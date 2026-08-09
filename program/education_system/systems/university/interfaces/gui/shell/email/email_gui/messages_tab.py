@@ -11,6 +11,8 @@ System tab and Notifications Hub window are no longer needed; both have
 been folded in here.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import os
@@ -125,16 +127,16 @@ def create_inbox(self, inbox_frame):
     hsb.config(command=self.messages_tree.xview)
 
     # Configure columns
-    self.messages_tree.heading("From", text="From")
+    self.messages_tree.heading("From", text=_t('gui.shell.email.email_gui.messages_tab.headings.from', default="From"))
     self.messages_tree.column("From", width=150, minwidth=100)
 
-    self.messages_tree.heading("Subject", text="Subject")
+    self.messages_tree.heading("Subject", text=_t('gui.shell.email.email_gui.messages_tab.headings.subject', default="Subject"))
     self.messages_tree.column("Subject", width=250, minwidth=150)
 
-    self.messages_tree.heading("Date", text="Date")
+    self.messages_tree.heading("Date", text=_t('gui.shell.email.email_gui.messages_tab.headings.date', default="Date"))
     self.messages_tree.column("Date", width=150, minwidth=120)
 
-    self.messages_tree.heading("Status", text="Status")
+    self.messages_tree.heading("Status", text=_t('gui.shell.email.email_gui.messages_tab.headings.status', default="Status"))
     self.messages_tree.column("Status", width=80, minwidth=60)
 
     # Enable row selection highlighting
@@ -236,7 +238,7 @@ def refresh_messages(self):
                 ), tags=('error',))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh messages: {e}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.messages_tab.dialogs.error', default="Error"), f"Failed to refresh messages: {e}")
         import traceback
         traceback.print_exc()
 
@@ -250,11 +252,11 @@ def reply_message(self):
     """Reply to selected message"""
     selection = self.messages_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a message to reply to")
+        messagebox.showwarning(_t('gui.shell.email.email_gui.messages_tab.dialogs.no_selection', default="No Selection"), _t('gui.shell.email.email_gui.messages_tab.dialogs.please_select_a_message_to_reply_to', default="Please select a message to reply to"))
         return
 
     if not self.dashboard:
-        messagebox.showerror("Error", "Dashboard not initialized. Please restart the application.")
+        messagebox.showerror(_t('gui.shell.email.email_gui.messages_tab.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.messages_tab.dialogs.dashboard_not_initialized_please_restart_the_application', default="Dashboard not initialized. Please restart the application."))
         return
 
     item = self.messages_tree.item(selection[0])
@@ -266,25 +268,25 @@ def delete_message(self):
     """Delete selected message"""
     selection = self.messages_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a message to delete")
+        messagebox.showwarning(_t('gui.shell.email.email_gui.messages_tab.dialogs.no_selection', default="No Selection"), _t('gui.shell.email.email_gui.messages_tab.dialogs.please_select_a_message_to_delete', default="Please select a message to delete"))
         return
 
     if not self.dashboard:
-        messagebox.showerror("Error", "Dashboard not initialized. Please restart the application.")
+        messagebox.showerror(_t('gui.shell.email.email_gui.messages_tab.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.messages_tab.dialogs.dashboard_not_initialized_please_restart_the_application', default="Dashboard not initialized. Please restart the application."))
         return
 
     item = self.messages_tree.item(selection[0])
     message_id = item['tags'][0]
 
-    if messagebox.askyesno("Confirm Delete", "Delete this message?"):
+    if messagebox.askyesno(_t('gui.shell.email.email_gui.messages_tab.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.email.email_gui.messages_tab.dialogs.delete_this_message', default="Delete this message?")):
         try:
             if self.dashboard.update_message_status(message_id, 'delete'):
                 self.refresh_messages()
                 self.update_status("Message deleted")
             else:
-                messagebox.showerror("Error", "Failed to delete message")
+                messagebox.showerror(_t('gui.shell.email.email_gui.messages_tab.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.messages_tab.dialogs.failed_to_delete_message', default="Failed to delete message"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error deleting message: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.messages_tab.dialogs.error', default="Error"), f"Error deleting message: {e}")
 
 
 def on_message_select(self, event):
@@ -303,7 +305,7 @@ def on_message_select(self, event):
             # Update indicator to show no message selected
             if hasattr(self, 'selected_message_indicator'):
                 self.selected_message_indicator.config(
-                    text="No message selected",
+                    text=_t('gui.shell.email.email_gui.messages_tab.text.no_message_selected', default="No message selected"),
                     foreground='#666'
                 )
             return
@@ -311,7 +313,7 @@ def on_message_select(self, event):
         if not tags:
             if hasattr(self, 'selected_message_indicator'):
                 self.selected_message_indicator.config(
-                    text="No message selected",
+                    text=_t('gui.shell.email.email_gui.messages_tab.text.no_message_selected', default="No message selected"),
                     foreground='#666'
                 )
             return
@@ -340,7 +342,7 @@ def on_message_select(self, event):
                     # Update selection indicator to show message is ready for reply
                     if hasattr(self, 'selected_message_indicator'):
                         self.selected_message_indicator.config(
-                            text="✓ Message selected - Ready to reply",
+                            text=_t('gui.shell.email.email_gui.messages_tab.text.message_selected_ready_to_reply', default="✓ Message selected - Ready to reply"),
                             foreground='#2E86AB',  # Primary color
                             font=('Arial', 9, 'bold')
                         )
@@ -350,14 +352,14 @@ def on_message_select(self, event):
                     # Restore selection after refresh
                     self._select_message_by_id(message_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Error loading message: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.messages_tab.dialogs.error', default="Error"), f"Error loading message: {e}")
             import traceback
             traceback.print_exc()
     else:
         # No selection - reset indicator
         if hasattr(self, 'selected_message_indicator'):
             self.selected_message_indicator.config(
-                text="No message selected",
+                text=_t('gui.shell.email.email_gui.messages_tab.text.no_message_selected', default="No message selected"),
                 foreground='#666',
                 font=('Arial', 9, 'italic')
             )
@@ -403,11 +405,11 @@ def show_message_context_menu(self, event):
 
         # Create context menu
         context_menu = tk.Menu(self.root, tearoff=0)
-        context_menu.add_command(label="Reply", command=self.reply_message)
-        context_menu.add_command(label="Delete", command=self.delete_message)
+        context_menu.add_command(label=_t('gui.shell.email.email_gui.messages_tab.menus.reply', default="Reply"), command=self.reply_message)
+        context_menu.add_command(label=_t('gui.shell.email.email_gui.messages_tab.menus.delete', default="Delete"), command=self.delete_message)
         context_menu.add_separator()
-        context_menu.add_command(label="Mark as Unread", command=lambda: self.mark_message_unread(tags[0]))
-        context_menu.add_command(label="Archive", command=lambda: self.archive_message(tags[0]))
+        context_menu.add_command(label=_t('gui.shell.email.email_gui.messages_tab.menus.mark_as_unread', default="Mark as Unread"), command=lambda: self.mark_message_unread(tags[0]))
+        context_menu.add_command(label=_t('gui.shell.email.email_gui.messages_tab.menus.archive', default="Archive"), command=lambda: self.archive_message(tags[0]))
 
         try:
             context_menu.tk_popup(event.x_root, event.y_root)
@@ -429,7 +431,7 @@ def mark_message_unread(self, message_id):
             self.refresh_messages()
             self.update_status("Message marked as unread")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to mark as unread: {e}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.messages_tab.dialogs.error', default="Error"), f"Failed to mark as unread: {e}")
 
 
 def archive_message(self, message_id):
@@ -445,7 +447,7 @@ def archive_message(self, message_id):
             self.refresh_messages()
             self.update_status("Message archived")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to archive message: {e}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.messages_tab.dialogs.error', default="Error"), f"Failed to archive message: {e}")
 
 
 def open_messages(self):

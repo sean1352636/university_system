@@ -1,4 +1,6 @@
 """Backup options and backup viewer dialogs for the data backup GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import os
@@ -27,7 +29,7 @@ class BackupOptionsDialog:
         self.selected_tables = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Backup Options")
+        self.dialog.title(_t('gui.shell.database.dialogs.backup_options.windows.backup_options', default="Backup Options"))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -44,22 +46,22 @@ class BackupOptionsDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Backup type selection
-        type_frame = ttk.LabelFrame(self.dialog, text="Backup Type", padding=10)
+        type_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.backup_options.labels.backup_type', default="Backup Type"), padding=10)
         type_frame.pack(fill="x", padx=10, pady=5)
 
-        self.type_var = tk.StringVar(value="full")
+        self.type_var = tk.StringVar(value=_t('gui.shell.database.dialogs.backup_options.values.full', default="full"))
 
-        ttk.Radiobutton(type_frame, text="Full Backup", variable=self.type_var,
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.database.dialogs.backup_options.buttons.full_backup', default="Full Backup"), variable=self.type_var,
                        value="full").pack(anchor="w")
-        ttk.Radiobutton(type_frame, text="Incremental Backup", variable=self.type_var,
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.database.dialogs.backup_options.buttons.incremental_backup', default="Incremental Backup"), variable=self.type_var,
                        value="incremental").pack(anchor="w")
-        ttk.Radiobutton(type_frame, text="Schema Only", variable=self.type_var,
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.database.dialogs.backup_options.buttons.schema_only', default="Schema Only"), variable=self.type_var,
                        value="schema").pack(anchor="w")
-        ttk.Radiobutton(type_frame, text="Selective Tables", variable=self.type_var,
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.database.dialogs.backup_options.buttons.selective_tables', default="Selective Tables"), variable=self.type_var,
                        value="selective", command=self.show_table_selection).pack(anchor="w")
 
         # Table selection frame (hidden initially)
-        self.table_frame = ttk.LabelFrame(self.dialog, text="Select Tables", padding=10)
+        self.table_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.backup_options.labels.select_tables', default="Select Tables"), padding=10)
 
         # Get available tables
         try:
@@ -71,14 +73,14 @@ class BackupOptionsDialog:
                 self.table_vars[table] = var
                 ttk.Checkbutton(self.table_frame, text=table, variable=var).pack(anchor="w")
         except Exception:
-            ttk.Label(self.table_frame, text="No tables found or database not accessible").pack()
+            ttk.Label(self.table_frame, text=_t('gui.shell.database.dialogs.backup_options.labels.no_tables_found_or_database_not_accessible', default="No tables found or database not accessible")).pack()
 
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Create Backup", command=self.ok).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.backup_options.buttons.create_backup', default="Create Backup"), command=self.ok).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.backup_options.buttons.cancel', default="Cancel"), command=self.cancel).pack(side="right")
 
     def show_table_selection(self):
         """Show table selection frame"""
@@ -92,7 +94,7 @@ class BackupOptionsDialog:
         if self.backup_type == "selective":
             self.selected_tables = [table for table, var in self.table_vars.items() if var.get()]
             if not self.selected_tables:
-                messagebox.showwarning("No Tables", "Please select at least one table")
+                messagebox.showwarning(_t('gui.shell.database.dialogs.backup_options.dialogs.no_tables', default="No Tables"), _t('gui.shell.database.dialogs.backup_options.dialogs.please_select_at_least_one_table', default="Please select at least one table"))
                 return
 
         self.result = True
@@ -109,7 +111,7 @@ class BackupViewerDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Backup Viewer")
+        self.dialog.title(_t('gui.shell.database.dialogs.backup_options.windows.backup_viewer', default="Backup Viewer"))
         self.dialog.geometry("800x600")
         self.dialog.transient(parent)
 
@@ -122,16 +124,16 @@ class BackupViewerDialog:
         controls_frame = ttk.Frame(self.dialog)
         controls_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="Refresh", command=self.load_backups).pack(side="left", padx=5)
-        ttk.Button(controls_frame, text="Delete Selected", command=self.delete_backup).pack(side="left", padx=5)
-        ttk.Button(controls_frame, text="Validate Selected", command=self.validate_backup).pack(side="left", padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.database.dialogs.backup_options.buttons.refresh', default="Refresh"), command=self.load_backups).pack(side="left", padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.database.dialogs.backup_options.buttons.delete_selected', default="Delete Selected"), command=self.delete_backup).pack(side="left", padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.database.dialogs.backup_options.buttons.validate_selected', default="Validate Selected"), command=self.validate_backup).pack(side="left", padx=5)
 
         # Filter frame
         filter_frame = ttk.Frame(self.dialog)
         filter_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Filter by type:").pack(side="left")
-        self.filter_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.shell.database.dialogs.backup_options.labels.filter_by_type', default="Filter by type:")).pack(side="left")
+        self.filter_var = tk.StringVar(value=_t('gui.shell.database.dialogs.backup_options.values.all', default="All"))
         filter_combo = ttk.Combobox(filter_frame, textvariable=self.filter_var,
                                    values=["All", "full", "incremental", "schema", "selective"],
                                    state="readonly", width=15)
@@ -159,7 +161,7 @@ class BackupViewerDialog:
         h_scroll.pack(side="bottom", fill="x")
 
         # Details frame
-        details_frame = ttk.LabelFrame(self.dialog, text="Backup Details", padding=10)
+        details_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.backup_options.labels.backup_details', default="Backup Details"), padding=10)
         details_frame.pack(fill="x", padx=10, pady=5)
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=8, wrap=tk.WORD)
@@ -203,7 +205,7 @@ class BackupViewerDialog:
                 self.backup_items[item] = backup
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load backups: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.backup_options.dialogs.error', default="Error"), f"Failed to load backups: {e}")
 
     def apply_filter(self, event=None):
         """Apply filter to backup list"""
@@ -274,14 +276,14 @@ class BackupViewerDialog:
         """Delete selected backup"""
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a backup to delete")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.backup_options.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.backup_options.dialogs.please_select_a_backup_to_delete', default="Please select a backup to delete"))
             return
 
         item = selection[0]
         values = self.tree.item(item, "values")
         filename = values[4]
 
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{filename}'?"):
+        if messagebox.askyesno(_t('gui.shell.database.dialogs.backup_options.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete '{filename}'?"):
             try:
                 backup_id = int(values[0])
                 backup = None
@@ -315,21 +317,21 @@ class BackupViewerDialog:
                             success = False
 
                     if success:
-                        messagebox.showinfo("Success", "Backup deleted successfully and removed from list")
+                        messagebox.showinfo(_t('gui.shell.database.dialogs.backup_options.dialogs.success', default="Success"), _t('gui.shell.database.dialogs.backup_options.dialogs.backup_deleted_successfully_and_removed_from_list', default="Backup deleted successfully and removed from list"))
                         self.load_backups()
                     else:
-                        messagebox.showerror("Error", "Failed to delete backup")
+                        messagebox.showerror(_t('gui.shell.database.dialogs.backup_options.dialogs.error', default="Error"), _t('gui.shell.database.dialogs.backup_options.dialogs.failed_to_delete_backup', default="Failed to delete backup"))
                 else:
-                    messagebox.showerror("Error", "Backup not found")
+                    messagebox.showerror(_t('gui.shell.database.dialogs.backup_options.dialogs.error', default="Error"), _t('gui.shell.database.dialogs.backup_options.dialogs.backup_not_found', default="Backup not found"))
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete backup: {e}")
+                messagebox.showerror(_t('gui.shell.database.dialogs.backup_options.dialogs.error', default="Error"), f"Failed to delete backup: {e}")
 
     def validate_backup(self):
         """Validate selected backup"""
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a backup to validate")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.backup_options.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.backup_options.dialogs.please_select_a_backup_to_validate', default="Please select a backup to validate"))
             return
 
         item = selection[0]
@@ -360,7 +362,7 @@ class BackupViewerDialog:
                     for error in results['errors']:
                         message += f"\u2022 {error}\n"
 
-                messagebox.showinfo("Validation Results", message)
+                messagebox.showinfo(_t('gui.shell.database.dialogs.backup_options.dialogs.validation_results', default="Validation Results"), message)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Validation failed: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.backup_options.dialogs.error', default="Error"), f"Validation failed: {e}")

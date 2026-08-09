@@ -3,6 +3,8 @@ Takeaway System GUI for University Management System
 Campus food ordering and delivery interface
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -47,7 +49,7 @@ from education_system.systems.university.infrastructure.utils.finance_integratio
 )
 
 # Housing integration for delivery address
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 class TakeawayGUI:
     """Takeaway ordering system GUI"""
@@ -91,7 +93,7 @@ class TakeawayGUI:
         Returns dict with building and room info, or None if not found.
         """
         try:
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             # Get active housing assignment for the student
@@ -663,7 +665,7 @@ class TakeawayGUI:
         type_frame = ttk.LabelFrame(main_frame, text=_t("takeaway.delivery_type"), padding=10)
         type_frame.pack(fill=tk.X, pady=5)
 
-        delivery_type = tk.StringVar(value="delivery")
+        delivery_type = tk.StringVar(value=_t('gui.operations.commerce.takeaway.values.delivery', default="delivery"))
         ttk.Radiobutton(type_frame, text=_t("takeaway.delivery"), variable=delivery_type, value="delivery").pack(anchor='w')
         ttk.Radiobutton(type_frame, text=_t("takeaway.collection"), variable=delivery_type, value="collection").pack(anchor='w')
 
@@ -704,7 +706,7 @@ class TakeawayGUI:
         payment_frame = ttk.LabelFrame(main_frame, text=_t("takeaway.payment_method"), padding=10)
         payment_frame.pack(fill=tk.X, pady=5)
 
-        payment_method = tk.StringVar(value="card")
+        payment_method = tk.StringVar(value=_t('gui.operations.commerce.takeaway.values.card', default="card"))
 
         # Get student finance balance using correct identifier
         user_identifier = self.get_user_identifier()
@@ -863,27 +865,27 @@ class TakeawayGUI:
     def create_refunds_tab(self):
         """Create payment refunds management tab"""
         refunds_frame = ttk.Frame(self.notebook)
-        self.notebook.add(refunds_frame, text="Refunds")
+        self.notebook.add(refunds_frame, text=_t('gui.operations.commerce.takeaway.tabs.refunds', default="Refunds"))
 
         # Configure grid
         refunds_frame.columnconfigure(0, weight=1)
         refunds_frame.rowconfigure(2, weight=1)
 
         # Header
-        header_label = ttk.Label(refunds_frame, text="Takeaway Order Refunds", font=('Arial', 16, 'bold'))
+        header_label = ttk.Label(refunds_frame, text=_t('gui.operations.commerce.takeaway.labels.takeaway_order_refunds', default="Takeaway Order Refunds"), font=('Arial', 16, 'bold'))
         header_label.grid(row=0, column=0, pady=10, padx=10, sticky='w')
 
         # Search frame
-        search_frame = ttk.LabelFrame(refunds_frame, text="Search Orders", padding=10)
+        search_frame = ttk.LabelFrame(refunds_frame, text=_t('gui.operations.commerce.takeaway.labels.search_orders', default="Search Orders"), padding=10)
         search_frame.grid(row=1, column=0, padx=10, pady=5, sticky='ew')
 
-        ttk.Label(search_frame, text="Search by Order ID, Customer or Restaurant:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.takeaway.labels.search_by_order_id_customer_or_restaurant', default="Search by Order ID, Customer or Restaurant:")).pack(side=tk.LEFT, padx=5)
         self.refunds_search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=self.refunds_search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(search_frame, text="Search", command=self.refresh_refunds_list).pack(side=tk.LEFT, padx=2)
-        ttk.Button(search_frame, text="Show All", command=lambda: [self.refunds_search_var.set(''), self.refresh_refunds_list()]).pack(side=tk.LEFT, padx=2)
+        ttk.Button(search_frame, text=_t('gui.operations.commerce.takeaway.buttons.search', default="Search"), command=self.refresh_refunds_list).pack(side=tk.LEFT, padx=2)
+        ttk.Button(search_frame, text=_t('gui.operations.commerce.takeaway.buttons.show_all', default="Show All"), command=lambda: [self.refunds_search_var.set(''), self.refresh_refunds_list()]).pack(side=tk.LEFT, padx=2)
 
         # Orders table
         table_frame = ttk.Frame(refunds_frame)
@@ -892,13 +894,13 @@ class TakeawayGUI:
         columns = ('order_id', 'order_date', 'customer', 'restaurant', 'amount', 'payment_method', 'status')
         self.refunds_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
 
-        self.refunds_tree.heading('order_id', text='Order ID')
-        self.refunds_tree.heading('order_date', text='Order Date')
-        self.refunds_tree.heading('customer', text='Customer')
-        self.refunds_tree.heading('restaurant', text='Restaurant')
-        self.refunds_tree.heading('amount', text='Amount')
-        self.refunds_tree.heading('payment_method', text='Payment Method')
-        self.refunds_tree.heading('status', text='Status')
+        self.refunds_tree.heading('order_id', text=_t('gui.operations.commerce.takeaway.headings.order_id', default='Order ID'))
+        self.refunds_tree.heading('order_date', text=_t('gui.operations.commerce.takeaway.headings.order_date', default='Order Date'))
+        self.refunds_tree.heading('customer', text=_t('gui.operations.commerce.takeaway.headings.customer', default='Customer'))
+        self.refunds_tree.heading('restaurant', text=_t('gui.operations.commerce.takeaway.headings.restaurant', default='Restaurant'))
+        self.refunds_tree.heading('amount', text=_t('gui.operations.commerce.takeaway.headings.amount', default='Amount'))
+        self.refunds_tree.heading('payment_method', text=_t('gui.operations.commerce.takeaway.headings.payment_method', default='Payment Method'))
+        self.refunds_tree.heading('status', text=_t('gui.operations.commerce.takeaway.headings.status', default='Status'))
 
         self.refunds_tree.column('order_id', width=150)
         self.refunds_tree.column('order_date', width=150)
@@ -921,10 +923,10 @@ class TakeawayGUI:
         button_frame = ttk.Frame(refunds_frame)
         button_frame.grid(row=3, column=0, padx=10, pady=10, sticky='ew')
 
-        ttk.Button(button_frame, text="Process Refund", command=self.process_takeaway_refund).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="View Details", command=self.view_order_details_for_refund).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Export to CSV", command=self.export_refunds_to_csv).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.refresh_refunds_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.takeaway.buttons.process_refund', default="Process Refund"), command=self.process_takeaway_refund).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.takeaway.buttons.view_details', default="View Details"), command=self.view_order_details_for_refund).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.takeaway.buttons.export_to_csv', default="Export to CSV"), command=self.export_refunds_to_csv).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.takeaway.buttons.refresh', default="Refresh"), command=self.refresh_refunds_list).pack(side=tk.LEFT, padx=5)
 
         # Initial load
         self.refresh_refunds_list()
@@ -936,7 +938,7 @@ class TakeawayGUI:
             self.refunds_tree.delete(item)
 
         try:
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             search_term = self.refunds_search_var.get().strip()
@@ -996,7 +998,7 @@ class TakeawayGUI:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading orders: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.database_error', default="Database Error"), f"Error loading orders: {e}")
             try:
                 if 'conn' in locals():
                     conn.close()
@@ -1007,14 +1009,14 @@ class TakeawayGUI:
         """Process a refund for selected takeaway order"""
         selection = self.refunds_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an order to refund.")
+            messagebox.showwarning(_t('gui.operations.commerce.takeaway.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.takeaway.dialogs.please_select_an_order_to_refund', default="Please select an order to refund."))
             return
 
         item = self.refunds_tree.item(selection[0])
         values = item['values']
 
         if len(values) < 7:
-            messagebox.showerror("Error", "Invalid order data.")
+            messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.error', default="Error"), _t('gui.operations.commerce.takeaway.dialogs.invalid_order_data', default="Invalid order data."))
             return
 
         order_id = values[0]
@@ -1022,23 +1024,23 @@ class TakeawayGUI:
         try:
             amount = float(amount_str)
         except ValueError:
-            messagebox.showerror("Error", "Invalid amount format.")
+            messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.error', default="Error"), _t('gui.operations.commerce.takeaway.dialogs.invalid_amount_format', default="Invalid amount format."))
             return
 
         status = values[6]
 
         # Check if already refunded
         if status == 'REFUNDED':
-            messagebox.showinfo("Already Refunded", "This order has already been refunded.")
+            messagebox.showinfo(_t('gui.operations.commerce.takeaway.dialogs.already_refunded', default="Already Refunded"), _t('gui.operations.commerce.takeaway.dialogs.this_order_has_already_been_refunded', default="This order has already been refunded."))
             return
 
         # Confirm refund
-        if not messagebox.askyesno("Confirm Refund", f"Process refund of \u00a3{amount:.2f} for order {order_id}?"):
+        if not messagebox.askyesno(_t('gui.operations.commerce.takeaway.dialogs.confirm_refund', default="Confirm Refund"), f"Process refund of \u00a3{amount:.2f} for order {order_id}?"):
             return
 
         # Get order details to find user_id
         try:
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             cursor.execute('''
@@ -1051,13 +1053,13 @@ class TakeawayGUI:
             conn.close()
 
             if not order_data:
-                messagebox.showerror("Error", "Order not found in database.")
+                messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.error', default="Error"), _t('gui.operations.commerce.takeaway.dialogs.order_not_found_in_database', default="Order not found in database."))
                 return
 
             user_id, payment_method = order_data
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error fetching order details: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.database_error', default="Database Error"), f"Error fetching order details: {e}")
             return
 
         # Show refund method dialog
@@ -1068,7 +1070,7 @@ class TakeawayGUI:
 
         # Process based on method
         try:
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             # Update order status to refunded
@@ -1114,8 +1116,8 @@ class TakeawayGUI:
             if refund_method == 'Student Account':
                 success = self.add_takeaway_refund_to_student_account(user_id, amount, refund_ref)
                 if not success:
-                    messagebox.showwarning("Partial Success",
-                                         "Refund recorded but failed to credit student account. Please credit manually.")
+                    messagebox.showwarning(_t('gui.operations.commerce.takeaway.dialogs.partial_success', default="Partial Success"),
+                                         _t('gui.operations.commerce.takeaway.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
             # Send refund receipt email
             self.send_takeaway_refund_receipt(order_id, user_id, amount, refund_method, refund_ref)
@@ -1123,14 +1125,14 @@ class TakeawayGUI:
             # Notify finance GUI
             self.notify_takeaway_finance_gui(order_id, amount, refund_method, refund_ref, user_id)
 
-            messagebox.showinfo("Refund Processed",
+            messagebox.showinfo(_t('gui.operations.commerce.takeaway.dialogs.refund_processed', default="Refund Processed"),
                               f"Refund of \u00a3{amount:.2f} processed successfully.\nRefund Reference: {refund_ref}")
 
             # Refresh the list
             self.refresh_refunds_list()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error processing refund: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.database_error', default="Database Error"), f"Error processing refund: {e}")
             try:
                 if 'conn' in locals():
                     conn.close()
@@ -1140,7 +1142,7 @@ class TakeawayGUI:
     def show_takeaway_refund_method_dialog(self, amount, order_id, user_id):
         """Show dialog to select refund method"""
         dialog = tk.Toplevel(self.takeaway_window)
-        dialog.title("Select Refund Method")
+        dialog.title(_t('gui.operations.commerce.takeaway.windows.select_refund_method', default="Select Refund Method"))
         dialog.geometry("400x350")
         dialog.transient(self.takeaway_window)
         dialog.grab_set()
@@ -1154,7 +1156,7 @@ class TakeawayGUI:
         student_id = None
         if user_id:
             try:
-                conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
                 cursor = conn.cursor()
                 cursor.execute('SELECT student_id FROM users WHERE id = ?', (user_id,))
                 result_row = cursor.fetchone()
@@ -1170,7 +1172,7 @@ class TakeawayGUI:
                 current_balance = get_student_finance_account_balance(student_id)
                 if current_balance is not None:
                     new_balance = current_balance + amount
-                    balance_frame = ttk.LabelFrame(dialog, text="Student Finance Account", padding=10)
+                    balance_frame = ttk.LabelFrame(dialog, text=_t('gui.operations.commerce.takeaway.labels.student_finance_account', default="Student Finance Account"), padding=10)
                     balance_frame.pack(pady=10, padx=20, fill=tk.X)
 
                     ttk.Label(balance_frame, text=f"Current Balance: \u00a3{current_balance:.2f}").pack(anchor='w')
@@ -1179,7 +1181,7 @@ class TakeawayGUI:
             except Exception as e:
                 print(f"Error getting balance: {e}")
 
-        ttk.Label(dialog, text="Select refund method:", font=('Arial', 10)).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.operations.commerce.takeaway.labels.select_refund_method', default="Select refund method:"), font=('Arial', 10)).pack(pady=10)
 
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=20)
@@ -1194,18 +1196,18 @@ class TakeawayGUI:
 
         def select_student_account():
             if not student_id:
-                messagebox.showerror("Error", "No student ID associated with this user account.")
+                messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.error', default="Error"), _t('gui.operations.commerce.takeaway.dialogs.no_student_id_associated_with_this_user_account', default="No student ID associated with this user account."))
                 return
             result['method'] = 'Student Account'
             dialog.destroy()
 
-        ttk.Button(button_frame, text="Cash Refund", command=select_cash, width=20).pack(pady=5)
-        ttk.Button(button_frame, text="Card Refund", command=select_card, width=20).pack(pady=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.takeaway.buttons.cash_refund', default="Cash Refund"), command=select_cash, width=20).pack(pady=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.takeaway.buttons.card_refund', default="Card Refund"), command=select_card, width=20).pack(pady=5)
 
         if student_id:
-            ttk.Button(button_frame, text="Student Finance Account", command=select_student_account, width=20).pack(pady=5)
+            ttk.Button(button_frame, text=_t('gui.operations.commerce.takeaway.buttons.student_finance_account', default="Student Finance Account"), command=select_student_account, width=20).pack(pady=5)
 
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=20).pack(pady=10)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.takeaway.buttons.cancel', default="Cancel"), command=dialog.destroy, width=20).pack(pady=10)
 
         dialog.wait_window()
         return result['method']
@@ -1213,7 +1215,7 @@ class TakeawayGUI:
     def add_takeaway_refund_to_student_account(self, user_id, amount, refund_ref):
         """Add refund amount to student finance account"""
         try:
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             # Get student_id from users table
@@ -1276,7 +1278,7 @@ class TakeawayGUI:
         """Send refund receipt email to customer"""
         try:
             # Get user info from users table
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
             cursor.execute('''
                 SELECT first_name, last_name, email, student_id
@@ -1336,7 +1338,7 @@ class TakeawayGUI:
         This method logs the notification for finance GUI awareness.
         """
         try:
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             # Get user information from users table
@@ -1371,20 +1373,20 @@ class TakeawayGUI:
         """View detailed information for selected order"""
         selection = self.refunds_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an order to view details.")
+            messagebox.showwarning(_t('gui.operations.commerce.takeaway.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.takeaway.dialogs.please_select_an_order_to_view_details', default="Please select an order to view details."))
             return
 
         item = self.refunds_tree.item(selection[0])
         values = item['values']
 
         if len(values) < 7:
-            messagebox.showerror("Error", "Invalid order data.")
+            messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.error', default="Error"), _t('gui.operations.commerce.takeaway.dialogs.invalid_order_data', default="Invalid order data."))
             return
 
         order_id = values[0]
 
         try:
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             # Get order details
@@ -1398,7 +1400,7 @@ class TakeawayGUI:
             order = cursor.fetchone()
 
             if not order:
-                messagebox.showerror("Error", "Order not found.")
+                messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.error', default="Error"), _t('gui.operations.commerce.takeaway.dialogs.order_not_found', default="Order not found."))
                 conn.close()
                 return
 
@@ -1474,10 +1476,10 @@ Actual Delivery:    {order[14] if order[14] else 'N/A'}
             info_text.insert('1.0', details)
             info_text.config(state='disabled')
 
-            ttk.Button(main_frame, text="Close", command=details_window.destroy).pack(pady=10)
+            ttk.Button(main_frame, text=_t('gui.operations.commerce.takeaway.buttons.close', default="Close"), command=details_window.destroy).pack(pady=10)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading order details: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.database_error', default="Database Error"), f"Error loading order details: {e}")
 
     def export_refunds_to_csv(self):
         """Export refunds list to CSV file"""
@@ -1506,7 +1508,7 @@ Actual Delivery:    {order[14] if order[14] else 'N/A'}
                     values = self.refunds_tree.item(item)['values']
                     writer.writerow(values)
 
-            messagebox.showinfo("Export Successful", f"Data exported to:\n{filename}")
+            messagebox.showinfo(_t('gui.operations.commerce.takeaway.dialogs.export_successful', default="Export Successful"), f"Data exported to:\n{filename}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Error exporting data: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.takeaway.dialogs.export_error', default="Export Error"), f"Error exporting data: {e}")

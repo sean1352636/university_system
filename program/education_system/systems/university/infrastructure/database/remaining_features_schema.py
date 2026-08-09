@@ -4,7 +4,7 @@ Creates all tables for: Mobile App, Accessibility, Parent Portal, Transportation
 """
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 # Feature 4: Mobile App (PWA) Infrastructure
 MOBILE_APP_SCHEMA = """
@@ -533,6 +533,28 @@ CREATE TABLE IF NOT EXISTS credential_verifications (
     FOREIGN KEY (badge_issuance_id) REFERENCES badge_issuances(issuance_id)
 );
 
+-- Binding between a credential and the registrar-owned source record.
+CREATE TABLE IF NOT EXISTS credential_academic_records (
+    credential_id INTEGER PRIMARY KEY,
+    record_type TEXT NOT NULL,
+    record_id TEXT NOT NULL,
+    record_hash TEXT NOT NULL,
+    FOREIGN KEY (credential_id) REFERENCES blockchain_credentials(credential_id)
+);
+
+-- Receipts returned by external verification/attestation networks.
+CREATE TABLE IF NOT EXISTS credential_network_attestations (
+    attestation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    credential_id INTEGER NOT NULL,
+    network_name TEXT NOT NULL,
+    external_id TEXT,
+    status TEXT NOT NULL,
+    receipt TEXT,
+    published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (credential_id, network_name),
+    FOREIGN KEY (credential_id) REFERENCES blockchain_credentials(credential_id)
+);
+
 -- Blockchain Wallets
 CREATE TABLE IF NOT EXISTS blockchain_wallets (
     wallet_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -598,7 +620,7 @@ CREATE TABLE IF NOT EXISTS micro_credentials (
 def create_all_remaining_tables():
     """Create all remaining feature tables"""
     try:
-        conn = sqlite3.connect(DEFAULT_DB_PATH)
+        conn = sqlite3.connect(UNIVERSITY_DEFAULT_DB_PATH)
         cursor = conn.cursor()
 
         print("Creating Mobile App tables...")

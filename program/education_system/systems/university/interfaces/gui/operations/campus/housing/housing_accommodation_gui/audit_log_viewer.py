@@ -11,6 +11,8 @@ so the table isn't dominated by ambient framework chatter.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import re
 import tkinter as tk
@@ -29,7 +31,7 @@ def show_audit_log(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Activity / Audit Log",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.audit_log_viewer.labels.activity_audit_log', default="Activity / Audit Log"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
 
@@ -37,24 +39,24 @@ def show_audit_log(gui_instance) -> None:
     bar = ttk.Frame(parent)
     bar.pack(fill="x", padx=8, pady=4)
 
-    ttk.Label(bar, text="Contains:").pack(side="left", padx=(0, 4))
-    q_var = tk.StringVar(value="housing")
+    ttk.Label(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.audit_log_viewer.labels.contains', default="Contains:")).pack(side="left", padx=(0, 4))
+    q_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.audit_log_viewer.values.housing', default="housing"))
     qentry = ttk.Entry(bar, textvariable=q_var, width=30)
     qentry.pack(side="left")
 
-    ttk.Label(bar, text="Level:").pack(side="left", padx=(12, 4))
-    level_var = tk.StringVar(value="(any)")
+    ttk.Label(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.audit_log_viewer.labels.level', default="Level:")).pack(side="left", padx=(12, 4))
+    level_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.audit_log_viewer.values.any', default="(any)"))
     ttk.Combobox(bar, textvariable=level_var, state="readonly", width=10,
                  values=["(any)", "DEBUG", "INFO", "WARNING", "ERROR",
                          "CRITICAL"]).pack(side="left")
 
-    ttk.Label(bar, text="Max rows:").pack(side="left", padx=(12, 4))
+    ttk.Label(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.audit_log_viewer.labels.max_rows', default="Max rows:")).pack(side="left", padx=(12, 4))
     max_var = tk.StringVar(value="500")
     ttk.Entry(bar, textvariable=max_var, width=8).pack(side="left")
 
-    ttk.Button(bar, text="Apply", command=lambda: reload()).pack(side="left",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.audit_log_viewer.buttons.apply', default="Apply"), command=lambda: reload()).pack(side="left",
                                                                    padx=8)
-    ttk.Button(bar, text="Refresh", command=lambda: reload()).pack(side="right")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.audit_log_viewer.buttons.refresh', default="Refresh"), command=lambda: reload()).pack(side="right")
 
     cols = ("ts", "level", "logger", "msg")
     tree = ttk.Treeview(parent, columns=cols, show="headings", height=20)
@@ -86,7 +88,7 @@ def show_audit_log(gui_instance) -> None:
             lines = _read_log_lines()
         except Exception as e:
             logger.exception("Audit log read failed")
-            messagebox.showerror("Audit log",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.audit_log_viewer.dialogs.audit_log', default="Audit log"),
                                   f"Could not read log:\n\n{e}",
                                   parent=gui_instance.root)
             return
@@ -141,8 +143,8 @@ def _read_log_lines() -> list[str]:
 
 def _resolve_log_dir() -> Path | None:
     try:
-        from education_system.systems.university.infrastructure import paths
-        ld = getattr(paths, 'LOG_DIR', None)
+        from education_system import paths
+        ld = getattr(paths, "UNIVERSITY_LOG_DIR", None)
         if ld:
             return Path(ld)
     except Exception:

@@ -14,6 +14,8 @@ orchestrator is responsible for wiring these into the navigation.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import builtins
 import contextlib
 import io
@@ -130,7 +132,7 @@ class _ServicePanelBase(ttk.Frame):
         self.body = ttk.Frame(self)
         self.body.grid(row=1, column=0, sticky="nsw", padx=(0, 10))
 
-        out_frame = ttk.LabelFrame(self, text="Output", padding=5)
+        out_frame = ttk.LabelFrame(self, text=_t('gui.pastoral.health.health_portal.provider_panels.labels.output', default="Output"), padding=5)
         out_frame.grid(row=1, column=1, sticky="nsew")
         self.output = scrolledtext.ScrolledText(out_frame, width=70, height=28,
                                                 wrap="word", font=("Courier", 9))
@@ -179,11 +181,11 @@ class ProviderSchedulePanel(_ServicePanelBase):
     def build_controls(self):
         r = 0
         # --- Add schedule form ---
-        ttk.Label(self.body, text="Add Provider Schedule",
+        ttk.Label(self.body, text=_t('gui.pastoral.health.health_portal.provider_panels.labels.add_provider_schedule', default="Add Provider Schedule"),
                   font=("Arial", 10, "bold")).grid(row=r, column=0, columnspan=2, sticky=tk.W, pady=(4, 2)); r += 1
         self.a_provider = self._add_entry(r, "Provider name:"); r += 1
-        ttk.Label(self.body, text="Day of week:").grid(row=r, column=0, sticky=tk.W, pady=2)
-        self.a_day = tk.StringVar(value="Monday")
+        ttk.Label(self.body, text=_t('gui.pastoral.health.health_portal.provider_panels.labels.day_of_week', default="Day of week:")).grid(row=r, column=0, sticky=tk.W, pady=2)
+        self.a_day = tk.StringVar(value=_t('gui.pastoral.health.health_portal.provider_panels.values.monday', default="Monday"))
         ttk.Combobox(self.body, textvariable=self.a_day, width=20, state="readonly",
                      values=[d[0] for d in self._DAYS]).grid(row=r, column=1, sticky=tk.W, padx=(5, 0)); r += 1
         self.a_start = self._add_entry(r, "Start time (HH:MM):", "09:00"); r += 1
@@ -234,9 +236,9 @@ class ProviderSchedulePanel(_ServicePanelBase):
     # -- actions ------------------------------------------------------------
     def on_add(self):
         if not self.a_provider.get().strip():
-            messagebox.showerror("Error", "Provider name is required."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.provider_name_is_required', default="Provider name is required.")); return
         if not (_valid_time(self.a_start.get()) and _valid_time(self.a_end.get())):
-            messagebox.showerror("Error", "Start/End must be HH:MM."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.start_end_must_be_hh_mm', default="Start/End must be HH:MM.")); return
         day_num = dict(self._DAYS)[self.a_day.get()]
         self.run(add_provider_schedule, [
             self.a_provider.get().strip(),
@@ -260,7 +262,7 @@ class ProviderSchedulePanel(_ServicePanelBase):
 
     def on_update(self):
         if not self.u_id.get().strip():
-            messagebox.showerror("Error", "Schedule ID is required."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.schedule_id_is_required', default="Schedule ID is required.")); return
         self.run(update_provider_schedule, [
             self.u_id.get().strip(),
             self.u_start.get().strip(),
@@ -270,11 +272,11 @@ class ProviderSchedulePanel(_ServicePanelBase):
 
     def on_block(self):
         if not self.b_provider.get().strip():
-            messagebox.showerror("Error", "Provider is required."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.provider_is_required', default="Provider is required.")); return
         if not _valid_date(self.b_date.get()):
-            messagebox.showerror("Error", "Block date must be YYYY-MM-DD."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.block_date_must_be_yyyy_mm_dd', default="Block date must be YYYY-MM-DD.")); return
         if not (_valid_time(self.b_start.get()) and _valid_time(self.b_end.get())):
-            messagebox.showerror("Error", "Block start/end must be HH:MM."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.block_start_end_must_be_hh_mm', default="Block start/end must be HH:MM.")); return
         self.run(block_time_slots, [
             self.b_provider.get().strip(),
             self.b_date.get().strip(),
@@ -313,7 +315,7 @@ class ProviderDashboardPanel(_ServicePanelBase):
     def on_lookup(self):
         term = self.lookup.get().strip()
         if not term:
-            messagebox.showerror("Error", "Enter a search term."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.enter_a_search_term', default="Enter a search term.")); return
         # feed the term, then "1" to auto-select the first match if several
         self.run(quick_patient_lookup, [term, "1"])
 
@@ -333,10 +335,10 @@ class ScreeningSchedulePanel(_ServicePanelBase):
 
     def build_controls(self):
         r = 0
-        ttk.Label(self.body, text="Create Screening Schedule",
+        ttk.Label(self.body, text=_t('gui.pastoral.health.health_portal.provider_panels.labels.create_screening_schedule', default="Create Screening Schedule"),
                   font=("Arial", 10, "bold")).grid(row=r, column=0, columnspan=2, sticky=tk.W, pady=(4, 2)); r += 1
         self.c_student = self._add_entry(r, "Student ID:"); r += 1
-        ttk.Label(self.body, text="Screening type:").grid(row=r, column=0, sticky=tk.W, pady=2)
+        ttk.Label(self.body, text=_t('gui.pastoral.health.health_portal.provider_panels.labels.screening_type', default="Screening type:")).grid(row=r, column=0, sticky=tk.W, pady=2)
         self.c_type = tk.StringVar(value=self._TYPES[0])
         ttk.Combobox(self.body, textvariable=self.c_type, width=20, state="readonly",
                      values=self._TYPES).grid(row=r, column=1, sticky=tk.W, padx=(5, 0)); r += 1
@@ -357,7 +359,7 @@ class ScreeningSchedulePanel(_ServicePanelBase):
         ttk.Separator(self.body, orient="horizontal").grid(
             row=r, column=0, columnspan=2, sticky="ew", pady=8); r += 1
 
-        ttk.Label(self.body, text="Schedule Screening Appointment",
+        ttk.Label(self.body, text=_t('gui.pastoral.health.health_portal.provider_panels.labels.schedule_screening_appointment', default="Schedule Screening Appointment"),
                   font=("Arial", 10, "bold")).grid(row=r, column=0, columnspan=2, sticky=tk.W, pady=(4, 2)); r += 1
         self.s_id = self._add_entry(r, "Screening ID:"); r += 1
         self.s_date = self._add_entry(r, "Appt date (YYYY-MM-DD):",
@@ -369,7 +371,7 @@ class ScreeningSchedulePanel(_ServicePanelBase):
         ttk.Separator(self.body, orient="horizontal").grid(
             row=r, column=0, columnspan=2, sticky="ew", pady=8); r += 1
 
-        ttk.Label(self.body, text="Record Screening Results",
+        ttk.Label(self.body, text=_t('gui.pastoral.health.health_portal.provider_panels.labels.record_screening_results', default="Record Screening Results"),
                   font=("Arial", 10, "bold")).grid(row=r, column=0, columnspan=2, sticky=tk.W, pady=(4, 2)); r += 1
         self.r_id = self._add_entry(r, "Screening ID:"); r += 1
         self.r_date = self._add_entry(r, "Completed (blank=today):", ""); r += 1
@@ -379,10 +381,10 @@ class ScreeningSchedulePanel(_ServicePanelBase):
     # -- actions ------------------------------------------------------------
     def on_create(self):
         if not self.c_student.get().strip():
-            messagebox.showerror("Error", "Student ID is required."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.student_id_is_required', default="Student ID is required.")); return
         due = self.c_due.get().strip()
         if due and not _valid_date(due):
-            messagebox.showerror("Error", "Due date must be YYYY-MM-DD."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.due_date_must_be_yyyy_mm_dd', default="Due date must be YYYY-MM-DD.")); return
         idx = self._TYPES.index(self.c_type.get()) + 1  # menu is 1-based
         inputs = [self.c_student.get().strip(), str(idx)]
         if self.c_type.get() == "Other":
@@ -392,9 +394,9 @@ class ScreeningSchedulePanel(_ServicePanelBase):
 
     def on_schedule(self):
         if not self.s_id.get().strip():
-            messagebox.showerror("Error", "Screening ID is required."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.screening_id_is_required', default="Screening ID is required.")); return
         if not _valid_date(self.s_date.get()) or not _valid_time(self.s_time.get()):
-            messagebox.showerror("Error", "Date must be YYYY-MM-DD and time HH:MM."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.date_must_be_yyyy_mm_dd_and_time_hh_mm', default="Date must be YYYY-MM-DD and time HH:MM.")); return
         self.run(schedule_screening_appointment, [
             self.s_id.get().strip(),
             self.s_date.get().strip(),
@@ -404,10 +406,10 @@ class ScreeningSchedulePanel(_ServicePanelBase):
 
     def on_record(self):
         if not self.r_id.get().strip():
-            messagebox.showerror("Error", "Screening ID is required."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.screening_id_is_required', default="Screening ID is required.")); return
         due = self.r_date.get().strip()
         if due and not _valid_date(due):
-            messagebox.showerror("Error", "Completed date must be YYYY-MM-DD."); return
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.provider_panels.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.provider_panels.dialogs.completed_date_must_be_yyyy_mm_dd', default="Completed date must be YYYY-MM-DD.")); return
         self.run(record_screening_results, [
             self.r_id.get().strip(),
             due,

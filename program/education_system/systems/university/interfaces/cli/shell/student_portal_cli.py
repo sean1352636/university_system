@@ -191,7 +191,9 @@ class StudentPortalCLI:
 
     def _handle_health_portal(self):
         try:
-            from education_system.systems.university.domain.pastoral.health.services.health_portal import display_health_portal_menu
+            from education_system.systems.university.interfaces.cli.pastoral.health_portal import (
+                display_health_portal_menu,
+            )
             display_health_portal_menu(self.auth)
         except ImportError as e:
             print(f"\n  Health Portal module is not available: {e}")

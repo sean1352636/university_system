@@ -62,13 +62,13 @@ class PatrolLogsMixin:
                 self.data['patrol_logs'].append(dialog.result)
                 if hasattr(self, 'patrol_tree'):
                     self.refresh_patrol_logs()
-                messagebox.showinfo(_t("police_station.msg_titles.success"), "Patrol log entry added!")
+                messagebox.showinfo(_t("police_station.msg_titles.success"), _t('gui.operations.campus.security.tabs.patrol_logs.dialogs.patrol_log_entry_added', default="Patrol log entry added!"))
 
     def view_patrol_notes(self):
         """View patrol log notes"""
         selected = self.patrol_tree.selection()
         if not selected:
-            messagebox.showwarning(_t("police_station.msg_titles.warning"), "Please select a patrol log to view.")
+            messagebox.showwarning(_t("police_station.msg_titles.warning"), _t('gui.operations.campus.security.tabs.patrol_logs.dialogs.please_select_a_patrol_log_to_view', default="Please select a patrol log to view."))
             return
 
         item = self.patrol_tree.item(selected[0])
@@ -85,10 +85,10 @@ class PatrolLogsMixin:
         """Delete patrol log"""
         selected = self.patrol_tree.selection()
         if not selected:
-            messagebox.showwarning(_t("police_station.msg_titles.warning"), "Please select a patrol log to delete.")
+            messagebox.showwarning(_t("police_station.msg_titles.warning"), _t('gui.operations.campus.security.tabs.patrol_logs.dialogs.please_select_a_patrol_log_to_delete', default="Please select a patrol log to delete."))
             return
 
-        if messagebox.askyesno(_t("police_station.buttons.confirm"), "Delete this patrol log entry?"):
+        if messagebox.askyesno(_t("police_station.buttons.confirm"), _t('gui.operations.campus.security.tabs.patrol_logs.dialogs.delete_this_patrol_log_entry', default="Delete this patrol log entry?")):
             item = self.patrol_tree.item(selected[0])
             date = item["values"][0]
             officer = item["values"][1]

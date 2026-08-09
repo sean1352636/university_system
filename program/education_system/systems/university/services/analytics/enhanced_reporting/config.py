@@ -7,7 +7,7 @@ import warnings
 
 from education_system.systems.university.infrastructure.database.db import get_db_connection
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 from education_system.systems.university.services.analytics.enhanced_reporting._compat import configure_logging
 
@@ -15,13 +15,13 @@ warnings.filterwarnings('ignore')
 
 # Configuration
 CONFIG = {
-    'database': str(paths.DEFAULT_DB_PATH),
-    'reports_dir': str(paths.REPORTS_DIR),
-    'templates_dir': str(paths.REPORT_TEMPLATES_DIR),
-    'cache_dir': str(paths.REPORT_CACHE_DIR),
-    'logs_dir': str(paths.LOG_DIR),
-    'scheduled_reports_file': str(paths.SCHEDULED_REPORTS_FILE),
-    'config_file': str(paths.DATA_DIR / 'system_config.json'),
+    'database': str(paths.UNIVERSITY_DEFAULT_DB_PATH),
+    'reports_dir': str(paths.UNIVERSITY_REPORTS_DIR),
+    'templates_dir': str(paths.UNIVERSITY_REPORT_TEMPLATES_DIR),
+    'cache_dir': str(paths.UNIVERSITY_REPORT_CACHE_DIR),
+    'logs_dir': str(paths.UNIVERSITY_LOG_DIR),
+    'scheduled_reports_file': str(paths.UNIVERSITY_SCHEDULED_REPORTS_FILE),
+    'config_file': str(paths.UNIVERSITY_DATA_DIR / 'system_config.json'),
     'secret_key': os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32)),
     'cache_expiry_hours': 24,
     'max_cache_size_mb': 500

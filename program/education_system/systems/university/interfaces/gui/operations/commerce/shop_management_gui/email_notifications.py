@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -128,7 +130,7 @@ def _show_shop_email_fallback(self, customer_name, email, subject, message):
     """Show fallback dialog for shop email"""
     try:
         fallback_window = tk.Toplevel(self.root)
-        fallback_window.title("Shop Order Email - Manual Send")
+        fallback_window.title(_t('gui.operations.commerce.shop_management_gui.email_notifications.windows.shop_order_email_manual_send', default="Shop Order Email - Manual Send"))
         fallback_window.geometry("700x500")
         fallback_window.transient(self.root)
 
@@ -136,7 +138,7 @@ def _show_shop_email_fallback(self, customer_name, email, subject, message):
                  text=f"Shop order confirmation for {customer_name} - Please send manually:",
                  font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', padx=10, pady=10)
 
-        details_frame = ttk.LabelFrame(fallback_window, text="Email Details", padding=10)
+        details_frame = ttk.LabelFrame(fallback_window, text=_t('gui.operations.commerce.shop_management_gui.email_notifications.labels.email_details', default="Email Details"), padding=10)
         details_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         from tkinter.scrolledtext import ScrolledText
@@ -147,7 +149,7 @@ def _show_shop_email_fallback(self, customer_name, email, subject, message):
         details_text.insert('1.0', email_details)
         details_text.config(state='disabled')
 
-        ttk.Button(fallback_window, text="Close", command=fallback_window.destroy).pack(pady=10)
+        ttk.Button(fallback_window, text=_t('gui.operations.commerce.shop_management_gui.email_notifications.buttons.close', default="Close"), command=fallback_window.destroy).pack(pady=10)
     except Exception as e:
         print(f"Failed to show shop email fallback: {e}")
 

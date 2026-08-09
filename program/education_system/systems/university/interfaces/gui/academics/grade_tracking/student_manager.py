@@ -1,5 +1,7 @@
 """Student management functionality"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -12,12 +14,12 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.interfaces.gui.academics.grade_tracking.utils import ensure_column_exists
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import secure file upload handler
 try:
@@ -210,7 +212,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -329,7 +331,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -455,18 +457,18 @@ class StudentManager:
         control_frame = ttk.Frame(self.content_frame)
         control_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(control_frame, text="Import Students",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.student_manager.buttons.import_students', default="Import Students"),
                   command=self.import_students).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Export Students",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.student_manager.buttons.export_students', default="Export Students"),
                   command=self.export_students).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Refresh",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.student_manager.buttons.refresh', default="Refresh"),
                   command=self.refresh_students).pack(side='left', padx=5)
 
         # Search frame
         search_frame = ttk.Frame(self.content_frame)
         search_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
+        ttk.Label(search_frame, text=_t('gui.academics.grade_tracking.student_manager.labels.search', default="Search:")).pack(side='left', padx=5)
         self.student_search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=self.student_search_var, width=30)
         search_entry.pack(side='left', padx=5)
@@ -476,7 +478,7 @@ class StudentManager:
         filter_frame = ttk.Frame(self.content_frame)
         filter_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Filter by Course:").pack(side='left', padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.grade_tracking.student_manager.labels.filter_by_course', default="Filter by Course:")).pack(side='left', padx=5)
         self.course_filter_var = tk.StringVar()
         self.course_filter_combo = ttk.Combobox(filter_frame, textvariable=self.course_filter_var,
                                                width=20, state='readonly')
@@ -515,13 +517,13 @@ class StudentManager:
     def show_student_management_message(self):
         """Display message directing users to main GUI for student management"""
         messagebox.showinfo(
-            "Student Management",
-            "Student creation, editing, and deletion have been centralized in the main GUI.\n\n"
+            _t('gui.academics.grade_tracking.student_manager.dialogs.student_management', default="Student Management"),
+            _t('gui.academics.grade_tracking.student_manager.dialogs.student_creation_editing_and_deletion_have_been_centralized_in_t', default="Student creation, editing, and deletion have been centralized in the main GUI.\n\n"
             "Please use the main student management interface to:\n"
             "• Create new students\n"
             "• Edit student information\n"
             "• Delete student records\n\n"
-            "This ensures consistent student data across all modules."
+            "This ensures consistent student data across all modules.")
         )
 
 
@@ -553,7 +555,7 @@ class StudentManager:
     def import_students(self):
         """Import students from CSV file"""
         file_path = filedialog.askopenfilename(
-            title="Select CSV file",
+            title=_t('gui.academics.grade_tracking.student_manager.dialogs.select_csv_file', default="Select CSV file"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
 
@@ -569,7 +571,7 @@ class StudentManager:
                         validation = validate_upload(original_filename, file_content, category='data')
                         if not validation['valid']:
                             messagebox.showerror(
-                                "Security Error",
+                                _t('gui.academics.grade_tracking.student_manager.dialogs.security_error', default="Security Error"),
                                 f"File validation failed: {validation['error']}"
                             )
                             if ACTIVITY_LOGGER_AVAILABLE:
@@ -586,7 +588,7 @@ class StudentManager:
                 # Get database cursor
                 cursor = self.get_cursor()
                 if not cursor:
-                    messagebox.showerror("Error", "Failed to connect to database")
+                    messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.student_manager.dialogs.failed_to_connect_to_database', default="Failed to connect to database"))
                     return
 
                 import csv
@@ -627,16 +629,16 @@ class StudentManager:
                     self.refresh_students()
                     self.populate_filter_combos()
                     self.update_status(f"Imported {imported_count} students")
-                    messagebox.showinfo("Success", f"Successfully imported {imported_count} students!")
+                    messagebox.showinfo(_t('gui.academics.grade_tracking.student_manager.dialogs.success', default="Success"), f"Successfully imported {imported_count} students!")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to import students: {e}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to import students: {e}")
 
 
     def export_students(self):
         """Export students to CSV file"""
         file_path = filedialog.asksaveasfilename(
-            title="Save CSV file",
+            title=_t('gui.academics.grade_tracking.student_manager.dialogs.save_csv_file', default="Save CSV file"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
@@ -646,7 +648,7 @@ class StudentManager:
                 # Get database cursor
                 cursor = self.get_cursor()
                 if not cursor:
-                    messagebox.showerror("Error", "Failed to connect to database")
+                    messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.student_manager.dialogs.failed_to_connect_to_database', default="Failed to connect to database"))
                     return
 
                 import csv
@@ -658,18 +660,23 @@ class StudentManager:
 
                 students = cursor.fetchall()
 
+                from education_system.platform.kernel.core.csv_safety import sanitize_row
+
                 with open(file_path, 'w', newline='', encoding='utf-8') as file:
                     writer = csv.writer(file)
                     writer.writerow(['student_id', 'first_name', 'middle_name', 'last_name', 'course',
                                    'email_address', 'phone_number', 'address', 'enrollment_date',
                                    'status', 'date_of_birth', 'gender', 'nationality'])
-                    writer.writerows(students)
+                    # Student names/addresses are user-controlled at enrolment;
+                    # escape formula triggers so an export cannot run a formula
+                    # in the recipient's spreadsheet.
+                    writer.writerows(sanitize_row(s) for s in students)
 
                 self.update_status(f"Exported {len(students)} students")
-                messagebox.showinfo("Success", f"Successfully exported {len(students)} students!")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.student_manager.dialogs.success', default="Success"), f"Successfully exported {len(students)} students!")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export students: {e}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to export students: {e}")
 
 
     def refresh_students(self):
@@ -755,7 +762,7 @@ class StudentManager:
             self.update_status(f"Loaded {len(students)} students")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh students: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to refresh students: {e}")
 
 
     def search_students(self, event):
@@ -803,10 +810,10 @@ class StudentManager:
             if hasattr(self.app, 'analytics') and hasattr(self.app.analytics, 'generate_individual_transcript'):
                 self.app.analytics.generate_individual_transcript()
             else:
-                messagebox.showerror("Error", "Transcript generation functionality not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.student_manager.dialogs.transcript_generation_functionality_not_available', default="Transcript generation functionality not available."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate transcript: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to generate transcript: {e}")
 
 
     def generate_student_progress_report(self):
@@ -976,9 +983,9 @@ class StudentManager:
             self._display_report("Student Progress Report", sections, footer)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate student progress report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.database_error', default="Database Error"), f"Failed to generate student progress report: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate student progress report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to generate student progress report: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1102,9 +1109,9 @@ class StudentManager:
             self._display_report("Competency Profile Summary", sections, footer)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate competency profile: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.database_error', default="Database Error"), f"Failed to generate competency profile: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate competency profile: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to generate competency profile: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1247,9 +1254,9 @@ class StudentManager:
             self._display_report("At-Risk Student Report", sections, footer)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate at-risk report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.database_error', default="Database Error"), f"Failed to generate at-risk report: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate at-risk report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to generate at-risk report: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1292,12 +1299,12 @@ class StudentManager:
         try:
             # Create dashboard window
             dashboard_window = tk.Toplevel(self.root)
-            dashboard_window.title("Performance Dashboard")
+            dashboard_window.title(_t('gui.academics.grade_tracking.student_manager.windows.performance_dashboard', default="Performance Dashboard"))
             dashboard_window.geometry("1200x800")
             safe_grab_set(dashboard_window)
 
             # Title
-            ttk.Label(dashboard_window, text="Performance Dashboard",
+            ttk.Label(dashboard_window, text=_t('gui.academics.grade_tracking.student_manager.labels.performance_dashboard', default="Performance Dashboard"),
                      font=('Arial', 16, 'bold')).pack(pady=10)
 
             # Dashboard content
@@ -1343,7 +1350,7 @@ class StudentManager:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate dashboard: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to generate dashboard: {e}")
 
 
     def show_grade_trends_chart(self):
@@ -1351,23 +1358,23 @@ class StudentManager:
         try:
             # Create trends window
             trends_window = tk.Toplevel(self.root)
-            trends_window.title("Grade Trends Chart")
+            trends_window.title(_t('gui.academics.grade_tracking.student_manager.windows.grade_trends_chart', default="Grade Trends Chart"))
             trends_window.geometry("800x600")
             safe_grab_set(trends_window)
 
-            ttk.Label(trends_window, text="Grade Trends Chart",
+            ttk.Label(trends_window, text=_t('gui.academics.grade_tracking.student_manager.labels.grade_trends_chart', default="Grade Trends Chart"),
                      font=('Arial', 16, 'bold')).pack(pady=10)
 
             # Chart placeholder
             chart_frame = ttk.Frame(trends_window)
             chart_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-            ttk.Label(chart_frame, text="Grade trends visualization would appear here.\n"
-                                      "This feature requires matplotlib integration.",
+            ttk.Label(chart_frame, text=_t('gui.academics.grade_tracking.student_manager.labels.grade_trends_visualization_would_appear_here_this_feature_requir', default="Grade trends visualization would appear here.\n"
+                                      "This feature requires matplotlib integration."),
                      font=('Arial', 12)).pack(expand=True)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show trends chart: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to show trends chart: {e}")
 
 
     def student_progress_charts(self):
@@ -1375,21 +1382,21 @@ class StudentManager:
         try:
             # Create progress charts window
             progress_window = tk.Toplevel(self.root)
-            progress_window.title("Student Progress Charts")
+            progress_window.title(_t('gui.academics.grade_tracking.student_manager.windows.student_progress_charts', default="Student Progress Charts"))
             progress_window.geometry("800x600")
             safe_grab_set(progress_window)
 
-            ttk.Label(progress_window, text="Student Progress Charts",
+            ttk.Label(progress_window, text=_t('gui.academics.grade_tracking.student_manager.labels.student_progress_charts', default="Student Progress Charts"),
                      font=('Arial', 16, 'bold')).pack(pady=10)
 
             # Chart placeholder
             chart_frame = ttk.Frame(progress_window)
             chart_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-            ttk.Label(chart_frame, text="Student progress charts would appear here.\n"
-                                      "This feature requires matplotlib integration.",
+            ttk.Label(chart_frame, text=_t('gui.academics.grade_tracking.student_manager.labels.student_progress_charts_would_appear_here_this_feature_requires', default="Student progress charts would appear here.\n"
+                                      "This feature requires matplotlib integration."),
                      font=('Arial', 12)).pack(expand=True)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show progress charts: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.student_manager.dialogs.error', default="Error"), f"Failed to show progress charts: {e}")
 

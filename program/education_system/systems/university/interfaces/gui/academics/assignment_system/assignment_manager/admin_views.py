@@ -1,5 +1,7 @@
 """Admin-specific assignment views"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -12,17 +14,17 @@ class AdminViewsMixin:
     def show_admin_all_assignments(self):
         """Show all assignments in the system (admin view)"""
         if not self.auth.current_user or self.auth.current_user.get('role') != 'admin':
-            messagebox.showerror("Access Denied", "This feature is only available to administrators.")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.this_feature_is_only_available_to_administrators', default="This feature is only available to administrators."))
             return
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="All Assignments (Admin View)", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assignment_manager.admin_views.labels.all_assignments_admin_view', default="All Assignments (Admin View)"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Info label
         info_label = ttk.Label(self.gui.layout.content_area,
-                              text="As an administrator, you can view all assignments in the system.",
+                              text=_t('gui.academics.assignment_system.assignment_manager.admin_views.labels.as_an_administrator_you_can_view_all_assignments_in_the_system', default="As an administrator, you can view all assignments in the system."),
                               foreground='blue')
         info_label.pack(anchor='w', pady=(0, 10))
 
@@ -63,11 +65,11 @@ class AdminViewsMixin:
         buttons_frame = ttk.Frame(self.gui.layout.content_area)
         buttons_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(buttons_frame, text="View Assignment Details",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.admin_views.buttons.view_assignment_details', default="View Assignment Details"),
                   command=lambda: self.view_admin_assignment_details(tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="View All Submissions",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.admin_views.buttons.view_all_submissions', default="View All Submissions"),
                   command=lambda: self.view_all_submissions_for_assignment(tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="Refresh",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.admin_views.buttons.refresh', default="Refresh"),
                   command=lambda: self.load_admin_assignments_data(tree)).pack(side='left')
 
 
@@ -120,14 +122,14 @@ class AdminViewsMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load admin assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.error', default="Error"), f"Failed to load admin assignments: {e}")
 
 
     def view_admin_assignment_details(self, tree):
         """View detailed information about selected assignment (admin)"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment to view details.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.please_select_an_assignment_to_view_details', default="Please select an assignment to view details."))
             return
 
         # Get assignment ID from selected item
@@ -147,7 +149,7 @@ class AdminViewsMixin:
 
             assignment = cursor.fetchone()
             if not assignment:
-                messagebox.showerror("Error", "Assignment not found.")
+                messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.error', default="Error"), _t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.assignment_not_found', default="Assignment not found."))
                 return
 
             # Create details window
@@ -169,7 +171,7 @@ class AdminViewsMixin:
             canvas.configure(yscrollcommand=scrollbar.set)
 
             # Assignment details
-            ttk.Label(scrollable_frame, text="Assignment Details", font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
+            ttk.Label(scrollable_frame, text=_t('gui.academics.assignment_system.assignment_manager.admin_views.labels.assignment_details', default="Assignment Details"), font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
 
             canvas.pack(side="left", fill="both", expand=True)
             scrollbar.pack(side="right", fill="y")
@@ -177,13 +179,13 @@ class AdminViewsMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignment details: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.error', default="Error"), f"Failed to load assignment details: {e}")
 
     def view_all_submissions_for_assignment(self, tree):
         """View all submissions for selected assignment (admin)"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment to view submissions.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.please_select_an_assignment_to_view_submissions', default="Please select an assignment to view submissions."))
             return
 
         # Get assignment details
@@ -254,4 +256,4 @@ class AdminViewsMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.admin_views.dialogs.error', default="Error"), f"Failed to load submissions: {e}")

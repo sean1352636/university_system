@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "description": "Ordered rules; first match owns every university Python module.",
+  "rules": [
+    {"glob": "domain/admissions/**", "classification": "core"},
+    {"glob": "domain/learners/**", "classification": "core"},
+    {"glob": "domain/academics/**", "classification": "core"},
+    {"glob": "domain/assessment/**", "classification": "core"},
+    {"glob": "domain/finance/**", "classification": "core"},
+    {"glob": "domain/safeguarding/**", "classification": "core"},
+    {"glob": "domain/pastoral/health/**", "classification": "core"},
+    {"glob": "domain/operations/commerce/**", "classification": "demo"},
+    {"glob": "domain/operations/campus/community/**", "classification": "optional"},
+    {"glob": "infrastructure/ai/**", "classification": "optional"},
+    {"glob": "infrastructure/analytics/**", "classification": "optional"},
+    {"glob": "interfaces/gui/**", "classification": "optional"},
+    {"glob": "services/integrations/**", "classification": "integration"},
+    {"glob": "**", "classification": "optional"}
+  ]
+}

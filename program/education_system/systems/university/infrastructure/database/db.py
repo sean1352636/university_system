@@ -16,7 +16,11 @@ from contextlib import contextmanager
 from typing import Any, Generator, Iterable, Optional
 
 # Import from core package - no circular imports!
-from education_system.systems.university.infrastructure.paths import DB_DIR, DB_EXPORTS_DIR, DEFAULT_DB_PATH
+from education_system.paths import (
+    UNIVERSITY_DB_DIR as DB_DIR,
+    UNIVERSITY_DB_EXPORTS_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH as DEFAULT_DB_PATH,
+)
 from education_system.systems.university.infrastructure.exceptions import (
     DatabaseError,
     DatabaseConnectionError,
@@ -41,7 +45,7 @@ from education_system.systems.university.infrastructure.database.constants impor
 
 # Convert Path objects to strings for os operations
 DB_DIR = os.fspath(DB_DIR)
-EXPORTS_DIR = os.fspath(DB_EXPORTS_DIR)
+EXPORTS_DIR = os.fspath(UNIVERSITY_DB_EXPORTS_DIR)
 DEFAULT_DB_PATH = os.fspath(DEFAULT_DB_PATH)
 
 os.makedirs(EXPORTS_DIR, exist_ok=True)
@@ -121,8 +125,16 @@ def _apply_pragmas(conn: _sqlite3.Connection) -> None:
     Args:
         conn: SQLite connection to configure
     """
+    # Referential integrity must not be silently disableable via environment
+    # in production: ON DELETE CASCADE (relied on for GDPR erasure) and every
+    # foreign key stop being enforced. The DB_PRAGMA_FOREIGN_KEYS override is
+    # honoured only in development; production always enforces.
+    _app_env = os.getenv("APP_ENV", "production").strip().lower()
+    _is_dev = _app_env in ("development", "dev", "local", "test", "testing")
+    fk_setting = PRAGMA_FOREIGN_KEYS if _is_dev else "ON"
+
     pragmas = [
-        f"PRAGMA foreign_keys={PRAGMA_FOREIGN_KEYS}",
+        f"PRAGMA foreign_keys={fk_setting}",
         f"PRAGMA journal_mode={PRAGMA_JOURNAL_MODE}",
         f"PRAGMA synchronous={PRAGMA_SYNCHRONOUS}",
         f"PRAGMA busy_timeout={SQLITE_BUSY_TIMEOUT}",
@@ -134,6 +146,17 @@ def _apply_pragmas(conn: _sqlite3.Connection) -> None:
     except _sqlite3.OperationalError as e:
         logger.warning(f"Failed to set database PRAGMA settings: {e}")
         # Continue with connection even if PRAGMA fails
+
+    # Verify foreign-key enforcement actually took effect (unless intentionally
+    # disabled in dev). A swallowed PRAGMA that left FKs off is a silent
+    # data-integrity hole, so surface it rather than assume success.
+    if str(fk_setting).upper() in ("ON", "1", "TRUE"):
+        try:
+            enabled = conn.execute("PRAGMA foreign_keys").fetchone()
+            if enabled is not None and not enabled[0]:
+                logger.error("foreign_keys pragma did not take effect on this connection")
+        except _sqlite3.Error:
+            logger.error("could not verify foreign_keys pragma state", exc_info=True)
 
 
 def ensure_parent_dir(path: str) -> None:
@@ -184,6 +207,27 @@ def _ensure_wal_keeper(db_path: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Tenant-aware default resolution
+#
+# When no explicit path is given AND a tenant is bound to the current context,
+# the university database resolves to that tenant's isolated file. When no
+# tenant is bound (the single-tenant default, and every current call path),
+# this returns DEFAULT_DB_PATH unchanged — so existing behaviour is identical.
+# This is the join that makes the tenant middleware actually isolate data;
+# without it every tenant shared one university database.
+
+def _resolve_default_target() -> str:
+    try:
+        from education_system.platform.kernel.core.tenant import get_current_tenant, tenant_db_path
+        if get_current_tenant() is not None:
+            return os.fspath(tenant_db_path("university"))
+    except Exception:
+        # Never let tenant resolution break a DB open; fall back to default.
+        logger.debug("Tenant DB resolution unavailable; using default path", exc_info=True)
+    return DEFAULT_DB_PATH
+
+
+# ---------------------------------------------------------------------------
 # sqlite3 wrapper
 
 def connect(database: Optional[str | os.PathLike[str]] = None, *args: Any, **kwargs: Any) -> _sqlite3.Connection:
@@ -228,7 +272,7 @@ def connect(database: Optional[str | os.PathLike[str]] = None, *args: Any, **kwa
     """
     db = database
     if db is None or os.fspath(db) == DEFAULT_DB_NAME:
-        db = DEFAULT_DB_PATH
+        db = _resolve_default_target()
     kwargs.setdefault("timeout", DEFAULT_DB_TIMEOUT)
     kwargs.setdefault("factory", _ManagedConnection)
     conn = _sqlite3.connect(db, *args, **kwargs)
@@ -294,7 +338,7 @@ def get_connection(
     transaction : Context manager for transactional write operations.
     get_connection_pool : For high-concurrency scenarios with connection reuse.
     """
-    target = DEFAULT_DB_PATH if (db_path is None or os.fspath(db_path) == DEFAULT_DB_NAME) else db_path
+    target = _resolve_default_target() if (db_path is None or os.fspath(db_path) == DEFAULT_DB_NAME) else db_path
     db = os.fspath(target)
     conn = _sqlite3.connect(db, timeout=timeout, factory=_ManagedConnection)
     _apply_pragmas(conn)

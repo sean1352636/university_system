@@ -1,11 +1,19 @@
-"""The single student view — one learner's whole history, all five systems.
+"""The single student view — one learner's whole history, every system.
 
 Given a canonical ``journey_id`` this builds a read-only, nested snapshot
-of everything the platform knows about that person, in phase order::
+of everything the platform knows about that person, in ``SYSTEM_ORDER``::
 
-    nursery → primary → secondary → sixth-form college → university
+    nursery → primary → secondary → ┬ sixth-form college ┬ → university
+                                    ├ FE College         ┤
+                                    └ apprenticeships    ┘
 
-For each phase the learner actually reached it pulls the local record plus,
+The post-16 row is a fork, not a queue, and a learner may appear in more
+than one branch of it at once — a degree apprentice holds a university
+and an apprenticeships record simultaneously, and an FE learner who takes
+up an apprenticeship usually keeps their college place. The view shows
+every system the learner has a record in rather than picking a winner.
+
+For each system the learner actually reached it pulls the local record plus,
 where the system keeps them, an attendance summary and recent results. The
 cross-system links already exist (the ``student_journey`` slots and the
 ``journey_id`` FK stamped on each domain row); this is the first place that
@@ -24,11 +32,7 @@ from pathlib import Path
 
 from education_system.platform.identity.auth.db import connect as _auth_connect
 from education_system.platform.cross_system import identity_service, person
-from education_system.platform.kernel.database.paths import (
-    SYSTEM_DB_PATHS,
-    SYSTEM_LABELS,
-    SYSTEM_ORDER,
-)
+from education_system.paths import SYSTEM_DB_PATHS, SYSTEM_LABELS, SYSTEM_ORDER
 
 logger = logging.getLogger(__name__)
 
@@ -169,11 +173,69 @@ def _phase_university(conn, sid) -> dict:
     return out
 
 
+def _phase_fe_college(conn, sid) -> dict:
+    out: dict = {
+        "record": _record(conn, "students", "student_id", sid, [
+            "first_name", "last_name", "date_of_birth", "learner_type",
+            "mode_of_study", "tutor_group", "status", "email"]),
+        "attendance": _attendance_summary(
+            conn, "attendance", "student_id", sid, "mark"),
+    }
+    # An FE learner's "results" are their learning aims and the grades
+    # against them, which is the vocational equivalent of a result set.
+    if _table_exists(conn, "enrolments"):
+        rows = conn.execute(
+            "SELECT c.title AS course, e.academic_year, e.status, "
+            "e.predicted_grade, e.final_grade FROM enrolments e "
+            "LEFT JOIN courses c ON c.course_id = e.course_id "
+            "WHERE e.student_id = ? "
+            "ORDER BY e.is_main_aim DESC, e.academic_year DESC LIMIT 10",
+            (sid,)).fetchall()
+        out["results"] = [dict(r) for r in rows]
+    return out
+
+
+def _phase_apprenticeships(conn, sid) -> dict:
+    """The apprentice's record, off-the-job attendance and EPA outcome.
+
+    Deliberately does not surface portfolio evidence or formative
+    judgements: this view is read by staff across the whole platform, and
+    the provider's in-progress assessment of an apprentice is not theirs
+    to see. The EPA grade is the published outcome and does cross.
+    """
+    out: dict = {
+        "record": _record(conn, "apprentices", "apprentice_id", sid, [
+            "given_name", "family_name", "date_of_birth", "uln", "status",
+            "start_date", "planned_end_date", "actual_end_date",
+            "weekly_hours", "email"]),
+        "attendance": _attendance_summary(
+            conn, "session_attendance", "apprentice_id", sid, "mark"),
+    }
+    if _table_exists(conn, "epa_results"):
+        rows = conn.execute(
+            "SELECT method, grade, assessed_date, attempt FROM epa_results "
+            "WHERE apprentice_id = ? ORDER BY assessed_date DESC LIMIT 10",
+            (sid,)).fetchall()
+        out["results"] = [dict(r) for r in rows]
+    # The employer is half of an apprenticeship; a view that omits it
+    # describes a course, not an apprenticeship.
+    if _table_exists(conn, "employers"):
+        row = conn.execute(
+            "SELECT e.name FROM apprentices a "
+            "JOIN employers e ON e.employer_id = a.employer_id "
+            "WHERE a.apprentice_id = ?", (sid,)).fetchone()
+        if row is not None:
+            out["record"]["employer"] = row["name"]
+    return out
+
+
 _EXTRACTORS = {
     "nursery":    _phase_nursery,
     "primary":    _phase_primary,
     "secondary":     _phase_secondary,
     "sixth_form":    _phase_college,
+    "fe_college": _phase_fe_college,
+    "apprenticeships": _phase_apprenticeships,
     "university": _phase_university,
 }
 

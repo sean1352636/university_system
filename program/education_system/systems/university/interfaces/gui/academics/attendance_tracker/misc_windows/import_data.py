@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -92,31 +98,31 @@ class ImportDataWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="📥 Import Data", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.import_data.labels.import_data', default="📥 Import Data"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # File info
-        info_frame = ttk.LabelFrame(self.window, text="File Information", padding=10)
+        info_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.import_data.labels.file_information', default="File Information"), padding=10)
         info_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         ttk.Label(info_frame, text=f"File: {os.path.basename(self.filename)}").pack(anchor=tk.W)
         ttk.Label(info_frame, text=f"Path: {self.filename}").pack(anchor=tk.W)
 
         # Import options
-        options_frame = ttk.LabelFrame(self.window, text="Import Options", padding=10)
+        options_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.import_data.labels.import_options', default="Import Options"), padding=10)
         options_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(options_frame, text="Data Type:").grid(row=0, column=0, sticky=tk.W)
-        self.data_type_var = tk.StringVar(value="Students")
+        ttk.Label(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.import_data.labels.data_type', default="Data Type:")).grid(row=0, column=0, sticky=tk.W)
+        self.data_type_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.misc_windows.import_data.values.students', default="Students"))
         type_combo = ttk.Combobox(options_frame, textvariable=self.data_type_var,
                                  values=["Students", "Attendance Records", "Modules"], state="readonly")
         type_combo.grid(row=0, column=1, padx=(10, 0))
 
         self.overwrite_var = tk.BooleanVar()
-        ttk.Checkbutton(options_frame, text="Overwrite existing data", variable=self.overwrite_var).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(10, 0))
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.import_data.buttons.overwrite_existing_data', default="Overwrite existing data"), variable=self.overwrite_var).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(10, 0))
 
         # Preview
-        preview_frame = ttk.LabelFrame(self.window, text="Data Preview", padding=10)
+        preview_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.import_data.labels.data_preview', default="Data Preview"), padding=10)
         preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         self.preview_text = tk.Text(preview_frame, wrap=tk.WORD)
@@ -163,7 +169,7 @@ class ImportDataWindow:
             data_type = self.data_type_var.get()
             overwrite = self.overwrite_var.get()
 
-            messagebox.showinfo("Import", f"Would import {data_type} data from {self.filename}\nOverwrite: {overwrite}")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.misc_windows.import_data.dialogs.import', default="Import"), f"Would import {data_type} data from {self.filename}\nOverwrite: {overwrite}")
 
             self.callback()  # Refresh parent data
             self.window.destroy()

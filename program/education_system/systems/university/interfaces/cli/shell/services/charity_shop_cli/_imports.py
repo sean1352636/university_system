@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from decimal import Decimal
 
 # University system imports
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.sql_safety import safe_alter_table_add_column
 

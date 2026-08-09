@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -341,7 +343,7 @@ class BatchGradeDialog:
         self.cursor = cursor
         self.conn = conn
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Batch Grade Entry")
+        self.dialog.title(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.windows.batch_grade_entry', default="Batch Grade Entry"))
         self.dialog.geometry("900x700")
         safe_grab_set(self.dialog)
 
@@ -349,24 +351,24 @@ class BatchGradeDialog:
 
     def setup_dialog(self):
         # Title
-        ttk.Label(self.dialog, text="Batch Grade Entry",
+        ttk.Label(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.labels.batch_grade_entry', default="Batch Grade Entry"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Assessment selection
-        select_frame = ttk.LabelFrame(self.dialog, text="Select Assessment")
+        select_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.labels.select_assessment', default="Select Assessment"))
         select_frame.pack(fill=tk.X, padx=20, pady=10)
 
         self.assessment_var = tk.StringVar()
         assessment_combo = ttk.Combobox(select_frame, textvariable=self.assessment_var, width=50)
         assessment_combo.pack(side=tk.LEFT, padx=10, pady=10)
 
-        ttk.Button(select_frame, text="Load Assessments",
+        ttk.Button(select_frame, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.buttons.load_assessments', default="Load Assessments"),
                   command=lambda: self.load_assessments(assessment_combo)).pack(side=tk.LEFT, padx=10)
-        ttk.Button(select_frame, text="Load Students",
+        ttk.Button(select_frame, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.buttons.load_students', default="Load Students"),
                   command=self.load_students).pack(side=tk.LEFT, padx=10)
 
         # Students frame
-        students_frame = ttk.LabelFrame(self.dialog, text="Students and Grades")
+        students_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.labels.students_and_grades', default="Students and Grades"))
         students_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Treeview for students
@@ -384,20 +386,20 @@ class BatchGradeDialog:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Quick grade entry
-        quick_frame = ttk.LabelFrame(self.dialog, text="Quick Grade Entry")
+        quick_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.labels.quick_grade_entry', default="Quick Grade Entry"))
         quick_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(quick_frame, text="Apply to all selected:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(quick_frame, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.labels.apply_to_all_selected', default="Apply to all selected:")).pack(side=tk.LEFT, padx=5)
         self.quick_score_var = tk.StringVar()
         ttk.Entry(quick_frame, textvariable=self.quick_score_var, width=10).pack(side=tk.LEFT, padx=5)
-        ttk.Button(quick_frame, text="Apply Score", command=self.apply_quick_score).pack(side=tk.LEFT, padx=5)
+        ttk.Button(quick_frame, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.buttons.apply_score', default="Apply Score"), command=self.apply_quick_score).pack(side=tk.LEFT, padx=5)
 
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Save All Grades", command=self.save_all_grades).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.buttons.save_all_grades', default="Save All Grades"), command=self.save_all_grades).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
         # Bind double-click to edit
         self.students_tree.bind('<Double-1>', self.edit_individual_grade)
@@ -411,14 +413,14 @@ class BatchGradeDialog:
             self.cursor.execute("SELECT assessment_id, assessment_name, module_code FROM assessments ORDER BY assessment_name")
             assessments = [f"{row[0]} - [{row[2]}] {row[1]}" for row in self.cursor.fetchall()]
             combo['values'] = assessments
-            messagebox.showinfo("Success", f"Loaded {len(assessments)} assessments")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.success', default="Success"), f"Loaded {len(assessments)} assessments")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assessments: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.error', default="Error"), f"Failed to load assessments: {e}")
 
     def load_students(self):
         """Load students for selected assessment"""
         if not self.assessment_var.get():
-            messagebox.showwarning("Warning", "Please select an assessment first")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.please_select_an_assessment_first', default="Please select an assessment first"))
             return
 
         try:
@@ -429,7 +431,7 @@ class BatchGradeDialog:
                               (self.assessment_id,))
             result = self.cursor.fetchone()
             if not result:
-                messagebox.showerror("Error", "Assessment not found")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.assessment_not_found', default="Assessment not found"))
                 return
 
             self.max_points, module_code = result
@@ -468,21 +470,21 @@ class BatchGradeDialog:
                     student_id, full_name, current_score, "", "", ""
                 ))
 
-            messagebox.showinfo("Success", f"Loaded {len(students)} students")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.success', default="Success"), f"Loaded {len(students)} students")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load students: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.error', default="Error"), f"Failed to load students: {e}")
 
     def apply_quick_score(self):
         """Apply quick score to selected students"""
         if not self.quick_score_var.get():
-            messagebox.showwarning("Warning", "Please enter a score")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.please_enter_a_score', default="Please enter a score"))
             return
 
         try:
             score = float(self.quick_score_var.get())
             if score < 0 or score > self.max_points:
-                messagebox.showerror("Error", f"Score must be between 0 and {self.max_points}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.error', default="Error"), f"Score must be between 0 and {self.max_points}")
                 return
 
             # Calculate letter grade
@@ -501,7 +503,7 @@ class BatchGradeDialog:
                 self.students_tree.item(item, values=values)
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid numeric score")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.please_enter_a_valid_numeric_score', default="Please enter a valid numeric score"))
 
     def edit_individual_grade(self, event):
         """Edit individual student grade"""
@@ -526,7 +528,7 @@ class BatchGradeDialog:
         score_var = tk.StringVar(value=current_new_score)
         ttk.Entry(edit_dialog, textvariable=score_var, width=20).pack(pady=5)
 
-        ttk.Label(edit_dialog, text="Comments:").pack(pady=5)
+        ttk.Label(edit_dialog, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.labels.comments', default="Comments:")).pack(pady=5)
         comments_text = tk.Text(edit_dialog, height=4, width=30)
         comments_text.pack(pady=5)
         comments_text.insert(1.0, current_comments)
@@ -535,7 +537,7 @@ class BatchGradeDialog:
             try:
                 score = float(score_var.get()) if score_var.get() else 0
                 if score < 0 or score > self.max_points:
-                    messagebox.showerror("Error", f"Score must be between 0 and {self.max_points}")
+                    messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.error', default="Error"), f"Score must be between 0 and {self.max_points}")
                     return
 
                 percentage = (score / self.max_points) * 100
@@ -552,19 +554,35 @@ class BatchGradeDialog:
                 edit_dialog.destroy()
 
             except ValueError:
-                messagebox.showerror("Error", "Please enter a valid numeric score")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.please_enter_a_valid_numeric_score', default="Please enter a valid numeric score"))
 
-        ttk.Button(edit_dialog, text="Save", command=save_edit).pack(side=tk.LEFT, padx=10, pady=10)
-        ttk.Button(edit_dialog, text="Cancel", command=edit_dialog.destroy).pack(side=tk.LEFT, padx=10, pady=10)
+        ttk.Button(edit_dialog, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.buttons.save', default="Save"), command=save_edit).pack(side=tk.LEFT, padx=10, pady=10)
+        ttk.Button(edit_dialog, text=_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.buttons.cancel', default="Cancel"), command=edit_dialog.destroy).pack(side=tk.LEFT, padx=10, pady=10)
 
     def save_all_grades(self):
         """Save all grades to database"""
         if not self.assessment_id:
-            messagebox.showwarning("Warning", "Please select an assessment first")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.please_select_an_assessment_first', default="Please select an assessment first"))
             return
+
+        # Fail-closed authorization for the whole batch: the acting user must
+        # hold the grade capability AND own the module the assessment belongs
+        # to. Checked on the same cursor/transaction that performs the writes.
+        from education_system.systems.university.interfaces.gui.academics.grade_tracking.grades.authz import (
+            require_grade_mutation,
+        )
+        if not require_grade_mutation("update", cursor=self.cursor, assessment_id=self.assessment_id):
+            return
+
+        from education_system.systems.university.interfaces.gui.academics.grade_tracking.grades.authz import (
+            is_student_enrolled,
+            module_code_for,
+        )
+        module_code = module_code_for(self.cursor, assessment_id=self.assessment_id)
 
         try:
             saved_count = 0
+            skipped_not_enrolled = 0
             submission_date = datetime.now().strftime('%Y-%m-%d')
 
             for item in self.students_tree.get_children():
@@ -575,6 +593,12 @@ class BatchGradeDialog:
                 comments = values[5]
 
                 if new_score and letter_grade:  # Only save if score entered
+                    # Recheck enrolment per student inside the transaction: a
+                    # grade must not be written for a student not enrolled in
+                    # this assessment's module.
+                    if not is_student_enrolled(self.cursor, student_id, module_code):
+                        skipped_not_enrolled += 1
+                        continue
                     # Check if grade exists
                     self.cursor.execute('''
                     SELECT grade_id FROM grades
@@ -600,10 +624,10 @@ class BatchGradeDialog:
                     saved_count += 1
 
             self.conn.commit()
-            messagebox.showinfo("Success", f"Saved {saved_count} grades successfully")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.success', default="Success"), f"Saved {saved_count} grades successfully")
             self.result = True
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save grades: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.batch_grade_dialog.dialogs.error', default="Error"), f"Failed to save grades: {e}")
 

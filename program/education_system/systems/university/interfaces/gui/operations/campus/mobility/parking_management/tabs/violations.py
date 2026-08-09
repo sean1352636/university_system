@@ -1,4 +1,6 @@
 """Violations tab mixin for ParkingManagementGUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -22,7 +24,7 @@ class ViolationsMixin:
         ttk.Button(toolbar, text=_t("parking.btn.record_violation"), command=self.record_violation_dialog).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text=_t("parking.btn.edit_selected"), command=self.edit_selected_violation).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text=_t("parking.btn.delete_selected"), command=self.delete_selected_violation).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="Pay Fine", command=self.pay_selected_violation).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text=_t('gui.operations.campus.mobility.parking_management.tabs.violations.buttons.pay_fine', default="Pay Fine"), command=self.pay_selected_violation).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text=_t("common.refresh"), command=self.refresh_violations).pack(side=tk.LEFT, padx=2)
 
         # Search frame
@@ -86,7 +88,7 @@ class ViolationsMixin:
 
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh violations: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.error', default="Error"), f"Failed to refresh violations: {e}")
 
     def filter_violations(self, event=None):
         """Filter violations based on search term"""
@@ -114,13 +116,13 @@ class ViolationsMixin:
                 self.refresh_violations()
                 self.update_status("Violation recorded successfully")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to record violation: {e}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.error', default="Error"), f"Failed to record violation: {e}")
 
     def edit_selected_violation(self):
         """Edit the selected violation"""
         selected = self.violations_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a violation to edit")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.please_select_a_violation_to_edit', default="Please select a violation to edit"))
             return
 
         violation_id = self.violations_tree.item(selected[0])['values'][0]
@@ -141,18 +143,18 @@ class ViolationsMixin:
                     self.refresh_violations()
                     self.update_status("Violation updated successfully")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to edit violation: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.error', default="Error"), f"Failed to edit violation: {e}")
 
     def delete_selected_violation(self):
         """Delete the selected violation"""
         selected = self.violations_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a violation to delete")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.please_select_a_violation_to_delete', default="Please select a violation to delete"))
             return
 
         violation_id = self.violations_tree.item(selected[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete violation {violation_id}?"):
+        if messagebox.askyesno(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete violation {violation_id}?"):
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
@@ -163,20 +165,20 @@ class ViolationsMixin:
                 self.refresh_violations()
                 self.update_status("Violation deleted successfully")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete violation: {e}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.error', default="Error"), f"Failed to delete violation: {e}")
 
     def pay_selected_violation(self):
         """Pay fine for selected violation"""
         selected = self.violations_tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a violation to pay.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.please_select_a_violation_to_pay', default="Please select a violation to pay."))
             return
 
         violation_data = self.violations_tree.item(selected[0])['values']
 
         # Check if already paid
         if len(violation_data) > 5 and violation_data[5] == 'Paid':
-            messagebox.showinfo("Already Paid", "This violation has already been paid.")
+            messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.already_paid', default="Already Paid"), _t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.this_violation_has_already_been_paid', default="This violation has already been paid."))
             return
 
         # Process payment
@@ -311,13 +313,13 @@ class ViolationsMixin:
                 logging.warning(f"Email service not available. Email would have been sent to {student_email}:")
                 logging.info(f"Subject: {subject}")
                 logging.info(f"Body: {body}")
-                messagebox.showinfo("Email Notification",
+                messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.email_notification', default="Email Notification"),
                     f"Email service unavailable.\n\n"
                     f"Violation notice for {student_name} logged.\n"
                     f"Manual notification required to: {student_email}")
 
         except Exception as e:
             logging.error(f"Failed to send violation email: {e}")
-            messagebox.showwarning("Email Error",
-                "Violation recorded successfully, but email notification failed.\n"
-                "Please notify the student manually.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.email_error', default="Email Error"),
+                _t('gui.operations.campus.mobility.parking_management.tabs.violations.dialogs.violation_recorded_successfully_but_email_notification_failed_pl', default="Violation recorded successfully, but email notification failed.\n"
+                "Please notify the student manually."))

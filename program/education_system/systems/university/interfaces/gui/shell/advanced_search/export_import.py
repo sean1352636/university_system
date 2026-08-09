@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -1122,7 +1124,7 @@ def custom_format_export(self):
     format_frame = ttk.LabelFrame(frame, text=_t('advanced_search.export_import.export_format'), padding="10")
     format_frame.pack(fill=tk.X, pady=(0, 20))
 
-    format_var = tk.StringVar(value="custom")
+    format_var = tk.StringVar(value=_t('gui.shell.advanced_search.export_import.values.custom', default="custom"))
     formats = [
         (_t('advanced_search.export_import.custom_delimiter'), "custom"),
         (_t('advanced_search.export_import.tab_separated'), "tsv"),

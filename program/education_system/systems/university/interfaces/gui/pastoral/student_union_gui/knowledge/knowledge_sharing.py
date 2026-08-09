@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -173,7 +175,7 @@ class ProposeSessionDialog:
         self.duration_entry.insert(0, "2")
 
         ttk.Label(details_frame, text=_t("student_union.knowledge.level")).grid(row=0, column=2, sticky='w', padx=(0, 10))
-        self.level_var = tk.StringVar(value="Beginner")
+        self.level_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.knowledge.knowledge_sharing.values.beginner', default="Beginner"))
         level_combo = ttk.Combobox(details_frame, textvariable=self.level_var, width=15, state='readonly')
         level_combo['values'] = ('Beginner', 'Intermediate', 'Advanced', 'All Levels')
         level_combo.grid(row=0, column=3, sticky='w')

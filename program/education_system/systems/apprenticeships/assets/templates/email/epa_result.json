@@ -1,0 +1,8 @@
+{
+  "subject": "End-Point Assessment result — {{apprentice_name}}",
+  "body": "Dear {{recipient_name}},\n\n{{epao_name}} has returned the End-Point Assessment result for {{apprentice_name}} on {{standard_title}}.\n\n  Result:    {{epa_grade}}\n  Assessed:  {{assessed_date}}\n  Method:    {{epa_method}}\n\n{{result_note}}\n\nThe certificate is issued by the awarding body and normally arrives within {{certificate_lead_time}}. We will forward it as soon as it does.\n\n{{tutor_name}}\n{{provider_name}}",
+  "from_name": "{{provider_name}}",
+  "from_address": "epa@provider.ac.uk",
+  "category": "Gateway / EPA",
+  "priority": "Normal"
+}

@@ -1,6 +1,8 @@
 """Public entry points extracted from gui.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import secrets
 from datetime import datetime
 from tkinter import messagebox
@@ -15,8 +17,8 @@ def open_equality_diversity_gui(parent, auth_manager) -> EqualityDiversityGUI:
     migrate()
     if not getattr(auth_manager, "current_user", None):
         messagebox.showerror(
-            "Equality & Diversity",
-            "You must be logged in to access the Equality & Diversity system.")
+            _t('gui.pastoral.equality_diversity.entrypoints.dialogs.equality_diversity', default="Equality & Diversity"),
+            _t('gui.pastoral.equality_diversity.entrypoints.dialogs.you_must_be_logged_in_to_access_the_equality_diversity_system', default="You must be logged in to access the Equality & Diversity system."))
         raise PermissionError("open_equality_diversity_gui requires an authenticated user")
     return EqualityDiversityGUI(parent, auth_manager)
 

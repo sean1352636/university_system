@@ -38,24 +38,70 @@ _sid_to_user: dict[str, int] = {}
 # ---------------------------------------------------------------------------
 # JWT validation helper
 # ---------------------------------------------------------------------------
+_ALLOWED_WS_ROLES = frozenset(
+    {"admin", "staff", "instructor", "teacher", "student", "parent", "alumni"}
+)
+_PRIVILEGED_WS_ROLES = frozenset({"admin", "staff"})
+
+
 def _validate_token(token: str) -> dict | None:
-    """Decode a JWT access token and return the payload, or None on failure."""
+    """Decode a JWT access token and return the payload, or None on failure.
+
+    Uses the canonical decoder from the auth module — the same signing key
+    and algorithm as the HTTP API — and refuses refresh tokens, exactly as
+    ``token_required`` does. The previous implementation imported a
+    non-existent ``_jwt_manager`` symbol (so it always fell through) and then
+    decoded with an env-only secret while never checking the token ``type``,
+    which let a refresh token authenticate a socket.
+    """
     try:
-        from education_system.platform.delivery.api.auth import _jwt_manager  # type: ignore[attr-defined]
-        if _jwt_manager is None:
+        from education_system.platform.delivery.api.auth import decode_token
+
+        payload = decode_token(token)
+    except Exception:
+        return None
+    if not isinstance(payload, dict):
+        return None
+    if payload.get("type") == "refresh":
+        return None
+    return payload
+
+
+def _authenticate_ws(token: str | None) -> dict | None:
+    """Full connection auth: decode, re-check is_active, allow-list the role.
+
+    Returns a context dict ``{user_id, system_key, role}`` on success or None
+    on any failure. Every namespace uses this so /chat and /presence get the
+    same is_active and role checks that /notifications had.
+    """
+    if not token:
+        return None
+    payload = _validate_token(token)
+    if payload is None:
+        return None
+    try:
+        user_id = int(payload.get("sub") or payload.get("user_id") or 0)
+        if user_id <= 0:
             return None
-        return _jwt_manager.decode(token)
+        from education_system.platform.identity.auth.db import connect
+
+        with connect() as conn:
+            active = conn.execute(
+                "SELECT is_active FROM users WHERE id = ?", (user_id,)
+            ).fetchone()
+        if not active or not active[0]:
+            return None
     except Exception:
-        pass
-    # Fallback: try raw PyJWT with env secret
-    try:
-        import jwt as pyjwt
-        secret = os.getenv("JWT_SECRET_KEY", "")
-        if secret:
-            return pyjwt.decode(token, secret, algorithms=["HS256"])
-    except Exception:
-        pass
-    return None
+        logger.warning("WS authentication state could not be verified")
+        return None
+    role = payload.get("role")
+    if role not in _ALLOWED_WS_ROLES:
+        return None
+    return {
+        "user_id": user_id,
+        "system_key": payload.get("system_key", "unknown"),
+        "role": role,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -101,18 +147,15 @@ if SOCKETIO_AVAILABLE:
                 or request.args.get("token")
                 or (request.headers.get("Authorization", "").replace("Bearer ", "") or None)
             )
-            if not token:
-                logger.warning("WS /notifications: missing auth from %s", request.sid)  # nosemgrep: python-logger-credential-disclosure
-                return False  # reject
-            payload = _validate_token(token)
-            if payload is None:
-                logger.warning("WS /notifications: invalid auth from %s", request.sid)  # nosemgrep: python-logger-credential-disclosure
+            ctx = _authenticate_ws(token)
+            if ctx is None:
+                logger.warning("WS /notifications: auth rejected from %s", request.sid)  # nosemgrep: python-logger-credential-disclosure
                 return False
 
             sid = request.sid
-            user_id = int(payload.get("sub", 0))
-            system_key = payload.get("system_key", "unknown")
-            role = payload.get("role", "student")
+            user_id = ctx["user_id"]
+            system_key = ctx["system_key"]
+            role = ctx["role"]
 
             _online_users[user_id] = {
                 "sid": sid, "system_key": system_key, "role": role,
@@ -148,10 +191,28 @@ if SOCKETIO_AVAILABLE:
                 }, namespace="/presence")
 
         def on_join_room(self, data):
+            # A client may only join rooms it is already entitled to by virtue
+            # of who it authenticated as — its own user room, its system room,
+            # or its system+role room. Arbitrary joins let a student subscribe
+            # to "university:admin" and receive every admin broadcast.
+            from flask import request
+
+            user_id = _sid_to_user.get(request.sid)
+            info = _online_users.get(user_id) if user_id else None
+            if not info:
+                emit("error", {"message": "not authenticated"})
+                return
             room = data.get("room")
-            if room:
+            allowed = {
+                f"user:{user_id}",
+                f"system:{info.get('system_key')}",
+                f"{info.get('system_key')}:{info.get('role')}",
+            }
+            if room in allowed:
                 join_room(room)
                 emit("joined_room", {"room": room})
+            else:
+                emit("error", {"message": "room not permitted"})
 
         def on_leave_room(self, data):
             room = data.get("room")
@@ -160,7 +221,18 @@ if SOCKETIO_AVAILABLE:
                 emit("left_room", {"room": room})
 
         def on_send_notification(self, data):
-            """Server-side trigger: push a notification to a user or room."""
+            """Server-side trigger: push a notification to a user or room.
+
+            Restricted to privileged roles — any connected client could
+            otherwise forge notifications to any user or room.
+            """
+            from flask import request
+
+            user_id = _sid_to_user.get(request.sid)
+            info = _online_users.get(user_id) if user_id else None
+            if not info or info.get("role") not in _PRIVILEGED_WS_ROLES:
+                emit("error", {"message": "not permitted"})
+                return
             target_user = data.get("user_id")
             target_room = data.get("room")
             payload = data.get("payload", data)
@@ -179,23 +251,47 @@ if SOCKETIO_AVAILABLE:
                 or request.args.get("token")
                 or (request.headers.get("Authorization", "").replace("Bearer ", "") or None)
             )
-            if not token:
+            ctx = _authenticate_ws(token)
+            if ctx is None:
                 return False
-            payload = _validate_token(token)
-            if payload is None:
-                return False
-            logger.info("WS /chat connected: user_id=%s", payload.get("sub"))
-            emit("connected", {"status": "ok", "user_id": payload.get("sub")})
+            # Record the authenticated identity for this socket so message
+            # attribution and room-membership checks use it, rather than the
+            # None the old code persisted as sender_id.
+            _sid_to_user[request.sid] = ctx["user_id"]
+            logger.info("WS /chat connected: user_id=%s", ctx["user_id"])
+            emit("connected", {"status": "ok", "user_id": ctx["user_id"]})
 
         def on_disconnect(self):
             from flask import request
+            _sid_to_user.pop(request.sid, None)
             logger.info("WS /chat disconnected: sid=%s", request.sid)
 
+        @staticmethod
+        def _is_room_member(room_id, user_id) -> bool:
+            if not user_id:
+                return False
+            try:
+                from education_system.platform.services.chat_service import ChatService
+                from education_system.platform.identity.auth.db import AUTH_DB_FILE
+
+                svc = ChatService(str(AUTH_DB_FILE))
+                participants = svc.get_room_participants(int(room_id))
+                return any(int(p.get("user_id")) == int(user_id) for p in participants)
+            except Exception as exc:
+                # Fail closed: if membership cannot be confirmed, deny.
+                logger.warning("Chat membership check failed: %s", exc)
+                return False
+
         def on_join_room(self, data):
+            from flask import request
+
+            user_id = _sid_to_user.get(request.sid)
             room_id = data.get("room_id")
-            if room_id:
-                join_room(f"chat:{room_id}")
-                emit("joined_room", {"room_id": room_id})
+            if not room_id or not self._is_room_member(room_id, user_id):
+                emit("error", {"message": "room not permitted"})
+                return
+            join_room(f"chat:{room_id}")
+            emit("joined_room", {"room_id": room_id})
 
         def on_leave_room(self, data):
             room_id = data.get("room_id")
@@ -212,6 +308,9 @@ if SOCKETIO_AVAILABLE:
             text = data.get("message", "").strip()
             if not room_id or not text:
                 emit("error", {"message": "room_id and message are required"})
+                return
+            if not user_id or not self._is_room_member(room_id, user_id):
+                emit("error", {"message": "not permitted"})
                 return
             # Persist the message
             try:
@@ -263,13 +362,12 @@ if SOCKETIO_AVAILABLE:
                 or request.args.get("token")
                 or (request.headers.get("Authorization", "").replace("Bearer ", "") or None)
             )
-            if not token:
+            ctx = _authenticate_ws(token)
+            if ctx is None:
                 return False
-            payload = _validate_token(token)
-            if payload is None:
-                return False
-            user_id = int(payload.get("sub", 0))
-            system_key = payload.get("system_key", "unknown")
+            _sid_to_user[request.sid] = ctx["user_id"]
+            user_id = ctx["user_id"]
+            system_key = ctx["system_key"]
             # Broadcast online status to the system room
             socketio.emit("presence_update", {
                 "user_id": user_id, "status": "online", "system_key": system_key,
@@ -281,7 +379,7 @@ if SOCKETIO_AVAILABLE:
         def on_disconnect(self):
             from flask import request
             sid = request.sid
-            user_id = _sid_to_user.get(sid)
+            user_id = _sid_to_user.pop(sid, None)
             if user_id and user_id in _online_users:
                 system_key = _online_users[user_id].get("system_key", "unknown")
                 socketio.emit("presence_update", {
@@ -320,9 +418,24 @@ def init_socketio(app) -> "SocketIO | None":
         logger.warning("init_socketio: flask-socketio not available – skipping")
         return None
 
-    cors_origins = os.getenv("API_CORS_ORIGINS", "*")
-    if cors_origins != "*":
-        cors_origins = [o.strip() for o in cors_origins.split(",") if o.strip()]
+    # CORS — fail closed, matching the Flask app (unified_server.py refuses a
+    # wildcard in production). A "*" default here combined with token-in-query
+    # would be a cross-origin socket-hijack path.
+    raw_origins = os.getenv("API_CORS_ORIGINS", "").strip()
+    app_env = os.getenv("APP_ENV", "production").strip().lower()
+    is_dev = app_env in ("development", "dev", "local", "test", "testing")
+    if raw_origins:
+        cors_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
+    elif is_dev:
+        cors_origins = [
+            "http://localhost:5000", "http://127.0.0.1:5000",
+            "http://localhost:3000", "http://127.0.0.1:3000",
+        ]
+    else:
+        raise RuntimeError(
+            "API_CORS_ORIGINS must be set in production for the WebSocket "
+            "server; refusing to start with a wildcard origin policy."
+        )
 
     socketio = SocketIO(
         app,

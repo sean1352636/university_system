@@ -22,7 +22,7 @@ from flask import Blueprint, g, jsonify, request
 
 logger = logging.getLogger(__name__)
 
-pastoral_bp = Blueprint("sf_pastoral", __name__, url_prefix="/api/sixthform/pastoral")
+pastoral_bp = Blueprint("sf_pastoral", __name__, url_prefix="/api/pastoral")
 
 
 def _token_required(view):

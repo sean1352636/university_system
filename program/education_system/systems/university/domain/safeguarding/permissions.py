@@ -6,7 +6,9 @@ import os
 import re
 import secrets
 import shutil
-import sqlite3
+from education_system.systems.university.infrastructure.database.db import (
+    sqlite3 as _db_errors,
+)
 import sys
 import tkinter as tk
 import webbrowser
@@ -61,8 +63,40 @@ def can(user, permission):
     return permission in perms
 
 
-def require(user, permission, raise_=False):
-    if can(user, permission):
+def require(
+    user,
+    permission,
+    raise_=False,
+    *,
+    purpose="safeguarding_casework",
+    subject_id=None,
+    fields=("case_summary",),
+):
+    role_allowed = can(user, permission)
+    sensitive_allowed = role_allowed
+    if permission in {"view_case", "export", "add_note", "add_action"}:
+        from education_system.platform.governance.security.sensitive_access import (
+            authorize_sensitive_fields,
+        )
+
+        requested_fields = ("*",) if permission == "export" else fields
+        decision = authorize_sensitive_fields(
+            actor_id=str((user or {}).get("id") or (user or {}).get("username") or "?"),
+            actor_role=str((user or {}).get("role") or ""),
+            domain="safeguarding",
+            subject_id=str(subject_id) if subject_id is not None else None,
+            fields=requested_fields,
+            purpose=purpose,
+        )
+        sensitive_allowed = decision.allowed
+    if role_allowed and sensitive_allowed:
+        audit_log(
+            actor=(user or {}).get("username", "?"),
+            actor_role=(user or {}).get("role", "?"),
+            action="permission_allowed",
+            case_id=subject_id,
+            details=f"permission={permission};purpose={purpose};fields={list(fields)}",
+        )
         return True
     audit_log(
         actor=(user or {}).get("username", "?"),
@@ -87,7 +121,7 @@ def audit_log(actor="?", action="?", case_id=None, details="", actor_role=None):
         )
         conn.commit()
         conn.close()
-    except sqlite3.OperationalError:
+    except _db_errors.OperationalError:
         # init_db hasn't run yet — drop on the floor rather than crash callers
         pass
 

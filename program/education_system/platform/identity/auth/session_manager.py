@@ -67,18 +67,23 @@ class SessionManager:
 
         return token
 
-    def validate_session(self, token: str) -> dict | None:
+    def validate_session(self, token: str, system_key: str | None = None) -> dict | None:
         """Validate a session token. Returns user info if valid, None otherwise."""
+        if not isinstance(token, str) or not token or len(token) > 512:
+            return None
         conn = self._conn()
         try:
             row = conn.execute(
-                """SELECT s.user_id, s.expires_at, u.username
+                """SELECT s.user_id, s.expires_at, u.username, u.is_active,
+                          us.system_key, us.role
                    FROM sessions s JOIN users u ON s.user_id = u.id
-                   WHERE s.token = ? AND s.is_active = 1""",
-                (token,),
+                   LEFT JOIN user_systems us ON us.user_id = u.id
+                   WHERE s.token = ? AND s.is_active = 1
+                     AND (us.system_key = ? OR ? IS NULL)""",
+                (token, system_key, system_key),
             ).fetchone()
 
-            if not row:
+            if not row or not row["is_active"]:
                 return None
 
             if datetime.fromisoformat(row["expires_at"]) < datetime.utcnow():
@@ -103,7 +108,14 @@ class SessionManager:
             return {
                 "user_id": row["user_id"],
                 "username": row["username"],
+                "role": row["role"],
+                "system_key": row["system_key"],
             }
+        except Exception:
+            # Authentication infrastructure errors are an authentication
+            # failure, never a reason to allow the caller through.
+            logger.exception("Session validation failed")
+            return None
         finally:
             conn.close()
 

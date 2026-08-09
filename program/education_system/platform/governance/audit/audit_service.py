@@ -10,6 +10,8 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
+from education_system.paths import PLATFORM_AUDIT_DB_FILE, PLATFORM_DB_FILES_DIR
+
 logger = logging.getLogger(__name__)
 
 _AUDIT_DB: Path | None = None
@@ -41,10 +43,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_severity ON audit_log(severity);
 def get_audit_db_path() -> Path:
     if _AUDIT_DB is not None:
         return _AUDIT_DB
-    shared_root = Path(__file__).resolve().parent.parent
-    db_dir = shared_root / "data" / "db_files"
-    db_dir.mkdir(parents=True, exist_ok=True)
-    return db_dir / "audit.db"
+    PLATFORM_DB_FILES_DIR.mkdir(parents=True, exist_ok=True)
+    return PLATFORM_AUDIT_DB_FILE
 
 
 def _connect(db_path=None):

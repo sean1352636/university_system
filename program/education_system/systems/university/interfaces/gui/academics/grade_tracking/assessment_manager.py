@@ -1,5 +1,7 @@
 """Assessment management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -12,7 +14,7 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.domain.academics.services.assessment_service import AssessmentAssignmentService
 from education_system.systems.university.interfaces.gui.academics.grade_tracking.utils import ensure_column_exists
 
@@ -30,8 +32,8 @@ except ImportError:
     IMMUTABLE_AUDIT_AVAILABLE = False
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -203,7 +205,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -322,7 +324,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -369,24 +371,24 @@ class AssessmentManager:
         control_frame = ttk.Frame(self.content_frame)
         control_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(control_frame, text="Add Assessment",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.add_assessment', default="Add Assessment"),
                   command=self.add_assessment_dialog).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Edit Assessment",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.edit_assessment', default="Edit Assessment"),
                   command=self.edit_assessment_dialog).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Delete Assessment",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.delete_assessment', default="Delete Assessment"),
                   command=self.delete_assessment).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Copy Assessment",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.copy_assessment', default="Copy Assessment"),
                   command=self.copy_assessment).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Refresh",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.refresh', default="Refresh"),
                   command=self.refresh_assessments).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="🔄 Load from Assignments",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.load_from_assignments', default="🔄 Load from Assignments"),
                   command=self.sync_from_assignments).pack(side='right', padx=5)
 
         # Filter frame
         filter_frame = ttk.Frame(self.content_frame)
         filter_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Filter by Module:").pack(side='left', padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.grade_tracking.assessment_manager.labels.filter_by_module', default="Filter by Module:")).pack(side='left', padx=5)
         self.assessment_module_filter_var = tk.StringVar()
         self.assessment_module_combo = ttk.Combobox(filter_frame,
                                                    textvariable=self.assessment_module_filter_var,
@@ -510,9 +512,9 @@ class AssessmentManager:
             self._display_report("Assessment Analysis Report", sections, footer)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate assessment analysis: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Failed to generate assessment analysis: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate assessment analysis: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.error', default="Error"), f"Failed to generate assessment analysis: {e}")
         finally:
             if conn:
                 conn.close()
@@ -520,18 +522,18 @@ class AssessmentManager:
     def add_assessment_dialog(self):
         """Open dialog to add a new assessment (matches Create Assessment form)"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Assessment")
+        dialog.title(_t('gui.academics.grade_tracking.assessment_manager.windows.add_assessment', default="Add Assessment"))
         dialog.geometry("600x750")
         dialog.transient(self.root)
         safe_grab_set(dialog)
 
         # Assessment name
-        ttk.Label(dialog, text="Title:").grid(row=0, column=0, padx=10, pady=8, sticky='w')
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.title', default="Title:")).grid(row=0, column=0, padx=10, pady=8, sticky='w')
         name_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=name_var, width=40).grid(row=0, column=1, padx=10, pady=8)
 
         # Module selection
-        ttk.Label(dialog, text="Module:").grid(row=1, column=0, padx=10, pady=8, sticky='w')
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.module', default="Module:")).grid(row=1, column=0, padx=10, pady=8, sticky='w')
         module_var = tk.StringVar()
         module_combo = ttk.Combobox(dialog, textvariable=module_var, width=38, state='readonly')
         module_combo.grid(row=1, column=1, padx=10, pady=8)
@@ -544,55 +546,55 @@ class AssessmentManager:
             module_combo['values'] = [f"{m[0]} - {m[1]}" for m in modules]
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading modules: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Error loading modules: {e}")
             dialog.destroy()
             return
 
         # Assessment type
-        ttk.Label(dialog, text="Assessment Type:").grid(row=2, column=0, padx=10, pady=8, sticky='w')
-        type_var = tk.StringVar(value="exam")
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.assessment_type', default="Assessment Type:")).grid(row=2, column=0, padx=10, pady=8, sticky='w')
+        type_var = tk.StringVar(value=_t('gui.academics.grade_tracking.assessment_manager.values.exam', default="exam"))
         type_combo = ttk.Combobox(dialog, textvariable=type_var, width=38, state='readonly',
                                   values=["exam", "quiz", "test", "project", "presentation", "practical"])
         type_combo.grid(row=2, column=1, padx=10, pady=8)
 
         # Due date and time
-        ttk.Label(dialog, text="Due Date:").grid(row=3, column=0, padx=10, pady=8, sticky='w')
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.due_date', default="Due Date:")).grid(row=3, column=0, padx=10, pady=8, sticky='w')
         date_frame = ttk.Frame(dialog)
         date_frame.grid(row=3, column=1, padx=10, pady=8, sticky='w')
         due_date_var = tk.StringVar(value=(datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d'))
         ttk.Entry(date_frame, textvariable=due_date_var, width=14).pack(side='left')
-        ttk.Label(date_frame, text="Time:").pack(side='left', padx=(10, 5))
+        ttk.Label(date_frame, text=_t('gui.academics.grade_tracking.assessment_manager.labels.time', default="Time:")).pack(side='left', padx=(10, 5))
         due_time_var = tk.StringVar(value="23:59")
         ttk.Entry(date_frame, textvariable=due_time_var, width=8).pack(side='left')
 
         # Duration
-        ttk.Label(dialog, text="Duration (minutes):").grid(row=4, column=0, padx=10, pady=8, sticky='w')
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.duration_minutes', default="Duration (minutes):")).grid(row=4, column=0, padx=10, pady=8, sticky='w')
         duration_var = tk.StringVar(value="120")
         ttk.Entry(dialog, textvariable=duration_var, width=10).grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Max points
-        ttk.Label(dialog, text="Max Points:").grid(row=5, column=0, padx=10, pady=8, sticky='w')
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.max_points', default="Max Points:")).grid(row=5, column=0, padx=10, pady=8, sticky='w')
         max_points_var = tk.StringVar(value="100")
         ttk.Entry(dialog, textvariable=max_points_var, width=10).grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Weight
-        ttk.Label(dialog, text="Weight (%):").grid(row=6, column=0, padx=10, pady=8, sticky='w')
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.weight', default="Weight (%):")).grid(row=6, column=0, padx=10, pady=8, sticky='w')
         weight_var = tk.StringVar(value="25")
         ttk.Entry(dialog, textvariable=weight_var, width=10).grid(row=6, column=1, padx=10, pady=8, sticky='w')
 
         # Status
-        ttk.Label(dialog, text="Status:").grid(row=7, column=0, padx=10, pady=8, sticky='w')
-        status_var = tk.StringVar(value="Active")
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.status', default="Status:")).grid(row=7, column=0, padx=10, pady=8, sticky='w')
+        status_var = tk.StringVar(value=_t('gui.academics.grade_tracking.assessment_manager.values.active', default="Active"))
         ttk.Combobox(dialog, textvariable=status_var, width=20, state='readonly',
                      values=["Active", "Draft", "Archived"]).grid(row=7, column=1, padx=10, pady=8, sticky='w')
 
         # Description
-        ttk.Label(dialog, text="Description:").grid(row=8, column=0, padx=10, pady=8, sticky='nw')
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.description', default="Description:")).grid(row=8, column=0, padx=10, pady=8, sticky='nw')
         description_text = scrolledtext.ScrolledText(dialog, width=38, height=5)
         description_text.grid(row=8, column=1, padx=10, pady=8)
 
         # Rubric
-        ttk.Label(dialog, text="Rubric:").grid(row=9, column=0, padx=10, pady=8, sticky='nw')
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.rubric', default="Rubric:")).grid(row=9, column=0, padx=10, pady=8, sticky='nw')
         rubric_text = scrolledtext.ScrolledText(dialog, width=38, height=4)
         rubric_text.grid(row=9, column=1, padx=10, pady=8)
 
@@ -610,10 +612,10 @@ class AssessmentManager:
             rubric = rubric_text.get('1.0', 'end-1c').strip()
 
             if not name:
-                messagebox.showerror("Validation Error", "Please enter an assessment name", parent=dialog)
+                messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.please_enter_an_assessment_name', default="Please enter an assessment name"), parent=dialog)
                 return
             if not module:
-                messagebox.showerror("Validation Error", "Please select a module", parent=dialog)
+                messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.please_select_a_module', default="Please select a module"), parent=dialog)
                 return
 
             try:
@@ -622,7 +624,7 @@ class AssessmentManager:
                 duration_int = int(duration) if duration else None
 
                 if max_points_float <= 0:
-                    messagebox.showerror("Validation Error", "Max points must be greater than 0", parent=dialog)
+                    messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.max_points_must_be_greater_than_0', default="Max points must be greater than 0"), parent=dialog)
                     return
 
                 module_code = module.split(' - ')[0]
@@ -678,27 +680,27 @@ class AssessmentManager:
                 except Exception:
                     pass
 
-                messagebox.showinfo("Success", "Assessment added successfully!")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_added_successfully', default="Assessment added successfully!"))
                 dialog.destroy()
                 self.refresh_assessments()
                 if hasattr(self.app, 'populate_filter_combos'):
                     self.app.populate_filter_combos()
 
             except ValueError:
-                messagebox.showerror("Validation Error", "Max points, weight, and duration must be valid numbers", parent=dialog)
+                messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.max_points_weight_and_duration_must_be_valid_numbers', default="Max points, weight, and duration must be valid numbers"), parent=dialog)
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Error saving assessment: {e}", parent=dialog)
+                messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Error saving assessment: {e}", parent=dialog)
 
         button_frame = ttk.Frame(dialog)
         button_frame.grid(row=10, column=0, columnspan=2, pady=15)
-        ttk.Button(button_frame, text="Save Assessment", command=save_assessment).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.save_assessment', default="Save Assessment"), command=save_assessment).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
     def edit_assessment_dialog(self):
         """Open dialog to edit an existing assessment (supports both assessments and assignments tables)"""
         selection = self.assessment_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an assessment to edit")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.assessment_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.please_select_an_assessment_to_edit', default="Please select an assessment to edit"))
             return
 
         item = self.assessment_tree.item(selection[0])
@@ -728,26 +730,26 @@ class AssessmentManager:
             assessment_data = cursor.fetchone()
 
             if not assessment_data:
-                messagebox.showerror("Error", "Assessment not found")
+                messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_not_found', default="Assessment not found"))
                 return
 
             dialog = tk.Toplevel(self.root)
-            dialog.title("Edit Assessment")
+            dialog.title(_t('gui.academics.grade_tracking.assessment_manager.windows.edit_assessment', default="Edit Assessment"))
             dialog.geometry("600x700")
             dialog.transient(self.root)
             safe_grab_set(dialog)
 
-            ttk.Label(dialog, text="Title:").grid(row=0, column=0, padx=10, pady=8, sticky='w')
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.title', default="Title:")).grid(row=0, column=0, padx=10, pady=8, sticky='w')
             name_var = tk.StringVar(value=assessment_data[0])
             ttk.Entry(dialog, textvariable=name_var, width=40).grid(row=0, column=1, padx=10, pady=8)
 
-            ttk.Label(dialog, text="Assessment Type:").grid(row=1, column=0, padx=10, pady=8, sticky='w')
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.assessment_type', default="Assessment Type:")).grid(row=1, column=0, padx=10, pady=8, sticky='w')
             type_var = tk.StringVar(value=assessment_data[1] or '')
             ttk.Combobox(dialog, textvariable=type_var, width=38, state='readonly',
                         values=["exam", "quiz", "test", "project", "presentation", "practical",
                                 "assignment", "individual", "group"]).grid(row=1, column=1, padx=10, pady=8)
 
-            ttk.Label(dialog, text="Module:").grid(row=2, column=0, padx=10, pady=8, sticky='w')
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.module', default="Module:")).grid(row=2, column=0, padx=10, pady=8, sticky='w')
             module_var = tk.StringVar()
             module_combo = ttk.Combobox(dialog, textvariable=module_var, width=38, state='readonly')
             module_combo.grid(row=2, column=1, padx=10, pady=8)
@@ -760,24 +762,24 @@ class AssessmentManager:
                     module_var.set(f"{m[0]} - {m[1]}")
                     break
 
-            ttk.Label(dialog, text="Max Points:").grid(row=3, column=0, padx=10, pady=8, sticky='w')
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.max_points', default="Max Points:")).grid(row=3, column=0, padx=10, pady=8, sticky='w')
             max_points_var = tk.StringVar(value=str(assessment_data[3] or 100))
             ttk.Entry(dialog, textvariable=max_points_var, width=10).grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
-            ttk.Label(dialog, text="Weight (%):").grid(row=4, column=0, padx=10, pady=8, sticky='w')
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.weight', default="Weight (%):")).grid(row=4, column=0, padx=10, pady=8, sticky='w')
             weight_var = tk.StringVar(value=str(assessment_data[4] or 0))
             ttk.Entry(dialog, textvariable=weight_var, width=10).grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
-            ttk.Label(dialog, text="Due Date:").grid(row=5, column=0, padx=10, pady=8, sticky='w')
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.due_date', default="Due Date:")).grid(row=5, column=0, padx=10, pady=8, sticky='w')
             due_date_var = tk.StringVar(value=assessment_data[5] or '')
             ttk.Entry(dialog, textvariable=due_date_var, width=30).grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
-            ttk.Label(dialog, text="Description:").grid(row=6, column=0, padx=10, pady=8, sticky='nw')
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.description', default="Description:")).grid(row=6, column=0, padx=10, pady=8, sticky='nw')
             description_text = scrolledtext.ScrolledText(dialog, width=38, height=5)
             description_text.grid(row=6, column=1, padx=10, pady=8)
             description_text.insert('1.0', assessment_data[6] or '')
 
-            ttk.Label(dialog, text="Rubric/Instructions:").grid(row=7, column=0, padx=10, pady=8, sticky='nw')
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.assessment_manager.labels.rubric_instructions', default="Rubric/Instructions:")).grid(row=7, column=0, padx=10, pady=8, sticky='nw')
             rubric_text = scrolledtext.ScrolledText(dialog, width=38, height=5)
             rubric_text.grid(row=7, column=1, padx=10, pady=8)
             rubric_text.insert('1.0', assessment_data[7] or '')
@@ -787,7 +789,7 @@ class AssessmentManager:
                 assessment_type = type_var.get()
                 module = module_var.get()
                 if not name or not module:
-                    messagebox.showerror("Validation Error", "Title and module are required", parent=dialog)
+                    messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.title_and_module_are_required', default="Title and module are required"), parent=dialog)
                     return
 
                 try:
@@ -840,21 +842,21 @@ class AssessmentManager:
                             },
                         )
 
-                    messagebox.showinfo("Success", "Assessment updated successfully!")
+                    messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_updated_successfully', default="Assessment updated successfully!"))
                     dialog.destroy()
                     self.refresh_assessments()
                 except ValueError:
-                    messagebox.showerror("Validation Error", "Max points and weight must be valid numbers", parent=dialog)
+                    messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.max_points_and_weight_must_be_valid_numbers', default="Max points and weight must be valid numbers"), parent=dialog)
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Error updating assessment: {e}", parent=dialog)
+                    messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Error updating assessment: {e}", parent=dialog)
 
             button_frame = ttk.Frame(dialog)
             button_frame.grid(row=8, column=0, columnspan=2, pady=15)
-            ttk.Button(button_frame, text="Update", command=update_assessment).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.update', default="Update"), command=update_assessment).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.assessment_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading assessment: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Error loading assessment: {e}")
         finally:
             if conn:
                 conn.close()
@@ -863,7 +865,7 @@ class AssessmentManager:
         """Delete selected assessment (supports both assessments and assignments tables)"""
         selection = self.assessment_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an assessment to delete")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.assessment_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.please_select_an_assessment_to_delete', default="Please select an assessment to delete"))
             return
 
         item = self.assessment_tree.item(selection[0])
@@ -871,7 +873,7 @@ class AssessmentManager:
         assessment_name = item['values'][1]
         is_assignment = raw_id.startswith('A')
 
-        if not messagebox.askyesno("Confirm Deletion",
+        if not messagebox.askyesno(_t('gui.academics.grade_tracking.assessment_manager.dialogs.confirm_deletion', default="Confirm Deletion"),
                                    f"Are you sure you want to delete '{assessment_name}'?\n\n"
                                    "This will also delete all associated grades/submissions!"):
             return
@@ -906,13 +908,13 @@ class AssessmentManager:
                     details={'raw_id': str(raw_id), 'cascade': True},
                 )
 
-            messagebox.showinfo("Success", "Assessment deleted successfully!")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_deleted_successfully', default="Assessment deleted successfully!"))
             self.refresh_assessments()
             if hasattr(self.app, 'populate_filter_combos'):
                 self.app.populate_filter_combos()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error deleting assessment: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Error deleting assessment: {e}")
         finally:
             if conn:
                 conn.close()
@@ -921,7 +923,7 @@ class AssessmentManager:
         """Copy selected assessment (supports both assessments and assignments tables)"""
         selection = self.assessment_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an assessment to copy")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.assessment_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.please_select_an_assessment_to_copy', default="Please select an assessment to copy"))
             return
 
         item = self.assessment_tree.item(selection[0])
@@ -942,7 +944,7 @@ class AssessmentManager:
                 """, (real_id,))
                 data = cursor.fetchone()
                 if not data:
-                    messagebox.showerror("Error", "Assignment not found")
+                    messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assignment_not_found', default="Assignment not found"))
                     return
 
                 new_name = f"Copy of {data[0]}"
@@ -962,7 +964,7 @@ class AssessmentManager:
                 """, (raw_id,))
                 data = cursor.fetchone()
                 if not data:
-                    messagebox.showerror("Error", "Assessment not found")
+                    messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.assessment_not_found', default="Assessment not found"))
                     return
 
                 new_name = f"Copy of {data[0]}"
@@ -974,13 +976,13 @@ class AssessmentManager:
                 """, (new_name, data[1], data[2], data[3], data[4], data[5], data[6], data[7]))
 
             conn.commit()
-            messagebox.showinfo("Success", f"Assessment copied as '{new_name}'!")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.success', default="Success"), f"Assessment copied as '{new_name}'!")
             self.refresh_assessments()
             if hasattr(self.app, 'populate_filter_combos'):
                 self.app.populate_filter_combos()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error copying assessment: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Error copying assessment: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1062,9 +1064,9 @@ class AssessmentManager:
                 ))
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to load assessments: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.database_error', default="Database Error"), f"Failed to load assessments: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assessments: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.error', default="Error"), f"Failed to load assessments: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1113,7 +1115,7 @@ class AssessmentManager:
             assessments = AssessmentAssignmentService.get_all_assessments()
 
             if not assessments:
-                messagebox.showinfo("Load Complete", "No assessments found to load from assignments")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.assessment_manager.dialogs.load_complete', default="Load Complete"), _t('gui.academics.grade_tracking.assessment_manager.dialogs.no_assessments_found_to_load_from_assignments', default="No assessments found to load from assignments"))
                 return
 
             loaded_count = 0
@@ -1134,11 +1136,11 @@ class AssessmentManager:
             self.refresh_assessments()
 
             messagebox.showinfo(
-                "Load Complete",
+                _t('gui.academics.grade_tracking.assessment_manager.dialogs.load_complete', default="Load Complete"),
                 f"Loaded {loaded_count} assignment(s) from assessments.\n"
                 f"Skipped {skipped_count} (already exist or invalid)."
             )
 
         except Exception as e:
-            messagebox.showerror("Load Error", f"Failed to load from assignments: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.assessment_manager.dialogs.load_error', default="Load Error"), f"Failed to load from assignments: {e}")
 

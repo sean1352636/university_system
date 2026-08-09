@@ -943,7 +943,7 @@ Feedback Generated:
 
         # Algorithm
         ttk.Label(main_frame, text=_t("ai_features.labels.algorithm")).grid(row=3, column=0, sticky='w', pady=5)
-        algo_var = tk.StringVar(value='collaborative_filtering')
+        algo_var = tk.StringVar(value=_t('gui.shell.ai_features.ai_features.values.collaborative_filtering', default='collaborative_filtering'))
         ttk.Entry(main_frame, textvariable=algo_var, width=40).grid(row=3, column=1, pady=5)
 
         # Confidence Score

@@ -19,7 +19,7 @@
     <div id="alert" class="alert alert-error hidden"></div>
 
     <!-- Credentials form -->
-    <form id="login-form" autocomplete="on">
+    <form id="login-form" method="post" action="/portal/login.html" autocomplete="on">
       <div class="field">
         <label for="username">Username</label>
         <input id="username" name="username" type="text" autocomplete="username" required>
@@ -51,9 +51,12 @@
       <div id="system-list" class="system-list"></div>
     </div>
 
+    <a class="btn btn-ghost" href="/portal/"
+       style="display:block; text-align:center; margin-top:1rem;">Return to welcome page</a>
+
     <div class="hint">
-      Default dev creds: <code>superadmin</code> / <code>SuperAdmin@123</code><br>
-      <a href="/portal/">← Back to portal home</a>
+      Development login: <code>admin</code> / <code>admin123</code><br>
+      <span class="muted">The superadmin account requires an MFA code.</span>
     </div>
   </div>
 
@@ -194,10 +197,6 @@
         }
       });
 
-      // If already signed in, jump to dashboard
-      if (EduPortal.getToken() && EduPortal.getUser()) {
-        redirectAfterLogin();
-      }
     })();
   </script>
 </body>

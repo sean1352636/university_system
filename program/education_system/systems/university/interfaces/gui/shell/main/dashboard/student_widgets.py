@@ -1,5 +1,7 @@
 """Embedded student dashboard widgets (Features 31-43)."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk
@@ -9,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 def create_grades_summary_widget(parent, student_id):
     """Create a mini per-module grades summary table."""
-    frame = ttk.LabelFrame(parent, text="Grades Summary", padding="10")
+    frame = ttk.LabelFrame(parent, text=_t('gui.shell.main.dashboard.student_widgets.labels.grades_summary', default="Grades Summary"), padding="10")
     frame.pack(fill=tk.X, padx=15, pady=5)
 
     try:
@@ -25,9 +27,9 @@ def create_grades_summary_widget(parent, student_id):
                 frame, columns=cols, show="headings",
                 height=min(5, len(modules)),
             )
-            tree.heading("module", text="Module")
-            tree.heading("avg_score", text="Average")
-            tree.heading("letter", text="Grade")
+            tree.heading("module", text=_t('gui.shell.main.dashboard.student_widgets.headings.module', default="Module"))
+            tree.heading("avg_score", text=_t('gui.shell.main.dashboard.student_widgets.headings.average', default="Average"))
+            tree.heading("letter", text=_t('gui.shell.main.dashboard.student_widgets.headings.grade', default="Grade"))
             tree.column("module", width=200)
             tree.column("avg_score", width=80)
             tree.column("letter", width=60)
@@ -56,17 +58,17 @@ def create_grades_summary_widget(parent, student_id):
                 ))
             tree.pack(fill=tk.X)
         else:
-            ttk.Label(frame, text="No graded assignments yet.").pack(anchor="w")
+            ttk.Label(frame, text=_t('gui.shell.main.dashboard.student_widgets.labels.no_graded_assignments_yet', default="No graded assignments yet.")).pack(anchor="w")
     except Exception as e:
         logger.error(f"Error creating grades summary widget: {e}")
-        ttk.Label(frame, text="Unable to load grades summary.").pack(anchor="w")
+        ttk.Label(frame, text=_t('gui.shell.main.dashboard.student_widgets.labels.unable_to_load_grades_summary', default="Unable to load grades summary.")).pack(anchor="w")
 
     return frame
 
 
 def create_degree_progress_widget(parent, student_id):
     """Create a progress bar and stat cards for degree progress."""
-    frame = ttk.LabelFrame(parent, text="Degree Progress", padding="10")
+    frame = ttk.LabelFrame(parent, text=_t('gui.shell.main.dashboard.student_widgets.labels.degree_progress', default="Degree Progress"), padding="10")
     frame.pack(fill=tk.X, padx=15, pady=5)
 
     try:
@@ -100,14 +102,14 @@ def create_degree_progress_widget(parent, student_id):
 
     except Exception as e:
         logger.error(f"Error creating degree progress widget: {e}")
-        ttk.Label(frame, text="Unable to load degree progress.").pack(anchor="w")
+        ttk.Label(frame, text=_t('gui.shell.main.dashboard.student_widgets.labels.unable_to_load_degree_progress', default="Unable to load degree progress.")).pack(anchor="w")
 
     return frame
 
 
 def create_gpa_whatif_widget(parent, student_id, launch_callback=None):
     """Create current GPA display with 'Open Calculator' link."""
-    frame = ttk.LabelFrame(parent, text="GPA What-If", padding="10")
+    frame = ttk.LabelFrame(parent, text=_t('gui.shell.main.dashboard.student_widgets.labels.gpa_what_if', default="GPA What-If"), padding="10")
     frame.pack(fill=tk.X, padx=15, pady=5)
 
     try:
@@ -130,23 +132,23 @@ def create_gpa_whatif_widget(parent, student_id, launch_callback=None):
         gpa_text = f"{gpa:.2f}" if gpa is not None else "N/A"
         ttk.Label(frame, text=f"Current GPA: {gpa_text}",
                   font=("Arial", 12, "bold")).pack(anchor="w")
-        ttk.Label(frame, text="Use the GPA Calculator to see how future grades affect your GPA."
+        ttk.Label(frame, text=_t('gui.shell.main.dashboard.student_widgets.labels.use_the_gpa_calculator_to_see_how_future_grades_affect_your_gpa', default="Use the GPA Calculator to see how future grades affect your GPA.")
                   ).pack(anchor="w", pady=(2, 5))
 
         if launch_callback:
-            ttk.Button(frame, text="Open GPA Calculator",
+            ttk.Button(frame, text=_t('gui.shell.main.dashboard.student_widgets.buttons.open_gpa_calculator', default="Open GPA Calculator"),
                        command=launch_callback).pack(anchor="w")
 
     except Exception as e:
         logger.error(f"Error creating GPA what-if widget: {e}")
-        ttk.Label(frame, text="Unable to load GPA info.").pack(anchor="w")
+        ttk.Label(frame, text=_t('gui.shell.main.dashboard.student_widgets.labels.unable_to_load_gpa_info', default="Unable to load GPA info.")).pack(anchor="w")
 
     return frame
 
 
 def create_payment_alerts_widget(parent, student_id):
     """Create upcoming/overdue payment deadline alerts."""
-    frame = ttk.LabelFrame(parent, text="Payment Alerts", padding="10")
+    frame = ttk.LabelFrame(parent, text=_t('gui.shell.main.dashboard.student_widgets.labels.payment_alerts', default="Payment Alerts"), padding="10")
     frame.pack(fill=tk.X, padx=15, pady=5)
 
     try:
@@ -160,7 +162,7 @@ def create_payment_alerts_widget(parent, student_id):
         upcoming = data.get("upcoming_payments", [])
 
         if overdue:
-            ttk.Label(frame, text="Overdue:", font=("Arial", 10, "bold"),
+            ttk.Label(frame, text=_t('gui.shell.main.dashboard.student_widgets.labels.overdue', default="Overdue:"), font=("Arial", 10, "bold"),
                       foreground="red").pack(anchor="w")
             for p in overdue:
                 ttk.Label(
@@ -171,7 +173,7 @@ def create_payment_alerts_widget(parent, student_id):
                 ).pack(anchor="w")
 
         if upcoming:
-            ttk.Label(frame, text="Upcoming:", font=("Arial", 10, "bold")).pack(
+            ttk.Label(frame, text=_t('gui.shell.main.dashboard.student_widgets.labels.upcoming', default="Upcoming:"), font=("Arial", 10, "bold")).pack(
                 anchor="w", pady=(5 if overdue else 0, 0)
             )
             for p in upcoming:
@@ -190,6 +192,6 @@ def create_payment_alerts_widget(parent, student_id):
 
     except Exception as e:
         logger.error(f"Error creating payment alerts widget: {e}")
-        ttk.Label(frame, text="Unable to load payment info.").pack(anchor="w")
+        ttk.Label(frame, text=_t('gui.shell.main.dashboard.student_widgets.labels.unable_to_load_payment_info', default="Unable to load payment info.")).pack(anchor="w")
 
     return frame

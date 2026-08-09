@@ -1,5 +1,7 @@
 """Configuration, cache, and status methods mixin for the enhanced reporting GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.standalone.constants import (
     tk, ttk, messagebox,
     os, json, logging,
@@ -27,13 +29,13 @@ class ConfigMixin:
                 self.config_display.delete(1.0, tk.END)
                 self.config_display.insert(1.0, config_text)
 
-                messagebox.showinfo("Success", "Configuration reloaded successfully!")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.configuration_reloaded_successfully', default="Configuration reloaded successfully!"))
             else:
-                messagebox.showwarning("Feature Unavailable",
-                                     "Configuration management requires the enhanced system.")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.feature_unavailable', default="Feature Unavailable"),
+                                     _t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.configuration_management_requires_the_enhanced_system', default="Configuration management requires the enhanced system."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to reload configuration: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.error', default="Error"), f"Failed to reload configuration: {str(e)}")
 
     def save_config(self):
         """Save system configuration"""
@@ -43,15 +45,15 @@ class ConfigMixin:
                 config = json.loads(config_text)
 
                 SystemConfig.save_config(config)
-                messagebox.showinfo("Success", "Configuration saved successfully!")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.configuration_saved_successfully', default="Configuration saved successfully!"))
             else:
-                messagebox.showwarning("Feature Unavailable",
-                                     "Configuration management requires the enhanced system.")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.feature_unavailable', default="Feature Unavailable"),
+                                     _t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.configuration_management_requires_the_enhanced_system', default="Configuration management requires the enhanced system."))
 
         except json.JSONDecodeError:
-            messagebox.showerror("Invalid JSON", "Configuration contains invalid JSON syntax.")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.invalid_json', default="Invalid JSON"), _t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.configuration_contains_invalid_json_syntax', default="Configuration contains invalid JSON syntax."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save configuration: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.error', default="Error"), f"Failed to save configuration: {str(e)}")
 
     # ===== STATUS / PROGRESS METHODS =====
 
@@ -235,16 +237,16 @@ class ConfigMixin:
         """Clean up old cache files"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return
 
             self.update_status("Cleaning up cache...")
             CacheManager.cleanup_cache()
             self.update_status("Cache cleaned successfully", "success")
-            messagebox.showinfo("Success", "Cache cleaned successfully!")
+            messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.cache_cleaned_successfully', default="Cache cleaned successfully!"))
         except Exception as e:
             logging.error(f"Error cleaning cache: {str(e)}")
-            messagebox.showerror("Error", f"Failed to clean cache: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.config_mixin.dialogs.error', default="Error"), f"Failed to clean cache: {str(e)}")
 
     # ===== UTILITY & CONFIGURATION METHODS =====
 

@@ -6,7 +6,11 @@ import logging
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import admin_required, token_required
+from education_system.platform.delivery.api.university.auth import (
+    admin_required,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
@@ -60,6 +64,7 @@ def list_profiles():
 
 @early_warning_bp.route("/profiles/<student_id>", methods=["GET"])
 @token_required
+@staff_required
 def get_profile(student_id: str):
     with get_connection() as conn:
         row = conn.execute(

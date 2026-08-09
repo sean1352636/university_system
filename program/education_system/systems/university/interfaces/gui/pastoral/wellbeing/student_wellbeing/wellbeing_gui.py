@@ -1,5 +1,7 @@
 """WellbeingFrame GUI for the University System."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -21,7 +23,7 @@ class WellbeingFrame(tk.Frame):
         header = tk.Frame(self, bg=self.HEADER_BG, height=40)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Wellbeing",
+        tk.Label(header, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.labels.wellbeing', default="Wellbeing"),
                  fg="white", bg=self.HEADER_BG,
                  font=("Helvetica", 14, "bold")).pack(side="left", padx=15)
 
@@ -30,13 +32,13 @@ class WellbeingFrame(tk.Frame):
         self._notebook.pack(fill="both", expand=True, padx=5, pady=5)
 
         self._referrals_tab = tk.Frame(self._notebook)
-        self._notebook.add(self._referrals_tab, text="Referrals")
+        self._notebook.add(self._referrals_tab, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.tabs.referrals', default="Referrals"))
         self._check_ins_tab = tk.Frame(self._notebook)
-        self._notebook.add(self._check_ins_tab, text="Check-ins")
+        self._notebook.add(self._check_ins_tab, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.tabs.check_ins', default="Check-ins"))
         self._counselling_tab = tk.Frame(self._notebook)
-        self._notebook.add(self._counselling_tab, text="Counselling")
+        self._notebook.add(self._counselling_tab, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.tabs.counselling', default="Counselling"))
         self._summary_tab = tk.Frame(self._notebook)
-        self._notebook.add(self._summary_tab, text="Summary")
+        self._notebook.add(self._summary_tab, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.tabs.summary', default="Summary"))
 
         self._build_list_tab()
         self._build_check_ins_tab()
@@ -67,35 +69,35 @@ class WellbeingFrame(tk.Frame):
 
         form = tk.Frame(frame, bg="#d5dbdb", padx=6, pady=6)
         form.pack(fill="x")
-        tk.Label(form, text="Student:", bg="#d5dbdb").pack(side="left")
+        tk.Label(form, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.labels.student', default="Student:"), bg="#d5dbdb").pack(side="left")
         self._chk_student = tk.StringVar()
         self._chk_student_cb = ttk.Combobox(form, textvariable=self._chk_student,
                                             values=labels, width=32, state="readonly")
         self._chk_student_cb.pack(side="left", padx=(2, 4))
         tk.Button(form, text="↻", width=2,
                   command=self._reload_students).pack(side="left", padx=(0, 8))
-        tk.Label(form, text="Mood (1–10):", bg="#d5dbdb").pack(side="left")
+        tk.Label(form, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.labels.mood_1_10', default="Mood (1–10):"), bg="#d5dbdb").pack(side="left")
         self._chk_mood = tk.StringVar()
         ttk.Combobox(form, textvariable=self._chk_mood,
                      values=[str(i) for i in range(1, 11)],
                      width=4, state="readonly").pack(side="left", padx=(2, 8))
-        tk.Label(form, text="Notes:", bg="#d5dbdb").pack(side="left")
+        tk.Label(form, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.labels.notes', default="Notes:"), bg="#d5dbdb").pack(side="left")
         self._chk_notes = tk.StringVar()
         tk.Entry(form, textvariable=self._chk_notes, width=40).pack(side="left", padx=2,
                                                                     fill="x", expand=True)
-        tk.Button(form, text="Log check-in", command=self._add_checkin).pack(side="left", padx=4)
+        tk.Button(form, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.log_check_in', default="Log check-in"), command=self._add_checkin).pack(side="left", padx=4)
 
         toolbar = tk.Frame(frame, bg="#ecf0f1", padx=6, pady=4)
         toolbar.pack(fill="x")
-        tk.Label(toolbar, text="Filter by student:", bg="#ecf0f1").pack(side="left")
+        tk.Label(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.labels.filter_by_student', default="Filter by student:"), bg="#ecf0f1").pack(side="left")
         self._chk_filter = tk.StringVar()
         self._chk_filter_cb = ttk.Combobox(toolbar, textvariable=self._chk_filter,
                                            values=["(all)"] + labels, width=32,
                                            state="readonly")
         self._chk_filter_cb.pack(side="left", padx=4)
         self._chk_filter.set("(all)")
-        tk.Button(toolbar, text="Apply", command=self._refresh_checkins).pack(side="left")
-        tk.Button(toolbar, text="Show all",
+        tk.Button(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.apply', default="Apply"), command=self._refresh_checkins).pack(side="left")
+        tk.Button(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.show_all', default="Show all"),
                   command=lambda: (self._chk_filter.set("(all)"),
                                    self._refresh_checkins())).pack(side="left", padx=4)
 
@@ -109,7 +111,7 @@ class WellbeingFrame(tk.Frame):
         self._chk_tree.pack(side="left", fill="both", expand=True, padx=4, pady=4)
         vsb.pack(side="left", fill="y", pady=4)
 
-        self._chk_status = tk.StringVar(value="Ready")
+        self._chk_status = tk.StringVar(value=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.values.ready', default="Ready"))
         tk.Label(frame, textvariable=self._chk_status, anchor="w",
                  bg="#ecf0f1", padx=8).pack(fill="x", side="bottom")
 
@@ -120,7 +122,7 @@ class WellbeingFrame(tk.Frame):
         try:
             self._student_options = self._service.list_student_ids()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.error', default="Error"), str(e))
             return
         self._student_label_to_id = {label: sid for sid, label in self._student_options}
         labels = [label for _sid, label in self._student_options]
@@ -138,13 +140,13 @@ class WellbeingFrame(tk.Frame):
         label = self._chk_student.get().strip()
         sid = self._student_label_to_id.get(label)
         if not sid:
-            messagebox.showwarning("Missing", "Select a student from the dropdown.")
+            messagebox.showwarning(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.missing', default="Missing"), _t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.select_a_student_from_the_dropdown', default="Select a student from the dropdown."))
             return
         mood_raw = self._chk_mood.get().strip()
         try:
             mood = int(mood_raw) if mood_raw else None
         except ValueError:
-            messagebox.showwarning("Invalid", "Mood must be a number 1–10.")
+            messagebox.showwarning(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.invalid', default="Invalid"), _t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.mood_must_be_a_number_1_10', default="Mood must be a number 1–10."))
             return
         logged_by = None
         if self._auth:
@@ -160,7 +162,7 @@ class WellbeingFrame(tk.Frame):
                 logged_by=logged_by,
             )
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.error', default="Error"), str(e))
             return
         self._chk_student.set("")
         self._chk_mood.set("")
@@ -175,7 +177,7 @@ class WellbeingFrame(tk.Frame):
             sid = self._student_label_to_id.get(label) if label and label != "(all)" else None
             rows = self._service.list_checkins(student_id=sid)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.error', default="Error"), str(e))
             return
         for r in rows:
             self._chk_tree.insert("", "end",
@@ -189,7 +191,7 @@ class WellbeingFrame(tk.Frame):
         frame = self._summary_tab
         toolbar = tk.Frame(frame, bg="#d5dbdb", padx=6, pady=4)
         toolbar.pack(fill="x")
-        tk.Button(toolbar, text="Refresh", command=self._refresh_summary).pack(side="left")
+        tk.Button(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.refresh', default="Refresh"), command=self._refresh_summary).pack(side="left")
 
         body = tk.Frame(frame)
         body.pack(fill="both", expand=True, padx=10, pady=10)
@@ -210,7 +212,7 @@ class WellbeingFrame(tk.Frame):
         try:
             data = self._service.summary()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.error', default="Error"), str(e))
             return
         t = self._sum_text
         t.config(state="normal")
@@ -276,19 +278,19 @@ class WellbeingFrame(tk.Frame):
 
         toolbar = tk.Frame(frame, bg="#d5dbdb", padx=5, pady=5)
         toolbar.pack(fill="x")
-        tk.Button(toolbar, text="Refresh",
+        tk.Button(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.refresh', default="Refresh"),
                   command=self.refresh).pack(side="left", padx=3)
-        tk.Button(toolbar, text="Create",
+        tk.Button(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.create', default="Create"),
                   command=self._create_referral).pack(side="left", padx=3)
-        tk.Button(toolbar, text="View",
+        tk.Button(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.view', default="View"),
                   command=self._view_referral).pack(side="left", padx=3)
-        tk.Button(toolbar, text="Update",
+        tk.Button(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.update', default="Update"),
                   command=self._update_referral).pack(side="left", padx=3)
-        tk.Button(toolbar, text="Delete",
+        tk.Button(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.delete', default="Delete"),
                   command=self._delete_referral).pack(side="left", padx=3)
-        tk.Label(toolbar, text="Source:",
+        tk.Label(toolbar, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.labels.source', default="Source:"),
                  bg="#d5dbdb").pack(side="left", padx=(20, 4))
-        self._source_var = tk.StringVar(value="All sources")
+        self._source_var = tk.StringVar(value=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.values.all_sources', default="All sources"))
         cb = ttk.Combobox(toolbar, textvariable=self._source_var,
                           values=list(self._SOURCE_FILTERS.keys()),
                           state="readonly", width=22)
@@ -312,7 +314,7 @@ class WellbeingFrame(tk.Frame):
                         padx=5, pady=5)
         vsb.pack(side="right", fill="y", pady=5)
 
-        self._status_var = tk.StringVar(value="Ready")
+        self._status_var = tk.StringVar(value=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.values.ready', default="Ready"))
         tk.Label(frame, textvariable=self._status_var, anchor="w",
                  bg="#ecf0f1", padx=10).pack(fill="x", side="bottom")
 
@@ -352,7 +354,7 @@ class WellbeingFrame(tk.Frame):
             self._status_var.set(
                 f"{len(records)} record(s) — filter: {choice}")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------- referral CRUD
     # Fields the create/update forms expose (mapped to referral columns).
@@ -363,7 +365,7 @@ class WellbeingFrame(tk.Frame):
         """Return the id of the selected referral row, or None."""
         sel = self._tree.selection()
         if not sel:
-            messagebox.showwarning("No selection", "Select a referral first.")
+            messagebox.showwarning(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.no_selection', default="No selection"), _t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.select_a_referral_first', default="Select a referral first."))
             return None
         return self._tree.item(sel[0], "values")[0]
 
@@ -395,8 +397,8 @@ class WellbeingFrame(tk.Frame):
 
         btns = tk.Frame(dialog)
         btns.grid(row=len(self._REFERRAL_FIELDS), column=0, columnspan=2, pady=8)
-        tk.Button(btns, text="Save", command=_save).pack(side="left", padx=6)
-        tk.Button(btns, text="Cancel",
+        tk.Button(btns, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.save', default="Save"), command=_save).pack(side="left", padx=6)
+        tk.Button(btns, text=_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.buttons.cancel', default="Cancel"),
                   command=dialog.destroy).pack(side="left", padx=6)
 
         dialog.wait_window()
@@ -410,10 +412,10 @@ class WellbeingFrame(tk.Frame):
         try:
             new_id = self._service.create(**data)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.error', default="Error"), str(e))
             return
         self.refresh()
-        messagebox.showinfo("Created", f"Referral #{new_id} created.")
+        messagebox.showinfo(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.created', default="Created"), f"Referral #{new_id} created.")
 
     def _view_referral(self):
         """Show the full record for the selected referral."""
@@ -422,7 +424,7 @@ class WellbeingFrame(tk.Frame):
             return
         record = self._service.get(rid)
         if not record:
-            messagebox.showinfo("Not found", "Referral not found.")
+            messagebox.showinfo(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.not_found', default="Not found"), _t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.referral_not_found', default="Referral not found."))
             return
         detail = "\n".join(f"{k}: {v}" for k, v in record.items())
         messagebox.showinfo(f"Referral #{rid}", detail)
@@ -434,7 +436,7 @@ class WellbeingFrame(tk.Frame):
             return
         record = self._service.get(rid)
         if not record:
-            messagebox.showinfo("Not found", "Referral not found.")
+            messagebox.showinfo(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.not_found', default="Not found"), _t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.referral_not_found', default="Referral not found."))
             return
         data = self._referral_form(f"Update Referral #{rid}", record)
         if not data:
@@ -442,23 +444,23 @@ class WellbeingFrame(tk.Frame):
         try:
             self._service.update(rid, **data)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.error', default="Error"), str(e))
             return
         self.refresh()
-        messagebox.showinfo("Updated", f"Referral #{rid} updated.")
+        messagebox.showinfo(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.updated', default="Updated"), f"Referral #{rid} updated.")
 
     def _delete_referral(self):
         """Delete the selected referral after confirmation."""
         rid = self._selected_referral_id()
         if rid is None:
             return
-        if not messagebox.askyesno("Confirm delete",
+        if not messagebox.askyesno(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.confirm_delete', default="Confirm delete"),
                                    f"Delete referral #{rid}?"):
             return
         try:
             self._service.delete(rid)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.error', default="Error"), str(e))
             return
         self.refresh()
-        messagebox.showinfo("Deleted", f"Referral #{rid} deleted.")
+        messagebox.showinfo(_t('gui.pastoral.wellbeing.student_wellbeing.wellbeing.dialogs.deleted', default="Deleted"), f"Referral #{rid} deleted.")

@@ -11,6 +11,8 @@ and absence-tracking systems:
     threshold (defaults to 75%).
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from contextlib import closing
 import json
 import tkinter as tk
@@ -59,7 +61,7 @@ class AtRiskTabMixin:
 
     def create_at_risk_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="At-Risk Audit")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.tabs.attendance_intel_tab.tabs.at_risk_audit', default="At-Risk Audit"))
 
         ctrl = ttk.Frame(tab)
         ctrl.pack(fill=tk.X, pady=(0, 8))
@@ -68,12 +70,12 @@ class AtRiskTabMixin:
             text=f"Enrolled students with ≥ N absences in the past "
                  f"{ABSENCE_LOOKBACK_DAYS} days, per upcoming exam.",
             style="Header.TLabel").pack(side=tk.LEFT)
-        ttk.Label(ctrl, text="Min absences:").pack(side=tk.LEFT, padx=(20, 4))
+        ttk.Label(ctrl, text=_t('gui.academics.exam_management.tabs.attendance_intel_tab.labels.min_absences', default="Min absences:")).pack(side=tk.LEFT, padx=(20, 4))
         self.at_risk_threshold = tk.IntVar(value=3)
         ttk.Spinbox(ctrl, from_=1, to=30, width=4,
                     textvariable=self.at_risk_threshold,
                     command=self.refresh_at_risk_list).pack(side=tk.LEFT)
-        ttk.Button(ctrl, text="Refresh",
+        ttk.Button(ctrl, text=_t('gui.academics.exam_management.tabs.attendance_intel_tab.buttons.refresh', default="Refresh"),
                    command=self.refresh_at_risk_list).pack(side=tk.RIGHT)
 
         # Added "risk_feed" column so the persisted student_risk_assessment
@@ -164,7 +166,7 @@ class AtRiskTabMixin:
                             values=(dt, mod, display, risk,
                                     abs_n, late_n, last or ""))
         except Exception as exc:
-            messagebox.showerror("At-Risk Audit",
+            messagebox.showerror(_t('gui.academics.exam_management.tabs.attendance_intel_tab.dialogs.at_risk_audit', default="At-Risk Audit"),
                                  f"Failed to load: {exc}", parent=self.root)
 
 
@@ -176,21 +178,21 @@ class ExamEligibilityTabMixin:
 
     def create_eligibility_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="Exam Eligibility")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.tabs.attendance_intel_tab.tabs.exam_eligibility', default="Exam Eligibility"))
 
         ctrl = ttk.Frame(tab)
         ctrl.pack(fill=tk.X, pady=(0, 8))
         ttk.Label(
             ctrl,
-            text="Per-student attendance % on each upcoming exam's module. "
-                 "Below threshold = Not Eligible.",
+            text=_t('gui.academics.exam_management.tabs.attendance_intel_tab.labels.per_student_attendance_on_each_upcoming_exam_s_module_below_thre', default="Per-student attendance % on each upcoming exam's module. "
+                 "Below threshold = Not Eligible."),
             style="Header.TLabel").pack(side=tk.LEFT)
-        ttk.Label(ctrl, text="Threshold %:").pack(side=tk.LEFT, padx=(20, 4))
+        ttk.Label(ctrl, text=_t('gui.academics.exam_management.tabs.attendance_intel_tab.labels.threshold', default="Threshold %:")).pack(side=tk.LEFT, padx=(20, 4))
         self.eligibility_threshold = tk.DoubleVar(value=ELIGIBILITY_THRESHOLD)
         ttk.Spinbox(ctrl, from_=0, to=100, increment=5, width=5,
                     textvariable=self.eligibility_threshold,
                     command=self.refresh_eligibility_list).pack(side=tk.LEFT)
-        ttk.Button(ctrl, text="Refresh",
+        ttk.Button(ctrl, text=_t('gui.academics.exam_management.tabs.attendance_intel_tab.buttons.refresh', default="Refresh"),
                    command=self.refresh_eligibility_list).pack(side=tk.RIGHT)
 
         cols = ("date", "module", "student", "present", "total", "pct", "verdict")
@@ -269,5 +271,5 @@ class ExamEligibilityTabMixin:
                                 verdict),
                         tags=(tag,))
         except Exception as exc:
-            messagebox.showerror("Exam Eligibility",
+            messagebox.showerror(_t('gui.academics.exam_management.tabs.attendance_intel_tab.dialogs.exam_eligibility', default="Exam Eligibility"),
                                  f"Failed to load: {exc}", parent=self.root)

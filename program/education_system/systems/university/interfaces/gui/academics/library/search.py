@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
@@ -73,8 +75,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -121,7 +123,7 @@ def show_search_books(self):
     self.clear_content_area()
 
     search_frame = ttk.Frame(self.notebook)
-    self.notebook.add(search_frame, text="Search Books")
+    self.notebook.add(search_frame, text=_t('gui.academics.library.search.tabs.search_books', default="Search Books"))
 
     # Search criteria frame
     criteria_frame = ttk.LabelFrame(search_frame, text=_("library.frames.search_criteria"))
@@ -175,7 +177,7 @@ def show_search_books(self):
 
     ttk.Button(button_frame, text=_("common.search"), command=self.execute_search).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.clear"), command=self.clear_search).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Save Search", command=self.save_search).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.search.buttons.save_search', default="Save Search"), command=self.save_search).pack(side=tk.LEFT, padx=5)
 
     # Results frame
     results_frame = ttk.LabelFrame(search_frame, text=_("library.frames.search_results"))
@@ -262,7 +264,7 @@ def clear_search(self):
 
 def save_search(self):
     """Save current search criteria"""
-    search_name = simpledialog.askstring("Save Search", "Enter name for this search:")
+    search_name = simpledialog.askstring(_t('gui.academics.library.search.dialogs.save_search', default="Save Search"), _t('gui.academics.library.search.dialogs.enter_name_for_this_search', default="Enter name for this search:"))
     if search_name:
         # Save search criteria (implementation depends on your requirements)
         messagebox.showinfo(_("common.success"), f"Search '{search_name}' saved successfully!")
@@ -295,39 +297,39 @@ def show_advanced_search(self):
         'publisher': tk.StringVar(),
         'year_from': tk.StringVar(),
         'year_to': tk.StringVar(),
-        'status': tk.StringVar(value='Any')
+        'status': tk.StringVar(value=_t('gui.academics.library.search.values.any', default='Any'))
     }
 
     row = 0
-    ttk.Label(criteria_frame, text="Title:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(criteria_frame, text=_t('gui.academics.library.search.labels.title', default="Title:")).grid(row=row, column=0, sticky='w', padx=5, pady=5)
     ttk.Entry(criteria_frame, textvariable=fields['title'], width=40).grid(row=row, column=1, padx=5, pady=5)
 
     row += 1
-    ttk.Label(criteria_frame, text="Author:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(criteria_frame, text=_t('gui.academics.library.search.labels.author', default="Author:")).grid(row=row, column=0, sticky='w', padx=5, pady=5)
     ttk.Entry(criteria_frame, textvariable=fields['author'], width=40).grid(row=row, column=1, padx=5, pady=5)
 
     row += 1
-    ttk.Label(criteria_frame, text="ISBN:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(criteria_frame, text=_t('gui.academics.library.search.labels.isbn', default="ISBN:")).grid(row=row, column=0, sticky='w', padx=5, pady=5)
     ttk.Entry(criteria_frame, textvariable=fields['isbn'], width=40).grid(row=row, column=1, padx=5, pady=5)
 
     row += 1
-    ttk.Label(criteria_frame, text="Category:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(criteria_frame, text=_t('gui.academics.library.search.labels.category', default="Category:")).grid(row=row, column=0, sticky='w', padx=5, pady=5)
     ttk.Entry(criteria_frame, textvariable=fields['category'], width=40).grid(row=row, column=1, padx=5, pady=5)
 
     row += 1
-    ttk.Label(criteria_frame, text="Publisher:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(criteria_frame, text=_t('gui.academics.library.search.labels.publisher', default="Publisher:")).grid(row=row, column=0, sticky='w', padx=5, pady=5)
     ttk.Entry(criteria_frame, textvariable=fields['publisher'], width=40).grid(row=row, column=1, padx=5, pady=5)
 
     row += 1
-    ttk.Label(criteria_frame, text="Year From:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(criteria_frame, text=_t('gui.academics.library.search.labels.year_from', default="Year From:")).grid(row=row, column=0, sticky='w', padx=5, pady=5)
     ttk.Entry(criteria_frame, textvariable=fields['year_from'], width=15).grid(row=row, column=1, sticky='w', padx=5, pady=5)
 
     row += 1
-    ttk.Label(criteria_frame, text="Year To:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(criteria_frame, text=_t('gui.academics.library.search.labels.year_to', default="Year To:")).grid(row=row, column=0, sticky='w', padx=5, pady=5)
     ttk.Entry(criteria_frame, textvariable=fields['year_to'], width=15).grid(row=row, column=1, sticky='w', padx=5, pady=5)
 
     row += 1
-    ttk.Label(criteria_frame, text="Status:").grid(row=row, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(criteria_frame, text=_t('gui.academics.library.search.labels.status', default="Status:")).grid(row=row, column=0, sticky='w', padx=5, pady=5)
     ttk.Combobox(criteria_frame, textvariable=fields['status'],
                 values=['Any', 'Available', 'Checked Out', 'Reserved', 'Maintenance'],
                 width=37).grid(row=row, column=1, padx=5, pady=5)
@@ -403,7 +405,7 @@ def show_advanced_search(self):
             for result in results:
                 results_tree.insert('', 'end', values=result)
 
-            messagebox.showinfo("Search Complete", f"Found {len(results)} matching books")
+            messagebox.showinfo(_t('gui.academics.library.search.dialogs.search_complete', default="Search Complete"), f"Found {len(results)} matching books")
 
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Search failed: {str(e)}")
@@ -419,10 +421,10 @@ def show_advanced_search(self):
 def show_advanced_search_gui(self):
     """Show advanced search interface"""
     search_window = tk.Toplevel(self.master)
-    search_window.title("Advanced Search")
+    search_window.title(_t('gui.academics.library.search.windows.advanced_search', default="Advanced Search"))
     search_window.geometry("800x700")
 
-    ttk.Label(search_window, text="Advanced Book Search",
+    ttk.Label(search_window, text=_t('gui.academics.library.search.labels.advanced_book_search', default="Advanced Book Search"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Search criteria frame
@@ -495,7 +497,7 @@ def show_advanced_search_gui(self):
 
             conn.close()
 
-            messagebox.showinfo("Search Complete", f"Found {len(results)} books")
+            messagebox.showinfo(_t('gui.academics.library.search.dialogs.search_complete', default="Search Complete"), f"Found {len(results)} books")
 
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Search failed: {str(e)}")

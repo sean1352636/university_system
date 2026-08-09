@@ -36,7 +36,7 @@ class ReportsManager:
         reports_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        ttk.Label(reports_frame, text="Reports & Analytics", font=('Arial', 18, 'bold')).pack(pady=(0, 20))
+        ttk.Label(reports_frame, text=_t('gui.shell.document_manager.reports.labels.reports_analytics', default="Reports & Analytics"), font=('Arial', 18, 'bold')).pack(pady=(0, 20))
 
         # Create report categories
         self.create_report_categories(reports_frame)
@@ -44,7 +44,7 @@ class ReportsManager:
     def create_report_categories(self, parent):
         """Create report category sections"""
         # Standard Reports
-        standard_frame = ttk.LabelFrame(parent, text="Standard Reports", padding=15)
+        standard_frame = ttk.LabelFrame(parent, text=_t('gui.shell.document_manager.reports.labels.standard_reports', default="Standard Reports"), padding=15)
         standard_frame.pack(fill='x', pady=(0, 15))
 
         standard_reports = [
@@ -71,16 +71,16 @@ class ReportsManager:
         standard_frame.grid_columnconfigure(1, weight=1)
 
         # Custom Reports
-        custom_frame = ttk.LabelFrame(parent, text="Custom Reports", padding=15)
+        custom_frame = ttk.LabelFrame(parent, text=_t('gui.shell.document_manager.reports.labels.custom_reports', default="Custom Reports"), padding=15)
         custom_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Button(custom_frame, text="🔧 Custom Report Builder",
+        ttk.Button(custom_frame, text=_t('gui.shell.document_manager.reports.buttons.custom_report_builder', default="🔧 Custom Report Builder"),
                   command=self.custom_report_builder, width=30).pack(pady=5)
-        ttk.Label(custom_frame, text="Build custom reports with flexible filters and fields",
+        ttk.Label(custom_frame, text=_t('gui.shell.document_manager.reports.labels.build_custom_reports_with_flexible_filters_and_fields', default="Build custom reports with flexible filters and fields"),
                  font=('Arial', 9), foreground='gray').pack()
 
         # Export Options
-        export_frame = ttk.LabelFrame(parent, text="Export Options", padding=15)
+        export_frame = ttk.LabelFrame(parent, text=_t('gui.shell.document_manager.reports.labels.export_options', default="Export Options"), padding=15)
         export_frame.pack(fill='x')
 
         export_buttons = [
@@ -120,7 +120,7 @@ class ReportsManager:
 
             # Create report window
             report_window = tk.Toplevel(self.root)
-            report_window.title("Compliance Report")
+            report_window.title(_t('gui.shell.document_manager.reports.windows.compliance_report', default="Compliance Report"))
             report_window.geometry("800x600")
 
             # Report frame
@@ -132,7 +132,7 @@ class ReportsManager:
             ttk.Label(report_frame, text=title_text, font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Summary stats
-            summary_frame = ttk.LabelFrame(report_frame, text="Summary", padding=10)
+            summary_frame = ttk.LabelFrame(report_frame, text=_t('gui.shell.document_manager.reports.labels.summary', default="Summary"), padding=10)
             summary_frame.pack(fill='x', pady=(0, 15))
 
             total_students = len(compliance_data)
@@ -144,7 +144,7 @@ class ReportsManager:
             ttk.Label(summary_frame, text=f"Compliance Rate: {compliance_rate:.1f}%").grid(row=0, column=2, sticky='w', padx=10)
 
             # Detailed report
-            details_frame = ttk.LabelFrame(report_frame, text="Detailed Report", padding=10)
+            details_frame = ttk.LabelFrame(report_frame, text=_t('gui.shell.document_manager.reports.labels.detailed_report', default="Detailed Report"), padding=10)
             details_frame.pack(fill='both', expand=True, pady=(0, 15))
 
             # Create treeview for detailed data
@@ -197,18 +197,18 @@ class ReportsManager:
                             writer = csv.writer(f)
                             writer.writerow(report_columns)
                             writer.writerows(report_data)
-                        messagebox.showinfo("Success", f"Report exported to:\n{fp}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.success', default="Success"), f"Report exported to:\n{fp}")
                     except Exception as ex:
-                        messagebox.showerror("Error", f"Failed to export: {ex}")
+                        messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to export: {ex}")
 
-            ttk.Button(button_frame, text="📧 Send to Admin",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.send_to_admin', default="📧 Send to Admin"),
                       command=lambda: self.gui.send_report_to_admin("Compliance Report", report_columns, report_data)).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="📄 Export to CSV",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.export_to_csv_variant_2', default="📄 Export to CSV"),
                       command=export_compliance_csv).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"), command=report_window.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Report Error", f"Failed to generate compliance report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.report_error', default="Report Error"), f"Failed to generate compliance report: {str(e)}")
 
     def generate_status_report(self):
         """Generate document status distribution report"""
@@ -228,13 +228,13 @@ class ReportsManager:
 
             # Create report window
             report_window = tk.Toplevel(self.root)
-            report_window.title("Document Status Report")
+            report_window.title(_t('gui.shell.document_manager.reports.windows.document_status_report', default="Document Status Report"))
             report_window.geometry("850x600")
 
             main_frame = ttk.Frame(report_window, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Document Status Distribution",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.reports.labels.document_status_distribution', default="Document Status Distribution"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Create treeview for results
@@ -255,15 +255,15 @@ class ReportsManager:
 
             report_columns = ('Status', 'Count')
             report_data = [tuple(row) for row in results]
-            ttk.Button(button_frame, text="📧 Email Report to Admin",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.email_report_to_admin', default="📧 Email Report to Admin"),
                       command=lambda: self.gui.send_report_to_admin(
                           "Document Status Report", report_columns, report_data
                       )).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"),
                       command=report_window.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate status report: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to generate status report: {e}")
 
     def generate_expiry_report(self):
         """Generate report of documents expiring soon"""
@@ -295,13 +295,13 @@ class ReportsManager:
 
             # Create report window
             report_window = tk.Toplevel(self.root)
-            report_window.title("Document Expiry Report")
+            report_window.title(_t('gui.shell.document_manager.reports.windows.document_expiry_report', default="Document Expiry Report"))
             report_window.geometry("1000x600")
 
             main_frame = ttk.Frame(report_window, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Documents Expiring Within 30 Days",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.reports.labels.documents_expiring_within_30_days', default="Documents Expiring Within 30 Days"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Create treeview for results
@@ -343,28 +343,28 @@ class ReportsManager:
             report_columns = ('Doc ID', 'Student ID', 'Student Name',
                               'Document Type', 'Upload Date', 'Expiry Date', 'Days Left')
             report_data = [tuple(row) for row in results]
-            ttk.Button(button_frame, text="📧 Email Report to Admin",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.email_report_to_admin', default="📧 Email Report to Admin"),
                       command=lambda: self.gui.send_report_to_admin(
                           "Document Expiry Report", report_columns, report_data
                       )).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"),
                       command=report_window.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate expiry report: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to generate expiry report: {e}")
 
     def generate_monthly_summary(self):
         """Generate monthly summary report"""
         try:
             # Create dialog
             report_window = tk.Toplevel(self.root)
-            report_window.title("Monthly Summary Report")
+            report_window.title(_t('gui.shell.document_manager.reports.windows.monthly_summary_report', default="Monthly Summary Report"))
             report_window.geometry("1000x700")
 
             main_frame = ttk.Frame(report_window, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Monthly Summary Report",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.reports.labels.monthly_summary_report', default="Monthly Summary Report"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             conn = get_connection()
@@ -383,7 +383,7 @@ class ReportsManager:
             stats = cursor.fetchone()
 
             # Stats display
-            stats_frame = ttk.LabelFrame(main_frame, text="This Month's Statistics", padding=15)
+            stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.reports.labels.this_month_s_statistics', default="This Month's Statistics"), padding=15)
             stats_frame.pack(fill='x', pady=(0, 15))
 
             labels = [
@@ -412,7 +412,7 @@ class ReportsManager:
             conn.close()
 
             # Monthly table
-            table_frame = ttk.LabelFrame(main_frame, text="Last 12 Months", padding=15)
+            table_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.reports.labels.last_12_months', default="Last 12 Months"), padding=15)
             table_frame.pack(fill='both', expand=True)
 
             columns = ('Month', 'Total Uploads')
@@ -449,9 +449,9 @@ class ReportsManager:
                             writer.writerow([])
                             writer.writerow(['Month', 'Total Uploads'])
                             writer.writerows([tuple(row) for row in monthly_data])
-                        messagebox.showinfo("Success", f"Report exported to:\n{filename}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.success', default="Success"), f"Report exported to:\n{filename}")
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to export: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to export: {e}")
 
             button_frame = ttk.Frame(report_window)
             button_frame.pack(pady=10)
@@ -471,27 +471,27 @@ class ReportsManager:
                     "Monthly Summary Report", report_columns, report_data
                 )
 
-            ttk.Button(button_frame, text="📧 Email Report to Admin",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.email_report_to_admin', default="📧 Email Report to Admin"),
                       command=email_monthly_summary).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Export to CSV",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.export_to_csv', default="Export to CSV"),
                       command=export_summary).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"),
                       command=report_window.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate monthly summary: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to generate monthly summary: {e}")
 
     def generate_department_analysis(self):
         """Generate department analysis report"""
         try:
             report_window = tk.Toplevel(self.root)
-            report_window.title("Department Analysis Report")
+            report_window.title(_t('gui.shell.document_manager.reports.windows.department_analysis_report', default="Department Analysis Report"))
             report_window.geometry("1000x700")
 
             main_frame = ttk.Frame(report_window, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Department Analysis Report",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.reports.labels.department_analysis_report', default="Department Analysis Report"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             conn = get_connection()
@@ -546,18 +546,18 @@ class ReportsManager:
                             writer = csv.writer(f)
                             writer.writerow(columns)
                             writer.writerows([tuple(r) for r in dept_data])
-                        messagebox.showinfo("Success", f"Report exported to:\n{filename}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.success', default="Success"), f"Report exported to:\n{filename}")
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to export: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to export: {e}")
 
             button_frame = ttk.Frame(report_window)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="Export to CSV", command=export_dept_analysis).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.export_to_csv', default="Export to CSV"), command=export_dept_analysis).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"), command=report_window.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate department analysis: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to generate department analysis: {e}")
 
     def generate_student_progress_report(self):
         """
@@ -565,7 +565,7 @@ class ReportsManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Student Progress Report")
+            dialog.title(_t('gui.shell.document_manager.reports.windows.student_progress_report', default="Student Progress Report"))
             dialog.geometry("900x750")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -574,14 +574,14 @@ class ReportsManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Generate Student Progress Report",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.reports.labels.generate_student_progress_report', default="Generate Student Progress Report"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Student selection
-            student_frame = ttk.LabelFrame(main_frame, text="Select Student", padding=10)
+            student_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.reports.labels.select_student', default="Select Student"), padding=10)
             student_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(student_frame, text="Student:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(student_frame, text=_t('gui.shell.document_manager.reports.labels.student', default="Student:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
             student_combo = ttk.Combobox(student_frame, width=40, state='readonly')
             student_combo.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
@@ -592,7 +592,7 @@ class ReportsManager:
             student_frame.grid_columnconfigure(1, weight=1)
 
             # Report options
-            options_frame = ttk.LabelFrame(main_frame, text="Report Options", padding=10)
+            options_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.reports.labels.report_options', default="Report Options"), padding=10)
             options_frame.pack(fill='x', pady=(0, 15))
 
             include_docs = tk.BooleanVar(value=True)
@@ -600,13 +600,13 @@ class ReportsManager:
             include_requirements = tk.BooleanVar(value=True)
             include_notifications = tk.BooleanVar(value=False)
 
-            ttk.Checkbutton(options_frame, text="Include Documents Summary", variable=include_docs).pack(anchor='w', pady=3)
-            ttk.Checkbutton(options_frame, text="Include Workflow Status", variable=include_workflow).pack(anchor='w', pady=3)
-            ttk.Checkbutton(options_frame, text="Include Requirements Check", variable=include_requirements).pack(anchor='w', pady=3)
-            ttk.Checkbutton(options_frame, text="Include Notifications", variable=include_notifications).pack(anchor='w', pady=3)
+            ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.reports.buttons.include_documents_summary', default="Include Documents Summary"), variable=include_docs).pack(anchor='w', pady=3)
+            ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.reports.buttons.include_workflow_status', default="Include Workflow Status"), variable=include_workflow).pack(anchor='w', pady=3)
+            ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.reports.buttons.include_requirements_check', default="Include Requirements Check"), variable=include_requirements).pack(anchor='w', pady=3)
+            ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.reports.buttons.include_notifications', default="Include Notifications"), variable=include_notifications).pack(anchor='w', pady=3)
 
             # Report preview
-            preview_frame = ttk.LabelFrame(main_frame, text="Report Preview", padding=10)
+            preview_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.reports.labels.report_preview', default="Report Preview"), padding=10)
             preview_frame.pack(fill='both', expand=True, pady=(0, 15))
 
             preview_text = tk.Text(preview_frame, wrap=tk.WORD, font=('Courier', 9))
@@ -618,7 +618,7 @@ class ReportsManager:
 
             def generate_report():
                 if not student_combo.get():
-                    messagebox.showerror("Error", "Please select a student")
+                    messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), _t('gui.shell.document_manager.reports.dialogs.please_select_a_student', default="Please select a student"))
                     return
 
                 student_id = student_combo.get().split(' - ')[0]
@@ -635,7 +635,7 @@ class ReportsManager:
                     student_info = cursor.fetchone()
 
                     if not student_info:
-                        messagebox.showerror("Error", "Student not found")
+                        messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), _t('gui.shell.document_manager.reports.dialogs.student_not_found', default="Student not found"))
                         return
 
                     report = []
@@ -773,11 +773,11 @@ class ReportsManager:
                     })
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to generate report: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
             def export_report():
                 if not preview_text.get('1.0', tk.END).strip():
-                    messagebox.showwarning("Warning", "Please generate report first")
+                    messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.reports.dialogs.please_generate_report_first', default="Please generate report first"))
                     return
 
                 file_path = filedialog.asksaveasfilename(
@@ -790,9 +790,9 @@ class ReportsManager:
                     try:
                         with open(file_path, 'w', encoding='utf-8') as f:
                             f.write(preview_text.get('1.0', tk.END))
-                        messagebox.showinfo("Success", f"Report exported to:\n{file_path}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.success', default="Success"), f"Report exported to:\n{file_path}")
                     except Exception as e:
-                        messagebox.showerror("Error", f"Failed to export report: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to export report: {e}")
 
             # Action buttons
             action_frame = ttk.Frame(main_frame)
@@ -801,7 +801,7 @@ class ReportsManager:
             def email_progress_report():
                 content = preview_text.get('1.0', tk.END).strip()
                 if not content:
-                    messagebox.showwarning("Warning", "Please generate report first")
+                    messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.reports.dialogs.please_generate_report_first', default="Please generate report first"))
                     return
                 report_columns = ('Report Content',)
                 report_data = [(line,) for line in content.split('\n') if line.strip()]
@@ -809,17 +809,17 @@ class ReportsManager:
                     "Student Progress Report", report_columns, report_data
                 )
 
-            ttk.Button(action_frame, text="Generate Report",
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.reports.buttons.generate_report', default="Generate Report"),
                       command=generate_report).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Export Report",
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.reports.buttons.export_report', default="Export Report"),
                       command=export_report).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="📧 Email Report to Admin",
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.reports.buttons.email_report_to_admin', default="📧 Email Report to Admin"),
                       command=email_progress_report).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Close",
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"),
                       command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open report generator: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to open report generator: {e}")
 
     def custom_report_builder(self):
         """
@@ -827,7 +827,7 @@ class ReportsManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Custom Report Builder")
+            dialog.title(_t('gui.shell.document_manager.reports.windows.custom_report_builder', default="Custom Report Builder"))
             dialog.geometry("1000x800")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -836,7 +836,7 @@ class ReportsManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Custom Report Builder",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.reports.labels.custom_report_builder', default="Custom Report Builder"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Left panel - Configuration
@@ -844,32 +844,32 @@ class ReportsManager:
             config_panel.pack(side='left', fill='both', expand=True, padx=(0, 10))
 
             # Report type
-            type_frame = ttk.LabelFrame(config_panel, text="Report Type", padding=10)
+            type_frame = ttk.LabelFrame(config_panel, text=_t('gui.shell.document_manager.reports.labels.report_type', default="Report Type"), padding=10)
             type_frame.pack(fill='x', pady=(0, 10))
 
-            report_type = tk.StringVar(value="documents")
-            ttk.Radiobutton(type_frame, text="Documents Summary", variable=report_type, value="documents").pack(anchor='w', pady=3)
-            ttk.Radiobutton(type_frame, text="Student Overview", variable=report_type, value="students").pack(anchor='w', pady=3)
-            ttk.Radiobutton(type_frame, text="Workflow Analytics", variable=report_type, value="workflow").pack(anchor='w', pady=3)
-            ttk.Radiobutton(type_frame, text="Document Types", variable=report_type, value="doc_types").pack(anchor='w', pady=3)
-            ttk.Radiobutton(type_frame, text="Custom Query", variable=report_type, value="custom").pack(anchor='w', pady=3)
+            report_type = tk.StringVar(value=_t('gui.shell.document_manager.reports.values.documents', default="documents"))
+            ttk.Radiobutton(type_frame, text=_t('gui.shell.document_manager.reports.buttons.documents_summary', default="Documents Summary"), variable=report_type, value="documents").pack(anchor='w', pady=3)
+            ttk.Radiobutton(type_frame, text=_t('gui.shell.document_manager.reports.buttons.student_overview', default="Student Overview"), variable=report_type, value="students").pack(anchor='w', pady=3)
+            ttk.Radiobutton(type_frame, text=_t('gui.shell.document_manager.reports.buttons.workflow_analytics', default="Workflow Analytics"), variable=report_type, value="workflow").pack(anchor='w', pady=3)
+            ttk.Radiobutton(type_frame, text=_t('gui.shell.document_manager.reports.buttons.document_types', default="Document Types"), variable=report_type, value="doc_types").pack(anchor='w', pady=3)
+            ttk.Radiobutton(type_frame, text=_t('gui.shell.document_manager.reports.buttons.custom_query', default="Custom Query"), variable=report_type, value="custom").pack(anchor='w', pady=3)
 
             # Filters
-            filter_frame = ttk.LabelFrame(config_panel, text="Filters", padding=10)
+            filter_frame = ttk.LabelFrame(config_panel, text=_t('gui.shell.document_manager.reports.labels.filters', default="Filters"), padding=10)
             filter_frame.pack(fill='x', pady=(0, 10))
 
-            ttk.Label(filter_frame, text="Date Range:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(filter_frame, text=_t('gui.shell.document_manager.reports.labels.date_range', default="Date Range:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
             date_range = ttk.Combobox(filter_frame, values=['All Time', 'Last 7 Days', 'Last 30 Days', 'Last 90 Days', 'This Year'], width=20, state='readonly')
             date_range.set('All Time')
             date_range.grid(row=0, column=1, padx=5, pady=5, sticky='w')
 
-            ttk.Label(filter_frame, text="Status:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(filter_frame, text=_t('gui.shell.document_manager.reports.labels.status', default="Status:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
             status_filter = ttk.Combobox(filter_frame, values=['All', 'Pending', 'Approved', 'Rejected', 'Verified'], width=20, state='readonly')
             status_filter.set('All')
             status_filter.grid(row=1, column=1, padx=5, pady=5, sticky='w')
 
             # Fields to include
-            fields_frame = ttk.LabelFrame(config_panel, text="Fields to Include", padding=10)
+            fields_frame = ttk.LabelFrame(config_panel, text=_t('gui.shell.document_manager.reports.labels.fields_to_include', default="Fields to Include"), padding=10)
             fields_frame.pack(fill='both', expand=True)
 
             fields_list = tk.Listbox(fields_frame, selectmode='multiple', height=10)
@@ -902,7 +902,7 @@ class ReportsManager:
             preview_panel = ttk.Frame(main_frame)
             preview_panel.pack(side='right', fill='both', expand=True)
 
-            preview_label = ttk.Label(preview_panel, text="Report Preview", font=('Arial', 12, 'bold'))
+            preview_label = ttk.Label(preview_panel, text=_t('gui.shell.document_manager.reports.labels.report_preview', default="Report Preview"), font=('Arial', 12, 'bold'))
             preview_label.pack(pady=(0, 10))
 
             # Preview table
@@ -933,7 +933,7 @@ class ReportsManager:
                     selected_fields = [fields_list.get(i) for i in fields_list.curselection()]
 
                     if not selected_fields and rtype != "custom":
-                        messagebox.showwarning("Warning", "Please select at least one field")
+                        messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.reports.dialogs.please_select_at_least_one_field', default="Please select at least one field"))
                         return
 
                     # Clear preview
@@ -972,7 +972,7 @@ class ReportsManager:
                         WHERE is_active = 1
                         '''
                     else:
-                        messagebox.showinfo("Info", "Custom query mode - enter SQL manually")
+                        messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.info', default="Info"), _t('gui.shell.document_manager.reports.dialogs.custom_query_mode_enter_sql_manually', default="Custom query mode - enter SQL manually"))
                         return
 
                     # Apply filters using parameterized queries
@@ -1019,7 +1019,7 @@ class ReportsManager:
 
                         stats_label.config(text=f"Total Records: {len(results)}")
                     else:
-                        stats_label.config(text="No records found")
+                        stats_label.config(text=_t('gui.shell.document_manager.reports.text.no_records_found', default="No records found"))
 
                     self.gui.log_event('generate', 'custom_report', None, {
                         'report_type': rtype,
@@ -1027,11 +1027,11 @@ class ReportsManager:
                     })
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to generate report: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
             def export_custom_report():
                 if len(preview_tree.get_children()) == 0:
-                    messagebox.showwarning("Warning", "Please generate report first")
+                    messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.reports.dialogs.please_generate_report_first', default="Please generate report first"))
                     return
 
                 file_path = filedialog.asksaveasfilename(
@@ -1050,9 +1050,9 @@ class ReportsManager:
                             for item in preview_tree.get_children():
                                 writer.writerow(preview_tree.item(item)['values'])
 
-                        messagebox.showinfo("Success", f"Report exported to:\n{file_path}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.success', default="Success"), f"Report exported to:\n{file_path}")
                     except Exception as e:
-                        messagebox.showerror("Error", f"Failed to export: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to export: {e}")
 
             # Bottom buttons
             button_frame = ttk.Frame(config_panel)
@@ -1060,7 +1060,7 @@ class ReportsManager:
 
             def email_custom_report():
                 if len(preview_tree.get_children()) == 0:
-                    messagebox.showwarning("Warning", "Please generate report first")
+                    messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.reports.dialogs.please_generate_report_first', default="Please generate report first"))
                     return
                 report_columns = tuple(preview_tree['columns'])
                 report_data = [
@@ -1071,17 +1071,17 @@ class ReportsManager:
                     "Custom Report", report_columns, report_data
                 )
 
-            ttk.Button(button_frame, text="Generate",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.generate', default="Generate"),
                       command=generate_custom_report).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Export",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.export', default="Export"),
                       command=export_custom_report).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="📧 Email to Admin",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.email_to_admin', default="📧 Email to Admin"),
                       command=email_custom_report).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"),
                       command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open custom report builder: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to open custom report builder: {e}")
 
     def student_document_summary(self):
         """Generate student document summary"""
@@ -1090,26 +1090,26 @@ class ReportsManager:
 
         # Create summary window
         summary_window = tk.Toplevel(self.root)
-        summary_window.title("Student Document Summary")
+        summary_window.title(_t('gui.shell.document_manager.reports.windows.student_document_summary', default="Student Document Summary"))
         summary_window.geometry("800x600")
         summary_window.transient(self.root)
         summary_window.grab_set()
 
-        ttk.Label(summary_window, text="Student Document Summary",
+        ttk.Label(summary_window, text=_t('gui.shell.document_manager.reports.labels.student_document_summary', default="Student Document Summary"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Student selection
         select_frame = ttk.Frame(summary_window)
         select_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Label(select_frame, text="Student ID:").pack(side='left', padx=5)
+        ttk.Label(select_frame, text=_t('gui.shell.document_manager.reports.labels.student_id', default="Student ID:")).pack(side='left', padx=5)
         student_entry = ttk.Entry(select_frame, width=20)
         student_entry.pack(side='left', padx=5)
 
         def generate_summary():
             student_id = student_entry.get().strip()
             if not student_id:
-                messagebox.showwarning("Input Required", "Please enter a student ID")
+                messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.input_required', default="Input Required"), _t('gui.shell.document_manager.reports.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
                 return
 
             try:
@@ -1139,7 +1139,7 @@ class ReportsManager:
                     documents = cursor.fetchall()
 
                 if stats[0] == 0:
-                    messagebox.showinfo("No Documents", f"No documents found for student {student_id}")
+                    messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.no_documents', default="No Documents"), f"No documents found for student {student_id}")
                     return
 
                 # Create summary display
@@ -1184,21 +1184,21 @@ DOCUMENT LIST
                     if file_path:
                         with open(file_path, 'w') as f:
                             f.write(summary_content)
-                        messagebox.showinfo("Export Successful", f"Summary exported to:\n{file_path}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.export_successful', default="Export Successful"), f"Summary exported to:\n{file_path}")
 
-                ttk.Button(summary_window, text="Export to File",
+                ttk.Button(summary_window, text=_t('gui.shell.document_manager.reports.buttons.export_to_file', default="Export to File"),
                           command=export_summary).pack(pady=5)
 
                 self.gui.log_event('generate', 'student_summary',
                               details=f'Generated summary for student {student_id}')
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to generate summary: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.reports.dialogs.error', default="Error"), f"Failed to generate summary: {e}")
 
-        ttk.Button(select_frame, text="Generate Summary",
+        ttk.Button(select_frame, text=_t('gui.shell.document_manager.reports.buttons.generate_summary', default="Generate Summary"),
                   command=generate_summary).pack(side='left', padx=5)
 
-        ttk.Button(summary_window, text="Close",
+        ttk.Button(summary_window, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"),
                   command=summary_window.destroy).pack(pady=10)
 
     def student_compliance_report(self):
@@ -1213,12 +1213,12 @@ DOCUMENT LIST
 
         # Create statistics window
         stats_window = tk.Toplevel(self.root)
-        stats_window.title("Document Statistics Report")
+        stats_window.title(_t('gui.shell.document_manager.reports.windows.document_statistics_report', default="Document Statistics Report"))
         stats_window.geometry("1000x750")
         stats_window.transient(self.root)
         stats_window.grab_set()
 
-        ttk.Label(stats_window, text="Document Statistics Report",
+        ttk.Label(stats_window, text=_t('gui.shell.document_manager.reports.labels.document_statistics_report', default="Document Statistics Report"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Create notebook
@@ -1227,7 +1227,7 @@ DOCUMENT LIST
 
         # Tab 1: Overall Statistics
         overall_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(overall_frame, text="Overall Stats")
+        notebook.add(overall_frame, text=_t('gui.shell.document_manager.reports.tabs.overall_stats', default="Overall Stats"))
 
         try:
             with get_connection() as conn:
@@ -1313,9 +1313,9 @@ Total Storage Used:           {stats[8]/1024/1024/1024:.2f} GB
 
         # Tab 2: Charts (Placeholder)
         charts_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(charts_frame, text="Visual Charts")
+        notebook.add(charts_frame, text=_t('gui.shell.document_manager.reports.tabs.visual_charts', default="Visual Charts"))
 
-        ttk.Label(charts_frame, text="Visual charts would be displayed here using matplotlib",
+        ttk.Label(charts_frame, text=_t('gui.shell.document_manager.reports.labels.visual_charts_would_be_displayed_here_using_matplotlib', default="Visual charts would be displayed here using matplotlib"),
                  font=("Arial", 11)).pack(pady=20)
 
         # Export button
@@ -1328,11 +1328,11 @@ Total Storage Used:           {stats[8]/1024/1024/1024:.2f} GB
             if file_path:
                 with open(file_path, 'w') as f:
                     f.write(report_content)
-                messagebox.showinfo("Export Successful", f"Statistics exported to:\n{file_path}")
+                messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.export_successful', default="Export Successful"), f"Statistics exported to:\n{file_path}")
 
-        ttk.Button(stats_window, text="Export Report",
+        ttk.Button(stats_window, text=_t('gui.shell.document_manager.reports.buttons.export_report', default="Export Report"),
                   command=export_stats).pack(pady=5)
-        ttk.Button(stats_window, text="Close",
+        ttk.Button(stats_window, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"),
                   command=stats_window.destroy).pack(pady=5)
 
         self.gui.log_event('generate', 'statistics_report', details='Generated document statistics report')
@@ -1344,27 +1344,27 @@ Total Storage Used:           {stats[8]/1024/1024/1024:.2f} GB
 
         # Create scheduled reports window
         reports_window = tk.Toplevel(self.root)
-        reports_window.title("Scheduled Reports")
+        reports_window.title(_t('gui.shell.document_manager.reports.windows.scheduled_reports', default="Scheduled Reports"))
         reports_window.geometry("900x650")
         reports_window.transient(self.root)
         reports_window.grab_set()
 
-        ttk.Label(reports_window, text="Scheduled Reports Management",
+        ttk.Label(reports_window, text=_t('gui.shell.document_manager.reports.labels.scheduled_reports_management', default="Scheduled Reports Management"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Reports list
-        list_frame = ttk.LabelFrame(reports_window, text="Scheduled Reports", padding=10)
+        list_frame = ttk.LabelFrame(reports_window, text=_t('gui.shell.document_manager.reports.labels.scheduled_reports', default="Scheduled Reports"), padding=10)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         tree = ttk.Treeview(list_frame,
                            columns=('Name', 'Type', 'Schedule', 'Recipients', 'Last Run', 'Status'),
                            show='headings', height=15)
-        tree.heading('Name', text='Report Name')
-        tree.heading('Type', text='Report Type')
-        tree.heading('Schedule', text='Schedule')
-        tree.heading('Recipients', text='Recipients')
-        tree.heading('Last Run', text='Last Run')
-        tree.heading('Status', text='Status')
+        tree.heading('Name', text=_t('gui.shell.document_manager.reports.headings.report_name', default='Report Name'))
+        tree.heading('Type', text=_t('gui.shell.document_manager.reports.headings.report_type', default='Report Type'))
+        tree.heading('Schedule', text=_t('gui.shell.document_manager.reports.headings.schedule', default='Schedule'))
+        tree.heading('Recipients', text=_t('gui.shell.document_manager.reports.headings.recipients', default='Recipients'))
+        tree.heading('Last Run', text=_t('gui.shell.document_manager.reports.headings.last_run', default='Last Run'))
+        tree.heading('Status', text=_t('gui.shell.document_manager.reports.headings.status', default='Status'))
 
         tree.column('Name', width=150)
         tree.column('Type', text='Report Type', width=120)
@@ -1394,45 +1394,45 @@ Total Storage Used:           {stats[8]/1024/1024/1024:.2f} GB
         button_frame.pack(fill='x', padx=10, pady=10)
 
         def add_schedule():
-            messagebox.showinfo("Add Schedule",
-                              "Feature to add new scheduled report.\n\n"
+            messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.add_schedule', default="Add Schedule"),
+                              _t('gui.shell.document_manager.reports.dialogs.feature_to_add_new_scheduled_report_would_configure_report_type', default="Feature to add new scheduled report.\n\n"
                               "Would configure:\n"
                               "- Report type\n"
                               "- Schedule (daily/weekly/monthly)\n"
                               "- Recipients\n"
-                              "- Delivery method")
+                              "- Delivery method"))
 
         def edit_schedule():
             selected = tree.selection()
             if not selected:
-                messagebox.showwarning("No Selection", "Please select a scheduled report")
+                messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.reports.dialogs.please_select_a_scheduled_report', default="Please select a scheduled report"))
                 return
-            messagebox.showinfo("Edit Schedule", "Edit selected scheduled report configuration")
+            messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.edit_schedule', default="Edit Schedule"), _t('gui.shell.document_manager.reports.dialogs.edit_selected_scheduled_report_configuration', default="Edit selected scheduled report configuration"))
 
         def delete_schedule():
             selected = tree.selection()
             if not selected:
-                messagebox.showwarning("No Selection", "Please select a scheduled report")
+                messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.reports.dialogs.please_select_a_scheduled_report', default="Please select a scheduled report"))
                 return
-            if messagebox.askyesno("Confirm Delete", "Delete selected scheduled report?"):
+            if messagebox.askyesno(_t('gui.shell.document_manager.reports.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.document_manager.reports.dialogs.delete_selected_scheduled_report', default="Delete selected scheduled report?")):
                 tree.delete(selected)
 
         def run_now():
             selected = tree.selection()
             if not selected:
-                messagebox.showwarning("No Selection", "Please select a scheduled report")
+                messagebox.showwarning(_t('gui.shell.document_manager.reports.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.reports.dialogs.please_select_a_scheduled_report', default="Please select a scheduled report"))
                 return
-            messagebox.showinfo("Run Now", "Report generation started. You will receive it via email shortly.")
+            messagebox.showinfo(_t('gui.shell.document_manager.reports.dialogs.run_now', default="Run Now"), _t('gui.shell.document_manager.reports.dialogs.report_generation_started_you_will_receive_it_via_email_shortly', default="Report generation started. You will receive it via email shortly."))
 
-        ttk.Button(button_frame, text="Add Schedule",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.add_schedule', default="Add Schedule"),
                   command=add_schedule).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Edit",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.edit', default="Edit"),
                   command=edit_schedule).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Delete",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.delete', default="Delete"),
                   command=delete_schedule).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Run Now",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.run_now', default="Run Now"),
                   command=run_now).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.reports.buttons.close', default="Close"),
                   command=reports_window.destroy).pack(side='right', padx=5)
 
         self.gui.log_event('view', 'scheduled_reports', details='Viewed scheduled reports management')

@@ -36,8 +36,8 @@ os.makedirs(os.path.dirname(log_path), exist_ok=True)
 logger = configure_logging(name=__name__)
 warnings.filterwarnings("ignore")
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Use centralized auth management
 from education_system.systems.university.infrastructure.shared_context import (

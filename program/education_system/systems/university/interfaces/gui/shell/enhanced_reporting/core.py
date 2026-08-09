@@ -14,9 +14,11 @@ After modularisation this file contains only:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 # ── shared imports (also satisfy wrapper-file ``from .core import …``) ──────
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection  # noqa: F401
-from education_system.systems.university.infrastructure import paths  # noqa: F401
+from education_system import paths  # noqa: F401
 
 import logging
 import os
@@ -789,7 +791,7 @@ class ReportingSystemGUI(
             self._status_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
             self._status_frame.columnconfigure(1, weight=1)
 
-            self.status_text = ttk.Label(self._status_frame, text="Ready", style='Info.TLabel')
+            self.status_text = ttk.Label(self._status_frame, text=_t('gui.shell.enhanced_reporting.core.labels.ready', default="Ready"), style='Info.TLabel')
             self.status_text.grid(row=0, column=0, sticky=tk.W)
 
             self.progress = ttk.Progressbar(self._status_frame, mode='indeterminate')
@@ -809,9 +811,9 @@ class ReportingSystemGUI(
         config_actions_bottom = ttk.Frame(config_display_frame)
         config_actions_bottom.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(10, 0))
 
-        ttk.Button(config_actions_bottom, text="Reload Config",
+        ttk.Button(config_actions_bottom, text=_t('gui.shell.enhanced_reporting.core.buttons.reload_config', default="Reload Config"),
                   command=self.reload_config).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(config_actions_bottom, text="Save Config",
+        ttk.Button(config_actions_bottom, text=_t('gui.shell.enhanced_reporting.core.buttons.save_config', default="Save Config"),
                   command=self.save_config).pack(side=tk.LEFT, padx=(0, 5))
 
 
@@ -863,13 +865,13 @@ class TemplateDialog:
         ttk.Entry(basic_frame, textvariable=self.description_var).grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(10, 0), pady=(0, 5))
 
         ttk.Label(basic_frame, text=_t("enhanced_reporting.template_dialog.security_level")).grid(row=2, column=0, sticky=tk.W, pady=(0, 5))
-        self.security_var = tk.StringVar(value="normal")
+        self.security_var = tk.StringVar(value=_t('gui.shell.enhanced_reporting.core.values.normal', default="normal"))
         security_combo = ttk.Combobox(basic_frame, textvariable=self.security_var,
                                      values=["normal", "confidential", "restricted"], state="readonly")
         security_combo.grid(row=2, column=1, sticky=(tk.W, tk.E), padx=(10, 0), pady=(0, 5))
 
         ttk.Label(basic_frame, text=_t("enhanced_reporting.template_dialog.visualization")).grid(row=3, column=0, sticky=tk.W, pady=(0, 5))
-        self.viz_var = tk.StringVar(value="standard")
+        self.viz_var = tk.StringVar(value=_t('gui.shell.enhanced_reporting.core.values.standard', default="standard"))
         viz_combo = ttk.Combobox(basic_frame, textvariable=self.viz_var,
                                 values=["standard", "advanced", "interactive"], state="readonly")
         viz_combo.grid(row=3, column=1, sticky=(tk.W, tk.E), padx=(10, 0), pady=(0, 5))
@@ -1018,14 +1020,14 @@ class TemplateDialog:
                 save_template_dict(template_data)
 
             self.result = template_data
-            messagebox.showinfo("Success", f"Template '{name}' saved successfully!")
+            messagebox.showinfo(_t('gui.shell.enhanced_reporting.core.dialogs.success', default="Success"), f"Template '{name}' saved successfully!")
             self.dialog.destroy()
 
         except Exception as e:
             logging.error(f"Failed to save template: {e}")
             import traceback
             logging.error(traceback.format_exc())
-            messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.core.dialogs.error', default="Error"), f"Failed to save template: {str(e)}")
 
     def cancel(self):
         """Cancel dialog"""

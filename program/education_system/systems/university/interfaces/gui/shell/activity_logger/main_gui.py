@@ -2,6 +2,8 @@
 Main GUI application class for the Enhanced Activity Logger.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.activity_logger._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     time, json, os, sys, queue,
@@ -320,7 +322,7 @@ class EnhancedActivityLoggerGUI:
         """Create a new configuration"""
         try:
             file_path = filedialog.asksaveasfilename(
-                title="Create New Configuration",
+                title=_t('gui.shell.activity_logger.main.dialogs.create_new_configuration', default="Create New Configuration"),
                 defaultextension=".json",
                 filetypes=[("JSON files", "*.json")]
             )
@@ -328,7 +330,7 @@ class EnhancedActivityLoggerGUI:
             if file_path:
                 if LOGGER_AVAILABLE:
                     create_default_config(file_path)
-                    messagebox.showinfo("Configuration Created", f"New configuration created at: {file_path}")
+                    messagebox.showinfo(_t('gui.shell.activity_logger.main.dialogs.configuration_created', default="Configuration Created"), f"New configuration created at: {file_path}")
                 else:
                     # Create a minimal config for demo mode
                     default_config = {
@@ -339,30 +341,30 @@ class EnhancedActivityLoggerGUI:
                     }
                     with open(file_path, 'w') as f:
                         json.dump(default_config, f, indent=2)
-                    messagebox.showinfo("Configuration Created", f"Demo configuration created at: {file_path}")
+                    messagebox.showinfo(_t('gui.shell.activity_logger.main.dialogs.configuration_created', default="Configuration Created"), f"Demo configuration created at: {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Configuration Error", f"Failed to create configuration: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.configuration_error', default="Configuration Error"), f"Failed to create configuration: {str(e)}")
 
     def load_config(self):
         """Load configuration from file"""
         if hasattr(self.config_tab, 'load_config'):
             self.config_tab.load_config()
         else:
-            messagebox.showwarning("Load Configuration", "Configuration tab not available.")
+            messagebox.showwarning(_t('gui.shell.activity_logger.main.dialogs.load_configuration', default="Load Configuration"), _t('gui.shell.activity_logger.main.dialogs.configuration_tab_not_available', default="Configuration tab not available."))
 
     def save_config(self):
         """Save current configuration to file"""
         if hasattr(self.config_tab, 'save_config'):
             self.config_tab.save_config()
         else:
-            messagebox.showwarning("Save Configuration", "Configuration tab not available.")
+            messagebox.showwarning(_t('gui.shell.activity_logger.main.dialogs.save_configuration', default="Save Configuration"), _t('gui.shell.activity_logger.main.dialogs.configuration_tab_not_available', default="Configuration tab not available."))
 
     def import_logs(self):
         """Import logs from file"""
         try:
             file_path = filedialog.askopenfilename(
-                title="Import Logs",
+                title=_t('gui.shell.activity_logger.main.dialogs.import_logs', default="Import Logs"),
                 filetypes=[
                     ("JSON files", "*.json"),
                     ("CSV files", "*.csv"),
@@ -409,7 +411,7 @@ class EnhancedActivityLoggerGUI:
 
                     # Determine file type and parse
                     if file_path.endswith('.json'):
-                        status_label.config(text="Parsing JSON file...")
+                        status_label.config(text=_t('gui.shell.activity_logger.main.text.parsing_json_file', default="Parsing JSON file..."))
                         progress_var.set(20)
                         import_dialog.update()
 
@@ -423,7 +425,7 @@ class EnhancedActivityLoggerGUI:
                                 logs_to_import = [data]
 
                     elif file_path.endswith('.csv'):
-                        status_label.config(text="Parsing CSV file...")
+                        status_label.config(text=_t('gui.shell.activity_logger.main.text.parsing_csv_file', default="Parsing CSV file..."))
                         progress_var.set(20)
                         import_dialog.update()
 
@@ -433,7 +435,7 @@ class EnhancedActivityLoggerGUI:
                                 logs_to_import.append(row)
 
                     else:  # Text file
-                        status_label.config(text="Parsing text file...")
+                        status_label.config(text=_t('gui.shell.activity_logger.main.text.parsing_text_file', default="Parsing text file..."))
                         progress_var.set(20)
                         import_dialog.update()
 
@@ -459,7 +461,7 @@ class EnhancedActivityLoggerGUI:
                     results_text.insert('end', f"Found {len(logs_to_import)} log entries\n\n")
 
                     # Import logs
-                    status_label.config(text="Importing logs...")
+                    status_label.config(text=_t('gui.shell.activity_logger.main.text.importing_logs', default="Importing logs..."))
                     for i, log_entry in enumerate(logs_to_import):
                         try:
                             # In real implementation, would save to database
@@ -486,7 +488,7 @@ class EnhancedActivityLoggerGUI:
                         results_text.see('end')
 
                     progress_var.set(100)
-                    status_label.config(text="Import Complete!")
+                    status_label.config(text=_t('gui.shell.activity_logger.main.text.import_complete', default="Import Complete!"))
 
                     # Summary
                     summary = f"\n{'='*60}\nImport Summary:\n"
@@ -495,25 +497,25 @@ class EnhancedActivityLoggerGUI:
                     summary += f"Errors: {error_count}\n"
                     results_text.insert('end', summary)
 
-                    ttk.Button(progress_frame, text="Close",
+                    ttk.Button(progress_frame, text=_t('gui.shell.activity_logger.main.buttons.close', default="Close"),
                               command=import_dialog.destroy).pack(pady=10)
 
                 except Exception as e:
-                    messagebox.showerror("Import Error", f"Failed to import logs: {e}",
+                    messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.import_error', default="Import Error"), f"Failed to import logs: {e}",
                                        parent=import_dialog)
 
             # Start import
             import_dialog.after(100, perform_import)
 
         except Exception as e:
-            messagebox.showerror("Import Error", f"Failed to import logs: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.import_error', default="Import Error"), f"Failed to import logs: {str(e)}")
 
     def export_logs(self):
         """Export logs to file"""
         if hasattr(self.log_viewer_tab, 'export_logs'):
             self.log_viewer_tab.export_logs()
         else:
-            messagebox.showwarning("Export Logs", "Log viewer tab not available.")
+            messagebox.showwarning(_t('gui.shell.activity_logger.main.dialogs.export_logs', default="Export Logs"), _t('gui.shell.activity_logger.main.dialogs.log_viewer_tab_not_available', default="Log viewer tab not available."))
 
     def test_log_entry(self):
         """Create a test log entry"""
@@ -605,10 +607,10 @@ RECOMMENDATIONS
                 text_widget.configure(state='disabled')
 
             else:
-                messagebox.showwarning("Health Check", "System health monitoring not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.main.dialogs.health_check', default="Health Check"), _t('gui.shell.activity_logger.main.dialogs.system_health_monitoring_not_available', default="System health monitoring not available."))
 
         except Exception as e:
-            messagebox.showerror("Health Check Error", f"Failed to perform health check: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.health_check_error', default="Health Check Error"), f"Failed to perform health check: {str(e)}")
 
     def generate_report(self):
         """Generate analytics report"""
@@ -617,16 +619,16 @@ RECOMMENDATIONS
                 self.analytics_tab.generate_report()
             else:
                 # Provide basic analytics functionality
-                messagebox.showinfo("Analytics", "Analytics reporting is available through the Analytics tab.")
+                messagebox.showinfo(_t('gui.shell.activity_logger.main.dialogs.analytics', default="Analytics"), _t('gui.shell.activity_logger.main.dialogs.analytics_reporting_is_available_through_the_analytics_tab', default="Analytics reporting is available through the Analytics tab."))
         except Exception as e:
-            messagebox.showerror("Report Error", f"Failed to generate report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.report_error', default="Report Error"), f"Failed to generate report: {str(e)}")
 
     def run_anomaly_detection(self):
         """Run anomaly detection"""
         if hasattr(self.security_tab, 'run_anomaly_detection'):
             self.security_tab.run_anomaly_detection()
         else:
-            messagebox.showwarning("Anomaly Detection", "Security tab not available.")
+            messagebox.showwarning(_t('gui.shell.activity_logger.main.dialogs.anomaly_detection', default="Anomaly Detection"), _t('gui.shell.activity_logger.main.dialogs.security_tab_not_available', default="Security tab not available."))
 
     def database_maintenance(self):
         """Perform database maintenance"""
@@ -652,19 +654,19 @@ RECOMMENDATIONS
             def perform_cleanup():
                 try:
                     if not self.logger or not hasattr(self.logger, 'db_logger') or not self.logger.db_logger:
-                        messagebox.showwarning("Cleanup Warning", "Logger database is not available.")
+                        messagebox.showwarning(_t('gui.shell.activity_logger.main.dialogs.cleanup_warning', default="Cleanup Warning"), _t('gui.shell.activity_logger.main.dialogs.logger_database_is_not_available', default="Logger database is not available."))
                         return
                     days = cleanup_days.get()
                     deleted_count = self.logger.db_logger.delete_old_logs(days)
-                    messagebox.showinfo("Cleanup Complete", f"Deleted {deleted_count} old log entries.")
+                    messagebox.showinfo(_t('gui.shell.activity_logger.main.dialogs.cleanup_complete', default="Cleanup Complete"), f"Deleted {deleted_count} old log entries.")
                     maintenance_window.destroy()
                 except Exception as e:
-                    messagebox.showerror("Cleanup Error", f"Failed to perform cleanup: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.cleanup_error', default="Cleanup Error"), f"Failed to perform cleanup: {str(e)}")
 
             def show_stats():
                 try:
                     if not self.logger or not hasattr(self.logger, 'db_logger') or not self.logger.db_logger:
-                        messagebox.showwarning("Statistics Warning", "Logger database is not available.")
+                        messagebox.showwarning(_t('gui.shell.activity_logger.main.dialogs.statistics_warning', default="Statistics Warning"), _t('gui.shell.activity_logger.main.dialogs.logger_database_is_not_available', default="Logger database is not available."))
                         return
                     stats = self.logger.db_logger.get_database_stats()
                     stats_text = f"""Database Statistics:
@@ -672,9 +674,9 @@ Total Logs: {stats.get('total_logs', 0):,}
 Recent Activity (24h): {stats.get('recent_activity', 0):,}
 Database Size: {stats.get('database_size', 0):,} bytes
 """
-                    messagebox.showinfo("Database Statistics", stats_text)
+                    messagebox.showinfo(_t('gui.shell.activity_logger.main.dialogs.database_statistics', default="Database Statistics"), stats_text)
                 except Exception as e:
-                    messagebox.showerror("Statistics Error", f"Failed to get statistics: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.statistics_error', default="Statistics Error"), f"Failed to get statistics: {str(e)}")
 
             button_frame = ttk.Frame(maintenance_window)
             button_frame.pack(pady=20)
@@ -683,28 +685,28 @@ Database Size: {stats.get('database_size', 0):,} bytes
                       command=show_stats).pack(side=tk.LEFT, padx=5)
             ttk.Button(button_frame, text=_t("activity_logger.maintenance.cleanup_logs"),
                       command=perform_cleanup).pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="Cancel",
+            ttk.Button(button_frame, text=_t('gui.shell.activity_logger.main.buttons.cancel', default="Cancel"),
                       command=maintenance_window.destroy).pack(side=tk.LEFT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Maintenance Error", f"Failed to open database maintenance: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.maintenance_error', default="Maintenance Error"), f"Failed to open database maintenance: {str(e)}")
 
     def log_file_cleanup(self):
         """Perform log file cleanup"""
         try:
             if not self.logger or not hasattr(self.logger, 'rotation_manager'):
-                messagebox.showwarning("File Cleanup", "Log rotation manager not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.main.dialogs.file_cleanup', default="File Cleanup"), _t('gui.shell.activity_logger.main.dialogs.log_rotation_manager_not_available', default="Log rotation manager not available."))
                 return
 
-            if messagebox.askyesno("Log File Cleanup",
-                                 "This will remove old log files based on retention settings. Continue?"):
+            if messagebox.askyesno(_t('gui.shell.activity_logger.main.dialogs.log_file_cleanup', default="Log File Cleanup"),
+                                 _t('gui.shell.activity_logger.main.dialogs.this_will_remove_old_log_files_based_on_retention_settings_conti', default="This will remove old log files based on retention settings. Continue?")):
 
                 log_dir = getattr(self.logger, 'log_dir', 'logs')
                 self.logger.rotation_manager.cleanup_old_logs(log_dir)
-                messagebox.showinfo("Cleanup Complete", "Old log files have been cleaned up.")
+                messagebox.showinfo(_t('gui.shell.activity_logger.main.dialogs.cleanup_complete', default="Cleanup Complete"), _t('gui.shell.activity_logger.main.dialogs.old_log_files_have_been_cleaned_up', default="Old log files have been cleaned up."))
 
         except Exception as e:
-            messagebox.showerror("Cleanup Error", f"Failed to cleanup log files: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.cleanup_error', default="Cleanup Error"), f"Failed to cleanup log files: {str(e)}")
 
     def show_user_guide(self):
         """Show user guide"""
@@ -846,9 +848,9 @@ For detailed documentation, see:
 - Local: university_system/modules/shared/utils/activity_logger.py
 - Online: Check the project README.md for full documentation
 """
-            messagebox.showinfo("API Documentation", doc_text)
+            messagebox.showinfo(_t('gui.shell.activity_logger.main.dialogs.api_documentation', default="API Documentation"), doc_text)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show documentation: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.main.dialogs.error', default="Error"), f"Failed to show documentation: {str(e)}")
 
     def show_about(self):
         """Show about dialog"""

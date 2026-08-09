@@ -10,9 +10,7 @@ from __future__ import annotations
 
 import sqlite3
 
-from education_system.systems.university.infrastructure.paths import (
-    DEFAULT_DB_PATH,
-)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.domain.governance.legal.disciplinary.fitness_to_practise._db_init import (
     ensure_ftp_schema,
 )
@@ -44,7 +42,7 @@ class FtPDataAccess:
     translation step."""
 
     def __init__(self, db_path=None):
-        self.db_path = str(db_path or DEFAULT_DB_PATH)
+        self.db_path = str(db_path or UNIVERSITY_DEFAULT_DB_PATH)
         ensure_ftp_schema(self.db_path)
 
     def _conn(self):

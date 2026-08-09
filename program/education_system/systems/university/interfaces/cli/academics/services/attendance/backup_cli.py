@@ -29,8 +29,8 @@ def handle_backup_recovery(backup_system):
 
     elif choice == '2':
         # Use centralized backup directory
-        from education_system.systems.university.infrastructure.paths import BACKUP_ATTENDANCE_DIR
-        backup_dir = BACKUP_ATTENDANCE_DIR
+        from education_system.paths import UNIVERSITY_BACKUP_ATTENDANCE_DIR
+        backup_dir = UNIVERSITY_BACKUP_ATTENDANCE_DIR
 
         if backup_dir.exists():
             backups = sorted(backup_dir.glob("*.db"), key=lambda x: x.stat().st_mtime, reverse=True)

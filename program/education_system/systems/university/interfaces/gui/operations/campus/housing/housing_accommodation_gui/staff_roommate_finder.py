@@ -8,6 +8,8 @@ applicants (e.g. to fill the last spot in a 4-person flat).
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -23,13 +25,13 @@ def show_staff_roommate_finder(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Roommate Finder (staff view)",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.staff_roommate_finder.labels.roommate_finder_staff_view', default="Roommate Finder (staff view)"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
     ttk.Label(parent,
-              text=("Run match suggestions for any applicant or current "
+              text=(_t('gui.operations.campus.housing.housing_accommodation_gui.staff_roommate_finder.labels.run_match_suggestions_for_any_applicant_or_current_resident_the', default="Run match suggestions for any applicant or current "
                     "resident. The widget is the same one residents use "
-                    "from their portal."),
+                    "from their portal.")),
               wraplength=820, foreground="#555").pack(anchor="w", padx=8,
                                                         pady=(0, 8))
 
@@ -43,6 +45,6 @@ def show_staff_roommate_finder(gui_instance) -> None:
             container=container)
     except Exception as e:
         logger.exception("Could not start roommate finder for staff")
-        messagebox.showerror("Roommate finder",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.staff_roommate_finder.dialogs.roommate_finder', default="Roommate finder"),
                               f"Could not open:\n\n{e}",
                               parent=gui_instance.root)

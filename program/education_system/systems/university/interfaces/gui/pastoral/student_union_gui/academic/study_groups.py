@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class StudyGroupsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Study Groups")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.academic.study_groups.windows.study_groups', default="Study Groups"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -76,14 +78,14 @@ class StudyGroupsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📚 Study Groups",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.study_groups', default="📚 Study Groups"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Course:").pack(side='left', padx=(0, 5))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.course', default="Course:")).pack(side='left', padx=(0, 5))
         self.course_var = tk.StringVar()
         course_combo = ttk.Combobox(filter_frame, textvariable=self.course_var, width=25, state='readonly')
         course_combo['values'] = ('All Courses', 'CS101 - Intro to Programming',
@@ -92,12 +94,12 @@ class StudyGroupsDialog:
         course_combo.current(0)
         course_combo.pack(side='left', padx=(0, 15))
 
-        ttk.Button(filter_frame, text="Filter", command=self.load_groups).pack(side='left', padx=(0, 20))
-        ttk.Button(filter_frame, text="➕ Create Study Group",
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.filter', default="Filter"), command=self.load_groups).pack(side='left', padx=(0, 20))
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.create_study_group', default="➕ Create Study Group"),
                   command=self.create_group).pack(side='left')
 
         # Groups list
-        list_frame = ttk.LabelFrame(main_frame, text="Available Study Groups")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.available_study_groups', default="Available Study Groups"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Course', 'Group Name', 'Members', 'Next Session', 'Location', 'Status')
@@ -121,7 +123,7 @@ class StudyGroupsDialog:
         self.groups_tree.bind('<<TreeviewSelect>>', self.on_select)
 
         # Details frame
-        details_frame = ttk.LabelFrame(main_frame, text="Group Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.group_details', default="Group Details"))
         details_frame.pack(fill='x', pady=(0, 15))
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=5, wrap=tk.WORD)
@@ -131,10 +133,10 @@ class StudyGroupsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Join Group", command=self.join_group).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Schedule Session", command=self.schedule_session).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Share Materials", command=self.share_materials).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.join_group', default="Join Group"), command=self.join_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.schedule_session', default="Schedule Session"), command=self.schedule_session).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.share_materials', default="Share Materials"), command=self.share_materials).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_groups(self):
         for item in self.groups_tree.get_children():
@@ -171,31 +173,31 @@ class StudyGroupsDialog:
     def join_group(self):
         selection = self.groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a study group.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.please_select_a_study_group', default="Please select a study group."))
             return
 
         item = self.groups_tree.item(selection[0])
         group_name = item['values'][1]
 
-        if messagebox.askyesno("Confirm", f"Join '{group_name}'?"):
-            messagebox.showinfo("Success",
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.confirm', default="Confirm"), f"Join '{group_name}'?"):
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.success', default="Success"),
                                f"You've joined '{group_name}'!\n\n"
                                "You'll receive notifications about upcoming sessions.")
 
     def schedule_session(self):
-        messagebox.showinfo("Schedule Session",
-                           "Schedule a new study session:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.schedule_session', default="Schedule Session"),
+                           _t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.schedule_a_new_study_session_select_date_and_time_choose_locatio', default="Schedule a new study session:\n\n"
                            "• Select date and time\n"
                            "• Choose location\n"
                            "• Set agenda/topics\n"
-                           "• Notify group members")
+                           "• Notify group members"))
 
     def share_materials(self):
-        messagebox.showinfo("Share Materials",
-                           "Share study materials with your group:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.share_materials', default="Share Materials"),
+                           _t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.share_study_materials_with_your_group_upload_notes_share_practic', default="Share study materials with your group:\n\n"
                            "• Upload notes\n"
                            "• Share practice problems\n"
-                           "• Post helpful resources")
+                           "• Post helpful resources"))
 
     def create_group(self):
         dialog = CreateStudyGroupDialog(self.dialog, self.auth)
@@ -211,7 +213,7 @@ class CreateStudyGroupDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create Study Group")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.academic.study_groups.windows.create_study_group', default="Create Study Group"))
         self.dialog.geometry("700x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -222,28 +224,28 @@ class CreateStudyGroupDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="➕ Create New Study Group",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.create_new_study_group', default="➕ Create New Study Group"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Form
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill='both', expand=True, pady=(0, 15))
 
-        ttk.Label(form_frame, text="Course:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.course', default="Course:")).grid(row=0, column=0, sticky='w', pady=5)
         self.course_combo = ttk.Combobox(form_frame, width=47, state='readonly')
         self.course_combo['values'] = ('CS101 - Intro to Programming', 'MATH201 - Calculus II',
                                         'BIO150 - Biology', 'CHEM101 - General Chemistry')
         self.course_combo.grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text="Group Name:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.group_name', default="Group Name:")).grid(row=1, column=0, sticky='w', pady=5)
         self.name_entry = ttk.Entry(form_frame, width=50)
         self.name_entry.grid(row=1, column=1, sticky='ew', pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw', pady=5)
         self.desc_text = scrolledtext.ScrolledText(form_frame, width=50, height=3)
         self.desc_text.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text="Member Limit:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.member_limit', default="Member Limit:")).grid(row=3, column=0, sticky='w', pady=5)
         self.limit_spin = ttk.Spinbox(form_frame, from_=3, to=20, width=10)
         self.limit_spin.grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
         self.limit_spin.set(8)
@@ -254,15 +256,15 @@ class CreateStudyGroupDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Create", command=self.create).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.create', default="Create"), command=self.create).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='right')
 
     def create(self):
         if not self.name_entry.get():
-            messagebox.showwarning("Warning", "Please enter a group name.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.please_enter_a_group_name', default="Please enter a group name."))
             return
 
-        messagebox.showinfo("Success", "Study group created successfully!")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.study_group_created_successfully', default="Study group created successfully!"))
         self.dialog.destroy()
 
 
@@ -275,7 +277,7 @@ class ExamPrepGroupsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Exam Preparation Groups")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.academic.study_groups.windows.exam_preparation_groups', default="Exam Preparation Groups"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -287,7 +289,7 @@ class ExamPrepGroupsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📝 Exam Preparation Groups",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.exam_preparation_groups', default="📝 Exam Preparation Groups"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Info banner
@@ -302,19 +304,19 @@ class ExamPrepGroupsDialog:
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Course:").pack(side='left', padx=(0, 5))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.course', default="Course:")).pack(side='left', padx=(0, 5))
         self.course_var = tk.StringVar()
         course_combo = ttk.Combobox(filter_frame, textvariable=self.course_var, width=25, state='readonly')
         course_combo['values'] = ('All Courses', 'CS101', 'MATH201', 'BIO150', 'CHEM101', 'PHYS200')
         course_combo.current(0)
         course_combo.pack(side='left', padx=(0, 15))
 
-        ttk.Button(filter_frame, text="Filter", command=self.load_groups).pack(side='left', padx=(0, 20))
-        ttk.Button(filter_frame, text="➕ Create Exam Prep Group",
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.filter', default="Filter"), command=self.load_groups).pack(side='left', padx=(0, 20))
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.create_exam_prep_group', default="➕ Create Exam Prep Group"),
                   command=self.create_group).pack(side='left')
 
         # Groups list
-        list_frame = ttk.LabelFrame(main_frame, text="Upcoming Exam Prep Groups")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.labels.upcoming_exam_prep_groups', default="Upcoming Exam Prep Groups"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Course', 'Exam Date', 'Group Name', 'Members', 'Next Session', 'Focus')
@@ -339,10 +341,10 @@ class ExamPrepGroupsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Join Group", command=self.join_group).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Study Schedule", command=self.view_schedule).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Practice Tests", command=self.practice_tests).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.join_group', default="Join Group"), command=self.join_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.view_study_schedule', default="View Study Schedule"), command=self.view_schedule).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.practice_tests', default="Practice Tests"), command=self.practice_tests).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.study_groups.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_groups(self):
         for item in self.groups_tree.get_children():
@@ -363,40 +365,40 @@ class ExamPrepGroupsDialog:
     def join_group(self):
         selection = self.groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an exam prep group.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.please_select_an_exam_prep_group', default="Please select an exam prep group."))
             return
 
         item = self.groups_tree.item(selection[0])
         group_name = item['values'][2]
 
-        if messagebox.askyesno("Confirm", f"Join '{group_name}'?"):
-            messagebox.showinfo("Success",
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.confirm', default="Confirm"), f"Join '{group_name}'?"):
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.success', default="Success"),
                                f"You've joined '{group_name}'!\n\n"
                                "Check your email for session details and study materials.")
 
     def create_group(self):
-        messagebox.showinfo("Create Group",
-                           "Create an exam prep group:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.create_group', default="Create Group"),
+                           _t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.create_an_exam_prep_group_select_course_and_exam_date_name_your', default="Create an exam prep group:\n\n"
                            "• Select course and exam date\n"
                            "• Name your group\n"
                            "• Define study schedule\n"
-                           "• Invite classmates")
+                           "• Invite classmates"))
 
     def view_schedule(self):
-        messagebox.showinfo("Study Schedule",
-                           "Exam Prep Study Schedule:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.study_schedule', default="Study Schedule"),
+                           _t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.exam_prep_study_schedule_week_1_review_chapters_1_3_week_2_pract', default="Exam Prep Study Schedule:\n\n"
                            "Week 1: Review chapters 1-3\n"
                            "Week 2: Practice problems, chapters 4-5\n"
                            "Week 3: Past exams, mock tests\n"
-                           "Final Week: Last-minute review")
+                           "Final Week: Last-minute review"))
 
     def practice_tests(self):
-        messagebox.showinfo("Practice Tests",
-                           "Available Practice Resources:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.practice_tests', default="Practice Tests"),
+                           _t('gui.pastoral.student_union_gui.academic.study_groups.dialogs.available_practice_resources_past_exam_papers_practice_quiz_bank', default="Available Practice Resources:\n\n"
                            "• Past exam papers\n"
                            "• Practice quiz bank\n"
                            "• Timed mock exams\n"
-                           "• Solution explanations")
+                           "• Solution explanations"))
 
 
 

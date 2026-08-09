@@ -2,6 +2,8 @@
 Cinema Reports - Export, save, email, and report window functions.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
 import csv
@@ -226,8 +228,8 @@ def email_report_to_admin(self, report_type, from_date, to_date):
 
     # If still not found, prompt for it
     if not admin_email:
-        admin_email = simpledialog.askstring("Admin Email",
-            "No admin email configured.\nEnter admin email address:")
+        admin_email = simpledialog.askstring(_t('gui.operations.commerce.cinema.cinema_gui.reports.exports.dialogs.admin_email', default="Admin Email"),
+            _t('gui.operations.commerce.cinema.cinema_gui.reports.exports.dialogs.no_admin_email_configured_enter_admin_email_address', default="No admin email configured.\nEnter admin email address:"))
         if admin_email:
             # Save it for future use
             cursor.execute("""INSERT OR REPLACE INTO cinema_settings (key, value)
@@ -519,8 +521,8 @@ def open_report_in_window(self, report_type, from_date, to_date):
 
         # If still not found, prompt for it
         if not admin_email:
-            admin_email = simpledialog.askstring("Admin Email",
-                "No admin email configured.\nEnter admin email address:")
+            admin_email = simpledialog.askstring(_t('gui.operations.commerce.cinema.cinema_gui.reports.exports.dialogs.admin_email', default="Admin Email"),
+                _t('gui.operations.commerce.cinema.cinema_gui.reports.exports.dialogs.no_admin_email_configured_enter_admin_email_address', default="No admin email configured.\nEnter admin email address:"))
             if admin_email:
                 # Save it for future use
                 conn = sqlite3.connect(DB_FILE)

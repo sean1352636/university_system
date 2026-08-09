@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -69,7 +71,7 @@ class AcademicSupportDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Academic Support Hub")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.academic.academic_support.windows.academic_support_hub', default="Academic Support Hub"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -80,7 +82,7 @@ class AcademicSupportDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="🎓 Academic Support Hub",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.academic_support_hub', default="🎓 Academic Support Hub"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Info banner
@@ -121,7 +123,7 @@ class AcademicSupportDialog:
                 'my_activity': self.view_my_activity
             }
 
-            ttk.Button(card, text="Open",
+            ttk.Button(card, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.open', default="Open"),
                       command=command_map[key]).pack(padx=10, pady=5)
 
         for i in range(3):
@@ -129,7 +131,7 @@ class AcademicSupportDialog:
         for i in range(2):
             buttons_frame.columnconfigure(i, weight=1)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def manage_study_groups(self):
         dialog = StudyGroupsDialog(self.dialog, self.auth)
@@ -165,7 +167,7 @@ class MyAcademicActivityDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("My Academic Activity")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.academic.academic_support.windows.my_academic_activity', default="My Academic Activity"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -176,7 +178,7 @@ class MyAcademicActivityDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📊 My Academic Support Activity",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.my_academic_support_activity', default="📊 My Academic Support Activity"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Create notebook for different activity areas
@@ -185,25 +187,25 @@ class MyAcademicActivityDialog:
 
         # Study groups tab
         study_groups_frame = ttk.Frame(notebook)
-        notebook.add(study_groups_frame, text="Study Groups")
+        notebook.add(study_groups_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.tabs.study_groups', default="Study Groups"))
         self.create_study_groups_tab(study_groups_frame)
 
         # Tutoring tab
         tutoring_frame = ttk.Frame(notebook)
-        notebook.add(tutoring_frame, text="Tutoring")
+        notebook.add(tutoring_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.tabs.tutoring', default="Tutoring"))
         self.create_tutoring_tab(tutoring_frame)
 
         # Resources tab
         resources_frame = ttk.Frame(notebook)
-        notebook.add(resources_frame, text="My Resources")
+        notebook.add(resources_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.tabs.my_resources', default="My Resources"))
         self.create_resources_tab(resources_frame)
 
         # Workshops tab
         workshops_frame = ttk.Frame(notebook)
-        notebook.add(workshops_frame, text="Workshops")
+        notebook.add(workshops_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.tabs.workshops', default="Workshops"))
         self.create_workshops_tab(workshops_frame)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def _ensure_study_groups_table(self, cursor):
         cursor.execute('''
@@ -235,7 +237,7 @@ class MyAcademicActivityDialog:
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="My Study Groups",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.my_study_groups', default="My Study Groups"),
                  font=('Arial', 11, 'bold')).pack(pady=(0, 10))
 
         columns = ('Group', 'Subject', 'Members', 'Schedule', 'Location', 'Status')
@@ -255,11 +257,11 @@ class MyAcademicActivityDialog:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(btn_frame, text="Create Study Group",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.create_study_group', default="Create Study Group"),
                   command=self._create_study_group).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Join Group",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.join_group', default="Join Group"),
                   command=self._join_study_group).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.refresh', default="Refresh"),
                   command=self._load_study_groups).pack(side='left', padx=5)
 
         self.sg_stats_label = ttk.Label(frame, text="", font=('Arial', 10))
@@ -293,11 +295,11 @@ class MyAcademicActivityDialog:
             self.sg_stats_label.config(text=f"Groups joined: {count}")
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load study groups: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to load study groups: {e}")
 
     def _create_study_group(self):
         create_win = tk.Toplevel(self.dialog)
-        create_win.title("Create Study Group")
+        create_win.title(_t('gui.pastoral.student_union_gui.academic.academic_support.windows.create_study_group', default="Create Study Group"))
         create_win.geometry("450x400")
         create_win.transient(self.dialog)
         create_win.grab_set()
@@ -305,39 +307,39 @@ class MyAcademicActivityDialog:
         fields_frame = ttk.Frame(create_win)
         fields_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(fields_frame, text="Group Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.group_name', default="Group Name:")).grid(row=0, column=0, sticky='w', pady=5)
         name_var = tk.StringVar()
         ttk.Entry(fields_frame, textvariable=name_var, width=40).grid(row=0, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Subject:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.subject', default="Subject:")).grid(row=1, column=0, sticky='w', pady=5)
         subject_var = tk.StringVar()
         ttk.Entry(fields_frame, textvariable=subject_var, width=40).grid(row=1, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw', pady=5)
         desc_text = tk.Text(fields_frame, width=30, height=4)
         desc_text.grid(row=2, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Max Members:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.max_members', default="Max Members:")).grid(row=3, column=0, sticky='w', pady=5)
         max_var = tk.StringVar(value="10")
         ttk.Entry(fields_frame, textvariable=max_var, width=10).grid(row=3, column=1, sticky='w', pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Schedule:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.schedule', default="Schedule:")).grid(row=4, column=0, sticky='w', pady=5)
         sched_var = tk.StringVar()
         ttk.Entry(fields_frame, textvariable=sched_var, width=40).grid(row=4, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Location:").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.location', default="Location:")).grid(row=5, column=0, sticky='w', pady=5)
         loc_var = tk.StringVar()
         ttk.Entry(fields_frame, textvariable=loc_var, width=40).grid(row=5, column=1, pady=5, padx=5)
 
         def save_group():
             name = name_var.get().strip()
             if not name:
-                messagebox.showwarning("Warning", "Group name is required.", parent=create_win)
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.group_name_is_required', default="Group name is required."), parent=create_win)
                 return
             try:
                 max_m = int(max_var.get())
             except ValueError:
-                messagebox.showwarning("Warning", "Max members must be a number.", parent=create_win)
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.max_members_must_be_a_number', default="Max members must be a number."), parent=create_win)
                 return
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -359,22 +361,22 @@ class MyAcademicActivityDialog:
                 ''', (group_id, user_id, now))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success", "Study group created!", parent=create_win)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.study_group_created', default="Study group created!"), parent=create_win)
                 create_win.destroy()
                 self._load_study_groups()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create group: {e}", parent=create_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to create group: {e}", parent=create_win)
 
-        ttk.Button(fields_frame, text="Create", command=save_group).grid(row=6, column=1, sticky='e', pady=15)
+        ttk.Button(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.create', default="Create"), command=save_group).grid(row=6, column=1, sticky='e', pady=15)
 
     def _join_study_group(self):
         join_win = tk.Toplevel(self.dialog)
-        join_win.title("Join Study Group")
+        join_win.title(_t('gui.pastoral.student_union_gui.academic.academic_support.windows.join_study_group', default="Join Study Group"))
         join_win.geometry("700x450")
         join_win.transient(self.dialog)
         join_win.grab_set()
 
-        ttk.Label(join_win, text="Available Study Groups", font=('Arial', 11, 'bold')).pack(pady=10)
+        ttk.Label(join_win, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.available_study_groups', default="Available Study Groups"), font=('Arial', 11, 'bold')).pack(pady=10)
 
         columns = ('ID', 'Group', 'Subject', 'Members', 'Schedule', 'Location')
         join_tree = ttk.Treeview(join_win, columns=columns, show='headings', height=10)
@@ -404,12 +406,12 @@ class MyAcademicActivityDialog:
                 join_tree.insert('', 'end', iid=str(row[0]), values=row)
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load groups: {e}", parent=join_win)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to load groups: {e}", parent=join_win)
 
         def do_join():
             sel = join_tree.selection()
             if not sel:
-                messagebox.showwarning("Warning", "Select a group to join.", parent=join_win)
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.select_a_group_to_join', default="Select a group to join."), parent=join_win)
                 return
             group_id = int(sel[0])
             try:
@@ -427,13 +429,13 @@ class MyAcademicActivityDialog:
                 ''', (group_id,))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success", "You have joined the study group!", parent=join_win)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.you_have_joined_the_study_group', default="You have joined the study group!"), parent=join_win)
                 join_win.destroy()
                 self._load_study_groups()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to join group: {e}", parent=join_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to join group: {e}", parent=join_win)
 
-        ttk.Button(join_win, text="Join Selected Group", command=do_join).pack(pady=10)
+        ttk.Button(join_win, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.join_selected_group', default="Join Selected Group"), command=do_join).pack(pady=10)
 
     def _ensure_tutoring_table(self, cursor):
         cursor.execute('''
@@ -464,7 +466,7 @@ class MyAcademicActivityDialog:
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Tutoring Activity",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.tutoring_activity', default="Tutoring Activity"),
                  font=('Arial', 11, 'bold')).pack(pady=(0, 10))
 
         # Treeview for available tutors
@@ -484,11 +486,11 @@ class MyAcademicActivityDialog:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(btn_frame, text="Request Tutoring",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.request_tutoring', default="Request Tutoring"),
                   command=self._request_tutoring).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Offer Tutoring",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.offer_tutoring', default="Offer Tutoring"),
                   command=self._offer_tutoring).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.refresh', default="Refresh"),
                   command=self._load_tutoring).pack(side='left', padx=5)
 
         self._load_tutoring()
@@ -511,17 +513,17 @@ class MyAcademicActivityDialog:
                                       values=(row[1], row[2], row[3], row[4], row[5]))
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load tutors: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to load tutors: {e}")
 
     def _request_tutoring(self):
         sel = self.tutor_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a tutor to request tutoring from.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.select_a_tutor_to_request_tutoring_from', default="Select a tutor to request tutoring from."))
             return
         session_id = int(sel[0])
 
-        msg = simpledialog.askstring("Request Tutoring",
-                                     "Enter a message for the tutor:",
+        msg = simpledialog.askstring(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.request_tutoring', default="Request Tutoring"),
+                                     _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.enter_a_message_for_the_tutor', default="Enter a message for the tutor:"),
                                      parent=self.dialog)
         if msg is None:
             return
@@ -536,13 +538,13 @@ class MyAcademicActivityDialog:
             ''', (session_id, user_id, msg, now))
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", "Tutoring request submitted!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.tutoring_request_submitted', default="Tutoring request submitted!"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to submit request: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to submit request: {e}")
 
     def _offer_tutoring(self):
         offer_win = tk.Toplevel(self.dialog)
-        offer_win.title("Offer Tutoring")
+        offer_win.title(_t('gui.pastoral.student_union_gui.academic.academic_support.windows.offer_tutoring', default="Offer Tutoring"))
         offer_win.geometry("450x350")
         offer_win.transient(self.dialog)
         offer_win.grab_set()
@@ -550,26 +552,26 @@ class MyAcademicActivityDialog:
         fields_frame = ttk.Frame(offer_win)
         fields_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(fields_frame, text="Subject:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.subject', default="Subject:")).grid(row=0, column=0, sticky='w', pady=5)
         subject_var = tk.StringVar()
         ttk.Entry(fields_frame, textvariable=subject_var, width=35).grid(row=0, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Description:").grid(row=1, column=0, sticky='nw', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.description', default="Description:")).grid(row=1, column=0, sticky='nw', pady=5)
         desc_text = tk.Text(fields_frame, width=27, height=4)
         desc_text.grid(row=1, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Availability:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.availability', default="Availability:")).grid(row=2, column=0, sticky='w', pady=5)
         avail_var = tk.StringVar()
         ttk.Entry(fields_frame, textvariable=avail_var, width=35).grid(row=2, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Rate:").grid(row=3, column=0, sticky='w', pady=5)
-        rate_var = tk.StringVar(value="Free")
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.rate', default="Rate:")).grid(row=3, column=0, sticky='w', pady=5)
+        rate_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.academic.academic_support.values.free', default="Free"))
         ttk.Entry(fields_frame, textvariable=rate_var, width=15).grid(row=3, column=1, sticky='w', pady=5, padx=5)
 
         def save_offer():
             subject = subject_var.get().strip()
             if not subject:
-                messagebox.showwarning("Warning", "Subject is required.", parent=offer_win)
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.subject_is_required', default="Subject is required."), parent=offer_win)
                 return
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -586,13 +588,13 @@ class MyAcademicActivityDialog:
                       avail_var.get().strip(), rate_var.get().strip(), now))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success", "Tutoring offer created!", parent=offer_win)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.tutoring_offer_created', default="Tutoring offer created!"), parent=offer_win)
                 offer_win.destroy()
                 self._load_tutoring()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create offer: {e}", parent=offer_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to create offer: {e}", parent=offer_win)
 
-        ttk.Button(fields_frame, text="Offer", command=save_offer).grid(row=4, column=1, sticky='e', pady=15)
+        ttk.Button(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.offer', default="Offer"), command=save_offer).grid(row=4, column=1, sticky='e', pady=15)
 
     def _ensure_resources_table(self, cursor):
         cursor.execute('''
@@ -613,7 +615,7 @@ class MyAcademicActivityDialog:
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="My Shared Resources",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.my_shared_resources', default="My Shared Resources"),
                  font=('Arial', 11, 'bold')).pack(pady=(0, 10))
 
         columns = ('Title', 'Subject', 'Type', 'Downloads', 'Upload Date')
@@ -633,9 +635,9 @@ class MyAcademicActivityDialog:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(btn_frame, text="Upload Resource",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.upload_resource', default="Upload Resource"),
                   command=self._upload_resource).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.refresh', default="Refresh"),
                   command=self._load_resources).pack(side='left', padx=5)
 
         self.res_stats_label = ttk.Label(frame, text="", font=('Arial', 10))
@@ -668,11 +670,11 @@ class MyAcademicActivityDialog:
                 text=f"Total uploads: {count} | Total downloads: {total_downloads}")
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load resources: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to load resources: {e}")
 
     def _upload_resource(self):
         upload_win = tk.Toplevel(self.dialog)
-        upload_win.title("Upload Resource")
+        upload_win.title(_t('gui.pastoral.student_union_gui.academic.academic_support.windows.upload_resource', default="Upload Resource"))
         upload_win.geometry("500x400")
         upload_win.transient(self.dialog)
         upload_win.grab_set()
@@ -680,32 +682,32 @@ class MyAcademicActivityDialog:
         fields_frame = ttk.Frame(upload_win)
         fields_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(fields_frame, text="Title:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.title', default="Title:")).grid(row=0, column=0, sticky='w', pady=5)
         title_var = tk.StringVar()
         ttk.Entry(fields_frame, textvariable=title_var, width=40).grid(row=0, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Subject:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.subject', default="Subject:")).grid(row=1, column=0, sticky='w', pady=5)
         subject_var = tk.StringVar()
         ttk.Entry(fields_frame, textvariable=subject_var, width=40).grid(row=1, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Type:").grid(row=2, column=0, sticky='w', pady=5)
-        type_var = tk.StringVar(value="Notes")
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.type', default="Type:")).grid(row=2, column=0, sticky='w', pady=5)
+        type_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.academic.academic_support.values.notes', default="Notes"))
         ttk.Combobox(fields_frame, textvariable=type_var, width=20,
                      values=["Notes", "Study Guide", "Past Exam", "Textbook", "Other"],
                      state='readonly').grid(row=2, column=1, sticky='w', pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="Description:").grid(row=3, column=0, sticky='nw', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.description', default="Description:")).grid(row=3, column=0, sticky='nw', pady=5)
         desc_text = tk.Text(fields_frame, width=30, height=3)
         desc_text.grid(row=3, column=1, pady=5, padx=5)
 
-        ttk.Label(fields_frame, text="File:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.file', default="File:")).grid(row=4, column=0, sticky='w', pady=5)
         file_var = tk.StringVar()
         file_entry = ttk.Entry(fields_frame, textvariable=file_var, width=30, state='readonly')
         file_entry.grid(row=4, column=1, sticky='w', pady=5, padx=5)
 
         def browse_file():
             path = filedialog.askopenfilename(
-                title="Select Resource File",
+                title=_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.select_resource_file', default="Select Resource File"),
                 parent=upload_win,
                 filetypes=[("All Files", "*.*"), ("PDF", "*.pdf"),
                            ("Documents", "*.docx *.doc"), ("Text", "*.txt")]
@@ -713,12 +715,12 @@ class MyAcademicActivityDialog:
             if path:
                 file_var.set(path)
 
-        ttk.Button(fields_frame, text="Browse...", command=browse_file).grid(row=4, column=1, sticky='e', pady=5, padx=5)
+        ttk.Button(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.browse', default="Browse..."), command=browse_file).grid(row=4, column=1, sticky='e', pady=5, padx=5)
 
         def save_resource():
             title = title_var.get().strip()
             if not title:
-                messagebox.showwarning("Warning", "Title is required.", parent=upload_win)
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.title_is_required', default="Title is required."), parent=upload_win)
                 return
             src_path = file_var.get().strip()
             dest_path = ""
@@ -743,13 +745,13 @@ class MyAcademicActivityDialog:
                       desc_text.get('1.0', 'end').strip(), dest_path, user_id, now))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success", "Resource uploaded!", parent=upload_win)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.resource_uploaded', default="Resource uploaded!"), parent=upload_win)
                 upload_win.destroy()
                 self._load_resources()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to upload resource: {e}", parent=upload_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to upload resource: {e}", parent=upload_win)
 
-        ttk.Button(fields_frame, text="Upload", command=save_resource).grid(row=5, column=1, sticky='e', pady=15)
+        ttk.Button(fields_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.upload', default="Upload"), command=save_resource).grid(row=5, column=1, sticky='e', pady=15)
 
     def _ensure_workshops_table(self, cursor):
         cursor.execute('''
@@ -782,7 +784,7 @@ class MyAcademicActivityDialog:
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="My Workshops",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.my_workshops', default="My Workshops"),
                  font=('Arial', 11, 'bold')).pack(pady=(0, 10))
 
         columns = ('Title', 'Instructor', 'Date', 'Time', 'Location', 'Status')
@@ -801,9 +803,9 @@ class MyAcademicActivityDialog:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(btn_frame, text="Register for Workshop",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.register_for_workshop', default="Register for Workshop"),
                   command=self._register_workshop).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.refresh', default="Refresh"),
                   command=self._load_workshops).pack(side='left', padx=5)
 
         self.ws_stats_label = ttk.Label(frame, text="", font=('Arial', 10))
@@ -834,16 +836,16 @@ class MyAcademicActivityDialog:
             self.ws_stats_label.config(text=f"Workshops registered: {len(rows)}")
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load workshops: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to load workshops: {e}")
 
     def _register_workshop(self):
         reg_win = tk.Toplevel(self.dialog)
-        reg_win.title("Register for Workshop")
+        reg_win.title(_t('gui.pastoral.student_union_gui.academic.academic_support.windows.register_for_workshop', default="Register for Workshop"))
         reg_win.geometry("750x450")
         reg_win.transient(self.dialog)
         reg_win.grab_set()
 
-        ttk.Label(reg_win, text="Available Workshops", font=('Arial', 11, 'bold')).pack(pady=10)
+        ttk.Label(reg_win, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.available_workshops', default="Available Workshops"), font=('Arial', 11, 'bold')).pack(pady=10)
 
         columns = ('ID', 'Title', 'Instructor', 'Date', 'Time', 'Location', 'Spots')
         reg_tree = ttk.Treeview(reg_win, columns=columns, show='headings', height=10)
@@ -874,12 +876,12 @@ class MyAcademicActivityDialog:
                 reg_tree.insert('', 'end', iid=str(row[0]), values=row)
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load workshops: {e}", parent=reg_win)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to load workshops: {e}", parent=reg_win)
 
         def do_register():
             sel = reg_tree.selection()
             if not sel:
-                messagebox.showwarning("Warning", "Select a workshop to register.", parent=reg_win)
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.select_a_workshop_to_register', default="Select a workshop to register."), parent=reg_win)
                 return
             workshop_id = int(sel[0])
             try:
@@ -897,13 +899,13 @@ class MyAcademicActivityDialog:
                 ''', (workshop_id,))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success", "Registered for workshop!", parent=reg_win)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.registered_for_workshop', default="Registered for workshop!"), parent=reg_win)
                 reg_win.destroy()
                 self._load_workshops()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to register: {e}", parent=reg_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to register: {e}", parent=reg_win)
 
-        ttk.Button(reg_win, text="Register", command=do_register).pack(pady=10)
+        ttk.Button(reg_win, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.register', default="Register"), command=do_register).pack(pady=10)
 
 
 # ============================================================================
@@ -919,7 +921,7 @@ class LearningIntegrationDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Learning Integration")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.academic.academic_support.windows.learning_integration', default="Learning Integration"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -930,7 +932,7 @@ class LearningIntegrationDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="🎓 Learning Integration Hub",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.learning_integration_hub', default="🎓 Learning Integration Hub"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Info banner
@@ -967,14 +969,14 @@ class LearningIntegrationDialog:
                 'credit': self.course_credit_events
             }
 
-            ttk.Button(card, text="Open",
+            ttk.Button(card, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.open', default="Open"),
                       command=command_map[key]).pack(padx=10, pady=5)
 
         for i in range(2):
             buttons_frame.rowconfigure(i, weight=1)
             buttons_frame.columnconfigure(i, weight=1)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def organize_academic_conferences(self):
         from education_system.systems.university.interfaces.gui.pastoral.student_union_gui.conferences.conferences import AcademicConferencesOrganizerDialog
@@ -993,7 +995,7 @@ class LearningIntegrationDialog:
 
     def course_credit_events(self):
         cce_win = tk.Toplevel(self.dialog)
-        cce_win.title("Course Credit Events")
+        cce_win.title(_t('gui.pastoral.student_union_gui.academic.academic_support.windows.course_credit_events', default="Course Credit Events"))
         cce_win.geometry("850x550")
         cce_win.transient(self.dialog)
         cce_win.grab_set()
@@ -1001,7 +1003,7 @@ class LearningIntegrationDialog:
         main_frame = ttk.Frame(cce_win)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Events Eligible for Course Credit",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.labels.events_eligible_for_course_credit', default="Events Eligible for Course Credit"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         columns = ('Event', 'Date', 'Category', 'Credits', 'Status')
@@ -1072,13 +1074,13 @@ class LearningIntegrationDialog:
         def register_credit():
             sel = cce_tree.selection()
             if not sel:
-                messagebox.showwarning("Warning", "Select an event to register for credit.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.select_an_event_to_register_for_credit', default="Select an event to register for credit."),
                                        parent=cce_win)
                 return
             event_id = int(sel[0])
             values = cce_tree.item(sel[0], 'values')
             if values and values[4] == 'registered':
-                messagebox.showinfo("Info", "You are already registered for this event.",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.info', default="Info"), _t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.you_are_already_registered_for_this_event', default="You are already registered for this event."),
                                     parent=cce_win)
                 return
             try:
@@ -1095,17 +1097,17 @@ class LearningIntegrationDialog:
                 conn.commit()
                 conn.close()
                 cce_tree.set(sel[0], 'Status', 'registered')
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.success', default="Success"),
                                     f"Registered for {values[0]} ({credits} credit(s)).",
                                     parent=cce_win)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to register: {e}", parent=cce_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.academic.academic_support.dialogs.error', default="Error"), f"Failed to register: {e}", parent=cce_win)
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill='x', pady=(10, 0))
-        ttk.Button(btn_frame, text="Register for Credit",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.register_for_credit', default="Register for Credit"),
                   command=register_credit).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Close",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.academic.academic_support.buttons.close', default="Close"),
                   command=cce_win.destroy).pack(side='right', padx=5)
 
 

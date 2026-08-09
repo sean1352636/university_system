@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -428,14 +430,14 @@ def show_sla_management(self):
         from education_system.systems.university.infrastructure.database.db import get_connection
 
         sla_window = tk.Toplevel(self.root)
-        sla_window.title("SLA Policy Management")
+        sla_window.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.sla_policy_management', default="SLA Policy Management"))
         sla_window.geometry("800x500")
         sla_window.transient(self.root)
 
         main_frame = ttk.Frame(sla_window, padding="10")
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="SLA Policies", font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.sla_policies', default="SLA Policies"), font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
         # Treeview for SLA policies
         columns = ('ID', 'Name', 'Priority', 'Response Hours', 'Resolution Hours', 'Active')
@@ -463,11 +465,11 @@ def show_sla_management(self):
         def add_sla():
             self._show_sla_form(tree)
 
-        ttk.Button(btn_frame, text="Add SLA Policy", command=add_sla).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Close", command=sla_window.destroy).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.add_sla_policy', default="Add SLA Policy"), command=add_sla).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.close', default="Close"), command=sla_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load SLA management: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to load SLA management: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_sla_management = show_sla_management
@@ -475,7 +477,7 @@ HelpdeskGUI.show_sla_management = show_sla_management
 def _show_sla_form(self, tree):
     """Show form to add new SLA policy"""
     form_window = tk.Toplevel(self.root)
-    form_window.title("Add SLA Policy")
+    form_window.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.add_sla_policy', default="Add SLA Policy"))
     form_window.geometry("400x350")
     form_window.transient(self.root)
     form_window.grab_set()
@@ -483,19 +485,19 @@ def _show_sla_form(self, tree):
     frame = ttk.Frame(form_window, padding="20")
     frame.pack(fill='both', expand=True)
 
-    ttk.Label(frame, text="Name:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.name', default="Name:")).grid(row=0, column=0, sticky='w', pady=5)
     name_var = tk.StringVar()
     ttk.Entry(frame, textvariable=name_var, width=30).grid(row=0, column=1, pady=5)
 
-    ttk.Label(frame, text="Priority:").grid(row=1, column=0, sticky='w', pady=5)
-    priority_var = tk.StringVar(value="medium")
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.priority_variant_2', default="Priority:")).grid(row=1, column=0, sticky='w', pady=5)
+    priority_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.sla_workflows.values.medium', default="medium"))
     ttk.Combobox(frame, textvariable=priority_var, values=['low', 'medium', 'high', 'critical'], width=27).grid(row=1, column=1, pady=5)
 
-    ttk.Label(frame, text="Response Hours:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.response_hours', default="Response Hours:")).grid(row=2, column=0, sticky='w', pady=5)
     response_var = tk.StringVar(value="4")
     ttk.Entry(frame, textvariable=response_var, width=30).grid(row=2, column=1, pady=5)
 
-    ttk.Label(frame, text="Resolution Hours:").grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.resolution_hours_variant_2', default="Resolution Hours:")).grid(row=3, column=0, sticky='w', pady=5)
     resolution_var = tk.StringVar(value="24")
     ttk.Entry(frame, textvariable=resolution_var, width=30).grid(row=3, column=1, pady=5)
 
@@ -516,16 +518,16 @@ def _show_sla_form(self, tree):
 
             tree.insert('', 'end', values=(sla_id, name_var.get(), priority_var.get(),
                                            response_var.get(), resolution_var.get(), 'Yes'))
-            messagebox.showinfo("Success", "SLA Policy added successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.sla_policy_added_successfully', default="SLA Policy added successfully!"))
             form_window.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add SLA: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to add SLA: {str(e)}")
         finally:
             if conn:
                 conn.close()
 
-    ttk.Button(frame, text="Save", command=save).grid(row=4, column=0, pady=20)
-    ttk.Button(frame, text="Cancel", command=form_window.destroy).grid(row=4, column=1, pady=20)
+    ttk.Button(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.save', default="Save"), command=save).grid(row=4, column=0, pady=20)
+    ttk.Button(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.cancel', default="Cancel"), command=form_window.destroy).grid(row=4, column=1, pady=20)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._show_sla_form = _show_sla_form
@@ -533,11 +535,11 @@ HelpdeskGUI._show_sla_form = _show_sla_form
 def manage_sla_policies_gui(self):
     """Manage SLA policies"""
     if not self.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to manage SLA policies.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.you_don_t_have_permission_to_manage_sla_policies', default="You don't have permission to manage SLA policies."))
         return
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("SLA Policy Management")
+    dialog.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.sla_policy_management', default="SLA Policy Management"))
     dialog.geometry("1100x600")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -545,24 +547,24 @@ def manage_sla_policies_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="SLA Policy Management",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.sla_policy_management', default="SLA Policy Management"),
              font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
     # Toolbar
     toolbar = ttk.Frame(main_frame)
     toolbar.pack(fill='x', pady=(0, 10))
 
-    ttk.Button(toolbar, text="➕ Create SLA Policy",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.create_sla_policy_variant_2', default="➕ Create SLA Policy"),
               command=lambda: self.create_sla_policy_gui()).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="✏️ Edit SLA Policy",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.edit_sla_policy', default="✏️ Edit SLA Policy"),
               command=lambda: self.edit_selected_sla(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔄 Toggle Active",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.toggle_active', default="🔄 Toggle Active"),
               command=lambda: self.toggle_selected_sla(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="📊 SLA Report",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.sla_report', default="📊 SLA Report"),
               command=lambda: self.generate_sla_compliance_report_gui()).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="⚠️ Check Overdue",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.check_overdue', default="⚠️ Check Overdue"),
               command=lambda: self.check_overdue_tickets_gui()).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔃 Refresh",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.refresh', default="🔃 Refresh"),
               command=lambda: self.load_sla_policies_list(tree)).pack(side='left', padx=5)
 
     # SLA policies list
@@ -586,7 +588,7 @@ def manage_sla_policies_gui(self):
     self.load_sla_policies_list(tree)
 
     # Close button
-    ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.manage_sla_policies_gui = manage_sla_policies_gui
@@ -625,7 +627,7 @@ def load_sla_policies_list(self, tree):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load SLA policies: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to load SLA policies: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.load_sla_policies_list = load_sla_policies_list
@@ -633,7 +635,7 @@ HelpdeskGUI.load_sla_policies_list = load_sla_policies_list
 def create_sla_policy_gui(self):
     """Create a new SLA policy"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Create SLA Policy")
+    dialog.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.create_sla_policy', default="Create SLA Policy"))
     dialog.geometry("500x600")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -641,7 +643,7 @@ def create_sla_policy_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Create New SLA Policy",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.create_new_sla_policy', default="Create New SLA Policy"),
              font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
 
     # Form fields
@@ -649,53 +651,53 @@ def create_sla_policy_gui(self):
     form_frame.pack(fill='both', expand=True)
 
     # Name
-    ttk.Label(form_frame, text="Policy Name *").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.policy_name', default="Policy Name *")).grid(row=0, column=0, sticky='w', pady=5)
     name_entry = ttk.Entry(form_frame, width=35)
     name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
     # Description
-    ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.description', default="Description")).grid(row=1, column=0, sticky='w', pady=5)
     desc_entry = ttk.Entry(form_frame, width=35)
     desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
     # Priority, Impact, Urgency
-    ttk.Label(form_frame, text="Priority *").grid(row=2, column=0, sticky='w', pady=5)
-    priority_var = tk.StringVar(value='medium')
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.priority', default="Priority *")).grid(row=2, column=0, sticky='w', pady=5)
+    priority_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.sla_workflows.values.medium', default='medium'))
     priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, state="readonly", width=15)
     priority_combo['values'] = ['low', 'medium', 'high']
     priority_combo.grid(row=2, column=1, sticky='w', pady=5)
 
-    ttk.Label(form_frame, text="Impact *").grid(row=3, column=0, sticky='w', pady=5)
-    impact_var = tk.StringVar(value='low')
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.impact', default="Impact *")).grid(row=3, column=0, sticky='w', pady=5)
+    impact_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.sla_workflows.values.low', default='low'))
     impact_combo = ttk.Combobox(form_frame, textvariable=impact_var, state="readonly", width=15)
     impact_combo['values'] = ['low', 'medium', 'high']
     impact_combo.grid(row=3, column=1, sticky='w', pady=5)
 
-    ttk.Label(form_frame, text="Urgency *").grid(row=4, column=0, sticky='w', pady=5)
-    urgency_var = tk.StringVar(value='low')
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.urgency', default="Urgency *")).grid(row=4, column=0, sticky='w', pady=5)
+    urgency_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.sla_workflows.values.low', default='low'))
     urgency_combo = ttk.Combobox(form_frame, textvariable=urgency_var, state="readonly", width=15)
     urgency_combo['values'] = ['low', 'medium', 'high']
     urgency_combo.grid(row=4, column=1, sticky='w', pady=5)
 
     # Time targets
-    ttk.Label(form_frame, text="First Response (hours) *").grid(row=5, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.first_response_hours', default="First Response (hours) *")).grid(row=5, column=0, sticky='w', pady=5)
     response_entry = ttk.Entry(form_frame, width=15)
     response_entry.insert(0, '4')
     response_entry.grid(row=5, column=1, sticky='w', pady=5)
 
-    ttk.Label(form_frame, text="Resolution (hours) *").grid(row=6, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.resolution_hours', default="Resolution (hours) *")).grid(row=6, column=0, sticky='w', pady=5)
     resolution_entry = ttk.Entry(form_frame, width=15)
     resolution_entry.insert(0, '24')
     resolution_entry.grid(row=6, column=1, sticky='w', pady=5)
 
-    ttk.Label(form_frame, text="Escalation (hours) *").grid(row=7, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.escalation_hours', default="Escalation (hours) *")).grid(row=7, column=0, sticky='w', pady=5)
     escalation_entry = ttk.Entry(form_frame, width=15)
     escalation_entry.insert(0, '8')
     escalation_entry.grid(row=7, column=1, sticky='w', pady=5)
 
     # Business hours only
     business_var = tk.BooleanVar(value=False)
-    ttk.Checkbutton(form_frame, text="Business hours only",
+    ttk.Checkbutton(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.business_hours_only', default="Business hours only"),
                    variable=business_var).grid(row=8, column=1, sticky='w', pady=5)
 
     form_frame.columnconfigure(1, weight=1)
@@ -708,7 +710,7 @@ def create_sla_policy_gui(self):
         name = name_entry.get().strip()
 
         if not name:
-            messagebox.showerror("Error", "Policy name is required")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.policy_name_is_required', default="Policy name is required"))
             return
 
         try:
@@ -745,16 +747,16 @@ def create_sla_policy_gui(self):
             sla_id = cursor.lastrowid
             conn.close()
 
-            messagebox.showinfo("Success", f"SLA Policy #{sla_id} created successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.success', default="Success"), f"SLA Policy #{sla_id} created successfully!")
             dialog.destroy()
 
         except ValueError:
-            messagebox.showerror("Error", "Time values must be numbers")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.time_values_must_be_numbers', default="Time values must be numbers"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create SLA policy: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to create SLA policy: {str(e)}")
 
-    ttk.Button(button_frame, text="Create SLA Policy", command=save_sla).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.create_sla_policy', default="Create SLA Policy"), command=save_sla).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.create_sla_policy_gui = create_sla_policy_gui
@@ -763,7 +765,7 @@ def edit_selected_sla(self, tree):
     """Edit selected SLA policy"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select an SLA policy to edit")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.please_select_an_sla_policy_to_edit', default="Please select an SLA policy to edit"))
         return
 
     sla_id = tree.item(selection[0])['values'][0]
@@ -789,7 +791,7 @@ def edit_sla_policy_gui(self, sla_id):
         conn.close()
 
         if not sla:
-            messagebox.showerror("Error", "SLA policy not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.sla_policy_not_found', default="SLA policy not found"))
             return
 
         (name, description, priority, impact, urgency, response_h,
@@ -811,60 +813,60 @@ def edit_sla_policy_gui(self, sla_id):
         form_frame.pack(fill='both', expand=True)
 
         # Name
-        ttk.Label(form_frame, text="Policy Name *").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.policy_name', default="Policy Name *")).grid(row=0, column=0, sticky='w', pady=5)
         name_entry = ttk.Entry(form_frame, width=35)
         name_entry.insert(0, name or '')
         name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
         # Description
-        ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.description', default="Description")).grid(row=1, column=0, sticky='w', pady=5)
         desc_entry = ttk.Entry(form_frame, width=35)
         desc_entry.insert(0, description or '')
         desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
         # Priority, Impact, Urgency
-        ttk.Label(form_frame, text="Priority *").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.priority', default="Priority *")).grid(row=2, column=0, sticky='w', pady=5)
         priority_var = tk.StringVar(value=priority or 'medium')
         priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, state="readonly", width=15)
         priority_combo['values'] = ['low', 'medium', 'high']
         priority_combo.grid(row=2, column=1, sticky='w', pady=5)
 
-        ttk.Label(form_frame, text="Impact *").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.impact', default="Impact *")).grid(row=3, column=0, sticky='w', pady=5)
         impact_var = tk.StringVar(value=impact or 'low')
         impact_combo = ttk.Combobox(form_frame, textvariable=impact_var, state="readonly", width=15)
         impact_combo['values'] = ['low', 'medium', 'high']
         impact_combo.grid(row=3, column=1, sticky='w', pady=5)
 
-        ttk.Label(form_frame, text="Urgency *").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.urgency', default="Urgency *")).grid(row=4, column=0, sticky='w', pady=5)
         urgency_var = tk.StringVar(value=urgency or 'low')
         urgency_combo = ttk.Combobox(form_frame, textvariable=urgency_var, state="readonly", width=15)
         urgency_combo['values'] = ['low', 'medium', 'high']
         urgency_combo.grid(row=4, column=1, sticky='w', pady=5)
 
         # Time targets
-        ttk.Label(form_frame, text="First Response (hours) *").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.first_response_hours', default="First Response (hours) *")).grid(row=5, column=0, sticky='w', pady=5)
         response_entry = ttk.Entry(form_frame, width=15)
         response_entry.insert(0, str(response_h or 4))
         response_entry.grid(row=5, column=1, sticky='w', pady=5)
 
-        ttk.Label(form_frame, text="Resolution (hours) *").grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.resolution_hours', default="Resolution (hours) *")).grid(row=6, column=0, sticky='w', pady=5)
         resolution_entry = ttk.Entry(form_frame, width=15)
         resolution_entry.insert(0, str(resolution_h or 24))
         resolution_entry.grid(row=6, column=1, sticky='w', pady=5)
 
-        ttk.Label(form_frame, text="Escalation (hours) *").grid(row=7, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.escalation_hours', default="Escalation (hours) *")).grid(row=7, column=0, sticky='w', pady=5)
         escalation_entry = ttk.Entry(form_frame, width=15)
         escalation_entry.insert(0, str(escalation_h or 8))
         escalation_entry.grid(row=7, column=1, sticky='w', pady=5)
 
         # Business hours only
         business_var = tk.BooleanVar(value=bool(business_only))
-        ttk.Checkbutton(form_frame, text="Business hours only",
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.business_hours_only', default="Business hours only"),
                        variable=business_var).grid(row=8, column=1, sticky='w', pady=5)
 
         # Active status
         active_var = tk.BooleanVar(value=bool(is_active))
-        ttk.Checkbutton(form_frame, text="Policy Active",
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.policy_active', default="Policy Active"),
                        variable=active_var).grid(row=9, column=1, sticky='w', pady=5)
 
         form_frame.columnconfigure(1, weight=1)
@@ -876,7 +878,7 @@ def edit_sla_policy_gui(self, sla_id):
             new_name = name_entry.get().strip()
 
             if not new_name:
-                messagebox.showerror("Error", "Policy name is required")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.policy_name_is_required', default="Policy name is required"))
                 return
 
             try:
@@ -910,19 +912,19 @@ def edit_sla_policy_gui(self, sla_id):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"SLA Policy #{sla_id} updated successfully!")
+                messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.success', default="Success"), f"SLA Policy #{sla_id} updated successfully!")
                 dialog.destroy()
 
             except ValueError:
-                messagebox.showerror("Error", "Time values must be numbers")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.time_values_must_be_numbers', default="Time values must be numbers"))
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update SLA policy: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to update SLA policy: {str(e)}")
 
-        ttk.Button(button_frame, text="Update SLA Policy", command=update_sla).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.update_sla_policy', default="Update SLA Policy"), command=update_sla).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load SLA policy: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to load SLA policy: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.edit_sla_policy_gui = edit_sla_policy_gui
@@ -931,7 +933,7 @@ def toggle_selected_sla(self, tree):
     """Toggle active status of selected SLA policy"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select an SLA policy to toggle")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.please_select_an_sla_policy_to_toggle', default="Please select an SLA policy to toggle"))
         return
 
     sla_id = tree.item(selection[0])['values'][0]
@@ -952,7 +954,7 @@ def toggle_sla_policy_gui(self, sla_id, tree):
         result = cursor.fetchone()
 
         if not result:
-            messagebox.showerror("Error", "SLA policy not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.sla_policy_not_found', default="SLA policy not found"))
             conn.close()
             return
 
@@ -966,13 +968,13 @@ def toggle_sla_policy_gui(self, sla_id, tree):
         conn.close()
 
         status_text = "activated" if new_status else "deactivated"
-        messagebox.showinfo("Success", f"SLA Policy '{name}' has been {status_text}")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.success', default="Success"), f"SLA Policy '{name}' has been {status_text}")
 
         # Refresh tree
         self.load_sla_policies_list(tree)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to toggle SLA policy: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to toggle SLA policy: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.toggle_sla_policy_gui = toggle_sla_policy_gui
@@ -1000,12 +1002,12 @@ def check_overdue_tickets_gui(self):
         conn.close()
 
         if not overdue:
-            messagebox.showinfo("SLA Check", "No overdue tickets found!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.sla_check', default="SLA Check"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.no_overdue_tickets_found', default="No overdue tickets found!"))
             return
 
         # Create results window
         result_window = tk.Toplevel(self.root)
-        result_window.title("Overdue Tickets")
+        result_window.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.overdue_tickets', default="Overdue Tickets"))
         result_window.geometry("800x400")
 
         main_frame = ttk.Frame(result_window, padding="10")
@@ -1028,10 +1030,10 @@ def check_overdue_tickets_gui(self):
                 ticket_id, subject[:50], due_date, f"{days_overdue:.1f}"
             ))
 
-        ttk.Button(main_frame, text="Close", command=result_window.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.close', default="Close"), command=result_window.destroy).pack(pady=10)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to check overdue tickets: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to check overdue tickets: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.check_overdue_tickets_gui = check_overdue_tickets_gui
@@ -1059,7 +1061,7 @@ def generate_sla_compliance_report_gui(self):
         conn.close()
 
         if not metrics or metrics[0] == 0:
-            messagebox.showinfo("SLA Report", "No SLA data available")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.sla_report', default="SLA Report"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.no_sla_data_available', default="No SLA data available"))
             return
 
         total, within_sla, breached, at_risk = metrics
@@ -1067,17 +1069,17 @@ def generate_sla_compliance_report_gui(self):
 
         # Create report window
         report_window = tk.Toplevel(self.root)
-        report_window.title("SLA Compliance Report")
+        report_window.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.sla_compliance_report', default="SLA Compliance Report"))
         report_window.geometry("600x400")
 
         main_frame = ttk.Frame(report_window, padding="10")
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="📊 SLA Compliance Report",
+        ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.sla_compliance_report', default="📊 SLA Compliance Report"),
                  font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
 
         # Metrics display
-        metrics_frame = ttk.LabelFrame(main_frame, text="Compliance Metrics", padding="20")
+        metrics_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.compliance_metrics', default="Compliance Metrics"), padding="20")
         metrics_frame.pack(fill='both', expand=True)
 
         metrics_text = f"""
@@ -1107,10 +1109,10 @@ Overall Compliance Rate: {compliance_rate:.1f}%
                  font=('TkDefaultFont', 12, 'bold'),
                  foreground=status_color).pack(pady=(10, 0))
 
-        ttk.Button(main_frame, text="Close", command=report_window.destroy).pack(pady=20)
+        ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.close', default="Close"), command=report_window.destroy).pack(pady=20)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate SLA report: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to generate SLA report: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.generate_sla_compliance_report_gui = generate_sla_compliance_report_gui
@@ -1131,14 +1133,14 @@ def show_workflow_management(self):
         from education_system.systems.university.infrastructure.database.db import get_connection
 
         workflow_window = tk.Toplevel(self.root)
-        workflow_window.title("Workflow Management")
+        workflow_window.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.workflow_management', default="Workflow Management"))
         workflow_window.geometry("900x500")
         workflow_window.transient(self.root)
 
         main_frame = ttk.Frame(workflow_window, padding="10")
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Ticket Workflows", font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.ticket_workflows', default="Ticket Workflows"), font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
         # Treeview for workflows
         columns = ('ID', 'Name', 'Trigger Type', 'Description', 'Active')
@@ -1166,11 +1168,11 @@ def show_workflow_management(self):
         def add_workflow():
             self._show_workflow_form(tree)
 
-        ttk.Button(btn_frame, text="Add Workflow", command=add_workflow).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Close", command=workflow_window.destroy).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.add_workflow', default="Add Workflow"), command=add_workflow).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.close', default="Close"), command=workflow_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load workflow management: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to load workflow management: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_workflow_management = show_workflow_management
@@ -1178,7 +1180,7 @@ HelpdeskGUI.show_workflow_management = show_workflow_management
 def _show_workflow_form(self, tree):
     """Show form to add new workflow"""
     form_window = tk.Toplevel(self.root)
-    form_window.title("Add Workflow")
+    form_window.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.add_workflow', default="Add Workflow"))
     form_window.geometry("450x350")
     form_window.transient(self.root)
     form_window.grab_set()
@@ -1186,16 +1188,16 @@ def _show_workflow_form(self, tree):
     frame = ttk.Frame(form_window, padding="20")
     frame.pack(fill='both', expand=True)
 
-    ttk.Label(frame, text="Workflow Name:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.workflow_name_variant_2', default="Workflow Name:")).grid(row=0, column=0, sticky='w', pady=5)
     name_var = tk.StringVar()
     ttk.Entry(frame, textvariable=name_var, width=30).grid(row=0, column=1, pady=5)
 
-    ttk.Label(frame, text="Trigger Type:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.trigger_type_variant_2', default="Trigger Type:")).grid(row=1, column=0, sticky='w', pady=5)
     trigger_var = tk.StringVar()
     ttk.Combobox(frame, textvariable=trigger_var,
                 values=['on_create', 'on_update', 'on_close', 'on_escalate', 'scheduled'], width=27).grid(row=1, column=1, pady=5)
 
-    ttk.Label(frame, text="Description:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.description_variant_2', default="Description:")).grid(row=2, column=0, sticky='w', pady=5)
     desc_var = tk.StringVar()
     ttk.Entry(frame, textvariable=desc_var, width=30).grid(row=2, column=1, pady=5)
 
@@ -1215,16 +1217,16 @@ def _show_workflow_form(self, tree):
             workflow_id = cursor.lastrowid
 
             tree.insert('', 'end', values=(workflow_id, name_var.get(), trigger_var.get(), desc_var.get(), 'Yes'))
-            messagebox.showinfo("Success", "Workflow added successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.workflow_added_successfully', default="Workflow added successfully!"))
             form_window.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add workflow: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to add workflow: {str(e)}")
         finally:
             if conn:
                 conn.close()
 
-    ttk.Button(frame, text="Save", command=save).grid(row=3, column=0, pady=20)
-    ttk.Button(frame, text="Cancel", command=form_window.destroy).grid(row=3, column=1, pady=20)
+    ttk.Button(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.save', default="Save"), command=save).grid(row=3, column=0, pady=20)
+    ttk.Button(frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.cancel', default="Cancel"), command=form_window.destroy).grid(row=3, column=1, pady=20)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._show_workflow_form = _show_workflow_form
@@ -1232,11 +1234,11 @@ HelpdeskGUI._show_workflow_form = _show_workflow_form
 def manage_workflows_gui(self):
     """Manage automated workflows"""
     if not self.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to manage workflows.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.you_don_t_have_permission_to_manage_workflows', default="You don't have permission to manage workflows."))
         return
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Workflow Management")
+    dialog.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.workflow_management', default="Workflow Management"))
     dialog.geometry("1000x600")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1244,20 +1246,20 @@ def manage_workflows_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Automated Workflow Management",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.automated_workflow_management', default="Automated Workflow Management"),
              font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
     # Toolbar
     toolbar = ttk.Frame(main_frame)
     toolbar.pack(fill='x', pady=(0, 10))
 
-    ttk.Button(toolbar, text="➕ Create Workflow",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.create_workflow_variant_2', default="➕ Create Workflow"),
               command=lambda: self.create_workflow_gui()).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="✏️ Edit Workflow",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.edit_workflow', default="✏️ Edit Workflow"),
               command=lambda: self.edit_selected_workflow(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔄 Toggle Active",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.toggle_active', default="🔄 Toggle Active"),
               command=lambda: self.toggle_selected_workflow(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔃 Refresh",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.refresh', default="🔃 Refresh"),
               command=lambda: self.load_workflows_list(tree)).pack(side='left', padx=5)
 
     # Workflows list
@@ -1280,7 +1282,7 @@ def manage_workflows_gui(self):
     self.load_workflows_list(tree)
 
     # Close button
-    ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.manage_workflows_gui = manage_workflows_gui
@@ -1316,7 +1318,7 @@ def load_workflows_list(self, tree):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load workflows: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to load workflows: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.load_workflows_list = load_workflows_list
@@ -1324,7 +1326,7 @@ HelpdeskGUI.load_workflows_list = load_workflows_list
 def create_workflow_gui(self):
     """Create a new automated workflow"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Create Workflow")
+    dialog.title(_t('gui.pastoral.helpdesk.sla_workflows.windows.create_workflow', default="Create Workflow"))
     dialog.geometry("600x700")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1332,7 +1334,7 @@ def create_workflow_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Create New Automated Workflow",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.create_new_automated_workflow', default="Create New Automated Workflow"),
              font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
 
     # Form fields
@@ -1340,17 +1342,17 @@ def create_workflow_gui(self):
     form_frame.pack(fill='both', expand=True)
 
     # Name
-    ttk.Label(form_frame, text="Workflow Name *").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.workflow_name', default="Workflow Name *")).grid(row=0, column=0, sticky='w', pady=5)
     name_entry = ttk.Entry(form_frame, width=40)
     name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
     # Description
-    ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.description', default="Description")).grid(row=1, column=0, sticky='w', pady=5)
     desc_entry = ttk.Entry(form_frame, width=40)
     desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
     # Trigger Type
-    ttk.Label(form_frame, text="Trigger Type *").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.trigger_type', default="Trigger Type *")).grid(row=2, column=0, sticky='w', pady=5)
     trigger_var = tk.StringVar()
     trigger_combo = ttk.Combobox(form_frame, textvariable=trigger_var, state="readonly", width=38)
     trigger_combo['values'] = ['ticket_created', 'ticket_updated', 'status_changed',
@@ -1358,18 +1360,18 @@ def create_workflow_gui(self):
     trigger_combo.grid(row=2, column=1, sticky='ew', pady=5)
 
     # Conditions (JSON)
-    ttk.Label(form_frame, text="Conditions (JSON)").grid(row=3, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.conditions_json', default="Conditions (JSON)")).grid(row=3, column=0, sticky='nw', pady=5)
     conditions_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
     conditions_text.insert('1.0', '{\n  "priority": "high",\n  "category": "Technical Support"\n}')
     conditions_text.grid(row=3, column=1, sticky='ew', pady=5)
 
     # Actions (JSON)
-    ttk.Label(form_frame, text="Actions (JSON) *").grid(row=4, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.actions_json', default="Actions (JSON) *")).grid(row=4, column=0, sticky='nw', pady=5)
     actions_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
     actions_text.insert('1.0', '{\n  "assign_to_department": "IT Support",\n  "set_priority": "high"\n}')
     actions_text.grid(row=4, column=1, sticky='ew', pady=5)
 
-    ttk.Label(form_frame, text="Actions: assign_to_department, set_priority, change_status",
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.actions_assign_to_department_set_priority_change_status', default="Actions: assign_to_department, set_priority, change_status"),
              foreground='gray', font=('TkDefaultFont', 8)).grid(row=5, column=1, sticky='w')
 
     form_frame.columnconfigure(1, weight=1)
@@ -1383,7 +1385,7 @@ def create_workflow_gui(self):
         trigger_type = trigger_var.get()
 
         if not name or not trigger_type:
-            messagebox.showerror("Error", "Name and trigger type are required")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.name_and_trigger_type_are_required', default="Name and trigger type are required"))
             return
 
         try:
@@ -1421,16 +1423,16 @@ def create_workflow_gui(self):
             workflow_id = cursor.lastrowid
             conn.close()
 
-            messagebox.showinfo("Success", f"Workflow #{workflow_id} created successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.success', default="Success"), f"Workflow #{workflow_id} created successfully!")
             dialog.destroy()
 
         except json.JSONDecodeError as e:
-            messagebox.showerror("Error", f"Invalid JSON: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Invalid JSON: {str(e)}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create workflow: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to create workflow: {str(e)}")
 
-    ttk.Button(button_frame, text="Create Workflow", command=save_workflow).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.create_workflow', default="Create Workflow"), command=save_workflow).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.create_workflow_gui = create_workflow_gui
@@ -1439,7 +1441,7 @@ def edit_selected_workflow(self, tree):
     """Edit selected workflow"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select a workflow to edit")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.please_select_a_workflow_to_edit', default="Please select a workflow to edit"))
         return
 
     workflow_id = tree.item(selection[0])['values'][0]
@@ -1464,7 +1466,7 @@ def edit_workflow_gui(self, workflow_id):
         conn.close()
 
         if not workflow:
-            messagebox.showerror("Error", "Workflow not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.workflow_not_found', default="Workflow not found"))
             return
 
         name, description, trigger_type, trigger_conditions, actions, is_active = workflow
@@ -1485,19 +1487,19 @@ def edit_workflow_gui(self, workflow_id):
         form_frame.pack(fill='both', expand=True)
 
         # Name
-        ttk.Label(form_frame, text="Workflow Name *").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.workflow_name', default="Workflow Name *")).grid(row=0, column=0, sticky='w', pady=5)
         name_entry = ttk.Entry(form_frame, width=40)
         name_entry.insert(0, name or '')
         name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
         # Description
-        ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.description', default="Description")).grid(row=1, column=0, sticky='w', pady=5)
         desc_entry = ttk.Entry(form_frame, width=40)
         desc_entry.insert(0, description or '')
         desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
         # Trigger Type
-        ttk.Label(form_frame, text="Trigger Type *").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.trigger_type', default="Trigger Type *")).grid(row=2, column=0, sticky='w', pady=5)
         trigger_var = tk.StringVar(value=trigger_type or '')
         trigger_combo = ttk.Combobox(form_frame, textvariable=trigger_var, state="readonly", width=38)
         trigger_combo['values'] = ['ticket_created', 'ticket_updated', 'status_changed',
@@ -1505,7 +1507,7 @@ def edit_workflow_gui(self, workflow_id):
         trigger_combo.grid(row=2, column=1, sticky='ew', pady=5)
 
         # Conditions (JSON)
-        ttk.Label(form_frame, text="Conditions (JSON)").grid(row=3, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.conditions_json', default="Conditions (JSON)")).grid(row=3, column=0, sticky='nw', pady=5)
         conditions_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
         if trigger_conditions:
             try:
@@ -1516,7 +1518,7 @@ def edit_workflow_gui(self, workflow_id):
         conditions_text.grid(row=3, column=1, sticky='ew', pady=5)
 
         # Actions (JSON)
-        ttk.Label(form_frame, text="Actions (JSON) *").grid(row=4, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.actions_json', default="Actions (JSON) *")).grid(row=4, column=0, sticky='nw', pady=5)
         actions_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
         if actions:
             try:
@@ -1526,12 +1528,12 @@ def edit_workflow_gui(self, workflow_id):
                 actions_text.insert('1.0', actions or '')
         actions_text.grid(row=4, column=1, sticky='ew', pady=5)
 
-        ttk.Label(form_frame, text="Actions: assign_to_department, set_priority, change_status",
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.labels.actions_assign_to_department_set_priority_change_status', default="Actions: assign_to_department, set_priority, change_status"),
                  foreground='gray', font=('TkDefaultFont', 8)).grid(row=5, column=1, sticky='w')
 
         # Active status
         active_var = tk.BooleanVar(value=bool(is_active))
-        ttk.Checkbutton(form_frame, text="Workflow Active",
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.workflow_active', default="Workflow Active"),
                        variable=active_var).grid(row=6, column=1, sticky='w', pady=5)
 
         form_frame.columnconfigure(1, weight=1)
@@ -1544,7 +1546,7 @@ def edit_workflow_gui(self, workflow_id):
             new_trigger = trigger_var.get()
 
             if not new_name or not new_trigger:
-                messagebox.showerror("Error", "Name and trigger type are required")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.name_and_trigger_type_are_required', default="Name and trigger type are required"))
                 return
 
             try:
@@ -1577,19 +1579,19 @@ def edit_workflow_gui(self, workflow_id):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Workflow #{workflow_id} updated successfully!")
+                messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.success', default="Success"), f"Workflow #{workflow_id} updated successfully!")
                 dialog.destroy()
 
             except json.JSONDecodeError as e:
-                messagebox.showerror("Error", f"Invalid JSON: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Invalid JSON: {str(e)}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update workflow: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to update workflow: {str(e)}")
 
-        ttk.Button(button_frame, text="Update Workflow", command=update_workflow).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.update_workflow', default="Update Workflow"), command=update_workflow).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.sla_workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load workflow: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to load workflow: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.edit_workflow_gui = edit_workflow_gui
@@ -1598,7 +1600,7 @@ def toggle_selected_workflow(self, tree):
     """Toggle active status of selected workflow"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select a workflow to toggle")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.please_select_a_workflow_to_toggle', default="Please select a workflow to toggle"))
         return
 
     workflow_id = tree.item(selection[0])['values'][0]
@@ -1620,7 +1622,7 @@ def toggle_workflow_gui(self, workflow_id, tree):
         result = cursor.fetchone()
 
         if not result:
-            messagebox.showerror("Error", "Workflow not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.sla_workflows.dialogs.workflow_not_found', default="Workflow not found"))
             conn.close()
             return
 
@@ -1634,13 +1636,13 @@ def toggle_workflow_gui(self, workflow_id, tree):
         conn.close()
 
         status_text = "activated" if new_status else "deactivated"
-        messagebox.showinfo("Success", f"Workflow '{name}' has been {status_text}")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.success', default="Success"), f"Workflow '{name}' has been {status_text}")
 
         # Refresh tree
         self.load_workflows_list(tree)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to toggle workflow: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.sla_workflows.dialogs.error', default="Error"), f"Failed to toggle workflow: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.toggle_workflow_gui = toggle_workflow_gui

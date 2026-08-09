@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -86,7 +88,7 @@ class ForumMixin:
                     self.update_status(f"Loaded {len(posts)} forum post(s)")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load forum posts: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.forum.dialogs.database_error', default="Database Error"), f"Failed to load forum posts: {str(e)}")
 
         def _show_reply_dialog(self, post_title, parent_window):
             """Show dialog to add a reply to a forum post"""
@@ -102,28 +104,28 @@ class ForumMixin:
             ttk.Label(frame, text=f"Reply to: {post_title}",
                      font=('Arial', 12, 'bold')).pack(pady=(0, 20))
 
-            ttk.Label(frame, text="Your Reply:").pack(anchor='w')
+            ttk.Label(frame, text=_t('gui.learners.alumni.forum.labels.your_reply', default="Your Reply:")).pack(anchor='w')
             reply_text = ScrolledText(frame, wrap=tk.WORD, height=10)
             reply_text.pack(fill=tk.BOTH, expand=True, pady=(5, 20))
 
             def submit_reply():
                 reply_content = reply_text.get(1.0, tk.END).strip()
                 if not reply_content:
-                    messagebox.showerror("Validation Error", "Reply cannot be empty!")
+                    messagebox.showerror(_t('gui.learners.alumni.forum.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.forum.dialogs.reply_cannot_be_empty', default="Reply cannot be empty!"))
                     return
 
                 try:
                     self.add_forum_reply(post_title, reply_content)
-                    messagebox.showinfo("Success", "Reply posted successfully!")
+                    messagebox.showinfo(_t('gui.learners.alumni.forum.dialogs.success', default="Success"), _t('gui.learners.alumni.forum.dialogs.reply_posted_successfully', default="Reply posted successfully!"))
                     reply_window.destroy()
                     parent_window.destroy()  # Close parent detail window
                     self.view_forum_posts()  # Refresh forum view
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Failed to post reply: {str(e)}")
+                    messagebox.showerror(_t('gui.learners.alumni.forum.dialogs.database_error', default="Database Error"), f"Failed to post reply: {str(e)}")
 
-            ttk.Button(frame, text="Post Reply",
+            ttk.Button(frame, text=_t('gui.learners.alumni.forum.buttons.post_reply', default="Post Reply"),
                       command=submit_reply).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(frame, text="Cancel",
+            ttk.Button(frame, text=_t('gui.learners.alumni.forum.buttons.cancel', default="Cancel"),
                       command=reply_window.destroy).pack(side=tk.LEFT)
 
         def add_forum_reply(self, post_title, reply_content):
@@ -169,7 +171,7 @@ class ForumMixin:
 
         def create_forum_post_form(self, parent):
             """Create the forum post form"""
-            ttk.Label(parent, text="Create New Forum Post",
+            ttk.Label(parent, text=_t('gui.learners.alumni.forum.labels.create_new_forum_post', default="Create New Forum Post"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             form_frame = ttk.Frame(parent)
@@ -179,7 +181,7 @@ class ForumMixin:
             cat_frame = ttk.Frame(form_frame)
             cat_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(cat_frame, text="Category:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(cat_frame, text=_t('gui.learners.alumni.forum.labels.category', default="Category:")).pack(side=tk.LEFT, padx=(0, 10))
             self.post_category = tk.StringVar()
             cat_combo = ttk.Combobox(cat_frame, textvariable=self.post_category,
                                     values=["General Discussion", "Career Advice", "Networking",
@@ -191,17 +193,17 @@ class ForumMixin:
             title_frame = ttk.Frame(form_frame)
             title_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(title_frame, text="Post Title:").pack(anchor='w')
+            ttk.Label(title_frame, text=_t('gui.learners.alumni.forum.labels.post_title', default="Post Title:")).pack(anchor='w')
             self.post_title = tk.StringVar()
             ttk.Entry(title_frame, textvariable=self.post_title).pack(fill=tk.X, pady=(5, 0))
 
             # Content
-            ttk.Label(form_frame, text="Post Content:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(form_frame, text=_t('gui.learners.alumni.forum.labels.post_content_variant_2', default="Post Content:")).pack(anchor='w', pady=(10, 5))
             self.post_content = ScrolledText(form_frame, height=10, wrap=tk.WORD)
             self.post_content.pack(fill=tk.BOTH, expand=True)
 
             # Submit button
-            ttk.Button(form_frame, text="Post to Forum",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.forum.buttons.post_to_forum', default="Post to Forum"),
                       command=self.submit_forum_post).pack(pady=20)
 
         def preview_newsletter(self):
@@ -224,23 +226,23 @@ class ForumMixin:
 
         def save_newsletter_draft(self):
             """Save newsletter as draft"""
-            messagebox.showinfo("Draft Saved", "Newsletter saved as draft successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.forum.dialogs.draft_saved', default="Draft Saved"), _t('gui.learners.alumni.forum.dialogs.newsletter_saved_as_draft_successfully', default="Newsletter saved as draft successfully!"))
             self.update_status("Newsletter draft saved")
 
         def send_newsletter(self):
             """Send the newsletter"""
             if not self.newsletter_title.get().strip():
-                messagebox.showerror("Validation Error", "Newsletter title is required!")
+                messagebox.showerror(_t('gui.learners.alumni.forum.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.forum.dialogs.newsletter_title_is_required', default="Newsletter title is required!"))
                 return
 
             if not self.newsletter_content.get(1.0, tk.END).strip():
-                messagebox.showerror("Validation Error", "Newsletter content is required!")
+                messagebox.showerror(_t('gui.learners.alumni.forum.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.forum.dialogs.newsletter_content_is_required', default="Newsletter content is required!"))
                 return
 
             # Confirmation dialog
-            if messagebox.askyesno("Confirm Send",
+            if messagebox.askyesno(_t('gui.learners.alumni.forum.dialogs.confirm_send', default="Confirm Send"),
                                   f"Send newsletter '{self.newsletter_title.get()}' to {self.newsletter_audience.get()}?"):
-                messagebox.showinfo("Newsletter Sent", "Newsletter has been sent successfully!")
+                messagebox.showinfo(_t('gui.learners.alumni.forum.dialogs.newsletter_sent', default="Newsletter Sent"), _t('gui.learners.alumni.forum.dialogs.newsletter_has_been_sent_successfully', default="Newsletter has been sent successfully!"))
                 self.update_status("Newsletter sent to recipients")
 
         def show_create_newsletter(self):
@@ -248,18 +250,18 @@ class ForumMixin:
             self.clear_content()
             self.update_status("Newsletter Creation")
 
-            ttk.Label(self.content_frame, text="Create Alumni Newsletter",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.forum.labels.create_alumni_newsletter', default="Create Alumni Newsletter"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Newsletter form
-            form_frame = ttk.LabelFrame(self.content_frame, text="Newsletter Details", padding=10)
+            form_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.forum.labels.newsletter_details', default="Newsletter Details"), padding=10)
             form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             # Title
             title_frame = ttk.Frame(form_frame)
             title_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(title_frame, text="Newsletter Title:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(title_frame, text=_t('gui.learners.alumni.forum.labels.newsletter_title', default="Newsletter Title:")).pack(side=tk.LEFT, padx=(0, 10))
             self.newsletter_title = tk.StringVar()
             ttk.Entry(title_frame, textvariable=self.newsletter_title).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
@@ -267,7 +269,7 @@ class ForumMixin:
             audience_frame = ttk.Frame(form_frame)
             audience_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(audience_frame, text="Target Audience:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(audience_frame, text=_t('gui.learners.alumni.forum.labels.target_audience', default="Target Audience:")).pack(side=tk.LEFT, padx=(0, 10))
             self.newsletter_audience = tk.StringVar()
             audience_combo = ttk.Combobox(audience_frame, textvariable=self.newsletter_audience,
                                          values=["All Alumni", "By Graduation Year", "By Industry", "Donors Only", "Mentors Only"])
@@ -275,7 +277,7 @@ class ForumMixin:
             audience_combo.set("All Alumni")
 
             # Content
-            ttk.Label(form_frame, text="Newsletter Content:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(form_frame, text=_t('gui.learners.alumni.forum.labels.newsletter_content', default="Newsletter Content:")).pack(anchor='w', pady=(10, 5))
             self.newsletter_content = ScrolledText(form_frame, height=15, wrap=tk.WORD)
             self.newsletter_content.pack(fill=tk.BOTH, expand=True)
 
@@ -315,11 +317,11 @@ class ForumMixin:
             button_frame = ttk.Frame(form_frame)
             button_frame.pack(fill=tk.X, pady=10)
 
-            ttk.Button(button_frame, text="Send Newsletter",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.forum.buttons.send_newsletter', default="Send Newsletter"),
                       command=self.send_newsletter).pack(side=tk.RIGHT, padx=(10, 0))
-            ttk.Button(button_frame, text="Save as Draft",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.forum.buttons.save_as_draft', default="Save as Draft"),
                       command=self.save_newsletter_draft).pack(side=tk.RIGHT)
-            ttk.Button(button_frame, text="Preview",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.forum.buttons.preview', default="Preview"),
                       command=self.preview_newsletter).pack(side=tk.RIGHT, padx=(0, 10))
 
         def show_forum(self):
@@ -327,7 +329,7 @@ class ForumMixin:
             self.clear_content()
             self.update_status("Alumni Forum")
 
-            ttk.Label(self.content_frame, text="Alumni Forum",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.forum.labels.alumni_forum', default="Alumni Forum"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Forum tabs
@@ -336,7 +338,7 @@ class ForumMixin:
 
             # Recent posts tab
             posts_frame = ttk.Frame(notebook)
-            notebook.add(posts_frame, text="Recent Posts")
+            notebook.add(posts_frame, text=_t('gui.learners.alumni.forum.tabs.recent_posts', default="Recent Posts"))
 
             posts_text = ScrolledText(posts_frame, wrap=tk.WORD)
             posts_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -367,21 +369,21 @@ class ForumMixin:
 
             # Create post tab
             create_frame = ttk.Frame(notebook)
-            notebook.add(create_frame, text="Create Post")
+            notebook.add(create_frame, text=_t('gui.learners.alumni.forum.tabs.create_post', default="Create Post"))
 
             self.create_forum_post_form(create_frame)
 
         def show_moderate_forum_posts(self):
             """Show forum moderation interface"""
             if not self.has_permission('moderate_forum'):
-                messagebox.showerror("Access Denied", "You don't have permission to moderate forum posts.")
+                messagebox.showerror(_t('gui.learners.alumni.forum.dialogs.access_denied', default="Access Denied"), _t('gui.learners.alumni.forum.dialogs.you_don_t_have_permission_to_moderate_forum_posts', default="You don't have permission to moderate forum posts."))
                 return
 
             moderate_window = tk.Toplevel(self.root)
-            moderate_window.title("Moderate Forum Posts")
+            moderate_window.title(_t('gui.learners.alumni.forum.windows.moderate_forum_posts', default="Moderate Forum Posts"))
             moderate_window.geometry("700x500")
 
-            ttk.Label(moderate_window, text="Forum Moderation",
+            ttk.Label(moderate_window, text=_t('gui.learners.alumni.forum.labels.forum_moderation', default="Forum Moderation"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             # Tabs for different moderation views
@@ -390,7 +392,7 @@ class ForumMixin:
 
             # Pending posts
             pending_frame = ttk.Frame(notebook)
-            notebook.add(pending_frame, text="Pending Posts")
+            notebook.add(pending_frame, text=_t('gui.learners.alumni.forum.tabs.pending_posts', default="Pending Posts"))
 
             pending_text = ScrolledText(pending_frame, wrap=tk.WORD)
             pending_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -414,7 +416,7 @@ class ForumMixin:
 
             # Reported posts
             reported_frame = ttk.Frame(notebook)
-            notebook.add(reported_frame, text="Reported Posts")
+            notebook.add(reported_frame, text=_t('gui.learners.alumni.forum.tabs.reported_posts', default="Reported Posts"))
 
             reported_text = ScrolledText(reported_frame, wrap=tk.WORD)
             reported_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -435,10 +437,10 @@ class ForumMixin:
         def show_my_forum_posts(self):
             """Show current user's forum posts"""
             posts_window = tk.Toplevel(self.root)
-            posts_window.title("My Forum Posts")
+            posts_window.title(_t('gui.learners.alumni.forum.windows.my_forum_posts', default="My Forum Posts"))
             posts_window.geometry("600x400")
 
-            ttk.Label(posts_window, text="My Forum Posts",
+            ttk.Label(posts_window, text=_t('gui.learners.alumni.forum.labels.my_forum_posts', default="My Forum Posts"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             posts_text = ScrolledText(posts_window, wrap=tk.WORD)
@@ -468,21 +470,21 @@ class ForumMixin:
         def show_search_forum_posts(self):
             """Show forum post search interface"""
             search_window = tk.Toplevel(self.root)
-            search_window.title("Search Forum Posts")
+            search_window.title(_t('gui.learners.alumni.forum.windows.search_forum_posts', default="Search Forum Posts"))
             search_window.geometry("400x300")
 
-            ttk.Label(search_window, text="Search Forum Posts",
+            ttk.Label(search_window, text=_t('gui.learners.alumni.forum.labels.search_forum_posts', default="Search Forum Posts"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             # Search criteria
             search_frame = ttk.Frame(search_window)
             search_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-            ttk.Label(search_frame, text="Search Term:").pack(anchor='w')
+            ttk.Label(search_frame, text=_t('gui.learners.alumni.forum.labels.search_term', default="Search Term:")).pack(anchor='w')
             search_term = tk.StringVar()
             ttk.Entry(search_frame, textvariable=search_term).pack(fill=tk.X, pady=(5, 10))
 
-            ttk.Label(search_frame, text="Category:").pack(anchor='w')
+            ttk.Label(search_frame, text=_t('gui.learners.alumni.forum.labels.category', default="Category:")).pack(anchor='w')
             category_var = tk.StringVar()
             category_combo = ttk.Combobox(search_frame, textvariable=category_var,
                                          values=["All", "General Discussion", "Career Advice", "Networking"])
@@ -491,22 +493,22 @@ class ForumMixin:
 
             def perform_search():
                 if search_term.get():
-                    messagebox.showinfo("Search Results", f"Searching for '{search_term.get()}' in {category_var.get()}")
+                    messagebox.showinfo(_t('gui.learners.alumni.forum.dialogs.search_results', default="Search Results"), f"Searching for '{search_term.get()}' in {category_var.get()}")
                 search_window.destroy()
 
-            ttk.Button(search_window, text="Search", command=perform_search).pack(pady=20)
+            ttk.Button(search_window, text=_t('gui.learners.alumni.forum.buttons.search', default="Search"), command=perform_search).pack(pady=20)
 
         def submit_forum_post(self):
             """Submit forum post"""
             if not self.post_title.get().strip():
-                messagebox.showerror("Validation Error", "Post title is required!")
+                messagebox.showerror(_t('gui.learners.alumni.forum.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.forum.dialogs.post_title_is_required', default="Post title is required!"))
                 return
 
             if not self.post_content.get(1.0, tk.END).strip():
-                messagebox.showerror("Validation Error", "Post content is required!")
+                messagebox.showerror(_t('gui.learners.alumni.forum.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.forum.dialogs.post_content_is_required', default="Post content is required!"))
                 return
 
-            messagebox.showinfo("Post Created", "Forum post created successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.forum.dialogs.post_created', default="Post Created"), _t('gui.learners.alumni.forum.dialogs.forum_post_created_successfully', default="Forum post created successfully!"))
             self.update_status("Forum post submitted")
 
             # Clear form
@@ -516,12 +518,12 @@ class ForumMixin:
         def view_forum_post_details(self):
             """View details for a selected forum post"""
             if not hasattr(self, 'forum_posts_tree'):
-                messagebox.showwarning("Not Available", "Please use the 'View Forum Posts' feature first.")
+                messagebox.showwarning(_t('gui.learners.alumni.forum.dialogs.not_available', default="Not Available"), _t('gui.learners.alumni.forum.dialogs.please_use_the_view_forum_posts_feature_first', default="Please use the 'View Forum Posts' feature first."))
                 return
 
             selection = self.forum_posts_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a forum post to view.")
+                messagebox.showwarning(_t('gui.learners.alumni.forum.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.forum.dialogs.please_select_a_forum_post_to_view', default="Please select a forum post to view."))
                 return
 
             item = self.forum_posts_tree.item(selection[0])
@@ -549,7 +551,7 @@ class ForumMixin:
                      font=('Arial', 9), foreground='gray').pack(anchor='w', pady=(5, 0))
 
             # Post content
-            content_frame = ttk.LabelFrame(main_frame, text="Post Content", padding=10)
+            content_frame = ttk.LabelFrame(main_frame, text=_t('gui.learners.alumni.forum.labels.post_content', default="Post Content"), padding=10)
             content_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
 
             content_text = ScrolledText(content_frame, wrap=tk.WORD, height=10)
@@ -571,7 +573,7 @@ class ForumMixin:
             content_text.config(state='disabled')
 
             # Replies section
-            replies_frame = ttk.LabelFrame(main_frame, text="Replies", padding=10)
+            replies_frame = ttk.LabelFrame(main_frame, text=_t('gui.learners.alumni.forum.labels.replies', default="Replies"), padding=10)
             replies_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
             replies_text = ScrolledText(replies_frame, wrap=tk.WORD, height=8)
@@ -583,9 +585,9 @@ class ForumMixin:
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(fill=tk.X)
 
-            ttk.Button(button_frame, text="Add Reply",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.forum.buttons.add_reply', default="Add Reply"),
                       command=lambda: self._show_reply_dialog(post_data[0], detail_window)).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.forum.buttons.close', default="Close"),
                       command=detail_window.destroy).pack(side=tk.LEFT)
 
         def view_forum_posts(self):
@@ -593,14 +595,14 @@ class ForumMixin:
             self.clear_content()
             self.update_status("Forum Posts")
 
-            ttk.Label(self.content_frame, text="Forum Posts",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.forum.labels.forum_posts', default="Forum Posts"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Filter frame
             filter_frame = ttk.Frame(self.content_frame)
             filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-            ttk.Label(filter_frame, text="Category:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.forum.labels.category', default="Category:")).pack(side=tk.LEFT, padx=(0, 10))
             self.forum_filter_category = tk.StringVar()
             category_combo = ttk.Combobox(filter_frame, textvariable=self.forum_filter_category,
                                          values=["All", "General Discussion", "Career Advice", "Networking",
@@ -608,14 +610,14 @@ class ForumMixin:
             category_combo.pack(side=tk.LEFT, padx=(0, 20))
             category_combo.set("All")
 
-            ttk.Label(filter_frame, text="Sort by:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.forum.labels.sort_by', default="Sort by:")).pack(side=tk.LEFT, padx=(0, 10))
             self.forum_sort_by = tk.StringVar()
             sort_combo = ttk.Combobox(filter_frame, textvariable=self.forum_sort_by,
                                      values=["Most Recent", "Most Replies", "Most Views", "Oldest First"])
             sort_combo.pack(side=tk.LEFT, padx=(0, 20))
             sort_combo.set("Most Recent")
 
-            ttk.Button(filter_frame, text="Apply Filter",
+            ttk.Button(filter_frame, text=_t('gui.learners.alumni.forum.buttons.apply_filter', default="Apply Filter"),
                       command=self._load_forum_posts).pack(side=tk.LEFT)
 
             # Posts table
@@ -644,10 +646,10 @@ class ForumMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="View Post",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.forum.buttons.view_post', default="View Post"),
                       command=self.view_forum_post_details).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Create New Post",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.forum.buttons.create_new_post', default="Create New Post"),
                       command=self.show_forum).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.forum.buttons.refresh', default="Refresh"),
                       command=self._load_forum_posts).pack(side=tk.LEFT)
 

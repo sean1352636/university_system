@@ -11,6 +11,8 @@ Features:
 - Activity calendar view
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -37,11 +39,11 @@ class SocialMatchingGUI:
         self.auth = get_auth()
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Interest-Based Social Matching")
+        self.window.title(_t('gui.pastoral.social_matching.social_matching.windows.interest_based_social_matching', default="Interest-Based Social Matching"))
         self.window.geometry("1200x800")
 
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to use Social Matching.")
+            messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.you_must_be_logged_in_to_use_social_matching', default="You must be logged in to use Social Matching."))
             self.window.destroy()
             return
 
@@ -67,20 +69,20 @@ class SocialMatchingGUI:
     def create_interests_tab(self):
         """Create interests management tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Interests")
+        self.notebook.add(tab, text=_t('gui.pastoral.social_matching.social_matching.tabs.my_interests', default="My Interests"))
 
         # Header
-        header = ttk.Label(tab, text="My Interest Profile", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.my_interest_profile', default="My Interest Profile"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Top frame for buttons
         button_frame = ttk.Frame(tab)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Add Interest", command=self.add_interest).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Update Level", command=self.update_interest_level).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Remove Selected", command=self.remove_interest).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.load_interests).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.add_interest', default="Add Interest"), command=self.add_interest).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.update_level', default="Update Level"), command=self.update_interest_level).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.remove_selected', default="Remove Selected"), command=self.remove_interest).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.refresh', default="Refresh"), command=self.load_interests).pack(side=tk.LEFT, padx=5)
 
         # Interests display
         columns = ('ID', 'Category', 'Interest', 'Level', 'Public')
@@ -130,26 +132,26 @@ class SocialMatchingGUI:
     def add_interest(self):
         """Open dialog to add new interest."""
         dialog = tk.Toplevel(self.window)
-        dialog.title("Add Interest")
+        dialog.title(_t('gui.pastoral.social_matching.social_matching.windows.add_interest', default="Add Interest"))
         dialog.geometry("400x350")
 
-        ttk.Label(dialog, text="Add New Interest", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.add_new_interest', default="Add New Interest"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Category
-        ttk.Label(dialog, text="Category:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.category', default="Category:")).pack(pady=5)
         category_var = tk.StringVar()
         category_combo = ttk.Combobox(dialog, textvariable=category_var, values=INTEREST_CATEGORIES, state='readonly')
         category_combo.pack(pady=5)
         category_combo.current(0)
 
         # Interest name
-        ttk.Label(dialog, text="Interest Name:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.interest_name', default="Interest Name:")).pack(pady=5)
         name_var = tk.StringVar()
         name_entry = ttk.Entry(dialog, textvariable=name_var, width=30)
         name_entry.pack(pady=5)
 
         # Interest level
-        ttk.Label(dialog, text="Interest Level (1-10):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.interest_level_1_10', default="Interest Level (1-10):")).pack(pady=5)
         level_var = tk.IntVar(value=5)
         level_scale = ttk.Scale(dialog, from_=1, to=10, variable=level_var, orient=tk.HORIZONTAL)
         level_scale.pack(pady=5)
@@ -164,7 +166,7 @@ class SocialMatchingGUI:
 
         # Public checkbox
         public_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(dialog, text="Make this interest public", variable=public_var).pack(pady=10)
+        ttk.Checkbutton(dialog, text=_t('gui.pastoral.social_matching.social_matching.buttons.make_this_interest_public', default="Make this interest public"), variable=public_var).pack(pady=10)
 
         # Buttons
         button_frame = ttk.Frame(dialog)
@@ -177,29 +179,29 @@ class SocialMatchingGUI:
             is_public = public_var.get()
 
             if not name:
-                messagebox.showerror("Error", "Please enter an interest name.")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_enter_an_interest_name', default="Please enter an interest name."))
                 return
 
             user_id = self.auth.get_current_user()['username']
 
             try:
                 if self.service.add_user_interest(user_id, category, name, level, is_public):
-                    messagebox.showinfo("Success", f"Added '{name}' to {category}!")
+                    messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Added '{name}' to {category}!")
                     dialog.destroy()
                     self.load_interests()
                 else:
-                    messagebox.showerror("Error", "Failed to add interest (may already exist).")
+                    messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.failed_to_add_interest_may_already_exist', default="Failed to add interest (may already exist)."))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Save", command=save_interest).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.save', default="Save"), command=save_interest).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def update_interest_level(self):
         """Update the level of the selected interest."""
         selection = self.interests_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an interest to update.")
+            messagebox.showwarning(_t('gui.pastoral.social_matching.social_matching.dialogs.warning', default="Warning"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_select_an_interest_to_update', default="Please select an interest to update."))
             return
 
         item = self.interests_tree.item(selection[0])
@@ -207,12 +209,12 @@ class SocialMatchingGUI:
         interest_name = item['values'][2]
 
         dialog = tk.Toplevel(self.window)
-        dialog.title("Update Interest Level")
+        dialog.title(_t('gui.pastoral.social_matching.social_matching.windows.update_interest_level', default="Update Interest Level"))
         dialog.geometry("400x250")
 
         ttk.Label(dialog, text=f"Update: {interest_name}", font=('Arial', 14, 'bold')).pack(pady=10)
 
-        ttk.Label(dialog, text="New Interest Level (1-10):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.new_interest_level_1_10', default="New Interest Level (1-10):")).pack(pady=5)
         level_var = tk.IntVar(value=5)
         level_scale = ttk.Scale(dialog, from_=1, to=10, variable=level_var, orient=tk.HORIZONTAL)
         level_scale.pack(pady=5)
@@ -233,58 +235,58 @@ class SocialMatchingGUI:
             user_id = self.auth.get_current_user()['username']
 
             if self.service.update_interest_level(user_id, interest_id, new_level):
-                messagebox.showinfo("Success", f"Interest level updated to {new_level}!")
+                messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Interest level updated to {new_level}!")
                 dialog.destroy()
                 self.load_interests()
             else:
-                messagebox.showerror("Error", "Failed to update interest.")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.failed_to_update_interest', default="Failed to update interest."))
 
-        ttk.Button(button_frame, text="Save", command=save_level).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.save', default="Save"), command=save_level).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def remove_interest(self):
         """Remove selected interest."""
         selection = self.interests_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an interest to remove.")
+            messagebox.showwarning(_t('gui.pastoral.social_matching.social_matching.dialogs.warning', default="Warning"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_select_an_interest_to_remove', default="Please select an interest to remove."))
             return
 
         item = self.interests_tree.item(selection[0])
         interest_id = item['values'][0]
         interest_name = item['values'][2]
 
-        if messagebox.askyesno("Confirm", f"Remove '{interest_name}'?"):
+        if messagebox.askyesno(_t('gui.pastoral.social_matching.social_matching.dialogs.confirm', default="Confirm"), f"Remove '{interest_name}'?"):
             user_id = self.auth.get_current_user()['username']
             if self.service.remove_user_interest(user_id, interest_id):
-                messagebox.showinfo("Success", "Interest removed!")
+                messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), _t('gui.pastoral.social_matching.social_matching.dialogs.interest_removed', default="Interest removed!"))
                 self.load_interests()
             else:
-                messagebox.showerror("Error", "Failed to remove interest.")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.failed_to_remove_interest', default="Failed to remove interest."))
 
     # ========== Matches Tab ==========
 
     def create_matches_tab(self):
         """Create interest matches tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Find Matches")
+        self.notebook.add(tab, text=_t('gui.pastoral.social_matching.social_matching.tabs.find_matches', default="Find Matches"))
 
         # Header
-        header = ttk.Label(tab, text="Interest-Based Matches", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.interest_based_matches', default="Interest-Based Matches"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Search controls
         search_frame = ttk.Frame(tab)
         search_frame.pack(pady=10)
 
-        ttk.Label(search_frame, text="Min Score:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.pastoral.social_matching.social_matching.labels.min_score', default="Min Score:")).pack(side=tk.LEFT, padx=5)
         self.min_score_var = tk.StringVar(value="30")
         ttk.Entry(search_frame, textvariable=self.min_score_var, width=10).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(search_frame, text="Max Results:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.pastoral.social_matching.social_matching.labels.max_results', default="Max Results:")).pack(side=tk.LEFT, padx=5)
         self.max_results_var = tk.StringVar(value="20")
         ttk.Entry(search_frame, textvariable=self.max_results_var, width=10).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(search_frame, text="Find Matches", command=self.find_matches).pack(side=tk.LEFT, padx=10)
+        ttk.Button(search_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.find_matches', default="Find Matches"), command=self.find_matches).pack(side=tk.LEFT, padx=10)
 
         # Results frame
         results_frame = ttk.Frame(tab)
@@ -304,7 +306,7 @@ class SocialMatchingGUI:
         self.matches_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Match details
-        details_frame = ttk.LabelFrame(results_frame, text="Match Details")
+        details_frame = ttk.LabelFrame(results_frame, text=_t('gui.pastoral.social_matching.social_matching.labels.match_details', default="Match Details"))
         details_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10)
 
         self.match_details_text = scrolledtext.ScrolledText(details_frame, wrap=tk.WORD, height=20)
@@ -314,7 +316,7 @@ class SocialMatchingGUI:
         button_frame = ttk.Frame(details_frame)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Send Buddy Request", command=self.send_request_to_match).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.send_buddy_request', default="Send Buddy Request"), command=self.send_request_to_match).pack(side=tk.LEFT, padx=5)
 
         # Bind selection event
         self.matches_tree.bind('<<TreeviewSelect>>', self.on_match_selected)
@@ -325,7 +327,7 @@ class SocialMatchingGUI:
             min_score = float(self.min_score_var.get())
             max_results = int(self.max_results_var.get())
         except ValueError:
-            messagebox.showerror("Error", "Invalid score or results value.")
+            messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.invalid_score_or_results_value', default="Invalid score or results value."))
             return
 
         # Clear tree
@@ -336,7 +338,7 @@ class SocialMatchingGUI:
         matches = self.service.find_interest_matches(user_id, min_score, max_results)
 
         if not matches:
-            messagebox.showinfo("Info", "No matches found. Try lowering the minimum score or adding more interests.")
+            messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.info', default="Info"), _t('gui.pastoral.social_matching.social_matching.dialogs.no_matches_found_try_lowering_the_minimum_score_or_adding_more_i', default="No matches found. Try lowering the minimum score or adding more interests."))
             return
 
         for match in matches:
@@ -346,7 +348,7 @@ class SocialMatchingGUI:
                 match['shared_count']
             ), tags=(json.dumps(match),))
 
-        messagebox.showinfo("Success", f"Found {len(matches)} matches!")
+        messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Found {len(matches)} matches!")
 
     def on_match_selected(self, event):
         """Handle match selection."""
@@ -371,7 +373,7 @@ class SocialMatchingGUI:
         """Send buddy request to selected match."""
         selection = self.matches_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a match first.")
+            messagebox.showwarning(_t('gui.pastoral.social_matching.social_matching.dialogs.warning', default="Warning"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_select_a_match_first', default="Please select a match first."))
             return
 
         item = self.matches_tree.item(selection[0])
@@ -384,10 +386,10 @@ class SocialMatchingGUI:
     def create_buddy_requests_tab(self):
         """Create buddy requests tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Buddy Requests")
+        self.notebook.add(tab, text=_t('gui.pastoral.social_matching.social_matching.tabs.buddy_requests', default="Buddy Requests"))
 
         # Header
-        header = ttk.Label(tab, text="Buddy Requests", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.buddy_requests', default="Buddy Requests"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Sub-tabs for sent/received
@@ -396,9 +398,9 @@ class SocialMatchingGUI:
 
         # Received requests
         received_frame = ttk.Frame(sub_notebook)
-        sub_notebook.add(received_frame, text="Received")
+        sub_notebook.add(received_frame, text=_t('gui.pastoral.social_matching.social_matching.tabs.received', default="Received"))
 
-        ttk.Button(received_frame, text="Refresh", command=self.load_received_requests).pack(pady=5)
+        ttk.Button(received_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.refresh', default="Refresh"), command=self.load_received_requests).pack(pady=5)
 
         columns = ('ID', 'From', 'Type', 'Destination', 'Message', 'Date')
         self.received_tree = ttk.Treeview(received_frame, columns=columns, show='headings', height=15)
@@ -418,14 +420,14 @@ class SocialMatchingGUI:
         button_frame = ttk.Frame(received_frame)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Accept", command=lambda: self.respond_to_request(True)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Decline", command=lambda: self.respond_to_request(False)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.accept', default="Accept"), command=lambda: self.respond_to_request(True)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.decline', default="Decline"), command=lambda: self.respond_to_request(False)).pack(side=tk.LEFT, padx=5)
 
         # Sent requests
         sent_frame = ttk.Frame(sub_notebook)
-        sub_notebook.add(sent_frame, text="Sent")
+        sub_notebook.add(sent_frame, text=_t('gui.pastoral.social_matching.social_matching.tabs.sent', default="Sent"))
 
-        ttk.Button(sent_frame, text="Refresh", command=self.load_sent_requests).pack(pady=5)
+        ttk.Button(sent_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.refresh', default="Refresh"), command=self.load_sent_requests).pack(pady=5)
 
         columns = ('ID', 'To', 'Type', 'Destination', 'Status', 'Date')
         self.sent_tree = ttk.Treeview(sent_frame, columns=columns, show='headings', height=15)
@@ -486,7 +488,7 @@ class SocialMatchingGUI:
         """Respond to a buddy request."""
         selection = self.received_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a request first.")
+            messagebox.showwarning(_t('gui.pastoral.social_matching.social_matching.dialogs.warning', default="Warning"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_select_a_request_first', default="Please select a request first."))
             return
 
         item = self.received_tree.item(selection[0])
@@ -496,27 +498,27 @@ class SocialMatchingGUI:
 
         if self.service.respond_to_buddy_request(request_id, user_id, accept):
             status = "accepted" if accept else "declined"
-            messagebox.showinfo("Success", f"Request {status}!")
+            messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Request {status}!")
             self.load_received_requests()
         else:
-            messagebox.showerror("Error", "Failed to respond to request.")
+            messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.failed_to_respond_to_request', default="Failed to respond to request."))
 
     def open_buddy_request_dialog(self, receiver_id: str = ""):
         """Open dialog to send buddy request."""
         dialog = tk.Toplevel(self.window)
-        dialog.title("Send Buddy Request")
+        dialog.title(_t('gui.pastoral.social_matching.social_matching.windows.send_buddy_request', default="Send Buddy Request"))
         dialog.geometry("400x400")
 
-        ttk.Label(dialog, text="Send Buddy Request", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.send_buddy_request', default="Send Buddy Request"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Receiver ID
-        ttk.Label(dialog, text="To Student ID:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.to_student_id', default="To Student ID:")).pack(pady=5)
         receiver_var = tk.StringVar(value=receiver_id)
         ttk.Entry(dialog, textvariable=receiver_var, width=30).pack(pady=5)
 
         # Request type
-        ttk.Label(dialog, text="Request Type:").pack(pady=5)
-        type_var = tk.StringVar(value="general")
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.request_type', default="Request Type:")).pack(pady=5)
+        type_var = tk.StringVar(value=_t('gui.pastoral.social_matching.social_matching.values.general', default="general"))
         types = [("General Buddy", "general"), ("Study Abroad", "study_abroad"),
                 ("Sports/Fitness", "sports"), ("Academic/Study", "academic"), ("Other", "other")]
 
@@ -524,12 +526,12 @@ class SocialMatchingGUI:
             ttk.Radiobutton(dialog, text=text, variable=type_var, value=value).pack(anchor=tk.W, padx=50)
 
         # Destination (for study abroad)
-        ttk.Label(dialog, text="Destination (if study abroad):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.destination_if_study_abroad', default="Destination (if study abroad):")).pack(pady=5)
         dest_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=dest_var, width=30).pack(pady=5)
 
         # Message
-        ttk.Label(dialog, text="Personal Message:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.personal_message', default="Personal Message:")).pack(pady=5)
         message_text = tk.Text(dialog, height=5, width=40)
         message_text.pack(pady=5)
 
@@ -540,7 +542,7 @@ class SocialMatchingGUI:
         def send_request():
             receiver = receiver_var.get().strip()
             if not receiver:
-                messagebox.showerror("Error", "Please enter a student ID.")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_enter_a_student_id', default="Please enter a student ID."))
                 return
 
             req_type = type_var.get()
@@ -553,33 +555,33 @@ class SocialMatchingGUI:
                 request_id = self.service.send_buddy_request(
                     user_id, receiver, req_type, destination, message
                 )
-                messagebox.showinfo("Success", f"Buddy request sent! (ID: {request_id})")
+                messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Buddy request sent! (ID: {request_id})")
                 dialog.destroy()
                 self.load_sent_requests()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Send", command=send_request).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.send', default="Send"), command=send_request).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     # ========== Teams Tab ==========
 
     def create_teams_tab(self):
         """Create teams tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Teams")
+        self.notebook.add(tab, text=_t('gui.pastoral.social_matching.social_matching.tabs.teams', default="Teams"))
 
         # Header
-        header = ttk.Label(tab, text="Intramural Team Formation", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.intramural_team_formation', default="Intramural Team Formation"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Buttons
         button_frame = ttk.Frame(tab)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Create Team", command=self.create_team).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Join Team", command=self.join_team).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.load_teams).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.create_team', default="Create Team"), command=self.create_team).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.join_team', default="Join Team"), command=self.join_team).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.refresh', default="Refresh"), command=self.load_teams).pack(side=tk.LEFT, padx=5)
 
         # Teams list
         columns = ('ID', 'Name', 'Sport', 'Members', 'Skill', 'Description')
@@ -619,36 +621,36 @@ class SocialMatchingGUI:
     def create_team(self):
         """Open dialog to create team."""
         dialog = tk.Toplevel(self.window)
-        dialog.title("Create Team")
+        dialog.title(_t('gui.pastoral.social_matching.social_matching.windows.create_team', default="Create Team"))
         dialog.geometry("400x400")
 
-        ttk.Label(dialog, text="Create New Team", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.create_new_team', default="Create New Team"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Team name
-        ttk.Label(dialog, text="Team Name:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.team_name', default="Team Name:")).pack(pady=5)
         name_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=name_var, width=30).pack(pady=5)
 
         # Sport type
-        ttk.Label(dialog, text="Sport Type:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.sport_type', default="Sport Type:")).pack(pady=5)
         sport_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=sport_var, width=30).pack(pady=5)
 
         # Team size
-        ttk.Label(dialog, text="Team Size:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.team_size', default="Team Size:")).pack(pady=5)
         size_var = tk.StringVar(value="5")
         ttk.Entry(dialog, textvariable=size_var, width=30).pack(pady=5)
 
         # Skill level
-        ttk.Label(dialog, text="Skill Level:").pack(pady=5)
-        skill_var = tk.StringVar(value="Mixed")
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.skill_level', default="Skill Level:")).pack(pady=5)
+        skill_var = tk.StringVar(value=_t('gui.pastoral.social_matching.social_matching.values.mixed', default="Mixed"))
         skill_combo = ttk.Combobox(dialog, textvariable=skill_var,
                                    values=["Beginner", "Intermediate", "Advanced", "Mixed"],
                                    state='readonly')
         skill_combo.pack(pady=5)
 
         # Description
-        ttk.Label(dialog, text="Description:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.description', default="Description:")).pack(pady=5)
         desc_text = tk.Text(dialog, height=4, width=40)
         desc_text.pack(pady=5)
 
@@ -661,13 +663,13 @@ class SocialMatchingGUI:
             sport = sport_var.get().strip()
 
             if not name or not sport:
-                messagebox.showerror("Error", "Please enter team name and sport.")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_enter_team_name_and_sport', default="Please enter team name and sport."))
                 return
 
             try:
                 size = int(size_var.get())
             except ValueError:
-                messagebox.showerror("Error", "Invalid team size.")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.invalid_team_size', default="Invalid team size."))
                 return
 
             skill = skill_var.get()
@@ -677,48 +679,48 @@ class SocialMatchingGUI:
 
             try:
                 team_id = self.service.create_team(user_id, name, sport, size, skill, description)
-                messagebox.showinfo("Success", f"Team created! (ID: {team_id})")
+                messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Team created! (ID: {team_id})")
                 dialog.destroy()
                 self.load_teams()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Create", command=save_team).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.create', default="Create"), command=save_team).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def join_team(self):
         """Join selected team."""
         selection = self.teams_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a team first.")
+            messagebox.showwarning(_t('gui.pastoral.social_matching.social_matching.dialogs.warning', default="Warning"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_select_a_team_first', default="Please select a team first."))
             return
 
         item = self.teams_tree.item(selection[0])
         team_id = item['values'][0]
         team_name = item['values'][1]
 
-        if messagebox.askyesno("Confirm", f"Join team '{team_name}'?"):
+        if messagebox.askyesno(_t('gui.pastoral.social_matching.social_matching.dialogs.confirm', default="Confirm"), f"Join team '{team_name}'?"):
             user_id = self.auth.get_current_user()['username']
 
             if self.service.join_team(team_id, user_id):
-                messagebox.showinfo("Success", "Successfully joined the team!")
+                messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), _t('gui.pastoral.social_matching.social_matching.dialogs.successfully_joined_the_team', default="Successfully joined the team!"))
                 self.load_teams()
             else:
-                messagebox.showerror("Error", "Failed to join team (may be full or already a member).")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.failed_to_join_team_may_be_full_or_already_a_member', default="Failed to join team (may be full or already a member)."))
 
     # ========== Clubs Tab ==========
 
     def create_clubs_tab(self):
         """Create clubs recommendations tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Club Recommendations")
+        self.notebook.add(tab, text=_t('gui.pastoral.social_matching.social_matching.tabs.club_recommendations', default="Club Recommendations"))
 
         # Header
-        header = ttk.Label(tab, text="Recommended Clubs", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.recommended_clubs', default="Recommended Clubs"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Button
-        ttk.Button(tab, text="Generate Recommendations", command=self.generate_club_recs).pack(pady=10)
+        ttk.Button(tab, text=_t('gui.pastoral.social_matching.social_matching.buttons.generate_recommendations', default="Generate Recommendations"), command=self.generate_club_recs).pack(pady=10)
 
         # Recommendations grid
         columns = ('Club Name', 'Category', 'Score', 'Reason')
@@ -745,7 +747,7 @@ class SocialMatchingGUI:
         recommendations = self.service.generate_club_recommendations(user_id)
 
         if not recommendations:
-            messagebox.showinfo("Info", "No recommendations available. Add interests to your profile!")
+            messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.info', default="Info"), _t('gui.pastoral.social_matching.social_matching.dialogs.no_recommendations_available_add_interests_to_your_profile', default="No recommendations available. Add interests to your profile!"))
             return
 
         for rec in recommendations:
@@ -756,26 +758,26 @@ class SocialMatchingGUI:
                 rec['reason']
             ))
 
-        messagebox.showinfo("Success", f"Generated {len(recommendations)} recommendations!")
+        messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Generated {len(recommendations)} recommendations!")
 
     # ========== Activities Tab ==========
 
     def create_activities_tab(self):
         """Create social activities tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Social Activities")
+        self.notebook.add(tab, text=_t('gui.pastoral.social_matching.social_matching.tabs.social_activities', default="Social Activities"))
 
         # Header
-        header = ttk.Label(tab, text="Social Activities", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.social_activities', default="Social Activities"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Buttons
         button_frame = ttk.Frame(tab)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Create Activity", command=self.create_activity).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="View Suggested", command=self.load_suggested_activities).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Join Activity", command=self.join_activity).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.create_activity', default="Create Activity"), command=self.create_activity).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.view_suggested', default="View Suggested"), command=self.load_suggested_activities).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.join_activity', default="Join Activity"), command=self.join_activity).pack(side=tk.LEFT, padx=5)
 
         # Activities list
         columns = ('ID', 'Name', 'Type', 'Date', 'Time', 'Location', 'Participants')
@@ -803,7 +805,7 @@ class SocialMatchingGUI:
         activities = self.service.get_suggested_activities(user_id, 30)
 
         if not activities:
-            messagebox.showinfo("Info", "No suggested activities found.")
+            messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.info', default="Info"), _t('gui.pastoral.social_matching.social_matching.dialogs.no_suggested_activities_found', default="No suggested activities found."))
             return
 
         for activity in activities:
@@ -817,48 +819,48 @@ class SocialMatchingGUI:
                 f"{activity['current_participants']}/{activity['max_participants']}"
             ))
 
-        messagebox.showinfo("Success", f"Found {len(activities)} suggested activities!")
+        messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Found {len(activities)} suggested activities!")
 
     def create_activity(self):
         """Open dialog to create activity."""
         dialog = tk.Toplevel(self.window)
-        dialog.title("Create Activity")
+        dialog.title(_t('gui.pastoral.social_matching.social_matching.windows.create_activity', default="Create Activity"))
         dialog.geometry("450x500")
 
-        ttk.Label(dialog, text="Create Social Activity", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.create_social_activity', default="Create Social Activity"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Activity name
-        ttk.Label(dialog, text="Activity Name:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.activity_name', default="Activity Name:")).pack(pady=5)
         name_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=name_var, width=40).pack(pady=5)
 
         # Activity type
-        ttk.Label(dialog, text="Activity Type:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.activity_type', default="Activity Type:")).pack(pady=5)
         type_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=type_var, width=40).pack(pady=5)
 
         # Location
-        ttk.Label(dialog, text="Location:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.location', default="Location:")).pack(pady=5)
         location_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=location_var, width=40).pack(pady=5)
 
         # Date
-        ttk.Label(dialog, text="Date (YYYY-MM-DD):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).pack(pady=5)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(dialog, textvariable=date_var, width=40).pack(pady=5)
 
         # Time
-        ttk.Label(dialog, text="Time (HH:MM):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.time_hh_mm', default="Time (HH:MM):")).pack(pady=5)
         time_var = tk.StringVar(value="18:00")
         ttk.Entry(dialog, textvariable=time_var, width=40).pack(pady=5)
 
         # Max participants
-        ttk.Label(dialog, text="Max Participants:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.max_participants', default="Max Participants:")).pack(pady=5)
         max_var = tk.StringVar(value="10")
         ttk.Entry(dialog, textvariable=max_var, width=40).pack(pady=5)
 
         # Description
-        ttk.Label(dialog, text="Description:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.description', default="Description:")).pack(pady=5)
         desc_text = tk.Text(dialog, height=4, width=45)
         desc_text.pack(pady=5)
 
@@ -874,13 +876,13 @@ class SocialMatchingGUI:
             time = time_var.get().strip()
 
             if not all([name, act_type, location, date, time]):
-                messagebox.showerror("Error", "Please fill all required fields.")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_fill_all_required_fields', default="Please fill all required fields."))
                 return
 
             try:
                 max_participants = int(max_var.get())
             except ValueError:
-                messagebox.showerror("Error", "Invalid max participants.")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.invalid_max_participants', default="Invalid max participants."))
                 return
 
             description = desc_text.get(1.0, tk.END).strip()
@@ -892,19 +894,19 @@ class SocialMatchingGUI:
                     user_id, name, act_type, description, location,
                     date, time, max_participants, []
                 )
-                messagebox.showinfo("Success", f"Activity created! (ID: {activity_id})")
+                messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Activity created! (ID: {activity_id})")
                 dialog.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Create", command=save_activity).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.create', default="Create"), command=save_activity).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def join_activity(self):
         """Join selected activity."""
         selection = self.activities_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an activity first.")
+            messagebox.showwarning(_t('gui.pastoral.social_matching.social_matching.dialogs.warning', default="Warning"), _t('gui.pastoral.social_matching.social_matching.dialogs.please_select_an_activity_first', default="Please select an activity first."))
             return
 
         item = self.activities_tree.item(selection[0])
@@ -913,53 +915,53 @@ class SocialMatchingGUI:
 
         # Ask for RSVP status
         dialog = tk.Toplevel(self.window)
-        dialog.title("Join Activity")
+        dialog.title(_t('gui.pastoral.social_matching.social_matching.windows.join_activity', default="Join Activity"))
         dialog.geometry("300x200")
 
         ttk.Label(dialog, text=f"Join: {activity_name}", font=('Arial', 12, 'bold')).pack(pady=20)
 
-        ttk.Label(dialog, text="RSVP Status:").pack(pady=5)
-        status_var = tk.StringVar(value="going")
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.rsvp_status', default="RSVP Status:")).pack(pady=5)
+        status_var = tk.StringVar(value=_t('gui.pastoral.social_matching.social_matching.values.going', default="going"))
 
-        ttk.Radiobutton(dialog, text="Going", variable=status_var, value="going").pack(anchor=tk.W, padx=50)
-        ttk.Radiobutton(dialog, text="Interested", variable=status_var, value="interested").pack(anchor=tk.W, padx=50)
-        ttk.Radiobutton(dialog, text="Maybe", variable=status_var, value="maybe").pack(anchor=tk.W, padx=50)
+        ttk.Radiobutton(dialog, text=_t('gui.pastoral.social_matching.social_matching.buttons.going', default="Going"), variable=status_var, value="going").pack(anchor=tk.W, padx=50)
+        ttk.Radiobutton(dialog, text=_t('gui.pastoral.social_matching.social_matching.buttons.interested', default="Interested"), variable=status_var, value="interested").pack(anchor=tk.W, padx=50)
+        ttk.Radiobutton(dialog, text=_t('gui.pastoral.social_matching.social_matching.buttons.maybe', default="Maybe"), variable=status_var, value="maybe").pack(anchor=tk.W, padx=50)
 
         def confirm_join():
             user_id = self.auth.get_current_user()['username']
             status = status_var.get()
 
             if self.service.join_activity(activity_id, user_id, status):
-                messagebox.showinfo("Success", f"Joined activity with status '{status}'!")
+                messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), f"Joined activity with status '{status}'!")
                 dialog.destroy()
             else:
-                messagebox.showerror("Error", "Failed to join activity.")
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), _t('gui.pastoral.social_matching.social_matching.dialogs.failed_to_join_activity', default="Failed to join activity."))
 
-        ttk.Button(dialog, text="Confirm", command=confirm_join).pack(pady=20)
+        ttk.Button(dialog, text=_t('gui.pastoral.social_matching.social_matching.buttons.confirm', default="Confirm"), command=confirm_join).pack(pady=20)
 
     # ========== Profile Tab ==========
 
     def create_profile_tab(self):
         """Create personality profile tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Profile & Settings")
+        self.notebook.add(tab, text=_t('gui.pastoral.social_matching.social_matching.tabs.profile_settings', default="Profile & Settings"))
 
         # Header
-        header = ttk.Label(tab, text="Personality Profile & Privacy", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.personality_profile_privacy', default="Personality Profile & Privacy"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Personality section
-        personality_frame = ttk.LabelFrame(tab, text="Personality Profile")
+        personality_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.personality_profile', default="Personality Profile"))
         personality_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Display current profile
         self.profile_display = scrolledtext.ScrolledText(personality_frame, wrap=tk.WORD, height=10)
         self.profile_display.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Button(personality_frame, text="Update Profile", command=self.update_personality).pack(pady=5)
+        ttk.Button(personality_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.update_profile', default="Update Profile"), command=self.update_personality).pack(pady=5)
 
         # Privacy section
-        privacy_frame = ttk.LabelFrame(tab, text="Privacy Settings")
+        privacy_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.privacy_settings', default="Privacy Settings"))
         privacy_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         self.privacy_vars = {}
@@ -977,16 +979,16 @@ class SocialMatchingGUI:
             self.privacy_vars[key] = tk.BooleanVar()
             ttk.Checkbutton(privacy_frame, text=label, variable=self.privacy_vars[key]).pack(anchor=tk.W, padx=20, pady=2)
 
-        ttk.Button(privacy_frame, text="Save Privacy Settings", command=self.save_privacy).pack(pady=10)
+        ttk.Button(privacy_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.save_privacy_settings', default="Save Privacy Settings"), command=self.save_privacy).pack(pady=10)
 
         # Statistics section
-        stats_frame = ttk.LabelFrame(tab, text="My Statistics")
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.social_matching.social_matching.labels.my_statistics', default="My Statistics"))
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         self.stats_display = scrolledtext.ScrolledText(stats_frame, wrap=tk.WORD, height=8)
         self.stats_display.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Button(stats_frame, text="Refresh Statistics", command=self.load_statistics).pack(pady=5)
+        ttk.Button(stats_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.refresh_statistics', default="Refresh Statistics"), command=self.load_statistics).pack(pady=5)
 
         # Load initial data
         self.load_profile_data()
@@ -1021,40 +1023,40 @@ class SocialMatchingGUI:
     def update_personality(self):
         """Open dialog to update personality profile."""
         dialog = tk.Toplevel(self.window)
-        dialog.title("Update Personality Profile")
+        dialog.title(_t('gui.pastoral.social_matching.social_matching.windows.update_personality_profile', default="Update Personality Profile"))
         dialog.geometry("400x500")
 
-        ttk.Label(dialog, text="Personality Profile", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.personality_profile', default="Personality Profile"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Personality type
-        ttk.Label(dialog, text="Personality Type:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.personality_type', default="Personality Type:")).pack(pady=5)
         type_var = tk.StringVar(value=PERSONALITY_TYPES[0])
         type_combo = ttk.Combobox(dialog, textvariable=type_var, values=PERSONALITY_TYPES, state='readonly')
         type_combo.pack(pady=5)
 
         # Extroversion
-        ttk.Label(dialog, text="Extroversion (1-10):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.extroversion_1_10', default="Extroversion (1-10):")).pack(pady=5)
         extro_var = tk.IntVar(value=5)
         ttk.Scale(dialog, from_=1, to=10, variable=extro_var, orient=tk.HORIZONTAL).pack(pady=5)
 
         # Openness
-        ttk.Label(dialog, text="Openness (1-10):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.openness_1_10', default="Openness (1-10):")).pack(pady=5)
         open_var = tk.IntVar(value=5)
         ttk.Scale(dialog, from_=1, to=10, variable=open_var, orient=tk.HORIZONTAL).pack(pady=5)
 
         # Social preference
-        ttk.Label(dialog, text="Social Preference:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.social_preference', default="Social Preference:")).pack(pady=5)
         social_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=social_var, width=40).pack(pady=5)
 
         # Group size
-        ttk.Label(dialog, text="Group Size Preference:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.group_size_preference', default="Group Size Preference:")).pack(pady=5)
         group_var = tk.StringVar(value=GROUP_SIZE_PREFERENCES[0])
         group_combo = ttk.Combobox(dialog, textvariable=group_var, values=GROUP_SIZE_PREFERENCES, state='readonly')
         group_combo.pack(pady=5)
 
         # Activity level
-        ttk.Label(dialog, text="Activity Level:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.pastoral.social_matching.social_matching.labels.activity_level', default="Activity Level:")).pack(pady=5)
         activity_var = tk.StringVar(value=ACTIVITY_LEVELS[1])
         activity_combo = ttk.Combobox(dialog, textvariable=activity_var, values=ACTIVITY_LEVELS, state='readonly')
         activity_combo.pack(pady=5)
@@ -1076,14 +1078,14 @@ class SocialMatchingGUI:
                     group_var.get(),
                     activity_var.get()
                 )
-                messagebox.showinfo("Success", "Personality profile updated!")
+                messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), _t('gui.pastoral.social_matching.social_matching.dialogs.personality_profile_updated', default="Personality profile updated!"))
                 dialog.destroy()
                 self.load_profile_data()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Save", command=save_profile).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.save', default="Save"), command=save_profile).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.social_matching.social_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def save_privacy(self):
         """Save privacy settings."""
@@ -1093,9 +1095,9 @@ class SocialMatchingGUI:
 
         try:
             self.service.set_privacy_settings(user_id, **settings)
-            messagebox.showinfo("Success", "Privacy settings saved!")
+            messagebox.showinfo(_t('gui.pastoral.social_matching.social_matching.dialogs.success', default="Success"), _t('gui.pastoral.social_matching.social_matching.dialogs.privacy_settings_saved', default="Privacy settings saved!"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.social_matching.social_matching.dialogs.error', default="Error"), str(e))
 
     def load_statistics(self):
         """Load and display statistics."""

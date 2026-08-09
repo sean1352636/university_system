@@ -15,12 +15,12 @@ def test_package_and_cli_import():
 
 
 def test_data_paths_redirect_to_temp_dir(tmp_path, monkeypatch):
-    from education_system.systems.primary.infrastructure import paths as paths_mod
+    from education_system import paths as paths_mod
 
     monkeypatch.setenv("EDU_PRIMARY_DATA_DIR", str(tmp_path))
     importlib.reload(paths_mod)
     try:
-        assert str(paths_mod.PUPILS_DB).startswith(str(tmp_path))
+        assert str(paths_mod.PRIMARY_PUPILS_DB).startswith(str(tmp_path))
     finally:
         monkeypatch.delenv("EDU_PRIMARY_DATA_DIR", raising=False)
         importlib.reload(paths_mod)

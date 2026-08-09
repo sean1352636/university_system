@@ -1,5 +1,7 @@
 """AI Assistant Manager for assignment system - rule-based AI features"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 import json
@@ -97,13 +99,13 @@ class AIAssistantManager:
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="AI Assistant Dashboard", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.ai_assistant_dashboard', default="AI Assistant Dashboard"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         desc = ttk.Label(
             parent,
-            text="Rule-based AI tools for feedback, practice generation, "
-                 "collusion detection, and late-pass advising.",
+            text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.rule_based_ai_tools_for_feedback_practice_generation_collusion_d', default="Rule-based AI tools for feedback, practice generation, "
+                 "collusion detection, and late-pass advising."),
             wraplength=700,
         )
         desc.pack(anchor='w', pady=(0, 15))
@@ -153,7 +155,7 @@ class AIAssistantManager:
             )
 
         # Recent activity
-        activity_frame = ttk.LabelFrame(parent, text="Recent Activity", padding=10)
+        activity_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.recent_activity', default="Recent Activity"), padding=10)
         activity_frame.pack(fill='x', padx=10, pady=(20, 0))
 
         try:
@@ -203,20 +205,20 @@ class AIAssistantManager:
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="AI Draft Feedback", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.ai_draft_feedback', default="AI Draft Feedback"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 10))
 
         ttk.Label(
             parent,
-            text="Paste your draft below for writing suggestions and structure feedback. "
-                 "This is not grading — it helps you improve before final submission.",
+            text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.paste_your_draft_below_for_writing_suggestions_and_structure_fee', default="Paste your draft below for writing suggestions and structure feedback. "
+                 "This is not grading — it helps you improve before final submission."),
             wraplength=700,
         ).pack(anchor='w', pady=(0, 10))
 
         # Assignment selector
         sel_frame = ttk.Frame(parent)
         sel_frame.pack(fill='x', pady=(0, 10))
-        ttk.Label(sel_frame, text="Assignment (optional):").pack(side='left')
+        ttk.Label(sel_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.assignment_optional', default="Assignment (optional):")).pack(side='left')
         self._feedback_assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(
             sel_frame, textvariable=self._feedback_assignment_var, width=50, state='readonly'
@@ -225,21 +227,21 @@ class AIAssistantManager:
         self._load_assignments_into_combo(assignment_combo)
 
         # Draft text area
-        ttk.Label(parent, text="Draft Text:").pack(anchor='w')
+        ttk.Label(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.draft_text', default="Draft Text:")).pack(anchor='w')
         self._draft_text = scrolledtext.ScrolledText(parent, height=14, wrap='word')
         self._draft_text.pack(fill='both', expand=True, pady=(2, 10))
 
         btn_frame = ttk.Frame(parent)
         btn_frame.pack(fill='x')
         ttk.Button(
-            btn_frame, text="Get Feedback", command=self._on_submit_draft
+            btn_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.buttons.get_feedback', default="Get Feedback"), command=self._on_submit_draft
         ).pack(side='left')
         ttk.Button(
-            btn_frame, text="Back to Dashboard", command=self.show_ai_dashboard
+            btn_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.buttons.back_to_dashboard', default="Back to Dashboard"), command=self.show_ai_dashboard
         ).pack(side='right')
 
         # Feedback output area
-        ttk.Label(parent, text="Feedback:").pack(anchor='w', pady=(10, 0))
+        ttk.Label(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.feedback', default="Feedback:")).pack(anchor='w', pady=(10, 0))
         self._feedback_output = scrolledtext.ScrolledText(
             parent, height=12, wrap='word', state='disabled'
         )
@@ -249,12 +251,12 @@ class AIAssistantManager:
         """Handle draft submission"""
         draft_text = self._draft_text.get('1.0', 'end').strip()
         if not draft_text:
-            messagebox.showwarning("Empty Draft", "Please enter some text before requesting feedback.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.ai_assistant_manager.dialogs.empty_draft', default="Empty Draft"), _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.please_enter_some_text_before_requesting_feedback', default="Please enter some text before requesting feedback."))
             return
         if len(draft_text) < 50:
             messagebox.showwarning(
-                "Draft Too Short",
-                "Please provide at least 50 characters for meaningful feedback.",
+                _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.draft_too_short', default="Draft Too Short"),
+                _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.please_provide_at_least_50_characters_for_meaningful_feedback', default="Please provide at least 50 characters for meaningful feedback."),
             )
             return
 
@@ -566,12 +568,12 @@ class AIAssistantManager:
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Practice Question Generator", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.practice_question_generator', default="Practice Question Generator"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 10))
 
         ttk.Label(
             parent,
-            text="Paste or load course material below to auto-generate practice questions.",
+            text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.paste_or_load_course_material_below_to_auto_generate_practice_qu', default="Paste or load course material below to auto-generate practice questions."),
             wraplength=700,
         ).pack(anchor='w', pady=(0, 10))
 
@@ -579,18 +581,18 @@ class AIAssistantManager:
         opt_frame = ttk.Frame(parent)
         opt_frame.pack(fill='x', pady=(0, 5))
 
-        ttk.Label(opt_frame, text="Module Code:").pack(side='left')
+        ttk.Label(opt_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.module_code', default="Module Code:")).pack(side='left')
         self._pq_module_var = tk.StringVar()
         ttk.Entry(opt_frame, textvariable=self._pq_module_var, width=15).pack(side='left', padx=(5, 15))
 
-        ttk.Label(opt_frame, text="Question Type:").pack(side='left')
-        self._pq_type_var = tk.StringVar(value='mcq')
+        ttk.Label(opt_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.question_type', default="Question Type:")).pack(side='left')
+        self._pq_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.ai_assistant_manager.values.mcq', default='mcq'))
         ttk.Combobox(
             opt_frame, textvariable=self._pq_type_var,
             values=['mcq', 'short_answer', 'mixed'], width=14, state='readonly',
         ).pack(side='left', padx=(5, 15))
 
-        ttk.Label(opt_frame, text="Count:").pack(side='left')
+        ttk.Label(opt_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.count', default="Count:")).pack(side='left')
         self._pq_count_var = tk.IntVar(value=5)
         ttk.Spinbox(
             opt_frame, textvariable=self._pq_count_var,
@@ -598,24 +600,24 @@ class AIAssistantManager:
         ).pack(side='left', padx=(5, 0))
 
         # Source material
-        ttk.Label(parent, text="Source Material:").pack(anchor='w')
+        ttk.Label(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.source_material', default="Source Material:")).pack(anchor='w')
         self._pq_source = scrolledtext.ScrolledText(parent, height=10, wrap='word')
         self._pq_source.pack(fill='both', expand=True, pady=(2, 5))
 
         btn_frame = ttk.Frame(parent)
         btn_frame.pack(fill='x', pady=(0, 5))
         ttk.Button(
-            btn_frame, text="Load from File", command=self._load_material_file
+            btn_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.buttons.load_from_file', default="Load from File"), command=self._load_material_file
         ).pack(side='left', padx=(0, 10))
         ttk.Button(
-            btn_frame, text="Generate Questions", command=self._on_generate_questions
+            btn_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.buttons.generate_questions', default="Generate Questions"), command=self._on_generate_questions
         ).pack(side='left')
         ttk.Button(
-            btn_frame, text="Back to Dashboard", command=self.show_ai_dashboard
+            btn_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.buttons.back_to_dashboard', default="Back to Dashboard"), command=self.show_ai_dashboard
         ).pack(side='right')
 
         # Output
-        ttk.Label(parent, text="Generated Questions:").pack(anchor='w', pady=(5, 0))
+        ttk.Label(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.generated_questions', default="Generated Questions:")).pack(anchor='w', pady=(5, 0))
         self._pq_output = scrolledtext.ScrolledText(
             parent, height=12, wrap='word', state='disabled'
         )
@@ -624,7 +626,7 @@ class AIAssistantManager:
     def _load_material_file(self):
         """Load source material from a text file"""
         path = filedialog.askopenfilename(
-            title="Select Source Material",
+            title=_t('gui.academics.assignment_system.ai_assistant_manager.dialogs.select_source_material', default="Select Source Material"),
             filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")],
         )
         if path:
@@ -634,15 +636,15 @@ class AIAssistantManager:
                 self._pq_source.delete('1.0', 'end')
                 self._pq_source.insert('1.0', content)
             except Exception as e:
-                messagebox.showerror("Error", f"Could not read file: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.ai_assistant_manager.dialogs.error', default="Error"), f"Could not read file: {e}")
 
     def _on_generate_questions(self):
         """Handle question generation request"""
         content = self._pq_source.get('1.0', 'end').strip()
         if not content or len(content) < 30:
             messagebox.showwarning(
-                "Insufficient Material",
-                "Please provide at least 30 characters of source material.",
+                _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.insufficient_material', default="Insufficient Material"),
+                _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.please_provide_at_least_30_characters_of_source_material', default="Please provide at least 30 characters of source material."),
             )
             return
 
@@ -818,26 +820,26 @@ class AIAssistantManager:
     def show_collusion_detector(self):
         """Collusion detection dashboard"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to access collusion detection.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.ai_assistant_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.you_do_not_have_permission_to_access_collusion_detection', default="You do not have permission to access collusion detection."))
             return
 
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Collusion Detection", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.collusion_detection', default="Collusion Detection"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 10))
 
         ttk.Label(
             parent,
-            text="Analyse submissions for suspicious similarity beyond simple plagiarism — "
-                 "structural patterns, timing analysis, and shared unusual errors.",
+            text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.analyse_submissions_for_suspicious_similarity_beyond_simple_plag', default="Analyse submissions for suspicious similarity beyond simple plagiarism — "
+                 "structural patterns, timing analysis, and shared unusual errors."),
             wraplength=700,
         ).pack(anchor='w', pady=(0, 10))
 
         # Assignment selector
         sel_frame = ttk.Frame(parent)
         sel_frame.pack(fill='x', pady=(0, 10))
-        ttk.Label(sel_frame, text="Select Assignment:").pack(side='left')
+        ttk.Label(sel_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.select_assignment', default="Select Assignment:")).pack(side='left')
         self._cd_assignment_var = tk.StringVar()
         cd_combo = ttk.Combobox(
             sel_frame, textvariable=self._cd_assignment_var, width=50, state='readonly'
@@ -846,24 +848,24 @@ class AIAssistantManager:
         self._load_assignments_into_combo(cd_combo)
 
         ttk.Button(
-            sel_frame, text="Run Analysis", command=self._on_run_collusion
+            sel_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.buttons.run_analysis', default="Run Analysis"), command=self._on_run_collusion
         ).pack(side='left')
         ttk.Button(
-            sel_frame, text="Back to Dashboard", command=self.show_ai_dashboard
+            sel_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.buttons.back_to_dashboard', default="Back to Dashboard"), command=self.show_ai_dashboard
         ).pack(side='right')
 
         # Results area - treeview
-        results_frame = ttk.LabelFrame(parent, text="Analysis Results", padding=10)
+        results_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.analysis_results', default="Analysis Results"), padding=10)
         results_frame.pack(fill='both', expand=True, pady=(5, 5))
 
         columns = ('pair', 'similarity', 'timing', 'structural', 'errors', 'flagged')
         self._cd_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=10)
-        self._cd_tree.heading('pair', text='Student Pair')
-        self._cd_tree.heading('similarity', text='Overall %')
-        self._cd_tree.heading('timing', text='Timing Score')
-        self._cd_tree.heading('structural', text='Structural Score')
-        self._cd_tree.heading('errors', text='Error Match')
-        self._cd_tree.heading('flagged', text='Flagged')
+        self._cd_tree.heading('pair', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.student_pair', default='Student Pair'))
+        self._cd_tree.heading('similarity', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.overall', default='Overall %'))
+        self._cd_tree.heading('timing', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.timing_score', default='Timing Score'))
+        self._cd_tree.heading('structural', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.structural_score', default='Structural Score'))
+        self._cd_tree.heading('errors', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.error_match', default='Error Match'))
+        self._cd_tree.heading('flagged', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.flagged', default='Flagged'))
 
         self._cd_tree.column('pair', width=200)
         self._cd_tree.column('similarity', width=80, anchor='center')
@@ -878,7 +880,7 @@ class AIAssistantManager:
         scrollbar.pack(side='right', fill='y')
 
         # Detail area
-        detail_frame = ttk.LabelFrame(parent, text="Detailed Analysis", padding=10)
+        detail_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.detailed_analysis', default="Detailed Analysis"), padding=10)
         detail_frame.pack(fill='both', expand=True, pady=(5, 0))
         self._cd_detail = scrolledtext.ScrolledText(
             detail_frame, height=8, wrap='word', state='disabled'
@@ -894,7 +896,7 @@ class AIAssistantManager:
         """Handle collusion analysis request"""
         assignment_id = self._parse_assignment_id(self._cd_assignment_var.get())
         if not assignment_id:
-            messagebox.showwarning("No Assignment", "Please select an assignment to analyse.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.ai_assistant_manager.dialogs.no_assignment', default="No Assignment"), _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.please_select_an_assignment_to_analyse', default="Please select an assignment to analyse."))
             return
 
         results = self.run_collusion_analysis(assignment_id)
@@ -904,7 +906,7 @@ class AIAssistantManager:
             self._cd_tree.delete(item)
 
         if not results:
-            messagebox.showinfo("No Results", "No submission pairs found for analysis.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.ai_assistant_manager.dialogs.no_results', default="No Results"), _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.no_submission_pairs_found_for_analysis', default="No submission pairs found for analysis."))
             return
 
         for r in results:
@@ -921,7 +923,7 @@ class AIAssistantManager:
         self._cd_tree.tag_configure('flagged', background='#ffcccc')
 
         messagebox.showinfo(
-            "Analysis Complete",
+            _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.analysis_complete', default="Analysis Complete"),
             f"Analysed {len(results)} submission pairs. "
             f"{sum(1 for r in results if r['flagged'])} flagged for review.",
         )
@@ -1252,19 +1254,19 @@ class AIAssistantManager:
     def show_late_pass_advisor(self):
         """Smart late-pass suggestion dashboard"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to access the late-pass advisor.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.ai_assistant_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.you_do_not_have_permission_to_access_the_late_pass_advisor', default="You do not have permission to access the late-pass advisor."))
             return
 
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Smart Late-Pass Advisor", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.smart_late_pass_advisor', default="Smart Late-Pass Advisor"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 10))
 
         ttk.Label(
             parent,
-            text="Analyse student submission patterns and get data-driven recommendations "
-                 "for granting or denying late passes.",
+            text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.analyse_student_submission_patterns_and_get_data_driven_recommen', default="Analyse student submission patterns and get data-driven recommendations "
+                 "for granting or denying late passes."),
             wraplength=700,
         ).pack(anchor='w', pady=(0, 10))
 
@@ -1272,11 +1274,11 @@ class AIAssistantManager:
         sel_frame = ttk.Frame(parent)
         sel_frame.pack(fill='x', pady=(0, 5))
 
-        ttk.Label(sel_frame, text="Student ID:").pack(side='left')
+        ttk.Label(sel_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.student_id', default="Student ID:")).pack(side='left')
         self._lp_student_var = tk.StringVar()
         ttk.Entry(sel_frame, textvariable=self._lp_student_var, width=20).pack(side='left', padx=(5, 15))
 
-        ttk.Label(sel_frame, text="Assignment (optional):").pack(side='left')
+        ttk.Label(sel_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.assignment_optional', default="Assignment (optional):")).pack(side='left')
         self._lp_assignment_var = tk.StringVar()
         lp_combo = ttk.Combobox(
             sel_frame, textvariable=self._lp_assignment_var, width=40, state='readonly'
@@ -1287,14 +1289,14 @@ class AIAssistantManager:
         btn_frame = ttk.Frame(parent)
         btn_frame.pack(fill='x', pady=(0, 10))
         ttk.Button(
-            btn_frame, text="Analyse Student", command=self._on_analyse_late_pass
+            btn_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.buttons.analyse_student', default="Analyse Student"), command=self._on_analyse_late_pass
         ).pack(side='left')
         ttk.Button(
-            btn_frame, text="Back to Dashboard", command=self.show_ai_dashboard
+            btn_frame, text=_t('gui.academics.assignment_system.ai_assistant_manager.buttons.back_to_dashboard', default="Back to Dashboard"), command=self.show_ai_dashboard
         ).pack(side='right')
 
         # Results
-        results_frame = ttk.LabelFrame(parent, text="Recommendation", padding=10)
+        results_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.recommendation', default="Recommendation"), padding=10)
         results_frame.pack(fill='both', expand=True, pady=(5, 5))
         self._lp_output = scrolledtext.ScrolledText(
             results_frame, height=10, wrap='word', state='disabled'
@@ -1302,16 +1304,16 @@ class AIAssistantManager:
         self._lp_output.pack(fill='both', expand=True)
 
         # History table
-        history_frame = ttk.LabelFrame(parent, text="Previous Recommendations", padding=10)
+        history_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.ai_assistant_manager.labels.previous_recommendations', default="Previous Recommendations"), padding=10)
         history_frame.pack(fill='both', expand=True, pady=(5, 0))
 
         cols = ('student', 'assignment', 'recommendation', 'confidence', 'date')
         self._lp_tree = ttk.Treeview(history_frame, columns=cols, show='headings', height=6)
-        self._lp_tree.heading('student', text='Student')
-        self._lp_tree.heading('assignment', text='Assignment')
-        self._lp_tree.heading('recommendation', text='Recommendation')
-        self._lp_tree.heading('confidence', text='Confidence')
-        self._lp_tree.heading('date', text='Date')
+        self._lp_tree.heading('student', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.student', default='Student'))
+        self._lp_tree.heading('assignment', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.assignment', default='Assignment'))
+        self._lp_tree.heading('recommendation', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.recommendation', default='Recommendation'))
+        self._lp_tree.heading('confidence', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.confidence', default='Confidence'))
+        self._lp_tree.heading('date', text=_t('gui.academics.assignment_system.ai_assistant_manager.headings.date', default='Date'))
 
         self._lp_tree.column('student', width=100)
         self._lp_tree.column('assignment', width=100)
@@ -1330,7 +1332,7 @@ class AIAssistantManager:
         """Handle late-pass analysis request"""
         student_id = self._lp_student_var.get().strip()
         if not student_id:
-            messagebox.showwarning("No Student", "Please enter a student ID.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.ai_assistant_manager.dialogs.no_student', default="No Student"), _t('gui.academics.assignment_system.ai_assistant_manager.dialogs.please_enter_a_student_id', default="Please enter a student ID."))
             return
 
         assignment_id = self._parse_assignment_id(self._lp_assignment_var.get())

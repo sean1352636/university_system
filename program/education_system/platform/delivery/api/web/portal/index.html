@@ -17,11 +17,10 @@
         <h1>Welcome to the Education System</h1>
         <p>One portal for the University, Sixth Form College, Secondary School, and Primary School.</p>
       </div>
-      <div id="cta" class="row"></div>
-    </section>
-
-    <section>
-      <div id="systems-grid" class="grid grid-4" aria-label="Systems"></div>
+      <div id="cta" class="row">
+        <a class="btn" href="/web/login">Login</a>
+        <a class="btn-ghost btn" href="/portal/operations/pgr">Postgraduate research</a>
+      </div>
     </section>
 
     <section style="margin-top: 2.5rem;">
@@ -52,44 +51,15 @@
     (function () {
       EduPortal.renderTopbar("home");
 
-      const grid = document.getElementById("systems-grid");
       const user = EduPortal.getUser();
       const cta  = document.getElementById("cta");
 
-      if (!user) {
-        cta.innerHTML = `
-          <a class="btn" href="/portal/login.html">Sign in</a>
-          <a class="btn-ghost btn" href="#systems-grid">Browse systems</a>`;
-      } else {
+      if (user) {
         const active = EduPortal.getActiveSystem();
-        cta.innerHTML = `
-          <a class="btn" href="/portal/dashboard.html${active ? "?system=" + active : ""}">Open dashboard</a>`;
+        cta.insertAdjacentHTML("beforeend", `
+          <a class="btn-ghost btn" href="/portal/dashboard.html${active ? "?system=" + active : ""}">Open dashboard</a>`);
       }
 
-      grid.innerHTML = EduPortal.SYSTEMS.map(s => {
-        const accessible = user ? EduPortal.userHasSystem(s.key) : true;
-        const href = user
-          ? (accessible ? `/portal/dashboard.html?system=${s.key}` : "#")
-          : `/portal/login.html?system=${s.key}`;
-        const cls = accessible ? "system-card accessible" : "system-card locked";
-        const badge = !user
-          ? "Sign in"
-          : (accessible ? "Open" : "No access");
-        return `
-          <a class="card ${cls}" data-system="${s.key}" href="${href}"
-             ${accessible ? "" : 'onclick="return false;"'}>
-            <span class="badge">${badge}</span>
-            <span class="eyebrow">${s.emoji} ${s.label.toUpperCase()}</span>
-            <h3>${s.label}</h3>
-            <p>${s.tagline}</p>
-          </a>`;
-      }).join("");
-
-      // On card click for signed-in users, remember which system they chose
-      grid.addEventListener("click", (ev) => {
-        const card = ev.target.closest(".system-card.accessible");
-        if (card && card.dataset.system) EduPortal.setActiveSystem(card.dataset.system);
-      });
     })();
   </script>
 </body>

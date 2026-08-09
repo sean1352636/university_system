@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES
 from education_system.systems.university.domain.academics.services.module_scheduling.analytics import AnalyticsMixin
 from education_system.systems.university.domain.academics.services.module_scheduling.conflicts import ConflictsMixin
@@ -33,7 +33,7 @@ class ModuleScheduler(
 ):
     def __init__(self, db_path=None):
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
         self.db_path = db_path
         self._init_db()
         self._migrate_database()  # Run migrations after table creation
@@ -331,11 +331,11 @@ class ModuleScheduler(
 
     def _init_config(self):
         """Initialize configuration settings"""
-        from education_system.systems.university.infrastructure import paths
-        os.makedirs(str(paths.REPORTS_DIR / 'timetable_reports'), exist_ok=True)
-        os.makedirs(str(paths.BACKUP_DIR), exist_ok=True)
-        os.makedirs(str(paths.ANALYTICS_DIR), exist_ok=True)
-        os.makedirs(str(paths.REPORT_TEMPLATES_DIR), exist_ok=True)
+        from education_system import paths
+        os.makedirs(str(paths.UNIVERSITY_REPORTS_DIR / 'timetable_reports'), exist_ok=True)
+        os.makedirs(str(paths.UNIVERSITY_BACKUP_DIR), exist_ok=True)
+        os.makedirs(str(paths.UNIVERSITY_ANALYTICS_DIR), exist_ok=True)
+        os.makedirs(str(paths.UNIVERSITY_REPORT_TEMPLATES_DIR), exist_ok=True)
 
     def _get_known_modules(self):
         """Get all known modules from various sources"""

@@ -63,7 +63,7 @@ def show_referrals_page(self):
 
 def create_referral(self):
     form = tk.Toplevel(self.root)
-    form.title("New Referral")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.referrals.windows.new_referral', default="New Referral"))
     form.geometry("400x300")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -80,7 +80,7 @@ def create_referral(self):
 
     def create():
         if not email_e.get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Enter referrer email")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.referrals.dialogs.enter_referrer_email', default="Enter referrer email"))
             return
         code = 'REF' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         conn = sqlite3.connect(DB_FILE)
@@ -100,11 +100,11 @@ def create_referral(self):
 def use_referral(self):
     selected = self.referral_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a referral")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.referrals.dialogs.select_a_referral', default="Select a referral"))
         return
     ref_id = self.referral_tree.item(selected[0])['values'][0]
 
-    referee_email = simpledialog.askstring("Referee", "Enter referee email:")
+    referee_email = simpledialog.askstring(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.referrals.dialogs.referee', default="Referee"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.referrals.dialogs.enter_referee_email', default="Enter referee email:"))
     if referee_email:
         conn = sqlite3.connect(DB_FILE)
         try:
@@ -114,13 +114,13 @@ def use_referral(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Referral marked as used")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.referrals.dialogs.referral_marked_as_used', default="Referral marked as used"))
         self.show_referrals_page()
 
 def give_referral_reward(self):
     selected = self.referral_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a referral")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.referrals.dialogs.select_a_referral', default="Select a referral"))
         return
     ref_id = self.referral_tree.item(selected[0])['values'][0]
 
@@ -131,5 +131,5 @@ def give_referral_reward(self):
         conn.commit()
     finally:
         conn.close()
-    messagebox.showinfo(_t("cinema.common.success"), "Reward marked as given")
+    messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.referrals.dialogs.reward_marked_as_given', default="Reward marked as given"))
     self.show_referrals_page()

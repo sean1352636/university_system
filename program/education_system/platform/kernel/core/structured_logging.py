@@ -170,10 +170,9 @@ def setup_structured_logging(
     if effective_format == "json":
         formatter: logging.Formatter = JSONFormatter(system=effective_system)
     else:
-        # Clean human-readable console output: "datetime - message".
+        # Compact human-readable console output for interactive operation.
         formatter = logging.Formatter(
-            "%(asctime)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+            "%(levelname)s: %(message)s",
         )
 
     handler.setFormatter(formatter)

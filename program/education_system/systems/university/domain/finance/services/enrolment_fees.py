@@ -23,6 +23,10 @@ from __future__ import annotations
 import logging
 from typing import List, Optional
 
+from education_system.systems.university.services.boundary_errors import (
+    FinanceBoundaryError,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -31,8 +35,11 @@ def _connect():
         from education_system.systems.university.infrastructure.database.db import get_connection
         return get_connection()
     except Exception as exc:
-        logger.debug("DB unavailable for enrolment fee service: %s", exc)
-        return None
+        raise FinanceBoundaryError(
+            "Database unavailable for enrolment fee service",
+            code="FINANCE_DATABASE_UNAVAILABLE",
+            details={"cause": str(exc)},
+        ) from exc
 
 
 def _resolve_program_fees(conn, module_code: str,
@@ -55,7 +62,12 @@ def _resolve_program_fees(conn, module_code: str,
         )
         row = cur.fetchone()
         course_code = row[0] if row else None
-    except Exception:
+    except Exception as exc:
+        logger.info(
+            "Course-code enrichment unavailable for module %s: %s",
+            module_code,
+            exc,
+        )
         course_code = None
 
     candidates = [module_code]
@@ -77,8 +89,11 @@ def _resolve_program_fees(conn, module_code: str,
     try:
         rows = conn.execute(sql, params).fetchall()
     except Exception as exc:
-        logger.debug("program_fees lookup failed: %s", exc)
-        return []
+        raise FinanceBoundaryError(
+            "Programme fee lookup failed",
+            code="PROGRAMME_FEE_LOOKUP_FAILED",
+            details={"module_code": module_code, "cause": str(exc)},
+        ) from exc
 
     return [
         {
@@ -101,8 +116,6 @@ def assess_module_enrolment_fee(student_id: str, module_code: str,
     for the same (student, fee_type, academic_year) it's left alone.
     """
     conn = _connect()
-    if conn is None:
-        return []
 
     created: List[int] = []
     try:
@@ -150,7 +163,25 @@ def assess_module_enrolment_fee(student_id: str, module_code: str,
                      fee["currency"] or "GBP", fee["due_date"]),
                 )
                 if cur.lastrowid:
-                    created.append(int(cur.lastrowid))
+                    fee_id = int(cur.lastrowid)
+                    created.append(fee_id)
+                    from education_system.systems.university.infrastructure.events import (
+                        transactional_publisher,
+                    )
+                    transactional_publisher.publish(
+                        conn,
+                        "fee.assessed",
+                        {
+                            "student_fee_id": fee_id,
+                            "student_id": student_id,
+                            "module_code": module_code,
+                            "amount": fee["amount"],
+                            "currency": fee["currency"] or "GBP",
+                            "academic_year": academic_year,
+                        },
+                        aggregate_id=student_id,
+                        idempotency_key=f"fee:{fee_id}:assessed",
+                    )
         if created:
             logger.info(
                 "Assessed %d fee(s) for student %s on module %s",
@@ -162,16 +193,34 @@ def assess_module_enrolment_fee(student_id: str, module_code: str,
                 for fid in created:
                     notify_ledger('fee_assignment', fid, posted_by='enrolment_fees')
             except Exception as _e:
-                logger.warning("ledger hook failed: %s", _e)
+                raise FinanceBoundaryError(
+                    "Fees were assessed but ledger posting failed",
+                    code="FEE_LEDGER_POST_FAILED",
+                    details={
+                        "student_id": student_id,
+                        "module_code": module_code,
+                        "fee_ids": created,
+                        "cause": str(_e),
+                    },
+                ) from _e
         return created
+    except FinanceBoundaryError:
+        raise
     except Exception as exc:
-        logger.error("assess_module_enrolment_fee failed: %s", exc)
-        return []
+        raise FinanceBoundaryError(
+            "Module enrolment fee assessment failed",
+            code="FEE_ASSESSMENT_FAILED",
+            details={
+                "student_id": student_id,
+                "module_code": module_code,
+                "cause": str(exc),
+            },
+        ) from exc
     finally:
         try:
             conn.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to close enrolment fee connection: %s", exc)
 
 
 def cancel_module_enrolment_fee(student_id: str, module_code: str,
@@ -183,8 +232,6 @@ def cancel_module_enrolment_fee(student_id: str, module_code: str,
     after payment go through the refund flow, not here.
     """
     conn = _connect()
-    if conn is None:
-        return 0
     try:
         with conn:
             fees = _resolve_program_fees(conn, module_code, academic_year)
@@ -200,11 +247,20 @@ def cancel_module_enrolment_fee(student_id: str, module_code: str,
                 [student_id, *fee_type_ids],
             )
             return cur.rowcount or 0
+    except FinanceBoundaryError:
+        raise
     except Exception as exc:
-        logger.error("cancel_module_enrolment_fee failed: %s", exc)
-        return 0
+        raise FinanceBoundaryError(
+            "Module enrolment fee cancellation failed",
+            code="FEE_CANCELLATION_FAILED",
+            details={
+                "student_id": student_id,
+                "module_code": module_code,
+                "cause": str(exc),
+            },
+        ) from exc
     finally:
         try:
             conn.close()
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed to close enrolment fee connection: %s", exc)

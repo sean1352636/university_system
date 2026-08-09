@@ -366,6 +366,18 @@ def token_required(f):
             if data.get("type") == "refresh":
                 return jsonify({"error": "Cannot use refresh token for API access"}), 401
             systems = data.get("systems", [])
+            # JWT validity alone is insufficient: a user may have been
+            # disabled or had their access revoked after token issuance.
+            # Re-read the authoritative auth record on every request and fail
+            # closed if the auth database is unavailable.
+            from education_system.platform.identity.auth.db import connect
+            with connect(_auth_db_path) as auth_conn:
+                active = auth_conn.execute(
+                    "SELECT is_active FROM users WHERE id = ? AND username = ?",
+                    (data.get("user_id"), data.get("username")),
+                ).fetchone()
+            if not active or not active[0]:
+                return jsonify({"error": "Authentication required"}), 401
             g.current_user = {
                 "user_id": data["user_id"],
                 "username": data["username"],

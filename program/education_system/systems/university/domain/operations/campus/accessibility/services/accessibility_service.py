@@ -21,7 +21,7 @@ import shutil
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 class AccessibilityService:
     """Service class for managing accessibility accommodations and services."""
@@ -240,7 +240,7 @@ class AccessibilityService:
             doc_id: ID of the uploaded document
         """
         # Create upload directory if it doesn't exist
-        upload_dir = os.path.join(paths.UPLOAD_DIR, 'accessibility', student_id)
+        upload_dir = os.path.join(paths.UNIVERSITY_UPLOAD_DIR, 'accessibility', student_id)
         os.makedirs(upload_dir, exist_ok=True)
 
         # Generate unique filename

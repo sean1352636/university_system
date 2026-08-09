@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -120,10 +122,10 @@ def initialize_enhanced_database_wrapper(self):
             success = initialize_enhanced_database()
             if success:
                 self.update_status("Enhanced database initialized successfully")
-                messagebox.showinfo(_("common.success"), "Enhanced database tables created successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.wrappers.compatibility.dialogs.enhanced_database_tables_created_successfully', default="Enhanced database tables created successfully!"))
             else:
                 self.update_status("Database initialization failed", error=True)
-                messagebox.showerror(_("common.error"), "Failed to initialize enhanced database")
+                messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.wrappers.compatibility.dialogs.failed_to_initialize_enhanced_database', default="Failed to initialize enhanced database"))
         else:
             # Use fallback
             self.init_fallback_database()
@@ -182,7 +184,7 @@ def view_course_details_wrapper(self):
     """
     selected = self.course_tree.selection()
     if not selected:
-        messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a course to view details.")
+        messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.wrappers.compatibility.dialogs.please_select_a_course_to_view_details', default="Please select a course to view details."))
         return
 
     # Switch to details tab

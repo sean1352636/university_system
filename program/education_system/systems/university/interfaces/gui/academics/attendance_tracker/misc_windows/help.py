@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -89,7 +95,7 @@ class HelpWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="📖 User Manual", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.help.labels.user_manual', default="📖 User Manual"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Help content

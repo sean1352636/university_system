@@ -67,8 +67,8 @@ except ImportError:
         return logging.getLogger(name or __name__)
 
     def get_log_file(name):
-        from education_system.systems.university.infrastructure import paths
-        return str(paths.LOG_DIR / name)
+        from education_system import paths
+        return str(paths.UNIVERSITY_LOG_DIR / name)
 
 # The collections / payment-arrangement / db-maintenance workflow functions live
 # across several finance modules (they are NOT in financial_core, which is why the
@@ -198,6 +198,10 @@ except ImportError:
         complete_database_fix = _make_stub('complete_database_fix')
     if quick_fix_database is None:
         quick_fix_database = _make_stub('quick_fix_database')
+
+# Override the compatibility stubs above with the stable, per-operation
+# finance facade. One optional failure no longer disables unrelated actions.
+from education_system.systems.university.domain.finance.facade import *  # noqa: F403,E402
 
 # Configure logging
 log_path = get_log_file("app.log")
@@ -592,10 +596,10 @@ class DatabaseManager:
             from datetime import datetime
             from tkinter import filedialog
             from pathlib import Path
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
 
             # Get database path
-            db_path = str(paths.DEFAULT_DB_PATH)
+            db_path = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
             if not os.path.exists(db_path):
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.db_manager.db_not_found"))
                 return
@@ -613,8 +617,8 @@ class DatabaseManager:
                 backup_dir = university_system_root / 'university_system' / 'backups'
             else:
                 # Fallback to centralized backup directory
-                from education_system.systems.university.infrastructure.paths import BACKUP_DIR
-                backup_dir = BACKUP_DIR
+                from education_system.paths import UNIVERSITY_BACKUP_DIR
+                backup_dir = UNIVERSITY_BACKUP_DIR
 
             # Create backup directory if it doesn't exist
             backup_dir.mkdir(parents=True, exist_ok=True)
@@ -698,8 +702,8 @@ class DatabaseManager:
             stats_text += "=" * 50 + "\n\n"
 
             # Get database file path and info
-            from education_system.systems.university.infrastructure import paths
-            db_path = str(paths.DEFAULT_DB_PATH)
+            from education_system import paths
+            db_path = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
             if os.path.exists(db_path):
                 file_size = os.path.getsize(db_path)
@@ -836,4 +840,3 @@ class DatabaseManager:
 
         except Exception as e:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.db_manager.text_window_failed", error=str(e)))
-

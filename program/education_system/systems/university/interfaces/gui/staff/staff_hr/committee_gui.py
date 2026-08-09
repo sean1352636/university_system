@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -35,7 +37,7 @@ class CommitteeGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Committee Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), _t('gui.staff.staff_hr.committee.dialogs.login_required_to_access_committee_management', default="Login required to access Committee Management"))
             return
 
         if parent_notebook:
@@ -50,21 +52,21 @@ class CommitteeGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Committees")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.committee.tabs.committees', default="Committees"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Committee Management")
+        self.window.title(_t('gui.staff.staff_hr.committee.windows.committee_management', default="Committee Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.committee.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.committee.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -90,13 +92,13 @@ class CommitteeGUI:
     def _create_my_committees_tab(self):
         """Create my committees tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Committees")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.committee.tabs.my_committees', default="My Committees"))
 
         # Header with Refresh button
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Committees", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_my_committees).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.committee.labels.my_committees', default="My Committees"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.committee.buttons.refresh', default="Refresh"), command=self._load_my_committees).pack(side=tk.RIGHT, padx=5)
 
         # Committees treeview
         tree_frame = ttk.Frame(tab)
@@ -181,7 +183,7 @@ class CommitteeGUI:
         try:
             members = CommitteeManager.get_committee_members(committee_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load committee members: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), f"Could not load committee members: {e}")
             return
 
         dialog = tk.Toplevel(self.root)
@@ -223,28 +225,28 @@ class CommitteeGUI:
         # Close button
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # ==================== TAB 2: MEETINGS ====================
 
     def _create_meetings_tab(self):
         """Create meetings tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Meetings")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.committee.tabs.meetings', default="Meetings"))
 
         # Header with committee filter
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Meetings", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.committee.labels.meetings', default="Meetings"), style='Header.TLabel').pack(side=tk.LEFT)
 
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
-        ttk.Label(filter_frame, text="Committee:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.committee.labels.committee', default="Committee:")).pack(side=tk.LEFT, padx=5)
         self.meetings_committee_filter = ttk.Combobox(filter_frame, width=25, state='readonly')
         self.meetings_committee_filter.pack(side=tk.LEFT, padx=5)
         self.meetings_committee_filter.bind('<<ComboboxSelected>>', lambda e: self._load_meetings())
-        ttk.Button(filter_frame, text="Refresh", command=self._refresh_meetings).pack(side=tk.LEFT, padx=5)
-        ttk.Button(filter_frame, text="Schedule Meeting",
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.committee.buttons.refresh', default="Refresh"), command=self._refresh_meetings).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.committee.buttons.schedule_meeting', default="Schedule Meeting"),
                    command=self._schedule_meeting_dialog).pack(side=tk.LEFT, padx=5)
 
         # Store committee mapping for filter
@@ -352,7 +354,7 @@ class CommitteeGUI:
     def _schedule_meeting_dialog(self):
         """Open dialog to schedule a new meeting."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Schedule Meeting")
+        dialog.title(_t('gui.staff.staff_hr.committee.windows.schedule_meeting', default="Schedule Meeting"))
         dialog.geometry("500x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -361,7 +363,7 @@ class CommitteeGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Committee selector
-        ttk.Label(frame, text="Committee:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.committee', default="Committee:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         committee_combo = ttk.Combobox(frame, width=30, state='readonly')
         committee_combo.grid(row=0, column=1, padx=10, pady=8)
 
@@ -381,35 +383,35 @@ class CommitteeGUI:
             committee_combo.current(0)
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.title', default="Title:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=35)
         title_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Date
-        ttk.Label(frame, text="Date (YYYY-MM-DD):").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         date_entry = ttk.Entry(frame, width=15)
         date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         date_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Start time
-        ttk.Label(frame, text="Start Time:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.start_time', default="Start Time:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         start_time_entry = ttk.Entry(frame, width=15)
         start_time_entry.insert(0, "09:00")
         start_time_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # End time
-        ttk.Label(frame, text="End Time:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.end_time', default="End Time:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         end_time_entry = ttk.Entry(frame, width=15)
         end_time_entry.insert(0, "10:00")
         end_time_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Location
-        ttk.Label(frame, text="Location:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.location', default="Location:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         location_entry = ttk.Entry(frame, width=35)
         location_entry.grid(row=5, column=1, padx=10, pady=8)
 
         # Virtual link
-        ttk.Label(frame, text="Virtual Link:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.virtual_link', default="Virtual Link:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         virtual_link_entry = ttk.Entry(frame, width=35)
         virtual_link_entry.grid(row=6, column=1, padx=10, pady=8)
 
@@ -423,7 +425,7 @@ class CommitteeGUI:
 
             selected_committee_id = committee_map.get(committee_label)
             if not selected_committee_id:
-                messagebox.showerror("Error", "Please select a valid committee.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), _t('gui.staff.staff_hr.committee.dialogs.please_select_a_valid_committee', default="Please select a valid committee."), parent=dialog)
                 return
 
             # Validate required fields
@@ -450,19 +452,19 @@ class CommitteeGUI:
                     virtual_link=virtual_link,
                     created_by=self._get_user_id()
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.success', default="Success"),
                                     f"Meeting scheduled. ID: {meeting_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_meetings()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Schedule", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.schedule', default="Schedule"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         title_entry.focus_set()
 
@@ -478,11 +480,11 @@ class CommitteeGUI:
         try:
             meeting = CommitteeManager.get_meeting(meeting_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load meeting details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), f"Could not load meeting details: {e}")
             return
 
         if not meeting:
-            messagebox.showerror("Error", "Meeting not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), _t('gui.staff.staff_hr.committee.dialogs.meeting_not_found', default="Meeting not found"))
             return
 
         dialog = tk.Toplevel(self.root)
@@ -503,7 +505,7 @@ class CommitteeGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Meeting details
-        details_frame = ttk.LabelFrame(scroll_frame, text="Meeting Details", padding=15)
+        details_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.committee.labels.meeting_details', default="Meeting Details"), padding=15)
         details_frame.pack(fill=tk.X, padx=10, pady=10)
 
         fields = [
@@ -525,7 +527,7 @@ class CommitteeGUI:
                 row=i, column=1, sticky='nw', padx=(5, 10), pady=4)
 
         # Agenda items
-        agenda_frame = ttk.LabelFrame(scroll_frame, text="Agenda", padding=10)
+        agenda_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.committee.labels.agenda', default="Agenda"), padding=10)
         agenda_frame.pack(fill=tk.X, padx=10, pady=10)
 
         try:
@@ -552,23 +554,23 @@ class CommitteeGUI:
                 ))
             agenda_tree.pack(fill=tk.X)
         else:
-            ttk.Label(agenda_frame, text="No agenda items yet.").pack(anchor='w')
+            ttk.Label(agenda_frame, text=_t('gui.staff.staff_hr.committee.labels.no_agenda_items_yet', default="No agenda items yet.")).pack(anchor='w')
 
         # Add Agenda Item button
         agenda_btn_frame = ttk.Frame(agenda_frame)
         agenda_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(agenda_btn_frame, text="Add Agenda Item",
+        ttk.Button(agenda_btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.add_agenda_item', default="Add Agenda Item"),
                    command=lambda: self._add_agenda_item_dialog(meeting_id, dialog)).pack(side=tk.LEFT, padx=5)
 
         # Close button
         btn_frame = ttk.Frame(scroll_frame)
         btn_frame.pack(fill=tk.X, padx=10, pady=15)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def _add_agenda_item_dialog(self, meeting_id, parent_dialog=None):
         """Open dialog to add an agenda item to a meeting."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Agenda Item")
+        dialog.title(_t('gui.staff.staff_hr.committee.windows.add_agenda_item', default="Add Agenda Item"))
         dialog.geometry("450x350")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -577,12 +579,12 @@ class CommitteeGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.title', default="Title:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=30)
         title_entry.grid(row=0, column=1, padx=10, pady=8)
 
         # Type
-        ttk.Label(frame, text="Type:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.type', default="Type:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(
             frame, values=['discussion', 'decision', 'information', 'action'],
             width=20, state='readonly'
@@ -591,12 +593,12 @@ class CommitteeGUI:
         type_combo.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Presenter
-        ttk.Label(frame, text="Presenter:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.presenter', default="Presenter:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         presenter_entry = ttk.Entry(frame, width=25)
         presenter_entry.grid(row=2, column=1, padx=10, pady=8)
 
         # Duration
-        ttk.Label(frame, text="Duration (min):").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.duration_min', default="Duration (min):")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         duration_entry = ttk.Entry(frame, width=10)
         duration_entry.insert(0, "15")
         duration_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
@@ -623,8 +625,8 @@ class CommitteeGUI:
                 if duration < 1:
                     raise ValueError
             except ValueError:
-                messagebox.showerror("Validation Error",
-                                     "Duration must be a positive integer.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.validation_error', default="Validation Error"),
+                                     _t('gui.staff.staff_hr.committee.dialogs.duration_must_be_a_positive_integer', default="Duration must be a positive integer."), parent=dialog)
                 return
 
             # Determine next item order
@@ -643,7 +645,7 @@ class CommitteeGUI:
                     presenter_id=presenter,
                     duration_minutes=duration
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.success', default="Success"),
                                     f"Agenda item added. ID: {item_id}",
                                     parent=dialog)
                 dialog.destroy()
@@ -653,12 +655,12 @@ class CommitteeGUI:
                     # Re-open the meeting details by simulating the view
                     self._open_meeting_detail_by_id(meeting_id)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Add", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.add', default="Add"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         title_entry.focus_set()
 
@@ -689,7 +691,7 @@ class CommitteeGUI:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        details_frame = ttk.LabelFrame(scroll_frame, text="Meeting Details", padding=15)
+        details_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.committee.labels.meeting_details', default="Meeting Details"), padding=15)
         details_frame.pack(fill=tk.X, padx=10, pady=10)
 
         fields = [
@@ -710,7 +712,7 @@ class CommitteeGUI:
             ttk.Label(details_frame, text=str(value), wraplength=400).grid(
                 row=i, column=1, sticky='nw', padx=(5, 10), pady=4)
 
-        agenda_frame = ttk.LabelFrame(scroll_frame, text="Agenda", padding=10)
+        agenda_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.committee.labels.agenda', default="Agenda"), padding=10)
         agenda_frame.pack(fill=tk.X, padx=10, pady=10)
 
         try:
@@ -737,38 +739,38 @@ class CommitteeGUI:
                 ))
             agenda_tree.pack(fill=tk.X)
         else:
-            ttk.Label(agenda_frame, text="No agenda items yet.").pack(anchor='w')
+            ttk.Label(agenda_frame, text=_t('gui.staff.staff_hr.committee.labels.no_agenda_items_yet', default="No agenda items yet.")).pack(anchor='w')
 
         agenda_btn_frame = ttk.Frame(agenda_frame)
         agenda_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(agenda_btn_frame, text="Add Agenda Item",
+        ttk.Button(agenda_btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.add_agenda_item', default="Add Agenda Item"),
                    command=lambda: self._add_agenda_item_dialog(meeting_id, dialog)).pack(side=tk.LEFT, padx=5)
 
         btn_frame = ttk.Frame(scroll_frame)
         btn_frame.pack(fill=tk.X, padx=10, pady=15)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # ==================== TAB 3: MINUTES ====================
 
     def _create_minutes_tab(self):
         """Create minutes tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Minutes")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.committee.tabs.minutes', default="Minutes"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Meeting Minutes", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.committee.labels.meeting_minutes', default="Meeting Minutes"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Meeting selector
-        selector_frame = ttk.LabelFrame(tab, text="Select Meeting", padding=10)
+        selector_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.committee.labels.select_meeting', default="Select Meeting"), padding=10)
         selector_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(selector_frame, text="Meeting:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.committee.labels.meeting', default="Meeting:")).pack(side=tk.LEFT, padx=5)
         self.minutes_meeting_combo = ttk.Combobox(selector_frame, width=50, state='readonly')
         self.minutes_meeting_combo.pack(side=tk.LEFT, padx=5)
         self.minutes_meeting_combo.bind('<<ComboboxSelected>>', lambda e: self._load_minutes())
-        ttk.Button(selector_frame, text="Refresh List",
+        ttk.Button(selector_frame, text=_t('gui.staff.staff_hr.committee.buttons.refresh_list', default="Refresh List"),
                    command=self._load_minutes_meetings).pack(side=tk.LEFT, padx=10)
 
         # Store meeting mapping
@@ -779,7 +781,7 @@ class CommitteeGUI:
         self.minutes_status_label.pack(fill=tk.X, padx=10, pady=(0, 5))
 
         # Minutes content area
-        content_frame = ttk.LabelFrame(tab, text="Minutes Content", padding=10)
+        content_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.committee.labels.minutes_content', default="Minutes Content"), padding=10)
         content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.minutes_text = scrolledtext.ScrolledText(content_frame, wrap=tk.WORD, width=80, height=20)
@@ -788,12 +790,12 @@ class CommitteeGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Record Minutes",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.record_minutes', default="Record Minutes"),
                    command=self._record_minutes).pack(side=tk.LEFT, padx=5)
 
         # Approve button (admin only)
         if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
-            ttk.Button(btn_frame, text="Approve",
+            ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.approve', default="Approve"),
                        command=self._approve_minutes).pack(side=tk.LEFT, padx=5)
 
         # Store current minute ID for approval
@@ -872,18 +874,18 @@ class CommitteeGUI:
                 text=f"Status: {status} | Recorded by: {recorded_by} | Created: {created_at}"
             )
         else:
-            self.minutes_status_label.config(text="No minutes recorded for this meeting yet.")
+            self.minutes_status_label.config(text=_t('gui.staff.staff_hr.committee.text.no_minutes_recorded_for_this_meeting_yet', default="No minutes recorded for this meeting yet."))
 
     def _record_minutes(self):
         """Record or update minutes for the selected meeting."""
         meeting_id = self._get_selected_minutes_meeting_id()
         if not meeting_id:
-            messagebox.showinfo("Info", "Please select a meeting first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.info', default="Info"), _t('gui.staff.staff_hr.committee.dialogs.please_select_a_meeting_first', default="Please select a meeting first."))
             return
 
         content = self.minutes_text.get("1.0", "end-1c").strip()
         if not content:
-            messagebox.showerror("Validation Error", "Minutes content cannot be empty.")
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.committee.dialogs.minutes_content_cannot_be_empty', default="Minutes content cannot be empty."))
             return
 
         try:
@@ -892,18 +894,18 @@ class CommitteeGUI:
                 content=content,
                 recorded_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", f"Minutes recorded. ID: {minute_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.success', default="Success"), f"Minutes recorded. ID: {minute_id}")
             self._load_minutes()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), str(e))
 
     def _approve_minutes(self):
         """Approve the currently displayed minutes."""
         if not self.current_minute_id:
-            messagebox.showinfo("Info", "No minutes to approve. Please select a meeting with recorded minutes.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.info', default="Info"), _t('gui.staff.staff_hr.committee.dialogs.no_minutes_to_approve_please_select_a_meeting_with_recorded_minu', default="No minutes to approve. Please select a meeting with recorded minutes."))
             return
 
-        if not messagebox.askyesno("Confirm", "Approve these minutes?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.committee.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.committee.dialogs.approve_these_minutes', default="Approve these minutes?")):
             return
 
         try:
@@ -911,23 +913,23 @@ class CommitteeGUI:
                 minute_id=self.current_minute_id,
                 approved_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", "Minutes approved.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.success', default="Success"), _t('gui.staff.staff_hr.committee.dialogs.minutes_approved', default="Minutes approved."))
             self._load_minutes()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 4: VOTING ====================
 
     def _create_voting_tab(self):
         """Create voting tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Voting")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.committee.tabs.voting', default="Voting"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Open Votes", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_votes).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.committee.labels.open_votes', default="Open Votes"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.committee.buttons.refresh', default="Refresh"), command=self._load_votes).pack(side=tk.RIGHT, padx=5)
 
         # Votes treeview (top pane)
         top_frame = ttk.Frame(tab)
@@ -955,11 +957,11 @@ class CommitteeGUI:
         self.votes_tree.bind('<<TreeviewSelect>>', self._on_vote_selected)
 
         # Detail panel (bottom pane)
-        self.vote_detail_frame = ttk.LabelFrame(tab, text="Vote Details", padding=10)
+        self.vote_detail_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.committee.labels.vote_details', default="Vote Details"), padding=10)
         self.vote_detail_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
 
         # Description
-        self.vote_desc_label = ttk.Label(self.vote_detail_frame, text="Select a vote to see details.",
+        self.vote_desc_label = ttk.Label(self.vote_detail_frame, text=_t('gui.staff.staff_hr.committee.labels.select_a_vote_to_see_details', default="Select a vote to see details."),
                                          wraplength=700)
         self.vote_desc_label.pack(anchor='w', padx=5, pady=5)
 
@@ -967,20 +969,20 @@ class CommitteeGUI:
         vote_controls_frame = ttk.Frame(self.vote_detail_frame)
         vote_controls_frame.pack(fill=tk.X, padx=5, pady=5)
 
-        self.vote_choice_var = tk.StringVar(value='for')
-        ttk.Radiobutton(vote_controls_frame, text="For", variable=self.vote_choice_var,
+        self.vote_choice_var = tk.StringVar(value=_t('gui.staff.staff_hr.committee.values.for', default='for'))
+        ttk.Radiobutton(vote_controls_frame, text=_t('gui.staff.staff_hr.committee.buttons.for', default="For"), variable=self.vote_choice_var,
                         value='for').pack(side=tk.LEFT, padx=10)
-        ttk.Radiobutton(vote_controls_frame, text="Against", variable=self.vote_choice_var,
+        ttk.Radiobutton(vote_controls_frame, text=_t('gui.staff.staff_hr.committee.buttons.against', default="Against"), variable=self.vote_choice_var,
                         value='against').pack(side=tk.LEFT, padx=10)
-        ttk.Radiobutton(vote_controls_frame, text="Abstain", variable=self.vote_choice_var,
+        ttk.Radiobutton(vote_controls_frame, text=_t('gui.staff.staff_hr.committee.buttons.abstain', default="Abstain"), variable=self.vote_choice_var,
                         value='abstain').pack(side=tk.LEFT, padx=10)
 
         # Action buttons
         vote_btn_frame = ttk.Frame(self.vote_detail_frame)
         vote_btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(vote_btn_frame, text="Cast Vote",
+        ttk.Button(vote_btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.cast_vote', default="Cast Vote"),
                    command=self._cast_vote).pack(side=tk.LEFT, padx=5)
-        ttk.Button(vote_btn_frame, text="View Results",
+        ttk.Button(vote_btn_frame, text=_t('gui.staff.staff_hr.committee.buttons.view_results', default="View Results"),
                    command=self._view_vote_results).pack(side=tk.LEFT, padx=5)
 
         # Store vote data cache
@@ -1027,7 +1029,7 @@ class CommitteeGUI:
             self._votes_cache[vote_id] = v
 
         # Reset detail panel
-        self.vote_desc_label.config(text="Select a vote to see details.")
+        self.vote_desc_label.config(text=_t('gui.staff.staff_hr.committee.text.select_a_vote_to_see_details', default="Select a vote to see details."))
 
     def _on_vote_selected(self, event):
         """Update detail panel when a vote is selected."""
@@ -1056,7 +1058,7 @@ class CommitteeGUI:
         """Cast a vote on the selected vote item."""
         selection = self.votes_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a vote first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.info', default="Info"), _t('gui.staff.staff_hr.committee.dialogs.please_select_a_vote_first', default="Please select a vote first."))
             return
 
         item = self.votes_tree.item(selection[0])
@@ -1064,12 +1066,12 @@ class CommitteeGUI:
         vote_status = item['values'][4]
 
         if vote_status.lower() != 'open':
-            messagebox.showinfo("Info", "This vote is no longer open.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.info', default="Info"), _t('gui.staff.staff_hr.committee.dialogs.this_vote_is_no_longer_open', default="This vote is no longer open."))
             return
 
         choice = self.vote_choice_var.get()
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.committee.dialogs.confirm', default="Confirm"),
                                     f"Cast your vote as '{choice.title()}'?"):
             return
 
@@ -1079,17 +1081,17 @@ class CommitteeGUI:
                 voter_id=self._get_user_id(),
                 choice=choice
             )
-            messagebox.showinfo("Success", "Your vote has been cast.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.success', default="Success"), _t('gui.staff.staff_hr.committee.dialogs.your_vote_has_been_cast', default="Your vote has been cast."))
         except ValueError as e:
-            messagebox.showwarning("Warning", str(e))
+            messagebox.showwarning(_t('gui.staff.staff_hr.committee.dialogs.warning', default="Warning"), str(e))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), str(e))
 
     def _view_vote_results(self):
         """View results for the selected vote."""
         selection = self.votes_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a vote first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.info', default="Info"), _t('gui.staff.staff_hr.committee.dialogs.please_select_a_vote_first', default="Please select a vote first."))
             return
 
         item = self.votes_tree.item(selection[0])
@@ -1098,7 +1100,7 @@ class CommitteeGUI:
         try:
             results = CommitteeManager.get_vote_results(vote_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load vote results: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), f"Could not load vote results: {e}")
             return
 
         dialog = tk.Toplevel(self.root)
@@ -1110,7 +1112,7 @@ class CommitteeGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Vote info
-        info_frame = ttk.LabelFrame(frame, text="Vote Information", padding=10)
+        info_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.committee.labels.vote_information', default="Vote Information"), padding=10)
         info_frame.pack(fill=tk.X, pady=(0, 10))
 
         vote_type = results.get('vote_type', '').replace('_', ' ').title()
@@ -1133,7 +1135,7 @@ class CommitteeGUI:
                 row=i, column=1, sticky='w', padx=(5, 10), pady=3)
 
         # Tallies
-        tally_frame = ttk.LabelFrame(frame, text="Tallies", padding=10)
+        tally_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.committee.labels.tallies', default="Tallies"), padding=10)
         tally_frame.pack(fill=tk.X, pady=(0, 10))
 
         votes_for = results.get('votes_for', 0) or 0
@@ -1151,7 +1153,7 @@ class CommitteeGUI:
         # Individual ballots (only for non-secret ballots)
         ballots = results.get('ballots')
         if ballots is not None:
-            ballots_frame = ttk.LabelFrame(frame, text="Individual Ballots", padding=10)
+            ballots_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.committee.labels.individual_ballots', default="Individual Ballots"), padding=10)
             ballots_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
             ballot_cols = ('Voter', 'Choice', 'Cast At')
@@ -1169,18 +1171,18 @@ class CommitteeGUI:
                 ))
             ballot_tree.pack(fill=tk.BOTH, expand=True)
         else:
-            ttk.Label(frame, text="Secret ballot - individual votes are not displayed.",
+            ttk.Label(frame, text=_t('gui.staff.staff_hr.committee.labels.secret_ballot_individual_votes_are_not_displayed', default="Secret ballot - individual votes are not displayed."),
                       font=('Arial', 9, 'italic')).pack(anchor='w', pady=5)
 
         # Close button
-        ttk.Button(frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5, pady=10)
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.committee.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5, pady=10)
 
     # ==================== TAB 5: ADMIN ====================
 
     def _create_admin_tab(self):
         """Create admin tab for committee management (admin only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Admin")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.committee.tabs.admin', default="Admin"))
 
         # Scrollable content
         canvas = tk.Canvas(tab)
@@ -1195,21 +1197,21 @@ class CommitteeGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Committee CRUD Section ----
-        crud_frame = ttk.LabelFrame(scroll_frame, text="Create Committee", padding=15)
+        crud_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.committee.labels.create_committee', default="Create Committee"), padding=15)
         crud_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Name
-        ttk.Label(crud_frame, text="Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.committee.labels.name', default="Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.admin_name_entry = ttk.Entry(crud_frame, width=35)
         self.admin_name_entry.grid(row=0, column=1, columnspan=2, padx=10, pady=8, sticky='w')
 
         # Description
-        ttk.Label(crud_frame, text="Description:").grid(row=1, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.committee.labels.description', default="Description:")).grid(row=1, column=0, sticky='ne', padx=10, pady=8)
         self.admin_desc_text = tk.Text(crud_frame, width=40, height=3)
         self.admin_desc_text.grid(row=1, column=1, columnspan=2, padx=10, pady=8, sticky='w')
 
         # Type
-        ttk.Label(crud_frame, text="Type:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.committee.labels.type', default="Type:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.admin_type_combo = ttk.Combobox(
             crud_frame, values=['standing', 'ad_hoc', 'advisory', 'task_force'],
             width=20, state='readonly'
@@ -1218,26 +1220,26 @@ class CommitteeGUI:
         self.admin_type_combo.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Department
-        ttk.Label(crud_frame, text="Department:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.committee.labels.department', default="Department:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         self.admin_dept_entry = ttk.Entry(crud_frame, width=25)
         self.admin_dept_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Create button
-        ttk.Button(crud_frame, text="Create Committee",
+        ttk.Button(crud_frame, text=_t('gui.staff.staff_hr.committee.buttons.create_committee', default="Create Committee"),
                    command=self._create_committee).grid(row=4, column=1, padx=10, pady=15, sticky='w')
 
         # ---- Members Management Section ----
-        members_frame = ttk.LabelFrame(scroll_frame, text="Manage Members", padding=15)
+        members_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.committee.labels.manage_members', default="Manage Members"), padding=15)
         members_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Committee selector
         selector_row = ttk.Frame(members_frame)
         selector_row.pack(fill=tk.X, pady=5)
-        ttk.Label(selector_row, text="Committee:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(selector_row, text=_t('gui.staff.staff_hr.committee.labels.committee', default="Committee:")).pack(side=tk.LEFT, padx=5)
         self.admin_committee_combo = ttk.Combobox(selector_row, width=35, state='readonly')
         self.admin_committee_combo.pack(side=tk.LEFT, padx=5)
         self.admin_committee_combo.bind('<<ComboboxSelected>>', lambda e: self._load_admin_members())
-        ttk.Button(selector_row, text="Refresh",
+        ttk.Button(selector_row, text=_t('gui.staff.staff_hr.committee.buttons.refresh', default="Refresh"),
                    command=self._refresh_admin_committees).pack(side=tk.LEFT, padx=5)
 
         # Store committee mapping for admin
@@ -1246,19 +1248,19 @@ class CommitteeGUI:
         # Add member controls
         add_row = ttk.Frame(members_frame)
         add_row.pack(fill=tk.X, pady=10)
-        ttk.Label(add_row, text="User ID:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(add_row, text=_t('gui.staff.staff_hr.committee.labels.user_id', default="User ID:")).pack(side=tk.LEFT, padx=5)
         self.admin_user_id_entry = ttk.Entry(add_row, width=20)
         self.admin_user_id_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Label(add_row, text="Role:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(add_row, text=_t('gui.staff.staff_hr.committee.labels.role', default="Role:")).pack(side=tk.LEFT, padx=5)
         self.admin_member_role_combo = ttk.Combobox(
             add_row, values=['chair', 'secretary', 'member'],
             width=12, state='readonly'
         )
         self.admin_member_role_combo.set('member')
         self.admin_member_role_combo.pack(side=tk.LEFT, padx=5)
-        ttk.Button(add_row, text="Add Member",
+        ttk.Button(add_row, text=_t('gui.staff.staff_hr.committee.buttons.add_member', default="Add Member"),
                    command=self._add_member).pack(side=tk.LEFT, padx=5)
-        ttk.Button(add_row, text="Remove Selected",
+        ttk.Button(add_row, text=_t('gui.staff.staff_hr.committee.buttons.remove_selected', default="Remove Selected"),
                    command=self._remove_member).pack(side=tk.LEFT, padx=5)
 
         # Members treeview
@@ -1343,7 +1345,7 @@ class CommitteeGUI:
 
         description = self.admin_desc_text.get("1.0", "end-1c").strip()
         if not description:
-            messagebox.showerror("Validation Error", "Description is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.committee.dialogs.description_is_required', default="Description is required."))
             return
 
         try:
@@ -1369,7 +1371,7 @@ class CommitteeGUI:
                 department=department,
                 created_by=user_id
             )
-            messagebox.showinfo("Success", f"Committee created. ID: {committee_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.success', default="Success"), f"Committee created. ID: {committee_id}")
             # Clear form
             self.admin_name_entry.delete(0, tk.END)
             self.admin_desc_text.delete("1.0", tk.END)
@@ -1379,13 +1381,13 @@ class CommitteeGUI:
             self._refresh_admin_committees()
             self._load_my_committees()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), str(e))
 
     def _add_member(self):
         """Add a member to the selected committee."""
         committee_id = self._get_admin_selected_committee_id()
         if not committee_id:
-            messagebox.showinfo("Info", "Please select a committee first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.info', default="Info"), _t('gui.staff.staff_hr.committee.dialogs.please_select_a_committee_first', default="Please select a committee first."))
             return
 
         try:
@@ -1406,28 +1408,28 @@ class CommitteeGUI:
                 user_id=user_id,
                 role=role
             )
-            messagebox.showinfo("Success", f"Member added. ID: {member_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.success', default="Success"), f"Member added. ID: {member_id}")
             self.admin_user_id_entry.delete(0, tk.END)
             self._load_admin_members()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), str(e))
 
     def _remove_member(self):
         """Remove the selected member from the committee."""
         selection = self.admin_members_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a member to remove.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.info', default="Info"), _t('gui.staff.staff_hr.committee.dialogs.please_select_a_member_to_remove', default="Please select a member to remove."))
             return
 
         committee_id = self._get_admin_selected_committee_id()
         if not committee_id:
-            messagebox.showinfo("Info", "Please select a committee first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.info', default="Info"), _t('gui.staff.staff_hr.committee.dialogs.please_select_a_committee_first', default="Please select a committee first."))
             return
 
         item = self.admin_members_tree.item(selection[0])
         user_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.committee.dialogs.confirm', default="Confirm"),
                                     f"Remove member '{user_id}' from this committee?"):
             return
 
@@ -1436,7 +1438,7 @@ class CommitteeGUI:
                 committee_id=committee_id,
                 user_id=str(user_id)
             )
-            messagebox.showinfo("Success", "Member removed.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.committee.dialogs.success', default="Success"), _t('gui.staff.staff_hr.committee.dialogs.member_removed', default="Member removed."))
             self._load_admin_members()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.committee.dialogs.error', default="Error"), str(e))

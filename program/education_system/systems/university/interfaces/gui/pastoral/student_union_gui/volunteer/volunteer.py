@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -31,7 +33,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -68,7 +70,7 @@ class VolunteerOpportunitiesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Volunteer Opportunities")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.volunteer.volunteer.windows.volunteer_opportunities', default="Volunteer Opportunities"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -80,24 +82,24 @@ class VolunteerOpportunitiesDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="🌟 Volunteer Opportunities",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.volunteer_opportunities', default="🌟 Volunteer Opportunities"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Category:").pack(side='left', padx=(0, 5))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.category', default="Category:")).pack(side='left', padx=(0, 5))
         self.category_var = tk.StringVar()
         category_combo = ttk.Combobox(filter_frame, textvariable=self.category_var, width=20, state='readonly')
         category_combo['values'] = ('All', 'Community Service', 'Education', 'Environment', 'Health', 'Animals')
         category_combo.current(0)
         category_combo.pack(side='left', padx=(0, 15))
 
-        ttk.Button(filter_frame, text="Filter", command=self.load_opportunities).pack(side='left')
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.buttons.filter', default="Filter"), command=self.load_opportunities).pack(side='left')
 
         # Opportunities list
-        list_frame = ttk.LabelFrame(main_frame, text="Available Opportunities")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.available_opportunities', default="Available Opportunities"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Organization', 'Description', 'Date', 'Hours', 'Spots', 'Status')
@@ -121,7 +123,7 @@ class VolunteerOpportunitiesDialog:
         self.opp_tree.bind('<<TreeviewSelect>>', self.on_select)
 
         # Details frame
-        details_frame = ttk.LabelFrame(main_frame, text="Opportunity Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.opportunity_details', default="Opportunity Details"))
         details_frame.pack(fill='x', pady=(0, 10))
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=6, wrap=tk.WORD)
@@ -131,9 +133,9 @@ class VolunteerOpportunitiesDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Sign Up", command=self.sign_up).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="My Activities", command=self.view_my_activities).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.buttons.sign_up', default="Sign Up"), command=self.sign_up).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.buttons.my_activities', default="My Activities"), command=self.view_my_activities).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_opportunities(self):
         # Clear existing
@@ -171,14 +173,14 @@ class VolunteerOpportunitiesDialog:
     def sign_up(self):
         selection = self.opp_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an opportunity.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.please_select_an_opportunity', default="Please select an opportunity."))
             return
 
         item = self.opp_tree.item(selection[0])
         org = item['values'][0]
 
-        if messagebox.askyesno("Confirm", f"Sign up for volunteer opportunity with {org}?"):
-            messagebox.showinfo("Success", "You've been signed up!\n\nYou will receive further details via email.\n\n+20 Community Service Points earned!")
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.confirm', default="Confirm"), f"Sign up for volunteer opportunity with {org}?"):
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.you_ve_been_signed_up_you_will_receive_further_details_via_email', default="You've been signed up!\n\nYou will receive further details via email.\n\n+20 Community Service Points earned!"))
 
     def view_my_activities(self):
         dialog = MyVolunteerActivitiesDialog(self.dialog, self.auth)
@@ -194,7 +196,7 @@ class MyVolunteerActivitiesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("My Volunteer Activities")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.volunteer.volunteer.windows.my_volunteer_activities', default="My Volunteer Activities"))
         self.dialog.geometry("900x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -205,11 +207,11 @@ class MyVolunteerActivitiesDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🤝 My Volunteer Activities",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.my_volunteer_activities', default="🤝 My Volunteer Activities"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Stats frame
-        stats_frame = ttk.LabelFrame(main_frame, text="Volunteer Statistics")
+        stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.volunteer_statistics', default="Volunteer Statistics"))
         stats_frame.pack(fill='x', pady=(0, 15))
 
         stats_text = """Total Hours: 45 hours
@@ -225,7 +227,7 @@ Community Service Points: 450 points
         ttk.Label(stats_frame, text=stats_text, justify='left', font=('Arial', 10)).pack(padx=15, pady=10)
 
         # Activities list
-        list_frame = ttk.LabelFrame(main_frame, text="Activity History")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.activity_history', default="Activity History"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Organization', 'Activity', 'Date', 'Hours', 'Status')
@@ -260,11 +262,11 @@ Community Service Points: 450 points
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Download Certificate", command=self.download_cert).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.buttons.download_certificate', default="Download Certificate"), command=self.download_cert).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def download_cert(self):
-        messagebox.showinfo("Success", "Volunteer hours certificate downloaded!\n\nFile: volunteer_certificate_2025.pdf\n\nTotal Hours: 45")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.volunteer_hours_certificate_downloaded_file_volunteer_certificat', default="Volunteer hours certificate downloaded!\n\nFile: volunteer_certificate_2025.pdf\n\nTotal Hours: 45"))
 
 
 
@@ -276,7 +278,7 @@ class CommunityServiceHoursDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Community Service Hours")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.volunteer.volunteer.windows.community_service_hours', default="Community Service Hours"))
         self.dialog.geometry("800x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -287,53 +289,53 @@ class CommunityServiceHoursDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📋 Track Community Service Hours",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.track_community_service_hours', default="📋 Track Community Service Hours"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Log hours form
-        form_frame = ttk.LabelFrame(main_frame, text="Log Service Hours")
+        form_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.log_service_hours', default="Log Service Hours"))
         form_frame.pack(fill='x', pady=(0, 15))
 
         form = ttk.Frame(form_frame)
         form.pack(padx=15, pady=15, fill='x')
 
         # Organization
-        ttk.Label(form, text="Organization:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.organization', default="Organization:")).grid(row=0, column=0, sticky='w', pady=5)
         self.org_entry = ttk.Entry(form, width=40)
         self.org_entry.grid(row=0, column=1, pady=5, sticky='ew')
 
         # Activity
-        ttk.Label(form, text="Activity:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.activity', default="Activity:")).grid(row=1, column=0, sticky='w', pady=5)
         self.activity_entry = ttk.Entry(form, width=40)
         self.activity_entry.grid(row=1, column=1, pady=5, sticky='ew')
 
         # Date
-        ttk.Label(form, text="Date:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.date', default="Date:")).grid(row=2, column=0, sticky='w', pady=5)
         self.date_entry = ttk.Entry(form, width=40)
         self.date_entry.grid(row=2, column=1, pady=5, sticky='ew')
         self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
         # Hours
-        ttk.Label(form, text="Hours:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.hours', default="Hours:")).grid(row=3, column=0, sticky='w', pady=5)
         self.hours_entry = ttk.Entry(form, width=40)
         self.hours_entry.grid(row=3, column=1, pady=5, sticky='ew')
 
         # Supervisor
-        ttk.Label(form, text="Supervisor Name:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.supervisor_name', default="Supervisor Name:")).grid(row=4, column=0, sticky='w', pady=5)
         self.supervisor_entry = ttk.Entry(form, width=40)
         self.supervisor_entry.grid(row=4, column=1, pady=5, sticky='ew')
 
         # Supervisor Email
-        ttk.Label(form, text="Supervisor Email:").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.supervisor_email', default="Supervisor Email:")).grid(row=5, column=0, sticky='w', pady=5)
         self.supervisor_email_entry = ttk.Entry(form, width=40)
         self.supervisor_email_entry.grid(row=5, column=1, pady=5, sticky='ew')
 
         form.columnconfigure(1, weight=1)
 
-        ttk.Button(form_frame, text="Submit for Verification", command=self.submit_hours).pack(pady=(0, 10))
+        ttk.Button(form_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.buttons.submit_for_verification', default="Submit for Verification"), command=self.submit_hours).pack(pady=(0, 10))
 
         # Pending verification
-        pending_frame = ttk.LabelFrame(main_frame, text="Pending Verification")
+        pending_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.pending_verification', default="Pending Verification"))
         pending_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Organization', 'Hours', 'Date', 'Status')
@@ -348,7 +350,7 @@ class CommunityServiceHoursDialog:
         tree.insert('', 'end', values=("Food Bank", "4", "2025-03-28", "Pending"))
         tree.insert('', 'end', values=("Hospital", "2", "2025-03-25", "Verified ✓"))
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def submit_hours(self):
         org = self.org_entry.get().strip()
@@ -356,10 +358,10 @@ class CommunityServiceHoursDialog:
         supervisor = self.supervisor_entry.get().strip()
 
         if not all([org, hours, supervisor]):
-            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields."))
             return
 
-        messagebox.showinfo("Success", f"Hours submitted for verification!\n\nAn email has been sent to your supervisor for verification.\n\nHours: {hours}\nOrganization: {org}")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.volunteer.volunteer.dialogs.success', default="Success"), f"Hours submitted for verification!\n\nAn email has been sent to your supervisor for verification.\n\nHours: {hours}\nOrganization: {org}")
 
         # Clear form
         self.org_entry.delete(0, tk.END)
@@ -382,7 +384,7 @@ class CommunityEngagementDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Community Engagement")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.volunteer.volunteer.windows.community_engagement', default="Community Engagement"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -393,7 +395,7 @@ class CommunityEngagementDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="🤝 Community Engagement & Outreach",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.community_engagement_outreach', default="🤝 Community Engagement & Outreach"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Tabs for different features
@@ -402,26 +404,26 @@ class CommunityEngagementDialog:
 
         # Tab 1: Community Projects
         projects_frame = ttk.Frame(notebook)
-        notebook.add(projects_frame, text="Community Projects")
+        notebook.add(projects_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.tabs.community_projects', default="Community Projects"))
         self.create_projects_tab(projects_frame)
 
         # Tab 2: Engagement Analytics
         analytics_frame = ttk.Frame(notebook)
-        notebook.add(analytics_frame, text="Engagement Analytics")
+        notebook.add(analytics_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.tabs.engagement_analytics', default="Engagement Analytics"))
         self.create_analytics_tab(analytics_frame)
 
         # Tab 3: Retention Insights
         retention_frame = ttk.Frame(notebook)
-        notebook.add(retention_frame, text="Retention Insights")
+        notebook.add(retention_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.tabs.retention_insights', default="Retention Insights"))
         self.create_retention_tab(retention_frame)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def create_projects_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Active Community Projects", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.volunteer.volunteer.labels.active_community_projects', default="Active Community Projects"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         columns = ('Project', 'Partners', 'Students', 'Impact', 'Status')
         tree = ttk.Treeview(frame, columns=columns, show='tree headings', height=15)

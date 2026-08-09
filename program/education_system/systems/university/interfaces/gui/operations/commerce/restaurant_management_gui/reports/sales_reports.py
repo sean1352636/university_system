@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -181,7 +183,7 @@ def monthly_summary_report(self):
     """Generate monthly summary report with actual data"""
     try:
         # Get month to report on
-        month_input = simpledialog.askstring("Monthly Summary", "Enter month (YYYY-MM) or leave empty for current month:")
+        month_input = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.monthly_summary', default="Monthly Summary"), _t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.enter_month_yyyy_mm_or_leave_empty_for_current_month', default="Enter month (YYYY-MM) or leave empty for current month:"))
         if month_input is None:
             return  # User cancelled
 
@@ -191,7 +193,7 @@ def monthly_summary_report(self):
 
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
 
         cursor = conn.cursor()
@@ -334,23 +336,23 @@ def monthly_summary_report(self):
         self.show_report_window(f"Monthly Summary Report - {month_input}", report)
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to generate monthly summary: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.error', default="Error"), f"Failed to generate monthly summary: {e}")
 
 def profit_analysis_report(self):
     """Generate profit analysis report with actual data"""
     try:
         # Get date range
-        start_date = simpledialog.askstring("Profit Analysis", "Enter start date (YYYY-MM-DD):")
+        start_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.profit_analysis', default="Profit Analysis"), _t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.enter_start_date_yyyy_mm_dd', default="Enter start date (YYYY-MM-DD):"))
         if not start_date:
             return
 
-        end_date = simpledialog.askstring("Profit Analysis", "Enter end date (YYYY-MM-DD):")
+        end_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.profit_analysis', default="Profit Analysis"), _t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.enter_end_date_yyyy_mm_dd', default="Enter end date (YYYY-MM-DD):"))
         if not end_date:
             return
 
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
 
         cursor = conn.cursor()
@@ -528,7 +530,7 @@ def profit_analysis_report(self):
         self.show_report_window(f"Profit Analysis Report - {start_date} to {end_date}", report)
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to generate profit analysis: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.sales_reports.dialogs.error', default="Error"), f"Failed to generate profit analysis: {e}")
 
 def menu_performance_report(self):
     """Generate menu performance report"""

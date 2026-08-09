@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -70,24 +72,24 @@ from education_system.systems.university.interfaces.gui.operations.commerce.rest
 def staff_performance(self):
     """Staff performance management menu"""
     perf_dialog = tk.Toplevel(self.root)
-    perf_dialog.title("Staff Performance Management")
+    perf_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.windows.staff_performance_management', default="Staff Performance Management"))
     perf_dialog.geometry("400x350")
     perf_dialog.transient(self.root)
     perf_dialog.grab_set()
     main_frame = ttk.Frame(perf_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Staff Performance Management",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.staff_performance_management', default="Staff Performance Management"),
              font=('Arial', 14, 'bold')).pack(pady=20)
-    ttk.Button(main_frame, text="View Performance Rankings",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.buttons.view_performance_rankings', default="View Performance Rankings"),
               command=lambda: [perf_dialog.destroy(), self.view_performance_rankings()],
               width=35).pack(pady=10)
-    ttk.Button(main_frame, text="Update Performance Scores",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.buttons.update_performance_scores', default="Update Performance Scores"),
               command=lambda: [perf_dialog.destroy(), self.update_performance_scores()],
               width=35).pack(pady=10)
-    ttk.Button(main_frame, text="Export Performance Report",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.buttons.export_performance_report', default="Export Performance Report"),
               command=lambda: [perf_dialog.destroy(), self.export_performance_report()],
               width=35).pack(pady=10)
-    ttk.Button(main_frame, text="Close",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.buttons.close', default="Close"),
               command=perf_dialog.destroy,
               width=35).pack(pady=20)
 
@@ -96,7 +98,7 @@ def view_performance_rankings(self):
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Create performance table if it doesn't exist
@@ -129,12 +131,12 @@ def view_performance_rankings(self):
         conn.close()
         # Display rankings
         rank_dialog = tk.Toplevel(self.root)
-        rank_dialog.title("Staff Performance Rankings")
+        rank_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.windows.staff_performance_rankings', default="Staff Performance Rankings"))
         rank_dialog.geometry("800x600")
         rank_dialog.transient(self.root)
         main_frame = ttk.Frame(rank_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Staff Performance Rankings",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.staff_performance_rankings', default="Staff Performance Rankings"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         # Create treeview
         columns = ('Rank', 'Staff ID', 'Name', 'Position', 'Avg Score', 'Evaluations', 'Performance')
@@ -152,69 +154,69 @@ def view_performance_rankings(self):
         tree.configure(yscrollcommand=scrollbar.set)
         tree.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.buttons.close', default="Close"),
                   command=rank_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to load performance rankings:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.error', default="Error"), f"Failed to load performance rankings:\n{str(e)}")
 
 def update_performance_scores(self):
     """Update individual staff performance scores"""
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         cursor.execute('SELECT staff_id, name, position FROM restaurant_staff ORDER BY name')
         staff_list = cursor.fetchall()
         conn.close()
         if not staff_list:
-            messagebox.showinfo("No Staff", "No staff members found in database")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.no_staff', default="No Staff"), _t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.no_staff_members_found_in_database', default="No staff members found in database"))
             return
         # Create dialog
         update_dialog = tk.Toplevel(self.root)
-        update_dialog.title("Update Performance Scores")
+        update_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.windows.update_performance_scores', default="Update Performance Scores"))
         update_dialog.geometry("500x650")
         update_dialog.transient(self.root)
         main_frame = ttk.Frame(update_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Update Performance Scores",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.update_performance_scores', default="Update Performance Scores"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         # Staff selection
-        staff_frame = ttk.LabelFrame(main_frame, text="Select Staff Member", padding=10)
+        staff_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.select_staff_member', default="Select Staff Member"), padding=10)
         staff_frame.pack(fill='x', pady=10)
         staff_var = tk.StringVar()
         staff_dropdown = ttk.Combobox(staff_frame, textvariable=staff_var, width=40, state='readonly')
         staff_dropdown['values'] = [f"{s[0]} - {s[1]} ({s[2]})" for s in staff_list]
         staff_dropdown.pack()
         # Performance criteria
-        criteria_frame = ttk.LabelFrame(main_frame, text="Performance Criteria (1-10)", padding=10)
+        criteria_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.performance_criteria_1_10', default="Performance Criteria (1-10)"), padding=10)
         criteria_frame.pack(fill='x', pady=10)
         punctuality_var = tk.IntVar(value=5)
         quality_var = tk.IntVar(value=5)
         efficiency_var = tk.IntVar(value=5)
         teamwork_var = tk.IntVar(value=5)
-        ttk.Label(criteria_frame, text="Punctuality:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.punctuality', default="Punctuality:")).grid(row=0, column=0, sticky='w', pady=5)
         ttk.Scale(criteria_frame, from_=1, to=10, variable=punctuality_var, orient='horizontal', length=200).grid(row=0, column=1, padx=10)
         ttk.Label(criteria_frame, textvariable=punctuality_var).grid(row=0, column=2)
-        ttk.Label(criteria_frame, text="Quality:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.quality', default="Quality:")).grid(row=1, column=0, sticky='w', pady=5)
         ttk.Scale(criteria_frame, from_=1, to=10, variable=quality_var, orient='horizontal', length=200).grid(row=1, column=1, padx=10)
         ttk.Label(criteria_frame, textvariable=quality_var).grid(row=1, column=2)
-        ttk.Label(criteria_frame, text="Efficiency:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.efficiency', default="Efficiency:")).grid(row=2, column=0, sticky='w', pady=5)
         ttk.Scale(criteria_frame, from_=1, to=10, variable=efficiency_var, orient='horizontal', length=200).grid(row=2, column=1, padx=10)
         ttk.Label(criteria_frame, textvariable=efficiency_var).grid(row=2, column=2)
-        ttk.Label(criteria_frame, text="Teamwork:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.teamwork', default="Teamwork:")).grid(row=3, column=0, sticky='w', pady=5)
         ttk.Scale(criteria_frame, from_=1, to=10, variable=teamwork_var, orient='horizontal', length=200).grid(row=3, column=1, padx=10)
         ttk.Label(criteria_frame, textvariable=teamwork_var).grid(row=3, column=2)
         # Notes
-        notes_frame = ttk.LabelFrame(main_frame, text="Manager Comments", padding=10)
+        notes_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.labels.manager_comments', default="Manager Comments"), padding=10)
         notes_frame.pack(fill='both', expand=True, pady=10)
         notes_text = tk.Text(notes_frame, height=5, width=50)
         notes_text.pack(fill='both', expand=True)
         # Save button
         def save_performance():
             if not staff_var.get():
-                messagebox.showwarning("No Selection", "Please select a staff member")
+                messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.please_select_a_staff_member', default="Please select a staff member"))
                 return
             staff_id = int(staff_var.get().split(' - ')[0])
             overall_score = (punctuality_var.get() + quality_var.get() +
@@ -247,16 +249,16 @@ def update_performance_scores(self):
                          notes_text.get(1.0, tk.END)))
                     conn.commit()
                     conn.close()
-                    messagebox.showinfo("Success", "Performance evaluation saved successfully!")
+                    messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.performance_evaluation_saved_successfully', default="Performance evaluation saved successfully!"))
                     update_dialog.destroy()
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to save performance: {e}")
-        ttk.Button(main_frame, text="Save Evaluation",
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.error', default="Error"), f"Failed to save performance: {e}")
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.buttons.save_evaluation', default="Save Evaluation"),
                   command=save_performance).pack(pady=10)
-        ttk.Button(main_frame, text="Cancel",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.performance.buttons.cancel', default="Cancel"),
                   command=update_dialog.destroy).pack()
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to update performance scores:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.error', default="Error"), f"Failed to update performance scores:\n{str(e)}")
 
 def export_performance_report(self):
     """Export staff performance report"""
@@ -265,7 +267,7 @@ def export_performance_report(self):
         import csv
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Get comprehensive performance data
@@ -286,11 +288,11 @@ def export_performance_report(self):
         performance_data = cursor.fetchall()
         conn.close()
         if not performance_data:
-            messagebox.showinfo("No Data", "No performance data available")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.no_data', default="No Data"), _t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.no_performance_data_available', default="No performance data available"))
             return
         # Ask for export format
-        format_choice = messagebox.askquestion("Export Format",
-                                              "Export as CSV?\n(No = Display in window)")
+        format_choice = messagebox.askquestion(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.export_format', default="Export Format"),
+                                              _t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.export_as_csv_no_display_in_window', default="Export as CSV?\n(No = Display in window)"))
         if format_choice == 'yes':
             filename = filedialog.asksaveasfilename(
                 defaultextension=".csv",
@@ -304,7 +306,7 @@ def export_performance_report(self):
                                    'Efficiency', 'Teamwork', 'Overall Score', 'Evaluations', 'Latest Eval'])
                     for record in performance_data:
                         writer.writerow(record)
-                messagebox.showinfo("Success", f"Performance report exported to:\n{filename}")
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.success', default="Success"), f"Performance report exported to:\n{filename}")
         else:
             # Display in report window
             report = "STAFF PERFORMANCE REPORT\n"
@@ -321,12 +323,12 @@ def export_performance_report(self):
                 self.report_text.insert(tk.END, report)
             else:
                 report_dialog = tk.Toplevel(self.root)
-                report_dialog.title("Performance Report")
+                report_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.windows.performance_report', default="Performance Report"))
                 report_dialog.geometry("1000x600")
                 report_text = ScrolledText(report_dialog, height=30, width=120)
                 report_text.pack(fill='both', expand=True, padx=10, pady=10)
                 report_text.insert(1.0, report)
                 report_text.config(state='disabled')
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to export performance report:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.performance.dialogs.error', default="Error"), f"Failed to export performance report:\n{str(e)}")
 

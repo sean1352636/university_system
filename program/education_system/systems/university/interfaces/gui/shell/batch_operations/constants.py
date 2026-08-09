@@ -28,13 +28,13 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import DATA_DIR, BACKUP_DIR
+from education_system.paths import UNIVERSITY_DATA_DIR, UNIVERSITY_BACKUP_DIR
 
 # Configuration file paths
-GUI_SETTINGS_PATH = DATA_DIR / "gui_settings.json"
-EXTERNAL_DB_CONFIG_PATH = DATA_DIR / "external_db_config.json"
-EXTERNAL_API_CONFIG_PATH = DATA_DIR / "external_api_config.json"
-IMPORT_HISTORY_PATH = DATA_DIR / "import_history.json"
+GUI_SETTINGS_PATH = UNIVERSITY_DATA_DIR / "gui_settings.json"
+EXTERNAL_DB_CONFIG_PATH = UNIVERSITY_DATA_DIR / "external_db_config.json"
+EXTERNAL_API_CONFIG_PATH = UNIVERSITY_DATA_DIR / "external_api_config.json"
+IMPORT_HISTORY_PATH = UNIVERSITY_DATA_DIR / "import_history.json"
 
 # GUI imports
 import tkinter as tk

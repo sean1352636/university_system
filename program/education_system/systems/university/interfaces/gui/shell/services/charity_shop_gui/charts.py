@@ -1,5 +1,7 @@
 """Charity Shop - Charts and analytics window."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui._imports import (
     tk, ttk,
     MATPLOTLIB_AVAILABLE, plt, FigureCanvasTkAgg, Figure,
@@ -15,12 +17,12 @@ class ChartsWindow(tk.Toplevel):
 
     def __init__(self, parent, db: Database):
         super().__init__(parent)
-        self.title("Sales Analytics & Charts")
+        self.title(_t('gui.shell.services.charity_shop_gui.charts.windows.sales_analytics_charts', default="Sales Analytics & Charts"))
         self.geometry("900x700")
         self.db = db
 
         if not MATPLOTLIB_AVAILABLE:
-            ttk.Label(self, text="matplotlib is not installed.\nPlease install it with: pip install matplotlib",
+            ttk.Label(self, text=_t('gui.shell.services.charity_shop_gui.charts.labels.matplotlib_is_not_installed_please_install_it_with_pip_install_m', default="matplotlib is not installed.\nPlease install it with: pip install matplotlib"),
                      font=("Helvetica", 12)).pack(expand=True)
             return
 
@@ -34,28 +36,28 @@ class ChartsWindow(tk.Toplevel):
 
         # Revenue Overview Tab
         revenue_frame = ttk.Frame(notebook)
-        notebook.add(revenue_frame, text="Revenue Overview")
+        notebook.add(revenue_frame, text=_t('gui.shell.services.charity_shop_gui.charts.tabs.revenue_overview', default="Revenue Overview"))
         self.create_revenue_overview(revenue_frame)
 
         # Category Breakdown Tab
         category_frame = ttk.Frame(notebook)
-        notebook.add(category_frame, text="Category Analysis")
+        notebook.add(category_frame, text=_t('gui.shell.services.charity_shop_gui.charts.tabs.category_analysis', default="Category Analysis"))
         self.create_category_charts(category_frame)
 
         # Sales Timeline Tab
         timeline_frame = ttk.Frame(notebook)
-        notebook.add(timeline_frame, text="Sales Timeline")
+        notebook.add(timeline_frame, text=_t('gui.shell.services.charity_shop_gui.charts.tabs.sales_timeline', default="Sales Timeline"))
         self.create_timeline_chart(timeline_frame)
 
         # Stock Status Tab
         stock_frame = ttk.Frame(notebook)
-        notebook.add(stock_frame, text="Stock Status")
+        notebook.add(stock_frame, text=_t('gui.shell.services.charity_shop_gui.charts.tabs.stock_status', default="Stock Status"))
         self.create_stock_charts(stock_frame)
 
     def create_revenue_overview(self, parent):
         """Create revenue overview with summary stats."""
         # Summary stats at top
-        stats_frame = ttk.LabelFrame(parent, text="Revenue Summary", padding="10")
+        stats_frame = ttk.LabelFrame(parent, text=_t('gui.shell.services.charity_shop_gui.charts.labels.revenue_summary', default="Revenue Summary"), padding="10")
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         revenue_data = self.db.get_revenue_summary()
@@ -157,12 +159,12 @@ class ChartsWindow(tk.Toplevel):
         control_frame = ttk.Frame(parent)
         control_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(control_frame, text="Show last:").pack(side=tk.LEFT)
+        ttk.Label(control_frame, text=_t('gui.shell.services.charity_shop_gui.charts.labels.show_last', default="Show last:")).pack(side=tk.LEFT)
         self.days_var = tk.StringVar(value="30")
         days_combo = ttk.Combobox(control_frame, textvariable=self.days_var,
                                   values=["7", "14", "30", "60", "90"], width=5, state="readonly")
         days_combo.pack(side=tk.LEFT, padx=5)
-        ttk.Label(control_frame, text="days").pack(side=tk.LEFT)
+        ttk.Label(control_frame, text=_t('gui.shell.services.charity_shop_gui.charts.labels.days', default="days")).pack(side=tk.LEFT)
 
         self.timeline_container = ttk.Frame(parent)
         self.timeline_container.pack(fill=tk.BOTH, expand=True)

@@ -12,7 +12,7 @@ import logging
 import sys
 from datetime import date
 from typing import Any, Callable
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.admissions.enrolments import enrolments
 from education_system.systems.sixth_form.domain.admissions.enrolments import enrolments as data
 from education_system.systems.sixth_form.domain.learners.students import students as student_data
@@ -147,8 +147,8 @@ def _autofill_tutor_group(old_year: int, new_year: int, tg: str | None) -> str |
 
 # Saved filter presets + academic-year list share the GUI's JSON files so
 # the two front-ends stay in sync.
-_PRESETS_PATH = paths.DATA_DIR / "enrolment_filter_presets.json"
-_YEARS_PATH = paths.DATA_DIR / "enrolment_academic_years.json"
+_PRESETS_PATH = paths.SIXTH_FORM_DATA_DIR / "enrolment_filter_presets.json"
+_YEARS_PATH = paths.SIXTH_FORM_DATA_DIR / "enrolment_academic_years.json"
 
 
 def _load_json(path, default):
@@ -164,7 +164,7 @@ def _load_json(path, default):
 
 def _save_json(path, value) -> None:
     try:
-        paths.ensure_directories()
+        paths.ensure_sixth_form_directories()
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(value, fh, indent=2)
     except Exception:

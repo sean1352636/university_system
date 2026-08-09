@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import base64
 import hashlib
 import json
@@ -76,7 +78,7 @@ class WizardMixin:
             try:
                 self.wizard_state.update(existing_draft.get("state") or {})
                 self.lang = existing_draft.get("lang") or self.lang
-                messagebox.showinfo("Draft", tr("draft_restored", self.lang))
+                messagebox.showinfo(_t('gui.safeguarding.wizard_mixin.dialogs.draft', default="Draft"), tr("draft_restored", self.lang))
             except Exception:
                 pass
 
@@ -99,14 +101,14 @@ class WizardMixin:
         )
         anon_btn.pack(anchor="w", pady=(0, 8))
 
-        ttk.Label(right, text="Your recent submissions", style="Sub.TLabel").pack(anchor="w")
+        ttk.Label(right, text=_t('gui.safeguarding.wizard_mixin.labels.your_recent_submissions', default="Your recent submissions"), style="Sub.TLabel").pack(anchor="w")
         self.history_list = tk.Listbox(right, width=40, height=10, font=("Segoe UI", 9))
         self.history_list.pack(fill="x", pady=(2, 15))
         self._refresh_student_history()
 
         support = tk.Frame(right, bg="#eaf4ec", bd=1, relief="solid")
         support.pack(fill="x")
-        tk.Label(support, text="Need help now?", bg="#eaf4ec", font=("Segoe UI", 10, "bold")).pack(
+        tk.Label(support, text=_t('gui.safeguarding.wizard_mixin.labels.need_help_now', default="Need help now?"), bg="#eaf4ec", font=("Segoe UI", 10, "bold")).pack(
             anchor="w", padx=10, pady=(8, 4)
         )
         tk.Label(
@@ -252,7 +254,7 @@ class WizardMixin:
 
         # Feature 17 — vulnerability flags
         tk.Label(
-            host, text="Vulnerability factors (optional):", bg="white", font=("Segoe UI", 9, "bold")
+            host, text=_t('gui.safeguarding.wizard_mixin.labels.vulnerability_factors_optional', default="Vulnerability factors (optional):"), bg="white", font=("Segoe UI", 9, "bold")
         ).pack(anchor="w", **pad)
         self._vuln_vars = {}
         existing = set(self.wizard_state.get("vulnerability_flags") or [])
@@ -268,11 +270,11 @@ class WizardMixin:
         # Feature 19 — location & department for the incident
         loc_row = tk.Frame(host, bg="white")
         loc_row.pack(fill="x", **pad)
-        tk.Label(loc_row, text="Location:", bg="white", width=12, anchor="w").pack(side="left")
+        tk.Label(loc_row, text=_t('gui.safeguarding.wizard_mixin.labels.location', default="Location:"), bg="white", width=12, anchor="w").pack(side="left")
         self._loc_entry = ttk.Entry(loc_row, width=22)
         self._loc_entry.insert(0, self.wizard_state.get("case_location") or "")
         self._loc_entry.pack(side="left", padx=4)
-        tk.Label(loc_row, text="  Department:", bg="white").pack(side="left")
+        tk.Label(loc_row, text=_t('gui.safeguarding.wizard_mixin.labels.department', default="  Department:"), bg="white").pack(side="left")
         self._dept_entry = ttk.Entry(loc_row, width=22)
         self._dept_entry.insert(0, self.wizard_state.get("case_department") or "")
         self._dept_entry.pack(side="left", padx=4)
@@ -281,7 +283,7 @@ class WizardMixin:
         self._cv_wb = tk.BooleanVar(value=self.wizard_state["whistleblowing"])
         tk.Checkbutton(
             host,
-            text="This is a whistleblowing disclosure (handled by independent reviewers only)",
+            text=_t('gui.safeguarding.wizard_mixin.buttons.this_is_a_whistleblowing_disclosure_handled_by_independent_revie', default="This is a whistleblowing disclosure (handled by independent reviewers only)"),
             variable=self._cv_wb,
             bg="white",
             command=self._toggle_wb_field,
@@ -297,7 +299,7 @@ class WizardMixin:
             w.destroy()
         if self._cv_wb.get():
             tk.Label(
-                self._wb_row, text="Preferred independent reviewer (optional username):", bg="white"
+                self._wb_row, text=_t('gui.safeguarding.wizard_mixin.labels.preferred_independent_reviewer_optional_username', default="Preferred independent reviewer (optional username):"), bg="white"
             ).pack(side="left")
             self._wb_entry = ttk.Entry(self._wb_row, width=22)
             self._wb_entry.insert(0, self.wizard_state.get("wb_independent_reviewer") or "")
@@ -460,14 +462,14 @@ class WizardMixin:
         self._persist_draft()
         if transcription:
             messagebox.showinfo(
-                "Audio attached",
+                _t('gui.safeguarding.wizard_mixin.dialogs.audio_attached', default="Audio attached"),
                 f"Auto-transcribed:\n\n{transcription[:400]}",
             )
         else:
             messagebox.showinfo(
-                "Audio attached",
-                "Audio note saved. Automatic transcription is not available; "
-                "a reviewer will listen to the note.",
+                _t('gui.safeguarding.wizard_mixin.dialogs.audio_attached', default="Audio attached"),
+                _t('gui.safeguarding.wizard_mixin.dialogs.audio_note_saved_automatic_transcription_is_not_available_a_revi', default="Audio note saved. Automatic transcription is not available; "
+                "a reviewer will listen to the note."),
             )
         # Re-render to show the audio chip
         self._render_wizard()
@@ -532,7 +534,7 @@ class WizardMixin:
                 if hasattr(self, "_wb_entry") and self._cv_wb.get():
                     self.wizard_state["wb_independent_reviewer"] = self._wb_entry.get().strip()
                 if validate and not self._cv_disclose.get():
-                    messagebox.showwarning("Consent required", tr("consent_disclose", self.lang))
+                    messagebox.showwarning(_t('gui.safeguarding.wizard_mixin.dialogs.consent_required', default="Consent required"), tr("consent_disclose", self.lang))
                     return False
             elif self.wizard_step == 1:
                 self.wizard_state["triage"] = {
@@ -542,12 +544,12 @@ class WizardMixin:
                     "q4": self._tr_q4.get(),
                 }
                 if validate and not self.wizard_state["triage"]["q1"]:
-                    messagebox.showwarning("Required", tr("triage_q1", self.lang))
+                    messagebox.showwarning(_t('gui.safeguarding.wizard_mixin.dialogs.required', default="Required"), tr("triage_q1", self.lang))
                     return False
             elif self.wizard_step == 2:
                 self.wizard_state["content"] = self.txt_input.get("1.0", "end").strip()
                 if validate and not self.wizard_state["content"]:
-                    messagebox.showwarning("Required", tr("step_details", self.lang))
+                    messagebox.showwarning(_t('gui.safeguarding.wizard_mixin.dialogs.required', default="Required"), tr("step_details", self.lang))
                     return False
         except (tk.TclError, AttributeError):
             pass
@@ -559,7 +561,7 @@ class WizardMixin:
         s = self.wizard_state
         text = s.get("content") or ""
         if not text:
-            messagebox.showwarning("Empty", tr("step_details", self.lang))
+            messagebox.showwarning(_t('gui.safeguarding.wizard_mixin.dialogs.empty', default="Empty"), tr("step_details", self.lang))
             self.wizard_step = 2
             self._render_wizard()
             return
@@ -568,7 +570,7 @@ class WizardMixin:
         username = self.user.get("username") or ""
         dup_id = find_duplicate(username, text)
         if dup_id and not messagebox.askyesno(
-            "Possible duplicate", tr("duplicate_warn", self.lang, sid=dup_id)
+            _t('gui.safeguarding.wizard_mixin.dialogs.possible_duplicate', default="Possible duplicate"), tr("duplicate_warn", self.lang, sid=dup_id)
         ):
             return
 
@@ -683,21 +685,21 @@ class WizardMixin:
         # Feature 13 — self-harm pathway
         if is_self_harm_case(matches, nlp_scores):
             messagebox.showwarning(
-                "Immediate support",
+                _t('gui.safeguarding.wizard_mixin.dialogs.immediate_support', default="Immediate support"),
                 "Please know help is available right now.\n\n" + SUPPORT_RESOURCES,
             )
         elif overall == "CRITICAL":
             messagebox.showwarning(
-                "We're here for you",
+                _t('gui.safeguarding.wizard_mixin.dialogs.we_re_here_for_you', default="We're here for you"),
                 "Thank you for reaching out. A member of the safeguarding "
                 "team has been alerted.\n\n" + SUPPORT_RESOURCES,
             )
         elif overall in ("HIGH", "MEDIUM"):
             messagebox.showinfo(
-                "Submitted", "Your submission has been flagged for review.\n\n" + SUPPORT_RESOURCES
+                _t('gui.safeguarding.wizard_mixin.dialogs.submitted', default="Submitted"), "Your submission has been flagged for review.\n\n" + SUPPORT_RESOURCES
             )
         else:
-            messagebox.showinfo("Submitted", f"Thank you. Submission #{sid} received.")
+            messagebox.showinfo(_t('gui.safeguarding.wizard_mixin.dialogs.submitted', default="Submitted"), f"Thank you. Submission #{sid} received.")
 
         # Reset wizard
         self.show_student_dashboard()
@@ -738,4 +740,4 @@ class WizardMixin:
                 msg += f"\n\nReviewer note:\n{note}"
             out.config(text=msg, fg="#1f3a5f")
 
-        ttk.Button(win, text="Check", command=do_lookup).pack(pady=(0, 12))
+        ttk.Button(win, text=_t('gui.safeguarding.wizard_mixin.buttons.check', default="Check"), command=do_lookup).pack(pady=(0, 12))

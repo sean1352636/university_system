@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
 )
@@ -10,37 +12,37 @@ class PrerequisitesMixin:
         Opens a dialog to select course and prerequisite.
         """
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Course Prerequisite")
+        dialog.title(_t('gui.academics.course_management_gui.recommendations.prerequisites.windows.add_course_prerequisite', default="Add Course Prerequisite"))
         dialog.geometry("500x300")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Add Prerequisite to Course",
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.add_prerequisite_to_course', default="Add Prerequisite to Course"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Course selection
-        course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding="10")
+        course_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.select_course', default="Select Course"), padding="10")
         course_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(course_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.course', default="Course:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         course_var = tk.StringVar()
         course_combo = ttk.Combobox(course_frame, textvariable=course_var, state='readonly', width=40)
         course_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
 
         # Prerequisite selection
-        prereq_frame = ttk.LabelFrame(main_frame, text="Select Prerequisite", padding="10")
+        prereq_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.select_prerequisite', default="Select Prerequisite"), padding="10")
         prereq_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(prereq_frame, text="Prerequisite:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(prereq_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.prerequisite', default="Prerequisite:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         prereq_var = tk.StringVar()
         prereq_combo = ttk.Combobox(prereq_frame, textvariable=prereq_var, state='readonly', width=40)
         prereq_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
 
         # Required checkbox
         required_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(prereq_frame, text="Required (vs. Recommended)",
+        ttk.Checkbutton(prereq_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.buttons.required_vs_recommended', default="Required (vs. Recommended)"),
                        variable=required_var).grid(row=1, column=1, sticky=tk.W, pady=5)
 
         # Load courses
@@ -68,7 +70,7 @@ class PrerequisitesMixin:
 
         def save_prerequisite():
             if not course_var.get() or not prereq_var.get():
-                messagebox.showwarning("Incomplete", "Please select both course and prerequisite")
+                messagebox.showwarning(_t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.incomplete', default="Incomplete"), _t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.please_select_both_course_and_prerequisite', default="Please select both course and prerequisite"))
                 return
 
             try:
@@ -77,7 +79,7 @@ class PrerequisitesMixin:
                 prereq_id = int(prereq_var.get().split("ID: ")[1].rstrip(")"))
 
                 if course_id == prereq_id:
-                    messagebox.showerror(_("common.error"), "A course cannot be its own prerequisite")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.a_course_cannot_be_its_own_prerequisite', default="A course cannot be its own prerequisite"))
                     return
 
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
@@ -86,8 +88,8 @@ class PrerequisitesMixin:
 
                     # Check for circular dependency
                     if self.check_circular_prerequisite_db(cursor, course_id, prereq_id):
-                        messagebox.showerror("Circular Dependency",
-                                           "Adding this prerequisite would create a circular dependency!")
+                        messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.circular_dependency', default="Circular Dependency"),
+                                           _t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.adding_this_prerequisite_would_create_a_circular_dependency', default="Adding this prerequisite would create a circular dependency!"))
                 finally:
                     conn.close()
                     return
@@ -99,7 +101,7 @@ class PrerequisitesMixin:
                 """, (course_id, prereq_id))
 
                 if cursor.fetchone():
-                    messagebox.showwarning("Duplicate", "This prerequisite already exists")
+                    messagebox.showwarning(_t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.duplicate', default="Duplicate"), _t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.this_prerequisite_already_exists', default="This prerequisite already exists"))
                     conn.close()
                     return
 
@@ -113,7 +115,7 @@ class PrerequisitesMixin:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo(_("common.success"), "Prerequisite added successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.prerequisite_added_successfully', default="Prerequisite added successfully!"))
                 self.update_status("Prerequisite added successfully")
                 dialog.destroy()
 
@@ -124,8 +126,8 @@ class PrerequisitesMixin:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Save", command=save_prerequisite).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.buttons.save', default="Save"), command=save_prerequisite).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def check_circular_prerequisite_db(self, cursor, course_id, prereq_id):
         """
@@ -161,21 +163,21 @@ class PrerequisitesMixin:
         Opens a dialog with prerequisite information.
         """
         dialog = tk.Toplevel(self.root)
-        dialog.title("View Course Prerequisites")
+        dialog.title(_t('gui.academics.course_management_gui.recommendations.prerequisites.windows.view_course_prerequisites', default="View Course Prerequisites"))
         dialog.geometry("700x500")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Course Prerequisites",
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.course_prerequisites', default="Course Prerequisites"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Course selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(select_frame, text="Select Course:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(select_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.select_course_variant_2', default="Select Course:")).pack(side=tk.LEFT, padx=5)
         course_var = tk.StringVar()
         course_combo = ttk.Combobox(select_frame, textvariable=course_var, state='readonly', width=40)
         course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
@@ -287,8 +289,8 @@ class PrerequisitesMixin:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Refresh", command=show_prerequisites).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.buttons.refresh', default="Refresh"), command=show_prerequisites).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Initial load
         load_courses()
@@ -300,27 +302,27 @@ class PrerequisitesMixin:
         Opens a dialog to select and remove prerequisites.
         """
         dialog = tk.Toplevel(self.root)
-        dialog.title("Remove Course Prerequisite")
+        dialog.title(_t('gui.academics.course_management_gui.recommendations.prerequisites.windows.remove_course_prerequisite', default="Remove Course Prerequisite"))
         dialog.geometry("600x400")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Remove Course Prerequisite",
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.remove_course_prerequisite', default="Remove Course Prerequisite"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Course selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(select_frame, text="Select Course:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(select_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.select_course_variant_2', default="Select Course:")).pack(side=tk.LEFT, padx=5)
         course_var = tk.StringVar()
         course_combo = ttk.Combobox(select_frame, textvariable=course_var, state='readonly', width=40)
         course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
         # Prerequisites list
-        list_frame = ttk.LabelFrame(main_frame, text="Current Prerequisites", padding="10")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.labels.current_prerequisites', default="Current Prerequisites"), padding="10")
         list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         prereq_listbox = tk.Listbox(list_frame, height=10)
@@ -391,7 +393,7 @@ class PrerequisitesMixin:
         def remove_selected():
             selection = prereq_listbox.curselection()
             if not selection:
-                messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a prerequisite to remove")
+                messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.please_select_a_prerequisite_to_remove', default="Please select a prerequisite to remove"))
                 return
 
             selected_text = prereq_listbox.get(selection[0])
@@ -410,7 +412,7 @@ class PrerequisitesMixin:
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo(_("common.success"), "Prerequisite removed successfully!")
+                    messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.recommendations.prerequisites.dialogs.prerequisite_removed_successfully', default="Prerequisite removed successfully!"))
                     self.update_status("Prerequisite removed")
                     load_prerequisites()
 
@@ -423,8 +425,8 @@ class PrerequisitesMixin:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Remove Selected", command=remove_selected).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.buttons.remove_selected', default="Remove Selected"), command=remove_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.prerequisites.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Initial load
         load_courses()

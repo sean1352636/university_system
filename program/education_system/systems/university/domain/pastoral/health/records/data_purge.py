@@ -1,4 +1,4 @@
-from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager, get_connection
+from education_system.systems.university.infrastructure.health.storage import sqlite3, DatabaseManager, get_connection
 from education_system.systems.university.domain.pastoral.health.records.backup_export import create_database_backup
 from education_system.systems.university.domain.pastoral.health.services import log_audit_event
 from datetime import datetime, timedelta
@@ -47,7 +47,7 @@ def update_retention_policy(auth):
     cursor.execute('''
     SELECT id, data_type, retention_period_days, auto_archive, auto_delete
     FROM data_retention_policies
-    ORDER BY data_type
+    ORDER BY id
     ''')
 
     policies = cursor.fetchall()
@@ -152,6 +152,24 @@ def archive_old_data(auth):
         cutoff_date = (datetime.now() - timedelta(days=retention_days)).strftime('%Y-%m-%d')
 
         print(f"\nProcessing {data_type} (older than {cutoff_date})...")
+
+        table_name = {
+            'health_records': 'health_records',
+            'vaccination_records': 'vaccination_records',
+            'appointments': 'health_appointments',
+        }.get(data_type)
+        if table_name:
+            cursor.execute(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+                (table_name,),
+            )
+            if cursor.fetchone() is None:
+                audit_logger.warning(
+                    "Skipping archival policy %s because table %s is unavailable",
+                    data_type,
+                    table_name,
+                )
+                continue
 
         if data_type == 'health_records':
             # Archive old health records
@@ -289,7 +307,6 @@ def purge_expired_data(auth):
         username = getattr(auth, "username", None) or ""
         if username.lower() != "admin":
             print("Only 'admin' can perform a purge.")
-            input("Press Enter to return...")
             return
 
         confirm = input("Type 'DELETE' to confirm you want to proceed: ").strip()
@@ -315,7 +332,6 @@ def purge_expired_data(auth):
                 conn.close()
             except Exception as ex:
                 audit_logger.debug(f"Error closing connection after backup failure: {ex}")
-            input("Press Enter to return...")
             return
 
         # --- Purge phase (transactional) ---
@@ -344,7 +360,6 @@ def purge_expired_data(auth):
                 audit_logger.debug(f"Error during rollback: {ex}")
             print(f"Purge failed: {e}")
             print("No changes have been committed.")
-            input("Press Enter to return...")
             return
         finally:
             try:
@@ -392,34 +407,40 @@ def retention_compliance_report(auth):
     for data_type, retention_days, auto_archive, auto_delete in policies:
         cutoff_date = (datetime.now() - timedelta(days=retention_days)).strftime('%Y-%m-%d')
 
-        # Count records exceeding retention period
-        if data_type == 'health_records':
-            cursor.execute('''
-            SELECT COUNT(*) FROM health_records
-            WHERE record_date < ?
-            ''', (cutoff_date,))
-        elif data_type == 'vaccination_records':
-            cursor.execute('''
-            SELECT COUNT(*) FROM vaccination_records
-            WHERE administered_date < ?
-            ''', (cutoff_date,))
-        elif data_type == 'appointments':
-            cursor.execute('''
-            SELECT COUNT(*) FROM health_appointments
-            WHERE appointment_date < ?
-            ''', (cutoff_date,))
-        else:
+        table_details = {
+            'health_records': ('health_records', 'record_date'),
+            'vaccination_records': ('vaccination_records', 'administered_date'),
+            'appointments': ('health_appointments', 'appointment_date'),
+        }.get(data_type)
+        if table_details is None:
             continue
+        table_name, date_column = table_details
+        cursor.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (table_name,),
+        )
+        if cursor.fetchone() is None:
+            compliance_summary.append({
+                'data_type': data_type,
+                'retention_days': retention_days,
+                'total_records': 0,
+                'old_records': 0,
+                'status': 'NOT CONFIGURED',
+                'auto_archive': auto_archive,
+                'auto_delete': auto_delete,
+            })
+            continue
+
+        # Count records exceeding retention period
+        cursor.execute(
+            f'SELECT COUNT(*) FROM "{table_name}" WHERE "{date_column}" < ?',
+            (cutoff_date,),
+        )
 
         old_count = cursor.fetchone()[0]
 
         # Count total records
-        if data_type == 'health_records':
-            cursor.execute('SELECT COUNT(*) FROM health_records')
-        elif data_type == 'vaccination_records':
-            cursor.execute('SELECT COUNT(*) FROM vaccination_records')
-        elif data_type == 'appointments':
-            cursor.execute('SELECT COUNT(*) FROM health_appointments')
+        cursor.execute(f'SELECT COUNT(*) FROM "{table_name}"')
 
         total_count = cursor.fetchone()[0]
 
@@ -472,6 +493,18 @@ def compliance_monitoring(auth):
     conn = get_connection()
     cursor = conn.cursor()
 
+    def table_exists(name):
+        cursor.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?",
+            (name,),
+        )
+        return cursor.fetchone() is not None
+
+    def column_exists(table, column):
+        if not table_exists(table):
+            return False
+        return column in {row[1] for row in cursor.execute(f'PRAGMA table_info("{table}")')}
+
     print("\n===== Compliance Monitoring =====")
 
     # HIPAA compliance indicators
@@ -495,13 +528,14 @@ def compliance_monitoring(auth):
         print("  🔴 No access logs found")
 
     # Data encryption compliance
-    cursor.execute('''
-    SELECT setting_value
-    FROM security_settings
-    WHERE setting_name = 'encryption_enabled'
-    ''')
-
-    encryption_status = cursor.fetchone()
+    encryption_status = None
+    if table_exists('security_settings'):
+        cursor.execute('''
+        SELECT setting_value
+        FROM security_settings
+        WHERE setting_name = 'encryption_enabled'
+        ''')
+        encryption_status = cursor.fetchone()
     if encryption_status and encryption_status[0] == '1':
         print("  ✅ Data encryption enabled")
     else:
@@ -512,13 +546,15 @@ def compliance_monitoring(auth):
     print("-" * 23)
 
     # Required fields completion
-    cursor.execute('''
-    SELECT
-        COUNT(*) as total_records,
-        SUM(CASE WHEN provider IS NOT NULL AND provider != '' THEN 1 ELSE 0 END) as with_provider,
+    provider_expression = (
+        "SUM(CASE WHEN provider IS NOT NULL AND provider != '' THEN 1 ELSE 0 END)"
+        if column_exists('health_records', 'provider') else "0"
+    )
+    cursor.execute(f'''
+    SELECT COUNT(*) as total_records,
+        {provider_expression} as with_provider,
         SUM(CASE WHEN record_type IS NOT NULL AND record_type != '' THEN 1 ELSE 0 END) as with_type
-    FROM health_records
-    WHERE record_date >= date('now', '-90 days')
+    FROM health_records WHERE record_date >= date('now', '-90 days')
     ''')
 
     doc_compliance = cursor.fetchone()
@@ -541,24 +577,26 @@ def compliance_monitoring(auth):
     print("-" * 25)
 
     # Check for records exceeding retention periods
-    cursor.execute('''
-    SELECT
-        drp.data_type,
-        drp.retention_period_days,
-        COUNT(*) as old_records
-    FROM data_retention_policies drp
-    LEFT JOIN (
-        SELECT 'health_records' as data_type, record_date as record_date FROM health_records
-        UNION ALL
-        SELECT 'vaccination_records' as data_type, administered_date as record_date FROM vaccination_records
-        UNION ALL
-        SELECT 'appointments' as data_type, appointment_date as record_date FROM health_appointments
-    ) records ON drp.data_type = records.data_type
-    WHERE records.record_date < date('now', '-' || drp.retention_period_days || ' days')
-    GROUP BY drp.data_type, drp.retention_period_days
-    ''')
-
-    retention_status = cursor.fetchall()
+    retention_status = []
+    cursor.execute('SELECT data_type, retention_period_days FROM data_retention_policies')
+    retention_tables = {
+        'health_records': ('health_records', 'record_date'),
+        'vaccination_records': ('vaccination_records', 'administered_date'),
+        'appointments': ('health_appointments', 'appointment_date'),
+    }
+    for data_type, retention_days in cursor.fetchall():
+        details = retention_tables.get(data_type)
+        if not details or not column_exists(*details):
+            continue
+        table_name, date_column = details
+        cursor.execute(
+            f'''SELECT COUNT(*) FROM "{table_name}"
+                WHERE "{date_column}" < date('now', '-' || ? || ' days')''',
+            (retention_days,),
+        )
+        old_count = cursor.fetchone()[0]
+        if old_count:
+            retention_status.append((data_type, retention_days, old_count))
 
     if retention_status:
         print("Records exceeding retention periods:")
@@ -575,15 +613,18 @@ def compliance_monitoring(auth):
     print("\nVACCINATION VERIFICATION")
     print("-" * 23)
 
-    cursor.execute('''
-    SELECT
-        COUNT(*) as total_vaccinations,
-        SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) as verified_count
-    FROM vaccination_records
-    WHERE administered_date >= date('now', '-365 days')
-    ''')
-
-    vax_verification = cursor.fetchone()
+    vax_verification = (0, 0)
+    if column_exists('vaccination_records', 'administered_date'):
+        verified_expression = (
+            "SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END)"
+            if column_exists('vaccination_records', 'verified') else "0"
+        )
+        cursor.execute(f'''
+        SELECT COUNT(*) as total_vaccinations, {verified_expression} as verified_count
+        FROM vaccination_records
+        WHERE administered_date >= date('now', '-365 days')
+        ''')
+        vax_verification = cursor.fetchone()
     if vax_verification[0] > 0:
         verification_rate = (vax_verification[1] / vax_verification[0] * 100)
         print(f"Vaccination verification rate: {verification_rate:.1f}%")
@@ -694,8 +735,60 @@ def custom_data_purge(auth):
         print("Operation cancelled.")
         return
 
-    print("\nCustom purge confirmed. This feature would implement specific purge criteria.")
-    print("Implementation requires additional safety measures and business rules.")
+    cutoff = input("Delete records before date (YYYY-MM-DD): ").strip()
+    try:
+        datetime.strptime(cutoff, '%Y-%m-%d')
+    except ValueError:
+        print("Invalid cutoff date.")
+        return
+    record_type = input("Record type (blank for all): ").strip() or None
+    student_id = input("Student ID (blank for all): ").strip() or None
+    result = purge_health_records(cutoff, record_type=record_type,
+                                  student_id=student_id)
+    log_audit_event(
+        auth.current_user['id'], 'custom_data_purge', 'data_purge', 0,
+        f"Purged {result['deleted']} records; recovery archive: {result['archive_path']}",
+    )
+    print(f"Purged {result['deleted']} record(s).")
+    print(f"Recovery archive: {result['archive_path']}")
 
-    # Log the attempt even if not implemented
-    log_audit_event(auth.current_user['id'], 'custom_data_purge_attempt', 'data_purge', 0, "Custom purge requested but not implemented")
+
+def purge_health_records(cutoff_date, *, record_type=None, student_id=None,
+                         archive_dir=None):
+    """Archive matching health rows to JSON, then delete them atomically."""
+    from pathlib import Path
+    from education_system import paths
+
+    datetime.strptime(cutoff_date, '%Y-%m-%d')
+    clauses = ["DATE(record_date) < DATE(?)"]
+    values = [cutoff_date]
+    if record_type:
+        clauses.append("record_type = ?")
+        values.append(record_type)
+    if student_id:
+        clauses.append("student_id = ?")
+        values.append(student_id)
+    where = " AND ".join(clauses)
+
+    # Take the normal full-database safety backup as well as a portable row
+    # archive that can be inspected and restored independently.
+    backup_before_operation('custom_health_record_purge')
+    conn = get_connection()
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = [dict(row) for row in conn.execute(
+            f"SELECT * FROM health_records WHERE {where}", values
+        ).fetchall()]
+        destination = Path(archive_dir or (paths.UNIVERSITY_BACKUP_DIR / 'health_purge'))
+        destination.mkdir(parents=True, exist_ok=True)
+        archive_path = destination / f"health_records_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}.json"
+        archive_path.write_text(json.dumps(rows, indent=2, default=str), encoding='utf-8')
+        conn.execute("BEGIN IMMEDIATE")
+        cursor = conn.execute(f"DELETE FROM health_records WHERE {where}", values)
+        conn.commit()
+        return {"deleted": cursor.rowcount, "archive_path": str(archive_path)}
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()

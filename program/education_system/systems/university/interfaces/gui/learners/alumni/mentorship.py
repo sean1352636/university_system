@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -42,7 +44,7 @@ from education_system.systems.university.interfaces.gui.learners.alumni._service
 class MentorshipMixin:
         def create_mentee_request_form(self, parent):
             """Create mentee request form"""
-            ttk.Label(parent, text="Request a Mentor",
+            ttk.Label(parent, text=_t('gui.learners.alumni.mentorship.labels.request_a_mentor', default="Request a Mentor"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             form_frame = ttk.Frame(parent)
@@ -67,7 +69,7 @@ class MentorshipMixin:
             goals_frame = ttk.Frame(form_frame)
             goals_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(goals_frame, text="Career Goals:").pack(anchor='w')
+            ttk.Label(goals_frame, text=_t('gui.learners.alumni.mentorship.labels.career_goals', default="Career Goals:")).pack(anchor='w')
             self.mentee_vars['goals'] = ScrolledText(goals_frame, height=3, wrap=tk.WORD)
             self.mentee_vars['goals'].pack(fill=tk.X, pady=(5, 0))
 
@@ -75,7 +77,7 @@ class MentorshipMixin:
             interest_frame = ttk.Frame(form_frame)
             interest_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(interest_frame, text="Areas of Interest:").pack(anchor='w')
+            ttk.Label(interest_frame, text=_t('gui.learners.alumni.mentorship.labels.areas_of_interest', default="Areas of Interest:")).pack(anchor='w')
             self.mentee_vars['interests'] = tk.StringVar()
             ttk.Entry(interest_frame, textvariable=self.mentee_vars['interests']).pack(fill=tk.X, pady=(5, 0))
 
@@ -83,7 +85,7 @@ class MentorshipMixin:
             stage_frame = ttk.Frame(form_frame)
             stage_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(stage_frame, text="Current Career Stage:").pack(anchor='w')
+            ttk.Label(stage_frame, text=_t('gui.learners.alumni.mentorship.labels.current_career_stage', default="Current Career Stage:")).pack(anchor='w')
             self.mentee_vars['stage'] = tk.StringVar()
             stage_combo = ttk.Combobox(stage_frame, textvariable=self.mentee_vars['stage'],
                                       values=["Student", "Recent Graduate", "Early Career", "Career Change", "Mid-Career"])
@@ -93,17 +95,17 @@ class MentorshipMixin:
             mentor_pref_frame = ttk.Frame(form_frame)
             mentor_pref_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(mentor_pref_frame, text="Preferred Mentor Characteristics:").pack(anchor='w')
+            ttk.Label(mentor_pref_frame, text=_t('gui.learners.alumni.mentorship.labels.preferred_mentor_characteristics', default="Preferred Mentor Characteristics:")).pack(anchor='w')
             self.mentee_vars['mentor_prefs'] = ScrolledText(mentor_pref_frame, height=2, wrap=tk.WORD)
             self.mentee_vars['mentor_prefs'].pack(fill=tk.X, pady=(5, 0))
 
             # Submit button
-            ttk.Button(form_frame, text="Request Mentor",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.mentorship.buttons.request_mentor', default="Request Mentor"),
                       command=self.submit_mentee_request).pack(pady=20)
 
         def create_mentor_signup_form(self, parent):
             """Create mentor signup form"""
-            ttk.Label(parent, text="Sign Up as a Mentor",
+            ttk.Label(parent, text=_t('gui.learners.alumni.mentorship.labels.sign_up_as_a_mentor', default="Sign Up as a Mentor"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             form_frame = ttk.Frame(parent)
@@ -127,7 +129,7 @@ class MentorshipMixin:
             expertise_frame = ttk.Frame(form_frame)
             expertise_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(expertise_frame, text="Areas of Expertise:").pack(anchor='w')
+            ttk.Label(expertise_frame, text=_t('gui.learners.alumni.mentorship.labels.areas_of_expertise', default="Areas of Expertise:")).pack(anchor='w')
             self.mentor_vars['expertise'] = ScrolledText(expertise_frame, height=3, wrap=tk.WORD)
             self.mentor_vars['expertise'].pack(fill=tk.X, pady=(5, 0))
 
@@ -135,7 +137,7 @@ class MentorshipMixin:
             industries_frame = ttk.Frame(form_frame)
             industries_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(industries_frame, text="Industries:").pack(anchor='w')
+            ttk.Label(industries_frame, text=_t('gui.learners.alumni.mentorship.labels.industries', default="Industries:")).pack(anchor='w')
             self.mentor_vars['industries'] = tk.StringVar()
             ttk.Entry(industries_frame, textvariable=self.mentor_vars['industries']).pack(fill=tk.X, pady=(5, 0))
 
@@ -143,7 +145,7 @@ class MentorshipMixin:
             availability_frame = ttk.Frame(form_frame)
             availability_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(availability_frame, text="Availability:").pack(anchor='w')
+            ttk.Label(availability_frame, text=_t('gui.learners.alumni.mentorship.labels.availability', default="Availability:")).pack(anchor='w')
             self.mentor_vars['availability'] = tk.StringVar()
             availability_combo = ttk.Combobox(availability_frame, textvariable=self.mentor_vars['availability'],
                                              values=["Weekday evenings", "Weekend mornings", "Weekend afternoons", "Flexible"])
@@ -153,19 +155,19 @@ class MentorshipMixin:
             comm_frame = ttk.Frame(form_frame)
             comm_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(comm_frame, text="Preferred Communication:").pack(anchor='w')
+            ttk.Label(comm_frame, text=_t('gui.learners.alumni.mentorship.labels.preferred_communication', default="Preferred Communication:")).pack(anchor='w')
             self.mentor_vars['communication'] = tk.StringVar()
             comm_combo = ttk.Combobox(comm_frame, textvariable=self.mentor_vars['communication'],
                                      values=["Email", "Phone", "Video calls", "In-person meetings"])
             comm_combo.pack(fill=tk.X, pady=(5, 0))
 
             # Submit button
-            ttk.Button(form_frame, text="Sign Up as Mentor",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.mentorship.buttons.sign_up_as_mentor', default="Sign Up as Mentor"),
                       command=self.submit_mentor_signup).pack(pady=20)
 
         def create_mentorship_pairing_form(self, parent):
             """Create manual mentorship pairing form"""
-            ttk.Label(parent, text="Create Mentorship Pair",
+            ttk.Label(parent, text=_t('gui.learners.alumni.mentorship.labels.create_mentorship_pair', default="Create Mentorship Pair"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             form_frame = ttk.Frame(parent)
@@ -175,7 +177,7 @@ class MentorshipMixin:
             mentor_frame = ttk.Frame(form_frame)
             mentor_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(mentor_frame, text="Select Mentor:").pack(anchor='w')
+            ttk.Label(mentor_frame, text=_t('gui.learners.alumni.mentorship.labels.select_mentor', default="Select Mentor:")).pack(anchor='w')
             self.pairing_vars = {}
             self.pairing_vars['mentor'] = tk.StringVar()
             mentor_combo = ttk.Combobox(mentor_frame, textvariable=self.pairing_vars['mentor'],
@@ -186,7 +188,7 @@ class MentorshipMixin:
             mentee_frame = ttk.Frame(form_frame)
             mentee_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(mentee_frame, text="Select Mentee:").pack(anchor='w')
+            ttk.Label(mentee_frame, text=_t('gui.learners.alumni.mentorship.labels.select_mentee', default="Select Mentee:")).pack(anchor='w')
             self.pairing_vars['mentee'] = tk.StringVar()
             mentee_combo = ttk.Combobox(mentee_frame, textvariable=self.pairing_vars['mentee'],
                                        values=["John Smith - Student", "Emma Wilson - Recent Graduate", "Alex Brown - Career Change"])
@@ -196,7 +198,7 @@ class MentorshipMixin:
             focus_frame = ttk.Frame(form_frame)
             focus_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(focus_frame, text="Focus Area:").pack(anchor='w')
+            ttk.Label(focus_frame, text=_t('gui.learners.alumni.mentorship.labels.focus_area', default="Focus Area:")).pack(anchor='w')
             self.pairing_vars['focus'] = tk.StringVar()
             focus_combo = ttk.Combobox(focus_frame, textvariable=self.pairing_vars['focus'],
                                       values=["Career Planning", "Industry Transition", "Leadership Development", "Technical Skills"])
@@ -206,19 +208,19 @@ class MentorshipMixin:
             duration_frame = ttk.Frame(form_frame)
             duration_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(duration_frame, text="Duration (months):").pack(anchor='w')
+            ttk.Label(duration_frame, text=_t('gui.learners.alumni.mentorship.labels.duration_months', default="Duration (months):")).pack(anchor='w')
             self.pairing_vars['duration'] = tk.StringVar(value="6")
             duration_combo = ttk.Combobox(duration_frame, textvariable=self.pairing_vars['duration'],
                                          values=["3", "6", "12", "Ongoing"])
             duration_combo.pack(fill=tk.X, pady=(5, 0))
 
             # Notes
-            ttk.Label(form_frame, text="Notes:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(form_frame, text=_t('gui.learners.alumni.mentorship.labels.notes', default="Notes:")).pack(anchor='w', pady=(10, 5))
             self.pairing_notes = ScrolledText(form_frame, height=3, wrap=tk.WORD)
             self.pairing_notes.pack(fill=tk.X)
 
             # Submit button
-            ttk.Button(form_frame, text="Create Mentorship",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.mentorship.buttons.create_mentorship', default="Create Mentorship"),
                       command=self.submit_mentorship_pairing).pack(pady=20)
 
         def show_setup_mentorship(self):
@@ -226,7 +228,7 @@ class MentorshipMixin:
             self.clear_content()
             self.update_status("Setup Mentorship")
 
-            ttk.Label(self.content_frame, text="Mentorship Program Setup",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.mentorship.labels.mentorship_program_setup', default="Mentorship Program Setup"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Tabs for different mentorship actions
@@ -235,20 +237,20 @@ class MentorshipMixin:
 
             # Become mentor tab
             mentor_frame = ttk.Frame(notebook)
-            notebook.add(mentor_frame, text="Become a Mentor")
+            notebook.add(mentor_frame, text=_t('gui.learners.alumni.mentorship.tabs.become_a_mentor', default="Become a Mentor"))
 
             self.create_mentor_signup_form(mentor_frame)
 
             # Request mentorship tab
             mentee_frame = ttk.Frame(notebook)
-            notebook.add(mentee_frame, text="Request Mentorship")
+            notebook.add(mentee_frame, text=_t('gui.learners.alumni.mentorship.tabs.request_mentorship', default="Request Mentorship"))
 
             self.create_mentee_request_form(mentee_frame)
 
             # Manual pairing tab (for staff)
             if self.has_permission('manage_mentorships'):
                 pairing_frame = ttk.Frame(notebook)
-                notebook.add(pairing_frame, text="Create Mentorship Pair")
+                notebook.add(pairing_frame, text=_t('gui.learners.alumni.mentorship.tabs.create_mentorship_pair', default="Create Mentorship Pair"))
 
                 self.create_mentorship_pairing_form(pairing_frame)
 
@@ -257,7 +259,7 @@ class MentorshipMixin:
             self.clear_content()
             self.update_status("View Mentorships")
 
-            ttk.Label(self.content_frame, text="Mentorship Program Overview",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.mentorship.labels.mentorship_program_overview', default="Mentorship Program Overview"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Tabs for different mentorship views
@@ -266,7 +268,7 @@ class MentorshipMixin:
 
             # Active mentorships tab
             active_frame = ttk.Frame(notebook)
-            notebook.add(active_frame, text="Active Mentorships")
+            notebook.add(active_frame, text=_t('gui.learners.alumni.mentorship.tabs.active_mentorships', default="Active Mentorships"))
 
             active_text = ScrolledText(active_frame, wrap=tk.WORD)
             active_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -329,7 +331,7 @@ class MentorshipMixin:
 
             # Program statistics tab
             stats_frame = ttk.Frame(notebook)
-            notebook.add(stats_frame, text="Program Statistics")
+            notebook.add(stats_frame, text=_t('gui.learners.alumni.mentorship.tabs.program_statistics', default="Program Statistics"))
 
             stats_text = ScrolledText(stats_frame, wrap=tk.WORD)
             stats_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -385,10 +387,10 @@ class MentorshipMixin:
             """Submit mentee request"""
             goals = self.mentee_vars['goals'].get(1.0, tk.END).strip()
             if not goals:
-                messagebox.showerror("Validation Error", "Please describe your career goals!")
+                messagebox.showerror(_t('gui.learners.alumni.mentorship.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.mentorship.dialogs.please_describe_your_career_goals', default="Please describe your career goals!"))
                 return
 
-            messagebox.showinfo("Mentorship Request", "Your mentorship request has been submitted! We'll match you with a suitable mentor.")
+            messagebox.showinfo(_t('gui.learners.alumni.mentorship.dialogs.mentorship_request', default="Mentorship Request"), _t('gui.learners.alumni.mentorship.dialogs.your_mentorship_request_has_been_submitted_we_ll_match_you_with', default="Your mentorship request has been submitted! We'll match you with a suitable mentor."))
             self.update_status("Mentorship request submitted")
 
             # Clear form
@@ -401,10 +403,10 @@ class MentorshipMixin:
             """Submit mentor signup"""
             expertise = self.mentor_vars['expertise'].get(1.0, tk.END).strip()
             if not expertise:
-                messagebox.showerror("Validation Error", "Please describe your areas of expertise!")
+                messagebox.showerror(_t('gui.learners.alumni.mentorship.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.mentorship.dialogs.please_describe_your_areas_of_expertise', default="Please describe your areas of expertise!"))
                 return
 
-            messagebox.showinfo("Mentor Signup", "Thank you for signing up as a mentor! You will be contacted soon.")
+            messagebox.showinfo(_t('gui.learners.alumni.mentorship.dialogs.mentor_signup', default="Mentor Signup"), _t('gui.learners.alumni.mentorship.dialogs.thank_you_for_signing_up_as_a_mentor_you_will_be_contacted_soon', default="Thank you for signing up as a mentor! You will be contacted soon."))
             self.update_status("Mentor signup completed")
 
             # Clear form
@@ -416,14 +418,14 @@ class MentorshipMixin:
         def submit_mentorship_pairing(self):
             """Submit mentorship pairing"""
             if not self.pairing_vars['mentor'].get():
-                messagebox.showerror("Validation Error", "Please select a mentor!")
+                messagebox.showerror(_t('gui.learners.alumni.mentorship.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.mentorship.dialogs.please_select_a_mentor', default="Please select a mentor!"))
                 return
 
             if not self.pairing_vars['mentee'].get():
-                messagebox.showerror("Validation Error", "Please select a mentee!")
+                messagebox.showerror(_t('gui.learners.alumni.mentorship.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.mentorship.dialogs.please_select_a_mentee', default="Please select a mentee!"))
                 return
 
-            messagebox.showinfo("Mentorship Created", "Mentorship pairing created successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.mentorship.dialogs.mentorship_created', default="Mentorship Created"), _t('gui.learners.alumni.mentorship.dialogs.mentorship_pairing_created_successfully', default="Mentorship pairing created successfully!"))
             self.update_status("Mentorship pairing completed")
 
             # Clear form

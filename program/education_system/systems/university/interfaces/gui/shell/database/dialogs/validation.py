@@ -1,4 +1,6 @@
 """Validation dialog for the data backup GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import os
@@ -21,7 +23,7 @@ class ValidationDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Validate Backup")
+        self.dialog.title(_t('gui.shell.database.dialogs.validation.windows.validate_backup', default="Validate Backup"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
 
@@ -31,7 +33,7 @@ class ValidationDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Backup selection
-        select_frame = ttk.LabelFrame(self.dialog, text="Select Backup to Validate", padding=10)
+        select_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.validation.labels.select_backup_to_validate', default="Select Backup to Validate"), padding=10)
         select_frame.pack(fill="x", padx=10, pady=5)
 
         self.backup_var = tk.StringVar()
@@ -39,10 +41,10 @@ class ValidationDialog:
                                         state="readonly", width=50)
         self.backup_combo.pack(fill="x", pady=5)
 
-        ttk.Button(select_frame, text="Validate", command=self.validate).pack(pady=5)
+        ttk.Button(select_frame, text=_t('gui.shell.database.dialogs.validation.buttons.validate', default="Validate"), command=self.validate).pack(pady=5)
 
         # Results
-        results_frame = ttk.LabelFrame(self.dialog, text="Validation Results", padding=10)
+        results_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.validation.labels.validation_results', default="Validation Results"), padding=10)
         results_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         self.results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD)
@@ -67,7 +69,7 @@ class ValidationDialog:
     def validate(self):
         """Validate selected backup"""
         if not self.backup_combo.get():
-            messagebox.showwarning("No Selection", "Please select a backup to validate")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.validation.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.validation.dialogs.please_select_a_backup_to_validate', default="Please select a backup to validate"))
             return
 
         try:

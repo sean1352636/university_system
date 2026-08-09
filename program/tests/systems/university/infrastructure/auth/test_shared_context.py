@@ -223,7 +223,7 @@ class TestInitializeAuth:
             context_module._auth_initialized = False
 
             # Call without path
-            with patch('education_system.systems.university.infrastructure.paths') as mock_paths:
+            with patch('education_system.paths') as mock_paths:
                 mock_paths.DEFAULT_DB_PATH = "/default/path/db.sqlite"
                 auth = initialize_auth()
 

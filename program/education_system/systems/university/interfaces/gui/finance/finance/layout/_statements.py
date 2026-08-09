@@ -1,5 +1,7 @@
 """Periodic student statement runs tab."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import date
@@ -85,7 +87,7 @@ class StatementsMixin:
                 runs = list_runs()
             except Exception:
                 runs = []
-                summary_label.config(text="⚠ schema not initialised: click 'Init Schema'")
+                summary_label.config(text=_t('gui.finance.finance.layout.statements.text.schema_not_initialised_click_init_schema', default="⚠ schema not initialised: click 'Init Schema'"))
             self._statements_runs = runs
             run_combo['values'] = [
                 f"#{r['run_id']} — period end {r['period_end']} "
@@ -107,7 +109,7 @@ class StatementsMixin:
                 tree.delete(iid)
             rid = _selected_run_id()
             if rid is None:
-                summary_label.config(text="No run selected")
+                summary_label.config(text=_t('gui.finance.finance.layout.statements.text.no_run_selected', default="No run selected"))
                 return
             from education_system.systems.university.domain.finance.statements import list_statements
             try:
@@ -147,26 +149,26 @@ class StatementsMixin:
         from education_system.systems.university.domain.finance.statements import init_statements
         try:
             init_statements()
-            messagebox.showinfo("Statements",
-                                "Schema initialised. You can now run statements.")
+            messagebox.showinfo(_t('gui.finance.finance.layout.statements.dialogs.statements', default="Statements"),
+                                _t('gui.finance.finance.layout.statements.dialogs.schema_initialised_you_can_now_run_statements', default="Schema initialised. You can now run statements."))
             if hasattr(self, '_statements_reload_runs'):
                 self._statements_reload_runs()
         except Exception as e:
-            messagebox.showerror("Init failed", str(e))
+            messagebox.showerror(_t('gui.finance.finance.layout.statements.dialogs.init_failed', default="Init failed"), str(e))
 
     def _statements_run_action(self, reload_runs):
         # Default period_end = today
         today = date.today().isoformat()
         period_end = simpledialog.askstring(
-            "Run statements",
-            "Period end date (YYYY-MM-DD):",
+            _t('gui.finance.finance.layout.statements.dialogs.run_statements', default="Run statements"),
+            _t('gui.finance.finance.layout.statements.dialogs.period_end_date_yyyy_mm_dd', default="Period end date (YYYY-MM-DD):"),
             initialvalue=today,
         )
         if not period_end:
             return
         period_start = simpledialog.askstring(
-            "Run statements",
-            "Period start date (YYYY-MM-DD)\n(blank = beginning of time):",
+            _t('gui.finance.finance.layout.statements.dialogs.run_statements', default="Run statements"),
+            _t('gui.finance.finance.layout.statements.dialogs.period_start_date_yyyy_mm_dd_blank_beginning_of_time', default="Period start date (YYYY-MM-DD)\n(blank = beginning of time):"),
             initialvalue='',
         )
 
@@ -185,11 +187,11 @@ class StatementsMixin:
                 period_start=period_start or None,
             )
         except Exception as e:
-            messagebox.showerror("Run failed", str(e))
+            messagebox.showerror(_t('gui.finance.finance.layout.statements.dialogs.run_failed', default="Run failed"), str(e))
             return
 
         messagebox.showinfo(
-            "Run complete",
+            _t('gui.finance.finance.layout.statements.dialogs.run_complete', default="Run complete"),
             f"Run #{result['run_id']}\n"
             f"Statements generated: {result['total_students']}\n"
             f"With outstanding balance: {result['total_with_balance']}"

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # main_gui.py
 # Main AccommodationGUI class that combines all mixins and provides
 # the core interface (init, menu, tab creation, status bar, refresh).
@@ -167,21 +169,21 @@ class AccommodationGUI(
         button_frame = ttk.Frame(self.accom_frame)
         button_frame.pack(fill=tk.X, padx=5, pady=5)
 
-        ttk.Button(button_frame, text="Add New",
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.add_new', default="Add New"),
                   command=self.add_accommodation_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_frame, text="Update",
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.update', default="Update"),
                   command=self.update_accommodation_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_frame, text="Remove",
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.remove', default="Remove"),
                   command=self.remove_accommodation_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_frame, text="View Details",
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.view_details', default="View Details"),
                   command=self.view_accommodation_details).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_frame, text="Refresh",
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.refresh', default="Refresh"),
                   command=self.refresh_data).pack(side=tk.LEFT, padx=2)
 
         ttk.Separator(button_frame, orient=tk.VERTICAL).pack(side=tk.LEFT, padx=5, fill=tk.Y)
-        ttk.Button(button_frame, text="Approve",
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.approve', default="Approve"),
                   command=self.approve_selected).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_frame, text="Reject",
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.reject', default="Reject"),
                   command=self.reject_selected).pack(side=tk.LEFT, padx=2)
 
         tree_frame = ttk.Frame(self.accom_frame)
@@ -215,47 +217,47 @@ class AccommodationGUI(
         self.search_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.search_frame, text=_t("medical_accommodation.tabs.search"))
 
-        criteria_frame = ttk.LabelFrame(self.search_frame, text="Search Criteria")
+        criteria_frame = ttk.LabelFrame(self.search_frame, text=_t('gui.pastoral.health.medical_accommodation.main.labels.search_criteria', default="Search Criteria"))
         criteria_frame.pack(fill=tk.X, padx=10, pady=5)
 
         row1 = ttk.Frame(criteria_frame)
         row1.pack(fill=tk.X, padx=5, pady=2)
 
-        ttk.Label(row1, text="Student ID:").pack(side=tk.LEFT)
+        ttk.Label(row1, text=_t('gui.pastoral.health.medical_accommodation.main.labels.student_id', default="Student ID:")).pack(side=tk.LEFT)
         self.search_student_id = ttk.Entry(row1, width=15)
         self.search_student_id.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(row1, text="Type:").pack(side=tk.LEFT, padx=(20,0))
+        ttk.Label(row1, text=_t('gui.pastoral.health.medical_accommodation.main.labels.type', default="Type:")).pack(side=tk.LEFT, padx=(20,0))
         self.search_type = ttk.Combobox(row1, width=20)
         self.search_type.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(row1, text="Status:").pack(side=tk.LEFT, padx=(20,0))
+        ttk.Label(row1, text=_t('gui.pastoral.health.medical_accommodation.main.labels.status', default="Status:")).pack(side=tk.LEFT, padx=(20,0))
         self.search_status = ttk.Combobox(row1, values=['', 'active', 'pending', 'suspended', 'expired'])
         self.search_status.pack(side=tk.LEFT, padx=5)
 
         row2 = ttk.Frame(criteria_frame)
         row2.pack(fill=tk.X, padx=5, pady=2)
 
-        ttk.Label(row2, text="Start Date >=:").pack(side=tk.LEFT)
+        ttk.Label(row2, text=_t('gui.pastoral.health.medical_accommodation.main.labels.start_date', default="Start Date >=:")).pack(side=tk.LEFT)
         self.search_start_date = ttk.Entry(row2, width=12)
         self.search_start_date.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(row2, text="End Date <=:").pack(side=tk.LEFT, padx=(20,0))
+        ttk.Label(row2, text=_t('gui.pastoral.health.medical_accommodation.main.labels.end_date', default="End Date <=:")).pack(side=tk.LEFT, padx=(20,0))
         self.search_end_date = ttk.Entry(row2, width=12)
         self.search_end_date.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(row2, text="Keyword:").pack(side=tk.LEFT, padx=(20,0))
+        ttk.Label(row2, text=_t('gui.pastoral.health.medical_accommodation.main.labels.keyword', default="Keyword:")).pack(side=tk.LEFT, padx=(20,0))
         self.search_keyword = ttk.Entry(row2, width=20)
         self.search_keyword.pack(side=tk.LEFT, padx=5)
 
         button_row = ttk.Frame(criteria_frame)
         button_row.pack(fill=tk.X, padx=5, pady=5)
 
-        ttk.Button(button_row, text="Search", command=self.perform_search).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_row, text="Clear", command=self.clear_search).pack(side=tk.LEFT, padx=2)
-        ttk.Button(button_row, text="Show All", command=self.refresh_data).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_row, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.search', default="Search"), command=self.perform_search).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_row, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.clear', default="Clear"), command=self.clear_search).pack(side=tk.LEFT, padx=2)
+        ttk.Button(button_row, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.show_all', default="Show All"), command=self.refresh_data).pack(side=tk.LEFT, padx=2)
 
-        results_frame = ttk.LabelFrame(self.search_frame, text="Search Results")
+        results_frame = ttk.LabelFrame(self.search_frame, text=_t('gui.pastoral.health.medical_accommodation.main.labels.search_results', default="Search Results"))
         results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         self.search_tree = ttk.Treeview(results_frame, columns=(
@@ -284,7 +286,7 @@ class AccommodationGUI(
         self.dashboard_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.dashboard_frame, text=_t("medical_accommodation.tabs.dashboard"))
 
-        metrics_frame = ttk.LabelFrame(self.dashboard_frame, text="Key Metrics")
+        metrics_frame = ttk.LabelFrame(self.dashboard_frame, text=_t('gui.pastoral.health.medical_accommodation.main.labels.key_metrics', default="Key Metrics"))
         metrics_frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.metrics_vars = {}
@@ -315,13 +317,13 @@ class AccommodationGUI(
         for i in range(3):
             metrics_grid.columnconfigure(i, weight=1)
 
-        charts_frame = ttk.LabelFrame(self.dashboard_frame, text="Statistics")
+        charts_frame = ttk.LabelFrame(self.dashboard_frame, text=_t('gui.pastoral.health.medical_accommodation.main.labels.statistics', default="Statistics"))
         charts_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         self.stats_text = ScrolledText(charts_frame, height=15, width=80)
         self.stats_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Button(self.dashboard_frame, text="Refresh Dashboard",
+        ttk.Button(self.dashboard_frame, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.refresh_dashboard', default="Refresh Dashboard"),
                   command=self.refresh_dashboard).pack(pady=5)
 
     def create_templates_tab(self):
@@ -332,17 +334,17 @@ class AccommodationGUI(
         template_buttons = ttk.Frame(self.templates_frame)
         template_buttons.pack(fill=tk.X, padx=5, pady=5)
 
-        ttk.Button(template_buttons, text="Create Template",
+        ttk.Button(template_buttons, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.create_template', default="Create Template"),
                   command=self.save_template_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(template_buttons, text="Apply Template",
+        ttk.Button(template_buttons, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.apply_template', default="Apply Template"),
                   command=self.apply_template_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(template_buttons, text="Edit Template",
+        ttk.Button(template_buttons, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.edit_template', default="Edit Template"),
                   command=self.edit_template_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(template_buttons, text="Delete Template",
+        ttk.Button(template_buttons, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.delete_template', default="Delete Template"),
                   command=self.delete_template_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(template_buttons, text="Import Medical Templates",
+        ttk.Button(template_buttons, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.import_medical_templates', default="Import Medical Templates"),
                   command=self.import_medical_templates).pack(side=tk.LEFT, padx=2)
-        ttk.Button(template_buttons, text="Refresh",
+        ttk.Button(template_buttons, text=_t('gui.pastoral.health.medical_accommodation.main.buttons.refresh', default="Refresh"),
                   command=self.refresh_templates).pack(side=tk.LEFT, padx=2)
 
         templates_list_frame = ttk.Frame(self.templates_frame)
@@ -376,7 +378,7 @@ class AccommodationGUI(
         self.status_bar = ttk.Frame(self.root)
         self.status_bar.pack(fill=tk.X, side=tk.BOTTOM)
 
-        self.status_var = tk.StringVar(value="Ready")
+        self.status_var = tk.StringVar(value=_t('gui.pastoral.health.medical_accommodation.main.values.ready', default="Ready"))
         ttk.Label(self.status_bar, textvariable=self.status_var).pack(side=tk.LEFT, padx=5)
 
         if CLI_AVAILABLE and 'auth' in globals() and auth and auth.current_user:
@@ -431,7 +433,7 @@ class AccommodationGUI(
             self.status_var.set(f"Loaded {len(accommodations)} accommodations")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load accommodations: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.main.dialogs.error', default="Error"), f"Failed to load accommodations: {str(e)}")
             self.status_var.set("Error loading data")
 
     def refresh_templates(self):
@@ -466,7 +468,7 @@ class AccommodationGUI(
                     ))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load templates: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.main.dialogs.error', default="Error"), f"Failed to load templates: {str(e)}")
 
     # --- Event Handlers ---
 
@@ -482,7 +484,7 @@ class AccommodationGUI(
         """Get the currently selected accommodation"""
         selection = self.accom_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an accommodation first")
+            messagebox.showwarning(_t('gui.pastoral.health.medical_accommodation.main.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.medical_accommodation.main.dialogs.please_select_an_accommodation_first', default="Please select an accommodation first"))
             return None
         return self.accom_tree.item(selection[0])
 
@@ -492,14 +494,14 @@ class AccommodationGUI(
     def notify_student(student_id, subject, message):
         """Send notification to student (GUI version)"""
         if not CLI_AVAILABLE:
-            messagebox.showinfo("Student Notification",
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.main.dialogs.student_notification', default="Student Notification"),
                 f"Would notify {student_id}:\n{subject}\n\n{message}")
             return
 
         try:
             cli_notify_student(student_id, subject, message)
         except Exception as e:
-            messagebox.showerror("Notification Error", f"Failed to notify student: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.main.dialogs.notification_error', default="Notification Error"), f"Failed to notify student: {str(e)}")
 
     def validate_accommodation_data(self, data):
         """Validate accommodation data before submission"""
@@ -551,7 +553,7 @@ class AccommodationGUI(
 
         dialog = DocumentUploadDialog(self.root, accommodation_id)
         if dialog.result:
-            messagebox.showinfo("Success", "Document uploaded successfully")
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.main.dialogs.success', default="Success"), _t('gui.pastoral.health.medical_accommodation.main.dialogs.document_uploaded_successfully', default="Document uploaded successfully"))
 
     def show_db_info(self):
         """Show database information"""
@@ -567,13 +569,13 @@ class AccommodationGUI(
 
     def show_about(self):
         """Show about dialog"""
-        messagebox.showinfo("About",
-            "Student Accommodation Management System\n\n"
+        messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.main.dialogs.about', default="About"),
+            _t('gui.pastoral.health.medical_accommodation.main.dialogs.student_accommodation_management_system_gui_version_1_0_backward', default="Student Accommodation Management System\n\n"
             "GUI Version 1.0\n"
             "Backwards compatible with CLI version\n\n"
             "This system helps manage student accommodations\n"
             "with features for registration, tracking, reporting,\n"
-            "and template management.")
+            "and template management."))
 
     @staticmethod
     def launch_gui():

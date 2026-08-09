@@ -6,15 +6,17 @@ PRAGMA so this dialog tolerates the column drift that exists between
 conftest.py, services/.../database.py, and the live DB.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text as _
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)
 
 _TABLES = ("activity_log", "audit_log")
@@ -29,7 +31,7 @@ class AuditLogViewerDialog:
         self.auth = auth
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Audit Log Viewer")
+        self.dialog.title(_t('gui.academics.course_management_gui.maintenance.audit_log.windows.audit_log_viewer', default="Audit Log Viewer"))
         self.dialog.geometry("1100x600")
         self.dialog.transient(parent)
 
@@ -40,27 +42,27 @@ class AuditLogViewerDialog:
         top = ttk.Frame(self.dialog, padding=10)
         top.pack(fill=tk.X)
 
-        ttk.Label(top, text="Audit Log Viewer",
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.maintenance.audit_log.labels.audit_log_viewer', default="Audit Log Viewer"),
                   font=("Arial", 13, "bold")).grid(row=0, column=0, sticky=tk.W,
                                                    columnspan=8, pady=(0, 8))
 
-        ttk.Label(top, text="Source:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.maintenance.audit_log.labels.source', default="Source:")).grid(row=1, column=0, sticky=tk.W)
         self.source_var = tk.StringVar(value=_TABLES[0])
         ttk.Combobox(top, textvariable=self.source_var, state="readonly",
                      values=list(_TABLES), width=14
                      ).grid(row=1, column=1, padx=4)
 
-        ttk.Label(top, text="User contains:").grid(row=1, column=2, sticky=tk.W, padx=(12, 0))
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.maintenance.audit_log.labels.user_contains', default="User contains:")).grid(row=1, column=2, sticky=tk.W, padx=(12, 0))
         self.user_var = tk.StringVar()
         ttk.Entry(top, textvariable=self.user_var, width=18
                   ).grid(row=1, column=3, padx=4)
 
-        ttk.Label(top, text="Action contains:").grid(row=1, column=4, sticky=tk.W, padx=(12, 0))
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.maintenance.audit_log.labels.action_contains', default="Action contains:")).grid(row=1, column=4, sticky=tk.W, padx=(12, 0))
         self.action_var = tk.StringVar()
         ttk.Entry(top, textvariable=self.action_var, width=18
                   ).grid(row=1, column=5, padx=4)
 
-        ttk.Label(top, text="Limit:").grid(row=1, column=6, sticky=tk.W, padx=(12, 0))
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.maintenance.audit_log.labels.limit', default="Limit:")).grid(row=1, column=6, sticky=tk.W, padx=(12, 0))
         self.limit_var = tk.IntVar(value=_DEFAULT_LIMIT)
         ttk.Spinbox(top, from_=50, to=10000, increment=50,
                     textvariable=self.limit_var, width=6
@@ -173,7 +175,7 @@ class AuditLogViewerDialog:
         if not full_detail:
             return
         win = tk.Toplevel(self.dialog)
-        win.title("Audit Detail")
+        win.title(_t('gui.academics.course_management_gui.maintenance.audit_log.windows.audit_detail', default="Audit Detail"))
         win.geometry("700x400")
         win.transient(self.dialog)
         text = tk.Text(win, wrap=tk.WORD)

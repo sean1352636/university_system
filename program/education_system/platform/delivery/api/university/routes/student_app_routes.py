@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import scoped_to, token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
@@ -43,6 +43,7 @@ def get_preferences(student_id: str):
 
 @student_app_bp.route("/preferences/<student_id>", methods=["PUT"])
 @token_required
+@scoped_to("student_id")
 def update_preferences(student_id: str):
     data = request.get_json(silent=True) or {}
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

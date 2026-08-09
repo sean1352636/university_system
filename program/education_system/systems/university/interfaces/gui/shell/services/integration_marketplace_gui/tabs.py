@@ -135,7 +135,7 @@ class TabsMixin:
 
         # Status filter
         ttk.Label(controls_frame, text=_t("integration_marketplace.common.status")).pack(side='left', padx=5)
-        self.installed_filter_var = tk.StringVar(value='active')
+        self.installed_filter_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.tabs.values.active', default='active'))
         ttk.Combobox(controls_frame, textvariable=self.installed_filter_var,
                     values=['all', 'active', 'inactive', 'error'],
                     width=10, state='readonly').pack(side='left', padx=5)
@@ -303,7 +303,7 @@ class TabsMixin:
 
         # Status filter
         ttk.Label(controls_frame, text=_t("integration_marketplace.common.status")).pack(side='left', padx=5)
-        self.sync_filter_var = tk.StringVar(value='all')
+        self.sync_filter_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.tabs.values.all', default='all'))
         ttk.Combobox(controls_frame, textvariable=self.sync_filter_var,
                     values=['all', 'success', 'failed', 'running'],
                     width=10, state='readonly').pack(side='left', padx=5)

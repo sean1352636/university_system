@@ -10,7 +10,7 @@ import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from education_system.platform.kernel.database.paths import SYSTEM_DB_PATHS, SYSTEM_LABELS
+from education_system.paths import SYSTEM_DB_PATHS, SYSTEM_LABELS, learner_table
 
 logger = logging.getLogger(__name__)
 
@@ -294,14 +294,17 @@ class EarlyWarningService:
             return []
 
         try:
-            table = "pupils" if system == "primary" else "students"
+            # From the registry, not a "pupils for primary, students for
+            # everyone else" guess — apprenticeships keeps ``apprentices``.
+            table, id_col = learner_table(system)
             if not _table_exists(conn, table):
                 return []
 
             cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
-            id_col = "pupil_id" if system == "primary" and "pupil_id" in cols else (
-                "student_id" if "student_id" in cols else "id"
-            )
+            if id_col not in cols:
+                id_col = next(
+                    (c for c in ("student_id", "pupil_id", "apprentice_id", "id")
+                     if c in cols), "id")
 
             rows = conn.execute(f"SELECT {id_col} FROM {table} LIMIT 500").fetchall()
             student_ids = [str(r[0]) for r in rows]

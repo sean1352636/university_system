@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -229,7 +231,7 @@ class LibraryGUI:
                 if payload.get("peak_period") and hasattr(self, "status_label"):
                     try:
                         self.status_label.configure(
-                            text="Exam peak period — review opening hours",
+                            text=_t('gui.academics.library.base.text.exam_peak_period_review_opening_hours', default="Exam peak period — review opening hours"),
                             foreground="#c0392b",
                         )
                     except Exception:
@@ -286,48 +288,50 @@ class LibraryGUI:
         role = self.get_user_role()
         return role == 'student'
 
-    def __getattr__(self, name):
-        """Fallback for undefined attributes or commands.
+    def _show_unavailable_command(self, name):
+        """Report one explicitly declared, unsupported command."""
+        try:
+            messagebox.showwarning(
+                _("library.messages.feature_not_implemented_title"),
+                _("library.messages.feature_not_implemented").format(name=name),
+            )
+        except tk.TclError:
+            logging.getLogger(__name__).warning(
+                "Library command is not implemented: %s", name
+            )
 
-        Many menu commands and button callbacks in the GUI reference
-        methods that may not yet be implemented.  Instead of raising
-        ``AttributeError`` and causing the application to crash, this
-        fallback returns a placeholder function for any undefined
-        attribute accessed on the ``LibraryGUI`` instance.  When
-        invoked, the placeholder will display a warning message
-        informing the user that the requested feature is not yet
-        available.
+    # These context-menu gaps are intentionally explicit. Unknown attributes
+    # now raise AttributeError normally, exposing typos and missing bindings.
+    def add_book_to_list(self):
+        return self._show_unavailable_command("add_book_to_list")
 
-        Parameters
-        ----------
-        name : str
-            The attribute name being accessed.
+    def edit_reading_list(self):
+        return self._show_unavailable_command("edit_reading_list")
 
-        Returns
-        -------
-        Callable
-            A function that accepts arbitrary arguments and displays a
-            warning message.
-        """
-        # Only generate placeholders for attributes that start with typical
-        # command prefixes.  This avoids intercepting legitimate
-        # attribute accesses such as Tkinter variables or internal state.
-        if name.startswith(('import_', 'export_', 'backup_', 'restore_',
-                            'show_', 'add_', 'edit_', 'delete_', 'reserve_',
-                            'checkout_', 'return_', 'view_', 'contact_',
-                            'share_', 'update_', 'process_', 'waive_')):
-            def placeholder(*args, **kwargs):
-                try:
-                    messagebox.showwarning(
-                        _("library.messages.feature_not_implemented_title"),
-                        _("library.messages.feature_not_implemented").format(name=name)
-                    )
-                except tk.TclError:
-                    # If messagebox cannot be displayed (e.g., in headless
-                    # environments), log to console instead
-                    print(f"Warning: '{name}' is not implemented yet.")
-            return placeholder
-        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+    def share_reading_list(self):
+        return self._show_unavailable_command("share_reading_list")
+
+    def delete_reading_list(self):
+        return self._show_unavailable_command("delete_reading_list")
+
+    def contact_overdue_user(self):
+        return self._show_unavailable_command("contact_overdue_user")
+
+    def process_overdue_return(self):
+        return self._show_unavailable_command("process_overdue_return")
+
+    def waive_fine(self):
+        return self._show_unavailable_command("waive_fine")
+
+    def view_user_history(self):
+        return self._show_unavailable_command("view_user_history")
+
+    def show_download_stats(self):
+        return self._show_unavailable_command("show_download_stats")
+
+    def manage_digital_access_dialog(self):
+        """Delegate to the implemented access-permissions dialog."""
+        return self.manage_digital_access_permissions_gui()
 
     def get_db_connection():
         """Get database connection - wrapper for backwards compatibility"""
@@ -342,7 +346,7 @@ class LibraryGUI:
         # Fallback implementation
         try:
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            return sqlite3.connect(str(DEFAULT_DB_PATH))
+            return sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         except (sqlite3.Error, OSError) as e:
             print(f"Database connection error: {e}")
             return None
@@ -810,7 +814,9 @@ class LibraryGUI:
                         self.current_user = None
 
                     def check_permission(self, permission):
-                        return True  # Allow all permissions in fallback mode
+                        # Fail closed: the fallback exists only so the UI can
+                        # render an error state, never to grant access.
+                        return False
 
                 self.auth = SimpleAuth()
 
@@ -903,7 +909,10 @@ class LibraryGUI:
     def check_permission(self, permission):
         """Check if current user has permission"""
         if not self.auth:
-            return True  # Allow all if no auth system
+            # Fail closed: a missing auth system is a misconfiguration, not a
+            # grant. Denying here cannot leak data; allowing would expose every
+            # library action to an unauthenticated shell.
+            return False
 
         # For shared auth system, check if user is authenticated
         if hasattr(self.auth, 'current_user') and self.auth.current_user:
@@ -931,4 +940,3 @@ class LibraryGUI:
                 self.master.destroy()
             else:
                 self.master.destroy()
-

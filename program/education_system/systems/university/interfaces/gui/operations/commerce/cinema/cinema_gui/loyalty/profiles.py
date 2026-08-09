@@ -62,7 +62,7 @@ def show_profiles_page(self):
 
 def create_profile(self):
     form = tk.Toplevel(self.root)
-    form.title("Create Customer Profile")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.windows.create_customer_profile', default="Create Customer Profile"))
     form.geometry("400x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -85,7 +85,7 @@ def create_profile(self):
     phone_e = ttk.Entry(frame, width=35)
     phone_e.pack(pady=5)
 
-    tk.Label(frame, text="Birthday (YYYY-MM-DD):", bg="#ffffff", fg="#333333").pack(anchor="w")
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.labels.birthday_yyyy_mm_dd', default="Birthday (YYYY-MM-DD):"), bg="#ffffff", fg="#333333").pack(anchor="w")
     bday_e = ttk.Entry(frame, width=35)
     bday_e.pack(pady=5)
 
@@ -96,7 +96,7 @@ def create_profile(self):
 
     def save():
         if not name_e.get().strip() or not email_e.get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Name and email required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.dialogs.name_and_email_required', default="Name and email required"))
             return
         conn = sqlite3.connect(DB_FILE)
         try:
@@ -108,7 +108,7 @@ def create_profile(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Profile created")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.dialogs.profile_created', default="Profile created"))
         form.destroy()
         self.show_profiles_page()
 
@@ -117,7 +117,7 @@ def create_profile(self):
 def edit_profile(self):
     selected = self.profile_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a profile")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.dialogs.select_a_profile', default="Select a profile"))
         return
     profile_id = self.profile_tree.item(selected[0])['values'][0]
 
@@ -133,7 +133,7 @@ def edit_profile(self):
         return
 
     form = tk.Toplevel(self.root)
-    form.title("Edit Profile")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.windows.edit_profile', default="Edit Profile"))
     form.geometry("400x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -180,7 +180,7 @@ def edit_profile(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Profile updated")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.dialogs.profile_updated', default="Profile updated"))
         form.destroy()
         self.show_profiles_page()
 
@@ -189,7 +189,7 @@ def edit_profile(self):
 def view_profile_history(self):
     selected = self.profile_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a profile")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.dialogs.select_a_profile', default="Select a profile"))
         return
     email = self.profile_tree.item(selected[0])['values'][2]
 
@@ -204,7 +204,7 @@ def view_profile_history(self):
         conn.close()
 
     history = tk.Toplevel(self.root)
-    history.title("Booking History")
+    history.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.windows.booking_history', default="Booking History"))
     history.geometry("600x400")
     history.configure(bg="#ecf0f1")
 
@@ -224,11 +224,11 @@ def view_profile_history(self):
 def set_favorite_seats(self):
     selected = self.profile_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a profile")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.dialogs.select_a_profile', default="Select a profile"))
         return
     profile_id = self.profile_tree.item(selected[0])['values'][0]
 
-    seats = simpledialog.askstring("Favorite Seats", "Enter favorite seats (e.g., A1, A2, B3):")
+    seats = simpledialog.askstring(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.dialogs.favorite_seats', default="Favorite Seats"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.dialogs.enter_favorite_seats_e_g_a1_a2_b3', default="Enter favorite seats (e.g., A1, A2, B3):"))
     if seats:
         conn = sqlite3.connect(DB_FILE)
         try:
@@ -253,7 +253,7 @@ def show_birthday_rewards(self):
         conn.close()
 
     reward_win = tk.Toplevel(self.root)
-    reward_win.title("Birthday Rewards This Month")
+    reward_win.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.profiles.windows.birthday_rewards_this_month', default="Birthday Rewards This Month"))
     reward_win.geometry("500x400")
     reward_win.configure(bg="#ecf0f1")
 

@@ -1,0 +1,11 @@
+{
+  "template_id": "assignment_reminder",
+  "description": "Sent to a student a set number of days before a coursework deadline (7/3/1 by default). Each offset fires once, so a student is nudged rather than nagged.",
+  "channel": "Email",
+  "category": "Academic",
+  "priority": "Normal",
+  "from_name": "Sixth Form Assignments",
+  "from_address": "assignments@sixthform.ac.uk",
+  "subject": "Due in {{days_left}} day(s): {{title}} ({{subject_name}})",
+  "body": "Hi {{first_name}},\n\nThis is a reminder that a piece of coursework is due soon.\n\n  Assignment: {{title}}\n  Subject:    {{subject_name}}\n  Teacher:    {{teacher}}\n  Due:        {{due_date}}  ({{days_left}} day(s) away)\n  Submit via: {{submission_method}}\n  Your status: {{status}}\n\nIf you have already handed this in, you can ignore this message — the status above tells you what we have recorded, so check it matches what you think you submitted.\n\nIf you are stuck, say so now rather than the night before. {{teacher}} would far rather hear from you with {{days_left}} days left than receive nothing on the deadline.\n\n{{system_name}}"
+}

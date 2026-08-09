@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -118,7 +120,7 @@ class AlumniGUIApp(
         self.show_dashboard()
         self._photo_file_paths: list[str] = []
         self._event_lookup: dict[str, int] = {}
-        self._photo_storage_dir = Path(paths.DATA_DIR) / "alumni_photos"
+        self._photo_storage_dir = Path(paths.UNIVERSITY_DATA_DIR) / "alumni_photos"
         self._photo_storage_dir.mkdir(parents=True, exist_ok=True)
 
     def _current_user_id(self):
@@ -310,7 +312,7 @@ class AlumniGUIApp(
 
     def create_status_bar(self):
         """Create status bar at the bottom"""
-        self.status_bar = ttk.Label(self.root, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.root, text=_t('gui.learners.alumni.main.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
     def create_widgets(self):
@@ -341,9 +343,12 @@ class AlumniGUIApp(
 
     def has_permission(self, permission):
         """Check if current user has permission"""
+        # An empty/blank permission name is a caller bug, not an all-access
+        # pass — treat it as a denial rather than granting everything.
         if not permission:
-            return True
-        return permission in self.current_user.get('permissions', []) or 'admin' in self.current_user.get('permissions', [])
+            return False
+        perms = (self.current_user or {}).get('permissions', [])
+        return permission in perms or 'admin' in perms
 
     def open_email_manager_gui(self):
         """Open email manager GUI"""

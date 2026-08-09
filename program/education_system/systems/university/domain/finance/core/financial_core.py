@@ -1,7 +1,7 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3
 import os
 import csv
-from education_system.systems.university.infrastructure.paths import FINANCE_TEMPLATES_DIR
+from education_system.paths import UNIVERSITY_FINANCE_TEMPLATES_DIR
 import numpy as np
 from datetime import datetime, timedelta
 import json
@@ -61,7 +61,7 @@ def warn_if_table_empty(cursor, table_name: str, warning_message: str) -> None:
 
 def load_json_template(filename: str) -> dict:
     """Load JSON template data from the finance templates directory."""
-    filepath = FINANCE_TEMPLATES_DIR / filename
+    filepath = UNIVERSITY_FINANCE_TEMPLATES_DIR / filename
     if filepath.exists():
         with open(filepath, 'r') as f:
             return json.load(f)
@@ -255,9 +255,10 @@ from education_system.systems.university.domain.finance.reporting.revenue_analyt
 from education_system.systems.university.domain.finance.scholarships.scholarship_programs import manage_scholarships, view_available_scholarships, create_new_scholarship, award_scholarship_to_student, view_student_scholarships, scholarship_distribution_summary, scholarship_utilization_analysis, manage_financial_aid, view_financial_aid_applications, create_financial_aid_application, disburse_financial_aid
 from education_system.systems.university.domain.finance.core.security_automation import detect_payment_fraud, create_approval_workflow, setup_automated_notifications, send_automated_notifications
 from education_system.systems.university.domain.finance.reporting.budget_analysis import manage_budgets
-# NOTE: Some imports commented out due to missing modules - functionality needs to be implemented
-# from education_system.systems.university.domain.finance.core.security_automation  import setup_automated_notifications, send_automated_notifications, send_notification, send_email_notification, send_sms_notification, enhanced_notification_system, detect_payment_fraud, log_audit_action, create_approval_workflow, send_aid_decision_notification, send_disbursement_notification, budget_approval_workflow, verify_jwt_in_request, api_endpoint
-# from education_system.systems.university.domain.finance.finance_budgeting_collection import manage_budgets, create_budget_plan, add_budget_line_items, view_budget_plans, view_budget_plan_detail, update_budget_plan, update_budget_line_items, recalculate_budget_totals, budget_vs_actual_analysis, manage_budget_categories, view_budget_categories, create_budget_category, edit_budget_category, deactivate_budget_category, budget_performance_trends
+# Legacy ``finance_budgeting_collection`` was split across
+# ``reporting.budget_analysis`` and ``reporting.revenue_analytics``. GUI
+# compatibility imports are now provided by ``domain.finance.facade``; do not
+# restore the removed monolithic module here.
 try:
     # finance_misc is optional in some deployments; keep the import best-effort
     from education_system.systems.university.domain.finance.core import set_auth as set_finance_misc_auth

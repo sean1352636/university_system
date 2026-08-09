@@ -10,6 +10,8 @@ Full-featured GUI for buying/selling items with:
 - Transaction management
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from datetime import datetime
@@ -21,7 +23,7 @@ from education_system.systems.university.infrastructure.shared_context import ge
 from education_system.systems.university.domain.operations.commerce.marketplace.services.marketplace_service import (
     MarketplaceService
 )
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 
 class MarketplaceGUI:
@@ -29,7 +31,7 @@ class MarketplaceGUI:
 
     def __init__(self, parent, auth=None):
         self.root = tk.Toplevel(parent)
-        self.root.title("Student Marketplace")
+        self.root.title(_t('gui.operations.commerce.marketplace.marketplace.windows.student_marketplace', default="Student Marketplace"))
         self.root.geometry("1400x900")
 
         self.auth = auth or get_auth()
@@ -64,7 +66,7 @@ class MarketplaceGUI:
         header_frame = ttk.Frame(main_frame)
         header_frame.pack(fill=tk.X, pady=(0, 10))
 
-        title = ttk.Label(header_frame, text="Student Marketplace",
+        title = ttk.Label(header_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.student_marketplace', default="Student Marketplace"),
                          font=('Arial', 20, 'bold'))
         title.pack(side=tk.LEFT)
 
@@ -72,15 +74,15 @@ class MarketplaceGUI:
         btn_frame = ttk.Frame(header_frame)
         btn_frame.pack(side=tk.RIGHT)
 
-        ttk.Button(btn_frame, text="Create Listing",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.create_listing', default="Create Listing"),
                   command=self.show_create_listing_dialog).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="My Listings",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.my_listings', default="My Listings"),
                   command=self.show_my_listings).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Messages",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.messages', default="Messages"),
                   command=self.show_messages).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="My Reviews",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.my_reviews', default="My Reviews"),
                   command=self.show_my_reviews).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Statistics",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.statistics', default="Statistics"),
                   command=self.show_statistics).pack(side=tk.LEFT, padx=2)
 
         # Notebook for category tabs
@@ -106,30 +108,30 @@ class MarketplaceGUI:
     def create_all_tab(self):
         """Create 'All Listings' tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="All Listings")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.marketplace.marketplace.tabs.all_listings', default="All Listings"))
 
         # Search and filter frame
-        search_frame = ttk.LabelFrame(tab, text="Search & Filter", padding="10")
+        search_frame = ttk.LabelFrame(tab, text=_t('gui.operations.commerce.marketplace.marketplace.labels.search_filter', default="Search & Filter"), padding="10")
         search_frame.pack(fill=tk.X, padx=5, pady=5)
 
         # Search box
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.search', default="Search:")).pack(side=tk.LEFT, padx=5)
         self.search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=5)
 
         # Price filters
-        ttk.Label(search_frame, text="Min Price:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.min_price', default="Min Price:")).pack(side=tk.LEFT, padx=5)
         self.min_price_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=self.min_price_var, width=10).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(search_frame, text="Max Price:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.max_price', default="Max Price:")).pack(side=tk.LEFT, padx=5)
         self.max_price_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=self.max_price_var, width=10).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(search_frame, text="Search",
+        ttk.Button(search_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.search', default="Search"),
                   command=self.perform_search).pack(side=tk.LEFT, padx=10)
-        ttk.Button(search_frame, text="Clear",
+        ttk.Button(search_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.clear', default="Clear"),
                   command=self.clear_search).pack(side=tk.LEFT, padx=2)
 
         # Listings display
@@ -150,20 +152,20 @@ class MarketplaceGUI:
     def create_my_listings_tab(self):
         """Create 'My Listings' tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="My Listings")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.marketplace.marketplace.tabs.my_listings', default="My Listings"))
 
         # Status filter
         filter_frame = ttk.Frame(tab)
         filter_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
-        self.my_listing_status_var = tk.StringVar(value="Active")
+        ttk.Label(filter_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
+        self.my_listing_status_var = tk.StringVar(value=_t('gui.operations.commerce.marketplace.marketplace.values.active', default="Active"))
         status_combo = ttk.Combobox(filter_frame, textvariable=self.my_listing_status_var,
                                     values=["Active", "Sold", "Reserved", "All"],
                                     state="readonly", width=15)
         status_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(filter_frame, text="Refresh",
+        ttk.Button(filter_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.refresh', default="Refresh"),
                   command=self.load_my_listings).pack(side=tk.LEFT, padx=5)
 
         # Listings display
@@ -172,12 +174,12 @@ class MarketplaceGUI:
     def create_favorites_tab(self):
         """Create 'Favorites' tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Favorites")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.marketplace.marketplace.tabs.favorites', default="Favorites"))
 
         # Refresh button
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.refresh', default="Refresh"),
                   command=self.load_favorites).pack(side=tk.RIGHT, padx=5)
 
         # Listings display
@@ -194,13 +196,13 @@ class MarketplaceGUI:
         tree = ttk.Treeview(container, columns=columns, show="headings", height=20)
 
         # Define column headings
-        tree.heading("ID", text="ID")
-        tree.heading("Title", text="Title")
-        tree.heading("Category", text="Category")
-        tree.heading("Price", text="Price")
-        tree.heading("Condition", text="Condition")
-        tree.heading("Status", text="Status")
-        tree.heading("Views", text="Views")
+        tree.heading("ID", text=_t('gui.operations.commerce.marketplace.marketplace.headings.id', default="ID"))
+        tree.heading("Title", text=_t('gui.operations.commerce.marketplace.marketplace.headings.title', default="Title"))
+        tree.heading("Category", text=_t('gui.operations.commerce.marketplace.marketplace.headings.category', default="Category"))
+        tree.heading("Price", text=_t('gui.operations.commerce.marketplace.marketplace.headings.price', default="Price"))
+        tree.heading("Condition", text=_t('gui.operations.commerce.marketplace.marketplace.headings.condition', default="Condition"))
+        tree.heading("Status", text=_t('gui.operations.commerce.marketplace.marketplace.headings.status', default="Status"))
+        tree.heading("Views", text=_t('gui.operations.commerce.marketplace.marketplace.headings.views', default="Views"))
 
         # Define column widths
         tree.column("ID", width=50)
@@ -231,20 +233,20 @@ class MarketplaceGUI:
         action_frame = ttk.Frame(parent)
         action_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(action_frame, text="View Details",
+        ttk.Button(action_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.view_details', default="View Details"),
                   command=lambda: self.view_listing_details(tree)).pack(side=tk.LEFT, padx=5)
 
         if show_actions:
-            ttk.Button(action_frame, text="Edit",
+            ttk.Button(action_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.edit', default="Edit"),
                       command=lambda: self.edit_listing(tree)).pack(side=tk.LEFT, padx=5)
-            ttk.Button(action_frame, text="Mark as Sold",
+            ttk.Button(action_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.mark_as_sold', default="Mark as Sold"),
                       command=lambda: self.mark_as_sold(tree)).pack(side=tk.LEFT, padx=5)
-            ttk.Button(action_frame, text="Delete",
+            ttk.Button(action_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.delete', default="Delete"),
                       command=lambda: self.delete_listing(tree)).pack(side=tk.LEFT, padx=5)
         else:
-            ttk.Button(action_frame, text="Contact Seller",
+            ttk.Button(action_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.contact_seller', default="Contact Seller"),
                       command=lambda: self.contact_seller(tree)).pack(side=tk.LEFT, padx=5)
-            ttk.Button(action_frame, text="Add to Favorites",
+            ttk.Button(action_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.add_to_favorites', default="Add to Favorites"),
                       command=lambda: self.add_to_favorites(tree)).pack(side=tk.LEFT, padx=5)
 
         # Store tree reference
@@ -258,7 +260,7 @@ class MarketplaceGUI:
             listings = self.service.get_listings(status='Active', limit=100)
             self.populate_tree(self.all_tree, listings)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load listings: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), f"Failed to load listings: {str(e)}")
 
     def load_category_listings(self, category: str, tree):
         """Load listings for a specific category"""
@@ -266,12 +268,12 @@ class MarketplaceGUI:
             listings = self.service.get_listings(category=category, status='Active', limit=100)
             self.populate_tree(tree, listings)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load {category} listings: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), f"Failed to load {category} listings: {str(e)}")
 
     def load_my_listings(self):
         """Load current user's listings"""
         if not self.user_id:
-            messagebox.showwarning("Login Required", "Please log in to view your listings.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.login_required', default="Login Required"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_log_in_to_view_your_listings', default="Please log in to view your listings."))
             return
 
         try:
@@ -280,19 +282,19 @@ class MarketplaceGUI:
             listings = self.service.get_user_listings(self.user_id, status=status_filter)
             self.populate_tree(self.my_listings_tree, listings)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load your listings: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), f"Failed to load your listings: {str(e)}")
 
     def load_favorites(self):
         """Load user's favorite listings"""
         if not self.user_id:
-            messagebox.showwarning("Login Required", "Please log in to view favorites.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.login_required', default="Login Required"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_log_in_to_view_favorites', default="Please log in to view favorites."))
             return
 
         try:
             favorites = self.service.get_user_favorites(self.user_id)
             self.populate_tree(self.favorites_tree, favorites)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load favorites: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), f"Failed to load favorites: {str(e)}")
 
     def populate_tree(self, tree, listings: List[Dict[str, Any]]):
         """Populate a treeview with listings"""
@@ -332,7 +334,7 @@ class MarketplaceGUI:
             )
             self.populate_tree(self.all_tree, listings)
         except Exception as e:
-            messagebox.showerror("Error", f"Search failed: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), f"Search failed: {str(e)}")
 
     def clear_search(self):
         """Clear search filters and reload all listings"""
@@ -355,7 +357,7 @@ class MarketplaceGUI:
         """View detailed information about a listing"""
         selected = tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a listing to view.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_select_a_listing_to_view', default="Please select a listing to view."))
             return
 
         # Get listing ID from first column
@@ -364,14 +366,14 @@ class MarketplaceGUI:
         try:
             listing = self.service.get_listing(listing_id)
             if not listing:
-                messagebox.showerror("Error", "Listing not found.")
+                messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.listing_not_found', default="Listing not found."))
                 return
 
             # Create details window
             self.show_listing_details_window(listing)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load listing details: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), f"Failed to load listing details: {str(e)}")
 
     def show_listing_details_window(self, listing: Dict[str, Any]):
         """Show a window with full listing details"""
@@ -428,7 +430,7 @@ class MarketplaceGUI:
             row += 1
 
         # Description
-        desc_frame = ttk.LabelFrame(content, text="Description", padding="10")
+        desc_frame = ttk.LabelFrame(content, text=_t('gui.operations.commerce.marketplace.marketplace.labels.description', default="Description"), padding="10")
         desc_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         desc_text = scrolledtext.ScrolledText(desc_frame, width=60, height=8, wrap=tk.WORD)
@@ -441,22 +443,23 @@ class MarketplaceGUI:
         btn_frame.pack(fill=tk.X, pady=10)
 
         if self.user_id and str(listing.get('seller_id')) != self.user_id:
-            ttk.Button(btn_frame, text="Contact Seller",
+            ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.contact_seller', default="Contact Seller"),
                       command=lambda: self.send_message_dialog(listing)).pack(side=tk.LEFT, padx=5)
-            ttk.Button(btn_frame, text="Add to Favorites",
+            ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.add_to_favorites', default="Add to Favorites"),
                       command=lambda: self.add_listing_to_favorites(listing.get('listing_id'))).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(btn_frame, text="Close",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.close', default="Close"),
                   command=details_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     def show_create_listing_dialog(self):
         """Show dialog to create a new listing"""
         if not self.user_id:
-            messagebox.showwarning("Login Required", "Please log in to create a listing.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.login_required', default="Login Required"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_log_in_to_create_a_listing', default="Please log in to create a listing."))
             return
+        self.photo_paths = []
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create New Listing")
+        dialog.title(_t('gui.operations.commerce.marketplace.marketplace.windows.create_new_listing', default="Create New Listing"))
         dialog.geometry("600x700")
 
         # Main frame
@@ -464,7 +467,7 @@ class MarketplaceGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        ttk.Label(main_frame, text="Create New Listing",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.create_new_listing', default="Create New Listing"),
                  font=('Arial', 16, 'bold')).pack(anchor=tk.W, pady=(0, 20))
 
         # Form fields
@@ -474,7 +477,7 @@ class MarketplaceGUI:
         row = 0
 
         # Category
-        ttk.Label(form_frame, text="Category:*").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.category', default="Category:*")).grid(row=row, column=0, sticky=tk.W, pady=5)
         category_var = tk.StringVar()
         categories = self.service.get_categories()
         category_combo = ttk.Combobox(form_frame, textvariable=category_var,
@@ -483,20 +486,20 @@ class MarketplaceGUI:
         row += 1
 
         # Title
-        ttk.Label(form_frame, text="Title:*").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.title', default="Title:*")).grid(row=row, column=0, sticky=tk.W, pady=5)
         title_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=title_var, width=40).grid(row=row, column=1, sticky=tk.W, pady=5)
         row += 1
 
         # Price
-        ttk.Label(form_frame, text="Price ($):*").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.price', default="Price ($):*")).grid(row=row, column=0, sticky=tk.W, pady=5)
         price_var = tk.StringVar(value="0.00")
         ttk.Entry(form_frame, textvariable=price_var, width=15).grid(row=row, column=1, sticky=tk.W, pady=5)
-        ttk.Label(form_frame, text="(Enter 0 for free items)").grid(row=row, column=2, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.enter_0_for_free_items', default="(Enter 0 for free items)")).grid(row=row, column=2, sticky=tk.W, pady=5)
         row += 1
 
         # Condition
-        ttk.Label(form_frame, text="Condition:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.condition', default="Condition:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         condition_var = tk.StringVar()
         condition_combo = ttk.Combobox(form_frame, textvariable=condition_var,
                                        values=["New", "Like New", "Good", "Fair", "Poor"],
@@ -505,37 +508,37 @@ class MarketplaceGUI:
         row += 1
 
         # Location
-        ttk.Label(form_frame, text="Location:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.location', default="Location:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         location_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=location_var, width=40).grid(row=row, column=1, sticky=tk.W, pady=5)
         row += 1
 
         # Description
-        ttk.Label(form_frame, text="Description:*").grid(row=row, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.description_variant_2', default="Description:*")).grid(row=row, column=0, sticky=tk.NW, pady=5)
         description_text = tk.Text(form_frame, width=40, height=8)
         description_text.grid(row=row, column=1, columnspan=2, sticky=tk.W, pady=5)
         row += 1
 
         # Course code (for textbooks)
-        ttk.Label(form_frame, text="Course Code:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.course_code', default="Course Code:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         course_code_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=course_code_var, width=20).grid(row=row, column=1, sticky=tk.W, pady=5)
-        ttk.Label(form_frame, text="(For textbooks)").grid(row=row, column=2, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.for_textbooks', default="(For textbooks)")).grid(row=row, column=2, sticky=tk.W, pady=5)
         row += 1
 
         # ISBN (for textbooks)
-        ttk.Label(form_frame, text="ISBN:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.isbn', default="ISBN:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         isbn_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=isbn_var, width=20).grid(row=row, column=1, sticky=tk.W, pady=5)
-        ttk.Label(form_frame, text="(For textbooks)").grid(row=row, column=2, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.for_textbooks', default="(For textbooks)")).grid(row=row, column=2, sticky=tk.W, pady=5)
         row += 1
 
-        # Photo upload placeholder
-        ttk.Label(form_frame, text="Photos:").grid(row=row, column=0, sticky=tk.W, pady=5)
-        photo_label = ttk.Label(form_frame, text="No photos uploaded")
+        # Photo upload
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.photos', default="Photos:")).grid(row=row, column=0, sticky=tk.W, pady=5)
+        photo_label = ttk.Label(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.no_photos_uploaded', default="No photos uploaded"))
         photo_label.grid(row=row, column=1, sticky=tk.W, pady=5)
-        ttk.Button(form_frame, text="Upload Photos",
-                  command=lambda: self.upload_photos_placeholder(photo_label)).grid(row=row, column=2, sticky=tk.W, pady=5)
+        ttk.Button(form_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.upload_photos', default="Upload Photos"),
+                  command=lambda: self.select_listing_photos(photo_label)).grid(row=row, column=2, sticky=tk.W, pady=5)
         row += 1
 
         # Buttons
@@ -545,19 +548,19 @@ class MarketplaceGUI:
         def create_listing():
             # Validate
             if not category_var.get():
-                messagebox.showerror("Validation Error", "Please select a category.")
+                messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.validation_error', default="Validation Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_select_a_category', default="Please select a category."))
                 return
             if not title_var.get().strip():
-                messagebox.showerror("Validation Error", "Please enter a title.")
+                messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.validation_error', default="Validation Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_enter_a_title', default="Please enter a title."))
                 return
             if not description_text.get(1.0, tk.END).strip():
-                messagebox.showerror("Validation Error", "Please enter a description.")
+                messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.validation_error', default="Validation Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_enter_a_description', default="Please enter a description."))
                 return
 
             try:
                 price = float(price_var.get())
             except ValueError:
-                messagebox.showerror("Validation Error", "Please enter a valid price.")
+                messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.validation_error', default="Validation Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_enter_a_valid_price', default="Please enter a valid price."))
                 return
 
             # Create listing
@@ -585,23 +588,43 @@ class MarketplaceGUI:
             listing_id = self.service.create_listing(**listing_data)
 
             if listing_id:
-                messagebox.showinfo("Success", f"Listing created successfully! (ID: {listing_id})")
+                upload_errors = []
+                for index, photo_path in enumerate(self.photo_paths):
+                    try:
+                        self.service.add_listing_photo(
+                            'marketplace', listing_id, photo_path.read_bytes(),
+                            is_primary=(index == 0),
+                            original_filename=photo_path.name,
+                        )
+                    except Exception as exc:
+                        upload_errors.append(f"{photo_path.name}: {exc}")
+                if upload_errors:
+                    messagebox.showwarning(
+                        _t('gui.operations.commerce.marketplace.marketplace.dialogs.listing_created', default="Listing Created"),
+                        "The listing was created, but some photos failed:\n" + "\n".join(upload_errors),
+                    )
+                else:
+                    messagebox.showinfo(_t('gui.operations.commerce.marketplace.marketplace.dialogs.success', default="Success"), f"Listing created successfully! (ID: {listing_id})")
                 dialog.destroy()
                 self.load_all_listings()
                 self.load_my_listings()
             else:
-                messagebox.showerror("Error", "Failed to create listing. Please try again.")
+                messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.failed_to_create_listing_please_try_again', default="Failed to create listing. Please try again."))
 
-        ttk.Button(btn_frame, text="Create Listing",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.create_listing', default="Create Listing"),
                   command=create_listing).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.cancel', default="Cancel"),
                   command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
-    def upload_photos_placeholder(self, label):
-        """Placeholder for photo upload functionality"""
-        messagebox.showinfo("Photo Upload", "Photo upload functionality is available.\n"
-                          "Selected photos will be attached to the listing.")
-        label.config(text="Photos ready to upload")
+    def select_listing_photos(self, label):
+        """Select image files to attach after the listing is created."""
+        selected = filedialog.askopenfilenames(
+            title=_t('gui.operations.commerce.marketplace.marketplace.dialogs.select_listing_photos', default="Select listing photos"),
+            filetypes=[("Images", "*.jpg *.jpeg *.png *.gif *.webp *.bmp")],
+        )
+        if selected:
+            self.photo_paths = [Path(path) for path in selected]
+            label.config(text=f"{len(self.photo_paths)} photo(s) selected")
 
     def show_my_listings(self):
         """Switch to My Listings tab"""
@@ -615,35 +638,35 @@ class MarketplaceGUI:
     def show_messages(self):
         """Show messages window"""
         if not self.user_id:
-            messagebox.showwarning("Login Required", "Please log in to view messages.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.login_required', default="Login Required"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_log_in_to_view_messages', default="Please log in to view messages."))
             return
 
         msg_window = tk.Toplevel(self.root)
-        msg_window.title("My Messages")
+        msg_window.title(_t('gui.operations.commerce.marketplace.marketplace.windows.my_messages', default="My Messages"))
         msg_window.geometry("900x600")
 
         # Frame
         main_frame = ttk.Frame(msg_window, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="My Messages",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.my_messages', default="My Messages"),
                  font=('Arial', 16, 'bold')).pack(anchor=tk.W, pady=(0, 10))
 
         # Messages list
         messages = self.service.get_user_messages(self.user_id)
 
         if not messages:
-            ttk.Label(main_frame, text="No messages yet.").pack(pady=20)
+            ttk.Label(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.no_messages_yet', default="No messages yet.")).pack(pady=20)
             return
 
         # Treeview for messages
         columns = ("Listing", "From", "Date", "Preview")
         tree = ttk.Treeview(main_frame, columns=columns, show="headings", height=15)
 
-        tree.heading("Listing", text="Listing")
-        tree.heading("From", text="From")
-        tree.heading("Date", text="Date")
-        tree.heading("Preview", text="Message Preview")
+        tree.heading("Listing", text=_t('gui.operations.commerce.marketplace.marketplace.headings.listing', default="Listing"))
+        tree.heading("From", text=_t('gui.operations.commerce.marketplace.marketplace.headings.from', default="From"))
+        tree.heading("Date", text=_t('gui.operations.commerce.marketplace.marketplace.headings.date', default="Date"))
+        tree.heading("Preview", text=_t('gui.operations.commerce.marketplace.marketplace.headings.message_preview', default="Message Preview"))
 
         tree.column("Listing", width=200)
         tree.column("From", width=150)
@@ -653,6 +676,7 @@ class MarketplaceGUI:
         tree.pack(fill=tk.BOTH, expand=True, pady=10)
 
         # Populate messages
+        message_rows = {}
         for msg in messages:
             listing_title = "Unknown Listing"
             listing = self.service.get_listing(msg.get('listing_id'))
@@ -663,36 +687,77 @@ class MarketplaceGUI:
             date = msg.get('created_at', '')
             preview = msg.get('message_text', '')[:50] + "..."
 
-            tree.insert("", tk.END, values=(listing_title, from_user, date, preview))
+            item_id = tree.insert("", tk.END, values=(listing_title, from_user, date, preview))
+            message_rows[item_id] = msg
+
+        def view_conversation():
+            selected = tree.selection()
+            if not selected:
+                messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.select_a_message_first', default="Select a message first."))
+                return
+            message = message_rows[selected[0]]
+            listing_id = int(message['listing_id'])
+            conversation = tk.Toplevel(msg_window)
+            conversation.title(_t('gui.operations.commerce.marketplace.marketplace.windows.marketplace_conversation', default="Marketplace Conversation"))
+            conversation.geometry("700x550")
+            body = scrolledtext.ScrolledText(conversation, wrap=tk.WORD, state='disabled')
+            body.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            reply = tk.Text(conversation, height=4)
+            reply.pack(fill=tk.X, padx=10, pady=(0, 5))
+
+            def refresh():
+                items = self.service.get_messages('marketplace', listing_id, self.user_id)
+                body.config(state='normal')
+                body.delete('1.0', tk.END)
+                for item in items:
+                    author = "You" if item.get('direction') == 'sent' else item.get('sender_id', 'User')
+                    body.insert(tk.END, f"{author} — {item.get('sent_at', '')}\n{item.get('message_text', '')}\n\n")
+                body.config(state='disabled')
+                body.see(tk.END)
+                self.service.mark_messages_read('marketplace', listing_id, self.user_id)
+
+            def send_reply():
+                text = reply.get('1.0', tk.END).strip()
+                if not text:
+                    return
+                receiver = message.get('sender_id')
+                if str(receiver) == self.user_id:
+                    receiver = message.get('receiver_id')
+                self.service.send_message(listing_id, self.user_id, text, receiver_id=receiver)
+                reply.delete('1.0', tk.END)
+                refresh()
+
+            ttk.Button(conversation, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.send_reply', default="Send Reply"), command=send_reply).pack(pady=(0, 10))
+            refresh()
 
         # View message button
-        ttk.Button(main_frame, text="View Conversation",
-                  command=lambda: messagebox.showinfo("Messages", "Message viewing coming soon")).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.view_conversation', default="View Conversation"),
+                  command=view_conversation).pack(pady=10)
 
     def show_my_reviews(self):
         """Show reviews received by the current user (mirrors CLI 'My Reviews')."""
         if not self.user_id:
-            messagebox.showwarning("Login Required", "Please log in to view your reviews.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.login_required', default="Login Required"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_log_in_to_view_your_reviews', default="Please log in to view your reviews."))
             return
 
         try:
             reviews = self.service.get_seller_reviews(self.user_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load reviews: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), f"Failed to load reviews: {str(e)}")
             return
 
         win = tk.Toplevel(self.root)
-        win.title("My Reviews")
+        win.title(_t('gui.operations.commerce.marketplace.marketplace.windows.my_reviews', default="My Reviews"))
         win.geometry("700x500")
 
         main_frame = ttk.Frame(win, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="My Reviews",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.my_reviews', default="My Reviews"),
                  font=('Arial', 16, 'bold')).pack(anchor=tk.W, pady=(0, 10))
 
         if not reviews:
-            ttk.Label(main_frame, text="You don't have any reviews yet.").pack(pady=20)
+            ttk.Label(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.you_don_t_have_any_reviews_yet', default="You don't have any reviews yet.")).pack(pady=20)
             return
 
         total_rating = sum(r.get('rating', 0) for r in reviews)
@@ -715,28 +780,28 @@ class MarketplaceGUI:
                                            r.get('created_at', 'Unknown'),
                                            r.get('review_text', '')))
 
-        ttk.Button(main_frame, text="Close", command=win.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.close', default="Close"), command=win.destroy).pack(pady=10)
 
     def show_statistics(self):
         """Show marketplace statistics (mirrors CLI 'Marketplace Statistics')."""
         try:
             stats = self.service.get_statistics()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load statistics: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), f"Failed to load statistics: {str(e)}")
             return
 
         win = tk.Toplevel(self.root)
-        win.title("Marketplace Statistics")
+        win.title(_t('gui.operations.commerce.marketplace.marketplace.windows.marketplace_statistics', default="Marketplace Statistics"))
         win.geometry("500x440")
 
         main_frame = ttk.Frame(win, padding="15")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Marketplace Statistics",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.marketplace_statistics', default="Marketplace Statistics"),
                  font=('Arial', 16, 'bold')).pack(anchor=tk.W, pady=(0, 10))
 
         if not stats:
-            ttk.Label(main_frame, text="No statistics available.").pack(pady=20)
+            ttk.Label(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.no_statistics_available', default="No statistics available.")).pack(pady=20)
             return
 
         txt = scrolledtext.ScrolledText(main_frame, width=55, height=18, wrap=tk.WORD)
@@ -759,20 +824,20 @@ class MarketplaceGUI:
         section("Free Stuff", stats.get('free_stuff', {}))
         txt.configure(state='disabled')
 
-        ttk.Button(main_frame, text="Close", command=win.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.close', default="Close"), command=win.destroy).pack(pady=10)
 
     def contact_seller(self, tree):
         """Contact seller about a listing"""
         selected = tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a listing.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_select_a_listing', default="Please select a listing."))
             return
 
         listing_id = tree.item(selected[0])['values'][0]
         listing = self.service.get_listing(listing_id)
 
         if not listing:
-            messagebox.showerror("Error", "Listing not found.")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.listing_not_found', default="Listing not found."))
             return
 
         self.send_message_dialog(listing)
@@ -780,7 +845,7 @@ class MarketplaceGUI:
     def send_message_dialog(self, listing: Dict[str, Any]):
         """Show dialog to send a message to seller"""
         if not self.user_id:
-            messagebox.showwarning("Login Required", "Please log in to send messages.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.login_required', default="Login Required"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_log_in_to_send_messages', default="Please log in to send messages."))
             return
 
         dialog = tk.Toplevel(self.root)
@@ -790,20 +855,20 @@ class MarketplaceGUI:
         main_frame = ttk.Frame(dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Send Message to Seller",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.send_message_to_seller', default="Send Message to Seller"),
                  font=('Arial', 14, 'bold')).pack(anchor=tk.W, pady=(0, 10))
 
         ttk.Label(main_frame, text=f"Listing: {listing.get('title')}").pack(anchor=tk.W, pady=5)
         ttk.Label(main_frame, text=f"Seller: {listing.get('seller_id')}").pack(anchor=tk.W, pady=5)
 
-        ttk.Label(main_frame, text="\nYour Message:").pack(anchor=tk.W, pady=(10, 5))
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.marketplace.marketplace.labels.your_message', default="\nYour Message:")).pack(anchor=tk.W, pady=(10, 5))
         message_text = tk.Text(main_frame, width=50, height=10)
         message_text.pack(fill=tk.BOTH, expand=True, pady=5)
 
         def send_message():
             message = message_text.get(1.0, tk.END).strip()
             if not message:
-                messagebox.showerror("Validation Error", "Please enter a message.")
+                messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.validation_error', default="Validation Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_enter_a_message', default="Please enter a message."))
                 return
 
             msg_id = self.service.send_message(
@@ -813,26 +878,26 @@ class MarketplaceGUI:
             )
 
             if msg_id:
-                messagebox.showinfo("Success", "Message sent successfully!")
+                messagebox.showinfo(_t('gui.operations.commerce.marketplace.marketplace.dialogs.success', default="Success"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.message_sent_successfully', default="Message sent successfully!"))
                 dialog.destroy()
             else:
-                messagebox.showerror("Error", "Failed to send message.")
+                messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.failed_to_send_message', default="Failed to send message."))
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(btn_frame, text="Send", command=send_message).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.send', default="Send"), command=send_message).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.marketplace.marketplace.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def add_to_favorites(self, tree):
         """Add selected listing to favorites"""
         if not self.user_id:
-            messagebox.showwarning("Login Required", "Please log in to add favorites.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.login_required', default="Login Required"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_log_in_to_add_favorites', default="Please log in to add favorites."))
             return
 
         selected = tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a listing.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_select_a_listing', default="Please select a listing."))
             return
 
         listing_id = tree.item(selected[0])['values'][0]
@@ -841,65 +906,65 @@ class MarketplaceGUI:
     def add_listing_to_favorites(self, listing_id):
         """Add a listing to favorites by ID"""
         if self.service.add_favorite(self.user_id, listing_id):
-            messagebox.showinfo("Success", "Added to favorites!")
+            messagebox.showinfo(_t('gui.operations.commerce.marketplace.marketplace.dialogs.success', default="Success"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.added_to_favorites', default="Added to favorites!"))
         else:
-            messagebox.showerror("Error", "Failed to add to favorites.")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.failed_to_add_to_favorites', default="Failed to add to favorites."))
 
     def edit_listing(self, tree):
         """Edit a listing"""
         selected = tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a listing to edit.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_select_a_listing_to_edit', default="Please select a listing to edit."))
             return
 
         listing_id = tree.item(selected[0])['values'][0]
         listing = self.service.get_listing(listing_id)
 
         if not listing or str(listing.get('seller_id')) != self.user_id:
-            messagebox.showerror("Error", "You can only edit your own listings.")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.you_can_only_edit_your_own_listings', default="You can only edit your own listings."))
             return
 
         # Show edit dialog (simplified)
-        messagebox.showinfo("Edit Listing", f"Edit functionality for listing {listing_id} would open here.")
+        messagebox.showinfo(_t('gui.operations.commerce.marketplace.marketplace.dialogs.edit_listing', default="Edit Listing"), f"Edit functionality for listing {listing_id} would open here.")
 
     def mark_as_sold(self, tree):
         """Mark a listing as sold"""
         selected = tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a listing.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_select_a_listing', default="Please select a listing."))
             return
 
         listing_id = tree.item(selected[0])['values'][0]
 
-        confirm = messagebox.askyesno("Confirm", "Mark this listing as sold?")
+        confirm = messagebox.askyesno(_t('gui.operations.commerce.marketplace.marketplace.dialogs.confirm', default="Confirm"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.mark_this_listing_as_sold', default="Mark this listing as sold?"))
         if not confirm:
             return
 
         if self.service.mark_listing_sold(listing_id, self.user_id):
-            messagebox.showinfo("Success", "Listing marked as sold!")
+            messagebox.showinfo(_t('gui.operations.commerce.marketplace.marketplace.dialogs.success', default="Success"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.listing_marked_as_sold', default="Listing marked as sold!"))
             self.load_my_listings()
         else:
-            messagebox.showerror("Error", "Failed to mark listing as sold.")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.failed_to_mark_listing_as_sold', default="Failed to mark listing as sold."))
 
     def delete_listing(self, tree):
         """Delete a listing"""
         selected = tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a listing to delete.")
+            messagebox.showwarning(_t('gui.operations.commerce.marketplace.marketplace.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.please_select_a_listing_to_delete', default="Please select a listing to delete."))
             return
 
         listing_id = tree.item(selected[0])['values'][0]
 
-        confirm = messagebox.askyesno("Confirm Delete",
-                                     "Are you sure you want to delete this listing?\nThis action cannot be undone.")
+        confirm = messagebox.askyesno(_t('gui.operations.commerce.marketplace.marketplace.dialogs.confirm_delete', default="Confirm Delete"),
+                                     _t('gui.operations.commerce.marketplace.marketplace.dialogs.are_you_sure_you_want_to_delete_this_listing_this_action_cannot', default="Are you sure you want to delete this listing?\nThis action cannot be undone."))
         if not confirm:
             return
 
         if self.service.delete_listing(listing_id, self.user_id):
-            messagebox.showinfo("Success", "Listing deleted successfully!")
+            messagebox.showinfo(_t('gui.operations.commerce.marketplace.marketplace.dialogs.success', default="Success"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.listing_deleted_successfully', default="Listing deleted successfully!"))
             self.load_my_listings()
         else:
-            messagebox.showerror("Error", "Failed to delete listing.")
+            messagebox.showerror(_t('gui.operations.commerce.marketplace.marketplace.dialogs.error', default="Error"), _t('gui.operations.commerce.marketplace.marketplace.dialogs.failed_to_delete_listing', default="Failed to delete listing."))
 
 
 def main():

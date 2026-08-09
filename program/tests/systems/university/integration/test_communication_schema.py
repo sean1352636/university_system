@@ -586,11 +586,11 @@ class TestMainExecution:
         """Test that schema module can be imported without errors."""
         # Simply verify that importing required modules works
 
-        from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+        from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
         from education_system.systems.university.services.communication.schema import create_communication_tables
 
         # Verify functions exist
-        assert DEFAULT_DB_PATH is not None
+        assert UNIVERSITY_DEFAULT_DB_PATH is not None
         assert callable(create_communication_tables)
 
 if __name__ == '__main__':

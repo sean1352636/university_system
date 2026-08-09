@@ -1,0 +1,3 @@
+# College System
+
+Documentation placeholder.

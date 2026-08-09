@@ -39,10 +39,10 @@ try:
     from education_system.systems.university.infrastructure.database.db import get_connection
 except ImportError:
     # Fallback to creating our own get_connection
-    from education_system.systems.university.infrastructure import paths
+    from education_system import paths
     def get_connection():
         """Get database connection"""
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         conn.execute("PRAGMA busy_timeout = 30000")
         return conn
 

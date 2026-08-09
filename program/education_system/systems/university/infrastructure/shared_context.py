@@ -102,8 +102,8 @@ def initialize_auth(db_path: Optional[str] = None) -> UserAuth:
     with _auth_lock:
         if _auth_instance is None:
             if db_path is None:
-                from education_system.systems.university.infrastructure import paths
-                db_path = paths.DEFAULT_DB_PATH
+                from education_system import paths
+                db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
             _auth_instance = UserAuth(db_path)
             _auth_initialized = True
             logger.info("Authentication system initialized successfully")

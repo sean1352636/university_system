@@ -42,6 +42,8 @@ def check_eligibility(student_id: str, conn=None) -> Dict[str, Any]:
         "student_name": student_id,
         "eligible": False,
         "already_graduated": False,
+        "award_ratified": False,
+        "ratified_award": None,
         "credits_earned": 0.0,
         "current_gpa": 0.0,
         "modules_completed": 0,
@@ -70,6 +72,29 @@ def check_eligibility(student_id: str, conn=None) -> Dict[str, Any]:
             return report
         report["student_name"] = f"{row[0] or ''} {row[1] or ''}".strip() or student_id
         report["already_graduated"] = str(row[2] or "").lower() == "graduated"
+
+        # Mutable grades are advisory only: release requires a currently
+        # authorised ratified award.
+        board_schema = cur.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'ratified_student_awards'"
+        ).fetchone()
+        if board_schema:
+            award = cur.execute(
+                """SELECT award_name, classification, academic_year,
+                          ratified_at
+                     FROM ratified_student_awards
+                    WHERE student_id = ? AND status = 'ratified'
+                      AND release_authorised = 1
+                    ORDER BY ratified_at DESC LIMIT 1""",
+                (student_id,),
+            ).fetchone()
+            report["award_ratified"] = award is not None
+            if award:
+                report["ratified_award"] = {
+                    "award_name": award[0], "classification": award[1],
+                    "academic_year": award[2], "ratified_at": award[3],
+                }
 
         prog = cur.execute(
             f"""SELECT COUNT(DISTINCT sm.module_code),
@@ -109,9 +134,18 @@ def check_eligibility(student_id: str, conn=None) -> Dict[str, Any]:
 
     requirements_met = (report["credit_met"] and report["gpa_met"]
                         and report["modules_met"])
-    # An approved/graduated student stays eligible even if recomputed metrics
-    # later dip (the approval is the authoritative decision).
-    report["eligible"] = bool(requirements_met or report["already_graduated"])
+    report["eligible"] = bool(
+        board_schema and (report["award_ratified"] or report["already_graduated"])
+    )
+    if requirements_met and not report["award_ratified"]:
+        report["reasons"].append(
+            "Academic requirements appear complete, but no assessment "
+            "board has ratified and released the award."
+        )
+    if not board_schema:
+        report["reasons"].append(
+            "Assessment-board schema is unavailable; graduation cannot be authorised."
+        )
     return report
 
 

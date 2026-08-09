@@ -11,6 +11,8 @@ Features:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
@@ -43,7 +45,7 @@ class AcademicStaffGUI:
 
         if parent_notebook:
             self.tab = ttk.Frame(parent_notebook)
-            parent_notebook.add(self.tab, text="Academic Staff")
+            parent_notebook.add(self.tab, text=_t('gui.staff.staff_hr.academic_staff.tabs.academic_staff', default="Academic Staff"))
             self._create_content(self.tab)
         else:
             self._create_standalone_window()
@@ -51,15 +53,15 @@ class AcademicStaffGUI:
     def _create_standalone_window(self):
         """Create standalone window when not embedded."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Academic Staff Management")
+        self.window.title(_t('gui.staff.staff_hr.academic_staff.windows.academic_staff_management', default="Academic Staff Management"))
         self.window.geometry("1200x800")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.academic_staff.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._create_content(self.window)
@@ -82,7 +84,7 @@ class AcademicStaffGUI:
     def _create_teaching_portfolio_tab(self):
         """Create Teaching Portfolio tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Teaching Portfolio")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.academic_staff.tabs.teaching_portfolio', default="Teaching Portfolio"))
 
         # Scrollable form
         canvas = tk.Canvas(tab)
@@ -97,43 +99,43 @@ class AcademicStaffGUI:
         scrollbar.pack(side="right", fill="y")
 
         # Teaching Philosophy
-        philosophy_frame = ttk.LabelFrame(form_frame, text="Teaching Philosophy", padding=10)
+        philosophy_frame = ttk.LabelFrame(form_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.teaching_philosophy', default="Teaching Philosophy"), padding=10)
         philosophy_frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.philosophy_text = tk.Text(philosophy_frame, height=5, width=80)
         self.philosophy_text.pack(fill=tk.X, pady=5)
 
         # Teaching Interests
-        interests_frame = ttk.LabelFrame(form_frame, text="Teaching Interests", padding=10)
+        interests_frame = ttk.LabelFrame(form_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.teaching_interests', default="Teaching Interests"), padding=10)
         interests_frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.interests_text = tk.Text(interests_frame, height=3, width=80)
         self.interests_text.pack(fill=tk.X, pady=5)
 
         # Courses Taught
-        courses_frame = ttk.LabelFrame(form_frame, text="Courses Taught", padding=10)
+        courses_frame = ttk.LabelFrame(form_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.courses_taught', default="Courses Taught"), padding=10)
         courses_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(courses_frame, text="Enter courses (one per line):").pack(anchor=tk.W)
+        ttk.Label(courses_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.enter_courses_one_per_line', default="Enter courses (one per line):")).pack(anchor=tk.W)
         self.courses_text = tk.Text(courses_frame, height=5, width=80)
         self.courses_text.pack(fill=tk.X, pady=5)
 
         # Teaching Innovations
-        innovations_frame = ttk.LabelFrame(form_frame, text="Teaching Innovations & Methods", padding=10)
+        innovations_frame = ttk.LabelFrame(form_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.teaching_innovations_methods', default="Teaching Innovations & Methods"), padding=10)
         innovations_frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.innovations_text = tk.Text(innovations_frame, height=4, width=80)
         self.innovations_text.pack(fill=tk.X, pady=5)
 
         # Awards & Recognition
-        awards_frame = ttk.LabelFrame(form_frame, text="Awards & Recognition", padding=10)
+        awards_frame = ttk.LabelFrame(form_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.awards_recognition', default="Awards & Recognition"), padding=10)
         awards_frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.awards_text = tk.Text(awards_frame, height=3, width=80)
         self.awards_text.pack(fill=tk.X, pady=5)
 
         # Professional Development
-        pd_frame = ttk.LabelFrame(form_frame, text="Professional Development", padding=10)
+        pd_frame = ttk.LabelFrame(form_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.professional_development', default="Professional Development"), padding=10)
         pd_frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.pd_text = tk.Text(pd_frame, height=3, width=80)
@@ -143,8 +145,8 @@ class AcademicStaffGUI:
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(btn_frame, text="Save Portfolio", command=self._save_teaching_portfolio).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_teaching_portfolio).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.save_portfolio', default="Save Portfolio"), command=self._save_teaching_portfolio).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.refresh', default="Refresh"), command=self._load_teaching_portfolio).pack(side=tk.LEFT, padx=5)
 
         self._load_teaching_portfolio()
 
@@ -217,9 +219,9 @@ class AcademicStaffGUI:
 
                 conn.commit()
                 log_activity('update', 'teaching_portfolio', user_id=user_id)
-                messagebox.showinfo("Success", "Teaching portfolio saved successfully")
+                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.teaching_portfolio_saved_successfully', default="Teaching portfolio saved successfully"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save portfolio: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save portfolio: {e}")
 
     # ================================================================
     # RESEARCH OUTPUT TAB
@@ -228,25 +230,25 @@ class AcademicStaffGUI:
     def _create_research_output_tab(self):
         """Create Research Output tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Research Output")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.academic_staff.tabs.research_output', default="Research Output"))
 
         # Profile frame
-        profile_frame = ttk.LabelFrame(tab, text="Research Profile", padding=10)
+        profile_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.academic_staff.labels.research_profile', default="Research Profile"), padding=10)
         profile_frame.pack(fill=tk.X, padx=10, pady=5)
 
         # Metrics
         metrics_frame = ttk.Frame(profile_frame)
         metrics_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(metrics_frame, text="h-Index:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        ttk.Label(metrics_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.h_index', default="h-Index:")).grid(row=0, column=0, sticky=tk.W, padx=5)
         self.h_index_var = tk.StringVar(value="0")
         ttk.Entry(metrics_frame, textvariable=self.h_index_var, width=10).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(metrics_frame, text="Total Citations:").grid(row=0, column=2, sticky=tk.W, padx=5)
+        ttk.Label(metrics_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.total_citations', default="Total Citations:")).grid(row=0, column=2, sticky=tk.W, padx=5)
         self.citations_var = tk.StringVar(value="0")
         ttk.Entry(metrics_frame, textvariable=self.citations_var, width=10).grid(row=0, column=3, sticky=tk.W, padx=5)
 
-        ttk.Label(metrics_frame, text="Total Publications:").grid(row=0, column=4, sticky=tk.W, padx=5)
+        ttk.Label(metrics_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.total_publications', default="Total Publications:")).grid(row=0, column=4, sticky=tk.W, padx=5)
         self.publications_var = tk.StringVar(value="0")
         ttk.Entry(metrics_frame, textvariable=self.publications_var, width=10).grid(row=0, column=5, sticky=tk.W, padx=5)
 
@@ -254,24 +256,24 @@ class AcademicStaffGUI:
         ids_frame = ttk.Frame(profile_frame)
         ids_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(ids_frame, text="ORCID:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        ttk.Label(ids_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.orcid', default="ORCID:")).grid(row=0, column=0, sticky=tk.W, padx=5)
         self.orcid_var = tk.StringVar()
         ttk.Entry(ids_frame, textvariable=self.orcid_var, width=25).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(ids_frame, text="Google Scholar:").grid(row=0, column=2, sticky=tk.W, padx=5)
+        ttk.Label(ids_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.google_scholar', default="Google Scholar:")).grid(row=0, column=2, sticky=tk.W, padx=5)
         self.scholar_var = tk.StringVar()
         ttk.Entry(ids_frame, textvariable=self.scholar_var, width=25).grid(row=0, column=3, sticky=tk.W, padx=5)
 
-        ttk.Label(ids_frame, text="Scopus ID:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(ids_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.scopus_id', default="Scopus ID:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.scopus_var = tk.StringVar()
         ttk.Entry(ids_frame, textvariable=self.scopus_var, width=25).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(ids_frame, text="ResearchGate:").grid(row=1, column=2, sticky=tk.W, padx=5)
+        ttk.Label(ids_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.researchgate', default="ResearchGate:")).grid(row=1, column=2, sticky=tk.W, padx=5)
         self.rg_var = tk.StringVar()
         ttk.Entry(ids_frame, textvariable=self.rg_var, width=35).grid(row=1, column=3, sticky=tk.W, padx=5)
 
         # Research Interests
-        interests_frame = ttk.LabelFrame(tab, text="Research Interests", padding=10)
+        interests_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.academic_staff.labels.research_interests', default="Research Interests"), padding=10)
         interests_frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.research_interests_text = tk.Text(interests_frame, height=4, width=80)
@@ -281,11 +283,11 @@ class AcademicStaffGUI:
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="Save Research Profile", command=self._save_research_profile).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_research_profile).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.save_research_profile', default="Save Research Profile"), command=self._save_research_profile).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.refresh', default="Refresh"), command=self._load_research_profile).pack(side=tk.LEFT, padx=5)
 
         # Summary section
-        summary_frame = ttk.LabelFrame(tab, text="Publication Summary", padding=10)
+        summary_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.academic_staff.labels.publication_summary', default="Publication Summary"), padding=10)
         summary_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         self.research_summary = tk.Text(summary_frame, height=10, state=tk.DISABLED)
@@ -389,9 +391,9 @@ class AcademicStaffGUI:
 
                 conn.commit()
                 log_activity('update', 'research_profile', user_id=user_id)
-                messagebox.showinfo("Success", "Research profile saved successfully")
+                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.research_profile_saved_successfully', default="Research profile saved successfully"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save profile: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save profile: {e}")
 
     # ================================================================
     # SUPERVISIONS TAB
@@ -400,27 +402,27 @@ class AcademicStaffGUI:
     def _create_supervisions_tab(self):
         """Create Student Supervisions tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Supervisions")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.academic_staff.tabs.supervisions', default="Supervisions"))
 
         # Buttons frame
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="Add Supervision", command=self._add_supervision).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit Supervision", command=self._edit_supervision).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Update Progress", command=self._update_supervision_progress).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_supervisions).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.add_supervision', default="Add Supervision"), command=self._add_supervision).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.edit_supervision', default="Edit Supervision"), command=self._edit_supervision).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.update_progress', default="Update Progress"), command=self._update_supervision_progress).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.refresh', default="Refresh"), command=self._load_supervisions).pack(side=tk.LEFT, padx=5)
 
         # Filter frame
         filter_frame = ttk.Frame(tab)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
-        self.supervision_status_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
+        self.supervision_status_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.all', default="All"))
         ttk.Combobox(filter_frame, textvariable=self.supervision_status_var,
                      values=["All", "active", "completed", "withdrawn"],
                      width=15).pack(side=tk.LEFT, padx=5)
-        ttk.Button(filter_frame, text="Filter", command=self._load_supervisions).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.filter', default="Filter"), command=self._load_supervisions).pack(side=tk.LEFT, padx=5)
 
         # Supervisions list
         list_frame = ttk.Frame(tab)
@@ -489,7 +491,7 @@ class AcademicStaffGUI:
         """Edit selected supervision."""
         selection = self.supervisions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a supervision to edit")
+            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_a_supervision_to_edit', default="Please select a supervision to edit"))
             return
 
         item = self.supervisions_tree.item(selection[0])
@@ -504,38 +506,38 @@ class AcademicStaffGUI:
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Student Name:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.student_name', default="Student Name:")).pack(pady=5)
         student_name_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=student_name_var, width=40).pack(pady=5)
 
-        ttk.Label(dialog, text="Student ID (optional):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.student_id_optional', default="Student ID (optional):")).pack(pady=5)
         student_id_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=student_id_var, width=20).pack(pady=5)
 
-        ttk.Label(dialog, text="Program Type:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.program_type', default="Program Type:")).pack(pady=5)
         program_var = tk.StringVar()
         ttk.Combobox(dialog, textvariable=program_var, values=get_program_types(), width=20).pack(pady=5)
 
-        ttk.Label(dialog, text="Thesis Title:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.thesis_title', default="Thesis Title:")).pack(pady=5)
         thesis_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=thesis_var, width=50).pack(pady=5)
 
-        ttk.Label(dialog, text="Supervision Role:").pack(pady=5)
-        role_var = tk.StringVar(value="primary")
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.supervision_role', default="Supervision Role:")).pack(pady=5)
+        role_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.primary', default="primary"))
         ttk.Combobox(dialog, textvariable=role_var,
                      values=['primary', 'secondary', 'advisor', 'co-supervisor'],
                      width=20).pack(pady=5)
 
-        ttk.Label(dialog, text="Start Date (YYYY-MM-DD):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).pack(pady=5)
         start_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=start_var, width=15).pack(pady=5)
 
-        ttk.Label(dialog, text="Expected End Date (YYYY-MM-DD):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.expected_end_date_yyyy_mm_dd', default="Expected End Date (YYYY-MM-DD):")).pack(pady=5)
         end_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=end_var, width=15).pack(pady=5)
 
-        ttk.Label(dialog, text="Status:").pack(pady=5)
-        status_var = tk.StringVar(value="active")
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.status', default="Status:")).pack(pady=5)
+        status_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.active', default="active"))
         ttk.Combobox(dialog, textvariable=status_var,
                      values=['active', 'completed', 'withdrawn'],
                      width=15).pack(pady=5)
@@ -567,7 +569,7 @@ class AcademicStaffGUI:
             user_id = self.current_user.get('id') or self.current_user.get('username')
 
             if not student_name_var.get():
-                messagebox.showwarning("Warning", "Please enter student name")
+                messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_enter_student_name', default="Please enter student name"))
                 return
 
             try:
@@ -600,19 +602,19 @@ class AcademicStaffGUI:
                     conn.commit()
 
                 log_activity('update' if supervision_id else 'create', 'student_supervision', user_id=user_id)
-                messagebox.showinfo("Success", "Supervision saved successfully")
+                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.supervision_saved_successfully', default="Supervision saved successfully"))
                 dialog.destroy()
                 self._load_supervisions()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save supervision: {e}")
+                messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save supervision: {e}")
 
-        ttk.Button(dialog, text="Save", command=save).pack(pady=20)
+        ttk.Button(dialog, text=_t('gui.staff.staff_hr.academic_staff.buttons.save', default="Save"), command=save).pack(pady=20)
 
     def _update_supervision_progress(self):
         """Update progress notes for supervision."""
         selection = self.supervisions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a supervision")
+            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_a_supervision', default="Please select a supervision"))
             return
 
         item = self.supervisions_tree.item(selection[0])
@@ -625,7 +627,7 @@ class AcademicStaffGUI:
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Progress Notes:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.progress_notes', default="Progress Notes:")).pack(pady=5)
         notes_text = tk.Text(dialog, height=15, width=60)
         notes_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
@@ -651,12 +653,12 @@ class AcademicStaffGUI:
                     ''', (notes_text.get('1.0', tk.END).strip(),
                           datetime.now().isoformat(), supervision_id))
                     conn.commit()
-                messagebox.showinfo("Success", "Progress notes saved")
+                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.progress_notes_saved', default="Progress notes saved"))
                 dialog.destroy()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save notes: {e}")
+                messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save notes: {e}")
 
-        ttk.Button(dialog, text="Save Notes", command=save_notes).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.staff.staff_hr.academic_staff.buttons.save_notes', default="Save Notes"), command=save_notes).pack(pady=10)
 
     # ================================================================
     # EXTERNAL EXAMINERS TAB
@@ -665,7 +667,7 @@ class AcademicStaffGUI:
     def _create_examiners_tab(self):
         """Create External Examiners tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="External Examiners")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.academic_staff.tabs.external_examiners', default="External Examiners"))
 
         role = self.current_user.get('role')
         is_admin = role in ['admin', 'staff']
@@ -675,11 +677,11 @@ class AcademicStaffGUI:
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
         if is_admin:
-            ttk.Button(btn_frame, text="Add Examiner", command=self._add_examiner).pack(side=tk.LEFT, padx=5)
-            ttk.Button(btn_frame, text="Edit Examiner", command=self._edit_examiner).pack(side=tk.LEFT, padx=5)
+            ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.add_examiner', default="Add Examiner"), command=self._add_examiner).pack(side=tk.LEFT, padx=5)
+            ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.edit_examiner', default="Edit Examiner"), command=self._edit_examiner).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(btn_frame, text="View Assignments", command=self._view_examiner_assignments).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_examiners).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.view_assignments', default="View Assignments"), command=self._view_examiner_assignments).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.refresh', default="Refresh"), command=self._load_examiners).pack(side=tk.LEFT, padx=5)
 
         # Examiners list
         list_frame = ttk.Frame(tab)
@@ -731,7 +733,7 @@ class AcademicStaffGUI:
         """Edit selected examiner."""
         selection = self.examiners_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an examiner to edit")
+            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_an_examiner_to_edit', default="Please select an examiner to edit"))
             return
 
         item = self.examiners_tree.item(selection[0])
@@ -759,8 +761,8 @@ class AcademicStaffGUI:
             ttk.Entry(dialog, textvariable=var, width=width).pack(pady=2)
             fields[label.split(':')[0].lower().replace(' ', '_')] = var
 
-        ttk.Label(dialog, text="Status:").pack(pady=2)
-        status_var = tk.StringVar(value="active")
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.academic_staff.labels.status', default="Status:")).pack(pady=2)
+        status_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.active', default="active"))
         ttk.Combobox(dialog, textvariable=status_var,
                      values=['active', 'inactive', 'expired'], width=15).pack(pady=2)
 
@@ -789,7 +791,7 @@ class AcademicStaffGUI:
 
         def save():
             if not fields['name'].get():
-                messagebox.showwarning("Warning", "Please enter examiner name")
+                messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_enter_examiner_name', default="Please enter examiner name"))
                 return
 
             try:
@@ -827,19 +829,19 @@ class AcademicStaffGUI:
 
                 user_id = self.current_user.get('id') or self.current_user.get('username')
                 log_activity('update' if examiner_id else 'create', 'external_examiner', user_id=user_id)
-                messagebox.showinfo("Success", "Examiner saved successfully")
+                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.examiner_saved_successfully', default="Examiner saved successfully"))
                 dialog.destroy()
                 self._load_examiners()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save examiner: {e}")
+                messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save examiner: {e}")
 
-        ttk.Button(dialog, text="Save", command=save).pack(pady=15)
+        ttk.Button(dialog, text=_t('gui.staff.staff_hr.academic_staff.buttons.save', default="Save"), command=save).pack(pady=15)
 
     def _view_examiner_assignments(self):
         """View examiner assignments."""
         selection = self.examiners_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an examiner")
+            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_an_examiner', default="Please select an examiner"))
             return
 
         item = self.examiners_tree.item(selection[0])
@@ -880,7 +882,7 @@ class AcademicStaffGUI:
         except Exception as e:
             print(f"Error loading assignments: {e}")
 
-        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.staff.staff_hr.academic_staff.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
     # ================================================================
     # PEER OBSERVATIONS TAB
@@ -889,26 +891,26 @@ class AcademicStaffGUI:
     def _create_peer_observations_tab(self):
         """Create Peer Observations tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Peer Observations")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.academic_staff.tabs.peer_observations', default="Peer Observations"))
 
         # Buttons frame
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="New Observation", command=self._add_observation).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="View/Edit", command=self._edit_observation).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_observations).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.new_observation', default="New Observation"), command=self._add_observation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.view_edit', default="View/Edit"), command=self._edit_observation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.refresh', default="Refresh"), command=self._load_observations).pack(side=tk.LEFT, padx=5)
 
         # Filter frame
         filter_frame = ttk.Frame(tab)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Show:").pack(side=tk.LEFT, padx=5)
-        self.obs_view_var = tk.StringVar(value="my_observations")
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.show', default="Show:")).pack(side=tk.LEFT, padx=5)
+        self.obs_view_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.my_observations', default="my_observations"))
         ttk.Combobox(filter_frame, textvariable=self.obs_view_var,
                      values=["my_observations", "observations_of_me", "all"],
                      width=20).pack(side=tk.LEFT, padx=5)
-        ttk.Button(filter_frame, text="Apply", command=self._load_observations).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.apply', default="Apply"), command=self._load_observations).pack(side=tk.LEFT, padx=5)
 
         # Observations list
         list_frame = ttk.Frame(tab)
@@ -992,7 +994,7 @@ class AcademicStaffGUI:
         """Edit selected observation."""
         selection = self.obs_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an observation")
+            messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_select_an_observation', default="Please select an observation"))
             return
 
         item = self.obs_tree.item(selection[0])
@@ -1020,57 +1022,57 @@ class AcademicStaffGUI:
         scrollbar.pack(side="right", fill="y")
 
         # Basic info
-        basic_frame = ttk.LabelFrame(form_frame, text="Basic Information", padding=10)
+        basic_frame = ttk.LabelFrame(form_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.basic_information', default="Basic Information"), padding=10)
         basic_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(basic_frame, text="Observee (Staff being observed):").pack(anchor=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.observee_staff_being_observed', default="Observee (Staff being observed):")).pack(anchor=tk.W)
         observee_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=observee_var, width=40).pack(pady=2)
 
-        ttk.Label(basic_frame, text="Course Code/Name:").pack(anchor=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.course_code_name', default="Course Code/Name:")).pack(anchor=tk.W)
         course_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=course_var, width=40).pack(pady=2)
 
-        ttk.Label(basic_frame, text="Observation Date (YYYY-MM-DD):").pack(anchor=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.observation_date_yyyy_mm_dd', default="Observation Date (YYYY-MM-DD):")).pack(anchor=tk.W)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(basic_frame, textvariable=date_var, width=15).pack(pady=2)
 
-        ttk.Label(basic_frame, text="Observation Type:").pack(anchor=tk.W)
-        type_var = tk.StringVar(value="peer")
+        ttk.Label(basic_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.observation_type', default="Observation Type:")).pack(anchor=tk.W)
+        type_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.peer', default="peer"))
         ttk.Combobox(basic_frame, textvariable=type_var,
                      values=get_observation_types(), width=20).pack(pady=2)
 
-        ttk.Label(basic_frame, text="Class Size:").pack(anchor=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.class_size', default="Class Size:")).pack(anchor=tk.W)
         size_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=size_var, width=10).pack(pady=2)
 
-        ttk.Label(basic_frame, text="Duration (minutes):").pack(anchor=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.duration_minutes', default="Duration (minutes):")).pack(anchor=tk.W)
         duration_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=duration_var, width=10).pack(pady=2)
 
         # Feedback
-        feedback_frame = ttk.LabelFrame(form_frame, text="Feedback", padding=10)
+        feedback_frame = ttk.LabelFrame(form_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.feedback', default="Feedback"), padding=10)
         feedback_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(feedback_frame, text="Strengths:").pack(anchor=tk.W)
+        ttk.Label(feedback_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.strengths', default="Strengths:")).pack(anchor=tk.W)
         strengths_text = tk.Text(feedback_frame, height=4, width=60)
         strengths_text.pack(pady=2)
 
-        ttk.Label(feedback_frame, text="Areas for Development:").pack(anchor=tk.W)
+        ttk.Label(feedback_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.areas_for_development', default="Areas for Development:")).pack(anchor=tk.W)
         areas_text = tk.Text(feedback_frame, height=4, width=60)
         areas_text.pack(pady=2)
 
-        ttk.Label(feedback_frame, text="Action Points:").pack(anchor=tk.W)
+        ttk.Label(feedback_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.action_points', default="Action Points:")).pack(anchor=tk.W)
         actions_text = tk.Text(feedback_frame, height=3, width=60)
         actions_text.pack(pady=2)
 
-        ttk.Label(feedback_frame, text="Overall Rating (1-5):").pack(anchor=tk.W)
+        ttk.Label(feedback_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.overall_rating_1_5', default="Overall Rating (1-5):")).pack(anchor=tk.W)
         rating_var = tk.StringVar()
         ttk.Combobox(feedback_frame, textvariable=rating_var,
                      values=['1', '2', '3', '4', '5'], width=5).pack(pady=2)
 
-        ttk.Label(feedback_frame, text="Status:").pack(anchor=tk.W)
-        status_var = tk.StringVar(value="draft")
+        ttk.Label(feedback_frame, text=_t('gui.staff.staff_hr.academic_staff.labels.status', default="Status:")).pack(anchor=tk.W)
+        status_var = tk.StringVar(value=_t('gui.staff.staff_hr.academic_staff.values.draft', default="draft"))
         ttk.Combobox(feedback_frame, textvariable=status_var,
                      values=['draft', 'submitted', 'acknowledged'], width=15).pack(pady=2)
 
@@ -1106,7 +1108,7 @@ class AcademicStaffGUI:
             username = self.current_user.get('username', user_id)
 
             if not observee_var.get():
-                messagebox.showwarning("Warning", "Please enter observee name")
+                messagebox.showwarning(_t('gui.staff.staff_hr.academic_staff.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.academic_staff.dialogs.please_enter_observee_name', default="Please enter observee name"))
                 return
 
             try:
@@ -1151,13 +1153,13 @@ class AcademicStaffGUI:
                     conn.commit()
 
                 log_activity('update' if obs_id else 'create', 'peer_observation', user_id=user_id)
-                messagebox.showinfo("Success", "Observation saved successfully")
+                messagebox.showinfo(_t('gui.staff.staff_hr.academic_staff.dialogs.success', default="Success"), _t('gui.staff.staff_hr.academic_staff.dialogs.observation_saved_successfully', default="Observation saved successfully"))
                 dialog.destroy()
                 self._load_observations()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save observation: {e}")
+                messagebox.showerror(_t('gui.staff.staff_hr.academic_staff.dialogs.error', default="Error"), f"Failed to save observation: {e}")
 
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.academic_staff.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)

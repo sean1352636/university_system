@@ -30,11 +30,11 @@ class APIWebManager:
         if not self.gui.ensure_login('admin'):
             return
 
-        messagebox.showinfo("Start API Server",
-                          "Starting REST API server...\n\n"
+        messagebox.showinfo(_t('gui.shell.document_manager.api_web.dialogs.start_api_server', default="Start API Server"),
+                          _t('gui.shell.document_manager.api_web.dialogs.starting_rest_api_server_server_will_start_on_http_localhost_500', default="Starting REST API server...\n\n"
                           "Server will start on http://localhost:5000\n\n"
                           "API Documentation available at /api/docs\n\n"
-                          "This would require Flask/FastAPI implementation.")
+                          "This would require Flask/FastAPI implementation."))
 
         self.gui.log_event('start', 'api_server', details='Started REST API server')
 
@@ -45,12 +45,12 @@ class APIWebManager:
 
         # Create endpoints window
         endpoints_window = tk.Toplevel(self.root)
-        endpoints_window.title("API Endpoints")
+        endpoints_window.title(_t('gui.shell.document_manager.api_web.windows.api_endpoints', default="API Endpoints"))
         endpoints_window.geometry("1000x700")
         endpoints_window.transient(self.root)
         endpoints_window.grab_set()
 
-        ttk.Label(endpoints_window, text="Available REST API Endpoints",
+        ttk.Label(endpoints_window, text=_t('gui.shell.document_manager.api_web.labels.available_rest_api_endpoints', default="Available REST API Endpoints"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Create notebook for different endpoint categories
@@ -59,7 +59,7 @@ class APIWebManager:
 
         # Document endpoints
         doc_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(doc_frame, text="Document APIs")
+        notebook.add(doc_frame, text=_t('gui.shell.document_manager.api_web.tabs.document_apis', default="Document APIs"))
 
         doc_text = tk.Text(doc_frame, wrap='word', font=("Courier", 9))
         doc_text.pack(fill='both', expand=True)
@@ -102,7 +102,7 @@ POST /api/documents/{id}/approve
 
         # Student endpoints
         student_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(student_frame, text="Student APIs")
+        notebook.add(student_frame, text=_t('gui.shell.document_manager.api_web.tabs.student_apis', default="Student APIs"))
 
         student_text = tk.Text(student_frame, wrap='word', font=("Courier", 9))
         student_text.pack(fill='both', expand=True)
@@ -132,7 +132,7 @@ GET /api/students/{id}/notifications
 
         # System endpoints
         system_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(system_frame, text="System APIs")
+        notebook.add(system_frame, text=_t('gui.shell.document_manager.api_web.tabs.system_apis', default="System APIs"))
 
         system_text = tk.Text(system_frame, wrap='word', font=("Courier", 9))
         system_text.pack(fill='both', expand=True)
@@ -164,7 +164,7 @@ GET /api/version
         """)
         system_text.config(state='disabled')
 
-        ttk.Button(endpoints_window, text="Close",
+        ttk.Button(endpoints_window, text=_t('gui.shell.document_manager.api_web.buttons.close', default="Close"),
                   command=endpoints_window.destroy).pack(pady=10)
 
         self.gui.log_event('view', 'api_endpoints', details='Viewed API documentation')
@@ -176,12 +176,12 @@ GET /api/version
 
         # Create API keys window
         keys_window = tk.Toplevel(self.root)
-        keys_window.title("API Keys Management")
+        keys_window.title(_t('gui.shell.document_manager.api_web.windows.api_keys_management', default="API Keys Management"))
         keys_window.geometry("900x600")
         keys_window.transient(self.root)
         keys_window.grab_set()
 
-        ttk.Label(keys_window, text="API Keys Management",
+        ttk.Label(keys_window, text=_t('gui.shell.document_manager.api_web.labels.api_keys_management', default="API Keys Management"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Keys list
@@ -191,12 +191,12 @@ GET /api/version
         tree = ttk.Treeview(tree_frame,
                            columns=('Key', 'Name', 'Created', 'Expires', 'Permissions', 'Status'),
                            show='headings', height=15)
-        tree.heading('Key', text='API Key')
-        tree.heading('Name', text='Key Name')
-        tree.heading('Created', text='Created Date')
-        tree.heading('Expires', text='Expiry Date')
-        tree.heading('Permissions', text='Permissions')
-        tree.heading('Status', text='Status')
+        tree.heading('Key', text=_t('gui.shell.document_manager.api_web.headings.api_key', default='API Key'))
+        tree.heading('Name', text=_t('gui.shell.document_manager.api_web.headings.key_name', default='Key Name'))
+        tree.heading('Created', text=_t('gui.shell.document_manager.api_web.headings.created_date', default='Created Date'))
+        tree.heading('Expires', text=_t('gui.shell.document_manager.api_web.headings.expiry_date', default='Expiry Date'))
+        tree.heading('Permissions', text=_t('gui.shell.document_manager.api_web.headings.permissions', default='Permissions'))
+        tree.heading('Status', text=_t('gui.shell.document_manager.api_web.headings.status', default='Status'))
 
         tree.column('Key', width=150)
         tree.column('Name', width=120)
@@ -226,18 +226,18 @@ GET /api/version
         button_frame.pack(fill='x', padx=10, pady=10)
 
         def generate_new_key():
-            messagebox.showinfo("Generate API Key",
+            messagebox.showinfo(_t('gui.shell.document_manager.api_web.dialogs.generate_api_key', default="Generate API Key"),
                               "New API Key Generated:\n\n"
                               "sk_live_" + "x" * 32 + "\n\n"
                               "⚠ Save this key securely. It won't be shown again!")
 
             self.gui.log_event('create', 'api_key', details='Generated new API key')
 
-        ttk.Button(button_frame, text="Generate New Key",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.api_web.buttons.generate_new_key', default="Generate New Key"),
                   command=generate_new_key).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Revoke Selected",
-                  command=lambda: messagebox.showinfo("Revoke", "API key revoked")).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.api_web.buttons.revoke_selected', default="Revoke Selected"),
+                  command=lambda: messagebox.showinfo(_t('gui.shell.document_manager.api_web.dialogs.revoke', default="Revoke"), _t('gui.shell.document_manager.api_web.dialogs.api_key_revoked', default="API key revoked"))).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.api_web.buttons.close', default="Close"),
                   command=keys_window.destroy).pack(side='right', padx=5)
 
     def api_usage_statistics(self):
@@ -247,12 +247,12 @@ GET /api/version
 
         # Create statistics window
         stats_window = tk.Toplevel(self.root)
-        stats_window.title("API Usage Statistics")
+        stats_window.title(_t('gui.shell.document_manager.api_web.windows.api_usage_statistics', default="API Usage Statistics"))
         stats_window.geometry("1000x700")
         stats_window.transient(self.root)
         stats_window.grab_set()
 
-        ttk.Label(stats_window, text="API Usage Statistics",
+        ttk.Label(stats_window, text=_t('gui.shell.document_manager.api_web.labels.api_usage_statistics', default="API Usage Statistics"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Stats cards
@@ -276,7 +276,7 @@ GET /api/version
                     bg=color, fg='white').pack(pady=(0, 10))
 
         # Usage chart (simulated)
-        chart_frame = ttk.LabelFrame(stats_window, text="Request Volume (Last 7 Days)", padding=10)
+        chart_frame = ttk.LabelFrame(stats_window, text=_t('gui.shell.document_manager.api_web.labels.request_volume_last_7_days', default="Request Volume (Last 7 Days)"), padding=10)
         chart_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         chart_text = tk.Text(chart_frame, height=15, font=("Courier", 9))
@@ -306,18 +306,18 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
         """)
         chart_text.config(state='disabled')
 
-        ttk.Button(stats_window, text="Close",
+        ttk.Button(stats_window, text=_t('gui.shell.document_manager.api_web.buttons.close', default="Close"),
                   command=stats_window.destroy).pack(pady=10)
 
         self.gui.log_event('view', 'api_usage_stats', details='Viewed API usage statistics')
 
     def api_documentation(self):
         """Open API documentation in browser"""
-        messagebox.showinfo("API Documentation",
-                          "Opening API documentation...\n\n"
+        messagebox.showinfo(_t('gui.shell.document_manager.api_web.dialogs.api_documentation', default="API Documentation"),
+                          _t('gui.shell.document_manager.api_web.dialogs.opening_api_documentation_documentation_will_open_in_your_defaul', default="Opening API documentation...\n\n"
                           "Documentation will open in your default web browser:\n"
                           "http://localhost:5000/api/docs\n\n"
-                          "Interactive API testing available via Swagger UI.")
+                          "Interactive API testing available via Swagger UI."))
 
         self.gui.log_event('view', 'api_documentation', details='Opened API docs')
 
@@ -326,15 +326,15 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
         if not self.gui.ensure_login('admin'):
             return
 
-        messagebox.showinfo("Start Web Server",
-                          "Starting web interface server...\n\n"
+        messagebox.showinfo(_t('gui.shell.document_manager.api_web.dialogs.start_web_server', default="Start Web Server"),
+                          _t('gui.shell.document_manager.api_web.dialogs.starting_web_interface_server_server_will_start_on_http_localhos', default="Starting web interface server...\n\n"
                           "Server will start on http://localhost:8080\n\n"
                           "Features:\n"
                           "- Student portal\n"
                           "- Admin dashboard\n"
                           "- Document management\n"
                           "- Real-time updates\n\n"
-                          "This would require Flask/Django implementation.")
+                          "This would require Flask/Django implementation."))
 
         self.gui.log_event('start', 'web_server', details='Started web interface server')
 
@@ -345,12 +345,12 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
 
         # Create settings window
         settings_window = tk.Toplevel(self.root)
-        settings_window.title("Web Interface Settings")
+        settings_window.title(_t('gui.shell.document_manager.api_web.windows.web_interface_settings', default="Web Interface Settings"))
         settings_window.geometry("700x650")
         settings_window.transient(self.root)
         settings_window.grab_set()
 
-        ttk.Label(settings_window, text="Web Interface Configuration",
+        ttk.Label(settings_window, text=_t('gui.shell.document_manager.api_web.labels.web_interface_configuration', default="Web Interface Configuration"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Create notebook
@@ -359,34 +359,34 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
 
         # Server settings
         server_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(server_frame, text="Server")
+        notebook.add(server_frame, text=_t('gui.shell.document_manager.api_web.tabs.server', default="Server"))
 
         settings_form = ttk.Frame(server_frame)
         settings_form.pack(fill='both', expand=True)
 
-        ttk.Label(settings_form, text="Server Port:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(settings_form, text=_t('gui.shell.document_manager.api_web.labels.server_port', default="Server Port:")).grid(row=0, column=0, sticky='w', pady=5)
         port_entry = ttk.Entry(settings_form, width=30)
         port_entry.insert(0, "8080")
         port_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
-        ttk.Label(settings_form, text="Host:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(settings_form, text=_t('gui.shell.document_manager.api_web.labels.host', default="Host:")).grid(row=1, column=0, sticky='w', pady=5)
         host_entry = ttk.Entry(settings_form, width=30)
         host_entry.insert(0, "localhost")
         host_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
         debug_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(settings_form, text="Debug Mode (Development only)",
+        ttk.Checkbutton(settings_form, text=_t('gui.shell.document_manager.api_web.buttons.debug_mode_development_only', default="Debug Mode (Development only)"),
                        variable=debug_var).grid(row=2, column=0, columnspan=2, sticky='w', pady=5)
 
         auto_reload_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(settings_form, text="Auto-reload on file changes",
+        ttk.Checkbutton(settings_form, text=_t('gui.shell.document_manager.api_web.buttons.auto_reload_on_file_changes', default="Auto-reload on file changes"),
                        variable=auto_reload_var).grid(row=3, column=0, columnspan=2, sticky='w', pady=5)
 
         settings_form.columnconfigure(1, weight=1)
 
         # Features settings
         features_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(features_frame, text="Features")
+        notebook.add(features_frame, text=_t('gui.shell.document_manager.api_web.tabs.features', default="Features"))
 
         feature_vars = {}
         features = [
@@ -408,9 +408,9 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
 
         # Security settings
         security_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(security_frame, text="Security")
+        notebook.add(security_frame, text=_t('gui.shell.document_manager.api_web.tabs.security', default="Security"))
 
-        ttk.Label(security_frame, text="Security Configuration",
+        ttk.Label(security_frame, text=_t('gui.shell.document_manager.api_web.labels.security_configuration', default="Security Configuration"),
                  font=("Arial", 11, "bold")).pack(pady=5)
 
         security_vars = {}
@@ -430,9 +430,9 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
                            variable=var).pack(anchor='w', pady=5)
 
         def save_settings():
-            messagebox.showinfo("Settings Saved",
-                              "Web interface settings saved successfully!\n\n"
-                              "Restart the web server for changes to take effect.")
+            messagebox.showinfo(_t('gui.shell.document_manager.api_web.dialogs.settings_saved', default="Settings Saved"),
+                              _t('gui.shell.document_manager.api_web.dialogs.web_interface_settings_saved_successfully_restart_the_web_server', default="Web interface settings saved successfully!\n\n"
+                              "Restart the web server for changes to take effect."))
 
             self.gui.log_event('update', 'web_interface_settings',
                           details='Updated web interface configuration')
@@ -443,22 +443,22 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
         button_frame = ttk.Frame(settings_window)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Save Settings",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.api_web.buttons.save_settings', default="Save Settings"),
                   command=save_settings).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.api_web.buttons.cancel', default="Cancel"),
                   command=settings_window.destroy).pack(side='right', padx=5)
 
     def generate_mobile_interface(self):
         """Generate mobile-responsive interface"""
-        messagebox.showinfo("Mobile Interface",
-                          "Generating mobile-responsive interface...\n\n"
+        messagebox.showinfo(_t('gui.shell.document_manager.api_web.dialogs.mobile_interface', default="Mobile Interface"),
+                          _t('gui.shell.document_manager.api_web.dialogs.generating_mobile_responsive_interface_the_web_interface_include', default="Generating mobile-responsive interface...\n\n"
                           "The web interface includes:\n"
                           "- Responsive Bootstrap/Tailwind CSS\n"
                           "- Touch-optimized controls\n"
                           "- Progressive Web App (PWA) support\n"
                           "- Offline mode capability\n"
                           "- Mobile document upload via camera\n\n"
-                          "Access via: http://localhost:8080/mobile")
+                          "Access via: http://localhost:8080/mobile"))
 
         self.gui.log_event('generate', 'mobile_interface',
                       details='Generated mobile interface')
@@ -470,12 +470,12 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
 
         # Create QR code window
         qr_window = tk.Toplevel(self.root)
-        qr_window.title("Mobile App Access")
+        qr_window.title(_t('gui.shell.document_manager.api_web.windows.mobile_app_access', default="Mobile App Access"))
         qr_window.geometry("500x600")
         qr_window.transient(self.root)
         qr_window.grab_set()
 
-        ttk.Label(qr_window, text="Mobile App Access",
+        ttk.Label(qr_window, text=_t('gui.shell.document_manager.api_web.labels.mobile_app_access', default="Mobile App Access"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # QR code placeholder (would use qrcode library in real implementation)
@@ -491,22 +491,22 @@ Peak Traffic: 2024-11-04 14:30 (89 req/min)
                 if (i + j) % 60 == 0:
                     canvas.create_rectangle(i, j, i+30, j+30, fill='black')
 
-        ttk.Label(qr_window, text="Scan with your mobile device",
+        ttk.Label(qr_window, text=_t('gui.shell.document_manager.api_web.labels.scan_with_your_mobile_device', default="Scan with your mobile device"),
                  font=("Arial", 11)).pack()
 
         url_frame = ttk.Frame(qr_window)
         url_frame.pack(fill='x', padx=20, pady=10)
 
-        ttk.Label(url_frame, text="Or visit:").pack()
+        ttk.Label(url_frame, text=_t('gui.shell.document_manager.api_web.labels.or_visit', default="Or visit:")).pack()
         url_text = tk.Text(url_frame, height=2, width=40)
         url_text.insert('1.0', "http://192.168.1.100:8080/mobile")
         url_text.config(state='disabled')
         url_text.pack(pady=5)
 
-        ttk.Button(qr_window, text="Copy URL",
-                  command=lambda: messagebox.showinfo("Copied", "URL copied to clipboard")).pack(pady=5)
+        ttk.Button(qr_window, text=_t('gui.shell.document_manager.api_web.buttons.copy_url', default="Copy URL"),
+                  command=lambda: messagebox.showinfo(_t('gui.shell.document_manager.api_web.dialogs.copied', default="Copied"), _t('gui.shell.document_manager.api_web.dialogs.url_copied_to_clipboard', default="URL copied to clipboard"))).pack(pady=5)
 
-        ttk.Button(qr_window, text="Close",
+        ttk.Button(qr_window, text=_t('gui.shell.document_manager.api_web.buttons.close', default="Close"),
                   command=qr_window.destroy).pack(pady=10)
 
         self.gui.log_event('generate', 'mobile_qr_code',

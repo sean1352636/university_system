@@ -1,5 +1,7 @@
 """Charity Shop - Main application class."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui._imports import (
     tk, ttk, messagebox,
     init_i18n, _t,
@@ -105,8 +107,8 @@ class CharityShopApp(SalesMixin, BasketOpsMixin, ReportsMixin, RefundsMixin):
 
         # Refunds menu
         refunds_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Refunds", menu=refunds_menu)
-        refunds_menu.add_command(label="Manage Refunds", command=self.show_refunds_window)
+        menubar.add_cascade(label=_t('gui.shell.services.charity_shop_gui.charity_shop.menus.refunds', default="Refunds"), menu=refunds_menu)
+        refunds_menu.add_command(label=_t('gui.shell.services.charity_shop_gui.charity_shop.menus.manage_refunds', default="Manage Refunds"), command=self.show_refunds_window)
 
         # Bind keyboard shortcuts
         self.root.bind("<Control-n>", lambda e: self.add_item())
@@ -140,23 +142,23 @@ class CharityShopApp(SalesMixin, BasketOpsMixin, ReportsMixin, RefundsMixin):
         self.stock_summary_frame = ttk.LabelFrame(summary_container, text=_t("charity_shop.summary.stock"), padding="5")
         self.stock_summary_frame.pack(side=tk.LEFT, padx=(0, 10))
 
-        self.items_label = ttk.Label(self.stock_summary_frame, text="Items: 0")
+        self.items_label = ttk.Label(self.stock_summary_frame, text=_t('gui.shell.services.charity_shop_gui.charity_shop.labels.items_0', default="Items: 0"))
         self.items_label.pack(side=tk.LEFT, padx=5)
 
-        self.quantity_label = ttk.Label(self.stock_summary_frame, text="Qty: 0")
+        self.quantity_label = ttk.Label(self.stock_summary_frame, text=_t('gui.shell.services.charity_shop_gui.charity_shop.labels.qty_0', default="Qty: 0"))
         self.quantity_label.pack(side=tk.LEFT, padx=5)
 
-        self.value_label = ttk.Label(self.stock_summary_frame, text="Value: \u00a30.00")
+        self.value_label = ttk.Label(self.stock_summary_frame, text=_t('gui.shell.services.charity_shop_gui.charity_shop.labels.value_0_00', default="Value: \u00a30.00"))
         self.value_label.pack(side=tk.LEFT, padx=5)
 
         # Revenue summary
         self.revenue_summary_frame = ttk.LabelFrame(summary_container, text=_t("charity_shop.summary.revenue"), padding="5")
         self.revenue_summary_frame.pack(side=tk.LEFT)
 
-        self.sold_label = ttk.Label(self.revenue_summary_frame, text="Sold: 0")
+        self.sold_label = ttk.Label(self.revenue_summary_frame, text=_t('gui.shell.services.charity_shop_gui.charity_shop.labels.sold_0', default="Sold: 0"))
         self.sold_label.pack(side=tk.LEFT, padx=5)
 
-        self.revenue_label = ttk.Label(self.revenue_summary_frame, text="Revenue: \u00a30.00", foreground="green")
+        self.revenue_label = ttk.Label(self.revenue_summary_frame, text=_t('gui.shell.services.charity_shop_gui.charity_shop.labels.revenue_0_00', default="Revenue: \u00a30.00"), foreground="green")
         self.revenue_label.pack(side=tk.LEFT, padx=5)
 
         # Return to Homepage button
@@ -174,14 +176,14 @@ class CharityShopApp(SalesMixin, BasketOpsMixin, ReportsMixin, RefundsMixin):
         search_entry.pack(side=tk.LEFT, padx=(5, 15))
 
         ttk.Label(search_frame, text=_t("charity_shop.filter.category")).pack(side=tk.LEFT)
-        self.filter_category_var = tk.StringVar(value="All")
+        self.filter_category_var = tk.StringVar(value=_t('gui.shell.services.charity_shop_gui.charity_shop.values.all', default="All"))
         self.category_filter = ttk.Combobox(search_frame, textvariable=self.filter_category_var,
                                             values=["All"] + ItemDialog.CATEGORIES, width=12, state="readonly")
         self.category_filter.pack(side=tk.LEFT, padx=5)
         self.category_filter.bind("<<ComboboxSelected>>", lambda e: self.on_search())
 
         ttk.Label(search_frame, text=_t("charity_shop.filter.status")).pack(side=tk.LEFT, padx=(15, 0))
-        self.filter_status_var = tk.StringVar(value="all")
+        self.filter_status_var = tk.StringVar(value=_t('gui.shell.services.charity_shop_gui.charity_shop.values.all_variant_2', default="all"))
         self.status_filter = ttk.Combobox(search_frame, textvariable=self.filter_status_var,
                                           values=["all", "available", "sold"], width=10, state="readonly")
         self.status_filter.pack(side=tk.LEFT, padx=5)
@@ -374,7 +376,7 @@ class CharityShopApp(SalesMixin, BasketOpsMixin, ReportsMixin, RefundsMixin):
                 dialog.result["condition"]
             )
             self.refresh_stock_list()
-            messagebox.showinfo("Success", "Item added successfully!")
+            messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.success', default="Success"), _t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.item_added_successfully', default="Item added successfully!"))
 
             # Log activity
             if ACTIVITY_LOGGER_AVAILABLE:
@@ -389,7 +391,7 @@ class CharityShopApp(SalesMixin, BasketOpsMixin, ReportsMixin, RefundsMixin):
         """Edit the selected stock item."""
         item = self.get_selected_item()
         if not item:
-            messagebox.showwarning("No Selection", "Please select an item to edit.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.please_select_an_item_to_edit', default="Please select an item to edit."))
             return
 
         # Get full item data from database
@@ -401,7 +403,7 @@ class CharityShopApp(SalesMixin, BasketOpsMixin, ReportsMixin, RefundsMixin):
                 break
 
         if not item_data:
-            messagebox.showerror("Error", "Could not find item in database.")
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.could_not_find_item_in_database', default="Could not find item in database."))
             return
 
         dialog = ItemDialog(self.root, "Edit Item", item_data)
@@ -418,19 +420,19 @@ class CharityShopApp(SalesMixin, BasketOpsMixin, ReportsMixin, RefundsMixin):
                 dialog.result["sold_quantity"]
             )
             self.refresh_stock_list()
-            messagebox.showinfo("Success", "Item updated successfully!")
+            messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.success', default="Success"), _t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.item_updated_successfully', default="Item updated successfully!"))
 
     def delete_item(self):
         """Delete the selected stock item."""
         item = self.get_selected_item()
         if not item:
-            messagebox.showwarning("No Selection", "Please select an item to delete.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.please_select_an_item_to_delete', default="Please select an item to delete."))
             return
 
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{item['name']}'?"):
+        if messagebox.askyesno(_t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete '{item['name']}'?"):
             self.db.delete_item(item["id"])
             self.refresh_stock_list()
-            messagebox.showinfo("Success", "Item deleted successfully!")
+            messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.success', default="Success"), _t('gui.shell.services.charity_shop_gui.charity_shop.dialogs.item_deleted_successfully', default="Item deleted successfully!"))
 
             # Log activity
             if ACTIVITY_LOGGER_AVAILABLE:

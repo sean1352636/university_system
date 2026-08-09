@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import tkinter.font as tkFont
@@ -10,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import i18n for language support
 from education_system.systems.university.infrastructure.i18n import (
@@ -43,8 +45,8 @@ except ImportError:
     render_template = lambda *args, **kwargs: (None, None)
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this module when targeting the
@@ -160,11 +162,11 @@ class TicketFormsMixin:
         self.clear_content()
 
         create_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(create_frame, text="🎫 Create Ticket")
+        self.notebook.add(create_frame, text=_t('gui.pastoral.student_support.ticket_forms.tabs.create_ticket', default="🎫 Create Ticket"))
 
         # Check authentication
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'student':
-            ttk.Label(create_frame, text="❌ Only students can create tickets",
+            ttk.Label(create_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.only_students_can_create_tickets', default="❌ Only students can create tickets"),
                      style='Title.TLabel').pack(pady=20)
             return
 
@@ -219,11 +221,11 @@ class TicketFormsMixin:
                 bind_scroll_recursive(child)
 
         # Title
-        ttk.Label(form_frame, text="🎫 Create Support Ticket",
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.create_support_ticket', default="🎫 Create Support Ticket"),
                  style='Title.TLabel').pack(pady=(0, 20), anchor="w")
 
         # Template selection
-        template_frame = ttk.LabelFrame(form_frame, text="📋 Templates (Optional)", padding="10")
+        template_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.templates_optional', default="📋 Templates (Optional)"), padding="10")
         template_frame.pack(fill="x", pady=(0, 10))
 
         self.selected_template = tk.StringVar()
@@ -248,14 +250,14 @@ class TicketFormsMixin:
         self.template_combo.bind('<<ComboboxSelected>>', self.on_template_selected)
 
         # Title field
-        title_frame = ttk.LabelFrame(form_frame, text="📝 Title *", padding="10")
+        title_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.title', default="📝 Title *"), padding="10")
         title_frame.pack(fill="x", pady=(0, 10))
 
         self.title_entry = ttk.Entry(title_frame, width=80, font=('Segoe UI', 10))
         self.title_entry.pack(fill="x")
 
         # Category field
-        category_frame = ttk.LabelFrame(form_frame, text="📂 Category *", padding="10")
+        category_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.category_variant_2', default="📂 Category *"), padding="10")
         category_frame.pack(fill="x", pady=(0, 10))
 
         self.category_var = tk.StringVar()
@@ -265,7 +267,7 @@ class TicketFormsMixin:
         self.category_combo.pack(fill="x")
 
         # Priority field
-        priority_frame = ttk.LabelFrame(form_frame, text="🔥 Priority", padding="10")
+        priority_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.priority_variant_2', default="🔥 Priority"), padding="10")
         priority_frame.pack(fill="x", pady=(0, 10))
 
         self.priority_var = tk.StringVar()
@@ -275,21 +277,21 @@ class TicketFormsMixin:
         self.priority_combo.pack(fill="x")
 
         # Description field
-        desc_frame = ttk.LabelFrame(form_frame, text="📄 Description *", padding="10")
+        desc_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.description', default="📄 Description *"), padding="10")
         desc_frame.pack(fill="x", pady=(0, 10))
 
         self.description_text = scrolledtext.ScrolledText(desc_frame, height=10, wrap=tk.WORD, font=('Segoe UI', 10))
         self.description_text.pack(fill="x")
 
         # Tags field
-        tags_frame = ttk.LabelFrame(form_frame, text="🏷️ Tags (comma-separated)", padding="10")
+        tags_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.tags_comma_separated', default="🏷️ Tags (comma-separated)"), padding="10")
         tags_frame.pack(fill="x", pady=(0, 10))
 
         self.tags_entry = ttk.Entry(tags_frame, width=80, font=('Segoe UI', 10))
         self.tags_entry.pack(fill="x")
 
         # Attachments
-        attachments_frame = ttk.LabelFrame(form_frame, text="📎 Attachments", padding="10")
+        attachments_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.attachments', default="📎 Attachments"), padding="10")
         attachments_frame.pack(fill="x", pady=(0, 10))
 
         self.attachments = []
@@ -299,20 +301,20 @@ class TicketFormsMixin:
         attach_btn_frame = ttk.Frame(attachments_frame)
         attach_btn_frame.pack(fill="x")
 
-        ttk.Button(attach_btn_frame, text="➕ Add File",
+        ttk.Button(attach_btn_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.add_file', default="➕ Add File"),
                   command=self.add_attachment).pack(side="left", padx=(0, 5))
-        ttk.Button(attach_btn_frame, text="➖ Remove",
+        ttk.Button(attach_btn_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.remove', default="➖ Remove"),
                   command=self.remove_attachment).pack(side="left")
 
         # Buttons
         button_frame = ttk.Frame(form_frame)
         button_frame.pack(fill="x", pady=(20, 10))
 
-        ttk.Button(button_frame, text="🎫 Create Ticket",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.create_ticket', default="🎫 Create Ticket"),
                   command=self.create_ticket, style='Primary.TButton').pack(side="left", padx=(0, 10))
-        ttk.Button(button_frame, text="🔄 Reset Form",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.reset_form', default="🔄 Reset Form"),
                   command=self.reset_create_form).pack(side="left", padx=(0, 10))
-        ttk.Button(button_frame, text="❌ Cancel",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.cancel', default="❌ Cancel"),
                   command=self.show_dashboard).pack(side="left")
 
         # Add bottom padding to ensure buttons are fully visible
@@ -340,7 +342,7 @@ class TicketFormsMixin:
     def add_attachment(self):
         """Add file attachment"""
         file_path = filedialog.askopenfilename(
-            title="Select File to Attach",
+            title=_t('gui.pastoral.student_support.ticket_forms.dialogs.select_file_to_attach', default="Select File to Attach"),
             filetypes=[("All Files", "*.*")]
         )
 
@@ -348,7 +350,7 @@ class TicketFormsMixin:
             # Check file size (10MB limit)
             file_size = os.path.getsize(file_path)
             if file_size > 10 * 1024 * 1024:
-                messagebox.showerror("File Too Large", "File size must be less than 10MB")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_forms.dialogs.file_too_large', default="File Too Large"), _t('gui.pastoral.student_support.ticket_forms.dialogs.file_size_must_be_less_than_10mb', default="File size must be less than 10MB"))
                 return
 
             # Read file data
@@ -366,7 +368,7 @@ class TicketFormsMixin:
                 self.attachments_listbox.insert(tk.END, attachment['filename'])
 
             except Exception as e:
-                messagebox.showerror("File Error", f"Could not read file: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_forms.dialogs.file_error', default="File Error"), f"Could not read file: {e}")
 
     def remove_attachment(self):
         """Remove selected attachment"""
@@ -381,12 +383,12 @@ class TicketFormsMixin:
         # Validate form
         title = self.title_entry.get().strip()
         if not title:
-            messagebox.showerror("Validation Error", "Title is required")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_forms.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.student_support.ticket_forms.dialogs.title_is_required', default="Title is required"))
             return
 
         description = self.description_text.get(1.0, tk.END).strip()
         if not description:
-            messagebox.showerror("Validation Error", "Description is required")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_forms.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.student_support.ticket_forms.dialogs.description_is_required', default="Description is required"))
             return
 
         category = self.category_var.get()
@@ -406,13 +408,13 @@ class TicketFormsMixin:
             conn.close()
 
             if not result:
-                messagebox.showerror("Error", "No student ID associated with your account")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_forms.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_forms.dialogs.no_student_id_associated_with_your_account', default="No student ID associated with your account"))
                 return
 
             student_id = result[0]
 
         except Exception as e:
-            messagebox.showerror("Database Error", f"Could not get student ID: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_forms.dialogs.database_error', default="Database Error"), f"Could not get student ID: {e}")
             return
 
         # Create ticket
@@ -437,7 +439,7 @@ class TicketFormsMixin:
                 tags=tags
             )
 
-            messagebox.showinfo("Success", f"Support ticket #{ticket_id} created successfully!")
+            messagebox.showinfo(_t('gui.pastoral.student_support.ticket_forms.dialogs.success', default="Success"), f"Support ticket #{ticket_id} created successfully!")
             self.update_status(f"Ticket #{ticket_id} created")
 
             # Send email notification to admin
@@ -455,7 +457,7 @@ class TicketFormsMixin:
             self.view_ticket_details(ticket_id)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create ticket: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_forms.dialogs.error', default="Error"), f"Failed to create ticket: {e}")
             self.update_status("Ticket creation failed")
 
     def reset_create_form(self):
@@ -474,7 +476,7 @@ class TicketFormsMixin:
         self.clear_content()
 
         tickets_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(tickets_frame, text="📋 My Tickets")
+        self.notebook.add(tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.tabs.my_tickets', default="📋 My Tickets"))
 
         # Configure frame to expand
         tickets_frame.rowconfigure(0, weight=1)
@@ -486,7 +488,7 @@ class TicketFormsMixin:
 
         # Check authentication
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'student':
-            ttk.Label(tickets_frame, text="❌ Access denied",
+            ttk.Label(tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.access_denied', default="❌ Access denied"),
                      style='Title.TLabel').pack(pady=20)
             return
 
@@ -494,21 +496,21 @@ class TicketFormsMixin:
         header_frame = ttk.Frame(tickets_frame)
         header_frame.pack(fill="x", pady=(0, 10))
 
-        ttk.Label(header_frame, text="📋 My Support Tickets",
+        ttk.Label(header_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.my_support_tickets', default="📋 My Support Tickets"),
                  style='Title.TLabel').pack(side="left")
 
-        ttk.Button(header_frame, text="🔄 Refresh",
+        ttk.Button(header_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.refresh', default="🔄 Refresh"),
                   command=self.refresh_my_tickets).pack(side="right")
 
         # Filters
-        filter_frame = ttk.LabelFrame(tickets_frame, text="🔍 Filters", padding="10")
+        filter_frame = ttk.LabelFrame(tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.filters', default="🔍 Filters"), padding="10")
         filter_frame.pack(fill="x", pady=(0, 10))
 
         filter_grid = ttk.Frame(filter_frame)
         filter_grid.pack(fill="x")
 
         # Status filter
-        ttk.Label(filter_grid, text="Status:").grid(row=0, column=0, sticky="w", padx=(0, 5))
+        ttk.Label(filter_grid, text=_t('gui.pastoral.student_support.ticket_forms.labels.status', default="Status:")).grid(row=0, column=0, sticky="w", padx=(0, 5))
         self.my_tickets_status_filter = ttk.Combobox(filter_grid, values=[
             "All", "Open", "In Progress", "Resolved", "Closed"
         ], state="readonly", width=15)
@@ -516,12 +518,12 @@ class TicketFormsMixin:
         self.my_tickets_status_filter.grid(row=0, column=1, padx=(0, 10))
 
         # Search filter
-        ttk.Label(filter_grid, text="Search:").grid(row=0, column=2, sticky="w", padx=(0, 5))
+        ttk.Label(filter_grid, text=_t('gui.pastoral.student_support.ticket_forms.labels.search', default="Search:")).grid(row=0, column=2, sticky="w", padx=(0, 5))
         self.my_tickets_search = ttk.Entry(filter_grid, width=30)
         self.my_tickets_search.grid(row=0, column=3, padx=(0, 10))
         self.my_tickets_search.bind('<Return>', lambda e: self.refresh_my_tickets())
 
-        ttk.Button(filter_grid, text="Apply",
+        ttk.Button(filter_grid, text=_t('gui.pastoral.student_support.ticket_forms.buttons.apply', default="Apply"),
                   command=self.refresh_my_tickets).grid(row=0, column=4)
 
         # Tickets list
@@ -547,7 +549,7 @@ class TicketFormsMixin:
             conn.close()
 
             if not result:
-                ttk.Label(self.my_tickets_frame, text="❌ No student ID found").pack(pady=20)
+                ttk.Label(self.my_tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.no_student_id_found', default="❌ No student ID found")).pack(pady=20)
                 return
 
             student_id = result[0]
@@ -572,13 +574,13 @@ class TicketFormsMixin:
 
             # Handle None or invalid result
             if result is None:
-                ttk.Label(self.my_tickets_frame, text="📭 No tickets found").pack(pady=20)
+                ttk.Label(self.my_tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.no_tickets_found', default="📭 No tickets found")).pack(pady=20)
                 return
 
             tickets = result.get('tickets', []) if isinstance(result, dict) else []
 
             if not tickets:
-                ttk.Label(self.my_tickets_frame, text="📭 No tickets found").pack(pady=20)
+                ttk.Label(self.my_tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.no_tickets_found', default="📭 No tickets found")).pack(pady=20)
                 return
 
             # Create tickets table
@@ -645,7 +647,7 @@ class TicketFormsMixin:
         self.clear_content()
 
         tickets_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(tickets_frame, text="🎫 All Tickets")
+        self.notebook.add(tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.tabs.all_tickets', default="🎫 All Tickets"))
 
         # Configure frame to expand
         tickets_frame.rowconfigure(0, weight=1)
@@ -653,7 +655,7 @@ class TicketFormsMixin:
 
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(tickets_frame, text="❌ Staff access required",
+            ttk.Label(tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.staff_access_required', default="❌ Staff access required"),
                      style='Title.TLabel').pack(pady=20)
             return
 
@@ -661,56 +663,56 @@ class TicketFormsMixin:
         header_frame = ttk.Frame(tickets_frame)
         header_frame.pack(fill="x", pady=(0, 10))
 
-        ttk.Label(header_frame, text="🎫 All Support Tickets",
+        ttk.Label(header_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.all_support_tickets', default="🎫 All Support Tickets"),
                  style='Title.TLabel').pack(side="left")
 
         control_frame = ttk.Frame(header_frame)
         control_frame.pack(side="right")
 
-        ttk.Button(control_frame, text="🔄 Refresh",
+        ttk.Button(control_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.refresh', default="🔄 Refresh"),
                   command=self.refresh_all_tickets).pack(side="left", padx=(0, 5))
-        ttk.Button(control_frame, text="📊 Reports",
+        ttk.Button(control_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.reports', default="📊 Reports"),
                   command=self.show_reports).pack(side="left", padx=(0, 5))
-        ttk.Button(control_frame, text="📦 Bulk Ops",
+        ttk.Button(control_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.bulk_ops', default="📦 Bulk Ops"),
                   command=self.show_bulk_operations).pack(side="left")
 
         # Advanced filters
-        filter_frame = ttk.LabelFrame(tickets_frame, text="🔍 Advanced Filters", padding="10")
+        filter_frame = ttk.LabelFrame(tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.advanced_filters', default="🔍 Advanced Filters"), padding="10")
         filter_frame.pack(fill="x", pady=(0, 10))
 
         filter_grid = ttk.Frame(filter_frame)
         filter_grid.pack(fill="x")
 
         # Row 1
-        ttk.Label(filter_grid, text="Status:").grid(row=0, column=0, sticky="w", padx=(0, 5))
+        ttk.Label(filter_grid, text=_t('gui.pastoral.student_support.ticket_forms.labels.status', default="Status:")).grid(row=0, column=0, sticky="w", padx=(0, 5))
         self.all_tickets_status = ttk.Combobox(filter_grid, values=[
             "All"] + TICKET_STATUSES, state="readonly", width=12)
         self.all_tickets_status.set("All")
         self.all_tickets_status.grid(row=0, column=1, padx=(0, 10))
 
-        ttk.Label(filter_grid, text="Priority:").grid(row=0, column=2, sticky="w", padx=(0, 5))
+        ttk.Label(filter_grid, text=_t('gui.pastoral.student_support.ticket_forms.labels.priority', default="Priority:")).grid(row=0, column=2, sticky="w", padx=(0, 5))
         self.all_tickets_priority = ttk.Combobox(filter_grid, values=[
             "All"] + TICKET_PRIORITIES, state="readonly", width=12)
         self.all_tickets_priority.set("All")
         self.all_tickets_priority.grid(row=0, column=3, padx=(0, 10))
 
-        ttk.Label(filter_grid, text="Category:").grid(row=0, column=4, sticky="w", padx=(0, 5))
+        ttk.Label(filter_grid, text=_t('gui.pastoral.student_support.ticket_forms.labels.category', default="Category:")).grid(row=0, column=4, sticky="w", padx=(0, 5))
         self.all_tickets_category = ttk.Combobox(filter_grid, values=[
             "All"] + SUPPORT_CATEGORIES, state="readonly", width=15)
         self.all_tickets_category.set("All")
         self.all_tickets_category.grid(row=0, column=5, padx=(0, 10))
 
         # Row 2
-        ttk.Label(filter_grid, text="Assigned to:").grid(row=1, column=0, sticky="w", padx=(0, 5), pady=(5, 0))
+        ttk.Label(filter_grid, text=_t('gui.pastoral.student_support.ticket_forms.labels.assigned_to', default="Assigned to:")).grid(row=1, column=0, sticky="w", padx=(0, 5), pady=(5, 0))
         self.all_tickets_assigned = ttk.Entry(filter_grid, width=15)
         self.all_tickets_assigned.grid(row=1, column=1, padx=(0, 10), pady=(5, 0))
 
-        ttk.Label(filter_grid, text="Search:").grid(row=1, column=2, sticky="w", padx=(0, 5), pady=(5, 0))
+        ttk.Label(filter_grid, text=_t('gui.pastoral.student_support.ticket_forms.labels.search', default="Search:")).grid(row=1, column=2, sticky="w", padx=(0, 5), pady=(5, 0))
         self.all_tickets_search = ttk.Entry(filter_grid, width=20)
         self.all_tickets_search.grid(row=1, column=3, columnspan=2, sticky="ew", padx=(0, 10), pady=(5, 0))
         self.all_tickets_search.bind('<Return>', lambda e: self.refresh_all_tickets())
 
-        ttk.Button(filter_grid, text="Apply Filters",
+        ttk.Button(filter_grid, text=_t('gui.pastoral.student_support.ticket_forms.buttons.apply_filters', default="Apply Filters"),
                   command=self.refresh_all_tickets).grid(row=1, column=5, pady=(5, 0))
 
         filter_grid.columnconfigure(4, weight=1)
@@ -719,13 +721,13 @@ class TicketFormsMixin:
         quick_frame = ttk.Frame(filter_frame)
         quick_frame.pack(fill="x", pady=(10, 0))
 
-        ttk.Button(quick_frame, text="🔥 High Priority",
+        ttk.Button(quick_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.high_priority', default="🔥 High Priority"),
                   command=lambda: self.apply_quick_filter('priority', 'High')).pack(side="left", padx=(0, 5))
-        ttk.Button(quick_frame, text="❌ Unassigned",
+        ttk.Button(quick_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.unassigned', default="❌ Unassigned"),
                   command=lambda: self.apply_quick_filter('assigned', 'none')).pack(side="left", padx=(0, 5))
-        ttk.Button(quick_frame, text="🚨 Escalated",
+        ttk.Button(quick_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.escalated', default="🚨 Escalated"),
                   command=lambda: self.apply_quick_filter('status', 'Escalated')).pack(side="left", padx=(0, 5))
-        ttk.Button(quick_frame, text="🔄 Clear Filters",
+        ttk.Button(quick_frame, text=_t('gui.pastoral.student_support.ticket_forms.buttons.clear_filters', default="🔄 Clear Filters"),
                   command=self.clear_all_filters).pack(side="left", padx=(0, 5))
 
         # Tickets list
@@ -795,13 +797,13 @@ class TicketFormsMixin:
 
             # Handle None or invalid result
             if result is None:
-                ttk.Label(self.all_tickets_frame, text="📭 No tickets found with current filters").pack(pady=20)
+                ttk.Label(self.all_tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.no_tickets_found_with_current_filters', default="📭 No tickets found with current filters")).pack(pady=20)
                 return
 
             tickets = result.get('tickets', []) if isinstance(result, dict) else []
 
             if not tickets:
-                ttk.Label(self.all_tickets_frame, text="📭 No tickets found with current filters").pack(pady=20)
+                ttk.Label(self.all_tickets_frame, text=_t('gui.pastoral.student_support.ticket_forms.labels.no_tickets_found_with_current_filters', default="📭 No tickets found with current filters")).pack(pady=20)
                 return
 
             # Create tickets table with enhanced columns
@@ -914,16 +916,16 @@ class TicketFormsMixin:
             ticket_data = tree.item(item)
             ticket_id = ticket_data['values'][0]
 
-            context_menu.add_command(label="👁️ View Details",
+            context_menu.add_command(label=_t('gui.pastoral.student_support.ticket_forms.menus.view_details', default="👁️ View Details"),
                                    command=lambda: self.view_ticket_details(ticket_id))
-            context_menu.add_command(label="💬 Add Response",
+            context_menu.add_command(label=_t('gui.pastoral.student_support.ticket_forms.menus.add_response', default="💬 Add Response"),
                                    command=lambda: self.show_add_response_dialog_by_id(ticket_id))
 
             if self.auth.current_user['role'] in ('staff', 'admin'):
                 context_menu.add_separator()
-                context_menu.add_command(label="📊 Update Status",
+                context_menu.add_command(label=_t('gui.pastoral.student_support.ticket_forms.menus.update_status', default="📊 Update Status"),
                                        command=lambda: self.show_status_update_dialog(ticket_id))
-                context_menu.add_command(label="👨‍💼 Assign to Me",
+                context_menu.add_command(label=_t('gui.pastoral.student_support.ticket_forms.menus.assign_to_me', default="👨‍💼 Assign to Me"),
                                        command=lambda: self.assign_ticket_to_me(ticket_id))
 
             # Show menu

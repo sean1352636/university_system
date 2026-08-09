@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -85,41 +87,41 @@ def show_browse_products(self):
     title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
     title_frame.columnconfigure(1, weight=1)
 
-    ttk.Label(title_frame, text="Browse Products", style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(title_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.browse_products', default="Browse Products"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
 
     # Search and filter frame
     search_frame = ttk.Frame(title_frame)
     search_frame.grid(row=0, column=1, sticky=tk.E)
 
-    ttk.Label(search_frame, text="Search:").grid(row=0, column=0, padx=(0, 5))
+    ttk.Label(search_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.search', default="Search:")).grid(row=0, column=0, padx=(0, 5))
     self.search_var = tk.StringVar()
     search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=20)
     search_entry.grid(row=0, column=1, padx=5)
 
-    ttk.Button(search_frame, text="🔍 Search", command=self.search_products).grid(row=0, column=2, padx=5)
-    ttk.Button(search_frame, text="🔄 Refresh", command=self.refresh_products).grid(row=0, column=3, padx=5)
+    ttk.Button(search_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.buttons.search', default="🔍 Search"), command=self.search_products).grid(row=0, column=2, padx=5)
+    ttk.Button(search_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.buttons.refresh', default="🔄 Refresh"), command=self.refresh_products).grid(row=0, column=3, padx=5)
 
     # Filter frame
-    filter_frame = ttk.LabelFrame(self.content_frame, text="Filters", padding="10")
+    filter_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.filters', default="Filters"), padding="10")
     filter_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-    ttk.Label(filter_frame, text="Category:").grid(row=0, column=0, padx=(0, 5))
-    self.category_var = tk.StringVar(value="All")
+    ttk.Label(filter_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.category', default="Category:")).grid(row=0, column=0, padx=(0, 5))
+    self.category_var = tk.StringVar(value=_t('gui.operations.commerce.shop_management_gui.product_browser.values.all', default="All"))
     self.category_combo = ttk.Combobox(filter_frame, textvariable=self.category_var,
                                       values=["All"], state="readonly", width=15)
     self.category_combo.grid(row=0, column=1, padx=5)
 
-    ttk.Label(filter_frame, text="Price Range:").grid(row=0, column=2, padx=(10, 5))
+    ttk.Label(filter_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.price_range', default="Price Range:")).grid(row=0, column=2, padx=(10, 5))
     self.min_price_var = tk.StringVar()
     ttk.Entry(filter_frame, textvariable=self.min_price_var, width=10).grid(row=0, column=3, padx=2)
-    ttk.Label(filter_frame, text="to").grid(row=0, column=4, padx=2)
+    ttk.Label(filter_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.to', default="to")).grid(row=0, column=4, padx=2)
     self.max_price_var = tk.StringVar()
     ttk.Entry(filter_frame, textvariable=self.max_price_var, width=10).grid(row=0, column=5, padx=2)
 
-    ttk.Button(filter_frame, text="Apply Filters", command=self.apply_filters).grid(row=0, column=6, padx=10)
+    ttk.Button(filter_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.buttons.apply_filters', default="Apply Filters"), command=self.apply_filters).grid(row=0, column=6, padx=10)
 
     # Products display area
-    products_frame = ttk.LabelFrame(self.content_frame, text="Products", padding="10")
+    products_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.products', default="Products"), padding="10")
     products_frame.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     products_frame.columnconfigure(0, weight=1)
     products_frame.rowconfigure(0, weight=1)
@@ -129,12 +131,12 @@ def show_browse_products(self):
     self.products_tree = ttk.Treeview(products_frame, columns=columns, show='headings', height=15)
 
     # Configure columns
-    self.products_tree.heading('ID', text='Product ID')
-    self.products_tree.heading('Name', text='Name')
-    self.products_tree.heading('Category', text='Category')
-    self.products_tree.heading('Price', text='Price (£)')
-    self.products_tree.heading('Stock', text='Stock')
-    self.products_tree.heading('Description', text='Description')
+    self.products_tree.heading('ID', text=_t('gui.operations.commerce.shop_management_gui.product_browser.headings.product_id', default='Product ID'))
+    self.products_tree.heading('Name', text=_t('gui.operations.commerce.shop_management_gui.product_browser.headings.name', default='Name'))
+    self.products_tree.heading('Category', text=_t('gui.operations.commerce.shop_management_gui.product_browser.headings.category', default='Category'))
+    self.products_tree.heading('Price', text=_t('gui.operations.commerce.shop_management_gui.product_browser.headings.price', default='Price (£)'))
+    self.products_tree.heading('Stock', text=_t('gui.operations.commerce.shop_management_gui.product_browser.headings.stock', default='Stock'))
+    self.products_tree.heading('Description', text=_t('gui.operations.commerce.shop_management_gui.product_browser.headings.description', default='Description'))
 
     # Configure column widths
     self.products_tree.column('ID', width=80)
@@ -163,9 +165,9 @@ def show_browse_products(self):
     action_frame = ttk.Frame(self.content_frame)
     action_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=10)
 
-    ttk.Button(action_frame, text="Add to Cart", command=self.add_selected_to_cart,
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.buttons.add_to_cart', default="Add to Cart"), command=self.add_selected_to_cart,
               style='Primary.TButton').grid(row=0, column=0, padx=5)
-    ttk.Button(action_frame, text="View Details", command=self.view_product_details).grid(row=0, column=1, padx=5)
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.buttons.view_details', default="View Details"), command=self.view_product_details).grid(row=0, column=1, padx=5)
 
     # Load initial data
     self.load_products()
@@ -216,7 +218,7 @@ def search_products(self):
         self.update_status(f"Found {len(self.products_tree.get_children())} products matching '{search_term}'")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Search failed: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_browser.dialogs.error', default="Error"), f"Search failed: {e}")
 
 
 def apply_filters(self):
@@ -277,9 +279,9 @@ def apply_filters(self):
         self.update_status(f"Applied filters - {len(self.products_tree.get_children())} products shown")
 
     except ValueError:
-        messagebox.showerror("Error", "Invalid price range")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_browser.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.product_browser.dialogs.invalid_price_range', default="Invalid price range"))
     except Exception as e:
-        messagebox.showerror("Error", f"Filter failed: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_browser.dialogs.error', default="Error"), f"Filter failed: {e}")
 
 
 def refresh_products(self):
@@ -301,7 +303,7 @@ def view_product_details(self):
     """Show detailed product information"""
     selection = self.products_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a product first")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.product_browser.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.product_browser.dialogs.please_select_a_product_first', default="Please select a product first"))
         return
 
     item = self.products_tree.item(selection[0])
@@ -326,31 +328,31 @@ def view_product_details(self):
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
     # Product info
-    info_frame = ttk.LabelFrame(main_frame, text="Product Information", padding="10")
+    info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.product_information', default="Product Information"), padding="10")
     info_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
     try:
         product_data = self.get_product_details(product_id)
 
         if product_data:
-            ttk.Label(info_frame, text="Product ID:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W, pady=2)
+            ttk.Label(info_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.product_id', default="Product ID:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W, pady=2)
             ttk.Label(info_frame, text=product_data.get('product_id', 'N/A')).grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=2)
 
-            ttk.Label(info_frame, text="Name:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, pady=2)
+            ttk.Label(info_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.name', default="Name:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, pady=2)
             ttk.Label(info_frame, text=product_data.get('name', 'N/A')).grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=2)
 
-            ttk.Label(info_frame, text="Category:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky=tk.W, pady=2)
+            ttk.Label(info_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.category', default="Category:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky=tk.W, pady=2)
             ttk.Label(info_frame, text=product_data.get('category', 'N/A')).grid(row=2, column=1, sticky=tk.W, padx=(10, 0), pady=2)
 
-            ttk.Label(info_frame, text="Price:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky=tk.W, pady=2)
+            ttk.Label(info_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.price', default="Price:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky=tk.W, pady=2)
             ttk.Label(info_frame, text=f"£{product_data.get('price', 0):.2f}").grid(row=3, column=1, sticky=tk.W, padx=(10, 0), pady=2)
 
-            ttk.Label(info_frame, text="Stock:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky=tk.W, pady=2)
+            ttk.Label(info_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.stock', default="Stock:"), font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky=tk.W, pady=2)
             stock_color = 'red' if product_data.get('quantity', 0) <= product_data.get('restock_threshold', 5) else 'green'
             stock_label = ttk.Label(info_frame, text=str(product_data.get('quantity', 0)), foreground=stock_color)
             stock_label.grid(row=4, column=1, sticky=tk.W, padx=(10, 0), pady=2)
 
-            ttk.Label(info_frame, text="Description:", font=('Arial', 10, 'bold')).grid(row=5, column=0, sticky=(tk.W, tk.N), pady=2)
+            ttk.Label(info_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.description', default="Description:"), font=('Arial', 10, 'bold')).grid(row=5, column=0, sticky=(tk.W, tk.N), pady=2)
 
             # Description text widget
             desc_text = tk.Text(info_frame, height=4, width=40, wrap=tk.WORD, state='disabled')
@@ -363,10 +365,10 @@ def view_product_details(self):
         ttk.Label(info_frame, text=f"Error loading details: {e}", style='Error.TLabel').grid(row=0, column=0, columnspan=2)
 
     # Add to cart section
-    cart_frame = ttk.LabelFrame(main_frame, text="Add to Cart", padding="10")
+    cart_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.add_to_cart', default="Add to Cart"), padding="10")
     cart_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-    ttk.Label(cart_frame, text="Quantity:").grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(cart_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.labels.quantity', default="Quantity:")).grid(row=0, column=0, sticky=tk.W)
     quantity_var = tk.IntVar(value=1)
     quantity_spin = ttk.Spinbox(cart_frame, from_=1, to=100, textvariable=quantity_var, width=10)
     quantity_spin.grid(row=0, column=1, padx=(10, 0))
@@ -376,13 +378,13 @@ def view_product_details(self):
             self.add_to_cart(product_id, quantity_var.get())
             details_window.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add to cart: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_browser.dialogs.error', default="Error"), f"Failed to add to cart: {e}")
 
-    ttk.Button(cart_frame, text="Add to Cart", command=add_to_cart_action,
+    ttk.Button(cart_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.buttons.add_to_cart', default="Add to Cart"), command=add_to_cart_action,
               style='Primary.TButton').grid(row=0, column=2, padx=10)
 
     # Close button
-    ttk.Button(main_frame, text="Close", command=details_window.destroy).grid(row=2, column=0, pady=10)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_browser.buttons.close', default="Close"), command=details_window.destroy).grid(row=2, column=0, pady=10)
 
     # Now that window is fully created, make it modal
     details_window.update_idletasks()  # Ensure window is rendered

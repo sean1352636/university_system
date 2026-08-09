@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class PeerTutoringDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Peer Tutoring")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.academic.tutoring.windows.peer_tutoring', default="Peer Tutoring"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -76,25 +78,25 @@ class PeerTutoringDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="👨‍🏫 Peer Tutoring",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.labels.peer_tutoring', default="👨‍🏫 Peer Tutoring"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Top buttons
         top_btn_frame = ttk.Frame(main_frame)
         top_btn_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Button(top_btn_frame, text="🎓 Become a Tutor",
+        ttk.Button(top_btn_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.become_a_tutor', default="🎓 Become a Tutor"),
                   command=self.become_tutor).pack(side='left', padx=(0, 10))
-        ttk.Button(top_btn_frame, text="📅 My Tutoring Schedule",
+        ttk.Button(top_btn_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.my_tutoring_schedule', default="📅 My Tutoring Schedule"),
                   command=self.view_schedule).pack(side='left', padx=(0, 10))
-        ttk.Button(top_btn_frame, text="📊 My Tutoring Hours",
+        ttk.Button(top_btn_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.my_tutoring_hours', default="📊 My Tutoring Hours"),
                   command=self.view_hours).pack(side='left')
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Subject:").pack(side='left', padx=(0, 5))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.labels.subject', default="Subject:")).pack(side='left', padx=(0, 5))
         self.subject_var = tk.StringVar()
         subject_combo = ttk.Combobox(filter_frame, textvariable=self.subject_var, width=25, state='readonly')
         subject_combo['values'] = ('All Subjects', 'Computer Science', 'Mathematics',
@@ -102,10 +104,10 @@ class PeerTutoringDialog:
         subject_combo.current(0)
         subject_combo.pack(side='left', padx=(0, 15))
 
-        ttk.Button(filter_frame, text="Filter", command=self.load_tutors).pack(side='left')
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.filter', default="Filter"), command=self.load_tutors).pack(side='left')
 
         # Tutors list
-        list_frame = ttk.LabelFrame(main_frame, text="Available Tutors")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.labels.available_tutors', default="Available Tutors"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Tutor', 'Subject', 'Rating', 'Sessions', 'Availability', 'Rate')
@@ -129,7 +131,7 @@ class PeerTutoringDialog:
         self.tutors_tree.bind('<<TreeviewSelect>>', self.on_select)
 
         # Details frame
-        details_frame = ttk.LabelFrame(main_frame, text="Tutor Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.labels.tutor_details', default="Tutor Details"))
         details_frame.pack(fill='x', pady=(0, 15))
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=5, wrap=tk.WORD)
@@ -139,9 +141,9 @@ class PeerTutoringDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Request Session", command=self.request_session).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Reviews", command=self.view_reviews).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.request_session', default="Request Session"), command=self.request_session).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.view_reviews', default="View Reviews"), command=self.view_reviews).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_tutors(self):
         for item in self.tutors_tree.get_children():
@@ -178,56 +180,56 @@ class PeerTutoringDialog:
     def request_session(self):
         selection = self.tutors_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a tutor.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.please_select_a_tutor', default="Please select a tutor."))
             return
 
         item = self.tutors_tree.item(selection[0])
         tutor_name = item['values'][0]
 
-        if messagebox.askyesno("Request Session",
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.request_session', default="Request Session"),
                               f"Request a tutoring session with {tutor_name}?\n\n"
                               "You'll be able to select a time from their available slots."):
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.success', default="Success"),
                                "Tutoring session request sent!\n\n"
                                f"{tutor_name} will confirm your session request shortly.")
 
     def view_reviews(self):
-        messagebox.showinfo("Tutor Reviews",
-                           "Student Reviews:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.tutor_reviews', default="Tutor Reviews"),
+                           _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.student_reviews_excellent_tutor_very_patient_helped_me_improve_m', default="Student Reviews:\n\n"
                            "⭐⭐⭐⭐⭐ 'Excellent tutor, very patient!'\n"
                            "⭐⭐⭐⭐⭐ 'Helped me improve my grade significantly'\n"
-                           "⭐⭐⭐⭐ 'Clear explanations, very helpful'")
+                           "⭐⭐⭐⭐ 'Clear explanations, very helpful'"))
 
     def become_tutor(self):
-        if messagebox.askyesno("Become a Tutor",
-                              "Interested in becoming a peer tutor?\n\n"
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.become_a_tutor', default="Become a Tutor"),
+                              _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.interested_in_becoming_a_peer_tutor_requirements_gpa_3_5_in_subj', default="Interested in becoming a peer tutor?\n\n"
                               "Requirements:\n"
                               "• GPA 3.5+ in subject area\n"
                               "• Professor recommendation\n"
                               "• Complete tutor training\n\n"
-                              "Would you like to apply?"):
-            messagebox.showinfo("Application",
-                               "Tutor application process:\n\n"
+                              "Would you like to apply?")):
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.application', default="Application"),
+                               _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.tutor_application_process_1_fill_out_application_form_2_get_prof', default="Tutor application process:\n\n"
                                "1. Fill out application form\n"
                                "2. Get professor recommendation\n"
                                "3. Attend training session\n"
                                "4. Start tutoring!\n\n"
-                               "Applications reviewed weekly.")
+                               "Applications reviewed weekly."))
 
     def view_schedule(self):
-        messagebox.showinfo("My Schedule",
-                           "Upcoming Tutoring Sessions:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.my_schedule', default="My Schedule"),
+                           _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.upcoming_tutoring_sessions_mon_apr_14_5pm_john_doe_cs101_wed_apr', default="Upcoming Tutoring Sessions:\n\n"
                            "Mon, Apr 14, 5PM - John Doe (CS101)\n"
                            "Wed, Apr 16, 6PM - Jane Smith (CS101)\n"
-                           "Fri, Apr 18, 5PM - Bob Johnson (CS102)")
+                           "Fri, Apr 18, 5PM - Bob Johnson (CS102)"))
 
     def view_hours(self):
-        messagebox.showinfo("Tutoring Hours",
-                           "My Tutoring Statistics:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.tutoring_hours', default="Tutoring Hours"),
+                           _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.my_tutoring_statistics_total_hours_24_5_sessions_completed_18_av', default="My Tutoring Statistics:\n\n"
                            "Total Hours: 24.5\n"
                            "Sessions Completed: 18\n"
                            "Average Rating: 4.8/5\n"
-                           "Students Helped: 12")
+                           "Students Helped: 12"))
 
 
 
@@ -239,7 +241,7 @@ class AcademicWorkshopsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Academic Workshops")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.academic.tutoring.windows.academic_workshops', default="Academic Workshops"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -251,14 +253,14 @@ class AcademicWorkshopsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🎯 Academic Workshops",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.labels.academic_workshops', default="🎯 Academic Workshops"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Category:").pack(side='left', padx=(0, 5))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.labels.category', default="Category:")).pack(side='left', padx=(0, 5))
         self.category_var = tk.StringVar()
         category_combo = ttk.Combobox(filter_frame, textvariable=self.category_var, width=25, state='readonly')
         category_combo['values'] = ('All Categories', 'Study Skills', 'Time Management',
@@ -267,10 +269,10 @@ class AcademicWorkshopsDialog:
         category_combo.current(0)
         category_combo.pack(side='left', padx=(0, 15))
 
-        ttk.Button(filter_frame, text="Filter", command=self.load_workshops).pack(side='left')
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.filter', default="Filter"), command=self.load_workshops).pack(side='left')
 
         # Workshops list
-        list_frame = ttk.LabelFrame(main_frame, text="Upcoming Workshops")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.labels.upcoming_workshops', default="Upcoming Workshops"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Workshop Title', 'Category', 'Date/Time', 'Location', 'Seats', 'Duration')
@@ -294,7 +296,7 @@ class AcademicWorkshopsDialog:
         self.workshops_tree.bind('<<TreeviewSelect>>', self.on_select)
 
         # Details frame
-        details_frame = ttk.LabelFrame(main_frame, text="Workshop Description")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.labels.workshop_description', default="Workshop Description"))
         details_frame.pack(fill='x', pady=(0, 15))
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=5, wrap=tk.WORD)
@@ -304,10 +306,10 @@ class AcademicWorkshopsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Register", command=self.register).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Materials", command=self.view_materials).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="My Workshops", command=self.my_workshops).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.register', default="Register"), command=self.register).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.view_materials', default="View Materials"), command=self.view_materials).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.my_workshops', default="My Workshops"), command=self.my_workshops).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.tutoring.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_workshops(self):
         for item in self.workshops_tree.get_children():
@@ -348,35 +350,35 @@ class AcademicWorkshopsDialog:
     def register(self):
         selection = self.workshops_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a workshop.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.please_select_a_workshop', default="Please select a workshop."))
             return
 
         item = self.workshops_tree.item(selection[0])
         workshop_title = item['values'][0]
 
-        if messagebox.askyesno("Register", f"Register for '{workshop_title}'?"):
-            messagebox.showinfo("Success",
-                               "Registration successful!\n\n"
-                               "You'll receive a confirmation email with workshop details.")
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.register', default="Register"), f"Register for '{workshop_title}'?"):
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.success', default="Success"),
+                               _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.registration_successful_you_ll_receive_a_confirmation_email_with', default="Registration successful!\n\n"
+                               "You'll receive a confirmation email with workshop details."))
 
     def view_materials(self):
-        messagebox.showinfo("Workshop Materials",
-                           "Workshop materials:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.workshop_materials', default="Workshop Materials"),
+                           _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.workshop_materials_presentation_slides_handouts_and_worksheets_r', default="Workshop materials:\n\n"
                            "• Presentation slides\n"
                            "• Handouts and worksheets\n"
                            "• Recommended reading\n"
                            "• Practice exercises\n\n"
-                           "Available after attendance")
+                           "Available after attendance"))
 
     def my_workshops(self):
-        messagebox.showinfo("My Workshops",
-                           "Registered Workshops:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.my_workshops', default="My Workshops"),
+                           _t('gui.pastoral.student_union_gui.academic.tutoring.dialogs.registered_workshops_upcoming_note_taking_strategies_apr_14_time', default="Registered Workshops:\n\n"
                            "Upcoming:\n"
                            "• Note-Taking Strategies (Apr 14)\n"
                            "• Time Management (Apr 16)\n\n"
                            "Completed:\n"
                            "• Academic Writing (Mar 20)\n"
-                           "• Research Skills (Feb 15)")
+                           "• Research Skills (Feb 15)"))
 
 
 

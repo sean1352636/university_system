@@ -20,7 +20,11 @@ from education_system.systems.university.infrastructure.database.db import get_c
 from education_system.systems.university.infrastructure.email.email_manager import send_email
 from education_system.systems.university.infrastructure.sql_safety import validate_field_for_query
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
+from education_system.paths import (
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_TICKET_TEMPLATES_DIR,
+    UNIVERSITY_UPLOAD_DIR,
+)
 from education_system.systems.university.infrastructure.logging.log_config import get_log_file
 
 from education_system.systems.university.domain.pastoral.services.student_support.config import NotificationType, TicketSentiment, FileType, SupportConfig
@@ -213,7 +217,7 @@ def setup_enhanced_logging():
 logger = setup_enhanced_logging()
 
 # Enhanced Constants
-SUPPORT_DB = str(DEFAULT_DB_PATH)
+SUPPORT_DB = str(UNIVERSITY_DEFAULT_DB_PATH)
 TICKET_STATUSES = ['Open', 'In Progress', 'Resolved', 'Closed', 'Escalated', 'On Hold']
 TICKET_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent', 'Critical']
 SUPPORT_CATEGORIES = [
@@ -242,7 +246,7 @@ def get_user_preferences_safe(support_instance, user_id=None):
         }
 
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         # Check if table exists
@@ -524,7 +528,7 @@ def display_enhanced_faqs(support):
         print("="*50)
 
         # Get FAQ categories
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         try:
             cursor = conn.cursor()
 
@@ -639,7 +643,7 @@ def display_enhanced_resources(support):
         print("="*50)
 
         # Get resource categories
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         try:
             cursor = conn.cursor()
 
@@ -681,7 +685,7 @@ def display_enhanced_resources(support):
             display_resource_list(resources, f"{category} Resources")
         elif choice == str(len(categories) + 1):
             # Featured resources
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
             try:
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
@@ -739,7 +743,7 @@ def apply_student_support_fixes():
 def fix_user_preferences_table():
     """Fix the user_preferences table schema"""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         # Check if table exists

@@ -17,6 +17,8 @@ On first use of a module within an academic year, an `evaluation_forms`
 row is lazily created and seeded with the standard question set.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import hashlib
 import json
 import logging
@@ -353,7 +355,7 @@ class ModuleEvaluationPortal:
         # ``open_in_workspace``), it has no ``wm_title`` — skip
         # window-chrome. Same shape Library uses (8.117.34).
         if hasattr(self.root, "wm_title"):
-            self.root.title("University Module Evaluation Portal")
+            self.root.title(_t('gui.academics.course_management_gui.module_evaluation_portal.windows.university_module_evaluation_portal', default="University Module Evaluation Portal"))
             self.root.geometry("800x700")
         try:
             self.root.configure(bg="#f0f0f0")
@@ -400,13 +402,13 @@ class ModuleEvaluationPortal:
         self.clear_window()
         container = tk.Frame(self.root, bg="#f0f0f0")
         container.place(relx=0.5, rely=0.5, anchor="center")
-        ttk.Label(container, text="🔒 Authentication Required",
+        ttk.Label(container, text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.authentication_required', default="🔒 Authentication Required"),
                   style="Title.TLabel").pack(pady=(0, 10))
         ttk.Label(container,
-                  text="Please launch this module from the\n"
-                       "main University System after signing in.",
+                  text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.please_launch_this_module_from_the_main_university_system_after', default="Please launch this module from the\n"
+                       "main University System after signing in."),
                   style="Body.TLabel", justify="center").pack(pady=10)
-        ttk.Button(container, text="Close", style="Primary.TButton",
+        ttk.Button(container, text=_t('gui.academics.course_management_gui.module_evaluation_portal.buttons.close', default="Close"), style="Primary.TButton",
                    command=self.root.destroy).pack(pady=20)
 
     # ---------- MODULE SELECTION ----------
@@ -422,24 +424,24 @@ class ModuleEvaluationPortal:
                  bg="#f0f0f0", fg="#000000").pack(side="left", padx=20, pady=20)
 
         if self.is_admin:
-            ttk.Button(header, text="View Submissions",
+            ttk.Button(header, text=_t('gui.academics.course_management_gui.module_evaluation_portal.buttons.view_submissions', default="View Submissions"),
                        command=self.view_submissions).pack(
                            side="right", padx=20, pady=20)
 
         body = tk.Frame(self.root, bg="#f0f0f0")
         body.pack(fill="both", expand=True, padx=40, pady=30)
 
-        ttk.Label(body, text="Select a Module to Evaluate",
+        ttk.Label(body, text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.select_a_module_to_evaluate', default="Select a Module to Evaluate"),
                   style="Title.TLabel").pack(pady=(0, 20))
         ttk.Label(body,
-                  text="Choose the module you wish to provide feedback for:",
+                  text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.choose_the_module_you_wish_to_provide_feedback_for', default="Choose the module you wish to provide feedback for:"),
                   style="Body.TLabel").pack(pady=(0, 15))
 
         modules = self.db.get_modules()
         if not modules:
             ttk.Label(body,
-                      text="No modules are listed in the catalog yet.\n"
-                           "Please contact an administrator.",
+                      text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.no_modules_are_listed_in_the_catalog_yet_please_contact_an_admin', default="No modules are listed in the catalog yet.\n"
+                           "Please contact an administrator."),
                       style="Body.TLabel", justify="center").pack(pady=40)
             return
 
@@ -452,14 +454,14 @@ class ModuleEvaluationPortal:
         module_combo.pack(pady=10)
         module_combo.current(0)
 
-        ttk.Button(body, text="Start Evaluation →",
+        ttk.Button(body, text=_t('gui.academics.course_management_gui.module_evaluation_portal.buttons.start_evaluation', default="Start Evaluation →"),
                    style="Primary.TButton",
                    command=self.start_evaluation).pack(pady=30)
 
     def start_evaluation(self):
         selected = self.module_var.get()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a module.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.no_selection', default="No Selection"), _t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.please_select_a_module', default="Please select a module."))
             return
         code = selected.split(" — ", 1)[0]
         name = next((n for c, n in self._modules if c == code), code)
@@ -470,15 +472,15 @@ class ModuleEvaluationPortal:
                 code, name, created_by=self.user.get('username', ''))
         except Exception as e:
             logger.exception("Could not load/create form for %s", code)
-            messagebox.showerror("Database Error",
+            messagebox.showerror(_t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.database_error', default="Database Error"),
                                  f"Could not prepare the evaluation form: {e}")
             return
 
         if self.db.has_responded(form_id, self.student_id):
             messagebox.showinfo(
-                "Already Submitted",
-                "You have already submitted an evaluation for this module "
-                "this academic year. Each student may submit once per module.")
+                _t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.already_submitted', default="Already Submitted"),
+                _t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.you_have_already_submitted_an_evaluation_for_this_module_this_ac', default="You have already submitted an evaluation for this module "
+                "this academic year. Each student may submit once per module."))
             return
 
         self.current_form_id = form_id
@@ -517,7 +519,7 @@ class ModuleEvaluationPortal:
             canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
         canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
-        ttk.Label(scroll_frame, text="Please rate the following statements:",
+        ttk.Label(scroll_frame, text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.please_rate_the_following_statements', default="Please rate the following statements:"),
                   style="Heading.TLabel").pack(anchor="w", pady=(0, 15))
 
         questions = self.db.get_form_questions(self.current_form_id)
@@ -538,10 +540,10 @@ class ModuleEvaluationPortal:
 
         btn_frame = tk.Frame(scroll_frame, bg="#f0f0f0")
         btn_frame.pack(pady=20)
-        ttk.Button(btn_frame, text="← Back", style="Primary.TButton",
+        ttk.Button(btn_frame, text=_t('gui.academics.course_management_gui.module_evaluation_portal.buttons.back', default="← Back"), style="Primary.TButton",
                    command=self.show_module_selection
                    ).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Submit Evaluation",
+        ttk.Button(btn_frame, text=_t('gui.academics.course_management_gui.module_evaluation_portal.buttons.submit_evaluation', default="Submit Evaluation"),
                    style="Primary.TButton",
                    command=self.submit_evaluation
                    ).pack(side="left", padx=5)
@@ -598,15 +600,15 @@ class ModuleEvaluationPortal:
                 value = holder.get()
                 if not value:
                     messagebox.showwarning(
-                        "Incomplete Form",
-                        "Please answer all rating questions before submitting.")
+                        _t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.incomplete_form', default="Incomplete Form"),
+                        _t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.please_answer_all_rating_questions_before_submitting', default="Please answer all rating questions before submitting."))
                     return
                 answers[qid] = (LIKERT_VALUES[value], value)
             elif qtype == 'rating':
                 value = holder.get()
                 if value == 0:
-                    messagebox.showwarning("Incomplete Form",
-                                           "Please provide an overall rating.")
+                    messagebox.showwarning(_t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.incomplete_form', default="Incomplete Form"),
+                                           _t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.please_provide_an_overall_rating', default="Please provide an overall rating."))
                     return
                 answers[qid] = (value, str(value))
             elif qtype == 'text':
@@ -614,14 +616,14 @@ class ModuleEvaluationPortal:
                 answers[qid] = (None, text or None)
 
         if not messagebox.askyesno(
-                "Confirm Submission",
-                "Are you sure you want to submit? You cannot edit after submission."):
+                _t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.confirm_submission', default="Confirm Submission"),
+                _t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.are_you_sure_you_want_to_submit_you_cannot_edit_after_submission', default="Are you sure you want to submit? You cannot edit after submission.")):
             return
 
         try:
             self.db.submit_response(self.current_form_id, self.student_id, answers)
         except sqlite3.Error as e:
-            messagebox.showerror("Save Error", f"Could not save response: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.save_error', default="Save Error"), f"Could not save response: {e}")
             return
 
         self.show_thank_you()
@@ -635,22 +637,22 @@ class ModuleEvaluationPortal:
         tk.Label(container, text="✓",
                  font=("Helvetica", 60, "bold"),
                  bg="#f0f0f0", fg="#38a169").pack()
-        ttk.Label(container, text="Thank You!",
+        ttk.Label(container, text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.thank_you', default="Thank You!"),
                   style="Title.TLabel").pack(pady=10)
         ttk.Label(container,
-                  text="Your evaluation has been submitted successfully.",
+                  text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.your_evaluation_has_been_submitted_successfully', default="Your evaluation has been submitted successfully."),
                   style="Body.TLabel").pack(pady=5)
         ttk.Label(container,
-                  text="Your feedback helps us improve teaching and learning.",
+                  text=_t('gui.academics.course_management_gui.module_evaluation_portal.labels.your_feedback_helps_us_improve_teaching_and_learning', default="Your feedback helps us improve teaching and learning."),
                   style="Body.TLabel").pack(pady=5)
 
         btn_frame = tk.Frame(container, bg="#f0f0f0")
         btn_frame.pack(pady=30)
-        ttk.Button(btn_frame, text="Evaluate Another Module",
+        ttk.Button(btn_frame, text=_t('gui.academics.course_management_gui.module_evaluation_portal.buttons.evaluate_another_module', default="Evaluate Another Module"),
                    style="Primary.TButton",
                    command=self.show_module_selection
                    ).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Close",
+        ttk.Button(btn_frame, text=_t('gui.academics.course_management_gui.module_evaluation_portal.buttons.close', default="Close"),
                    style="Primary.TButton",
                    command=self.root.destroy
                    ).pack(side="left", padx=5)
@@ -663,12 +665,12 @@ class ModuleEvaluationPortal:
         forms = self.db.get_all_submissions()
         forms = [f for f in forms if f[4]]  # drop forms with zero responses
         if not forms:
-            messagebox.showinfo("No Data",
-                                "No submissions have been recorded yet.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.no_data', default="No Data"),
+                                _t('gui.academics.course_management_gui.module_evaluation_portal.dialogs.no_submissions_have_been_recorded_yet', default="No submissions have been recorded yet."))
             return
 
         win = tk.Toplevel(self.root)
-        win.title("Submitted Evaluations")
+        win.title(_t('gui.academics.course_management_gui.module_evaluation_portal.windows.submitted_evaluations', default="Submitted Evaluations"))
         win.geometry("820x600")
         win.configure(bg="#f0f0f0")
 

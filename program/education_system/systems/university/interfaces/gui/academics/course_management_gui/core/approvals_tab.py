@@ -10,6 +10,8 @@ a comment, giving a full audit trail. Courses with no approval row are treated
 as *Draft*.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     ExtFormDialog, tk, ttk, messagebox, _, logger,
 )
@@ -45,7 +47,7 @@ class ApprovalsTabMixin:
 
             bar = ttk.Frame(frame)
             bar.pack(fill=tk.X, padx=5, pady=5)
-            ttk.Label(bar, text="Filter:").pack(side=tk.LEFT, padx=5)
+            ttk.Label(bar, text=_t('gui.academics.course_management_gui.core.approvals_tab.labels.filter', default="Filter:")).pack(side=tk.LEFT, padx=5)
             self._appr_filter = ttk.Combobox(
                 bar, width=18, state="readonly",
                 values=["All", "Draft", "Submitted", "Under Review",
@@ -55,9 +57,9 @@ class ApprovalsTabMixin:
             self._appr_filter.bind("<<ComboboxSelected>>", self._reload_approvals)
 
             if self._ext_can_edit():
-                ttk.Button(bar, text="Advance / Transition…",
+                ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.approvals_tab.buttons.advance_transition', default="Advance / Transition…"),
                            command=self._transition_approval).pack(side=tk.LEFT, padx=5)
-            ttk.Button(bar, text="History…",
+            ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.approvals_tab.buttons.history', default="History…"),
                        command=self._show_approval_history).pack(side=tk.LEFT, padx=5)
             ttk.Button(bar, text=_("common.refresh", default="Refresh"),
                        command=self._reload_approvals).pack(side=tk.LEFT, padx=5)
@@ -124,7 +126,7 @@ class ApprovalsTabMixin:
         vals = self._ext_selected_values(self._appr_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.approvals_tab.dialogs.select_a_course_first', default="Select a course first."))
             return None
         return vals
 
@@ -159,13 +161,13 @@ class ApprovalsTabMixin:
             target = values.get("target_stage")
             if target not in targets:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Choose a valid target stage.")
+                                     _t('gui.academics.course_management_gui.core.approvals_tab.dialogs.choose_a_valid_target_stage', default="Choose a valid target stage."))
                 return False
             comment = (values.get("comment") or "").strip()
             # Require a reason when rejecting.
             if target == "Rejected" and not comment:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "A comment is required when rejecting.")
+                                     _t('gui.academics.course_management_gui.core.approvals_tab.dialogs.a_comment_is_required_when_rejecting', default="A comment is required when rejecting."))
                 return False
             actor = self._ext_username()
             try:

@@ -25,7 +25,7 @@ import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from education_system.systems.university.infrastructure import paths as sys_paths
+from education_system import paths as sys_paths
 
 _logger = logging.getLogger(__name__)
 
@@ -261,7 +261,7 @@ def load_config(path: str | Path | None = None) -> Dict[str, Any]:
     if loaded is None:
         # Fallback to legacy behavior
         if path is None:
-            path = sys_paths.EMAIL_CONFIG_FILE
+            path = sys_paths.UNIVERSITY_EMAIL_CONFIG_FILE
         else:
             path = Path(path)
 
@@ -300,7 +300,7 @@ def save_config(path: str | Path | None = None) -> None:
     import json
 
     if path is None:
-        path = sys_paths.EMAIL_CONFIG_FILE
+        path = sys_paths.UNIVERSITY_EMAIL_CONFIG_FILE
     else:
         path = Path(path)
 

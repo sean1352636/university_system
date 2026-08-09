@@ -33,11 +33,11 @@ from dataclasses import dataclass
 from datetime import date as _date
 from decimal import Decimal, InvalidOperation
 from typing import Any
-from education_system.systems.secondary.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.RECEIPTS_DB
+DB_PATH = paths.SECONDARY_RECEIPTS_DB
 
 PAYMENT_METHODS: tuple[str, ...] = (
     "Cash", "Card", "Bank Transfer", "Cheque",
@@ -155,7 +155,7 @@ class ReceiptView:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_secondary_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

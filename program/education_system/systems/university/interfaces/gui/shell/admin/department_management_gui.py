@@ -4,6 +4,8 @@ Provides department-level resource allocation, cross-department reporting,
 department head dashboards, and organizational hierarchy visualization.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -19,7 +21,7 @@ class DepartmentManagementGUI(tk.Toplevel):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.title("Department & Organizational Management")
+        self.title(_t('gui.shell.admin.department_management.windows.department_organizational_management', default="Department & Organizational Management"))
         self.geometry("1050x700")
         self.transient(parent)
 
@@ -36,7 +38,7 @@ class DepartmentManagementGUI(tk.Toplevel):
         header = tk.Frame(self, bg="#1B5E20", height=50)
         header.pack(fill=tk.X)
         header.pack_propagate(False)
-        tk.Label(header, text="Department & Organizational Management",
+        tk.Label(header, text=_t('gui.shell.admin.department_management.labels.department_organizational_management', default="Department & Organizational Management"),
                  font=("Arial", 14, "bold"), bg="#1B5E20", fg="white").pack(pady=12)
 
         self.notebook = ttk.Notebook(self)
@@ -51,27 +53,27 @@ class DepartmentManagementGUI(tk.Toplevel):
     # ------------------------------------------------------------------
     def _create_departments_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Departments")
+        self.notebook.add(tab, text=_t('gui.shell.admin.department_management.tabs.departments', default="Departments"))
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Add Department",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.department_management.buttons.add_department', default="Add Department"),
                    command=self._add_department).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit Selected",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.department_management.buttons.edit_selected', default="Edit Selected"),
                    command=self._edit_department).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Toggle Active",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.department_management.buttons.toggle_active', default="Toggle Active"),
                    command=self._toggle_department).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.department_management.buttons.refresh', default="Refresh"),
                    command=self._load_departments).pack(side=tk.LEFT, padx=5)
 
         cols = ("dept_id", "name", "description", "manager", "email", "is_active")
         self.dept_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
-        self.dept_tree.heading("dept_id", text="ID")
-        self.dept_tree.heading("name", text="Department Name")
-        self.dept_tree.heading("description", text="Description")
-        self.dept_tree.heading("manager", text="Manager")
-        self.dept_tree.heading("email", text="Email")
-        self.dept_tree.heading("is_active", text="Active")
+        self.dept_tree.heading("dept_id", text=_t('gui.shell.admin.department_management.headings.id', default="ID"))
+        self.dept_tree.heading("name", text=_t('gui.shell.admin.department_management.headings.department_name', default="Department Name"))
+        self.dept_tree.heading("description", text=_t('gui.shell.admin.department_management.headings.description', default="Description"))
+        self.dept_tree.heading("manager", text=_t('gui.shell.admin.department_management.headings.manager', default="Manager"))
+        self.dept_tree.heading("email", text=_t('gui.shell.admin.department_management.headings.email', default="Email"))
+        self.dept_tree.heading("is_active", text=_t('gui.shell.admin.department_management.headings.active', default="Active"))
         self.dept_tree.column("dept_id", width=50)
         self.dept_tree.column("name", width=200)
         self.dept_tree.column("description", width=250)
@@ -108,7 +110,7 @@ class DepartmentManagementGUI(tk.Toplevel):
     def _edit_department(self):
         sel = self.dept_tree.selection()
         if not sel:
-            messagebox.showinfo("Info", "Select a department first.")
+            messagebox.showinfo(_t('gui.shell.admin.department_management.dialogs.info', default="Info"), _t('gui.shell.admin.department_management.dialogs.select_a_department_first', default="Select a department first."))
             return
         dept_id = self.dept_tree.item(sel[0])['values'][0]
         self._show_department_editor(dept_id)
@@ -132,7 +134,7 @@ class DepartmentManagementGUI(tk.Toplevel):
             entries[key] = e
 
         # Manager dropdown
-        ttk.Label(dialog, text="Manager:").grid(row=3, column=0, sticky="w", padx=10, pady=5)
+        ttk.Label(dialog, text=_t('gui.shell.admin.department_management.labels.manager', default="Manager:")).grid(row=3, column=0, sticky="w", padx=10, pady=5)
         manager_combo = ttk.Combobox(dialog, width=32, state="readonly")
         manager_combo.grid(row=3, column=1, padx=10, pady=5)
 
@@ -176,7 +178,7 @@ class DepartmentManagementGUI(tk.Toplevel):
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             name = entries['name'].get().strip()
             if not name:
-                messagebox.showerror("Error", "Name is required.")
+                messagebox.showerror(_t('gui.shell.admin.department_management.dialogs.error', default="Error"), _t('gui.shell.admin.department_management.dialogs.name_is_required', default="Name is required."))
                 return
             mgr_name = manager_combo.get()
             mgr_id = manager_map.get(mgr_name)
@@ -200,9 +202,9 @@ class DepartmentManagementGUI(tk.Toplevel):
                 dialog.destroy()
                 self._load_departments()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.shell.admin.department_management.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(dialog, text="Save", command=save).grid(
+        ttk.Button(dialog, text=_t('gui.shell.admin.department_management.buttons.save', default="Save"), command=save).grid(
             row=4, column=0, columnspan=2, pady=15)
 
     def _toggle_department(self):
@@ -219,32 +221,32 @@ class DepartmentManagementGUI(tk.Toplevel):
                 )
             self._load_departments()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.admin.department_management.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------------
     # Cross-Department Reporting Tab
     # ------------------------------------------------------------------
     def _create_reporting_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Cross-Department Reports")
+        self.notebook.add(tab, text=_t('gui.shell.admin.department_management.tabs.cross_department_reports', default="Cross-Department Reports"))
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.department_management.buttons.refresh', default="Refresh"),
                    command=self._load_reports).pack(side=tk.LEFT, padx=5)
 
         # Summary cards
-        self.report_cards_frame = ttk.LabelFrame(tab, text="Department Summary", padding="10")
+        self.report_cards_frame = ttk.LabelFrame(tab, text=_t('gui.shell.admin.department_management.labels.department_summary', default="Department Summary"), padding="10")
         self.report_cards_frame.pack(fill=tk.X, padx=10, pady=5)
 
         # Per-department stats table
         cols = ("department", "courses", "enrollments", "staff_count", "avg_grade")
         self.report_tree = ttk.Treeview(tab, columns=cols, show="headings", height=12)
-        self.report_tree.heading("department", text="Department")
-        self.report_tree.heading("courses", text="Courses")
-        self.report_tree.heading("enrollments", text="Enrollments")
-        self.report_tree.heading("staff_count", text="Staff")
-        self.report_tree.heading("avg_grade", text="Avg Grade")
+        self.report_tree.heading("department", text=_t('gui.shell.admin.department_management.headings.department', default="Department"))
+        self.report_tree.heading("courses", text=_t('gui.shell.admin.department_management.headings.courses', default="Courses"))
+        self.report_tree.heading("enrollments", text=_t('gui.shell.admin.department_management.headings.enrollments', default="Enrollments"))
+        self.report_tree.heading("staff_count", text=_t('gui.shell.admin.department_management.headings.staff', default="Staff"))
+        self.report_tree.heading("avg_grade", text=_t('gui.shell.admin.department_management.headings.avg_grade', default="Avg Grade"))
         self.report_tree.column("department", width=200)
         self.report_tree.column("courses", width=80, anchor='center')
         self.report_tree.column("enrollments", width=100, anchor='center')
@@ -331,19 +333,19 @@ class DepartmentManagementGUI(tk.Toplevel):
     # ------------------------------------------------------------------
     def _create_hierarchy_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Org Hierarchy")
+        self.notebook.add(tab, text=_t('gui.shell.admin.department_management.tabs.org_hierarchy', default="Org Hierarchy"))
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.department_management.buttons.refresh', default="Refresh"),
                    command=self._load_hierarchy).pack(side=tk.LEFT, padx=5)
 
         self.hierarchy_tree = ttk.Treeview(tab, show="tree headings",
                                            columns=("role", "email"),
                                            height=20)
-        self.hierarchy_tree.heading("#0", text="Organization")
-        self.hierarchy_tree.heading("role", text="Role")
-        self.hierarchy_tree.heading("email", text="Email")
+        self.hierarchy_tree.heading("#0", text=_t('gui.shell.admin.department_management.headings.organization', default="Organization"))
+        self.hierarchy_tree.heading("role", text=_t('gui.shell.admin.department_management.headings.role', default="Role"))
+        self.hierarchy_tree.heading("email", text=_t('gui.shell.admin.department_management.headings.email', default="Email"))
         self.hierarchy_tree.column("#0", width=300)
         self.hierarchy_tree.column("role", width=120)
         self.hierarchy_tree.column("email", width=200)

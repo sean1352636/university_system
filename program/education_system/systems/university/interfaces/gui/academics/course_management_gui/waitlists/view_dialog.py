@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # ViewWaitlistsDialog – view and remove waitlist entries
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.waitlists._imports import _, messagebox, tk, ttk, DEFAULT_DB_PATH
 
@@ -6,7 +8,7 @@ class ViewWaitlistsDialog:
     def __init__(self, parent, auth):
         self.parent = parent; self.auth = auth
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("View Course Waitlists")
+        self.dialog.title(_t('gui.academics.course_management_gui.waitlists.view_dialog.windows.view_course_waitlists', default="View Course Waitlists"))
         self.dialog.geometry("800x500")
         self.dialog.transient(parent); self.dialog.grab_set()
         self._ui(); self._load()
@@ -25,9 +27,9 @@ class ViewWaitlistsDialog:
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True); y.pack(side=tk.RIGHT, fill=tk.Y)
 
         btns = ttk.Frame(self.dialog); btns.pack(fill=tk.X, padx=10, pady=8)
-        ttk.Button(btns, text="Refresh", command=self._load).pack(side=tk.LEFT)
-        ttk.Button(btns, text="Remove Selected", command=self._remove).pack(side=tk.LEFT, padx=6)
-        ttk.Button(btns, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.waitlists.view_dialog.buttons.refresh', default="Refresh"), command=self._load).pack(side=tk.LEFT)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.waitlists.view_dialog.buttons.remove_selected', default="Remove Selected"), command=self._remove).pack(side=tk.LEFT, padx=6)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.waitlists.view_dialog.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def _load(self):
         from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -50,9 +52,9 @@ class ViewWaitlistsDialog:
         from education_system.systems.university.infrastructure.database.db import sqlite3
         sel = self.tree.selection()
         if not sel:
-            messagebox.showwarning(_("course_management.messages.no_selection"), "Pick a waitlist entry to remove."); return
+            messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.waitlists.view_dialog.dialogs.pick_a_waitlist_entry_to_remove', default="Pick a waitlist entry to remove.")); return
         row = self.tree.item(sel[0])['values']; waitlist_id = row[0]
-        if not messagebox.askyesno(_("common.confirm"), "Remove selected waitlist entry?"): return
+        if not messagebox.askyesno(_("common.confirm"), _t('gui.academics.course_management_gui.waitlists.view_dialog.dialogs.remove_selected_waitlist_entry', default="Remove selected waitlist entry?")): return
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH)); cur = conn.cursor()
             # capture course to fix positions

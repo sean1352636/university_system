@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
+from education_system.systems.university.infrastructure.health.storage import sqlite3, get_connection
 
 # Configure logging
 logger = logging.getLogger(__name__)

@@ -4,6 +4,8 @@ Provides a complete point-of-sale system for the university pub/bar
 with age verification, finance integration, and email receipts.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime, timedelta
@@ -871,7 +873,7 @@ Questions? Contact the University Bar staff.
     def send_admin_report(self, report_type='daily'):
         """Send daily/weekly sales report to admin email"""
         if not EMAIL_SERVICE_AVAILABLE:
-            messagebox.showwarning(_t("common.warning", default="Warning"), "Email service not available")
+            messagebox.showwarning(_t("common.warning", default="Warning"), _t('gui.operations.commerce.bar.dialogs.email_service_not_available', default="Email service not available"))
             return
 
         try:
@@ -975,7 +977,7 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         # Menu items treeview
         columns = ('id', 'name', 'category', 'price', 'alcoholic', 'available', 'stock')
         self.menu_tree = ttk.Treeview(menu_frame, columns=columns, show='headings', height=20)
-        self.menu_tree.heading('id', text='ID')
+        self.menu_tree.heading('id', text=_t('gui.operations.commerce.bar.headings.id', default='ID'))
         self.menu_tree.heading('name', text=_t("bar.menu.name", default="Name:"))
         self.menu_tree.heading('category', text=_t("bar.menu.category", default="Category:"))
         self.menu_tree.heading('price', text=_t("bar.menu.price", default="Price (£):"))
@@ -1358,7 +1360,7 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         # Inventory treeview
         columns = ('id', 'name', 'category', 'stock', 'status')
         self.inv_tree = ttk.Treeview(inv_frame, columns=columns, show='headings', height=20)
-        self.inv_tree.heading('id', text='ID')
+        self.inv_tree.heading('id', text=_t('gui.operations.commerce.bar.headings.id', default='ID'))
         self.inv_tree.heading('name', text=_t("bar.menu.name", default="Name:"))
         self.inv_tree.heading('category', text=_t("bar.menu.category", default="Category:"))
         self.inv_tree.heading('stock', text=_t("bar.menu.stock", default="Stock Quantity:"))

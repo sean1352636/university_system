@@ -18,7 +18,11 @@ from functools import wraps
 
 from education_system.systems.university.infrastructure.database.db import get_connection, sqlite3, DatabaseManager
 from education_system.systems.university.infrastructure.email.email_manager import send_email
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
+from education_system.paths import (
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_TICKET_TEMPLATES_DIR,
+    UNIVERSITY_UPLOAD_DIR,
+)
 from education_system.systems.university.infrastructure.logging.log_config import get_log_file
 
 from education_system.systems.university.domain.pastoral.services.student_support.config import (
@@ -51,8 +55,8 @@ def get_ticket_templates():
 
     # Load from JSON files in ticket_templates directory
     try:
-        if TICKET_TEMPLATES_DIR.exists():
-            for json_file in TICKET_TEMPLATES_DIR.glob("*.json"):
+        if UNIVERSITY_TICKET_TEMPLATES_DIR.exists():
+            for json_file in UNIVERSITY_TICKET_TEMPLATES_DIR.glob("*.json"):
                 try:
                     with open(json_file, 'r', encoding='utf-8') as f:
                         tmpl_data = json.load(f)
@@ -389,7 +393,7 @@ def show_template_statistics(support):
         print("\n📊 TEMPLATE USAGE STATISTICS")
         print("="*50)
 
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         try:
             cursor = conn.cursor()
 

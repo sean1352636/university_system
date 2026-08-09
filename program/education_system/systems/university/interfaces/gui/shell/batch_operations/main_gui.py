@@ -354,9 +354,9 @@ class BatchOperationsGUI:
     def create_user_operations_tab(self):
         """Create user operations tab for bulk user management"""
         user_ops_frame = ttk.Frame(self.notebook)
-        self.notebook.add(user_ops_frame, text="User Operations")
+        self.notebook.add(user_ops_frame, text=_t('gui.shell.batch_operations.main.tabs.user_operations', default="User Operations"))
 
-        header = ttk.Label(user_ops_frame, text="Batch User Operations",
+        header = ttk.Label(user_ops_frame, text=_t('gui.shell.batch_operations.main.labels.batch_user_operations', default="Batch User Operations"),
                            style='Header.TLabel')
         header.pack(pady=(10, 20))
 

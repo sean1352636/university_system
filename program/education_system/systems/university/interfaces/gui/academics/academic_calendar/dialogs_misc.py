@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import logging
 import os
@@ -40,7 +42,7 @@ class ExportDialog:
         format_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.labels.export_format"), padding=10)
         format_frame.pack(fill=tk.X, pady=(0, 15))
 
-        self.format_var = tk.StringVar(value="csv")
+        self.format_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_misc.values.csv', default="csv"))
         formats = [
             ("CSV", "csv"),
             ("Excel", "xlsx"),
@@ -178,7 +180,7 @@ class ImportCalendarDialog:
         options_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.dialogs.import_calendar.import_options"), padding=10)
         options_frame.pack(fill=tk.X, pady=(0, 15))
 
-        self.import_type = tk.StringVar(value="file")
+        self.import_type = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_misc.values.file', default="file"))
         ttk.Radiobutton(options_frame, text=_("academic_calendar.dialogs.import_calendar.import_from_file"),
                        variable=self.import_type, value="file").pack(anchor=tk.W)
         ttk.Radiobutton(options_frame, text=_("academic_calendar.dialogs.import_calendar.import_from_url"),
@@ -486,7 +488,7 @@ class ImportHolidaysDialog:
 
         # Country selection
         ttk.Label(main_frame, text=_("academic_calendar.dialogs.import_holidays.country_code")).pack(anchor=tk.W)
-        self.country_var = tk.StringVar(value="US")
+        self.country_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_misc.values.us', default="US"))
         country_combo = ttk.Combobox(main_frame, textvariable=self.country_var, width=40,
                                    values=["US", "UK", "CA", "AU", "DE", "FR", "JP", "IN"])
         country_combo.pack(fill=tk.X, pady=(5, 15))

@@ -109,9 +109,9 @@ def create_student_dialog(self):
     def _open_csv_import():
         _open_bulk_csv_import_dialog(self, dialog)
 
-    ttk.Button(import_bar, text="Import from Sixth Form System",
+    ttk.Button(import_bar, text=_t('gui.learners.students.student_crud_gui.create.buttons.import_from_sixth_form_system', default="Import from Sixth Form System"),
                command=_open_sixth_form_import).pack(side=tk.RIGHT)
-    ttk.Button(import_bar, text="Bulk import from CSV",
+    ttk.Button(import_bar, text=_t('gui.learners.students.student_crud_gui.create.buttons.bulk_import_from_csv', default="Bulk import from CSV"),
                command=_open_csv_import).pack(
         side=tk.RIGHT, padx=(0, 6))
 
@@ -160,7 +160,7 @@ def create_student_dialog(self):
     # record is committed and the welcome email goes out.
     preview_frame = ttk.LabelFrame(
         personal_frame,
-        text="Will be created as …",
+        text=_t('gui.learners.students.student_crud_gui.create.labels.will_be_created_as', default="Will be created as …"),
         padding=(10, 6),
     )
     preview_frame.grid(row=7, column=0, columnspan=2,
@@ -233,10 +233,10 @@ def create_student_dialog(self):
     _populate_courses(_all_courses)
 
     # Sixth-form A-level results → UCAS tariff (gates course eligibility).
-    grades_frame = ttk.LabelFrame(academic_frame, text="Sixth-form A-level results", padding=10)
+    grades_frame = ttk.LabelFrame(academic_frame, text=_t('gui.learners.students.student_crud_gui.create.labels.sixth_form_a_level_results', default="Sixth-form A-level results"), padding=10)
     grades_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(8, 0))
 
-    tariff_var = tk.StringVar(value="UCAS tariff: 0")
+    tariff_var = tk.StringVar(value=_t('gui.learners.students.student_crud_gui.create.values.ucas_tariff_0', default="UCAS tariff: 0"))
 
     def _recompute_tariff(*_a):
         grades = [fields[f'alevel_grade_{i}'].get() for i in range(1, 4)]
@@ -246,7 +246,7 @@ def create_student_dialog(self):
         ttk.Label(grades_frame, text=f"A-level {i} subject").grid(row=i, column=0, sticky=tk.W, pady=2)
         fields[f'alevel_subj_{i}'] = ttk.Entry(grades_frame, width=22)
         fields[f'alevel_subj_{i}'].grid(row=i, column=1, padx=(8, 16), pady=2)
-        ttk.Label(grades_frame, text="Grade").grid(row=i, column=2, sticky=tk.W)
+        ttk.Label(grades_frame, text=_t('gui.learners.students.student_crud_gui.create.labels.grade', default="Grade")).grid(row=i, column=2, sticky=tk.W)
         fields[f'alevel_grade_{i}'] = ttk.Combobox(grades_frame, values=list(_GRADE_CHOICES),
                                                    state='readonly', width=6)
         fields[f'alevel_grade_{i}'].grid(row=i, column=3, padx=8, pady=2)
@@ -261,17 +261,17 @@ def create_student_dialog(self):
         elig = _eligible_courses(t)
         if not elig:
             messagebox.showwarning(
-                "Eligibility",
+                _t('gui.learners.students.student_crud_gui.create.dialogs.eligibility', default="Eligibility"),
                 f"With a UCAS tariff of {t}, you are not eligible for any "
                 "course currently on offer.")
             _populate_courses(_all_courses)
             return
         _populate_courses(elig)
         messagebox.showinfo(
-            "Eligibility",
+            _t('gui.learners.students.student_crud_gui.create.dialogs.eligibility', default="Eligibility"),
             f"Showing the {len(elig)} course(s) you can study with a tariff of {t}.")
 
-    ttk.Button(grades_frame, text="Show courses I'm eligible for",
+    ttk.Button(grades_frame, text=_t('gui.learners.students.student_crud_gui.create.buttons.show_courses_i_m_eligible_for', default="Show courses I'm eligible for"),
                command=_filter_to_eligible).grid(row=4, column=2, columnspan=2,
                                                   sticky=tk.E, pady=(6, 0))
 
@@ -281,7 +281,7 @@ def create_student_dialog(self):
     # applicants who don't need the section, and the extra ~5 rows
     # were padding every create-student session unnecessarily.
     intl_frame = ttk.LabelFrame(right_col,
-                                text="International student (Tier-4 / Student Route)",
+                                text=_t('gui.learners.students.student_crud_gui.create.labels.international_student_tier_4_student_route', default="International student (Tier-4 / Student Route)"),
                                 padding=15)
     intl_frame.pack(fill=tk.X, pady=(10, 0))
 
@@ -295,26 +295,26 @@ def create_student_dialog(self):
         else:
             intl_details_frame.grid_forget()
 
-    ttk.Checkbutton(intl_frame, text="This student is on a Student Route visa",
+    ttk.Checkbutton(intl_frame, text=_t('gui.learners.students.student_crud_gui.create.buttons.this_student_is_on_a_student_route_visa', default="This student is on a Student Route visa"),
                     variable=fields['is_international'],
                     command=_toggle_visa_details).grid(
         row=0, column=0, columnspan=4, sticky=tk.W, pady=(0, 6))
 
     # Visa fields are stacked one-per-row (label + entry) so the section
     # stays within the right column's width when it expands.
-    ttk.Label(intl_details_frame, text="Nationality").grid(row=0, column=0, sticky=tk.W, pady=3)
+    ttk.Label(intl_details_frame, text=_t('gui.learners.students.student_crud_gui.create.labels.nationality', default="Nationality")).grid(row=0, column=0, sticky=tk.W, pady=3)
     fields['nationality'] = ttk.Entry(intl_details_frame, width=28)
     fields['nationality'].grid(row=0, column=1, padx=(8, 0), sticky=tk.W)
 
-    ttk.Label(intl_details_frame, text="Passport #").grid(row=1, column=0, sticky=tk.W, pady=3)
+    ttk.Label(intl_details_frame, text=_t('gui.learners.students.student_crud_gui.create.labels.passport', default="Passport #")).grid(row=1, column=0, sticky=tk.W, pady=3)
     fields['passport_number'] = ttk.Entry(intl_details_frame, width=28)
     fields['passport_number'].grid(row=1, column=1, padx=(8, 0), sticky=tk.W)
 
-    ttk.Label(intl_details_frame, text="Visa expiry (YYYY-MM-DD)").grid(row=2, column=0, sticky=tk.W, pady=3)
+    ttk.Label(intl_details_frame, text=_t('gui.learners.students.student_crud_gui.create.labels.visa_expiry_yyyy_mm_dd', default="Visa expiry (YYYY-MM-DD)")).grid(row=2, column=0, sticky=tk.W, pady=3)
     fields['visa_expiry_date'] = ttk.Entry(intl_details_frame, width=28)
     fields['visa_expiry_date'].grid(row=2, column=1, padx=(8, 0), sticky=tk.W)
 
-    ttk.Label(intl_details_frame, text="BRP #").grid(row=3, column=0, sticky=tk.W, pady=3)
+    ttk.Label(intl_details_frame, text=_t('gui.learners.students.student_crud_gui.create.labels.brp', default="BRP #")).grid(row=3, column=0, sticky=tk.W, pady=3)
     fields['brp_number'] = ttk.Entry(intl_details_frame, width=28)
     fields['brp_number'].grid(row=3, column=1, padx=(8, 0), sticky=tk.W)
     # Start hidden — _toggle_visa_details has not been called yet
@@ -422,7 +422,7 @@ def create_student_dialog(self):
             # requirement derived from the applicant's A-level grades.
             chosen = course_label_map.get(fields['course'].get())
             if not chosen:
-                validation_label.config(text="Please select a course.")
+                validation_label.config(text=_t('gui.learners.students.student_crud_gui.create.text.please_select_a_course', default="Please select a course."))
                 return
 
             alevel_pairs = [
@@ -437,7 +437,7 @@ def create_student_dialog(self):
                 if eligible:
                     _populate_courses(eligible)
                     messagebox.showwarning(
-                        "Entry requirement not met",
+                        _t('gui.learners.students.student_crud_gui.create.dialogs.entry_requirement_not_met', default="Entry requirement not met"),
                         f"You need {chosen['min_tariff']} UCAS points for "
                         f"{chosen['code']} - {chosen['name']}, but your grades give "
                         f"{ucas_tariff}.\n\nThe course list now shows only the "
@@ -445,7 +445,7 @@ def create_student_dialog(self):
                         "please choose one and save again.")
                 else:
                     messagebox.showwarning(
-                        "Entry requirement not met",
+                        _t('gui.learners.students.student_crud_gui.create.dialogs.entry_requirement_not_met', default="Entry requirement not met"),
                         f"Your tariff of {ucas_tariff} does not meet the entry "
                         "requirement for any course currently on offer.")
                 return
@@ -721,7 +721,7 @@ Student Details:
                             "succeed)", sf_origin, student_id,
                         )
                         messagebox.showwarning(
-                            "Sixth-form medical import",
+                            _t('gui.learners.students.student_crud_gui.create.dialogs.sixth_form_medical_import', default="Sixth-form medical import"),
                             "The student was transferred successfully, "
                             "but their medical record could not be "
                             "imported:\n\n"
@@ -738,7 +738,7 @@ Student Details:
                         sf_origin, student_id,
                     )
                     messagebox.showwarning(
-                        "Sixth-form transfer",
+                        _t('gui.learners.students.student_crud_gui.create.dialogs.sixth_form_transfer', default="Sixth-form transfer"),
                         "The university record was created, but the "
                         "sixth-form side-effects could not all be "
                         "applied:\n\n"
@@ -771,7 +771,7 @@ Student Details:
         dialog._add_another_after_save = True
         create_student()
 
-    ttk.Button(button_frame, text="Save & add another",
+    ttk.Button(button_frame, text=_t('gui.learners.students.student_crud_gui.create.buttons.save_add_another', default="Save & add another"),
                 command=_save_and_add_another).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("student.clear_form"),
               command=lambda: [field.delete(0, tk.END) if hasattr(field, 'delete')

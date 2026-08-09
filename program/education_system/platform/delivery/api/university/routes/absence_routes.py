@@ -8,10 +8,17 @@ from __future__ import annotations
 
 import logging
 from datetime import date
+from pathlib import Path
 
 from flask import Blueprint, g, jsonify, request
 
 from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.kernel.core.safe_paths import (
+    PathSecurityError,
+    ensure_secure_dir,
+    harden_path,
+    safe_join,
+)
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.domain.academics.services.attendance.absence_tracking import (
     absence_enhancements as ae,
@@ -24,6 +31,13 @@ absence_bp = Blueprint("absence", __name__, url_prefix="/api/absence")
 
 def _conn():
     return get_connection()
+
+
+def _export_root() -> Path:
+    """The one directory this blueprint is allowed to write exports into."""
+    from education_system import paths
+
+    return ensure_secure_dir(paths.UNIVERSITY_EXPORTS_REPORTS_DIR)
 
 
 def _row(cur) -> dict:
@@ -110,13 +124,26 @@ def drain_push():
 @token_required
 def hesa_export_route():
     body = request.get_json(silent=True) or {}
-    out_path = body.get("out_path") or f"/tmp/hesa_{date.today().isoformat()}.csv"
+    # The client may name the export file but may not choose where it lands:
+    # the raw body value used to be passed straight to the CSV writer, which
+    # made this an authenticated arbitrary-file-write. The name is reduced to a
+    # single safe component and joined beneath the approved exports root.
+    requested = body.get("out_path") or f"hesa_{date.today().isoformat()}.csv"
+    try:
+        out_path = safe_join(_export_root(), Path(str(requested)).name)
+    except PathSecurityError as exc:
+        logger.warning("Rejected HESA export destination %r: %s", requested, exc)
+        return jsonify({"error": "Invalid export filename"}), 400
+
     conn = _conn()
     ae.ensure_enhanced_schema(conn)
-    n = ae.hesa_export(conn, out_path,
+    n = ae.hesa_export(conn, str(out_path),
                        term_start=body.get("term_start"),
                        term_end=body.get("term_end"))
-    return jsonify({"rows": n, "path": out_path})
+    harden_path(out_path)
+    # Return only the basename — the server's directory layout is not the
+    # client's business, and leaking it aids traversal probing.
+    return jsonify({"rows": n, "path": out_path.name})
 
 
 # ---- UKVI (#31) ----

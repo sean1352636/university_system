@@ -14,7 +14,7 @@ import hashlib
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 class LostFoundService:
     """Service for lost and found item management."""
@@ -142,7 +142,7 @@ class LostFoundService:
 
     def _ensure_upload_directory(self):
         """Ensure upload directory exists for item photos."""
-        upload_dir = os.path.join(paths.UPLOAD_DIR, 'lost_found')
+        upload_dir = os.path.join(paths.UNIVERSITY_UPLOAD_DIR, 'lost_found')
         os.makedirs(upload_dir, exist_ok=True)
 
     # ========== Lost Items ==========
@@ -441,7 +441,7 @@ class LostFoundService:
         photo_hash = hashlib.sha256(photo_data).hexdigest()
 
         # Save photo to disk
-        upload_dir = os.path.join(paths.UPLOAD_DIR, 'lost_found')
+        upload_dir = os.path.join(paths.UNIVERSITY_UPLOAD_DIR, 'lost_found')
         filename = f"{item_type}_{item_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
         photo_path = os.path.join(upload_dir, filename)
 

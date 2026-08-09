@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -8,7 +10,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 matplotlib.use('TkAgg')
 import numpy as np
 
@@ -62,14 +64,14 @@ def show_alerts(self):
     main_frame = ttk.Frame(alerts_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Financial Alerts", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.financial_alerts', default="Financial Alerts"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Alerts treeview
     alerts_tree = ttk.Treeview(main_frame, columns=('Type', 'Date', 'Status'), height=15)
-    alerts_tree.heading('#0', text='Alert Message')
-    alerts_tree.heading('Type', text='Type')
-    alerts_tree.heading('Date', text='Date')
-    alerts_tree.heading('Status', text='Status')
+    alerts_tree.heading('#0', text=_t('gui.finance.finance_reporting.alerts_monitoring.headings.alert_message', default='Alert Message'))
+    alerts_tree.heading('Type', text=_t('gui.finance.finance_reporting.alerts_monitoring.headings.type', default='Type'))
+    alerts_tree.heading('Date', text=_t('gui.finance.finance_reporting.alerts_monitoring.headings.date', default='Date'))
+    alerts_tree.heading('Status', text=_t('gui.finance.finance_reporting.alerts_monitoring.headings.status', default='Status'))
     alerts_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     # Load alerts
@@ -96,7 +98,7 @@ def show_alerts(self):
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load alerts: {e}")
+            messagebox.showerror(_t('gui.finance.finance_reporting.alerts_monitoring.dialogs.error', default="Error"), f"Failed to load alerts: {e}")
 
     load_alerts()
 
@@ -104,14 +106,14 @@ def show_alerts(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="Refresh", command=lambda: [
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.refresh', default="Refresh"), command=lambda: [
         alerts_tree.delete(*alerts_tree.get_children()), load_alerts()
     ]).pack(side=tk.LEFT, padx=(0, 5))
 
-    ttk.Button(button_frame, text="Run Alert Check",
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.run_alert_check', default="Run Alert Check"),
               command=self.run_alert_check).pack(side=tk.LEFT, padx=5)
 
-    ttk.Button(button_frame, text="Close",
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.close', default="Close"),
               command=alerts_window.destroy).pack(side=tk.RIGHT)
 
 def run_alert_check(self):
@@ -144,7 +146,7 @@ def show_system_health(self):
     main_frame = ttk.Frame(health_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="System Health Check", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.system_health_check', default="System Health Check"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Health status display
     health_text = ScrolledText(main_frame, height=20, wrap=tk.WORD)
@@ -182,7 +184,7 @@ def show_system_health(self):
     run_health_check()
 
     # Refresh button
-    ttk.Button(main_frame, text="🔄 Run Health Check",
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.run_health_check', default="🔄 Run Health Check"),
               command=run_health_check).pack(pady=5)
 
 def run_background_health_check(self):
@@ -218,11 +220,11 @@ def show_alert_system_dialog(self):
     main_frame = ttk.Frame(alert_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Smart Alert System Configuration",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.smart_alert_system_configuration', default="Smart Alert System Configuration"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Current alerts
-    alerts_frame = ttk.LabelFrame(main_frame, text="Active Alerts", padding="10")
+    alerts_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.active_alerts', default="Active Alerts"), padding="10")
     alerts_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     alerts_text = ScrolledText(alerts_frame, height=15, wrap=tk.WORD)
@@ -257,12 +259,12 @@ def show_alert_system_dialog(self):
     alerts_text.configure(state='disabled')
 
     # Alert configuration
-    config_frame = ttk.LabelFrame(main_frame, text="Alert Configuration", padding="10")
+    config_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.alert_configuration', default="Alert Configuration"), padding="10")
     config_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(config_frame, text="Configure alert thresholds and notification preferences").pack(anchor=tk.W)
+    ttk.Label(config_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.configure_alert_thresholds_and_notification_preferences', default="Configure alert thresholds and notification preferences")).pack(anchor=tk.W)
 
-    ttk.Button(main_frame, text="Close", command=alert_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.close', default="Close"), command=alert_window.destroy).pack(pady=10)
 
 def show_performance_monitoring_dialog(self):
     """Show performance monitoring dashboard"""
@@ -283,11 +285,11 @@ def show_performance_monitoring_dialog(self):
     main_frame = ttk.Frame(perf_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="System Performance Monitoring",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.system_performance_monitoring', default="System Performance Monitoring"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Metrics frame
-    metrics_frame = ttk.LabelFrame(main_frame, text="Performance Metrics", padding="10")
+    metrics_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.performance_metrics', default="Performance Metrics"), padding="10")
     metrics_frame.pack(fill=tk.X, pady=(0, 10))
 
     try:
@@ -358,7 +360,7 @@ def show_performance_monitoring_dialog(self):
         metrics_text.insert(tk.END, f"Error loading performance metrics: {e}\n")
 
     # Recommendations
-    rec_frame = ttk.LabelFrame(main_frame, text="Optimization Recommendations", padding="10")
+    rec_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.optimization_recommendations', default="Optimization Recommendations"), padding="10")
     rec_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     rec_text = ScrolledText(rec_frame, height=8, wrap=tk.WORD)
@@ -378,9 +380,9 @@ def show_performance_monitoring_dialog(self):
     rec_text.insert(1.0, rec_content)
     rec_text.configure(state='disabled')
 
-    ttk.Button(main_frame, text="Run Optimization",
-               command=lambda: messagebox.showinfo("Optimization", "Database optimization completed!")).pack(side=tk.LEFT, pady=10)
-    ttk.Button(main_frame, text="Close", command=perf_window.destroy).pack(side=tk.RIGHT, pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.run_optimization', default="Run Optimization"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.alerts_monitoring.dialogs.optimization', default="Optimization"), _t('gui.finance.finance_reporting.alerts_monitoring.dialogs.database_optimization_completed', default="Database optimization completed!"))).pack(side=tk.LEFT, pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.close', default="Close"), command=perf_window.destroy).pack(side=tk.RIGHT, pady=10)
 
 def run_comprehensive_health_check(self):
     """Run comprehensive system health check with GUI display"""
@@ -391,7 +393,7 @@ def run_comprehensive_health_check(self):
     main_frame = ttk.Frame(health_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="System Health Check", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.system_health_check', default="System Health Check"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Health status display
     health_text = ScrolledText(main_frame, height=25, wrap=tk.WORD)
@@ -516,10 +518,10 @@ def run_comprehensive_health_check(self):
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(buttons_frame, text="Re-run Check", command=run_health_check).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Export Report",
-               command=lambda: messagebox.showinfo("Export", "Health report exported")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=health_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.re_run_check', default="Re-run Check"), command=run_health_check).pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.export_report', default="Export Report"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.alerts_monitoring.dialogs.export', default="Export"), _t('gui.finance.finance_reporting.alerts_monitoring.dialogs.health_report_exported', default="Health report exported"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.close', default="Close"), command=health_window.destroy).pack(side=tk.RIGHT)
 
 def run_system_performance_monitoring(self):
     """Run real-time system performance monitoring"""
@@ -530,37 +532,37 @@ def run_system_performance_monitoring(self):
     main_frame = ttk.Frame(monitoring_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Real-Time Performance Monitoring",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.real_time_performance_monitoring', default="Real-Time Performance Monitoring"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Metrics display
-    metrics_frame = ttk.LabelFrame(main_frame, text="Live Performance Metrics", padding="10")
+    metrics_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.live_performance_metrics', default="Live Performance Metrics"), padding="10")
     metrics_frame.pack(fill=tk.X, pady=(0, 10))
 
     # Create metric variables
-    self.perf_payment_velocity = tk.StringVar(value="Loading...")
-    self.perf_system_load = tk.StringVar(value="Loading...")
-    self.perf_db_response = tk.StringVar(value="Loading...")
-    self.perf_active_users = tk.StringVar(value="Loading...")
+    self.perf_payment_velocity = tk.StringVar(value=_t('gui.finance.finance_reporting.alerts_monitoring.values.loading', default="Loading..."))
+    self.perf_system_load = tk.StringVar(value=_t('gui.finance.finance_reporting.alerts_monitoring.values.loading', default="Loading..."))
+    self.perf_db_response = tk.StringVar(value=_t('gui.finance.finance_reporting.alerts_monitoring.values.loading', default="Loading..."))
+    self.perf_active_users = tk.StringVar(value=_t('gui.finance.finance_reporting.alerts_monitoring.values.loading', default="Loading..."))
 
     # Metric displays
     metrics_grid = ttk.Frame(metrics_frame)
     metrics_grid.pack(fill=tk.X)
 
-    ttk.Label(metrics_grid, text="Payment Velocity:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(metrics_grid, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.payment_velocity', default="Payment Velocity:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W)
     ttk.Label(metrics_grid, textvariable=self.perf_payment_velocity).grid(row=0, column=1, sticky=tk.W, padx=(10, 20))
 
-    ttk.Label(metrics_grid, text="System Load:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky=tk.W)
+    ttk.Label(metrics_grid, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.system_load', default="System Load:"), font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky=tk.W)
     ttk.Label(metrics_grid, textvariable=self.perf_system_load).grid(row=0, column=3, sticky=tk.W, padx=(10, 0))
 
-    ttk.Label(metrics_grid, text="DB Response Time:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
+    ttk.Label(metrics_grid, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.db_response_time', default="DB Response Time:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
     ttk.Label(metrics_grid, textvariable=self.perf_db_response).grid(row=1, column=1, sticky=tk.W, padx=(10, 20), pady=(5, 0))
 
-    ttk.Label(metrics_grid, text="Active Processes:", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky=tk.W, pady=(5, 0))
+    ttk.Label(metrics_grid, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.active_processes', default="Active Processes:"), font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky=tk.W, pady=(5, 0))
     ttk.Label(metrics_grid, textvariable=self.perf_active_users).grid(row=1, column=3, sticky=tk.W, padx=(10, 0), pady=(5, 0))
 
     # Activity log
-    activity_frame = ttk.LabelFrame(main_frame, text="System Activity Log", padding="10")
+    activity_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.labels.system_activity_log', default="System Activity Log"), padding="10")
     activity_frame.pack(fill=tk.BOTH, expand=True)
 
     self.monitoring_log = ScrolledText(activity_frame, height=20, wrap=tk.WORD)
@@ -578,13 +580,13 @@ def run_system_performance_monitoring(self):
         else:
             self.stop_performance_monitoring()
 
-    ttk.Checkbutton(control_frame, text="Real-time Monitoring",
+    ttk.Checkbutton(control_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.real_time_monitoring', default="Real-time Monitoring"),
                    variable=self.monitoring_active, command=toggle_monitoring).pack(side=tk.LEFT)
 
-    ttk.Button(control_frame, text="Clear Log",
+    ttk.Button(control_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.clear_log', default="Clear Log"),
                command=lambda: self.monitoring_log.delete(1.0, tk.END)).pack(side=tk.LEFT, padx=(10, 0))
 
-    ttk.Button(control_frame, text="Export Log",
+    ttk.Button(control_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.export_log', default="Export Log"),
                command=self.export_monitoring_log).pack(side=tk.LEFT, padx=(5, 0))
 
     # Cleanup function to stop monitoring when window closes
@@ -597,7 +599,7 @@ def run_system_performance_monitoring(self):
                 pass
         monitoring_window.destroy()
 
-    ttk.Button(control_frame, text="Close", command=on_monitoring_close).pack(side=tk.RIGHT)
+    ttk.Button(control_frame, text=_t('gui.finance.finance_reporting.alerts_monitoring.buttons.close', default="Close"), command=on_monitoring_close).pack(side=tk.RIGHT)
 
     # Bind cleanup to window close
     monitoring_window.protocol("WM_DELETE_WINDOW", on_monitoring_close)
@@ -695,9 +697,9 @@ def export_monitoring_log(self):
             f.write("=" * 60 + "\n\n")
             f.write(log_content)
 
-        messagebox.showinfo("Export Complete", f"Monitoring log exported to {filename}")
+        messagebox.showinfo(_t('gui.finance.finance_reporting.alerts_monitoring.dialogs.export_complete', default="Export Complete"), f"Monitoring log exported to {filename}")
 
     except Exception as e:
-        messagebox.showerror("Export Error", f"Failed to export log: {e}")
+        messagebox.showerror(_t('gui.finance.finance_reporting.alerts_monitoring.dialogs.export_error', default="Export Error"), f"Failed to export log: {e}")
 
 # Method registration is handled by main.py

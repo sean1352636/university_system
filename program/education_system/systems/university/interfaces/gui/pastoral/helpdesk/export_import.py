@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -445,7 +447,7 @@ def export_tickets_csv(self):
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title="Save Tickets Export",
+            title=_t('gui.pastoral.helpdesk.export_import.dialogs.save_tickets_export', default="Save Tickets Export"),
             initialfile=f"tickets_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         )
 
@@ -468,10 +470,10 @@ def export_tickets_csv(self):
                 writer.writerow(columns)  # Header
                 writer.writerows(tickets)
 
-            messagebox.showinfo("Success", f"Exported {len(tickets)} tickets to:\n{filename}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.success', default="Success"), f"Exported {len(tickets)} tickets to:\n{filename}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Export failed: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Export failed: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.export_tickets_csv = export_tickets_csv
@@ -485,7 +487,7 @@ def export_users_csv(self):
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title="Save Users Export",
+            title=_t('gui.pastoral.helpdesk.export_import.dialogs.save_users_export', default="Save Users Export"),
             initialfile=f"users_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
         )
 
@@ -511,10 +513,10 @@ def export_users_csv(self):
                 writer.writerow(columns)  # Header
                 writer.writerows(users)
 
-            messagebox.showinfo("Success", f"Exported {len(users)} users to:\n{filename}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.success', default="Success"), f"Exported {len(users)} users to:\n{filename}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Export failed: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Export failed: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.export_users_csv = export_users_csv
@@ -527,7 +529,7 @@ def export_analytics_json(self):
         filename = filedialog.asksaveasfilename(
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            title="Save Analytics Export",
+            title=_t('gui.pastoral.helpdesk.export_import.dialogs.save_analytics_export', default="Save Analytics Export"),
             initialfile=f"analytics_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         )
 
@@ -589,10 +591,10 @@ def export_analytics_json(self):
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(analytics, f, indent=2, default=str)
 
-            messagebox.showinfo("Success", f"Analytics exported to:\n{filename}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.success', default="Success"), f"Analytics exported to:\n{filename}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Export failed: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Export failed: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.export_analytics_json = export_analytics_json
@@ -607,7 +609,7 @@ def export_ticket_list_gui(self):
         if hasattr(self, 'all_tickets_tree'):
             items = self.all_tickets_tree.get_children()
             if not items:
-                messagebox.showinfo("Info", "No tickets to export")
+                messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.info', default="Info"), _t('gui.pastoral.helpdesk.export_import.dialogs.no_tickets_to_export', default="No tickets to export"))
                 return
 
             # Ask for save location
@@ -628,13 +630,13 @@ def export_ticket_list_gui(self):
                     values = self.all_tickets_tree.item(item)['values']
                     writer.writerow(values)
 
-            messagebox.showinfo("Success", f"Exported {len(items)} tickets to {filename}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.success', default="Success"), f"Exported {len(items)} tickets to {filename}")
 
         else:
-            messagebox.showerror("Error", "No ticket list available to export")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.export_import.dialogs.no_ticket_list_available_to_export', default="No ticket list available to export"))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export tickets: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Failed to export tickets: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.export_ticket_list_gui = export_ticket_list_gui
@@ -676,10 +678,10 @@ def export_analytics_data_gui(self):
             for ticket in tickets:
                 writer.writerow(ticket)
 
-        messagebox.showinfo("Success", f"Exported {len(tickets)} tickets to {filename}")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.success', default="Success"), f"Exported {len(tickets)} tickets to {filename}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export analytics data: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Failed to export analytics data: {str(e)}")
 
 # END OF ANALYTICS & REPORTING FUNCTIONS
 # ============================================================================
@@ -699,7 +701,7 @@ def import_tickets_csv_gui(self):
         from education_system.systems.university.infrastructure.database.db import get_connection
 
         filename = filedialog.askopenfilename(
-            title="Select CSV file to import",
+            title=_t('gui.pastoral.helpdesk.export_import.dialogs.select_csv_file_to_import', default="Select CSV file to import"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
 
@@ -745,15 +747,15 @@ def import_tickets_csv_gui(self):
             error_msg = "\n".join(errors[:5])
             if len(errors) > 5:
                 error_msg += f"\n... and {len(errors)-5} more errors"
-            messagebox.showwarning("Import Complete with Errors",
+            messagebox.showwarning(_t('gui.pastoral.helpdesk.export_import.dialogs.import_complete_with_errors', default="Import Complete with Errors"),
                                   f"Imported {imported} tickets\nErrors: {len(errors)}\n\n{error_msg}")
         else:
-            messagebox.showinfo("Success", f"Successfully imported {imported} tickets")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.success', default="Success"), f"Successfully imported {imported} tickets")
 
         self.refresh_all_tickets()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to import tickets: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Failed to import tickets: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.import_tickets_csv_gui = import_tickets_csv_gui
@@ -761,7 +763,7 @@ HelpdeskGUI.import_tickets_csv_gui = import_tickets_csv_gui
 def data_import_export_gui(self):
     """Show import/export options dialog"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Data Import/Export")
+    dialog.title(_t('gui.pastoral.helpdesk.export_import.windows.data_import_export', default="Data Import/Export"))
     dialog.geometry("400x300")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -769,27 +771,27 @@ def data_import_export_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Data Import/Export",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.export_import.labels.data_import_export', default="Data Import/Export"),
              font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
 
     # Export options
-    export_frame = ttk.LabelFrame(main_frame, text="Export", padding="10")
+    export_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.export_import.labels.export', default="Export"), padding="10")
     export_frame.pack(fill='x', pady=(0, 10))
 
-    ttk.Button(export_frame, text="Export Tickets to CSV",
+    ttk.Button(export_frame, text=_t('gui.pastoral.helpdesk.export_import.buttons.export_tickets_to_csv', default="Export Tickets to CSV"),
               command=lambda: [dialog.destroy(), self.export_ticket_list_gui()]).pack(fill='x', pady=2)
-    ttk.Button(export_frame, text="Export Analytics Data",
+    ttk.Button(export_frame, text=_t('gui.pastoral.helpdesk.export_import.buttons.export_analytics_data', default="Export Analytics Data"),
               command=lambda: [dialog.destroy(), self.export_analytics_data_gui()]).pack(fill='x', pady=2)
 
     # Import options
-    import_frame = ttk.LabelFrame(main_frame, text="Import", padding="10")
+    import_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.export_import.labels.import', default="Import"), padding="10")
     import_frame.pack(fill='x', pady=(0, 10))
 
-    ttk.Button(import_frame, text="Import Tickets from CSV",
+    ttk.Button(import_frame, text=_t('gui.pastoral.helpdesk.export_import.buttons.import_tickets_from_csv', default="Import Tickets from CSV"),
               command=lambda: [dialog.destroy(), self.import_tickets_csv_gui()]).pack(fill='x', pady=2)
 
     # Close button
-    ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(10, 0))
+    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.export_import.buttons.close', default="Close"), command=dialog.destroy).pack(pady=(10, 0))
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.data_import_export_gui = data_import_export_gui
@@ -805,20 +807,20 @@ def handle_file_attachments_gui(self, ticket_id, reply_id=None):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="File Attachments",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.export_import.labels.file_attachments', default="File Attachments"),
              font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
 
     # Toolbar
     toolbar = ttk.Frame(main_frame)
     toolbar.pack(fill='x', pady=(0, 10))
 
-    ttk.Button(toolbar, text="📎 Add File",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.export_import.buttons.add_file', default="📎 Add File"),
               command=lambda: self._select_and_upload_file(ticket_id, reply_id, tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="📥 Download",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.export_import.buttons.download', default="📥 Download"),
               command=lambda: self._download_selected_attachment(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🗑️ Delete",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.export_import.buttons.delete', default="🗑️ Delete"),
               command=lambda: self._delete_selected_attachment(tree, ticket_id)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔃 Refresh",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.export_import.buttons.refresh', default="🔃 Refresh"),
               command=lambda: self._load_attachments_list(tree, ticket_id)).pack(side='left', padx=5)
 
     # Attachments list
@@ -840,7 +842,7 @@ def handle_file_attachments_gui(self, ticket_id, reply_id=None):
     self._load_attachments_list(tree, ticket_id)
 
     # Close button
-    ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.pastoral.helpdesk.export_import.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.handle_file_attachments_gui = handle_file_attachments_gui
@@ -895,7 +897,7 @@ def _load_attachments_list(self, tree, ticket_id):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load attachments: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Failed to load attachments: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._load_attachments_list = _load_attachments_list
@@ -919,7 +921,7 @@ def _select_and_upload_file(self, ticket_id, reply_id, tree):
     from tkinter import filedialog
 
     file_path = filedialog.askopenfilename(
-        title="Select File to Attach",
+        title=_t('gui.pastoral.helpdesk.export_import.dialogs.select_file_to_attach', default="Select File to Attach"),
         filetypes=[
             ("All files", "*.*"),
             ("Documents", "*.pdf *.doc *.docx *.txt"),
@@ -935,12 +937,12 @@ def _select_and_upload_file(self, ticket_id, reply_id, tree):
     max_size = 10 * 1024 * 1024  # 10 MB
     file_size = os.path.getsize(file_path)
     if file_size > max_size:
-        messagebox.showerror("Error", "File size exceeds maximum limit of 10MB")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.export_import.dialogs.file_size_exceeds_maximum_limit_of_10mb', default="File size exceeds maximum limit of 10MB"))
         return
 
     try:
         from education_system.systems.university.infrastructure.database.db import get_connection
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         import mimetypes
 
         original_filename = os.path.basename(file_path)
@@ -953,7 +955,7 @@ def _select_and_upload_file(self, ticket_id, reply_id, tree):
             validation = validate_upload(original_filename, file_content, category='documents')
             if not validation['valid']:
                 messagebox.showerror(
-                    "Security Error",
+                    _t('gui.pastoral.helpdesk.export_import.dialogs.security_error', default="Security Error"),
                     f"File validation failed: {validation['error']}"
                 )
                 if ACTIVITY_LOGGER_AVAILABLE:
@@ -973,7 +975,7 @@ def _select_and_upload_file(self, ticket_id, reply_id, tree):
             safe_filename = secure_filename(original_filename)
 
         # Create attachments directory
-        attachments_dir = paths.DATA_DIR / 'attachments' / 'tickets' / str(ticket_id)
+        attachments_dir = paths.UNIVERSITY_DATA_DIR / 'attachments' / 'tickets' / str(ticket_id)
         attachments_dir.mkdir(parents=True, exist_ok=True)
         # Set restrictive permissions on directory
         os.chmod(attachments_dir, 0o700)
@@ -1016,11 +1018,11 @@ def _select_and_upload_file(self, ticket_id, reply_id, tree):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"File '{original_filename}' uploaded successfully!")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.success', default="Success"), f"File '{original_filename}' uploaded successfully!")
         self._load_attachments_list(tree, ticket_id)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to upload file: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Failed to upload file: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._select_and_upload_file = _select_and_upload_file
@@ -1032,7 +1034,7 @@ def _download_selected_attachment(self, tree):
 
     selection = tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select an attachment to download")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.export_import.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.export_import.dialogs.please_select_an_attachment_to_download', default="Please select an attachment to download"))
         return
 
     attachment_id = tree.item(selection[0])['values'][0]
@@ -1049,28 +1051,28 @@ def _download_selected_attachment(self, tree):
         conn.close()
 
         if not result or not result[0]:
-            messagebox.showerror("Error", "File not found in database")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.export_import.dialogs.file_not_found_in_database', default="File not found in database"))
             return
 
         source_path = result[0]
 
         if not os.path.exists(source_path):
-            messagebox.showerror("Error", "File no longer exists on disk")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.export_import.dialogs.file_no_longer_exists_on_disk', default="File no longer exists on disk"))
             return
 
         # Ask user where to save
         save_path = filedialog.asksaveasfilename(
-            title="Save Attachment As",
+            title=_t('gui.pastoral.helpdesk.export_import.dialogs.save_attachment_as', default="Save Attachment As"),
             initialfile=original_filename,
             defaultextension=os.path.splitext(original_filename)[1]
         )
 
         if save_path:
             shutil.copy2(source_path, save_path)
-            messagebox.showinfo("Success", f"File saved to:\n{save_path}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.success', default="Success"), f"File saved to:\n{save_path}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to download file: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Failed to download file: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._download_selected_attachment = _download_selected_attachment
@@ -1080,13 +1082,13 @@ def _delete_selected_attachment(self, tree, ticket_id):
 
     selection = tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select an attachment to delete")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.export_import.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.export_import.dialogs.please_select_an_attachment_to_delete', default="Please select an attachment to delete"))
         return
 
     attachment_id = tree.item(selection[0])['values'][0]
     filename = tree.item(selection[0])['values'][1]
 
-    if not messagebox.askyesno("Confirm Delete",
+    if not messagebox.askyesno(_t('gui.pastoral.helpdesk.export_import.dialogs.confirm_delete', default="Confirm Delete"),
                                f"Are you sure you want to delete '{filename}'?"):
         return
 
@@ -1111,11 +1113,11 @@ def _delete_selected_attachment(self, tree, ticket_id):
         if result and result[0] and os.path.exists(result[0]):
             os.remove(result[0])
 
-        messagebox.showinfo("Success", "Attachment deleted successfully!")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.export_import.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.export_import.dialogs.attachment_deleted_successfully', default="Attachment deleted successfully!"))
         self._load_attachments_list(tree, ticket_id)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to delete attachment: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Failed to delete attachment: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._delete_selected_attachment = _delete_selected_attachment
@@ -1126,16 +1128,16 @@ def add_attachment_gui(self, ticket_id, reply_id, file_path):
     import uuid
 
     if not file_path or not os.path.exists(file_path):
-        messagebox.showerror("Error", "Invalid file path")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.export_import.dialogs.invalid_file_path', default="Invalid file path"))
         return False
 
     try:
         from education_system.systems.university.infrastructure.database.db import get_connection
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         import mimetypes
 
         # Create attachments directory
-        attachments_dir = paths.DATA_DIR / 'attachments' / 'tickets' / str(ticket_id)
+        attachments_dir = paths.UNIVERSITY_DATA_DIR / 'attachments' / 'tickets' / str(ticket_id)
         attachments_dir.mkdir(parents=True, exist_ok=True)
 
         # Generate unique filename
@@ -1178,7 +1180,7 @@ def add_attachment_gui(self, ticket_id, reply_id, file_path):
         return True
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to add attachment: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.export_import.dialogs.error', default="Error"), f"Failed to add attachment: {str(e)}")
         return False
 
 # ========================================================================
@@ -1431,7 +1433,7 @@ def run_gui_helpdesk(auth_system=None):
 
     # Handle window closing
     def on_closing():
-        if messagebox.askokcancel("Quit", "Do you want to quit the helpdesk system?"):
+        if messagebox.askokcancel(_t('gui.pastoral.helpdesk.export_import.dialogs.quit', default="Quit"), _t('gui.pastoral.helpdesk.export_import.dialogs.do_you_want_to_quit_the_helpdesk_system', default="Do you want to quit the helpdesk system?")):
             root.destroy()
 
     root.protocol("WM_DELETE_WINDOW", on_closing)

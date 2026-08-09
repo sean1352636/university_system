@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -93,8 +95,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -144,18 +146,18 @@ def show_digital_library(self):
     self.clear_content_area()
 
     digital_frame = ttk.Frame(self.notebook)
-    self.notebook.add(digital_frame, text="Digital Library")
+    self.notebook.add(digital_frame, text=_t('gui.academics.library.digital_library.tabs.digital_library', default="Digital Library"))
 
-    title_label = ttk.Label(digital_frame, text="Digital Library Management", style='Title.TLabel')
+    title_label = ttk.Label(digital_frame, text=_t('gui.academics.library.digital_library.labels.digital_library_management', default="Digital Library Management"), style='Title.TLabel')
     title_label.pack(pady=10)
 
     # Control buttons
     control_frame = ttk.Frame(digital_frame)
     control_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(control_frame, text="Add Digital Resource", command=self.add_digital_resource_dialog).pack(side=tk.LEFT, padx=5)
-    ttk.Button(control_frame, text="Manage Access", command=self.manage_digital_access_dialog).pack(side=tk.LEFT, padx=5)
-    ttk.Button(control_frame, text="Download Stats", command=self.show_download_stats).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.digital_library.buttons.add_digital_resource', default="Add Digital Resource"), command=self.add_digital_resource_dialog).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.digital_library.buttons.manage_access', default="Manage Access"), command=self.manage_digital_access_dialog).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.digital_library.buttons.download_stats', default="Download Stats"), command=self.show_download_stats).pack(side=tk.LEFT, padx=5)
     ttk.Button(control_frame, text=_("common.refresh"), command=self.refresh_digital_library).pack(side=tk.LEFT, padx=5)
 
     # Digital resources table
@@ -240,19 +242,19 @@ def add_digital_resource_dialog(self):
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # File selection
-    file_frame = ttk.LabelFrame(main_frame, text="File Selection")
+    file_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.digital_library.labels.file_selection', default="File Selection"))
     file_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(file_frame, text="Select File:").pack(anchor='w', padx=5, pady=5)
+    ttk.Label(file_frame, text=_t('gui.academics.library.digital_library.labels.select_file', default="Select File:")).pack(anchor='w', padx=5, pady=5)
     self.digital_file_path = tk.StringVar()
     file_path_frame = ttk.Frame(file_frame)
     file_path_frame.pack(fill=tk.X, padx=5, pady=5)
 
     ttk.Entry(file_path_frame, textvariable=self.digital_file_path, width=40).pack(side=tk.LEFT, fill=tk.X, expand=True)
-    ttk.Button(file_path_frame, text="Browse", command=self.browse_digital_file).pack(side=tk.RIGHT, padx=(5, 0))
+    ttk.Button(file_path_frame, text=_t('gui.academics.library.digital_library.buttons.browse', default="Browse"), command=self.browse_digital_file).pack(side=tk.RIGHT, padx=(5, 0))
 
     # Metadata
-    metadata_frame = ttk.LabelFrame(main_frame, text="Metadata")
+    metadata_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.digital_library.labels.metadata', default="Metadata"))
     metadata_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     # Form fields
@@ -279,8 +281,8 @@ def add_digital_resource_dialog(self):
             self.digital_metadata_vars[field] = var
 
     # Access level
-    ttk.Label(metadata_frame, text="Access Level:").grid(row=len(fields), column=0, sticky='w', padx=5, pady=5)
-    self.digital_access_var = tk.StringVar(value="public")
+    ttk.Label(metadata_frame, text=_t('gui.academics.library.digital_library.labels.access_level', default="Access Level:")).grid(row=len(fields), column=0, sticky='w', padx=5, pady=5)
+    self.digital_access_var = tk.StringVar(value=_t('gui.academics.library.digital_library.values.public', default="public"))
     access_combo = ttk.Combobox(metadata_frame, textvariable=self.digital_access_var, width=37)
     access_combo['values'] = ('public', 'students', 'staff', 'restricted')
     access_combo.grid(row=len(fields), column=1, sticky='w', padx=5, pady=5)
@@ -289,13 +291,13 @@ def add_digital_resource_dialog(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
 
-    ttk.Button(button_frame, text="Add Resource", command=lambda: self.save_digital_resource(dialog)).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.digital_library.buttons.add_resource', default="Add Resource"), command=lambda: self.save_digital_resource(dialog)).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
 def browse_digital_file(self):
     """Browse for digital file"""
     file_path = filedialog.askopenfilename(
-        title="Select Digital Resource",
+        title=_t('gui.academics.library.digital_library.dialogs.select_digital_resource', default="Select Digital Resource"),
         filetypes=[
             ("PDF files", "*.pdf"),
             ("eBook files", "*.epub *.mobi"),
@@ -319,7 +321,7 @@ def save_digital_resource(self, dialog):
     file_path = self.digital_file_path.get().strip()
 
     if not file_path or not os.path.exists(file_path):
-        messagebox.showerror(_("common.error"), "Please select a valid file")
+        messagebox.showerror(_("common.error"), _t('gui.academics.library.digital_library.dialogs.please_select_a_valid_file', default="Please select a valid file"))
         return
 
     # Get metadata
@@ -330,18 +332,18 @@ def save_digital_resource(self, dialog):
     access_level = self.digital_access_var.get()
 
     if not title or not author:
-        messagebox.showerror(_("common.error"), "Title and Author are required")
+        messagebox.showerror(_("common.error"), _t('gui.academics.library.digital_library.dialogs.title_and_author_are_required', default="Title and Author are required"))
         return
 
     try:
         if ORIGINAL_LIBRARY_AVAILABLE:
             success = self.add_digital_resource_database(file_path, title, author, category, description, access_level)
             if success:
-                messagebox.showinfo(_("common.success"), "Digital resource added successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.digital_library.dialogs.digital_resource_added_successfully', default="Digital resource added successfully!"))
                 dialog.destroy()
                 self.refresh_digital_library()
             else:
-                messagebox.showerror(_("common.error"), "Failed to add digital resource")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.digital_library.dialogs.failed_to_add_digital_resource', default="Failed to add digital resource"))
         else:
             messagebox.showinfo(_("common.demo"), f"Digital resource '{title}' would be added")
             dialog.destroy()
@@ -429,17 +431,17 @@ def add_digital_resource_database(self, file_path, title, author, category, desc
 def show_digital_library_gui(self):
     """Show digital library management interface"""
     digital_window = tk.Toplevel(self.master)
-    digital_window.title("Digital Library")
+    digital_window.title(_t('gui.academics.library.digital_library.windows.digital_library', default="Digital Library"))
     digital_window.geometry("1000x700")
 
-    ttk.Label(digital_window, text="Digital Library Management",
+    ttk.Label(digital_window, text=_t('gui.academics.library.digital_library.labels.digital_library_management', default="Digital Library Management"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Button frame
     button_frame = ttk.Frame(digital_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Upload Digital Resource",
+    ttk.Button(button_frame, text=_t('gui.academics.library.digital_library.buttons.upload_digital_resource', default="Upload Digital Resource"),
               command=self.upload_digital_resource).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.refresh"),
               command=lambda: self.load_digital_library(tree)).pack(side=tk.LEFT, padx=5)
@@ -500,7 +502,7 @@ def load_digital_library(self, tree):
 def upload_digital_resource(self):
     """Upload a digital resource"""
     file_path = filedialog.askopenfilename(
-        title="Select Digital Resource",
+        title=_t('gui.academics.library.digital_library.dialogs.select_digital_resource', default="Select Digital Resource"),
         filetypes=[
             ("PDF files", "*.pdf"),
             ("EPUB files", "*.epub"),
@@ -514,25 +516,25 @@ def upload_digital_resource(self):
 
     # Get metadata dialog
     metadata_dialog = tk.Toplevel(self.master)
-    metadata_dialog.title("Resource Metadata")
+    metadata_dialog.title(_t('gui.academics.library.digital_library.windows.resource_metadata', default="Resource Metadata"))
     metadata_dialog.geometry("400x300")
 
-    ttk.Label(metadata_dialog, text="Enter Resource Details",
+    ttk.Label(metadata_dialog, text=_t('gui.academics.library.digital_library.labels.enter_resource_details', default="Enter Resource Details"),
              font=('Arial', 12, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
 
-    ttk.Label(metadata_dialog, text="Title:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(metadata_dialog, text=_t('gui.academics.library.digital_library.labels.title', default="Title:")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
     title_var = tk.StringVar(value=os.path.basename(file_path))
     ttk.Entry(metadata_dialog, textvariable=title_var, width=30).grid(row=1, column=1, padx=10, pady=5)
 
-    ttk.Label(metadata_dialog, text="Author:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(metadata_dialog, text=_t('gui.academics.library.digital_library.labels.author', default="Author:")).grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
     author_var = tk.StringVar()
     ttk.Entry(metadata_dialog, textvariable=author_var, width=30).grid(row=2, column=1, padx=10, pady=5)
 
-    ttk.Label(metadata_dialog, text="Category:").grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
-    category_var = tk.StringVar(value="General")
+    ttk.Label(metadata_dialog, text=_t('gui.academics.library.digital_library.labels.category', default="Category:")).grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+    category_var = tk.StringVar(value=_t('gui.academics.library.digital_library.values.general', default="General"))
     ttk.Entry(metadata_dialog, textvariable=category_var, width=30).grid(row=3, column=1, padx=10, pady=5)
 
-    ttk.Label(metadata_dialog, text="Description:").grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(metadata_dialog, text=_t('gui.academics.library.digital_library.labels.description', default="Description:")).grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
     desc_text = tk.Text(metadata_dialog, width=30, height=4)
     desc_text.grid(row=4, column=1, padx=10, pady=5)
 
@@ -546,7 +548,7 @@ def upload_digital_resource(self):
             description = desc_text.get('1.0', tk.END).strip()
 
             if not title or not author:
-                messagebox.showerror(_("common.error"), "Title and Author are required")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.digital_library.dialogs.title_and_author_are_required', default="Title and Author are required"))
                 return
 
             original_filename = os.path.basename(file_path)
@@ -578,8 +580,8 @@ def upload_digital_resource(self):
                 safe_filename = secure_filename(original_filename)
 
             # Copy file to digital library folder
-            from education_system.systems.university.infrastructure.paths import UPLOAD_DIR
-            digital_dir = UPLOAD_DIR / "digital_library"
+            from education_system.paths import UNIVERSITY_UPLOAD_DIR
+            digital_dir = UNIVERSITY_UPLOAD_DIR / "digital_library"
             digital_dir.mkdir(parents=True, exist_ok=True)
             # Set restrictive permissions on directory
             os.chmod(digital_dir, 0o700)
@@ -613,7 +615,7 @@ def upload_digital_resource(self):
             log_audit_event(get_current_user_id(), f"Uploaded digital resource: {title}", "digital_library")
 
             metadata_dialog.destroy()
-            messagebox.showinfo(_("common.success"), "Digital resource uploaded successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.library.digital_library.dialogs.digital_resource_uploaded_successfully', default="Digital resource uploaded successfully!"))
 
         except (OSError, IOError, tk.TclError, ValueError, TypeError) as e:
             messagebox.showerror(_("common.error"), f"Upload failed: {str(e)}")
@@ -624,7 +626,7 @@ def download_digital_resource_gui(self, tree):
     """Download selected digital resource"""
     selection = tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a resource to download")
+        messagebox.showwarning(_t('gui.academics.library.digital_library.dialogs.no_selection', default="No Selection"), _t('gui.academics.library.digital_library.dialogs.please_select_a_resource_to_download', default="Please select a resource to download"))
         return
 
     item = tree.item(selection[0])
@@ -638,7 +640,7 @@ def download_digital_resource_gui(self, tree):
         result = cursor.fetchone()
 
         if not result:
-            messagebox.showerror(_("common.error"), "Resource not found")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.digital_library.dialogs.resource_not_found', default="Resource not found"))
             return
 
         file_path, title = result
@@ -671,18 +673,18 @@ def download_digital_resource_gui(self, tree):
 def manage_digital_access_permissions_gui(self):
     """Manage digital resource access permissions"""
     perms_window = tk.Toplevel(self.master)
-    perms_window.title("Digital Access Permissions")
+    perms_window.title(_t('gui.academics.library.digital_library.windows.digital_access_permissions', default="Digital Access Permissions"))
     perms_window.geometry("900x600")
 
-    ttk.Label(perms_window, text="Digital Resource Access Permissions",
+    ttk.Label(perms_window, text=_t('gui.academics.library.digital_library.labels.digital_resource_access_permissions', default="Digital Resource Access Permissions"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Filter frame
-    filter_frame = ttk.LabelFrame(perms_window, text="Filter", padding=10)
+    filter_frame = ttk.LabelFrame(perms_window, text=_t('gui.academics.library.digital_library.labels.filter', default="Filter"), padding=10)
     filter_frame.pack(fill=tk.X, padx=10, pady=10)
 
     resource_filter = tk.StringVar()
-    ttk.Label(filter_frame, text="Resource ID:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(filter_frame, text=_t('gui.academics.library.digital_library.labels.resource_id', default="Resource ID:")).pack(side=tk.LEFT, padx=5)
     ttk.Entry(filter_frame, textvariable=resource_filter, width=20).pack(side=tk.LEFT, padx=5)
 
     # Permissions table
@@ -748,10 +750,10 @@ def manage_digital_access_permissions_gui(self):
     def grant_permission():
         # Permission dialog
         grant_dialog = tk.Toplevel(perms_window)
-        grant_dialog.title("Grant Permission")
+        grant_dialog.title(_t('gui.academics.library.digital_library.windows.grant_permission', default="Grant Permission"))
         grant_dialog.geometry("400x300")
 
-        ttk.Label(grant_dialog, text="Grant Digital Access",
+        ttk.Label(grant_dialog, text=_t('gui.academics.library.digital_library.labels.grant_digital_access', default="Grant Digital Access"),
                  font=('Arial', 12, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(grant_dialog, padding=15)
@@ -759,20 +761,20 @@ def manage_digital_access_permissions_gui(self):
 
         digital_id_var = tk.StringVar()
         user_id_var = tk.StringVar()
-        access_level_var = tk.StringVar(value="read")
+        access_level_var = tk.StringVar(value=_t('gui.academics.library.digital_library.values.read', default="read"))
         days_valid_var = tk.IntVar(value=30)
 
-        ttk.Label(form_frame, text="Digital Resource ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.digital_library.labels.digital_resource_id', default="Digital Resource ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         ttk.Entry(form_frame, textvariable=digital_id_var, width=25).grid(row=0, column=1, pady=5)
 
-        ttk.Label(form_frame, text="User ID:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.digital_library.labels.user_id', default="User ID:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         ttk.Entry(form_frame, textvariable=user_id_var, width=25).grid(row=1, column=1, pady=5)
 
-        ttk.Label(form_frame, text="Access Level:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.digital_library.labels.access_level', default="Access Level:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         ttk.Combobox(form_frame, textvariable=access_level_var,
                     values=["read", "download", "full"], width=22).grid(row=2, column=1, pady=5)
 
-        ttk.Label(form_frame, text="Valid for (days):").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.digital_library.labels.valid_for_days', default="Valid for (days):")).grid(row=3, column=0, sticky=tk.W, pady=5)
         ttk.Entry(form_frame, textvariable=days_valid_var, width=25).grid(row=3, column=1, pady=5)
 
         def save_permission():
@@ -780,7 +782,7 @@ def manage_digital_access_permissions_gui(self):
             user_id = user_id_var.get().strip()
 
             if not digital_id or not user_id:
-                messagebox.showerror(_("common.error"), "Please provide both Resource ID and User ID")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.digital_library.dialogs.please_provide_both_resource_id_and_user_id', default="Please provide both Resource ID and User ID"))
                 return
 
             try:
@@ -803,25 +805,25 @@ def manage_digital_access_permissions_gui(self):
                               f"Granted {access_level_var.get()} access to digital resource {digital_id} for {user_id}",
                               "digital_access_permissions")
 
-                messagebox.showinfo(_("common.success"), "Permission granted successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.digital_library.dialogs.permission_granted_successfully', default="Permission granted successfully!"))
                 grant_dialog.destroy()
                 load_permissions()
 
             except tk.TclError as e:
                 messagebox.showerror(_("common.error"), f"Failed to grant permission: {str(e)}")
 
-        ttk.Button(form_frame, text="Grant", command=save_permission).grid(row=4, column=0, columnspan=2, pady=20)
+        ttk.Button(form_frame, text=_t('gui.academics.library.digital_library.buttons.grant', default="Grant"), command=save_permission).grid(row=4, column=0, columnspan=2, pady=20)
 
     def revoke_permission():
         selection = perms_tree.selection()
         if not selection:
-            messagebox.showwarning(_("common.warning"), "Please select a permission to revoke")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.digital_library.dialogs.please_select_a_permission_to_revoke', default="Please select a permission to revoke"))
             return
 
         item = perms_tree.item(selection[0])
         perm_id = item['values'][0]
 
-        if messagebox.askyesno("Confirm", "Revoke this permission?"):
+        if messagebox.askyesno(_t('gui.academics.library.digital_library.dialogs.confirm', default="Confirm"), _t('gui.academics.library.digital_library.dialogs.revoke_this_permission', default="Revoke this permission?")):
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
@@ -830,7 +832,7 @@ def manage_digital_access_permissions_gui(self):
                 conn.close()
 
                 log_audit_event(get_current_user_id(), f"Revoked permission {perm_id}", "digital_access_permissions")
-                messagebox.showinfo(_("common.success"), "Permission revoked")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.digital_library.dialogs.permission_revoked', default="Permission revoked"))
                 load_permissions()
 
             except (sqlite3.Error, DatabaseError, tk.TclError) as e:
@@ -840,8 +842,8 @@ def manage_digital_access_permissions_gui(self):
     button_frame = ttk.Frame(perms_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Grant Permission", command=grant_permission).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Revoke Selected", command=revoke_permission).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.digital_library.buttons.grant_permission', default="Grant Permission"), command=grant_permission).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.digital_library.buttons.revoke_selected', default="Revoke Selected"), command=revoke_permission).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.refresh"), command=load_permissions).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=perms_window.destroy).pack(side=tk.RIGHT, padx=5)
 

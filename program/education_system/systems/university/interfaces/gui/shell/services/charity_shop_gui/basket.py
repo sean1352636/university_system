@@ -1,5 +1,7 @@
 """Charity Shop - Basket window."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui._imports import tk, ttk, messagebox
 
 
@@ -9,7 +11,7 @@ class BasketWindow(tk.Toplevel):
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app  # Reference to main CharityShopApp
-        self.title("Shopping Basket")
+        self.title(_t('gui.shell.services.charity_shop_gui.basket.windows.shopping_basket', default="Shopping Basket"))
         self.geometry("500x500")
         self.minsize(400, 400)
 
@@ -28,9 +30,9 @@ class BasketWindow(tk.Toplevel):
         header_frame = ttk.Frame(main_frame)
         header_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(header_frame, text="Shopping Basket", font=("Helvetica", 14, "bold")).pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.shell.services.charity_shop_gui.basket.labels.shopping_basket', default="Shopping Basket"), font=("Helvetica", 14, "bold")).pack(side=tk.LEFT)
 
-        self.item_count_label = ttk.Label(header_frame, text="0 items", foreground="gray")
+        self.item_count_label = ttk.Label(header_frame, text=_t('gui.shell.services.charity_shop_gui.basket.labels.value_0_items', default="0 items"), foreground="gray")
         self.item_count_label.pack(side=tk.RIGHT)
 
         # Basket items treeview
@@ -40,10 +42,10 @@ class BasketWindow(tk.Toplevel):
         columns = ("name", "qty", "price", "subtotal")
         self.basket_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=12)
 
-        self.basket_tree.heading("name", text="Item")
-        self.basket_tree.heading("qty", text="Qty")
-        self.basket_tree.heading("price", text="Price")
-        self.basket_tree.heading("subtotal", text="Subtotal")
+        self.basket_tree.heading("name", text=_t('gui.shell.services.charity_shop_gui.basket.headings.item', default="Item"))
+        self.basket_tree.heading("qty", text=_t('gui.shell.services.charity_shop_gui.basket.headings.qty', default="Qty"))
+        self.basket_tree.heading("price", text=_t('gui.shell.services.charity_shop_gui.basket.headings.price', default="Price"))
+        self.basket_tree.heading("subtotal", text=_t('gui.shell.services.charity_shop_gui.basket.headings.subtotal', default="Subtotal"))
 
         self.basket_tree.column("name", width=200, anchor="w")
         self.basket_tree.column("qty", width=60, anchor="center")
@@ -57,13 +59,13 @@ class BasketWindow(tk.Toplevel):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Quantity adjustment frame
-        qty_frame = ttk.LabelFrame(main_frame, text="Adjust Quantity", padding="10")
+        qty_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.services.charity_shop_gui.basket.labels.adjust_quantity', default="Adjust Quantity"), padding="10")
         qty_frame.pack(fill=tk.X, pady=(0, 10))
 
         ttk.Button(qty_frame, text="-1", command=self.decrease_qty, width=5).pack(side=tk.LEFT, padx=5)
         ttk.Button(qty_frame, text="+1", command=self.increase_qty, width=5).pack(side=tk.LEFT, padx=5)
-        ttk.Button(qty_frame, text="Remove Item", command=self.remove_selected, width=12).pack(side=tk.LEFT, padx=15)
-        ttk.Button(qty_frame, text="Clear All", command=self.clear_all, width=10).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(qty_frame, text=_t('gui.shell.services.charity_shop_gui.basket.buttons.remove_item', default="Remove Item"), command=self.remove_selected, width=12).pack(side=tk.LEFT, padx=15)
+        ttk.Button(qty_frame, text=_t('gui.shell.services.charity_shop_gui.basket.buttons.clear_all', default="Clear All"), command=self.clear_all, width=10).pack(side=tk.RIGHT, padx=5)
 
         # Total frame
         total_frame = ttk.Frame(main_frame)
@@ -74,12 +76,12 @@ class BasketWindow(tk.Toplevel):
         total_inner = ttk.Frame(total_frame)
         total_inner.pack(fill=tk.X)
 
-        ttk.Label(total_inner, text="Total:", font=("Helvetica", 14, "bold")).pack(side=tk.LEFT)
+        ttk.Label(total_inner, text=_t('gui.shell.services.charity_shop_gui.basket.labels.total', default="Total:"), font=("Helvetica", 14, "bold")).pack(side=tk.LEFT)
         self.total_label = ttk.Label(total_inner, text="\u00a30.00", font=("Helvetica", 16, "bold"), foreground="green")
         self.total_label.pack(side=tk.RIGHT)
 
         # Checkout button
-        checkout_btn = ttk.Button(main_frame, text="Proceed to Checkout", command=self.proceed_to_checkout)
+        checkout_btn = ttk.Button(main_frame, text=_t('gui.shell.services.charity_shop_gui.basket.buttons.proceed_to_checkout', default="Proceed to Checkout"), command=self.proceed_to_checkout)
         checkout_btn.pack(fill=tk.X, pady=(10, 0))
 
         # Style the checkout button
@@ -126,7 +128,7 @@ class BasketWindow(tk.Toplevel):
         """Decrease quantity of selected item."""
         idx = self.get_selected_index()
         if idx is None:
-            messagebox.showwarning("No Selection", "Please select an item.", parent=self)
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.basket.dialogs.please_select_an_item', default="Please select an item."), parent=self)
             return
 
         if self.app.basket[idx]['quantity'] > 1:
@@ -134,7 +136,7 @@ class BasketWindow(tk.Toplevel):
             self.refresh_display()
         else:
             # Remove if quantity would become 0
-            if messagebox.askyesno("Remove Item", "Remove this item from basket?", parent=self):
+            if messagebox.askyesno(_t('gui.shell.services.charity_shop_gui.basket.dialogs.remove_item', default="Remove Item"), _t('gui.shell.services.charity_shop_gui.basket.dialogs.remove_this_item_from_basket', default="Remove this item from basket?"), parent=self):
                 self.app.remove_from_basket(idx)
                 self.refresh_display()
 
@@ -142,7 +144,7 @@ class BasketWindow(tk.Toplevel):
         """Increase quantity of selected item."""
         idx = self.get_selected_index()
         if idx is None:
-            messagebox.showwarning("No Selection", "Please select an item.", parent=self)
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.basket.dialogs.please_select_an_item', default="Please select an item."), parent=self)
             return
 
         basket_item = self.app.basket[idx]
@@ -150,34 +152,34 @@ class BasketWindow(tk.Toplevel):
             basket_item['quantity'] += 1
             self.refresh_display()
         else:
-            messagebox.showwarning("Limit Reached", f"Maximum available quantity ({basket_item['max_qty']}) reached.", parent=self)
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket.dialogs.limit_reached', default="Limit Reached"), f"Maximum available quantity ({basket_item['max_qty']}) reached.", parent=self)
 
     def remove_selected(self):
         """Remove selected item from basket."""
         idx = self.get_selected_index()
         if idx is None:
-            messagebox.showwarning("No Selection", "Please select an item to remove.", parent=self)
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.basket.dialogs.please_select_an_item_to_remove', default="Please select an item to remove."), parent=self)
             return
 
         item_name = self.app.basket[idx]['name']
-        if messagebox.askyesno("Confirm", f"Remove '{item_name}' from basket?", parent=self):
+        if messagebox.askyesno(_t('gui.shell.services.charity_shop_gui.basket.dialogs.confirm', default="Confirm"), f"Remove '{item_name}' from basket?", parent=self):
             self.app.remove_from_basket(idx)
             self.refresh_display()
 
     def clear_all(self):
         """Clear all items from basket."""
         if not self.app.basket:
-            messagebox.showinfo("Empty", "Basket is already empty.", parent=self)
+            messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.basket.dialogs.empty', default="Empty"), _t('gui.shell.services.charity_shop_gui.basket.dialogs.basket_is_already_empty', default="Basket is already empty."), parent=self)
             return
 
-        if messagebox.askyesno("Confirm", "Clear all items from basket?", parent=self):
+        if messagebox.askyesno(_t('gui.shell.services.charity_shop_gui.basket.dialogs.confirm', default="Confirm"), _t('gui.shell.services.charity_shop_gui.basket.dialogs.clear_all_items_from_basket', default="Clear all items from basket?"), parent=self):
             self.app.clear_basket()
             self.refresh_display()
 
     def proceed_to_checkout(self):
         """Open checkout dialog."""
         if not self.app.basket:
-            messagebox.showwarning("Empty Basket", "Please add items to basket before checkout.", parent=self)
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket.dialogs.empty_basket', default="Empty Basket"), _t('gui.shell.services.charity_shop_gui.basket.dialogs.please_add_items_to_basket_before_checkout', default="Please add items to basket before checkout."), parent=self)
             return
 
         from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui.dialogs import CheckoutDialog

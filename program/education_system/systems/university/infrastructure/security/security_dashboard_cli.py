@@ -48,7 +48,7 @@ except ImportError:
 
 # Import centralized database path and connection utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 # Import full security modules for complete access
@@ -91,7 +91,7 @@ class SecurityDashboardCLI:
 
     def __init__(self, admin_user_id: int):
         self.admin_user_id = admin_user_id
-        self.db_path = str(DEFAULT_DB_PATH)
+        self.db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
 
         # Initialize security database tables first
         init_security_tables(self.db_path)

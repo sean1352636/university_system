@@ -16,7 +16,7 @@ class EmergencyAlertDialog(tk.Toplevel):
 
     def __init__(self, parent, colors, current_user):
         super().__init__(parent)
-        self.title("Emergency Alert")
+        self.title(_t('gui.operations.campus.security.dialogs.emergency_alert.windows.emergency_alert', default="Emergency Alert"))
         self.geometry("500x400")
         self.configure(bg="#8B0000")
         self.transient(parent)

@@ -1,5 +1,7 @@
 """Barber Shop GUI - Appointment management feature methods."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, messagebox, logging,
     datetime, timedelta,
@@ -40,7 +42,7 @@ class AppointmentsMixin:
         appt_time = self.appt_time_combo.get()
 
         if not service_str or not appt_date or not appt_time:
-            messagebox.showerror(_t("common.error"), "Please select a service, date and time.")
+            messagebox.showerror(_t("common.error"), _t('gui.operations.commerce.barber.features.appointments.dialogs.please_select_a_service_date_and_time', default="Please select a service, date and time."))
             return
 
         try:
@@ -171,7 +173,7 @@ class AppointmentsMixin:
 
         # Payment dialog
         payment_window = tk.Toplevel(self.parent)
-        payment_window.title("Process Payment")
+        payment_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.process_payment', default="Process Payment"))
         payment_window.geometry("500x500")
         payment_window.transient(self.parent)
         payment_window.grab_set()
@@ -181,11 +183,11 @@ class AppointmentsMixin:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Header
-        ttk.Label(main_frame, text="Payment Details",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.payment_details', default="Payment Details"),
                  font=('Helvetica', 16, 'bold')).pack(pady=(0, 15))
 
         # Appointment info frame
-        info_frame = ttk.LabelFrame(main_frame, text="Appointment Information", padding="10")
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.appointment_information', default="Appointment Information"), padding="10")
         info_frame.pack(fill=tk.X, pady=(0, 10))
 
         ttk.Label(info_frame, text=f"Appointment: {appt_number}").pack(anchor=tk.W)
@@ -197,22 +199,22 @@ class AppointmentsMixin:
         # Tip frame
         tip_frame = ttk.Frame(main_frame)
         tip_frame.pack(fill=tk.X, pady=10)
-        ttk.Label(tip_frame, text="Add Tip (£):").pack(side=tk.LEFT)
+        ttk.Label(tip_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.add_tip', default="Add Tip (£):")).pack(side=tk.LEFT)
         tip_var = tk.StringVar(value="0")
         ttk.Entry(tip_frame, textvariable=tip_var, width=10).pack(side=tk.LEFT, padx=10)
 
         # Payment method frame
-        method_frame = ttk.LabelFrame(main_frame, text="Select Payment Method", padding="10")
+        method_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.select_payment_method', default="Select Payment Method"), padding="10")
         method_frame.pack(fill=tk.X, pady=10)
 
-        payment_method_var = tk.StringVar(value="card")
+        payment_method_var = tk.StringVar(value=_t('gui.operations.commerce.barber.features.appointments.values.card', default="card"))
 
         # Cash option
-        ttk.Radiobutton(method_frame, text="Cash", variable=payment_method_var,
+        ttk.Radiobutton(method_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.cash', default="Cash"), variable=payment_method_var,
                        value="cash").pack(anchor=tk.W, pady=2)
 
         # Card option
-        ttk.Radiobutton(method_frame, text="Card", variable=payment_method_var,
+        ttk.Radiobutton(method_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.card', default="Card"), variable=payment_method_var,
                        value="card").pack(anchor=tk.W, pady=2)
 
         # Student Account option with balance
@@ -228,7 +230,7 @@ class AppointmentsMixin:
 
         student_frame = ttk.Frame(method_frame)
         student_frame.pack(anchor=tk.W, fill=tk.X)
-        ttk.Radiobutton(student_frame, text="Student Account",
+        ttk.Radiobutton(student_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.student_account', default="Student Account"),
                        variable=payment_method_var, value="student_account").pack(side=tk.LEFT)
         balance_label = ttk.Label(student_frame, text=balance_text,
                                  foreground='green' if student_balance > 0 else 'gray')
@@ -264,7 +266,7 @@ class AppointmentsMixin:
             try:
                 tip = float(tip_var.get() or 0)
             except ValueError:
-                messagebox.showerror("Error", "Invalid tip amount.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.appointments.dialogs.invalid_tip_amount', default="Invalid tip amount."))
                 return
 
             total_amount = appt['price'] + tip
@@ -276,12 +278,12 @@ class AppointmentsMixin:
                 if method == 'student_account':
                     # Check if finance integration available
                     if not FINANCE_AVAILABLE:
-                        messagebox.showerror("Error", "Student account payment is not available.")
+                        messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.appointments.dialogs.student_account_payment_is_not_available', default="Student account payment is not available."))
                         return
 
                     # Check balance
                     if student_balance < total_amount:
-                        messagebox.showerror("Insufficient Balance",
+                        messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.insufficient_balance', default="Insufficient Balance"),
                             f"Your account balance (£{student_balance:.2f}) is insufficient.\n"
                             f"Required: £{total_amount:.2f}")
                         return
@@ -297,7 +299,7 @@ class AppointmentsMixin:
                     )
 
                     if not result.get('success'):
-                        messagebox.showerror("Payment Failed", result.get('message', 'Unknown error'))
+                        messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.payment_failed', default="Payment Failed"), result.get('message', 'Unknown error'))
                         return
 
                     payment_id = result.get('transaction_id')
@@ -344,7 +346,7 @@ class AppointmentsMixin:
                                    'amount': total_amount,
                                    'method': method})
 
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.appointments.dialogs.success', default="Success"),
                     f"Payment of £{total_amount:.2f} processed successfully!\n\n"
                     f"Method: {method.replace('_', ' ').title()}\n"
                     f"Reference: {transaction_ref}")
@@ -353,15 +355,15 @@ class AppointmentsMixin:
 
             except Exception as e:
                 logger.error(f"Payment processing error: {e}")
-                messagebox.showerror("Error", f"Payment failed: {str(e)}")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), f"Payment failed: {str(e)}")
 
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill=tk.X, pady=(20, 0))
 
-        ttk.Button(btn_frame, text="Confirm Payment",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.confirm_payment', default="Confirm Payment"),
                   command=confirm_payment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.cancel', default="Cancel"),
                   command=payment_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     def _send_payment_receipt(self, appt: dict, total_amount: float, tip: float,
@@ -617,7 +619,7 @@ class AppointmentsMixin:
     def view_appointment_history(self):
         """View appointment history for selected customer or all."""
         history_window = tk.Toplevel(self.parent)
-        history_window.title("Appointment History")
+        history_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.appointment_history', default="Appointment History"))
         history_window.geometry("800x500")
         history_window.transient(self.parent)
 
@@ -625,15 +627,15 @@ class AppointmentsMixin:
         filter_frame = ttk.Frame(history_window, padding="10")
         filter_frame.pack(fill=tk.X)
 
-        ttk.Label(filter_frame, text="Customer ID:").pack(side=tk.LEFT)
+        ttk.Label(filter_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.customer_id', default="Customer ID:")).pack(side=tk.LEFT)
         customer_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=customer_var, width=20).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="From:").pack(side=tk.LEFT, padx=(20, 5))
+        ttk.Label(filter_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.from', default="From:")).pack(side=tk.LEFT, padx=(20, 5))
         from_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
         ttk.Entry(filter_frame, textvariable=from_var, width=12).pack(side=tk.LEFT)
 
-        ttk.Label(filter_frame, text="To:").pack(side=tk.LEFT, padx=(10, 5))
+        ttk.Label(filter_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.to', default="To:")).pack(side=tk.LEFT, padx=(10, 5))
         to_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(filter_frame, textvariable=to_var, width=12).pack(side=tk.LEFT)
 
@@ -683,13 +685,13 @@ class AppointmentsMixin:
             except Exception as e:
                 logger.error(f"Error loading history: {e}")
 
-        ttk.Button(filter_frame, text="Search", command=load_history).pack(side=tk.LEFT, padx=20)
+        ttk.Button(filter_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.search', default="Search"), command=load_history).pack(side=tk.LEFT, padx=20)
         load_history()
 
     def show_weekly_calendar(self):
         """Show weekly calendar view of appointments."""
         cal_window = tk.Toplevel(self.parent)
-        cal_window.title("Weekly Calendar")
+        cal_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.weekly_calendar', default="Weekly Calendar"))
         cal_window.geometry("1000x600")
         cal_window.transient(self.parent)
 
@@ -710,9 +712,9 @@ class AppointmentsMixin:
             week_var.set(date.strftime('%Y-%m-%d'))
             load_week()
 
-        ttk.Button(nav_frame, text="< Prev", command=prev_week).pack(side=tk.LEFT)
+        ttk.Button(nav_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.prev', default="< Prev"), command=prev_week).pack(side=tk.LEFT)
         ttk.Label(nav_frame, textvariable=week_var, font=('Helvetica', 12, 'bold')).pack(side=tk.LEFT, padx=20)
-        ttk.Button(nav_frame, text="Next >", command=next_week).pack(side=tk.LEFT)
+        ttk.Button(nav_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.next', default="Next >"), command=next_week).pack(side=tk.LEFT)
 
         # Calendar grid
         cal_frame = ttk.Frame(cal_window, padding="10")
@@ -761,39 +763,39 @@ class AppointmentsMixin:
     def bulk_cancel_appointments(self):
         """Bulk cancel appointments."""
         cancel_window = tk.Toplevel(self.parent)
-        cancel_window.title("Bulk Cancel Appointments")
+        cancel_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.bulk_cancel_appointments', default="Bulk Cancel Appointments"))
         cancel_window.geometry("500x400")
         cancel_window.transient(self.parent)
         cancel_window.grab_set()
 
-        ttk.Label(cancel_window, text="Bulk Cancel Appointments",
+        ttk.Label(cancel_window, text=_t('gui.operations.commerce.barber.features.appointments.labels.bulk_cancel_appointments', default="Bulk Cancel Appointments"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         # Options
-        options_frame = ttk.LabelFrame(cancel_window, text="Cancel Options", padding="10")
+        options_frame = ttk.LabelFrame(cancel_window, text=_t('gui.operations.commerce.barber.features.appointments.labels.cancel_options', default="Cancel Options"), padding="10")
         options_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(options_frame, text="Date:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(options_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.date', default="Date:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(options_frame, textvariable=date_var, width=15).grid(row=0, column=1, pady=5)
 
-        ttk.Label(options_frame, text="Staff ID (optional):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(options_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.staff_id_optional', default="Staff ID (optional):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         staff_var = tk.StringVar()
         ttk.Entry(options_frame, textvariable=staff_var, width=15).grid(row=1, column=1, pady=5)
 
-        ttk.Label(options_frame, text="Reason:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        reason_var = tk.StringVar(value="Staff unavailable")
+        ttk.Label(options_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.reason', default="Reason:")).grid(row=2, column=0, sticky=tk.W, pady=5)
+        reason_var = tk.StringVar(value=_t('gui.operations.commerce.barber.features.appointments.values.staff_unavailable', default="Staff unavailable"))
         ttk.Entry(options_frame, textvariable=reason_var, width=30).grid(row=2, column=1, pady=5)
 
         notify_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Notify customers via email",
+        ttk.Checkbutton(options_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.notify_customers_via_email', default="Notify customers via email"),
                        variable=notify_var).grid(row=3, column=0, columnspan=2, pady=5)
 
         result_text = tk.Text(cancel_window, height=10, width=50)
         result_text.pack(padx=20, pady=10)
 
         def execute_cancel():
-            if not messagebox.askyesno("Confirm", "Are you sure you want to cancel these appointments?"):
+            if not messagebox.askyesno(_t('gui.operations.commerce.barber.features.appointments.dialogs.confirm', default="Confirm"), _t('gui.operations.commerce.barber.features.appointments.dialogs.are_you_sure_you_want_to_cancel_these_appointments', default="Are you sure you want to cancel these appointments?")):
                 return
             try:
                 with transaction() as conn:
@@ -846,22 +848,22 @@ class AppointmentsMixin:
                 self._load_appointments()
 
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(cancel_window, text="Cancel Appointments", command=execute_cancel).pack(pady=10)
+        ttk.Button(cancel_window, text=_t('gui.operations.commerce.barber.features.appointments.buttons.cancel_appointments', default="Cancel Appointments"), command=execute_cancel).pack(pady=10)
 
     def set_appointment_reminder(self):
         """Set reminder for appointment."""
         selected = self.appointments_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select an appointment.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.appointments.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.appointments.dialogs.please_select_an_appointment', default="Please select an appointment."))
             return
 
         item = self.appointments_tree.item(selected[0])
         appt_number = item['values'][0]
 
         reminder_window = tk.Toplevel(self.parent)
-        reminder_window.title("Set Reminder")
+        reminder_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.set_reminder', default="Set Reminder"))
         reminder_window.geometry("400x300")
         reminder_window.transient(self.parent)
         reminder_window.grab_set()
@@ -872,17 +874,17 @@ class AppointmentsMixin:
         frame = ttk.Frame(reminder_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Reminder Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        type_var = tk.StringVar(value="email")
-        ttk.Radiobutton(frame, text="Email", variable=type_var, value="email").grid(row=0, column=1, sticky=tk.W)
-        ttk.Radiobutton(frame, text="SMS", variable=type_var, value="sms").grid(row=1, column=1, sticky=tk.W)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.reminder_type', default="Reminder Type:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        type_var = tk.StringVar(value=_t('gui.operations.commerce.barber.features.appointments.values.email', default="email"))
+        ttk.Radiobutton(frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.email', default="Email"), variable=type_var, value="email").grid(row=0, column=1, sticky=tk.W)
+        ttk.Radiobutton(frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.sms', default="SMS"), variable=type_var, value="sms").grid(row=1, column=1, sticky=tk.W)
 
-        ttk.Label(frame, text="Hours Before:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.hours_before', default="Hours Before:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         hours_var = tk.StringVar(value="24")
         ttk.Combobox(frame, textvariable=hours_var, values=['1', '2', '4', '12', '24', '48'],
                     width=10).grid(row=2, column=1, sticky=tk.W)
 
-        ttk.Label(frame, text="Message:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.message', default="Message:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         msg_text = tk.Text(frame, height=4, width=30)
         msg_text.grid(row=3, column=1, pady=5)
         msg_text.insert('1.0', "Don't forget your appointment!")
@@ -908,24 +910,24 @@ class AppointmentsMixin:
                         send_at=send_at_str,
                         channel='email'
                     )
-                    messagebox.showinfo("Success", "Reminder scheduled successfully!")
+                    messagebox.showinfo(_t('gui.operations.commerce.barber.features.appointments.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.appointments.dialogs.reminder_scheduled_successfully', default="Reminder scheduled successfully!"))
                     reminder_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(reminder_window, text="Save Reminder", command=save_reminder).pack(pady=10)
+        ttk.Button(reminder_window, text=_t('gui.operations.commerce.barber.features.appointments.buttons.save_reminder', default="Save Reminder"), command=save_reminder).pack(pady=10)
 
     def mark_no_show(self):
         """Mark appointment as no-show."""
         selected = self.appointments_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select an appointment.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.appointments.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.appointments.dialogs.please_select_an_appointment', default="Please select an appointment."))
             return
 
         item = self.appointments_tree.item(selected[0])
         appt_number = item['values'][0]
 
-        if not messagebox.askyesno("Confirm", f"Mark appointment {appt_number} as no-show?"):
+        if not messagebox.askyesno(_t('gui.operations.commerce.barber.features.appointments.dialogs.confirm', default="Confirm"), f"Mark appointment {appt_number} as no-show?"):
             return
 
         try:
@@ -944,15 +946,15 @@ class AppointmentsMixin:
                 )
                 log_activity('no_show', 'barber_appointment',
                             details={'appointment_id': appt['appointment_id']})
-                messagebox.showinfo("Success", "Appointment marked as no-show.")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.appointments.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.appointments.dialogs.appointment_marked_as_no_show', default="Appointment marked as no-show."))
                 self._load_appointments()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), str(e))
 
     def view_waitlist(self):
         """View waitlist."""
         waitlist_window = tk.Toplevel(self.parent)
-        waitlist_window.title("Waitlist")
+        waitlist_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.waitlist', default="Waitlist"))
         waitlist_window.geometry("700x400")
         waitlist_window.transient(self.parent)
 
@@ -988,9 +990,9 @@ class AppointmentsMixin:
         btn_frame = ttk.Frame(waitlist_window)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="Refresh", command=load_waitlist).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Notify Selected", command=lambda: self._notify_waitlist_entry(tree)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Remove Selected", command=lambda: self._remove_waitlist_entry(tree, load_waitlist)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.refresh', default="Refresh"), command=load_waitlist).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.notify_selected', default="Notify Selected"), command=lambda: self._notify_waitlist_entry(tree)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.barber.features.appointments.buttons.remove_selected', default="Remove Selected"), command=lambda: self._remove_waitlist_entry(tree, load_waitlist)).pack(side=tk.LEFT, padx=5)
 
         load_waitlist()
 
@@ -1004,27 +1006,27 @@ class AppointmentsMixin:
 
         # Prompt for available slot
         slot_window = tk.Toplevel(self.parent)
-        slot_window.title("Available Slot")
+        slot_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.available_slot', default="Available Slot"))
         slot_window.geometry("300x150")
         slot_window.transient(self.parent)
         slot_window.grab_set()
 
-        ttk.Label(slot_window, text="Enter available slot:").pack(pady=10)
+        ttk.Label(slot_window, text=_t('gui.operations.commerce.barber.features.appointments.labels.enter_available_slot', default="Enter available slot:")).pack(pady=10)
 
         slot_frame = ttk.Frame(slot_window, padding="10")
         slot_frame.pack()
 
-        ttk.Label(slot_frame, text="Date:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(slot_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.date', default="Date:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(slot_frame, textvariable=date_var, width=15).grid(row=0, column=1, pady=5)
 
-        ttk.Label(slot_frame, text="Time:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(slot_frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.time', default="Time:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         time_combo = ttk.Combobox(slot_frame, values=self._get_time_slots(), width=12)
         time_combo.grid(row=1, column=1, pady=5)
 
         def confirm_notify():
             if not time_combo.get():
-                messagebox.showerror("Error", "Please select a time.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.appointments.dialogs.please_select_a_time', default="Please select a time."))
                 return
 
             available_slot = f"{date_var.get()} {time_combo.get()}"
@@ -1041,7 +1043,7 @@ class AppointmentsMixin:
                     ''', (waitlist_id,)).fetchone()
 
                 if not waitlist_entry:
-                    messagebox.showerror("Error", "Waitlist entry not found.")
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.appointments.dialogs.waitlist_entry_not_found', default="Waitlist entry not found."))
                     return
 
                 # Update waitlist status
@@ -1079,12 +1081,12 @@ class AppointmentsMixin:
                         logger.error(f"Failed to send availability notification email: {e}")
                         # Don't fail the whole operation if email fails
 
-                messagebox.showinfo("Success", f"Customer notified of available slot: {available_slot}\nEmail sent to: {customer_email if customer_email else 'No email on file'}")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.appointments.dialogs.success', default="Success"), f"Customer notified of available slot: {available_slot}\nEmail sent to: {customer_email if customer_email else 'No email on file'}")
                 slot_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(slot_window, text="Notify", command=confirm_notify).pack(pady=10)
+        ttk.Button(slot_window, text=_t('gui.operations.commerce.barber.features.appointments.buttons.notify', default="Notify"), command=confirm_notify).pack(pady=10)
 
     def _remove_waitlist_entry(self, tree, reload_func):
         """Helper to remove waitlist entry."""
@@ -1098,17 +1100,17 @@ class AppointmentsMixin:
             WaitlistManager.remove_from_waitlist(waitlist_id)
             reload_func()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), str(e))
 
     def add_to_waitlist(self):
         """Add customer to waitlist."""
         waitlist_window = tk.Toplevel(self.parent)
-        waitlist_window.title("Add to Waitlist")
+        waitlist_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.add_to_waitlist', default="Add to Waitlist"))
         waitlist_window.geometry("400x350")
         waitlist_window.transient(self.parent)
         waitlist_window.grab_set()
 
-        ttk.Label(waitlist_window, text="Add to Waitlist",
+        ttk.Label(waitlist_window, text=_t('gui.operations.commerce.barber.features.appointments.labels.add_to_waitlist', default="Add to Waitlist"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(waitlist_window, padding="20")
@@ -1122,20 +1124,20 @@ class AppointmentsMixin:
 
         ttk.Label(frame, text=f"Customer: {customer_name}").grid(row=0, column=0, columnspan=2, pady=5)
 
-        ttk.Label(frame, text="Service:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.service', default="Service:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         service_combo = ttk.Combobox(frame, state="readonly", width=25)
         service_combo['values'] = self.appt_service_combo['values']
         service_combo.grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Preferred Date:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.preferred_date', default="Preferred Date:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(frame, textvariable=date_var, width=15).grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Preferred Time:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.preferred_time', default="Preferred Time:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         time_combo = ttk.Combobox(frame, values=self._get_time_slots(), width=10)
         time_combo.grid(row=3, column=1, pady=5)
 
-        ttk.Label(frame, text="Notes:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.notes', default="Notes:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         notes_text = tk.Text(frame, height=3, width=25)
         notes_text.grid(row=4, column=1, pady=5)
 
@@ -1190,54 +1192,54 @@ class AppointmentsMixin:
                         logger.error(f"Failed to send waitlist confirmation email: {e}")
                         # Don't fail the whole operation if email fails
 
-                messagebox.showinfo("Success", "Added to waitlist! Confirmation email sent.")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.appointments.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.appointments.dialogs.added_to_waitlist_confirmation_email_sent', default="Added to waitlist! Confirmation email sent."))
                 waitlist_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(waitlist_window, text="Add to Waitlist", command=add_entry).pack(pady=10)
+        ttk.Button(waitlist_window, text=_t('gui.operations.commerce.barber.features.appointments.buttons.add_to_waitlist', default="Add to Waitlist"), command=add_entry).pack(pady=10)
 
     def notify_waitlist_availability(self):
         """Notify waitlist about availability."""
         try:
             from education_system.systems.university.domain.operations.commerce.barber.services.barber_core import WaitlistManager
             count = WaitlistManager.notify_available_slots()
-            messagebox.showinfo("Success", f"Notified {count} customers about availability.")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.appointments.dialogs.success', default="Success"), f"Notified {count} customers about availability.")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), str(e))
 
     def block_time_slot(self):
         """Block time slot."""
         block_window = tk.Toplevel(self.parent)
-        block_window.title("Block Time Slot")
+        block_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.block_time_slot', default="Block Time Slot"))
         block_window.geometry("400x350")
         block_window.transient(self.parent)
         block_window.grab_set()
 
-        ttk.Label(block_window, text="Block Time Slot",
+        ttk.Label(block_window, text=_t('gui.operations.commerce.barber.features.appointments.labels.block_time_slot', default="Block Time Slot"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(block_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Date:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.date', default="Date:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(frame, textvariable=date_var, width=15).grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Start Time:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.start_time', default="Start Time:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         start_combo = ttk.Combobox(frame, values=self._get_time_slots(), width=10)
         start_combo.grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="End Time:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.end_time', default="End Time:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         end_combo = ttk.Combobox(frame, values=self._get_time_slots(), width=10)
         end_combo.grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Staff (optional):").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.staff_optional', default="Staff (optional):")).grid(row=3, column=0, sticky=tk.W, pady=5)
         staff_combo = ttk.Combobox(frame, values=self.appt_staff_combo['values'], width=20)
         staff_combo.grid(row=3, column=1, pady=5)
 
-        ttk.Label(frame, text="Reason:").grid(row=4, column=0, sticky=tk.W, pady=5)
-        reason_var = tk.StringVar(value="Break")
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.reason', default="Reason:")).grid(row=4, column=0, sticky=tk.W, pady=5)
+        reason_var = tk.StringVar(value=_t('gui.operations.commerce.barber.features.appointments.values.break', default="Break"))
         ttk.Entry(frame, textvariable=reason_var, width=25).grid(row=4, column=1, pady=5)
 
         def block_slot():
@@ -1258,22 +1260,22 @@ class AppointmentsMixin:
                     reason=reason_var.get(),
                     blocked_by=blocked_by
                 )
-                messagebox.showinfo("Success", "Time slot blocked!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.appointments.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.appointments.dialogs.time_slot_blocked', default="Time slot blocked!"))
                 block_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(block_window, text="Block Slot", command=block_slot).pack(pady=10)
+        ttk.Button(block_window, text=_t('gui.operations.commerce.barber.features.appointments.buttons.block_slot', default="Block Slot"), command=block_slot).pack(pady=10)
 
     def recurring_appointment(self):
         """Create recurring appointment."""
         recurring_window = tk.Toplevel(self.parent)
-        recurring_window.title("Recurring Appointment")
+        recurring_window.title(_t('gui.operations.commerce.barber.features.appointments.windows.recurring_appointment', default="Recurring Appointment"))
         recurring_window.geometry("450x450")
         recurring_window.transient(self.parent)
         recurring_window.grab_set()
 
-        ttk.Label(recurring_window, text="Create Recurring Appointment",
+        ttk.Label(recurring_window, text=_t('gui.operations.commerce.barber.features.appointments.labels.create_recurring_appointment', default="Create Recurring Appointment"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(recurring_window, padding="20")
@@ -1282,45 +1284,45 @@ class AppointmentsMixin:
         customer_name = self.current_user.get('full_name') or self.current_user.get('username', 'Guest')
         ttk.Label(frame, text=f"Customer: {customer_name}").grid(row=0, column=0, columnspan=2, pady=5)
 
-        ttk.Label(frame, text="Service:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.service', default="Service:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         service_combo = ttk.Combobox(frame, state="readonly", width=25)
         service_combo['values'] = self.appt_service_combo['values']
         service_combo.grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Staff:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.staff', default="Staff:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         staff_combo = ttk.Combobox(frame, values=self.appt_staff_combo['values'], width=20)
         staff_combo.set('Any')
         staff_combo.grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Preferred Day:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.preferred_day', default="Preferred Day:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         day_combo = ttk.Combobox(frame, values=['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], width=15)
         day_combo.grid(row=3, column=1, pady=5)
 
-        ttk.Label(frame, text="Preferred Time:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.preferred_time', default="Preferred Time:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         time_combo = ttk.Combobox(frame, values=self._get_time_slots(), width=10)
         time_combo.grid(row=4, column=1, pady=5)
 
-        ttk.Label(frame, text="Frequency:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.frequency', default="Frequency:")).grid(row=5, column=0, sticky=tk.W, pady=5)
         freq_combo = ttk.Combobox(frame, values=['weekly', 'biweekly', 'monthly'], width=15)
         freq_combo.set('monthly')
         freq_combo.grid(row=5, column=1, pady=5)
 
-        ttk.Label(frame, text="Number of Occurrences:").grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.appointments.labels.number_of_occurrences', default="Number of Occurrences:")).grid(row=6, column=0, sticky=tk.W, pady=5)
         count_var = tk.StringVar(value="6")
         ttk.Entry(frame, textvariable=count_var, width=10).grid(row=6, column=1, pady=5)
 
         def create_recurring():
             try:
                 if not service_combo.get():
-                    messagebox.showerror("Error", "Please select a service.")
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.appointments.dialogs.please_select_a_service', default="Please select a service."))
                     return
 
                 if not day_combo.get():
-                    messagebox.showerror("Error", "Please select a day of the week.")
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.appointments.dialogs.please_select_a_day_of_the_week', default="Please select a day of the week."))
                     return
 
                 if not time_combo.get():
-                    messagebox.showerror("Error", "Please select a time.")
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.appointments.dialogs.please_select_a_time', default="Please select a time."))
                     return
 
                 customer_id = (self.current_user.get('student_id') or
@@ -1338,7 +1340,7 @@ class AppointmentsMixin:
                 }
                 day_of_week = day_map.get(day_combo.get())
                 if day_of_week is None:
-                    messagebox.showerror("Error", "Invalid day selected.")
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.appointments.dialogs.invalid_day_selected', default="Invalid day selected."))
                     return
 
                 from education_system.systems.university.domain.operations.commerce.barber.services.barber_core import RecurringAppointmentManager
@@ -1360,10 +1362,10 @@ class AppointmentsMixin:
                     start_date=start_date,
                     end_date=end_date
                 )
-                messagebox.showinfo("Success", "Recurring appointment created!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.appointments.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.appointments.dialogs.recurring_appointment_created', default="Recurring appointment created!"))
                 recurring_window.destroy()
                 self._load_appointments()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.appointments.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(recurring_window, text="Create Recurring", command=create_recurring).pack(pady=10)
+        ttk.Button(recurring_window, text=_t('gui.operations.commerce.barber.features.appointments.buttons.create_recurring', default="Create Recurring"), command=create_recurring).pack(pady=10)

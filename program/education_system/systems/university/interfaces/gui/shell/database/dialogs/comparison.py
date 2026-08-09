@@ -4,6 +4,8 @@ Provides the ComparisonDialog class for comparing two backup files side by side,
 showing differences in tables, records, size, and providing recommendations.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import datetime
@@ -17,7 +19,7 @@ class ComparisonDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Compare Backups")
+        self.dialog.title(_t('gui.shell.database.dialogs.comparison.windows.compare_backups', default="Compare Backups"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
 
@@ -27,25 +29,25 @@ class ComparisonDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Backup selection
-        select_frame = ttk.LabelFrame(self.dialog, text="Select Backups to Compare", padding=10)
+        select_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.comparison.labels.select_backups_to_compare', default="Select Backups to Compare"), padding=10)
         select_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(select_frame, text="First Backup:").grid(row=0, column=0, sticky="w", padx=5)
+        ttk.Label(select_frame, text=_t('gui.shell.database.dialogs.comparison.labels.first_backup', default="First Backup:")).grid(row=0, column=0, sticky="w", padx=5)
         self.backup1_var = tk.StringVar()
         self.backup1_combo = ttk.Combobox(select_frame, textvariable=self.backup1_var,
                                          state="readonly", width=40)
         self.backup1_combo.grid(row=0, column=1, padx=5, pady=2)
 
-        ttk.Label(select_frame, text="Second Backup:").grid(row=1, column=0, sticky="w", padx=5)
+        ttk.Label(select_frame, text=_t('gui.shell.database.dialogs.comparison.labels.second_backup', default="Second Backup:")).grid(row=1, column=0, sticky="w", padx=5)
         self.backup2_var = tk.StringVar()
         self.backup2_combo = ttk.Combobox(select_frame, textvariable=self.backup2_var,
                                          state="readonly", width=40)
         self.backup2_combo.grid(row=1, column=1, padx=5, pady=2)
 
-        ttk.Button(select_frame, text="Compare", command=self.compare).grid(row=2, column=1, pady=10)
+        ttk.Button(select_frame, text=_t('gui.shell.database.dialogs.comparison.buttons.compare', default="Compare"), command=self.compare).grid(row=2, column=1, pady=10)
 
         # Results
-        results_frame = ttk.LabelFrame(self.dialog, text="Comparison Results", padding=10)
+        results_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.comparison.labels.comparison_results', default="Comparison Results"), padding=10)
         results_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         self.results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD)
@@ -73,11 +75,11 @@ class ComparisonDialog:
     def compare(self):
         """Compare selected backups"""
         if not self.backup1_combo.get() or not self.backup2_combo.get():
-            messagebox.showwarning("No Selection", "Please select two backups to compare")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.comparison.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.comparison.dialogs.please_select_two_backups_to_compare', default="Please select two backups to compare"))
             return
 
         if self.backup1_combo.current() == self.backup2_combo.current():
-            messagebox.showwarning("Same Backup", "Please select two different backups")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.comparison.dialogs.same_backup', default="Same Backup"), _t('gui.shell.database.dialogs.comparison.dialogs.please_select_two_different_backups', default="Please select two different backups"))
             return
 
         try:
@@ -215,7 +217,7 @@ class ComparisonDialog:
             logger.error(f"Backup comparison failed: {e}")
 
             # Optionally show a more detailed error dialog
-            if messagebox.askyesno("Detailed Error",
+            if messagebox.askyesno(_t('gui.shell.database.dialogs.comparison.dialogs.detailed_error', default="Detailed Error"),
                                   f"Comparison failed with error: {str(e)}\n\n"
                                   "Would you like to see the full error details?"):
                 import traceback
@@ -223,12 +225,12 @@ class ComparisonDialog:
 
                 # Create a new window to show error details
                 error_window = tk.Toplevel(self.dialog)
-                error_window.title("Error Details")
+                error_window.title(_t('gui.shell.database.dialogs.comparison.windows.error_details', default="Error Details"))
                 error_window.geometry("600x400")
 
                 error_text = scrolledtext.ScrolledText(error_window, wrap=tk.WORD)
                 error_text.pack(fill="both", expand=True, padx=10, pady=10)
                 error_text.insert(1.0, error_details)
 
-                ttk.Button(error_window, text="Close",
+                ttk.Button(error_window, text=_t('gui.shell.database.dialogs.comparison.buttons.close', default="Close"),
                           command=error_window.destroy).pack(pady=10)

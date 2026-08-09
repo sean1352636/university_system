@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -14,7 +16,7 @@ class HESAExportGUI:
             self.root = parent
         else:
             self.root = tk.Toplevel(parent) if parent else tk.Tk()
-            self.root.title("HESA Export Management")
+            self.root.title(_t('gui.governance.compliance.hesa_export.hesa_export.windows.hesa_export_management', default="HESA Export Management"))
             self.root.geometry("1200x800")
         try:
             from education_system.systems.university.domain.governance.compliance.hesa_export.services.hesa_export_service import HESAExportService
@@ -66,7 +68,7 @@ class HESAExportGUI:
         return preparers can see the canonical programme metadata that
         feeds the HESA Course / Qualification entities."""
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Curriculum Programmes")
+        notebook.add(tab, text=_t('gui.governance.compliance.hesa_export.hesa_export.tabs.curriculum_programmes', default="Curriculum Programmes"))
 
         cols = ("code", "title", "award", "level", "credits", "version", "status")
         self.curr_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -79,9 +81,9 @@ class HESAExportGUI:
 
         btn = ttk.Frame(tab)
         btn.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn, text="Refresh",
+        ttk.Button(btn, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.refresh', default="Refresh"),
                    command=self._refresh_curriculum_programmes).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="View HESA Payload",
+        ttk.Button(btn, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.view_hesa_payload', default="View HESA Payload"),
                    command=self._view_hesa_payload).pack(side=tk.LEFT, padx=2)
         self._refresh_curriculum_programmes()
 
@@ -106,7 +108,7 @@ class HESAExportGUI:
     def _view_hesa_payload(self):
         sel = self.curr_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a programme first.", parent=self.root)
+            messagebox.showwarning(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.selection', default="Selection"), _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.select_a_programme_first', default="Select a programme first."), parent=self.root)
             return
         code = self.curr_tree.item(sel[0], "values")[0]
         version = self.curr_tree.item(sel[0], "values")[5]
@@ -121,7 +123,7 @@ class HESAExportGUI:
                 return
             payload = curr.hesa_programme_payload(match["id"])
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.error', default="Error"), str(e), parent=self.root)
             return
 
         dlg = tk.Toplevel(self.root)
@@ -136,7 +138,7 @@ class HESAExportGUI:
     # ------------------------------------------------------------------ Returns
     def _create_returns_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Returns")
+        notebook.add(tab, text=_t('gui.governance.compliance.hesa_export.hesa_export.tabs.returns', default="Returns"))
 
         cols = ("year", "type", "status", "date")
         self.returns_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -147,10 +149,10 @@ class HESAExportGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Create", command=self._create_return).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Generate XML", command=self._generate_xml).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Submit", command=self._submit_return).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_returns).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.create', default="Create"), command=self._create_return).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.generate_xml', default="Generate XML"), command=self._generate_xml).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.submit', default="Submit"), command=self._submit_return).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.refresh', default="Refresh"), command=self._refresh_returns).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_returns()
 
@@ -171,16 +173,16 @@ class HESAExportGUI:
 
     def _create_return(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Create HESA Return")
+        dlg.title(_t('gui.governance.compliance.hesa_export.hesa_export.windows.create_hesa_return', default="Create HESA Return"))
         dlg.geometry("400x300")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Academic Year:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.governance.compliance.hesa_export.hesa_export.labels.academic_year', default="Academic Year:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         year_var = tk.StringVar(value=str(datetime.now().year))
         ttk.Entry(dlg, textvariable=year_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Return Type:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.governance.compliance.hesa_export.hesa_export.labels.return_type', default="Return Type:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         type_var = tk.StringVar()
         ttk.Combobox(dlg, textvariable=type_var, values=[
             "Student", "Staff", "Destinations", "Finance", "Estates",
@@ -188,7 +190,7 @@ class HESAExportGUI:
 
         def save():
             if not year_var.get() or not type_var.get():
-                messagebox.showwarning("Validation", "All fields are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.validation', default="Validation"), _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.all_fields_are_required', default="All fields are required."), parent=dlg)
                 return
             try:
                 self.service.create_return(
@@ -197,17 +199,17 @@ class HESAExportGUI:
                 )
                 dlg.destroy()
                 self._refresh_returns()
-                messagebox.showinfo("Success", "HESA return created.", parent=self.root)
+                messagebox.showinfo(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.success', default="Success"), _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.hesa_return_created', default="HESA return created."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.save', default="Save"), command=save).pack(pady=15)
 
     def _get_selected_return_id(self):
         """Get the return ID for the selected treeview row."""
         sel = self.returns_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a return first.", parent=self.root)
+            messagebox.showwarning(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.selection', default="Selection"), _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.select_a_return_first', default="Select a return first."), parent=self.root)
             return None
         values = self.returns_tree.item(sel[0], "values")
         # Look up the return ID by year and type
@@ -226,10 +228,10 @@ class HESAExportGUI:
             return
         try:
             self.service.generate_xml_export(return_id)
-            messagebox.showinfo("Success", "XML generated successfully.", parent=self.root)
+            messagebox.showinfo(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.success', default="Success"), _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.xml_generated_successfully', default="XML generated successfully."), parent=self.root)
             self._refresh_returns()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _submit_return(self):
         return_id = self._get_selected_return_id()
@@ -237,20 +239,20 @@ class HESAExportGUI:
             return
         sel = self.returns_tree.selection()
         values = self.returns_tree.item(sel[0], "values")
-        if not messagebox.askyesno("Confirm", f"Submit {values[1]} return for {values[0]}?", parent=self.root):
+        if not messagebox.askyesno(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.confirm', default="Confirm"), f"Submit {values[1]} return for {values[0]}?", parent=self.root):
             return
         try:
             username = self.auth.current_user.get("username") if self.auth and hasattr(self.auth, "current_user") and self.auth.current_user else None
             self.service.update_return_status(return_id, "submitted", performed_by=username)
-            messagebox.showinfo("Success", "Return submitted.", parent=self.root)
+            messagebox.showinfo(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.success', default="Success"), _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.return_submitted', default="Return submitted."), parent=self.root)
             self._refresh_returns()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.error', default="Error"), str(e), parent=self.root)
 
     # ---------------------------------------------------------- Field Mappings
     def _create_field_mappings_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Field Mappings")
+        notebook.add(tab, text=_t('gui.governance.compliance.hesa_export.hesa_export.tabs.field_mappings', default="Field Mappings"))
 
         cols = ("type", "hesa_field", "local_field")
         self.mappings_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -261,8 +263,8 @@ class HESAExportGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Add", command=self._add_mapping).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_mappings).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.add', default="Add"), command=self._add_mapping).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.refresh', default="Refresh"), command=self._refresh_mappings).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_mappings()
 
@@ -283,28 +285,28 @@ class HESAExportGUI:
 
     def _add_mapping(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Add Field Mapping")
+        dlg.title(_t('gui.governance.compliance.hesa_export.hesa_export.windows.add_field_mapping', default="Add Field Mapping"))
         dlg.geometry("400x300")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Return Type:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.governance.compliance.hesa_export.hesa_export.labels.return_type', default="Return Type:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         type_var = tk.StringVar()
         ttk.Combobox(dlg, textvariable=type_var, values=[
             "Student", "Staff", "Destinations", "Finance", "Estates",
         ], state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="HESA Field:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.governance.compliance.hesa_export.hesa_export.labels.hesa_field', default="HESA Field:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         hesa_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=hesa_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Local Field:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.governance.compliance.hesa_export.hesa_export.labels.local_field', default="Local Field:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         local_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=local_var).pack(fill=tk.X, padx=10)
 
         def save():
             if not type_var.get() or not hesa_var.get() or not local_var.get():
-                messagebox.showwarning("Validation", "All fields are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.validation', default="Validation"), _t('gui.governance.compliance.hesa_export.hesa_export.dialogs.all_fields_are_required', default="All fields are required."), parent=dlg)
                 return
             try:
                 self.service.add_field_mapping(
@@ -315,14 +317,14 @@ class HESAExportGUI:
                 dlg.destroy()
                 self._refresh_mappings()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.governance.compliance.hesa_export.hesa_export.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.save', default="Save"), command=save).pack(pady=15)
 
     # ---------------------------------------------------------- Submission Log
     def _create_submission_log_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Submission Log")
+        notebook.add(tab, text=_t('gui.governance.compliance.hesa_export.hesa_export.tabs.submission_log', default="Submission Log"))
 
         cols = ("action", "details", "by", "date")
         self.log_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -333,7 +335,7 @@ class HESAExportGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_log).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.refresh', default="Refresh"), command=self._refresh_log).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_log()
 
@@ -358,9 +360,9 @@ class HESAExportGUI:
     # ------------------------------------------------------------- Statistics
     def _create_statistics_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Statistics")
+        notebook.add(tab, text=_t('gui.governance.compliance.hesa_export.hesa_export.tabs.statistics', default="Statistics"))
 
-        stats_frame = ttk.LabelFrame(tab, text="HESA Export Statistics")
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.governance.compliance.hesa_export.hesa_export.labels.hesa_export_statistics', default="HESA Export Statistics"))
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.stats_labels = {}
@@ -377,7 +379,7 @@ class HESAExportGUI:
             lbl.grid(row=row, column=col + 1, padx=10, pady=8, sticky=tk.W)
             self.stats_labels[name] = lbl
 
-        ttk.Button(stats_frame, text="Refresh Statistics", command=self._refresh_statistics).grid(
+        ttk.Button(stats_frame, text=_t('gui.governance.compliance.hesa_export.hesa_export.buttons.refresh_statistics', default="Refresh Statistics"), command=self._refresh_statistics).grid(
             row=len(stat_names) // 2 + 1, column=0, columnspan=4, pady=15)
 
         self._refresh_statistics()

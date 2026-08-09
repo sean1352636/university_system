@@ -88,13 +88,13 @@ def show_refunds_page(self):
     self.refunds_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
 
     # Configure columns
-    self.refunds_tree.heading('booking_id', text='Booking ID')
-    self.refunds_tree.heading('booking_ref', text='Reference')
-    self.refunds_tree.heading('date', text='Date')
-    self.refunds_tree.heading('customer', text='Customer')
-    self.refunds_tree.heading('amount', text='Amount')
-    self.refunds_tree.heading('payment_method', text='Payment Method')
-    self.refunds_tree.heading('status', text='Status')
+    self.refunds_tree.heading('booking_id', text=_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.headings.booking_id', default='Booking ID'))
+    self.refunds_tree.heading('booking_ref', text=_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.headings.reference', default='Reference'))
+    self.refunds_tree.heading('date', text=_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.headings.date', default='Date'))
+    self.refunds_tree.heading('customer', text=_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.headings.customer', default='Customer'))
+    self.refunds_tree.heading('amount', text=_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.headings.amount', default='Amount'))
+    self.refunds_tree.heading('payment_method', text=_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.headings.payment_method', default='Payment Method'))
+    self.refunds_tree.heading('status', text=_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.headings.status', default='Status'))
 
     self.refunds_tree.column('booking_id', width=80)
     self.refunds_tree.column('booking_ref', width=150)
@@ -207,7 +207,7 @@ def process_cinema_refund(self):
     # Get selected booking
     selection = self.refunds_tree.selection()
     if not selection:
-        messagebox.showwarning(_t("cinema.messages.warnings.select_item"), "Please select a booking to refund.")
+        messagebox.showwarning(_t("cinema.messages.warnings.select_item"), _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.please_select_a_booking_to_refund', default="Please select a booking to refund."))
         return
 
     item = self.refunds_tree.item(selection[0])
@@ -219,18 +219,18 @@ def process_cinema_refund(self):
 
     # Check if already refunded
     if status == 'refunded':
-        messagebox.showwarning("Already Refunded", _t("cinema.messages.already_refunded"))
+        messagebox.showwarning(_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.already_refunded', default="Already Refunded"), _t("cinema.messages.already_refunded"))
         return
 
     # Parse amount
     try:
         amount = float(amount_str.replace('\u00a3', '').replace(',', ''))
     except (ValueError, TypeError):
-        messagebox.showerror(_t("cinema.common.error"), "Invalid amount format.")
+        messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.invalid_amount_format', default="Invalid amount format."))
         return
 
     # Confirm refund
-    if not messagebox.askyesno("Confirm Refund",
+    if not messagebox.askyesno(_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.confirm_refund', default="Confirm Refund"),
                                f"Refund \u00a3{amount:.2f} for Booking {booking_ref}?"):
         return
 
@@ -243,7 +243,7 @@ def process_cinema_refund(self):
         conn.close()
 
         if not result:
-            messagebox.showerror(_t("cinema.common.error"), "Booking not found.")
+            messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.booking_not_found', default="Booking not found."))
             return
         customer_email = result[0]
 
@@ -257,7 +257,7 @@ def process_cinema_refund(self):
 def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, customer_email):
     """Show dialog to select refund method"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Select Refund Method")
+    dialog.title(_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.windows.select_refund_method', default="Select Refund Method"))
     dialog.geometry("500x400")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -269,7 +269,7 @@ def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, cust
     dialog.geometry(f"+{x}+{y}")
 
     # Header
-    ttk.Label(dialog, text="Select Refund Method",
+    ttk.Label(dialog, text=_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.labels.select_refund_method', default="Select Refund Method"),
              font=('Arial', 12, 'bold')).pack(pady=10)
 
     ttk.Label(dialog, text=f"Refund Amount: \u00a3{amount:.2f}").pack(pady=5)
@@ -322,7 +322,7 @@ def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, cust
                 # If paid via student account but we can't find student_id, show a note
                 ttk.Label(dialog, text=_t("cinema.messages.student_id_not_found"),
                          foreground='orange').pack(pady=5)
-                ttk.Label(dialog, text="You will be asked for Student ID if you select Student Account refund",
+                ttk.Label(dialog, text=_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.labels.you_will_be_asked_for_student_id_if_you_select_student_account_r', default="You will be asked for Student ID if you select Student Account refund"),
                          foreground='grey').pack(pady=2)
         except Exception as e:
             print(f"Could not retrieve booking info: {e}")
@@ -341,17 +341,17 @@ def show_cinema_refund_method_dialog(self, booking_id, booking_ref, amount, cust
 
     def refund_student_account():
         if not FINANCE_AVAILABLE:
-            messagebox.showerror(_t("cinema.common.error"), "Finance system not available.")
+            messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.finance_system_not_available', default="Finance system not available."))
             return
 
         # Get student_id - either from auto-detection or manual entry
         final_student_id = student_id
         if not final_student_id:
-            final_student_id = simpledialog.askstring("Student ID Required",
-                "Enter Student ID for refund to student account:",
+            final_student_id = simpledialog.askstring(_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.student_id_required', default="Student ID Required"),
+                _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.enter_student_id_for_refund_to_student_account', default="Enter Student ID for refund to student account:"),
                 parent=dialog)
             if not final_student_id:
-                messagebox.showwarning(_t("cinema.messages.success.cancelled"), "Student ID is required for student account refund.")
+                messagebox.showwarning(_t("cinema.messages.success.cancelled"), _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.student_id_is_required_for_student_account_refund', default="Student ID is required for student account refund."))
                 return
 
             # Verify the student exists
@@ -461,7 +461,7 @@ def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method
 def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, customer_email, student_id):
     """Add refund amount to student finance account"""
     if not FINANCE_AVAILABLE:
-        messagebox.showerror(_t("cinema.common.error"), "Finance system not available.")
+        messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.finance_system_not_available', default="Finance system not available."))
         return
 
     try:
@@ -648,7 +648,7 @@ def view_cinema_booking_details(self):
     # Get selected booking
     selection = self.refunds_tree.selection()
     if not selection:
-        messagebox.showwarning(_t("cinema.messages.warnings.select_item"), "Please select a booking to view.")
+        messagebox.showwarning(_t("cinema.messages.warnings.select_item"), _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.please_select_a_booking_to_view', default="Please select a booking to view."))
         return
 
     item = self.refunds_tree.item(selection[0])
@@ -685,7 +685,7 @@ def view_cinema_booking_details(self):
         booking = cursor.fetchone()
 
         if not booking:
-            messagebox.showerror(_t("cinema.common.error"), "Booking not found.")
+            messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.dialogs.booking_not_found', default="Booking not found."))
             conn.close()
             return
 
@@ -740,7 +740,7 @@ def view_cinema_booking_details(self):
 
         # Create details window
         details_window = tk.Toplevel(self.root)
-        details_window.title("Booking Details")
+        details_window.title(_t('gui.operations.commerce.cinema.cinema_gui.reports.refunds.windows.booking_details', default="Booking Details"))
         details_window.geometry("600x700")
         details_window.transient(self.root)
 

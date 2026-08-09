@@ -12,7 +12,7 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import token_required, authorize_object
 from education_system.platform.delivery.api.university.validators import validate_grade_create, validate_grade_update
 from education_system.systems.university.infrastructure.exceptions import GradeNotFoundError, ValidationError
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
@@ -35,6 +35,12 @@ def list_grades():
     student_id = request.args.get("student_id")
     assessment_id = request.args.get("assessment_id")
 
+    if (g.current_user or {}).get("role") not in {"admin", "staff", "superadmin"}:
+        student_id = student_id or (g.current_user or {}).get("sub")
+        denied = authorize_object(student_id)
+        if denied is not None:
+            return denied
+
     clauses = []
     params = []
     if student_id:
@@ -55,6 +61,12 @@ def list_grades():
 @grade_bp.route("", methods=["POST"])
 @token_required
 def record_grade():
+    # Recording a grade is grade *entry* — a capability instructors hold
+    # (enter_grades), unlike the admin/staff-only manage_grades. Now that the
+    # permission argument enforces, require the capability that matches.
+    denied = authorize_object("staff-boundary", permission="enter_grades")
+    if denied is not None:
+        return denied
     data = request.get_json(silent=True) or {}
     validate_grade_create(data)
 
@@ -88,6 +100,9 @@ def record_grade():
 @grade_bp.route("/<int:grade_id>", methods=["PUT"])
 @token_required
 def update_grade(grade_id: int):
+    denied = authorize_object("staff-boundary", permission="edit_grades")
+    if denied is not None:
+        return denied
     data = request.get_json(silent=True) or {}
     validate_grade_update(data)
 

@@ -20,6 +20,7 @@ from datetime import datetime
 from tkinter import messagebox, ttk
 from typing import Callable
 
+from education_system.platform.delivery.gui import window_sizing
 from education_system.systems.nursery import SYSTEM_NAME, SYSTEM_SLUG
 from education_system.systems.nursery.menu import NAV_CATEGORIES
 
@@ -34,8 +35,7 @@ class NurseryMainGUI:
         self.auth = auth
         self.root = tk.Tk()
         self.root.title(SYSTEM_NAME)
-        self.root.geometry("1400x900")
-        self.root.minsize(1200, 800)
+        window_sizing.fit(self.root, "1400x900", (1200, 800))
 
         self.style = ttk.Style()
         try:

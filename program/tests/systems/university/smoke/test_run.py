@@ -320,7 +320,7 @@ class TestMain:
     @patch('education_system.systems.university.infrastructure.database.database_utils.init_db')
     @patch('education_system.systems.university.infrastructure.shared_context.set_auth')
     @patch('education_system.systems.university.infrastructure.auth.core.UserAuth')
-    @patch('education_system.systems.university.infrastructure.paths.ensure_directories')
+    @patch('education_system.paths.ensure_university_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_help_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db, mock_input):
@@ -336,7 +336,7 @@ class TestMain:
     @patch('education_system.systems.university.infrastructure.database.database_utils.init_db')
     @patch('education_system.systems.university.infrastructure.shared_context.set_auth')
     @patch('education_system.systems.university.infrastructure.auth.core.UserAuth')
-    @patch('education_system.systems.university.infrastructure.paths.ensure_directories')
+    @patch('education_system.paths.ensure_university_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_with_unknown_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                        mock_set_auth, mock_init_db, mock_input):
@@ -388,7 +388,7 @@ class TestMain:
     @patch('education_system.systems.university.infrastructure.database.database_utils.init_db')
     @patch('education_system.systems.university.infrastructure.shared_context.set_auth')
     @patch('education_system.systems.university.infrastructure.auth.core.UserAuth')
-    @patch('education_system.systems.university.infrastructure.paths.ensure_directories')
+    @patch('education_system.paths.ensure_university_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_main_database_init_warning(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                        mock_set_auth, mock_init_db, mock_input):
@@ -507,7 +507,7 @@ class TestMain:
     @patch('education_system.systems.university.infrastructure.database.database_utils.init_db')
     @patch('education_system.systems.university.infrastructure.shared_context.set_auth')
     @patch('education_system.systems.university.infrastructure.auth.core.UserAuth')
-    @patch('education_system.systems.university.infrastructure.paths.ensure_directories')
+    @patch('education_system.paths.ensure_university_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_help_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                      mock_set_auth, mock_init_db, mock_input):
@@ -673,7 +673,7 @@ class TestOutputFormatting:
     @patch('education_system.systems.university.infrastructure.database.database_utils.init_db')
     @patch('education_system.systems.university.infrastructure.shared_context.set_auth')
     @patch('education_system.systems.university.infrastructure.auth.core.UserAuth')
-    @patch('education_system.systems.university.infrastructure.paths.ensure_directories')
+    @patch('education_system.paths.ensure_university_directories')
     @patch('sys.stdout', new_callable=StringIO)
     def test_help_message_formatting(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
                                     mock_set_auth, mock_init_db, mock_input):

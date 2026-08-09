@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
 import threading
@@ -41,17 +43,17 @@ from education_system.systems.university.infrastructure.i18n import get_text, _
 
 def create_export_section(self, parent):
     """Create export/import section"""
-    export_frame = ttk.LabelFrame(parent, text="Data Management", padding=15)
+    export_frame = ttk.LabelFrame(parent, text=_t('gui.academics.ai_detector.export_import_view.labels.data_management', default="Data Management"), padding=15)
     export_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Label(export_frame, text="Export results and manage data").pack(anchor='w')
+    ttk.Label(export_frame, text=_t('gui.academics.ai_detector.export_import_view.labels.export_results_and_manage_data', default="Export results and manage data")).pack(anchor='w')
 
     export_buttons = ttk.Frame(export_frame)
     export_buttons.pack(fill='x', pady=(10, 0))
 
-    ttk.Button(export_buttons, text="📤 Export Results", command=self.export_results).pack(side='left', padx=(0, 10))
-    ttk.Button(export_buttons, text="📥 Import Data", command=self.import_data).pack(side='left', padx=(0, 10))
-    ttk.Button(export_buttons, text="🗄️ Database Status", command=self.show_db_status).pack(side='left')
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.export_results', default="📤 Export Results"), command=self.export_results).pack(side='left', padx=(0, 10))
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.import_data', default="📥 Import Data"), command=self.import_data).pack(side='left', padx=(0, 10))
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.database_status', default="🗄️ Database Status"), command=self.show_db_status).pack(side='left')
 
 
 def create_data_export_import_view(self, parent):
@@ -64,55 +66,55 @@ def create_data_export_import_view(self, parent):
     data_card = ttk.Frame(export_frame, style='Card.TFrame')
     data_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(data_card, text="Advanced Data Management", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(data_card, text=_t('gui.academics.ai_detector.export_import_view.labels.advanced_data_management', default="Advanced Data Management"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Export options
-    export_frame_inner = ttk.LabelFrame(data_card, text="Export Options", padding=15)
+    export_frame_inner = ttk.LabelFrame(data_card, text=_t('gui.academics.ai_detector.export_import_view.labels.export_options', default="Export Options"), padding=15)
     export_frame_inner.pack(fill='x', padx=15, pady=(0, 15))
 
     export_buttons = ttk.Frame(export_frame_inner)
     export_buttons.pack(fill='x')
 
-    ttk.Button(export_buttons, text="📊 Export Detailed Report",
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.export_detailed_report', default="📊 Export Detailed Report"),
               command=self.export_detailed_report).pack(side='left', padx=(0, 10))
-    ttk.Button(export_buttons, text="📈 Export Analytics Data",
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.export_analytics_data', default="📈 Export Analytics Data"),
               command=self.export_analytics_data).pack(side='left', padx=(0, 10))
-    ttk.Button(export_buttons, text="🔐 Export Audit Log",
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.export_audit_log', default="🔐 Export Audit Log"),
               command=self.export_audit_log).pack(side='left')
 
     # Import options
-    import_frame_inner = ttk.LabelFrame(data_card, text="Import Options", padding=15)
+    import_frame_inner = ttk.LabelFrame(data_card, text=_t('gui.academics.ai_detector.export_import_view.labels.import_options', default="Import Options"), padding=15)
     import_frame_inner.pack(fill='x', padx=15, pady=(0, 15))
 
     import_buttons = ttk.Frame(import_frame_inner)
     import_buttons.pack(fill='x')
 
-    ttk.Button(import_buttons, text="📥 Import Submissions",
+    ttk.Button(import_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.import_submissions', default="📥 Import Submissions"),
               command=self.import_submissions).pack(side='left', padx=(0, 10))
-    ttk.Button(import_buttons, text="👥 Import Student Data",
+    ttk.Button(import_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.import_student_data', default="👥 Import Student Data"),
               command=self.import_student_data).pack(side='left', padx=(0, 10))
-    ttk.Button(import_buttons, text="⚙️ Import Settings",
+    ttk.Button(import_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.import_settings', default="⚙️ Import Settings"),
               command=self.import_settings).pack(side='left')
 
     # Data cleanup
-    cleanup_frame = ttk.LabelFrame(data_card, text="Data Cleanup", padding=15)
+    cleanup_frame = ttk.LabelFrame(data_card, text=_t('gui.academics.ai_detector.export_import_view.labels.data_cleanup', default="Data Cleanup"), padding=15)
     cleanup_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     cleanup_buttons = ttk.Frame(cleanup_frame)
     cleanup_buttons.pack(fill='x')
 
-    ttk.Button(cleanup_buttons, text="🗑️ Archive Old Data",
+    ttk.Button(cleanup_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.archive_old_data', default="🗑️ Archive Old Data"),
               command=self.archive_old_data).pack(side='left', padx=(0, 10))
-    ttk.Button(cleanup_buttons, text="🔄 Optimize Database",
+    ttk.Button(cleanup_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.optimize_database', default="🔄 Optimize Database"),
               command=self.optimize_database).pack(side='left', padx=(0, 10))
-    ttk.Button(cleanup_buttons, text="🧹 Clean Duplicates",
+    ttk.Button(cleanup_buttons, text=_t('gui.academics.ai_detector.export_import_view.buttons.clean_duplicates', default="🧹 Clean Duplicates"),
               command=self.clean_duplicates).pack(side='left')
 
 
 def export_results(self):
     """Export analysis results"""
     file_path = filedialog.asksaveasfilename(
-        title="Export Results",
+        title=_t('gui.academics.ai_detector.export_import_view.dialogs.export_results', default="Export Results"),
         defaultextension=".json",
         filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv"), ("All files", "*.*")]
     )
@@ -146,16 +148,16 @@ def export_results(self):
                     }
                     json.dump(export_data, jsonfile, indent=2, default=str)
 
-            messagebox.showinfo("Export Complete", f"Results exported to {file_path}")
+            messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.export_complete', default="Export Complete"), f"Results exported to {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export results: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.export_error', default="Export Error"), f"Failed to export results: {str(e)}")
 
 
 def export_detailed_report(self):
     """Export detailed analysis report"""
     file_path = filedialog.asksaveasfilename(
-        title="Export Detailed Report",
+        title=_t('gui.academics.ai_detector.export_import_view.dialogs.export_detailed_report', default="Export Detailed Report"),
         defaultextension=".pdf",
         filetypes=[("PDF files", "*.pdf"), ("HTML files", "*.html"), ("Word files", "*.docx")]
     )
@@ -172,15 +174,15 @@ def export_detailed_report(self):
             else:
                 self.export_to_docx(report_data, file_path)
 
-            messagebox.showinfo("Export Complete", f"Detailed report exported to {file_path}")
+            messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.export_complete', default="Export Complete"), f"Detailed report exported to {file_path}")
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export report: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.export_error', default="Export Error"), f"Failed to export report: {str(e)}")
 
 
 def export_analytics_data(self):
     """Export analytics and statistics data"""
     file_path = filedialog.asksaveasfilename(
-        title="Export Analytics Data",
+        title=_t('gui.academics.ai_detector.export_import_view.dialogs.export_analytics_data', default="Export Analytics Data"),
         defaultextension=".xlsx",
         filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv")]
     )
@@ -194,15 +196,15 @@ def export_analytics_data(self):
             else:
                 self.export_to_csv(analytics_data, file_path)
 
-            messagebox.showinfo("Export Complete", f"Analytics data exported to {file_path}")
+            messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.export_complete', default="Export Complete"), f"Analytics data exported to {file_path}")
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export analytics: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.export_error', default="Export Error"), f"Failed to export analytics: {str(e)}")
 
 
 def export_audit_log(self):
     """Export audit log"""
     file_path = filedialog.asksaveasfilename(
-        title="Export Audit Log",
+        title=_t('gui.academics.ai_detector.export_import_view.dialogs.export_audit_log', default="Export Audit Log"),
         defaultextension=".json",
         filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv")]
     )
@@ -222,15 +224,15 @@ def export_audit_log(self):
                         writer.writeheader()
                         writer.writerows(audit_data)
 
-            messagebox.showinfo("Export Complete", f"Audit log exported to {file_path}")
+            messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.export_complete', default="Export Complete"), f"Audit log exported to {file_path}")
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export audit log: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.export_error', default="Export Error"), f"Failed to export audit log: {str(e)}")
 
 
 def import_data(self):
     """Import data from file"""
     file_path = filedialog.askopenfilename(
-        title="Import AI Detection Data",
+        title=_t('gui.academics.ai_detector.export_import_view.dialogs.import_ai_detection_data', default="Import AI Detection Data"),
         filetypes=[
             ("JSON files", "*.json"),
             ("CSV files", "*.csv"),
@@ -244,27 +246,27 @@ def import_data(self):
 
     # Create import progress window
     import_window = tk.Toplevel(self.root)
-    import_window.title("Data Import Progress")
+    import_window.title(_t('gui.academics.ai_detector.export_import_view.windows.data_import_progress', default="Data Import Progress"))
     import_window.geometry("500x400")
     import_window.transient(self.root)
     import_window.grab_set()
 
     # Title
-    ttk.Label(import_window, text="📥 Importing AI Detection Data", style='Title.TLabel').pack(pady=15)
+    ttk.Label(import_window, text=_t('gui.academics.ai_detector.export_import_view.labels.importing_ai_detection_data', default="📥 Importing AI Detection Data"), style='Title.TLabel').pack(pady=15)
 
     # Progress frame
-    progress_frame = ttk.LabelFrame(import_window, text="Import Progress", padding="15")
+    progress_frame = ttk.LabelFrame(import_window, text=_t('gui.academics.ai_detector.export_import_view.labels.import_progress', default="Import Progress"), padding="15")
     progress_frame.pack(fill='x', padx=20, pady=(0, 15))
 
     progress_var = tk.DoubleVar()
     progress_bar = ttk.Progressbar(progress_frame, variable=progress_var, mode='determinate', length=400)
     progress_bar.pack(pady=(0, 10))
 
-    status_label = ttk.Label(progress_frame, text="Preparing import...")
+    status_label = ttk.Label(progress_frame, text=_t('gui.academics.ai_detector.export_import_view.labels.preparing_import', default="Preparing import..."))
     status_label.pack()
 
     # Results frame
-    results_frame = ttk.LabelFrame(import_window, text="Import Results", padding="15")
+    results_frame = ttk.LabelFrame(import_window, text=_t('gui.academics.ai_detector.export_import_view.labels.import_results', default="Import Results"), padding="15")
     results_frame.pack(fill='both', expand=True, padx=20, pady=(0, 15))
 
     results_text = tk.Text(results_frame, height=10, wrap='word')
@@ -291,7 +293,7 @@ def import_data(self):
 
             if file_ext == '.json':
                 # Import JSON data
-                status_label.config(text="Reading JSON file...")
+                status_label.config(text=_t('gui.academics.ai_detector.export_import_view.text.reading_json_file', default="Reading JSON file..."))
                 import_window.update()
 
                 with open(file_path, 'r', encoding='utf-8') as jsonfile:
@@ -329,7 +331,7 @@ def import_data(self):
             elif file_ext == '.csv':
                 # Import CSV data
                 import csv
-                status_label.config(text="Reading CSV file...")
+                status_label.config(text=_t('gui.academics.ai_detector.export_import_view.text.reading_csv_file', default="Reading CSV file..."))
                 import_window.update()
 
                 with open(file_path, 'r', encoding='utf-8') as csvfile:
@@ -366,7 +368,7 @@ def import_data(self):
 
             elif file_ext == '.txt':
                 # Import text file (assume one submission per line)
-                status_label.config(text="Reading text file...")
+                status_label.config(text=_t('gui.academics.ai_detector.export_import_view.text.reading_text_file', default="Reading text file..."))
                 import_window.update()
 
                 with open(file_path, 'r', encoding='utf-8') as txtfile:
@@ -401,7 +403,7 @@ def import_data(self):
                         import_stats['errors'].append(f"Line {i + 1}: {str(e)}")
 
             progress_var.set(100)
-            status_label.config(text="Import completed!")
+            status_label.config(text=_t('gui.academics.ai_detector.export_import_view.text.import_completed', default="Import completed!"))
 
             # Display results
             results_text.insert(tk.END, f"\n{'='*50}\n")
@@ -429,15 +431,15 @@ def import_data(self):
 
         except Exception as e:
             results_text.insert(tk.END, f"\nCritical Error: {str(e)}\n")
-            status_label.config(text="Import failed!")
+            status_label.config(text=_t('gui.academics.ai_detector.export_import_view.text.import_failed', default="Import failed!"))
 
     # Control buttons
     button_frame = ttk.Frame(import_window)
     button_frame.pack(fill='x', padx=20, pady=(0, 15))
 
-    ttk.Button(button_frame, text="Start Import",
+    ttk.Button(button_frame, text=_t('gui.academics.ai_detector.export_import_view.buttons.start_import', default="Start Import"),
               command=lambda: threading.Thread(target=run_import, daemon=True).start()).pack(side='left', padx=(0, 10))
-    ttk.Button(button_frame, text="Close", command=import_window.destroy).pack(side='right')
+    ttk.Button(button_frame, text=_t('gui.academics.ai_detector.export_import_view.buttons.close', default="Close"), command=import_window.destroy).pack(side='right')
 
     # Show initial message
     file_ext = os.path.splitext(file_path)[1].lower()
@@ -450,39 +452,39 @@ def import_data(self):
 def import_submissions(self):
     """Import submissions from file"""
     file_path = filedialog.askopenfilename(
-        title="Import Submissions",
+        title=_t('gui.academics.ai_detector.export_import_view.dialogs.import_submissions', default="Import Submissions"),
         filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv"), ("Excel files", "*.xlsx")]
     )
 
     if file_path:
         try:
             imported_count = self.process_submission_import(file_path)
-            messagebox.showinfo("Import Complete", f"Successfully imported {imported_count} submissions")
+            messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.import_complete', default="Import Complete"), f"Successfully imported {imported_count} submissions")
             self.refresh_history()
             self.refresh_statistics()
         except Exception as e:
-            messagebox.showerror("Import Error", f"Failed to import submissions: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.import_error', default="Import Error"), f"Failed to import submissions: {str(e)}")
 
 
 def import_student_data(self):
     """Import student demographic data"""
     file_path = filedialog.askopenfilename(
-        title="Import Student Data",
+        title=_t('gui.academics.ai_detector.export_import_view.dialogs.import_student_data', default="Import Student Data"),
         filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx")]
     )
 
     if file_path:
         try:
             imported_count = self.process_student_data_import(file_path)
-            messagebox.showinfo("Import Complete", f"Successfully imported data for {imported_count} students")
+            messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.import_complete', default="Import Complete"), f"Successfully imported data for {imported_count} students")
         except Exception as e:
-            messagebox.showerror("Import Error", f"Failed to import student data: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.import_error', default="Import Error"), f"Failed to import student data: {str(e)}")
 
 
 def import_settings(self):
     """Import application settings"""
     file_path = filedialog.askopenfilename(
-        title="Import Settings",
+        title=_t('gui.academics.ai_detector.export_import_view.dialogs.import_settings', default="Import Settings"),
         filetypes=[("JSON files", "*.json")]
     )
 
@@ -492,9 +494,9 @@ def import_settings(self):
                 settings = json.load(f)
 
             self.apply_imported_settings(settings)
-            messagebox.showinfo("Import Complete", "Settings imported successfully")
+            messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.import_complete', default="Import Complete"), _t('gui.academics.ai_detector.export_import_view.dialogs.settings_imported_successfully', default="Settings imported successfully"))
         except Exception as e:
-            messagebox.showerror("Import Error", f"Failed to import settings: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.import_error', default="Import Error"), f"Failed to import settings: {str(e)}")
 
 
 def archive_old_data(self):
@@ -507,9 +509,9 @@ def archive_old_data(self):
     if cutoff_date:
         try:
             archived_count = self.process_data_archival(cutoff_date)
-            messagebox.showinfo("Archive Complete", f"Archived {archived_count} records")
+            messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.archive_complete', default="Archive Complete"), f"Archived {archived_count} records")
         except Exception as e:
-            messagebox.showerror("Archive Error", f"Failed to archive data: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.archive_error', default="Archive Error"), f"Failed to archive data: {str(e)}")
 
 
 def optimize_database(self):
@@ -518,10 +520,10 @@ def optimize_database(self):
         self.update_status("Optimizing database...")
         # Run database optimization
         optimization_result = self.run_database_optimization()
-        messagebox.showinfo("Optimization Complete", f"Database optimized successfully\n{optimization_result}")
+        messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.optimization_complete', default="Optimization Complete"), f"Database optimized successfully\n{optimization_result}")
         self.update_status("Database optimization complete")
     except Exception as e:
-        messagebox.showerror("Optimization Error", f"Failed to optimize database: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.optimization_error', default="Optimization Error"), f"Failed to optimize database: {str(e)}")
 
 
 def clean_duplicates(self):
@@ -530,16 +532,16 @@ def clean_duplicates(self):
         duplicates_found = self.find_duplicate_records()
         if duplicates_found > 0:
             response = messagebox.askyesno(
-                "Duplicates Found",
+                _t('gui.academics.ai_detector.export_import_view.dialogs.duplicates_found', default="Duplicates Found"),
                 f"Found {duplicates_found} duplicate records. Remove them?"
             )
             if response:
                 removed_count = self.remove_duplicate_records()
-                messagebox.showinfo("Cleanup Complete", f"Removed {removed_count} duplicate records")
+                messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.cleanup_complete', default="Cleanup Complete"), f"Removed {removed_count} duplicate records")
         else:
-            messagebox.showinfo("No Duplicates", "No duplicate records found")
+            messagebox.showinfo(_t('gui.academics.ai_detector.export_import_view.dialogs.no_duplicates', default="No Duplicates"), _t('gui.academics.ai_detector.export_import_view.dialogs.no_duplicate_records_found', default="No duplicate records found"))
     except Exception as e:
-        messagebox.showerror("Cleanup Error", f"Failed to clean duplicates: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.export_import_view.dialogs.cleanup_error', default="Cleanup Error"), f"Failed to clean duplicates: {str(e)}")
 
 
 def _process_import_record(self, record, stats):

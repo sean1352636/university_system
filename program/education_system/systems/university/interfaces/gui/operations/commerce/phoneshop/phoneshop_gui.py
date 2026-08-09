@@ -425,7 +425,7 @@ class PhoneShopGUI:
     def open_cart_window(self):
         """Open shopping cart in a new window"""
         cart_dialog = tk.Toplevel(self.root)
-        cart_dialog.title("Shopping Cart")
+        cart_dialog.title(_t('gui.operations.commerce.phoneshop.phoneshop.windows.shopping_cart', default="Shopping Cart"))
         cart_dialog.geometry("1000x750")
         cart_dialog.transient(self.root)
         cart_dialog.grab_set()
@@ -493,18 +493,18 @@ class PhoneShopGUI:
         def remove_selected():
             selected = cart_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("phoneshop.msg_titles.warning"), "Please select an item to remove")
+                messagebox.showwarning(_t("phoneshop.msg_titles.warning"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.please_select_an_item_to_remove', default="Please select an item to remove"))
                 return
             product_id = cart_tree.item(selected[0])['values'][0]
             self.cart = [item for item in self.cart if item['product_id'] != product_id]
             cart_dialog.destroy()
-            messagebox.showinfo(_t("phoneshop.msg_titles.success"), "Item removed from cart")
+            messagebox.showinfo(_t("phoneshop.msg_titles.success"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.item_removed_from_cart', default="Item removed from cart"))
 
         def clear_all():
-            if messagebox.askyesno(_t("phoneshop.msg_titles.confirm"), "Clear all items from cart?"):
+            if messagebox.askyesno(_t("phoneshop.msg_titles.confirm"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.clear_all_items_from_cart', default="Clear all items from cart?")):
                 self.cart = []
                 cart_dialog.destroy()
-                messagebox.showinfo(_t("phoneshop.msg_titles.success"), "Cart cleared")
+                messagebox.showinfo(_t("phoneshop.msg_titles.success"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.cart_cleared', default="Cart cleared"))
 
         ttk.Button(action_frame, text=_t("phoneshop.btn.remove_selected"), command=remove_selected).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text=_t("phoneshop.btn.clear_cart"), command=clear_all).pack(side=tk.LEFT, padx=5)
@@ -562,7 +562,7 @@ class PhoneShopGUI:
 
         def proceed_to_payment():
             if not self.cart:
-                messagebox.showwarning(_t("phoneshop.msg_titles.warning"), "Cart is empty")
+                messagebox.showwarning(_t("phoneshop.msg_titles.warning"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.cart_is_empty', default="Cart is empty"))
                 return
             cart_dialog.destroy()
             self.show_payment_window()
@@ -597,7 +597,7 @@ class PhoneShopGUI:
 
         # Create payment dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Complete Purchase")
+        dialog.title(_t('gui.operations.commerce.phoneshop.phoneshop.windows.complete_purchase', default="Complete Purchase"))
         dialog.geometry("400x500")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -650,7 +650,7 @@ class PhoneShopGUI:
             balance_text = f"Student Account (Balance: £{balance:.2f})"
             payment_options.append(balance_text)
 
-        payment_method_var = tk.StringVar(value='Card')
+        payment_method_var = tk.StringVar(value=_t('gui.operations.commerce.phoneshop.phoneshop.values.card', default='Card'))
         for option in payment_options:
             ttk.Radiobutton(payment_frame, text=option, variable=payment_method_var, value=option).pack(anchor=tk.W)
 
@@ -661,7 +661,7 @@ class PhoneShopGUI:
             # Check balance for student account
             if actual_method == 'finance_account':
                 if balance is None or balance < total:
-                    messagebox.showerror(_t("common.error"), "Insufficient balance in student account")
+                    messagebox.showerror(_t("common.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.insufficient_balance_in_student_account', default="Insufficient balance in student account"))
                     return
 
                 # Process student account payment
@@ -793,7 +793,7 @@ Payment: {order['payment_status']}
         # Get order details
         order = OrderManager.get_order(order_id)
         if not order:
-            messagebox.showerror(_t("common.error"), "Order not found")
+            messagebox.showerror(_t("common.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.order_not_found', default="Order not found"))
             return
 
         customer_id = order.get('customer_id', 'GUEST')
@@ -846,7 +846,7 @@ Payment: {order['payment_status']}
                     success = self.add_phoneshop_refund_to_student_account(customer_id, amount, refund_ref)
                     if not success:
                         messagebox.showwarning(_t("phoneshop.msg_titles.partial_success"),
-                                             "Refund recorded but failed to credit student account. Please credit manually.")
+                                             _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
                 # Send refund receipt email
                 if transaction_id:
@@ -860,7 +860,7 @@ Payment: {order['payment_status']}
                     f"Refund of £{amount:.2f} processed successfully.\nRefund Method: {refund_method}\nRefund Reference: {refund_ref}\nOrder status updated to Refunded.")
                 self._load_orders()
             else:
-                messagebox.showerror(_t("common.error"), "Failed to process refund")
+                messagebox.showerror(_t("common.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.failed_to_process_refund', default="Failed to process refund"))
         except Exception as e:
             logger.error(f"Error processing refund: {e}")
             messagebox.showerror(_t("common.error"), f"Error processing refund: {e}")
@@ -868,7 +868,7 @@ Payment: {order['payment_status']}
     def show_refund_method_dialog(self, amount, order_number, customer_id):
         """Show dialog to select refund method for order refunds"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Select Refund Method")
+        dialog.title(_t('gui.operations.commerce.phoneshop.phoneshop.windows.select_refund_method', default="Select Refund Method"))
         dialog.geometry("450x400")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -908,7 +908,7 @@ Payment: {order['payment_status']}
 
         def select_student_account():
             if not customer_id or customer_id == 'GUEST':
-                messagebox.showerror(_t("phoneshop.msg_titles.error"), "No customer ID associated with this order.")
+                messagebox.showerror(_t("phoneshop.msg_titles.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.no_customer_id_associated_with_this_order', default="No customer ID associated with this order."))
                 return
             result['method'] = 'Student Account'
             dialog.destroy()
@@ -1105,7 +1105,7 @@ Low Stock Items: {summary['low_stock_count']}
     def create_refunds_tab(self):
         """Create the refunds management tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Refunds")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.phoneshop.phoneshop.tabs.refunds', default="Refunds"))
 
         # Header
         header_frame = ttk.Frame(tab)
@@ -1228,14 +1228,14 @@ Low Stock Items: {summary['low_stock_count']}
         """Process a refund for selected phone shop transaction"""
         selection = self.refunds_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("phoneshop.msg_titles.no_selection"), "Please select a transaction to refund.")
+            messagebox.showwarning(_t("phoneshop.msg_titles.no_selection"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.please_select_a_transaction_to_refund', default="Please select a transaction to refund."))
             return
 
         item = self.refunds_tree.item(selection[0])
         values = item['values']
 
         if len(values) < 7:
-            messagebox.showerror(_t("phoneshop.msg_titles.error"), "Invalid transaction data.")
+            messagebox.showerror(_t("phoneshop.msg_titles.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.invalid_transaction_data', default="Invalid transaction data."))
             return
 
         transaction_id = values[0]
@@ -1244,7 +1244,7 @@ Low Stock Items: {summary['low_stock_count']}
         try:
             amount = float(amount_str)
         except ValueError:
-            messagebox.showerror(_t("phoneshop.msg_titles.error"), "Invalid amount format.")
+            messagebox.showerror(_t("phoneshop.msg_titles.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.invalid_amount_format', default="Invalid amount format."))
             return
 
         status = values[6]
@@ -1270,7 +1270,7 @@ Low Stock Items: {summary['low_stock_count']}
                 trans_data = cursor.fetchone()
 
                 if not trans_data:
-                    messagebox.showerror(_t("phoneshop.msg_titles.error"), "Transaction not found in database.")
+                    messagebox.showerror(_t("phoneshop.msg_titles.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.transaction_not_found_in_database', default="Transaction not found in database."))
                     return
 
                 customer_id = trans_data[0]
@@ -1329,7 +1329,7 @@ Low Stock Items: {summary['low_stock_count']}
                 success = self.add_phoneshop_refund_to_student_account(customer_id, amount, refund_ref)
                 if not success:
                     messagebox.showwarning(_t("phoneshop.msg_titles.partial_success"),
-                                         "Refund recorded but failed to credit student account. Please credit manually.")
+                                         _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
             # Send refund receipt email
             self.send_phoneshop_refund_receipt(transaction_id, customer_id, amount, refund_method, refund_ref)
@@ -1350,7 +1350,7 @@ Low Stock Items: {summary['low_stock_count']}
     def show_phoneshop_refund_method_dialog(self, amount, transaction_id, customer_id):
         """Show dialog to select refund method"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Select Refund Method")
+        dialog.title(_t('gui.operations.commerce.phoneshop.phoneshop.windows.select_refund_method', default="Select Refund Method"))
         dialog.geometry("400x350")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -1390,7 +1390,7 @@ Low Stock Items: {summary['low_stock_count']}
 
         def select_student_account():
             if not customer_id:
-                messagebox.showerror(_t("phoneshop.msg_titles.error"), "No customer ID associated with this transaction.")
+                messagebox.showerror(_t("phoneshop.msg_titles.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.no_customer_id_associated_with_this_transaction', default="No customer ID associated with this transaction."))
                 return
             result['method'] = 'Student Account'
             dialog.destroy()
@@ -1519,14 +1519,14 @@ Low Stock Items: {summary['low_stock_count']}
         """View detailed information for selected transaction"""
         selection = self.refunds_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("phoneshop.msg_titles.no_selection"), "Please select a transaction to view details.")
+            messagebox.showwarning(_t("phoneshop.msg_titles.no_selection"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.please_select_a_transaction_to_view_details', default="Please select a transaction to view details."))
             return
 
         item = self.refunds_tree.item(selection[0])
         values = item['values']
 
         if len(values) < 7:
-            messagebox.showerror(_t("phoneshop.msg_titles.error"), "Invalid transaction data.")
+            messagebox.showerror(_t("phoneshop.msg_titles.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.invalid_transaction_data', default="Invalid transaction data."))
             return
 
         transaction_id = values[0]
@@ -1545,7 +1545,7 @@ Low Stock Items: {summary['low_stock_count']}
                 trans = cursor.fetchone()
 
                 if not trans:
-                    messagebox.showerror(_t("phoneshop.msg_titles.error"), "Transaction not found.")
+                    messagebox.showerror(_t("phoneshop.msg_titles.error"), _t('gui.operations.commerce.phoneshop.phoneshop.dialogs.transaction_not_found', default="Transaction not found."))
                     return
 
                 # Get order items

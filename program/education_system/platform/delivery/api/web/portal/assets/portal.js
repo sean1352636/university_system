@@ -205,13 +205,17 @@
              class="${active === "dashboard" ? "active" : ""}">Dashboard</a>
           <a href="/portal/students.html${system ? "?system=" + system : ""}"
              class="${active === "students" ? "active" : ""}">Students</a>
+          ${system === "university"
+            ? `<a href="/portal/operations"
+                 class="${active === "operations" ? "active" : ""}">Operations</a>`
+            : ""}
         </nav>
         <div class="user-chip">
           ${meta ? `<span class="tag tag-${meta.key}">${meta.label}</span>` : ""}
           ${user ? `<span><strong>${escapeHtml(user.display_name || user.username)}</strong></span>` : ""}
           ${user
             ? `<button class="btn-ghost" onclick="EduPortal.logout()">Sign out</button>`
-            : `<a class="btn" href="/portal/login.html">Sign in</a>`}
+            : (active === "home" ? "" : `<a class="btn" href="/portal/login.html">Sign in</a>`)}
         </div>
       </header>`;
 

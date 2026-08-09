@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -300,8 +302,8 @@ def show_club_merchandise_selection(self):
     title_frame = ttk.Frame(self.content_frame)
     title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 20))
 
-    ttk.Label(title_frame, text="Club Merchandise", style='Title.TLabel').pack(side='left')
-    ttk.Label(title_frame, text="Select a club to browse merchandise",
+    ttk.Label(title_frame, text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.labels.club_merchandise', default="Club Merchandise"), style='Title.TLabel').pack(side='left')
+    ttk.Label(title_frame, text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.labels.select_a_club_to_browse_merchandise', default="Select a club to browse merchandise"),
              font=('Arial', 10), foreground='gray').pack(side='left', padx=20)
 
     # Main content frame
@@ -310,14 +312,14 @@ def show_club_merchandise_selection(self):
     main_frame.columnconfigure(0, weight=1)
 
     # Instructions
-    instructions_frame = ttk.LabelFrame(main_frame, text="Instructions", padding="15")
+    instructions_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.labels.instructions', default="Instructions"), padding="15")
     instructions_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 15))
 
-    ttk.Label(instructions_frame, text="Select a student club below to view and purchase their official merchandise.",
+    ttk.Label(instructions_frame, text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.labels.select_a_student_club_below_to_view_and_purchase_their_official', default="Select a student club below to view and purchase their official merchandise."),
              wraplength=600).pack()
 
     # Club selection frame
-    clubs_frame = ttk.LabelFrame(main_frame, text="Available Clubs", padding="15")
+    clubs_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.labels.available_clubs', default="Available Clubs"), padding="15")
     clubs_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     clubs_frame.columnconfigure(0, weight=1)
     clubs_frame.rowconfigure(1, weight=1)
@@ -326,7 +328,7 @@ def show_club_merchandise_selection(self):
     search_frame = ttk.Frame(clubs_frame)
     search_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-    ttk.Label(search_frame, text="Search:").pack(side='left', padx=(0, 5))
+    ttk.Label(search_frame, text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.labels.search', default="Search:")).pack(side='left', padx=(0, 5))
     search_var = tk.StringVar()
     search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
     search_entry.pack(side='left', padx=5)
@@ -341,10 +343,10 @@ def show_club_merchandise_selection(self):
     columns = ('club_id', 'club_name', 'category', 'members')
     clubs_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
 
-    clubs_tree.heading('club_id', text='ID')
-    clubs_tree.heading('club_name', text='Club Name')
-    clubs_tree.heading('category', text='Category')
-    clubs_tree.heading('members', text='Members')
+    clubs_tree.heading('club_id', text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.headings.id', default='ID'))
+    clubs_tree.heading('club_name', text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.headings.club_name', default='Club Name'))
+    clubs_tree.heading('category', text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.headings.category', default='Category'))
+    clubs_tree.heading('members', text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.headings.members', default='Members'))
 
     clubs_tree.column('club_id', width=60)
     clubs_tree.column('club_name', width=250)
@@ -362,7 +364,7 @@ def show_club_merchandise_selection(self):
 
     # Load clubs from database
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -394,7 +396,7 @@ def show_club_merchandise_selection(self):
     def view_club_merchandise():
         selection = clubs_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a club to view merchandise.")
+            messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.please_select_a_club_to_view_merchandise', default="Please select a club to view merchandise."))
             return
 
         item = clubs_tree.item(selection[0])
@@ -404,13 +406,13 @@ def show_club_merchandise_selection(self):
         # Filter products by club category or tag
         self.show_browse_products()  # Show regular browse with filter option
         self.update_status(f"Showing merchandise for: {club_name}")
-        messagebox.showinfo("Club Merchandise",
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.club_merchandise', default="Club Merchandise"),
                            f"Browsing merchandise for {club_name}\n\n"
                            f"Tip: Products tagged with '{club_name}' will appear in the list.")
 
-    ttk.Button(button_frame, text="View Merchandise", command=view_club_merchandise,
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.buttons.view_merchandise', default="View Merchandise"), command=view_club_merchandise,
               style='Primary.TButton').pack(side='left', padx=5)
-    ttk.Button(button_frame, text="Back to Dashboard", command=self.show_dashboard).pack(side='left', padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.buttons.back_to_dashboard', default="Back to Dashboard"), command=self.show_dashboard).pack(side='left', padx=5)
 
     # Search functionality
     def search_clubs(*args):
@@ -418,7 +420,7 @@ def show_club_merchandise_selection(self):
         clubs_tree.delete(*clubs_tree.get_children())
 
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             cursor.execute('''
@@ -493,14 +495,14 @@ def toggle_discount_status(self):
     """Toggle the status of the selected discount"""
     selection = self.discounts_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a discount to toggle status.")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.please_select_a_discount_to_toggle_status', default="Please select a discount to toggle status."))
         return
 
     discount_id = self.discounts_tree.item(selection[0])['text']
     current_status = self.discounts_tree.item(selection[0])['values'][2]
 
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         new_status = 0 if current_status == "Active" else 1
@@ -514,11 +516,11 @@ def toggle_discount_status(self):
         conn.close()
 
         status_text = "activated" if new_status else "deactivated"
-        messagebox.showinfo("Success", f"Discount {discount_id} has been {status_text}.")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.success', default="Success"), f"Discount {discount_id} has been {status_text}.")
         self.load_discounts()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to update discount status: {str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.error', default="Error"), f"Failed to update discount status: {str(e)}")
 
 
 def get_monthly_stats(self, year, month):
@@ -701,7 +703,7 @@ def show_sales_summary_report(self, start_date, end_date):
 
         # Daily trend if available
         if sales_data.get('daily_trend'):
-            trend_frame = ttk.LabelFrame(self.report_display_frame, text="Daily Sales Trend", padding="10")
+            trend_frame = ttk.LabelFrame(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.dashboard_manager.labels.daily_sales_trend', default="Daily Sales Trend"), padding="10")
             trend_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
 
             for date, amount in sales_data['daily_trend'].items():
@@ -797,7 +799,7 @@ def toggle_product_status(self):
 
     selection = self.mgmt_products_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a product")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.please_select_a_product', default="Please select a product"))
         return
 
     item = self.mgmt_products_tree.item(selection[0])
@@ -807,13 +809,13 @@ def toggle_product_status(self):
 
     new_status = "Inactive" if current_status == "Active" else "Active"
 
-    if messagebox.askyesno("Confirm", f"Change product status to {new_status}?"):
+    if messagebox.askyesno(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.confirm', default="Confirm"), f"Change product status to {new_status}?"):
         try:
             self.update_product_status(product_id, new_status == "Active")
             self.load_products_for_management()
             self.update_status(f"Product {product_id} status changed to {new_status}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update status: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.error', default="Error"), f"Failed to update status: {e}")
 
 
 def update_product_status(self, product_id, is_active):
@@ -903,8 +905,8 @@ def show_low_stock_report(self):
         low_stock_items = self.get_low_stock_items()
 
         if not low_stock_items:
-            messagebox.showinfo("Low Stock Report",
-                              "✅ All products are adequately stocked!")
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.low_stock_report', default="Low Stock Report"),
+                              _t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.all_products_are_adequately_stocked', default="✅ All products are adequately stocked!"))
             return
 
         # Generate report content as text
@@ -940,7 +942,7 @@ def show_low_stock_report(self):
         self.show_report_window("Low Stock Report", report)
 
     except Exception as e:
-        messagebox.showerror("Report Error", f"Error loading low stock report:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.dashboard_manager.dialogs.report_error', default="Report Error"), f"Error loading low stock report:\n{str(e)}")
 
 
 def get_low_stock_items(self):

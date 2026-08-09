@@ -45,7 +45,7 @@ from typing import Any
 import pyotp
 
 from education_system.systems.sixth_form import SYSTEM_NAME
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.platform.identity.auth.db import connect as shared_auth_connect
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 CODE_TTL_MINUTES = 10
 MAX_VERIFY_ATTEMPTS = 5
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-_TEMPLATE_FILE = paths.EMAIL_TEMPLATES_DIR / "mfa_otp.json"
+_TEMPLATE_FILE = paths.SIXTH_FORM_EMAIL_TEMPLATES_DIR / "mfa_otp.json"
 
 
 class MFASetupError(ValueError):
@@ -81,8 +81,8 @@ def _shared_db_path(auth: Any) -> str | None:
 
 
 def _pending_conn() -> sqlite3.Connection:
-    paths.ensure_directories()
-    conn = sqlite3.connect(str(paths.STUDENTS_DB))
+    paths.ensure_sixth_form_directories()
+    conn = sqlite3.connect(str(paths.SIXTH_FORM_STUDENTS_DB))
     conn.row_factory = sqlite3.Row
     conn.execute(
         """

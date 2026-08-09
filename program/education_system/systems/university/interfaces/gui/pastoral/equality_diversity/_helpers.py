@@ -38,7 +38,7 @@ def _prompt_string(parent, prompt: str) -> str | None:
     def ok():
         result["value"] = var.get().strip()
         win.destroy()
-    Button(win, text="OK", command=ok).pack(pady=6)
+    Button(win, text=_t('gui.pastoral.equality_diversity.helpers.buttons.ok', default="OK"), command=ok).pack(pady=6)
     win.grab_set()
     win.wait_window()
     return result["value"]
@@ -52,7 +52,7 @@ def _render_bar_table(parent, title, data, theme, drill=None):
           bg=theme["panel"], fg=theme["accent"]
           ).pack(anchor="w", pady=(0, 10))
     if not data:
-        Label(parent, text="No data.", bg=theme["panel"], fg=theme["muted"]
+        Label(parent, text=_t('gui.pastoral.equality_diversity.helpers.labels.no_data', default="No data."), bg=theme["panel"], fg=theme["muted"]
               ).pack(pady=12)
         return
     total = sum(r[1] for r in data) or 1

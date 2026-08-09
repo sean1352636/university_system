@@ -211,7 +211,7 @@ class LoginManager:
 
                 if not user_data:
                     # User not found
-                    self.account_security.increment_login_attempts(username)
+                    attempts = self.account_security.increment_login_attempts(username)
                     self._log_login_attempt(username, False)
 
                     if ACTIVITY_LOGGER_AVAILABLE:
@@ -226,7 +226,9 @@ class LoginManager:
                         )
 
                     raise InvalidCredentialsError(
-                        "Invalid username or password.",
+                        "Account temporarily locked due to too many failed attempts."
+                        if attempts >= self.account_security.max_attempts
+                        else "Invalid username or password.",
                         details={'username': username}
                     )
 
@@ -245,7 +247,7 @@ class LoginManager:
 
                 if hashed_attempt != password_hash:
                     # Incorrect password
-                    self.account_security.increment_login_attempts(username)
+                    attempts = self.account_security.increment_login_attempts(username)
                     self._log_login_attempt(username, False)
 
                     if ACTIVITY_LOGGER_AVAILABLE:
@@ -260,7 +262,9 @@ class LoginManager:
                         )
 
                     raise InvalidCredentialsError(
-                        "Invalid username or password.",
+                        "Account temporarily locked due to too many failed attempts."
+                        if attempts >= self.account_security.max_attempts
+                        else "Invalid username or password.",
                         details={'username': username}
                     )
 

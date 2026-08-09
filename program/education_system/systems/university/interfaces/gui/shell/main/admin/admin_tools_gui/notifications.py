@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from ._common import (
     EMAIL_TEMPLATE_MAPPING_FILE,
     EMAIL_TEMPLATES_DIR,
@@ -46,7 +48,7 @@ def show_notification_template_manager(self):
         search_var = tk.StringVar()
         search_entry = ttk.Entry(filter_frame, textvariable=search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=5)
-        cat_filter_var = tk.StringVar(value='All')
+        cat_filter_var = tk.StringVar(value=_t('gui.shell.main.admin.admin_tools_gui.notifications.values.all', default='All'))
         categories = set()
         for path in mapping.values():
             parts = path.split('/')
@@ -149,7 +151,7 @@ def show_notification_template_manager(self):
         notebook.add(create_frame, text=_t("admin_tools_v2.templates.tab_create"))
 
         new_name_var = tk.StringVar()
-        new_cat_var = tk.StringVar(value='general')
+        new_cat_var = tk.StringVar(value=_t('gui.shell.main.admin.admin_tools_gui.notifications.values.general', default='general'))
         new_subj_var = tk.StringVar()
 
         for lbl, var in [(_t("admin_tools_v2.templates.new_name"), new_name_var),

@@ -134,6 +134,32 @@ class TestCalendarGUIComponents:
         assert hasattr(CalendarGUI, '__init__')
         assert callable(getattr(CalendarGUI, '__init__'))
 
+    def test_task_processor_timer_is_cancelled_on_close(self):
+        if not GUI_AVAILABLE:
+            pytest.skip("GUI module not available")
+        gui = object.__new__(CalendarGUI)
+        gui.root = Mock()
+        gui._closing = False
+        gui._task_after_id = "after#17"
+
+        gui._stop_task_processor()
+
+        assert gui._closing is True
+        assert gui._task_after_id is None
+        gui.root.after_cancel.assert_called_once_with("after#17")
+
+    def test_external_root_destroy_stops_task_processor(self):
+        if not GUI_AVAILABLE:
+            pytest.skip("GUI module not available")
+        gui = object.__new__(CalendarGUI)
+        gui.root = Mock()
+        gui._closing = False
+        gui._task_after_id = "after#18"
+
+        gui._on_root_destroy(Mock(widget=gui.root))
+
+        gui.root.after_cancel.assert_called_once_with("after#18")
+
 class TestDatabaseIntegration:
     """Tests for database integration in calendar GUI"""
 

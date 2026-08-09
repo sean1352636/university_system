@@ -4,6 +4,8 @@ Provides the ScheduleHistoryDialog for viewing scheduled backup history and the
 ScheduleConfigDialog for configuring backup schedule frequency, timing, and type.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import os
@@ -20,7 +22,7 @@ class ScheduleHistoryDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Schedule History")
+        self.dialog.title(_t('gui.shell.database.dialogs.schedule.windows.schedule_history', default="Schedule History"))
         self.dialog.geometry("600x400")
         self.dialog.transient(parent)
 
@@ -30,7 +32,7 @@ class ScheduleHistoryDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # History list
-        list_frame = ttk.LabelFrame(self.dialog, text="Scheduled Backup History", padding=10)
+        list_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.schedule.labels.scheduled_backup_history', default="Scheduled Backup History"), padding=10)
         list_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         columns = ("Date", "Type", "Status", "Duration", "Size")
@@ -50,9 +52,9 @@ class ScheduleHistoryDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(button_frame, text="Refresh", command=self.load_history).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Clear History", command=self.clear_history).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.refresh', default="Refresh"), command=self.load_history).pack(side="left", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.clear_history', default="Clear History"), command=self.clear_history).pack(side="left", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.close', default="Close"), command=self.dialog.destroy).pack(side="right")
 
     def load_history(self):
         """Load schedule history"""
@@ -77,19 +79,19 @@ class ScheduleHistoryDialog:
                 ))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load schedule history: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.schedule.dialogs.error', default="Error"), f"Failed to load schedule history: {e}")
 
     def clear_history(self):
         """Clear schedule history"""
-        if messagebox.askyesno("Clear History", "Are you sure you want to clear the schedule history?"):
+        if messagebox.askyesno(_t('gui.shell.database.dialogs.schedule.dialogs.clear_history', default="Clear History"), _t('gui.shell.database.dialogs.schedule.dialogs.are_you_sure_you_want_to_clear_the_schedule_history', default="Are you sure you want to clear the schedule history?")):
             try:
                 # This would clear scheduled backup records from metadata
                 # For now, just clear the display
                 for item in self.history_tree.get_children():
                     self.history_tree.delete(item)
-                messagebox.showinfo("Success", "Schedule history cleared")
+                messagebox.showinfo(_t('gui.shell.database.dialogs.schedule.dialogs.success', default="Success"), _t('gui.shell.database.dialogs.schedule.dialogs.schedule_history_cleared', default="Schedule history cleared"))
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to clear history: {e}")
+                messagebox.showerror(_t('gui.shell.database.dialogs.schedule.dialogs.error', default="Error"), f"Failed to clear history: {e}")
 
 
 class ScheduleConfigDialog:
@@ -99,7 +101,7 @@ class ScheduleConfigDialog:
         self.update_callback = update_callback
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Schedule Configuration")
+        self.dialog.title(_t('gui.shell.database.dialogs.schedule.windows.schedule_configuration', default="Schedule Configuration"))
         self.dialog.geometry("400x350")
         self.dialog.transient(parent)
 
@@ -109,50 +111,50 @@ class ScheduleConfigDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Frequency settings
-        freq_frame = ttk.LabelFrame(self.dialog, text="Backup Frequency", padding=10)
+        freq_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.schedule.labels.backup_frequency', default="Backup Frequency"), padding=10)
         freq_frame.pack(fill="x", padx=10, pady=5)
 
         self.frequency_var = tk.StringVar(value=config["backup_frequency"])
 
-        ttk.Radiobutton(freq_frame, text="Daily", variable=self.frequency_var, value="daily").pack(anchor="w")
-        ttk.Radiobutton(freq_frame, text="Weekly", variable=self.frequency_var, value="weekly").pack(anchor="w")
-        ttk.Radiobutton(freq_frame, text="Monthly", variable=self.frequency_var, value="monthly").pack(anchor="w")
+        ttk.Radiobutton(freq_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.daily', default="Daily"), variable=self.frequency_var, value="daily").pack(anchor="w")
+        ttk.Radiobutton(freq_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.weekly', default="Weekly"), variable=self.frequency_var, value="weekly").pack(anchor="w")
+        ttk.Radiobutton(freq_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.monthly', default="Monthly"), variable=self.frequency_var, value="monthly").pack(anchor="w")
 
         # Time settings
-        time_frame = ttk.LabelFrame(self.dialog, text="Backup Time", padding=10)
+        time_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.schedule.labels.backup_time', default="Backup Time"), padding=10)
         time_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(time_frame, text="Time (24-hour format):").pack(anchor="w")
+        ttk.Label(time_frame, text=_t('gui.shell.database.dialogs.schedule.labels.time_24_hour_format', default="Time (24-hour format):")).pack(anchor="w")
         self.time_var = tk.StringVar(value=config["scheduled_backup_time"])
         time_entry = ttk.Entry(time_frame, textvariable=self.time_var, width=10)
         time_entry.pack(anchor="w", pady=2)
-        ttk.Label(time_frame, text="Format: HH:MM (e.g., 02:30)", font=("Arial", 8)).pack(anchor="w")
+        ttk.Label(time_frame, text=_t('gui.shell.database.dialogs.schedule.labels.format_hh_mm_e_g_02_30', default="Format: HH:MM (e.g., 02:30)"), font=("Arial", 8)).pack(anchor="w")
 
         # Advanced scheduling
-        advanced_frame = ttk.LabelFrame(self.dialog, text="Advanced Scheduling", padding=10)
+        advanced_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.schedule.labels.advanced_scheduling', default="Advanced Scheduling"), padding=10)
         advanced_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(advanced_frame, text="Cron Expression (optional):").pack(anchor="w")
+        ttk.Label(advanced_frame, text=_t('gui.shell.database.dialogs.schedule.labels.cron_expression_optional', default="Cron Expression (optional):")).pack(anchor="w")
         self.cron_var = tk.StringVar(value=config.get("cron_schedule", ""))
         cron_entry = ttk.Entry(advanced_frame, textvariable=self.cron_var, width=30)
         cron_entry.pack(anchor="w", pady=2)
-        ttk.Label(advanced_frame, text="Examples: '0 2 * * *' (daily 2am), '0 2 * * 1' (weekly Monday 2am)",
+        ttk.Label(advanced_frame, text=_t('gui.shell.database.dialogs.schedule.labels.examples_0_2_daily_2am_0_2_1_weekly_monday_2am', default="Examples: '0 2 * * *' (daily 2am), '0 2 * * 1' (weekly Monday 2am)"),
                  font=("Arial", 8)).pack(anchor="w")
 
         # Backup type for scheduled backups
-        type_frame = ttk.LabelFrame(self.dialog, text="Scheduled Backup Type", padding=10)
+        type_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.schedule.labels.scheduled_backup_type', default="Scheduled Backup Type"), padding=10)
         type_frame.pack(fill="x", padx=10, pady=5)
 
         self.backup_type_var = tk.StringVar(value=config.get("backup_type", "full"))
-        ttk.Radiobutton(type_frame, text="Full Backup", variable=self.backup_type_var, value="full").pack(anchor="w")
-        ttk.Radiobutton(type_frame, text="Incremental Backup", variable=self.backup_type_var, value="incremental").pack(anchor="w")
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.full_backup', default="Full Backup"), variable=self.backup_type_var, value="full").pack(anchor="w")
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.incremental_backup', default="Incremental Backup"), variable=self.backup_type_var, value="incremental").pack(anchor="w")
 
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Save", command=self.save_schedule).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.save', default="Save"), command=self.save_schedule).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.schedule.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side="right")
 
     def load_current_settings(self):
         """Load current schedule settings"""
@@ -171,7 +173,7 @@ class ScheduleConfigDialog:
             cron_expr = self.cron_var.get().strip()
             if cron_expr:
                 if not parse_cron_schedule(cron_expr):
-                    messagebox.showerror("Invalid Cron", "Cron expression could not be parsed. Please check the format.")
+                    messagebox.showerror(_t('gui.shell.database.dialogs.schedule.dialogs.invalid_cron', default="Invalid Cron"), _t('gui.shell.database.dialogs.schedule.dialogs.cron_expression_could_not_be_parsed_please_check_the_format', default="Cron expression could not be parsed. Please check the format."))
                     return
             else:
                 parse_cron_schedule("")
@@ -192,10 +194,10 @@ class ScheduleConfigDialog:
             if self.update_callback:
                 self.update_callback()
 
-            messagebox.showinfo("Success", "Schedule configuration saved!")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.schedule.dialogs.success', default="Success"), _t('gui.shell.database.dialogs.schedule.dialogs.schedule_configuration_saved', default="Schedule configuration saved!"))
             self.dialog.destroy()
 
         except ValueError:
-            messagebox.showerror("Invalid Time", "Please enter time in HH:MM format (e.g., 02:30)")
+            messagebox.showerror(_t('gui.shell.database.dialogs.schedule.dialogs.invalid_time', default="Invalid Time"), _t('gui.shell.database.dialogs.schedule.dialogs.please_enter_time_in_hh_mm_format_e_g_02_30', default="Please enter time in HH:MM format (e.g., 02:30)"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save schedule: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.schedule.dialogs.error', default="Error"), f"Failed to save schedule: {e}")

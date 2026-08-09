@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -73,15 +75,15 @@ def export_payroll_report(self):
         from tkinter import filedialog
         import csv
         # Get date range
-        start_date = simpledialog.askstring("Payroll Report", "Enter start date (YYYY-MM-DD):")
+        start_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.payroll_report', default="Payroll Report"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_start_date_yyyy_mm_dd', default="Enter start date (YYYY-MM-DD):"))
         if not start_date:
             return
-        end_date = simpledialog.askstring("Payroll Report", "Enter end date (YYYY-MM-DD):")
+        end_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.payroll_report', default="Payroll Report"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_end_date_yyyy_mm_dd', default="Enter end date (YYYY-MM-DD):"))
         if not end_date:
             return
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
 
@@ -93,7 +95,7 @@ def export_payroll_report(self):
 
         if cursor.fetchone() is None:
             conn.close()
-            messagebox.showinfo("Table Not Available",
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.table_not_available', default="Table Not Available"),
                               "Payroll report requires the restaurant_shifts table which is not yet created.\n\n" +
                               "This table tracks employee work hours and shifts.\n\n" +
                               "Please contact your system administrator to set up shift tracking.")
@@ -119,11 +121,11 @@ def export_payroll_report(self):
         payroll_data = cursor.fetchall()
         conn.close()
         if not payroll_data:
-            messagebox.showinfo("No Data", "No payroll data found for the specified period")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.no_data', default="No Data"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.no_payroll_data_found_for_the_specified_period', default="No payroll data found for the specified period"))
             return
         # Ask for export format
-        format_choice = messagebox.askquestion("Export Format",
-                                              "Export as CSV?\n(No = Display in window)")
+        format_choice = messagebox.askquestion(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.export_format', default="Export Format"),
+                                              _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.export_as_csv_no_display_in_window', default="Export as CSV?\n(No = Display in window)"))
         if format_choice == 'yes':
             # Export to CSV
             filename = filedialog.asksaveasfilename(
@@ -142,7 +144,7 @@ def export_payroll_report(self):
                         gross_pay = hours * rate
                         writer.writerow([record[0], record[1], record[2], f"£{rate:.2f}",
                                       record[4], f"{hours:.2f}", f"£{gross_pay:.2f}"])
-                messagebox.showinfo("Success", f"Payroll report exported to {filename}")
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.success', default="Success"), f"Payroll report exported to {filename}")
         else:
             # Display in report window
             report = "PAYROLL REPORT\n"
@@ -165,7 +167,7 @@ def export_payroll_report(self):
             self.report_text.delete(1.0, tk.END)
             self.report_text.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate payroll report: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), f"Failed to generate payroll report: {e}")
 
 def export_expense_report(self):
     """Export detailed expense report"""
@@ -173,15 +175,15 @@ def export_expense_report(self):
         from tkinter import filedialog
         import csv
         # Get date range
-        start_date = simpledialog.askstring("Expense Report", "Enter start date (YYYY-MM-DD):")
+        start_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.expense_report', default="Expense Report"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_start_date_yyyy_mm_dd', default="Enter start date (YYYY-MM-DD):"))
         if not start_date:
             return
-        end_date = simpledialog.askstring("Expense Report", "Enter end date (YYYY-MM-DD):")
+        end_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.expense_report', default="Expense Report"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_end_date_yyyy_mm_dd', default="Enter end date (YYYY-MM-DD):"))
         if not end_date:
             return
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
 
@@ -193,7 +195,7 @@ def export_expense_report(self):
 
         if cursor.fetchone() is None:
             conn.close()
-            messagebox.showinfo("Table Not Available",
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.table_not_available', default="Table Not Available"),
                               "Expense report requires the restaurant_purchase_orders table which is not yet created.\n\n" +
                               "This table tracks inventory purchases and supplier expenses.\n\n" +
                               "Current workaround: Expenses can be estimated from revenue and profit data.\n" +
@@ -212,11 +214,11 @@ def export_expense_report(self):
         expenses = cursor.fetchall()
         conn.close()
         if not expenses:
-            messagebox.showinfo("No Data", "No expense data found for the specified period")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.no_data', default="No Data"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.no_expense_data_found_for_the_specified_period', default="No expense data found for the specified period"))
             return
         # Ask for export format
-        format_choice = messagebox.askquestion("Export Format",
-                                              "Export as CSV?\n(No = Display in window)")
+        format_choice = messagebox.askquestion(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.export_format', default="Export Format"),
+                                              _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.export_as_csv_no_display_in_window', default="Export as CSV?\n(No = Display in window)"))
         if format_choice == 'yes':
             # Export to CSV
             filename = filedialog.asksaveasfilename(
@@ -232,7 +234,7 @@ def export_expense_report(self):
                     for record in expenses:
                         writer.writerow([record[0], record[1], record[2], record[3],
                                       f"£{record[4]:.2f}", record[5], record[6]])
-                messagebox.showinfo("Success", f"Expense report exported to {filename}")
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.success', default="Success"), f"Expense report exported to {filename}")
         else:
             # Display in report window
             report = "EXPENSE REPORT\n"
@@ -262,40 +264,40 @@ def export_expense_report(self):
             self.report_text.delete(1.0, tk.END)
             self.report_text.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate expense report: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), f"Failed to generate expense report: {e}")
 
 def tax_reports_menu(self):
     """Show tax reporting menu"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Tax Reports")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.windows.tax_reports', default="Tax Reports"))
     dialog.geometry("400x300")
     dialog.transient(self.root)
     dialog.grab_set()
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Tax Reports", font=('Arial', 14, 'bold')).pack(pady=20)
-    ttk.Button(main_frame, text="Generate VAT Report",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.labels.tax_reports', default="Tax Reports"), font=('Arial', 14, 'bold')).pack(pady=20)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.buttons.generate_vat_report', default="Generate VAT Report"),
               command=lambda: [dialog.destroy(), self.generate_vat_report()],
               width=30).pack(pady=10)
-    ttk.Button(main_frame, text="Generate Sales Tax Summary",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.buttons.generate_sales_tax_summary', default="Generate Sales Tax Summary"),
               command=lambda: [dialog.destroy(), self.generate_sales_tax_summary()],
               width=30).pack(pady=10)
-    ttk.Button(main_frame, text="Close", command=dialog.destroy, width=30).pack(pady=20)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.buttons.close', default="Close"), command=dialog.destroy, width=30).pack(pady=20)
 
 def generate_vat_report(self):
     """Generate VAT/GST report"""
     try:
         # Get date range
-        start_date = simpledialog.askstring("VAT Report", "Enter start date (YYYY-MM-DD):")
+        start_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.vat_report', default="VAT Report"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_start_date_yyyy_mm_dd', default="Enter start date (YYYY-MM-DD):"))
         if not start_date:
             return
-        end_date = simpledialog.askstring("VAT Report", "Enter end date (YYYY-MM-DD):")
+        end_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.vat_report', default="VAT Report"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_end_date_yyyy_mm_dd', default="Enter end date (YYYY-MM-DD):"))
         if not end_date:
             return
         vat_rate = 0.20  # 20% UK VAT rate
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # VAT collected on sales
@@ -361,21 +363,21 @@ def generate_vat_report(self):
         self.report_text.delete(1.0, tk.END)
         self.report_text.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate VAT report: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), f"Failed to generate VAT report: {e}")
 
 def generate_sales_tax_summary(self):
     """Generate sales tax summary"""
     try:
         # Get date range
-        start_date = simpledialog.askstring("Sales Tax Summary", "Enter start date (YYYY-MM-DD):")
+        start_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.sales_tax_summary', default="Sales Tax Summary"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_start_date_yyyy_mm_dd', default="Enter start date (YYYY-MM-DD):"))
         if not start_date:
             return
-        end_date = simpledialog.askstring("Sales Tax Summary", "Enter end date (YYYY-MM-DD):")
+        end_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.sales_tax_summary', default="Sales Tax Summary"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_end_date_yyyy_mm_dd', default="Enter end date (YYYY-MM-DD):"))
         if not end_date:
             return
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Sales by payment method
@@ -421,14 +423,14 @@ def generate_sales_tax_summary(self):
         self.report_text.delete(1.0, tk.END)
         self.report_text.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate sales tax summary: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), f"Failed to generate sales tax summary: {e}")
 
 def financial_forecasting(self):
     """Generate financial forecasts based on historical data"""
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Get historical revenue by month (last 12 months)
@@ -466,7 +468,7 @@ def financial_forecasting(self):
 
         conn.close()
         if not monthly_revenue:
-            messagebox.showinfo("No Data", "Insufficient historical data for forecasting")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.no_data', default="No Data"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.insufficient_historical_data_for_forecasting', default="Insufficient historical data for forecasting"))
             return
         # Calculate averages and trends
         total_revenue = sum(r[1] for r in monthly_revenue if r[1])
@@ -555,26 +557,26 @@ def financial_forecasting(self):
         self.report_text.delete(1.0, tk.END)
         self.report_text.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate forecast: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), f"Failed to generate forecast: {e}")
 
 def export_financial_data_menu(self):
     """Show export financial data menu"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Export Financial Data")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.windows.export_financial_data', default="Export Financial Data"))
     dialog.geometry("400x300")
     dialog.transient(self.root)
     dialog.grab_set()
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Export Financial Data",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.labels.export_financial_data', default="Export Financial Data"),
              font=('Arial', 14, 'bold')).pack(pady=20)
-    ttk.Button(main_frame, text="Export Complete Financial Data",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.buttons.export_complete_financial_data', default="Export Complete Financial Data"),
               command=lambda: [dialog.destroy(), self.export_complete_financial_data()],
               width=35).pack(pady=10)
-    ttk.Button(main_frame, text="Export Sales Data Only",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.buttons.export_sales_data_only', default="Export Sales Data Only"),
               command=lambda: [dialog.destroy(), self.export_sales_data()],
               width=35).pack(pady=10)
-    ttk.Button(main_frame, text="Close", command=dialog.destroy, width=35).pack(pady=20)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.buttons.close', default="Close"), command=dialog.destroy, width=35).pack(pady=20)
 
 def export_complete_financial_data(self):
     """Export complete financial data to CSV"""
@@ -582,12 +584,12 @@ def export_complete_financial_data(self):
         from tkinter import filedialog
         import csv
         # Get date range
-        start_date = simpledialog.askstring("Export Financial Data",
-                                           "Enter start date (YYYY-MM-DD):")
+        start_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.export_financial_data', default="Export Financial Data"),
+                                           _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_start_date_yyyy_mm_dd', default="Enter start date (YYYY-MM-DD):"))
         if not start_date:
             return
-        end_date = simpledialog.askstring("Export Financial Data",
-                                         "Enter end date (YYYY-MM-DD):")
+        end_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.export_financial_data', default="Export Financial Data"),
+                                         _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_end_date_yyyy_mm_dd', default="Enter end date (YYYY-MM-DD):"))
         if not end_date:
             return
         filename = filedialog.asksaveasfilename(
@@ -599,7 +601,7 @@ def export_complete_financial_data(self):
             return
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
 
@@ -721,9 +723,9 @@ def export_complete_financial_data(self):
         if not has_purchase_orders or not has_waste:
             success_msg += "\n\nNote: Some data tables were not available and have been omitted from the export."
 
-        messagebox.showinfo("Success", success_msg)
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.success', default="Success"), success_msg)
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to export financial data: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), f"Failed to export financial data: {e}")
 
 def export_sales_data(self):
     """Export sales-specific data to CSV"""
@@ -731,12 +733,12 @@ def export_sales_data(self):
         from tkinter import filedialog
         import csv
         # Get date range
-        start_date = simpledialog.askstring("Export Sales Data",
-                                           "Enter start date (YYYY-MM-DD):")
+        start_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.export_sales_data', default="Export Sales Data"),
+                                           _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_start_date_yyyy_mm_dd', default="Enter start date (YYYY-MM-DD):"))
         if not start_date:
             return
-        end_date = simpledialog.askstring("Export Sales Data",
-                                         "Enter end date (YYYY-MM-DD):")
+        end_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.export_sales_data', default="Export Sales Data"),
+                                         _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.enter_end_date_yyyy_mm_dd', default="Enter end date (YYYY-MM-DD):"))
         if not end_date:
             return
         filename = filedialog.asksaveasfilename(
@@ -748,7 +750,7 @@ def export_sales_data(self):
             return
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         with open(filename, 'w', newline='') as csvfile:
@@ -807,7 +809,7 @@ def export_sales_data(self):
             writer.writerow(['Total Sales (incl. tax)', f"£{summary[3] if summary[3] else 0:.2f}"])
             writer.writerow(['Average Order Value', f"£{summary[4] if summary[4] else 0:.2f}"])
         conn.close()
-        messagebox.showinfo("Success", f"Sales data exported to:\n{filename}")
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.success', default="Success"), f"Sales data exported to:\n{filename}")
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to export sales data: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.financial_reports.dialogs.error', default="Error"), f"Failed to export sales data: {e}")
 

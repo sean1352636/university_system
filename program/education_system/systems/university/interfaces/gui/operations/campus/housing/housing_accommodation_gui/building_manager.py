@@ -19,7 +19,7 @@ def show_building_management(gui_instance):
     gui_instance.clear_content()
 
     # Title
-    ttk.Label(gui_instance.content_frame, text="Building Management",
+    ttk.Label(gui_instance.content_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.labels.building_management', default="Building Management"),
              font=('Arial', 16, 'bold')).grid(row=0, column=0, pady=(0, 20), sticky='w')
 
     # Create notebook for different building operations
@@ -28,12 +28,12 @@ def show_building_management(gui_instance):
 
     # View Buildings tab
     view_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(view_frame, text="View Buildings")
+    notebook.add(view_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.tabs.view_buildings', default="View Buildings"))
     create_buildings_list(gui_instance, view_frame)
 
     # Add Building tab
     add_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(add_frame, text="Add Building")
+    notebook.add(add_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.tabs.add_building', default="Add Building"))
     create_add_building_form(gui_instance, add_frame)
 
 
@@ -71,13 +71,13 @@ def create_buildings_list(gui_instance, parent):
     buttons_frame = ttk.Frame(parent)
     buttons_frame.grid(row=1, column=0, columnspan=2, pady=20)
 
-    ttk.Button(buttons_frame, text="Refresh",
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.buttons.refresh', default="Refresh"),
               command=lambda: refresh_buildings_list(gui_instance)).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Edit Selected",
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.buttons.edit_selected', default="Edit Selected"),
               command=lambda: edit_selected_building(gui_instance)).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Delete Selected",
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.buttons.delete_selected', default="Delete Selected"),
               command=lambda: delete_selected_building(gui_instance)).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Manage Rooms",
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.buttons.manage_rooms', default="Manage Rooms"),
               command=lambda: manage_selected_building_rooms(gui_instance)).pack(side='left', padx=5)
 
     # Load buildings
@@ -88,7 +88,7 @@ def manage_selected_building_rooms(gui_instance):
     """Manage rooms for selected building"""
     selected = gui_instance.buildings_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a building to manage rooms")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.please_select_a_building_to_manage_rooms', default="Please select a building to manage rooms"))
         return
 
     building_data = gui_instance.buildings_tree.item(selected[0])['values']
@@ -127,7 +127,7 @@ def refresh_buildings_list(gui_instance):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load buildings: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), f"Failed to load buildings: {str(e)}")
 
 
 def create_add_building_form(gui_instance, parent):
@@ -150,7 +150,7 @@ def create_add_building_form(gui_instance, parent):
         gui_instance.building_entries[field] = entry
 
     # Checkboxes for amenities
-    amenities_frame = ttk.LabelFrame(parent, text="Building Amenities", padding="10")
+    amenities_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.labels.building_amenities', default="Building Amenities"), padding="10")
     amenities_frame.grid(row=len(fields), column=0, columnspan=2, pady=20, sticky='w')
 
     gui_instance.building_amenities = {}
@@ -169,7 +169,7 @@ def create_add_building_form(gui_instance, parent):
         )
 
     # Submit button
-    ttk.Button(parent, text="Add Building",
+    ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.buttons.add_building', default="Add Building"),
               command=lambda: add_building(gui_instance)).grid(row=len(fields)+2, column=0, pady=20)
 
 
@@ -182,7 +182,7 @@ def add_building(gui_instance):
         campus_location = gui_instance.building_entries['campus_location'].get().strip()
 
         if not all([building_name, address, campus_location]):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         try:
@@ -193,7 +193,7 @@ def add_building(gui_instance):
                 raise ValueError("Invalid room numbers")
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid room numbers")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.please_enter_valid_room_numbers', default="Please enter valid room numbers"))
             return
 
         # Create building record
@@ -220,7 +220,7 @@ def add_building(gui_instance):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"Building '{building_name}' created successfully!")
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.success', default="Success"), f"Building '{building_name}' created successfully!")
 
         # Clear form
         for entry in gui_instance.building_entries.values():
@@ -233,14 +233,14 @@ def add_building(gui_instance):
             refresh_buildings_list(gui_instance)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to create building: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), f"Failed to create building: {str(e)}")
 
 
 def edit_selected_building(gui_instance):
     """Edit the selected building"""
     selected = gui_instance.buildings_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a building to edit")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.please_select_a_building_to_edit', default="Please select a building to edit"))
         return
 
     building_id = gui_instance.buildings_tree.item(selected[0])['values'][0]
@@ -251,7 +251,7 @@ def show_edit_building_dialog(gui_instance, building_id):
     """Show dialog to edit building"""
     # Create new window
     edit_window = tk.Toplevel(gui_instance.root)
-    edit_window.title("Edit Building")
+    edit_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.windows.edit_building', default="Edit Building"))
     edit_window.geometry("500x400")
     edit_window.transient(gui_instance.root)
     edit_window.grab_set()
@@ -269,7 +269,7 @@ def show_edit_building_dialog(gui_instance, building_id):
         conn.close()
 
         if not building_data:
-            messagebox.showerror("Error", "Building not found")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.building_not_found', default="Building not found"))
             edit_window.destroy()
             return
 
@@ -292,7 +292,7 @@ def show_edit_building_dialog(gui_instance, building_id):
             entries[field] = entry
 
         # Amenities
-        amenities_frame = ttk.LabelFrame(edit_window, text="Building Amenities", padding="10")
+        amenities_frame = ttk.LabelFrame(edit_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.labels.building_amenities', default="Building Amenities"), padding="10")
         amenities_frame.grid(row=len(fields), column=0, columnspan=2, pady=20, sticky='w', padx=10)
 
         amenities = {}
@@ -319,7 +319,7 @@ def show_edit_building_dialog(gui_instance, building_id):
                 campus_location = entries['campus_location'].get().strip()
 
                 if not all([building_name, address, campus_location]):
-                    messagebox.showerror("Error", "Please fill in all required fields")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
                     return
 
                 total_rooms = int(entries['total_rooms'].get())
@@ -350,24 +350,24 @@ def show_edit_building_dialog(gui_instance, building_id):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Building updated successfully!")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.building_updated_successfully', default="Building updated successfully!"))
                 refresh_buildings_list(gui_instance)
                 edit_window.destroy()
 
             except ValueError:
-                messagebox.showerror("Error", "Please enter valid values")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.please_enter_valid_values', default="Please enter valid values"))
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update building: {str(e)}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), f"Failed to update building: {str(e)}")
 
         # Add buttons frame
         buttons_frame = ttk.Frame(edit_window)
         buttons_frame.grid(row=len(fields)+1, column=0, columnspan=2, pady=20)
 
-        ttk.Button(buttons_frame, text="Save Changes", command=save_changes).pack(side='left', padx=10)
-        ttk.Button(buttons_frame, text="Cancel", command=edit_window.destroy).pack(side='left', padx=10)
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side='left', padx=10)
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.buttons.cancel', default="Cancel"), command=edit_window.destroy).pack(side='left', padx=10)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load building data: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), f"Failed to load building data: {str(e)}")
         edit_window.destroy()
 
 
@@ -375,7 +375,7 @@ def delete_selected_building(gui_instance):
     """Delete the selected building"""
     selected = gui_instance.buildings_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a building to delete")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.please_select_a_building_to_delete', default="Please select a building to delete"))
         return
 
     building_data = gui_instance.buildings_tree.item(selected[0])['values']
@@ -383,7 +383,7 @@ def delete_selected_building(gui_instance):
     building_name = building_data[1]
 
     # Confirm deletion
-    result = messagebox.askyesno("Confirm Delete",
+    result = messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.confirm_delete', default="Confirm Delete"),
                                f"Are you sure you want to delete building '{building_name}'?\n"
                                "This will also delete all associated rooms.")
 
@@ -398,7 +398,7 @@ def delete_selected_building(gui_instance):
             occupied_count = cursor.fetchone()[0]
 
             if occupied_count > 0:
-                messagebox.showerror("Error",
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"),
                                    f"Cannot delete building. It has {occupied_count} occupied or reserved rooms.")
                 conn.close()
                 return
@@ -410,11 +410,11 @@ def delete_selected_building(gui_instance):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Building '{building_name}' deleted successfully!")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.success', default="Success"), f"Building '{building_name}' deleted successfully!")
             refresh_buildings_list(gui_instance)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete building: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.building_manager.dialogs.error', default="Error"), f"Failed to delete building: {str(e)}")
 
 
 def show_building_rooms_management(gui_instance, building_id, building_name):

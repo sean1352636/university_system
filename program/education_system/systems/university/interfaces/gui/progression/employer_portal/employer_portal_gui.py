@@ -1,6 +1,8 @@
 """Tkinter GUI for the university employer portal."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -37,7 +39,7 @@ class EmployerPortalFrame(tk.Frame):
         header.pack(fill="x")
         header.pack_propagate(False)
         tk.Label(
-            header, text="Employer Portal",
+            header, text=_t('gui.progression.employer_portal.employer_portal.labels.employer_portal', default="Employer Portal"),
             font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white",
         ).pack(side="left", padx=20, pady=10)
 
@@ -59,9 +61,9 @@ class EmployerPortalFrame(tk.Frame):
 
     def _build_employers_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Employers")
+        self._nb.add(tab, text=_t('gui.progression.employer_portal.employer_portal.tabs.employers', default="Employers"))
 
-        form = tk.LabelFrame(tab, text="Register Employer", bg="#ecf0f1")
+        form = tk.LabelFrame(tab, text=_t('gui.progression.employer_portal.employer_portal.labels.register_employer', default="Register Employer"), bg="#ecf0f1")
         form.pack(fill="x", padx=10, pady=5)
         labels = ["Company", "Contact", "Email", "Phone", "Sector", "Size"]
         self._emp_vars: dict[str, tk.StringVar] = {}
@@ -81,9 +83,9 @@ class EmployerPortalFrame(tk.Frame):
 
         btns = tk.Frame(form, bg="#ecf0f1")
         btns.grid(row=2, column=0, columnspan=6, pady=5)
-        tk.Button(btns, text="Add", command=self._add_employer).pack(side="left", padx=5)
-        tk.Button(btns, text="Update", command=self._update_employer).pack(side="left", padx=5)
-        tk.Button(btns, text="Refresh", command=self._load_employers).pack(side="left", padx=5)
+        tk.Button(btns, text=_t('gui.progression.employer_portal.employer_portal.buttons.add', default="Add"), command=self._add_employer).pack(side="left", padx=5)
+        tk.Button(btns, text=_t('gui.progression.employer_portal.employer_portal.buttons.update', default="Update"), command=self._update_employer).pack(side="left", padx=5)
+        tk.Button(btns, text=_t('gui.progression.employer_portal.employer_portal.buttons.refresh', default="Refresh"), command=self._load_employers).pack(side="left", padx=5)
 
         cols = ("id", "company", "contact", "email", "sector", "size", "active")
         self._emp_tree = ttk.Treeview(tab, columns=cols, show="headings", height=12)
@@ -105,23 +107,23 @@ class EmployerPortalFrame(tk.Frame):
             )
             logger.info("Employer registered id=%s company=%r by user=%s",
                         new_id, v["Company"].get().strip(), self._user_display)
-            messagebox.showinfo("Success", "Employer registered.")
+            messagebox.showinfo(_t('gui.progression.employer_portal.employer_portal.dialogs.success', default="Success"), _t('gui.progression.employer_portal.employer_portal.dialogs.employer_registered', default="Employer registered."))
             for var in v.values():
                 var.set("" if var.get() != "small" else "small")
             self._load_employers()
         except EmployerPortalError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc))
 
     def _update_employer(self):
         sel = self._emp_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an employer to update.")
+            messagebox.showwarning(_t('gui.progression.employer_portal.employer_portal.dialogs.selection', default="Selection"), _t('gui.progression.employer_portal.employer_portal.dialogs.select_an_employer_to_update', default="Select an employer to update."))
             return
         row = self._emp_tree.item(sel[0], "values")
         emp_id = int(row[0])
 
         dlg = tk.Toplevel(self)
-        dlg.title("Update Employer")
+        dlg.title(_t('gui.progression.employer_portal.employer_portal.windows.update_employer', default="Update Employer"))
         dlg.transient(self.winfo_toplevel())
         dlg.grab_set()
         fields = [
@@ -137,12 +139,12 @@ class EmployerPortalFrame(tk.Frame):
             var = tk.StringVar(value=str(current or ""))
             tk.Entry(dlg, textvariable=var, width=28).grid(row=i, column=1, padx=5, pady=3)
             upd_vars[key] = var
-        tk.Label(dlg, text="Size:").grid(row=len(fields), column=0, padx=5, pady=3, sticky="e")
+        tk.Label(dlg, text=_t('gui.progression.employer_portal.employer_portal.labels.size', default="Size:")).grid(row=len(fields), column=0, padx=5, pady=3, sticky="e")
         size_var = tk.StringVar(value=str(row[5] or "small"))
         ttk.Combobox(dlg, textvariable=size_var, values=["small", "medium", "large"],
                      width=25).grid(row=len(fields), column=1, padx=5, pady=3)
         active_var = tk.BooleanVar(value=str(row[6]).lower() == "yes")
-        tk.Checkbutton(dlg, text="Active", variable=active_var).grid(
+        tk.Checkbutton(dlg, text=_t('gui.progression.employer_portal.employer_portal.buttons.active', default="Active"), variable=active_var).grid(
             row=len(fields) + 1, column=1, padx=5, pady=3, sticky="w")
 
         def save():
@@ -152,13 +154,13 @@ class EmployerPortalFrame(tk.Frame):
             try:
                 self._svc.update_employer(emp_id, **updates)
                 logger.info("Employer updated id=%s by user=%s", emp_id, self._user_display)
-                messagebox.showinfo("Success", "Employer updated.", parent=dlg)
+                messagebox.showinfo(_t('gui.progression.employer_portal.employer_portal.dialogs.success', default="Success"), _t('gui.progression.employer_portal.employer_portal.dialogs.employer_updated', default="Employer updated."), parent=dlg)
                 dlg.destroy()
                 self._load_employers()
             except EmployerPortalError as exc:
-                messagebox.showerror("Error", str(exc), parent=dlg)
+                messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc), parent=dlg)
 
-        tk.Button(dlg, text="Save", command=save).grid(
+        tk.Button(dlg, text=_t('gui.progression.employer_portal.employer_portal.buttons.save', default="Save"), command=save).grid(
             row=len(fields) + 2, column=0, columnspan=2, pady=10)
 
     def _load_employers(self):
@@ -173,30 +175,30 @@ class EmployerPortalFrame(tk.Frame):
                     "Yes" if e.get("is_active") else "No",
                 ))
         except EmployerPortalError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc))
 
     # -- Reviews -------------------------------------------------------
 
     def _build_reviews_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Reviews")
+        self._nb.add(tab, text=_t('gui.progression.employer_portal.employer_portal.tabs.reviews', default="Reviews"))
 
-        sched = tk.LabelFrame(tab, text="Schedule Review", bg="#ecf0f1")
+        sched = tk.LabelFrame(tab, text=_t('gui.progression.employer_portal.employer_portal.labels.schedule_review', default="Schedule Review"), bg="#ecf0f1")
         sched.pack(fill="x", padx=10, pady=5)
-        tk.Label(sched, text="Placement ID:", bg="#ecf0f1").grid(row=0, column=0, padx=5, pady=2, sticky="e")
+        tk.Label(sched, text=_t('gui.progression.employer_portal.employer_portal.labels.placement_id_variant_2', default="Placement ID:"), bg="#ecf0f1").grid(row=0, column=0, padx=5, pady=2, sticky="e")
         self._rev_pid = tk.StringVar()
         tk.Entry(sched, textvariable=self._rev_pid, width=8).grid(row=0, column=1, padx=5, pady=2)
-        tk.Label(sched, text="Date (YYYY-MM-DD):", bg="#ecf0f1").grid(row=0, column=2, padx=5, pady=2, sticky="e")
+        tk.Label(sched, text=_t('gui.progression.employer_portal.employer_portal.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):"), bg="#ecf0f1").grid(row=0, column=2, padx=5, pady=2, sticky="e")
         self._rev_date = tk.StringVar()
         tk.Entry(sched, textvariable=self._rev_date, width=12).grid(row=0, column=3, padx=5, pady=2)
-        tk.Label(sched, text="Type:", bg="#ecf0f1").grid(row=0, column=4, padx=5, pady=2, sticky="e")
-        self._rev_type = tk.StringVar(value="monthly")
+        tk.Label(sched, text=_t('gui.progression.employer_portal.employer_portal.labels.type', default="Type:"), bg="#ecf0f1").grid(row=0, column=4, padx=5, pady=2, sticky="e")
+        self._rev_type = tk.StringVar(value=_t('gui.progression.employer_portal.employer_portal.values.monthly', default="monthly"))
         ttk.Combobox(sched, textvariable=self._rev_type,
                      values=["monthly", "tripartite", "midterm", "final"], width=12).grid(
             row=0, column=5, padx=5, pady=2)
-        tk.Button(sched, text="Schedule", command=self._schedule_review).grid(row=0, column=6, padx=10)
+        tk.Button(sched, text=_t('gui.progression.employer_portal.employer_portal.buttons.schedule', default="Schedule"), command=self._schedule_review).grid(row=0, column=6, padx=10)
 
-        comp = tk.LabelFrame(tab, text="Complete Review", bg="#ecf0f1")
+        comp = tk.LabelFrame(tab, text=_t('gui.progression.employer_portal.employer_portal.labels.complete_review', default="Complete Review"), bg="#ecf0f1")
         comp.pack(fill="x", padx=10, pady=5)
         comp_labels = [
             "Review ID", "On Track (y/n)", "Competency Progress",
@@ -210,10 +212,10 @@ class EmployerPortalFrame(tk.Frame):
             tk.Entry(comp, textvariable=var, width=20).grid(
                 row=i // 3, column=(i % 3) * 2 + 1, padx=5, pady=2)
             self._comp_vars[lbl] = var
-        tk.Button(comp, text="Complete", command=self._complete_review).grid(
+        tk.Button(comp, text=_t('gui.progression.employer_portal.employer_portal.buttons.complete', default="Complete"), command=self._complete_review).grid(
             row=2, column=5, padx=10, pady=5)
 
-        tk.Button(tab, text="Refresh", command=self._load_reviews).pack(padx=10, pady=2, anchor="w")
+        tk.Button(tab, text=_t('gui.progression.employer_portal.employer_portal.buttons.refresh', default="Refresh"), command=self._load_reviews).pack(padx=10, pady=2, anchor="w")
         cols = ("id", "placement", "date", "type", "on_track", "hours",
                 "emp", "stu", "sup", "status")
         self._rev_tree = ttk.Treeview(tab, columns=cols, show="headings", height=10)
@@ -232,10 +234,10 @@ class EmployerPortalFrame(tk.Frame):
             logger.info("Review scheduled id=%s placement=%s date=%s type=%s by user=%s",
                         new_id, self._rev_pid.get(), self._rev_date.get(),
                         self._rev_type.get(), self._user_display)
-            messagebox.showinfo("Success", "Review scheduled.")
+            messagebox.showinfo(_t('gui.progression.employer_portal.employer_portal.dialogs.success', default="Success"), _t('gui.progression.employer_portal.employer_portal.dialogs.review_scheduled', default="Review scheduled."))
             self._load_reviews()
         except (EmployerPortalError, ValueError) as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc))
 
     def _complete_review(self):
         try:
@@ -250,10 +252,10 @@ class EmployerPortalFrame(tk.Frame):
             )
             logger.info("Review completed review_id=%s by user=%s",
                         v["Review ID"].get(), self._user_display)
-            messagebox.showinfo("Success", "Review completed.")
+            messagebox.showinfo(_t('gui.progression.employer_portal.employer_portal.dialogs.success', default="Success"), _t('gui.progression.employer_portal.employer_portal.dialogs.review_completed', default="Review completed."))
             self._load_reviews()
         except (EmployerPortalError, ValueError) as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc))
 
     def _load_reviews(self):
         for row in self._rev_tree.get_children():
@@ -274,34 +276,34 @@ class EmployerPortalFrame(tk.Frame):
                     r.get("status", ""),
                 ))
         except EmployerPortalError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc))
 
     # -- Sign-off ------------------------------------------------------
 
     def _build_signoff_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Sign-Off")
+        self._nb.add(tab, text=_t('gui.progression.employer_portal.employer_portal.tabs.sign_off', default="Sign-Off"))
 
-        form = tk.LabelFrame(tab, text="Sign Off Review", bg="#ecf0f1")
+        form = tk.LabelFrame(tab, text=_t('gui.progression.employer_portal.employer_portal.labels.sign_off_review', default="Sign Off Review"), bg="#ecf0f1")
         form.pack(fill="x", padx=10, pady=5)
-        tk.Label(form, text="Review ID:", bg="#ecf0f1").grid(row=0, column=0, padx=5, pady=5, sticky="e")
+        tk.Label(form, text=_t('gui.progression.employer_portal.employer_portal.labels.review_id', default="Review ID:"), bg="#ecf0f1").grid(row=0, column=0, padx=5, pady=5, sticky="e")
         self._so_rid = tk.StringVar()
         tk.Entry(form, textvariable=self._so_rid, width=8).grid(row=0, column=1, padx=5, pady=5)
-        tk.Label(form, text="Signer Type:", bg="#ecf0f1").grid(row=0, column=2, padx=5, pady=5, sticky="e")
-        self._so_type = tk.StringVar(value="employer")
+        tk.Label(form, text=_t('gui.progression.employer_portal.employer_portal.labels.signer_type', default="Signer Type:"), bg="#ecf0f1").grid(row=0, column=2, padx=5, pady=5, sticky="e")
+        self._so_type = tk.StringVar(value=_t('gui.progression.employer_portal.employer_portal.values.employer', default="employer"))
         ttk.Combobox(form, textvariable=self._so_type,
                      values=["employer", "student", "supervisor"], width=12).grid(
             row=0, column=3, padx=5, pady=5)
-        tk.Label(form, text="Signer Name:", bg="#ecf0f1").grid(row=0, column=4, padx=5, pady=5, sticky="e")
+        tk.Label(form, text=_t('gui.progression.employer_portal.employer_portal.labels.signer_name', default="Signer Name:"), bg="#ecf0f1").grid(row=0, column=4, padx=5, pady=5, sticky="e")
         self._so_name = tk.StringVar(value=self._user_display if self._auth else "")
         tk.Entry(form, textvariable=self._so_name, width=20).grid(row=0, column=5, padx=5, pady=5)
-        tk.Label(form, text="Comments:", bg="#ecf0f1").grid(row=1, column=0, padx=5, pady=5, sticky="e")
+        tk.Label(form, text=_t('gui.progression.employer_portal.employer_portal.labels.comments', default="Comments:"), bg="#ecf0f1").grid(row=1, column=0, padx=5, pady=5, sticky="e")
         self._so_comment = tk.StringVar()
         tk.Entry(form, textvariable=self._so_comment, width=50).grid(
             row=1, column=1, columnspan=4, padx=5, pady=5, sticky="w")
-        tk.Button(form, text="Sign Off", command=self._sign_off).grid(row=1, column=5, padx=10)
+        tk.Button(form, text=_t('gui.progression.employer_portal.employer_portal.buttons.sign_off', default="Sign Off"), command=self._sign_off).grid(row=1, column=5, padx=10)
 
-        tk.Button(tab, text="Show Overdue Reviews", command=self._show_overdue).pack(
+        tk.Button(tab, text=_t('gui.progression.employer_portal.employer_portal.buttons.show_overdue_reviews', default="Show Overdue Reviews"), command=self._show_overdue).pack(
             padx=10, pady=5, anchor="w")
         cols = ("id", "placement", "date", "type", "student", "company")
         self._overdue_tree = ttk.Treeview(tab, columns=cols, show="headings", height=10)
@@ -321,9 +323,9 @@ class EmployerPortalFrame(tk.Frame):
             logger.info("Review signed off review_id=%s signer_type=%s signer=%r logged_by=%s",
                         self._so_rid.get(), self._so_type.get(),
                         self._so_name.get().strip(), self._user_display)
-            messagebox.showinfo("Success", "Review signed off.")
+            messagebox.showinfo(_t('gui.progression.employer_portal.employer_portal.dialogs.success', default="Success"), _t('gui.progression.employer_portal.employer_portal.dialogs.review_signed_off', default="Review signed off."))
         except (EmployerPortalError, ValueError) as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc))
 
     def _show_overdue(self):
         for row in self._overdue_tree.get_children():
@@ -336,25 +338,25 @@ class EmployerPortalFrame(tk.Frame):
                     r.get("company", ""),
                 ))
         except EmployerPortalError as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc))
 
     # -- Dashboard -----------------------------------------------------
 
     def _build_dashboard_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1")
-        self._nb.add(tab, text="Dashboard")
+        self._nb.add(tab, text=_t('gui.progression.employer_portal.employer_portal.tabs.dashboard', default="Dashboard"))
 
         ctrl = tk.Frame(tab, bg="#ecf0f1")
         ctrl.pack(fill="x", padx=10, pady=5)
-        tk.Label(ctrl, text="Employer ID:", bg="#ecf0f1").pack(side="left", padx=5)
+        tk.Label(ctrl, text=_t('gui.progression.employer_portal.employer_portal.labels.employer_id', default="Employer ID:"), bg="#ecf0f1").pack(side="left", padx=5)
         self._dash_eid = tk.StringVar()
         tk.Entry(ctrl, textvariable=self._dash_eid, width=8).pack(side="left", padx=5)
-        tk.Button(ctrl, text="Load Employer Dashboard", command=self._load_dashboard).pack(
+        tk.Button(ctrl, text=_t('gui.progression.employer_portal.employer_portal.buttons.load_employer_dashboard', default="Load Employer Dashboard"), command=self._load_dashboard).pack(
             side="left", padx=5)
-        tk.Label(ctrl, text="  Placement ID:", bg="#ecf0f1").pack(side="left", padx=5)
+        tk.Label(ctrl, text=_t('gui.progression.employer_portal.employer_portal.labels.placement_id', default="  Placement ID:"), bg="#ecf0f1").pack(side="left", padx=5)
         self._dash_pid = tk.StringVar()
         tk.Entry(ctrl, textvariable=self._dash_pid, width=8).pack(side="left", padx=5)
-        tk.Button(ctrl, text="Placement Progress", command=self._load_progress).pack(
+        tk.Button(ctrl, text=_t('gui.progression.employer_portal.employer_portal.buttons.placement_progress', default="Placement Progress"), command=self._load_progress).pack(
             side="left", padx=5)
 
         self._dash_info = tk.Text(tab, height=20, width=80, state="disabled")
@@ -392,7 +394,7 @@ class EmployerPortalFrame(tk.Frame):
                 )
             self._set_dash(lines)
         except (EmployerPortalError, ValueError) as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc))
 
     def _load_progress(self):
         try:
@@ -415,7 +417,7 @@ class EmployerPortalFrame(tk.Frame):
                 )
             self._set_dash(lines)
         except (EmployerPortalError, ValueError) as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.progression.employer_portal.employer_portal.dialogs.error', default="Error"), str(exc))
 
     def refresh(self):
         self._load_employers()

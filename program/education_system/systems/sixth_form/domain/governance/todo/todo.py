@@ -20,11 +20,11 @@ from dataclasses import dataclass
 from datetime import date as _date
 from typing import Any
 
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.TODO_DB
+DB_PATH = paths.SIXTH_FORM_TODO_DB
 
 STATUSES: tuple[str, ...] = (
     "Open", "In Progress", "Blocked", "Done", "Cancelled",
@@ -113,7 +113,7 @@ class ValidationError(ValueError):
 
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

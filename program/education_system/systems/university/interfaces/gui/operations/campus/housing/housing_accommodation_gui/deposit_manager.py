@@ -6,6 +6,8 @@ useful, this module imports the non-interactive helpers (state machine,
 interest math, TDP deadline calc) so behaviour matches across surfaces.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import datetime as _dt
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -29,7 +31,7 @@ def show_deposits(gui_instance):
 
     header = ttk.Frame(gui_instance.content_frame)
     header.pack(fill='x', pady=(0, 10))
-    ttk.Label(header, text="Deposit Management",
+    ttk.Label(header, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.deposit_management', default="Deposit Management"),
               font=('Arial', 16, 'bold')).pack(side='left', padx=(0, 20))
 
     notebook = ttk.Notebook(gui_instance.content_frame)
@@ -103,7 +105,7 @@ def _build_ledger_tab(gui_instance, parent):
 
     btns = ttk.Frame(parent)
     btns.pack(fill='x', pady=(8, 0))
-    ttk.Button(btns, text="Refresh", command=refresh).pack(side='left')
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.refresh', default="Refresh"), command=refresh).pack(side='left')
     refresh()
 
 
@@ -122,7 +124,7 @@ def _build_refund_tab(gui_instance, parent):
     }
 
     # Selection row
-    sel = ttk.LabelFrame(parent, text="Select assignment", padding="8")
+    sel = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.select_assignment', default="Select assignment"), padding="8")
     sel.pack(fill='x', pady=(0, 8))
     combo = ttk.Combobox(sel, width=70, state='readonly')
     combo.grid(row=0, column=0, padx=4, sticky='w')
@@ -158,7 +160,7 @@ def _build_refund_tab(gui_instance, parent):
     candidates = load_candidates()
 
     # Summary frame
-    summary = ttk.LabelFrame(parent, text="Refund summary", padding="8")
+    summary = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.refund_summary', default="Refund summary"), padding="8")
     summary.pack(fill='x', pady=(0, 8))
     held_var = tk.StringVar(value="£0.00")
     deductions_var = tk.StringVar(value="£0.00")
@@ -179,7 +181,7 @@ def _build_refund_tab(gui_instance, parent):
     inspection_lbl.grid(row=0, column=2, rowspan=4, sticky='nw', padx=20)
 
     # Deductions tree
-    ded_frame = ttk.LabelFrame(parent, text="Deductions (proposed + new)", padding="8")
+    ded_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.deductions_proposed_new', default="Deductions (proposed + new)"), padding="8")
     ded_frame.pack(fill='both', expand=True, pady=(0, 8))
     cols = ('source', 'description', 'amount', 'ack_status', 'dispute')
     ded_tree = ttk.Treeview(ded_frame, columns=cols, show='headings', height=8)
@@ -302,12 +304,12 @@ def _build_refund_tab(gui_instance, parent):
 
     def add_deduction():
         if not ctx['assignment_id']:
-            messagebox.showwarning("Select assignment", "Pick an assignment first.")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.select_assignment', default="Select assignment"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.pick_an_assignment_first', default="Pick an assignment first."))
             return
-        desc = simpledialog.askstring("New deduction", "Description:", parent=parent)
+        desc = simpledialog.askstring(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.new_deduction', default="New deduction"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.description', default="Description:"), parent=parent)
         if not desc:
             return
-        amt_str = simpledialog.askstring("New deduction", f"Amount for '{desc}' (£):",
+        amt_str = simpledialog.askstring(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.new_deduction', default="New deduction"), f"Amount for '{desc}' (£):",
                                          parent=parent)
         if not amt_str:
             return
@@ -316,7 +318,7 @@ def _build_refund_tab(gui_instance, parent):
             if amt <= 0:
                 raise ValueError
         except ValueError:
-            messagebox.showerror("Invalid", "Amount must be a positive number.")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.invalid', default="Invalid"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.amount_must_be_a_positive_number', default="Amount must be a positive number."))
             return
         ctx['new_deductions'].append((desc, amt))
         ded_tree.insert('', tk.END,
@@ -325,7 +327,7 @@ def _build_refund_tab(gui_instance, parent):
 
     def post_refund():
         if not ctx['assignment_id']:
-            messagebox.showwarning("Select assignment", "Pick an assignment first.")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.select_assignment', default="Select assignment"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.pick_an_assignment_first', default="Pick an assignment first."))
             return
         # Compute totals.
         deductions_amounts = []
@@ -341,7 +343,7 @@ def _build_refund_tab(gui_instance, parent):
         ti = ctx['tenant_interest']
         refund = round(held - capped + ti, 2)
         if not messagebox.askyesno(
-            "Confirm refund",
+            _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.confirm_refund', default="Confirm refund"),
             f"Post refund for {ctx['assignment_id']}?\n\n"
             f"Held:        £{held:,.2f}\n"
             f"Deductions:  £{capped:,.2f}\n"
@@ -359,7 +361,7 @@ def _build_refund_tab(gui_instance, parent):
             # Re-check terminal state at post time.
             current = _ds.current_state(cur, ctx['assignment_id'])
             if _ds.is_terminal(current):
-                messagebox.showerror("Already terminal",
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.already_terminal', default="Already terminal"),
                                      f"State is {current}; cannot re-refund.")
                 return
 
@@ -371,8 +373,8 @@ def _build_refund_tab(gui_instance, parent):
             ''', (ctx['assignment_id'],))
             if (cur.fetchone()[0] or 0) > 0:
                 messagebox.showerror(
-                    "Open disputes",
-                    "Unresolved disputes exist — resolve them on the Disputes tab first.",
+                    _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.open_disputes', default="Open disputes"),
+                    _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.unresolved_disputes_exist_resolve_them_on_the_disputes_tab_first', default="Unresolved disputes exist — resolve them on the Disputes tab first."),
                 )
                 return
 
@@ -423,7 +425,7 @@ def _build_refund_tab(gui_instance, parent):
                                       f"refund £{refund:,.2f}",
                                actor=actor)
             except _ds.IllegalTransition as e:
-                messagebox.showerror("State machine error", str(e))
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.state_machine_error', default="State machine error"), str(e))
                 conn.rollback()
                 return
 
@@ -440,13 +442,13 @@ def _build_refund_tab(gui_instance, parent):
                     print(f"GL journal {jid} posted for {ctx['assignment_id']}.")
             except Exception as exc:
                 messagebox.showwarning(
-                    "GL post failed",
+                    _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.gl_post_failed', default="GL post failed"),
                     f"Operational records saved but the GL journal failed:\n{exc}\n\n"
                     f"Re-post via finance tools.",
                 )
 
             messagebox.showinfo(
-                "Refund posted",
+                _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.refund_posted', default="Refund posted"),
                 f"State: {new_status}\nRefund: £{refund:,.2f}",
             )
             # Reset the form.
@@ -463,10 +465,10 @@ def _build_refund_tab(gui_instance, parent):
         finally:
             conn.close()
 
-    ttk.Button(actions, text="Add Deduction", command=add_deduction).pack(side='left', padx=4)
-    post_btn = ttk.Button(actions, text="Post Refund", command=post_refund)
+    ttk.Button(actions, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.add_deduction', default="Add Deduction"), command=add_deduction).pack(side='left', padx=4)
+    post_btn = ttk.Button(actions, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.post_refund', default="Post Refund"), command=post_refund)
     post_btn.pack(side='left', padx=4)
-    ttk.Button(actions, text="Reload Candidates",
+    ttk.Button(actions, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.reload_candidates', default="Reload Candidates"),
                command=lambda: load_candidates()).pack(side='left', padx=4)
 
 
@@ -508,21 +510,21 @@ def _build_disputes_tab(gui_instance, parent):
     def resolve():
         sel = tree.selection()
         if not sel:
-            messagebox.showwarning("Select", "Pick a dispute first.")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.select', default="Select"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.pick_a_dispute_first', default="Pick a dispute first."))
             return
         ded_id = sel[0]
         action_win = tk.Toplevel(parent)
-        action_win.title("Resolve dispute")
+        action_win.title(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.windows.resolve_dispute', default="Resolve dispute"))
         action_win.transient(parent.winfo_toplevel())
-        ttk.Label(action_win, text="Action:").grid(row=0, column=0, sticky='w', padx=8, pady=4)
-        action_var = tk.StringVar(value='Uphold')
+        ttk.Label(action_win, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.action', default="Action:")).grid(row=0, column=0, sticky='w', padx=8, pady=4)
+        action_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.values.uphold', default='Uphold'))
         ttk.OptionMenu(action_win, action_var, 'Uphold', 'Uphold', 'Reduce', 'Waive').grid(
             row=0, column=1, sticky='w', padx=8, pady=4)
-        ttk.Label(action_win, text="New amount (Reduce only):").grid(
+        ttk.Label(action_win, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.new_amount_reduce_only', default="New amount (Reduce only):")).grid(
             row=1, column=0, sticky='w', padx=8, pady=4)
         amt_entry = ttk.Entry(action_win, width=12)
         amt_entry.grid(row=1, column=1, sticky='w', padx=8, pady=4)
-        ttk.Label(action_win, text="Notes:").grid(row=2, column=0, sticky='nw', padx=8, pady=4)
+        ttk.Label(action_win, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.notes', default="Notes:")).grid(row=2, column=0, sticky='nw', padx=8, pady=4)
         notes_entry = tk.Text(action_win, width=40, height=4)
         notes_entry.grid(row=2, column=1, padx=8, pady=4)
 
@@ -539,7 +541,7 @@ def _build_disputes_tab(gui_instance, parent):
                     'WHERE deduction_id = ?', (ded_id,))
                 row = cur.fetchone()
                 if not row:
-                    messagebox.showerror("Missing", "Deduction no longer exists.")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.missing', default="Missing"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.deduction_no_longer_exists', default="Deduction no longer exists."))
                     return
                 current_amt, aid = float(row[0]), row[1]
 
@@ -556,11 +558,11 @@ def _build_disputes_tab(gui_instance, parent):
                     try:
                         new_amt = float(amt_entry.get())
                     except ValueError:
-                        messagebox.showerror("Invalid", "Enter a valid amount.")
+                        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.invalid', default="Invalid"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.enter_a_valid_amount', default="Enter a valid amount."))
                         return
                     if new_amt < 0 or new_amt >= current_amt:
-                        messagebox.showerror("Invalid",
-                                             "New amount must be lower than the current.")
+                        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.invalid', default="Invalid"),
+                                             _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.new_amount_must_be_lower_than_the_current', default="New amount must be lower than the current."))
                         return
                     cur.execute('''
                         UPDATE housing_deposit_deductions
@@ -589,15 +591,15 @@ def _build_disputes_tab(gui_instance, parent):
                 conn.close()
             action_win.destroy()
             refresh()
-            messagebox.showinfo("Resolved", f"Dispute {ded_id} resolved.")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.resolved', default="Resolved"), f"Dispute {ded_id} resolved.")
 
-        ttk.Button(action_win, text="Resolve", command=commit).grid(
+        ttk.Button(action_win, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.resolve', default="Resolve"), command=commit).grid(
             row=3, column=0, columnspan=2, pady=8)
 
     btns = ttk.Frame(parent)
     btns.pack(fill='x', pady=(8, 0))
-    ttk.Button(btns, text="Resolve Selected", command=resolve).pack(side='left', padx=4)
-    ttk.Button(btns, text="Refresh", command=refresh).pack(side='left', padx=4)
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.resolve_selected', default="Resolve Selected"), command=resolve).pack(side='left', padx=4)
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.refresh', default="Refresh"), command=refresh).pack(side='left', padx=4)
     refresh()
 
 
@@ -611,7 +613,7 @@ def _build_tdp_tab(gui_instance, parent):
 
     # Compliance report
     report_frame = ttk.Frame(sub, padding="8")
-    sub.add(report_frame, text="Compliance Report")
+    sub.add(report_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.tabs.compliance_report', default="Compliance Report"))
     report_cols = ('assignment', 'student', 'held', 'state', 'scheme', 'deadline', 'days')
     rtree = ttk.Treeview(report_frame, columns=report_cols, show='headings', height=16)
     for c, t, w in [('assignment', 'Assignment', 140), ('student', 'Student', 180),
@@ -664,12 +666,12 @@ def _build_tdp_tab(gui_instance, parent):
 
     rbtns = ttk.Frame(report_frame)
     rbtns.pack(fill='x', pady=(8, 0))
-    ttk.Button(rbtns, text="Refresh", command=refresh_report).pack(side='left')
+    ttk.Button(rbtns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.refresh', default="Refresh"), command=refresh_report).pack(side='left')
     refresh_report()
 
     # Record protection
     rec_frame = ttk.Frame(sub, padding="8")
-    sub.add(rec_frame, text="Record Protection")
+    sub.add(rec_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.tabs.record_protection', default="Record Protection"))
 
     form_combo = ttk.Combobox(rec_frame, width=70, state='readonly')
     form_combo.grid(row=0, column=0, columnspan=4, sticky='w', padx=4, pady=4)
@@ -730,7 +732,7 @@ def _build_tdp_tab(gui_instance, parent):
     def submit():
         text = form_combo.get()
         if not text:
-            messagebox.showwarning("Select assignment", "Pick one first.")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.select_assignment', default="Select assignment"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.pick_one_first', default="Pick one first."))
             return
         aid = text.split('|', 1)[0].strip()
         scheme = fields['scheme'].get()
@@ -750,13 +752,13 @@ def _build_tdp_tab(gui_instance, parent):
             try:
                 rate = float(rate_text) if rate_text else None
             except ValueError:
-                messagebox.showerror("Invalid", "Interest rate must be numeric.")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.invalid', default="Invalid"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.interest_rate_must_be_numeric', default="Interest rate must be numeric."))
                 return
 
             if scheme == 'Exempt':
                 reason = fields['exempt'].get().strip()
                 if not reason:
-                    messagebox.showerror("Required", "Exemption reason required.")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.required', default="Required"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.exemption_reason_required', default="Exemption reason required."))
                     return
                 cur.execute('''
                     UPDATE housing_assignments
@@ -771,7 +773,7 @@ def _build_tdp_tab(gui_instance, parent):
             else:
                 ref = fields['ref'].get().strip()
                 if not ref:
-                    messagebox.showerror("Required", "Scheme reference required.")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.required', default="Required"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.scheme_reference_required', default="Scheme reference required."))
                     return
                 protected_at = fields['protected_at'].get().strip()
                 info_sent = fields['info_sent'].get().strip()
@@ -779,14 +781,14 @@ def _build_tdp_tab(gui_instance, parent):
                     _dt.datetime.strptime(protected_at, '%Y-%m-%d')
                     _dt.datetime.strptime(info_sent, '%Y-%m-%d')
                 except ValueError:
-                    messagebox.showerror("Invalid", "Dates must be YYYY-MM-DD.")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.invalid', default="Invalid"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.dates_must_be_yyyy_mm_dd', default="Dates must be YYYY-MM-DD."))
                     return
                 # Warn if past deadline.
                 if deadline and protected_at > deadline:
                     days_late = (_dt.datetime.strptime(protected_at, '%Y-%m-%d').date()
                                  - _dt.datetime.strptime(deadline, '%Y-%m-%d').date()).days
                     if not messagebox.askyesno(
-                        "Past deadline",
+                        _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.past_deadline', default="Past deadline"),
                         f"Protection date is {days_late} day(s) past the 30-day "
                         f"deadline ({deadline}).\n\n"
                         f"Continue and accept penalty exposure?",
@@ -807,11 +809,11 @@ def _build_tdp_tab(gui_instance, parent):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo("Recorded", f"TDP recorded for {aid}.")
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.recorded', default="Recorded"), f"TDP recorded for {aid}.")
         load_rec_candidates()
         refresh_report()
 
-    ttk.Button(rec_frame, text="Save", command=submit).grid(row=9, column=0,
+    ttk.Button(rec_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.save', default="Save"), command=submit).grid(row=9, column=0,
                                                             sticky='w', padx=4, pady=10)
 
 
@@ -901,16 +903,16 @@ def _build_interest_tab(gui_instance, parent):
         finally:
             conn.close()
         if accrued_n:
-            messagebox.showinfo("Accrued",
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.accrued', default="Accrued"),
                                 f"Accrued £{total:,.2f} across {accrued_n} assignment(s).")
         else:
-            messagebox.showinfo("Up to date", "Nothing new to accrue.")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.up_to_date', default="Up to date"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.nothing_new_to_accrue', default="Nothing new to accrue."))
         refresh()
 
     btns = ttk.Frame(parent)
     btns.pack(fill='x', pady=(8, 0))
-    ttk.Button(btns, text="Accrue Now", command=accrue_now).pack(side='left', padx=4)
-    ttk.Button(btns, text="Refresh", command=refresh).pack(side='left', padx=4)
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.accrue_now', default="Accrue Now"), command=accrue_now).pack(side='left', padx=4)
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.refresh', default="Refresh"), command=refresh).pack(side='left', padx=4)
     refresh()
 
 
@@ -920,7 +922,7 @@ def _build_interest_tab(gui_instance, parent):
 
 def _build_state_log_tab(gui_instance, parent):
     # Top: assignments + their current state.
-    top = ttk.LabelFrame(parent, text="Assignments", padding="8")
+    top = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.assignments', default="Assignments"), padding="8")
     top.pack(fill='x', pady=(0, 8))
     cols = ('assignment', 'student', 'state', 'last_change')
     state_tree = ttk.Treeview(top, columns=cols, show='headings', height=8)
@@ -931,7 +933,7 @@ def _build_state_log_tab(gui_instance, parent):
     state_tree.pack(fill='both', expand=True)
 
     # Bottom: log entries for the selected assignment.
-    bottom = ttk.LabelFrame(parent, text="Transition log", padding="8")
+    bottom = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.transition_log', default="Transition log"), padding="8")
     bottom.pack(fill='both', expand=True)
     log_cols = ('at', 'from', 'to', 'actor', 'reason')
     log_tree = ttk.Treeview(bottom, columns=log_cols, show='headings', height=12)
@@ -990,7 +992,7 @@ def _build_state_log_tab(gui_instance, parent):
 
     btns = ttk.Frame(parent)
     btns.pack(fill='x', pady=(8, 0))
-    ttk.Button(btns, text="Refresh", command=refresh_state).pack(side='left')
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.refresh', default="Refresh"), command=refresh_state).pack(side='left')
     refresh_state()
 
 
@@ -1028,37 +1030,37 @@ def prompt_move_out_deductions(parent_widget, inspection_id, auth):
         ''', (room_id,))
         assn = cur.fetchone()
         if not assn:
-            messagebox.showinfo("No assignment",
-                                "No assignment found for this room — skipping deduction capture.")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.no_assignment', default="No assignment"),
+                                _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.no_assignment_found_for_this_room_skipping_deduction_capture', default="No assignment found for this room — skipping deduction capture."))
             return
         assignment_id, student_id = assn
     finally:
         conn.close()
 
     if not messagebox.askyesno(
-        "Capture deductions?",
-        "Capture itemised deductions against the held deposit for this Move-out "
-        "inspection?\n\nYou can also do this later via Deposits → Process Refund.",
+        _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.capture_deductions', default="Capture deductions?"),
+        _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.capture_itemised_deductions_against_the_held_deposit_for_this_mo', default="Capture itemised deductions against the held deposit for this Move-out "
+        "inspection?\n\nYou can also do this later via Deposits → Process Refund."),
         parent=parent_widget,
     ):
         return
 
     dialog = tk.Toplevel(parent_widget)
-    dialog.title("Proposed deductions")
+    dialog.title(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.windows.proposed_deductions', default="Proposed deductions"))
     dialog.geometry("560x400")
     dialog.transient(parent_widget.winfo_toplevel())
 
     ttk.Label(dialog, text=f"Assignment: {assignment_id}  ·  Student: {student_id}",
               font=('Arial', 10, 'bold')).pack(anchor='w', padx=10, pady=(10, 4))
     ttk.Label(dialog, foreground='#555', wraplength=520, justify='left',
-              text="Each line you add becomes a Proposed deduction. The student "
-                   "can acknowledge or dispute before any refund is posted.").pack(
+              text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.each_line_you_add_becomes_a_proposed_deduction_the_student_can_a', default="Each line you add becomes a Proposed deduction. The student "
+                   "can acknowledge or dispute before any refund is posted.")).pack(
         anchor='w', padx=10, pady=(0, 8))
 
     cols = ('description', 'amount')
     tree = ttk.Treeview(dialog, columns=cols, show='headings', height=8)
-    tree.heading('description', text='Description')
-    tree.heading('amount', text='Amount £')
+    tree.heading('description', text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.headings.description', default='Description'))
+    tree.heading('amount', text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.headings.amount', default='Amount £'))
     tree.column('description', width=380)
     tree.column('amount', width=100)
     tree.pack(fill='both', expand=True, padx=10, pady=(0, 8))
@@ -1066,10 +1068,10 @@ def prompt_move_out_deductions(parent_widget, inspection_id, auth):
     pending = []
 
     def add_line():
-        desc = simpledialog.askstring("New deduction", "Description:", parent=dialog)
+        desc = simpledialog.askstring(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.new_deduction', default="New deduction"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.description', default="Description:"), parent=dialog)
         if not desc:
             return
-        amt_str = simpledialog.askstring("New deduction", f"Amount for '{desc}' (£):",
+        amt_str = simpledialog.askstring(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.new_deduction', default="New deduction"), f"Amount for '{desc}' (£):",
                                          parent=dialog)
         if not amt_str:
             return
@@ -1078,7 +1080,7 @@ def prompt_move_out_deductions(parent_widget, inspection_id, auth):
             if amt <= 0:
                 raise ValueError
         except ValueError:
-            messagebox.showerror("Invalid", "Amount must be positive.", parent=dialog)
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.invalid', default="Invalid"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.amount_must_be_positive', default="Amount must be positive."), parent=dialog)
             return
         pending.append((desc, amt))
         tree.insert('', tk.END, values=(desc, f"{amt:.2f}"))
@@ -1116,7 +1118,7 @@ def prompt_move_out_deductions(parent_widget, inspection_id, auth):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo("Recorded",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.recorded', default="Recorded"),
                             f"{len(pending)} proposed deduction(s) saved.\n\n"
                             f"Process Deposit Refund (Deposits panel) to apply them.",
                             parent=parent_widget)
@@ -1124,10 +1126,10 @@ def prompt_move_out_deductions(parent_widget, inspection_id, auth):
 
     btns = ttk.Frame(dialog)
     btns.pack(fill='x', padx=10, pady=(0, 10))
-    ttk.Button(btns, text="Add", command=add_line).pack(side='left', padx=4)
-    ttk.Button(btns, text="Remove selected", command=remove_line).pack(side='left', padx=4)
-    ttk.Button(btns, text="Save", command=commit).pack(side='right', padx=4)
-    ttk.Button(btns, text="Cancel", command=dialog.destroy).pack(side='right', padx=4)
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.add', default="Add"), command=add_line).pack(side='left', padx=4)
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.remove_selected', default="Remove selected"), command=remove_line).pack(side='left', padx=4)
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.save', default="Save"), command=commit).pack(side='right', padx=4)
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=4)
 
 
 # ---------------------------------------------------------------------------
@@ -1147,19 +1149,19 @@ def show_student_deductions(gui_instance):
                     (auth.current_user['id'],))
         row = cur.fetchone()
         if not row or not row[0]:
-            messagebox.showinfo("No record",
-                                "No student record linked to your account.")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.no_record', default="No record"),
+                                _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.no_student_record_linked_to_your_account', default="No student record linked to your account."))
             return
         student_id = row[0]
     finally:
         conn.close()
 
     gui_instance.clear_content()
-    ttk.Label(gui_instance.content_frame, text="My Deposit Deductions",
+    ttk.Label(gui_instance.content_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.my_deposit_deductions', default="My Deposit Deductions"),
               font=('Arial', 16, 'bold')).pack(anchor='w', pady=(0, 8))
     ttk.Label(gui_instance.content_frame, foreground='#555',
-              text="Acknowledge each line or raise a dispute. Disputed lines must "
-                   "be resolved by housing staff before any refund is processed.",
+              text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.labels.acknowledge_each_line_or_raise_a_dispute_disputed_lines_must_be', default="Acknowledge each line or raise a dispute. Disputed lines must "
+                   "be resolved by housing staff before any refund is processed."),
               wraplength=600, justify='left').pack(anchor='w', pady=(0, 8))
 
     cols = ('id', 'description', 'amount', 'status', 'reason', 'resolution')
@@ -1200,7 +1202,7 @@ def show_student_deductions(gui_instance):
     def _act(action):
         sel = tree.selection()
         if not sel:
-            messagebox.showwarning("Select", "Select a deduction first.")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.select', default="Select"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.select_a_deduction_first', default="Select a deduction first."))
             return
         ded_id = sel[0]
         ts = _dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -1215,8 +1217,8 @@ def show_student_deductions(gui_instance):
                 return
             ack, aid = r
             if ack == 'Resolved':
-                messagebox.showinfo("Resolved",
-                                    "This line has already been resolved by staff.")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.resolved', default="Resolved"),
+                                    _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.this_line_has_already_been_resolved_by_staff', default="This line has already been resolved by staff."))
                 return
             if action == 'ack':
                 cur.execute('''
@@ -1227,7 +1229,7 @@ def show_student_deductions(gui_instance):
                 ''', (ts, ded_id))
             else:  # dispute
                 reason = simpledialog.askstring(
-                    "Reason", "Reason for dispute:", parent=gui_instance.content_frame)
+                    _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.reason', default="Reason"), _t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.dialogs.reason_for_dispute', default="Reason for dispute:"), parent=gui_instance.content_frame)
                 if not reason:
                     return
                 cur.execute('''
@@ -1247,8 +1249,8 @@ def show_student_deductions(gui_instance):
 
     btns = ttk.Frame(gui_instance.content_frame)
     btns.pack(fill='x', pady=(8, 0))
-    ttk.Button(btns, text="Acknowledge",
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.acknowledge', default="Acknowledge"),
                command=lambda: _act('ack')).pack(side='left', padx=4)
-    ttk.Button(btns, text="Dispute",
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.dispute', default="Dispute"),
                command=lambda: _act('dispute')).pack(side='left', padx=4)
-    ttk.Button(btns, text="Refresh", command=refresh).pack(side='left', padx=4)
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.deposit_manager.buttons.refresh', default="Refresh"), command=refresh).pack(side='left', padx=4)

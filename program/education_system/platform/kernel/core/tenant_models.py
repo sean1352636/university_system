@@ -2,7 +2,7 @@
 
 All tenant metadata is stored in a single SQLite database at::
 
-    education_system/shared/data/db_files/tenants.db
+    program/var/data/platform/db_files/tenants.db
 
 Tables
 ------
@@ -21,13 +21,13 @@ from pathlib import Path
 from typing import Any, Optional
 
 from education_system.platform.kernel.core.tenant import Tenant
+from education_system.paths import PLATFORM_DB_FILES_DIR
 
 logger = logging.getLogger(__name__)
 
 # ── Default path for the central tenants DB ──────────────────────────────────
 
-_SHARED_ROOT = Path(__file__).resolve().parent.parent   # …/shared/
-_DEFAULT_TENANTS_DB = _SHARED_ROOT / "data" / "db_files" / "tenants.db"
+_DEFAULT_TENANTS_DB = PLATFORM_DB_FILES_DIR / "tenants.db"
 
 
 def _connect(db_path: str | None = None) -> sqlite3.Connection:

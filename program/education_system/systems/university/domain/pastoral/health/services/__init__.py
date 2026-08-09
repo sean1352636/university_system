@@ -130,7 +130,7 @@ except ImportError:
         _logging.info(f"Backup requested for {operation_type} but backup module not available")
 
 # Database connection (re-export from infrastructure)
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.health.storage import get_connection
 
 __all__ = [
     # Operations

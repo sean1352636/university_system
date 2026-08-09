@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Database imports
 try:
     from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-    from education_system.systems.university.infrastructure import paths
+    from education_system import paths
     HAS_DB = True
 except ImportError:
     HAS_DB = False

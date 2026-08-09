@@ -8,6 +8,8 @@ error handling, and email notifications.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime, timedelta
@@ -22,8 +24,13 @@ import hashlib
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth as get_centralized_auth
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domain.finance.blockchain.services import (
+    issue_credential as issue_signed_credential,
+    revoke_credential as revoke_signed_credential,
+    verify_credential as verify_signed_credential,
+)
 
 # Language/i18n support
 from education_system.systems.university.infrastructure.i18n import (
@@ -320,7 +327,7 @@ class BlockchainCredentialsGUI:
 
         # Filter
         ttk.Label(controls_frame, text=f"{_t('blockchain.type')}:").pack(side='left', padx=5)
-        self.badge_filter_var = tk.StringVar(value='all')
+        self.badge_filter_var = tk.StringVar(value=_t('gui.academics.blockchain_credentials.values.all', default='all'))
         ttk.Combobox(controls_frame, textvariable=self.badge_filter_var,
                     values=['all', 'skill', 'achievement', 'completion'],
                     width=12, state='readonly').pack(side='left', padx=5)
@@ -791,7 +798,7 @@ class BlockchainCredentialsGUI:
             ttk.Entry(dialog, textvariable=student_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=f"{_t('blockchain.credential_type')}:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
-            cred_type_var = tk.StringVar(value='degree')
+            cred_type_var = tk.StringVar(value=_t('gui.academics.blockchain_credentials.values.degree', default='degree'))
             ttk.Combobox(dialog, textvariable=cred_type_var,
                         values=['degree', 'certificate', 'diploma', 'transcript'],
                         width=28, state='readonly').grid(row=1, column=1, padx=10, pady=5)
@@ -805,7 +812,7 @@ class BlockchainCredentialsGUI:
             ttk.Entry(dialog, textvariable=issue_date_var, width=30).grid(row=3, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=f"{_t('blockchain.blockchain_type')}:").grid(row=4, column=0, padx=10, pady=5, sticky='w')
-            blockchain_var = tk.StringVar(value='ethereum')
+            blockchain_var = tk.StringVar(value=_t('gui.academics.blockchain_credentials.values.ethereum', default='ethereum'))
             ttk.Combobox(dialog, textvariable=blockchain_var,
                         values=['ethereum', 'hyperledger', 'polygon'],
                         width=28, state='readonly').grid(row=4, column=1, padx=10, pady=5)
@@ -837,32 +844,22 @@ class BlockchainCredentialsGUI:
 
                     # Validate JSON metadata
                     try:
-                        json.loads(metadata)
+                        metadata_values = json.loads(metadata)
                     except json.JSONDecodeError:
                         messagebox.showerror(_t("common.error"), _t("blockchain.errors.invalid_json_metadata"))
                         return
 
-                    # Generate blockchain hash (simulated)
-                    data = f"{student_id}{cred_type}{cred_name}{issue_date}{datetime.now().isoformat()}"
-                    blockchain_hash = hashlib.sha256(data.encode()).hexdigest()
-
-                    # Generate blockchain address (simulated)
-                    blockchain_address = f"0x{hashlib.sha256(secrets.token_bytes(32)).hexdigest()[:40]}"
-
-                    # Generate IPFS hash (simulated)
-                    ipfs_hash = f"Qm{hashlib.sha256(secrets.token_bytes(32)).hexdigest()[:44]}"
-
-                    with transaction() as conn:
-                        cursor = conn.cursor()
-                        cursor.execute('''
-                            INSERT INTO blockchain_credentials
-                            (student_id, credential_type, credential_name, issue_date,
-                             blockchain_hash, blockchain_address, ipfs_hash, metadata)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (student_id, cred_type, cred_name, issue_date,
-                              blockchain_hash, blockchain_address, ipfs_hash, metadata))
-
-                        credential_id = cursor.lastrowid
+                    credential = issue_signed_credential(
+                        student_id=student_id,
+                        credential_type=cred_type,
+                        credential_name=cred_name,
+                        issue_date=issue_date,
+                        issuer="University System",
+                        claims=metadata_values,
+                    )
+                    credential_id = credential["credential_id"]
+                    blockchain_hash = credential["blockchain_hash"]
+                    blockchain_address = credential.get("blockchain_address") or ""
 
                     # Log activity
                     log_activity('create', 'blockchain_credential', credential_id,
@@ -922,29 +919,24 @@ class BlockchainCredentialsGUI:
             values = self.cred_tree.item(selected[0])['values']
             credential_id = values[0]
             blockchain_hash = values[5]
-
-            # Simulate blockchain verification
-            verification_result = hashlib.sha256(blockchain_hash.encode()).hexdigest()
-
-            # Log verification
-            with transaction() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    INSERT INTO credential_verifications
-                    (credential_id, verifier_name, verified_date, verification_method)
-                    VALUES (?, ?, ?, 'blockchain')
-                ''', (credential_id, self.auth.current_user.get('username', 'Unknown'),
-                      datetime.now().isoformat()))
+            result = verify_signed_credential(
+                credential_id=int(credential_id),
+                verifier_name=self.auth.current_user.get('username', 'Unknown'),
+                verification_method="gui",
+            )
 
             log_activity('verify', 'blockchain_credential', credential_id,
                         details={'blockchain_hash': blockchain_hash})
 
+            status_text = (
+                _t('blockchain.messages.status_valid')
+                if result["valid"] else result["reason"].upper()
+            )
             messagebox.showinfo(_t("blockchain.dialogs.verification_details"),
-                              f"{_t('blockchain.messages.verification_success')}\n\n"
+                              f"{_t('blockchain.messages.verification_success') if result['valid'] else _t('common.error')}\n\n"
                               f"{_t('blockchain.messages.credential_id', id=credential_id)}\n"
                               f"{_t('blockchain.messages.blockchain_hash', hash=blockchain_hash)}\n"
-                              f"{_t('blockchain.messages.verification_hash', hash=verification_result[:32])}\n"
-                              f"{_t('blockchain.messages.status_valid')}")
+                              f"{status_text}")
 
             self.load_verifications()
 
@@ -968,27 +960,11 @@ class BlockchainCredentialsGUI:
                 return
 
             if messagebox.askyesno(_t("common.confirm"), _t("blockchain.confirm.revoke_credential")):
-                # Generate revocation hash
-                revocation_hash = hashlib.sha256(
-                    f"{credential_id}{reason}{datetime.now().isoformat()}".encode()
-                ).hexdigest()
-
-                with transaction() as conn:
-                    cursor = conn.cursor()
-
-                    cursor.execute('''
-                        UPDATE blockchain_credentials
-                        SET is_revoked = 1
-                        WHERE credential_id = ?
-                    ''', (credential_id,))
-
-                    cursor.execute('''
-                        INSERT INTO revoked_credentials
-                        (credential_id, revoked_date, reason, revoked_by, blockchain_revocation_hash)
-                        VALUES (?, ?, ?, ?, ?)
-                    ''', (credential_id, datetime.now().isoformat(), reason,
-                          self.auth.current_user.get('user_id'),
-                          revocation_hash))
+                revoke_signed_credential(
+                    int(credential_id),
+                    reason=reason,
+                    revoked_by=self.auth.current_user.get('user_id'),
+                )
 
                 log_activity('revoke', 'blockchain_credential', credential_id,
                             details={'reason': reason})
@@ -1013,7 +989,7 @@ class BlockchainCredentialsGUI:
             ttk.Entry(dialog, textvariable=badge_name_var, width=30).grid(row=0, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=f"{_t('blockchain.badge_type')}:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
-            badge_type_var = tk.StringVar(value='skill')
+            badge_type_var = tk.StringVar(value=_t('gui.academics.blockchain_credentials.values.skill', default='skill'))
             ttk.Combobox(dialog, textvariable=badge_type_var,
                         values=['skill', 'achievement', 'completion'],
                         width=28, state='readonly').grid(row=1, column=1, padx=10, pady=5)
@@ -1027,7 +1003,7 @@ class BlockchainCredentialsGUI:
             description_text.grid(row=3, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=f"{_t('blockchain.issuer_name')}:").grid(row=4, column=0, padx=10, pady=5, sticky='w')
-            issuer_var = tk.StringVar(value="University")
+            issuer_var = tk.StringVar(value=_t('gui.academics.blockchain_credentials.values.university', default="University"))
             ttk.Entry(dialog, textvariable=issuer_var, width=30).grid(row=4, column=1, padx=10, pady=5)
 
             def save_badge():
@@ -1372,7 +1348,7 @@ class BlockchainCredentialsGUI:
             ttk.Entry(dialog, textvariable=user_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=f"{_t('blockchain.blockchain_type')}:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
-            blockchain_var = tk.StringVar(value='ethereum')
+            blockchain_var = tk.StringVar(value=_t('gui.academics.blockchain_credentials.values.ethereum', default='ethereum'))
             ttk.Combobox(dialog, textvariable=blockchain_var,
                         values=['ethereum', 'hyperledger', 'polygon', 'cardano'],
                         width=28, state='readonly').grid(row=1, column=1, padx=10, pady=5)
@@ -1433,7 +1409,7 @@ class BlockchainCredentialsGUI:
             ttk.Entry(dialog, textvariable=template_name_var, width=30).grid(row=0, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=f"{_t('blockchain.credential_type')}:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
-            cred_type_var = tk.StringVar(value='degree')
+            cred_type_var = tk.StringVar(value=_t('gui.academics.blockchain_credentials.values.degree', default='degree'))
             ttk.Combobox(dialog, textvariable=cred_type_var,
                         values=['degree', 'certificate', 'diploma', 'transcript'],
                         width=28, state='readonly').grid(row=1, column=1, padx=10, pady=5)

@@ -18,20 +18,20 @@ import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
 
-from education_system.platform.kernel.database.paths import (
-    AUTH_DB,
+from education_system.paths import (
+    PLATFORM_AUTH_DB,
     SYSTEM_DB_PATHS,
     SYSTEM_LABELS,
+    SYSTEM_LEARNER_TABLE,
     SYSTEM_ORDER,
 )
 
 logger = logging.getLogger(__name__)
 
-# Local student/pupil table per system.
-_STUDENT_TABLE = {
-    "nursery": "pupils", "primary": "pupils", "secondary": "pupils",
-    "sixth_form": "students", "university": "students",
-}
+# Local learner table per system. Derived from the one registry rather than
+# restated here — apprenticeships keeps ``apprentices``, so the old "pupils
+# for K-12, students for everyone else" rule no longer holds.
+_STUDENT_TABLE = {s: t for s, (t, _id) in SYSTEM_LEARNER_TABLE.items()}
 
 
 class Warehouse:
@@ -41,7 +41,7 @@ class Warehouse:
         paths = db_paths if db_paths is not None else SYSTEM_DB_PATHS
         self._db_paths = {s: Path(p) for s, p in paths.items()}
         self._order = [s for s in SYSTEM_ORDER if s in self._db_paths]
-        self._auth_db = Path(auth_db) if auth_db is not None else Path(AUTH_DB)
+        self._auth_db = Path(auth_db) if auth_db is not None else Path(PLATFORM_AUTH_DB)
 
     # ------------------------------------------------------------------
 

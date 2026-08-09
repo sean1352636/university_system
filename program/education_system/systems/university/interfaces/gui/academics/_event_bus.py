@@ -259,6 +259,20 @@ def reset_for_tests() -> None:
     with _lock:
         _subscribers.clear()
 
+# Compatibility adapter: all existing GUI callers now share the GUI-neutral
+# registry used by domain/application services. ``subscribe_tk`` resolves the
+# rebound ``subscribe`` name when called, so Tk scheduling behaviour is
+# preserved without maintaining a second event registry.
+from education_system.systems.university.services.events.in_process import (
+    publish as _core_publish,
+    reset_for_tests as _core_reset_for_tests,
+    subscribe as _core_subscribe,
+)
+
+publish = _core_publish
+reset_for_tests = _core_reset_for_tests
+subscribe = _core_subscribe
+
 
 __all__ = [
     "EVENT_EXAM_CHANGED",

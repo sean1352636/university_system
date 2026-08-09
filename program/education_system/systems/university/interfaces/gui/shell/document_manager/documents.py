@@ -5,7 +5,7 @@ import shutil
 import hashlib
 from datetime import datetime, timedelta
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.security.file_upload import (
     validate_upload,
 )
@@ -38,7 +38,7 @@ class DocumentsManager:
     def upload_document_dialog(self):
         """Show upload document dialog"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Upload Document")
+        dialog.title(_t('gui.shell.document_manager.documents.windows.upload_document', default="Upload Document"))
         dialog.geometry("700x600")
         dialog.minsize(500, 400)
         dialog.transient(self.root)
@@ -48,14 +48,14 @@ class DocumentsManager:
         dialog.geometry("+%d+%d" % (self.root.winfo_rootx() + 50, self.root.winfo_rooty() + 50))
 
         # Title - pack at top
-        ttk.Label(dialog, text="Upload Student Document", font=('Arial', 14, 'bold')).pack(pady=(15, 5))
+        ttk.Label(dialog, text=_t('gui.shell.document_manager.documents.labels.upload_student_document', default="Upload Student Document"), font=('Arial', 14, 'bold')).pack(pady=(15, 5))
 
         # Buttons - pack at bottom FIRST so they're always visible
         button_frame = ttk.Frame(dialog)
         button_frame.pack(side='bottom', fill='x', padx=20, pady=10)
 
-        ttk.Button(button_frame, text="Upload Document", command=lambda: self.perform_upload(dialog)).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.documents.buttons.upload_document', default="Upload Document"), command=lambda: self.perform_upload(dialog)).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.documents.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
         # Separator above buttons
         ttk.Separator(dialog, orient='horizontal').pack(side='bottom', fill='x', padx=20)
@@ -94,10 +94,10 @@ class DocumentsManager:
         form_canvas.bind('<Button-5>', _on_mousewheel)
 
         # Student selection
-        student_frame = ttk.LabelFrame(main_frame, text="Student Information", padding=10)
+        student_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.documents.labels.student_information', default="Student Information"), padding=10)
         student_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(student_frame, text="Student ID:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(student_frame, text=_t('gui.shell.document_manager.documents.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.gui.upload_student_id = ttk.Combobox(student_frame, width=20)
         self.gui.upload_student_id.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
@@ -107,15 +107,15 @@ class DocumentsManager:
         self.gui.upload_student_id['values'] = student_values
 
         # Search button
-        ttk.Button(student_frame, text="\U0001f50d Search", command=self.gui.search_student_for_upload).grid(row=0, column=2, padx=5)
+        ttk.Button(student_frame, text=_t('gui.shell.document_manager.documents.buttons.search', default="\U0001f50d Search"), command=self.gui.search_student_for_upload).grid(row=0, column=2, padx=5)
 
         student_frame.grid_columnconfigure(1, weight=1)
 
         # Document type selection
-        doc_type_frame = ttk.LabelFrame(main_frame, text="Document Type", padding=10)
+        doc_type_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.documents.labels.document_type', default="Document Type"), padding=10)
         doc_type_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(doc_type_frame, text="Document Type:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(doc_type_frame, text=_t('gui.shell.document_manager.documents.labels.document_type_variant_2', default="Document Type:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.gui.upload_doc_type = ttk.Combobox(doc_type_frame, width=30)
         self.gui.upload_doc_type.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
@@ -131,15 +131,15 @@ class DocumentsManager:
         self.gui.doc_type_info.grid(row=1, column=0, columnspan=2, sticky='w', padx=5, pady=(5, 0))
 
         # File selection
-        file_frame = ttk.LabelFrame(main_frame, text="File Selection", padding=10)
+        file_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.documents.labels.file_selection', default="File Selection"), padding=10)
         file_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(file_frame, text="File:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(file_frame, text=_t('gui.shell.document_manager.documents.labels.file', default="File:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.gui.upload_file_path = tk.StringVar()
         file_entry = ttk.Entry(file_frame, textvariable=self.gui.upload_file_path, width=40)
         file_entry.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-        ttk.Button(file_frame, text="Browse...", command=self.browse_file).grid(row=0, column=2, padx=5)
+        ttk.Button(file_frame, text=_t('gui.shell.document_manager.documents.buttons.browse', default="Browse..."), command=self.browse_file).grid(row=0, column=2, padx=5)
 
         file_frame.grid_columnconfigure(1, weight=1)
 
@@ -148,23 +148,23 @@ class DocumentsManager:
         self.gui.file_info.grid(row=1, column=0, columnspan=3, sticky='w', padx=5, pady=(5, 0))
 
         # Additional options
-        options_frame = ttk.LabelFrame(main_frame, text="Additional Options", padding=10)
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.documents.labels.additional_options', default="Additional Options"), padding=10)
         options_frame.pack(fill='x', pady=(0, 15))
 
         # Expiry date (if applicable)
-        ttk.Label(options_frame, text="Expiry Date:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(options_frame, text=_t('gui.shell.document_manager.documents.labels.expiry_date', default="Expiry Date:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.gui.upload_expiry_date = tk.Entry(options_frame, width=15)
         self.gui.upload_expiry_date.grid(row=0, column=1, padx=5, pady=5, sticky='w')
-        ttk.Label(options_frame, text="(YYYY-MM-DD, if applicable)", font=('Arial', 9), foreground='gray').grid(row=0, column=2, sticky='w', padx=5)
+        ttk.Label(options_frame, text=_t('gui.shell.document_manager.documents.labels.yyyy_mm_dd_if_applicable', default="(YYYY-MM-DD, if applicable)"), font=('Arial', 9), foreground='gray').grid(row=0, column=2, sticky='w', padx=5)
 
         # Tags
-        ttk.Label(options_frame, text="Tags:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(options_frame, text=_t('gui.shell.document_manager.documents.labels.tags', default="Tags:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.gui.upload_tags = tk.Entry(options_frame, width=40)
         self.gui.upload_tags.grid(row=1, column=1, columnspan=2, padx=5, pady=5, sticky='ew')
-        ttk.Label(options_frame, text="(comma-separated)", font=('Arial', 9), foreground='gray').grid(row=2, column=1, sticky='w', padx=5)
+        ttk.Label(options_frame, text=_t('gui.shell.document_manager.documents.labels.comma_separated', default="(comma-separated)"), font=('Arial', 9), foreground='gray').grid(row=2, column=1, sticky='w', padx=5)
 
         # Notes
-        ttk.Label(options_frame, text="Notes:").grid(row=3, column=0, sticky='nw', padx=5, pady=5)
+        ttk.Label(options_frame, text=_t('gui.shell.document_manager.documents.labels.notes', default="Notes:")).grid(row=3, column=0, sticky='nw', padx=5, pady=5)
         self.gui.upload_notes = tk.Text(options_frame, width=40, height=3)
         self.gui.upload_notes.grid(row=3, column=1, columnspan=2, padx=5, pady=5, sticky='ew')
 
@@ -173,7 +173,7 @@ class DocumentsManager:
     def browse_file(self):
         """Browse for file to upload"""
         file_path = filedialog.askopenfilename(
-            title="Select Document File",
+            title=_t('gui.shell.document_manager.documents.dialogs.select_document_file', default="Select Document File"),
             filetypes=[
                 ("All Supported", "*.pdf *.jpg *.jpeg *.png *.doc *.docx"),
                 ("PDF files", "*.pdf"),
@@ -215,15 +215,15 @@ class DocumentsManager:
         """Perform the document upload"""
         # Validate inputs
         if not self.gui.upload_student_id.get():
-            messagebox.showerror("Error", "Please select a student")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), _t('gui.shell.document_manager.documents.dialogs.please_select_a_student', default="Please select a student"))
             return
 
         if not self.gui.upload_doc_type.get():
-            messagebox.showerror("Error", "Please select a document type")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), _t('gui.shell.document_manager.documents.dialogs.please_select_a_document_type', default="Please select a document type"))
             return
 
         if not self.gui.upload_file_path.get() or not os.path.exists(self.gui.upload_file_path.get()):
-            messagebox.showerror("Error", "Please select a valid file")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), _t('gui.shell.document_manager.documents.dialogs.please_select_a_valid_file', default="Please select a valid file"))
             return
 
         try:
@@ -240,7 +240,7 @@ class DocumentsManager:
                     break
 
             if not type_id:
-                messagebox.showerror("Error", "Invalid document type selected")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), _t('gui.shell.document_manager.documents.dialogs.invalid_document_type_selected', default="Invalid document type selected"))
                 return
 
             # Validate file
@@ -257,15 +257,15 @@ class DocumentsManager:
             )
 
             if success:
-                messagebox.showinfo("Success", "Document uploaded successfully!")
+                messagebox.showinfo(_t('gui.shell.document_manager.documents.dialogs.success', default="Success"), _t('gui.shell.document_manager.documents.dialogs.document_uploaded_successfully', default="Document uploaded successfully!"))
                 dialog.destroy()
                 self.refresh_documents()
                 self.gui.refresh_dashboard()
             else:
-                messagebox.showerror("Error", "Failed to upload document")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), _t('gui.shell.document_manager.documents.dialogs.failed_to_upload_document', default="Failed to upload document"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Upload failed: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), f"Upload failed: {str(e)}")
 
     def validate_file(self, file_path, type_id):
         """Validate file against document type requirements"""
@@ -283,7 +283,7 @@ class DocumentsManager:
             conn.close()
 
             if not result:
-                messagebox.showerror("Error", "Document type not found")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), _t('gui.shell.document_manager.documents.dialogs.document_type_not_found', default="Document type not found"))
                 return False
 
             max_size_mb, allowed_formats = result
@@ -293,7 +293,7 @@ class DocumentsManager:
             file_size_mb = file_size / (1024 * 1024)
 
             if file_size_mb > max_size_mb:
-                messagebox.showerror("Error", f"File size ({file_size_mb:.2f}MB) exceeds maximum allowed size ({max_size_mb}MB)")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), f"File size ({file_size_mb:.2f}MB) exceeds maximum allowed size ({max_size_mb}MB)")
                 return False
 
             # Check file format
@@ -301,13 +301,13 @@ class DocumentsManager:
             allowed_ext_list = [ext.strip().lower() for ext in allowed_formats.split(',')]
 
             if file_ext not in allowed_ext_list:
-                messagebox.showerror("Error", f"File format '{file_ext}' not allowed. Allowed formats: {allowed_formats}")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), f"File format '{file_ext}' not allowed. Allowed formats: {allowed_formats}")
                 return False
 
             return True
 
         except Exception as e:
-            messagebox.showerror("Error", f"File validation failed: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), f"File validation failed: {str(e)}")
             return False
 
     def upload_document_to_db(self, student_id, type_id, file_path, expiry_date, tags, notes):
@@ -321,7 +321,7 @@ class DocumentsManager:
             # Validate file using secure upload handler
             validation = validate_upload(original_filename, file_content, category='documents')
             if not validation['valid']:
-                messagebox.showerror("Upload Error", f"File validation failed: {validation['error']}")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.upload_error', default="Upload Error"), f"File validation failed: {validation['error']}")
                 return None
 
             conn = get_connection()
@@ -338,7 +338,7 @@ class DocumentsManager:
                 existing_doc = cursor.fetchone()
 
                 # Create document directory if it doesn't exist
-                doc_dir = paths.UPLOAD_DIR / 'student_documents' / student_id
+                doc_dir = paths.UNIVERSITY_UPLOAD_DIR / 'student_documents' / student_id
                 os.makedirs(doc_dir, exist_ok=True)
 
                 # Set restrictive permissions on directory
@@ -444,20 +444,20 @@ class DocumentsManager:
                 return True
 
             except Exception as e:
-                messagebox.showerror("Database Error", f"Failed to save document: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.database_error', default="Database Error"), f"Failed to save document: {str(e)}")
                 return False
             finally:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Database Error", f"Failed to save document: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.database_error', default="Database Error"), f"Failed to save document: {str(e)}")
             return False
 
     def view_document_details(self):
         """View detailed information about selected document"""
         selection = self.gui.docs_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a document to view details.")
+            messagebox.showwarning(_t('gui.shell.document_manager.documents.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.documents.dialogs.please_select_a_document_to_view_details', default="Please select a document to view details."))
             return
 
         item = self.gui.docs_tree.item(selection[0])
@@ -481,15 +481,15 @@ class DocumentsManager:
             if doc_data:
                 self.show_document_details_window(doc_data)
             else:
-                messagebox.showerror("Error", "Document not found.")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), _t('gui.shell.document_manager.documents.dialogs.document_not_found', default="Document not found."))
 
         except Exception as e:
-            messagebox.showerror("Database Error", f"Error loading document details: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.database_error', default="Database Error"), f"Error loading document details: {str(e)}")
 
     def show_document_details_window(self, doc_data):
         """Show document details in a new window"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Document Details")
+        dialog.title(_t('gui.shell.document_manager.documents.windows.document_details', default="Document Details"))
         dialog.geometry("850x700")
         dialog.transient(self.root)
 
@@ -542,13 +542,13 @@ Notes:
         scrollbar.pack(side='right', fill='y')
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.shell.document_manager.documents.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
     def edit_document_status(self):
         """Edit the status of selected document"""
         selection = self.gui.docs_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a document to edit.")
+            messagebox.showwarning(_t('gui.shell.document_manager.documents.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.documents.dialogs.please_select_a_document_to_edit', default="Please select a document to edit."))
             return
 
         item = self.gui.docs_tree.item(selection[0])
@@ -557,7 +557,7 @@ Notes:
 
         # Status dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Document Status")
+        dialog.title(_t('gui.shell.document_manager.documents.windows.edit_document_status', default="Edit Document Status"))
         dialog.geometry("600x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -565,18 +565,18 @@ Notes:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Update Document Status", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.documents.labels.update_document_status', default="Update Document Status"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         ttk.Label(main_frame, text=f"Document ID: {doc_id}").pack(anchor='w')
         ttk.Label(main_frame, text=f"Current Status: {current_status}").pack(anchor='w', pady=(0, 15))
 
-        ttk.Label(main_frame, text="New Status:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.documents.labels.new_status', default="New Status:")).pack(anchor='w')
         status_var = tk.StringVar(value=current_status)
         status_combo = ttk.Combobox(main_frame, textvariable=status_var,
                                    values=['Pending', 'Verified', 'Rejected', 'Expired'])
         status_combo.pack(fill='x', pady=5)
 
-        ttk.Label(main_frame, text="Notes:").pack(anchor='w', pady=(10, 0))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.documents.labels.notes', default="Notes:")).pack(anchor='w', pady=(10, 0))
         notes_text = tk.Text(main_frame, height=5, width=40)
         notes_text.pack(fill='x', pady=5)
 
@@ -599,21 +599,21 @@ Notes:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Document status updated successfully!")
+                messagebox.showinfo(_t('gui.shell.document_manager.documents.dialogs.success', default="Success"), _t('gui.shell.document_manager.documents.dialogs.document_status_updated_successfully', default="Document status updated successfully!"))
                 dialog.destroy()
                 self.refresh_documents()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), f"Failed to update status: {str(e)}")
 
-        ttk.Button(button_frame, text="Update", command=update_status).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.documents.buttons.update', default="Update"), command=update_status).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.documents.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def download_document(self):
         """Download selected document file"""
         selection = self.gui.docs_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a document to download.")
+            messagebox.showwarning(_t('gui.shell.document_manager.documents.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.documents.dialogs.please_select_a_document_to_download', default="Please select a document to download."))
             return
 
         item = self.gui.docs_tree.item(selection[0])
@@ -629,25 +629,25 @@ Notes:
 
             if result and os.path.exists(result[0]):
                 save_path = filedialog.asksaveasfilename(
-                    title="Save Document As",
+                    title=_t('gui.shell.document_manager.documents.dialogs.save_document_as', default="Save Document As"),
                     initialname=result[1],
                     defaultextension=os.path.splitext(result[1])[1]
                 )
 
                 if save_path:
                     shutil.copy2(result[0], save_path)
-                    messagebox.showinfo("Success", f"Document downloaded to {save_path}")
+                    messagebox.showinfo(_t('gui.shell.document_manager.documents.dialogs.success', default="Success"), f"Document downloaded to {save_path}")
             else:
-                messagebox.showerror("Error", "Document file not found.")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), _t('gui.shell.document_manager.documents.dialogs.document_file_not_found', default="Document file not found."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to download document: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), f"Failed to download document: {str(e)}")
 
     def send_document_notification(self):
         """Send notification about selected document"""
         selection = self.gui.docs_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a document to send notification about.")
+            messagebox.showwarning(_t('gui.shell.document_manager.documents.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.documents.dialogs.please_select_a_document_to_send_notification_about', default="Please select a document to send notification about."))
             return
 
         item = self.gui.docs_tree.item(selection[0])
@@ -656,7 +656,7 @@ Notes:
         doc_type = item['values'][2]
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Send Document Notification")
+        dialog.title(_t('gui.shell.document_manager.documents.windows.send_document_notification', default="Send Document Notification"))
         dialog.geometry("600x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -664,11 +664,11 @@ Notes:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Send notification about:", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.documents.labels.send_notification_about', default="Send notification about:"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
         ttk.Label(main_frame, text=f"Document: {doc_type}").pack(anchor='w')
         ttk.Label(main_frame, text=f"Student: {student_name}").pack(anchor='w')
 
-        ttk.Label(main_frame, text="Message:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.documents.labels.message', default="Message:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
         message_text = tk.Text(main_frame, height=6, width=40)
         message_text.pack(fill='x', pady=5)
         message_text.insert('1.0', f"Regarding your {doc_type} document...")
@@ -676,28 +676,28 @@ Notes:
         def send_notification():
             message = message_text.get('1.0', 'end-1c')
             if message:
-                messagebox.showinfo("Success", "Notification sent successfully!")
+                messagebox.showinfo(_t('gui.shell.document_manager.documents.dialogs.success', default="Success"), _t('gui.shell.document_manager.documents.dialogs.notification_sent_successfully', default="Notification sent successfully!"))
                 dialog.destroy()
             else:
-                messagebox.showerror("Error", "Please enter a message")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), _t('gui.shell.document_manager.documents.dialogs.please_enter_a_message', default="Please enter a message"))
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
 
-        ttk.Button(button_frame, text="Send", command=send_notification).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.documents.buttons.send', default="Send"), command=send_notification).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.documents.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def delete_document(self):
         """Delete selected document"""
         selection = self.gui.docs_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a document to delete.")
+            messagebox.showwarning(_t('gui.shell.document_manager.documents.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.documents.dialogs.please_select_a_document_to_delete', default="Please select a document to delete."))
             return
 
         item = self.gui.docs_tree.item(selection[0])
         doc_id = item['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this document?"):
+        if messagebox.askyesno(_t('gui.shell.document_manager.documents.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.document_manager.documents.dialogs.are_you_sure_you_want_to_delete_this_document', default="Are you sure you want to delete this document?")):
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
@@ -716,11 +716,11 @@ Notes:
                 if result and os.path.exists(result[0]):
                     os.remove(result[0])
 
-                messagebox.showinfo("Success", "Document deleted successfully!")
+                messagebox.showinfo(_t('gui.shell.document_manager.documents.dialogs.success', default="Success"), _t('gui.shell.document_manager.documents.dialogs.document_deleted_successfully', default="Document deleted successfully!"))
                 self.refresh_documents()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete document: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.error', default="Error"), f"Failed to delete document: {str(e)}")
 
     def show_documents(self):
         """Show documents management interface"""
@@ -734,47 +734,47 @@ Notes:
         title_frame = ttk.Frame(docs_frame)
         title_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(title_frame, text="Document Management", font=('Arial', 18, 'bold')).pack(side='left')
+        ttk.Label(title_frame, text=_t('gui.shell.document_manager.documents.labels.document_management', default="Document Management"), font=('Arial', 18, 'bold')).pack(side='left')
 
         # Control buttons
         controls_frame = ttk.Frame(title_frame)
         controls_frame.pack(side='right')
 
-        ttk.Button(controls_frame, text="\U0001f4e4 Upload", command=self.upload_document_dialog).pack(side='left', padx=2)
-        ttk.Button(controls_frame, text="\U0001f50d Search", command=self.search_documents).pack(side='left', padx=2)
-        ttk.Button(controls_frame, text="\U0001f504 Refresh", command=self.refresh_documents).pack(side='left', padx=2)
+        ttk.Button(controls_frame, text=_t('gui.shell.document_manager.documents.buttons.upload', default="\U0001f4e4 Upload"), command=self.upload_document_dialog).pack(side='left', padx=2)
+        ttk.Button(controls_frame, text=_t('gui.shell.document_manager.documents.buttons.search', default="\U0001f50d Search"), command=self.search_documents).pack(side='left', padx=2)
+        ttk.Button(controls_frame, text=_t('gui.shell.document_manager.documents.buttons.refresh', default="\U0001f504 Refresh"), command=self.refresh_documents).pack(side='left', padx=2)
 
         # Filters frame
-        filters_frame = ttk.LabelFrame(docs_frame, text="Filters", padding=10)
+        filters_frame = ttk.LabelFrame(docs_frame, text=_t('gui.shell.document_manager.documents.labels.filters', default="Filters"), padding=10)
         filters_frame.pack(fill='x', pady=(0, 10))
 
         # Status filter
-        ttk.Label(filters_frame, text="Status:").grid(row=0, column=0, padx=5, sticky='w')
+        ttk.Label(filters_frame, text=_t('gui.shell.document_manager.documents.labels.status', default="Status:")).grid(row=0, column=0, padx=5, sticky='w')
         self.gui.status_filter = ttk.Combobox(filters_frame, values=['All', 'Pending', 'Verified', 'Rejected', 'Expired'])
         self.gui.status_filter.set('All')
         self.gui.status_filter.grid(row=0, column=1, padx=5)
         self.gui.status_filter.bind('<<ComboboxSelected>>', lambda e: self.apply_filters())
 
         # Document type filter
-        ttk.Label(filters_frame, text="Type:").grid(row=0, column=2, padx=5, sticky='w')
+        ttk.Label(filters_frame, text=_t('gui.shell.document_manager.documents.labels.type', default="Type:")).grid(row=0, column=2, padx=5, sticky='w')
         self.gui.type_filter = ttk.Combobox(filters_frame, values=['All'] + self.gui.get_document_types())
         self.gui.type_filter.set('All')
         self.gui.type_filter.grid(row=0, column=3, padx=5)
         self.gui.type_filter.bind('<<ComboboxSelected>>', lambda e: self.apply_filters())
 
         # Date range filter
-        ttk.Label(filters_frame, text="From:").grid(row=0, column=4, padx=5, sticky='w')
+        ttk.Label(filters_frame, text=_t('gui.shell.document_manager.documents.labels.from', default="From:")).grid(row=0, column=4, padx=5, sticky='w')
         self.gui.from_date = tk.Entry(filters_frame, width=12)
         self.gui.from_date.grid(row=0, column=5, padx=5)
         self.gui.from_date.insert(0, (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
 
-        ttk.Label(filters_frame, text="To:").grid(row=0, column=6, padx=5, sticky='w')
+        ttk.Label(filters_frame, text=_t('gui.shell.document_manager.documents.labels.to', default="To:")).grid(row=0, column=6, padx=5, sticky='w')
         self.gui.to_date = tk.Entry(filters_frame, width=12)
         self.gui.to_date.grid(row=0, column=7, padx=5)
         self.gui.to_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
         # Apply filters button
-        ttk.Button(filters_frame, text="Apply Filters", command=self.apply_filters).grid(row=0, column=8, padx=10)
+        ttk.Button(filters_frame, text=_t('gui.shell.document_manager.documents.buttons.apply_filters', default="Apply Filters"), command=self.apply_filters).grid(row=0, column=8, padx=10)
 
         # Documents table
         self.create_documents_table(docs_frame)
@@ -821,14 +821,14 @@ Notes:
     def create_documents_context_menu(self):
         """Create context menu for documents table"""
         self.gui.docs_context_menu = tk.Menu(self.root, tearoff=0)
-        self.gui.docs_context_menu.add_command(label="View Details", command=self.view_document_details)
-        self.gui.docs_context_menu.add_command(label="Edit Status", command=self.edit_document_status)
-        self.gui.docs_context_menu.add_command(label="View Versions", command=self.gui.view_document_versions)
+        self.gui.docs_context_menu.add_command(label=_t('gui.shell.document_manager.documents.menus.view_details', default="View Details"), command=self.view_document_details)
+        self.gui.docs_context_menu.add_command(label=_t('gui.shell.document_manager.documents.menus.edit_status', default="Edit Status"), command=self.edit_document_status)
+        self.gui.docs_context_menu.add_command(label=_t('gui.shell.document_manager.documents.menus.view_versions', default="View Versions"), command=self.gui.view_document_versions)
         self.gui.docs_context_menu.add_separator()
-        self.gui.docs_context_menu.add_command(label="Download File", command=self.download_document)
-        self.gui.docs_context_menu.add_command(label="Send Notification", command=self.send_document_notification)
+        self.gui.docs_context_menu.add_command(label=_t('gui.shell.document_manager.documents.menus.download_file', default="Download File"), command=self.download_document)
+        self.gui.docs_context_menu.add_command(label=_t('gui.shell.document_manager.documents.menus.send_notification', default="Send Notification"), command=self.send_document_notification)
         self.gui.docs_context_menu.add_separator()
-        self.gui.docs_context_menu.add_command(label="Delete Document", command=self.delete_document)
+        self.gui.docs_context_menu.add_command(label=_t('gui.shell.document_manager.documents.menus.delete_document', default="Delete Document"), command=self.delete_document)
 
         # Bind right-click
         self.gui.docs_tree.bind('<Button-3>', self.show_docs_context_menu)
@@ -878,7 +878,7 @@ Notes:
                 ))
 
         except Exception as e:
-            messagebox.showerror("Data Error", f"Failed to load documents: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.data_error', default="Data Error"), f"Failed to load documents: {str(e)}")
 
     def on_document_double_click(self, event):
         """Handle double-click on document"""
@@ -938,7 +938,7 @@ Notes:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Search Error", f"Failed to search documents: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.search_error', default="Search Error"), f"Failed to search documents: {str(e)}")
 
     def sort_column(self, col):
         """
@@ -1000,7 +1000,7 @@ Notes:
 
         # Create upload window
         upload_window = tk.Toplevel(self.root)
-        upload_window.title("Upload Student Document")
+        upload_window.title(_t('gui.shell.document_manager.documents.windows.upload_student_document', default="Upload Student Document"))
         upload_window.transient(self.root)
         upload_window.grab_set()
 
@@ -1013,7 +1013,7 @@ Notes:
         upload_window.geometry(f"{win_w}x{win_h}+{x}+{y}")
 
         # Title
-        ttk.Label(upload_window, text="Upload Student Document",
+        ttk.Label(upload_window, text=_t('gui.shell.document_manager.documents.labels.upload_student_document', default="Upload Student Document"),
                  font=("Arial", 14, "bold")).pack(pady=(8, 4))
 
         # Button frame - pack at bottom first so it's always visible
@@ -1025,14 +1025,14 @@ Notes:
         form_frame.pack(fill='both', expand=True)
 
         # Student ID
-        ttk.Label(form_frame, text="Student ID: *").grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(form_frame, text=_t('gui.shell.document_manager.documents.labels.student_id_variant_2', default="Student ID: *")).grid(row=0, column=0, sticky='w', pady=3)
         student_id_entry = ttk.Entry(form_frame, width=40)
         if student_id:
             student_id_entry.insert(0, student_id)
         student_id_entry.grid(row=0, column=1, sticky='ew', pady=3)
 
         # Document Type
-        ttk.Label(form_frame, text="Document Type: *").grid(row=1, column=0, sticky='w', pady=3)
+        ttk.Label(form_frame, text=_t('gui.shell.document_manager.documents.labels.document_type_variant_3', default="Document Type: *")).grid(row=1, column=0, sticky='w', pady=3)
         doc_type_combo = ttk.Combobox(form_frame, width=38, state='readonly')
         doc_type_combo['values'] = ['Transcript', 'ID Card', 'Health Form', 'Enrollment Form',
                                      'Financial Document', 'Recommendation Letter', 'Other']
@@ -1040,41 +1040,41 @@ Notes:
         doc_type_combo.grid(row=1, column=1, sticky='ew', pady=3)
 
         # File selection
-        ttk.Label(form_frame, text="Select File: *").grid(row=2, column=0, sticky='w', pady=3)
+        ttk.Label(form_frame, text=_t('gui.shell.document_manager.documents.labels.select_file', default="Select File: *")).grid(row=2, column=0, sticky='w', pady=3)
         file_path_var = tk.StringVar()
         file_entry = ttk.Entry(form_frame, textvariable=file_path_var, width=40, state='readonly')
         file_entry.grid(row=2, column=1, sticky='ew', pady=3)
 
         def browse_file():
             filename = filedialog.askopenfilename(
-                title="Select Document",
+                title=_t('gui.shell.document_manager.documents.dialogs.select_document', default="Select Document"),
                 filetypes=[("PDF Files", "*.pdf"), ("Image Files", "*.jpg *.jpeg *.png"),
                           ("All Files", "*.*")]
             )
             if filename:
                 file_path_var.set(filename)
 
-        ttk.Button(form_frame, text="Browse...", command=browse_file).grid(row=2, column=2, padx=5)
+        ttk.Button(form_frame, text=_t('gui.shell.document_manager.documents.buttons.browse', default="Browse..."), command=browse_file).grid(row=2, column=2, padx=5)
 
         # Expiry Date
-        ttk.Label(form_frame, text="Expiry Date:").grid(row=3, column=0, sticky='w', pady=3)
+        ttk.Label(form_frame, text=_t('gui.shell.document_manager.documents.labels.expiry_date', default="Expiry Date:")).grid(row=3, column=0, sticky='w', pady=3)
         expiry_entry = ttk.Entry(form_frame, width=40)
         expiry_entry.insert(0, "YYYY-MM-DD (optional)")
         expiry_entry.grid(row=3, column=1, sticky='ew', pady=3)
 
         # Tags
-        ttk.Label(form_frame, text="Tags:").grid(row=4, column=0, sticky='w', pady=3)
+        ttk.Label(form_frame, text=_t('gui.shell.document_manager.documents.labels.tags', default="Tags:")).grid(row=4, column=0, sticky='w', pady=3)
         tags_entry = ttk.Entry(form_frame, width=40)
         tags_entry.insert(0, "comma, separated, tags")
         tags_entry.grid(row=4, column=1, sticky='ew', pady=3)
 
         # Notes
-        ttk.Label(form_frame, text="Notes:").grid(row=5, column=0, sticky='w', pady=3)
+        ttk.Label(form_frame, text=_t('gui.shell.document_manager.documents.labels.notes', default="Notes:")).grid(row=5, column=0, sticky='w', pady=3)
         notes_text = tk.Text(form_frame, width=40, height=2)
         notes_text.grid(row=5, column=1, sticky='ew', pady=3)
 
         # Status
-        ttk.Label(form_frame, text="Initial Status:").grid(row=6, column=0, sticky='w', pady=3)
+        ttk.Label(form_frame, text=_t('gui.shell.document_manager.documents.labels.initial_status', default="Initial Status:")).grid(row=6, column=0, sticky='w', pady=3)
         status_combo = ttk.Combobox(form_frame, width=38, state='readonly')
         status_combo['values'] = ['Pending', 'Approved']
         status_combo.current(0)
@@ -1086,11 +1086,11 @@ Notes:
             """Submit the document upload"""
             # Validate fields
             if not student_id_entry.get().strip():
-                messagebox.showwarning("Validation Error", "Student ID is required")
+                messagebox.showwarning(_t('gui.shell.document_manager.documents.dialogs.validation_error', default="Validation Error"), _t('gui.shell.document_manager.documents.dialogs.student_id_is_required', default="Student ID is required"))
                 return
 
             if not file_path_var.get():
-                messagebox.showwarning("Validation Error", "Please select a file to upload")
+                messagebox.showwarning(_t('gui.shell.document_manager.documents.dialogs.validation_error', default="Validation Error"), _t('gui.shell.document_manager.documents.dialogs.please_select_a_file_to_upload', default="Please select a file to upload"))
                 return
 
             try:
@@ -1127,7 +1127,7 @@ Notes:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.shell.document_manager.documents.dialogs.success', default="Success"),
                                   f"Document uploaded successfully!\n\n"
                                   f"Document ID: {doc_id}\n"
                                   f"Student: {student_id_entry.get()}\n"
@@ -1141,9 +1141,9 @@ Notes:
                 upload_window.destroy()
 
             except Exception as e:
-                messagebox.showerror("Upload Error", f"Failed to upload document: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.documents.dialogs.upload_error', default="Upload Error"), f"Failed to upload document: {e}")
 
-        ttk.Button(button_frame, text="Upload Document",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.documents.buttons.upload_document', default="Upload Document"),
                   command=submit_upload).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.documents.buttons.cancel', default="Cancel"),
                   command=upload_window.destroy).pack(side='right', padx=5)

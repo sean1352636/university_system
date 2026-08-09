@@ -14,7 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from typing import Dict, Optional, List
 from abc import ABC, abstractmethod
 from string import Template
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text, _
 from education_system.systems.university.infrastructure.validation.validators import Validators
 
@@ -58,7 +58,7 @@ class SMTPEmailProvider(EmailProvider):
             pass
         # Fallback to legacy path
         try:
-            config_path = os.path.join(paths.CONFIG_DIR, 'email_config.json')
+            config_path = os.path.join(paths.UNIVERSITY_CONFIG_DIR, 'email_config.json')
             if os.path.exists(config_path):
                 with open(config_path, 'r') as f:
                     return json.load(f)
@@ -106,7 +106,7 @@ class SMTPEmailProvider(EmailProvider):
     def _create_text_body(self, code: str, username: str = None) -> str:
         """Create plain text email body from template"""
         # Load template from JSON
-        template_path = paths.EMAIL_TEMPLATES_DIR / "otp_verification_text.json"
+        template_path = paths.UNIVERSITY_EMAIL_TEMPLATES_DIR / "auth_security" / "authentication" / "otp_verification_text.json"
 
         try:
             with open(template_path, 'r', encoding='utf-8') as f:
@@ -181,7 +181,7 @@ University System Security Team
     def _create_html_body(self, code: str, username: str = None) -> str:
         """Create HTML email body from template"""
         # Load template from JSON
-        template_path = paths.EMAIL_TEMPLATES_DIR / "otp_verification_html.json"
+        template_path = paths.UNIVERSITY_EMAIL_TEMPLATES_DIR / "auth_security" / "authentication" / "otp_verification_html.json"
 
         try:
             with open(template_path, 'r', encoding='utf-8') as f:
@@ -375,7 +375,7 @@ class MockEmailProvider(EmailProvider):
 
     def __init__(self, log_file: str = None):
         """Initialize mock provider"""
-        self.log_file = log_file or str(paths.TEMP_DIR / 'email_otp_log.txt')
+        self.log_file = log_file or str(paths.UNIVERSITY_TEMP_DIR / 'email_otp_log.txt')
 
     def send_otp(self, to_email: str, code: str, username: str = None) -> Dict:
         """Mock send - logs to file instead of sending email"""
@@ -461,7 +461,7 @@ class EmailOTPService:
     def _load_whitelist_from_db(self) -> List[str]:
         """Load whitelist from database"""
         try:
-            db_path = paths.DEFAULT_DB_PATH
+            db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
 
@@ -486,14 +486,22 @@ class EmailOTPService:
         combined_whitelist = list(self.smtp_whitelist)
 
         # Load from database and add to whitelist
+        db_load_failed = False
         try:
             db_whitelist = self._load_whitelist_from_db()
             combined_whitelist.extend(db_whitelist)
         except Exception as e:
+            db_load_failed = True
             logger.warning(f"Error loading database whitelist: {e}")
 
         if not combined_whitelist:
-            # No whitelist = send all via SMTP (backward compatible)
+            if db_load_failed:
+                # Fail closed: a load error must not be mistaken for "no
+                # whitelist configured" and silently widen sending to every
+                # address. Refuse SMTP delivery until the whitelist is readable.
+                logger.error("SMTP whitelist unavailable; refusing to treat as send-to-all")
+                return False
+            # No whitelist configured at all = send all via SMTP (backward compatible)
             return True
 
         email_lower = email.lower()
@@ -552,7 +560,7 @@ class EmailOTPService:
 # Configuration loader
 def load_email_config() -> Dict:
     """Load email provider configuration from file or environment"""
-    config_file = paths.CONFIG_DIR / 'email_config.json'
+    config_file = paths.UNIVERSITY_CONFIG_DIR / 'email_config.json'
 
     # Try to load from config file
     if os.path.exists(config_file):

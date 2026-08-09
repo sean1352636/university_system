@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -50,14 +52,14 @@ class ChaptersMixin:
             """Delete selected chapter"""
             selection = self.admin_chapters_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a chapter to delete.")
+                messagebox.showwarning(_t('gui.learners.alumni.chapters.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.chapters.dialogs.please_select_a_chapter_to_delete', default="Please select a chapter to delete."))
                 return
 
             item = self.admin_chapters_tree.item(selection[0])
             chapter_data = item['values']
             chapter_id = chapter_data[0]
 
-            if messagebox.askyesno("Confirm Deletion",
+            if messagebox.askyesno(_t('gui.learners.alumni.chapters.dialogs.confirm_deletion', default="Confirm Deletion"),
                                   f"Are you sure you want to delete '{chapter_data[1]}'? "
                                   f"This will also remove all {chapter_data[4]} member(s)."):
                 try:
@@ -72,7 +74,7 @@ class ChaptersMixin:
 
                         conn.commit()
 
-                    messagebox.showinfo("Success", "Chapter deleted successfully!")
+                    messagebox.showinfo(_t('gui.learners.alumni.chapters.dialogs.success', default="Success"), _t('gui.learners.alumni.chapters.dialogs.chapter_deleted_successfully', default="Chapter deleted successfully!"))
                     self._load_all_chapters()
 
                     # Log activity
@@ -81,13 +83,13 @@ class ChaptersMixin:
                                details={'name': chapter_data[1], 'action': 'deleted'})
 
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Failed to delete chapter: {str(e)}")
+                    messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.database_error', default="Database Error"), f"Failed to delete chapter: {str(e)}")
 
         def _edit_chapter_admin(self):
             """Edit selected chapter"""
             selection = self.admin_chapters_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a chapter to edit.")
+                messagebox.showwarning(_t('gui.learners.alumni.chapters.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.chapters.dialogs.please_select_a_chapter_to_edit', default="Please select a chapter to edit."))
                 return
 
             item = self.admin_chapters_tree.item(selection[0])
@@ -140,7 +142,7 @@ class ChaptersMixin:
                         ))
                         conn.commit()
 
-                    messagebox.showinfo("Success", "Chapter updated successfully!")
+                    messagebox.showinfo(_t('gui.learners.alumni.chapters.dialogs.success', default="Success"), _t('gui.learners.alumni.chapters.dialogs.chapter_updated_successfully', default="Chapter updated successfully!"))
                     edit_window.destroy()
                     self._load_all_chapters()
 
@@ -150,11 +152,11 @@ class ChaptersMixin:
                                details={'name': edit_vars['name'].get()})
 
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Failed to update chapter: {str(e)}")
+                    messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.database_error', default="Database Error"), f"Failed to update chapter: {str(e)}")
 
-            ttk.Button(frame, text="Save Changes",
+            ttk.Button(frame, text=_t('gui.learners.alumni.chapters.buttons.save_changes', default="Save Changes"),
                       command=save_chapter_changes).pack(pady=20)
-            ttk.Button(frame, text="Cancel",
+            ttk.Button(frame, text=_t('gui.learners.alumni.chapters.buttons.cancel', default="Cancel"),
                       command=edit_window.destroy).pack()
 
         def _join_selected_chapter(self):
@@ -164,7 +166,7 @@ class ChaptersMixin:
 
             selection = self.join_chapters_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a chapter to join.")
+                messagebox.showwarning(_t('gui.learners.alumni.chapters.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.chapters.dialogs.please_select_a_chapter_to_join', default="Please select a chapter to join."))
                 return
 
             item = self.join_chapters_tree.item(selection[0])
@@ -199,7 +201,7 @@ class ChaptersMixin:
 
                         conn.commit()
 
-                        messagebox.showinfo("Success", f"You have joined {chapter_name}!")
+                        messagebox.showinfo(_t('gui.learners.alumni.chapters.dialogs.success', default="Success"), f"You have joined {chapter_name}!")
                         self.join_regional_chapter()  # Refresh
 
                         # Log activity
@@ -208,7 +210,7 @@ class ChaptersMixin:
                                    details={'chapter': chapter_name, 'action': 'joined'})
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to join chapter: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.database_error', default="Database Error"), f"Failed to join chapter: {str(e)}")
 
         def _leave_chapter(self):
             """Leave a selected chapter"""
@@ -217,11 +219,11 @@ class ChaptersMixin:
 
             selection = self.my_chapters_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a chapter to leave.")
+                messagebox.showwarning(_t('gui.learners.alumni.chapters.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.chapters.dialogs.please_select_a_chapter_to_leave', default="Please select a chapter to leave."))
                 return
 
-            if messagebox.askyesno("Confirm Leave",
-                                  "Are you sure you want to leave this chapter?"):
+            if messagebox.askyesno(_t('gui.learners.alumni.chapters.dialogs.confirm_leave', default="Confirm Leave"),
+                                  _t('gui.learners.alumni.chapters.dialogs.are_you_sure_you_want_to_leave_this_chapter', default="Are you sure you want to leave this chapter?")):
                 item = self.my_chapters_tree.item(selection[0])
                 chapter_data = item['values']
                 chapter_name = chapter_data[0]
@@ -252,7 +254,7 @@ class ChaptersMixin:
 
                             conn.commit()
 
-                            messagebox.showinfo("Success", f"You have left {chapter_name}.")
+                            messagebox.showinfo(_t('gui.learners.alumni.chapters.dialogs.success', default="Success"), f"You have left {chapter_name}.")
                             self.view_my_chapters()  # Refresh
 
                             # Log activity
@@ -261,7 +263,7 @@ class ChaptersMixin:
                                        details={'chapter': chapter_name, 'action': 'left'})
 
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Failed to leave chapter: {str(e)}")
+                    messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.database_error', default="Database Error"), f"Failed to leave chapter: {str(e)}")
 
         def _load_all_chapters(self):
             """Load all chapters for admin view"""
@@ -288,17 +290,17 @@ class ChaptersMixin:
                     self.update_status(f"Loaded {len(chapters)} chapter(s)")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load chapters: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.database_error', default="Database Error"), f"Failed to load chapters: {str(e)}")
 
         def _submit_new_chapter(self):
             """Submit new chapter creation"""
             # Validation
             if not self.new_chapter_vars['name'].get().strip():
-                messagebox.showerror("Validation Error", "Chapter name is required!")
+                messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.chapters.dialogs.chapter_name_is_required', default="Chapter name is required!"))
                 return
 
             if not self.new_chapter_vars['location'].get().strip():
-                messagebox.showerror("Validation Error", "Location is required!")
+                messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.chapters.dialogs.location_is_required', default="Location is required!"))
                 return
 
             try:
@@ -338,7 +340,7 @@ class ChaptersMixin:
 
                     conn.commit()
 
-                messagebox.showinfo("Success", "Regional chapter created successfully!")
+                messagebox.showinfo(_t('gui.learners.alumni.chapters.dialogs.success', default="Success"), _t('gui.learners.alumni.chapters.dialogs.regional_chapter_created_successfully', default="Regional chapter created successfully!"))
                 self.update_status("Chapter created")
                 self._clear_chapter_form()
 
@@ -348,13 +350,13 @@ class ChaptersMixin:
                            details={'name': self.new_chapter_vars['name'].get()})
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to create chapter: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.database_error', default="Database Error"), f"Failed to create chapter: {str(e)}")
 
         def _update_chapter_status(self, status):
             """Update chapter status"""
             selection = self.admin_chapters_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a chapter.")
+                messagebox.showwarning(_t('gui.learners.alumni.chapters.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.chapters.dialogs.please_select_a_chapter', default="Please select a chapter."))
                 return
 
             item = self.admin_chapters_tree.item(selection[0])
@@ -371,7 +373,7 @@ class ChaptersMixin:
                     """, (status, chapter_id))
                     conn.commit()
 
-                messagebox.showinfo("Success", f"Chapter {status}!")
+                messagebox.showinfo(_t('gui.learners.alumni.chapters.dialogs.success', default="Success"), f"Chapter {status}!")
                 self._load_all_chapters()
 
                 # Log activity
@@ -380,19 +382,19 @@ class ChaptersMixin:
                            details={'action': f'status_changed_to_{status}'})
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to update status: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.database_error', default="Database Error"), f"Failed to update status: {str(e)}")
 
         def admin_manage_chapters(self):
             """Admin controls for managing chapters"""
             if not self.has_permission('admin') and not self.has_permission('manage_alumni'):
-                messagebox.showerror("Permission Denied",
-                                   "You don't have permission to manage chapters.")
+                messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.permission_denied', default="Permission Denied"),
+                                   _t('gui.learners.alumni.chapters.dialogs.you_don_t_have_permission_to_manage_chapters', default="You don't have permission to manage chapters."))
                 return
 
             self.clear_content()
             self.update_status("Manage Chapters (Admin)")
 
-            ttk.Label(self.content_frame, text="Chapter Management (Admin)",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.chapters.labels.chapter_management_admin', default="Chapter Management (Admin)"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Chapters table
@@ -423,15 +425,15 @@ class ChaptersMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="Edit Chapter",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.edit_chapter', default="Edit Chapter"),
                       command=self._edit_chapter_admin).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Deactivate",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.deactivate', default="Deactivate"),
                       command=lambda: self._update_chapter_status('inactive')).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Activate",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.activate', default="Activate"),
                       command=lambda: self._update_chapter_status('active')).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Delete Chapter",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.delete_chapter', default="Delete Chapter"),
                       command=self._delete_chapter_admin).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.refresh', default="Refresh"),
                       command=self._load_all_chapters).pack(side=tk.LEFT)
 
         def create_regional_chapter(self):
@@ -439,11 +441,11 @@ class ChaptersMixin:
             self.clear_content()
             self.update_status("Create Regional Chapter")
 
-            ttk.Label(self.content_frame, text="Create a New Regional Chapter",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.chapters.labels.create_a_new_regional_chapter', default="Create a New Regional Chapter"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Form
-            form_frame = ttk.LabelFrame(self.content_frame, text="Chapter Details", padding=10)
+            form_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.chapters.labels.chapter_details', default="Chapter Details"), padding=10)
             form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             # Form fields
@@ -466,7 +468,7 @@ class ChaptersMixin:
                     side=tk.LEFT, fill=tk.X, expand=True)
 
             # Description
-            ttk.Label(form_frame, text="Chapter Description:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(form_frame, text=_t('gui.learners.alumni.chapters.labels.chapter_description', default="Chapter Description:")).pack(anchor='w', pady=(10, 5))
             self.new_chapter_description = ScrolledText(form_frame, height=5, wrap=tk.WORD)
             self.new_chapter_description.pack(fill=tk.X)
 
@@ -474,9 +476,9 @@ class ChaptersMixin:
             button_frame = ttk.Frame(form_frame)
             button_frame.pack(fill=tk.X, pady=(20, 0))
 
-            ttk.Button(button_frame, text="Create Chapter",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.create_chapter', default="Create Chapter"),
                       command=self._submit_new_chapter).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Clear Form",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.clear_form', default="Clear Form"),
                       command=self._clear_chapter_form).pack(side=tk.LEFT)
 
         def join_regional_chapter(self):
@@ -485,7 +487,7 @@ class ChaptersMixin:
             self.clear_content()
             self.update_status("Join Regional Chapter")
 
-            ttk.Label(self.content_frame, text="Join a Regional Chapter",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.chapters.labels.join_a_regional_chapter', default="Join a Regional Chapter"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Available chapters
@@ -532,19 +534,19 @@ class ChaptersMixin:
                     self.update_status(f"Found {len(chapters)} available chapter(s)")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load chapters: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.database_error', default="Database Error"), f"Failed to load chapters: {str(e)}")
 
             # Action buttons
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="Join Selected Chapter",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.join_selected_chapter', default="Join Selected Chapter"),
                       command=self._join_selected_chapter).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="My Chapters",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.my_chapters', default="My Chapters"),
                       command=self.view_my_chapters).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Create Chapter",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.create_chapter', default="Create Chapter"),
                       command=self.create_regional_chapter).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="🔄 Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.refresh_variant_2', default="🔄 Refresh"),
                       command=self.join_regional_chapter).pack(side=tk.LEFT)
 
         def _ensure_chapters_schema(self):
@@ -590,7 +592,7 @@ class ChaptersMixin:
             self.clear_content()
             self.update_status("My Chapters")
 
-            ttk.Label(self.content_frame, text="My Chapter Memberships",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.chapters.labels.my_chapter_memberships', default="My Chapter Memberships"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Chapters table
@@ -634,16 +636,16 @@ class ChaptersMixin:
                     self.update_status(f"You are a member of {len(chapters)} chapter(s)")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load chapters: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.chapters.dialogs.database_error', default="Database Error"), f"Failed to load chapters: {str(e)}")
 
             # Action buttons
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="Leave Chapter",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.leave_chapter', default="Leave Chapter"),
                       command=self._leave_chapter).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Join New Chapter",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.join_new_chapter', default="Join New Chapter"),
                       command=self.join_regional_chapter).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.chapters.buttons.refresh', default="Refresh"),
                       command=self.view_my_chapters).pack(side=tk.LEFT)
 

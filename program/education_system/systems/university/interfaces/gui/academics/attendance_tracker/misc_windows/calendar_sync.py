@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -90,7 +96,7 @@ class CalendarSyncWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="📅 Calendar Sync", font=('Arial', 16, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.calendar_sync', default="📅 Calendar Sync"), font=('Arial', 16, 'bold'))
         title_label.pack(pady=10)
 
         # Notebook
@@ -99,17 +105,17 @@ class CalendarSyncWindow:
 
         # Configuration tab
         config_frame = ttk.Frame(notebook)
-        notebook.add(config_frame, text="⚙️ Configuration")
+        notebook.add(config_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.tabs.configuration', default="⚙️ Configuration"))
         self.create_calendar_config_tab(config_frame)
 
         # Export tab
         export_frame = ttk.Frame(notebook)
-        notebook.add(export_frame, text="📤 Export Sessions")
+        notebook.add(export_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.tabs.export_sessions', default="📤 Export Sessions"))
         self.create_export_tab(export_frame)
 
         # Import tab
         import_frame = ttk.Frame(notebook)
-        notebook.add(import_frame, text="📥 Import Sessions")
+        notebook.add(import_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.tabs.import_sessions', default="📥 Import Sessions"))
         self.create_import_tab(import_frame)
 
         # Close button
@@ -117,95 +123,95 @@ class CalendarSyncWindow:
 
     def create_calendar_config_tab(self, parent):
         # Calendar platform selection
-        platform_frame = ttk.LabelFrame(parent, text="Calendar Platform", padding=15)
+        platform_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.calendar_platform', default="Calendar Platform"), padding=15)
         platform_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(platform_frame, text="Select Platform:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.calendar_platform_var = tk.StringVar(value="Google Calendar")
+        ttk.Label(platform_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.select_platform', default="Select Platform:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.calendar_platform_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.values.google_calendar', default="Google Calendar"))
         platform_combo = ttk.Combobox(platform_frame, textvariable=self.calendar_platform_var, width=30,
                                      values=["Google Calendar", "Microsoft Outlook", "Apple Calendar", "iCal", "Custom CalDAV"])
         platform_combo.grid(row=0, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
         platform_frame.grid_columnconfigure(1, weight=1)
 
         # Connection settings
-        connection_frame = ttk.LabelFrame(parent, text="Connection Settings", padding=15)
+        connection_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.connection_settings', default="Connection Settings"), padding=15)
         connection_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(connection_frame, text="Calendar URL/Endpoint:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(connection_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.calendar_url_endpoint', default="Calendar URL/Endpoint:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.calendar_url_var = tk.StringVar()
         ttk.Entry(connection_frame, textvariable=self.calendar_url_var).grid(row=0, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
 
-        ttk.Label(connection_frame, text="Auth Token/API Key:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(connection_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.auth_token_api_key', default="Auth Token/API Key:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.calendar_auth_var = tk.StringVar()
         ttk.Entry(connection_frame, textvariable=self.calendar_auth_var, show="*").grid(row=1, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
 
         connection_frame.grid_columnconfigure(1, weight=1)
 
         # Test connection button
-        ttk.Button(connection_frame, text="Test Connection & Authenticate", command=self.test_calendar_connection, style='Primary.TButton').grid(row=2, column=0, columnspan=2, pady=(10, 0))
+        ttk.Button(connection_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.test_connection_authenticate', default="Test Connection & Authenticate"), command=self.test_calendar_connection, style='Primary.TButton').grid(row=2, column=0, columnspan=2, pady=(10, 0))
 
         # Sync settings
-        settings_frame = ttk.LabelFrame(parent, text="Sync Settings", padding=15)
+        settings_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.sync_settings', default="Sync Settings"), padding=15)
         settings_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         self.auto_create_events_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(settings_frame, text="Automatically create calendar events for new sessions", variable=self.auto_create_events_var).pack(anchor=tk.W)
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.automatically_create_calendar_events_for_new_sessions', default="Automatically create calendar events for new sessions"), variable=self.auto_create_events_var).pack(anchor=tk.W)
 
         self.include_attendance_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(settings_frame, text="Include attendance data in event description", variable=self.include_attendance_var).pack(anchor=tk.W)
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.include_attendance_data_in_event_description', default="Include attendance data in event description"), variable=self.include_attendance_var).pack(anchor=tk.W)
 
         self.set_reminders_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(settings_frame, text="Set reminders for upcoming sessions", variable=self.set_reminders_var).pack(anchor=tk.W)
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.set_reminders_for_upcoming_sessions', default="Set reminders for upcoming sessions"), variable=self.set_reminders_var).pack(anchor=tk.W)
 
-        ttk.Label(settings_frame, text="Reminder time (minutes before):").pack(anchor=tk.W, pady=(10, 0))
+        ttk.Label(settings_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.reminder_time_minutes_before', default="Reminder time (minutes before):")).pack(anchor=tk.W, pady=(10, 0))
         self.reminder_time_var = tk.StringVar(value="15")
         ttk.Combobox(settings_frame, textvariable=self.reminder_time_var, width=10,
                     values=["5", "10", "15", "30", "60"]).pack(anchor=tk.W, pady=(5, 10))
 
         # Save button
-        ttk.Button(settings_frame, text="Save Settings", command=self.save_calendar_settings, style='Success.TButton').pack(pady=(10, 0))
+        ttk.Button(settings_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.save_settings', default="Save Settings"), command=self.save_calendar_settings, style='Success.TButton').pack(pady=(10, 0))
 
     def create_export_tab(self, parent):
         # Export options frame
-        options_frame = ttk.LabelFrame(parent, text="Export Options", padding=15)
+        options_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.export_options', default="Export Options"), padding=15)
         options_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Date range
         date_frame = ttk.Frame(options_frame)
         date_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(date_frame, text="Export Date Range:").pack(side=tk.LEFT)
+        ttk.Label(date_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.export_date_range', default="Export Date Range:")).pack(side=tk.LEFT)
         self.export_start_var = tk.StringVar(value=datetime.datetime.now().strftime("%Y-%m-%d"))
         ttk.Entry(date_frame, textvariable=self.export_start_var, width=12).pack(side=tk.LEFT, padx=(5, 5))
-        ttk.Label(date_frame, text="to").pack(side=tk.LEFT)
+        ttk.Label(date_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.to', default="to")).pack(side=tk.LEFT)
         self.export_end_var = tk.StringVar(value=(datetime.datetime.now() + datetime.timedelta(days=30)).strftime("%Y-%m-%d"))
         ttk.Entry(date_frame, textvariable=self.export_end_var, width=12).pack(side=tk.LEFT, padx=(5, 0))
 
         # Module selection
-        ttk.Label(options_frame, text="Select Modules:").pack(anchor=tk.W)
+        ttk.Label(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.select_modules', default="Select Modules:")).pack(anchor=tk.W)
         self.export_all_modules_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="All Modules", variable=self.export_all_modules_var).pack(anchor=tk.W)
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.all_modules', default="All Modules"), variable=self.export_all_modules_var).pack(anchor=tk.W)
 
         # Export format
         format_frame = ttk.Frame(options_frame)
         format_frame.pack(fill=tk.X, pady=(10, 0))
 
-        ttk.Label(format_frame, text="Export Format:").pack(side=tk.LEFT)
-        self.export_format_var = tk.StringVar(value="iCal (.ics)")
-        ttk.Radiobutton(format_frame, text="iCal (.ics)", variable=self.export_format_var, value="iCal (.ics)").pack(side=tk.LEFT, padx=(10, 5))
-        ttk.Radiobutton(format_frame, text="Google Calendar", variable=self.export_format_var, value="Google Calendar").pack(side=tk.LEFT, padx=(5, 5))
-        ttk.Radiobutton(format_frame, text="CSV", variable=self.export_format_var, value="CSV").pack(side=tk.LEFT)
+        ttk.Label(format_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.export_format', default="Export Format:")).pack(side=tk.LEFT)
+        self.export_format_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.values.ical_ics', default="iCal (.ics)"))
+        ttk.Radiobutton(format_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.ical_ics', default="iCal (.ics)"), variable=self.export_format_var, value="iCal (.ics)").pack(side=tk.LEFT, padx=(10, 5))
+        ttk.Radiobutton(format_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.google_calendar', default="Google Calendar"), variable=self.export_format_var, value="Google Calendar").pack(side=tk.LEFT, padx=(5, 5))
+        ttk.Radiobutton(format_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.csv', default="CSV"), variable=self.export_format_var, value="CSV").pack(side=tk.LEFT)
 
         # Action buttons
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Button(button_frame, text="Export to File", command=self.export_to_file, style='Success.TButton').pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Push to Calendar", command=self.push_to_calendar, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.export_to_file', default="Export to File"), command=self.export_to_file, style='Success.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.push_to_calendar', default="Push to Calendar"), command=self.push_to_calendar, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_("common.preview"), command=self.preview_export, style='Warning.TButton').pack(side=tk.LEFT, padx=5)
 
         # Preview frame
-        preview_frame = ttk.LabelFrame(parent, text="Export Preview", padding=15)
+        preview_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.export_preview', default="Export Preview"), padding=15)
         preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         self.export_preview_text = tk.Text(preview_frame, wrap=tk.WORD, height=12)
@@ -217,36 +223,36 @@ class CalendarSyncWindow:
 
     def create_import_tab(self, parent):
         # Import options frame
-        options_frame = ttk.LabelFrame(parent, text="Import Options", padding=15)
+        options_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.import_options', default="Import Options"), padding=15)
         options_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(options_frame, text="Import calendar events to create attendance sessions").pack(anchor=tk.W)
+        ttk.Label(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.import_calendar_events_to_create_attendance_sessions', default="Import calendar events to create attendance sessions")).pack(anchor=tk.W)
 
         # File selection
         file_frame = ttk.Frame(options_frame)
         file_frame.pack(fill=tk.X, pady=(10, 10))
 
-        ttk.Label(file_frame, text="Select Calendar File:").pack(side=tk.LEFT)
+        ttk.Label(file_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.select_calendar_file', default="Select Calendar File:")).pack(side=tk.LEFT)
         self.import_file_var = tk.StringVar()
         ttk.Entry(file_frame, textvariable=self.import_file_var).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 5))
         ttk.Button(file_frame, text=_("common.browse"), command=self.browse_import_file).pack(side=tk.LEFT)
 
         # Import settings
         self.create_missing_modules_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(options_frame, text="Create missing modules automatically", variable=self.create_missing_modules_var).pack(anchor=tk.W)
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.create_missing_modules_automatically', default="Create missing modules automatically"), variable=self.create_missing_modules_var).pack(anchor=tk.W)
 
         self.skip_past_events_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Skip past events", variable=self.skip_past_events_var).pack(anchor=tk.W)
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.skip_past_events', default="Skip past events"), variable=self.skip_past_events_var).pack(anchor=tk.W)
 
         # Action buttons
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Button(button_frame, text="Import from File", command=self.import_from_file, style='Success.TButton').pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Pull from Calendar", command=self.pull_from_calendar, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.import_from_file', default="Import from File"), command=self.import_from_file, style='Success.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.buttons.pull_from_calendar', default="Pull from Calendar"), command=self.pull_from_calendar, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
 
         # Import results frame
-        results_frame = ttk.LabelFrame(parent, text="Import Results", padding=15)
+        results_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.labels.import_results', default="Import Results"), padding=15)
         results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         self.import_results_text = tk.Text(results_frame, wrap=tk.WORD, height=12)
@@ -258,11 +264,11 @@ class CalendarSyncWindow:
 
     def test_calendar_connection(self):
         platform = self.calendar_platform_var.get()
-        messagebox.showinfo("Connection Test", f"Testing connection to {platform}...\n\nAuthentication successful!\n\nCalendar access granted\nAvailable calendars: 5")
+        messagebox.showinfo(_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.dialogs.connection_test', default="Connection Test"), f"Testing connection to {platform}...\n\nAuthentication successful!\n\nCalendar access granted\nAvailable calendars: 5")
 
     def save_calendar_settings(self):
         try:
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
                 cursor.execute("""
@@ -293,7 +299,7 @@ class CalendarSyncWindow:
 
                 conn.commit()
 
-            messagebox.showinfo(_("common.success"), "Calendar sync settings saved successfully")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.misc_windows.calendar_sync.dialogs.calendar_sync_settings_saved_successfully', default="Calendar sync settings saved successfully"))
 
         except Exception as e:
             logger.exception("misc_windows.py:753 %s", 'except Exception as e')
@@ -314,7 +320,7 @@ class CalendarSyncWindow:
 
     def push_to_calendar(self):
         platform = self.calendar_platform_var.get()
-        messagebox.showinfo("Push to Calendar", f"Pushing events to {platform}...\n\n15 events created successfully!")
+        messagebox.showinfo(_t('gui.academics.attendance_tracker.misc_windows.calendar_sync.dialogs.push_to_calendar', default="Push to Calendar"), f"Pushing events to {platform}...\n\n15 events created successfully!")
 
     def preview_export(self):
         self.export_preview_text.delete("1.0", tk.END)
@@ -343,7 +349,7 @@ class CalendarSyncWindow:
     def import_from_file(self):
         filename = self.import_file_var.get()
         if not filename:
-            messagebox.showwarning(_("common.warning"), "Please select a file to import")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.misc_windows.calendar_sync.dialogs.please_select_a_file_to_import', default="Please select a file to import"))
             return
 
         self.import_results_text.delete("1.0", tk.END)
@@ -354,7 +360,7 @@ class CalendarSyncWindow:
         self.import_results_text.insert(tk.END, "⚠️  3 events skipped (past dates)\n")
         self.import_results_text.insert(tk.END, "✅ Import complete!")
 
-        messagebox.showinfo(_("common.success"), "Calendar import completed!\n\n12 sessions imported\n3 events skipped")
+        messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.misc_windows.calendar_sync.dialogs.calendar_import_completed_12_sessions_imported_3_events_skipped', default="Calendar import completed!\n\n12 sessions imported\n3 events skipped"))
 
     def pull_from_calendar(self):
         platform = self.calendar_platform_var.get()

@@ -81,12 +81,12 @@ class WorkflowManager:
         except Exception as e:
             ttk.Label(main_frame, text=f"Error loading workflows: {e}").pack()
 
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.shell.document_manager.workflows.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
     def process_workflow_step(self):
         """Process a workflow step in GUI"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Process Workflow Step")
+        dialog.title(_t('gui.shell.document_manager.workflows.windows.process_workflow_step', default="Process Workflow Step"))
         dialog.geometry("700x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -94,23 +94,23 @@ class WorkflowManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Process Workflow Step", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.process_workflow_step', default="Process Workflow Step"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         # Workflow ID input
-        ttk.Label(main_frame, text="Workflow ID:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_id', default="Workflow ID:")).pack(anchor='w')
         workflow_id_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=workflow_id_var, width=20).pack(fill='x', pady=5)
 
         # Action selection
-        ttk.Label(main_frame, text="Action:").pack(anchor='w', pady=(10, 0))
-        action_var = tk.StringVar(value="approve")
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.action_variant_2', default="Action:")).pack(anchor='w', pady=(10, 0))
+        action_var = tk.StringVar(value=_t('gui.shell.document_manager.workflows.values.approve', default="approve"))
 
         actions = [("Approve and Continue", "approve"), ("Reject and Stop", "reject"), ("Request More Info", "request_info")]
         for text, value in actions:
             ttk.Radiobutton(main_frame, text=text, variable=action_var, value=value).pack(anchor='w', pady=2)
 
         # Comments
-        ttk.Label(main_frame, text="Comments:").pack(anchor='w', pady=(10, 0))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.comments', default="Comments:")).pack(anchor='w', pady=(10, 0))
         comments_text = tk.Text(main_frame, height=5, width=40)
         comments_text.pack(fill='x', pady=5)
 
@@ -120,7 +120,7 @@ class WorkflowManager:
             comments = comments_text.get('1.0', 'end-1c')
 
             if not workflow_id:
-                messagebox.showerror("Error", "Please enter workflow ID")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_enter_workflow_id', default="Please enter workflow ID"))
                 return
 
             try:
@@ -137,7 +137,7 @@ class WorkflowManager:
                 workflow = cursor.fetchone()
 
                 if not workflow:
-                    messagebox.showerror("Error", "Workflow step not found or already completed")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.workflow_step_not_found_or_already_completed', default="Workflow step not found or already completed"))
                     conn.close()
                     return
 
@@ -169,9 +169,9 @@ class WorkflowManager:
                         WHERE document_id = ?
                         ''', (datetime.now().strftime('%Y-%m-%d'), doc_id))
 
-                        messagebox.showinfo("Success", "Workflow completed! Document marked as Verified.")
+                        messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), _t('gui.shell.document_manager.workflows.dialogs.workflow_completed_document_marked_as_verified', default="Workflow completed! Document marked as Verified."))
                     else:
-                        messagebox.showinfo("Success", "Step approved. Workflow continues to next step.")
+                        messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), _t('gui.shell.document_manager.workflows.dialogs.step_approved_workflow_continues_to_next_step', default="Step approved. Workflow continues to next step."))
 
                 elif action == "reject":
                     cursor.execute('''
@@ -188,26 +188,26 @@ class WorkflowManager:
                     WHERE document_id = ?
                     ''', (datetime.now().strftime('%Y-%m-%d'), comments, doc_id))
 
-                    messagebox.showinfo("Success", "Document rejected. Workflow stopped.")
+                    messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), _t('gui.shell.document_manager.workflows.dialogs.document_rejected_workflow_stopped', default="Document rejected. Workflow stopped."))
 
                 conn.commit()
                 conn.close()
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to process workflow step: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to process workflow step: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
 
-        ttk.Button(button_frame, text="Process", command=process_step).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.process', default="Process"), command=process_step).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def workflow_management(self):
         """Full workflow management interface"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Workflow Management")
+        dialog.title(_t('gui.shell.document_manager.workflows.windows.workflow_management', default="Workflow Management"))
         dialog.geometry("900x700")
         dialog.transient(self.root)
 
@@ -220,9 +220,9 @@ class WorkflowManager:
 
         # Active Workflows Tab
         active_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(active_frame, text="Active Workflows")
+        notebook.add(active_frame, text=_t('gui.shell.document_manager.workflows.tabs.active_workflows', default="Active Workflows"))
 
-        ttk.Label(active_frame, text="Active Workflows", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(active_frame, text=_t('gui.shell.document_manager.workflows.labels.active_workflows', default="Active Workflows"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Workflows list
         wf_columns = ('WF ID', 'Doc ID', 'Student', 'Document Type', 'Step', 'Assigned To', 'Age (days)')
@@ -240,43 +240,43 @@ class WorkflowManager:
 
         # Process Workflow Tab
         process_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(process_frame, text="Process Steps")
+        notebook.add(process_frame, text=_t('gui.shell.document_manager.workflows.tabs.process_steps', default="Process Steps"))
 
-        ttk.Label(process_frame, text="Process Workflow Step", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(process_frame, text=_t('gui.shell.document_manager.workflows.labels.process_workflow_step', default="Process Workflow Step"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         # Workflow ID input
         id_frame = ttk.Frame(process_frame)
         id_frame.pack(fill='x', pady=5)
-        ttk.Label(id_frame, text="Workflow ID:").pack(side='left')
+        ttk.Label(id_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_id', default="Workflow ID:")).pack(side='left')
         self.gui.workflow_id_var = tk.StringVar()
         ttk.Entry(id_frame, textvariable=self.gui.workflow_id_var, width=20).pack(side='left', padx=10)
-        ttk.Button(id_frame, text="Load", command=self.load_workflow_details).pack(side='left', padx=5)
+        ttk.Button(id_frame, text=_t('gui.shell.document_manager.workflows.buttons.load', default="Load"), command=self.load_workflow_details).pack(side='left', padx=5)
 
         # Workflow details
-        self.gui.workflow_details_frame = ttk.LabelFrame(process_frame, text="Workflow Details", padding=10)
+        self.gui.workflow_details_frame = ttk.LabelFrame(process_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_details', default="Workflow Details"), padding=10)
         self.gui.workflow_details_frame.pack(fill='x', pady=10)
 
         # Action selection
-        action_frame = ttk.LabelFrame(process_frame, text="Action", padding=10)
+        action_frame = ttk.LabelFrame(process_frame, text=_t('gui.shell.document_manager.workflows.labels.action', default="Action"), padding=10)
         action_frame.pack(fill='x', pady=10)
 
-        self.gui.workflow_action_var = tk.StringVar(value="approve")
+        self.gui.workflow_action_var = tk.StringVar(value=_t('gui.shell.document_manager.workflows.values.approve', default="approve"))
         actions = [("Approve and Continue", "approve"), ("Reject and Stop", "reject"), ("Request More Info", "request_info")]
         for text, value in actions:
             ttk.Radiobutton(action_frame, text=text, variable=self.gui.workflow_action_var, value=value).pack(anchor='w', pady=2)
 
         # Comments
-        ttk.Label(process_frame, text="Comments:").pack(anchor='w', pady=(10, 0))
+        ttk.Label(process_frame, text=_t('gui.shell.document_manager.workflows.labels.comments', default="Comments:")).pack(anchor='w', pady=(10, 0))
         self.gui.workflow_comments = tk.Text(process_frame, height=5, width=50)
         self.gui.workflow_comments.pack(fill='x', pady=5)
 
-        ttk.Button(process_frame, text="Process Step", command=self.process_workflow_step_full).pack(pady=15)
+        ttk.Button(process_frame, text=_t('gui.shell.document_manager.workflows.buttons.process_step', default="Process Step"), command=self.process_workflow_step_full).pack(pady=15)
 
         # Workflow Templates Tab
         templates_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(templates_frame, text="Templates")
+        notebook.add(templates_frame, text=_t('gui.shell.document_manager.workflows.tabs.templates', default="Templates"))
 
-        ttk.Label(templates_frame, text="Workflow Templates", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(templates_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_templates', default="Workflow Templates"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         template_options = [
             ("Standard Document Review", self.create_standard_workflow),
@@ -291,7 +291,7 @@ class WorkflowManager:
         # Load initial data
         self.load_workflows()
 
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.shell.document_manager.workflows.buttons.close', default="Close"), command=dialog.destroy).pack()
 
     def load_workflows(self):
         """Load active workflows"""
@@ -335,7 +335,7 @@ class WorkflowManager:
         """Load workflow details for processing"""
         workflow_id = self.gui.workflow_id_var.get()
         if not workflow_id:
-            messagebox.showerror("Error", "Please enter a workflow ID")
+            messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_enter_a_workflow_id', default="Please enter a workflow ID"))
             return
 
         try:
@@ -356,7 +356,7 @@ class WorkflowManager:
             conn.close()
 
             if not workflow:
-                messagebox.showerror("Error", "Workflow step not found or already completed")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.workflow_step_not_found_or_already_completed', default="Workflow step not found or already completed"))
                 return
 
             # Clear previous details
@@ -373,7 +373,7 @@ class WorkflowManager:
             ttk.Label(self.gui.workflow_details_frame, text=f"Upload Date: {upload_date[:10]}").pack(anchor='w')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load workflow details: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to load workflow details: {str(e)}")
 
     def process_workflow_step_full(self):
         """Process workflow step with full functionality"""
@@ -382,7 +382,7 @@ class WorkflowManager:
         comments = self.gui.workflow_comments.get('1.0', 'end-1c')
 
         if not workflow_id:
-            messagebox.showerror("Error", "Please enter and load a workflow ID first")
+            messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_enter_and_load_a_workflow_id_first', default="Please enter and load a workflow ID first"))
             return
 
         try:
@@ -398,7 +398,7 @@ class WorkflowManager:
             workflow = cursor.fetchone()
 
             if not workflow:
-                messagebox.showerror("Error", "Workflow step not found or already completed")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.workflow_step_not_found_or_already_completed', default="Workflow step not found or already completed"))
                 conn.close()
                 return
 
@@ -430,9 +430,9 @@ class WorkflowManager:
                     WHERE document_id = ?
                     ''', (datetime.now().strftime('%Y-%m-%d'), doc_id))
 
-                    messagebox.showinfo("Success", "Workflow completed! Document marked as Verified.")
+                    messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), _t('gui.shell.document_manager.workflows.dialogs.workflow_completed_document_marked_as_verified', default="Workflow completed! Document marked as Verified."))
                 else:
-                    messagebox.showinfo("Success", "Step approved. Workflow continues to next step.")
+                    messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), _t('gui.shell.document_manager.workflows.dialogs.step_approved_workflow_continues_to_next_step', default="Step approved. Workflow continues to next step."))
 
             elif action == "reject":
                 cursor.execute('''
@@ -449,7 +449,7 @@ class WorkflowManager:
                 WHERE document_id = ?
                 ''', (datetime.now().strftime('%Y-%m-%d'), comments, doc_id))
 
-                messagebox.showinfo("Success", "Document rejected. Workflow stopped.")
+                messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), _t('gui.shell.document_manager.workflows.dialogs.document_rejected_workflow_stopped', default="Document rejected. Workflow stopped."))
 
             conn.commit()
             conn.close()
@@ -464,12 +464,12 @@ class WorkflowManager:
                 widget.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to process workflow step: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to process workflow step: {str(e)}")
 
     def create_standard_workflow(self):
         """Create standard workflow template"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create Standard Workflow")
+        dialog.title(_t('gui.shell.document_manager.workflows.windows.create_standard_workflow', default="Create Standard Workflow"))
         dialog.geometry("700x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -477,10 +477,10 @@ class WorkflowManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Create Standard Workflow Template", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.create_standard_workflow_template', default="Create Standard Workflow Template"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         # Document type selection
-        ttk.Label(main_frame, text="Apply to Document Type:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.apply_to_document_type', default="Apply to Document Type:")).pack(anchor='w')
         doc_type_var = tk.StringVar()
         doc_type_combo = ttk.Combobox(main_frame, textvariable=doc_type_var)
 
@@ -498,7 +498,7 @@ class WorkflowManager:
         doc_type_combo.pack(fill='x', pady=5)
 
         # Workflow steps preview
-        ttk.Label(main_frame, text="Workflow Steps:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_steps_variant_2', default="Workflow Steps:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
 
         steps_frame = ttk.Frame(main_frame)
         steps_frame.pack(fill='x', pady=5)
@@ -523,7 +523,7 @@ class WorkflowManager:
         def create_workflow():
             doc_type = doc_type_var.get()
             if not doc_type:
-                messagebox.showerror("Error", "Please select a document type")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_select_a_document_type', default="Please select a document type"))
                 return
 
             try:
@@ -534,7 +534,7 @@ class WorkflowManager:
                 cursor.execute('SELECT type_id FROM document_types WHERE type_name = ?', (doc_type,))
                 type_result = cursor.fetchone()
                 if not type_result:
-                    messagebox.showerror("Error", "Document type not found")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.document_type_not_found', default="Document type not found"))
                     conn.close()
                     return
 
@@ -553,22 +553,22 @@ class WorkflowManager:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Standard workflow template created for {doc_type}!\n\nNew documents of this type will automatically use this 3-step approval process.")
+                messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), f"Standard workflow template created for {doc_type}!\n\nNew documents of this type will automatically use this 3-step approval process.")
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create workflow: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to create workflow: {str(e)}")
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
 
-        ttk.Button(button_frame, text="Create Workflow", command=create_workflow).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.create_workflow', default="Create Workflow"), command=create_workflow).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def create_express_workflow(self):
         """Create express workflow template"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create Express Workflow")
+        dialog.title(_t('gui.shell.document_manager.workflows.windows.create_express_workflow', default="Create Express Workflow"))
         dialog.geometry("950x700")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -576,10 +576,10 @@ class WorkflowManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Create Express Workflow Template", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.create_express_workflow_template', default="Create Express Workflow Template"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         # Document type selection
-        ttk.Label(main_frame, text="Apply to Document Type:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.apply_to_document_type', default="Apply to Document Type:")).pack(anchor='w')
         doc_type_var = tk.StringVar()
         doc_type_combo = ttk.Combobox(main_frame, textvariable=doc_type_var)
 
@@ -597,16 +597,16 @@ class WorkflowManager:
         doc_type_combo.pack(fill='x', pady=5)
 
         # Priority selection
-        ttk.Label(main_frame, text="Priority Level:").pack(anchor='w', pady=(10, 0))
-        priority_var = tk.StringVar(value="high")
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.priority_level', default="Priority Level:")).pack(anchor='w', pady=(10, 0))
+        priority_var = tk.StringVar(value=_t('gui.shell.document_manager.workflows.values.high', default="high"))
         priority_frame = ttk.Frame(main_frame)
         priority_frame.pack(fill='x', pady=5)
 
-        ttk.Radiobutton(priority_frame, text="High Priority", variable=priority_var, value="high").pack(side='left')
-        ttk.Radiobutton(priority_frame, text="Urgent", variable=priority_var, value="urgent").pack(side='left', padx=20)
+        ttk.Radiobutton(priority_frame, text=_t('gui.shell.document_manager.workflows.buttons.high_priority', default="High Priority"), variable=priority_var, value="high").pack(side='left')
+        ttk.Radiobutton(priority_frame, text=_t('gui.shell.document_manager.workflows.buttons.urgent', default="Urgent"), variable=priority_var, value="urgent").pack(side='left', padx=20)
 
         # Workflow steps preview
-        ttk.Label(main_frame, text="Express Workflow Steps:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.express_workflow_steps', default="Express Workflow Steps:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
 
         steps_text = """1. Quick Review (Assigned to: admin)
        - Fast-track document verification
@@ -629,7 +629,7 @@ class WorkflowManager:
             priority = priority_var.get()
 
             if not doc_type:
-                messagebox.showerror("Error", "Please select a document type")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_select_a_document_type', default="Please select a document type"))
                 return
 
             try:
@@ -640,29 +640,29 @@ class WorkflowManager:
                 cursor.execute('SELECT type_id FROM document_types WHERE type_name = ?', (doc_type,))
                 type_result = cursor.fetchone()
                 if not type_result:
-                    messagebox.showerror("Error", "Document type not found")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.document_type_not_found', default="Document type not found"))
                     conn.close()
                     return
 
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Express workflow template created for {doc_type}!\n\nPriority: {priority.title()}\nTarget completion: 1-2 business days")
+                messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), f"Express workflow template created for {doc_type}!\n\nPriority: {priority.title()}\nTarget completion: 1-2 business days")
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create express workflow: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to create express workflow: {str(e)}")
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
 
-        ttk.Button(button_frame, text="Create Express Workflow", command=create_express).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.create_express_workflow', default="Create Express Workflow"), command=create_express).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def create_multistage_workflow(self):
         """Create multi-stage workflow template"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create Multi-Stage Workflow")
+        dialog.title(_t('gui.shell.document_manager.workflows.windows.create_multi_stage_workflow', default="Create Multi-Stage Workflow"))
         dialog.geometry("850x700")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -670,10 +670,10 @@ class WorkflowManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Create Multi-Stage Workflow Template", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.create_multi_stage_workflow_template', default="Create Multi-Stage Workflow Template"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         # Document type selection
-        ttk.Label(main_frame, text="Apply to Document Type:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.apply_to_document_type', default="Apply to Document Type:")).pack(anchor='w')
         doc_type_var = tk.StringVar()
         doc_type_combo = ttk.Combobox(main_frame, textvariable=doc_type_var)
 
@@ -691,7 +691,7 @@ class WorkflowManager:
         doc_type_combo.pack(fill='x', pady=5)
 
         # Department assignments
-        ttk.Label(main_frame, text="Department Assignments:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.department_assignments', default="Department Assignments:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
 
         dept_frame = ttk.Frame(main_frame)
         dept_frame.pack(fill='x', pady=5)
@@ -705,7 +705,7 @@ class WorkflowManager:
                            variable=dept_vars[dept]).grid(row=i//2, column=i%2, sticky='w', padx=10, pady=2)
 
         # Workflow steps preview
-        ttk.Label(main_frame, text="Multi-Stage Workflow Steps:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.multi_stage_workflow_steps', default="Multi-Stage Workflow Steps:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
 
         steps_text = """1. Intake (Assigned to: registrar)
        - Initial document receipt and logging
@@ -742,13 +742,13 @@ class WorkflowManager:
         def create_multistage():
             doc_type = doc_type_var.get()
             if not doc_type:
-                messagebox.showerror("Error", "Please select a document type")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_select_a_document_type', default="Please select a document type"))
                 return
 
             # Get selected departments
             selected_depts = [dept for dept, var in dept_vars.items() if var.get()]
             if len(selected_depts) < 2:
-                messagebox.showerror("Error", "Please select at least 2 departments for multi-stage workflow")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_select_at_least_2_departments_for_multi_stage_workflow', default="Please select at least 2 departments for multi-stage workflow"))
                 return
 
             try:
@@ -759,7 +759,7 @@ class WorkflowManager:
                 cursor.execute('SELECT type_id FROM document_types WHERE type_name = ?', (doc_type,))
                 type_result = cursor.fetchone()
                 if not type_result:
-                    messagebox.showerror("Error", "Document type not found")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.document_type_not_found', default="Document type not found"))
                     conn.close()
                     return
 
@@ -767,22 +767,22 @@ class WorkflowManager:
                 conn.close()
 
                 dept_list = ', '.join([dept.replace('_', ' ').title() for dept in selected_depts])
-                messagebox.showinfo("Success", f"Multi-stage workflow template created for {doc_type}!\n\nDepartments involved: {dept_list}\nTarget completion: 5-7 business days")
+                messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), f"Multi-stage workflow template created for {doc_type}!\n\nDepartments involved: {dept_list}\nTarget completion: 5-7 business days")
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create multi-stage workflow: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to create multi-stage workflow: {str(e)}")
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
 
-        ttk.Button(button_frame, text="Create Multi-Stage Workflow", command=create_multistage).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.create_multi_stage_workflow', default="Create Multi-Stage Workflow"), command=create_multistage).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def custom_workflow_builder(self):
         """Open custom workflow builder"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Custom Workflow Builder")
+        dialog.title(_t('gui.shell.document_manager.workflows.windows.custom_workflow_builder', default="Custom Workflow Builder"))
         dialog.geometry("700x600")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -790,17 +790,17 @@ class WorkflowManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Custom Workflow Builder", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.custom_workflow_builder', default="Custom Workflow Builder"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Workflow name and document type
-        config_frame = ttk.LabelFrame(main_frame, text="Workflow Configuration", padding=10)
+        config_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_configuration', default="Workflow Configuration"), padding=10)
         config_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(config_frame, text="Workflow Name:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(config_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_name', default="Workflow Name:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         workflow_name = tk.Entry(config_frame, width=30)
         workflow_name.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-        ttk.Label(config_frame, text="Document Type:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(config_frame, text=_t('gui.shell.document_manager.workflows.labels.document_type', default="Document Type:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         doc_type_var = tk.StringVar()
         doc_type_combo = ttk.Combobox(config_frame, textvariable=doc_type_var, width=28)
         doc_type_combo.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
@@ -819,7 +819,7 @@ class WorkflowManager:
         config_frame.grid_columnconfigure(1, weight=1)
 
         # Workflow steps builder
-        steps_frame = ttk.LabelFrame(main_frame, text="Workflow Steps", padding=10)
+        steps_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_steps', default="Workflow Steps"), padding=10)
         steps_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         # Steps list
@@ -840,15 +840,15 @@ class WorkflowManager:
         step_input_frame = ttk.Frame(steps_frame)
         step_input_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Label(step_input_frame, text="Step Name:").grid(row=0, column=0, sticky='w', padx=5)
+        ttk.Label(step_input_frame, text=_t('gui.shell.document_manager.workflows.labels.step_name', default="Step Name:")).grid(row=0, column=0, sticky='w', padx=5)
         step_name_entry = tk.Entry(step_input_frame, width=20)
         step_name_entry.grid(row=0, column=1, padx=5)
 
-        ttk.Label(step_input_frame, text="Assigned To:").grid(row=0, column=2, sticky='w', padx=5)
+        ttk.Label(step_input_frame, text=_t('gui.shell.document_manager.workflows.labels.assigned_to', default="Assigned To:")).grid(row=0, column=2, sticky='w', padx=5)
         assigned_to_combo = ttk.Combobox(step_input_frame, values=['registrar', 'admin', 'dean', 'academic_affairs', 'student_services'], width=15)
         assigned_to_combo.grid(row=0, column=3, padx=5)
 
-        ttk.Label(step_input_frame, text="Description:").grid(row=1, column=0, sticky='w', padx=5)
+        ttk.Label(step_input_frame, text=_t('gui.shell.document_manager.workflows.labels.description', default="Description:")).grid(row=1, column=0, sticky='w', padx=5)
         step_desc_entry = tk.Entry(step_input_frame, width=50)
         step_desc_entry.grid(row=1, column=1, columnspan=3, padx=5, pady=5, sticky='ew')
 
@@ -860,7 +860,7 @@ class WorkflowManager:
             description = step_desc_entry.get()
 
             if not step_name or not assigned_to:
-                messagebox.showerror("Error", "Please enter step name and assignment")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_enter_step_name_and_assignment', default="Please enter step name and assignment"))
                 return
 
             step_order = len(steps_tree.get_children()) + 1
@@ -884,19 +884,19 @@ class WorkflowManager:
         step_buttons_frame = ttk.Frame(step_input_frame)
         step_buttons_frame.grid(row=2, column=0, columnspan=4, pady=10)
 
-        ttk.Button(step_buttons_frame, text="Add Step", command=add_step).pack(side='left', padx=5)
-        ttk.Button(step_buttons_frame, text="Remove Selected", command=remove_step).pack(side='left', padx=5)
+        ttk.Button(step_buttons_frame, text=_t('gui.shell.document_manager.workflows.buttons.add_step', default="Add Step"), command=add_step).pack(side='left', padx=5)
+        ttk.Button(step_buttons_frame, text=_t('gui.shell.document_manager.workflows.buttons.remove_selected', default="Remove Selected"), command=remove_step).pack(side='left', padx=5)
 
         def save_custom_workflow():
             name = workflow_name.get()
             doc_type = doc_type_var.get()
 
             if not name or not doc_type:
-                messagebox.showerror("Error", "Please enter workflow name and select document type")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_enter_workflow_name_and_select_document_type', default="Please enter workflow name and select document type"))
                 return
 
             if len(steps_tree.get_children()) == 0:
-                messagebox.showerror("Error", "Please add at least one workflow step")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_add_at_least_one_workflow_step', default="Please add at least one workflow step"))
                 return
 
             try:
@@ -907,7 +907,7 @@ class WorkflowManager:
                 cursor.execute('SELECT type_id FROM document_types WHERE type_name = ?', (doc_type,))
                 type_result = cursor.fetchone()
                 if not type_result:
-                    messagebox.showerror("Error", "Document type not found")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.document_type_not_found', default="Document type not found"))
                     conn.close()
                     return
 
@@ -958,18 +958,18 @@ class WorkflowManager:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Custom workflow '{name}' created successfully!\n\nThe workflow will be applied to all new {doc_type} documents.")
+                messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), f"Custom workflow '{name}' created successfully!\n\nThe workflow will be applied to all new {doc_type} documents.")
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create custom workflow: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to create custom workflow: {str(e)}")
 
         # Main buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Save Workflow", command=save_custom_workflow).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.save_workflow', default="Save Workflow"), command=save_custom_workflow).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def create_custom_workflow(self):
         """
@@ -977,7 +977,7 @@ class WorkflowManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Create Custom Workflow")
+            dialog.title(_t('gui.shell.document_manager.workflows.windows.create_custom_workflow', default="Create Custom Workflow"))
             dialog.geometry("800x700")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -986,18 +986,18 @@ class WorkflowManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Create Custom Workflow",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.create_custom_workflow', default="Create Custom Workflow"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Workflow name
-            name_frame = ttk.LabelFrame(main_frame, text="Workflow Information", padding=10)
+            name_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_information', default="Workflow Information"), padding=10)
             name_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(name_frame, text="Workflow Name:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(name_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_name', default="Workflow Name:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
             workflow_name = tk.StringVar()
             ttk.Entry(name_frame, textvariable=workflow_name, width=40).grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-            ttk.Label(name_frame, text="Document Type:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(name_frame, text=_t('gui.shell.document_manager.workflows.labels.document_type', default="Document Type:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
             doc_type_combo = ttk.Combobox(name_frame, width=37, state='readonly')
             doc_type_combo.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
@@ -1008,7 +1008,7 @@ class WorkflowManager:
             name_frame.grid_columnconfigure(1, weight=1)
 
             # Workflow steps
-            steps_frame = ttk.LabelFrame(main_frame, text="Workflow Steps", padding=10)
+            steps_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_steps', default="Workflow Steps"), padding=10)
             steps_frame.pack(fill='both', expand=True, pady=(0, 15))
 
             # Steps list
@@ -1038,15 +1038,15 @@ class WorkflowManager:
             add_step_frame = ttk.Frame(steps_frame)
             add_step_frame.pack(fill='x', pady=(10, 0))
 
-            ttk.Label(add_step_frame, text="Step Name:").grid(row=0, column=0, sticky='w', padx=5)
+            ttk.Label(add_step_frame, text=_t('gui.shell.document_manager.workflows.labels.step_name', default="Step Name:")).grid(row=0, column=0, sticky='w', padx=5)
             step_name = tk.StringVar()
             ttk.Entry(add_step_frame, textvariable=step_name, width=20).grid(row=0, column=1, padx=5)
 
-            ttk.Label(add_step_frame, text="Assigned To:").grid(row=0, column=2, sticky='w', padx=5)
+            ttk.Label(add_step_frame, text=_t('gui.shell.document_manager.workflows.labels.assigned_to', default="Assigned To:")).grid(row=0, column=2, sticky='w', padx=5)
             assigned_to = tk.StringVar()
             ttk.Entry(add_step_frame, textvariable=assigned_to, width=15).grid(row=0, column=3, padx=5)
 
-            ttk.Label(add_step_frame, text="Description:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(add_step_frame, text=_t('gui.shell.document_manager.workflows.labels.description', default="Description:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
             step_desc = tk.StringVar()
             ttk.Entry(add_step_frame, textvariable=step_desc, width=50).grid(row=1, column=1, columnspan=3, padx=5, pady=5, sticky='ew')
 
@@ -1060,7 +1060,7 @@ class WorkflowManager:
                     assigned_to.set('')
                     step_desc.set('')
                 else:
-                    messagebox.showwarning("Warning", "Please enter step name and assigned to")
+                    messagebox.showwarning(_t('gui.shell.document_manager.workflows.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.workflows.dialogs.please_enter_step_name_and_assigned_to', default="Please enter step name and assigned to"))
 
             def remove_step():
                 selection = steps_tree.selection()
@@ -1070,12 +1070,12 @@ class WorkflowManager:
                     for idx, item in enumerate(steps_tree.get_children(), 1):
                         steps_tree.set(item, 'Order', idx)
                 else:
-                    messagebox.showwarning("Warning", "Please select a step to remove")
+                    messagebox.showwarning(_t('gui.shell.document_manager.workflows.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.workflows.dialogs.please_select_a_step_to_remove', default="Please select a step to remove"))
 
             button_frame = ttk.Frame(add_step_frame)
             button_frame.grid(row=2, column=0, columnspan=4, pady=10)
-            ttk.Button(button_frame, text="Add Step", command=add_step).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Remove Selected", command=remove_step).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.add_step', default="Add Step"), command=add_step).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.remove_selected', default="Remove Selected"), command=remove_step).pack(side='left', padx=5)
 
             add_step_frame.grid_columnconfigure(1, weight=1)
 
@@ -1088,16 +1088,16 @@ class WorkflowManager:
                 doc_type = doc_type_combo.get()
 
                 if not name:
-                    messagebox.showerror("Error", "Please enter workflow name")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_enter_workflow_name', default="Please enter workflow name"))
                     return
 
                 if not doc_type:
-                    messagebox.showerror("Error", "Please select document type")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_select_document_type', default="Please select document type"))
                     return
 
                 steps = steps_tree.get_children()
                 if not steps:
-                    messagebox.showerror("Error", "Please add at least one workflow step")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), _t('gui.shell.document_manager.workflows.dialogs.please_add_at_least_one_workflow_step', default="Please add at least one workflow step"))
                     return
 
                 try:
@@ -1155,17 +1155,17 @@ class WorkflowManager:
                         'steps_count': len(steps)
                     })
 
-                    messagebox.showinfo("Success", f"Workflow '{name}' created successfully with {len(steps)} steps")
+                    messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), f"Workflow '{name}' created successfully with {len(steps)} steps")
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to create workflow: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to create workflow: {e}")
 
-            ttk.Button(action_frame, text="Save Workflow", command=save_workflow).pack(side='right', padx=5)
-            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.workflows.buttons.save_workflow', default="Save Workflow"), command=save_workflow).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.workflows.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open workflow creator: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to open workflow creator: {e}")
 
     def workflow_templates(self):
         """
@@ -1173,7 +1173,7 @@ class WorkflowManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Workflow Templates")
+            dialog.title(_t('gui.shell.document_manager.workflows.windows.workflow_templates', default="Workflow Templates"))
             dialog.geometry("1000x700")
             dialog.transient(self.root)
 
@@ -1181,7 +1181,7 @@ class WorkflowManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Workflow Templates",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_templates', default="Workflow Templates"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Templates list
@@ -1238,7 +1238,7 @@ class WorkflowManager:
                         ))
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load templates: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to load templates: {e}")
 
             load_templates()
 
@@ -1249,14 +1249,14 @@ class WorkflowManager:
             def view_template_details():
                 selection = templates_tree.selection()
                 if not selection:
-                    messagebox.showwarning("Warning", "Please select a template")
+                    messagebox.showwarning(_t('gui.shell.document_manager.workflows.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.workflows.dialogs.please_select_a_template', default="Please select a template"))
                     return
 
                 template_id = templates_tree.item(selection[0])['values'][0]
 
                 # Show template details
                 detail_dialog = tk.Toplevel(dialog)
-                detail_dialog.title("Template Details")
+                detail_dialog.title(_t('gui.shell.document_manager.workflows.windows.template_details', default="Template Details"))
                 detail_dialog.geometry("700x500")
                 detail_dialog.transient(dialog)
 
@@ -1301,15 +1301,15 @@ class WorkflowManager:
                     text_widget.insert('1.0', info_text)
                     text_widget.config(state='disabled')
 
-                    ttk.Button(detail_frame, text="Close", command=detail_dialog.destroy).pack(pady=10)
+                    ttk.Button(detail_frame, text=_t('gui.shell.document_manager.workflows.buttons.close', default="Close"), command=detail_dialog.destroy).pack(pady=10)
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load template details: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to load template details: {e}")
 
             def toggle_template_status():
                 selection = templates_tree.selection()
                 if not selection:
-                    messagebox.showwarning("Warning", "Please select a template")
+                    messagebox.showwarning(_t('gui.shell.document_manager.workflows.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.workflows.dialogs.please_select_a_template', default="Please select a template"))
                     return
 
                 template_id = templates_tree.item(selection[0])['values'][0]
@@ -1325,19 +1325,19 @@ class WorkflowManager:
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo("Success", "Template status updated")
+                    messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), _t('gui.shell.document_manager.workflows.dialogs.template_status_updated', default="Template status updated"))
                     load_templates()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to update status: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to update status: {e}")
 
-            ttk.Button(action_frame, text="View Details", command=view_template_details).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Toggle Active/Inactive", command=toggle_template_status).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Refresh", command=load_templates).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.workflows.buttons.view_details', default="View Details"), command=view_template_details).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.workflows.buttons.toggle_active_inactive', default="Toggle Active/Inactive"), command=toggle_template_status).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.workflows.buttons.refresh', default="Refresh"), command=load_templates).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.workflows.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open workflow templates: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to open workflow templates: {e}")
 
     def workflow_analytics(self):
         """
@@ -1345,7 +1345,7 @@ class WorkflowManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Workflow Analytics")
+            dialog.title(_t('gui.shell.document_manager.workflows.windows.workflow_analytics', default="Workflow Analytics"))
             dialog.geometry("1100x750")
             dialog.transient(self.root)
 
@@ -1353,7 +1353,7 @@ class WorkflowManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Workflow Analytics Dashboard",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflow_analytics_dashboard', default="Workflow Analytics Dashboard"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Summary cards
@@ -1401,7 +1401,7 @@ class WorkflowManager:
                          foreground='red').pack()
 
             # Workflow by status
-            status_frame = ttk.LabelFrame(main_frame, text="Workflows by Status", padding=10)
+            status_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflows_by_status', default="Workflows by Status"), padding=10)
             status_frame.pack(fill='both', expand=True, pady=(0, 10))
 
             columns = ('Status', 'Count', 'Percentage')
@@ -1437,7 +1437,7 @@ class WorkflowManager:
                 pass
 
             # Workflow by assignee
-            assignee_frame = ttk.LabelFrame(main_frame, text="Workflows by Assignee", padding=10)
+            assignee_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.workflows.labels.workflows_by_assignee', default="Workflows by Assignee"), padding=10)
             assignee_frame.pack(fill='both', expand=True)
 
             columns = ('Assigned To', 'Pending', 'Completed', 'Total')
@@ -1510,16 +1510,16 @@ class WorkflowManager:
                                            'Status', 'Completed Date', 'Completed By'])
                             writer.writerows(workflows)
 
-                        messagebox.showinfo("Success", f"Analytics exported to:\n{file_path}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.workflows.dialogs.success', default="Success"), f"Analytics exported to:\n{file_path}")
 
                     except Exception as e:
-                        messagebox.showerror("Error", f"Failed to export analytics: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to export analytics: {e}")
 
-            ttk.Button(button_frame, text="Export Analytics", command=export_analytics).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.export_analytics', default="Export Analytics"), command=export_analytics).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.workflows.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open workflow analytics: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.workflows.dialogs.error', default="Error"), f"Failed to open workflow analytics: {e}")
 
     def create_workflow_steps(self, workflow_id, template_id):
         """

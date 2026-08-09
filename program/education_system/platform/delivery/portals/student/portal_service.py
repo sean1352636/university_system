@@ -11,10 +11,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from education_system.platform.kernel.database.paths import (
-    SYSTEM_DB_PATHS as _DB_PATHS,
-    AUTH_DB as _AUTH_DB,
-)
+from education_system.paths import SYSTEM_DB_PATHS as _DB_PATHS, PLATFORM_AUTH_DB as _AUTH_DB
 
 REQUEST_TYPES = ("transcript", "data_export", "correction", "other")
 

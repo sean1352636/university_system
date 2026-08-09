@@ -1,5 +1,7 @@
 """Notification management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
@@ -13,7 +15,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 from collections import deque
@@ -148,7 +150,7 @@ class NotificationManager:
             )
             NotificationsGUI(parent=self.root)
         except Exception as e:
-            messagebox.showerror("Notifications", f"Unable to open notifications: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.notifications', default="Notifications"), f"Unable to open notifications: {e}")
 
         # The user is about to read them, so refresh the header badge.
         try:
@@ -178,7 +180,7 @@ class NotificationManager:
             self.update_notifications()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to mark notifications as read: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to mark notifications as read: {e}")
 
 
     def update_notifications(self):
@@ -192,7 +194,7 @@ class NotificationManager:
             if not user_id:
                 self.gui.notification_count = 0
                 if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'notification_btn'):
-                    self.gui.layout.notification_btn.configure(text="\U0001f514 Notifications (0)")
+                    self.gui.layout.notification_btn.configure(text=_t('gui.academics.assignment_system.notifications.text.notifications_0', default="\U0001f514 Notifications (0)"))
                 return
 
             count = self._get_unread_notification_count(user_id)
@@ -205,7 +207,7 @@ class NotificationManager:
             print(f"Error updating notifications: {e}")
             self.gui.notification_count = 0
             if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'notification_btn'):
-                self.gui.layout.notification_btn.configure(text="\U0001f514 Notifications (0)")
+                self.gui.layout.notification_btn.configure(text=_t('gui.academics.assignment_system.notifications.text.notifications_0', default="\U0001f514 Notifications (0)"))
 
 
     def _get_unread_notification_count(self, user_id):
@@ -346,7 +348,7 @@ class NotificationManager:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load notifications: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to load notifications: {str(e)}")
             print(f"Error refreshing notifications: {e}")
 
 
@@ -354,7 +356,7 @@ class NotificationManager:
         """View notification details"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a notification to view")
+            messagebox.showwarning(_t('gui.academics.assignment_system.notifications.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.notifications.dialogs.please_select_a_notification_to_view', default="Please select a notification to view"))
             return
 
         notif_id = tree.item(selection[0])['text']
@@ -376,7 +378,7 @@ class NotificationManager:
             notification = cursor.fetchone()
 
             if not notification:
-                messagebox.showerror("Error", "Notification not found")
+                messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), _t('gui.academics.assignment_system.notifications.dialogs.notification_not_found', default="Notification not found"))
                 conn.close()
                 return
 
@@ -395,27 +397,27 @@ class NotificationManager:
 
             # Create detail window
             detail_window = tk.Toplevel(self.root)
-            detail_window.title("Notification Details")
+            detail_window.title(_t('gui.academics.assignment_system.notifications.windows.notification_details', default="Notification Details"))
             detail_window.geometry("700x500")
             detail_window.configure(bg='#f0f0f0')
 
             # Info frame
-            info_frame = ttk.LabelFrame(detail_window, text="Notification Information", padding=10)
+            info_frame = ttk.LabelFrame(detail_window, text=_t('gui.academics.assignment_system.notifications.labels.notification_information', default="Notification Information"), padding=10)
             info_frame.pack(fill='x', padx=10, pady=10)
 
             # Type
-            ttk.Label(info_frame, text="Type:").grid(row=0, column=0, sticky='w', padx=5, pady=2)
+            ttk.Label(info_frame, text=_t('gui.academics.assignment_system.notifications.labels.type', default="Type:")).grid(row=0, column=0, sticky='w', padx=5, pady=2)
             type_label = ttk.Label(info_frame, text=notification[4], font=('TkDefaultFont', 10, 'bold'))
             type_label.grid(row=0, column=1, sticky='w', padx=5, pady=2)
 
             # Title
-            ttk.Label(info_frame, text="Title:").grid(row=1, column=0, sticky='w', padx=5, pady=2)
+            ttk.Label(info_frame, text=_t('gui.academics.assignment_system.notifications.labels.title', default="Title:")).grid(row=1, column=0, sticky='w', padx=5, pady=2)
             title_label = ttk.Label(info_frame, text=notification[2] or "No title",
                                    font=('TkDefaultFont', 10, 'bold'))
             title_label.grid(row=1, column=1, sticky='w', padx=5, pady=2)
 
             # Date
-            ttk.Label(info_frame, text="Date:").grid(row=2, column=0, sticky='w', padx=5, pady=2)
+            ttk.Label(info_frame, text=_t('gui.academics.assignment_system.notifications.labels.date', default="Date:")).grid(row=2, column=0, sticky='w', padx=5, pady=2)
             try:
                 date_obj = datetime.fromisoformat(notification[6])
                 formatted_date = date_obj.strftime("%Y-%m-%d %H:%M:%S")
@@ -425,11 +427,11 @@ class NotificationManager:
 
             # Assignment reference (if any)
             if notification[7]:  # assignment_id
-                ttk.Label(info_frame, text="Assignment:").grid(row=3, column=0, sticky='w', padx=5, pady=2)
+                ttk.Label(info_frame, text=_t('gui.academics.assignment_system.notifications.labels.assignment', default="Assignment:")).grid(row=3, column=0, sticky='w', padx=5, pady=2)
                 ttk.Label(info_frame, text=f"ID: {notification[7]}").grid(row=3, column=1, sticky='w', padx=5, pady=2)
 
             # Message content frame
-            content_frame = ttk.LabelFrame(detail_window, text="Message", padding=10)
+            content_frame = ttk.LabelFrame(detail_window, text=_t('gui.academics.assignment_system.notifications.labels.message', default="Message"), padding=10)
             content_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
             message_text = scrolledtext.ScrolledText(content_frame, width=60, height=15, wrap=tk.WORD)
@@ -441,13 +443,13 @@ class NotificationManager:
             button_frame = ttk.Frame(detail_window)
             button_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Button(button_frame, text="Close", command=detail_window.destroy).pack(side='right', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.close', default="Close"), command=detail_window.destroy).pack(side='right', padx=5)
 
             # Refresh the tree to show updated read status
             self._refresh_notifications(tree, user_id)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to view notification: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to view notification: {str(e)}")
             print(f"Error viewing notification: {e}")
 
 
@@ -455,7 +457,7 @@ class NotificationManager:
         """Mark notification as read or unread"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a notification")
+            messagebox.showwarning(_t('gui.academics.assignment_system.notifications.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.notifications.dialogs.please_select_a_notification', default="Please select a notification"))
             return
 
         notif_id = tree.item(selection[0])['text']
@@ -481,10 +483,10 @@ class NotificationManager:
             self._refresh_notifications(tree, user_id)
 
             status = "read" if is_read else "unread"
-            messagebox.showinfo("Success", f"Notification marked as {status}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.notifications.dialogs.success', default="Success"), f"Notification marked as {status}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update notification: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to update notification: {str(e)}")
             print(f"Error marking notification: {e}")
 
 
@@ -492,10 +494,10 @@ class NotificationManager:
         """Delete selected notification"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a notification to delete")
+            messagebox.showwarning(_t('gui.academics.assignment_system.notifications.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.notifications.dialogs.please_select_a_notification_to_delete', default="Please select a notification to delete"))
             return
 
-        if not messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this notification?"):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.notifications.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.academics.assignment_system.notifications.dialogs.are_you_sure_you_want_to_delete_this_notification', default="Are you sure you want to delete this notification?")):
             return
 
         notif_id = tree.item(selection[0])['text']
@@ -520,10 +522,10 @@ class NotificationManager:
             # Refresh the tree
             self._refresh_notifications(tree, user_id)
 
-            messagebox.showinfo("Success", "Notification deleted")
+            messagebox.showinfo(_t('gui.academics.assignment_system.notifications.dialogs.success', default="Success"), _t('gui.academics.assignment_system.notifications.dialogs.notification_deleted', default="Notification deleted"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete notification: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to delete notification: {str(e)}")
             print(f"Error deleting notification: {e}")
 
 
@@ -544,17 +546,17 @@ class NotificationManager:
             # Refresh the tree
             self._refresh_notifications(tree, user_id)
 
-            messagebox.showinfo("Success", f"Marked {rows_updated} notification(s) as read")
+            messagebox.showinfo(_t('gui.academics.assignment_system.notifications.dialogs.success', default="Success"), f"Marked {rows_updated} notification(s) as read")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to mark notifications as read: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to mark notifications as read: {str(e)}")
             print(f"Error marking all as read: {e}")
 
 
     def _clear_read_notifications(self, tree, user_id):
         """Delete all read notifications"""
-        if not messagebox.askyesno("Confirm Clear",
-                                   "Are you sure you want to delete all read notifications?"):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.notifications.dialogs.confirm_clear', default="Confirm Clear"),
+                                   _t('gui.academics.assignment_system.notifications.dialogs.are_you_sure_you_want_to_delete_all_read_notifications', default="Are you sure you want to delete all read notifications?")):
             return
 
         try:
@@ -572,10 +574,10 @@ class NotificationManager:
             # Refresh the tree
             self._refresh_notifications(tree, user_id)
 
-            messagebox.showinfo("Success", f"Cleared {rows_deleted} read notification(s)")
+            messagebox.showinfo(_t('gui.academics.assignment_system.notifications.dialogs.success', default="Success"), f"Cleared {rows_deleted} read notification(s)")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to clear read notifications: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to clear read notifications: {str(e)}")
             print(f"Error clearing read notifications: {e}")
 
 
@@ -594,14 +596,14 @@ class NotificationManager:
         try:
             # Create notifications window
             notif_window = tk.Toplevel(self.root)
-            notif_window.title("Notification Management")
+            notif_window.title(_t('gui.academics.assignment_system.notifications.windows.notification_management', default="Notification Management"))
             notif_window.geometry("1000x700")
             notif_window.configure(bg='#f0f0f0')
 
             # Get current user ID
             user_id = self.auth.current_user.get('id')
             if not user_id:
-                messagebox.showerror("Error", "User not authenticated")
+                messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), _t('gui.academics.assignment_system.notifications.dialogs.user_not_authenticated', default="User not authenticated"))
                 notif_window.destroy()
                 return
 
@@ -612,7 +614,7 @@ class NotificationManager:
             header_frame = ttk.Frame(notif_window)
             header_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Label(header_frame, text="Notifications",
+            ttk.Label(header_frame, text=_t('gui.academics.assignment_system.notifications.labels.notifications', default="Notifications"),
                      font=('TkDefaultFont', 16, 'bold')).pack(side='left')
 
             # Get unread count
@@ -621,37 +623,37 @@ class NotificationManager:
                      font=('TkDefaultFont', 12)).pack(side='left', padx=10)
 
             # Filter frame
-            filter_frame = ttk.LabelFrame(notif_window, text="Filters", padding=10)
+            filter_frame = ttk.LabelFrame(notif_window, text=_t('gui.academics.assignment_system.notifications.labels.filters', default="Filters"), padding=10)
             filter_frame.pack(fill='x', padx=10, pady=5)
 
             # Type filter
-            ttk.Label(filter_frame, text="Type:").pack(side='left', padx=5)
-            type_var = tk.StringVar(value="all")
+            ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.notifications.labels.type', default="Type:")).pack(side='left', padx=5)
+            type_var = tk.StringVar(value=_t('gui.academics.assignment_system.notifications.values.all', default="all"))
 
-            ttk.Radiobutton(filter_frame, text="All", variable=type_var, value="all").pack(side='left', padx=5)
-            ttk.Radiobutton(filter_frame, text="Info", variable=type_var, value="info").pack(side='left', padx=5)
-            ttk.Radiobutton(filter_frame, text="Warning", variable=type_var, value="warning").pack(side='left', padx=5)
-            ttk.Radiobutton(filter_frame, text="Success", variable=type_var, value="success").pack(side='left', padx=5)
-            ttk.Radiobutton(filter_frame, text="Error", variable=type_var, value="error").pack(side='left', padx=5)
+            ttk.Radiobutton(filter_frame, text=_t('gui.academics.assignment_system.notifications.buttons.all', default="All"), variable=type_var, value="all").pack(side='left', padx=5)
+            ttk.Radiobutton(filter_frame, text=_t('gui.academics.assignment_system.notifications.buttons.info', default="Info"), variable=type_var, value="info").pack(side='left', padx=5)
+            ttk.Radiobutton(filter_frame, text=_t('gui.academics.assignment_system.notifications.buttons.warning', default="Warning"), variable=type_var, value="warning").pack(side='left', padx=5)
+            ttk.Radiobutton(filter_frame, text=_t('gui.academics.assignment_system.notifications.buttons.success', default="Success"), variable=type_var, value="success").pack(side='left', padx=5)
+            ttk.Radiobutton(filter_frame, text=_t('gui.academics.assignment_system.notifications.buttons.error', default="Error"), variable=type_var, value="error").pack(side='left', padx=5)
 
             # Status filter
             ttk.Separator(filter_frame, orient='vertical').pack(side='left', fill='y', padx=10)
-            ttk.Label(filter_frame, text="Status:").pack(side='left', padx=5)
-            status_var = tk.StringVar(value="all")
+            ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.notifications.labels.status', default="Status:")).pack(side='left', padx=5)
+            status_var = tk.StringVar(value=_t('gui.academics.assignment_system.notifications.values.all', default="all"))
 
-            ttk.Radiobutton(filter_frame, text="All", variable=status_var, value="all").pack(side='left', padx=5)
-            ttk.Radiobutton(filter_frame, text="Unread", variable=status_var, value="unread").pack(side='left', padx=5)
-            ttk.Radiobutton(filter_frame, text="Read", variable=status_var, value="read").pack(side='left', padx=5)
+            ttk.Radiobutton(filter_frame, text=_t('gui.academics.assignment_system.notifications.buttons.all', default="All"), variable=status_var, value="all").pack(side='left', padx=5)
+            ttk.Radiobutton(filter_frame, text=_t('gui.academics.assignment_system.notifications.buttons.unread', default="Unread"), variable=status_var, value="unread").pack(side='left', padx=5)
+            ttk.Radiobutton(filter_frame, text=_t('gui.academics.assignment_system.notifications.buttons.read', default="Read"), variable=status_var, value="read").pack(side='left', padx=5)
 
             # Search
             ttk.Separator(filter_frame, orient='vertical').pack(side='left', fill='y', padx=10)
-            ttk.Label(filter_frame, text="Search:").pack(side='left', padx=5)
+            ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.notifications.labels.search', default="Search:")).pack(side='left', padx=5)
             search_var = tk.StringVar()
             search_entry = ttk.Entry(filter_frame, textvariable=search_var, width=20)
             search_entry.pack(side='left', padx=5)
 
             # Apply filter button
-            ttk.Button(filter_frame, text="Apply Filters",
+            ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.notifications.buttons.apply_filters', default="Apply Filters"),
                       command=lambda: self._refresh_notifications(tree, user_id, type_var.get(),
                                                                  status_var.get(), search_var.get())).pack(side='left', padx=10)
 
@@ -663,12 +665,12 @@ class NotificationManager:
             columns = ('Status', 'Type', 'Title', 'Message', 'Date')
             tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
 
-            tree.heading('#0', text='ID')
-            tree.heading('Status', text='Status')
-            tree.heading('Type', text='Type')
-            tree.heading('Title', text='Title')
-            tree.heading('Message', text='Message')
-            tree.heading('Date', text='Date')
+            tree.heading('#0', text=_t('gui.academics.assignment_system.notifications.headings.id', default='ID'))
+            tree.heading('Status', text=_t('gui.academics.assignment_system.notifications.headings.status', default='Status'))
+            tree.heading('Type', text=_t('gui.academics.assignment_system.notifications.headings.type', default='Type'))
+            tree.heading('Title', text=_t('gui.academics.assignment_system.notifications.headings.title', default='Title'))
+            tree.heading('Message', text=_t('gui.academics.assignment_system.notifications.headings.message', default='Message'))
+            tree.heading('Date', text=_t('gui.academics.assignment_system.notifications.headings.date', default='Date'))
 
             tree.column('#0', width=50)
             tree.column('Status', width=80)
@@ -688,23 +690,23 @@ class NotificationManager:
             button_frame = ttk.Frame(notif_window)
             button_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Button(button_frame, text="View Details",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.view_details', default="View Details"),
                       command=lambda: self._view_notification_details(tree, user_id)).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Mark as Read",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.mark_as_read', default="Mark as Read"),
                       command=lambda: self._mark_notification_read(tree, user_id, True)).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Mark as Unread",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.mark_as_unread', default="Mark as Unread"),
                       command=lambda: self._mark_notification_read(tree, user_id, False)).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Delete Selected",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.delete_selected', default="Delete Selected"),
                       command=lambda: self._delete_notification(tree, user_id)).pack(side='left', padx=5)
 
             ttk.Separator(button_frame, orient='vertical').pack(side='left', fill='y', padx=10)
 
-            ttk.Button(button_frame, text="Mark All as Read",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.mark_all_as_read', default="Mark All as Read"),
                       command=lambda: self._mark_all_notifications_read(tree, user_id)).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Clear All Read",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.clear_all_read', default="Clear All Read"),
                       command=lambda: self._clear_read_notifications(tree, user_id)).pack(side='left', padx=5)
 
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.refresh', default="Refresh"),
                       command=lambda: self._refresh_notifications(tree, user_id, type_var.get(),
                                                                  status_var.get(), search_var.get())).pack(side='right', padx=5)
 
@@ -715,7 +717,7 @@ class NotificationManager:
             tree.bind('<Double-1>', lambda e: self._view_notification_details(tree, user_id))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load notifications: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to load notifications: {str(e)}")
             print(f"Error in manage_notifications: {e}")
 
 
@@ -758,24 +760,24 @@ class NotificationManager:
                 enabled, email_enabled, push_enabled = 1, 1, 0
 
             # Settings frame
-            settings_frame = ttk.LabelFrame(dialog, text="Notification Channels", padding=20)
+            settings_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.notifications.labels.notification_channels', default="Notification Channels"), padding=20)
             settings_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
             enabled_var = tk.BooleanVar(value=bool(enabled))
             email_var = tk.BooleanVar(value=bool(email_enabled))
             push_var = tk.BooleanVar(value=bool(push_enabled))
 
-            ttk.Checkbutton(settings_frame, text="Enable notifications for this type",
+            ttk.Checkbutton(settings_frame, text=_t('gui.academics.assignment_system.notifications.buttons.enable_notifications_for_this_type', default="Enable notifications for this type"),
                            variable=enabled_var).pack(anchor='w', pady=5)
 
             ttk.Separator(settings_frame, orient='horizontal').pack(fill='x', pady=10)
 
-            ttk.Label(settings_frame, text="Delivery Methods:", font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', pady=(0, 10))
+            ttk.Label(settings_frame, text=_t('gui.academics.assignment_system.notifications.labels.delivery_methods', default="Delivery Methods:"), font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', pady=(0, 10))
 
-            ttk.Checkbutton(settings_frame, text="In-app notifications",
+            ttk.Checkbutton(settings_frame, text=_t('gui.academics.assignment_system.notifications.buttons.in_app_notifications', default="In-app notifications"),
                            variable=enabled_var, state='disabled').pack(anchor='w', pady=2)
 
-            ttk.Checkbutton(settings_frame, text="Email notifications",
+            ttk.Checkbutton(settings_frame, text=_t('gui.academics.assignment_system.notifications.buttons.email_notifications', default="Email notifications"),
                            variable=email_var).pack(anchor='w', pady=2)
 
             push_checkbox_text = "Push notifications (Desktop)" if DESKTOP_NOTIFICATIONS_AVAILABLE else "Push notifications (In-app popups)"
@@ -783,7 +785,7 @@ class NotificationManager:
                            variable=push_var).pack(anchor='w', pady=2)
 
             # Description
-            desc_frame = ttk.LabelFrame(dialog, text="Description", padding=10)
+            desc_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.notifications.labels.description', default="Description"), padding=10)
             desc_frame.pack(fill='x', padx=10, pady=(0, 10))
 
             descriptions = {
@@ -814,21 +816,21 @@ class NotificationManager:
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo("Success", "Notification settings saved successfully!", parent=dialog)
+                    messagebox.showinfo(_t('gui.academics.assignment_system.notifications.dialogs.success', default="Success"), _t('gui.academics.assignment_system.notifications.dialogs.notification_settings_saved_successfully', default="Notification settings saved successfully!"), parent=dialog)
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save settings: {e}", parent=dialog)
+                    messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to save settings: {e}", parent=dialog)
 
             button_frame = ttk.Frame(dialog)
             button_frame.pack(fill='x', padx=10, pady=(0, 10))
 
-            ttk.Button(button_frame, text="Save Settings", command=save_notification_settings,
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.save_settings', default="Save Settings"), command=save_notification_settings,
                       style='Accent.TButton').pack(side='left')
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.notifications.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to configure notifications: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Failed to configure notifications: {e}")
 
 
     def _notify_new_assignment(self, assignment_id, assignment_title, module_code, due_date):
@@ -936,6 +938,6 @@ class NotificationManager:
         try:
             callback()
         except Exception as e:
-            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.notifications.dialogs.error', default="Error"), f"Error launching {feature_name}: {str(e)}")
 
 

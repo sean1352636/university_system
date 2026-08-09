@@ -10,6 +10,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -34,7 +36,7 @@ class WorkloadGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Workload Dashboard")
+            messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), _t('gui.staff.staff_hr.workload.dialogs.login_required_to_access_workload_dashboard', default="Login required to access Workload Dashboard"))
             return
 
         if parent_notebook:
@@ -47,18 +49,18 @@ class WorkloadGUI:
 
     def create_as_tab(self, notebook: ttk.Notebook):
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Workload")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.workload.tabs.workload', default="Workload"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
-        self.window.title("Workload Dashboard")
+        self.window.title(_t('gui.staff.staff_hr.workload.windows.workload_dashboard', default="Workload Dashboard"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.workload.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.workload.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         self._build_interface(self.window)
 
@@ -80,26 +82,26 @@ class WorkloadGUI:
     def _create_my_workload_tab(self):
         """Create the personal workload visualization tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Workload")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.workload.tabs.my_workload', default="My Workload"))
 
         # Header frame with academic year entry and refresh button
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(header_frame, text="My Workload", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.workload.labels.my_workload', default="My Workload"), style='Header.TLabel').pack(side=tk.LEFT)
 
         controls_frame = ttk.Frame(header_frame)
         controls_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(controls_frame, text="Academic Year:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(controls_frame, text=_t('gui.staff.staff_hr.workload.labels.academic_year', default="Academic Year:")).pack(side=tk.LEFT, padx=(0, 5))
         self.my_year_entry = ttk.Entry(controls_frame, width=10)
         self.my_year_entry.insert(0, "2025/26")
         self.my_year_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Button(controls_frame, text="Refresh", command=self._refresh_my_workload).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.staff.staff_hr.workload.buttons.refresh', default="Refresh"), command=self._refresh_my_workload).pack(side=tk.LEFT, padx=5)
 
         # Canvas-based horizontal stacked bar chart
-        chart_frame = ttk.LabelFrame(tab, text="Workload Distribution", padding=5)
+        chart_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.workload.labels.workload_distribution', default="Workload Distribution"), padding=5)
         chart_frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.chart_canvas = tk.Canvas(chart_frame, height=80, bg='white', highlightthickness=0)
@@ -111,7 +113,7 @@ class WorkloadGUI:
         self._balance_analysis = {}
 
         # Balance analysis section
-        balance_frame = ttk.LabelFrame(tab, text="Balance Analysis", padding=10)
+        balance_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.workload.labels.balance_analysis', default="Balance Analysis"), padding=10)
         balance_frame.pack(fill=tk.X, padx=10, pady=5)
 
         balance_tree_frame = ttk.Frame(balance_frame)
@@ -133,7 +135,7 @@ class WorkloadGUI:
         self.balance_tree.pack(fill=tk.X)
 
         # Allocations treeview
-        alloc_frame = ttk.LabelFrame(tab, text="My Allocations", padding=5)
+        alloc_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.workload.labels.my_allocations', default="My Allocations"), padding=5)
         alloc_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         alloc_tree_frame = ttk.Frame(alloc_frame)
@@ -282,36 +284,36 @@ class WorkloadGUI:
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load workload data: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), f"Failed to load workload data: {e}")
 
     # ==================== TAB 2: DEPARTMENT VIEW ====================
 
     def _create_department_tab(self):
         """Create the department workload overview tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Department View")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.workload.tabs.department_view', default="Department View"))
 
         # Header frame
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(header_frame, text="Department Workload Overview",
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.workload.labels.department_workload_overview', default="Department Workload Overview"),
                   style='Header.TLabel').pack(side=tk.LEFT)
 
         # Controls frame
         controls_frame = ttk.Frame(tab)
         controls_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(controls_frame, text="Department:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(controls_frame, text=_t('gui.staff.staff_hr.workload.labels.department', default="Department:")).pack(side=tk.LEFT, padx=(0, 5))
         self.dept_entry = ttk.Entry(controls_frame, width=20)
         self.dept_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Label(controls_frame, text="Academic Year:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(controls_frame, text=_t('gui.staff.staff_hr.workload.labels.academic_year', default="Academic Year:")).pack(side=tk.LEFT, padx=(0, 5))
         self.dept_year_entry = ttk.Entry(controls_frame, width=10)
         self.dept_year_entry.insert(0, "2025/26")
         self.dept_year_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Button(controls_frame, text="View", command=self._load_department_workloads).pack(
+        ttk.Button(controls_frame, text=_t('gui.staff.staff_hr.workload.buttons.view', default="View"), command=self._load_department_workloads).pack(
             side=tk.LEFT, padx=5)
 
         # Staff workload treeview
@@ -343,7 +345,7 @@ class WorkloadGUI:
         x_scroll.pack(side=tk.BOTTOM, fill=tk.X)
 
         # Summary label
-        self.dept_summary_label = ttk.Label(tab, text="Enter a department name and click View.")
+        self.dept_summary_label = ttk.Label(tab, text=_t('gui.staff.staff_hr.workload.labels.enter_a_department_name_and_click_view', default="Enter a department name and click View."))
         self.dept_summary_label.pack(fill=tk.X, padx=10, pady=5)
 
     def _load_department_workloads(self):
@@ -351,7 +353,7 @@ class WorkloadGUI:
         try:
             department = self.dept_entry.get().strip()
             if not department:
-                messagebox.showwarning("Warning", "Please enter a department name.")
+                messagebox.showwarning(_t('gui.staff.staff_hr.workload.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.workload.dialogs.please_enter_a_department_name', default="Please enter a department name."))
                 return
 
             academic_year = self.dept_year_entry.get().strip() or None
@@ -397,45 +399,45 @@ class WorkloadGUI:
             self._update_status(f"Loaded department workloads for {department}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load department workloads: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), f"Failed to load department workloads: {e}")
 
     # ==================== TAB 3: ALLOCATIONS (ADMIN) ====================
 
     def _create_allocations_tab(self):
         """Create the allocation management tab (admin/staff only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Allocations")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.workload.tabs.allocations', default="Allocations"))
 
         # Header frame
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(header_frame, text="Workload Allocations",
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.workload.labels.workload_allocations', default="Workload Allocations"),
                   style='Header.TLabel').pack(side=tk.LEFT)
 
         # Controls frame: User ID + Academic Year + Load button
         controls_frame = ttk.Frame(tab)
         controls_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(controls_frame, text="User ID:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(controls_frame, text=_t('gui.staff.staff_hr.workload.labels.user_id', default="User ID:")).pack(side=tk.LEFT, padx=(0, 5))
         self.alloc_user_entry = ttk.Entry(controls_frame, width=20)
         self.alloc_user_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Label(controls_frame, text="Academic Year:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(controls_frame, text=_t('gui.staff.staff_hr.workload.labels.academic_year', default="Academic Year:")).pack(side=tk.LEFT, padx=(0, 5))
         self.alloc_year_entry = ttk.Entry(controls_frame, width=10)
         self.alloc_year_entry.insert(0, "2025/26")
         self.alloc_year_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Button(controls_frame, text="Load", command=self._load_allocations).pack(
+        ttk.Button(controls_frame, text=_t('gui.staff.staff_hr.workload.buttons.load', default="Load"), command=self._load_allocations).pack(
             side=tk.LEFT, padx=5)
 
         # Action buttons frame
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="Add Allocation",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.workload.buttons.add_allocation', default="Add Allocation"),
                    command=self._show_add_allocation_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Remove Selected",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.workload.buttons.remove_selected', default="Remove Selected"),
                    command=self._remove_selected_allocation).pack(side=tk.LEFT, padx=5)
 
         # Allocations treeview
@@ -461,7 +463,7 @@ class WorkloadGUI:
         y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Summary label
-        self.alloc_summary_label = ttk.Label(tab, text="Enter a User ID and click Load.")
+        self.alloc_summary_label = ttk.Label(tab, text=_t('gui.staff.staff_hr.workload.labels.enter_a_user_id_and_click_load', default="Enter a User ID and click Load."))
         self.alloc_summary_label.pack(fill=tk.X, padx=10, pady=5)
 
     def _load_allocations(self):
@@ -469,7 +471,7 @@ class WorkloadGUI:
         try:
             user_id = self.alloc_user_entry.get().strip()
             if not user_id:
-                messagebox.showwarning("Warning", "Please enter a User ID.")
+                messagebox.showwarning(_t('gui.staff.staff_hr.workload.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.workload.dialogs.please_enter_a_user_id', default="Please enter a User ID."))
                 return
 
             academic_year = self.alloc_year_entry.get().strip() or None
@@ -498,22 +500,22 @@ class WorkloadGUI:
             self._update_status(f"Loaded {len(allocations)} allocations for {user_id}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load allocations: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), f"Failed to load allocations: {e}")
 
     def _show_add_allocation_dialog(self):
         """Show dialog to add a new workload allocation."""
         user_id = self.alloc_user_entry.get().strip()
         if not user_id:
-            messagebox.showwarning("Warning", "Please enter a User ID first.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.workload.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.workload.dialogs.please_enter_a_user_id_first', default="Please enter a User ID first."))
             return
 
         academic_year = self.alloc_year_entry.get().strip()
         if not academic_year:
-            messagebox.showwarning("Warning", "Please enter an Academic Year first.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.workload.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.workload.dialogs.please_enter_an_academic_year_first', default="Please enter an Academic Year first."))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Workload Allocation")
+        dialog.title(_t('gui.staff.staff_hr.workload.windows.add_workload_allocation', default="Add Workload Allocation"))
         dialog.geometry("450x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -521,7 +523,7 @@ class WorkloadGUI:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Add Workload Allocation",
+        ttk.Label(main_frame, text=_t('gui.staff.staff_hr.workload.labels.add_workload_allocation', default="Add Workload Allocation"),
                   font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Info labels
@@ -533,14 +535,14 @@ class WorkloadGUI:
         # Activity Name
         name_frame = ttk.Frame(main_frame)
         name_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(name_frame, text="Activity Name:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(name_frame, text=_t('gui.staff.staff_hr.workload.labels.activity_name', default="Activity Name:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         name_entry = ttk.Entry(name_frame, width=25)
         name_entry.pack(side=tk.LEFT, padx=5)
 
         # Activity Type
         type_frame = ttk.Frame(main_frame)
         type_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(type_frame, text="Activity Type:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(type_frame, text=_t('gui.staff.staff_hr.workload.labels.activity_type', default="Activity Type:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         type_combo = ttk.Combobox(type_frame,
                                   values=['teaching', 'research', 'admin', 'service'],
                                   width=22, state='readonly')
@@ -549,7 +551,7 @@ class WorkloadGUI:
         # Hours per Week
         hours_frame = ttk.Frame(main_frame)
         hours_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(hours_frame, text="Hours/Week:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(hours_frame, text=_t('gui.staff.staff_hr.workload.labels.hours_week', default="Hours/Week:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         hours_entry = ttk.Entry(hours_frame, width=25)
         hours_entry.insert(0, "0")
         hours_entry.pack(side=tk.LEFT, padx=5)
@@ -557,7 +559,7 @@ class WorkloadGUI:
         # Weighting Factor
         weight_frame = ttk.Frame(main_frame)
         weight_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(weight_frame, text="Weighting Factor:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(weight_frame, text=_t('gui.staff.staff_hr.workload.labels.weighting_factor', default="Weighting Factor:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         weight_entry = ttk.Entry(weight_frame, width=25)
         weight_entry.insert(0, "1.0")
         weight_entry.pack(side=tk.LEFT, padx=5)
@@ -565,14 +567,14 @@ class WorkloadGUI:
         # Semester
         sem_frame = ttk.Frame(main_frame)
         sem_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(sem_frame, text="Semester:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(sem_frame, text=_t('gui.staff.staff_hr.workload.labels.semester', default="Semester:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         sem_entry = ttk.Entry(sem_frame, width=25)
         sem_entry.pack(side=tk.LEFT, padx=5)
 
         # Notes
         notes_frame = ttk.Frame(main_frame)
         notes_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(notes_frame, text="Notes:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(notes_frame, text=_t('gui.staff.staff_hr.workload.labels.notes', default="Notes:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         notes_entry = ttk.Entry(notes_frame, width=25)
         notes_entry.pack(side=tk.LEFT, padx=5)
 
@@ -610,7 +612,7 @@ class WorkloadGUI:
                     created_by=created_by
                 )
 
-                messagebox.showinfo("Success", "Allocation added successfully!", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.workload.dialogs.success', default="Success"), _t('gui.staff.staff_hr.workload.dialogs.allocation_added_successfully', default="Allocation added successfully!"), parent=dialog)
                 dialog.destroy()
                 self._load_allocations()
 
@@ -620,14 +622,14 @@ class WorkloadGUI:
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text="Save", command=save_allocation).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.workload.buttons.save', default="Save"), command=save_allocation).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.workload.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _remove_selected_allocation(self):
         """Remove the selected allocation from the treeview and database."""
         selection = self.admin_alloc_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an allocation to remove.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.workload.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.workload.dialogs.please_select_an_allocation_to_remove', default="Please select an allocation to remove."))
             return
 
         item = self.admin_alloc_tree.item(selection[0])
@@ -635,44 +637,44 @@ class WorkloadGUI:
         activity_name = item['values'][1]
 
         if not messagebox.askyesno(
-            "Confirm Removal",
+            _t('gui.staff.staff_hr.workload.dialogs.confirm_removal', default="Confirm Removal"),
             f"Are you sure you want to remove allocation '{activity_name}' (ID: {allocation_id})?"
         ):
             return
 
         try:
             WorkloadManager.remove_allocation(int(allocation_id))
-            messagebox.showinfo("Success", "Allocation removed successfully!")
+            messagebox.showinfo(_t('gui.staff.staff_hr.workload.dialogs.success', default="Success"), _t('gui.staff.staff_hr.workload.dialogs.allocation_removed_successfully', default="Allocation removed successfully!"))
             self._load_allocations()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to remove allocation: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), f"Failed to remove allocation: {e}")
 
     # ==================== TAB 4: NORMS (ADMIN) ====================
 
     def _create_norms_tab(self):
         """Create the workload norms configuration tab (admin/staff only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Norms")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.workload.tabs.norms', default="Norms"))
 
         # Header frame
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(header_frame, text="Workload Norms Configuration",
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.workload.labels.workload_norms_configuration', default="Workload Norms Configuration"),
                   style='Header.TLabel').pack(side=tk.LEFT)
 
-        ttk.Button(header_frame, text="Refresh", command=self._load_norms).pack(
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.workload.buttons.refresh', default="Refresh"), command=self._load_norms).pack(
             side=tk.RIGHT, padx=5)
 
         # Action buttons frame
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="Add Norm",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.workload.buttons.add_norm', default="Add Norm"),
                    command=self._show_add_norm_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit Selected",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.workload.buttons.edit_selected', default="Edit Selected"),
                    command=self._show_edit_norm_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete Selected",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.workload.buttons.delete_selected', default="Delete Selected"),
                    command=self._delete_selected_norm).pack(side=tk.LEFT, padx=5)
 
         # Norms treeview
@@ -729,7 +731,7 @@ class WorkloadGUI:
             self._update_status(f"Loaded {len(norms)} workload norms")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load norms: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), f"Failed to load norms: {e}")
 
     def _show_add_norm_dialog(self):
         """Show dialog to add a new workload norm."""
@@ -739,7 +741,7 @@ class WorkloadGUI:
         """Show dialog to edit the selected workload norm."""
         selection = self.norms_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a norm to edit.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.workload.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.workload.dialogs.please_select_a_norm_to_edit', default="Please select a norm to edit."))
             return
 
         item = self.norms_tree.item(selection[0])
@@ -748,11 +750,11 @@ class WorkloadGUI:
         try:
             norm_data = WorkloadManager.get_norm(int(norm_id))
             if not norm_data:
-                messagebox.showerror("Error", f"Norm ID {norm_id} not found.")
+                messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), f"Norm ID {norm_id} not found.")
                 return
             self._show_norm_dialog(mode='edit', norm_data=norm_data)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load norm: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), f"Failed to load norm: {e}")
 
     def _show_norm_dialog(self, mode='add', norm_data=None):
         """Show add/edit norm dialog.
@@ -777,7 +779,7 @@ class WorkloadGUI:
         # Name
         name_frame = ttk.Frame(main_frame)
         name_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(name_frame, text="Name:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(name_frame, text=_t('gui.staff.staff_hr.workload.labels.name', default="Name:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         name_entry = ttk.Entry(name_frame, width=25)
         if norm_data:
             name_entry.insert(0, norm_data.get('name', ''))
@@ -786,7 +788,7 @@ class WorkloadGUI:
         # Department
         dept_frame = ttk.Frame(main_frame)
         dept_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(dept_frame, text="Department:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(dept_frame, text=_t('gui.staff.staff_hr.workload.labels.department', default="Department:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         dept_entry = ttk.Entry(dept_frame, width=25)
         if norm_data and norm_data.get('department'):
             dept_entry.insert(0, norm_data['department'])
@@ -795,7 +797,7 @@ class WorkloadGUI:
         # Role
         role_frame = ttk.Frame(main_frame)
         role_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(role_frame, text="Role:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(role_frame, text=_t('gui.staff.staff_hr.workload.labels.role', default="Role:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         role_entry = ttk.Entry(role_frame, width=25)
         if norm_data and norm_data.get('role'):
             role_entry.insert(0, norm_data['role'])
@@ -804,7 +806,7 @@ class WorkloadGUI:
         # Teaching %
         teaching_frame = ttk.Frame(main_frame)
         teaching_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(teaching_frame, text="Teaching %:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(teaching_frame, text=_t('gui.staff.staff_hr.workload.labels.teaching', default="Teaching %:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         teaching_entry = ttk.Entry(teaching_frame, width=25)
         teaching_entry.insert(0, str(norm_data.get('teaching_pct', 40)) if norm_data else "40")
         teaching_entry.pack(side=tk.LEFT, padx=5)
@@ -812,7 +814,7 @@ class WorkloadGUI:
         # Research %
         research_frame = ttk.Frame(main_frame)
         research_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(research_frame, text="Research %:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(research_frame, text=_t('gui.staff.staff_hr.workload.labels.research', default="Research %:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         research_entry = ttk.Entry(research_frame, width=25)
         research_entry.insert(0, str(norm_data.get('research_pct', 40)) if norm_data else "40")
         research_entry.pack(side=tk.LEFT, padx=5)
@@ -820,7 +822,7 @@ class WorkloadGUI:
         # Admin %
         admin_frame = ttk.Frame(main_frame)
         admin_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(admin_frame, text="Admin %:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(admin_frame, text=_t('gui.staff.staff_hr.workload.labels.admin', default="Admin %:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         admin_entry = ttk.Entry(admin_frame, width=25)
         admin_entry.insert(0, str(norm_data.get('admin_pct', 10)) if norm_data else "10")
         admin_entry.pack(side=tk.LEFT, padx=5)
@@ -828,7 +830,7 @@ class WorkloadGUI:
         # Service %
         service_frame = ttk.Frame(main_frame)
         service_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(service_frame, text="Service %:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(service_frame, text=_t('gui.staff.staff_hr.workload.labels.service', default="Service %:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         service_entry = ttk.Entry(service_frame, width=25)
         service_entry.insert(0, str(norm_data.get('service_pct', 10)) if norm_data else "10")
         service_entry.pack(side=tk.LEFT, padx=5)
@@ -836,7 +838,7 @@ class WorkloadGUI:
         # Total Hours per Week
         hours_frame = ttk.Frame(main_frame)
         hours_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(hours_frame, text="Total Hours/Week:", width=18, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(hours_frame, text=_t('gui.staff.staff_hr.workload.labels.total_hours_week', default="Total Hours/Week:"), width=18, anchor=tk.W).pack(side=tk.LEFT)
         hours_entry = ttk.Entry(hours_frame, width=25)
         hours_entry.insert(0, str(norm_data.get('total_hours_per_week', 40)) if norm_data else "40")
         hours_entry.pack(side=tk.LEFT, padx=5)
@@ -848,7 +850,7 @@ class WorkloadGUI:
         default_frame = ttk.Frame(main_frame)
         default_frame.pack(fill=tk.X, pady=5)
         ttk.Label(default_frame, text="", width=18).pack(side=tk.LEFT)
-        ttk.Checkbutton(default_frame, text="Set as Default Norm",
+        ttk.Checkbutton(default_frame, text=_t('gui.staff.staff_hr.workload.buttons.set_as_default_norm', default="Set as Default Norm"),
                         variable=default_var).pack(side=tk.LEFT, padx=5)
 
         # Error label
@@ -876,7 +878,7 @@ class WorkloadGUI:
             pct_sum = teaching_pct + research_pct + admin_pct + service_pct
             if abs(pct_sum - 100) > 0.1:
                 messagebox.showwarning(
-                    "Validation Warning",
+                    _t('gui.staff.staff_hr.workload.dialogs.validation_warning', default="Validation Warning"),
                     f"Percentages sum to {pct_sum:.1f}% instead of 100%. "
                     "Consider adjusting.",
                     parent=dialog
@@ -899,7 +901,7 @@ class WorkloadGUI:
                         role=role,
                         is_default=is_default
                     )
-                    messagebox.showinfo("Success", "Norm created successfully!",
+                    messagebox.showinfo(_t('gui.staff.staff_hr.workload.dialogs.success', default="Success"), _t('gui.staff.staff_hr.workload.dialogs.norm_created_successfully', default="Norm created successfully!"),
                                         parent=dialog)
                 else:
                     norm_id = norm_data['norm_id']
@@ -915,7 +917,7 @@ class WorkloadGUI:
                         role=role,
                         is_default=int(is_default)
                     )
-                    messagebox.showinfo("Success", "Norm updated successfully!",
+                    messagebox.showinfo(_t('gui.staff.staff_hr.workload.dialogs.success', default="Success"), _t('gui.staff.staff_hr.workload.dialogs.norm_updated_successfully', default="Norm updated successfully!"),
                                         parent=dialog)
 
                 dialog.destroy()
@@ -929,13 +931,13 @@ class WorkloadGUI:
         btn_frame.pack(pady=15)
         save_text = "Save" if mode == 'add' else "Update"
         ttk.Button(btn_frame, text=save_text, command=save_norm).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.workload.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _delete_selected_norm(self):
         """Delete the selected workload norm."""
         selection = self.norms_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a norm to delete.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.workload.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.workload.dialogs.please_select_a_norm_to_delete', default="Please select a norm to delete."))
             return
 
         item = self.norms_tree.item(selection[0])
@@ -943,17 +945,17 @@ class WorkloadGUI:
         norm_name = item['values'][1]
 
         if not messagebox.askyesno(
-            "Confirm Deletion",
+            _t('gui.staff.staff_hr.workload.dialogs.confirm_deletion', default="Confirm Deletion"),
             f"Are you sure you want to delete norm '{norm_name}' (ID: {norm_id})?"
         ):
             return
 
         try:
             WorkloadManager.delete_norm(int(norm_id))
-            messagebox.showinfo("Success", "Norm deleted successfully!")
+            messagebox.showinfo(_t('gui.staff.staff_hr.workload.dialogs.success', default="Success"), _t('gui.staff.staff_hr.workload.dialogs.norm_deleted_successfully', default="Norm deleted successfully!"))
             self._load_norms()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete norm: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), f"Failed to delete norm: {e}")
 
     # ==================== UTILITY METHODS ====================
 
@@ -968,5 +970,5 @@ def launch_workload_gui(root, auth):
     try:
         return WorkloadGUI(root, auth)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to launch Workload Dashboard: {e}")
+        messagebox.showerror(_t('gui.staff.staff_hr.workload.dialogs.error', default="Error"), f"Failed to launch Workload Dashboard: {e}")
         return None

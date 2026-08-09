@@ -34,12 +34,12 @@ def show_reviews_page(self):
     finally:
         conn.close()
 
-    movie_var = tk.StringVar(value="all")
+    movie_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.community.reviews.values.all', default="all"))
     movie_combo = ttk.Combobox(filter_frame, textvariable=movie_var, width=30,
                                values=[m[1] for m in movies])
     movie_combo.pack(side="left", padx=10)
 
-    ttk.Button(filter_frame, text="+ Add Review", style="Success.TButton",
+    ttk.Button(filter_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.community.reviews.buttons.add_review', default="+ Add Review"), style="Success.TButton",
               command=self.add_review).pack(side="right", padx=5)
 
     # Reviews list
@@ -145,7 +145,7 @@ def show_reviews_page(self):
 def add_review(self):
     """Add a new movie review."""
     form_window = tk.Toplevel(self.root)
-    form_window.title("Add Review")
+    form_window.title(_t('gui.operations.commerce.cinema.cinema_gui.community.reviews.windows.add_review', default="Add Review"))
     form_window.geometry("500x450")
     form_window.configure(bg="#ecf0f1")
     form_window.transient(self.root)
@@ -214,7 +214,7 @@ def add_review(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Review submitted successfully!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.community.reviews.dialogs.review_submitted_successfully', default="Review submitted successfully!"))
         form_window.destroy()
         self.show_reviews_page()
 
@@ -230,7 +230,7 @@ def view_full_review(self):
     """View full review text."""
     selected = self.review_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a review")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.reviews.dialogs.please_select_a_review', default="Please select a review"))
         return
 
     review_id = self.review_tree.item(selected[0])['values'][0]
@@ -279,7 +279,7 @@ def update_review_status(self, new_status):
     """Update review status."""
     selected = self.review_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a review")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.reviews.dialogs.please_select_a_review', default="Please select a review"))
         return
 
     review_id = self.review_tree.item(selected[0])['values'][0]

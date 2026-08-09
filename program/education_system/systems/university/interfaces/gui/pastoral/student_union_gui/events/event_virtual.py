@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class VirtualEventsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Virtual Events Platform")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_virtual.windows.virtual_events_platform', default="Virtual Events Platform"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -75,7 +77,7 @@ class VirtualEventsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="💻 Virtual Events Platform",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.virtual_events_platform', default="💻 Virtual Events Platform"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Action buttons
@@ -93,14 +95,14 @@ class VirtualEventsDialog:
             card = ttk.LabelFrame(button_grid, text=title)
             card.grid(row=i//2, column=i%2, padx=10, pady=10, sticky='nsew')
             ttk.Label(card, text=description).pack(padx=10, pady=5)
-            ttk.Button(card, text="Open", command=command).pack(padx=10, pady=5)
+            ttk.Button(card, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.open', default="Open"), command=command).pack(padx=10, pady=5)
 
         button_grid.rowconfigure(0, weight=1)
         button_grid.rowconfigure(1, weight=1)
         button_grid.columnconfigure(0, weight=1)
         button_grid.columnconfigure(1, weight=1)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def create_virtual(self):
         dialog = CreateVirtualEventDialog(self.dialog, self.auth)
@@ -128,7 +130,7 @@ class CreateVirtualEventDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create Virtual Event")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_virtual.windows.create_virtual_event', default="Create Virtual Event"))
         self.dialog.geometry("800x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -139,38 +141,38 @@ class CreateVirtualEventDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Create Virtual Event", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.create_virtual_event', default="Create Virtual Event"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Form
         form = ttk.Frame(main_frame)
         form.pack(fill='both', expand=True)
 
-        ttk.Label(form, text="Event Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.event_name', default="Event Name:")).grid(row=0, column=0, sticky='w', pady=5)
         self.name_entry = ttk.Entry(form, width=50)
         self.name_entry.grid(row=0, column=1, pady=5, sticky='ew')
 
-        ttk.Label(form, text="Platform:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.platform', default="Platform:")).grid(row=1, column=0, sticky='w', pady=5)
         self.platform_combo = ttk.Combobox(form, width=48, state='readonly')
         self.platform_combo['values'] = ('Zoom', 'Microsoft Teams', 'Google Meet', 'WebEx', 'Custom Platform')
         self.platform_combo.grid(row=1, column=1, pady=5, sticky='ew')
         self.platform_combo.current(0)
 
-        ttk.Label(form, text="Meeting Link:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.meeting_link', default="Meeting Link:")).grid(row=2, column=0, sticky='w', pady=5)
         self.link_entry = ttk.Entry(form, width=50)
         self.link_entry.grid(row=2, column=1, pady=5, sticky='ew')
 
-        ttk.Label(form, text="Virtual Capacity:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.virtual_capacity', default="Virtual Capacity:")).grid(row=3, column=0, sticky='w', pady=5)
         self.capacity_entry = ttk.Entry(form, width=50)
         self.capacity_entry.grid(row=3, column=1, pady=5, sticky='ew')
         self.capacity_entry.insert(0, "100")
 
-        ttk.Label(form, text="Date & Time:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.date_time', default="Date & Time:")).grid(row=4, column=0, sticky='w', pady=5)
         self.datetime_entry = ttk.Entry(form, width=50)
         self.datetime_entry.grid(row=4, column=1, pady=5, sticky='ew')
         self.datetime_entry.insert(0, datetime.now().strftime('%Y-%m-%d %H:%M'))
 
         # Features
-        features_frame = ttk.LabelFrame(main_frame, text="Features")
+        features_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.features', default="Features"))
         features_frame.pack(fill='x', pady=15)
 
         self.recording_var = tk.BooleanVar(value=True)
@@ -178,10 +180,10 @@ class CreateVirtualEventDialog:
         self.qa_var = tk.BooleanVar(value=True)
         self.breakout_var = tk.BooleanVar(value=False)
 
-        ttk.Checkbutton(features_frame, text="Enable Recording", variable=self.recording_var).pack(anchor='w', padx=10, pady=3)
-        ttk.Checkbutton(features_frame, text="Live Streaming", variable=self.streaming_var).pack(anchor='w', padx=10, pady=3)
-        ttk.Checkbutton(features_frame, text="Q&A Session", variable=self.qa_var).pack(anchor='w', padx=10, pady=3)
-        ttk.Checkbutton(features_frame, text="Breakout Rooms", variable=self.breakout_var).pack(anchor='w', padx=10, pady=3)
+        ttk.Checkbutton(features_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.enable_recording', default="Enable Recording"), variable=self.recording_var).pack(anchor='w', padx=10, pady=3)
+        ttk.Checkbutton(features_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.live_streaming', default="Live Streaming"), variable=self.streaming_var).pack(anchor='w', padx=10, pady=3)
+        ttk.Checkbutton(features_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.q_a_session', default="Q&A Session"), variable=self.qa_var).pack(anchor='w', padx=10, pady=3)
+        ttk.Checkbutton(features_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.breakout_rooms', default="Breakout Rooms"), variable=self.breakout_var).pack(anchor='w', padx=10, pady=3)
 
         form.columnconfigure(1, weight=1)
 
@@ -189,14 +191,14 @@ class CreateVirtualEventDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Create Event", command=self.create_event).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Generate Meeting Link", command=self.generate_link).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.create_event', default="Create Event"), command=self.create_event).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.generate_meeting_link', default="Generate Meeting Link"), command=self.generate_link).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def create_event(self):
         name = self.name_entry.get().strip()
         if not name:
-            messagebox.showwarning("Warning", "Please enter an event name.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.please_enter_an_event_name', default="Please enter an event name."))
             return
 
         features = []
@@ -205,7 +207,7 @@ class CreateVirtualEventDialog:
         if self.qa_var.get(): features.append("Q&A")
         if self.breakout_var.get(): features.append("Breakout Rooms")
 
-        messagebox.showinfo("Success", f"Virtual event '{name}' created!\n\nPlatform: {self.platform_combo.get()}\nCapacity: {self.capacity_entry.get()}\nFeatures: {', '.join(features)}")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.success', default="Success"), f"Virtual event '{name}' created!\n\nPlatform: {self.platform_combo.get()}\nCapacity: {self.capacity_entry.get()}\nFeatures: {', '.join(features)}")
         self.dialog.destroy()
 
     def generate_link(self):
@@ -214,7 +216,7 @@ class CreateVirtualEventDialog:
         link = f"https://zoom.us/j/{meeting_id}"
         self.link_entry.delete(0, tk.END)
         self.link_entry.insert(0, link)
-        messagebox.showinfo("Link Generated", f"Meeting link generated:\n{link}\n\nMeeting ID: {meeting_id}")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.link_generated', default="Link Generated"), f"Meeting link generated:\n{link}\n\nMeeting ID: {meeting_id}")
 
 
 
@@ -226,7 +228,7 @@ class SetupHybridEventDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Setup Hybrid Event")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_virtual.windows.setup_hybrid_event', default="Setup Hybrid Event"))
         self.dialog.geometry("900x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -237,7 +239,7 @@ class SetupHybridEventDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Setup Hybrid Event (In-Person + Virtual)",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.setup_hybrid_event_in_person_virtual', default="Setup Hybrid Event (In-Person + Virtual)"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Notebook for in-person and virtual setup
@@ -246,35 +248,35 @@ class SetupHybridEventDialog:
 
         # In-person tab
         inperson_frame = ttk.Frame(notebook)
-        notebook.add(inperson_frame, text="In-Person")
+        notebook.add(inperson_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.tabs.in_person', default="In-Person"))
 
-        ttk.Label(inperson_frame, text="Venue:").grid(row=0, column=0, sticky='w', padx=10, pady=5)
+        ttk.Label(inperson_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.venue', default="Venue:")).grid(row=0, column=0, sticky='w', padx=10, pady=5)
         venue_entry = ttk.Entry(inperson_frame, width=40)
         venue_entry.grid(row=0, column=1, padx=10, pady=5)
 
-        ttk.Label(inperson_frame, text="Capacity:").grid(row=1, column=0, sticky='w', padx=10, pady=5)
+        ttk.Label(inperson_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.capacity', default="Capacity:")).grid(row=1, column=0, sticky='w', padx=10, pady=5)
         capacity_entry = ttk.Entry(inperson_frame, width=40)
         capacity_entry.grid(row=1, column=1, padx=10, pady=5)
         capacity_entry.insert(0, "50")
 
         # Virtual tab
         virtual_frame = ttk.Frame(notebook)
-        notebook.add(virtual_frame, text="Virtual")
+        notebook.add(virtual_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.tabs.virtual', default="Virtual"))
 
-        ttk.Label(virtual_frame, text="Platform:").grid(row=0, column=0, sticky='w', padx=10, pady=5)
+        ttk.Label(virtual_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.platform', default="Platform:")).grid(row=0, column=0, sticky='w', padx=10, pady=5)
         platform_combo = ttk.Combobox(virtual_frame, width=38, state='readonly')
         platform_combo['values'] = ('Zoom', 'Teams', 'Google Meet')
         platform_combo.grid(row=0, column=1, padx=10, pady=5)
         platform_combo.current(0)
 
-        ttk.Label(virtual_frame, text="Virtual Capacity:").grid(row=1, column=0, sticky='w', padx=10, pady=5)
+        ttk.Label(virtual_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.virtual_capacity', default="Virtual Capacity:")).grid(row=1, column=0, sticky='w', padx=10, pady=5)
         vcapacity_entry = ttk.Entry(virtual_frame, width=40)
         vcapacity_entry.grid(row=1, column=1, padx=10, pady=5)
         vcapacity_entry.insert(0, "100")
 
         # Integration tab
         integration_frame = ttk.Frame(notebook)
-        notebook.add(integration_frame, text="Integration")
+        notebook.add(integration_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.tabs.integration', default="Integration"))
 
         features = [
             "Live stream venue to virtual attendees",
@@ -289,7 +291,7 @@ class SetupHybridEventDialog:
             ttk.Checkbutton(integration_frame, text=feature, variable=var).grid(row=i, column=0, sticky='w', padx=10, pady=5)
 
         # Setup summary
-        summary_frame = ttk.LabelFrame(main_frame, text="Hybrid Event Benefits")
+        summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.hybrid_event_benefits', default="Hybrid Event Benefits"))
         summary_frame.pack(fill='x', pady=(0, 15))
 
         summary = """✓ Wider reach (In-person + Virtual attendance)
@@ -304,11 +306,11 @@ class SetupHybridEventDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Create Hybrid Event", command=self.create_hybrid).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.create_hybrid_event', default="Create Hybrid Event"), command=self.create_hybrid).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def create_hybrid(self):
-        messagebox.showinfo("Success", "Hybrid event created!\n\nBoth in-person and virtual attendance enabled.\nIntegration features configured.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.hybrid_event_created_both_in_person_and_virtual_attendance_enabl', default="Hybrid event created!\n\nBoth in-person and virtual attendance enabled.\nIntegration features configured."))
         self.dialog.destroy()
 
 
@@ -321,7 +323,7 @@ class VirtualAttendanceDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Virtual Attendance Tracking")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_virtual.windows.virtual_attendance_tracking', default="Virtual Attendance Tracking"))
         self.dialog.geometry("1000x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -332,11 +334,11 @@ class VirtualAttendanceDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Virtual Attendance Tracking",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.virtual_attendance_tracking', default="Virtual Attendance Tracking"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Attendees list
-        list_frame = ttk.LabelFrame(main_frame, text="Virtual Attendees")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.virtual_attendees', default="Virtual Attendees"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Name', 'Join Time', 'Leave Time', 'Duration', 'Engagement', 'Quality')
@@ -359,7 +361,7 @@ class VirtualAttendanceDialog:
             tree.insert('', 'end', values=attendee)
 
         # Stats
-        stats_frame = ttk.LabelFrame(main_frame, text="Session Statistics")
+        stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.session_statistics', default="Session Statistics"))
         stats_frame.pack(fill='x', pady=(0, 15))
 
         stats = """Total Participants: 24
@@ -369,7 +371,7 @@ Peak Concurrent: 22 attendees
 Connection Quality: 91% Good/Excellent"""
         ttk.Label(stats_frame, text=stats, justify='left', font=('Courier', 10)).pack(padx=15, pady=10)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
 
 
@@ -381,7 +383,7 @@ class VirtualTechSupportDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Virtual Event Tech Support")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_virtual.windows.virtual_event_tech_support', default="Virtual Event Tech Support"))
         self.dialog.geometry("900x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -392,7 +394,7 @@ class VirtualTechSupportDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🛠️ Virtual Event Tech Support",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.virtual_event_tech_support', default="🛠️ Virtual Event Tech Support"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Notebook for different support areas
@@ -401,7 +403,7 @@ class VirtualTechSupportDialog:
 
         # Troubleshooting tab
         troubleshoot_tab = ttk.Frame(notebook)
-        notebook.add(troubleshoot_tab, text="Troubleshooting")
+        notebook.add(troubleshoot_tab, text=_t('gui.pastoral.student_union_gui.events.event_virtual.tabs.troubleshooting', default="Troubleshooting"))
 
         issues = [
             ("Cannot connect to meeting", "Check internet connection\nVerify meeting link\nTry different browser"),
@@ -417,16 +419,16 @@ class VirtualTechSupportDialog:
 
         # Connection test tab
         test_tab = ttk.Frame(notebook)
-        notebook.add(test_tab, text="Connection Test")
+        notebook.add(test_tab, text=_t('gui.pastoral.student_union_gui.events.event_virtual.tabs.connection_test', default="Connection Test"))
 
-        ttk.Label(test_tab, text="Run System Check", font=('Arial', 12, 'bold')).pack(pady=15)
-        ttk.Button(test_tab, text="Test Connection", command=self.test_connection).pack(pady=5)
-        ttk.Button(test_tab, text="Test Camera/Microphone", command=self.test_devices).pack(pady=5)
-        ttk.Button(test_tab, text="Test Screen Sharing", command=self.test_screen).pack(pady=5)
+        ttk.Label(test_tab, text=_t('gui.pastoral.student_union_gui.events.event_virtual.labels.run_system_check', default="Run System Check"), font=('Arial', 12, 'bold')).pack(pady=15)
+        ttk.Button(test_tab, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.test_connection', default="Test Connection"), command=self.test_connection).pack(pady=5)
+        ttk.Button(test_tab, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.test_camera_microphone', default="Test Camera/Microphone"), command=self.test_devices).pack(pady=5)
+        ttk.Button(test_tab, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.test_screen_sharing', default="Test Screen Sharing"), command=self.test_screen).pack(pady=5)
 
         # Tutorials tab
         tutorials_tab = ttk.Frame(notebook)
-        notebook.add(tutorials_tab, text="Tutorials")
+        notebook.add(tutorials_tab, text=_t('gui.pastoral.student_union_gui.events.event_virtual.tabs.tutorials', default="Tutorials"))
 
         tutorials = [
             "How to join a virtual event",
@@ -439,19 +441,19 @@ class VirtualTechSupportDialog:
         for tutorial in tutorials:
             ttk.Button(tutorials_tab, text=tutorial, command=lambda t=tutorial: self.show_tutorial(t)).pack(fill='x', padx=10, pady=3)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_virtual.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def test_connection(self):
-        messagebox.showinfo("Connection Test", "Connection: Good ✓\nSpeed: 50 Mbps\nLatency: 25ms\nJitter: Low\n\nYour connection is suitable for virtual events.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.connection_test', default="Connection Test"), _t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.connection_good_speed_50_mbps_latency_25ms_jitter_low_your_conne', default="Connection: Good ✓\nSpeed: 50 Mbps\nLatency: 25ms\nJitter: Low\n\nYour connection is suitable for virtual events."))
 
     def test_devices(self):
-        messagebox.showinfo("Device Test", "Camera: Detected ✓\nMicrophone: Detected ✓\nSpeakers: Detected ✓\n\nAll devices working properly.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.device_test', default="Device Test"), _t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.camera_detected_microphone_detected_speakers_detected_all_device', default="Camera: Detected ✓\nMicrophone: Detected ✓\nSpeakers: Detected ✓\n\nAll devices working properly."))
 
     def test_screen(self):
-        messagebox.showinfo("Screen Share Test", "Screen sharing: Available ✓\nPermissions: Granted ✓\n\nScreen sharing is ready to use.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.screen_share_test', default="Screen Share Test"), _t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.screen_sharing_available_permissions_granted_screen_sharing_is_r', default="Screen sharing: Available ✓\nPermissions: Granted ✓\n\nScreen sharing is ready to use."))
 
     def show_tutorial(self, tutorial_name):
-        messagebox.showinfo("Tutorial", f"Opening tutorial: {tutorial_name}\n\nVideo tutorial would play here...")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_virtual.dialogs.tutorial', default="Tutorial"), f"Opening tutorial: {tutorial_name}\n\nVideo tutorial would play here...")
 
 
 # ============================================================================

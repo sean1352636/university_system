@@ -1,5 +1,7 @@
 """Assignment creation form, validation, and execution"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import threading
@@ -14,7 +16,7 @@ class CreationMixin:
         """Show assignment creation form - FIXED DATE PICKER"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Create Assignment", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.create_assignment', default="Create Assignment"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create scrollable frame for the form (increased size for better display)
@@ -31,33 +33,33 @@ class CreationMixin:
         canvas.configure(yscrollcommand=scrollbar.set)
 
         # Assignment creation form
-        form_frame = ttk.LabelFrame(scrollable_frame, text="Assignment Details", padding=20)
+        form_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.assignment_details', default="Assignment Details"), padding=20)
         form_frame.pack(fill='x', padx=10, pady=10)
 
         # Module selection
-        ttk.Label(form_frame, text="Module:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.module', default="Module:")).grid(row=0, column=0, sticky='w', pady=5)
         self.module_var = tk.StringVar()
         module_combo = ttk.Combobox(form_frame, textvariable=self.module_var, width=30)
         module_combo.grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
         self.load_modules(module_combo)
 
         # Title
-        ttk.Label(form_frame, text="Title:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.title', default="Title:")).grid(row=1, column=0, sticky='w', pady=5)
         self.title_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.title_var, width=50).grid(row=1, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         # Description
-        ttk.Label(form_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw', pady=5)
         self.description_text = scrolledtext.ScrolledText(form_frame, height=4, width=50)
         self.description_text.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         # Instructions
-        ttk.Label(form_frame, text="Instructions:").grid(row=3, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.instructions', default="Instructions:")).grid(row=3, column=0, sticky='nw', pady=5)
         self.instructions_text = scrolledtext.ScrolledText(form_frame, height=4, width=50)
         self.instructions_text.grid(row=3, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         # FIXED: Due date without tkcalendar
-        ttk.Label(form_frame, text="Due Date:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.due_date', default="Due Date:")).grid(row=4, column=0, sticky='w', pady=5)
         due_frame = ttk.Frame(form_frame)
         due_frame.grid(row=4, column=1, sticky='w', pady=5, padx=(10, 0))
 
@@ -69,7 +71,7 @@ class CreationMixin:
         date_entry_frame = ttk.Frame(due_frame)
         date_entry_frame.pack(side='left')
 
-        ttk.Label(date_entry_frame, text="Date (YYYY-MM-DD):").pack(side='left')
+        ttk.Label(date_entry_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).pack(side='left')
         date_entry = ttk.Entry(date_entry_frame, textvariable=self.due_date_var, width=12)
         date_entry.pack(side='left', padx=(5, 0))
 
@@ -77,12 +79,12 @@ class CreationMixin:
         def show_date_picker():
             """Simple date picker dialog"""
             date_window = tk.Toplevel(self.root)
-            date_window.title("Select Date")
+            date_window.title(_t('gui.academics.assignment_system.assignment_manager.creation.windows.select_date', default="Select Date"))
             date_window.geometry("300x200")
             date_window.transient(self.root)
 
             # Simple date selection interface
-            ttk.Label(date_window, text="Enter date (YYYY-MM-DD):").pack(pady=10)
+            ttk.Label(date_window, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.enter_date_yyyy_mm_dd', default="Enter date (YYYY-MM-DD):")).pack(pady=10)
 
             date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
             date_entry_popup = ttk.Entry(date_window, textvariable=date_var, width=15)
@@ -96,10 +98,10 @@ class CreationMixin:
                 target_date = datetime.now() + timedelta(days=days_from_now)
                 date_var.set(target_date.strftime("%Y-%m-%d"))
 
-            ttk.Button(quick_frame, text="Today", command=lambda: set_date(0)).pack(side='left', padx=2)
-            ttk.Button(quick_frame, text="Tomorrow", command=lambda: set_date(1)).pack(side='left', padx=2)
-            ttk.Button(quick_frame, text="1 Week", command=lambda: set_date(7)).pack(side='left', padx=2)
-            ttk.Button(quick_frame, text="2 Weeks", command=lambda: set_date(14)).pack(side='left', padx=2)
+            ttk.Button(quick_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.today', default="Today"), command=lambda: set_date(0)).pack(side='left', padx=2)
+            ttk.Button(quick_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.tomorrow', default="Tomorrow"), command=lambda: set_date(1)).pack(side='left', padx=2)
+            ttk.Button(quick_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.value_1_week', default="1 Week"), command=lambda: set_date(7)).pack(side='left', padx=2)
+            ttk.Button(quick_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.value_2_weeks', default="2 Weeks"), command=lambda: set_date(14)).pack(side='left', padx=2)
 
             def confirm_date():
                 try:
@@ -108,18 +110,18 @@ class CreationMixin:
                     self.due_date_var.set(date_var.get())
                     date_window.destroy()
                 except ValueError:
-                    messagebox.showerror("Invalid Date", "Please enter date in YYYY-MM-DD format")
+                    messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.creation.dialogs.invalid_date', default="Invalid Date"), _t('gui.academics.assignment_system.assignment_manager.creation.dialogs.please_enter_date_in_yyyy_mm_dd_format', default="Please enter date in YYYY-MM-DD format"))
 
             button_frame = ttk.Frame(date_window)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="OK", command=confirm_date).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=date_window.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.ok', default="OK"), command=confirm_date).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.cancel', default="Cancel"), command=date_window.destroy).pack(side='left', padx=5)
 
         ttk.Button(due_frame, text="\U0001f4c5", command=show_date_picker, width=3).pack(side='left', padx=(10, 0))
 
         # Time selection
-        ttk.Label(due_frame, text="Time:").pack(side='left', padx=(10, 5))
+        ttk.Label(due_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.time', default="Time:")).pack(side='left', padx=(10, 5))
         time_combo = ttk.Combobox(due_frame, textvariable=self.due_time_var, width=8, values=[
             "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00",
             "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:59"
@@ -131,164 +133,164 @@ class CreationMixin:
         self.due_date_var.set(default_date)
 
         # Max marks
-        ttk.Label(form_frame, text="Max Marks:").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.max_marks', default="Max Marks:")).grid(row=5, column=0, sticky='w', pady=5)
         self.max_marks_var = tk.StringVar(value="100")
         ttk.Entry(form_frame, textvariable=self.max_marks_var, width=10).grid(row=5, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # File settings frame
-        file_frame = ttk.LabelFrame(scrollable_frame, text="File Settings", padding=20)
+        file_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.file_settings', default="File Settings"), padding=20)
         file_frame.pack(fill='x', padx=10, pady=10)
 
         # Allowed file types
-        ttk.Label(file_frame, text="Allowed File Types:").grid(row=0, column=0, sticky='w', pady=5)
-        self.file_types_var = tk.StringVar(value=".pdf,.docx,.txt")
+        ttk.Label(file_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.allowed_file_types', default="Allowed File Types:")).grid(row=0, column=0, sticky='w', pady=5)
+        self.file_types_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.creation.values.pdf_docx_txt', default=".pdf,.docx,.txt"))
         ttk.Entry(file_frame, textvariable=self.file_types_var, width=30).grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
-        ttk.Label(file_frame, text="(comma-separated, e.g., .pdf,.docx,.txt)").grid(row=0, column=2, sticky='w', pady=5, padx=(5, 0))
+        ttk.Label(file_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.comma_separated_e_g_pdf_docx_txt', default="(comma-separated, e.g., .pdf,.docx,.txt)")).grid(row=0, column=2, sticky='w', pady=5, padx=(5, 0))
 
         # Max file size
-        ttk.Label(file_frame, text="Max File Size (MB):").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(file_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.max_file_size_mb', default="Max File Size (MB):")).grid(row=1, column=0, sticky='w', pady=5)
         self.max_size_var = tk.StringVar(value="10")
         ttk.Entry(file_frame, textvariable=self.max_size_var, width=10).grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Assignment type frame
-        type_frame = ttk.LabelFrame(scrollable_frame, text="Assignment Type & Category", padding=20)
+        type_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.assignment_type_category', default="Assignment Type & Category"), padding=20)
         type_frame.pack(fill='x', padx=10, pady=10)
 
         # Assessment Type Selection
-        ttk.Label(type_frame, text="Assessment Type:").grid(row=0, column=0, sticky='w', pady=5)
-        self.assessment_type_var = tk.StringVar(value="essay")
+        ttk.Label(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.assessment_type', default="Assessment Type:")).grid(row=0, column=0, sticky='w', pady=5)
+        self.assessment_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.creation.values.essay', default="essay"))
         assessment_combo = ttk.Combobox(type_frame, textvariable=self.assessment_type_var, width=20,
                                        values=["essay", "quiz", "project", "presentation", "lab_report",
                                               "case_study", "exam", "homework", "discussion", "other"])
         assessment_combo.grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Grading Method Selection
-        ttk.Label(type_frame, text="Grading Method:").grid(row=1, column=0, sticky='w', pady=5)
-        self.grading_method_var = tk.StringVar(value="points")
+        ttk.Label(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.grading_method', default="Grading Method:")).grid(row=1, column=0, sticky='w', pady=5)
+        self.grading_method_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.creation.values.points', default="points"))
         grading_combo = ttk.Combobox(type_frame, textvariable=self.grading_method_var, width=20,
                                      values=["points", "percentage", "letter_grade", "pass_fail", "rubric"])
         grading_combo.grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Visibility Options
-        ttk.Label(type_frame, text="Visibility:").grid(row=2, column=0, sticky='w', pady=5)
-        self.visibility_var = tk.StringVar(value="draft")
+        ttk.Label(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.visibility', default="Visibility:")).grid(row=2, column=0, sticky='w', pady=5)
+        self.visibility_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.creation.values.draft', default="draft"))
         visibility_combo = ttk.Combobox(type_frame, textvariable=self.visibility_var, width=20,
                                        values=["draft", "published", "hidden", "scheduled"])
         visibility_combo.grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
-        ttk.Label(type_frame, text="(Draft = not visible to students)").grid(row=2, column=2, sticky='w', pady=5, padx=(5, 0))
+        ttk.Label(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.draft_not_visible_to_students', default="(Draft = not visible to students)")).grid(row=2, column=2, sticky='w', pady=5, padx=(5, 0))
 
-        self.assignment_type_var = tk.StringVar(value="individual")
-        ttk.Radiobutton(type_frame, text="Individual", variable=self.assignment_type_var,
+        self.assignment_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.creation.values.individual', default="individual"))
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.individual', default="Individual"), variable=self.assignment_type_var,
                        value="individual").grid(row=3, column=0, sticky='w', pady=5)
-        ttk.Radiobutton(type_frame, text="Group", variable=self.assignment_type_var,
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.group', default="Group"), variable=self.assignment_type_var,
                        value="group").grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Group size (enabled when group is selected)
-        ttk.Label(type_frame, text="Group Size (min-max):").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.group_size_min_max', default="Group Size (min-max):")).grid(row=4, column=0, sticky='w', pady=5)
         group_size_frame = ttk.Frame(type_frame)
         group_size_frame.grid(row=4, column=1, sticky='w', pady=5, padx=(10, 0))
 
         self.group_min_var = tk.StringVar(value="2")
         self.group_max_var = tk.StringVar(value="4")
         ttk.Entry(group_size_frame, textvariable=self.group_min_var, width=5).pack(side='left')
-        ttk.Label(group_size_frame, text=" to ").pack(side='left')
+        ttk.Label(group_size_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.to', default=" to ")).pack(side='left')
         ttk.Entry(group_size_frame, textvariable=self.group_max_var, width=5).pack(side='left')
 
         # Group assignment options
-        ttk.Label(type_frame, text="Group Assignment:").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.group_assignment', default="Group Assignment:")).grid(row=5, column=0, sticky='w', pady=5)
         self.auto_assign_groups_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(type_frame, text="Auto-assign students to groups",
+        ttk.Checkbutton(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.auto_assign_students_to_groups', default="Auto-assign students to groups"),
                        variable=self.auto_assign_groups_var).grid(row=5, column=1, sticky='w', pady=5)
 
-        ttk.Label(type_frame, text="Group Submission:").grid(row=6, column=0, sticky='w', pady=5)
-        self.group_submission_type_var = tk.StringVar(value="one_per_group")
+        ttk.Label(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.group_submission', default="Group Submission:")).grid(row=6, column=0, sticky='w', pady=5)
+        self.group_submission_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.creation.values.one_per_group', default="one_per_group"))
         group_sub_frame = ttk.Frame(type_frame)
         group_sub_frame.grid(row=6, column=1, sticky='w', pady=5, padx=(10, 0))
-        ttk.Radiobutton(group_sub_frame, text="One per group", variable=self.group_submission_type_var,
+        ttk.Radiobutton(group_sub_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.one_per_group', default="One per group"), variable=self.group_submission_type_var,
                        value="one_per_group").pack(side='left')
-        ttk.Radiobutton(group_sub_frame, text="Individual within group", variable=self.group_submission_type_var,
+        ttk.Radiobutton(group_sub_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.individual_within_group', default="Individual within group"), variable=self.group_submission_type_var,
                        value="individual").pack(side='left', padx=(10, 0))
 
         self.peer_eval_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(type_frame, text="Enable peer evaluation within groups",
+        ttk.Checkbutton(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.enable_peer_evaluation_within_groups', default="Enable peer evaluation within groups"),
                        variable=self.peer_eval_var).grid(row=7, column=1, sticky='w', pady=5)
 
-        ttk.Button(type_frame, text="Configure Groups & Students",
+        ttk.Button(type_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.configure_groups_students', default="Configure Groups & Students"),
                   command=self.gui.groups.show_group_configuration).grid(row=8, column=1, sticky='w', pady=10)
 
         # Additional settings frame
-        settings_frame = ttk.LabelFrame(scrollable_frame, text="Submission & Grading Settings", padding=20)
+        settings_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.submission_grading_settings', default="Submission & Grading Settings"), padding=20)
         settings_frame.pack(fill='x', padx=10, pady=10)
 
         # Late submission settings
         self.allow_late_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(settings_frame, text="Allow Late Submissions",
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.allow_late_submissions', default="Allow Late Submissions"),
                        variable=self.allow_late_var).grid(row=0, column=0, sticky='w', pady=5)
 
-        ttk.Label(settings_frame, text="Late Penalty (% per day):").grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
+        ttk.Label(settings_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.late_penalty_per_day', default="Late Penalty (% per day):")).grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
         self.late_penalty_var = tk.StringVar(value="0")
         ttk.Entry(settings_frame, textvariable=self.late_penalty_var, width=10).grid(row=0, column=2, sticky='w', pady=5, padx=(10, 0))
 
         # Maximum late days allowed
-        ttk.Label(settings_frame, text="Max Late Days:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(settings_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.max_late_days', default="Max Late Days:")).grid(row=1, column=0, sticky='w', pady=5)
         self.max_late_days_var = tk.StringVar(value="7")
         ttk.Entry(settings_frame, textvariable=self.max_late_days_var, width=10).grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
-        ttk.Label(settings_frame, text="(0 = unlimited)").grid(row=1, column=2, sticky='w', pady=5, padx=(5, 0))
+        ttk.Label(settings_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.value_0_unlimited', default="(0 = unlimited)")).grid(row=1, column=2, sticky='w', pady=5, padx=(5, 0))
 
         # Resubmission settings
         self.allow_resubmit_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(settings_frame, text="Allow Resubmissions",
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.allow_resubmissions', default="Allow Resubmissions"),
                        variable=self.allow_resubmit_var).grid(row=2, column=0, sticky='w', pady=5)
 
-        ttk.Label(settings_frame, text="Max Attempts:").grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
+        ttk.Label(settings_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.max_attempts', default="Max Attempts:")).grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
         self.max_attempts_var = tk.StringVar(value="1")
         ttk.Entry(settings_frame, textvariable=self.max_attempts_var, width=10).grid(row=2, column=2, sticky='w', pady=5, padx=(10, 0))
 
         # Other settings
         self.auto_release_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(settings_frame, text="Auto-release Grades",
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.auto_release_grades', default="Auto-release Grades"),
                        variable=self.auto_release_var).grid(row=3, column=0, sticky='w', pady=5)
 
         self.peer_review_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(settings_frame, text="Enable Peer Review",
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.enable_peer_review', default="Enable Peer Review"),
                        variable=self.peer_review_var).grid(row=3, column=1, sticky='w', pady=5)
 
         self.plagiarism_check_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(settings_frame, text="Enable Plagiarism Check",
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.enable_plagiarism_check', default="Enable Plagiarism Check"),
                        variable=self.plagiarism_check_var).grid(row=3, column=2, sticky='w', pady=5)
 
         # Advanced settings collapsible section
-        advanced_frame = ttk.LabelFrame(scrollable_frame, text="Advanced Settings (Optional)", padding=20)
+        advanced_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.advanced_settings_optional', default="Advanced Settings (Optional)"), padding=20)
         advanced_frame.pack(fill='x', padx=10, pady=10)
 
         # Rubric selection
-        ttk.Label(advanced_frame, text="Rubric Template:").grid(row=0, column=0, sticky='w', pady=5)
-        self.rubric_var = tk.StringVar(value="None")
+        ttk.Label(advanced_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.rubric_template', default="Rubric Template:")).grid(row=0, column=0, sticky='w', pady=5)
+        self.rubric_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.creation.values.none', default="None"))
         rubric_combo = ttk.Combobox(advanced_frame, textvariable=self.rubric_var, width=30,
                                     values=["None", "Standard Essay Rubric", "Project Rubric", "Presentation Rubric", "Custom"])
         rubric_combo.grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
-        ttk.Button(advanced_frame, text="Create/Edit Rubric",
+        ttk.Button(advanced_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.create_edit_rubric', default="Create/Edit Rubric"),
                   command=self.gui.rubrics.show_rubric_editor).grid(row=0, column=2, padx=(10, 0))
 
         # Submission notifications
-        ttk.Label(advanced_frame, text="Notifications:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(advanced_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.notifications', default="Notifications:")).grid(row=1, column=0, sticky='w', pady=5)
         self.notify_on_submit_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(advanced_frame, text="Email on submission",
+        ttk.Checkbutton(advanced_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.email_on_submission', default="Email on submission"),
                        variable=self.notify_on_submit_var).grid(row=1, column=1, sticky='w', pady=5)
 
         # Reminder settings
-        ttk.Label(advanced_frame, text="Reminder Before Due:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(advanced_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.reminder_before_due', default="Reminder Before Due:")).grid(row=2, column=0, sticky='w', pady=5)
         self.reminder_days_var = tk.StringVar(value="2")
         reminder_frame = ttk.Frame(advanced_frame)
         reminder_frame.grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
         ttk.Entry(reminder_frame, textvariable=self.reminder_days_var, width=5).pack(side='left')
-        ttk.Label(reminder_frame, text=" days").pack(side='left', padx=(5, 0))
+        ttk.Label(reminder_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.days', default=" days")).pack(side='left', padx=(5, 0))
 
         # Weight/Points distribution
-        ttk.Label(advanced_frame, text="Course Weight (%):").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(advanced_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.course_weight', default="Course Weight (%):")).grid(row=3, column=0, sticky='w', pady=5)
         self.course_weight_var = tk.StringVar(value="0")
         ttk.Entry(advanced_frame, textvariable=self.course_weight_var, width=10).grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
-        ttk.Label(advanced_frame, text="(0 = not weighted)").grid(row=3, column=2, sticky='w', pady=5, padx=(5, 0))
+        ttk.Label(advanced_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.value_0_not_weighted', default="(0 = not weighted)")).grid(row=3, column=2, sticky='w', pady=5, padx=(5, 0))
 
         # Configure grid weights
         form_frame.grid_columnconfigure(1, weight=1)
@@ -298,22 +300,22 @@ class CreationMixin:
         buttons_frame = ttk.Frame(scrollable_frame)
         buttons_frame.pack(fill='x', padx=10, pady=20)
 
-        ttk.Button(buttons_frame, text="Create Assignment",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.create_assignment', default="Create Assignment"),
                   command=self.create_assignment_gui, style='Accent.TButton').pack(side='right', padx=(10, 0))
-        ttk.Button(buttons_frame, text="Save as Draft",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.save_as_draft', default="Save as Draft"),
                   command=self.save_assignment_draft).pack(side='right', padx=(10, 0))
         # Free-room finder for venue-bound assignments (in-class quiz,
         # lab, workshop) — same shared algorithm Module Scheduling and
         # Exam use, so we never invent a fourth implementation.
-        ttk.Button(buttons_frame, text="Suggest Venue",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.suggest_venue', default="Suggest Venue"),
                   command=self._suggest_assignment_venue).pack(
             side='left', padx=(10, 0),
         )
-        ttk.Button(buttons_frame, text="Load Template",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.load_template', default="Load Template"),
                   command=self.load_assignment_template).pack(side='left')
-        ttk.Button(buttons_frame, text="Save as Template",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.save_as_template', default="Save as Template"),
                   command=self.save_assignment_template).pack(side='left', padx=(10, 0))
-        ttk.Button(buttons_frame, text="Clear Form",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.clear_form', default="Clear Form"),
                   command=self.clear_assignment_form).pack(side='right', padx=(10, 0))
 
         # Pack canvas and scrollbar
@@ -381,7 +383,7 @@ class CreationMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load modules: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.creation.dialogs.error', default="Error"), f"Failed to load modules: {e}")
 
 
     def _suggest_assignment_venue(self):
@@ -400,8 +402,8 @@ class CreationMixin:
             due_date = due_time = ""
         if not due_date:
             messagebox.showwarning(
-                "Pick a due date first",
-                "Set the assignment due date so we know when to look.",
+                _t('gui.academics.assignment_system.assignment_manager.creation.dialogs.pick_a_due_date_first', default="Pick a due date first"),
+                _t('gui.academics.assignment_system.assignment_manager.creation.dialogs.set_the_assignment_due_date_so_we_know_when_to_look', default="Set the assignment due date so we know when to look."),
             )
             return
         # 1-hour default slot from the due time.
@@ -420,7 +422,7 @@ class CreationMixin:
                 on_date=due_date, start_time=start, end_time=end,
             )
         except Exception as exc:
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.creation.dialogs.error', default="Error"),
                                  f"Could not query rooms: {exc}")
             return
 
@@ -430,7 +432,7 @@ class CreationMixin:
 
         if not rows:
             ttk.Label(win,
-                      text="No rooms available in that window.",
+                      text=_t('gui.academics.assignment_system.assignment_manager.creation.labels.no_rooms_available_in_that_window', default="No rooms available in that window."),
                       foreground="#7f8c8d").pack(padx=15, pady=20)
         else:
             cols = ("name", "building", "capacity")
@@ -444,7 +446,7 @@ class CreationMixin:
                     r.get("capacity", 0),
                 ))
             tree.pack(fill="both", expand=True, padx=10, pady=10)
-        ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
+        ttk.Button(win, text=_t('gui.academics.assignment_system.assignment_manager.creation.buttons.close', default="Close"), command=win.destroy).pack(pady=10)
 
     def create_assignment_gui(self):
         """Create assignment through GUI"""

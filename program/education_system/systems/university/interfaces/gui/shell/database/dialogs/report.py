@@ -5,6 +5,8 @@ detailed, and statistics reports for the backup system, with export
 capabilities in text, HTML, and PDF formats.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import os
@@ -21,7 +23,7 @@ class ReportDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Backup Report Generator")
+        self.dialog.title(_t('gui.shell.database.dialogs.report.windows.backup_report_generator', default="Backup Report Generator"))
         self.dialog.geometry("700x600")
         self.dialog.transient(parent)
 
@@ -30,44 +32,44 @@ class ReportDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Report options
-        options_frame = ttk.LabelFrame(self.dialog, text="Report Options", padding=10)
+        options_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.report.labels.report_options', default="Report Options"), padding=10)
         options_frame.pack(fill="x", padx=10, pady=5)
 
         # Report type
-        self.report_type_var = tk.StringVar(value="summary")
-        ttk.Label(options_frame, text="Report Type:").grid(row=0, column=0, sticky="w")
-        ttk.Radiobutton(options_frame, text="Summary Report", variable=self.report_type_var,
+        self.report_type_var = tk.StringVar(value=_t('gui.shell.database.dialogs.report.values.summary', default="summary"))
+        ttk.Label(options_frame, text=_t('gui.shell.database.dialogs.report.labels.report_type', default="Report Type:")).grid(row=0, column=0, sticky="w")
+        ttk.Radiobutton(options_frame, text=_t('gui.shell.database.dialogs.report.buttons.summary_report', default="Summary Report"), variable=self.report_type_var,
                        value="summary").grid(row=0, column=1, sticky="w")
-        ttk.Radiobutton(options_frame, text="Detailed Report", variable=self.report_type_var,
+        ttk.Radiobutton(options_frame, text=_t('gui.shell.database.dialogs.report.buttons.detailed_report', default="Detailed Report"), variable=self.report_type_var,
                        value="detailed").grid(row=0, column=2, sticky="w")
-        ttk.Radiobutton(options_frame, text="Statistics Report", variable=self.report_type_var,
+        ttk.Radiobutton(options_frame, text=_t('gui.shell.database.dialogs.report.buttons.statistics_report', default="Statistics Report"), variable=self.report_type_var,
                        value="statistics").grid(row=0, column=3, sticky="w")
 
         # Date range
-        ttk.Label(options_frame, text="Date Range:").grid(row=1, column=0, sticky="w", pady=5)
-        self.date_range_var = tk.StringVar(value="all")
+        ttk.Label(options_frame, text=_t('gui.shell.database.dialogs.report.labels.date_range', default="Date Range:")).grid(row=1, column=0, sticky="w", pady=5)
+        self.date_range_var = tk.StringVar(value=_t('gui.shell.database.dialogs.report.values.all', default="all"))
         date_frame = ttk.Frame(options_frame)
         date_frame.grid(row=1, column=1, columnspan=3, sticky="w")
 
-        ttk.Radiobutton(date_frame, text="All time", variable=self.date_range_var, value="all").pack(side="left")
-        ttk.Radiobutton(date_frame, text="Last 30 days", variable=self.date_range_var, value="30days").pack(side="left")
-        ttk.Radiobutton(date_frame, text="Last 90 days", variable=self.date_range_var, value="90days").pack(side="left")
+        ttk.Radiobutton(date_frame, text=_t('gui.shell.database.dialogs.report.buttons.all_time', default="All time"), variable=self.date_range_var, value="all").pack(side="left")
+        ttk.Radiobutton(date_frame, text=_t('gui.shell.database.dialogs.report.buttons.last_30_days', default="Last 30 days"), variable=self.date_range_var, value="30days").pack(side="left")
+        ttk.Radiobutton(date_frame, text=_t('gui.shell.database.dialogs.report.buttons.last_90_days', default="Last 90 days"), variable=self.date_range_var, value="90days").pack(side="left")
 
         # Export options
-        ttk.Label(options_frame, text="Export Format:").grid(row=2, column=0, sticky="w", pady=5)
-        self.export_format_var = tk.StringVar(value="text")
+        ttk.Label(options_frame, text=_t('gui.shell.database.dialogs.report.labels.export_format', default="Export Format:")).grid(row=2, column=0, sticky="w", pady=5)
+        self.export_format_var = tk.StringVar(value=_t('gui.shell.database.dialogs.report.values.text', default="text"))
         export_frame = ttk.Frame(options_frame)
         export_frame.grid(row=2, column=1, columnspan=3, sticky="w")
 
-        ttk.Radiobutton(export_frame, text="Text", variable=self.export_format_var, value="text").pack(side="left")
-        ttk.Radiobutton(export_frame, text="HTML", variable=self.export_format_var, value="html").pack(side="left")
-        ttk.Radiobutton(export_frame, text="PDF", variable=self.export_format_var, value="pdf").pack(side="left")
+        ttk.Radiobutton(export_frame, text=_t('gui.shell.database.dialogs.report.buttons.text', default="Text"), variable=self.export_format_var, value="text").pack(side="left")
+        ttk.Radiobutton(export_frame, text=_t('gui.shell.database.dialogs.report.buttons.html', default="HTML"), variable=self.export_format_var, value="html").pack(side="left")
+        ttk.Radiobutton(export_frame, text=_t('gui.shell.database.dialogs.report.buttons.pdf', default="PDF"), variable=self.export_format_var, value="pdf").pack(side="left")
 
         # Generate button
-        ttk.Button(options_frame, text="Generate Report", command=self.generate_report).grid(row=3, column=1, pady=10)
+        ttk.Button(options_frame, text=_t('gui.shell.database.dialogs.report.buttons.generate_report', default="Generate Report"), command=self.generate_report).grid(row=3, column=1, pady=10)
 
         # Report display
-        display_frame = ttk.LabelFrame(self.dialog, text="Report", padding=10)
+        display_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.report.labels.report', default="Report"), padding=10)
         display_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         self.report_text = scrolledtext.ScrolledText(display_frame, wrap=tk.WORD)
@@ -77,8 +79,8 @@ class ReportDialog:
         export_button_frame = ttk.Frame(self.dialog)
         export_button_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(export_button_frame, text="Export Report", command=self.export_report).pack(side="right", padx=5)
-        ttk.Button(export_button_frame, text="Close", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(export_button_frame, text=_t('gui.shell.database.dialogs.report.buttons.export_report', default="Export Report"), command=self.export_report).pack(side="right", padx=5)
+        ttk.Button(export_button_frame, text=_t('gui.shell.database.dialogs.report.buttons.close', default="Close"), command=self.dialog.destroy).pack(side="right")
 
     def generate_report(self):
         """Generate the backup report"""
@@ -260,13 +262,13 @@ class ReportDialog:
     def export_report(self):
         """Export integrity check report"""
         if not self.check_results:
-            messagebox.showwarning("No Results", "No integrity check results to export")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.report.dialogs.no_results', default="No Results"), _t('gui.shell.database.dialogs.report.dialogs.no_integrity_check_results_to_export', default="No integrity check results to export"))
             return
 
         filename = filedialog.asksaveasfilename(
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-            title="Save Integrity Report"
+            title=_t('gui.shell.database.dialogs.report.dialogs.save_integrity_report', default="Save Integrity Report")
         )
 
         if filename:
@@ -305,10 +307,10 @@ class ReportDialog:
                             for error in results['errors']:
                                 f.write(f"  - {error}\n")
 
-                messagebox.showinfo("Export Complete", f"Report exported to {filename}")
+                messagebox.showinfo(_t('gui.shell.database.dialogs.report.dialogs.export_complete', default="Export Complete"), f"Report exported to {filename}")
 
             except Exception as e:
-                messagebox.showerror("Export Error", f"Failed to export report: {e}")
+                messagebox.showerror(_t('gui.shell.database.dialogs.report.dialogs.export_error', default="Export Error"), f"Failed to export report: {e}")
 
     def convert_to_html(self, text_content):
         """Convert text report to HTML"""

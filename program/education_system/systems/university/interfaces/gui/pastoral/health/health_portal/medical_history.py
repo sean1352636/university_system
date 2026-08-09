@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -11,26 +13,26 @@ class MedicalHistoryMixin:
         content_frame = ttk.Frame(self.content_area)
         content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        title_label = ttk.Label(content_frame, text="Medical History",
+        title_label = ttk.Label(content_frame, text=_t('gui.pastoral.health.health_portal.medical_history.labels.medical_history', default="Medical History"),
                                font=('Arial', 16, 'bold'))
         title_label.pack(pady=(0, 20))
 
-        add_frame = ttk.LabelFrame(content_frame, text="Add Medical History Record", padding=15)
+        add_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.health.health_portal.medical_history.labels.add_medical_history_record', default="Add Medical History Record"), padding=15)
         add_frame.pack(fill=tk.X, pady=(0, 20))
 
-        ttk.Label(add_frame, text="Condition:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(add_frame, text=_t('gui.pastoral.health.health_portal.medical_history.labels.condition', default="Condition:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.condition_name = ttk.Entry(add_frame, width=30)
         self.condition_name.grid(row=0, column=1, sticky=tk.W, padx=(10, 20), pady=5)
 
-        ttk.Label(add_frame, text="Date:").grid(row=0, column=2, sticky=tk.W, pady=5)
+        ttk.Label(add_frame, text=_t('gui.pastoral.health.health_portal.medical_history.labels.date', default="Date:")).grid(row=0, column=2, sticky=tk.W, pady=5)
         self.condition_date = ttk.Entry(add_frame, width=15)
         self.condition_date.grid(row=0, column=3, sticky=tk.W, padx=(10, 20), pady=5)
         self.condition_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-        ttk.Button(add_frame, text="Add Record",
+        ttk.Button(add_frame, text=_t('gui.pastoral.health.health_portal.medical_history.buttons.add_record', default="Add Record"),
                   command=self.add_medical_history_record).grid(row=0, column=4)
 
-        history_frame = ttk.LabelFrame(content_frame, text="Medical History Records", padding=15)
+        history_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.health.health_portal.medical_history.labels.medical_history_records', default="Medical History Records"), padding=15)
         history_frame.pack(fill=tk.BOTH, expand=True)
 
         self.medical_history_text = scrolledtext.ScrolledText(history_frame, wrap=tk.WORD, height=15)
@@ -41,7 +43,7 @@ class MedicalHistoryMixin:
     def add_medical_history_record(self):
         """Add a new medical history record"""
         if not self.condition_name.get().strip():
-            messagebox.showerror("Validation Error", "Condition name is required.")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.medical_history.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.health.health_portal.medical_history.dialogs.condition_name_is_required', default="Condition name is required."))
             return
 
         try:
@@ -57,11 +59,11 @@ class MedicalHistoryMixin:
             self.condition_date.delete(0, tk.END)
             self.condition_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-            messagebox.showinfo("Success", "Medical history record added successfully!")
+            messagebox.showinfo(_t('gui.pastoral.health.health_portal.medical_history.dialogs.success', default="Success"), _t('gui.pastoral.health.health_portal.medical_history.dialogs.medical_history_record_added_successfully', default="Medical history record added successfully!"))
             self.log_audit_event('add_medical_history', 'medical_history', self.condition_name.get())
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add medical history record: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.medical_history.dialogs.error', default="Error"), f"Failed to add medical history record: {str(e)}")
 
     def load_medical_history_display(self):
         """Load and display medical history"""

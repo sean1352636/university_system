@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Request support · University portal</title><link rel="stylesheet" href="/static/css/journey.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header"><a class="brand" href="/portal">University portal</a><span>Student support</span></header>
+  <main id="main" tabindex="-1">
+    <nav aria-label="Student tasks"><ul class="task-nav"><li><a href="/portal/student/timetable">Timetable</a></li>
+      <li><a href="/portal/student/submissions">Submissions</a></li><li><a href="/portal/student/fees">Fees</a></li>
+      <li><a aria-current="page" href="/portal/student/support">Support</a></li><li><a href="/portal/student/graduation">Graduation</a></li></ul></nav>
+    <div id="page-message" class="message" role="alert" aria-live="assertive" tabindex="-1" hidden></div>
+    <section aria-labelledby="page-heading"><h1 id="page-heading">Request support</h1>
+      <p>If anyone is in immediate danger, contact the emergency services. This form is not monitored continuously.</p>
+      <form data-success-message="Your support request has been sent. Your case number will appear here.">
+        <label for="support-category">Support area</label><select id="support-category" name="category" required>
+          <option value="">Choose a support area</option><option value="academic">Academic</option>
+          <option value="finance">Finance</option><option value="wellbeing">Wellbeing</option>
+          <option value="disability">Disability and accessibility</option></select>
+        <label for="support-contact">Preferred contact method</label><select id="support-contact" name="contact_method" required>
+          <option value="">Choose a contact method</option><option value="email">Email</option><option value="phone">Phone</option></select>
+        <label for="support-description">How can we help?</label>
+        <textarea id="support-description" name="description" rows="7" minlength="20" required
+          aria-describedby="support-help"></textarea>
+        <p id="support-help" class="hint">Include what happened and the outcome you need. Avoid unnecessary sensitive information.</p>
+        <button type="submit">Send support request</button>
+      </form>
+    </section>
+  </main><script src="/static/js/student_pages.js"></script>
+</body></html>

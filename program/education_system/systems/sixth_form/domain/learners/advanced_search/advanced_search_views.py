@@ -19,7 +19,7 @@ from pathlib import Path
 from tkinter import messagebox, simpledialog, ttk
 from typing import Callable
 from education_system.platform import branding
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.learners.advanced_search import (
     advanced_search as data,
 )
@@ -66,7 +66,7 @@ _UI_STORE_NAME = "advanced_search_ui.json"
 
 
 def _ui_store_path() -> Path:
-    return paths.DATA_DIR / _UI_STORE_NAME
+    return paths.SIXTH_FORM_DATA_DIR / _UI_STORE_NAME
 
 
 def _load_ui_store() -> dict:
@@ -92,7 +92,7 @@ def _save_ui_store(store: dict) -> None:
     """Persist *store* atomically. Failures are logged, not raised —
     losing a template must never crash the search window."""
     try:
-        paths.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        paths.SIXTH_FORM_DATA_DIR.mkdir(parents=True, exist_ok=True)
         tmp = _ui_store_path().with_suffix(".json.tmp")
         with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(store, fh, indent=2)
@@ -114,7 +114,7 @@ _ANN_STORE_NAME = "advanced_search_annotations.json"
 
 
 def _ann_store_path() -> Path:
-    return paths.DATA_DIR / _ANN_STORE_NAME
+    return paths.SIXTH_FORM_DATA_DIR / _ANN_STORE_NAME
 
 
 def _load_ann_store() -> dict:
@@ -130,7 +130,7 @@ def _load_ann_store() -> dict:
 
 def _save_ann_store(store: dict) -> None:
     try:
-        paths.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        paths.SIXTH_FORM_DATA_DIR.mkdir(parents=True, exist_ok=True)
         tmp = _ann_store_path().with_suffix(".json.tmp")
         with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(store, fh, indent=2)
@@ -159,7 +159,7 @@ _ACTION_LOG_NAME = "advanced_search_action_log.json"
 
 
 def _action_log_path() -> Path:
-    return paths.DATA_DIR / _ACTION_LOG_NAME
+    return paths.SIXTH_FORM_DATA_DIR / _ACTION_LOG_NAME
 
 
 def _append_action_log(action: str, detail: str = "", count: int = 0) -> None:
@@ -178,7 +178,7 @@ def _append_action_log(action: str, detail: str = "", count: int = 0) -> None:
             "action": action, "detail": detail, "count": count,
         })
         del log[:-500]                      # keep only the last 500 entries
-        paths.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        paths.SIXTH_FORM_DATA_DIR.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".json.tmp")
         with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(log, fh, indent=2)

@@ -23,7 +23,7 @@ import json
 
 # Add path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.i18n import get_text, _
 
 # Import immutable audit logging for compliance
@@ -56,7 +56,7 @@ class MFAService:
     def __init__(self, db_path: str = None):
         """Initialize MFA service with database connection"""
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
 
         self.db_path = db_path
         self.otp_expiry_minutes = 10  # OTP codes expire in 10 minutes
@@ -119,9 +119,9 @@ class MFAService:
         # Determine the username if not provided
         if username is None:
             try:
-                from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+                from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
                 import sqlite3 as _sqlite3
-                uni_conn = _sqlite3.connect(str(DEFAULT_DB_PATH))
+                uni_conn = _sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
                 try:
                     uni_row = uni_conn.execute(
                         "SELECT username FROM users WHERE id = ?",

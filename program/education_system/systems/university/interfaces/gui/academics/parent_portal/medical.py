@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -48,18 +50,18 @@ def show_medical_interface(self):
     self.clear_content()
     self.update_status("Medical Information")
 
-    title = ttk.Label(self.content_frame, text="Medical Information", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.medical.labels.medical_information', default="Medical Information"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.medical.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.medical.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -68,7 +70,7 @@ def show_medical_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Medical information display frame
-    medical_frame = ttk.LabelFrame(self.content_frame, text="Medical Information", padding=15)
+    medical_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.medical.labels.medical_information', default="Medical Information"), padding=15)
     medical_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_medical_info():
@@ -78,7 +80,7 @@ def show_medical_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(medical_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(medical_frame, text=_t('gui.academics.parent_portal.medical.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -93,7 +95,7 @@ def show_medical_interface(self):
             info_container.pack(fill=tk.BOTH, expand=True)
 
             # Left column - Conditions and Allergies
-            left_frame = ttk.LabelFrame(info_container, text="Medical Conditions & Allergies", padding=10)
+            left_frame = ttk.LabelFrame(info_container, text=_t('gui.academics.parent_portal.medical.labels.medical_conditions_allergies', default="Medical Conditions & Allergies"), padding=10)
             left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
 
             # Load medical conditions
@@ -106,12 +108,12 @@ def show_medical_interface(self):
 
             if conditions:
                 has_data = True
-                ttk.Label(left_frame, text="Active Conditions:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=3)
+                ttk.Label(left_frame, text=_t('gui.academics.parent_portal.medical.labels.active_conditions', default="Active Conditions:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=3)
                 for cond in conditions:
                     cond_text = f"• {cond[0]} ({cond[1] or 'severity unknown'})"
                     ttk.Label(left_frame, text=cond_text, font=('Arial', 10)).pack(anchor='w', pady=1)
             else:
-                ttk.Label(left_frame, text="No active medical conditions", font=('Arial', 10)).pack(anchor='w', pady=3)
+                ttk.Label(left_frame, text=_t('gui.academics.parent_portal.medical.labels.no_active_medical_conditions', default="No active medical conditions"), font=('Arial', 10)).pack(anchor='w', pady=3)
 
             # Load allergies
             cursor.execute("""
@@ -123,17 +125,17 @@ def show_medical_interface(self):
 
             if allergies:
                 has_data = True
-                ttk.Label(left_frame, text="\nAllergies:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=3)
+                ttk.Label(left_frame, text=_t('gui.academics.parent_portal.medical.labels.allergies', default="\nAllergies:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=3)
                 for allergy in allergies:
                     allergy_text = f"• {allergy[0]} ({allergy[1] or 'unknown severity'})"
                     ttk.Label(left_frame, text=allergy_text, font=('Arial', 10)).pack(anchor='w', pady=1)
                     if allergy[2]:
                         ttk.Label(left_frame, text=f"  Reaction: {allergy[2]}", font=('Arial', 9, 'italic')).pack(anchor='w')
             else:
-                ttk.Label(left_frame, text="\nNo allergies on record", font=('Arial', 10)).pack(anchor='w', pady=3)
+                ttk.Label(left_frame, text=_t('gui.academics.parent_portal.medical.labels.no_allergies_on_record', default="\nNo allergies on record"), font=('Arial', 10)).pack(anchor='w', pady=3)
 
             # Right column - Medications & Emergency Contact
-            right_frame = ttk.LabelFrame(info_container, text="Medications & Contacts", padding=10)
+            right_frame = ttk.LabelFrame(info_container, text=_t('gui.academics.parent_portal.medical.labels.medications_contacts', default="Medications & Contacts"), padding=10)
             right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
 
             # Load student_medical_info for medications and contacts
@@ -148,7 +150,7 @@ def show_medical_interface(self):
                 has_data = True
                 medications = [m for m in med_info if m[0]]
                 if medications:
-                    ttk.Label(right_frame, text="Medications:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=3)
+                    ttk.Label(right_frame, text=_t('gui.academics.parent_portal.medical.labels.medications', default="Medications:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=3)
                     for med in medications:
                         med_text = f"• {med[0]}"
                         if med[1]:
@@ -163,7 +165,7 @@ def show_medical_interface(self):
                 if med_info[0][4]:
                     ttk.Label(right_frame, text=f"Doctor Contact: {med_info[0][4]}", font=('Arial', 10)).pack(anchor='w', pady=3)
             else:
-                ttk.Label(right_frame, text="No medication information on record", font=('Arial', 10)).pack(anchor='w', pady=3)
+                ttk.Label(right_frame, text=_t('gui.academics.parent_portal.medical.labels.no_medication_information_on_record', default="No medication information on record"), font=('Arial', 10)).pack(anchor='w', pady=3)
 
             # Load health_records for recent records
             cursor.execute("""
@@ -176,7 +178,7 @@ def show_medical_interface(self):
 
             if health_recs:
                 has_data = True
-                records_frame = ttk.LabelFrame(medical_frame, text="Recent Health Records", padding=10)
+                records_frame = ttk.LabelFrame(medical_frame, text=_t('gui.academics.parent_portal.medical.labels.recent_health_records', default="Recent Health Records"), padding=10)
                 records_frame.pack(fill=tk.X, pady=(10, 0))
 
                 for rec in health_recs:
@@ -184,11 +186,11 @@ def show_medical_interface(self):
                     ttk.Label(records_frame, text=rec_text, font=('Arial', 9)).pack(anchor='w', pady=1)
 
             if not has_data:
-                ttk.Label(medical_frame, text="No medical information found for this student",
+                ttk.Label(medical_frame, text=_t('gui.academics.parent_portal.medical.labels.no_medical_information_found_for_this_student', default="No medical information found for this student"),
                          font=('Arial', 11)).pack(pady=20)
 
             # Update button
-            ttk.Button(medical_frame, text="Update Medical Information",
+            ttk.Button(medical_frame, text=_t('gui.academics.parent_portal.medical.buttons.update_medical_information', default="Update Medical Information"),
                       command=lambda: self.update_medical_info(student_id)).pack(pady=10)
 
             conn.close()
@@ -197,7 +199,7 @@ def show_medical_interface(self):
             ttk.Label(medical_frame, text=f"Error loading medical information: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Medical Info", command=load_medical_info).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.medical.buttons.load_medical_info', default="Load Medical Info"), command=load_medical_info).pack(side=tk.LEFT, padx=5)
 
     # Load initial data
     load_medical_info()
@@ -207,7 +209,7 @@ def update_medical_info(self, student_id):
     """Update medical information for a student"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Update Medical Information")
+    dialog.title(_t('gui.academics.parent_portal.medical.windows.update_medical_information', default="Update Medical Information"))
     dialog.geometry("650x750")
     dialog.minsize(600, 600)
     dialog.transient(self.root)
@@ -233,7 +235,7 @@ def update_medical_info(self, student_id):
         canvas.yview_scroll(int(-1*(event.delta/120)), "units")
     canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
-    ttk.Label(main_frame, text="Update Medical Information",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.update_medical_information', default="Update Medical Information"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Fetch existing medical info
@@ -274,7 +276,7 @@ def update_medical_info(self, student_id):
         existing_data = cursor.fetchone()
         conn.close()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load medical information: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.medical.dialogs.error', default="Error"), f"Failed to load medical information: {str(e)}")
         dialog.destroy()
         return
 
@@ -282,7 +284,7 @@ def update_medical_info(self, student_id):
     fields = {}
 
     # Blood Type
-    ttk.Label(main_frame, text="Blood Type:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.blood_type', default="Blood Type:")).pack(anchor='w', pady=(5, 0))
     fields['blood_type'] = ttk.Combobox(main_frame, width=50, state="readonly")
     fields['blood_type']['values'] = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown']
     fields['blood_type'].pack(fill=tk.X, pady=(0, 10))
@@ -290,49 +292,49 @@ def update_medical_info(self, student_id):
         fields['blood_type'].set(existing_data[0])
 
     # Allergies
-    ttk.Label(main_frame, text="Allergies (one per line):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.allergies_one_per_line', default="Allergies (one per line):")).pack(anchor='w', pady=(5, 0))
     fields['allergies'] = scrolledtext.ScrolledText(main_frame, width=50, height=4)
     fields['allergies'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[1]:
         fields['allergies'].insert('1.0', existing_data[1])
 
     # Medications
-    ttk.Label(main_frame, text="Current Medications (one per line):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.current_medications_one_per_line', default="Current Medications (one per line):")).pack(anchor='w', pady=(5, 0))
     fields['medications'] = scrolledtext.ScrolledText(main_frame, width=50, height=4)
     fields['medications'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[2]:
         fields['medications'].insert('1.0', existing_data[2])
 
     # Conditions
-    ttk.Label(main_frame, text="Medical Conditions (one per line):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.medical_conditions_one_per_line', default="Medical Conditions (one per line):")).pack(anchor='w', pady=(5, 0))
     fields['conditions'] = scrolledtext.ScrolledText(main_frame, width=50, height=4)
     fields['conditions'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[3]:
         fields['conditions'].insert('1.0', existing_data[3])
 
     # Doctor Name
-    ttk.Label(main_frame, text="Doctor Name:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.doctor_name', default="Doctor Name:")).pack(anchor='w', pady=(5, 0))
     fields['doctor_name'] = ttk.Entry(main_frame, width=50)
     fields['doctor_name'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[4]:
         fields['doctor_name'].insert(0, existing_data[4])
 
     # Doctor Phone
-    ttk.Label(main_frame, text="Doctor Phone:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.doctor_phone', default="Doctor Phone:")).pack(anchor='w', pady=(5, 0))
     fields['doctor_phone'] = ttk.Entry(main_frame, width=50)
     fields['doctor_phone'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[5]:
         fields['doctor_phone'].insert(0, existing_data[5])
 
     # Insurance Provider
-    ttk.Label(main_frame, text="Insurance Provider:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.insurance_provider', default="Insurance Provider:")).pack(anchor='w', pady=(5, 0))
     fields['insurance_provider'] = ttk.Entry(main_frame, width=50)
     fields['insurance_provider'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[6]:
         fields['insurance_provider'].insert(0, existing_data[6])
 
     # Insurance Policy
-    ttk.Label(main_frame, text="Insurance Policy Number:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.insurance_policy_number', default="Insurance Policy Number:")).pack(anchor='w', pady=(5, 0))
     fields['insurance_policy'] = ttk.Entry(main_frame, width=50)
     fields['insurance_policy'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[7]:
@@ -365,25 +367,25 @@ def update_medical_info(self, student_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Medical information updated successfully!")
+            messagebox.showinfo(_t('gui.academics.parent_portal.medical.dialogs.success', default="Success"), _t('gui.academics.parent_portal.medical.dialogs.medical_information_updated_successfully', default="Medical information updated successfully!"))
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update medical information: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.medical.dialogs.error', default="Error"), f"Failed to update medical information: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Save", command=save_info).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.medical.buttons.save', default="Save"), command=save_info).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.medical.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.update_medical_info = update_medical_info
 
 def add_medical_info(self, student_id):
     """Add medical information for a student"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Add Medical Information")
+    dialog.title(_t('gui.academics.parent_portal.medical.windows.add_medical_information', default="Add Medical Information"))
     dialog.geometry("600x700")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -392,7 +394,7 @@ def add_medical_info(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Add Medical Information",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.add_medical_information', default="Add Medical Information"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Ensure table exists
@@ -425,7 +427,7 @@ def add_medical_info(self, student_id):
 
         conn.close()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to initialize database: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.medical.dialogs.error', default="Error"), f"Failed to initialize database: {str(e)}")
         dialog.destroy()
         return
 
@@ -433,43 +435,43 @@ def add_medical_info(self, student_id):
     fields = {}
 
     # Blood Type
-    ttk.Label(main_frame, text="Blood Type:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.blood_type', default="Blood Type:")).pack(anchor='w', pady=(5, 0))
     fields['blood_type'] = ttk.Combobox(main_frame, width=50, state="readonly")
     fields['blood_type']['values'] = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown']
     fields['blood_type'].pack(fill=tk.X, pady=(0, 10))
 
     # Allergies
-    ttk.Label(main_frame, text="Allergies (one per line):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.allergies_one_per_line', default="Allergies (one per line):")).pack(anchor='w', pady=(5, 0))
     fields['allergies'] = scrolledtext.ScrolledText(main_frame, width=50, height=4)
     fields['allergies'].pack(fill=tk.X, pady=(0, 10))
 
     # Medications
-    ttk.Label(main_frame, text="Current Medications (one per line):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.current_medications_one_per_line', default="Current Medications (one per line):")).pack(anchor='w', pady=(5, 0))
     fields['medications'] = scrolledtext.ScrolledText(main_frame, width=50, height=4)
     fields['medications'].pack(fill=tk.X, pady=(0, 10))
 
     # Conditions
-    ttk.Label(main_frame, text="Medical Conditions (one per line):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.medical_conditions_one_per_line', default="Medical Conditions (one per line):")).pack(anchor='w', pady=(5, 0))
     fields['conditions'] = scrolledtext.ScrolledText(main_frame, width=50, height=4)
     fields['conditions'].pack(fill=tk.X, pady=(0, 10))
 
     # Doctor Name
-    ttk.Label(main_frame, text="Doctor Name:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.doctor_name', default="Doctor Name:")).pack(anchor='w', pady=(5, 0))
     fields['doctor_name'] = ttk.Entry(main_frame, width=50)
     fields['doctor_name'].pack(fill=tk.X, pady=(0, 10))
 
     # Doctor Phone
-    ttk.Label(main_frame, text="Doctor Phone:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.doctor_phone', default="Doctor Phone:")).pack(anchor='w', pady=(5, 0))
     fields['doctor_phone'] = ttk.Entry(main_frame, width=50)
     fields['doctor_phone'].pack(fill=tk.X, pady=(0, 10))
 
     # Insurance Provider
-    ttk.Label(main_frame, text="Insurance Provider:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.insurance_provider', default="Insurance Provider:")).pack(anchor='w', pady=(5, 0))
     fields['insurance_provider'] = ttk.Entry(main_frame, width=50)
     fields['insurance_provider'].pack(fill=tk.X, pady=(0, 10))
 
     # Insurance Policy
-    ttk.Label(main_frame, text="Insurance Policy Number:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.medical.labels.insurance_policy_number', default="Insurance Policy Number:")).pack(anchor='w', pady=(5, 0))
     fields['insurance_policy'] = ttk.Entry(main_frame, width=50)
     fields['insurance_policy'].pack(fill=tk.X, pady=(0, 10))
 
@@ -498,16 +500,16 @@ def add_medical_info(self, student_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Medical information added successfully!")
+            messagebox.showinfo(_t('gui.academics.parent_portal.medical.dialogs.success', default="Success"), _t('gui.academics.parent_portal.medical.dialogs.medical_information_added_successfully', default="Medical information added successfully!"))
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add medical information: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.medical.dialogs.error', default="Error"), f"Failed to add medical information: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Save", command=save_info).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.medical.buttons.save', default="Save"), command=save_info).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.medical.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.add_medical_info = add_medical_info

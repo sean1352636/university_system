@@ -1,0 +1,4 @@
+{
+  "subject": "[$level] $type",
+  "body": "System Alert\n\nType: $type\nLevel: $level\nTime: $timestamp\n\nMessage:\n$message\n\nDetails:\n$details\n\n---\nUniversity Management System\nAutomated Alert\n"
+}

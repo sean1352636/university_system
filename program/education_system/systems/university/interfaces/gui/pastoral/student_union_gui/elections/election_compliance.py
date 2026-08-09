@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class MonitorCampaignComplianceDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Campaign Compliance Monitoring")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_compliance.windows.campaign_compliance_monitoring', default="Campaign Compliance Monitoring"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -75,30 +77,30 @@ class MonitorCampaignComplianceDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="⚖️ Campaign Compliance Monitor",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.campaign_compliance_monitor', default="⚖️ Campaign Compliance Monitor"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Compliance overview
-        overview_frame = ttk.LabelFrame(main_frame, text="Compliance Overview")
+        overview_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.compliance_overview', default="Compliance Overview"))
         overview_frame.pack(fill='x', pady=(0, 15))
 
         overview_grid = ttk.Frame(overview_frame)
         overview_grid.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(overview_grid, text="Total Candidates:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.total_candidates', default="Total Candidates:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
         ttk.Label(overview_grid, text="4").grid(row=0, column=1, sticky='w', padx=10)
 
-        ttk.Label(overview_grid, text="Compliant:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.compliant', default="Compliant:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
         ttk.Label(overview_grid, text="3", foreground='green').grid(row=1, column=1, sticky='w', padx=10)
 
-        ttk.Label(overview_grid, text="Warnings Issued:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.warnings_issued', default="Warnings Issued:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
         ttk.Label(overview_grid, text="2", foreground='orange').grid(row=2, column=1, sticky='w', padx=10)
 
-        ttk.Label(overview_grid, text="Violations:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.violations', default="Violations:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
         ttk.Label(overview_grid, text="1", foreground='red').grid(row=3, column=1, sticky='w', padx=10)
 
         # Compliance checks
-        checks_frame = ttk.LabelFrame(main_frame, text="Compliance Checks")
+        checks_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.compliance_checks', default="Compliance Checks"))
         checks_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Candidate', 'Budget Limit', 'Spending', 'Materials OK', 'Conduct', 'Status')
@@ -131,7 +133,7 @@ class MonitorCampaignComplianceDialog:
         tree.bind('<Double-1>', lambda e: self.show_violation_details())
 
         # Recent issues
-        issues_frame = ttk.LabelFrame(main_frame, text="Recent Compliance Issues")
+        issues_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.recent_compliance_issues', default="Recent Compliance Issues"))
         issues_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         issues_text = scrolledtext.ScrolledText(issues_frame, height=8, wrap=tk.WORD)
@@ -197,14 +199,14 @@ COMPLIANCE RULES REFERENCE:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Issue Warning", command=self.issue_warning).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Record Violation", command=self.record_violation).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Rules", command=self.view_rules).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Generate Compliance Report", command=self.generate_report).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.issue_warning', default="Issue Warning"), command=self.issue_warning).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.record_violation', default="Record Violation"), command=self.record_violation).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.view_rules', default="View Rules"), command=self.view_rules).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.generate_compliance_report', default="Generate Compliance Report"), command=self.generate_report).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def show_violation_details(self):
-        messagebox.showinfo("Violation Details",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.violation_details', default="Violation Details"),
                           "VIOLATION DETAILS:\n\n" +
                           "Candidate: David Lee\n" +
                           "Date: 2025-03-26 14:30\n" +
@@ -221,14 +223,14 @@ COMPLIANCE RULES REFERENCE:
                           "- Mandatory conduct review meeting")
 
     def issue_warning(self):
-        messagebox.showinfo("Issue Warning",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.issue_warning', default="Issue Warning"),
                           "Warning form:\n\n" +
                           "Select candidate, violation type, and description.\n\n" +
                           "Warning will be officially recorded and candidate\n" +
                           "will be notified via email within 1 hour.")
 
     def record_violation(self):
-        messagebox.showinfo("Record Violation",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.record_violation', default="Record Violation"),
                           "Violation recording form:\n\n" +
                           "Requires:\n" +
                           "- Candidate name\n" +
@@ -238,7 +240,7 @@ COMPLIANCE RULES REFERENCE:
                           "Serious violations may result in disqualification.")
 
     def view_rules(self):
-        messagebox.showinfo("Campaign Rules",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.campaign_rules', default="Campaign Rules"),
                           "Complete Election Rules Document:\n\n" +
                           "Available sections:\n" +
                           "1. Budget & Finance Rules\n" +
@@ -250,7 +252,7 @@ COMPLIANCE RULES REFERENCE:
                           "View full PDF document")
 
     def generate_report(self):
-        messagebox.showinfo("Report Generated",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.report_generated', default="Report Generated"),
                           "Compliance monitoring report generated:\n\n" +
                           "reports/compliance_report_2025.pdf\n\n" +
                           "Contains:\n" +
@@ -270,7 +272,7 @@ class ElectionSecurityAuditDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Election Security Audit")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_compliance.windows.election_security_audit', default="Election Security Audit"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -281,27 +283,27 @@ class ElectionSecurityAuditDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🔒 Election Security Audit",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.election_security_audit', default="🔒 Election Security Audit"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Security status
-        status_frame = ttk.LabelFrame(main_frame, text="Security Status")
+        status_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.security_status', default="Security Status"))
         status_frame.pack(fill='x', pady=(0, 15))
 
         status_grid = ttk.Frame(status_frame)
         status_grid.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(status_grid, text="Overall Security:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
-        ttk.Label(status_grid, text="SECURE", foreground='green', font=('Arial', 10, 'bold')).grid(row=0, column=1, sticky='w', padx=10)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.overall_security', default="Overall Security:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.secure', default="SECURE"), foreground='green', font=('Arial', 10, 'bold')).grid(row=0, column=1, sticky='w', padx=10)
 
-        ttk.Label(status_grid, text="Last Audit:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.last_audit', default="Last Audit:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
         ttk.Label(status_grid, text="2025-03-27 10:00").grid(row=1, column=1, sticky='w', padx=10)
 
-        ttk.Label(status_grid, text="Threats Detected:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
-        ttk.Label(status_grid, text="0 (Last 7 days)").grid(row=2, column=1, sticky='w', padx=10)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.threats_detected', default="Threats Detected:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.value_0_last_7_days', default="0 (Last 7 days)")).grid(row=2, column=1, sticky='w', padx=10)
 
-        ttk.Label(status_grid, text="Suspicious Activity:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
-        ttk.Label(status_grid, text="2 investigated, resolved", foreground='orange').grid(row=3, column=1, sticky='w', padx=10)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.suspicious_activity', default="Suspicious Activity:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.value_2_investigated_resolved', default="2 investigated, resolved"), foreground='orange').grid(row=3, column=1, sticky='w', padx=10)
 
         # Create notebook for security sections
         notebook = ttk.Notebook(main_frame)
@@ -309,7 +311,7 @@ class ElectionSecurityAuditDialog:
 
         # Access Control tab
         access_frame = ttk.Frame(notebook)
-        notebook.add(access_frame, text="Access Control")
+        notebook.add(access_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.tabs.access_control', default="Access Control"))
 
         access_scroll = scrolledtext.ScrolledText(access_frame, height=12, wrap=tk.WORD)
         access_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -353,7 +355,7 @@ RECOMMENDATIONS:
 
         # Vote Security tab
         vote_frame = ttk.Frame(notebook)
-        notebook.add(vote_frame, text="Vote Security")
+        notebook.add(vote_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.tabs.vote_security', default="Vote Security"))
 
         vote_scroll = scrolledtext.ScrolledText(vote_frame, height=12, wrap=tk.WORD)
         vote_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -401,7 +403,7 @@ SECURITY SCORE: 98/100 (EXCELLENT)"""
 
         # Incident Log tab
         incident_frame = ttk.Frame(notebook)
-        notebook.add(incident_frame, text="Incident Log")
+        notebook.add(incident_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.tabs.incident_log', default="Incident Log"))
 
         incident_scroll = scrolledtext.ScrolledText(incident_frame, height=12, wrap=tk.WORD)
         incident_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -455,7 +457,7 @@ THREAT INDICATORS:
 
         # Compliance tab
         compliance_frame = ttk.Frame(notebook)
-        notebook.add(compliance_frame, text="Compliance & Standards")
+        notebook.add(compliance_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.tabs.compliance_standards', default="Compliance & Standards"))
 
         compliance_scroll = scrolledtext.ScrolledText(compliance_frame, height=12, wrap=tk.WORD)
         compliance_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -513,11 +515,11 @@ NEXT AUDIT: 2025-04-27"""
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Run Security Scan", command=self.run_scan).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Logs", command=self.view_logs).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Generate Audit Report", command=self.generate_report).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Security Settings", command=self.security_settings).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.run_security_scan', default="Run Security Scan"), command=self.run_scan).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.view_logs', default="View Logs"), command=self.view_logs).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.generate_audit_report', default="Generate Audit Report"), command=self.generate_report).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.security_settings', default="Security Settings"), command=self.security_settings).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def run_scan(self):
         """Run security scan checking elections for anomalies."""
@@ -590,17 +592,17 @@ NEXT AUDIT: 2025-04-27"""
 
         # Display results
         scan_win = tk.Toplevel(self.dialog)
-        scan_win.title("Security Scan Results")
+        scan_win.title(_t('gui.pastoral.student_union_gui.elections.election_compliance.windows.security_scan_results', default="Security Scan Results"))
         scan_win.geometry("700x500")
         scan_win.transient(self.dialog)
 
-        ttk.Label(scan_win, text="Security Scan Results",
+        ttk.Label(scan_win, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.security_scan_results', default="Security Scan Results"),
                   font=('Arial', 12, 'bold')).pack(pady=10)
         text_widget = scrolledtext.ScrolledText(scan_win, wrap=tk.WORD)
         text_widget.pack(fill='both', expand=True, padx=10, pady=(0, 10))
         text_widget.insert('1.0', "\n".join(results))
         text_widget.config(state='disabled')
-        ttk.Button(scan_win, text="Close", command=scan_win.destroy).pack(pady=(0, 10))
+        ttk.Button(scan_win, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.close', default="Close"), command=scan_win.destroy).pack(pady=(0, 10))
 
     def view_logs(self):
         """View security logs from election-related tables."""
@@ -650,7 +652,7 @@ NEXT AUDIT: 2025-04-27"""
             logs.sort(key=lambda x: x[0] if x[0] else '', reverse=True)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to retrieve logs: {e}", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to retrieve logs: {e}", parent=self.dialog)
             return
         finally:
             if conn:
@@ -658,11 +660,11 @@ NEXT AUDIT: 2025-04-27"""
 
         # Display in Toplevel with Treeview
         log_win = tk.Toplevel(self.dialog)
-        log_win.title("Security Logs")
+        log_win.title(_t('gui.pastoral.student_union_gui.elections.election_compliance.windows.security_logs', default="Security Logs"))
         log_win.geometry("900x550")
         log_win.transient(self.dialog)
 
-        ttk.Label(log_win, text="Security Logs",
+        ttk.Label(log_win, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.security_logs', default="Security Logs"),
                   font=('Arial', 12, 'bold')).pack(pady=10)
 
         columns = ('Timestamp', 'Action', 'User', 'Details')
@@ -690,7 +692,7 @@ NEXT AUDIT: 2025-04-27"""
         if not logs:
             tree.insert('', 'end', values=('--', 'No logs found', '--', '--'))
 
-        ttk.Button(log_win, text="Close", command=log_win.destroy).pack(pady=(0, 10))
+        ttk.Button(log_win, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.close', default="Close"), command=log_win.destroy).pack(pady=(0, 10))
 
     def generate_report(self):
         """Generate a text-based audit report with election statistics."""
@@ -782,11 +784,11 @@ NEXT AUDIT: 2025-04-27"""
 
         # Display report
         report_win = tk.Toplevel(self.dialog)
-        report_win.title("Audit Report")
+        report_win.title(_t('gui.pastoral.student_union_gui.elections.election_compliance.windows.audit_report', default="Audit Report"))
         report_win.geometry("750x600")
         report_win.transient(self.dialog)
 
-        ttk.Label(report_win, text="Election Audit Report",
+        ttk.Label(report_win, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.election_audit_report', default="Election Audit Report"),
                   font=('Arial', 12, 'bold')).pack(pady=10)
 
         text_widget = scrolledtext.ScrolledText(report_win, wrap=tk.WORD)
@@ -802,15 +804,15 @@ NEXT AUDIT: 2025-04-27"""
                 parent=report_win,
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                title="Save Audit Report"
+                title=_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.save_audit_report', default="Save Audit Report")
             )
             if filepath:
                 try:
                     with open(filepath, 'w') as f:
                         f.write(report_text)
-                    messagebox.showinfo("Saved", f"Report saved to:\n{filepath}", parent=report_win)
+                    messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.saved', default="Saved"), f"Report saved to:\n{filepath}", parent=report_win)
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save: {e}", parent=report_win)
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to save: {e}", parent=report_win)
 
         def email_to_admin():
             conn = None
@@ -820,14 +822,14 @@ NEXT AUDIT: 2025-04-27"""
                 cursor.execute("SELECT email FROM users WHERE role = 'admin' LIMIT 1")
                 admin_row = cursor.fetchone()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to look up admin: {e}", parent=report_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to look up admin: {e}", parent=report_win)
                 return
             finally:
                 if conn:
                     conn.close()
 
             if not admin_row or not admin_row[0]:
-                messagebox.showwarning("No Admin", "No admin email found in the database.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.no_admin', default="No Admin"), _t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.no_admin_email_found_in_the_database', default="No admin email found in the database."),
                                        parent=report_win)
                 return
 
@@ -837,23 +839,23 @@ NEXT AUDIT: 2025-04-27"""
                     "Election Security Audit Report",
                     report_text
                 )
-                messagebox.showinfo("Sent", f"Report emailed to {admin_row[0]}.",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.sent', default="Sent"), f"Report emailed to {admin_row[0]}.",
                                     parent=report_win)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to send email: {e}", parent=report_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to send email: {e}", parent=report_win)
 
-        ttk.Button(btn_frame, text="Save as TXT", command=save_report).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Email to Admin", command=email_to_admin).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Close", command=report_win.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.save_as_txt', default="Save as TXT"), command=save_report).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.email_to_admin', default="Email to Admin"), command=email_to_admin).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.close', default="Close"), command=report_win.destroy).pack(side='right')
 
     def security_settings(self):
         """Show and manage election security settings."""
         settings_win = tk.Toplevel(self.dialog)
-        settings_win.title("Election Security Settings")
+        settings_win.title(_t('gui.pastoral.student_union_gui.elections.election_compliance.windows.election_security_settings', default="Election Security Settings"))
         settings_win.geometry("500x400")
         settings_win.transient(self.dialog)
 
-        ttk.Label(settings_win, text="Security Settings",
+        ttk.Label(settings_win, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.security_settings', default="Security Settings"),
                   font=('Arial', 12, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(settings_win)
@@ -892,28 +894,28 @@ NEXT AUDIT: 2025-04-27"""
                 elif key == 'ip_logging_enabled':
                     ip_logging_var.set(value == '1')
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load settings: {e}", parent=settings_win)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to load settings: {e}", parent=settings_win)
         finally:
             if conn:
                 conn.close()
 
         # Layout
         row = 0
-        ttk.Checkbutton(form_frame, text="Require MFA for voting",
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.require_mfa_for_voting', default="Require MFA for voting"),
                          variable=require_mfa_var).grid(row=row, column=0, columnspan=2, sticky='w', pady=5)
         row += 1
-        ttk.Checkbutton(form_frame, text="Vote encryption enabled",
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.vote_encryption_enabled', default="Vote encryption enabled"),
                          variable=encryption_var).grid(row=row, column=0, columnspan=2, sticky='w', pady=5)
         row += 1
-        ttk.Label(form_frame, text="Max login attempts:").grid(row=row, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.max_login_attempts', default="Max login attempts:")).grid(row=row, column=0, sticky='w', pady=5)
         ttk.Spinbox(form_frame, from_=1, to=20, width=8,
                      textvariable=max_attempts_var).grid(row=row, column=1, sticky='w', pady=5)
         row += 1
-        ttk.Label(form_frame, text="Session timeout (minutes):").grid(row=row, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.session_timeout_minutes', default="Session timeout (minutes):")).grid(row=row, column=0, sticky='w', pady=5)
         ttk.Spinbox(form_frame, from_=5, to=120, width=8,
                      textvariable=session_timeout_var).grid(row=row, column=1, sticky='w', pady=5)
         row += 1
-        ttk.Checkbutton(form_frame, text="IP logging enabled",
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.ip_logging_enabled', default="IP logging enabled"),
                          variable=ip_logging_var).grid(row=row, column=0, columnspan=2, sticky='w', pady=5)
 
         def save_settings():
@@ -940,18 +942,18 @@ NEXT AUDIT: 2025-04-27"""
                         VALUES (?, ?)
                     ''', (key, value))
                 conn.commit()
-                messagebox.showinfo("Saved", "Security settings saved successfully.",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.saved', default="Saved"), _t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.security_settings_saved_successfully', default="Security settings saved successfully."),
                                     parent=settings_win)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save settings: {e}", parent=settings_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to save settings: {e}", parent=settings_win)
             finally:
                 if conn:
                     conn.close()
 
         btn_frame = ttk.Frame(settings_win)
         btn_frame.pack(fill='x', padx=20, pady=(10, 15))
-        ttk.Button(btn_frame, text="Save Settings", command=save_settings).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=settings_win.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.save_settings', default="Save Settings"), command=save_settings).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.cancel', default="Cancel"), command=settings_win.destroy).pack(side='right')
 
 
 
@@ -963,7 +965,7 @@ class VoteIntegrityCheckDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Vote Integrity Check")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_compliance.windows.vote_integrity_check', default="Vote Integrity Check"))
         self.dialog.geometry("1000x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -974,39 +976,39 @@ class VoteIntegrityCheckDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="✅ Vote Integrity Verification",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.vote_integrity_verification', default="✅ Vote Integrity Verification"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Election selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(select_frame, text="Select Election:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.select_election', default="Select Election:")).pack(side='left', padx=(0, 10))
         election_combo = ttk.Combobox(select_frame, width=40, state='readonly')
         election_combo['values'] = ('Student Union President 2025', 'VP Academic Affairs 2025', 'Treasurer 2025')
         election_combo.pack(side='left', fill='x', expand=True)
         election_combo.current(0)
 
         # Integrity status
-        status_frame = ttk.LabelFrame(main_frame, text="Integrity Status")
+        status_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.integrity_status', default="Integrity Status"))
         status_frame.pack(fill='x', pady=(0, 15))
 
         status_grid = ttk.Frame(status_frame)
         status_grid.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(status_grid, text="Overall Integrity:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
-        ttk.Label(status_grid, text="VERIFIED", foreground='green', font=('Arial', 10, 'bold')).grid(row=0, column=1, sticky='w', padx=10)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.overall_integrity', default="Overall Integrity:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.verified', default="VERIFIED"), foreground='green', font=('Arial', 10, 'bold')).grid(row=0, column=1, sticky='w', padx=10)
 
-        ttk.Label(status_grid, text="Total Votes:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.total_votes', default="Total Votes:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
         ttk.Label(status_grid, text="1,234").grid(row=1, column=1, sticky='w', padx=10)
 
-        ttk.Label(status_grid, text="Valid Votes:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.valid_votes', default="Valid Votes:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
         ttk.Label(status_grid, text="1,231 (99.8%)", foreground='green').grid(row=2, column=1, sticky='w', padx=10)
 
-        ttk.Label(status_grid, text="Flagged for Review:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.flagged_for_review', default="Flagged for Review:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
         ttk.Label(status_grid, text="3 (0.2%)", foreground='orange').grid(row=3, column=1, sticky='w', padx=10)
 
-        ttk.Label(status_grid, text="Invalid/Rejected:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=3)
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.invalid_rejected', default="Invalid/Rejected:"), font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=3)
         ttk.Label(status_grid, text="0 (0.0%)").grid(row=4, column=1, sticky='w', padx=10)
 
         # Create notebook for checks
@@ -1015,7 +1017,7 @@ class VoteIntegrityCheckDialog:
 
         # Authenticity Checks tab
         auth_frame = ttk.Frame(notebook)
-        notebook.add(auth_frame, text="Authenticity Checks")
+        notebook.add(auth_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.tabs.authenticity_checks', default="Authenticity Checks"))
 
         auth_scroll = scrolledtext.ScrolledText(auth_frame, height=12, wrap=tk.WORD)
         auth_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -1064,7 +1066,7 @@ AUTHENTICITY SCORE: 99.8% (EXCELLENT)"""
 
         # Statistical Analysis tab
         stats_frame = ttk.Frame(notebook)
-        notebook.add(stats_frame, text="Statistical Analysis")
+        notebook.add(stats_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.tabs.statistical_analysis', default="Statistical Analysis"))
 
         stats_scroll = scrolledtext.ScrolledText(stats_frame, height=12, wrap=tk.WORD)
         stats_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -1114,7 +1116,7 @@ No anomalies requiring investigation"""
 
         # Duplicate Detection tab
         duplicate_frame = ttk.Frame(notebook)
-        notebook.add(duplicate_frame, text="Duplicate Detection")
+        notebook.add(duplicate_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.tabs.duplicate_detection', default="Duplicate Detection"))
 
         duplicate_scroll = scrolledtext.ScrolledText(duplicate_frame, height=12, wrap=tk.WORD)
         duplicate_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -1180,7 +1182,7 @@ Zero duplicate votes in final count"""
 
         # Audit Trail tab
         audit_frame = ttk.Frame(notebook)
-        notebook.add(audit_frame, text="Audit Trail")
+        notebook.add(audit_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.tabs.audit_trail', default="Audit Trail"))
 
         audit_scroll = scrolledtext.ScrolledText(audit_frame, height=12, wrap=tk.WORD)
         audit_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -1261,11 +1263,11 @@ Full audit available for independent verification"""
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Run Integrity Check", command=self.run_check).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Verify My Vote", command=self.verify_vote).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Export Audit Log", command=self.export_audit).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Generate Certificate", command=self.generate_cert).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.run_integrity_check', default="Run Integrity Check"), command=self.run_check).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.verify_my_vote', default="Verify My Vote"), command=self.verify_vote).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.export_audit_log', default="Export Audit Log"), command=self.export_audit).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.generate_certificate', default="Generate Certificate"), command=self.generate_cert).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def run_check(self):
         """Run comprehensive integrity checks on election votes."""
@@ -1331,23 +1333,23 @@ Full audit available for independent verification"""
 
         # Display results
         check_win = tk.Toplevel(self.dialog)
-        check_win.title("Integrity Check Results")
+        check_win.title(_t('gui.pastoral.student_union_gui.elections.election_compliance.windows.integrity_check_results', default="Integrity Check Results"))
         check_win.geometry("700x500")
         check_win.transient(self.dialog)
 
-        ttk.Label(check_win, text="Integrity Check Results",
+        ttk.Label(check_win, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.integrity_check_results', default="Integrity Check Results"),
                   font=('Arial', 12, 'bold')).pack(pady=10)
         text_widget = scrolledtext.ScrolledText(check_win, wrap=tk.WORD)
         text_widget.pack(fill='both', expand=True, padx=10, pady=(0, 10))
         text_widget.insert('1.0', "\n".join(results))
         text_widget.config(state='disabled')
-        ttk.Button(check_win, text="Close", command=check_win.destroy).pack(pady=(0, 10))
+        ttk.Button(check_win, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.close', default="Close"), command=check_win.destroy).pack(pady=(0, 10))
 
     def verify_vote(self):
         """Verify a vote by receipt ID (vote id). Shows timestamp and election but NOT the candidate chosen."""
         receipt_id = simpledialog.askstring(
-            "Verify Vote",
-            "Enter your vote receipt ID:",
+            _t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.verify_vote', default="Verify Vote"),
+            _t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.enter_your_vote_receipt_id', default="Enter your vote receipt ID:"),
             parent=self.dialog
         )
         if not receipt_id:
@@ -1366,7 +1368,7 @@ Full audit available for independent verification"""
             ''', (receipt_id,))
             row = cursor.fetchone()
         except Exception as e:
-            messagebox.showerror("Error", f"Verification failed: {e}", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Verification failed: {e}", parent=self.dialog)
             return
         finally:
             if conn:
@@ -1374,7 +1376,7 @@ Full audit available for independent verification"""
 
         if row:
             messagebox.showinfo(
-                "Vote Verified",
+                _t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.vote_verified', default="Vote Verified"),
                 f"Vote verification successful.\n\n"
                 f"Receipt ID: {row[0]}\n"
                 f"Timestamp: {row[1]}\n"
@@ -1385,7 +1387,7 @@ Full audit available for independent verification"""
             )
         else:
             messagebox.showwarning(
-                "Not Found",
+                _t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.not_found', default="Not Found"),
                 f"No vote found with receipt ID: {receipt_id}\n\n"
                 f"Please check the ID and try again.",
                 parent=self.dialog
@@ -1397,7 +1399,7 @@ Full audit available for independent verification"""
             parent=self.dialog,
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("Text files", "*.txt"), ("All files", "*.*")],
-            title="Export Audit Log"
+            title=_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.export_audit_log', default="Export Audit Log")
         )
         if not filepath:
             return
@@ -1448,7 +1450,7 @@ Full audit available for independent verification"""
             rows.sort(key=lambda x: x[0] if x[0] else '', reverse=True)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to query audit data: {e}", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to query audit data: {e}", parent=self.dialog)
             return
         finally:
             if conn:
@@ -1469,13 +1471,13 @@ Full audit available for independent verification"""
                         f.write(f"{str(r[0] or ''):<25} {str(r[1] or ''):<25} "
                                 f"{str(r[2] or ''):<15} {str(r[3] or ''):<15} {str(r[4] or '')}\n")
 
-            messagebox.showinfo("Exported",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.exported', default="Exported"),
                                 f"Audit log exported successfully.\n\n"
                                 f"File: {filepath}\n"
                                 f"Records: {len(rows)}",
                                 parent=self.dialog)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to write file: {e}", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to write file: {e}", parent=self.dialog)
 
     def generate_cert(self):
         """Generate a text-based election integrity certificate with a hash-based certificate number."""
@@ -1496,7 +1498,7 @@ Full audit available for independent verification"""
             election = cursor.fetchone()
 
             if not election:
-                messagebox.showwarning("No Election", "No elections found in the database.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.no_election', default="No Election"), _t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.no_elections_found_in_the_database', default="No elections found in the database."),
                                        parent=self.dialog)
                 return
 
@@ -1535,7 +1537,7 @@ Full audit available for independent verification"""
                 check_results.append(("Votes within period", "N/A (no period set)"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate certificate: {e}", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to generate certificate: {e}", parent=self.dialog)
             return
         finally:
             if conn:
@@ -1579,11 +1581,11 @@ Full audit available for independent verification"""
 
         # Display certificate
         cert_win = tk.Toplevel(self.dialog)
-        cert_win.title("Integrity Certificate")
+        cert_win.title(_t('gui.pastoral.student_union_gui.elections.election_compliance.windows.integrity_certificate', default="Integrity Certificate"))
         cert_win.geometry("650x500")
         cert_win.transient(self.dialog)
 
-        ttk.Label(cert_win, text="Election Integrity Certificate",
+        ttk.Label(cert_win, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.labels.election_integrity_certificate', default="Election Integrity Certificate"),
                   font=('Arial', 12, 'bold')).pack(pady=10)
 
         text_widget = scrolledtext.ScrolledText(cert_win, wrap=tk.WORD, font=('Courier', 10))
@@ -1599,19 +1601,19 @@ Full audit available for independent verification"""
                 parent=cert_win,
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                title="Save Certificate",
+                title=_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.save_certificate', default="Save Certificate"),
                 initialfile=f"integrity_cert_{cert_number}.txt"
             )
             if filepath:
                 try:
                     with open(filepath, 'w') as f:
                         f.write(cert_text)
-                    messagebox.showinfo("Saved", f"Certificate saved to:\n{filepath}", parent=cert_win)
+                    messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.saved', default="Saved"), f"Certificate saved to:\n{filepath}", parent=cert_win)
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save: {e}", parent=cert_win)
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_compliance.dialogs.error', default="Error"), f"Failed to save: {e}", parent=cert_win)
 
-        ttk.Button(btn_frame, text="Save as TXT", command=save_cert).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Close", command=cert_win.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.save_as_txt', default="Save as TXT"), command=save_cert).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_compliance.buttons.close', default="Close"), command=cert_win.destroy).pack(side='right')
 
 
 

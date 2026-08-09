@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from tkinter.scrolledtext import ScrolledText
 
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core._imports import (
@@ -168,7 +170,7 @@ class UISetupMixin:
             show_risks_for(self.root, f"course:{cc.strip()}",
                            title=f"Risks for {cc}")
         course_menu.add_command(
-            label="View course risks",
+            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.view_course_risks', default="View course risks"),
             command=_show_course_risks,
         )
 
@@ -283,17 +285,17 @@ class UISetupMixin:
             open_exam_gui, open_grade_gui, open_module_gui,
         )
         open_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Open", menu=open_menu)
+        menubar.add_cascade(label=_t('gui.academics.course_management_gui.core.ui_setup.menus.open', default="Open"), menu=open_menu)
         open_menu.add_command(
-            label="Exam Scheduler",
+            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.exam_scheduler', default="Exam Scheduler"),
             command=lambda: open_exam_gui(self.root, getattr(self, "auth", None)),
         )
         open_menu.add_command(
-            label="Grade Tracking",
+            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.grade_tracking', default="Grade Tracking"),
             command=lambda: open_grade_gui(self.root, getattr(self, "auth", None)),
         )
         open_menu.add_command(
-            label="Module Scheduling",
+            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.module_scheduling', default="Module Scheduling"),
             command=lambda: open_module_gui(self.root, getattr(self, "auth", None)),
         )
 
@@ -303,7 +305,7 @@ class UISetupMixin:
             show_at_risk_dialog, show_module_timeline_dialog,
         )
         cross_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Cross-Domain", menu=cross_menu)
+        menubar.add_cascade(label=_t('gui.academics.course_management_gui.core.ui_setup.menus.cross_domain', default="Cross-Domain"), menu=cross_menu)
 
         def _show_conflicts_for_course():
             # Constrain selection to courses that actually exist in the DB.
@@ -314,15 +316,15 @@ class UISetupMixin:
                 show_conflicts_dialog(self.root, course_code=code)
 
         cross_menu.add_command(
-            label="Show conflicts for course…",
+            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.show_conflicts_for_course', default="Show conflicts for course…"),
             command=_show_conflicts_for_course,
         )
         cross_menu.add_command(
-            label="Instructor workload…",
+            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.instructor_workload', default="Instructor workload…"),
             command=lambda: show_instructor_workload_dialog(self.root),
         )
         cross_menu.add_command(
-            label="At-risk students (unified)…",
+            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.at_risk_students_unified', default="At-risk students (unified)…"),
             command=lambda: show_at_risk_dialog(self.root),
         )
         def _show_module_timeline():
@@ -333,7 +335,7 @@ class UISetupMixin:
                 show_module_timeline_dialog(self.root, code)
 
         cross_menu.add_command(
-            label="Module timeline…",
+            label=_t('gui.academics.course_management_gui.core.ui_setup.menus.module_timeline', default="Module timeline…"),
             command=_show_module_timeline,
         )
 
@@ -477,7 +479,7 @@ class UISetupMixin:
     def _create_course_planning_tab(self):
         """Add a placeholder Course Planning tab that initializes on first click."""
         self._course_planning_placeholder = ttk.Frame(self.notebook)
-        self.notebook.add(self._course_planning_placeholder, text="Course Planning")
+        self.notebook.add(self._course_planning_placeholder, text=_t('gui.academics.course_management_gui.core.ui_setup.tabs.course_planning', default="Course Planning"))
         self._course_planning_loaded = False
 
         def _on_tab_changed(event):
@@ -495,7 +497,7 @@ class UISetupMixin:
                     self.notebook.select(self.notebook.index("end") - 1)
                 except Exception as e:
                     tab = ttk.Frame(self.notebook)
-                    self.notebook.add(tab, text="Course Planning")
+                    self.notebook.add(tab, text=_t('gui.academics.course_management_gui.core.ui_setup.tabs.course_planning', default="Course Planning"))
                     ttk.Label(tab, text=f"Course Planning could not be loaded: {e}",
                               font=("Arial", 12)).pack(padx=20, pady=20)
                     self.notebook.select(self.notebook.index("end") - 1)
@@ -505,7 +507,7 @@ class UISetupMixin:
     def open_course_management_cli(self):
         """Launch the course management CLI in a terminal."""
         if not ORIGINAL_MODULE_AVAILABLE:
-            messagebox.showwarning(_("common.error"), "Course management CLI is unavailable.")
+            messagebox.showwarning(_("common.error"), _t('gui.academics.course_management_gui.core.ui_setup.dialogs.course_management_cli_is_unavailable', default="Course management CLI is unavailable."))
             return
 
         try:
@@ -662,14 +664,14 @@ class UISetupMixin:
                    command=lambda: self.page_jump("first")).pack(side=tk.LEFT)
         ttk.Button(pager, text="<", width=3,
                    command=lambda: self.page_jump("prev")).pack(side=tk.LEFT, padx=(2, 6))
-        self._page_label_var = tk.StringVar(value="Page 1 of 1")
+        self._page_label_var = tk.StringVar(value=_t('gui.academics.course_management_gui.core.ui_setup.values.page_1_of_1', default="Page 1 of 1"))
         ttk.Label(pager, textvariable=self._page_label_var, width=24,
                   anchor=tk.CENTER).pack(side=tk.LEFT)
         ttk.Button(pager, text=">", width=3,
                    command=lambda: self.page_jump("next")).pack(side=tk.LEFT, padx=(6, 2))
         ttk.Button(pager, text=">>", width=3,
                    command=lambda: self.page_jump("last")).pack(side=tk.LEFT)
-        ttk.Label(pager, text="  Rows per page:").pack(side=tk.LEFT, padx=(15, 2))
+        ttk.Label(pager, text=_t('gui.academics.course_management_gui.core.ui_setup.labels.rows_per_page', default="  Rows per page:")).pack(side=tk.LEFT, padx=(15, 2))
         self._page_size_var = tk.StringVar(value=str(self._page_size))
         page_size_combo = ttk.Combobox(pager, textvariable=self._page_size_var,
                                        values=["25", "50", "100", "250", "500"],

@@ -1,5 +1,7 @@
 """Predictive analytics and forecasting methods for AnalyticsManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -27,16 +29,16 @@ class PredictionsMixin:
             students = cursor.fetchall()
 
             if not students:
-                messagebox.showinfo("Grade Prediction", "No students with grades found.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.grade_prediction', default="Grade Prediction"), _t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.no_students_with_grades_found', default="No students with grades found."))
                 return
 
             # Create dialog for student selection
             dialog = tk.Toplevel(self.content_frame)
-            dialog.title("Predict Student Grades")
+            dialog.title(_t('gui.academics.grade_tracking.analytics_manager.predictions.windows.predict_student_grades', default="Predict Student Grades"))
             dialog.geometry("500x400")
             dialog.transient(self.content_frame)
 
-            ttk.Label(dialog, text="Select Student:", font=('Arial', 10, 'bold')).pack(pady=10)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.predictions.labels.select_student', default="Select Student:"), font=('Arial', 10, 'bold')).pack(pady=10)
 
             # Student selection
             student_var = tk.StringVar()
@@ -45,7 +47,7 @@ class PredictionsMixin:
             student_combo.pack(pady=5)
 
             # Results display
-            results_frame = ttk.LabelFrame(dialog, text="Prediction Results", padding=10)
+            results_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.predictions.labels.prediction_results', default="Prediction Results"), padding=10)
             results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             results_text = tk.Text(results_frame, height=15, width=55, wrap=tk.WORD)
@@ -57,7 +59,7 @@ class PredictionsMixin:
             def predict_for_student():
                 selection = student_var.get()
                 if not selection:
-                    messagebox.showwarning("Selection Required", "Please select a student.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.selection_required', default="Selection Required"), _t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.please_select_a_student', default="Please select a student."))
                     return
 
                 student_id = selection.split(' - ')[0]
@@ -160,13 +162,13 @@ class PredictionsMixin:
             button_frame = ttk.Frame(dialog)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="Predict Grades", command=predict_for_student).pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.predictions.buttons.predict_grades', default="Predict Grades"), command=predict_for_student).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.predictions.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to predict grades: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.database_error', default="Database Error"), f"Failed to predict grades: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open prediction dialog: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.error', default="Error"), f"Failed to open prediction dialog: {e}")
         finally:
             if conn:
                 conn.close()
@@ -198,7 +200,7 @@ class PredictionsMixin:
             predictions = cursor.fetchall()
 
             if not predictions:
-                messagebox.showinfo("GPA Prediction", "No data available for prediction.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.gpa_prediction', default="GPA Prediction"), _t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.no_data_available_for_prediction', default="No data available for prediction."))
                 return
 
             prediction_lines = [
@@ -215,19 +217,19 @@ class PredictionsMixin:
             self._display_report("GPA Predictions", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to predict GPA: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.database_error', default="Database Error"), f"Failed to predict GPA: {e}")
         finally:
             if conn:
                 conn.close()
 
     def predict_module_success(self):
         """Predict success probability for modules"""
-        messagebox.showinfo("Module Success Prediction",
-                          "Module success prediction analyzes:\n"
+        messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.module_success_prediction', default="Module Success Prediction"),
+                          _t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.module_success_prediction_analyzes_historical_pass_rates_current', default="Module success prediction analyzes:\n"
                           "• Historical pass rates\n"
                           "• Current student performance\n"
                           "• Assessment difficulty trends\n\n"
-                          "This feature requires statistical analysis of past data.")
+                          "This feature requires statistical analysis of past data."))
 
     def calculate_success_probability(self):
         """Calculate probability of passing based on current performance"""
@@ -275,19 +277,19 @@ class PredictionsMixin:
             self._display_report("Success Probability Report", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to calculate probabilities: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.database_error', default="Database Error"), f"Failed to calculate probabilities: {e}")
         finally:
             if conn:
                 conn.close()
 
     def build_at_risk_model(self):
         """Build predictive model for at-risk identification"""
-        messagebox.showinfo("At-Risk Model",
-                          "Building at-risk prediction model requires:\n"
+        messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.at_risk_model', default="At-Risk Model"),
+                          _t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.building_at_risk_prediction_model_requires_historical_student_da', default="Building at-risk prediction model requires:\n"
                           "• Historical student data\n"
                           "• Feature engineering\n"
                           "• Machine learning algorithms\n\n"
-                          "This is an advanced feature requiring ML libraries.")
+                          "This is an advanced feature requiring ML libraries."))
 
     def analyze_dropout_risk(self):
         """Analyze dropout risk using predictive analytics"""
@@ -301,12 +303,12 @@ class PredictionsMixin:
 
     def forecast_performance_trends(self):
         """Forecast future performance trends"""
-        messagebox.showinfo("Performance Forecasting",
-                          "Performance forecasting analyzes historical trends to predict:\n"
+        messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.performance_forecasting', default="Performance Forecasting"),
+                          _t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.performance_forecasting_analyzes_historical_trends_to_predict_fu', default="Performance forecasting analyzes historical trends to predict:\n"
                           "• Future grade trajectories\n"
                           "• Expected performance by module\n"
                           "• Cohort-level outcomes\n\n"
-                          "Requires time-series analysis capabilities.")
+                          "Requires time-series analysis capabilities."))
 
     def forecast_course_performance(self):
         """Forecast overall course performance"""
@@ -341,7 +343,7 @@ class PredictionsMixin:
             self._display_report("Course Performance Forecast", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to forecast performance: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.database_error', default="Database Error"), f"Failed to forecast performance: {e}")
         finally:
             if conn:
                 conn.close()
@@ -380,7 +382,7 @@ class PredictionsMixin:
             self._display_report("Success Rate Forecast", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to forecast success rates: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.database_error', default="Database Error"), f"Failed to forecast success rates: {e}")
         finally:
             if conn:
                 conn.close()
@@ -414,9 +416,9 @@ class PredictionsMixin:
             students = cursor.fetchall()
 
             if not students:
-                messagebox.showinfo("Batch Prediction",
-                                  "Not enough data for predictions.\n"
-                                  "Students need at least 2 graded assessments.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.batch_prediction', default="Batch Prediction"),
+                                  _t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.not_enough_data_for_predictions_students_need_at_least_2_graded', default="Not enough data for predictions.\n"
+                                  "Students need at least 2 graded assessments."))
                 return
 
             predictions = []
@@ -518,9 +520,9 @@ class PredictionsMixin:
             self._display_report("Batch Grade Predictions", sections, footer)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to predict grades: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.database_error', default="Database Error"), f"Failed to predict grades: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate predictions: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.predictions.dialogs.error', default="Error"), f"Failed to generate predictions: {e}")
         finally:
             if conn:
                 conn.close()

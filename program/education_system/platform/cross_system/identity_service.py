@@ -30,8 +30,19 @@ SYSTEM_SLOTS: dict[str, tuple[str, str]] = {
     "primary":    ("primary_pk", "primary_student_id"),
     "secondary":     ("school_pk", "school_student_id"),
     "sixth_form":    ("college_pk", "college_student_id"),
+    "fe_college": ("fe_college_pk", "fe_college_student_id"),
+    "apprenticeships": ("apprenticeships_pk", "apprenticeships_learner_id"),
     "university": ("university_pk", "university_student_id"),
 }
+
+# The post-16 systems a learner may hold *concurrently* with another. A
+# degree apprentice is enrolled with the university and the training
+# provider at once, and an FE learner may convert to an apprenticeship
+# mid-programme while the FE enrolment stays open. Callers that assume one
+# live system per learner should consult this before closing the other.
+CONCURRENT_SYSTEMS: frozenset[str] = frozenset({
+    "apprenticeships", "fe_college", "university", "sixth_form",
+})
 
 _initialised: set[str] = set()
 
@@ -132,7 +143,34 @@ def link_system(journey_id: str, system: str, *,
     out = get(journey_id, db_path=db_path)
     if out is None:
         raise ValueError(f"No journey {journey_id}")
+    _mirror_enrolment(journey_id, system, student_id, db_path=db_path)
     return out
+
+
+def _mirror_enrolment(journey_id: str, system: str,
+                      student_id: str | None, *,
+                      db_path: str | None = None) -> None:
+    """Dual-write the slot link into ``learner_enrolment``.
+
+    Slots record only the latest local id per phase; enrolments record
+    every spell. Writing both keeps existing slot readers correct while
+    the enrolment history becomes the authoritative one — see
+    ``enrolment_schema`` for why the slots alone are not enough.
+
+    Best-effort by design: this is a mirror of a write that has already
+    committed, so a failure here must not fail the caller's link.
+    """
+    if not student_id:
+        return
+    try:
+        from education_system.platform.cross_system import enrolments
+        enrolments.link_local_enrolment(
+            journey_id=journey_id, system=system,
+            local_student_id=student_id, status="active", db_path=db_path)
+    except Exception:
+        logger.exception(
+            "Enrolment mirror failed for journey %s / %s %s (slot link "
+            "still applied)", journey_id, system, student_id)
 
 
 def get_or_create_journey(*, first_name: str, last_name: str,
@@ -175,6 +213,9 @@ def get_or_create_journey(*, first_name: str, last_name: str,
         conn.close()
     logger.info("Created student_journey %s for %s %s (%s) in %s",
                 jid, first_name, last_name, date_of_birth, system)
+    # This path INSERTs the slot directly rather than going through
+    # link_system, so it has to mirror the enrolment itself.
+    _mirror_enrolment(jid, system, student_id, db_path=db_path)
     return jid
 
 

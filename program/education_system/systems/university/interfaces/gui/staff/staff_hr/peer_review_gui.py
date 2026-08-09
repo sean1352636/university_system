@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -35,7 +37,7 @@ class PeerReviewGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Peer Review Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), _t('gui.staff.staff_hr.peer_review.dialogs.login_required_to_access_peer_review_management', default="Login required to access Peer Review Management"))
             return
 
         if parent_notebook:
@@ -50,21 +52,21 @@ class PeerReviewGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Peer Review")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.peer_review.tabs.peer_review', default="Peer Review"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Peer Review Management")
+        self.window.title(_t('gui.staff.staff_hr.peer_review.windows.peer_review_management', default="Peer Review Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.peer_review.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -90,13 +92,13 @@ class PeerReviewGUI:
     def _create_my_submissions_tab(self):
         """Create my submissions tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Submissions")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.peer_review.tabs.my_submissions', default="My Submissions"))
 
         # Header with Refresh button
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Submissions", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_my_submissions).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.peer_review.labels.my_submissions', default="My Submissions"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.refresh', default="Refresh"), command=self._load_my_submissions).pack(side=tk.RIGHT, padx=5)
 
         # Submissions treeview
         tree_frame = ttk.Frame(tab)
@@ -126,11 +128,11 @@ class PeerReviewGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="New Submission",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.new_submission', default="New Submission"),
                    command=self._new_submission_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Submit for Review",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.submit_for_review', default="Submit for Review"),
                    command=self._submit_for_review).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Create Revision",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.create_revision', default="Create Revision"),
                    command=self._create_revision_dialog).pack(side=tk.LEFT, padx=5)
 
         self._load_my_submissions()
@@ -165,7 +167,7 @@ class PeerReviewGUI:
     def _new_submission_dialog(self):
         """Open dialog to create a new submission."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("New Submission")
+        dialog.title(_t('gui.staff.staff_hr.peer_review.windows.new_submission', default="New Submission"))
         dialog.geometry("550x500")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -174,7 +176,7 @@ class PeerReviewGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Cycle selector
-        ttk.Label(frame, text="Cycle:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.cycle', default="Cycle:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         cycle_combo = ttk.Combobox(frame, width=30, state='readonly')
         cycle_combo.grid(row=0, column=1, padx=10, pady=8)
 
@@ -194,17 +196,17 @@ class PeerReviewGUI:
             cycle_combo.current(0)
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.title', default="Title:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=35)
         title_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.description', default="Description:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         desc_text = tk.Text(frame, width=35, height=4)
         desc_text.grid(row=2, column=1, padx=10, pady=8)
 
         # Material type
-        ttk.Label(frame, text="Material Type:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.material_type', default="Material Type:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         material_combo = ttk.Combobox(
             frame,
             values=['lecture_notes', 'assessment', 'syllabus', 'lab_manual', 'presentation', 'other'],
@@ -214,12 +216,12 @@ class PeerReviewGUI:
         material_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Course code
-        ttk.Label(frame, text="Course Code:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.course_code', default="Course Code:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         course_entry = ttk.Entry(frame, width=20)
         course_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # File path
-        ttk.Label(frame, text="File Path:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.file_path', default="File Path:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         file_path_entry = ttk.Entry(frame, width=35)
         file_path_entry.grid(row=5, column=1, padx=10, pady=8)
 
@@ -233,7 +235,7 @@ class PeerReviewGUI:
 
             selected_cycle_id = cycle_map.get(cycle_label)
             if not selected_cycle_id:
-                messagebox.showerror("Error", "Please select a valid cycle.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_a_valid_cycle', default="Please select a valid cycle."), parent=dialog)
                 return
 
             # Validate required fields
@@ -261,19 +263,19 @@ class PeerReviewGUI:
                     file_path=file_path,
                     file_name=file_name
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"),
                                     f"Submission created. ID: {submission_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_my_submissions()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=6, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Create", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.create', default="Create"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         title_entry.focus_set()
 
@@ -281,7 +283,7 @@ class PeerReviewGUI:
         """Submit the selected draft submission for review."""
         selection = self.submissions_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a submission first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_a_submission_first', default="Please select a submission first."))
             return
 
         item = self.submissions_tree.item(selection[0])
@@ -289,25 +291,25 @@ class PeerReviewGUI:
         status = item['values'][5]
 
         if status.lower() != 'draft':
-            messagebox.showinfo("Info", "Only draft submissions can be submitted for review.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.only_draft_submissions_can_be_submitted_for_review', default="Only draft submissions can be submitted for review."))
             return
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.peer_review.dialogs.confirm', default="Confirm"),
                                     f"Submit submission #{submission_id} for peer review?"):
             return
 
         try:
             PeerReviewManager.submit_for_review(submission_id)
-            messagebox.showinfo("Success", "Submission sent for review.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"), _t('gui.staff.staff_hr.peer_review.dialogs.submission_sent_for_review', default="Submission sent for review."))
             self._load_my_submissions()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e))
 
     def _create_revision_dialog(self):
         """Open dialog to create a revision of the selected submission."""
         selection = self.submissions_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a submission to revise.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_a_submission_to_revise', default="Please select a submission to revise."))
             return
 
         item = self.submissions_tree.item(selection[0])
@@ -327,12 +329,12 @@ class PeerReviewGUI:
                   font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
 
         # File path
-        ttk.Label(frame, text="New File Path:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.new_file_path', default="New File Path:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         file_path_entry = ttk.Entry(frame, width=35)
         file_path_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # File name
-        ttk.Label(frame, text="File Name:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.file_name', default="File Name:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         file_name_entry = ttk.Entry(frame, width=35)
         file_name_entry.grid(row=2, column=1, padx=10, pady=8)
 
@@ -350,18 +352,18 @@ class PeerReviewGUI:
                     file_path=file_path,
                     file_name=file_name
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"),
                                     f"Revision created. New submission ID: {new_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_my_submissions()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Create Revision", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.create_revision', default="Create Revision"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         file_path_entry.focus_set()
 
@@ -370,13 +372,13 @@ class PeerReviewGUI:
     def _create_my_reviews_tab(self):
         """Create my reviews tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Reviews")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.peer_review.tabs.my_reviews', default="My Reviews"))
 
         # Header with Refresh button
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Review Assignments", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_my_reviews).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.peer_review.labels.my_review_assignments', default="My Review Assignments"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.refresh', default="Refresh"), command=self._load_my_reviews).pack(side=tk.RIGHT, padx=5)
 
         # Assignments treeview
         tree_frame = ttk.Frame(tab)
@@ -405,11 +407,11 @@ class PeerReviewGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Start Review",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.start_review', default="Start Review"),
                    command=self._start_review).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Submit Feedback",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.submit_feedback', default="Submit Feedback"),
                    command=self._submit_feedback_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Decline",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.decline', default="Decline"),
                    command=self._decline_assignment).pack(side=tk.LEFT, padx=5)
 
         # Cache assignment data for lookup
@@ -465,7 +467,7 @@ class PeerReviewGUI:
         """Start the selected review assignment."""
         selection = self.reviews_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an assignment first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_an_assignment_first', default="Please select an assignment first."))
             return
 
         item = self.reviews_tree.item(selection[0])
@@ -473,21 +475,21 @@ class PeerReviewGUI:
         status = item['values'][4]
 
         if status.lower() != 'assigned':
-            messagebox.showinfo("Info", "Only assignments with 'Assigned' status can be started.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.only_assignments_with_assigned_status_can_be_started', default="Only assignments with 'Assigned' status can be started."))
             return
 
         try:
             PeerReviewManager.start_review(assignment_id)
-            messagebox.showinfo("Success", "Review started.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"), _t('gui.staff.staff_hr.peer_review.dialogs.review_started', default="Review started."))
             self._load_my_reviews()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e))
 
     def _submit_feedback_dialog(self):
         """Open dialog to submit feedback for the selected assignment."""
         selection = self.reviews_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an assignment first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_an_assignment_first', default="Please select an assignment first."))
             return
 
         item = self.reviews_tree.item(selection[0])
@@ -496,7 +498,7 @@ class PeerReviewGUI:
         status = item['values'][4]
 
         if status.lower() not in ('assigned', 'in progress', 'in_progress'):
-            messagebox.showinfo("Info", "Can only submit feedback for active assignments.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.can_only_submit_feedback_for_active_assignments', default="Can only submit feedback for active assignments."))
             return
 
         assignment = self._assignments_cache.get(assignment_id, {})
@@ -527,7 +529,7 @@ class PeerReviewGUI:
                   font=('Arial', 11, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
 
         # Rating scales using Spinbox widgets
-        ratings_frame = ttk.LabelFrame(frame, text="Ratings (1-5)", padding=10)
+        ratings_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.peer_review.labels.ratings_1_5', default="Ratings (1-5)"), padding=10)
         ratings_frame.grid(row=1, column=0, columnspan=2, sticky='ew', padx=10, pady=8)
 
         rating_labels = [
@@ -546,22 +548,22 @@ class PeerReviewGUI:
             rating_spinboxes[key] = spinbox
 
         # Strengths
-        ttk.Label(frame, text="Strengths:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.strengths', default="Strengths:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         strengths_text = scrolledtext.ScrolledText(frame, width=45, height=4, wrap=tk.WORD)
         strengths_text.grid(row=2, column=1, padx=10, pady=8)
 
         # Improvements
-        ttk.Label(frame, text="Improvements:").grid(row=3, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.improvements', default="Improvements:")).grid(row=3, column=0, sticky='ne', padx=10, pady=8)
         improvements_text = scrolledtext.ScrolledText(frame, width=45, height=4, wrap=tk.WORD)
         improvements_text.grid(row=3, column=1, padx=10, pady=8)
 
         # Detailed comments
-        ttk.Label(frame, text="Detailed Comments:").grid(row=4, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.detailed_comments', default="Detailed Comments:")).grid(row=4, column=0, sticky='ne', padx=10, pady=8)
         comments_text = scrolledtext.ScrolledText(frame, width=45, height=4, wrap=tk.WORD)
         comments_text.grid(row=4, column=1, padx=10, pady=8)
 
         # Recommendation
-        ttk.Label(frame, text="Recommendation:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.recommendation', default="Recommendation:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         recommendation_combo = ttk.Combobox(
             frame,
             values=['approve', 'minor_revisions', 'major_revisions', 'reject'],
@@ -572,7 +574,7 @@ class PeerReviewGUI:
 
         # Confidential checkbox
         confidential_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(frame, text="Confidential feedback", variable=confidential_var).grid(
+        ttk.Checkbutton(frame, text=_t('gui.staff.staff_hr.peer_review.buttons.confidential_feedback', default="Confidential feedback"), variable=confidential_var).grid(
             row=6, column=1, sticky='w', padx=10, pady=8)
 
         def save():
@@ -584,8 +586,8 @@ class PeerReviewGUI:
                 alignment = int(rating_spinboxes['alignment_with_outcomes'].get())
                 engagement = int(rating_spinboxes['engagement_potential'].get())
             except ValueError:
-                messagebox.showerror("Validation Error",
-                                     "All ratings must be valid numbers.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.validation_error', default="Validation Error"),
+                                     _t('gui.staff.staff_hr.peer_review.dialogs.all_ratings_must_be_valid_numbers', default="All ratings must be valid numbers."), parent=dialog)
                 return
 
             # Validate text fields
@@ -614,25 +616,25 @@ class PeerReviewGUI:
                     recommendation=recommendation,
                     is_confidential=confidential_var.get()
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"),
                                     f"Feedback submitted. ID: {feedback_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_my_reviews()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Submit Feedback", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.submit_feedback', default="Submit Feedback"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _decline_assignment(self):
         """Decline the selected review assignment."""
         selection = self.reviews_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an assignment first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_an_assignment_first', default="Please select an assignment first."))
             return
 
         item = self.reviews_tree.item(selection[0])
@@ -640,37 +642,37 @@ class PeerReviewGUI:
         status = item['values'][4]
 
         if status.lower() not in ('assigned', 'in progress', 'in_progress'):
-            messagebox.showinfo("Info", "Only active assignments can be declined.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.only_active_assignments_can_be_declined', default="Only active assignments can be declined."))
             return
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.peer_review.dialogs.confirm', default="Confirm"),
                                     f"Decline assignment #{assignment_id}?"):
             return
 
         try:
             PeerReviewManager.decline_assignment(assignment_id)
-            messagebox.showinfo("Success", "Assignment declined.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"), _t('gui.staff.staff_hr.peer_review.dialogs.assignment_declined', default="Assignment declined."))
             self._load_my_reviews()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 3: SHARED RESOURCES ====================
 
     def _create_shared_resources_tab(self):
         """Create shared resources tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Shared Resources")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.peer_review.tabs.shared_resources', default="Shared Resources"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Shared Resources", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.peer_review.labels.shared_resources', default="Shared Resources"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Filter frame
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(filter_frame, text="Type:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.peer_review.labels.type', default="Type:")).pack(side=tk.LEFT, padx=5)
         self.resource_type_filter = ttk.Combobox(
             filter_frame,
             values=['All', 'template', 'rubric', 'example', 'lecture_notes',
@@ -681,11 +683,11 @@ class PeerReviewGUI:
         self.resource_type_filter.pack(side=tk.LEFT, padx=5)
         self.resource_type_filter.bind('<<ComboboxSelected>>', lambda e: self._load_resources())
 
-        ttk.Label(filter_frame, text="Subject:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.peer_review.labels.subject', default="Subject:")).pack(side=tk.LEFT, padx=5)
         self.resource_subject_filter = ttk.Entry(filter_frame, width=15)
         self.resource_subject_filter.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(filter_frame, text="Refresh", command=self._load_resources).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.refresh', default="Refresh"), command=self._load_resources).pack(side=tk.LEFT, padx=5)
 
         # Resources treeview
         tree_frame = ttk.Frame(tab)
@@ -709,11 +711,11 @@ class PeerReviewGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Share Resource",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.share_resource', default="Share Resource"),
                    command=self._share_resource_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Rate",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.rate', default="Rate"),
                    command=self._rate_resource_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Download",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.download', default="Download"),
                    command=self._download_resource).pack(side=tk.LEFT, padx=5)
 
         self._load_resources()
@@ -758,7 +760,7 @@ class PeerReviewGUI:
     def _share_resource_dialog(self):
         """Open dialog to share a new resource."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Share Resource")
+        dialog.title(_t('gui.staff.staff_hr.peer_review.windows.share_resource', default="Share Resource"))
         dialog.geometry("550x500")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -767,17 +769,17 @@ class PeerReviewGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.title', default="Title:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=35)
         title_entry.grid(row=0, column=1, padx=10, pady=8)
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=1, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.description', default="Description:")).grid(row=1, column=0, sticky='ne', padx=10, pady=8)
         desc_text = tk.Text(frame, width=35, height=4)
         desc_text.grid(row=1, column=1, padx=10, pady=8)
 
         # Resource type
-        ttk.Label(frame, text="Type:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.type', default="Type:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(
             frame,
             values=['template', 'rubric', 'example', 'lecture_notes',
@@ -788,22 +790,22 @@ class PeerReviewGUI:
         type_combo.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Subject area
-        ttk.Label(frame, text="Subject Area:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.subject_area', default="Subject Area:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         subject_entry = ttk.Entry(frame, width=25)
         subject_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Course code
-        ttk.Label(frame, text="Course Code:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.course_code', default="Course Code:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         course_entry = ttk.Entry(frame, width=20)
         course_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # File path
-        ttk.Label(frame, text="File Path:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.file_path', default="File Path:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         file_path_entry = ttk.Entry(frame, width=35)
         file_path_entry.grid(row=5, column=1, padx=10, pady=8)
 
         # File name
-        ttk.Label(frame, text="File Name:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.file_name', default="File Name:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         file_name_entry = ttk.Entry(frame, width=35)
         file_name_entry.grid(row=6, column=1, padx=10, pady=8)
 
@@ -831,19 +833,19 @@ class PeerReviewGUI:
                     file_name=file_name,
                     shared_by=self._get_user_id()
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"),
                                     f"Resource shared. ID: {resource_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_resources()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Share", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.share', default="Share"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         title_entry.focus_set()
 
@@ -851,7 +853,7 @@ class PeerReviewGUI:
         """Open dialog to rate the selected resource."""
         selection = self.resources_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a resource to rate.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_a_resource_to_rate', default="Please select a resource to rate."))
             return
 
         item = self.resources_tree.item(selection[0])
@@ -871,12 +873,12 @@ class PeerReviewGUI:
                   font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=2, pady=10)
 
         # Rating
-        ttk.Label(frame, text="Rating (1-5):").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.rating_1_5', default="Rating (1-5):")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         rating_spinbox = tk.Spinbox(frame, from_=1, to=5, width=5, state='readonly')
         rating_spinbox.grid(row=1, column=1, sticky='w', padx=10, pady=8)
 
         # Comment
-        ttk.Label(frame, text="Comment:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.peer_review.labels.comment', default="Comment:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         comment_text = scrolledtext.ScrolledText(frame, width=35, height=4, wrap=tk.WORD)
         comment_text.grid(row=2, column=1, padx=10, pady=8)
 
@@ -884,13 +886,13 @@ class PeerReviewGUI:
             try:
                 rating = int(rating_spinbox.get())
             except ValueError:
-                messagebox.showerror("Validation Error",
-                                     "Rating must be a valid number.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.validation_error', default="Validation Error"),
+                                     _t('gui.staff.staff_hr.peer_review.dialogs.rating_must_be_a_valid_number', default="Rating must be a valid number."), parent=dialog)
                 return
 
             if rating < 1 or rating > 5:
-                messagebox.showerror("Validation Error",
-                                     "Rating must be between 1 and 5.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.validation_error', default="Validation Error"),
+                                     _t('gui.staff.staff_hr.peer_review.dialogs.rating_must_be_between_1_and_5', default="Rating must be between 1 and 5."), parent=dialog)
                 return
 
             comment = comment_text.get("1.0", "end-1c").strip() or None
@@ -902,22 +904,22 @@ class PeerReviewGUI:
                     rating=rating,
                     comment=comment
                 )
-                messagebox.showinfo("Success", "Rating submitted.", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"), _t('gui.staff.staff_hr.peer_review.dialogs.rating_submitted', default="Rating submitted."), parent=dialog)
                 dialog.destroy()
                 self._load_resources()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Submit Rating", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.submit_rating', default="Submit Rating"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _download_resource(self):
         """Increment download count for the selected resource."""
         selection = self.resources_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a resource to download.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_a_resource_to_download', default="Please select a resource to download."))
             return
 
         item = self.resources_tree.item(selection[0])
@@ -926,24 +928,24 @@ class PeerReviewGUI:
 
         try:
             PeerReviewManager.increment_download(resource_id)
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"),
                                 f"Download recorded for '{resource_title}'.")
             self._load_resources()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 4: REVIEW CYCLES ====================
 
     def _create_review_cycles_tab(self):
         """Create review cycles tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Review Cycles")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.peer_review.tabs.review_cycles', default="Review Cycles"))
 
         # Header with Refresh button
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Review Cycles", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_review_cycles).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.peer_review.labels.review_cycles', default="Review Cycles"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.refresh', default="Refresh"), command=self._load_review_cycles).pack(side=tk.RIGHT, padx=5)
 
         # Cycles treeview
         tree_frame = ttk.Frame(tab)
@@ -1013,11 +1015,11 @@ class PeerReviewGUI:
         try:
             cycle = PeerReviewManager.get_cycle(cycle_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load cycle details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), f"Could not load cycle details: {e}")
             return
 
         if not cycle:
-            messagebox.showerror("Error", "Cycle not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), _t('gui.staff.staff_hr.peer_review.dialogs.cycle_not_found', default="Cycle not found"))
             return
 
         dialog = tk.Toplevel(self.root)
@@ -1038,7 +1040,7 @@ class PeerReviewGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Cycle details
-        details_frame = ttk.LabelFrame(scroll_frame, text="Cycle Details", padding=15)
+        details_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.peer_review.labels.cycle_details', default="Cycle Details"), padding=15)
         details_frame.pack(fill=tk.X, padx=10, pady=10)
 
         fields = [
@@ -1060,7 +1062,7 @@ class PeerReviewGUI:
                 row=i, column=1, sticky='nw', padx=(5, 10), pady=4)
 
         # Submissions for this cycle
-        subs_frame = ttk.LabelFrame(scroll_frame, text="Submissions in this Cycle", padding=10)
+        subs_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.peer_review.labels.submissions_in_this_cycle', default="Submissions in this Cycle"), padding=10)
         subs_frame.pack(fill=tk.X, padx=10, pady=10)
 
         try:
@@ -1090,7 +1092,7 @@ class PeerReviewGUI:
                 ))
             sub_tree.pack(fill=tk.X)
         else:
-            ttk.Label(subs_frame, text="No submissions in this cycle yet.").pack(anchor='w')
+            ttk.Label(subs_frame, text=_t('gui.staff.staff_hr.peer_review.labels.no_submissions_in_this_cycle_yet', default="No submissions in this cycle yet.")).pack(anchor='w')
 
         # Statistics
         try:
@@ -1099,7 +1101,7 @@ class PeerReviewGUI:
             stats = {}
 
         if stats:
-            stats_frame = ttk.LabelFrame(scroll_frame, text="Cycle Statistics", padding=10)
+            stats_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.peer_review.labels.cycle_statistics', default="Cycle Statistics"), padding=10)
             stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
             avg_rating = stats.get('avg_overall_rating')
@@ -1121,14 +1123,14 @@ class PeerReviewGUI:
         # Close button
         btn_frame = ttk.Frame(scroll_frame)
         btn_frame.pack(fill=tk.X, padx=10, pady=15)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # ==================== TAB 5: ADMIN ====================
 
     def _create_admin_tab(self):
         """Create admin tab for peer review administration (admin only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Admin")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.peer_review.tabs.admin', default="Admin"))
 
         # Scrollable content
         canvas = tk.Canvas(tab)
@@ -1143,21 +1145,21 @@ class PeerReviewGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Cycle CRUD Section ----
-        crud_frame = ttk.LabelFrame(scroll_frame, text="Create Review Cycle", padding=15)
+        crud_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.peer_review.labels.create_review_cycle', default="Create Review Cycle"), padding=15)
         crud_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Name
-        ttk.Label(crud_frame, text="Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.peer_review.labels.name', default="Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.admin_cycle_name_entry = ttk.Entry(crud_frame, width=35)
         self.admin_cycle_name_entry.grid(row=0, column=1, columnspan=2, padx=10, pady=8, sticky='w')
 
         # Description
-        ttk.Label(crud_frame, text="Description:").grid(row=1, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.peer_review.labels.description', default="Description:")).grid(row=1, column=0, sticky='ne', padx=10, pady=8)
         self.admin_cycle_desc_text = tk.Text(crud_frame, width=40, height=3)
         self.admin_cycle_desc_text.grid(row=1, column=1, columnspan=2, padx=10, pady=8, sticky='w')
 
         # Type
-        ttk.Label(crud_frame, text="Type:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.peer_review.labels.type', default="Type:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.admin_cycle_type_combo = ttk.Combobox(
             crud_frame, values=['annual', 'mid_term', 'ad_hoc'],
             width=20, state='readonly'
@@ -1166,47 +1168,47 @@ class PeerReviewGUI:
         self.admin_cycle_type_combo.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Department
-        ttk.Label(crud_frame, text="Department:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.peer_review.labels.department', default="Department:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         self.admin_cycle_dept_entry = ttk.Entry(crud_frame, width=25)
         self.admin_cycle_dept_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Start date
-        ttk.Label(crud_frame, text="Start Date (YYYY-MM-DD):").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.peer_review.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         self.admin_cycle_start_entry = ttk.Entry(crud_frame, width=15)
         self.admin_cycle_start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         self.admin_cycle_start_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # End date
-        ttk.Label(crud_frame, text="End Date (YYYY-MM-DD):").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.peer_review.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         self.admin_cycle_end_entry = ttk.Entry(crud_frame, width=15)
         self.admin_cycle_end_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Buttons
         cycle_btn_frame = ttk.Frame(crud_frame)
         cycle_btn_frame.grid(row=6, column=0, columnspan=3, pady=15)
-        ttk.Button(cycle_btn_frame, text="Create Cycle",
+        ttk.Button(cycle_btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.create_cycle', default="Create Cycle"),
                    command=self._admin_create_cycle).pack(side=tk.LEFT, padx=5)
-        ttk.Button(cycle_btn_frame, text="Activate",
+        ttk.Button(cycle_btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.activate', default="Activate"),
                    command=self._admin_activate_cycle).pack(side=tk.LEFT, padx=5)
 
         # Cycle selector for activation
         activate_frame = ttk.Frame(crud_frame)
         activate_frame.grid(row=7, column=0, columnspan=3, pady=5)
-        ttk.Label(activate_frame, text="Cycle to activate:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(activate_frame, text=_t('gui.staff.staff_hr.peer_review.labels.cycle_to_activate', default="Cycle to activate:")).pack(side=tk.LEFT, padx=5)
         self.admin_activate_cycle_combo = ttk.Combobox(activate_frame, width=35, state='readonly')
         self.admin_activate_cycle_combo.pack(side=tk.LEFT, padx=5)
-        ttk.Button(activate_frame, text="Refresh Cycles",
+        ttk.Button(activate_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.refresh_cycles', default="Refresh Cycles"),
                    command=self._refresh_admin_cycle_lists).pack(side=tk.LEFT, padx=5)
 
         # Store cycle mapping for activation
         self.admin_cycle_map = {}
 
         # ---- Reviewer Assignment Section ----
-        assign_frame = ttk.LabelFrame(scroll_frame, text="Assign Reviewer", padding=15)
+        assign_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.peer_review.labels.assign_reviewer', default="Assign Reviewer"), padding=15)
         assign_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Submission selector
-        ttk.Label(assign_frame, text="Submission:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(assign_frame, text=_t('gui.staff.staff_hr.peer_review.labels.submission', default="Submission:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.admin_submission_combo = ttk.Combobox(assign_frame, width=40, state='readonly')
         self.admin_submission_combo.grid(row=0, column=1, columnspan=2, padx=10, pady=8, sticky='w')
 
@@ -1214,21 +1216,21 @@ class PeerReviewGUI:
         self.admin_submission_map = {}
 
         # Reviewer ID
-        ttk.Label(assign_frame, text="Reviewer ID:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(assign_frame, text=_t('gui.staff.staff_hr.peer_review.labels.reviewer_id', default="Reviewer ID:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.admin_reviewer_id_entry = ttk.Entry(assign_frame, width=25)
         self.admin_reviewer_id_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Due date
-        ttk.Label(assign_frame, text="Due Date (YYYY-MM-DD):").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(assign_frame, text=_t('gui.staff.staff_hr.peer_review.labels.due_date_yyyy_mm_dd', default="Due Date (YYYY-MM-DD):")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.admin_due_date_entry = ttk.Entry(assign_frame, width=15)
         self.admin_due_date_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Assign button
-        ttk.Button(assign_frame, text="Assign",
+        ttk.Button(assign_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.assign', default="Assign"),
                    command=self._admin_assign_reviewer).grid(row=3, column=1, padx=10, pady=15, sticky='w')
 
         # ---- Resource Approval Section ----
-        approval_frame = ttk.LabelFrame(scroll_frame, text="Resource Approval", padding=15)
+        approval_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.peer_review.labels.resource_approval', default="Resource Approval"), padding=15)
         approval_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Unapproved resources treeview
@@ -1253,19 +1255,19 @@ class PeerReviewGUI:
         # Approve button
         approval_btn_frame = ttk.Frame(approval_frame)
         approval_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(approval_btn_frame, text="Approve",
+        ttk.Button(approval_btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.approve', default="Approve"),
                    command=self._admin_approve_resource).pack(side=tk.LEFT, padx=5)
-        ttk.Button(approval_btn_frame, text="Refresh",
+        ttk.Button(approval_btn_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.refresh', default="Refresh"),
                    command=self._load_unapproved_resources).pack(side=tk.LEFT, padx=5)
 
         # ---- Statistics Section ----
-        stats_frame = ttk.LabelFrame(scroll_frame, text="Statistics", padding=15)
+        stats_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.peer_review.labels.statistics', default="Statistics"), padding=15)
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.admin_stats_text = tk.Text(stats_frame, width=70, height=10, state='disabled')
         self.admin_stats_text.pack(fill=tk.X, pady=5)
 
-        ttk.Button(stats_frame, text="Refresh Statistics",
+        ttk.Button(stats_frame, text=_t('gui.staff.staff_hr.peer_review.buttons.refresh_statistics', default="Refresh Statistics"),
                    command=self._load_admin_statistics).pack(side=tk.LEFT, padx=5, pady=5)
 
         # Load initial data
@@ -1326,7 +1328,7 @@ class PeerReviewGUI:
 
         description = self.admin_cycle_desc_text.get("1.0", "end-1c").strip()
         if not description:
-            messagebox.showerror("Validation Error", "Description is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.peer_review.dialogs.description_is_required', default="Description is required."))
             return
 
         try:
@@ -1360,7 +1362,7 @@ class PeerReviewGUI:
                 end_date=end_date,
                 created_by=user_id
             )
-            messagebox.showinfo("Success", f"Review cycle created. ID: {cycle_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"), f"Review cycle created. ID: {cycle_id}")
             # Clear form
             self.admin_cycle_name_entry.delete(0, tk.END)
             self.admin_cycle_desc_text.delete("1.0", tk.END)
@@ -1373,7 +1375,7 @@ class PeerReviewGUI:
             self._refresh_admin_cycle_lists()
             self._load_review_cycles()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e))
 
     def _admin_activate_cycle(self):
         """Activate the selected cycle."""
@@ -1381,20 +1383,20 @@ class PeerReviewGUI:
         cycle_id = self.admin_cycle_map.get(selected)
 
         if not cycle_id:
-            messagebox.showinfo("Info", "Please select a cycle to activate.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_a_cycle_to_activate', default="Please select a cycle to activate."))
             return
 
-        if not messagebox.askyesno("Confirm",
-                                    "Activate the selected review cycle?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.peer_review.dialogs.confirm', default="Confirm"),
+                                    _t('gui.staff.staff_hr.peer_review.dialogs.activate_the_selected_review_cycle', default="Activate the selected review cycle?")):
             return
 
         try:
             PeerReviewManager.activate_cycle(cycle_id)
-            messagebox.showinfo("Success", "Cycle activated.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"), _t('gui.staff.staff_hr.peer_review.dialogs.cycle_activated', default="Cycle activated."))
             self._refresh_admin_cycle_lists()
             self._load_review_cycles()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e))
 
     def _admin_assign_reviewer(self):
         """Assign a reviewer to the selected submission."""
@@ -1402,7 +1404,7 @@ class PeerReviewGUI:
         submission_id = self.admin_submission_map.get(selected_sub)
 
         if not submission_id:
-            messagebox.showinfo("Info", "Please select a submission.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_a_submission', default="Please select a submission."))
             return
 
         try:
@@ -1419,13 +1421,13 @@ class PeerReviewGUI:
                 assigned_by=self._get_user_id(),
                 due_date=due_date
             )
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"),
                                 f"Reviewer assigned. Assignment ID: {assignment_id}")
             self.admin_reviewer_id_entry.delete(0, tk.END)
             self.admin_due_date_entry.delete(0, tk.END)
             self._refresh_admin_cycle_lists()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e))
 
     def _load_unapproved_resources(self):
         """Load unapproved resources into the admin approval treeview."""
@@ -1452,23 +1454,23 @@ class PeerReviewGUI:
         """Approve the selected resource."""
         selection = self.admin_approval_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a resource to approve.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.info', default="Info"), _t('gui.staff.staff_hr.peer_review.dialogs.please_select_a_resource_to_approve', default="Please select a resource to approve."))
             return
 
         item = self.admin_approval_tree.item(selection[0])
         resource_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.peer_review.dialogs.confirm', default="Confirm"),
                                     f"Approve resource #{resource_id}?"):
             return
 
         try:
             PeerReviewManager.approve_resource(resource_id)
-            messagebox.showinfo("Success", "Resource approved.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.peer_review.dialogs.success', default="Success"), _t('gui.staff.staff_hr.peer_review.dialogs.resource_approved', default="Resource approved."))
             self._load_unapproved_resources()
             self._load_resources()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.peer_review.dialogs.error', default="Error"), str(e))
 
     def _load_admin_statistics(self):
         """Load and display statistics in the admin panel."""

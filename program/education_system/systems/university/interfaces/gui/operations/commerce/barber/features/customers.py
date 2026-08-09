@@ -1,5 +1,7 @@
 """Barber Shop GUI - Customer management feature methods."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, messagebox, filedialog, logging, csv, json,
     _t, log_activity,
@@ -15,40 +17,40 @@ class CustomersMixin:
     def create_customer_profile(self):
         """Create customer profile."""
         profile_window = tk.Toplevel(self.parent)
-        profile_window.title("Create Customer Profile")
+        profile_window.title(_t('gui.operations.commerce.barber.features.customers.windows.create_customer_profile', default="Create Customer Profile"))
         profile_window.geometry("400x400")
         profile_window.transient(self.parent)
         profile_window.grab_set()
 
-        ttk.Label(profile_window, text="Create Customer Profile",
+        ttk.Label(profile_window, text=_t('gui.operations.commerce.barber.features.customers.labels.create_customer_profile', default="Create Customer Profile"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(profile_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.name', default="Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         name_var = tk.StringVar()
         ttk.Entry(frame, textvariable=name_var, width=30).grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Email:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.email', default="Email:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         email_var = tk.StringVar()
         ttk.Entry(frame, textvariable=email_var, width=30).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Phone:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.phone', default="Phone:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         phone_var = tk.StringVar()
         ttk.Entry(frame, textvariable=phone_var, width=30).grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Preferred Barber:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.preferred_barber', default="Preferred Barber:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         barber_combo = ttk.Combobox(frame, values=self.appt_staff_combo['values'], width=20)
         barber_combo.grid(row=3, column=1, pady=5)
 
-        ttk.Label(frame, text="Notes:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.notes_variant_2', default="Notes:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         notes_text = tk.Text(frame, height=4, width=25)
         notes_text.grid(row=4, column=1, pady=5)
 
         def save_profile():
             if not name_var.get().strip():
-                messagebox.showerror("Error", "Name is required.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.customers.dialogs.name_is_required', default="Name is required."))
                 return
             try:
                 preferred_staff = None
@@ -69,26 +71,26 @@ class CustomersMixin:
                     preferences=prefs,
                     notes=notes_text.get('1.0', tk.END).strip()
                 )
-                messagebox.showinfo("Success", "Customer profile created!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.customers.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.customers.dialogs.customer_profile_created', default="Customer profile created!"))
                 profile_window.destroy()
                 self._load_customers()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(profile_window, text="Save Profile", command=save_profile).pack(pady=10)
+        ttk.Button(profile_window, text=_t('gui.operations.commerce.barber.features.customers.buttons.save_profile', default="Save Profile"), command=save_profile).pack(pady=10)
 
     def view_customer_details(self):
         """View customer details."""
         selected = self.customers_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a customer.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.customers.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.customers.dialogs.please_select_a_customer', default="Please select a customer."))
             return
 
         item = self.customers_tree.item(selected[0])
         customer_id = item['values'][0]
 
         details_window = tk.Toplevel(self.parent)
-        details_window.title("Customer Details")
+        details_window.title(_t('gui.operations.commerce.barber.features.customers.windows.customer_details', default="Customer Details"))
         details_window.geometry("600x500")
         details_window.transient(self.parent)
 
@@ -97,12 +99,12 @@ class CustomersMixin:
             customer = CustomerManager.get_customer(customer_id)
 
             if not customer:
-                messagebox.showerror("Error", "Customer not found.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.customers.dialogs.customer_not_found', default="Customer not found."))
                 details_window.destroy()
                 return
 
             # Customer info
-            info_frame = ttk.LabelFrame(details_window, text="Customer Information", padding="10")
+            info_frame = ttk.LabelFrame(details_window, text=_t('gui.operations.commerce.barber.features.customers.labels.customer_information', default="Customer Information"), padding="10")
             info_frame.pack(fill=tk.X, padx=20, pady=10)
 
             ttk.Label(info_frame, text=f"Name: {customer['name']}", font=('Helvetica', 12, 'bold')).pack(anchor=tk.W)
@@ -112,7 +114,7 @@ class CustomersMixin:
             ttk.Label(info_frame, text=f"Last Visit: {customer.get('last_visit', 'N/A')}").pack(anchor=tk.W)
 
             # Notes
-            notes_frame = ttk.LabelFrame(details_window, text="Notes", padding="10")
+            notes_frame = ttk.LabelFrame(details_window, text=_t('gui.operations.commerce.barber.features.customers.labels.notes', default="Notes"), padding="10")
             notes_frame.pack(fill=tk.X, padx=20, pady=10)
 
             notes_text = tk.Text(notes_frame, height=5, width=50)
@@ -121,7 +123,7 @@ class CustomersMixin:
             notes_text.config(state='disabled')
 
             # Recent appointments
-            appt_frame = ttk.LabelFrame(details_window, text="Recent Appointments", padding="10")
+            appt_frame = ttk.LabelFrame(details_window, text=_t('gui.operations.commerce.barber.features.customers.labels.recent_appointments', default="Recent Appointments"), padding="10")
             appt_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
             columns = ('date', 'service', 'barber', 'status')
@@ -139,13 +141,13 @@ class CustomersMixin:
                 ))
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), str(e))
 
     def add_customer_notes(self):
         """Add customer notes."""
         selected = self.customers_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a customer.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.customers.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.customers.dialogs.please_select_a_customer', default="Please select a customer."))
             return
 
         item = self.customers_tree.item(selected[0])
@@ -175,12 +177,12 @@ class CustomersMixin:
                     note=note,
                     created_by=self.current_user.get('username')
                 )
-                messagebox.showinfo("Success", "Note added!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.customers.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.customers.dialogs.note_added', default="Note added!"))
                 notes_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(notes_window, text="Save Note", command=save_note).pack(pady=10)
+        ttk.Button(notes_window, text=_t('gui.operations.commerce.barber.features.customers.buttons.save_note', default="Save Note"), command=save_note).pack(pady=10)
 
     def search_customers(self):
         """Search customers."""
@@ -226,7 +228,7 @@ class CustomersMixin:
         """Send message to customer."""
         selected = self.customers_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a customer.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.customers.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.customers.dialogs.please_select_a_customer', default="Please select a customer."))
             return
 
         item = self.customers_tree.item(selected[0])
@@ -235,7 +237,7 @@ class CustomersMixin:
         customer_email = item['values'][2]
 
         if not customer_email:
-            messagebox.showerror("Error", "Customer has no email address.")
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.customers.dialogs.customer_has_no_email_address', default="Customer has no email address."))
             return
 
         msg_window = tk.Toplevel(self.parent)
@@ -252,17 +254,17 @@ class CustomersMixin:
 
         ttk.Label(frame, text=f"To: {customer_email}").pack(anchor=tk.W)
 
-        ttk.Label(frame, text="Subject:").pack(anchor=tk.W, pady=(10, 0))
-        subject_var = tk.StringVar(value="Message from Barber Shop")
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.subject', default="Subject:")).pack(anchor=tk.W, pady=(10, 0))
+        subject_var = tk.StringVar(value=_t('gui.operations.commerce.barber.features.customers.values.message_from_barber_shop', default="Message from Barber Shop"))
         ttk.Entry(frame, textvariable=subject_var, width=40).pack(fill=tk.X)
 
-        ttk.Label(frame, text="Message:").pack(anchor=tk.W, pady=(10, 0))
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.message', default="Message:")).pack(anchor=tk.W, pady=(10, 0))
         msg_text = tk.Text(frame, height=8, width=40)
         msg_text.pack(fill=tk.BOTH, expand=True)
 
         def send_message():
             if not EMAIL_AVAILABLE:
-                messagebox.showerror("Error", "Email service not available.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.customers.dialogs.email_service_not_available', default="Email service not available."))
                 return
             try:
                 from education_system.systems.university.infrastructure.email.email_service import send_email
@@ -271,12 +273,12 @@ class CustomersMixin:
                     subject_var.get(),
                     msg_text.get('1.0', tk.END).strip()
                 )
-                messagebox.showinfo("Success", "Message sent!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.customers.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.customers.dialogs.message_sent', default="Message sent!"))
                 msg_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(msg_window, text="Send", command=send_message).pack(pady=10)
+        ttk.Button(msg_window, text=_t('gui.operations.commerce.barber.features.customers.buttons.send', default="Send"), command=send_message).pack(pady=10)
 
     def view_customer_feedback(self):
         """View customer feedback."""
@@ -287,18 +289,18 @@ class CustomersMixin:
             customer_id = item['values'][0]
 
         feedback_window = tk.Toplevel(self.parent)
-        feedback_window.title("Customer Feedback")
+        feedback_window.title(_t('gui.operations.commerce.barber.features.customers.windows.customer_feedback', default="Customer Feedback"))
         feedback_window.geometry("700x450")
         feedback_window.transient(self.parent)
 
         columns = ('id', 'date', 'customer', 'rating', 'comments')
         tree = ttk.Treeview(feedback_window, columns=columns, show='headings', height=15)
 
-        tree.heading('id', text='ID')
-        tree.heading('date', text='Date')
-        tree.heading('customer', text='Customer')
-        tree.heading('rating', text='Rating')
-        tree.heading('comments', text='Comments')
+        tree.heading('id', text=_t('gui.operations.commerce.barber.features.customers.headings.id', default='ID'))
+        tree.heading('date', text=_t('gui.operations.commerce.barber.features.customers.headings.date', default='Date'))
+        tree.heading('customer', text=_t('gui.operations.commerce.barber.features.customers.headings.customer', default='Customer'))
+        tree.heading('rating', text=_t('gui.operations.commerce.barber.features.customers.headings.rating', default='Rating'))
+        tree.heading('comments', text=_t('gui.operations.commerce.barber.features.customers.headings.comments', default='Comments'))
 
         tree.column('id', width=50)
         tree.column('date', width=100)
@@ -326,50 +328,50 @@ class CustomersMixin:
     def merge_customer_profiles(self):
         """Merge customer profiles."""
         merge_window = tk.Toplevel(self.parent)
-        merge_window.title("Merge Customer Profiles")
+        merge_window.title(_t('gui.operations.commerce.barber.features.customers.windows.merge_customer_profiles', default="Merge Customer Profiles"))
         merge_window.geometry("400x300")
         merge_window.transient(self.parent)
         merge_window.grab_set()
 
-        ttk.Label(merge_window, text="Merge Customer Profiles",
+        ttk.Label(merge_window, text=_t('gui.operations.commerce.barber.features.customers.labels.merge_customer_profiles', default="Merge Customer Profiles"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(merge_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Primary Customer ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.primary_customer_id', default="Primary Customer ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         primary_var = tk.StringVar()
         ttk.Entry(frame, textvariable=primary_var, width=20).grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Secondary Customer ID:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.secondary_customer_id', default="Secondary Customer ID:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         secondary_var = tk.StringVar()
         ttk.Entry(frame, textvariable=secondary_var, width=20).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="(Secondary will be merged into Primary)").grid(row=2, column=0, columnspan=2, pady=10)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.customers.labels.secondary_will_be_merged_into_primary', default="(Secondary will be merged into Primary)")).grid(row=2, column=0, columnspan=2, pady=10)
 
         def merge():
             if not primary_var.get() or not secondary_var.get():
-                messagebox.showerror("Error", "Please enter both customer IDs.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.customers.dialogs.please_enter_both_customer_ids', default="Please enter both customer IDs."))
                 return
-            if not messagebox.askyesno("Confirm", "Are you sure you want to merge these profiles? This cannot be undone."):
+            if not messagebox.askyesno(_t('gui.operations.commerce.barber.features.customers.dialogs.confirm', default="Confirm"), _t('gui.operations.commerce.barber.features.customers.dialogs.are_you_sure_you_want_to_merge_these_profiles_this_cannot_be_und', default="Are you sure you want to merge these profiles? This cannot be undone.")):
                 return
             try:
                 from education_system.systems.university.domain.operations.commerce.barber.services.barber_core import CustomerManager
                 CustomerManager.merge_profiles(primary_var.get(), secondary_var.get())
-                messagebox.showinfo("Success", "Profiles merged!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.customers.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.customers.dialogs.profiles_merged', default="Profiles merged!"))
                 merge_window.destroy()
                 self._load_customers()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(merge_window, text="Merge Profiles", command=merge).pack(pady=10)
+        ttk.Button(merge_window, text=_t('gui.operations.commerce.barber.features.customers.buttons.merge_profiles', default="Merge Profiles"), command=merge).pack(pady=10)
 
     def export_customer_list(self):
         """Export customer list."""
         file_path = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json")],
-            title="Export Customer List"
+            title=_t('gui.operations.commerce.barber.features.customers.dialogs.export_customer_list', default="Export Customer List")
         )
         if not file_path:
             return
@@ -388,17 +390,17 @@ class CustomersMixin:
                         writer.writeheader()
                         writer.writerows(customers)
 
-            messagebox.showinfo("Success", f"Exported {len(customers)} customers to {file_path}")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.customers.dialogs.success', default="Success"), f"Exported {len(customers)} customers to {file_path}")
             log_activity('export', 'barber_customers', details={'count': len(customers)})
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), str(e))
 
     def import_customers(self):
         """Import customers."""
         file_path = filedialog.askopenfilename(
             filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json")],
-            title="Import Customers"
+            title=_t('gui.operations.commerce.barber.features.customers.dialogs.import_customers', default="Import Customers")
         )
         if not file_path:
             return
@@ -427,9 +429,9 @@ class CustomersMixin:
                 except Exception:
                     pass
 
-            messagebox.showinfo("Success", f"Imported {imported} customers.")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.customers.dialogs.success', default="Success"), f"Imported {imported} customers.")
             log_activity('import', 'barber_customers', details={'count': imported})
             self._load_customers()
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.customers.dialogs.error', default="Error"), str(e))

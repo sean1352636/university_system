@@ -30,13 +30,13 @@ _ = get_text
 _initialised = False
 
 # University locale directory (lives alongside the university runtime data)
-from education_system.systems.university.infrastructure.paths import LOCALES_DIR as _UNIVERSITY_LOCALES
+from education_system.paths import UNIVERSITY_LOCALES_DIR as _UNIVERSITY_LOCALES
 
 
 def _get_config_path() -> Path:
     """Get the language config file path (backward compat)."""
-    from education_system.systems.university.infrastructure import paths
-    return paths.CONFIG_DIR / "language_config.json"
+    from education_system import paths
+    return paths.UNIVERSITY_CONFIG_DIR / "language_config.json"
 
 
 def init_i18n(language_code: str | None = None) -> str:

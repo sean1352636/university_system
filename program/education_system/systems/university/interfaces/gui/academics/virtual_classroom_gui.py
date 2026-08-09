@@ -3,6 +3,8 @@ Virtual Classroom Management GUI
 Comprehensive interface for managing virtual classrooms, sessions, participants, and recordings
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import sys
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
@@ -16,7 +18,7 @@ init_i18n()
 # Infrastructure imports
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.shared_context import get_auth, get_current_user
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 
 # Virtual classroom service imports
@@ -1241,7 +1243,7 @@ class VirtualClassroomGUI:
                 # Get user ID from selected user
                 selected = fields['user_combo'].get()
                 if not selected or selected not in user_data:
-                    messagebox.showerror(_("common.error"), "Please select a user")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.virtual_classroom.dialogs.please_select_a_user', default="Please select a user"))
                     return
 
                 user_id = user_data[selected]['id']

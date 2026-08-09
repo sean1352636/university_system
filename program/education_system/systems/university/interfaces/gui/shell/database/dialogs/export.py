@@ -4,6 +4,8 @@ Provides the ExportDialog class for exporting backups to various formats
 including CSV, JSON, XML, PDF, and plain text.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
@@ -16,7 +18,7 @@ class ExportDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Export Backup")
+        self.dialog.title(_t('gui.shell.database.dialogs.export.windows.export_backup', default="Export Backup"))
         self.dialog.geometry("500x300")
         self.dialog.transient(parent)
 
@@ -26,7 +28,7 @@ class ExportDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Backup selection
-        select_frame = ttk.LabelFrame(self.dialog, text="Select Backup to Export", padding=10)
+        select_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.export.labels.select_backup_to_export', default="Select Backup to Export"), padding=10)
         select_frame.pack(fill="x", padx=10, pady=5)
 
         self.backup_var = tk.StringVar()
@@ -35,30 +37,30 @@ class ExportDialog:
         self.backup_combo.pack(fill="x", pady=5)
 
         # Export format
-        format_frame = ttk.LabelFrame(self.dialog, text="Export Format", padding=10)
+        format_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.export.labels.export_format', default="Export Format"), padding=10)
         format_frame.pack(fill="x", padx=10, pady=5)
 
-        self.format_var = tk.StringVar(value="csv")
-        ttk.Radiobutton(format_frame, text="CSV Files", variable=self.format_var, value="csv").pack(anchor="w")
-        ttk.Radiobutton(format_frame, text="JSON File", variable=self.format_var, value="json").pack(anchor="w")
-        ttk.Radiobutton(format_frame, text="XML File", variable=self.format_var, value="xml").pack(anchor="w")
-        ttk.Radiobutton(format_frame, text="PDF File", variable=self.format_var, value="pdf").pack(anchor="w")
-        ttk.Radiobutton(format_frame, text="Text File", variable=self.format_var, value="txt").pack(anchor="w")
+        self.format_var = tk.StringVar(value=_t('gui.shell.database.dialogs.export.values.csv', default="csv"))
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.database.dialogs.export.buttons.csv_files', default="CSV Files"), variable=self.format_var, value="csv").pack(anchor="w")
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.database.dialogs.export.buttons.json_file', default="JSON File"), variable=self.format_var, value="json").pack(anchor="w")
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.database.dialogs.export.buttons.xml_file', default="XML File"), variable=self.format_var, value="xml").pack(anchor="w")
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.database.dialogs.export.buttons.pdf_file', default="PDF File"), variable=self.format_var, value="pdf").pack(anchor="w")
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.database.dialogs.export.buttons.text_file', default="Text File"), variable=self.format_var, value="txt").pack(anchor="w")
 
         # Output location
-        output_frame = ttk.LabelFrame(self.dialog, text="Output Location", padding=10)
+        output_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.export.labels.output_location', default="Output Location"), padding=10)
         output_frame.pack(fill="x", padx=10, pady=5)
 
         self.output_var = tk.StringVar()
         ttk.Entry(output_frame, textvariable=self.output_var, width=40).pack(side="left", fill="x", expand=True)
-        ttk.Button(output_frame, text="Browse", command=self.browse_output).pack(side="right", padx=(5,0))
+        ttk.Button(output_frame, text=_t('gui.shell.database.dialogs.export.buttons.browse', default="Browse"), command=self.browse_output).pack(side="right", padx=(5,0))
 
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Export", command=self.export).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.export.buttons.export', default="Export"), command=self.export).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.export.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side="right")
 
     def load_backups(self):
         """Load available backups"""
@@ -74,12 +76,12 @@ class ExportDialog:
                 self.backup_combo.current(0)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load backups: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.export.dialogs.error', default="Error"), f"Failed to load backups: {e}")
 
     def browse_output(self):
         """Browse for output location"""
         if self.format_var.get() == "csv":
-            path = filedialog.askdirectory(title="Select output directory for CSV files")
+            path = filedialog.askdirectory(title=_t('gui.shell.database.dialogs.export.dialogs.select_output_directory_for_csv_files', default="Select output directory for CSV files"))
         else:
             format_type = self.format_var.get()
             filetypes_map = {
@@ -89,7 +91,7 @@ class ExportDialog:
                 "txt": [("Text files", "*.txt")]
             }
             filetypes = filetypes_map.get(format_type, [("All files", "*.*")])
-            path = filedialog.asksaveasfilename(title="Save export file", filetypes=filetypes)
+            path = filedialog.asksaveasfilename(title=_t('gui.shell.database.dialogs.export.dialogs.save_export_file', default="Save export file"), filetypes=filetypes)
 
         if path:
             self.output_var.set(path)
@@ -97,11 +99,11 @@ class ExportDialog:
     def export(self):
         """Export selected backup"""
         if not self.backup_combo.get():
-            messagebox.showwarning("No Selection", "Please select a backup to export")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.export.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.export.dialogs.please_select_a_backup_to_export', default="Please select a backup to export"))
             return
 
         if not self.output_var.get():
-            messagebox.showwarning("No Output", "Please specify output location")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.export.dialogs.no_output', default="No Output"), _t('gui.shell.database.dialogs.export.dialogs.please_specify_output_location', default="Please specify output location"))
             return
 
         try:
@@ -123,10 +125,10 @@ class ExportDialog:
                 success = export_to_txt(backup['path'], output_path)
 
             if success:
-                messagebox.showinfo("Success", f"Backup exported successfully to {output_path}")
+                messagebox.showinfo(_t('gui.shell.database.dialogs.export.dialogs.success', default="Success"), f"Backup exported successfully to {output_path}")
                 self.dialog.destroy()
             else:
-                messagebox.showerror("Error", "Export operation failed. Check logs for details.")
+                messagebox.showerror(_t('gui.shell.database.dialogs.export.dialogs.error', default="Error"), _t('gui.shell.database.dialogs.export.dialogs.export_operation_failed_check_logs_for_details', default="Export operation failed. Check logs for details."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Export failed: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.export.dialogs.error', default="Error"), f"Export failed: {e}")

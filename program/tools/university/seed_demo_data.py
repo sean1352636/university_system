@@ -19,8 +19,8 @@ from datetime import datetime, timedelta
 
 # Attempt to resolve the DB path from the project's central config.
 try:
-    from education_system.systems.university.infrastructure import paths
-    DB_PATH = str(paths.DEFAULT_DB_PATH)
+    from education_system import paths
+    DB_PATH = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 except Exception:
     DB_PATH = "university_system/data/db_files/student_records.db"
 

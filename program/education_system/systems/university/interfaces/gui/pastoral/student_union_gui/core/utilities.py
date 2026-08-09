@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 
 # =========================================================================
@@ -102,7 +104,7 @@ def _show_email_fallback(root, email, subject, message, email_type):
         details_text.insert('1.0', email_details)
         details_text.config(state='disabled')
 
-        ttk.Button(fallback_window, text="Close", command=fallback_window.destroy).pack(pady=10)
+        ttk.Button(fallback_window, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.close', default="Close"), command=fallback_window.destroy).pack(pady=10)
     except (tk.TclError, AttributeError) as e:
         print(f"Failed to show email fallback: {e}")
 
@@ -173,7 +175,7 @@ class DatabaseQueryDialog:
         scrollbar_x.pack(side='bottom', fill='x')
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)
 
     def execute_query(self):
         """Execute the database query and display results"""
@@ -189,7 +191,7 @@ class DatabaseQueryDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to execute query: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Failed to execute query: {str(e)}")
 
     # =========================================================================
     # EMAIL INTEGRATION METHODS
@@ -266,12 +268,12 @@ Best regards,
 
             success = self._send_email_via_gui(recipient_email, subject, message)
             if success:
-                messagebox.showinfo("Invitation Sent", f"Club invitation sent to {recipient_name}")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.invitation_sent', default="Invitation Sent"), f"Club invitation sent to {recipient_name}")
             else:
                 self._show_email_fallback(recipient_email, subject, message, "Club Invitation")
 
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Failed to send club invitation: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Failed to send club invitation: {e}")
 
     def send_club_join_confirmation(self, club_name, user_email, user_name):
         """Send confirmation email when user joins a club"""
@@ -486,10 +488,10 @@ Best regards,
 
                 self._send_email_via_gui(email, subject, message)
 
-            messagebox.showinfo("Newsletter Sent", f"Newsletter sent to {len(members)} club members")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.newsletter_sent', default="Newsletter Sent"), f"Newsletter sent to {len(members)} club members")
 
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Failed to send newsletter: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Failed to send newsletter: {e}")
 
     def send_event_notification_to_all_students(self, event_name, event_description, event_date, event_location):
         """Send event notification to all students"""
@@ -730,7 +732,7 @@ Student Union Finance Team
             details_text.insert('1.0', email_details)
             details_text.config(state='disabled')
 
-            ttk.Button(fallback_window, text="Close", command=fallback_window.destroy).pack(pady=10)
+            ttk.Button(fallback_window, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.close', default="Close"), command=fallback_window.destroy).pack(pady=10)
         except (tk.TclError, AttributeError) as e:
             print(f"Failed to show email fallback: {e}")
 
@@ -753,12 +755,12 @@ Student Union Finance Team
             if hasattr(finance_gui, 'prepopulate_student_union_payment'):
                 finance_gui.prepopulate_student_union_payment(item_name, amount, payment_type)
 
-            messagebox.showinfo("Finance System", f"Finance system opened for {payment_type}: {item_name}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.finance_system', default="Finance System"), f"Finance system opened for {payment_type}: {item_name}")
 
         except ImportError:
-            messagebox.showerror("Error", "Finance system is not available")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.core.utilities.dialogs.finance_system_is_not_available', default="Finance system is not available"))
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Could not open finance system: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Could not open finance system: {e}")
 
     def process_student_union_payment(self, student_id, amount, description, payment_type):
         """Process payment through student finance account balance"""
@@ -768,13 +770,13 @@ Student Union Finance Team
                 # Check balance first
                 current_balance = get_student_finance_account_balance(student_id)
                 if current_balance is None:
-                    messagebox.showerror("Error",
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"),
                         f"No finance account found for student {student_id}.\n"
                         "Please create a finance account first or use a different payment method.")
                     return False
 
                 if current_balance < amount:
-                    messagebox.showerror("Insufficient Balance",
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.insufficient_balance', default="Insufficient Balance"),
                         f"Student finance account balance is insufficient.\n\n"
                         f"Current Balance: £{current_balance:.2f}\n"
                         f"Required Amount: £{amount:.2f}\n\n"
@@ -784,7 +786,7 @@ Student Union Finance Team
                 # Get student info for email
                 student_info = get_student_info(student_id)
                 if not student_info:
-                    messagebox.showerror("Error", f"Student ID {student_id} not found")
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Student ID {student_id} not found")
                     return False
 
                 student_name = student_info.get('full_name', student_id)
@@ -804,7 +806,7 @@ Student Union Finance Team
                 )
 
                 if not payment_result['success']:
-                    messagebox.showerror("Payment Failed", payment_result['message'])
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.payment_failed', default="Payment Failed"), payment_result['message'])
                     return False
 
                 new_balance = payment_result.get('new_balance', 0)
@@ -819,7 +821,7 @@ Student Union Finance Team
                 if low_balance_email_sent:
                     success_msg += "\n\n⚠ Low balance alert email sent to student"
 
-                messagebox.showinfo("Payment Processed", success_msg)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.payment_processed', default="Payment Processed"), success_msg)
                 return True
 
             # No legacy fallback: the primary path above is the only correct
@@ -829,7 +831,7 @@ Student Union Finance Team
             return False
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to process payment: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Failed to process payment: {e}")
             return False
 
     # =========================================================================
@@ -851,12 +853,12 @@ Student Union Finance Team
             if hasattr(shop_gui, 'filter_club_merchandise'):
                 shop_gui.filter_club_merchandise(club_name)
 
-            messagebox.showinfo("Shop Opened", f"Shop opened for {club_name} merchandise")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.shop_opened', default="Shop Opened"), f"Shop opened for {club_name} merchandise")
 
         except ImportError:
-            messagebox.showerror("Error", "Shop system is not available")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.core.utilities.dialogs.shop_system_is_not_available', default="Shop system is not available"))
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Could not open shop system: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Could not open shop system: {e}")
 
     def add_club_merchandise_button(self, club_name):
         """Add button to access club merchandise"""
@@ -887,12 +889,12 @@ Student Union Finance Team
             if hasattr(restaurant_gui, 'create_club_reservation'):
                 restaurant_gui.create_club_reservation(club_name, event_type)
 
-            messagebox.showinfo("Restaurant Opened", f"Restaurant booking opened for {club_name}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.restaurant_opened', default="Restaurant Opened"), f"Restaurant booking opened for {club_name}")
 
         except ImportError:
-            messagebox.showerror("Error", "Restaurant system is not available")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.core.utilities.dialogs.restaurant_system_is_not_available', default="Restaurant system is not available"))
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Could not open restaurant system: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Could not open restaurant system: {e}")
 
     def book_club_dining_dialog(self, club_name):
         """Show dialog for club dining reservation"""
@@ -910,13 +912,13 @@ Student Union Finance Team
                      font=('Arial', 12, 'bold')).pack(pady=10)
 
             # Booking options
-            ttk.Label(main_frame, text="Event Type:").pack(anchor='w')
-            event_type_var = tk.StringVar(value="Club Meeting")
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.event_type', default="Event Type:")).pack(anchor='w')
+            event_type_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.core.utilities.values.club_meeting', default="Club Meeting"))
             event_types = ["Club Meeting", "Social Dinner", "Celebration", "Awards Ceremony", "Other"]
             event_combo = ttk.Combobox(main_frame, textvariable=event_type_var, values=event_types)
             event_combo.pack(fill='x', pady=5)
 
-            ttk.Label(main_frame, text="Expected Attendees:").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.expected_attendees', default="Expected Attendees:")).pack(anchor='w')
             attendees_var = tk.StringVar()
             ttk.Entry(main_frame, textvariable=attendees_var).pack(fill='x', pady=5)
 
@@ -927,18 +929,18 @@ Student Union Finance Team
                     dialog.destroy()
                     self.open_restaurant_for_club_booking(club_name, event_type)
                 else:
-                    messagebox.showwarning("Missing Information", "Please specify expected attendees")
+                    messagebox.showwarning(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.missing_information', default="Missing Information"), _t('gui.pastoral.student_union_gui.core.utilities.dialogs.please_specify_expected_attendees', default="Please specify expected attendees"))
 
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(pady=20)
 
-            ttk.Button(button_frame, text="Open Restaurant System",
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.open_restaurant_system', default="Open Restaurant System"),
                       command=proceed_booking).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel",
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.cancel', default="Cancel"),
                       command=dialog.destroy).pack(side='left', padx=5)
 
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Could not open booking dialog: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Could not open booking dialog: {e}")
 
     # =========================================================================
     # TRIP INTEGRATION METHODS
@@ -959,12 +961,12 @@ Student Union Finance Team
             if hasattr(trip_gui, 'set_organizing_club'):
                 trip_gui.set_organizing_club(club_name)
 
-            messagebox.showinfo("Trip Management Opened", f"Trip management opened for {club_name}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.trip_management_opened', default="Trip Management Opened"), f"Trip management opened for {club_name}")
 
         except ImportError:
-            messagebox.showerror("Error", "Trip management system is not available")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.core.utilities.dialogs.trip_management_system_is_not_available', default="Trip management system is not available"))
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Could not open trip management: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Could not open trip management: {e}")
 
     def create_club_trip_dialog(self, club_name):
         """Show dialog to create a new club trip"""
@@ -984,28 +986,28 @@ Student Union Finance Team
             # Trip details form
             fields = {}
 
-            ttk.Label(main_frame, text="Trip Name:").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.trip_name', default="Trip Name:")).pack(anchor='w')
             fields['name'] = ttk.Entry(main_frame)
             fields['name'].pack(fill='x', pady=5)
 
-            ttk.Label(main_frame, text="Destination:").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.destination', default="Destination:")).pack(anchor='w')
             fields['destination'] = ttk.Entry(main_frame)
             fields['destination'].pack(fill='x', pady=5)
 
-            ttk.Label(main_frame, text="Trip Date:").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.trip_date', default="Trip Date:")).pack(anchor='w')
             fields['date'] = ttk.Entry(main_frame)
             fields['date'].pack(fill='x', pady=5)
             fields['date'].insert(0, "YYYY-MM-DD")
 
-            ttk.Label(main_frame, text="Cost per Person (£):").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.cost_per_person', default="Cost per Person (£):")).pack(anchor='w')
             fields['cost'] = ttk.Entry(main_frame)
             fields['cost'].pack(fill='x', pady=5)
 
-            ttk.Label(main_frame, text="Maximum Participants:").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.maximum_participants', default="Maximum Participants:")).pack(anchor='w')
             fields['max_participants'] = ttk.Entry(main_frame)
             fields['max_participants'].pack(fill='x', pady=5)
 
-            ttk.Label(main_frame, text="Description:").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.description', default="Description:")).pack(anchor='w')
             fields['description'] = tk.Text(main_frame, height=6)
             fields['description'].pack(fill='both', expand=True, pady=5)
 
@@ -1023,7 +1025,7 @@ Student Union Finance Team
 
                     # Validate required fields
                     if not all([trip_data['name'], trip_data['destination'], trip_data['date']]):
-                        messagebox.showerror("Error", "Please fill in all required fields")
+                        messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.core.utilities.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
                         return
 
                     # Create trip in database (simplified)
@@ -1068,23 +1070,23 @@ Student Union Finance Team
                     )
 
                     dialog.destroy()
-                    messagebox.showinfo("Trip Created", f"Trip '{trip_data['name']}' created successfully!")
+                    messagebox.showinfo(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.trip_created', default="Trip Created"), f"Trip '{trip_data['name']}' created successfully!")
 
                 except ValueError:
-                    messagebox.showerror("Error", "Please enter valid numbers for cost and max participants")
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.core.utilities.dialogs.please_enter_valid_numbers_for_cost_and_max_participants', default="Please enter valid numbers for cost and max participants"))
                 except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Failed to create trip: {e}")
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Failed to create trip: {e}")
 
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(pady=20)
 
-            ttk.Button(button_frame, text="Create Trip", command=create_trip).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Open Trip Management",
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.create_trip', default="Create Trip"), command=create_trip).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.open_trip_management', default="Open Trip Management"),
                       command=lambda: [dialog.destroy(), self.open_trip_management_for_club(club_name)]).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Could not create trip dialog: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Could not create trip dialog: {e}")
 
     # =========================================================================
     # ENHANCED UI INTEGRATION METHODS
@@ -1095,34 +1097,34 @@ Student Union Finance Team
         try:
             if hasattr(self, 'content_frame'):
                 # Create integration buttons frame
-                integration_frame = ttk.LabelFrame(self.content_frame, text="Club Services")
+                integration_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.club_services', default="Club Services"))
                 integration_frame.pack(fill='x', padx=10, pady=10)
 
                 # Row 1: Shopping and Dining
                 row1_frame = ttk.Frame(integration_frame)
                 row1_frame.pack(fill='x', padx=5, pady=5)
 
-                ttk.Button(row1_frame, text="🛍️ Club Merchandise",
+                ttk.Button(row1_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.club_merchandise', default="🛍️ Club Merchandise"),
                           command=lambda: self.open_shop_for_club_merchandise(club_name)).pack(side='left', padx=5)
-                ttk.Button(row1_frame, text="🍽️ Book Club Dining",
+                ttk.Button(row1_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.book_club_dining', default="🍽️ Book Club Dining"),
                           command=lambda: self.book_club_dining_dialog(club_name)).pack(side='left', padx=5)
 
                 # Row 2: Calendar and Trips
                 row2_frame = ttk.Frame(integration_frame)
                 row2_frame.pack(fill='x', padx=5, pady=5)
 
-                ttk.Button(row2_frame, text="📅 Club Calendar",
+                ttk.Button(row2_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.club_calendar', default="📅 Club Calendar"),
                           command=lambda: self.open_calendar_with_club_events(club_name)).pack(side='left', padx=5)
-                ttk.Button(row2_frame, text="🧳 Organize Trip",
+                ttk.Button(row2_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.organize_trip', default="🧳 Organize Trip"),
                           command=lambda: self.create_club_trip_dialog(club_name)).pack(side='left', padx=5)
 
                 # Row 3: Finance and Communication
                 row3_frame = ttk.Frame(integration_frame)
                 row3_frame.pack(fill='x', padx=5, pady=5)
 
-                ttk.Button(row3_frame, text="💳 Club Payments",
+                ttk.Button(row3_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.club_payments', default="💳 Club Payments"),
                           command=lambda: self.open_finance_gui_for_club_payment(f"{club_name} Membership", 0, "Club Fee")).pack(side='left', padx=5)
-                ttk.Button(row3_frame, text="📧 Send Newsletter",
+                ttk.Button(row3_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.send_newsletter_variant_2', default="📧 Send Newsletter"),
                           command=lambda: self.create_newsletter_dialog(club_name)).pack(side='left', padx=5)
 
         except (tk.TclError, AttributeError) as e:
@@ -1143,11 +1145,11 @@ Student Union Finance Team
             ttk.Label(main_frame, text=f"Send Newsletter to {club_name} Members",
                      font=('Arial', 12, 'bold')).pack(pady=10)
 
-            ttk.Label(main_frame, text="Newsletter Subject:").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.newsletter_subject', default="Newsletter Subject:")).pack(anchor='w')
             subject_entry = ttk.Entry(main_frame)
             subject_entry.pack(fill='x', pady=5)
 
-            ttk.Label(main_frame, text="Newsletter Content:").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.newsletter_content', default="Newsletter Content:")).pack(anchor='w')
             content_text = tk.Text(main_frame, height=15)
             content_text.pack(fill='both', expand=True, pady=5)
 
@@ -1156,7 +1158,7 @@ Student Union Finance Team
                 content = content_text.get('1.0', 'end-1c').strip()
 
                 if not subject or not content:
-                    messagebox.showwarning("Missing Information", "Please provide both subject and content")
+                    messagebox.showwarning(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.missing_information', default="Missing Information"), _t('gui.pastoral.student_union_gui.core.utilities.dialogs.please_provide_both_subject_and_content', default="Please provide both subject and content"))
                     return
 
                 self.send_newsletter_to_club_members(club_name, subject, content)
@@ -1165,11 +1167,11 @@ Student Union Finance Team
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="Send Newsletter", command=send_newsletter).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.send_newsletter', default="Send Newsletter"), command=send_newsletter).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Could not create newsletter dialog: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Could not create newsletter dialog: {e}")
 
 
 class SearchDialog:
@@ -1194,7 +1196,7 @@ class SearchDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Search input
-        ttk.Label(main_frame, text="Search Term:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.labels.search_term', default="Search Term:")).pack(anchor='w', pady=(0, 5))
 
         self.search_var = tk.StringVar()
         search_entry = ttk.Entry(main_frame, textvariable=self.search_var, width=40)
@@ -1206,14 +1208,14 @@ class SearchDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Search", command=self.perform_search).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.search', default="Search"), command=self.perform_search).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.core.utilities.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def perform_search(self):
         """Perform the search"""
         search_term = self.search_var.get().strip()
         if not search_term:
-            messagebox.showwarning("Warning", "Please enter a search term.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.core.utilities.dialogs.please_enter_a_search_term', default="Please enter a search term."))
             return
 
         try:
@@ -1221,7 +1223,7 @@ class SearchDialog:
             self.display_function(results)
             self.dialog.destroy()
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Search failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.utilities.dialogs.error', default="Error"), f"Search failed: {str(e)}")
 
 # Backward compatibility functions for CLI integration
 

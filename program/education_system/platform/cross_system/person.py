@@ -28,19 +28,22 @@ from dataclasses import dataclass, field
 
 from education_system.platform.identity.auth.db import connect
 from education_system.platform.cross_system import identity_service
-from education_system.platform.kernel.database.paths import SYSTEM_DB_PATHS
+from education_system.paths import (
+    SYSTEM_DB_PATHS,
+    SYSTEM_LEARNER_TABLE,
+    SYSTEM_ORDER,
+)
 
 logger = logging.getLogger(__name__)
 
 # Per-system local pupil/student table + primary-key column. Used to stamp
 # the shared journey_id back onto the domain row ("FK to shared identity").
-_LOCAL_TABLE: dict[str, tuple[str, str]] = {
-    "nursery":    ("pupils", "pupil_id"),
-    "primary":    ("pupils", "pupil_id"),
-    "secondary":     ("pupils", "pupil_id"),
-    "sixth_form":    ("students", "student_id"),
-    "university": ("students", "student_id"),
-}
+#
+# Sourced from the one registry rather than redeclared here: apprenticeships
+# keeps ``apprentices``/``apprentice_id``, so the old "pupils for the K-12
+# systems, students for everyone else" rule is no longer true and must not
+# be re-derived per module.
+_LOCAL_TABLE: dict[str, tuple[str, str]] = dict(SYSTEM_LEARNER_TABLE)
 
 # The immutable identity fields held canonically on student_journey.
 DEMOGRAPHIC_FIELDS = (
@@ -74,9 +77,14 @@ class Person:
 
     @property
     def systems(self) -> list[str]:
-        """The systems this person currently has a record in, in order."""
-        from education_system.platform.cross_system.progression import PHASE_ORDER
-        return [s for s in PHASE_ORDER if s in self.local_ids]
+        """The systems this person currently has a record in, in order.
+
+        Ordered by SYSTEM_ORDER, not by ``progression.PHASE_ORDER``: the
+        latter is the five-phase *recommendation* chain and excludes
+        fe_college and apprenticeships, which would silently drop an FE
+        learner or an apprentice from their own list of systems.
+        """
+        return [s for s in SYSTEM_ORDER if s in self.local_ids]
 
     def demographics(self) -> dict:
         """Just the canonical, never-changing identity fields."""

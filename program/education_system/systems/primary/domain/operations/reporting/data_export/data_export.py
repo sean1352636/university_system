@@ -32,14 +32,14 @@ from datetime import datetime as _dt
 from pathlib import Path
 from typing import Any
 
-from education_system.systems.primary.infrastructure import paths
+from education_system import paths
 from education_system.systems.primary.domain.operations.reporting.custom_export import (
     custom_export as _ce,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.DATA_EXPORT_DB
+DB_PATH = paths.PRIMARY_DATA_EXPORT_DB
 
 FORMATS: tuple[str, ...] = ("csv", "tsv", "json", "jsonl", "markdown")
 DEFAULT_FORMAT: str = "csv"
@@ -177,7 +177,7 @@ CREATE INDEX IF NOT EXISTS idx_de_jobs_preset  ON data_export_jobs(preset_key);
 
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_primary_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

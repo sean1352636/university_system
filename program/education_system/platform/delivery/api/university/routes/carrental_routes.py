@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import staff_required, token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -161,6 +161,7 @@ def list_rentals():
 
 @carrental_bp.route("/rentals/<int:rental_id>", methods=["GET"])
 @token_required
+@staff_required
 def get_rental(rental_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -202,6 +203,7 @@ def create_rental():
 
 @carrental_bp.route("/vehicles/<int:vehicle_id>", methods=["PUT"])
 @token_required
+@staff_required
 def update_vehicle(vehicle_id: int):
     data = request.get_json(silent=True) or {}
     if not data:
@@ -245,6 +247,7 @@ def update_vehicle(vehicle_id: int):
 
 @carrental_bp.route("/rentals/<int:rental_id>/status", methods=["PUT"])
 @token_required
+@staff_required
 def update_rental_status(rental_id: int):
     data = request.get_json(silent=True) or {}
     if "status" not in data:
@@ -272,6 +275,7 @@ def update_rental_status(rental_id: int):
 
 @carrental_bp.route("/rentals/<int:rental_id>/start", methods=["PUT"])
 @token_required
+@staff_required
 def start_rental(rental_id: int):
     data = request.get_json(silent=True) or {}
     for field in ["pickup_mileage", "fuel_level_pickup"]:
@@ -304,6 +308,7 @@ def start_rental(rental_id: int):
 
 @carrental_bp.route("/rentals/<int:rental_id>/complete", methods=["PUT"])
 @token_required
+@staff_required
 def complete_rental(rental_id: int):
     data = request.get_json(silent=True) or {}
     for field in ["return_mileage", "fuel_level_return"]:
@@ -353,6 +358,7 @@ def complete_rental(rental_id: int):
 
 @carrental_bp.route("/rentals/<int:rental_id>/cancel", methods=["POST"])
 @token_required
+@staff_required
 def cancel_rental(rental_id: int):
     data = request.get_json(silent=True) or {}
     reason = data.get("reason", "")
@@ -387,6 +393,7 @@ def cancel_rental(rental_id: int):
 
 @carrental_bp.route("/customers/<customer_id>/rentals", methods=["GET"])
 @token_required
+@staff_required
 def get_customer_rentals(customer_id: str):
     page, per_page, offset = get_pagination_params()
     with get_connection() as conn:
@@ -430,6 +437,7 @@ def get_available_vehicles():
 
 @carrental_bp.route("/rentals/<int:rental_id>/payment", methods=["POST"])
 @token_required
+@staff_required
 def record_payment(rental_id: int):
     data = request.get_json(silent=True) or {}
     for field in ["amount", "payment_method"]:

@@ -7,7 +7,10 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    deny_unless_owner_or_staff,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -82,6 +85,9 @@ def get_plan(plan_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"plans {plan_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
     log_activity("view", "study_plans", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -166,8 +172,20 @@ def get_task(task_id: int):
         row = conn.execute(
             "SELECT * FROM study_plan_tasks WHERE task_id = ?", (task_id,)
         ).fetchone()
+        owner = None
+        if row is not None:
+            owner_row = conn.execute(
+                """SELECT p.student_id FROM study_plan_tasks t
+                   JOIN study_plans p ON t.plan_id = p.plan_id
+                   WHERE t.task_id = ?""",
+                (task_id,),
+            ).fetchone()
+            owner = owner_row[0] if owner_row else None
     if not row:
         raise ValidationError(f"tasks {task_id} not found")
+    denial = deny_unless_owner_or_staff(owner)
+    if denial:
+        return denial
     log_activity("view", "study_plan_tasks", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -254,6 +272,9 @@ def get_flashcard(flashcard_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"flashcards {flashcard_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
     log_activity("view", "flashcards", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 

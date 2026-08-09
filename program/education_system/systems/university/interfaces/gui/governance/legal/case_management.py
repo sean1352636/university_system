@@ -1,5 +1,7 @@
 """Case Management mixin for the Legal Services GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.governance.legal._imports import (
     tk, ttk, messagebox, scrolledtext, traceback,
     CaseManager, ConsultationManager, DocumentManager, PaymentManager,
@@ -318,7 +320,7 @@ class CaseManagementMixin:
         try:
             case = CaseManager.get_case(self.selected_case['case_id'])
             if not case:
-                messagebox.showerror(_t("common.error", default="Error"), "Case not found")
+                messagebox.showerror(_t("common.error", default="Error"), _t('gui.governance.legal.case_management.dialogs.case_not_found', default="Case not found"))
                 return
 
             # Get related data

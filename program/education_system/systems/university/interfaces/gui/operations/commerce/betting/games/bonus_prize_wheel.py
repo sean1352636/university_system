@@ -9,6 +9,8 @@ doubles the bank and lets you keep going; BUST wipes the bank and ends the
 round. Press COLLECT any time to bank your winnings into credits.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import math
 import random
 import tkinter as tk
@@ -31,7 +33,7 @@ START_CREDITS, MIN_BET = 200, 5
 class BonusPrizeWheel:
     def __init__(self, root):
         self.root = root
-        root.title("Bonus Prize Wheel")
+        root.title(_t('gui.operations.commerce.betting.games.bonus_prize_wheel.windows.bonus_prize_wheel', default="Bonus Prize Wheel"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -47,7 +49,7 @@ class BonusPrizeWheel:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=12)
         f.pack()
-        tk.Label(f, text="BONUS PRIZE WHEEL", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.labels.bonus_prize_wheel', default="BONUS PRIZE WHEEL"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 18, "bold")).pack()
         self.bank_lbl = tk.Label(f, text="", bg="#3a1a55", fg=GOLD,
                                  font=("Helvetica", 15, "bold"), padx=16, pady=4)
@@ -55,7 +57,7 @@ class BonusPrizeWheel:
         self.wheel = tk.Canvas(f, width=WR * 2 + 20, height=WR * 2 + 30,
                                bg=FELT, highlightthickness=0)
         self.wheel.pack(pady=4)
-        self.msg = tk.Label(f, text="Press Start to buy in and spin!", bg=FELT,
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.labels.press_start_to_buy_in_and_spin', default="Press Start to buy in and spin!"), bg=FELT,
                             fg="white", font=("Helvetica", 12, "bold"))
         self.msg.pack()
 
@@ -67,7 +69,7 @@ class BonusPrizeWheel:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Entry:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.labels.entry', default="Entry:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -83,12 +85,12 @@ class BonusPrizeWheel:
 
         btns = tk.Frame(f, bg=FELT, pady=6)
         btns.pack()
-        self.spin_btn = tk.Button(btns, text="START", command=self.spin, width=12,
+        self.spin_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.buttons.start', default="START"), command=self.spin, width=12,
                                   font=("Helvetica", 14, "bold"), bg="#7b2cbf",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
         self.spin_btn.pack(side="left", padx=6)
-        self.collect_btn = tk.Button(btns, text="COLLECT", command=self.collect,
+        self.collect_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.buttons.collect', default="COLLECT"), command=self.collect,
                                      width=12, font=("Helvetica", 14, "bold"),
                                      bg="#1b7a4b", fg="white", activebackground=GOLD,
                                      bd=0, pady=8, cursor="hand2", state="disabled")
@@ -146,16 +148,16 @@ class BonusPrizeWheel:
             return
         if not self.in_round:
             if self.credits < self.bet:
-                self.msg.config(text="Not enough credits.")
+                self.msg.config(text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.text.not_enough_credits', default="Not enough credits."))
                 return
             self.credits -= self.bet
             self.in_round = True
             self.bank = 0
-            self.spin_btn.config(text="SPIN AGAIN")
+            self.spin_btn.config(text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.text.spin_again', default="SPIN AGAIN"))
         self.busy = True
         self.spin_btn.config(state="disabled")
         self.collect_btn.config(state="disabled")
-        self.msg.config(text="Spinning...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.text.spinning', default="Spinning..."), fg="white")
         self.refresh()
         target = random.randrange(len(SEGMENTS))
         n = len(SEGMENTS)
@@ -183,8 +185,8 @@ class BonusPrizeWheel:
         if kind == "bust":
             self.bank = 0
             self.in_round = False
-            self.msg.config(text="BUST! The bank is gone.", fg="#ff8080")
-            self.spin_btn.config(text="START", state="normal")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.text.bust_the_bank_is_gone', default="BUST! The bank is gone."), fg="#ff8080")
+            self.spin_btn.config(text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.text.start', default="START"), state="normal")
             self.collect_btn.config(state="disabled")
         elif kind == "double":
             self.bank *= 2
@@ -198,7 +200,7 @@ class BonusPrizeWheel:
             self.spin_btn.config(state="normal")
             self.collect_btn.config(state="normal")
         if self.credits < MIN_BET and not self.in_round:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits) if not self.in_round else self.bet
         self.refresh()
@@ -210,7 +212,7 @@ class BonusPrizeWheel:
         self.msg.config(text=f"Collected {self.bank} credits!", fg=GOLD)
         self.bank = 0
         self.in_round = False
-        self.spin_btn.config(text="START", state="normal")
+        self.spin_btn.config(text=_t('gui.operations.commerce.betting.games.bonus_prize_wheel.text.start', default="START"), state="normal")
         self.collect_btn.config(state="disabled")
         self.bet = min(self.bet, max(MIN_BET, self.credits))
         self.refresh()

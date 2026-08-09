@@ -1,5 +1,7 @@
 """Refunds management mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.scrolledtext import ScrolledText
@@ -50,7 +52,7 @@ class RefundsMixin:
 
         # Status filter (defaults to Pending — approver's queue view)
         ttk.Label(toolbar, text=_("finance_gui.refunds.status_filter", default="Status:")).pack(side='left', padx=(20, 5))
-        status_var = tk.StringVar(value='pending')
+        status_var = tk.StringVar(value=_t('gui.finance.finance.layout.refunds.values.pending', default='pending'))
         status_combo = ttk.Combobox(
             toolbar, textvariable=status_var, width=12, state='readonly',
             values=('all', 'pending', 'approved', 'processed', 'completed', 'rejected'),
@@ -114,7 +116,7 @@ class RefundsMixin:
         # Summary
         summary_frame = ttk.Frame(frame)
         summary_frame.pack(fill='x', padx=10, pady=5)
-        self.summary_label = ttk.Label(summary_frame, text="Loading...", font=('Arial', 10, 'bold'))
+        self.summary_label = ttk.Label(summary_frame, text=_t('gui.finance.finance.layout.refunds.labels.loading', default="Loading..."), font=('Arial', 10, 'bold'))
         self.summary_label.pack()
 
         self._load_refunds_to_table(refunds_tree, None, status_var.get())
@@ -135,7 +137,7 @@ class RefundsMixin:
         try:
             # Create refunds window
             refunds_window = tk.Toplevel(self.root)
-            refunds_window.title("All Refunds - Database Records")
+            refunds_window.title(_t('gui.finance.finance.layout.refunds.windows.all_refunds_database_records', default="All Refunds - Database Records"))
             refunds_window.geometry("1200x700")
             refunds_window.transient(self.root)
 
@@ -143,21 +145,21 @@ class RefundsMixin:
             header_frame = ttk.Frame(refunds_window)
             header_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Label(header_frame, text="All Refunds", font=('Arial', 16, 'bold')).pack(side='left')
+            ttk.Label(header_frame, text=_t('gui.finance.finance.layout.refunds.labels.all_refunds', default="All Refunds"), font=('Arial', 16, 'bold')).pack(side='left')
 
             # Refresh button
-            ttk.Button(header_frame, text="Refresh",
+            ttk.Button(header_frame, text=_t('gui.finance.finance.layout.refunds.buttons.refresh', default="Refresh"),
                       command=lambda: self._refresh_refunds_table(refunds_tree)).pack(side='right', padx=5)
 
             # Export button
-            ttk.Button(header_frame, text="Export to CSV",
+            ttk.Button(header_frame, text=_t('gui.finance.finance.layout.refunds.buttons.export_to_csv', default="Export to CSV"),
                       command=lambda: self._export_refunds_to_csv(refunds_tree)).pack(side='right', padx=5)
 
             # Search frame
             search_frame = ttk.Frame(refunds_window)
             search_frame.pack(fill='x', padx=10, pady=5)
 
-            ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
+            ttk.Label(search_frame, text=_t('gui.finance.finance.layout.refunds.labels.search', default="Search:")).pack(side='left', padx=5)
             search_var = tk.StringVar()
             search_entry = ttk.Entry(search_frame, textvariable=search_var, width=40)
             search_entry.pack(side='left', padx=5)
@@ -167,7 +169,7 @@ class RefundsMixin:
                 self._load_refunds_to_table(refunds_tree, search_term)
 
             search_var.trace('w', search_refunds)
-            ttk.Button(search_frame, text="Clear",
+            ttk.Button(search_frame, text=_t('gui.finance.finance.layout.refunds.buttons.clear', default="Clear"),
                       command=lambda: search_var.set("")).pack(side='left', padx=5)
 
             # Table frame with scrollbars
@@ -180,16 +182,16 @@ class RefundsMixin:
             refunds_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=25)
 
             # Configure columns
-            refunds_tree.heading('ID', text='ID')
-            refunds_tree.heading('Reference', text='Refund Reference')
-            refunds_tree.heading('Source', text='Source Type')
-            refunds_tree.heading('Department', text='Department')
-            refunds_tree.heading('Amount', text='Amount')
-            refunds_tree.heading('Method', text='Method')
-            refunds_tree.heading('Date', text='Date')
-            refunds_tree.heading('Reference ID', text='Reference ID')
-            refunds_tree.heading('Processed By', text='Processed By')
-            refunds_tree.heading('Notes', text='Notes')
+            refunds_tree.heading('ID', text=_t('gui.finance.finance.layout.refunds.headings.id', default='ID'))
+            refunds_tree.heading('Reference', text=_t('gui.finance.finance.layout.refunds.headings.refund_reference', default='Refund Reference'))
+            refunds_tree.heading('Source', text=_t('gui.finance.finance.layout.refunds.headings.source_type', default='Source Type'))
+            refunds_tree.heading('Department', text=_t('gui.finance.finance.layout.refunds.headings.department', default='Department'))
+            refunds_tree.heading('Amount', text=_t('gui.finance.finance.layout.refunds.headings.amount', default='Amount'))
+            refunds_tree.heading('Method', text=_t('gui.finance.finance.layout.refunds.headings.method', default='Method'))
+            refunds_tree.heading('Date', text=_t('gui.finance.finance.layout.refunds.headings.date', default='Date'))
+            refunds_tree.heading('Reference ID', text=_t('gui.finance.finance.layout.refunds.headings.reference_id', default='Reference ID'))
+            refunds_tree.heading('Processed By', text=_t('gui.finance.finance.layout.refunds.headings.processed_by', default='Processed By'))
+            refunds_tree.heading('Notes', text=_t('gui.finance.finance.layout.refunds.headings.notes', default='Notes'))
 
             # Set column widths
             refunds_tree.column('ID', width=50, anchor='center')
@@ -220,14 +222,14 @@ class RefundsMixin:
             summary_frame = ttk.Frame(refunds_window)
             summary_frame.pack(fill='x', padx=10, pady=5)
 
-            self.summary_label = ttk.Label(summary_frame, text="Loading...", font=('Arial', 10, 'bold'))
+            self.summary_label = ttk.Label(summary_frame, text=_t('gui.finance.finance.layout.refunds.labels.loading', default="Loading..."), font=('Arial', 10, 'bold'))
             self.summary_label.pack()
 
             # Load data
             self._load_refunds_to_table(refunds_tree)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open refunds view: {e}")
+            messagebox.showerror(_t('gui.finance.finance.layout.refunds.dialogs.error', default="Error"), f"Failed to open refunds view: {e}")
             import traceback
             traceback.print_exc()
 
@@ -351,7 +353,7 @@ class RefundsMixin:
     def _refresh_refunds_table(self, tree, status_filter=None):
         """Refresh the refunds table"""
         self._load_refunds_to_table(tree, None, status_filter)
-        messagebox.showinfo("Success", "Refunds list refreshed successfully")
+        messagebox.showinfo(_t('gui.finance.finance.layout.refunds.dialogs.success', default="Success"), _t('gui.finance.finance.layout.refunds.dialogs.refunds_list_refreshed_successfully', default="Refunds list refreshed successfully"))
 
     def _set_refund_status(self, tree, new_status, current_filter=None):
         """Approve or reject the selected pending refund(s).
@@ -462,10 +464,10 @@ class RefundsMixin:
                     values = tree.item(item)['values']
                     writer.writerow(values)
 
-            messagebox.showinfo("Success", f"Refunds exported to:\n{filename}")
+            messagebox.showinfo(_t('gui.finance.finance.layout.refunds.dialogs.success', default="Success"), f"Refunds exported to:\n{filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export: {e}")
+            messagebox.showerror(_t('gui.finance.finance.layout.refunds.dialogs.error', default="Error"), f"Failed to export: {e}")
 
     def _show_financial_summary(self):
         """Show financial summary"""
@@ -667,8 +669,8 @@ class RefundsMixin:
             summary_text.config(state='disabled')
 
             # Close button
-            close_btn = ttk.Button(summary_window, text="Close", command=summary_window.destroy)
+            close_btn = ttk.Button(summary_window, text=_t('gui.finance.finance.layout.refunds.buttons.close', default="Close"), command=summary_window.destroy)
             close_btn.pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate financial summary: {e}")
+            messagebox.showerror(_t('gui.finance.finance.layout.refunds.dialogs.error', default="Error"), f"Failed to generate financial summary: {e}")

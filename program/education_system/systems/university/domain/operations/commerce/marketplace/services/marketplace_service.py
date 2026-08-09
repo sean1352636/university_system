@@ -12,7 +12,7 @@ import os
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, escape_like  # nosec B608
 
 class MarketplaceService:
@@ -245,7 +245,7 @@ class MarketplaceService:
 
     def _ensure_upload_directory(self):
         """Ensure upload directory exists for listing photos."""
-        upload_dir = os.path.join(paths.UPLOAD_DIR, 'marketplace')
+        upload_dir = os.path.join(paths.UNIVERSITY_UPLOAD_DIR, 'marketplace')
         os.makedirs(upload_dir, exist_ok=True)
 
     # ========== Marketplace Listings (Buy/Sell) ==========
@@ -850,7 +850,7 @@ class MarketplaceService:
 
     def add_listing_photo(self, listing_type: str, listing_id: int,
                          photo_data: bytes, is_primary: bool = False,
-                         caption: str = "") -> int:
+                         caption: str = "", original_filename: str = "") -> int:
         """
         Add a photo to a listing.
 
@@ -865,8 +865,14 @@ class MarketplaceService:
             Photo ID
         """
         # Save photo to disk
-        upload_dir = os.path.join(paths.UPLOAD_DIR, 'marketplace')
-        filename = f"{listing_type}_{listing_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jpg"
+        upload_dir = os.path.join(paths.UNIVERSITY_UPLOAD_DIR, 'marketplace')
+        from pathlib import Path
+        from uuid import uuid4
+        os.makedirs(upload_dir, exist_ok=True)
+        suffix = Path(original_filename).suffix.lower()
+        if suffix not in {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'}:
+            suffix = '.jpg'
+        filename = f"{listing_type}_{listing_id}_{uuid4().hex}{suffix}"
         photo_path = os.path.join(upload_dir, filename)
 
         with open(photo_path, 'wb') as f:

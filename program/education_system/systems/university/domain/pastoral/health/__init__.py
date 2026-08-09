@@ -1,3 +1,11 @@
 """Student health services and records."""
 
-__all__ = ['appointments', 'portal', 'records', 'services']
+__all__ = [
+    "appointments",
+    "contacts",
+    "portal",
+    "records",
+    "reporting",
+    "services",
+    "vaccinations",
+]

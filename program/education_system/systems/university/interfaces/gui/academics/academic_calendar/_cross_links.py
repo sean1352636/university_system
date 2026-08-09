@@ -32,6 +32,8 @@ careers snapshots in ``library/_cross_links.show_*_snapshot``.
 """
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import re
 import tkinter as tk
@@ -109,15 +111,13 @@ def show_event_attendees(event_id, parent=None):
         return
     import sqlite3
     from tkinter import ttk, messagebox
-    from education_system.systems.university.infrastructure.paths import (
-        DEFAULT_DB_PATH,
-    )
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
     bare, _src = _normalise_event_id(event_id)
 
     rows = []
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         try:
             cur = conn.execute(
                 "SELECT registration_id, user_id, user_type, "
@@ -146,7 +146,7 @@ def show_event_attendees(event_id, parent=None):
     except Exception as exc:
         logger.exception("event attendees lookup failed")
         messagebox.showerror(
-            "Lookup failed",
+            _t('gui.academics.academic_calendar.cross_links.dialogs.lookup_failed', default="Lookup failed"),
             f"Could not query attendees:\n{exc}",
             parent=parent)
         return
@@ -206,11 +206,11 @@ def show_event_attendees(event_id, parent=None):
                 return
             menu = tk.Menu(tree, tearoff=0)
             menu.add_command(
-                label="👤 Open student profile",
+                label=_t('gui.academics.academic_calendar.cross_links.menus.open_student_profile', default="👤 Open student profile"),
                 command=lambda u=uid: _jump("student_records", {"student_id": str(u)}),
             )
             menu.add_command(
-                label="📨 Open in Email Manager",
+                label=_t('gui.academics.academic_calendar.cross_links.menus.open_in_email_manager', default="📨 Open in Email Manager"),
                 command=lambda u=uid: _jump("email_manager", {"student_id": str(u)}),
             )
             try:
@@ -221,7 +221,7 @@ def show_event_attendees(event_id, parent=None):
             logger.exception("attendee row menu failed")
 
     tree.bind("<Button-3>", _attendee_menu, add="+")
-    ttk.Button(win, text="Close",
+    ttk.Button(win, text=_t('gui.academics.academic_calendar.cross_links.buttons.close', default="Close"),
                command=win.destroy).pack(pady=(0, 10))
 
 

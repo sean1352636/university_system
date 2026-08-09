@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -163,12 +165,12 @@ def get_payment_methods_data(self, start_date, end_date):
 def show_checkout(self):
     """Display checkout interface"""
     if not self.cart_items:
-        messagebox.showwarning("Warning", "Cart is empty")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.cart_is_empty', default="Cart is empty"))
         return
 
     # Create checkout window
     checkout_window = tk.Toplevel(self.root)
-    checkout_window.title("Checkout")
+    checkout_window.title(_t('gui.operations.commerce.shop_management_gui.checkout_manager.windows.checkout', default="Checkout"))
     checkout_window.geometry("600x500")
     checkout_window.resizable(False, False)
 
@@ -180,7 +182,7 @@ def show_checkout(self):
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
     # Order summary
-    summary_frame = ttk.LabelFrame(main_frame, text="Order Summary", padding="10")
+    summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.labels.order_summary', default="Order Summary"), padding="10")
     summary_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
     total = 0
@@ -190,35 +192,35 @@ def show_checkout(self):
         total += item['subtotal']
 
     ttk.Separator(summary_frame, orient='horizontal').grid(row=len(self.cart_items), column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
-    ttk.Label(summary_frame, text="Total:", font=('Arial', 12, 'bold')).grid(row=len(self.cart_items)+1, column=0, sticky=tk.W)
+    ttk.Label(summary_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.labels.total', default="Total:"), font=('Arial', 12, 'bold')).grid(row=len(self.cart_items)+1, column=0, sticky=tk.W)
     ttk.Label(summary_frame, text=f"£{total:.2f}", font=('Arial', 12, 'bold')).grid(row=len(self.cart_items)+1, column=1, sticky=tk.E)
 
     summary_frame.columnconfigure(0, weight=1)
 
     # Payment method
-    payment_frame = ttk.LabelFrame(main_frame, text="Payment Method", padding="10")
+    payment_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.labels.payment_method', default="Payment Method"), padding="10")
     payment_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-    payment_var = tk.StringVar(value="Credit/Debit Card")
-    ttk.Radiobutton(payment_frame, text="Credit/Debit Card", variable=payment_var,
+    payment_var = tk.StringVar(value=_t('gui.operations.commerce.shop_management_gui.checkout_manager.values.credit_debit_card', default="Credit/Debit Card"))
+    ttk.Radiobutton(payment_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.buttons.credit_debit_card', default="Credit/Debit Card"), variable=payment_var,
                    value="Credit/Debit Card").grid(row=0, column=0, sticky=tk.W, pady=2)
-    ttk.Radiobutton(payment_frame, text="Student Account", variable=payment_var,
+    ttk.Radiobutton(payment_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.buttons.student_account', default="Student Account"), variable=payment_var,
                    value="Student Account").grid(row=1, column=0, sticky=tk.W, pady=2)
-    ttk.Radiobutton(payment_frame, text="Cash", variable=payment_var,
+    ttk.Radiobutton(payment_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.buttons.cash', default="Cash"), variable=payment_var,
                    value="Cash").grid(row=2, column=0, sticky=tk.W, pady=2)
 
     # Finance system payment option removed - not needed for checkout
     # self.add_finance_payment_option_to_checkout(payment_frame, payment_var, row_index=3)
 
     # Customer info
-    info_frame = ttk.LabelFrame(main_frame, text="Customer Information", padding="10")
+    info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.labels.customer_information', default="Customer Information"), padding="10")
     info_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-    ttk.Label(info_frame, text="Name:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    ttk.Label(info_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.labels.name', default="Name:")).grid(row=0, column=0, sticky=tk.W, pady=2)
     name_var = tk.StringVar(value=self.current_user.get('username', ''))
     ttk.Entry(info_frame, textvariable=name_var, width=30).grid(row=0, column=1, padx=(10, 0), pady=2)
 
-    ttk.Label(info_frame, text="Email:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    ttk.Label(info_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.labels.email', default="Email:")).grid(row=1, column=0, sticky=tk.W, pady=2)
     email_var = tk.StringVar(value=self.current_user.get('email', ''))
     ttk.Entry(info_frame, textvariable=email_var, width=30).grid(row=1, column=1, padx=(10, 0), pady=2)
 
@@ -237,22 +239,22 @@ def show_checkout(self):
 
             # Show appropriate message based on payment method
             if selected_payment == "Finance System":
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.success', default="Success"),
                     f"Order created successfully!\n"
                     f"Transaction ID: {transaction_id}\n\n"
                     f"The Finance System will open for manual payment processing.\n"
                     f"Status: Pending Payment")
             else:
-                messagebox.showinfo("Success", f"Order completed successfully!\nTransaction ID: {transaction_id}")
+                messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.success', default="Success"), f"Order completed successfully!\nTransaction ID: {transaction_id}")
 
             self.show_order_history()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Checkout failed: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.error', default="Error"), f"Checkout failed: {e}")
 
-    ttk.Button(button_frame, text="Complete Order", command=complete_checkout,
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.buttons.complete_order', default="Complete Order"), command=complete_checkout,
               style='Success.TButton').grid(row=0, column=0, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=checkout_window.destroy).grid(row=0, column=1, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.buttons.cancel', default="Cancel"), command=checkout_window.destroy).grid(row=0, column=1, padx=5)
 
 
 def process_checkout(self, payment_method, customer_name, customer_email):
@@ -384,13 +386,13 @@ def _process_student_account_payment(self, student_id, total_amount, transaction
             # Check balance first
             current_balance = get_student_finance_account_balance(student_id)
             if current_balance is None:
-                messagebox.showerror("Error",
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.error', default="Error"),
                     f"No finance account found for student {student_id}.\n"
                     "Please create a finance account first or use a different payment method.")
                 return False
 
             if current_balance < total_amount:
-                messagebox.showerror("Insufficient Balance",
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.insufficient_balance', default="Insufficient Balance"),
                     f"Student finance account balance is insufficient.\n\n"
                     f"Current Balance: £{current_balance:.2f}\n"
                     f"Required Amount: £{total_amount:.2f}\n\n"
@@ -411,7 +413,7 @@ def _process_student_account_payment(self, student_id, total_amount, transaction
             )
 
             if not payment_result['success']:
-                messagebox.showerror("Payment Failed", payment_result['message'])
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.payment_failed', default="Payment Failed"), payment_result['message'])
                 return False
 
             # Store payment result for later use
@@ -428,14 +430,14 @@ def _process_student_account_payment(self, student_id, total_amount, transaction
             return True
 
         # Fallback: Legacy method - add to student_fees without balance deduction
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         try:
             cursor = conn.cursor()
 
             cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
             student_result = cursor.fetchone()
             if not student_result:
-                messagebox.showerror("Error", f"Student ID {student_id} not found in system")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.error', default="Error"), f"Student ID {student_id} not found in system")
         finally:
             conn.close()
             return False
@@ -484,7 +486,7 @@ def open_finance_gui_for_payment(self, transaction_id=None, amount=None):
         from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
 
         finance_window = tk.Toplevel(self.root)
-        finance_window.title("Finance System - Shop Payment")
+        finance_window.title(_t('gui.operations.commerce.shop_management_gui.checkout_manager.windows.finance_system_shop_payment', default="Finance System - Shop Payment"))
         finance_window.geometry("1000x700")
 
         # Initialize finance GUI
@@ -494,12 +496,12 @@ def open_finance_gui_for_payment(self, transaction_id=None, amount=None):
         if transaction_id and amount and hasattr(finance_gui, 'prepopulate_shop_payment'):
             finance_gui.prepopulate_shop_payment(transaction_id, amount)
 
-        messagebox.showinfo("Finance System", "Finance system opened for payment processing")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.finance_system', default="Finance System"), _t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.finance_system_opened_for_payment_processing', default="Finance system opened for payment processing"))
 
     except ImportError:
-        messagebox.showerror("Error", "Finance system is not available")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.finance_system_is_not_available', default="Finance system is not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Could not open finance system: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.checkout_manager.dialogs.error', default="Error"), f"Could not open finance system: {e}")
 
 
 def add_finance_payment_option_to_checkout(self, payment_frame, payment_var, row_index=3):
@@ -536,7 +538,7 @@ def add_finance_payment_option_to_checkout(self, payment_frame, payment_var, row
         # Create finance system payment option
         finance_option = ttk.Radiobutton(
             payment_frame,
-            text="Finance System (Manual)",
+            text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.buttons.finance_system_manual', default="Finance System (Manual)"),
             variable=payment_var,
             value="Finance System"
         )
@@ -545,7 +547,7 @@ def add_finance_payment_option_to_checkout(self, payment_frame, payment_var, row
         # Add help text
         help_text = ttk.Label(
             payment_frame,
-            text="  Opens finance system for manual payment processing",
+            text=_t('gui.operations.commerce.shop_management_gui.checkout_manager.labels.opens_finance_system_for_manual_payment_processing', default="  Opens finance system for manual payment processing"),
             font=('Arial', 8),
             foreground='gray'
         )

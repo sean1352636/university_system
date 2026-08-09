@@ -332,7 +332,7 @@ class WitnessDialog(tk.Toplevel):
 
     def __init__(self, parent, colors):
         super().__init__(parent)
-        self.title("Add Witness")
+        self.title(_t('gui.operations.campus.security.dialogs.case_details.windows.add_witness', default="Add Witness"))
         self.geometry("400x300")
         self.configure(bg=colors["bg_dark"])
         self.transient(parent)

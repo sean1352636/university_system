@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -51,7 +53,7 @@ class DonationDialog:
         self.result = None
 
         dialog = tk.Toplevel(parent)
-        dialog.title("Make a Donation")
+        dialog.title(_t('gui.academics.parent_portal.fundraising.windows.make_a_donation', default="Make a Donation"))
         dialog.geometry("500x400")
         dialog.transient(parent)
         dialog.grab_set()
@@ -59,10 +61,10 @@ class DonationDialog:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Make a Donation", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.fundraising.labels.make_a_donation', default="Make a Donation"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Campaign selection
-        ttk.Label(main_frame, text="Campaign:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.fundraising.labels.campaign', default="Campaign:")).pack(anchor='w')
         campaign_var = tk.StringVar()
         campaign_combo = ttk.Combobox(main_frame, textvariable=campaign_var, width=45, state="readonly")
 
@@ -84,12 +86,12 @@ class DonationDialog:
         campaign_combo.pack(fill=tk.X, pady=(0, 10))
 
         # Amount
-        ttk.Label(main_frame, text="Amount:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.fundraising.labels.amount', default="Amount:")).pack(anchor='w')
         amount_entry = ttk.Entry(main_frame, width=20)
         amount_entry.pack(anchor='w', pady=(0, 10))
 
         # Child selection
-        ttk.Label(main_frame, text="On behalf of student:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.fundraising.labels.on_behalf_of_student', default="On behalf of student:")).pack(anchor='w')
         child_var = tk.StringVar()
         child_combo = ttk.Combobox(main_frame, textvariable=child_var, width=45, state="readonly")
         child_combo['values'] = [f"{c[1]} {c[3]} (ID: {c[0]})" for c in children] if children else ['N/A']
@@ -101,10 +103,10 @@ class DonationDialog:
             try:
                 amount = float(amount_entry.get())
             except (ValueError, TypeError):
-                messagebox.showwarning("Invalid Amount", "Please enter a valid number.")
+                messagebox.showwarning(_t('gui.academics.parent_portal.fundraising.dialogs.invalid_amount', default="Invalid Amount"), _t('gui.academics.parent_portal.fundraising.dialogs.please_enter_a_valid_number', default="Please enter a valid number."))
                 return
             if amount <= 0:
-                messagebox.showwarning("Invalid Amount", "Amount must be greater than zero.")
+                messagebox.showwarning(_t('gui.academics.parent_portal.fundraising.dialogs.invalid_amount', default="Invalid Amount"), _t('gui.academics.parent_portal.fundraising.dialogs.amount_must_be_greater_than_zero', default="Amount must be greater than zero."))
                 return
             campaign = campaign_var.get()
             idx = child_combo.current()
@@ -114,8 +116,8 @@ class DonationDialog:
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text="Donate", command=submit).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.fundraising.buttons.donate', default="Donate"), command=submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.fundraising.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         dialog.wait_window()
 

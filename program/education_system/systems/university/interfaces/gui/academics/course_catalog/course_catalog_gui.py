@@ -5,6 +5,8 @@ register for (or drop) courses.  If a course is full the student is offered
 a spot on the waitlist.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -29,7 +31,7 @@ class CourseCatalogGUI:
             self.student_id = auth.current_user.get('username', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Course Catalog & Registration")
+        self.window.title(_t('gui.academics.course_catalog.course_catalog.windows.course_catalog_registration', default="Course Catalog & Registration"))
         self.window.geometry("1100x700")
         self.window.transient(parent)
 
@@ -44,7 +46,7 @@ class CourseCatalogGUI:
         """Build the catalog layout."""
         ttk.Label(
             self.window,
-            text="Course Catalog & Registration",
+            text=_t('gui.academics.course_catalog.course_catalog.labels.course_catalog_registration', default="Course Catalog & Registration"),
             font=('Arial', 16, 'bold'),
         ).pack(pady=(10, 5))
 
@@ -52,21 +54,21 @@ class CourseCatalogGUI:
         search_frame = ttk.Frame(self.window)
         search_frame.pack(fill=tk.X, padx=15, pady=5)
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(search_frame, text=_t('gui.academics.course_catalog.course_catalog.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
         self.search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=(0, 10))
         search_entry.bind('<Return>', lambda e: self._search_courses())
 
-        ttk.Label(search_frame, text="Type:").pack(side=tk.LEFT, padx=(0, 5))
-        self.type_var = tk.StringVar(value='All')
+        ttk.Label(search_frame, text=_t('gui.academics.course_catalog.course_catalog.labels.type', default="Type:")).pack(side=tk.LEFT, padx=(0, 5))
+        self.type_var = tk.StringVar(value=_t('gui.academics.course_catalog.course_catalog.values.all', default='All'))
         type_combo = ttk.Combobox(
             search_frame, textvariable=self.type_var,
             values=self.TYPE_CHOICES, state='readonly', width=12,
         )
         type_combo.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Button(search_frame, text="Search", command=self._search_courses).pack(side=tk.LEFT)
+        ttk.Button(search_frame, text=_t('gui.academics.course_catalog.course_catalog.buttons.search', default="Search"), command=self._search_courses).pack(side=tk.LEFT)
 
         # ---- Results treeview ----
         tree_frame = ttk.Frame(self.window)
@@ -74,13 +76,13 @@ class CourseCatalogGUI:
 
         cols = ('code', 'name', 'credits', 'type', 'instructor', 'enrolled_capacity', 'status')
         self.tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=20)
-        self.tree.heading('code', text='Code')
-        self.tree.heading('name', text='Course Name')
-        self.tree.heading('credits', text='Credits')
-        self.tree.heading('type', text='Type')
-        self.tree.heading('instructor', text='Instructor')
-        self.tree.heading('enrolled_capacity', text='Enrolled/Cap')
-        self.tree.heading('status', text='Status')
+        self.tree.heading('code', text=_t('gui.academics.course_catalog.course_catalog.headings.code', default='Code'))
+        self.tree.heading('name', text=_t('gui.academics.course_catalog.course_catalog.headings.course_name', default='Course Name'))
+        self.tree.heading('credits', text=_t('gui.academics.course_catalog.course_catalog.headings.credits', default='Credits'))
+        self.tree.heading('type', text=_t('gui.academics.course_catalog.course_catalog.headings.type', default='Type'))
+        self.tree.heading('instructor', text=_t('gui.academics.course_catalog.course_catalog.headings.instructor', default='Instructor'))
+        self.tree.heading('enrolled_capacity', text=_t('gui.academics.course_catalog.course_catalog.headings.enrolled_cap', default='Enrolled/Cap'))
+        self.tree.heading('status', text=_t('gui.academics.course_catalog.course_catalog.headings.status', default='Status'))
 
         self.tree.column('code', width=110)
         self.tree.column('name', width=280)
@@ -99,9 +101,9 @@ class CourseCatalogGUI:
         btn_frame = ttk.Frame(self.window)
         btn_frame.pack(fill=tk.X, padx=15, pady=(5, 10))
 
-        ttk.Button(btn_frame, text="Register", command=self._register).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Drop", command=self._drop).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._search_courses).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.course_catalog.course_catalog.buttons.register', default="Register"), command=self._register).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.course_catalog.course_catalog.buttons.drop', default="Drop"), command=self._drop).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.course_catalog.course_catalog.buttons.refresh', default="Refresh"), command=self._search_courses).pack(side=tk.RIGHT, padx=5)
 
         self.status_var = tk.StringVar(value="")
         ttk.Label(self.window, textvariable=self.status_var).pack(anchor='w', padx=15, pady=(0, 5))
@@ -175,7 +177,7 @@ class CourseCatalogGUI:
         except Exception as e:
             logger.error(f"Error searching courses: {e}")
             self.status_var.set(f"Error: {e}")
-            messagebox.showerror("Error", f"Failed to search courses: {e}", parent=self.window)
+            messagebox.showerror(_t('gui.academics.course_catalog.course_catalog.dialogs.error', default="Error"), f"Failed to search courses: {e}", parent=self.window)
 
     # ------------------------------------------------------------------
     # Registration
@@ -185,7 +187,7 @@ class CourseCatalogGUI:
         """Return the module_code of the selected treeview row, or None."""
         sel = self.tree.selection()
         if not sel:
-            messagebox.showwarning("No Selection", "Please select a course first.", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.course_catalog.course_catalog.dialogs.no_selection', default="No Selection"), _t('gui.academics.course_catalog.course_catalog.dialogs.please_select_a_course_first', default="Please select a course first."), parent=self.window)
             return None
         values = self.tree.item(sel[0], 'values')
         return values[0] if values else None
@@ -193,7 +195,7 @@ class CourseCatalogGUI:
     def _register(self):
         """Register the student for the selected course, or offer waitlist if full."""
         if not self.student_id:
-            messagebox.showwarning("Warning", "No student logged in.", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.course_catalog.course_catalog.dialogs.warning', default="Warning"), _t('gui.academics.course_catalog.course_catalog.dialogs.no_student_logged_in', default="No student logged in."), parent=self.window)
             return
 
         module_code = self._get_selected_code()
@@ -210,7 +212,7 @@ class CourseCatalogGUI:
                 ).fetchone()
                 if existing:
                     messagebox.showinfo(
-                        "Already Enrolled",
+                        _t('gui.academics.course_catalog.course_catalog.dialogs.already_enrolled', default="Already Enrolled"),
                         f"You are already enrolled in {module_code}.",
                         parent=self.window,
                     )
@@ -238,7 +240,7 @@ class CourseCatalogGUI:
             if capacity and enrolled >= capacity:
                 # Course is full -- offer waitlist
                 if messagebox.askyesno(
-                    "Course Full",
+                    _t('gui.academics.course_catalog.course_catalog.dialogs.course_full', default="Course Full"),
                     f"{module_code} is full ({enrolled}/{capacity}). "
                     "Would you like to join the waitlist?",
                     parent=self.window,
@@ -280,7 +282,7 @@ class CourseCatalogGUI:
                 pass
 
             messagebox.showinfo(
-                "Enrolled",
+                _t('gui.academics.course_catalog.course_catalog.dialogs.enrolled', default="Enrolled"),
                 f"Successfully enrolled in {module_code}.",
                 parent=self.window,
             )
@@ -289,7 +291,7 @@ class CourseCatalogGUI:
         except Exception as e:
             logger.error(f"Error registering for {module_code}: {e}")
             messagebox.showerror(
-                "Error", f"Registration failed: {e}", parent=self.window
+                _t('gui.academics.course_catalog.course_catalog.dialogs.error', default="Error"), f"Registration failed: {e}", parent=self.window
             )
 
     def _add_to_waitlist(self, module_code):
@@ -320,7 +322,7 @@ class CourseCatalogGUI:
                 pass
 
             messagebox.showinfo(
-                "Waitlisted",
+                _t('gui.academics.course_catalog.course_catalog.dialogs.waitlisted', default="Waitlisted"),
                 f"You have been added to the waitlist for {module_code} "
                 f"at position {next_pos}.",
                 parent=self.window,
@@ -330,7 +332,7 @@ class CourseCatalogGUI:
         except Exception as e:
             logger.error(f"Error adding to waitlist for {module_code}: {e}")
             messagebox.showerror(
-                "Error", f"Failed to join waitlist: {e}", parent=self.window
+                _t('gui.academics.course_catalog.course_catalog.dialogs.error', default="Error"), f"Failed to join waitlist: {e}", parent=self.window
             )
 
     # ------------------------------------------------------------------
@@ -340,7 +342,7 @@ class CourseCatalogGUI:
     def _drop(self):
         """Drop the student from the selected course."""
         if not self.student_id:
-            messagebox.showwarning("Warning", "No student logged in.", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.course_catalog.course_catalog.dialogs.warning', default="Warning"), _t('gui.academics.course_catalog.course_catalog.dialogs.no_student_logged_in', default="No student logged in."), parent=self.window)
             return
 
         module_code = self._get_selected_code()
@@ -348,7 +350,7 @@ class CourseCatalogGUI:
             return
 
         if not messagebox.askyesno(
-            "Confirm Drop",
+            _t('gui.academics.course_catalog.course_catalog.dialogs.confirm_drop', default="Confirm Drop"),
             f"Are you sure you want to drop {module_code}?",
             parent=self.window,
         ):
@@ -372,7 +374,7 @@ class CourseCatalogGUI:
                 pass
 
             messagebox.showinfo(
-                "Dropped",
+                _t('gui.academics.course_catalog.course_catalog.dialogs.dropped', default="Dropped"),
                 f"You have been dropped from {module_code}.",
                 parent=self.window,
             )
@@ -381,5 +383,5 @@ class CourseCatalogGUI:
         except Exception as e:
             logger.error(f"Error dropping {module_code}: {e}")
             messagebox.showerror(
-                "Error", f"Failed to drop course: {e}", parent=self.window
+                _t('gui.academics.course_catalog.course_catalog.dialogs.error', default="Error"), f"Failed to drop course: {e}", parent=self.window
             )

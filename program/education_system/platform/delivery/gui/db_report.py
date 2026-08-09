@@ -20,6 +20,8 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
+from education_system.paths import VAR_DIR
+
 import matplotlib
 matplotlib.use("Agg")  # headless: render charts to files, never to a display
 import matplotlib.pyplot as plt
@@ -98,8 +100,8 @@ _CATEGORICAL_PREFERRED = (
 # Discovery + extraction
 # --------------------------------------------------------------------------- #
 def discover_databases(edu_root: Path | None = None) -> list[Path]:
-    """Return every real .db file under the education_system tree, sorted."""
-    root = Path(edu_root) if edu_root else _EDU_ROOT
+    """Return every runtime .db file, or scan an explicitly supplied root."""
+    root = Path(edu_root) if edu_root else VAR_DIR
     found = []
     for p in root.rglob("*.db"):
         s = str(p)

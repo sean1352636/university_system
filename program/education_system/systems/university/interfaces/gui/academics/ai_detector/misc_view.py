@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import logging
 import os
@@ -172,12 +174,12 @@ def _show_ai_detection_email_fallback(self, email, subject, message, analysis_re
     """Show fallback dialog for AI detection report email"""
     try:
         fallback_window = tk.Toplevel(self.root)
-        fallback_window.title("AI Detection Report Email - Manual Send")
+        fallback_window.title(_t('gui.academics.ai_detector.misc_view.windows.ai_detection_report_email_manual_send', default="AI Detection Report Email - Manual Send"))
         fallback_window.geometry("700x500")
         fallback_window.transient(self.root)
 
         ttk.Label(fallback_window,
-                 text="Email system unavailable. Please manually send this report:",
+                 text=_t('gui.academics.ai_detector.misc_view.labels.email_system_unavailable_please_manually_send_this_report', default="Email system unavailable. Please manually send this report:"),
                  font=('Arial', 10, 'bold')).pack(pady=10)
 
         details_frame = ttk.Frame(fallback_window)
@@ -191,7 +193,7 @@ def _show_ai_detection_email_fallback(self, email, subject, message, analysis_re
         details_text.insert('1.0', email_details)
         details_text.config(state='disabled')
 
-        ttk.Button(fallback_window, text="Close", command=fallback_window.destroy).pack(pady=10)
+        ttk.Button(fallback_window, text=_t('gui.academics.ai_detector.misc_view.buttons.close', default="Close"), command=fallback_window.destroy).pack(pady=10)
     except Exception as e:
         print(f"Failed to show AI detection email fallback: {e}")
 
@@ -296,64 +298,64 @@ def collect_performance_data(self):
 def create_api_integration_tab(self):
     """Create API integration tab"""
     api_frame = ttk.Frame(self.notebook)
-    self.notebook.add(api_frame, text="🔌 API Integration")
+    self.notebook.add(api_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.api_integration', default="🔌 API Integration"))
 
     # API integration card
     api_card = ttk.Frame(api_frame, style='Card.TFrame')
     api_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(api_card, text="External API Integration", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(api_card, text=_t('gui.academics.ai_detector.misc_view.labels.external_api_integration', default="External API Integration"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # API configuration
-    config_frame = ttk.LabelFrame(api_card, text="API Configuration", padding=15)
+    config_frame = ttk.LabelFrame(api_card, text=_t('gui.academics.ai_detector.misc_view.labels.api_configuration', default="API Configuration"), padding=15)
     config_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     # API endpoint input
     endpoint_frame = ttk.Frame(config_frame)
     endpoint_frame.pack(fill='x', pady=(0, 10))
 
-    ttk.Label(endpoint_frame, text="API Name:").pack(side='left')
+    ttk.Label(endpoint_frame, text=_t('gui.academics.ai_detector.misc_view.labels.api_name', default="API Name:")).pack(side='left')
     self.api_name_var = tk.StringVar()
     ttk.Entry(endpoint_frame, textvariable=self.api_name_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Label(endpoint_frame, text="Endpoint:").pack(side='left')
+    ttk.Label(endpoint_frame, text=_t('gui.academics.ai_detector.misc_view.labels.endpoint', default="Endpoint:")).pack(side='left')
     self.api_endpoint_var = tk.StringVar()
     ttk.Entry(endpoint_frame, textvariable=self.api_endpoint_var, width=30).pack(side='left', padx=(5, 0))
 
     # Register button
-    ttk.Button(config_frame, text="Register API",
+    ttk.Button(config_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.register_api', default="Register API"),
               command=self.register_external_api).pack(fill='x')
 
     # Test API
-    test_frame = ttk.LabelFrame(api_card, text="API Testing", padding=15)
+    test_frame = ttk.LabelFrame(api_card, text=_t('gui.academics.ai_detector.misc_view.labels.api_testing', default="API Testing"), padding=15)
     test_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(test_frame, text="Test API Connection",
+    ttk.Button(test_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.test_api_connection', default="Test API Connection"),
               command=self.test_api_connection).pack(fill='x', pady=(0, 5))
-    ttk.Button(test_frame, text="Compare API Results",
+    ttk.Button(test_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.compare_api_results', default="Compare API Results"),
               command=self.compare_api_results).pack(fill='x')
 
 
 def create_bias_detection_tab(self):
     """Create bias detection tab"""
     bias_frame = ttk.Frame(self.notebook)
-    self.notebook.add(bias_frame, text="⚖️ Bias Detection")
+    self.notebook.add(bias_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.bias_detection', default="⚖️ Bias Detection"))
 
     # Bias detection card
     bias_card = ttk.Frame(bias_frame, style='Card.TFrame')
     bias_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(bias_card, text="Bias Detection & Analysis", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(bias_card, text=_t('gui.academics.ai_detector.misc_view.labels.bias_detection_analysis', default="Bias Detection & Analysis"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Institution input
     input_frame = ttk.Frame(bias_card)
     input_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Label(input_frame, text="Institution ID:").pack(side='left')
+    ttk.Label(input_frame, text=_t('gui.academics.ai_detector.misc_view.labels.institution_id', default="Institution ID:")).pack(side='left')
     self.bias_institution_var = tk.StringVar()
     ttk.Entry(input_frame, textvariable=self.bias_institution_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Button(input_frame, text="Analyze Bias",
+    ttk.Button(input_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.analyze_bias', default="Analyze Bias"),
               command=self.analyze_institutional_bias).pack(side='right')
 
     # Results display
@@ -364,121 +366,121 @@ def create_bias_detection_tab(self):
 def create_compliance_tab(self):
     """Create compliance monitoring tab"""
     compliance_frame = ttk.Frame(self.notebook)
-    self.notebook.add(compliance_frame, text="📋 Compliance")
+    self.notebook.add(compliance_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.compliance', default="📋 Compliance"))
 
     # Compliance card
     compliance_card = ttk.Frame(compliance_frame, style='Card.TFrame')
     compliance_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(compliance_card, text="Compliance & Privacy", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(compliance_card, text=_t('gui.academics.ai_detector.misc_view.labels.compliance_privacy', default="Compliance & Privacy"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Compliance controls
-    controls_frame = ttk.LabelFrame(compliance_card, text="Compliance Tools", padding=15)
+    controls_frame = ttk.LabelFrame(compliance_card, text=_t('gui.academics.ai_detector.misc_view.labels.compliance_tools', default="Compliance Tools"), padding=15)
     controls_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(controls_frame, text="Generate Compliance Report",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.generate_compliance_report', default="Generate Compliance Report"),
               command=self.generate_compliance_report).pack(fill='x', pady=(0, 5))
-    ttk.Button(controls_frame, text="Data Retention Status",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.data_retention_status', default="Data Retention Status"),
               command=self.show_data_retention_status).pack(fill='x', pady=(0, 5))
-    ttk.Button(controls_frame, text="Consent Management",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.consent_management', default="Consent Management"),
               command=self.show_consent_management).pack(fill='x')
 
 
 def create_data_export_import_tab(self):
     """Create data export/import tab"""
     export_frame = ttk.Frame(self.notebook)
-    self.notebook.add(export_frame, text="💾 Data Management")
+    self.notebook.add(export_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.data_management', default="💾 Data Management"))
 
     # Data management card
     data_card = ttk.Frame(export_frame, style='Card.TFrame')
     data_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(data_card, text="Advanced Data Management", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(data_card, text=_t('gui.academics.ai_detector.misc_view.labels.advanced_data_management', default="Advanced Data Management"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Export options
-    export_frame_inner = ttk.LabelFrame(data_card, text="Export Options", padding=15)
+    export_frame_inner = ttk.LabelFrame(data_card, text=_t('gui.academics.ai_detector.misc_view.labels.export_options', default="Export Options"), padding=15)
     export_frame_inner.pack(fill='x', padx=15, pady=(0, 15))
 
     export_buttons = ttk.Frame(export_frame_inner)
     export_buttons.pack(fill='x')
 
-    ttk.Button(export_buttons, text="📊 Export Detailed Report",
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.export_detailed_report', default="📊 Export Detailed Report"),
               command=self.export_detailed_report).pack(side='left', padx=(0, 10))
-    ttk.Button(export_buttons, text="📈 Export Analytics Data",
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.export_analytics_data', default="📈 Export Analytics Data"),
               command=self.export_analytics_data).pack(side='left', padx=(0, 10))
-    ttk.Button(export_buttons, text="🔐 Export Audit Log",
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.export_audit_log', default="🔐 Export Audit Log"),
               command=self.export_audit_log).pack(side='left')
 
     # Import options
-    import_frame_inner = ttk.LabelFrame(data_card, text="Import Options", padding=15)
+    import_frame_inner = ttk.LabelFrame(data_card, text=_t('gui.academics.ai_detector.misc_view.labels.import_options', default="Import Options"), padding=15)
     import_frame_inner.pack(fill='x', padx=15, pady=(0, 15))
 
     import_buttons = ttk.Frame(import_frame_inner)
     import_buttons.pack(fill='x')
 
-    ttk.Button(import_buttons, text="📥 Import Submissions",
+    ttk.Button(import_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.import_submissions', default="📥 Import Submissions"),
               command=self.import_submissions).pack(side='left', padx=(0, 10))
-    ttk.Button(import_buttons, text="👥 Import Student Data",
+    ttk.Button(import_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.import_student_data', default="👥 Import Student Data"),
               command=self.import_student_data).pack(side='left', padx=(0, 10))
-    ttk.Button(import_buttons, text="⚙️ Import Settings",
+    ttk.Button(import_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.import_settings', default="⚙️ Import Settings"),
               command=self.import_settings).pack(side='left')
 
 
 def create_federated_learning_tab(self):
     """Create federated learning tab"""
     fed_frame = ttk.Frame(self.notebook)
-    self.notebook.add(fed_frame, text="🌐 Federated ML")
+    self.notebook.add(fed_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.federated_ml', default="🌐 Federated ML"))
 
     # Federated learning card
     fed_card = ttk.Frame(fed_frame, style='Card.TFrame')
     fed_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(fed_card, text="Federated Learning", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(fed_card, text=_t('gui.academics.ai_detector.misc_view.labels.federated_learning', default="Federated Learning"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Institution setup
-    setup_frame = ttk.LabelFrame(fed_card, text="Federation Setup", padding=15)
+    setup_frame = ttk.LabelFrame(fed_card, text=_t('gui.academics.ai_detector.misc_view.labels.federation_setup', default="Federation Setup"), padding=15)
     setup_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Label(setup_frame, text="Institution ID:").pack(side='left')
+    ttk.Label(setup_frame, text=_t('gui.academics.ai_detector.misc_view.labels.institution_id', default="Institution ID:")).pack(side='left')
     self.institution_id_var = tk.StringVar()
     ttk.Entry(setup_frame, textvariable=self.institution_id_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Button(setup_frame, text="Initialize Federation",
+    ttk.Button(setup_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.initialize_federation', default="Initialize Federation"),
               command=self.initialize_federation).pack(side='right')
 
     # Controls
     controls_frame = ttk.Frame(fed_card)
     controls_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(controls_frame, text="Contribute Model Update",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.contribute_model_update', default="Contribute Model Update"),
               command=self.contribute_model_update).pack(side='left', padx=(0, 10))
-    ttk.Button(controls_frame, text="Download Global Model",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.download_global_model', default="Download Global Model"),
               command=self.download_global_model).pack(side='left')
 
 
 def create_predictive_analytics_tab(self):
     """Create predictive analytics tab"""
     predictive_frame = ttk.Frame(self.notebook)
-    self.notebook.add(predictive_frame, text="🔮 Predictive")
+    self.notebook.add(predictive_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.predictive', default="🔮 Predictive"))
 
     # Predictive analytics card
     predictive_card = ttk.Frame(predictive_frame, style='Card.TFrame')
     predictive_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(predictive_card, text="Predictive Analytics", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(predictive_card, text=_t('gui.academics.ai_detector.misc_view.labels.predictive_analytics', default="Predictive Analytics"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Student risk prediction
-    risk_frame = ttk.LabelFrame(predictive_card, text="Student Risk Prediction", padding=15)
+    risk_frame = ttk.LabelFrame(predictive_card, text=_t('gui.academics.ai_detector.misc_view.labels.student_risk_prediction', default="Student Risk Prediction"), padding=15)
     risk_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     input_frame = ttk.Frame(risk_frame)
     input_frame.pack(fill='x')
 
-    ttk.Label(input_frame, text="Student ID:").pack(side='left')
+    ttk.Label(input_frame, text=_t('gui.academics.ai_detector.misc_view.labels.student_id', default="Student ID:")).pack(side='left')
     self.risk_student_var = tk.StringVar()
     ttk.Entry(input_frame, textvariable=self.risk_student_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Button(input_frame, text="Predict Risk",
+    ttk.Button(input_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.predict_risk', default="Predict Risk"),
               command=self.predict_student_risk).pack(side='right')
 
     # Results display
@@ -489,25 +491,25 @@ def create_predictive_analytics_tab(self):
     training_frame = ttk.Frame(predictive_card)
     training_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(training_frame, text="Train Risk Model",
+    ttk.Button(training_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.train_risk_model', default="Train Risk Model"),
               command=self.train_risk_model).pack(side='left', padx=(0, 10))
-    ttk.Button(training_frame, text="Model Performance",
+    ttk.Button(training_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.model_performance', default="Model Performance"),
               command=self.show_model_performance).pack(side='left')
 
 
 def create_statistics_tab(self):
     """Create enhanced statistics tab"""
     stats_frame = ttk.Frame(self.notebook)
-    self.notebook.add(stats_frame, text="📊 Statistics")
+    self.notebook.add(stats_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.statistics', default="📊 Statistics"))
 
     # Statistics card
     stats_card = ttk.Frame(stats_frame, style='Card.TFrame')
     stats_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(stats_card, text="Enhanced Statistics", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(stats_card, text=_t('gui.academics.ai_detector.misc_view.labels.enhanced_statistics', default="Enhanced Statistics"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Refresh button
-    ttk.Button(stats_card, text="🔄 Refresh Statistics",
+    ttk.Button(stats_card, text=_t('gui.academics.ai_detector.misc_view.buttons.refresh_statistics', default="🔄 Refresh Statistics"),
               command=self.refresh_statistics).pack(pady=15)
 
     # Stats display frame
@@ -518,16 +520,16 @@ def create_statistics_tab(self):
 def create_student_self_check_tab(self):
     """Create student self-check tool tab"""
     selfcheck_frame = ttk.Frame(self.notebook)
-    self.notebook.add(selfcheck_frame, text="✓ Self-Check")
+    self.notebook.add(selfcheck_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.self_check', default="✓ Self-Check"))
 
     # Self-check card
     selfcheck_card = ttk.Frame(selfcheck_frame, style='Card.TFrame')
     selfcheck_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(selfcheck_card, text="Student Self-Check Tool", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(selfcheck_card, text=_t('gui.academics.ai_detector.misc_view.labels.student_self_check_tool', default="Student Self-Check Tool"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Text input
-    input_frame = ttk.LabelFrame(selfcheck_card, text="Enter Your Text", padding=15)
+    input_frame = ttk.LabelFrame(selfcheck_card, text=_t('gui.academics.ai_detector.misc_view.labels.enter_your_text', default="Enter Your Text"), padding=15)
     input_frame.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
     import scrolledtext
@@ -535,41 +537,41 @@ def create_student_self_check_tab(self):
     self.self_check_text.pack(fill='both', expand=True)
 
     # Check button
-    ttk.Button(selfcheck_card, text="Run Self-Check",
+    ttk.Button(selfcheck_card, text=_t('gui.academics.ai_detector.misc_view.buttons.run_self_check', default="Run Self-Check"),
               command=self.run_self_check).pack(pady=15)
 
 
 def create_system_monitoring_tab(self):
     """Create system monitoring tab"""
     monitoring_frame = ttk.Frame(self.notebook)
-    self.notebook.add(monitoring_frame, text="🔍 System Monitor")
+    self.notebook.add(monitoring_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.system_monitor', default="🔍 System Monitor"))
 
     # System monitoring card
     monitor_card = ttk.Frame(monitoring_frame, style='Card.TFrame')
     monitor_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(monitor_card, text="System Health Monitoring", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(monitor_card, text=_t('gui.academics.ai_detector.misc_view.labels.system_health_monitoring', default="System Health Monitoring"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Performance metrics
-    perf_frame = ttk.LabelFrame(monitor_card, text="Performance Metrics", padding=15)
+    perf_frame = ttk.LabelFrame(monitor_card, text=_t('gui.academics.ai_detector.misc_view.labels.performance_metrics', default="Performance Metrics"), padding=15)
     perf_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    self.cpu_usage_label = ttk.Label(perf_frame, text="CPU Usage: --")
+    self.cpu_usage_label = ttk.Label(perf_frame, text=_t('gui.academics.ai_detector.misc_view.labels.cpu_usage', default="CPU Usage: --"))
     self.cpu_usage_label.pack(anchor='w')
 
-    self.memory_usage_label = ttk.Label(perf_frame, text="Memory Usage: --")
+    self.memory_usage_label = ttk.Label(perf_frame, text=_t('gui.academics.ai_detector.misc_view.labels.memory_usage', default="Memory Usage: --"))
     self.memory_usage_label.pack(anchor='w')
 
-    self.db_size_label = ttk.Label(perf_frame, text="Database Size: --")
+    self.db_size_label = ttk.Label(perf_frame, text=_t('gui.academics.ai_detector.misc_view.labels.database_size', default="Database Size: --"))
     self.db_size_label.pack(anchor='w')
 
     # Controls
     health_buttons = ttk.Frame(monitor_card)
     health_buttons.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(health_buttons, text="🔄 Refresh Metrics",
+    ttk.Button(health_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.refresh_metrics', default="🔄 Refresh Metrics"),
               command=self.refresh_system_metrics).pack(side='left', padx=(0, 10))
-    ttk.Button(health_buttons, text="🏥 Health Check",
+    ttk.Button(health_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.health_check', default="🏥 Health Check"),
               command=self.run_system_health_check).pack(side='left')
 
 
@@ -583,41 +585,41 @@ def create_system_monitoring_view(self, parent):
     monitor_card = ttk.Frame(monitoring_frame, style='Card.TFrame')
     monitor_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(monitor_card, text="System Health Monitoring", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(monitor_card, text=_t('gui.academics.ai_detector.misc_view.labels.system_health_monitoring', default="System Health Monitoring"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Performance metrics
-    perf_frame = ttk.LabelFrame(monitor_card, text="Performance Metrics", padding=15)
+    perf_frame = ttk.LabelFrame(monitor_card, text=_t('gui.academics.ai_detector.misc_view.labels.performance_metrics', default="Performance Metrics"), padding=15)
     perf_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     # Real-time metrics display
-    self.cpu_usage_label = ttk.Label(perf_frame, text="CPU Usage: --")
+    self.cpu_usage_label = ttk.Label(perf_frame, text=_t('gui.academics.ai_detector.misc_view.labels.cpu_usage', default="CPU Usage: --"))
     self.cpu_usage_label.pack(anchor='w')
 
-    self.memory_usage_label = ttk.Label(perf_frame, text="Memory Usage: --")
+    self.memory_usage_label = ttk.Label(perf_frame, text=_t('gui.academics.ai_detector.misc_view.labels.memory_usage', default="Memory Usage: --"))
     self.memory_usage_label.pack(anchor='w')
 
-    self.db_size_label = ttk.Label(perf_frame, text="Database Size: --")
+    self.db_size_label = ttk.Label(perf_frame, text=_t('gui.academics.ai_detector.misc_view.labels.database_size', default="Database Size: --"))
     self.db_size_label.pack(anchor='w')
 
-    self.analysis_speed_label = ttk.Label(perf_frame, text="Avg Analysis Speed: --")
+    self.analysis_speed_label = ttk.Label(perf_frame, text=_t('gui.academics.ai_detector.misc_view.labels.avg_analysis_speed', default="Avg Analysis Speed: --"))
     self.analysis_speed_label.pack(anchor='w')
 
     # System health controls
-    health_frame = ttk.LabelFrame(monitor_card, text="System Health", padding=15)
+    health_frame = ttk.LabelFrame(monitor_card, text=_t('gui.academics.ai_detector.misc_view.labels.system_health', default="System Health"), padding=15)
     health_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     health_buttons = ttk.Frame(health_frame)
     health_buttons.pack(fill='x')
 
-    ttk.Button(health_buttons, text="🔄 Refresh Metrics",
+    ttk.Button(health_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.refresh_metrics', default="🔄 Refresh Metrics"),
               command=self.refresh_system_metrics).pack(side='left', padx=(0, 10))
-    ttk.Button(health_buttons, text="🏥 Health Check",
+    ttk.Button(health_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.health_check', default="🏥 Health Check"),
               command=self.run_system_health_check).pack(side='left', padx=(0, 10))
-    ttk.Button(health_buttons, text="📊 Performance Report",
+    ttk.Button(health_buttons, text=_t('gui.academics.ai_detector.misc_view.buttons.performance_report', default="📊 Performance Report"),
               command=self.generate_performance_report).pack(side='left')
 
     # Error logs
-    error_frame = ttk.LabelFrame(monitor_card, text="Recent Errors", padding=15)
+    error_frame = ttk.LabelFrame(monitor_card, text=_t('gui.academics.ai_detector.misc_view.labels.recent_errors', default="Recent Errors"), padding=15)
     error_frame.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
     self.error_log_display = scrolledtext.ScrolledText(
@@ -633,21 +635,21 @@ def create_system_monitoring_view(self, parent):
 def create_visual_analysis_tab(self):
     """Create visual analysis tab"""
     visual_frame = ttk.Frame(self.notebook)
-    self.notebook.add(visual_frame, text="📊 Visual")
+    self.notebook.add(visual_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.visual', default="📊 Visual"))
 
     # Visual analysis card
     visual_card = ttk.Frame(visual_frame, style='Card.TFrame')
     visual_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(visual_card, text="Visual Analysis", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(visual_card, text=_t('gui.academics.ai_detector.misc_view.labels.visual_analysis', default="Visual Analysis"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Visualization options
-    viz_frame = ttk.LabelFrame(visual_card, text="Visualizations", padding=15)
+    viz_frame = ttk.LabelFrame(visual_card, text=_t('gui.academics.ai_detector.misc_view.labels.visualizations', default="Visualizations"), padding=15)
     viz_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(viz_frame, text="🔥 Text Heatmap",
+    ttk.Button(viz_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.text_heatmap', default="🔥 Text Heatmap"),
               command=self.display_text_heatmap).pack(fill='x', pady=(0, 5))
-    ttk.Button(viz_frame, text="📈 Writing Flow",
+    ttk.Button(viz_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.writing_flow', default="📈 Writing Flow"),
               command=self.display_writing_flow).pack(fill='x')
 
 
@@ -709,11 +711,11 @@ def generate_performance_report(self):
     """Generate system performance report"""
     try:
         report_window = tk.Toplevel(self.root)
-        report_window.title("Performance Report")
+        report_window.title(_t('gui.academics.ai_detector.misc_view.windows.performance_report', default="Performance Report"))
         report_window.geometry("700x600")
         report_window.configure(bg=self.colors['bg_primary'])
 
-        ttk.Label(report_window, text="System Performance Report", style='Title.TLabel').pack(pady=20)
+        ttk.Label(report_window, text=_t('gui.academics.ai_detector.misc_view.labels.system_performance_report', default="System Performance Report"), style='Title.TLabel').pack(pady=20)
 
         # Performance data
         perf_frame = ttk.Frame(report_window, style='Card.TFrame')
@@ -733,7 +735,7 @@ def generate_performance_report(self):
         report_text.insert('1.0', report_content)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate performance report: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.misc_view.dialogs.error', default="Error"), f"Failed to generate performance report: {str(e)}")
 
 
 def get_audit_log_data(self):
@@ -785,7 +787,7 @@ def patch_gui_with_missing_functions():
 def create_real_time_monitoring_tab(self):
     """Create real-time monitoring tab"""
     monitoring_frame = ttk.Frame(self.notebook)
-    self.notebook.add(monitoring_frame, text="📡 Real-time Monitor")
+    self.notebook.add(monitoring_frame, text=_t('gui.academics.ai_detector.misc_view.tabs.real_time_monitor', default="📡 Real-time Monitor"))
 
     monitoring_frame.pack(fill="both", expand=True)
 
@@ -793,32 +795,32 @@ def create_real_time_monitoring_tab(self):
     monitoring_card = ttk.Frame(monitoring_frame, style='Card.TFrame')
     monitoring_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(monitoring_card, text="Real-time Processing", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(monitoring_card, text=_t('gui.academics.ai_detector.misc_view.labels.real_time_processing', default="Real-time Processing"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Control buttons
     control_frame = ttk.Frame(monitoring_card)
     control_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    self.start_monitoring_btn = ttk.Button(control_frame, text="▶️ Start Monitoring",
+    self.start_monitoring_btn = ttk.Button(control_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.start_monitoring', default="▶️ Start Monitoring"),
                                          command=self.start_real_time_monitoring)
     self.start_monitoring_btn.pack(side='left', padx=(0, 10))
 
-    self.stop_monitoring_btn = ttk.Button(control_frame, text="⏹️ Stop Monitoring",
+    self.stop_monitoring_btn = ttk.Button(control_frame, text=_t('gui.academics.ai_detector.misc_view.buttons.stop_monitoring', default="⏹️ Stop Monitoring"),
                                         command=self.stop_real_time_monitoring, state='disabled')
     self.stop_monitoring_btn.pack(side='left')
 
     # Status display
-    self.monitoring_status_label = ttk.Label(monitoring_card, text="Status: Stopped", style='Subtitle.TLabel')
+    self.monitoring_status_label = ttk.Label(monitoring_card, text=_t('gui.academics.ai_detector.misc_view.labels.status_stopped', default="Status: Stopped"), style='Subtitle.TLabel')
     self.monitoring_status_label.pack(anchor='w', padx=15, pady=(0, 10))
 
     # Queue status
-    queue_frame = ttk.LabelFrame(monitoring_card, text="Processing Queue", padding=15)
+    queue_frame = ttk.LabelFrame(monitoring_card, text=_t('gui.academics.ai_detector.misc_view.labels.processing_queue', default="Processing Queue"), padding=15)
     queue_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    self.queue_size_label = ttk.Label(queue_frame, text="Queue size: 0")
+    self.queue_size_label = ttk.Label(queue_frame, text=_t('gui.academics.ai_detector.misc_view.labels.queue_size_0', default="Queue size: 0"))
     self.queue_size_label.pack(anchor='w')
 
-    self.active_workers_label = ttk.Label(queue_frame, text="Active workers: 0")
+    self.active_workers_label = ttk.Label(queue_frame, text=_t('gui.academics.ai_detector.misc_view.labels.active_workers_0', default="Active workers: 0"))
     self.active_workers_label.pack(anchor='w')
 
 
@@ -841,11 +843,11 @@ def refresh_system_metrics(self):
             self.db_size_label.config(text=f"Database Size: {db_size:.1f} MB")
 
         # Analysis speed (mock data)
-        self.analysis_speed_label.config(text="Avg Analysis Speed: 2.3s per submission")
+        self.analysis_speed_label.config(text=_t('gui.academics.ai_detector.misc_view.text.avg_analysis_speed_2_3s_per_submission', default="Avg Analysis Speed: 2.3s per submission"))
 
     except ImportError:
-        self.cpu_usage_label.config(text="CPU Usage: Not available (install psutil)")
-        self.memory_usage_label.config(text="Memory Usage: Not available")
+        self.cpu_usage_label.config(text=_t('gui.academics.ai_detector.misc_view.text.cpu_usage_not_available_install_psutil', default="CPU Usage: Not available (install psutil)"))
+        self.memory_usage_label.config(text=_t('gui.academics.ai_detector.misc_view.text.memory_usage_not_available', default="Memory Usage: Not available"))
     except Exception as e:
         self.update_status(f"Error refreshing metrics: {str(e)}")
 
@@ -853,11 +855,11 @@ def refresh_system_metrics(self):
 def run_system_health_check(self):
     """Run comprehensive system health check"""
     health_window = tk.Toplevel(self.root)
-    health_window.title("System Health Check")
+    health_window.title(_t('gui.academics.ai_detector.misc_view.windows.system_health_check', default="System Health Check"))
     health_window.geometry("600x500")
     health_window.configure(bg=self.colors['bg_primary'])
 
-    ttk.Label(health_window, text="System Health Check", style='Title.TLabel').pack(pady=20)
+    ttk.Label(health_window, text=_t('gui.academics.ai_detector.misc_view.labels.system_health_check', default="System Health Check"), style='Title.TLabel').pack(pady=20)
 
     # Health check results
     health_frame = ttk.Frame(health_window, style='Card.TFrame')
@@ -937,23 +939,23 @@ def send_ai_detection_report_via_email(self, analysis_results, user_email=None):
             success = False
 
         if success:
-            messagebox.showinfo("Email Sent", f"AI detection report sent to {user_email}")
+            messagebox.showinfo(_t('gui.academics.ai_detector.misc_view.dialogs.email_sent', default="Email Sent"), f"AI detection report sent to {user_email}")
         else:
             # Show fallback
             self._show_ai_detection_email_fallback(user_email, subject, message, analysis_results)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to send AI detection report: {e}")
+        messagebox.showerror(_t('gui.academics.ai_detector.misc_view.dialogs.error', default="Error"), f"Failed to send AI detection report: {e}")
 
 
 def show_db_status(self):
     """Show database status"""
     status_window = tk.Toplevel(self.root)
-    status_window.title("Database Status")
+    status_window.title(_t('gui.academics.ai_detector.misc_view.windows.database_status', default="Database Status"))
     status_window.geometry("500x300")
     status_window.configure(bg=self.colors['bg_primary'])
 
-    ttk.Label(status_window, text="Database Status", style='Title.TLabel').pack(pady=20)
+    ttk.Label(status_window, text=_t('gui.academics.ai_detector.misc_view.labels.database_status', default="Database Status"), style='Title.TLabel').pack(pady=20)
 
     status_frame = ttk.Frame(status_window, style='Card.TFrame')
     status_frame.pack(fill='both', expand=True, padx=20, pady=20)

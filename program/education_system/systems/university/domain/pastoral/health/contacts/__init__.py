@@ -1,0 +1,1 @@
+"""Emergency-contact health domain."""

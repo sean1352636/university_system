@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.services.feature_gui_factory import create_gui_launcher
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text, _
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 

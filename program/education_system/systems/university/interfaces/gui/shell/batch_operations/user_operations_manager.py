@@ -33,7 +33,7 @@ class UserOperationsManager:
         Optional columns: student_id, password
         """
         file_path = filedialog.askopenfilename(
-            title="Select CSV with user data",
+            title=_t('gui.shell.batch_operations.user_operations_manager.dialogs.select_csv_with_user_data', default="Select CSV with user data"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
         if not file_path:
@@ -46,21 +46,21 @@ class UserOperationsManager:
                 headers = reader.fieldnames or []
                 rows = list(reader)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not read file: {e}")
+            messagebox.showerror(_t('gui.shell.batch_operations.user_operations_manager.dialogs.error', default="Error"), f"Could not read file: {e}")
             return
 
         required = {'username', 'first_name', 'last_name', 'email', 'role'}
         missing = required - set(h.strip().lower() for h in headers)
         if missing:
             messagebox.showerror(
-                "Missing Columns",
+                _t('gui.shell.batch_operations.user_operations_manager.dialogs.missing_columns', default="Missing Columns"),
                 f"CSV is missing required columns: {', '.join(missing)}\n\n"
                 f"Found columns: {', '.join(headers)}"
             )
             return
 
         if not messagebox.askyesno(
-            "Confirm Bulk User Creation",
+            _t('gui.shell.batch_operations.user_operations_manager.dialogs.confirm_bulk_user_creation', default="Confirm Bulk User Creation"),
             f"This will create {len(rows)} user accounts.\n\n"
             f"Columns: {', '.join(headers)}\n\n"
             "Users without a 'password' column will receive a generated password.\n\n"
@@ -174,22 +174,22 @@ class UserOperationsManager:
     def bulk_permission_update(self):
         """Update permissions for multiple users at once."""
         dialog = tk.Toplevel(self.gui.root)
-        dialog.title("Bulk Permission Update")
+        dialog.title(_t('gui.shell.batch_operations.user_operations_manager.windows.bulk_permission_update', default="Bulk Permission Update"))
         dialog.geometry("650x550")
         dialog.transient(self.gui.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Bulk Permission Update",
+        ttk.Label(dialog, text=_t('gui.shell.batch_operations.user_operations_manager.labels.bulk_permission_update', default="Bulk Permission Update"),
                   font=("Arial", 14, "bold")).pack(pady=10)
 
         # Role selection
-        role_frame = ttk.LabelFrame(dialog, text="Target Users", padding="10")
+        role_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.user_operations_manager.labels.target_users', default="Target Users"), padding="10")
         role_frame.pack(fill=tk.X, padx=20, pady=5)
 
-        target_var = tk.StringVar(value="role")
-        ttk.Radiobutton(role_frame, text="All users with role:",
+        target_var = tk.StringVar(value=_t('gui.shell.batch_operations.user_operations_manager.values.role', default="role"))
+        ttk.Radiobutton(role_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.all_users_with_role', default="All users with role:"),
                         variable=target_var, value="role").pack(anchor="w")
-        ttk.Radiobutton(role_frame, text="Users from CSV file",
+        ttk.Radiobutton(role_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.users_from_csv_file', default="Users from CSV file"),
                         variable=target_var, value="file").pack(anchor="w")
 
         role_combo = ttk.Combobox(role_frame, values=["student", "staff", "instructor", "admin"],
@@ -198,7 +198,7 @@ class UserOperationsManager:
         role_combo.pack(anchor="w", padx=20, pady=5)
 
         # Permission selection
-        perm_frame = ttk.LabelFrame(dialog, text="Permissions to Modify", padding="10")
+        perm_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.user_operations_manager.labels.permissions_to_modify', default="Permissions to Modify"), padding="10")
         perm_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
         perm_list_frame = ttk.Frame(perm_frame)
@@ -223,20 +223,20 @@ class UserOperationsManager:
             perm_listbox.insert(tk.END, "(Could not load permissions)")
 
         # Action
-        action_frame = ttk.LabelFrame(dialog, text="Action", padding="10")
+        action_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.user_operations_manager.labels.action', default="Action"), padding="10")
         action_frame.pack(fill=tk.X, padx=20, pady=5)
 
-        action_var = tk.StringVar(value="grant")
-        ttk.Radiobutton(action_frame, text="Grant selected permissions",
+        action_var = tk.StringVar(value=_t('gui.shell.batch_operations.user_operations_manager.values.grant', default="grant"))
+        ttk.Radiobutton(action_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.grant_selected_permissions', default="Grant selected permissions"),
                         variable=action_var, value="grant").pack(anchor="w")
-        ttk.Radiobutton(action_frame, text="Revoke selected permissions",
+        ttk.Radiobutton(action_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.revoke_selected_permissions', default="Revoke selected permissions"),
                         variable=action_var, value="revoke").pack(anchor="w")
 
         # Execute
         def execute():
             selected_indices = perm_listbox.curselection()
             if not selected_indices:
-                messagebox.showerror("Error", "Select at least one permission")
+                messagebox.showerror(_t('gui.shell.batch_operations.user_operations_manager.dialogs.error', default="Error"), _t('gui.shell.batch_operations.user_operations_manager.dialogs.select_at_least_one_permission', default="Select at least one permission"))
                 return
 
             selected_perms = [perm_listbox.get(i) for i in selected_indices]
@@ -249,8 +249,8 @@ class UserOperationsManager:
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Execute", command=execute).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.execute', default="Execute"), command=execute).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _execute_permission_update(self, target, role, permissions, action):
         """Execute the bulk permission update."""
@@ -265,7 +265,7 @@ class UserOperationsManager:
                         ).fetchall()
                     else:
                         file_path = filedialog.askopenfilename(
-                            title="Select CSV with usernames",
+                            title=_t('gui.shell.batch_operations.user_operations_manager.dialogs.select_csv_with_usernames', default="Select CSV with usernames"),
                             filetypes=[("CSV files", "*.csv")]
                         )
                         if not file_path:
@@ -326,7 +326,7 @@ class UserOperationsManager:
         Optional: status (defaults to 'Enrolled')
         """
         file_path = filedialog.askopenfilename(
-            title="Select CSV with enrollment data (student_id, module_code)",
+            title=_t('gui.shell.batch_operations.user_operations_manager.dialogs.select_csv_with_enrollment_data_student_id_module_code', default="Select CSV with enrollment data (student_id, module_code)"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
         if not file_path:
@@ -338,18 +338,18 @@ class UserOperationsManager:
                 headers = reader.fieldnames or []
                 rows = list(reader)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not read file: {e}")
+            messagebox.showerror(_t('gui.shell.batch_operations.user_operations_manager.dialogs.error', default="Error"), f"Could not read file: {e}")
             return
 
         required = {'student_id', 'module_code'}
         missing = required - set(h.strip().lower() for h in headers)
         if missing:
-            messagebox.showerror("Missing Columns",
+            messagebox.showerror(_t('gui.shell.batch_operations.user_operations_manager.dialogs.missing_columns', default="Missing Columns"),
                                  f"CSV missing required columns: {', '.join(missing)}")
             return
 
         if not messagebox.askyesno(
-            "Confirm Batch Enrollment",
+            _t('gui.shell.batch_operations.user_operations_manager.dialogs.confirm_batch_enrollment', default="Confirm Batch Enrollment"),
             f"This will create {len(rows)} enrollment records.\nContinue?"
         ):
             return
@@ -418,30 +418,30 @@ class UserOperationsManager:
     def batch_email_campaign(self):
         """Send targeted email campaign to user segments via the email system."""
         dialog = tk.Toplevel(self.gui.root)
-        dialog.title("Batch Email Campaign")
+        dialog.title(_t('gui.shell.batch_operations.user_operations_manager.windows.batch_email_campaign', default="Batch Email Campaign"))
         dialog.geometry("700x650")
         dialog.transient(self.gui.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Send Targeted Email Campaign",
+        ttk.Label(dialog, text=_t('gui.shell.batch_operations.user_operations_manager.labels.send_targeted_email_campaign', default="Send Targeted Email Campaign"),
                   font=("Arial", 14, "bold")).pack(pady=10)
 
         # Segment selection
-        seg_frame = ttk.LabelFrame(dialog, text="Recipient Segment", padding="10")
+        seg_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.user_operations_manager.labels.recipient_segment', default="Recipient Segment"), padding="10")
         seg_frame.pack(fill=tk.X, padx=20, pady=5)
 
-        segment_var = tk.StringVar(value="all_users")
-        ttk.Radiobutton(seg_frame, text="All Users in Database",
+        segment_var = tk.StringVar(value=_t('gui.shell.batch_operations.user_operations_manager.values.all_users', default="all_users"))
+        ttk.Radiobutton(seg_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.all_users_in_database', default="All Users in Database"),
                         variable=segment_var, value="all_users").pack(anchor="w")
-        ttk.Radiobutton(seg_frame, text="All Students",
+        ttk.Radiobutton(seg_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.all_students', default="All Students"),
                         variable=segment_var, value="all_students").pack(anchor="w")
-        ttk.Radiobutton(seg_frame, text="All Staff/Instructors",
+        ttk.Radiobutton(seg_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.all_staff_instructors', default="All Staff/Instructors"),
                         variable=segment_var, value="all_staff").pack(anchor="w")
 
         # Course selection row
         course_row = ttk.Frame(seg_frame)
         course_row.pack(fill=tk.X, anchor="w")
-        ttk.Radiobutton(course_row, text="Students in course:",
+        ttk.Radiobutton(course_row, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.students_in_course', default="Students in course:"),
                         variable=segment_var, value="by_course").pack(side=tk.LEFT)
 
         # Load available courses from DB
@@ -463,7 +463,7 @@ class UserOperationsManager:
         course_combo.set(course_values[0] if course_values else "CS")
         course_combo.pack(side=tk.LEFT, padx=(5, 0))
 
-        ttk.Radiobutton(seg_frame, text="Users from CSV file (column: email)",
+        ttk.Radiobutton(seg_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.users_from_csv_file_column_email', default="Users from CSV file (column: email)"),
                         variable=segment_var, value="from_file").pack(anchor="w")
 
         # Recipient count preview
@@ -496,7 +496,7 @@ class UserOperationsManager:
                             (course_combo.get(),)
                         ).fetchone()
                     else:
-                        count_label.config(text="(Select CSV file to see count)")
+                        count_label.config(text=_t('gui.shell.batch_operations.user_operations_manager.text.select_csv_file_to_see_count', default="(Select CSV file to see count)"))
                         return
                     count_label.config(text=f"Estimated recipients: {row['cnt']}")
             except Exception:
@@ -507,19 +507,19 @@ class UserOperationsManager:
         preview_count()
 
         # Email content
-        content_frame = ttk.LabelFrame(dialog, text="Email Content", padding="10")
+        content_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.user_operations_manager.labels.email_content', default="Email Content"), padding="10")
         content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=5)
 
-        ttk.Label(content_frame, text="Subject:").pack(anchor="w")
+        ttk.Label(content_frame, text=_t('gui.shell.batch_operations.user_operations_manager.labels.subject', default="Subject:")).pack(anchor="w")
         subject_entry = ttk.Entry(content_frame, width=70)
         subject_entry.pack(fill=tk.X, pady=(0, 5))
 
-        ttk.Label(content_frame, text="Body:").pack(anchor="w")
+        ttk.Label(content_frame, text=_t('gui.shell.batch_operations.user_operations_manager.labels.body', default="Body:")).pack(anchor="w")
         body_text = scrolledtext.ScrolledText(content_frame, height=10, width=70)
         body_text.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(content_frame,
-                  text="Tip: Use {first_name}, {last_name}, {email} as placeholders",
+                  text=_t('gui.shell.batch_operations.user_operations_manager.labels.tip_use_first_name_last_name_email_as_placeholders', default="Tip: Use {first_name}, {last_name}, {email} as placeholders"),
                   foreground="gray").pack(anchor="w", pady=(2, 0))
 
         # Execute
@@ -528,7 +528,7 @@ class UserOperationsManager:
             body = body_text.get("1.0", tk.END).strip()
 
             if not subject or not body:
-                messagebox.showerror("Error", "Subject and body are required")
+                messagebox.showerror(_t('gui.shell.batch_operations.user_operations_manager.dialogs.error', default="Error"), _t('gui.shell.batch_operations.user_operations_manager.dialogs.subject_and_body_are_required', default="Subject and body are required"))
                 return
 
             segment = segment_var.get()
@@ -537,14 +537,14 @@ class UserOperationsManager:
             csv_path = None
             if segment == "from_file":
                 csv_path = filedialog.askopenfilename(
-                    title="Select CSV with email addresses",
+                    title=_t('gui.shell.batch_operations.user_operations_manager.dialogs.select_csv_with_email_addresses', default="Select CSV with email addresses"),
                     filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
                 )
                 if not csv_path:
                     return
 
             if not messagebox.askyesno(
-                "Confirm Email Campaign",
+                _t('gui.shell.batch_operations.user_operations_manager.dialogs.confirm_email_campaign', default="Confirm Email Campaign"),
                 f"This will send emails to the selected segment: {segment}.\n\n"
                 f"Subject: {subject}\n\n"
                 "Emails will be processed through the email system.\n"
@@ -557,13 +557,13 @@ class UserOperationsManager:
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Send Campaign", command=send,
+        ttk.Button(btn_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.send_campaign', default="Send Campaign"), command=send,
                    style='Action.TButton').pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Preview Recipients",
+        ttk.Button(btn_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.preview_recipients', default="Preview Recipients"),
                    command=lambda: self._preview_campaign_recipients(
                        segment_var.get(), course_combo.get()
                    )).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _preview_campaign_recipients(self, segment, course):
         """Show a preview of recipients for the selected segment."""
@@ -594,11 +594,11 @@ class UserOperationsManager:
                         "ORDER BY u.last_name LIMIT 50", (course,)
                     ).fetchall()
                 else:
-                    messagebox.showinfo("Preview", "Select a CSV file to see recipients from file.")
+                    messagebox.showinfo(_t('gui.shell.batch_operations.user_operations_manager.dialogs.preview', default="Preview"), _t('gui.shell.batch_operations.user_operations_manager.dialogs.select_a_csv_file_to_see_recipients_from_file', default="Select a CSV file to see recipients from file."))
                     return
 
             if not recipients:
-                messagebox.showinfo("Preview", "No recipients found for this segment.")
+                messagebox.showinfo(_t('gui.shell.batch_operations.user_operations_manager.dialogs.preview', default="Preview"), _t('gui.shell.batch_operations.user_operations_manager.dialogs.no_recipients_found_for_this_segment', default="No recipients found for this segment."))
                 return
 
             preview = "First 50 recipients:\n\n"
@@ -607,7 +607,7 @@ class UserOperationsManager:
 
             # Show in a preview dialog
             preview_dialog = tk.Toplevel(self.gui.root)
-            preview_dialog.title("Recipient Preview")
+            preview_dialog.title(_t('gui.shell.batch_operations.user_operations_manager.windows.recipient_preview', default="Recipient Preview"))
             preview_dialog.geometry("500x400")
             preview_dialog.transient(self.gui.root)
 
@@ -616,11 +616,11 @@ class UserOperationsManager:
             text_widget.insert("1.0", preview)
             text_widget.config(state=tk.DISABLED)
 
-            ttk.Button(preview_dialog, text="Close",
+            ttk.Button(preview_dialog, text=_t('gui.shell.batch_operations.user_operations_manager.buttons.close', default="Close"),
                        command=preview_dialog.destroy).pack(pady=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not preview recipients: {e}")
+            messagebox.showerror(_t('gui.shell.batch_operations.user_operations_manager.dialogs.error', default="Error"), f"Could not preview recipients: {e}")
 
     def _execute_email_campaign(self, segment, course, subject, body, csv_path=None):
         """Execute the email campaign via the email system."""

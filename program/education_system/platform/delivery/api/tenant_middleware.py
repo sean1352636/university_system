@@ -1,11 +1,8 @@
 """Flask before_request middleware for multi-tenant request resolution.
 
-Tenant extraction order (first match wins)
-------------------------------------------
-1. ``X-Tenant-ID`` request header  (slug or numeric ID)
-2. Subdomain  (e.g. ``oakwood.school.example.com`` → slug ``oakwood``)
-3. JWT ``tenant_id`` claim inside the ``Authorization: Bearer`` token
-4. ``?tenant=<slug>`` query parameter
+Tenant identity is authoritative only when it comes from the authenticated
+session/JWT.  Headers, subdomains and query parameters are treated as
+untrusted consistency assertions and can never select a tenant.
 
 When no tenant is found and the path is not exempt:
 * 404 — tenant not in the database
@@ -27,6 +24,7 @@ preserves full backward-compatibility.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Callable
 
 from flask import Flask, g, jsonify, request
@@ -44,14 +42,14 @@ logger = logging.getLogger(__name__)
 # ── Paths that bypass tenant resolution entirely ─────────────────────────────
 
 _EXEMPT_PREFIXES: tuple[str, ...] = (
-    "/api/v1/tenants/",
-    "/api/v1/auth/",
+    "/api/v1/tenants",
+    "/api/v1/auth",
+    "/api/auth",
     "/health",
     "/metrics",
     "/parent/",
     "/api/v1/health",
-    "/",
-    "/api",
+    "/api/health",
 )
 
 
@@ -86,15 +84,22 @@ def _extract_subdomain(host: str) -> str | None:
 # ── JWT claim extraction ──────────────────────────────────────────────────────
 
 def _extract_jwt_tenant(auth_header: str) -> str | None:
-    """Return the ``tenant_id`` claim from a Bearer JWT (no verification needed
-    here — the auth middleware handles signature checking separately)."""
+    """Return a tenant claim from a *verified* bearer token."""
     if not auth_header or not auth_header.startswith("Bearer "):
         return None
     token = auth_header[7:]
     try:
-        import jwt as pyjwt
-        # Decode without verification — we only want the claim value.
-        payload = pyjwt.decode(token, options={"verify_signature": False})  # nosemgrep: unverified-jwt-decode — signature is verified by auth middleware
+        payload = None
+        try:
+            from education_system.platform.delivery.api.auth import decode_token
+            payload = decode_token(token)
+        except Exception:
+            try:
+                from flask import current_app
+                from education_system.platform.delivery.api.university.auth import decode_token as uni_decode
+                payload = uni_decode(token, current_app.config.get("API_CONFIG", {}))
+            except Exception:
+                return None
         tid = payload.get("tenant_id") or payload.get("tenant")
         return str(tid) if tid is not None else None
     except Exception:
@@ -103,6 +108,16 @@ def _extract_jwt_tenant(auth_header: str) -> str | None:
 
 # ── Core resolution logic ─────────────────────────────────────────────────────
 
+def _authenticated_tenant_id() -> str | None:
+    """Get tenant identity only from request authentication context."""
+    current = getattr(g, "current_user", None)
+    if isinstance(current, dict):
+        value = current.get("tenant_id") or current.get("tenant") or current.get("institution_id")
+        if value is not None:
+            return str(value)
+    return _extract_jwt_tenant(request.headers.get("Authorization", ""))
+
+
 def _resolve_tenant(db_path: str | None = None) -> tuple[Tenant | None, str]:
     """Attempt to resolve the current tenant from the request context.
 
@@ -110,33 +125,11 @@ def _resolve_tenant(db_path: str | None = None) -> tuple[Tenant | None, str]:
     -------
     (tenant_or_None, source_description)
     """
-    # 1. X-Tenant-ID header
-    header_val = request.headers.get("X-Tenant-ID")
-    if header_val:
-        tenant = _lookup_by_slug_or_id(header_val, db_path)
+    authenticated_tid = _authenticated_tenant_id()
+    if authenticated_tid:
+        tenant = _lookup_by_slug_or_id(authenticated_tid, db_path)
         if tenant:
-            return tenant, "header"
-
-    # 2. Subdomain
-    subdomain = _extract_subdomain(request.host or "")
-    if subdomain:
-        tenant = get_tenant_by_subdomain(subdomain, db_path=db_path)
-        if tenant:
-            return tenant, "subdomain"
-
-    # 3. JWT tenant_id claim
-    jwt_tid = _extract_jwt_tenant(request.headers.get("Authorization", ""))
-    if jwt_tid:
-        tenant = _lookup_by_slug_or_id(jwt_tid, db_path)
-        if tenant:
-            return tenant, "jwt"
-
-    # 4. ?tenant= query parameter
-    qs_slug = request.args.get("tenant")
-    if qs_slug:
-        tenant = _lookup_by_slug_or_id(qs_slug, db_path)
-        if tenant:
-            return tenant, "query_param"
+            return tenant, "authenticated_session"
 
     return None, "none"
 
@@ -153,7 +146,12 @@ def _lookup_by_slug_or_id(value: str, db_path: str | None) -> Tenant | None:
 
 # ── Middleware registration ───────────────────────────────────────────────────
 
-def register_tenant_middleware(app: Flask, tenants_db_path: str | None = None) -> None:
+def register_tenant_middleware(
+    app: Flask,
+    tenants_db_path: str | None = None,
+    *,
+    require_tenant: bool | None = None,
+) -> None:
     """Attach tenant resolution hooks to *app*.
 
     Call this once during application factory setup, after other middleware.
@@ -166,6 +164,9 @@ def register_tenant_middleware(app: Flask, tenants_db_path: str | None = None) -
         Override path for the central tenants database.  Defaults to the
         standard location (``shared/data/db_files/tenants.db``).
     """
+    if require_tenant is None:
+        require_tenant = os.getenv("MULTI_TENANT_REQUIRED", "true").lower() == "true"
+
     # Ensure tenant schema exists
     try:
         init_tenant_db(tenants_db_path)
@@ -183,11 +184,32 @@ def register_tenant_middleware(app: Flask, tenants_db_path: str | None = None) -
         if _is_exempt(path):
             return  # No tenant resolution needed
 
+        header_tenant = request.headers.get("X-Tenant-ID")
+        query_tenant = request.args.get("tenant")
+        subdomain = _extract_subdomain(request.host or "")
+        authenticated_tid = _authenticated_tenant_id()
+        if not authenticated_tid:
+            # Client-controlled tenant selectors are never sufficient.
+            if header_tenant or query_tenant or subdomain:
+                return jsonify({"error": "Authenticated tenant identity is required"}), 401
+        for supplied in (header_tenant, query_tenant, subdomain):
+            if supplied and authenticated_tid:
+                asserted = _lookup_by_slug_or_id(supplied, tenants_db_path)
+                claimed = _lookup_by_slug_or_id(authenticated_tid, tenants_db_path)
+                if asserted is None or claimed is None or asserted.id != claimed.id:
+                    return jsonify({"error": "Tenant identity mismatch"}), 403
+
         tenant, source = _resolve_tenant(db_path=tenants_db_path)
 
         if tenant is None:
-            # No tenant signals detected — operate in single-tenant mode.
-            # This is the legacy / default behaviour.
+            signalled = bool(
+                header_tenant or query_tenant or subdomain or authenticated_tid
+            )
+            if signalled:
+                return jsonify({"error": "Tenant not found"}), 404
+            if require_tenant:
+                return jsonify({"error": "Tenant identity is required"}), 400
+            # Explicit compatibility mode for self-hosted single-tenant installs.
             return
 
         if not tenant.is_active:

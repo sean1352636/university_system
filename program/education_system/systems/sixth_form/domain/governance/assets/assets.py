@@ -34,11 +34,11 @@ from dataclasses import dataclass, field
 from datetime import date as _date
 from decimal import Decimal, InvalidOperation
 from typing import Any
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.ASSETS_DB
+DB_PATH = paths.SIXTH_FORM_ASSETS_DB
 
 CATEGORIES: tuple[str, ...] = (
     "Laptop", "Desktop", "Tablet", "Monitor", "Projector",
@@ -247,7 +247,7 @@ class Summary:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

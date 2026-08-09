@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -104,7 +110,7 @@ class ReportWindow:
                  foreground='#666').pack(side=tk.RIGHT)
 
         # Report content
-        content_frame = ttk.LabelFrame(self.window, text="Report Content", padding=10)
+        content_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.report.labels.report_content', default="Report Content"), padding=10)
         content_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
 
         self.report_text = scrolledtext.ScrolledText(content_frame, wrap=tk.WORD,
@@ -117,13 +123,13 @@ class ReportWindow:
         button_frame = ttk.Frame(self.window)
         button_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        ttk.Button(button_frame, text="💾 Save Report",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.report.buttons.save_report', default="💾 Save Report"),
                   command=self.save_report, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Button(button_frame, text="📧 Send to Admin",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.report.buttons.send_to_admin', default="📧 Send to Admin"),
                   command=self.send_to_admin, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Button(button_frame, text="📋 Copy to Clipboard",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.report.buttons.copy_to_clipboard', default="📋 Copy to Clipboard"),
                   command=self.copy_to_clipboard, style='Primary.TButton').pack(side=tk.LEFT)
 
         ttk.Button(button_frame, text=_("common.close"),
@@ -156,7 +162,7 @@ class ReportWindow:
         try:
             self.window.clipboard_clear()
             self.window.clipboard_append(self.report_content)
-            messagebox.showinfo(_("common.success"), "Report copied to clipboard!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.misc_windows.report.dialogs.report_copied_to_clipboard', default="Report copied to clipboard!"))
         except Exception as e:
             logger.exception("misc_windows.py:1655 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to copy to clipboard:\n{e}")
@@ -169,26 +175,26 @@ class ReportWindow:
 
             if not admin_emails:
                 messagebox.showerror(_("common.error"),
-                    "No admin email addresses found in the database.\n\n"
-                    "Please ensure at least one admin account has a valid email address.")
+                    _t('gui.academics.attendance_tracker.misc_windows.report.dialogs.no_admin_email_addresses_found_in_the_database_please_ensure_at', default="No admin email addresses found in the database.\n\n"
+                    "Please ensure at least one admin account has a valid email address."))
                 return
 
             # Show confirmation with admin list
             admin_list = "\n".join([f"  • {email}" for email in admin_emails])
-            if not messagebox.askyesno("Confirm Send",
+            if not messagebox.askyesno(_t('gui.academics.attendance_tracker.misc_windows.report.dialogs.confirm_send', default="Confirm Send"),
                 f"Send this report to the following admin(s)?\n\n{admin_list}\n\n"
                 f"Report: {self.report_title}\nType: {self.report_type}"):
                 return
 
             # Show progress
             progress_window = tk.Toplevel(self.window)
-            progress_window.title("Sending Report")
+            progress_window.title(_t('gui.academics.attendance_tracker.misc_windows.report.windows.sending_report', default="Sending Report"))
             progress_window.geometry("400x150")
             progress_window.transient(self.window)
 
-            ttk.Label(progress_window, text="Sending report to administrators...",
+            ttk.Label(progress_window, text=_t('gui.academics.attendance_tracker.misc_windows.report.labels.sending_report_to_administrators', default="Sending report to administrators..."),
                      font=('Arial', 12)).pack(pady=20)
-            progress_label = ttk.Label(progress_window, text="Please wait...")
+            progress_label = ttk.Label(progress_window, text=_t('gui.academics.attendance_tracker.misc_windows.report.labels.please_wait', default="Please wait..."))
             progress_label.pack(pady=10)
 
             progress_window.update()
@@ -212,15 +218,15 @@ class ReportWindow:
 
             # Show results
             if success_count > 0:
-                messagebox.showinfo("Email Sent",
+                messagebox.showinfo(_t('gui.academics.attendance_tracker.misc_windows.report.dialogs.email_sent', default="Email Sent"),
                     f"Report sent successfully!\n\n"
                     f"✅ Sent: {success_count}\n"
                     f"❌ Failed: {failed_count}\n\n"
                     f"Administrators have been notified.")
             else:
-                messagebox.showerror("Failed",
-                    "Failed to send report to any administrators.\n"
-                    "Please check email configuration.")
+                messagebox.showerror(_t('gui.academics.attendance_tracker.misc_windows.report.dialogs.failed', default="Failed"),
+                    _t('gui.academics.attendance_tracker.misc_windows.report.dialogs.failed_to_send_report_to_any_administrators_please_check_email_c', default="Failed to send report to any administrators.\n"
+                    "Please check email configuration."))
 
         except Exception as e:
             logger.exception("misc_windows.py:1718 %s", 'except Exception as e')
@@ -234,7 +240,7 @@ class ReportWindow:
 
         try:
 
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
                 # Query for admin users with email addresses

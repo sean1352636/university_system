@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 from contextlib import contextmanager
 import tkinter as tk
@@ -43,8 +45,8 @@ except Exception as import_error:
 try:
     import nltk
     # Use centralized NLTK data path
-    from education_system.systems.university.infrastructure.paths import NLTK_DATA_DIR
-    custom_nltk_path = str(NLTK_DATA_DIR)
+    from education_system.paths import UNIVERSITY_NLTK_DATA_DIR
+    custom_nltk_path = str(UNIVERSITY_NLTK_DATA_DIR)
     if custom_nltk_path not in nltk.data.path:
         nltk.data.path.insert(0, custom_nltk_path)
 
@@ -375,7 +377,7 @@ class SetupTestingDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.common.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 

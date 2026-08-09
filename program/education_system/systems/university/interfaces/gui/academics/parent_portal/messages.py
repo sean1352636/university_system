@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -60,7 +62,7 @@ def message_teachers(self, child):
     instructors = self._get_student_instructors(student_id)
 
     # Instructor selection
-    teacher_frame = ttk.LabelFrame(message_frame, text="Select Instructor", padding=10)
+    teacher_frame = ttk.LabelFrame(message_frame, text=_t('gui.academics.parent_portal.messages.labels.select_instructor', default="Select Instructor"), padding=10)
     teacher_frame.pack(fill=tk.X, pady=10)
 
     teacher_var = tk.StringVar()
@@ -77,25 +79,25 @@ def message_teachers(self, child):
 
         # Add "All Instructors" option
         instructor_data["All Instructors"] = [inst[3] for inst in instructors]  # List of all emails
-        rb = ttk.Radiobutton(teacher_frame, text="All Instructors", variable=teacher_var, value="All Instructors")
+        rb = ttk.Radiobutton(teacher_frame, text=_t('gui.academics.parent_portal.messages.buttons.all_instructors', default="All Instructors"), variable=teacher_var, value="All Instructors")
         rb.pack(anchor='w')
 
         teacher_var.set(list(instructor_data.keys())[0])
     else:
-        ttk.Label(teacher_frame, text="No instructors found in the system.").pack(anchor='w')
+        ttk.Label(teacher_frame, text=_t('gui.academics.parent_portal.messages.labels.no_instructors_found_in_the_system', default="No instructors found in the system.")).pack(anchor='w')
 
     # Store instructor data for send function
     self._current_instructor_data = instructor_data
 
     # Message composition
-    compose_frame = ttk.LabelFrame(message_frame, text="Compose Message", padding=10)
+    compose_frame = ttk.LabelFrame(message_frame, text=_t('gui.academics.parent_portal.messages.labels.compose_message', default="Compose Message"), padding=10)
     compose_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
-    ttk.Label(compose_frame, text="Subject:").pack(anchor='w')
+    ttk.Label(compose_frame, text=_t('gui.academics.parent_portal.messages.labels.subject', default="Subject:")).pack(anchor='w')
     subject_entry = ttk.Entry(compose_frame, width=80)
     subject_entry.pack(fill=tk.X, pady=5)
 
-    ttk.Label(compose_frame, text="Message:").pack(anchor='w', pady=(10, 0))
+    ttk.Label(compose_frame, text=_t('gui.academics.parent_portal.messages.labels.message', default="Message:")).pack(anchor='w', pady=(10, 0))
     message_text = scrolledtext.ScrolledText(compose_frame, height=10)
     message_text.pack(fill=tk.BOTH, expand=True, pady=5)
 
@@ -116,11 +118,11 @@ def message_teachers(self, child):
         teacher = teacher_var.get()
 
         if not subject or not message_body:
-            messagebox.showwarning("Missing Information", "Please fill in both subject and message.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.messages.dialogs.missing_information', default="Missing Information"), _t('gui.academics.parent_portal.messages.dialogs.please_fill_in_both_subject_and_message', default="Please fill in both subject and message."))
             return
 
         if not teacher or teacher not in self._current_instructor_data:
-            messagebox.showwarning("No Recipient", "Please select an instructor.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.messages.dialogs.no_recipient', default="No Recipient"), _t('gui.academics.parent_portal.messages.dialogs.please_select_an_instructor', default="Please select an instructor."))
             return
 
         # Build full email body with student info and sender signature
@@ -175,19 +177,19 @@ This message was sent through the University Guardian Portal.
                 fail_count += 1
 
         if success_count > 0 and fail_count == 0:
-            messagebox.showinfo("Success", f"Message sent successfully to {success_count} instructor(s)!")
+            messagebox.showinfo(_t('gui.academics.parent_portal.messages.dialogs.success', default="Success"), f"Message sent successfully to {success_count} instructor(s)!")
             subject_entry.delete(0, tk.END)
             message_text.delete(1.0, tk.END)
         elif success_count > 0:
-            messagebox.showwarning("Partial Success", f"Sent to {success_count} instructor(s), failed for {fail_count}.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.messages.dialogs.partial_success', default="Partial Success"), f"Sent to {success_count} instructor(s), failed for {fail_count}.")
         else:
-            messagebox.showerror("Failed", "Failed to send message. Please try again.")
+            messagebox.showerror(_t('gui.academics.parent_portal.messages.dialogs.failed', default="Failed"), _t('gui.academics.parent_portal.messages.dialogs.failed_to_send_message_please_try_again', default="Failed to send message. Please try again."))
 
-    send_btn = ttk.Button(compose_frame, text="Send Message", command=send_message)
+    send_btn = ttk.Button(compose_frame, text=_t('gui.academics.parent_portal.messages.buttons.send_message', default="Send Message"), command=send_message)
     send_btn.pack(pady=10)
 
     # Back button
-    back_btn = ttk.Button(self.content_frame, text="← Back", command=self.show_children)
+    back_btn = ttk.Button(self.content_frame, text=_t('gui.academics.parent_portal.messages.buttons.back', default="← Back"), command=self.show_children)
     back_btn.pack(pady=10)
 ParentPortalGUI.message_teachers = message_teachers
 
@@ -196,22 +198,22 @@ def show_messages_interface(self):
     self.clear_content()
     self.update_status("Messages")
 
-    title = ttk.Label(self.content_frame, text="Messages", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.messages.labels.messages', default="Messages"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Message categories
     categories_frame = ttk.Frame(self.content_frame)
     categories_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Button(categories_frame, text="Inbox",
+    ttk.Button(categories_frame, text=_t('gui.academics.parent_portal.messages.buttons.inbox', default="Inbox"),
               command=lambda: self.show_message_category("inbox")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(categories_frame, text="Sent",
+    ttk.Button(categories_frame, text=_t('gui.academics.parent_portal.messages.buttons.sent', default="Sent"),
               command=lambda: self.show_message_category("sent")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(categories_frame, text="Compose New",
+    ttk.Button(categories_frame, text=_t('gui.academics.parent_portal.messages.buttons.compose_new', default="Compose New"),
               command=self.show_send_message_interface).pack(side=tk.LEFT, padx=5)
 
     # Messages display frame
-    messages_frame = ttk.LabelFrame(self.content_frame, text="Inbox", padding=15)
+    messages_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.messages.labels.inbox', default="Inbox"), padding=15)
     messages_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     try:
@@ -240,10 +242,10 @@ def show_messages_interface(self):
                 columns = ("From", "Subject", "Date", "Status")
                 tree = ttk.Treeview(messages_frame, columns=columns, show="headings", height=15)
 
-                tree.heading("From", text="From")
-                tree.heading("Subject", text="Subject")
-                tree.heading("Date", text="Date")
-                tree.heading("Status", text="Status")
+                tree.heading("From", text=_t('gui.academics.parent_portal.messages.headings.from', default="From"))
+                tree.heading("Subject", text=_t('gui.academics.parent_portal.messages.headings.subject', default="Subject"))
+                tree.heading("Date", text=_t('gui.academics.parent_portal.messages.headings.date', default="Date"))
+                tree.heading("Status", text=_t('gui.academics.parent_portal.messages.headings.status', default="Status"))
 
                 tree.column("From", width=150)
                 tree.column("Subject", width=300)
@@ -266,16 +268,16 @@ def show_messages_interface(self):
                     selected = tree.selection()
                     if selected:
                         item = tree.item(selected[0])
-                        messagebox.showinfo("Message", f"From: {item['values'][0]}\n"
+                        messagebox.showinfo(_t('gui.academics.parent_portal.messages.dialogs.message', default="Message"), f"From: {item['values'][0]}\n"
                                                       f"Subject: {item['values'][1]}\n"
                                                       f"Date: {item['values'][2]}\n\n"
                                                       "Full message content would be displayed here.")
 
-                ttk.Button(messages_frame, text="View Message", command=view_message).pack(pady=10)
+                ttk.Button(messages_frame, text=_t('gui.academics.parent_portal.messages.buttons.view_message', default="View Message"), command=view_message).pack(pady=10)
             else:
-                ttk.Label(messages_frame, text="No messages found", font=('Arial', 11)).pack(pady=50)
+                ttk.Label(messages_frame, text=_t('gui.academics.parent_portal.messages.labels.no_messages_found', default="No messages found"), font=('Arial', 11)).pack(pady=50)
         else:
-            ttk.Label(messages_frame, text="Messaging system not configured",
+            ttk.Label(messages_frame, text=_t('gui.academics.parent_portal.messages.labels.messaging_system_not_configured', default="Messaging system not configured"),
                      font=('Arial', 11)).pack(pady=20)
 
         conn.close()
@@ -298,11 +300,11 @@ def show_message_category(self, category):
     categories_frame = ttk.Frame(self.content_frame)
     categories_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Button(categories_frame, text="Inbox",
+    ttk.Button(categories_frame, text=_t('gui.academics.parent_portal.messages.buttons.inbox', default="Inbox"),
               command=lambda: self.show_message_category("inbox")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(categories_frame, text="Sent",
+    ttk.Button(categories_frame, text=_t('gui.academics.parent_portal.messages.buttons.sent', default="Sent"),
               command=lambda: self.show_message_category("sent")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(categories_frame, text="Compose New",
+    ttk.Button(categories_frame, text=_t('gui.academics.parent_portal.messages.buttons.compose_new', default="Compose New"),
               command=self.show_send_message_interface).pack(side=tk.LEFT, padx=5)
 
     # Messages display frame
@@ -375,10 +377,10 @@ def show_message_category(self, category):
                 if category.lower() == "inbox":
                     columns = ("From", "Subject", "Date", "Status")
                     tree = ttk.Treeview(messages_frame, columns=columns, show="headings", height=15)
-                    tree.heading("From", text="From")
-                    tree.heading("Subject", text="Subject")
-                    tree.heading("Date", text="Date")
-                    tree.heading("Status", text="Status")
+                    tree.heading("From", text=_t('gui.academics.parent_portal.messages.headings.from', default="From"))
+                    tree.heading("Subject", text=_t('gui.academics.parent_portal.messages.headings.subject', default="Subject"))
+                    tree.heading("Date", text=_t('gui.academics.parent_portal.messages.headings.date', default="Date"))
+                    tree.heading("Status", text=_t('gui.academics.parent_portal.messages.headings.status', default="Status"))
                     tree.column("From", width=150)
                     tree.column("Subject", width=300)
                     tree.column("Date", width=150)
@@ -386,9 +388,9 @@ def show_message_category(self, category):
                 else:  # sent
                     columns = ("To", "Subject", "Date")
                     tree = ttk.Treeview(messages_frame, columns=columns, show="headings", height=15)
-                    tree.heading("To", text="To")
-                    tree.heading("Subject", text="Subject")
-                    tree.heading("Date", text="Date")
+                    tree.heading("To", text=_t('gui.academics.parent_portal.messages.headings.to', default="To"))
+                    tree.heading("Subject", text=_t('gui.academics.parent_portal.messages.headings.subject', default="Subject"))
+                    tree.heading("Date", text=_t('gui.academics.parent_portal.messages.headings.date', default="Date"))
                     tree.column("To", width=150)
                     tree.column("Subject", width=300)
                     tree.column("Date", width=150)
@@ -424,12 +426,12 @@ def show_message_category(self, category):
                             conn.commit()
 
                         if category.lower() == "inbox":
-                            messagebox.showinfo("Message", f"From: {item['values'][0]}\n"
+                            messagebox.showinfo(_t('gui.academics.parent_portal.messages.dialogs.message', default="Message"), f"From: {item['values'][0]}\n"
                                                           f"Subject: {item['values'][1]}\n"
                                                           f"Date: {item['values'][2]}\n\n"
                                                           f"{body}")
                         else:
-                            messagebox.showinfo("Message", f"To: {item['values'][0]}\n"
+                            messagebox.showinfo(_t('gui.academics.parent_portal.messages.dialogs.message', default="Message"), f"To: {item['values'][0]}\n"
                                                           f"Subject: {item['values'][1]}\n"
                                                           f"Date: {item['values'][2]}\n\n"
                                                           f"{body}")
@@ -437,12 +439,12 @@ def show_message_category(self, category):
                         # Refresh the view
                         self.show_message_category(category)
 
-                ttk.Button(messages_frame, text="View Message", command=view_message).pack(pady=10)
+                ttk.Button(messages_frame, text=_t('gui.academics.parent_portal.messages.buttons.view_message', default="View Message"), command=view_message).pack(pady=10)
             else:
                 ttk.Label(messages_frame, text=f"No {category} messages found",
                          font=('Arial', 11)).pack(pady=50)
         else:
-            ttk.Label(messages_frame, text="Messaging system not configured",
+            ttk.Label(messages_frame, text=_t('gui.academics.parent_portal.messages.labels.messaging_system_not_configured', default="Messaging system not configured"),
                      font=('Arial', 11)).pack(pady=20)
 
         conn.close()
@@ -498,7 +500,7 @@ def show_send_message_interface(self):
     self.clear_content()
     self.update_status("Send Message")
 
-    title = ttk.Label(self.content_frame, text="Compose Message", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.messages.labels.compose_message', default="Compose Message"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Load recipients from database
@@ -506,11 +508,11 @@ def show_send_message_interface(self):
     self._send_msg_recipients = recipients
 
     # Message form
-    form_frame = ttk.LabelFrame(self.content_frame, text="New Message", padding=20)
+    form_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.messages.labels.new_message', default="New Message"), padding=20)
     form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     # Recipient
-    ttk.Label(form_frame, text="To:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.messages.labels.to', default="To:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
     recipient_var = tk.StringVar()
     recipient_combo = ttk.Combobox(form_frame, textvariable=recipient_var, width=60)
     recipient_values = ["-- Select Recipient --"] + list(recipients.keys())
@@ -519,17 +521,17 @@ def show_send_message_interface(self):
     recipient_combo.grid(row=0, column=1, pady=5, sticky='ew')
 
     # Or enter email directly
-    ttk.Label(form_frame, text="Or Email:", font=('Arial', 10)).grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.messages.labels.or_email', default="Or Email:"), font=('Arial', 10)).grid(row=1, column=0, sticky='w', pady=5)
     direct_email_entry = ttk.Entry(form_frame, width=50)
     direct_email_entry.grid(row=1, column=1, pady=5, sticky='ew')
 
     # Subject
-    ttk.Label(form_frame, text="Subject:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.messages.labels.subject', default="Subject:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
     subject_entry = ttk.Entry(form_frame, width=50)
     subject_entry.grid(row=2, column=1, pady=5, sticky='ew')
 
     # Message body
-    ttk.Label(form_frame, text="Message:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.messages.labels.message', default="Message:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='nw', pady=5)
     message_text = scrolledtext.ScrolledText(form_frame, height=12, width=50, wrap=tk.WORD)
     message_text.grid(row=3, column=1, pady=5, sticky='ew')
 
@@ -567,13 +569,13 @@ def show_send_message_interface(self):
             recipient_name = recipient_display
 
         if not recipient_email:
-            messagebox.showwarning("Missing Recipient", "Please select a recipient or enter an email address.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.messages.dialogs.missing_recipient', default="Missing Recipient"), _t('gui.academics.parent_portal.messages.dialogs.please_select_a_recipient_or_enter_an_email_address', default="Please select a recipient or enter an email address."))
             return
         if not subject:
-            messagebox.showwarning("Missing Subject", "Please enter a subject.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.messages.dialogs.missing_subject', default="Missing Subject"), _t('gui.academics.parent_portal.messages.dialogs.please_enter_a_subject', default="Please enter a subject."))
             return
         if not message:
-            messagebox.showwarning("Missing Message", "Please enter a message.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.messages.dialogs.missing_message', default="Missing Message"), _t('gui.academics.parent_portal.messages.dialogs.please_enter_a_message', default="Please enter a message."))
             return
 
         # Build full email body with signature
@@ -615,19 +617,19 @@ This message was sent through the University Guardian Portal.
                     conn.close()
 
             if success:
-                messagebox.showinfo("Success", f"Message sent to {recipient_name}!")
+                messagebox.showinfo(_t('gui.academics.parent_portal.messages.dialogs.success', default="Success"), f"Message sent to {recipient_name}!")
                 subject_entry.delete(0, tk.END)
                 message_text.delete('1.0', tk.END)
                 direct_email_entry.delete(0, tk.END)
                 recipient_combo.set("-- Select Recipient --")
             else:
-                messagebox.showerror("Failed", "Failed to send message. Please try again.")
+                messagebox.showerror(_t('gui.academics.parent_portal.messages.dialogs.failed', default="Failed"), _t('gui.academics.parent_portal.messages.dialogs.failed_to_send_message_please_try_again', default="Failed to send message. Please try again."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send message: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.messages.dialogs.error', default="Error"), f"Failed to send message: {str(e)}")
 
-    ttk.Button(btn_frame, text="Send", command=send_message).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=self.show_messages_interface).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.messages.buttons.send', default="Send"), command=send_message).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.messages.buttons.cancel', default="Cancel"), command=self.show_messages_interface).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.show_send_message_interface = show_send_message_interface
 
 def show_group_message_interface(self):
@@ -635,11 +637,11 @@ def show_group_message_interface(self):
     self.clear_content()
     self.update_status("Group Messages")
 
-    title = ttk.Label(self.content_frame, text="Group Messages", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.messages.labels.group_messages', default="Group Messages"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Group selection
-    groups_frame = ttk.LabelFrame(self.content_frame, text="Select Group", padding=15)
+    groups_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.messages.labels.select_group', default="Select Group"), padding=15)
     groups_frame.pack(fill=tk.X, padx=20, pady=10)
 
     groups = ["All Instructors", "Course Guardians", "Sports Team", "Music Department", "Special Education Team"]
@@ -650,7 +652,7 @@ def show_group_message_interface(self):
         btn.pack(pady=5, fill=tk.X)
 
     # Recent group messages
-    messages_frame = ttk.LabelFrame(self.content_frame, text="Recent Group Messages", padding=15)
+    messages_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.messages.labels.recent_group_messages', default="Recent Group Messages"), padding=15)
     messages_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     try:
@@ -691,9 +693,9 @@ def show_group_message_interface(self):
                 tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
                 scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
             else:
-                ttk.Label(messages_frame, text="No group messages found", font=('Arial', 11)).pack(pady=50)
+                ttk.Label(messages_frame, text=_t('gui.academics.parent_portal.messages.labels.no_group_messages_found', default="No group messages found"), font=('Arial', 11)).pack(pady=50)
         else:
-            ttk.Label(messages_frame, text="Group messaging not configured",
+            ttk.Label(messages_frame, text=_t('gui.academics.parent_portal.messages.labels.group_messaging_not_configured', default="Group messaging not configured"),
                      font=('Arial', 11)).pack(pady=20)
 
         conn.close()
@@ -713,7 +715,7 @@ def view_group_messages(self, group_name):
     title.pack(pady=20)
 
     # Back button
-    ttk.Button(self.content_frame, text="← Back to Group Messages",
+    ttk.Button(self.content_frame, text=_t('gui.academics.parent_portal.messages.buttons.back_to_group_messages', default="← Back to Group Messages"),
               command=self.show_group_message_interface).pack(anchor='w', padx=20, pady=5)
 
     # Messages display frame
@@ -748,10 +750,10 @@ def view_group_messages(self, group_name):
                 columns = ("Subject", "From", "Date", "Replies")
                 tree = ttk.Treeview(messages_frame, columns=columns, show="headings", height=15)
 
-                tree.heading("Subject", text="Subject")
-                tree.heading("From", text="From")
-                tree.heading("Date", text="Date")
-                tree.heading("Replies", text="Replies")
+                tree.heading("Subject", text=_t('gui.academics.parent_portal.messages.headings.subject', default="Subject"))
+                tree.heading("From", text=_t('gui.academics.parent_portal.messages.headings.from', default="From"))
+                tree.heading("Date", text=_t('gui.academics.parent_portal.messages.headings.date', default="Date"))
+                tree.heading("Replies", text=_t('gui.academics.parent_portal.messages.headings.replies', default="Replies"))
 
                 tree.column("Subject", width=300)
                 tree.column("From", width=150)
@@ -773,19 +775,19 @@ def view_group_messages(self, group_name):
                         item = tree.item(selected[0])
                         msg = messages[tree.index(selected[0])]
 
-                        messagebox.showinfo("Group Message",
+                        messagebox.showinfo(_t('gui.academics.parent_portal.messages.dialogs.group_message', default="Group Message"),
                                           f"Subject: {msg[1]}\n"
                                           f"From: {msg[2]}\n"
                                           f"Date: {msg[4]}\n"
                                           f"Replies: {msg[5]}\n\n"
                                           f"{msg[3]}")
 
-                ttk.Button(messages_frame, text="View Message", command=view_message).pack(pady=10)
+                ttk.Button(messages_frame, text=_t('gui.academics.parent_portal.messages.buttons.view_message', default="View Message"), command=view_message).pack(pady=10)
             else:
                 ttk.Label(messages_frame, text=f"No messages found for {group_name}",
                          font=('Arial', 11)).pack(pady=50)
         else:
-            ttk.Label(messages_frame, text="Group messaging not configured",
+            ttk.Label(messages_frame, text=_t('gui.academics.parent_portal.messages.labels.group_messaging_not_configured', default="Group messaging not configured"),
                      font=('Arial', 11)).pack(pady=20)
 
         conn.close()
@@ -800,22 +802,22 @@ def show_announcements_interface(self):
     self.clear_content()
     self.update_status("University Announcements")
 
-    title = ttk.Label(self.content_frame, text="University Announcements", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.messages.labels.university_announcements', default="University Announcements"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Filter options
     filter_frame = ttk.Frame(self.content_frame)
     filter_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(filter_frame, text="Filter:").pack(side=tk.LEFT, padx=5)
-    filter_var = tk.StringVar(value="All")
+    ttk.Label(filter_frame, text=_t('gui.academics.parent_portal.messages.labels.filter', default="Filter:")).pack(side=tk.LEFT, padx=5)
+    filter_var = tk.StringVar(value=_t('gui.academics.parent_portal.messages.values.all', default="All"))
     categories = ["All", "Academic", "Events", "Emergency", "General", "Sports", "Arts"]
 
     for cat in categories:
         ttk.Radiobutton(filter_frame, text=cat, value=cat, variable=filter_var).pack(side=tk.LEFT, padx=5)
 
     # Announcements display
-    announcements_frame = ttk.LabelFrame(self.content_frame, text="Recent Announcements", padding=15)
+    announcements_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.messages.labels.recent_announcements', default="Recent Announcements"), padding=15)
     announcements_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     try:
@@ -868,16 +870,16 @@ def show_announcements_interface(self):
 
                     # is_urgent is 1 for urgent, 0 for not urgent
                     if announcement[5] == 1:
-                        priority_label = ttk.Label(ann_card, text="URGENT", foreground='red', font=('Arial', 9, 'bold'))
+                        priority_label = ttk.Label(ann_card, text=_t('gui.academics.parent_portal.messages.labels.urgent', default="URGENT"), foreground='red', font=('Arial', 9, 'bold'))
                         priority_label.pack(anchor='w')
 
                 canvas.pack(side="left", fill="both", expand=True)
                 scrollbar.pack(side="right", fill="y")
             else:
-                ttk.Label(announcements_frame, text="No announcements at this time",
+                ttk.Label(announcements_frame, text=_t('gui.academics.parent_portal.messages.labels.no_announcements_at_this_time', default="No announcements at this time"),
                          font=('Arial', 11)).pack(pady=50)
         else:
-            ttk.Label(announcements_frame, text="Announcements system not configured",
+            ttk.Label(announcements_frame, text=_t('gui.academics.parent_portal.messages.labels.announcements_system_not_configured', default="Announcements system not configured"),
                      font=('Arial', 11)).pack(pady=20)
 
         conn.close()

@@ -8,6 +8,8 @@ Pick up to 10 numbers from 1-80. The game draws 20. Your payout depends on
 how many of your picks are drawn ("catches") and how many spots you played.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -42,7 +44,7 @@ def payout_multiplier(spots, catches):
 class Keno:
     def __init__(self, root):
         self.root = root
-        root.title("Keno")
+        root.title(_t('gui.operations.commerce.betting.games.keno.windows.keno', default="Keno"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -58,9 +60,9 @@ class Keno:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=12)
         f.pack()
-        tk.Label(f, text="K E N O", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.keno.labels.k_e_n_o', default="K E N O"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 22, "bold")).pack()
-        self.msg = tk.Label(f, text="Pick up to 10 numbers, then Play.",
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.keno.labels.pick_up_to_10_numbers_then_play', default="Pick up to 10 numbers, then Play."),
                             bg=FELT, fg="white", font=("Helvetica", 12, "bold"))
         self.msg.pack(pady=2)
 
@@ -75,10 +77,10 @@ class Keno:
 
         ctl = tk.Frame(f, bg=FELT, pady=6)
         ctl.pack()
-        tk.Button(ctl, text="Quick Pick", command=self.quick_pick, width=10,
+        tk.Button(ctl, text=_t('gui.operations.commerce.betting.games.keno.buttons.quick_pick', default="Quick Pick"), command=self.quick_pick, width=10,
                   font=("Helvetica", 11, "bold"), bg="#3a5a8a", fg="white",
                   bd=0, cursor="hand2").pack(side="left", padx=4)
-        tk.Button(ctl, text="Clear", command=self.clear, width=8,
+        tk.Button(ctl, text=_t('gui.operations.commerce.betting.games.keno.buttons.clear', default="Clear"), command=self.clear, width=8,
                   font=("Helvetica", 11, "bold"), bg="#555", fg="white",
                   bd=0, cursor="hand2").pack(side="left", padx=4)
 
@@ -90,7 +92,7 @@ class Keno:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.keno.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -103,7 +105,7 @@ class Keno:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.play_btn = tk.Button(f, text="PLAY", command=self.play, width=16,
+        self.play_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.keno.buttons.play', default="PLAY"), command=self.play, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -141,7 +143,7 @@ class Keno:
         self.revealed = 0
         self.repaint()
         self.update_picklabel()
-        self.msg.config(text="Pick up to 10 numbers, then Play.")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.keno.text.pick_up_to_10_numbers_then_play', default="Pick up to 10 numbers, then Play."))
 
     def update_picklabel(self):
         n = len(self.selected)
@@ -202,17 +204,17 @@ class Keno:
         if self.busy:
             return
         if not self.selected:
-            self.msg.config(text="Pick at least one number.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.keno.text.pick_at_least_one_number', default="Pick at least one number."))
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.keno.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.drawn = random.sample(range(1, 81), 20)
         self.revealed = 0
         self.busy = True
         self.play_btn.config(state="disabled")
-        self.msg.config(text="Drawing...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.keno.text.drawing', default="Drawing..."), fg="white")
         self.refresh()
         self._reveal()
 
@@ -234,7 +236,7 @@ class Keno:
         else:
             self.msg.config(text=f"{catches} catches \u2014 no win.", fg="white")
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.keno.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

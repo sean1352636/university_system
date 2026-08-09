@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # import_export.py
 # Import/export functionality mixin for AccommodationGUI.
 
@@ -22,11 +24,11 @@ class ImportExportMixin:
     def import_csv(self):
         """Import accommodations from CSV file"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.import_export.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
         file_path = filedialog.askopenfilename(
-            title="Select CSV file",
+            title=_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.select_csv_file', default="Select CSV file"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
 
@@ -41,7 +43,7 @@ class ImportExportMixin:
                 thread.start()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Import failed: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.error', default="Error"), f"Import failed: {str(e)}")
                 self.status_var.set("Import failed")
 
     def run_csv_import(self, file_path):
@@ -62,7 +64,7 @@ class ImportExportMixin:
             self.root.after(0, lambda: self.show_import_result(result))
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: messagebox.showerror("Import Error", str(_e)))
+            self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.import_error', default="Import Error"), str(_e)))
         finally:
             self.root.after(0, lambda: self.status_var.set("Ready"))
             self.root.after(0, self.refresh_data)
@@ -74,11 +76,11 @@ class ImportExportMixin:
     def import_json(self):
         """Import accommodations from JSON file"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.import_export.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
         file_path = filedialog.askopenfilename(
-            title="Select JSON file",
+            title=_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.select_json_file', default="Select JSON file"),
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
         )
 
@@ -91,7 +93,7 @@ class ImportExportMixin:
                 thread.start()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Import failed: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.error', default="Error"), f"Import failed: {str(e)}")
                 self.status_var.set("Import failed")
 
     def run_json_import(self, file_path):
@@ -106,10 +108,10 @@ class ImportExportMixin:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
             except json.JSONDecodeError as e:
-                self.root.after(0, lambda _e=e: messagebox.showerror("JSON Error", f"Invalid JSON format: {_e}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.json_error', default="JSON Error"), f"Invalid JSON format: {_e}"))
                 return
             except Exception as e:
-                self.root.after(0, lambda _e=e: messagebox.showerror("File Error", f"Could not read file: {_e}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.file_error', default="File Error"), f"Could not read file: {_e}"))
                 return
 
             # Handle both list of records and single record
@@ -121,7 +123,7 @@ class ImportExportMixin:
             elif isinstance(data, list):
                 records = data
             else:
-                self.root.after(0, lambda: messagebox.showerror("Data Error", "JSON must contain a list of records or a single record"))
+                self.root.after(0, lambda: messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.data_error', default="Data Error"), _t('gui.pastoral.health.medical_accommodation.import_export.dialogs.json_must_contain_a_list_of_records_or_a_single_record', default="JSON must contain a list of records or a single record")))
                 return
 
             # Process each record
@@ -225,7 +227,7 @@ class ImportExportMixin:
             self.root.after(0, lambda: self.show_import_result(result_message))
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: messagebox.showerror("Import Error", f"Unexpected error: {str(_e)}"))
+            self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.import_error', default="Import Error"), f"Unexpected error: {str(_e)}"))
         finally:
             self.root.after(0, lambda: self.status_var.set("Ready"))
             self.root.after(0, self.refresh_data)
@@ -235,7 +237,7 @@ class ImportExportMixin:
     def export_data(self, format_type):
         """Export accommodations data"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.import_export.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
         # Get export filters
@@ -248,30 +250,30 @@ class ImportExportMixin:
         # Choose save location
         if format_type == 'csv':
             file_path = filedialog.asksaveasfilename(
-                title="Export to CSV",
+                title=_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.export_to_csv', default="Export to CSV"),
                 filetypes=[("CSV files", "*.csv")],
                 defaultextension=".csv"
             )
         elif format_type == 'excel':
             file_path = filedialog.asksaveasfilename(
-                title="Export to Excel",
+                title=_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.export_to_excel', default="Export to Excel"),
                 filetypes=[("Excel files", "*.xlsx")],
                 defaultextension=".xlsx"
             )
         elif format_type == 'pdf':
             file_path = filedialog.asksaveasfilename(
-                title="Export to PDF",
+                title=_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.export_to_pdf', default="Export to PDF"),
                 filetypes=[("PDF files", "*.pdf")],
                 defaultextension=".pdf"
             )
         elif format_type == 'json':
             file_path = filedialog.asksaveasfilename(
-                title="Export to JSON",
+                title=_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.export_to_json', default="Export to JSON"),
                 filetypes=[("JSON files", "*.json")],
                 defaultextension=".json"
             )
         else:
-            messagebox.showerror("Error", f"Unsupported export format: {format_type}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.error', default="Error"), f"Unsupported export format: {format_type}")
             return
 
         if not file_path:
@@ -322,10 +324,10 @@ class ImportExportMixin:
             elif format_type == 'json':
                 self.export_to_json_file(rows, file_path)
 
-            messagebox.showinfo("Success", f"Data exported to {file_path}")
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.success', default="Success"), f"Data exported to {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Export failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.error', default="Error"), f"Export failed: {str(e)}")
 
     def export_csv(self):
         """Export accommodations to CSV"""
@@ -402,7 +404,7 @@ class ImportExportMixin:
                 df.to_excel(writer, sheet_name='Accommodations', index=False)
 
         except ImportError:
-            messagebox.showerror("Error", "pandas module not installed. Cannot export to Excel.")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.import_export.dialogs.pandas_module_not_installed_cannot_export_to_excel', default="pandas module not installed. Cannot export to Excel."))
             raise
 
     def export_to_pdf_file(self, rows, file_path):
@@ -460,7 +462,7 @@ class ImportExportMixin:
             doc.build(elements)
 
         except ImportError:
-            messagebox.showerror("Error", "reportlab module not installed. Cannot export to PDF.")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.import_export.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.import_export.dialogs.reportlab_module_not_installed_cannot_export_to_pdf', default="reportlab module not installed. Cannot export to PDF."))
             raise
 
     def export_to_json_file(self, rows, file_path):

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -412,9 +414,9 @@ def generate_enrollment_report(self, report_type):
             self.report_action_frame = ttk.Frame(self.analytics_frame)
             self.report_action_frame.pack(fill=tk.X, pady=5)
 
-            ttk.Button(self.report_action_frame, text="📊 Visualize Report",
+            ttk.Button(self.report_action_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.visualize_report', default="📊 Visualize Report"),
                       command=self.visualize_report).pack(side=tk.LEFT, padx=5)
-            ttk.Button(self.report_action_frame, text="📧 Email Report to Admin",
+            ttk.Button(self.report_action_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.email_report_to_admin', default="📧 Email Report to Admin"),
                       command=self.email_report).pack(side=tk.LEFT, padx=5)
 
         self.update_status(f"{report_type} enrollment report generated")
@@ -426,13 +428,13 @@ def generate_enrollment_report(self, report_type):
 def visualize_report(self):
     """Generate and display visual charts for the current report"""
     if not hasattr(self, 'last_report_data'):
-        messagebox.showwarning("No Report", "Please generate a report first.")
+        messagebox.showwarning(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.no_report', default="No Report"), _t('gui.academics.course_management_gui.analytics.analytics.dialogs.please_generate_a_report_first', default="Please generate a report first."))
         return
 
     if not CHARTS_AVAILABLE:
-        messagebox.showerror("Charts Unavailable",
-                           "Chart generation requires matplotlib and seaborn.\n"
-                           "Install with: pip install matplotlib seaborn")
+        messagebox.showerror(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.charts_unavailable', default="Charts Unavailable"),
+                           _t('gui.academics.course_management_gui.analytics.analytics.dialogs.chart_generation_requires_matplotlib_and_seaborn_install_with_pi', default="Chart generation requires matplotlib and seaborn.\n"
+                           "Install with: pip install matplotlib seaborn"))
         return
 
     report_type = self.last_report_data['type']
@@ -469,10 +471,10 @@ def visualize_report(self):
                 self._create_capacity_charts(chart_notebook, cursor)
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=chart_window.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.close', default="Close"), command=chart_window.destroy).pack(pady=10)
 
     except Exception as e:
-        messagebox.showerror("Visualization Error", f"Failed to create charts: {e}")
+        messagebox.showerror(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.visualization_error', default="Visualization Error"), f"Failed to create charts: {e}")
         print(_("course_management.errors.chart_generation", error=str(e)))
 
 
@@ -493,7 +495,7 @@ def _create_summary_charts(self, notebook, cursor):
 
     # Chart 1: Enrollment Overview (Bar Chart)
     frame1 = ttk.Frame(notebook)
-    notebook.add(frame1, text="Enrollment Overview")
+    notebook.add(frame1, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.enrollment_overview', default="Enrollment Overview"))
 
     fig1 = Figure(figsize=(10, 6), dpi=100)
     ax1 = fig1.add_subplot(111)
@@ -516,7 +518,7 @@ def _create_summary_charts(self, notebook, cursor):
 
     # Chart 2: Fill Rate Pie Chart
     frame2 = ttk.Frame(notebook)
-    notebook.add(frame2, text="Capacity Fill Rate")
+    notebook.add(frame2, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.capacity_fill_rate', default="Capacity Fill Rate"))
 
     fig2 = Figure(figsize=(10, 6), dpi=100)
     ax2 = fig2.add_subplot(111)
@@ -554,7 +556,7 @@ def _create_department_charts(self, notebook, cursor):
 
     # Chart 1: Students by Department (Bar Chart)
     frame1 = ttk.Frame(notebook)
-    notebook.add(frame1, text="Students by Department")
+    notebook.add(frame1, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.students_by_department', default="Students by Department"))
 
     fig1 = Figure(figsize=(12, 6), dpi=100)
     ax1 = fig1.add_subplot(111)
@@ -577,7 +579,7 @@ def _create_department_charts(self, notebook, cursor):
 
     # Chart 2: Course Count by Department (Pie Chart)
     frame2 = ttk.Frame(notebook)
-    notebook.add(frame2, text="Courses by Department")
+    notebook.add(frame2, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.courses_by_department', default="Courses by Department"))
 
     fig2 = Figure(figsize=(10, 6), dpi=100)
     ax2 = fig2.add_subplot(111)
@@ -593,7 +595,7 @@ def _create_department_charts(self, notebook, cursor):
 
     # Chart 3: Fill Rate by Department
     frame3 = ttk.Frame(notebook)
-    notebook.add(frame3, text="Fill Rate by Department")
+    notebook.add(frame3, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.fill_rate_by_department', default="Fill Rate by Department"))
 
     fig3 = Figure(figsize=(12, 6), dpi=100)
     ax3 = fig3.add_subplot(111)
@@ -632,7 +634,7 @@ def _create_detailed_charts(self, notebook, cursor):
 
     # Chart 1: Top 15 Courses by Enrollment
     frame1 = ttk.Frame(notebook)
-    notebook.add(frame1, text="Top Courses")
+    notebook.add(frame1, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.top_courses', default="Top Courses"))
 
     fig1 = Figure(figsize=(12, 8), dpi=100)
     ax1 = fig1.add_subplot(111)
@@ -655,7 +657,7 @@ def _create_detailed_charts(self, notebook, cursor):
 
     # Chart 2: Enrollment vs Capacity
     frame2 = ttk.Frame(notebook)
-    notebook.add(frame2, text="Enrollment vs Capacity")
+    notebook.add(frame2, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.enrollment_vs_capacity', default="Enrollment vs Capacity"))
 
     fig2 = Figure(figsize=(12, 8), dpi=100)
     ax2 = fig2.add_subplot(111)
@@ -704,7 +706,7 @@ def _create_capacity_charts(self, notebook, cursor):
 
     # Chart 1: Available Spots by Course
     frame1 = ttk.Frame(notebook)
-    notebook.add(frame1, text="Available Spots")
+    notebook.add(frame1, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.available_spots', default="Available Spots"))
 
     fig1 = Figure(figsize=(12, 8), dpi=100)
     ax1 = fig1.add_subplot(111)
@@ -727,7 +729,7 @@ def _create_capacity_charts(self, notebook, cursor):
 
     # Chart 2: Capacity Utilization Breakdown
     frame2 = ttk.Frame(notebook)
-    notebook.add(frame2, text="Utilization Breakdown")
+    notebook.add(frame2, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.utilization_breakdown', default="Utilization Breakdown"))
 
     fig2 = Figure(figsize=(12, 8), dpi=100)
     ax2 = fig2.add_subplot(111)
@@ -757,18 +759,18 @@ def _create_capacity_charts(self, notebook, cursor):
 def email_report(self):
     """Email the current report to admin"""
     if not hasattr(self, 'last_report_data'):
-        messagebox.showwarning("No Report", "Please generate a report first.")
+        messagebox.showwarning(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.no_report', default="No Report"), _t('gui.academics.course_management_gui.analytics.analytics.dialogs.please_generate_a_report_first', default="Please generate a report first."))
         return
 
     if not EMAIL_AVAILABLE:
-        messagebox.showerror("Email Service Unavailable",
-                           "Email service is not configured.\n"
-                           "Please set up email settings.")
+        messagebox.showerror(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.email_service_unavailable', default="Email Service Unavailable"),
+                           _t('gui.academics.course_management_gui.analytics.analytics.dialogs.email_service_is_not_configured_please_set_up_email_settings', default="Email service is not configured.\n"
+                           "Please set up email settings."))
         return
 
     # Create email dialog
     email_dialog = tk.Toplevel(self.root)
-    email_dialog.title("📧 Email Report to Admin")
+    email_dialog.title(_t('gui.academics.course_management_gui.analytics.analytics.windows.email_report_to_admin', default="📧 Email Report to Admin"))
     email_dialog.geometry("1000x750")
     email_dialog.transient(self.root)
     email_dialog.grab_set()
@@ -776,7 +778,7 @@ def email_report(self):
     frame = ttk.Frame(email_dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Email Course Management Report",
+    ttk.Label(frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.email_course_management_report', default="Email Course Management Report"),
              font=("Arial", 14, "bold")).pack(pady=(0, 20))
 
     # Get admin email from database
@@ -790,7 +792,7 @@ def email_report(self):
         print(_("course_management.warnings.admin_email_fetch_failed", error=str(e)))
         default_email = "admin@university.edu"
 
-    ttk.Label(frame, text="Admin Email Address:").pack(anchor='w', pady=(0, 5))
+    ttk.Label(frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.admin_email_address', default="Admin Email Address:")).pack(anchor='w', pady=(0, 5))
     email_var = tk.StringVar(value=default_email)
 
     # Create email input frame with refresh button
@@ -812,12 +814,12 @@ def email_report(self):
                 if len(admins) > 1:
                     # Show selection dialog
                     admin_select_dialog = tk.Toplevel(email_dialog)
-                    admin_select_dialog.title("Select Admin")
+                    admin_select_dialog.title(_t('gui.academics.course_management_gui.analytics.analytics.windows.select_admin', default="Select Admin"))
                     admin_select_dialog.geometry("900x700")
                     admin_select_dialog.transient(email_dialog)
                     admin_select_dialog.grab_set()
 
-                    ttk.Label(admin_select_dialog, text="Select Admin User:",
+                    ttk.Label(admin_select_dialog, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.select_admin_user', default="Select Admin User:"),
                              font=('Arial', 12, 'bold')).pack(pady=10)
 
                     admin_listbox = tk.Listbox(admin_select_dialog, height=10)
@@ -833,29 +835,29 @@ def email_report(self):
                             email_var.set(selected_email)
                         admin_select_dialog.destroy()
 
-                    ttk.Button(admin_select_dialog, text="Select",
+                    ttk.Button(admin_select_dialog, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.select', default="Select"),
                               command=select_admin).pack(pady=10)
                 else:
                     email_var.set(admins[0][1])
-                    messagebox.showinfo("Admin Email", f"Using admin email: {admins[0][1]}")
+                    messagebox.showinfo(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.admin_email', default="Admin Email"), f"Using admin email: {admins[0][1]}")
             else:
-                messagebox.showwarning("No Admins", "No admin users found in database.")
+                messagebox.showwarning(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.no_admins', default="No Admins"), _t('gui.academics.course_management_gui.analytics.analytics.dialogs.no_admin_users_found_in_database', default="No admin users found in database."))
         except Exception as e:
             messagebox.showerror(_("common.database_error"), f"Could not fetch admin emails: {str(e)}")
 
     ttk.Button(email_frame, text="🔄", command=refresh_admin_email, width=3).pack(side='left', padx=(5, 0))
 
-    ttk.Label(frame, text="Subject:").pack(anchor='w', pady=(10, 5))
+    ttk.Label(frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.subject', default="Subject:")).pack(anchor='w', pady=(10, 5))
     subject_var = tk.StringVar(value=f"Course Management Report - {self.last_report_data['type']}")
     ttk.Entry(frame, textvariable=subject_var, width=60).pack(fill='x', pady=(0, 10))
 
-    ttk.Label(frame, text="Message (optional):").pack(anchor='w', pady=(10, 5))
+    ttk.Label(frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.message_optional', default="Message (optional):")).pack(anchor='w', pady=(10, 5))
     message_text = ScrolledText(frame, height=8, wrap=tk.WORD)
     message_text.pack(fill='both', expand=True, pady=(0, 10))
     message_text.insert('1.0', "Please find the course management report below.\n\n"
                                "This report was automatically generated from the Course Management GUI.")
 
-    ttk.Label(frame, text="Report Preview:").pack(anchor='w', pady=(10, 5))
+    ttk.Label(frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.report_preview', default="Report Preview:")).pack(anchor='w', pady=(10, 5))
     preview_text = ScrolledText(frame, height=10, wrap=tk.WORD)
     preview_text.pack(fill='both', expand=True, pady=(0, 20))
     preview_text.insert('1.0', self.last_report_data['text'])
@@ -868,7 +870,7 @@ def email_report(self):
             message = message_text.get('1.0', tk.END).strip()
 
             if not admin_email or '@' not in admin_email:
-                messagebox.showwarning("Invalid Email", "Please enter a valid admin email address.")
+                messagebox.showwarning(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.invalid_email', default="Invalid Email"), _t('gui.academics.course_management_gui.analytics.analytics.dialogs.please_enter_a_valid_admin_email_address', default="Please enter a valid admin email address."))
                 return
 
             # Render email from template
@@ -907,13 +909,13 @@ This email was sent from the Course Management GUI.
                 body=body
             )
 
-            messagebox.showinfo("Email Sent",
+            messagebox.showinfo(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.email_sent', default="Email Sent"),
                               f"✅ Report sent successfully to {admin_email}\n\n"
                               f"Report Type: {self.last_report_data['type']}")
             email_dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Email Error",
+            messagebox.showerror(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.email_error', default="Email Error"),
                                f"Failed to send email: {str(e)}\n\n"
                                f"Please check email configuration.")
             print(_("course_management.errors.email", error=str(e)))
@@ -921,9 +923,9 @@ This email was sent from the Course Management GUI.
     # Buttons
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill='x', pady=(10, 0))
-    ttk.Button(button_frame, text="📧 Send Email",
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.send_email', default="📧 Send Email"),
               command=send_email_report).pack(side='left', padx=(0, 10))
-    ttk.Button(button_frame, text="❌ Cancel",
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.cancel_variant_2', default="❌ Cancel"),
               command=email_dialog.destroy).pack(side='right')
 
 
@@ -932,7 +934,7 @@ def show_department_stats(self):
     try:
         # Create department stats window
         stats_window = tk.Toplevel(self.root)
-        stats_window.title("Department Statistics")
+        stats_window.title(_t('gui.academics.course_management_gui.analytics.analytics.windows.department_statistics', default="Department Statistics"))
         stats_window.geometry("800x600")
         stats_window.transient(self.root)
 
@@ -943,7 +945,7 @@ def show_department_stats(self):
         selection_frame = ttk.Frame(main_frame)
         selection_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(selection_frame, text="Department:").pack(side=tk.LEFT)
+        ttk.Label(selection_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.department', default="Department:")).pack(side=tk.LEFT)
         dept_var = tk.StringVar()
 
         # Get departments list
@@ -1034,8 +1036,8 @@ def show_department_stats(self):
                     if total_capacity > 0:
                         stats_text.insert(tk.END, f"Department Fill Rate: {(total_students/total_capacity*100):.1f}%\n")
 
-        ttk.Button(selection_frame, text="Update", command=update_stats).pack(side=tk.LEFT, padx=5)
-        ttk.Button(main_frame, text="Close", command=stats_window.destroy).pack(pady=10)
+        ttk.Button(selection_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.update', default="Update"), command=update_stats).pack(side=tk.LEFT, padx=5)
+        ttk.Button(main_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.close', default="Close"), command=stats_window.destroy).pack(pady=10)
 
         # Initial load
         update_stats()
@@ -1051,7 +1053,7 @@ class CourseAnalyticsDialog:
         self.auth = auth
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Course Analytics Dashboard")
+        self.dialog.title(_t('gui.academics.course_management_gui.analytics.analytics.windows.course_analytics_dashboard', default="Course Analytics Dashboard"))
         self.dialog.geometry("1200x850")
         self.dialog.minsize(1000, 700)
         self.dialog.transient(parent)
@@ -1091,53 +1093,53 @@ class CourseAnalyticsDialog:
 
         # Overview Tab
         overview_frame = ttk.Frame(notebook)
-        notebook.add(overview_frame, text="Overview")
+        notebook.add(overview_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.overview', default="Overview"))
         self.create_overview_tab(overview_frame)
 
         # Department Analysis Tab
         dept_frame = ttk.Frame(notebook)
-        notebook.add(dept_frame, text="Department Analysis")
+        notebook.add(dept_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.department_analysis', default="Department Analysis"))
         self.create_department_tab(dept_frame)
 
         # Trends Tab
         trends_frame = ttk.Frame(notebook)
-        notebook.add(trends_frame, text="Trends")
+        notebook.add(trends_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.tabs.trends', default="Trends"))
         self.create_trends_tab(trends_frame)
 
         # Controls
         controls_frame = ttk.Frame(main_frame)
         controls_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(controls_frame, text="Refresh Data", command=self.refresh_all_data).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Export Report", command=self.export_report).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.refresh_data', default="Refresh Data"), command=self.refresh_all_data).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.export_report', default="Export Report"), command=self.export_report).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Load initial data
         self.refresh_all_data()
 
     def create_overview_tab(self, parent):
         # Key metrics frame
-        metrics_frame = ttk.LabelFrame(parent, text="Key Metrics", padding=10)
+        metrics_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.key_metrics', default="Key Metrics"), padding=10)
         metrics_frame.pack(fill=tk.X, pady=5)
 
         # Create metric labels
-        self.total_courses_label = ttk.Label(metrics_frame, text="Total Courses: -", font=("Arial", 12, "bold"))
+        self.total_courses_label = ttk.Label(metrics_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.total_courses', default="Total Courses: -"), font=("Arial", 12, "bold"))
         self.total_courses_label.grid(row=0, column=0, padx=20, pady=5)
 
-        self.total_students_label = ttk.Label(metrics_frame, text="Total Students: -", font=("Arial", 12, "bold"))
+        self.total_students_label = ttk.Label(metrics_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.total_students', default="Total Students: -"), font=("Arial", 12, "bold"))
         self.total_students_label.grid(row=0, column=1, padx=20, pady=5)
 
-        self.avg_fill_rate_label = ttk.Label(metrics_frame, text="Avg Fill Rate: -", font=("Arial", 12, "bold"))
+        self.avg_fill_rate_label = ttk.Label(metrics_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.avg_fill_rate', default="Avg Fill Rate: -"), font=("Arial", 12, "bold"))
         self.avg_fill_rate_label.grid(row=0, column=2, padx=20, pady=5)
 
-        self.available_spots_label = ttk.Label(metrics_frame, text="Available Spots: -", font=("Arial", 12, "bold"))
+        self.available_spots_label = ttk.Label(metrics_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.available_spots', default="Available Spots: -"), font=("Arial", 12, "bold"))
         self.available_spots_label.grid(row=1, column=0, padx=20, pady=5)
 
-        self.active_courses_label = ttk.Label(metrics_frame, text="Active Courses: -", font=("Arial", 12, "bold"))
+        self.active_courses_label = ttk.Label(metrics_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.active_courses', default="Active Courses: -"), font=("Arial", 12, "bold"))
         self.active_courses_label.grid(row=1, column=1, padx=20, pady=5)
 
         # Charts frame (simplified text-based charts since GUI doesn't have matplotlib)
-        charts_frame = ttk.LabelFrame(parent, text="Status Distribution", padding=10)
+        charts_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.status_distribution', default="Status Distribution"), padding=10)
         charts_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.status_text = ScrolledText(charts_frame, height=15)
@@ -1147,7 +1149,7 @@ class CourseAnalyticsDialog:
         button_frame.pack(fill=tk.X, pady=(5, 0))
         ttk.Button(
             button_frame,
-            text="Email Overview to Admin",
+            text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.email_overview_to_admin', default="Email Overview to Admin"),
             command=self.email_overview_report,
         ).pack(side=tk.RIGHT, padx=5)
 
@@ -1156,7 +1158,7 @@ class CourseAnalyticsDialog:
         selector_frame = ttk.Frame(parent)
         selector_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(selector_frame, text="Department:").pack(side=tk.LEFT)
+        ttk.Label(selector_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.department', default="Department:")).pack(side=tk.LEFT)
         self.dept_selector = ttk.Combobox(selector_frame, width=30)
         self.dept_selector.pack(side=tk.LEFT, padx=5)
         self.dept_selector.bind('<<ComboboxSelected>>', self.update_department_data)
@@ -1169,13 +1171,13 @@ class CourseAnalyticsDialog:
         button_frame.pack(fill=tk.X, pady=(5, 0))
         ttk.Button(
             button_frame,
-            text="Email Department Report to Admin",
+            text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.email_department_report_to_admin', default="Email Department Report to Admin"),
             command=self.email_department_report,
         ).pack(side=tk.RIGHT, padx=5)
 
     def create_trends_tab(self, parent):
         # Trends analysis
-        trends_label = ttk.Label(parent, text="Course Trends Analysis", font=("Arial", 14, "bold"))
+        trends_label = ttk.Label(parent, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.course_trends_analysis', default="Course Trends Analysis"), font=("Arial", 14, "bold"))
         trends_label.pack(pady=10)
 
         self.trends_text = ScrolledText(parent, height=25)
@@ -1185,7 +1187,7 @@ class CourseAnalyticsDialog:
         button_frame.pack(fill=tk.X, pady=(5, 0))
         ttk.Button(
             button_frame,
-            text="Email Trends Report to Admin",
+            text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.email_trends_report_to_admin', default="Email Trends Report to Admin"),
             command=self.email_trends_report,
         ).pack(side=tk.RIGHT, padx=5)
 
@@ -1207,14 +1209,14 @@ class CourseAnalyticsDialog:
 
     def _send_report_to_admin(self, report_title, report_body):
         if not EMAIL_AVAILABLE:
-            messagebox.showerror("Email Service Unavailable", "Email service is not configured.")
+            messagebox.showerror(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.email_service_unavailable', default="Email Service Unavailable"), _t('gui.academics.course_management_gui.analytics.analytics.dialogs.email_service_is_not_configured', default="Email service is not configured."))
             return
 
         admin_email = self._get_admin_email()
         if not admin_email:
             admin_email = simpledialog.askstring(
-                "Admin Email",
-                "Enter admin email address:",
+                _t('gui.academics.course_management_gui.analytics.analytics.dialogs.admin_email', default="Admin Email"),
+                _t('gui.academics.course_management_gui.analytics.analytics.dialogs.enter_admin_email_address', default="Enter admin email address:"),
                 parent=self.dialog,
             )
 
@@ -1229,9 +1231,9 @@ class CourseAnalyticsDialog:
 
         try:
             send_email(admin_email, subject, body)
-            messagebox.showinfo("Email Sent", f"Report sent to {admin_email}.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.email_sent', default="Email Sent"), f"Report sent to {admin_email}.")
         except Exception as exc:
-            messagebox.showerror("Email Error", f"Failed to send email: {exc}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.email_error', default="Email Error"), f"Failed to send email: {exc}")
 
     def email_overview_report(self):
         metrics = [
@@ -1248,14 +1250,14 @@ class CourseAnalyticsDialog:
     def email_department_report(self):
         report_body = self.dept_details.get(1.0, tk.END).strip()
         if not report_body:
-            messagebox.showwarning("No Report", "Department report is empty.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.no_report', default="No Report"), _t('gui.academics.course_management_gui.analytics.analytics.dialogs.department_report_is_empty', default="Department report is empty."))
             return
         self._send_report_to_admin("Department Analysis", report_body)
 
     def email_trends_report(self):
         report_body = self.trends_text.get(1.0, tk.END).strip()
         if not report_body:
-            messagebox.showwarning("No Report", "Trends report is empty.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.analytics.analytics.dialogs.no_report', default="No Report"), _t('gui.academics.course_management_gui.analytics.analytics.dialogs.trends_report_is_empty', default="Trends report is empty."))
             return
         self._send_report_to_admin("Trends Analysis", report_body)
 
@@ -1497,7 +1499,7 @@ class CourseAnalyticsDialog:
 
     def export_report(self):
         filename = filedialog.asksaveasfilename(
-            title="Export Analytics Report",
+            title=_t('gui.academics.course_management_gui.analytics.analytics.dialogs.export_analytics_report', default="Export Analytics Report"),
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
         )
@@ -1536,7 +1538,7 @@ class EnrollmentReportDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Generate Enrollment Report")
+        self.dialog.title(_t('gui.academics.course_management_gui.analytics.analytics.windows.generate_enrollment_report', default="Generate Enrollment Report"))
         self.dialog.geometry("460x420")
         self.dialog.minsize(420, 380)
         self.dialog.transient(parent)
@@ -1550,28 +1552,28 @@ class EnrollmentReportDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Select Report Type", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.select_report_type', default="Select Report Type"), font=("Arial", 12, "bold")).pack(pady=10)
 
-        self.report_type = tk.StringVar(value="Summary")
+        self.report_type = tk.StringVar(value=_t('gui.academics.course_management_gui.analytics.analytics.values.summary', default="Summary"))
 
-        report_frame = ttk.LabelFrame(main_frame, text="Report Options", padding=10)
+        report_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.labels.report_options', default="Report Options"), padding=10)
         report_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Radiobutton(report_frame, text="Summary Report", variable=self.report_type,
+        ttk.Radiobutton(report_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.summary_report', default="Summary Report"), variable=self.report_type,
                        value="Summary").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(report_frame, text="Department Report", variable=self.report_type,
+        ttk.Radiobutton(report_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.department_report', default="Department Report"), variable=self.report_type,
                        value="Department").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(report_frame, text="Detailed Course Report", variable=self.report_type,
+        ttk.Radiobutton(report_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.detailed_course_report', default="Detailed Course Report"), variable=self.report_type,
                        value="Detailed").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(report_frame, text="Capacity Analysis", variable=self.report_type,
+        ttk.Radiobutton(report_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.capacity_analysis', default="Capacity Analysis"), variable=self.report_type,
                        value="Capacity").pack(anchor=tk.W, pady=2)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Generate", command=self.generate_report).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.generate', default="Generate"), command=self.generate_report).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.analytics.analytics.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def generate_report(self):
         self.result = self.report_type.get()

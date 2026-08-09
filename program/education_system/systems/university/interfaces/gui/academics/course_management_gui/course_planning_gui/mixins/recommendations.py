@@ -2,6 +2,8 @@
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import threading
@@ -22,7 +24,7 @@ class _RecommendationsMixin:
     def _create_recommendations_tab(self):
         """Add the recommendations tab frame (content built lazily on first view)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Recommendations")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.tabs.recommendations', default="Recommendations"))
         self._register_lazy_tab(tab, self._populate_recommendations_tab)
 
     def _populate_recommendations_tab(self, tab):
@@ -31,18 +33,18 @@ class _RecommendationsMixin:
         control_frame = ttk.Frame(tab)
         control_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(control_frame, text="Target Semester:", font=('Arial', 11)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.labels.target_semester', default="Target Semester:"), font=('Arial', 11)).pack(side=tk.LEFT, padx=5)
         self.rec_semester_entry = ttk.Entry(control_frame, width=15, font=('Arial', 11))
         self.rec_semester_entry.insert(0, "Fall 2026")
         self.rec_semester_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(control_frame, text="Get Recommendations",
+        ttk.Button(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.buttons.get_recommendations', default="Get Recommendations"),
                   command=self._get_recommendations).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Refresh",
+        ttk.Button(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.buttons.refresh', default="Refresh"),
                   command=self._get_recommendations).pack(side=tk.LEFT, padx=5)
 
         # Recommendations display
-        rec_frame = ttk.LabelFrame(tab, text="Recommended Courses", padding=10)
+        rec_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.labels.recommended_courses', default="Recommended Courses"), padding=10)
         rec_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Create treeview for recommendations
@@ -61,7 +63,7 @@ class _RecommendationsMixin:
         self.rec_tree.configure(yscrollcommand=rec_scrollbar.set)
 
         # Button to add to plan
-        ttk.Button(rec_frame, text="Add Selected to Plan",
+        ttk.Button(rec_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.buttons.add_selected_to_plan', default="Add Selected to Plan"),
                   command=self._add_recommended_course).pack(pady=10)
 
     def _get_recommendations(self):
@@ -95,17 +97,17 @@ class _RecommendationsMixin:
             self.status_bar.config(text=f"Loaded {len(recommendations)} recommendations")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to get recommendations: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.dialogs.error', default="Error"), f"Failed to get recommendations: {e}")
 
     def _add_recommended_course(self):
         """Add selected recommended course to plan."""
         if not self.current_plan_id:
-            messagebox.showwarning("Warning", "Please load a plan first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.dialogs.please_load_a_plan_first', default="Please load a plan first."))
             return
 
         selection = self.rec_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a course to add.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.dialogs.please_select_a_course_to_add', default="Please select a course to add."))
             return
 
         item = selection[0]
@@ -138,10 +140,10 @@ class _RecommendationsMixin:
                 semester_name=semester_name
             )
 
-            messagebox.showinfo("Success", f"Course {course_id} added to Semester {semester_num}!")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.dialogs.success', default="Success"), f"Course {course_id} added to Semester {semester_num}!")
             self.current_plan_data = self.planning_service.get_semester_plan(self.current_plan_id)
             self._display_planner_content()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add course: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.recommendations.dialogs.error', default="Error"), f"Failed to add course: {e}")
 

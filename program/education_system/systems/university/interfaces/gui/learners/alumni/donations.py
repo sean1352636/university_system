@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -42,40 +44,40 @@ from education_system.systems.university.interfaces.gui.learners.alumni._service
 class DonationsMixin:
         def _add_recognition_level(self):
             """Add a new recognition level"""
-            messagebox.showinfo("Feature", "Recognition level editor dialog would open here.")
+            messagebox.showinfo(_t('gui.learners.alumni.donations.dialogs.feature', default="Feature"), _t('gui.learners.alumni.donations.dialogs.recognition_level_editor_dialog_would_open_here', default="Recognition level editor dialog would open here."))
 
         def _delete_recognition_level(self):
             """Delete selected recognition level"""
             selection = self.recognition_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a level to delete.")
+                messagebox.showwarning(_t('gui.learners.alumni.donations.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.donations.dialogs.please_select_a_level_to_delete', default="Please select a level to delete."))
                 return
 
-            if messagebox.askyesno("Confirm Deletion",
-                                  "Are you sure you want to delete this recognition level?"):
-                messagebox.showinfo("Success", "Recognition level deleted!")
+            if messagebox.askyesno(_t('gui.learners.alumni.donations.dialogs.confirm_deletion', default="Confirm Deletion"),
+                                  _t('gui.learners.alumni.donations.dialogs.are_you_sure_you_want_to_delete_this_recognition_level', default="Are you sure you want to delete this recognition level?")):
+                messagebox.showinfo(_t('gui.learners.alumni.donations.dialogs.success', default="Success"), _t('gui.learners.alumni.donations.dialogs.recognition_level_deleted', default="Recognition level deleted!"))
                 self._load_recognition_levels()
 
         def _edit_recognition_level(self):
             """Edit selected recognition level"""
             selection = self.recognition_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a level to edit.")
+                messagebox.showwarning(_t('gui.learners.alumni.donations.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.donations.dialogs.please_select_a_level_to_edit', default="Please select a level to edit."))
                 return
-            messagebox.showinfo("Feature", "Recognition level editor dialog would open here.")
+            messagebox.showinfo(_t('gui.learners.alumni.donations.dialogs.feature', default="Feature"), _t('gui.learners.alumni.donations.dialogs.recognition_level_editor_dialog_would_open_here', default="Recognition level editor dialog would open here."))
 
         def _load_campaign_performance(self):
             """Load and display campaign performance data"""
             campaign_selection = self.selected_campaign.get()
             if not campaign_selection or campaign_selection == "No campaigns available":
-                messagebox.showwarning("No Selection", "Please select a campaign.")
+                messagebox.showwarning(_t('gui.learners.alumni.donations.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.donations.dialogs.please_select_a_campaign', default="Please select a campaign."))
                 return
 
             # Extract campaign_id
             import re
             match = re.search(r'ID:\s*(\d+)', campaign_selection)
             if not match:
-                messagebox.showerror("Error", "Invalid campaign selection.")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.error', default="Error"), _t('gui.learners.alumni.donations.dialogs.invalid_campaign_selection', default="Invalid campaign selection."))
                 return
 
             campaign_id = int(match.group(1))
@@ -128,7 +130,7 @@ class DonationsMixin:
                         self.update_status(f"Loaded performance for: {campaign_name}")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load performance: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.database_error', default="Database Error"), f"Failed to load performance: {str(e)}")
 
         def _load_recognition_levels(self):
             """Load donor recognition levels"""
@@ -156,11 +158,11 @@ class DonationsMixin:
                     self.update_status(f"Loaded {len(levels)} recognition level(s)")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load levels: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.database_error', default="Database Error"), f"Failed to load levels: {str(e)}")
 
         def create_campaign_form(self, parent):
             """Create fundraising campaign form"""
-            ttk.Label(parent, text="Create New Fundraising Campaign",
+            ttk.Label(parent, text=_t('gui.learners.alumni.donations.labels.create_new_fundraising_campaign', default="Create New Fundraising Campaign"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             form_frame = ttk.Frame(parent)
@@ -194,7 +196,7 @@ class DonationsMixin:
             category_frame = ttk.Frame(form_frame)
             category_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=5, sticky='ew')
 
-            ttk.Label(category_frame, text="Category:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(category_frame, text=_t('gui.learners.alumni.donations.labels.category', default="Category:")).pack(side=tk.LEFT, padx=(0, 10))
             self.campaign_vars['category'] = tk.StringVar()
             category_combo = ttk.Combobox(category_frame, textvariable=self.campaign_vars['category'],
                                          values=["Annual Fund", "Scholarship Fund", "Building Fund", "Research Fund", "Student Support"])
@@ -205,14 +207,14 @@ class DonationsMixin:
             featured_frame.grid(row=3, column=0, columnspan=2, padx=10, pady=5, sticky='ew')
 
             self.campaign_vars['is_featured'] = tk.BooleanVar()
-            ttk.Checkbutton(featured_frame, text="Feature this campaign on main page",
+            ttk.Checkbutton(featured_frame, text=_t('gui.learners.alumni.donations.buttons.feature_this_campaign_on_main_page', default="Feature this campaign on main page"),
                            variable=self.campaign_vars['is_featured']).pack(anchor='w')
 
             # Description
             desc_frame = ttk.Frame(form_frame)
             desc_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
 
-            ttk.Label(desc_frame, text="Campaign Description:").pack(anchor='w')
+            ttk.Label(desc_frame, text=_t('gui.learners.alumni.donations.labels.campaign_description', default="Campaign Description:")).pack(anchor='w')
             self.campaign_description = ScrolledText(desc_frame, height=6, wrap=tk.WORD)
             self.campaign_description.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
 
@@ -220,7 +222,7 @@ class DonationsMixin:
             submit_frame = ttk.Frame(form_frame)
             submit_frame.grid(row=5, column=0, columnspan=2, pady=20)
 
-            ttk.Button(submit_frame, text="Create Campaign",
+            ttk.Button(submit_frame, text=_t('gui.learners.alumni.donations.buttons.create_campaign', default="Create Campaign"),
                       command=self.submit_campaign).pack()
 
         def filter_donations(self):
@@ -277,24 +279,24 @@ class DonationsMixin:
                     self.update_status(f"Loaded {count} donation records")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load donations data: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.database_error', default="Database Error"), f"Failed to load donations data: {str(e)}")
 
         def lookup_donor(self):
             """Lookup donor information"""
             alumni_id = self.donation_vars['alumni_id'].get().strip()
             if not alumni_id:
-                messagebox.showwarning("No Alumni ID", "Please enter an Alumni ID to lookup.")
+                messagebox.showwarning(_t('gui.learners.alumni.donations.dialogs.no_alumni_id', default="No Alumni ID"), _t('gui.learners.alumni.donations.dialogs.please_enter_an_alumni_id_to_lookup', default="Please enter an Alumni ID to lookup."))
                 return
 
             # Simulate lookup
-            messagebox.showinfo("Alumni Found", f"Alumni {alumni_id}: John Doe (Class of 2018)")
+            messagebox.showinfo(_t('gui.learners.alumni.donations.dialogs.alumni_found', default="Alumni Found"), f"Alumni {alumni_id}: John Doe (Class of 2018)")
 
         def show_campaigns(self):
             """Show fundraising campaigns interface"""
             self.clear_content()
             self.update_status("Fundraising Campaigns")
 
-            ttk.Label(self.content_frame, text="Fundraising Campaigns",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.donations.labels.fundraising_campaigns', default="Fundraising Campaigns"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Tabs for different campaign views
@@ -303,7 +305,7 @@ class DonationsMixin:
 
             # Active campaigns tab
             active_frame = ttk.Frame(notebook)
-            notebook.add(active_frame, text="Active Campaigns")
+            notebook.add(active_frame, text=_t('gui.learners.alumni.donations.tabs.active_campaigns', default="Active Campaigns"))
 
             active_text = ScrolledText(active_frame, wrap=tk.WORD)
             active_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -367,7 +369,7 @@ class DonationsMixin:
             # Create campaign tab (for authorized users)
             if self.has_permission('manage_campaigns'):
                 create_frame = ttk.Frame(notebook)
-                notebook.add(create_frame, text="Create Campaign")
+                notebook.add(create_frame, text=_t('gui.learners.alumni.donations.tabs.create_campaign', default="Create Campaign"))
 
                 self.create_campaign_form(create_frame)
 
@@ -376,7 +378,7 @@ class DonationsMixin:
             self.clear_content()
             self.update_status("Donor Recognition")
 
-            ttk.Label(self.content_frame, text="Donor Recognition Management",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.donations.labels.donor_recognition_management', default="Donor Recognition Management"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Tabs for different recognition views
@@ -385,7 +387,7 @@ class DonationsMixin:
 
             # Recognition levels tab
             levels_frame = ttk.Frame(notebook)
-            notebook.add(levels_frame, text="Recognition Levels")
+            notebook.add(levels_frame, text=_t('gui.learners.alumni.donations.tabs.recognition_levels', default="Recognition Levels"))
 
             levels_text = ScrolledText(levels_frame, wrap=tk.WORD)
             levels_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -426,22 +428,22 @@ class DonationsMixin:
 
             # Update levels tab
             update_frame = ttk.Frame(notebook)
-            notebook.add(update_frame, text="Update Levels")
+            notebook.add(update_frame, text=_t('gui.learners.alumni.donations.tabs.update_levels', default="Update Levels"))
 
-            ttk.Label(update_frame, text="Update Donor Recognition Levels",
+            ttk.Label(update_frame, text=_t('gui.learners.alumni.donations.labels.update_donor_recognition_levels', default="Update Donor Recognition Levels"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
-            ttk.Button(update_frame, text="Update All Recognition Levels",
+            ttk.Button(update_frame, text=_t('gui.learners.alumni.donations.buttons.update_all_recognition_levels', default="Update All Recognition Levels"),
                       command=self.update_recognition_levels).pack(pady=20)
 
             # Recognition report
             report_frame = ttk.Frame(notebook)
-            notebook.add(report_frame, text="Reports")
+            notebook.add(report_frame, text=_t('gui.learners.alumni.donations.tabs.reports', default="Reports"))
 
             self.recognition_report = ScrolledText(report_frame, wrap=tk.WORD)
             self.recognition_report.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-            ttk.Button(report_frame, text="Generate Recognition Report",
+            ttk.Button(report_frame, text=_t('gui.learners.alumni.donations.buttons.generate_recognition_report', default="Generate Recognition Report"),
                       command=self.generate_recognition_report_gui).pack(pady=10)
 
         def show_record_donation(self):
@@ -449,11 +451,11 @@ class DonationsMixin:
             self.clear_content()
             self.update_status("Record Donation")
 
-            ttk.Label(self.content_frame, text="Record Alumni Donation",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.donations.labels.record_alumni_donation', default="Record Alumni Donation"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Donation form
-            form_frame = ttk.LabelFrame(self.content_frame, text="Donation Details", padding=10)
+            form_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.donations.labels.donation_details', default="Donation Details"), padding=10)
             form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             self.donation_vars = {}
@@ -462,17 +464,17 @@ class DonationsMixin:
             donor_frame = ttk.Frame(form_frame)
             donor_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(donor_frame, text="Alumni ID:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(donor_frame, text=_t('gui.learners.alumni.donations.labels.alumni_id', default="Alumni ID:")).pack(side=tk.LEFT, padx=(0, 10))
             self.donation_vars['alumni_id'] = tk.StringVar()
             ttk.Entry(donor_frame, textvariable=self.donation_vars['alumni_id'], width=15).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(donor_frame, text="Lookup Alumni",
+            ttk.Button(donor_frame, text=_t('gui.learners.alumni.donations.buttons.lookup_alumni', default="Lookup Alumni"),
                       command=self.lookup_donor).pack(side=tk.LEFT)
 
             # Donation amount
             amount_frame = ttk.Frame(form_frame)
             amount_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(amount_frame, text="Donation Amount ($):").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(amount_frame, text=_t('gui.learners.alumni.donations.labels.donation_amount', default="Donation Amount ($):")).pack(side=tk.LEFT, padx=(0, 10))
             self.donation_vars['amount'] = tk.StringVar()
             ttk.Entry(amount_frame, textvariable=self.donation_vars['amount'], width=15).pack(side=tk.LEFT)
 
@@ -480,7 +482,7 @@ class DonationsMixin:
             campaign_frame = ttk.Frame(form_frame)
             campaign_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(campaign_frame, text="Campaign:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(campaign_frame, text=_t('gui.learners.alumni.donations.labels.campaign', default="Campaign:")).pack(side=tk.LEFT, padx=(0, 10))
             self.donation_vars['campaign'] = tk.StringVar()
             campaign_combo = ttk.Combobox(campaign_frame, textvariable=self.donation_vars['campaign'],
                                          values=["Annual Alumni Fund", "Scholarship Fund", "Building Fund", "General Fund"])
@@ -490,14 +492,14 @@ class DonationsMixin:
             payment_frame = ttk.Frame(form_frame)
             payment_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(payment_frame, text="Payment Method:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(payment_frame, text=_t('gui.learners.alumni.donations.labels.payment_method', default="Payment Method:")).pack(side=tk.LEFT, padx=(0, 10))
             self.donation_vars['payment_method'] = tk.StringVar()
             payment_combo = ttk.Combobox(payment_frame, textvariable=self.donation_vars['payment_method'],
                                         values=["Credit Card", "Check", "Bank Transfer", "Cash",
                                                 "Online", "Finance Account"])
             payment_combo.pack(side=tk.LEFT)
             ttk.Label(payment_frame,
-                      text="  (Finance Account debits the alumnus's university account)",
+                      text=_t('gui.learners.alumni.donations.labels.finance_account_debits_the_alumnus_s_university_account', default="  (Finance Account debits the alumnus's university account)"),
                       foreground='#555555').pack(side=tk.LEFT, padx=(10, 0))
 
             # Recurring donation
@@ -505,22 +507,22 @@ class DonationsMixin:
             recurring_frame.pack(fill=tk.X, pady=(0, 10))
 
             self.donation_vars['is_recurring'] = tk.BooleanVar()
-            ttk.Checkbutton(recurring_frame, text="Recurring Donation",
+            ttk.Checkbutton(recurring_frame, text=_t('gui.learners.alumni.donations.buttons.recurring_donation', default="Recurring Donation"),
                            variable=self.donation_vars['is_recurring']).pack(side=tk.LEFT, padx=(0, 10))
 
-            ttk.Label(recurring_frame, text="Frequency:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(recurring_frame, text=_t('gui.learners.alumni.donations.labels.frequency', default="Frequency:")).pack(side=tk.LEFT, padx=(0, 10))
             self.donation_vars['frequency'] = tk.StringVar()
             freq_combo = ttk.Combobox(recurring_frame, textvariable=self.donation_vars['frequency'],
                                      values=["Monthly", "Quarterly", "Annually"])
             freq_combo.pack(side=tk.LEFT)
 
             # Notes
-            ttk.Label(form_frame, text="Notes:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(form_frame, text=_t('gui.learners.alumni.donations.labels.notes', default="Notes:")).pack(anchor='w', pady=(10, 5))
             self.donation_notes = ScrolledText(form_frame, height=4, wrap=tk.WORD)
             self.donation_notes.pack(fill=tk.X)
 
             # Submit button
-            ttk.Button(form_frame, text="Record Donation",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.donations.buttons.record_donation', default="Record Donation"),
                       command=self.submit_donation).pack(pady=20)
 
         def show_view_donations(self):
@@ -528,33 +530,33 @@ class DonationsMixin:
             self.clear_content()
             self.update_status("View Donations")
 
-            ttk.Label(self.content_frame, text="Alumni Donations",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.donations.labels.alumni_donations', default="Alumni Donations"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Filter and search
             filter_frame = ttk.Frame(self.content_frame)
             filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-            ttk.Label(filter_frame, text="Filter by:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.donations.labels.filter_by', default="Filter by:")).pack(side=tk.LEFT, padx=(0, 10))
 
             # Date range
-            ttk.Label(filter_frame, text="From:").pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.donations.labels.from', default="From:")).pack(side=tk.LEFT, padx=(0, 5))
             self.donation_from_date = tk.StringVar()
             ttk.Entry(filter_frame, textvariable=self.donation_from_date, width=10).pack(side=tk.LEFT, padx=(0, 10))
 
-            ttk.Label(filter_frame, text="To:").pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.donations.labels.to', default="To:")).pack(side=tk.LEFT, padx=(0, 5))
             self.donation_to_date = tk.StringVar()
             ttk.Entry(filter_frame, textvariable=self.donation_to_date, width=10).pack(side=tk.LEFT, padx=(0, 10))
 
             # Campaign filter
-            ttk.Label(filter_frame, text="Campaign:").pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.donations.labels.campaign', default="Campaign:")).pack(side=tk.LEFT, padx=(0, 5))
             self.donation_campaign_filter = tk.StringVar()
             campaign_filter_combo = ttk.Combobox(filter_frame, textvariable=self.donation_campaign_filter,
                                                values=["All", "Annual Fund", "Scholarship Fund", "Building Fund"])
             campaign_filter_combo.pack(side=tk.LEFT, padx=(0, 10))
             campaign_filter_combo.set("All")
 
-            ttk.Button(filter_frame, text="Apply Filter",
+            ttk.Button(filter_frame, text=_t('gui.learners.alumni.donations.buttons.apply_filter', default="Apply Filter"),
                       command=self.filter_donations).pack(side=tk.LEFT)
 
             # Donations table
@@ -582,7 +584,7 @@ class DonationsMixin:
             self.load_donations_data()
 
             # Summary
-            summary_frame = ttk.LabelFrame(self.content_frame, text="Summary", padding=10)
+            summary_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.donations.labels.summary', default="Summary"), padding=10)
             summary_frame.pack(fill=tk.X, padx=20)
 
             self.donation_summary = tk.StringVar()
@@ -594,19 +596,19 @@ class DonationsMixin:
             required_fields = ['campaign_name', 'goal_amount', 'start_date', 'end_date']
             for field in required_fields:
                 if not self.campaign_vars[field].get().strip():
-                    messagebox.showerror("Validation Error", f"{field.replace('_', ' ').title()} is required!")
+                    messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.validation_error', default="Validation Error"), f"{field.replace('_', ' ').title()} is required!")
                     return
 
             try:
                 goal_amount = float(self.campaign_vars['goal_amount'].get())
                 if goal_amount <= 0:
-                    messagebox.showerror("Validation Error", "Goal amount must be greater than zero!")
+                    messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.donations.dialogs.goal_amount_must_be_greater_than_zero', default="Goal amount must be greater than zero!"))
                     return
             except ValueError:
-                messagebox.showerror("Validation Error", "Please enter a valid goal amount!")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.donations.dialogs.please_enter_a_valid_goal_amount', default="Please enter a valid goal amount!"))
                 return
 
-            messagebox.showinfo("Campaign Created", "Fundraising campaign created successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.donations.dialogs.campaign_created', default="Campaign Created"), _t('gui.learners.alumni.donations.dialogs.fundraising_campaign_created_successfully', default="Fundraising campaign created successfully!"))
             self.update_status("Campaign creation completed")
 
             # Clear form
@@ -620,20 +622,20 @@ class DonationsMixin:
         def submit_donation(self):
             """Submit donation record"""
             if not self.donation_vars['alumni_id'].get().strip():
-                messagebox.showerror("Validation Error", "Alumni ID is required!")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.donations.dialogs.alumni_id_is_required', default="Alumni ID is required!"))
                 return
 
             if not self.donation_vars['amount'].get().strip():
-                messagebox.showerror("Validation Error", "Donation amount is required!")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.donations.dialogs.donation_amount_is_required', default="Donation amount is required!"))
                 return
 
             try:
                 amount = float(self.donation_vars['amount'].get())
                 if amount <= 0:
-                    messagebox.showerror("Validation Error", "Donation amount must be greater than zero!")
+                    messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.donations.dialogs.donation_amount_must_be_greater_than_zero', default="Donation amount must be greater than zero!"))
                     return
             except ValueError:
-                messagebox.showerror("Validation Error", "Please enter a valid donation amount!")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.donations.dialogs.please_enter_a_valid_donation_amount', default="Please enter a valid donation amount!"))
                 return
 
             alumni_id = self.donation_vars['alumni_id'].get().strip()
@@ -654,10 +656,10 @@ class DonationsMixin:
                         "FROM alumni WHERE alumni_id = ?", (alumni_id,)
                     ).fetchone()
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Could not look up alumnus: {e}")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.database_error', default="Database Error"), f"Could not look up alumnus: {e}")
                 return
             if not alum:
-                messagebox.showerror("Not Found",
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.not_found', default="Not Found"),
                                      f"No alumni record found for ID {alumni_id}.")
                 return
             student_id, donor_email, donor_name = alum
@@ -668,9 +670,9 @@ class DonationsMixin:
             if payment_method == "Finance Account":
                 if not student_id:
                     messagebox.showerror(
-                        "No Finance Account",
-                        "This alumnus has no linked student/finance account, so the "
-                        "donation cannot be paid from a finance account.")
+                        _t('gui.learners.alumni.donations.dialogs.no_finance_account', default="No Finance Account"),
+                        _t('gui.learners.alumni.donations.dialogs.this_alumnus_has_no_linked_student_finance_account_so_the_donati', default="This alumnus has no linked student/finance account, so the "
+                        "donation cannot be paid from a finance account."))
                     return
                 try:
                     with db_get_connection() as conn:
@@ -678,16 +680,16 @@ class DonationsMixin:
                             "SELECT balance FROM student_finance_accounts WHERE student_id = ?",
                             (student_id,)).fetchone()
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Finance account lookup failed: {e}")
+                    messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.database_error', default="Database Error"), f"Finance account lookup failed: {e}")
                     return
                 if bal_row is None:
                     messagebox.showerror(
-                        "No Finance Account",
+                        _t('gui.learners.alumni.donations.dialogs.no_finance_account', default="No Finance Account"),
                         f"No finance account exists for student {student_id}.")
                     return
                 if float(bal_row[0] or 0) < amount:
                     messagebox.showerror(
-                        "Insufficient Funds",
+                        _t('gui.learners.alumni.donations.dialogs.insufficient_funds', default="Insufficient Funds"),
                         f"Finance account balance (£{float(bal_row[0] or 0):.2f}) is less "
                         f"than the donation amount (£{amount:.2f}).")
                     return
@@ -701,11 +703,11 @@ class DonationsMixin:
                         processed_by=str(getattr(self, 'current_user', {}).get('username', 'alumni_gui')),
                     )
                     if tx is None:
-                        messagebox.showerror("Payment Failed",
-                                             "Could not debit the finance account.")
+                        messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.payment_failed', default="Payment Failed"),
+                                             _t('gui.learners.alumni.donations.dialogs.could_not_debit_the_finance_account', default="Could not debit the finance account."))
                         return
                 except Exception as e:
-                    messagebox.showerror("Payment Failed",
+                    messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.payment_failed', default="Payment Failed"),
                                          f"Finance account charge failed: {e}")
                     return
 
@@ -743,7 +745,7 @@ class DonationsMixin:
                     donation_id = cur.lastrowid
                     conn.commit()
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to record donation: {e}")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.database_error', default="Database Error"), f"Failed to record donation: {e}")
                 return
 
             # Send a thank-you receipt email (best-effort) and flag receipt_sent.
@@ -764,7 +766,7 @@ class DonationsMixin:
                 msg += "\nFinance account debited."
             msg += ("\nThank-you receipt emailed." if receipt_sent
                     else "\n(Receipt email could not be sent.)")
-            messagebox.showinfo("Donation Recorded", msg)
+            messagebox.showinfo(_t('gui.learners.alumni.donations.dialogs.donation_recorded', default="Donation Recorded"), msg)
             self.update_status("Donation record submitted")
 
             # Clear form
@@ -826,14 +828,14 @@ class DonationsMixin:
         def update_donor_recognition_levels(self):
             """Configure donor recognition tiers"""
             if not self.has_permission('admin') and not self.has_permission('manage_fundraising'):
-                messagebox.showerror("Permission Denied",
-                                   "You don't have permission to manage donor recognition levels.")
+                messagebox.showerror(_t('gui.learners.alumni.donations.dialogs.permission_denied', default="Permission Denied"),
+                                   _t('gui.learners.alumni.donations.dialogs.you_don_t_have_permission_to_manage_donor_recognition_levels', default="You don't have permission to manage donor recognition levels."))
                 return
 
             self.clear_content()
             self.update_status("Donor Recognition Levels")
 
-            ttk.Label(self.content_frame, text="Donor Recognition Levels",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.donations.labels.donor_recognition_levels', default="Donor Recognition Levels"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Recognition levels table
@@ -861,19 +863,19 @@ class DonationsMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="Add New Level",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.donations.buttons.add_new_level', default="Add New Level"),
                       command=self._add_recognition_level).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Edit Level",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.donations.buttons.edit_level', default="Edit Level"),
                       command=self._edit_recognition_level).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Delete Level",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.donations.buttons.delete_level', default="Delete Level"),
                       command=self._delete_recognition_level).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.donations.buttons.refresh', default="Refresh"),
                       command=self._load_recognition_levels).pack(side=tk.LEFT)
 
         def update_recognition_levels(self):
             """Update donor recognition levels"""
             # Simulate updating recognition levels
-            messagebox.showinfo("Update Complete", "Donor recognition levels updated successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.donations.dialogs.update_complete', default="Update Complete"), _t('gui.learners.alumni.donations.dialogs.donor_recognition_levels_updated_successfully', default="Donor recognition levels updated successfully!"))
             self.update_status("Recognition levels updated")
 
         def view_campaign_performance(self):
@@ -881,14 +883,14 @@ class DonationsMixin:
             self.clear_content()
             self.update_status("Campaign Performance")
 
-            ttk.Label(self.content_frame, text="Campaign Performance Analytics",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.donations.labels.campaign_performance_analytics', default="Campaign Performance Analytics"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Campaign selection
-            select_frame = ttk.LabelFrame(self.content_frame, text="Select Campaign", padding=10)
+            select_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.donations.labels.select_campaign', default="Select Campaign"), padding=10)
             select_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
-            ttk.Label(select_frame, text="Campaign:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(select_frame, text=_t('gui.learners.alumni.donations.labels.campaign', default="Campaign:")).pack(side=tk.LEFT, padx=(0, 10))
             self.selected_campaign = tk.StringVar()
 
             # Load campaigns
@@ -915,11 +917,11 @@ class DonationsMixin:
             if campaign_options and campaign_options[0] != "No campaigns available":
                 campaign_combo.set(campaign_options[0])
 
-            ttk.Button(select_frame, text="Load Performance",
+            ttk.Button(select_frame, text=_t('gui.learners.alumni.donations.buttons.load_performance', default="Load Performance"),
                       command=self._load_campaign_performance).pack(side=tk.LEFT)
 
             # Performance metrics
-            self.performance_frame = ttk.LabelFrame(self.content_frame, text="Performance Metrics", padding=10)
+            self.performance_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.donations.labels.performance_metrics', default="Performance Metrics"), padding=10)
             self.performance_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             # Summary metrics
@@ -941,7 +943,7 @@ class DonationsMixin:
             summary_frame.columnconfigure((0, 1, 2, 3), weight=1)
 
             # Donation history
-            history_frame = ttk.LabelFrame(self.performance_frame, text="Recent Donations", padding=10)
+            history_frame = ttk.LabelFrame(self.performance_frame, text=_t('gui.learners.alumni.donations.labels.recent_donations', default="Recent Donations"), padding=10)
             history_frame.pack(fill=tk.BOTH, expand=True)
 
             columns = ('Donor', 'Amount', 'Date', 'Payment Method')

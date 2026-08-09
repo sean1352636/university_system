@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fees and payments · University portal</title><link rel="stylesheet" href="/static/css/journey.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header"><a class="brand" href="/portal">University portal</a><span>Student finance</span></header>
+  <main id="main" tabindex="-1">
+    <nav aria-label="Student tasks"><ul class="task-nav"><li><a href="/portal/student/timetable">Timetable</a></li>
+      <li><a href="/portal/student/submissions">Submissions</a></li><li><a aria-current="page" href="/portal/student/fees">Fees</a></li>
+      <li><a href="/portal/student/support">Support</a></li><li><a href="/portal/student/graduation">Graduation</a></li></ul></nav>
+    <div id="page-message" class="message" role="alert" aria-live="assertive" tabindex="-1" hidden></div>
+    <section aria-labelledby="page-heading"><h1 id="page-heading">Fees and payments</h1>
+      <div id="account-balance" role="status"><h2>Balance</h2><p>No payable charges.</p></div>
+      <form data-success-message="Payment request accepted. A receipt will be sent when the provider confirms payment.">
+        <label for="charge">Charge to pay</label><select id="charge" name="charge" required>
+          <option value="">Choose a charge</option><option value="example">No open charges</option></select>
+        <label for="amount">Amount in pounds</label><input id="amount" name="amount" type="number" min="0.01" step="0.01"
+          inputmode="decimal" required aria-describedby="payment-help">
+        <p id="payment-help" class="hint">You will review the amount before leaving for the approved payment provider.</p>
+        <button type="submit">Continue to secure payment</button>
+      </form>
+    </section>
+  </main><script src="/static/js/student_pages.js"></script>
+</body></html>

@@ -286,12 +286,14 @@ def ensure_user_in_communication_system(username, first_name, last_name, email, 
 def _link_auth_to_student_union(auth):
     """Wire authentication to Student Union modules."""
     try:
-        from education_system.systems.university.domain.pastoral import student_union
+        from education_system.systems.university.domain.pastoral.student_life import student_union
         if hasattr(student_union, 'set_auth_all'):
             student_union.set_auth_all(auth)
         elif hasattr(student_union, 'set_auth'):
             student_union.set_auth(auth)
-    except (sqlite3.Error, DatabaseError) as e:
+    except (ImportError, sqlite3.Error, DatabaseError) as e:
+        # Student Union is an optional integration; an unavailable dependency
+        # must not prevent the rest of the CLI from starting.
         logger.warning(f"Could not link auth to Student Union: {e}")
 
 

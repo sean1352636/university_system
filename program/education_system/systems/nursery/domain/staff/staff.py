@@ -19,11 +19,11 @@ import re
 import sqlite3
 from dataclasses import dataclass
 from typing import Any
-from education_system.systems.nursery.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.STAFF_DB
+DB_PATH = paths.NURSERY_STAFF_DB
 ID_PREFIX = "NST"
 ID_DIGITS = 3
 EMAIL_DOMAIN = "nursery.local"
@@ -122,7 +122,7 @@ class Staff:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_nursery_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

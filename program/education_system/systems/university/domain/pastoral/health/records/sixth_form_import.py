@@ -37,7 +37,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from education_system.systems.university.infrastructure.database.db import (
+from education_system.systems.university.infrastructure.health.storage import (
     get_connection,
 )
 

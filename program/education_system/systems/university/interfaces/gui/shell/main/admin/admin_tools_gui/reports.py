@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from ._common import (
     SAVED_REPORTS_FILE,
     SCHEDULED_REPORTS_FILE,
@@ -415,7 +417,7 @@ def _build_custom_report_builder(self, win):
         sort_var = tk.StringVar()
         sort_entry = ttk.Entry(sort_frame, textvariable=sort_var, width=20)
         sort_entry.pack(side=tk.LEFT, padx=5)
-        order_var = tk.StringVar(value='ASC')
+        order_var = tk.StringVar(value=_t('gui.shell.main.admin.admin_tools_gui.reports.values.asc', default='ASC'))
         ttk.Combobox(sort_frame, textvariable=order_var,
                      values=['ASC', 'DESC'], width=8, state='readonly').pack(side=tk.LEFT, padx=5)
         ttk.Label(sort_frame, text=_t("admin_tools_v2.report_builder.limit")).pack(side=tk.LEFT, padx=(20, 0))

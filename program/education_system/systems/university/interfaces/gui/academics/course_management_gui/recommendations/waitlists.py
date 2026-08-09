@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
 )
@@ -10,30 +12,30 @@ class WaitlistsMixin:
         Opens a dialog to select full course and enter student ID.
         """
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Student to Waitlist")
+        dialog.title(_t('gui.academics.course_management_gui.recommendations.waitlists.windows.add_student_to_waitlist', default="Add Student to Waitlist"))
         dialog.geometry("550x350")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Add Student to Course Waitlist",
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.labels.add_student_to_course_waitlist', default="Add Student to Course Waitlist"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Course selection (full courses only)
-        course_frame = ttk.LabelFrame(main_frame, text="Select Full Course", padding="10")
+        course_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.labels.select_full_course', default="Select Full Course"), padding="10")
         course_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(course_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.labels.course', default="Course:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         course_var = tk.StringVar()
         course_combo = ttk.Combobox(course_frame, textvariable=course_var, state='readonly', width=45)
         course_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
 
         # Student ID
-        student_frame = ttk.LabelFrame(main_frame, text="Student Information", padding="10")
+        student_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.labels.student_information', default="Student Information"), padding="10")
         student_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(student_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(student_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         student_id_var = tk.StringVar()
         student_id_entry = ttk.Entry(student_frame, textvariable=student_id_var, width=30)
         student_id_entry.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
@@ -66,7 +68,7 @@ class WaitlistsMixin:
                     info_label.config(text=f"Found {len(courses)} full course(s)")
                 else:
                     course_combo['values'] = ["No full courses available"]
-                    info_label.config(text="No full courses found")
+                    info_label.config(text=_t('gui.academics.course_management_gui.recommendations.waitlists.text.no_full_courses_found', default="No full courses found"))
 
             except sqlite3.Error as e:
                 messagebox.showerror(_("common.database_error"), f"Failed to load courses: {e}")
@@ -74,11 +76,11 @@ class WaitlistsMixin:
 
         def add_student():
             if not course_var.get() or course_var.get() == "No full courses available":
-                messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a course")
+                messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.please_select_a_course', default="Please select a course"))
                 return
 
             if not student_id_var.get().strip():
-                messagebox.showerror("Missing Data", "Please enter student ID")
+                messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.missing_data', default="Missing Data"), _t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.please_enter_student_id', default="Please enter student ID"))
                 return
 
             try:
@@ -94,7 +96,7 @@ class WaitlistsMixin:
                     student_record = cursor.fetchone()
 
                     if not student_record:
-                        messagebox.showerror("Invalid Student",
+                        messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.invalid_student', default="Invalid Student"),
                                            f"Student ID '{student_id}' does not exist in the database.\n\n"
                                            f"Please enter a valid student ID.")
                 finally:
@@ -110,7 +112,7 @@ class WaitlistsMixin:
                 """, (course_id, student_id))
 
                 if cursor.fetchone():
-                    messagebox.showerror("Duplicate", f"Student {student_name} ({student_id}) is already on the waitlist for this course")
+                    messagebox.showerror(_t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.duplicate', default="Duplicate"), f"Student {student_name} ({student_id}) is already on the waitlist for this course")
                     conn.close()
                     return
 
@@ -143,8 +145,8 @@ class WaitlistsMixin:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Add to Waitlist", command=add_student).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.buttons.add_to_waitlist', default="Add to Waitlist"), command=add_student).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         load_full_courses()
 
@@ -154,21 +156,21 @@ class WaitlistsMixin:
         Opens a dialog with waitlist information.
         """
         dialog = tk.Toplevel(self.root)
-        dialog.title("View Course Waitlists")
+        dialog.title(_t('gui.academics.course_management_gui.recommendations.waitlists.windows.view_course_waitlists', default="View Course Waitlists"))
         dialog.geometry("800x600")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Course Waitlists",
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.labels.course_waitlists', default="Course Waitlists"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(filter_frame, text="Filter by Course:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.labels.filter_by_course', default="Filter by Course:")).pack(side=tk.LEFT, padx=5)
         course_var = tk.StringVar()
         course_combo = ttk.Combobox(filter_frame, textvariable=course_var, state='readonly', width=40)
         course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
@@ -258,7 +260,7 @@ class WaitlistsMixin:
                     ))
 
                 if not waitlist:
-                    messagebox.showinfo(_("common.no_results"), "No waitlist entries found")
+                    messagebox.showinfo(_("common.no_results"), _t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.no_waitlist_entries_found', default="No waitlist entries found"))
 
             except Exception as e:
                 messagebox.showerror(_("common.error"), f"Failed to load waitlist: {e}")
@@ -269,8 +271,8 @@ class WaitlistsMixin:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Refresh", command=load_waitlist).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.buttons.refresh', default="Refresh"), command=load_waitlist).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.waitlists.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Initial load
         load_courses()
@@ -281,7 +283,7 @@ class WaitlistsMixin:
         Process waitlist and enroll students when spots become available.
         Opens a dialog to select course and process waitlist.
         """
-        messagebox.showinfo("Process Waitlist",
-                          "This feature would automatically enroll students from the waitlist\n"
+        messagebox.showinfo(_t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.process_waitlist', default="Process Waitlist"),
+                          _t('gui.academics.course_management_gui.recommendations.waitlists.dialogs.this_feature_would_automatically_enroll_students_from_the_waitli', default="This feature would automatically enroll students from the waitlist\n"
                           "when spots become available in the course.\n\n"
-                          "Implementation requires integration with enrollment system.")
+                          "Implementation requires integration with enrollment system."))

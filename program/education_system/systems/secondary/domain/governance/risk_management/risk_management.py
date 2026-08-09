@@ -21,11 +21,11 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
-from education_system.systems.secondary.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.RISK_MANAGEMENT_DB
+DB_PATH = paths.SECONDARY_RISK_MANAGEMENT_DB
 
 # ── Vocabularies ──────────────────────────────────────────────────
 
@@ -147,7 +147,7 @@ CREATE INDEX IF NOT EXISTS idx_rev_date        ON risk_reviews(review_date DESC)
 
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_secondary_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

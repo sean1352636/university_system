@@ -29,7 +29,7 @@ except ImportError:
         try:
             # Create new top-level window for housing finance
             finance_window = tk.Toplevel(self.root)
-            finance_window.title("Housing Finance Management")
+            finance_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.windows.housing_finance_management', default="Housing Finance Management"))
             finance_window.geometry("1400x900")
             finance_window.transient(self.root)
 
@@ -43,7 +43,7 @@ except ImportError:
 
         except Exception as e:
             messagebox.showerror(
-                "Error Opening Housing Finance",
+                _t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error_opening_housing_finance', default="Error Opening Housing Finance"),
                 f"Failed to open Housing Finance system:\n\n{str(e)}"
             )
             print(f"✗ Failed to open Housing Finance: {e}")
@@ -84,13 +84,13 @@ class HousingFinanceManager:
         header_frame.pack(fill='x', side='top')
         header_frame.pack_propagate(False)
 
-        title_label = tk.Label(header_frame, text="🏠 Housing Finance Management",
+        title_label = tk.Label(header_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.housing_finance_management', default="🏠 Housing Finance Management"),
                               font=('Arial', 20, 'bold'),
                               bg=self.colors['primary'], fg='white')
         title_label.pack(side='left', padx=20, pady=15)
 
         # Refresh button
-        refresh_btn = tk.Button(header_frame, text="🔄 Refresh",
+        refresh_btn = tk.Button(header_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.refresh', default="🔄 Refresh"),
                                command=self.refresh_data,
                                bg=self.colors['secondary'], fg='white',
                                font=('Arial', 10, 'bold'), relief='flat',
@@ -98,7 +98,7 @@ class HousingFinanceManager:
         refresh_btn.pack(side='right', padx=10, pady=15)
 
         # Close button
-        close_btn = tk.Button(header_frame, text="✕ Close",
+        close_btn = tk.Button(header_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.close_variant_2', default="✕ Close"),
                              command=self.root.destroy,
                              bg=self.colors['danger'], fg='white',
                              font=('Arial', 10, 'bold'), relief='flat',
@@ -180,28 +180,28 @@ class HousingFinanceManager:
             toolbar_frame = tk.Frame(parent, bg='white')
             toolbar_frame.pack(fill='x', padx=20, pady=10)
 
-            tk.Button(toolbar_frame, text="➕ Record Payment",
+            tk.Button(toolbar_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.record_payment', default="➕ Record Payment"),
                      command=self.record_housing_payment,
                      bg=self.colors['success'], fg='white',
                      font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
 
-            tk.Button(toolbar_frame, text="🔍 Filter Payments",
+            tk.Button(toolbar_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.filter_payments', default="🔍 Filter Payments"),
                      command=self.filter_housing_payments,
                      bg=self.colors['info'], fg='white',
                      font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
 
-            tk.Button(toolbar_frame, text="📊 Export Report",
+            tk.Button(toolbar_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.export_report', default="📊 Export Report"),
                      command=self.export_housing_report,
                      bg=self.colors['warning'], fg='white',
                      font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
 
-            tk.Button(toolbar_frame, text="💰 Outstanding Balances",
+            tk.Button(toolbar_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.outstanding_balances', default="💰 Outstanding Balances"),
                      command=self.show_outstanding_balances,
                      bg=self.colors['danger'], fg='white',
                      font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
 
             # Outstanding balance summary section
-            outstanding_frame = tk.LabelFrame(parent, text="Outstanding Balances Summary",
+            outstanding_frame = tk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.outstanding_balances_summary', default="Outstanding Balances Summary"),
                                             font=('Arial', 12, 'bold'),
                                             bg='white', padx=10, pady=10)
             outstanding_frame.pack(fill='x', padx=20, pady=10)
@@ -244,7 +244,7 @@ class HousingFinanceManager:
                         bg='#ecf0f1', fg='#e74c3c').pack(pady=(2, 5))
 
             # Monthly revenue trend section
-            trend_frame = tk.LabelFrame(parent, text="Monthly Revenue Trend (Last 6 Months)",
+            trend_frame = tk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.monthly_revenue_trend_last_6_months', default="Monthly Revenue Trend (Last 6 Months)"),
                                        font=('Arial', 12, 'bold'),
                                        bg='white', padx=10, pady=10)
             trend_frame.pack(fill='x', padx=20, pady=10)
@@ -269,10 +269,10 @@ class HousingFinanceManager:
                 trend_tree = ttk.Treeview(trend_frame, columns=trend_columns,
                                          show='headings', height=6)
 
-                trend_tree.heading('Month', text='Month')
-                trend_tree.heading('Payments', text='Number of Payments')
-                trend_tree.heading('Revenue', text='Total Revenue')
-                trend_tree.heading('Avg Payment', text='Average Payment')
+                trend_tree.heading('Month', text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.headings.month', default='Month'))
+                trend_tree.heading('Payments', text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.headings.number_of_payments', default='Number of Payments'))
+                trend_tree.heading('Revenue', text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.headings.total_revenue', default='Total Revenue'))
+                trend_tree.heading('Avg Payment', text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.headings.average_payment', default='Average Payment'))
 
                 trend_tree.column('Month', width=120, anchor='center')
                 trend_tree.column('Payments', width=150, anchor='center')
@@ -290,11 +290,11 @@ class HousingFinanceManager:
 
                 trend_tree.pack(fill='x', pady=5)
             else:
-                tk.Label(trend_frame, text="No monthly trend data available",
+                tk.Label(trend_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.no_monthly_trend_data_available', default="No monthly trend data available"),
                         font=('Arial', 10), bg='white').pack(pady=10)
 
             # Recent payments section
-            payments_frame = tk.LabelFrame(parent, text="Recent Housing Payments",
+            payments_frame = tk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.recent_housing_payments', default="Recent Housing Payments"),
                                           font=('Arial', 12, 'bold'),
                                           bg='white', padx=10, pady=10)
             payments_frame.pack(fill='both', expand=True, padx=20, pady=10)
@@ -343,7 +343,7 @@ class HousingFinanceManager:
             tree_scroll.pack(side='right', fill='y')
 
             # Payment by building section
-            building_frame = tk.LabelFrame(parent, text="Revenue by Building",
+            building_frame = tk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.revenue_by_building', default="Revenue by Building"),
                                           font=('Arial', 12, 'bold'),
                                           bg='white', padx=10, pady=10)
             building_frame.pack(fill='both', expand=True, padx=20, pady=10)
@@ -369,9 +369,9 @@ class HousingFinanceManager:
                                             columns=('Building', 'Payments', 'Revenue'),
                                             show='headings', height=8)
 
-                building_tree.heading('Building', text='Building Name')
-                building_tree.heading('Payments', text='Number of Payments')
-                building_tree.heading('Revenue', text='Total Revenue')
+                building_tree.heading('Building', text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.headings.building_name', default='Building Name'))
+                building_tree.heading('Payments', text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.headings.number_of_payments', default='Number of Payments'))
+                building_tree.heading('Revenue', text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.headings.total_revenue', default='Total Revenue'))
 
                 building_tree.column('Building', width=200)
                 building_tree.column('Payments', width=150, anchor='center')
@@ -386,7 +386,7 @@ class HousingFinanceManager:
 
                 building_tree.pack(fill='both', expand=True)
             else:
-                tk.Label(building_frame, text="No building revenue data available",
+                tk.Label(building_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.no_building_revenue_data_available', default="No building revenue data available"),
                         font=('Arial', 10), bg='white').pack(pady=20)
 
             conn.close()
@@ -414,13 +414,13 @@ class HousingFinanceManager:
         try:
             # Create payment dialog window
             dialog = tk.Toplevel(self.root)
-            dialog.title("Record Housing Payment")
+            dialog.title(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.windows.record_housing_payment', default="Record Housing Payment"))
             dialog.geometry("500x600")
             dialog.transient(self.root)
             dialog.grab_set()
 
             # Title
-            tk.Label(dialog, text="Record New Housing Payment",
+            tk.Label(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.record_new_housing_payment', default="Record New Housing Payment"),
                     font=('Arial', 14, 'bold')).pack(pady=10)
 
             # Form frame
@@ -428,7 +428,7 @@ class HousingFinanceManager:
             form_frame.pack(fill='both', expand=True)
 
             # Student ID with lookup button
-            ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky='w', pady=5)
 
             student_id_frame = ttk.Frame(form_frame)
             student_id_frame.grid(row=0, column=1, pady=5, padx=10, sticky='w')
@@ -445,7 +445,7 @@ class HousingFinanceManager:
             def lookup_student():
                 student_id = student_id_entry.get().strip()
                 if not student_id:
-                    messagebox.showwarning("Lookup", "Please enter a Student ID")
+                    messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.lookup', default="Lookup"), _t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.please_enter_a_student_id', default="Please enter a Student ID"))
                     return
 
                 try:
@@ -467,49 +467,49 @@ class HousingFinanceManager:
                         student_name_var.set("✗ Not Found")
                         student_name_label.config(foreground='red')
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to lookup student: {str(e)}")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), f"Failed to lookup student: {str(e)}")
 
-            ttk.Button(student_id_frame, text="🔍 Lookup", command=lookup_student,
+            ttk.Button(student_id_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.lookup', default="🔍 Lookup"), command=lookup_student,
                       width=8).pack(side='left', padx=(5, 0))
 
             # Amount
-            ttk.Label(form_frame, text="Amount (£):").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.amount', default="Amount (£):")).grid(row=1, column=0, sticky='w', pady=5)
             amount_entry = ttk.Entry(form_frame, width=30)
             amount_entry.grid(row=1, column=1, pady=5, padx=10)
 
             # Payment Method
-            ttk.Label(form_frame, text="Payment Method:").grid(row=2, column=0, sticky='w', pady=5)
-            method_var = tk.StringVar(value="Credit Card")
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.payment_method', default="Payment Method:")).grid(row=2, column=0, sticky='w', pady=5)
+            method_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.values.credit_card', default="Credit Card"))
             method_combo = ttk.Combobox(form_frame, textvariable=method_var, width=28,
                                        values=["Credit Card", "Debit Card", "Cash", "Check", "Bank Transfer", "Financial Aid"])
             method_combo.grid(row=2, column=1, pady=5, padx=10)
 
             # Payment Date
-            ttk.Label(form_frame, text="Payment Date:").grid(row=3, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.payment_date', default="Payment Date:")).grid(row=3, column=0, sticky='w', pady=5)
             date_entry = ttk.Entry(form_frame, width=30)
             date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
             date_entry.grid(row=3, column=1, pady=5, padx=10)
 
             # Period Start
-            ttk.Label(form_frame, text="Period Start:").grid(row=4, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.period_start', default="Period Start:")).grid(row=4, column=0, sticky='w', pady=5)
             period_start_entry = ttk.Entry(form_frame, width=30)
             period_start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
             period_start_entry.grid(row=4, column=1, pady=5, padx=10)
 
             # Period End
-            ttk.Label(form_frame, text="Period End:").grid(row=5, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.period_end', default="Period End:")).grid(row=5, column=0, sticky='w', pady=5)
             period_end_entry = ttk.Entry(form_frame, width=30)
             period_end_entry.grid(row=5, column=1, pady=5, padx=10)
 
             # Status
-            ttk.Label(form_frame, text="Status:").grid(row=6, column=0, sticky='w', pady=5)
-            status_var = tk.StringVar(value="Completed")
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.status', default="Status:")).grid(row=6, column=0, sticky='w', pady=5)
+            status_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.values.completed', default="Completed"))
             status_combo = ttk.Combobox(form_frame, textvariable=status_var, width=28,
                                        values=["Completed", "Pending", "Failed", "Overdue"])
             status_combo.grid(row=6, column=1, pady=5, padx=10)
 
             # Notes
-            ttk.Label(form_frame, text="Notes:").grid(row=7, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.notes', default="Notes:")).grid(row=7, column=0, sticky='w', pady=5)
             notes_text = tk.Text(form_frame, width=30, height=5)
             notes_text.grid(row=7, column=1, pady=5, padx=10)
 
@@ -517,16 +517,16 @@ class HousingFinanceManager:
                 try:
                     student_id = student_id_entry.get().strip()
                     if not student_id:
-                        messagebox.showerror("Error", "Student ID is required")
+                        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.student_id_is_required', default="Student ID is required"))
                         return
 
                     try:
                         amount = float(amount_entry.get().strip())
                         if amount <= 0:
-                            messagebox.showerror("Error", "Amount must be greater than 0")
+                            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.amount_must_be_greater_than_0', default="Amount must be greater than 0"))
                             return
                     except ValueError:
-                        messagebox.showerror("Error", "Please enter a valid amount")
+                        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount"))
                         return
 
                     import uuid
@@ -555,7 +555,7 @@ class HousingFinanceManager:
 
                     if not result:
                         conn.close()
-                        messagebox.showerror("Error",
+                        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"),
                             f"Student '{student_id}' does not have a housing assignment.")
                         return
 
@@ -586,53 +586,53 @@ class HousingFinanceManager:
                             import logging
                             logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
-                    messagebox.showinfo("Success", f"Payment {payment_id} recorded successfully!")
+                    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.success', default="Success"), f"Payment {payment_id} recorded successfully!")
                     dialog.destroy()
                     self.refresh_data()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to record payment: {str(e)}")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), f"Failed to record payment: {str(e)}")
 
             # Buttons
             button_frame = ttk.Frame(dialog)
             button_frame.pack(pady=20)
 
-            ttk.Button(button_frame, text="Save Payment", command=save_payment).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.save_payment', default="Save Payment"), command=save_payment).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open payment dialog: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), f"Failed to open payment dialog: {str(e)}")
 
     def filter_housing_payments(self):
         """Open dialog to filter housing payments"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Filter Housing Payments")
+            dialog.title(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.windows.filter_housing_payments', default="Filter Housing Payments"))
             dialog.geometry("450x400")
             dialog.transient(self.root)
             dialog.grab_set()
 
-            tk.Label(dialog, text="Filter Housing Payments",
+            tk.Label(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.filter_housing_payments', default="Filter Housing Payments"),
                     font=('Arial', 14, 'bold')).pack(pady=10)
 
             form_frame = ttk.Frame(dialog, padding="20")
             form_frame.pack(fill='both', expand=True)
 
-            ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky='w', pady=5)
             student_filter = ttk.Entry(form_frame, width=30)
             student_filter.grid(row=0, column=1, pady=5, padx=10)
 
-            ttk.Label(form_frame, text="Status:").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.status', default="Status:")).grid(row=1, column=0, sticky='w', pady=5)
             status_filter = ttk.Combobox(form_frame, width=28,
                                         values=["All", "Completed", "Pending", "Failed", "Overdue"])
             status_filter.set("All")
             status_filter.grid(row=1, column=1, pady=5, padx=10)
 
-            ttk.Label(form_frame, text="From Date:").grid(row=2, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.from_date', default="From Date:")).grid(row=2, column=0, sticky='w', pady=5)
             from_date = ttk.Entry(form_frame, width=30)
             from_date.grid(row=2, column=1, pady=5, padx=10)
 
-            ttk.Label(form_frame, text="To Date:").grid(row=3, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.to_date', default="To Date:")).grid(row=3, column=0, sticky='w', pady=5)
             to_date = ttk.Entry(form_frame, width=30)
             to_date.grid(row=3, column=1, pady=5, padx=10)
 
@@ -673,7 +673,7 @@ class HousingFinanceManager:
                     conn.close()
 
                     results_window = tk.Toplevel(dialog)
-                    results_window.title("Filter Results")
+                    results_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.windows.filter_results', default="Filter Results"))
                     results_window.geometry("900x500")
 
                     tk.Label(results_window, text=f"Found {len(results)} payments",
@@ -692,16 +692,16 @@ class HousingFinanceManager:
                     tree.pack(fill='both', expand=True, padx=10, pady=10)
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Filter failed: {str(e)}")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), f"Filter failed: {str(e)}")
 
             button_frame = ttk.Frame(dialog)
             button_frame.pack(pady=20)
 
-            ttk.Button(button_frame, text="Apply Filter", command=apply_filter).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.apply_filter', default="Apply Filter"), command=apply_filter).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.close', default="Close"), command=dialog.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open filter dialog: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), f"Failed to open filter dialog: {str(e)}")
 
     def export_housing_report(self):
         """Export housing finance report to CSV"""
@@ -742,20 +742,20 @@ class HousingFinanceManager:
                 for row in data:
                     writer.writerow(row)
 
-            messagebox.showinfo("Success", f"Report exported to:\n{filename}\n\nTotal records: {len(data)}")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.success', default="Success"), f"Report exported to:\n{filename}\n\nTotal records: {len(data)}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export report: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), f"Failed to export report: {str(e)}")
 
     def show_outstanding_balances(self):
         """Show detailed outstanding balances window"""
         try:
             window = tk.Toplevel(self.root)
-            window.title("Outstanding Housing Balances")
+            window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.windows.outstanding_housing_balances', default="Outstanding Housing Balances"))
             window.geometry("900x600")
             window.transient(self.root)
 
-            tk.Label(window, text="Outstanding Housing Balances",
+            tk.Label(window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.labels.outstanding_housing_balances', default="Outstanding Housing Balances"),
                     font=('Arial', 16, 'bold')).pack(pady=10)
 
             conn = get_connection()
@@ -794,10 +794,10 @@ class HousingFinanceManager:
 
             tree.pack(fill='both', expand=True, padx=10, pady=10)
 
-            ttk.Button(window, text="Close", command=window.destroy).pack(pady=10)
+            ttk.Button(window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.buttons.close', default="Close"), command=window.destroy).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load outstanding balances: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.finance_integration.dialogs.error', default="Error"), f"Failed to load outstanding balances: {str(e)}")
 
 
 # Export functions for backward compatibility

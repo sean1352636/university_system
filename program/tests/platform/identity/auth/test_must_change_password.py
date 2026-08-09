@@ -18,6 +18,7 @@ sys.path.insert(
 
 from education_system.platform.identity.auth.core import UserAuth
 from education_system.platform.identity.auth.db import connect
+from education_system.platform.identity.auth.password_manager import verify_password
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────
@@ -127,3 +128,35 @@ class TestChangePasswordClearsFlag:
         # And a subsequent login no longer forces a change
         result2 = auth.login("admin", "Rotated!Pass123")
         assert not result2.get("must_change_password")
+
+
+class TestAdministratorUnlockAndReset:
+    def test_unlock_reset_issues_temp_and_forces_change(self, auth, auth_db, monkeypatch):
+        sent = []
+        monkeypatch.setattr(
+            auth, "_send_account_email",
+            lambda recipient, subject, body: sent.append((recipient, subject, body)) or True,
+        )
+
+        conn = connect(auth_db)
+        conn.execute(
+            "UPDATE users SET failed_login_attempts = 3, locked_until = '2999-01-01T00:00:00' "
+            "WHERE username = 'admin1'"
+        )
+        conn.commit()
+        conn.close()
+
+        result = auth.unlock_and_reset_password("admin1")
+
+        conn = connect(auth_db)
+        row = conn.execute(
+            "SELECT password_hash, failed_login_attempts, locked_until, must_change_password "
+            "FROM users WHERE username = 'admin1'"
+        ).fetchone()
+        conn.close()
+        assert verify_password(result["temp_password"], row["password_hash"])
+        assert row["failed_login_attempts"] == 0
+        assert row["locked_until"] is None
+        assert row["must_change_password"] == 1
+        assert auth.login("admin1", result["temp_password"])["must_change_password"] is True
+        assert sent and sent[0][0]

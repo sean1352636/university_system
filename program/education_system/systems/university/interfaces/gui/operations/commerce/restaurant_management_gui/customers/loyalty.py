@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -73,20 +75,20 @@ from education_system.systems.university.interfaces.gui.operations.commerce.rest
 def manage_loyalty_dialog(self):
     """Show loyalty program management dialog"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Loyalty Program Management")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.windows.loyalty_program_management', default="Loyalty Program Management"))
     dialog.geometry("800x600")
     dialog.transient(self.root)
     dialog.grab_set()
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Loyalty Program Management", font=('Arial', 14, 'bold')).pack(pady=10)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.loyalty_program_management', default="Loyalty Program Management"), font=('Arial', 14, 'bold')).pack(pady=10)
     # Tier information frame
-    tier_frame = ttk.LabelFrame(main_frame, text="Loyalty Tiers", padding=10)
+    tier_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.loyalty_tiers', default="Loyalty Tiers"), padding=10)
     tier_frame.pack(fill='both', expand=True, pady=10)
     # Customer selection
     search_frame = ttk.Frame(tier_frame)
     search_frame.pack(fill='x', pady=5)
-    ttk.Label(search_frame, text="Select Customer:").pack(side='left', padx=5)
+    ttk.Label(search_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.select_customer_variant_2', default="Select Customer:")).pack(side='left', padx=5)
     customer_var = tk.StringVar()
     customer_combo = ttk.Combobox(search_frame, textvariable=customer_var, width=40)
     customer_combo.pack(side='left', padx=5)
@@ -101,20 +103,20 @@ def manage_loyalty_dialog(self):
             customer_list = [f"{c[0]}: {c[1]} ({c[2]}, {c[3]} pts)" for c in customers]
             customer_combo['values'] = customer_list
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to load customers: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.error', default="Error"), f"Failed to load customers: {e}")
     # Points adjustment frame
-    adjust_frame = ttk.LabelFrame(tier_frame, text="Adjust Points", padding=10)
+    adjust_frame = ttk.LabelFrame(tier_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.adjust_points', default="Adjust Points"), padding=10)
     adjust_frame.pack(fill='x', pady=10)
-    ttk.Label(adjust_frame, text="Points to Add/Subtract:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(adjust_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.points_to_add_subtract', default="Points to Add/Subtract:")).grid(row=0, column=0, sticky='w', pady=5)
     points_var = tk.StringVar(value="0")
     ttk.Entry(adjust_frame, textvariable=points_var, width=15).grid(row=0, column=1, pady=5)
-    ttk.Label(adjust_frame, text="Reason:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(adjust_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.reason', default="Reason:")).grid(row=1, column=0, sticky='w', pady=5)
     reason_var = tk.StringVar()
     ttk.Entry(adjust_frame, textvariable=reason_var, width=40).grid(row=1, column=1, pady=5, columnspan=2)
     def adjust_points():
         selection = customer_var.get()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a customer")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.please_select_a_customer', default="Please select a customer"))
             return
         try:
             customer_id = int(selection.split(':')[0])
@@ -129,13 +131,13 @@ def manage_loyalty_dialog(self):
                 ''', (points_change, customer_id))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success", f"Points adjusted by {points_change}")
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.success', default="Success"), f"Points adjusted by {points_change}")
                 dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to adjust points: {e}")
-    ttk.Button(adjust_frame, text="Apply Adjustment", command=adjust_points).grid(row=2, column=0, columnspan=3, pady=10)
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.error', default="Error"), f"Failed to adjust points: {e}")
+    ttk.Button(adjust_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.apply_adjustment', default="Apply Adjustment"), command=adjust_points).grid(row=2, column=0, columnspan=3, pady=10)
     # Tier upgrade information
-    info_frame = ttk.LabelFrame(tier_frame, text="Tier Information", padding=10)
+    info_frame = ttk.LabelFrame(tier_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.tier_information', default="Tier Information"), padding=10)
     info_frame.pack(fill='both', expand=True, pady=10)
     info_text = ScrolledText(info_frame, height=10, width=70)
     info_text.pack(fill='both', expand=True)
@@ -161,34 +163,34 @@ Exclusive menu access"""
     info_text.insert('1.0', info_content)
     info_text.config(state='disabled')
     # Advanced features buttons
-    advanced_frame = ttk.LabelFrame(main_frame, text="Advanced Features", padding=10)
+    advanced_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.advanced_features', default="Advanced Features"), padding=10)
     advanced_frame.pack(fill='x', pady=10)
     btn_row = ttk.Frame(advanced_frame)
     btn_row.pack(fill='x', pady=5)
-    ttk.Button(btn_row, text="View Loyalty Tiers",
+    ttk.Button(btn_row, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.view_loyalty_tiers', default="View Loyalty Tiers"),
               command=lambda: self.view_loyalty_tiers(dialog),
               width=20).pack(side='left', padx=5)
-    ttk.Button(btn_row, text="Promote Customer Tier",
+    ttk.Button(btn_row, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.promote_customer_tier', default="Promote Customer Tier"),
               command=lambda: self.promote_customer_tier(dialog),
               width=20).pack(side='left', padx=5)
-    ttk.Button(btn_row, text="Award Bonus Points",
+    ttk.Button(btn_row, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.award_bonus_points', default="Award Bonus Points"),
               command=lambda: self.award_bonus_points(dialog),
               width=20).pack(side='left', padx=5)
-    ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
 def view_loyalty_tiers(self, parent_dialog):
     """View and manage loyalty tier structure"""
     tiers_dialog = tk.Toplevel(parent_dialog)
-    tiers_dialog.title("Loyalty Tier Management")
+    tiers_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.windows.loyalty_tier_management', default="Loyalty Tier Management"))
     tiers_dialog.geometry("900x700")
     tiers_dialog.transient(parent_dialog)
     tiers_dialog.grab_set()
     main_frame = ttk.Frame(tiers_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Loyalty Tier Structure",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.loyalty_tier_structure', default="Loyalty Tier Structure"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     # Tier definitions
-    tier_frame = ttk.LabelFrame(main_frame, text="Tier Definitions", padding=15)
+    tier_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.tier_definitions', default="Tier Definitions"), padding=15)
     tier_frame.pack(fill='both', expand=True, pady=10)
     # Tier details
     tiers = [
@@ -240,7 +242,7 @@ Benefits:
     tier_frame.columnconfigure(0, weight=1)
     tier_frame.columnconfigure(1, weight=1)
     # Statistics frame
-    stats_frame = ttk.LabelFrame(main_frame, text="Customer Distribution by Tier", padding=15)
+    stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.customer_distribution_by_tier', default="Customer Distribution by Tier"), padding=15)
     stats_frame.pack(fill='x', pady=10)
     def update_tier_stats():
         try:
@@ -273,12 +275,12 @@ Benefits:
                 stats_label.config(text=stats_text)
         except sqlite3.Error as e:
             stats_label.config(text=f"Error loading statistics: {e}")
-    stats_label = ttk.Label(stats_frame, text="Loading statistics...",
+    stats_label = ttk.Label(stats_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.loading_statistics', default="Loading statistics..."),
                            font=('Courier', 9), justify='left')
     stats_label.pack(anchor='w')
     update_tier_stats()
     # Tier upgrade rules
-    rules_frame = ttk.LabelFrame(main_frame, text="Tier Upgrade Rules", padding=10)
+    rules_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.tier_upgrade_rules', default="Tier Upgrade Rules"), padding=10)
     rules_frame.pack(fill='x', pady=10)
     rules_text = """
 Automatic Tier Upgrades:
@@ -296,28 +298,28 @@ Manual Promotions:
     # Buttons
     btn_frame = ttk.Frame(main_frame)
     btn_frame.pack(fill='x', pady=10)
-    ttk.Button(btn_frame, text="Refresh Statistics",
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.refresh_statistics', default="Refresh Statistics"),
               command=update_tier_stats).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Close", command=tiers_dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.close', default="Close"), command=tiers_dialog.destroy).pack(side='right', padx=5)
 
 def promote_customer_tier(self, parent_dialog):
     """Manually promote a customer to a higher loyalty tier"""
     promote_dialog = tk.Toplevel(parent_dialog)
-    promote_dialog.title("Promote Customer Tier")
+    promote_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.windows.promote_customer_tier', default="Promote Customer Tier"))
     promote_dialog.geometry("700x600")
     promote_dialog.transient(parent_dialog)
     promote_dialog.grab_set()
     main_frame = ttk.Frame(promote_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Promote Customer to Higher Tier",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.promote_customer_to_higher_tier', default="Promote Customer to Higher Tier"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     ttk.Label(main_frame,
-             text="Select a customer and promote them to a higher loyalty tier",
+             text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.select_a_customer_and_promote_them_to_a_higher_loyalty_tier', default="Select a customer and promote them to a higher loyalty tier"),
              foreground='blue').pack(pady=5)
     # Customer selection
-    search_frame = ttk.LabelFrame(main_frame, text="Select Customer", padding=15)
+    search_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.select_customer', default="Select Customer"), padding=15)
     search_frame.pack(fill='x', pady=10)
-    ttk.Label(search_frame, text="Customer:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(search_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.customer', default="Customer:")).grid(row=0, column=0, sticky='w', pady=5)
     customer_var = tk.StringVar()
     customer_combo = ttk.Combobox(search_frame, textvariable=customer_var,
                                   width=50, state='readonly')
@@ -340,27 +342,27 @@ def promote_customer_tier(self, parent_dialog):
                 customer_data[label] = cust
                 customer_combo['values'] = list(customer_data.keys())
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to load customers: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.error', default="Error"), f"Failed to load customers: {e}")
     # Current tier info
-    current_info_frame = ttk.LabelFrame(main_frame, text="Current Information", padding=15)
+    current_info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.current_information', default="Current Information"), padding=15)
     current_info_frame.pack(fill='x', pady=10)
     current_info_label = ttk.Label(current_info_frame,
-                                  text="Select a customer to view their current tier",
+                                  text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.select_a_customer_to_view_their_current_tier', default="Select a customer to view their current tier"),
                                   font=('Arial', 9))
     current_info_label.pack(pady=5)
     # New tier selection
-    new_tier_frame = ttk.LabelFrame(main_frame, text="Promote To", padding=15)
+    new_tier_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.promote_to', default="Promote To"), padding=15)
     new_tier_frame.pack(fill='x', pady=10)
-    ttk.Label(new_tier_frame, text="New Tier:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(new_tier_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.new_tier', default="New Tier:")).grid(row=0, column=0, sticky='w', pady=5)
     new_tier_var = tk.StringVar()
     new_tier_combo = ttk.Combobox(new_tier_frame, textvariable=new_tier_var,
                                  values=['Bronze', 'Silver', 'Gold', 'Platinum'],
                                  width=30, state='readonly')
     new_tier_combo.grid(row=0, column=1, pady=5, padx=10)
-    ttk.Label(new_tier_frame, text="Reason:*").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(new_tier_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.reason_variant_2', default="Reason:*")).grid(row=1, column=0, sticky='w', pady=5)
     reason_entry = ttk.Entry(new_tier_frame, width=50)
     reason_entry.grid(row=1, column=1, pady=5, padx=10, columnspan=2)
-    ttk.Label(new_tier_frame, text="Notes:").grid(row=2, column=0, sticky='nw', pady=5)
+    ttk.Label(new_tier_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.notes', default="Notes:")).grid(row=2, column=0, sticky='nw', pady=5)
     notes_text = tk.Text(new_tier_frame, height=4, width=50)
     notes_text.grid(row=2, column=1, pady=5, padx=10)
     def update_customer_info(*args):
@@ -387,13 +389,13 @@ Loyalty Points: {cust[3]}
         """Execute the tier promotion"""
         selection = customer_var.get()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a customer")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.please_select_a_customer', default="Please select a customer"))
             return
         if not new_tier_var.get():
-            messagebox.showwarning("No Tier", "Please select a new tier")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.no_tier', default="No Tier"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.please_select_a_new_tier', default="Please select a new tier"))
             return
         if not reason_entry.get().strip():
-            messagebox.showwarning("No Reason", "Please provide a reason for the promotion")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.no_reason', default="No Reason"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.please_provide_a_reason_for_the_promotion', default="Please provide a reason for the promotion"))
             return
         cust = customer_data[selection]
         current_tier = cust[2]
@@ -401,17 +403,17 @@ Loyalty Points: {cust[3]}
         # Validate promotion is an upgrade
         tier_order = ['Bronze', 'Silver', 'Gold', 'Platinum']
         if current_tier not in tier_order or new_tier not in tier_order:
-            messagebox.showerror("Error", "Invalid tier selection")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.invalid_tier_selection', default="Invalid tier selection"))
             return
         current_idx = tier_order.index(current_tier)
         new_idx = tier_order.index(new_tier)
         if new_idx <= current_idx:
-            messagebox.showerror("Invalid Promotion",
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.invalid_promotion', default="Invalid Promotion"),
                                f"Cannot promote from {current_tier} to {new_tier}.\n"
                                f"New tier must be higher than current tier.")
             return
         # Confirm promotion
-        confirm = messagebox.askyesno("Confirm Promotion",
+        confirm = messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.confirm_promotion', default="Confirm Promotion"),
                                      f"Promote {cust[1]} from {current_tier} to {new_tier}?\n\n"
                                      f"Reason: {reason_entry.get()}\n\n"
                                      f"This action will be recorded in the system.")
@@ -460,58 +462,58 @@ Loyalty Points: {cust[3]}
                       notes_text.get('1.0', tk.END).strip(), current_user))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.success', default="Success"),
                                   f"Customer {cust[1]} promoted successfully!\n\n"
                                   f"{current_tier} → {new_tier}\n"
                                   f"Promoted by: {current_user}")
                 promote_dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to promote customer: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.error', default="Error"), f"Failed to promote customer: {e}")
     # Buttons
     btn_frame = ttk.Frame(main_frame)
     btn_frame.pack(fill='x', pady=10)
-    ttk.Button(btn_frame, text="Promote Customer",
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.promote_customer', default="Promote Customer"),
               command=promote_customer).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Cancel",
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.cancel', default="Cancel"),
               command=promote_dialog.destroy).pack(side='right', padx=5)
 
 def award_bonus_points(self, parent_dialog):
     """Award promotional bonus points to customers"""
     bonus_dialog = tk.Toplevel(parent_dialog)
-    bonus_dialog.title("Award Bonus Points")
+    bonus_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.windows.award_bonus_points', default="Award Bonus Points"))
     bonus_dialog.geometry("800x650")
     bonus_dialog.transient(parent_dialog)
     bonus_dialog.grab_set()
     main_frame = ttk.Frame(bonus_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Award Bonus Loyalty Points",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.award_bonus_loyalty_points', default="Award Bonus Loyalty Points"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     ttk.Label(main_frame,
-             text="Award bonus points to customers for promotions, events, or special occasions",
+             text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.award_bonus_points_to_customers_for_promotions_events_or_special', default="Award bonus points to customers for promotions, events, or special occasions"),
              foreground='blue').pack(pady=5)
     # Award type selection
-    type_frame = ttk.LabelFrame(main_frame, text="Award Type", padding=15)
+    type_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.award_type', default="Award Type"), padding=15)
     type_frame.pack(fill='x', pady=10)
-    award_type_var = tk.StringVar(value='individual')
-    ttk.Radiobutton(type_frame, text="Individual Customer",
+    award_type_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.values.individual', default='individual'))
+    ttk.Radiobutton(type_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.individual_customer', default="Individual Customer"),
                    variable=award_type_var, value='individual').pack(anchor='w', pady=2)
-    ttk.Radiobutton(type_frame, text="All Customers in Tier",
+    ttk.Radiobutton(type_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.all_customers_in_tier', default="All Customers in Tier"),
                    variable=award_type_var, value='tier').pack(anchor='w', pady=2)
-    ttk.Radiobutton(type_frame, text="All Customers",
+    ttk.Radiobutton(type_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.all_customers', default="All Customers"),
                    variable=award_type_var, value='all').pack(anchor='w', pady=2)
     # Selection frame (changes based on award type)
-    selection_frame = ttk.LabelFrame(main_frame, text="Select Recipients", padding=15)
+    selection_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.select_recipients', default="Select Recipients"), padding=15)
     selection_frame.pack(fill='x', pady=10)
     # Individual customer selection
     individual_frame = ttk.Frame(selection_frame)
-    ttk.Label(individual_frame, text="Customer:").pack(side='left', padx=5)
+    ttk.Label(individual_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.customer', default="Customer:")).pack(side='left', padx=5)
     customer_var = tk.StringVar()
     customer_combo = ttk.Combobox(individual_frame, textvariable=customer_var,
                                   width=50, state='readonly')
     customer_combo.pack(side='left', padx=5)
     # Tier selection
     tier_frame_inner = ttk.Frame(selection_frame)
-    ttk.Label(tier_frame_inner, text="Tier:").pack(side='left', padx=5)
+    ttk.Label(tier_frame_inner, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.tier', default="Tier:")).pack(side='left', padx=5)
     tier_var = tk.StringVar()
     tier_combo = ttk.Combobox(tier_frame_inner, textvariable=tier_var,
                               values=['Bronze', 'Silver', 'Gold', 'Platinum'],
@@ -519,7 +521,7 @@ def award_bonus_points(self, parent_dialog):
     tier_combo.pack(side='left', padx=5)
     # All customers frame
     all_frame = ttk.Frame(selection_frame)
-    ttk.Label(all_frame, text="This will award points to ALL customers in the system",
+    ttk.Label(all_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.this_will_award_points_to_all_customers_in_the_system', default="This will award points to ALL customers in the system"),
              foreground='red', font=('Arial', 9, 'bold')).pack(pady=5)
     # Load customers
     customer_data = {}
@@ -539,7 +541,7 @@ def award_bonus_points(self, parent_dialog):
                 customer_data[label] = cust
             customer_combo['values'] = list(customer_data.keys())
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to load customers: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.error', default="Error"), f"Failed to load customers: {e}")
     def update_selection_ui(*args):
         """Update UI based on award type selection"""
         # Hide all frames
@@ -556,22 +558,22 @@ def award_bonus_points(self, parent_dialog):
     award_type_var.trace('w', update_selection_ui)
     update_selection_ui()  # Initial setup
     # Points and reason
-    details_frame = ttk.LabelFrame(main_frame, text="Bonus Details", padding=15)
+    details_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.bonus_details', default="Bonus Details"), padding=15)
     details_frame.pack(fill='x', pady=10)
-    ttk.Label(details_frame, text="Bonus Points:*").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(details_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.bonus_points', default="Bonus Points:*")).grid(row=0, column=0, sticky='w', pady=5)
     points_entry = ttk.Entry(details_frame, width=20)
     points_entry.grid(row=0, column=1, sticky='w', pady=5, padx=10)
     points_entry.insert(0, "100")
-    ttk.Label(details_frame, text="Reason/Campaign:*").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(details_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.reason_campaign', default="Reason/Campaign:*")).grid(row=1, column=0, sticky='w', pady=5)
     reason_entry = ttk.Entry(details_frame, width=50)
     reason_entry.grid(row=1, column=1, pady=5, padx=10, columnspan=2)
-    ttk.Label(details_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+    ttk.Label(details_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw', pady=5)
     desc_text = tk.Text(details_frame, height=4, width=50)
     desc_text.grid(row=2, column=1, pady=5, padx=10)
     # Preview
-    preview_frame = ttk.LabelFrame(main_frame, text="Preview", padding=10)
+    preview_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.preview', default="Preview"), padding=10)
     preview_frame.pack(fill='x', pady=10)
-    preview_label = ttk.Label(preview_frame, text="Configure award details above",
+    preview_label = ttk.Label(preview_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.labels.configure_award_details_above', default="Configure award details above"),
                              font=('Arial', 9))
     preview_label.pack()
     def update_preview(*args):
@@ -585,7 +587,7 @@ def award_bonus_points(self, parent_dialog):
                     preview_label.config(
                         text=f"Will award {points} points to:\n{cust[1]} (Current: {cust[3]} → New: {cust[3] + points})")
                 else:
-                    preview_label.config(text="Please select a customer")
+                    preview_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.text.please_select_a_customer', default="Please select a customer"))
             elif award_type == 'tier':
                 if tier_var.get():
                     conn = get_db_connection()
@@ -600,7 +602,7 @@ def award_bonus_points(self, parent_dialog):
                         preview_label.config(
                             text=f"Will award {points} points to {count} customers in {tier_var.get()} tier")
                 else:
-                    preview_label.config(text="Please select a tier")
+                    preview_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.text.please_select_a_tier', default="Please select a tier"))
             else:  # 'all'
                 conn = get_db_connection()
                 if conn:
@@ -611,7 +613,7 @@ def award_bonus_points(self, parent_dialog):
                     preview_label.config(
                         text=f"Will award {points} points to ALL {count} customers")
         except sqlite3.Error:
-            preview_label.config(text="Configure award details above")
+            preview_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.text.configure_award_details_above', default="Configure award details above"))
     points_entry.bind('<KeyRelease>', update_preview)
     customer_var.trace('w', update_preview)
     tier_var.trace('w', update_preview)
@@ -621,21 +623,21 @@ def award_bonus_points(self, parent_dialog):
         try:
             points = int(points_entry.get())
             if points <= 0:
-                messagebox.showwarning("Invalid Points", "Points must be greater than 0")
+                messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.invalid_points', default="Invalid Points"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.points_must_be_greater_than_0', default="Points must be greater than 0"))
                 return
         except ValueError:
-            messagebox.showwarning("Invalid Input", "Please enter a valid number of points")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.invalid_input', default="Invalid Input"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.please_enter_a_valid_number_of_points', default="Please enter a valid number of points"))
             return
         if not reason_entry.get().strip():
-            messagebox.showwarning("Missing Reason", "Please provide a reason for the bonus points")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.missing_reason', default="Missing Reason"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.please_provide_a_reason_for_the_bonus_points', default="Please provide a reason for the bonus points"))
             return
         award_type = award_type_var.get()
         # Validate selection
         if award_type == 'individual' and not customer_var.get():
-            messagebox.showwarning("No Selection", "Please select a customer")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.please_select_a_customer', default="Please select a customer"))
             return
         elif award_type == 'tier' and not tier_var.get():
-            messagebox.showwarning("No Selection", "Please select a tier")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.please_select_a_tier', default="Please select a tier"))
             return
         # Get current user
         current_user = "System"
@@ -649,12 +651,12 @@ def award_bonus_points(self, parent_dialog):
                 pass
         # Confirm award
         if award_type == 'all':
-            confirm = messagebox.askyesno("Confirm Award",
+            confirm = messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.confirm_award', default="Confirm Award"),
                                         f"Award {points} bonus points to ALL customers?\n\n"
                                         f"Reason: {reason_entry.get()}\n\n"
                                         f"This cannot be undone.")
         else:
-            confirm = messagebox.askyesno("Confirm Award",
+            confirm = messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.confirm_award', default="Confirm Award"),
                                         f"Award {points} bonus points?\n\n"
                                         f"Reason: {reason_entry.get()}")
         if not confirm:
@@ -745,19 +747,19 @@ def award_bonus_points(self, parent_dialog):
                     customers_affected = len(all_customers)
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.success', default="Success"),
                                   f"Bonus points awarded successfully!\n\n"
                                   f"Points Awarded: {points}\n"
                                   f"Customers Affected: {customers_affected}\n"
                                   f"Awarded by: {current_user}")
                 bonus_dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to award bonus points: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.dialogs.error', default="Error"), f"Failed to award bonus points: {e}")
     # Buttons
     btn_frame = ttk.Frame(main_frame)
     btn_frame.pack(fill='x', pady=10)
-    ttk.Button(btn_frame, text="Award Points",
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.award_points', default="Award Points"),
               command=award_points).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Cancel",
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.loyalty.buttons.cancel', default="Cancel"),
               command=bonus_dialog.destroy).pack(side='right', padx=5)
 

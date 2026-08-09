@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import os
 from datetime import datetime
 
-from education_system.systems.university.infrastructure.paths import LOG_DIR
+from education_system.paths import UNIVERSITY_LOG_DIR
 from education_system.systems.university.interfaces.gui.shell.logging.helpers import _t
 
 
@@ -207,7 +209,7 @@ Modules Used:
                 save_path = path_var.get()
 
                 if not save_path:
-                    charts_dir = LOG_DIR / "charts"
+                    charts_dir = UNIVERSITY_LOG_DIR / "charts"
                     charts_dir.mkdir(parents=True, exist_ok=True)
                     save_path = str(charts_dir / f"activity_chart_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
 
@@ -218,7 +220,7 @@ Modules Used:
                 if not result_path or not os.path.exists(result_path):
                     messagebox.showwarning(
                         _t("log_management.messages.info"),
-                        "No activity data found for the selected period.",
+                        _t('gui.shell.logging.tabs.analytics.dialogs.no_activity_data_found_for_the_selected_period', default="No activity data found for the selected period."),
                     )
                     return
 
@@ -242,7 +244,7 @@ Modules Used:
             return
 
         win = tk.Toplevel(self.root)
-        win.title("Activity Chart")
+        win.title(_t('gui.shell.logging.tabs.analytics.windows.activity_chart', default="Activity Chart"))
         win.geometry("900x620")
         win.transient(self.root)
 
@@ -258,4 +260,4 @@ Modules Used:
         info_frame = ttk.Frame(win)
         info_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
         ttk.Label(info_frame, text=f"Saved: {image_path}", wraplength=860).pack(side=tk.LEFT)
-        ttk.Button(info_frame, text="Close", command=win.destroy).pack(side=tk.RIGHT)
+        ttk.Button(info_frame, text=_t('gui.shell.logging.tabs.analytics.buttons.close', default="Close"), command=win.destroy).pack(side=tk.RIGHT)

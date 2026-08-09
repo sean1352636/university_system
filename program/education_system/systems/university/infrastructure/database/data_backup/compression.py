@@ -5,6 +5,7 @@ import os
 import shutil
 import zipfile
 
+from education_system.platform.kernel.core.safe_paths import PathSecurityError, safe_extract
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
 logger = configure_logging(name=__name__)
@@ -59,16 +60,23 @@ def decompress_file(compressed_path: str, output_path: str = None) -> str:
             if output_path is None:
                 output_path = os.path.splitext(compressed_path)[0]
 
+            # safe_extract, not extractall: a ".zip" handed to this function is
+            # untrusted, and extractall honours "../" and symlink members.
+            target_dir = os.path.dirname(output_path) or "."
             with zipfile.ZipFile(compressed_path, 'r') as zipf:
-                zipf.extractall(os.path.dirname(output_path))
-                # Assume single file in zip
-                extracted_files = zipf.namelist()
-                if extracted_files:
-                    extracted_path = os.path.join(os.path.dirname(output_path), extracted_files[0])
-                    if extracted_path != output_path:
-                        shutil.move(extracted_path, output_path)
+                written = safe_extract(zipf, target_dir)
+            if written:
+                extracted_path = str(written[0])
+                if extracted_path != output_path:
+                    shutil.move(extracted_path, output_path)
 
         return output_path
+    except PathSecurityError:
+        # Deliberately not swallowed into a None return: an archive that tries
+        # to escape its destination is an attack, not a corrupt-file case, and
+        # the caller must not treat it as "nothing to restore".
+        logger.error("Refused to decompress %s — unsafe archive member", compressed_path)
+        raise
     except (OSError, IOError) as e:
         logger.error(f"File I/O error during decompression: {e}")
         return None

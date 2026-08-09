@@ -9,6 +9,8 @@ card wins (Ace low, King high). Dragon/Tiger pay 1:1; Tie pays 8:1 (and your
 Dragon/Tiger stake is half-lost on a tie, as in most casinos).
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -29,12 +31,12 @@ START_CREDITS, MIN_BET = 200, 5
 class DragonTiger:
     def __init__(self, root):
         self.root = root
-        root.title("Dragon Tiger")
+        root.title(_t('gui.operations.commerce.betting.games.dragon_tiger.windows.dragon_tiger', default="Dragon Tiger"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
         self.bet = 20
-        self.choice = tk.StringVar(value="dragon")
+        self.choice = tk.StringVar(value=_t('gui.operations.commerce.betting.games.dragon_tiger.values.dragon', default="dragon"))
         self.busy = False
         self._build()
         self.render(None, None)
@@ -51,20 +53,20 @@ class DragonTiger:
         row.pack(pady=8)
         dcol = tk.Frame(row, bg=FELT)
         dcol.pack(side="left", padx=20)
-        tk.Label(dcol, text="DRAGON", bg=FELT, fg="#ff7b7b",
+        tk.Label(dcol, text=_t('gui.operations.commerce.betting.games.dragon_tiger.labels.dragon', default="DRAGON"), bg=FELT, fg="#ff7b7b",
                  font=("Helvetica", 14, "bold")).pack()
         self.dragon_c = tk.Canvas(dcol, width=CARD_W, height=CARD_H, bg=FELT,
                                   highlightthickness=0)
         self.dragon_c.pack()
         tcol = tk.Frame(row, bg=FELT)
         tcol.pack(side="left", padx=20)
-        tk.Label(tcol, text="TIGER", bg=FELT, fg="#ffcf7b",
+        tk.Label(tcol, text=_t('gui.operations.commerce.betting.games.dragon_tiger.labels.tiger', default="TIGER"), bg=FELT, fg="#ffcf7b",
                  font=("Helvetica", 14, "bold")).pack()
         self.tiger_c = tk.Canvas(tcol, width=CARD_W, height=CARD_H, bg=FELT,
                                  highlightthickness=0)
         self.tiger_c.pack()
 
-        self.msg = tk.Label(f, text="Choose a side and deal.", bg=FELT, fg="white",
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.dragon_tiger.labels.choose_a_side_and_deal', default="Choose a side and deal."), bg=FELT, fg="white",
                             font=("Helvetica", 13, "bold"))
         self.msg.pack(pady=4)
 
@@ -86,7 +88,7 @@ class DragonTiger:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.dragon_tiger.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -99,7 +101,7 @@ class DragonTiger:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.deal_btn = tk.Button(f, text="DEAL", command=self.deal, width=16,
+        self.deal_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.dragon_tiger.buttons.deal', default="DEAL"), command=self.deal, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -155,7 +157,7 @@ class DragonTiger:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.dragon_tiger.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.busy = True
@@ -165,9 +167,9 @@ class DragonTiger:
         random.shuffle(deck)
         self.dcard, self.tcard = deck.pop(), deck.pop()
         self.render(None, None)
-        self.msg.config(text="Dealing...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.dragon_tiger.text.dealing', default="Dealing..."), fg="white")
         self.root.after(400, lambda: (self._draw(self.dragon_c, self.dcard),
-                                      self.msg.config(text="Dragon...")))
+                                      self.msg.config(text=_t('gui.operations.commerce.betting.games.dragon_tiger.text.dragon', default="Dragon..."))))
         self.root.after(900, lambda: (self._draw(self.tiger_c, self.tcard),
                                       self._settle()))
 
@@ -200,7 +202,7 @@ class DragonTiger:
             self.msg.config(text=f"{outcome.title()} wins. You lose.", fg="white")
 
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.dragon_tiger.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

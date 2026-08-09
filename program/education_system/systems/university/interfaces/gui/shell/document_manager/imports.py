@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import os
@@ -39,13 +41,13 @@ class ImportManager:
 
         # Create templates window
         templates_window = tk.Toplevel(self.root)
-        templates_window.title("Document Templates Management")
+        templates_window.title(_t('gui.shell.document_manager.imports.windows.document_templates_management', default="Document Templates Management"))
         templates_window.geometry("1000x700")
         templates_window.transient(self.root)
         templates_window.grab_set()
 
         # Title
-        ttk.Label(templates_window, text="Document Templates",
+        ttk.Label(templates_window, text=_t('gui.shell.document_manager.imports.labels.document_templates', default="Document Templates"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Notebook for different template sections
@@ -54,16 +56,16 @@ class ImportManager:
 
         # Tab 1: Templates List
         list_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(list_frame, text="Templates")
+        notebook.add(list_frame, text=_t('gui.shell.document_manager.imports.tabs.templates', default="Templates"))
 
         tree = ttk.Treeview(list_frame,
                            columns=('ID', 'Name', 'Type', 'Usage', 'Created'),
                            show='headings', height=18)
-        tree.heading('ID', text='Template ID')
-        tree.heading('Name', text='Template Name')
-        tree.heading('Type', text='Document Type')
-        tree.heading('Usage', text='Times Used')
-        tree.heading('Created', text='Created Date')
+        tree.heading('ID', text=_t('gui.shell.document_manager.imports.headings.template_id', default='Template ID'))
+        tree.heading('Name', text=_t('gui.shell.document_manager.imports.headings.template_name', default='Template Name'))
+        tree.heading('Type', text=_t('gui.shell.document_manager.imports.headings.document_type', default='Document Type'))
+        tree.heading('Usage', text=_t('gui.shell.document_manager.imports.headings.times_used', default='Times Used'))
+        tree.heading('Created', text=_t('gui.shell.document_manager.imports.headings.created_date', default='Created Date'))
 
         tree.column('ID', width=80)
         tree.column('Name', width=250)
@@ -91,29 +93,29 @@ class ImportManager:
 
         # Tab 2: Template Builder
         builder_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(builder_frame, text="Template Builder")
+        notebook.add(builder_frame, text=_t('gui.shell.document_manager.imports.tabs.template_builder', default="Template Builder"))
 
-        ttk.Label(builder_frame, text="Create New Template",
+        ttk.Label(builder_frame, text=_t('gui.shell.document_manager.imports.labels.create_new_template', default="Create New Template"),
                  font=("Arial", 12, "bold")).pack(pady=5)
 
         builder_form = ttk.Frame(builder_frame)
         builder_form.pack(fill='both', expand=True, pady=10)
 
-        ttk.Label(builder_form, text="Template Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(builder_form, text=_t('gui.shell.document_manager.imports.labels.template_name', default="Template Name:")).grid(row=0, column=0, sticky='w', pady=5)
         name_entry = ttk.Entry(builder_form, width=50)
         name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
-        ttk.Label(builder_form, text="Document Type:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(builder_form, text=_t('gui.shell.document_manager.imports.labels.document_type', default="Document Type:")).grid(row=1, column=0, sticky='w', pady=5)
         type_combo = ttk.Combobox(builder_form, width=48, state='readonly')
         type_combo['values'] = ['Transcript', 'ID Card', 'Health Form', 'Enrollment Form',
                                 'Financial Document', 'Other']
         type_combo.grid(row=1, column=1, sticky='ew', pady=5)
 
-        ttk.Label(builder_form, text="Template Description:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(builder_form, text=_t('gui.shell.document_manager.imports.labels.template_description', default="Template Description:")).grid(row=2, column=0, sticky='w', pady=5)
         desc_text = tk.Text(builder_form, width=50, height=4)
         desc_text.grid(row=2, column=1, sticky='ew', pady=5)
 
-        ttk.Label(builder_form, text="Template Content:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(builder_form, text=_t('gui.shell.document_manager.imports.labels.template_content', default="Template Content:")).grid(row=3, column=0, sticky='w', pady=5)
         content_text = tk.Text(builder_form, width=50, height=15)
         content_text.insert('1.0', "Template content here...\n\n"
                                     "Available placeholders:\n"
@@ -126,20 +128,20 @@ class ImportManager:
         builder_form.columnconfigure(1, weight=1)
 
         def save_template():
-            messagebox.showinfo("Save Template",
-                              "Template saved successfully!\n\n"
-                              "This would save the template to the database.")
+            messagebox.showinfo(_t('gui.shell.document_manager.imports.dialogs.save_template', default="Save Template"),
+                              _t('gui.shell.document_manager.imports.dialogs.template_saved_successfully_this_would_save_the_template_to_the', default="Template saved successfully!\n\n"
+                              "This would save the template to the database."))
             self.gui.log_event('create', 'document_template',
                           details=f'Created template: {name_entry.get()}')
 
-        ttk.Button(builder_frame, text="Save Template",
+        ttk.Button(builder_frame, text=_t('gui.shell.document_manager.imports.buttons.save_template', default="Save Template"),
                   command=save_template).pack(pady=10)
 
         # Tab 3: Settings
         settings_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(settings_frame, text="Settings")
+        notebook.add(settings_frame, text=_t('gui.shell.document_manager.imports.tabs.settings', default="Settings"))
 
-        ttk.Label(settings_frame, text="Template Settings",
+        ttk.Label(settings_frame, text=_t('gui.shell.document_manager.imports.labels.template_settings', default="Template Settings"),
                  font=("Arial", 12, "bold")).pack(pady=5)
 
         settings_list = [
@@ -155,18 +157,18 @@ class ImportManager:
             ttk.Checkbutton(settings_frame, text=setting_text,
                            variable=var).pack(anchor='w', pady=5)
 
-        ttk.Button(settings_frame, text="Save Settings",
-                  command=lambda: messagebox.showinfo("Settings", "Settings saved successfully!")).pack(pady=20)
+        ttk.Button(settings_frame, text=_t('gui.shell.document_manager.imports.buttons.save_settings', default="Save Settings"),
+                  command=lambda: messagebox.showinfo(_t('gui.shell.document_manager.imports.dialogs.settings', default="Settings"), _t('gui.shell.document_manager.imports.dialogs.settings_saved_successfully', default="Settings saved successfully!"))).pack(pady=20)
 
         # Button frame
         button_frame = ttk.Frame(templates_window)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Export Templates",
-                  command=lambda: messagebox.showinfo("Export", "Templates exported to JSON")).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Import Templates",
-                  command=lambda: messagebox.showinfo("Import", "Select JSON file to import templates")).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.imports.buttons.export_templates', default="Export Templates"),
+                  command=lambda: messagebox.showinfo(_t('gui.shell.document_manager.imports.dialogs.export', default="Export"), _t('gui.shell.document_manager.imports.dialogs.templates_exported_to_json', default="Templates exported to JSON"))).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.imports.buttons.import_templates', default="Import Templates"),
+                  command=lambda: messagebox.showinfo(_t('gui.shell.document_manager.imports.dialogs.import', default="Import"), _t('gui.shell.document_manager.imports.dialogs.select_json_file_to_import_templates', default="Select JSON file to import templates"))).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.imports.buttons.close', default="Close"),
                   command=templates_window.destroy).pack(side='right', padx=5)
 
         # Log activity
@@ -178,7 +180,7 @@ class ImportManager:
             return
 
         file_path = filedialog.askopenfilename(
-            title="Select CSV File",
+            title=_t('gui.shell.document_manager.imports.dialogs.select_csv_file', default="Select CSV File"),
             filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
         )
 
@@ -207,7 +209,7 @@ class ImportManager:
                     except Exception:
                         failed_count += 1
 
-            messagebox.showinfo("Import Complete",
+            messagebox.showinfo(_t('gui.shell.document_manager.imports.dialogs.import_complete', default="Import Complete"),
                               f"CSV import completed!\n\n"
                               f"Successfully imported: {imported_count}\n"
                               f"Failed: {failed_count}")
@@ -216,7 +218,7 @@ class ImportManager:
                           details=f'Imported {imported_count} documents from CSV')
 
         except Exception as e:
-            messagebox.showerror("Import Error", f"Failed to import CSV: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.imports.dialogs.import_error', default="Import Error"), f"Failed to import CSV: {e}")
 
     def import_from_excel(self):
         """Import documents metadata from Excel"""
@@ -224,14 +226,14 @@ class ImportManager:
             return
 
         file_path = filedialog.askopenfilename(
-            title="Select Excel File",
+            title=_t('gui.shell.document_manager.imports.dialogs.select_excel_file', default="Select Excel File"),
             filetypes=[("Excel Files", "*.xlsx *.xls"), ("All Files", "*.*")]
         )
 
         if not file_path:
             return
 
-        messagebox.showinfo("Excel Import",
+        messagebox.showinfo(_t('gui.shell.document_manager.imports.dialogs.excel_import', default="Excel Import"),
                           f"Excel file selected: {os.path.basename(file_path)}\n\n"
                           "This would import document metadata from Excel.\n"
                           "Requires 'openpyxl' or 'xlrd' library.\n\n"
@@ -252,9 +254,9 @@ class ImportManager:
             return
 
         # Ask for template format
-        format_choice = messagebox.askquestion("Template Format",
-                                              "Download as CSV?\n\n"
-                                              "Click 'No' for Excel format",
+        format_choice = messagebox.askquestion(_t('gui.shell.document_manager.imports.dialogs.template_format', default="Template Format"),
+                                              _t('gui.shell.document_manager.imports.dialogs.download_as_csv_click_no_for_excel_format', default="Download as CSV?\n\n"
+                                              "Click 'No' for Excel format"),
                                               icon='question')
 
         if format_choice == 'yes':
@@ -278,14 +280,14 @@ class ImportManager:
                                        'Approved', '2024-01-20', '2029-01-20',
                                        'id,photo', 'Student ID photo'])
 
-                    messagebox.showinfo("Template Created",
+                    messagebox.showinfo(_t('gui.shell.document_manager.imports.dialogs.template_created', default="Template Created"),
                                       f"CSV template created successfully:\n{file_path}")
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to create template: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.imports.dialogs.error', default="Error"), f"Failed to create template: {e}")
         else:
-            messagebox.showinfo("Excel Template",
-                              "Excel template generation requires 'openpyxl' library.\n\n"
-                              "Please use the CSV template as a reference.")
+            messagebox.showinfo(_t('gui.shell.document_manager.imports.dialogs.excel_template', default="Excel Template"),
+                              _t('gui.shell.document_manager.imports.dialogs.excel_template_generation_requires_openpyxl_library_please_use_t', default="Excel template generation requires 'openpyxl' library.\n\n"
+                              "Please use the CSV template as a reference."))
 
         self.gui.log_event('download', 'import_template',
                       details='Downloaded import template')

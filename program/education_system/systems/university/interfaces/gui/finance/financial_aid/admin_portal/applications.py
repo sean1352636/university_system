@@ -2,6 +2,8 @@
 Aid application review mixin for AdminPortal.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.finance.financial_aid.admin_portal._imports import (
     tk, ttk, scrolledtext, json, logging,
     get_connection, log_activity,
@@ -33,7 +35,7 @@ class ApplicationsMixin:
         filter_frame.pack(fill='x', padx=10, pady=10)
 
         ttk.Label(filter_frame, text=get_text("financial_aid.admin_portal.labels.status", "Status:")).pack(side='left', padx=5)
-        status_var = tk.StringVar(value='pending')
+        status_var = tk.StringVar(value=_t('gui.finance.financial_aid.admin_portal.applications.values.pending', default='pending'))
         status_combo = ttk.Combobox(filter_frame, textvariable=status_var,
                                     values=[get_text("financial_aid.admin_portal.disbursements.status_filters.all", "All"), 'pending', 'under_review', 'approved', 'denied'],
                                     state='readonly', width=15)

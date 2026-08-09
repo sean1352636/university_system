@@ -12,7 +12,7 @@ import logging
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ def flag_at_risk_student(
     notes = f"Risk score: {risk_score}. Factors: {factors_summary}".strip()
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         try:
             cur = conn.cursor()

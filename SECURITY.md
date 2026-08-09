@@ -255,8 +255,11 @@ def is_student(self):
 - **Remaining attempts display**: Users see how many attempts remain
 - **Emergency unlock functions**: Administrative functions to unlock any account
   - All unlock attempts are logged for security audit
-  - Default password: `UnlockMe2024!SecureAdmin`
-  - Can be overridden via environment variable: `EMERGENCY_UNLOCK_PASSWORD`
+  - Enabled only when the `EMERGENCY_UNLOCK_PASSWORD` environment variable is
+    set; there is no built-in default. When the variable is unset the
+    break-glass path refuses all unlock attempts. If your deployment ever ran
+    with the old documented default password, treat it as exposed and set a
+    new value.
 
 **Available Functions:**
 

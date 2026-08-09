@@ -730,9 +730,9 @@ def show_student_details(self, student_id):
             modules_frame, columns=("type", "code", "name"),
             show="headings", height=6,
         )
-        modules_tree.heading("type", text="Type")
-        modules_tree.heading("code", text="Code")
-        modules_tree.heading("name", text="Module Name")
+        modules_tree.heading("type", text=_t('gui.learners.students.student_records.headings.type', default="Type"))
+        modules_tree.heading("code", text=_t('gui.learners.students.student_records.headings.code', default="Code"))
+        modules_tree.heading("name", text=_t('gui.learners.students.student_records.headings.module_name', default="Module Name"))
         modules_tree.column("type", width=110, anchor="w")
         modules_tree.column("code", width=110, anchor="w")
         modules_tree.column("name", width=400, anchor="w")
@@ -751,10 +751,10 @@ def show_student_details(self, student_id):
             grades_frame, columns=("module", "assessment", "grade", "date"),
             show="headings", height=6,
         )
-        grades_tree.heading("module", text="Module")
-        grades_tree.heading("assessment", text="Assessment")
-        grades_tree.heading("grade", text="Grade")
-        grades_tree.heading("date", text="Date")
+        grades_tree.heading("module", text=_t('gui.learners.students.student_records.headings.module', default="Module"))
+        grades_tree.heading("assessment", text=_t('gui.learners.students.student_records.headings.assessment', default="Assessment"))
+        grades_tree.heading("grade", text=_t('gui.learners.students.student_records.headings.grade', default="Grade"))
+        grades_tree.heading("date", text=_t('gui.learners.students.student_records.headings.date', default="Date"))
         grades_tree.column("module", width=110, anchor="w")
         grades_tree.column("assessment", width=300, anchor="w")
         grades_tree.column("grade", width=80, anchor="center")
@@ -776,10 +776,10 @@ def show_student_details(self, student_id):
             attendance_frame, columns=("date", "module", "status", "notes"),
             show="headings", height=6,
         )
-        attendance_tree.heading("date", text="Date")
-        attendance_tree.heading("module", text="Module")
-        attendance_tree.heading("status", text="Status")
-        attendance_tree.heading("notes", text="Notes")
+        attendance_tree.heading("date", text=_t('gui.learners.students.student_records.headings.date', default="Date"))
+        attendance_tree.heading("module", text=_t('gui.learners.students.student_records.headings.module', default="Module"))
+        attendance_tree.heading("status", text=_t('gui.learners.students.student_records.headings.status', default="Status"))
+        attendance_tree.heading("notes", text=_t('gui.learners.students.student_records.headings.notes', default="Notes"))
         attendance_tree.column("date", width=120, anchor="w")
         attendance_tree.column("module", width=110, anchor="w")
         attendance_tree.column("status", width=100, anchor="center")
@@ -805,7 +805,7 @@ def show_student_details(self, student_id):
                 LibrarySummaryFrame,
             )
             library_tab = ttk.Frame(notebook)
-            notebook.add(library_tab, text="📚 Library")
+            notebook.add(library_tab, text=_t('gui.learners.students.student_records.tabs.library', default="📚 Library"))
             LibrarySummaryFrame(
                 library_tab,
                 user_id=student_id,
@@ -824,7 +824,7 @@ def show_student_details(self, student_id):
         # to see "is this student in trouble".
         try:
             summary_tab = ttk.Frame(notebook)
-            notebook.add(summary_tab, text="📊 Summary")
+            notebook.add(summary_tab, text=_t('gui.learners.students.student_records.tabs.summary', default="📊 Summary"))
             _build_student_summary(
                 summary_tab, student_id, na,
                 on_open_finance=lambda: self.show_student_finance_account()
@@ -847,7 +847,7 @@ def show_student_details(self, student_id):
             current_role = (self.auth.current_user or {}).get('role', '') if self.auth else ''
             if current_role == 'admin':
                 admin_tab = ttk.Frame(notebook)
-                notebook.add(admin_tab, text="🛡 All Records (Admin)")
+                notebook.add(admin_tab, text=_t('gui.learners.students.student_records.tabs.all_records_admin', default="🛡 All Records (Admin)"))
                 _build_student_all_records_tab(admin_tab, student_id)
         except Exception:
             logger.exception("Could not build admin all-records tab")
@@ -1066,9 +1066,9 @@ def _build_student_all_records_tab(tab, student_id):
               text=f"All database records for {student_id}",
               font=('Arial', 13, 'bold')).pack(anchor='w', padx=15, pady=(15, 4))
     ttk.Label(tab,
-              text=("Discovered automatically from sqlite_master — "
+              text=(_t('gui.learners.students.student_records.labels.discovered_automatically_from_sqlite_master_every_table_with_a_s', default="Discovered automatically from sqlite_master — "
                     "every table with a 'student_id' column. "
-                    "Empty tables are hidden."),
+                    "Empty tables are hidden.")),
               foreground='#555').pack(anchor='w', padx=15, pady=(0, 10))
 
     # Toolbar (Refresh + status)
@@ -1082,9 +1082,9 @@ def _build_student_all_records_tab(tab, student_id):
     tree_frame = ttk.Frame(tab)
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 12))
     tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=18)
-    tree.heading('table',   text='Table')
-    tree.heading('rows',    text='Rows')
-    tree.heading('columns', text='Columns')
+    tree.heading('table',   text=_t('gui.learners.students.student_records.headings.table', default='Table'))
+    tree.heading('rows',    text=_t('gui.learners.students.student_records.headings.rows', default='Rows'))
+    tree.heading('columns', text=_t('gui.learners.students.student_records.headings.columns', default='Columns'))
     tree.column('table',   width=220)
     tree.column('rows',    width=70, anchor='center')
     tree.column('columns', width=520)
@@ -1139,7 +1139,7 @@ def _build_student_all_records_tab(tab, student_id):
             except Exception:
                 pass
 
-    ttk.Button(toolbar, text="Refresh",
+    ttk.Button(toolbar, text=_t('gui.learners.students.student_records.buttons.refresh', default="Refresh"),
                command=_refresh).pack(side=tk.RIGHT)
 
     def _open_drilldown(_e=None):
@@ -1171,7 +1171,7 @@ def _build_student_all_records_tab(tab, student_id):
         ttk.Label(win, text=f"{table} ({len(rows)} row(s), most recent first)",
                   font=('Arial', 12, 'bold')).pack(anchor='w', padx=10, pady=8)
         if not rows:
-            ttk.Label(win, text="No rows.").pack(padx=20, pady=20)
+            ttk.Label(win, text=_t('gui.learners.students.student_records.labels.no_rows', default="No rows.")).pack(padx=20, pady=20)
             return
         inner = ttk.Frame(win)
         inner.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1205,11 +1205,9 @@ def _build_student_summary(tab, student_id, na,
     that don't have ``disciplinary_records`` / ``student_fees`` see an
     "n/a" tile rather than a stack trace."""
     import sqlite3
-    from education_system.systems.university.infrastructure.paths import (
-        DEFAULT_DB_PATH,
-    )
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
-    title_lbl = ttk.Label(tab, text="At-a-glance summary",
+    title_lbl = ttk.Label(tab, text=_t('gui.learners.students.student_records.labels.at_a_glance_summary', default="At-a-glance summary"),
                           font=('Arial', 14, 'bold'))
     title_lbl.pack(anchor='w', padx=14, pady=(14, 6))
     ttk.Label(tab, text=f"Cross-domain status for {student_id} — drawn live "
@@ -1233,7 +1231,7 @@ def _build_student_summary(tab, student_id, na,
             tk.Label(card, text=sub, fg='#555555',
                      font=('Arial', 9)).pack(anchor='w', pady=(2, 0))
         if callable(on_click):
-            ttk.Button(card, text="Open →",
+            ttk.Button(card, text=_t('gui.learners.students.student_records.buttons.open', default="Open →"),
                        command=on_click).pack(anchor='e', pady=(8, 0))
         return card
 
@@ -1241,7 +1239,7 @@ def _build_student_summary(tab, student_id, na,
     finance_balance = "—"
     finance_color = None
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         try:
             row = conn.execute(
                 "SELECT COUNT(*), COALESCE(SUM(amount), 0) "
@@ -1275,7 +1273,7 @@ def _build_student_summary(tab, student_id, na,
     att_sub = ""
     att_color = None
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         try:
             row = conn.execute(
                 "SELECT "
@@ -1312,7 +1310,7 @@ def _build_student_summary(tab, student_id, na,
     case_color = None
     case_seen = False
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         try:
             row = conn.execute(
                 "SELECT COUNT(*) FROM disciplinary_records "

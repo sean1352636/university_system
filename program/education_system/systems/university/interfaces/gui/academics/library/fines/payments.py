@@ -2,6 +2,8 @@
 Library Fines Management - Payment processing (manual, finance account, GUI).
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime
@@ -39,20 +41,20 @@ def process_fine_payment(self):
     payment_amount = self.payment_amount_var.get().strip()
 
     if not user_id:
-        messagebox.showwarning(_("common.warning"), "Please search for a user first")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.please_search_for_a_user_first', default="Please search for a user first"))
         return
 
     if not payment_amount:
-        messagebox.showwarning(_("common.warning"), "Please enter a payment amount")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.please_enter_a_payment_amount', default="Please enter a payment amount"))
         return
 
     try:
         amount = float(payment_amount)
         if amount <= 0:
-            messagebox.showwarning(_("common.warning"), "Payment amount must be greater than 0")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.payment_amount_must_be_greater_than_0', default="Payment amount must be greater than 0"))
             return
     except ValueError:
-        messagebox.showwarning(_("common.warning"), "Please enter a valid payment amount")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.please_enter_a_valid_payment_amount', default="Please enter a valid payment amount"))
         return
 
     # Get user details
@@ -60,7 +62,7 @@ def process_fine_payment(self):
         if ORIGINAL_LIBRARY_AVAILABLE:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror(_("common.error"), "Database connection unavailable")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.payments.dialogs.database_connection_unavailable', default="Database connection unavailable"))
                 return
 
             cursor = conn.cursor()
@@ -73,13 +75,13 @@ def process_fine_payment(self):
             total_fines = cursor.fetchone()[0] or 0.0
 
             if total_fines == 0:
-                messagebox.showinfo("No Fines", "This user has no outstanding fines")
+                messagebox.showinfo(_t('gui.academics.library.fines.payments.dialogs.no_fines', default="No Fines"), _t('gui.academics.library.fines.payments.dialogs.this_user_has_no_outstanding_fines', default="This user has no outstanding fines"))
                 conn.close()
                 return
 
             if amount > total_fines:
                 response = messagebox.askyesno(
-                    "Payment Exceeds Fines",
+                    _t('gui.academics.library.fines.payments.dialogs.payment_exceeds_fines', default="Payment Exceeds Fines"),
                     f"Payment amount (£{amount:.2f}) exceeds total fines (£{total_fines:.2f}).\n\n"
                     f"Do you want to process payment of £{total_fines:.2f} (full balance) instead?"
                 )
@@ -177,31 +179,31 @@ def pay_fine_from_finance_account(self):
     payment_amount = self.payment_amount_var.get().strip()
 
     if not user_id:
-        messagebox.showwarning(_("common.warning"), "Please search for a user first")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.please_search_for_a_user_first', default="Please search for a user first"))
         return
 
     if not payment_amount:
-        messagebox.showwarning(_("common.warning"), "Please enter a payment amount")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.please_enter_a_payment_amount', default="Please enter a payment amount"))
         return
 
     try:
         amount = float(payment_amount)
         if amount <= 0:
-            messagebox.showwarning(_("common.warning"), "Payment amount must be greater than 0")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.payment_amount_must_be_greater_than_0', default="Payment amount must be greater than 0"))
             return
     except ValueError:
-        messagebox.showwarning(_("common.warning"), "Please enter a valid payment amount")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.please_enter_a_valid_payment_amount', default="Please enter a valid payment amount"))
         return
 
     if not FINANCE_ACCOUNT_AVAILABLE:
-        messagebox.showerror(_("common.error"), "Finance account integration is not available")
+        messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.payments.dialogs.finance_account_integration_is_not_available', default="Finance account integration is not available"))
         return
 
     try:
         if ORIGINAL_LIBRARY_AVAILABLE:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror(_("common.error"), "Database connection unavailable")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.payments.dialogs.database_connection_unavailable', default="Database connection unavailable"))
                 return
 
             cursor = conn.cursor()
@@ -214,13 +216,13 @@ def pay_fine_from_finance_account(self):
             total_fines = cursor.fetchone()[0] or 0.0
 
             if total_fines == 0:
-                messagebox.showinfo("No Fines", "This user has no outstanding fines")
+                messagebox.showinfo(_t('gui.academics.library.fines.payments.dialogs.no_fines', default="No Fines"), _t('gui.academics.library.fines.payments.dialogs.this_user_has_no_outstanding_fines', default="This user has no outstanding fines"))
                 conn.close()
                 return
 
             if amount > total_fines:
                 response = messagebox.askyesno(
-                    "Payment Exceeds Fines",
+                    _t('gui.academics.library.fines.payments.dialogs.payment_exceeds_fines', default="Payment Exceeds Fines"),
                     f"Payment amount (\u00a3{amount:.2f}) exceeds total fines (\u00a3{total_fines:.2f}).\n\n"
                     f"Do you want to process payment of \u00a3{total_fines:.2f} (full balance) instead?"
                 )
@@ -235,18 +237,18 @@ def pay_fine_from_finance_account(self):
             if current_balance is None:
                 # Offer to create a finance account
                 create_account = messagebox.askyesno(
-                    "No Finance Account",
+                    _t('gui.academics.library.fines.payments.dialogs.no_finance_account', default="No Finance Account"),
                     f"No finance account found for user {user_id}.\n\n"
                     "Would you like to create a finance account now?"
                 )
                 if create_account:
                     if ensure_student_finance_account_exists(user_id):
                         current_balance = 0.0
-                        messagebox.showinfo("Account Created",
+                        messagebox.showinfo(_t('gui.academics.library.fines.payments.dialogs.account_created', default="Account Created"),
                             f"Finance account created for user {user_id}.\n"
                             "The account has a \u00a30.00 balance. You can top up now.")
                     else:
-                        messagebox.showerror(_("common.error"), "Failed to create finance account")
+                        messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.payments.dialogs.failed_to_create_finance_account', default="Failed to create finance account"))
                         conn.close()
                         return
                 else:
@@ -257,7 +259,7 @@ def pay_fine_from_finance_account(self):
                 # Offer to top up the account
                 shortfall = amount - current_balance
                 topup_response = messagebox.askyesno(
-                    "Insufficient Balance",
+                    _t('gui.academics.library.fines.payments.dialogs.insufficient_balance', default="Insufficient Balance"),
                     f"Student finance account balance is insufficient.\n\n"
                     f"Current Balance: \u00a3{current_balance:.2f}\n"
                     f"Required Amount: \u00a3{amount:.2f}\n"
@@ -285,7 +287,7 @@ def pay_fine_from_finance_account(self):
             )
 
             if not payment_result['success']:
-                messagebox.showerror("Payment Failed", payment_result['message'])
+                messagebox.showerror(_t('gui.academics.library.fines.payments.dialogs.payment_failed', default="Payment Failed"), payment_result['message'])
                 conn.close()
                 return
 
@@ -377,26 +379,26 @@ def pay_fine_from_finance_account(self):
 def process_fine_payment_gui(self):
     """Process fine payment interface"""
     payment_window = tk.Toplevel(self.master)
-    payment_window.title("Process Fine Payment")
+    payment_window.title(_t('gui.academics.library.fines.payments.windows.process_fine_payment', default="Process Fine Payment"))
     payment_window.geometry("600x500")
 
-    ttk.Label(payment_window, text="Process Fine Payment",
+    ttk.Label(payment_window, text=_t('gui.academics.library.fines.payments.labels.process_fine_payment', default="Process Fine Payment"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Search frame
-    search_frame = ttk.LabelFrame(payment_window, text="Find Loan with Fine", padding=15)
+    search_frame = ttk.LabelFrame(payment_window, text=_t('gui.academics.library.fines.payments.labels.find_loan_with_fine', default="Find Loan with Fine"), padding=15)
     search_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    search_type = tk.StringVar(value="user_id")
+    search_type = tk.StringVar(value=_t('gui.academics.library.fines.payments.values.user_id', default="user_id"))
     search_value = tk.StringVar()
 
-    ttk.Radiobutton(search_frame, text="By User ID", variable=search_type, value="user_id").grid(row=0, column=0, sticky=tk.W, padx=5)
-    ttk.Radiobutton(search_frame, text="By Loan ID", variable=search_type, value="loan_id").grid(row=0, column=1, sticky=tk.W, padx=5)
+    ttk.Radiobutton(search_frame, text=_t('gui.academics.library.fines.payments.buttons.by_user_id', default="By User ID"), variable=search_type, value="user_id").grid(row=0, column=0, sticky=tk.W, padx=5)
+    ttk.Radiobutton(search_frame, text=_t('gui.academics.library.fines.payments.buttons.by_loan_id', default="By Loan ID"), variable=search_type, value="loan_id").grid(row=0, column=1, sticky=tk.W, padx=5)
 
     ttk.Entry(search_frame, textvariable=search_value, width=30).grid(row=1, column=0, columnspan=2, padx=5, pady=10)
 
     # Results frame
-    results_frame = ttk.LabelFrame(payment_window, text="Outstanding Fines", padding=10)
+    results_frame = ttk.LabelFrame(payment_window, text=_t('gui.academics.library.fines.payments.labels.outstanding_fines', default="Outstanding Fines"), padding=10)
     results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     columns = ('Loan ID', 'Book Title', 'User', 'Fine Amount', 'Days Overdue')
@@ -429,7 +431,7 @@ def process_fine_payment_gui(self):
         svalue = search_value.get().strip()
 
         if not svalue:
-            messagebox.showwarning(_("common.warning"), "Please enter a search value")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.please_enter_a_search_value', default="Please enter a search value"))
             return
 
         try:
@@ -463,7 +465,7 @@ def process_fine_payment_gui(self):
                 ))
 
             if not fines:
-                messagebox.showinfo("No Fines", "No outstanding fines found")
+                messagebox.showinfo(_t('gui.academics.library.fines.payments.dialogs.no_fines', default="No Fines"), _t('gui.academics.library.fines.payments.dialogs.no_outstanding_fines_found', default="No outstanding fines found"))
 
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Search failed: {str(e)}")
@@ -473,7 +475,7 @@ def process_fine_payment_gui(self):
     def process_payment():
         selection = fines_tree.selection()
         if not selection:
-            messagebox.showwarning(_("common.warning"), "Please select a fine to pay")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.payments.dialogs.please_select_a_fine_to_pay', default="Please select a fine to pay"))
             return
 
         item = fines_tree.item(selection[0])
@@ -483,10 +485,10 @@ def process_fine_payment_gui(self):
 
         # Payment dialog
         pay_dialog = tk.Toplevel(payment_window)
-        pay_dialog.title("Process Payment")
+        pay_dialog.title(_t('gui.academics.library.fines.payments.windows.process_payment', default="Process Payment"))
         pay_dialog.geometry("400x300")
 
-        ttk.Label(pay_dialog, text="Process Fine Payment",
+        ttk.Label(pay_dialog, text=_t('gui.academics.library.fines.payments.labels.process_fine_payment', default="Process Fine Payment"),
                  font=('Arial', 12, 'bold')).pack(pady=10)
 
         info_frame = ttk.Frame(pay_dialog, padding=15)
@@ -496,13 +498,13 @@ def process_fine_payment_gui(self):
         ttk.Label(info_frame, text=f"Fine Amount: £{fine_amount:.2f}",
                  font=('Arial', 11, 'bold')).pack(anchor=tk.W, pady=2)
 
-        payment_method_var = tk.StringVar(value="cash")
-        ttk.Label(info_frame, text="Payment Method:").pack(anchor=tk.W, pady=(10, 2))
-        ttk.Radiobutton(info_frame, text="Cash", variable=payment_method_var, value="cash").pack(anchor=tk.W, padx=20)
-        ttk.Radiobutton(info_frame, text="Card", variable=payment_method_var, value="card").pack(anchor=tk.W, padx=20)
-        ttk.Radiobutton(info_frame, text="Check", variable=payment_method_var, value="check").pack(anchor=tk.W, padx=20)
+        payment_method_var = tk.StringVar(value=_t('gui.academics.library.fines.payments.values.cash', default="cash"))
+        ttk.Label(info_frame, text=_t('gui.academics.library.fines.payments.labels.payment_method', default="Payment Method:")).pack(anchor=tk.W, pady=(10, 2))
+        ttk.Radiobutton(info_frame, text=_t('gui.academics.library.fines.payments.buttons.cash', default="Cash"), variable=payment_method_var, value="cash").pack(anchor=tk.W, padx=20)
+        ttk.Radiobutton(info_frame, text=_t('gui.academics.library.fines.payments.buttons.card', default="Card"), variable=payment_method_var, value="card").pack(anchor=tk.W, padx=20)
+        ttk.Radiobutton(info_frame, text=_t('gui.academics.library.fines.payments.buttons.check', default="Check"), variable=payment_method_var, value="check").pack(anchor=tk.W, padx=20)
         if FINANCE_ACCOUNT_AVAILABLE:
-            ttk.Radiobutton(info_frame, text="Finance Account", variable=payment_method_var, value="finance_account").pack(anchor=tk.W, padx=20)
+            ttk.Radiobutton(info_frame, text=_t('gui.academics.library.fines.payments.buttons.finance_account', default="Finance Account"), variable=payment_method_var, value="finance_account").pack(anchor=tk.W, padx=20)
 
         # Get user_id from the selected fine
         user_id_for_payment = item['values'][2]
@@ -515,33 +517,33 @@ def process_fine_payment_gui(self):
                 # Handle finance account payment separately
                 if payment_method == "finance_account":
                     if not FINANCE_ACCOUNT_AVAILABLE:
-                        messagebox.showerror(_("common.error"), "Finance account integration not available")
+                        messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.payments.dialogs.finance_account_integration_not_available', default="Finance account integration not available"))
                         return
 
                     # Check if account exists
                     current_balance = get_student_finance_account_balance(user_id_for_payment)
                     if current_balance is None:
                         # Offer to create account
-                        create = messagebox.askyesno("No Account",
+                        create = messagebox.askyesno(_t('gui.academics.library.fines.payments.dialogs.no_account', default="No Account"),
                             f"No finance account found for {user_id_for_payment}.\n\nCreate one now?")
                         if create:
                             if ensure_student_finance_account_exists(user_id_for_payment):
                                 current_balance = 0.0
-                                messagebox.showinfo("Created", "Account created with \u00a30.00 balance.\nPlease top up first.")
+                                messagebox.showinfo(_t('gui.academics.library.fines.payments.dialogs.created', default="Created"), _t('gui.academics.library.fines.payments.dialogs.account_created_with_0_00_balance_please_top_up_first', default="Account created with \u00a30.00 balance.\nPlease top up first."))
                                 return
                             else:
-                                messagebox.showerror(_("common.error"), "Failed to create account")
+                                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.payments.dialogs.failed_to_create_account', default="Failed to create account"))
                                 return
                         else:
                             return
 
                     if current_balance < fine_amount:
                         shortfall = fine_amount - current_balance
-                        topup = messagebox.askyesno("Insufficient Balance",
+                        topup = messagebox.askyesno(_t('gui.academics.library.fines.payments.dialogs.insufficient_balance', default="Insufficient Balance"),
                             f"Balance: \u00a3{current_balance:.2f}\nRequired: \u00a3{fine_amount:.2f}\nShortfall: \u00a3{shortfall:.2f}\n\nTop up now?")
                         if topup:
                             # Show simple top-up dialog
-                            topup_amt = simpledialog.askfloat("Top Up", f"Enter top-up amount (min \u00a3{shortfall:.2f}):",
+                            topup_amt = simpledialog.askfloat(_t('gui.academics.library.fines.payments.dialogs.top_up', default="Top Up"), f"Enter top-up amount (min \u00a3{shortfall:.2f}):",
                                 minvalue=shortfall, initialvalue=shortfall)
                             if topup_amt:
                                 result = top_up_student_finance_account(
@@ -634,11 +636,11 @@ def process_fine_payment_gui(self):
             except Exception as e:
                 messagebox.showerror(_("common.error"), f"Payment failed: {str(e)}")
 
-        ttk.Button(info_frame, text="Process Payment", command=confirm_payment).pack(pady=20)
+        ttk.Button(info_frame, text=_t('gui.academics.library.fines.payments.buttons.process_payment', default="Process Payment"), command=confirm_payment).pack(pady=20)
 
     # Button frame
     button_frame = ttk.Frame(payment_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Process Payment", command=process_payment).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.fines.payments.buttons.process_payment', default="Process Payment"), command=process_payment).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=payment_window.destroy).pack(side=tk.RIGHT, padx=5)

@@ -23,12 +23,12 @@ import re
 import sqlite3
 from dataclasses import dataclass, field
 from typing import Any
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.gradebook.gradebook import LETTER_GRADES
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.EXAM_RESULTS_DB
+DB_PATH = paths.SIXTH_FORM_EXAM_RESULTS_DB
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -93,7 +93,7 @@ class ResultEntryView:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

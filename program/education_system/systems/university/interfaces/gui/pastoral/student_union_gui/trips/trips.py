@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -47,7 +49,7 @@ class StudentUnionTripsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Student Union Trip Management")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.trips.trips.windows.student_union_trip_management', default="Student Union Trip Management"))
         self.dialog.geometry("1050x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -74,17 +76,17 @@ class StudentUnionTripsDialog:
 
         # Tab 1 - Upcoming Trips
         self.upcoming_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.upcoming_frame, text="Upcoming Trips")
+        self.notebook.add(self.upcoming_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.tabs.upcoming_trips', default="Upcoming Trips"))
         self._build_upcoming_tab()
 
         # Tab 2 - Organise Trip
         self.organise_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.organise_frame, text="Organise Trip")
+        self.notebook.add(self.organise_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.tabs.organise_trip', default="Organise Trip"))
         self._build_organise_tab()
 
         # Tab 3 - My Trips
         self.my_trips_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.my_trips_frame, text="My Trips")
+        self.notebook.add(self.my_trips_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.tabs.my_trips', default="My Trips"))
         self._build_my_trips_tab()
 
     # ------------------------------------------------------------------
@@ -95,19 +97,19 @@ class StudentUnionTripsDialog:
         toolbar = ttk.Frame(self.upcoming_frame)
         toolbar.pack(fill='x', pady=(0, 8))
 
-        ttk.Button(toolbar, text="Refresh", command=self._load_upcoming_trips).pack(side='left')
-        ttk.Button(toolbar, text="Register for Selected Trip", command=self._register_for_trip).pack(side='right')
+        ttk.Button(toolbar, text=_t('gui.pastoral.student_union_gui.trips.trips.buttons.refresh', default="Refresh"), command=self._load_upcoming_trips).pack(side='left')
+        ttk.Button(toolbar, text=_t('gui.pastoral.student_union_gui.trips.trips.buttons.register_for_selected_trip', default="Register for Selected Trip"), command=self._register_for_trip).pack(side='right')
 
         columns = ('trip_id', 'trip_name', 'date', 'destination', 'organizer', 'capacity', 'registered')
         self.upcoming_tree = ttk.Treeview(self.upcoming_frame, columns=columns, show='headings', height=18)
 
-        self.upcoming_tree.heading('trip_id', text='ID')
-        self.upcoming_tree.heading('trip_name', text='Trip Name')
-        self.upcoming_tree.heading('date', text='Date')
-        self.upcoming_tree.heading('destination', text='Destination')
-        self.upcoming_tree.heading('organizer', text='Organizer')
-        self.upcoming_tree.heading('capacity', text='Capacity')
-        self.upcoming_tree.heading('registered', text='Registered')
+        self.upcoming_tree.heading('trip_id', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.id', default='ID'))
+        self.upcoming_tree.heading('trip_name', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.trip_name', default='Trip Name'))
+        self.upcoming_tree.heading('date', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.date', default='Date'))
+        self.upcoming_tree.heading('destination', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.destination', default='Destination'))
+        self.upcoming_tree.heading('organizer', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.organizer', default='Organizer'))
+        self.upcoming_tree.heading('capacity', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.capacity', default='Capacity'))
+        self.upcoming_tree.heading('registered', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.registered', default='Registered'))
 
         self.upcoming_tree.column('trip_id', width=50, anchor='center')
         self.upcoming_tree.column('trip_name', width=200)
@@ -148,7 +150,7 @@ class StudentUnionTripsDialog:
     def _register_for_trip(self):
         selected = self.upcoming_tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a trip to register for.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.please_select_a_trip_to_register_for', default="Please select a trip to register for."), parent=self.dialog)
             return
 
         values = self.upcoming_tree.item(selected[0], 'values')
@@ -158,12 +160,12 @@ class StudentUnionTripsDialog:
         registered = int(values[6])
 
         if registered >= capacity:
-            messagebox.showinfo("Full", "This trip is already at full capacity.", parent=self.dialog)
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.full', default="Full"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.this_trip_is_already_at_full_capacity', default="This trip is already at full capacity."), parent=self.dialog)
             return
 
         current_user = self.auth.current_user
         if not current_user:
-            messagebox.showerror("Error", "You must be logged in to register.", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.you_must_be_logged_in_to_register', default="You must be logged in to register."), parent=self.dialog)
             return
 
         user_id = current_user.get('id') or current_user.get('user_id', '')
@@ -177,7 +179,7 @@ class StudentUnionTripsDialog:
                 (trip_id, user_id)
             )
             if cursor.fetchone():
-                messagebox.showinfo("Already Registered", "You are already registered for this trip.", parent=self.dialog)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.already_registered', default="Already Registered"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.you_are_already_registered_for_this_trip', default="You are already registered for this trip."), parent=self.dialog)
                 return
 
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -209,12 +211,12 @@ class StudentUnionTripsDialog:
                 except Exception:
                     pass  # Email failure should not block registration
 
-            messagebox.showinfo("Success", f"You have been registered for '{trip_name}'.", parent=self.dialog)
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.success', default="Success"), f"You have been registered for '{trip_name}'.", parent=self.dialog)
             self._load_upcoming_trips()
             self._load_my_trips()
         except Exception as e:
             conn.rollback()
-            messagebox.showerror("Error", f"Could not register: {e}", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.error', default="Error"), f"Could not register: {e}", parent=self.dialog)
         finally:
             conn.close()
 
@@ -223,52 +225,52 @@ class StudentUnionTripsDialog:
     # ------------------------------------------------------------------
 
     def _build_organise_tab(self):
-        form_frame = ttk.LabelFrame(self.organise_frame, text="Create a New Trip", padding=15)
+        form_frame = ttk.LabelFrame(self.organise_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.labels.create_a_new_trip', default="Create a New Trip"), padding=15)
         form_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         row = 0
-        ttk.Label(form_frame, text="Trip Name:").grid(row=row, column=0, sticky='w', pady=4)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.labels.trip_name', default="Trip Name:")).grid(row=row, column=0, sticky='w', pady=4)
         self.trip_name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.trip_name_var, width=40).grid(row=row, column=1, sticky='w', pady=4)
 
         row += 1
-        ttk.Label(form_frame, text="Destination:").grid(row=row, column=0, sticky='w', pady=4)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.labels.destination', default="Destination:")).grid(row=row, column=0, sticky='w', pady=4)
         self.destination_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.destination_var, width=40).grid(row=row, column=1, sticky='w', pady=4)
 
         row += 1
-        ttk.Label(form_frame, text="Trip Date (YYYY-MM-DD):").grid(row=row, column=0, sticky='w', pady=4)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.labels.trip_date_yyyy_mm_dd', default="Trip Date (YYYY-MM-DD):")).grid(row=row, column=0, sticky='w', pady=4)
         self.trip_date_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.trip_date_var, width=20).grid(row=row, column=1, sticky='w', pady=4)
 
         row += 1
-        ttk.Label(form_frame, text="Return Date (YYYY-MM-DD):").grid(row=row, column=0, sticky='w', pady=4)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.labels.return_date_yyyy_mm_dd', default="Return Date (YYYY-MM-DD):")).grid(row=row, column=0, sticky='w', pady=4)
         self.return_date_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.return_date_var, width=20).grid(row=row, column=1, sticky='w', pady=4)
 
         row += 1
-        ttk.Label(form_frame, text="Description:").grid(row=row, column=0, sticky='nw', pady=4)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.labels.description', default="Description:")).grid(row=row, column=0, sticky='nw', pady=4)
         self.description_text = tk.Text(form_frame, width=40, height=4)
         self.description_text.grid(row=row, column=1, sticky='w', pady=4)
 
         row += 1
-        ttk.Label(form_frame, text="Max Participants:").grid(row=row, column=0, sticky='w', pady=4)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.labels.max_participants', default="Max Participants:")).grid(row=row, column=0, sticky='w', pady=4)
         self.max_participants_var = tk.StringVar(value='30')
         ttk.Entry(form_frame, textvariable=self.max_participants_var, width=10).grid(row=row, column=1, sticky='w', pady=4)
 
         row += 1
-        ttk.Label(form_frame, text="Estimated Cost:").grid(row=row, column=0, sticky='w', pady=4)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.labels.estimated_cost', default="Estimated Cost:")).grid(row=row, column=0, sticky='w', pady=4)
         self.cost_var = tk.StringVar(value='0.00')
         ttk.Entry(form_frame, textvariable=self.cost_var, width=10).grid(row=row, column=1, sticky='w', pady=4)
 
         row += 1
-        ttk.Label(form_frame, text="Organising Club:").grid(row=row, column=0, sticky='w', pady=4)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.labels.organising_club', default="Organising Club:")).grid(row=row, column=0, sticky='w', pady=4)
         self.club_combo = ttk.Combobox(form_frame, state='readonly', width=37)
         self.club_combo.grid(row=row, column=1, sticky='w', pady=4)
         self._load_clubs()
 
         row += 1
-        ttk.Button(form_frame, text="Create Trip", command=self._create_trip).grid(
+        ttk.Button(form_frame, text=_t('gui.pastoral.student_union_gui.trips.trips.buttons.create_trip', default="Create Trip"), command=self._create_trip).grid(
             row=row, column=0, columnspan=2, pady=15
         )
 
@@ -311,30 +313,30 @@ class StudentUnionTripsDialog:
 
         # Validation
         if not trip_name or not destination or not trip_date or not return_date:
-            messagebox.showwarning("Missing Fields", "Trip name, destination, trip date and return date are required.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.missing_fields', default="Missing Fields"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.trip_name_destination_trip_date_and_return_date_are_required', default="Trip name, destination, trip date and return date are required."), parent=self.dialog)
             return
 
         try:
             datetime.strptime(trip_date, '%Y-%m-%d')
             datetime.strptime(return_date, '%Y-%m-%d')
         except ValueError:
-            messagebox.showwarning("Invalid Date", "Dates must be in YYYY-MM-DD format.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.invalid_date', default="Invalid Date"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.dates_must_be_in_yyyy_mm_dd_format', default="Dates must be in YYYY-MM-DD format."), parent=self.dialog)
             return
 
         if return_date < trip_date:
-            messagebox.showwarning("Invalid Dates", "Return date cannot be before the trip date.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.invalid_dates', default="Invalid Dates"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.return_date_cannot_be_before_the_trip_date', default="Return date cannot be before the trip date."), parent=self.dialog)
             return
 
         try:
             max_participants = int(max_participants)
         except ValueError:
-            messagebox.showwarning("Invalid Value", "Max participants must be a whole number.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.invalid_value', default="Invalid Value"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.max_participants_must_be_a_whole_number', default="Max participants must be a whole number."), parent=self.dialog)
             return
 
         try:
             cost = float(cost)
         except ValueError:
-            messagebox.showwarning("Invalid Value", "Estimated cost must be a number.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.invalid_value', default="Invalid Value"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.estimated_cost_must_be_a_number', default="Estimated cost must be a number."), parent=self.dialog)
             return
 
         club_id = self._club_map.get(club_name)
@@ -357,7 +359,7 @@ class StudentUnionTripsDialog:
             ''', (trip_name, destination, trip_date, return_date, description,
                   max_participants, cost, club_id, created_by, now))
             conn.commit()
-            messagebox.showinfo("Success", f"Trip '{trip_name}' has been created.", parent=self.dialog)
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.success', default="Success"), f"Trip '{trip_name}' has been created.", parent=self.dialog)
             # Clear form
             self.trip_name_var.set('')
             self.destination_var.set('')
@@ -372,7 +374,7 @@ class StudentUnionTripsDialog:
             self._load_upcoming_trips()
         except Exception as e:
             conn.rollback()
-            messagebox.showerror("Error", f"Could not create trip: {e}", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.error', default="Error"), f"Could not create trip: {e}", parent=self.dialog)
         finally:
             conn.close()
 
@@ -384,19 +386,19 @@ class StudentUnionTripsDialog:
         toolbar = ttk.Frame(self.my_trips_frame)
         toolbar.pack(fill='x', pady=(0, 8))
 
-        ttk.Button(toolbar, text="Refresh", command=self._load_my_trips).pack(side='left')
-        ttk.Button(toolbar, text="Cancel Registration", command=self._cancel_registration).pack(side='right')
+        ttk.Button(toolbar, text=_t('gui.pastoral.student_union_gui.trips.trips.buttons.refresh', default="Refresh"), command=self._load_my_trips).pack(side='left')
+        ttk.Button(toolbar, text=_t('gui.pastoral.student_union_gui.trips.trips.buttons.cancel_registration', default="Cancel Registration"), command=self._cancel_registration).pack(side='right')
 
         columns = ('trip_id', 'trip_name', 'date', 'return_date', 'destination', 'status', 'registered_at')
         self.my_tree = ttk.Treeview(self.my_trips_frame, columns=columns, show='headings', height=18)
 
-        self.my_tree.heading('trip_id', text='ID')
-        self.my_tree.heading('trip_name', text='Trip Name')
-        self.my_tree.heading('date', text='Trip Date')
-        self.my_tree.heading('return_date', text='Return Date')
-        self.my_tree.heading('destination', text='Destination')
-        self.my_tree.heading('status', text='Status')
-        self.my_tree.heading('registered_at', text='Registered')
+        self.my_tree.heading('trip_id', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.id', default='ID'))
+        self.my_tree.heading('trip_name', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.trip_name', default='Trip Name'))
+        self.my_tree.heading('date', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.trip_date', default='Trip Date'))
+        self.my_tree.heading('return_date', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.return_date', default='Return Date'))
+        self.my_tree.heading('destination', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.destination', default='Destination'))
+        self.my_tree.heading('status', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.status', default='Status'))
+        self.my_tree.heading('registered_at', text=_t('gui.pastoral.student_union_gui.trips.trips.headings.registered', default='Registered'))
 
         self.my_tree.column('trip_id', width=50, anchor='center')
         self.my_tree.column('trip_name', width=200)
@@ -442,7 +444,7 @@ class StudentUnionTripsDialog:
     def _cancel_registration(self):
         selected = self.my_tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a trip to cancel.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.please_select_a_trip_to_cancel', default="Please select a trip to cancel."), parent=self.dialog)
             return
 
         values = self.my_tree.item(selected[0], 'values')
@@ -451,10 +453,10 @@ class StudentUnionTripsDialog:
         status = values[5]
 
         if status == 'completed':
-            messagebox.showinfo("Cannot Cancel", "Cannot cancel a completed trip registration.", parent=self.dialog)
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.cannot_cancel', default="Cannot Cancel"), _t('gui.pastoral.student_union_gui.trips.trips.dialogs.cannot_cancel_a_completed_trip_registration', default="Cannot cancel a completed trip registration."), parent=self.dialog)
             return
 
-        if not messagebox.askyesno("Confirm", f"Cancel your registration for '{trip_name}'?", parent=self.dialog):
+        if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.confirm', default="Confirm"), f"Cancel your registration for '{trip_name}'?", parent=self.dialog):
             return
 
         current_user = self.auth.current_user
@@ -471,12 +473,12 @@ class StudentUnionTripsDialog:
             if status == 'full':
                 cursor.execute("UPDATE union_trips SET status = 'upcoming' WHERE trip_id = ?", (trip_id,))
             conn.commit()
-            messagebox.showinfo("Cancelled", f"Registration for '{trip_name}' has been cancelled.", parent=self.dialog)
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.cancelled', default="Cancelled"), f"Registration for '{trip_name}' has been cancelled.", parent=self.dialog)
             self._load_my_trips()
             self._load_upcoming_trips()
         except Exception as e:
             conn.rollback()
-            messagebox.showerror("Error", f"Could not cancel registration: {e}", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.trips.trips.dialogs.error', default="Error"), f"Could not cancel registration: {e}", parent=self.dialog)
         finally:
             conn.close()
 

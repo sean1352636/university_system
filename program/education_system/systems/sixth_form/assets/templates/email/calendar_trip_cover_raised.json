@@ -1,0 +1,11 @@
+{
+  "template_id": "calendar_trip_cover_raised",
+  "description": "Tells the cover coordinator that a trip has taken a teacher out and cover requests now exist for each affected day. Triggered when cover is raised from a calendar Trip event.",
+  "channel": "Email",
+  "category": "Calendar",
+  "priority": "Normal",
+  "from_name": "Sixth Form Calendar",
+  "from_address": "calendar@sixthform.ac.uk",
+  "subject": "Cover needed: {{organiser}} out on {{event_title}}",
+  "body": "Hi {{first_name}},\n\n{{organiser}} is out of college for a trip and cover requests have been raised:\n\n  Trip:  {{event_title}}\n  Dates: {{event_date}} to {{event_end_date}}\n  Days needing cover: {{cover_days}}\n\nThe requests are in the cover book as \"Trip Cover\", one per teaching day, ready to allocate.\n\n{{system_name}}"
+}

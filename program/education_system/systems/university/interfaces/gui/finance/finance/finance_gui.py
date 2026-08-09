@@ -1,5 +1,7 @@
 """Main Finance GUI - coordinates all manager classes"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
@@ -57,8 +59,8 @@ except ImportError:
         return logging.getLogger(name or __name__)
 
     def get_log_file(name):
-        from education_system.systems.university.infrastructure import paths
-        return str(paths.LOG_DIR / name)
+        from education_system import paths
+        return str(paths.UNIVERSITY_LOG_DIR / name)
 
 try:
     from education_system.systems.university.domain.finance.core.financial_core import (
@@ -153,6 +155,10 @@ except ImportError:
     ]
 
     globals().update({name: _make_stub(name) for name in _missing_functions})
+
+# Override legacy all-or-nothing fallbacks with independently resolved
+# operations from the stable finance facade.
+from education_system.systems.university.domain.finance.facade import *  # noqa: F403,E402
 
 # Configure logging
 log_path = get_log_file("app.log")
@@ -402,7 +408,7 @@ class FinanceGUI:
                  bg=colors['secondary'], fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
         tk.Button(toolbar, text=_("finance.buttons.view_finances"), command=self.view_student_finances,
                  bg=colors['dark'], fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
-        tk.Button(toolbar, text="Status Letters", command=self._open_status_letters,
+        tk.Button(toolbar, text=_t('gui.finance.finance.finance.buttons.status_letters', default="Status Letters"), command=self._open_status_letters,
                  bg=colors.get('warning', '#f39c12'), fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
 
         # Search frame
@@ -730,7 +736,7 @@ class FinanceGUI:
         main_canvas.bind_all("<MouseWheel>", on_mousewheel)
 
         # Variables for dynamic updates
-        balance_var = tk.StringVar(value="Loading...")
+        balance_var = tk.StringVar(value=_t('gui.finance.finance.finance.values.loading', default="Loading..."))
         total_deposited_var = tk.StringVar(value="£0.00")
         total_spent_var = tk.StringVar(value="£0.00")
         transaction_count_var = tk.StringVar(value="0")
@@ -865,12 +871,12 @@ class FinanceGUI:
                 )
 
                 if result['success']:
-                    messagebox.showinfo("Success", f"✓ Added £{amount:.2f} to account\nNew balance: £{result['new_balance']:.2f}")
+                    messagebox.showinfo(_t('gui.finance.finance.finance.dialogs.success', default="Success"), f"✓ Added £{amount:.2f} to account\nNew balance: £{result['new_balance']:.2f}")
                     refresh_all_data()
                 else:
-                    messagebox.showerror("Error", result['message'])
+                    messagebox.showerror(_t('gui.finance.finance.finance.dialogs.error', default="Error"), result['message'])
             except Exception as e:
-                messagebox.showerror("Error", _("student_dashboard.messages.quick_topup_failed").format(e=e))
+                messagebox.showerror(_t('gui.finance.finance.finance.dialogs.error', default="Error"), _("student_dashboard.messages.quick_topup_failed").format(e=e))
 
         for amount in [10, 20, 50, 100]:
             tk.Button(quick_amounts, text=f"£{amount}", command=lambda amt=amount: quick_top_up(amt),
@@ -885,7 +891,7 @@ class FinanceGUI:
         filter_frame = tk.Frame(trans_frame)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        filter_var = tk.StringVar(value='all')
+        filter_var = tk.StringVar(value=_t('gui.finance.finance.finance.values.all', default='all'))
 
         def apply_filter():
             load_transactions(filter_var.get())
@@ -927,9 +933,9 @@ class FinanceGUI:
                     writer.writerows(cursor.fetchall())
 
                 conn.close()
-                messagebox.showinfo("Success", _("student_dashboard.messages.transactions_exported").format(filename=filename))
+                messagebox.showinfo(_t('gui.finance.finance.finance.dialogs.success', default="Success"), _("student_dashboard.messages.transactions_exported").format(filename=filename))
             except Exception as e:
-                messagebox.showerror("Error", _("student_dashboard.messages.export_failed").format(e=e))
+                messagebox.showerror(_t('gui.finance.finance.finance.dialogs.error', default="Error"), _("student_dashboard.messages.export_failed").format(e=e))
 
         tk.Button(filter_frame, text=_("student_dashboard.buttons.export_csv"), command=export_transactions,
                  bg='#34495e', fg='white', font=('Arial', 9, 'bold'),
@@ -942,11 +948,11 @@ class FinanceGUI:
         columns = ('Date', 'Type', 'Amount', 'Balance', 'Description')
         trans_tree = ttk.Treeview(trans_table_frame, columns=columns, show='headings', height=10)
 
-        trans_tree.heading('Date', text='Date/Time')
-        trans_tree.heading('Type', text='Type')
-        trans_tree.heading('Amount', text='Amount')
-        trans_tree.heading('Balance', text='Balance After')
-        trans_tree.heading('Description', text='Description')
+        trans_tree.heading('Date', text=_t('gui.finance.finance.finance.headings.date_time', default='Date/Time'))
+        trans_tree.heading('Type', text=_t('gui.finance.finance.finance.headings.type', default='Type'))
+        trans_tree.heading('Amount', text=_t('gui.finance.finance.finance.headings.amount', default='Amount'))
+        trans_tree.heading('Balance', text=_t('gui.finance.finance.finance.headings.balance_after', default='Balance After'))
+        trans_tree.heading('Description', text=_t('gui.finance.finance.finance.headings.description', default='Description'))
 
         trans_tree.column('Date', width=150, anchor='center')
         trans_tree.column('Type', width=100, anchor='center')
@@ -1052,7 +1058,7 @@ class FinanceGUI:
         amount_entry.focus()
 
         ttk.Label(top_up_dialog, text=_("finance.labels.payment_method")).pack(pady=5)
-        method_var = tk.StringVar(value='card')
+        method_var = tk.StringVar(value=_t('gui.finance.finance.finance.values.card', default='card'))
         method_combo = ttk.Combobox(top_up_dialog, textvariable=method_var,
                                     values=['card', 'bank_transfer', 'cash', 'online'],
                                     state='readonly', width=18)
@@ -1166,7 +1172,7 @@ class FinanceGUI:
         amount_entry.focus()
 
         ttk.Label(use_dialog, text=_("finance.labels.purpose")).pack(pady=5)
-        purpose_var = tk.StringVar(value='fee_payment')
+        purpose_var = tk.StringVar(value=_t('gui.finance.finance.finance.values.fee_payment', default='fee_payment'))
         purpose_combo = ttk.Combobox(use_dialog, textvariable=purpose_var,
                                      values=['fee_payment', 'library_fine', 'meal_purchase',
                                             'printing', 'club_fee', 'other'],
@@ -1261,7 +1267,7 @@ class FinanceGUI:
         amount_entry.focus()
 
         ttk.Label(withdraw_dialog, text=_("finance.labels.withdrawal_method")).pack(pady=5)
-        method_var = tk.StringVar(value='bank_transfer')
+        method_var = tk.StringVar(value=_t('gui.finance.finance.finance.values.bank_transfer', default='bank_transfer'))
         method_combo = ttk.Combobox(withdraw_dialog, textvariable=method_var,
                                     values=['bank_transfer', 'cash', 'cheque'],
                                     state='readonly', width=18)
@@ -1673,4 +1679,3 @@ class FinanceGUI:
             print(f"Error logging activity: {e}")
 
     # Additional helper methods that might be missing
-

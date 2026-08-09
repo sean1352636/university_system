@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # ProcessWaitlistDialog – process waitlists and enroll students
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.waitlists._imports import _, messagebox, tk, ttk, sqlite3, DEFAULT_DB_PATH
 
@@ -9,7 +11,7 @@ class ProcessWaitlistDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Process Course Waitlists")
+        self.dialog.title(_t('gui.academics.course_management_gui.waitlists.process_dialog.windows.process_course_waitlists', default="Process Course Waitlists"))
         self.dialog.geometry("700x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -22,7 +24,7 @@ class ProcessWaitlistDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Courses with Available Spots and Waitlists",
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.waitlists.process_dialog.labels.courses_with_available_spots_and_waitlists', default="Courses with Available Spots and Waitlists"),
                  font=("Arial", 12, "bold")).pack(pady=10)
 
         # Course waitlist display
@@ -46,10 +48,10 @@ class ProcessWaitlistDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Process Selected", command=self.process_selected).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Process All", command=self.process_all).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.load_waitlist_data).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.waitlists.process_dialog.buttons.process_selected', default="Process Selected"), command=self.process_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.waitlists.process_dialog.buttons.process_all', default="Process All"), command=self.process_all).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.waitlists.process_dialog.buttons.refresh', default="Refresh"), command=self.load_waitlist_data).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.waitlists.process_dialog.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_waitlist_data(self):
         conn = None
@@ -87,7 +89,7 @@ class ProcessWaitlistDialog:
     def process_selected(self):
         selection = self.waitlist_tree.selection()
         if not selection:
-            messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a course to process.")
+            messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.waitlists.process_dialog.dialogs.please_select_a_course_to_process', default="Please select a course to process."))
             return
 
         course_data = self.waitlist_tree.item(selection[0])['values']
@@ -97,7 +99,7 @@ class ProcessWaitlistDialog:
             self.load_waitlist_data()
 
     def process_all(self):
-        if messagebox.askyesno(_("common.confirm"), "Process all waitlists? This will enroll students from waitlists where spots are available."):
+        if messagebox.askyesno(_("common.confirm"), _t('gui.academics.course_management_gui.waitlists.process_dialog.dialogs.process_all_waitlists_this_will_enroll_students_from_waitlists_w', default="Process all waitlists? This will enroll students from waitlists where spots are available.")):
             processed = 0
             for item in self.waitlist_tree.get_children():
                 course_data = self.waitlist_tree.item(item)['values']
@@ -105,7 +107,7 @@ class ProcessWaitlistDialog:
                 if self.process_course_waitlist(course_id, show_messages=False):
                     processed += 1
 
-            messagebox.showinfo("Complete", f"Processed waitlists for {processed} courses.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.waitlists.process_dialog.dialogs.complete', default="Complete"), f"Processed waitlists for {processed} courses.")
             self.load_waitlist_data()
 
     def process_course_waitlist(self, course_id, show_messages=True):
@@ -130,7 +132,7 @@ class ProcessWaitlistDialog:
 
             if available_spots <= 0:
                 if show_messages:
-                    messagebox.showwarning("No Spots", f"No available spots in {code}")
+                    messagebox.showwarning(_t('gui.academics.course_management_gui.waitlists.process_dialog.dialogs.no_spots', default="No Spots"), f"No available spots in {code}")
                 return False
 
             # Get waitlist students

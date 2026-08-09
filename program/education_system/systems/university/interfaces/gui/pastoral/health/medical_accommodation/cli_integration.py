@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # cli_integration.py
 # CLI integration mixin, standalone functions, and main entry point.
 
@@ -22,11 +24,11 @@ class CliIntegrationMixin:
     def launch_cli(self):
         """Launch CLI mode"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
-        if messagebox.askyesno("Launch CLI",
-            "This will open the command-line interface in a new window. Continue?"):
+        if messagebox.askyesno(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.launch_cli', default="Launch CLI"),
+            _t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.this_will_open_the_command_line_interface_in_a_new_window_contin', default="This will open the command-line interface in a new window. Continue?")):
 
             try:
                 thread = threading.Thread(target=self.run_cli_mode)
@@ -34,7 +36,7 @@ class CliIntegrationMixin:
                 thread.start()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to launch CLI: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.error', default="Error"), f"Failed to launch CLI: {str(e)}")
 
     def run_cli_mode(self):
         """Run CLI mode in background"""
@@ -46,12 +48,12 @@ class CliIntegrationMixin:
     def migrate_database_schema(self):
         """Run database schema migration"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
         try:
-            result = messagebox.askyesno("Database Migration",
-                "This will update the database schema. Continue?")
+            result = messagebox.askyesno(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.database_migration', default="Database Migration"),
+                _t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.this_will_update_the_database_schema_continue', default="This will update the database schema. Continue?"))
             if not result:
                 return
 
@@ -62,20 +64,20 @@ class CliIntegrationMixin:
             success2 = fix_accommodation_db_schema()
 
             if success1 and success2:
-                messagebox.showinfo("Success", "Database migration completed successfully")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.success', default="Success"), _t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.database_migration_completed_successfully', default="Database migration completed successfully"))
             else:
-                messagebox.showwarning("Warning", "Migration completed with some issues. Check logs.")
+                messagebox.showwarning(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.warning', default="Warning"), _t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.migration_completed_with_some_issues_check_logs', default="Migration completed with some issues. Check logs."))
 
             self.status_var.set("Migration completed")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Migration failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.error', default="Error"), f"Migration failed: {str(e)}")
             self.status_var.set("Migration failed")
 
     def verify_db_schema(self):
         """Verify database schema and display results"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
         try:
@@ -90,13 +92,13 @@ class CliIntegrationMixin:
             result = output.getvalue()
 
             result_window = tk.Toplevel(self.root)
-            result_window.title("Database Schema Verification")
+            result_window.title(_t('gui.pastoral.health.medical_accommodation.cli_integration.windows.database_schema_verification', default="Database Schema Verification"))
             result_window.geometry("700x600")
 
             main_frame = ttk.Frame(result_window, padding="10")
             main_frame.pack(fill=tk.BOTH, expand=True)
 
-            ttk.Label(main_frame, text="Database Schema Information",
+            ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.cli_integration.labels.database_schema_information', default="Database Schema Information"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
             text_frame = ttk.Frame(main_frame)
@@ -107,14 +109,14 @@ class CliIntegrationMixin:
             text_widget.insert('1.0', result)
             text_widget.config(state='disabled')
 
-            ttk.Button(main_frame, text="Close",
+            ttk.Button(main_frame, text=_t('gui.pastoral.health.medical_accommodation.cli_integration.buttons.close', default="Close"),
                       command=result_window.destroy).pack(pady=10)
 
             if CLI_AVAILABLE:
                 log_action('verify_schema', None, 'Verified database schema')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Schema verification failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.cli_integration.dialogs.error', default="Error"), f"Schema verification failed: {str(e)}")
 
 
 # --- Standalone Functions ---
@@ -257,8 +259,8 @@ def export_gui_data_to_cli_format(output_path=None):
 
     if output_path is None:
         try:
-            from education_system.systems.university.infrastructure import paths
-            export_dir = Path(paths.DATA_DIR) / "exports"
+            from education_system import paths
+            export_dir = Path(paths.UNIVERSITY_DATA_DIR) / "exports"
         except Exception:
             export_dir = Path.cwd() / "exports"
         export_dir.mkdir(parents=True, exist_ok=True)

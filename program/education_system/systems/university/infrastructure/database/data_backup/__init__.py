@@ -7,7 +7,7 @@ here so that existing callers continue to work unchanged.
 """
 
 # ── Re-exported dependencies (patched by tests) ──────────────────────────────
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH, DATA_DIR
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH, UNIVERSITY_DATA_DIR
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 # ── Config / globals ──────────────────────────────────────────────────────────

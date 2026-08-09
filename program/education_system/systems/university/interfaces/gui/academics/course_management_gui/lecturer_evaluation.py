@@ -16,6 +16,8 @@ directory straight from the `instructors` table (the old standalone
 match the 7-criterion lecturer schema).
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import os
 import sqlite3
@@ -447,7 +449,7 @@ class StudentDashboard:
         header.pack(fill="x")
         header.pack_propagate(False)
 
-        tk.Label(header, text="🎓  Lecturer Evaluation",
+        tk.Label(header, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.lecturer_evaluation', default="🎓  Lecturer Evaluation"),
                  bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                  font=Theme.FONT_HEADING).pack(side="left", padx=25, pady=18)
         tk.Label(header, text=f"👤  {self.full_name}  ({self.student_id})",
@@ -457,11 +459,11 @@ class StudentDashboard:
         body = tk.Frame(self.root, bg=Theme.BG)
         body.pack(fill="both", expand=True, padx=25, pady=20)
 
-        tk.Label(body, text="Your Modules — Evaluate Your Lecturers",
+        tk.Label(body, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.your_modules_evaluate_your_lecturers', default="Your Modules — Evaluate Your Lecturers"),
                  bg=Theme.BG, fg=Theme.TEXT, font=Theme.FONT_HEADING).pack(anchor="w")
         tk.Label(body,
-                 text="Select a module below and choose the lecturer you wish to evaluate. "
-                      "Your feedback helps improve teaching quality.",
+                 text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.select_a_module_below_and_choose_the_lecturer_you_wish_to_evalua', default="Select a module below and choose the lecturer you wish to evaluate. "
+                      "Your feedback helps improve teaching quality."),
                  bg=Theme.BG, fg=Theme.TEXT_MUTED, font=Theme.FONT_SMALL,
                  wraplength=900, justify="left").pack(anchor="w", pady=(2, 15))
 
@@ -501,9 +503,9 @@ class StudentDashboard:
 
         actions = tk.Frame(body, bg=Theme.BG)
         actions.pack(fill="x", pady=(15, 0))
-        ttk.Button(actions, text="📝  Evaluate Selected Module",
+        ttk.Button(actions, text=_t('gui.academics.course_management_gui.lecturer_evaluation.buttons.evaluate_selected_module', default="📝  Evaluate Selected Module"),
                    command=self.open_evaluation).pack(side="left")
-        ttk.Button(actions, text="🔄  Refresh",
+        ttk.Button(actions, text=_t('gui.academics.course_management_gui.lecturer_evaluation.buttons.refresh', default="🔄  Refresh"),
                    command=self.load_modules).pack(side="left", padx=10)
 
     def load_modules(self):
@@ -519,15 +521,15 @@ class StudentDashboard:
     def open_evaluation(self):
         sel = self.tree.selection()
         if not sel:
-            messagebox.showinfo("No Selection", "Please select a module to evaluate.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.no_selection', default="No Selection"), _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.please_select_a_module_to_evaluate', default="Please select a module to evaluate."))
             return
         module_code = sel[0]
         module_name = self.tree.item(module_code)["values"][1]
         lecturers = self.db.get_lecturers()
         if not lecturers:
             messagebox.showwarning(
-                "No Lecturers",
-                "No lecturers are listed in the directory yet. Please contact an administrator.")
+                _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.no_lecturers', default="No Lecturers"),
+                _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.no_lecturers_are_listed_in_the_directory_yet_please_contact_an_a', default="No lecturers are listed in the directory yet. Please contact an administrator."))
             return
         EvaluationForm(self.root, self.db, self.student_id,
                        module_code, module_name, lecturers, self.load_modules)
@@ -557,7 +559,7 @@ class EvaluationForm:
         self.on_submit = on_submit
 
         self.win = tk.Toplevel(parent)
-        self.win.title("Lecturer Evaluation Form")
+        self.win.title(_t('gui.academics.course_management_gui.lecturer_evaluation.windows.lecturer_evaluation_form', default="Lecturer Evaluation Form"))
         self.win.geometry("760x820")
         self.win.configure(bg=Theme.BG)
         self.win.transient(parent)
@@ -571,7 +573,7 @@ class EvaluationForm:
         header = tk.Frame(self.win, bg=Theme.HEADER_BG, height=100)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Lecturer Evaluation Form", bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
+        tk.Label(header, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.lecturer_evaluation_form', default="Lecturer Evaluation Form"), bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                  font=Theme.FONT_HEADING).pack(anchor="w", padx=25, pady=(18, 0))
         tk.Label(header, text=f"{self.module_code} — {self.module_name}",
                  bg=Theme.HEADER_BG, fg=Theme.HEADER_FG_MUTED,
@@ -593,9 +595,9 @@ class EvaluationForm:
         picker = tk.Frame(inner, bg=Theme.CARD,
                           highlightbackground=Theme.BORDER, highlightthickness=1)
         picker.pack(fill="x", padx=10, pady=(0, 12))
-        tk.Label(picker, text="Lecturer", bg=Theme.CARD, fg=Theme.PRIMARY,
+        tk.Label(picker, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.lecturer', default="Lecturer"), bg=Theme.CARD, fg=Theme.PRIMARY,
                  font=Theme.FONT_BOLD).pack(anchor="w", padx=12, pady=(8, 0))
-        tk.Label(picker, text="Select the lecturer you wish to evaluate for this module.",
+        tk.Label(picker, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.select_the_lecturer_you_wish_to_evaluate_for_this_module', default="Select the lecturer you wish to evaluate for this module."),
                  bg=Theme.CARD, fg=Theme.TEXT_MUTED,
                  font=Theme.FONT_SMALL).pack(anchor="w", padx=12)
         self._lecturer_map = {f"{l[1]} — {l[2]}": l[0] for l in self.lecturers}
@@ -607,18 +609,18 @@ class EvaluationForm:
         info = tk.Frame(inner, bg="#f7f3e8",
                         highlightbackground=Theme.ACCENT, highlightthickness=1)
         info.pack(fill="x", padx=10, pady=(0, 15))
-        tk.Label(info, text="📋  Rating Scale",
+        tk.Label(info, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.rating_scale', default="📋  Rating Scale"),
                  bg="#f7f3e8", fg=Theme.PRIMARY, font=Theme.FONT_BOLD).pack(anchor="w", padx=12, pady=(8, 2))
         tk.Label(info,
-                 text="1 = Poor   •   2 = Below Average   •   3 = Average   •   4 = Good   •   5 = Excellent",
+                 text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.value_1_poor_2_below_average_3_average_4_good_5_excellent', default="1 = Poor   •   2 = Below Average   •   3 = Average   •   4 = Good   •   5 = Excellent"),
                  bg="#f7f3e8", fg=Theme.TEXT, font=Theme.FONT_SMALL).pack(anchor="w", padx=12, pady=(0, 8))
 
         for key, label, desc in self.CRITERIA:
             self.build_criterion(inner, key, label, desc)
 
-        tk.Label(inner, text="Additional Comments (Optional)",
+        tk.Label(inner, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.additional_comments_optional', default="Additional Comments (Optional)"),
                  bg=Theme.BG, fg=Theme.TEXT, font=Theme.FONT_BOLD).pack(anchor="w", padx=10, pady=(10, 4))
-        tk.Label(inner, text="Share any specific feedback, suggestions, or praise.",
+        tk.Label(inner, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.share_any_specific_feedback_suggestions_or_praise', default="Share any specific feedback, suggestions, or praise."),
                  bg=Theme.BG, fg=Theme.TEXT_MUTED, font=Theme.FONT_SMALL).pack(anchor="w", padx=10)
         self.comments = scrolledtext.ScrolledText(inner, height=5, font=Theme.FONT_BODY,
                                                   relief="solid", bd=1, wrap="word")
@@ -626,10 +628,10 @@ class EvaluationForm:
 
         btns = tk.Frame(inner, bg=Theme.BG)
         btns.pack(fill="x", padx=10, pady=(0, 10))
-        tk.Button(btns, text="Submit Evaluation", bg=Theme.SUCCESS, fg="white",
+        tk.Button(btns, text=_t('gui.academics.course_management_gui.lecturer_evaluation.buttons.submit_evaluation', default="Submit Evaluation"), bg=Theme.SUCCESS, fg="white",
                   font=Theme.FONT_BOLD, relief="flat", cursor="hand2",
                   padx=25, pady=10, command=self.submit).pack(side="left")
-        ttk.Button(btns, text="Cancel",
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.lecturer_evaluation.buttons.cancel', default="Cancel"),
                    command=self.win.destroy).pack(side="left", padx=10)
 
     def build_criterion(self, parent, key, label, desc):
@@ -658,18 +660,18 @@ class EvaluationForm:
         lecturer_label = self.lecturer_combo.get()
         lecturer_id = self._lecturer_map.get(lecturer_label)
         if not lecturer_id:
-            messagebox.showwarning("Lecturer Required", "Please select a lecturer.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.lecturer_required', default="Lecturer Required"), _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.please_select_a_lecturer', default="Please select a lecturer."))
             return
 
         missing = [label for key, label, _ in self.CRITERIA if self.ratings[key].get() == 0]
         if missing:
-            messagebox.showwarning("Incomplete",
+            messagebox.showwarning(_t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.incomplete', default="Incomplete"),
                                    "Please rate all criteria:\n\n• " + "\n• ".join(missing))
             return
 
         if self.db.has_evaluated(self.student_id, self.module_code, lecturer_id):
-            messagebox.showinfo("Already Evaluated",
-                                "You have already evaluated this lecturer for this module.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.already_evaluated', default="Already Evaluated"),
+                                _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.you_have_already_evaluated_this_lecturer_for_this_module', default="You have already evaluated this lecturer for this module."))
             return
 
         comments = self.comments.get("1.0", "end").strip()
@@ -687,12 +689,12 @@ class EvaluationForm:
         )
         ok, msg = self.db.submit_evaluation(data)
         if ok:
-            messagebox.showinfo("Thank You",
-                                "Your evaluation has been submitted.\nThank you for your feedback!")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.thank_you', default="Thank You"),
+                                _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.your_evaluation_has_been_submitted_thank_you_for_your_feedback', default="Your evaluation has been submitted.\nThank you for your feedback!"))
             self.on_submit()
             self.win.destroy()
         else:
-            messagebox.showerror("Error", msg)
+            messagebox.showerror(_t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.error', default="Error"), msg)
 
 
 # ---------------------------------------------------------------------------
@@ -722,7 +724,7 @@ class AdminDashboard:
         header = tk.Frame(self.root, bg=Theme.HEADER_BG, height=70)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="🏛  Lecturer Evaluation — Administrator",
+        tk.Label(header, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.lecturer_evaluation_administrator', default="🏛  Lecturer Evaluation — Administrator"),
                  bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                  font=Theme.FONT_HEADING).pack(side="left", padx=25, pady=18)
         tk.Label(header, text=f"👤  {self.full_name}",
@@ -743,16 +745,16 @@ class AdminDashboard:
 
         self.tab_reports = tk.Frame(self.nb, bg=Theme.BG)
 
-        self.nb.add(self.tab_reports, text="  📊  Evaluation Reports  ")
+        self.nb.add(self.tab_reports, text=_t('gui.academics.course_management_gui.lecturer_evaluation.tabs.evaluation_reports', default="  📊  Evaluation Reports  "))
 
         self.build_reports_tab()
 
     # -- Reports ------------------------------------------------------------
     def build_reports_tab(self):
         tab = self.tab_reports
-        tk.Label(tab, text="Lecturer Performance Summary",
+        tk.Label(tab, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.lecturer_performance_summary', default="Lecturer Performance Summary"),
                  bg=Theme.BG, fg=Theme.TEXT, font=Theme.FONT_HEADING).pack(anchor="w", padx=10, pady=(10, 4))
-        tk.Label(tab, text="Double-click a lecturer to view their detailed evaluation report.",
+        tk.Label(tab, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.double_click_a_lecturer_to_view_their_detailed_evaluation_report', default="Double-click a lecturer to view their detailed evaluation report."),
                  bg=Theme.BG, fg=Theme.TEXT_MUTED, font=Theme.FONT_SMALL).pack(anchor="w", padx=10, pady=(0, 10))
 
         frame = tk.Frame(tab, bg=Theme.CARD,
@@ -776,9 +778,9 @@ class AdminDashboard:
 
         actions = tk.Frame(tab, bg=Theme.BG)
         actions.pack(fill="x", padx=10, pady=5)
-        ttk.Button(actions, text="📄  View Detailed Report",
+        ttk.Button(actions, text=_t('gui.academics.course_management_gui.lecturer_evaluation.buttons.view_detailed_report', default="📄  View Detailed Report"),
                    command=self.view_report).pack(side="left")
-        ttk.Button(actions, text="🔄  Refresh",
+        ttk.Button(actions, text=_t('gui.academics.course_management_gui.lecturer_evaluation.buttons.refresh', default="🔄  Refresh"),
                    command=self.load_summaries).pack(side="left", padx=10)
 
         self.load_summaries()
@@ -800,7 +802,7 @@ class AdminDashboard:
     def view_report(self):
         sel = self.lecturer_tree.selection()
         if not sel:
-            messagebox.showinfo("No Selection", "Please select a lecturer.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.no_selection', default="No Selection"), _t('gui.academics.course_management_gui.lecturer_evaluation.dialogs.please_select_a_lecturer', default="Please select a lecturer."))
             return
         LecturerReportWindow(self.root, self.db, int(sel[0]))
 
@@ -855,9 +857,9 @@ class LecturerReportWindow:
         count = stats[0] if stats else 0
 
         if count == 0:
-            tk.Label(body, text="No evaluations have been submitted yet.",
+            tk.Label(body, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.no_evaluations_have_been_submitted_yet', default="No evaluations have been submitted yet."),
                      bg=Theme.BG, fg=Theme.TEXT_MUTED, font=Theme.FONT_HEADING).pack(pady=60)
-            ttk.Button(body, text="Close",
+            ttk.Button(body, text=_t('gui.academics.course_management_gui.lecturer_evaluation.buttons.close', default="Close"),
                        command=self.win.destroy).pack()
             return
 
@@ -884,7 +886,7 @@ class LecturerReportWindow:
         star_str = "★" * stars_filled + "☆" * (5 - stars_filled)
         card(summary, "Stars", star_str, Theme.ACCENT)
 
-        tk.Label(body, text="Rating Breakdown", bg=Theme.BG, fg=Theme.TEXT,
+        tk.Label(body, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.rating_breakdown', default="Rating Breakdown"), bg=Theme.BG, fg=Theme.TEXT,
                  font=Theme.FONT_HEADING).pack(anchor="w", pady=(20, 8))
 
         breakdown = tk.Frame(body, bg=Theme.CARD,
@@ -906,7 +908,7 @@ class LecturerReportWindow:
             tk.Label(row, text=f"{avg:.2f}", bg=Theme.CARD, fg=Theme.TEXT,
                      font=Theme.FONT_BOLD, width=6).pack(side="left")
 
-        tk.Label(body, text="Student Comments", bg=Theme.BG, fg=Theme.TEXT,
+        tk.Label(body, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.student_comments', default="Student Comments"), bg=Theme.BG, fg=Theme.TEXT,
                  font=Theme.FONT_HEADING).pack(anchor="w", pady=(20, 8))
 
         comments_frame = tk.Frame(body, bg=Theme.CARD,
@@ -934,7 +936,7 @@ class LecturerReportWindow:
         text.tag_config("body",   foreground=Theme.TEXT, font=Theme.FONT_BODY)
         text.config(state="disabled")
 
-        ttk.Button(body, text="Close",
+        ttk.Button(body, text=_t('gui.academics.course_management_gui.lecturer_evaluation.buttons.close', default="Close"),
                    command=self.win.destroy).pack(pady=(15, 0))
 
     @staticmethod
@@ -988,21 +990,21 @@ class App:
 
     def _show_no_auth_screen(self):
         if hasattr(self.root, "wm_title"):
-            self.root.title("Lecturer Evaluation")
+            self.root.title(_t('gui.academics.course_management_gui.lecturer_evaluation.windows.lecturer_evaluation', default="Lecturer Evaluation"))
             self.root.geometry("520x260")
         try:
             self.root.configure(bg=Theme.BG)
         except tk.TclError:
             pass
-        tk.Label(self.root, text="🔒  Authentication Required",
+        tk.Label(self.root, text=_t('gui.academics.course_management_gui.lecturer_evaluation.labels.authentication_required', default="🔒  Authentication Required"),
                  bg=Theme.BG, fg=Theme.PRIMARY,
                  font=Theme.FONT_HEADING).pack(pady=(40, 10))
         tk.Label(self.root,
-                 text=("Please launch this module from the main\n"
-                       "University System after signing in."),
+                 text=(_t('gui.academics.course_management_gui.lecturer_evaluation.labels.please_launch_this_module_from_the_main_university_system_after', default="Please launch this module from the main\n"
+                       "University System after signing in.")),
                  bg=Theme.BG, fg=Theme.TEXT, font=Theme.FONT_BODY,
                  justify="center").pack(pady=10)
-        ttk.Button(self.root, text="Close",
+        ttk.Button(self.root, text=_t('gui.academics.course_management_gui.lecturer_evaluation.buttons.close', default="Close"),
                    command=self.root.destroy).pack(pady=20)
 
     def run(self):

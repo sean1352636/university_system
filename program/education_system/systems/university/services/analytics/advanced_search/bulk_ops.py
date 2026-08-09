@@ -113,28 +113,37 @@ def mass_email_students():
     print(f"\n📧 MASS EMAIL ({len(_globals.last_search_results)} recipients)")
     print("="*50)
 
-    # Email configuration (in production, use proper email service)
-    smtp_server = input("SMTP Server (or press Enter for simulation): ").strip()
+    subject = input("Email subject: ").strip()
+    message = input("Email message: ").strip()
+    if not subject or not message:
+        print("Subject and message are required.")
+        return {"sent": 0, "failed": []}
+    recipients = [str(student[1]).strip() for student in _globals.last_search_results if student[1]]
+    result = send_bulk_email(recipients, subject, message)
+    print(f"Sent: {result['sent']}; failed: {len(result['failed'])}")
+    for email in result['failed']:
+        print(f"  ✗ {email}")
+    return result
 
-    if not smtp_server:
-        print("📧 EMAIL SIMULATION MODE")
-        subject = input("Email subject: ").strip()
-        message = input("Email message: ").strip()
 
-        print(f"\n✅ Simulated email sent to {len(_globals.last_search_results)} students:")
-        print(f"Subject: {subject}")
-        print(f"Message: {message}")
-
-        # In real implementation, would send actual emails
-        for student in _globals.last_search_results[:5]:  # Show first 5
-            print(f"  → {student[1]} ({student[3]} {student[5]})")
-
-        if len(_globals.last_search_results) > 5:
-            print(f"  ... and {len(_globals.last_search_results) - 5} more")
-
-    else:
-        # Real email implementation would go here
-        print("Real email sending not implemented in this demo.")
+def send_bulk_email(recipients, subject, message, batch_size=50):
+    """Deliver a message through the central service and report each failure."""
+    from education_system.systems.university.infrastructure.email.email_service import send_email
+    if batch_size < 1:
+        raise ValueError("batch_size must be positive")
+    sent, failed = 0, []
+    unique = list(dict.fromkeys(recipients))
+    for start in range(0, len(unique), batch_size):
+        for recipient in unique[start:start + batch_size]:
+            try:
+                success = send_email(recipient_email=recipient, subject=subject, body=message)
+            except Exception:
+                success = False
+            if success:
+                sent += 1
+            else:
+                failed.append(recipient)
+    return {"sent": sent, "failed": failed}
 
 def batch_data_updates():
     """Perform batch updates on student data"""

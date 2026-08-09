@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -10,11 +12,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -191,7 +193,7 @@ class AdvancedCourseSearchDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Advanced Course Search")
+        self.dialog.title(_t('gui.academics.course_management_gui.search.search.windows.advanced_course_search', default="Advanced Course Search"))
         self.dialog.geometry("800x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -203,7 +205,7 @@ class AdvancedCourseSearchDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Advanced Course Search", font=("Arial", 14, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.search.search.labels.advanced_course_search', default="Advanced Course Search"), font=("Arial", 14, "bold")).pack(pady=10)
 
         # Create notebook for different search types
         notebook = ttk.Notebook(main_frame)
@@ -211,32 +213,32 @@ class AdvancedCourseSearchDialog:
 
         # Basic Search Tab
         basic_frame = ttk.Frame(notebook)
-        notebook.add(basic_frame, text="Basic Search")
+        notebook.add(basic_frame, text=_t('gui.academics.course_management_gui.search.search.tabs.basic_search', default="Basic Search"))
         self.create_basic_search(basic_frame)
 
         # Advanced Filters Tab
         advanced_frame = ttk.Frame(notebook)
-        notebook.add(advanced_frame, text="Advanced Filters")
+        notebook.add(advanced_frame, text=_t('gui.academics.course_management_gui.search.search.tabs.advanced_filters', default="Advanced Filters"))
         self.create_advanced_filters(advanced_frame)
 
         # Results Tab
         results_frame = ttk.Frame(notebook)
-        notebook.add(results_frame, text="Search Results")
+        notebook.add(results_frame, text=_t('gui.academics.course_management_gui.search.search.tabs.search_results', default="Search Results"))
         self.create_results_display(results_frame)
 
         # Saved searches bar
-        saved_bar = ttk.LabelFrame(main_frame, text="Saved Searches", padding=8)
+        saved_bar = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.search.search.labels.saved_searches', default="Saved Searches"), padding=8)
         saved_bar.pack(fill=tk.X, pady=(0, 5))
-        ttk.Label(saved_bar, text="Load:").pack(side=tk.LEFT)
+        ttk.Label(saved_bar, text=_t('gui.academics.course_management_gui.search.search.labels.load', default="Load:")).pack(side=tk.LEFT)
         self.saved_search_var = tk.StringVar()
         self.saved_search_combo = ttk.Combobox(saved_bar, textvariable=self.saved_search_var,
                                                state="readonly", width=30)
         self.saved_search_combo.pack(side=tk.LEFT, padx=(4, 8))
-        ttk.Button(saved_bar, text="Apply",
+        ttk.Button(saved_bar, text=_t('gui.academics.course_management_gui.search.search.buttons.apply', default="Apply"),
                    command=self.load_saved_search).pack(side=tk.LEFT, padx=2)
-        ttk.Button(saved_bar, text="Delete",
+        ttk.Button(saved_bar, text=_t('gui.academics.course_management_gui.search.search.buttons.delete', default="Delete"),
                    command=self.delete_saved_search).pack(side=tk.LEFT, padx=2)
-        ttk.Button(saved_bar, text="Save current...",
+        ttk.Button(saved_bar, text=_t('gui.academics.course_management_gui.search.search.buttons.save_current', default="Save current..."),
                    command=self.save_current_search).pack(side=tk.RIGHT, padx=2)
         self._refresh_saved_searches()
 
@@ -244,18 +246,18 @@ class AdvancedCourseSearchDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Search", command=self.perform_search).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Clear", command=self.clear_search).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Export Results", command=self.export_results).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.search', default="Search"), command=self.perform_search).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.clear', default="Clear"), command=self.clear_search).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.export_results', default="Export Results"), command=self.export_results).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def create_basic_search(self, parent):
         # Keyword search
-        keyword_frame = ttk.LabelFrame(parent, text="Keyword Search", padding=10)
+        keyword_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.search.search.labels.keyword_search', default="Keyword Search"), padding=10)
         keyword_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(keyword_frame, text="Search in:").grid(row=0, column=0, sticky=tk.W)
-        self.search_in_var = tk.StringVar(value="all")
+        ttk.Label(keyword_frame, text=_t('gui.academics.course_management_gui.search.search.labels.search_in', default="Search in:")).grid(row=0, column=0, sticky=tk.W)
+        self.search_in_var = tk.StringVar(value=_t('gui.academics.course_management_gui.search.search.values.all', default="all"))
 
         search_options = [
             ("All fields", "all"),
@@ -268,37 +270,37 @@ class AdvancedCourseSearchDialog:
             ttk.Radiobutton(keyword_frame, text=text, variable=self.search_in_var,
                            value=value).grid(row=i+1, column=0, sticky=tk.W)
 
-        ttk.Label(keyword_frame, text="Keywords:").grid(row=0, column=1, sticky=tk.W, padx=(20,0))
+        ttk.Label(keyword_frame, text=_t('gui.academics.course_management_gui.search.search.labels.keywords', default="Keywords:")).grid(row=0, column=1, sticky=tk.W, padx=(20,0))
         self.keyword_var = tk.StringVar()
         ttk.Entry(keyword_frame, textvariable=self.keyword_var, width=40).grid(row=1, column=1, sticky=tk.W, padx=(20,0))
 
         # Quick filters
-        quick_frame = ttk.LabelFrame(parent, text="Quick Filters", padding=10)
+        quick_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.search.search.labels.quick_filters', default="Quick Filters"), padding=10)
         quick_frame.pack(fill=tk.X, pady=5)
 
         self.only_available = tk.BooleanVar()
-        ttk.Checkbutton(quick_frame, text="Only courses with available spots",
+        ttk.Checkbutton(quick_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.only_courses_with_available_spots', default="Only courses with available spots"),
                        variable=self.only_available).pack(anchor=tk.W)
 
         self.only_active = tk.BooleanVar(value=True)
-        ttk.Checkbutton(quick_frame, text="Only active courses",
+        ttk.Checkbutton(quick_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.only_active_courses', default="Only active courses"),
                        variable=self.only_active).pack(anchor=tk.W)
 
         self.online_only = tk.BooleanVar()
-        ttk.Checkbutton(quick_frame, text="Only online available courses",
+        ttk.Checkbutton(quick_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.only_online_available_courses', default="Only online available courses"),
                        variable=self.online_only).pack(anchor=tk.W)
 
         self.no_lab = tk.BooleanVar()
-        ttk.Checkbutton(quick_frame, text="Exclude lab courses",
+        ttk.Checkbutton(quick_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.exclude_lab_courses', default="Exclude lab courses"),
                        variable=self.no_lab).pack(anchor=tk.W)
 
     def create_advanced_filters(self, parent):
         # Academic filters
-        academic_frame = ttk.LabelFrame(parent, text="Academic Criteria", padding=10)
+        academic_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.search.search.labels.academic_criteria', default="Academic Criteria"), padding=10)
         academic_frame.pack(fill=tk.X, pady=5)
 
         # Department multi-select
-        ttk.Label(academic_frame, text="Departments:").grid(row=0, column=0, sticky=tk.NW)
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.search.search.labels.departments', default="Departments:")).grid(row=0, column=0, sticky=tk.NW)
         dept_frame = ttk.Frame(academic_frame)
         dept_frame.grid(row=0, column=1, sticky=tk.W, padx=5)
 
@@ -306,7 +308,7 @@ class AdvancedCourseSearchDialog:
         self.load_departments(dept_frame)
 
         # Level selection
-        ttk.Label(academic_frame, text="Levels:").grid(row=1, column=0, sticky=tk.NW, pady=(10,0))
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.search.search.labels.levels', default="Levels:")).grid(row=1, column=0, sticky=tk.NW, pady=(10,0))
         level_frame = ttk.Frame(academic_frame)
         level_frame.grid(row=1, column=1, sticky=tk.W, padx=5, pady=(10,0))
 
@@ -320,31 +322,31 @@ class AdvancedCourseSearchDialog:
         # Instructor filter (matches first or last name; runs against the
         # course's primary instructor only — schedule-level co-instructors
         # are not searched).
-        instructor_frame = ttk.LabelFrame(parent, text="Instructor", padding=10)
+        instructor_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.search.search.labels.instructor', default="Instructor"), padding=10)
         instructor_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(instructor_frame, text="Name contains:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(instructor_frame, text=_t('gui.academics.course_management_gui.search.search.labels.name_contains', default="Name contains:")).grid(row=0, column=0, sticky=tk.W)
         self.instructor_var = tk.StringVar()
         ttk.Entry(instructor_frame, textvariable=self.instructor_var, width=30
                   ).grid(row=0, column=1, padx=5, sticky=tk.W)
 
         # Credit hours range
-        credits_frame = ttk.LabelFrame(parent, text="Credit Hours", padding=10)
+        credits_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.search.search.labels.credit_hours', default="Credit Hours"), padding=10)
         credits_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(credits_frame, text="Min:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(credits_frame, text=_t('gui.academics.course_management_gui.search.search.labels.min', default="Min:")).grid(row=0, column=0, sticky=tk.W)
         self.min_credits_var = tk.StringVar()
         ttk.Entry(credits_frame, textvariable=self.min_credits_var, width=10).grid(row=0, column=1, padx=5)
 
-        ttk.Label(credits_frame, text="Max:").grid(row=0, column=2, sticky=tk.W, padx=(20,0))
+        ttk.Label(credits_frame, text=_t('gui.academics.course_management_gui.search.search.labels.max', default="Max:")).grid(row=0, column=2, sticky=tk.W, padx=(20,0))
         self.max_credits_var = tk.StringVar()
         ttk.Entry(credits_frame, textvariable=self.max_credits_var, width=10).grid(row=0, column=3, padx=5)
 
         # Enrollment filters
-        enrollment_frame = ttk.LabelFrame(parent, text="Enrollment Criteria", padding=10)
+        enrollment_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.search.search.labels.enrollment_criteria', default="Enrollment Criteria"), padding=10)
         enrollment_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(enrollment_frame, text="Fill rate:").grid(row=0, column=0, sticky=tk.W)
-        self.fill_rate_var = tk.StringVar(value="any")
+        ttk.Label(enrollment_frame, text=_t('gui.academics.course_management_gui.search.search.labels.fill_rate', default="Fill rate:")).grid(row=0, column=0, sticky=tk.W)
+        self.fill_rate_var = tk.StringVar(value=_t('gui.academics.course_management_gui.search.search.values.any', default="any"))
 
         fill_options = [
             ("Any", "any"),
@@ -392,7 +394,7 @@ class AdvancedCourseSearchDialog:
         parent.grid_columnconfigure(0, weight=1)
 
         # Results summary
-        self.results_summary = ttk.Label(parent, text="No search performed yet")
+        self.results_summary = ttk.Label(parent, text=_t('gui.academics.course_management_gui.search.search.labels.no_search_performed_yet', default="No search performed yet"))
         self.results_summary.grid(row=2, column=0, columnspan=2, pady=5)
 
         # Double-click for details
@@ -568,15 +570,15 @@ class AdvancedCourseSearchDialog:
         for item in self.results_tree.get_children():
             self.results_tree.delete(item)
 
-        self.results_summary.config(text="Search cleared")
+        self.results_summary.config(text=_t('gui.academics.course_management_gui.search.search.text.search_cleared', default="Search cleared"))
 
     def export_results(self):
         if not self.results_tree.get_children():
-            messagebox.showwarning("No Results", "No search results to export.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.search.search.dialogs.no_results', default="No Results"), _t('gui.academics.course_management_gui.search.search.dialogs.no_search_results_to_export', default="No search results to export."))
             return
 
         filename = filedialog.asksaveasfilename(
-            title="Export Search Results",
+            title=_t('gui.academics.course_management_gui.search.search.dialogs.export_search_results', default="Export Search Results"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
@@ -702,7 +704,7 @@ class AdvancedCourseSearchDialog:
             self.saved_search_var.set("")
 
     def save_current_search(self):
-        name = simpledialog.askstring("Save Search", "Name for this saved search:",
+        name = simpledialog.askstring(_t('gui.academics.course_management_gui.search.search.dialogs.save_search', default="Save Search"), _t('gui.academics.course_management_gui.search.search.dialogs.name_for_this_saved_search', default="Name for this saved search:"),
                                       parent=self.dialog)
         if not name:
             return
@@ -736,7 +738,7 @@ class AdvancedCourseSearchDialog:
         name = self.saved_search_var.get().strip()
         if not name:
             messagebox.showinfo(_("common.info", default="Info"),
-                                "Pick a saved search from the dropdown first.")
+                                _t('gui.academics.course_management_gui.search.search.dialogs.pick_a_saved_search_from_the_dropdown_first', default="Pick a saved search from the dropdown first."))
             return
         try:
             with sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0) as conn:
@@ -795,7 +797,7 @@ class AdvancedSearchDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Advanced Search")
+        self.dialog.title(_t('gui.academics.course_management_gui.search.search.windows.advanced_search', default="Advanced Search"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -808,48 +810,48 @@ class AdvancedSearchDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Advanced Course Search", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.search.search.labels.advanced_course_search', default="Advanced Course Search"), font=("Arial", 12, "bold")).pack(pady=10)
 
         # Search criteria
-        criteria_frame = ttk.LabelFrame(main_frame, text="Search Criteria", padding=10)
+        criteria_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.search.search.labels.search_criteria', default="Search Criteria"), padding=10)
         criteria_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(criteria_frame, text="Keyword:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(criteria_frame, text=_t('gui.academics.course_management_gui.search.search.labels.keyword', default="Keyword:")).grid(row=0, column=0, sticky=tk.W)
         self.keyword_var = tk.StringVar()
         ttk.Entry(criteria_frame, textvariable=self.keyword_var, width=30).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(criteria_frame, text="Department:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(criteria_frame, text=_t('gui.academics.course_management_gui.search.search.labels.department', default="Department:")).grid(row=1, column=0, sticky=tk.W)
         self.department_var = tk.StringVar()
         ttk.Entry(criteria_frame, textvariable=self.department_var, width=30).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(criteria_frame, text="Level:").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(criteria_frame, text=_t('gui.academics.course_management_gui.search.search.labels.level', default="Level:")).grid(row=2, column=0, sticky=tk.W)
         self.level_var = tk.StringVar()
         ttk.Entry(criteria_frame, textvariable=self.level_var, width=30).grid(row=2, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(criteria_frame, text="Course Type:").grid(row=3, column=0, sticky=tk.W)
+        ttk.Label(criteria_frame, text=_t('gui.academics.course_management_gui.search.search.labels.course_type', default="Course Type:")).grid(row=3, column=0, sticky=tk.W)
         self.type_var = tk.StringVar()
         ttk.Entry(criteria_frame, textvariable=self.type_var, width=30).grid(row=3, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(criteria_frame, text="Min Credits:").grid(row=4, column=0, sticky=tk.W)
+        ttk.Label(criteria_frame, text=_t('gui.academics.course_management_gui.search.search.labels.min_credits', default="Min Credits:")).grid(row=4, column=0, sticky=tk.W)
         self.min_credits_var = tk.StringVar()
         ttk.Entry(criteria_frame, textvariable=self.min_credits_var, width=15).grid(row=4, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(criteria_frame, text="Max Credits:").grid(row=5, column=0, sticky=tk.W)
+        ttk.Label(criteria_frame, text=_t('gui.academics.course_management_gui.search.search.labels.max_credits', default="Max Credits:")).grid(row=5, column=0, sticky=tk.W)
         self.max_credits_var = tk.StringVar()
         ttk.Entry(criteria_frame, textvariable=self.max_credits_var, width=15).grid(row=5, column=1, sticky=tk.W, padx=5)
 
         # Status filter
         self.show_available_only = tk.BooleanVar()
-        ttk.Checkbutton(criteria_frame, text="Show only courses with available spots",
+        ttk.Checkbutton(criteria_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.show_only_courses_with_available_spots', default="Show only courses with available spots"),
                        variable=self.show_available_only).grid(row=6, column=0, columnspan=2, sticky=tk.W, pady=5)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Search", command=self.perform_search).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Clear", command=self.clear_fields).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.search', default="Search"), command=self.perform_search).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.search.search.buttons.clear', default="Clear"), command=self.clear_fields).pack(side=tk.LEFT, padx=5)
 
     def clear_fields(self):
         for var in [self.keyword_var, self.department_var, self.level_var, self.type_var,

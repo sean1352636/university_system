@@ -27,7 +27,7 @@ import logging
 import re
 from typing import Any
 
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.operations.communications.messages import (
     messages as _messages,
 )
@@ -43,7 +43,7 @@ class TemplateError(Exception):
 
 def load_template(name: str) -> dict[str, Any]:
     """Load and JSON-parse one template by filename stem."""
-    path = paths.EMAIL_TEMPLATES_DIR / f"{name}.json"
+    path = paths.SIXTH_FORM_EMAIL_TEMPLATES_DIR / f"{name}.json"
     if not path.is_file():
         raise TemplateError(f"Email template not found: {path}")
     try:

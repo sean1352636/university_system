@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # Auto-generated module
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -515,7 +517,7 @@ def show_ucas_management_gui(self):
         try:
             from tkinter import messagebox
             messagebox.showerror(
-                "UCAS Management",
+                _t('gui.shell.main.features.student_affairs.dialogs.ucas_management', default="UCAS Management"),
                 f"Could not open UCAS Management:\n{e}")
         except Exception:
             print(f"UCAS Management failed to open: {e}")
@@ -577,8 +579,8 @@ def show_equality_diversity_gui(self):
     try:
         if not self.auth or not getattr(self.auth, "current_user", None):
             messagebox.showerror(
-                "Equality & Diversity",
-                "You must be logged in to open the Equality & Diversity system.",
+                _t('gui.shell.main.features.student_affairs.dialogs.equality_diversity', default="Equality & Diversity"),
+                _t('gui.shell.main.features.student_affairs.dialogs.you_must_be_logged_in_to_open_the_equality_diversity_system', default="You must be logged in to open the Equality & Diversity system."),
             )
             return
         from education_system.systems.university.domain.pastoral.equality_diversity import (
@@ -595,7 +597,7 @@ def show_equality_diversity_gui(self):
     except Exception as e:
         logger.error(f"Error opening Equality & Diversity GUI: {e}")
         messagebox.showerror(
-            "Equality & Diversity",
+            _t('gui.shell.main.features.student_affairs.dialogs.equality_diversity', default="Equality & Diversity"),
             f"Failed to open Equality & Diversity system: {e}",
         )
 

@@ -1,0 +1,11 @@
+{
+  "template_id": "calendar_event_changed",
+  "description": "Tells an event's audience exactly what moved — date, time, location or status — when a scheduled event is edited. Triggered by the calendar change-notice flow.",
+  "channel": "Email",
+  "category": "Calendar",
+  "priority": "High",
+  "from_name": "Sixth Form Calendar",
+  "from_address": "calendar@sixthform.ac.uk",
+  "subject": "Changed: {{event_title}}",
+  "body": "Hi {{first_name}},\n\nPlease note a change to an event you may be attending:\n\n{{change_lines}}\n\nIt now runs:\n\n  When:  {{event_date}}, {{event_time}}\n  Where: {{event_location}}\n\n{{reason_line}}\n\nPlease pass this on to anyone you know who was planning to attend.\n\n{{system_name}}"
+}

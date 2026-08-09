@@ -13,6 +13,8 @@ import sqlite3
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+from education_system.paths import PLATFORM_DB_FILES_DIR
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_REGION = "england_and_wales"
@@ -56,11 +58,9 @@ _SEED_2027: list[tuple[str, str]] = [
 
 
 def _default_db_path() -> Path:
-    """Default to ``shared/data/db_files/bank_holidays.db``."""
-    shared_root = Path(__file__).resolve().parent.parent
-    db_dir = shared_root / "data" / "db_files"
-    db_dir.mkdir(parents=True, exist_ok=True)
-    return db_dir / "bank_holidays.db"
+    """Default to ``var/data/platform/db_files/bank_holidays.db``."""
+    PLATFORM_DB_FILES_DIR.mkdir(parents=True, exist_ok=True)
+    return PLATFORM_DB_FILES_DIR / "bank_holidays.db"
 
 
 class BankHolidayService:

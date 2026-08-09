@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -378,7 +380,7 @@ class StudentUnionGUI:
         except Exception as e:
             from tkinter import messagebox
             messagebox.showerror(
-                "Election Voting Portal",
+                _t('gui.pastoral.student_union_gui.core.main.dialogs.election_voting_portal', default="Election Voting Portal"),
                 f"Could not launch the elections hub:\n{e}",
                 parent=getattr(self, 'root', None))
             return
@@ -418,7 +420,7 @@ class StudentUnionGUI:
         except Exception as e:
             from tkinter import messagebox
             messagebox.showerror(
-                "Election Voting Portal",
+                _t('gui.pastoral.student_union_gui.core.main.dialogs.election_voting_portal', default="Election Voting Portal"),
                 f"Could not launch the elections hub:\n{e}",
                 parent=getattr(self, 'root', None))
 
@@ -500,7 +502,7 @@ class StudentUnionGUI:
 
         # Use centralized path configuration
         # Always use the central student_records.db in university_system/data/db_files
-        self.db_path = str(paths.DEFAULT_DB_PATH)
+        self.db_path = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
         # GUI components
         self.main_frame = None
@@ -738,7 +740,7 @@ class StudentUnionGUI:
                 conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to initialize database: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.main.dialogs.database_error', default="Database Error"), f"Failed to initialize database: {e}")
             sys.exit(1)
 
     def set_auth(self, auth_manager):
@@ -994,7 +996,7 @@ class StudentUnionGUI:
             self.update_status("Application started")
             self.root.mainloop()
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Application Error", f"An unexpected error occurred: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.main.dialogs.application_error', default="Application Error"), f"An unexpected error occurred: {e}")
         finally:
             try:
                 if hasattr(self, 'root'):

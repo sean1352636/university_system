@@ -15,7 +15,7 @@ import json
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.shared_context import get_auth
 from education_system.systems.university.infrastructure.activity_logger import log_activity
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.services.business_intelligence.bi_reports_core import (
     ReportDefinitionManager,
     ReportExportManager,
@@ -913,7 +913,7 @@ class ExportReportDialog:
             export_id = ReportExportManager.export_report(
                 report_id=report_id,
                 export_format=export_format,
-                file_path=str(paths.TEMP_DIR / f"report_{report_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{export_format.lower()}"),
+                file_path=str(paths.UNIVERSITY_TEMP_DIR / f"report_{report_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.{export_format.lower()}"),
                 generated_by=self.auth.current_user.get('username', ''),
                 row_count=0
             )

@@ -12,7 +12,7 @@ import json
 import hashlib
 import logging
 from datetime import datetime, timedelta
-from education_system.systems.university.infrastructure.paths import QR_CODES_DIR
+from education_system.paths import UNIVERSITY_QR_CODES_DIR
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 import smtplib
 from email.mime.text import MIMEText
@@ -30,8 +30,8 @@ logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import auth instance management from user_authentication
 try:
@@ -754,7 +754,7 @@ def generate_qr_codes():
         cursor = conn.cursor()
 
         # Use canonical QR codes directory
-        qr_dir = str(QR_CODES_DIR)
+        qr_dir = str(UNIVERSITY_QR_CODES_DIR)
         os.makedirs(qr_dir, exist_ok=True)
 
         if choice == '1':
@@ -832,7 +832,7 @@ def generate_qr_codes():
                     created_date = qr[3][:10] if qr[3] else 'N/A'
 
                     # Check if QR code file exists
-                    qr_filename = QR_CODES_DIR / f"table_{qr[1]}_qr.png"
+                    qr_filename = UNIVERSITY_QR_CODES_DIR / f"table_{qr[1]}_qr.png"
                     file_exists = "✅ Yes" if qr_filename.exists() else "❌ No"
 
                     location = qr[7] or 'N/A'
@@ -907,7 +907,7 @@ def create_qr_code_image(table_id, capacity, location):
         qr_image = qr.make_image(fill_color="black", back_color="white")
 
         # Create filename
-        qr_filename = QR_CODES_DIR / f"table_{table_id}_qr.png"
+        qr_filename = UNIVERSITY_QR_CODES_DIR / f"table_{table_id}_qr.png"
 
         # Save the image
         qr_image.save(qr_filename)
@@ -980,7 +980,7 @@ def create_enhanced_qr_image(qr_image, table_id, capacity, location):
             draw.text((line_x, info_y + (i * line_height)), line, fill='black', font=info_font)
 
         # Save enhanced version
-        enhanced_filename = QR_CODES_DIR / f"table_{table_id}_qr_enhanced.png"
+        enhanced_filename = UNIVERSITY_QR_CODES_DIR / f"table_{table_id}_qr_enhanced.png"
         enhanced_image.save(str(enhanced_filename))
 
         print(f"📱 Enhanced QR code saved: {enhanced_filename}")
@@ -1073,7 +1073,7 @@ def print_qr_codes():
             table_id, capacity, location, qr_id = table
 
             # Check if QR code file exists
-            qr_filename = QR_CODES_DIR / f"table_{table_id}_qr.png"
+            qr_filename = UNIVERSITY_QR_CODES_DIR / f"table_{table_id}_qr.png"
             qr_status = "✓ Available" if qr_filename.exists() else "✗ Missing"
 
             table_data.append([

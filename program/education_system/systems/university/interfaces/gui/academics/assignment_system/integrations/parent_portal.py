@@ -12,7 +12,7 @@ import datetime
 import logging
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def fetch_parent_children(parent_id: int) -> list[dict]:
     relying on its tuple ordering.
     """
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         conn.row_factory = sqlite3.Row
         try:
@@ -74,7 +74,7 @@ def fetch_child_assignments(student_id: str | int) -> dict[str, list[dict]]:
     out: dict[str, list[dict]] = {"upcoming": [], "overdue": [], "completed": []}
 
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         conn.row_factory = sqlite3.Row
         try:

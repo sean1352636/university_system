@@ -26,7 +26,7 @@ class CheckResultDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Plagiarism Check Result")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.results.windows.plagiarism_check_result', default="Plagiarism Check Result"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -50,7 +50,7 @@ class CheckResultDialog:
         title_label.pack(pady=(0, GuiConfig.PADDING_LARGE))
 
         # Result summary
-        summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=GuiConfig.PADDING_MEDIUM)
+        summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.results.labels.summary', default="Summary"), padding=GuiConfig.PADDING_MEDIUM)
         summary_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
         # Status
@@ -71,7 +71,7 @@ class CheckResultDialog:
         status_frame = ttk.Frame(summary_frame)
         status_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
-        ttk.Label(status_frame, text="Status:", font=GuiConfig.SUBHEADER_FONT).pack(side=tk.LEFT)
+        ttk.Label(status_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.results.labels.status', default="Status:"), font=GuiConfig.SUBHEADER_FONT).pack(side=tk.LEFT)
 
         status_label = tk.Label(
             status_frame,
@@ -109,8 +109,8 @@ class CheckResultDialog:
             columns = ('Document', 'Similarity')
             matches_tree = ttk.Treeview(matches_frame, columns=columns, show='headings', height=10)
 
-            matches_tree.heading('Document', text='Document Title')
-            matches_tree.heading('Similarity', text='Similarity Score')
+            matches_tree.heading('Document', text=_t('gui.academics.plagiarism_main_gui.dialogs.results.headings.document_title', default='Document Title'))
+            matches_tree.heading('Similarity', text=_t('gui.academics.plagiarism_main_gui.dialogs.results.headings.similarity_score', default='Similarity Score'))
 
             matches_tree.column('Document', width=400)
             matches_tree.column('Similarity', width=150)
@@ -135,7 +135,7 @@ class CheckResultDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X)
 
-        close_btn = ttk.Button(button_frame, text="Close", command=self.dialog.destroy)
+        close_btn = ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.results.buttons.close', default="Close"), command=self.dialog.destroy)
         close_btn.pack(side=tk.RIGHT)
 
         if self.on_email_result:
@@ -199,7 +199,7 @@ class ResultDetailsDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Plagiarism Result Details")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.results.windows.plagiarism_result_details', default="Plagiarism Result Details"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -226,7 +226,7 @@ class ResultDetailsDialog:
                 self.dialog.after(0, lambda err=error_msg: self.show_error(err))
 
         # Show loading message
-        loading_label = ttk.Label(self.dialog, text="Loading detailed report...", font=GuiConfig.BODY_FONT)
+        loading_label = ttk.Label(self.dialog, text=_t('gui.academics.plagiarism_main_gui.dialogs.results.labels.loading_detailed_report', default="Loading detailed report..."), font=GuiConfig.BODY_FONT)
         loading_label.pack(expand=True)
 
         thread = threading.Thread(target=load_task, daemon=True)
@@ -320,7 +320,7 @@ class ResultDetailsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X)
 
-        close_btn = ttk.Button(button_frame, text="Close", command=self.dialog.destroy)
+        close_btn = ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.results.buttons.close', default="Close"), command=self.dialog.destroy)
         close_btn.pack(side=tk.RIGHT)
 
         if self.on_email_result:
@@ -380,5 +380,5 @@ class ResultDetailsDialog:
         )
         error_label.pack(expand=True)
 
-        close_btn = ttk.Button(self.dialog, text="Close", command=self.dialog.destroy)
+        close_btn = ttk.Button(self.dialog, text=_t('gui.academics.plagiarism_main_gui.dialogs.results.buttons.close', default="Close"), command=self.dialog.destroy)
         close_btn.pack(pady=GuiConfig.PADDING_MEDIUM)

@@ -1,5 +1,7 @@
 """Scholarship management: creation, awarding, browsing, and reporting."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import sys
 import io
 import tkinter as tk
@@ -315,7 +317,7 @@ class ScholarshipsMixin:
         selection_frame = ttk.LabelFrame(dialog, text=_("finance_gui.settings.report_options_frame"), padding=15)
         selection_frame.pack(fill='x', padx=20, pady=10)
 
-        report_type_var = tk.StringVar(value="distribution")
+        report_type_var = tk.StringVar(value=_t('gui.finance.finance.settings.scholarships.values.distribution', default="distribution"))
 
         ttk.Radiobutton(selection_frame, text=_("finance_gui.settings.distribution_summary_radio"),
                        variable=report_type_var, value="distribution").pack(anchor='w', pady=2)
@@ -383,7 +385,7 @@ class ScholarshipsMixin:
         ttk.Entry(filter_frame, textvariable=year_var, width=12).grid(row=0, column=1, padx=5, pady=5)
 
         ttk.Label(filter_frame, text=_("finance_gui.settings.filter_status_label")).grid(row=0, column=2, padx=5, pady=5, sticky='e')
-        status_var = tk.StringVar(value="active")
+        status_var = tk.StringVar(value=_t('gui.finance.finance.settings.scholarships.values.active', default="active"))
         status_combo = ttk.Combobox(filter_frame, textvariable=status_var,
                                    values=["active", "inactive", "all"], state='readonly', width=10)
         status_combo.grid(row=0, column=3, padx=5, pady=5)

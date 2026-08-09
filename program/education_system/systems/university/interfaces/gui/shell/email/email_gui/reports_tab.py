@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from tkinter.simpledialog import askstring, askinteger
@@ -97,11 +99,11 @@ Chat Rooms Created: {stats['chat_rooms_created']}
                 self.report_text.delete(1.0, tk.END)
                 self.report_text.insert(1.0, stats_text)
             else:
-                messagebox.showinfo("Info", "Could not retrieve statistics")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.reports_tab.dialogs.info', default="Info"), _t('gui.shell.email.email_gui.reports_tab.dialogs.could_not_retrieve_statistics', default="Could not retrieve statistics"))
         else:
-            messagebox.showinfo("Info", "Dashboard not available")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.reports_tab.dialogs.info', default="Info"), _t('gui.shell.email.email_gui.reports_tab.dialogs.dashboard_not_available', default="Dashboard not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Error getting statistics: {e}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.reports_tab.dialogs.error', default="Error"), f"Error getting statistics: {e}")
 
 # Bind method to EmailManagerGUI
 EmailManagerGUI.communication_stats = communication_stats
@@ -210,7 +212,7 @@ def generate_email_report(self):
         error_msg = f"Error generating report:\n{str(e)}\n\n{traceback.format_exc()}"
         self.report_text.delete(1.0, tk.END)
         self.report_text.insert(1.0, error_msg)
-        messagebox.showerror("Error", f"Error generating report: {e}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.reports_tab.dialogs.error', default="Error"), f"Error generating report: {e}")
 
 # Bind method to EmailManagerGUI
 EmailManagerGUI.generate_email_report = generate_email_report
@@ -242,12 +244,12 @@ def export_report_csv(self):
                             'template_name': email['template_name'] or 'Direct'
                         })
 
-                messagebox.showinfo("Success", f"Report exported to {filename}")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.reports_tab.dialogs.success', default="Success"), f"Report exported to {filename}")
                 self.update_status(f"Report exported to {filename}")
             else:
-                messagebox.showerror("Error", "Export functionality not available")
+                messagebox.showerror(_t('gui.shell.email.email_gui.reports_tab.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.reports_tab.dialogs.export_functionality_not_available', default="Export functionality not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Error exporting report: {e}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.reports_tab.dialogs.error', default="Error"), f"Error exporting report: {e}")
 
 # Bind method to EmailManagerGUI
 EmailManagerGUI.export_report_csv = export_report_csv
@@ -276,7 +278,7 @@ EmailManagerGUI.notification_preferences = notification_preferences
 def import_contacts(self):
     """Import contacts from file"""
     filename = filedialog.askopenfilename(
-        title="Import Contacts",
+        title=_t('gui.shell.email.email_gui.reports_tab.dialogs.import_contacts', default="Import Contacts"),
         filetypes=[("CSV files", "*.csv"), ("VCard files", "*.vcf"), ("All files", "*.*")]
     )
 
@@ -288,24 +290,24 @@ def import_contacts(self):
 
         # Create import preview dialog
         import_dialog = tk.Toplevel(self.root)
-        import_dialog.title("Import Contacts")
+        import_dialog.title(_t('gui.shell.email.email_gui.reports_tab.windows.import_contacts', default="Import Contacts"))
         import_dialog.geometry("700x500")
         import_dialog.transient(self.root)
 
-        ttk.Label(import_dialog, text="Import Contacts Preview",
+        ttk.Label(import_dialog, text=_t('gui.shell.email.email_gui.reports_tab.labels.import_contacts_preview', default="Import Contacts Preview"),
                  font=('TkDefaultFont', 14, 'bold')).pack(pady=10)
 
         ttk.Label(import_dialog, text=f"File: {filename}", foreground='blue').pack()
 
         # Preview frame
-        preview_frame = ttk.LabelFrame(import_dialog, text="Preview (first 10 rows)", padding=10)
+        preview_frame = ttk.LabelFrame(import_dialog, text=_t('gui.shell.email.email_gui.reports_tab.labels.preview_first_10_rows', default="Preview (first 10 rows)"), padding=10)
         preview_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         preview_tree = ttk.Treeview(preview_frame, columns=('Name', 'Email', 'Group'),
                                    show='headings', height=15)
-        preview_tree.heading('Name', text='Name')
-        preview_tree.heading('Email', text='Email')
-        preview_tree.heading('Group', text='Group')
+        preview_tree.heading('Name', text=_t('gui.shell.email.email_gui.reports_tab.headings.name', default='Name'))
+        preview_tree.heading('Email', text=_t('gui.shell.email.email_gui.reports_tab.headings.email', default='Email'))
+        preview_tree.heading('Group', text=_t('gui.shell.email.email_gui.reports_tab.headings.group', default='Group'))
 
         for col in ('Name', 'Email', 'Group'):
             preview_tree.column(col, width=200)
@@ -358,25 +360,25 @@ def import_contacts(self):
                     else:
                         duplicate_count += 1
 
-                messagebox.showinfo("Import Complete",
+                messagebox.showinfo(_t('gui.shell.email.email_gui.reports_tab.dialogs.import_complete', default="Import Complete"),
                                   f"Successfully imported {imported_count} contacts!\n\n"
                                   f"Skipped {duplicate_count} invalid/duplicate entries.",
                                   parent=import_dialog)
                 import_dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Import Error", f"Failed to import contacts: {e}",
+                messagebox.showerror(_t('gui.shell.email.email_gui.reports_tab.dialogs.import_error', default="Import Error"), f"Failed to import contacts: {e}",
                                    parent=import_dialog)
 
         # Buttons
         button_frame = ttk.Frame(import_dialog)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Import", command=perform_import).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=import_dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.reports_tab.buttons.import', default="Import"), command=perform_import).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.reports_tab.buttons.cancel', default="Cancel"), command=import_dialog.destroy).pack(side='left', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to read contacts file: {e}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.reports_tab.dialogs.error', default="Error"), f"Failed to read contacts file: {e}")
 
 # Bind method to EmailManagerGUI
 EmailManagerGUI.import_contacts = import_contacts

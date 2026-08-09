@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -118,7 +120,7 @@ def bulk_price_update(self):
     """Bulk update prices for selected products"""
     # Create bulk price update window
     update_window = tk.Toplevel(self.root)
-    update_window.title("Bulk Price Update")
+    update_window.title(_t('gui.operations.commerce.shop_management_gui.bulk_operations.windows.bulk_price_update', default="Bulk Price Update"))
     update_window.geometry("400x300")
     update_window.resizable(False, False)
 
@@ -130,28 +132,28 @@ def bulk_price_update(self):
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
     # Title
-    ttk.Label(main_frame, text="Bulk Price Update", style='Title.TLabel').grid(row=0, column=0, pady=(0, 20))
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.labels.bulk_price_update', default="Bulk Price Update"), style='Title.TLabel').grid(row=0, column=0, pady=(0, 20))
 
     # Update options
-    ttk.Label(main_frame, text="Update Method:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.labels.update_method', default="Update Method:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, pady=5)
 
-    update_method = tk.StringVar(value="percentage")
-    ttk.Radiobutton(main_frame, text="Percentage change", variable=update_method,
+    update_method = tk.StringVar(value=_t('gui.operations.commerce.shop_management_gui.bulk_operations.values.percentage', default="percentage"))
+    ttk.Radiobutton(main_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.buttons.percentage_change', default="Percentage change"), variable=update_method,
                    value="percentage").grid(row=2, column=0, sticky=tk.W, pady=2)
-    ttk.Radiobutton(main_frame, text="Fixed amount change", variable=update_method,
+    ttk.Radiobutton(main_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.buttons.fixed_amount_change', default="Fixed amount change"), variable=update_method,
                    value="fixed").grid(row=3, column=0, sticky=tk.W, pady=2)
 
     # Value input
-    ttk.Label(main_frame, text="Value:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky=tk.W, pady=(10, 5))
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.labels.value', default="Value:"), font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky=tk.W, pady=(10, 5))
     value_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=value_var, width=20).grid(row=5, column=0, sticky=tk.W, pady=2)
-    ttk.Label(main_frame, text="(Use negative values for decreases)",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.labels.use_negative_values_for_decreases', default="(Use negative values for decreases)"),
              font=('Arial', 8)).grid(row=6, column=0, sticky=tk.W, pady=2)
 
     # Category filter
-    ttk.Label(main_frame, text="Apply to Category:", font=('Arial', 10, 'bold')).grid(row=7, column=0, sticky=tk.W, pady=(10, 5))
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.labels.apply_to_category', default="Apply to Category:"), font=('Arial', 10, 'bold')).grid(row=7, column=0, sticky=tk.W, pady=(10, 5))
 
-    category_var = tk.StringVar(value="All")
+    category_var = tk.StringVar(value=_t('gui.operations.commerce.shop_management_gui.bulk_operations.values.all', default="All"))
     category_combo = ttk.Combobox(main_frame, textvariable=category_var,
                                  values=["All"], state="readonly", width=17)
     category_combo.grid(row=8, column=0, sticky=tk.W, pady=2)
@@ -222,20 +224,20 @@ def bulk_price_update(self):
 
             change_desc = f"{value:+.1f}%" if method == "percentage" else f"£{value:+.2f}"
             scope = category if category != "All" else "all products"
-            messagebox.showinfo("Success", f"Updated {affected_rows} products in {scope} by {change_desc}")
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.success', default="Success"), f"Updated {affected_rows} products in {scope} by {change_desc}")
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid numeric value")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.please_enter_a_valid_numeric_value', default="Please enter a valid numeric value"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update prices: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.error', default="Error"), f"Failed to update prices: {e}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.grid(row=9, column=0, pady=20)
 
-    ttk.Button(button_frame, text="Update Prices", command=execute_update,
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.buttons.update_prices', default="Update Prices"), command=execute_update,
               style='Primary.TButton').grid(row=0, column=0, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=update_window.destroy).grid(row=0, column=1, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.buttons.cancel', default="Cancel"), command=update_window.destroy).grid(row=0, column=1, padx=5)
 
 
 def import_products(self):
@@ -243,7 +245,7 @@ def import_products(self):
     try:
         # Ask for file
         filename = filedialog.askopenfilename(
-            title="Import Products",
+            title=_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.import_products', default="Import Products"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
 
@@ -252,7 +254,7 @@ def import_products(self):
 
         # Show progress dialog
         progress_window = tk.Toplevel(self.root)
-        progress_window.title("Importing Products")
+        progress_window.title(_t('gui.operations.commerce.shop_management_gui.bulk_operations.windows.importing_products', default="Importing Products"))
         progress_window.geometry("400x150")
         progress_window.resizable(False, False)
         progress_window.transient(self.root)
@@ -261,12 +263,12 @@ def import_products(self):
         progress_frame = ttk.Frame(progress_window, padding="20")
         progress_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        ttk.Label(progress_frame, text="Importing products...").grid(row=0, column=0, pady=10)
+        ttk.Label(progress_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.labels.importing_products', default="Importing products...")).grid(row=0, column=0, pady=10)
         progress_var = tk.DoubleVar()
         progress_bar = ttk.Progressbar(progress_frame, variable=progress_var, maximum=100)
         progress_bar.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=10)
 
-        status_label = ttk.Label(progress_frame, text="Reading file...")
+        status_label = ttk.Label(progress_frame, text=_t('gui.operations.commerce.shop_management_gui.bulk_operations.labels.reading_file', default="Reading file..."))
         status_label.grid(row=2, column=0, pady=5)
 
         progress_window.update()
@@ -351,7 +353,7 @@ def import_products(self):
 
         # Show results
         message = f"Import completed!\n\nImported: {imported_count} products\nErrors: {error_count} rows"
-        messagebox.showinfo("Import Results", message)
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.import_results', default="Import Results"), message)
 
         # Refresh products view
         self.load_products_for_management()
@@ -359,7 +361,7 @@ def import_products(self):
     except Exception as e:
         if 'progress_window' in locals():
             progress_window.destroy()
-        messagebox.showerror("Import Error", f"Failed to import products: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.import_error', default="Import Error"), f"Failed to import products: {e}")
 
 
 def export_products(self):
@@ -367,7 +369,7 @@ def export_products(self):
     try:
         # Ask for file location
         filename = filedialog.asksaveasfilename(
-            title="Export Products",
+            title=_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.export_products', default="Export Products"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
@@ -413,10 +415,10 @@ def export_products(self):
                     'created_at': product['created_at']
                 })
 
-        messagebox.showinfo("Export Complete", f"Exported {len(products)} products to {filename}")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.export_complete', default="Export Complete"), f"Exported {len(products)} products to {filename}")
 
     except Exception as e:
-        messagebox.showerror("Export Error", f"Failed to export products: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.export_error', default="Export Error"), f"Failed to export products: {e}")
 
 
 def backup_shop_database(self):
@@ -430,7 +432,7 @@ def backup_shop_database(self):
         backup_filename = f"shop_backup_{timestamp}.db"
 
         # Get the current database path
-        from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH as DB_PATH
+        from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH as DB_PATH
         db_path = str(DB_PATH)
 
         # Let user choose save location
@@ -439,7 +441,7 @@ def backup_shop_database(self):
             defaultextension=".db",
             filetypes=[("Database files", "*.db"), ("All files", "*.*")],
             initialfile=backup_filename,
-            title="Save Database Backup"
+            title=_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.save_database_backup', default="Save Database Backup")
         )
 
         if not save_path:
@@ -448,10 +450,10 @@ def backup_shop_database(self):
         # Perform backup
         shutil.copy2(db_path, save_path)
 
-        messagebox.showinfo("Backup Complete",
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.backup_complete', default="Backup Complete"),
             f"Database backed up successfully!\n\nBackup saved to:\n{save_path}\n\nSize: {os.path.getsize(save_path) / 1024:.2f} KB")
 
     except Exception as e:
-        messagebox.showerror("Backup Failed", f"Failed to backup database: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.bulk_operations.dialogs.backup_failed', default="Backup Failed"), f"Failed to backup database: {e}")
 
 

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -370,14 +372,14 @@ class GradeEditDialog:
         self.score_entry = ttk.Entry(score_frame, textvariable=self.score_var, width=10)
         self.score_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(score_frame, text="Calculate Grade",
+        ttk.Button(score_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.buttons.calculate_grade', default="Calculate Grade"),
                   command=self.calculate_grade).pack(side=tk.LEFT, padx=5)
 
         # Grade entry
         grade_frame = ttk.Frame(self.dialog)
         grade_frame.pack(pady=10)
 
-        ttk.Label(grade_frame, text="Letter Grade:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(grade_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.labels.letter_grade', default="Letter Grade:")).pack(side=tk.LEFT, padx=5)
 
         self.grade_var = tk.StringVar(value=current_grade)
         grade_values = list(GRADE_SYSTEMS["letter"].keys())
@@ -386,7 +388,7 @@ class GradeEditDialog:
         self.grade_combo.pack(side=tk.LEFT, padx=5)
 
         # Comments entry
-        comments_frame = ttk.LabelFrame(self.dialog, text="Comments")
+        comments_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.labels.comments', default="Comments"))
         comments_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         self.comments_text = tk.Text(comments_frame, height=6)
@@ -397,9 +399,9 @@ class GradeEditDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Save",
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.buttons.save', default="Save"),
                   command=self.save_grade).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.buttons.cancel', default="Cancel"),
                   command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def calculate_grade(self):
@@ -411,9 +413,9 @@ class GradeEditDialog:
                 letter_grade = percentage_to_letter(percentage)
                 self.grade_var.set(letter_grade)
             else:
-                messagebox.showerror("Error", f"Score must be between 0 and {self.max_points}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.error', default="Error"), f"Score must be between 0 and {self.max_points}")
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid numeric score")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.please_enter_a_valid_numeric_score', default="Please enter a valid numeric score"))
 
     def save_grade(self):
         """Save the grade"""
@@ -423,18 +425,18 @@ class GradeEditDialog:
             comments = self.comments_text.get(1.0, tk.END).strip()
 
             if not score or not letter_grade:
-                messagebox.showerror("Error", "Please enter both score and letter grade")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.please_enter_both_score_and_letter_grade', default="Please enter both score and letter grade"))
                 return
 
             # Validate score
             score_float = float(score)
             if not (0 <= score_float <= self.max_points):
-                messagebox.showerror("Error", f"Score must be between 0 and {self.max_points}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.error', default="Error"), f"Score must be between 0 and {self.max_points}")
                 return
 
             # Validate grade
             if letter_grade not in GRADE_SYSTEMS["letter"]:
-                messagebox.showerror("Error", "Please select a valid letter grade")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.please_select_a_valid_letter_grade', default="Please select a valid letter grade"))
                 return
 
             # Call callback to update parent
@@ -442,5 +444,5 @@ class GradeEditDialog:
             self.dialog.destroy()
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid numeric score")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.grade_edit_dialog.dialogs.please_enter_a_valid_numeric_score', default="Please enter a valid numeric score"))
 

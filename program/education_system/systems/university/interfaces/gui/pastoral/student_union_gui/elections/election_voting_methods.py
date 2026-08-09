@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -35,7 +37,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -72,7 +74,7 @@ class ManageEnhancedVotingDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Enhanced Voting Systems")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.windows.enhanced_voting_systems', default="Enhanced Voting Systems"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -83,11 +85,11 @@ class ManageEnhancedVotingDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🗳️ Enhanced Voting Systems",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.enhanced_voting_systems', default="🗳️ Enhanced Voting Systems"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Voting methods overview
-        overview_frame = ttk.LabelFrame(main_frame, text="Available Voting Methods")
+        overview_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.available_voting_methods', default="Available Voting Methods"))
         overview_frame.pack(fill='x', pady=(0, 15))
 
         methods_text = """ENABLED VOTING METHODS:
@@ -119,7 +121,7 @@ class ManageEnhancedVotingDialog:
         ttk.Label(overview_frame, text=methods_text, justify='left', font=('Courier', 9)).pack(padx=15, pady=10)
 
         # Elections using enhanced voting
-        elections_frame = ttk.LabelFrame(main_frame, text="Elections Configuration")
+        elections_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.elections_configuration', default="Elections Configuration"))
         elections_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Election', 'Position', 'Voting Method', 'Status', 'Start Date', 'End Date')
@@ -148,7 +150,7 @@ class ManageEnhancedVotingDialog:
             tree.insert('', 'end', values=election)
 
         # Statistics
-        stats_frame = ttk.LabelFrame(main_frame, text="Voting Statistics")
+        stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.voting_statistics', default="Voting Statistics"))
         stats_frame.pack(fill='x', pady=(0, 15))
 
         stats_text = """Total Elections This Year: 12
@@ -168,23 +170,23 @@ Average Voter Turnout:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Configure Ranked Choice", command=self.config_ranked).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Configure Approval", command=self.config_approval).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Configure Score", command=self.config_score).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Method Comparison", command=self.view_comparison).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.configure_ranked_choice', default="Configure Ranked Choice"), command=self.config_ranked).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.configure_approval', default="Configure Approval"), command=self.config_approval).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.configure_score', default="Configure Score"), command=self.config_score).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.view_method_comparison', default="View Method Comparison"), command=self.view_comparison).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def config_ranked(self):
-        messagebox.showinfo("Ranked Choice Voting", "Configure Ranked Choice Voting:\n\n- Number of rankings to allow (3-10)\n- Elimination threshold\n- Tie-breaking rules\n- Ballot format options")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.ranked_choice_voting', default="Ranked Choice Voting"), _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.configure_ranked_choice_voting_number_of_rankings_to_allow_3_10', default="Configure Ranked Choice Voting:\n\n- Number of rankings to allow (3-10)\n- Elimination threshold\n- Tie-breaking rules\n- Ballot format options"))
 
     def config_approval(self):
-        messagebox.showinfo("Approval Voting", "Configure Approval Voting:\n\n- Maximum approvals allowed\n- Ballot design\n- Counting method\n- Results display format")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.approval_voting', default="Approval Voting"), _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.configure_approval_voting_maximum_approvals_allowed_ballot_desig', default="Configure Approval Voting:\n\n- Maximum approvals allowed\n- Ballot design\n- Counting method\n- Results display format"))
 
     def config_score(self):
-        messagebox.showinfo("Score Voting", "Configure Score Voting:\n\n- Score range (0-5 or 0-10)\n- Decimal scores allowed?\n- Averaging method\n- Minimum participation threshold")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.score_voting', default="Score Voting"), _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.configure_score_voting_score_range_0_5_or_0_10_decimal_scores_al', default="Configure Score Voting:\n\n- Score range (0-5 or 0-10)\n- Decimal scores allowed?\n- Averaging method\n- Minimum participation threshold"))
 
     def view_comparison(self):
-        messagebox.showinfo("Method Comparison", "Voting Method Comparison:\n\nStandard: Simple, familiar, but can split votes\nRanked Choice: Fair, eliminates spoilers, more complex\nApproval: Simple, reduces strategic voting\nScore: Most nuanced, but can be confusing\n\nRecommendation: Ranked Choice for competitive races")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.method_comparison', default="Method Comparison"), _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.voting_method_comparison_standard_simple_familiar_but_can_split', default="Voting Method Comparison:\n\nStandard: Simple, familiar, but can split votes\nRanked Choice: Fair, eliminates spoilers, more complex\nApproval: Simple, reduces strategic voting\nScore: Most nuanced, but can be confusing\n\nRecommendation: Ranked Choice for competitive races"))
 
 
 
@@ -198,7 +200,7 @@ class RankedChoiceVotingDialog:
         self.candidates = []  # Store candidate info
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Ranked Choice Voting")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.windows.ranked_choice_voting', default="Ranked Choice Voting"))
         self.dialog.geometry("1000x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -209,7 +211,7 @@ class RankedChoiceVotingDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📊 Ranked Choice Voting",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.ranked_choice_voting', default="📊 Ranked Choice Voting"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Create notebook for sections
@@ -218,7 +220,7 @@ class RankedChoiceVotingDialog:
 
         # How It Works tab
         how_frame = ttk.Frame(notebook)
-        notebook.add(how_frame, text="How It Works")
+        notebook.add(how_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.tabs.how_it_works', default="How It Works"))
 
         how_scroll = scrolledtext.ScrolledText(how_frame, height=15, wrap=tk.WORD)
         how_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -278,15 +280,15 @@ CONSIDERATIONS:
 
         # Cast Vote tab
         vote_frame = ttk.Frame(notebook)
-        notebook.add(vote_frame, text="Cast RCV Vote")
+        notebook.add(vote_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.tabs.cast_rcv_vote', default="Cast RCV Vote"))
 
         vote_content = ttk.Frame(vote_frame)
         vote_content.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(vote_content, text="Student Union President 2025",
+        ttk.Label(vote_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.student_union_president_2025', default="Student Union President 2025"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
-        ttk.Label(vote_content, text="Rank candidates in order of preference (1 = most preferred)",
+        ttk.Label(vote_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.rank_candidates_in_order_of_preference_1_most_preferred', default="Rank candidates in order of preference (1 = most preferred)"),
                  font=('Arial', 10)).pack(pady=(0, 15))
 
         # Candidates with ranking dropdowns
@@ -317,12 +319,12 @@ CONSIDERATIONS:
             # Store reference to the combobox
             self.rank_combos[name] = rank_combo
 
-        ttk.Button(vote_content, text="Submit Ranked Ballot",
+        ttk.Button(vote_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.submit_ranked_ballot', default="Submit Ranked Ballot"),
                   command=self.submit_ballot).pack(pady=20)
 
         # Results tab
         results_frame = ttk.Frame(notebook)
-        notebook.add(results_frame, text="RCV Results")
+        notebook.add(results_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.tabs.rcv_results', default="RCV Results"))
 
         results_scroll = scrolledtext.ScrolledText(results_frame, height=15, wrap=tk.WORD, font=('Courier', 9))
         results_scroll.pack(fill='both', expand=True, padx=10, pady=10)
@@ -386,9 +388,9 @@ winner has broad support (55.7% final approval)."""
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="View Tutorial Video", command=self.view_tutorial).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Download Ballot Template", command=self.download_template).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.view_tutorial_video', default="View Tutorial Video"), command=self.view_tutorial).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.download_ballot_template', default="Download Ballot Template"), command=self.download_template).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def submit_ballot(self):
         """Submit the ranked choice ballot"""
@@ -403,12 +405,12 @@ winner has broad support (55.7% final approval)."""
 
         # Check if at least one candidate was ranked
         if not rankings:
-            messagebox.showwarning("No Rankings", "Please rank at least one candidate before submitting.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.no_rankings', default="No Rankings"), _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.please_rank_at_least_one_candidate_before_submitting', default="Please rank at least one candidate before submitting."))
             return
 
         # Check for duplicate rankings
         if len(rankings) != len(set(rankings.keys())):
-            messagebox.showerror("Error", "Please ensure each candidate has a unique ranking.")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.please_ensure_each_candidate_has_a_unique_ranking', default="Please ensure each candidate has a unique ranking."))
             return
 
         # Build rankings display
@@ -422,7 +424,7 @@ winner has broad support (55.7% final approval)."""
 
         # Show success message
         messagebox.showinfo(
-            "Vote Submitted",
+            _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.vote_submitted', default="Vote Submitted"),
             f"Your ranked choice ballot has been submitted!\n\nYour rankings:\n{rankings_display}\nThank you for voting!"
         )
 
@@ -446,7 +448,7 @@ winner has broad support (55.7% final approval)."""
         self.dialog.destroy()
 
     def view_tutorial(self):
-        messagebox.showinfo("RCV Tutorial", "Opening RCV tutorial video:\n\n'Understanding Ranked Choice Voting'\nDuration: 3:45\n\nCovers:\n- How to fill out ballot\n- Vote counting process\n- Benefits and examples\n- FAQs")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.rcv_tutorial', default="RCV Tutorial"), _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.opening_rcv_tutorial_video_understanding_ranked_choice_voting_du', default="Opening RCV tutorial video:\n\n'Understanding Ranked Choice Voting'\nDuration: 3:45\n\nCovers:\n- How to fill out ballot\n- Vote counting process\n- Benefits and examples\n- FAQs"))
 
     def download_template(self):
         """Download a ranked choice voting ballot template"""
@@ -514,7 +516,7 @@ For questions or assistance, contact the Elections Committee.
                 f.write(template_content)
 
             messagebox.showinfo(
-                "Download Complete",
+                _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.download_complete', default="Download Complete"),
                 f"Ballot template saved successfully to:\n{file_path}\n\n" +
                 "The template includes:\n" +
                 "- Sample ballot format\n" +
@@ -522,7 +524,7 @@ For questions or assistance, contact the Elections Committee.
                 "- Explanation of RCV process"
             )
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save ballot template: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.error', default="Error"), f"Failed to save ballot template: {e}")
 
 
 
@@ -534,7 +536,7 @@ class ConfigureVotingMethodsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Configure Voting Methods")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.windows.configure_voting_methods', default="Configure Voting Methods"))
         self.dialog.geometry("900x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -545,14 +547,14 @@ class ConfigureVotingMethodsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="⚙️ Configure Voting Methods",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.configure_voting_methods', default="⚙️ Configure Voting Methods"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Election selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(select_frame, text="Election:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.election', default="Election:")).pack(side='left', padx=(0, 10))
         self.election_combo = ttk.Combobox(select_frame, width=40, state='readonly')
         self.election_combo['values'] = ('Student Union President 2025', 'VP Academic Affairs 2025',
                                      'Best Club Award 2025', 'Sports Team Captain Elections')
@@ -565,12 +567,12 @@ class ConfigureVotingMethodsDialog:
 
         # Standard Voting tab
         standard_frame = ttk.Frame(notebook)
-        notebook.add(standard_frame, text="Standard Voting")
+        notebook.add(standard_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.tabs.standard_voting', default="Standard Voting"))
 
         standard_content = ttk.Frame(standard_frame)
         standard_content.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(standard_content, text="Standard Voting Configuration",
+        ttk.Label(standard_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.standard_voting_configuration', default="Standard Voting Configuration"),
                  font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
         self.enable_standard_var = tk.BooleanVar(value=True)
@@ -578,130 +580,130 @@ class ConfigureVotingMethodsDialog:
         self.show_live_results_var = tk.BooleanVar()
         self.require_confirm_var = tk.BooleanVar(value=True)
 
-        ttk.Checkbutton(standard_content, text="Enable standard voting for this election", variable=self.enable_standard_var).pack(anchor='w', pady=3)
-        ttk.Checkbutton(standard_content, text="Allow write-in candidates", variable=self.allow_writein_var).pack(anchor='w', pady=3)
-        ttk.Checkbutton(standard_content, text="Show live results during voting", variable=self.show_live_results_var).pack(anchor='w', pady=3)
-        ttk.Checkbutton(standard_content, text="Require confirmation before submitting", variable=self.require_confirm_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.enable_standard_voting_for_this_election', default="Enable standard voting for this election"), variable=self.enable_standard_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.allow_write_in_candidates', default="Allow write-in candidates"), variable=self.allow_writein_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.show_live_results_during_voting', default="Show live results during voting"), variable=self.show_live_results_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(standard_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.require_confirmation_before_submitting', default="Require confirmation before submitting"), variable=self.require_confirm_var).pack(anchor='w', pady=3)
 
-        ttk.Label(standard_content, text="\nWinning Criterion:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(standard_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.winning_criterion', default="\nWinning Criterion:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
         self.winning_criterion_var = tk.IntVar(value=1)
-        ttk.Radiobutton(standard_content, text="Simple Plurality (most votes wins)", variable=self.winning_criterion_var, value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(standard_content, text="Absolute Majority (>50% required, runoff if needed)", variable=self.winning_criterion_var, value=2).pack(anchor='w', pady=2)
+        ttk.Radiobutton(standard_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.simple_plurality_most_votes_wins', default="Simple Plurality (most votes wins)"), variable=self.winning_criterion_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(standard_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.absolute_majority_50_required_runoff_if_needed', default="Absolute Majority (>50% required, runoff if needed)"), variable=self.winning_criterion_var, value=2).pack(anchor='w', pady=2)
 
         # Ranked Choice tab
         rcv_frame = ttk.Frame(notebook)
-        notebook.add(rcv_frame, text="Ranked Choice")
+        notebook.add(rcv_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.tabs.ranked_choice', default="Ranked Choice"))
 
         rcv_content = ttk.Frame(rcv_frame)
         rcv_content.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(rcv_content, text="Ranked Choice Voting Configuration",
+        ttk.Label(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.ranked_choice_voting_configuration', default="Ranked Choice Voting Configuration"),
                  font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
         self.enable_rcv_var = tk.BooleanVar()
         self.allow_partial_var = tk.BooleanVar(value=True)
         self.show_runoff_viz_var = tk.BooleanVar()
 
-        ttk.Checkbutton(rcv_content, text="Enable ranked choice voting for this election", variable=self.enable_rcv_var).pack(anchor='w', pady=3)
-        ttk.Checkbutton(rcv_content, text="Allow partial rankings (don't require ranking all)", variable=self.allow_partial_var).pack(anchor='w', pady=3)
-        ttk.Checkbutton(rcv_content, text="Show instant runoff visualization", variable=self.show_runoff_viz_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.enable_ranked_choice_voting_for_this_election', default="Enable ranked choice voting for this election"), variable=self.enable_rcv_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.allow_partial_rankings_don_t_require_ranking_all', default="Allow partial rankings (don't require ranking all)"), variable=self.allow_partial_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.show_instant_runoff_visualization', default="Show instant runoff visualization"), variable=self.show_runoff_viz_var).pack(anchor='w', pady=3)
 
-        ttk.Label(rcv_content, text="\nMaximum Rankings Allowed:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.maximum_rankings_allowed', default="\nMaximum Rankings Allowed:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
         self.rank_spin = ttk.Spinbox(rcv_content, from_=3, to=10, width=10)
         self.rank_spin.pack(anchor='w')
         self.rank_spin.set(5)
 
-        ttk.Label(rcv_content, text="\nElimination Method:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.elimination_method', default="\nElimination Method:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
         self.elimination_var = tk.IntVar(value=1)
-        ttk.Radiobutton(rcv_content, text="Eliminate one candidate per round", variable=self.elimination_var, value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(rcv_content, text="Batch elimination (all below threshold)", variable=self.elimination_var, value=2).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.eliminate_one_candidate_per_round', default="Eliminate one candidate per round"), variable=self.elimination_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.batch_elimination_all_below_threshold', default="Batch elimination (all below threshold)"), variable=self.elimination_var, value=2).pack(anchor='w', pady=2)
 
-        ttk.Label(rcv_content, text="\nTie Breaking:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.tie_breaking', default="\nTie Breaking:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
         self.tiebreak_var = tk.IntVar(value=2)
-        ttk.Radiobutton(rcv_content, text="Random selection", variable=self.tiebreak_var, value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(rcv_content, text="Most 1st place votes", variable=self.tiebreak_var, value=2).pack(anchor='w', pady=2)
-        ttk.Radiobutton(rcv_content, text="Manual review", variable=self.tiebreak_var, value=3).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.random_selection', default="Random selection"), variable=self.tiebreak_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.most_1st_place_votes', default="Most 1st place votes"), variable=self.tiebreak_var, value=2).pack(anchor='w', pady=2)
+        ttk.Radiobutton(rcv_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.manual_review', default="Manual review"), variable=self.tiebreak_var, value=3).pack(anchor='w', pady=2)
 
         # Approval Voting tab
         approval_frame = ttk.Frame(notebook)
-        notebook.add(approval_frame, text="Approval Voting")
+        notebook.add(approval_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.tabs.approval_voting', default="Approval Voting"))
 
         approval_content = ttk.Frame(approval_frame)
         approval_content.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(approval_content, text="Approval Voting Configuration",
+        ttk.Label(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.approval_voting_configuration', default="Approval Voting Configuration"),
                  font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
         self.enable_approval_var = tk.BooleanVar()
         self.show_approval_count_var = tk.BooleanVar(value=True)
         self.allow_abstain_var = tk.BooleanVar(value=True)
 
-        ttk.Checkbutton(approval_content, text="Enable approval voting for this election", variable=self.enable_approval_var).pack(anchor='w', pady=3)
-        ttk.Checkbutton(approval_content, text="Show number of approvals for each candidate", variable=self.show_approval_count_var).pack(anchor='w', pady=3)
-        ttk.Checkbutton(approval_content, text="Allow abstaining (approve none)", variable=self.allow_abstain_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.enable_approval_voting_for_this_election', default="Enable approval voting for this election"), variable=self.enable_approval_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.show_number_of_approvals_for_each_candidate', default="Show number of approvals for each candidate"), variable=self.show_approval_count_var).pack(anchor='w', pady=3)
+        ttk.Checkbutton(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.allow_abstaining_approve_none', default="Allow abstaining (approve none)"), variable=self.allow_abstain_var).pack(anchor='w', pady=3)
 
-        ttk.Label(approval_content, text="\nApproval Limit:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.approval_limit', default="\nApproval Limit:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
         self.approval_limit_var = tk.IntVar(value=1)
-        ttk.Radiobutton(approval_content, text="Unlimited (approve as many as you want)", variable=self.approval_limit_var, value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(approval_content, text="Limited to specific number:", variable=self.approval_limit_var, value=2).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.unlimited_approve_as_many_as_you_want', default="Unlimited (approve as many as you want)"), variable=self.approval_limit_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.limited_to_specific_number', default="Limited to specific number:"), variable=self.approval_limit_var, value=2).pack(anchor='w', pady=2)
 
         self.limit_spin = ttk.Spinbox(approval_content, from_=1, to=10, width=10)
         self.limit_spin.pack(anchor='w', padx=30)
         self.limit_spin.set(3)
 
-        ttk.Label(approval_content, text="\nResults Display:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.results_display', default="\nResults Display:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
         self.results_display_var = tk.IntVar(value=3)
-        ttk.Radiobutton(approval_content, text="Show approval count", variable=self.results_display_var, value=1).pack(anchor='w', pady=2)
-        ttk.Radiobutton(approval_content, text="Show approval percentage", variable=self.results_display_var, value=2).pack(anchor='w', pady=2)
-        ttk.Radiobutton(approval_content, text="Show both", variable=self.results_display_var, value=3).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.show_approval_count', default="Show approval count"), variable=self.results_display_var, value=1).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.show_approval_percentage', default="Show approval percentage"), variable=self.results_display_var, value=2).pack(anchor='w', pady=2)
+        ttk.Radiobutton(approval_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.show_both', default="Show both"), variable=self.results_display_var, value=3).pack(anchor='w', pady=2)
 
         # Advanced tab
         advanced_frame = ttk.Frame(notebook)
-        notebook.add(advanced_frame, text="Advanced Settings")
+        notebook.add(advanced_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.tabs.advanced_settings', default="Advanced Settings"))
 
         advanced_content = ttk.Frame(advanced_frame)
         advanced_content.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(advanced_content, text="Advanced Configuration",
+        ttk.Label(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.advanced_configuration', default="Advanced Configuration"),
                  font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
-        ttk.Label(advanced_content, text="Voting Period:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.voting_period', default="Voting Period:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
 
         period_frame = ttk.Frame(advanced_content)
         period_frame.pack(anchor='w', pady=5)
-        ttk.Label(period_frame, text="Start:").pack(side='left', padx=(0, 5))
+        ttk.Label(period_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.start', default="Start:")).pack(side='left', padx=(0, 5))
         self.start_date_entry = ttk.Entry(period_frame, width=15)
         self.start_date_entry.pack(side='left', padx=(0, 15))
-        ttk.Label(period_frame, text="End:").pack(side='left', padx=(0, 5))
+        ttk.Label(period_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.end', default="End:")).pack(side='left', padx=(0, 5))
         self.end_date_entry = ttk.Entry(period_frame, width=15)
         self.end_date_entry.pack(side='left')
 
-        ttk.Label(advanced_content, text="\nSecurity Options:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.security_options', default="\nSecurity Options:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
         self.require_2fa_var = tk.BooleanVar()
         self.unique_code_var = tk.BooleanVar()
         self.vote_verify_var = tk.BooleanVar()
         self.allow_change_var = tk.BooleanVar()
-        ttk.Checkbutton(advanced_content, text="Require two-factor authentication for voting", variable=self.require_2fa_var).pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Generate unique verification code for each voter", variable=self.unique_code_var).pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Enable vote verification (voters can check their vote was counted)", variable=self.vote_verify_var).pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Allow vote change before deadline", variable=self.allow_change_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.require_two_factor_authentication_for_voting', default="Require two-factor authentication for voting"), variable=self.require_2fa_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.generate_unique_verification_code_for_each_voter', default="Generate unique verification code for each voter"), variable=self.unique_code_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.enable_vote_verification_voters_can_check_their_vote_was_counted', default="Enable vote verification (voters can check their vote was counted)"), variable=self.vote_verify_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.allow_vote_change_before_deadline', default="Allow vote change before deadline"), variable=self.allow_change_var).pack(anchor='w', pady=2)
 
-        ttk.Label(advanced_content, text="\nAccessibility:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.accessibility', default="\nAccessibility:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
         self.screen_reader_var = tk.BooleanVar()
         self.audio_ballot_var = tk.BooleanVar()
         self.extended_time_var = tk.BooleanVar()
-        ttk.Checkbutton(advanced_content, text="Enable screen reader support", variable=self.screen_reader_var).pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Provide audio ballot option", variable=self.audio_ballot_var).pack(anchor='w', pady=2)
-        ttk.Checkbutton(advanced_content, text="Allow extended time for voting", variable=self.extended_time_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.enable_screen_reader_support', default="Enable screen reader support"), variable=self.screen_reader_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.provide_audio_ballot_option', default="Provide audio ballot option"), variable=self.audio_ballot_var).pack(anchor='w', pady=2)
+        ttk.Checkbutton(advanced_content, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.allow_extended_time_for_voting', default="Allow extended time for voting"), variable=self.extended_time_var).pack(anchor='w', pady=2)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Save Configuration", command=self.save_config).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Load Template", command=self.load_template).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Preview Ballot", command=self.preview_ballot).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.save_configuration', default="Save Configuration"), command=self.save_config).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.load_template', default="Load Template"), command=self.load_template).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.preview_ballot', default="Preview Ballot"), command=self.preview_ballot).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def _determine_voting_method(self):
         """Determine which voting method is currently configured."""
@@ -716,7 +718,7 @@ class ConfigureVotingMethodsDialog:
         """Save the current voting method configuration to the database."""
         election_name = self.election_combo.get()
         if not election_name:
-            messagebox.showwarning("No Election", "Please select an election first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.no_election', default="No Election"), _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.please_select_an_election_first', default="Please select an election first."))
             return
 
         voting_method = self._determine_voting_method()
@@ -763,7 +765,7 @@ class ConfigureVotingMethodsDialog:
             conn.commit()
 
             messagebox.showinfo(
-                "Configuration Saved",
+                _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.configuration_saved', default="Configuration Saved"),
                 f"Voting method configuration saved successfully.\n\n"
                 f"Election: {election_name}\n"
                 f"Method: {voting_method}\n"
@@ -773,7 +775,7 @@ class ConfigureVotingMethodsDialog:
                 f"Configuration will be active when voting opens."
             )
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save configuration: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.error', default="Error"), f"Failed to save configuration: {e}")
         finally:
             if conn:
                 conn.close()
@@ -781,12 +783,12 @@ class ConfigureVotingMethodsDialog:
     def load_template(self):
         """Show a dialog with predefined voting configuration templates."""
         template_win = tk.Toplevel(self.dialog)
-        template_win.title("Load Voting Template")
+        template_win.title(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.windows.load_voting_template', default="Load Voting Template"))
         template_win.geometry("500x420")
         template_win.transient(self.dialog)
         template_win.grab_set()
 
-        ttk.Label(template_win, text="Select a Voting Template",
+        ttk.Label(template_win, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.select_a_voting_template', default="Select a Voting Template"),
                   font=('Arial', 12, 'bold')).pack(pady=(15, 10))
 
         templates = {
@@ -834,7 +836,7 @@ class ConfigureVotingMethodsDialog:
         def apply_template():
             chosen = selected_var.get()
             if not chosen:
-                messagebox.showwarning("No Selection", "Please select a template.", parent=template_win)
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.please_select_a_template', default="Please select a template."), parent=template_win)
                 return
             t = templates[chosen]
             self.enable_standard_var.set(t["enable_standard"])
@@ -847,14 +849,14 @@ class ConfigureVotingMethodsDialog:
             self.approval_limit_var.set(t["approval_limit_mode"])
             self.winning_criterion_var.set(t["winning_criterion"])
             template_win.destroy()
-            messagebox.showinfo("Template Loaded",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.dialogs.template_loaded', default="Template Loaded"),
                                 f"'{chosen}' template has been applied.\n\n"
                                 "Review the settings and click Save Configuration when ready.")
 
         btn_frame = ttk.Frame(template_win)
         btn_frame.pack(fill='x', padx=15, pady=(5, 15))
-        ttk.Button(btn_frame, text="Apply Template", command=apply_template).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=template_win.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.apply_template', default="Apply Template"), command=apply_template).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.cancel', default="Cancel"), command=template_win.destroy).pack(side='right')
 
     def preview_ballot(self):
         """Show a Toplevel window that simulates the ballot appearance."""
@@ -903,7 +905,7 @@ class ConfigureVotingMethodsDialog:
             ]
 
         preview_win = tk.Toplevel(self.dialog)
-        preview_win.title("Ballot Preview")
+        preview_win.title(_t('gui.pastoral.student_union_gui.elections.election_voting_methods.windows.ballot_preview', default="Ballot Preview"))
         preview_win.geometry("550x600")
         preview_win.transient(self.dialog)
         preview_win.grab_set()
@@ -915,12 +917,12 @@ class ConfigureVotingMethodsDialog:
         # Preview warning banner
         warn_frame = tk.Frame(outer, bg="#fff3cd")
         warn_frame.pack(fill='x', pady=(0, 10))
-        tk.Label(warn_frame, text="THIS IS A PREVIEW ONLY - No votes will be recorded",
+        tk.Label(warn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.this_is_a_preview_only_no_votes_will_be_recorded', default="THIS IS A PREVIEW ONLY - No votes will be recorded"),
                  bg="#fff3cd", fg="#856404", font=('Arial', 10, 'bold'),
                  pady=6).pack()
 
         # Ballot header
-        header_frame = ttk.LabelFrame(outer, text="Official Ballot")
+        header_frame = ttk.LabelFrame(outer, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.official_ballot', default="Official Ballot"))
         header_frame.pack(fill='x', pady=(0, 10))
 
         ttk.Label(header_frame, text=election_name,
@@ -978,7 +980,7 @@ class ConfigureVotingMethodsDialog:
                 combo = ttk.Combobox(row_frame, values=rank_options, width=5, state='readonly')
                 combo.current(0)
                 combo.pack(side='right', padx=5)
-                ttk.Label(row_frame, text="Rank:").pack(side='right')
+                ttk.Label(row_frame, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.rank', default="Rank:")).pack(side='right')
 
         elif voting_method == "Approval Voting":
             for cand in candidates:
@@ -1019,19 +1021,19 @@ class ConfigureVotingMethodsDialog:
                 sep = ttk.Separator(cand_frame, orient='horizontal')
                 sep.pack(fill='x', padx=10, pady=6)
                 ttk.Radiobutton(cand_frame, variable=preview_choice,
-                                value=0, text="Abstain").pack(anchor='w', padx=10)
+                                value=0, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.abstain', default="Abstain")).pack(anchor='w', padx=10)
 
         ttk.Separator(outer, orient='horizontal').pack(fill='x', pady=8)
 
         # Disabled submit button (preview only)
-        ttk.Button(outer, text="Submit Ballot (disabled in preview)",
+        ttk.Button(outer, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.submit_ballot_disabled_in_preview', default="Submit Ballot (disabled in preview)"),
                    state='disabled').pack(pady=(0, 5))
 
         # Footer
-        ttk.Label(outer, text="This is a preview only. No votes are cast.",
+        ttk.Label(outer, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.labels.this_is_a_preview_only_no_votes_are_cast', default="This is a preview only. No votes are cast."),
                   font=('Arial', 9, 'italic'), foreground='gray').pack(pady=(0, 5))
 
-        ttk.Button(outer, text="Close Preview",
+        ttk.Button(outer, text=_t('gui.pastoral.student_union_gui.elections.election_voting_methods.buttons.close_preview', default="Close Preview"),
                    command=preview_win.destroy).pack(pady=(0, 5))
 
 

@@ -8,6 +8,8 @@ A 20-slot wheel: 9 red, 9 black, 2 green. Bet Red or Black (1:1), Green (9:1),
 or a single number 1-18 (17:1). The pointer decides.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import math
 import random
 import tkinter as tk
@@ -44,15 +46,15 @@ def payout(bet_kind, bet_num, slot):
 class ColorWheel:
     def __init__(self, root):
         self.root = root
-        root.title("Color Wheel")
+        root.title(_t('gui.operations.commerce.betting.games.color_wheel.windows.color_wheel', default="Color Wheel"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
         self.bet = 10
         self.offset = 0.0
         self.busy = False
-        self.bet_kind = tk.StringVar(value="color")
-        self.bet_color = tk.StringVar(value="red")
+        self.bet_kind = tk.StringVar(value=_t('gui.operations.commerce.betting.games.color_wheel.values.color', default="color"))
+        self.bet_color = tk.StringVar(value=_t('gui.operations.commerce.betting.games.color_wheel.values.red', default="red"))
         self.bet_number = tk.StringVar(value="1")
         self._build()
         self.draw_wheel()
@@ -61,12 +63,12 @@ class ColorWheel:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=10)
         f.pack()
-        tk.Label(f, text="COLOR WHEEL", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.color_wheel.labels.color_wheel', default="COLOR WHEEL"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 18, "bold")).pack()
         self.wheel = tk.Canvas(f, width=WR * 2 + 20, height=WR * 2 + 30,
                                bg=FELT, highlightthickness=0)
         self.wheel.pack(pady=4)
-        self.msg = tk.Label(f, text="Place a bet and spin!", bg=FELT, fg="white",
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.color_wheel.labels.place_a_bet_and_spin', default="Place a bet and spin!"), bg=FELT, fg="white",
                             font=("Helvetica", 12, "bold"))
         self.msg.pack()
 
@@ -84,7 +86,7 @@ class ColorWheel:
         # number bet
         nrow = tk.Frame(f, bg=FELT, pady=4)
         nrow.pack()
-        tk.Radiobutton(nrow, text="Number (17:1):", value="number",
+        tk.Radiobutton(nrow, text=_t('gui.operations.commerce.betting.games.color_wheel.buttons.number_17_1', default="Number (17:1):"), value="number",
                        variable=self.bet_kind, bg=FELT, fg="white",
                        selectcolor="#111", font=("Helvetica", 10, "bold"),
                        activebackground=FELT).pack(side="left")
@@ -93,7 +95,7 @@ class ColorWheel:
         self.num_menu.config(bg="#333", fg="white", font=("Helvetica", 10, "bold"),
                              width=4, highlightthickness=0)
         self.num_menu.pack(side="left", padx=4)
-        tk.Radiobutton(nrow, text="Colour bet", value="color",
+        tk.Radiobutton(nrow, text=_t('gui.operations.commerce.betting.games.color_wheel.buttons.colour_bet', default="Colour bet"), value="color",
                        variable=self.bet_kind, bg=FELT, fg="white",
                        selectcolor="#111", font=("Helvetica", 10, "bold"),
                        activebackground=FELT).pack(side="left", padx=6)
@@ -106,7 +108,7 @@ class ColorWheel:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.color_wheel.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -119,7 +121,7 @@ class ColorWheel:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.color_wheel.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -174,12 +176,12 @@ class ColorWheel:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.color_wheel.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.busy = True
         self.spin_btn.config(state="disabled")
-        self.msg.config(text="Spinning...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.color_wheel.text.spinning', default="Spinning..."), fg="white")
         self.refresh()
         target = random.randrange(len(SLOTS))
         n = len(SLOTS)
@@ -215,7 +217,7 @@ class ColorWheel:
             self.msg.config(text=f"Landed {slot[0]} ({slot[1]}). No win.",
                             fg="white")
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.color_wheel.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

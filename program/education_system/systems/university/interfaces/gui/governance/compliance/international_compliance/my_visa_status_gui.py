@@ -8,6 +8,8 @@ status questions.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from datetime import date, datetime
@@ -47,7 +49,7 @@ class MyVisaStatusGUI:
 
     def __init__(self, parent=None):
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title("My visa status")
+        self.window.title(_t('gui.governance.compliance.international_compliance.my_visa_status.windows.my_visa_status', default="My visa status"))
         self.window.geometry("700x620")
         self.window.minsize(600, 520)
 
@@ -73,16 +75,16 @@ class MyVisaStatusGUI:
         outer = ttk.Frame(self.window, padding=14)
         outer.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(outer, text="My visa status",
+        ttk.Label(outer, text=_t('gui.governance.compliance.international_compliance.my_visa_status.labels.my_visa_status', default="My visa status"),
                   font=("Arial", 16, "bold")).pack(anchor=tk.W)
         self.subtitle = ttk.Label(outer, text="", foreground="#555555")
         self.subtitle.pack(anchor=tk.W, pady=(0, 10))
 
         self.empty_label = ttk.Label(
             outer,
-            text=("No visa record is on file for your account. If you are\n"
+            text=(_t('gui.governance.compliance.international_compliance.my_visa_status.labels.no_visa_record_is_on_file_for_your_account_if_you_are_an_interna', default="No visa record is on file for your account. If you are\n"
                   "an international student and believe this is wrong,\n"
-                  "please contact the International Office."),
+                  "please contact the International Office.")),
             foreground="#555555", justify=tk.LEFT,
         )
 
@@ -90,22 +92,22 @@ class MyVisaStatusGUI:
         self.detail_frame.pack(fill=tk.BOTH, expand=True)
 
         # Status row at top
-        self.status_row = ttk.LabelFrame(self.detail_frame, text="At a glance",
+        self.status_row = ttk.LabelFrame(self.detail_frame, text=_t('gui.governance.compliance.international_compliance.my_visa_status.labels.at_a_glance', default="At a glance"),
                                           padding=10)
         self.status_row.pack(fill=tk.X)
 
-        self.visa_lbl = ttk.Label(self.status_row, text="Visa: —", font=("Arial", 11))
+        self.visa_lbl = ttk.Label(self.status_row, text=_t('gui.governance.compliance.international_compliance.my_visa_status.labels.visa', default="Visa: —"), font=("Arial", 11))
         self.visa_lbl.grid(row=0, column=0, sticky=tk.W, padx=4, pady=2)
-        self.brp_lbl = ttk.Label(self.status_row, text="BRP: —", font=("Arial", 11))
+        self.brp_lbl = ttk.Label(self.status_row, text=_t('gui.governance.compliance.international_compliance.my_visa_status.labels.brp', default="BRP: —"), font=("Arial", 11))
         self.brp_lbl.grid(row=1, column=0, sticky=tk.W, padx=4, pady=2)
-        self.rts_lbl = ttk.Label(self.status_row, text="Right to study: —",
+        self.rts_lbl = ttk.Label(self.status_row, text=_t('gui.governance.compliance.international_compliance.my_visa_status.labels.right_to_study', default="Right to study: —"),
                                   font=("Arial", 11))
         self.rts_lbl.grid(row=2, column=0, sticky=tk.W, padx=4, pady=2)
-        self.atas_lbl = ttk.Label(self.status_row, text="ATAS: —", font=("Arial", 11))
+        self.atas_lbl = ttk.Label(self.status_row, text=_t('gui.governance.compliance.international_compliance.my_visa_status.labels.atas', default="ATAS: —"), font=("Arial", 11))
         self.atas_lbl.grid(row=3, column=0, sticky=tk.W, padx=4, pady=2)
 
         # Profile detail
-        prof = ttk.LabelFrame(self.detail_frame, text="Profile", padding=10)
+        prof = ttk.LabelFrame(self.detail_frame, text=_t('gui.governance.compliance.international_compliance.my_visa_status.labels.profile', default="Profile"), padding=10)
         prof.pack(fill=tk.X, pady=(10, 0))
         self.profile_text = tk.Text(prof, height=7, wrap=tk.WORD,
                                      state=tk.DISABLED, bg=self.window.cget("bg"),
@@ -113,7 +115,7 @@ class MyVisaStatusGUI:
         self.profile_text.pack(fill=tk.X)
 
         # CAS list
-        cas = ttk.LabelFrame(self.detail_frame, text="CAS history", padding=10)
+        cas = ttk.LabelFrame(self.detail_frame, text=_t('gui.governance.compliance.international_compliance.my_visa_status.labels.cas_history', default="CAS history"), padding=10)
         cas.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
         self.cas_tree = ttk.Treeview(
             cas, columns=("cas", "issued", "programme", "fee_paid", "status"),
@@ -132,16 +134,16 @@ class MyVisaStatusGUI:
         footer.pack(fill=tk.X, pady=(10, 0))
         ttk.Label(
             footer,
-            text=("This information is read-only. Need to update it? "
-                  "Contact the International Office."),
+            text=(_t('gui.governance.compliance.international_compliance.my_visa_status.labels.this_information_is_read_only_need_to_update_it_contact_the_inte', default="This information is read-only. Need to update it? "
+                  "Contact the International Office.")),
             foreground="#555555",
         ).pack(side=tk.LEFT)
-        ttk.Button(footer, text="Close",
+        ttk.Button(footer, text=_t('gui.governance.compliance.international_compliance.my_visa_status.buttons.close', default="Close"),
                    command=self.window.destroy).pack(side=tk.RIGHT)
 
     def _populate(self):
         if not self.student_id:
-            self.subtitle.config(text="(not signed in)")
+            self.subtitle.config(text=_t('gui.governance.compliance.international_compliance.my_visa_status.text.not_signed_in', default="(not signed in)"))
             self.detail_frame.pack_forget()
             self.empty_label.pack(pady=20)
             return
@@ -175,19 +177,19 @@ class MyVisaStatusGUI:
 
         # Right-to-study
         if vs.has_passing_right_to_study(self.student_id):
-            self.rts_lbl.config(text="Right to study: ✓ pass on file",
+            self.rts_lbl.config(text=_t('gui.governance.compliance.international_compliance.my_visa_status.text.right_to_study_pass_on_file', default="Right to study: ✓ pass on file"),
                                  foreground="#287d3c")
         else:
             self.rts_lbl.config(
-                text="Right to study: NOT yet on file — please bring your passport "
-                     "and visa/BRP to the International Office.",
+                text=_t('gui.governance.compliance.international_compliance.my_visa_status.text.right_to_study_not_yet_on_file_please_bring_your_passport_and_vi', default="Right to study: NOT yet on file — please bring your passport "
+                     "and visa/BRP to the International Office."),
                 foreground="#b00020",
             )
 
         # ATAS
         atas_modules = vs.atas_required_for_student_modules(self.student_id)
         if not rec.get("atas_required") and not atas_modules:
-            self.atas_lbl.config(text="ATAS: not required for your modules",
+            self.atas_lbl.config(text=_t('gui.governance.compliance.international_compliance.my_visa_status.text.atas_not_required_for_your_modules', default="ATAS: not required for your modules"),
                                   foreground="#287d3c")
         else:
             ok = all(vs.has_valid_atas(self.student_id, c) for c in atas_modules)

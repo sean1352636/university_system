@@ -21,7 +21,7 @@ class HealthRecordsMixin:
         action_bar.grid(row=0, column=0, pady=10, sticky=tk.E)
         ttk.Button(
             action_bar,
-            text="Import from Sixth Form System",
+            text=_t('gui.pastoral.health.health_portal.health_records.buttons.import_from_sixth_form_system', default="Import from Sixth Form System"),
             command=self.open_sixth_form_medical_import,
         ).pack(side=tk.RIGHT)
 
@@ -98,26 +98,26 @@ class HealthRecordsMixin:
             logging.getLogger(__name__).exception(
                 "Sixth-form module not importable from health records GUI")
             messagebox.showerror(
-                "Import from Sixth Form System",
-                "Could not load the sixth-form student module.")
+                _t('gui.pastoral.health.health_portal.health_records.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
+                _t('gui.pastoral.health.health_portal.health_records.dialogs.could_not_load_the_sixth_form_student_module', default="Could not load the sixth-form student module."))
             return
 
         try:
             sf_rows = sf_students.list_students()
         except Exception as e:
             messagebox.showerror(
-                "Import from Sixth Form System",
+                _t('gui.pastoral.health.health_portal.health_records.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
                 f"Could not load sixth-form students: {e}")
             return
 
         if not sf_rows:
             messagebox.showinfo(
-                "Import from Sixth Form System",
-                "There are no students in the sixth-form database.")
+                _t('gui.pastoral.health.health_portal.health_records.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
+                _t('gui.pastoral.health.health_portal.health_records.dialogs.there_are_no_students_in_the_sixth_form_database', default="There are no students in the sixth-form database."))
             return
 
         win = tk.Toplevel(self.content_frame)
-        win.title("Import Medical Record from Sixth Form")
+        win.title(_t('gui.pastoral.health.health_portal.health_records.windows.import_medical_record_from_sixth_form', default="Import Medical Record from Sixth Form"))
         win.geometry("860x560")
         try:
             win.transient(self.content_frame.winfo_toplevel())
@@ -127,10 +127,10 @@ class HealthRecordsMixin:
 
         # Destination uni student id
         dest_frame = ttk.LabelFrame(
-            win, text="Destination — University student",
+            win, text=_t('gui.pastoral.health.health_portal.health_records.labels.destination_university_student', default="Destination — University student"),
             padding=10)
         dest_frame.pack(fill=tk.X, padx=12, pady=(12, 6))
-        ttk.Label(dest_frame, text="University student ID:").pack(
+        ttk.Label(dest_frame, text=_t('gui.pastoral.health.health_portal.health_records.labels.university_student_id', default="University student ID:")).pack(
             side=tk.LEFT)
         dest_var = tk.StringVar(
             value=(getattr(self, "hr_student_id", None).get()
@@ -139,19 +139,19 @@ class HealthRecordsMixin:
                     width=24).pack(side=tk.LEFT, padx=(8, 0))
         ttk.Label(
             dest_frame,
-            text="(must already exist in the university students table)",
+            text=_t('gui.pastoral.health.health_portal.health_records.labels.must_already_exist_in_the_university_students_table', default="(must already exist in the university students table)"),
             foreground="#666",
         ).pack(side=tk.LEFT, padx=(10, 0))
 
         # Source sixth-form student
         src_frame = ttk.LabelFrame(
-            win, text="Source — Sixth-form student",
+            win, text=_t('gui.pastoral.health.health_portal.health_records.labels.source_sixth_form_student', default="Source — Sixth-form student"),
             padding=10)
         src_frame.pack(fill=tk.BOTH, expand=True, padx=12, pady=6)
 
         search_bar = ttk.Frame(src_frame)
         search_bar.pack(fill=tk.X, pady=(0, 6))
-        ttk.Label(search_bar, text="Search:").pack(side=tk.LEFT)
+        ttk.Label(search_bar, text=_t('gui.pastoral.health.health_portal.health_records.labels.search', default="Search:")).pack(side=tk.LEFT)
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_bar, textvariable=search_var)
         search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True,
@@ -197,11 +197,11 @@ class HealthRecordsMixin:
             sel = tree.selection()
             if not dest_id:
                 status.config(
-                    text="Enter a university student ID first.")
+                    text=_t('gui.pastoral.health.health_portal.health_records.text.enter_a_university_student_id_first', default="Enter a university student ID first."))
                 return
             if not sel:
                 status.config(
-                    text="Select a sixth-form student first.")
+                    text=_t('gui.pastoral.health.health_portal.health_records.text.select_a_sixth_form_student_first', default="Select a sixth-form student first."))
                 return
             sf_sid = sel[0]
 
@@ -236,7 +236,7 @@ class HealthRecordsMixin:
                     uni_student_id=dest_id, sf_student_id=sf_sid)
             except Exception as e:
                 messagebox.showerror(
-                    "Import failed",
+                    _t('gui.pastoral.health.health_portal.health_records.dialogs.import_failed', default="Import failed"),
                     f"Could not import medical record for "
                     f"{sf_sid} -> {dest_id}:\n\n{e}",
                     parent=win,
@@ -247,7 +247,7 @@ class HealthRecordsMixin:
                 'sixth_form_medical_import', 'medical_info', dest_id)
 
             messagebox.showinfo(
-                "Import complete",
+                _t('gui.pastoral.health.health_portal.health_records.dialogs.import_complete', default="Import complete"),
                 "Medical record imported from sixth form.\n\n"
                 f"University student : {dest_id}\n"
                 f"Sixth-form student : {sf_sid}\n\n"
@@ -274,10 +274,10 @@ class HealthRecordsMixin:
 
         btns = ttk.Frame(footer)
         btns.pack(side=tk.RIGHT)
-        ttk.Button(btns, text="Cancel",
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.health_records.buttons.cancel', default="Cancel"),
                     command=win.destroy).pack(
             side=tk.RIGHT, padx=4)
-        ttk.Button(btns, text="Import",
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.health_records.buttons.import', default="Import"),
                     command=_run_import).pack(
             side=tk.RIGHT, padx=4)
         tree.bind("<Double-Button-1>", lambda _e: _run_import())
@@ -286,15 +286,15 @@ class HealthRecordsMixin:
         """Save health record to database"""
         try:
             if not self.hr_student_id.get().strip():
-                messagebox.showerror("Error", "Student ID is required")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.health_records.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.health_records.dialogs.student_id_is_required', default="Student ID is required"))
                 return
 
             if not self.hr_record_type.get().strip():
-                messagebox.showerror("Error", "Record type is required")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.health_records.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.health_records.dialogs.record_type_is_required', default="Record type is required"))
                 return
 
             if not self.hr_description.get(1.0, tk.END).strip():
-                messagebox.showerror("Error", "Description is required")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.health_records.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.health_records.dialogs.description_is_required', default="Description is required"))
                 return
 
             conn = self.get_connection()
@@ -302,7 +302,7 @@ class HealthRecordsMixin:
 
             cursor.execute("SELECT COUNT(*) FROM students WHERE student_id = ?", (self.hr_student_id.get().strip(),))
             if cursor.fetchone()[0] == 0:
-                messagebox.showerror("Error", "Student ID not found")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.health_records.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.health_records.dialogs.student_id_not_found', default="Student ID not found"))
                 conn.close()
                 return
 
@@ -337,11 +337,11 @@ class HealthRecordsMixin:
                 self.send_health_record_creation_confirmation(patient_email, patient_name, record_type)
 
             self.log_audit_event('add_health_record', 'health_record', record_id)
-            messagebox.showinfo("Success", "Health record added successfully!\nConfirmation email sent.")
+            messagebox.showinfo(_t('gui.pastoral.health.health_portal.health_records.dialogs.success', default="Success"), _t('gui.pastoral.health.health_portal.health_records.dialogs.health_record_added_successfully_confirmation_email_sent', default="Health record added successfully!\nConfirmation email sent."))
             self.clear_health_record_form()
 
         except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.health_records.dialogs.error', default="Error"), f"An error occurred: {str(e)}")
 
     def clear_health_record_form(self):
         """Clear the health record form"""
@@ -470,19 +470,19 @@ class HealthRecordsMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load health records: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.health_records.dialogs.error', default="Error"), f"Failed to load health records: {str(e)}")
 
     def view_health_record_details(self):
         """Show detailed view of selected health record"""
         selection = self.hr_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a record to view.")
+            messagebox.showwarning(_t('gui.pastoral.health.health_portal.health_records.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.health_portal.health_records.dialogs.please_select_a_record_to_view', default="Please select a record to view."))
             return
 
         record_id = self.hr_tree.item(selection[0])['values'][0]
 
         details_window = tk.Toplevel(self.root)
-        details_window.title("Health Record Details")
+        details_window.title(_t('gui.pastoral.health.health_portal.health_records.windows.health_record_details', default="Health Record Details"))
         details_window.geometry("600x500")
         details_window.transient(self.root)
         details_window.grab_set()
@@ -503,7 +503,7 @@ class HealthRecordsMixin:
             conn.close()
 
             if not record:
-                messagebox.showerror("Error", "Record not found")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.health_records.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.health_records.dialogs.record_not_found', default="Record not found"))
                 details_window.destroy()
                 return
 
@@ -675,12 +675,12 @@ class HealthRecordsMixin:
         """Delete selected health record"""
         selection = self.hr_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a record to delete.")
+            messagebox.showwarning(_t('gui.pastoral.health.health_portal.health_records.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.health_portal.health_records.dialogs.please_select_a_record_to_delete', default="Please select a record to delete."))
             return
 
         record_id = self.hr_tree.item(selection[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this health record?"):
+        if messagebox.askyesno(_t('gui.pastoral.health.health_portal.health_records.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.pastoral.health.health_portal.health_records.dialogs.are_you_sure_you_want_to_delete_this_health_record', default="Are you sure you want to delete this health record?")):
             try:
                 conn = self.get_connection()
                 cursor = conn.cursor()
@@ -705,7 +705,7 @@ class HealthRecordsMixin:
                     self.send_health_record_deletion_confirmation(patient_email, patient_name, record_type)
 
                 self.log_audit_event('delete_health_record', 'health_record', record_id)
-                messagebox.showinfo("Success", "Health record deleted successfully!\nConfirmation email sent.")
+                messagebox.showinfo(_t('gui.pastoral.health.health_portal.health_records.dialogs.success', default="Success"), _t('gui.pastoral.health.health_portal.health_records.dialogs.health_record_deleted_successfully_confirmation_email_sent', default="Health record deleted successfully!\nConfirmation email sent."))
                 self.search_health_records()
 
             except Exception as e:

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -212,7 +214,7 @@ def show_lms_gui(self):
             if self.notebook.tab(i, "text") == _("lms.title"):
                 self.notebook.select(i)
                 return
-        messagebox.showinfo("LMS", "LMS tab is available in the Course Management tabs above.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.academic_systems.integrations.dialogs.lms', default="LMS"), _t('gui.academics.course_management_gui.academic_systems.integrations.dialogs.lms_tab_is_available_in_the_course_management_tabs_above', default="LMS tab is available in the Course Management tabs above."))
     except Exception as e:
         messagebox.showerror(_("common.error"), f"Failed to open LMS tab: {e}")
 

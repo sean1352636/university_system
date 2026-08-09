@@ -11,15 +11,17 @@ audits the existing dataset, including conflicts created before that check
 existed.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text as _
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)
 
 
@@ -40,7 +42,7 @@ class ScheduleConflictReportDialog:
         self.auth = auth
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Schedule Conflict Report")
+        self.dialog.title(_t('gui.academics.course_management_gui.schedules.conflict_report.windows.schedule_conflict_report', default="Schedule Conflict Report"))
         self.dialog.geometry("950x550")
         self.dialog.transient(parent)
 
@@ -50,7 +52,7 @@ class ScheduleConflictReportDialog:
     def _build_ui(self):
         header = ttk.Frame(self.dialog, padding=10)
         header.pack(fill=tk.X)
-        ttk.Label(header, text="Schedule Conflict Report",
+        ttk.Label(header, text=_t('gui.academics.course_management_gui.schedules.conflict_report.labels.schedule_conflict_report', default="Schedule Conflict Report"),
                   font=("Arial", 13, "bold")).pack(side=tk.LEFT)
         ttk.Button(header, text=_("common.refresh", default="Refresh"),
                    command=self._populate).pack(side=tk.RIGHT)
@@ -58,8 +60,8 @@ class ScheduleConflictReportDialog:
         # Filter row
         filter_frame = ttk.Frame(self.dialog, padding=(10, 0))
         filter_frame.pack(fill=tk.X)
-        ttk.Label(filter_frame, text="Filter by type:").pack(side=tk.LEFT)
-        self.type_filter = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.academics.course_management_gui.schedules.conflict_report.labels.filter_by_type', default="Filter by type:")).pack(side=tk.LEFT)
+        self.type_filter = tk.StringVar(value=_t('gui.academics.course_management_gui.schedules.conflict_report.values.all', default="All"))
         ttk.Combobox(filter_frame, textvariable=self.type_filter, state="readonly",
                      values=["All", "Room", "Instructor", "Course"], width=12,
                      ).pack(side=tk.LEFT, padx=5)

@@ -16,7 +16,7 @@ import os
 from pathlib import Path
 from typing import Dict, Any
 
-from education_system.systems.university.infrastructure.paths import CONFIG_DIR
+from education_system.paths import UNIVERSITY_CONFIG_DIR
 
 
 # Default institution settings
@@ -57,7 +57,7 @@ _settings_loaded: bool = False
 
 def _get_config_path() -> Path:
     """Get the path to the institution settings configuration file."""
-    return CONFIG_DIR / "institution_settings.json"
+    return UNIVERSITY_CONFIG_DIR / "institution_settings.json"
 
 
 def load_settings() -> Dict[str, Any]:

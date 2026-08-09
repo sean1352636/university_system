@@ -16,6 +16,11 @@ def pytest_configure(config):
     # defaults), so opt the whole test run into dev seeding unless the
     # environment already sets it explicitly.
     os.environ.setdefault("EDU_DEV_SEED", "true")
+    # Security-sensitive modules fail closed when APP_ENV is production —
+    # which is also the default when it is unset. The test run is a dev-like
+    # environment, so say so explicitly; tests that assert production
+    # behaviour patch APP_ENV themselves.
+    os.environ.setdefault("APP_ENV", "testing")
     _suppress_daemon_threads()
     _quiet_noisy_loggers()
 
@@ -61,6 +66,26 @@ _SUPPRESSED_THREAD_NAMES = frozenset({
 })
 
 _real_thread_start = threading.Thread.start
+
+_strict_skips = []
+
+
+def pytest_runtest_logreport(report):
+    """Collect skips so CI can opt into fail-closed test execution."""
+    if report.skipped and os.environ.get("CI_STRICT_SKIPS") == "1":
+        _strict_skips.append((report.nodeid, str(report.longrepr)))
+
+
+def pytest_sessionfinish(session, exitstatus):
+    """Never report a green strict-quality job when a test silently skipped."""
+    if _strict_skips:
+        session.exitstatus = 1
+        terminal = session.config.pluginmanager.getplugin("terminalreporter")
+        if terminal:
+            terminal.write_sep("=", "strict skip gate")
+            for nodeid, reason in _strict_skips:
+                terminal.write_line(f"SKIPPED: {nodeid}: {reason}")
+            terminal.write_line(f"{len(_strict_skips)} skipped test(s) violate CI_STRICT_SKIPS=1")
 
 
 def _guarded_thread_start(self):

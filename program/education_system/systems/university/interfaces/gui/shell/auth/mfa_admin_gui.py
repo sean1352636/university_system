@@ -4,6 +4,8 @@ MFA Admin Management GUI
 Administrative interface for managing MFA policies, user MFA settings, and monitoring
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -279,7 +281,7 @@ class MFAAdminPanel(tk.Toplevel):
 
         tk.Label(filter_frame, text=_("mfa_admin.labels.filter"), bg="white").pack(side=tk.LEFT, padx=(0, 5))
 
-        self.user_filter_var = tk.StringVar(value="all")
+        self.user_filter_var = tk.StringVar(value=_t('gui.shell.auth.mfa_admin.values.all', default="all"))
         filters = [
             (_("mfa_admin.filters.all_users"), "all"),
             (_("mfa_admin.filters.mfa_enabled"), "enabled"),
@@ -371,7 +373,7 @@ class MFAAdminPanel(tk.Toplevel):
 
         tk.Label(filter_frame, text=_("mfa_admin.labels.show"), bg="white").pack(side=tk.LEFT, padx=(0, 5))
 
-        self.audit_filter_var = tk.StringVar(value="all")
+        self.audit_filter_var = tk.StringVar(value=_t('gui.shell.auth.mfa_admin.values.all', default="all"))
         audit_filters = [
             (_("mfa_admin.filters.all"), "all"),
             (_("mfa_admin.filters.success"), "success"),
@@ -870,7 +872,7 @@ class MFAAdminPanel(tk.Toplevel):
 
         # Enforcement level
         ttk.Label(dialog, text=_("mfa_admin.dialogs.enforcement_level")).pack(anchor='w', padx=10, pady=(10, 0))
-        enforcement_var = tk.StringVar(value="required")
+        enforcement_var = tk.StringVar(value=_t('gui.shell.auth.mfa_admin.values.required', default="required"))
         enforcement_combo = ttk.Combobox(dialog, textvariable=enforcement_var,
                                          values=['required', 'optional', 'recommended'], state='readonly')
         enforcement_combo.pack(anchor='w', padx=10, pady=5)
@@ -1087,7 +1089,7 @@ class MFAAdminPanel(tk.Toplevel):
 
         # Required methods
         ttk.Label(dialog, text=_("mfa_admin.dialogs.required_method")).pack(anchor='w', padx=20, pady=(10, 0))
-        method_var = tk.StringVar(value="any")
+        method_var = tk.StringVar(value=_t('gui.shell.auth.mfa_admin.values.any', default="any"))
         methods_frame = ttk.Frame(dialog)
         methods_frame.pack(anchor='w', padx=20, pady=5)
 

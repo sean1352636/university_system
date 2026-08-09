@@ -1,5 +1,7 @@
 """Budget manager - main class composing all mixins"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 
@@ -57,15 +59,15 @@ class BudgetManager(
         toolbar.pack(fill='x', padx=10, pady=5)
 
         # Common buttons for all users - Quick navigation
-        tk.Button(toolbar, text="\U0001f4b0 My Expenses", command=self.open_expense_tracker,
+        tk.Button(toolbar, text=_t('gui.finance.finance.budget_manager.manager.buttons.my_expenses', default="\U0001f4b0 My Expenses"), command=self.open_expense_tracker,
                  bg=self.gui.layout.colors['info'], fg='white').pack(side='left', padx=5)
-        tk.Button(toolbar, text="\U0001f4b5 My Income", command=self.open_income_tracker,
+        tk.Button(toolbar, text=_t('gui.finance.finance.budget_manager.manager.buttons.my_income', default="\U0001f4b5 My Income"), command=self.open_income_tracker,
                  bg=self.gui.layout.colors['success'], fg='white').pack(side='left', padx=5)
-        tk.Button(toolbar, text="\U0001f3af Savings Goals", command=self.open_savings_goals,
+        tk.Button(toolbar, text=_t('gui.finance.finance.budget_manager.manager.buttons.savings_goals', default="\U0001f3af Savings Goals"), command=self.open_savings_goals,
                  bg=self.gui.layout.colors['warning'], fg='white').pack(side='left', padx=5)
-        tk.Button(toolbar, text="\U0001f37d\ufe0f Meal Plan", command=self.open_meal_plan,
+        tk.Button(toolbar, text=_t('gui.finance.finance.budget_manager.manager.buttons.meal_plan', default="\U0001f37d\ufe0f Meal Plan"), command=self.open_meal_plan,
                  bg=self.gui.layout.colors['secondary'], fg='white').pack(side='left', padx=5)
-        tk.Button(toolbar, text="\U0001f4da Textbooks", command=self.open_textbooks,
+        tk.Button(toolbar, text=_t('gui.finance.finance.budget_manager.manager.buttons.textbooks', default="\U0001f4da Textbooks"), command=self.open_textbooks,
                  bg=self.gui.layout.colors['primary'], fg='white').pack(side='left', padx=5)
 
         # Admin/Staff only buttons
@@ -73,15 +75,15 @@ class BudgetManager(
             toolbar2 = tk.Frame(budget_frame, bg='white')
             toolbar2.pack(fill='x', padx=10, pady=5)
 
-            tk.Button(toolbar2, text="\U0001f4ca New Budget Plan", command=self.create_budget_plan,
+            tk.Button(toolbar2, text=_t('gui.finance.finance.budget_manager.manager.buttons.new_budget_plan', default="\U0001f4ca New Budget Plan"), command=self.create_budget_plan,
                      bg=self.gui.layout.colors['success'], fg='white').pack(side='left', padx=5)
-            tk.Button(toolbar2, text="\u270f\ufe0f Edit Budget", command=self.edit_budget_plan,
+            tk.Button(toolbar2, text=_t('gui.finance.finance.budget_manager.manager.buttons.edit_budget', default="\u270f\ufe0f Edit Budget"), command=self.edit_budget_plan,
                      bg=self.gui.layout.colors['warning'], fg='white').pack(side='left', padx=5)
-            tk.Button(toolbar2, text="\U0001f5d1\ufe0f Delete Budget", command=self.delete_budget_plan,
+            tk.Button(toolbar2, text=_t('gui.finance.finance.budget_manager.manager.buttons.delete_budget', default="\U0001f5d1\ufe0f Delete Budget"), command=self.delete_budget_plan,
                      bg=self.gui.layout.colors['danger'], fg='white').pack(side='left', padx=5)
-            tk.Button(toolbar2, text="\U0001f4c8 Budget Analysis", command=self.budget_analysis,
+            tk.Button(toolbar2, text=_t('gui.finance.finance.budget_manager.manager.buttons.budget_analysis', default="\U0001f4c8 Budget Analysis"), command=self.budget_analysis,
                      bg=self.gui.layout.colors['secondary'], fg='white').pack(side='left', padx=5)
-            tk.Button(toolbar2, text="\U0001f4c2 Manage Categories", command=self.gui_manage_budget_categories,
+            tk.Button(toolbar2, text=_t('gui.finance.finance.budget_manager.manager.buttons.manage_categories', default="\U0001f4c2 Manage Categories"), command=self.gui_manage_budget_categories,
                      bg=self.gui.layout.colors['info'], fg='white').pack(side='left', padx=5)
 
         # Main content with notebook

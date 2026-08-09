@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, scrolledtext
 
@@ -9,14 +11,14 @@ class SearchMixin:
         """Create chat history search functionality"""
         def show_search_dialog():
             search_window = tk.Toplevel(self.root)
-            search_window.title("Search Chat History")
+            search_window.title(_t('gui.shell.ai.features.search.windows.search_chat_history', default="Search Chat History"))
             search_window.geometry("500x400")
 
             # Search input
             search_frame = ttk.Frame(search_window)
             search_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+            ttk.Label(search_frame, text=_t('gui.shell.ai.features.search.labels.search', default="Search:")).pack(side=tk.LEFT)
             search_entry = ttk.Entry(search_frame, width=30)
             search_entry.pack(side=tk.LEFT, padx=(5, 10), fill=tk.X, expand=True)
 
@@ -48,7 +50,7 @@ class SearchMixin:
                 else:
                     results_text.insert(1.0, f"Found {found_count} results\n\n")
 
-            ttk.Button(search_frame, text="Search", command=perform_search).pack(side=tk.LEFT)
+            ttk.Button(search_frame, text=_t('gui.shell.ai.features.search.buttons.search', default="Search"), command=perform_search).pack(side=tk.LEFT)
 
             # Results display
             results_text = scrolledtext.ScrolledText(search_window, height=20)

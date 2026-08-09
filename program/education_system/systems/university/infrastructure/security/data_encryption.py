@@ -16,13 +16,14 @@ import secrets
 import json
 import logging
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from cryptography.fernet import Fernet
 import base64
 
 # Import centralized database path and connection utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text, _
 
@@ -66,7 +67,7 @@ class EncryptionManager:
             use_kms: Force KMS usage (True/False) or auto-detect from environment (None)
         """
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
 
         self.db_path = db_path
 
@@ -145,18 +146,34 @@ class EncryptionManager:
             "Set USE_KMS=true and configure a KMS provider for secure key management."
         )
 
-        # Store keys in a separate .keys directory under the project root,
-        # NOT alongside the database files
-        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        keys_dir = os.path.join(project_root, '.keys')
+        app_env = os.getenv("APP_ENV", "development").strip().lower()
+        if app_env not in {"development", "dev", "local", "test"}:
+            raise RuntimeError(
+                "File-based encryption keys are disabled outside development; "
+                "configure USE_KMS=true and a supported KMS provider"
+            )
+
+        # Development fallback only. Runtime secrets belong under var/ (or an
+        # explicitly mounted secret directory), never inside the Python package.
+        from education_system.platform.governance.security.secrets import (
+            DevelopmentFileSecretProvider,
+        )
+        from education_system.paths import VAR_DIR
+
+        provider = DevelopmentFileSecretProvider(
+            Path(os.getenv(
+                "EDUCATION_UNIVERSITY_KEYS_DIR",
+                VAR_DIR / "data" / "university" / "secrets",
+            ))
+        )
+        master_key_path = os.fspath(provider.path_for("encryption-master.key"))
+        keys_dir = os.path.dirname(master_key_path)
         os.makedirs(keys_dir, exist_ok=True)
         # Restrict directory permissions
         try:
             os.chmod(keys_dir, 0o700)
         except OSError:
             logger.warning("Could not set restrictive permissions on keys directory: %s", keys_dir)
-
-        master_key_path = os.path.join(keys_dir, '.encryption_master_key')
 
         # Support legacy key location for backward compatibility
         legacy_key_path = os.path.join(
@@ -179,10 +196,15 @@ class EncryptionManager:
             try:
                 with open(master_key_path, 'rb') as f:
                     key = f.read()
+                # A Fernet key is 32 urlsafe-base64 encoded bytes (44 bytes on
+                # disk). Reject empty/truncated placeholders rather than
+                # failing later during a sensitive operation.
+                Fernet(key)
                 logger.debug("Master key loaded from file")
                 return key
             except Exception:
-                logger.error("Failed to load master key")
+                logger.exception("Stored master key is invalid")
+                raise RuntimeError("Stored encryption master key is invalid")
 
         # Generate new master key
         logger.warning(

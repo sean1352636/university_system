@@ -1,5 +1,7 @@
 """Data loading helpers for combo boxes and filters"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import csv
@@ -157,7 +159,7 @@ class DataLoadersMixin:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.data_loaders.dialogs.error', default="Error"), f"Failed to load assignments: {e}")
 
 
     def _load_assignments_for_compose(self, assignment_combo):
@@ -188,7 +190,7 @@ class DataLoadersMixin:
         """Export assignment data"""
         selection = self.manage_assignments_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment to export")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.data_loaders.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.data_loaders.dialogs.please_select_an_assignment_to_export', default="Please select an assignment to export"))
             return
 
         item = self.manage_assignments_tree.item(selection[0])
@@ -229,7 +231,7 @@ class DataLoadersMixin:
 
             finally:
                 conn.close()
-            messagebox.showinfo("Success", f"Assignment data exported to: {save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.data_loaders.dialogs.success', default="Success"), f"Assignment data exported to: {save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export data: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.data_loaders.dialogs.error', default="Error"), f"Failed to export data: {e}")

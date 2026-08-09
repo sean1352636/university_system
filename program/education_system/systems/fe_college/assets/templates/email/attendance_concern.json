@@ -1,0 +1,8 @@
+{
+  "subject": "Attendance on {{course_title}} — {{first_name}} {{last_name}}",
+  "body": "Dear {{recipient_name}},\n\nWe keep in touch when attendance drops, because catching it early is usually the difference between a learner finishing the course and not.\n\n{{first_name}}'s attendance on {{course_title}} is currently {{attendance_pct}}%, against the {{attendance_target}}% we ask for. The sessions missed since {{since_date}} are:\n\n{{missed_sessions}}\n\nIf something is making it hard to attend — travel, work, health, caring responsibilities — please tell {{tutor_name}}. Support is available and it is easier to arrange now than after a deadline has passed.\n\n{{tutor_name}}\nPersonal Tutor, {{college_name}}",
+  "from_name": "{{college_name}}",
+  "from_address": "attendance@fecollege.ac.uk",
+  "category": "Attendance",
+  "priority": "High"
+}

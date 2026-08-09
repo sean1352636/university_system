@@ -30,10 +30,30 @@ import time
 # query, which requires a computationally-expensive / password-safe KDF for
 # sensitive credentials. Iteration count is kept modest because the raw key is
 # already 256 bits of entropy from ``secrets.token_urlsafe(32)``.
-_API_KEY_PEPPER: bytes = (
-    os.environ.get("API_KEY_PEPPER", "uni-api-key-pepper-v1").encode("utf-8")
-)
+def _resolve_pepper() -> bytes:
+    """Pepper for key hashing — required in production, defaulted only in dev."""
+    pepper = os.environ.get("API_KEY_PEPPER")
+    if pepper:
+        return pepper.encode("utf-8")
+    app_env = os.getenv("APP_ENV", "production").strip().lower()
+    if app_env in ("development", "dev", "local", "test", "testing"):
+        return b"uni-api-key-pepper-v1"
+    raise RuntimeError(
+        "API_KEY_PEPPER must be set in production: the built-in default is "
+        "public, which defeats the pepper against a stolen database."
+    )
+
+
 _API_KEY_ITERATIONS: int = 10_000
+_API_KEY_PEPPER_CACHE: bytes | None = None
+
+
+def _get_pepper() -> bytes:
+    """Resolve (and cache) the pepper on first use, not at import time."""
+    global _API_KEY_PEPPER_CACHE
+    if _API_KEY_PEPPER_CACHE is None:
+        _API_KEY_PEPPER_CACHE = _resolve_pepper()
+    return _API_KEY_PEPPER_CACHE
 
 
 def _hash_api_key(raw_key: str) -> str:
@@ -41,13 +61,13 @@ def _hash_api_key(raw_key: str) -> str:
     return hashlib.pbkdf2_hmac(
         "sha256",
         raw_key.encode("utf-8"),
-        _API_KEY_PEPPER,
+        _get_pepper(),
         _API_KEY_ITERATIONS,
     ).hex()
 
 # Import centralized database path and connection utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text, _
 
@@ -56,7 +76,7 @@ class APISecurityManager:
 
     def __init__(self, db_path: str = None):
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
         self.db_path = db_path
 
     def _get_connection(self):
@@ -240,7 +260,7 @@ class PasswordSecurityManager:
 
     def __init__(self, db_path: str = None):
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
         self.db_path = db_path
 
     def _get_connection(self):
@@ -370,12 +390,18 @@ class PasswordSecurityManager:
                             'message': f'This password has appeared in {count} data breaches'
                         }
 
-                return {'compromised': False, 'message': 'Password not found in known breaches'}
+                return {'compromised': False, 'checked': True,
+                        'message': 'Password not found in known breaches'}
 
-            return {'compromised': False, 'error': 'Unable to check'}
+            # Do not assert the password is safe when the check did not run.
+            # 'checked': False lets a strict caller reject rather than read a
+            # falsy 'compromised' as a clean bill of health.
+            logger.warning("HIBP breach check unavailable (status=%s)", response.status_code)
+            return {'compromised': False, 'checked': False, 'error': 'Unable to check'}
 
         except Exception as e:
-            return {'compromised': False, 'error': str(e)}
+            logger.warning("HIBP breach check failed: %s", e)
+            return {'compromised': False, 'checked': False, 'error': str(e)}
 
     def add_to_password_history(self, user_id: int, password_hash: str) -> None:
         """Add password to user's history"""
@@ -435,7 +461,7 @@ class SecurityAuditManager:
 
     def __init__(self, db_path: str = None):
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
         self.db_path = db_path
 
     def _get_connection(self):
@@ -598,7 +624,7 @@ class DataLossPreventionManager:
 
     def __init__(self, db_path: str = None):
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
         self.db_path = db_path
 
         # Bulk export thresholds
@@ -710,7 +736,7 @@ class IncidentResponseManager:
 
     def __init__(self, db_path: str = None):
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
         self.db_path = db_path
 
     def _get_connection(self):
@@ -774,7 +800,7 @@ class VulnerabilityScanner:
 
     def __init__(self, db_path: str = None):
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
         self.db_path = db_path
 
     def _get_connection(self):

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -8,7 +10,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 matplotlib.use('TkAgg')
 import numpy as np
 
@@ -72,12 +74,12 @@ def get_admin_email():
 def send_report_to_admin(report_title, report_content, parent_window=None):
     """Send a report to the admin via email"""
     if not HAS_EMAIL:
-        messagebox.showerror("Error", "Email system not available")
+        messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.email_system_not_available', default="Email system not available"))
         return False
 
     admin_email = get_admin_email()
     if not admin_email:
-        messagebox.showerror("Error", "No admin email found in database.\nPlease ensure an admin user has an email configured.")
+        messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.no_admin_email_found_in_database_please_ensure_an_admin_user_has', default="No admin email found in database.\nPlease ensure an admin user has an email configured."))
         return False
 
     try:
@@ -99,13 +101,13 @@ def send_report_to_admin(report_title, report_content, parent_window=None):
 
         result = send_email(admin_email, subject, body)
         if result:
-            messagebox.showinfo("Success", f"Report sent to admin at:\n{admin_email}")
+            messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.success', default="Success"), f"Report sent to admin at:\n{admin_email}")
             return True
         else:
-            messagebox.showerror("Error", "Failed to send email. Please check email configuration.")
+            messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.failed_to_send_email_please_check_email_configuration', default="Failed to send email. Please check email configuration."))
             return False
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to send report:\n{e}")
+        messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"), f"Failed to send report:\n{e}")
         return False
 
 
@@ -115,29 +117,29 @@ def send_report_to_admin(report_title, report_content, parent_window=None):
 def show_payment_optimization_dialog(self):
     """Show payment plan optimization analysis dialog"""
     opt_window = tk.Toplevel(self.root)
-    opt_window.title("Payment Plan Optimization")
+    opt_window.title(_t('gui.finance.finance_reporting.feature_dialogs.windows.payment_plan_optimization', default="Payment Plan Optimization"))
     opt_window.geometry("1200x800")
 
     main_frame = ttk.Frame(opt_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Payment Plan Optimization Analysis",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.payment_plan_optimization_analysis', default="Payment Plan Optimization Analysis"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Analysis options
-    options_frame = ttk.LabelFrame(main_frame, text="Optimization Options", padding="10")
+    options_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.optimization_options', default="Optimization Options"), padding="10")
     options_frame.pack(fill=tk.X, pady=(0, 10))
 
     self.opt_monthly = tk.BooleanVar(value=True)
     self.opt_biweekly = tk.BooleanVar(value=True)
     self.opt_flexible = tk.BooleanVar(value=True)
 
-    ttk.Checkbutton(options_frame, text="Monthly Payment Plans", variable=self.opt_monthly).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Bi-weekly Payment Plans", variable=self.opt_biweekly).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Flexible Payment Terms", variable=self.opt_flexible).pack(anchor=tk.W)
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.monthly_payment_plans', default="Monthly Payment Plans"), variable=self.opt_monthly).pack(anchor=tk.W)
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.bi_weekly_payment_plans', default="Bi-weekly Payment Plans"), variable=self.opt_biweekly).pack(anchor=tk.W)
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.flexible_payment_terms', default="Flexible Payment Terms"), variable=self.opt_flexible).pack(anchor=tk.W)
 
     # Results area
-    results_frame = ttk.LabelFrame(main_frame, text="Optimization Results", padding="10")
+    results_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.optimization_results', default="Optimization Results"), padding="10")
     results_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     results_text = ScrolledText(results_frame, height=15, wrap=tk.WORD)
@@ -157,23 +159,23 @@ def show_payment_optimization_dialog(self):
 
         results_text.insert(tk.END, "\nRecommendation: Implement flexible payment terms for optimal ROI\n")
 
-    ttk.Button(main_frame, text="Run Analysis", command=run_optimization).pack(pady=5)
-    ttk.Button(main_frame, text="Close", command=opt_window.destroy).pack(pady=5)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.run_analysis', default="Run Analysis"), command=run_optimization).pack(pady=5)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=opt_window.destroy).pack(pady=5)
 
 def show_collection_strategy_dialog(self):
     """Show collection strategy effectiveness dialog"""
     strategy_window = tk.Toplevel(self.root)
-    strategy_window.title("Collection Strategy Analysis")
+    strategy_window.title(_t('gui.finance.finance_reporting.feature_dialogs.windows.collection_strategy_analysis', default="Collection Strategy Analysis"))
     strategy_window.geometry("1200x800")
 
     main_frame = ttk.Frame(strategy_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Collection Strategy Effectiveness Analysis",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.collection_strategy_effectiveness_analysis', default="Collection Strategy Effectiveness Analysis"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Strategy metrics
-    metrics_frame = ttk.LabelFrame(main_frame, text="Current Strategy Metrics", padding="10")
+    metrics_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.current_strategy_metrics', default="Current Strategy Metrics"), padding="10")
     metrics_frame.pack(fill=tk.X, pady=(0, 10))
 
     try:
@@ -192,7 +194,7 @@ def show_collection_strategy_dialog(self):
         method_data = cursor.fetchall()
 
         if method_data:
-            ttk.Label(metrics_frame, text="Collection Method Effectiveness:",
+            ttk.Label(metrics_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.collection_method_effectiveness', default="Collection Method Effectiveness:"),
                      font=('Arial', 10, 'bold')).pack(anchor=tk.W)
 
             for method, count, total, avg in method_data:
@@ -206,7 +208,7 @@ def show_collection_strategy_dialog(self):
                  foreground="red").pack(anchor=tk.W)
 
     # Strategy recommendations
-    recommendations_frame = ttk.LabelFrame(main_frame, text="Strategy Recommendations", padding="10")
+    recommendations_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.strategy_recommendations', default="Strategy Recommendations"), padding="10")
     recommendations_frame.pack(fill=tk.BOTH, expand=True)
 
     recommendations_text = ScrolledText(recommendations_frame, height=15, wrap=tk.WORD)
@@ -253,18 +255,18 @@ def show_collection_strategy_dialog(self):
     recommendations_text.insert(1.0, recommendations_content)
     recommendations_text.configure(state='disabled')
 
-    ttk.Button(main_frame, text="Close", command=strategy_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=strategy_window.destroy).pack(pady=10)
 
 def show_scholarship_analysis_dialog(self):
     """Show scholarship impact analysis dialog"""
     scholarship_window = tk.Toplevel(self.root)
-    scholarship_window.title("Scholarship Impact Analysis")
+    scholarship_window.title(_t('gui.finance.finance_reporting.feature_dialogs.windows.scholarship_impact_analysis', default="Scholarship Impact Analysis"))
     scholarship_window.geometry("1200x800")
 
     main_frame = ttk.Frame(scholarship_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Scholarship Impact Analysis",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.scholarship_impact_analysis', default="Scholarship Impact Analysis"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Create notebook for different analyses
@@ -273,7 +275,7 @@ def show_scholarship_analysis_dialog(self):
 
     # Impact Analysis Tab
     impact_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(impact_frame, text="Impact Analysis")
+    notebook.add(impact_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.tabs.impact_analysis', default="Impact Analysis"))
 
     try:
         from education_system.systems.university.infrastructure.database.db import get_connection
@@ -303,9 +305,9 @@ def show_scholarship_analysis_dialog(self):
         impact_data = cursor.fetchall()
 
         impact_tree = ttk.Treeview(impact_frame, columns=('Students', 'Collection Rate'), height=10)
-        impact_tree.heading('#0', text='Scholarship Status')
-        impact_tree.heading('Students', text='Student Count')
-        impact_tree.heading('Collection Rate', text='Avg Collection Rate')
+        impact_tree.heading('#0', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.scholarship_status', default='Scholarship Status'))
+        impact_tree.heading('Students', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.student_count', default='Student Count'))
+        impact_tree.heading('Collection Rate', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.avg_collection_rate', default='Avg Collection Rate'))
         impact_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         for status, count, rate in impact_data:
@@ -320,7 +322,7 @@ def show_scholarship_analysis_dialog(self):
 
     # ROI Analysis Tab
     roi_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(roi_frame, text="ROI Analysis")
+    notebook.add(roi_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.tabs.roi_analysis', default="ROI Analysis"))
 
     roi_text = ScrolledText(roi_frame, height=20, wrap=tk.WORD)
     roi_text.pack(fill=tk.BOTH, expand=True)
@@ -368,18 +370,18 @@ def show_scholarship_analysis_dialog(self):
     roi_text.insert(1.0, roi_content)
     roi_text.configure(state='disabled')
 
-    ttk.Button(main_frame, text="Close", command=scholarship_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=scholarship_window.destroy).pack(pady=10)
 
 def show_revenue_optimization_dialog(self):
     """Show revenue optimization recommendations dialog"""
     revenue_window = tk.Toplevel(self.root)
-    revenue_window.title("Revenue Optimization Recommendations")
+    revenue_window.title(_t('gui.finance.finance_reporting.feature_dialogs.windows.revenue_optimization_recommendations', default="Revenue Optimization Recommendations"))
     revenue_window.geometry("1200x800")
 
     main_frame = ttk.Frame(revenue_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Revenue Optimization Recommendations",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.revenue_optimization_recommendations', default="Revenue Optimization Recommendations"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Quick metrics
@@ -398,7 +400,7 @@ def show_revenue_optimization_dialog(self):
         revenue_data = cursor.fetchone()
         collection_rate = (revenue_data[1] / revenue_data[0] * 100) if revenue_data[0] > 0 else 0
 
-        metrics_frame = ttk.LabelFrame(main_frame, text="Current Performance", padding="10")
+        metrics_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.current_performance', default="Current Performance"), padding="10")
         metrics_frame.pack(fill=tk.X, pady=(0, 10))
 
         ttk.Label(metrics_frame, text=f"Total Expected Revenue: £{revenue_data[0]:,.2f}").pack(anchor=tk.W)
@@ -411,15 +413,15 @@ def show_revenue_optimization_dialog(self):
         pass
 
     # Recommendations
-    recommendations_frame = ttk.LabelFrame(main_frame, text="Optimization Recommendations", padding="10")
+    recommendations_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.optimization_recommendations', default="Optimization Recommendations"), padding="10")
     recommendations_frame.pack(fill=tk.BOTH, expand=True)
 
     recommendations_tree = ttk.Treeview(recommendations_frame,
                                        columns=('Impact', 'Priority', 'Cost'), height=15)
-    recommendations_tree.heading('#0', text='Recommendation')
-    recommendations_tree.heading('Impact', text='Potential Impact')
-    recommendations_tree.heading('Priority', text='Priority')
-    recommendations_tree.heading('Cost', text='Implementation Cost')
+    recommendations_tree.heading('#0', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.recommendation', default='Recommendation'))
+    recommendations_tree.heading('Impact', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.potential_impact', default='Potential Impact'))
+    recommendations_tree.heading('Priority', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.priority', default='Priority'))
+    recommendations_tree.heading('Cost', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.implementation_cost', default='Implementation Cost'))
     recommendations_tree.pack(fill=tk.BOTH, expand=True)
 
     recommendations = [
@@ -446,7 +448,7 @@ def show_revenue_optimization_dialog(self):
     ttk.Label(summary_frame, text=f"Total Optimization Potential: £{total_potential:,}",
              font=('Arial', 12, 'bold')).pack()
 
-    ttk.Button(main_frame, text="Close", command=revenue_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=revenue_window.destroy).pack(pady=10)
 
 def show_api_configuration_dialog(self):
     """Show API configuration dialog"""
@@ -457,38 +459,38 @@ def show_api_configuration_dialog(self):
     main_frame = ttk.Frame(api_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="API Data Feed Configuration",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.api_data_feed_configuration', default="API Data Feed Configuration"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # API Settings
-    settings_frame = ttk.LabelFrame(main_frame, text="API Settings", padding="10")
+    settings_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.api_settings', default="API Settings"), padding="10")
     settings_frame.pack(fill=tk.X, pady=(0, 10))
 
     # Base URL
-    ttk.Label(settings_frame, text="Base URL:").grid(row=0, column=0, sticky=tk.W)
-    self.api_base_url = tk.StringVar(value="/api/v1/finance")
+    ttk.Label(settings_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.base_url', default="Base URL:")).grid(row=0, column=0, sticky=tk.W)
+    self.api_base_url = tk.StringVar(value=_t('gui.finance.finance_reporting.feature_dialogs.values.api_v1_finance', default="/api/v1/finance"))
     ttk.Entry(settings_frame, textvariable=self.api_base_url, width=50).grid(row=0, column=1, sticky=(tk.W, tk.E))
 
     # API Version
-    ttk.Label(settings_frame, text="Version:").grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
-    self.api_version = tk.StringVar(value="v1")
+    ttk.Label(settings_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.version', default="Version:")).grid(row=1, column=0, sticky=tk.W, pady=(5, 0))
+    self.api_version = tk.StringVar(value=_t('gui.finance.finance_reporting.feature_dialogs.values.v1', default="v1"))
     ttk.Entry(settings_frame, textvariable=self.api_version, width=20).grid(row=1, column=1, sticky=tk.W, pady=(5, 0))
 
     # Rate Limit
-    ttk.Label(settings_frame, text="Rate Limit:").grid(row=2, column=0, sticky=tk.W, pady=(5, 0))
-    self.api_rate_limit = tk.StringVar(value="1000 requests/hour")
+    ttk.Label(settings_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.rate_limit', default="Rate Limit:")).grid(row=2, column=0, sticky=tk.W, pady=(5, 0))
+    self.api_rate_limit = tk.StringVar(value=_t('gui.finance.finance_reporting.feature_dialogs.values.value_1000_requests_hour', default="1000 requests/hour"))
     ttk.Entry(settings_frame, textvariable=self.api_rate_limit, width=30).grid(row=2, column=1, sticky=tk.W, pady=(5, 0))
 
     settings_frame.grid_columnconfigure(1, weight=1)
 
     # Available Endpoints
-    endpoints_frame = ttk.LabelFrame(main_frame, text="Available Endpoints", padding="10")
+    endpoints_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.available_endpoints', default="Available Endpoints"), padding="10")
     endpoints_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     endpoints_tree = ttk.Treeview(endpoints_frame, columns=('Description', 'Status'), height=10)
-    endpoints_tree.heading('#0', text='Endpoint')
-    endpoints_tree.heading('Description', text='Description')
-    endpoints_tree.heading('Status', text='Status')
+    endpoints_tree.heading('#0', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.endpoint', default='Endpoint'))
+    endpoints_tree.heading('Description', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.description', default='Description'))
+    endpoints_tree.heading('Status', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.status', default='Status'))
     endpoints_tree.pack(fill=tk.BOTH, expand=True)
 
     endpoints = [
@@ -509,13 +511,13 @@ def show_api_configuration_dialog(self):
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(buttons_frame, text="Test Connection",
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.test_connection', default="Test Connection"),
                command=lambda: self.test_api_connection(api_window)).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Generate API Key",
-               command=lambda: messagebox.showinfo("API Key", "API key generation - contact IT department")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Save Configuration",
-               command=lambda: messagebox.showinfo("Configuration", "API configuration saved")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=api_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.generate_api_key', default="Generate API Key"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.api_key', default="API Key"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.api_key_generation_contact_it_department', default="API key generation - contact IT department"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.save_configuration', default="Save Configuration"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.configuration', default="Configuration"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.api_configuration_saved', default="API configuration saved"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=api_window.destroy).pack(side=tk.RIGHT)
 
 def test_api_connection(self, parent_window):
     """Test connection to external finance API"""
@@ -525,12 +527,12 @@ def test_api_connection(self, parent_window):
 
     # Create test dialog
     test_window = tk.Toplevel(parent_window)
-    test_window.title("API Connection Test")
+    test_window.title(_t('gui.finance.finance_reporting.feature_dialogs.windows.api_connection_test', default="API Connection Test"))
     test_window.geometry("600x400")
     test_window.transient(parent_window)
     test_window.grab_set()
 
-    ttk.Label(test_window, text="API Connection Test",
+    ttk.Label(test_window, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.api_connection_test', default="API Connection Test"),
              font=('Arial', 12, 'bold')).pack(pady=20)
 
     test_text = scrolledtext.ScrolledText(test_window, height=15, wrap=tk.WORD)
@@ -617,27 +619,27 @@ def test_api_connection(self, parent_window):
     log_test("=" * 70)
 
     # Add close button
-    ttk.Button(test_window, text="Close",
+    ttk.Button(test_window, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"),
               command=test_window.destroy).pack(pady=10)
 
 def show_regulatory_reporting_dialog(self):
     """Show regulatory reporting dialog"""
     regulatory_window = tk.Toplevel(self.root)
-    regulatory_window.title("Regulatory Reporting")
+    regulatory_window.title(_t('gui.finance.finance_reporting.feature_dialogs.windows.regulatory_reporting', default="Regulatory Reporting"))
     regulatory_window.geometry("900x600")
 
     main_frame = ttk.Frame(regulatory_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Regulatory Reporting Status",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.regulatory_reporting_status', default="Regulatory Reporting Status"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Reporting status
     status_tree = ttk.Treeview(main_frame, columns=('Frequency', 'Deadline', 'Status'), height=15)
-    status_tree.heading('#0', text='Report Type')
-    status_tree.heading('Frequency', text='Frequency')
-    status_tree.heading('Deadline', text='Deadline')
-    status_tree.heading('Status', text='Status')
+    status_tree.heading('#0', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.report_type', default='Report Type'))
+    status_tree.heading('Frequency', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.frequency', default='Frequency'))
+    status_tree.heading('Deadline', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.deadline', default='Deadline'))
+    status_tree.heading('Status', text=_t('gui.finance.finance_reporting.feature_dialogs.headings.status', default='Status'))
     status_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     reports = [
@@ -659,13 +661,13 @@ def show_regulatory_reporting_dialog(self):
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(buttons_frame, text="Generate Report",
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.generate_report', default="Generate Report"),
                command=lambda: self.generate_regulatory_report(regulatory_window, status_tree)).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Schedule Report",
-               command=lambda: messagebox.showinfo("Schedule", "Report scheduling configured")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Compliance Check",
-               command=lambda: messagebox.showinfo("Compliance", "All critical reports are on track")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=regulatory_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.schedule_report', default="Schedule Report"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.schedule', default="Schedule"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.report_scheduling_configured', default="Report scheduling configured"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.compliance_check', default="Compliance Check"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.compliance', default="Compliance"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.all_critical_reports_are_on_track', default="All critical reports are on track"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=regulatory_window.destroy).pack(side=tk.RIGHT)
 
 def generate_regulatory_report(self, parent_window, tree_widget):
     """Generate a regulatory compliance report"""
@@ -676,8 +678,8 @@ def generate_regulatory_report(self, parent_window, tree_widget):
         # Get selected report
         selection = tree_widget.selection()
         if not selection:
-            messagebox.showwarning("No Selection",
-                "Please select a report type to generate.",
+            messagebox.showwarning(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.no_selection', default="No Selection"),
+                _t('gui.finance.finance_reporting.feature_dialogs.dialogs.please_select_a_report_type_to_generate', default="Please select a report type to generate."),
                 parent=parent_window)
             return
 
@@ -866,11 +868,11 @@ def generate_regulatory_report(self, parent_window, tree_widget):
         buttons_frame = ttk.Frame(report_window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(buttons_frame, text="Save Report",
+        ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.save_report', default="Save Report"),
                   command=lambda: self.save_report_to_file(report_text, report_name)).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Print",
-                  command=lambda: messagebox.showinfo("Print", "Printing functionality would open system print dialog")).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Close",
+        ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.print', default="Print"),
+                  command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.print', default="Print"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.printing_functionality_would_open_system_print_dialog', default="Printing functionality would open system print dialog"))).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"),
                   command=report_window.destroy).pack(side=tk.RIGHT)
 
         # Log activity
@@ -882,7 +884,7 @@ def generate_regulatory_report(self, parent_window, tree_widget):
             pass
 
     except Exception as e:
-        messagebox.showerror("Error",
+        messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"),
             f"Failed to generate regulatory report:\n{e}",
             parent=parent_window)
         import traceback
@@ -901,9 +903,9 @@ def save_report_to_file(self, text_widget, report_name):
             content = text_widget.get("1.0", tk.END)
             with open(filename, 'w') as f:
                 f.write(content)
-            messagebox.showinfo("Success", f"Report saved to:\n{filename}")
+            messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.success', default="Success"), f"Report saved to:\n{filename}")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to save report:\n{e}")
+        messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"), f"Failed to save report:\n{e}")
 
 def show_automated_reporting_dialog(self):
     """Show automated reporting configuration dialog"""
@@ -924,32 +926,32 @@ def show_automated_reporting_dialog(self):
     main_frame = ttk.Frame(reporting_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Automated Reporting Configuration",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.automated_reporting_configuration', default="Automated Reporting Configuration"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Schedule frame
-    schedule_frame = ttk.LabelFrame(main_frame, text="Report Schedule", padding="10")
+    schedule_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.report_schedule', default="Report Schedule"), padding="10")
     schedule_frame.pack(fill=tk.X, pady=(0, 10))
 
     self.daily_report = tk.BooleanVar(value=True)
     self.weekly_report = tk.BooleanVar(value=True)
     self.monthly_report = tk.BooleanVar(value=True)
 
-    ttk.Checkbutton(schedule_frame, text="Daily Revenue Report", variable=self.daily_report).pack(anchor=tk.W)
-    ttk.Checkbutton(schedule_frame, text="Weekly Summary Report", variable=self.weekly_report).pack(anchor=tk.W)
-    ttk.Checkbutton(schedule_frame, text="Monthly Financial Report", variable=self.monthly_report).pack(anchor=tk.W)
+    ttk.Checkbutton(schedule_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.daily_revenue_report', default="Daily Revenue Report"), variable=self.daily_report).pack(anchor=tk.W)
+    ttk.Checkbutton(schedule_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.weekly_summary_report', default="Weekly Summary Report"), variable=self.weekly_report).pack(anchor=tk.W)
+    ttk.Checkbutton(schedule_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.monthly_financial_report', default="Monthly Financial Report"), variable=self.monthly_report).pack(anchor=tk.W)
 
     # Recipients frame
-    recipients_frame = ttk.LabelFrame(main_frame, text="Report Recipients", padding="10")
+    recipients_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.report_recipients', default="Report Recipients"), padding="10")
     recipients_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(recipients_frame, text="Email addresses (comma separated):").pack(anchor=tk.W)
+    ttk.Label(recipients_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.email_addresses_comma_separated', default="Email addresses (comma separated):")).pack(anchor=tk.W)
     recipients_entry = ttk.Entry(recipients_frame, width=60)
     recipients_entry.pack(fill=tk.X, pady=5)
     recipients_entry.insert(0, "finance@university.edu, admin@university.edu")
 
     # Report types frame
-    types_frame = ttk.LabelFrame(main_frame, text="Report Types", padding="10")
+    types_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.report_types', default="Report Types"), padding="10")
     types_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     types_text = ScrolledText(types_frame, height=10, wrap=tk.WORD)
@@ -974,13 +976,13 @@ def show_automated_reporting_dialog(self):
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
     def save_config():
-        messagebox.showinfo("Success", "Automated reporting configuration saved successfully!")
+        messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.success', default="Success"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.automated_reporting_configuration_saved_successfully', default="Automated reporting configuration saved successfully!"))
         self.log_activity("Automated reporting configuration updated")
 
-    ttk.Button(buttons_frame, text="Save Configuration", command=save_config).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Test Report",
-               command=lambda: messagebox.showinfo("Test", "Test report sent successfully!")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=reporting_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.save_configuration', default="Save Configuration"), command=save_config).pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.test_report', default="Test Report"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.test', default="Test"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.test_report_sent_successfully', default="Test report sent successfully!"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=reporting_window.destroy).pack(side=tk.RIGHT)
 
 def show_advanced_export_dialog(self):
     """Show advanced export system dialog"""
@@ -991,42 +993,42 @@ def show_advanced_export_dialog(self):
     main_frame = ttk.Frame(export_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Advanced Export System",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.advanced_export_system', default="Advanced Export System"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Export options
-    options_frame = ttk.LabelFrame(main_frame, text="Export Options", padding="10")
+    options_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.export_options', default="Export Options"), padding="10")
     options_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(options_frame, text="Select Export Format:").pack(anchor=tk.W)
+    ttk.Label(options_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.select_export_format', default="Select Export Format:")).pack(anchor=tk.W)
 
-    self.export_format = tk.StringVar(value="CSV")
+    self.export_format = tk.StringVar(value=_t('gui.finance.finance_reporting.feature_dialogs.values.csv', default="CSV"))
     formats = ["CSV", "Excel (XLSX)", "JSON", "XML", "PDF Report"]
     for fmt in formats:
         ttk.Radiobutton(options_frame, text=fmt, variable=self.export_format, value=fmt).pack(anchor=tk.W)
 
     # Data selection
-    data_frame = ttk.LabelFrame(main_frame, text="Data Selection", padding="10")
+    data_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.data_selection', default="Data Selection"), padding="10")
     data_frame.pack(fill=tk.X, pady=(0, 10))
 
     self.export_fees = tk.BooleanVar(value=True)
     self.export_payments = tk.BooleanVar(value=True)
     self.export_students = tk.BooleanVar(value=False)
 
-    ttk.Checkbutton(data_frame, text="Student Fees", variable=self.export_fees).pack(anchor=tk.W)
-    ttk.Checkbutton(data_frame, text="Payment Records", variable=self.export_payments).pack(anchor=tk.W)
-    ttk.Checkbutton(data_frame, text="Student Information", variable=self.export_students).pack(anchor=tk.W)
+    ttk.Checkbutton(data_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.student_fees', default="Student Fees"), variable=self.export_fees).pack(anchor=tk.W)
+    ttk.Checkbutton(data_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.payment_records', default="Payment Records"), variable=self.export_payments).pack(anchor=tk.W)
+    ttk.Checkbutton(data_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.student_information', default="Student Information"), variable=self.export_students).pack(anchor=tk.W)
 
     # Date range
-    date_frame = ttk.LabelFrame(main_frame, text="Date Range", padding="10")
+    date_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.date_range', default="Date Range"), padding="10")
     date_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(date_frame, text="Export data from:").pack(anchor=tk.W)
-    self.export_range = tk.StringVar(value="all")
-    ttk.Radiobutton(date_frame, text="All Time", variable=self.export_range, value="all").pack(anchor=tk.W)
-    ttk.Radiobutton(date_frame, text="Last 30 Days", variable=self.export_range, value="30days").pack(anchor=tk.W)
-    ttk.Radiobutton(date_frame, text="Last 90 Days", variable=self.export_range, value="90days").pack(anchor=tk.W)
-    ttk.Radiobutton(date_frame, text="Current Year", variable=self.export_range, value="year").pack(anchor=tk.W)
+    ttk.Label(date_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.export_data_from', default="Export data from:")).pack(anchor=tk.W)
+    self.export_range = tk.StringVar(value=_t('gui.finance.finance_reporting.feature_dialogs.values.all', default="all"))
+    ttk.Radiobutton(date_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.all_time', default="All Time"), variable=self.export_range, value="all").pack(anchor=tk.W)
+    ttk.Radiobutton(date_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.last_30_days', default="Last 30 Days"), variable=self.export_range, value="30days").pack(anchor=tk.W)
+    ttk.Radiobutton(date_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.last_90_days', default="Last 90 Days"), variable=self.export_range, value="90days").pack(anchor=tk.W)
+    ttk.Radiobutton(date_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.current_year', default="Current Year"), variable=self.export_range, value="year").pack(anchor=tk.W)
 
     # Buttons
     buttons_frame = ttk.Frame(main_frame)
@@ -1034,13 +1036,13 @@ def show_advanced_export_dialog(self):
 
     def perform_export():
         fmt = self.export_format.get()
-        messagebox.showinfo("Export", f"Data exported successfully to {fmt} format!")
+        messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.export', default="Export"), f"Data exported successfully to {fmt} format!")
         self.log_activity(f"Data exported to {fmt} format")
 
-    ttk.Button(buttons_frame, text="Export Data", command=perform_export).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Schedule Export",
-               command=lambda: messagebox.showinfo("Schedule", "Export scheduled successfully!")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=export_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.export_data', default="Export Data"), command=perform_export).pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.schedule_export', default="Schedule Export"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.schedule', default="Schedule"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.export_scheduled_successfully', default="Export scheduled successfully!"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=export_window.destroy).pack(side=tk.RIGHT)
 
 def show_api_config_dialog(self):
     """Show API configuration dialog"""
@@ -1051,11 +1053,11 @@ def show_api_config_dialog(self):
     main_frame = ttk.Frame(api_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="API Configuration & Integration",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.api_configuration_integration', default="API Configuration & Integration"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # API endpoints
-    endpoints_frame = ttk.LabelFrame(main_frame, text="API Endpoints", padding="10")
+    endpoints_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.api_endpoints', default="API Endpoints"), padding="10")
     endpoints_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     endpoints_text = ScrolledText(endpoints_frame, height=15, wrap=tk.WORD)
@@ -1100,26 +1102,26 @@ def show_api_config_dialog(self):
     endpoints_text.configure(state='disabled')
 
     # API key management
-    key_frame = ttk.LabelFrame(main_frame, text="API Key Management", padding="10")
+    key_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.api_key_management', default="API Key Management"), padding="10")
     key_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(key_frame, text="Current API Key: ").pack(side=tk.LEFT)
+    ttk.Label(key_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.current_api_key', default="Current API Key: ")).pack(side=tk.LEFT)
     key_entry = ttk.Entry(key_frame, width=40, show="*")
     key_entry.pack(side=tk.LEFT, padx=5)
     key_entry.insert(0, "sk_live_************************")
 
-    ttk.Button(key_frame, text="Regenerate",
-               command=lambda: messagebox.showinfo("API Key", "New API key generated!")).pack(side=tk.LEFT, padx=5)
+    ttk.Button(key_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.regenerate', default="Regenerate"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.api_key', default="API Key"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.new_api_key_generated', default="New API key generated!"))).pack(side=tk.LEFT, padx=5)
 
     # Buttons
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(buttons_frame, text="Test Connection",
-               command=lambda: messagebox.showinfo("Test", "API connection successful!")).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="View Documentation",
-               command=lambda: messagebox.showinfo("Docs", "Opening API documentation...")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=api_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.test_connection', default="Test Connection"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.test', default="Test"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.api_connection_successful', default="API connection successful!"))).pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.view_documentation', default="View Documentation"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.docs', default="Docs"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.opening_api_documentation', default="Opening API documentation..."))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=api_window.destroy).pack(side=tk.RIGHT)
 
 def show_custom_reports_dialog(self):
     """Show custom report builder dialog"""
@@ -1130,11 +1132,11 @@ def show_custom_reports_dialog(self):
     main_frame = ttk.Frame(report_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Custom Report Builder",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.custom_report_builder', default="Custom Report Builder"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Report fields
-    fields_frame = ttk.LabelFrame(main_frame, text="Select Report Fields", padding="10")
+    fields_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.select_report_fields', default="Select Report Fields"), padding="10")
     fields_frame.pack(fill=tk.X, pady=(0, 10))
 
     self.report_student_id = tk.BooleanVar(value=True)
@@ -1144,41 +1146,41 @@ def show_custom_reports_dialog(self):
     self.report_payment_status = tk.BooleanVar(value=True)
     self.report_payment_date = tk.BooleanVar(value=False)
 
-    ttk.Checkbutton(fields_frame, text="Student ID", variable=self.report_student_id).grid(row=0, column=0, sticky=tk.W)
-    ttk.Checkbutton(fields_frame, text="Student Name", variable=self.report_student_name).grid(row=0, column=1, sticky=tk.W)
-    ttk.Checkbutton(fields_frame, text="Department", variable=self.report_department).grid(row=1, column=0, sticky=tk.W)
-    ttk.Checkbutton(fields_frame, text="Fee Amount", variable=self.report_fee_amount).grid(row=1, column=1, sticky=tk.W)
-    ttk.Checkbutton(fields_frame, text="Payment Status", variable=self.report_payment_status).grid(row=2, column=0, sticky=tk.W)
-    ttk.Checkbutton(fields_frame, text="Payment Date", variable=self.report_payment_date).grid(row=2, column=1, sticky=tk.W)
+    ttk.Checkbutton(fields_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.student_id', default="Student ID"), variable=self.report_student_id).grid(row=0, column=0, sticky=tk.W)
+    ttk.Checkbutton(fields_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.student_name', default="Student Name"), variable=self.report_student_name).grid(row=0, column=1, sticky=tk.W)
+    ttk.Checkbutton(fields_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.department', default="Department"), variable=self.report_department).grid(row=1, column=0, sticky=tk.W)
+    ttk.Checkbutton(fields_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.fee_amount', default="Fee Amount"), variable=self.report_fee_amount).grid(row=1, column=1, sticky=tk.W)
+    ttk.Checkbutton(fields_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.payment_status', default="Payment Status"), variable=self.report_payment_status).grid(row=2, column=0, sticky=tk.W)
+    ttk.Checkbutton(fields_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.payment_date', default="Payment Date"), variable=self.report_payment_date).grid(row=2, column=1, sticky=tk.W)
 
     # Filters
-    filters_frame = ttk.LabelFrame(main_frame, text="Report Filters", padding="10")
+    filters_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.report_filters', default="Report Filters"), padding="10")
     filters_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(filters_frame, text="Filter by Status:").grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(filters_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.filter_by_status', default="Filter by Status:")).grid(row=0, column=0, sticky=tk.W)
     self.report_status_filter = ttk.Combobox(filters_frame, values=["All", "Paid", "Unpaid", "Overdue"])
     self.report_status_filter.set("All")
     self.report_status_filter.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=5)
 
-    ttk.Label(filters_frame, text="Filter by Department:").grid(row=1, column=0, sticky=tk.W)
+    ttk.Label(filters_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.filter_by_department', default="Filter by Department:")).grid(row=1, column=0, sticky=tk.W)
     self.report_dept_filter = ttk.Combobox(filters_frame, values=["All", "Computer Science", "Engineering", "Business"])
     self.report_dept_filter.set("All")
     self.report_dept_filter.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=5)
 
     # Sorting
-    sort_frame = ttk.LabelFrame(main_frame, text="Sorting & Grouping", padding="10")
+    sort_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.sorting_grouping', default="Sorting & Grouping"), padding="10")
     sort_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(sort_frame, text="Sort by:").grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(sort_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.sort_by', default="Sort by:")).grid(row=0, column=0, sticky=tk.W)
     self.report_sort = ttk.Combobox(sort_frame, values=["Student ID", "Name", "Amount", "Department", "Date"])
     self.report_sort.set("Student ID")
     self.report_sort.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=5)
 
     self.report_sort_desc = tk.BooleanVar(value=False)
-    ttk.Checkbutton(sort_frame, text="Descending", variable=self.report_sort_desc).grid(row=0, column=2, padx=5)
+    ttk.Checkbutton(sort_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.descending', default="Descending"), variable=self.report_sort_desc).grid(row=0, column=2, padx=5)
 
     # Preview
-    preview_frame = ttk.LabelFrame(main_frame, text="Report Preview", padding="10")
+    preview_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.report_preview', default="Report Preview"), padding="10")
     preview_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     preview_text = ScrolledText(preview_frame, height=10, wrap=tk.WORD)
@@ -1190,15 +1192,15 @@ def show_custom_reports_dialog(self):
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
     def generate_report():
-        messagebox.showinfo("Success", "Custom report generated successfully!")
+        messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.success', default="Success"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.custom_report_generated_successfully', default="Custom report generated successfully!"))
         self.log_activity("Custom report generated")
 
-    ttk.Button(buttons_frame, text="Generate Report", command=generate_report).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Save Template",
-               command=lambda: messagebox.showinfo("Save", "Report template saved!")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Export",
-               command=lambda: messagebox.showinfo("Export", "Report exported!")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=report_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.generate_report', default="Generate Report"), command=generate_report).pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.save_template', default="Save Template"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.save', default="Save"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.report_template_saved', default="Report template saved!"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.export', default="Export"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.export', default="Export"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.report_exported', default="Report exported!"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=report_window.destroy).pack(side=tk.RIGHT)
 
 def generate_regulatory_reports(self):
     """Generate regulatory compliance reports"""
@@ -1245,7 +1247,7 @@ def generate_regulatory_reports(self):
 
         except Exception as e:
             self.root.after(0, lambda _e=e: [
-                messagebox.showerror("Error", f"Regulatory report generation failed: {_e}"),
+                messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"), f"Regulatory report generation failed: {_e}"),
                 self.update_status("Error")
             ])
 
@@ -1262,7 +1264,7 @@ def show_regulatory_report(self, data):
     main_frame = ttk.Frame(reg_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Regulatory Compliance Report",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.labels.regulatory_compliance_report', default="Regulatory Compliance Report"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     report_text = ScrolledText(main_frame, height=25, wrap=tk.WORD)
@@ -1359,7 +1361,7 @@ def show_regulatory_report(self, data):
                         elements.append(Spacer(1, 6))
 
                 doc.build(elements)
-                messagebox.showinfo("Success", f"Report exported to:\n{filename}")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.success', default="Success"), f"Report exported to:\n{filename}")
 
             except ImportError:
                 # Fallback to HTML if reportlab not available
@@ -1377,10 +1379,10 @@ def show_regulatory_report(self, data):
 </html>"""
                 with open(html_filename, 'w') as f:
                     f.write(html_content)
-                messagebox.showinfo("Success", f"Report exported as HTML to:\n{html_filename}\n(PDF export requires reportlab library)")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.success', default="Success"), f"Report exported as HTML to:\n{html_filename}\n(PDF export requires reportlab library)")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export PDF:\n{e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"), f"Failed to export PDF:\n{e}")
 
     def export_as_txt():
         """Export regulatory report as TXT"""
@@ -1400,9 +1402,9 @@ def show_regulatory_report(self, data):
                     f.write(f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                     f.write("=" * 80 + "\n\n")
                     f.write(content)
-                messagebox.showinfo("Success", f"Report saved to:\n{filename}")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.success', default="Success"), f"Report saved to:\n{filename}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save report:\n{e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.error', default="Error"), f"Failed to save report:\n{e}")
 
     def send_to_admin():
         """Send regulatory report to admin via email"""
@@ -1415,11 +1417,11 @@ def show_regulatory_report(self, data):
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(buttons_frame, text="Export PDF", command=export_as_pdf).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Save as TXT", command=export_as_txt).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Send to Admin", command=send_to_admin).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Print",
-               command=lambda: messagebox.showinfo("Print", "Sending report to printer...")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=reg_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.export_pdf', default="Export PDF"), command=export_as_pdf).pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.save_as_txt', default="Save as TXT"), command=export_as_txt).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.send_to_admin', default="Send to Admin"), command=send_to_admin).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.print', default="Print"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.feature_dialogs.dialogs.print', default="Print"), _t('gui.finance.finance_reporting.feature_dialogs.dialogs.sending_report_to_printer', default="Sending report to printer..."))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.feature_dialogs.buttons.close', default="Close"), command=reg_window.destroy).pack(side=tk.RIGHT)
 
 # Method registration is handled by main.py

@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class ClubFinancialReportsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Club Financial Reports")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.clubs.club_finance.windows.club_financial_reports', default="Club Financial Reports"))
         self.dialog.geometry("900x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -76,27 +78,27 @@ class ClubFinancialReportsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Club Financial Reports", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.club_financial_reports', default="Club Financial Reports"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Club selection
-        club_frame = ttk.LabelFrame(main_frame, text="Select Club and Period")
+        club_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.select_club_and_period', default="Select Club and Period"))
         club_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(club_frame, text="Club:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(club_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.club', default="Club:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.club_var = tk.StringVar()
         self.club_combo = ttk.Combobox(club_frame, textvariable=self.club_var, width=40, state="readonly")
         self.club_combo.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(club_frame, text="Period:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
-        self.period_var = tk.StringVar(value="current_month")
+        ttk.Label(club_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.period', default="Period:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        self.period_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.clubs.club_finance.values.current_month', default="current_month"))
         ttk.Combobox(club_frame, textvariable=self.period_var,
                     values=["current_month", "last_month", "current_year", "last_year", "all_time"],
                     state="readonly", width=38).grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Button(club_frame, text="Generate Report", command=self.generate_report).grid(row=0, column=2, padx=5, pady=5)
+        ttk.Button(club_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.buttons.generate_report', default="Generate Report"), command=self.generate_report).grid(row=0, column=2, padx=5, pady=5)
 
         # Report display
-        report_frame = ttk.LabelFrame(main_frame, text="Financial Report")
+        report_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.financial_report', default="Financial Report"))
         report_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         self.report_text = scrolledtext.ScrolledText(report_frame, height=20, width=80)
@@ -105,8 +107,8 @@ class ClubFinancialReportsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Export PDF", command=self.export_pdf).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.buttons.export_pdf', default="Export PDF"), command=self.export_pdf).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='left')
 
     def generate_report(self):
         """Generate comprehensive financial report"""
@@ -114,7 +116,7 @@ class ClubFinancialReportsDialog:
 
         club_selection = self.club_var.get()
         if not club_selection:
-            messagebox.showwarning("Warning", "Please select a club first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.please_select_a_club_first', default="Please select a club first."))
             return
 
         try:
@@ -252,7 +254,7 @@ class ClubFinancialReportsDialog:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
             import traceback
             traceback.print_exc()
 
@@ -264,21 +266,21 @@ class ClubFinancialReportsDialog:
 
             report_content = self.report_text.get("1.0", tk.END)
             if not report_content.strip() or "coming soon" in report_content.lower():
-                messagebox.showwarning("Warning", "Please generate a report first.")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.please_generate_a_report_first', default="Please generate a report first."))
                 return
 
             filename = filedialog.asksaveasfilename(
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                title="Save Financial Report"
+                title=_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.save_financial_report', default="Save Financial Report")
             )
 
             if filename:
                 with open(filename, 'w') as f:
                     f.write(report_content)
-                messagebox.showinfo("Success", f"Report saved to {filename}")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.success', default="Success"), f"Report saved to {filename}")
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Failed to export report: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.error', default="Error"), f"Failed to export report: {str(e)}")
 
 
 
@@ -290,7 +292,7 @@ class ClubBudgetDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Manage Club Budgets")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.clubs.club_finance.windows.manage_club_budgets', default="Manage Club Budgets"))
         self.dialog.geometry("900x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -302,21 +304,21 @@ class ClubBudgetDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Club Budget Management", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.club_budget_management', default="Club Budget Management"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Club selection
-        club_frame = ttk.LabelFrame(main_frame, text="Select Club")
+        club_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.select_club', default="Select Club"))
         club_frame.pack(fill='x', pady=(0, 10))
 
         self.club_var = tk.StringVar()
         self.club_combo = ttk.Combobox(club_frame, textvariable=self.club_var, width=50, state="readonly")
         self.club_combo.pack(side='left', padx=5, pady=5)
 
-        ttk.Button(club_frame, text="View Budget", command=self.view_budget).pack(side='left', padx=5)
-        ttk.Button(club_frame, text="Set Budget", command=self.set_budget).pack(side='left', padx=5)
+        ttk.Button(club_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.buttons.view_budget', default="View Budget"), command=self.view_budget).pack(side='left', padx=5)
+        ttk.Button(club_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.buttons.set_budget', default="Set Budget"), command=self.set_budget).pack(side='left', padx=5)
 
         # Budget details
-        details_frame = ttk.LabelFrame(main_frame, text="Budget Overview")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.budget_overview', default="Budget Overview"))
         details_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         self.budget_text = scrolledtext.ScrolledText(details_frame, height=20, width=80)
@@ -325,7 +327,7 @@ class ClubBudgetDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='left')
 
     def view_budget(self):
         """View comprehensive budget for selected club"""
@@ -333,7 +335,7 @@ class ClubBudgetDialog:
 
         club_selection = self.club_var.get()
         if not club_selection:
-            messagebox.showwarning("Warning", "Please select a club first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.please_select_a_club_first', default="Please select a club first."))
             return
 
         try:
@@ -347,7 +349,7 @@ class ClubBudgetDialog:
             cursor.execute('SELECT club_name FROM student_clubs WHERE club_id = ?', (club_id,))
             result = cursor.fetchone()
             if not result:
-                messagebox.showerror("Error", "Club not found.")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.club_not_found', default="Club not found."))
                 return
 
             club_name = result[0]
@@ -442,7 +444,7 @@ class ClubBudgetDialog:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to view budget: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.error', default="Error"), f"Failed to view budget: {str(e)}")
             import traceback
             traceback.print_exc()
 
@@ -450,12 +452,12 @@ class ClubBudgetDialog:
         """Set or modify budget for selected club"""
         club_selection = self.club_var.get()
         if not club_selection:
-            messagebox.showwarning("Warning", "Please select a club first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.please_select_a_club_first', default="Please select a club first."))
             return
 
         # Create budget setting dialog
         budget_dialog = tk.Toplevel(self.dialog)
-        budget_dialog.title("Set Club Budget")
+        budget_dialog.title(_t('gui.pastoral.student_union_gui.clubs.club_finance.windows.set_club_budget', default="Set Club Budget"))
         budget_dialog.geometry("600x500")
         budget_dialog.transient(self.dialog)
         budget_dialog.grab_set()
@@ -463,17 +465,17 @@ class ClubBudgetDialog:
         frame = ttk.Frame(budget_dialog)
         frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(frame, text="Set Budget Allocation", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.set_budget_allocation', default="Set Budget Allocation"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Fiscal year
         year_frame = ttk.Frame(frame)
         year_frame.pack(fill='x', pady=(0, 10))
-        ttk.Label(year_frame, text="Fiscal Year:").pack(side='left', padx=(0, 10))
+        ttk.Label(year_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.fiscal_year', default="Fiscal Year:")).pack(side='left', padx=(0, 10))
         year_var = tk.StringVar(value=str(datetime.now().year))
         ttk.Entry(year_frame, textvariable=year_var, width=10).pack(side='left')
 
         # Budget categories
-        ttk.Label(frame, text="Budget Categories:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.budget_categories', default="Budget Categories:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
 
         categories_frame = ttk.Frame(frame)
         categories_frame.pack(fill='both', expand=True, pady=(0, 10))
@@ -516,7 +518,7 @@ class ClubBudgetDialog:
         # Total display
         total_frame = ttk.Frame(frame)
         total_frame.pack(fill='x', pady=(10, 10))
-        ttk.Label(total_frame, text="Total Budget:", font=('Arial', 10, 'bold')).pack(side='left', padx=(0, 10))
+        ttk.Label(total_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.labels.total_budget', default="Total Budget:"), font=('Arial', 10, 'bold')).pack(side='left', padx=(0, 10))
         total_label = ttk.Label(total_frame, text="£0.00", font=('Arial', 10))
         total_label.pack(side='left')
 
@@ -561,19 +563,19 @@ class ClubBudgetDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Budget saved successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.budget_saved_successfully', default="Budget saved successfully!"))
                 budget_dialog.destroy()
                 self.view_budget()  # Refresh the budget view
 
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to save budget: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.error', default="Error"), f"Failed to save budget: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(frame)
         button_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(button_frame, text="Save Budget", command=save_budget).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=budget_dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.buttons.save_budget', default="Save Budget"), command=save_budget).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_finance.buttons.cancel', default="Cancel"), command=budget_dialog.destroy).pack(side='left')
 
 
 
@@ -583,7 +585,7 @@ def view_club_financial_reports_gui(self):
         dialog = ClubFinancialReportsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def manage_club_budgets_gui(self):
@@ -592,6 +594,6 @@ def manage_club_budgets_gui(self):
         dialog = ClubBudgetDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_finance.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

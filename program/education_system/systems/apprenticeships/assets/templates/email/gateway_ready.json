@@ -1,0 +1,8 @@
+{
+  "subject": "Ready for gateway — {{apprentice_name}}",
+  "body": "Dear {{recipient_name}},\n\n{{apprentice_name}} has completed the practical period and met the gateway requirements for {{standard_title}}.\n\n  Off-the-job hours: {{hours_logged}} of {{hours_target}}\n  English and maths: {{functional_skills}}\n  Portfolio:         {{portfolio_status}}\n\nGateway needs your signature as the employer to confirm you agree they are ready. Once that is in, we book the End-Point Assessment with {{epao_name}}, usually within {{epa_lead_time}}.\n\nThe assessment is independent of us — we deliver the training, the EPAO judges the outcome.\n\n{{tutor_name}}\n{{provider_name}}",
+  "from_name": "{{provider_name}}",
+  "from_address": "epa@provider.ac.uk",
+  "category": "Gateway / EPA",
+  "priority": "High"
+}

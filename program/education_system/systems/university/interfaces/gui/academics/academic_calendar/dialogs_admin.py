@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import logging
 import os
@@ -272,12 +274,12 @@ class AuditLogsDialog:
         self.audit_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
 
         # Configure columns
-        self.audit_tree.heading('#0', text='ID')
-        self.audit_tree.heading('Timestamp', text='Timestamp')
-        self.audit_tree.heading('User', text='User')
-        self.audit_tree.heading('Action', text='Action')
-        self.audit_tree.heading('Table', text='Table')
-        self.audit_tree.heading('Record', text='Record ID')
+        self.audit_tree.heading('#0', text=_t('gui.academics.academic_calendar.dialogs_admin.headings.id', default='ID'))
+        self.audit_tree.heading('Timestamp', text=_t('gui.academics.academic_calendar.dialogs_admin.headings.timestamp', default='Timestamp'))
+        self.audit_tree.heading('User', text=_t('gui.academics.academic_calendar.dialogs_admin.headings.user', default='User'))
+        self.audit_tree.heading('Action', text=_t('gui.academics.academic_calendar.dialogs_admin.headings.action', default='Action'))
+        self.audit_tree.heading('Table', text=_t('gui.academics.academic_calendar.dialogs_admin.headings.table', default='Table'))
+        self.audit_tree.heading('Record', text=_t('gui.academics.academic_calendar.dialogs_admin.headings.record_id', default='Record ID'))
 
         self.audit_tree.column('#0', width=50)
         self.audit_tree.column('Timestamp', width=150)
@@ -501,7 +503,7 @@ class SettingsDialog:
         notebook.add(general_frame, text=_("academic_calendar.dialogs.settings.general"))
 
         ttk.Label(general_frame, text=_("academic_calendar.dialogs.settings.default_event_type")).pack(anchor=tk.W)
-        self.default_type_var = tk.StringVar(value="Academic")
+        self.default_type_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_admin.values.academic', default="Academic"))
         type_combo = ttk.Combobox(general_frame, textvariable=self.default_type_var,
                                 values=["Academic", "Holiday", "Administrative", "Social", "Sports", "Trip"])
         type_combo.pack(fill=tk.X, pady=(5, 15))
@@ -773,7 +775,7 @@ class NotificationSettingsDialog:
         method_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.labels.delivery_methods"), padding=10)
         method_frame.pack(fill=tk.X, pady=(0, 15))
 
-        self.method_var = tk.StringVar(value="email")
+        self.method_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_admin.values.email', default="email"))
         ttk.Radiobutton(method_frame, text=_("academic_calendar.labels.email"), variable=self.method_var, value="email").pack(anchor=tk.W)
         ttk.Radiobutton(method_frame, text=_("academic_calendar.labels.sms"), variable=self.method_var, value="sms").pack(anchor=tk.W)
         ttk.Radiobutton(method_frame, text=_("academic_calendar.labels.both"), variable=self.method_var, value="both").pack(anchor=tk.W)

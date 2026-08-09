@@ -180,7 +180,7 @@ def show_payment_page(self, screening, movie):
         self.booking_student_id = user_info.get('student_id', '')
 
     tk.Label(fields_frame, text=_t("cinema.payment.payment_label"), bg="#ffffff", fg="#333333").grid(row=3, column=0, sticky="w", pady=5)
-    payment_var = tk.StringVar(value="Credit Card")
+    payment_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.booking.payment.values.credit_card', default="Credit Card"))
     payment_combo = ttk.Combobox(fields_frame, textvariable=payment_var, width=37,
                                  values=["Credit Card", "Debit Card", "PayPal", "Cash", "Gift Card", "Student Account", "Split Payment"])
     payment_combo.grid(row=3, column=1, pady=5, padx=10)
@@ -216,7 +216,7 @@ def show_payment_page(self, screening, movie):
     def configure_split_payment():
         final_total = subtotal + snacks_total - self.discount_amount
         split_win = tk.Toplevel(self.root)
-        split_win.title("Split Payment")
+        split_win.title(_t('gui.operations.commerce.cinema.cinema_gui.booking.payment.windows.split_payment', default="Split Payment"))
         split_win.geometry("450x500")
         split_win.configure(bg="#ecf0f1")
         split_win.transient(self.root)
@@ -295,7 +295,7 @@ def show_payment_page(self, screening, movie):
                 return
 
             if len(self.split_payments) < 2:
-                messagebox.showwarning(_t("cinema.common.warning"), "Split payment requires at least 2 payment methods")
+                messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.booking.payment.dialogs.split_payment_requires_at_least_2_payment_methods', default="Split payment requires at least 2 payment methods"))
                 return
 
             payment_var.set("Split Payment")
@@ -330,7 +330,7 @@ def show_payment_page(self, screening, movie):
         if payment == "Student Account":
             student_id = self.booking_student_id
             if not student_id:
-                student_id = simpledialog.askstring("Student Account", "Enter your Student ID:")
+                student_id = simpledialog.askstring(_t('gui.operations.commerce.cinema.cinema_gui.booking.payment.dialogs.student_account', default="Student Account"), _t('gui.operations.commerce.cinema.cinema_gui.booking.payment.dialogs.enter_your_student_id', default="Enter your Student ID:"))
                 if not student_id:
                     messagebox.showwarning(_t("cinema.common.warning"), _t("cinema.messages.warnings.enter_student_id"))
                     return
@@ -563,7 +563,7 @@ def print_ticket(self, booking_ref):
 
     # Print button (simulated)
     def do_print():
-        messagebox.showinfo(_t("cinema.common.print"), "Ticket sent to printer!\n(In a real system, this would print)")
+        messagebox.showinfo(_t("cinema.common.print"), _t('gui.operations.commerce.cinema.cinema_gui.booking.payment.dialogs.ticket_sent_to_printer_in_a_real_system_this_would_print', default="Ticket sent to printer!\n(In a real system, this would print)"))
         print_window.destroy()
 
     def save_ticket():

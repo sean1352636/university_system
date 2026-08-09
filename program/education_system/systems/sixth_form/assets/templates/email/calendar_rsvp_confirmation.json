@@ -1,0 +1,11 @@
+{
+  "template_id": "calendar_rsvp_confirmation",
+  "description": "Confirms one person's booking on an event — or their place on the waiting list when the event is full. Triggered by the booking flow.",
+  "channel": "Email",
+  "category": "Calendar",
+  "priority": "Normal",
+  "from_name": "Sixth Form Calendar",
+  "from_address": "calendar@sixthform.ac.uk",
+  "subject": "{{booking_state}}: {{event_title}}",
+  "body": "Hi {{first_name}},\n\n{{booking_line}}\n\n  Event: {{event_title}}\n  When:  {{event_date}}, {{event_time}}\n  Where: {{event_location}}\n\nIf your plans change, please cancel your booking so your place can go to the next person on the list.\n\n{{system_name}}"
+}

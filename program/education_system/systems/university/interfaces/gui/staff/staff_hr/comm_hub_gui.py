@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -35,7 +37,7 @@ class CommHubGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Communication Hub")
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), _t('gui.staff.staff_hr.comm_hub.dialogs.login_required_to_access_communication_hub', default="Login required to access Communication Hub"))
             return
 
         if parent_notebook:
@@ -50,21 +52,21 @@ class CommHubGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Comm Hub")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.comm_hub.tabs.comm_hub', default="Comm Hub"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Communication Hub")
+        self.window.title(_t('gui.staff.staff_hr.comm_hub.windows.communication_hub', default="Communication Hub"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.comm_hub.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -91,31 +93,31 @@ class CommHubGUI:
     def _create_dashboard_tab(self):
         """Create hub dashboard tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Hub Dashboard")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.comm_hub.tabs.hub_dashboard', default="Hub Dashboard"))
 
         # Header with Refresh
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Hub Dashboard", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_dashboard).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.hub_dashboard', default="Hub Dashboard"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.refresh', default="Refresh"), command=self._load_dashboard).pack(side=tk.RIGHT, padx=5)
 
         # Quick action buttons
         actions_frame = ttk.Frame(tab)
         actions_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        ttk.Button(actions_frame, text="New Thread",
+        ttk.Button(actions_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.new_thread', default="New Thread"),
                    command=self._quick_new_thread).pack(side=tk.LEFT, padx=5)
-        ttk.Button(actions_frame, text="Create Poll",
+        ttk.Button(actions_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.create_poll', default="Create Poll"),
                    command=self._quick_create_poll).pack(side=tk.LEFT, padx=5)
-        ttk.Button(actions_frame, text="View Forums",
+        ttk.Button(actions_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.view_forums', default="View Forums"),
                    command=self._switch_to_forums_tab).pack(side=tk.LEFT, padx=5)
 
         # Active polls count
-        self.active_polls_label = ttk.Label(actions_frame, text="Active Polls: 0",
+        self.active_polls_label = ttk.Label(actions_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.active_polls_0', default="Active Polls: 0"),
                                             font=('Arial', 10, 'bold'))
         self.active_polls_label.pack(side=tk.RIGHT, padx=10)
 
         # Pinned messages section
-        pinned_frame = ttk.LabelFrame(tab, text="Pinned Messages", padding=10)
+        pinned_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.comm_hub.labels.pinned_messages', default="Pinned Messages"), padding=10)
         pinned_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         pinned_tree_frame = ttk.Frame(pinned_frame)
@@ -138,7 +140,7 @@ class CommHubGUI:
         y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Recent threads section
-        recent_frame = ttk.LabelFrame(tab, text="Recent Threads", padding=10)
+        recent_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.comm_hub.labels.recent_threads', default="Recent Threads"), padding=10)
         recent_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         recent_tree_frame = ttk.Frame(recent_frame)
@@ -254,15 +256,15 @@ class CommHubGUI:
     def _create_forums_tab(self):
         """Create forums tab with paned view."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Forums")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.comm_hub.tabs.forums', default="Forums"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Forums", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="New Thread",
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.forums', default="Forums"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.new_thread', default="New Thread"),
                    command=self._forum_new_thread).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text="Refresh",
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.refresh', default="Refresh"),
                    command=self._load_forums).pack(side=tk.RIGHT, padx=5)
 
         # PanedWindow: left = forums list, right = threads in selected forum
@@ -270,7 +272,7 @@ class CommHubGUI:
         paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Left pane: Forums list
-        left_frame = ttk.LabelFrame(paned, text="Forums", padding=5)
+        left_frame = ttk.LabelFrame(paned, text=_t('gui.staff.staff_hr.comm_hub.labels.forums', default="Forums"), padding=5)
         paned.add(left_frame, weight=1)
 
         forums_tree_frame = ttk.Frame(left_frame)
@@ -302,7 +304,7 @@ class CommHubGUI:
         self._forums_cache = {}
 
         # Right pane: Threads in selected forum
-        right_frame = ttk.LabelFrame(paned, text="Threads", padding=5)
+        right_frame = ttk.LabelFrame(paned, text=_t('gui.staff.staff_hr.comm_hub.labels.threads', default="Threads"), padding=5)
         paned.add(right_frame, weight=2)
 
         threads_tree_frame = ttk.Frame(right_frame)
@@ -411,14 +413,14 @@ class CommHubGUI:
         """Open new thread dialog for the currently selected forum."""
         forum_id = self._get_selected_forum_id()
         if not forum_id:
-            messagebox.showinfo("Info", "Please select a forum first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_forum_first', default="Please select a forum first."))
             return
         self._open_new_thread_dialog(forum_id=forum_id)
 
     def _open_new_thread_dialog(self, forum_id=None):
         """Open dialog to create a new thread."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("New Thread")
+        dialog.title(_t('gui.staff.staff_hr.comm_hub.windows.new_thread', default="New Thread"))
         dialog.geometry("550x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -427,7 +429,7 @@ class CommHubGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Forum selector
-        ttk.Label(frame, text="Forum:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.forum', default="Forum:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         forum_combo = ttk.Combobox(frame, width=35, state='readonly')
         forum_combo.grid(row=0, column=1, padx=10, pady=8)
 
@@ -454,12 +456,12 @@ class CommHubGUI:
             forum_combo.current(0)
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.title', default="Title:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=40)
         title_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Content
-        ttk.Label(frame, text="Content:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.content_variant_2', default="Content:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         content_text = scrolledtext.ScrolledText(frame, width=40, height=10, wrap=tk.WORD)
         content_text.grid(row=2, column=1, padx=10, pady=8)
 
@@ -472,7 +474,7 @@ class CommHubGUI:
 
             selected_forum_id = forum_map.get(forum_label)
             if not selected_forum_id:
-                messagebox.showerror("Error", "Please select a valid forum.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_valid_forum', default="Please select a valid forum."), parent=dialog)
                 return
 
             try:
@@ -483,7 +485,7 @@ class CommHubGUI:
 
             content = content_text.get("1.0", "end-1c").strip()
             if not content:
-                messagebox.showerror("Validation Error", "Content is required.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.comm_hub.dialogs.content_is_required', default="Content is required."), parent=dialog)
                 return
 
             try:
@@ -493,7 +495,7 @@ class CommHubGUI:
                     content=content,
                     author_id=self._get_user_id()
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"),
                                     f"Thread created. ID: {thread_id}",
                                     parent=dialog)
                 dialog.destroy()
@@ -503,13 +505,13 @@ class CommHubGUI:
                     self._load_threads(selected_forum_id)
                 self._load_dashboard()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Create", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.create', default="Create"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         title_entry.focus_set()
 
@@ -527,11 +529,11 @@ class CommHubGUI:
         try:
             thread = CommHubManager.get_thread(thread_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load thread: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), f"Could not load thread: {e}")
             return
 
         if not thread:
-            messagebox.showerror("Error", "Thread not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), _t('gui.staff.staff_hr.comm_hub.dialogs.thread_not_found', default="Thread not found"))
             return
 
         # Increment view count
@@ -558,7 +560,7 @@ class CommHubGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Thread details
-        details_frame = ttk.LabelFrame(scroll_frame, text="Thread Details", padding=15)
+        details_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.thread_details', default="Thread Details"), padding=15)
         details_frame.pack(fill=tk.X, padx=10, pady=10)
 
         fields = [
@@ -578,7 +580,7 @@ class CommHubGUI:
                 row=i, column=1, sticky='nw', padx=(5, 10), pady=4)
 
         # Thread content
-        content_frame = ttk.LabelFrame(scroll_frame, text="Content", padding=10)
+        content_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.content', default="Content"), padding=10)
         content_frame.pack(fill=tk.X, padx=10, pady=10)
 
         content_text = tk.Text(content_frame, wrap=tk.WORD, height=6, state=tk.NORMAL)
@@ -587,7 +589,7 @@ class CommHubGUI:
         content_text.pack(fill=tk.X)
 
         # Replies section
-        replies_frame = ttk.LabelFrame(scroll_frame, text="Replies", padding=10)
+        replies_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.replies', default="Replies"), padding=10)
         replies_frame.pack(fill=tk.X, padx=10, pady=10)
 
         try:
@@ -636,32 +638,32 @@ class CommHubGUI:
             def mark_solution():
                 sel = replies_tree.selection()
                 if not sel:
-                    messagebox.showinfo("Info", "Please select a reply to mark as solution.",
+                    messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_reply_to_mark_as_solution', default="Please select a reply to mark as solution."),
                                         parent=dialog)
                     return
 
                 reply_id = int(sel[0])
-                if not messagebox.askyesno("Confirm",
-                                           "Mark this reply as the solution?",
+                if not messagebox.askyesno(_t('gui.staff.staff_hr.comm_hub.dialogs.confirm', default="Confirm"),
+                                           _t('gui.staff.staff_hr.comm_hub.dialogs.mark_this_reply_as_the_solution', default="Mark this reply as the solution?"),
                                            parent=dialog):
                     return
 
                 try:
                     CommHubManager.mark_solution(reply_id)
-                    messagebox.showinfo("Success", "Reply marked as solution.", parent=dialog)
+                    messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"), _t('gui.staff.staff_hr.comm_hub.dialogs.reply_marked_as_solution', default="Reply marked as solution."), parent=dialog)
                     dialog.destroy()
                     self._open_thread_detail_dialog(thread_id)
                 except Exception as e:
-                    messagebox.showerror("Error", str(e), parent=dialog)
+                    messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e), parent=dialog)
 
-            ttk.Button(reply_btn_frame, text="Mark Solution",
+            ttk.Button(reply_btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.mark_solution', default="Mark Solution"),
                        command=mark_solution).pack(side=tk.LEFT, padx=5)
         else:
-            ttk.Label(replies_frame, text="No replies yet.").pack(anchor='w')
+            ttk.Label(replies_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.no_replies_yet', default="No replies yet.")).pack(anchor='w')
 
         # Add Reply section
         if not thread.get('is_locked'):
-            add_reply_frame = ttk.LabelFrame(scroll_frame, text="Add Reply", padding=10)
+            add_reply_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.add_reply', default="Add Reply"), padding=10)
             add_reply_frame.pack(fill=tk.X, padx=10, pady=10)
 
             reply_text = scrolledtext.ScrolledText(add_reply_frame, wrap=tk.WORD,
@@ -671,7 +673,7 @@ class CommHubGUI:
             def submit_reply():
                 content = reply_text.get("1.0", "end-1c").strip()
                 if not content:
-                    messagebox.showerror("Validation Error", "Reply content is required.",
+                    messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.comm_hub.dialogs.reply_content_is_required', default="Reply content is required."),
                                          parent=dialog)
                     return
 
@@ -681,38 +683,38 @@ class CommHubGUI:
                         content=content,
                         author_id=self._get_user_id()
                     )
-                    messagebox.showinfo("Success",
+                    messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"),
                                         f"Reply added. ID: {reply_id}",
                                         parent=dialog)
                     dialog.destroy()
                     self._open_thread_detail_dialog(thread_id)
                 except Exception as e:
-                    messagebox.showerror("Error", str(e), parent=dialog)
+                    messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e), parent=dialog)
 
-            ttk.Button(add_reply_frame, text="Submit Reply",
+            ttk.Button(add_reply_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.submit_reply', default="Submit Reply"),
                        command=submit_reply).pack(side=tk.LEFT, padx=5)
 
         # Close button
         btn_frame = ttk.Frame(scroll_frame)
         btn_frame.pack(fill=tk.X, padx=10, pady=15)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # ==================== TAB 3: POLLS & SURVEYS ====================
 
     def _create_polls_tab(self):
         """Create polls and surveys tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Polls & Surveys")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.comm_hub.tabs.polls_surveys', default="Polls & Surveys"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Polls & Surveys", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Create Poll",
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.polls_surveys', default="Polls & Surveys"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.create_poll', default="Create Poll"),
                    command=self._open_create_poll_dialog).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text="Refresh",
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.refresh', default="Refresh"),
                    command=self._load_polls).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text="View/Vote",
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.view_vote', default="View/Vote"),
                    command=self._view_vote_poll).pack(side=tk.RIGHT, padx=5)
 
         # Polls treeview
@@ -785,7 +787,7 @@ class CommHubGUI:
         """Open poll detail/vote dialog for the selected poll."""
         selection = self.polls_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a poll first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_poll_first', default="Please select a poll first."))
             return
 
         poll_id = int(selection[0])
@@ -796,7 +798,7 @@ class CommHubGUI:
         try:
             results = CommHubManager.get_poll_results(poll_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load poll: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), f"Could not load poll: {e}")
             return
 
         dialog = tk.Toplevel(self.root)
@@ -808,7 +810,7 @@ class CommHubGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Poll info
-        info_frame = ttk.LabelFrame(frame, text="Poll Information", padding=10)
+        info_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.poll_information', default="Poll Information"), padding=10)
         info_frame.pack(fill=tk.X, pady=(0, 10))
 
         poll_type = results.get('poll_type', '')
@@ -836,7 +838,7 @@ class CommHubGUI:
 
         # Voting section (only if poll is open)
         if results.get('status', '').lower() == 'open':
-            vote_frame = ttk.LabelFrame(frame, text="Cast Your Vote", padding=10)
+            vote_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.cast_your_vote', default="Cast Your Vote"), padding=10)
             vote_frame.pack(fill=tk.X, pady=(0, 10))
 
             if poll_type == 'single_choice':
@@ -852,11 +854,11 @@ class CommHubGUI:
                 def cast_single():
                     selected_option = vote_var.get()
                     if selected_option == -1:
-                        messagebox.showinfo("Info", "Please select an option.",
+                        messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_an_option', default="Please select an option."),
                                             parent=dialog)
                         return
 
-                    if not messagebox.askyesno("Confirm", "Cast your vote?",
+                    if not messagebox.askyesno(_t('gui.staff.staff_hr.comm_hub.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.comm_hub.dialogs.cast_your_vote', default="Cast your vote?"),
                                                parent=dialog):
                         return
 
@@ -866,16 +868,16 @@ class CommHubGUI:
                             option_id=selected_option,
                             voter_id=self._get_user_id()
                         )
-                        messagebox.showinfo("Success", "Your vote has been cast.",
+                        messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"), _t('gui.staff.staff_hr.comm_hub.dialogs.your_vote_has_been_cast', default="Your vote has been cast."),
                                             parent=dialog)
                         dialog.destroy()
                         self._load_polls()
                     except ValueError as e:
-                        messagebox.showwarning("Warning", str(e), parent=dialog)
+                        messagebox.showwarning(_t('gui.staff.staff_hr.comm_hub.dialogs.warning', default="Warning"), str(e), parent=dialog)
                     except Exception as e:
-                        messagebox.showerror("Error", str(e), parent=dialog)
+                        messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e), parent=dialog)
 
-                ttk.Button(vote_frame, text="Vote",
+                ttk.Button(vote_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.vote', default="Vote"),
                            command=cast_single).pack(pady=10)
 
             elif poll_type == 'multiple_choice':
@@ -892,11 +894,11 @@ class CommHubGUI:
                 def cast_multiple():
                     selected_ids = [oid for oid, var in check_vars.items() if var.get()]
                     if not selected_ids:
-                        messagebox.showinfo("Info", "Please select at least one option.",
+                        messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_at_least_one_option', default="Please select at least one option."),
                                             parent=dialog)
                         return
 
-                    if not messagebox.askyesno("Confirm",
+                    if not messagebox.askyesno(_t('gui.staff.staff_hr.comm_hub.dialogs.confirm', default="Confirm"),
                                                f"Cast votes for {len(selected_ids)} option(s)?",
                                                parent=dialog):
                         return
@@ -908,16 +910,16 @@ class CommHubGUI:
                                 option_id=option_id,
                                 voter_id=self._get_user_id()
                             )
-                        messagebox.showinfo("Success", "Your votes have been cast.",
+                        messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"), _t('gui.staff.staff_hr.comm_hub.dialogs.your_votes_have_been_cast', default="Your votes have been cast."),
                                             parent=dialog)
                         dialog.destroy()
                         self._load_polls()
                     except ValueError as e:
-                        messagebox.showwarning("Warning", str(e), parent=dialog)
+                        messagebox.showwarning(_t('gui.staff.staff_hr.comm_hub.dialogs.warning', default="Warning"), str(e), parent=dialog)
                     except Exception as e:
-                        messagebox.showerror("Error", str(e), parent=dialog)
+                        messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e), parent=dialog)
 
-                ttk.Button(vote_frame, text="Vote",
+                ttk.Button(vote_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.vote', default="Vote"),
                            command=cast_multiple).pack(pady=10)
 
             elif poll_type == 'rating':
@@ -934,11 +936,11 @@ class CommHubGUI:
                 def cast_rating():
                     selected_option = vote_var.get()
                     if selected_option == -1:
-                        messagebox.showinfo("Info", "Please select a rating.",
+                        messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_rating', default="Please select a rating."),
                                             parent=dialog)
                         return
 
-                    if not messagebox.askyesno("Confirm", "Submit your rating?",
+                    if not messagebox.askyesno(_t('gui.staff.staff_hr.comm_hub.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.comm_hub.dialogs.submit_your_rating', default="Submit your rating?"),
                                                parent=dialog):
                         return
 
@@ -948,20 +950,20 @@ class CommHubGUI:
                             option_id=selected_option,
                             voter_id=self._get_user_id()
                         )
-                        messagebox.showinfo("Success", "Your rating has been submitted.",
+                        messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"), _t('gui.staff.staff_hr.comm_hub.dialogs.your_rating_has_been_submitted', default="Your rating has been submitted."),
                                             parent=dialog)
                         dialog.destroy()
                         self._load_polls()
                     except ValueError as e:
-                        messagebox.showwarning("Warning", str(e), parent=dialog)
+                        messagebox.showwarning(_t('gui.staff.staff_hr.comm_hub.dialogs.warning', default="Warning"), str(e), parent=dialog)
                     except Exception as e:
-                        messagebox.showerror("Error", str(e), parent=dialog)
+                        messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e), parent=dialog)
 
-                ttk.Button(vote_frame, text="Submit Rating",
+                ttk.Button(vote_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.submit_rating', default="Submit Rating"),
                            command=cast_rating).pack(pady=10)
 
         # Results section
-        results_frame = ttk.LabelFrame(frame, text="Results", padding=10)
+        results_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.results', default="Results"), padding=10)
         results_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         for opt in options:
@@ -978,12 +980,12 @@ class CommHubGUI:
         total_label.pack(anchor='w', padx=5, pady=(10, 0))
 
         # Close button
-        ttk.Button(frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5, pady=10)
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5, pady=10)
 
     def _open_create_poll_dialog(self):
         """Open dialog to create a new poll."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create Poll")
+        dialog.title(_t('gui.staff.staff_hr.comm_hub.windows.create_poll', default="Create Poll"))
         dialog.geometry("600x600")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -992,7 +994,7 @@ class CommHubGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Forum selector
-        ttk.Label(frame, text="Forum:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.forum', default="Forum:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         forum_combo = ttk.Combobox(frame, width=35, state='readonly')
         forum_combo.grid(row=0, column=1, padx=10, pady=8)
 
@@ -1013,17 +1015,17 @@ class CommHubGUI:
             forum_combo.current(0)
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.title', default="Title:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=40)
         title_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.description', default="Description:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         desc_text = tk.Text(frame, width=38, height=3)
         desc_text.grid(row=2, column=1, padx=10, pady=8)
 
         # Type
-        ttk.Label(frame, text="Type:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.type', default="Type:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(
             frame, values=['single_choice', 'multiple_choice', 'rating'],
             width=20, state='readonly'
@@ -1033,17 +1035,17 @@ class CommHubGUI:
 
         # Anonymous
         anon_var = tk.BooleanVar(value=False)
-        ttk.Label(frame, text="Anonymous:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.anonymous', default="Anonymous:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         ttk.Checkbutton(frame, variable=anon_var,
-                        text="Anonymous voting").grid(row=4, column=1, padx=10, pady=8, sticky='w')
+                        text=_t('gui.staff.staff_hr.comm_hub.buttons.anonymous_voting', default="Anonymous voting")).grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Closes at
-        ttk.Label(frame, text="Closes At\n(YYYY-MM-DD):").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.closes_at_yyyy_mm_dd', default="Closes At\n(YYYY-MM-DD):")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         closes_entry = ttk.Entry(frame, width=15)
         closes_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Options management
-        ttk.Label(frame, text="Options:").grid(row=6, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.comm_hub.labels.options', default="Options:")).grid(row=6, column=0, sticky='ne', padx=10, pady=8)
         options_frame = ttk.Frame(frame)
         options_frame.grid(row=6, column=1, padx=10, pady=8, sticky='w')
 
@@ -1062,17 +1064,17 @@ class CommHubGUI:
                 options_listbox.insert(tk.END, text)
                 option_entry.delete(0, tk.END)
             else:
-                messagebox.showinfo("Info", "Enter option text first.", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.enter_option_text_first', default="Enter option text first."), parent=dialog)
 
         def remove_option():
             sel = options_listbox.curselection()
             if sel:
                 options_listbox.delete(sel[0])
             else:
-                messagebox.showinfo("Info", "Select an option to remove.", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.select_an_option_to_remove', default="Select an option to remove."), parent=dialog)
 
-        ttk.Button(options_btn_frame, text="Add", command=add_option).pack(pady=2, fill=tk.X)
-        ttk.Button(options_btn_frame, text="Remove", command=remove_option).pack(pady=2, fill=tk.X)
+        ttk.Button(options_btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.add', default="Add"), command=add_option).pack(pady=2, fill=tk.X)
+        ttk.Button(options_btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.remove', default="Remove"), command=remove_option).pack(pady=2, fill=tk.X)
 
         def save():
             try:
@@ -1083,7 +1085,7 @@ class CommHubGUI:
 
             selected_forum_id = forum_map.get(forum_label)
             if not selected_forum_id:
-                messagebox.showerror("Error", "Please select a valid forum.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_valid_forum', default="Please select a valid forum."), parent=dialog)
                 return
 
             try:
@@ -1103,8 +1105,8 @@ class CommHubGUI:
             # Get options
             options = list(options_listbox.get(0, tk.END))
             if len(options) < 2:
-                messagebox.showerror("Validation Error",
-                                     "At least 2 options are required.",
+                messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.validation_error', default="Validation Error"),
+                                     _t('gui.staff.staff_hr.comm_hub.dialogs.at_least_2_options_are_required', default="At least 2 options are required."),
                                      parent=dialog)
                 return
 
@@ -1114,8 +1116,8 @@ class CommHubGUI:
                     datetime.strptime(closes_at, '%Y-%m-%d')
                     closes_at = closes_at + "T23:59:59"
                 except ValueError:
-                    messagebox.showerror("Validation Error",
-                                         "Closes At must be in YYYY-MM-DD format.",
+                    messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.validation_error', default="Validation Error"),
+                                         _t('gui.staff.staff_hr.comm_hub.dialogs.closes_at_must_be_in_yyyy_mm_dd_format', default="Closes At must be in YYYY-MM-DD format."),
                                          parent=dialog)
                     return
 
@@ -1128,7 +1130,7 @@ class CommHubGUI:
                     author_id=self._get_user_id()
                 )
             except Exception as e:
-                messagebox.showerror("Error", f"Could not create poll thread: {e}",
+                messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), f"Could not create poll thread: {e}",
                                      parent=dialog)
                 return
 
@@ -1145,20 +1147,20 @@ class CommHubGUI:
                     created_by=self._get_user_id(),
                     options=options
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"),
                                     f"Poll created. ID: {poll_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_polls()
                 self._load_dashboard()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Create Poll", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.create_poll', default="Create Poll"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         title_entry.focus_set()
 
@@ -1167,7 +1169,7 @@ class CommHubGUI:
     def _create_forum_admin_tab(self):
         """Create forum admin tab (admin only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Forum Admin")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.comm_hub.tabs.forum_admin', default="Forum Admin"))
 
         # Scrollable content
         canvas = tk.Canvas(tab)
@@ -1182,21 +1184,21 @@ class CommHubGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Forum CRUD Section ----
-        crud_frame = ttk.LabelFrame(scroll_frame, text="Create Forum", padding=15)
+        crud_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.create_forum', default="Create Forum"), padding=15)
         crud_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Name
-        ttk.Label(crud_frame, text="Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.name', default="Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.admin_forum_name_entry = ttk.Entry(crud_frame, width=35)
         self.admin_forum_name_entry.grid(row=0, column=1, columnspan=2, padx=10, pady=8, sticky='w')
 
         # Description
-        ttk.Label(crud_frame, text="Description:").grid(row=1, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.description', default="Description:")).grid(row=1, column=0, sticky='ne', padx=10, pady=8)
         self.admin_forum_desc_text = tk.Text(crud_frame, width=40, height=3)
         self.admin_forum_desc_text.grid(row=1, column=1, columnspan=2, padx=10, pady=8, sticky='w')
 
         # Type
-        ttk.Label(crud_frame, text="Type:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.type', default="Type:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.admin_forum_type_combo = ttk.Combobox(
             crud_frame, values=['department', 'topic', 'project', 'social'],
             width=20, state='readonly'
@@ -1205,12 +1207,12 @@ class CommHubGUI:
         self.admin_forum_type_combo.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Department
-        ttk.Label(crud_frame, text="Department:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.department', default="Department:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         self.admin_forum_dept_entry = ttk.Entry(crud_frame, width=25)
         self.admin_forum_dept_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Visibility
-        ttk.Label(crud_frame, text="Visibility:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.visibility', default="Visibility:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         self.admin_forum_vis_combo = ttk.Combobox(
             crud_frame, values=['public', 'members_only', 'private'],
             width=20, state='readonly'
@@ -1219,21 +1221,21 @@ class CommHubGUI:
         self.admin_forum_vis_combo.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Create button
-        ttk.Button(crud_frame, text="Create Forum",
+        ttk.Button(crud_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.create_forum', default="Create Forum"),
                    command=self._create_forum).grid(row=5, column=1, padx=10, pady=15, sticky='w')
 
         # ---- Members Management Section ----
-        members_frame = ttk.LabelFrame(scroll_frame, text="Manage Forum Members", padding=15)
+        members_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.manage_forum_members', default="Manage Forum Members"), padding=15)
         members_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Forum selector
         selector_row = ttk.Frame(members_frame)
         selector_row.pack(fill=tk.X, pady=5)
-        ttk.Label(selector_row, text="Forum:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(selector_row, text=_t('gui.staff.staff_hr.comm_hub.labels.forum', default="Forum:")).pack(side=tk.LEFT, padx=5)
         self.admin_forum_combo = ttk.Combobox(selector_row, width=35, state='readonly')
         self.admin_forum_combo.pack(side=tk.LEFT, padx=5)
         self.admin_forum_combo.bind('<<ComboboxSelected>>', lambda e: self._load_admin_forum_members())
-        ttk.Button(selector_row, text="Refresh",
+        ttk.Button(selector_row, text=_t('gui.staff.staff_hr.comm_hub.buttons.refresh', default="Refresh"),
                    command=self._refresh_admin_forums).pack(side=tk.LEFT, padx=5)
 
         # Store forum mapping for admin
@@ -1242,19 +1244,19 @@ class CommHubGUI:
         # Add member controls
         add_row = ttk.Frame(members_frame)
         add_row.pack(fill=tk.X, pady=10)
-        ttk.Label(add_row, text="User ID:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(add_row, text=_t('gui.staff.staff_hr.comm_hub.labels.user_id', default="User ID:")).pack(side=tk.LEFT, padx=5)
         self.admin_member_user_entry = ttk.Entry(add_row, width=20)
         self.admin_member_user_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Label(add_row, text="Role:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(add_row, text=_t('gui.staff.staff_hr.comm_hub.labels.role', default="Role:")).pack(side=tk.LEFT, padx=5)
         self.admin_member_role_combo = ttk.Combobox(
             add_row, values=['moderator', 'member'],
             width=12, state='readonly'
         )
         self.admin_member_role_combo.set('member')
         self.admin_member_role_combo.pack(side=tk.LEFT, padx=5)
-        ttk.Button(add_row, text="Add Member",
+        ttk.Button(add_row, text=_t('gui.staff.staff_hr.comm_hub.buttons.add_member', default="Add Member"),
                    command=self._add_forum_member).pack(side=tk.LEFT, padx=5)
-        ttk.Button(add_row, text="Remove Selected",
+        ttk.Button(add_row, text=_t('gui.staff.staff_hr.comm_hub.buttons.remove_selected', default="Remove Selected"),
                    command=self._remove_forum_member).pack(side=tk.LEFT, padx=5)
 
         # Members treeview
@@ -1277,14 +1279,14 @@ class CommHubGUI:
         y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Pin/Unpin Messages Section ----
-        pin_frame = ttk.LabelFrame(scroll_frame, text="Pin/Unpin Messages", padding=15)
+        pin_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.pin_unpin_messages', default="Pin/Unpin Messages"), padding=15)
         pin_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Pin controls
         pin_controls = ttk.Frame(pin_frame)
         pin_controls.pack(fill=tk.X, pady=5)
 
-        ttk.Label(pin_controls, text="Message Type:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(pin_controls, text=_t('gui.staff.staff_hr.comm_hub.labels.message_type', default="Message Type:")).pack(side=tk.LEFT, padx=5)
         self.pin_type_combo = ttk.Combobox(
             pin_controls, values=['thread', 'reply'],
             width=12, state='readonly'
@@ -1292,15 +1294,15 @@ class CommHubGUI:
         self.pin_type_combo.set('thread')
         self.pin_type_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(pin_controls, text="Message ID:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(pin_controls, text=_t('gui.staff.staff_hr.comm_hub.labels.message_id', default="Message ID:")).pack(side=tk.LEFT, padx=5)
         self.pin_message_id_entry = ttk.Entry(pin_controls, width=10)
         self.pin_message_id_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(pin_controls, text="Expires (YYYY-MM-DD):").pack(side=tk.LEFT, padx=5)
+        ttk.Label(pin_controls, text=_t('gui.staff.staff_hr.comm_hub.labels.expires_yyyy_mm_dd', default="Expires (YYYY-MM-DD):")).pack(side=tk.LEFT, padx=5)
         self.pin_expires_entry = ttk.Entry(pin_controls, width=12)
         self.pin_expires_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(pin_controls, text="Pin Message",
+        ttk.Button(pin_controls, text=_t('gui.staff.staff_hr.comm_hub.buttons.pin_message', default="Pin Message"),
                    command=self._pin_message).pack(side=tk.LEFT, padx=5)
 
         # Pinned messages list
@@ -1325,9 +1327,9 @@ class CommHubGUI:
 
         unpin_btn_frame = ttk.Frame(pin_frame)
         unpin_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(unpin_btn_frame, text="Unpin Selected",
+        ttk.Button(unpin_btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.unpin_selected', default="Unpin Selected"),
                    command=self._unpin_message).pack(side=tk.LEFT, padx=5)
-        ttk.Button(unpin_btn_frame, text="Refresh Pins",
+        ttk.Button(unpin_btn_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.refresh_pins', default="Refresh Pins"),
                    command=self._load_admin_pinned_messages).pack(side=tk.LEFT, padx=5)
 
         # Load initial data
@@ -1394,7 +1396,7 @@ class CommHubGUI:
 
         description = self.admin_forum_desc_text.get("1.0", "end-1c").strip()
         if not description:
-            messagebox.showerror("Validation Error", "Description is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.comm_hub.dialogs.description_is_required', default="Description is required."))
             return
 
         try:
@@ -1424,7 +1426,7 @@ class CommHubGUI:
                 visibility=visibility,
                 created_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", f"Forum created. ID: {forum_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"), f"Forum created. ID: {forum_id}")
             # Clear form
             self.admin_forum_name_entry.delete(0, tk.END)
             self.admin_forum_desc_text.delete("1.0", tk.END)
@@ -1435,13 +1437,13 @@ class CommHubGUI:
             self._refresh_admin_forums()
             self._load_forums()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e))
 
     def _add_forum_member(self):
         """Add a member to the selected forum."""
         forum_id = self._get_admin_selected_forum_id()
         if not forum_id:
-            messagebox.showinfo("Info", "Please select a forum first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_forum_first', default="Please select a forum first."))
             return
 
         try:
@@ -1462,28 +1464,28 @@ class CommHubGUI:
                 user_id=user_id,
                 role=role
             )
-            messagebox.showinfo("Success", f"Member added. ID: {member_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"), f"Member added. ID: {member_id}")
             self.admin_member_user_entry.delete(0, tk.END)
             self._load_admin_forum_members()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e))
 
     def _remove_forum_member(self):
         """Remove the selected member from the forum."""
         selection = self.admin_forum_members_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a member to remove.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_member_to_remove', default="Please select a member to remove."))
             return
 
         forum_id = self._get_admin_selected_forum_id()
         if not forum_id:
-            messagebox.showinfo("Info", "Please select a forum first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_forum_first', default="Please select a forum first."))
             return
 
         item = self.admin_forum_members_tree.item(selection[0])
         user_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.comm_hub.dialogs.confirm', default="Confirm"),
                                     f"Remove member '{user_id}' from this forum?"):
             return
 
@@ -1492,10 +1494,10 @@ class CommHubGUI:
                 forum_id=forum_id,
                 user_id=str(user_id)
             )
-            messagebox.showinfo("Success", "Member removed.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"), _t('gui.staff.staff_hr.comm_hub.dialogs.member_removed', default="Member removed."))
             self._load_admin_forum_members()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e))
 
     def _pin_message(self):
         """Pin a message from the admin panel."""
@@ -1507,13 +1509,13 @@ class CommHubGUI:
 
         message_id_str = self.pin_message_id_entry.get().strip()
         if not message_id_str:
-            messagebox.showerror("Validation Error", "Message ID is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.comm_hub.dialogs.message_id_is_required', default="Message ID is required."))
             return
 
         try:
             message_id = int(message_id_str)
         except ValueError:
-            messagebox.showerror("Validation Error", "Message ID must be a number.")
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.comm_hub.dialogs.message_id_must_be_a_number', default="Message ID must be a number."))
             return
 
         expires_at = self.pin_expires_entry.get().strip() or None
@@ -1522,8 +1524,8 @@ class CommHubGUI:
                 datetime.strptime(expires_at, '%Y-%m-%d')
                 expires_at = expires_at + "T23:59:59"
             except ValueError:
-                messagebox.showerror("Validation Error",
-                                     "Expires date must be in YYYY-MM-DD format.")
+                messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.validation_error', default="Validation Error"),
+                                     _t('gui.staff.staff_hr.comm_hub.dialogs.expires_date_must_be_in_yyyy_mm_dd_format', default="Expires date must be in YYYY-MM-DD format."))
                 return
 
         try:
@@ -1533,35 +1535,35 @@ class CommHubGUI:
                 pinned_by=self._get_user_id(),
                 expires_at=expires_at
             )
-            messagebox.showinfo("Success", f"Message pinned. Pin ID: {pin_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"), f"Message pinned. Pin ID: {pin_id}")
             self.pin_message_id_entry.delete(0, tk.END)
             self.pin_expires_entry.delete(0, tk.END)
             self._load_admin_pinned_messages()
             self._load_dashboard()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e))
 
     def _unpin_message(self):
         """Unpin the selected pinned message."""
         selection = self.admin_pinned_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a pinned message to unpin.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_select_a_pinned_message_to_unpin', default="Please select a pinned message to unpin."))
             return
 
         item = self.admin_pinned_tree.item(selection[0])
         pin_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.comm_hub.dialogs.confirm', default="Confirm"),
                                     f"Unpin message (Pin ID: {pin_id})?"):
             return
 
         try:
             CommHubManager.unpin_message(pin_id)
-            messagebox.showinfo("Success", "Message unpinned.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.success', default="Success"), _t('gui.staff.staff_hr.comm_hub.dialogs.message_unpinned', default="Message unpinned."))
             self._load_admin_pinned_messages()
             self._load_dashboard()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), str(e))
 
     def _load_admin_pinned_messages(self):
         """Load pinned messages into the admin pinned tree."""
@@ -1587,22 +1589,22 @@ class CommHubGUI:
     def _create_search_tab(self):
         """Create search tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Search")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.comm_hub.tabs.search', default="Search"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Search", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.search', default="Search"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Search controls
         search_frame = ttk.Frame(tab)
         search_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(search_frame, text="Query:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.staff.staff_hr.comm_hub.labels.query', default="Query:")).pack(side=tk.LEFT, padx=5)
         self.search_entry = ttk.Entry(search_frame, width=50)
         self.search_entry.pack(side=tk.LEFT, padx=5)
         self.search_entry.bind('<Return>', lambda e: self._perform_search())
-        ttk.Button(search_frame, text="Search",
+        ttk.Button(search_frame, text=_t('gui.staff.staff_hr.comm_hub.buttons.search', default="Search"),
                    command=self._perform_search).pack(side=tk.LEFT, padx=5)
 
         # Results treeview
@@ -1630,7 +1632,7 @@ class CommHubGUI:
         self.search_tree.tag_configure('reply', background='#e2e3e5')
 
         # Status label
-        self.search_status_label = ttk.Label(tab, text="Enter a query and click Search.",
+        self.search_status_label = ttk.Label(tab, text=_t('gui.staff.staff_hr.comm_hub.labels.enter_a_query_and_click_search', default="Enter a query and click Search."),
                                              font=('Arial', 10))
         self.search_status_label.pack(fill=tk.X, padx=10, pady=(0, 10))
 
@@ -1638,7 +1640,7 @@ class CommHubGUI:
         """Perform search and display results."""
         query = self.search_entry.get().strip()
         if not query:
-            messagebox.showinfo("Info", "Please enter a search query.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.comm_hub.dialogs.info', default="Info"), _t('gui.staff.staff_hr.comm_hub.dialogs.please_enter_a_search_query', default="Please enter a search query."))
             return
 
         for item in self.search_tree.get_children():
@@ -1647,7 +1649,7 @@ class CommHubGUI:
         try:
             results = CommHubManager.search_all(query)
         except Exception as e:
-            messagebox.showerror("Error", f"Search failed: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.comm_hub.dialogs.error', default="Error"), f"Search failed: {e}")
             return
 
         threads = results.get('threads', [])

@@ -17,7 +17,7 @@ import logging
 import sqlite3
 from pathlib import Path
 
-from education_system.systems.nursery.infrastructure import paths
+from education_system import paths
 from education_system.systems.nursery.infrastructure.database import connect, init_db
 
 logger = logging.getLogger(__name__)
@@ -163,8 +163,8 @@ def export_all(dir_path: str | Path,
 
 def default_export_dir() -> Path:
     """A dated default destination under the nursery data directory."""
-    paths.ensure_directories()
-    return paths.DATA_DIR / f"export_{_dt.date.today().isoformat()}"
+    paths.ensure_nursery_directories()
+    return paths.NURSERY_DATA_DIR / f"export_{_dt.date.today().isoformat()}"
 
 
 def label_for(table: str) -> str:

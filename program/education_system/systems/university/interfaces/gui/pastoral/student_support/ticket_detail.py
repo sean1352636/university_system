@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import tkinter.font as tkFont
@@ -10,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import i18n for language support
 from education_system.systems.university.infrastructure.i18n import (
@@ -43,8 +45,8 @@ except ImportError:
     render_template = lambda *args, **kwargs: (None, None)
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this module when targeting the
@@ -161,13 +163,13 @@ class TicketDetailMixin:
             ticket = self.support.get_ticket_details(ticket_id)
             self.show_ticket_detail_window(ticket)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load ticket details: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_detail.dialogs.error', default="Error"), f"Could not load ticket details: {e}")
 
     def show_ticket_detail_window(self, ticket):
         """Show ticket details in a new window"""
         # Handle None or invalid ticket
         if ticket is None or not isinstance(ticket, dict):
-            messagebox.showerror("Error", "Invalid ticket data")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_detail.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_detail.dialogs.invalid_ticket_data', default="Invalid ticket data"))
             return
 
         ticket_id = ticket.get('ticket_id', 'N/A')
@@ -184,7 +186,7 @@ class TicketDetailMixin:
 
         # Overview tab
         overview_frame = ttk.Frame(detail_notebook, padding="10")
-        detail_notebook.add(overview_frame, text="📋 Overview")
+        detail_notebook.add(overview_frame, text=_t('gui.pastoral.student_support.ticket_detail.tabs.overview', default="📋 Overview"))
 
         self.create_ticket_overview(overview_frame, ticket)
 
@@ -205,7 +207,7 @@ class TicketDetailMixin:
         # Actions tab (for staff)
         if self.auth.current_user['role'] in ('staff', 'admin'):
             actions_frame = ttk.Frame(detail_notebook, padding="10")
-            detail_notebook.add(actions_frame, text="🔧 Actions")
+            detail_notebook.add(actions_frame, text=_t('gui.pastoral.student_support.ticket_detail.tabs.actions', default="🔧 Actions"))
 
             self.create_ticket_actions(actions_frame, ticket, detail_window)
 
@@ -229,7 +231,7 @@ class TicketDetailMixin:
         title_label.pack(anchor="w")
 
         # Details grid
-        details_frame = ttk.LabelFrame(parent, text="📊 Ticket Details", padding="15")
+        details_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.ticket_detail.labels.ticket_details', default="📊 Ticket Details"), padding="15")
         details_frame.pack(fill="x", pady=(0, 10))
 
         details_grid = ttk.Frame(details_frame)
@@ -279,14 +281,14 @@ class TicketDetailMixin:
                 tags_frame = ttk.Frame(details_frame)
                 tags_frame.pack(fill="x", pady=(10, 0))
 
-                ttk.Label(tags_frame, text="🏷️ Tags:", font=('Segoe UI', 9, 'bold')).pack(side="left")
+                ttk.Label(tags_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.tags', default="🏷️ Tags:"), font=('Segoe UI', 9, 'bold')).pack(side="left")
                 for tag in tags:
                     tag_label = tk.Label(tags_frame, text=tag, bg="#e5e7eb", fg="#374151",
                                        padx=8, pady=2, relief="solid", borderwidth=1)
                     tag_label.pack(side="left", padx=(5, 0))
 
         # Description
-        desc_frame = ttk.LabelFrame(parent, text="📄 Description", padding="15")
+        desc_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.ticket_detail.labels.description_variant_2', default="📄 Description"), padding="15")
         desc_frame.pack(fill="both", expand=True)
 
         desc_text = scrolledtext.ScrolledText(desc_frame, height=10, wrap=tk.WORD, state='disabled')
@@ -301,7 +303,7 @@ class TicketDetailMixin:
         responses = ticket.get('responses', [])
 
         if not responses:
-            ttk.Label(parent, text="💬 No responses yet", style='Heading.TLabel').pack(pady=20)
+            ttk.Label(parent, text=_t('gui.pastoral.student_support.ticket_detail.labels.no_responses_yet', default="💬 No responses yet"), style='Heading.TLabel').pack(pady=20)
             return
 
         # Create scrollable responses
@@ -345,12 +347,12 @@ class TicketDetailMixin:
 
             # Auto-generated and internal indicators
             if response.get('is_auto_generated'):
-                auto_label = tk.Label(header_frame, text="🤖 AUTO", bg="#f59e0b", fg="white",
+                auto_label = tk.Label(header_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.auto', default="🤖 AUTO"), bg="#f59e0b", fg="white",
                                     padx=6, pady=2, font=('Segoe UI', 8, 'bold'))
                 auto_label.pack(side="left", padx=(5, 0))
 
             if response.get('is_internal'):
-                internal_label = tk.Label(header_frame, text="🔒 INTERNAL", bg="#ef4444", fg="white",
+                internal_label = tk.Label(header_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.internal', default="🔒 INTERNAL"), bg="#ef4444", fg="white",
                                         padx=6, pady=2, font=('Segoe UI', 8, 'bold'))
                 internal_label.pack(side="left", padx=(5, 0))
 
@@ -375,7 +377,7 @@ class TicketDetailMixin:
 
         # Add response button (if permitted) - use grid to match canvas/scrollbar
         if self.can_respond_to_ticket(ticket):
-            add_response_btn = ttk.Button(parent, text="💬 Add Response",
+            add_response_btn = ttk.Button(parent, text=_t('gui.pastoral.student_support.ticket_detail.buttons.add_response', default="💬 Add Response"),
                                         command=lambda: self.show_add_response_dialog(ticket))
             add_response_btn.grid(row=1, column=0, columnspan=2, pady=(10, 0))
 
@@ -417,7 +419,7 @@ class TicketDetailMixin:
                      foreground=self.colors['text_secondary']).pack(side="left", padx=(10, 0))
 
             # Download button
-            ttk.Button(att_frame, text="📥 Download",
+            ttk.Button(att_frame, text=_t('gui.pastoral.student_support.ticket_detail.buttons.download', default="📥 Download"),
                       command=lambda a=attachment: self.download_attachment(a)).pack(side="right")
 
     def create_ticket_actions(self, parent, ticket, window):
@@ -427,82 +429,82 @@ class TicketDetailMixin:
         ticket_id = ticket.get('ticket_id', 'N/A') if ticket else 'N/A'
 
         # Status update
-        status_frame = ttk.LabelFrame(parent, text="📊 Update Status", padding="10")
+        status_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.ticket_detail.labels.update_status', default="📊 Update Status"), padding="10")
         status_frame.pack(fill="x", pady=(0, 10))
 
         status_grid = ttk.Frame(status_frame)
         status_grid.pack(fill="x")
 
-        ttk.Label(status_grid, text="New Status:").grid(row=0, column=0, sticky="w", padx=(0, 10))
+        ttk.Label(status_grid, text=_t('gui.pastoral.student_support.ticket_detail.labels.new_status', default="New Status:")).grid(row=0, column=0, sticky="w", padx=(0, 10))
 
         self.new_status_var = tk.StringVar(value=ticket_status)
         status_combo = ttk.Combobox(status_grid, textvariable=self.new_status_var,
                                    values=TICKET_STATUSES, state="readonly")
         status_combo.grid(row=0, column=1, sticky="ew", padx=(0, 10))
 
-        ttk.Button(status_grid, text="Update Status",
+        ttk.Button(status_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.update_status', default="Update Status"),
                   command=lambda: self.update_ticket_status_action(ticket_id, window)).grid(row=0, column=2)
 
         status_grid.columnconfigure(1, weight=1)
 
         # Assignment
-        assign_frame = ttk.LabelFrame(parent, text="👨‍💼 Assignment", padding="10")
+        assign_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.ticket_detail.labels.assignment', default="👨‍💼 Assignment"), padding="10")
         assign_frame.pack(fill="x", pady=(0, 10))
 
         assign_grid = ttk.Frame(assign_frame)
         assign_grid.pack(fill="x")
 
-        ttk.Label(assign_grid, text="Assign to:").grid(row=0, column=0, sticky="w", padx=(0, 10))
+        ttk.Label(assign_grid, text=_t('gui.pastoral.student_support.ticket_detail.labels.assign_to', default="Assign to:")).grid(row=0, column=0, sticky="w", padx=(0, 10))
 
         self.assign_to_var = tk.StringVar(value=ticket.get('assigned_to', ''))
         assign_entry = ttk.Entry(assign_grid, textvariable=self.assign_to_var)
         assign_entry.grid(row=0, column=1, sticky="ew", padx=(0, 10))
 
-        ttk.Button(assign_grid, text="Assign to Me",
+        ttk.Button(assign_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.assign_to_me', default="Assign to Me"),
                   command=lambda: self.assign_to_var.set(self.auth.current_user['username'])).grid(row=0, column=2, padx=(0, 10))
 
-        ttk.Button(assign_grid, text="Update Assignment",
+        ttk.Button(assign_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.update_assignment', default="Update Assignment"),
                   command=lambda: self.update_ticket_assignment(ticket_id, window)).grid(row=0, column=3)
 
         assign_grid.columnconfigure(1, weight=1)
 
         # Quick actions
-        actions_frame = ttk.LabelFrame(parent, text="⚡ Quick Actions", padding="10")
+        actions_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.ticket_detail.labels.quick_actions', default="⚡ Quick Actions"), padding="10")
         actions_frame.pack(fill="x", pady=(0, 10))
 
         actions_grid = ttk.Frame(actions_frame)
         actions_grid.pack(fill="x")
 
-        ttk.Button(actions_grid, text="📝 Add Internal Note",
+        ttk.Button(actions_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.add_internal_note', default="📝 Add Internal Note"),
                   command=lambda: self.show_add_internal_note_dialog(ticket)).grid(row=0, column=0, padx=(0, 5), pady=2)
 
-        ttk.Button(actions_grid, text="📋 Use Template",
+        ttk.Button(actions_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.use_template', default="📋 Use Template"),
                   command=lambda: self.show_response_template_dialog(ticket)).grid(row=0, column=1, padx=5, pady=2)
 
-        ttk.Button(actions_grid, text="📊 View History",
+        ttk.Button(actions_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.view_history', default="📊 View History"),
                   command=lambda: self.show_ticket_history(ticket_id)).grid(row=0, column=2, padx=5, pady=2)
 
-        ttk.Button(actions_grid, text="🔗 Merge Ticket",
+        ttk.Button(actions_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.merge_ticket', default="🔗 Merge Ticket"),
                   command=lambda: self.show_merge_dialog(ticket)).grid(row=1, column=0, padx=(0, 5), pady=2)
 
-        ttk.Button(actions_grid, text="⚡ Escalate",
+        ttk.Button(actions_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.escalate', default="⚡ Escalate"),
                   command=lambda: self.escalate_ticket(ticket_id)).grid(row=1, column=1, padx=5, pady=2)
 
-        ttk.Button(actions_grid, text="📤 Export",
+        ttk.Button(actions_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.export', default="📤 Export"),
                   command=lambda: self.export_ticket(ticket)).grid(row=1, column=2, padx=5, pady=2)
 
         # Edit and Delete buttons
-        ttk.Button(actions_grid, text="✏️ Edit Ticket",
+        ttk.Button(actions_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.edit_ticket', default="✏️ Edit Ticket"),
                   command=lambda: self.edit_ticket(ticket, window)).grid(row=2, column=0, padx=(0, 5), pady=2)
 
-        ttk.Button(actions_grid, text="🗑️ Delete Ticket",
+        ttk.Button(actions_grid, text=_t('gui.pastoral.student_support.ticket_detail.buttons.delete_ticket', default="🗑️ Delete Ticket"),
                   command=lambda: self.delete_ticket(ticket_id, window)).grid(row=2, column=1, padx=5, pady=2)
 
     def edit_ticket(self, ticket, parent_window=None):
         """Edit an existing support ticket"""
         # Handle None or invalid ticket
         if ticket is None or not isinstance(ticket, dict):
-            messagebox.showerror("Error", "Invalid ticket data")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_detail.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_detail.dialogs.invalid_ticket_data', default="Invalid ticket data"))
             return
 
         ticket_id = ticket.get('ticket_id', 'N/A')
@@ -524,13 +526,13 @@ class TicketDetailMixin:
         form_frame.pack(fill="both", expand=True)
 
         # Title
-        ttk.Label(form_frame, text="Title:", font=('Segoe UI', 10, 'bold')).pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.title', default="Title:"), font=('Segoe UI', 10, 'bold')).pack(anchor="w")
         edit_title_var = tk.StringVar(value=ticket.get('subject', ''))
         title_entry = ttk.Entry(form_frame, textvariable=edit_title_var, width=80, font=('Segoe UI', 10))
         title_entry.pack(fill="x", pady=(0, 10))
 
         # Category
-        ttk.Label(form_frame, text="Category:", font=('Segoe UI', 10, 'bold')).pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.category', default="Category:"), font=('Segoe UI', 10, 'bold')).pack(anchor="w")
         edit_category_var = tk.StringVar(value=ticket.get('category', 'Other'))
         category_combo = ttk.Combobox(form_frame, textvariable=edit_category_var,
                                       values=SUPPORT_CATEGORIES if SUPPORT_CATEGORIES else ['Academic', 'Technical', 'Financial', 'Housing', 'Other'],
@@ -538,7 +540,7 @@ class TicketDetailMixin:
         category_combo.pack(anchor="w", pady=(0, 10))
 
         # Priority
-        ttk.Label(form_frame, text="Priority:", font=('Segoe UI', 10, 'bold')).pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.priority', default="Priority:"), font=('Segoe UI', 10, 'bold')).pack(anchor="w")
         edit_priority_var = tk.StringVar(value=ticket.get('priority', 'Medium'))
         priority_combo = ttk.Combobox(form_frame, textvariable=edit_priority_var,
                                       values=TICKET_PRIORITIES if TICKET_PRIORITIES else ['Low', 'Medium', 'High', 'Urgent'],
@@ -547,7 +549,7 @@ class TicketDetailMixin:
 
         # Status (staff only)
         if self.auth and self.auth.current_user and self.auth.current_user.get('role') in ('staff', 'admin'):
-            ttk.Label(form_frame, text="Status:", font=('Segoe UI', 10, 'bold')).pack(anchor="w")
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.status', default="Status:"), font=('Segoe UI', 10, 'bold')).pack(anchor="w")
             edit_status_var = tk.StringVar(value=ticket.get('status', 'Open'))
             status_combo = ttk.Combobox(form_frame, textvariable=edit_status_var,
                                         values=TICKET_STATUSES if TICKET_STATUSES else ['Open', 'In Progress', 'Resolved', 'Closed'],
@@ -557,13 +559,13 @@ class TicketDetailMixin:
             edit_status_var = tk.StringVar(value=ticket.get('status', 'Open'))
 
         # Description
-        ttk.Label(form_frame, text="Description:", font=('Segoe UI', 10, 'bold')).pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.description', default="Description:"), font=('Segoe UI', 10, 'bold')).pack(anchor="w")
         description_text = scrolledtext.ScrolledText(form_frame, height=12, wrap=tk.WORD, font=('Segoe UI', 10))
         description_text.pack(fill="both", expand=True, pady=(0, 10))
         description_text.insert(1.0, ticket.get('description', ''))
 
         # Tags
-        ttk.Label(form_frame, text="Tags (comma-separated):", font=('Segoe UI', 10, 'bold')).pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.tags_comma_separated', default="Tags (comma-separated):"), font=('Segoe UI', 10, 'bold')).pack(anchor="w")
         tags_str = ''
         if ticket.get('tags'):
             try:
@@ -586,10 +588,10 @@ class TicketDetailMixin:
                 new_description = description_text.get(1.0, tk.END).strip()
 
                 if not new_title:
-                    messagebox.showerror("Validation Error", "Title is required")
+                    messagebox.showerror(_t('gui.pastoral.student_support.ticket_detail.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.student_support.ticket_detail.dialogs.title_is_required', default="Title is required"))
                     return
                 if not new_description:
-                    messagebox.showerror("Validation Error", "Description is required")
+                    messagebox.showerror(_t('gui.pastoral.student_support.ticket_detail.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.student_support.ticket_detail.dialogs.description_is_required', default="Description is required"))
                     return
 
                 # Parse tags
@@ -648,7 +650,7 @@ class TicketDetailMixin:
                         update_details
                     )
 
-                messagebox.showinfo("Success", f"Ticket #{ticket_id} updated successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_support.ticket_detail.dialogs.success', default="Success"), f"Ticket #{ticket_id} updated successfully!")
                 edit_window.destroy()
 
                 # Refresh parent window if exists
@@ -657,17 +659,17 @@ class TicketDetailMixin:
                     self.view_ticket_details(ticket_id)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update ticket: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_detail.dialogs.error', default="Error"), f"Failed to update ticket: {e}")
 
-        ttk.Button(btn_frame, text="💾 Save Changes", command=save_ticket_changes,
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_detail.buttons.save_changes', default="💾 Save Changes"), command=save_ticket_changes,
                   style='Primary.TButton').pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=edit_window.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_detail.buttons.cancel_variant_2', default="❌ Cancel"), command=edit_window.destroy).pack(side="left")
 
     def delete_ticket(self, ticket_id, parent_window=None):
         """Delete a support ticket"""
         # Confirm deletion
         confirm = messagebox.askyesno(
-            "Confirm Delete",
+            _t('gui.pastoral.student_support.ticket_detail.dialogs.confirm_delete', default="Confirm Delete"),
             f"Are you sure you want to delete ticket #{ticket_id}?\n\n"
             "This action cannot be undone. All associated responses and attachments will also be deleted.",
             icon='warning'
@@ -696,7 +698,7 @@ class TicketDetailMixin:
             if ACTIVITY_LOGGER_AVAILABLE:
                 log_activity('delete', 'support_ticket', ticket_id=ticket_id)
 
-            messagebox.showinfo("Success", f"Ticket #{ticket_id} has been deleted.")
+            messagebox.showinfo(_t('gui.pastoral.student_support.ticket_detail.dialogs.success', default="Success"), f"Ticket #{ticket_id} has been deleted.")
 
             # Close parent window and refresh list
             if parent_window:
@@ -709,7 +711,7 @@ class TicketDetailMixin:
                 self.refresh_all_tickets()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete ticket: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_detail.dialogs.error', default="Error"), f"Failed to delete ticket: {e}")
 
     def _send_ticket_created_admin_notification(self, ticket_id, title, description, category, priority, student_id):
         """Send email notification to admin when a new ticket is created"""
@@ -789,22 +791,7 @@ class TicketDetailMixin:
                     subject, body = render_template('support_ticket_created_admin', fallback_template_vars)
 
                     if not subject or not body:
-                        # Final fallback to basic email if template also fails
-                        subject = f"New Support Ticket Created - #{ticket_id} [{priority} Priority]"
-                        body = f"""A new support ticket has been submitted.
-
-Ticket ID: #{ticket_id}
-Title: {title}
-Category: {category}
-Priority: {priority}
-Student ID: {student_id}
-Created: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-
-Description:
-{description[:500]}{'...' if len(description) > 500 else ''}
-
-Please log into the Student Support Portal to review this ticket.
-"""
+                        raise RuntimeError("support_ticket_created_admin template is empty")
 
                     for admin_email in admin_emails:
                         try:
@@ -892,24 +879,7 @@ Please log into the Student Support Portal to review this ticket.
                     subject, body = render_template('support_ticket_update_user', fallback_template_vars)
 
                     if not subject or not body:
-                        # Final fallback to basic email if template also fails
-                        subject = f"Update on Your Support Ticket #{ticket_id} - {update_type}"
-                        body = f"""Dear {student_name},
-
-There has been an update to your support ticket.
-
-Ticket ID: #{ticket_id}
-Title: {ticket_title}
-Update Type: {update_type}
-Current Status: {status}
-
-{update_details}
-
-To view the full ticket details, please log into the Student Portal.
-
-Best regards,
-University Student Support Team
-"""
+                        raise RuntimeError("support_ticket_update_user template is empty")
 
                     try:
                         send_email(user_email, subject, body)
@@ -1008,40 +978,39 @@ University Student Support Team
         form_frame = ttk.Frame(status_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
 
-        ttk.Label(form_frame, text="Update Ticket Status",
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.update_ticket_status', default="Update Ticket Status"),
                  style='Heading.TLabel').pack(pady=(0, 15))
 
         # Status selection
-        ttk.Label(form_frame, text="New Status:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.new_status', default="New Status:")).pack(anchor="w")
         status_var = tk.StringVar()
         status_combo = ttk.Combobox(form_frame, textvariable=status_var,
                                    values=TICKET_STATUSES, state="readonly")
         status_combo.pack(fill="x", pady=(5, 10))
 
         # Resolution notes
-        ttk.Label(form_frame, text="Resolution Notes (optional):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_detail.labels.resolution_notes_optional', default="Resolution Notes (optional):")).pack(anchor="w")
         notes_text = scrolledtext.ScrolledText(form_frame, height=4, wrap=tk.WORD)
         notes_text.pack(fill="both", expand=True, pady=(5, 15))
 
         def update_status():
             new_status = status_var.get()
             if not new_status:
-                messagebox.showerror("Error", "Please select a status")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_detail.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_detail.dialogs.please_select_a_status', default="Please select a status"))
                 return
 
             notes = notes_text.get(1.0, tk.END).strip() or None
 
             try:
                 self.support.update_ticket_status(ticket_id, new_status, notes)
-                messagebox.showinfo("Success", f"Status updated to {new_status}")
+                messagebox.showinfo(_t('gui.pastoral.student_support.ticket_detail.dialogs.success', default="Success"), f"Status updated to {new_status}")
                 status_dialog.destroy()
                 self.refresh_data()
             except Exception as e:
-                messagebox.showerror("Error", f"Could not update status: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_detail.dialogs.error', default="Error"), f"Could not update status: {e}")
 
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
 
-        ttk.Button(btn_frame, text="Update Status", command=update_status).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=status_dialog.destroy).pack(side="left")
-
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_detail.buttons.update_status', default="Update Status"), command=update_status).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_detail.buttons.cancel', default="Cancel"), command=status_dialog.destroy).pack(side="left")

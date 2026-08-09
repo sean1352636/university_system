@@ -13,13 +13,13 @@ from education_system.systems.university.infrastructure.email.email_db_utilities
 
 # Also make these available
 from education_system.systems.university.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Database management variables - Thread-safe using locks
 _DB_READY = False
 _DB_READY_LOCK = threading.Lock()  # Protect _DB_READY flag
 USE_AUTH_DB = True
-MAIN_DIR = str(paths.DATA_DIR)  # Use DATA_DIR instead of MAIN_DIR
+MAIN_DIR = str(paths.UNIVERSITY_DATA_DIR)  # Use DATA_DIR instead of MAIN_DIR
 PROJECT_ROOT = str(Path(__file__).parent.parent.parent.parent)  # Calculate from file location
 DB_PATH = DEFAULT_DB_PATH
 _db_manager = None

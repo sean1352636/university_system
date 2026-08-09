@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import datetime
 
 
@@ -110,7 +110,7 @@ class AcademicsMixin:
 
             conn = None
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
                 conn.execute("PRAGMA busy_timeout = 30000")
                 cursor = conn.cursor()
 
@@ -223,7 +223,7 @@ class AcademicsMixin:
 
             conn = None
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
                 conn.execute("PRAGMA busy_timeout = 30000")
                 cursor = conn.cursor()
 
@@ -325,7 +325,7 @@ class AcademicsMixin:
 
             conn = None
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
                 conn.execute("PRAGMA busy_timeout = 30000")
                 cursor = conn.cursor()
 
@@ -471,7 +471,7 @@ class AcademicsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -579,7 +579,7 @@ class AcademicsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -677,7 +677,7 @@ class AcademicsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 

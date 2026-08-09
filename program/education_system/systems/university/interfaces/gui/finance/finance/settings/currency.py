@@ -1,5 +1,7 @@
 """Currency management, exchange rates, and conversion."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -41,12 +43,12 @@ class CurrencyMixin:
         ttk.Entry(converter_frame, textvariable=self.amount_var, width=15).grid(row=0, column=1, padx=5, pady=5)
 
         ttk.Label(converter_frame, text=_("finance_gui.settings.from_label")).grid(row=0, column=2, padx=5, pady=5, sticky='e')
-        self.from_currency_var = tk.StringVar(value='GBP')
+        self.from_currency_var = tk.StringVar(value=_t('gui.finance.finance.settings.currency.values.gbp', default='GBP'))
         ttk.Combobox(converter_frame, textvariable=self.from_currency_var,
                     values=SUPPORTED_CURRENCIES, width=10, state='readonly').grid(row=0, column=3, padx=5, pady=5)
 
         ttk.Label(converter_frame, text=_("finance_gui.settings.to_label")).grid(row=0, column=4, padx=5, pady=5, sticky='e')
-        self.to_currency_var = tk.StringVar(value='USD')
+        self.to_currency_var = tk.StringVar(value=_t('gui.finance.finance.settings.currency.values.usd', default='USD'))
         ttk.Combobox(converter_frame, textvariable=self.to_currency_var,
                     values=SUPPORTED_CURRENCIES, width=10, state='readonly').grid(row=0, column=5, padx=5, pady=5)
 
@@ -193,14 +195,14 @@ class CurrencyMixin:
 
         # From currency
         ttk.Label(converter_frame, text=_("finance_gui.settings.from_label"), font=('Arial', 14)).grid(row=1, column=0, sticky='e', padx=10, pady=10)
-        from_var = tk.StringVar(value='GBP')
+        from_var = tk.StringVar(value=_t('gui.finance.finance.settings.currency.values.gbp', default='GBP'))
         from_combo = ttk.Combobox(converter_frame, textvariable=from_var, values=SUPPORTED_CURRENCIES,
                                  state='readonly', font=('Arial', 14), width=10)
         from_combo.grid(row=1, column=1, padx=10, pady=10)
 
         # To currency
         ttk.Label(converter_frame, text=_("finance_gui.settings.to_label"), font=('Arial', 14)).grid(row=2, column=0, sticky='e', padx=10, pady=10)
-        to_var = tk.StringVar(value='USD')
+        to_var = tk.StringVar(value=_t('gui.finance.finance.settings.currency.values.usd', default='USD'))
         to_combo = ttk.Combobox(converter_frame, textvariable=to_var, values=SUPPORTED_CURRENCIES,
                                state='readonly', font=('Arial', 14), width=10)
         to_combo.grid(row=2, column=1, padx=10, pady=10)

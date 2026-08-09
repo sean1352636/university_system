@@ -10,6 +10,8 @@ via the Assignment portal or Grade Tracking portal.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import threading
 import tkinter as tk
@@ -43,7 +45,7 @@ class AutoGradingStaffPortal:
         self.user_id = self._resolve_user_id()
 
         self.window = tk.Toplevel(parent)
-        self.window.title("AI Auto-Grading — Staff Portal")
+        self.window.title(_t('gui.academics.assignment_system.auto_grading_portal.windows.ai_auto_grading_staff_portal', default="AI Auto-Grading — Staff Portal"))
         self.window.geometry("1120x720")
         self.window.minsize(960, 600)
         self.window.configure(bg='#f0f0f0')
@@ -53,7 +55,7 @@ class AutoGradingStaffPortal:
             pass
 
         self.assignment_var = tk.StringVar()
-        self.status_var = tk.StringVar(value="Loading your assignments…")
+        self.status_var = tk.StringVar(value=_t('gui.academics.assignment_system.auto_grading_portal.values.loading_your_assignments', default="Loading your assignments…"))
 
         self._assignments: list = []   # (id, title, module_code, max_marks)
         self._current_assignment = None
@@ -103,13 +105,13 @@ class AutoGradingStaffPortal:
         tk.Label(header, text=f"AI Auto-Grading — {display}",
                  font=('Arial', 14, 'bold'), bg='#6f42c1', fg='white'
                  ).pack(side='left', padx=18, pady=14)
-        tk.Button(header, text="Close", bg='#5a3697', fg='white',
+        tk.Button(header, text=_t('gui.academics.assignment_system.auto_grading_portal.buttons.close', default="Close"), bg='#5a3697', fg='white',
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
                   command=self.window.destroy).pack(side='right', padx=8, pady=12)
 
         bar = ttk.Frame(self.window, padding=(12, 8))
         bar.pack(fill='x')
-        ttk.Label(bar, text="Assignment:").pack(side='left', padx=(0, 6))
+        ttk.Label(bar, text=_t('gui.academics.assignment_system.auto_grading_portal.labels.assignment', default="Assignment:")).pack(side='left', padx=(0, 6))
         self.assignment_combo = ttk.Combobox(bar,
                                               textvariable=self.assignment_var,
                                               state='readonly', width=60)
@@ -117,7 +119,7 @@ class AutoGradingStaffPortal:
                                     expand=True)
         self.assignment_combo.bind('<<ComboboxSelected>>',
                                     self._on_assignment_selected)
-        ttk.Button(bar, text="Refresh",
+        ttk.Button(bar, text=_t('gui.academics.assignment_system.auto_grading_portal.buttons.refresh', default="Refresh"),
                    command=self._load_assignments).pack(side='left')
 
         info = ttk.Frame(self.window, padding=(14, 0, 14, 6))
@@ -126,7 +128,7 @@ class AutoGradingStaffPortal:
         ttk.Label(info, textvariable=self.info_var,
                   foreground='#2c3e50').pack(side='left')
 
-        body = ttk.LabelFrame(self.window, text="Ungraded submissions",
+        body = ttk.LabelFrame(self.window, text=_t('gui.academics.assignment_system.auto_grading_portal.labels.ungraded_submissions', default="Ungraded submissions"),
                               padding=8)
         body.pack(fill='both', expand=True, padx=12, pady=6)
 
@@ -152,12 +154,12 @@ class AutoGradingStaffPortal:
 
         actions = ttk.Frame(self.window, padding=(12, 6))
         actions.pack(fill='x')
-        ttk.Button(actions, text="Review with AI…",
+        ttk.Button(actions, text=_t('gui.academics.assignment_system.auto_grading_portal.buttons.review_with_ai', default="Review with AI…"),
                    command=self._review_selected).pack(side='left', padx=(0, 6))
-        ttk.Button(actions, text="Auto-Grade All (review each)",
+        ttk.Button(actions, text=_t('gui.academics.assignment_system.auto_grading_portal.buttons.auto_grade_all_review_each', default="Auto-Grade All (review each)"),
                    command=self._review_all).pack(side='left', padx=(0, 6))
         ttk.Label(actions,
-                  text="Grades always require your review before release.",
+                  text=_t('gui.academics.assignment_system.auto_grading_portal.labels.grades_always_require_your_review_before_release', default="Grades always require your review before release."),
                   foreground='#666').pack(side='left', padx=12)
 
         status = ttk.Frame(self.window, relief='sunken')
@@ -196,7 +198,7 @@ class AutoGradingStaffPortal:
                     (r[0], r[1], r[2], r[3] or 100.0) for r in cur.fetchall()
                 ]
         except Exception as e:
-            messagebox.showerror("Database Error",
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_portal.dialogs.database_error', default="Database Error"),
                                  f"Could not load assignments: {e}",
                                  parent=self.window)
             return
@@ -252,7 +254,7 @@ class AutoGradingStaffPortal:
                 )
                 rows = cur.fetchall()
         except Exception as e:
-            messagebox.showerror("Database Error",
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_portal.dialogs.database_error', default="Database Error"),
                                  f"Could not load submissions: {e}",
                                  parent=self.window)
             return
@@ -283,8 +285,8 @@ class AutoGradingStaffPortal:
     def _review_selected(self, _event=None):
         sel = self.tree.selection()
         if not sel:
-            messagebox.showinfo("No Selection",
-                                "Pick a submission first.",
+            messagebox.showinfo(_t('gui.academics.assignment_system.auto_grading_portal.dialogs.no_selection', default="No Selection"),
+                                _t('gui.academics.assignment_system.auto_grading_portal.dialogs.pick_a_submission_first', default="Pick a submission first."),
                                 parent=self.window)
             return
         self._run_grader(int(sel[0]))
@@ -292,12 +294,12 @@ class AutoGradingStaffPortal:
     def _review_all(self):
         ids = [int(i) for i in self.tree.get_children()]
         if not ids:
-            messagebox.showinfo("Nothing to grade",
-                                "No ungraded submissions for this assignment.",
+            messagebox.showinfo(_t('gui.academics.assignment_system.auto_grading_portal.dialogs.nothing_to_grade', default="Nothing to grade"),
+                                _t('gui.academics.assignment_system.auto_grading_portal.dialogs.no_ungraded_submissions_for_this_assignment', default="No ungraded submissions for this assignment."),
                                 parent=self.window)
             return
         if not messagebox.askyesno(
-                "Auto-Grade All",
+                _t('gui.academics.assignment_system.auto_grading_portal.dialogs.auto_grade_all', default="Auto-Grade All"),
                 f"Run the auto-grader on {len(ids)} submission(s)? You'll "
                 "review each suggestion one at a time before anything is "
                 "committed.",
@@ -336,7 +338,7 @@ class AutoGradingStaffPortal:
         if result.error:
             self.status_var.set(f"Auto-grader: {result.error}")
             messagebox.showerror(
-                "Auto-Grader",
+                _t('gui.academics.assignment_system.auto_grading_portal.dialogs.auto_grader', default="Auto-Grader"),
                 f"Could not grade submission #{submission_id}:\n\n{result.error}",
                 parent=self.window)
             if chain:
@@ -384,14 +386,14 @@ class AutoGradingStaffPortal:
             if not save_submission_grade(
                     submission_id, score, feedback, self.user_id):
                 messagebox.showerror(
-                    "Database Error",
-                    "Grade save failed. See application log for details.",
+                    _t('gui.academics.assignment_system.auto_grading_portal.dialogs.database_error', default="Database Error"),
+                    _t('gui.academics.assignment_system.auto_grading_portal.dialogs.grade_save_failed_see_application_log_for_details', default="Grade save failed. See application log for details."),
                     parent=self.window)
                 return
             send_grade_release_emails_async(
                 submission_id, score, feedback, max_marks, self.user_id)
             messagebox.showinfo(
-                "Grade Saved",
+                _t('gui.academics.assignment_system.auto_grading_portal.dialogs.grade_saved', default="Grade Saved"),
                 f"Graded submission #{submission_id}.\n\nThe student will "
                 "be notified by email, and a confirmation will be sent to "
                 "your inbox.",

@@ -22,7 +22,7 @@ from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
 from education_system.systems.university.infrastructure.database import data_backup
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 @pytest.fixture
 def temp_db():

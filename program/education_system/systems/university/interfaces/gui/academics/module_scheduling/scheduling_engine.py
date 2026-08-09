@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
@@ -72,7 +74,7 @@ def suggest_optimal_time_slot(self, module_code, session_type, duration_minutes=
         # Get module information
         cursor.execute('SELECT module_code FROM modules WHERE module_code = ?', (module_code,))
         if not cursor.fetchone():
-            messagebox.showerror("Error", f"Module {module_code} does not exist.", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.error', default="Error"), f"Module {module_code} does not exist.", parent=self.root)
             return []
 
         suggestions = []
@@ -242,7 +244,7 @@ def schedule_module_interactively(self):
     """Interactive module scheduling wizard with optimal time slot suggestions"""
     # Create a dialog window for interactive scheduling
     dialog = tk.Toplevel(self.root)
-    dialog.title("Interactive Module Scheduling Wizard")
+    dialog.title(_t('gui.academics.module_scheduling.scheduling_engine.windows.interactive_module_scheduling_wizard', default="Interactive Module Scheduling Wizard"))
     dialog.geometry("800x700")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -250,7 +252,7 @@ def schedule_module_interactively(self):
     # Variables to store selections
     selected_module = tk.StringVar()
     selected_day = tk.StringVar()
-    selected_session_type = tk.StringVar(value="Lecture")
+    selected_session_type = tk.StringVar(value=_t('gui.academics.module_scheduling.scheduling_engine.values.lecture', default="Lecture"))
     duration_var = tk.IntVar(value=60)
 
     # Main frame with scrollbar
@@ -258,12 +260,12 @@ def schedule_module_interactively(self):
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     # Title
-    title_label = ttk.Label(main_frame, text="Module Scheduling Wizard",
+    title_label = ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.labels.module_scheduling_wizard', default="Module Scheduling Wizard"),
                            font=('Arial', 16, 'bold'))
     title_label.pack(pady=(0, 20))
 
     # Step 1: Select Module
-    step1_frame = ttk.LabelFrame(main_frame, text="Step 1: Select Module", padding="10")
+    step1_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.labels.step_1_select_module', default="Step 1: Select Module"), padding="10")
     step1_frame.pack(fill=tk.X, pady=10)
 
     with get_connection() as conn:
@@ -279,12 +281,12 @@ def schedule_module_interactively(self):
         module_combo.current(0)
 
     # Step 2: Session Type and Duration
-    step2_frame = ttk.LabelFrame(main_frame, text="Step 2: Session Type & Duration", padding="10")
+    step2_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.labels.step_2_session_type_duration', default="Step 2: Session Type & Duration"), padding="10")
     step2_frame.pack(fill=tk.X, pady=10)
 
     type_frame = ttk.Frame(step2_frame)
     type_frame.pack(fill=tk.X, pady=5)
-    ttk.Label(type_frame, text="Session Type:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(type_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.labels.session_type', default="Session Type:")).pack(side=tk.LEFT, padx=5)
     session_combo = ttk.Combobox(type_frame, textvariable=selected_session_type,
                                 values=SESSION_TYPES, width=20, state='readonly')
     session_combo.pack(side=tk.LEFT, padx=5)
@@ -292,13 +294,13 @@ def schedule_module_interactively(self):
 
     duration_frame = ttk.Frame(step2_frame)
     duration_frame.pack(fill=tk.X, pady=5)
-    ttk.Label(duration_frame, text="Duration (minutes):").pack(side=tk.LEFT, padx=5)
+    ttk.Label(duration_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.labels.duration_minutes', default="Duration (minutes):")).pack(side=tk.LEFT, padx=5)
     duration_spin = ttk.Spinbox(duration_frame, from_=30, to=180, increment=15,
                                textvariable=duration_var, width=10)
     duration_spin.pack(side=tk.LEFT, padx=5)
 
     # Step 3: Get Suggestions
-    step3_frame = ttk.LabelFrame(main_frame, text="Step 3: Suggested Time Slots", padding="10")
+    step3_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.labels.step_3_suggested_time_slots', default="Step 3: Suggested Time Slots"), padding="10")
     step3_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
     # Suggestions tree
@@ -323,7 +325,7 @@ def schedule_module_interactively(self):
 
         module_text = selected_module.get()
         if not module_text:
-            messagebox.showwarning("Warning", "Please select a module first.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.scheduling_engine.dialogs.please_select_a_module_first', default="Please select a module first."), parent=self.root)
             return
 
         module_code = module_text.split(' - ')[0]
@@ -343,12 +345,12 @@ def schedule_module_interactively(self):
             ))
 
     # Get Suggestions button
-    suggest_btn = ttk.Button(step3_frame, text="Get Optimal Time Slots",
+    suggest_btn = ttk.Button(step3_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.buttons.get_optimal_time_slots', default="Get Optimal Time Slots"),
                             command=get_suggestions, style='Action.TButton')
     suggest_btn.pack(pady=5)
 
     # Step 4: Finalize Scheduling
-    step4_frame = ttk.LabelFrame(main_frame, text="Step 4: Finalize Schedule", padding="10")
+    step4_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.labels.step_4_finalize_schedule', default="Step 4: Finalize Schedule"), padding="10")
     step4_frame.pack(fill=tk.X, pady=10)
 
     # Room and Instructor selection
@@ -357,7 +359,7 @@ def schedule_module_interactively(self):
 
     room_frame = ttk.Frame(step4_frame)
     room_frame.pack(fill=tk.X, pady=5)
-    ttk.Label(room_frame, text="Room:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(room_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.labels.room', default="Room:")).pack(side=tk.LEFT, padx=5)
 
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -373,7 +375,7 @@ def schedule_module_interactively(self):
 
     instructor_frame = ttk.Frame(step4_frame)
     instructor_frame.pack(fill=tk.X, pady=5)
-    ttk.Label(instructor_frame, text="Instructor:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(instructor_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.labels.instructor', default="Instructor:")).pack(side=tk.LEFT, padx=5)
 
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -391,7 +393,7 @@ def schedule_module_interactively(self):
         """Schedule the module with selected time slot"""
         selection = suggestions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a suggested time slot.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.scheduling_engine.dialogs.please_select_a_suggested_time_slot', default="Please select a suggested time slot."), parent=self.root)
             return
 
         item = suggestions_tree.item(selection[0])
@@ -410,7 +412,7 @@ def schedule_module_interactively(self):
         instructor_idx = instructor_combo.current()
 
         if room_idx < 0 or instructor_idx < 0:
-            messagebox.showwarning("Warning", "Please select both room and instructor.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.scheduling_engine.dialogs.please_select_both_room_and_instructor', default="Please select both room and instructor."), parent=self.root)
             return
 
         room_id = rooms[room_idx][0]
@@ -422,21 +424,21 @@ def schedule_module_interactively(self):
                 module_code, day, start_time, end_time,
                 room_id, instructor_id, session_type
             )
-            messagebox.showinfo("Success", "Module scheduled successfully!", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.scheduling_engine.dialogs.module_scheduled_successfully', default="Module scheduled successfully!"), parent=self.root)
             self.refresh_all_data()
             dialog.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to schedule module: {str(e)}", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.error', default="Error"), f"Failed to schedule module: {str(e)}", parent=self.root)
 
     # Bottom buttons
     button_frame = ttk.Frame(step4_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    schedule_btn = ttk.Button(button_frame, text="Schedule Selected Slot",
+    schedule_btn = ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.buttons.schedule_selected_slot', default="Schedule Selected Slot"),
                              command=schedule_selected, style='Success.TButton')
     schedule_btn.pack(side=tk.LEFT, padx=5)
 
-    cancel_btn = ttk.Button(button_frame, text="Cancel",
+    cancel_btn = ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.scheduling_engine.buttons.cancel', default="Cancel"),
                            command=dialog.destroy)
     cancel_btn.pack(side=tk.LEFT, padx=5)
 
@@ -639,9 +641,9 @@ def validate_data_consistency(self):
 
     if issues:
         message = "Data Consistency Issues Found:\n\n" + "\n".join(f"{i}. {issue}" for i, issue in enumerate(issues, 1))
-        messagebox.showwarning("Data Validation", message, parent=self.root)
+        messagebox.showwarning(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.data_validation', default="Data Validation"), message, parent=self.root)
     else:
-        messagebox.showinfo("Data Validation", "No data consistency issues found.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.data_validation', default="Data Validation"), _t('gui.academics.module_scheduling.scheduling_engine.dialogs.no_data_consistency_issues_found', default="No data consistency issues found."), parent=self.root)
 
     return issues
 
@@ -650,9 +652,9 @@ ModuleSchedulingGUI.validate_data_consistency = validate_data_consistency
 def clean_orphaned_records(self):
     """Clean up orphaned records"""
     confirm = messagebox.askyesno(
-        "Confirm Cleanup",
-        "This will remove schedules with invalid room or instructor references.\n\n"
-        "Are you sure you want to continue?"
+        _t('gui.academics.module_scheduling.scheduling_engine.dialogs.confirm_cleanup', default="Confirm Cleanup"),
+        _t('gui.academics.module_scheduling.scheduling_engine.dialogs.this_will_remove_schedules_with_invalid_room_or_instructor_refer', default="This will remove schedules with invalid room or instructor references.\n\n"
+        "Are you sure you want to continue?")
     , parent=self.root)
 
     if not confirm:
@@ -680,11 +682,11 @@ def clean_orphaned_records(self):
                  f"• Removed {removed_room_refs} schedules with invalid room references\n" \
                  f"• Removed {removed_instructor_refs} schedules with invalid instructor references"
 
-        messagebox.showinfo("Cleanup Complete", message, parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.cleanup_complete', default="Cleanup Complete"), message, parent=self.root)
         self.refresh_all_data()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error during cleanup: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.scheduling_engine.dialogs.error', default="Error"), f"Error during cleanup: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.clean_orphaned_records = clean_orphaned_records
 

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import html
 import logging
 import tkinter as tk
@@ -247,8 +249,8 @@ class ReportsDialog:
 
             if not year_rows:
                 messagebox.showinfo(
-                    "Academic Year Report",
-                    "No academic years found. Please add an academic year before generating a report."
+                    _t('gui.academics.academic_calendar.dialogs_reports.dialogs.academic_year_report', default="Academic Year Report"),
+                    _t('gui.academics.academic_calendar.dialogs_reports.dialogs.no_academic_years_found_please_add_an_academic_year_before_gener', default="No academic years found. Please add an academic year before generating a report.")
                 )
                 return
 
@@ -275,7 +277,7 @@ class ReportsDialog:
                           "Leave blank to cancel.")
 
                 selected_year_id = simpledialog.askstring(
-                    "Select Academic Year",
+                    _t('gui.academics.academic_calendar.dialogs_reports.dialogs.select_academic_year', default="Select Academic Year"),
                     prompt,
                     parent=self.dialog,
                     initialvalue=default_year_id or year_rows[0]['id']
@@ -287,7 +289,7 @@ class ReportsDialog:
                 selected_year_id = selected_year_id.strip()
                 if selected_year_id not in year_lookup:
                     messagebox.showerror(
-                        "Invalid Selection",
+                        _t('gui.academics.academic_calendar.dialogs_reports.dialogs.invalid_selection', default="Invalid Selection"),
                         f"The academic year '{selected_year_id}' is not in the available list."
                     )
                     return
@@ -296,7 +298,7 @@ class ReportsDialog:
             summary = self.calendar_manager.advanced_reporting.generate_academic_year_summary(selected_year_id)
             if not summary or not summary.get('success'):
                 message = summary.get('error') if isinstance(summary, dict) else "Unknown error."
-                messagebox.showerror("Error", f"Failed to generate report: {message}")
+                messagebox.showerror(_t('gui.academics.academic_calendar.dialogs_reports.dialogs.error', default="Error"), f"Failed to generate report: {message}")
                 return
 
             year_info = summary['academic_year']
@@ -399,9 +401,9 @@ class ReportsDialog:
             ReportViewDialog(self.dialog, f"Academic Year Report ({selected_year_id})", report_content)
 
         except PermissionError as perm_err:
-            messagebox.showerror("Permission Denied", str(perm_err))
+            messagebox.showerror(_t('gui.academics.academic_calendar.dialogs_reports.dialogs.permission_denied', default="Permission Denied"), str(perm_err))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to generate academic year report: {exc}")
+            messagebox.showerror(_t('gui.academics.academic_calendar.dialogs_reports.dialogs.error', default="Error"), f"Failed to generate academic year report: {exc}")
 
     def _show_statistics_report(self):
         """Show statistics report"""
@@ -719,7 +721,7 @@ class DataVisualizationDialog:
 
     def _create_heatmap(self):
         """Create calendar heatmap visualization"""
-        year = simpledialog.askinteger("Calendar Heatmap", "Enter year:",
+        year = simpledialog.askinteger(_t('gui.academics.academic_calendar.dialogs_reports.dialogs.calendar_heatmap', default="Calendar Heatmap"), _t('gui.academics.academic_calendar.dialogs_reports.dialogs.enter_year', default="Enter year:"),
                                      initialvalue=datetime.now().year,
                                      parent=self.dialog)
         if not year:

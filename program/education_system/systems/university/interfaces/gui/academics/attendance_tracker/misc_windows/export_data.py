@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -90,40 +96,40 @@ class ExportDataWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="📤 Export Data", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.export_data.labels.export_data', default="📤 Export Data"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Export options
-        options_frame = ttk.LabelFrame(self.window, text="Export Options", padding=20)
+        options_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.export_data.labels.export_options', default="Export Options"), padding=20)
         options_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        ttk.Label(options_frame, text="Data Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.data_type_var = tk.StringVar(value="All Data")
+        ttk.Label(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.export_data.labels.data_type', default="Data Type:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.data_type_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.misc_windows.export_data.values.all_data', default="All Data"))
         type_combo = ttk.Combobox(options_frame, textvariable=self.data_type_var,
                                  values=["All Data", "Students", "Attendance Records", "Modules", "Settings"],
                                  state="readonly", width=25)
         type_combo.grid(row=0, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(options_frame, text="Format:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.format_var = tk.StringVar(value="Excel")
+        ttk.Label(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.export_data.labels.format', default="Format:")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.format_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.misc_windows.export_data.values.excel', default="Excel"))
         format_combo = ttk.Combobox(options_frame, textvariable=self.format_var,
                                    values=["Excel", "CSV", "JSON"], state="readonly", width=25)
         format_combo.grid(row=1, column=1, padx=(10, 0), pady=5)
 
         # Date range for attendance data
-        ttk.Label(options_frame, text="Date Range:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.export_data.labels.date_range', default="Date Range:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         date_frame = ttk.Frame(options_frame)
         date_frame.grid(row=2, column=1, sticky=tk.W, padx=(10, 0), pady=5)
 
         self.start_date_var = tk.StringVar(value=(datetime.date.today() - datetime.timedelta(days=30)).isoformat())
         ttk.Entry(date_frame, textvariable=self.start_date_var, width=10).pack(side=tk.LEFT)
-        ttk.Label(date_frame, text=" to ").pack(side=tk.LEFT)
+        ttk.Label(date_frame, text=_t('gui.academics.attendance_tracker.misc_windows.export_data.labels.to', default=" to ")).pack(side=tk.LEFT)
         self.end_date_var = tk.StringVar(value=datetime.date.today().isoformat())
         ttk.Entry(date_frame, textvariable=self.end_date_var, width=10).pack(side=tk.LEFT)
 
         # Include options
         self.include_deleted_var = tk.BooleanVar()
-        ttk.Checkbutton(options_frame, text="Include deleted records", variable=self.include_deleted_var).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.attendance_tracker.misc_windows.export_data.buttons.include_deleted_records', default="Include deleted records"), variable=self.include_deleted_var).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
 
         # Buttons
         buttons_frame = ttk.Frame(self.window)
@@ -148,7 +154,7 @@ class ExportDataWindow:
             )
 
             if filename:
-                messagebox.showinfo("Export", f"Would export {data_type} as {format_type} to {filename}")
+                messagebox.showinfo(_t('gui.academics.attendance_tracker.misc_windows.export_data.dialogs.export', default="Export"), f"Would export {data_type} as {format_type} to {filename}")
                 self.window.destroy()
 
         except Exception as e:

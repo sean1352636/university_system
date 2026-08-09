@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from tkinter.simpledialog import Dialog
@@ -46,7 +48,7 @@ class ViewItineraryDialog(Dialog):
     def body(self, master):
         """Create the dialog body"""
         if not self.trip_data:
-            ttk.Label(master, text="Trip not found or no itinerary available.").pack(pady=20)
+            ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.trip_not_found_or_no_itinerary_available', default="Trip not found or no itinerary available.")).pack(pady=20)
             return None
 
         trip_info = self.trip_data['trip_info']
@@ -55,7 +57,7 @@ class ViewItineraryDialog(Dialog):
         trip_name, destination, start_date, end_date = trip_info
 
         # Trip information header
-        info_frame = ttk.LabelFrame(master, text="Trip Information", padding=10)
+        info_frame = ttk.LabelFrame(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.trip_information', default="Trip Information"), padding=10)
         info_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(info_frame, text=f"Trip: {trip_name}", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
@@ -63,11 +65,11 @@ class ViewItineraryDialog(Dialog):
         ttk.Label(info_frame, text=f"Dates: {start_date} to {end_date}").pack(anchor=tk.W)
 
         # Itinerary display
-        itinerary_frame = ttk.LabelFrame(master, text="Itinerary", padding=10)
+        itinerary_frame = ttk.LabelFrame(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.itinerary', default="Itinerary"), padding=10)
         itinerary_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         if not itinerary_items:
-            ttk.Label(itinerary_frame, text="No itinerary items found for this trip.").pack(pady=20)
+            ttk.Label(itinerary_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.no_itinerary_items_found_for_this_trip', default="No itinerary items found for this trip.")).pack(pady=20)
             return None
 
         # Create scrolled text widget for itinerary
@@ -116,7 +118,7 @@ class ViewItineraryDialog(Dialog):
     def buttonbox(self):
         """Create button box"""
         box = ttk.Frame(self)
-        ttk.Button(box, text="Close", command=self.ok).pack()
+        ttk.Button(box, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.buttons.close', default="Close"), command=self.ok).pack()
         box.pack(pady=10)
 
 
@@ -147,7 +149,7 @@ class ItineraryDialog(Dialog):
     def body(self, master):
         """Create the dialog body"""
         if not self.trip_info:
-            ttk.Label(master, text="Trip not found.").pack(pady=20)
+            ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.trip_not_found', default="Trip not found.")).pack(pady=20)
             return None
 
         trip_name, start_date, end_date = self.trip_info
@@ -156,22 +158,22 @@ class ItineraryDialog(Dialog):
         trip_days = (end_date_obj - start_date_obj).days + 1
 
         # Trip info
-        info_frame = ttk.LabelFrame(master, text="Trip Information", padding=10)
+        info_frame = ttk.LabelFrame(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.trip_information', default="Trip Information"), padding=10)
         info_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(info_frame, text=f"Trip: {trip_name}", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
         ttk.Label(info_frame, text=f"Duration: {trip_days} days ({start_date} to {end_date})").pack(anchor=tk.W)
 
         # Existing itinerary
-        existing_frame = ttk.LabelFrame(master, text="Existing Itinerary", padding=10)
+        existing_frame = ttk.LabelFrame(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.existing_itinerary', default="Existing Itinerary"), padding=10)
         existing_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         self.itinerary_tree = ttk.Treeview(existing_frame, columns=('day', 'activity', 'location', 'time'), show='headings', height=10)
 
-        self.itinerary_tree.heading('day', text='Day')
-        self.itinerary_tree.heading('activity', text='Activity')
-        self.itinerary_tree.heading('location', text='Location')
-        self.itinerary_tree.heading('time', text='Time')
+        self.itinerary_tree.heading('day', text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.headings.day', default='Day'))
+        self.itinerary_tree.heading('activity', text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.headings.activity', default='Activity'))
+        self.itinerary_tree.heading('location', text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.headings.location', default='Location'))
+        self.itinerary_tree.heading('time', text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.headings.time', default='Time'))
 
         self.itinerary_tree.column('day', width=50)
         self.itinerary_tree.column('activity', width=200)
@@ -184,10 +186,10 @@ class ItineraryDialog(Dialog):
         buttons_frame = ttk.Frame(existing_frame)
         buttons_frame.pack(fill=tk.X)
 
-        ttk.Button(buttons_frame, text="Add Item", command=self.add_itinerary_item).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Edit Item", command=self.edit_itinerary_item).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Delete Item", command=self.delete_itinerary_item).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Refresh", command=self.load_itinerary).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.buttons.add_item', default="Add Item"), command=self.add_itinerary_item).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.buttons.edit_item', default="Edit Item"), command=self.edit_itinerary_item).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.buttons.delete_item', default="Delete Item"), command=self.delete_itinerary_item).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.buttons.refresh', default="Refresh"), command=self.load_itinerary).pack(side=tk.LEFT, padx=5)
 
         # Load existing itinerary
         self.load_itinerary()
@@ -247,7 +249,7 @@ class ItineraryDialog(Dialog):
         """Edit selected itinerary item"""
         selection = self.itinerary_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an itinerary item.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.please_select_an_itinerary_item', default="Please select an itinerary item."))
             return
 
         item_id = self.itinerary_tree.item(selection[0])['text']
@@ -257,13 +259,13 @@ class ItineraryDialog(Dialog):
         """Delete selected itinerary item"""
         selection = self.itinerary_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an itinerary item.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.please_select_an_itinerary_item', default="Please select an itinerary item."))
             return
 
         item_id = self.itinerary_tree.item(selection[0])['text']
         activity = self.itinerary_tree.item(selection[0])['values'][1]
 
-        if messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete '{activity}'?"):
+        if messagebox.askyesno(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.confirm_deletion', default="Confirm Deletion"), f"Are you sure you want to delete '{activity}'?"):
             def delete_item_operation(conn):
                 cursor = conn.cursor()
                 cursor.execute('DELETE FROM trip_itinerary WHERE id = ?', (item_id,))
@@ -271,15 +273,15 @@ class ItineraryDialog(Dialog):
 
 
             if safe_db_operation(delete_item_operation):
-                messagebox.showinfo("Success", "Itinerary item deleted successfully!")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.itinerary_item_deleted_successfully', default="Itinerary item deleted successfully!"))
                 self.load_itinerary()
             else:
-                messagebox.showerror("Error", "Failed to delete itinerary item.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.failed_to_delete_itinerary_item', default="Failed to delete itinerary item."))
 
     def buttonbox(self):
         """Create button box"""
         box = ttk.Frame(self)
-        ttk.Button(box, text="Close", command=self.ok).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(box, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.buttons.close', default="Close"), command=self.ok).pack(side=tk.RIGHT, padx=5)
         box.pack(pady=5)
 
 
@@ -301,28 +303,28 @@ class AddItineraryItemDialog(Dialog):
         day_combo.grid(row=0, column=1, padx=5, pady=5)
 
         # Activity
-        ttk.Label(master, text="Activity description:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.activity_description', default="Activity description:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.activity_var = tk.StringVar()
         self.activity_entry = ttk.Entry(master, textvariable=self.activity_var, width=40)
         self.activity_entry.grid(row=1, column=1, padx=5, pady=5)
 
         # Location
-        ttk.Label(master, text="Location (optional):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.location_optional', default="Location (optional):")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.location_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.location_var, width=40).grid(row=2, column=1, padx=5, pady=5)
 
         # Start time
-        ttk.Label(master, text="Start time (HH:MM, optional):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.start_time_hh_mm_optional', default="Start time (HH:MM, optional):")).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
         self.start_time_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.start_time_var, width=40).grid(row=3, column=1, padx=5, pady=5)
 
         # End time
-        ttk.Label(master, text="End time (HH:MM, optional):").grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.end_time_hh_mm_optional', default="End time (HH:MM, optional):")).grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
         self.end_time_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.end_time_var, width=40).grid(row=4, column=1, padx=5, pady=5)
 
         # Notes
-        ttk.Label(master, text="Notes (optional):").grid(row=5, column=0, sticky=tk.NW, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.notes_optional', default="Notes (optional):")).grid(row=5, column=0, sticky=tk.NW, padx=5, pady=5)
         self.notes_text = tk.Text(master, width=40, height=3)
         self.notes_text.grid(row=5, column=1, padx=5, pady=5)
 
@@ -331,7 +333,7 @@ class AddItineraryItemDialog(Dialog):
     def validate(self):
         """Validate itinerary item data"""
         if not self.activity_var.get().strip():
-            messagebox.showerror("Validation Error", "Activity description is required.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.activity_description_is_required', default="Activity description is required."))
             return False
 
         # Validate time formats if provided
@@ -341,7 +343,7 @@ class AddItineraryItemDialog(Dialog):
                 try:
                     datetime.strptime(time_value, '%H:%M')
                 except ValueError:
-                    messagebox.showerror("Validation Error", f"Invalid {label} format. Please use HH:MM.")
+                    messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.validation_error', default="Validation Error"), f"Invalid {label} format. Please use HH:MM.")
                     return False
 
         return True
@@ -376,13 +378,13 @@ class AddItineraryItemDialog(Dialog):
 
         try:
             if safe_db_operation(add_item_operation):
-                messagebox.showinfo("Success", "Itinerary item added successfully!")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.itinerary_item_added_successfully', default="Itinerary item added successfully!"))
                 if self.refresh_callback:
                     self.refresh_callback()
             else:
-                messagebox.showerror("Error", "Failed to add itinerary item.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.failed_to_add_itinerary_item', default="Failed to add itinerary item."))
         except sqlite3.IntegrityError:
-            messagebox.showerror("Error", "Conflicting itinerary item (same day and time). Please use different time.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.conflicting_itinerary_item_same_day_and_time_please_use_differen', default="Conflicting itinerary item (same day and time). Please use different time."))
 
 
 class EditItineraryItemDialog(Dialog):
@@ -408,33 +410,33 @@ class EditItineraryItemDialog(Dialog):
     def body(self, master):
         """Create the dialog body"""
         if not self.item_data:
-            ttk.Label(master, text="Itinerary item not found.").pack(pady=20)
+            ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.itinerary_item_not_found', default="Itinerary item not found.")).pack(pady=20)
             return None
 
         item = self.item_data
 
         # Activity
-        ttk.Label(master, text="Activity description:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.activity_description', default="Activity description:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.activity_var = tk.StringVar(value=item[3])
         ttk.Entry(master, textvariable=self.activity_var, width=40).grid(row=0, column=1, padx=5, pady=5)
 
         # Location
-        ttk.Label(master, text="Location (optional):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.location_optional', default="Location (optional):")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.location_var = tk.StringVar(value=item[4] or "")
         ttk.Entry(master, textvariable=self.location_var, width=40).grid(row=1, column=1, padx=5, pady=5)
 
         # Start time
-        ttk.Label(master, text="Start time (HH:MM, optional):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.start_time_hh_mm_optional', default="Start time (HH:MM, optional):")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.start_time_var = tk.StringVar(value=item[5] or "")
         ttk.Entry(master, textvariable=self.start_time_var, width=40).grid(row=2, column=1, padx=5, pady=5)
 
         # End time
-        ttk.Label(master, text="End time (HH:MM, optional):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.end_time_hh_mm_optional', default="End time (HH:MM, optional):")).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
         self.end_time_var = tk.StringVar(value=item[6] or "")
         ttk.Entry(master, textvariable=self.end_time_var, width=40).grid(row=3, column=1, padx=5, pady=5)
 
         # Notes
-        ttk.Label(master, text="Notes (optional):").grid(row=4, column=0, sticky=tk.NW, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.labels.notes_optional', default="Notes (optional):")).grid(row=4, column=0, sticky=tk.NW, padx=5, pady=5)
         self.notes_text = tk.Text(master, width=40, height=3)
         self.notes_text.insert(1.0, item[7] or "")
         self.notes_text.grid(row=4, column=1, padx=5, pady=5)
@@ -444,7 +446,7 @@ class EditItineraryItemDialog(Dialog):
     def validate(self):
         """Validate itinerary item data"""
         if not self.activity_var.get().strip():
-            messagebox.showerror("Validation Error", "Activity description is required.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.activity_description_is_required', default="Activity description is required."))
             return False
 
         # Validate time formats if provided
@@ -454,7 +456,7 @@ class EditItineraryItemDialog(Dialog):
                 try:
                     datetime.strptime(time_value, '%H:%M')
                 except ValueError:
-                    messagebox.showerror("Validation Error", f"Invalid {label} format. Please use HH:MM.")
+                    messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.validation_error', default="Validation Error"), f"Invalid {label} format. Please use HH:MM.")
                     return False
 
         return True
@@ -486,8 +488,8 @@ class EditItineraryItemDialog(Dialog):
 
 
         if safe_db_operation(update_item_operation):
-            messagebox.showinfo("Success", "Itinerary item updated successfully!")
+            messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.itinerary_item_updated_successfully', default="Itinerary item updated successfully!"))
             if self.refresh_callback:
                 self.refresh_callback()
         else:
-            messagebox.showerror("Error", "Failed to update itinerary item.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.itinerary_dialogs.dialogs.failed_to_update_itinerary_item', default="Failed to update itinerary item."))

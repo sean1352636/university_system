@@ -9,6 +9,8 @@ rest. You're paid on the standard Jacks-or-Better table -- a pair of Jacks or
 higher is the minimum paying hand.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -86,7 +88,7 @@ def rank_hand(hand):
 class VideoPoker:
     def __init__(self, root):
         self.root = root
-        root.title("Video Poker \u2014 Jacks or Better")
+        root.title(_t('gui.operations.commerce.betting.games.video_poker.windows.video_poker_jacks_or_better', default="Video Poker \u2014 Jacks or Better"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -101,7 +103,7 @@ class VideoPoker:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=12)
         f.pack()
-        tk.Label(f, text="VIDEO POKER \u2014 Jacks or Better", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.video_poker.labels.video_poker_jacks_or_better', default="VIDEO POKER \u2014 Jacks or Better"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 17, "bold")).pack()
         self.pay_frame = tk.Frame(f, bg="#08202c")
         self.pay_frame.pack(pady=6, fill="x")
@@ -117,7 +119,7 @@ class VideoPoker:
             c.bind("<Button-1>", lambda e, idx=i: self.toggle_hold(idx))
             self.card_canvases.append(c)
 
-        self.msg = tk.Label(f, text="Press Deal to start.", bg=FELT, fg="white",
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.video_poker.labels.press_deal_to_start', default="Press Deal to start."), bg=FELT, fg="white",
                             font=("Helvetica", 13, "bold"))
         self.msg.pack()
 
@@ -126,10 +128,10 @@ class VideoPoker:
         self.cr_lbl = tk.Label(bar, text="", bg=FELT, fg="white",
                                font=("Helvetica", 13, "bold"))
         self.cr_lbl.pack(side="left", padx=8)
-        tk.Button(bar, text="Bet \u2212", command=lambda: self.chg(-1),
+        tk.Button(bar, text=_t('gui.operations.commerce.betting.games.video_poker.buttons.bet_variant_2', default="Bet \u2212"), command=lambda: self.chg(-1),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.video_poker.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -139,10 +141,10 @@ class VideoPoker:
         self.bet_entry.pack(side="left")
         self.bet_entry.bind("<Return>", lambda e: self.set_bet())
         self.bet_entry.bind("<FocusOut>", lambda e: self.set_bet())
-        tk.Button(bar, text="Bet +", command=lambda: self.chg(1),
+        tk.Button(bar, text=_t('gui.operations.commerce.betting.games.video_poker.buttons.bet', default="Bet +"), command=lambda: self.chg(1),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.action_btn = tk.Button(f, text="DEAL", command=self.action, width=16,
+        self.action_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.video_poker.buttons.deal', default="DEAL"), command=self.action, width=16,
                                     font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                     fg="white", activebackground=GOLD, bd=0, pady=8,
                                     cursor="hand2")
@@ -221,7 +223,7 @@ class VideoPoker:
     def action(self):
         if self.phase == "deal":
             if self.credits < self.bet:
-                self.msg.config(text="Not enough credits.")
+                self.msg.config(text=_t('gui.operations.commerce.betting.games.video_poker.text.not_enough_credits', default="Not enough credits."))
                 return
             self.credits -= self.bet
             self.deck = [(r, s) for s in SUITS for r in RANKS]
@@ -229,8 +231,8 @@ class VideoPoker:
             self.hand = [self.deck.pop() for _ in range(5)]
             self.held = [False] * 5
             self.phase = "draw"
-            self.action_btn.config(text="DRAW")
-            self.msg.config(text="Hold cards, then Draw.", fg="white")
+            self.action_btn.config(text=_t('gui.operations.commerce.betting.games.video_poker.text.draw', default="DRAW"))
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.video_poker.text.hold_cards_then_draw', default="Hold cards, then Draw."), fg="white")
             self.render()
             self.refresh()
         else:
@@ -244,11 +246,11 @@ class VideoPoker:
                 self.credits += pay
                 self.msg.config(text=f"{name}!  Win {pay}.", fg=GOLD)
             else:
-                self.msg.config(text="No paying hand. Deal again.", fg="white")
+                self.msg.config(text=_t('gui.operations.commerce.betting.games.video_poker.text.no_paying_hand_deal_again', default="No paying hand. Deal again."), fg="white")
             self.phase = "deal"
-            self.action_btn.config(text="DEAL")
+            self.action_btn.config(text=_t('gui.operations.commerce.betting.games.video_poker.text.deal', default="DEAL"))
             if self.credits < 1:
-                self.msg.config(text="Out of credits \u2014 buy more credits!")
+                self.msg.config(text=_t('gui.operations.commerce.betting.games.video_poker.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
                 wallet.close_game(self.root)
             self.bet = min(self.bet, max(1, self.credits))
             self._build_paytable()

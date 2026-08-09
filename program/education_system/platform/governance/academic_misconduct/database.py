@@ -142,9 +142,7 @@ class MisconductDatabaseMixin:
         system_key = getattr(self, 'system_key', None)
         if system_key == 'university':
             try:
-                from education_system.systems.university.infrastructure.paths import (
-                    DEFAULT_DB_PATH as _p,
-                )
+                from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH as _p
                 return str(_p)
             except ImportError:
                 pass

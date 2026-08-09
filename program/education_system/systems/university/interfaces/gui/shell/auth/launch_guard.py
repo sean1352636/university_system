@@ -18,6 +18,8 @@ Resolution order:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import os
 import sys
@@ -85,7 +87,7 @@ def _show_login_error(module_name: str) -> None:
 
         root = tk.Tk()
         root.withdraw()
-        messagebox.showerror("Login required", msg)
+        messagebox.showerror(_t('gui.shell.auth.launch_guard.dialogs.login_required', default="Login required"), msg)
         try:
             root.destroy()
         except Exception:

@@ -1,0 +1,5 @@
+{
+  "subject": "Action required: reset your ICT account password",
+  "body": "Hello $recipient_name,\n\nYour ICT account requires a password reset. Please use the secure link below to complete the reset before it expires.\n\n[Reset your password]($tracking_url)\n\nThis link expires on $link_expiry. If you did not expect this request, contact the ICT service desk.\n\nEducation System ICT",
+  "html_body": "<!doctype html><html><body style='font-family:Arial,sans-serif;background:#f4f6f8;padding:24px'><main style='max-width:600px;margin:auto;background:white;border-radius:8px;padding:32px'><h1 style='font-size:22px;color:#243447'>ICT account password reset</h1><p>Hello <strong>$recipient_name</strong>,</p><p>Your ICT account requires a password reset. Please use the secure link below to complete the reset before it expires.</p><p style='margin:28px 0'><a href='$tracking_url' style='background:#1769aa;color:white;padding:12px 20px;border-radius:5px;text-decoration:none'>Reset your password</a></p><p style='color:#667;font-size:13px'>This link expires on $link_expiry. If you did not expect this request, contact the ICT service desk.</p></main></body></html>"
+}

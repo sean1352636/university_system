@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -158,7 +160,7 @@ def refresh_instructors(self):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh instructors: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.instructors_tab.dialogs.error', default="Error"), f"Failed to refresh instructors: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.refresh_instructors = refresh_instructors
 
@@ -211,7 +213,7 @@ def filter_instructors(self, *args):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to filter instructors: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.instructors_tab.dialogs.error', default="Error"), f"Failed to filter instructors: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.filter_instructors = filter_instructors
 
@@ -229,7 +231,7 @@ def edit_selected_instructor(self):
     """Edit the selected instructor"""
     selected = self.instructors_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select an instructor to edit.", parent=self.root)
+        messagebox.showwarning(_t('gui.academics.module_scheduling.instructors_tab.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.instructors_tab.dialogs.please_select_an_instructor_to_edit', default="Please select an instructor to edit."), parent=self.root)
         return
 
     instructor_data = self.instructors_tree.item(selected[0])['values']
@@ -264,7 +266,7 @@ def view_instructor_schedule(self, instructor_id=None):
     schedules = get_instructor_schedule_data(instructor_id)
 
     if not schedules:
-        messagebox.showinfo("No Schedule", f"No schedule found for instructor ID {instructor_id}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.instructors_tab.dialogs.no_schedule', default="No Schedule"), f"No schedule found for instructor ID {instructor_id}", parent=self.root)
         return
 
     # Get instructor name
@@ -310,7 +312,7 @@ def view_instructor_schedule(self, instructor_id=None):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.instructors_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.view_instructor_schedule = view_instructor_schedule
 
@@ -322,11 +324,11 @@ def _select_instructor_dialog(self):
         instructors = cursor.fetchall()
 
     if not instructors:
-        messagebox.showinfo("No Instructors", "No instructors found in the system.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.instructors_tab.dialogs.no_instructors', default="No Instructors"), _t('gui.academics.module_scheduling.instructors_tab.dialogs.no_instructors_found_in_the_system', default="No instructors found in the system."), parent=self.root)
         return None
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Select Instructor")
+    dialog.title(_t('gui.academics.module_scheduling.instructors_tab.windows.select_instructor', default="Select Instructor"))
     dialog.geometry("500x400")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -344,7 +346,7 @@ def _select_instructor_dialog(self):
             selected[0] = instructors[idx][0]
             dialog.destroy()
 
-    ttk.Button(dialog, text="Select", command=on_select).pack(pady=5)
+    ttk.Button(dialog, text=_t('gui.academics.module_scheduling.instructors_tab.buttons.select', default="Select"), command=on_select).pack(pady=5)
 
     dialog.wait_window()
     return selected[0]

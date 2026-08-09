@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.finance.finance_reporting.archive_backup._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext, ScrolledText, datetime, paths, _,
 )
@@ -27,7 +29,7 @@ def create_database_backup(self, parent_window):
         progress_window.transient(parent_window)
         progress_window.grab_set()
 
-        ttk.Label(progress_window, text="Creating Database Backup...",
+        ttk.Label(progress_window, text=_t('gui.finance.finance_reporting.archive_backup.backup.labels.creating_database_backup', default="Creating Database Backup..."),
                  font=('Arial', 12, 'bold')).pack(pady=20)
 
         progress_text = scrolledtext.ScrolledText(progress_window, height=8, wrap=tk.WORD)
@@ -68,7 +70,7 @@ def create_database_backup(self, parent_window):
         log_progress(f"Location: {backup_path}")
 
         # Add close button
-        ttk.Button(progress_window, text="Close",
+        ttk.Button(progress_window, text=_t('gui.finance.finance_reporting.archive_backup.backup.buttons.close', default="Close"),
                   command=progress_window.destroy).pack(pady=10)
 
         # Log activity
@@ -80,7 +82,7 @@ def create_database_backup(self, parent_window):
             pass
 
     except Exception as e:
-        messagebox.showerror("Error",
+        messagebox.showerror(_t('gui.finance.finance_reporting.archive_backup.backup.dialogs.error', default="Error"),
             f"Failed to create backup:\n{e}",
             parent=parent_window)
         import traceback
@@ -95,11 +97,11 @@ def run_enhanced_backup_system(self):
     main_frame = ttk.Frame(backup_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Enhanced Backup System",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.labels.enhanced_backup_system', default="Enhanced Backup System"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Backup options
-    options_frame = ttk.LabelFrame(main_frame, text="Backup Options", padding="10")
+    options_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.labels.backup_options', default="Backup Options"), padding="10")
     options_frame.pack(fill=tk.X, pady=(0, 10))
 
     self.backup_database = tk.BooleanVar(value=True)
@@ -107,13 +109,13 @@ def run_enhanced_backup_system(self):
     self.backup_charts = tk.BooleanVar(value=False)
     self.backup_logs = tk.BooleanVar(value=True)
 
-    ttk.Checkbutton(options_frame, text="Database (Complete)", variable=self.backup_database).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Generated Reports", variable=self.backup_reports).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Charts and Visualizations", variable=self.backup_charts).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="System Logs", variable=self.backup_logs).pack(anchor=tk.W)
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.buttons.database_complete', default="Database (Complete)"), variable=self.backup_database).pack(anchor=tk.W)
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.buttons.generated_reports', default="Generated Reports"), variable=self.backup_reports).pack(anchor=tk.W)
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.buttons.charts_and_visualizations', default="Charts and Visualizations"), variable=self.backup_charts).pack(anchor=tk.W)
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.buttons.system_logs', default="System Logs"), variable=self.backup_logs).pack(anchor=tk.W)
 
     # Backup location
-    location_frame = ttk.LabelFrame(main_frame, text="Backup Location", padding="10")
+    location_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.labels.backup_location', default="Backup Location"), padding="10")
     location_frame.pack(fill=tk.X, pady=(0, 10))
 
     self.backup_location = tk.StringVar(value=str(paths.BACKUP_FINANCE_DIR / ""))
@@ -121,17 +123,17 @@ def run_enhanced_backup_system(self):
     location_entry_frame.pack(fill=tk.X)
 
     ttk.Entry(location_entry_frame, textvariable=self.backup_location).pack(side=tk.LEFT, fill=tk.X, expand=True)
-    ttk.Button(location_entry_frame, text="Browse",
+    ttk.Button(location_entry_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.buttons.browse', default="Browse"),
                command=lambda: self.backup_location.set(filedialog.askdirectory() or self.backup_location.get())).pack(side=tk.RIGHT, padx=(5, 0))
 
     # Progress area
-    progress_frame = ttk.LabelFrame(main_frame, text="Backup Progress", padding="10")
+    progress_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.labels.backup_progress', default="Backup Progress"), padding="10")
     progress_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     self.backup_progress = ttk.Progressbar(progress_frame, mode='determinate')
     self.backup_progress.pack(fill=tk.X, pady=(0, 5))
 
-    self.backup_status = tk.StringVar(value="Ready to backup")
+    self.backup_status = tk.StringVar(value=_t('gui.finance.finance_reporting.archive_backup.backup.values.ready_to_backup', default="Ready to backup"))
     ttk.Label(progress_frame, textvariable=self.backup_status).pack(anchor=tk.W)
 
     self.backup_log = ScrolledText(progress_frame, height=12, wrap=tk.WORD)
@@ -152,7 +154,7 @@ def run_enhanced_backup_system(self):
             backup_tasks.append(("Logs Backup", self.backup_logs_task))
 
         if not backup_tasks:
-            messagebox.showwarning("Backup", "Please select at least one backup option")
+            messagebox.showwarning(_t('gui.finance.finance_reporting.archive_backup.backup.dialogs.backup', default="Backup"), _t('gui.finance.finance_reporting.archive_backup.backup.dialogs.please_select_at_least_one_backup_option', default="Please select at least one backup option"))
             return
 
         total_tasks = len(backup_tasks)
@@ -174,7 +176,7 @@ def run_enhanced_backup_system(self):
 
         self.backup_status.set("Backup completed")
         self.backup_log.insert(tk.END, f"\nBackup process completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        messagebox.showinfo("Backup Complete", "System backup completed successfully!")
+        messagebox.showinfo(_t('gui.finance.finance_reporting.archive_backup.backup.dialogs.backup_complete', default="Backup Complete"), _t('gui.finance.finance_reporting.archive_backup.backup.dialogs.system_backup_completed_successfully', default="System backup completed successfully!"))
 
     # Backup task methods
     def backup_database_task():
@@ -209,8 +211,8 @@ def run_enhanced_backup_system(self):
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill=tk.X)
 
-    ttk.Button(buttons_frame, text="Start Backup", command=run_backup,
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.buttons.start_backup', default="Start Backup"), command=run_backup,
               style='Accent.TButton').pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Schedule Backup",
-               command=lambda: messagebox.showinfo("Schedule", "Backup scheduling configured")).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=backup_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.buttons.schedule_backup', default="Schedule Backup"),
+               command=lambda: messagebox.showinfo(_t('gui.finance.finance_reporting.archive_backup.backup.dialogs.schedule', default="Schedule"), _t('gui.finance.finance_reporting.archive_backup.backup.dialogs.backup_scheduling_configured', default="Backup scheduling configured"))).pack(side=tk.LEFT, padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.archive_backup.backup.buttons.close', default="Close"), command=backup_window.destroy).pack(side=tk.RIGHT)

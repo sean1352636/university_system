@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -42,7 +44,7 @@ class CurriculumGUI:
         self.current_syllabus_id = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Curriculum Design")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.login_required_to_access_curriculum_design', default="Login required to access Curriculum Design"))
             return
 
         if parent_notebook:
@@ -57,21 +59,21 @@ class CurriculumGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Curriculum")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.curriculum.tabs.curriculum', default="Curriculum"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Curriculum Design Tools")
+        self.window.title(_t('gui.staff.staff_hr.curriculum.windows.curriculum_design_tools', default="Curriculum Design Tools"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.curriculum.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -97,22 +99,22 @@ class CurriculumGUI:
     def _create_programmes_tab(self):
         """Create the programmes management tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Programmes")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.curriculum.tabs.programmes', default="Programmes"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Academic Programmes", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.curriculum.labels.academic_programmes', default="Academic Programmes"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Filter frame
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(filter_frame, text="Department:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.curriculum.labels.department', default="Department:")).pack(side=tk.LEFT, padx=5)
         self.prog_dept_entry = ttk.Entry(filter_frame, width=20)
         self.prog_dept_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.curriculum.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.prog_status_filter = ttk.Combobox(
             filter_frame,
             values=['All', 'Draft', 'Pending', 'Approved', 'Rejected'],
@@ -122,8 +124,8 @@ class CurriculumGUI:
         self.prog_status_filter.pack(side=tk.LEFT, padx=5)
         self.prog_status_filter.bind('<<ComboboxSelected>>', lambda e: self._load_programmes())
 
-        ttk.Button(filter_frame, text="Refresh", command=self._load_programmes).pack(side=tk.LEFT, padx=5)
-        ttk.Button(filter_frame, text="New Programme", command=self._create_programme_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.refresh', default="Refresh"), command=self._load_programmes).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.new_programme', default="New Programme"), command=self._create_programme_dialog).pack(side=tk.LEFT, padx=5)
 
         # Programmes treeview
         tree_frame = ttk.Frame(tab)
@@ -159,8 +161,8 @@ class CurriculumGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Submit for Approval", command=self._submit_for_approval).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit Programme", command=self._edit_programme_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.submit_for_approval', default="Submit for Approval"), command=self._submit_for_approval).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.edit_programme', default="Edit Programme"), command=self._edit_programme_dialog).pack(side=tk.LEFT, padx=5)
 
         self._load_programmes()
 
@@ -182,7 +184,7 @@ class CurriculumGUI:
                 status=status, department=department
             )
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load programmes: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), f"Failed to load programmes: {e}")
             self.programmes_data = []
             return
 
@@ -206,7 +208,7 @@ class CurriculumGUI:
     def _create_programme_dialog(self):
         """Open dialog to create a new programme."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("New Programme")
+        dialog.title(_t('gui.staff.staff_hr.curriculum.windows.new_programme', default="New Programme"))
         dialog.geometry("500x480")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -214,22 +216,22 @@ class CurriculumGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Create New Programme", style='Header.TLabel').grid(
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.create_new_programme', default="Create New Programme"), style='Header.TLabel').grid(
             row=0, column=0, columnspan=2, pady=(0, 15), sticky='w'
         )
 
         # Code
-        ttk.Label(frame, text="Code:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.code', default="Code:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         code_entry = ttk.Entry(frame, width=30)
         code_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Name
-        ttk.Label(frame, text="Name:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.name', default="Name:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         name_entry = ttk.Entry(frame, width=30)
         name_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Level
-        ttk.Label(frame, text="Level:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.level', default="Level:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         level_combo = ttk.Combobox(
             frame, values=['undergraduate', 'postgraduate', 'doctoral'],
             width=27, state='readonly'
@@ -238,24 +240,24 @@ class CurriculumGUI:
         level_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Department
-        ttk.Label(frame, text="Department:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.department', default="Department:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         dept_entry = ttk.Entry(frame, width=30)
         dept_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Credits
-        ttk.Label(frame, text="Total Credits:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.total_credits', default="Total Credits:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         credits_entry = ttk.Entry(frame, width=15)
         credits_entry.insert(0, "360")
         credits_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Duration
-        ttk.Label(frame, text="Duration (years):").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.duration_years', default="Duration (years):")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         duration_entry = ttk.Entry(frame, width=15)
         duration_entry.insert(0, "3")
         duration_entry.grid(row=6, column=1, padx=10, pady=8, sticky='w')
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=7, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.description', default="Description:")).grid(row=7, column=0, sticky='ne', padx=10, pady=8)
         desc_text = tk.Text(frame, width=40, height=4)
         desc_text.grid(row=7, column=1, padx=10, pady=8, sticky='w')
 
@@ -275,13 +277,13 @@ class CurriculumGUI:
             try:
                 total_credits = int(credits_entry.get().strip())
             except ValueError:
-                messagebox.showerror("Error", "Credits must be a valid integer", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.credits_must_be_a_valid_integer', default="Credits must be a valid integer"), parent=dialog)
                 return
 
             try:
                 duration = int(duration_entry.get().strip())
             except ValueError:
-                messagebox.showerror("Error", "Duration must be a valid integer", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.duration_must_be_a_valid_integer', default="Duration must be a valid integer"), parent=dialog)
                 return
 
             try:
@@ -295,22 +297,22 @@ class CurriculumGUI:
                     description=description,
                     created_by=self._get_user_id()
                 )
-                messagebox.showinfo("Success", f"Programme created successfully. ID: {programme_id}", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), f"Programme created successfully. ID: {programme_id}", parent=dialog)
                 dialog.destroy()
                 self._load_programmes()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=8, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _edit_programme_dialog(self):
         """Edit the selected programme."""
         selection = self.programmes_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a programme to edit")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_a_programme_to_edit', default="Please select a programme to edit"))
             return
 
         item = self.programmes_tree.item(selection[0])
@@ -319,15 +321,15 @@ class CurriculumGUI:
         try:
             programme = CurriculumManager.get_programme(programme_id)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e))
             return
 
         if not programme:
-            messagebox.showerror("Error", "Programme not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.programme_not_found', default="Programme not found"))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Programme")
+        dialog.title(_t('gui.staff.staff_hr.curriculum.windows.edit_programme', default="Edit Programme"))
         dialog.geometry("500x480")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -335,23 +337,23 @@ class CurriculumGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Edit Programme", style='Header.TLabel').grid(
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.edit_programme', default="Edit Programme"), style='Header.TLabel').grid(
             row=0, column=0, columnspan=2, pady=(0, 15), sticky='w'
         )
 
         # Code (read-only for editing)
-        ttk.Label(frame, text="Code:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.code', default="Code:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         code_label = ttk.Label(frame, text=programme.get('code', ''))
         code_label.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Name
-        ttk.Label(frame, text="Name:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.name', default="Name:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         name_entry = ttk.Entry(frame, width=30)
         name_entry.insert(0, programme.get('name', ''))
         name_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Level
-        ttk.Label(frame, text="Level:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.level', default="Level:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         level_combo = ttk.Combobox(
             frame, values=['undergraduate', 'postgraduate', 'doctoral'],
             width=27, state='readonly'
@@ -360,25 +362,25 @@ class CurriculumGUI:
         level_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Department
-        ttk.Label(frame, text="Department:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.department', default="Department:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         dept_entry = ttk.Entry(frame, width=30)
         dept_entry.insert(0, programme.get('department', ''))
         dept_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Credits
-        ttk.Label(frame, text="Total Credits:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.total_credits', default="Total Credits:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         credits_entry = ttk.Entry(frame, width=15)
         credits_entry.insert(0, str(programme.get('total_credits', 360)))
         credits_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Duration
-        ttk.Label(frame, text="Duration (years):").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.duration_years', default="Duration (years):")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         duration_entry = ttk.Entry(frame, width=15)
         duration_entry.insert(0, str(programme.get('duration_years', 3)))
         duration_entry.grid(row=6, column=1, padx=10, pady=8, sticky='w')
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=7, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.description', default="Description:")).grid(row=7, column=0, sticky='ne', padx=10, pady=8)
         desc_text = tk.Text(frame, width=40, height=4)
         desc_text.insert("1.0", programme.get('description', '') or '')
         desc_text.grid(row=7, column=1, padx=10, pady=8, sticky='w')
@@ -397,13 +399,13 @@ class CurriculumGUI:
             try:
                 total_credits = int(credits_entry.get().strip())
             except ValueError:
-                messagebox.showerror("Error", "Credits must be a valid integer", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.credits_must_be_a_valid_integer', default="Credits must be a valid integer"), parent=dialog)
                 return
 
             try:
                 duration = int(duration_entry.get().strip())
             except ValueError:
-                messagebox.showerror("Error", "Duration must be a valid integer", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.duration_must_be_a_valid_integer', default="Duration must be a valid integer"), parent=dialog)
                 return
 
             try:
@@ -416,16 +418,16 @@ class CurriculumGUI:
                     duration_years=duration,
                     description=description
                 )
-                messagebox.showinfo("Success", "Programme updated successfully", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.programme_updated_successfully', default="Programme updated successfully"), parent=dialog)
                 dialog.destroy()
                 self._load_programmes()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=8, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _on_programme_double_click(self, event):
         """Handle double-click on programme to select it for the Design tab."""
@@ -455,7 +457,7 @@ class CurriculumGUI:
         """Submit the selected programme for approval."""
         selection = self.programmes_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a programme to submit")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_a_programme_to_submit', default="Please select a programme to submit"))
             return
 
         item = self.programmes_tree.item(selection[0])
@@ -463,7 +465,7 @@ class CurriculumGUI:
         programme_name = item['values'][2]
 
         if not messagebox.askyesno(
-            "Confirm",
+            _t('gui.staff.staff_hr.curriculum.dialogs.confirm', default="Confirm"),
             f"Submit '{programme_name}' for approval?\n\n"
             "This will create approval entries at department, faculty, and senate levels."
         ):
@@ -473,36 +475,36 @@ class CurriculumGUI:
             CurriculumManager.submit_for_approval(
                 programme_id, submitted_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", "Programme submitted for approval")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.programme_submitted_for_approval', default="Programme submitted for approval"))
             self._load_programmes()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 2: PROGRAMME DESIGN ====================
 
     def _create_design_tab(self):
         """Create the programme design (module mapping) tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Programme Design")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.curriculum.tabs.programme_design', default="Programme Design"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Programme Design", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.curriculum.labels.programme_design', default="Programme Design"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Programme selector
-        selector_frame = ttk.LabelFrame(tab, text="Select Programme", padding=10)
+        selector_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.curriculum.labels.select_programme', default="Select Programme"), padding=10)
         selector_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(selector_frame, text="Programme:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.curriculum.labels.programme', default="Programme:")).pack(side=tk.LEFT, padx=5)
         self.design_programme_combo = ttk.Combobox(selector_frame, width=50, state='readonly')
         self.design_programme_combo.pack(side=tk.LEFT, padx=5)
         self.design_programme_combo.bind('<<ComboboxSelected>>', lambda e: self._on_design_programme_selected())
 
-        ttk.Button(selector_frame, text="Load", command=self._load_programme_modules).pack(side=tk.LEFT, padx=5)
+        ttk.Button(selector_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.load', default="Load"), command=self._load_programme_modules).pack(side=tk.LEFT, padx=5)
 
         # Credit summary
-        self.credit_summary_label = ttk.Label(selector_frame, text="Total Credits: 0 / 0", font=('Arial', 11, 'bold'))
+        self.credit_summary_label = ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.curriculum.labels.total_credits_0_0', default="Total Credits: 0 / 0"), font=('Arial', 11, 'bold'))
         self.credit_summary_label.pack(side=tk.RIGHT, padx=10)
 
         # Module mapping treeview
@@ -533,8 +535,8 @@ class CurriculumGUI:
         # Button frame
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Add Module", command=self._add_module_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Remove Module", command=self._remove_module).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.add_module', default="Add Module"), command=self._add_module_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.remove_module', default="Remove Module"), command=self._remove_module).pack(side=tk.LEFT, padx=5)
 
         # Populate programme selector
         self._refresh_programme_selector()
@@ -567,14 +569,14 @@ class CurriculumGUI:
             self.modules_tree.delete(item)
 
         if not self.selected_programme_id:
-            self.credit_summary_label.config(text="Total Credits: 0 / 0")
+            self.credit_summary_label.config(text=_t('gui.staff.staff_hr.curriculum.text.total_credits_0_0', default="Total Credits: 0 / 0"))
             return
 
         try:
             modules = CurriculumManager.get_programme_modules(self.selected_programme_id)
             programme = CurriculumManager.get_programme(self.selected_programme_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load modules: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), f"Failed to load modules: {e}")
             return
 
         total_credits = 0
@@ -604,11 +606,11 @@ class CurriculumGUI:
     def _add_module_dialog(self):
         """Open dialog to add a module to the programme."""
         if not self.selected_programme_id:
-            messagebox.showinfo("Info", "Please select a programme first")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_a_programme_first', default="Please select a programme first"))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Module to Programme")
+        dialog.title(_t('gui.staff.staff_hr.curriculum.windows.add_module_to_programme', default="Add Module to Programme"))
         dialog.geometry("450x380")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -616,22 +618,22 @@ class CurriculumGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Add Module", style='Header.TLabel').grid(
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.add_module', default="Add Module"), style='Header.TLabel').grid(
             row=0, column=0, columnspan=2, pady=(0, 15), sticky='w'
         )
 
         # Module Code
-        ttk.Label(frame, text="Module Code:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.module_code', default="Module Code:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         code_entry = ttk.Entry(frame, width=25)
         code_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Module Name
-        ttk.Label(frame, text="Module Name:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.module_name', default="Module Name:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         name_entry = ttk.Entry(frame, width=25)
         name_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Year
-        ttk.Label(frame, text="Year:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.year', default="Year:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         year_combo = ttk.Combobox(
             frame, values=['1', '2', '3', '4', '5', '6'],
             width=10, state='readonly'
@@ -640,7 +642,7 @@ class CurriculumGUI:
         year_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Semester
-        ttk.Label(frame, text="Semester:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.semester', default="Semester:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         semester_combo = ttk.Combobox(
             frame, values=['1', '2'],
             width=10, state='readonly'
@@ -649,7 +651,7 @@ class CurriculumGUI:
         semester_combo.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Core/Elective
-        ttk.Label(frame, text="Type:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.type', default="Type:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(
             frame, values=['Core', 'Elective'],
             width=15, state='readonly'
@@ -658,7 +660,7 @@ class CurriculumGUI:
         type_combo.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Credits
-        ttk.Label(frame, text="Credits:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.credits', default="Credits:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         credits_entry = ttk.Entry(frame, width=15)
         credits_entry.insert(0, "20")
         credits_entry.grid(row=6, column=1, padx=10, pady=8, sticky='w')
@@ -679,7 +681,7 @@ class CurriculumGUI:
                 if credits <= 0:
                     raise ValueError
             except ValueError:
-                messagebox.showerror("Error", "Credits must be a positive integer", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.credits_must_be_a_positive_integer', default="Credits must be a positive integer"), parent=dialog)
                 return
 
             is_core = module_type == 'Core'
@@ -694,22 +696,22 @@ class CurriculumGUI:
                     is_core=is_core,
                     credits=credits
                 )
-                messagebox.showinfo("Success", f"Module added. Mapping ID: {mapping_id}", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), f"Module added. Mapping ID: {mapping_id}", parent=dialog)
                 dialog.destroy()
                 self._load_programme_modules()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _remove_module(self):
         """Remove the selected module from the programme."""
         selection = self.modules_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a module to remove")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_a_module_to_remove', default="Please select a module to remove"))
             return
 
         item = self.modules_tree.item(selection[0])
@@ -718,37 +720,37 @@ class CurriculumGUI:
         module_name = item['values'][2]
 
         if not messagebox.askyesno(
-            "Confirm",
+            _t('gui.staff.staff_hr.curriculum.dialogs.confirm', default="Confirm"),
             f"Remove module '{module_code} - {module_name}' from this programme?"
         ):
             return
 
         try:
             CurriculumManager.remove_module_from_programme(mapping_id)
-            messagebox.showinfo("Success", "Module removed from programme")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.module_removed_from_programme', default="Module removed from programme"))
             self._load_programme_modules()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 3: LEARNING OUTCOMES ====================
 
     def _create_outcomes_tab(self):
         """Create the learning outcomes and alignment tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Learning Outcomes")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.curriculum.tabs.learning_outcomes', default="Learning Outcomes"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Learning Outcomes & Alignment", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._refresh_outcomes_tab).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.curriculum.labels.learning_outcomes_alignment', default="Learning Outcomes & Alignment"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.refresh', default="Refresh"), command=self._refresh_outcomes_tab).pack(side=tk.RIGHT, padx=5)
 
         # PanedWindow for side-by-side layout
         paned = ttk.PanedWindow(tab, orient=tk.HORIZONTAL)
         paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Left: Programme Outcomes
-        left_frame = ttk.LabelFrame(paned, text="Programme Outcomes", padding=10)
+        left_frame = ttk.LabelFrame(paned, text=_t('gui.staff.staff_hr.curriculum.labels.programme_outcomes', default="Programme Outcomes"), padding=10)
         paned.add(left_frame, weight=1)
 
         outcomes_tree_frame = ttk.Frame(left_frame)
@@ -773,12 +775,12 @@ class CurriculumGUI:
         # Outcome action buttons
         outcome_btn_frame = ttk.Frame(left_frame)
         outcome_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(outcome_btn_frame, text="Add", command=self._add_outcome_dialog).pack(side=tk.LEFT, padx=3)
-        ttk.Button(outcome_btn_frame, text="Edit", command=self._edit_outcome_dialog).pack(side=tk.LEFT, padx=3)
-        ttk.Button(outcome_btn_frame, text="Delete", command=self._delete_outcome).pack(side=tk.LEFT, padx=3)
+        ttk.Button(outcome_btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.add', default="Add"), command=self._add_outcome_dialog).pack(side=tk.LEFT, padx=3)
+        ttk.Button(outcome_btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.edit', default="Edit"), command=self._edit_outcome_dialog).pack(side=tk.LEFT, padx=3)
+        ttk.Button(outcome_btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.delete', default="Delete"), command=self._delete_outcome).pack(side=tk.LEFT, padx=3)
 
         # Right: Alignment Matrix
-        right_frame = ttk.LabelFrame(paned, text="Alignment Matrix", padding=10)
+        right_frame = ttk.LabelFrame(paned, text=_t('gui.staff.staff_hr.curriculum.labels.alignment_matrix', default="Alignment Matrix"), padding=10)
         paned.add(right_frame, weight=2)
 
         alignment_tree_frame = ttk.Frame(right_frame)
@@ -803,7 +805,7 @@ class CurriculumGUI:
         # Alignment legend
         legend_frame = ttk.Frame(right_frame)
         legend_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(legend_frame, text="Legend:  ", font=('Arial', 9)).pack(side=tk.LEFT)
+        ttk.Label(legend_frame, text=_t('gui.staff.staff_hr.curriculum.labels.legend', default="Legend:  "), font=('Arial', 9)).pack(side=tk.LEFT)
         for strength, colour in [('Strong', '#2e7d32'), ('Moderate', '#f57f17'), ('Weak', '#e65100'), ('None', '#9e9e9e')]:
             ttk.Label(legend_frame, text=f"  {strength}  ", font=('Arial', 9),
                       foreground=colour).pack(side=tk.LEFT)
@@ -824,7 +826,7 @@ class CurriculumGUI:
         try:
             outcomes = CurriculumManager.get_programme_outcomes(self.selected_programme_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load outcomes: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), f"Failed to load outcomes: {e}")
             return
 
         for o in outcomes:
@@ -851,7 +853,7 @@ class CurriculumGUI:
         try:
             matrix_data = CurriculumManager.get_alignment_matrix(self.selected_programme_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load alignment matrix: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), f"Failed to load alignment matrix: {e}")
             return
 
         programme_outcomes = matrix_data.get('programme_outcomes', [])
@@ -860,7 +862,7 @@ class CurriculumGUI:
 
         if not programme_outcomes or not modules:
             self.alignment_tree['columns'] = ('Outcome',)
-            self.alignment_tree.heading('Outcome', text='Outcome')
+            self.alignment_tree.heading('Outcome', text=_t('gui.staff.staff_hr.curriculum.headings.outcome', default='Outcome'))
             self.alignment_tree.column('Outcome', width=200)
             self.alignment_tree.insert('', tk.END, values=('No data available',))
             return
@@ -870,7 +872,7 @@ class CurriculumGUI:
         all_columns = ['Outcome'] + module_codes
         self.alignment_tree['columns'] = all_columns
 
-        self.alignment_tree.heading('Outcome', text='Outcome')
+        self.alignment_tree.heading('Outcome', text=_t('gui.staff.staff_hr.curriculum.headings.outcome', default='Outcome'))
         self.alignment_tree.column('Outcome', width=80, minwidth=60)
         for mc in module_codes:
             self.alignment_tree.heading(mc, text=mc)
@@ -899,11 +901,11 @@ class CurriculumGUI:
     def _add_outcome_dialog(self):
         """Open dialog to add a new learning outcome."""
         if not self.selected_programme_id:
-            messagebox.showinfo("Info", "Please select a programme first (from the Programmes tab)")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_a_programme_first_from_the_programmes_tab', default="Please select a programme first (from the Programmes tab)"))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Learning Outcome")
+        dialog.title(_t('gui.staff.staff_hr.curriculum.windows.add_learning_outcome', default="Add Learning Outcome"))
         dialog.geometry("520x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -911,17 +913,17 @@ class CurriculumGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="New Learning Outcome", style='Header.TLabel').grid(
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.new_learning_outcome', default="New Learning Outcome"), style='Header.TLabel').grid(
             row=0, column=0, columnspan=2, pady=(0, 15), sticky='w'
         )
 
         # Code
-        ttk.Label(frame, text="Code:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.code', default="Code:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         code_entry = ttk.Entry(frame, width=25)
         code_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Type
-        ttk.Label(frame, text="Type:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.type', default="Type:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(
             frame, values=['programme', 'module'],
             width=22, state='readonly'
@@ -930,7 +932,7 @@ class CurriculumGUI:
         type_combo.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Module code (only for module-level outcomes)
-        ttk.Label(frame, text="Module Code:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.module_code', default="Module Code:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         module_code_entry = ttk.Entry(frame, width=25)
         module_code_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
         module_code_entry.config(state='disabled')
@@ -945,7 +947,7 @@ class CurriculumGUI:
         type_combo.bind('<<ComboboxSelected>>', on_type_change)
 
         # Bloom Level
-        ttk.Label(frame, text="Bloom Level:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.bloom_level', default="Bloom Level:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         bloom_combo = ttk.Combobox(
             frame, values=['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'],
             width=22, state='readonly'
@@ -954,7 +956,7 @@ class CurriculumGUI:
         bloom_combo.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=5, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.description', default="Description:")).grid(row=5, column=0, sticky='ne', padx=10, pady=8)
         desc_text = scrolledtext.ScrolledText(frame, width=35, height=6)
         desc_text.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
@@ -972,7 +974,7 @@ class CurriculumGUI:
             if outcome_type == 'module':
                 mc = module_code_entry.get().strip()
                 if not mc:
-                    messagebox.showerror("Error", "Module Code is required for module-level outcomes", parent=dialog)
+                    messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.module_code_is_required_for_module_level_outcomes', default="Module Code is required for module-level outcomes"), parent=dialog)
                     return
                 module_code = mc
 
@@ -987,29 +989,29 @@ class CurriculumGUI:
                     bloom_level=bloom_level,
                     outcome_type=outcome_type
                 )
-                messagebox.showinfo("Success", f"Outcome created. ID: {outcome_id}", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), f"Outcome created. ID: {outcome_id}", parent=dialog)
                 dialog.destroy()
                 self._refresh_outcomes_tab()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=6, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _edit_outcome_dialog(self):
         """Edit the selected learning outcome."""
         selection = self.outcomes_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an outcome to edit")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_an_outcome_to_edit', default="Please select an outcome to edit"))
             return
 
         item = self.outcomes_tree.item(selection[0])
         outcome_id = item['values'][0]
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Learning Outcome")
+        dialog.title(_t('gui.staff.staff_hr.curriculum.windows.edit_learning_outcome', default="Edit Learning Outcome"))
         dialog.geometry("520x400")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -1017,22 +1019,22 @@ class CurriculumGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Edit Learning Outcome", style='Header.TLabel').grid(
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.edit_learning_outcome', default="Edit Learning Outcome"), style='Header.TLabel').grid(
             row=0, column=0, columnspan=2, pady=(0, 15), sticky='w'
         )
 
         # ID display
-        ttk.Label(frame, text="Outcome ID:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.outcome_id', default="Outcome ID:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         ttk.Label(frame, text=str(outcome_id)).grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Code
-        ttk.Label(frame, text="Code:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.code', default="Code:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         code_entry = ttk.Entry(frame, width=25)
         code_entry.insert(0, str(item['values'][1]))
         code_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Bloom Level
-        ttk.Label(frame, text="Bloom Level:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.bloom_level', default="Bloom Level:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         bloom_combo = ttk.Combobox(
             frame, values=['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'],
             width=22, state='readonly'
@@ -1042,7 +1044,7 @@ class CurriculumGUI:
         bloom_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=4, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.curriculum.labels.description', default="Description:")).grid(row=4, column=0, sticky='ne', padx=10, pady=8)
         desc_text = scrolledtext.ScrolledText(frame, width=35, height=6)
         # Use full description from item (may be truncated in treeview)
         desc_text.insert("1.0", str(item['values'][2]))
@@ -1064,22 +1066,22 @@ class CurriculumGUI:
                     bloom_level=bloom_level,
                     description=description
                 )
-                messagebox.showinfo("Success", "Outcome updated successfully", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.outcome_updated_successfully', default="Outcome updated successfully"), parent=dialog)
                 dialog.destroy()
                 self._refresh_outcomes_tab()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=5, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _delete_outcome(self):
         """Delete the selected learning outcome."""
         selection = self.outcomes_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an outcome to delete")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_an_outcome_to_delete', default="Please select an outcome to delete"))
             return
 
         item = self.outcomes_tree.item(selection[0])
@@ -1087,55 +1089,55 @@ class CurriculumGUI:
         outcome_code = item['values'][1]
 
         if not messagebox.askyesno(
-            "Confirm",
+            _t('gui.staff.staff_hr.curriculum.dialogs.confirm', default="Confirm"),
             f"Delete outcome '{outcome_code}'?\n\nThis will also remove all associated alignments."
         ):
             return
 
         try:
             CurriculumManager.delete_outcome(outcome_id)
-            messagebox.showinfo("Success", "Outcome deleted")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.outcome_deleted', default="Outcome deleted"))
             self._refresh_outcomes_tab()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 4: SYLLABUS BUILDER ====================
 
     def _create_syllabus_tab(self):
         """Create the syllabus builder tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Syllabus Builder")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.curriculum.tabs.syllabus_builder', default="Syllabus Builder"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Syllabus Builder", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.curriculum.labels.syllabus_builder', default="Syllabus Builder"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Selector frame
-        selector_frame = ttk.LabelFrame(tab, text="Syllabus Selection", padding=10)
+        selector_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.curriculum.labels.syllabus_selection', default="Syllabus Selection"), padding=10)
         selector_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(selector_frame, text="Module Code:").grid(row=0, column=0, sticky='e', padx=5, pady=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.curriculum.labels.module_code', default="Module Code:")).grid(row=0, column=0, sticky='e', padx=5, pady=5)
         self.syllabus_module_entry = ttk.Entry(selector_frame, width=20)
         self.syllabus_module_entry.grid(row=0, column=1, padx=5, pady=5, sticky='w')
 
-        ttk.Label(selector_frame, text="Academic Year:").grid(row=0, column=2, sticky='e', padx=5, pady=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.curriculum.labels.academic_year', default="Academic Year:")).grid(row=0, column=2, sticky='e', padx=5, pady=5)
         self.syllabus_year_entry = ttk.Entry(selector_frame, width=15)
         self.syllabus_year_entry.insert(0, "2025-2026")
         self.syllabus_year_entry.grid(row=0, column=3, padx=5, pady=5, sticky='w')
 
-        ttk.Label(selector_frame, text="Template:").grid(row=0, column=4, sticky='e', padx=5, pady=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.curriculum.labels.template', default="Template:")).grid(row=0, column=4, sticky='e', padx=5, pady=5)
         self.syllabus_template_combo = ttk.Combobox(selector_frame, width=25, state='readonly')
         self.syllabus_template_combo.grid(row=0, column=5, padx=5, pady=5, sticky='w')
         self._load_syllabus_templates()
 
         btn_sel_frame = ttk.Frame(selector_frame)
         btn_sel_frame.grid(row=1, column=0, columnspan=6, pady=5)
-        ttk.Button(btn_sel_frame, text="Load Syllabus", command=self._load_syllabus).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_sel_frame, text="New from Template", command=self._new_from_template).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_sel_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.load_syllabus', default="Load Syllabus"), command=self._load_syllabus).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_sel_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.new_from_template', default="New from Template"), command=self._new_from_template).pack(side=tk.LEFT, padx=5)
 
         # Status label
-        self.syllabus_status_label = ttk.Label(selector_frame, text="Status: No syllabus loaded", font=('Arial', 10))
+        self.syllabus_status_label = ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.curriculum.labels.status_no_syllabus_loaded', default="Status: No syllabus loaded"), font=('Arial', 10))
         self.syllabus_status_label.grid(row=1, column=3, columnspan=3, sticky='e', padx=10)
 
         # Content frame with scrollable area
@@ -1167,8 +1169,8 @@ class CurriculumGUI:
         # Save button frame
         save_frame = ttk.Frame(tab)
         save_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(save_frame, text="Save Syllabus", command=self._save_syllabus).pack(side=tk.LEFT, padx=5)
-        ttk.Button(save_frame, text="Submit for Review", command=self._submit_syllabus_for_review).pack(side=tk.LEFT, padx=5)
+        ttk.Button(save_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.save_syllabus', default="Save Syllabus"), command=self._save_syllabus).pack(side=tk.LEFT, padx=5)
+        ttk.Button(save_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.submit_for_review', default="Submit for Review"), command=self._submit_syllabus_for_review).pack(side=tk.LEFT, padx=5)
 
     def _load_syllabus_templates(self):
         """Load available syllabus templates into the combobox."""
@@ -1196,7 +1198,7 @@ class CurriculumGUI:
         self.syllabus_widgets = {}
 
         if not sections:
-            ttk.Label(self.syllabus_content_frame, text="No sections available.").pack(padx=10, pady=10)
+            ttk.Label(self.syllabus_content_frame, text=_t('gui.staff.staff_hr.curriculum.labels.no_sections_available', default="No sections available.")).pack(padx=10, pady=10)
             return
 
         for idx, section in enumerate(sections):
@@ -1223,20 +1225,20 @@ class CurriculumGUI:
         academic_year = self.syllabus_year_entry.get().strip()
 
         if not module_code:
-            messagebox.showerror("Error", "Module Code is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.module_code_is_required', default="Module Code is required"))
             return
 
         try:
             syllabus = CurriculumManager.get_syllabus(module_code, academic_year or None)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load syllabus: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), f"Failed to load syllabus: {e}")
             return
 
         if not syllabus:
-            messagebox.showinfo("Info", f"No syllabus found for {module_code}" +
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), f"No syllabus found for {module_code}" +
                                 (f" ({academic_year})" if academic_year else ""))
             self.current_syllabus_id = None
-            self.syllabus_status_label.config(text="Status: No syllabus found")
+            self.syllabus_status_label.config(text=_t('gui.staff.staff_hr.curriculum.text.status_no_syllabus_found', default="Status: No syllabus found"))
             return
 
         self.current_syllabus_id = syllabus.get('syllabus_id')
@@ -1266,12 +1268,12 @@ class CurriculumGUI:
         """Create a new syllabus from the selected template."""
         module_code = self.syllabus_module_entry.get().strip()
         if not module_code:
-            messagebox.showerror("Error", "Module Code is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.module_code_is_required', default="Module Code is required"))
             return
 
         template_name = self.syllabus_template_combo.get()
         if not template_name or template_name not in self._templates_data:
-            messagebox.showerror("Error", "Please select a template")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_a_template', default="Please select a template"))
             return
 
         template = self._templates_data[template_name]
@@ -1321,15 +1323,15 @@ class CurriculumGUI:
         academic_year = self.syllabus_year_entry.get().strip()
 
         if not module_code:
-            messagebox.showerror("Error", "Module Code is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.module_code_is_required', default="Module Code is required"))
             return
 
         if not academic_year:
-            messagebox.showerror("Error", "Academic Year is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.academic_year_is_required', default="Academic Year is required"))
             return
 
         if not self.syllabus_widgets:
-            messagebox.showerror("Error", "No syllabus content to save")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.no_syllabus_content_to_save', default="No syllabus content to save"))
             return
 
         # Collect section texts
@@ -1346,7 +1348,7 @@ class CurriculumGUI:
                     self.current_syllabus_id,
                     content_json=content_json
                 )
-                messagebox.showinfo("Success", "Syllabus updated successfully")
+                messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.syllabus_updated_successfully', default="Syllabus updated successfully"))
             else:
                 # Create new
                 template_name = self.syllabus_template_combo.get()
@@ -1362,44 +1364,44 @@ class CurriculumGUI:
                     created_by=self._get_user_id()
                 )
                 self.current_syllabus_id = syllabus_id
-                messagebox.showinfo("Success", f"Syllabus created. ID: {syllabus_id}")
+                messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), f"Syllabus created. ID: {syllabus_id}")
 
             self.syllabus_status_label.config(
                 text=f"Status: Draft (ID: {self.current_syllabus_id})"
             )
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e))
 
     def _submit_syllabus_for_review(self):
         """Submit the syllabus for review by changing its status."""
         if not self.current_syllabus_id:
-            messagebox.showinfo("Info", "Please save the syllabus first")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_save_the_syllabus_first', default="Please save the syllabus first"))
             return
 
-        if not messagebox.askyesno("Confirm", "Submit this syllabus for review?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.curriculum.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.curriculum.dialogs.submit_this_syllabus_for_review', default="Submit this syllabus for review?")):
             return
 
         try:
             CurriculumManager.update_syllabus(self.current_syllabus_id, status='submitted')
-            messagebox.showinfo("Success", "Syllabus submitted for review")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.syllabus_submitted_for_review', default="Syllabus submitted for review"))
             self.syllabus_status_label.config(
                 text=f"Status: Submitted (ID: {self.current_syllabus_id})"
             )
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 5: APPROVALS (ADMIN) ====================
 
     def _create_approvals_tab(self):
         """Create the programme approvals tab (admin only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Approvals")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.curriculum.tabs.approvals', default="Approvals"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Programme Approvals", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_pending_approvals).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.curriculum.labels.programme_approvals', default="Programme Approvals"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.refresh', default="Refresh"), command=self._load_pending_approvals).pack(side=tk.RIGHT)
 
         # Pending approvals treeview
         tree_frame = ttk.Frame(tab)
@@ -1430,9 +1432,9 @@ class CurriculumGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Approve", command=self._approve_programme).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Return for Revision", command=self._return_for_revision).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Reject", command=self._reject_programme).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.approve', default="Approve"), command=self._approve_programme).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.return_for_revision', default="Return for Revision"), command=self._return_for_revision).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.curriculum.buttons.reject', default="Reject"), command=self._reject_programme).pack(side=tk.LEFT, padx=5)
 
         self._load_pending_approvals()
 
@@ -1444,7 +1446,7 @@ class CurriculumGUI:
         try:
             approvals = CurriculumManager.get_pending_approvals(self._get_user_id())
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load approvals: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), f"Failed to load approvals: {e}")
             return
 
         for a in approvals:
@@ -1463,7 +1465,7 @@ class CurriculumGUI:
         """Approve the selected programme approval."""
         selection = self.approvals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an approval to approve")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_an_approval_to_approve', default="Please select an approval to approve"))
             return
 
         item = self.approvals_tree.item(selection[0])
@@ -1483,17 +1485,17 @@ class CurriculumGUI:
                 status='approved',
                 comments=comments or ''
             )
-            messagebox.showinfo("Success", "Programme approved")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.programme_approved', default="Programme approved"))
             self._load_pending_approvals()
             self._load_programmes()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e))
 
     def _return_for_revision(self):
         """Return the selected programme for revision."""
         selection = self.approvals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an approval to return for revision")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_an_approval_to_return_for_revision', default="Please select an approval to return for revision"))
             return
 
         item = self.approvals_tree.item(selection[0])
@@ -1507,7 +1509,7 @@ class CurriculumGUI:
         )
 
         if not comments:
-            messagebox.showerror("Error", "Comments are required when returning for revision")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.comments_are_required_when_returning_for_revision', default="Comments are required when returning for revision"))
             return
 
         try:
@@ -1517,17 +1519,17 @@ class CurriculumGUI:
                 status='revision_required',
                 comments=comments
             )
-            messagebox.showinfo("Success", "Programme returned for revision")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.programme_returned_for_revision', default="Programme returned for revision"))
             self._load_pending_approvals()
             self._load_programmes()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e))
 
     def _reject_programme(self):
         """Reject the selected programme approval."""
         selection = self.approvals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an approval to reject")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.info', default="Info"), _t('gui.staff.staff_hr.curriculum.dialogs.please_select_an_approval_to_reject', default="Please select an approval to reject"))
             return
 
         item = self.approvals_tree.item(selection[0])
@@ -1541,7 +1543,7 @@ class CurriculumGUI:
         )
 
         if not comments:
-            messagebox.showerror("Error", "Rejection reason is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), _t('gui.staff.staff_hr.curriculum.dialogs.rejection_reason_is_required', default="Rejection reason is required"))
             return
 
         try:
@@ -1551,11 +1553,11 @@ class CurriculumGUI:
                 status='rejected',
                 comments=comments
             )
-            messagebox.showinfo("Success", "Programme rejected")
+            messagebox.showinfo(_t('gui.staff.staff_hr.curriculum.dialogs.success', default="Success"), _t('gui.staff.staff_hr.curriculum.dialogs.programme_rejected', default="Programme rejected"))
             self._load_pending_approvals()
             self._load_programmes()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.curriculum.dialogs.error', default="Error"), str(e))
 
 
 # Add simpledialog import for the approval dialogs

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
 import threading
@@ -65,7 +67,7 @@ def create_input_section(self, parent):
     input_card.pack(fill='both', expand=True, padx=5, pady=5)
 
     # Card title
-    ttk.Label(input_card, text="Text Input", style='Title.TLabel').pack(anchor='w', padx=15, pady=(15, 5))
+    ttk.Label(input_card, text=_t('gui.academics.ai_detector.analysis_view.labels.text_input', default="Text Input"), style='Title.TLabel').pack(anchor='w', padx=15, pady=(15, 5))
 
     # Metadata inputs
     metadata_frame = ttk.Frame(input_card)
@@ -75,12 +77,12 @@ def create_input_section(self, parent):
     row1 = ttk.Frame(metadata_frame)
     row1.pack(fill='x', pady=(0, 5))
 
-    ttk.Label(row1, text="Student:").pack(side='left')
+    ttk.Label(row1, text=_t('gui.academics.ai_detector.analysis_view.labels.student', default="Student:")).pack(side='left')
     self.student_var = tk.StringVar()
     self.student_combo = ttk.Combobox(row1, textvariable=self.student_var, width=25, state='readonly')
     self.student_combo.pack(side='left', padx=(5, 15))
 
-    ttk.Label(row1, text="Title:").pack(side='left')
+    ttk.Label(row1, text=_t('gui.academics.ai_detector.analysis_view.labels.title', default="Title:")).pack(side='left')
     self.title_var = tk.StringVar()
     self.title_entry = ttk.Entry(row1, textvariable=self.title_var, width=30)
     self.title_entry.pack(side='left', padx=(5, 0))
@@ -89,13 +91,13 @@ def create_input_section(self, parent):
     row2 = ttk.Frame(metadata_frame)
     row2.pack(fill='x')
 
-    ttk.Label(row2, text="Module:").pack(side='left')
+    ttk.Label(row2, text=_t('gui.academics.ai_detector.analysis_view.labels.module', default="Module:")).pack(side='left')
     self.module_var = tk.StringVar()
     self.module_combo = ttk.Combobox(row2, textvariable=self.module_var, width=20, state='readonly')
     self.module_combo.pack(side='left', padx=(5, 15))
     self.module_combo.bind('<<ComboboxSelected>>', self._on_module_selected)
 
-    ttk.Label(row2, text="Assignment:").pack(side='left')
+    ttk.Label(row2, text=_t('gui.academics.ai_detector.analysis_view.labels.assignment', default="Assignment:")).pack(side='left')
     self.assignment_var = tk.StringVar()
     self.assignment_combo = ttk.Combobox(row2, textvariable=self.assignment_var, width=25, state='readonly')
     self.assignment_combo.pack(side='left', padx=(5, 0))
@@ -104,27 +106,27 @@ def create_input_section(self, parent):
     self._load_database_data()
 
     # Text input area
-    ttk.Label(input_card, text="Text to Analyze:", style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=(10, 5))
+    ttk.Label(input_card, text=_t('gui.academics.ai_detector.analysis_view.labels.text_to_analyze', default="Text to Analyze:"), style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=(10, 5))
 
     # Buttons and word count packed BEFORE text area so they stay visible
     button_frame = ttk.Frame(input_card)
     button_frame.pack(side='bottom', fill='x', padx=15, pady=(0, 15))
 
-    self.upload_btn = ttk.Button(button_frame, text="📁 Load File", command=self.load_file)
+    self.upload_btn = ttk.Button(button_frame, text=_t('gui.academics.ai_detector.analysis_view.buttons.load_file', default="📁 Load File"), command=self.load_file)
     self.upload_btn.pack(side='left', padx=(0, 10))
 
-    self.clear_btn = ttk.Button(button_frame, text="🗑️ Clear", command=self.clear_input)
+    self.clear_btn = ttk.Button(button_frame, text=_t('gui.academics.ai_detector.analysis_view.buttons.clear', default="🗑️ Clear"), command=self.clear_input)
     self.clear_btn.pack(side='left', padx=(0, 10))
 
     self.analyze_btn = ttk.Button(
         button_frame,
-        text="🔍 Analyze Text",
+        text=_t('gui.academics.ai_detector.analysis_view.buttons.analyze_text', default="🔍 Analyze Text"),
         command=self.analyze_text,
         style='Accent.TButton'
     )
     self.analyze_btn.pack(side='right')
 
-    self.word_count_label = ttk.Label(input_card, text="Words: 0", style='Subtitle.TLabel')
+    self.word_count_label = ttk.Label(input_card, text=_t('gui.academics.ai_detector.analysis_view.labels.words_0', default="Words: 0"), style='Subtitle.TLabel')
     self.word_count_label.pack(side='bottom', anchor='e', padx=15, pady=(0, 5))
 
     # Text widget fills remaining space
@@ -153,7 +155,7 @@ def create_results_section(self, parent):
     results_card.pack(fill='both', expand=True, padx=5, pady=5)
 
     # Card title
-    ttk.Label(results_card, text="Analysis Results", style='Title.TLabel').pack(anchor='w', padx=15, pady=(15, 5))
+    ttk.Label(results_card, text=_t('gui.academics.ai_detector.analysis_view.labels.analysis_results', default="Analysis Results"), style='Title.TLabel').pack(anchor='w', padx=15, pady=(15, 5))
 
     # Results container
     self.results_container = ttk.Frame(results_card)
@@ -169,7 +171,7 @@ def show_empty_results(self):
         widget.destroy()
 
     empty_label = ttk.Label(self.results_container,
-                          text="Enter text and click 'Analyze Text' to see results",
+                          text=_t('gui.academics.ai_detector.analysis_view.labels.enter_text_and_click_analyze_text_to_see_results', default="Enter text and click 'Analyze Text' to see results"),
                           style='Subtitle.TLabel')
     empty_label.pack(expand=True)
 
@@ -188,7 +190,7 @@ def load_file(self):
     filetypes.append(("All files", "*.*"))
 
     file_path = filedialog.askopenfilename(
-        title="Select document file",
+        title=_t('gui.academics.ai_detector.analysis_view.dialogs.select_document_file', default="Select document file"),
         filetypes=filetypes
     )
 
@@ -209,10 +211,10 @@ def load_file(self):
 
                 self.update_status(f"Loaded file: {filename}")
             else:
-                messagebox.showwarning("Warning", "No text could be extracted from the file.")
+                messagebox.showwarning(_t('gui.academics.ai_detector.analysis_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.analysis_view.dialogs.no_text_could_be_extracted_from_the_file', default="No text could be extracted from the file."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load file: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.analysis_view.dialogs.error', default="Error"), f"Failed to load file: {str(e)}")
 
 
 def clear_input(self):
@@ -231,15 +233,15 @@ def analyze_text(self):
     text = self.text_input.get('1.0', tk.END).strip()
 
     if not text:
-        messagebox.showwarning("Warning", "Please enter text to analyze")
+        messagebox.showwarning(_t('gui.academics.ai_detector.analysis_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.analysis_view.dialogs.please_enter_text_to_analyze', default="Please enter text to analyze"))
         return
 
     if len(text) < 50:
-        messagebox.showwarning("Warning", "Text is too short for meaningful analysis (minimum 50 characters)")
+        messagebox.showwarning(_t('gui.academics.ai_detector.analysis_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.analysis_view.dialogs.text_is_too_short_for_meaningful_analysis_minimum_50_characters', default="Text is too short for meaningful analysis (minimum 50 characters)"))
         return
 
     # Update UI state
-    self.analyze_btn.config(state='disabled', text='🔄 Analyzing...')
+    self.analyze_btn.config(state='disabled', text=_t('gui.academics.ai_detector.analysis_view.text.analyzing', default='🔄 Analyzing...'))
     self.update_status("Analyzing text...")
     self.show_progress(True)
 
@@ -294,7 +296,7 @@ def display_results(self, result):
     self.create_recommendations(main_results, result)
 
     # Reset UI state
-    self.analyze_btn.config(state='normal', text='🔍 Analyze Text')
+    self.analyze_btn.config(state='normal', text=_t('gui.academics.ai_detector.analysis_view.text.analyze_text', default='🔍 Analyze Text'))
     self.show_progress(False)
     self.update_status("Analysis complete")
 
@@ -341,7 +343,7 @@ def create_score_display(self, parent, result):
     details_frame = ttk.Frame(score_display_frame)
     details_frame.pack(side='left', padx=(20, 0), fill='y')
 
-    ttk.Label(details_frame, text="AI Generated Probability",
+    ttk.Label(details_frame, text=_t('gui.academics.ai_detector.analysis_view.labels.ai_generated_probability', default="AI Generated Probability"),
              style='Subtitle.TLabel').pack(anchor='w')
     ttk.Label(details_frame, text=f"Confidence: {confidence:.1%}",
              style='Subtitle.TLabel').pack(anchor='w')
@@ -354,7 +356,7 @@ def create_detailed_analysis(self, parent, result):
     details_frame = ttk.Frame(parent, style='Card.TFrame')
     details_frame.pack(fill='both', expand=True, pady=(0, 10))
 
-    ttk.Label(details_frame, text="Detailed Analysis",
+    ttk.Label(details_frame, text=_t('gui.academics.ai_detector.analysis_view.labels.detailed_analysis', default="Detailed Analysis"),
              style='Title.TLabel').pack(anchor='w', padx=15, pady=(15, 10))
 
     # Analysis notebook
@@ -376,7 +378,7 @@ def create_detailed_analysis(self, parent, result):
 def create_pattern_tab(self, notebook, result):
     """Create pattern analysis tab"""
     pattern_frame = ttk.Frame(notebook)
-    notebook.add(pattern_frame, text="Patterns")
+    notebook.add(pattern_frame, text=_t('gui.academics.ai_detector.analysis_view.tabs.patterns', default="Patterns"))
 
     # Create scrollable frame
     canvas = tk.Canvas(pattern_frame, bg=self.colors['bg_primary'])
@@ -406,7 +408,7 @@ def create_pattern_tab(self, notebook, result):
 
     # If no patterns, show default
     if not patterns:
-        ttk.Label(scrollable_frame, text="No specific patterns detected",
+        ttk.Label(scrollable_frame, text=_t('gui.academics.ai_detector.analysis_view.labels.no_specific_patterns_detected', default="No specific patterns detected"),
                  style='Subtitle.TLabel').pack(pady=20)
 
     canvas.pack(side="left", fill="both", expand=True)
@@ -452,7 +454,7 @@ def create_pattern_indicator(self, parent, pattern_name, pattern_data):
 def create_sentence_tab(self, notebook, result):
     """Create sentence analysis tab"""
     sentence_frame = ttk.Frame(notebook)
-    notebook.add(sentence_frame, text="Sentences")
+    notebook.add(sentence_frame, text=_t('gui.academics.ai_detector.analysis_view.tabs.sentences', default="Sentences"))
 
     # Sentence analysis display
     sentence_analysis = result.get('sentence_analysis', {})
@@ -499,7 +501,7 @@ def create_sentence_tab(self, notebook, result):
         legend_frame = ttk.Frame(sentence_frame)
         legend_frame.pack(fill='x', padx=10, pady=(0, 10))
 
-        ttk.Label(legend_frame, text="Legend:").pack(side='left')
+        ttk.Label(legend_frame, text=_t('gui.academics.ai_detector.analysis_view.labels.legend', default="Legend:")).pack(side='left')
 
         for color, label in [('high_risk', 'High Risk'), ('medium_risk', 'Medium Risk'), ('low_risk', 'Low Risk')]:
             legend_item = tk.Label(legend_frame, text=f"● {label}", fg=self.colors['danger'] if color == 'high_risk'
@@ -507,14 +509,14 @@ def create_sentence_tab(self, notebook, result):
                                  bg=self.colors['bg_primary'])
             legend_item.pack(side='left', padx=(10, 0))
     else:
-        ttk.Label(sentence_frame, text="Sentence analysis not available",
+        ttk.Label(sentence_frame, text=_t('gui.academics.ai_detector.analysis_view.labels.sentence_analysis_not_available', default="Sentence analysis not available"),
                  style='Subtitle.TLabel').pack(expand=True)
 
 
 def create_advanced_analysis_tab(self, notebook, result):
     """Create advanced analysis tab"""
     advanced_frame = ttk.Frame(notebook)
-    notebook.add(advanced_frame, text="Advanced")
+    notebook.add(advanced_frame, text=_t('gui.academics.ai_detector.analysis_view.tabs.advanced', default="Advanced"))
 
     # Advanced analysis results
     advanced_analyses = result.get('advanced_analyses', {})
@@ -540,7 +542,7 @@ def create_advanced_analysis_tab(self, notebook, result):
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
     else:
-        ttk.Label(advanced_frame, text="Advanced analysis not available",
+        ttk.Label(advanced_frame, text=_t('gui.academics.ai_detector.analysis_view.labels.advanced_analysis_not_available', default="Advanced analysis not available"),
                  style='Subtitle.TLabel').pack(expand=True)
 
 
@@ -564,7 +566,7 @@ def create_recommendations(self, parent, result):
     rec_frame = ttk.Frame(parent, style='Card.TFrame')
     rec_frame.pack(fill='x')
 
-    ttk.Label(rec_frame, text="Recommendations",
+    ttk.Label(rec_frame, text=_t('gui.academics.ai_detector.analysis_view.labels.recommendations', default="Recommendations"),
              style='Title.TLabel').pack(anchor='w', padx=15, pady=(15, 10))
 
     # Get recommendations
@@ -604,10 +606,10 @@ def create_recommendations(self, parent, result):
 
 def analysis_error(self, error_message):
     """Handle analysis error"""
-    self.analyze_btn.config(state='normal', text='🔍 Analyze Text')
+    self.analyze_btn.config(state='normal', text=_t('gui.academics.ai_detector.analysis_view.text.analyze_text', default='🔍 Analyze Text'))
     self.show_progress(False)
     self.update_status("Analysis failed")
-    messagebox.showerror("Analysis Error", f"Failed to analyze text:\n{error_message}")
+    messagebox.showerror(_t('gui.academics.ai_detector.analysis_view.dialogs.analysis_error', default="Analysis Error"), f"Failed to analyze text:\n{error_message}")
 
 
 def get_risk_color(self, score):

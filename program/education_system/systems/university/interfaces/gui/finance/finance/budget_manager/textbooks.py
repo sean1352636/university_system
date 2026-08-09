@@ -1,5 +1,7 @@
 """Textbook management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -12,28 +14,28 @@ class TextbooksMixin:
     def create_textbooks_tab(self, notebook):
         """Create textbook comparison and tracking tab"""
         tab = ttk.Frame(notebook, padding="10")
-        notebook.add(tab, text="Textbooks")
+        notebook.add(tab, text=_t('gui.finance.finance.budget_manager.textbooks.tabs.textbooks', default="Textbooks"))
 
         # Search frame
-        search_frame = ttk.LabelFrame(tab, text="Compare Textbook Prices", padding="10")
+        search_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.textbooks.labels.compare_textbook_prices', default="Compare Textbook Prices"), padding="10")
         search_frame.pack(fill=tk.X, pady=(0, 10))
 
         fields = ttk.Frame(search_frame)
         fields.pack(fill=tk.X)
 
-        ttk.Label(fields, text="ISBN:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.textbooks.labels.isbn', default="ISBN:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.textbook_isbn_entry = ttk.Entry(fields, width=20)
         self.textbook_isbn_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(fields, text="Course Code:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.textbooks.labels.course_code', default="Course Code:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.textbook_course_entry = ttk.Entry(fields, width=15)
         self.textbook_course_entry.grid(row=0, column=3, padx=5, pady=5)
 
-        ttk.Button(fields, text="Search Prices",
+        ttk.Button(fields, text=_t('gui.finance.finance.budget_manager.textbooks.buttons.search_prices', default="Search Prices"),
                   command=self.search_textbooks).grid(row=0, column=4, padx=5, pady=5)
 
         # Search results
-        results_frame = ttk.LabelFrame(tab, text="Available Listings", padding="10")
+        results_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.textbooks.labels.available_listings', default="Available Listings"), padding="10")
         results_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         self.textbook_results_tree = ttk.Treeview(results_frame,
@@ -53,7 +55,7 @@ class TextbooksMixin:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # My textbooks
-        my_books_frame = ttk.LabelFrame(tab, text="My Textbook Purchases", padding="10")
+        my_books_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.textbooks.labels.my_textbook_purchases', default="My Textbook Purchases"), padding="10")
         my_books_frame.pack(fill=tk.BOTH, expand=True)
 
         self.my_textbooks_tree = ttk.Treeview(my_books_frame,
@@ -72,7 +74,7 @@ class TextbooksMixin:
         self.my_textbooks_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar2.pack(side=tk.RIGHT, fill=tk.Y)
 
-        ttk.Button(tab, text="Refresh My Textbooks",
+        ttk.Button(tab, text=_t('gui.finance.finance.budget_manager.textbooks.buttons.refresh_my_textbooks', default="Refresh My Textbooks"),
                   command=self.load_my_textbooks).pack(pady=5)
 
     def search_textbooks(self):
@@ -83,7 +85,7 @@ class TextbooksMixin:
             course_code = self.textbook_course_entry.get().strip() or None
 
             if not isbn and not course_code:
-                messagebox.showwarning("Warning", "Please enter ISBN or Course Code.")
+                messagebox.showwarning(_t('gui.finance.finance.budget_manager.textbooks.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.textbooks.dialogs.please_enter_isbn_or_course_code', default="Please enter ISBN or Course Code."))
                 return
 
             from education_system.systems.university.domain.finance.budget.services.budget_service import TextbookComparisonManager
@@ -102,10 +104,10 @@ class TextbooksMixin:
                 ))
 
             if not listings:
-                messagebox.showinfo("Info", "No listings found.")
+                messagebox.showinfo(_t('gui.finance.finance.budget_manager.textbooks.dialogs.info', default="Info"), _t('gui.finance.finance.budget_manager.textbooks.dialogs.no_listings_found', default="No listings found."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to search textbooks: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.textbooks.dialogs.error', default="Error"), f"Failed to search textbooks: {e}")
 
     def load_my_textbooks(self):
         """Load student's textbook purchases"""

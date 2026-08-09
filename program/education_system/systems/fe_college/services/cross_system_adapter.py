@@ -1,0 +1,448 @@
+"""This system's side of the platform transition contract.
+
+FE College joined the cross-system registry alongside apprenticeships, so
+a learner arriving from a secondary school, or converting from a study
+programme onto an apprenticeship, lands as a real record rather than as a
+note on a transition row. See ``platform.cross_system.adapters.base`` for
+the contract; the platform orchestrates and the four methods here answer
+for *this system only*.
+
+The dependency points inwards: nothing in ``platform/`` imports this
+module. It registers itself when :func:`register` is called at launch,
+and the platform then addresses it by the system key ``"fe_college"``.
+
+This lives in ``services/`` rather than a new ``integrations/`` package
+because it is exactly what the layer is for — orchestration over the
+repositories, with the domain rules (``Student.validate``, the status
+vocabulary) still owning correctness.
+
+One rule specific to FE: **the concurrent case is normal here.** An FE
+learner who picks up an apprenticeship usually stays enrolled for the
+qualification the college delivers, so ``close_enrolment`` is only called
+when they have genuinely left. The platform decides that, via
+``close_source=False`` on the transition.
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import date
+from typing import Any
+
+from education_system.platform.cross_system.adapters import registry
+from education_system.platform.cross_system.adapters.base import (
+    AdapterError,
+    ApplicantResult,
+    EnrolmentResult,
+    ExportResult,
+    HandoverRequest,
+    PhaseAdapter,
+)
+from education_system.systems.fe_college.infrastructure.persistence import transaction
+from education_system.systems.fe_college.infrastructure.persistence.schema import init_db
+
+logger = logging.getLogger(__name__)
+
+SYSTEM_KEY = "fe_college"
+
+
+# ---------------------------------------------------------------------------
+# Handover → student fields
+# ---------------------------------------------------------------------------
+
+def _text(value: Any) -> str:
+    """Flatten a handover value into something a TEXT column can hold.
+
+    Returns ``""`` rather than None: the FE ``Student`` model uses empty
+    strings for absent optional text throughout, and mixing the two
+    conventions in one row makes every reader test for both.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        return "; ".join(f"{k}: {v}" for k, v in value.items() if v is not None)
+    if isinstance(value, (list, tuple)):
+        return "; ".join(str(v) for v in value if v is not None)
+    return str(value)
+
+
+def _identity(handover: HandoverRequest) -> dict[str, str]:
+    """Pull name / DOB / ULN out of whichever identity field was sent.
+
+    Boundaries name this field for their own vocabulary
+    (``student_identity`` from secondary, ``learner_identity`` from
+    apprenticeships), and a caller driving the workflow by hand may have
+    put the fields at the top level. All shapes are accepted — refusing a
+    handover over the spelling of a key would strand a real learner.
+    """
+    raw = (handover.get("student_identity")
+           or handover.get("learner_identity")
+           or handover.get("child_identity")
+           or {})
+    if not isinstance(raw, dict):
+        raw = {}
+    merged = {**handover.payload, **raw}
+
+    def pick(*names: str) -> Any:
+        for n in names:
+            if merged.get(n) not in (None, ""):
+                return merged[n]
+        return None
+
+    first = pick("first_name", "given_name", "legal_first_name", "forename")
+    last = pick("last_name", "family_name", "legal_last_name", "surname")
+    full = pick("full_name", "name")
+    if (not first or not last) and isinstance(full, str) and full.strip():
+        parts = full.strip().split()
+        first = first or parts[0]
+        last = last or (" ".join(parts[1:]) or parts[0])
+    return {
+        "first_name": _text(first),
+        "last_name": _text(last),
+        "date_of_birth": _text(pick("date_of_birth", "dob")),
+        "uln": _text(pick("uln", "unique_learner_number")),
+        "email": _text(pick("email", "personal_email")),
+        "phone": _text(pick("phone", "mobile", "telephone")),
+    }
+
+
+def _prior_attainment(handover: HandoverRequest) -> str:
+    """Everything that decides what the learner may enrol onto."""
+    bits = []
+    for key in ("gcse_results", "predicted_grades", "ks2_results",
+                "core_assessments", "prior_attainment", "prior_learning",
+                "achieved_qualifications", "functional_skills",
+                "standard_completed", "epa_result"):
+        text = _text(handover.get(key))
+        if text:
+            bits.append(f"{key.replace('_', ' ')}: {text}")
+    return "\n".join(bits)
+
+
+def _learning_support(handover: HandoverRequest) -> str:
+    """SEND and support detail, as one note.
+
+    These are the sensitive fields; if consent was withheld,
+    ``build_handover`` has already stripped them and this comes back empty.
+    """
+    bits = []
+    for key in ("send_provision", "send_support", "access_arrangements",
+                "support_indicators", "current_interventions",
+                "medical_requirements", "support_referral"):
+        text = _text(handover.get(key))
+        if text:
+            bits.append(f"{key.replace('_', ' ')}: {text}")
+    return "\n".join(bits)
+
+
+def _has_ehcp(handover: HandoverRequest) -> int:
+    """Whether the handover mentions an EHCP anywhere in the SEND fields.
+
+    A keyword test, not a parse: the source systems record EHCP status as
+    free text within a wider SEND field rather than as a flag, and an
+    EHCP that fails to cross is a statutory duty missed. False positives
+    cost a conversation; false negatives cost support the learner is
+    legally entitled to.
+    """
+    haystack = " ".join(
+        _text(handover.get(k)) for k in
+        ("send_provision", "send_support", "access_arrangements",
+         "support_indicators")).lower()
+    return int("ehcp" in haystack or "education, health and care" in haystack)
+
+
+# ---------------------------------------------------------------------------
+# The adapter
+# ---------------------------------------------------------------------------
+
+class FeCollegeAdapter(PhaseAdapter):
+    """FE College's side of the four-method transition contract."""
+
+    system = SYSTEM_KEY
+
+    # ── Destination side ────────────────────────────────────────────
+
+    def create_applicant(self, handover: HandoverRequest) -> ApplicantResult:
+        """Create (or find) the applicant record for an arriving learner.
+
+        Idempotent on ``journey_id``: a redelivered bus event finds the
+        row stamped by the first delivery rather than creating a second
+        learner.
+        """
+        init_db()
+        identity = _identity(handover)
+        if not identity["first_name"] or not identity["last_name"]:
+            raise AdapterError(
+                f"Handover for journey {handover.journey_id} carries no usable "
+                f"name; fe_college cannot create an applicant without one "
+                f"(boundary {handover.boundary})")
+
+        # Imported here, not at module load: the domain module pulls in the
+        # config vocabulary, and an adapter that is registered but never
+        # called should not pay for that.
+        from education_system.systems.fe_college.domain.students.models import (
+            next_student_id,
+        )
+
+        with transaction() as conn:
+            existing = conn.execute(
+                "SELECT student_id, status FROM students WHERE journey_id = ?",
+                (handover.journey_id,)).fetchone()
+            if existing is not None:
+                logger.info(
+                    "Journey %s already has FE learner %s (%s) — handover "
+                    "from %s is a no-op", handover.journey_id,
+                    existing["student_id"], existing["status"],
+                    handover.source_system)
+                return ApplicantResult(
+                    local_applicant_id=existing["student_id"],
+                    notes=f"existing record, status {existing['status']}")
+
+            # A learner may already be here under their ULN without a
+            # journey stamp — created locally before the platform knew
+            # about them. Adopt that row rather than duplicating a person.
+            if identity["uln"]:
+                by_uln = conn.execute(
+                    "SELECT student_id, status FROM students "
+                    "WHERE uln = ? AND uln <> ''",
+                    (identity["uln"],)).fetchone()
+                if by_uln is not None:
+                    conn.execute(
+                        "UPDATE students SET journey_id = ?, "
+                        "updated_at = datetime('now') WHERE student_id = ?",
+                        (handover.journey_id, by_uln["student_id"]))
+                    logger.info(
+                        "Matched journey %s onto existing FE learner %s by ULN",
+                        handover.journey_id, by_uln["student_id"])
+                    return ApplicantResult(
+                        local_applicant_id=by_uln["student_id"],
+                        notes="matched on ULN")
+
+            used = [r[0] for r in conn.execute(
+                "SELECT student_id FROM students").fetchall()]
+            student_id = next_student_id(used)
+
+            # A learner arriving from apprenticeships is on the Apprentice
+            # study programme; everyone else defaults by age band.
+            learner_type = ("Apprentice"
+                            if handover.source_system == "apprenticeships"
+                            else "16-18 Study Programme")
+
+            conn.execute(
+                """INSERT INTO students
+                     (student_id, journey_id, first_name, last_name,
+                      date_of_birth, uln, email, phone, learner_type,
+                      status, prior_attainment, has_ehcp, learning_support,
+                      notes)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'applicant', ?, ?, ?, ?)""",
+                (student_id, handover.journey_id, identity["first_name"],
+                 identity["last_name"], identity["date_of_birth"] or None,
+                 identity["uln"], identity["email"], identity["phone"],
+                 learner_type, _prior_attainment(handover),
+                 _has_ehcp(handover), _learning_support(handover),
+                 f"Arrived from {handover.source_system} via transition "
+                 f"{handover.transition_id or '(none)'}; "
+                 f"journey {handover.journey_id}"))
+
+        logger.info("Created FE applicant %s for journey %s (from %s)",
+                    student_id, handover.journey_id, handover.source_system)
+        return ApplicantResult(
+            local_applicant_id=student_id,
+            institution_id=handover.institution_id,
+            year_group=handover.year_group,
+            notes=f"applicant created from {handover.boundary}")
+
+    def create_enrolment(self, journey_id: str,
+                         application_id: str | None = None,
+                         **details: Any) -> EnrolmentResult:
+        """Promote an accepted applicant to an enrolled learner.
+
+        Idempotent on ``journey_id``: a learner already enrolled (or
+        beyond) is returned untouched rather than having their start date
+        rewritten by a duplicate event.
+
+        Enrolling onto a *course* is a separate act with its own rules
+        (entry requirements, funding, timetable) and stays in
+        ``student_service.enrol``. This method establishes the learner on
+        roll, which is what the platform's contract asks for.
+        """
+        init_db()
+        start_date = details.get("start_date") or date.today().isoformat()
+
+        with transaction() as conn:
+            row = conn.execute(
+                "SELECT student_id, status, start_date FROM students "
+                "WHERE journey_id = ?", (journey_id,)).fetchone()
+            if row is None:
+                raise AdapterError(
+                    f"No FE learner for journey {journey_id}; "
+                    f"create_applicant must run before create_enrolment")
+
+            student_id = row["student_id"]
+            if row["status"] != "applicant":
+                logger.info(
+                    "FE learner %s is already %s — create_enrolment is a "
+                    "no-op", student_id, row["status"])
+                return EnrolmentResult(local_student_id=student_id,
+                                       start_date=row["start_date"],
+                                       notes=f"already {row['status']}")
+
+            patch: dict[str, Any] = {"status": "enrolled",
+                                     "start_date": start_date}
+            for field in ("tutor_group", "personal_tutor", "mode_of_study",
+                          "learner_type"):
+                if details.get(field):
+                    patch[field] = details[field]
+
+            assignments = ", ".join(f"{k} = ?" for k in patch)
+            conn.execute(
+                f"UPDATE students SET {assignments}, "
+                "updated_at = datetime('now') WHERE student_id = ?",
+                [*patch.values(), student_id])
+
+        logger.info("FE learner %s enrolled from %s (journey %s)",
+                    student_id, start_date, journey_id)
+        return EnrolmentResult(
+            local_student_id=student_id,
+            institution_id=details.get("institution_id"),
+            year_group=details.get("year_group"),
+            start_date=start_date,
+            notes="enrolled by cross-system transition")
+
+    # ── Source side ─────────────────────────────────────────────────
+
+    def export_handover(self, local_student_id: str,
+                        consent: bool | set[str] | None = None,
+                        *, destination_system: str | None = None
+                        ) -> ExportResult:
+        """Gather what the college holds about a departing learner.
+
+        Returns everything for the boundary's field keys and lets
+        ``handover.build_handover`` apply consent — filtering here too
+        would put the consent decision in two places, and eventually they
+        would disagree.
+        """
+        init_db()
+        with transaction() as conn:
+            row = conn.execute(
+                "SELECT * FROM students WHERE student_id = ?",
+                (local_student_id,)).fetchone()
+            if row is None:
+                raise AdapterError(
+                    f"No FE learner {local_student_id} to export")
+
+            # Units achieved so far are what a training provider maps
+            # onto recognised prior learning, so they cross as structured
+            # rows rather than as a summary sentence.
+            aims = conn.execute(
+                """SELECT c.title AS course, c.level, c.qualification_type,
+                          e.academic_year, e.status, e.is_main_aim,
+                          e.start_date, e.end_date,
+                          e.predicted_grade, e.final_grade
+                     FROM enrolments e
+                     LEFT JOIN courses c ON c.course_id = e.course_id
+                    WHERE e.student_id = ?
+                    ORDER BY e.is_main_aim DESC, e.academic_year""",
+                (local_student_id,)).fetchall()
+
+        record: dict[str, Any] = {
+            "learner_identity": {
+                "first_name": row["first_name"],
+                "last_name": row["last_name"],
+                "date_of_birth": row["date_of_birth"],
+                "uln": row["uln"],
+            },
+            "contact_details": {
+                "email": row["email"],
+                "phone": row["phone"],
+                "address": row["address"],
+                "postcode": row["postcode"],
+            },
+            "vocational_profile": {
+                "learner_type": row["learner_type"],
+                "mode_of_study": row["mode_of_study"],
+                "status": row["status"],
+                "courses": [dict(a) for a in aims],
+            },
+            "prior_attainment": row["prior_attainment"],
+            "prior_learning": row["prior_attainment"],
+            "send_support": row["learning_support"] or (
+                "EHCP in place" if row["has_ehcp"] else None),
+            "support_indicators": row["learning_support"],
+        }
+
+        logger.info("Exported FE learner %s for handover to %s",
+                    local_student_id, destination_system or "(unspecified)")
+        return ExportResult(record=record,
+                            local_student_id=str(local_student_id))
+
+    def close_enrolment(self, local_student_id: str,
+                        reason: str, **details: Any) -> None:
+        """Close the local record when a learner leaves. Never deletes.
+
+        ``transferred`` when they have gone to another provider or system,
+        ``withdrawn`` otherwise. A record already at a terminal status is
+        left alone.
+
+        Not called for a learner who keeps their college place while
+        starting an apprenticeship — that is the common FE case, and the
+        platform expresses it with ``close_source=False``.
+        """
+        init_db()
+        status = details.get("status") or (
+            "transferred" if "transfer" in reason.lower()
+            or "progress" in reason.lower() else "withdrawn")
+        end_date = details.get("end_date") or date.today().isoformat()
+
+        with transaction() as conn:
+            row = conn.execute(
+                "SELECT status, notes FROM students WHERE student_id = ?",
+                (local_student_id,)).fetchone()
+            if row is None:
+                logger.warning(
+                    "close_enrolment: no FE learner %s (already removed?)",
+                    local_student_id)
+                return
+            if row["status"] in ("withdrawn", "completed", "transferred"):
+                logger.info("FE learner %s is already %s — not re-closing",
+                            local_student_id, row["status"])
+                return
+
+            note = f"{row['notes'] or ''}\nLeft {end_date}: {reason}".strip()
+            conn.execute(
+                "UPDATE students SET status = ?, end_date = ?, notes = ?, "
+                "updated_at = datetime('now') WHERE student_id = ?",
+                (status, end_date, note, local_student_id))
+            # Close the open course enrolments too, or the learner stays
+            # on registers and in achievement returns after they have left.
+            conn.execute(
+                "UPDATE enrolments SET status = 'withdrawn', end_date = ? "
+                "WHERE student_id = ? AND status NOT IN "
+                "('withdrawn', 'completed', 'transferred')",
+                (end_date, local_student_id))
+
+        logger.info("FE learner %s closed as %s (%s)", local_student_id,
+                    status, reason)
+
+
+# ---------------------------------------------------------------------------
+# Registration
+# ---------------------------------------------------------------------------
+
+ADAPTER = FeCollegeAdapter()
+
+
+def register() -> FeCollegeAdapter:
+    """Register this adapter with the platform. Idempotent.
+
+    Called from the launcher rather than at package import: importing the
+    FE College package should not drag the platform's cross-system stack
+    in behind it.
+    """
+    registry.register(ADAPTER, replace=True)
+    return ADAPTER
+
+
+__all__ = ["SYSTEM_KEY", "FeCollegeAdapter", "ADAPTER", "register"]

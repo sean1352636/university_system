@@ -28,14 +28,14 @@ import re
 import sqlite3
 from dataclasses import dataclass
 from typing import Any
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.value_added import (
     value_added as data,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.VALUE_ADDED_DB
+DB_PATH = paths.SIXTH_FORM_VALUE_ADDED_DB
 
 
 # Standard A-Level grade scale plus UCAS-style point values.
@@ -190,7 +190,7 @@ class Summary:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

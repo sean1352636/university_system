@@ -34,19 +34,19 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Tests directory (this file lives at the tests/ root).
-TESTS_DIR = Path(__file__).parent
+# This helper lives in ``university/_support``; the suite root is its parent.
+TESTS_DIR = Path(__file__).resolve().parents[1]
 
 # Top-level layers, in display order.
 LAYERS = [
-    "core",
+    "application",
+    "browser",
+    "contracts",
     "domain",
     "infrastructure",
-    "services",
-    "shared",
     "integration",
-    "sal",
-    "scripts",
+    "interfaces",
+    "services",
     "smoke",
 ]
 
@@ -54,10 +54,6 @@ RUNNER_PYTEST_DEFAULTS = [
     "-o",
     "addopts=",
     "--import-mode=importlib",
-    "--ignore=education_system/post_18/university_system/tests/domain/commerce/restaurant",
-    "--ignore=education_system/post_18/university_system/tests/domain/health",
-    "--ignore=education_system/post_18/university_system/tests/domain/academics/assessment",
-    "--ignore=education_system/post_18/university_system/tests/domain/academics/assignments",
 ]
 
 
@@ -170,7 +166,7 @@ def generate_coverage_report():
     print("\nGenerating coverage report...")
     pytest_args = [
         str(TESTS_DIR),
-        "--cov=university_system",
+        "--cov=education_system.systems.university",
         "--cov-report=html",
         "--cov-report=term",
         "-vv",

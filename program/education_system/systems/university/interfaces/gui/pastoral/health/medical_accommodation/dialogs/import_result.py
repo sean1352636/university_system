@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # dialogs/import_result.py
 # Dialog for showing import results.
 
@@ -21,4 +23,4 @@ class ImportResultDialog:
         result_text_widget.insert(tk.END, result_text)
         result_text_widget.config(state=tk.DISABLED)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.import_result.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)

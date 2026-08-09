@@ -6,7 +6,6 @@ import os
 import re
 import secrets
 import shutil
-import sqlite3
 import sys
 import tkinter as tk
 import webbrowser
@@ -172,6 +171,23 @@ def save_submission(
             "assigned_at, note) VALUES (?,?,?,?,?)",
             (sid, assignee, "auto-rota", now, "Auto-assigned via on-call rota"),
         )
+    from education_system.systems.university.infrastructure.events import (
+        transactional_publisher,
+    )
+    transactional_publisher.publish(
+        conn,
+        "safeguarding.case.raised",
+        {
+            "case_id": sid,
+            "severity": severity,
+            "risk_score": risk_score,
+            "subject_id": subject_id,
+            # Deliberately exclude special-category narrative and transcription.
+            "anonymous": bool(anonymous),
+        },
+        aggregate_id=str(sid),
+        idempotency_key=f"safeguarding:{sid}:raised",
+    )
     conn.commit()
     conn.close()
 

@@ -1,4 +1,6 @@
 """Parking lots tab mixin for ParkingManagementGUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -64,7 +66,7 @@ class LotsMixin:
 
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh lots: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.error', default="Error"), f"Failed to refresh lots: {e}")
 
     def add_lot_dialog(self):
         """Show add lot dialog"""
@@ -77,13 +79,13 @@ class LotsMixin:
                 self.refresh_lots()
                 self.update_status("Parking lot added successfully")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to add parking lot: {e}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.error', default="Error"), f"Failed to add parking lot: {e}")
 
     def edit_selected_lot(self):
         """Edit the selected parking lot"""
         selected = self.lots_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a lot to edit")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.please_select_a_lot_to_edit', default="Please select a lot to edit"))
             return
 
         lot_id = self.lots_tree.item(selected[0])['values'][0]
@@ -104,18 +106,18 @@ class LotsMixin:
                     self.refresh_lots()
                     self.update_status("Parking lot updated successfully")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to edit lot: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.error', default="Error"), f"Failed to edit lot: {e}")
 
     def delete_selected_lot(self):
         """Delete the selected parking lot"""
         selected = self.lots_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a lot to delete")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.please_select_a_lot_to_delete', default="Please select a lot to delete"))
             return
 
         lot_id = self.lots_tree.item(selected[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete lot {lot_id}?"):
+        if messagebox.askyesno(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete lot {lot_id}?"):
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
@@ -126,7 +128,7 @@ class LotsMixin:
                 self.refresh_lots()
                 self.update_status("Parking lot deleted successfully")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete lot: {e}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.error', default="Error"), f"Failed to delete lot: {e}")
 
     def add_lot_from_data(self, data):
         """Add a parking lot from dialog data"""
@@ -186,13 +188,13 @@ class LotsMixin:
             lots = cursor.fetchall()
 
             if not lots:
-                messagebox.showinfo("Info", "No parking lots found.")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.info', default="Info"), _t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.no_parking_lots_found', default="No parking lots found."))
                 conn.close()
                 return
 
             # Create dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Update Available Spaces")
+            dialog.title(_t('gui.operations.campus.mobility.parking_management.tabs.lots.windows.update_available_spaces', default="Update Available Spaces"))
             dialog.geometry("500x400")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -217,7 +219,7 @@ class LotsMixin:
             # Add lot entries
             lot_vars = {}
 
-            ttk.Label(scrollable_frame, text="Update Available Spaces", font=("Arial", 12, "bold")).pack(pady=(0, 10))
+            ttk.Label(scrollable_frame, text=_t('gui.operations.campus.mobility.parking_management.tabs.lots.labels.update_available_spaces', default="Update Available Spaces"), font=("Arial", 12, "bold")).pack(pady=(0, 10))
 
             for lot in lots:
                 lot_frame = ttk.Frame(scrollable_frame)
@@ -244,7 +246,7 @@ class LotsMixin:
                     for lot_id_key, var in lot_vars.items():
                         available = int(var.get())
                         if available < 0:
-                            messagebox.showerror("Error", f"Available spaces for {lot_id_key} cannot be negative.")
+                            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.error', default="Error"), f"Available spaces for {lot_id_key} cannot be negative.")
                             return
 
                         # Get total spaces for validation
@@ -252,7 +254,7 @@ class LotsMixin:
                         total = cursor.fetchone()[0]
 
                         if available > total:
-                            messagebox.showerror("Error", f"Available spaces for {lot_id_key} cannot exceed total spaces ({total}).")
+                            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.error', default="Error"), f"Available spaces for {lot_id_key} cannot exceed total spaces ({total}).")
                             return
 
                         # Update available spaces
@@ -264,14 +266,14 @@ class LotsMixin:
                     dialog.destroy()
 
                 except ValueError:
-                    messagebox.showerror("Error", "Please enter valid numbers for available spaces.")
+                    messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.please_enter_valid_numbers_for_available_spaces', default="Please enter valid numbers for available spaces."))
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to update available spaces: {e}")
+                    messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.error', default="Error"), f"Failed to update available spaces: {e}")
 
-            ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.tabs.lots.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.tabs.lots.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open update dialog: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.lots.dialogs.error', default="Error"), f"Failed to open update dialog: {e}")

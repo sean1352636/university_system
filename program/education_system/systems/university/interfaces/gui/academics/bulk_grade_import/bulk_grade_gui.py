@@ -1,5 +1,7 @@
 """Bulk Grade Import GUI (Feature 25)."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import logging
 import tkinter as tk
@@ -22,9 +24,14 @@ class BulkGradeImportGUI:
             self.instructor_id = auth.current_user.get('username', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Bulk Grade Import")
+        self.window.title(_t('gui.academics.bulk_grade_import.bulk_grade.windows.bulk_grade_import', default="Bulk Grade Import"))
         self.window.geometry("1000x700")
         self.window.transient(parent)
+
+        if not self._has_import_permission():
+            ttk.Label(self.window, text="Access denied", font=('Arial', 16, 'bold')).pack(pady=30)
+            ttk.Label(self.window, text="You are not authorised to import grades.").pack()
+            return
 
         self.parsed_data = []
         self.valid_students = set()
@@ -32,20 +39,56 @@ class BulkGradeImportGUI:
         self._setup_ui()
         self._load_assignments()
 
+    def _has_import_permission(self):
+        """Authenticate and authorize bulk-grade mutations, failing closed."""
+        user = getattr(self.auth, 'current_user', None) if self.auth else None
+        if not user:
+            return False
+        if str(user.get('role', '')).lower() == 'admin':
+            return True
+        if str(user.get('role', '')).lower() not in ('staff', 'instructor', 'faculty'):
+            return False
+        try:
+            return (self.auth.check_permission('manage_grades') or
+                    self.auth.check_permission('enter_grades'))
+        except Exception:
+            return False
+
+    def _can_grade_assignment(self, conn, assignment_id):
+        """Re-resolve assignment ownership using the current authenticated user."""
+        if not self._has_import_permission():
+            return None
+        user = self.auth.current_user
+        role = str(user.get('role', '')).lower()
+        if role == 'admin':
+            return conn.execute(
+                "SELECT id, module_code FROM assignments WHERE id=?", (assignment_id,)
+            ).fetchone()
+        identifiers = (str(user.get('username') or ''), str(user.get('id') or ''))
+        return conn.execute(
+            "SELECT a.id, a.module_code FROM assignments a "
+            "WHERE a.id=? AND (EXISTS (SELECT 1 FROM modules m "
+            "WHERE m.module_code=a.module_code AND m.instructor IN (?, ?)) "
+            "OR EXISTS (SELECT 1 FROM module_schedule ms "
+            "WHERE ms.module_code=a.module_code "
+            "AND CAST(ms.instructor_id AS TEXT) IN (?, ?)))",
+            (assignment_id, identifiers[0], identifiers[1], identifiers[0], identifiers[1]),
+        ).fetchone()
+
     def _setup_ui(self):
         """Build the bulk grade import UI."""
         ttk.Label(
-            self.window, text="Bulk Grade Import",
+            self.window, text=_t('gui.academics.bulk_grade_import.bulk_grade.labels.bulk_grade_import', default="Bulk Grade Import"),
             font=('Arial', 16, 'bold')
         ).pack(pady=(10, 5))
 
         # Top: assignment selector + file selector
-        top_frame = ttk.LabelFrame(self.window, text="Import Settings", padding="10")
+        top_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.bulk_grade_import.bulk_grade.labels.import_settings', default="Import Settings"), padding="10")
         top_frame.pack(fill=tk.X, padx=15, pady=5)
 
         row1 = ttk.Frame(top_frame)
         row1.pack(fill=tk.X, pady=2)
-        ttk.Label(row1, text="Assignment:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text=_t('gui.academics.bulk_grade_import.bulk_grade.labels.assignment', default="Assignment:")).pack(side=tk.LEFT, padx=(0, 5))
         self.assignment_var = tk.StringVar()
         self.assignment_combo = ttk.Combobox(
             row1, textvariable=self.assignment_var,
@@ -55,37 +98,37 @@ class BulkGradeImportGUI:
 
         row2 = ttk.Frame(top_frame)
         row2.pack(fill=tk.X, pady=2)
-        ttk.Label(row2, text="CSV File:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text=_t('gui.academics.bulk_grade_import.bulk_grade.labels.csv_file', default="CSV File:")).pack(side=tk.LEFT, padx=(0, 5))
         self.file_var = tk.StringVar()
         ttk.Entry(row2, textvariable=self.file_var, width=50, state='readonly').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(row2, text="Browse...", command=self._browse_file).pack(side=tk.LEFT, padx=(0, 15))
-        ttk.Button(row2, text="Preview & Validate", command=self._preview_data).pack(side=tk.LEFT)
+        ttk.Button(row2, text=_t('gui.academics.bulk_grade_import.bulk_grade.buttons.browse', default="Browse..."), command=self._browse_file).pack(side=tk.LEFT, padx=(0, 15))
+        ttk.Button(row2, text=_t('gui.academics.bulk_grade_import.bulk_grade.buttons.preview_validate', default="Preview & Validate"), command=self._preview_data).pack(side=tk.LEFT)
 
         # Column mapping
-        map_frame = ttk.LabelFrame(self.window, text="Column Mapping", padding="10")
+        map_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.bulk_grade_import.bulk_grade.labels.column_mapping', default="Column Mapping"), padding="10")
         map_frame.pack(fill=tk.X, padx=15, pady=5)
 
         map_row = ttk.Frame(map_frame)
         map_row.pack(fill=tk.X)
-        ttk.Label(map_row, text="Student ID Column:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(map_row, text=_t('gui.academics.bulk_grade_import.bulk_grade.labels.student_id_column', default="Student ID Column:")).pack(side=tk.LEFT, padx=(0, 5))
         self.sid_col_var = tk.StringVar()
         self.sid_col_combo = ttk.Combobox(map_row, textvariable=self.sid_col_var, state='readonly', width=20)
         self.sid_col_combo.pack(side=tk.LEFT, padx=(0, 15))
 
-        ttk.Label(map_row, text="Grade Column:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(map_row, text=_t('gui.academics.bulk_grade_import.bulk_grade.labels.grade_column', default="Grade Column:")).pack(side=tk.LEFT, padx=(0, 5))
         self.grade_col_var = tk.StringVar()
         self.grade_col_combo = ttk.Combobox(map_row, textvariable=self.grade_col_var, state='readonly', width=20)
         self.grade_col_combo.pack(side=tk.LEFT)
 
         # Preview table
-        tree_frame = ttk.LabelFrame(self.window, text="Preview", padding="5")
+        tree_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.bulk_grade_import.bulk_grade.labels.preview', default="Preview"), padding="5")
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
         cols = ('student_id', 'grade', 'status')
         self.tree = ttk.Treeview(tree_frame, columns=cols, show='headings')
-        self.tree.heading('student_id', text='Student ID')
-        self.tree.heading('grade', text='Grade')
-        self.tree.heading('status', text='Validation Status')
+        self.tree.heading('student_id', text=_t('gui.academics.bulk_grade_import.bulk_grade.headings.student_id', default='Student ID'))
+        self.tree.heading('grade', text=_t('gui.academics.bulk_grade_import.bulk_grade.headings.grade', default='Grade'))
+        self.tree.heading('status', text=_t('gui.academics.bulk_grade_import.bulk_grade.headings.validation_status', default='Validation Status'))
         self.tree.column('student_id', width=200)
         self.tree.column('grade', width=150)
         self.tree.column('status', width=300)
@@ -100,9 +143,9 @@ class BulkGradeImportGUI:
         # Bottom: import button
         btn_frame = ttk.Frame(self.window)
         btn_frame.pack(fill=tk.X, padx=15, pady=10)
-        self.import_btn = ttk.Button(btn_frame, text="Import Grades", command=self._import_grades)
+        self.import_btn = ttk.Button(btn_frame, text=_t('gui.academics.bulk_grade_import.bulk_grade.buttons.import_grades', default="Import Grades"), command=self._import_grades)
         self.import_btn.pack(side=tk.RIGHT)
-        self.status_var = tk.StringVar(value="Select an assignment and CSV file.")
+        self.status_var = tk.StringVar(value=_t('gui.academics.bulk_grade_import.bulk_grade.values.select_an_assignment_and_csv_file', default="Select an assignment and CSV file."))
         ttk.Label(btn_frame, textvariable=self.status_var).pack(side=tk.LEFT)
 
     def _load_assignments(self):
@@ -118,7 +161,7 @@ class BulkGradeImportGUI:
                 role = self.auth.current_user.get('role', '')
 
             with get_connection() as conn:
-                if role in ('admin', 'staff'):
+                if role == 'admin':
                     rows = conn.execute(
                         "SELECT a.id, a.title, a.module_code FROM assignments a "
                         "ORDER BY a.due_date DESC",
@@ -177,8 +220,8 @@ class BulkGradeImportGUI:
 
         if not filepath or not sid_col or not grade_col or not assignment_sel:
             messagebox.showwarning(
-                "Missing Info",
-                "Please select an assignment, CSV file, and map columns.",
+                _t('gui.academics.bulk_grade_import.bulk_grade.dialogs.missing_info', default="Missing Info"),
+                _t('gui.academics.bulk_grade_import.bulk_grade.dialogs.please_select_an_assignment_csv_file_and_map_columns', default="Please select an assignment, CSV file, and map columns."),
                 parent=self.window
             )
             return
@@ -214,7 +257,7 @@ class BulkGradeImportGUI:
                         'grade_str': grade_str,
                     })
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to parse CSV: {e}", parent=self.window)
+            messagebox.showerror(_t('gui.academics.bulk_grade_import.bulk_grade.dialogs.error', default="Error"), f"Failed to parse CSV: {e}", parent=self.window)
             return
 
         # Validate and display
@@ -252,18 +295,18 @@ class BulkGradeImportGUI:
         """Import validated grades into the database."""
         assignment_sel = self.assignment_var.get()
         if not assignment_sel:
-            messagebox.showwarning("No Assignment", "Please select an assignment.", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.bulk_grade_import.bulk_grade.dialogs.no_assignment', default="No Assignment"), _t('gui.academics.bulk_grade_import.bulk_grade.dialogs.please_select_an_assignment', default="Please select an assignment."), parent=self.window)
             return
 
         valid_entries = [e for e in self.parsed_data if e.get('valid')]
         if not valid_entries:
-            messagebox.showwarning("No Valid Data", "No valid entries to import.", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.bulk_grade_import.bulk_grade.dialogs.no_valid_data', default="No Valid Data"), _t('gui.academics.bulk_grade_import.bulk_grade.dialogs.no_valid_entries_to_import', default="No valid entries to import."), parent=self.window)
             return
 
         assignment_id = int(assignment_sel.split(' - ')[0])
 
         if not messagebox.askyesno(
-            "Confirm Import",
+            _t('gui.academics.bulk_grade_import.bulk_grade.dialogs.confirm_import', default="Confirm Import"),
             f"Import grades for {len(valid_entries)} students?",
             parent=self.window
         ):
@@ -272,12 +315,19 @@ class BulkGradeImportGUI:
         imported = 0
         try:
             with transaction() as conn:
+                assignment = self._can_grade_assignment(conn, assignment_id)
+                if not assignment:
+                    raise PermissionError("Assignment access is no longer authorised")
                 for entry in valid_entries:
                     conn.execute(
                         "UPDATE assignment_submissions SET grade = ?, graded_by = ?, "
                         "graded_date = datetime('now') "
-                        "WHERE assignment_id = ? AND student_id = ? AND grade IS NULL",
-                        (entry['grade'], self.instructor_id, assignment_id, entry['student_id'])
+                        "WHERE assignment_id = ? AND student_id = ? AND grade IS NULL "
+                        "AND EXISTS (SELECT 1 FROM student_modules sm "
+                        "WHERE sm.student_id=assignment_submissions.student_id "
+                        "AND sm.module_code=? AND LOWER(sm.status)='enrolled')",
+                        (entry['grade'], self.instructor_id, assignment_id,
+                         entry['student_id'], assignment['module_code'])
                     )
                     if conn.execute("SELECT changes()").fetchone()[0] > 0:
                         imported += 1
@@ -292,11 +342,11 @@ class BulkGradeImportGUI:
                 pass
 
             messagebox.showinfo(
-                "Import Complete",
+                _t('gui.academics.bulk_grade_import.bulk_grade.dialogs.import_complete', default="Import Complete"),
                 f"Successfully imported {imported} grades.",
                 parent=self.window
             )
             self.status_var.set(f"Imported {imported} grades.")
         except Exception as e:
-            logger.error(f"Error importing grades: {e}")
-            messagebox.showerror("Error", f"Import failed: {e}", parent=self.window)
+            logger.exception("Bulk grade import failed")
+            messagebox.showerror(_t('gui.academics.bulk_grade_import.bulk_grade.dialogs.error', default="Error"), "Import failed. Check the file and try again.", parent=self.window)

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.pastoral.internship_management._imports import (
     datetime, messagebox, scrolledtext, tk, ttk, sqlite3, get_connection,
 )
@@ -9,14 +11,14 @@ class ManageInternshipsMixin:
         self.clear_content()
 
         if not self.auth.check_permission('create_internship'):
-            messagebox.showerror("Permission Error", "You don't have permission to create internships.")
+            messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.permission_error', default="Permission Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.you_don_t_have_permission_to_create_internships', default="You don't have permission to create internships."))
             return
 
         # Title
         title_frame = tk.Frame(self.content_frame, bg='white')
         title_frame.pack(fill='x', padx=20, pady=(20, 10))
 
-        tk.Label(title_frame, text="Create New Internship",
+        tk.Label(title_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.create_new_internship', default="Create New Internship"),
                 font=('Arial', 18, 'bold'), bg='white', fg='#2c3e50').pack(side='left')
 
         # Create scrollable form
@@ -37,58 +39,58 @@ class ManageInternshipsMixin:
         form_frame.pack(fill='both', expand=True, padx=40, pady=20)
 
         # Basic Information
-        basic_frame = tk.LabelFrame(form_frame, text="Basic Information",
+        basic_frame = tk.LabelFrame(form_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.basic_information', default="Basic Information"),
                                    font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
         basic_frame.pack(fill='x', pady=(0, 15))
 
-        tk.Label(basic_frame, text="Title:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=0, sticky='w', padx=10, pady=5)
+        tk.Label(basic_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.title', default="Title:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=0, sticky='w', padx=10, pady=5)
         self.title_entry = tk.Entry(basic_frame, font=('Arial', 10), width=50)
         self.title_entry.grid(row=0, column=1, padx=10, pady=5)
 
-        tk.Label(basic_frame, text="Company:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=0, sticky='w', padx=10, pady=5)
+        tk.Label(basic_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.company', default="Company:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=0, sticky='w', padx=10, pady=5)
         self.company_entry = tk.Entry(basic_frame, font=('Arial', 10), width=50)
         self.company_entry.grid(row=1, column=1, padx=10, pady=5)
 
-        tk.Label(basic_frame, text="Location:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=2, column=0, sticky='w', padx=10, pady=5)
+        tk.Label(basic_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.location', default="Location:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=2, column=0, sticky='w', padx=10, pady=5)
         self.location_entry = tk.Entry(basic_frame, font=('Arial', 10), width=50)
         self.location_entry.grid(row=2, column=1, padx=10, pady=5)
 
-        tk.Label(basic_frame, text="Contact Email:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=3, column=0, sticky='w', padx=10, pady=5)
+        tk.Label(basic_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.contact_email', default="Contact Email:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=3, column=0, sticky='w', padx=10, pady=5)
         self.contact_entry = tk.Entry(basic_frame, font=('Arial', 10), width=50)
         self.contact_entry.grid(row=3, column=1, padx=10, pady=5)
 
         # Description and Requirements
-        desc_frame = tk.LabelFrame(form_frame, text="Description & Requirements",
+        desc_frame = tk.LabelFrame(form_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.description_requirements', default="Description & Requirements"),
                                   font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
         desc_frame.pack(fill='x', pady=(0, 15))
 
-        tk.Label(desc_frame, text="Description:", font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', padx=10, pady=(5, 0))
+        tk.Label(desc_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.description', default="Description:"), font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', padx=10, pady=(5, 0))
         self.description_text = scrolledtext.ScrolledText(desc_frame, height=4, wrap='word', font=('Arial', 10))
         self.description_text.pack(fill='x', padx=10, pady=5)
 
-        tk.Label(desc_frame, text="Requirements:", font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', padx=10, pady=(5, 0))
+        tk.Label(desc_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.requirements', default="Requirements:"), font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', padx=10, pady=(5, 0))
         self.requirements_text = scrolledtext.ScrolledText(desc_frame, height=4, wrap='word', font=('Arial', 10))
         self.requirements_text.pack(fill='x', padx=10, pady=5)
 
         # Dates and Compensation
-        details_frame = tk.LabelFrame(form_frame, text="Details",
+        details_frame = tk.LabelFrame(form_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.details', default="Details"),
                                      font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
         details_frame.pack(fill='x', pady=(0, 15))
 
         # Date fields
-        tk.Label(details_frame, text="Start Date (YYYY-MM-DD):", font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=0, sticky='w', padx=10, pady=5)
+        tk.Label(details_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=0, sticky='w', padx=10, pady=5)
         self.start_date_entry = tk.Entry(details_frame, font=('Arial', 10), width=20)
         self.start_date_entry.grid(row=0, column=1, padx=10, pady=5, sticky='w')
 
-        tk.Label(details_frame, text="End Date (YYYY-MM-DD):", font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=2, sticky='w', padx=10, pady=5)
+        tk.Label(details_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=2, sticky='w', padx=10, pady=5)
         self.end_date_entry = tk.Entry(details_frame, font=('Arial', 10), width=20)
         self.end_date_entry.grid(row=0, column=3, padx=10, pady=5, sticky='w')
 
-        tk.Label(details_frame, text="Application Deadline (YYYY-MM-DD):", font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=0, sticky='w', padx=10, pady=5)
+        tk.Label(details_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.application_deadline_yyyy_mm_dd', default="Application Deadline (YYYY-MM-DD):"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=0, sticky='w', padx=10, pady=5)
         self.deadline_entry = tk.Entry(details_frame, font=('Arial', 10), width=20)
         self.deadline_entry.grid(row=1, column=1, padx=10, pady=5, sticky='w')
 
-        tk.Label(details_frame, text="Hours per Week:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=2, sticky='w', padx=10, pady=5)
+        tk.Label(details_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.hours_per_week', default="Hours per Week:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=2, sticky='w', padx=10, pady=5)
         self.hours_entry = tk.Entry(details_frame, font=('Arial', 10), width=20)
         self.hours_entry.grid(row=1, column=3, padx=10, pady=5, sticky='w')
 
@@ -97,10 +99,10 @@ class ManageInternshipsMixin:
         payment_frame.grid(row=2, column=0, columnspan=4, sticky='w', padx=10, pady=5)
 
         self.is_paid_var = tk.BooleanVar()
-        tk.Checkbutton(payment_frame, text="Paid Internship", variable=self.is_paid_var,
+        tk.Checkbutton(payment_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.paid_internship', default="Paid Internship"), variable=self.is_paid_var,
                       font=('Arial', 11), bg='white', fg='#34495e').pack(side='left')
 
-        tk.Label(payment_frame, text="Salary/Stipend:", font=('Arial', 11), bg='white', fg='#34495e').pack(side='left', padx=(20, 5))
+        tk.Label(payment_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.salary_stipend', default="Salary/Stipend:"), font=('Arial', 11), bg='white', fg='#34495e').pack(side='left', padx=(20, 5))
         self.salary_entry = tk.Entry(payment_frame, font=('Arial', 10), width=30)
         self.salary_entry.pack(side='left')
 
@@ -108,9 +110,9 @@ class ManageInternshipsMixin:
         relevance_frame = tk.Frame(details_frame, bg='white')
         relevance_frame.grid(row=3, column=0, columnspan=4, sticky='w', padx=10, pady=5)
 
-        tk.Label(relevance_frame, text="Course Relevance:", font=('Arial', 11), bg='white', fg='#34495e').pack(side='left')
+        tk.Label(relevance_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.course_relevance', default="Course Relevance:"), font=('Arial', 11), bg='white', fg='#34495e').pack(side='left')
 
-        self.course_var = tk.StringVar(value="All")
+        self.course_var = tk.StringVar(value=_t('gui.pastoral.internship_management.manage_internships.values.all', default="All"))
         course_options = [("Computer Science", "CS"), ("Data Science", "DS"), ("All Courses", "All")]
 
         for text, value in course_options:
@@ -121,10 +123,10 @@ class ManageInternshipsMixin:
         btn_frame = tk.Frame(form_frame, bg='white')
         btn_frame.pack(fill='x', pady=20)
 
-        tk.Button(btn_frame, text="Create Internship", command=self.create_new_internship,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.create_internship', default="Create Internship"), command=self.create_new_internship,
                  bg='#27ae60', fg='white', font=('Arial', 12, 'bold'), padx=25, pady=10, relief='flat').pack(side='left', padx=5)
 
-        tk.Button(btn_frame, text="Cancel", command=self.show_internships,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.cancel', default="Cancel"), command=self.show_internships,
                  bg='#6c757d', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
         # Pack canvas and scrollbar
@@ -149,7 +151,7 @@ class ManageInternshipsMixin:
 
             for value, field_name in required_fields:
                 if not value:
-                    messagebox.showerror("Validation Error", f"Please fill in the {field_name} field.")
+                    messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.validation_error', default="Validation Error"), f"Please fill in the {field_name} field.")
                     return
 
             # Validate dates
@@ -159,25 +161,25 @@ class ManageInternshipsMixin:
                 deadline_date = datetime.strptime(self.deadline_entry.get().strip(), "%Y-%m-%d")
 
                 if end_date <= start_date:
-                    messagebox.showerror("Validation Error", "End date must be after start date.")
+                    messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.end_date_must_be_after_start_date', default="End date must be after start date."))
                     return
 
                 if deadline_date >= start_date:
-                    messagebox.showerror("Validation Error", "Application deadline must be before start date.")
+                    messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.application_deadline_must_be_before_start_date', default="Application deadline must be before start date."))
                     return
 
             except ValueError:
-                messagebox.showerror("Validation Error", "Please enter valid dates in YYYY-MM-DD format.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.please_enter_valid_dates_in_yyyy_mm_dd_format', default="Please enter valid dates in YYYY-MM-DD format."))
                 return
 
             # Validate hours
             try:
                 hours = int(self.hours_entry.get().strip())
                 if hours <= 0:
-                    messagebox.showerror("Validation Error", "Hours per week must be greater than 0.")
+                    messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.hours_per_week_must_be_greater_than_0', default="Hours per week must be greater than 0."))
                     return
             except ValueError:
-                messagebox.showerror("Validation Error", "Please enter a valid number for hours per week.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.please_enter_a_valid_number_for_hours_per_week', default="Please enter a valid number for hours per week."))
                 return
 
             # Get text fields
@@ -185,11 +187,11 @@ class ManageInternshipsMixin:
             requirements = self.requirements_text.get('1.0', 'end-1c').strip()
 
             if not description:
-                messagebox.showerror("Validation Error", "Please provide a description.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.please_provide_a_description', default="Please provide a description."))
                 return
 
             if not requirements:
-                messagebox.showerror("Validation Error", "Please provide requirements.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.please_provide_requirements', default="Please provide requirements."))
                 return
 
             # Create internship in database
@@ -233,42 +235,42 @@ class ManageInternshipsMixin:
             # Send announcement email to all students
             self.send_new_internship_announcement(internship_id)
 
-            messagebox.showinfo("Success", f"Internship created successfully! ID: {internship_id}")
+            messagebox.showinfo(_t('gui.pastoral.internship_management.manage_internships.dialogs.success', default="Success"), f"Internship created successfully! ID: {internship_id}")
             self.show_internships()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error creating internship: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.database_error', default="Database Error"), f"Error creating internship: {e}")
 
     def show_manage_internships(self):
         """Show manage internships interface"""
         self.clear_content()
 
         if not self.auth.check_permission('edit_internship'):
-            messagebox.showerror("Permission Error", "You don't have permission to manage internships.")
+            messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.permission_error', default="Permission Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.you_don_t_have_permission_to_manage_internships', default="You don't have permission to manage internships."))
             return
 
         # Title
         title_frame = tk.Frame(self.content_frame, bg='white')
         title_frame.pack(fill='x', padx=20, pady=(20, 10))
 
-        tk.Label(title_frame, text="Manage Internships",
+        tk.Label(title_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.manage_internships', default="Manage Internships"),
                 font=('Arial', 18, 'bold'), bg='white', fg='#2c3e50').pack(side='left')
 
         # Filter frame
         filter_frame = tk.Frame(title_frame, bg='white')
         filter_frame.pack(side='right')
 
-        tk.Label(filter_frame, text="Filter by Status:", font=('Arial', 10),
+        tk.Label(filter_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.filter_by_status', default="Filter by Status:"), font=('Arial', 10),
                 bg='white', fg='#34495e').pack(side='left', padx=(0, 5))
 
-        self.manage_status_filter = tk.StringVar(value="All")
+        self.manage_status_filter = tk.StringVar(value=_t('gui.pastoral.internship_management.manage_internships.values.all', default="All"))
         status_combo = ttk.Combobox(filter_frame, textvariable=self.manage_status_filter,
                                    values=["All", "active", "closed", "filled"],
                                    font=('Arial', 9), state='readonly', width=12)
         status_combo.pack(side='left', padx=5)
         status_combo.bind('<<ComboboxSelected>>', lambda e: self.load_manage_internships_data())
 
-        refresh_btn = tk.Button(filter_frame, text="Refresh", command=self.load_manage_internships_data,
+        refresh_btn = tk.Button(filter_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.refresh', default="Refresh"), command=self.load_manage_internships_data,
                                bg='#27ae60', fg='white', font=('Arial', 10),
                                padx=10, pady=3, relief='flat')
         refresh_btn.pack(side='left', padx=5)
@@ -312,14 +314,14 @@ class ManageInternshipsMixin:
         btn_frame = tk.Frame(self.content_frame, bg='white')
         btn_frame.pack(fill='x', padx=20, pady=10)
 
-        tk.Button(btn_frame, text="View Details", command=self.view_manage_internship_details,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.view_details', default="View Details"), command=self.view_manage_internship_details,
                  bg='#3498db', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
-        tk.Button(btn_frame, text="Edit Internship", command=self.edit_selected_internship,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.edit_internship', default="Edit Internship"), command=self.edit_selected_internship,
                  bg='#f39c12', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
         if self.auth.check_permission('delete_internship'):
-            tk.Button(btn_frame, text="Delete Internship", command=self.delete_selected_internship,
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.delete_internship', default="Delete Internship"), command=self.delete_selected_internship,
                      bg='#e74c3c', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
     def load_manage_internships_data(self):
@@ -370,13 +372,13 @@ class ManageInternshipsMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading internships: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.database_error', default="Database Error"), f"Error loading internships: {e}")
 
     def view_manage_internship_details(self):
         """View details of selected internship from manage view"""
         selection = self.manage_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select an internship to view.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.manage_internships.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.please_select_an_internship_to_view', default="Please select an internship to view."))
             return
 
         item = self.manage_tree.item(selection[0])
@@ -388,7 +390,7 @@ class ManageInternshipsMixin:
         """Edit the selected internship"""
         selection = self.manage_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select an internship to edit.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.manage_internships.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.please_select_an_internship_to_edit', default="Please select an internship to edit."))
             return
 
         item = self.manage_tree.item(selection[0])
@@ -406,7 +408,7 @@ class ManageInternshipsMixin:
             internship = cursor.fetchone()
 
             if not internship:
-                messagebox.showerror("Error", "Internship not found.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.internship_not_found', default="Internship not found."))
                 conn.close()
                 return
 
@@ -439,34 +441,34 @@ class ManageInternshipsMixin:
             form_frame.pack(fill='both', expand=True, padx=40, pady=20)
 
             # Basic Information
-            basic_frame = tk.LabelFrame(form_frame, text="Basic Information",
+            basic_frame = tk.LabelFrame(form_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.basic_information', default="Basic Information"),
                                        font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             basic_frame.pack(fill='x', pady=(0, 15))
 
             fields = {}
 
-            tk.Label(basic_frame, text="Title:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=0, sticky='w', padx=10, pady=5)
+            tk.Label(basic_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.title', default="Title:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=0, sticky='w', padx=10, pady=5)
             fields['title'] = tk.Entry(basic_frame, font=('Arial', 10), width=50)
             fields['title'].grid(row=0, column=1, padx=10, pady=5)
             fields['title'].insert(0, internship[1])
 
-            tk.Label(basic_frame, text="Company:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=0, sticky='w', padx=10, pady=5)
+            tk.Label(basic_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.company', default="Company:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=0, sticky='w', padx=10, pady=5)
             fields['company'] = tk.Entry(basic_frame, font=('Arial', 10), width=50)
             fields['company'].grid(row=1, column=1, padx=10, pady=5)
             fields['company'].insert(0, internship[2])
 
-            tk.Label(basic_frame, text="Location:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=2, column=0, sticky='w', padx=10, pady=5)
+            tk.Label(basic_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.location', default="Location:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=2, column=0, sticky='w', padx=10, pady=5)
             fields['location'] = tk.Entry(basic_frame, font=('Arial', 10), width=50)
             fields['location'].grid(row=2, column=1, padx=10, pady=5)
             fields['location'].insert(0, internship[3])
 
-            tk.Label(basic_frame, text="Contact Email:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=3, column=0, sticky='w', padx=10, pady=5)
+            tk.Label(basic_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.contact_email', default="Contact Email:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=3, column=0, sticky='w', padx=10, pady=5)
             fields['contact'] = tk.Entry(basic_frame, font=('Arial', 10), width=50)
             fields['contact'].grid(row=3, column=1, padx=10, pady=5)
             fields['contact'].insert(0, internship[14])
 
             # Status
-            tk.Label(basic_frame, text="Status:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=4, column=0, sticky='w', padx=10, pady=5)
+            tk.Label(basic_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.status', default="Status:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=4, column=0, sticky='w', padx=10, pady=5)
             status_var = tk.StringVar(value=internship[13])
             status_combo = ttk.Combobox(basic_frame, textvariable=status_var,
                                        values=["active", "closed", "filled"],
@@ -474,41 +476,41 @@ class ManageInternshipsMixin:
             status_combo.grid(row=4, column=1, padx=10, pady=5, sticky='w')
 
             # Description and Requirements
-            desc_frame = tk.LabelFrame(form_frame, text="Description & Requirements",
+            desc_frame = tk.LabelFrame(form_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.description_requirements', default="Description & Requirements"),
                                       font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             desc_frame.pack(fill='x', pady=(0, 15))
 
-            tk.Label(desc_frame, text="Description:", font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', padx=10, pady=(5, 0))
+            tk.Label(desc_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.description', default="Description:"), font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', padx=10, pady=(5, 0))
             fields['description'] = scrolledtext.ScrolledText(desc_frame, height=4, wrap='word', font=('Arial', 10))
             fields['description'].pack(fill='x', padx=10, pady=5)
             fields['description'].insert('1.0', internship[4])
 
-            tk.Label(desc_frame, text="Requirements:", font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', padx=10, pady=(5, 0))
+            tk.Label(desc_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.requirements', default="Requirements:"), font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', padx=10, pady=(5, 0))
             fields['requirements'] = scrolledtext.ScrolledText(desc_frame, height=4, wrap='word', font=('Arial', 10))
             fields['requirements'].pack(fill='x', padx=10, pady=5)
             fields['requirements'].insert('1.0', internship[5])
 
             # Dates and other details
-            details_frame = tk.LabelFrame(form_frame, text="Details",
+            details_frame = tk.LabelFrame(form_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.details', default="Details"),
                                          font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             details_frame.pack(fill='x', pady=(0, 15))
 
-            tk.Label(details_frame, text="Start Date:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=0, sticky='w', padx=10, pady=5)
+            tk.Label(details_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.start_date', default="Start Date:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=0, sticky='w', padx=10, pady=5)
             fields['start_date'] = tk.Entry(details_frame, font=('Arial', 10), width=20)
             fields['start_date'].grid(row=0, column=1, padx=10, pady=5, sticky='w')
             fields['start_date'].insert(0, internship[6])
 
-            tk.Label(details_frame, text="End Date:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=2, sticky='w', padx=10, pady=5)
+            tk.Label(details_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.end_date', default="End Date:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=0, column=2, sticky='w', padx=10, pady=5)
             fields['end_date'] = tk.Entry(details_frame, font=('Arial', 10), width=20)
             fields['end_date'].grid(row=0, column=3, padx=10, pady=5, sticky='w')
             fields['end_date'].insert(0, internship[7])
 
-            tk.Label(details_frame, text="Deadline:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=0, sticky='w', padx=10, pady=5)
+            tk.Label(details_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.deadline', default="Deadline:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=0, sticky='w', padx=10, pady=5)
             fields['deadline'] = tk.Entry(details_frame, font=('Arial', 10), width=20)
             fields['deadline'].grid(row=1, column=1, padx=10, pady=5, sticky='w')
             fields['deadline'].insert(0, internship[12])
 
-            tk.Label(details_frame, text="Hours/Week:", font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=2, sticky='w', padx=10, pady=5)
+            tk.Label(details_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.hours_week', default="Hours/Week:"), font=('Arial', 11), bg='white', fg='#34495e').grid(row=1, column=2, sticky='w', padx=10, pady=5)
             fields['hours'] = tk.Entry(details_frame, font=('Arial', 10), width=20)
             fields['hours'].grid(row=1, column=3, padx=10, pady=5, sticky='w')
             fields['hours'].insert(0, str(internship[10]))
@@ -518,10 +520,10 @@ class ManageInternshipsMixin:
             payment_frame.grid(row=2, column=0, columnspan=4, sticky='w', padx=10, pady=5)
 
             is_paid_var = tk.BooleanVar(value=bool(internship[8]))
-            tk.Checkbutton(payment_frame, text="Paid Internship", variable=is_paid_var,
+            tk.Checkbutton(payment_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.paid_internship', default="Paid Internship"), variable=is_paid_var,
                           font=('Arial', 11), bg='white', fg='#34495e').pack(side='left')
 
-            tk.Label(payment_frame, text="Salary:", font=('Arial', 11), bg='white', fg='#34495e').pack(side='left', padx=(20, 5))
+            tk.Label(payment_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.salary', default="Salary:"), font=('Arial', 11), bg='white', fg='#34495e').pack(side='left', padx=(20, 5))
             fields['salary'] = tk.Entry(payment_frame, font=('Arial', 10), width=30)
             fields['salary'].pack(side='left')
             fields['salary'].insert(0, internship[9])
@@ -530,7 +532,7 @@ class ManageInternshipsMixin:
             relevance_frame = tk.Frame(details_frame, bg='white')
             relevance_frame.grid(row=3, column=0, columnspan=4, sticky='w', padx=10, pady=5)
 
-            tk.Label(relevance_frame, text="Course:", font=('Arial', 11), bg='white', fg='#34495e').pack(side='left')
+            tk.Label(relevance_frame, text=_t('gui.pastoral.internship_management.manage_internships.labels.course', default="Course:"), font=('Arial', 11), bg='white', fg='#34495e').pack(side='left')
 
             course_var = tk.StringVar(value=internship[15])
             for text, value in [("Computer Science", "CS"), ("Data Science", "DS"), ("All Courses", "All")]:
@@ -586,19 +588,19 @@ class ManageInternshipsMixin:
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo("Success", "Internship updated successfully!")
+                    messagebox.showinfo(_t('gui.pastoral.internship_management.manage_internships.dialogs.success', default="Success"), _t('gui.pastoral.internship_management.manage_internships.dialogs.internship_updated_successfully', default="Internship updated successfully!"))
                     edit_window.destroy()
                     self.load_manage_internships_data()
 
                 except ValueError:
-                    messagebox.showerror("Validation Error", "Please check your date and number formats.")
+                    messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.please_check_your_date_and_number_formats', default="Please check your date and number formats."))
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Error updating internship: {e}")
+                    messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.database_error', default="Database Error"), f"Error updating internship: {e}")
 
-            tk.Button(btn_frame, text="Save Changes", command=save_changes,
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.save_changes', default="Save Changes"), command=save_changes,
                      bg='#27ae60', fg='white', font=('Arial', 12, 'bold'), padx=20, pady=8, relief='flat').pack(side='left', padx=5)
 
-            tk.Button(btn_frame, text="Cancel", command=edit_window.destroy,
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.manage_internships.buttons.cancel', default="Cancel"), command=edit_window.destroy,
                      bg='#6c757d', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
             # Pack canvas and scrollbar
@@ -608,13 +610,13 @@ class ManageInternshipsMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading internship for editing: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.database_error', default="Database Error"), f"Error loading internship for editing: {e}")
 
     def delete_selected_internship(self):
         """Delete the selected internship"""
         selection = self.manage_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select an internship to delete.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.manage_internships.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.manage_internships.dialogs.please_select_an_internship_to_delete', default="Please select an internship to delete."))
             return
 
         item = self.manage_tree.item(selection[0])
@@ -623,7 +625,7 @@ class ManageInternshipsMixin:
         company = item['values'][2]
 
         # Confirm deletion
-        result = messagebox.askyesno("Confirm Deletion",
+        result = messagebox.askyesno(_t('gui.pastoral.internship_management.manage_internships.dialogs.confirm_deletion', default="Confirm Deletion"),
                                    f"Are you sure you want to delete '{internship_title}' at {company}?\n\n"
                                    "This will also delete all associated applications and placements.")
 
@@ -642,8 +644,8 @@ class ManageInternshipsMixin:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Internship '{internship_title}' deleted successfully!")
+            messagebox.showinfo(_t('gui.pastoral.internship_management.manage_internships.dialogs.success', default="Success"), f"Internship '{internship_title}' deleted successfully!")
             self.load_manage_internships_data()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error deleting internship: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.manage_internships.dialogs.database_error', default="Database Error"), f"Error deleting internship: {e}")

@@ -219,8 +219,8 @@ class FallbackQueue:
             retry_delays: Delay between retries in seconds (exponential backoff)
         """
         if db_path is None:
-            from education_system.systems.university.infrastructure import paths
-            db_path = str(Path(paths.DATA_DIR) / 'email_queue.db')
+            from education_system import paths
+            db_path = str(Path(paths.UNIVERSITY_DATA_DIR) / 'email_queue.db')
 
         self.db_path = db_path
         self.max_retries = max_retries

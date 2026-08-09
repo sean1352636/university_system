@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -947,7 +949,7 @@ def show_favorites_manager(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Favorite Students", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.predictive.labels.favorite_students', default="Favorite Students"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Load favorites
     try:
@@ -957,7 +959,7 @@ def show_favorites_manager(self):
         self.favorite_students = []
 
     if not self.favorite_students:
-        ttk.Label(frame, text="No favorite students yet.").pack()
+        ttk.Label(frame, text=_t('gui.shell.advanced_search.predictive.labels.no_favorite_students_yet', default="No favorite students yet.")).pack()
         ttk.Button(frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack(pady=(20, 0))
         return
 
@@ -989,7 +991,7 @@ def show_favorites_manager(self):
     def view_favorite():
         selection = favorites_tree.selection()
         if not selection:
-            messagebox.showwarning("_t('advanced_search.no_selection')", "_t('advanced_search.select_student')")
+            messagebox.showwarning(_t('gui.shell.advanced_search.predictive.dialogs.t_advanced_search_no_selection', default="_t('advanced_search.no_selection')"), _t('gui.shell.advanced_search.predictive.dialogs.t_advanced_search_select_student', default="_t('advanced_search.select_student')"))
             return
 
         item = favorites_tree.item(selection[0])
@@ -1013,13 +1015,13 @@ def show_favorites_manager(self):
     def remove_favorite():
         selection = favorites_tree.selection()
         if not selection:
-            messagebox.showwarning("_t('advanced_search.no_selection')", "Please select a student to remove.")
+            messagebox.showwarning(_t('gui.shell.advanced_search.predictive.dialogs.t_advanced_search_no_selection', default="_t('advanced_search.no_selection')"), _t('gui.shell.advanced_search.predictive.dialogs.please_select_a_student_to_remove', default="Please select a student to remove."))
             return
 
         item = favorites_tree.item(selection[0])
         student_name = item['values'][1]
 
-        if messagebox.askyesno("Confirm Remove", f"Remove {student_name} from favorites?"):
+        if messagebox.askyesno(_t('gui.shell.advanced_search.predictive.dialogs.confirm_remove', default="Confirm Remove"), f"Remove {student_name} from favorites?"):
             student_id = item['values'][0]
             self.favorite_students = [fav for fav in self.favorite_students if fav['id'] != student_id]
 
@@ -1046,7 +1048,7 @@ def show_smart_suggestions(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Smart Search Suggestions", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.predictive.labels.smart_search_suggestions', default="Smart Search Suggestions"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Suggestion categories
     notebook = ttk.Notebook(frame)
@@ -1054,7 +1056,7 @@ def show_smart_suggestions(self):
 
     # Popular searches tab
     popular_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(popular_frame, text="Popular Searches")
+    notebook.add(popular_frame, text=_t('gui.shell.advanced_search.predictive.tabs.popular_searches', default="Popular Searches"))
 
     popular_suggestions = [
         "Students enrolled in CS courses",
@@ -1065,7 +1067,7 @@ def show_smart_suggestions(self):
         "Incomplete module enrollments"
     ]
 
-    ttk.Label(popular_frame, text="Most popular search patterns:").pack(anchor='w', pady=(0, 10))
+    ttk.Label(popular_frame, text=_t('gui.shell.advanced_search.predictive.labels.most_popular_search_patterns', default="Most popular search patterns:")).pack(anchor='w', pady=(0, 10))
 
     for suggestion in popular_suggestions:
         btn = ttk.Button(popular_frame, text=f"🔍 {suggestion}",
@@ -1074,14 +1076,14 @@ def show_smart_suggestions(self):
 
     # Recent searches tab
     recent_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(recent_frame, text="Recent Searches")
+    notebook.add(recent_frame, text=_t('gui.shell.advanced_search.predictive.tabs.recent_searches', default="Recent Searches"))
 
-    ttk.Label(recent_frame, text="Your recent searches:").pack(anchor='w', pady=(0, 10))
+    ttk.Label(recent_frame, text=_t('gui.shell.advanced_search.predictive.labels.your_recent_searches', default="Your recent searches:")).pack(anchor='w', pady=(0, 10))
 
     recent_searches = self._load_recent_search_terms(limit=10)
 
     if not recent_searches:
-        ttk.Label(recent_frame, text="(no recorded search activity yet)",
+        ttk.Label(recent_frame, text=_t('gui.shell.advanced_search.predictive.labels.no_recorded_search_activity_yet', default="(no recorded search activity yet)"),
                   foreground="#888").pack(anchor='w', pady=2)
     else:
         for search in recent_searches:
@@ -1091,7 +1093,7 @@ def show_smart_suggestions(self):
 
     # Recommended tab
     recommended_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(recommended_frame, text="Recommended")
+    notebook.add(recommended_frame, text=_t('gui.shell.advanced_search.predictive.tabs.recommended', default="Recommended"))
 
     recommendations = [
         "Students at risk of dropping out",
@@ -1100,7 +1102,7 @@ def show_smart_suggestions(self):
         "Duplicate student records"
     ]
 
-    ttk.Label(recommended_frame, text="Recommended searches based on patterns:").pack(anchor='w', pady=(0, 10))
+    ttk.Label(recommended_frame, text=_t('gui.shell.advanced_search.predictive.labels.recommended_searches_based_on_patterns', default="Recommended searches based on patterns:")).pack(anchor='w', pady=(0, 10))
 
     for recommendation in recommendations:
         btn = ttk.Button(recommended_frame, text=f"💡 {recommendation}",
@@ -1194,7 +1196,7 @@ def show_predictive_analytics(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Predictive Analytics Dashboard", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.predictive.labels.predictive_analytics_dashboard', default="Predictive Analytics Dashboard"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Analytics options
     analytics_notebook = ttk.Notebook(frame)
@@ -1202,11 +1204,11 @@ def show_predictive_analytics(self):
 
     # At-risk students tab
     risk_frame = ttk.Frame(analytics_notebook, padding="10")
-    analytics_notebook.add(risk_frame, text="At-Risk Students")
+    analytics_notebook.add(risk_frame, text=_t('gui.shell.advanced_search.predictive.tabs.at_risk_students', default="At-Risk Students"))
 
-    ttk.Label(risk_frame, text="Identify students at risk of academic failure:").pack(anchor='w', pady=(0, 10))
+    ttk.Label(risk_frame, text=_t('gui.shell.advanced_search.predictive.labels.identify_students_at_risk_of_academic_failure', default="Identify students at risk of academic failure:")).pack(anchor='w', pady=(0, 10))
 
-    risk_criteria_frame = ttk.LabelFrame(risk_frame, text="Risk Criteria", padding="10")
+    risk_criteria_frame = ttk.LabelFrame(risk_frame, text=_t('gui.shell.advanced_search.predictive.labels.risk_criteria', default="Risk Criteria"), padding="10")
     risk_criteria_frame.pack(fill=tk.X, pady=(0, 10))
 
     # Risk factors checkboxes
@@ -1244,19 +1246,19 @@ def show_predictive_analytics(self):
 
         threading.Thread(target=run_risk_analysis, daemon=True).start()
 
-    ttk.Button(risk_frame, text="🔍 Analyze At-Risk Students", command=analyze_at_risk).pack(pady=10)
+    ttk.Button(risk_frame, text=_t('gui.shell.advanced_search.predictive.buttons.analyze_at_risk_students', default="🔍 Analyze At-Risk Students"), command=analyze_at_risk).pack(pady=10)
 
     # Enrollment prediction tab
     enrollment_frame = ttk.Frame(analytics_notebook, padding="10")
-    analytics_notebook.add(enrollment_frame, text="Enrollment Prediction")
+    analytics_notebook.add(enrollment_frame, text=_t('gui.shell.advanced_search.predictive.tabs.enrollment_prediction', default="Enrollment Prediction"))
 
-    ttk.Label(enrollment_frame, text="Predict future enrollment trends:").pack(anchor='w', pady=(0, 10))
+    ttk.Label(enrollment_frame, text=_t('gui.shell.advanced_search.predictive.labels.predict_future_enrollment_trends', default="Predict future enrollment trends:")).pack(anchor='w', pady=(0, 10))
 
-    prediction_frame = ttk.LabelFrame(enrollment_frame, text="Prediction Parameters", padding="10")
+    prediction_frame = ttk.LabelFrame(enrollment_frame, text=_t('gui.shell.advanced_search.predictive.labels.prediction_parameters', default="Prediction Parameters"), padding="10")
     prediction_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(prediction_frame, text="Time Period:").pack(anchor='w')
-    period_var = tk.StringVar(value="next_semester")
+    ttk.Label(prediction_frame, text=_t('gui.shell.advanced_search.predictive.labels.time_period', default="Time Period:")).pack(anchor='w')
+    period_var = tk.StringVar(value=_t('gui.shell.advanced_search.predictive.values.next_semester', default="next_semester"))
 
     periods = [
         ("Next Semester", "next_semester"),
@@ -1285,18 +1287,18 @@ def show_predictive_analytics(self):
 
         threading.Thread(target=run_enrollment_prediction, daemon=True).start()
 
-    ttk.Button(enrollment_frame, text="📈 Generate Predictions", command=predict_enrollment).pack(pady=10)
+    ttk.Button(enrollment_frame, text=_t('gui.shell.advanced_search.predictive.buttons.generate_predictions', default="📈 Generate Predictions"), command=predict_enrollment).pack(pady=10)
 
     # Success probability tab
     success_frame = ttk.Frame(analytics_notebook, padding="10")
-    analytics_notebook.add(success_frame, text="Success Probability")
+    analytics_notebook.add(success_frame, text=_t('gui.shell.advanced_search.predictive.tabs.success_probability', default="Success Probability"))
 
-    ttk.Label(success_frame, text="Calculate module success probability:").pack(anchor='w', pady=(0, 10))
+    ttk.Label(success_frame, text=_t('gui.shell.advanced_search.predictive.labels.calculate_module_success_probability', default="Calculate module success probability:")).pack(anchor='w', pady=(0, 10))
 
-    module_frame = ttk.LabelFrame(success_frame, text="Module Selection", padding="10")
+    module_frame = ttk.LabelFrame(success_frame, text=_t('gui.shell.advanced_search.predictive.labels.module_selection', default="Module Selection"), padding="10")
     module_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(module_frame, text="Select Module:").pack(anchor='w')
+    ttk.Label(module_frame, text=_t('gui.shell.advanced_search.predictive.labels.select_module', default="Select Module:")).pack(anchor='w')
     module_var = tk.StringVar()
     module_combo = ttk.Combobox(module_frame, textvariable=module_var, width=30)
     module_combo.pack(fill=tk.X, pady=(5, 0))
@@ -1333,7 +1335,7 @@ def show_predictive_analytics(self):
 
         threading.Thread(target=run_success_calculation, daemon=True).start()
 
-    ttk.Button(success_frame, text="🎯 Calculate Success Probability", command=calculate_success).pack(pady=10)
+    ttk.Button(success_frame, text=_t('gui.shell.advanced_search.predictive.buttons.calculate_success_probability', default="🎯 Calculate Success Probability"), command=calculate_success).pack(pady=10)
 
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack()
 AdvancedSearchGUI.show_predictive_analytics = show_predictive_analytics
@@ -1566,38 +1568,38 @@ def show_graduation_timeline_forecast(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Graduation Timeline Forecast", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.predictive.labels.graduation_timeline_forecast', default="Graduation Timeline Forecast"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Student selection
-    selection_frame = ttk.LabelFrame(frame, text="Student Selection", padding="10")
+    selection_frame = ttk.LabelFrame(frame, text=_t('gui.shell.advanced_search.predictive.labels.student_selection', default="Student Selection"), padding="10")
     selection_frame.pack(fill=tk.X, pady=(0, 20))
 
-    selection_var = tk.StringVar(value="all")
-    ttk.Radiobutton(selection_frame, text="All students", variable=selection_var, value="all").pack(anchor='w')
-    ttk.Radiobutton(selection_frame, text="Specific course", variable=selection_var, value="course").pack(anchor='w')
-    ttk.Radiobutton(selection_frame, text="Current search results", variable=selection_var, value="results").pack(anchor='w')
+    selection_var = tk.StringVar(value=_t('gui.shell.advanced_search.predictive.values.all', default="all"))
+    ttk.Radiobutton(selection_frame, text=_t('gui.shell.advanced_search.predictive.buttons.all_students', default="All students"), variable=selection_var, value="all").pack(anchor='w')
+    ttk.Radiobutton(selection_frame, text=_t('gui.shell.advanced_search.predictive.buttons.specific_course', default="Specific course"), variable=selection_var, value="course").pack(anchor='w')
+    ttk.Radiobutton(selection_frame, text=_t('gui.shell.advanced_search.predictive.buttons.current_search_results', default="Current search results"), variable=selection_var, value="results").pack(anchor='w')
 
     course_frame = ttk.Frame(selection_frame)
     course_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Label(course_frame, text="Course (if selected):").pack(side=tk.LEFT)
+    ttk.Label(course_frame, text=_t('gui.shell.advanced_search.predictive.labels.course_if_selected', default="Course (if selected):")).pack(side=tk.LEFT)
     course_var = tk.StringVar()
     course_combo = ttk.Combobox(course_frame, textvariable=course_var, values=["CS", "DS"], width=15)
     course_combo.pack(side=tk.LEFT, padx=(10, 0))
 
     # Forecast parameters
-    params_frame = ttk.LabelFrame(frame, text="Forecast Parameters", padding="10")
+    params_frame = ttk.LabelFrame(frame, text=_t('gui.shell.advanced_search.predictive.labels.forecast_parameters', default="Forecast Parameters"), padding="10")
     params_frame.pack(fill=tk.X, pady=(0, 20))
 
-    ttk.Label(params_frame, text="Graduation Requirements:").pack(anchor='w')
+    ttk.Label(params_frame, text=_t('gui.shell.advanced_search.predictive.labels.graduation_requirements', default="Graduation Requirements:")).pack(anchor='w')
     requirements_frame = ttk.Frame(params_frame)
     requirements_frame.pack(fill=tk.X, pady=(5, 0))
 
-    ttk.Label(requirements_frame, text="Minimum Modules:").pack(side=tk.LEFT)
+    ttk.Label(requirements_frame, text=_t('gui.shell.advanced_search.predictive.labels.minimum_modules', default="Minimum Modules:")).pack(side=tk.LEFT)
     min_modules_var = tk.StringVar(value="8")
     ttk.Entry(requirements_frame, textvariable=min_modules_var, width=10).pack(side=tk.LEFT, padx=(10, 20))
 
-    ttk.Label(requirements_frame, text="Minimum GPA:").pack(side=tk.LEFT)
+    ttk.Label(requirements_frame, text=_t('gui.shell.advanced_search.predictive.labels.minimum_gpa', default="Minimum GPA:")).pack(side=tk.LEFT)
     min_gpa_var = tk.StringVar(value="2.0")
     ttk.Entry(requirements_frame, textvariable=min_gpa_var, width=10).pack(side=tk.LEFT, padx=(10, 0))
 
@@ -1626,7 +1628,7 @@ def show_graduation_timeline_forecast(self):
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="📊 Generate Forecast", command=generate_forecast).pack(side=tk.LEFT)
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.predictive.buttons.generate_forecast', default="📊 Generate Forecast"), command=generate_forecast).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_graduation_timeline_forecast = show_graduation_timeline_forecast
 
@@ -1769,10 +1771,10 @@ def module_success_probability(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Module Success Probability Calculator",
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.predictive.labels.module_success_probability_calculator', default="Module Success Probability Calculator"),
              style='Title.TLabel').pack(pady=(0, 20))
 
-    ttk.Label(frame, text="Enter Module Code:").pack(anchor='w')
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.predictive.labels.enter_module_code', default="Enter Module Code:")).pack(anchor='w')
     module_var = tk.StringVar()
     ttk.Entry(frame, textvariable=module_var, width=30).pack(fill=tk.X, pady=(0, 20))
 
@@ -1795,7 +1797,7 @@ def module_success_probability(self):
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="🎯 Calculate", command=calculate).pack(side=tk.LEFT)
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.predictive.buttons.calculate', default="🎯 Calculate"), command=calculate).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.module_success_probability = module_success_probability
 
@@ -1818,7 +1820,7 @@ def graduation_timeline_forecast(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Graduation Timeline Forecast",
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.predictive.labels.graduation_timeline_forecast', default="Graduation Timeline Forecast"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     result_text = scrolledtext.ScrolledText(frame, height=20, wrap=tk.WORD, font=('Courier', 9))
@@ -1901,6 +1903,6 @@ def graduation_timeline_forecast(self):
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="🔄 Refresh", command=generate_forecast).pack(side=tk.LEFT)
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.predictive.buttons.refresh', default="🔄 Refresh"), command=generate_forecast).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.graduation_timeline_forecast = graduation_timeline_forecast

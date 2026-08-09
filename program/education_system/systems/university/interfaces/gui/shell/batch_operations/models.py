@@ -87,8 +87,8 @@ except ImportError:
 
         def __init__(self, db_path: str = DEFAULT_BATCH_DB):
             self.db_path = db_path
-            from education_system.systems.university.infrastructure import paths
-            self.backup_dir = str(paths.BACKUP_DIR)
+            from education_system import paths
+            self.backup_dir = str(paths.UNIVERSITY_BACKUP_DIR)
             self.import_history = []
             self.api_app = None
             self.ensure_backup_directory()

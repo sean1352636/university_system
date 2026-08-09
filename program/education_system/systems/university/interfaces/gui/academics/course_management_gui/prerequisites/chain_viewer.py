@@ -6,15 +6,17 @@ view walks the graph recursively using DFS with cycle detection so a corrupt
 prerequisite graph cannot loop forever.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text as _
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)
 
 _MAX_DEPTH = 12  # Prevents pathological depth even when cycle detection misses.
@@ -29,7 +31,7 @@ class PrerequisiteChainDialog:
         self._courses = []  # list of (id, code, name)
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Prerequisite Chain")
+        self.dialog.title(_t('gui.academics.course_management_gui.prerequisites.chain_viewer.windows.prerequisite_chain', default="Prerequisite Chain"))
         self.dialog.geometry("750x550")
         self.dialog.transient(parent)
 
@@ -39,12 +41,12 @@ class PrerequisiteChainDialog:
     def _build_ui(self):
         top = ttk.Frame(self.dialog, padding=10)
         top.pack(fill=tk.X)
-        ttk.Label(top, text="Prerequisite Chain Viewer",
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.prerequisites.chain_viewer.labels.prerequisite_chain_viewer', default="Prerequisite Chain Viewer"),
                   font=("Arial", 13, "bold")).pack(side=tk.LEFT)
 
         picker = ttk.Frame(self.dialog, padding=(10, 0))
         picker.pack(fill=tk.X)
-        ttk.Label(picker, text="Course:").pack(side=tk.LEFT)
+        ttk.Label(picker, text=_t('gui.academics.course_management_gui.prerequisites.chain_viewer.labels.course', default="Course:")).pack(side=tk.LEFT)
         self.course_var = tk.StringVar()
         self.course_combo = ttk.Combobox(picker, textvariable=self.course_var,
                                          width=60, state="readonly")
@@ -55,8 +57,8 @@ class PrerequisiteChainDialog:
         body = ttk.Frame(self.dialog, padding=10)
         body.pack(fill=tk.BOTH, expand=True)
         self.tree = ttk.Treeview(body, columns=("type",), show="tree headings", height=22)
-        self.tree.heading("#0", text="Course")
-        self.tree.heading("type", text="Requirement")
+        self.tree.heading("#0", text=_t('gui.academics.course_management_gui.prerequisites.chain_viewer.headings.course', default="Course"))
+        self.tree.heading("type", text=_t('gui.academics.course_management_gui.prerequisites.chain_viewer.headings.requirement', default="Requirement"))
         self.tree.column("#0", width=420)
         self.tree.column("type", width=200, anchor=tk.W)
         scroll = ttk.Scrollbar(body, orient=tk.VERTICAL, command=self.tree.yview)

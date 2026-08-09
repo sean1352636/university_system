@@ -4,17 +4,30 @@ Data endpoints query the real system databases and return JSON for the
 frontend SPA to consume.
 """
 
+import html
 import logging
 import os
+import secrets
 import sqlite3
 from pathlib import Path
 
-from flask import Blueprint, send_from_directory, g, jsonify, current_app
+from flask import (
+    Blueprint,
+    current_app,
+    g,
+    jsonify,
+    make_response,
+    redirect,
+    send_from_directory,
+)
+
+from education_system.paths import PLATFORM_UI_TEMPLATES_DIR
+from education_system.platform.delivery.api.static_files import send_static_asset
 
 logger = logging.getLogger(__name__)
 
 _DIR = Path(__file__).parent
-_TEMPLATE_DIR = _DIR / "templates"
+_TEMPLATE_DIR = PLATFORM_UI_TEMPLATES_DIR
 _STATIC_DIR = _DIR / "static"
 _PORTAL_DIR = _DIR / "portal"
 _PORTAL_ASSETS_DIR = _PORTAL_DIR / "assets"
@@ -29,7 +42,6 @@ web_bp = Blueprint("web_frontend", __name__)
 
 # ── Static file serving ──────────────────────────────────────────────
 
-@web_bp.route("/")
 @web_bp.route("/web")
 @web_bp.route("/web/login")
 @web_bp.route("/web/dashboard")
@@ -37,9 +49,15 @@ def serve_index():
     return send_from_directory(str(_TEMPLATE_DIR), "index.html")
 
 
+@web_bp.route("/")
+def welcome():
+    """Make the multi-system welcome portal the server landing page."""
+    return redirect("/portal/")
+
+
 @web_bp.route("/web/static/<path:filename>")
 def serve_static(filename):
-    return send_from_directory(str(_STATIC_DIR), filename)
+    return send_static_asset(_STATIC_DIR, filename)
 
 
 # ── Multi-page portal (new HTML site) ────────────────────────────────
@@ -47,7 +65,7 @@ def serve_static(filename):
 @web_bp.route("/portal/")
 @web_bp.route("/portal")
 def portal_home():
-    return send_from_directory(str(_PORTAL_DIR), "index.html")
+    return _serve_portal_page("index.html")
 
 
 @web_bp.route("/portal/<page>.html")
@@ -56,12 +74,62 @@ def portal_page(page):
     # stops the route from serving unrelated files by accident.
     if page not in _PORTAL_PAGES:
         return jsonify({"error": "Not found"}), 404
-    return send_from_directory(str(_PORTAL_DIR), f"{page}.html")
+    return _serve_portal_page(f"{page}.html")
+
+
+def _serve_portal_page(filename: str):
+    """Serve portal HTML with a per-response nonce for its inline script."""
+    nonce = secrets.token_urlsafe(24)
+    html = (_PORTAL_DIR / filename).read_text(encoding="utf-8")
+    html = html.replace("<script>", f'<script nonce="{nonce}">')
+    response = make_response(html)
+    response.headers["Content-Type"] = "text/html; charset=utf-8"
+    response._custom_csp = True
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        f"script-src 'self' 'nonce-{nonce}'; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' data: https://fonts.gstatic.com; "
+        "connect-src 'self'; frame-ancestors 'none'; "
+        "base-uri 'self'; form-action 'self'"
+    )
+    return response
+
+
+# ── ICT security-awareness simulation ───────────────────────────────
+
+@web_bp.route("/security-training/invitation")
+def security_training_invitation():
+    """Record a signed simulation click and show the training invitation."""
+    from flask import request
+    from education_system.platform.governance.security.training_simulation import (
+        SecurityTrainingSimulation, SimulationError, invitation_html,
+    )
+    try:
+        from education_system.platform.identity.auth.db import AUTH_DB_FILE
+        from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+        signing_key = os.environ.get("SECURITY_TRAINING_SIGNING_KEY") or current_app.config["SECRET_KEY"]
+        service = SecurityTrainingSimulation(
+            str(AUTH_DB_FILE), str(UNIVERSITY_DEFAULT_DB_PATH), signing_key,
+            request.host_url.rstrip("/"),
+        )
+        result = service.record_click(request.args.get("token", ""))
+        response = make_response(invitation_html(result), 200)
+    except SimulationError as exc:
+        response = make_response(
+            f"<!doctype html><title>Invalid invitation</title><h1>Invitation unavailable</h1><p>{html.escape(str(exc))}</p>",
+            400,
+        )
+    response.headers["Content-Type"] = "text/html; charset=utf-8"
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'"
+    return response
 
 
 @web_bp.route("/portal/assets/<path:filename>")
 def portal_assets(filename):
-    return send_from_directory(str(_PORTAL_ASSETS_DIR), filename)
+    return send_static_asset(_PORTAL_ASSETS_DIR, filename)
 
 
 # ── Database resolution ──────────────────────────────────────────────
@@ -88,8 +156,8 @@ def _resolve_db(system_key: str) -> str | None:
     """
     try:
         if system_key == "university":
-            from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-            return str(DEFAULT_DB_PATH) if Path(DEFAULT_DB_PATH).exists() else None
+            from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+            return str(UNIVERSITY_DEFAULT_DB_PATH) if Path(UNIVERSITY_DEFAULT_DB_PATH).exists() else None
         path = _SYSTEM_DB_PATHS.get(system_key)
         if path is not None:
             return str(path) if path.exists() else None
@@ -193,8 +261,7 @@ def _prettify(segment: str) -> str:
 def _modules_for_system(system_key: str) -> list[dict]:
     """Derive the list of API modules for *system_key* from the URL map.
 
-    Returns ``[{"key", "label", "path"}]`` sorted by label. Handles the
-    sixth-form doubled prefix (/api/v1/sixthform/sixthform/<module>).
+    Returns ``[{"key", "label", "path"}]`` sorted by label.
     """
     prefix = _SYSTEM_ROUTE_PREFIX.get(system_key)
     if not prefix:
@@ -207,15 +274,11 @@ def _modules_for_system(system_key: str) -> list[dict]:
         rest = rule.rule[len(base):].strip("/").split("/")
         if not rest or not rest[0]:
             continue
-        # Skip the doubled system segment (sixth-form): .../sixthform/sixthform/<module>
-        idx = 1 if (len(rest) > 1 and rest[0] == prefix) else 0
-        if idx >= len(rest):
-            continue
-        seg = rest[idx]
+        seg = rest[0]
         if not seg or seg in _NON_MODULE_SEGMENTS or seg.startswith("<"):
             continue
         if seg not in seen:
-            seen[seg] = base + ("/".join(rest[:idx] + [seg]))
+            seen[seg] = base + seg
     mods = [{"key": k, "label": _prettify(k), "path": p} for k, p in seen.items()]
     mods.sort(key=lambda m: m["label"])
     return mods
@@ -504,6 +567,50 @@ def _is_admin() -> bool:
     return any(s.get("role") == "admin" for s in systems)
 
 
+@web_bp.route("/api/v1/web/superadmin/security-training/campaigns", methods=["POST"])
+@_require_token
+def launch_security_training_campaign():
+    """Launch an authorised click-only ICT awareness simulation."""
+    if not _is_superadmin():
+        return jsonify({"error": "Superadmin access required"}), 403
+
+    from flask import request
+    from education_system.platform.governance.security.training_simulation import (
+        SecurityTrainingSimulation, SimulationError,
+    )
+
+    body = request.get_json(silent=True) or {}
+    for field in ("recipient_user_id", "target_system", "training_date"):
+        if body.get(field) in (None, ""):
+            return jsonify({"error": f"Missing field: {field}"}), 400
+    if body["target_system"] not in _SYSTEM_KEYS:
+        return jsonify({"error": "Invalid target_system"}), 400
+
+    try:
+        from education_system.platform.identity.auth.db import AUTH_DB_FILE
+        from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+        signing_key = os.environ.get("SECURITY_TRAINING_SIGNING_KEY") or current_app.config["SECRET_KEY"]
+        service = SecurityTrainingSimulation(
+            str(AUTH_DB_FILE), str(UNIVERSITY_DEFAULT_DB_PATH), signing_key,
+            request.host_url.rstrip("/"),
+        )
+        result = service.launch(
+            target_user_id=int(body["recipient_user_id"]),
+            target_system=body["target_system"],
+            training_date=body["training_date"],
+            created_by=int(g.current_user["user_id"]),
+            course_name=body.get("course_name", "ICT Security Awareness Training"),
+            location=body.get("location", "Online"),
+            training_time=body.get("training_time", "09:00"),
+        )
+        return jsonify(result), 201 if result["failed"] == 0 else 207
+    except (SimulationError, TypeError, ValueError) as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        logger.exception("Failed to launch ICT security training campaign")
+        return jsonify({"error": "Internal server error"}), 500
+
+
 def _system_health(system_key: str) -> dict:
     """Gather health info for a single system."""
     db = _resolve_db(system_key)
@@ -778,8 +885,8 @@ def session_heartbeat():
             return jsonify({"active": True})
         return jsonify({"active": False, "reason": "session_terminated"}), 401
     except Exception:
-        # If we can't check, assume valid to avoid false logouts
-        return jsonify({"active": True})
+        logger.exception("Session heartbeat verification failed")
+        return jsonify({"active": False, "reason": "session_verification_unavailable"}), 503
 
 
 # ── Active Sessions endpoint (admin + superadmin) ────────────────────

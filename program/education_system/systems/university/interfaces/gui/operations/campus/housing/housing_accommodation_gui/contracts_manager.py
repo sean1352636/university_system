@@ -7,6 +7,8 @@ metadata in ``housing_contract_documents``.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import sqlite3
 import subprocess
@@ -33,13 +35,13 @@ def show_contracts(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Lease / Contract Documents",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.labels.lease_contract_documents', default="Lease / Contract Documents"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
 
     pick = ttk.Frame(parent)
     pick.pack(fill="x", padx=8, pady=4)
-    ttk.Label(pick, text="Assignment:").pack(side="left", padx=(0, 4))
+    ttk.Label(pick, text=_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.labels.assignment', default="Assignment:")).pack(side="left", padx=(0, 4))
     asg_var = tk.StringVar()
     combo = ttk.Combobox(pick, textvariable=asg_var, state="readonly",
                           width=68)
@@ -93,7 +95,7 @@ def show_contracts(gui_instance) -> None:
             return
         path = filedialog.askopenfilename(
             parent=gui_instance.root,
-            title="Select contract document",
+            title=_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.dialogs.select_contract_document', default="Select contract document"),
             filetypes=[("PDF / scans", "*.pdf *.png *.jpg *.jpeg *.tif"),
                        ("All files", "*.*")])
         if not path:
@@ -110,12 +112,12 @@ def show_contracts(gui_instance) -> None:
                 asgs[i][0], path, uploaded_by=who, notes=notes)
         except Exception as e:
             logger.exception("Contract upload failed")
-            messagebox.showerror("Upload", f"Upload failed:\n\n{e}",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.dialogs.upload', default="Upload"), f"Upload failed:\n\n{e}",
                                   parent=gui_instance.root)
             return
         if not did:
-            messagebox.showerror("Upload",
-                                  "Upload failed (see logs).",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.dialogs.upload', default="Upload"),
+                                  _t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.dialogs.upload_failed_see_logs', default="Upload failed (see logs)."),
                                   parent=gui_instance.root)
             return
         log_activity(f"Contract document {did} attached to {asgs[i][0]}")
@@ -135,14 +137,14 @@ def show_contracts(gui_instance) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Open contract failed")
-            messagebox.showerror("Open", f"DB error:\n\n{e}",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.dialogs.open', default="Open"), f"DB error:\n\n{e}",
                                   parent=gui_instance.root)
             return
         if not row:
             return
         path = Path(row[0])
         if not path.exists():
-            messagebox.showerror("Open",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.dialogs.open', default="Open"),
                                   f"File missing on disk:\n{path}",
                                   parent=gui_instance.root)
             return
@@ -152,7 +154,7 @@ def show_contracts(gui_instance) -> None:
         sel = tree.focus()
         if not sel:
             return
-        if not messagebox.askyesno("Delete",
+        if not messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.dialogs.delete', default="Delete"),
                                      f"Delete document {sel}?",
                                      parent=gui_instance.root):
             return
@@ -160,16 +162,16 @@ def show_contracts(gui_instance) -> None:
             log_activity(f"Contract document {sel} deleted")
             reload()
         else:
-            messagebox.showerror("Delete",
-                                  "Delete failed (see logs).",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.dialogs.delete', default="Delete"),
+                                  _t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.dialogs.delete_failed_see_logs', default="Delete failed (see logs)."),
                                   parent=gui_instance.root)
 
-    ttk.Button(bar, text="Upload…", command=upload).pack(side="left")
-    ttk.Button(bar, text="Open selected",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.buttons.upload', default="Upload…"), command=upload).pack(side="left")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.buttons.open_selected', default="Open selected"),
                command=open_selected).pack(side="left", padx=4)
-    ttk.Button(bar, text="Delete selected",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.buttons.delete_selected', default="Delete selected"),
                command=delete_selected).pack(side="left", padx=4)
-    ttk.Button(bar, text="Refresh",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.contracts_manager.buttons.refresh', default="Refresh"),
                command=reload).pack(side="right")
 
     reload()

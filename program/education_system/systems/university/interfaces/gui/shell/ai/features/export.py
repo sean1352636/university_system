@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import messagebox, filedialog
 import json
@@ -25,7 +27,7 @@ class ExportMixin:
                 filename = filedialog.asksaveasfilename(
                     defaultextension=".json",
                     filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv"), ("Text files", "*.txt")],
-                    title="Export Conversation History"
+                    title=_t('gui.shell.ai.features.export.dialogs.export_conversation_history', default="Export Conversation History")
                 )
 
                 if filename:
@@ -77,7 +79,7 @@ class ExportMixin:
                 filename = filedialog.asksaveasfilename(
                     defaultextension=".backup",
                     filetypes=[("Backup files", "*.backup"), ("JSON files", "*.json")],
-                    title="Create System Backup"
+                    title=_t('gui.shell.ai.features.export.dialogs.create_system_backup', default="Create System Backup")
                 )
 
                 if filename:

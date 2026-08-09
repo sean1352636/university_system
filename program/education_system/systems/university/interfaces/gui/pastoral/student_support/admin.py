@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -11,7 +13,7 @@ from typing import Dict, List, Optional, Any
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import i18n for language support
 from education_system.systems.university.infrastructure.i18n import (
@@ -44,8 +46,8 @@ except ImportError:
     render_template = lambda *args, **kwargs: (None, None)
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this module when targeting the
@@ -161,7 +163,7 @@ class AdminMixin:
         self.clear_content()
 
         templates_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(templates_frame, text="🔧 Manage Templates")
+        self.notebook.add(templates_frame, text=_t('gui.pastoral.student_support.admin.tabs.manage_templates', default="🔧 Manage Templates"))
 
         # Configure frame to expand
         templates_frame.rowconfigure(0, weight=1)
@@ -169,11 +171,11 @@ class AdminMixin:
 
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(templates_frame, text="❌ Staff access required",
+            ttk.Label(templates_frame, text=_t('gui.pastoral.student_support.admin.labels.staff_access_required', default="❌ Staff access required"),
                      style='Title.TLabel').pack(pady=20)
             return
 
-        ttk.Label(templates_frame, text="🔧 Template Management",
+        ttk.Label(templates_frame, text=_t('gui.pastoral.student_support.admin.labels.template_management', default="🔧 Template Management"),
                  style='Title.TLabel').pack(pady=(0, 20))
 
         # Create notebook for ticket and response templates
@@ -182,23 +184,23 @@ class AdminMixin:
 
         # Ticket Templates Tab
         ticket_template_frame = ttk.Frame(template_notebook, padding=10)
-        template_notebook.add(ticket_template_frame, text="🎫 Ticket Templates")
+        template_notebook.add(ticket_template_frame, text=_t('gui.pastoral.student_support.admin.tabs.ticket_templates', default="🎫 Ticket Templates"))
 
         # Ticket templates controls
         ticket_controls = ttk.Frame(ticket_template_frame)
         ticket_controls.pack(fill=tk.X, pady=10)
 
-        ttk.Button(ticket_controls, text="➕ Create Ticket Template",
+        ttk.Button(ticket_controls, text=_t('gui.pastoral.student_support.admin.buttons.create_ticket_template', default="➕ Create Ticket Template"),
                   command=lambda: self.create_ticket_template()).pack(side=tk.LEFT, padx=5)
-        ttk.Button(ticket_controls, text="✏️ Edit Template",
+        ttk.Button(ticket_controls, text=_t('gui.pastoral.student_support.admin.buttons.edit_template', default="✏️ Edit Template"),
                   command=lambda: self.edit_ticket_template()).pack(side=tk.LEFT, padx=5)
-        ttk.Button(ticket_controls, text="🗑️ Delete Template",
+        ttk.Button(ticket_controls, text=_t('gui.pastoral.student_support.admin.buttons.delete_template', default="🗑️ Delete Template"),
                   command=lambda: self.delete_ticket_template()).pack(side=tk.LEFT, padx=5)
-        ttk.Button(ticket_controls, text="🔄 Refresh",
+        ttk.Button(ticket_controls, text=_t('gui.pastoral.student_support.admin.buttons.refresh', default="🔄 Refresh"),
                   command=lambda: self.refresh_ticket_templates()).pack(side=tk.LEFT, padx=5)
 
         # Ticket templates list
-        ticket_list_frame = ttk.LabelFrame(ticket_template_frame, text="Ticket Templates", padding=10)
+        ticket_list_frame = ttk.LabelFrame(ticket_template_frame, text=_t('gui.pastoral.student_support.admin.labels.ticket_templates', default="Ticket Templates"), padding=10)
         ticket_list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         columns = ("ID", "Name", "Category", "Priority", "Created By", "Created Date", "Usage Count")
@@ -223,23 +225,23 @@ class AdminMixin:
 
         # Response Templates Tab
         response_template_frame = ttk.Frame(template_notebook, padding=10)
-        template_notebook.add(response_template_frame, text="💬 Response Templates")
+        template_notebook.add(response_template_frame, text=_t('gui.pastoral.student_support.admin.tabs.response_templates', default="💬 Response Templates"))
 
         # Response templates controls
         response_controls = ttk.Frame(response_template_frame)
         response_controls.pack(fill=tk.X, pady=10)
 
-        ttk.Button(response_controls, text="➕ Create Response Template",
+        ttk.Button(response_controls, text=_t('gui.pastoral.student_support.admin.buttons.create_response_template', default="➕ Create Response Template"),
                   command=lambda: self.create_response_template()).pack(side=tk.LEFT, padx=5)
-        ttk.Button(response_controls, text="✏️ Edit Template",
+        ttk.Button(response_controls, text=_t('gui.pastoral.student_support.admin.buttons.edit_template', default="✏️ Edit Template"),
                   command=lambda: self.edit_response_template()).pack(side=tk.LEFT, padx=5)
-        ttk.Button(response_controls, text="🗑️ Delete Template",
+        ttk.Button(response_controls, text=_t('gui.pastoral.student_support.admin.buttons.delete_template', default="🗑️ Delete Template"),
                   command=lambda: self.delete_response_template()).pack(side=tk.LEFT, padx=5)
-        ttk.Button(response_controls, text="🔄 Refresh",
+        ttk.Button(response_controls, text=_t('gui.pastoral.student_support.admin.buttons.refresh', default="🔄 Refresh"),
                   command=lambda: self.refresh_response_templates()).pack(side=tk.LEFT, padx=5)
 
         # Response templates list
-        response_list_frame = ttk.LabelFrame(response_template_frame, text="Response Templates", padding=10)
+        response_list_frame = ttk.LabelFrame(response_template_frame, text=_t('gui.pastoral.student_support.admin.labels.response_templates', default="Response Templates"), padding=10)
         response_list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         columns = ("ID", "Name", "Subject", "Category", "Created By", "Created Date", "Usage Count")
@@ -307,7 +309,7 @@ class AdminMixin:
 
             # Load JSON file templates from ticket_templates directory
             try:
-                ticket_templates_dir = paths.TICKET_TEMPLATES_DIR
+                ticket_templates_dir = paths.UNIVERSITY_TICKET_TEMPLATES_DIR
                 if ticket_templates_dir.exists():
                     for json_file in ticket_templates_dir.glob("*.json"):
                         try:
@@ -336,7 +338,7 @@ class AdminMixin:
             self.update_status(f"Loaded {template_count} ticket templates")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load ticket templates: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to load ticket templates: {e}")
 
     def refresh_response_templates(self):
         """Refresh response templates list"""
@@ -377,12 +379,12 @@ class AdminMixin:
             self.update_status(f"Loaded {len(templates)} response templates")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load response templates: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to load response templates: {e}")
 
     def create_ticket_template(self):
         """Create a new ticket template"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("➕ Create Ticket Template")
+        dialog.title(_t('gui.pastoral.student_support.admin.windows.create_ticket_template', default="➕ Create Ticket Template"))
         dialog.geometry("1200x750")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -390,15 +392,15 @@ class AdminMixin:
         form_frame = ttk.Frame(dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
 
-        ttk.Label(form_frame, text="➕ Create Ticket Template", style='Heading.TLabel').pack(pady=(0, 20))
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.create_ticket_template', default="➕ Create Ticket Template"), style='Heading.TLabel').pack(pady=(0, 20))
 
         # Name
-        ttk.Label(form_frame, text="Template Name:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.template_name', default="Template Name:")).pack(anchor="w")
         name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=name_var, width=50).pack(fill="x", pady=(5, 10))
 
         # Category
-        ttk.Label(form_frame, text="Category:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.category', default="Category:")).pack(anchor="w")
         category_var = tk.StringVar()
         category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=47)
         category_combo.pack(fill="x", pady=(5, 10))
@@ -406,7 +408,7 @@ class AdminMixin:
             category_combo.current(0)
 
         # Priority
-        ttk.Label(form_frame, text="Priority:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.priority', default="Priority:")).pack(anchor="w")
         priority_var = tk.StringVar()
         priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, values=TICKET_PRIORITIES, state="readonly", width=47)
         priority_combo.pack(fill="x", pady=(5, 10))
@@ -414,12 +416,12 @@ class AdminMixin:
             priority_combo.current(1)  # Default to Medium
 
         # Title Template
-        ttk.Label(form_frame, text="Title Template:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.title_template', default="Title Template:")).pack(anchor="w")
         title_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=title_var, width=50).pack(fill="x", pady=(5, 10))
 
         # Description Template
-        ttk.Label(form_frame, text="Description Template:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.description_template', default="Description Template:")).pack(anchor="w")
         desc_text = scrolledtext.ScrolledText(form_frame, height=8, width=50)
         desc_text.pack(fill="both", expand=True, pady=(5, 10))
 
@@ -435,27 +437,27 @@ class AdminMixin:
             description_template = desc_text.get("1.0", tk.END).strip()
 
             if not all([name, category, priority, title_template, description_template]):
-                messagebox.showerror("Error", "All fields are required")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.all_fields_are_required', default="All fields are required"))
                 return
 
             try:
                 template_id = self.support.create_ticket_template(
                     name, title_template, description_template, category, priority
                 )
-                messagebox.showinfo("Success", f"Ticket template created successfully (ID: {template_id})")
+                messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), f"Ticket template created successfully (ID: {template_id})")
                 dialog.destroy()
                 self.refresh_ticket_templates()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create template: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to create template: {e}")
 
-        ttk.Button(btn_frame, text="💾 Save", command=save_template).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.save', default="💾 Save"), command=save_template).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.cancel', default="❌ Cancel"), command=dialog.destroy).pack(side="left")
 
     def edit_ticket_template(self):
         """Edit selected ticket template"""
         selection = self.ticket_templates_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a template to edit")
+            messagebox.showwarning(_t('gui.pastoral.student_support.admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.admin.dialogs.please_select_a_template_to_edit', default="Please select a template to edit"))
             return
 
         item = self.ticket_templates_tree.item(selection[0])
@@ -471,10 +473,10 @@ class AdminMixin:
             conn.close()
 
             if not template:
-                messagebox.showerror("Error", "Template not found")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.template_not_found', default="Template not found"))
                 return
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load template: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to load template: {e}")
             return
 
         # Create edit dialog
@@ -490,29 +492,29 @@ class AdminMixin:
         ttk.Label(form_frame, text=f"✏️ Edit Ticket Template #{template_id}", style='Heading.TLabel').pack(pady=(0, 20))
 
         # Name
-        ttk.Label(form_frame, text="Template Name:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.template_name', default="Template Name:")).pack(anchor="w")
         name_var = tk.StringVar(value=template['name'])
         ttk.Entry(form_frame, textvariable=name_var, width=50).pack(fill="x", pady=(5, 10))
 
         # Category
-        ttk.Label(form_frame, text="Category:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.category', default="Category:")).pack(anchor="w")
         category_var = tk.StringVar(value=template['category'])
         category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=47)
         category_combo.pack(fill="x", pady=(5, 10))
 
         # Priority
-        ttk.Label(form_frame, text="Priority:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.priority', default="Priority:")).pack(anchor="w")
         priority_var = tk.StringVar(value=template['priority'])
         priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, values=TICKET_PRIORITIES, state="readonly", width=47)
         priority_combo.pack(fill="x", pady=(5, 10))
 
         # Title Template
-        ttk.Label(form_frame, text="Title Template:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.title_template', default="Title Template:")).pack(anchor="w")
         title_var = tk.StringVar(value=template['subject_template'])
         ttk.Entry(form_frame, textvariable=title_var, width=50).pack(fill="x", pady=(5, 10))
 
         # Description Template
-        ttk.Label(form_frame, text="Description Template:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.description_template', default="Description Template:")).pack(anchor="w")
         desc_text = scrolledtext.ScrolledText(form_frame, height=8, width=50)
         desc_text.insert("1.0", template['message_template'])
         desc_text.pack(fill="both", expand=True, pady=(5, 10))
@@ -529,7 +531,7 @@ class AdminMixin:
             description_template = desc_text.get("1.0", tk.END).strip()
 
             if not all([name, category, priority, title_template, description_template]):
-                messagebox.showerror("Error", "All fields are required")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.all_fields_are_required', default="All fields are required"))
                 return
 
             try:
@@ -544,27 +546,27 @@ class AdminMixin:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Template updated successfully")
+                messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), _t('gui.pastoral.student_support.admin.dialogs.template_updated_successfully', default="Template updated successfully"))
                 dialog.destroy()
                 self.refresh_ticket_templates()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update template: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to update template: {e}")
 
-        ttk.Button(btn_frame, text="💾 Save Changes", command=save_changes).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.save_changes', default="💾 Save Changes"), command=save_changes).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.cancel', default="❌ Cancel"), command=dialog.destroy).pack(side="left")
 
     def delete_ticket_template(self):
         """Delete selected ticket template"""
         selection = self.ticket_templates_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a template to delete")
+            messagebox.showwarning(_t('gui.pastoral.student_support.admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.admin.dialogs.please_select_a_template_to_delete', default="Please select a template to delete"))
             return
 
         item = self.ticket_templates_tree.item(selection[0])
         template_id = item['values'][0]
         template_name = item['values'][1]
 
-        if not messagebox.askyesno("Confirm Delete",
+        if not messagebox.askyesno(_t('gui.pastoral.student_support.admin.dialogs.confirm_delete', default="Confirm Delete"),
                                    f"Are you sure you want to delete template '{template_name}'?\n\nThis action cannot be undone."):
             return
 
@@ -575,15 +577,15 @@ class AdminMixin:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Template deleted successfully")
+            messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), _t('gui.pastoral.student_support.admin.dialogs.template_deleted_successfully', default="Template deleted successfully"))
             self.refresh_ticket_templates()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete template: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to delete template: {e}")
 
     def create_response_template(self):
         """Create a new response template"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("➕ Create Response Template")
+        dialog.title(_t('gui.pastoral.student_support.admin.windows.create_response_template', default="➕ Create Response Template"))
         dialog.geometry("1200x750")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -591,27 +593,27 @@ class AdminMixin:
         form_frame = ttk.Frame(dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
 
-        ttk.Label(form_frame, text="➕ Create Response Template", style='Heading.TLabel').pack(pady=(0, 20))
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.create_response_template', default="➕ Create Response Template"), style='Heading.TLabel').pack(pady=(0, 20))
 
         # Name
-        ttk.Label(form_frame, text="Template Name:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.template_name', default="Template Name:")).pack(anchor="w")
         name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=name_var, width=50).pack(fill="x", pady=(5, 10))
 
         # Subject
-        ttk.Label(form_frame, text="Subject:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.subject', default="Subject:")).pack(anchor="w")
         subject_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=subject_var, width=50).pack(fill="x", pady=(5, 10))
 
         # Category
-        ttk.Label(form_frame, text="Category (optional):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.category_optional', default="Category (optional):")).pack(anchor="w")
         category_var = tk.StringVar()
         category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=47)
         category_combo.pack(fill="x", pady=(5, 10))
 
         # Content
-        ttk.Label(form_frame, text="Content:").pack(anchor="w")
-        ttk.Label(form_frame, text="Use variables: {student_name}, {ticket_id}, {ticket_title}",
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.content', default="Content:")).pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.use_variables_student_name_ticket_id_ticket_title', default="Use variables: {student_name}, {ticket_id}, {ticket_title}"),
                  font=('Segoe UI', 8), foreground='gray').pack(anchor="w")
         content_text = scrolledtext.ScrolledText(form_frame, height=10, width=50)
         content_text.pack(fill="both", expand=True, pady=(5, 10))
@@ -627,27 +629,27 @@ class AdminMixin:
             content = content_text.get("1.0", tk.END).strip()
 
             if not all([name, subject, content]):
-                messagebox.showerror("Error", "Name, subject, and content are required")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.name_subject_and_content_are_required', default="Name, subject, and content are required"))
                 return
 
             try:
                 template_id = self.support.create_response_template(
                     name, subject, content, category, ['student_name', 'ticket_id', 'ticket_title']
                 )
-                messagebox.showinfo("Success", f"Response template created successfully (ID: {template_id})")
+                messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), f"Response template created successfully (ID: {template_id})")
                 dialog.destroy()
                 self.refresh_response_templates()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create template: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to create template: {e}")
 
-        ttk.Button(btn_frame, text="💾 Save", command=save_template).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.save', default="💾 Save"), command=save_template).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.cancel', default="❌ Cancel"), command=dialog.destroy).pack(side="left")
 
     def edit_response_template(self):
         """Edit selected response template"""
         selection = self.response_templates_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a template to edit")
+            messagebox.showwarning(_t('gui.pastoral.student_support.admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.admin.dialogs.please_select_a_template_to_edit', default="Please select a template to edit"))
             return
 
         item = self.response_templates_tree.item(selection[0])
@@ -663,10 +665,10 @@ class AdminMixin:
             conn.close()
 
             if not template:
-                messagebox.showerror("Error", "Template not found")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.template_not_found', default="Template not found"))
                 return
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load template: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to load template: {e}")
             return
 
         # Create edit dialog
@@ -682,23 +684,23 @@ class AdminMixin:
         ttk.Label(form_frame, text=f"✏️ Edit Response Template #{template_id}", style='Heading.TLabel').pack(pady=(0, 20))
 
         # Name
-        ttk.Label(form_frame, text="Template Name:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.template_name', default="Template Name:")).pack(anchor="w")
         name_var = tk.StringVar(value=template['name'])
         ttk.Entry(form_frame, textvariable=name_var, width=50).pack(fill="x", pady=(5, 10))
 
         # Subject
-        ttk.Label(form_frame, text="Subject:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.subject', default="Subject:")).pack(anchor="w")
         subject_var = tk.StringVar(value=template['subject'])
         ttk.Entry(form_frame, textvariable=subject_var, width=50).pack(fill="x", pady=(5, 10))
 
         # Category
-        ttk.Label(form_frame, text="Category (optional):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.category_optional', default="Category (optional):")).pack(anchor="w")
         category_var = tk.StringVar(value=template['category'] or '')
         category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=47)
         category_combo.pack(fill="x", pady=(5, 10))
 
         # Content
-        ttk.Label(form_frame, text="Content:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.content', default="Content:")).pack(anchor="w")
         content_text = scrolledtext.ScrolledText(form_frame, height=10, width=50)
         content_text.insert("1.0", template['content'])
         content_text.pack(fill="both", expand=True, pady=(5, 10))
@@ -714,7 +716,7 @@ class AdminMixin:
             content = content_text.get("1.0", tk.END).strip()
 
             if not all([name, subject, content]):
-                messagebox.showerror("Error", "Name, subject, and content are required")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.name_subject_and_content_are_required', default="Name, subject, and content are required"))
                 return
 
             try:
@@ -728,27 +730,27 @@ class AdminMixin:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Template updated successfully")
+                messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), _t('gui.pastoral.student_support.admin.dialogs.template_updated_successfully', default="Template updated successfully"))
                 dialog.destroy()
                 self.refresh_response_templates()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update template: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to update template: {e}")
 
-        ttk.Button(btn_frame, text="💾 Save Changes", command=save_changes).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.save_changes', default="💾 Save Changes"), command=save_changes).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.cancel', default="❌ Cancel"), command=dialog.destroy).pack(side="left")
 
     def delete_response_template(self):
         """Delete selected response template"""
         selection = self.response_templates_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a template to delete")
+            messagebox.showwarning(_t('gui.pastoral.student_support.admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.admin.dialogs.please_select_a_template_to_delete', default="Please select a template to delete"))
             return
 
         item = self.response_templates_tree.item(selection[0])
         template_id = item['values'][0]
         template_name = item['values'][1]
 
-        if not messagebox.askyesno("Confirm Delete",
+        if not messagebox.askyesno(_t('gui.pastoral.student_support.admin.dialogs.confirm_delete', default="Confirm Delete"),
                                    f"Are you sure you want to delete template '{template_name}'?\n\nThis action cannot be undone."):
             return
 
@@ -759,17 +761,17 @@ class AdminMixin:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Template deleted successfully")
+            messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), _t('gui.pastoral.student_support.admin.dialogs.template_deleted_successfully', default="Template deleted successfully"))
             self.refresh_response_templates()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete template: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to delete template: {e}")
 
     def show_manage_kb(self):
         """Show knowledge base management interface (staff only)"""
         self.clear_content()
 
         kb_mgmt_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(kb_mgmt_frame, text="📖 Manage KB")
+        self.notebook.add(kb_mgmt_frame, text=_t('gui.pastoral.student_support.admin.tabs.manage_kb', default="📖 Manage KB"))
 
         # Configure frame to expand
         kb_mgmt_frame.rowconfigure(0, weight=1)
@@ -777,40 +779,40 @@ class AdminMixin:
 
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(kb_mgmt_frame, text="❌ Staff access required",
+            ttk.Label(kb_mgmt_frame, text=_t('gui.pastoral.student_support.admin.labels.staff_access_required', default="❌ Staff access required"),
                      style='Title.TLabel').pack(pady=20)
             return
 
-        ttk.Label(kb_mgmt_frame, text="📖 Knowledge Base Management",
+        ttk.Label(kb_mgmt_frame, text=_t('gui.pastoral.student_support.admin.labels.knowledge_base_management', default="📖 Knowledge Base Management"),
                  style='Title.TLabel').pack(pady=(0, 20))
 
         # Knowledge base management UI
         kb_controls = ttk.Frame(kb_mgmt_frame)
         kb_controls.pack(fill=tk.X, pady=10)
 
-        ttk.Button(kb_controls, text="➕ Add Article", command=self.add_kb_article).pack(side=tk.LEFT, padx=5)
-        ttk.Button(kb_controls, text="✏️ Edit Article", command=self.edit_kb_article).pack(side=tk.LEFT, padx=5)
-        ttk.Button(kb_controls, text="📢 Publish Article", command=self.publish_kb_article).pack(side=tk.LEFT, padx=5)
-        ttk.Button(kb_controls, text="🗑️ Delete Article", command=self.delete_kb_article).pack(side=tk.LEFT, padx=5)
-        ttk.Button(kb_controls, text="🔄 Refresh", command=self.refresh_kb_articles).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text=_t('gui.pastoral.student_support.admin.buttons.add_article', default="➕ Add Article"), command=self.add_kb_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text=_t('gui.pastoral.student_support.admin.buttons.edit_article', default="✏️ Edit Article"), command=self.edit_kb_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text=_t('gui.pastoral.student_support.admin.buttons.publish_article', default="📢 Publish Article"), command=self.publish_kb_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text=_t('gui.pastoral.student_support.admin.buttons.delete_article', default="🗑️ Delete Article"), command=self.delete_kb_article).pack(side=tk.LEFT, padx=5)
+        ttk.Button(kb_controls, text=_t('gui.pastoral.student_support.admin.buttons.refresh', default="🔄 Refresh"), command=self.refresh_kb_articles).pack(side=tk.LEFT, padx=5)
 
         # Search and filter frame
         search_frame = ttk.Frame(kb_mgmt_frame)
         search_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.pastoral.student_support.admin.labels.search', default="Search:")).pack(side=tk.LEFT, padx=5)
         self.kb_search_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=self.kb_search_var, width=30).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="🔍 Search", command=self.search_kb_articles).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="🔄 Clear", command=self.clear_kb_search).pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text=_t('gui.pastoral.student_support.admin.buttons.search', default="🔍 Search"), command=self.search_kb_articles).pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text=_t('gui.pastoral.student_support.admin.buttons.clear', default="🔄 Clear"), command=self.clear_kb_search).pack(side=tk.LEFT, padx=5)
 
         # Show all toggle
         self.kb_show_all_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(search_frame, text="Show Unpublished", variable=self.kb_show_all_var,
+        ttk.Checkbutton(search_frame, text=_t('gui.pastoral.student_support.admin.buttons.show_unpublished', default="Show Unpublished"), variable=self.kb_show_all_var,
                        command=self.refresh_kb_articles).pack(side=tk.LEFT, padx=10)
 
         # KB articles list
-        kb_list_frame = ttk.LabelFrame(kb_mgmt_frame, text="Knowledge Base Articles", padding=10)
+        kb_list_frame = ttk.LabelFrame(kb_mgmt_frame, text=_t('gui.pastoral.student_support.admin.labels.knowledge_base_articles', default="Knowledge Base Articles"), padding=10)
         kb_list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         columns = ("ID", "Title", "Category", "Status", "Views", "Helpful", "Author", "Last Updated")
@@ -882,7 +884,7 @@ class AdminMixin:
             self.update_status(f"Loaded {len(articles)} KB articles")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load KB articles: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to load KB articles: {e}")
 
     def search_kb_articles(self):
         """Search KB articles"""
@@ -940,7 +942,7 @@ class AdminMixin:
             self.update_status(f"Found {len(articles)} articles matching '{query}'")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to search KB articles: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to search KB articles: {e}")
 
     def clear_kb_search(self):
         """Clear KB search"""
@@ -950,7 +952,7 @@ class AdminMixin:
     def add_kb_article(self):
         """Create a new KB article"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("➕ Create KB Article")
+        dialog.title(_t('gui.pastoral.student_support.admin.windows.create_kb_article', default="➕ Create KB Article"))
         dialog.geometry("1300x800")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -958,15 +960,15 @@ class AdminMixin:
         form_frame = ttk.Frame(dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
 
-        ttk.Label(form_frame, text="➕ Create Knowledge Base Article", style='Heading.TLabel').pack(pady=(0, 20))
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.create_knowledge_base_article', default="➕ Create Knowledge Base Article"), style='Heading.TLabel').pack(pady=(0, 20))
 
         # Title
-        ttk.Label(form_frame, text="Title:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.title', default="Title:")).pack(anchor="w")
         title_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=title_var, width=60).pack(fill="x", pady=(5, 10))
 
         # Category
-        ttk.Label(form_frame, text="Category:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.category', default="Category:")).pack(anchor="w")
         category_var = tk.StringVar()
         category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=57)
         category_combo.pack(fill="x", pady=(5, 10))
@@ -974,23 +976,23 @@ class AdminMixin:
             category_combo.current(0)
 
         # Summary
-        ttk.Label(form_frame, text="Summary (optional):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.summary_optional', default="Summary (optional):")).pack(anchor="w")
         summary_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=summary_var, width=60).pack(fill="x", pady=(5, 10))
 
         # Tags
-        ttk.Label(form_frame, text="Tags (comma-separated):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.tags_comma_separated', default="Tags (comma-separated):")).pack(anchor="w")
         tags_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=tags_var, width=60).pack(fill="x", pady=(5, 10))
 
         # Content
-        ttk.Label(form_frame, text="Content:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.content', default="Content:")).pack(anchor="w")
         content_text = scrolledtext.ScrolledText(form_frame, height=12, width=60)
         content_text.pack(fill="both", expand=True, pady=(5, 10))
 
         # Publish immediately checkbox
         publish_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(form_frame, text="Publish immediately", variable=publish_var).pack(anchor="w", pady=5)
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.student_support.admin.buttons.publish_immediately', default="Publish immediately"), variable=publish_var).pack(anchor="w", pady=5)
 
         # Buttons
         btn_frame = ttk.Frame(form_frame)
@@ -1006,7 +1008,7 @@ class AdminMixin:
             is_published = publish_var.get()
 
             if not all([title, category, content]):
-                messagebox.showerror("Error", "Title, category, and content are required")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.title_category_and_content_are_required', default="Title, category, and content are required"))
                 return
 
             try:
@@ -1014,20 +1016,20 @@ class AdminMixin:
                     title, content, category, summary, tags, is_published
                 )
                 status = "published" if is_published else "created as draft"
-                messagebox.showinfo("Success", f"KB article {status} successfully (ID: {article_id})")
+                messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), f"KB article {status} successfully (ID: {article_id})")
                 dialog.destroy()
                 self.refresh_kb_articles()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create article: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to create article: {e}")
 
-        ttk.Button(btn_frame, text="💾 Save", command=save_article).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.save', default="💾 Save"), command=save_article).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.cancel', default="❌ Cancel"), command=dialog.destroy).pack(side="left")
 
     def edit_kb_article(self):
         """Edit selected KB article"""
         selection = self.kb_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an article to edit")
+            messagebox.showwarning(_t('gui.pastoral.student_support.admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.admin.dialogs.please_select_an_article_to_edit', default="Please select an article to edit"))
             return
 
         item = self.kb_tree.item(selection[0])
@@ -1043,10 +1045,10 @@ class AdminMixin:
             conn.close()
 
             if not article:
-                messagebox.showerror("Error", "Article not found")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.article_not_found', default="Article not found"))
                 return
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load article: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to load article: {e}")
             return
 
         # Create edit dialog
@@ -1062,23 +1064,23 @@ class AdminMixin:
         ttk.Label(form_frame, text=f"✏️ Edit KB Article #{article_id}", style='Heading.TLabel').pack(pady=(0, 20))
 
         # Title
-        ttk.Label(form_frame, text="Title:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.title', default="Title:")).pack(anchor="w")
         title_var = tk.StringVar(value=article['title'])
         ttk.Entry(form_frame, textvariable=title_var, width=60).pack(fill="x", pady=(5, 10))
 
         # Category
-        ttk.Label(form_frame, text="Category:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.category', default="Category:")).pack(anchor="w")
         category_var = tk.StringVar(value=article['category'])
         category_combo = ttk.Combobox(form_frame, textvariable=category_var, values=SUPPORT_CATEGORIES, state="readonly", width=57)
         category_combo.pack(fill="x", pady=(5, 10))
 
         # Summary
-        ttk.Label(form_frame, text="Summary (optional):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.summary_optional', default="Summary (optional):")).pack(anchor="w")
         summary_var = tk.StringVar(value=article['summary'] or '')
         ttk.Entry(form_frame, textvariable=summary_var, width=60).pack(fill="x", pady=(5, 10))
 
         # Tags
-        ttk.Label(form_frame, text="Tags (comma-separated):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.tags_comma_separated', default="Tags (comma-separated):")).pack(anchor="w")
         try:
             tags_list = json.loads(article['tags']) if article['tags'] else []
             tags_str = ', '.join(tags_list)
@@ -1088,7 +1090,7 @@ class AdminMixin:
         ttk.Entry(form_frame, textvariable=tags_var, width=60).pack(fill="x", pady=(5, 10))
 
         # Content
-        ttk.Label(form_frame, text="Content:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.admin.labels.content', default="Content:")).pack(anchor="w")
         content_text = scrolledtext.ScrolledText(form_frame, height=12, width=60)
         content_text.insert("1.0", article['content'])
         content_text.pack(fill="both", expand=True, pady=(5, 10))
@@ -1106,7 +1108,7 @@ class AdminMixin:
             content = content_text.get("1.0", tk.END).strip()
 
             if not all([title, category, content]):
-                messagebox.showerror("Error", "Title, category, and content are required")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.title_category_and_content_are_required', default="Title, category, and content are required"))
                 return
 
             try:
@@ -1120,20 +1122,20 @@ class AdminMixin:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Article updated successfully")
+                messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), _t('gui.pastoral.student_support.admin.dialogs.article_updated_successfully', default="Article updated successfully"))
                 dialog.destroy()
                 self.refresh_kb_articles()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update article: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to update article: {e}")
 
-        ttk.Button(btn_frame, text="💾 Save Changes", command=save_changes).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.save_changes', default="💾 Save Changes"), command=save_changes).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.admin.buttons.cancel', default="❌ Cancel"), command=dialog.destroy).pack(side="left")
 
     def publish_kb_article(self):
         """Publish selected KB article"""
         selection = self.kb_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an article to publish")
+            messagebox.showwarning(_t('gui.pastoral.student_support.admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.admin.dialogs.please_select_an_article_to_publish', default="Please select an article to publish"))
             return
 
         item = self.kb_tree.item(selection[0])
@@ -1142,32 +1144,32 @@ class AdminMixin:
         status = item['values'][3]
 
         if status == "Published":
-            messagebox.showinfo("Info", "This article is already published")
+            messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.info', default="Info"), _t('gui.pastoral.student_support.admin.dialogs.this_article_is_already_published', default="This article is already published"))
             return
 
-        if not messagebox.askyesno("Confirm Publish",
+        if not messagebox.askyesno(_t('gui.pastoral.student_support.admin.dialogs.confirm_publish', default="Confirm Publish"),
                                    f"Publish article '{article_title}'?\n\nThis will make it visible to all users."):
             return
 
         try:
             self.support.publish_kb_article(article_id)
-            messagebox.showinfo("Success", "Article published successfully")
+            messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), _t('gui.pastoral.student_support.admin.dialogs.article_published_successfully', default="Article published successfully"))
             self.refresh_kb_articles()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to publish article: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to publish article: {e}")
 
     def delete_kb_article(self):
         """Delete selected KB article"""
         selection = self.kb_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an article to delete")
+            messagebox.showwarning(_t('gui.pastoral.student_support.admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.admin.dialogs.please_select_an_article_to_delete', default="Please select an article to delete"))
             return
 
         item = self.kb_tree.item(selection[0])
         article_id = item['values'][0]
         article_title = item['values'][1]
 
-        if not messagebox.askyesno("Confirm Delete",
+        if not messagebox.askyesno(_t('gui.pastoral.student_support.admin.dialogs.confirm_delete', default="Confirm Delete"),
                                    f"Are you sure you want to delete article '{article_title}'?\n\nThis action cannot be undone."):
             return
 
@@ -1178,10 +1180,10 @@ class AdminMixin:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Article deleted successfully")
+            messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), _t('gui.pastoral.student_support.admin.dialogs.article_deleted_successfully', default="Article deleted successfully"))
             self.refresh_kb_articles()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete article: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to delete article: {e}")
 
     def view_kb_article_details(self):
         """View detailed information about a KB article"""
@@ -1201,7 +1203,7 @@ class AdminMixin:
             conn.close()
 
             if not article:
-                messagebox.showerror("Error", "Article not found")
+                messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.article_not_found', default="Article not found"))
                 return
 
             # Create detail window
@@ -1246,14 +1248,14 @@ class AdminMixin:
 
             # Summary
             if article['summary']:
-                ttk.Label(scrollable_frame, text="Summary:", font=('Segoe UI', 11, 'bold')).pack(anchor="w", pady=(10, 5))
+                ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_support.admin.labels.summary', default="Summary:"), font=('Segoe UI', 11, 'bold')).pack(anchor="w", pady=(10, 5))
                 summary_text = tk.Text(scrollable_frame, wrap=tk.WORD, height=3, font=('Segoe UI', 10))
                 summary_text.insert("1.0", article['summary'])
                 summary_text.config(state='disabled')
                 summary_text.pack(fill="x", pady=(0, 10))
 
             # Content
-            ttk.Label(scrollable_frame, text="Content:", font=('Segoe UI', 11, 'bold')).pack(anchor="w", pady=(10, 5))
+            ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_support.admin.labels.content', default="Content:"), font=('Segoe UI', 11, 'bold')).pack(anchor="w", pady=(10, 5))
             content_text = tk.Text(scrollable_frame, wrap=tk.WORD, height=20, font=('Segoe UI', 10))
             content_text.insert("1.0", article['content'])
             content_text.config(state='disabled')
@@ -1264,14 +1266,14 @@ class AdminMixin:
             scrollbar.pack(side="right", fill="y")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load article details: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to load article details: {e}")
 
     def show_bulk_operations(self):
         """Show bulk operations interface (staff only)"""
         self.clear_content()
 
         bulk_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(bulk_frame, text="📦 Bulk Operations")
+        self.notebook.add(bulk_frame, text=_t('gui.pastoral.student_support.admin.tabs.bulk_operations', default="📦 Bulk Operations"))
 
         # Configure frame to expand
         bulk_frame.rowconfigure(0, weight=1)
@@ -1279,11 +1281,11 @@ class AdminMixin:
 
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(bulk_frame, text="❌ Staff access required",
+            ttk.Label(bulk_frame, text=_t('gui.pastoral.student_support.admin.labels.staff_access_required', default="❌ Staff access required"),
                      style='Title.TLabel').pack(pady=20)
             return
 
-        ttk.Label(bulk_frame, text="📦 Bulk Operations",
+        ttk.Label(bulk_frame, text=_t('gui.pastoral.student_support.admin.labels.bulk_operations', default="📦 Bulk Operations"),
                  style='Title.TLabel').pack(pady=(0, 20))
 
         # Bulk operations UI
@@ -1292,84 +1294,84 @@ class AdminMixin:
 
         # Bulk Assign Tab
         bulk_assign_frame = ttk.Frame(bulk_notebook, padding=10)
-        bulk_notebook.add(bulk_assign_frame, text="👤 Bulk Assign")
+        bulk_notebook.add(bulk_assign_frame, text=_t('gui.pastoral.student_support.admin.tabs.bulk_assign', default="👤 Bulk Assign"))
 
-        ttk.Label(bulk_assign_frame, text="Assign multiple tickets to a staff member", font=('Segoe UI', 11, 'bold')).pack(pady=10)
+        ttk.Label(bulk_assign_frame, text=_t('gui.pastoral.student_support.admin.labels.assign_multiple_tickets_to_a_staff_member', default="Assign multiple tickets to a staff member"), font=('Segoe UI', 11, 'bold')).pack(pady=10)
 
         # Ticket IDs
-        ttk.Label(bulk_assign_frame, text="Ticket IDs (comma-separated):").pack(anchor='w', padx=10, pady=(10, 5))
+        ttk.Label(bulk_assign_frame, text=_t('gui.pastoral.student_support.admin.labels.ticket_ids_comma_separated', default="Ticket IDs (comma-separated):")).pack(anchor='w', padx=10, pady=(10, 5))
         self.bulk_assign_tickets_var = tk.StringVar()
         ttk.Entry(bulk_assign_frame, textvariable=self.bulk_assign_tickets_var, width=60).pack(fill=tk.X, padx=10, pady=5)
 
         # Staff member
-        ttk.Label(bulk_assign_frame, text="Assign To (username):").pack(anchor='w', padx=10, pady=(10, 5))
+        ttk.Label(bulk_assign_frame, text=_t('gui.pastoral.student_support.admin.labels.assign_to_username', default="Assign To (username):")).pack(anchor='w', padx=10, pady=(10, 5))
         self.bulk_assign_staff_var = tk.StringVar()
         ttk.Entry(bulk_assign_frame, textvariable=self.bulk_assign_staff_var, width=60).pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(bulk_assign_frame, text="📋 Assign Tickets", command=self.perform_bulk_assign).pack(pady=20)
+        ttk.Button(bulk_assign_frame, text=_t('gui.pastoral.student_support.admin.buttons.assign_tickets', default="📋 Assign Tickets"), command=self.perform_bulk_assign).pack(pady=20)
 
         # Bulk Status Update Tab
         bulk_status_frame = ttk.Frame(bulk_notebook, padding=10)
-        bulk_notebook.add(bulk_status_frame, text="📊 Bulk Status")
+        bulk_notebook.add(bulk_status_frame, text=_t('gui.pastoral.student_support.admin.tabs.bulk_status', default="📊 Bulk Status"))
 
-        ttk.Label(bulk_status_frame, text="Update status for multiple tickets", font=('Segoe UI', 11, 'bold')).pack(pady=10)
+        ttk.Label(bulk_status_frame, text=_t('gui.pastoral.student_support.admin.labels.update_status_for_multiple_tickets', default="Update status for multiple tickets"), font=('Segoe UI', 11, 'bold')).pack(pady=10)
 
         # Ticket IDs
-        ttk.Label(bulk_status_frame, text="Ticket IDs (comma-separated):").pack(anchor='w', padx=10, pady=(10, 5))
+        ttk.Label(bulk_status_frame, text=_t('gui.pastoral.student_support.admin.labels.ticket_ids_comma_separated', default="Ticket IDs (comma-separated):")).pack(anchor='w', padx=10, pady=(10, 5))
         self.bulk_status_tickets_var = tk.StringVar()
         ttk.Entry(bulk_status_frame, textvariable=self.bulk_status_tickets_var, width=60).pack(fill=tk.X, padx=10, pady=5)
 
         # Status
-        ttk.Label(bulk_status_frame, text="New Status:").pack(anchor='w', padx=10, pady=(10, 5))
+        ttk.Label(bulk_status_frame, text=_t('gui.pastoral.student_support.admin.labels.new_status', default="New Status:")).pack(anchor='w', padx=10, pady=(10, 5))
         self.bulk_status_var = tk.StringVar()
         status_combo = ttk.Combobox(bulk_status_frame, textvariable=self.bulk_status_var, values=TICKET_STATUSES, state="readonly", width=57)
         status_combo.pack(fill=tk.X, padx=10, pady=5)
         if TICKET_STATUSES:
             status_combo.current(0)
 
-        ttk.Button(bulk_status_frame, text="🔄 Update Status", command=self.perform_bulk_status_update).pack(pady=20)
+        ttk.Button(bulk_status_frame, text=_t('gui.pastoral.student_support.admin.buttons.update_status', default="🔄 Update Status"), command=self.perform_bulk_status_update).pack(pady=20)
 
         # Bulk Priority Update Tab
         bulk_priority_frame = ttk.Frame(bulk_notebook, padding=10)
-        bulk_notebook.add(bulk_priority_frame, text="⚡ Bulk Priority")
+        bulk_notebook.add(bulk_priority_frame, text=_t('gui.pastoral.student_support.admin.tabs.bulk_priority', default="⚡ Bulk Priority"))
 
-        ttk.Label(bulk_priority_frame, text="Update priority for multiple tickets", font=('Segoe UI', 11, 'bold')).pack(pady=10)
+        ttk.Label(bulk_priority_frame, text=_t('gui.pastoral.student_support.admin.labels.update_priority_for_multiple_tickets', default="Update priority for multiple tickets"), font=('Segoe UI', 11, 'bold')).pack(pady=10)
 
         # Ticket IDs
-        ttk.Label(bulk_priority_frame, text="Ticket IDs (comma-separated):").pack(anchor='w', padx=10, pady=(10, 5))
+        ttk.Label(bulk_priority_frame, text=_t('gui.pastoral.student_support.admin.labels.ticket_ids_comma_separated', default="Ticket IDs (comma-separated):")).pack(anchor='w', padx=10, pady=(10, 5))
         self.bulk_priority_tickets_var = tk.StringVar()
         ttk.Entry(bulk_priority_frame, textvariable=self.bulk_priority_tickets_var, width=60).pack(fill=tk.X, padx=10, pady=5)
 
         # Priority
-        ttk.Label(bulk_priority_frame, text="New Priority:").pack(anchor='w', padx=10, pady=(10, 5))
+        ttk.Label(bulk_priority_frame, text=_t('gui.pastoral.student_support.admin.labels.new_priority', default="New Priority:")).pack(anchor='w', padx=10, pady=(10, 5))
         self.bulk_priority_var = tk.StringVar()
         priority_combo = ttk.Combobox(bulk_priority_frame, textvariable=self.bulk_priority_var, values=TICKET_PRIORITIES, state="readonly", width=57)
         priority_combo.pack(fill=tk.X, padx=10, pady=5)
         if TICKET_PRIORITIES:
             priority_combo.current(0)
 
-        ttk.Button(bulk_priority_frame, text="⚡ Update Priority", command=self.perform_bulk_priority_update).pack(pady=20)
+        ttk.Button(bulk_priority_frame, text=_t('gui.pastoral.student_support.admin.buttons.update_priority', default="⚡ Update Priority"), command=self.perform_bulk_priority_update).pack(pady=20)
 
         # Bulk Category Update Tab
         bulk_category_frame = ttk.Frame(bulk_notebook, padding=10)
-        bulk_notebook.add(bulk_category_frame, text="📂 Bulk Category")
+        bulk_notebook.add(bulk_category_frame, text=_t('gui.pastoral.student_support.admin.tabs.bulk_category', default="📂 Bulk Category"))
 
-        ttk.Label(bulk_category_frame, text="Update category for multiple tickets", font=('Segoe UI', 11, 'bold')).pack(pady=10)
+        ttk.Label(bulk_category_frame, text=_t('gui.pastoral.student_support.admin.labels.update_category_for_multiple_tickets', default="Update category for multiple tickets"), font=('Segoe UI', 11, 'bold')).pack(pady=10)
 
         # Ticket IDs
-        ttk.Label(bulk_category_frame, text="Ticket IDs (comma-separated):").pack(anchor='w', padx=10, pady=(10, 5))
+        ttk.Label(bulk_category_frame, text=_t('gui.pastoral.student_support.admin.labels.ticket_ids_comma_separated', default="Ticket IDs (comma-separated):")).pack(anchor='w', padx=10, pady=(10, 5))
         self.bulk_category_tickets_var = tk.StringVar()
         ttk.Entry(bulk_category_frame, textvariable=self.bulk_category_tickets_var, width=60).pack(fill=tk.X, padx=10, pady=5)
 
         # Category
-        ttk.Label(bulk_category_frame, text="New Category:").pack(anchor='w', padx=10, pady=(10, 5))
+        ttk.Label(bulk_category_frame, text=_t('gui.pastoral.student_support.admin.labels.new_category', default="New Category:")).pack(anchor='w', padx=10, pady=(10, 5))
         self.bulk_category_var = tk.StringVar()
         category_combo = ttk.Combobox(bulk_category_frame, textvariable=self.bulk_category_var, values=SUPPORT_CATEGORIES, state="readonly", width=57)
         category_combo.pack(fill=tk.X, padx=10, pady=5)
         if SUPPORT_CATEGORIES:
             category_combo.current(0)
 
-        ttk.Button(bulk_category_frame, text="📂 Update Category", command=self.perform_bulk_category_update).pack(pady=20)
+        ttk.Button(bulk_category_frame, text=_t('gui.pastoral.student_support.admin.buttons.update_category', default="📂 Update Category"), command=self.perform_bulk_category_update).pack(pady=20)
 
     def perform_bulk_assign(self):
         """Perform bulk ticket assignment"""
@@ -1377,28 +1379,28 @@ class AdminMixin:
         staff_username = self.bulk_assign_staff_var.get().strip()
 
         if not tickets_str or not staff_username:
-            messagebox.showerror("Error", "Please provide ticket IDs and staff username")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.please_provide_ticket_ids_and_staff_username', default="Please provide ticket IDs and staff username"))
             return
 
         try:
             # Parse ticket IDs
             ticket_ids = [int(tid.strip()) for tid in tickets_str.split(',')]
 
-            if not messagebox.askyesno("Confirm Bulk Assign",
+            if not messagebox.askyesno(_t('gui.pastoral.student_support.admin.dialogs.confirm_bulk_assign', default="Confirm Bulk Assign"),
                                        f"Assign {len(ticket_ids)} tickets to {staff_username}?"):
                 return
 
             # Perform bulk update
             updated_count = self.support.bulk_update_tickets(ticket_ids, {'assigned_to': staff_username})
 
-            messagebox.showinfo("Success", f"Successfully assigned {updated_count} tickets to {staff_username}")
+            messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), f"Successfully assigned {updated_count} tickets to {staff_username}")
             self.bulk_assign_tickets_var.set('')
             self.bulk_assign_staff_var.set('')
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid ticket IDs. Please use comma-separated numbers.")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.invalid_ticket_ids_please_use_comma_separated_numbers', default="Invalid ticket IDs. Please use comma-separated numbers."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to perform bulk assign: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to perform bulk assign: {e}")
 
     def perform_bulk_priority_update(self):
         """Perform bulk priority update"""
@@ -1406,27 +1408,27 @@ class AdminMixin:
         new_priority = self.bulk_priority_var.get()
 
         if not tickets_str or not new_priority:
-            messagebox.showerror("Error", "Please provide ticket IDs and priority")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.please_provide_ticket_ids_and_priority', default="Please provide ticket IDs and priority"))
             return
 
         try:
             # Parse ticket IDs
             ticket_ids = [int(tid.strip()) for tid in tickets_str.split(',')]
 
-            if not messagebox.askyesno("Confirm Bulk Update",
+            if not messagebox.askyesno(_t('gui.pastoral.student_support.admin.dialogs.confirm_bulk_update', default="Confirm Bulk Update"),
                                        f"Update priority to '{new_priority}' for {len(ticket_ids)} tickets?"):
                 return
 
             # Perform bulk update
             updated_count = self.support.bulk_update_tickets(ticket_ids, {'priority': new_priority})
 
-            messagebox.showinfo("Success", f"Successfully updated priority for {updated_count} tickets")
+            messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), f"Successfully updated priority for {updated_count} tickets")
             self.bulk_priority_tickets_var.set('')
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid ticket IDs. Please use comma-separated numbers.")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.invalid_ticket_ids_please_use_comma_separated_numbers', default="Invalid ticket IDs. Please use comma-separated numbers."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to perform bulk priority update: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to perform bulk priority update: {e}")
 
     def perform_bulk_category_update(self):
         """Perform bulk category update"""
@@ -1434,27 +1436,27 @@ class AdminMixin:
         new_category = self.bulk_category_var.get()
 
         if not tickets_str or not new_category:
-            messagebox.showerror("Error", "Please provide ticket IDs and category")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.please_provide_ticket_ids_and_category', default="Please provide ticket IDs and category"))
             return
 
         try:
             # Parse ticket IDs
             ticket_ids = [int(tid.strip()) for tid in tickets_str.split(',')]
 
-            if not messagebox.askyesno("Confirm Bulk Update",
+            if not messagebox.askyesno(_t('gui.pastoral.student_support.admin.dialogs.confirm_bulk_update', default="Confirm Bulk Update"),
                                        f"Update category to '{new_category}' for {len(ticket_ids)} tickets?"):
                 return
 
             # Perform bulk update
             updated_count = self.support.bulk_update_tickets(ticket_ids, {'category': new_category})
 
-            messagebox.showinfo("Success", f"Successfully updated category for {updated_count} tickets")
+            messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.success', default="Success"), f"Successfully updated category for {updated_count} tickets")
             self.bulk_category_tickets_var.set('')
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid ticket IDs. Please use comma-separated numbers.")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), _t('gui.pastoral.student_support.admin.dialogs.invalid_ticket_ids_please_use_comma_separated_numbers', default="Invalid ticket IDs. Please use comma-separated numbers."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to perform bulk category update: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to perform bulk category update: {e}")
 
     def perform_bulk_status_update(self, support, tickets):
         """Perform bulk status update from ticket list"""
@@ -1528,17 +1530,17 @@ class AdminMixin:
             if hasattr(self, 'priority_var'):
                 self.priority_var.set(template['priority'])
 
-            messagebox.showinfo("Template Loaded", f"Template '{template['name']}' has been loaded. You can customize it before submitting.")
+            messagebox.showinfo(_t('gui.pastoral.student_support.admin.dialogs.template_loaded', default="Template Loaded"), f"Template '{template['name']}' has been loaded. You can customize it before submitting.")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not use template: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Could not use template: {e}")
 
     def show_ticket_templates(self):
         """Show ticket templates for students"""
         self.clear_content()
 
         templates_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(templates_frame, text="📄 Templates")
+        self.notebook.add(templates_frame, text=_t('gui.pastoral.student_support.admin.tabs.templates', default="📄 Templates"))
 
         # Configure frame to expand
         templates_frame.rowconfigure(0, weight=1)
@@ -1547,7 +1549,7 @@ class AdminMixin:
         header_frame = ttk.Frame(templates_frame)
         header_frame.pack(fill="x", pady=(0, 15))
 
-        ttk.Label(header_frame, text="📄 Ticket Templates",
+        ttk.Label(header_frame, text=_t('gui.pastoral.student_support.admin.labels.ticket_templates_variant_2', default="📄 Ticket Templates"),
                   style='Title.TLabel').pack(side="left")
 
         search_frame = ttk.Frame(header_frame)
@@ -1560,17 +1562,17 @@ class AdminMixin:
         template_search_entry.pack(side="left", padx=(0, 5))
         template_search_entry.bind('<Return>', lambda _: self._load_templates())
 
-        ttk.Button(search_frame, text="🔍 Search",
+        ttk.Button(search_frame, text=_t('gui.pastoral.student_support.admin.buttons.search', default="🔍 Search"),
                    command=self._load_templates).pack(side="left")
 
-        ttk.Button(search_frame, text="🔄 Refresh",
+        ttk.Button(search_frame, text=_t('gui.pastoral.student_support.admin.buttons.refresh', default="🔄 Refresh"),
                    command=self._refresh_template_filters).pack(side="left", padx=(5, 0))
 
-        filter_frame = ttk.LabelFrame(templates_frame, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(templates_frame, text=_t('gui.pastoral.student_support.admin.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill="x", pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Category:").grid(row=0, column=0, sticky="w")
-        self.template_category_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_support.admin.labels.category', default="Category:")).grid(row=0, column=0, sticky="w")
+        self.template_category_var = tk.StringVar(value=_t('gui.pastoral.student_support.admin.values.all', default="All"))
         self.template_category_combo = ttk.Combobox(
             filter_frame,
             textvariable=self.template_category_var,
@@ -1580,8 +1582,8 @@ class AdminMixin:
         self.template_category_combo.grid(row=0, column=1, padx=(5, 15))
         self.template_category_combo.bind('<<ComboboxSelected>>', lambda _: self._load_templates())
 
-        ttk.Label(filter_frame, text="Priority:").grid(row=0, column=2, sticky="w")
-        self.template_priority_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_support.admin.labels.priority', default="Priority:")).grid(row=0, column=2, sticky="w")
+        self.template_priority_var = tk.StringVar(value=_t('gui.pastoral.student_support.admin.values.all', default="All"))
         priority_combo = ttk.Combobox(
             filter_frame,
             textvariable=self.template_priority_var,
@@ -1592,7 +1594,7 @@ class AdminMixin:
         priority_combo.grid(row=0, column=3, padx=(5, 0))
         priority_combo.bind('<<ComboboxSelected>>', lambda _: self._load_templates())
 
-        ttk.Button(filter_frame, text="Clear Filters",
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_support.admin.buttons.clear_filters', default="Clear Filters"),
                    command=self._reset_template_filters).grid(row=0, column=4, padx=(15, 0))
 
         content_frame = ttk.Frame(templates_frame)
@@ -1612,10 +1614,10 @@ class AdminMixin:
         template_scrollbar.pack(side="right", fill="y")
         self.templates_tree.configure(yscrollcommand=template_scrollbar.set)
 
-        detail_frame = ttk.LabelFrame(templates_frame, text="Template Details", padding=10)
+        detail_frame = ttk.LabelFrame(templates_frame, text=_t('gui.pastoral.student_support.admin.labels.template_details', default="Template Details"), padding=10)
         detail_frame.pack(fill="x", pady=(15, 0))
 
-        self.template_title_var = tk.StringVar(value="Select a template to view details.")
+        self.template_title_var = tk.StringVar(value=_t('gui.pastoral.student_support.admin.values.select_a_template_to_view_details', default="Select a template to view details."))
         ttk.Label(detail_frame, textvariable=self.template_title_var,
                   font=('Segoe UI', 10, 'bold')).pack(anchor="w", pady=(0, 8))
 
@@ -1625,9 +1627,9 @@ class AdminMixin:
         template_action_frame = ttk.Frame(detail_frame)
         template_action_frame.pack(fill="x")
 
-        ttk.Button(template_action_frame, text="Copy Title",
+        ttk.Button(template_action_frame, text=_t('gui.pastoral.student_support.admin.buttons.copy_title', default="Copy Title"),
                    command=self._copy_template_title).pack(side="left")
-        ttk.Button(template_action_frame, text="Copy Description",
+        ttk.Button(template_action_frame, text=_t('gui.pastoral.student_support.admin.buttons.copy_description', default="Copy Description"),
                    command=self._copy_template_description).pack(side="left", padx=5)
 
         self._load_template_categories()
@@ -1647,7 +1649,7 @@ class AdminMixin:
             if self.template_category_var.get() not in values:
                 self.template_category_var.set("All")
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load template categories: {exc}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to load template categories: {exc}")
             self.template_category_combo['values'] = ["All"]
             self.template_category_var.set("All")
 
@@ -1728,7 +1730,7 @@ class AdminMixin:
                 self.template_body_text.insert(1.0, "Adjust your filters or create new templates.")
                 self.template_body_text.config(state='disabled')
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load ticket templates: {exc}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Failed to load ticket templates: {exc}")
 
     def _on_template_select(self, event=None):
         """Display details for the selected ticket template."""
@@ -1758,7 +1760,7 @@ class AdminMixin:
     def _copy_template_title(self):
         """Copy the selected template title to clipboard."""
         if not getattr(self, 'selected_template_id', None):
-            messagebox.showwarning("Copy Title", "Select a template first.")
+            messagebox.showwarning(_t('gui.pastoral.student_support.admin.dialogs.copy_title', default="Copy Title"), _t('gui.pastoral.student_support.admin.dialogs.select_a_template_first', default="Select a template first."))
             return
         template = self.template_records.get(self.selected_template_id)
         if not template:
@@ -1768,12 +1770,12 @@ class AdminMixin:
             self.root.clipboard_append(template.get('subject_template', ''))
             self.update_status("Template title copied to clipboard")
         except Exception as exc:
-            messagebox.showerror("Error", f"Could not copy title: {exc}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Could not copy title: {exc}")
 
     def _copy_template_description(self):
         """Copy the selected template description to clipboard."""
         if not getattr(self, 'selected_template_id', None):
-            messagebox.showwarning("Copy Description", "Select a template first.")
+            messagebox.showwarning(_t('gui.pastoral.student_support.admin.dialogs.copy_description', default="Copy Description"), _t('gui.pastoral.student_support.admin.dialogs.select_a_template_first', default="Select a template first."))
             return
         template = self.template_records.get(self.selected_template_id)
         if not template:
@@ -1783,5 +1785,5 @@ class AdminMixin:
             self.root.clipboard_append(template.get('message_template', ''))
             self.update_status("Template description copied to clipboard")
         except Exception as exc:
-            messagebox.showerror("Error", f"Could not copy description: {exc}")
+            messagebox.showerror(_t('gui.pastoral.student_support.admin.dialogs.error', default="Error"), f"Could not copy description: {exc}")
 

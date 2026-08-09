@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -92,39 +98,39 @@ class CustomReportWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="📊 Custom Report Builder", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.labels.custom_report_builder', default="📊 Custom Report Builder"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Report configuration
-        config_frame = ttk.LabelFrame(self.window, text="Report Configuration", padding=10)
+        config_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.labels.report_configuration', default="Report Configuration"), padding=10)
         config_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         # Report type
-        ttk.Label(config_frame, text="Report Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.report_type_var = tk.StringVar(value="Attendance Summary")
+        ttk.Label(config_frame, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.labels.report_type', default="Report Type:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.report_type_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.misc_windows.custom_report.values.attendance_summary', default="Attendance Summary"))
         type_combo = ttk.Combobox(config_frame, textvariable=self.report_type_var,
                                  values=["Attendance Summary", "Detailed Records", "Statistical Analysis"],
                                  state="readonly", width=30)
         type_combo.grid(row=0, column=1, padx=(10, 0), pady=5)
 
         # Date range
-        ttk.Label(config_frame, text="Date Range:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(config_frame, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.labels.date_range', default="Date Range:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         date_frame = ttk.Frame(config_frame)
         date_frame.grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=5)
 
         self.start_date_var = tk.StringVar(value=(datetime.date.today() - datetime.timedelta(days=30)).isoformat())
         ttk.Entry(date_frame, textvariable=self.start_date_var, width=12).pack(side=tk.LEFT)
-        ttk.Label(date_frame, text=" to ").pack(side=tk.LEFT)
+        ttk.Label(date_frame, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.labels.to', default=" to ")).pack(side=tk.LEFT)
         self.end_date_var = tk.StringVar(value=datetime.date.today().isoformat())
         ttk.Entry(date_frame, textvariable=self.end_date_var, width=12).pack(side=tk.LEFT)
 
         # Filters
-        filters_frame = ttk.LabelFrame(self.window, text="Filters", padding=10)
+        filters_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.labels.filters', default="Filters"), padding=10)
         filters_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         # Module filter
         self.module_filter_var = tk.BooleanVar()
-        ttk.Checkbutton(filters_frame, text="Filter by Module:", variable=self.module_filter_var).grid(row=0, column=0, sticky=tk.W)
+        ttk.Checkbutton(filters_frame, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.buttons.filter_by_module', default="Filter by Module:"), variable=self.module_filter_var).grid(row=0, column=0, sticky=tk.W)
         self.selected_module_var = tk.StringVar()
         module_combo = ttk.Combobox(filters_frame, textvariable=self.selected_module_var,
                                    values=self.modules, state="readonly", width=20)
@@ -132,28 +138,28 @@ class CustomReportWindow:
 
         # Student filter
         self.student_filter_var = tk.BooleanVar()
-        ttk.Checkbutton(filters_frame, text="Filter by Student:", variable=self.student_filter_var).grid(row=1, column=0, sticky=tk.W)
+        ttk.Checkbutton(filters_frame, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.buttons.filter_by_student', default="Filter by Student:"), variable=self.student_filter_var).grid(row=1, column=0, sticky=tk.W)
         self.selected_student_var = tk.StringVar()
         ttk.Entry(filters_frame, textvariable=self.selected_student_var, width=20).grid(row=1, column=1, padx=(10, 0))
 
         # Output options
-        output_frame = ttk.LabelFrame(self.window, text="Output Options", padding=10)
+        output_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.labels.output_options', default="Output Options"), padding=10)
         output_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(output_frame, text="Output Format:").grid(row=0, column=0, sticky=tk.W)
-        self.output_format_var = tk.StringVar(value="Excel")
+        ttk.Label(output_frame, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.labels.output_format', default="Output Format:")).grid(row=0, column=0, sticky=tk.W)
+        self.output_format_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.misc_windows.custom_report.values.excel', default="Excel"))
         format_combo = ttk.Combobox(output_frame, textvariable=self.output_format_var,
                                    values=["Excel", "PDF", "CSV", "HTML"], state="readonly")
         format_combo.grid(row=0, column=1, padx=(10, 0))
 
         self.include_charts_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(output_frame, text="Include Charts", variable=self.include_charts_var).grid(row=1, column=0, columnspan=2, sticky=tk.W)
+        ttk.Checkbutton(output_frame, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.buttons.include_charts', default="Include Charts"), variable=self.include_charts_var).grid(row=1, column=0, columnspan=2, sticky=tk.W)
 
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(buttons_frame, text="Generate Report", command=self.generate_report, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(buttons_frame, text=_t('gui.academics.attendance_tracker.misc_windows.custom_report.buttons.generate_report', default="Generate Report"), command=self.generate_report, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.preview"), command=self.preview_report, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"), command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
 
@@ -170,7 +176,7 @@ class CustomReportWindow:
                   "CSV": [("CSV files", "*.csv")], "HTML": [("HTML files", "*.html")]}
 
         filename = filedialog.asksaveasfilename(
-            title="Export Report",
+            title=_t('gui.academics.attendance_tracker.misc_windows.custom_report.dialogs.export_report', default="Export Report"),
             defaultextension=ext,
             filetypes=ft_map.get(fmt, [("Text files", "*.txt")]) + [("All files", "*.*")],
             parent=self.window)
@@ -200,7 +206,7 @@ class CustomReportWindow:
         if not report_content:
             return
         preview = tk.Toplevel(self.window)
-        preview.title("Report Preview")
+        preview.title(_t('gui.academics.attendance_tracker.misc_windows.custom_report.windows.report_preview', default="Report Preview"))
         preview.geometry("700x500")
         preview.transient(self.window)
         from tkinter import scrolledtext as st
@@ -223,7 +229,7 @@ class CustomReportWindow:
         lines.append(f"Generated: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
         try:
-            conn = sqlite3.connect(DEFAULT_DB_PATH)
+            conn = sqlite3.connect(UNIVERSITY_DEFAULT_DB_PATH)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
@@ -420,13 +426,13 @@ class CustomReportWindow:
             # Fallback: save as CSV with .xlsx extension note
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(content)
-            messagebox.showwarning("Export", "openpyxl not installed. Report saved as plain text.\n"
-                                   "Install with: pip install openpyxl", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.attendance_tracker.misc_windows.custom_report.dialogs.export', default="Export"), _t('gui.academics.attendance_tracker.misc_windows.custom_report.dialogs.openpyxl_not_installed_report_saved_as_plain_text_install_with_p', default="openpyxl not installed. Report saved as plain text.\n"
+                                   "Install with: pip install openpyxl"), parent=self.window)
 
     def _load_modules(self):
         """Load modules from database"""
         try:
-            conn = sqlite3.connect(DEFAULT_DB_PATH)
+            conn = sqlite3.connect(UNIVERSITY_DEFAULT_DB_PATH)
             cursor = conn.cursor()
 
             # Try to get modules from modules table

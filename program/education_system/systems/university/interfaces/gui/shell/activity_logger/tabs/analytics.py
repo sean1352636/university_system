@@ -2,6 +2,8 @@
 Analytics and reporting tab for the Activity Logger GUI.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.activity_logger._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     json,
@@ -321,7 +323,7 @@ TOP ACTIONS
                      style='AL.Title.TLabel').pack(side=tk.LEFT, padx=10)
 
             # Report preview
-            preview_frame = ttk.LabelFrame(report_window, text="Report Preview", padding=10)
+            preview_frame = ttk.LabelFrame(report_window, text=_t('gui.shell.activity_logger.tabs.analytics.labels.report_preview', default="Report Preview"), padding=10)
             preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
             preview_text = scrolledtext.ScrolledText(preview_frame, wrap=tk.WORD, font=('Courier', 10))
@@ -343,7 +345,7 @@ TOP ACTIONS
                     }
 
                     file_path = filedialog.asksaveasfilename(
-                        title="Save Report",
+                        title=_t('gui.shell.activity_logger.tabs.analytics.dialogs.save_report', default="Save Report"),
                         defaultextension=file_extensions.get(format_type, '.txt'),
                         filetypes=[(f"{format_type.upper()} files", f"*{file_extensions.get(format_type, '.txt')}")]
                     )
@@ -360,10 +362,10 @@ TOP ACTIONS
                             else:  # txt
                                 f.write(report_content)
 
-                        messagebox.showinfo("Success", f"Report saved to: {file_path}")
+                        messagebox.showinfo(_t('gui.shell.activity_logger.tabs.analytics.dialogs.success', default="Success"), f"Report saved to: {file_path}")
 
                 except Exception as e:
-                    messagebox.showerror("Save Error", f"Failed to save report: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.activity_logger.tabs.analytics.dialogs.save_error', default="Save Error"), f"Failed to save report: {str(e)}")
 
             def send_to_admin():
                 """Send report to admin via email"""
@@ -390,7 +392,7 @@ TOP ACTIONS
                                 admin_name = f"{first_name} {last_name}".strip()
 
                     if not admin_email:
-                        messagebox.showerror("Error", "No admin email found in database")
+                        messagebox.showerror(_t('gui.shell.activity_logger.tabs.analytics.dialogs.error', default="Error"), _t('gui.shell.activity_logger.tabs.analytics.dialogs.no_admin_email_found_in_database', default="No admin email found in database"))
                         return
 
                     # Send email
@@ -419,12 +421,12 @@ University Management System
                     )
 
                     if result:
-                        messagebox.showinfo("Success", f"Report sent to admin ({admin_email})")
+                        messagebox.showinfo(_t('gui.shell.activity_logger.tabs.analytics.dialogs.success', default="Success"), f"Report sent to admin ({admin_email})")
                     else:
-                        messagebox.showinfo("Queued", f"Report queued for delivery to {admin_email}")
+                        messagebox.showinfo(_t('gui.shell.activity_logger.tabs.analytics.dialogs.queued', default="Queued"), f"Report queued for delivery to {admin_email}")
 
                 except Exception as e:
-                    messagebox.showerror("Email Error", f"Failed to send report: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.activity_logger.tabs.analytics.dialogs.email_error', default="Email Error"), f"Failed to send report: {str(e)}")
 
             ttk.Label(button_frame, text=_t("activity_logger.report.save_as"), style='AL.Info.TLabel').pack(side=tk.LEFT, padx=5)
             ttk.Button(button_frame, text="\U0001f4c4 " + _t("activity_logger.report.formats.txt"), command=lambda: save_as_format('txt')).pack(side=tk.LEFT, padx=2)
@@ -437,6 +439,6 @@ University Management System
             ttk.Button(button_frame, text="\U0001f3e0 " + _t("activity_logger.report.close"), command=report_window.destroy).pack(side=tk.RIGHT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Report Error", f"Failed to generate report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.analytics.dialogs.report_error', default="Report Error"), f"Failed to generate report: {str(e)}")
             import traceback
             traceback.print_exc()

@@ -15,24 +15,24 @@ def show_inspections(self):
         """Show room inspections interface"""
         self.clear_content()
 
-        ttk.Label(self.content_frame, text="Room Inspections",
+        ttk.Label(self.content_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.room_inspections', default="Room Inspections"),
                  font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
         # Control buttons
         button_frame = ttk.Frame(self.content_frame)
         button_frame.pack(fill='x', pady=10)
 
-        ttk.Button(button_frame, text="Schedule Inspection",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.schedule_inspection', default="Schedule Inspection"),
                   command=lambda: schedule_inspection_dialog(self)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Record Inspection",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.record_inspection', default="Record Inspection"),
                   command=lambda: record_inspection_dialog(self)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="View Details",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.view_details', default="View Details"),
                   command=lambda: view_inspection_details(self, inspections_tree)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Edit Inspection",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.edit_inspection', default="Edit Inspection"),
                   command=lambda: edit_inspection(self, inspections_tree)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Delete Inspection",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.delete_inspection', default="Delete Inspection"),
                   command=lambda: delete_inspection(self, inspections_tree)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Refresh",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.refresh', default="Refresh"),
                   command=lambda: load_inspections(self, inspections_tree)).pack(side='left', padx=5)
 
         # Inspections list
@@ -43,13 +43,13 @@ def show_inspections(self):
                                        columns=('ID', 'Room', 'Date', 'Type', 'Inspector', 'Status', 'Issues'),
                                        show='headings', height=20)
 
-        inspections_tree.heading('ID', text='Inspection ID')
-        inspections_tree.heading('Room', text='Room')
-        inspections_tree.heading('Date', text='Date')
-        inspections_tree.heading('Type', text='Type')
-        inspections_tree.heading('Inspector', text='Inspector')
-        inspections_tree.heading('Status', text='Status')
-        inspections_tree.heading('Issues', text='Issues Found')
+        inspections_tree.heading('ID', text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.headings.inspection_id', default='Inspection ID'))
+        inspections_tree.heading('Room', text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.headings.room', default='Room'))
+        inspections_tree.heading('Date', text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.headings.date', default='Date'))
+        inspections_tree.heading('Type', text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.headings.type', default='Type'))
+        inspections_tree.heading('Inspector', text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.headings.inspector', default='Inspector'))
+        inspections_tree.heading('Status', text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.headings.status', default='Status'))
+        inspections_tree.heading('Issues', text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.headings.issues_found', default='Issues Found'))
 
         for col in ('ID', 'Room', 'Date', 'Type', 'Inspector', 'Status', 'Issues'):
             inspections_tree.column(col, width=120)
@@ -67,18 +67,18 @@ def show_inspections(self):
 def schedule_inspection_dialog(self):
         """Schedule a new inspection"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Schedule Inspection")
+        dialog.title(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.windows.schedule_inspection', default="Schedule Inspection"))
         dialog.geometry("800x700")
         dialog.transient(self.root)
 
-        ttk.Label(dialog, text="Schedule Room Inspection",
+        ttk.Label(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.schedule_room_inspection', default="Schedule Room Inspection"),
                  font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(dialog, padding=20)
         form_frame.pack(fill='both', expand=True)
 
         # Building selection
-        ttk.Label(form_frame, text="Building:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.building', default="Building:")).grid(row=0, column=0, sticky='w', pady=5)
         building_var = tk.StringVar()
         building_combo = ttk.Combobox(form_frame, textvariable=building_var, width=28, state='readonly')
         building_combo.grid(row=0, column=1, pady=5, padx=5)
@@ -94,19 +94,19 @@ def schedule_inspection_dialog(self):
             building_dict = {f"{row[1]} (ID: {row[0]})": row[0] for row in buildings}
             building_combo['values'] = list(building_dict.keys())
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load buildings: {str(e)}", parent=dialog)
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), f"Failed to load buildings: {str(e)}", parent=dialog)
             building_dict = {}
 
         # Inspection scope selection
-        ttk.Label(form_frame, text="Inspection Scope:").grid(row=1, column=0, sticky='w', pady=5)
-        scope_var = tk.StringVar(value="Single Room")
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.inspection_scope', default="Inspection Scope:")).grid(row=1, column=0, sticky='w', pady=5)
+        scope_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.values.single_room', default="Single Room"))
         scope_combo = ttk.Combobox(form_frame, textvariable=scope_var,
                                    values=['Single Room', 'Full Building'],
                                    width=28, state='readonly')
         scope_combo.grid(row=1, column=1, pady=5, padx=5)
 
         # Room selection (shown only for single room)
-        room_label = ttk.Label(form_frame, text="Room Number:")
+        room_label = ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.room_number', default="Room Number:"))
         room_label.grid(row=2, column=0, sticky='w', pady=5)
         room_var = tk.StringVar()
         room_combo = ttk.Combobox(form_frame, textvariable=room_var, width=28, state='readonly')
@@ -132,7 +132,7 @@ def schedule_inspection_dialog(self):
                     room_dict[building_id] = {f"Room {row[1]}": row[0] for row in rooms}
                     room_combo['values'] = list(room_dict.get(building_id, {}).keys())
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load rooms: {str(e)}", parent=dialog)
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), f"Failed to load rooms: {str(e)}", parent=dialog)
 
         def toggle_room_selection(*args):
             """Show/hide room selection based on scope"""
@@ -148,54 +148,54 @@ def schedule_inspection_dialog(self):
         scope_var.trace('w', toggle_room_selection)
 
         # Date
-        ttk.Label(form_frame, text="Inspection Date:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.inspection_date', default="Inspection Date:")).grid(row=3, column=0, sticky='w', pady=5)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         date_entry = ttk.Entry(form_frame, textvariable=date_var, width=30)
         date_entry.grid(row=3, column=1, pady=5, padx=5)
 
         # Time
-        ttk.Label(form_frame, text="Inspection Time:").grid(row=4, column=0, sticky='w', pady=5)
-        time_var = tk.StringVar(value="10:00 AM")
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.inspection_time', default="Inspection Time:")).grid(row=4, column=0, sticky='w', pady=5)
+        time_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.values.value_10_00_am', default="10:00 AM"))
         time_entry = ttk.Entry(form_frame, textvariable=time_var, width=30)
         time_entry.grid(row=4, column=1, pady=5, padx=5)
 
         # Type
-        ttk.Label(form_frame, text="Inspection Type:").grid(row=5, column=0, sticky='w', pady=5)
-        type_var = tk.StringVar(value="Routine")
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.inspection_type', default="Inspection Type:")).grid(row=5, column=0, sticky='w', pady=5)
+        type_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.values.routine', default="Routine"))
         type_combo = ttk.Combobox(form_frame, textvariable=type_var,
                                   values=['Routine', 'Move-in', 'Move-out', 'Maintenance', 'Safety'],
                                   width=28, state='readonly')
         type_combo.grid(row=5, column=1, pady=5, padx=5)
 
         # Inspector
-        ttk.Label(form_frame, text="Inspector:").grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.inspector', default="Inspector:")).grid(row=6, column=0, sticky='w', pady=5)
         inspector_var = tk.StringVar()
         inspector_entry = ttk.Entry(form_frame, textvariable=inspector_var, width=30)
         inspector_entry.grid(row=6, column=1, pady=5, padx=5)
 
         # Notes
-        ttk.Label(form_frame, text="Notes:").grid(row=7, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.notes', default="Notes:")).grid(row=7, column=0, sticky='nw', pady=5)
         notes_text = tk.Text(form_frame, height=4, width=30)
         notes_text.grid(row=7, column=1, pady=5, padx=5)
 
         # Email notification checkbox
         send_email_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(form_frame, text="Send email notification to affected students",
+        ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.send_email_notification_to_affected_students', default="Send email notification to affected students"),
                        variable=send_email_var).grid(row=8, column=0, columnspan=2, sticky='w', pady=10)
 
         def save_inspection():
             # Validation
             selected_building = building_var.get()
             if not selected_building:
-                messagebox.showwarning("Building Required", "Please select a building", parent=dialog)
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.building_required', default="Building Required"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_select_a_building', default="Please select a building"), parent=dialog)
                 return
 
             if scope_var.get() == "Single Room" and not room_var.get().strip():
-                messagebox.showwarning("Room Required", "Please select a room", parent=dialog)
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.room_required', default="Room Required"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_select_a_room', default="Please select a room"), parent=dialog)
                 return
 
             if not inspector_var.get().strip():
-                messagebox.showwarning("Inspector Required", "Please enter an inspector name", parent=dialog)
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.inspector_required', default="Inspector Required"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_enter_an_inspector_name', default="Please enter an inspector name"), parent=dialog)
                 return
 
             try:
@@ -221,7 +221,7 @@ def schedule_inspection_dialog(self):
                     if selected_room in room_dict.get(building_id, {}):
                         room_ids = [room_dict[building_id][selected_room]]
                     else:
-                        messagebox.showerror("Error", "Please select a valid room", parent=dialog)
+                        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_select_a_valid_room', default="Please select a valid room"), parent=dialog)
                         conn.close()
                         return
                 else:
@@ -230,7 +230,7 @@ def schedule_inspection_dialog(self):
                     room_ids = [row[0] for row in cursor.fetchall()]
 
                 if not room_ids:
-                    messagebox.showerror("Error", "No rooms found for inspection", parent=dialog)
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.no_rooms_found_for_inspection', default="No rooms found for inspection"), parent=dialog)
                     conn.close()
                     return
 
@@ -257,7 +257,7 @@ def schedule_inspection_dialog(self):
 
                 conn.close()
 
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.success', default="Success"),
                                   f"Inspection(s) scheduled successfully!\n\n"
                                   f"Total inspections: {len(inspection_ids)}\n"
                                   f"Building: {selected_building}\n"
@@ -268,16 +268,16 @@ def schedule_inspection_dialog(self):
                 dialog.destroy()
 
             except ValueError:
-                messagebox.showerror("Error", "Please enter a valid date (YYYY-MM-DD)", parent=dialog)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_enter_a_valid_date_yyyy_mm_dd', default="Please enter a valid date (YYYY-MM-DD)"), parent=dialog)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to schedule inspection: {str(e)}", parent=dialog)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), f"Failed to schedule inspection: {str(e)}", parent=dialog)
                 import traceback
                 traceback.print_exc()
 
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="Schedule", command=save_inspection).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.schedule', default="Schedule"), command=save_inspection).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
 def send_inspection_emails(self, cursor, building_id, room_ids, inspection_date,
                                inspection_time, inspection_type, inspector_name, notes, is_building_wide):
@@ -313,8 +313,8 @@ def send_inspection_emails(self, cursor, building_id, room_ids, inspection_date,
 
             try:
                 import json
-                from education_system.systems.university.infrastructure import paths
-                template_path = paths.PROJECT_ROOT / 'university_system' / 'templates' / 'email' / f'{template_name}.json'
+                from education_system import paths
+                template_path = paths.UNIVERSITY_PROJECT_ROOT / 'university_system' / 'templates' / 'email' / f'{template_name}.json'
 
                 with open(template_path, 'r') as f:
                     template = json.load(f)
@@ -405,7 +405,7 @@ def send_post_inspection_email(self, cursor, room_id, inspection_id, inspection_
 
             # Load email service
             from education_system.systems.university.infrastructure.email.email_service import send_email
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
 
             # Determine which template to use based on status
             if status == 'Issues Found':
@@ -414,7 +414,7 @@ def send_post_inspection_email(self, cursor, room_id, inspection_id, inspection_
                 template_name='housing/inspection_completed'
 
             # Load email template
-            template_path = paths.EMAIL_TEMPLATES_DIR / f"{template_name}.json"
+            template_path = paths.UNIVERSITY_EMAIL_TEMPLATES_DIR / "campus_services" / f"{template_name}.json"
             try:
                 with open(template_path, 'r') as f:
                     import json
@@ -487,42 +487,42 @@ def send_post_inspection_email(self, cursor, room_id, inspection_id, inspection_
 def record_inspection_dialog(self):
         """Record inspection results"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Record Inspection")
+        dialog.title(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.windows.record_inspection', default="Record Inspection"))
         dialog.geometry("600x500")
         dialog.transient(self.root)
 
-        ttk.Label(dialog, text="Record Inspection Results",
+        ttk.Label(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.record_inspection_results', default="Record Inspection Results"),
                  font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(dialog, padding=20)
         form_frame.pack(fill='both', expand=True)
 
         # Inspection ID
-        ttk.Label(form_frame, text="Inspection ID:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.inspection_id', default="Inspection ID:")).grid(row=0, column=0, sticky='w', pady=5)
         id_var = tk.StringVar()
         id_entry = ttk.Entry(form_frame, textvariable=id_var, width=30)
         id_entry.grid(row=0, column=1, pady=5, padx=5)
 
         # Status
-        ttk.Label(form_frame, text="Status:").grid(row=1, column=0, sticky='w', pady=5)
-        status_var = tk.StringVar(value="Completed")
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.status', default="Status:")).grid(row=1, column=0, sticky='w', pady=5)
+        status_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.values.completed', default="Completed"))
         status_combo = ttk.Combobox(form_frame, textvariable=status_var,
                                     values=['Completed', 'Issues Found', 'Follow-up Required'],
                                     width=28, state='readonly')
         status_combo.grid(row=1, column=1, pady=5, padx=5)
 
         # Issues found
-        ttk.Label(form_frame, text="Issues Found:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.issues_found', default="Issues Found:")).grid(row=2, column=0, sticky='nw', pady=5)
         issues_text = tk.Text(form_frame, height=6, width=30)
         issues_text.grid(row=2, column=1, pady=5, padx=5)
 
         # Pass/Fail
         pass_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(form_frame, text="Inspection Passed", variable=pass_var).grid(row=3, column=1, sticky='w', pady=5)
+        ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.inspection_passed', default="Inspection Passed"), variable=pass_var).grid(row=3, column=1, sticky='w', pady=5)
 
         def save_results():
             if not id_var.get().strip():
-                messagebox.showwarning("ID Required", "Please enter inspection ID", parent=dialog)
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.id_required', default="ID Required"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_enter_inspection_id', default="Please enter inspection ID"), parent=dialog)
                 return
 
             try:
@@ -542,7 +542,7 @@ def record_inspection_dialog(self):
                     'WHERE inspection_id = ?', (inspection_id,))
                 row = cursor.fetchone()
                 if not row:
-                    messagebox.showerror("Error", f"Inspection ID {inspection_id} not found", parent=dialog)
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), f"Inspection ID {inspection_id} not found", parent=dialog)
                     conn.close()
                     return
                 inspection_type = row[1]
@@ -557,7 +557,7 @@ def record_inspection_dialog(self):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.success', default="Success"),
                                   f"Inspection results recorded successfully!\n\n"
                                   f"Inspection ID: {inspection_id}\n"
                                   f"Status: {status}\n"
@@ -581,22 +581,22 @@ def record_inspection_dialog(self):
                         )
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to record inspection results: {str(e)}", parent=dialog)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), f"Failed to record inspection results: {str(e)}", parent=dialog)
 
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="Save", command=save_results).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.save', default="Save"), command=save_results).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
 def view_inspection_details(self, tree):
         """View detailed inspection report"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an inspection to view")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_select_an_inspection_to_view', default="Please select an inspection to view"))
             return
 
         values = tree.item(selection[0], 'values')
-        messagebox.showinfo("Inspection Details",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.inspection_details', default="Inspection Details"),
                           f"Inspection ID: {values[0]}\n"
                           f"Room: {values[1]}\n"
                           f"Date: {values[2]}\n"
@@ -640,7 +640,7 @@ def load_inspections(self, tree):
                 tree.insert('', 'end', values=('No inspections found', '', '', '', '', '', ''))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load inspections: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), f"Failed to load inspections: {str(e)}")
             # Show sample data on error for demo purposes
             tree.insert('', 'end', values=(f'Error: {str(e)}', '', '', '', '', '', ''))
             import traceback
@@ -650,7 +650,7 @@ def edit_inspection(self, tree):
         """Edit an existing inspection"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an inspection to edit")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_select_an_inspection_to_edit', default="Please select an inspection to edit"))
             return
 
         values = tree.item(selection[0], 'values')
@@ -658,7 +658,7 @@ def edit_inspection(self, tree):
 
         # Create edit dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Inspection")
+        dialog.title(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.windows.edit_inspection', default="Edit Inspection"))
         dialog.geometry("700x600")
         dialog.transient(self.root)
 
@@ -684,61 +684,61 @@ def edit_inspection(self, tree):
             conn.close()
 
             if not inspection_data:
-                messagebox.showerror("Error", "Inspection not found")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.inspection_not_found', default="Inspection not found"))
                 dialog.destroy()
                 return
 
             # Room Number (read-only)
-            ttk.Label(form_frame, text="Room Number:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.room_number', default="Room Number:")).grid(row=0, column=0, sticky='w', pady=5)
             ttk.Label(form_frame, text=inspection_data[1]).grid(row=0, column=1, sticky='w', pady=5, padx=5)
 
             # Date
-            ttk.Label(form_frame, text="Inspection Date:").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.inspection_date', default="Inspection Date:")).grid(row=1, column=0, sticky='w', pady=5)
             date_var = tk.StringVar(value=inspection_data[2])
             ttk.Entry(form_frame, textvariable=date_var, width=30).grid(row=1, column=1, pady=5, padx=5)
 
             # Type
-            ttk.Label(form_frame, text="Inspection Type:").grid(row=2, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.inspection_type', default="Inspection Type:")).grid(row=2, column=0, sticky='w', pady=5)
             type_var = tk.StringVar(value=inspection_data[3])
             ttk.Combobox(form_frame, textvariable=type_var, width=28,
                         values=['Routine', 'Move-in', 'Move-out', 'Maintenance', 'Safety'],
                         state='readonly').grid(row=2, column=1, pady=5, padx=5)
 
             # Inspector
-            ttk.Label(form_frame, text="Inspector:").grid(row=3, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.inspector', default="Inspector:")).grid(row=3, column=0, sticky='w', pady=5)
             inspector_var = tk.StringVar(value=inspection_data[4])
             ttk.Entry(form_frame, textvariable=inspector_var, width=30).grid(row=3, column=1, pady=5, padx=5)
 
             # Status
-            ttk.Label(form_frame, text="Status:").grid(row=4, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.status', default="Status:")).grid(row=4, column=0, sticky='w', pady=5)
             status_var = tk.StringVar(value=inspection_data[6])
             ttk.Combobox(form_frame, textvariable=status_var, width=28,
                         values=['Scheduled', 'Completed', 'Issues Found', 'Follow-up Required'],
                         state='readonly').grid(row=4, column=1, pady=5, padx=5)
 
             # Findings
-            ttk.Label(form_frame, text="Findings:").grid(row=5, column=0, sticky='nw', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.findings', default="Findings:")).grid(row=5, column=0, sticky='nw', pady=5)
             findings_text = tk.Text(form_frame, height=4, width=30)
             findings_text.grid(row=5, column=1, pady=5, padx=5)
             if inspection_data[5]:
                 findings_text.insert("1.0", inspection_data[5])
 
             # Action Required
-            ttk.Label(form_frame, text="Action Required:").grid(row=6, column=0, sticky='nw', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.action_required', default="Action Required:")).grid(row=6, column=0, sticky='nw', pady=5)
             action_text = tk.Text(form_frame, height=4, width=30)
             action_text.grid(row=6, column=1, pady=5, padx=5)
             if inspection_data[7]:
                 action_text.insert("1.0", inspection_data[7])
 
             # Follow-up Date
-            ttk.Label(form_frame, text="Follow-up Date:").grid(row=7, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.follow_up_date', default="Follow-up Date:")).grid(row=7, column=0, sticky='w', pady=5)
             followup_var = tk.StringVar(value=inspection_data[8] if inspection_data[8] else '')
             ttk.Entry(form_frame, textvariable=followup_var, width=30).grid(row=7, column=1, pady=5, padx=5)
 
             # Email notification checkbox
-            ttk.Label(form_frame, text="Email Notification:").grid(row=8, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.labels.email_notification', default="Email Notification:")).grid(row=8, column=0, sticky='w', pady=5)
             email_var = tk.BooleanVar(value=True)
-            ttk.Checkbutton(form_frame, text="Send email notification to student(s)",
+            ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.send_email_notification_to_student_s', default="Send email notification to student(s)"),
                            variable=email_var).grid(row=8, column=1, sticky='w', pady=5, padx=5)
 
             def save_changes():
@@ -775,34 +775,34 @@ def edit_inspection(self, tree):
 
                     conn.close()
 
-                    messagebox.showinfo("Success", "Inspection updated successfully!")
+                    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.inspection_updated_successfully', default="Inspection updated successfully!"))
                     dialog.destroy()
                     load_inspections(self, tree)
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to update inspection: {str(e)}")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), f"Failed to update inspection: {str(e)}")
 
             button_frame = ttk.Frame(dialog)
             button_frame.pack(pady=10)
-            ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load inspection data: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), f"Failed to load inspection data: {str(e)}")
             dialog.destroy()
 
 def delete_inspection(self, tree):
         """Delete an inspection"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an inspection to delete")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.please_select_an_inspection_to_delete', default="Please select an inspection to delete"))
             return
 
         values = tree.item(selection[0], 'values')
         inspection_id = values[0]
         room = values[1]
 
-        result = messagebox.askyesno("Confirm Delete",
+        result = messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.confirm_delete', default="Confirm Delete"),
                                      f"Delete inspection {inspection_id} for room {room}?")
         if result:
             try:
@@ -815,8 +815,8 @@ def delete_inspection(self, tree):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Inspection {inspection_id} deleted successfully")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.success', default="Success"), f"Inspection {inspection_id} deleted successfully")
                 load_inspections(self, tree)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete inspection: {str(e)}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inspection_manager.dialogs.error', default="Error"), f"Failed to delete inspection: {str(e)}")

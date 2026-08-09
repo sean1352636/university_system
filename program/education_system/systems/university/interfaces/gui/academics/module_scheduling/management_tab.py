@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -140,17 +142,17 @@ def create_backup(self, backup_name=None, description=""):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         backup_name = f"backup_{timestamp}"
 
-    from education_system.systems.university.infrastructure import paths
+    from education_system import paths
     import shutil
     import os
-    os.makedirs(str(paths.BACKUP_DATABASE_DIR), exist_ok=True)
+    os.makedirs(str(paths.UNIVERSITY_BACKUP_DATABASE_DIR), exist_ok=True)
 
-    backup_path = os.path.join(str(paths.BACKUP_DATABASE_DIR), f"{backup_name}.db")
+    backup_path = os.path.join(str(paths.UNIVERSITY_BACKUP_DATABASE_DIR), f"{backup_name}.db")
 
     try:
         # Check if source database exists
         if not os.path.exists(DEFAULT_DB_PATH):
-            messagebox.showerror("Error", f"Database file not found: {DEFAULT_DB_PATH}", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Database file not found: {DEFAULT_DB_PATH}", parent=self.root)
             return None
 
         # Copy the database file
@@ -168,11 +170,11 @@ def create_backup(self, backup_name=None, description=""):
             VALUES (?, ?, ?, ?)
             ''', (backup_name, backup_path, file_size, description))
 
-        messagebox.showinfo("Success", f"Backup created successfully:\n{backup_path}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.success', default="Success"), f"Backup created successfully:\n{backup_path}", parent=self.root)
         return backup_path
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error creating backup: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Error creating backup: {str(e)}", parent=self.root)
         return None
 
 ModuleSchedulingGUI.create_backup = create_backup
@@ -191,12 +193,12 @@ def list_backups(self):
         backups = cursor.fetchall()
 
     if not backups:
-        messagebox.showinfo("Backups", "No backups found.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.backups', default="Backups"), _t('gui.academics.module_scheduling.management_tab.dialogs.no_backups_found', default="No backups found."), parent=self.root)
         return
 
     # Create dialog to show backups
     dialog = tk.Toplevel(self.root)
-    dialog.title("Available Backups")
+    dialog.title(_t('gui.academics.module_scheduling.management_tab.windows.available_backups', default="Available Backups"))
     dialog.geometry("800x400")
     dialog.transient(self.root)
 
@@ -220,13 +222,13 @@ def list_backups(self):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.management_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.list_backups = list_backups
 
 def restore_backup(self, backup_name=None):
     """Restore from a backup"""
-    from education_system.systems.university.infrastructure import paths
+    from education_system import paths
     import shutil
     import os
     from tkinter import filedialog
@@ -234,8 +236,8 @@ def restore_backup(self, backup_name=None):
     # If no backup_name provided, show file selection dialog
     if backup_name is None:
         backup_path = filedialog.askopenfilename(
-            title="Select Backup File to Restore",
-            initialdir=str(paths.BACKUP_DATABASE_DIR),
+            title=_t('gui.academics.module_scheduling.management_tab.dialogs.select_backup_file_to_restore', default="Select Backup File to Restore"),
+            initialdir=str(paths.UNIVERSITY_BACKUP_DATABASE_DIR),
             filetypes=[
                 ("Database Backup", "*.db"),
                 ("All Files", "*.*")
@@ -248,15 +250,15 @@ def restore_backup(self, backup_name=None):
         # Extract backup name from path for display
         backup_name = os.path.basename(backup_path).replace('.db', '')
     else:
-        backup_path = os.path.join(str(paths.BACKUP_DATABASE_DIR), f"{backup_name}.db")
+        backup_path = os.path.join(str(paths.UNIVERSITY_BACKUP_DATABASE_DIR), f"{backup_name}.db")
 
     if not os.path.exists(backup_path):
-        messagebox.showerror("Error", f"Backup file not found: {backup_path}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Backup file not found: {backup_path}", parent=self.root)
         return False
 
     # Confirm restoration
     confirm = messagebox.askyesno(
-        "Confirm Restore",
+        _t('gui.academics.module_scheduling.management_tab.dialogs.confirm_restore', default="Confirm Restore"),
         f"WARNING: This will replace the current database with the backup from {backup_name}\n\n"
         "A pre-restore backup will be created automatically.\n\n"
         "Are you sure you want to continue?"
@@ -272,11 +274,11 @@ def restore_backup(self, backup_name=None):
         # Replace current database
         shutil.copy2(backup_path, DEFAULT_DB_PATH)
 
-        messagebox.showinfo("Success", f"Database restored from backup: {backup_name}\n\nPlease restart the application.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.success', default="Success"), f"Database restored from backup: {backup_name}\n\nPlease restart the application.", parent=self.root)
         return True
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error restoring backup: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Error restoring backup: {str(e)}", parent=self.root)
         return False
 
 ModuleSchedulingGUI.restore_backup = restore_backup
@@ -298,11 +300,11 @@ def validate_data(self):
                 self.log_text.insert(tk.END, f"{i}. {issue}\n")
             self.log_text.insert(tk.END, "=" * 50 + "\n")
 
-            if messagebox.askyesno("Issues Found", f"Found {len(issues)} data consistency issues.\n\nWould you like to fix them automatically?", parent=self.root):
+            if messagebox.askyesno(_t('gui.academics.module_scheduling.management_tab.dialogs.issues_found', default="Issues Found"), f"Found {len(issues)} data consistency issues.\n\nWould you like to fix them automatically?", parent=self.root):
                 self.clean_orphaned_records()
         else:
             self.log_text.insert(tk.END, "No data consistency issues found.\n")
-            messagebox.showinfo("Validation Complete", "No data consistency issues found.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.validation_complete', default="Validation Complete"), _t('gui.academics.module_scheduling.management_tab.dialogs.no_data_consistency_issues_found', default="No data consistency issues found."), parent=self.root)
 
         self.log_text.config(state=tk.DISABLED)
         self.notebook.select(7)  # Switch to management tab
@@ -311,7 +313,7 @@ def validate_data(self):
         self.update_status("Ready")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to validate data: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Failed to validate data: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.validate_data = validate_data
@@ -319,9 +321,9 @@ ModuleSchedulingGUI.validate_data = validate_data
 def clean_orphaned_records(self):
     """Clean up orphaned records"""
     confirm = messagebox.askyesno(
-        "Confirm Cleanup",
-        "This will remove schedules with invalid room or instructor references.\n\n"
-        "Are you sure you want to continue?"
+        _t('gui.academics.module_scheduling.management_tab.dialogs.confirm_cleanup', default="Confirm Cleanup"),
+        _t('gui.academics.module_scheduling.management_tab.dialogs.this_will_remove_schedules_with_invalid_room_or_instructor_refer', default="This will remove schedules with invalid room or instructor references.\n\n"
+        "Are you sure you want to continue?")
     , parent=self.root)
 
     if not confirm:
@@ -349,11 +351,11 @@ def clean_orphaned_records(self):
                  f"• Removed {removed_room_refs} schedules with invalid room references\n" \
                  f"• Removed {removed_instructor_refs} schedules with invalid instructor references"
 
-        messagebox.showinfo("Cleanup Complete", message, parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.cleanup_complete', default="Cleanup Complete"), message, parent=self.root)
         self.refresh_all_data()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error during cleanup: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Error during cleanup: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.clean_orphaned_records = clean_orphaned_records
 
@@ -366,16 +368,16 @@ def repair_issues(self):
         issues = self.scheduler.validate_data_consistency()
         if issues:
             self.scheduler.clean_orphaned_records()
-            messagebox.showinfo("Success", "Common issues repaired.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.management_tab.dialogs.common_issues_repaired', default="Common issues repaired."), parent=self.root)
         else:
-            messagebox.showinfo("Info", "No issues found to repair.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.info', default="Info"), _t('gui.academics.module_scheduling.management_tab.dialogs.no_issues_found_to_repair', default="No issues found to repair."), parent=self.root)
 
         self.refresh_all_data()
         self.update_activity_log("Repaired data issues")
         self.update_status("Ready")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to repair issues: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Failed to repair issues: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.repair_issues = repair_issues
@@ -384,7 +386,7 @@ def import_csv(self):
     """Import schedules from CSV file"""
     try:
         file_path = filedialog.askopenfilename(
-            title="Select CSV file to import",
+            title=_t('gui.academics.module_scheduling.management_tab.dialogs.select_csv_file_to_import', default="Select CSV file to import"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
 
@@ -394,16 +396,16 @@ def import_csv(self):
             success = self.scheduler.import_schedules_from_csv(file_path)
 
             if success:
-                messagebox.showinfo("Success", "CSV imported successfully!", parent=self.root)
+                messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.management_tab.dialogs.csv_imported_successfully', default="CSV imported successfully!"), parent=self.root)
                 self.refresh_all_data()
                 self.update_activity_log(f"Imported data from {os.path.basename(file_path)}")
             else:
-                messagebox.showerror("Error", "Failed to import CSV file.", parent=self.root)
+                messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.management_tab.dialogs.failed_to_import_csv_file', default="Failed to import CSV file."), parent=self.root)
 
             self.update_status("Ready")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to import CSV: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Failed to import CSV: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.import_csv = import_csv
@@ -416,18 +418,18 @@ def export_all_data(self):
         filename = self.scheduler.export_all_schedules_to_csv()
 
         if filename:
-            if messagebox.askyesno("Export Complete", f"Data exported successfully!\n\nFile: {filename}\n\nWould you like to open the file location?", parent=self.root):
+            if messagebox.askyesno(_t('gui.academics.module_scheduling.management_tab.dialogs.export_complete', default="Export Complete"), f"Data exported successfully!\n\nFile: {filename}\n\nWould you like to open the file location?", parent=self.root):
                 folder_path = os.path.dirname(os.path.abspath(filename))
                 webbrowser.open(f"file://{folder_path}")
 
             self.update_activity_log("Exported all schedule data")
         else:
-            messagebox.showerror("Error", "Failed to export data.", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.management_tab.dialogs.failed_to_export_data', default="Failed to export data."), parent=self.root)
 
         self.update_status("Ready")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export data: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Failed to export data: {str(e)}", parent=self.root)
         self.update_status("Ready")
 
 ModuleSchedulingGUI.export_all_data = export_all_data
@@ -435,7 +437,7 @@ ModuleSchedulingGUI.export_all_data = export_all_data
 def import_schedules_from_csv(self):
     """Import schedules from CSV file"""
     filename = filedialog.askopenfilename(
-        title="Select CSV File",
+        title=_t('gui.academics.module_scheduling.management_tab.dialogs.select_csv_file', default="Select CSV File"),
         filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
     )
 
@@ -501,18 +503,18 @@ def import_schedules_from_csv(self):
         if errors:
             message += f"\nErrors: {len(errors)}\n\nFirst 5 errors:\n" + "\n".join(errors[:5])
 
-        messagebox.showinfo("Import Complete", message, parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.import_complete', default="Import Complete"), message, parent=self.root)
         self.refresh_all_data()
 
     except Exception as e:
-        messagebox.showerror("Import Error", f"Failed to import CSV: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.import_error', default="Import Error"), f"Failed to import CSV: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.import_schedules_from_csv = import_schedules_from_csv
 
 def export_all_schedules_to_csv(self):
     """Export all schedules to CSV file"""
     filename = filedialog.asksaveasfilename(
-        title="Export Schedules to CSV",
+        title=_t('gui.academics.module_scheduling.management_tab.dialogs.export_schedules_to_csv', default="Export Schedules to CSV"),
         defaultextension=".csv",
         filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
     )
@@ -552,10 +554,10 @@ def export_all_schedules_to_csv(self):
             # Write data
             writer.writerows(schedules)
 
-        messagebox.showinfo("Export Complete", f"Exported {len(schedules)} schedules to:\n{filename}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.export_complete', default="Export Complete"), f"Exported {len(schedules)} schedules to:\n{filename}", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Export Error", f"Failed to export CSV: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.export_error', default="Export Error"), f"Failed to export CSV: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.export_all_schedules_to_csv = export_all_schedules_to_csv
 
@@ -768,7 +770,7 @@ def open_activity_log_window(self):
     try:
         # Create new window
         activity_window = tk.Toplevel(self.root)
-        activity_window.title("Activity Log - Module Scheduling System")
+        activity_window.title(_t('gui.academics.module_scheduling.management_tab.windows.activity_log_module_scheduling_system', default="Activity Log - Module Scheduling System"))
         activity_window.geometry("1000x600")
         activity_window.transient(self.root)
 
@@ -776,16 +778,16 @@ def open_activity_log_window(self):
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        title_label = ttk.Label(main_frame, text="System Activity Log", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.academics.module_scheduling.management_tab.labels.system_activity_log', default="System Activity Log"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Controls frame
         controls_frame = ttk.Frame(main_frame)
         controls_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(controls_frame, text="🔄 Refresh", command=lambda: self._refresh_activity_log(activity_tree)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="🗑️ Clear Old Logs", command=lambda: self._clear_old_activity_logs(activity_tree)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="📥 Export", command=lambda: self._export_activity_log()).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.module_scheduling.management_tab.buttons.refresh', default="🔄 Refresh"), command=lambda: self._refresh_activity_log(activity_tree)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.module_scheduling.management_tab.buttons.clear_old_logs', default="🗑️ Clear Old Logs"), command=lambda: self._clear_old_activity_logs(activity_tree)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.module_scheduling.management_tab.buttons.export', default="📥 Export"), command=lambda: self._export_activity_log()).pack(side=tk.LEFT, padx=5)
 
         # Activity log treeview
         tree_frame = ttk.Frame(main_frame)
@@ -819,7 +821,7 @@ def open_activity_log_window(self):
         activity_window.geometry(f"+{x}+{y}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open activity log: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Failed to open activity log: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.open_activity_log_window = open_activity_log_window
 
@@ -864,13 +866,13 @@ def _refresh_activity_log(self, tree):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh activity log: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Failed to refresh activity log: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._refresh_activity_log = _refresh_activity_log
 
 def _clear_old_activity_logs(self, tree):
     """Clear activity logs older than 30 days"""
-    if not messagebox.askyesno("Confirm", "Clear activity logs older than 30 days?", parent=self.root):
+    if not messagebox.askyesno(_t('gui.academics.module_scheduling.management_tab.dialogs.confirm', default="Confirm"), _t('gui.academics.module_scheduling.management_tab.dialogs.clear_activity_logs_older_than_30_days', default="Clear activity logs older than 30 days?"), parent=self.root):
         return
 
     try:
@@ -883,11 +885,11 @@ def _clear_old_activity_logs(self, tree):
             cursor.execute('DELETE FROM activity_log WHERE timestamp < ?', (cutoff_date,))
             deleted_count = cursor.rowcount
 
-        messagebox.showinfo("Success", f"Deleted {deleted_count} old activity log entries.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.success', default="Success"), f"Deleted {deleted_count} old activity log entries.", parent=self.root)
         self._refresh_activity_log(tree)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to clear old logs: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Failed to clear old logs: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._clear_old_activity_logs = _clear_old_activity_logs
 
@@ -919,10 +921,10 @@ def _export_activity_log(self):
             writer.writerow(['ID', 'User ID', 'Username', 'Action', 'Details', 'Timestamp', 'IP Address'])
             writer.writerows(logs)
 
-        messagebox.showinfo("Success", f"Activity log exported to {filename}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.management_tab.dialogs.success', default="Success"), f"Activity log exported to {filename}", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export activity log: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.management_tab.dialogs.error', default="Error"), f"Failed to export activity log: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_activity_log = _export_activity_log
 

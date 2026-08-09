@@ -13,7 +13,10 @@
 
     // API base URL. Override via localStorage.setItem('api_base_url', 'http://host:port')
     // for alternative deployments.
-    const DEFAULT_API = 'http://localhost:5000';
+    // Use the host that served the HTML. A hard-coded localhost points at the
+    // visitor's computer when this UI is opened from another device.
+    const PAGE_HOST = (global.location && global.location.hostname) || 'localhost';
+    const DEFAULT_API = `${global.location.protocol === 'https:' ? 'https:' : 'http:'}//${PAGE_HOST}:5000`;
     const API_BASE = (localStorage.getItem('api_base_url') || DEFAULT_API).replace(/\/$/, '');
     const API_PREFIX = '/api/v1';
 
@@ -36,19 +39,26 @@
 
     async function postJson(path, body, headers) {
         let response;
-        try {
-            response = await fetch(apiUrl(path), {
-                method: 'POST',
-                headers: Object.assign(
-                    { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    headers || {},
-                ),
-                body: JSON.stringify(body || {}),
-            });
-        } catch (netErr) {
-            throw new Error(
-                `Cannot reach API at ${API_BASE}. Start it with:\n  python run.py --api`
-            );
+        for (let attempt = 0; attempt < 10; attempt += 1) {
+            try {
+                response = await fetch(apiUrl(path), {
+                    method: 'POST',
+                    headers: Object.assign(
+                        { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        headers || {},
+                    ),
+                    body: JSON.stringify(body || {}),
+                });
+                break;
+            } catch (netErr) {
+                if (attempt === 9) {
+                    const command = global.location.protocol === 'file:'
+                        ? 'This file cannot authenticate when opened directly. Run:\n  python run.py --university --web'
+                        : 'Restart the combined server with:\n  python run.py --university --web';
+                    throw new Error(`Cannot reach API at ${API_BASE}.\n${command}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
         }
         if (!response.ok) throw await parseError(response);
         return response.json();
@@ -64,7 +74,7 @@
                 },
             });
         } catch (netErr) {
-            throw new Error(`Cannot reach API at ${API_BASE}.`);
+            throw new Error(`Cannot reach API at ${API_BASE}. Restart with: python run.py --university --web`);
         }
         if (!response.ok) throw await parseError(response);
         return response.json();

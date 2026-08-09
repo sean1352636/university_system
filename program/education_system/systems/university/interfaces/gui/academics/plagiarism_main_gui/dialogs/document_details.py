@@ -25,7 +25,7 @@ class DocumentDetailsDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Document Details")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.document_details.windows.document_details', default="Document Details"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -57,7 +57,7 @@ class DocumentDetailsDialog:
                 self.dialog.after(0, lambda err=error_msg: self.show_error(err))
 
         # Show loading message
-        loading_label = ttk.Label(self.dialog, text="Loading document details...", font=GuiConfig.BODY_FONT)
+        loading_label = ttk.Label(self.dialog, text=_t('gui.academics.plagiarism_main_gui.dialogs.document_details.labels.loading_document_details', default="Loading document details..."), font=GuiConfig.BODY_FONT)
         loading_label.pack(expand=True)
 
         thread = threading.Thread(target=load_task, daemon=True)
@@ -92,7 +92,7 @@ class DocumentDetailsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X)
 
-        close_btn = ttk.Button(button_frame, text="Close", command=self.dialog.destroy)
+        close_btn = ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.document_details.buttons.close', default="Close"), command=self.dialog.destroy)
         close_btn.pack(side=tk.RIGHT)
 
         check_btn = ttk.Button(button_frame, text=_t("plagiarism.check_for_plagiarism"), command=self.check_plagiarism)
@@ -101,7 +101,7 @@ class DocumentDetailsDialog:
     def create_info_tab(self, notebook, details):
         """Create document information tab"""
         info_frame = ttk.Frame(notebook)
-        notebook.add(info_frame, text="Information")
+        notebook.add(info_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.document_details.tabs.information', default="Information"))
 
         # Create scrollable frame
         canvas = tk.Canvas(info_frame)
@@ -183,7 +183,7 @@ class DocumentDetailsDialog:
         if not check_history:
             no_checks_label = ttk.Label(
                 checks_frame,
-                text="No plagiarism checks performed on this document",
+                text=_t('gui.academics.plagiarism_main_gui.dialogs.document_details.labels.no_plagiarism_checks_performed_on_this_document', default="No plagiarism checks performed on this document"),
                 font=GuiConfig.BODY_FONT
             )
             no_checks_label.pack(expand=True)
@@ -230,13 +230,13 @@ class DocumentDetailsDialog:
                 item = selection[0]
                 result_id = int(checks_tree.item(item, 'tags')[0])
                 # This would show detailed results
-                messagebox.showinfo("Details", f"Detailed results for check {result_id} would be shown here.")
+                messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.document_details.dialogs.details', default="Details"), f"Detailed results for check {result_id} would be shown here.")
 
         checks_tree.bind('<Double-1>', on_check_double_click)
 
     def check_plagiarism(self):
         """Start plagiarism check for this document"""
-        messagebox.showinfo("Info", "Use the main application's Check for Plagiarism feature to check this document.")
+        messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.document_details.dialogs.info', default="Info"), _t('gui.academics.plagiarism_main_gui.dialogs.document_details.dialogs.use_the_main_application_s_check_for_plagiarism_feature_to_check', default="Use the main application's Check for Plagiarism feature to check this document."))
 
     def show_error(self, error):
         """Show error message"""
@@ -252,5 +252,5 @@ class DocumentDetailsDialog:
         )
         error_label.pack(expand=True)
 
-        close_btn = ttk.Button(self.dialog, text="Close", command=self.dialog.destroy)
+        close_btn = ttk.Button(self.dialog, text=_t('gui.academics.plagiarism_main_gui.dialogs.document_details.buttons.close', default="Close"), command=self.dialog.destroy)
         close_btn.pack(pady=GuiConfig.PADDING_MEDIUM)

@@ -12,6 +12,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -37,7 +39,7 @@ class TeachingLoadGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Teaching Load Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), _t('gui.staff.staff_hr.teaching_load.dialogs.login_required_to_access_teaching_load_management', default="Login required to access Teaching Load Management"))
             return
 
         if parent_notebook:
@@ -52,21 +54,21 @@ class TeachingLoadGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Teaching Load")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.teaching_load.tabs.teaching_load', default="Teaching Load"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Teaching Load Management")
+        self.window.title(_t('gui.staff.staff_hr.teaching_load.windows.teaching_load_management', default="Teaching Load Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.teaching_load.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -93,22 +95,22 @@ class TeachingLoadGUI:
     def _create_my_load_tab(self):
         """Create my teaching load tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Teaching Load")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.teaching_load.tabs.my_teaching_load', default="My Teaching Load"))
 
         # Header with filters
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Teaching Load", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.my_teaching_load', default="My Teaching Load"), style='Header.TLabel').pack(side=tk.LEFT)
 
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(filter_frame, text="Year:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.year', default="Year:")).pack(side=tk.LEFT, padx=5)
         self.load_year_entry = ttk.Entry(filter_frame, width=12)
         self.load_year_entry.insert(0, "2025-2026")
         self.load_year_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="Semester:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.semester', default="Semester:")).pack(side=tk.LEFT, padx=5)
         self.load_semester_combo = ttk.Combobox(
             filter_frame, values=['Fall', 'Spring', 'Summer'],
             width=10, state='readonly'
@@ -116,7 +118,7 @@ class TeachingLoadGUI:
         self.load_semester_combo.set('Fall')
         self.load_semester_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(filter_frame, text="Load", command=self._load_my_teaching_load).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.load', default="Load"), command=self._load_my_teaching_load).pack(side=tk.LEFT, padx=5)
 
         # Scrollable content area
         canvas_outer = tk.Canvas(tab)
@@ -132,7 +134,7 @@ class TeachingLoadGUI:
         scrollbar_outer.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Summary stat cards
-        self.load_stats_frame = ttk.LabelFrame(self.load_scroll_frame, text="Load Summary", padding=10)
+        self.load_stats_frame = ttk.LabelFrame(self.load_scroll_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.load_summary', default="Load Summary"), padding=10)
         self.load_stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.stat_total_courses = tk.StringVar(value="0")
@@ -154,7 +156,7 @@ class TeachingLoadGUI:
             self.load_stats_frame.columnconfigure(col_idx, weight=1)
 
         # Bar chart canvas
-        self.chart_frame = ttk.LabelFrame(self.load_scroll_frame, text="Credit Hours by Course", padding=10)
+        self.chart_frame = ttk.LabelFrame(self.load_scroll_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.credit_hours_by_course', default="Credit Hours by Course"), padding=10)
         self.chart_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.load_chart_canvas = tk.Canvas(self.chart_frame, height=200, bg='white',
@@ -308,17 +310,17 @@ class TeachingLoadGUI:
     def _create_semester_comparison_tab(self):
         """Create semester comparison tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Semester Comparison")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.teaching_load.tabs.semester_comparison', default="Semester Comparison"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Semester Comparison", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.semester_comparison', default="Semester Comparison"), style='Header.TLabel').pack(side=tk.LEFT)
 
         btn_frame = ttk.Frame(header_frame)
         btn_frame.pack(side=tk.RIGHT)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_semester_comparison).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Snapshot Current",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.refresh', default="Refresh"), command=self._load_semester_comparison).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.snapshot_current', default="Snapshot Current"),
                    command=self._snapshot_semester).pack(side=tk.LEFT, padx=5)
 
         # Semester comparison treeview
@@ -383,7 +385,7 @@ class TeachingLoadGUI:
         semester = self.load_semester_combo.get() if hasattr(self, 'load_semester_combo') else 'Fall'
         user_id = self._get_user_id()
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.teaching_load.dialogs.confirm', default="Confirm"),
                                     f"Snapshot current load for {year} {semester}?"):
             return
 
@@ -393,32 +395,32 @@ class TeachingLoadGUI:
                 academic_year=year,
                 semester=semester
             )
-            messagebox.showinfo("Success", "Semester snapshot saved.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), _t('gui.staff.staff_hr.teaching_load.dialogs.semester_snapshot_saved', default="Semester snapshot saved."))
             self._load_semester_comparison()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 3: RELEASE TIME ====================
 
     def _create_release_time_tab(self):
         """Create release time tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Release Time")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.teaching_load.tabs.release_time', default="Release Time"))
 
         # Header with filters
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Release Time", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.release_time', default="Release Time"), style='Header.TLabel').pack(side=tk.LEFT)
 
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(filter_frame, text="Year:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.year', default="Year:")).pack(side=tk.LEFT, padx=5)
         self.release_year_entry = ttk.Entry(filter_frame, width=12)
         self.release_year_entry.insert(0, "2025-2026")
         self.release_year_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="Semester:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.semester', default="Semester:")).pack(side=tk.LEFT, padx=5)
         self.release_semester_combo = ttk.Combobox(
             filter_frame, values=['', 'Fall', 'Spring', 'Summer'],
             width=10, state='readonly'
@@ -426,7 +428,7 @@ class TeachingLoadGUI:
         self.release_semester_combo.set('')
         self.release_semester_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(filter_frame, text="Refresh", command=self._load_release_time).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.refresh', default="Refresh"), command=self._load_release_time).pack(side=tk.LEFT, padx=5)
 
         # Release time treeview
         tree_frame = ttk.Frame(tab)
@@ -454,11 +456,11 @@ class TeachingLoadGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Add Release",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.add_release', default="Add Release"),
                    command=self._add_release_time_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.edit', default="Edit"),
                    command=self._edit_release_time_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.delete', default="Delete"),
                    command=self._delete_release_time).pack(side=tk.LEFT, padx=5)
 
         self._load_release_time()
@@ -496,7 +498,7 @@ class TeachingLoadGUI:
     def _add_release_time_dialog(self):
         """Open dialog to add release time."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Release Time")
+        dialog.title(_t('gui.staff.staff_hr.teaching_load.windows.add_release_time', default="Add Release Time"))
         dialog.geometry("500x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -505,7 +507,7 @@ class TeachingLoadGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Type
-        ttk.Label(frame, text="Type:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.type', default="Type:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(
             frame, values=['research_grant', 'admin_duty', 'sabbatical',
                            'department_chair', 'program_director',
@@ -516,40 +518,40 @@ class TeachingLoadGUI:
         type_combo.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.title', default="Title:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=30)
         title_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Hours per week
-        ttk.Label(frame, text="Hours/Week:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.hours_week', default="Hours/Week:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         hours_entry = ttk.Entry(frame, width=10)
         hours_entry.insert(0, "0")
         hours_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Credit equivalent
-        ttk.Label(frame, text="Credit Equiv:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.credit_equiv', default="Credit Equiv:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         credit_entry = ttk.Entry(frame, width=10)
         credit_entry.insert(0, "3")
         credit_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Start date
-        ttk.Label(frame, text="Start Date (YYYY-MM-DD):").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         start_entry = ttk.Entry(frame, width=15)
         start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         start_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # End date
-        ttk.Label(frame, text="End Date (YYYY-MM-DD):").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         end_entry = ttk.Entry(frame, width=15)
         end_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Funding source
-        ttk.Label(frame, text="Funding Source:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.funding_source', default="Funding Source:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         funding_entry = ttk.Entry(frame, width=30)
         funding_entry.grid(row=6, column=1, padx=10, pady=8)
 
         # Notes
-        ttk.Label(frame, text="Notes:").grid(row=7, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.notes', default="Notes:")).grid(row=7, column=0, sticky='ne', padx=10, pady=8)
         notes_text = tk.Text(frame, width=30, height=3)
         notes_text.grid(row=7, column=1, padx=10, pady=8)
 
@@ -589,18 +591,18 @@ class TeachingLoadGUI:
                     academic_year=self.release_year_entry.get().strip() or None,
                     semester=self.release_semester_combo.get() or None
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"),
                                     f"Release time added. ID: {release_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_release_time()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=8, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Add", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.add', default="Add"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         title_entry.focus_set()
 
@@ -608,7 +610,7 @@ class TeachingLoadGUI:
         """Open dialog to edit selected release time entry."""
         selection = self.release_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a release time entry to edit.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.info', default="Info"), _t('gui.staff.staff_hr.teaching_load.dialogs.please_select_a_release_time_entry_to_edit', default="Please select a release time entry to edit."))
             return
 
         item = self.release_tree.item(selection[0])
@@ -616,7 +618,7 @@ class TeachingLoadGUI:
         release_id = values[0]
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Release Time")
+        dialog.title(_t('gui.staff.staff_hr.teaching_load.windows.edit_release_time', default="Edit Release Time"))
         dialog.geometry("500x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -625,7 +627,7 @@ class TeachingLoadGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Type
-        ttk.Label(frame, text="Type:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.type', default="Type:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(
             frame, values=['research_grant', 'admin_duty', 'sabbatical',
                            'department_chair', 'program_director',
@@ -637,25 +639,25 @@ class TeachingLoadGUI:
         type_combo.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.title', default="Title:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=30)
         title_entry.insert(0, str(values[2]))
         title_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Hours per week
-        ttk.Label(frame, text="Hours/Week:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.hours_week', default="Hours/Week:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         hours_entry = ttk.Entry(frame, width=10)
         hours_entry.insert(0, str(values[3]))
         hours_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Credit equivalent
-        ttk.Label(frame, text="Credit Equiv:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.credit_equiv', default="Credit Equiv:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         credit_entry = ttk.Entry(frame, width=10)
         credit_entry.insert(0, str(values[4]))
         credit_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Status
-        ttk.Label(frame, text="Status:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.status', default="Status:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         status_combo = ttk.Combobox(
             frame, values=['pending', 'approved', 'denied'],
             width=15, state='readonly'
@@ -684,16 +686,16 @@ class TeachingLoadGUI:
                     credit_equivalent=credit_equiv,
                     status=status
                 )
-                messagebox.showinfo("Success", "Release time updated.", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), _t('gui.staff.staff_hr.teaching_load.dialogs.release_time_updated', default="Release time updated."), parent=dialog)
                 dialog.destroy()
                 self._load_release_time()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=5, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         title_entry.focus_set()
 
@@ -701,48 +703,48 @@ class TeachingLoadGUI:
         """Delete the selected release time entry."""
         selection = self.release_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a release time entry to delete.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.info', default="Info"), _t('gui.staff.staff_hr.teaching_load.dialogs.please_select_a_release_time_entry_to_delete', default="Please select a release time entry to delete."))
             return
 
         item = self.release_tree.item(selection[0])
         release_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.teaching_load.dialogs.confirm', default="Confirm"),
                                     f"Delete release time entry #{release_id}?"):
             return
 
         try:
             TeachingLoadManager.delete_release_time(release_id)
-            messagebox.showinfo("Success", "Release time entry deleted.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), _t('gui.staff.staff_hr.teaching_load.dialogs.release_time_entry_deleted', default="Release time entry deleted."))
             self._load_release_time()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 4: DEPARTMENT VIEW (admin) ====================
 
     def _create_department_view_tab(self):
         """Create department view tab (admin only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Department View")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.teaching_load.tabs.department_view', default="Department View"))
 
         # Header with filters
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Department Teaching Loads", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.department_teaching_loads', default="Department Teaching Loads"), style='Header.TLabel').pack(side=tk.LEFT)
 
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(filter_frame, text="Department:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.department', default="Department:")).pack(side=tk.LEFT, padx=5)
         self.dept_view_dept_entry = ttk.Entry(filter_frame, width=20)
         self.dept_view_dept_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="Year:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.year', default="Year:")).pack(side=tk.LEFT, padx=5)
         self.dept_view_year_entry = ttk.Entry(filter_frame, width=12)
         self.dept_view_year_entry.insert(0, "2025-2026")
         self.dept_view_year_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="Semester:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.semester', default="Semester:")).pack(side=tk.LEFT, padx=5)
         self.dept_view_semester_combo = ttk.Combobox(
             filter_frame, values=['Fall', 'Spring', 'Summer'],
             width=10, state='readonly'
@@ -750,7 +752,7 @@ class TeachingLoadGUI:
         self.dept_view_semester_combo.set('Fall')
         self.dept_view_semester_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(filter_frame, text="Load",
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.load', default="Load"),
                    command=self._load_department_view).pack(side=tk.LEFT, padx=5)
 
         # Department loads treeview
@@ -778,7 +780,7 @@ class TeachingLoadGUI:
         # Suggestions button
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Suggestions",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.suggestions', default="Suggestions"),
                    command=self._show_load_balance_suggestions).pack(side=tk.LEFT, padx=5)
 
     def _load_department_view(self):
@@ -788,7 +790,7 @@ class TeachingLoadGUI:
 
         department = self.dept_view_dept_entry.get().strip()
         if not department:
-            messagebox.showinfo("Info", "Please enter a department name.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.info', default="Info"), _t('gui.staff.staff_hr.teaching_load.dialogs.please_enter_a_department_name', default="Please enter a department name."))
             return
 
         year = self.dept_view_year_entry.get().strip()
@@ -817,7 +819,7 @@ class TeachingLoadGUI:
         """Show load balance suggestions in a dialog."""
         department = self.dept_view_dept_entry.get().strip()
         if not department:
-            messagebox.showinfo("Info", "Please enter a department and load data first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.info', default="Info"), _t('gui.staff.staff_hr.teaching_load.dialogs.please_enter_a_department_and_load_data_first', default="Please enter a department and load data first."))
             return
 
         year = self.dept_view_year_entry.get().strip()
@@ -827,11 +829,11 @@ class TeachingLoadGUI:
             suggestions = TeachingLoadManager.get_load_balance_suggestions(
                 department=department, academic_year=year, semester=semester)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load suggestions: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), f"Could not load suggestions: {e}")
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Load Balance Suggestions")
+        dialog.title(_t('gui.staff.staff_hr.teaching_load.windows.load_balance_suggestions', default="Load Balance Suggestions"))
         dialog.geometry("700x500")
         dialog.transient(self.root)
 
@@ -842,7 +844,7 @@ class TeachingLoadGUI:
                   font=('Arial', 12, 'bold')).pack(anchor='w', pady=(0, 10))
 
         if not suggestions:
-            ttk.Label(frame, text="No suggestions available. Load is balanced.",
+            ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.no_suggestions_available_load_is_balanced', default="No suggestions available. Load is balanced."),
                       font=('Arial', 10)).pack(anchor='w', pady=10)
         else:
             # Suggestions treeview
@@ -877,33 +879,33 @@ class TeachingLoadGUI:
         # Close button
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # ==================== TAB 5: COURSE ASSIGNMENTS (admin) ====================
 
     def _create_course_assignments_tab(self):
         """Create course assignments admin tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Course Assignments")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.teaching_load.tabs.course_assignments', default="Course Assignments"))
 
         # Header with search filters
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Course Assignments", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.course_assignments', default="Course Assignments"), style='Header.TLabel').pack(side=tk.LEFT)
 
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(filter_frame, text="User ID:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.user_id', default="User ID:")).pack(side=tk.LEFT, padx=5)
         self.assign_user_entry = ttk.Entry(filter_frame, width=15)
         self.assign_user_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="Year:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.year', default="Year:")).pack(side=tk.LEFT, padx=5)
         self.assign_year_entry = ttk.Entry(filter_frame, width=12)
         self.assign_year_entry.insert(0, "2025-2026")
         self.assign_year_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="Semester:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.semester', default="Semester:")).pack(side=tk.LEFT, padx=5)
         self.assign_semester_combo = ttk.Combobox(
             filter_frame, values=['Fall', 'Spring', 'Summer'],
             width=10, state='readonly'
@@ -911,7 +913,7 @@ class TeachingLoadGUI:
         self.assign_semester_combo.set('Fall')
         self.assign_semester_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(filter_frame, text="Search",
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.search', default="Search"),
                    command=self._load_course_assignments).pack(side=tk.LEFT, padx=5)
 
         # Assignments treeview
@@ -940,13 +942,13 @@ class TeachingLoadGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Add",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.add', default="Add"),
                    command=self._add_assignment_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.edit', default="Edit"),
                    command=self._edit_assignment_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.delete', default="Delete"),
                    command=self._delete_assignment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Import CSV",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.import_csv', default="Import CSV"),
                    command=self._import_csv_dialog).pack(side=tk.LEFT, padx=5)
 
     def _load_course_assignments(self):
@@ -956,7 +958,7 @@ class TeachingLoadGUI:
 
         user_id = self.assign_user_entry.get().strip()
         if not user_id:
-            messagebox.showinfo("Info", "Please enter a User ID to search.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.info', default="Info"), _t('gui.staff.staff_hr.teaching_load.dialogs.please_enter_a_user_id_to_search', default="Please enter a User ID to search."))
             return
 
         year = self.assign_year_entry.get().strip()
@@ -986,7 +988,7 @@ class TeachingLoadGUI:
     def _add_assignment_dialog(self):
         """Open dialog to add a course assignment."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Course Assignment")
+        dialog.title(_t('gui.staff.staff_hr.teaching_load.windows.add_course_assignment', default="Add Course Assignment"))
         dialog.geometry("500x600")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -995,7 +997,7 @@ class TeachingLoadGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # User ID
-        ttk.Label(frame, text="User ID:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.user_id', default="User ID:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         user_entry = ttk.Entry(frame, width=25)
         user_val = self.assign_user_entry.get().strip()
         if user_val:
@@ -1003,56 +1005,56 @@ class TeachingLoadGUI:
         user_entry.grid(row=0, column=1, padx=10, pady=8)
 
         # Course code
-        ttk.Label(frame, text="Course Code:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.course_code', default="Course Code:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         code_entry = ttk.Entry(frame, width=15)
         code_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Course name
-        ttk.Label(frame, text="Course Name:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.course_name', default="Course Name:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         name_entry = ttk.Entry(frame, width=30)
         name_entry.grid(row=2, column=1, padx=10, pady=8)
 
         # Section
-        ttk.Label(frame, text="Section:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.section', default="Section:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         section_entry = ttk.Entry(frame, width=10)
         section_entry.insert(0, "001")
         section_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Credits
-        ttk.Label(frame, text="Credits:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.credits', default="Credits:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         credits_entry = ttk.Entry(frame, width=10)
         credits_entry.insert(0, "3")
         credits_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Contact hours
-        ttk.Label(frame, text="Contact Hours:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.contact_hours', default="Contact Hours:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         contact_entry = ttk.Entry(frame, width=10)
         contact_entry.insert(0, "3")
         contact_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Enrolled students
-        ttk.Label(frame, text="Enrolled Students:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.enrolled_students', default="Enrolled Students:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         enrolled_entry = ttk.Entry(frame, width=10)
         enrolled_entry.insert(0, "30")
         enrolled_entry.grid(row=6, column=1, padx=10, pady=8, sticky='w')
 
         # Department
-        ttk.Label(frame, text="Department:").grid(row=7, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.department', default="Department:")).grid(row=7, column=0, sticky='e', padx=10, pady=8)
         dept_entry = ttk.Entry(frame, width=25)
         dept_entry.grid(row=7, column=1, padx=10, pady=8)
 
         # Is new prep
         new_prep_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(frame, text="New Prep", variable=new_prep_var).grid(
+        ttk.Checkbutton(frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.new_prep', default="New Prep"), variable=new_prep_var).grid(
             row=8, column=1, padx=10, pady=4, sticky='w')
 
         # Is team taught
         team_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(frame, text="Team Taught", variable=team_var).grid(
+        ttk.Checkbutton(frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.team_taught', default="Team Taught"), variable=team_var).grid(
             row=9, column=1, padx=10, pady=4, sticky='w')
 
         # Team share percentage
-        ttk.Label(frame, text="Team Share %:").grid(row=10, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.team_share', default="Team Share %:")).grid(row=10, column=0, sticky='e', padx=10, pady=8)
         share_entry = ttk.Entry(frame, width=10)
         share_entry.insert(0, "100")
         share_entry.grid(row=10, column=1, padx=10, pady=8, sticky='w')
@@ -1090,18 +1092,18 @@ class TeachingLoadGUI:
                     academic_year=self.assign_year_entry.get().strip() or None,
                     semester=self.assign_semester_combo.get() or None
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"),
                                     f"Course assignment added. ID: {assignment_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_course_assignments()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=11, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Add", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.add', default="Add"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         code_entry.focus_set()
 
@@ -1109,7 +1111,7 @@ class TeachingLoadGUI:
         """Open dialog to edit the selected course assignment."""
         selection = self.assignments_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an assignment to edit.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.info', default="Info"), _t('gui.staff.staff_hr.teaching_load.dialogs.please_select_an_assignment_to_edit', default="Please select an assignment to edit."))
             return
 
         item = self.assignments_tree.item(selection[0])
@@ -1117,7 +1119,7 @@ class TeachingLoadGUI:
         assignment_id = values[0]
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Course Assignment")
+        dialog.title(_t('gui.staff.staff_hr.teaching_load.windows.edit_course_assignment', default="Edit Course Assignment"))
         dialog.geometry("500x500")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -1126,37 +1128,37 @@ class TeachingLoadGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Course code
-        ttk.Label(frame, text="Course Code:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.course_code', default="Course Code:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         code_entry = ttk.Entry(frame, width=15)
         code_entry.insert(0, str(values[1]))
         code_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
         # Course name
-        ttk.Label(frame, text="Course Name:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.course_name', default="Course Name:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         name_entry = ttk.Entry(frame, width=30)
         name_entry.insert(0, str(values[2]))
         name_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Section
-        ttk.Label(frame, text="Section:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.section', default="Section:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         section_entry = ttk.Entry(frame, width=10)
         section_entry.insert(0, str(values[3]))
         section_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Credits
-        ttk.Label(frame, text="Credits:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.credits', default="Credits:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         credits_entry = ttk.Entry(frame, width=10)
         credits_entry.insert(0, str(values[4]))
         credits_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Enrolled students
-        ttk.Label(frame, text="Enrolled Students:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.enrolled_students', default="Enrolled Students:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         enrolled_entry = ttk.Entry(frame, width=10)
         enrolled_entry.insert(0, str(values[5]))
         enrolled_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Status
-        ttk.Label(frame, text="Status:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.status', default="Status:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         status_combo = ttk.Combobox(
             frame, values=['active', 'cancelled', 'completed'],
             width=15, state='readonly'
@@ -1187,16 +1189,16 @@ class TeachingLoadGUI:
                     enrolled_students=enrolled,
                     status=status
                 )
-                messagebox.showinfo("Success", "Assignment updated.", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), _t('gui.staff.staff_hr.teaching_load.dialogs.assignment_updated', default="Assignment updated."), parent=dialog)
                 dialog.destroy()
                 self._load_course_assignments()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=6, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         code_entry.focus_set()
 
@@ -1204,29 +1206,29 @@ class TeachingLoadGUI:
         """Delete the selected course assignment."""
         selection = self.assignments_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an assignment to delete.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.info', default="Info"), _t('gui.staff.staff_hr.teaching_load.dialogs.please_select_an_assignment_to_delete', default="Please select an assignment to delete."))
             return
 
         item = self.assignments_tree.item(selection[0])
         assignment_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.teaching_load.dialogs.confirm', default="Confirm"),
                                     f"Delete course assignment #{assignment_id}?"):
             return
 
         try:
             TeachingLoadManager.delete_course_assignment(assignment_id)
-            messagebox.showinfo("Success", "Course assignment deleted.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), _t('gui.staff.staff_hr.teaching_load.dialogs.course_assignment_deleted', default="Course assignment deleted."))
             self._load_course_assignments()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e))
 
     def _import_csv_dialog(self):
         """Open dialog to import course assignments from CSV."""
         from tkinter import filedialog
 
         file_path = filedialog.askopenfilename(
-            title="Select CSV File",
+            title=_t('gui.staff.staff_hr.teaching_load.dialogs.select_csv_file', default="Select CSV File"),
             filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
             parent=self.root
         )
@@ -1244,23 +1246,23 @@ class TeachingLoadGUI:
                 semester=semester
             )
             imported = result.get('imported', 0) if isinstance(result, dict) else result
-            messagebox.showinfo("Success", f"Imported {imported} course assignments.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), f"Imported {imported} course assignments.")
             self._load_course_assignments()
         except Exception as e:
-            messagebox.showerror("Error", f"Import failed: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), f"Import failed: {e}")
 
     # ==================== TAB 6: STANDARDS (admin) ====================
 
     def _create_standards_tab(self):
         """Create teaching load standards admin tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Standards")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.teaching_load.tabs.standards', default="Standards"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Teaching Load Standards", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh",
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.teaching_load.labels.teaching_load_standards', default="Teaching Load Standards"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.refresh', default="Refresh"),
                    command=self._load_standards).pack(side=tk.RIGHT, padx=5)
 
         # Standards treeview
@@ -1286,11 +1288,11 @@ class TeachingLoadGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Add",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.add', default="Add"),
                    command=self._add_standard_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.edit', default="Edit"),
                    command=self._edit_standard_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.delete', default="Delete"),
                    command=self._delete_standard).pack(side=tk.LEFT, padx=5)
 
         self._load_standards()
@@ -1319,7 +1321,7 @@ class TeachingLoadGUI:
     def _add_standard_dialog(self):
         """Open dialog to add a teaching load standard."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Teaching Load Standard")
+        dialog.title(_t('gui.staff.staff_hr.teaching_load.windows.add_teaching_load_standard', default="Add Teaching Load Standard"))
         dialog.geometry("500x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -1328,53 +1330,53 @@ class TeachingLoadGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Department
-        ttk.Label(frame, text="Department:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.department', default="Department:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         dept_entry = ttk.Entry(frame, width=25)
         dept_entry.grid(row=0, column=1, padx=10, pady=8)
 
         # Role
-        ttk.Label(frame, text="Role:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.role', default="Role:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         role_entry = ttk.Entry(frame, width=25)
         role_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Standard credits
-        ttk.Label(frame, text="Standard Credits:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.standard_credits', default="Standard Credits:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         std_credits_entry = ttk.Entry(frame, width=10)
         std_credits_entry.insert(0, "12")
         std_credits_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Standard courses
-        ttk.Label(frame, text="Standard Courses:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.standard_courses', default="Standard Courses:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         std_courses_entry = ttk.Entry(frame, width=10)
         std_courses_entry.insert(0, "4")
         std_courses_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Max credits
-        ttk.Label(frame, text="Max Credits:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.max_credits', default="Max Credits:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         max_credits_entry = ttk.Entry(frame, width=10)
         max_credits_entry.insert(0, "15")
         max_credits_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Max new preps
-        ttk.Label(frame, text="Max New Preps:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.max_new_preps', default="Max New Preps:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         max_preps_entry = ttk.Entry(frame, width=10)
         max_preps_entry.insert(0, "2")
         max_preps_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Large class threshold
-        ttk.Label(frame, text="Large Class Threshold:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.large_class_threshold', default="Large Class Threshold:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         threshold_entry = ttk.Entry(frame, width=10)
         threshold_entry.insert(0, "50")
         threshold_entry.grid(row=6, column=1, padx=10, pady=8, sticky='w')
 
         # Large class factor
-        ttk.Label(frame, text="Large Class Factor:").grid(row=7, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.large_class_factor', default="Large Class Factor:")).grid(row=7, column=0, sticky='e', padx=10, pady=8)
         factor_entry = ttk.Entry(frame, width=10)
         factor_entry.insert(0, "1.5")
         factor_entry.grid(row=7, column=1, padx=10, pady=8, sticky='w')
 
         # Overload rate
-        ttk.Label(frame, text="Overload Rate:").grid(row=8, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.overload_rate', default="Overload Rate:")).grid(row=8, column=0, sticky='e', padx=10, pady=8)
         rate_entry = ttk.Entry(frame, width=10)
         rate_entry.insert(0, "0")
         rate_entry.grid(row=8, column=1, padx=10, pady=8, sticky='w')
@@ -1406,18 +1408,18 @@ class TeachingLoadGUI:
                     large_class_factor=factor,
                     overload_rate=overload_rate
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"),
                                     f"Standard created. ID: {standard_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_standards()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=9, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Add", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.add', default="Add"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         dept_entry.focus_set()
 
@@ -1425,7 +1427,7 @@ class TeachingLoadGUI:
         """Open dialog to edit the selected teaching load standard."""
         selection = self.standards_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a standard to edit.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.info', default="Info"), _t('gui.staff.staff_hr.teaching_load.dialogs.please_select_a_standard_to_edit', default="Please select a standard to edit."))
             return
 
         item = self.standards_tree.item(selection[0])
@@ -1433,7 +1435,7 @@ class TeachingLoadGUI:
         standard_id = values[0]
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Teaching Load Standard")
+        dialog.title(_t('gui.staff.staff_hr.teaching_load.windows.edit_teaching_load_standard', default="Edit Teaching Load Standard"))
         dialog.geometry("500x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -1442,55 +1444,55 @@ class TeachingLoadGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Department
-        ttk.Label(frame, text="Department:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.department', default="Department:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         dept_entry = ttk.Entry(frame, width=25)
         dept_entry.insert(0, str(values[1]))
         dept_entry.grid(row=0, column=1, padx=10, pady=8)
 
         # Role
-        ttk.Label(frame, text="Role:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.role', default="Role:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         role_entry = ttk.Entry(frame, width=25)
         role_entry.insert(0, str(values[2]))
         role_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Standard credits
-        ttk.Label(frame, text="Standard Credits:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.standard_credits', default="Standard Credits:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         std_credits_entry = ttk.Entry(frame, width=10)
         std_credits_entry.insert(0, str(values[3]))
         std_credits_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Standard courses
-        ttk.Label(frame, text="Standard Courses:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.standard_courses', default="Standard Courses:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         std_courses_entry = ttk.Entry(frame, width=10)
         std_courses_entry.insert(0, str(values[4]))
         std_courses_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Max credits
-        ttk.Label(frame, text="Max Credits:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.max_credits', default="Max Credits:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         max_credits_entry = ttk.Entry(frame, width=10)
         max_credits_entry.insert(0, str(values[5]))
         max_credits_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Max new preps
-        ttk.Label(frame, text="Max New Preps:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.max_new_preps', default="Max New Preps:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         max_preps_entry = ttk.Entry(frame, width=10)
         max_preps_entry.insert(0, str(values[6]))
         max_preps_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Large class threshold
-        ttk.Label(frame, text="Large Class Threshold:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.large_class_threshold', default="Large Class Threshold:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         threshold_entry = ttk.Entry(frame, width=10)
         threshold_entry.insert(0, "50")
         threshold_entry.grid(row=6, column=1, padx=10, pady=8, sticky='w')
 
         # Large class factor
-        ttk.Label(frame, text="Large Class Factor:").grid(row=7, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.large_class_factor', default="Large Class Factor:")).grid(row=7, column=0, sticky='e', padx=10, pady=8)
         factor_entry = ttk.Entry(frame, width=10)
         factor_entry.insert(0, "1.5")
         factor_entry.grid(row=7, column=1, padx=10, pady=8, sticky='w')
 
         # Overload rate
-        ttk.Label(frame, text="Overload Rate:").grid(row=8, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.teaching_load.labels.overload_rate', default="Overload Rate:")).grid(row=8, column=0, sticky='e', padx=10, pady=8)
         rate_entry = ttk.Entry(frame, width=10)
         rate_entry.insert(0, "0")
         rate_entry.grid(row=8, column=1, padx=10, pady=8, sticky='w')
@@ -1523,16 +1525,16 @@ class TeachingLoadGUI:
                     large_class_factor=factor,
                     overload_rate=overload_rate
                 )
-                messagebox.showinfo("Success", "Standard updated.", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), _t('gui.staff.staff_hr.teaching_load.dialogs.standard_updated', default="Standard updated."), parent=dialog)
                 dialog.destroy()
                 self._load_standards()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=9, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.teaching_load.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         dept_entry.focus_set()
 
@@ -1540,19 +1542,19 @@ class TeachingLoadGUI:
         """Delete the selected teaching load standard."""
         selection = self.standards_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a standard to delete.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.info', default="Info"), _t('gui.staff.staff_hr.teaching_load.dialogs.please_select_a_standard_to_delete', default="Please select a standard to delete."))
             return
 
         item = self.standards_tree.item(selection[0])
         standard_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.teaching_load.dialogs.confirm', default="Confirm"),
                                     f"Delete standard #{standard_id}?"):
             return
 
         try:
             TeachingLoadManager.delete_standard(standard_id)
-            messagebox.showinfo("Success", "Standard deleted.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.teaching_load.dialogs.success', default="Success"), _t('gui.staff.staff_hr.teaching_load.dialogs.standard_deleted', default="Standard deleted."))
             self._load_standards()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.teaching_load.dialogs.error', default="Error"), str(e))

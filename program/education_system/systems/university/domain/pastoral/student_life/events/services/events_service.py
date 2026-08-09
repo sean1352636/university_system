@@ -25,7 +25,7 @@ import json
 import logging
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 
 logger = logging.getLogger(__name__)

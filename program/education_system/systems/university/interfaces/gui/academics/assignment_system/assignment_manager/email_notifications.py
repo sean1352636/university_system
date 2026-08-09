@@ -1,5 +1,7 @@
 """Email reminder and notification operations for assignments"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -13,7 +15,7 @@ class EmailNotificationsMixin:
         """Send email reminders for assignment"""
         selection = self.manage_assignments_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment to send reminders for")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.email_notifications.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.email_notifications.dialogs.please_select_an_assignment_to_send_reminders_for', default="Please select an assignment to send reminders for"))
             return
 
         item = self.manage_assignments_tree.item(selection[0])
@@ -29,12 +31,12 @@ class EmailNotificationsMixin:
         email_window.grab_set()
 
         # Email options frame
-        options_frame = ttk.LabelFrame(email_window, text="Email Options", padding=10)
+        options_frame = ttk.LabelFrame(email_window, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.labels.email_options', default="Email Options"), padding=10)
         options_frame.pack(fill='x', padx=10, pady=10)
 
         # Email type selection
-        email_type_var = tk.StringVar(value="upcoming")
-        ttk.Label(options_frame, text="Email Type:").grid(row=0, column=0, sticky='w', padx=(0, 10))
+        email_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.email_notifications.values.upcoming', default="upcoming"))
+        ttk.Label(options_frame, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.labels.email_type', default="Email Type:")).grid(row=0, column=0, sticky='w', padx=(0, 10))
 
         email_types = [
             ("upcoming", "Upcoming Assignment Reminder"),
@@ -48,10 +50,10 @@ class EmailNotificationsMixin:
                            value=value).grid(row=i+1, column=0, sticky='w', padx=(20, 0))
 
         # Recipient selection
-        recipient_frame = ttk.LabelFrame(email_window, text="Recipients", padding=10)
+        recipient_frame = ttk.LabelFrame(email_window, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.labels.recipients', default="Recipients"), padding=10)
         recipient_frame.pack(fill='x', padx=10, pady=10)
 
-        recipient_var = tk.StringVar(value="enrolled")
+        recipient_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.email_notifications.values.enrolled', default="enrolled"))
         recipient_options = [
             ("enrolled", "All Enrolled Students"),
             ("not_submitted", "Students Who Haven't Submitted"),
@@ -64,17 +66,17 @@ class EmailNotificationsMixin:
                            value=value).grid(row=i, column=0, sticky='w')
 
         # Message frame
-        message_frame = ttk.LabelFrame(email_window, text="Message", padding=10)
+        message_frame = ttk.LabelFrame(email_window, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.labels.message', default="Message"), padding=10)
         message_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Subject line
-        ttk.Label(message_frame, text="Subject:").pack(anchor='w')
+        ttk.Label(message_frame, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.labels.subject', default="Subject:")).pack(anchor='w')
         subject_var = tk.StringVar(value=f"Reminder: {assignment_title}")
         subject_entry = ttk.Entry(message_frame, textvariable=subject_var, width=70)
         subject_entry.pack(fill='x', pady=(0, 10))
 
         # Message body
-        ttk.Label(message_frame, text="Message:").pack(anchor='w')
+        ttk.Label(message_frame, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.labels.message_variant_2', default="Message:")).pack(anchor='w')
         message_text = scrolledtext.ScrolledText(message_frame, height=10, width=70)
         message_text.pack(fill='both', expand=True)
 
@@ -118,14 +120,14 @@ class EmailNotificationsMixin:
                 message = message_text.get('1.0', tk.END).strip()
 
                 if not subject or not message:
-                    messagebox.showwarning("Warning", "Please enter both subject and message")
+                    messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.email_notifications.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.email_notifications.dialogs.please_enter_both_subject_and_message', default="Please enter both subject and message"))
                     return
 
                 # Get recipient list based on selection
                 recipients = self._get_assignment_email_recipients(assignment_id, recipient_type)
 
                 if not recipients:
-                    messagebox.showinfo("Info", "No recipients found for the selected criteria")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.email_notifications.dialogs.info', default="Info"), _t('gui.academics.assignment_system.assignment_manager.email_notifications.dialogs.no_recipients_found_for_the_selected_criteria', default="No recipients found for the selected criteria"))
                     return
 
                 # Try to open email GUI if available
@@ -133,13 +135,13 @@ class EmailNotificationsMixin:
 
                 if success:
                     email_window.destroy()
-                    messagebox.showinfo("Success", f"Email reminders sent to {len(recipients)} recipients")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.email_notifications.dialogs.success', default="Success"), f"Email reminders sent to {len(recipients)} recipients")
                 else:
                     # Fallback: show email details for manual sending
                     self._show_email_fallback_dialog(recipients, subject, message)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to send emails: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.email_notifications.dialogs.error', default="Error"), f"Failed to send emails: {e}")
 
         def preview_recipients():
             """Preview the list of recipients"""
@@ -148,7 +150,7 @@ class EmailNotificationsMixin:
                 recipients = self._get_assignment_email_recipients(assignment_id, recipient_type)
 
                 preview_window = tk.Toplevel(email_window)
-                preview_window.title("Email Recipients Preview")
+                preview_window.title(_t('gui.academics.assignment_system.assignment_manager.email_notifications.windows.email_recipients_preview', default="Email Recipients Preview"))
                 preview_window.geometry("500x400")
                 preview_window.transient(email_window)
 
@@ -160,17 +162,17 @@ class EmailNotificationsMixin:
                 for recipient in recipients:
                     recipients_list.insert(tk.END, f"{recipient['name']} ({recipient['email']})")
 
-                ttk.Button(preview_window, text="Close",
+                ttk.Button(preview_window, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.buttons.close', default="Close"),
                           command=preview_window.destroy).pack(pady=10)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to preview recipients: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.email_notifications.dialogs.error', default="Error"), f"Failed to preview recipients: {e}")
 
-        ttk.Button(buttons_frame, text="Preview Recipients",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.buttons.preview_recipients', default="Preview Recipients"),
                   command=preview_recipients).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="Send Emails",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.buttons.send_emails', default="Send Emails"),
                   command=send_emails).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="Cancel",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.buttons.cancel', default="Cancel"),
                   command=email_window.destroy).pack(side='right')
 
 
@@ -259,15 +261,15 @@ class EmailNotificationsMixin:
     def _show_email_fallback_dialog(self, recipients, subject, message):
         """Show fallback dialog with email details for manual sending"""
         fallback_window = tk.Toplevel(self.root)
-        fallback_window.title("Email Details - Manual Send")
+        fallback_window.title(_t('gui.academics.assignment_system.assignment_manager.email_notifications.windows.email_details_manual_send', default="Email Details - Manual Send"))
         fallback_window.geometry("700x500")
         fallback_window.transient(self.root)
 
-        ttk.Label(fallback_window, text="Email GUI not available. Please send manually:",
+        ttk.Label(fallback_window, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.labels.email_gui_not_available_please_send_manually', default="Email GUI not available. Please send manually:"),
                  font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', padx=10, pady=10)
 
         # Email details
-        details_frame = ttk.LabelFrame(fallback_window, text="Email Details", padding=10)
+        details_frame = ttk.LabelFrame(fallback_window, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.labels.email_details', default="Email Details"), padding=10)
         details_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         details_text = scrolledtext.ScrolledText(details_frame, height=20, width=80)
@@ -282,7 +284,7 @@ class EmailNotificationsMixin:
         details_text.insert('1.0', email_details)
         details_text.config(state='disabled')
 
-        ttk.Button(fallback_window, text="Close",
+        ttk.Button(fallback_window, text=_t('gui.academics.assignment_system.assignment_manager.email_notifications.buttons.close', default="Close"),
                   command=fallback_window.destroy).pack(pady=10)
 
 

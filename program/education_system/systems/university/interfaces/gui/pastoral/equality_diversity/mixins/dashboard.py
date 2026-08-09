@@ -1,6 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import json
 import os
@@ -69,10 +71,10 @@ class _DashboardMixin:
               bg=t["panel"], fg=t["accent"]).pack(anchor="w", padx=16, pady=(12, 4))
         grid = Frame(root, bg=t["panel"])
         grid.pack(fill="x", padx=16)
-        Label(grid, text="Field", width=22, anchor="w",
+        Label(grid, text=_t('gui.pastoral.equality_diversity.mixins.dashboard.labels.field', default="Field"), width=22, anchor="w",
               bg=t["panel"], fg=t["text"]).grid(row=0, column=0)
-        Label(grid, text="Missing", bg=t["panel"], fg=t["text"]).grid(row=0, column=1)
-        Label(grid, text="% missing", bg=t["panel"], fg=t["text"]).grid(row=0, column=2)
+        Label(grid, text=_t('gui.pastoral.equality_diversity.mixins.dashboard.labels.missing_variant_2', default="Missing"), bg=t["panel"], fg=t["text"]).grid(row=0, column=1)
+        Label(grid, text=_t('gui.pastoral.equality_diversity.mixins.dashboard.labels.missing', default="% missing"), bg=t["panel"], fg=t["text"]).grid(row=0, column=2)
         for i, (f, (missing, tot)) in enumerate(dq["per_field_missing"].items(), 1):
             pct = (missing / tot * 100) if tot else 0.0
             for c, v in enumerate([f, f"{missing}", f"{pct:.1f}%"]):

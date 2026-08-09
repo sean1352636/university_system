@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from tkinter import messagebox, simpledialog
 import threading
 
@@ -18,11 +20,11 @@ class StudentManagementMixin:
     def record_assessment_grades_gui(self):
         """Record grades for students for specific assessment"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to record grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_must_be_logged_in_to_record_grades', default="You must be logged in to record grades."))
             return
 
         if not self.auth.check_permission('manage_grades'):
-            messagebox.showerror("Error", "You don't have permission to record grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_don_t_have_permission_to_record_grades', default="You don't have permission to record grades."))
             return
 
         try:
@@ -30,18 +32,18 @@ class StudentManagementMixin:
                 thread = threading.Thread(target=record_assessment_grades, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Record assessment grades not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.record_assessment_grades_not_available', default="Record assessment grades not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to record assessment grades: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), f"Failed to record assessment grades: {str(e)}")
 
     def update_grades_gui(self):
         """Update existing grades for assessments"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to update grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_must_be_logged_in_to_update_grades', default="You must be logged in to update grades."))
             return
 
         if not self.auth.check_permission('manage_grades'):
-            messagebox.showerror("Error", "You don't have permission to update grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_don_t_have_permission_to_update_grades', default="You don't have permission to update grades."))
             return
 
         try:
@@ -49,14 +51,14 @@ class StudentManagementMixin:
                 thread = threading.Thread(target=update_grades, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Update grades not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.update_grades_not_available', default="Update grades not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update grades: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), f"Failed to update grades: {str(e)}")
 
     def view_student_grades_gui(self):
         """View grades for specific student"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to view student grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_must_be_logged_in_to_view_student_grades', default="You must be logged in to view student grades."))
             return
 
         try:
@@ -64,18 +66,18 @@ class StudentManagementMixin:
                 thread = threading.Thread(target=view_student_grades, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "View student grades not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.view_student_grades_not_available', default="View student grades not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to view student grades: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), f"Failed to view student grades: {str(e)}")
 
     def update_module_grade_gui(self, student_id=None, module_code=None):
         """Update final grade for student in module"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to update module grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_must_be_logged_in_to_update_module_grades', default="You must be logged in to update module grades."))
             return
 
         if not self.auth.check_permission('manage_grades'):
-            messagebox.showerror("Error", "You don't have permission to update module grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_don_t_have_permission_to_update_module_grades', default="You don't have permission to update module grades."))
             return
 
         try:
@@ -83,12 +85,12 @@ class StudentManagementMixin:
                 from education_system.systems.university.infrastructure.database.db import get_connection
 
                 if not student_id:
-                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    student_id = simpledialog.askstring(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.student_id', default="Student ID"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.enter_student_id', default="Enter Student ID:"), parent=self.root)
                     if not student_id:
                         return
 
                 if not module_code:
-                    module_code = simpledialog.askstring("Module Code", "Enter Module Code:", parent=self.root)
+                    module_code = simpledialog.askstring(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.module_code', default="Module Code"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.enter_module_code', default="Enter Module Code:"), parent=self.root)
                     if not module_code:
                         return
 
@@ -104,15 +106,15 @@ class StudentManagementMixin:
                 thread = threading.Thread(target=update, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Update module grade not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.update_module_grade_not_available', default="Update module grade not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update module grade: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), f"Failed to update module grade: {str(e)}")
 
     # GPA & Transcript Functions
     def calculate_gpa_gui(self):
         """Calculate GPA for student or all students"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to calculate GPA.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_must_be_logged_in_to_calculate_gpa', default="You must be logged in to calculate GPA."))
             return
 
         try:
@@ -120,14 +122,14 @@ class StudentManagementMixin:
                 thread = threading.Thread(target=calculate_gpa, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Calculate GPA not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.calculate_gpa_not_available', default="Calculate GPA not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to calculate GPA: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), f"Failed to calculate GPA: {str(e)}")
 
     def calculate_student_gpa_gui(self, student_id=None):
         """Calculate GPA for specific student"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to calculate student GPA.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_must_be_logged_in_to_calculate_student_gpa', default="You must be logged in to calculate student GPA."))
             return
 
         try:
@@ -135,7 +137,7 @@ class StudentManagementMixin:
                 from education_system.systems.university.infrastructure.database.db import get_connection
 
                 if not student_id:
-                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    student_id = simpledialog.askstring(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.student_id', default="Student ID"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.enter_student_id', default="Enter Student ID:"), parent=self.root)
                     if not student_id:
                         return
 
@@ -152,14 +154,14 @@ class StudentManagementMixin:
                 thread = threading.Thread(target=calculate, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Calculate student GPA not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.calculate_student_gpa_not_available', default="Calculate student GPA not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to calculate student GPA: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), f"Failed to calculate student GPA: {str(e)}")
 
     def generate_transcript_gui(self):
         """Generate official transcript for student"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to generate transcripts.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.you_must_be_logged_in_to_generate_transcripts', default="You must be logged in to generate transcripts."))
             return
 
         try:
@@ -167,6 +169,6 @@ class StudentManagementMixin:
                 thread = threading.Thread(target=generate_transcript, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Generate transcript not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.student_management.dialogs.generate_transcript_not_available', default="Generate transcript not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate transcript: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.student_management.dialogs.error', default="Error"), f"Failed to generate transcript: {str(e)}")

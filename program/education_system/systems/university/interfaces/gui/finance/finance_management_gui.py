@@ -8,7 +8,10 @@ from datetime import datetime, timedelta
 # Import finance modules
 try:
     from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
-    from education_system.systems.university.interfaces.gui.finance.finance_reporting import FinancialManagementGUI as FinanceReportingGUI
+    from education_system.systems.university.interfaces.gui.finance.finance_reporting import (
+        FinancialManagementGUI as FinanceReportingGUI,
+    )
+
     FINANCE_GUI_AVAILABLE = True
     FINANCE_REPORTING_GUI_AVAILABLE = True
 except ImportError as e:
@@ -20,14 +23,19 @@ except ImportError as e:
 
 # Import CLI fallback
 try:
-    from education_system.systems.university.interfaces.gui.finance.finance_reporting.misc import display_finance_menu as _display_finance_menu
+    from education_system.systems.university.interfaces.gui.finance.finance_reporting.misc import (
+        display_finance_menu as _display_finance_menu,
+    )
+
     FINANCE_CLI_AVAILABLE = True
 except ImportError:
     _display_finance_menu = None
     FINANCE_CLI_AVAILABLE = False
 
 try:
-    from education_system.systems.university.domain.finance.core.financial_core import set_finance_auth as _set_finance_cli_auth
+    from education_system.systems.university.domain.finance.core.financial_core import (
+        set_finance_auth as _set_finance_cli_auth,
+    )
 except Exception:
     _set_finance_cli_auth = None
 
@@ -37,6 +45,15 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+
+def responsive_window_size(screen_width, screen_height):
+    """Return usable finance window and minimum sizes for the current screen."""
+    available_width = max(320, screen_width - 80)
+    available_height = max(320, screen_height - 100)
+    width = min(1400, available_width)
+    height = min(900, available_height)
+    return width, height, min(700, width), min(560, height)
 
 
 def _launch_finance_cli_menu(auth):
@@ -57,6 +74,7 @@ def _launch_finance_cli_menu(auth):
         # Older versions of the CLI expect no parameters; call again without args
         _display_finance_menu()
 
+
 class FinanceManagementGUI:
     """Finance management GUI wrapper that handles both Finance GUI and Finance Reporting"""
 
@@ -71,17 +89,23 @@ class FinanceManagementGUI:
             initial_tab: Optional tab ID to show initially (e.g., 'housing', 'payments')
         """
         if not self.auth.current_user:
-            messagebox.showerror(_t("finance_management.error.title"), _t("finance_management.error.login_required"))
+            messagebox.showerror(
+                _t("finance_management.error.title"), _t("finance_management.error.login_required")
+            )
             return
 
         # Permissions: allow any meaningful finance capability
-        if not any([
-            self.auth.check_permission('manage_finances'),
-            self.auth.check_permission('record_payments'),
-            self.auth.check_permission('view_financial_reports'),
-            self.auth.check_permission('view_own_finances'),
-        ]):
-            messagebox.showerror(_t("finance_management.error.title"), _t("finance_management.error.no_permission"))
+        if not any(
+            [
+                self.auth.check_permission("manage_finances"),
+                self.auth.check_permission("record_payments"),
+                self.auth.check_permission("view_financial_reports"),
+                self.auth.check_permission("view_own_finances"),
+            ]
+        ):
+            messagebox.showerror(
+                _t("finance_management.error.title"), _t("finance_management.error.no_permission")
+            )
             return
 
         # Prefer the new Finance GUI
@@ -93,26 +117,30 @@ class FinanceManagementGUI:
                     win = self.root
                     # Ensure proper configuration
                     win.title(_t("finance_management.window.title"))
-                    win.geometry("1400x900")
-                    win.minsize(1200, 800)
+                    sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+                    width, height, min_width, min_height = responsive_window_size(sw, sh)
+                    win.geometry(f"{width}x{height}")
+                    win.minsize(min_width, min_height)
                 else:
                     # Create a new Toplevel window (standalone launch)
                     win = tk.Toplevel(self.root)
                     win.title(_t("finance_management.window.title"))
-                    win.geometry("1400x900")
-                    win.minsize(1200, 800)
+                    sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
+                    width, height, min_width, min_height = responsive_window_size(sw, sh)
+                    win.geometry(f"{width}x{height}")
+                    win.minsize(min_width, min_height)
                     try:
                         win.transient(self.root)
                     except Exception as e:
                         logger.debug(f"Could not set window as transient: {e}")
 
                 # Configure window background
-                win.configure(bg='#f0f0f0')
+                win.configure(bg="#f0f0f0")
 
                 app = FinanceGUI(win)
                 try:
                     # Push auth into the instance too
-                    if hasattr(app, 'set_auth'):
+                    if hasattr(app, "set_auth"):
                         app.set_auth(self.auth)
                     else:
                         app.auth = self.auth
@@ -125,12 +153,19 @@ class FinanceManagementGUI:
                 # operator sees the new balance/transaction immediately.
                 try:
                     from education_system.systems.university.interfaces.gui.academics._event_bus import (
-                        subscribe_tk, EVENT_CHARGE_RAISED, EVENT_HOLD_CHANGED,
+                        subscribe_tk,
+                        EVENT_CHARGE_RAISED,
+                        EVENT_HOLD_CHANGED,
                     )
 
                     def _on_finance_change(**_payload):
-                        for attr in ("refresh", "reload", "refresh_all_data",
-                                     "load_data", "refresh_data"):
+                        for attr in (
+                            "refresh",
+                            "reload",
+                            "refresh_all_data",
+                            "load_data",
+                            "refresh_data",
+                        ):
                             fn = getattr(app, attr, None)
                             if callable(fn):
                                 try:
@@ -145,7 +180,7 @@ class FinanceManagementGUI:
                     logger.debug(f"Finance bus subscribe failed: {bus_err}")
 
                 # Navigate to specific tab if requested
-                if initial_tab and hasattr(app, 'layout') and hasattr(app.layout, 'show_tab'):
+                if initial_tab and hasattr(app, "layout") and hasattr(app.layout, "show_tab"):
                     try:
                         # Give the GUI time to initialize before switching tabs
                         win.after(100, lambda: app.layout.show_tab(initial_tab))
@@ -155,14 +190,17 @@ class FinanceManagementGUI:
                 print("✅ Finance Management GUI opened successfully")
                 return
             except Exception as e:
-                messagebox.showerror(_t("finance_management.error.title"), _t("finance_management.error.failed_to_open", error=str(e)))
+                messagebox.showerror(
+                    _t("finance_management.error.title"),
+                    _t("finance_management.error.failed_to_open", error=str(e)),
+                )
 
         # Fallback to existing CLI menu if GUI import failed
         if not FINANCE_CLI_AVAILABLE:
             # Provide a simple fallback message instead of failing completely
             messagebox.showwarning(
                 _t("finance_management.warning.limited_functionality_title"),
-                _t("finance_management.warning.limited_functionality_message")
+                _t("finance_management.warning.limited_functionality_message"),
             )
             return
 
@@ -171,22 +209,30 @@ class FinanceManagementGUI:
         except Exception as e:
             messagebox.showwarning(
                 _t("finance_management.warning.cli_fallback_title"),
-                _t("finance_management.warning.cli_fallback_message", error=str(e))
+                _t("finance_management.warning.cli_fallback_message", error=str(e)),
             )
 
     def show_finance_reporting_dashboard(self):
         """Launch the Finance Reporting Dashboard GUI in a child window, fallback to CLI if needed."""
         if not self.auth.current_user:
-            messagebox.showerror(_t("finance_management.error.title"), _t("finance_management.error.reporting_login_required"))
+            messagebox.showerror(
+                _t("finance_management.error.title"),
+                _t("finance_management.error.reporting_login_required"),
+            )
             return
 
         # Check permissions for financial reporting
-        if not any([
-            self.auth.check_permission('view_financial_reports'),
-            self.auth.check_permission('manage_finances'),
-            self.auth.current_user.get('role') == 'admin'
-        ]):
-            messagebox.showerror(_t("finance_management.error.title"), _t("finance_management.error.reporting_no_permission"))
+        if not any(
+            [
+                self.auth.check_permission("view_financial_reports"),
+                self.auth.check_permission("manage_finances"),
+                self.auth.current_user.get("role") == "admin",
+            ]
+        ):
+            messagebox.showerror(
+                _t("finance_management.error.title"),
+                _t("finance_management.error.reporting_no_permission"),
+            )
             return
 
         # Try to launch Finance Reporting GUI
@@ -200,8 +246,14 @@ class FinanceManagementGUI:
 
                 # Center the window
                 finance_reporting_window.update_idletasks()
-                x = (finance_reporting_window.winfo_screenwidth() - finance_reporting_window.winfo_width()) // 2
-                y = (finance_reporting_window.winfo_screenheight() - finance_reporting_window.winfo_height()) // 2
+                x = (
+                    finance_reporting_window.winfo_screenwidth()
+                    - finance_reporting_window.winfo_width()
+                ) // 2
+                y = (
+                    finance_reporting_window.winfo_screenheight()
+                    - finance_reporting_window.winfo_height()
+                ) // 2
                 finance_reporting_window.geometry(f"+{x}+{y}")
 
                 try:
@@ -216,10 +268,16 @@ class FinanceManagementGUI:
                 return
             else:
                 # GUI not available, show info dialog
-                messagebox.showinfo(_t("finance_management.reporting.info_title"), _t("finance_management.reporting.not_available"))
+                messagebox.showinfo(
+                    _t("finance_management.reporting.info_title"),
+                    _t("finance_management.reporting.not_available"),
+                )
 
         except Exception as e:
-            messagebox.showerror(_t("finance_management.error.title"), _t("finance_management.error.reporting_failed", error=str(e)))
+            messagebox.showerror(
+                _t("finance_management.error.title"),
+                _t("finance_management.error.reporting_failed", error=str(e)),
+            )
             print(f"❌ Finance Reporting Dashboard error: {e}")
 
     def show_student_account_summary(self, student_id: str):
@@ -231,16 +289,34 @@ class FinanceManagementGUI:
         cross-domain charges and active holds in one place.
         """
         if not self.auth or not self.auth.current_user:
-            messagebox.showerror("Account Summary", "Login required.")
+            messagebox.showerror(
+                _t(
+                    "gui.finance.finance_management.dialogs.account_summary",
+                    default="Account Summary",
+                ),
+                _t(
+                    "gui.finance.finance_management.dialogs.login_required",
+                    default="Login required.",
+                ),
+            )
             return
-        if not any([
-            self.auth.check_permission('manage_finances'),
-            self.auth.check_permission('view_financial_reports'),
-            self.auth.current_user.get('role') == 'admin',
-        ]):
-            messagebox.showerror("Account Summary",
-                                 "You don't have permission to view "
-                                 "student finance summaries.")
+        if not any(
+            [
+                self.auth.check_permission("manage_finances"),
+                self.auth.check_permission("view_financial_reports"),
+                self.auth.current_user.get("role") == "admin",
+            ]
+        ):
+            messagebox.showerror(
+                _t(
+                    "gui.finance.finance_management.dialogs.account_summary",
+                    default="Account Summary",
+                ),
+                _t(
+                    "gui.finance.finance_management.dialogs.you_don_t_have_permission_to_view_student_finance_summaries",
+                    default="You don't have permission to view " "student finance summaries.",
+                ),
+            )
             return
 
         try:
@@ -251,8 +327,13 @@ class FinanceManagementGUI:
                 student_union_bus,
             )
         except Exception as exc:
-            messagebox.showerror("Account Summary",
-                                 f"Bus modules unavailable: {exc}")
+            messagebox.showerror(
+                _t(
+                    "gui.finance.finance_management.dialogs.account_summary",
+                    default="Account Summary",
+                ),
+                f"Bus modules unavailable: {exc}",
+            )
             return
 
         summary = finance_bus.student_account_summary(student_id)
@@ -267,50 +348,65 @@ class FinanceManagementGUI:
         header = ttk.Label(
             win,
             text=f"Student {student_id}   |   Balance: £{summary['balance']:.2f}"
-                 f"   |   Hall: {hall or '—'}",
+            f"   |   Hall: {hall or '—'}",
             font=("TkDefaultFont", 11, "bold"),
         )
         header.pack(anchor="w", padx=12, pady=(12, 6))
 
         holds = summary.get("active_holds") or []
         if holds:
-            ttk.Label(win, text=f"Active holds ({len(holds)}):",
-                      foreground="#a00").pack(anchor="w", padx=12)
+            ttk.Label(win, text=f"Active holds ({len(holds)}):", foreground="#a00").pack(
+                anchor="w", padx=12
+            )
             for h in holds:
                 ttk.Label(
                     win,
                     text=f"  • {h.get('source')} — {h.get('reason')} "
-                         f"(£{float(h.get('amount') or 0):.2f})"
+                    f"(£{float(h.get('amount') or 0):.2f})",
                 ).pack(anchor="w", padx=12)
         else:
-            ttk.Label(win, text="No active holds.",
-                      foreground="#070").pack(anchor="w", padx=12)
+            ttk.Label(
+                win,
+                text=_t(
+                    "gui.finance.finance_management.labels.no_active_holds",
+                    default="No active holds.",
+                ),
+                foreground="#070",
+            ).pack(anchor="w", padx=12)
 
         ttk.Separator(win).pack(fill="x", padx=8, pady=6)
 
         totals = summary.get("totals_by_source") or {}
-        ttk.Label(win, text="Charges by source (last 365 days):",
-                  font=("TkDefaultFont", 10, "bold")
-                  ).pack(anchor="w", padx=12)
+        ttk.Label(
+            win,
+            text=_t(
+                "gui.finance.finance_management.labels.charges_by_source_last_365_days",
+                default="Charges by source (last 365 days):",
+            ),
+            font=("TkDefaultFont", 10, "bold"),
+        ).pack(anchor="w", padx=12)
         if totals:
-            for src, amt in sorted(totals.items(),
-                                   key=lambda kv: -kv[1]):
-                ttk.Label(win, text=f"  • {src}: £{amt:.2f}"
-                          ).pack(anchor="w", padx=12)
+            for src, amt in sorted(totals.items(), key=lambda kv: -kv[1]):
+                ttk.Label(win, text=f"  • {src}: £{amt:.2f}").pack(anchor="w", padx=12)
         else:
-            ttk.Label(win, text="  (none)").pack(anchor="w", padx=12)
+            ttk.Label(
+                win, text=_t("gui.finance.finance_management.labels.none", default="  (none)")
+            ).pack(anchor="w", padx=12)
 
         ttk.Separator(win).pack(fill="x", padx=8, pady=6)
 
-        ttk.Label(win,
-                  text=f"SU clubs ({len(clubs)}) — recent SU charges "
-                       f"({len(su_charges)}):",
-                  font=("TkDefaultFont", 10, "bold")
-                  ).pack(anchor="w", padx=12)
+        ttk.Label(
+            win,
+            text=f"SU clubs ({len(clubs)}) — recent SU charges " f"({len(su_charges)}):",
+            font=("TkDefaultFont", 10, "bold"),
+        ).pack(anchor="w", padx=12)
         for c in clubs[:10]:
-            ttk.Label(win,
-                      text=f"  • {c.get('name')} ({c.get('category') or '—'})"
-                      ).pack(anchor="w", padx=12)
+            ttk.Label(win, text=f"  • {c.get('name')} ({c.get('category') or '—'})").pack(
+                anchor="w", padx=12
+            )
 
-        ttk.Button(win, text="Close",
-                   command=win.destroy).pack(pady=10)
+        ttk.Button(
+            win,
+            text=_t("gui.finance.finance_management.buttons.close", default="Close"),
+            command=win.destroy,
+        ).pack(pady=10)

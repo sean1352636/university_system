@@ -12,6 +12,8 @@ Double-clicking a row pre-fills the refunds tab for that student
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import sqlite3
 import tkinter as tk
@@ -28,7 +30,7 @@ def show_resident_search(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Cross-Building Resident Search",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.resident_search.labels.cross_building_resident_search', default="Cross-Building Resident Search"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
 
@@ -36,18 +38,18 @@ def show_resident_search(gui_instance) -> None:
     bar = ttk.Frame(parent)
     bar.pack(fill="x", padx=8, pady=4)
     ttk.Label(bar,
-              text="Name / student ID / email / room number:").pack(
+              text=_t('gui.operations.campus.housing.housing_accommodation_gui.resident_search.labels.name_student_id_email_room_number', default="Name / student ID / email / room number:")).pack(
         side="left", padx=(0, 4))
     query_var = tk.StringVar()
     entry = ttk.Entry(bar, textvariable=query_var, width=46)
     entry.pack(side="left", padx=(0, 8))
 
     active_only_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(bar, text="Active only",
+    ttk.Checkbutton(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.resident_search.buttons.active_only', default="Active only"),
                     variable=active_only_var).pack(side="left", padx=4)
-    ttk.Button(bar, text="Search", command=lambda: run()).pack(side="left",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.resident_search.buttons.search', default="Search"), command=lambda: run()).pack(side="left",
                                                                  padx=4)
-    ttk.Button(bar, text="Clear",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.resident_search.buttons.clear', default="Clear"),
                command=lambda: (query_var.set(""), run())).pack(
         side="left", padx=4)
 
@@ -69,7 +71,7 @@ def show_resident_search(gui_instance) -> None:
         tree.column(k, width=w, anchor="w")
     tree.pack(fill="both", expand=True, padx=8, pady=4)
 
-    summary_var = tk.StringVar(value="Type a query and press Enter.")
+    summary_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.resident_search.values.type_a_query_and_press_enter', default="Type a query and press Enter."))
     ttk.Label(parent, textvariable=summary_var,
               foreground="#666").pack(anchor="w", padx=8, pady=(0, 6))
 
@@ -88,7 +90,7 @@ def show_resident_search(gui_instance) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Resident search query failed")
-            messagebox.showerror("Search",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.resident_search.dialogs.search', default="Search"),
                                   f"Search failed:\n\n{e}",
                                   parent=gui_instance.root)
             return
@@ -119,7 +121,7 @@ def show_resident_search(gui_instance) -> None:
                 gui_instance.refund_search_var.set(student_id)
         except Exception as e:
             logger.exception("Could not open refunds from search")
-            messagebox.showerror("Refunds",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.resident_search.dialogs.refunds', default="Refunds"),
                                   f"Could not open refunds:\n\n{e}",
                                   parent=gui_instance.root)
 

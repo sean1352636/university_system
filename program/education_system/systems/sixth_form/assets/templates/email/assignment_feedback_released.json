@@ -1,0 +1,11 @@
+{
+  "template_id": "assignment_feedback_released",
+  "description": "Sent to a student when their coursework mark and feedback are released. Held back until release so a class hears together rather than one by one, and states the appeal window so a disputed mark is raised in time rather than months later.",
+  "channel": "Email",
+  "category": "Academic",
+  "priority": "Normal",
+  "from_name": "Sixth Form Assignments",
+  "from_address": "assignments@sixthform.ac.uk",
+  "subject": "Feedback available: {{title}} ({{subject_name}})",
+  "body": "Hi {{first_name}},\n\nYour marked work is now available.\n\nResult\n------\n  Assignment: {{title}}\n  Subject:    {{subject_name}}\n  Marker:     {{teacher}}\n  Marks:      {{marks}} / {{max_marks}}\n  Grade:      {{grade}}\n\nFeedback\n--------\n{{feedback}}\n\nWhat to do next\n---------------\n  - Read the feedback properly, then confirm you have read it in the portal. Your teacher can see who has and hasn't.\n  - Write down one thing you will do differently next time. That is the part that moves your grade, not the number.\n  - If something is unclear, ask {{teacher}} before the next piece rather than after it.\n\nIf you think the mark is wrong\n------------------------------\nYou have {{appeal_days}} days from today to request a remark through the portal. Say specifically what you think was misjudged and why — \"I expected more\" is not grounds, but \"the mark scheme credits X and I have done X in paragraph 3\" is.\n\n{{teacher}}\n{{system_name}}"
+}

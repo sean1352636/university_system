@@ -7,6 +7,8 @@ Per-course grading configuration that feeds the Grade Tracking system:
   40% Exam / 60% Coursework), with a live total and a 100% sanity check.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     ExtFormDialog, tk, ttk, messagebox, _, logger,
 )
@@ -28,7 +30,7 @@ class GradingTabMixin:
             sel = ttk.LabelFrame(frame, text=_("course_management.labels.select_course",
                                                default="Select Course"), padding=10)
             sel.pack(fill=tk.X, padx=5, pady=5)
-            ttk.Label(sel, text="Course:").pack(side=tk.LEFT, padx=5)
+            ttk.Label(sel, text=_t('gui.academics.course_management_gui.core.grading_tab.labels.course', default="Course:")).pack(side=tk.LEFT, padx=5)
             self._gr_course_combo = ttk.Combobox(sel, width=46, state="readonly")
             self._gr_course_combo.pack(side=tk.LEFT, padx=5)
             self._gr_course_combo.bind("<<ComboboxSelected>>", self._reload_grading)
@@ -41,31 +43,31 @@ class GradingTabMixin:
                        command=self._open_grade_management).pack(side=tk.RIGHT, padx=5)
 
             # Scheme row.
-            scheme = ttk.LabelFrame(frame, text="Grading scheme", padding=10)
+            scheme = ttk.LabelFrame(frame, text=_t('gui.academics.course_management_gui.core.grading_tab.labels.grading_scheme', default="Grading scheme"), padding=10)
             scheme.pack(fill=tk.X, padx=5, pady=5)
-            ttk.Label(scheme, text="Type:").grid(row=0, column=0, sticky=tk.W, padx=5)
-            self._gr_scheme_var = tk.StringVar(value="Letter")
+            ttk.Label(scheme, text=_t('gui.academics.course_management_gui.core.grading_tab.labels.type', default="Type:")).grid(row=0, column=0, sticky=tk.W, padx=5)
+            self._gr_scheme_var = tk.StringVar(value=_t('gui.academics.course_management_gui.core.grading_tab.values.letter', default="Letter"))
             self._gr_scheme_combo = ttk.Combobox(
                 scheme, textvariable=self._gr_scheme_var, values=SCHEME_TYPES,
                 state="readonly" if self._ext_can_edit() else "disabled", width=20)
             self._gr_scheme_combo.grid(row=0, column=1, padx=5)
-            ttk.Label(scheme, text="Pass mark (%):").grid(row=0, column=2, sticky=tk.W,
+            ttk.Label(scheme, text=_t('gui.academics.course_management_gui.core.grading_tab.labels.pass_mark', default="Pass mark (%):")).grid(row=0, column=2, sticky=tk.W,
                                                           padx=(20, 5))
             self._gr_pass_var = tk.StringVar(value="50")
             ttk.Entry(scheme, textvariable=self._gr_pass_var, width=8,
                       state="normal" if self._ext_can_edit() else "readonly"
                       ).grid(row=0, column=3, padx=5)
             if self._ext_can_edit():
-                ttk.Button(scheme, text="Save scheme",
+                ttk.Button(scheme, text=_t('gui.academics.course_management_gui.core.grading_tab.buttons.save_scheme', default="Save scheme"),
                            command=self._save_scheme).grid(row=0, column=4, padx=15)
 
             # Components.
-            comp = ttk.LabelFrame(frame, text="Assessment components", padding=8)
+            comp = ttk.LabelFrame(frame, text=_t('gui.academics.course_management_gui.core.grading_tab.labels.assessment_components', default="Assessment components"), padding=8)
             comp.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
             bar = ttk.Frame(comp)
             bar.pack(fill=tk.X, pady=3)
             if self._ext_can_edit():
-                ttk.Button(bar, text="Add Component",
+                ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.grading_tab.buttons.add_component', default="Add Component"),
                            command=self._add_component).pack(side=tk.LEFT, padx=5)
                 ttk.Button(bar, text=_("common.edit", default="Edit"),
                            command=self._edit_component).pack(side=tk.LEFT, padx=5)
@@ -217,7 +219,7 @@ class GradingTabMixin:
         code = self._current_gr_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.grading_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
         try:
             with self._ext_db(write=True) as conn:
@@ -227,7 +229,7 @@ class GradingTabMixin:
                     "WHERE course_code = ? ORDER BY id", (code,)).fetchall()
                 if not comps:
                     messagebox.showinfo(_("common.info", default="Info"),
-                                        "No assessment components to push. Add some first.")
+                                        _t('gui.academics.course_management_gui.core.grading_tab.dialogs.no_assessment_components_to_push_add_some_first', default="No assessment components to push. Add some first."))
                     return
                 mods = self._gr_module_codes(code, conn)
                 if not mods:
@@ -271,17 +273,17 @@ class GradingTabMixin:
         code = self._current_gr_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.grading_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
         try:
             pass_mark = float(self._gr_pass_var.get())
         except ValueError:
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Pass mark must be a number.")
+                                 _t('gui.academics.course_management_gui.core.grading_tab.dialogs.pass_mark_must_be_a_number', default="Pass mark must be a number."))
             return
         if not 0 <= pass_mark <= 100:
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Pass mark must be between 0 and 100.")
+                                 _t('gui.academics.course_management_gui.core.grading_tab.dialogs.pass_mark_must_be_between_0_and_100', default="Pass mark must be between 0 and 100."))
             return
         try:
             with self._ext_db(write=True) as conn:
@@ -344,11 +346,11 @@ class GradingTabMixin:
             weight = float(values.get("weight") or 0)
         except (TypeError, ValueError):
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Weight must be a number.")
+                                 _t('gui.academics.course_management_gui.core.grading_tab.dialogs.weight_must_be_a_number', default="Weight must be a number."))
             return None
         if not 0 <= weight <= 100:
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Weight must be between 0 and 100.")
+                                 _t('gui.academics.course_management_gui.core.grading_tab.dialogs.weight_must_be_between_0_and_100', default="Weight must be between 0 and 100."))
             return None
         return weight
 
@@ -358,14 +360,14 @@ class GradingTabMixin:
         code = self._current_gr_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.grading_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
 
         def submit(values):
             name = (values.get("name") or "").strip()
             if not name:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Component name is required.")
+                                     _t('gui.academics.course_management_gui.core.grading_tab.dialogs.component_name_is_required', default="Component name is required."))
                 return False
             weight = self._parse_weight(values)
             if weight is None:
@@ -392,7 +394,7 @@ class GradingTabMixin:
         vals = self._ext_selected_values(self._gr_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a component first.")
+                                   _t('gui.academics.course_management_gui.core.grading_tab.dialogs.select_a_component_first', default="Select a component first."))
             return None
         return vals
 
@@ -409,7 +411,7 @@ class GradingTabMixin:
             name = (values.get("name") or "").strip()
             if not name:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Component name is required.")
+                                     _t('gui.academics.course_management_gui.core.grading_tab.dialogs.component_name_is_required', default="Component name is required."))
                 return False
             weight = self._parse_weight(values)
             if weight is None:

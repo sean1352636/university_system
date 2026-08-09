@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.finance.finance_reporting.archive_backup._imports import (
     sys, tk, ttk, ScrolledText, datetime, _,
 )
@@ -12,7 +14,7 @@ def show_enhanced_system_info(self):
     main_frame = ttk.Frame(info_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Enhanced System Information",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.system_info.labels.enhanced_system_information', default="Enhanced System Information"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Create notebook for different info sections
@@ -21,37 +23,37 @@ def show_enhanced_system_info(self):
 
     # System Overview Tab
     overview_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(overview_frame, text="System Overview")
+    notebook.add(overview_frame, text=_t('gui.finance.finance_reporting.archive_backup.system_info.tabs.system_overview', default="System Overview"))
 
     overview_text = ScrolledText(overview_frame, height=20, wrap=tk.WORD)
     overview_text.pack(fill=tk.BOTH, expand=True)
 
     # Database Statistics Tab
     db_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(db_frame, text="Database Statistics")
+    notebook.add(db_frame, text=_t('gui.finance.finance_reporting.archive_backup.system_info.tabs.database_statistics', default="Database Statistics"))
 
     db_tree = ttk.Treeview(db_frame, columns=('Records', 'Size'), height=15)
-    db_tree.heading('#0', text='Table')
-    db_tree.heading('Records', text='Record Count')
-    db_tree.heading('Size', text='Estimated Size')
+    db_tree.heading('#0', text=_t('gui.finance.finance_reporting.archive_backup.system_info.headings.table', default='Table'))
+    db_tree.heading('Records', text=_t('gui.finance.finance_reporting.archive_backup.system_info.headings.record_count', default='Record Count'))
+    db_tree.heading('Size', text=_t('gui.finance.finance_reporting.archive_backup.system_info.headings.estimated_size', default='Estimated Size'))
     db_tree.pack(fill=tk.BOTH, expand=True)
 
     # Feature Status Tab
     features_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(features_frame, text="Feature Status")
+    notebook.add(features_frame, text=_t('gui.finance.finance_reporting.archive_backup.system_info.tabs.feature_status', default="Feature Status"))
 
     features_tree = ttk.Treeview(features_frame, columns=('Status', 'Version'), height=15)
-    features_tree.heading('#0', text='Feature')
-    features_tree.heading('Status', text='Status')
-    features_tree.heading('Version', text='Version')
+    features_tree.heading('#0', text=_t('gui.finance.finance_reporting.archive_backup.system_info.headings.feature', default='Feature'))
+    features_tree.heading('Status', text=_t('gui.finance.finance_reporting.archive_backup.system_info.headings.status', default='Status'))
+    features_tree.heading('Version', text=_t('gui.finance.finance_reporting.archive_backup.system_info.headings.version', default='Version'))
     features_tree.pack(fill=tk.BOTH, expand=True)
 
     # Populate system information
     self.populate_system_info(overview_text, db_tree, features_tree)
 
-    ttk.Button(main_frame, text="Refresh",
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.system_info.buttons.refresh', default="Refresh"),
                command=lambda: self.populate_system_info(overview_text, db_tree, features_tree)).pack(pady=5)
-    ttk.Button(main_frame, text="Close", command=info_window.destroy).pack(pady=5)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.system_info.buttons.close', default="Close"), command=info_window.destroy).pack(pady=5)
 
 def populate_system_info(self, overview_text, db_tree, features_tree):
     """Populate system information displays"""

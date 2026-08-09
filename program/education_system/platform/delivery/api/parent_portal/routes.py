@@ -32,14 +32,16 @@ from pathlib import Path
 from flask import Blueprint, jsonify, request, g, send_from_directory, current_app
 from markupsafe import escape
 
+from education_system.paths import PLATFORM_UI_TEMPLATES_DIR
 from education_system.platform.delivery.api.auth import token_required, decode_token
+from education_system.platform.delivery.api.static_files import send_static_asset
 from education_system.platform.identity.auth.db import AUTH_DB_FILE
 from education_system.platform.services.parent_child_link import ParentChildLinkService
 
 logger = logging.getLogger(__name__)
 
 _DIR = Path(__file__).parent
-_TEMPLATE_DIR = _DIR / "templates"
+_TEMPLATE_DIR = PLATFORM_UI_TEMPLATES_DIR
 _STATIC_DIR = _DIR / "static"
 
 parent_portal_bp = Blueprint(
@@ -178,11 +180,10 @@ def serve_spa():
 
 @parent_portal_bp.route("/static/<path:filename>")
 def serve_static(filename):
-    import re
-    # Validate filename contains only safe characters to prevent path traversal and XSS
-    if not re.match(r'^[a-zA-Z0-9/_\-][a-zA-Z0-9/._\-]*$', filename):
-        return jsonify({"error": "Invalid filename"}), 400
-    return send_from_directory(str(_STATIC_DIR), filename)
+    # The old character-class regex still admitted "a/../../x" (every
+    # character in it is "safe") and placed no bound on the file type served.
+    # send_static_asset checks the *resolved* path and an extension allow-list.
+    return send_static_asset(_STATIC_DIR, filename)
 
 
 # ── Children list ────────────────────────────────────────────────────────

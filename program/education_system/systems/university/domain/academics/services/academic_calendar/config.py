@@ -6,16 +6,16 @@ import secrets
 from datetime import datetime
 from typing import Tuple
 from dataclasses import dataclass
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 
 # Configuration
 @dataclass
 class CalendarConfig:
-    db_file: str = os.fspath(paths.DEFAULT_DB_PATH)
+    db_file: str = os.fspath(paths.UNIVERSITY_DEFAULT_DB_PATH)
     default_timezone: str = 'UTC'
     max_export_records: int = 10000
-    backup_directory: str = os.fspath(paths.BACKUP_CALENDAR_DIR)
+    backup_directory: str = os.fspath(paths.UNIVERSITY_BACKUP_CALENDAR_DIR)
     allowed_file_types: frozenset = frozenset(['.pdf', '.txt', '.csv', '.xlsx', '.ics'])
     smtp_timeout: int = 30
     api_rate_limit: int = 100

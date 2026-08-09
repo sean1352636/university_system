@@ -1,5 +1,7 @@
 """Tab/view construction methods for AnalyticsManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 import tkinter.scrolledtext as scrolledtext
@@ -16,7 +18,7 @@ class TabsMixin:
         self.notebook.pack(fill=tk.BOTH, expand=True)
         # Create the analytics frame as a child of the notebook
         analytics_frame = ttk.Frame(self.notebook)
-        self.notebook.add(analytics_frame, text="Analytics")
+        self.notebook.add(analytics_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.tabs.analytics', default="Analytics"))
 
         # Create paned window for layout
         paned = ttk.PanedWindow(analytics_frame, orient='horizontal')
@@ -66,57 +68,57 @@ class TabsMixin:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Analytics controls
-        controls_label = ttk.Label(left_panel, text="Analytics Options", style='Header.TLabel')
+        controls_label = ttk.Label(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.analytics_options', default="Analytics Options"), style='Header.TLabel')
         controls_label.pack(pady=10)
 
         # Performance Analysis
-        perf_frame = ttk.LabelFrame(left_panel, text="Performance Analysis", padding=10)
+        perf_frame = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.performance_analysis', default="Performance Analysis"), padding=10)
         perf_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(perf_frame, text="At-Risk Students",
+        ttk.Button(perf_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.at_risk_students', default="At-Risk Students"),
                   command=self.identify_at_risk_students,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(perf_frame, text="Grade Distribution",
+        ttk.Button(perf_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.grade_distribution', default="Grade Distribution"),
                   command=self.show_grade_distribution,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(perf_frame, text="Module Performance",
+        ttk.Button(perf_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.module_performance', default="Module Performance"),
                   command=self.analyze_module_performance,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(perf_frame, text="Course Comparison",
+        ttk.Button(perf_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.course_comparison', default="Course Comparison"),
                   command=self.compare_course_performance,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(perf_frame, text="Trends Over Time",
+        ttk.Button(perf_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.trends_over_time', default="Trends Over Time"),
                   command=self.analyze_performance_trends,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
         # Risk Assessment
-        risk_frame = ttk.LabelFrame(left_panel, text="Risk Assessment", padding=10)
+        risk_frame = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.risk_assessment', default="Risk Assessment"), padding=10)
         risk_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(risk_frame, text="Student Risk Assessment",
+        ttk.Button(risk_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.student_risk_assessment', default="Student Risk Assessment"),
                   command=self.student_risk_assessment,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(risk_frame, text="Early Warning System",
+        ttk.Button(risk_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.early_warning_system', default="Early Warning System"),
                   command=self.early_warning_system,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(risk_frame, text="Dropout Risk Analysis",
+        ttk.Button(risk_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.dropout_risk_analysis', default="Dropout Risk Analysis"),
                   command=self.dropout_risk_analysis,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(risk_frame, text="Intervention Recommendations",
+        ttk.Button(risk_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.intervention_recommendations', default="Intervention Recommendations"),
                   command=self.intervention_recommendations,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
         # Visualization Options
-        viz_frame = ttk.LabelFrame(left_panel, text="Visualizations", padding=10)
+        viz_frame = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.visualizations', default="Visualizations"), padding=10)
         viz_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(viz_frame, text="Performance Dashboard",
+        ttk.Button(viz_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.performance_dashboard', default="Performance Dashboard"),
                   command=self.generate_performance_dashboard,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(viz_frame, text="Grade Trends Chart",
+        ttk.Button(viz_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.grade_trends_chart', default="Grade Trends Chart"),
                   command=self.show_grade_trends_chart,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(viz_frame, text="Student Progress Charts",
+        ttk.Button(viz_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.student_progress_charts', default="Student Progress Charts"),
                   command=self.student_progress_charts,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
@@ -125,7 +127,7 @@ class TabsMixin:
         paned.add(right_panel, weight=2)
 
         # Results display area
-        results_label = ttk.Label(right_panel, text="Analytics Results", style='Header.TLabel')
+        results_label = ttk.Label(right_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.analytics_results', default="Analytics Results"), style='Header.TLabel')
         results_label.pack(pady=10)
 
         # Scrollable text area for results
@@ -143,7 +145,7 @@ class TabsMixin:
         self.notebook.pack(fill=tk.BOTH, expand=True)
         # Create reports frame as a child of the notebook
         reports_frame = ttk.Frame(self.notebook)
-        self.notebook.add(reports_frame, text="Reports")
+        self.notebook.add(reports_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.tabs.reports', default="Reports"))
 
         # Create paned window
         paned = ttk.PanedWindow(reports_frame, orient='horizontal')
@@ -192,68 +194,68 @@ class TabsMixin:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        reports_label = ttk.Label(left_panel, text="Report Generation", style='Header.TLabel')
+        reports_label = ttk.Label(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.report_generation', default="Report Generation"), style='Header.TLabel')
         reports_label.pack(pady=10)
 
         # Student Reports
-        student_reports = ttk.LabelFrame(left_panel, text="Student Reports", padding=10)
+        student_reports = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.student_reports', default="Student Reports"), padding=10)
         student_reports.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(student_reports, text="Individual Transcript",
+        ttk.Button(student_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.individual_transcript', default="Individual Transcript"),
                   command=self.generate_individual_transcript,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(student_reports, text="Student Progress Report",
+        ttk.Button(student_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.student_progress_report', default="Student Progress Report"),
                   command=self.generate_student_progress_report,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(student_reports, text="Competency Profile",
+        ttk.Button(student_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.competency_profile', default="Competency Profile"),
                   command=self.generate_competency_profile,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(student_reports, text="At-Risk Student Report",
+        ttk.Button(student_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.at_risk_student_report', default="At-Risk Student Report"),
                   command=self.generate_at_risk_report,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
         # Module Reports
-        module_reports = ttk.LabelFrame(left_panel, text="Module Reports", padding=10)
+        module_reports = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.module_reports', default="Module Reports"), padding=10)
         module_reports.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(module_reports, text="Module Grade Report",
+        ttk.Button(module_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.module_grade_report', default="Module Grade Report"),
                   command=self.generate_module_grade_report,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(module_reports, text="Module Outcome Report",
+        ttk.Button(module_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.module_outcome_report', default="Module Outcome Report"),
                   command=self.generate_module_outcome_report,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(module_reports, text="Assessment Analysis",
+        ttk.Button(module_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.assessment_analysis', default="Assessment Analysis"),
                   command=self.generate_assessment_analysis,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
         # System Reports
-        system_reports = ttk.LabelFrame(left_panel, text="System Reports", padding=10)
+        system_reports = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.system_reports', default="System Reports"), padding=10)
         system_reports.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(system_reports, text="Institution Summary",
+        ttk.Button(system_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.institution_summary', default="Institution Summary"),
                   command=self.generate_institution_summary,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(system_reports, text="Performance Analytics",
+        ttk.Button(system_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.performance_analytics', default="Performance Analytics"),
                   command=self.generate_performance_analytics,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(system_reports, text="Trend Analysis Report",
+        ttk.Button(system_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.trend_analysis_report', default="Trend Analysis Report"),
                   command=self.generate_trend_analysis_report,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(system_reports, text="Risk Assessment Report",
+        ttk.Button(system_reports, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.risk_assessment_report', default="Risk Assessment Report"),
                   command=self.generate_comprehensive_risk_report,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
         # Export Options
-        export_frame = ttk.LabelFrame(left_panel, text="Export Options", padding=10)
+        export_frame = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.export_options', default="Export Options"), padding=10)
         export_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(export_frame, text="Export to PDF",
+        ttk.Button(export_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.export_to_pdf', default="Export to PDF"),
                   command=self.export_reports_pdf,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(export_frame, text="Export to CSV",
+        ttk.Button(export_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.export_to_csv', default="Export to CSV"),
                   command=self.export_reports_csv,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(export_frame, text="Export to Excel",
+        ttk.Button(export_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.export_to_excel', default="Export to Excel"),
                   command=self.export_reports_excel,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
@@ -261,7 +263,7 @@ class TabsMixin:
         right_panel = ttk.Frame(paned)
         paned.add(right_panel, weight=2)
 
-        preview_label = ttk.Label(right_panel, text="Report Preview", style='Header.TLabel')
+        preview_label = ttk.Label(right_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.report_preview', default="Report Preview"), style='Header.TLabel')
         preview_label.pack(pady=10)
 
         # Report preview area
@@ -274,23 +276,23 @@ class TabsMixin:
         self.notebook = ttk.Notebook(self.content_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
         self.competency_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.competency_frame, text="Competencies")
+        self.notebook.add(self.competency_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.tabs.competencies', default="Competencies"))
 
         # Title
-        ttk.Label(self.competency_frame, text="Competency-Based Assessment",
+        ttk.Label(self.competency_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.competency_based_assessment', default="Competency-Based Assessment"),
                  font=('Arial', 16, 'bold')).pack(pady=10)
 
         # Competency assessment functionality
         competency_controls = ttk.Frame(self.competency_frame)
         competency_controls.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(competency_controls, text="Select Student:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(competency_controls, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
         comp_student_var = tk.StringVar()
         comp_student_combo = ttk.Combobox(competency_controls, textvariable=comp_student_var, width=30)
         comp_student_combo.pack(side=tk.LEFT, padx=5)
 
         # Competency display
-        competency_display = ttk.LabelFrame(self.competency_frame, text="Competency Assessment Matrix", padding=10)
+        competency_display = ttk.LabelFrame(self.competency_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.competency_assessment_matrix', default="Competency Assessment Matrix"), padding=10)
         competency_display.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         columns = ("Competency", "Level", "Evidence", "Date", "Assessor")
@@ -319,7 +321,7 @@ class TabsMixin:
         self.notebook = ttk.Notebook(self.content_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
         prediction_frame = ttk.Frame(self.notebook)
-        self.notebook.add(prediction_frame, text="Predictions")
+        self.notebook.add(prediction_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.tabs.predictions', default="Predictions"))
 
         # Create paned window
         paned = ttk.PanedWindow(prediction_frame, orient='horizontal')
@@ -368,65 +370,65 @@ class TabsMixin:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        prediction_label = ttk.Label(left_panel, text="Predictive Analytics", style='Header.TLabel')
+        prediction_label = ttk.Label(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.predictive_analytics', default="Predictive Analytics"), style='Header.TLabel')
         prediction_label.pack(pady=10)
 
         # Performance Prediction
-        perf_pred_frame = ttk.LabelFrame(left_panel, text="Performance Prediction", padding=10)
+        perf_pred_frame = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.performance_prediction', default="Performance Prediction"), padding=10)
         perf_pred_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(perf_pred_frame, text="Grade Prediction",
+        ttk.Button(perf_pred_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.grade_prediction', default="Grade Prediction"),
                   command=self.predict_grades_dialog,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(perf_pred_frame, text="GPA Prediction",
+        ttk.Button(perf_pred_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.gpa_prediction', default="GPA Prediction"),
                   command=self.predict_gpa_dialog,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(perf_pred_frame, text="Module Success Prediction",
+        ttk.Button(perf_pred_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.module_success_prediction', default="Module Success Prediction"),
                   command=self.predict_module_success,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(perf_pred_frame, text="Success Probability Calculator",
+        ttk.Button(perf_pred_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.success_probability_calculator', default="Success Probability Calculator"),
                   command=self.calculate_success_probability,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
         # Risk Prediction
-        risk_pred_frame = ttk.LabelFrame(left_panel, text="Risk Prediction", padding=10)
+        risk_pred_frame = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.risk_prediction', default="Risk Prediction"), padding=10)
         risk_pred_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(risk_pred_frame, text="At-Risk Prediction Model",
+        ttk.Button(risk_pred_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.at_risk_prediction_model', default="At-Risk Prediction Model"),
                   command=self.build_at_risk_model,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(risk_pred_frame, text="Dropout Risk Analysis",
+        ttk.Button(risk_pred_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.dropout_risk_analysis', default="Dropout Risk Analysis"),
                   command=self.analyze_dropout_risk,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(risk_pred_frame, text="Early Warning Alerts",
+        ttk.Button(risk_pred_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.early_warning_alerts', default="Early Warning Alerts"),
                   command=self.generate_early_warnings,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
         # Trend Forecasting
-        trend_frame = ttk.LabelFrame(left_panel, text="Trend Forecasting", padding=10)
+        trend_frame = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.trend_forecasting', default="Trend Forecasting"), padding=10)
         trend_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(trend_frame, text="Performance Trends",
+        ttk.Button(trend_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.performance_trends', default="Performance Trends"),
                   command=self.forecast_performance_trends,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(trend_frame, text="Course Performance Forecast",
+        ttk.Button(trend_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.course_performance_forecast', default="Course Performance Forecast"),
                   command=self.forecast_course_performance,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(trend_frame, text="Success Rate Trends",
+        ttk.Button(trend_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.success_rate_trends', default="Success Rate Trends"),
                   command=self.forecast_success_rates,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
         # Batch Operations
-        batch_frame = ttk.LabelFrame(left_panel, text="Batch Operations", padding=10)
+        batch_frame = ttk.LabelFrame(left_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.batch_operations', default="Batch Operations"), padding=10)
         batch_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(batch_frame, text="Batch Grade Predictions",
+        ttk.Button(batch_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.batch_grade_predictions', default="Batch Grade Predictions"),
                   command=self.batch_predict_grades,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(batch_frame, text="Batch Risk Assessment",
+        ttk.Button(batch_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.batch_risk_assessment', default="Batch Risk Assessment"),
                   command=self.batch_risk_assessment,
                   style='Custom.TButton').pack(fill='x', pady=2)
-        ttk.Button(batch_frame, text="Generate Interventions",
+        ttk.Button(batch_frame, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.buttons.generate_interventions', default="Generate Interventions"),
                   command=self.generate_interventions,
                   style='Custom.TButton').pack(fill='x', pady=2)
 
@@ -434,7 +436,7 @@ class TabsMixin:
         right_panel = ttk.Frame(paned)
         paned.add(right_panel, weight=2)
 
-        results_label = ttk.Label(right_panel, text="Prediction Results", style='Header.TLabel')
+        results_label = ttk.Label(right_panel, text=_t('gui.academics.grade_tracking.analytics_manager.tabs.labels.prediction_results', default="Prediction Results"), style='Header.TLabel')
         results_label.pack(pady=10)
 
         # Results display area

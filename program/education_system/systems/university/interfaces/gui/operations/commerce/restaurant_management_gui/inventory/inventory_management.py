@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -72,7 +74,7 @@ def view_inventory_gui(self):
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.database_connection_failed', default="Database connection failed"))
             return
 
         cursor = conn.cursor()
@@ -95,10 +97,10 @@ def view_inventory_gui(self):
             ))
 
         conn.close()
-        messagebox.showinfo("Success", f"Loaded {len(items)} inventory items")
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.success', default="Success"), f"Loaded {len(items)} inventory items")
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to load inventory: {str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.error', default="Error"), f"Failed to load inventory: {str(e)}")
 
 
 def inventory_transactions(self):
@@ -106,7 +108,7 @@ def inventory_transactions(self):
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Create transactions table if doesn't exist
@@ -135,12 +137,12 @@ def inventory_transactions(self):
         conn.close()
         # Display transactions
         trans_dialog = tk.Toplevel(self.root)
-        trans_dialog.title("Inventory Transactions Log")
+        trans_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.windows.inventory_transactions_log', default="Inventory Transactions Log"))
         trans_dialog.geometry("1000x600")
         trans_dialog.transient(self.root)
         main_frame = ttk.Frame(trans_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Inventory Transactions Log (Last 100)",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.labels.inventory_transactions_log_last_100', default="Inventory Transactions Log (Last 100)"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         # Create treeview
         columns = ('Trans ID', 'Item ID', 'Item Name', 'Type', 'Quantity', 'Date', 'Notes')
@@ -154,17 +156,17 @@ def inventory_transactions(self):
         tree.configure(yscrollcommand=scrollbar.set)
         tree.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.buttons.close', default="Close"),
                   command=trans_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to load transactions:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.error', default="Error"), f"Failed to load transactions:\n{str(e)}")
 
 def low_stock_alerts(self):
     """Show automated low stock alerts"""
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Get low stock items
@@ -178,15 +180,15 @@ def low_stock_alerts(self):
         conn.close()
         # Display alerts
         alerts_dialog = tk.Toplevel(self.root)
-        alerts_dialog.title("Low Stock Alerts")
+        alerts_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.windows.low_stock_alerts', default="Low Stock Alerts"))
         alerts_dialog.geometry("700x500")
         alerts_dialog.transient(self.root)
         main_frame = ttk.Frame(alerts_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
         if not low_stock:
-            ttk.Label(main_frame, text="✓ No Low Stock Alerts",
+            ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.labels.no_low_stock_alerts', default="✓ No Low Stock Alerts"),
                      font=('Arial', 14, 'bold'), foreground='green').pack(pady=20)
-            ttk.Label(main_frame, text="All inventory levels are adequate.",
+            ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.labels.all_inventory_levels_are_adequate', default="All inventory levels are adequate."),
                      font=('Arial', 12)).pack(pady=10)
         else:
             ttk.Label(main_frame, text=f"⚠ {len(low_stock)} Low Stock Alerts",
@@ -213,15 +215,15 @@ def low_stock_alerts(self):
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(pady=10)
             def send_alert_email():
-                messagebox.showinfo("Email Alert",
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.email_alert', default="Email Alert"),
                                    "Low stock alert email would be sent to procurement team.\n\n" +
                                    f"{len(low_stock)} items require reordering.")
-            ttk.Button(button_frame, text="Send Email Alert",
+            ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.buttons.send_email_alert', default="Send Email Alert"),
                       command=send_alert_email).pack(side='left', padx=5)
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.buttons.close', default="Close"),
                   command=alerts_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to load low stock alerts:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.error', default="Error"), f"Failed to load low stock alerts:\n{str(e)}")
 
 def waste_tracking_dialog(self):
     """Launch the Waste Tracking management GUI"""
@@ -236,7 +238,7 @@ def waste_tracking_dialog(self):
 
         # Create and show the Waste Tracking GUI
         waste_window = tk.Toplevel(self.root)
-        waste_window.title("Waste Tracking & Analysis")
+        waste_window.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.windows.waste_tracking_analysis', default="Waste Tracking & Analysis"))
         waste_window.geometry("1200x700")
         waste_window.transient(self.root)
 
@@ -244,7 +246,7 @@ def waste_tracking_dialog(self):
         WasteTrackingGUI(waste_window)
 
     except ImportError as e:
-        messagebox.showerror("Error", f"Failed to load Waste Tracking module:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.error', default="Error"), f"Failed to load Waste Tracking module:\n{str(e)}")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to launch Waste Tracking:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_management.dialogs.error', default="Error"), f"Failed to launch Waste Tracking:\n{str(e)}")
 

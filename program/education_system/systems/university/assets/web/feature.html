@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>University Feature</title><style>
+body{margin:0;font-family:system-ui,sans-serif;background:#f7fafc;color:#1a202c}header{background:#253858;color:white;padding:1rem 5vw}main{max-width:900px;margin:2rem auto;padding:0 1rem}.card{background:white;border-radius:10px;padding:1.5rem;box-shadow:0 2px 8px #0001}a{color:#2b6cb0}li{margin:.55rem 0}
+</style></head><body><header><h1 id="title">University feature</h1></header><main><p><a href="university.html">← University modules</a></p><div class="card"><h2 id="category"></h2><p>This feature is available in the university desktop application and service layer.</p><p id="session"></p><h3>Access</h3><ul><li>Launch the desktop interface with <code>python run.py --university --gui</code>.</li><li>Use the <a href="login.html">web login</a> for browser-enabled functions.</li><li>Open <a id="api-link" href="#">the university REST API</a> for service integrations.</li></ul></div></main>
+<script src="auth_client.js"></script><script>
+const q=new URLSearchParams(location.search), feature=q.get('feature')||'University feature';
+document.title=feature; document.getElementById('title').textContent=feature;
+document.getElementById('category').textContent=q.get('category')||'University System';
+const s=AuthClient.getSession(); document.getElementById('session').textContent=s?`Signed in as ${s.name||s.username} (${s.role}).`:'Sign in to access role-protected operations.';
+document.getElementById('api-link').href=`${AuthClient.API_BASE}/api/v1/`;
+</script></body></html>

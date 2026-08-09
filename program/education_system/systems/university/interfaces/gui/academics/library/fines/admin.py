@@ -2,6 +2,8 @@
 Library Fines Management - Admin actions (waive, adjust, view history).
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -23,14 +25,14 @@ def waive_all_fines(self):
     user_id = self.fine_user_var.get().strip()
 
     if not user_id:
-        messagebox.showwarning(_("common.warning"), "Please search for a user first")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.admin.dialogs.please_search_for_a_user_first', default="Please search for a user first"))
         return
 
     try:
         if ORIGINAL_LIBRARY_AVAILABLE:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror(_("common.error"), "Database connection unavailable")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.admin.dialogs.database_connection_unavailable', default="Database connection unavailable"))
                 return
 
             cursor = conn.cursor()
@@ -43,13 +45,13 @@ def waive_all_fines(self):
             total_fines = cursor.fetchone()[0] or 0.0
 
             if total_fines == 0:
-                messagebox.showinfo("No Fines", "This user has no outstanding fines to waive")
+                messagebox.showinfo(_t('gui.academics.library.fines.admin.dialogs.no_fines', default="No Fines"), _t('gui.academics.library.fines.admin.dialogs.this_user_has_no_outstanding_fines_to_waive', default="This user has no outstanding fines to waive"))
                 conn.close()
                 return
 
             # Confirm waiver
             response = messagebox.askyesno(
-                "Confirm Waive Fines",
+                _t('gui.academics.library.fines.admin.dialogs.confirm_waive_fines', default="Confirm Waive Fines"),
                 f"Are you sure you want to waive all fines for user {user_id}?\n\n"
                 f"Total amount to be waived: £{total_fines:.2f}\n\n"
                 f"This action cannot be undone."
@@ -100,14 +102,14 @@ def view_fine_history(self):
     user_id = self.fine_user_var.get().strip()
 
     if not user_id:
-        messagebox.showwarning(_("common.warning"), "Please search for a user first")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.admin.dialogs.please_search_for_a_user_first', default="Please search for a user first"))
         return
 
     try:
         if ORIGINAL_LIBRARY_AVAILABLE:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror(_("common.error"), "Database connection unavailable")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.admin.dialogs.database_connection_unavailable', default="Database connection unavailable"))
                 return
 
             cursor = conn.cursor()
@@ -125,7 +127,7 @@ def view_fine_history(self):
             conn.close()
 
             if not transactions:
-                messagebox.showinfo("No History", "No fine history found for this user")
+                messagebox.showinfo(_t('gui.academics.library.fines.admin.dialogs.no_history', default="No History"), _t('gui.academics.library.fines.admin.dialogs.no_fine_history_found_for_this_user', default="No fine history found for this user"))
                 return
 
             # Create history window
@@ -200,14 +202,14 @@ def adjust_fine_amount(self):
     user_id = self.fine_user_var.get().strip()
 
     if not user_id:
-        messagebox.showwarning(_("common.warning"), "Please search for a user first")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.admin.dialogs.please_search_for_a_user_first', default="Please search for a user first"))
         return
 
     try:
         if ORIGINAL_LIBRARY_AVAILABLE:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror(_("common.error"), "Database connection unavailable")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.admin.dialogs.database_connection_unavailable', default="Database connection unavailable"))
                 return
 
             cursor = conn.cursor()
@@ -222,20 +224,20 @@ def adjust_fine_amount(self):
             loans = cursor.fetchall()
 
             if not loans:
-                messagebox.showinfo("No Fines", "This user has no outstanding fines to adjust")
+                messagebox.showinfo(_t('gui.academics.library.fines.admin.dialogs.no_fines', default="No Fines"), _t('gui.academics.library.fines.admin.dialogs.this_user_has_no_outstanding_fines_to_adjust', default="This user has no outstanding fines to adjust"))
                 conn.close()
                 return
 
             # Create adjustment dialog
             adjust_dialog = tk.Toplevel()
-            adjust_dialog.title("Adjust Fine Amount")
+            adjust_dialog.title(_t('gui.academics.library.fines.admin.windows.adjust_fine_amount', default="Adjust Fine Amount"))
             adjust_dialog.geometry("500x400")
 
-            ttk.Label(adjust_dialog, text="Select Loan and Adjust Fine",
+            ttk.Label(adjust_dialog, text=_t('gui.academics.library.fines.admin.labels.select_loan_and_adjust_fine', default="Select Loan and Adjust Fine"),
                      font=('Arial', 12, 'bold')).pack(pady=10)
 
             # Loan selection
-            loan_frame = ttk.LabelFrame(adjust_dialog, text="Select Loan", padding=10)
+            loan_frame = ttk.LabelFrame(adjust_dialog, text=_t('gui.academics.library.fines.admin.labels.select_loan', default="Select Loan"), padding=10)
             loan_frame.pack(fill='x', padx=10, pady=5)
 
             loan_var = tk.StringVar()
@@ -246,15 +248,15 @@ def adjust_fine_amount(self):
                                value=f"{loan_id}:{fine_amt}").pack(anchor='w', pady=2)
 
             # Adjustment options
-            adjust_options_frame = ttk.LabelFrame(adjust_dialog, text="Adjustment", padding=10)
+            adjust_options_frame = ttk.LabelFrame(adjust_dialog, text=_t('gui.academics.library.fines.admin.labels.adjustment', default="Adjustment"), padding=10)
             adjust_options_frame.pack(fill='x', padx=10, pady=10)
 
-            adjust_type_var = tk.StringVar(value="set")
-            ttk.Radiobutton(adjust_options_frame, text="Set to specific amount",
+            adjust_type_var = tk.StringVar(value=_t('gui.academics.library.fines.admin.values.set', default="set"))
+            ttk.Radiobutton(adjust_options_frame, text=_t('gui.academics.library.fines.admin.buttons.set_to_specific_amount', default="Set to specific amount"),
                            variable=adjust_type_var, value="set").grid(row=0, column=0, sticky='w')
-            ttk.Radiobutton(adjust_options_frame, text="Increase by",
+            ttk.Radiobutton(adjust_options_frame, text=_t('gui.academics.library.fines.admin.buttons.increase_by', default="Increase by"),
                            variable=adjust_type_var, value="increase").grid(row=1, column=0, sticky='w')
-            ttk.Radiobutton(adjust_options_frame, text="Decrease by",
+            ttk.Radiobutton(adjust_options_frame, text=_t('gui.academics.library.fines.admin.buttons.decrease_by', default="Decrease by"),
                            variable=adjust_type_var, value="decrease").grid(row=2, column=0, sticky='w')
 
             amount_var = tk.StringVar()
@@ -263,7 +265,7 @@ def adjust_fine_amount(self):
             ttk.Entry(adjust_options_frame, textvariable=amount_var, width=15).grid(row=2, column=1, padx=5)
 
             # Reason
-            reason_frame = ttk.LabelFrame(adjust_dialog, text="Reason for Adjustment", padding=10)
+            reason_frame = ttk.LabelFrame(adjust_dialog, text=_t('gui.academics.library.fines.admin.labels.reason_for_adjustment', default="Reason for Adjustment"), padding=10)
             reason_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
             reason_text = tk.Text(reason_frame, height=4, width=50)
@@ -271,7 +273,7 @@ def adjust_fine_amount(self):
 
             def process_adjustment():
                 if not loan_var.get():
-                    messagebox.showwarning(_("common.warning"), "Please select a loan")
+                    messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.admin.dialogs.please_select_a_loan', default="Please select a loan"))
                     return
 
                 try:
@@ -282,7 +284,7 @@ def adjust_fine_amount(self):
                     reason = reason_text.get('1.0', 'end-1c').strip()
 
                     if not reason:
-                        messagebox.showwarning(_("common.warning"), "Please provide a reason for adjustment")
+                        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.admin.dialogs.please_provide_a_reason_for_adjustment', default="Please provide a reason for adjustment"))
                         return
 
                     # Calculate new fine amount
@@ -321,7 +323,7 @@ def adjust_fine_amount(self):
                     self.load_user_fines()
 
                 except ValueError:
-                    messagebox.showerror(_("common.error"), "Please enter a valid amount")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.admin.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount"))
                 except tk.TclError as e:
                     messagebox.showerror(_("common.error"), f"Failed to adjust fine: {str(e)}")
 
@@ -329,7 +331,7 @@ def adjust_fine_amount(self):
             button_frame = ttk.Frame(adjust_dialog)
             button_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Button(button_frame, text="Apply Adjustment",
+            ttk.Button(button_frame, text=_t('gui.academics.library.fines.admin.buttons.apply_adjustment', default="Apply Adjustment"),
                       command=process_adjustment).pack(side='left', padx=5)
             ttk.Button(button_frame, text=_("common.cancel"),
                       command=adjust_dialog.destroy).pack(side='right', padx=5)

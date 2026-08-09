@@ -131,8 +131,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -1574,8 +1574,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None

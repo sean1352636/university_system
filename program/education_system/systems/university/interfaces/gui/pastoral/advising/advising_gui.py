@@ -16,7 +16,7 @@ class AdvisingPortalGUI:
             self.window = parent
         else:
             self.window = tk.Toplevel(parent) if parent else tk.Tk()
-            self.window.title("Academic Advising Portal")
+            self.window.title(_t('gui.pastoral.advising.advising.windows.academic_advising_portal', default="Academic Advising Portal"))
             self.window.geometry("1100x700")
 
         # Try to get auth context
@@ -104,16 +104,16 @@ class AdvisingPortalGUI:
 
     def _build_appointments_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Appointments")
+        self.notebook.add(tab, text=_t('gui.pastoral.advising.advising.tabs.my_appointments', default="My Appointments"))
 
         # Toolbar
         toolbar = ttk.Frame(tab)
         toolbar.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_appointments).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="Cancel Selected", command=self._cancel_appointment).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text=_t('gui.pastoral.advising.advising.buttons.refresh', default="Refresh"), command=self._load_appointments).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text=_t('gui.pastoral.advising.advising.buttons.cancel_selected', default="Cancel Selected"), command=self._cancel_appointment).pack(side=tk.LEFT, padx=2)
 
         # Filter
-        ttk.Label(toolbar, text="Status:").pack(side=tk.LEFT, padx=(10,2))
+        ttk.Label(toolbar, text=_t('gui.pastoral.advising.advising.labels.status', default="Status:")).pack(side=tk.LEFT, padx=(10,2))
         self.appt_filter = ttk.Combobox(toolbar, values=["All", "scheduled", "completed", "cancelled"], state="readonly", width=12)
         self.appt_filter.set("All")
         self.appt_filter.pack(side=tk.LEFT, padx=2)
@@ -133,58 +133,58 @@ class AdvisingPortalGUI:
 
     def _build_schedule_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Schedule Appointment")
+        self.notebook.add(tab, text=_t('gui.pastoral.advising.advising.tabs.schedule_appointment', default="Schedule Appointment"))
 
-        form = ttk.LabelFrame(tab, text="New Appointment", padding=15)
+        form = ttk.LabelFrame(tab, text=_t('gui.pastoral.advising.advising.labels.new_appointment', default="New Appointment"), padding=15)
         form.pack(fill=tk.X, padx=10, pady=10)
 
         row = 0
-        ttk.Label(form, text="Advisor:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.pastoral.advising.advising.labels.advisor', default="Advisor:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.advisor_combo = ttk.Combobox(form, state="readonly", width=30)
         self.advisor_combo.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Date (YYYY-MM-DD):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.pastoral.advising.advising.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.date_entry = ttk.Entry(form, width=20)
         self.date_entry.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
         self.date_entry.insert(0, (date.today() + timedelta(days=1)).isoformat())
 
         row += 1
-        ttk.Label(form, text="Time (HH:MM):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.pastoral.advising.advising.labels.time_hh_mm', default="Time (HH:MM):")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.time_entry = ttk.Entry(form, width=20)
         self.time_entry.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
         self.time_entry.insert(0, "10:00")
 
         row += 1
-        ttk.Label(form, text="Duration (mins):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.pastoral.advising.advising.labels.duration_mins', default="Duration (mins):")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.duration_combo = ttk.Combobox(form, values=["15", "30", "45", "60"], state="readonly", width=10)
         self.duration_combo.set("30")
         self.duration_combo.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Type:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.pastoral.advising.advising.labels.type', default="Type:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.type_combo = ttk.Combobox(form, values=["general", "degree_planning", "course_selection", "academic_concern", "career_guidance", "graduate_school"], state="readonly", width=20)
         self.type_combo.set("general")
         self.type_combo.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Topic:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.pastoral.advising.advising.labels.topic', default="Topic:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.topic_entry = ttk.Entry(form, width=40)
         self.topic_entry.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Notes:").grid(row=row, column=0, sticky=tk.NW, pady=3)
+        ttk.Label(form, text=_t('gui.pastoral.advising.advising.labels.notes', default="Notes:")).grid(row=row, column=0, sticky=tk.NW, pady=3)
         self.notes_text = tk.Text(form, width=40, height=4)
         self.notes_text.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Button(form, text="Schedule Appointment", command=self._schedule_appointment).grid(row=row, column=1, sticky=tk.W, pady=10, padx=5)
+        ttk.Button(form, text=_t('gui.pastoral.advising.advising.buttons.schedule_appointment', default="Schedule Appointment"), command=self._schedule_appointment).grid(row=row, column=1, sticky=tk.W, pady=10, padx=5)
 
     def _build_advisor_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Advisors")
+        self.notebook.add(tab, text=_t('gui.pastoral.advising.advising.tabs.advisors', default="Advisors"))
 
-        ttk.Label(tab, text="Available Academic Advisors", font=("", 12, "bold")).pack(pady=10)
+        ttk.Label(tab, text=_t('gui.pastoral.advising.advising.labels.available_academic_advisors', default="Available Academic Advisors"), font=("", 12, "bold")).pack(pady=10)
 
         cols = ("advisor_id", "name", "department", "email", "office", "specialization", "available_days")
         self.advisor_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -195,29 +195,29 @@ class AdvisingPortalGUI:
 
     def _build_degree_plan_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Degree Plan")
+        self.notebook.add(tab, text=_t('gui.pastoral.advising.advising.tabs.degree_plan', default="Degree Plan"))
 
         # Plan summary
-        self.plan_frame = ttk.LabelFrame(tab, text="My Degree Plan", padding=10)
+        self.plan_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.advising.advising.labels.my_degree_plan', default="My Degree Plan"), padding=10)
         self.plan_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.plan_info = tk.Text(self.plan_frame, height=6, state=tk.DISABLED, wrap=tk.WORD)
         self.plan_info.pack(fill=tk.X)
 
         # Course progress
-        progress_frame = ttk.LabelFrame(tab, text="Credit Progress", padding=10)
+        progress_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.advising.advising.labels.credit_progress', default="Credit Progress"), padding=10)
         progress_frame.pack(fill=tk.X, padx=10, pady=5)
 
         self.progress_var = tk.DoubleVar(value=0)
         self.progress_bar = ttk.Progressbar(progress_frame, variable=self.progress_var, maximum=100, length=400)
         self.progress_bar.pack(fill=tk.X, pady=5)
-        self.progress_label = ttk.Label(progress_frame, text="0 / 120 credits completed (0%)")
+        self.progress_label = ttk.Label(progress_frame, text=_t('gui.pastoral.advising.advising.labels.value_0_120_credits_completed_0', default="0 / 120 credits completed (0%)"))
         self.progress_label.pack()
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Create New Plan", command=self._create_degree_plan).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_degree_plan).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.advising.advising.buttons.create_new_plan', default="Create New Plan"), command=self._create_degree_plan).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.advising.advising.buttons.refresh', default="Refresh"), command=self._load_degree_plan).pack(side=tk.LEFT, padx=5)
 
     def _load_data(self):
         self._load_appointments()
@@ -289,7 +289,7 @@ class AdvisingPortalGUI:
     def _schedule_appointment(self):
         advisor_val = self.advisor_combo.get()
         if not advisor_val or advisor_val == "No advisors available":
-            messagebox.showwarning("Warning", "Please select an advisor.")
+            messagebox.showwarning(_t('gui.pastoral.advising.advising.dialogs.warning', default="Warning"), _t('gui.pastoral.advising.advising.dialogs.please_select_an_advisor', default="Please select an advisor."))
             return
         advisor_id = advisor_val.split(" - ")[0].strip()
         appt_date = self.date_entry.get().strip()
@@ -303,12 +303,12 @@ class AdvisingPortalGUI:
         try:
             datetime.strptime(appt_date, "%Y-%m-%d")
         except ValueError:
-            messagebox.showerror("Error", "Invalid date format. Use YYYY-MM-DD.")
+            messagebox.showerror(_t('gui.pastoral.advising.advising.dialogs.error', default="Error"), _t('gui.pastoral.advising.advising.dialogs.invalid_date_format_use_yyyy_mm_dd', default="Invalid date format. Use YYYY-MM-DD."))
             return
         try:
             datetime.strptime(appt_time, "%H:%M")
         except ValueError:
-            messagebox.showerror("Error", "Invalid time format. Use HH:MM.")
+            messagebox.showerror(_t('gui.pastoral.advising.advising.dialogs.error', default="Error"), _t('gui.pastoral.advising.advising.dialogs.invalid_time_format_use_hh_mm', default="Invalid time format. Use HH:MM."))
             return
 
         try:
@@ -320,34 +320,34 @@ class AdvisingPortalGUI:
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')""",
                     (student_id, advisor_id, appt_date, appt_time, int(duration), appt_type, topic, notes))
                 conn.commit()
-            messagebox.showinfo("Success", "Appointment scheduled successfully!")
+            messagebox.showinfo(_t('gui.pastoral.advising.advising.dialogs.success', default="Success"), _t('gui.pastoral.advising.advising.dialogs.appointment_scheduled_successfully', default="Appointment scheduled successfully!"))
             self.topic_entry.delete(0, tk.END)
             self.notes_text.delete("1.0", tk.END)
             self._load_appointments()
             self.notebook.select(0)  # Switch to appointments tab
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to schedule: {e}")
+            messagebox.showerror(_t('gui.pastoral.advising.advising.dialogs.error', default="Error"), f"Failed to schedule: {e}")
 
     def _cancel_appointment(self):
         sel = self.appt_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Please select an appointment to cancel.")
+            messagebox.showwarning(_t('gui.pastoral.advising.advising.dialogs.warning', default="Warning"), _t('gui.pastoral.advising.advising.dialogs.please_select_an_appointment_to_cancel', default="Please select an appointment to cancel."))
             return
         vals = self.appt_tree.item(sel[0])['values']
         appt_id = vals[0]
         if vals[7] == 'cancelled':
-            messagebox.showinfo("Info", "This appointment is already cancelled.")
+            messagebox.showinfo(_t('gui.pastoral.advising.advising.dialogs.info', default="Info"), _t('gui.pastoral.advising.advising.dialogs.this_appointment_is_already_cancelled', default="This appointment is already cancelled."))
             return
-        if messagebox.askyesno("Confirm", "Cancel this appointment?"):
+        if messagebox.askyesno(_t('gui.pastoral.advising.advising.dialogs.confirm', default="Confirm"), _t('gui.pastoral.advising.advising.dialogs.cancel_this_appointment', default="Cancel this appointment?")):
             try:
                 from education_system.systems.university.infrastructure.database.db import get_connection
                 with get_connection() as conn:
                     conn.execute("UPDATE advising_appointments SET status='cancelled' WHERE appointment_id=?", (appt_id,))
                     conn.commit()
                 self._load_appointments()
-                messagebox.showinfo("Success", "Appointment cancelled.")
+                messagebox.showinfo(_t('gui.pastoral.advising.advising.dialogs.success', default="Success"), _t('gui.pastoral.advising.advising.dialogs.appointment_cancelled', default="Appointment cancelled."))
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to cancel: {e}")
+                messagebox.showerror(_t('gui.pastoral.advising.advising.dialogs.error', default="Error"), f"Failed to cancel: {e}")
 
     def _load_degree_plan(self):
         self.plan_info.configure(state=tk.NORMAL)
@@ -373,39 +373,39 @@ class AdvisingPortalGUI:
                 else:
                     self.plan_info.insert(tk.END, "No active degree plan found.\nClick 'Create New Plan' to get started.")
                     self.progress_var.set(0)
-                    self.progress_label.configure(text="0 / 120 credits (0%)")
+                    self.progress_label.configure(text=_t('gui.pastoral.advising.advising.text.value_0_120_credits_0', default="0 / 120 credits (0%)"))
         except Exception as e:
             self.plan_info.insert(tk.END, f"Unable to load degree plan: {e}")
         self.plan_info.configure(state=tk.DISABLED)
 
     def _create_degree_plan(self):
         dialog = tk.Toplevel(self.window)
-        dialog.title("Create Degree Plan")
+        dialog.title(_t('gui.pastoral.advising.advising.windows.create_degree_plan', default="Create Degree Plan"))
         dialog.geometry("400x300")
         dialog.transient(self.window)
 
-        ttk.Label(dialog, text="Plan Name:").pack(anchor=tk.W, padx=10, pady=(10,0))
+        ttk.Label(dialog, text=_t('gui.pastoral.advising.advising.labels.plan_name', default="Plan Name:")).pack(anchor=tk.W, padx=10, pady=(10,0))
         name_entry = ttk.Entry(dialog, width=35)
         name_entry.pack(padx=10, pady=2)
         name_entry.insert(0, "My Degree Plan")
 
-        ttk.Label(dialog, text="Target Graduation (YYYY-MM):").pack(anchor=tk.W, padx=10, pady=(10,0))
+        ttk.Label(dialog, text=_t('gui.pastoral.advising.advising.labels.target_graduation_yyyy_mm', default="Target Graduation (YYYY-MM):")).pack(anchor=tk.W, padx=10, pady=(10,0))
         grad_entry = ttk.Entry(dialog, width=20)
         grad_entry.pack(padx=10, pady=2, anchor=tk.W)
 
-        ttk.Label(dialog, text="Total Credits Required:").pack(anchor=tk.W, padx=10, pady=(10,0))
+        ttk.Label(dialog, text=_t('gui.pastoral.advising.advising.labels.total_credits_required', default="Total Credits Required:")).pack(anchor=tk.W, padx=10, pady=(10,0))
         credits_entry = ttk.Entry(dialog, width=10)
         credits_entry.pack(padx=10, pady=2, anchor=tk.W)
         credits_entry.insert(0, "120")
 
-        ttk.Label(dialog, text="Notes:").pack(anchor=tk.W, padx=10, pady=(10,0))
+        ttk.Label(dialog, text=_t('gui.pastoral.advising.advising.labels.notes', default="Notes:")).pack(anchor=tk.W, padx=10, pady=(10,0))
         notes_text = tk.Text(dialog, width=35, height=3)
         notes_text.pack(padx=10, pady=2)
 
         def save():
             name = name_entry.get().strip()
             if not name:
-                messagebox.showwarning("Warning", "Please enter a plan name.", parent=dialog)
+                messagebox.showwarning(_t('gui.pastoral.advising.advising.dialogs.warning', default="Warning"), _t('gui.pastoral.advising.advising.dialogs.please_enter_a_plan_name', default="Please enter a plan name."), parent=dialog)
                 return
             try:
                 from education_system.systems.university.infrastructure.database.db import get_connection
@@ -425,13 +425,13 @@ class AdvisingPortalGUI:
                         VALUES (?, ?, ?, ?, ?, ?)""",
                         (student_id, name, grad_entry.get().strip() or None, int(credits_entry.get()), completed, notes_text.get("1.0", tk.END).strip()))
                     conn.commit()
-                messagebox.showinfo("Success", "Degree plan created!", parent=dialog)
+                messagebox.showinfo(_t('gui.pastoral.advising.advising.dialogs.success', default="Success"), _t('gui.pastoral.advising.advising.dialogs.degree_plan_created', default="Degree plan created!"), parent=dialog)
                 dialog.destroy()
                 self._load_degree_plan()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed: {e}", parent=dialog)
+                messagebox.showerror(_t('gui.pastoral.advising.advising.dialogs.error', default="Error"), f"Failed: {e}", parent=dialog)
 
-        ttk.Button(dialog, text="Create Plan", command=save).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.pastoral.advising.advising.buttons.create_plan', default="Create Plan"), command=save).pack(pady=10)
 
 def launch_advising_gui(parent=None):
     return AdvisingPortalGUI(parent=parent)

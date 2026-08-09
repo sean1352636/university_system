@@ -7,14 +7,14 @@ Features: Members, Donations, Events, Prayer Requests, Sermons, Volunteers, Atte
 from datetime import datetime
 from pathlib import Path
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 try:
     from education_system.systems.university.infrastructure.database.db import get_connection
 except ImportError:
     from education_system.systems.university.infrastructure.database.db import sqlite3
     def get_connection():
-        return sqlite3.connect(str(DEFAULT_DB_PATH))
+        return sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
 
 try:
     from education_system.systems.university.infrastructure.email.email_service import send_email_as_system

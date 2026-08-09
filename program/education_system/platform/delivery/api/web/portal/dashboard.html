@@ -25,6 +25,20 @@
 
     <section id="kpis" class="grid grid-4" style="margin-bottom:1.25rem;"></section>
 
+    <section id="university-operations" style="margin-bottom:1.25rem;" hidden>
+      <div class="card">
+        <div class="row" style="justify-content:space-between; align-items:center;">
+          <div>
+            <span class="eyebrow">UNIVERSITY STAFF</span>
+            <h2>Institutional operations</h2>
+            <p class="muted">Case management, identity controls, connectors,
+              timetabling, PGR administration and programme governance.</p>
+          </div>
+          <a class="btn" href="/portal/operations">Open operations</a>
+        </div>
+      </div>
+    </section>
+
     <section class="grid grid-2">
       <div class="card">
         <h2>Attendance breakdown</h2>
@@ -126,6 +140,8 @@
       const meta = EduPortal.getSystemMeta(currentSystem);
       document.getElementById("title").innerHTML = `${meta.emoji} ${meta.label} Dashboard`;
       document.getElementById("subtitle").textContent = meta.tagline;
+      document.getElementById("university-operations").hidden =
+        currentSystem !== "university";
 
       // Module navigation — one button per API module for this system
       const modGrid = document.getElementById("modules-grid");

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
 import threading
@@ -89,7 +91,7 @@ class AIDetectorGUI:
             error_message = "AI Detector backend is not available."
             if _AI_DETECTOR_IMPORT_ERROR:
                 error_message += f" Details: {_AI_DETECTOR_IMPORT_ERROR}"
-            messagebox.showerror("Initialization Error", error_message)
+            messagebox.showerror(_t('gui.academics.ai_detector.main.dialogs.initialization_error', default="Initialization Error"), error_message)
             raise RuntimeError(error_message)
 
         # Initialize or use provided authentication
@@ -166,7 +168,7 @@ class AIDetectorGUI:
 
     def setup_window(self):
         """Setup main window properties"""
-        self.root.title("Ultimate AI Detector - Academic Integrity Suite")
+        self.root.title(_t('gui.academics.ai_detector.main.windows.ultimate_ai_detector_academic_integrity_suite', default="Ultimate AI Detector - Academic Integrity Suite"))
         self.root.geometry("1400x900")
         self.root.minsize(1200, 700)
 
@@ -209,7 +211,7 @@ class AIDetectorGUI:
         # Add return to main menu button at the top
         return_btn = ttk.Button(
             self.root,
-            text="← Return to Main Menu",
+            text=_t('gui.academics.ai_detector.main.buttons.return_to_main_menu', default="← Return to Main Menu"),
             command=self.return_to_main_menu
         )
         return_btn.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
@@ -253,7 +255,7 @@ class AIDetectorGUI:
 
         # Create navigation buttons
         self.current_view = None
-        ttk.Button(self.nav_frame, text="🏠 Return to Homescreen", width=25,
+        ttk.Button(self.nav_frame, text=_t('gui.academics.ai_detector.main.buttons.return_to_homescreen', default="🏠 Return to Homescreen"), width=25,
                    command=self.return_to_main_menu).pack(fill='x', padx=5, pady=(0, 6))
         self.create_navigation_buttons()
 
@@ -310,15 +312,15 @@ class AIDetectorGUI:
         title_frame.pack(fill='x', pady=(0, 10))
 
         # Title and subtitle
-        title_label = ttk.Label(title_frame, text="Ultimate AI Detector", style='Title.TLabel')
+        title_label = ttk.Label(title_frame, text=_t('gui.academics.ai_detector.main.labels.ultimate_ai_detector', default="Ultimate AI Detector"), style='Title.TLabel')
         title_label.pack(side='left', padx=15, pady=10)
 
-        subtitle_label = ttk.Label(title_frame, text="Advanced Academic Integrity Detection Suite",
+        subtitle_label = ttk.Label(title_frame, text=_t('gui.academics.ai_detector.main.labels.advanced_academic_integrity_detection_suite', default="Advanced Academic Integrity Detection Suite"),
                                  style='Subtitle.TLabel')
         subtitle_label.pack(side='left', padx=(10, 0), pady=10)
 
         # Status indicator
-        self.status_indicator = ttk.Label(title_frame, text="● Ready",
+        self.status_indicator = ttk.Label(title_frame, text=_t('gui.academics.ai_detector.main.labels.ready_variant_2', default="● Ready"),
                                         foreground=self.colors['success'])
         self.status_indicator.pack(side='right', padx=15, pady=10)
 
@@ -329,7 +331,7 @@ class AIDetectorGUI:
         self.status_frame.pack(fill='x', pady=(10, 0))
 
         # Status text
-        self.status_text = ttk.Label(self.status_frame, text="Ready", style='Subtitle.TLabel')
+        self.status_text = ttk.Label(self.status_frame, text=_t('gui.academics.ai_detector.main.labels.ready', default="Ready"), style='Subtitle.TLabel')
         self.status_text.pack(side='left')
 
         # Progress bar (initially hidden)
@@ -493,7 +495,7 @@ class AIDetectorGUI:
             self.root.mainloop()
 
         except Exception as e:
-            messagebox.showerror("Application Error", f"Failed to start application: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.main.dialogs.application_error', default="Application Error"), f"Failed to start application: {str(e)}")
 
 
 # Bind functions from analysis_view module

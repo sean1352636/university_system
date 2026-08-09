@@ -36,7 +36,7 @@ class AdvancedRepositorySearchDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -105,11 +105,11 @@ class AdvancedRepositorySearchDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X)
 
-        ttk.Button(button_frame, text="Search", command=self.perform_advanced_search).pack(side=tk.LEFT)
-        ttk.Button(button_frame, text="Clear", command=self.clear_search).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.buttons.search', default="Search"), command=self.perform_advanced_search).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.buttons.clear', default="Clear"), command=self.clear_search).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
         ttk.Button(button_frame, text=_t("plagiarism.export_results"), command=self.export_results).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT)
-        ttk.Button(button_frame, text="View Details", command=self.view_selected_details).pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.buttons.view_details', default="View Details"), command=self.view_selected_details).pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
 
     def create_basic_search_tab(self, parent):
         """Create basic search tab"""
@@ -120,18 +120,18 @@ class AdvancedRepositorySearchDialog:
         search_entry.grid(row=0, column=1, columnspan=2, sticky=tk.W+tk.E, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Author filter
-        ttk.Label(parent, text="Author:", font=GuiConfig.SUBHEADER_FONT).grid(row=1, column=0, sticky=tk.W, pady=GuiConfig.PADDING_SMALL)
+        ttk.Label(parent, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.labels.author', default="Author:"), font=GuiConfig.SUBHEADER_FONT).grid(row=1, column=0, sticky=tk.W, pady=GuiConfig.PADDING_SMALL)
         self.author_filter_var = tk.StringVar()
         author_entry = ttk.Entry(parent, textvariable=self.author_filter_var, width=30)
         author_entry.grid(row=1, column=1, sticky=tk.W+tk.E, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
-        ttk.Button(parent, text="Select", command=self.select_author).grid(row=1, column=2, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(parent, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.buttons.select', default="Select"), command=self.select_author).grid(row=1, column=2, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Module filter
-        ttk.Label(parent, text="Module:", font=GuiConfig.SUBHEADER_FONT).grid(row=2, column=0, sticky=tk.W, pady=GuiConfig.PADDING_SMALL)
+        ttk.Label(parent, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.labels.module', default="Module:"), font=GuiConfig.SUBHEADER_FONT).grid(row=2, column=0, sticky=tk.W, pady=GuiConfig.PADDING_SMALL)
         self.module_filter_var = tk.StringVar()
         module_entry = ttk.Entry(parent, textvariable=self.module_filter_var, width=30)
         module_entry.grid(row=2, column=1, sticky=tk.W+tk.E, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
-        ttk.Button(parent, text="Select", command=self.select_module).grid(row=2, column=2, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(parent, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.buttons.select', default="Select"), command=self.select_module).grid(row=2, column=2, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Configure grid weights
         parent.grid_columnconfigure(1, weight=1)
@@ -142,15 +142,15 @@ class AdvancedRepositorySearchDialog:
         date_frame = ttk.LabelFrame(parent, text=_t("plagiarism.date_range"), padding=GuiConfig.PADDING_SMALL)
         date_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
-        ttk.Label(date_frame, text="From:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(date_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.labels.from', default="From:")).grid(row=0, column=0, sticky=tk.W)
         self.date_from_var = tk.StringVar()
         ttk.Entry(date_frame, textvariable=self.date_from_var, width=15).grid(row=0, column=1, padx=GuiConfig.PADDING_SMALL)
 
-        ttk.Label(date_frame, text="To:").grid(row=0, column=2, sticky=tk.W, padx=(GuiConfig.PADDING_MEDIUM, 0))
+        ttk.Label(date_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.labels.to', default="To:")).grid(row=0, column=2, sticky=tk.W, padx=(GuiConfig.PADDING_MEDIUM, 0))
         self.date_to_var = tk.StringVar()
         ttk.Entry(date_frame, textvariable=self.date_to_var, width=15).grid(row=0, column=3, padx=GuiConfig.PADDING_SMALL)
 
-        ttk.Label(date_frame, text="(YYYY-MM-DD format)", font=("Arial", 8)).grid(row=1, column=0, columnspan=4, sticky=tk.W)
+        ttk.Label(date_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.labels.yyyy_mm_dd_format', default="(YYYY-MM-DD format)"), font=("Arial", 8)).grid(row=1, column=0, columnspan=4, sticky=tk.W)
 
         # File type filter
         type_frame = ttk.LabelFrame(parent, text=_t("plagiarism.file_type"), padding=GuiConfig.PADDING_SMALL)
@@ -178,24 +178,24 @@ class AdvancedRepositorySearchDialog:
         """Open author selection dialog"""
         author_name = self.author_filter_var.get().strip()
         if not author_name:
-            author_name = simpledialog.askstring("Author Search", "Enter author name to search:")
+            author_name = simpledialog.askstring(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.author_search', default="Author Search"), _t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.enter_author_name_to_search', default="Enter author name to search:"))
             if not author_name:
                 return
 
         # This would use the get_author_selection_dialog function
         # For now, simplified implementation
-        messagebox.showinfo("Author Selection", f"Author selection for '{author_name}' would open here")
+        messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.author_selection', default="Author Selection"), f"Author selection for '{author_name}' would open here")
 
     def select_module(self):
         """Open module selection dialog"""
         module_name = self.module_filter_var.get().strip()
         if not module_name:
-            module_name = simpledialog.askstring("Module Search", "Enter module name to search:")
+            module_name = simpledialog.askstring(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.module_search', default="Module Search"), _t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.enter_module_name_to_search', default="Enter module name to search:"))
             if not module_name:
                 return
 
         # This would use the get_module_selection_by_name_dialog function
-        messagebox.showinfo("Module Selection", f"Module selection for '{module_name}' would open here")
+        messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.module_selection', default="Module Selection"), f"Module selection for '{module_name}' would open here")
 
     def perform_advanced_search(self):
         """Perform the advanced search"""
@@ -249,10 +249,10 @@ class AdvancedRepositorySearchDialog:
                 except Exception as e:
                     logger.error(f"Error processing document {doc['id']}: {e}")
 
-            messagebox.showinfo("Search Complete", f"Found {len(filtered_docs)} documents matching your criteria.")
+            messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.search_complete', default="Search Complete"), f"Found {len(filtered_docs)} documents matching your criteria.")
 
         except Exception as e:
-            messagebox.showerror("Search Error", f"Error performing search: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.search_error', default="Search Error"), f"Error performing search: {e}")
 
     def apply_advanced_filters(self, documents):
         """Apply advanced filters to document list"""
@@ -280,8 +280,38 @@ class AdvancedRepositorySearchDialog:
         except ValueError as e:
             logger.debug(f"Invalid max_words value: {e}")
 
-        # Date filters would be implemented here
-        # For now, returning the basic filtered list
+        def parse_date(value, label):
+            value = value.strip()
+            if not value:
+                return None
+            try:
+                return datetime.strptime(value, "%Y-%m-%d").date()
+            except ValueError as exc:
+                raise ValueError(f"{label} must use YYYY-MM-DD format") from exc
+
+        date_from = parse_date(self.date_from_var.get(), "From date")
+        date_to = parse_date(self.date_to_var.get(), "To date")
+        if date_from and date_to and date_from > date_to:
+            raise ValueError("From date cannot be later than To date")
+
+        def document_date(document):
+            raw = document.get('submission_date') or document.get('created_at')
+            if not raw:
+                return None
+            try:
+                return datetime.fromisoformat(str(raw).replace('Z', '+00:00')).date()
+            except ValueError:
+                try:
+                    return datetime.strptime(str(raw)[:10], "%Y-%m-%d").date()
+                except ValueError:
+                    return None
+
+        if date_from:
+            filtered = [doc for doc in filtered
+                        if document_date(doc) is not None and document_date(doc) >= date_from]
+        if date_to:
+            filtered = [doc for doc in filtered
+                        if document_date(doc) is not None and document_date(doc) <= date_to]
 
         return filtered
 
@@ -310,13 +340,13 @@ class AdvancedRepositorySearchDialog:
             from tkinter import filedialog
 
             if not self.results_tree.get_children():
-                messagebox.showwarning("No Results", "No search results to export.")
+                messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.no_results', default="No Results"), _t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.no_search_results_to_export', default="No search results to export."))
                 return
 
             filename = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                title="Export Search Results"
+                title=_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.export_search_results', default="Export Search Results")
             )
 
             if filename:
@@ -332,16 +362,16 @@ class AdvancedRepositorySearchDialog:
                         values = self.results_tree.item(item, 'values')
                         writer.writerow(values)
 
-                messagebox.showinfo("Export Complete", f"Results exported to {filename}")
+                messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.export_complete', default="Export Complete"), f"Results exported to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Error exporting results: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.export_error', default="Export Error"), f"Error exporting results: {e}")
 
     def view_selected_details(self):
         """View details of selected document"""
         selection = self.results_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a document to view details.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.no_selection', default="No Selection"), _t('gui.academics.plagiarism_main_gui.dialogs.advanced_search.dialogs.please_select_a_document_to_view_details', default="Please select a document to view details."))
             return
 
         item = selection[0]

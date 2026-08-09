@@ -6,6 +6,8 @@ whose university role is 'alumni' (set when they graduate) land here instead of
 the student portal.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 import logging
@@ -26,7 +28,7 @@ class AlumniPortalWrapper:
             install_destroy_race_filter(self.root)
         except Exception:
             pass
-        self.root.title("Alumni Portal")
+        self.root.title(_t('gui.shell.main.alumni_portal_wrapper.windows.alumni_portal', default="Alumni Portal"))
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
 
@@ -66,15 +68,15 @@ class AlumniPortalWrapper:
         actions = tk.Frame(header, bg='#2c3e50')
         actions.pack(side='right', fill='x', expand=True)
 
-        tk.Button(actions, text="💬 Assistant", bg='#2980b9', fg='white',
+        tk.Button(actions, text=_t('gui.shell.main.alumni_portal_wrapper.buttons.assistant', default="💬 Assistant"), bg='#2980b9', fg='white',
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
                   command=self._open_chatbot).pack(side='left', expand=True, pady=10)
 
-        tk.Button(actions, text="Return to Login", bg='#e67e22', fg='white',
+        tk.Button(actions, text=_t('gui.shell.main.alumni_portal_wrapper.buttons.return_to_login', default="Return to Login"), bg='#e67e22', fg='white',
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
                   command=self._return_to_login).pack(side='left', expand=True, pady=10)
 
-        tk.Button(actions, text="Shutdown", bg='#c0392b', fg='white',
+        tk.Button(actions, text=_t('gui.shell.main.alumni_portal_wrapper.buttons.shutdown', default="Shutdown"), bg='#c0392b', fg='white',
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
                   command=self._shutdown).pack(side='left', expand=True, pady=10)
 
@@ -87,7 +89,7 @@ class AlumniPortalWrapper:
             AlumniGUIApp(self.root, auth=self.auth, show_return_button=False)
         except Exception as e:
             logger.error(f"Error loading alumni portal: {e}")
-            ttk.Label(self.root, text="Welcome to the Alumni community!",
+            ttk.Label(self.root, text=_t('gui.shell.main.alumni_portal_wrapper.labels.welcome_to_the_alumni_community', default="Welcome to the Alumni community!"),
                       font=('Arial', 14, 'bold')).pack(pady=20)
             ttk.Label(self.root,
                       text=f"The alumni portal could not be loaded: {e}",
@@ -105,7 +107,7 @@ class AlumniPortalWrapper:
             )
         except Exception as e:
             logger.error(f"Chatbot unavailable: {e}")
-            messagebox.showerror("Assistant", f"The assistant is not available: {e}")
+            messagebox.showerror(_t('gui.shell.main.alumni_portal_wrapper.dialogs.assistant', default="Assistant"), f"The assistant is not available: {e}")
             return
 
         try:
@@ -117,7 +119,7 @@ class AlumniPortalWrapper:
                     pass
 
             chatbot_window = tk.Toplevel(self.root)
-            chatbot_window.title("University Assistant")
+            chatbot_window.title(_t('gui.shell.main.alumni_portal_wrapper.windows.university_assistant', default="University Assistant"))
             chatbot_window.geometry("1000x700")
 
             # ChatbotGUI wires its own window-close handler and (with a parent
@@ -125,7 +127,7 @@ class AlumniPortalWrapper:
             ChatbotGUI(chatbot, chatbot_window, auth_system=self.auth)
         except Exception as e:
             logger.error(f"Error opening chatbot: {e}")
-            messagebox.showerror("Assistant", f"Could not open the assistant: {e}")
+            messagebox.showerror(_t('gui.shell.main.alumni_portal_wrapper.dialogs.assistant', default="Assistant"), f"Could not open the assistant: {e}")
 
     def _return_to_login(self):
         if self.auth:

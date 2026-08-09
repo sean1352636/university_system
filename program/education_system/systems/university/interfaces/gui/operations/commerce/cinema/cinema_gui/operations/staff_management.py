@@ -38,7 +38,7 @@ def show_staff_page(self):
         tk.Label(roles_frame, text=f"{role.title()}: {info['description']}", bg="#ffffff", fg="#7f8c8d").pack(anchor="w")
     btn_frame = ttk.Frame(self.content_frame, style="Main.TFrame")
     btn_frame.pack(fill="x", pady=10)
-    ttk.Button(btn_frame, text="+ Add Staff", style="Success.TButton", command=self.add_staff).pack(side="left", padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.staff_management.buttons.add_staff', default="+ Add Staff"), style="Success.TButton", command=self.add_staff).pack(side="left", padx=5)
     tree_frame = ttk.Frame(self.content_frame, style="Card.TFrame")
     tree_frame.pack(fill="both", expand=True, pady=10)
     columns = ("ID", "Username", "Name", "Role", "Email", "Status")
@@ -123,14 +123,14 @@ University Cinema Management
 
 def add_staff(self):
     form = tk.Toplevel(self.root)
-    form.title("Add Staff")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.staff_management.windows.add_staff', default="Add Staff"))
     form.geometry("400x450")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
     form.grab_set()
     frame = ttk.Frame(form, style="Card.TFrame", padding=20)
     frame.pack(fill="both", expand=True, padx=20, pady=20)
-    tk.Label(frame, text="Add Staff", font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c").grid(row=0, column=0, columnspan=2, pady=10)
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.staff_management.labels.add_staff', default="Add Staff"), font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c").grid(row=0, column=0, columnspan=2, pady=10)
 
     fields = [("Username:*", "user"), ("Password:*", "pass"), ("Confirm Password:*", "pass2"),
               ("Name:*", "name"), ("Email:", "email"), ("Role:", "role")]
@@ -140,7 +140,7 @@ def add_staff(self):
         if key in ("pass", "pass2"):
             e = ttk.Entry(frame, width=25, show="*")
         elif key == "role":
-            role_var = tk.StringVar(value="cashier")
+            role_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.operations.staff_management.values.cashier', default="cashier"))
             e = ttk.Combobox(frame, textvariable=role_var, width=22, values=list(STAFF_ROLES.keys()))
             entries['role_var'] = role_var
         else:
@@ -163,13 +163,13 @@ def add_staff(self):
 
         # Validation
         if not username or not password or not name:
-            messagebox.showwarning(_t("cinema.common.warning"), "Username, password, and name are required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.staff_management.dialogs.username_password_and_name_are_required', default="Username, password, and name are required"))
             return
         if password != password2:
-            messagebox.showwarning(_t("cinema.common.warning"), "Passwords do not match")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.staff_management.dialogs.passwords_do_not_match', default="Passwords do not match"))
             return
         if len(password) < 8:
-            messagebox.showwarning(_t("cinema.common.warning"), "Password must be at least 8 characters")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.staff_management.dialogs.password_must_be_at_least_8_characters', default="Password must be at least 8 characters"))
             return
 
         # Use PBKDF2 password hashing (matches university auth system)
@@ -199,9 +199,9 @@ def add_staff(self):
             form.destroy()
             self.show_staff_page()
         except sqlite3.IntegrityError:
-            messagebox.showerror(_t("cinema.common.error"), "Username already exists")
+            messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.operations.staff_management.dialogs.username_already_exists', default="Username already exists"))
         finally:
             conn.close()
 
-    ttk.Button(frame, text="Add Staff", style="Success.TButton", command=save).grid(
+    ttk.Button(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.staff_management.buttons.add_staff_variant_2', default="Add Staff"), style="Success.TButton", command=save).grid(
         row=len(fields)+2, column=0, columnspan=2, pady=20)

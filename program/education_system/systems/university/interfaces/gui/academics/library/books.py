@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -465,7 +467,7 @@ def generate_book_barcode(self):
             except (sqlite3.Error, DatabaseError, tk.TclError):
                 # Fallback to simple barcode generation
                 barcode = f"LIB{book_id}"
-                messagebox.showinfo("Barcode Generated",
+                messagebox.showinfo(_t('gui.academics.library.books.dialogs.barcode_generated', default="Barcode Generated"),
                                   f"Simple barcode generated:\n\n"
                                   f"Book ID: {book_id}\n"
                                   f"Title: {book_title}\n"
@@ -473,7 +475,7 @@ def generate_book_barcode(self):
         else:
             # Demo mode - simple barcode
             barcode = f"LIB{book_id}"
-            messagebox.showinfo("Demo Barcode",
+            messagebox.showinfo(_t('gui.academics.library.books.dialogs.demo_barcode', default="Demo Barcode"),
                               f"Demo barcode generated:\n\n"
                               f"Book ID: {book_id}\n"
                               f"Title: {book_title}\n"
@@ -593,7 +595,7 @@ def add_book_dialog(self):
             self.add_book_vars[field] = var
 
             # Add lookup button
-            lookup_btn = ttk.Button(isbn_frame, text="🔍 Lookup",
+            lookup_btn = ttk.Button(isbn_frame, text=_t('gui.academics.library.books.buttons.lookup', default="🔍 Lookup"),
                                    command=lambda: self.lookup_isbn_data(dialog),
                                    width=10)
             lookup_btn.pack(side=tk.LEFT, padx=5)
@@ -605,21 +607,21 @@ def add_book_dialog(self):
             self.add_book_vars[field] = var
 
     # Description field
-    ttk.Label(main_frame, text="Description:").grid(row=len(fields), column=0, sticky='nw', pady=5)
+    ttk.Label(main_frame, text=_t('gui.academics.library.books.labels.description', default="Description:")).grid(row=len(fields), column=0, sticky='nw', pady=5)
     self.add_book_description = tk.Text(main_frame, height=4, width=40)
     self.add_book_description.grid(row=len(fields), column=1, sticky='w', pady=5)
 
     # Tags field
-    ttk.Label(main_frame, text="Tags:").grid(row=len(fields)+1, column=0, sticky='w', pady=5)
+    ttk.Label(main_frame, text=_t('gui.academics.library.books.labels.tags', default="Tags:")).grid(row=len(fields)+1, column=0, sticky='w', pady=5)
     self.add_book_tags = tk.StringVar()
     ttk.Entry(main_frame, textvariable=self.add_book_tags, width=40).grid(row=len(fields)+1, column=1, sticky='w', pady=5)
-    ttk.Label(main_frame, text="(comma-separated)", font=('Arial', 8)).grid(row=len(fields)+2, column=1, sticky='w')
+    ttk.Label(main_frame, text=_t('gui.academics.library.books.labels.comma_separated', default="(comma-separated)"), font=('Arial', 8)).grid(row=len(fields)+2, column=1, sticky='w')
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.grid(row=len(fields)+3, column=0, columnspan=2, pady=20)
 
-    ttk.Button(button_frame, text="Add Book", command=lambda: self.save_new_book(dialog)).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.books.buttons.add_book', default="Add Book"), command=lambda: self.save_new_book(dialog)).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     # Focus on title field
@@ -630,7 +632,7 @@ def lookup_isbn_data(self, dialog):
     isbn = self.add_book_vars['isbn'].get().strip()
 
     if not isbn:
-        messagebox.showwarning("ISBN Required", "Please enter an ISBN number first")
+        messagebox.showwarning(_t('gui.academics.library.books.dialogs.isbn_required', default="ISBN Required"), _t('gui.academics.library.books.dialogs.please_enter_an_isbn_number_first', default="Please enter an ISBN number first"))
         return
 
     # Clean ISBN (remove dashes and spaces)
@@ -638,7 +640,7 @@ def lookup_isbn_data(self, dialog):
 
     # Show loading status
     original_text = dialog.title()
-    dialog.title("Looking up ISBN...")
+    dialog.title(_t('gui.academics.library.books.windows.looking_up_isbn', default="Looking up ISBN..."))
 
     def lookup_thread():
         """Run lookup in background thread to avoid freezing GUI"""
@@ -723,7 +725,7 @@ def _populate_book_data(self, book_data, dialog, original_title):
     dialog.title(original_title)
 
     if not book_data:
-        messagebox.showinfo("Not Found",
+        messagebox.showinfo(_t('gui.academics.library.books.dialogs.not_found', default="Not Found"),
                           "Book data not found for this ISBN.\n\n" +
                           "Please enter the details manually.")
         return
@@ -791,7 +793,7 @@ def _populate_book_data(self, book_data, dialog, original_title):
 def _handle_lookup_error(self, error_msg, dialog, original_title):
     """Handle lookup errors"""
     dialog.title(original_title)
-    messagebox.showerror("Lookup Error",
+    messagebox.showerror(_t('gui.academics.library.books.dialogs.lookup_error', default="Lookup Error"),
                        f"Failed to lookup ISBN:\n{error_msg}\n\n" +
                        "Please check your internet connection and try again,\n" +
                        "or enter the book details manually.")
@@ -803,7 +805,7 @@ def save_new_book(self, dialog):
     author = self.add_book_vars['author'].get().strip()
 
     if not title or not author:
-        messagebox.showerror(_("common.error"), "Title and Author are required fields")
+        messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.title_and_author_are_required_fields', default="Title and Author are required fields"))
         return
 
     try:
@@ -820,11 +822,11 @@ def save_new_book(self, dialog):
             success = self.add_book_to_database(book_data)
 
             if success:
-                messagebox.showinfo(_("common.success"), "Book added successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.books.dialogs.book_added_successfully', default="Book added successfully!"))
                 dialog.destroy()
                 self.refresh_books_table() if hasattr(self, 'books_tree') else None
             else:
-                messagebox.showerror(_("common.error"), "Failed to add book")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.failed_to_add_book', default="Failed to add book"))
         else:
             # Demo mode
             messagebox.showinfo(_("common.demo"), f"Book '{title}' by {author} would be added to the database")
@@ -898,7 +900,7 @@ def edit_selected_book(self):
     """Edit details of selected book"""
     selection = self.books_tree.selection()
     if not selection:
-        messagebox.showwarning(_("common.warning"), "Please select a book to edit")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.books.dialogs.please_select_a_book_to_edit', default="Please select a book to edit"))
         return
 
     item = self.books_tree.item(selection[0])
@@ -908,7 +910,7 @@ def edit_selected_book(self):
         # Get current book details
         book_details = self.get_book_details(book_id)
         if not book_details:
-            messagebox.showerror(_("common.error"), "Book not found")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.book_not_found', default="Book not found"))
             return
 
         # Create edit dialog
@@ -982,7 +984,7 @@ def edit_selected_book(self):
                 except tk.TclError:
                     pass
 
-                messagebox.showinfo(_("common.success"), "Book updated successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.books.dialogs.book_updated_successfully', default="Book updated successfully!"))
                 dialog.destroy()
                 self.load_books_data()
 
@@ -993,7 +995,7 @@ def edit_selected_book(self):
         button_frame = ttk.Frame(dialog)
         button_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.library.books.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     except (tk.TclError, ValueError, TypeError) as e:
@@ -1003,7 +1005,7 @@ def delete_selected_book(self):
     """Delete book with confirmation"""
     selection = self.books_tree.selection()
     if not selection:
-        messagebox.showwarning(_("common.warning"), "Please select a book to delete")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.books.dialogs.please_select_a_book_to_delete', default="Please select a book to delete"))
         return
 
     item = self.books_tree.item(selection[0])
@@ -1012,7 +1014,7 @@ def delete_selected_book(self):
 
     # Confirm deletion
     result = messagebox.askyesno(
-        "Confirm Deletion",
+        _t('gui.academics.library.books.dialogs.confirm_deletion', default="Confirm Deletion"),
         f"Are you sure you want to delete this book?\n\n"
         f"Book ID: {book_id}\n"
         f"Title: {title}\n\n"
@@ -1035,7 +1037,7 @@ def delete_selected_book(self):
         active_loans = cursor.fetchone()[0]
         if active_loans > 0:
             messagebox.showerror(
-                "Cannot Delete",
+                _t('gui.academics.library.books.dialogs.cannot_delete', default="Cannot Delete"),
                 f"This book has {active_loans} active loan(s).\n"
                 "Please return all copies before deleting."
             )
@@ -1054,7 +1056,7 @@ def delete_selected_book(self):
         except (sqlite3.Error, DatabaseError):
             pass
 
-        messagebox.showinfo(_("common.success"), "Book deleted successfully!")
+        messagebox.showinfo(_("common.success"), _t('gui.academics.library.books.dialogs.book_deleted_successfully', default="Book deleted successfully!"))
         self.load_books_data()
         self.update_status(f"Deleted book: {book_id}", "success")
 
@@ -1149,7 +1151,7 @@ def checkout_book_dialog(self, book_id):
         # Get current user
         current_user = get_current_user() if SHARED_AUTH_AVAILABLE else None
         if not current_user:
-            messagebox.showerror(_("common.error"), "No user logged in. Please log in to checkout books.")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.no_user_logged_in_please_log_in_to_checkout_books', default="No user logged in. Please log in to checkout books."))
             return
 
         current_user_id = current_user.get('username') or current_user.get('user_id') or current_user.get('id')
@@ -1158,7 +1160,7 @@ def checkout_book_dialog(self, book_id):
         # Get book details
         book_details = self.get_book_details(book_id)
         if not book_details:
-            messagebox.showerror(_("common.error"), "Book not found")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.book_not_found', default="Book not found"))
             return
 
         if book_details.get('status', '').lower() not in ('available',):
@@ -1176,7 +1178,7 @@ def checkout_book_dialog(self, book_id):
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Book info
-        book_frame = ttk.LabelFrame(main_frame, text="Book Information")
+        book_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.books.labels.book_information', default="Book Information"))
         book_frame.pack(fill=tk.X, pady=(0, 10))
 
         book_info = (
@@ -1188,11 +1190,11 @@ def checkout_book_dialog(self, book_id):
         ttk.Label(book_frame, text=book_info, justify=tk.LEFT).pack(anchor='w', padx=10, pady=10)
 
         # Borrower frame
-        borrower_frame = ttk.LabelFrame(main_frame, text="Borrower")
+        borrower_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.books.labels.borrower', default="Borrower"))
         borrower_frame.pack(fill=tk.X, pady=(0, 10))
 
         if current_role in ('admin', 'staff', 'instructor', 'librarian'):
-            ttk.Label(borrower_frame, text="User ID / Student ID:").pack(anchor='w', padx=10, pady=(10, 0))
+            ttk.Label(borrower_frame, text=_t('gui.academics.library.books.labels.user_id_student_id', default="User ID / Student ID:")).pack(anchor='w', padx=10, pady=(10, 0))
             borrower_var = tk.StringVar()
             ttk.Entry(borrower_frame, textvariable=borrower_var, width=30).pack(anchor='w', padx=10, pady=(5, 10))
         else:
@@ -1203,7 +1205,7 @@ def checkout_book_dialog(self, book_id):
             ttk.Label(borrower_frame, text=user_info, justify=tk.LEFT).pack(anchor='w', padx=10, pady=10)
 
         # Eligibility info
-        eligibility_frame = ttk.LabelFrame(main_frame, text="Loan Details")
+        eligibility_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.books.labels.loan_details', default="Loan Details"))
         eligibility_frame.pack(fill=tk.X, pady=(0, 10))
 
         eligibility_text = tk.Text(eligibility_frame, height=4, wrap=tk.WORD, state=tk.DISABLED)
@@ -1212,7 +1214,7 @@ def checkout_book_dialog(self, book_id):
         def check_eligibility():
             uid = borrower_var.get().strip()
             if not uid:
-                messagebox.showwarning(_("common.warning"), "Please enter a user ID")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.books.dialogs.please_enter_a_user_id', default="Please enter a user ID"))
                 return
 
             try:
@@ -1261,7 +1263,7 @@ def checkout_book_dialog(self, book_id):
             except (sqlite3.Error, DatabaseError, ValueError) as e:
                 messagebox.showerror(_("common.error"), f"Eligibility check failed: {str(e)}")
 
-        ttk.Button(eligibility_frame, text="Check Eligibility", command=check_eligibility).pack(anchor='w', padx=10, pady=(0, 10))
+        ttk.Button(eligibility_frame, text=_t('gui.academics.library.books.buttons.check_eligibility', default="Check Eligibility"), command=check_eligibility).pack(anchor='w', padx=10, pady=(0, 10))
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
@@ -1270,7 +1272,7 @@ def checkout_book_dialog(self, book_id):
         def process():
             uid = borrower_var.get().strip()
             if not uid:
-                messagebox.showwarning(_("common.warning"), "Please enter a user ID")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.books.dialogs.please_enter_a_user_id', default="Please enter a user ID"))
                 return
 
             try:
@@ -1284,11 +1286,11 @@ def checkout_book_dialog(self, book_id):
                     # Refresh book details
                     self.show_book_details(book_id)
                 else:
-                    messagebox.showerror(_("common.error"), "Checkout failed")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.checkout_failed', default="Checkout failed"))
             except (sqlite3.Error, DatabaseError, tk.TclError) as e:
                 messagebox.showerror(_("common.error"), f"Checkout error: {str(e)}")
 
-        checkout_btn = ttk.Button(button_frame, text="Checkout", command=process, state=tk.DISABLED)
+        checkout_btn = ttk.Button(button_frame, text=_t('gui.academics.library.books.buttons.checkout', default="Checkout"), command=process, state=tk.DISABLED)
         checkout_btn.pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
@@ -1305,7 +1307,7 @@ def reserve_book_dialog(self, book_id):
         # Get current user
         current_user = get_current_user() if SHARED_AUTH_AVAILABLE else None
         if not current_user:
-            messagebox.showerror(_("common.error"), "No user logged in. Please log in to reserve books.")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.no_user_logged_in_please_log_in_to_reserve_books', default="No user logged in. Please log in to reserve books."))
             return
 
         current_user_id = current_user.get('username') or current_user.get('user_id') or current_user.get('id')
@@ -1314,7 +1316,7 @@ def reserve_book_dialog(self, book_id):
         # Get book details
         book_details = self.get_book_details(book_id)
         if not book_details:
-            messagebox.showerror(_("common.error"), "Book not found")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.book_not_found', default="Book not found"))
             return
 
         dialog = tk.Toplevel(self.master)
@@ -1327,7 +1329,7 @@ def reserve_book_dialog(self, book_id):
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Book info
-        book_frame = ttk.LabelFrame(main_frame, text="Book Information")
+        book_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.books.labels.book_information', default="Book Information"))
         book_frame.pack(fill=tk.X, pady=(0, 10))
 
         book_info = (
@@ -1339,7 +1341,7 @@ def reserve_book_dialog(self, book_id):
         ttk.Label(book_frame, text=book_info, justify=tk.LEFT).pack(anchor='w', padx=10, pady=10)
 
         # Reservation info
-        info_frame = ttk.LabelFrame(main_frame, text="Reservation Queue")
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.books.labels.reservation_queue', default="Reservation Queue"))
         info_frame.pack(fill=tk.X, pady=(0, 10))
 
         queue_info = "Loading..."
@@ -1391,9 +1393,9 @@ def reserve_book_dialog(self, book_id):
 
         # Borrower field for staff
         if current_role in ('admin', 'staff', 'instructor', 'librarian'):
-            borrower_frame = ttk.LabelFrame(main_frame, text="Reserve For")
+            borrower_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.books.labels.reserve_for', default="Reserve For"))
             borrower_frame.pack(fill=tk.X, pady=(0, 10))
-            ttk.Label(borrower_frame, text="User ID / Student ID:").pack(anchor='w', padx=10, pady=(10, 0))
+            ttk.Label(borrower_frame, text=_t('gui.academics.library.books.labels.user_id_student_id', default="User ID / Student ID:")).pack(anchor='w', padx=10, pady=(10, 0))
             reserve_user_var = tk.StringVar(value=current_user_id)
             ttk.Entry(borrower_frame, textvariable=reserve_user_var, width=30).pack(anchor='w', padx=10, pady=(5, 10))
         else:
@@ -1406,7 +1408,7 @@ def reserve_book_dialog(self, book_id):
         def create_reservation():
             uid = reserve_user_var.get().strip()
             if not uid:
-                messagebox.showwarning(_("common.warning"), "Please enter a user ID")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.books.dialogs.please_enter_a_user_id', default="Please enter a user ID"))
                 return
 
             try:
@@ -1424,7 +1426,7 @@ def reserve_book_dialog(self, book_id):
             except (sqlite3.Error, DatabaseError, tk.TclError) as e:
                 messagebox.showerror(_("common.error"), f"Reservation error: {str(e)}")
 
-        reserve_btn = ttk.Button(button_frame, text="Reserve", command=create_reservation)
+        reserve_btn = ttk.Button(button_frame, text=_t('gui.academics.library.books.buttons.reserve', default="Reserve"), command=create_reservation)
         if has_existing:
             reserve_btn.config(state=tk.DISABLED)
         reserve_btn.pack(side=tk.LEFT, padx=5)
@@ -1442,7 +1444,7 @@ def edit_book_dialog(self, book_id):
         # Get current book details
         book_details = self.get_book_details(book_id)
         if not book_details:
-            messagebox.showerror(_("common.error"), "Book not found")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.book_not_found', default="Book not found"))
             return
 
         dialog = tk.Toplevel(self.master)
@@ -1508,7 +1510,7 @@ def edit_book_dialog(self, book_id):
 
         # Description
         desc_row = len(field_defs) + 1
-        ttk.Label(form_frame, text="Description:").grid(row=desc_row, column=0, sticky='nw', pady=5, padx=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.books.labels.description', default="Description:")).grid(row=desc_row, column=0, sticky='nw', pady=5, padx=5)
         desc_text = tk.Text(form_frame, height=4, width=40)
         desc_text.grid(row=desc_row, column=1, pady=5, padx=5)
         if book_details.get('description'):
@@ -1516,7 +1518,7 @@ def edit_book_dialog(self, book_id):
 
         # Tags
         tags_row = desc_row + 1
-        ttk.Label(form_frame, text="Tags:").grid(row=tags_row, column=0, sticky='w', pady=5, padx=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.books.labels.tags', default="Tags:")).grid(row=tags_row, column=0, sticky='w', pady=5, padx=5)
         tags_var = tk.StringVar(value=str(book_details.get('tags', '') or ''))
         ttk.Entry(form_frame, textvariable=tags_var, width=40).grid(row=tags_row, column=1, pady=5, padx=5)
 
@@ -1567,7 +1569,7 @@ def edit_book_dialog(self, book_id):
                     except (sqlite3.Error, DatabaseError):
                         pass
 
-                messagebox.showinfo(_("common.success"), "Book updated successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.books.dialogs.book_updated_successfully', default="Book updated successfully!"))
                 dialog.destroy()
                 # Refresh book details view
                 self.show_book_details(book_id)
@@ -1581,7 +1583,7 @@ def edit_book_dialog(self, book_id):
             except (sqlite3.Error, DatabaseError, tk.TclError) as e:
                 messagebox.showerror(_("common.error"), f"Update failed: {str(e)}")
 
-        ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.library.books.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         canvas.pack(side="left", fill="both", expand=True)
@@ -1596,7 +1598,7 @@ def show_book_reviews(self, book_id):
         # Get book details
         book_details = self.get_book_details(book_id)
         if not book_details:
-            messagebox.showerror(_("common.error"), "Book not found")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.books.dialogs.book_not_found', default="Book not found"))
             return
 
         dialog = tk.Toplevel(self.master)
@@ -1616,20 +1618,20 @@ def show_book_reviews(self, book_id):
         ttk.Label(header_frame, text=f"by {book_details.get('author', 'Unknown')}").pack(anchor='w')
 
         # Average rating display
-        avg_label = ttk.Label(header_frame, text="Loading ratings...")
+        avg_label = ttk.Label(header_frame, text=_t('gui.academics.library.books.labels.loading_ratings', default="Loading ratings..."))
         avg_label.pack(anchor='w', pady=(5, 0))
 
         # Reviews list
-        reviews_frame = ttk.LabelFrame(main_frame, text="Reviews")
+        reviews_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.books.labels.reviews', default="Reviews"))
         reviews_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         columns = ('Reviewer', 'Rating', 'Date', 'Status')
         reviews_tree = ttk.Treeview(reviews_frame, columns=columns, show='headings', height=8)
 
-        reviews_tree.heading('Reviewer', text='Reviewer')
-        reviews_tree.heading('Rating', text='Rating')
-        reviews_tree.heading('Date', text='Date')
-        reviews_tree.heading('Status', text='Status')
+        reviews_tree.heading('Reviewer', text=_t('gui.academics.library.books.headings.reviewer', default='Reviewer'))
+        reviews_tree.heading('Rating', text=_t('gui.academics.library.books.headings.rating', default='Rating'))
+        reviews_tree.heading('Date', text=_t('gui.academics.library.books.headings.date', default='Date'))
+        reviews_tree.heading('Status', text=_t('gui.academics.library.books.headings.status', default='Status'))
         reviews_tree.column('Reviewer', width=150)
         reviews_tree.column('Rating', width=120)
         reviews_tree.column('Date', width=100)
@@ -1642,7 +1644,7 @@ def show_book_reviews(self, book_id):
         reviews_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Review text display
-        review_detail_frame = ttk.LabelFrame(main_frame, text="Review Text")
+        review_detail_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.books.labels.review_text', default="Review Text"))
         review_detail_frame.pack(fill=tk.X, pady=(0, 10))
 
         review_detail_text = tk.Text(review_detail_frame, height=4, wrap=tk.WORD, state=tk.DISABLED)
@@ -1694,7 +1696,7 @@ def show_book_reviews(self, book_id):
                     star_display = "\u2605" * stars + "\u2606" * (5 - stars)
                     avg_label.config(text=f"Average Rating: {star_display} ({avg_rating:.1f}/5) - {total_reviews} review(s)")
                 else:
-                    avg_label.config(text="No reviews yet")
+                    avg_label.config(text=_t('gui.academics.library.books.text.no_reviews_yet', default="No reviews yet"))
 
                 for rev in reviews:
                     user_id, rating, review_text_val, review_date, status = rev
@@ -1710,23 +1712,23 @@ def show_book_reviews(self, book_id):
                         'status': status
                     })
             else:
-                avg_label.config(text="Reviews not available in demo mode")
+                avg_label.config(text=_t('gui.academics.library.books.text.reviews_not_available_in_demo_mode', default="Reviews not available in demo mode"))
 
         except (sqlite3.Error, DatabaseError) as e:
             avg_label.config(text=f"Error loading reviews: {str(e)}")
 
         # Add review section
-        add_frame = ttk.LabelFrame(main_frame, text="Write a Review")
+        add_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.books.labels.write_a_review', default="Write a Review"))
         add_frame.pack(fill=tk.X, pady=(0, 10))
 
         rating_row = ttk.Frame(add_frame)
         rating_row.pack(fill=tk.X, padx=10, pady=(10, 5))
-        ttk.Label(rating_row, text="Your Rating:").pack(side=tk.LEFT)
+        ttk.Label(rating_row, text=_t('gui.academics.library.books.labels.your_rating', default="Your Rating:")).pack(side=tk.LEFT)
         new_rating_var = tk.StringVar(value="5")
         for i in range(1, 6):
             ttk.Radiobutton(rating_row, text=f"{i}", variable=new_rating_var, value=str(i)).pack(side=tk.LEFT, padx=3)
 
-        ttk.Label(add_frame, text="Your Review:").pack(anchor='w', padx=10)
+        ttk.Label(add_frame, text=_t('gui.academics.library.books.labels.your_review', default="Your Review:")).pack(anchor='w', padx=10)
         new_review_text = tk.Text(add_frame, height=3, width=60)
         new_review_text.pack(fill=tk.X, padx=10, pady=(0, 5))
 
@@ -1735,19 +1737,19 @@ def show_book_reviews(self, book_id):
             rating = int(new_rating_var.get())
 
             if not review_content:
-                messagebox.showwarning(_("common.warning"), "Please write a review")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.books.dialogs.please_write_a_review', default="Please write a review"))
                 return
 
             try:
                 if ORIGINAL_LIBRARY_AVAILABLE:
                     success = self.submit_review_database(book_id, rating, review_content)
                     if success:
-                        messagebox.showinfo(_("common.success"), "Review submitted successfully!")
+                        messagebox.showinfo(_("common.success"), _t('gui.academics.library.books.dialogs.review_submitted_successfully', default="Review submitted successfully!"))
                         dialog.destroy()
                         # Reopen to show updated reviews
                         self.show_book_reviews(book_id)
                 else:
-                    messagebox.showinfo(_("common.demo"), "Review submitted (demo mode)")
+                    messagebox.showinfo(_("common.demo"), _t('gui.academics.library.books.dialogs.review_submitted_demo_mode', default="Review submitted (demo mode)"))
                     dialog.destroy()
 
             except (sqlite3.Error, DatabaseError, tk.TclError) as e:
@@ -1755,7 +1757,7 @@ def show_book_reviews(self, book_id):
 
         review_btn_frame = ttk.Frame(add_frame)
         review_btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        ttk.Button(review_btn_frame, text="Submit Review", command=submit_new_review).pack(side=tk.LEFT, padx=5)
+        ttk.Button(review_btn_frame, text=_t('gui.academics.library.books.buttons.submit_review', default="Submit Review"), command=submit_new_review).pack(side=tk.LEFT, padx=5)
 
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=dialog.destroy).pack(pady=5)

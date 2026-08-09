@@ -21,7 +21,7 @@ def show_rentals_page(self):
     info = ttk.Frame(self.content_frame, style="Card.TFrame", padding=15)
     info.pack(fill="x", pady=10)
     tk.Label(info, text=_t("cinema.rentals.theater_rental"), font=("Helvetica", 12, "bold"), bg="#ffffff", fg="#e74c3c").pack(anchor="w")
-    tk.Label(info, text="Base: \u00a3299 for 2 hours | Extra hours: \u00a3100/hr", bg="#ffffff", fg="#27ae60").pack(anchor="w")
+    tk.Label(info, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.rentals.labels.base_299_for_2_hours_extra_hours_100_hr', default="Base: \u00a3299 for 2 hours | Extra hours: \u00a3100/hr"), bg="#ffffff", fg="#27ae60").pack(anchor="w")
     btn_frame = ttk.Frame(self.content_frame, style="Main.TFrame")
     btn_frame.pack(fill="x", pady=10)
     ttk.Button(btn_frame, text=_t("cinema.btn.new_rental"), style="Success.TButton", command=self.create_rental).pack(side="left", padx=5)
@@ -50,7 +50,7 @@ def show_rentals_page(self):
 
 def create_rental(self):
     form = tk.Toplevel(self.root)
-    form.title("New Rental")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.rentals.windows.new_rental', default="New Rental"))
     form.geometry("450x450")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -72,7 +72,7 @@ def create_rental(self):
     entries['guests'].insert(0, "50")
     def save():
         if not entries['name'].get().strip() or not entries['email'].get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Name and email required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.rentals.dialogs.name_and_email_required', default="Name and email required"))
             return
         try:
             guests = int(entries['guests'].get() or 50)
@@ -96,7 +96,7 @@ def create_rental(self):
 def confirm_rental(self):
     selected = self.rental_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a rental")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.rentals.dialogs.select_a_rental', default="Select a rental"))
         return
     rental_id = self.rental_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
@@ -106,15 +106,15 @@ def confirm_rental(self):
         conn.commit()
     finally:
         conn.close()
-    messagebox.showinfo(_t("cinema.common.success"), "Rental confirmed!")
+    messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.rentals.dialogs.rental_confirmed', default="Rental confirmed!"))
     self.show_rentals_page()
 
 def cancel_rental(self):
     selected = self.rental_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a rental")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.rentals.dialogs.select_a_rental', default="Select a rental"))
         return
-    if not messagebox.askyesno(_t("cinema.common.confirm"), "Cancel this rental?"):
+    if not messagebox.askyesno(_t("cinema.common.confirm"), _t('gui.operations.commerce.cinema.cinema_gui.operations.rentals.dialogs.cancel_this_rental', default="Cancel this rental?")):
         return
     rental_id = self.rental_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)

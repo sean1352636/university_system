@@ -15,7 +15,7 @@ import datetime as _dt
 import logging
 import sqlite3
 
-from education_system.systems.nursery.infrastructure.paths import NURSERY_DB, ensure_directories
+from education_system.paths import NURSERY_DB, ensure_nursery_directories
 
 logger = logging.getLogger(__name__)
 
@@ -1576,7 +1576,7 @@ CREATE INDEX IF NOT EXISTS idx_menu_ingredients_menu ON menu_ingredients(menu_id
 
 def connect() -> sqlite3.Connection:
     """Open a connection to the nursery DB, creating the data dir if needed."""
-    ensure_directories()
+    ensure_nursery_directories()
     conn = sqlite3.connect(str(NURSERY_DB))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

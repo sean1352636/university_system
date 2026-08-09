@@ -6,6 +6,8 @@ A running total of required-material cost is shown so the student cost of a
 course is visible at a glance.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import os
 import webbrowser
 
@@ -39,7 +41,7 @@ class MaterialsTabMixin:
             sel = ttk.LabelFrame(frame, text=_("course_management.labels.select_course",
                                                default="Select Course"), padding=10)
             sel.pack(fill=tk.X, padx=5, pady=5)
-            ttk.Label(sel, text="Course:").pack(side=tk.LEFT, padx=5)
+            ttk.Label(sel, text=_t('gui.academics.course_management_gui.core.materials_tab.labels.course', default="Course:")).pack(side=tk.LEFT, padx=5)
             self._mat_course_combo = ttk.Combobox(sel, width=50, state="readonly")
             self._mat_course_combo.pack(side=tk.LEFT, padx=5)
             self._mat_course_combo.bind("<<ComboboxSelected>>", self._reload_materials)
@@ -58,7 +60,7 @@ class MaterialsTabMixin:
                            command=self._edit_material).pack(side=tk.LEFT, padx=5)
                 ttk.Button(bar, text=_("common.delete", default="Delete"),
                            command=self._delete_material).pack(side=tk.LEFT, padx=5)
-            ttk.Button(bar, text="Open Link / File",
+            ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.materials_tab.buttons.open_link_file', default="Open Link / File"),
                        command=self._open_material).pack(side=tk.LEFT, padx=5)
             # Cross-link: textbooks / reading lists here live in the Library
             # catalogue — jump to the Library to manage holdings and loans.
@@ -182,12 +184,12 @@ class MaterialsTabMixin:
         mat = self._mat_selected_row()
         if not mat:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a material first.")
+                                   _t('gui.academics.course_management_gui.core.materials_tab.dialogs.select_a_material_first', default="Select a material first."))
             return
         if str(mat.get("type")) not in ("Textbook", "Reading", "Article"):
             messagebox.showinfo(_("common.info", default="Info"),
-                                "Only Textbook / Reading / Article materials can be "
-                                "added to the Library.")
+                                _t('gui.academics.course_management_gui.core.materials_tab.dialogs.only_textbook_reading_article_materials_can_be_added_to_the_libr', default="Only Textbook / Reading / Article materials can be "
+                                "added to the Library."))
             return
         course = self._current_mat_course()
         try:
@@ -319,11 +321,11 @@ class MaterialsTabMixin:
             cost = float(values.get("cost") or 0)
         except (TypeError, ValueError):
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Cost must be a number.")
+                                 _t('gui.academics.course_management_gui.core.materials_tab.dialogs.cost_must_be_a_number', default="Cost must be a number."))
             return None
         if cost < 0:
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Cost cannot be negative.")
+                                 _t('gui.academics.course_management_gui.core.materials_tab.dialogs.cost_cannot_be_negative', default="Cost cannot be negative."))
             return None
         return cost
 
@@ -333,14 +335,14 @@ class MaterialsTabMixin:
         code = self._current_mat_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.materials_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
 
         def submit(values):
             title = (values.get("title") or "").strip()
             if not title:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Title is required.")
+                                     _t('gui.academics.course_management_gui.core.materials_tab.dialogs.title_is_required', default="Title is required."))
                 return False
             cost = self._parse_cost(values)
             if cost is None:
@@ -371,7 +373,7 @@ class MaterialsTabMixin:
         vals = self._ext_selected_values(self._materials_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a material first.")
+                                   _t('gui.academics.course_management_gui.core.materials_tab.dialogs.select_a_material_first', default="Select a material first."))
             return None
         return vals
 
@@ -394,7 +396,7 @@ class MaterialsTabMixin:
             self._ext_report_error("load material", exc)
             return
         if not row:
-            messagebox.showerror(_("common.error", default="Error"), "Material not found.")
+            messagebox.showerror(_("common.error", default="Error"), _t('gui.academics.course_management_gui.core.materials_tab.dialogs.material_not_found', default="Material not found."))
             return
         data = {"material_type": row[0], "title": row[1], "author": row[2],
                 "isbn": row[3], "edition": row[4], "url": row[5],
@@ -404,7 +406,7 @@ class MaterialsTabMixin:
             title = (values.get("title") or "").strip()
             if not title:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Title is required.")
+                                     _t('gui.academics.course_management_gui.core.materials_tab.dialogs.title_is_required', default="Title is required."))
                 return False
             cost = self._parse_cost(values)
             if cost is None:
@@ -465,7 +467,7 @@ class MaterialsTabMixin:
         target = target.strip()
         if not target:
             messagebox.showinfo(_("common.info", default="Info"),
-                                "This material has no URL or file path.")
+                                _t('gui.academics.course_management_gui.core.materials_tab.dialogs.this_material_has_no_url_or_file_path', default="This material has no URL or file path."))
             return
         try:
             if target.lower().startswith(("http://", "https://")):

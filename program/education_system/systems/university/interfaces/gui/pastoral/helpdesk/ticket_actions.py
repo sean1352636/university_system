@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -435,7 +437,7 @@ def show_reply_dialog(self, ticket_id):
              style='Heading.TLabel').pack(pady=10)
 
     # Message frame
-    message_frame = ttk.LabelFrame(reply_window, text="Your Reply")
+    message_frame = ttk.LabelFrame(reply_window, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.your_reply', default="Your Reply"))
     message_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     # Message text area
@@ -446,7 +448,7 @@ def show_reply_dialog(self, ticket_id):
     time_frame = ttk.Frame(reply_window)
     if self.has_permission('manage_tickets'):
         time_frame.pack(fill='x', padx=10, pady=5)
-        ttk.Label(time_frame, text="Time spent (hours):").pack(side='left')
+        ttk.Label(time_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.time_spent_hours', default="Time spent (hours):")).pack(side='left')
         time_entry = ttk.Entry(time_frame, width=10)
         time_entry.pack(side='left', padx=5)
 
@@ -457,7 +459,7 @@ def show_reply_dialog(self, ticket_id):
     def send_reply():
         message = message_text.get('1.0', 'end-1c').strip()
         if not message:
-            messagebox.showerror("Error", "Please enter a reply message")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.please_enter_a_reply_message', default="Please enter a reply message"))
             return
 
         time_spent = 0
@@ -468,16 +470,16 @@ def show_reply_dialog(self, ticket_id):
                 pass
 
         if self.add_ticket_reply(ticket_id, message, time_spent):
-            messagebox.showinfo("Success", "Reply added successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.reply_added_successfully', default="Reply added successfully!"))
             reply_window.destroy()
             # Refresh the ticket view if it's open
             self.refresh_my_tickets()
         else:
-            messagebox.showerror("Error", "Failed to add reply")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.failed_to_add_reply', default="Failed to add reply"))
 
-    ttk.Button(button_frame, text="Send Reply", command=send_reply,
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.send_reply', default="Send Reply"), command=send_reply,
               style='Primary.TButton').pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=reply_window.destroy).pack(side='right')
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=reply_window.destroy).pack(side='right')
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_reply_dialog = show_reply_dialog
@@ -520,7 +522,7 @@ def add_ticket_reply(self, ticket_id, message, time_spent=0, is_internal=False):
         return True
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to add reply: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to add reply: {str(e)}")
         return False
 
 # Attach method to HelpdeskGUI class
@@ -539,7 +541,7 @@ def show_status_dialog(self, ticket_id):
              style='Heading.TLabel').pack(pady=10)
 
     # Status selection
-    status_frame = ttk.LabelFrame(status_window, text="New Status")
+    status_frame = ttk.LabelFrame(status_window, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.new_status', default="New Status"))
     status_frame.pack(fill='x', padx=10, pady=10)
 
     status_var = tk.StringVar()
@@ -550,7 +552,7 @@ def show_status_dialog(self, ticket_id):
                        value=status).pack(anchor='w', padx=5, pady=2)
 
     # Resolution field (for resolved/closed)
-    resolution_frame = ttk.LabelFrame(status_window, text="Resolution (if resolved/closed)")
+    resolution_frame = ttk.LabelFrame(status_window, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.resolution_if_resolved_closed', default="Resolution (if resolved/closed)"))
     resolution_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     resolution_text = scrolledtext.ScrolledText(resolution_frame, height=5, wrap='word')
@@ -563,21 +565,21 @@ def show_status_dialog(self, ticket_id):
     def update_status():
         new_status = status_var.get()
         if not new_status:
-            messagebox.showerror("Error", "Please select a status")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.please_select_a_status', default="Please select a status"))
             return
 
         resolution = resolution_text.get('1.0', 'end-1c').strip()
 
         if self.update_ticket_status(ticket_id, new_status, resolution):
-            messagebox.showinfo("Success", "Status updated successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.status_updated_successfully', default="Status updated successfully!"))
             status_window.destroy()
             self.refresh_my_tickets()
         else:
-            messagebox.showerror("Error", "Failed to update status")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.failed_to_update_status', default="Failed to update status"))
 
-    ttk.Button(button_frame, text="Update Status", command=update_status,
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.update_status', default="Update Status"), command=update_status,
               style='Primary.TButton').pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=status_window.destroy).pack(side='right')
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=status_window.destroy).pack(side='right')
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_status_dialog = show_status_dialog
@@ -618,7 +620,7 @@ def update_ticket_status(self, ticket_id, new_status, resolution=None):
         return True
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to update status: {str(e)}")
         return False
 
 # Attach method to HelpdeskGUI class
@@ -637,7 +639,7 @@ def show_assign_dialog(self, ticket_id):
              style='Heading.TLabel').pack(pady=10)
 
     # Staff selection
-    staff_frame = ttk.LabelFrame(assign_window, text="Assign To")
+    staff_frame = ttk.LabelFrame(assign_window, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.assign_to', default="Assign To"))
     staff_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     # Get available staff
@@ -646,7 +648,7 @@ def show_assign_dialog(self, ticket_id):
     staff_var = tk.StringVar()
 
     # Add "Unassigned" option
-    ttk.Radiobutton(staff_frame, text="Unassigned", variable=staff_var,
+    ttk.Radiobutton(staff_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.unassigned', default="Unassigned"), variable=staff_var,
                    value="").pack(anchor='w', padx=5, pady=2)
 
     for staff in staff_list:
@@ -663,15 +665,15 @@ def show_assign_dialog(self, ticket_id):
         assignee_id = int(assignee_id) if assignee_id else None
 
         if self.assign_ticket_to_user(ticket_id, assignee_id):
-            messagebox.showinfo("Success", "Ticket assigned successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.ticket_assigned_successfully', default="Ticket assigned successfully!"))
             assign_window.destroy()
             self.refresh_my_tickets()
         else:
-            messagebox.showerror("Error", "Failed to assign ticket")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.failed_to_assign_ticket', default="Failed to assign ticket"))
 
-    ttk.Button(button_frame, text="Assign", command=assign_ticket,
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.assign', default="Assign"), command=assign_ticket,
               style='Primary.TButton').pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=assign_window.destroy).pack(side='right')
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=assign_window.destroy).pack(side='right')
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_assign_dialog = show_assign_dialog
@@ -722,7 +724,7 @@ def assign_ticket_to_user(self, ticket_id, assignee_id):
         return True
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to assign ticket: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to assign ticket: {str(e)}")
         return False
 
 # Attach method to HelpdeskGUI class
@@ -741,7 +743,7 @@ def show_internal_note_dialog(self, ticket_id):
              style='Heading.TLabel').pack(pady=10)
 
     # Message frame
-    message_frame = ttk.LabelFrame(note_window, text="Internal Note (Only visible to staff)")
+    message_frame = ttk.LabelFrame(note_window, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.internal_note_only_visible_to_staff', default="Internal Note (Only visible to staff)"))
     message_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     # Message text area
@@ -755,18 +757,18 @@ def show_internal_note_dialog(self, ticket_id):
     def add_note():
         message = message_text.get('1.0', 'end-1c').strip()
         if not message:
-            messagebox.showerror("Error", "Please enter a note")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.please_enter_a_note', default="Please enter a note"))
             return
 
         if self.add_ticket_reply(ticket_id, message, 0, is_internal=True):
-            messagebox.showinfo("Success", "Internal note added successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.internal_note_added_successfully', default="Internal note added successfully!"))
             note_window.destroy()
         else:
-            messagebox.showerror("Error", "Failed to add internal note")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.failed_to_add_internal_note', default="Failed to add internal note"))
 
-    ttk.Button(button_frame, text="Add Note", command=add_note,
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.add_note', default="Add Note"), command=add_note,
               style='Primary.TButton').pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=note_window.destroy).pack(side='right')
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=note_window.destroy).pack(side='right')
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_internal_note_dialog = show_internal_note_dialog
@@ -781,7 +783,7 @@ def escalate_ticket_manual(self, ticket_id):
 
     ttk.Label(escalate_window, text=_t("helpdesk.escalate_ticket_title", default="Escalate Ticket #{ticket_id}").format(ticket_id=ticket_id), style='Heading.TLabel').pack(pady=10)
 
-    ttk.Label(escalate_window, text="Escalation Reason:").pack(pady=5)
+    ttk.Label(escalate_window, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.escalation_reason', default="Escalation Reason:")).pack(pady=5)
     reason_entry = ttk.Entry(escalate_window, width=40)
     reason_entry.pack(pady=5)
     reason_entry.insert(0, "Manual escalation")
@@ -792,15 +794,15 @@ def escalate_ticket_manual(self, ticket_id):
     def perform_escalation():
         reason = reason_entry.get().strip()
         if self.escalate_ticket(ticket_id, reason):
-            messagebox.showinfo("Success", f"Ticket #{ticket_id} escalated successfully")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), f"Ticket #{ticket_id} escalated successfully")
             escalate_window.destroy()
             self.refresh_my_tickets()
         else:
-            messagebox.showerror("Error", "Failed to escalate ticket")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.failed_to_escalate_ticket', default="Failed to escalate ticket"))
 
-    ttk.Button(button_frame, text="Escalate", command=perform_escalation,
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.escalate', default="Escalate"), command=perform_escalation,
               style='Primary.TButton').pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=escalate_window.destroy).pack(side='right')
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=escalate_window.destroy).pack(side='right')
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.escalate_ticket_manual = escalate_ticket_manual
@@ -870,7 +872,7 @@ def escalate_ticket(self, ticket_id, reason='manual'):
         return False
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to escalate ticket: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to escalate ticket: {str(e)}")
         return False
 
 # Attach method to HelpdeskGUI class
@@ -879,16 +881,16 @@ HelpdeskGUI.escalate_ticket = escalate_ticket
 def assign_ticket_enhanced(self, ticket_id):
     """Enhanced ticket assignment with load balancing and skill-based routing"""
     if not self.current_user:
-        messagebox.showerror("Error", "You must be logged in to assign tickets.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.you_must_be_logged_in_to_assign_tickets', default="You must be logged in to assign tickets."))
         return
 
     if not self.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to assign tickets.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.you_don_t_have_permission_to_assign_tickets', default="You don't have permission to assign tickets."))
         return
 
     # Create assignment dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Enhanced Ticket Assignment")
+    dialog.title(_t('gui.pastoral.helpdesk.ticket_actions.windows.enhanced_ticket_assignment', default="Enhanced Ticket Assignment"))
     dialog.geometry("600x500")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -900,19 +902,19 @@ def assign_ticket_enhanced(self, ticket_id):
              font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
 
     # Assignment options
-    option_frame = ttk.LabelFrame(main_frame, text="Assignment Options", padding="10")
+    option_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.assignment_options', default="Assignment Options"), padding="10")
     option_frame.pack(fill='x', pady=(0, 10))
 
-    assign_option = tk.StringVar(value='user')
-    ttk.Radiobutton(option_frame, text="Assign to specific user",
+    assign_option = tk.StringVar(value=_t('gui.pastoral.helpdesk.ticket_actions.values.user', default='user'))
+    ttk.Radiobutton(option_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.assign_to_specific_user', default="Assign to specific user"),
                    variable=assign_option, value='user').pack(anchor='w')
-    ttk.Radiobutton(option_frame, text="Assign to department (auto-balance)",
+    ttk.Radiobutton(option_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.assign_to_department_auto_balance', default="Assign to department (auto-balance)"),
                    variable=assign_option, value='department').pack(anchor='w')
-    ttk.Radiobutton(option_frame, text="Unassign ticket",
+    ttk.Radiobutton(option_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.unassign_ticket', default="Unassign ticket"),
                    variable=assign_option, value='unassign').pack(anchor='w')
 
     # User selection frame
-    user_frame = ttk.LabelFrame(main_frame, text="Select User", padding="10")
+    user_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.select_user', default="Select User"), padding="10")
     user_frame.pack(fill='both', expand=True, pady=(0, 10))
 
     # Staff list
@@ -952,11 +954,11 @@ def assign_ticket_enhanced(self, ticket_id):
             staff_tree.insert('', 'end', values=staff)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load staff: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to load staff: {str(e)}")
         return
 
     # Department selection (hidden by default)
-    dept_frame = ttk.LabelFrame(main_frame, text="Select Department", padding="10")
+    dept_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.select_department', default="Select Department"), padding="10")
 
     dept_var = tk.StringVar()
     dept_combo = ttk.Combobox(dept_frame, textvariable=dept_var, state="readonly", width=40)
@@ -1004,7 +1006,7 @@ def assign_ticket_enhanced(self, ticket_id):
             if assign_option.get() == 'user':
                 selection = staff_tree.selection()
                 if not selection:
-                    messagebox.showerror("Error", "Please select a user")
+                    messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.please_select_a_user', default="Please select a user"))
                     return
 
                 values = staff_tree.item(selection[0])['values']
@@ -1014,7 +1016,7 @@ def assign_ticket_enhanced(self, ticket_id):
             elif assign_option.get() == 'department':
                 new_department = dept_var.get()
                 if not new_department:
-                    messagebox.showerror("Error", "Please select a department")
+                    messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.please_select_a_department', default="Please select a department"))
                     return
 
                 # Auto-assign to least loaded staff in department
@@ -1042,15 +1044,15 @@ def assign_ticket_enhanced(self, ticket_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Ticket #{ticket_id} assigned successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), f"Ticket #{ticket_id} assigned successfully!")
             dialog.destroy()
             self.refresh_all_tickets()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to assign ticket: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to assign ticket: {str(e)}")
 
-    ttk.Button(button_frame, text="Assign", command=perform_assignment).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.assign', default="Assign"), command=perform_assignment).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.assign_ticket_enhanced = assign_ticket_enhanced
@@ -1058,16 +1060,16 @@ HelpdeskGUI.assign_ticket_enhanced = assign_ticket_enhanced
 def change_ticket_status_enhanced(self, ticket_id):
     """Enhanced status change with resolution tracking and workflow validation"""
     if not self.current_user:
-        messagebox.showerror("Error", "You must be logged in to update ticket status.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.you_must_be_logged_in_to_update_ticket_status', default="You must be logged in to update ticket status."))
         return
 
     if not self.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to update ticket status.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.you_don_t_have_permission_to_update_ticket_status', default="You don't have permission to update ticket status."))
         return
 
     # Create status change dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Change Ticket Status")
+    dialog.title(_t('gui.pastoral.helpdesk.ticket_actions.windows.change_ticket_status', default="Change Ticket Status"))
     dialog.geometry("500x450")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1088,25 +1090,25 @@ def change_ticket_status_enhanced(self, ticket_id):
         conn.close()
 
         if not result:
-            messagebox.showerror("Error", f"Ticket #{ticket_id} not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Ticket #{ticket_id} not found")
             dialog.destroy()
             return
 
         current_status, current_resolution = result
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load ticket: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to load ticket: {str(e)}")
         dialog.destroy()
         return
 
     # Current status display
-    status_frame = ttk.LabelFrame(main_frame, text="Current Status", padding="10")
+    status_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.current_status', default="Current Status"), padding="10")
     status_frame.pack(fill='x', pady=(0, 10))
     ttk.Label(status_frame, text=current_status.upper(),
              font=('TkDefaultFont', 10, 'bold')).pack()
 
     # New status selection
-    new_status_frame = ttk.LabelFrame(main_frame, text="New Status", padding="10")
+    new_status_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.new_status', default="New Status"), padding="10")
     new_status_frame.pack(fill='x', pady=(0, 10))
 
     status_var = tk.StringVar(value=current_status)
@@ -1117,10 +1119,10 @@ def change_ticket_status_enhanced(self, ticket_id):
                        variable=status_var, value=status).pack(anchor='w')
 
     # Resolution frame (shown for resolved/closed)
-    resolution_frame = ttk.LabelFrame(main_frame, text="Resolution Details", padding="10")
+    resolution_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.resolution_details', default="Resolution Details"), padding="10")
     resolution_frame.pack(fill='both', expand=True, pady=(0, 10))
 
-    ttk.Label(resolution_frame, text="Required for Resolved/Closed tickets:").pack(anchor='w')
+    ttk.Label(resolution_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.required_for_resolved_closed_tickets', default="Required for Resolved/Closed tickets:")).pack(anchor='w')
     resolution_text = scrolledtext.ScrolledText(resolution_frame, height=8, width=50)
     resolution_text.pack(fill='both', expand=True)
 
@@ -1146,11 +1148,11 @@ def change_ticket_status_enhanced(self, ticket_id):
         resolution = resolution_text.get('1.0', 'end-1c').strip()
 
         if new_status == current_status:
-            messagebox.showinfo("Info", "Status is already set to " + new_status.upper())
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.info', default="Info"), "Status is already set to " + new_status.upper())
             return
 
         if new_status in ['resolved', 'closed'] and not resolution:
-            messagebox.showerror("Error", "Resolution details are required for resolved/closed tickets")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.resolution_details_are_required_for_resolved_closed_tickets', default="Resolution details are required for resolved/closed tickets"))
             return
 
         try:
@@ -1170,16 +1172,16 @@ def change_ticket_status_enhanced(self, ticket_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Ticket status updated to: {new_status.upper()}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), f"Ticket status updated to: {new_status.upper()}")
             dialog.destroy()
             self.refresh_all_tickets()
             self.auto_send_ticket_notifications(ticket_id, "updated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to update status: {str(e)}")
 
-    ttk.Button(button_frame, text="Update Status", command=update_status).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.update_status', default="Update Status"), command=update_status).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.change_ticket_status_enhanced = change_ticket_status_enhanced
@@ -1205,7 +1207,7 @@ def execute_ticket_action_gui(self, ticket_id, action):
     elif action == 'link':
         self.link_tickets_gui(ticket_id)
     else:
-        messagebox.showinfo("Info", f"Action '{action}' not yet implemented")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.info', default="Info"), f"Action '{action}' not yet implemented")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.execute_ticket_action_gui = execute_ticket_action_gui
@@ -1216,7 +1218,7 @@ def reply_to_ticket_enhanced_gui(self, ticket_id, is_internal=False):
     is_admin = self.auth.has_permission('reply_to_any_ticket')
 
     if not is_admin and not self.auth.has_permission('reply_to_own_ticket'):
-        messagebox.showerror("Permission Denied", "You don't have permission to reply to tickets.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.you_don_t_have_permission_to_reply_to_tickets', default="You don't have permission to reply to tickets."))
         return
 
     # Check ownership for non-admins
@@ -1229,10 +1231,10 @@ def reply_to_ticket_enhanced_gui(self, ticket_id, is_internal=False):
             conn.close()
 
             if not result or result[0] != self.auth.current_user['id']:
-                messagebox.showerror("Permission Denied", "You don't have permission to reply to this ticket.")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.you_don_t_have_permission_to_reply_to_this_ticket', default="You don't have permission to reply to this ticket."))
                 return
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to check permissions: {e}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to check permissions: {e}")
             return
 
     # Create reply dialog
@@ -1253,7 +1255,7 @@ def reply_to_ticket_enhanced_gui(self, ticket_id, is_internal=False):
     time_frame = ttk.Frame(main_frame)
     if self.auth.has_permission('manage_tickets'):
         time_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(time_frame, text="Time spent (hours):").pack(side=tk.LEFT, padx=5)
+        ttk.Label(time_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.time_spent_hours', default="Time spent (hours):")).pack(side=tk.LEFT, padx=5)
         time_var = tk.StringVar(value="0")
         ttk.Entry(time_frame, textvariable=time_var, width=10).pack(side=tk.LEFT, padx=5)
 
@@ -1261,7 +1263,7 @@ def reply_to_ticket_enhanced_gui(self, ticket_id, is_internal=False):
         message = message_text.get('1.0', tk.END).strip()
 
         if not message:
-            messagebox.showerror("Validation Error", "Reply message cannot be empty.")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.reply_message_cannot_be_empty', default="Reply message cannot be empty."))
             return
 
         time_spent = 0
@@ -1294,19 +1296,19 @@ def reply_to_ticket_enhanced_gui(self, ticket_id, is_internal=False):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"{reply_type} added successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), f"{reply_type} added successfully!")
             dialog.destroy()
             self.load_tickets()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to add {reply_type.lower()}: {e}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to add {reply_type.lower()}: {e}")
 
     # Buttons
     btn_frame = ttk.Frame(main_frame)
     btn_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Button(btn_frame, text="Save", command=save_reply).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.save', default="Save"), command=save_reply).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.reply_to_ticket_enhanced_gui = reply_to_ticket_enhanced_gui
@@ -1314,7 +1316,7 @@ HelpdeskGUI.reply_to_ticket_enhanced_gui = reply_to_ticket_enhanced_gui
 def add_time_entry_gui(self, ticket_id):
     """Add time tracking entry"""
     if not self.auth.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to add time entries.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.you_don_t_have_permission_to_add_time_entries', default="You don't have permission to add time entries."))
         return
 
     dialog = tk.Toplevel(self.root)
@@ -1325,27 +1327,27 @@ def add_time_entry_gui(self, ticket_id):
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     # Duration
-    ttk.Label(main_frame, text="Duration (hours):").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.duration_hours', default="Duration (hours):")).grid(row=0, column=0, sticky=tk.W, pady=5)
     duration_var = tk.StringVar(value="1.0")
     ttk.Entry(main_frame, textvariable=duration_var, width=20).grid(row=0, column=1, pady=5, padx=5)
 
     # Description
-    ttk.Label(main_frame, text="Description:").grid(row=1, column=0, sticky=tk.NW, pady=5)
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.description', default="Description:")).grid(row=1, column=0, sticky=tk.NW, pady=5)
     description_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, width=30, height=5)
     description_text.grid(row=1, column=1, pady=5, padx=5)
 
     # Billable
     billable_var = tk.BooleanVar(value=False)
-    ttk.Checkbutton(main_frame, text="Billable", variable=billable_var).grid(row=2, column=1, sticky=tk.W, pady=5)
+    ttk.Checkbutton(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.billable', default="Billable"), variable=billable_var).grid(row=2, column=1, sticky=tk.W, pady=5)
 
     def save_time_entry():
         try:
             duration = float(duration_var.get())
             if duration <= 0:
-                messagebox.showerror("Validation Error", "Duration must be greater than 0.")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.duration_must_be_greater_than_0', default="Duration must be greater than 0."))
                 return
         except ValueError:
-            messagebox.showerror("Validation Error", "Please enter a valid number for duration.")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.please_enter_a_valid_number_for_duration', default="Please enter a valid number for duration."))
             return
 
         description = description_text.get('1.0', tk.END).strip()
@@ -1369,18 +1371,18 @@ def add_time_entry_gui(self, ticket_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Time entry added: {duration} hours")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), f"Time entry added: {duration} hours")
             dialog.destroy()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to add time entry: {e}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to add time entry: {e}")
 
     # Buttons
     btn_frame = ttk.Frame(main_frame)
     btn_frame.grid(row=3, column=0, columnspan=2, pady=10)
 
-    ttk.Button(btn_frame, text="Save", command=save_time_entry).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.save', default="Save"), command=save_time_entry).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.add_time_entry_gui = add_time_entry_gui
@@ -1388,7 +1390,7 @@ HelpdeskGUI.add_time_entry_gui = add_time_entry_gui
 def link_tickets_gui(self, ticket_id):
     """Link tickets together"""
     if not self.auth.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to link tickets.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.you_don_t_have_permission_to_link_tickets', default="You don't have permission to link tickets."))
         return
 
     dialog = tk.Toplevel(self.root)
@@ -1399,13 +1401,13 @@ def link_tickets_gui(self, ticket_id):
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     # Linked ticket ID
-    ttk.Label(main_frame, text="Ticket ID to link:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.ticket_id_to_link', default="Ticket ID to link:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     linked_id_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=linked_id_var, width=20).grid(row=0, column=1, pady=5, padx=5)
 
     # Link type
-    ttk.Label(main_frame, text="Link type:").grid(row=1, column=0, sticky=tk.W, pady=5)
-    link_type_var = tk.StringVar(value="related_to")
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.labels.link_type', default="Link type:")).grid(row=1, column=0, sticky=tk.W, pady=5)
+    link_type_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.ticket_actions.values.related_to', default="related_to"))
     link_types = [
         ("Related to", "related_to"),
         ("Duplicate of", "duplicate_of"),
@@ -1426,7 +1428,7 @@ def link_tickets_gui(self, ticket_id):
             linked_ticket_id = int(linked_id_var.get())
 
             if linked_ticket_id == ticket_id:
-                messagebox.showerror("Validation Error", "Cannot link ticket to itself.")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.cannot_link_ticket_to_itself', default="Cannot link ticket to itself."))
                 return
 
             # Check if target ticket exists
@@ -1437,7 +1439,7 @@ def link_tickets_gui(self, ticket_id):
             target_ticket = cursor.fetchone()
 
             if not target_ticket:
-                messagebox.showerror("Not Found", "Target ticket not found.")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.not_found', default="Not Found"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.target_ticket_not_found', default="Target ticket not found."))
                 conn.close()
                 return
 
@@ -1452,20 +1454,20 @@ def link_tickets_gui(self, ticket_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Ticket linked successfully as '{link_type}'")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.success', default="Success"), f"Ticket linked successfully as '{link_type}'")
             dialog.destroy()
 
         except ValueError:
-            messagebox.showerror("Validation Error", "Please enter a valid ticket ID.")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.helpdesk.ticket_actions.dialogs.please_enter_a_valid_ticket_id', default="Please enter a valid ticket ID."))
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to link tickets: {e}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_actions.dialogs.error', default="Error"), f"Failed to link tickets: {e}")
 
     # Buttons
     btn_frame = ttk.Frame(main_frame)
     btn_frame.grid(row=2, column=0, columnspan=2, pady=10)
 
-    ttk.Button(btn_frame, text="Link", command=save_link).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.link', default="Link"), command=save_link).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.ticket_actions.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.link_tickets_gui = link_tickets_gui

@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -28,7 +30,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -67,7 +69,7 @@ class EquipmentCheckoutDialog:
         self.equipment_name = equipment_name
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Check Out Equipment")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.windows.check_out_equipment', default="Check Out Equipment"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -83,18 +85,18 @@ class EquipmentCheckoutDialog:
         title_label.pack(pady=(0, 20))
 
         # Return date
-        ttk.Label(main_frame, text="Expected Return Date:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.expected_return_date', default="Expected Return Date:")).pack(anchor='w', pady=(0, 5))
         self.return_date_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.return_date_var, width=30).pack(fill='x', pady=(0, 10))
-        ttk.Label(main_frame, text="(Format: YYYY-MM-DD)", font=('Arial', 8)).pack(anchor='w', pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.format_yyyy_mm_dd', default="(Format: YYYY-MM-DD)"), font=('Arial', 8)).pack(anchor='w', pady=(0, 10))
 
         # Purpose
-        ttk.Label(main_frame, text="Purpose:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.purpose', default="Purpose:")).pack(anchor='w', pady=(0, 5))
         self.purpose_text = scrolledtext.ScrolledText(main_frame, height=8, wrap=tk.WORD)
         self.purpose_text.pack(fill='both', expand=True, pady=(0, 10))
 
         # Club (optional)
-        ttk.Label(main_frame, text="For Club (optional):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.for_club_optional', default="For Club (optional):")).pack(anchor='w', pady=(0, 5))
         self.club_var = tk.StringVar()
         self.club_combo = ttk.Combobox(main_frame, textvariable=self.club_var, width=27)
         self.club_combo.pack(fill='x', pady=(0, 10))
@@ -104,8 +106,8 @@ class EquipmentCheckoutDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Check Out", command=self.checkout).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.check_out', default="Check Out"), command=self.checkout).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def load_clubs(self):
         try:
@@ -145,7 +147,7 @@ class EquipmentCheckoutDialog:
         purpose = self.purpose_text.get(1.0, tk.END).strip()
 
         if not return_date or not purpose:
-            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields."))
             return
 
         try:
@@ -173,10 +175,10 @@ class EquipmentCheckoutDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Equipment checked out successfully!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.equipment_checked_out_successfully', default="Equipment checked out successfully!"))
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to check out equipment: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"), f"Failed to check out equipment: {str(e)}")
 
 
 
@@ -188,7 +190,7 @@ class MyEquipmentDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("My Equipment")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.windows.my_equipment', default="My Equipment"))
         self.dialog.geometry("900x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -200,10 +202,10 @@ class MyEquipmentDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        title_label = ttk.Label(main_frame, text="My Checked Out Equipment", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.my_checked_out_equipment', default="My Checked Out Equipment"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
-        list_frame = ttk.LabelFrame(main_frame, text="Current Checkouts")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.current_checkouts', default="Current Checkouts"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Equipment', 'Checkout Date', 'Expected Return', 'Condition', 'Status')
@@ -222,8 +224,8 @@ class MyEquipmentDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Return Selected", command=self.return_equipment).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.return_selected', default="Return Selected"), command=self.return_equipment).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         try:
@@ -257,18 +259,18 @@ class MyEquipmentDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load equipment: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"), f"Failed to load equipment: {str(e)}")
 
     def return_equipment(self):
         selection = self.equipment_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select equipment to return.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.please_select_equipment_to_return', default="Please select equipment to return."))
             return
 
         item = self.equipment_tree.item(selection[0])
         checkout_id = item['tags'][0] if item['tags'] else None
 
-        if checkout_id and messagebox.askyesno("Confirm", "Return this equipment?"):
+        if checkout_id and messagebox.askyesno(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.confirm', default="Confirm"), _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.return_this_equipment', default="Return this equipment?")):
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
@@ -292,10 +294,10 @@ class MyEquipmentDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Equipment returned successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.equipment_returned_successfully', default="Equipment returned successfully!"))
                 self.load_data()
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to return equipment: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"), f"Failed to return equipment: {str(e)}")
 
 
 
@@ -307,7 +309,7 @@ class CheckOutEquipmentDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Check Out Equipment")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.windows.check_out_equipment', default="Check Out Equipment"))
         self.dialog.geometry("700x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -318,17 +320,17 @@ class CheckOutEquipmentDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="✅ Check Out Equipment",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.check_out_equipment', default="✅ Check Out Equipment"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Equipment selection
-        select_frame = ttk.LabelFrame(main_frame, text="Select Equipment")
+        select_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.select_equipment', default="Select Equipment"))
         select_frame.pack(fill='x', pady=(0, 15))
 
         select_content = ttk.Frame(select_frame)
         select_content.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(select_content, text="Equipment:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(select_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.equipment', default="Equipment:")).grid(row=0, column=0, sticky='w', pady=5)
         equipment_combo = ttk.Combobox(select_content, width=40, state='readonly')
         equipment_combo['values'] = ('Professional Camera (Canon EOS R5)',
                                      'Wireless Microphone System',
@@ -337,7 +339,7 @@ class CheckOutEquipmentDialog:
         equipment_combo.current(0)
         equipment_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(select_content, text="Quantity:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(select_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.quantity', default="Quantity:")).grid(row=1, column=0, sticky='w', pady=5)
         qty_spin = ttk.Spinbox(select_content, from_=1, to=5, width=10)
         qty_spin.set(1)
         qty_spin.grid(row=1, column=1, sticky='w', padx=10, pady=5)
@@ -345,35 +347,35 @@ class CheckOutEquipmentDialog:
         select_content.columnconfigure(1, weight=1)
 
         # Checkout details
-        details_frame = ttk.LabelFrame(main_frame, text="Checkout Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.checkout_details', default="Checkout Details"))
         details_frame.pack(fill='x', pady=(0, 15))
 
         details_content = ttk.Frame(details_frame)
         details_content.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(details_content, text="Your Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(details_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.your_name', default="Your Name:")).grid(row=0, column=0, sticky='w', pady=5)
         ttk.Entry(details_content, width=40).grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(details_content, text="Student ID:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(details_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.student_id', default="Student ID:")).grid(row=1, column=0, sticky='w', pady=5)
         ttk.Entry(details_content, width=40).grid(row=1, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(details_content, text="Email:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(details_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.email', default="Email:")).grid(row=2, column=0, sticky='w', pady=5)
         ttk.Entry(details_content, width=40).grid(row=2, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(details_content, text="Phone:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(details_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.phone', default="Phone:")).grid(row=3, column=0, sticky='w', pady=5)
         ttk.Entry(details_content, width=40).grid(row=3, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(details_content, text="Return Date:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(details_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.return_date', default="Return Date:")).grid(row=4, column=0, sticky='w', pady=5)
         ttk.Entry(details_content, width=40).grid(row=4, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(details_content, text="Purpose:").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(details_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.purpose', default="Purpose:")).grid(row=5, column=0, sticky='w', pady=5)
         purpose_text = scrolledtext.ScrolledText(details_content, height=3, width=40)
         purpose_text.grid(row=5, column=1, sticky='ew', padx=10, pady=5)
 
         details_content.columnconfigure(1, weight=1)
 
         # Terms
-        terms_frame = ttk.LabelFrame(main_frame, text="Terms & Conditions")
+        terms_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.terms_conditions', default="Terms & Conditions"))
         terms_frame.pack(fill='x', pady=(0, 15))
 
         terms_text = """☑ I agree to return equipment on time
@@ -384,17 +386,17 @@ class CheckOutEquipmentDialog:
         ttk.Label(terms_frame, text=terms_text, justify='left').pack(padx=15, pady=10)
 
         agree_var = tk.BooleanVar()
-        ttk.Checkbutton(terms_frame, text="I agree to all terms and conditions", variable=agree_var).pack(padx=15, pady=(0, 10))
+        ttk.Checkbutton(terms_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.i_agree_to_all_terms_and_conditions', default="I agree to all terms and conditions"), variable=agree_var).pack(padx=15, pady=(0, 10))
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Complete Checkout", command=self.complete_checkout).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.complete_checkout', default="Complete Checkout"), command=self.complete_checkout).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='right')
 
     def complete_checkout(self):
-        messagebox.showinfo("Checkout Complete",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.checkout_complete', default="Checkout Complete"),
                           "Equipment checked out successfully!\n\n" +
                           "Equipment: Professional Camera (Canon EOS R5)\n" +
                           "Return Date: 2025-04-05\n" +
@@ -418,7 +420,7 @@ class ReturnEquipmentDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Return Equipment")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.windows.return_equipment', default="Return Equipment"))
         self.dialog.geometry("750x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -477,11 +479,11 @@ class ReturnEquipmentDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Return Equipment",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.return_equipment', default="Return Equipment"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Current checkouts
-        checkouts_frame = ttk.LabelFrame(main_frame, text="Your Current Checkouts")
+        checkouts_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.your_current_checkouts', default="Your Current Checkouts"))
         checkouts_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('ID', 'Equipment', 'Checkout Date', 'Due Date', 'Days Left', 'Status')
@@ -503,19 +505,19 @@ class ReturnEquipmentDialog:
         self.fee_label.pack(anchor='w', pady=(0, 10))
 
         # Return form
-        return_frame = ttk.LabelFrame(main_frame, text="Return Details")
+        return_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.return_details', default="Return Details"))
         return_frame.pack(fill='x', pady=(0, 15))
 
         return_content = ttk.Frame(return_frame)
         return_content.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(return_content, text="Condition on Return:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(return_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.condition_on_return', default="Condition on Return:")).grid(row=0, column=0, sticky='w', pady=5)
         self.condition_combo = ttk.Combobox(return_content, width=28, state='readonly')
         self.condition_combo['values'] = ('good', 'excellent', 'fair', 'poor', 'damaged')
         self.condition_combo.current(0)
         self.condition_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(return_content, text="Notes:").grid(row=1, column=0, sticky='nw', pady=5)
+        ttk.Label(return_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.notes', default="Notes:")).grid(row=1, column=0, sticky='nw', pady=5)
         self.notes_text = scrolledtext.ScrolledText(return_content, height=3, width=30)
         self.notes_text.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
 
@@ -525,11 +527,11 @@ class ReturnEquipmentDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Process Return",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.process_return', default="Process Return"),
                   command=self.process_return).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Refresh",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.refresh', default="Refresh"),
                   command=self.load_checkouts).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.close', default="Close"),
                   command=self.dialog.destroy).pack(side='right')
 
     def load_checkouts(self):
@@ -608,15 +610,15 @@ class ReturnEquipmentDialog:
                 self.fee_label.config(
                     text=f"Late fee: {days_late} days overdue x £{self.LATE_FEE_PER_DAY:.2f}/day = £{fee:.2f}")
             except (ValueError, IndexError):
-                self.fee_label.config(text="Late fee applies")
+                self.fee_label.config(text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.text.late_fee_applies', default="Late fee applies"))
         else:
-            self.fee_label.config(text="No late fee - on time return")
+            self.fee_label.config(text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.text.no_late_fee_on_time_return', default="No late fee - on time return"))
 
     def process_return(self):
         """Process the equipment return with late fee handling."""
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a checkout to return.",
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.please_select_a_checkout_to_return', default="Please select a checkout to return."),
                                  parent=self.dialog)
             return
 
@@ -691,16 +693,16 @@ class ReturnEquipmentDialog:
                 msg += "Late Fee: £0.00\n"
             msg += "\nConfirmation email sent."
 
-            messagebox.showinfo("Return Processed", msg, parent=self.dialog)
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.return_processed', default="Return Processed"), msg, parent=self.dialog)
             self.load_checkouts()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to process return: {e}", parent=self.dialog)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"), f"Failed to process return: {e}", parent=self.dialog)
 
     def _handle_late_fee_payment(self, checkout_id, equip_name, days_late, late_fee):
         """Show late fee payment dialog. Returns True if paid, False if cancelled."""
         pay_dialog = tk.Toplevel(self.dialog)
-        pay_dialog.title("Late Fee Payment Required")
+        pay_dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.windows.late_fee_payment_required', default="Late Fee Payment Required"))
         pay_dialog.geometry("450x350")
         pay_dialog.transient(self.dialog)
         pay_dialog.grab_set()
@@ -710,7 +712,7 @@ class ReturnEquipmentDialog:
         main = ttk.Frame(pay_dialog, padding=20)
         main.pack(fill='both', expand=True)
 
-        ttk.Label(main, text="Late Fee Payment Required",
+        ttk.Label(main, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.late_fee_payment_required', default="Late Fee Payment Required"),
                  font=('Arial', 13, 'bold')).pack(pady=(0, 15))
 
         ttk.Label(main, text=f"Equipment: {equip_name}").pack(anchor='w')
@@ -719,7 +721,7 @@ class ReturnEquipmentDialog:
         ttk.Label(main, text=f"Total Due: £{late_fee:.2f}",
                  font=('Arial', 12, 'bold'), foreground='red').pack(anchor='w', pady=(5, 15))
 
-        ttk.Label(main, text="Select Payment Method:",
+        ttk.Label(main, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.select_payment_method', default="Select Payment Method:"),
                  font=('Arial', 10, 'bold')).pack(anchor='w', pady=(0, 10))
 
         def pay_with(method):
@@ -728,15 +730,15 @@ class ReturnEquipmentDialog:
                 result['paid'] = True
                 pay_dialog.destroy()
 
-        ttk.Button(main, text="Cash", width=30,
+        ttk.Button(main, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.cash', default="Cash"), width=30,
                   command=lambda: pay_with('cash')).pack(pady=3)
-        ttk.Button(main, text="Card", width=30,
+        ttk.Button(main, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.card', default="Card"), width=30,
                   command=lambda: pay_with('card')).pack(pady=3)
-        ttk.Button(main, text="Student Finance Account", width=30,
+        ttk.Button(main, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.student_finance_account', default="Student Finance Account"), width=30,
                   command=lambda: pay_with('student_finance')).pack(pady=3)
 
         ttk.Separator(main).pack(fill='x', pady=10)
-        ttk.Button(main, text="Cancel Return", command=pay_dialog.destroy).pack()
+        ttk.Button(main, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.cancel_return', default="Cancel Return"), command=pay_dialog.destroy).pack()
 
         self.dialog.wait_window(pay_dialog)
         return result['paid']
@@ -763,14 +765,14 @@ class ReturnEquipmentDialog:
                     acct = cursor.fetchone()
 
                     if not acct:
-                        messagebox.showerror("Error",
-                            "No active student finance account found.\nPlease use another payment method.",
+                        messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"),
+                            _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.no_active_student_finance_account_found_please_use_another_payme', default="No active student finance account found.\nPlease use another payment method."),
                             parent=self.dialog)
                         return False
 
                     account_id, balance = acct[0], float(acct[1])
                     if balance < amount:
-                        messagebox.showerror("Insufficient Funds",
+                        messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.insufficient_funds', default="Insufficient Funds"),
                             f"Account balance: £{balance:.2f}\nAmount due: £{amount:.2f}\n\n"
                             "Please use another payment method.",
                             parent=self.dialog)
@@ -799,7 +801,7 @@ class ReturnEquipmentDialog:
                 finally:
                     conn.close()
             except Exception as e:
-                messagebox.showerror("Payment Error", f"Failed to process payment: {e}",
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.payment_error', default="Payment Error"), f"Failed to process payment: {e}",
                                    parent=self.dialog)
                 return False
 
@@ -896,7 +898,7 @@ class ViewMyEquipmentCheckoutsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("My Equipment Checkouts")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.windows.my_equipment_checkouts', default="My Equipment Checkouts"))
         self.dialog.geometry("1000x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -930,14 +932,14 @@ class ViewMyEquipmentCheckoutsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="My Equipment Checkouts",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.my_equipment_checkouts', default="My Equipment Checkouts"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Summary
-        summary_frame = ttk.LabelFrame(main_frame, text="Summary")
+        summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.summary', default="Summary"))
         summary_frame.pack(fill='x', pady=(0, 15))
 
-        self.summary_label = ttk.Label(summary_frame, text="Loading...", justify='left', font=('Courier', 10))
+        self.summary_label = ttk.Label(summary_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.labels.loading', default="Loading..."), justify='left', font=('Courier', 10))
         self.summary_label.pack(padx=15, pady=10)
 
         # Create notebook
@@ -946,7 +948,7 @@ class ViewMyEquipmentCheckoutsDialog:
 
         # Current tab
         current_frame = ttk.Frame(notebook)
-        notebook.add(current_frame, text="Current Checkouts")
+        notebook.add(current_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.tabs.current_checkouts', default="Current Checkouts"))
 
         columns = ('ID', 'Equipment', 'Checkout Date', 'Due Date', 'Days Left', 'Status')
         self.current_tree = ttk.Treeview(current_frame, columns=columns, show='tree headings', height=10)
@@ -962,7 +964,7 @@ class ViewMyEquipmentCheckoutsDialog:
 
         # History tab
         history_frame = ttk.Frame(notebook)
-        notebook.add(history_frame, text="Checkout History")
+        notebook.add(history_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.tabs.checkout_history', default="Checkout History"))
 
         history_columns = ('ID', 'Equipment', 'Checkout Date', 'Return Date', 'Days Borrowed', 'Status')
         self.history_tree = ttk.Treeview(history_frame, columns=history_columns, show='tree headings', height=10)
@@ -980,15 +982,15 @@ class ViewMyEquipmentCheckoutsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Renew Checkout", command=self.renew).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Return Equipment", command=self.return_equipment).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Export History", command=self.export_history).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.renew_checkout', default="Renew Checkout"), command=self.renew).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.return_equipment', default="Return Equipment"), command=self.return_equipment).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.export_history', default="Export History"), command=self.export_history).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         """Load checkout data from the database for the current user."""
         if not self.auth or not self.auth.current_user:
-            self.summary_label.config(text="Not logged in.")
+            self.summary_label.config(text=_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.text.not_logged_in', default="Not logged in."))
             return
 
         conn = None
@@ -1122,7 +1124,7 @@ class ViewMyEquipmentCheckoutsDialog:
     def renew(self):
         selection = self.current_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a checkout to renew.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.please_select_a_checkout_to_renew', default="Please select a checkout to renew."))
             return
 
         item = self.current_tree.item(selection[0])
@@ -1139,10 +1141,10 @@ class ViewMyEquipmentCheckoutsDialog:
             new_due = due_date + timedelta(days=7)
             new_due_str = new_due.strftime('%Y-%m-%d')
         except (ValueError, TypeError):
-            messagebox.showerror("Error", "Cannot determine current due date.")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.cannot_determine_current_due_date', default="Cannot determine current due date."))
             return
 
-        if not messagebox.askyesno("Renew Checkout",
+        if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.renew_checkout', default="Renew Checkout"),
                                    f"Renew checkout for 7 more days?\n\n"
                                    f"Equipment: {equip_name}\n"
                                    f"Current Due Date: {current_due}\n"
@@ -1158,10 +1160,10 @@ class ViewMyEquipmentCheckoutsDialog:
                 WHERE checkout_id = ? AND status = 'checked_out'
             ''', (new_due_str, checkout_id))
             conn.commit()
-            messagebox.showinfo("Success", f"Checkout renewed. New due date: {new_due_str}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.success', default="Success"), f"Checkout renewed. New due date: {new_due_str}")
             self.load_data()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to renew checkout: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"), f"Failed to renew checkout: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1170,7 +1172,7 @@ class ViewMyEquipmentCheckoutsDialog:
         dialog = ReturnEquipmentDialog(self.dialog, self.auth)
 
     def export_history(self):
-        messagebox.showinfo("Export", "Checkout history exported to:\nmy_equipment_checkouts.csv\n\nIncludes all current and past checkouts.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.export', default="Export"), _t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.checkout_history_exported_to_my_equipment_checkouts_csv_includes', default="Checkout history exported to:\nmy_equipment_checkouts.csv\n\nIncludes all current and past checkouts."))
 
 
 
@@ -1198,7 +1200,7 @@ def check_out_equipment_gui(self):
         dialog = EquipmentBrowseDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def return_equipment_gui(self):
@@ -1207,7 +1209,7 @@ def return_equipment_gui(self):
         dialog = MyEquipmentDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def view_my_equipment_checkouts(self):
@@ -1216,6 +1218,6 @@ def view_my_equipment_checkouts(self):
         dialog = MyEquipmentDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_checkout.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

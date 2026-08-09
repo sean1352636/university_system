@@ -12,15 +12,17 @@ Each action runs through the service layer so schedule_history captures the
 change and the same validation/notifications fire.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)
 
 
@@ -69,30 +71,30 @@ class BulkActionsDialog:
                   font=("Arial", 11, "bold")).pack(anchor=tk.W)
 
         # Action picker
-        action_frame = ttk.LabelFrame(f, text="Action", padding=10)
+        action_frame = ttk.LabelFrame(f, text=_t('gui.academics.module_scheduling.bulk_actions_dialog.labels.action', default="Action"), padding=10)
         action_frame.pack(fill=tk.X, pady=(10, 8))
-        self.action_var = tk.StringVar(value="reassign_instructor")
-        ttk.Radiobutton(action_frame, text="Reassign instructor",
+        self.action_var = tk.StringVar(value=_t('gui.academics.module_scheduling.bulk_actions_dialog.values.reassign_instructor', default="reassign_instructor"))
+        ttk.Radiobutton(action_frame, text=_t('gui.academics.module_scheduling.bulk_actions_dialog.buttons.reassign_instructor', default="Reassign instructor"),
                         variable=self.action_var, value="reassign_instructor",
                         command=self._render_params).pack(anchor=tk.W)
-        ttk.Radiobutton(action_frame, text="Cancel (delete)",
+        ttk.Radiobutton(action_frame, text=_t('gui.academics.module_scheduling.bulk_actions_dialog.buttons.cancel_delete', default="Cancel (delete)"),
                         variable=self.action_var, value="cancel",
                         command=self._render_params).pack(anchor=tk.W)
-        ttk.Radiobutton(action_frame, text="Shift time by N minutes",
+        ttk.Radiobutton(action_frame, text=_t('gui.academics.module_scheduling.bulk_actions_dialog.buttons.shift_time_by_n_minutes', default="Shift time by N minutes"),
                         variable=self.action_var, value="shift",
                         command=self._render_params).pack(anchor=tk.W)
 
         # Param area, swapped per action
-        self.param_frame = ttk.LabelFrame(f, text="Parameters", padding=10)
+        self.param_frame = ttk.LabelFrame(f, text=_t('gui.academics.module_scheduling.bulk_actions_dialog.labels.parameters', default="Parameters"), padding=10)
         self.param_frame.pack(fill=tk.X)
         self._render_params()
 
         # Buttons
         btn = ttk.Frame(f)
         btn.pack(fill=tk.X, pady=(15, 0))
-        ttk.Button(btn, text="Apply",
+        ttk.Button(btn, text=_t('gui.academics.module_scheduling.bulk_actions_dialog.buttons.apply', default="Apply"),
                    command=self._apply).pack(side=tk.RIGHT, padx=4)
-        ttk.Button(btn, text="Cancel",
+        ttk.Button(btn, text=_t('gui.academics.module_scheduling.bulk_actions_dialog.buttons.cancel', default="Cancel"),
                    command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def _render_params(self):
@@ -100,7 +102,7 @@ class BulkActionsDialog:
             w.destroy()
         action = self.action_var.get()
         if action == "reassign_instructor":
-            ttk.Label(self.param_frame, text="New instructor:"
+            ttk.Label(self.param_frame, text=_t('gui.academics.module_scheduling.bulk_actions_dialog.labels.new_instructor', default="New instructor:")
                       ).grid(row=0, column=0, sticky=tk.W)
             self.instructor_var = tk.StringVar()
             self.instructor_combo = ttk.Combobox(
@@ -111,21 +113,21 @@ class BulkActionsDialog:
         elif action == "cancel":
             ttk.Label(
                 self.param_frame,
-                text="All selected schedules will be deleted. "
+                text=_t('gui.academics.module_scheduling.bulk_actions_dialog.labels.all_selected_schedules_will_be_deleted_schedule_history_retains', default="All selected schedules will be deleted. "
                      "Schedule history retains a snapshot, but the rows "
-                     "themselves cannot be recovered from the UI.",
+                     "themselves cannot be recovered from the UI."),
                 wraplength=440, justify=tk.LEFT, foreground="#a00",
             ).grid(row=0, column=0, sticky=tk.W)
         elif action == "shift":
-            ttk.Label(self.param_frame, text="Shift by (minutes, ±):"
+            ttk.Label(self.param_frame, text=_t('gui.academics.module_scheduling.bulk_actions_dialog.labels.shift_by_minutes', default="Shift by (minutes, ±):")
                       ).grid(row=0, column=0, sticky=tk.W)
             self.shift_var = tk.StringVar(value="15")
             ttk.Entry(self.param_frame, textvariable=self.shift_var,
                       width=8).grid(row=0, column=1, padx=8, sticky=tk.W)
             ttk.Label(
                 self.param_frame,
-                text="Negative = earlier. Rows that would roll past midnight "
-                     "are skipped.",
+                text=_t('gui.academics.module_scheduling.bulk_actions_dialog.labels.negative_earlier_rows_that_would_roll_past_midnight_are_skipped', default="Negative = earlier. Rows that would roll past midnight "
+                     "are skipped."),
                 wraplength=440, justify=tk.LEFT, foreground="#666",
             ).grid(row=1, column=0, columnspan=2, pady=(8, 0), sticky=tk.W)
 
@@ -141,7 +143,7 @@ class BulkActionsDialog:
                 )
                 rows = cur.fetchall()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load instructors: {e}",
+            messagebox.showerror(_t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.error', default="Error"), f"Failed to load instructors: {e}",
                                  parent=self.dialog)
             return
         self.instructor_combo["values"] = [
@@ -168,17 +170,17 @@ class BulkActionsDialog:
     def _do_reassign(self):
         sel = (self.instructor_var.get() or "").strip()
         if not sel:
-            messagebox.showerror("Error", "Pick an instructor.",
+            messagebox.showerror(_t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.pick_an_instructor', default="Pick an instructor."),
                                  parent=self.dialog)
             return
         try:
             new_instructor_id = int(sel.split(" - ")[0])
         except (ValueError, IndexError):
-            messagebox.showerror("Error", "Could not parse instructor.",
+            messagebox.showerror(_t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.could_not_parse_instructor', default="Could not parse instructor."),
                                  parent=self.dialog)
             return
         if not messagebox.askyesno(
-                "Confirm",
+                _t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.confirm', default="Confirm"),
                 f"Reassign {len(self.schedule_ids)} schedule(s) to "
                 f"{sel.split(' - ', 1)[1]}?",
                 parent=self.dialog):
@@ -200,7 +202,7 @@ class BulkActionsDialog:
 
     def _do_cancel(self):
         if not messagebox.askyesno(
-                "Confirm",
+                _t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.confirm', default="Confirm"),
                 f"Delete {len(self.schedule_ids)} schedule(s)? "
                 "This cannot be undone from the UI.",
                 parent=self.dialog,
@@ -224,16 +226,16 @@ class BulkActionsDialog:
         try:
             mins = int(self.shift_var.get())
         except (TypeError, ValueError):
-            messagebox.showerror("Error",
-                                 "Shift amount must be a whole number of minutes.",
+            messagebox.showerror(_t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.error', default="Error"),
+                                 _t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.shift_amount_must_be_a_whole_number_of_minutes', default="Shift amount must be a whole number of minutes."),
                                  parent=self.dialog)
             return
         if mins == 0:
-            messagebox.showinfo("No change", "Shift of 0 minutes — nothing to do.",
+            messagebox.showinfo(_t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.no_change', default="No change"), _t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.shift_of_0_minutes_nothing_to_do', default="Shift of 0 minutes — nothing to do."),
                                 parent=self.dialog)
             return
         if not messagebox.askyesno(
-                "Confirm",
+                _t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.confirm', default="Confirm"),
                 f"Shift {len(self.schedule_ids)} schedule(s) by {mins} minute(s)?",
                 parent=self.dialog):
             return
@@ -252,7 +254,7 @@ class BulkActionsDialog:
                 )
                 rows = cur.fetchall()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to read schedules: {e}",
+            messagebox.showerror(_t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.error', default="Error"), f"Failed to read schedules: {e}",
                                  parent=self.dialog)
             return
 
@@ -281,7 +283,7 @@ class BulkActionsDialog:
             shown = ", ".join(str(x) for x in fail[:5])
             more = f", … (+{len(fail) - 5} more)" if len(fail) > 5 else ""
             msg += f"\n\nFailed: {shown}{more}"
-        messagebox.showinfo("Bulk action complete", msg, parent=self.dialog)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.bulk_actions_dialog.dialogs.bulk_action_complete', default="Bulk action complete"), msg, parent=self.dialog)
         if self.gui and hasattr(self.gui, "refresh_schedules"):
             self.gui.refresh_schedules()
         self.dialog.destroy()

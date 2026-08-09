@@ -1,4 +1,6 @@
 """Payment processing dialog."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -16,7 +18,7 @@ class PaymentDialog:
         self.payment_method = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Pay Parking Fine")
+        self.dialog.title(_t('gui.operations.campus.mobility.parking_management.dialogs.payment_dialog.windows.pay_parking_fine', default="Pay Parking Fine"))
         self.dialog.geometry("550x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -38,7 +40,7 @@ class PaymentDialog:
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Violation details
-        details_frame = ttk.LabelFrame(main_frame, text="Violation Details", padding="10")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.payment_dialog.labels.violation_details', default="Violation Details"), padding="10")
         details_frame.pack(fill=tk.X, pady=(0, 15))
 
         details = [
@@ -57,7 +59,7 @@ class PaymentDialog:
                 row=i, column=1, sticky=tk.W, pady=2)
 
         # Payment method selection
-        method_frame = ttk.LabelFrame(main_frame, text="Select Payment Method", padding="10")
+        method_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.payment_dialog.labels.select_payment_method', default="Select Payment Method"), padding="10")
         method_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
 
         # Get student balance if available
@@ -86,21 +88,21 @@ class PaymentDialog:
                      font=('Arial', 10)).pack()
 
             if new_balance < 0:
-                ttk.Label(balance_frame, text="⚠ Insufficient balance for student account payment",
+                ttk.Label(balance_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.payment_dialog.labels.insufficient_balance_for_student_account_payment', default="⚠ Insufficient balance for student account payment"),
                          foreground='red').pack()
 
         # Payment buttons
         btn_container = ttk.Frame(method_frame)
         btn_container.pack(fill=tk.BOTH, expand=True)
 
-        tk.Button(btn_container, text="💵 Pay with Cash",
+        tk.Button(btn_container, text=_t('gui.operations.campus.mobility.parking_management.dialogs.payment_dialog.buttons.pay_with_cash', default="💵 Pay with Cash"),
                  command=lambda: self.select_payment_method('cash'),
                  font=('Arial', 11, 'bold'), bg='#27ae60', fg='white',
                  activebackground='#229954', activeforeground='white',
                  relief='raised', padx=20, pady=12, cursor='hand2',
                  borderwidth=3).pack(pady=8, fill=tk.X)
 
-        tk.Button(btn_container, text="💳 Pay with Card",
+        tk.Button(btn_container, text=_t('gui.operations.campus.mobility.parking_management.dialogs.payment_dialog.buttons.pay_with_card', default="💳 Pay with Card"),
                  command=lambda: self.select_payment_method('card'),
                  font=('Arial', 11, 'bold'), bg='#3498db', fg='white',
                  activebackground='#2980b9', activeforeground='white',
@@ -108,7 +110,7 @@ class PaymentDialog:
                  borderwidth=3).pack(pady=8, fill=tk.X)
 
         student_account_enabled = current_balance is not None and new_balance >= 0
-        student_account_btn = tk.Button(btn_container, text="🏦 Pay with Student Account",
+        student_account_btn = tk.Button(btn_container, text=_t('gui.operations.campus.mobility.parking_management.dialogs.payment_dialog.buttons.pay_with_student_account', default="🏦 Pay with Student Account"),
                                        command=lambda: self.select_payment_method('student_account'),
                                        font=('Arial', 11, 'bold'),
                                        bg='#9b59b6' if student_account_enabled else '#95a5a6',
@@ -122,7 +124,7 @@ class PaymentDialog:
         student_account_btn.pack(pady=8, fill=tk.X)
 
         # Cancel button
-        ttk.Button(main_frame, text="Cancel", command=self.dialog.destroy).pack(pady=(10, 0))
+        ttk.Button(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.payment_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(pady=(10, 0))
 
     def get_student_id_from_violation(self):
         """Get student ID (username or student_id) from violation license plate"""
@@ -149,7 +151,7 @@ class PaymentDialog:
         """Process payment with selected method"""
         self.payment_method = method
 
-        if not messagebox.askyesno("Confirm Payment",
+        if not messagebox.askyesno(_t('gui.operations.campus.mobility.parking_management.dialogs.payment_dialog.dialogs.confirm_payment', default="Confirm Payment"),
                                    f"Process payment of £{float(self.violation_data[4]):.2f} via {method.replace('_', ' ').title()}?"):
             return
 

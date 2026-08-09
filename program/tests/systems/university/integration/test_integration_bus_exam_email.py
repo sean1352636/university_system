@@ -9,6 +9,7 @@ effect. Uses a temporary SQLite DB; patches `get_connection` /
 from __future__ import annotations
 
 import sqlite3
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -107,8 +108,16 @@ def tmp_db(monkeypatch):
         finance_bus, integration_bus, email_bus,
     )
     monkeypatch.setattr(finance_bus, "get_connection", fake_get)
-    monkeypatch.setattr(integration_bus, "get_connection", fake_get)
-    monkeypatch.setattr(integration_bus, "transaction", fake_tx)
+    for name, module in tuple(sys.modules.items()):
+        if name.startswith(
+            "education_system.systems.university.services.bus.integration"
+        ) or name.startswith(
+            "education_system.systems.university.services.bus.jobs"
+        ):
+            if hasattr(module, "get_connection"):
+                monkeypatch.setattr(module, "get_connection", fake_get)
+            if hasattr(module, "transaction"):
+                monkeypatch.setattr(module, "transaction", fake_tx)
     monkeypatch.setattr(email_bus, "get_connection", fake_get)
 
     # Stub the SMTP layer so tests don't try to send.
@@ -295,6 +304,9 @@ def test_feature15_ungraded_sweep_emails_and_holds(tmp_db):
 
 def test_feature16_exam_outside_term_refused(tmp_db):
     from education_system.systems.university.services.bus import integration_bus
+    from education_system.systems.university.services.bus.integration.curriculum import (
+        subscribers as curriculum_subscribers,
+    )
     from education_system.systems.university.interfaces.gui.academics._event_bus import (
         publish, EVENT_TERM_CHANGED,
     )
@@ -306,8 +318,8 @@ def test_feature16_exam_outside_term_refused(tmp_db):
     assert integration_bus.is_exam_within_term("2026-02-01 09:00", "2026-02-01 11:00") is True
     assert integration_bus.is_exam_within_term("2026-06-01 09:00", "2026-06-01 11:00") is False
     # Permissive when term unknown
-    integration_bus._current_term["start"] = None
-    integration_bus._current_term["end"] = None
+    curriculum_subscribers._current_term["start"] = None
+    curriculum_subscribers._current_term["end"] = None
     assert integration_bus.is_exam_within_term("2099-01-01", "2099-01-02") is True
 
 

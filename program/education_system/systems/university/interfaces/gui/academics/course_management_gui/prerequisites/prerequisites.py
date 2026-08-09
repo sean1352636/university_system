@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -128,37 +130,37 @@ def add_prerequisite_gui(self):
     Opens a dialog to select course and prerequisite.
     """
     dialog = tk.Toplevel(self.root)
-    dialog.title("Add Course Prerequisite")
+    dialog.title(_t('gui.academics.course_management_gui.prerequisites.prerequisites.windows.add_course_prerequisite', default="Add Course Prerequisite"))
     dialog.geometry("500x300")
     dialog.transient(self.root)
 
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Add Prerequisite to Course",
+    ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.add_prerequisite_to_course', default="Add Prerequisite to Course"),
              font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
     # Course selection
-    course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding="10")
+    course_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.select_course', default="Select Course"), padding="10")
     course_frame.pack(fill=tk.X, pady=5)
 
-    ttk.Label(course_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.course', default="Course:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     course_var = tk.StringVar()
     course_combo = ttk.Combobox(course_frame, textvariable=course_var, state='readonly', width=40)
     course_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
 
     # Prerequisite selection
-    prereq_frame = ttk.LabelFrame(main_frame, text="Select Prerequisite", padding="10")
+    prereq_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.select_prerequisite', default="Select Prerequisite"), padding="10")
     prereq_frame.pack(fill=tk.X, pady=5)
 
-    ttk.Label(prereq_frame, text="Prerequisite:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(prereq_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.prerequisite', default="Prerequisite:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     prereq_var = tk.StringVar()
     prereq_combo = ttk.Combobox(prereq_frame, textvariable=prereq_var, state='readonly', width=40)
     prereq_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
 
     # Required checkbox
     required_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(prereq_frame, text="Required (vs. Recommended)",
+    ttk.Checkbutton(prereq_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.required_vs_recommended', default="Required (vs. Recommended)"),
                    variable=required_var).grid(row=1, column=1, sticky=tk.W, pady=5)
 
     # Load courses
@@ -186,7 +188,7 @@ def add_prerequisite_gui(self):
 
     def save_prerequisite():
         if not course_var.get() or not prereq_var.get():
-            messagebox.showwarning("Incomplete", "Please select both course and prerequisite")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.incomplete', default="Incomplete"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.please_select_both_course_and_prerequisite', default="Please select both course and prerequisite"))
             return
 
         try:
@@ -195,7 +197,7 @@ def add_prerequisite_gui(self):
             prereq_id = int(prereq_var.get().split("ID: ")[1].rstrip(")"))
 
             if course_id == prereq_id:
-                messagebox.showerror(_("common.error"), "A course cannot be its own prerequisite")
+                messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.a_course_cannot_be_its_own_prerequisite', default="A course cannot be its own prerequisite"))
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
@@ -204,8 +206,8 @@ def add_prerequisite_gui(self):
 
                 # Check for circular dependency
                 if self.check_circular_prerequisite_db(cursor, course_id, prereq_id):
-                    messagebox.showerror("Circular Dependency",
-                                       "Adding this prerequisite would create a circular dependency!")
+                    messagebox.showerror(_t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.circular_dependency', default="Circular Dependency"),
+                                       _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.adding_this_prerequisite_would_create_a_circular_dependency', default="Adding this prerequisite would create a circular dependency!"))
             finally:
                 conn.close()
                 return
@@ -217,7 +219,7 @@ def add_prerequisite_gui(self):
             """, (course_id, prereq_id))
 
             if cursor.fetchone():
-                messagebox.showwarning("Duplicate", "This prerequisite already exists")
+                messagebox.showwarning(_t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.duplicate', default="Duplicate"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.this_prerequisite_already_exists', default="This prerequisite already exists"))
                 conn.close()
                 return
 
@@ -231,7 +233,7 @@ def add_prerequisite_gui(self):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo(_("common.success"), "Prerequisite added successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.prerequisite_added_successfully', default="Prerequisite added successfully!"))
             self.update_status("Prerequisite added successfully")
             dialog.destroy()
 
@@ -242,8 +244,8 @@ def add_prerequisite_gui(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Button(button_frame, text="Save", command=save_prerequisite).pack(side=tk.RIGHT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.save', default="Save"), command=save_prerequisite).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
 
 def view_prerequisites_gui(self):
@@ -252,21 +254,21 @@ def view_prerequisites_gui(self):
     Opens a dialog with prerequisite information.
     """
     dialog = tk.Toplevel(self.root)
-    dialog.title("View Course Prerequisites")
+    dialog.title(_t('gui.academics.course_management_gui.prerequisites.prerequisites.windows.view_course_prerequisites', default="View Course Prerequisites"))
     dialog.geometry("700x500")
     dialog.transient(self.root)
 
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Course Prerequisites",
+    ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.course_prerequisites', default="Course Prerequisites"),
              font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
     # Course selection
     select_frame = ttk.Frame(main_frame)
     select_frame.pack(fill=tk.X, pady=5)
 
-    ttk.Label(select_frame, text="Select Course:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(select_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.select_course_variant_2', default="Select Course:")).pack(side=tk.LEFT, padx=5)
     course_var = tk.StringVar()
     course_combo = ttk.Combobox(select_frame, textvariable=course_var, state='readonly', width=40)
     course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
@@ -378,8 +380,8 @@ def view_prerequisites_gui(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Button(button_frame, text="Refresh", command=show_prerequisites).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.refresh', default="Refresh"), command=show_prerequisites).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # Initial load
     load_courses()
@@ -392,27 +394,27 @@ def remove_prerequisite_gui(self):
     Opens a dialog to select and remove prerequisites.
     """
     dialog = tk.Toplevel(self.root)
-    dialog.title("Remove Course Prerequisite")
+    dialog.title(_t('gui.academics.course_management_gui.prerequisites.prerequisites.windows.remove_course_prerequisite', default="Remove Course Prerequisite"))
     dialog.geometry("600x400")
     dialog.transient(self.root)
 
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Remove Course Prerequisite",
+    ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.remove_course_prerequisite', default="Remove Course Prerequisite"),
              font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
     # Course selection
     select_frame = ttk.Frame(main_frame)
     select_frame.pack(fill=tk.X, pady=5)
 
-    ttk.Label(select_frame, text="Select Course:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(select_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.select_course_variant_2', default="Select Course:")).pack(side=tk.LEFT, padx=5)
     course_var = tk.StringVar()
     course_combo = ttk.Combobox(select_frame, textvariable=course_var, state='readonly', width=40)
     course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
 
     # Prerequisites list
-    list_frame = ttk.LabelFrame(main_frame, text="Current Prerequisites", padding="10")
+    list_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.current_prerequisites', default="Current Prerequisites"), padding="10")
     list_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
     prereq_listbox = tk.Listbox(list_frame, height=10)
@@ -483,7 +485,7 @@ def remove_prerequisite_gui(self):
     def remove_selected():
         selection = prereq_listbox.curselection()
         if not selection:
-            messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a prerequisite to remove")
+            messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.please_select_a_prerequisite_to_remove', default="Please select a prerequisite to remove"))
             return
 
         selected_text = prereq_listbox.get(selection[0])
@@ -502,7 +504,7 @@ def remove_prerequisite_gui(self):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo(_("common.success"), "Prerequisite removed successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.prerequisite_removed_successfully_variant_2', default="Prerequisite removed successfully!"))
                 self.update_status("Prerequisite removed")
                 load_prerequisites()
 
@@ -515,8 +517,8 @@ def remove_prerequisite_gui(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Button(button_frame, text="Remove Selected", command=remove_selected).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.remove_selected', default="Remove Selected"), command=remove_selected).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # Initial load
     load_courses()
@@ -557,7 +559,7 @@ class PrerequisitesWindow:
         self.auth = auth
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Manage Prerequisites")
+        self.window.title(_t('gui.academics.course_management_gui.prerequisites.prerequisites.windows.manage_prerequisites', default="Manage Prerequisites"))
         self.window.geometry("800x600")
         self.window.transient(parent)
 
@@ -573,9 +575,9 @@ class PrerequisitesWindow:
         controls_frame = ttk.Frame(main_frame)
         controls_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(controls_frame, text="Add Prerequisite", command=self.add_prerequisite).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Remove Prerequisite", command=self.remove_prerequisite).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Refresh", command=self.load_data).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.add_prerequisite', default="Add Prerequisite"), command=self.add_prerequisite).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.remove_prerequisite', default="Remove Prerequisite"), command=self.remove_prerequisite).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.refresh', default="Refresh"), command=self.load_data).pack(side=tk.LEFT, padx=5)
 
         # Prerequisites display
         self.prereq_text = ScrolledText(main_frame, wrap=tk.WORD, height=30)
@@ -645,7 +647,7 @@ class AddPrerequisiteDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Add Prerequisite")
+        self.dialog.title(_t('gui.academics.course_management_gui.prerequisites.prerequisites.windows.add_prerequisite', default="Add Prerequisite"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -658,35 +660,35 @@ class AddPrerequisiteDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Add Course Prerequisite", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.add_course_prerequisite', default="Add Course Prerequisite"), font=("Arial", 12, "bold")).pack(pady=10)
 
         # Course selection
-        course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding=10)
+        course_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.select_course', default="Select Course"), padding=10)
         course_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(course_frame, text="Course:").pack(anchor=tk.W)
+        ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.course', default="Course:")).pack(anchor=tk.W)
         self.course_combo = ttk.Combobox(course_frame, width=50)
         self.course_combo.pack(fill=tk.X, pady=2)
 
         # Prerequisite selection
-        prereq_frame = ttk.LabelFrame(main_frame, text="Select Prerequisite", padding=10)
+        prereq_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.select_prerequisite', default="Select Prerequisite"), padding=10)
         prereq_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(prereq_frame, text="Prerequisite Course:").pack(anchor=tk.W)
+        ttk.Label(prereq_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.prerequisite_course', default="Prerequisite Course:")).pack(anchor=tk.W)
         self.prereq_combo = ttk.Combobox(prereq_frame, width=50)
         self.prereq_combo.pack(fill=tk.X, pady=2)
 
         # Requirement type
         self.is_required = tk.BooleanVar(value=True)
-        ttk.Checkbutton(prereq_frame, text="Required (uncheck for recommended)",
+        ttk.Checkbutton(prereq_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.required_uncheck_for_recommended', default="Required (uncheck for recommended)"),
                        variable=self.is_required).pack(anchor=tk.W, pady=5)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Add Prerequisite", command=self.add_prerequisite).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.add_prerequisite', default="Add Prerequisite"), command=self.add_prerequisite).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_courses(self):
         try:
@@ -720,18 +722,18 @@ class AddPrerequisiteDialog:
             prereq_text = self.prereq_combo.get()
 
             if not course_text or not prereq_text:
-                messagebox.showwarning(_("common.selection_required"), "Please select both course and prerequisite.")
+                messagebox.showwarning(_("common.selection_required"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.please_select_both_course_and_prerequisite_variant_2', default="Please select both course and prerequisite."))
                 return
 
             if course_text == prereq_text:
-                messagebox.showerror("Invalid Selection", "A course cannot be a prerequisite for itself.")
+                messagebox.showerror(_t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.invalid_selection', default="Invalid Selection"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.a_course_cannot_be_a_prerequisite_for_itself', default="A course cannot be a prerequisite for itself."))
                 return
 
             course_id = self.course_id_map.get(course_text)
             prereq_id = self.course_id_map.get(prereq_text)
 
             if not course_id or not prereq_id:
-                messagebox.showerror(_("common.error"), "Invalid course selection.")
+                messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.invalid_course_selection', default="Invalid course selection."))
                 return
 
             # Create prerequisites table if it doesn't exist
@@ -767,7 +769,7 @@ class AddPrerequisiteDialog:
             self.dialog.destroy()
 
         except sqlite3.IntegrityError:
-            messagebox.showerror(_("common.duplicate_error"), "This prerequisite already exists.")
+            messagebox.showerror(_("common.duplicate_error"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.this_prerequisite_already_exists_variant_2', default="This prerequisite already exists."))
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to add prerequisite: {e}")
 
@@ -781,7 +783,7 @@ class RemovePrerequisiteDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Remove Prerequisite")
+        self.dialog.title(_t('gui.academics.course_management_gui.prerequisites.prerequisites.windows.remove_prerequisite', default="Remove Prerequisite"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -794,19 +796,19 @@ class RemovePrerequisiteDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Remove Course Prerequisite", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.remove_course_prerequisite', default="Remove Course Prerequisite"), font=("Arial", 12, "bold")).pack(pady=10)
 
         # Prerequisites list
-        prereq_frame = ttk.LabelFrame(main_frame, text="Current Prerequisites", padding=10)
+        prereq_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.labels.current_prerequisites', default="Current Prerequisites"), padding=10)
         prereq_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         # Create treeview for prerequisites
         columns = ("Course", "Prerequisite", "Type")
         self.prereq_tree = ttk.Treeview(prereq_frame, columns=columns, show="headings", height=10)
 
-        self.prereq_tree.heading("Course", text="Course")
-        self.prereq_tree.heading("Prerequisite", text="Prerequisite Course")
-        self.prereq_tree.heading("Type", text="Type")
+        self.prereq_tree.heading("Course", text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.headings.course', default="Course"))
+        self.prereq_tree.heading("Prerequisite", text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.headings.prerequisite_course', default="Prerequisite Course"))
+        self.prereq_tree.heading("Type", text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.headings.type', default="Type"))
 
         self.prereq_tree.column("Course", width=150)
         self.prereq_tree.column("Prerequisite", width=150)
@@ -823,8 +825,8 @@ class RemovePrerequisiteDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Remove Selected", command=self.remove_selected).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.remove_selected', default="Remove Selected"), command=self.remove_selected).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.prerequisites.prerequisites.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_prerequisites(self):
         try:
@@ -861,11 +863,11 @@ class RemovePrerequisiteDialog:
     def remove_selected(self):
         selected = self.prereq_tree.selection()
         if not selected:
-            messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a prerequisite to remove.")
+            messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.please_select_a_prerequisite_to_remove_variant_2', default="Please select a prerequisite to remove."))
             return
 
         # Confirm removal
-        if not messagebox.askyesno("Confirm Removal", "Are you sure you want to remove this prerequisite?"):
+        if not messagebox.askyesno(_t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.confirm_removal', default="Confirm Removal"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.are_you_sure_you_want_to_remove_this_prerequisite', default="Are you sure you want to remove this prerequisite?")):
             return
 
         try:
@@ -883,7 +885,7 @@ class RemovePrerequisiteDialog:
             self.prereq_tree.delete(selected[0])
 
             self.result = True
-            messagebox.showinfo(_("common.success"), "Prerequisite removed successfully")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.prerequisites.prerequisites.dialogs.prerequisite_removed_successfully', default="Prerequisite removed successfully"))
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to remove prerequisite: {e}")

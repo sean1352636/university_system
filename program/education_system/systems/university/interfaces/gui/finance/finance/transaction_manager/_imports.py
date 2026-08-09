@@ -49,8 +49,8 @@ except ImportError:
 
     def get_log_file(name):
         """Fallback log file path resolution."""
-        from education_system.systems.university.infrastructure import paths
-        return str(paths.LOG_DIR / name)
+        from education_system import paths
+        return str(paths.UNIVERSITY_LOG_DIR / name)
 
 # Import finance functions from common_imports module (explicit imports)
 from education_system.systems.university.interfaces.gui.finance.finance.common_imports import (

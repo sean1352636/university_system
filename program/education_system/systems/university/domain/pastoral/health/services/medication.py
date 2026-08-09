@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.health.storage import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 def track_medication_adherence(auth):

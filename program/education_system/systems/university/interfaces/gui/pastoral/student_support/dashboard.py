@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import tkinter.font as tkFont
@@ -10,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import i18n for language support
 from education_system.systems.university.infrastructure.i18n import (
@@ -43,8 +45,8 @@ except ImportError:
     render_template = lambda *args, **kwargs: (None, None)
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this module when targeting the
@@ -181,7 +183,7 @@ class DashboardMixin:
 
             # Create a new Toplevel window for Helpdesk
             helpdesk_window = tk.Toplevel(self.root)
-            helpdesk_window.title("IT Helpdesk System")
+            helpdesk_window.title(_t('gui.pastoral.student_support.dashboard.windows.it_helpdesk_system', default="IT Helpdesk System"))
             helpdesk_window.geometry("1200x800")
             helpdesk_window.transient(self.root)
 
@@ -190,9 +192,9 @@ class DashboardMixin:
 
             self.update_status("Opened IT Helpdesk")
         except ImportError as e:
-            messagebox.showerror("Error", f"Could not load Helpdesk GUI: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), f"Could not load Helpdesk GUI: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open Helpdesk: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), f"Could not open Helpdesk: {e}")
             import traceback
             traceback.print_exc()
 
@@ -298,7 +300,7 @@ class DashboardMixin:
     def create_student_dashboard(self, parent):
         """Create student-specific dashboard widgets"""
         # Ticket statistics
-        stats_frame = ttk.LabelFrame(parent, text="📊 Your Tickets", padding="10")
+        stats_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.dashboard.labels.your_tickets', default="📊 Your Tickets"), padding="10")
         stats_frame.pack(fill="x", padx=10, pady=5)
 
         stats = self.dashboard_data.get('ticket_stats', {})
@@ -310,7 +312,7 @@ class DashboardMixin:
         ttk.Label(stats_frame, text=stats_text, font=('Segoe UI', 11)).pack()
 
         # Recent tickets
-        recent_frame = ttk.LabelFrame(parent, text="📋 Recent Tickets", padding="10")
+        recent_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.dashboard.labels.recent_tickets', default="📋 Recent Tickets"), padding="10")
         recent_frame.pack(fill="x", padx=10, pady=5)
 
         recent_tickets = self.dashboard_data.get('recent_tickets', []) or []
@@ -329,13 +331,13 @@ class DashboardMixin:
                 ticket_text = f"{status_emoji} #{ticket_id} - {ticket_title}..."
 
                 ttk.Label(ticket_frame, text=ticket_text).pack(side="left")
-                ttk.Button(ticket_frame, text="View",
+                ttk.Button(ticket_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.view', default="View"),
                           command=lambda t=ticket_id: self.view_ticket_details(t)).pack(side="right")
         else:
-            ttk.Label(recent_frame, text="No recent tickets").pack()
+            ttk.Label(recent_frame, text=_t('gui.pastoral.student_support.dashboard.labels.no_recent_tickets', default="No recent tickets")).pack()
 
         # Featured resources
-        resources_frame = ttk.LabelFrame(parent, text="⭐ Featured Resources", padding="10")
+        resources_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.dashboard.labels.featured_resources', default="⭐ Featured Resources"), padding="10")
         resources_frame.pack(fill="x", padx=10, pady=5)
 
         featured_resources = self.dashboard_data.get('featured_resources', []) or []
@@ -348,15 +350,15 @@ class DashboardMixin:
 
                 resource_title = resource.get('title', 'Untitled Resource')
                 ttk.Label(resource_frame, text=f"📄 {resource_title}").pack(side="left")
-                ttk.Button(resource_frame, text="View",
+                ttk.Button(resource_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.view', default="View"),
                           command=lambda r=resource: self.open_resource(r)).pack(side="right")
         else:
-            ttk.Label(resources_frame, text="No featured resources available").pack()
+            ttk.Label(resources_frame, text=_t('gui.pastoral.student_support.dashboard.labels.no_featured_resources_available', default="No featured resources available")).pack()
 
     def create_staff_dashboard(self, parent):
         """Create staff-specific dashboard widgets"""
         # Performance metrics
-        metrics_frame = ttk.LabelFrame(parent, text="📈 Performance Metrics", padding="10")
+        metrics_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.dashboard.labels.performance_metrics', default="📈 Performance Metrics"), padding="10")
         metrics_frame.pack(fill="x", padx=10, pady=5)
 
         metrics = self.dashboard_data.get('performance_metrics', {})
@@ -368,7 +370,7 @@ class DashboardMixin:
         ttk.Label(metrics_frame, text=metrics_text, font=('Segoe UI', 11)).pack()
 
         # Assigned tickets
-        assigned_frame = ttk.LabelFrame(parent, text="👨‍💼 Assigned Tickets", padding="10")
+        assigned_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.dashboard.labels.assigned_tickets', default="👨‍💼 Assigned Tickets"), padding="10")
         assigned_frame.pack(fill="x", padx=10, pady=5)
 
         assigned_stats = self.dashboard_data.get('assigned_stats', {})
@@ -378,7 +380,7 @@ class DashboardMixin:
         ttk.Label(assigned_frame, text=assigned_text, font=('Segoe UI', 11)).pack()
 
         # High priority tickets
-        priority_frame = ttk.LabelFrame(parent, text="🚨 Priority Tickets", padding="10")
+        priority_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.dashboard.labels.priority_tickets', default="🚨 Priority Tickets"), padding="10")
         priority_frame.pack(fill="x", padx=10, pady=5)
 
         priority_tickets = self.dashboard_data.get('priority_tickets', []) or []
@@ -399,14 +401,14 @@ class DashboardMixin:
                 ticket_text = f"{priority_emoji} #{ticket_id} - {ticket_title}..."
 
                 ttk.Label(ticket_frame, text=ticket_text).pack(side="left")
-                ttk.Button(ticket_frame, text="Assign to Me",
+                ttk.Button(ticket_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.assign_to_me', default="Assign to Me"),
                           command=lambda t=ticket_id: self.assign_ticket_to_me(t)).pack(side="right")
         else:
-            ttk.Label(priority_frame, text="No high priority tickets").pack()
+            ttk.Label(priority_frame, text=_t('gui.pastoral.student_support.dashboard.labels.no_high_priority_tickets', default="No high priority tickets")).pack()
 
     def create_notifications_widget(self, parent):
         """Create notifications widget"""
-        notifications_frame = ttk.LabelFrame(parent, text="🔔 Recent Notifications", padding="10")
+        notifications_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.dashboard.labels.recent_notifications', default="🔔 Recent Notifications"), padding="10")
         notifications_frame.pack(fill="x", padx=10, pady=5)
 
         notifications = self.dashboard_data.get('notifications', []) or []
@@ -430,11 +432,11 @@ class DashboardMixin:
                 ttk.Label(notif_frame, text=notif_created,
                          font=('Segoe UI', 9), foreground=self.colors['text_secondary']).pack(side="right")
         else:
-            ttk.Label(notifications_frame, text="No recent notifications").pack()
+            ttk.Label(notifications_frame, text=_t('gui.pastoral.student_support.dashboard.labels.no_recent_notifications', default="No recent notifications")).pack()
 
     def create_quick_actions_widget(self, parent):
         """Create quick actions widget"""
-        actions_frame = ttk.LabelFrame(parent, text="⚡ Quick Actions", padding="10")
+        actions_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.dashboard.labels.quick_actions', default="⚡ Quick Actions"), padding="10")
         actions_frame.pack(fill="x", padx=10, pady=5)
 
         # Create grid of action buttons
@@ -469,7 +471,7 @@ class DashboardMixin:
         self.clear_content()
 
         notifications_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(notifications_frame, text="🔔 Notifications")
+        self.notebook.add(notifications_frame, text=_t('gui.pastoral.student_support.dashboard.tabs.notifications', default="🔔 Notifications"))
 
         # Configure frame to expand
         notifications_frame.rowconfigure(0, weight=1)
@@ -479,20 +481,20 @@ class DashboardMixin:
         header_frame = ttk.Frame(notifications_frame)
         header_frame.pack(fill="x", pady=(0, 15))
 
-        ttk.Label(header_frame, text="🔔 Notifications",
+        ttk.Label(header_frame, text=_t('gui.pastoral.student_support.dashboard.labels.notifications', default="🔔 Notifications"),
                  style='Title.TLabel').pack(side="left")
 
         # Mark all as read button
-        ttk.Button(header_frame, text="📫 Mark All Read",
+        ttk.Button(header_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.mark_all_read', default="📫 Mark All Read"),
                   command=self.mark_all_notifications_read).pack(side="right")
 
         # Filter options
         filter_frame = ttk.Frame(notifications_frame)
         filter_frame.pack(fill="x", pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Filter:").pack(side="left")
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_support.dashboard.labels.filter', default="Filter:")).pack(side="left")
 
-        self.notification_filter_var = tk.StringVar(value="All")
+        self.notification_filter_var = tk.StringVar(value=_t('gui.pastoral.student_support.dashboard.values.all', default="All"))
         filter_combo = ttk.Combobox(filter_frame, textvariable=self.notification_filter_var,
                                    values=["All", "Unread", "Read"], state="readonly")
         filter_combo.pack(side="left", padx=(10, 0))
@@ -523,7 +525,7 @@ class DashboardMixin:
                 notifications = [n for n in notifications if n.get('is_read', False)]
 
             if not notifications:
-                ttk.Label(self.notifications_display_frame, text="📭 No notifications").pack(pady=20)
+                ttk.Label(self.notifications_display_frame, text=_t('gui.pastoral.student_support.dashboard.labels.no_notifications', default="📭 No notifications")).pack(pady=20)
                 return
 
             # Create scrollable notifications list
@@ -572,13 +574,13 @@ class DashboardMixin:
         action_frame.pack(anchor="w", pady=(5, 0))
 
         if not notification.get('is_read'):
-            ttk.Button(action_frame, text="✓ Mark as Read",
+            ttk.Button(action_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.mark_as_read', default="✓ Mark as Read"),
                       command=lambda: self.mark_notification_read(notification)).pack(side="left", padx=(0, 5))
 
         # Add "View Email" button for email notifications
         notification_type = notification.get('type') or notification.get('notification_type', '')
         if notification_type and 'email' in str(notification_type).lower():
-            ttk.Button(action_frame, text="📧 View Email",
+            ttk.Button(action_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.view_email', default="📧 View Email"),
                       command=lambda: self.view_notification_email(notification)).pack(side="left", padx=(0, 5))
 
     def mark_notification_read(self, notification):
@@ -587,11 +589,11 @@ class DashboardMixin:
         user_id, _ = self._get_current_user_identity()
 
         if not notification_id:
-            messagebox.showerror("Error", "Notification identifier missing.")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), _t('gui.pastoral.student_support.dashboard.dialogs.notification_identifier_missing', default="Notification identifier missing."))
             return
 
         if not user_id:
-            messagebox.showerror("Error", "You must be signed in to update notifications.")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), _t('gui.pastoral.student_support.dashboard.dialogs.you_must_be_signed_in_to_update_notifications', default="You must be signed in to update notifications."))
             return
 
         try:
@@ -613,7 +615,7 @@ class DashboardMixin:
                 success = self._safe_db_call(update_notification) > 0
 
             if not success:
-                messagebox.showwarning("Notification", "Notification was already marked as read or no longer exists.")
+                messagebox.showwarning(_t('gui.pastoral.student_support.dashboard.dialogs.notification', default="Notification"), _t('gui.pastoral.student_support.dashboard.dialogs.notification_was_already_marked_as_read_or_no_longer_exists', default="Notification was already marked as read or no longer exists."))
                 return
 
             notification['is_read'] = True
@@ -621,7 +623,7 @@ class DashboardMixin:
             self.load_notifications()
             self.update_status("Notification marked as read")
         except Exception as e:
-            messagebox.showerror("Error", f"Could not mark notification as read: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), f"Could not mark notification as read: {e}")
 
     def view_notification_email(self, notification):
         """View the email notification that was sent"""
@@ -636,7 +638,7 @@ class DashboardMixin:
         main_frame.pack(fill="both", expand=True)
 
         # Email header
-        header_frame = ttk.LabelFrame(main_frame, text="Email Details", padding="10")
+        header_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_support.dashboard.labels.email_details', default="Email Details"), padding="10")
         header_frame.pack(fill="x", pady=(0, 10))
 
         # Get user email
@@ -651,7 +653,7 @@ class DashboardMixin:
                  font=('Segoe UI', 10)).pack(anchor="w", pady=2)
 
         # Email body
-        body_frame = ttk.LabelFrame(main_frame, text="Email Content", padding="10")
+        body_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_support.dashboard.labels.email_content', default="Email Content"), padding="10")
         body_frame.pack(fill="both", expand=True, pady=(0, 10))
 
         # Create scrolled text widget for email body
@@ -667,11 +669,11 @@ class DashboardMixin:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill="x")
 
-        ttk.Button(btn_frame, text="📋 Copy to Clipboard",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.copy_to_clipboard', default="📋 Copy to Clipboard"),
                   command=lambda: self._copy_to_clipboard(email_content)).pack(side="left", padx=(0, 5))
-        ttk.Button(btn_frame, text="💾 Save as TXT",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.save_as_txt', default="💾 Save as TXT"),
                   command=lambda: self._save_email_as_txt(notification, email_content)).pack(side="left", padx=(0, 5))
-        ttk.Button(btn_frame, text="❌ Close",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.close', default="❌ Close"),
                   command=email_window.destroy).pack(side="left")
 
     def _get_user_email(self, user_id):
@@ -740,15 +742,15 @@ class DashboardMixin:
             self.root.clipboard_clear()
             self.root.clipboard_append(text)
             self.root.update()
-            messagebox.showinfo("Copied", "Email content copied to clipboard")
+            messagebox.showinfo(_t('gui.pastoral.student_support.dashboard.dialogs.copied', default="Copied"), _t('gui.pastoral.student_support.dashboard.dialogs.email_content_copied_to_clipboard', default="Email content copied to clipboard"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to copy to clipboard: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), f"Failed to copy to clipboard: {e}")
 
     def _save_email_as_txt(self, notification, email_content):
         """Save email notification as TXT file"""
 
         filename = filedialog.asksaveasfilename(
-            title="Save Email as TXT",
+            title=_t('gui.pastoral.student_support.dashboard.dialogs.save_email_as_txt', default="Save Email as TXT"),
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
             initialfile=f"email_notification_{notification.get('notification_id', 'unknown')}.txt"
@@ -761,15 +763,15 @@ class DashboardMixin:
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(email_content)
 
-            messagebox.showinfo("Success", f"Email saved to:\n{filename}")
+            messagebox.showinfo(_t('gui.pastoral.student_support.dashboard.dialogs.success', default="Success"), f"Email saved to:\n{filename}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save email: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), f"Failed to save email: {e}")
 
     def mark_all_notifications_read(self):
         """Mark all notifications as read"""
         user_id, _ = self._get_current_user_identity()
         if not user_id:
-            messagebox.showerror("Error", "You must be signed in to update notifications.")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), _t('gui.pastoral.student_support.dashboard.dialogs.you_must_be_signed_in_to_update_notifications', default="You must be signed in to update notifications."))
             return
 
         try:
@@ -799,22 +801,22 @@ class DashboardMixin:
             self.load_dashboard()
             self.load_notifications()
             self.update_status("All notifications marked as read")
-            messagebox.showinfo("Success", f"Marked {updated} notification(s) as read.")
+            messagebox.showinfo(_t('gui.pastoral.student_support.dashboard.dialogs.success', default="Success"), f"Marked {updated} notification(s) as read.")
         except Exception as e:
-            messagebox.showerror("Error", f"Could not mark notifications as read: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), f"Could not mark notifications as read: {e}")
 
     def show_preferences(self):
         """Show user preferences interface"""
         self.clear_content()
 
         prefs_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(prefs_frame, text="⚙️ Preferences")
+        self.notebook.add(prefs_frame, text=_t('gui.pastoral.student_support.dashboard.tabs.preferences', default="⚙️ Preferences"))
 
         # Configure frame to expand
         prefs_frame.rowconfigure(0, weight=1)
         prefs_frame.columnconfigure(0, weight=1)
 
-        ttk.Label(prefs_frame, text="⚙️ User Preferences",
+        ttk.Label(prefs_frame, text=_t('gui.pastoral.student_support.dashboard.labels.user_preferences', default="⚙️ User Preferences"),
                  style='Title.TLabel').pack(pady=(0, 20))
 
         # Get current preferences
@@ -827,41 +829,41 @@ class DashboardMixin:
             current_prefs = {}
 
         # Preferences form
-        form_frame = ttk.LabelFrame(prefs_frame, text="Notification Settings", padding="15")
+        form_frame = ttk.LabelFrame(prefs_frame, text=_t('gui.pastoral.student_support.dashboard.labels.notification_settings', default="Notification Settings"), padding="15")
         form_frame.pack(fill="x", pady=(0, 10))
 
         # Notification preferences
         self.email_notifications_var = tk.BooleanVar(value=current_prefs.get('email_notifications', True))
-        ttk.Checkbutton(form_frame, text="📧 Email Notifications",
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.email_notifications', default="📧 Email Notifications"),
                        variable=self.email_notifications_var).pack(anchor="w", pady=2)
 
         self.in_app_notifications_var = tk.BooleanVar(value=current_prefs.get('in_app_notifications', True))
-        ttk.Checkbutton(form_frame, text="🔔 In-App Notifications",
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.in_app_notifications', default="🔔 In-App Notifications"),
                        variable=self.in_app_notifications_var).pack(anchor="w", pady=2)
 
         self.push_notifications_var = tk.BooleanVar(value=current_prefs.get('push_notifications', True))
-        ttk.Checkbutton(form_frame, text="📱 Push Notifications",
+        ttk.Checkbutton(form_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.push_notifications', default="📱 Push Notifications"),
                        variable=self.push_notifications_var).pack(anchor="w", pady=2)
 
         # Digest frequency
         digest_frame = ttk.Frame(form_frame)
         digest_frame.pack(fill="x", pady=(10, 0))
 
-        ttk.Label(digest_frame, text="📅 Digest Frequency:").pack(side="left")
+        ttk.Label(digest_frame, text=_t('gui.pastoral.student_support.dashboard.labels.digest_frequency', default="📅 Digest Frequency:")).pack(side="left")
         self.digest_frequency_var = tk.StringVar(value=current_prefs.get('digest_frequency', 'daily'))
         digest_combo = ttk.Combobox(digest_frame, textvariable=self.digest_frequency_var,
                                    values=['immediate', 'daily', 'weekly'], state="readonly")
         digest_combo.pack(side="left", padx=(10, 0))
 
         # Display preferences
-        display_frame = ttk.LabelFrame(prefs_frame, text="Display Settings", padding="15")
+        display_frame = ttk.LabelFrame(prefs_frame, text=_t('gui.pastoral.student_support.dashboard.labels.display_settings', default="Display Settings"), padding="15")
         display_frame.pack(fill="x", pady=(0, 10))
 
         # Theme
         theme_frame = ttk.Frame(display_frame)
         theme_frame.pack(fill="x", pady=2)
 
-        ttk.Label(theme_frame, text="🎨 Theme:").pack(side="left")
+        ttk.Label(theme_frame, text=_t('gui.pastoral.student_support.dashboard.labels.theme', default="🎨 Theme:")).pack(side="left")
         self.theme_var = tk.StringVar(value=current_prefs.get('theme', 'light'))
         theme_combo = ttk.Combobox(theme_frame, textvariable=self.theme_var,
                                   values=['light', 'dark'], state="readonly")
@@ -871,7 +873,7 @@ class DashboardMixin:
         language_frame = ttk.Frame(display_frame)
         language_frame.pack(fill="x", pady=2)
 
-        ttk.Label(language_frame, text="🌐 Language:").pack(side="left")
+        ttk.Label(language_frame, text=_t('gui.pastoral.student_support.dashboard.labels.language', default="🌐 Language:")).pack(side="left")
         self.language_var = tk.StringVar(value=current_prefs.get('language', 'en'))
         language_combo = ttk.Combobox(language_frame, textvariable=self.language_var,
                                      values=['en', 'es', 'fr', 'de'], state="readonly")
@@ -881,13 +883,13 @@ class DashboardMixin:
         timezone_frame = ttk.Frame(display_frame)
         timezone_frame.pack(fill="x", pady=2)
 
-        ttk.Label(timezone_frame, text="🕐 Timezone:").pack(side="left")
+        ttk.Label(timezone_frame, text=_t('gui.pastoral.student_support.dashboard.labels.timezone', default="🕐 Timezone:")).pack(side="left")
         self.timezone_var = tk.StringVar(value=current_prefs.get('timezone', 'UTC'))
         timezone_entry = ttk.Entry(timezone_frame, textvariable=self.timezone_var, width=20)
         timezone_entry.pack(side="left", padx=(10, 0))
 
         # Save button
-        ttk.Button(prefs_frame, text="💾 Save Preferences",
+        ttk.Button(prefs_frame, text=_t('gui.pastoral.student_support.dashboard.buttons.save_preferences', default="💾 Save Preferences"),
                   command=self.save_preferences, style='Primary.TButton').pack(pady=20)
 
     def save_preferences(self):
@@ -905,11 +907,11 @@ class DashboardMixin:
 
             if self.support:
                 self.support.update_user_preferences(preferences)
-                messagebox.showinfo("Success", "Preferences saved successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_support.dashboard.dialogs.success', default="Success"), _t('gui.pastoral.student_support.dashboard.dialogs.preferences_saved_successfully', default="Preferences saved successfully!"))
                 self.update_status("Preferences saved")
             else:
-                messagebox.showerror("Error", "Support system not available")
+                messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), _t('gui.pastoral.student_support.dashboard.dialogs.support_system_not_available', default="Support system not available"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save preferences: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.dashboard.dialogs.error', default="Error"), f"Failed to save preferences: {e}")
 

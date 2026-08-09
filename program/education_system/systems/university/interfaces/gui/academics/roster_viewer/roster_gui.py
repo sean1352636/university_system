@@ -1,5 +1,7 @@
 """Class Roster Viewer & Export GUI (Feature 24)."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import io
 import logging
@@ -25,7 +27,7 @@ class ClassRosterGUI:
             self.instructor_id = auth.current_user.get('username', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Class Roster Viewer")
+        self.window.title(_t('gui.academics.roster_viewer.roster.windows.class_roster_viewer', default="Class Roster Viewer"))
         self.window.geometry("1100x700")
         self.window.transient(parent)
 
@@ -35,7 +37,7 @@ class ClassRosterGUI:
     def _setup_ui(self):
         """Build the roster viewer UI."""
         ttk.Label(
-            self.window, text="Class Roster Viewer",
+            self.window, text=_t('gui.academics.roster_viewer.roster.labels.class_roster_viewer', default="Class Roster Viewer"),
             font=('Arial', 16, 'bold')
         ).pack(pady=(10, 5))
 
@@ -43,7 +45,7 @@ class ClassRosterGUI:
         top_frame = ttk.Frame(self.window)
         top_frame.pack(fill=tk.X, padx=15, pady=5)
 
-        ttk.Label(top_frame, text="Module:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(top_frame, text=_t('gui.academics.roster_viewer.roster.labels.module', default="Module:")).pack(side=tk.LEFT, padx=(0, 5))
         self.course_var = tk.StringVar()
         self.course_combo = ttk.Combobox(
             top_frame, textvariable=self.course_var,
@@ -52,26 +54,26 @@ class ClassRosterGUI:
         self.course_combo.pack(side=tk.LEFT, padx=(0, 15))
         self.course_combo.bind('<<ComboboxSelected>>', lambda e: self._on_module_selected())
 
-        ttk.Label(top_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(top_frame, text=_t('gui.academics.roster_viewer.roster.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
         self.search_var = tk.StringVar()
         self.search_var.trace_add('write', lambda *a: self._filter_roster())
         search_entry = ttk.Entry(top_frame, textvariable=self.search_var, width=25)
         search_entry.pack(side=tk.LEFT, padx=(0, 15))
 
         # Export buttons
-        ttk.Button(top_frame, text="Export CSV", command=self._export_csv).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(top_frame, text=_t('gui.academics.roster_viewer.roster.buttons.export_csv', default="Export CSV"), command=self._export_csv).pack(side=tk.RIGHT, padx=5)
 
         # Timetable section
-        timetable_frame = ttk.LabelFrame(self.window, text="Module Timetable", padding="5")
+        timetable_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.roster_viewer.roster.labels.module_timetable', default="Module Timetable"), padding="5")
         timetable_frame.pack(fill=tk.X, padx=15, pady=5)
 
         tt_cols = ('day', 'time', 'room', 'type', 'instructor')
         self.timetable_tree = ttk.Treeview(timetable_frame, columns=tt_cols, show='headings', height=4)
-        self.timetable_tree.heading('day', text='Day')
-        self.timetable_tree.heading('time', text='Time')
-        self.timetable_tree.heading('room', text='Room')
-        self.timetable_tree.heading('type', text='Session Type')
-        self.timetable_tree.heading('instructor', text='Instructor')
+        self.timetable_tree.heading('day', text=_t('gui.academics.roster_viewer.roster.headings.day', default='Day'))
+        self.timetable_tree.heading('time', text=_t('gui.academics.roster_viewer.roster.headings.time', default='Time'))
+        self.timetable_tree.heading('room', text=_t('gui.academics.roster_viewer.roster.headings.room', default='Room'))
+        self.timetable_tree.heading('type', text=_t('gui.academics.roster_viewer.roster.headings.session_type', default='Session Type'))
+        self.timetable_tree.heading('instructor', text=_t('gui.academics.roster_viewer.roster.headings.instructor', default='Instructor'))
         self.timetable_tree.column('day', width=100)
         self.timetable_tree.column('time', width=150)
         self.timetable_tree.column('room', width=100)
@@ -85,10 +87,10 @@ class ClassRosterGUI:
 
         cols = ('student_id', 'name', 'email', 'status')
         self.tree = ttk.Treeview(tree_frame, columns=cols, show='headings')
-        self.tree.heading('student_id', text='Student ID')
-        self.tree.heading('name', text='Name')
-        self.tree.heading('email', text='Email')
-        self.tree.heading('status', text='Enrollment Status')
+        self.tree.heading('student_id', text=_t('gui.academics.roster_viewer.roster.headings.student_id', default='Student ID'))
+        self.tree.heading('name', text=_t('gui.academics.roster_viewer.roster.headings.name', default='Name'))
+        self.tree.heading('email', text=_t('gui.academics.roster_viewer.roster.headings.email', default='Email'))
+        self.tree.heading('status', text=_t('gui.academics.roster_viewer.roster.headings.enrollment_status', default='Enrollment Status'))
         self.tree.column('student_id', width=120)
         self.tree.column('name', width=250)
         self.tree.column('email', width=300)
@@ -100,7 +102,7 @@ class ClassRosterGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Status bar
-        self.status_var = tk.StringVar(value="Select a module to view roster.")
+        self.status_var = tk.StringVar(value=_t('gui.academics.roster_viewer.roster.values.select_a_module_to_view_roster', default="Select a module to view roster."))
         ttk.Label(self.window, textvariable=self.status_var).pack(anchor="w", padx=15, pady=5)
 
         self.roster_data = []
@@ -231,7 +233,7 @@ class ClassRosterGUI:
     def _export_csv(self):
         """Export roster to CSV file."""
         if not self.roster_data:
-            messagebox.showwarning("No Data", "No roster data to export.", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.roster_viewer.roster.dialogs.no_data', default="No Data"), _t('gui.academics.roster_viewer.roster.dialogs.no_roster_data_to_export', default="No roster data to export."), parent=self.window)
             return
 
         filepath = filedialog.asksaveasfilename(
@@ -266,7 +268,7 @@ class ClassRosterGUI:
             except Exception:
                 pass
 
-            messagebox.showinfo("Success", f"Roster exported to {filepath}", parent=self.window)
+            messagebox.showinfo(_t('gui.academics.roster_viewer.roster.dialogs.success', default="Success"), f"Roster exported to {filepath}", parent=self.window)
         except Exception as e:
             logger.error(f"Error exporting CSV: {e}")
-            messagebox.showerror("Error", f"Failed to export: {e}", parent=self.window)
+            messagebox.showerror(_t('gui.academics.roster_viewer.roster.dialogs.error', default="Error"), f"Failed to export: {e}", parent=self.window)

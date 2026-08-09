@@ -107,7 +107,7 @@ def show_student_finance_account(self):
         main_canvas.bind_all("<MouseWheel>", on_mousewheel)
 
         # Variables for dynamic updates
-        balance_var = tk.StringVar(value="Loading...")
+        balance_var = tk.StringVar(value=_t('gui.shell.main.features.finance.values.loading', default="Loading..."))
         total_deposited_var = tk.StringVar(value="£0.00")
         total_spent_var = tk.StringVar(value="£0.00")
         transaction_count_var = tk.StringVar(value="0")
@@ -163,7 +163,7 @@ def show_student_finance_account(self):
         tk.Label(balance_card, textvariable=balance_var,
                 font=('Arial', 32, 'bold'), bg='#27ae60', fg='white').pack(pady=5)
 
-        refresh_btn = tk.Button(balance_card, text="🔄 Refresh", command=refresh_all_data,
+        refresh_btn = tk.Button(balance_card, text=_t('gui.shell.main.features.finance.buttons.refresh', default="🔄 Refresh"), command=refresh_all_data,
                                bg='#229954', fg='white', font=('Arial', 10, 'bold'),
                                relief='flat', padx=20, pady=5, cursor='hand2')
         refresh_btn.pack(pady=(5, 15))
@@ -231,23 +231,23 @@ def show_student_finance_account(self):
                      relief='flat', padx=15, pady=5, cursor='hand2').pack(side='left', padx=3)
 
         # ==== RECENT TRANSACTIONS ====
-        trans_frame = ttk.LabelFrame(scrollable_frame, text="📜 Recent Transactions (Last 20)", padding=10)
+        trans_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.shell.main.features.finance.labels.recent_transactions_last_20', default="📜 Recent Transactions (Last 20)"), padding=10)
         trans_frame.pack(fill='both', expand=True, padx=20, pady=15)
 
         # Filter buttons
         filter_frame = tk.Frame(trans_frame)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        filter_var = tk.StringVar(value='all')
+        filter_var = tk.StringVar(value=_t('gui.shell.main.features.finance.values.all', default='all'))
 
         def apply_filter():
             load_transactions(filter_var.get())
 
-        tk.Radiobutton(filter_frame, text="All", variable=filter_var, value='all',
+        tk.Radiobutton(filter_frame, text=_t('gui.shell.main.features.finance.buttons.all', default="All"), variable=filter_var, value='all',
                       command=apply_filter).pack(side='left', padx=5)
-        tk.Radiobutton(filter_frame, text="Deposits ⬆️", variable=filter_var, value='deposit',
+        tk.Radiobutton(filter_frame, text=_t('gui.shell.main.features.finance.buttons.deposits', default="Deposits ⬆️"), variable=filter_var, value='deposit',
                       command=apply_filter).pack(side='left', padx=5)
-        tk.Radiobutton(filter_frame, text="Spending ⬇️", variable=filter_var, value='spend',
+        tk.Radiobutton(filter_frame, text=_t('gui.shell.main.features.finance.buttons.spending', default="Spending ⬇️"), variable=filter_var, value='spend',
                       command=apply_filter).pack(side='left', padx=5)
 
         # Export button
@@ -284,7 +284,7 @@ def show_student_finance_account(self):
             except Exception as e:
                 messagebox.showerror(_t("common.error"), _t("finance_gui.account.export_failed", error=str(e)))
 
-        tk.Button(filter_frame, text="📥 Export CSV", command=export_transactions,
+        tk.Button(filter_frame, text=_t('gui.shell.main.features.finance.buttons.export_csv', default="📥 Export CSV"), command=export_transactions,
                  bg='#34495e', fg='white', font=('Arial', 9, 'bold'),
                  relief='flat', padx=10, pady=3, cursor='hand2').pack(side='right', padx=5)
 
@@ -295,11 +295,11 @@ def show_student_finance_account(self):
         columns = ('Date', 'Type', 'Amount', 'Balance', 'Description')
         trans_tree = ttk.Treeview(trans_table_frame, columns=columns, show='headings', height=10)
 
-        trans_tree.heading('Date', text='Date/Time')
-        trans_tree.heading('Type', text='Type')
-        trans_tree.heading('Amount', text='Amount')
-        trans_tree.heading('Balance', text='Balance After')
-        trans_tree.heading('Description', text='Description')
+        trans_tree.heading('Date', text=_t('gui.shell.main.features.finance.headings.date_time', default='Date/Time'))
+        trans_tree.heading('Type', text=_t('gui.shell.main.features.finance.headings.type', default='Type'))
+        trans_tree.heading('Amount', text=_t('gui.shell.main.features.finance.headings.amount', default='Amount'))
+        trans_tree.heading('Balance', text=_t('gui.shell.main.features.finance.headings.balance_after', default='Balance After'))
+        trans_tree.heading('Description', text=_t('gui.shell.main.features.finance.headings.description', default='Description'))
 
         trans_tree.column('Date', width=150, anchor='center')
         trans_tree.column('Type', width=100, anchor='center')

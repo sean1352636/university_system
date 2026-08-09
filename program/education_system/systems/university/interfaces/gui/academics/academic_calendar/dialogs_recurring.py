@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
@@ -50,7 +52,7 @@ class RecurringEventDialog:
         self.description_text.pack(fill=tk.X, pady=(5, 15))
 
         ttk.Label(details_frame, text=_("academic_calendar.labels.event_type")).pack(anchor=tk.W)
-        self.type_var = tk.StringVar(value="Academic")
+        self.type_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_recurring.values.academic', default="Academic"))
         type_combo = ttk.Combobox(details_frame, textvariable=self.type_var, width=47,
                                 values=["Academic", "Holiday", "Administrative", "Social", "Sports", "Trip", "Deadline"])
         type_combo.pack(fill=tk.X, pady=(5, 0))
@@ -64,7 +66,7 @@ class RecurringEventDialog:
         freq_frame.pack(fill=tk.X, pady=(0, 15))
 
         ttk.Label(freq_frame, text=_("academic_calendar.labels.frequency")).pack(side=tk.LEFT)
-        self.frequency_var = tk.StringVar(value="weekly")
+        self.frequency_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_recurring.values.weekly', default="weekly"))
         freq_combo = ttk.Combobox(freq_frame, textvariable=self.frequency_var, width=15,
                                 values=["daily", "weekly", "monthly", "yearly"])
         freq_combo.pack(side=tk.LEFT, padx=(5, 15))
@@ -77,7 +79,7 @@ class RecurringEventDialog:
         end_frame = ttk.LabelFrame(pattern_frame, text=_("academic_calendar.labels.end_condition"), padding=5)
         end_frame.pack(fill=tk.X)
 
-        self.end_type_var = tk.StringVar(value="date")
+        self.end_type_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_recurring.values.date', default="date"))
         ttk.Radiobutton(end_frame, text=_("academic_calendar.labels.end_by_date"), variable=self.end_type_var,
                        value="date", command=self._toggle_end_fields).pack(anchor=tk.W)
 
@@ -226,11 +228,11 @@ class RecurringEventsDialog:
                                        show='tree headings',
                                        height=15)
 
-        self.events_tree.heading('#0', text='Event Name')
-        self.events_tree.heading('Pattern', text='Pattern')
-        self.events_tree.heading('Start', text='Start Date')
-        self.events_tree.heading('End', text='End Date')
-        self.events_tree.heading('Occurrences', text='Count')
+        self.events_tree.heading('#0', text=_t('gui.academics.academic_calendar.dialogs_recurring.headings.event_name', default='Event Name'))
+        self.events_tree.heading('Pattern', text=_t('gui.academics.academic_calendar.dialogs_recurring.headings.pattern', default='Pattern'))
+        self.events_tree.heading('Start', text=_t('gui.academics.academic_calendar.dialogs_recurring.headings.start_date', default='Start Date'))
+        self.events_tree.heading('End', text=_t('gui.academics.academic_calendar.dialogs_recurring.headings.end_date', default='End Date'))
+        self.events_tree.heading('Occurrences', text=_t('gui.academics.academic_calendar.dialogs_recurring.headings.count', default='Count'))
 
         self.events_tree.column('#0', width=150, minwidth=100)
         self.events_tree.column('Pattern', width=80, minwidth=60)
@@ -282,7 +284,7 @@ class RecurringEventsDialog:
         self.desc_text.pack(fill=tk.X, pady=(2, 10))
 
         ttk.Label(form_frame, text=_("academic_calendar.labels.event_type")).pack(anchor=tk.W)
-        self.type_var = tk.StringVar(value="Academic")
+        self.type_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_recurring.values.academic', default="Academic"))
         ttk.Combobox(form_frame, textvariable=self.type_var, width=33,
                     values=["Academic", "Holiday", "Administrative", "Social", "Sports"]).pack(fill=tk.X, pady=(2, 10))
 
@@ -291,7 +293,7 @@ class RecurringEventsDialog:
         ttk.Entry(form_frame, textvariable=self.start_var, width=35).pack(fill=tk.X, pady=(2, 10))
 
         ttk.Label(form_frame, text=_("academic_calendar.labels.recurrence_pattern_required")).pack(anchor=tk.W)
-        self.pattern_var = tk.StringVar(value="weekly")
+        self.pattern_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_recurring.values.weekly', default="weekly"))
         pattern_frame = ttk.Frame(form_frame)
         pattern_frame.pack(fill=tk.X, pady=(2, 10))
         for pattern in ["daily", "weekly", "monthly", "yearly"]:
@@ -303,7 +305,7 @@ class RecurringEventsDialog:
         ttk.Entry(form_frame, textvariable=self.interval_var, width=10).pack(anchor=tk.W, pady=(2, 10))
 
         ttk.Label(form_frame, text=_("academic_calendar.labels.end_condition")).pack(anchor=tk.W, pady=(10, 0))
-        self.end_type_var = tk.StringVar(value="count")
+        self.end_type_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_recurring.values.count', default="count"))
 
         end_frame = ttk.Frame(form_frame)
         end_frame.pack(fill=tk.X, pady=(2, 5))

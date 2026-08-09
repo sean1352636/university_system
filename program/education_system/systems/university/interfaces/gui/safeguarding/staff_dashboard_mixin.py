@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import base64
 import hashlib
 import json
@@ -57,8 +59,8 @@ class StaffDashboardMixin:
 
         cases_tab = tk.Frame(nb, bg="#f4f6fa")
         dash_tab = tk.Frame(nb, bg="#f4f6fa")
-        nb.add(cases_tab, text="Cases")
-        nb.add(dash_tab, text="Dashboard")
+        nb.add(cases_tab, text=_t('gui.safeguarding.staff_dashboard_mixin.tabs.cases', default="Cases"))
+        nb.add(dash_tab, text=_t('gui.safeguarding.staff_dashboard_mixin.tabs.dashboard', default="Dashboard"))
 
         self._build_cases_tab(cases_tab)
         self._build_dashboard_tab(dash_tab)
@@ -68,8 +70,8 @@ class StaffDashboardMixin:
         filt = tk.Frame(host, bg="#f4f6fa")
         filt.pack(fill="x", pady=(8, 8))
 
-        tk.Label(filt, text="Status:", bg="#f4f6fa").pack(side="left")
-        self.status_var = tk.StringVar(value="All")
+        tk.Label(filt, text=_t('gui.safeguarding.staff_dashboard_mixin.labels.status', default="Status:"), bg="#f4f6fa").pack(side="left")
+        self.status_var = tk.StringVar(value=_t('gui.safeguarding.staff_dashboard_mixin.values.all', default="All"))
         ttk.Combobox(
             filt,
             textvariable=self.status_var,
@@ -78,8 +80,8 @@ class StaffDashboardMixin:
             width=12,
         ).pack(side="left", padx=(4, 12))
 
-        tk.Label(filt, text="Severity:", bg="#f4f6fa").pack(side="left")
-        self.sev_var = tk.StringVar(value="All")
+        tk.Label(filt, text=_t('gui.safeguarding.staff_dashboard_mixin.labels.severity', default="Severity:"), bg="#f4f6fa").pack(side="left")
+        self.sev_var = tk.StringVar(value=_t('gui.safeguarding.staff_dashboard_mixin.values.all', default="All"))
         ttk.Combobox(
             filt,
             textvariable=self.sev_var,
@@ -88,8 +90,8 @@ class StaffDashboardMixin:
             width=12,
         ).pack(side="left", padx=(4, 12))
 
-        tk.Label(filt, text="Lifecycle:", bg="#f4f6fa").pack(side="left")
-        self.lifecycle_var = tk.StringVar(value="All")
+        tk.Label(filt, text=_t('gui.safeguarding.staff_dashboard_mixin.labels.lifecycle', default="Lifecycle:"), bg="#f4f6fa").pack(side="left")
+        self.lifecycle_var = tk.StringVar(value=_t('gui.safeguarding.staff_dashboard_mixin.values.all', default="All"))
         ttk.Combobox(
             filt,
             textvariable=self.lifecycle_var,
@@ -98,7 +100,7 @@ class StaffDashboardMixin:
             width=12,
         ).pack(side="left", padx=(4, 12))
 
-        ttk.Button(filt, text="Refresh", command=self._refresh_staff_list).pack(side="left")
+        ttk.Button(filt, text=_t('gui.safeguarding.staff_dashboard_mixin.buttons.refresh', default="Refresh"), command=self._refresh_staff_list).pack(side="left")
 
         split = tk.Frame(host, bg="#f4f6fa")
         split.pack(fill="both", expand=True)
@@ -137,7 +139,7 @@ class StaffDashboardMixin:
         # Heatmap (department × severity over last 90 days)
         tk.Label(
             host,
-            text="Incident heatmap — department × severity (90 days)",
+            text=_t('gui.safeguarding.staff_dashboard_mixin.labels.incident_heatmap_department_severity_90_days', default="Incident heatmap — department × severity (90 days)"),
             bg="#f4f6fa",
             font=("Segoe UI", 11, "bold"),
         ).pack(anchor="w", padx=12, pady=(12, 4))
@@ -150,7 +152,7 @@ class StaffDashboardMixin:
         # Header row
         tk.Label(
             heat_frame,
-            text="Department",
+            text=_t('gui.safeguarding.staff_dashboard_mixin.labels.department', default="Department"),
             bg="#1f3a5f",
             fg="white",
             font=("Segoe UI", 9, "bold"),
@@ -168,7 +170,7 @@ class StaffDashboardMixin:
                 pady=4,
             ).grid(row=0, column=ci, sticky="we")
         if not grid:
-            tk.Label(heat_frame, text="(no data yet)", bg="white", fg="#888", padx=8, pady=6).grid(
+            tk.Label(heat_frame, text=_t('gui.safeguarding.staff_dashboard_mixin.labels.no_data_yet', default="(no data yet)"), bg="white", fg="#888", padx=8, pady=6).grid(
                 row=1, column=0, columnspan=len(sevs) + 1
             )
         else:
@@ -192,7 +194,7 @@ class StaffDashboardMixin:
 
         # Risk trend (last 8 weeks)
         tk.Label(
-            host, text="Risk trend — last 8 weeks", bg="#f4f6fa", font=("Segoe UI", 11, "bold")
+            host, text=_t('gui.safeguarding.staff_dashboard_mixin.labels.risk_trend_last_8_weeks', default="Risk trend — last 8 weeks"), bg="#f4f6fa", font=("Segoe UI", 11, "bold")
         ).pack(anchor="w", padx=12, pady=(18, 4))
 
         trend = risk_trend(weeks=8)
@@ -200,7 +202,7 @@ class StaffDashboardMixin:
         trend_frame.pack(fill="x", padx=12, pady=4)
         tk.Label(
             trend_frame,
-            text="Week",
+            text=_t('gui.safeguarding.staff_dashboard_mixin.labels.week', default="Week"),
             bg="#1f3a5f",
             fg="white",
             font=("Segoe UI", 9, "bold"),
@@ -218,7 +220,7 @@ class StaffDashboardMixin:
                 pady=4,
             ).grid(row=0, column=ci, sticky="we")
         if not trend:
-            tk.Label(trend_frame, text="(no data yet)", bg="white", fg="#888", padx=8, pady=6).grid(
+            tk.Label(trend_frame, text=_t('gui.safeguarding.staff_dashboard_mixin.labels.no_data_yet', default="(no data yet)"), bg="white", fg="#888", padx=8, pady=6).grid(
                 row=1, column=0, columnspan=len(sevs) + 1
             )
         else:
@@ -240,7 +242,7 @@ class StaffDashboardMixin:
         # Feature 27 — reviews due now or in next 7 days
         tk.Label(
             host,
-            text="Reviews due (now or within 7 days)",
+            text=_t('gui.safeguarding.staff_dashboard_mixin.labels.reviews_due_now_or_within_7_days', default="Reviews due (now or within 7 days)"),
             bg="#f4f6fa",
             font=("Segoe UI", 11, "bold"),
         ).pack(anchor="w", padx=12, pady=(18, 4))
@@ -248,7 +250,7 @@ class StaffDashboardMixin:
         rev_frame.pack(fill="x", padx=12, pady=4)
         rev_rows = due_reviews(within_days=7)
         if not rev_rows:
-            tk.Label(rev_frame, text="(none due)", bg="white", fg="#888", padx=8, pady=6).pack(
+            tk.Label(rev_frame, text=_t('gui.safeguarding.staff_dashboard_mixin.labels.none_due', default="(none due)"), bg="white", fg="#888", padx=8, pady=6).pack(
                 anchor="w"
             )
         else:
@@ -325,7 +327,7 @@ class StaffDashboardMixin:
             w.destroy()
         tk.Label(
             self.detail,
-            text="Select a submission to review.",
+            text=_t('gui.safeguarding.staff_dashboard_mixin.labels.select_a_submission_to_review', default="Select a submission to review."),
             bg="white",
             fg="#888",
             font=("Segoe UI", 10),
@@ -338,7 +340,7 @@ class StaffDashboardMixin:
         sid = int(sel[0])
         # Feature 36 — gate viewing on role permission and log every access.
         if not require(self.user, "view_case"):
-            messagebox.showerror("Permission denied", "Your role cannot view safeguarding cases.")
+            messagebox.showerror(_t('gui.safeguarding.staff_dashboard_mixin.dialogs.permission_denied', default="Permission denied"), _t('gui.safeguarding.staff_dashboard_mixin.dialogs.your_role_cannot_view_safeguarding_cases', default="Your role cannot view safeguarding cases."))
             return
         audit_log(
             actor=self.user.get("username", "?"),
@@ -470,7 +472,7 @@ class StaffDashboardMixin:
         if extra.get("sla_breached"):
             tk.Label(
                 header,
-                text=" SLA BREACHED ",
+                text=_t('gui.safeguarding.staff_dashboard_mixin.labels.sla_breached', default=" SLA BREACHED "),
                 bg="#5b0011",
                 fg="white",
                 font=("Segoe UI", 9, "bold"),
@@ -492,7 +494,7 @@ class StaffDashboardMixin:
         if extra.get("whistleblowing"):
             tk.Label(
                 header,
-                text=" WHISTLEBLOWING ",
+                text=_t('gui.safeguarding.staff_dashboard_mixin.labels.whistleblowing', default=" WHISTLEBLOWING "),
                 bg="#4527a0",
                 fg="white",
                 font=("Segoe UI", 9, "bold"),
@@ -503,7 +505,7 @@ class StaffDashboardMixin:
         # Lifecycle dropdown right under the header
         lc_row = tk.Frame(self.detail, bg="white")
         lc_row.pack(fill="x", padx=12, pady=(6, 4))
-        tk.Label(lc_row, text="Lifecycle:", bg="white", font=("Segoe UI", 9, "bold")).pack(
+        tk.Label(lc_row, text=_t('gui.safeguarding.staff_dashboard_mixin.labels.lifecycle', default="Lifecycle:"), bg="white", font=("Segoe UI", 9, "bold")).pack(
             side="left"
         )
         lc_var = tk.StringVar(value=extra.get("lifecycle_state") or "Open")
@@ -523,19 +525,19 @@ class StaffDashboardMixin:
         nb.pack(fill="both", expand=True, padx=8, pady=6)
 
         overview = tk.Frame(nb, bg="white")
-        nb.add(overview, text="Overview")
+        nb.add(overview, text=_t('gui.safeguarding.staff_dashboard_mixin.tabs.overview', default="Overview"))
         notes_tab = tk.Frame(nb, bg="white")
-        nb.add(notes_tab, text="Notes")
+        nb.add(notes_tab, text=_t('gui.safeguarding.staff_dashboard_mixin.tabs.notes', default="Notes"))
         actions_tab = tk.Frame(nb, bg="white")
-        nb.add(actions_tab, text="Actions")
+        nb.add(actions_tab, text=_t('gui.safeguarding.staff_dashboard_mixin.tabs.actions', default="Actions"))
         referrals_tab = tk.Frame(nb, bg="white")
-        nb.add(referrals_tab, text="Referrals")
+        nb.add(referrals_tab, text=_t('gui.safeguarding.staff_dashboard_mixin.tabs.referrals', default="Referrals"))
         integ_tab = tk.Frame(nb, bg="white")
-        nb.add(integ_tab, text="Integrations")
+        nb.add(integ_tab, text=_t('gui.safeguarding.staff_dashboard_mixin.tabs.integrations', default="Integrations"))
         linked_tab = tk.Frame(nb, bg="white")
-        nb.add(linked_tab, text="Linked")
+        nb.add(linked_tab, text=_t('gui.safeguarding.staff_dashboard_mixin.tabs.linked', default="Linked"))
         audit_tab = tk.Frame(nb, bg="white")
-        nb.add(audit_tab, text="Audit")
+        nb.add(audit_tab, text=_t('gui.safeguarding.staff_dashboard_mixin.tabs.audit', default="Audit"))
 
         self._render_overview_tab(
             overview,

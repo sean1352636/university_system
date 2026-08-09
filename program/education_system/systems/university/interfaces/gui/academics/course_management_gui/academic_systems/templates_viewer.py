@@ -7,20 +7,22 @@ rubrics without touching the filesystem before deciding which one to attach
 to a course evaluation campaign.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import ttk, messagebox
 
-from education_system.systems.university.infrastructure.paths import TEMPLATES_DIR
+from education_system.paths import UNIVERSITY_TEMPLATES_DIR
 from education_system.systems.university.infrastructure.i18n import get_text as _
 
 logger = logging.getLogger(__name__)
 
 # Templates live alongside the python source tree under
 # ``university_system/templates/course_evaluation/``.
-_TEMPLATES_DIR = TEMPLATES_DIR / "course_evaluation"
+_TEMPLATES_DIR = UNIVERSITY_TEMPLATES_DIR / "ui" / "course_evaluation"
 
 
 def _list_template_files() -> list[Path]:
@@ -38,7 +40,7 @@ class EvaluationTemplatesViewerDialog:
         self._templates = []  # list of (Path, dict)
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Course Evaluation Templates")
+        self.dialog.title(_t('gui.academics.course_management_gui.academic_systems.templates_viewer.windows.course_evaluation_templates', default="Course Evaluation Templates"))
         self.dialog.geometry("950x600")
         self.dialog.transient(parent)
 
@@ -48,7 +50,7 @@ class EvaluationTemplatesViewerDialog:
     def _build_ui(self):
         header = ttk.Frame(self.dialog, padding=10)
         header.pack(fill=tk.X)
-        ttk.Label(header, text="Course Evaluation Templates",
+        ttk.Label(header, text=_t('gui.academics.course_management_gui.academic_systems.templates_viewer.labels.course_evaluation_templates', default="Course Evaluation Templates"),
                   font=("Arial", 13, "bold")).pack(side=tk.LEFT)
         ttk.Label(header, text=str(_TEMPLATES_DIR),
                   foreground="#666").pack(side=tk.LEFT, padx=15)
@@ -59,7 +61,7 @@ class EvaluationTemplatesViewerDialog:
         # Left: template list
         left = ttk.Frame(body)
         body.add(left, weight=1)
-        ttk.Label(left, text="Templates").pack(anchor=tk.W)
+        ttk.Label(left, text=_t('gui.academics.course_management_gui.academic_systems.templates_viewer.labels.templates', default="Templates")).pack(anchor=tk.W)
         self.list_var = tk.StringVar(value=[])
         self.listbox = tk.Listbox(left, listvariable=self.list_var,
                                   exportselection=False, height=22)
@@ -70,7 +72,7 @@ class EvaluationTemplatesViewerDialog:
         right = ttk.Frame(body)
         body.add(right, weight=3)
 
-        meta_frame = ttk.LabelFrame(right, text="Metadata", padding=10)
+        meta_frame = ttk.LabelFrame(right, text=_t('gui.academics.course_management_gui.academic_systems.templates_viewer.labels.metadata', default="Metadata"), padding=10)
         meta_frame.pack(fill=tk.X)
         self.meta_name = tk.StringVar()
         self.meta_type = tk.StringVar()
@@ -82,7 +84,7 @@ class EvaluationTemplatesViewerDialog:
             ttk.Label(meta_frame, textvariable=var, wraplength=620
                       ).grid(row=r, column=1, sticky=tk.W, padx=6)
 
-        questions_frame = ttk.LabelFrame(right, text="Questions", padding=10)
+        questions_frame = ttk.LabelFrame(right, text=_t('gui.academics.course_management_gui.academic_systems.templates_viewer.labels.questions', default="Questions"), padding=10)
         questions_frame.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
         cols = ("idx", "category", "type", "scale", "text")
         self.qtree = ttk.Treeview(questions_frame, columns=cols,

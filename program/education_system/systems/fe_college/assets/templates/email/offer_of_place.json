@@ -1,0 +1,8 @@
+{
+  "subject": "Your place at {{college_name}} — {{course_title}}",
+  "body": "Dear {{first_name}},\n\nI am pleased to offer you a place on {{course_title}} starting {{start_date}}.\n\nYour learner reference is {{student_id}}. Please keep it — you will need it to enrol and to sign in to the learner portal.\n\nTo accept, reply to this email or call us on {{college_phone}} by {{reply_by}}. If your circumstances have changed, tell us anyway; we can usually find a course that fits.\n\nEnrolment is on {{enrolment_date}}. Bring photo ID and evidence of your English and maths grades.\n\nWith best wishes,\n{{college_name}} Admissions",
+  "from_name": "{{college_name}} Admissions",
+  "from_address": "admissions@fecollege.ac.uk",
+  "category": "Admissions",
+  "priority": "Normal"
+}

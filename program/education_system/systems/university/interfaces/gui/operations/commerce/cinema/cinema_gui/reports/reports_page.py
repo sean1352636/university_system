@@ -2,6 +2,8 @@
 Cinema Reports - Main reports page UI.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime, timedelta
@@ -21,7 +23,7 @@ def show_reports_page(self):
 
     tk.Label(report_frame, text=_t("cinema.reports.select_report"), bg="#ffffff", fg="#333333").pack(side="left")
 
-    report_var = tk.StringVar(value="sales_summary")
+    report_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.reports.reports_page.values.sales_summary', default="sales_summary"))
     reports = ["sales_summary", "revenue_by_movie", "daily_sales", "occupancy", "payment_methods", "booking_status"]
     report_combo = ttk.Combobox(report_frame, textvariable=report_var, width=25, values=reports)
     report_combo.pack(side="left", padx=10)

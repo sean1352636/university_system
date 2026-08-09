@@ -10,6 +10,8 @@ Provides comprehensive order placement functionality including:
 - Optional immediate payment processing
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime
@@ -71,7 +73,7 @@ class PlaceOrderWindow:
         self.parent = parent
         self.auth = auth
         self.window = tk.Toplevel(parent)
-        self.window.title("Place New Order")
+        self.window.title(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.windows.place_new_order', default="Place New Order"))
         self.window.geometry("1200x800")
 
         # Initialize order_items table
@@ -203,25 +205,25 @@ class PlaceOrderWindow:
         menu_header = ttk.Frame(left_frame)
         menu_header.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(menu_header, text="Menu Items", font=('Arial', 14, 'bold')).pack(side=tk.LEFT)
+        ttk.Label(menu_header, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.menu_items', default="Menu Items"), font=('Arial', 14, 'bold')).pack(side=tk.LEFT)
 
         # Search and filter
         search_frame = ttk.Frame(left_frame)
         search_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
         self.search_var = tk.StringVar()
         self.search_var.trace('w', lambda *args: self.filter_menu())
         ttk.Entry(search_frame, textvariable=self.search_var, width=20).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(search_frame, text="Category:").pack(side=tk.LEFT, padx=(20, 5))
-        self.category_var = tk.StringVar(value="All")
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.category', default="Category:")).pack(side=tk.LEFT, padx=(20, 5))
+        self.category_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.values.all', default="All"))
         self.category_combo = ttk.Combobox(search_frame, textvariable=self.category_var,
                                           values=["All"], width=15, state='readonly')
         self.category_combo.pack(side=tk.LEFT, padx=5)
         self.category_combo.bind('<<ComboboxSelected>>', lambda e: self.filter_menu())
 
-        ttk.Checkbutton(search_frame, text="Vegetarian Only",
+        ttk.Checkbutton(search_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.vegetarian_only', default="Vegetarian Only"),
                        variable=tk.BooleanVar(), command=self.filter_menu).pack(side=tk.LEFT, padx=10)
 
         # Menu items treeview
@@ -231,12 +233,12 @@ class PlaceOrderWindow:
         columns = ('id', 'name', 'category', 'price', 'veg', 'available')
         self.menu_tree = ttk.Treeview(menu_frame, columns=columns, show='headings', height=20)
 
-        self.menu_tree.heading('id', text='ID')
-        self.menu_tree.heading('name', text='Item Name')
-        self.menu_tree.heading('category', text='Category')
-        self.menu_tree.heading('price', text='Price (£)')
-        self.menu_tree.heading('veg', text='V/VG')
-        self.menu_tree.heading('available', text='Available')
+        self.menu_tree.heading('id', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.id', default='ID'))
+        self.menu_tree.heading('name', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.item_name', default='Item Name'))
+        self.menu_tree.heading('category', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.category', default='Category'))
+        self.menu_tree.heading('price', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.price_variant_2', default='Price (£)'))
+        self.menu_tree.heading('veg', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.v_vg', default='V/VG'))
+        self.menu_tree.heading('available', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.available', default='Available'))
 
         self.menu_tree.column('id', width=40)
         self.menu_tree.column('name', width=200)
@@ -255,7 +257,7 @@ class PlaceOrderWindow:
         self.menu_tree.bind('<Double-1>', lambda e: self.add_to_cart())
 
         # Add to cart button
-        ttk.Button(left_frame, text="Add to Cart",
+        ttk.Button(left_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.add_to_cart', default="Add to Cart"),
                   command=self.add_to_cart).pack(pady=10)
 
         # Right panel - Order details and cart
@@ -263,7 +265,7 @@ class PlaceOrderWindow:
         main_pane.add(right_frame, weight=1)
 
         # Customer selection
-        customer_frame = ttk.LabelFrame(right_frame, text="Customer Information", padding="10")
+        customer_frame = ttk.LabelFrame(right_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.customer_information', default="Customer Information"), padding="10")
         customer_frame.pack(fill=tk.X, pady=(0, 10))
 
         self.customer_label = ttk.Label(customer_frame, text=f"Customer: {self.selected_customer_name}",
@@ -281,22 +283,22 @@ class PlaceOrderWindow:
         btn_frame = ttk.Frame(customer_frame)
         btn_frame.pack(fill=tk.X, pady=(5, 0))
 
-        ttk.Button(btn_frame, text="Select Different Customer",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.select_different_customer', default="Select Different Customer"),
                   command=self.select_customer).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Walk-in",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.walk_in', default="Walk-in"),
                   command=self.set_walkin).pack(side=tk.LEFT, padx=5)
 
         # Cart
-        cart_frame = ttk.LabelFrame(right_frame, text="Order Cart", padding="10")
+        cart_frame = ttk.LabelFrame(right_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.order_cart', default="Order Cart"), padding="10")
         cart_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         cart_columns = ('name', 'qty', 'price', 'total')
         self.cart_tree = ttk.Treeview(cart_frame, columns=cart_columns, show='headings', height=12)
 
-        self.cart_tree.heading('name', text='Item')
-        self.cart_tree.heading('qty', text='Qty')
-        self.cart_tree.heading('price', text='Price')
-        self.cart_tree.heading('total', text='Total')
+        self.cart_tree.heading('name', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.item', default='Item'))
+        self.cart_tree.heading('qty', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.qty', default='Qty'))
+        self.cart_tree.heading('price', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.price', default='Price'))
+        self.cart_tree.heading('total', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.total', default='Total'))
 
         self.cart_tree.column('name', width=150)
         self.cart_tree.column('qty', width=50)
@@ -313,24 +315,24 @@ class PlaceOrderWindow:
         cart_btn_frame = ttk.Frame(cart_frame)
         cart_btn_frame.pack(fill=tk.X, pady=(5, 0))
 
-        ttk.Button(cart_btn_frame, text="Remove Item",
+        ttk.Button(cart_btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.remove_item', default="Remove Item"),
                   command=self.remove_from_cart).pack(side=tk.LEFT, padx=5)
-        ttk.Button(cart_btn_frame, text="Update Qty",
+        ttk.Button(cart_btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.update_qty', default="Update Qty"),
                   command=self.update_quantity).pack(side=tk.LEFT, padx=5)
-        ttk.Button(cart_btn_frame, text="Clear Cart",
+        ttk.Button(cart_btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.clear_cart', default="Clear Cart"),
                   command=self.clear_cart).pack(side=tk.LEFT, padx=5)
 
         # Order summary
-        summary_frame = ttk.LabelFrame(right_frame, text="Order Summary", padding="10")
+        summary_frame = ttk.LabelFrame(right_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.order_summary', default="Order Summary"), padding="10")
         summary_frame.pack(fill=tk.X, pady=(0, 10))
 
-        self.subtotal_label = ttk.Label(summary_frame, text="Subtotal: £0.00")
+        self.subtotal_label = ttk.Label(summary_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.subtotal_0_00', default="Subtotal: £0.00"))
         self.subtotal_label.pack(anchor=tk.W)
 
-        self.tax_label = ttk.Label(summary_frame, text="Tax (20%): £0.00")
+        self.tax_label = ttk.Label(summary_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.tax_20_0_00', default="Tax (20%): £0.00"))
         self.tax_label.pack(anchor=tk.W)
 
-        self.total_label = ttk.Label(summary_frame, text="Total: £0.00",
+        self.total_label = ttk.Label(summary_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.total_0_00', default="Total: £0.00"),
                                     font=('Arial', 12, 'bold'))
         self.total_label.pack(anchor=tk.W, pady=(5, 0))
 
@@ -338,11 +340,11 @@ class PlaceOrderWindow:
         action_frame = ttk.Frame(right_frame)
         action_frame.pack(fill=tk.X)
 
-        ttk.Button(action_frame, text="Place Order",
+        ttk.Button(action_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.place_order', default="Place Order"),
                   command=self.place_order, style='Accent.TButton').pack(fill=tk.X, pady=2)
-        ttk.Button(action_frame, text="Place Order & Pay",
+        ttk.Button(action_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.place_order_pay', default="Place Order & Pay"),
                   command=self.place_order_and_pay).pack(fill=tk.X, pady=2)
-        ttk.Button(action_frame, text="Cancel",
+        ttk.Button(action_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.cancel', default="Cancel"),
                   command=self.window.destroy).pack(fill=tk.X, pady=2)
 
     def load_menu_items(self):
@@ -350,7 +352,7 @@ class PlaceOrderWindow:
         try:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror("Error", "Database connection failed")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.database_connection_failed', default="Database connection failed"))
                 return
 
             cursor = conn.cursor()
@@ -377,7 +379,7 @@ class PlaceOrderWindow:
             self.display_menu_items(self.menu_items)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load menu: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), f"Failed to load menu: {e}")
 
     def display_menu_items(self, items):
         """Display menu items in treeview"""
@@ -426,7 +428,7 @@ class PlaceOrderWindow:
         """Add selected menu item to cart"""
         selection = self.menu_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a menu item to add")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.please_select_a_menu_item_to_add', default="Please select a menu item to add"))
             return
 
         values = self.menu_tree.item(selection[0])['values']
@@ -435,14 +437,14 @@ class PlaceOrderWindow:
         item_price = float(values[3])
 
         # Ask for quantity
-        quantity = simpledialog.askinteger("Quantity",
+        quantity = simpledialog.askinteger(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.quantity', default="Quantity"),
                                           f"How many '{item_name}'?",
                                           initialvalue=1, minvalue=1, maxvalue=99)
         if not quantity:
             return
 
         # Ask for special instructions
-        instructions = simpledialog.askstring("Special Instructions",
+        instructions = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.special_instructions', default="Special Instructions"),
                                              f"Any special instructions for '{item_name}'?\n(Leave empty if none)")
 
         # Check if item already in cart
@@ -462,19 +464,19 @@ class PlaceOrderWindow:
         })
 
         self.update_cart_display()
-        messagebox.showinfo("Added", f"Added {quantity}x {item_name} to cart")
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.added', default="Added"), f"Added {quantity}x {item_name} to cart")
 
     def remove_from_cart(self):
         """Remove selected item from cart"""
         selection = self.cart_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a cart item to remove")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.please_select_a_cart_item_to_remove', default="Please select a cart item to remove"))
             return
 
         item_index = self.cart_tree.index(selection[0])
         item_name = self.cart[item_index]['name']
 
-        if messagebox.askyesno("Confirm", f"Remove '{item_name}' from cart?"):
+        if messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.confirm', default="Confirm"), f"Remove '{item_name}' from cart?"):
             del self.cart[item_index]
             self.update_cart_display()
 
@@ -482,13 +484,13 @@ class PlaceOrderWindow:
         """Update quantity of selected cart item"""
         selection = self.cart_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a cart item to update")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.please_select_a_cart_item_to_update', default="Please select a cart item to update"))
             return
 
         item_index = self.cart_tree.index(selection[0])
         cart_item = self.cart[item_index]
 
-        new_qty = simpledialog.askinteger("Update Quantity",
+        new_qty = simpledialog.askinteger(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.update_quantity', default="Update Quantity"),
                                          f"New quantity for '{cart_item['name']}':",
                                          initialvalue=cart_item['quantity'],
                                          minvalue=1, maxvalue=99)
@@ -498,7 +500,7 @@ class PlaceOrderWindow:
 
     def clear_cart(self):
         """Clear all items from cart"""
-        if self.cart and messagebox.askyesno("Confirm", "Clear all items from cart?"):
+        if self.cart and messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.confirm', default="Confirm"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.clear_all_items_from_cart', default="Clear all items from cart?")):
             self.cart.clear()
             self.update_cart_display()
 
@@ -626,10 +628,10 @@ class PlaceOrderWindow:
     def place_order(self):
         """Place order without payment"""
         if not self.cart:
-            messagebox.showwarning("Empty Cart", "Please add items to cart before placing order")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.empty_cart', default="Empty Cart"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.please_add_items_to_cart_before_placing_order', default="Please add items to cart before placing order"))
             return
 
-        if not messagebox.askyesno("Confirm Order",
+        if not messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.confirm_order', default="Confirm Order"),
                                   f"Place order for {self.selected_customer_name}?"):
             return
 
@@ -641,7 +643,7 @@ class PlaceOrderWindow:
 
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror("Error", "Database connection failed")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.database_connection_failed', default="Database connection failed"))
                 return
 
             cursor = conn.cursor()
@@ -690,19 +692,19 @@ class PlaceOrderWindow:
             elif self.current_user_email:
                 success_message += "\n\n⚠ Could not send email receipt"
 
-            messagebox.showinfo("Success", success_message)
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.success', default="Success"), success_message)
 
             # Clear cart and close window
             self.cart.clear()
             self.window.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to place order:\n{e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), f"Failed to place order:\n{e}")
 
     def place_order_and_pay(self):
         """Place order and immediately process payment"""
         if not self.cart:
-            messagebox.showwarning("Empty Cart", "Please add items to cart before placing order")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.empty_cart', default="Empty Cart"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.please_add_items_to_cart_before_placing_order', default="Please add items to cart before placing order"))
             return
 
         # Calculate totals first
@@ -721,7 +723,7 @@ class PlaceOrderWindow:
         try:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror("Error", "Database connection failed")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.database_connection_failed', default="Database connection failed"))
                 return
 
             cursor = conn.cursor()
@@ -795,7 +797,7 @@ class PlaceOrderWindow:
                             rollback_conn.close()
                     except Exception:
                         pass
-                    messagebox.showerror("Payment Failed", result.get('message', 'Payment failed'))
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.payment_failed', default="Payment Failed"), result.get('message', 'Payment failed'))
                     return
 
             # Send email receipt
@@ -811,14 +813,14 @@ class PlaceOrderWindow:
             elif self.current_user_email:
                 success_message += "\n\n⚠ Could not send email receipt"
 
-            messagebox.showinfo("Success", success_message)
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.success', default="Success"), success_message)
 
             # Clear cart and close window
             self.cart.clear()
             self.window.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to place order:\n{e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), f"Failed to place order:\n{e}")
 
 
 class CustomerSelectionDialog:
@@ -827,7 +829,7 @@ class CustomerSelectionDialog:
     def __init__(self, parent):
         self.result = None
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Select Customer")
+        self.dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.windows.select_customer', default="Select Customer"))
         self.dialog.geometry("600x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -836,10 +838,10 @@ class CustomerSelectionDialog:
         search_frame = ttk.Frame(self.dialog, padding="10")
         search_frame.pack(fill=tk.X)
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.search', default="Search:")).pack(side=tk.LEFT)
         search_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=search_var, width=30).pack(side=tk.LEFT, padx=10)
-        ttk.Button(search_frame, text="Search",
+        ttk.Button(search_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.search', default="Search"),
                   command=lambda: self.load_customers(search_var.get())).pack(side=tk.LEFT)
 
         # Customer list
@@ -849,11 +851,11 @@ class CustomerSelectionDialog:
         columns = ('id', 'name', 'email', 'phone', 'tier')
         self.tree = ttk.Treeview(list_frame, columns=columns, show='headings')
 
-        self.tree.heading('id', text='ID')
-        self.tree.heading('name', text='Name')
-        self.tree.heading('email', text='Email')
-        self.tree.heading('phone', text='Phone')
-        self.tree.heading('tier', text='Tier')
+        self.tree.heading('id', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.id', default='ID'))
+        self.tree.heading('name', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.name', default='Name'))
+        self.tree.heading('email', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.email', default='Email'))
+        self.tree.heading('phone', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.phone', default='Phone'))
+        self.tree.heading('tier', text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.headings.tier', default='Tier'))
 
         scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -867,8 +869,8 @@ class CustomerSelectionDialog:
         btn_frame = ttk.Frame(self.dialog, padding="10")
         btn_frame.pack(fill=tk.X)
 
-        ttk.Button(btn_frame, text="Select", command=self.select).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.select', default="Select"), command=self.select).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
         self.load_customers()
 
@@ -905,7 +907,7 @@ class CustomerSelectionDialog:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load customers: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), f"Failed to load customers: {e}")
 
     def select(self):
         """Select customer"""
@@ -927,7 +929,7 @@ class NewCustomerDialog:
     def __init__(self, parent):
         self.result = None
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("New Customer")
+        self.dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.windows.new_customer', default="New Customer"))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -936,17 +938,17 @@ class NewCustomerDialog:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Name
-        ttk.Label(frame, text="Name:*").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.name', default="Name:*")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.name_var, width=30).grid(row=0, column=1, pady=5)
 
         # Email
-        ttk.Label(frame, text="Email:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.email', default="Email:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.email_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.email_var, width=30).grid(row=1, column=1, pady=5)
 
         # Phone
-        ttk.Label(frame, text="Phone:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.phone', default="Phone:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.phone_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.phone_var, width=30).grid(row=2, column=1, pady=5)
 
@@ -954,20 +956,20 @@ class NewCustomerDialog:
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
 
-        ttk.Button(btn_frame, text="Create", command=self.create).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.create', default="Create"), command=self.create).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT)
 
     def create(self):
         """Create new customer"""
         name = self.name_var.get().strip()
         if not name:
-            messagebox.showwarning("Missing Name", "Please enter customer name")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.missing_name', default="Missing Name"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.please_enter_customer_name', default="Please enter customer name"))
             return
 
         try:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror("Error", "Database connection failed")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.database_connection_failed', default="Database connection failed"))
                 return
 
             cursor = conn.cursor()
@@ -987,7 +989,7 @@ class NewCustomerDialog:
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create customer:\n{e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), f"Failed to create customer:\n{e}")
 
 
 class PaymentMethodDialog:
@@ -1001,7 +1003,7 @@ class PaymentMethodDialog:
         self.auth = auth
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Select Payment Method")
+        self.dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.windows.select_payment_method', default="Select Payment Method"))
         self.dialog.geometry("450x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -1059,7 +1061,7 @@ class PaymentMethodDialog:
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Payment methods
-        self.method_var = tk.StringVar(value="Cash")
+        self.method_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.values.cash', default="Cash"))
         self.method_var.trace_add('write', lambda *_: self._on_method_changed())
 
         methods = [
@@ -1073,7 +1075,7 @@ class PaymentMethodDialog:
                           value=value).pack(anchor=tk.W, pady=5)
 
         # Finance account info frame (shown/hidden based on selection)
-        self.finance_frame = ttk.LabelFrame(frame, text="Finance Account Details", padding="10")
+        self.finance_frame = ttk.LabelFrame(frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.finance_account_details', default="Finance Account Details"), padding="10")
 
         # Resolve student_id for balance lookup
         self.resolved_student_id = self._resolve_user_identifier(student_id, customer_id)
@@ -1103,8 +1105,8 @@ class PaymentMethodDialog:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(pady=20, side=tk.BOTTOM)
 
-        ttk.Button(btn_frame, text="Confirm", command=self.confirm).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.confirm', default="Confirm"), command=self.confirm).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT)
 
     def _on_method_changed(self):
         """Show/hide finance account details based on selected payment method"""
@@ -1117,14 +1119,14 @@ class PaymentMethodDialog:
     def _update_finance_info(self):
         """Update finance account balance labels"""
         if not FINANCE_AVAILABLE:
-            self.balance_label.config(text="Finance system unavailable", foreground='red')
+            self.balance_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.text.finance_system_unavailable', default="Finance system unavailable"), foreground='red')
             self.deduction_label.config(text="")
             self.remaining_label.config(text="")
             self.warning_label.config(text="")
             return
 
         if not self.resolved_student_id:
-            self.balance_label.config(text="No finance account linked", foreground='orange')
+            self.balance_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.text.no_finance_account_linked', default="No finance account linked"), foreground='orange')
             self.deduction_label.config(text="")
             self.remaining_label.config(text="")
             self.warning_label.config(text="")
@@ -1137,7 +1139,7 @@ class PaymentMethodDialog:
             pass
 
         if self.current_balance is None:
-            self.balance_label.config(text="Finance account not found", foreground='orange')
+            self.balance_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.text.finance_account_not_found', default="Finance account not found"), foreground='orange')
             self.deduction_label.config(text="")
             self.remaining_label.config(text="")
             self.warning_label.config(text="")
@@ -1163,7 +1165,7 @@ class PaymentMethodDialog:
         )
 
         if not has_funds:
-            self.warning_label.config(text="Insufficient funds for this payment")
+            self.warning_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.text.insufficient_funds_for_this_payment', default="Insufficient funds for this payment"))
         else:
             self.warning_label.config(text="")
 
@@ -1173,27 +1175,27 @@ class PaymentMethodDialog:
 
         if method == "Finance Account":
             if not FINANCE_AVAILABLE:
-                messagebox.showerror("Error", "Finance system is unavailable", parent=self.dialog)
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.finance_system_is_unavailable', default="Finance system is unavailable"), parent=self.dialog)
                 return
 
             if not self.resolved_student_id:
-                messagebox.showerror("Error", "No finance account linked to this user", parent=self.dialog)
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.no_finance_account_linked_to_this_user', default="No finance account linked to this user"), parent=self.dialog)
                 return
 
             try:
                 balance = get_student_finance_account_balance(self.resolved_student_id)
                 if balance is None:
-                    messagebox.showerror("Error", "Finance account not found", parent=self.dialog)
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.finance_account_not_found', default="Finance account not found"), parent=self.dialog)
                     return
                 if balance < self.amount:
-                    if not messagebox.askyesno("Insufficient Funds",
+                    if not messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.insufficient_funds', default="Insufficient Funds"),
                                               f"Your balance (£{balance:.2f}) is less than "
                                               f"the order total (£{self.amount:.2f}).\n\n"
                                               "Continue anyway?",
                                               parent=self.dialog):
                         return
             except Exception as e:
-                messagebox.showerror("Error", f"Could not verify balance: {e}", parent=self.dialog)
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.dialogs.error', default="Error"), f"Could not verify balance: {e}", parent=self.dialog)
                 return
 
         self.result = {'method': method}
@@ -1209,10 +1211,10 @@ def create_place_order_tab(self, parent):
     header_frame = ttk.Frame(order_frame)
     header_frame.pack(fill=tk.X, pady=10, padx=10)
 
-    ttk.Label(header_frame, text="Place New Order",
+    ttk.Label(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.labels.place_new_order', default="Place New Order"),
              font=('Arial', 14, 'bold')).pack(side=tk.LEFT)
 
-    ttk.Button(header_frame, text="Open Order Window",
+    ttk.Button(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.place_order.buttons.open_order_window', default="Open Order Window"),
               command=lambda: PlaceOrderWindow(self.root, self.auth)).pack(side=tk.RIGHT)
 
     # Instructions

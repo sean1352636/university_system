@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class EquipmentBrowseDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Browse Equipment")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.windows.browse_equipment', default="Browse Equipment"))
         self.dialog.geometry("1000x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -76,22 +78,22 @@ class EquipmentBrowseDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        title_label = ttk.Label(main_frame, text="Equipment Catalog", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.equipment_catalog', default="Equipment Catalog"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Filter
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Category:").pack(side='left', padx=(0, 10))
-        self.category_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.category', default="Category:")).pack(side='left', padx=(0, 10))
+        self.category_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.values.all', default="All"))
         category_combo = ttk.Combobox(filter_frame, textvariable=self.category_var, width=20)
         category_combo['values'] = ('All', 'AV Equipment', 'Sports Gear', 'Tech Devices', 'Event Supplies')
         category_combo.pack(side='left')
         category_combo.bind('<<ComboboxSelected>>', lambda e: self.load_data())
 
         # Equipment list
-        list_frame = ttk.LabelFrame(main_frame, text="Available Equipment")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.available_equipment', default="Available Equipment"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('ID', 'Name', 'Category', 'Condition', 'Location', 'Status')
@@ -111,9 +113,9 @@ class EquipmentBrowseDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Check Out", command=self.checkout).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="My Equipment", command=self.view_my_equipment).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.check_out', default="Check Out"), command=self.checkout).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.my_equipment', default="My Equipment"), command=self.view_my_equipment).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         for item in self.equipment_tree.get_children():
@@ -147,12 +149,12 @@ class EquipmentBrowseDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load equipment: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.error', default="Error"), f"Failed to load equipment: {str(e)}")
 
     def checkout(self):
         selection = self.equipment_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select equipment to check out.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.please_select_equipment_to_check_out', default="Please select equipment to check out."))
             return
 
         item = self.equipment_tree.item(selection[0])
@@ -179,7 +181,7 @@ class BrowseAvailableEquipmentDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Browse Equipment")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.windows.browse_equipment', default="Browse Equipment"))
         self.dialog.geometry("1100x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -190,28 +192,28 @@ class BrowseAvailableEquipmentDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📋 Browse Available Equipment",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.browse_available_equipment', default="📋 Browse Available Equipment"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Category filter
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Category:").pack(side='left', padx=(0, 10))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.category', default="Category:")).pack(side='left', padx=(0, 10))
         category_combo = ttk.Combobox(filter_frame, width=25, state='readonly')
         category_combo['values'] = ('All Categories', 'Audio Equipment', 'Video Equipment',
                                      'Lighting', 'Computers', 'Sports Equipment', 'Event Supplies')
         category_combo.current(0)
         category_combo.pack(side='left', padx=(0, 20))
 
-        ttk.Label(filter_frame, text="Status:").pack(side='left', padx=(0, 10))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.status', default="Status:")).pack(side='left', padx=(0, 10))
         status_combo = ttk.Combobox(filter_frame, width=20, state='readonly')
         status_combo['values'] = ('All Status', 'Available', 'Checked Out', 'Maintenance')
         status_combo.current(1)  # Available
         status_combo.pack(side='left')
 
         # Equipment list
-        list_frame = ttk.LabelFrame(main_frame, text="Available Equipment")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.available_equipment', default="Available Equipment"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('ID', 'Name', 'Category', 'Condition', 'Location', 'Status', 'Last Checkout')
@@ -253,19 +255,19 @@ class BrowseAvailableEquipmentDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="View Details", command=self.view_details).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Check Out Selected", command=self.checkout_selected).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Reserve", command=self.reserve_equipment).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.view_details', default="View Details"), command=self.view_details).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.check_out_selected', default="Check Out Selected"), command=self.checkout_selected).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.reserve', default="Reserve"), command=self.reserve_equipment).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def view_details(self):
         dialog = ViewEquipmentDetailsDialog(self.dialog, self.auth)
 
     def checkout_selected(self):
-        messagebox.showinfo("Check Out", "Proceeding to check out Professional Camera (Canon EOS R5).\n\nYou will be asked to:\n- Confirm your details\n- Agree to terms\n- Select return date")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.check_out', default="Check Out"), _t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.proceeding_to_check_out_professional_camera_canon_eos_r5_you_wil', default="Proceeding to check out Professional Camera (Canon EOS R5).\n\nYou will be asked to:\n- Confirm your details\n- Agree to terms\n- Select return date"))
 
     def reserve_equipment(self):
-        messagebox.showinfo("Reserve", "Reserve equipment for future date:\n\nSelect:\n- Pickup date\n- Return date\n- Reason for use\n\nReservation will be confirmed via email.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.reserve', default="Reserve"), _t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.reserve_equipment_for_future_date_select_pickup_date_return_date', default="Reserve equipment for future date:\n\nSelect:\n- Pickup date\n- Return date\n- Reason for use\n\nReservation will be confirmed via email."))
 
 
 
@@ -277,7 +279,7 @@ class ViewEquipmentDetailsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Equipment Details")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.windows.equipment_details', default="Equipment Details"))
         self.dialog.geometry("700x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -288,11 +290,11 @@ class ViewEquipmentDetailsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Professional Camera (Canon EOS R5)",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.professional_camera_canon_eos_r5', default="Professional Camera (Canon EOS R5)"),
                  font=('Arial', 13, 'bold')).pack(pady=(0, 15))
 
         # Equipment info
-        info_frame = ttk.LabelFrame(main_frame, text="Equipment Information")
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.equipment_information', default="Equipment Information"))
         info_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         info_grid = ttk.Frame(info_frame)
@@ -319,7 +321,7 @@ class ViewEquipmentDetailsDialog:
             ttk.Label(info_grid, text=value).grid(row=i, column=1, sticky='w', padx=10, pady=2)
 
         # Description
-        desc_frame = ttk.LabelFrame(main_frame, text="Description & Included Items")
+        desc_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.description_included_items', default="Description & Included Items"))
         desc_frame.pack(fill='x', pady=(0, 15))
 
         desc_text = """Professional full-frame mirrorless camera with 45MP sensor,
@@ -341,7 +343,7 @@ COMPATIBLE LENSES (Available Separately):
         ttk.Label(desc_frame, text=desc_text, justify='left', font=('Arial', 9)).pack(padx=15, pady=10)
 
         # Usage notes
-        notes_frame = ttk.LabelFrame(main_frame, text="Usage Notes & Restrictions")
+        notes_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.usage_notes_restrictions', default="Usage Notes & Restrictions"))
         notes_frame.pack(fill='x', pady=(0, 15))
 
         notes_text = """⚠️ Training required before checkout
@@ -356,19 +358,19 @@ COMPATIBLE LENSES (Available Separately):
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Check Out", command=self.checkout).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Reserve", command=self.reserve).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View History", command=self.view_history).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.check_out', default="Check Out"), command=self.checkout).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.reserve', default="Reserve"), command=self.reserve).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.view_history', default="View History"), command=self.view_history).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def checkout(self):
-        messagebox.showinfo("Check Out", "Proceed to check out this equipment?\n\nMaximum loan period: 7 days\nYou will be responsible for any damage.\n\nContinue to checkout form...")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.check_out', default="Check Out"), _t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.proceed_to_check_out_this_equipment_maximum_loan_period_7_days_y', default="Proceed to check out this equipment?\n\nMaximum loan period: 7 days\nYou will be responsible for any damage.\n\nContinue to checkout form..."))
 
     def reserve(self):
-        messagebox.showinfo("Reserve", "Reserve this equipment:\n\nSelect dates and purpose.\nYou'll receive confirmation email.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.reserve', default="Reserve"), _t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.reserve_this_equipment_select_dates_and_purpose_you_ll_receive_c', default="Reserve this equipment:\n\nSelect dates and purpose.\nYou'll receive confirmation email."))
 
     def view_history(self):
-        messagebox.showinfo("Checkout History",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.checkout_history', default="Checkout History"),
                           "Recent Checkouts (Last 10):\n\n" +
                           "1. 2025-03-20 - John Smith (3 days)\n" +
                           "2. 2025-03-15 - Sarah Jones (5 days)\n" +
@@ -388,7 +390,7 @@ class SearchEquipmentDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Search Equipment")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.windows.search_equipment', default="Search Equipment"))
         self.dialog.geometry("900x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -399,48 +401,48 @@ class SearchEquipmentDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🔍 Search Equipment",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.search_equipment', default="🔍 Search Equipment"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Search criteria
-        search_frame = ttk.LabelFrame(main_frame, text="Search Criteria")
+        search_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.search_criteria', default="Search Criteria"))
         search_frame.pack(fill='x', pady=(0, 15))
 
         search_content = ttk.Frame(search_frame)
         search_content.pack(fill='x', padx=15, pady=10)
 
         # Search text
-        ttk.Label(search_content, text="Keyword:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(search_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.keyword', default="Keyword:")).grid(row=0, column=0, sticky='w', pady=5)
         search_entry = ttk.Entry(search_content, width=40)
         search_entry.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
         # Category
-        ttk.Label(search_content, text="Category:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(search_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.category', default="Category:")).grid(row=1, column=0, sticky='w', pady=5)
         category_combo = ttk.Combobox(search_content, width=38, state='readonly')
         category_combo['values'] = ('Any', 'Audio Equipment', 'Video Equipment', 'Lighting', 'Computers', 'Sports Equipment')
         category_combo.current(0)
         category_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
 
         # Status
-        ttk.Label(search_content, text="Status:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(search_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.status', default="Status:")).grid(row=2, column=0, sticky='w', pady=5)
         status_combo = ttk.Combobox(search_content, width=38, state='readonly')
         status_combo['values'] = ('Any', 'Available', 'Checked Out', 'Maintenance', 'Reserved')
         status_combo.current(0)
         status_combo.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
 
         # Condition
-        ttk.Label(search_content, text="Condition:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(search_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.condition', default="Condition:")).grid(row=3, column=0, sticky='w', pady=5)
         condition_combo = ttk.Combobox(search_content, width=38, state='readonly')
         condition_combo['values'] = ('Any', 'Excellent', 'Good', 'Fair')
         condition_combo.current(0)
         condition_combo.grid(row=3, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Button(search_content, text="Search", command=self.search, width=15).grid(row=4, column=1, sticky='e', padx=10, pady=10)
+        ttk.Button(search_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.search', default="Search"), command=self.search, width=15).grid(row=4, column=1, sticky='e', padx=10, pady=10)
 
         search_content.columnconfigure(1, weight=1)
 
         # Results
-        results_frame = ttk.LabelFrame(main_frame, text="Search Results (12 items found)")
+        results_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.search_results_12_items_found', default="Search Results (12 items found)"))
         results_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('ID', 'Name', 'Category', 'Condition', 'Location', 'Status')
@@ -478,13 +480,13 @@ class SearchEquipmentDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="View Details", command=self.view_details).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Check Out", command=self.checkout).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Save Search", command=self.save_search).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.view_details', default="View Details"), command=self.view_details).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.check_out', default="Check Out"), command=self.checkout).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.save_search', default="Save Search"), command=self.save_search).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def search(self):
-        messagebox.showinfo("Search", "Searching equipment database...\n\nFound 4 items matching 'camera'")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.search', default="Search"), _t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.searching_equipment_database_found_4_items_matching_camera', default="Searching equipment database...\n\nFound 4 items matching 'camera'"))
 
     def view_details(self):
         dialog = ViewEquipmentDetailsDialog(self.dialog, self.auth)
@@ -494,7 +496,7 @@ class SearchEquipmentDialog:
         dialog = CheckOutEquipmentDialog(self.dialog, self.auth)
 
     def save_search(self):
-        messagebox.showinfo("Save Search", "Save search criteria for quick access?\n\nYou'll be notified when matching equipment becomes available.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.save_search', default="Save Search"), _t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.save_search_criteria_for_quick_access_you_ll_be_notified_when_ma', default="Save search criteria for quick access?\n\nYou'll be notified when matching equipment becomes available."))
 
 
 
@@ -519,25 +521,25 @@ def open_search_equipment_dialog(self):
 def create_equipment_tab(self):
     """Create equipment management tab"""
     equipment_frame = ttk.Frame(self.notebook)
-    self.notebook.add(equipment_frame, text="Equipment")
+    self.notebook.add(equipment_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.tabs.equipment', default="Equipment"))
 
     # Left panel
-    left_panel = ttk.LabelFrame(equipment_frame, text="Equipment Actions")
+    left_panel = ttk.LabelFrame(equipment_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.equipment_actions', default="Equipment Actions"))
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
 
-    ttk.Button(left_panel, text="Browse Equipment",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.browse_equipment', default="Browse Equipment"),
               command=self.browse_available_equipment).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Check Out Equipment",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.check_out_equipment', default="Check Out Equipment"),
               command=self.check_out_equipment_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Return Equipment",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.return_equipment', default="Return Equipment"),
               command=self.return_equipment_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="My Checkouts",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.my_checkouts', default="My Checkouts"),
               command=self.view_my_equipment_checkouts).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Search Equipment",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.buttons.search_equipment', default="Search Equipment"),
               command=self.search_equipment_gui).pack(fill='x', pady=2)
 
     # Right panel
-    right_panel = ttk.LabelFrame(equipment_frame, text="Equipment Information")
+    right_panel = ttk.LabelFrame(equipment_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_browse.labels.equipment_information', default="Equipment Information"))
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
 
     self.equipment_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
@@ -551,7 +553,7 @@ def browse_available_equipment(self):
         dialog = EquipmentBrowseDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def search_equipment_gui(self):
@@ -560,6 +562,6 @@ def search_equipment_gui(self):
         dialog = EquipmentBrowseDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_browse.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -34,7 +36,12 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, BACKUP_ATTENDANCE_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_BACKUP_ATTENDANCE_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -93,27 +100,27 @@ class BackupRecoveryWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="💾 Backup & Recovery System", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.backup_recovery_system', default="💾 Backup & Recovery System"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Backup operations frame
-        operations_frame = ttk.LabelFrame(self.window, text="Backup Operations", padding=10)
+        operations_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.backup_operations', default="Backup Operations"), padding=10)
         operations_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         operations_grid = ttk.Frame(operations_frame)
         operations_grid.pack(fill=tk.X)
 
-        ttk.Button(operations_grid, text="Create Backup",
+        ttk.Button(operations_grid, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.create_backup', default="Create Backup"),
                   command=self.create_backup, style='Success.TButton').grid(row=0, column=0, padx=5)
-        ttk.Button(operations_grid, text="Restore Backup",
+        ttk.Button(operations_grid, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.restore_backup', default="Restore Backup"),
                   command=self.restore_backup, style='Warning.TButton').grid(row=0, column=1, padx=5)
-        ttk.Button(operations_grid, text="Schedule Settings",
+        ttk.Button(operations_grid, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.schedule_settings', default="Schedule Settings"),
                   command=self.backup_settings, style='Primary.TButton').grid(row=0, column=2, padx=5)
-        ttk.Button(operations_grid, text="Cleanup Old",
+        ttk.Button(operations_grid, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.cleanup_old', default="Cleanup Old"),
                   command=self.cleanup_backups, style='Primary.TButton').grid(row=0, column=3, padx=5)
 
         # Available backups frame
-        backups_frame = ttk.LabelFrame(self.window, text="Available Backups", padding=10)
+        backups_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.available_backups', default="Available Backups"), padding=10)
         backups_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Backups treeview
@@ -134,7 +141,7 @@ class BackupRecoveryWindow:
         self.backups_tree.bind('<Double-1>', self.restore_selected_backup)
 
         # Status frame
-        status_frame = ttk.LabelFrame(self.window, text="Backup Status", padding=10)
+        status_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.backup_status', default="Backup Status"), padding=10)
         status_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         self.status_text = tk.Text(status_frame, height=4, wrap=tk.WORD)
@@ -166,7 +173,7 @@ class BackupRecoveryWindow:
             self.backups_tree.insert('', 'end', values=backup)
 
     def create_backup(self):
-        backup_type = simpledialog.askstring("Backup Type", "Enter backup type (full/manual/custom):", initialvalue="manual")
+        backup_type = simpledialog.askstring(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.backup_type', default="Backup Type"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.enter_backup_type_full_manual_custom', default="Enter backup type (full/manual/custom):"), initialvalue="manual")
         if not backup_type:
             return
 
@@ -180,23 +187,23 @@ class BackupRecoveryWindow:
                     self.load_backups()
                     self.load_backup_status()
                 else:
-                    messagebox.showerror(_("common.error"), "Backup creation failed")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.backup_creation_failed', default="Backup creation failed"))
             except Exception as e:
                 logger.exception("backup_database_windows.py:186 %s", 'except Exception as e')
                 messagebox.showerror(_("common.error"), f"Backup creation failed: {e}")
         else:
-            messagebox.showinfo("Demo", f"Backup of type '{backup_type}' would be created here")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.demo', default="Demo"), f"Backup of type '{backup_type}' would be created here")
             self.load_backups()
 
     def restore_backup(self):
         filename = filedialog.askopenfilename(
-            title="Select backup file to restore",
+            title=_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.select_backup_file_to_restore', default="Select backup file to restore"),
             filetypes=[("Database files", "*.db"), ("All files", "*.*")]
         )
 
         if filename:
-            if messagebox.askyesno("Confirm Restore",
-                                 "This will overwrite current data. Are you sure?"):
+            if messagebox.askyesno(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.confirm_restore', default="Confirm Restore"),
+                                 _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.this_will_overwrite_current_data_are_you_sure', default="This will overwrite current data. Are you sure?")):
                 self.perform_restore(filename)
 
     def restore_selected_backup(self, event):
@@ -205,9 +212,9 @@ class BackupRecoveryWindow:
             item = self.backups_tree.item(selection[0])
             filename = item['values'][0]
 
-            if messagebox.askyesno("Confirm Restore",
+            if messagebox.askyesno(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.confirm_restore', default="Confirm Restore"),
                                  f"Restore from {filename}? This will overwrite current data."):
-                backup_path = str(BACKUP_ATTENDANCE_DIR / filename)
+                backup_path = str(UNIVERSITY_BACKUP_ATTENDANCE_DIR / filename)
                 self.perform_restore(backup_path)
 
     def perform_restore(self, backup_path):
@@ -225,28 +232,28 @@ class BackupRecoveryWindow:
                 logger.exception("backup_database_windows.py:225 %s", 'except Exception as e')
                 messagebox.showerror(_("common.error"), f"Restore failed: {e}")
         else:
-            messagebox.showinfo("Demo", f"Database would be restored from {backup_path}")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.demo', default="Demo"), f"Database would be restored from {backup_path}")
 
     def backup_settings(self):
         BackupSettingsWindow(self.window, self.load_backup_status)
 
     def cleanup_backups(self):
         try:
-            keep_days = int(simpledialog.askstring("Cleanup", "Keep backups newer than how many days?", initialvalue="30"))
+            keep_days = int(simpledialog.askstring(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.cleanup', default="Cleanup"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.keep_backups_newer_than_how_many_days', default="Keep backups newer than how many days?"), initialvalue="30"))
 
-            if messagebox.askyesno("Confirm Cleanup",
+            if messagebox.askyesno(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.confirm_cleanup', default="Confirm Cleanup"),
                                  f"Delete backups older than {keep_days} days?"):
                 if ORIGINAL_FUNCTIONS_AVAILABLE:
                     backup_system = BackupRecoverySystem()
                     backup_system.cleanup_old_backups(keep_days)
                     messagebox.showinfo(_("common.success"), f"Cleaned up backups older than {keep_days} days")
                 else:
-                    messagebox.showinfo("Demo", f"Would cleanup backups older than {keep_days} days")
+                    messagebox.showinfo(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.demo', default="Demo"), f"Would cleanup backups older than {keep_days} days")
 
                 self.load_backups()
         except (ValueError, TypeError):
             logger.exception("backup_database_windows.py:247 %s", 'except (ValueError, TypeError)')
-            messagebox.showerror(_("common.error"), "Invalid number of days")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.invalid_number_of_days', default="Invalid number of days"))
 
     def load_backup_status(self):
         status_text = """BACKUP SYSTEM STATUS
@@ -287,30 +294,30 @@ class BackupSettingsWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="Backup Settings", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.backup_settings', default="Backup Settings"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Settings frame
-        settings_frame = ttk.LabelFrame(self.window, text="Backup Configuration", padding=20)
+        settings_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.backup_configuration', default="Backup Configuration"), padding=20)
         settings_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Automatic backups
         self.auto_backup_var = tk.BooleanVar()
-        ttk.Checkbutton(settings_frame, text="Enable automatic backups",
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.enable_automatic_backups', default="Enable automatic backups"),
                        variable=self.auto_backup_var).grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=5)
 
         # Backup frequency
-        ttk.Label(settings_frame, text="Backup frequency (hours):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.backup_frequency_hours', default="Backup frequency (hours):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.frequency_var = tk.StringVar()
         ttk.Entry(settings_frame, textvariable=self.frequency_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=5)
 
         # Retention period
-        ttk.Label(settings_frame, text="Keep backups for (days):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.keep_backups_for_days', default="Keep backups for (days):")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.retention_var = tk.StringVar()
         ttk.Entry(settings_frame, textvariable=self.retention_var, width=10).grid(row=2, column=1, sticky=tk.W, padx=(10, 0), pady=5)
 
         # Backup location
-        ttk.Label(settings_frame, text="Backup location:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.backup_location', default="Backup location:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         location_frame = ttk.Frame(settings_frame)
         location_frame.grid(row=3, column=1, sticky=tk.W, padx=(10, 0), pady=5)
 
@@ -320,21 +327,21 @@ class BackupSettingsWindow:
 
         # Compression
         self.compression_var = tk.BooleanVar()
-        ttk.Checkbutton(settings_frame, text="Enable compression",
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.enable_compression', default="Enable compression"),
                        variable=self.compression_var).grid(row=4, column=0, columnspan=2, sticky=tk.W, pady=5)
 
         # Notifications
         self.notifications_var = tk.BooleanVar()
-        ttk.Checkbutton(settings_frame, text="Email notifications on backup completion",
+        ttk.Checkbutton(settings_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.email_notifications_on_backup_completion', default="Email notifications on backup completion"),
                        variable=self.notifications_var).grid(row=5, column=0, columnspan=2, sticky=tk.W, pady=5)
 
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(buttons_frame, text="Save Settings",
+        ttk.Button(buttons_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.save_settings', default="Save Settings"),
                   command=self.save_settings, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Test Backup",
+        ttk.Button(buttons_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.test_backup', default="Test Backup"),
                   command=self.test_backup, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"),
                   command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
@@ -349,13 +356,13 @@ class BackupSettingsWindow:
             self.frequency_var.set("24")
 
         self.retention_var.set("30")
-        from education_system.systems.university.infrastructure import paths
-        self.location_var.set(str(paths.BACKUP_ATTENDANCE_DIR / ""))
+        from education_system import paths
+        self.location_var.set(str(paths.UNIVERSITY_BACKUP_ATTENDANCE_DIR / ""))
         self.compression_var.set(True)
         self.notifications_var.set(False)
 
     def browse_location(self):
-        directory = filedialog.askdirectory(title="Select backup location")
+        directory = filedialog.askdirectory(title=_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.select_backup_location', default="Select backup location"))
         if directory:
             self.location_var.set(directory)
 
@@ -366,7 +373,7 @@ class BackupSettingsWindow:
             retention = int(self.retention_var.get())
 
             if frequency < 1 or retention < 1:
-                messagebox.showerror(_("common.error"), "Frequency and retention must be positive numbers")
+                messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.frequency_and_retention_must_be_positive_numbers', default="Frequency and retention must be positive numbers"))
                 return
 
             # Save settings
@@ -374,16 +381,16 @@ class BackupSettingsWindow:
                 set_enhanced_setting('auto_backup_enabled', self.auto_backup_var.get(), data_type='boolean')
                 set_enhanced_setting('backup_frequency_hours', frequency, data_type='integer')
 
-            messagebox.showinfo(_("common.success"), "Backup settings saved successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.backup_settings_saved_successfully', default="Backup settings saved successfully!"))
             self.callback()  # Refresh parent status
             self.window.destroy()
 
         except ValueError:
             logger.exception("backup_database_windows.py:380 %s", 'except ValueError')
-            messagebox.showerror(_("common.error"), "Please enter valid numbers for frequency and retention")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.please_enter_valid_numbers_for_frequency_and_retention', default="Please enter valid numbers for frequency and retention"))
 
     def test_backup(self):
-        messagebox.showinfo("Test Backup", "Test backup would be created here")
+        messagebox.showinfo(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.test_backup', default="Test Backup"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.test_backup_would_be_created_here', default="Test backup would be created here"))
 
 class DatabaseMaintenanceWindow:
     """SQLite-oriented maintenance helpers for attendance data."""
@@ -410,7 +417,7 @@ class DatabaseMaintenanceWindow:
         title_frame = ttk.Frame(self.window)
         title_frame.pack(fill='x', padx=15, pady=15)
 
-        ttk.Label(title_frame, text="🗄️ Attendance Database Maintenance",
+        ttk.Label(title_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.attendance_database_maintenance', default="🗄️ Attendance Database Maintenance"),
                  font=('Arial', 16, 'bold')).pack(side='left')
         ttk.Button(title_frame, text=_("common.refresh"), command=self.refresh_view).pack(side='right')
 
@@ -418,21 +425,21 @@ class DatabaseMaintenanceWindow:
         notebook.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
         status_frame = ttk.Frame(notebook)
-        notebook.add(status_frame, text="Status")
+        notebook.add(status_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.tabs.status', default="Status"))
         self._build_status_tab(status_frame)
 
         maintenance_frame = ttk.Frame(notebook)
-        notebook.add(maintenance_frame, text="Maintenance Tasks")
+        notebook.add(maintenance_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.tabs.maintenance_tasks', default="Maintenance Tasks"))
         self._build_maintenance_tab(maintenance_frame)
 
         backup_frame = ttk.Frame(notebook)
-        notebook.add(backup_frame, text="Backup & Restore")
+        notebook.add(backup_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.tabs.backup_restore', default="Backup & Restore"))
         self._build_backup_tab(backup_frame)
 
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy).pack(pady=(0, 10))
 
     def _build_status_tab(self, parent):
-        overview = ttk.LabelFrame(parent, text="Database Overview", padding=15)
+        overview = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.database_overview', default="Database Overview"), padding=15)
         overview.pack(fill='x', padx=10, pady=10)
 
         summary_items = [
@@ -450,7 +457,7 @@ class DatabaseMaintenanceWindow:
             self.status_labels[key] = value_label
             overview.grid_columnconfigure(idx, weight=1)
 
-        tables_frame = ttk.LabelFrame(parent, text="Table Statistics", padding=15)
+        tables_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.table_statistics', default="Table Statistics"), padding=15)
         tables_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
 
         columns = ('Table', 'Rows')
@@ -464,16 +471,16 @@ class DatabaseMaintenanceWindow:
         self._populate_status_tab()
 
     def _build_maintenance_tab(self, parent):
-        actions_frame = ttk.LabelFrame(parent, text="Maintenance Operations", padding=15)
+        actions_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.maintenance_operations', default="Maintenance Operations"), padding=15)
         actions_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(actions_frame, text="VACUUM", command=self.run_vacuum).pack(side='left', padx=5)
-        ttk.Button(actions_frame, text="ANALYZE", command=self.run_analyze).pack(side='left', padx=5)
-        ttk.Button(actions_frame, text="REINDEX", command=self.run_reindex).pack(side='left', padx=5)
-        ttk.Button(actions_frame, text="PRAGMA optimize", command=self.run_optimize).pack(side='left', padx=5)
-        ttk.Button(actions_frame, text="Integrity Check", command=self.run_integrity_check).pack(side='left', padx=5)
+        ttk.Button(actions_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.vacuum', default="VACUUM"), command=self.run_vacuum).pack(side='left', padx=5)
+        ttk.Button(actions_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.analyze', default="ANALYZE"), command=self.run_analyze).pack(side='left', padx=5)
+        ttk.Button(actions_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.reindex', default="REINDEX"), command=self.run_reindex).pack(side='left', padx=5)
+        ttk.Button(actions_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.pragma_optimize', default="PRAGMA optimize"), command=self.run_optimize).pack(side='left', padx=5)
+        ttk.Button(actions_frame, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.integrity_check', default="Integrity Check"), command=self.run_integrity_check).pack(side='left', padx=5)
 
-        log_frame = ttk.LabelFrame(parent, text="Maintenance Log", padding=15)
+        log_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.maintenance_log', default="Maintenance Log"), padding=15)
         log_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
 
         self.logs_text = scrolledtext.ScrolledText(log_frame, wrap='word', height=16)
@@ -481,14 +488,14 @@ class DatabaseMaintenanceWindow:
         self.logs_text.config(state='disabled')
 
     def _build_backup_tab(self, parent):
-        controls = ttk.LabelFrame(parent, text="Backup Operations", padding=15)
+        controls = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.backup_operations', default="Backup Operations"), padding=15)
         controls.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(controls, text="Create Backup", command=self.create_backup).pack(side='left', padx=5)
-        ttk.Button(controls, text="Restore Backup", command=self.restore_backup).pack(side='left', padx=5)
-        ttk.Button(controls, text="Open Backup Folder", command=self.open_backup_folder).pack(side='left', padx=5)
+        ttk.Button(controls, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.create_backup', default="Create Backup"), command=self.create_backup).pack(side='left', padx=5)
+        ttk.Button(controls, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.restore_backup', default="Restore Backup"), command=self.restore_backup).pack(side='left', padx=5)
+        ttk.Button(controls, text=_t('gui.academics.attendance_tracker.backup_database_windows.buttons.open_backup_folder', default="Open Backup Folder"), command=self.open_backup_folder).pack(side='left', padx=5)
 
-        history_frame = ttk.LabelFrame(parent, text="Backup History", padding=15)
+        history_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.backup_database_windows.labels.backup_history', default="Backup History"), padding=15)
         history_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
 
         columns = ('Filename', 'Created', 'Size')
@@ -581,7 +588,7 @@ class DatabaseMaintenanceWindow:
         for item in self.backup_tree.get_children():
             self.backup_tree.delete(item)
 
-        backups_dir = Path(BACKUP_ATTENDANCE_DIR)
+        backups_dir = Path(UNIVERSITY_BACKUP_ATTENDANCE_DIR)
         backups_dir.mkdir(parents=True, exist_ok=True)
         backups = sorted(backups_dir.glob("attendance_backup_*.db"), reverse=True)
 
@@ -606,7 +613,7 @@ class DatabaseMaintenanceWindow:
 
     def run_integrity_check(self):
         if not MAIN_DB_AVAILABLE:
-            messagebox.showwarning("Unavailable", "Database helper not available.")
+            messagebox.showwarning(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.unavailable', default="Unavailable"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.database_helper_not_available', default="Database helper not available."))
             return
         try:
             conn = get_db_connection()
@@ -615,15 +622,15 @@ class DatabaseMaintenanceWindow:
             result = cursor.fetchone()
             conn.close()
             self._append_log(f"Integrity check: {result[0] if result else 'No response'}")
-            messagebox.showinfo("Integrity Check", result[0] if result else "No response")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.integrity_check', default="Integrity Check"), result[0] if result else "No response")
         except Exception as exc:
             logger.exception("backup_database_windows.py:615 %s", 'except Exception as exc')
             self._append_log(f"Integrity check failed: {exc}")
-            messagebox.showerror("Integrity Check Failed", str(exc))
+            messagebox.showerror(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.integrity_check_failed', default="Integrity Check Failed"), str(exc))
 
     def _run_sql_command(self, command):
         if not MAIN_DB_AVAILABLE:
-            messagebox.showwarning("Unavailable", "Database helper not available.")
+            messagebox.showwarning(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.unavailable', default="Unavailable"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.database_helper_not_available', default="Database helper not available."))
             return
         try:
             conn = get_db_connection()
@@ -632,18 +639,18 @@ class DatabaseMaintenanceWindow:
             conn.commit()
             conn.close()
             self._append_log(f"Executed {command}")
-            messagebox.showinfo("Maintenance", f"{command} executed successfully.")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.maintenance', default="Maintenance"), f"{command} executed successfully.")
         except Exception as exc:
             logger.exception("backup_database_windows.py:631 %s", 'except Exception as exc')
             self._append_log(f"{command} failed: {exc}")
-            messagebox.showerror("Maintenance Failed", str(exc))
+            messagebox.showerror(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.maintenance_failed', default="Maintenance Failed"), str(exc))
 
     def create_backup(self):
         if not self.db_info['path'] or not os.path.exists(self.db_info['path']):
-            messagebox.showwarning("No Database File", "Database path is unknown or unavailable.")
+            messagebox.showwarning(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.no_database_file', default="No Database File"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.database_path_is_unknown_or_unavailable', default="Database path is unknown or unavailable."))
             return
 
-        backups_dir = Path(BACKUP_ATTENDANCE_DIR)
+        backups_dir = Path(UNIVERSITY_BACKUP_ATTENDANCE_DIR)
         backups_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         destination = backups_dir / f"attendance_backup_{timestamp}.db"
@@ -652,29 +659,29 @@ class DatabaseMaintenanceWindow:
             shutil.copy2(self.db_info['path'], destination)
             self._append_log(f"Backup created at {destination}")
             self._populate_backup_history()
-            messagebox.showinfo("Backup Complete", f"Backup saved to {destination}")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.backup_complete', default="Backup Complete"), f"Backup saved to {destination}")
         except Exception as exc:
             logger.exception("backup_database_windows.py:650 %s", 'except Exception as exc')
             self._append_log(f"Backup failed: {exc}")
-            messagebox.showerror("Backup Failed", str(exc))
+            messagebox.showerror(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.backup_failed', default="Backup Failed"), str(exc))
 
     def restore_backup(self):
         if not self.db_info['path'] or not os.path.exists(self.db_info['path']):
-            messagebox.showwarning("No Database File", "Database path is unknown or unavailable.")
+            messagebox.showwarning(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.no_database_file', default="No Database File"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.database_path_is_unknown_or_unavailable', default="Database path is unknown or unavailable."))
             return
 
         filename = filedialog.askopenfilename(
-            title="Select Backup File",
+            title=_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.select_backup_file', default="Select Backup File"),
             filetypes=[("Database files", "*.db"), ("All files", "*.*")]
         )
         if not filename:
             return
 
         confirmed = messagebox.askyesno(
-            "Confirm Restore",
-            "Restoring a backup will overwrite the current database.\n"
+            _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.confirm_restore', default="Confirm Restore"),
+            _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.restoring_a_backup_will_overwrite_the_current_database_make_sure', default="Restoring a backup will overwrite the current database.\n"
             "Make sure you have a recent backup of the current data.\n\n"
-            "Proceed with restore?"
+            "Proceed with restore?")
         )
         if not confirmed:
             return
@@ -683,15 +690,15 @@ class DatabaseMaintenanceWindow:
             shutil.copy2(self.db_info['path'], f"{self.db_info['path']}.bak")
             shutil.copy2(filename, self.db_info['path'])
             self._append_log(f"Database restored from {filename}")
-            messagebox.showinfo("Restore Complete", "Database has been restored successfully.")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.restore_complete', default="Restore Complete"), _t('gui.academics.attendance_tracker.backup_database_windows.dialogs.database_has_been_restored_successfully', default="Database has been restored successfully."))
             self.refresh_view()
         except Exception as exc:
             logger.exception("backup_database_windows.py:681 %s", 'except Exception as exc')
             self._append_log(f"Restore failed: {exc}")
-            messagebox.showerror("Restore Failed", str(exc))
+            messagebox.showerror(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.restore_failed', default="Restore Failed"), str(exc))
 
     def open_backup_folder(self):
-        backups_dir = Path(BACKUP_ATTENDANCE_DIR)
+        backups_dir = Path(UNIVERSITY_BACKUP_ATTENDANCE_DIR)
         backups_dir.mkdir(parents=True, exist_ok=True)
 
         # Get list of backup files
@@ -705,7 +712,7 @@ class DatabaseMaintenanceWindow:
         else:
             message = f"Backups are stored in:\n{backups_dir}\n\nNo backup files found."
 
-        messagebox.showinfo("Backup Folder", message)
+        messagebox.showinfo(_t('gui.academics.attendance_tracker.backup_database_windows.dialogs.backup_folder', default="Backup Folder"), message)
 
     def refresh_view(self):
         self.db_info = self._collect_db_info()

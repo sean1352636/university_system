@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class WellnessResourcesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Wellness Resources")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.support.wellness.windows.wellness_resources', default="Wellness Resources"))
         self.dialog.geometry("800x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -77,7 +79,7 @@ class WellnessResourcesDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        title_label = ttk.Label(main_frame, text="Wellness Resources", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.wellness_resources', default="Wellness Resources"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Create notebook for different resource categories
@@ -86,34 +88,34 @@ class WellnessResourcesDialog:
 
         # Mental Health tab
         mental_health_frame = ttk.Frame(notebook)
-        notebook.add(mental_health_frame, text="Mental Health")
+        notebook.add(mental_health_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.tabs.mental_health', default="Mental Health"))
         self.create_mental_health_tab(mental_health_frame)
 
         # Counseling Services tab
         counseling_frame = ttk.Frame(notebook)
-        notebook.add(counseling_frame, text="Counseling")
+        notebook.add(counseling_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.tabs.counseling', default="Counseling"))
         self.create_counseling_tab(counseling_frame)
 
         # Fitness Programs tab
         fitness_frame = ttk.Frame(notebook)
-        notebook.add(fitness_frame, text="Fitness")
+        notebook.add(fitness_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.tabs.fitness', default="Fitness"))
         self.create_fitness_tab(fitness_frame)
 
         # Nutrition tab
         nutrition_frame = ttk.Frame(notebook)
-        notebook.add(nutrition_frame, text="Nutrition")
+        notebook.add(nutrition_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.tabs.nutrition', default="Nutrition"))
         self.create_nutrition_tab(nutrition_frame)
 
         # Stress Management tab
         stress_frame = ttk.Frame(notebook)
-        notebook.add(stress_frame, text="Stress Management")
+        notebook.add(stress_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.tabs.stress_management', default="Stress Management"))
         self.create_stress_tab(stress_frame)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def _ensure_wellness_tables(self, conn):
         """Ensure wellness_resources table exists"""
@@ -161,19 +163,19 @@ class WellnessResourcesDialog:
         frame = ttk.Frame(add_win)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Title:").pack(anchor='w', pady=(0, 2))
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.title', default="Title:")).pack(anchor='w', pady=(0, 2))
         title_var = tk.StringVar()
         ttk.Entry(frame, textvariable=title_var, width=50).pack(fill='x', pady=(0, 8))
 
-        ttk.Label(frame, text="Description:").pack(anchor='w', pady=(0, 2))
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.description', default="Description:")).pack(anchor='w', pady=(0, 2))
         desc_text = scrolledtext.ScrolledText(frame, height=6, wrap=tk.WORD)
         desc_text.pack(fill='both', expand=True, pady=(0, 8))
 
-        ttk.Label(frame, text="Contact (phone/email):").pack(anchor='w', pady=(0, 2))
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.contact_phone_email', default="Contact (phone/email):")).pack(anchor='w', pady=(0, 2))
         contact_var = tk.StringVar()
         ttk.Entry(frame, textvariable=contact_var, width=50).pack(fill='x', pady=(0, 8))
 
-        ttk.Label(frame, text="URL (optional):").pack(anchor='w', pady=(0, 2))
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.url_optional', default="URL (optional):")).pack(anchor='w', pady=(0, 2))
         url_var = tk.StringVar()
         ttk.Entry(frame, textvariable=url_var, width=50).pack(fill='x', pady=(0, 8))
 
@@ -183,7 +185,7 @@ class WellnessResourcesDialog:
             contact = contact_var.get().strip()
             url = url_var.get().strip()
             if not title:
-                messagebox.showwarning("Warning", "Title is required.", parent=add_win)
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.wellness.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.wellness.dialogs.title_is_required', default="Title is required."), parent=add_win)
                 return
             conn = None
             try:
@@ -194,19 +196,19 @@ class WellnessResourcesDialog:
                     'INSERT INTO wellness_resources (category, title, description, contact, url) VALUES (?, ?, ?, ?, ?)',
                     (category, title, desc, contact, url))
                 conn.commit()
-                messagebox.showinfo("Success", "Resource added successfully.", parent=add_win)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.wellness.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.support.wellness.dialogs.resource_added_successfully', default="Resource added successfully."), parent=add_win)
                 add_win.destroy()
                 refresh_callback()
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to add resource: {e}", parent=add_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.wellness.dialogs.error', default="Error"), f"Failed to add resource: {e}", parent=add_win)
             finally:
                 if conn:
                     conn.close()
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(5, 0))
-        ttk.Button(btn_frame, text="Save", command=save).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=add_win.destroy).pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.save', default="Save"), command=save).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.cancel', default="Cancel"), command=add_win.destroy).pack(side='left')
 
     def _is_admin(self):
         """Check if current user has admin privileges"""
@@ -254,7 +256,7 @@ class WellnessResourcesDialog:
         vsb.pack(side='right', fill='y')
 
         # Info label
-        info_label = ttk.Label(container, text="Remember: It's okay to ask for help. Taking care of your mental health is just as important as your physical health.",
+        info_label = ttk.Label(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.remember_it_s_okay_to_ask_for_help_taking_care_of_your_mental_he', default="Remember: It's okay to ask for help. Taking care of your mental health is just as important as your physical health."),
                                font=('Arial', 9, 'italic'), wraplength=700)
         info_label.pack(pady=(0, 5))
 
@@ -273,7 +275,7 @@ class WellnessResourcesDialog:
 
         # Admin add button
         if self._is_admin():
-            ttk.Button(container, text="Add Resource",
+            ttk.Button(container, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.add_resource', default="Add Resource"),
                        command=lambda: self._add_resource_dialog('Mental Health', load)).pack(anchor='e', pady=(5, 0))
 
     def create_counseling_tab(self, parent):
@@ -290,7 +292,7 @@ class WellnessResourcesDialog:
         ]
 
         # Info section
-        info_frame = ttk.LabelFrame(container, text="Counseling Center Information")
+        info_frame = ttk.LabelFrame(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.counseling_center_information', default="Counseling Center Information"))
         info_frame.pack(fill='x', pady=(0, 10))
 
         info_text = ("Location: Student Services Building, 2nd Floor  |  "
@@ -300,7 +302,7 @@ class WellnessResourcesDialog:
         ttk.Label(info_frame, text=info_text, wraplength=700, font=('Arial', 9)).pack(padx=10, pady=8)
 
         # Counselor availability Treeview
-        avail_frame = ttk.LabelFrame(container, text="Services & Availability")
+        avail_frame = ttk.LabelFrame(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.services_availability', default="Services & Availability"))
         avail_frame.pack(fill='both', expand=True, pady=(0, 5))
 
         columns = ('Service', 'Description', 'Contact', 'URL')
@@ -319,7 +321,7 @@ class WellnessResourcesDialog:
         tree.pack(side='left', fill='both', expand=True)
         vsb.pack(side='right', fill='y')
 
-        ttk.Label(container, text="All counseling sessions are confidential and protected by HIPAA. Most student health plans cover counseling services.",
+        ttk.Label(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.all_counseling_sessions_are_confidential_and_protected_by_hipaa', default="All counseling sessions are confidential and protected by HIPAA. Most student health plans cover counseling services."),
                   font=('Arial', 9, 'italic'), wraplength=700).pack(pady=(0, 5))
 
         def load():
@@ -336,7 +338,7 @@ class WellnessResourcesDialog:
         load()
 
         if self._is_admin():
-            ttk.Button(container, text="Add Resource",
+            ttk.Button(container, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.add_resource', default="Add Resource"),
                        command=lambda: self._add_resource_dialog('Counseling', load)).pack(anchor='e', pady=(5, 0))
 
     def create_fitness_tab(self, parent):
@@ -355,7 +357,7 @@ class WellnessResourcesDialog:
         ]
 
         # Facility info
-        info_frame = ttk.LabelFrame(container, text="Campus Fitness Center")
+        info_frame = ttk.LabelFrame(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.campus_fitness_center', default="Campus Fitness Center"))
         info_frame.pack(fill='x', pady=(0, 10))
 
         info_text = ("Location: Recreation Building  |  Hours: Mon-Sun 6:00 AM - 11:00 PM  |  "
@@ -365,7 +367,7 @@ class WellnessResourcesDialog:
         ttk.Label(info_frame, text=info_text, wraplength=700, font=('Arial', 9)).pack(padx=10, pady=8)
 
         # Schedule Treeview
-        sched_frame = ttk.LabelFrame(container, text="Fitness Classes & Programs")
+        sched_frame = ttk.LabelFrame(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.fitness_classes_programs', default="Fitness Classes & Programs"))
         sched_frame.pack(fill='both', expand=True, pady=(0, 5))
 
         columns = ('Class/Program', 'Schedule/Description', 'Location', 'URL')
@@ -398,7 +400,7 @@ class WellnessResourcesDialog:
         load()
 
         if self._is_admin():
-            ttk.Button(container, text="Add Resource",
+            ttk.Button(container, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.add_resource', default="Add Resource"),
                        command=lambda: self._add_resource_dialog('Fitness', load)).pack(anchor='e', pady=(5, 0))
 
     def create_nutrition_tab(self, parent):
@@ -416,7 +418,7 @@ class WellnessResourcesDialog:
         ]
 
         # Info section
-        info_frame = ttk.LabelFrame(container, text="Campus Nutritionist")
+        info_frame = ttk.LabelFrame(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.campus_nutritionist', default="Campus Nutritionist"))
         info_frame.pack(fill='x', pady=(0, 10))
 
         info_text = ("Location: Student Health Center  |  Phone: (555) 123-4570  |  "
@@ -426,7 +428,7 @@ class WellnessResourcesDialog:
         ttk.Label(info_frame, text=info_text, wraplength=700, font=('Arial', 9)).pack(padx=10, pady=8)
 
         # Resources Treeview
-        res_frame = ttk.LabelFrame(container, text="Nutrition Services & Programs")
+        res_frame = ttk.LabelFrame(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.nutrition_services_programs', default="Nutrition Services & Programs"))
         res_frame.pack(fill='both', expand=True, pady=(0, 5))
 
         columns = ('Service', 'Description', 'Contact', 'URL')
@@ -459,7 +461,7 @@ class WellnessResourcesDialog:
         load()
 
         if self._is_admin():
-            ttk.Button(container, text="Add Resource",
+            ttk.Button(container, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.add_resource', default="Add Resource"),
                        command=lambda: self._add_resource_dialog('Nutrition', load)).pack(anchor='e', pady=(5, 0))
 
     def create_stress_tab(self, parent):
@@ -479,7 +481,7 @@ class WellnessResourcesDialog:
         ]
 
         # Tips section
-        tips_frame = ttk.LabelFrame(container, text="Quick Tips")
+        tips_frame = ttk.LabelFrame(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.quick_tips', default="Quick Tips"))
         tips_frame.pack(fill='x', pady=(0, 10))
 
         tips_text = ("Use a planner  |  Break tasks into smaller steps  |  "
@@ -488,7 +490,7 @@ class WellnessResourcesDialog:
         ttk.Label(tips_frame, text=tips_text, wraplength=700, font=('Arial', 9)).pack(padx=10, pady=8)
 
         # Resources Treeview
-        res_frame = ttk.LabelFrame(container, text="Stress Management Resources & Workshops")
+        res_frame = ttk.LabelFrame(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.stress_management_resources_workshops', default="Stress Management Resources & Workshops"))
         res_frame.pack(fill='both', expand=True, pady=(0, 5))
 
         columns = ('Resource', 'Description', 'Contact', 'URL')
@@ -507,7 +509,7 @@ class WellnessResourcesDialog:
         tree.pack(side='left', fill='both', expand=True)
         vsb.pack(side='right', fill='y')
 
-        ttk.Label(container, text="Campus quiet spaces: Meditation Room (Student Union 3rd Floor), Library quiet areas, Nature Trails (behind Recreation Building)",
+        ttk.Label(container, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.campus_quiet_spaces_meditation_room_student_union_3rd_floor_libr', default="Campus quiet spaces: Meditation Room (Student Union 3rd Floor), Library quiet areas, Nature Trails (behind Recreation Building)"),
                   font=('Arial', 9, 'italic'), wraplength=700).pack(pady=(0, 5))
 
         def load():
@@ -524,7 +526,7 @@ class WellnessResourcesDialog:
         load()
 
         if self._is_admin():
-            ttk.Button(container, text="Add Resource",
+            ttk.Button(container, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.add_resource', default="Add Resource"),
                        command=lambda: self._add_resource_dialog('Stress Management', load)).pack(anchor='e', pady=(5, 0))
 
 
@@ -536,7 +538,7 @@ class CrisisResourcesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Crisis Resources - IMMEDIATE HELP")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.support.wellness.windows.crisis_resources_immediate_help', default="Crisis Resources - IMMEDIATE HELP"))
         self.dialog.geometry("900x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -554,12 +556,12 @@ class CrisisResourcesDialog:
         emergency_frame = tk.Frame(main_frame, bg='#FF0000', relief='raised', bd=3)
         emergency_frame.pack(fill='x', pady=(0, 20))
 
-        ttk.Label(emergency_frame, text="🆘 CRISIS RESOURCES - IMMEDIATE HELP",
+        ttk.Label(emergency_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.crisis_resources_immediate_help', default="🆘 CRISIS RESOURCES - IMMEDIATE HELP"),
                  font=('Arial', 16, 'bold'), background='#FF0000',
                  foreground='white').pack(pady=15)
 
         # If in immediate danger
-        danger_frame = ttk.LabelFrame(main_frame, text="⚠️ IF YOU ARE IN IMMEDIATE DANGER")
+        danger_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.if_you_are_in_immediate_danger', default="⚠️ IF YOU ARE IN IMMEDIATE DANGER"))
         danger_frame.pack(fill='x', pady=(0, 15))
 
         danger_text = """CALL 911 IMMEDIATELY
@@ -571,7 +573,7 @@ Campus Police: (555) 123-9111 (24/7)
                  foreground='red', justify='center').pack(padx=20, pady=15)
 
         # Quick access buttons
-        quick_frame = ttk.LabelFrame(main_frame, text="Quick Access - Click to Call/Text")
+        quick_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.quick_access_click_to_call_text', default="Quick Access - Click to Call/Text"))
         quick_frame.pack(fill='x', pady=(0, 15))
 
         buttons_grid = ttk.Frame(quick_frame)
@@ -597,7 +599,7 @@ Campus Police: (555) 123-9111 (24/7)
         buttons_grid.columnconfigure(1, weight=1)
 
         # Safety planning
-        safety_frame = ttk.LabelFrame(main_frame, text="Safety Planning")
+        safety_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.safety_planning', default="Safety Planning"))
         safety_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         safety_text = scrolledtext.ScrolledText(safety_frame, height=10, wrap=tk.WORD,
@@ -660,32 +662,32 @@ YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="View All Wellness Resources",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.view_all_wellness_resources', default="View All Wellness Resources"),
                   command=self.view_all_resources).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Create Safety Plan",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.create_safety_plan', default="Create Safety Plan"),
                   command=self.create_safety_plan).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.close', default="Close"),
                   command=self.dialog.destroy).pack(side='right')
 
     def view_all_resources(self):
         """Open Toplevel showing all crisis/wellness resources from DB"""
         res_win = tk.Toplevel(self.dialog)
-        res_win.title("All Wellness Resources")
+        res_win.title(_t('gui.pastoral.student_union_gui.support.wellness.windows.all_wellness_resources', default="All Wellness Resources"))
         res_win.geometry("900x600")
         res_win.transient(self.dialog)
 
         main_frame = ttk.Frame(res_win)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Complete Wellness Resources Library",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.complete_wellness_resources_library', default="Complete Wellness Resources Library"),
                   font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Filter by category
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Category:").pack(side='left', padx=(0, 5))
-        cat_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.category', default="Category:")).pack(side='left', padx=(0, 5))
+        cat_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.support.wellness.values.all', default="All"))
         cat_combo = ttk.Combobox(filter_frame, textvariable=cat_var, width=20, state='readonly')
         cat_combo['values'] = ('All', 'Mental Health', 'Counseling', 'Fitness', 'Nutrition', 'Stress Management', 'Crisis')
         cat_combo.pack(side='left', padx=(0, 10))
@@ -755,7 +757,7 @@ YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
                         if selected_cat == "All" or row[0] == selected_cat:
                             tree.insert('', 'end', values=row)
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to load resources: {e}", parent=res_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.wellness.dialogs.error', default="Error"), f"Failed to load resources: {e}", parent=res_win)
             finally:
                 if conn:
                     conn.close()
@@ -763,7 +765,7 @@ YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
         cat_combo.bind('<<ComboboxSelected>>', lambda e: load_all())
         load_all()
 
-        ttk.Button(main_frame, text="Close", command=res_win.destroy).pack(anchor='e')
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.close', default="Close"), command=res_win.destroy).pack(anchor='e')
 
     def _ensure_safety_plans_table(self, conn):
         """Ensure safety_plans table exists"""
@@ -787,7 +789,7 @@ YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
     def create_safety_plan(self):
         """Open Toplevel with a safety plan form and save to DB"""
         plan_win = tk.Toplevel(self.dialog)
-        plan_win.title("Create Personal Safety Plan")
+        plan_win.title(_t('gui.pastoral.student_union_gui.support.wellness.windows.create_personal_safety_plan', default="Create Personal Safety Plan"))
         plan_win.geometry("700x750")
         plan_win.transient(self.dialog)
         plan_win.grab_set()
@@ -795,9 +797,9 @@ YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
         main_frame = ttk.Frame(plan_win)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Personal Safety Plan",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.personal_safety_plan', default="Personal Safety Plan"),
                   font=('Arial', 14, 'bold')).pack(pady=(0, 5))
-        ttk.Label(main_frame, text="This plan is private and confidential. Fill in what feels right for you.",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.labels.this_plan_is_private_and_confidential_fill_in_what_feels_right_f', default="This plan is private and confidential. Fill in what feels right for you."),
                   font=('Arial', 9, 'italic')).pack(pady=(0, 10))
 
         # Scrollable form
@@ -868,7 +870,7 @@ YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
                 data[key] = widget.get(1.0, tk.END).strip()
 
             if not any(data.values()):
-                messagebox.showwarning("Warning", "Please fill in at least one section.", parent=plan_win)
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.wellness.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.wellness.dialogs.please_fill_in_at_least_one_section', default="Please fill in at least one section."), parent=plan_win)
                 return
 
             conn = None
@@ -900,9 +902,9 @@ YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
                           data['emergency_contacts']))
 
                 conn.commit()
-                messagebox.showinfo("Saved", "Your safety plan has been saved securely.", parent=plan_win)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.wellness.dialogs.saved', default="Saved"), _t('gui.pastoral.student_union_gui.support.wellness.dialogs.your_safety_plan_has_been_saved_securely', default="Your safety plan has been saved securely."), parent=plan_win)
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to save safety plan: {e}", parent=plan_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.wellness.dialogs.error', default="Error"), f"Failed to save safety plan: {e}", parent=plan_win)
             finally:
                 if conn:
                     conn.close()
@@ -910,8 +912,8 @@ YOU ARE NOT ALONE. PEOPLE CARE ABOUT YOU. HELP IS AVAILABLE.
         # Buttons at bottom (outside the canvas)
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill='x', pady=(10, 0), side='bottom')
-        ttk.Button(btn_frame, text="Save Plan", command=save_plan).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=plan_win.destroy).pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.save_plan', default="Save Plan"), command=save_plan).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.wellness.buttons.cancel', default="Cancel"), command=plan_win.destroy).pack(side='left')
 
 
 
@@ -921,6 +923,6 @@ def view_wellness_resources(self):
         dialog = WellnessResourcesDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.support.wellness.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

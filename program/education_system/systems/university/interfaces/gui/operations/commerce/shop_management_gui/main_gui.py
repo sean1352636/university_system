@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import time
 import os
@@ -419,31 +421,31 @@ class UniversityShopGUI:
         row_counter += 1
 
         ttk.Label(
-            self.sidebar_frame, text="Textbooks",
+            self.sidebar_frame, text=_t('gui.operations.commerce.shop_management_gui.main.labels.textbooks', default="Textbooks"),
             style='Heading.TLabel'
         ).grid(row=row_counter, column=0, sticky=tk.W, pady=(0, 5))
         row_counter += 1
 
         ttk.Button(
-            self.sidebar_frame, text="Browse Textbooks",
+            self.sidebar_frame, text=_t('gui.operations.commerce.shop_management_gui.main.buttons.browse_textbooks', default="Browse Textbooks"),
             command=self.show_textbooks_browse, width=20
         ).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
         row_counter += 1
 
         ttk.Button(
-            self.sidebar_frame, text="Used Book Exchange",
+            self.sidebar_frame, text=_t('gui.operations.commerce.shop_management_gui.main.buttons.used_book_exchange', default="Used Book Exchange"),
             command=self.show_textbooks_exchange, width=20
         ).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
         row_counter += 1
 
         ttk.Button(
-            self.sidebar_frame, text="Sell a Book",
+            self.sidebar_frame, text=_t('gui.operations.commerce.shop_management_gui.main.buttons.sell_a_book', default="Sell a Book"),
             command=self.show_textbooks_sell, width=20
         ).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
         row_counter += 1
 
         ttk.Button(
-            self.sidebar_frame, text="Textbook Orders",
+            self.sidebar_frame, text=_t('gui.operations.commerce.shop_management_gui.main.buttons.textbook_orders', default="Textbook Orders"),
             command=self.show_textbooks_orders, width=20
         ).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
         row_counter += 1
@@ -481,7 +483,7 @@ class UniversityShopGUI:
             row_counter += 1
 
             ttk.Button(
-                self.sidebar_frame, text="💸 Refunds",
+                self.sidebar_frame, text=_t('gui.operations.commerce.shop_management_gui.main.buttons.refunds', default="💸 Refunds"),
                 command=self.show_refunds, width=20
             ).grid(row=row_counter, column=0, sticky=tk.W, pady=2)
             row_counter += 1
@@ -546,7 +548,7 @@ class UniversityShopGUI:
         try:
             # Create CLI window
             cli_window = tk.Toplevel(self.root)
-            cli_window.title("CLI Mode - University Shop")
+            cli_window.title(_t('gui.operations.commerce.shop_management_gui.main.windows.cli_mode_university_shop', default="CLI Mode - University Shop"))
             cli_window.geometry("800x600")
 
             # Create text widget for CLI output
@@ -619,27 +621,27 @@ class UniversityShopGUI:
                         env=env
                     )
                     messagebox.showinfo(
-                        "CLI Launched",
-                        "Shop Management CLI launched in separate process.\n"
-                        "Check your terminal for the CLI interface."
+                        _t('gui.operations.commerce.shop_management_gui.main.dialogs.cli_launched', default="CLI Launched"),
+                        _t('gui.operations.commerce.shop_management_gui.main.dialogs.shop_management_cli_launched_in_separate_process_check_your_term', default="Shop Management CLI launched in separate process.\n"
+                        "Check your terminal for the CLI interface.")
                     )
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to launch CLI: {e}")
+                    messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.main.dialogs.error', default="Error"), f"Failed to launch CLI: {e}")
 
             ttk.Button(
                 button_frame,
-                text="Launch External CLI",
+                text=_t('gui.operations.commerce.shop_management_gui.main.buttons.launch_external_cli', default="Launch External CLI"),
                 command=launch_external_cli
             ).grid(row=0, column=0, padx=5)
 
             ttk.Button(
                 button_frame,
-                text="Close",
+                text=_t('gui.operations.commerce.shop_management_gui.main.buttons.close', default="Close"),
                 command=cli_window.destroy
             ).grid(row=0, column=1, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to launch CLI mode: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.main.dialogs.error', default="Error"), f"Failed to launch CLI mode: {e}")
 
 
     def generate_sales_reports(self, days=30):
@@ -653,8 +655,8 @@ class UniversityShopGUI:
         if self.auth is not None and hasattr(self.auth, 'check_permission'):
             if not self.auth.check_permission('generate_sales_reports'):
                 messagebox.showwarning(
-                    "Permission Denied",
-                    "You don't have permission to generate sales reports."
+                    _t('gui.operations.commerce.shop_management_gui.main.dialogs.permission_denied', default="Permission Denied"),
+                    _t('gui.operations.commerce.shop_management_gui.main.dialogs.you_don_t_have_permission_to_generate_sales_reports', default="You don't have permission to generate sales reports.")
                 )
                 return
 
@@ -667,8 +669,8 @@ class UniversityShopGUI:
             stats = get_sales_statistics(days)
             if not stats:
                 messagebox.showinfo(
-                    "Sales Report",
-                    "No sales data is available for the selected period."
+                    _t('gui.operations.commerce.shop_management_gui.main.dialogs.sales_report', default="Sales Report"),
+                    _t('gui.operations.commerce.shop_management_gui.main.dialogs.no_sales_data_is_available_for_the_selected_period', default="No sales data is available for the selected period.")
                 )
                 return
 
@@ -731,7 +733,7 @@ class UniversityShopGUI:
 
         except Exception as e:
             messagebox.showerror(
-                "Report Error", f"Error generating sales report:\n{e}"
+                _t('gui.operations.commerce.shop_management_gui.main.dialogs.report_error', default="Report Error"), f"Error generating sales report:\n{e}"
             )
 
     def get_cli_functions(self):

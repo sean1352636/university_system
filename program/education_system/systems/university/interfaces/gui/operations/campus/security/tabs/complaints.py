@@ -144,8 +144,8 @@ Suspect Info: {complaint.get('suspect_description', 'N/A')}
         item = self.complaints_tree.item(selected[0])
         complaint_id = item["values"][0]
 
-        status = simpledialog.askstring("Update Status",
-                                        "Enter new status:\n(Pending/Under Investigation/Resolved/Dismissed)")
+        status = simpledialog.askstring(_t('gui.operations.campus.security.tabs.complaints.dialogs.update_status', default="Update Status"),
+                                        _t('gui.operations.campus.security.tabs.complaints.dialogs.enter_new_status_pending_under_investigation_resolved_dismissed', default="Enter new status:\n(Pending/Under Investigation/Resolved/Dismissed)"))
         if status:
             for complaint in self.data["complaints"]:
                 if complaint["id"] == complaint_id:
@@ -183,14 +183,14 @@ Campus Public Safety
 """
                             send_notification_email(complaint['email'], subject, body)
 
-                        messagebox.showinfo(_t("police_station.msg_titles.success"), "Status updated successfully!")
+                        messagebox.showinfo(_t("police_station.msg_titles.success"), _t('gui.operations.campus.security.tabs.complaints.dialogs.status_updated_successfully', default="Status updated successfully!"))
                     break
 
     def convert_to_case(self):
         """Convert complaint to case"""
         selected = self.complaints_tree.selection()
         if not selected:
-            messagebox.showwarning(_t("police_station.msg_titles.warning"), "Please select a complaint to convert.")
+            messagebox.showwarning(_t("police_station.msg_titles.warning"), _t('gui.operations.campus.security.tabs.complaints.dialogs.please_select_a_complaint_to_convert', default="Please select a complaint to convert."))
             return
 
         item = self.complaints_tree.item(selected[0])
@@ -198,7 +198,7 @@ Campus Public Safety
 
         for complaint in self.data["complaints"]:
             if complaint["id"] == complaint_id:
-                if messagebox.askyesno(_t("police_station.buttons.confirm"), "Convert this complaint to a case?"):
+                if messagebox.askyesno(_t("police_station.buttons.confirm"), _t('gui.operations.campus.security.tabs.complaints.dialogs.convert_this_complaint_to_a_case', default="Convert this complaint to a case?")):
                     case_id = self._db_get_next_id("CS", "police_cases")
                     case = {
                         "id": case_id,
@@ -224,13 +224,13 @@ Campus Public Safety
         """Delete selected complaint"""
         selected = self.complaints_tree.selection()
         if not selected:
-            messagebox.showwarning(_t("police_station.msg_titles.warning"), "Please select a complaint to delete.")
+            messagebox.showwarning(_t("police_station.msg_titles.warning"), _t('gui.operations.campus.security.tabs.complaints.dialogs.please_select_a_complaint_to_delete', default="Please select a complaint to delete."))
             return
 
-        if messagebox.askyesno(_t("police_station.buttons.confirm"), "Are you sure you want to delete this complaint?"):
+        if messagebox.askyesno(_t("police_station.buttons.confirm"), _t('gui.operations.campus.security.tabs.complaints.dialogs.are_you_sure_you_want_to_delete_this_complaint', default="Are you sure you want to delete this complaint?")):
             item = self.complaints_tree.item(selected[0])
             complaint_id = item["values"][0]
             if self._db_delete_complaint(complaint_id):
                 self.data["complaints"] = [c for c in self.data["complaints"] if c["id"] != complaint_id]
                 self.refresh_complaints()
-                messagebox.showinfo(_t("police_station.msg_titles.success"), "Complaint deleted successfully!")
+                messagebox.showinfo(_t("police_station.msg_titles.success"), _t('gui.operations.campus.security.tabs.complaints.dialogs.complaint_deleted_successfully', default="Complaint deleted successfully!"))

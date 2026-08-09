@@ -1,6 +1,8 @@
 """Shared counselling panel embedded by both WellnessGUI (student) and
 WellbeingFrame (staff). Backed by ``WellnessService.counseling_appointments``."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 
@@ -32,7 +34,7 @@ class CounsellingPanel(tk.Frame):
 
         ttk.Label(
             self,
-            text="🔒 All counselling records are confidential.",
+            text=_t('gui.pastoral.counselling_panel.labels.all_counselling_records_are_confidential', default="🔒 All counselling records are confidential."),
             font=("Arial", 10, "italic"),
         ).pack(fill="x", padx=10, pady=(8, 4))
 
@@ -46,34 +48,34 @@ class CounsellingPanel(tk.Frame):
         body = ttk.Frame(self)
         body.pack(fill="both", expand=True, padx=8, pady=4)
 
-        form = ttk.LabelFrame(body, text="Book Counselling Appointment", padding=10)
+        form = ttk.LabelFrame(body, text=_t('gui.pastoral.counselling_panel.labels.book_counselling_appointment', default="Book Counselling Appointment"), padding=10)
         form.pack(side="left", fill="both", expand=True, padx=(0, 5))
 
-        ttk.Label(form, text="Date (YYYY-MM-DD):").grid(row=0, column=0, sticky="w", pady=4)
+        ttk.Label(form, text=_t('gui.pastoral.counselling_panel.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=0, column=0, sticky="w", pady=4)
         self._date_var = tk.StringVar()
         ttk.Entry(form, textvariable=self._date_var, width=22).grid(row=0, column=1, pady=4)
 
-        ttk.Label(form, text="Time (HH:MM):").grid(row=1, column=0, sticky="w", pady=4)
+        ttk.Label(form, text=_t('gui.pastoral.counselling_panel.labels.time_hh_mm', default="Time (HH:MM):")).grid(row=1, column=0, sticky="w", pady=4)
         self._time_var = tk.StringVar()
         ttk.Entry(form, textvariable=self._time_var, width=22).grid(row=1, column=1, pady=4)
 
-        ttk.Label(form, text="Type:").grid(row=2, column=0, sticky="w", pady=4)
+        ttk.Label(form, text=_t('gui.pastoral.counselling_panel.labels.type', default="Type:")).grid(row=2, column=0, sticky="w", pady=4)
         self._type_var = tk.StringVar()
         ttk.Combobox(form, textvariable=self._type_var,
                      values=APPOINTMENT_TYPES, width=20).grid(row=2, column=1, pady=4)
 
-        ttk.Label(form, text="Concerns:").grid(row=3, column=0, sticky="nw", pady=4)
+        ttk.Label(form, text=_t('gui.pastoral.counselling_panel.labels.concerns', default="Concerns:")).grid(row=3, column=0, sticky="nw", pady=4)
         self._notes = scrolledtext.ScrolledText(form, height=6, width=24)
         self._notes.grid(row=3, column=1, pady=4)
 
-        ttk.Button(form, text="Book Appointment",
+        ttk.Button(form, text=_t('gui.pastoral.counselling_panel.buttons.book_appointment', default="Book Appointment"),
                    command=self._book).grid(row=4, column=0, columnspan=2, pady=8)
 
-        appts = ttk.LabelFrame(body, text="My Appointments", padding=10)
+        appts = ttk.LabelFrame(body, text=_t('gui.pastoral.counselling_panel.labels.my_appointments', default="My Appointments"), padding=10)
         appts.pack(side="left", fill="both", expand=True, padx=(5, 0))
         self._student_list = scrolledtext.ScrolledText(appts, height=20, wrap="word")
         self._student_list.pack(fill="both", expand=True)
-        ttk.Button(appts, text="Refresh", command=self._refresh).pack(pady=4)
+        ttk.Button(appts, text=_t('gui.pastoral.counselling_panel.buttons.refresh', default="Refresh"), command=self._refresh).pack(pady=4)
 
         self._refresh()
 
@@ -83,18 +85,18 @@ class CounsellingPanel(tk.Frame):
         appt_type = self._type_var.get().strip()
         notes = self._notes.get("1.0", "end").strip() or None
         if not (date and time and appt_type):
-            messagebox.showwarning("Missing info", "Date, time and type are required.")
+            messagebox.showwarning(_t('gui.pastoral.counselling_panel.dialogs.missing_info', default="Missing info"), _t('gui.pastoral.counselling_panel.dialogs.date_time_and_type_are_required', default="Date, time and type are required."))
             return
         student_id = self._current_user_id()
         if not student_id:
-            messagebox.showerror("Error", "Login required to book.")
+            messagebox.showerror(_t('gui.pastoral.counselling_panel.dialogs.error', default="Error"), _t('gui.pastoral.counselling_panel.dialogs.login_required_to_book', default="Login required to book."))
             return
         try:
             self._service.schedule_counseling(student_id, date, time, appt_type, notes)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to book: {e}")
+            messagebox.showerror(_t('gui.pastoral.counselling_panel.dialogs.error', default="Error"), f"Failed to book: {e}")
             return
-        messagebox.showinfo("Booked", f"Appointment booked for {date} at {time}.")
+        messagebox.showinfo(_t('gui.pastoral.counselling_panel.dialogs.booked', default="Booked"), f"Appointment booked for {date} at {time}.")
         self._date_var.set("")
         self._time_var.set("")
         self._type_var.set("")
@@ -105,14 +107,14 @@ class CounsellingPanel(tk.Frame):
     def _build_staff_view(self):
         toolbar = ttk.Frame(self)
         toolbar.pack(fill="x", padx=8, pady=4)
-        ttk.Label(toolbar, text="Status filter:").pack(side="left")
-        self._status_filter = tk.StringVar(value="All")
+        ttk.Label(toolbar, text=_t('gui.pastoral.counselling_panel.labels.status_filter', default="Status filter:")).pack(side="left")
+        self._status_filter = tk.StringVar(value=_t('gui.pastoral.counselling_panel.values.all', default="All"))
         ttk.Combobox(toolbar, textvariable=self._status_filter,
                      values=("All",) + STATUS_VALUES, state="readonly",
                      width=14).pack(side="left", padx=4)
         self._status_filter.trace_add("write", lambda *_: self._refresh())
-        ttk.Button(toolbar, text="Refresh", command=self._refresh).pack(side="left", padx=4)
-        ttk.Button(toolbar, text="Edit selected…",
+        ttk.Button(toolbar, text=_t('gui.pastoral.counselling_panel.buttons.refresh', default="Refresh"), command=self._refresh).pack(side="left", padx=4)
+        ttk.Button(toolbar, text=_t('gui.pastoral.counselling_panel.buttons.edit_selected', default="Edit selected…"),
                    command=self._edit_selected).pack(side="left", padx=4)
 
         cols = ("appointment_id", "student_id", "appointment_date",
@@ -135,7 +137,7 @@ class CounsellingPanel(tk.Frame):
     def _edit_selected(self):
         sel = self._tree.selection()
         if not sel:
-            messagebox.showinfo("Edit appointment", "Select an appointment first.")
+            messagebox.showinfo(_t('gui.pastoral.counselling_panel.dialogs.edit_appointment', default="Edit appointment"), _t('gui.pastoral.counselling_panel.dialogs.select_an_appointment_first', default="Select an appointment first."))
             return
         values = self._tree.item(sel[0], "values")
         appointment_id = int(values[0])
@@ -147,16 +149,16 @@ class CounsellingPanel(tk.Frame):
         dlg.transient(self.winfo_toplevel())
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Counsellor:").grid(row=0, column=0, sticky="w", padx=8, pady=6)
+        ttk.Label(dlg, text=_t('gui.pastoral.counselling_panel.labels.counsellor', default="Counsellor:")).grid(row=0, column=0, sticky="w", padx=8, pady=6)
         counsellor_var = tk.StringVar(value=current_counsellor)
         ttk.Entry(dlg, textvariable=counsellor_var, width=28).grid(row=0, column=1, padx=8, pady=6)
 
-        ttk.Label(dlg, text="Status:").grid(row=1, column=0, sticky="w", padx=8, pady=6)
+        ttk.Label(dlg, text=_t('gui.pastoral.counselling_panel.labels.status', default="Status:")).grid(row=1, column=0, sticky="w", padx=8, pady=6)
         status_var = tk.StringVar(value=current_status)
         ttk.Combobox(dlg, textvariable=status_var, values=STATUS_VALUES,
                      state="readonly", width=26).grid(row=1, column=1, padx=8, pady=6)
 
-        ttk.Label(dlg, text="Outcome notes:").grid(row=2, column=0, sticky="nw", padx=8, pady=6)
+        ttk.Label(dlg, text=_t('gui.pastoral.counselling_panel.labels.outcome_notes', default="Outcome notes:")).grid(row=2, column=0, sticky="nw", padx=8, pady=6)
         notes_box = scrolledtext.ScrolledText(dlg, width=32, height=8)
         notes_box.grid(row=2, column=1, padx=8, pady=6)
 
@@ -169,12 +171,12 @@ class CounsellingPanel(tk.Frame):
                     notes=notes_box.get("1.0", "end").strip() or None,
                 )
             except Exception as e:
-                messagebox.showerror("Error", f"Update failed: {e}")
+                messagebox.showerror(_t('gui.pastoral.counselling_panel.dialogs.error', default="Error"), f"Update failed: {e}")
                 return
             dlg.destroy()
             self._refresh()
 
-        ttk.Button(dlg, text="Save", command=save).grid(row=3, column=1, sticky="e",
+        ttk.Button(dlg, text=_t('gui.pastoral.counselling_panel.buttons.save', default="Save"), command=save).grid(row=3, column=1, sticky="e",
                                                         padx=8, pady=10)
 
     # ------------------------------------------------------------------- shared
@@ -216,7 +218,7 @@ class CounsellingPanel(tk.Frame):
                 status=None if status in ("", "All") else status
             )
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.counselling_panel.dialogs.error', default="Error"), str(e))
             return
         for a in appts:
             self._tree.insert("", "end", values=(

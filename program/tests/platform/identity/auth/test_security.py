@@ -204,7 +204,7 @@ class TestBruteForceProtection:
     """Account must lock after MAX_LOGIN_ATTEMPTS failed logins."""
 
     def test_lockout_after_max_attempts(self, auth):
-        for i in range(MAX_LOGIN_ATTEMPTS):
+        for i in range(MAX_LOGIN_ATTEMPTS - 1):
             with pytest.raises(AuthError, match="Invalid username or password"):
                 auth.login("admin1", "WrongPassword!!")
 

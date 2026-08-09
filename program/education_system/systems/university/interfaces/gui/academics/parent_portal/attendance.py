@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -54,14 +56,14 @@ def view_child_attendance(self, child):
     title.pack(pady=20)
 
     # Attendance summary
-    summary_frame = ttk.LabelFrame(self.content_frame, text="Attendance Summary", padding=15)
+    summary_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.attendance.labels.attendance_summary', default="Attendance Summary"), padding=15)
     summary_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(summary_frame, text="Overall Attendance: 95.5%", style='Heading.TLabel').pack()
-    ttk.Label(summary_frame, text="Days Present: 87 | Days Absent: 4", style='Info.TLabel').pack()
+    ttk.Label(summary_frame, text=_t('gui.academics.parent_portal.attendance.labels.overall_attendance_95_5', default="Overall Attendance: 95.5%"), style='Heading.TLabel').pack()
+    ttk.Label(summary_frame, text=_t('gui.academics.parent_portal.attendance.labels.days_present_87_days_absent_4', default="Days Present: 87 | Days Absent: 4"), style='Info.TLabel').pack()
 
     # Recent attendance
-    recent_frame = ttk.LabelFrame(self.content_frame, text="Recent Attendance", padding=15)
+    recent_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.attendance.labels.recent_attendance', default="Recent Attendance"), padding=15)
     recent_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     columns = ('Date', 'Status', 'Module', 'Reason')
@@ -123,12 +125,12 @@ def view_child_attendance(self, child):
             attendance_window = tk.Toplevel(self.root)
             attendance_gui = AttendanceGUI(attendance_window, self.auth)
         except ImportError as e:
-            messagebox.showinfo("Info", f"Attendance Tracker GUI not available: {e}")
+            messagebox.showinfo(_t('gui.academics.parent_portal.attendance.dialogs.info', default="Info"), f"Attendance Tracker GUI not available: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open Attendance Tracker: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.attendance.dialogs.error', default="Error"), f"Could not open Attendance Tracker: {e}")
 
-    ttk.Button(btn_frame, text="📅 Open Full Attendance Tracker", command=open_attendance_tracker).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="← Back", command=self.show_children).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.attendance.buttons.open_full_attendance_tracker', default="📅 Open Full Attendance Tracker"), command=open_attendance_tracker).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.attendance.buttons.back', default="← Back"), command=self.show_children).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.view_child_attendance = view_child_attendance
 
 def quick_absence_report(self):
@@ -139,12 +141,12 @@ def quick_absence_report(self):
     if is_admin:
         students_list = self._load_all_students_from_db()
         if not students_list:
-            messagebox.showinfo("No Students", "No students found in the system.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.attendance.dialogs.no_students', default="No Students"), _t('gui.academics.parent_portal.attendance.dialogs.no_students_found_in_the_system', default="No students found in the system."))
             return
     else:
         # Non-admin users can only access their linked students
         if not self.children:
-            messagebox.showinfo("No Students", "No students linked to your guardian account.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.attendance.dialogs.no_students', default="No Students"), _t('gui.academics.parent_portal.attendance.dialogs.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account."))
             return
         students_list = self.children
 
@@ -232,7 +234,7 @@ def quick_absence_report(self):
 
             # Ask if user wants to view attendance tracker
             response = messagebox.askyesno(
-                "Absence Reported",
+                _t('gui.academics.parent_portal.attendance.dialogs.absence_reported', default="Absence Reported"),
                 f"Absence reported for {student_name} on {absence_date}{sessions_text}.\n\n"
                 f"Reason: {reason}\n\n"
                 "Would you like to open the Attendance Tracker to view attendance records?"
@@ -242,7 +244,7 @@ def quick_absence_report(self):
                 self._open_attendance_tracker()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error saving absence report: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.attendance.dialogs.error', default="Error"), f"Error saving absence report: {e}")
 ParentPortalGUI.quick_absence_report = quick_absence_report
 
 def _send_absence_notification_to_admin(self, student_id, student_name, absence_date, reason, sessions):
@@ -294,10 +296,8 @@ def _send_absence_notification_to_admin(self, student_id, student_name, absence_
             'report_datetime': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
 
-        # Fallback if template not found
         if not subject or not body:
-            subject = f"Student Absence Report: {student_name} - {absence_date}"
-            body = f"Student Absence Notification\n\nA student absence has been reported.\n\nStudent: {student_name} ({student_id})\nDate: {absence_date}\nReason: {reason}\n{sessions_text}\n\nReported by: {reporter_name}"
+            raise RuntimeError("parent_absence_notification template is empty")
 
         # Send email to each admin
         if EMAIL_SERVICE_AVAILABLE:
@@ -321,9 +321,9 @@ def _open_attendance_tracker(self):
         attendance_window = tk.Toplevel(self.root)
         attendance_gui = AttendanceGUI(attendance_window, self.auth)
     except ImportError as e:
-        messagebox.showinfo("Info", f"Attendance Tracker GUI not available: {e}")
+        messagebox.showinfo(_t('gui.academics.parent_portal.attendance.dialogs.info', default="Info"), f"Attendance Tracker GUI not available: {e}")
     except Exception as e:
-        messagebox.showerror("Error", f"Could not open Attendance Tracker: {e}")
+        messagebox.showerror(_t('gui.academics.parent_portal.attendance.dialogs.error', default="Error"), f"Could not open Attendance Tracker: {e}")
 ParentPortalGUI._open_attendance_tracker = _open_attendance_tracker
 
 def show_attendance_interface(self):
@@ -331,7 +331,7 @@ def show_attendance_interface(self):
     self.clear_content()
     self.update_status("Attendance Records")
 
-    title = ttk.Label(self.content_frame, text="Attendance Records", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.attendance.labels.attendance_records', default="Attendance Records"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if self.children:
@@ -339,11 +339,11 @@ def show_attendance_interface(self):
             child_frame = ttk.LabelFrame(self.content_frame, text=f"{child[1]} {child[3]}", padding=15)
             child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-            view_btn = ttk.Button(child_frame, text="View Attendance",
+            view_btn = ttk.Button(child_frame, text=_t('gui.academics.parent_portal.attendance.buttons.view_attendance', default="View Attendance"),
                                  command=lambda c=child: self.view_child_attendance(c))
             view_btn.pack(pady=5)
     else:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.attendance.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
 ParentPortalGUI.show_attendance_interface = show_attendance_interface
 
 def show_behavior_interface(self):
@@ -351,18 +351,18 @@ def show_behavior_interface(self):
     self.clear_content()
     self.update_status("Conduct Reports")
 
-    title = ttk.Label(self.content_frame, text="Conduct Reports", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.attendance.labels.conduct_reports', default="Conduct Reports"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.attendance.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.attendance.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -371,7 +371,7 @@ def show_behavior_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Reports display frame
-    reports_frame = ttk.LabelFrame(self.content_frame, text="Conduct Reports", padding=15)
+    reports_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.attendance.labels.conduct_reports', default="Conduct Reports"), padding=15)
     reports_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_behavior_reports():
@@ -381,7 +381,7 @@ def show_behavior_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(reports_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(reports_frame, text=_t('gui.academics.parent_portal.attendance.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -410,7 +410,7 @@ def show_behavior_interface(self):
 
                 if reports:
                     # Summary statistics
-                    summary_frame = ttk.LabelFrame(reports_frame, text="Summary", padding=10)
+                    summary_frame = ttk.LabelFrame(reports_frame, text=_t('gui.academics.parent_portal.attendance.labels.summary', default="Summary"), padding=10)
                     summary_frame.pack(fill=tk.X, pady=(0, 10))
 
                     total_reports = len(reports)
@@ -434,12 +434,12 @@ def show_behavior_interface(self):
                     columns = ("Date", "Type", "Description", "Severity", "Instructor", "Resolution")
                     reports_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=12)
 
-                    reports_tree.heading("Date", text="Date")
-                    reports_tree.heading("Type", text="Type")
-                    reports_tree.heading("Description", text="Description")
-                    reports_tree.heading("Severity", text="Severity")
-                    reports_tree.heading("Instructor", text="Instructor")
-                    reports_tree.heading("Resolution", text="Resolution")
+                    reports_tree.heading("Date", text=_t('gui.academics.parent_portal.attendance.headings.date', default="Date"))
+                    reports_tree.heading("Type", text=_t('gui.academics.parent_portal.attendance.headings.type', default="Type"))
+                    reports_tree.heading("Description", text=_t('gui.academics.parent_portal.attendance.headings.description', default="Description"))
+                    reports_tree.heading("Severity", text=_t('gui.academics.parent_portal.attendance.headings.severity', default="Severity"))
+                    reports_tree.heading("Instructor", text=_t('gui.academics.parent_portal.attendance.headings.instructor', default="Instructor"))
+                    reports_tree.heading("Resolution", text=_t('gui.academics.parent_portal.attendance.headings.resolution', default="Resolution"))
 
                     reports_tree.column("Date", width=100)
                     reports_tree.column("Type", width=100)
@@ -471,18 +471,18 @@ def show_behavior_interface(self):
                             detail_text += f"Description:\n{values[2]}\n\n"
                             detail_text += f"Resolution:\n{values[5] if values[5] else 'Pending'}"
 
-                            messagebox.showinfo("Behavior Report Details", detail_text)
+                            messagebox.showinfo(_t('gui.academics.parent_portal.attendance.dialogs.behavior_report_details', default="Behavior Report Details"), detail_text)
 
-                    ttk.Button(reports_frame, text="View Details",
+                    ttk.Button(reports_frame, text=_t('gui.academics.parent_portal.attendance.buttons.view_details', default="View Details"),
                               command=view_details).pack(pady=10)
 
                 else:
-                    ttk.Label(reports_frame, text="No conduct reports found for this student",
+                    ttk.Label(reports_frame, text=_t('gui.academics.parent_portal.attendance.labels.no_conduct_reports_found_for_this_student', default="No conduct reports found for this student"),
                              font=('Arial', 11)).pack(pady=50)
 
             else:
                 # Sample data if table doesn't exist
-                sample_frame = ttk.LabelFrame(reports_frame, text="Sample Reports", padding=10)
+                sample_frame = ttk.LabelFrame(reports_frame, text=_t('gui.academics.parent_portal.attendance.labels.sample_reports', default="Sample Reports"), padding=10)
                 sample_frame.pack(fill=tk.BOTH, expand=True)
 
                 sample_reports = [
@@ -503,7 +503,7 @@ def show_behavior_interface(self):
 
                 reports_tree.pack(fill=tk.BOTH, expand=True, pady=5)
 
-                ttk.Label(sample_frame, text="(Sample data - no conduct reports table found)",
+                ttk.Label(sample_frame, text=_t('gui.academics.parent_portal.attendance.labels.sample_data_no_conduct_reports_table_found', default="(Sample data - no conduct reports table found)"),
                          font=('Arial', 9, 'italic')).pack(pady=5)
 
             conn.close()
@@ -512,7 +512,7 @@ def show_behavior_interface(self):
             ttk.Label(reports_frame, text=f"Error loading conduct reports: {str(e)}",
                      font=('Arial', 11)).pack(pady=50)
 
-    ttk.Button(child_frame, text="Load Reports", command=load_behavior_reports).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.attendance.buttons.load_reports', default="Load Reports"), command=load_behavior_reports).pack(side=tk.LEFT, padx=5)
 
     # Load initial reports
     load_behavior_reports()
@@ -523,14 +523,14 @@ def show_absence_interface(self):
     self.clear_content()
     self.update_status("Report Absence")
 
-    title = ttk.Label(self.content_frame, text="Report Student Absence", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.attendance.labels.report_student_absence', default="Report Student Absence"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
-    absence_frame = ttk.LabelFrame(self.content_frame, text="Absence Details", padding=20)
+    absence_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.attendance.labels.absence_details', default="Absence Details"), padding=20)
     absence_frame.pack(fill=tk.X, padx=20, pady=20)
 
     # Child selection
-    ttk.Label(absence_frame, text="Select Student:").pack(anchor='w')
+    ttk.Label(absence_frame, text=_t('gui.academics.parent_portal.attendance.labels.select_student', default="Select Student:")).pack(anchor='w')
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(absence_frame, textvariable=child_var, width=50)
     if self.children:
@@ -539,25 +539,25 @@ def show_absence_interface(self):
     child_combo.pack(fill=tk.X, pady=5)
 
     # Date selection
-    ttk.Label(absence_frame, text="Absence Date:").pack(anchor='w', pady=(10, 0))
+    ttk.Label(absence_frame, text=_t('gui.academics.parent_portal.attendance.labels.absence_date', default="Absence Date:")).pack(anchor='w', pady=(10, 0))
     date_var = tk.StringVar(value=datetime.datetime.now().strftime('%Y-%m-%d'))
     date_entry = ttk.Entry(absence_frame, textvariable=date_var)
     date_entry.pack(fill=tk.X, pady=5)
 
     # Reason
-    ttk.Label(absence_frame, text="Reason:").pack(anchor='w', pady=(10, 0))
+    ttk.Label(absence_frame, text=_t('gui.academics.parent_portal.attendance.labels.reason', default="Reason:")).pack(anchor='w', pady=(10, 0))
     reason_text = scrolledtext.ScrolledText(absence_frame, height=5)
     reason_text.pack(fill=tk.X, pady=5)
 
     def submit_absence():
         if not child_var.get() or not reason_text.get(1.0, tk.END).strip():
-            messagebox.showwarning("Missing Information", "Please select a child and provide a reason.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.attendance.dialogs.missing_information', default="Missing Information"), _t('gui.academics.parent_portal.attendance.dialogs.please_select_a_child_and_provide_a_reason', default="Please select a child and provide a reason."))
             return
 
         # In real implementation, this would save to database
-        messagebox.showinfo("Success", "Absence report submitted successfully.")
+        messagebox.showinfo(_t('gui.academics.parent_portal.attendance.dialogs.success', default="Success"), _t('gui.academics.parent_portal.attendance.dialogs.absence_report_submitted_successfully', default="Absence report submitted successfully."))
         reason_text.delete(1.0, tk.END)
 
-    submit_btn = ttk.Button(absence_frame, text="Submit Absence Report", command=submit_absence)
+    submit_btn = ttk.Button(absence_frame, text=_t('gui.academics.parent_portal.attendance.buttons.submit_absence_report', default="Submit Absence Report"), command=submit_absence)
     submit_btn.pack(pady=20)
 ParentPortalGUI.show_absence_interface = show_absence_interface

@@ -1,0 +1,11 @@
+{
+  "template_id": "assignment_receipt",
+  "description": "Sent to a student the moment a submission attempt is recorded. Carries the receipt reference, the timestamp, and the SHA-256 of every file received, so a disputed hand-in can be settled from the student's own inbox.",
+  "channel": "Email",
+  "category": "Academic",
+  "priority": "Normal",
+  "from_name": "Sixth Form Assignments",
+  "from_address": "assignments@sixthform.ac.uk",
+  "subject": "Submission received: {{title}} ({{subject_name}}) — ref {{reference}}",
+  "body": "Hi {{first_name}},\n\nWe have received your work. This is your proof of submission — keep it.\n\nReceipt\n-------\n  Reference:    {{reference}}\n  Fingerprint:  {{fingerprint}}\n  Assignment:   {{title}} ({{subject_name}})\n  Attempt:      {{attempt}}\n  Submitted on: {{submitted_on}}\n  Recorded at:  {{submitted_at}} UTC\n  Deadline:     {{due_date}}\n  Status:       {{status}}\n\nFiles received ({{file_count}})\n-------------------------------\n{{file_list}}\n\nWhat this means\n---------------\n  - The fingerprint above is derived from the contents of every file listed. If a file is ever changed, it will no longer match.\n  - If your status shows as Late and you believe that is wrong, reply to this message with the reference above before your teacher marks the work.\n  - If you submitted a draft, you still need to submit the final piece before the deadline — a draft does not count as a hand-in.\n  - If anything in this receipt looks wrong, tell your teacher straight away rather than resubmitting blindly.\n\n{{system_name}}"
+}

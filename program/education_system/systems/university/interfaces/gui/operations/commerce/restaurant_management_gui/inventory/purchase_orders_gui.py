@@ -4,6 +4,8 @@ Purchase Orders Management GUI
 Manages supplier purchases, inventory ordering, and expense tracking.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime
@@ -90,7 +92,7 @@ class PurchaseOrdersGUI:
     def __init__(self, parent):
         self.parent = parent
         self.window = tk.Toplevel(parent)
-        self.window.title("Purchase Orders Management")
+        self.window.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.windows.purchase_orders_management', default="Purchase Orders Management"))
         self.window.geometry("1400x800")
 
         # Initialize tables
@@ -107,12 +109,12 @@ class PurchaseOrdersGUI:
 
         # Purchase Orders Tab
         po_tab = ttk.Frame(notebook)
-        notebook.add(po_tab, text="Purchase Orders")
+        notebook.add(po_tab, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.tabs.purchase_orders', default="Purchase Orders"))
         self.create_po_tab(po_tab)
 
         # Suppliers Tab
         suppliers_tab = ttk.Frame(notebook)
-        notebook.add(suppliers_tab, text="Suppliers")
+        notebook.add(suppliers_tab, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.tabs.suppliers', default="Suppliers"))
         self.create_suppliers_tab(suppliers_tab)
 
     def create_po_tab(self, parent):
@@ -121,17 +123,17 @@ class PurchaseOrdersGUI:
         header_frame = ttk.Frame(parent)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(header_frame, text="Purchase Orders",
+        ttk.Label(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.purchase_orders', default="Purchase Orders"),
                  font=('Arial', 14, 'bold')).pack(side=tk.LEFT)
 
-        ttk.Button(header_frame, text="New Purchase Order",
+        ttk.Button(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.new_purchase_order', default="New Purchase Order"),
                   command=self.create_purchase_order).pack(side=tk.RIGHT, padx=5)
 
         # Filters
-        filter_frame = ttk.LabelFrame(parent, text="Filters", padding="10")
+        filter_frame = ttk.LabelFrame(parent, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.filters', default="Filters"), padding="10")
         filter_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Status:").grid(row=0, column=0, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.status', default="Status:")).grid(row=0, column=0, padx=5)
         self.status_filter = ttk.Combobox(filter_frame, width=15,
                                          values=['All', 'Pending', 'Approved', 'Ordered',
                                                 'Received', 'Completed', 'Cancelled'])
@@ -139,7 +141,7 @@ class PurchaseOrdersGUI:
         self.status_filter.grid(row=0, column=1, padx=5)
         self.status_filter.bind('<<ComboboxSelected>>', lambda e: self.load_purchase_orders())
 
-        ttk.Button(filter_frame, text="Refresh",
+        ttk.Button(filter_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.refresh', default="Refresh"),
                   command=self.load_purchase_orders).grid(row=0, column=2, padx=10)
 
         # Purchase Orders List
@@ -150,13 +152,13 @@ class PurchaseOrdersGUI:
                   'total_cost', 'status', 'payment_status')
         self.po_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
 
-        self.po_tree.heading('po_number', text='PO Number')
-        self.po_tree.heading('supplier', text='Supplier')
-        self.po_tree.heading('order_date', text='Order Date')
-        self.po_tree.heading('delivery_date', text='Expected Delivery')
-        self.po_tree.heading('total_cost', text='Total Cost')
-        self.po_tree.heading('status', text='Status')
-        self.po_tree.heading('payment_status', text='Payment')
+        self.po_tree.heading('po_number', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.po_number', default='PO Number'))
+        self.po_tree.heading('supplier', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.supplier', default='Supplier'))
+        self.po_tree.heading('order_date', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.order_date', default='Order Date'))
+        self.po_tree.heading('delivery_date', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.expected_delivery', default='Expected Delivery'))
+        self.po_tree.heading('total_cost', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.total_cost', default='Total Cost'))
+        self.po_tree.heading('status', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.status', default='Status'))
+        self.po_tree.heading('payment_status', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.payment', default='Payment'))
 
         self.po_tree.column('po_number', width=120)
         self.po_tree.column('supplier', width=200)
@@ -176,15 +178,15 @@ class PurchaseOrdersGUI:
         btn_frame = ttk.Frame(parent)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(btn_frame, text="View Details",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.view_details', default="View Details"),
                   command=self.view_po_details).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.edit', default="Edit"),
                   command=self.edit_purchase_order).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Mark as Received",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.mark_as_received', default="Mark as Received"),
                   command=self.mark_as_received).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Record Payment",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.record_payment', default="Record Payment"),
                   command=self.record_payment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.delete', default="Delete"),
                   command=self.delete_purchase_order).pack(side=tk.LEFT, padx=5)
 
     def create_suppliers_tab(self, parent):
@@ -193,10 +195,10 @@ class PurchaseOrdersGUI:
         header_frame = ttk.Frame(parent)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(header_frame, text="Suppliers",
+        ttk.Label(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.suppliers', default="Suppliers"),
                  font=('Arial', 14, 'bold')).pack(side=tk.LEFT)
 
-        ttk.Button(header_frame, text="Add Supplier",
+        ttk.Button(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.add_supplier', default="Add Supplier"),
                   command=self.add_supplier).pack(side=tk.RIGHT, padx=5)
 
         # Suppliers List
@@ -206,12 +208,12 @@ class PurchaseOrdersGUI:
         columns = ('name', 'contact_person', 'email', 'phone', 'payment_terms', 'is_active')
         self.suppliers_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=20)
 
-        self.suppliers_tree.heading('name', text='Supplier Name')
-        self.suppliers_tree.heading('contact_person', text='Contact Person')
-        self.suppliers_tree.heading('email', text='Email')
-        self.suppliers_tree.heading('phone', text='Phone')
-        self.suppliers_tree.heading('payment_terms', text='Payment Terms')
-        self.suppliers_tree.heading('is_active', text='Status')
+        self.suppliers_tree.heading('name', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.supplier_name', default='Supplier Name'))
+        self.suppliers_tree.heading('contact_person', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.contact_person', default='Contact Person'))
+        self.suppliers_tree.heading('email', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.email', default='Email'))
+        self.suppliers_tree.heading('phone', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.phone', default='Phone'))
+        self.suppliers_tree.heading('payment_terms', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.payment_terms', default='Payment Terms'))
+        self.suppliers_tree.heading('is_active', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.status', default='Status'))
 
         self.suppliers_tree.column('name', width=200)
         self.suppliers_tree.column('contact_person', width=150)
@@ -230,11 +232,11 @@ class PurchaseOrdersGUI:
         btn_frame = ttk.Frame(parent)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(btn_frame, text="Edit Supplier",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.edit_supplier', default="Edit Supplier"),
                   command=self.edit_supplier).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Toggle Active/Inactive",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.toggle_active_inactive', default="Toggle Active/Inactive"),
                   command=self.toggle_supplier_status).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.delete', default="Delete"),
                   command=self.delete_supplier).pack(side=tk.LEFT, padx=5)
 
         # Load suppliers
@@ -283,7 +285,7 @@ class PurchaseOrdersGUI:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load purchase orders: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to load purchase orders: {e}")
 
     def load_suppliers(self):
         """Load suppliers from database"""
@@ -312,7 +314,7 @@ class PurchaseOrdersGUI:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load suppliers: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to load suppliers: {e}")
 
     def create_purchase_order(self):
         """Create new purchase order"""
@@ -324,7 +326,7 @@ class PurchaseOrdersGUI:
         """View purchase order details"""
         selection = self.po_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a purchase order to view")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_select_a_purchase_order_to_view', default="Please select a purchase order to view"))
             return
 
         po_number = self.po_tree.item(selection[0])['values'][0]
@@ -334,7 +336,7 @@ class PurchaseOrdersGUI:
         """Edit purchase order"""
         selection = self.po_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a purchase order to edit")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_select_a_purchase_order_to_edit', default="Please select a purchase order to edit"))
             return
 
         po_number = self.po_tree.item(selection[0])['values'][0]
@@ -346,12 +348,12 @@ class PurchaseOrdersGUI:
         """Mark purchase order as received"""
         selection = self.po_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a purchase order")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_select_a_purchase_order', default="Please select a purchase order"))
             return
 
         po_number = self.po_tree.item(selection[0])['values'][0]
 
-        if messagebox.askyesno("Confirm", f"Mark PO {po_number} as received?"):
+        if messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.confirm', default="Confirm"), f"Mark PO {po_number} as received?"):
             try:
                 conn = get_db_connection()
                 if not conn:
@@ -368,17 +370,17 @@ class PurchaseOrdersGUI:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Purchase order marked as received")
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.purchase_order_marked_as_received', default="Purchase order marked as received"))
                 self.load_purchase_orders()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update status: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to update status: {e}")
 
     def record_payment(self):
         """Record payment for purchase order"""
         selection = self.po_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a purchase order")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_select_a_purchase_order', default="Please select a purchase order"))
             return
 
         po_number = self.po_tree.item(selection[0])['values'][0]
@@ -388,12 +390,12 @@ class PurchaseOrdersGUI:
         """Delete purchase order"""
         selection = self.po_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a purchase order to delete")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_select_a_purchase_order_to_delete', default="Please select a purchase order to delete"))
             return
 
         po_number = self.po_tree.item(selection[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", f"Delete purchase order {po_number}?\n\nThis cannot be undone."):
+        if messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.confirm_delete', default="Confirm Delete"), f"Delete purchase order {po_number}?\n\nThis cannot be undone."):
             try:
                 conn = get_db_connection()
                 if not conn:
@@ -404,11 +406,11 @@ class PurchaseOrdersGUI:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Purchase order deleted")
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.purchase_order_deleted', default="Purchase order deleted"))
                 self.load_purchase_orders()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete purchase order: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to delete purchase order: {e}")
 
     def add_supplier(self):
         """Add new supplier"""
@@ -420,7 +422,7 @@ class PurchaseOrdersGUI:
         """Edit supplier"""
         selection = self.suppliers_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a supplier to edit")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_select_a_supplier_to_edit', default="Please select a supplier to edit"))
             return
 
         supplier_name = self.suppliers_tree.item(selection[0])['values'][0]
@@ -432,7 +434,7 @@ class PurchaseOrdersGUI:
         """Toggle supplier active/inactive"""
         selection = self.suppliers_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a supplier")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_select_a_supplier', default="Please select a supplier"))
             return
 
         supplier_name = self.suppliers_tree.item(selection[0])['values'][0]
@@ -455,18 +457,18 @@ class PurchaseOrdersGUI:
             self.load_suppliers()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update supplier status: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to update supplier status: {e}")
 
     def delete_supplier(self):
         """Delete supplier"""
         selection = self.suppliers_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a supplier to delete")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_select_a_supplier_to_delete', default="Please select a supplier to delete"))
             return
 
         supplier_name = self.suppliers_tree.item(selection[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", f"Delete supplier '{supplier_name}'?\n\nThis cannot be undone."):
+        if messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.confirm_delete', default="Confirm Delete"), f"Delete supplier '{supplier_name}'?\n\nThis cannot be undone."):
             try:
                 conn = get_db_connection()
                 if not conn:
@@ -477,11 +479,11 @@ class PurchaseOrdersGUI:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Supplier deleted")
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.supplier_deleted', default="Supplier deleted"))
                 self.load_suppliers()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete supplier: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to delete supplier: {e}")
 
 
 class PurchaseOrderDialog:
@@ -510,51 +512,51 @@ class PurchaseOrderDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Header info
-        header_frame = ttk.LabelFrame(main_frame, text="Purchase Order Details", padding="10")
+        header_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.purchase_order_details', default="Purchase Order Details"), padding="10")
         header_frame.pack(fill=tk.X, pady=(0, 10))
 
         # PO Number
-        ttk.Label(header_frame, text="PO Number:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.po_number', default="PO Number:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.po_number_var = tk.StringVar(value=f"PO-{uuid.uuid4().hex[:8].upper()}")
         ttk.Entry(header_frame, textvariable=self.po_number_var, width=30,
                  state='readonly' if self.is_edit else 'normal').grid(row=0, column=1, pady=5, padx=5)
 
         # Supplier
-        ttk.Label(header_frame, text="Supplier:*").grid(row=0, column=2, sticky=tk.W, pady=5, padx=(20,0))
+        ttk.Label(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.supplier_variant_2', default="Supplier:*")).grid(row=0, column=2, sticky=tk.W, pady=5, padx=(20,0))
         self.supplier_var = tk.StringVar()
         self.supplier_combo = ttk.Combobox(header_frame, textvariable=self.supplier_var, width=30)
         self.supplier_combo.grid(row=0, column=3, pady=5, padx=5)
         self.load_suppliers()
 
         # Order Date
-        ttk.Label(header_frame, text="Order Date:*").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.order_date', default="Order Date:*")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.order_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(header_frame, textvariable=self.order_date_var, width=30).grid(row=1, column=1, pady=5, padx=5)
 
         # Expected Delivery
-        ttk.Label(header_frame, text="Expected Delivery:").grid(row=1, column=2, sticky=tk.W, pady=5, padx=(20,0))
+        ttk.Label(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.expected_delivery', default="Expected Delivery:")).grid(row=1, column=2, sticky=tk.W, pady=5, padx=(20,0))
         self.delivery_date_var = tk.StringVar()
         ttk.Entry(header_frame, textvariable=self.delivery_date_var, width=30).grid(row=1, column=3, pady=5, padx=5)
 
         # Status
-        ttk.Label(header_frame, text="Status:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.status_var = tk.StringVar(value='Pending')
+        ttk.Label(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.status', default="Status:")).grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.status_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.values.pending', default='Pending'))
         ttk.Combobox(header_frame, textvariable=self.status_var, width=28,
                     values=['Pending', 'Approved', 'Ordered', 'Received', 'Completed', 'Cancelled']).grid(row=2, column=1, pady=5, padx=5)
 
         # Items Section
-        items_frame = ttk.LabelFrame(main_frame, text="Order Items", padding="10")
+        items_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.order_items', default="Order Items"), padding="10")
         items_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         # Items list
         columns = ('item_name', 'quantity', 'unit', 'unit_cost', 'total')
         self.items_tree = ttk.Treeview(items_frame, columns=columns, show='headings', height=10)
 
-        self.items_tree.heading('item_name', text='Item Name')
-        self.items_tree.heading('quantity', text='Quantity')
-        self.items_tree.heading('unit', text='Unit')
-        self.items_tree.heading('unit_cost', text='Unit Cost')
-        self.items_tree.heading('total', text='Total')
+        self.items_tree.heading('item_name', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.item_name', default='Item Name'))
+        self.items_tree.heading('quantity', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.quantity', default='Quantity'))
+        self.items_tree.heading('unit', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.unit', default='Unit'))
+        self.items_tree.heading('unit_cost', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.unit_cost', default='Unit Cost'))
+        self.items_tree.heading('total', text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.headings.total', default='Total'))
 
         self.items_tree.column('item_name', width=250)
         self.items_tree.column('quantity', width=100)
@@ -572,22 +574,22 @@ class PurchaseOrderDialog:
         item_btn_frame = ttk.Frame(items_frame)
         item_btn_frame.pack(fill=tk.X, pady=(5, 0))
 
-        ttk.Button(item_btn_frame, text="Add Item", command=self.add_item).pack(side=tk.LEFT, padx=5)
-        ttk.Button(item_btn_frame, text="Remove Item", command=self.remove_item).pack(side=tk.LEFT, padx=5)
+        ttk.Button(item_btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.add_item', default="Add Item"), command=self.add_item).pack(side=tk.LEFT, padx=5)
+        ttk.Button(item_btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.remove_item', default="Remove Item"), command=self.remove_item).pack(side=tk.LEFT, padx=5)
 
         # Total
         total_frame = ttk.Frame(main_frame)
         total_frame.pack(fill=tk.X, pady=(0, 10))
 
-        self.total_label = ttk.Label(total_frame, text="Total: £0.00", font=('Arial', 12, 'bold'))
+        self.total_label = ttk.Label(total_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.total_0_00', default="Total: £0.00"), font=('Arial', 12, 'bold'))
         self.total_label.pack(side=tk.RIGHT)
 
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill=tk.X)
 
-        ttk.Button(btn_frame, text="Save", command=self.save).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.save', default="Save"), command=self.save).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def load_suppliers(self):
         """Load suppliers for combobox"""
@@ -650,7 +652,7 @@ class PurchaseOrderDialog:
             self.refresh_items_display()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load PO data: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to load PO data: {e}")
 
     def add_item(self):
         """Add item to order"""
@@ -691,11 +693,11 @@ class PurchaseOrderDialog:
         """Save purchase order"""
         # Validation
         if not self.supplier_var.get():
-            messagebox.showwarning("Missing Info", "Please select a supplier")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.missing_info', default="Missing Info"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_select_a_supplier', default="Please select a supplier"))
             return
 
         if not self.items:
-            messagebox.showwarning("Missing Items", "Please add at least one item")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.missing_items', default="Missing Items"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_add_at_least_one_item', default="Please add at least one item"))
             return
 
         try:
@@ -710,7 +712,7 @@ class PurchaseOrderDialog:
                          (self.supplier_var.get(),))
             supplier_row = cursor.fetchone()
             if not supplier_row:
-                messagebox.showerror("Error", "Supplier not found")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.supplier_not_found', default="Supplier not found"))
                 conn.close()
                 return
 
@@ -758,11 +760,11 @@ class PurchaseOrderDialog:
             conn.close()
 
             self.result = True
-            messagebox.showinfo("Success", "Purchase order saved successfully")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.purchase_order_saved_successfully', default="Purchase order saved successfully"))
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save purchase order: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to save purchase order: {e}")
 
 
 class OrderItemDialog:
@@ -772,7 +774,7 @@ class OrderItemDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Add Order Item")
+        self.dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.windows.add_order_item', default="Add Order Item"))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -784,24 +786,24 @@ class OrderItemDialog:
         frame = ttk.Frame(self.dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Item Name:*").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.item_name', default="Item Name:*")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.name_var, width=30).grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Quantity:*").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.quantity', default="Quantity:*")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.quantity_var = tk.DoubleVar(value=1.0)
         ttk.Entry(frame, textvariable=self.quantity_var, width=30).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Unit:*").grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.unit_var = tk.StringVar(value='kg')
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.unit_variant_3', default="Unit:*")).grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.unit_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.values.kg', default='kg'))
         ttk.Combobox(frame, textvariable=self.unit_var, width=28,
                     values=['kg', 'g', 'L', 'ml', 'units', 'boxes', 'cases']).grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Unit Cost (£):*").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.unit_cost', default="Unit Cost (£):*")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.cost_var = tk.DoubleVar(value=0.0)
         ttk.Entry(frame, textvariable=self.cost_var, width=30).grid(row=3, column=1, pady=5)
 
-        ttk.Label(frame, text="Total:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.total', default="Total:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.total_label = ttk.Label(frame, text="£0.00", font=('Arial', 10, 'bold'))
         self.total_label.grid(row=4, column=1, sticky=tk.W, pady=5)
 
@@ -812,8 +814,8 @@ class OrderItemDialog:
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=5, column=0, columnspan=2, pady=20)
 
-        ttk.Button(btn_frame, text="Add", command=self.add).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.add', default="Add"), command=self.add).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT)
 
     def update_total(self, *args):
         """Update total cost"""
@@ -826,7 +828,7 @@ class OrderItemDialog:
     def add(self):
         """Add item"""
         if not self.name_var.get():
-            messagebox.showwarning("Missing Info", "Please enter item name")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.missing_info', default="Missing Info"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_enter_item_name', default="Please enter item name"))
             return
 
         try:
@@ -845,7 +847,7 @@ class OrderItemDialog:
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Invalid values: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Invalid values: {e}")
 
 
 class SupplierDialog:
@@ -872,40 +874,40 @@ class SupplierDialog:
         frame = ttk.Frame(self.dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Supplier Name:*").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.supplier_name', default="Supplier Name:*")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.name_var, width=40).grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Contact Person:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.contact_person', default="Contact Person:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.contact_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.contact_var, width=40).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Email:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.email', default="Email:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.email_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.email_var, width=40).grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Phone:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.phone', default="Phone:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.phone_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.phone_var, width=40).grid(row=3, column=1, pady=5)
 
-        ttk.Label(frame, text="Address:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.address', default="Address:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.address_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.address_var, width=40).grid(row=4, column=1, pady=5)
 
-        ttk.Label(frame, text="Payment Terms:").grid(row=5, column=0, sticky=tk.W, pady=5)
-        self.terms_var = tk.StringVar(value='Net 30')
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.payment_terms', default="Payment Terms:")).grid(row=5, column=0, sticky=tk.W, pady=5)
+        self.terms_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.values.net_30', default='Net 30'))
         ttk.Combobox(frame, textvariable=self.terms_var, width=38,
                     values=['Cash on Delivery', 'Net 7', 'Net 15', 'Net 30', 'Net 60']).grid(row=5, column=1, pady=5)
 
-        ttk.Label(frame, text="Notes:").grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.notes', default="Notes:")).grid(row=6, column=0, sticky=tk.W, pady=5)
         self.notes_text = tk.Text(frame, height=4, width=40)
         self.notes_text.grid(row=6, column=1, pady=5)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=20)
 
-        ttk.Button(btn_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.save', default="Save"), command=self.save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT)
 
     def load_supplier_data(self):
         """Load existing supplier data"""
@@ -934,12 +936,12 @@ class SupplierDialog:
                 self.notes_text.insert('1.0', data[6] or '')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load supplier data: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to load supplier data: {e}")
 
     def save(self):
         """Save supplier"""
         if not self.name_var.get():
-            messagebox.showwarning("Missing Info", "Please enter supplier name")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.missing_info', default="Missing Info"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.please_enter_supplier_name', default="Please enter supplier name"))
             return
 
         try:
@@ -971,11 +973,11 @@ class SupplierDialog:
             conn.close()
 
             self.result = True
-            messagebox.showinfo("Success", "Supplier saved successfully")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.supplier_saved_successfully', default="Supplier saved successfully"))
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save supplier: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to save supplier: {e}")
 
 
 class PaymentDialog:
@@ -986,7 +988,7 @@ class PaymentDialog:
         self.callback = callback
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Record Payment")
+        self.dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.windows.record_payment', default="Record Payment"))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -1001,20 +1003,20 @@ class PaymentDialog:
         ttk.Label(frame, text=f"Record Payment for PO: {self.po_number}",
                  font=('Arial', 12, 'bold')).pack(pady=10)
 
-        ttk.Label(frame, text="Payment Method:").pack(anchor=tk.W, pady=5)
-        self.method_var = tk.StringVar(value='Bank Transfer')
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.payment_method', default="Payment Method:")).pack(anchor=tk.W, pady=5)
+        self.method_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.values.bank_transfer', default='Bank Transfer'))
         ttk.Combobox(frame, textvariable=self.method_var, width=38,
                     values=['Cash', 'Check', 'Bank Transfer', 'Credit Card']).pack(pady=5)
 
-        ttk.Label(frame, text="Payment Date:").pack(anchor=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.labels.payment_date', default="Payment Date:")).pack(anchor=tk.W, pady=5)
         self.date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(frame, textvariable=self.date_var, width=40).pack(pady=5)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(pady=20)
 
-        ttk.Button(btn_frame, text="Record Payment", command=self.save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.record_payment', default="Record Payment"), command=self.save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT)
 
     def save(self):
         """Save payment"""
@@ -1033,13 +1035,13 @@ class PaymentDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Payment recorded successfully")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.payment_recorded_successfully', default="Payment recorded successfully"))
             self.dialog.destroy()
             if self.callback:
                 self.callback()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to record payment: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.dialogs.error', default="Error"), f"Failed to record payment: {e}")
 
 
 class PurchaseOrderDetailsDialog:
@@ -1063,7 +1065,7 @@ class PurchaseOrderDetailsDialog:
         self.text = ScrolledText(self.dialog, height=30, width=80, font=('Courier', 10))
         self.text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Button(self.dialog, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(self.dialog, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.purchase_orders.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)
 
     def load_details(self):
         """Load and display PO details"""

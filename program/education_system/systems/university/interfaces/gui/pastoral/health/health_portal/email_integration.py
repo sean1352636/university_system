@@ -43,7 +43,7 @@ class EmailIntegrationMixin:
         def send_health_report_email():
             student_id = self.email_student_id.get().strip()
             if not student_id:
-                messagebox.showerror("Error", "Please enter a Student ID")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.email_integration.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.email_integration.dialogs.please_enter_a_student_id', default="Please enter a Student ID"))
                 return
 
             try:
@@ -54,7 +54,7 @@ class EmailIntegrationMixin:
                 conn.close()
 
                 if not patient_info:
-                    messagebox.showerror("Error", "Student not found")
+                    messagebox.showerror(_t('gui.pastoral.health.health_portal.email_integration.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.email_integration.dialogs.student_not_found', default="Student not found"))
                     return
 
                 patient_name = f"{patient_info[0]} {patient_info[1]}"
@@ -69,7 +69,7 @@ class EmailIntegrationMixin:
                 }
 
                 self.send_health_report_email(patient_email, patient_name, report_details)
-                messagebox.showinfo("Success", f"Health report email sent to {patient_name}")
+                messagebox.showinfo(_t('gui.pastoral.health.health_portal.email_integration.dialogs.success', default="Success"), f"Health report email sent to {patient_name}")
 
                 self.email_student_id.set("")
                 self.email_report_title.set("")
@@ -169,12 +169,12 @@ class EmailIntegrationMixin:
     def _show_email_fallback_dialog(self, to_email, subject, message):
         """Show email dialog as fallback when email system unavailable"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Health Portal Email Notification")
+        dialog.title(_t('gui.pastoral.health.health_portal.email_integration.windows.health_portal_email_notification', default="Health Portal Email Notification"))
         dialog.geometry("600x500")
         dialog.configure(bg='white')
         dialog.grab_set()
 
-        tk.Label(dialog, text="\U0001f3e5 Health Portal Email Notification", font=('Arial', 14, 'bold'),
+        tk.Label(dialog, text=_t('gui.pastoral.health.health_portal.email_integration.labels.health_portal_email_notification', default="\U0001f3e5 Health Portal Email Notification"), font=('Arial', 14, 'bold'),
                 bg='white', fg='#2c3e50').pack(pady=10)
 
         info_frame = tk.Frame(dialog, bg='white')
@@ -185,7 +185,7 @@ class EmailIntegrationMixin:
         tk.Label(info_frame, text=f"Subject: {subject}", font=('Arial', 11),
                 bg='white', fg='#34495e').pack(anchor='w')
 
-        tk.Label(dialog, text="Message:", font=('Arial', 11, 'bold'),
+        tk.Label(dialog, text=_t('gui.pastoral.health.health_portal.email_integration.labels.message', default="Message:"), font=('Arial', 11, 'bold'),
                 bg='white', fg='#2c3e50').pack(anchor='w', padx=20, pady=(10, 5))
 
         message_text = tk.Text(dialog, height=15, wrap='word', font=('Arial', 10))
@@ -193,7 +193,7 @@ class EmailIntegrationMixin:
         message_text.insert('1.0', message)
         message_text.config(state='disabled')
 
-        tk.Button(dialog, text="Close", command=dialog.destroy,
+        tk.Button(dialog, text=_t('gui.pastoral.health.health_portal.email_integration.buttons.close', default="Close"), command=dialog.destroy,
                  bg='#6c757d', fg='white', font=('Arial', 10),
                  padx=20, pady=5, relief='flat').pack(pady=10)
 
@@ -489,10 +489,10 @@ PRIVACY NOTICE: This health record is protected under HIPAA regulations."""
         try:
             from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI
             email_window = tk.Toplevel(self.root)
-            email_window.title("Health Portal - Email Manager")
+            email_window.title(_t('gui.pastoral.health.health_portal.email_integration.windows.health_portal_email_manager', default="Health Portal - Email Manager"))
             email_window.geometry("800x600")
             email_gui = EmailManagerGUI(email_window, auth=self.auth)
         except ImportError:
-            messagebox.showerror("Error", "Email Manager GUI not available")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.email_integration.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.email_integration.dialogs.email_manager_gui_not_available', default="Email Manager GUI not available"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error opening Email Manager: {e}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.email_integration.dialogs.error', default="Error"), f"Error opening Email Manager: {e}")

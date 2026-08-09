@@ -1,5 +1,7 @@
 """Barber Shop GUI - Appointments tab creation."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, datetime, _t,
 )
@@ -33,14 +35,14 @@ class AppointmentsTabMixin:
                   self.current_user.get('username') or
                   str(self.current_user.get('id', '')))
 
-        ttk.Label(cust_frame, text="Booking for:", font=('Helvetica', 10, 'bold')).pack(side=tk.LEFT)
+        ttk.Label(cust_frame, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.labels.booking_for', default="Booking for:"), font=('Helvetica', 10, 'bold')).pack(side=tk.LEFT)
         ttk.Label(cust_frame, text=user_name, font=('Helvetica', 10)).pack(side=tk.LEFT, padx=(5, 20))
 
-        ttk.Label(cust_frame, text="Email:").pack(side=tk.LEFT)
+        ttk.Label(cust_frame, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.labels.email', default="Email:")).pack(side=tk.LEFT)
         ttk.Label(cust_frame, text=user_email if user_email else "Not set",
                  foreground='gray' if not user_email else 'black').pack(side=tk.LEFT, padx=(5, 20))
 
-        ttk.Label(cust_frame, text="ID:").pack(side=tk.LEFT)
+        ttk.Label(cust_frame, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.labels.id', default="ID:")).pack(side=tk.LEFT)
         ttk.Label(cust_frame, text=user_id if user_id else "N/A").pack(side=tk.LEFT, padx=5)
 
         # Service and scheduling row
@@ -117,21 +119,21 @@ class AppointmentsTabMixin:
         action_frame2 = ttk.Frame(appointments_frame)
         action_frame2.pack(fill=tk.X, pady=2)
 
-        ttk.Button(action_frame2, text="Mark No-Show",
+        ttk.Button(action_frame2, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.buttons.mark_no_show', default="Mark No-Show"),
                   command=self.mark_no_show).pack(side=tk.LEFT, padx=3)
-        ttk.Button(action_frame2, text="Set Reminder",
+        ttk.Button(action_frame2, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.buttons.set_reminder', default="Set Reminder"),
                   command=self.set_appointment_reminder).pack(side=tk.LEFT, padx=3)
-        ttk.Button(action_frame2, text="View History",
+        ttk.Button(action_frame2, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.buttons.view_history', default="View History"),
                   command=self.view_appointment_history).pack(side=tk.LEFT, padx=3)
-        ttk.Button(action_frame2, text="Weekly Calendar",
+        ttk.Button(action_frame2, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.buttons.weekly_calendar', default="Weekly Calendar"),
                   command=self.show_weekly_calendar).pack(side=tk.LEFT, padx=3)
-        ttk.Button(action_frame2, text="Bulk Cancel",
+        ttk.Button(action_frame2, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.buttons.bulk_cancel', default="Bulk Cancel"),
                   command=self.bulk_cancel_appointments).pack(side=tk.LEFT, padx=3)
-        ttk.Button(action_frame2, text="View Waitlist",
+        ttk.Button(action_frame2, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.buttons.view_waitlist', default="View Waitlist"),
                   command=self.view_waitlist).pack(side=tk.LEFT, padx=3)
-        ttk.Button(action_frame2, text="Add to Waitlist",
+        ttk.Button(action_frame2, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.buttons.add_to_waitlist', default="Add to Waitlist"),
                   command=self.add_to_waitlist).pack(side=tk.LEFT, padx=3)
-        ttk.Button(action_frame2, text="Block Time Slot",
+        ttk.Button(action_frame2, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.buttons.block_time_slot', default="Block Time Slot"),
                   command=self.block_time_slot).pack(side=tk.LEFT, padx=3)
-        ttk.Button(action_frame2, text="Recurring Appt",
+        ttk.Button(action_frame2, text=_t('gui.operations.commerce.barber.tabs.appointments_tab.buttons.recurring_appt', default="Recurring Appt"),
                   command=self.recurring_appointment).pack(side=tk.LEFT, padx=3)

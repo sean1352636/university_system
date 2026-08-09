@@ -9,6 +9,8 @@ high). Each correct call multiplies your running win -- riskier calls pay more.
 Cash out any time; a wrong call (or an exact tie) loses the lot.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -42,7 +44,7 @@ def multiplier(p):
 class HiLo:
     def __init__(self, root):
         self.root = root
-        root.title("Hi-Lo")
+        root.title(_t('gui.operations.commerce.betting.games.hi_lo.windows.hi_lo', default="Hi-Lo"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -59,7 +61,7 @@ class HiLo:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=20, pady=14)
         f.pack()
-        tk.Label(f, text="HI - LO", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.hi_lo.labels.hi_lo', default="HI - LO"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 22, "bold")).pack()
         self.canvas = tk.Canvas(f, width=CARD_W, height=CARD_H, bg=FELT,
                                 highlightthickness=0)
@@ -67,19 +69,19 @@ class HiLo:
         self.run_lbl = tk.Label(f, text="", bg=FELT, fg=GOLD,
                                 font=("Helvetica", 14, "bold"))
         self.run_lbl.pack()
-        self.msg = tk.Label(f, text="Set a stake and press Deal.", bg=FELT,
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.hi_lo.labels.set_a_stake_and_press_deal', default="Set a stake and press Deal."), bg=FELT,
                             fg="white", font=("Helvetica", 12, "bold"))
         self.msg.pack(pady=2)
 
         guess = tk.Frame(f, bg=FELT, pady=6)
         guess.pack()
-        self.high_btn = tk.Button(guess, text="HIGHER", command=lambda:
+        self.high_btn = tk.Button(guess, text=_t('gui.operations.commerce.betting.games.hi_lo.buttons.higher', default="HIGHER"), command=lambda:
                                   self.guess("higher"), width=14,
                                   font=("Helvetica", 13, "bold"), bg="#1b7a4b",
                                   fg="white", bd=0, pady=6, cursor="hand2",
                                   state="disabled")
         self.high_btn.pack(side="left", padx=6)
-        self.low_btn = tk.Button(guess, text="LOWER", command=lambda:
+        self.low_btn = tk.Button(guess, text=_t('gui.operations.commerce.betting.games.hi_lo.buttons.lower', default="LOWER"), command=lambda:
                                  self.guess("lower"), width=14,
                                  font=("Helvetica", 13, "bold"), bg="#9b2226",
                                  fg="white", bd=0, pady=6, cursor="hand2",
@@ -94,7 +96,7 @@ class HiLo:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.hi_lo.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -110,11 +112,11 @@ class HiLo:
 
         btns = tk.Frame(f, bg=FELT, pady=6)
         btns.pack()
-        self.deal_btn = tk.Button(btns, text="DEAL", command=self.deal, width=12,
+        self.deal_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.hi_lo.buttons.deal', default="DEAL"), command=self.deal, width=12,
                                   font=("Helvetica", 13, "bold"), bg="#3a5a8a",
                                   fg="white", bd=0, pady=6, cursor="hand2")
         self.deal_btn.pack(side="left", padx=6)
-        self.cash_btn = tk.Button(btns, text="CASH OUT", command=self.cash_out,
+        self.cash_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.hi_lo.buttons.cash_out', default="CASH OUT"), command=self.cash_out,
                                   width=12, font=("Helvetica", 13, "bold"),
                                   bg="#1b7a4b", fg="white", bd=0, pady=6,
                                   cursor="hand2", state="disabled")
@@ -141,8 +143,8 @@ class HiLo:
 
     def update_buttons(self):
         if not self.in_round or self.current is None:
-            self.high_btn.config(state="disabled", text="HIGHER")
-            self.low_btn.config(state="disabled", text="LOWER")
+            self.high_btn.config(state="disabled", text=_t('gui.operations.commerce.betting.games.hi_lo.text.higher', default="HIGHER"))
+            self.low_btn.config(state="disabled", text=_t('gui.operations.commerce.betting.games.hi_lo.text.lower', default="LOWER"))
             return
         v = self.current[0]
         ph, pl = prob_higher(v), prob_lower(v)
@@ -186,14 +188,14 @@ class HiLo:
         if self.busy or self.in_round:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.hi_lo.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.running = float(self.bet)
         self.in_round = True
         self.current = self._draw_card()
         self.render()
-        self.msg.config(text="Higher or lower?", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.hi_lo.text.higher_or_lower', default="Higher or lower?"), fg="white")
         self.deal_btn.config(state="disabled")
         self.cash_btn.config(state="normal")
         self.update_buttons()
@@ -245,7 +247,7 @@ class HiLo:
         self.cash_btn.config(state="disabled")
         self.update_buttons()
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.hi_lo.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, max(MIN_BET, self.credits))
 

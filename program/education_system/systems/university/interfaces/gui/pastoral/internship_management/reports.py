@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.pastoral.internship_management._imports import messagebox, tk, ttk, sqlite3, get_connection
 
 
@@ -7,21 +9,21 @@ class ReportsMixin:
         self.clear_content()
 
         if not self.auth.check_permission('view_internship_reports'):
-            messagebox.showerror("Permission Error", "You don't have permission to view reports.")
+            messagebox.showerror(_t('gui.pastoral.internship_management.reports.dialogs.permission_error', default="Permission Error"), _t('gui.pastoral.internship_management.reports.dialogs.you_don_t_have_permission_to_view_reports', default="You don't have permission to view reports."))
             return
 
         # Title
         title_frame = tk.Frame(self.content_frame, bg='white')
         title_frame.pack(fill='x', padx=20, pady=(20, 10))
 
-        tk.Label(title_frame, text="Internship Reports",
+        tk.Label(title_frame, text=_t('gui.pastoral.internship_management.reports.labels.internship_reports', default="Internship Reports"),
                 font=('Arial', 18, 'bold'), bg='white', fg='#2c3e50').pack(side='left')
 
         # Report selection
         report_frame = tk.Frame(self.content_frame, bg='white')
         report_frame.pack(fill='x', padx=40, pady=20)
 
-        tk.Label(report_frame, text="Select Report Type:", font=('Arial', 12, 'bold'),
+        tk.Label(report_frame, text=_t('gui.pastoral.internship_management.reports.labels.select_report_type', default="Select Report Type:"), font=('Arial', 12, 'bold'),
                 bg='white', fg='#2c3e50').pack(anchor='w', pady=(0, 10))
 
         report_buttons = [
@@ -41,7 +43,7 @@ class ReportsMixin:
         self.report_display_frame.pack(fill='both', expand=True, padx=40, pady=20)
 
         # Default message
-        tk.Label(self.report_display_frame, text="Select a report type above to view data.",
+        tk.Label(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.select_a_report_type_above_to_view_data', default="Select a report type above to view data."),
                 font=('Arial', 12), bg='white', fg='#7f8c8d').pack(expand=True)
 
     def clear_report_display(self):
@@ -71,11 +73,11 @@ class ReportsMixin:
             placements = cursor.fetchall()
 
             # Title
-            tk.Label(self.report_display_frame, text="Current Placements Summary",
+            tk.Label(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.current_placements_summary', default="Current Placements Summary"),
                     font=('Arial', 16, 'bold'), bg='white', fg='#2c3e50').pack(pady=(10, 20))
 
             if not placements:
-                tk.Label(self.report_display_frame, text="No active placements found.",
+                tk.Label(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.no_active_placements_found', default="No active placements found."),
                         font=('Arial', 12), bg='white', fg='#7f8c8d').pack()
                 conn.close()
                 return
@@ -119,7 +121,7 @@ class ReportsMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error generating placements report: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.reports.dialogs.database_error', default="Database Error"), f"Error generating placements report: {e}")
 
     def show_success_rate_report(self):
         """Show application success rate by course report"""
@@ -145,11 +147,11 @@ class ReportsMixin:
             rates = cursor.fetchall()
 
             # Title
-            tk.Label(self.report_display_frame, text="Application Success Rate by Course",
+            tk.Label(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.application_success_rate_by_course', default="Application Success Rate by Course"),
                     font=('Arial', 16, 'bold'), bg='white', fg='#2c3e50').pack(pady=(10, 20))
 
             if not rates:
-                tk.Label(self.report_display_frame, text="No application data found.",
+                tk.Label(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.no_application_data_found', default="No application data found."),
                         font=('Arial', 12), bg='white', fg='#7f8c8d').pack()
                 conn.close()
                 return
@@ -190,7 +192,7 @@ class ReportsMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error generating success rate report: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.reports.dialogs.database_error', default="Database Error"), f"Error generating success rate report: {e}")
 
     def show_companies_report(self):
         """Show top companies by placements report"""
@@ -215,11 +217,11 @@ class ReportsMixin:
             companies = cursor.fetchall()
 
             # Title
-            tk.Label(self.report_display_frame, text="Top Companies by Placement Count",
+            tk.Label(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.top_companies_by_placement_count', default="Top Companies by Placement Count"),
                     font=('Arial', 16, 'bold'), bg='white', fg='#2c3e50').pack(pady=(10, 20))
 
             if not companies:
-                tk.Label(self.report_display_frame, text="No placement data found.",
+                tk.Label(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.no_placement_data_found', default="No placement data found."),
                         font=('Arial', 12), bg='white', fg='#7f8c8d').pack()
                 conn.close()
                 return
@@ -254,7 +256,7 @@ class ReportsMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error generating companies report: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.reports.dialogs.database_error', default="Database Error"), f"Error generating companies report: {e}")
 
     def show_status_overview_report(self):
         """Show application status overview report"""
@@ -291,11 +293,11 @@ class ReportsMixin:
             monthly_trends = cursor.fetchall()
 
             # Title
-            tk.Label(self.report_display_frame, text="Application Status Overview",
+            tk.Label(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.application_status_overview', default="Application Status Overview"),
                     font=('Arial', 16, 'bold'), bg='white', fg='#2c3e50').pack(pady=(10, 20))
 
             # Overall statistics
-            stats_frame = tk.LabelFrame(self.report_display_frame, text="Overall Statistics",
+            stats_frame = tk.LabelFrame(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.overall_statistics', default="Overall Statistics"),
                                        font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             stats_frame.pack(fill='x', padx=20, pady=10)
 
@@ -325,7 +327,7 @@ class ReportsMixin:
 
             # Monthly trends
             if monthly_trends:
-                trends_frame = tk.LabelFrame(self.report_display_frame, text="Monthly Trends (Last 6 Months)",
+                trends_frame = tk.LabelFrame(self.report_display_frame, text=_t('gui.pastoral.internship_management.reports.labels.monthly_trends_last_6_months', default="Monthly Trends (Last 6 Months)"),
                                            font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
                 trends_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
@@ -350,4 +352,4 @@ class ReportsMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error generating status overview report: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.reports.dialogs.database_error', default="Database Error"), f"Error generating status overview report: {e}")

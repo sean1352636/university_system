@@ -32,7 +32,7 @@ class SyncAndMappingsMixin:
         try:
             selected = self.sync_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select a sync log to view")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.please_select_a_sync_log_to_view', default="Please select a sync log to view"))
                 return
 
             log_id = self.sync_tree.item(selected[0])['values'][0]
@@ -50,7 +50,7 @@ class SyncAndMappingsMixin:
                 log = cursor.fetchone()
 
             if not log:
-                messagebox.showerror(_t("common.error"), "Sync log not found")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.sync_log_not_found', default="Sync log not found"))
                 return
 
             details = "Sync Log Details\n\n"
@@ -64,7 +64,7 @@ class SyncAndMappingsMixin:
             if log[7]:
                 details += f"\nError Details:\n{log[7]}"
 
-            messagebox.showinfo("Sync Log Details", details)
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.sync_log_details', default="Sync Log Details"), details)
 
         except Exception as e:
             logger.error(f"Error viewing sync details: {e}")
@@ -111,22 +111,22 @@ class SyncAndMappingsMixin:
         """Add data mapping"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Add Data Mapping")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.windows.add_data_mapping', default="Add Data Mapping"))
             dialog.geometry("500x350")
 
-            ttk.Label(dialog, text="Installation ID:").grid(row=0, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.installation_id', default="Installation ID:")).grid(row=0, column=0, padx=10, pady=5, sticky='w')
             install_id_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=install_id_var, width=35).grid(row=0, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Source Field:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.source_field', default="Source Field:")).grid(row=1, column=0, padx=10, pady=5, sticky='w')
             source_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=source_var, width=35).grid(row=1, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Target Field:").grid(row=2, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.target_field', default="Target Field:")).grid(row=2, column=0, padx=10, pady=5, sticky='w')
             target_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=target_var, width=35).grid(row=2, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Transformation Rule (Optional):").grid(row=3, column=0, padx=10, pady=5, sticky='nw')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.transformation_rule_optional', default="Transformation Rule (Optional):")).grid(row=3, column=0, padx=10, pady=5, sticky='nw')
             transform_text = scrolledtext.ScrolledText(dialog, width=35, height=5)
             transform_text.grid(row=3, column=1, padx=10, pady=5)
 
@@ -138,7 +138,7 @@ class SyncAndMappingsMixin:
                     transformation = transform_text.get('1.0', 'end-1c').strip()
 
                     if not install_id or not source_field or not target_field:
-                        messagebox.showerror(_t("common.error"), "Installation ID, source field, and target field are required")
+                        messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.installation_id_source_field_and_target_field_are_required', default="Installation ID, source field, and target field are required"))
                         return
 
                     if MANAGERS_AVAILABLE:
@@ -159,7 +159,7 @@ class SyncAndMappingsMixin:
                     log_activity('create', 'integration_data_mapping', mapping_id,
                                 details={'install_id': install_id})
 
-                    messagebox.showinfo(_t("common.success"), "Data mapping created successfully")
+                    messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.data_mapping_created_successfully', default="Data mapping created successfully"))
                     dialog.destroy()
                     self.load_mappings()
 
@@ -167,7 +167,7 @@ class SyncAndMappingsMixin:
                     logger.error(f"Error creating mapping: {e}")
                     messagebox.showerror(_t("common.error"), f"Failed to create mapping: {e}")
 
-            ttk.Button(dialog, text="Create Mapping", command=save_mapping).grid(
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.buttons.create_mapping', default="Create Mapping"), command=save_mapping).grid(
                 row=4, column=0, columnspan=2, pady=20)
 
         except Exception as e:
@@ -179,7 +179,7 @@ class SyncAndMappingsMixin:
         try:
             selected = self.mappings_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select a mapping to edit")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.please_select_a_mapping_to_edit', default="Please select a mapping to edit"))
                 return
 
             mapping_id = self.mappings_tree.item(selected[0])['values'][0]
@@ -195,35 +195,35 @@ class SyncAndMappingsMixin:
                 current_data = cursor.fetchone()
 
             if not current_data:
-                messagebox.showerror(_t("common.error"), "Mapping not found")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.mapping_not_found', default="Mapping not found"))
                 return
 
             # Create edit dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Edit Data Mapping")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.windows.edit_data_mapping', default="Edit Data Mapping"))
             dialog.geometry("500x400")
 
-            ttk.Label(dialog, text="Installation ID:").grid(row=0, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.installation_id', default="Installation ID:")).grid(row=0, column=0, padx=10, pady=5, sticky='w')
             install_id_var = tk.StringVar(value=str(current_data[0]))
             ttk.Entry(dialog, textvariable=install_id_var, width=35).grid(row=0, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Source Field:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.source_field', default="Source Field:")).grid(row=1, column=0, padx=10, pady=5, sticky='w')
             source_var = tk.StringVar(value=current_data[1] or '')
             ttk.Entry(dialog, textvariable=source_var, width=35).grid(row=1, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Target Field:").grid(row=2, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.target_field', default="Target Field:")).grid(row=2, column=0, padx=10, pady=5, sticky='w')
             target_var = tk.StringVar(value=current_data[2] or '')
             ttk.Entry(dialog, textvariable=target_var, width=35).grid(row=2, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Transformation Rule (Optional):").grid(row=3, column=0, padx=10, pady=5, sticky='nw')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.transformation_rule_optional', default="Transformation Rule (Optional):")).grid(row=3, column=0, padx=10, pady=5, sticky='nw')
             transform_text = scrolledtext.ScrolledText(dialog, width=35, height=5)
             transform_text.grid(row=3, column=1, padx=10, pady=5)
             if current_data[3]:
                 transform_text.insert('1.0', current_data[3])
 
-            ttk.Label(dialog, text="Status:").grid(row=4, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.status', default="Status:")).grid(row=4, column=0, padx=10, pady=5, sticky='w')
             is_active_var = tk.BooleanVar(value=bool(current_data[4]))
-            ttk.Checkbutton(dialog, text="Active", variable=is_active_var).grid(row=4, column=1, padx=10, pady=5, sticky='w')
+            ttk.Checkbutton(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.buttons.active', default="Active"), variable=is_active_var).grid(row=4, column=1, padx=10, pady=5, sticky='w')
 
             def save_changes():
                 try:
@@ -234,7 +234,7 @@ class SyncAndMappingsMixin:
                     is_active = 1 if is_active_var.get() else 0
 
                     if not install_id or not source_field or not target_field:
-                        messagebox.showerror(_t("common.error"), "Installation ID, source field, and target field are required")
+                        messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.installation_id_source_field_and_target_field_are_required', default="Installation ID, source field, and target field are required"))
                         return
 
                     if MANAGERS_AVAILABLE:
@@ -255,7 +255,7 @@ class SyncAndMappingsMixin:
                     log_activity('update', 'integration_data_mapping', mapping_id,
                                 details={'install_id': install_id, 'is_active': is_active})
 
-                    messagebox.showinfo(_t("common.success"), "Data mapping updated successfully")
+                    messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.data_mapping_updated_successfully', default="Data mapping updated successfully"))
                     dialog.destroy()
                     self.load_mappings()
 
@@ -278,12 +278,12 @@ class SyncAndMappingsMixin:
         try:
             selected = self.mappings_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select a mapping to delete")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.please_select_a_mapping_to_delete', default="Please select a mapping to delete"))
                 return
 
             mapping_id = self.mappings_tree.item(selected[0])['values'][0]
 
-            if messagebox.askyesno("Confirm Delete", "Delete this data mapping?"):
+            if messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.delete_this_data_mapping', default="Delete this data mapping?")):
                 with transaction() as conn:
                     cursor = conn.cursor()
                     cursor.execute('DELETE FROM integration_data_mappings WHERE mapping_id = ?',
@@ -292,7 +292,7 @@ class SyncAndMappingsMixin:
                 log_activity('delete', 'integration_data_mapping', mapping_id,
                             details={'action': 'deleted'})
 
-                messagebox.showinfo(_t("common.success"), "Data mapping deleted successfully")
+                messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.data_mapping_deleted_successfully', default="Data mapping deleted successfully"))
                 self.load_mappings()
 
         except Exception as e:
@@ -303,24 +303,24 @@ class SyncAndMappingsMixin:
         """Add webhook"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Add Webhook")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.windows.add_webhook', default="Add Webhook"))
             dialog.geometry("500x300")
 
-            ttk.Label(dialog, text="Installation ID:").grid(row=0, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.installation_id', default="Installation ID:")).grid(row=0, column=0, padx=10, pady=5, sticky='w')
             install_id_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=install_id_var, width=35).grid(row=0, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Webhook URL:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.webhook_url', default="Webhook URL:")).grid(row=1, column=0, padx=10, pady=5, sticky='w')
             url_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=url_var, width=35).grid(row=1, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Event Type:").grid(row=2, column=0, padx=10, pady=5, sticky='w')
-            event_var = tk.StringVar(value='data_update')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.event_type', default="Event Type:")).grid(row=2, column=0, padx=10, pady=5, sticky='w')
+            event_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.values.data_update', default='data_update'))
             ttk.Combobox(dialog, textvariable=event_var,
                         values=['data_update', 'sync_complete', 'error', 'status_change'],
                         width=33, state='readonly').grid(row=2, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Secret Key (Optional):").grid(row=3, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.labels.secret_key_optional', default="Secret Key (Optional):")).grid(row=3, column=0, padx=10, pady=5, sticky='w')
             secret_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=secret_var, width=35, show='*').grid(row=3, column=1, padx=10, pady=5)
 
@@ -332,7 +332,7 @@ class SyncAndMappingsMixin:
                     secret_key = secret_var.get().strip()
 
                     if not install_id or not webhook_url:
-                        messagebox.showerror(_t("common.error"), "Installation ID and webhook URL are required")
+                        messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.installation_id_and_webhook_url_are_required', default="Installation ID and webhook URL are required"))
                         return
 
                     if MANAGERS_AVAILABLE:
@@ -353,7 +353,7 @@ class SyncAndMappingsMixin:
                     log_activity('create', 'integration_webhook', webhook_id,
                                 details={'install_id': install_id})
 
-                    messagebox.showinfo(_t("common.success"), "Webhook registered successfully")
+                    messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.webhook_registered_successfully', default="Webhook registered successfully"))
                     dialog.destroy()
                     self.load_webhooks()
 
@@ -361,7 +361,7 @@ class SyncAndMappingsMixin:
                     logger.error(f"Error registering webhook: {e}")
                     messagebox.showerror(_t("common.error"), f"Failed to register webhook: {e}")
 
-            ttk.Button(dialog, text="Register Webhook", command=save_webhook).grid(
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.buttons.register_webhook', default="Register Webhook"), command=save_webhook).grid(
                 row=4, column=0, columnspan=2, pady=20)
 
         except Exception as e:
@@ -370,19 +370,19 @@ class SyncAndMappingsMixin:
 
     def edit_webhook(self):
         """Edit selected webhook"""
-        messagebox.showinfo("Edit Webhook", "Edit webhook functionality - similar to add_webhook")
+        messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.edit_webhook', default="Edit Webhook"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.edit_webhook_functionality_similar_to_add_webhook', default="Edit webhook functionality - similar to add_webhook"))
 
     def delete_webhook(self):
         """Delete selected webhook"""
         try:
             selected = self.webhooks_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select a webhook to delete")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.please_select_a_webhook_to_delete', default="Please select a webhook to delete"))
                 return
 
             webhook_id = self.webhooks_tree.item(selected[0])['values'][0]
 
-            if messagebox.askyesno("Confirm Delete", "Delete this webhook?"):
+            if messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.delete_this_webhook', default="Delete this webhook?")):
                 with transaction() as conn:
                     cursor = conn.cursor()
                     cursor.execute('DELETE FROM integration_webhooks WHERE webhook_id = ?',
@@ -391,7 +391,7 @@ class SyncAndMappingsMixin:
                 log_activity('delete', 'integration_webhook', webhook_id,
                             details={'action': 'deleted'})
 
-                messagebox.showinfo(_t("common.success"), "Webhook deleted successfully")
+                messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.sync_and_mappings.dialogs.webhook_deleted_successfully', default="Webhook deleted successfully"))
                 self.load_webhooks()
 
         except Exception as e:

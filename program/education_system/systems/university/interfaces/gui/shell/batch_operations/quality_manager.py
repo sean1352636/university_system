@@ -1,4 +1,6 @@
 """Data quality operations manager for batch operations GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import json
 import datetime
@@ -19,9 +21,9 @@ class QualityManager:
 
     def validate_data(self):
         """GUI version of data validation"""
-        if messagebox.askyesno("Validate Data",
-                              "This will analyze all student records for data quality issues.\n"
-                              "Continue?"):
+        if messagebox.askyesno(_t('gui.shell.batch_operations.quality_manager.dialogs.validate_data', default="Validate Data"),
+                              _t('gui.shell.batch_operations.quality_manager.dialogs.this_will_analyze_all_student_records_for_data_quality_issues_co', default="This will analyze all student records for data quality issues.\n"
+                              "Continue?")):
             def validate_worker():
                 try:
                     progress_dialog = GUIProgressDialog(self.gui.root, "Data Validation", "Analyzing data quality")
@@ -100,7 +102,7 @@ class QualityManager:
             # Export button
             def export_issues():
                 file_path = filedialog.asksaveasfilename(
-                    title="Save validation report",
+                    title=_t('gui.shell.batch_operations.quality_manager.dialogs.save_validation_report', default="Save validation report"),
                     defaultextension=".csv",
                     filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
                 )
@@ -125,7 +127,7 @@ class QualityManager:
             btn_frame.pack(pady=10)
 
             ttk.Button(btn_frame, text=_t("batch_ops.buttons.export_report"), command=export_issues).pack(side=tk.LEFT, padx=10)
-            ttk.Button(btn_frame, text="Email Report to Admin",
+            ttk.Button(btn_frame, text=_t('gui.shell.batch_operations.quality_manager.buttons.email_report_to_admin', default="Email Report to Admin"),
                        command=lambda: self._email_validation_report_to_admin(issues)).pack(side=tk.LEFT, padx=10)
 
         # Close button
@@ -133,10 +135,10 @@ class QualityManager:
 
     def find_duplicates(self):
         """GUI version of find duplicates"""
-        if messagebox.askyesno("Find Duplicates",
-                              "This will analyze all student records for potential duplicates.\n"
+        if messagebox.askyesno(_t('gui.shell.batch_operations.quality_manager.dialogs.find_duplicates', default="Find Duplicates"),
+                              _t('gui.shell.batch_operations.quality_manager.dialogs.this_will_analyze_all_student_records_for_potential_duplicates_t', default="This will analyze all student records for potential duplicates.\n"
                               "This may take some time for large databases.\n\n"
-                              "Continue?"):
+                              "Continue?")):
             def duplicate_worker():
                 try:
                     progress_dialog = GUIProgressDialog(self.gui.root, "Duplicate Detection", "Analyzing for duplicates")
@@ -218,7 +220,7 @@ class QualityManager:
 
             def export_duplicates():
                 file_path = filedialog.asksaveasfilename(
-                    title="Save duplicates report",
+                    title=_t('gui.shell.batch_operations.quality_manager.dialogs.save_duplicates_report', default="Save duplicates report"),
                     defaultextension=".json",
                     filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
                 )
@@ -232,7 +234,7 @@ class QualityManager:
 
             ttk.Button(action_frame, text=_t("batch_ops.buttons.merge"), command=merge_duplicates).pack(side=tk.LEFT, padx=10)
             ttk.Button(action_frame, text=_t("batch_ops.buttons.export_report"), command=export_duplicates).pack(side=tk.LEFT, padx=10)
-            ttk.Button(action_frame, text="Email Report to Admin",
+            ttk.Button(action_frame, text=_t('gui.shell.batch_operations.quality_manager.buttons.email_report_to_admin', default="Email Report to Admin"),
                        command=lambda: self._email_duplicate_report_to_admin(duplicates)).pack(side=tk.LEFT, padx=10)
 
         # Close button
@@ -250,7 +252,7 @@ class QualityManager:
     def show_duplicate_merger_dialog(self):
         """Show individual duplicate merger dialog"""
         if self.gui.current_duplicate_index >= len(self.gui.duplicates_list):
-            messagebox.showinfo(_t("batch_ops.msg_titles.complete"), "All duplicates have been processed")
+            messagebox.showinfo(_t("batch_ops.msg_titles.complete"), _t('gui.shell.batch_operations.quality_manager.dialogs.all_duplicates_have_been_processed', default="All duplicates have been processed"))
             return
 
         dup = self.gui.duplicates_list[self.gui.current_duplicate_index]
@@ -318,19 +320,19 @@ DOB: {dup['student2']['dob']}"""
 
         def skip_all():
             dialog.destroy()
-            messagebox.showinfo(_t("batch_ops.msg_titles.skipped"), "Remaining duplicates skipped")
+            messagebox.showinfo(_t("batch_ops.msg_titles.skipped"), _t('gui.shell.batch_operations.quality_manager.dialogs.remaining_duplicates_skipped', default="Remaining duplicates skipped"))
 
         ttk.Button(action_frame, text=_t("batch_ops.buttons.keep_student_1"), command=keep_student1).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text=_t("batch_ops.buttons.keep_student_2"), command=keep_student2).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Skip This Pair", command=skip_pair).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Skip All Remaining", command=skip_all).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.shell.batch_operations.quality_manager.buttons.skip_this_pair', default="Skip This Pair"), command=skip_pair).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.shell.batch_operations.quality_manager.buttons.skip_all_remaining', default="Skip All Remaining"), command=skip_all).pack(side=tk.LEFT, padx=5)
 
     def clean_data(self):
         """GUI version of data cleaning"""
-        if messagebox.askyesno("Clean Data",
-                              "This will automatically fix common data issues.\n"
+        if messagebox.askyesno(_t('gui.shell.batch_operations.quality_manager.dialogs.clean_data', default="Clean Data"),
+                              _t('gui.shell.batch_operations.quality_manager.dialogs.this_will_automatically_fix_common_data_issues_a_backup_will_be', default="This will automatically fix common data issues.\n"
                               "A backup will be created first.\n\n"
-                              "Continue?"):
+                              "Continue?")):
             def clean_worker():
                 try:
                     progress_dialog = GUIProgressDialog(self.gui.root, "Data Cleaning", "Cleaning data")
@@ -379,7 +381,7 @@ DOB: {dup['student2']['dob']}"""
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        header = ttk.Label(dialog, text="Data Quality Report", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.quality_manager.labels.data_quality_report', default="Data Quality Report"), font=("Arial", 14, "bold"))
         header.pack(pady=10)
 
         # Report content
@@ -397,7 +399,7 @@ DOB: {dup['student2']['dob']}"""
         # Export button
         def export_report():
             file_path = filedialog.asksaveasfilename(
-                title="Save quality report",
+                title=_t('gui.shell.batch_operations.quality_manager.dialogs.save_quality_report', default="Save quality report"),
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
             )
@@ -542,7 +544,7 @@ Quality Improvements: {data.get('quality_improvements', 0)}
         if not admin_emails:
             messagebox.showerror(
                 _t("batch_ops.msg_titles.error"),
-                "No admin email addresses found in the database."
+                _t('gui.shell.batch_operations.quality_manager.dialogs.no_admin_email_addresses_found_in_the_database', default="No admin email addresses found in the database.")
             )
             return
 
@@ -588,7 +590,7 @@ Quality Improvements: {data.get('quality_improvements', 0)}
         if not admin_emails:
             messagebox.showerror(
                 _t("batch_ops.msg_titles.error"),
-                "No admin email addresses found in the database."
+                _t('gui.shell.batch_operations.quality_manager.dialogs.no_admin_email_addresses_found_in_the_database', default="No admin email addresses found in the database.")
             )
             return
 
@@ -621,7 +623,7 @@ Quality Improvements: {data.get('quality_improvements', 0)}
         except ImportError:
             messagebox.showerror(
                 _t("batch_ops.msg_titles.error"),
-                "Email service is not available."
+                _t('gui.shell.batch_operations.quality_manager.dialogs.email_service_is_not_available', default="Email service is not available.")
             )
             return
 
@@ -644,16 +646,16 @@ Quality Improvements: {data.get('quality_improvements', 0)}
 
         if success and not failed:
             messagebox.showinfo(
-                "Email Sent",
+                _t('gui.shell.batch_operations.quality_manager.dialogs.email_sent', default="Email Sent"),
                 f"Report emailed to {success} admin(s):\n" + "\n".join(admin_emails)
             )
         elif success:
             messagebox.showwarning(
-                "Partial Success",
+                _t('gui.shell.batch_operations.quality_manager.dialogs.partial_success', default="Partial Success"),
                 f"Sent to {success} admin(s), failed for:\n" + "\n".join(failed)
             )
         else:
             messagebox.showerror(
                 _t("batch_ops.msg_titles.error"),
-                "Failed to send report to any admin address."
+                _t('gui.shell.batch_operations.quality_manager.dialogs.failed_to_send_report_to_any_admin_address', default="Failed to send report to any admin address.")
             )

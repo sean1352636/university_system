@@ -29,14 +29,14 @@ import logging
 import sqlite3
 from dataclasses import dataclass, field
 from typing import Any, Callable
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.learners.bulk_operations import (
     bulk_operations as data,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.BULK_OPERATIONS_DB
+DB_PATH = paths.SIXTH_FORM_BULK_OPERATIONS_DB
 
 
 OPERATIONS: tuple[str, ...] = (
@@ -391,7 +391,7 @@ class Summary:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     return conn

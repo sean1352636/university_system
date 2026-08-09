@@ -25,6 +25,8 @@ The panel exposes the seven CLI actions:
                                            analyze_wellness_patterns
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
@@ -66,7 +68,7 @@ class MentalHealthWellnessPanel:
     # ------------------------------------------------------------------ #
     def _build(self):
         title = ttk.Label(
-            self.parent, text="Mental Health & Wellness", style="Title.TLabel"
+            self.parent, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.mental_health_wellness', default="Mental Health & Wellness"), style="Title.TLabel"
         )
         title.grid(row=0, column=0, pady=10, sticky=tk.W)
 
@@ -77,38 +79,38 @@ class MentalHealthWellnessPanel:
         self.parent.rowconfigure(1, weight=1)
 
         counseling_tab = ttk.Frame(notebook)
-        notebook.add(counseling_tab, text="Schedule Counseling")
+        notebook.add(counseling_tab, text=_t('gui.pastoral.health.health_portal.mental_health_panel.tabs.schedule_counseling', default="Schedule Counseling"))
         self._build_counseling_tab(counseling_tab)
 
         checkin_tab = ttk.Frame(notebook)
-        notebook.add(checkin_tab, text="Wellness Check-in")
+        notebook.add(checkin_tab, text=_t('gui.pastoral.health.health_portal.mental_health_panel.tabs.wellness_check_in', default="Wellness Check-in"))
         self._build_checkin_tab(checkin_tab)
 
         progress_tab = ttk.Frame(notebook)
-        notebook.add(progress_tab, text="Wellness Progress")
+        notebook.add(progress_tab, text=_t('gui.pastoral.health.health_portal.mental_health_panel.tabs.wellness_progress', default="Wellness Progress"))
         self._build_progress_tab(progress_tab)
 
         peer_tab = ttk.Frame(notebook)
-        notebook.add(peer_tab, text="Peer Support")
+        notebook.add(peer_tab, text=_t('gui.pastoral.health.health_portal.mental_health_panel.tabs.peer_support', default="Peer Support"))
         self._build_peer_support_tab(peer_tab)
 
         mindfulness_tab = ttk.Frame(notebook)
-        notebook.add(mindfulness_tab, text="Mindfulness")
+        notebook.add(mindfulness_tab, text=_t('gui.pastoral.health.health_portal.mental_health_panel.tabs.mindfulness', default="Mindfulness"))
         self._build_mindfulness_tab(mindfulness_tab)
 
         counselor_tab = ttk.Frame(notebook)
-        notebook.add(counselor_tab, text="Counselor Profiles")
+        notebook.add(counselor_tab, text=_t('gui.pastoral.health.health_portal.mental_health_panel.tabs.counselor_profiles', default="Counselor Profiles"))
         self._build_counselor_profiles_tab(counselor_tab)
 
         crisis_tab = ttk.Frame(notebook)
-        notebook.add(crisis_tab, text="Crisis Hotline")
+        notebook.add(crisis_tab, text=_t('gui.pastoral.health.health_portal.mental_health_panel.tabs.crisis_hotline', default="Crisis Hotline"))
         self._build_crisis_tab(crisis_tab)
 
     # ------------------------------------------------------------------ #
     # Helpers
     # ------------------------------------------------------------------ #
     def _student_id_row(self, parent, var, row=0):
-        ttk.Label(parent, text="Student ID:").grid(
+        ttk.Label(parent, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.student_id', default="Student ID:")).grid(
             row=row, column=0, sticky=tk.W, pady=5
         )
         entry = ttk.Entry(parent, textvariable=var, width=20)
@@ -136,13 +138,13 @@ class MentalHealthWellnessPanel:
     # Tab: Schedule Counseling
     # ------------------------------------------------------------------ #
     def _build_counseling_tab(self, parent):
-        form = ttk.LabelFrame(parent, text="Book a Counseling Appointment", padding=10)
+        form = ttk.LabelFrame(parent, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.book_a_counseling_appointment', default="Book a Counseling Appointment"), padding=10)
         form.pack(fill="x", padx=10, pady=10)
 
         self.coun_student_id = tk.StringVar()
         self._student_id_row(form, self.coun_student_id, row=0)
 
-        ttk.Label(form, text="Date (YYYY-MM-DD):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.coun_date = tk.StringVar(
             value=(datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
         )
@@ -150,14 +152,14 @@ class MentalHealthWellnessPanel:
             row=1, column=1, sticky=tk.W, pady=5, padx=(5, 0)
         )
 
-        ttk.Label(form, text="Time (HH:MM):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.time_hh_mm', default="Time (HH:MM):")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.coun_time = tk.StringVar(value="10:00")
         ttk.Entry(form, textvariable=self.coun_time, width=20).grid(
             row=2, column=1, sticky=tk.W, pady=5, padx=(5, 0)
         )
 
-        ttk.Label(form, text="Type:").grid(row=3, column=0, sticky=tk.W, pady=5)
-        self.coun_type = tk.StringVar(value="Individual Counseling")
+        ttk.Label(form, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.type', default="Type:")).grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.coun_type = tk.StringVar(value=_t('gui.pastoral.health.health_portal.mental_health_panel.values.individual_counseling', default="Individual Counseling"))
         ttk.Combobox(
             form,
             textvariable=self.coun_type,
@@ -172,15 +174,15 @@ class MentalHealthWellnessPanel:
             width=28,
         ).grid(row=3, column=1, sticky=tk.W, pady=5, padx=(5, 0))
 
-        ttk.Label(form, text="Notes:").grid(row=4, column=0, sticky=(tk.W, tk.N), pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.notes', default="Notes:")).grid(row=4, column=0, sticky=(tk.W, tk.N), pady=5)
         self.coun_notes = tk.Text(form, width=40, height=3)
         self.coun_notes.grid(row=4, column=1, sticky=tk.W, pady=5, padx=(5, 0))
 
-        ttk.Button(form, text="Schedule", command=self._save_counseling).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.mental_health_panel.buttons.schedule', default="Schedule"), command=self._save_counseling).grid(
             row=5, column=0, columnspan=2, pady=10
         )
 
-        list_frame = ttk.LabelFrame(parent, text="My Counseling Appointments", padding=10)
+        list_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.my_counseling_appointments', default="My Counseling Appointments"), padding=10)
         list_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
         columns = ("ID", "Date", "Time", "Type", "Counselor", "Status")
@@ -197,7 +199,7 @@ class MentalHealthWellnessPanel:
         scroll.pack(side="right", fill="y")
         self.coun_tree.configure(yscrollcommand=scroll.set)
 
-        ttk.Button(parent, text="Refresh Appointments", command=self._load_counseling).pack(
+        ttk.Button(parent, text=_t('gui.pastoral.health.health_portal.mental_health_panel.buttons.refresh_appointments', default="Refresh Appointments"), command=self._load_counseling).pack(
             pady=(0, 10)
         )
 
@@ -208,13 +210,13 @@ class MentalHealthWellnessPanel:
         date_str = self.coun_date.get().strip()
         time_str = self.coun_time.get().strip()
         if not student_id or not date_str or not time_str:
-            messagebox.showerror("Error", "Student ID, date and time are required.")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.student_id_date_and_time_are_required', default="Student ID, date and time are required."))
             return
         try:
             datetime.strptime(date_str, "%Y-%m-%d")
             datetime.strptime(time_str, "%H:%M")
         except ValueError:
-            messagebox.showerror("Error", "Invalid date or time format.")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.invalid_date_or_time_format', default="Invalid date or time format."))
             return
         try:
             appt_id = self.service.schedule_counseling(
@@ -225,12 +227,12 @@ class MentalHealthWellnessPanel:
                 notes=self.coun_notes.get("1.0", tk.END).strip() or None,
             )
             messagebox.showinfo(
-                "Success", f"Counseling appointment scheduled (ID: {appt_id})."
+                _t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.success', default="Success"), f"Counseling appointment scheduled (ID: {appt_id})."
             )
             self.coun_notes.delete("1.0", tk.END)
             self._load_counseling()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to schedule: {e}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.error', default="Error"), f"Failed to schedule: {e}")
 
     def _load_counseling(self):
         for item in self.coun_tree.get_children():
@@ -253,13 +255,13 @@ class MentalHealthWellnessPanel:
                     ),
                 )
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load appointments: {e}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.error', default="Error"), f"Failed to load appointments: {e}")
 
     # ------------------------------------------------------------------ #
     # Tab: Wellness Check-in
     # ------------------------------------------------------------------ #
     def _build_checkin_tab(self, parent):
-        form = ttk.LabelFrame(parent, text="Daily Wellness Check-in (1-10)", padding=10)
+        form = ttk.LabelFrame(parent, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.daily_wellness_check_in_1_10', default="Daily Wellness Check-in (1-10)"), padding=10)
         form.pack(fill="x", padx=10, pady=10)
 
         self.ci_student_id = tk.StringVar()
@@ -286,19 +288,19 @@ class MentalHealthWellnessPanel:
             ).grid(row=i, column=1, sticky=tk.W, pady=4, padx=(5, 0))
             ttk.Label(form, textvariable=var, width=3).grid(row=i, column=2, padx=5)
 
-        ttk.Label(form, text="Notes:").grid(row=6, column=0, sticky=(tk.W, tk.N), pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.notes', default="Notes:")).grid(row=6, column=0, sticky=(tk.W, tk.N), pady=5)
         self.ci_notes = tk.Text(form, width=40, height=3)
         self.ci_notes.grid(row=6, column=1, columnspan=2, sticky=tk.W, pady=5, padx=(5, 0))
 
-        ttk.Button(form, text="Submit Check-in", command=self._save_checkin).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.mental_health_panel.buttons.submit_check_in', default="Submit Check-in"), command=self._save_checkin).grid(
             row=7, column=0, columnspan=3, pady=10
         )
 
-        history_frame = ttk.LabelFrame(parent, text="Recent Check-ins", padding=10)
+        history_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.health.health_portal.mental_health_panel.labels.recent_check_ins', default="Recent Check-ins"), padding=10)
         history_frame.pack(fill="both", expand=True, padx=10, pady=(0, 10))
         self.ci_history = self._readonly_text(history_frame, height=10)
 
-        ttk.Button(parent, text="Refresh History", command=self._load_checkins).pack(
+        ttk.Button(parent, text=_t('gui.pastoral.health.health_portal.mental_health_panel.buttons.refresh_history', default="Refresh History"), command=self._load_checkins).pack(
             pady=(0, 10)
         )
         self._load_checkins()
@@ -306,7 +308,7 @@ class MentalHealthWellnessPanel:
     def _save_checkin(self):
         student_id = self.ci_student_id.get().strip()
         if not student_id:
-            messagebox.showerror("Error", "Student ID is required.")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.student_id_is_required', default="Student ID is required."))
             return
         try:
             checkin_id = self.service.create_checkin(
@@ -319,12 +321,12 @@ class MentalHealthWellnessPanel:
                 notes=self.ci_notes.get("1.0", tk.END).strip() or None,
             )
             messagebox.showinfo(
-                "Success", f"Check-in recorded (ID: {checkin_id}). +10 wellness points."
+                _t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.success', default="Success"), f"Check-in recorded (ID: {checkin_id}). +10 wellness points."
             )
             self.ci_notes.delete("1.0", tk.END)
             self._load_checkins()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to record check-in: {e}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.mental_health_panel.dialogs.error', default="Error"), f"Failed to record check-in: {e}")
 
     def _load_checkins(self):
         student_id = self.ci_student_id.get().strip()
@@ -355,7 +357,7 @@ class MentalHealthWellnessPanel:
         top.pack(fill="x")
         self.pr_student_id = tk.StringVar()
         self._student_id_row(top, self.pr_student_id, row=0)
-        ttk.Button(top, text="Track Progress", command=self._load_progress).grid(
+        ttk.Button(top, text=_t('gui.pastoral.health.health_portal.mental_health_panel.buttons.track_progress', default="Track Progress"), command=self._load_progress).grid(
             row=0, column=2, padx=10
         )
 

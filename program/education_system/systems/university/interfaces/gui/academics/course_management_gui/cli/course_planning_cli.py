@@ -11,6 +11,8 @@ Provides menu-driven interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import os
@@ -58,7 +60,7 @@ def _switch_to_planning_gui() -> None:
         from education_system.systems.university.interfaces.gui.academics.course_management_gui.course_planning_gui import CoursePlanningGUI
         print("\nLaunching Course Planning GUI...")
         root = tk.Tk()
-        root.title("Course Planning Assistant")
+        root.title(_t('gui.academics.course_management_gui.cli.course_planning_cli.windows.course_planning_assistant', default="Course Planning Assistant"))
         root.geometry("1400x900")
         app = CoursePlanningGUI(root, auth=auth)
         root.mainloop()

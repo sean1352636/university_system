@@ -18,7 +18,7 @@ import psutil
 import schedule
 from cryptography.fernet import Fernet
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 from education_system.systems.university.infrastructure.utils.activity_logger.models import LogLevel, OutputFormat, SecurityLevel, LogEntry
 from education_system.systems.university.infrastructure.utils.activity_logger.security import PIIDetector, SecurityMonitor
@@ -45,7 +45,7 @@ class EnhancedActivityLogger:
     def __init__(self, config_path: Optional[str] = None):
         """Initialize the enhanced logger with configuration"""
         self.config = self._load_config(config_path)
-        self.log_dir = self.config.get('log_dir', str(paths.LOG_DIR))
+        self.log_dir = self.config.get('log_dir', str(paths.UNIVERSITY_LOG_DIR))
         self.min_log_level = LogLevel[self.config.get('min_log_level', 'INFO')]
 
         # Initialize components
@@ -57,7 +57,7 @@ class EnhancedActivityLogger:
         # Initialize database logger if enabled
         self.db_logger = None
         if OutputFormat.DATABASE in [OutputFormat(f) for f in self.config.get('output_formats', ['json'])]:
-            db_path = str(paths.DEFAULT_DB_PATH)
+            db_path = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
             self.db_logger = DatabaseLogger(db_path)
 
         # Initialize analytics engine
@@ -93,7 +93,7 @@ class EnhancedActivityLogger:
     def _load_config(self, config_path: Optional[str]) -> Dict[str, Any]:
         """Load configuration from file or use defaults"""
         default_config = {
-            'log_dir': str(paths.LOG_DIR),
+            'log_dir': str(paths.UNIVERSITY_LOG_DIR),
             'min_log_level': 'INFO',
             'output_formats': ['json', 'database'],
             'queue_size': 10000,

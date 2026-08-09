@@ -47,7 +47,7 @@ def show_shift_scheduling_page(self):
     # Action buttons
     btn_frame = ttk.Frame(self.content_frame, style="Main.TFrame")
     btn_frame.pack(fill="x", pady=10)
-    ttk.Button(btn_frame, text="+ Add Shift", style="Success.TButton", command=self.add_shift).pack(side="left", padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.buttons.add_shift', default="+ Add Shift"), style="Success.TButton", command=self.add_shift).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.staff.availability"), style="Secondary.TButton", command=self.show_staff_availability).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.booking.swap_requests"), style="Warning.TButton", command=self.show_swap_requests).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.btn.auto_schedule"), style="Secondary.TButton", command=self.auto_schedule_shifts).pack(side="left", padx=5)
@@ -146,7 +146,7 @@ def show_shift_scheduling_page(self):
 def add_shift(self):
     """Add a new shift assignment."""
     form = tk.Toplevel(self.root)
-    form.title("Add Shift")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.windows.add_shift', default="Add Shift"))
     form.geometry("450x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -179,26 +179,26 @@ def add_shift(self):
         staff_combo.current(0)
     fields['staff_var'] = staff_var
 
-    tk.Label(frame, text="Date (YYYY-MM-DD):", bg="#ffffff", fg="#333333").grid(row=2, column=0, sticky="w", pady=5)
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):"), bg="#ffffff", fg="#333333").grid(row=2, column=0, sticky="w", pady=5)
     date_e = ttk.Entry(frame, width=30)
     date_e.insert(0, datetime.now().strftime("%Y-%m-%d"))
     date_e.grid(row=2, column=1, pady=5)
     fields['date'] = date_e
 
-    tk.Label(frame, text="Start Time (HH:MM):", bg="#ffffff", fg="#333333").grid(row=3, column=0, sticky="w", pady=5)
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.labels.start_time_hh_mm', default="Start Time (HH:MM):"), bg="#ffffff", fg="#333333").grid(row=3, column=0, sticky="w", pady=5)
     start_e = ttk.Entry(frame, width=30)
     start_e.insert(0, "09:00")
     start_e.grid(row=3, column=1, pady=5)
     fields['start'] = start_e
 
-    tk.Label(frame, text="End Time (HH:MM):", bg="#ffffff", fg="#333333").grid(row=4, column=0, sticky="w", pady=5)
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.labels.end_time_hh_mm', default="End Time (HH:MM):"), bg="#ffffff", fg="#333333").grid(row=4, column=0, sticky="w", pady=5)
     end_e = ttk.Entry(frame, width=30)
     end_e.insert(0, "17:00")
     end_e.grid(row=4, column=1, pady=5)
     fields['end'] = end_e
 
     tk.Label(frame, text=_t("cinema.labels.position"), bg="#ffffff", fg="#333333").grid(row=5, column=0, sticky="w", pady=5)
-    position_var = tk.StringVar(value="general")
+    position_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.values.general', default="general"))
     positions = ["general", "cashier", "concessions", "usher", "projectionist", "manager", "cleaner"]
     position_combo = ttk.Combobox(frame, textvariable=position_var, values=positions, width=27)
     position_combo.grid(row=5, column=1, pady=5)
@@ -228,12 +228,12 @@ def add_shift(self):
 
     def save():
         if not fields['staff_var'].get():
-            messagebox.showwarning(_t("cinema.common.warning"), "Please select a staff member")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.please_select_a_staff_member', default="Please select a staff member"))
             return
 
         staff_id = staff_ids.get(fields['staff_var'].get())
         if not staff_id:
-            messagebox.showwarning(_t("cinema.common.warning"), "Invalid staff selection")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.invalid_staff_selection', default="Invalid staff selection"))
             return
 
         screen = None
@@ -255,7 +255,7 @@ def add_shift(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Shift added successfully!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.shift_added_successfully', default="Shift added successfully!"))
         form.destroy()
         self.show_shift_scheduling_page()
 
@@ -276,11 +276,11 @@ def edit_shift(self, shift_id):
         conn.close()
 
     if not shift:
-        messagebox.showerror(_t("cinema.common.error"), "Shift not found")
+        messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.shift_not_found', default="Shift not found"))
         return
 
     form = tk.Toplevel(self.root)
-    form.title("Edit Shift")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.windows.edit_shift', default="Edit Shift"))
     form.geometry("400x400")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -308,12 +308,12 @@ def edit_shift(self, shift_id):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Shift updated!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.shift_updated', default="Shift updated!"))
         form.destroy()
         self.show_shift_scheduling_page()
 
     def delete():
-        if messagebox.askyesno(_t("cinema.common.confirm"), "Delete this shift?"):
+        if messagebox.askyesno(_t("cinema.common.confirm"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.delete_this_shift', default="Delete this shift?")):
             conn = sqlite3.connect(DB_FILE)
             try:
                 cursor = conn.cursor()
@@ -321,7 +321,7 @@ def edit_shift(self, shift_id):
                 conn.commit()
             finally:
                 conn.close()
-            messagebox.showinfo(_t("cinema.messages.success.deleted"), "Shift deleted")
+            messagebox.showinfo(_t("cinema.messages.success.deleted"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.shift_deleted', default="Shift deleted"))
             form.destroy()
             self.show_shift_scheduling_page()
 
@@ -338,7 +338,7 @@ def edit_shift(self, shift_id):
 def show_staff_availability(self):
     """Show and manage staff availability."""
     form = tk.Toplevel(self.root)
-    form.title("Staff Availability")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.windows.staff_availability', default="Staff Availability"))
     form.geometry("700x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -364,7 +364,7 @@ def show_staff_availability(self):
     staff_names = [s[1] for s in staff_list]
     staff_ids = {s[1]: s[0] for s in staff_list}
 
-    tk.Label(select_frame, text="Select Staff:", bg="#ffffff", fg="#333333").pack(side="left")
+    tk.Label(select_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.labels.select_staff', default="Select Staff:"), bg="#ffffff", fg="#333333").pack(side="left")
     staff_var = tk.StringVar()
     staff_combo = ttk.Combobox(select_frame, textvariable=staff_var, values=staff_names, width=25, state="readonly")
     staff_combo.pack(side="left", padx=10)
@@ -387,7 +387,7 @@ def show_staff_availability(self):
         from_e.insert(0, "09:00")
         from_e.grid(row=i, column=2, padx=5)
 
-        tk.Label(avail_frame, text="to", bg="#ffffff", fg="#333333").grid(row=i, column=3)
+        tk.Label(avail_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.labels.to', default="to"), bg="#ffffff", fg="#333333").grid(row=i, column=3)
 
         to_e = ttk.Entry(avail_frame, width=8)
         to_e.insert(0, "22:00")
@@ -420,7 +420,7 @@ def show_staff_availability(self):
     def save_availability():
         staff_name = staff_var.get()
         if not staff_name:
-            messagebox.showwarning(_t("cinema.common.warning"), "Please select a staff member")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.please_select_a_staff_member', default="Please select a staff member"))
             return
         staff_id = staff_ids.get(staff_name)
 
@@ -438,7 +438,7 @@ def show_staff_availability(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Availability saved!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.availability_saved', default="Availability saved!"))
 
     staff_combo.bind("<<ComboboxSelected>>", lambda e: load_availability())
 
@@ -469,11 +469,11 @@ def request_shift_swap(self, shift_id):
         conn.close()
 
     if not shift:
-        messagebox.showerror(_t("cinema.common.error"), "Shift not found")
+        messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.shift_not_found', default="Shift not found"))
         return
 
     form = tk.Toplevel(self.root)
-    form.title("Request Shift Swap")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.windows.request_shift_swap', default="Request Shift Swap"))
     form.geometry("500x400")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -486,7 +486,7 @@ def request_shift_swap(self, shift_id):
 
     tk.Label(frame, text=f"Your Shift: {shift[2]} {shift[3]}-{shift[4]}", bg="#ffffff", fg="#333333").pack(anchor="w")
 
-    tk.Label(frame, text="Select shift to swap with:", bg="#ffffff", fg="#333333").pack(anchor="w", pady=(15, 5))
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.labels.select_shift_to_swap_with', default="Select shift to swap with:"), bg="#ffffff", fg="#333333").pack(anchor="w", pady=(15, 5))
 
     swap_options = [f"{s[1]} {s[2]}-{s[3]} - {s[4]}" for s in other_shifts]
     swap_ids = {f"{s[1]} {s[2]}-{s[3]} - {s[4]}": (s[0], s[5]) for s in other_shifts}
@@ -501,7 +501,7 @@ def request_shift_swap(self, shift_id):
 
     def submit():
         if not swap_var.get():
-            messagebox.showwarning(_t("cinema.common.warning"), "Please select a shift to swap with")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.please_select_a_shift_to_swap_with', default="Please select a shift to swap with"))
             return
 
         target_shift_id, target_staff_id = swap_ids.get(swap_var.get(), (None, None))
@@ -519,7 +519,7 @@ def request_shift_swap(self, shift_id):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Swap request submitted! Awaiting approval.")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.swap_request_submitted_awaiting_approval', default="Swap request submitted! Awaiting approval."))
         form.destroy()
 
     ttk.Button(frame, text=_t("cinema.btn.submit_request"), style="Success.TButton", command=submit).pack(pady=20)
@@ -527,7 +527,7 @@ def request_shift_swap(self, shift_id):
 def show_swap_requests(self):
     """Show pending shift swap requests."""
     form = tk.Toplevel(self.root)
-    form.title("Shift Swap Requests")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.windows.shift_swap_requests', default="Shift Swap Requests"))
     form.geometry("800x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -573,7 +573,7 @@ def show_swap_requests(self):
     def approve():
         selected = tree.selection()
         if not selected:
-            messagebox.showwarning(_t("cinema.common.warning"), "Select a request")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.select_a_request', default="Select a request"))
             return
         req_id = tree.item(selected[0])['values'][0]
 
@@ -601,14 +601,14 @@ def show_swap_requests(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.approved"), "Shift swap approved!")
+        messagebox.showinfo(_t("cinema.common.approved"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.shift_swap_approved', default="Shift swap approved!"))
         form.destroy()
         self.show_swap_requests()
 
     def deny():
         selected = tree.selection()
         if not selected:
-            messagebox.showwarning(_t("cinema.common.warning"), "Select a request")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.select_a_request', default="Select a request"))
             return
         req_id = tree.item(selected[0])['values'][0]
 
@@ -621,7 +621,7 @@ def show_swap_requests(self):
         finally:
             conn.close()
 
-        messagebox.showinfo("Denied", _t("cinema.messages.shift_swap_denied"))
+        messagebox.showinfo(_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.denied', default="Denied"), _t("cinema.messages.shift_swap_denied"))
         form.destroy()
         self.show_swap_requests()
 
@@ -632,7 +632,7 @@ def show_swap_requests(self):
 
 def auto_schedule_shifts(self):
     """Auto-schedule shifts based on staff availability."""
-    if not messagebox.askyesno(_t("cinema.screenings.auto_schedule"), "This will create shifts for next week based on staff availability.\n\nContinue?"):
+    if not messagebox.askyesno(_t("cinema.screenings.auto_schedule"), _t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.this_will_create_shifts_for_next_week_based_on_staff_availabilit', default="This will create shifts for next week based on staff availability.\n\nContinue?")):
         return
 
     conn = sqlite3.connect(DB_FILE)
@@ -669,5 +669,5 @@ def auto_schedule_shifts(self):
     finally:
         conn.close()
 
-    messagebox.showinfo("Auto-Schedule Complete", f"Created {shifts_created} shifts for next week.")
+    messagebox.showinfo(_t('gui.operations.commerce.cinema.cinema_gui.operations.shift_scheduling.dialogs.auto_schedule_complete', default="Auto-Schedule Complete"), f"Created {shifts_created} shifts for next week.")
     self.show_shift_scheduling_page()

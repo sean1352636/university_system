@@ -8,11 +8,11 @@ used throughout the student support system.
 from dataclasses import dataclass
 from enum import Enum
 from typing import List
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 
 # Enhanced Constants
-SUPPORT_DB = str(DEFAULT_DB_PATH)
+SUPPORT_DB = str(UNIVERSITY_DEFAULT_DB_PATH)
 TICKET_STATUSES = ['Open', 'In Progress', 'Resolved', 'Closed', 'Escalated', 'On Hold']
 TICKET_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent', 'Critical']
 SUPPORT_CATEGORIES = [

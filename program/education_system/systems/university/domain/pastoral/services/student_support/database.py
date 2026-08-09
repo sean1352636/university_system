@@ -10,7 +10,7 @@ import datetime
 import json
 import logging
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 
 from education_system.systems.university.domain.pastoral.services.student_support.config import SUPPORT_DB

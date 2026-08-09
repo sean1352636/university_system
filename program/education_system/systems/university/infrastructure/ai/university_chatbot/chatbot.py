@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 from education_system.systems.university.infrastructure.ai.university_chatbot.fallbacks import (
     LIBRARIES_AVAILABLE,
@@ -36,11 +36,11 @@ from education_system.systems.university.infrastructure.ai.university_chatbot im
 class UniversityChatbot:
     def __init__(self, db_path=None, config_path=None):
         # Core initialization
-        self.db_path = db_path or os.fspath(paths.DEFAULT_DB_PATH)
-        self.config_path = config_path or os.fspath(paths.CHATBOT_DATA_DIR / 'chatbot_config.json')
-        self.log_dir = os.fspath(paths.LOG_DIR)
-        self.upload_dir = os.fspath(paths.CHATBOT_UPLOAD_DIR)
-        self.models_dir = os.fspath(paths.CHATBOT_MODELS_DIR)
+        self.db_path = db_path or os.fspath(paths.UNIVERSITY_DEFAULT_DB_PATH)
+        self.config_path = config_path or os.fspath(paths.UNIVERSITY_CHATBOT_DATA_DIR / 'chatbot_config.json')
+        self.log_dir = os.fspath(paths.UNIVERSITY_LOG_DIR)
+        self.upload_dir = os.fspath(paths.UNIVERSITY_CHATBOT_UPLOAD_DIR)
+        self.models_dir = os.fspath(paths.UNIVERSITY_CHATBOT_MODELS_DIR)
 
         # Authentication system integration
         self.auth_system = None
@@ -879,7 +879,7 @@ class UniversityChatbot:
 
     def _load_faq_database(self) -> Dict:
         """Load FAQ database from file or create default"""
-        faq_path = os.fspath(paths.CHATBOT_DATA_DIR / "faq_database.json")
+        faq_path = os.fspath(paths.UNIVERSITY_CHATBOT_DATA_DIR / "faq_database.json")
         default_faq = {
             "academic": {
                 "How do I register for courses?": "You can register through the student portal during registration periods. Check course availability, prerequisites, and waitlist status from the registration page.",

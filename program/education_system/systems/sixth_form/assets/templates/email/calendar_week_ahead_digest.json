@@ -1,0 +1,11 @@
+{
+  "template_id": "calendar_week_ahead_digest",
+  "description": "Monday's briefing note: everything on the calendar this week for one audience, day by day. Triggered by the weekly digest sweep.",
+  "channel": "Email",
+  "category": "Calendar",
+  "priority": "Low",
+  "from_name": "Sixth Form Calendar",
+  "from_address": "calendar@sixthform.ac.uk",
+  "subject": "Week ahead ({{week_start}}) — {{audience}}",
+  "body": "Hi {{first_name}},\n\nHere is what is on this week:\n\n{{digest_lines}}\n\nTimes and rooms can move during the week — the calendar is always the latest word.\n\n{{system_name}}"
+}

@@ -9,6 +9,8 @@ Every spin feeds a small slice of your bet into the JACKPOT meter. Land three
 Other combos pay normal fixed multiples of your bet.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -39,7 +41,7 @@ START_CREDITS, MIN_BET = 200, 5
 class ProgressiveSlot:
     def __init__(self, root):
         self.root = root
-        root.title("Progressive Jackpot Slot")
+        root.title(_t('gui.operations.commerce.betting.games.progressive_slot.windows.progressive_jackpot_slot', default="Progressive Jackpot Slot"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -60,7 +62,7 @@ class ProgressiveSlot:
         self.jp_lbl = tk.Label(f, text="", bg="#2a1650", fg=GOLD,
                                font=("Helvetica", 24, "bold"), padx=20, pady=6)
         self.jp_lbl.pack(fill="x", pady=(0, 8))
-        tk.Label(f, text="Land \u2605 \u2605 \u2605 to win the JACKPOT",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.progressive_slot.labels.land_to_win_the_jackpot', default="Land \u2605 \u2605 \u2605 to win the JACKPOT"),
                  bg=FELT, fg="#cbb6ff", font=("Helvetica", 11, "bold")).pack()
         w = COLS * CELL + (COLS + 1) * GAP
         h = ROWS * CELL + (ROWS + 1) * GAP
@@ -70,7 +72,7 @@ class ProgressiveSlot:
         self.msg = tk.Label(f, text="", bg=FELT, fg="white",
                             font=("Helvetica", 13, "bold"))
         self.msg.pack()
-        tk.Label(f, text="777=50x  BAR=25x  \u25c6=14x  \u2665=8x  \u2663=5x",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.progressive_slot.labels.value_777_50x_bar_25x_14x_8x_5x', default="777=50x  BAR=25x  \u25c6=14x  \u2665=8x  \u2663=5x"),
                  bg=FELT, fg="#9f8fc8", font=("Helvetica", 9)).pack(pady=2)
 
         bar = tk.Frame(f, bg=FELT, pady=8)
@@ -81,7 +83,7 @@ class ProgressiveSlot:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.progressive_slot.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -94,7 +96,7 @@ class ProgressiveSlot:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.progressive_slot.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#7b2cbf",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -154,7 +156,7 @@ class ProgressiveSlot:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.progressive_slot.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.jackpot += int(self.bet * CONTRIB)
@@ -201,10 +203,10 @@ class ProgressiveSlot:
             self.win_cells = {(c, 1) for c in range(COLS) if line[c] == "jackpot"}
             self.msg.config(text=f"Two \u2605  \u2014  WIN {win}!", fg=GOLD)
         else:
-            self.msg.config(text="No win. Spin again!", fg="white")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.progressive_slot.text.no_win_spin_again', default="No win. Spin again!"), fg="white")
         self.render()
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.progressive_slot.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

@@ -1,6 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import json
 import os
@@ -104,11 +106,11 @@ class _RecordsMixin:
         nav = Frame(root, bg=t["panel"])
         nav.pack(fill="x", padx=10, pady=4)
         self.page_label = Label(nav, text="", bg=t["panel"], fg=t["text"])
-        Button(nav, text="◀ Prev", command=lambda: self._change_page(-1),
+        Button(nav, text=_t('gui.pastoral.equality_diversity.mixins.records.buttons.prev', default="◀ Prev"), command=lambda: self._change_page(-1),
                bg="#6c757d", fg="white", relief="flat", padx=10
                ).pack(side="left")
         self.page_label.pack(side="left", padx=10)
-        Button(nav, text="Next ▶", command=lambda: self._change_page(1),
+        Button(nav, text=_t('gui.pastoral.equality_diversity.mixins.records.buttons.next', default="Next ▶"), command=lambda: self._change_page(1),
                bg="#6c757d", fg="white", relief="flat", padx=10
                ).pack(side="left")
 
@@ -160,13 +162,13 @@ class _RecordsMixin:
         def apply():
             chosen = [c for c, v in vars_.items() if v.get()]
             if not chosen:
-                messagebox.showerror("Columns", "Pick at least one column.")
+                messagebox.showerror(_t('gui.pastoral.equality_diversity.mixins.records.dialogs.columns', default="Columns"), _t('gui.pastoral.equality_diversity.mixins.records.dialogs.pick_at_least_one_column', default="Pick at least one column."))
                 return
             self._save_column_prefs(chosen)
             win.destroy()
             self._apply_theme(self.theme_name)  # rebuild to pick up new cols
 
-        Button(win, text="Apply", command=apply,
+        Button(win, text=_t('gui.pastoral.equality_diversity.mixins.records.buttons.apply', default="Apply"), command=apply,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=12, pady=4).pack(pady=8)
 
@@ -287,16 +289,16 @@ class _RecordsMixin:
                 )
                 conn.commit()
             except sqlite3.IntegrityError:
-                messagebox.showerror("Saved Searches", "Name already taken.")
+                messagebox.showerror(_t('gui.pastoral.equality_diversity.mixins.records.dialogs.saved_searches', default="Saved Searches"), _t('gui.pastoral.equality_diversity.mixins.records.dialogs.name_already_taken', default="Name already taken."))
             finally:
                 conn.close()
 
         bf = Frame(win, bg=self.theme["panel"])
         bf.grid(row=len(DEMOGRAPHIC_FIELDS), column=0, columnspan=2, pady=8)
-        Button(bf, text="Apply", command=apply,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.records.buttons.apply', default="Apply"), command=apply,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=10).pack(side="left", padx=4)
-        Button(bf, text="Save as…", command=save_as,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.records.buttons.save_as', default="Save as…"), command=save_as,
                bg="#27ae60", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=4)
 
@@ -349,10 +351,10 @@ class _RecordsMixin:
             win.destroy()
             self._open_saved_searches()
 
-        Button(win, text="Apply", command=apply,
+        Button(win, text=_t('gui.pastoral.equality_diversity.mixins.records.buttons.apply', default="Apply"), command=apply,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=10).pack(side="left", padx=6, pady=6)
-        Button(win, text="Delete", command=delete,
+        Button(win, text=_t('gui.pastoral.equality_diversity.mixins.records.buttons.delete', default="Delete"), command=delete,
                bg="#c0392b", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=6, pady=6)
 
@@ -361,12 +363,12 @@ class _RecordsMixin:
     def _selected_record_id(self) -> int | None:
         sel = self.tree.selection()
         if not sel:
-            messagebox.showinfo("Records", "Select a row first.")
+            messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.records.dialogs.records', default="Records"), _t('gui.pastoral.equality_diversity.mixins.records.dialogs.select_a_row_first', default="Select a row first."))
             return None
         try:
             return int(self.tree.item(sel[0])["values"][self.columns.index("id")])
         except (ValueError, IndexError):
-            messagebox.showerror("Records", "Row is missing an ID column.")
+            messagebox.showerror(_t('gui.pastoral.equality_diversity.mixins.records.dialogs.records', default="Records"), _t('gui.pastoral.equality_diversity.mixins.records.dialogs.row_is_missing_an_id_column', default="Row is missing an ID column."))
             return None
 
     def _edit_selected(self):
@@ -374,7 +376,7 @@ class _RecordsMixin:
         if rid is None:
             return
         if not self.principal.can("edit_record"):
-            messagebox.showwarning("Access", "You don't have edit permission.")
+            messagebox.showwarning(_t('gui.pastoral.equality_diversity.mixins.records.dialogs.access', default="Access"), _t('gui.pastoral.equality_diversity.mixins.records.dialogs.you_don_t_have_edit_permission', default="You don't have edit permission."))
             return
         conn = get_connection()
         try:
@@ -430,7 +432,7 @@ class _RecordsMixin:
                                   "duplicates": duplicates,
                                   "errors": errors})
         messagebox.showinfo(
-            "Bulk import",
+            _t('gui.pastoral.equality_diversity.mixins.records.dialogs.bulk_import', default="Bulk import"),
             f"Created: {created}\nDuplicates skipped: {len(duplicates)}\nErrors: {len(errors)}"
             + (("\nFirst errors: " + "; ".join(errors[:5])) if errors else ""),
         )
@@ -467,7 +469,7 @@ class _RecordsMixin:
         integrations.audit(self.principal.username, "soft_delete", "person", rid,
                            {"queue_id": qid})
         messagebox.showinfo(
-            "Delete queued",
+            _t('gui.pastoral.equality_diversity.mixins.records.dialogs.delete_queued', default="Delete queued"),
             f"Record soft-deleted and queued for admin approval (#{qid}). "
             "It can be restored until hard-deletion.",
         )
@@ -497,7 +499,7 @@ class _RecordsMixin:
             w.writerows(rows)
         integrations.audit(self.principal.username, "export_csv", "person",
                            None, {"rows": len(rows), "path": path})
-        messagebox.showinfo("Exported", f"{len(rows)} rows → {path}")
+        messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.records.dialogs.exported', default="Exported"), f"{len(rows)} rows → {path}")
 
     # ================================================================= Add
 

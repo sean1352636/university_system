@@ -1,6 +1,8 @@
 """Bank reconciliation tab. Admin/staff: import a CSV statement, run the
 auto-matcher, and clear the unmatched-exception queue with manual matches."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.simpledialog import askinteger
@@ -35,7 +37,7 @@ class BankRecMixin:
         # Status filter
         ttk.Label(toolbar, text=_("finance_gui.bank_rec.status_filter",
                                    default="Status:")).pack(side='left', padx=(20, 5))
-        status_var = tk.StringVar(value='unmatched')
+        status_var = tk.StringVar(value=_t('gui.finance.finance.layout.bank_rec.values.unmatched', default='unmatched'))
         status_combo = ttk.Combobox(
             toolbar, textvariable=status_var, width=14, state='readonly',
             values=('all', 'unmatched', 'matched_auto', 'matched_manual', 'discarded'),
@@ -108,7 +110,7 @@ class BankRecMixin:
                 rows = list_statements()
             except Exception:
                 rows = []
-                summary_label.config(text="⚠ schema not initialised: click 'Init Schema'")
+                summary_label.config(text=_t('gui.finance.finance.layout.bank_rec.text.schema_not_initialised_click_init_schema', default="⚠ schema not initialised: click 'Init Schema'"))
             self._bank_rec_statements = rows
             statement_combo['values'] = [
                 f"#{r['statement_id']} — {r['account_name']} ({r['lines']} lines, {r['unmatched']} unmatched)"
@@ -129,7 +131,7 @@ class BankRecMixin:
                 tree.delete(iid)
             sid = _selected_statement_id()
             if sid is None:
-                summary_label.config(text="No statement selected")
+                summary_label.config(text=_t('gui.finance.finance.layout.bank_rec.text.no_statement_selected', default="No statement selected"))
                 return
             from education_system.systems.university.domain.finance.bank_rec import list_lines
             try:
@@ -181,24 +183,24 @@ class BankRecMixin:
         from education_system.systems.university.domain.finance.bank_rec import init_bank_rec
         try:
             init_bank_rec()
-            messagebox.showinfo("Bank Rec",
-                "Schema initialised. You can now import a CSV statement.")
+            messagebox.showinfo(_t('gui.finance.finance.layout.bank_rec.dialogs.bank_rec', default="Bank Rec"),
+                _t('gui.finance.finance.layout.bank_rec.dialogs.schema_initialised_you_can_now_import_a_csv_statement', default="Schema initialised. You can now import a CSV statement."))
             if hasattr(self, '_bank_rec_reload_statements'):
                 self._bank_rec_reload_statements()
         except Exception as e:
-            messagebox.showerror("Init failed", str(e))
+            messagebox.showerror(_t('gui.finance.finance.layout.bank_rec.dialogs.init_failed', default="Init failed"), str(e))
 
     def _bank_rec_import_action(self, reload_statements):
         path = filedialog.askopenfilename(
-            title="Import bank statement CSV",
+            title=_t('gui.finance.finance.layout.bank_rec.dialogs.import_bank_statement_csv', default="Import bank statement CSV"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
         )
         if not path:
             return
         from tkinter import simpledialog
         account_name = simpledialog.askstring(
-            "Account",
-            "Bank account name (e.g. 'Operating Account'):",
+            _t('gui.finance.finance.layout.bank_rec.dialogs.account', default="Account"),
+            _t('gui.finance.finance.layout.bank_rec.dialogs.bank_account_name_e_g_operating_account', default="Bank account name (e.g. 'Operating Account'):"),
         )
         if not account_name:
             return
@@ -220,7 +222,7 @@ class BankRecMixin:
             )
             if len(result['errors']) > 8:
                 msg += f"\n… and {len(result['errors']) - 8} more."
-        messagebox.showinfo("Import complete", msg)
+        messagebox.showinfo(_t('gui.finance.finance.layout.bank_rec.dialogs.import_complete', default="Import complete"), msg)
         reload_statements()
 
     def _bank_rec_automatch_action(self, statement_var, reload_lines):
@@ -232,19 +234,19 @@ class BankRecMixin:
                 idx = i
                 break
         if idx == -1:
-            messagebox.showwarning("Auto-match", "Select a statement first.")
+            messagebox.showwarning(_t('gui.finance.finance.layout.bank_rec.dialogs.auto_match', default="Auto-match"), _t('gui.finance.finance.layout.bank_rec.dialogs.select_a_statement_first', default="Select a statement first."))
             return
         sid = self._bank_rec_statements[idx]['statement_id']
         try:
             summary = auto_match_statement(sid)
         except Exception as e:
-            messagebox.showerror("Auto-match failed", str(e))
+            messagebox.showerror(_t('gui.finance.finance.layout.bank_rec.dialogs.auto_match_failed', default="Auto-match failed"), str(e))
             return
         msg = (f"Scanned: {summary['scanned']}\n"
                f"Auto-matched: {summary['matched']}\n"
                f"Ambiguous (left for review): {summary['ambiguous']}\n"
                f"Errors: {len(summary['errors'])}")
-        messagebox.showinfo("Auto-match complete", msg)
+        messagebox.showinfo(_t('gui.finance.finance.layout.bank_rec.dialogs.auto_match_complete', default="Auto-match complete"), msg)
         if hasattr(self, '_bank_rec_reload_statements'):
             self._bank_rec_reload_statements()
         reload_lines()
@@ -252,7 +254,7 @@ class BankRecMixin:
     def _bank_rec_selected_line(self):
         sel = self._bank_rec_tree.selection()
         if not sel:
-            messagebox.showwarning("Bank Rec", "Select a line first.")
+            messagebox.showwarning(_t('gui.finance.finance.layout.bank_rec.dialogs.bank_rec', default="Bank Rec"), _t('gui.finance.finance.layout.bank_rec.dialogs.select_a_line_first', default="Select a line first."))
             return None
         return self._bank_rec_tree.item(sel[0])['values']
 
@@ -289,7 +291,7 @@ class BankRecMixin:
             kwargs = {'payment_id': target_id} if kind == 'payment' else {'refund_id': target_id}
             manual_match(line_id, by=user, **kwargs)
         except Exception as e:
-            messagebox.showerror("Match failed", str(e))
+            messagebox.showerror(_t('gui.finance.finance.layout.bank_rec.dialogs.match_failed', default="Match failed"), str(e))
             return
         if hasattr(self, '_bank_rec_reload_statements'):
             self._bank_rec_reload_statements()
@@ -300,13 +302,13 @@ class BankRecMixin:
         if values is None:
             return
         line_id = int(values[0])
-        if not messagebox.askyesno("Unmatch", f"Reset line {line_id} to 'unmatched'?"):
+        if not messagebox.askyesno(_t('gui.finance.finance.layout.bank_rec.dialogs.unmatch', default="Unmatch"), f"Reset line {line_id} to 'unmatched'?"):
             return
         from education_system.systems.university.domain.finance.bank_rec import unmatch
         try:
             unmatch(line_id)
         except Exception as e:
-            messagebox.showerror("Unmatch failed", str(e))
+            messagebox.showerror(_t('gui.finance.finance.layout.bank_rec.dialogs.unmatch_failed', default="Unmatch failed"), str(e))
             return
         if hasattr(self, '_bank_rec_reload_statements'):
             self._bank_rec_reload_statements()
@@ -319,8 +321,8 @@ class BankRecMixin:
         line_id = int(values[0])
         from tkinter import simpledialog
         reason = simpledialog.askstring(
-            "Discard",
-            "Reason (e.g. 'bank fee', 'interest', 'irrelevant'):",
+            _t('gui.finance.finance.layout.bank_rec.dialogs.discard', default="Discard"),
+            _t('gui.finance.finance.layout.bank_rec.dialogs.reason_e_g_bank_fee_interest_irrelevant', default="Reason (e.g. 'bank fee', 'interest', 'irrelevant'):"),
         )
         from education_system.systems.university.domain.finance.bank_rec import discard
         from education_system.systems.university.infrastructure.shared_context import get_auth
@@ -333,7 +335,7 @@ class BankRecMixin:
         try:
             discard(line_id, reason=reason or '', by=user)
         except Exception as e:
-            messagebox.showerror("Discard failed", str(e))
+            messagebox.showerror(_t('gui.finance.finance.layout.bank_rec.dialogs.discard_failed', default="Discard failed"), str(e))
             return
         if hasattr(self, '_bank_rec_reload_statements'):
             self._bank_rec_reload_statements()

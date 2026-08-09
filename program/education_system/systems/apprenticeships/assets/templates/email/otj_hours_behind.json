@@ -1,0 +1,8 @@
+{
+  "subject": "Off-the-job hours are behind — {{apprentice_name}}",
+  "body": "Dear {{recipient_name}},\n\n{{apprentice_name}} has {{hours_logged}} off-the-job hours recorded against a target of {{hours_target}} — about {{hours_short}} behind where we would expect at this point.\n\nThis matters for two reasons. The apprentice cannot pass through gateway without meeting the requirement, and unevidenced hours put the funding for the programme at risk in an audit.\n\nMost of the gap is usually training that happened and was never written down. If {{apprentice_name}} has been shadowing, in briefings, or learning a new system on the job, that counts — it just needs logging.\n\nCould we agree a plan to close the gap before {{review_date}}?\n\n{{tutor_name}}\n{{provider_name}}",
+  "from_name": "{{provider_name}}",
+  "from_address": "training@provider.ac.uk",
+  "category": "Off-the-Job",
+  "priority": "High"
+}

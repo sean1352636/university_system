@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
@@ -385,7 +387,7 @@ Compatible with the original CLI interface
 For support and documentation, visit:
 https://github.com/yourproject/log-management"""
 
-        messagebox.showinfo("About", about_text)
+        messagebox.showinfo(_t('gui.shell.logging.log_management.dialogs.about', default="About"), about_text)
 
 
 # GUI Launcher Functions (maintains backwards compatibility)

@@ -206,12 +206,11 @@
                 <code>staff</code> / <code>staff123</code> &nbsp;→ Staff dashboard<br>
                 <code>S12345</code> / <code>student123</code> &nbsp;→ Student dashboard<br>
                 <code>parent</code> / <code>parent123</code> &nbsp;→ Parent view<br>
-                <span style="opacity:0.75;">API required: run <code>python run.py --api</code> first.</span>
+                <span style="opacity:0.75;">Launch the complete web interface with <code>python run.py --university --web</code>.</span>
             </div>
 
-            <p class="footer-text">
-                <a href="university.html">← Back to landing page</a>
-            </p>
+            <a class="btn btn-secondary" href="university.html"
+               style="display:block; text-align:center; text-decoration:none;">Return to welcome page</a>
         </div>
 
         <!-- MFA VIEW -->
@@ -265,7 +264,7 @@
     <script src="auth_client.js"></script>
     <script>
     (function() {
-        // Login page uses the unified API (python run.py --api on :5000) to
+        // Login page uses the unified API started automatically by --web to
         // authenticate against the real auth.db — no hardcoded users.
 
         const ROLE_DASHBOARDS = {
@@ -292,13 +291,6 @@
 
         let pendingMfa = null;   // { mfa_token, user_id, username }
         let pendingUsername = '';
-
-        // Already logged in? Bounce to role-specific dashboard.
-        const existing = AuthClient.getSession();
-        if (existing) {
-            window.location.href = ROLE_DASHBOARDS[existing.role] || 'university.html';
-            return;
-        }
 
         // Show password toggle
         $('pw-toggle').addEventListener('click', () => {

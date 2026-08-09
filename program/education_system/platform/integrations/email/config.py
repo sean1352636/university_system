@@ -1,7 +1,9 @@
 """Shared email configuration loader for all Education System subsystems.
 
-Loads SMTP settings from ``education_system/shared/data/config/email_config.json``.
-Falls back to the legacy university-system location if the shared file is missing.
+Loads SMTP settings from the platform-wide config
+(:data:`education_system.paths.PLATFORM_EMAIL_CONFIG_PATH`, currently
+``program/var/data/platform/config/email_config.json``), falling back to the
+per-university location for installs that predate the move to a shared file.
 """
 
 from __future__ import annotations
@@ -16,17 +18,18 @@ logger = logging.getLogger(__name__)
 
 # Shared config directory
 # Runtime state lives under var/, not inside the package (ADR 0018).
-from education_system.platform.paths import (
-    CONFIG_DIR as SHARED_CONFIG_DIR,
-    DATA_DIR as SHARED_DATA_DIR,
-    EMAIL_CONFIG_PATH as SHARED_EMAIL_CONFIG_PATH,
+from education_system.paths import (
+    PLATFORM_CONFIG_DIR as SHARED_CONFIG_DIR,
+    PLATFORM_DATA_DIR as SHARED_DATA_DIR,
+    PLATFORM_EMAIL_CONFIG_PATH as SHARED_EMAIL_CONFIG_PATH,
+    UNIVERSITY_CONFIG_DIR,
 )
 
-# Legacy university location (fallback)
-_LEGACY_EMAIL_CONFIG: Path = (
-    Path(__file__).resolve().parent.parent.parent
-    / "post_18" / "university_system" / "data" / "config" / "email_config.json"
-)
+# Legacy per-university location, for installs predating the shared config.
+# This previously pointed at ``platform/post_18/university_system/data/config/``,
+# which has not existed since the ADR 0018 move, so the fallback could never
+# resolve. Kept in step with the same candidate in ``education_system.paths``.
+_LEGACY_EMAIL_CONFIG: Path = UNIVERSITY_CONFIG_DIR / "email_config.json"
 
 # Check for optional keyring support
 try:

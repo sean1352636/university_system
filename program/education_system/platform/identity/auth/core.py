@@ -3,7 +3,14 @@
 from datetime import datetime, timedelta
 import logging
 import os
+import secrets
+import string
 
+from education_system.platform.governance.security.fail_closed import (
+    SecurityControlError,
+    alert_security_failure,
+    security_critical,
+)
 from education_system.platform.identity.auth.exceptions import AuthError
 from education_system.platform.identity.auth.defaults import MAX_LOGIN_ATTEMPTS, LOCKOUT_DURATION_MINUTES
 from education_system.platform.identity.auth.db import connect
@@ -101,7 +108,17 @@ class UserAuth:
                 )
                 conn.commit()
         except Exception as exc:
-            logger.debug("login_attempts insert failed: %s", exc)
+            # The login_attempts table is what lockout and brute-force
+            # detection are computed from. Losing writes to it disables both
+            # controls silently, so this is alerted rather than logged at
+            # debug — but it does not deny the login, because failing every
+            # login on an audit-table outage is its own denial of service.
+            alert_security_failure(
+                "auth.login_attempt_record",
+                f"Could not record login attempt for {username!r}: {exc}",
+                severity="medium",
+                exc=exc,
+            )
 
     def login(self, username: str, password: str) -> dict:
         """Authenticate a user against the shared auth database.
@@ -197,7 +214,13 @@ class UserAuth:
                         "Lockout expires at %s.",
                         username, attempts, updates["locked_until"],
                     )
-                    self._notify_lockout(username, attempts)
+                    self._notify_lockout(
+                        username,
+                        attempts,
+                        lockout_until=updates["locked_until"],
+                        display_name=user["display_name"] or username,
+                        account_email=user["email"] or "not set",
+                    )
 
                 # Keys are from a fixed whitelist (failed_login_attempts, locked_until)
                 _valid_keys = {"failed_login_attempts", "locked_until"}
@@ -211,6 +234,8 @@ class UserAuth:
                 )
                 conn.commit()
                 logger.warning("Login failed: bad auth for '%s' (attempt %d)", username, attempts)  # nosemgrep: python-logger-credential-disclosure
+                if attempts >= MAX_LOGIN_ATTEMPTS:
+                    raise AuthError("Account locked due to too many failed attempts.")
                 raise AuthError("Invalid username or password.")
 
             # If verified via legacy PBKDF2, re-hash with bcrypt transparently
@@ -252,11 +277,20 @@ class UserAuth:
             mfa_required = False
             try:
                 from education_system.platform.identity.auth.mfa_service import MFAService
-                mfa_svc = MFAService(self._db_path)
-                if mfa_svc.is_mfa_enabled(user["id"]):
-                    mfa_required = True
             except ImportError:
+                # The MFA service is genuinely absent from this install; there
+                # is no second factor to enforce. Distinct from "the lookup
+                # failed", which is handled below and must deny.
                 pass
+            else:
+                # A failure to *read* the MFA state is not "no MFA": treating
+                # it as such let any error in the shared auth DB downgrade an
+                # MFA-protected account to password-only for the duration of
+                # the outage. security_critical turns that into a denied login.
+                with security_critical("auth.mfa.shared_lookup", user_id=user["id"]):
+                    mfa_svc = MFAService(self._db_path)
+                    if mfa_svc.is_mfa_enabled(user["id"]):
+                        mfa_required = True
 
             # Also honour MFA enabled via the university subsystem
             # (mfa_user_settings / mfa_methods in student_records.db).
@@ -322,12 +356,24 @@ class UserAuth:
                     finally:
                         uconn.close()
                 except ImportError:
+                    # No university subsystem installed — nothing to consult.
                     pass
+                except SecurityControlError:
+                    raise
                 except Exception as exc:
-                    logger.warning(
-                        "University MFA lookup failed for %s: %s",
-                        user["username"], exc, exc_info=True,
+                    # Same reasoning as the shared lookup above: an unreadable
+                    # university MFA table used to be logged and ignored, which
+                    # meant the fall-through silently answered "MFA not
+                    # required" for every account whose MFA lives there.
+                    alert_security_failure(
+                        "auth.mfa.university_lookup",
+                        f"MFA state unreadable for {user['username']}: {exc}",
+                        user_id=user["id"],
+                        exc=exc,
                     )
+                    raise SecurityControlError(
+                        "auth.mfa.university_lookup", str(exc), cause=exc
+                    ) from exc
 
             if mfa_required:
                 return {
@@ -710,8 +756,77 @@ class UserAuth:
             logger.info("Password changed for user_id=%d", user_id)
 
             self.session_manager.invalidate_user_sessions(user_id)
+            self._notify_password_changed(user_id)
         finally:
             conn.close()
+
+    def unlock_and_reset_password(
+        self,
+        username: str,
+        temporary_password: str | None = None,
+    ) -> dict:
+        """Unlock an account and issue a one-use temporary password.
+
+        This is the service operation used by administrator interfaces.  The
+        caller is responsible for checking its admin/manage-users permission.
+        The user is forced to replace the temporary password at next login.
+        """
+        conn = self._conn()
+        try:
+            user = conn.execute(
+                "SELECT id, username, display_name, email, password_hash "
+                "FROM users WHERE username = ?",
+                (username.strip(),),
+            ).fetchone()
+            if not user:
+                raise AuthError("User not found.")
+
+            temp_pw = temporary_password or self._generate_temporary_password()
+            is_valid, msg = validate_password_strength(temp_pw)
+            if not is_valid:
+                raise AuthError(msg)
+
+            conn.execute(
+                "INSERT INTO password_history (user_id, password_hash) VALUES (?, ?)",
+                (user["id"], user["password_hash"]),
+            )
+            conn.execute(
+                "UPDATE users SET password_hash = ?, legacy_salt = NULL, "
+                "password_changed_at = NULL, must_change_password = 1, "
+                "failed_login_attempts = 0, locked_until = NULL, "
+                "updated_at = datetime('now') WHERE id = ?",
+                (hash_password(temp_pw), user["id"]),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        self.session_manager.invalidate_user_sessions(user["id"])
+        result = {
+            "user_id": user["id"],
+            "username": user["username"],
+            "display_name": user["display_name"] or user["username"],
+            "email": user["email"],
+            "temp_password": temp_pw,
+            "must_change_password": True,
+        }
+        result["email_sent"] = self._notify_temporary_password(result)
+        logger.info("Administrator unlock/password reset completed for '%s'", username)
+        return result
+
+    @staticmethod
+    def _generate_temporary_password(length: int = 16) -> str:
+        """Generate a password that satisfies the default strength policy."""
+        required = [
+            secrets.choice(string.ascii_uppercase),
+            secrets.choice(string.ascii_lowercase),
+            secrets.choice(string.digits),
+            secrets.choice("!@#$%^&*"),
+        ]
+        alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+        chars = required + [secrets.choice(alphabet) for _ in range(length - len(required))]
+        secrets.SystemRandom().shuffle(chars)
+        return "".join(chars)
 
     def check_password_expiry(self, user_id: int, max_age_days: int = 90) -> bool:
         """Check if a user's password must be reset. Returns True if it must.
@@ -918,44 +1033,119 @@ class UserAuth:
         finally:
             conn.close()
 
-    def _notify_lockout(self, username: str, attempts: int):
-        """Send an alert when an account is locked out."""
+    def _notify_lockout(
+        self,
+        username: str,
+        attempts: int,
+        *,
+        lockout_until: str | None = None,
+        display_name: str | None = None,
+        account_email: str | None = None,
+    ):
+        """Email an actionable alert when an account is locked."""
         try:
-            from education_system.platform.integrations.email.otp_sender import send_otp
-            from education_system.platform.integrations.email.config import load_email_config
-
-            cfg = load_email_config()
-            admin_email = cfg.get("sender_email", "")
-            if admin_email:
-                from email.mime.text import MIMEText
-                import smtplib
-
-                smtp_server = cfg.get("smtp_server", "")
-                smtp_port = cfg.get("smtp_port", 587)
-                smtp_user = cfg.get("smtp_username", "")
-                smtp_pass = cfg.get("smtp_password", "")
-                use_tls = cfg.get("use_tls", True)
-
-                if all([smtp_server, smtp_user, smtp_pass]):
-                    msg = MIMEText(
-                        f"Account '{username}' has been locked after {attempts} "
-                        f"failed login attempts at {datetime.utcnow().isoformat()}.\n\n"
-                        f"The account will be unlocked automatically after "
-                        f"{LOCKOUT_DURATION_MINUTES} minutes.",
-                    )
-                    msg["Subject"] = f"Security Alert: Account '{username}' locked"
-                    msg["From"] = smtp_user
-                    msg["To"] = admin_email
-
-                    server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
-                    if use_tls:
-                        server.starttls()
-                    server.login(smtp_user, smtp_pass)
-                    server.sendmail(smtp_user, [admin_email], msg.as_string())
-                    server.quit()
-                    logger.info("Lockout alert email sent for '%s'", username)
+            recipients = self._admin_email_addresses()
+            subject = f"Security Alert: Account '{username}' locked"
+            locked_at = datetime.utcnow().isoformat(timespec="seconds") + "Z"
+            expires = lockout_until or "the configured lockout period"
+            body = (
+                "ACCOUNT LOCKOUT ALERT\n"
+                "=====================\n\n"
+                f"User:          {display_name or username}\n"
+                f"Username:      {username}\n"
+                f"Account email: {account_email or 'not set'}\n"
+                f"Failed logins: {attempts}\n"
+                f"Locked at:     {locked_at}\n"
+                f"Unlocks at:    {expires}\n\n"
+                "What to do:\n"
+                "1. Confirm the activity with the account owner or your normal "
+                "identity-verification process.\n"
+                "2. If the lockout is expected, wait for it to expire; otherwise "
+                "open User Management and unlock the account.\n"
+                "3. Reset the password only if compromise is suspected, and ask "
+                "the user to choose a new password at next sign-in.\n\n"
+                "This alert contains no password or one-time authentication code."
+            )
+            for email in recipients:
+                self._send_account_email(email, subject, body)
+            if recipients:
+                logger.info("Lockout alert emailed to %d administrator(s)", len(recipients))
         except Exception as exc:
             logger.debug("Could not send lockout alert email: %s", exc)
+
+    def _admin_email_addresses(self) -> list[str]:
+        # In development/database mode, route lockout alerts to the configured
+        # sink instead of sending them to real administrator addresses.
+        try:
+            from education_system.platform.integrations.email.config import load_email_config
+            lockout_recipient = load_email_config().get("lockout_alert_recipient", "")
+            if lockout_recipient:
+                return [lockout_recipient]
+        except Exception:
+            pass
+        conn = self._conn()
+        try:
+            rows = conn.execute(
+                "SELECT DISTINCT u.email FROM users u "
+                "JOIN user_systems us ON us.user_id = u.id "
+                "WHERE u.is_active = 1 AND us.role IN ('admin', 'superadmin') "
+                "AND COALESCE(u.email, '') <> ''"
+            ).fetchall()
+            recipients = [row["email"] for row in rows]
+        finally:
+            conn.close()
+        if recipients:
+            return recipients
+        try:
+            from education_system.platform.integrations.email.config import load_email_config
+            fallback = load_email_config().get("sender_email", "")
+            return [fallback] if fallback else []
+        except Exception:
+            return []
+
+    @staticmethod
+    def _send_account_email(recipient: str, subject: str, body: str) -> bool:
+        try:
+            from education_system.platform.integrations.email.email_service import EmailService
+            service = EmailService()
+            if not service.is_configured:
+                return False
+            result = service.send_email(recipient, subject, body)
+            return bool(result.get("success"))
+        except Exception as exc:
+            logger.debug("Account-security email to %s failed: %s", recipient, exc)
+            return False
+
+    def _notify_temporary_password(self, reset_info: dict) -> bool:
+        email = reset_info.get("email")
+        if not email:
+            return False
+        body = (
+            f"Hello {reset_info['display_name']},\n\n"
+            f"An administrator unlocked your account and reset its password.\n\n"
+            f"Temporary password: {reset_info['temp_password']}\n\n"
+            "Log in with this temporary password. You must choose a new password "
+            "before you can continue.\n\nIf you did not expect this, contact an "
+            "administrator immediately."
+        )
+        return self._send_account_email(email, "Your account was unlocked and password reset", body)
+
+    def _notify_password_changed(self, user_id: int) -> bool:
+        conn = self._conn()
+        try:
+            user = conn.execute(
+                "SELECT username, display_name, email FROM users WHERE id = ?", (user_id,)
+            ).fetchone()
+        finally:
+            conn.close()
+        if not user or not user["email"]:
+            return False
+        body = (
+            f"Hello {user['display_name'] or user['username']},\n\n"
+            "Your Education System password has been reset successfully.\n\n"
+            "If you did not make this change, contact an administrator immediately."
+        )
+        return self._send_account_email(user["email"], "Your password has been reset", body)
 
     # Confirmation phrase callers must supply to actually run the
     # legacy-reset bulk-deactivation. Prevents accidental invocation

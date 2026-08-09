@@ -7,7 +7,11 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    deny_unless_owner_or_staff,
+    scoped_to,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -82,6 +86,9 @@ def get_plan(plan_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"plans {plan_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
     log_activity("view", "study_plans", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -168,6 +175,9 @@ def get_concept_explanation(explanation_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"concept-explanations {explanation_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
     log_activity("view", "concept_explanations", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -297,8 +307,20 @@ def complete_task(task_id: int):
         row = conn.execute(
             "SELECT * FROM study_plan_tasks WHERE task_id = ?", (task_id,)
         ).fetchone()
+        owner = None
+        if row is not None:
+            owner_row = conn.execute(
+                """SELECT p.student_id FROM study_plan_tasks t
+                   JOIN study_plans p ON t.plan_id = p.plan_id
+                   WHERE t.task_id = ?""",
+                (task_id,),
+            ).fetchone()
+            owner = owner_row[0] if owner_row else None
     if not row:
         raise ValidationError(f"task {task_id} not found")
+    denial = deny_unless_owner_or_staff(owner)
+    if denial:
+        return denial
 
     with transaction() as conn:
         conn.execute(
@@ -351,11 +373,14 @@ def review_flashcard(flashcard_id: int):
 
     with get_connection() as conn:
         card = conn.execute(
-            "SELECT review_count, correct_count FROM flashcards WHERE flashcard_id = ?",
+            "SELECT review_count, correct_count, student_id FROM flashcards WHERE flashcard_id = ?",
             (flashcard_id,),
         ).fetchone()
     if not card:
         raise ValidationError(f"flashcard {flashcard_id} not found")
+    denial = deny_unless_owner_or_staff(card["student_id"])
+    if denial:
+        return denial
 
     from datetime import timedelta
 
@@ -438,6 +463,9 @@ def rate_explanation(explanation_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"concept-explanation {explanation_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
 
     with transaction() as conn:
         conn.execute(
@@ -454,6 +482,7 @@ def rate_explanation(explanation_id: int):
 
 @ai_study_bp.route("/students/<student_id>/history", methods=["GET"])
 @token_required
+@scoped_to("student_id")
 def get_explanation_history(student_id: str):
     """Get all concept explanations for a student."""
     with get_connection() as conn:
@@ -470,6 +499,7 @@ def get_explanation_history(student_id: str):
 
 @ai_study_bp.route("/students/<student_id>/analytics", methods=["GET"])
 @token_required
+@scoped_to("student_id")
 def get_study_analytics(student_id: str):
     """Get comprehensive study analytics for a student."""
     with get_connection() as conn:

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -425,24 +427,24 @@ from education_system.systems.university.interfaces.gui.pastoral.helpdesk.base i
 def create_user_management_tab(self, parent):
     """Create user management tab"""
     user_frame = ttk.Frame(parent)
-    parent.add(user_frame, text="Users")
+    parent.add(user_frame, text=_t('gui.pastoral.helpdesk.user_management.tabs.users', default="Users"))
 
     # Toolbar
     toolbar = ttk.Frame(user_frame)
     toolbar.pack(fill='x', padx=10, pady=5)
 
-    ttk.Button(toolbar, text="Refresh", command=lambda: self._refresh_user_list(users_tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="Add User", command=self._show_add_user_dialog).pack(side='left', padx=5)
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.user_management.buttons.refresh', default="Refresh"), command=lambda: self._refresh_user_list(users_tree)).pack(side='left', padx=5)
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.user_management.buttons.add_user', default="Add User"), command=self._show_add_user_dialog).pack(side='left', padx=5)
 
     # Search frame
     search_frame = ttk.Frame(user_frame)
     search_frame.pack(fill='x', padx=10, pady=5)
 
-    ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
+    ttk.Label(search_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.search', default="Search:")).pack(side='left', padx=5)
     self.user_search_var = tk.StringVar()
     search_entry = ttk.Entry(search_frame, textvariable=self.user_search_var, width=30)
     search_entry.pack(side='left', padx=5)
-    ttk.Button(search_frame, text="Search", command=lambda: self._search_users(users_tree)).pack(side='left', padx=5)
+    ttk.Button(search_frame, text=_t('gui.pastoral.helpdesk.user_management.buttons.search', default="Search"), command=lambda: self._search_users(users_tree)).pack(side='left', padx=5)
 
     # Users list
     list_frame = ttk.Frame(user_frame)
@@ -466,9 +468,9 @@ def create_user_management_tab(self, parent):
     action_frame = ttk.Frame(user_frame)
     action_frame.pack(fill='x', padx=10, pady=5)
 
-    ttk.Button(action_frame, text="Edit User", command=lambda: self._edit_selected_user(users_tree)).pack(side='left', padx=5)
-    ttk.Button(action_frame, text="Deactivate", command=lambda: self._deactivate_user(users_tree)).pack(side='left', padx=5)
-    ttk.Button(action_frame, text="Reset Password", command=lambda: self._reset_user_password(users_tree)).pack(side='left', padx=5)
+    ttk.Button(action_frame, text=_t('gui.pastoral.helpdesk.user_management.buttons.edit_user', default="Edit User"), command=lambda: self._edit_selected_user(users_tree)).pack(side='left', padx=5)
+    ttk.Button(action_frame, text=_t('gui.pastoral.helpdesk.user_management.buttons.deactivate', default="Deactivate"), command=lambda: self._deactivate_user(users_tree)).pack(side='left', padx=5)
+    ttk.Button(action_frame, text=_t('gui.pastoral.helpdesk.user_management.buttons.reset_password', default="Reset Password"), command=lambda: self._reset_user_password(users_tree)).pack(side='left', padx=5)
 
     # Double-click to edit
     users_tree.bind('<Double-1>', lambda e: self._edit_selected_user(users_tree))
@@ -525,7 +527,7 @@ def _refresh_user_list(self, tree):
                 created[:16] if created else ''
             ))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load users: {e}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.user_management.dialogs.error', default="Error"), f"Failed to load users: {e}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._refresh_user_list = _refresh_user_list
@@ -580,7 +582,7 @@ def _search_users(self, tree):
                 created[:16] if created else ''
             ))
     except Exception as e:
-        messagebox.showerror("Error", f"Search failed: {e}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.user_management.dialogs.error', default="Error"), f"Search failed: {e}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._search_users = _search_users
@@ -588,7 +590,7 @@ HelpdeskGUI._search_users = _search_users
 def _show_add_user_dialog(self):
     """Show dialog to add a new user"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Add New User")
+    dialog.title(_t('gui.pastoral.helpdesk.user_management.windows.add_new_user', default="Add New User"))
     dialog.geometry("400x350")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -596,27 +598,27 @@ def _show_add_user_dialog(self):
     form_frame = ttk.Frame(dialog, padding="20")
     form_frame.pack(fill='both', expand=True)
 
-    ttk.Label(form_frame, text="Username:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.username', default="Username:")).grid(row=0, column=0, sticky='w', pady=5)
     username_var = tk.StringVar()
     ttk.Entry(form_frame, textvariable=username_var, width=30).grid(row=0, column=1, pady=5)
 
-    ttk.Label(form_frame, text="Email:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.email', default="Email:")).grid(row=1, column=0, sticky='w', pady=5)
     email_var = tk.StringVar()
     ttk.Entry(form_frame, textvariable=email_var, width=30).grid(row=1, column=1, pady=5)
 
-    ttk.Label(form_frame, text="Password:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.password', default="Password:")).grid(row=2, column=0, sticky='w', pady=5)
     password_var = tk.StringVar()
     ttk.Entry(form_frame, textvariable=password_var, show='*', width=30).grid(row=2, column=1, pady=5)
 
-    ttk.Label(form_frame, text="Role:").grid(row=3, column=0, sticky='w', pady=5)
-    role_var = tk.StringVar(value='student')
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.role', default="Role:")).grid(row=3, column=0, sticky='w', pady=5)
+    role_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.user_management.values.student', default='student'))
     ttk.Combobox(form_frame, textvariable=role_var,
                 values=['student', 'instructor', 'staff', 'admin'],
                 state='readonly', width=27).grid(row=3, column=1, pady=5)
 
     def save_user():
         if not username_var.get() or not email_var.get() or not password_var.get():
-            messagebox.showerror("Error", "All fields are required")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.user_management.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.user_management.dialogs.all_fields_are_required', default="All fields are required"))
             return
         try:
             from education_system.systems.university.infrastructure.database.db import get_connection
@@ -650,16 +652,16 @@ def _show_add_user_dialog(self):
 
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", "User created successfully")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.user_management.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.user_management.dialogs.user_created_successfully', default="User created successfully"))
             dialog.destroy()
             self._refresh_user_list(self.users_tree)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create user: {e}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.user_management.dialogs.error', default="Error"), f"Failed to create user: {e}")
 
     btn_frame = ttk.Frame(form_frame)
     btn_frame.grid(row=5, column=0, columnspan=2, pady=20)
-    ttk.Button(btn_frame, text="Save", command=save_user).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.user_management.buttons.save', default="Save"), command=save_user).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.user_management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._show_add_user_dialog = _show_add_user_dialog
@@ -668,7 +670,7 @@ def _edit_selected_user(self, tree):
     """Edit selected user"""
     selection = tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a user")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.user_management.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.user_management.dialogs.please_select_a_user', default="Please select a user"))
         return
 
     item = tree.item(selection[0])
@@ -682,14 +684,14 @@ def _deactivate_user(self, tree):
     """Deactivate selected user"""
     selection = tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a user")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.user_management.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.user_management.dialogs.please_select_a_user', default="Please select a user"))
         return
 
     item = tree.item(selection[0])
     user_id = item['values'][0]
     username = item['values'][1]
 
-    if not messagebox.askyesno("Confirm", f"Deactivate user '{username}'?"):
+    if not messagebox.askyesno(_t('gui.pastoral.helpdesk.user_management.dialogs.confirm', default="Confirm"), f"Deactivate user '{username}'?"):
         return
 
     try:
@@ -705,13 +707,13 @@ def _deactivate_user(self, tree):
             cursor.execute("UPDATE users SET is_active = 0 WHERE id = ?", (user_id,))
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", f"User '{username}' has been deactivated")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.user_management.dialogs.success', default="Success"), f"User '{username}' has been deactivated")
             self._refresh_user_list(tree)
         else:
             conn.close()
-            messagebox.showinfo("Info", "User deactivation not supported - is_active column not available")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.user_management.dialogs.info', default="Info"), _t('gui.pastoral.helpdesk.user_management.dialogs.user_deactivation_not_supported_is_active_column_not_available', default="User deactivation not supported - is_active column not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to deactivate user: {e}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.user_management.dialogs.error', default="Error"), f"Failed to deactivate user: {e}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._deactivate_user = _deactivate_user
@@ -720,30 +722,30 @@ def _reset_user_password(self, tree):
     """Reset password for selected user"""
     selection = tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a user")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.user_management.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.user_management.dialogs.please_select_a_user', default="Please select a user"))
         return
 
     item = tree.item(selection[0])
     user_id = item['values'][0]
     username = item['values'][1]
 
-    if not messagebox.askyesno("Confirm", f"Reset password for user '{username}'?"):
+    if not messagebox.askyesno(_t('gui.pastoral.helpdesk.user_management.dialogs.confirm', default="Confirm"), f"Reset password for user '{username}'?"):
         return
 
     # Show password entry dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Reset Password")
+    dialog.title(_t('gui.pastoral.helpdesk.user_management.windows.reset_password', default="Reset Password"))
     dialog.geometry("300x150")
     dialog.transient(self.root)
     dialog.grab_set()
 
-    ttk.Label(dialog, text="New Password:").pack(pady=10)
+    ttk.Label(dialog, text=_t('gui.pastoral.helpdesk.user_management.labels.new_password', default="New Password:")).pack(pady=10)
     password_var = tk.StringVar()
     ttk.Entry(dialog, textvariable=password_var, show='*', width=25).pack(pady=5)
 
     def do_reset():
         if not password_var.get():
-            messagebox.showerror("Error", "Password cannot be empty")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.user_management.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.user_management.dialogs.password_cannot_be_empty', default="Password cannot be empty"))
             return
         try:
             from education_system.systems.university.infrastructure.database.db import get_connection
@@ -754,12 +756,12 @@ def _reset_user_password(self, tree):
             cursor.execute("UPDATE users SET password_hash = ? WHERE id = ?", (password_hash, user_id))
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", f"Password reset for '{username}'")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.user_management.dialogs.success', default="Success"), f"Password reset for '{username}'")
             dialog.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to reset password: {e}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.user_management.dialogs.error', default="Error"), f"Failed to reset password: {e}")
 
-    ttk.Button(dialog, text="Reset Password", command=do_reset).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.pastoral.helpdesk.user_management.buttons.reset_password', default="Reset Password"), command=do_reset).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._reset_user_password = _reset_user_password
@@ -785,7 +787,7 @@ def show_edit_user(self):
     """Show edit user dialog"""
     selection = self.users_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a user to edit")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.user_management.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.user_management.dialogs.please_select_a_user_to_edit', default="Please select a user to edit"))
         return
 
     try:
@@ -813,34 +815,34 @@ def show_edit_user(self):
         main_frame = ttk.Frame(edit_window, padding="20")
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Edit User Details", font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.edit_user_details', default="Edit User Details"), font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
 
         # Form frame
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill='x', pady=10)
 
         # Username (read-only)
-        ttk.Label(form_frame, text="Username:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.username', default="Username:")).grid(row=0, column=0, sticky='w', pady=5)
         username_var = tk.StringVar(value=user.get('username', ''))
         ttk.Entry(form_frame, textvariable=username_var, state='disabled', width=30).grid(row=0, column=1, pady=5, padx=5)
 
         # Email
-        ttk.Label(form_frame, text="Email:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.email', default="Email:")).grid(row=1, column=0, sticky='w', pady=5)
         email_var = tk.StringVar(value=user.get('email', ''))
         ttk.Entry(form_frame, textvariable=email_var, width=30).grid(row=1, column=1, pady=5, padx=5)
 
         # First Name
-        ttk.Label(form_frame, text="First Name:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.first_name', default="First Name:")).grid(row=2, column=0, sticky='w', pady=5)
         first_name_var = tk.StringVar(value=user.get('first_name', ''))
         ttk.Entry(form_frame, textvariable=first_name_var, width=30).grid(row=2, column=1, pady=5, padx=5)
 
         # Last Name
-        ttk.Label(form_frame, text="Last Name:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.last_name', default="Last Name:")).grid(row=3, column=0, sticky='w', pady=5)
         last_name_var = tk.StringVar(value=user.get('last_name', ''))
         ttk.Entry(form_frame, textvariable=last_name_var, width=30).grid(row=3, column=1, pady=5, padx=5)
 
         # Role
-        ttk.Label(form_frame, text="Role:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.user_management.labels.role', default="Role:")).grid(row=4, column=0, sticky='w', pady=5)
         role_var = tk.StringVar(value=user.get('role', 'student'))
         role_combo = ttk.Combobox(form_frame, textvariable=role_var,
                                   values=['student', 'instructor', 'staff', 'admin'], state='readonly', width=27)
@@ -872,22 +874,22 @@ def show_edit_user(self):
                     log_activity('update', 'user', user_id=user_id,
                                 details={'updated_by': self.current_user.get('username')})
 
-                messagebox.showinfo("Success", "User updated successfully!")
+                messagebox.showinfo(_t('gui.pastoral.helpdesk.user_management.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.user_management.dialogs.user_updated_successfully', default="User updated successfully!"))
                 edit_window.destroy()
                 self.refresh_users()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update user: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.user_management.dialogs.error', default="Error"), f"Failed to update user: {str(e)}")
 
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill='x', pady=20)
 
-        ttk.Button(btn_frame, text="Save Changes", command=save_user).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=edit_window.destroy).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.user_management.buttons.save_changes', default="Save Changes"), command=save_user).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.user_management.buttons.cancel', default="Cancel"), command=edit_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load user data: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.user_management.dialogs.error', default="Error"), f"Failed to load user data: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_edit_user = show_edit_user

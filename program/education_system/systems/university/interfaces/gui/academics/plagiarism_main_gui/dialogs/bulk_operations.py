@@ -24,7 +24,7 @@ class BulkOperationsDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -88,7 +88,7 @@ class BulkOperationsDialog:
         ttk.Button(select_frame, text=_t("plagiarism.toggle_selection"), command=self.toggle_selection).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Operations
-        operations_frame = ttk.LabelFrame(main_frame, text="Operations", padding=GuiConfig.PADDING_SMALL)
+        operations_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.labels.operations', default="Operations"), padding=GuiConfig.PADDING_SMALL)
         operations_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
         ttk.Button(operations_frame, text=_t("plagiarism.bulk_plagiarism_check"), command=self.bulk_plagiarism_check).pack(side=tk.LEFT)
@@ -110,7 +110,7 @@ class BulkOperationsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(GuiConfig.PADDING_MEDIUM, 0))
 
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
         # Bind double-click to toggle selection
         self.docs_tree.bind('<Double-1>', self.on_double_click)
@@ -136,7 +136,7 @@ class BulkOperationsDialog:
                     logger.error(f"Error loading document {doc['id']}: {e}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error loading documents: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.error', default="Error"), f"Error loading documents: {e}")
 
     def on_double_click(self, event):
         """Handle double-click to toggle selection"""
@@ -199,20 +199,20 @@ class BulkOperationsDialog:
         selected_docs = self.get_selected_documents()
 
         if not selected_docs:
-            messagebox.showwarning("No Selection", "Please select documents to check.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.no_selection', default="No Selection"), _t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.please_select_documents_to_check', default="Please select documents to check."))
             return
 
         if not self.auth.check_permission('check_plagiarism'):
-            messagebox.showerror("Permission Denied", "You don't have permission to check documents for plagiarism.")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.you_don_t_have_permission_to_check_documents_for_plagiarism', default="You don't have permission to check documents for plagiarism."))
             return
 
         # Confirm operation
-        if not messagebox.askyesno("Confirm Bulk Check",
+        if not messagebox.askyesno(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.confirm_bulk_check', default="Confirm Bulk Check"),
                                    f"This will check {len(selected_docs)} documents for plagiarism. Continue?"):
             return
 
         # Get threshold
-        threshold = simpledialog.askfloat("Threshold", "Enter similarity threshold (0.1-0.9):",
+        threshold = simpledialog.askfloat(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.threshold', default="Threshold"), _t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.enter_similarity_threshold_0_1_0_9', default="Enter similarity threshold (0.1-0.9):"),
                                         initialvalue=0.3, minvalue=0.1, maxvalue=0.9)
         if threshold is None:
             return
@@ -241,7 +241,7 @@ class BulkOperationsDialog:
 
             except Exception as e:
                 error_msg = str(e)
-                self.dialog.after(0, lambda err=error_msg: messagebox.showerror("Error", f"Bulk check failed: {err}"))
+                self.dialog.after(0, lambda err=error_msg: messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.error', default="Error"), f"Bulk check failed: {err}"))
 
         self.status_var.set("Starting bulk plagiarism check...")
         thread = threading.Thread(target=check_task, daemon=True)
@@ -252,21 +252,21 @@ class BulkOperationsDialog:
         selected_docs = self.get_selected_documents()
 
         if not selected_docs:
-            messagebox.showwarning("No Selection", "Please select documents to delete.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.no_selection', default="No Selection"), _t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.please_select_documents_to_delete', default="Please select documents to delete."))
             return
 
         if not self.auth.check_permission('manage_plagiarism_system'):
-            messagebox.showerror("Permission Denied", "You don't have permission to delete documents.")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.you_don_t_have_permission_to_delete_documents', default="You don't have permission to delete documents."))
             return
 
         # Confirm operation
-        if not messagebox.askyesno("Confirm Bulk Delete",
+        if not messagebox.askyesno(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.confirm_bulk_delete', default="Confirm Bulk Delete"),
                                    f"This will permanently delete {len(selected_docs)} documents. Continue?"):
             return
 
         # Second confirmation
-        if not messagebox.askyesno("Final Confirmation",
-                                   "This action cannot be undone. Are you absolutely sure?"):
+        if not messagebox.askyesno(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.final_confirmation', default="Final Confirmation"),
+                                   _t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.this_action_cannot_be_undone_are_you_absolutely_sure', default="This action cannot be undone. Are you absolutely sure?")):
             return
 
         # Perform deletions
@@ -288,7 +288,7 @@ class BulkOperationsDialog:
             self.progress_var.set(100)
             self.status_var.set(f"Deleted {deleted_count} of {total} documents")
 
-            messagebox.showinfo("Bulk Delete Complete",
+            messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.bulk_delete_complete', default="Bulk Delete Complete"),
                                f"Successfully deleted {deleted_count} out of {total} documents.")
 
             # Reload the document list
@@ -297,14 +297,14 @@ class BulkOperationsDialog:
             self.load_documents()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Bulk delete failed: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.error', default="Error"), f"Bulk delete failed: {e}")
 
     def export_selected(self):
         """Export selected documents"""
         selected_docs = self.get_selected_documents()
 
         if not selected_docs:
-            messagebox.showwarning("No Selection", "Please select documents to export.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.no_selection', default="No Selection"), _t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.please_select_documents_to_export', default="Please select documents to export."))
             return
 
         try:
@@ -314,7 +314,7 @@ class BulkOperationsDialog:
             filename = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                title="Export Selected Documents"
+                title=_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.export_selected_documents', default="Export Selected Documents")
             )
 
             if filename:
@@ -348,16 +348,16 @@ class BulkOperationsDialog:
                         except Exception as e:
                             logger.error(f"Error exporting document {doc_id}: {e}")
 
-                messagebox.showinfo("Export Complete", f"Exported {len(selected_docs)} documents to {filename}")
+                messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.export_complete', default="Export Complete"), f"Exported {len(selected_docs)} documents to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Error exporting documents: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.dialogs.export_error', default="Export Error"), f"Error exporting documents: {e}")
 
     def show_bulk_results(self, results):
         """Show results of bulk operation"""
         # Create results dialog
         results_dialog = tk.Toplevel(self.dialog)
-        results_dialog.title("Bulk Check Results")
+        results_dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.windows.bulk_check_results', default="Bulk Check Results"))
         results_dialog.geometry("600x400")
         results_dialog.transient(self.dialog)
 
@@ -396,4 +396,4 @@ class BulkOperationsDialog:
 
         results_tree.pack(fill=tk.BOTH, expand=True, pady=(0, GuiConfig.PADDING_MEDIUM))
 
-        ttk.Button(main_frame, text="Close", command=results_dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.bulk_operations.buttons.close', default="Close"), command=results_dialog.destroy).pack()

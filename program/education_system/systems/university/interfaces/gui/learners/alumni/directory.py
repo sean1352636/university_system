@@ -1,10 +1,12 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -75,7 +77,7 @@ class DirectoryMixin:
 
             selection = self.incoming_requests_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a request.")
+                messagebox.showwarning(_t('gui.learners.alumni.directory.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.directory.dialogs.please_select_a_request', default="Please select a request."))
                 return
 
             connection_id = selection[0]  # tree iid is the connection_id
@@ -92,7 +94,7 @@ class DirectoryMixin:
                         (response, connection_id, me))
                     conn.commit()
 
-                messagebox.showinfo("Success", f"Request {response}!")
+                messagebox.showinfo(_t('gui.learners.alumni.directory.dialogs.success', default="Success"), f"Request {response}!")
                 self.view_connection_requests()  # Refresh
 
                 try:
@@ -103,11 +105,11 @@ class DirectoryMixin:
                     pass
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to respond: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.directory.dialogs.database_error', default="Database Error"), f"Failed to respond: {str(e)}")
 
         def _save_basic_directory_settings(self, privacy_vars):
             """Save basic directory privacy settings"""
-            messagebox.showinfo("Settings Saved", "Directory privacy settings have been saved successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.directory.dialogs.settings_saved', default="Settings Saved"), _t('gui.learners.alumni.directory.dialogs.directory_privacy_settings_have_been_saved_successfully', default="Directory privacy settings have been saved successfully!"))
             self.update_status("Directory settings updated")
 
         def _search_alumni_for_connection(self):
@@ -119,7 +121,7 @@ class DirectoryMixin:
 
                 search_term = self.connection_search.get().strip()
                 if not search_term:
-                    messagebox.showwarning("Search Required", "Please enter a search term.")
+                    messagebox.showwarning(_t('gui.learners.alumni.directory.dialogs.search_required', default="Search Required"), _t('gui.learners.alumni.directory.dialogs.please_enter_a_search_term', default="Please enter a search term."))
                     return
 
                 with db_get_connection() as conn:
@@ -156,7 +158,7 @@ class DirectoryMixin:
                     self.update_status(f"Found {len(results)} alumni")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Search failed: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.directory.dialogs.database_error', default="Database Error"), f"Search failed: {str(e)}")
 
         def _send_selected_connection_request(self):
             """Send connection request to selected alumni"""
@@ -165,7 +167,7 @@ class DirectoryMixin:
 
             selection = self.connection_alumni_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select an alumni to connect with.")
+                messagebox.showwarning(_t('gui.learners.alumni.directory.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.directory.dialogs.please_select_an_alumni_to_connect_with', default="Please select an alumni to connect with."))
                 return
 
             item = self.connection_alumni_tree.item(selection[0])
@@ -173,13 +175,13 @@ class DirectoryMixin:
 
             # Check if already connected
             if alumni_data[4] == 'Connected/Pending':
-                messagebox.showinfo("Already Connected",
-                                  "You already have a connection or pending request with this alumni.")
+                messagebox.showinfo(_t('gui.learners.alumni.directory.dialogs.already_connected', default="Already Connected"),
+                                  _t('gui.learners.alumni.directory.dialogs.you_already_have_a_connection_or_pending_request_with_this_alumn', default="You already have a connection or pending request with this alumni."))
                 return
 
             # Create message dialog
             msg_window = tk.Toplevel(self.root)
-            msg_window.title("Connection Request Message")
+            msg_window.title(_t('gui.learners.alumni.directory.windows.connection_request_message', default="Connection Request Message"))
             msg_window.geometry("500x300")
             msg_window.configure(bg='white')
             msg_window.grab_set()
@@ -190,7 +192,7 @@ class DirectoryMixin:
             ttk.Label(frame, text=f"Send connection request to {alumni_data[0]}",
                      font=('Arial', 12, 'bold')).pack(pady=(0, 20))
 
-            ttk.Label(frame, text="Message (optional):").pack(anchor='w')
+            ttk.Label(frame, text=_t('gui.learners.alumni.directory.labels.message_optional', default="Message (optional):")).pack(anchor='w')
             message_text = ScrolledText(frame, height=6, wrap=tk.WORD)
             message_text.pack(fill=tk.BOTH, expand=True, pady=(5, 20))
 
@@ -208,7 +210,7 @@ class DirectoryMixin:
                         """, (me, recipient_id, message_text.get(1.0, tk.END).strip()))
                         conn.commit()
 
-                    messagebox.showinfo("Success", "Connection request sent!")
+                    messagebox.showinfo(_t('gui.learners.alumni.directory.dialogs.success', default="Success"), _t('gui.learners.alumni.directory.dialogs.connection_request_sent', default="Connection request sent!"))
                     msg_window.destroy()
                     self._search_alumni_for_connection()  # Refresh
 
@@ -220,11 +222,11 @@ class DirectoryMixin:
                         pass
 
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Failed to send request: {str(e)}")
+                    messagebox.showerror(_t('gui.learners.alumni.directory.dialogs.database_error', default="Database Error"), f"Failed to send request: {str(e)}")
 
-            ttk.Button(frame, text="Send Request",
+            ttk.Button(frame, text=_t('gui.learners.alumni.directory.buttons.send_request', default="Send Request"),
                       command=send_request).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(frame, text="Cancel",
+            ttk.Button(frame, text=_t('gui.learners.alumni.directory.buttons.cancel', default="Cancel"),
                       command=msg_window.destroy).pack(side=tk.LEFT)
 
         def perform_directory_search(self, search_vars):
@@ -311,7 +313,7 @@ class DirectoryMixin:
             summary_text += f"• Notification Frequency: {self.notification_freq.get()}\n"
             summary_text += f"• Enabled Options: {', '.join(settings_summary)}"
 
-            messagebox.showinfo("Settings Saved", summary_text)
+            messagebox.showinfo(_t('gui.learners.alumni.directory.dialogs.settings_saved', default="Settings Saved"), summary_text)
             self.update_status("Directory settings updated")
 
         def send_connection_request(self):
@@ -319,22 +321,22 @@ class DirectoryMixin:
             self.clear_content()
             self.update_status("Send Connection Request")
 
-            ttk.Label(self.content_frame, text="Send Connection Request",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.directory.labels.send_connection_request', default="Send Connection Request"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Alumni search
-            search_frame = ttk.LabelFrame(self.content_frame, text="Find Alumni", padding=10)
+            search_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.directory.labels.find_alumni', default="Find Alumni"), padding=10)
             search_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
-            ttk.Label(search_frame, text="Search by name:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(search_frame, text=_t('gui.learners.alumni.directory.labels.search_by_name', default="Search by name:")).pack(side=tk.LEFT, padx=(0, 10))
             self.connection_search = tk.StringVar()
             ttk.Entry(search_frame, textvariable=self.connection_search, width=30).pack(side=tk.LEFT, padx=(0, 20))
 
-            ttk.Button(search_frame, text="Search",
+            ttk.Button(search_frame, text=_t('gui.learners.alumni.directory.buttons.search', default="Search"),
                       command=self._search_alumni_for_connection).pack(side=tk.LEFT)
 
             # Search results
-            results_frame = ttk.LabelFrame(self.content_frame, text="Alumni", padding=10)
+            results_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.directory.labels.alumni', default="Alumni"), padding=10)
             results_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             columns = ('Name', 'Graduation Year', 'Industry', 'Location', 'Status')
@@ -355,7 +357,7 @@ class DirectoryMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="Send Connection Request",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.directory.buttons.send_connection_request', default="Send Connection Request"),
                       command=self._send_selected_connection_request).pack(side=tk.LEFT)
 
         def show_alumni_directory(self):
@@ -363,10 +365,10 @@ class DirectoryMixin:
             self.clear_content()
             self.update_status("Alumni Directory Settings")
 
-            ttk.Label(self.content_frame, text="Alumni Directory Privacy Settings",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.directory.labels.alumni_directory_privacy_settings', default="Alumni Directory Privacy Settings"),
                      font=('Arial', 16, 'bold')).pack(pady=20)
 
-            settings_frame = ttk.LabelFrame(self.content_frame, text="Privacy Settings", padding=20)
+            settings_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.directory.labels.privacy_settings', default="Privacy Settings"), padding=20)
             settings_frame.pack(fill=tk.X, pady=20, padx=20)
 
             # Privacy checkboxes
@@ -386,7 +388,7 @@ class DirectoryMixin:
                                variable=privacy_vars[var_name]).pack(anchor='w', pady=5)
 
             # Save button
-            ttk.Button(settings_frame, text="Save Settings",
+            ttk.Button(settings_frame, text=_t('gui.learners.alumni.directory.buttons.save_settings', default="Save Settings"),
                       command=lambda: self._save_basic_directory_settings(privacy_vars)).pack(pady=20)
 
         def show_connections(self):
@@ -398,11 +400,11 @@ class DirectoryMixin:
             self.clear_content()
             self.update_status("Alumni Directory Search")
 
-            ttk.Label(self.content_frame, text="Alumni Directory Search",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.directory.labels.alumni_directory_search', default="Alumni Directory Search"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Search form
-            search_frame = ttk.LabelFrame(self.content_frame, text="Search Criteria", padding=10)
+            search_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.directory.labels.search_criteria', default="Search Criteria"), padding=10)
             search_frame.pack(fill=tk.X, pady=(0, 20), padx=20)
 
             search_vars = {}
@@ -433,7 +435,7 @@ class DirectoryMixin:
             fields_container.columnconfigure(1, weight=1)
 
             # Search button in separate frame using pack
-            ttk.Button(search_frame, text="Search Directory",
+            ttk.Button(search_frame, text=_t('gui.learners.alumni.directory.buttons.search_directory', default="Search Directory"),
                       command=lambda: self.perform_directory_search(search_vars)).pack(pady=10)
 
             # Results area
@@ -477,11 +479,11 @@ class DirectoryMixin:
             canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
             # Title
-            ttk.Label(scrollable_frame, text="Alumni Directory Privacy Settings",
+            ttk.Label(scrollable_frame, text=_t('gui.learners.alumni.directory.labels.alumni_directory_privacy_settings', default="Alumni Directory Privacy Settings"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20), padx=20)
 
             # Settings form
-            settings_frame = ttk.LabelFrame(scrollable_frame, text="Privacy Settings", padding=20)
+            settings_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.directory.labels.privacy_settings', default="Privacy Settings"), padding=20)
             settings_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
             # Privacy options
@@ -505,24 +507,24 @@ class DirectoryMixin:
                                variable=self.privacy_vars[var_name]).pack(anchor='w', pady=5)
 
             # Profile visibility level
-            visibility_frame = ttk.LabelFrame(scrollable_frame, text="Profile Visibility", padding=20)
+            visibility_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.directory.labels.profile_visibility', default="Profile Visibility"), padding=20)
             visibility_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
-            self.visibility_level = tk.StringVar(value="Alumni Only")
+            self.visibility_level = tk.StringVar(value=_t('gui.learners.alumni.directory.values.alumni_only', default="Alumni Only"))
 
-            ttk.Radiobutton(visibility_frame, text="Public (visible to all)",
+            ttk.Radiobutton(visibility_frame, text=_t('gui.learners.alumni.directory.buttons.public_visible_to_all', default="Public (visible to all)"),
                            variable=self.visibility_level, value="Public").pack(anchor='w', pady=2)
-            ttk.Radiobutton(visibility_frame, text="Alumni Only (registered alumni only)",
+            ttk.Radiobutton(visibility_frame, text=_t('gui.learners.alumni.directory.buttons.alumni_only_registered_alumni_only', default="Alumni Only (registered alumni only)"),
                            variable=self.visibility_level, value="Alumni Only").pack(anchor='w', pady=2)
-            ttk.Radiobutton(visibility_frame, text="Private (only visible to me)",
+            ttk.Radiobutton(visibility_frame, text=_t('gui.learners.alumni.directory.buttons.private_only_visible_to_me', default="Private (only visible to me)"),
                            variable=self.visibility_level, value="Private").pack(anchor='w', pady=2)
 
             # Communication preferences
-            comm_frame = ttk.LabelFrame(scrollable_frame, text="Communication Preferences", padding=20)
+            comm_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.directory.labels.communication_preferences', default="Communication Preferences"), padding=20)
             comm_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
-            ttk.Label(comm_frame, text="Preferred Contact Method:").pack(anchor='w', pady=(0, 5))
-            self.contact_method = tk.StringVar(value="Email")
+            ttk.Label(comm_frame, text=_t('gui.learners.alumni.directory.labels.preferred_contact_method', default="Preferred Contact Method:")).pack(anchor='w', pady=(0, 5))
+            self.contact_method = tk.StringVar(value=_t('gui.learners.alumni.directory.values.email', default="Email"))
 
             contact_methods = ["Email", "Phone", "LinkedIn", "Alumni Platform Messages"]
             for method in contact_methods:
@@ -533,14 +535,14 @@ class DirectoryMixin:
             freq_frame = ttk.Frame(comm_frame)
             freq_frame.pack(fill=tk.X, pady=(10, 0))
 
-            ttk.Label(freq_frame, text="Notification Frequency:").pack(side=tk.LEFT, padx=(0, 10))
-            self.notification_freq = tk.StringVar(value="Weekly")
+            ttk.Label(freq_frame, text=_t('gui.learners.alumni.directory.labels.notification_frequency', default="Notification Frequency:")).pack(side=tk.LEFT, padx=(0, 10))
+            self.notification_freq = tk.StringVar(value=_t('gui.learners.alumni.directory.values.weekly', default="Weekly"))
             freq_combo = ttk.Combobox(freq_frame, textvariable=self.notification_freq,
                                      values=["Immediate", "Daily", "Weekly", "Monthly", "Never"])
             freq_combo.pack(side=tk.LEFT)
 
             # Save button
-            ttk.Button(scrollable_frame, text="Save Settings",
+            ttk.Button(scrollable_frame, text=_t('gui.learners.alumni.directory.buttons.save_settings', default="Save Settings"),
                       command=self.save_directory_settings).pack(pady=20)
 
         def view_connection_requests(self):
@@ -548,15 +550,15 @@ class DirectoryMixin:
             self.clear_content()
             self.update_status("Connection Requests")
 
-            ttk.Label(self.content_frame, text="Connection Requests",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.directory.labels.connection_requests', default="Connection Requests"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 10))
 
             # Toolbar
             toolbar = ttk.Frame(self.content_frame)
             toolbar.pack(fill=tk.X, padx=20, pady=(0, 10))
-            ttk.Button(toolbar, text="➕ Find Alumni to Connect",
+            ttk.Button(toolbar, text=_t('gui.learners.alumni.directory.buttons.find_alumni_to_connect', default="➕ Find Alumni to Connect"),
                        command=self.send_connection_request).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(toolbar, text="🔄 Refresh",
+            ttk.Button(toolbar, text=_t('gui.learners.alumni.directory.buttons.refresh', default="🔄 Refresh"),
                        command=self.view_connection_requests).pack(side=tk.LEFT)
 
             # Tabs
@@ -565,7 +567,7 @@ class DirectoryMixin:
 
             # Incoming requests tab
             incoming_frame = ttk.Frame(notebook)
-            notebook.add(incoming_frame, text="Incoming Requests")
+            notebook.add(incoming_frame, text=_t('gui.learners.alumni.directory.tabs.incoming_requests', default="Incoming Requests"))
 
             incoming_table = ttk.Frame(incoming_frame)
             incoming_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -609,20 +611,20 @@ class DirectoryMixin:
                     self.update_status(f"{len(requests)} incoming request(s)")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load requests: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.directory.dialogs.database_error', default="Database Error"), f"Failed to load requests: {str(e)}")
 
             # Action buttons for incoming
             incoming_buttons = ttk.Frame(incoming_frame)
             incoming_buttons.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-            ttk.Button(incoming_buttons, text="Accept",
+            ttk.Button(incoming_buttons, text=_t('gui.learners.alumni.directory.buttons.accept', default="Accept"),
                       command=lambda: self._respond_to_request('accepted')).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(incoming_buttons, text="Decline",
+            ttk.Button(incoming_buttons, text=_t('gui.learners.alumni.directory.buttons.decline', default="Decline"),
                       command=lambda: self._respond_to_request('declined')).pack(side=tk.LEFT)
 
             # Outgoing requests tab
             outgoing_frame = ttk.Frame(notebook)
-            notebook.add(outgoing_frame, text="Sent Requests")
+            notebook.add(outgoing_frame, text=_t('gui.learners.alumni.directory.tabs.sent_requests', default="Sent Requests"))
 
             outgoing_table = ttk.Frame(outgoing_frame)
             outgoing_table.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)

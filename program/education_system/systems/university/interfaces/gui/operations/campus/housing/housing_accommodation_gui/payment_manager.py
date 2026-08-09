@@ -74,11 +74,11 @@ def show_payments(gui_instance):
     header_frame = ttk.Frame(gui_instance.content_frame)
     header_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(header_frame, text="Payment Management",
+    ttk.Label(header_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.payment_management', default="Payment Management"),
              font=('Arial', 16, 'bold')).pack(side='left', padx=(0, 20))
 
     # Button to open Finance Management GUI
-    ttk.Button(header_frame, text="📊 Open Finance Management",
+    ttk.Button(header_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.buttons.open_finance_management', default="📊 Open Finance Management"),
               command=lambda: open_finance_gui(gui_instance)).pack(side='left')
 
     # Create notebook
@@ -87,28 +87,28 @@ def show_payments(gui_instance):
 
     # Payment history tab
     history_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(history_frame, text="Payment History")
+    notebook.add(history_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.tabs.payment_history', default="Payment History"))
     create_payment_history(gui_instance, history_frame)
 
     # Record payment tab
     record_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(record_frame, text="Record Payment")
+    notebook.add(record_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.tabs.record_payment', default="Record Payment"))
     create_payment_form(gui_instance, record_frame)
 
 
 def create_payment_history(gui_instance, parent):
     """Create payment history view"""
     # Filter frame
-    filter_frame = ttk.LabelFrame(parent, text="Filter Payments", padding="10")
+    filter_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.filter_payments', default="Filter Payments"), padding="10")
     filter_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(filter_frame, text="Student ID:").grid(row=0, column=0, sticky='w')
+    ttk.Label(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky='w')
     gui_instance.payment_student_filter = ttk.Entry(filter_frame, width=20)
     gui_instance.payment_student_filter.grid(row=0, column=1, padx=10)
 
-    ttk.Button(filter_frame, text="Filter",
+    ttk.Button(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.buttons.filter', default="Filter"),
               command=lambda: refresh_payment_history(gui_instance)).grid(row=0, column=2, padx=10)
-    ttk.Button(filter_frame, text="Show All",
+    ttk.Button(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.buttons.show_all', default="Show All"),
               command=lambda: show_all_payments(gui_instance)).grid(row=0, column=3, padx=5)
 
     # Payments list
@@ -184,7 +184,7 @@ def refresh_payment_history(gui_instance):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load payments: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.error', default="Error"), f"Failed to load payments: {str(e)}")
 
 
 def show_all_payments(gui_instance):
@@ -196,23 +196,23 @@ def show_all_payments(gui_instance):
 def create_payment_form(gui_instance, parent):
     """Create payment recording form"""
     # Assignment selection
-    assign_frame = ttk.LabelFrame(parent, text="Select Assignment", padding="10")
+    assign_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.select_assignment', default="Select Assignment"), padding="10")
     assign_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(assign_frame, text="Active Assignment:").grid(row=0, column=0, sticky='w')
+    ttk.Label(assign_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.active_assignment', default="Active Assignment:")).grid(row=0, column=0, sticky='w')
     gui_instance.assignment_combo = ttk.Combobox(assign_frame, width=50)
     gui_instance.assignment_combo.grid(row=0, column=1, padx=10)
 
-    ttk.Button(assign_frame, text="Refresh",
+    ttk.Button(assign_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.buttons.refresh', default="Refresh"),
               command=lambda: load_active_assignments_for_payment(gui_instance)).grid(row=0, column=2, padx=10)
 
     load_active_assignments_for_payment(gui_instance)
 
     # Payment details
-    payment_frame = ttk.LabelFrame(parent, text="Payment Details", padding="10")
+    payment_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.payment_details', default="Payment Details"), padding="10")
     payment_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(payment_frame, text="Payment Type:").grid(row=0, column=0, sticky='w')
+    ttk.Label(payment_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.payment_type', default="Payment Type:")).grid(row=0, column=0, sticky='w')
     payment_types = ["Rent", "Deposit", "Damage Charge", "Late Fee", "Other"]
     gui_instance.payment_type_combo = ttk.Combobox(
         payment_frame, width=20, values=payment_types, state='readonly',
@@ -220,32 +220,32 @@ def create_payment_form(gui_instance, parent):
     gui_instance.payment_type_combo.grid(row=0, column=1, padx=10)
     gui_instance.payment_type_combo.set("Rent")
 
-    ttk.Label(payment_frame, text="Amount:").grid(row=1, column=0, sticky='w')
+    ttk.Label(payment_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.amount', default="Amount:")).grid(row=1, column=0, sticky='w')
     gui_instance.payment_amount_entry = ttk.Entry(payment_frame, width=20)
     gui_instance.payment_amount_entry.grid(row=1, column=1, padx=10)
 
-    ttk.Label(payment_frame, text="Payment Method:").grid(row=2, column=0, sticky='w')
+    ttk.Label(payment_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.payment_method', default="Payment Method:")).grid(row=2, column=0, sticky='w')
     payment_methods = ["Credit Card", "Bank Transfer", "Cash", "Check", "Other"]
     if FINANCE_ACCOUNT_AVAILABLE:
         payment_methods.insert(0, "Student Finance Account")
     gui_instance.payment_method_combo = ttk.Combobox(payment_frame, width=20, values=payment_methods)
     gui_instance.payment_method_combo.grid(row=2, column=1, padx=10)
 
-    ttk.Label(payment_frame, text="Transaction Reference:").grid(row=3, column=0, sticky='w')
+    ttk.Label(payment_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.transaction_reference', default="Transaction Reference:")).grid(row=3, column=0, sticky='w')
     gui_instance.transaction_ref_entry = ttk.Entry(payment_frame, width=30)
     gui_instance.transaction_ref_entry.grid(row=3, column=1, padx=10)
 
     # Payment period — only meaningful for Rent. Deposit / damage / late fee
     # leave the entries disabled and store NULL period dates.
-    period_frame = ttk.LabelFrame(parent, text="Payment Period (Rent only)", padding="10")
+    period_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.payment_period_rent_only', default="Payment Period (Rent only)"), padding="10")
     period_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(period_frame, text="Period Start:").grid(row=0, column=0, sticky='w')
+    ttk.Label(period_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.period_start', default="Period Start:")).grid(row=0, column=0, sticky='w')
     gui_instance.period_start_entry = ttk.Entry(period_frame, width=20)
     gui_instance.period_start_entry.grid(row=0, column=1, padx=10)
     gui_instance.period_start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-    ttk.Label(period_frame, text="Period End:").grid(row=0, column=2, sticky='w', padx=(20, 0))
+    ttk.Label(period_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.labels.period_end', default="Period End:")).grid(row=0, column=2, sticky='w', padx=(20, 0))
     gui_instance.period_end_entry = ttk.Entry(period_frame, width=20)
     gui_instance.period_end_entry.grid(row=0, column=3, padx=10)
     next_month = datetime.now().replace(day=28) + timedelta(days=4)
@@ -264,11 +264,11 @@ def create_payment_form(gui_instance, parent):
     buttons_frame = ttk.Frame(parent)
     buttons_frame.pack(pady=20)
 
-    ttk.Button(buttons_frame, text="Record Payment",
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.buttons.record_payment', default="Record Payment"),
               command=lambda: record_payment(gui_instance)).pack(side='left', padx=5)
 
     if FINANCE_GUI_AVAILABLE:
-        ttk.Button(buttons_frame, text="View in Finance System",
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.buttons.view_in_finance_system', default="View in Finance System"),
                   command=lambda: open_finance_gui(gui_instance)).pack(side='left', padx=5)
 
 
@@ -303,12 +303,12 @@ def record_payment(gui_instance):
         if payment_type == 'Rent':
             required += [period_start, period_end]
         if not all(required):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         # Extract assignment ID from combo text
         if not assignment_text or '(' not in assignment_text:
-            messagebox.showerror("Error", "Please select an assignment")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.please_select_an_assignment', default="Please select an assignment"))
             return
 
         student_id = assignment_text.split('(')[1].split(')')[0]
@@ -323,7 +323,7 @@ def record_payment(gui_instance):
 
         result = cursor.fetchone()
         if not result:
-            messagebox.showerror("Error", "Assignment not found")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.assignment_not_found', default="Assignment not found"))
             conn.close()
             return
 
@@ -335,7 +335,7 @@ def record_payment(gui_instance):
             if amount <= 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid payment amount")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.please_enter_a_valid_payment_amount', default="Please enter a valid payment amount"))
             conn.close()
             return
 
@@ -345,7 +345,7 @@ def record_payment(gui_instance):
                 datetime.strptime(period_start, '%Y-%m-%d')
                 datetime.strptime(period_end, '%Y-%m-%d')
             except ValueError:
-                messagebox.showerror("Error", "Please enter valid dates (YYYY-MM-DD)")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.please_enter_valid_dates_yyyy_mm_dd', default="Please enter valid dates (YYYY-MM-DD)"))
                 conn.close()
                 return
 
@@ -357,14 +357,14 @@ def record_payment(gui_instance):
             # Check balance first
             current_balance = get_student_finance_account_balance(student_id)
             if current_balance is None:
-                messagebox.showerror("Error",
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.error', default="Error"),
                     f"No finance account found for student {student_id}.\n"
                     "Please create a finance account first or use a different payment method.")
                 conn.close()
                 return
 
             if current_balance < amount:
-                messagebox.showerror("Insufficient Balance",
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.insufficient_balance', default="Insufficient Balance"),
                     f"Student finance account balance is insufficient.\n\n"
                     f"Current Balance: £{current_balance:.2f}\n"
                     f"Required Amount: £{amount:.2f}\n\n"
@@ -391,7 +391,7 @@ def record_payment(gui_instance):
             )
 
             if not payment_result['success']:
-                messagebox.showerror("Payment Failed", payment_result['message'])
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.payment_failed', default="Payment Failed"), payment_result['message'])
                 conn.close()
                 return
 
@@ -542,27 +542,27 @@ def record_payment(gui_instance):
         # Show immediate confirmation dialog with email status
         if email_sent:
             messagebox.showinfo(
-                "Payment Recorded - Email Sent",
+                _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.payment_recorded_email_sent', default="Payment Recorded - Email Sent"),
                 f"{base_msg}\n\n✓ Email confirmation sent to:\n{student_email}"
             )
         elif EMAIL_SERVICE_AVAILABLE and student_info and student_info[2]:
             # Email service available but failed
             messagebox.showerror(
-                "Payment Recorded - Email Failed",
+                _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.payment_recorded_email_failed', default="Payment Recorded - Email Failed"),
                 f"{base_msg}\n\n✗ Failed to send email confirmation:\n{email_error}\n\n"
                 f"Please notify the student manually."
             )
         elif student_info and not student_info[2]:
             # No email address on file
             messagebox.showwarning(
-                "Payment Recorded - No Email",
+                _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.payment_recorded_no_email', default="Payment Recorded - No Email"),
                 f"{base_msg}\n\n⚠ No email address on file for this student.\n"
                 f"Please notify the student manually."
             )
         else:
             # Email service not available
             messagebox.showinfo(
-                "Payment Recorded",
+                _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.payment_recorded', default="Payment Recorded"),
                 f"{base_msg}\n\nNote: Email service is not available."
             )
 
@@ -588,21 +588,21 @@ def record_payment(gui_instance):
         refresh_payment_history(gui_instance)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to record payment: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.error', default="Error"), f"Failed to record payment: {str(e)}")
 
 
 def open_finance_gui(gui_instance):
     """Open the Finance Management GUI"""
     if not FINANCE_GUI_AVAILABLE:
-        messagebox.showinfo("Finance GUI Unavailable",
-                          "The Finance Management GUI is not available.\n"
-                          "Please ensure the finance module is properly installed.")
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.finance_gui_unavailable', default="Finance GUI Unavailable"),
+                          _t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.the_finance_management_gui_is_not_available_please_ensure_the_fi', default="The Finance Management GUI is not available.\n"
+                          "Please ensure the finance module is properly installed."))
         return
 
     try:
         # Create new window for finance GUI
         finance_window = tk.Toplevel(gui_instance.root)
-        finance_window.title("Finance Management System")
+        finance_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.windows.finance_management_system', default="Finance Management System"))
         finance_window.geometry("1400x800")
 
         # Initialize Finance GUI in the new window
@@ -610,4 +610,4 @@ def open_finance_gui(gui_instance):
         FinanceGUI(finance_window, gui_instance.auth)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Finance GUI: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.payment_manager.dialogs.error', default="Error"), f"Failed to open Finance GUI: {str(e)}")

@@ -246,7 +246,7 @@ class DocumentDatabaseManager:
             conn.close()
             return True
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Database error: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.database.dialogs.database_error', default="Database Error"), f"Database error: {e}")
             return False
 
     def insert_default_data(self, cursor):
@@ -324,7 +324,7 @@ class DocumentDatabaseManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Database Migrations")
+            dialog.title(_t('gui.shell.document_manager.database.windows.database_migrations', default="Database Migrations"))
             dialog.geometry("800x600")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -333,11 +333,11 @@ class DocumentDatabaseManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Database Schema Migrations",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.database.labels.database_schema_migrations', default="Database Schema Migrations"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Available migrations
-            migrations_frame = ttk.LabelFrame(main_frame, text="Available Migrations", padding=10)
+            migrations_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.database.labels.available_migrations', default="Available Migrations"), padding=10)
             migrations_frame.pack(fill='both', expand=True, pady=(0, 15))
 
             # Migration list
@@ -394,7 +394,7 @@ class DocumentDatabaseManager:
                 migrations_list.insert(tk.END, name)
 
             # Output log
-            log_frame = ttk.LabelFrame(main_frame, text="Migration Log", padding=10)
+            log_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.database.labels.migration_log', default="Migration Log"), padding=10)
             log_frame.pack(fill='x')
 
             log_text = tk.Text(log_frame, height=8, wrap=tk.WORD, font=('Courier', 9))
@@ -412,10 +412,10 @@ class DocumentDatabaseManager:
             def run_migrations():
                 selections = migrations_list.curselection()
                 if not selections:
-                    messagebox.showwarning("Warning", "Please select migrations to run")
+                    messagebox.showwarning(_t('gui.shell.document_manager.database.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.database.dialogs.please_select_migrations_to_run', default="Please select migrations to run"))
                     return
 
-                response = messagebox.askyesno("Confirm Migrations",
+                response = messagebox.askyesno(_t('gui.shell.document_manager.database.dialogs.confirm_migrations', default="Confirm Migrations"),
                                              f"Run {len(selections)} selected migrations?\n\n"
                                              "This will modify the database schema.")
 
@@ -462,24 +462,24 @@ class DocumentDatabaseManager:
                     })
 
                     if error_count == 0:
-                        messagebox.showinfo("Success", f"All {len(selections)} migrations completed successfully")
+                        messagebox.showinfo(_t('gui.shell.document_manager.database.dialogs.success', default="Success"), f"All {len(selections)} migrations completed successfully")
                     else:
-                        messagebox.showwarning("Completed with Errors",
+                        messagebox.showwarning(_t('gui.shell.document_manager.database.dialogs.completed_with_errors', default="Completed with Errors"),
                                              f"{success_count} successful, {error_count} errors\n"
                                              "Check the log for details")
 
                 except Exception as e:
                     log_message(f"\u2717 Fatal error: {str(e)}")
-                    messagebox.showerror("Error", f"Migration failed: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.database.dialogs.error', default="Error"), f"Migration failed: {e}")
 
             def run_all_migrations():
                 migrations_list.selection_clear(0, tk.END)
                 migrations_list.selection_set(0, tk.END)
                 run_migrations()
 
-            ttk.Button(action_frame, text="Run Selected", command=run_migrations).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Run All", command=run_all_migrations).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.database.buttons.run_selected', default="Run Selected"), command=run_migrations).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.database.buttons.run_all', default="Run All"), command=run_all_migrations).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.database.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open migrations dialog: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.database.dialogs.error', default="Error"), f"Failed to open migrations dialog: {e}")

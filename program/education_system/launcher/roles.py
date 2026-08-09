@@ -8,12 +8,28 @@ _ROLE_OPTIONS = [
     ("parent", "Parent", "Parent portal for communication and reports"),
 ]
 
+# The apprenticeships system does not use the school vocabulary: an
+# apprenticeship has five parties round it, two of them (the employer
+# and the independent end-point assessor) outside the provider
+# altogether. Offering a superadmin "teacher" or "parent" there would
+# land them in a role the system has no screens for.
+_APPRENTICESHIP_ROLE_OPTIONS = [
+    ("admin", "Provider Admin", "Programmes, employers, funding and compliance"),
+    ("staff", "Tutor / Assessor", "Caseload, training delivery and portfolio assessment"),
+    ("apprentice", "Apprentice", "Own record, off-the-job log and portfolio"),
+    ("employer", "Employer", "Own apprentices, approvals and progress reviews"),
+    ("end_point_assessor", "End-Point Assessor", "Gateway decisions and EPA grading"),
+]
+
 _ROLE_COLOURS = {
     "admin": "#c0392b",
     "staff": "#2980b9",
     "teacher": "#27ae60",
     "student": "#8e44ad",
     "parent": "#e67e22",
+    "apprentice": "#8e44ad",
+    "employer": "#16a085",
+    "end_point_assessor": "#d35400",
 }
 
 SYSTEM_NAMES = {
@@ -22,16 +38,32 @@ SYSTEM_NAMES = {
     "secondary":     "Secondary School System",
     "primary":    "Primary School System",
     "nursery":    "Nursery System",
+    "apprenticeships": "Apprenticeships System",
+    "fe_college": "FE College System",
 }
 
 
+def role_options(target_system: str):
+    """Roles a superadmin may enter *target_system* as."""
+    if target_system == "apprenticeships":
+        return _APPRENTICESHIP_ROLE_OPTIONS
+    return _ROLE_OPTIONS
+
+
 def is_superadmin(user_info) -> bool:
-    """Check whether user_info represents a superadmin (admin in the university system)."""
+    """Check whether ``user_info`` represents a platform superadmin.
+
+    University administrators are system-scoped administrators.  The platform
+    superadmin dashboard is reserved for accounts with admin access across all
+    core systems, matching the universal GUI and CLI login flows.
+    """
     if not user_info:
         return False
     systems = user_info.get("systems", [])
-    admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
-    return "university" in admin_keys
+    admin_keys = {
+        s.get("system_key") for s in systems if s.get("role") == "admin"
+    }
+    return admin_keys >= {"university", "sixth_form", "secondary", "primary"}
 
 
 def pick_role_gui(target_system: str) -> str:
@@ -41,10 +73,12 @@ def pick_role_gui(target_system: str) -> str:
     """
     import tkinter as _tk
 
+    options = role_options(target_system)
     chosen = {"role": "admin"}
     dlg = _tk.Tk()
     dlg.title("Select Role")
-    dlg.geometry("420x440")
+    # Grow with the option list rather than clipping the last button.
+    dlg.geometry(f"460x{240 + len(options) * 42}")
     dlg.resizable(False, False)
 
     sys_name = SYSTEM_NAMES.get(target_system, target_system.title())
@@ -64,8 +98,8 @@ def pick_role_gui(target_system: str) -> str:
         chosen["role"] = r
         dlg.destroy()
 
-    for role_key, role_label, role_desc in _ROLE_OPTIONS:
-        colour = _ROLE_COLOURS[role_key]
+    for role_key, role_label, role_desc in options:
+        colour = _ROLE_COLOURS.get(role_key, "#2980b9")
         frm = _tk.Frame(body)
         frm.pack(fill="x", pady=3)
         _tk.Button(
@@ -92,19 +126,17 @@ def pick_role_cli(target_system: str) -> str:
     """CLI prompt for superadmin to choose which role to enter as."""
     from education_system.platform.delivery.cli.cli_helpers import print_header, print_menu, get_choice
 
+    options = role_options(target_system)
     sys_name = SYSTEM_NAMES.get(target_system, target_system.title())
+    width = max(len(label) for _, label, _ in options)
     print_header(f"Entering {sys_name} — Select Role")
     print_menu([
-        ("1", "Admin   — Full access to all modules and settings"),
-        ("2", "Staff   — Staff-level access to most modules"),
-        ("3", "Teacher — Teaching-focused access to academic modules"),
-        ("4", "Student — Student portal with limited access"),
-        ("5", "Parent  — Parent portal for communication and reports"),
+        (str(i), f"{label:<{width}} — {desc}")
+        for i, (_, label, desc) in enumerate(options, 1)
     ])
-    role_map = {"1": "admin", "2": "staff", "3": "teacher",
-                "4": "student", "5": "parent"}
+    role_map = {str(i): key for i, (key, _, _) in enumerate(options, 1)}
     while True:
         choice = get_choice()
         if choice in role_map:
             return role_map[choice]
-        print("  Invalid option. Please select 1-5.")
+        print(f"  Invalid option. Please select 1-{len(options)}.")

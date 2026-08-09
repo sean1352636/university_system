@@ -46,9 +46,38 @@ logger = logging.getLogger(__name__)
 # already high-entropy (256 bits from ``secrets.token_urlsafe(32)``) and the
 # hash must be recomputed on every authenticated request. We derive the pepper
 # from ``API_KEY_PEPPER`` when provided so deployments can rotate it.
-_API_KEY_PEPPER: bytes = (
-    os.environ.get("API_KEY_PEPPER", "edu-api-key-pepper-v1").encode("utf-8")
-)
+def _resolve_pepper() -> bytes:
+    """Pepper for key hashing — required in production, defaulted only in dev.
+
+    A public default pepper adds nothing against an exfiltrated auth.db; the
+    dev fallback matches the historic value so existing dev keys keep working.
+    """
+    pepper = os.environ.get("API_KEY_PEPPER")
+    if pepper:
+        return pepper.encode("utf-8")
+    app_env = os.getenv("APP_ENV", "production").strip().lower()
+    if app_env in ("development", "dev", "local", "test", "testing"):
+        return b"edu-api-key-pepper-v1"
+    raise RuntimeError(
+        "API_KEY_PEPPER must be set in production: the built-in default is "
+        "public, which defeats the pepper against a stolen auth database."
+    )
+
+
+def _get_pepper() -> bytes:
+    """Resolve (and cache) the pepper on first use — not at import.
+
+    Failing at import would take down any tool that merely imports this
+    module in a misconfigured environment; failing on first hash still blocks
+    the operation that actually needs the secret.
+    """
+    global _API_KEY_PEPPER_CACHE
+    if _API_KEY_PEPPER_CACHE is None:
+        _API_KEY_PEPPER_CACHE = _resolve_pepper()
+    return _API_KEY_PEPPER_CACHE
+
+
+_API_KEY_PEPPER_CACHE: bytes | None = None
 _API_KEY_ITERATIONS: int = 10_000
 
 _SCHEMA = """\
@@ -80,7 +109,7 @@ def _hash_key(raw_key: str) -> str:
     return hashlib.pbkdf2_hmac(
         "sha256",
         raw_key.encode("utf-8"),
-        _API_KEY_PEPPER,
+        _get_pepper(),
         _API_KEY_ITERATIONS,
     ).hex()
 

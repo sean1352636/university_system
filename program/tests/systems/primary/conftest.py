@@ -17,7 +17,7 @@ def fresh_data_dir(tmp_path, monkeypatch):
 
     target = tmp_path / "data"
     monkeypatch.setenv("EDU_PRIMARY_DATA_DIR", str(target))
-    from education_system.systems.primary.infrastructure import paths as paths_mod
+    from education_system import paths as paths_mod
     reloaded = importlib.reload(paths_mod)
     try:
         yield reloaded

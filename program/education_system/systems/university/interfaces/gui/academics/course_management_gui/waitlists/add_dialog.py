@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # AddToWaitlistDialog – add a student to a course waitlist
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.waitlists._imports import (
@@ -9,24 +11,24 @@ class AddToWaitlistDialog:
     def __init__(self, parent, auth):
         self.parent = parent; self.auth = auth
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Add to Course Waitlist")
+        self.dialog.title(_t('gui.academics.course_management_gui.waitlists.add_dialog.windows.add_to_course_waitlist', default="Add to Course Waitlist"))
         self.dialog.geometry("420x240")
         self.dialog.transient(parent); self.dialog.grab_set()
         self._ui()
 
     def _ui(self):
         frm = ttk.Frame(self.dialog); frm.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        ttk.Label(frm, text="Course:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(frm, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.labels.course', default="Course:")).grid(row=0, column=0, sticky=tk.W)
         self.course_combo = ttk.Combobox(frm, width=45); self.course_combo.grid(row=0, column=1, sticky=tk.W, padx=6, columnspan=2)
-        ttk.Label(frm, text="Student ID:").grid(row=1, column=0, sticky=tk.W, pady=(8,0))
+        ttk.Label(frm, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.labels.student_id', default="Student ID:")).grid(row=1, column=0, sticky=tk.W, pady=(8,0))
         self.student_var = tk.StringVar()
         ttk.Entry(frm, textvariable=self.student_var, width=20).grid(row=1, column=1, sticky=tk.W, padx=6, pady=(8,0))
-        ttk.Button(frm, text="Lookup", command=self._lookup_student).grid(row=1, column=2, sticky=tk.W, padx=6, pady=(8,0))
+        ttk.Button(frm, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.buttons.lookup', default="Lookup"), command=self._lookup_student).grid(row=1, column=2, sticky=tk.W, padx=6, pady=(8,0))
 
         self._load_courses()
         btns = ttk.Frame(frm); btns.grid(row=3, column=0, columnspan=3, sticky=tk.EW, pady=12)
-        ttk.Button(btns, text="Add", command=self._add).pack(side=tk.RIGHT, padx=6)
-        ttk.Button(btns, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.buttons.add', default="Add"), command=self._add).pack(side=tk.RIGHT, padx=6)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def _load_courses(self):
         from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -51,7 +53,7 @@ class AddToWaitlistDialog:
     def _lookup_student(self):
         """Open student lookup dialog"""
         lookup_dialog = tk.Toplevel(self.dialog)
-        lookup_dialog.title("Lookup Student")
+        lookup_dialog.title(_t('gui.academics.course_management_gui.waitlists.add_dialog.windows.lookup_student', default="Lookup Student"))
         lookup_dialog.geometry("600x400")
         lookup_dialog.transient(self.dialog)
         lookup_dialog.grab_set()
@@ -59,12 +61,12 @@ class AddToWaitlistDialog:
         lookup_frame = ttk.Frame(lookup_dialog, padding=10)
         lookup_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(lookup_frame, text="Search for Student", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(lookup_frame, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.labels.search_for_student', default="Search for Student"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Search field
         search_frame = ttk.Frame(lookup_frame)
         search_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(search_frame, text="Search (ID, Name):").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.labels.search_id_name', default="Search (ID, Name):")).pack(side=tk.LEFT)
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=5)
@@ -114,7 +116,7 @@ class AddToWaitlistDialog:
 
                 conn.close()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to search students: {str(e)}")
+                messagebox.showerror(_t('gui.academics.course_management_gui.waitlists.add_dialog.dialogs.error', default="Error"), f"Failed to search students: {str(e)}")
 
         def select_student():
             """Select the highlighted student"""
@@ -125,15 +127,15 @@ class AddToWaitlistDialog:
                 self.student_var.set(student_id)
                 lookup_dialog.destroy()
             else:
-                messagebox.showwarning("No Selection", "Please select a student")
+                messagebox.showwarning(_t('gui.academics.course_management_gui.waitlists.add_dialog.dialogs.no_selection', default="No Selection"), _t('gui.academics.course_management_gui.waitlists.add_dialog.dialogs.please_select_a_student', default="Please select a student"))
 
-        ttk.Button(search_frame, text="Search", command=search_students).pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.buttons.search', default="Search"), command=search_students).pack(side=tk.LEFT, padx=5)
 
         # Button frame
         btn_frame = ttk.Frame(lookup_frame)
         btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(btn_frame, text="Select", command=select_student).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.buttons.select', default="Select"), command=select_student).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.course_management_gui.waitlists.add_dialog.buttons.cancel', default="Cancel"), command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         # Initial load
         search_students()
@@ -146,9 +148,9 @@ class AddToWaitlistDialog:
         course_key = self.course_combo.get().strip()
         student_id = self.student_var.get().strip()
         if course_key not in self._course_id:
-            messagebox.showwarning(_("common.validation"), "Select a course."); return
+            messagebox.showwarning(_("common.validation"), _t('gui.academics.course_management_gui.waitlists.add_dialog.dialogs.select_a_course', default="Select a course.")); return
         if not student_id:
-            messagebox.showwarning(_("common.validation"), "Enter a student ID."); return
+            messagebox.showwarning(_("common.validation"), _t('gui.academics.course_management_gui.waitlists.add_dialog.dialogs.enter_a_student_id', default="Enter a student ID.")); return
         course_id = self._course_id[course_key]
 
         conn = None
@@ -171,7 +173,7 @@ class AddToWaitlistDialog:
             """)
             cur.execute("SELECT id FROM course_waitlist WHERE course_id = ? AND student_id = ?", (course_id, student_id))
             if cur.fetchone():
-                messagebox.showwarning("Already on Waitlist", "This student is already on the waitlist for this course.", parent=self.dialog)
+                messagebox.showwarning(_t('gui.academics.course_management_gui.waitlists.add_dialog.dialogs.already_on_waitlist', default="Already on Waitlist"), _t('gui.academics.course_management_gui.waitlists.add_dialog.dialogs.this_student_is_already_on_the_waitlist_for_this_course', default="This student is already on the waitlist for this course."), parent=self.dialog)
                 conn.close()
                 return
             cur.execute("SELECT COALESCE(MAX(position),0) + 1 FROM course_waitlist WHERE course_id = ?", (course_id,))

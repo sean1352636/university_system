@@ -24,7 +24,7 @@ def show_maintenance(gui_instance):
     """Show maintenance requests interface"""
     gui_instance.clear_content()
 
-    ttk.Label(gui_instance.content_frame, text="Maintenance Requests",
+    ttk.Label(gui_instance.content_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.maintenance_requests', default="Maintenance Requests"),
              font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
     # Create notebook
@@ -33,34 +33,34 @@ def show_maintenance(gui_instance):
 
     # Requests list tab
     list_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(list_frame, text="View Requests")
+    notebook.add(list_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.tabs.view_requests', default="View Requests"))
     create_maintenance_list(gui_instance, list_frame)
 
     # New request tab
     new_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(new_frame, text="New Request")
+    notebook.add(new_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.tabs.new_request', default="New Request"))
     create_maintenance_form(gui_instance, new_frame)
 
 
 def create_maintenance_list(gui_instance, parent):
     """Create maintenance requests list"""
     # Filter frame
-    filter_frame = ttk.LabelFrame(parent, text="Filter Requests", padding="10")
+    filter_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.filter_requests', default="Filter Requests"), padding="10")
     filter_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(filter_frame, text="Status:").grid(row=0, column=0, sticky='w')
+    ttk.Label(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.status_variant_2', default="Status:")).grid(row=0, column=0, sticky='w')
     gui_instance.maint_status_filter = ttk.Combobox(filter_frame,
                                           values=['All', 'Open', 'In Progress', 'Pending Parts', 'Complete'])
     gui_instance.maint_status_filter.set('Open')
     gui_instance.maint_status_filter.grid(row=0, column=1, padx=10)
 
-    ttk.Label(filter_frame, text="Priority:").grid(row=0, column=2, sticky='w', padx=(20, 0))
+    ttk.Label(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.priority', default="Priority:")).grid(row=0, column=2, sticky='w', padx=(20, 0))
     gui_instance.maint_priority_filter = ttk.Combobox(filter_frame,
                                             values=['All', 'Emergency', 'High', 'Medium', 'Low'])
     gui_instance.maint_priority_filter.set('All')
     gui_instance.maint_priority_filter.grid(row=0, column=3, padx=10)
 
-    ttk.Button(filter_frame, text="Apply Filter",
+    ttk.Button(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.buttons.apply_filter', default="Apply Filter"),
               command=lambda: refresh_maintenance_list(gui_instance)).grid(row=0, column=4, padx=10)
 
     # Requests list
@@ -86,9 +86,9 @@ def create_maintenance_list(gui_instance, parent):
     buttons_frame = ttk.Frame(parent)
     buttons_frame.pack(fill='x', pady=20)
 
-    ttk.Button(buttons_frame, text="Refresh", command=lambda: refresh_maintenance_list(gui_instance)).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="View Details", command=lambda: view_maintenance_details(gui_instance)).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Update Request", command=lambda: update_maintenance_request(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.buttons.refresh', default="Refresh"), command=lambda: refresh_maintenance_list(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.buttons.view_details', default="View Details"), command=lambda: view_maintenance_details(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.buttons.update_request', default="Update Request"), command=lambda: update_maintenance_request(gui_instance)).pack(side='left', padx=5)
 
     # Load requests
     refresh_maintenance_list(gui_instance)
@@ -161,14 +161,14 @@ def refresh_maintenance_list(gui_instance):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load maintenance requests: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), f"Failed to load maintenance requests: {str(e)}")
 
 
 def view_maintenance_details(gui_instance):
     """View maintenance request details"""
     selected = gui_instance.maintenance_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a request to view")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.please_select_a_request_to_view', default="Please select a request to view"))
         return
 
     request_id = gui_instance.maintenance_tree.item(selected[0])['values'][0]
@@ -178,7 +178,7 @@ def view_maintenance_details(gui_instance):
 def show_maintenance_details_dialog(gui_instance, request_id):
     """Show maintenance request details dialog"""
     details_window = tk.Toplevel(gui_instance.root)
-    details_window.title("Maintenance Request Details")
+    details_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.windows.maintenance_request_details', default="Maintenance Request Details"))
     details_window.geometry("600x500")
     details_window.transient(gui_instance.root)
     details_window.grab_set()
@@ -202,7 +202,7 @@ def show_maintenance_details_dialog(gui_instance, request_id):
         conn.close()
 
         if not req_data:
-            messagebox.showerror("Error", "Request not found")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.request_not_found', default="Request not found"))
             details_window.destroy()
             return
 
@@ -240,11 +240,11 @@ Status: {req_data[11]}
         text_widget.config(state='disabled')
 
         # Close button
-        ttk.Button(details_window, text="Close",
+        ttk.Button(details_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.buttons.close', default="Close"),
                   command=details_window.destroy).pack(pady=10)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load request details: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), f"Failed to load request details: {str(e)}")
         details_window.destroy()
 
 
@@ -252,7 +252,7 @@ def update_maintenance_request(gui_instance):
     """Update maintenance request"""
     selected = gui_instance.maintenance_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a request to update")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.please_select_a_request_to_update', default="Please select a request to update"))
         return
 
     request_id = gui_instance.maintenance_tree.item(selected[0])['values'][0]
@@ -262,13 +262,13 @@ def update_maintenance_request(gui_instance):
 def show_update_maintenance_dialog(gui_instance, request_id):
     """Show maintenance update dialog"""
     update_window = tk.Toplevel(gui_instance.root)
-    update_window.title("Update Maintenance Request")
+    update_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.windows.update_maintenance_request', default="Update Maintenance Request"))
     update_window.geometry("500x400")
     update_window.transient(gui_instance.root)
     update_window.grab_set()
 
     # Status update
-    status_frame = ttk.LabelFrame(update_window, text="Status", padding="10")
+    status_frame = ttk.LabelFrame(update_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.status', default="Status"), padding="10")
     status_frame.pack(fill='x', padx=10, pady=10)
 
     status_var = tk.StringVar()
@@ -279,20 +279,20 @@ def show_update_maintenance_dialog(gui_instance, request_id):
                        value=status).grid(row=i//2, column=i%2, sticky='w', pady=5)
 
     # Assignment
-    assign_frame = ttk.LabelFrame(update_window, text="Assignment", padding="10")
+    assign_frame = ttk.LabelFrame(update_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.assignment', default="Assignment"), padding="10")
     assign_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Label(assign_frame, text="Assigned to:").grid(row=0, column=0, sticky='w')
+    ttk.Label(assign_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.assigned_to', default="Assigned to:")).grid(row=0, column=0, sticky='w')
     assigned_entry = ttk.Entry(assign_frame, width=30)
     assigned_entry.grid(row=0, column=1, padx=10)
 
-    ttk.Label(assign_frame, text="Scheduled Date:").grid(row=1, column=0, sticky='w')
+    ttk.Label(assign_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.scheduled_date', default="Scheduled Date:")).grid(row=1, column=0, sticky='w')
     scheduled_entry = ttk.Entry(assign_frame, width=30)
     scheduled_entry.grid(row=1, column=1, padx=10)
     scheduled_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
     # Notes/Feedback
-    notes_frame = ttk.LabelFrame(update_window, text="Notes/Feedback", padding="10")
+    notes_frame = ttk.LabelFrame(update_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.notes_feedback', default="Notes/Feedback"), padding="10")
     notes_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     notes_text = scrolledtext.ScrolledText(notes_frame, height=6)
@@ -305,14 +305,14 @@ def show_update_maintenance_dialog(gui_instance, request_id):
         notes = notes_text.get('1.0', tk.END).strip()
 
         if not status:
-            messagebox.showerror("Error", "Please select a status")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.please_select_a_status', default="Please select a status"))
             return
 
         try:
             if scheduled:
                 datetime.strptime(scheduled, '%Y-%m-%d')
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid date (YYYY-MM-DD)")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.please_enter_valid_date_yyyy_mm_dd', default="Please enter valid date (YYYY-MM-DD)"))
             return
 
         try:
@@ -374,33 +374,33 @@ def show_update_maintenance_dialog(gui_instance, request_id):
                 except Exception as email_error:
                     print(f"Warning: Failed to send status update email: {email_error}")
 
-            messagebox.showinfo("Success", "Maintenance request updated successfully")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.maintenance_request_updated_successfully', default="Maintenance request updated successfully"))
             refresh_maintenance_list(gui_instance)
             update_window.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update request: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), f"Failed to update request: {str(e)}")
 
     # Buttons
     buttons_frame = ttk.Frame(update_window)
     buttons_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Button(buttons_frame, text="Save", command=save_update).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Cancel", command=update_window.destroy).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.buttons.save', default="Save"), command=save_update).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.buttons.cancel', default="Cancel"), command=update_window.destroy).pack(side='left', padx=5)
 
 
 def create_maintenance_form(gui_instance, parent):
     """Create new maintenance request form"""
     # Room selection
-    room_frame = ttk.LabelFrame(parent, text="Room Selection", padding="10")
+    room_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.room_selection', default="Room Selection"), padding="10")
     room_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(room_frame, text="Building:").grid(row=0, column=0, sticky='w')
+    ttk.Label(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.building', default="Building:")).grid(row=0, column=0, sticky='w')
     gui_instance.maint_building_combo = ttk.Combobox(room_frame, width=30)
     gui_instance.maint_building_combo.grid(row=0, column=1, padx=10)
     gui_instance.maint_building_combo.bind('<<ComboboxSelected>>', lambda e: load_rooms_for_maintenance(gui_instance))
 
-    ttk.Label(room_frame, text="Room:").grid(row=1, column=0, sticky='w')
+    ttk.Label(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.room', default="Room:")).grid(row=1, column=0, sticky='w')
     gui_instance.maint_room_combo = ttk.Combobox(room_frame, width=30)
     gui_instance.maint_room_combo.grid(row=1, column=1, padx=10)
 
@@ -408,28 +408,28 @@ def create_maintenance_form(gui_instance, parent):
     load_buildings_for_maintenance(gui_instance)
 
     # Request details
-    details_frame = ttk.LabelFrame(parent, text="Request Details", padding="10")
+    details_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.request_details', default="Request Details"), padding="10")
     details_frame.pack(fill='both', expand=True, pady=(0, 20))
 
-    ttk.Label(details_frame, text="Issue Type:").grid(row=0, column=0, sticky='w')
+    ttk.Label(details_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.issue_type', default="Issue Type:")).grid(row=0, column=0, sticky='w')
     gui_instance.issue_type_combo = ttk.Combobox(details_frame, width=30,
                                        values=["Plumbing", "Electrical", "HVAC", "Appliance",
                                               "Furniture", "Pest Control", "Structural",
                                               "Lock/Key", "Cleaning", "Other"])
     gui_instance.issue_type_combo.grid(row=0, column=1, padx=10)
 
-    ttk.Label(details_frame, text="Priority:").grid(row=1, column=0, sticky='w')
+    ttk.Label(details_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.priority', default="Priority:")).grid(row=1, column=0, sticky='w')
     gui_instance.priority_combo = ttk.Combobox(details_frame, width=30,
                                      values=["Low", "Medium", "High", "Emergency"])
     gui_instance.priority_combo.set("Medium")
     gui_instance.priority_combo.grid(row=1, column=1, padx=10)
 
-    ttk.Label(details_frame, text="Description:").grid(row=2, column=0, sticky='nw')
+    ttk.Label(details_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw')
     gui_instance.description_text = tk.Text(details_frame, width=40, height=6)
     gui_instance.description_text.grid(row=2, column=1, padx=10, pady=10)
 
     # Submit button
-    ttk.Button(details_frame, text="Submit Request",
+    ttk.Button(details_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.buttons.submit_request', default="Submit Request"),
               command=lambda: submit_maintenance_request(gui_instance)).grid(row=3, column=0, pady=20)
 
 
@@ -487,7 +487,7 @@ def submit_maintenance_request(gui_instance):
         description = gui_instance.description_text.get('1.0', tk.END).strip()
 
         if not all([building_name, room_info, issue_type, priority, description]):
-            messagebox.showerror("Error", "Please fill in all fields")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.please_fill_in_all_fields', default="Please fill in all fields"))
             return
 
         # Extract room number from room_info
@@ -505,7 +505,7 @@ def submit_maintenance_request(gui_instance):
 
         room_result = cursor.fetchone()
         if not room_result:
-            messagebox.showerror("Error", "Room not found")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.room_not_found', default="Room not found"))
             conn.close()
             return
 
@@ -533,22 +533,22 @@ def submit_maintenance_request(gui_instance):
                     student_id = assign_result[0]
                 else:
                     # No active assignment, ask for student ID
-                    student_id = simpledialog.askstring("Student ID",
-                                                       "Enter Student ID for this request:",
+                    student_id = simpledialog.askstring(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.student_id', default="Student ID"),
+                                                       _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.enter_student_id_for_this_request', default="Enter Student ID for this request:"),
                                                        parent=gui_instance.root)
                     if not student_id:
-                        messagebox.showerror("Error", "Student ID is required")
+                        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.student_id_is_required', default="Student ID is required"))
                         conn.close()
                         return
 
                     # Verify student exists
                     cursor.execute('SELECT student_id FROM students WHERE student_id = ?', (student_id,))
                     if not cursor.fetchone():
-                        messagebox.showerror("Error", f"Student ID {student_id} not found")
+                        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), f"Student ID {student_id} not found")
                         conn.close()
                         return
         else:
-            messagebox.showerror("Error", "Authentication required to submit maintenance requests")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.authentication_required_to_submit_maintenance_requests', default="Authentication required to submit maintenance requests"))
             conn.close()
             return
 
@@ -585,7 +585,7 @@ def submit_maintenance_request(gui_instance):
         except Exception as email_error:
             print(f"Warning: Failed to send confirmation email: {email_error}")
 
-        messagebox.showinfo("Success", f"Maintenance request submitted successfully!\nRequest ID: {request_id}")
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.success', default="Success"), f"Maintenance request submitted successfully!\nRequest ID: {request_id}")
 
         # Clear form
         gui_instance.maint_building_combo.set("")
@@ -597,4 +597,4 @@ def submit_maintenance_request(gui_instance):
         refresh_maintenance_list(gui_instance)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to submit request: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.maintenance_manager.dialogs.error', default="Error"), f"Failed to submit request: {str(e)}")

@@ -1,0 +1,1 @@
+"""Fe college portals package."""

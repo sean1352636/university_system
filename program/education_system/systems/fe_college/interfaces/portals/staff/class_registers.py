@@ -1,0 +1,1 @@
+"""Class Registers module."""

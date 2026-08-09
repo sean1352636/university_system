@@ -10,11 +10,11 @@ import json
 import sqlite3
 from typing import Iterable
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 
 def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+    conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 

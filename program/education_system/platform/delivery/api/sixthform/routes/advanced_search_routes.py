@@ -3,10 +3,10 @@
 Read/run endpoints clients can call over HTTP instead of importing the
 sixth-form package:
 
-* GET  /api/sixthform/advanced-search/saved              — list saved searches
-* GET  /api/sixthform/advanced-search/run?q=&scopes=&limit=  — run a query
-* GET  /api/sixthform/advanced-search/cohorts            — list cohorts
-* GET  /api/sixthform/advanced-search/telemetry          — telemetry summary
+* GET  /api/v1/sixthform/advanced-search/saved              — list saved searches
+* GET  /api/v1/sixthform/advanced-search/run?q=&scopes=&limit=  — run a query
+* GET  /api/v1/sixthform/advanced-search/cohorts            — list cohorts
+* GET  /api/v1/sixthform/advanced-search/telemetry          — telemetry summary
 
 Auth mirrors the other sixth-form routes: a JWT bearer token (validated
 by ``token_required`` if importable) or an ``X-Sixthform-Token`` header
@@ -24,7 +24,7 @@ from flask import Blueprint, g, jsonify, request
 logger = logging.getLogger(__name__)
 
 advanced_search_bp = Blueprint(
-    "sf_advanced_search", __name__, url_prefix="/api/sixthform")
+    "sf_advanced_search", __name__, url_prefix="/api")
 
 
 def _token_required(view):

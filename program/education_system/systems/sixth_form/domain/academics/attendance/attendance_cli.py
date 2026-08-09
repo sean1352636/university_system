@@ -158,8 +158,20 @@ def take_register() -> None:
         _pause()
         return
 
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_register as reg,
+    )
+    session = reg.get_session(slot_id, date_s)
+    if session and session.is_submitted:
+        print(f"\n  ✗ This register was submitted on {session.submitted_at} "
+              f"by {session.submitted_by or '?'}.")
+        print("    Reopen it from Register Tools before making changes.")
+        _pause()
+        return
+
     print(f"\n  Roster ({len(entries)} student(s)):")
-    print("  Statuses: 1=Present  2=Late  3=Absent  4=Authorised  S=Skip")
+    print("  Statuses: 1/P=Present  2/L=Late  3/A=Absent  4/U=Authorised  "
+          "S=Skip")
     print("  Default for blank input is 'Present'. Type 'cancel' to abort.\n")
 
     payload: dict[str, dict[str, Any]] = {}
@@ -178,9 +190,10 @@ def take_register() -> None:
             return
         if raw.lower() == "s":
             continue
-        # Accept either number or full status name
+        # Accept a number, the single-key shorthand, or the full name.
         mapping = {"1": "Present", "2": "Late", "3": "Absent", "4": "Authorised"}
-        status = mapping.get(raw, raw)
+        mapping.update(reg.STATUS_KEYS)
+        status = mapping.get(raw.lower(), raw)
         if status not in STATUSES:
             # Treat as a typed status — let validation catch errors at save
             pass
@@ -492,8 +505,102 @@ def _row_action_loop(rows: list) -> None:
 
 # ── Submenu dispatcher ─────────────────────────────────────────────
 
+def register_tools() -> None:
+    """Hand off to the register-lifecycle submenu (imported late to
+    avoid a cycle — that module borrows this one's prompt helpers)."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_register_cli,
+    )
+    attendance_register_cli.run()
+
+
+def code_tools() -> None:
+    """Mark codes, absence reasons, authorisation, off-site and audit."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_codes_cli,
+    )
+    attendance_codes_cli.run()
+
+
+def session_tools() -> None:
+    """Expected lessons, coverage gaps and AM/PM statutory marks."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_sessions_cli,
+    )
+    attendance_sessions_cli.run()
+
+
+def capture_tools() -> None:
+    """Kiosk check-in, offline sync, cover registers and bulk import."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_capture_cli,
+    )
+    attendance_capture_cli.run()
+
+
+def offtimetable_tools() -> None:
+    """Activity, work-placement and exam-room registers."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_offtimetable_cli,
+    )
+    attendance_offtimetable_cli.run()
+
+
+def policy_tools() -> None:
+    """Roll call, the A/B week cycle and the amendment window."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_policy_cli,
+    )
+    attendance_policy_cli.run()
+
+
+def absence_tools() -> None:
+    """Absence reports, self-certification, leave, evidence and appeals."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_absence_cli,
+    )
+    attendance_absence_cli.run()
+
+
+def comms_tools() -> None:
+    """First-day calling, notifications, register nudges and letters."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_comms_cli,
+    )
+    attendance_comms_cli.run()
+
+
+def intervention_tools() -> None:
+    """Cases, punctuality, cohorts, safeguarding, bursary and rewards."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_intervention_cli,
+    )
+    attendance_intervention_cli.run()
+
+
+def insight_tools() -> None:
+    """Analytics, anomalies, the governor report, returns and settings."""
+    from education_system.systems.sixth_form.domain.academics.attendance import (
+        attendance_insight_cli,
+    )
+    attendance_insight_cli.run()
+
+
 _MENU: list[tuple[str, Callable[[], None]]] = [
     ("Take Register",       take_register),
+    ("Register Tools (bulk / submit / undo)", register_tools),
+    ("Codes, Authorisation & Audit", code_tools),
+    ("Expected & Statutory Sessions", session_tools),
+    ("Capture (kiosk / offline / cover / import)", capture_tools),
+    ("Off-timetable Registers (activities / placements / exams)",
+     offtimetable_tools),
+    ("Roll Call & Policy (weeks / amendment window)", policy_tools),
+    ("Absence Intake (reports / leave / evidence / appeals)",
+     absence_tools),
+    ("Chasing & Communications (calls / messages / letters)", comms_tools),
+    ("Intervention & Pastoral (cases / bursary / rewards)",
+     intervention_tools),
+    ("Analysis, Returns & Configuration", insight_tools),
     ("List / Filter Records", list_records),
     ("Per-Student Summary", student_summary),
     ("Per-Group Summary",   group_summary),

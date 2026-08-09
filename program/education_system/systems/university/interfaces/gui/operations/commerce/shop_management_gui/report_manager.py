@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -85,20 +87,20 @@ def show_monthly_report(self):
     title_frame = ttk.Frame(self.report_display_frame)
     title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-    ttk.Label(title_frame, text="Monthly Sales Report", style='Heading.TLabel').grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(title_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.monthly_sales_report', default="Monthly Sales Report"), style='Heading.TLabel').grid(row=0, column=0, sticky=tk.W)
 
     # Month/Year selection
     today = datetime.now()
     month_frame = ttk.Frame(title_frame)
     month_frame.grid(row=0, column=1, sticky=tk.E)
 
-    ttk.Label(month_frame, text="Year:").grid(row=0, column=0, padx=(0, 5))
+    ttk.Label(month_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.year', default="Year:")).grid(row=0, column=0, padx=(0, 5))
     year_var = tk.StringVar(value=str(today.year))
     year_combo = ttk.Combobox(month_frame, textvariable=year_var, width=6,
                              values=[str(y) for y in range(2020, today.year + 2)])
     year_combo.grid(row=0, column=1, padx=5)
 
-    ttk.Label(month_frame, text="Month:").grid(row=0, column=2, padx=(10, 5))
+    ttk.Label(month_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.month', default="Month:")).grid(row=0, column=2, padx=(10, 5))
     month_var = tk.StringVar(value=str(today.month))
     month_combo = ttk.Combobox(month_frame, textvariable=month_var, width=6,
                               values=[str(m) for m in range(1, 13)])
@@ -132,7 +134,7 @@ def show_monthly_report(self):
 
             # Weekly breakdown
             if stats.get('weekly_breakdown'):
-                weekly_frame = ttk.LabelFrame(self.report_display_frame, text="Weekly Breakdown", padding="10")
+                weekly_frame = ttk.LabelFrame(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.weekly_breakdown', default="Weekly Breakdown"), padding="10")
                 weekly_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=10)
 
                 for i, week_data in enumerate(stats['weekly_breakdown']):
@@ -141,11 +143,11 @@ def show_monthly_report(self):
                         row=i, column=0, sticky=tk.W, pady=2)
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid year and month")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.please_enter_valid_year_and_month', default="Please enter valid year and month"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate monthly report: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.error', default="Error"), f"Failed to generate monthly report: {e}")
 
-    ttk.Button(month_frame, text="Generate", command=generate_monthly_report).grid(row=0, column=4, padx=10)
+    ttk.Button(month_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.generate', default="Generate"), command=generate_monthly_report).grid(row=0, column=4, padx=10)
 
 
 def show_weekly_report(self):
@@ -155,7 +157,7 @@ def show_weekly_report(self):
         widget.destroy()
 
     # Report title
-    ttk.Label(self.report_display_frame, text="Weekly Sales Report",
+    ttk.Label(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.weekly_sales_report', default="Weekly Sales Report"),
              style='Heading.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
 
     try:
@@ -174,7 +176,7 @@ def show_weekly_report(self):
 
         # Daily breakdown
         if stats.get('daily_breakdown'):
-            daily_frame = ttk.LabelFrame(self.report_display_frame, text="Daily Breakdown", padding="10")
+            daily_frame = ttk.LabelFrame(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.daily_breakdown', default="Daily Breakdown"), padding="10")
             daily_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
 
             for day, data in stats['daily_breakdown'].items():
@@ -194,7 +196,7 @@ def show_top_products_report(self):
         widget.destroy()
 
     # Report title
-    ttk.Label(self.report_display_frame, text="Top Products Report",
+    ttk.Label(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.top_products_report', default="Top Products Report"),
              style='Heading.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
 
     try:
@@ -202,7 +204,7 @@ def show_top_products_report(self):
         top_products = self.get_top_products_data()
 
         if not top_products:
-            ttk.Label(self.report_display_frame, text="No product sales data available",
+            ttk.Label(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.no_product_sales_data_available', default="No product sales data available"),
                      style='Warning.TLabel').grid(row=1, column=0, pady=20)
             return
 
@@ -304,7 +306,7 @@ def generate_custom_report(self):
             widget.destroy()
 
         # Show loading
-        ttk.Label(self.report_display_frame, text="Generating custom report...",
+        ttk.Label(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.generating_custom_report', default="Generating custom report..."),
                  style='Heading.TLabel').grid(row=0, column=0, pady=20)
         self.root.update()
 
@@ -320,7 +322,7 @@ def generate_custom_report(self):
             self.show_payment_methods_report(start_date, end_date)
 
     except ValueError:
-        messagebox.showerror("Error", "Please enter valid dates in YYYY-MM-DD format")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.please_enter_valid_dates_in_yyyy_mm_dd_format', default="Please enter valid dates in YYYY-MM-DD format"))
     except Exception as e:
         # Clear and show error
         for widget in self.report_display_frame.winfo_children():
@@ -523,7 +525,7 @@ def show_customer_analysis_report(self, start_date, end_date):
 
         # Top customers table
         if customer_data.get('top_customers'):
-            customers_frame = ttk.LabelFrame(self.report_display_frame, text="Top Customers", padding="10")
+            customers_frame = ttk.LabelFrame(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.top_customers', default="Top Customers"), padding="10")
             customers_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
             customers_frame.columnconfigure(0, weight=1)
             customers_frame.rowconfigure(0, weight=1)
@@ -630,7 +632,7 @@ def show_report_window(self, title, report_content):
     ttk.Label(main_frame, text=title, font=('Arial', 14, 'bold')).pack(pady=10)
 
     # Report display area
-    report_frame = ttk.LabelFrame(main_frame, text="Report", padding=10)
+    report_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.report', default="Report"), padding=10)
     report_frame.pack(fill='both', expand=True, pady=10)
 
     from tkinter.scrolledtext import ScrolledText
@@ -655,12 +657,12 @@ def show_report_window(self, title, report_content):
             with open(filepath, 'w') as f:
                 f.write(report_content)
 
-            messagebox.showinfo("Export Success",
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.export_success', default="Export Success"),
                               f"Report exported successfully!\n\n"
                               f"File: {filename}\n"
                               f"Location: {filepath}")
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export report:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.export_error', default="Export Error"), f"Failed to export report:\n{str(e)}")
 
     def email_to_admin():
         """Email report to admin"""
@@ -668,7 +670,7 @@ def show_report_window(self, title, report_content):
             # Get admin email from database
             conn = get_connection()
             if not conn:
-                messagebox.showerror("Database Error", "Could not connect to database")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.database_error', default="Database Error"), _t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.could_not_connect_to_database', default="Could not connect to database"))
                 return
 
             cursor = conn.cursor()
@@ -677,9 +679,9 @@ def show_report_window(self, title, report_content):
             conn.close()
 
             if not result or not result[0]:
-                messagebox.showerror("Email Error",
-                                   "No admin email found in database.\n"
-                                   "Please configure an admin email address first.")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.email_error', default="Email Error"),
+                                   _t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.no_admin_email_found_in_database_please_configure_an_admin_email', default="No admin email found in database.\n"
+                                   "Please configure an admin email address first."))
                 return
 
             admin_email = result[0]
@@ -688,9 +690,9 @@ def show_report_window(self, title, report_content):
             try:
                 from education_system.systems.university.infrastructure.email.email_service import send_email
             except ImportError:
-                messagebox.showerror("Email Error",
-                                   "Email service not available.\n"
-                                   "Please check your email configuration.")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.email_error', default="Email Error"),
+                                   _t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.email_service_not_available_please_check_your_email_configuratio', default="Email service not available.\n"
+                                   "Please check your email configuration."))
                 return
 
             # Prepare template variables
@@ -703,20 +705,20 @@ def show_report_window(self, title, report_content):
 
             subject, body = render_template('commerce/shop_report', template_vars)
             if not subject or not body:
-                messagebox.showerror("Email Error", "Failed to render email template")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.email_error', default="Email Error"), _t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.failed_to_render_email_template', default="Failed to render email template"))
                 return
 
             send_email(admin_email, subject, body)
 
-            messagebox.showinfo("Email Sent",
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.email_sent', default="Email Sent"),
                               f"Report has been sent to admin email:\n{admin_email}")
 
         except Exception as e:
-            messagebox.showerror("Email Error", f"Failed to send email:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.email_error', default="Email Error"), f"Failed to send email:\n{str(e)}")
 
-    ttk.Button(btn_frame, text="Export as TXT", command=export_as_txt).grid(row=0, column=0, padx=5)
-    ttk.Button(btn_frame, text="Email to Admin", command=email_to_admin).grid(row=0, column=1, padx=5)
-    ttk.Button(btn_frame, text="Close", command=report_window.destroy).grid(row=0, column=2, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.export_as_txt', default="Export as TXT"), command=export_as_txt).grid(row=0, column=0, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.email_to_admin', default="Email to Admin"), command=email_to_admin).grid(row=0, column=1, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.close', default="Close"), command=report_window.destroy).grid(row=0, column=2, padx=5)
 
     # Now that window is fully created, make it modal
     report_window.update_idletasks()
@@ -730,11 +732,11 @@ def show_reports(self):
 
     # Check permissions
     if self.current_user.get('role') not in ['admin', 'staff', 'shop_manager']:
-        ttk.Label(self.content_frame, text="Access Denied", style='Error.TLabel').grid(row=0, column=0)
+        ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.access_denied', default="Access Denied"), style='Error.TLabel').grid(row=0, column=0)
         return
 
     # Title
-    ttk.Label(self.content_frame, text="Sales Reports", style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 20))
+    ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.sales_reports', default="Sales Reports"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 20))
 
     # Report categories
     reports_frame = ttk.Frame(self.content_frame)
@@ -742,41 +744,41 @@ def show_reports(self):
     reports_frame.columnconfigure((0, 1), weight=1)
 
     # Quick Reports
-    quick_frame = ttk.LabelFrame(reports_frame, text="Quick Reports", padding="15")
+    quick_frame = ttk.LabelFrame(reports_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.quick_reports', default="Quick Reports"), padding="15")
     quick_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N), padx=(0, 10))
 
-    ttk.Button(quick_frame, text="📊 Daily Sales", command=lambda: self.generate_quick_report('daily'),
+    ttk.Button(quick_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.daily_sales', default="📊 Daily Sales"), command=lambda: self.generate_quick_report('daily'),
               width=20).grid(row=0, column=0, pady=5, sticky=tk.W)
-    ttk.Button(quick_frame, text="📈 Weekly Sales", command=lambda: self.generate_quick_report('weekly'),
+    ttk.Button(quick_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.weekly_sales', default="📈 Weekly Sales"), command=lambda: self.generate_quick_report('weekly'),
               width=20).grid(row=1, column=0, pady=5, sticky=tk.W)
-    ttk.Button(quick_frame, text="📅 Monthly Sales", command=lambda: self.generate_quick_report('monthly'),
+    ttk.Button(quick_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.monthly_sales', default="📅 Monthly Sales"), command=lambda: self.generate_quick_report('monthly'),
               width=20).grid(row=2, column=0, pady=5, sticky=tk.W)
-    ttk.Button(quick_frame, text="🏆 Top Products", command=lambda: self.generate_quick_report('top_products'),
+    ttk.Button(quick_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.top_products', default="🏆 Top Products"), command=lambda: self.generate_quick_report('top_products'),
               width=20).grid(row=3, column=0, pady=5, sticky=tk.W)
-    ttk.Button(quick_frame, text="📦 Low Stock", command=self.show_low_stock_report,
+    ttk.Button(quick_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.low_stock', default="📦 Low Stock"), command=self.show_low_stock_report,
               width=20).grid(row=4, column=0, pady=5, sticky=tk.W)
 
     # Custom Reports
-    custom_frame = ttk.LabelFrame(reports_frame, text="Custom Reports", padding="15")
+    custom_frame = ttk.LabelFrame(reports_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.custom_reports', default="Custom Reports"), padding="15")
     custom_frame.grid(row=0, column=1, sticky=(tk.W, tk.E, tk.N), padx=(10, 0))
 
     # Date range selector
-    ttk.Label(custom_frame, text="Date Range:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(custom_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.date_range', default="Date Range:")).grid(row=0, column=0, sticky=tk.W, pady=5)
 
     date_frame = ttk.Frame(custom_frame)
     date_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=5)
 
-    ttk.Label(date_frame, text="From:").grid(row=0, column=0)
+    ttk.Label(date_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.from', default="From:")).grid(row=0, column=0)
     self.report_start_date = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
     ttk.Entry(date_frame, textvariable=self.report_start_date, width=12).grid(row=0, column=1, padx=5)
 
-    ttk.Label(date_frame, text="To:").grid(row=0, column=2, padx=(10, 0))
+    ttk.Label(date_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.to', default="To:")).grid(row=0, column=2, padx=(10, 0))
     self.report_end_date = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
     ttk.Entry(date_frame, textvariable=self.report_end_date, width=12).grid(row=0, column=3, padx=5)
 
     # Report type selector
-    ttk.Label(custom_frame, text="Report Type:").grid(row=2, column=0, sticky=tk.W, pady=(10, 5))
-    self.report_type_var = tk.StringVar(value="sales_summary")
+    ttk.Label(custom_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.report_type', default="Report Type:")).grid(row=2, column=0, sticky=tk.W, pady=(10, 5))
+    self.report_type_var = tk.StringVar(value=_t('gui.operations.commerce.shop_management_gui.report_manager.values.sales_summary', default="sales_summary"))
 
     report_types = [
         ("Sales Summary", "sales_summary"),
@@ -791,17 +793,17 @@ def show_reports(self):
                        value=value).grid(row=3+i, column=0, sticky=tk.W, pady=2)
 
     # Generate button
-    ttk.Button(custom_frame, text="Generate Custom Report",
+    ttk.Button(custom_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.buttons.generate_custom_report', default="Generate Custom Report"),
               command=self.generate_custom_report, style='Primary.TButton').grid(row=10, column=0, pady=20)
 
     # Report display area
-    self.report_display_frame = ttk.LabelFrame(self.content_frame, text="Report Results", padding="10")
+    self.report_display_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.report_results', default="Report Results"), padding="10")
     self.report_display_frame.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=20)
     self.report_display_frame.columnconfigure(0, weight=1)
     self.report_display_frame.rowconfigure(0, weight=1)
 
     # Initial message
-    ttk.Label(self.report_display_frame, text="Select a report type above to generate a report",
+    ttk.Label(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.select_a_report_type_above_to_generate_a_report', default="Select a report type above to generate a report"),
              style='Heading.TLabel').grid(row=0, column=0, pady=50)
 
     self.update_status("Reports interface loaded")
@@ -815,7 +817,7 @@ def generate_quick_report(self, report_type):
             widget.destroy()
 
         # Show loading
-        ttk.Label(self.report_display_frame, text="Generating report...",
+        ttk.Label(self.report_display_frame, text=_t('gui.operations.commerce.shop_management_gui.report_manager.labels.generating_report', default="Generating report..."),
                  style='Heading.TLabel').grid(row=0, column=0, pady=20)
         self.root.update()
 
@@ -869,6 +871,6 @@ def show_daily_report(self):
         self.show_report_window(f"Daily Sales Report - {today}", report)
 
     except Exception as e:
-        messagebox.showerror("Report Error", f"Error loading daily report:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.report_manager.dialogs.report_error', default="Report Error"), f"Error loading daily report:\n{str(e)}")
 
 

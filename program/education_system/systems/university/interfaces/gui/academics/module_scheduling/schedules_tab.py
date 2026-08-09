@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -87,21 +89,21 @@ def create_schedules_tab(self):
     from education_system.systems.university.interfaces.gui.academics.module_scheduling.tooltip import Tooltip
     # Publish Selected — promotes draft → published. Calls the same service
     # path as the Edit dialog so schedule_history captures the state change.
-    btn_publish = ttk.Button(controls_frame, text="Publish Selected",
+    btn_publish = ttk.Button(controls_frame, text=_t('gui.academics.module_scheduling.schedules_tab.buttons.publish_selected', default="Publish Selected"),
                              command=self._publish_selected_schedule)
     btn_publish.pack(side=tk.LEFT, padx=5)
     Tooltip(btn_publish,
             "Promote selected draft schedules to 'published'. "
             "Notifications will fire and conflict checks apply.")
     # Bulk Actions — reassign instructor / cancel / shift time across many rows.
-    btn_bulk = ttk.Button(controls_frame, text="Bulk Actions…",
+    btn_bulk = ttk.Button(controls_frame, text=_t('gui.academics.module_scheduling.schedules_tab.buttons.bulk_actions', default="Bulk Actions…"),
                           command=self._show_bulk_actions_dialog)
     btn_bulk.pack(side=tk.LEFT, padx=5)
     Tooltip(btn_bulk,
             "Bulk reassign instructor, cancel, or shift the start/end "
             "time of every selected row by ±N minutes.")
     # Clone Term — opens the what-if dialog.
-    btn_clone = ttk.Button(controls_frame, text="Clone Term…",
+    btn_clone = ttk.Button(controls_frame, text=_t('gui.academics.module_scheduling.schedules_tab.buttons.clone_term', default="Clone Term…"),
                            command=self._show_clone_term_dialog)
     btn_clone.pack(side=tk.LEFT, padx=5)
     Tooltip(btn_clone,
@@ -112,22 +114,22 @@ def create_schedules_tab(self):
     # planners working on Spring don't see Fall noise.
     filter_frame = ttk.Frame(schedules_frame)
     filter_frame.pack(fill=tk.X, padx=10, pady=(0, 5))
-    ttk.Label(filter_frame, text="Term:").pack(side=tk.LEFT)
-    self.schedule_semester_var = tk.StringVar(value="(all)")
+    ttk.Label(filter_frame, text=_t('gui.academics.module_scheduling.schedules_tab.labels.term', default="Term:")).pack(side=tk.LEFT)
+    self.schedule_semester_var = tk.StringVar(value=_t('gui.academics.module_scheduling.schedules_tab.values.all', default="(all)"))
     sem_combo = ttk.Combobox(filter_frame, textvariable=self.schedule_semester_var,
                              values=["(all)", "Fall", "Spring", "Summer", "Winter"],
                              width=10, state="readonly")
     sem_combo.pack(side=tk.LEFT, padx=(4, 8))
     sem_combo.bind("<<ComboboxSelected>>", lambda _e: self._sched_filter_changed())
-    self.schedule_year_var = tk.StringVar(value="(all)")
+    self.schedule_year_var = tk.StringVar(value=_t('gui.academics.module_scheduling.schedules_tab.values.all', default="(all)"))
     year_combo = ttk.Combobox(filter_frame, textvariable=self.schedule_year_var,
                               values=["(all)"] + [str(y) for y in range(
                                   datetime.now().year - 2, datetime.now().year + 4)],
                               width=8, state="readonly")
     year_combo.pack(side=tk.LEFT, padx=(0, 12))
     year_combo.bind("<<ComboboxSelected>>", lambda _e: self._sched_filter_changed())
-    ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT)
-    self.schedule_status_var = tk.StringVar(value="(all)")
+    ttk.Label(filter_frame, text=_t('gui.academics.module_scheduling.schedules_tab.labels.status', default="Status:")).pack(side=tk.LEFT)
+    self.schedule_status_var = tk.StringVar(value=_t('gui.academics.module_scheduling.schedules_tab.values.all', default="(all)"))
     status_combo = ttk.Combobox(filter_frame, textvariable=self.schedule_status_var,
                                 values=["(all)", "published", "draft", "archived"],
                                 width=10, state="readonly")
@@ -138,16 +140,16 @@ def create_schedules_tab(self):
     # snap back to "Spring 2026 drafts" without re-picking the combos.
     saved_frame = ttk.Frame(filter_frame)
     saved_frame.pack(side=tk.RIGHT)
-    ttk.Label(saved_frame, text="View:").pack(side=tk.LEFT)
+    ttk.Label(saved_frame, text=_t('gui.academics.module_scheduling.schedules_tab.labels.view', default="View:")).pack(side=tk.LEFT)
     self.saved_view_var = tk.StringVar()
     self.saved_view_combo = ttk.Combobox(saved_frame, textvariable=self.saved_view_var,
                                          width=22, state="readonly")
     self.saved_view_combo.pack(side=tk.LEFT, padx=(4, 4))
-    ttk.Button(saved_frame, text="Apply",
+    ttk.Button(saved_frame, text=_t('gui.academics.module_scheduling.schedules_tab.buttons.apply', default="Apply"),
                command=self._apply_saved_view).pack(side=tk.LEFT, padx=2)
-    ttk.Button(saved_frame, text="Save…",
+    ttk.Button(saved_frame, text=_t('gui.academics.module_scheduling.schedules_tab.buttons.save', default="Save…"),
                command=self._save_current_view).pack(side=tk.LEFT, padx=2)
-    ttk.Button(saved_frame, text="Delete",
+    ttk.Button(saved_frame, text=_t('gui.academics.module_scheduling.schedules_tab.buttons.delete', default="Delete"),
                command=self._delete_saved_view).pack(side=tk.LEFT, padx=2)
     self._refresh_saved_views()
 
@@ -209,7 +211,7 @@ def create_schedules_tab(self):
     # Mirrors the scholarship→attendance reverse link for symmetry.
     self._sched_context_menu = tk.Menu(self.schedules_tree, tearoff=0)
     self._sched_context_menu.add_command(
-        label="View attendance for this module…",
+        label=_t('gui.academics.module_scheduling.schedules_tab.menus.view_attendance_for_this_module', default="View attendance for this module…"),
         command=lambda: _show_module_attendance_popup(
             self, _selected_module_code(self)),
     )
@@ -235,14 +237,14 @@ def create_schedules_tab(self):
                command=lambda: self._sched_page_jump("first")).pack(side=tk.LEFT)
     ttk.Button(pager, text="<", width=3,
                command=lambda: self._sched_page_jump("prev")).pack(side=tk.LEFT, padx=(2, 6))
-    self._sched_page_label_var = tk.StringVar(value="Page 1 of 1")
+    self._sched_page_label_var = tk.StringVar(value=_t('gui.academics.module_scheduling.schedules_tab.values.page_1_of_1', default="Page 1 of 1"))
     ttk.Label(pager, textvariable=self._sched_page_label_var,
               width=26, anchor=tk.CENTER).pack(side=tk.LEFT)
     ttk.Button(pager, text=">", width=3,
                command=lambda: self._sched_page_jump("next")).pack(side=tk.LEFT, padx=(6, 2))
     ttk.Button(pager, text=">>", width=3,
                command=lambda: self._sched_page_jump("last")).pack(side=tk.LEFT)
-    ttk.Label(pager, text="  Rows per page:").pack(side=tk.LEFT, padx=(15, 2))
+    ttk.Label(pager, text=_t('gui.academics.module_scheduling.schedules_tab.labels.rows_per_page', default="  Rows per page:")).pack(side=tk.LEFT, padx=(15, 2))
     self._sched_page_size_var = tk.StringVar(value=str(self._sched_page_size))
     ps_combo = ttk.Combobox(pager, textvariable=self._sched_page_size_var,
                             values=["50", "100", "250", "500", "1000"],
@@ -270,8 +272,8 @@ def _selected_module_code(gui):
 def _show_module_attendance_popup(gui, module_code):
     """Reverse link from the Schedules tab → attendance summary for a module."""
     if not module_code:
-        messagebox.showinfo("No selection",
-                            "Select a schedule row first.",
+        messagebox.showinfo(_t('gui.academics.module_scheduling.schedules_tab.dialogs.no_selection', default="No selection"),
+                            _t('gui.academics.module_scheduling.schedules_tab.dialogs.select_a_schedule_row_first', default="Select a schedule row first."),
                             parent=gui.root)
         return
     try:
@@ -279,8 +281,8 @@ def _show_module_attendance_popup(gui, module_code):
             tables = {r[0] for r in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
             if "attendance" not in tables:
-                messagebox.showwarning("Attendance",
-                                       "Attendance table not available in this DB.",
+                messagebox.showwarning(_t('gui.academics.module_scheduling.schedules_tab.dialogs.attendance', default="Attendance"),
+                                       _t('gui.academics.module_scheduling.schedules_tab.dialogs.attendance_table_not_available_in_this_db', default="Attendance table not available in this DB."),
                                        parent=gui.root)
                 return
             summary = conn.execute(
@@ -298,7 +300,7 @@ def _show_module_attendance_popup(gui, module_code):
                    GROUP BY date ORDER BY date DESC LIMIT 25""",
                 (module_code,)).fetchall()
     except Exception as e:
-        messagebox.showerror("Attendance", str(e), parent=gui.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.attendance', default="Attendance"), str(e), parent=gui.root)
         return
 
     win = tk.Toplevel(gui.root)
@@ -317,7 +319,7 @@ def _show_module_attendance_popup(gui, module_code):
               f"Module pct: {pct_text}"),
     ).pack(anchor="w", padx=12, pady=2)
 
-    ttk.Label(win, text="Most recent dates (up to 25):",
+    ttk.Label(win, text=_t('gui.academics.module_scheduling.schedules_tab.labels.most_recent_dates_up_to_25', default="Most recent dates (up to 25):"),
               font=("Arial", 10, "bold")).pack(anchor="w", padx=12, pady=(10, 2))
     body = ttk.Frame(win)
     body.pack(fill="both", expand=True, padx=12, pady=4)
@@ -333,7 +335,7 @@ def _show_module_attendance_popup(gui, module_code):
     vsb = ttk.Scrollbar(body, orient="vertical", command=tv.yview)
     tv.configure(yscrollcommand=vsb.set)
     vsb.pack(side="right", fill="y")
-    ttk.Button(win, text="Close", command=win.destroy).pack(pady=8)
+    ttk.Button(win, text=_t('gui.academics.module_scheduling.schedules_tab.buttons.close', default="Close"), command=win.destroy).pack(pady=8)
 
 
 ModuleSchedulingGUI._show_module_attendance_popup = staticmethod(
@@ -546,7 +548,7 @@ def refresh_schedules(self):
         self._populate_schedule_rows(schedules)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh schedules: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"), f"Failed to refresh schedules: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.refresh_schedules = refresh_schedules
 
@@ -603,7 +605,7 @@ def filter_schedules(self, *args):
         self._populate_schedule_rows(schedules)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to filter schedules: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"), f"Failed to filter schedules: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.filter_schedules = filter_schedules
 
@@ -621,7 +623,7 @@ def edit_selected_schedule(self):
     """Edit the selected schedule"""
     selected = self.schedules_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a schedule to edit.", parent=self.root)
+        messagebox.showwarning(_t('gui.academics.module_scheduling.schedules_tab.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.schedules_tab.dialogs.please_select_a_schedule_to_edit', default="Please select a schedule to edit."), parent=self.root)
         return
 
     schedule_data = self.schedules_tree.item(selected[0])['values']
@@ -638,14 +640,14 @@ def delete_selected_schedule(self):
     """Delete the selected schedule"""
     selected = self.schedules_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a schedule to delete.", parent=self.root)
+        messagebox.showwarning(_t('gui.academics.module_scheduling.schedules_tab.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.schedules_tab.dialogs.please_select_a_schedule_to_delete', default="Please select a schedule to delete."), parent=self.root)
         return
 
     schedule_data = self.schedules_tree.item(selected[0])['values']
     schedule_id = schedule_data[0]
     module_code = schedule_data[1]
 
-    if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete the schedule for {module_code}?", parent=self.root):
+    if messagebox.askyesno(_t('gui.academics.module_scheduling.schedules_tab.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete the schedule for {module_code}?", parent=self.root):
         try:
             from education_system.systems.university.infrastructure.database.db import sqlite3
             with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
@@ -656,10 +658,10 @@ def delete_selected_schedule(self):
             self.refresh_schedules()
             self.refresh_dashboard()
             self.update_activity_log(f"Schedule {schedule_id} deleted")
-            messagebox.showinfo("Success", "Schedule deleted successfully.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.schedules_tab.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.schedules_tab.dialogs.schedule_deleted_successfully', default="Schedule deleted successfully."), parent=self.root)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete schedule: {str(e)}", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"), f"Failed to delete schedule: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.delete_selected_schedule = delete_selected_schedule
 
@@ -696,7 +698,7 @@ def view_module_schedule(self, module_code=None):
         schedules = cursor.fetchall()
 
     if not schedules:
-        messagebox.showinfo("No Schedule", f"No schedule found for module {module_code}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.schedules_tab.dialogs.no_schedule', default="No Schedule"), f"No schedule found for module {module_code}", parent=self.root)
         return
 
     # Create dialog to show schedule
@@ -731,7 +733,7 @@ def view_module_schedule(self, module_code=None):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.schedules_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.view_module_schedule = view_module_schedule
 
@@ -762,8 +764,8 @@ def _publish_selected_schedule(self):
     """
     selected = self.schedules_tree.selection()
     if not selected:
-        messagebox.showwarning("No selection",
-                               "Select one or more draft schedules to publish.",
+        messagebox.showwarning(_t('gui.academics.module_scheduling.schedules_tab.dialogs.no_selection', default="No selection"),
+                               _t('gui.academics.module_scheduling.schedules_tab.dialogs.select_one_or_more_draft_schedules_to_publish', default="Select one or more draft schedules to publish."),
                                parent=self.root)
         return
 
@@ -776,12 +778,12 @@ def _publish_selected_schedule(self):
             rows.append((sched_id, status))
     drafts = [sid for sid, status in rows if status != "published"]
     if not drafts:
-        messagebox.showinfo("Nothing to publish",
-                            "All selected rows are already published.",
+        messagebox.showinfo(_t('gui.academics.module_scheduling.schedules_tab.dialogs.nothing_to_publish', default="Nothing to publish"),
+                            _t('gui.academics.module_scheduling.schedules_tab.dialogs.all_selected_rows_are_already_published', default="All selected rows are already published."),
                             parent=self.root)
         return
 
-    if not messagebox.askyesno("Publish",
+    if not messagebox.askyesno(_t('gui.academics.module_scheduling.schedules_tab.dialogs.publish', default="Publish"),
                                f"Publish {len(drafts)} schedule(s)? "
                                "This will fire student notifications.",
                                parent=self.root):
@@ -806,7 +808,7 @@ def _publish_selected_schedule(self):
     msg = f"Published {published} of {len(drafts)} draft(s)."
     if failures:
         msg += f"\nFailures: {', '.join(failures)}"
-    messagebox.showinfo("Publish complete", msg, parent=self.root)
+    messagebox.showinfo(_t('gui.academics.module_scheduling.schedules_tab.dialogs.publish_complete', default="Publish complete"), msg, parent=self.root)
 
 
 ModuleSchedulingGUI._publish_selected_schedule = _publish_selected_schedule
@@ -818,7 +820,7 @@ def _show_clone_term_dialog(self):
         from education_system.systems.university.interfaces.gui.academics.module_scheduling.clone_term_dialog import CloneTermDialog
         CloneTermDialog(self.root, self.scheduler, gui=self)
     except Exception as e:
-        messagebox.showerror("Error",
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"),
                              f"Failed to open clone-term dialog: {e}",
                              parent=self.root)
 
@@ -868,8 +870,8 @@ def _save_current_view(self):
     """Snapshot the current filter combos as a named view."""
     from tkinter import simpledialog
     import json
-    name = simpledialog.askstring("Save view",
-                                  "Name for this view:",
+    name = simpledialog.askstring(_t('gui.academics.module_scheduling.schedules_tab.dialogs.save_view', default="Save view"),
+                                  _t('gui.academics.module_scheduling.schedules_tab.dialogs.name_for_this_view', default="Name for this view:"),
                                   parent=self.root)
     if not name or not name.strip():
         return
@@ -898,7 +900,7 @@ def _save_current_view(self):
                   _dt.now().strftime("%Y-%m-%d %H:%M:%S")))
             conn.commit()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to save view: {e}",
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"), f"Failed to save view: {e}",
                              parent=self.root)
         return
     self._refresh_saved_views()
@@ -913,8 +915,8 @@ def _apply_saved_view(self):
     import json
     name = (self.saved_view_var.get() or "").strip()
     if not name:
-        messagebox.showinfo("Saved views",
-                            "Pick a saved view from the dropdown first.",
+        messagebox.showinfo(_t('gui.academics.module_scheduling.schedules_tab.dialogs.saved_views', default="Saved views"),
+                            _t('gui.academics.module_scheduling.schedules_tab.dialogs.pick_a_saved_view_from_the_dropdown_first', default="Pick a saved view from the dropdown first."),
                             parent=self.root)
         return
     user = self._resolve_changed_by()
@@ -928,11 +930,11 @@ def _apply_saved_view(self):
                 "WHERE user_id = ? AND name = ?", (user, name))
             row = cursor.fetchone()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load view: {e}",
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"), f"Failed to load view: {e}",
                              parent=self.root)
         return
     if not row:
-        messagebox.showwarning("Not found",
+        messagebox.showwarning(_t('gui.academics.module_scheduling.schedules_tab.dialogs.not_found', default="Not found"),
                                f"Saved view '{name}' no longer exists.",
                                parent=self.root)
         self._refresh_saved_views()
@@ -940,7 +942,7 @@ def _apply_saved_view(self):
     try:
         criteria = json.loads(row[0])
     except Exception as e:
-        messagebox.showerror("Error", f"View data is corrupt: {e}",
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"), f"View data is corrupt: {e}",
                              parent=self.root)
         return
     self.schedule_semester_var.set(criteria.get("semester", "(all)"))
@@ -957,7 +959,7 @@ def _delete_saved_view(self):
     name = (self.saved_view_var.get() or "").strip()
     if not name:
         return
-    if not messagebox.askyesno("Confirm",
+    if not messagebox.askyesno(_t('gui.academics.module_scheduling.schedules_tab.dialogs.confirm', default="Confirm"),
                                f"Delete saved view '{name}'?",
                                parent=self.root):
         return
@@ -972,7 +974,7 @@ def _delete_saved_view(self):
                 "WHERE user_id = ? AND name = ?", (user, name))
             conn.commit()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to delete view: {e}",
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"), f"Failed to delete view: {e}",
                              parent=self.root)
         return
     self._refresh_saved_views()
@@ -985,9 +987,9 @@ def _show_bulk_actions_dialog(self):
     """Open the bulk-actions dialog scoped to the multi-selected rows."""
     selected = self.schedules_tree.selection()
     if not selected:
-        messagebox.showwarning("No selection",
-                               "Select one or more schedules first "
-                               "(Ctrl/Shift-click to multi-select).",
+        messagebox.showwarning(_t('gui.academics.module_scheduling.schedules_tab.dialogs.no_selection', default="No selection"),
+                               _t('gui.academics.module_scheduling.schedules_tab.dialogs.select_one_or_more_schedules_first_ctrl_shift_click_to_multi_sel', default="Select one or more schedules first "
+                               "(Ctrl/Shift-click to multi-select)."),
                                parent=self.root)
         return
     schedule_ids = []
@@ -999,7 +1001,7 @@ def _show_bulk_actions_dialog(self):
             except (TypeError, ValueError):
                 pass
     if not schedule_ids:
-        messagebox.showerror("Error", "Could not extract schedule IDs.",
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.schedules_tab.dialogs.could_not_extract_schedule_ids', default="Could not extract schedule IDs."),
                              parent=self.root)
         return
     try:
@@ -1007,7 +1009,7 @@ def _show_bulk_actions_dialog(self):
         BulkActionsDialog(self.root, self.scheduler, gui=self,
                           schedule_ids=schedule_ids)
     except Exception as e:
-        messagebox.showerror("Error",
+        messagebox.showerror(_t('gui.academics.module_scheduling.schedules_tab.dialogs.error', default="Error"),
                              f"Failed to open bulk-actions dialog: {e}",
                              parent=self.root)
 

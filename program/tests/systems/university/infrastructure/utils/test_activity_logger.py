@@ -83,7 +83,7 @@ class TestActivityLoggerInitialization:
     def test_get_log_directory_with_paths(self, temp_log_dir):
         """Test getting log directory from paths module."""
         with patch('education_system.systems.university.infrastructure.activity_logger.ActivityLogger._instance', None):
-            with patch('education_system.systems.university.infrastructure.paths.LOG_DIR', temp_log_dir):
+            with patch('education_system.paths.UNIVERSITY_LOG_DIR', temp_log_dir):
                 logger_instance = ActivityLogger()
                 assert logger_instance.log_dir == Path(temp_log_dir)
 
@@ -101,7 +101,7 @@ class TestActivityLoggerInitialization:
         """Test that log directory is created if it doesn't exist."""
         new_log_dir = os.path.join(temp_log_dir, 'new_logs')
         with patch('education_system.systems.university.infrastructure.activity_logger.ActivityLogger._instance', None):
-            with patch('education_system.systems.university.infrastructure.paths.LOG_DIR', new_log_dir):
+            with patch('education_system.paths.UNIVERSITY_LOG_DIR', new_log_dir):
                 logger_instance = ActivityLogger()
                 assert os.path.exists(new_log_dir)
 
@@ -400,7 +400,7 @@ class TestIntegration:
     def test_full_logging_workflow(self, temp_log_dir):
         """Test a complete logging workflow."""
         with patch('education_system.systems.university.infrastructure.activity_logger.ActivityLogger._instance', None):
-            with patch('education_system.systems.university.infrastructure.paths.LOG_DIR', temp_log_dir):
+            with patch('education_system.paths.UNIVERSITY_LOG_DIR', temp_log_dir):
                 logger_instance = ActivityLogger()
 
                 # Set user
@@ -419,7 +419,7 @@ class TestIntegration:
     def test_concurrent_logging(self, temp_log_dir):
         """Test logging from multiple 'threads' (sequential for simplicity)."""
         with patch('education_system.systems.university.infrastructure.activity_logger.ActivityLogger._instance', None):
-            with patch('education_system.systems.university.infrastructure.paths.LOG_DIR', temp_log_dir):
+            with patch('education_system.paths.UNIVERSITY_LOG_DIR', temp_log_dir):
                 logger_instance = ActivityLogger()
 
                 # Simulate multiple users logging
@@ -433,7 +433,7 @@ class TestIntegration:
     def test_user_session_lifecycle(self, temp_log_dir):
         """Test complete user session lifecycle."""
         with patch('education_system.systems.university.infrastructure.activity_logger.ActivityLogger._instance', None):
-            with patch('education_system.systems.university.infrastructure.paths.LOG_DIR', temp_log_dir):
+            with patch('education_system.paths.UNIVERSITY_LOG_DIR', temp_log_dir):
                 logger_instance = ActivityLogger()
 
                 # Login

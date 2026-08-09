@@ -129,9 +129,9 @@ class ReportPreviewDialog(tk.Toplevel):
 
         if not admin_emails:
             messagebox.showwarning(_t("police_station.msg_titles.no_recipients"),
-                "No admin email addresses found.\n\n"
+                _t('gui.operations.campus.security.dialogs.report_preview.dialogs.no_admin_email_addresses_found_please_ensure_officers_have_email', default="No admin email addresses found.\n\n"
                 "Please ensure officers have email addresses configured,\n"
-                "or add admin users to the system.")
+                "or add admin users to the system."))
             return
 
         # Confirm before sending

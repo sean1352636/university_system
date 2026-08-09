@@ -34,38 +34,38 @@ def create_payments_refunds_tab(self, parent):
         # Header
         header_frame = ttk.Frame(parent)
         header_frame.pack(fill=tk.X, pady=(0, 10))
-        ttk.Label(header_frame, text="Housing Payments & Refunds",
+        ttk.Label(header_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.labels.housing_payments_refunds', default="Housing Payments & Refunds"),
                  font=('Arial', 12, 'bold')).pack(anchor=tk.W)
-        ttk.Label(header_frame, text="(Housing rent and deposit payments only)",
+        ttk.Label(header_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.labels.housing_rent_and_deposit_payments_only', default="(Housing rent and deposit payments only)"),
                  font=('Arial', 9, 'italic'), foreground='gray').pack(anchor=tk.W)
 
         # Search/Filter frame
-        search_frame = ttk.LabelFrame(parent, text="Search Payments", padding="10")
+        search_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.labels.search_payments', default="Search Payments"), padding="10")
         search_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(search_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        ttk.Label(search_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, padx=5)
         self.refund_search_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=self.refund_search_var, width=20).grid(row=0, column=1, padx=5)
 
-        ttk.Button(search_frame, text="Search", command=lambda: _refresh_refund_payments_list(self)).grid(row=0, column=2, padx=5)
-        ttk.Button(search_frame, text="Show All", command=lambda: [self.refund_search_var.set(''), _refresh_refund_payments_list(self)]).grid(row=0, column=3, padx=5)
+        ttk.Button(search_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.buttons.search', default="Search"), command=lambda: _refresh_refund_payments_list(self)).grid(row=0, column=2, padx=5)
+        ttk.Button(search_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.buttons.show_all', default="Show All"), command=lambda: [self.refund_search_var.set(''), _refresh_refund_payments_list(self)]).grid(row=0, column=3, padx=5)
 
         # Payments list frame
-        list_frame = ttk.LabelFrame(parent, text="Housing Payments", padding="5")
+        list_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.labels.housing_payments', default="Housing Payments"), padding="5")
         list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         columns = ('payment_id', 'student_id', 'type', 'amount', 'method', 'date', 'period_start', 'period_end', 'status')
         self.refund_payments_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
 
-        self.refund_payments_tree.heading('payment_id', text='Payment ID')
-        self.refund_payments_tree.heading('student_id', text='Student ID')
-        self.refund_payments_tree.heading('type', text='Type')
-        self.refund_payments_tree.heading('amount', text='Amount (£)')
-        self.refund_payments_tree.heading('method', text='Method')
-        self.refund_payments_tree.heading('date', text='Date')
-        self.refund_payments_tree.heading('period_start', text='Period Start')
-        self.refund_payments_tree.heading('period_end', text='Period End')
-        self.refund_payments_tree.heading('status', text='Status')
+        self.refund_payments_tree.heading('payment_id', text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.headings.payment_id', default='Payment ID'))
+        self.refund_payments_tree.heading('student_id', text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.headings.student_id', default='Student ID'))
+        self.refund_payments_tree.heading('type', text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.headings.type', default='Type'))
+        self.refund_payments_tree.heading('amount', text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.headings.amount', default='Amount (£)'))
+        self.refund_payments_tree.heading('method', text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.headings.method', default='Method'))
+        self.refund_payments_tree.heading('date', text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.headings.date', default='Date'))
+        self.refund_payments_tree.heading('period_start', text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.headings.period_start', default='Period Start'))
+        self.refund_payments_tree.heading('period_end', text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.headings.period_end', default='Period End'))
+        self.refund_payments_tree.heading('status', text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.headings.status', default='Status'))
 
         self.refund_payments_tree.column('payment_id', width=120)
         self.refund_payments_tree.column('student_id', width=100)
@@ -88,9 +88,9 @@ def create_payments_refunds_tab(self, parent):
         action_frame = ttk.Frame(parent)
         action_frame.pack(fill=tk.X)
 
-        ttk.Button(action_frame, text="Process Refund", command=lambda: process_housing_refund(self)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="View Details", command=lambda: view_housing_payment_details(self)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Export to CSV", command=lambda: export_housing_payments_csv(self)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.buttons.process_refund', default="Process Refund"), command=lambda: process_housing_refund(self)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.buttons.view_details', default="View Details"), command=lambda: view_housing_payment_details(self)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.buttons.export_to_csv', default="Export to CSV"), command=lambda: export_housing_payments_csv(self)).pack(side=tk.LEFT, padx=5)
 
         _refresh_refund_payments_list(self)
 
@@ -139,20 +139,20 @@ def _refresh_refund_payments_list(self):
             conn.close()
         except Exception as e:
             print(f"Error loading payments for refunds: {e}")
-            messagebox.showerror("Error", f"Failed to load payments: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.error', default="Error"), f"Failed to load payments: {e}")
 
 def view_housing_payment_details(self):
         """View detailed payment information"""
         selection = self.refund_payments_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a payment to view details")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.please_select_a_payment_to_view_details', default="Please select a payment to view details"))
             return
 
         try:
             values = self.refund_payments_tree.item(selection[0])['values']
 
             if len(values) < 9:
-                messagebox.showerror("Data Error", "Payment record is incomplete.")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.data_error', default="Data Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.payment_record_is_incomplete', default="Payment record is incomplete."))
                 return
 
             details = f"""PAYMENT DETAILS
@@ -167,9 +167,9 @@ Period Start: {values[6]}
 Period End: {values[7]}
 Status: {values[8]}
 """
-            messagebox.showinfo("Payment Details", details)
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.payment_details', default="Payment Details"), details)
         except Exception as e:
-            messagebox.showerror("Error", f"Error viewing payment details: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.error', default="Error"), f"Error viewing payment details: {e}")
 
 def export_housing_payments_csv(self):
         """Export housing payments to CSV file"""
@@ -193,23 +193,23 @@ def export_housing_payments_csv(self):
                         values = self.refund_payments_tree.item(item)['values']
                         writer.writerow(values)
 
-                messagebox.showinfo("Export Successful", f"Payments exported to:\n{filepath}")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.export_successful', default="Export Successful"), f"Payments exported to:\n{filepath}")
                 log_dynamic_activity('export', 'housing_payments', details=json.dumps({'file': filepath}))
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export payments: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.export_error', default="Export Error"), f"Failed to export payments: {e}")
 
 def process_housing_refund(self):
         """Process a housing payment refund"""
         selection = self.refund_payments_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a payment to refund")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.please_select_a_payment_to_refund', default="Please select a payment to refund"))
             return
 
         try:
             values = self.refund_payments_tree.item(selection[0])['values']
 
             if len(values) < 9:
-                messagebox.showerror("Data Error", "Payment record is incomplete.")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.data_error', default="Data Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.payment_record_is_incomplete', default="Payment record is incomplete."))
                 return
 
             payment_id = values[0]
@@ -222,26 +222,26 @@ def process_housing_refund(self):
             # are computed against held — not just marked Refunded.
             if (payment_type or '').lower() == 'deposit':
                 messagebox.showwarning(
-                    "Use Deposit Refund Flow",
-                    "This is a held deposit. Refund it via:\n\n"
+                    _t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.use_deposit_refund_flow', default="Use Deposit Refund Flow"),
+                    _t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.this_is_a_held_deposit_refund_it_via_payment_menu_process_deposi', default="This is a held deposit. Refund it via:\n\n"
                     "  Payment Menu → Process Deposit Refund (Move-out)\n\n"
                     "That flow links the move-out inspection, captures itemised "
                     "deductions, computes held − damages = refund, and posts the "
-                    "correct GL journal."
+                    "correct GL journal.")
                 )
                 return
 
             # Check if already refunded
             if status == 'Refunded':
-                messagebox.showinfo("Refund Already Made", "Refund already made")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.refund_already_made', default="Refund Already Made"), _t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.refund_already_made_variant_2', default="Refund already made"))
                 return
 
         except (IndexError, ValueError) as e:
-            messagebox.showerror("Error", f"Error reading payment data: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.error', default="Error"), f"Error reading payment data: {e}")
             return
 
         # Confirm refund
-        if not messagebox.askyesno("Confirm Refund",
+        if not messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.confirm_refund', default="Confirm Refund"),
                                    f"Refund £{amount:.2f} to {student_id}?\n\n"
                                    f"Payment ID: {payment_id}"):
             return
@@ -280,7 +280,7 @@ def process_housing_refund(self):
                 # Send refund receipt email
                 _send_housing_refund_receipt(self, student_id, amount, refund_method, payment_id)
 
-                messagebox.showinfo("Refund Processed",
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.refund_processed', default="Refund Processed"),
                                   f"Refund of £{amount:.2f} processed successfully\n\n"
                                   f"Method: {refund_method}\n"
                                   f"Payment ID: {payment_id}")
@@ -294,14 +294,14 @@ def process_housing_refund(self):
 
                 _refresh_refund_payments_list(self)
             except Exception as e:
-                messagebox.showerror("Refund Error", f"Failed to process refund: {e}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.refund_error', default="Refund Error"), f"Failed to process refund: {e}")
         else:
-            messagebox.showerror("Refund Failed", "Failed to process student account refund")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.refund_failed', default="Refund Failed"), _t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.dialogs.failed_to_process_student_account_refund', default="Failed to process student account refund"))
 
 def _show_housing_refund_method_dialog(self, amount: float, student_id: str):
         """Show refund method selection dialog for housing payments"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Select Refund Method")
+        dialog.title(_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.windows.select_refund_method', default="Select Refund Method"))
         dialog.geometry("400x350")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -309,7 +309,7 @@ def _show_housing_refund_method_dialog(self, amount: float, student_id: str):
         result = {'method': None}
 
         # Refund info frame
-        info_frame = ttk.LabelFrame(dialog, text="Refund Details", padding="10")
+        info_frame = ttk.LabelFrame(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.labels.refund_details', default="Refund Details"), padding="10")
         info_frame.pack(fill=tk.X, padx=10, pady=10)
 
         ttk.Label(info_frame, text=f"Student ID: {student_id}").pack(anchor=tk.W)
@@ -325,7 +325,7 @@ def _show_housing_refund_method_dialog(self, amount: float, student_id: str):
                      foreground='green').pack(anchor=tk.W)
 
         # Refund method selection
-        method_frame = ttk.LabelFrame(dialog, text="Select Refund Method", padding="10")
+        method_frame = ttk.LabelFrame(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.labels.select_refund_method', default="Select Refund Method"), padding="10")
         method_frame.pack(fill=tk.X, padx=10, pady=10)
 
         def select_method(method):
@@ -333,19 +333,19 @@ def _show_housing_refund_method_dialog(self, amount: float, student_id: str):
             dialog.destroy()
 
         # Cash button
-        ttk.Button(method_frame, text="Cash", width=20,
+        ttk.Button(method_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.buttons.cash', default="Cash"), width=20,
                   command=lambda: select_method('Cash')).pack(pady=5)
 
         # Card button
-        ttk.Button(method_frame, text="Card (Original Payment Method)", width=30,
+        ttk.Button(method_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.buttons.card_original_payment_method', default="Card (Original Payment Method)"), width=30,
                   command=lambda: select_method('Card')).pack(pady=5)
 
         # Student Account button
-        ttk.Button(method_frame, text="Student Finance Account", width=30,
+        ttk.Button(method_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.buttons.student_finance_account', default="Student Finance Account"), width=30,
                   command=lambda: select_method('Student Account')).pack(pady=5)
 
         # Cancel button
-        ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.refund_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(pady=10)
 
         dialog.wait_window()
         return result['method']

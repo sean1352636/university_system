@@ -214,10 +214,10 @@ class TestRestaurantContextDatabase(unittest.TestCase):
     def test_database_path_from_constants(self):
         """Test DATABASE_FILE comes from constants"""
         from education_system.systems.university.domain.operations.commerce.services.restaurant.operations.restaurant_context import DATABASE_FILE
-        from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+        from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
         # Should use centralized path
-        assert DATABASE_FILE == str(DEFAULT_DB_PATH)
+        assert DATABASE_FILE == str(UNIVERSITY_DEFAULT_DB_PATH)
 
     @patch('education_system.systems.university.infrastructure.restaurant_misc.restaurant_context.get_db_connection')
     def test_database_connection_callable(self, mock_get_conn):

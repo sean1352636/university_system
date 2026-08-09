@@ -11,6 +11,11 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 
+from education_system.platform.delivery.api.security_headers import (
+    is_development,
+    register_security_headers,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,40 +30,35 @@ def create_app(config_path: str | None = None) -> Flask:
     app.config["JSON_SORT_KEYS"] = False
     app.config["MAX_CONTENT_LENGTH"] = config.get("max_content_length", 16 * 1024 * 1024)
 
-    # CORS
+    # CORS — fail closed, matching the unified server. The previous fallback
+    # applied a localhost allow-list in *every* environment, so a production
+    # deployment that forgot UNI_CORS_ORIGINS silently ran a development CORS
+    # policy instead of refusing to start.
     allowed_origins = os.getenv("UNI_CORS_ORIGINS", "").split(",")
     allowed_origins = [o.strip() for o in allowed_origins if o.strip()]
     if allowed_origins:
         CORS(app, origins=allowed_origins)
-    else:
+    elif is_development():
         CORS(app, origins=["http://127.0.0.1:5000", "http://localhost:5000"])
+    else:
+        raise RuntimeError(
+            "UNI_CORS_ORIGINS must be set in production. Refusing to start "
+            "with a development CORS allow-list. Set it to a comma-separated "
+            "list of trusted origins."
+        )
 
-    # Security headers
-    @app.after_request
-    def add_security_headers(response):
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        if not getattr(response, "_custom_csp", False):
-            response.headers["Content-Security-Policy"] = (
-                "default-src 'self'; script-src 'self'; "
-                "style-src 'self' 'unsafe-inline'; "
-                "img-src 'self' data: https:; font-src 'self' data:; "
-                "connect-src 'self'; frame-ancestors 'none'; "
-                "base-uri 'self'; form-action 'self';"
-            )
-        app_env = os.getenv("APP_ENV", "production").lower()
-        if app_env not in ("development", "dev", "local", "test"):
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        return response
+    # Security headers, cookie flags and the production debug guard — shared
+    # policy, so this app cannot drift from the unified server's floor.
+    register_security_headers(app)
 
     # Initialise database
-    from education_system.systems.university.infrastructure.paths import ensure_directories
-    from education_system.systems.university.infrastructure.database.database_utils import init_db
+    from education_system.paths import ensure_university_directories
+    from education_system.systems.university.infrastructure.database.schema_version import (
+        require_supported_schema,
+    )
 
-    ensure_directories()
-    init_db()
+    ensure_university_directories()
+    require_supported_schema()
 
     # Register all university route blueprints
     from education_system.platform.delivery.api.university.routes import (
@@ -74,7 +74,8 @@ def create_app(config_path: str | None = None) -> Flask:
         integrity_bp, campus_bp, evaluation_bp, communication_bp,
         counseling_bp, emergency_bp, virtual_classroom_bp, equipment_bp,
         election_bp, document_bp, credential_bp, office_hours_bp, ta_bp,
-        mfa_bp, account_bp, docs_bp, absence_bp,
+        mfa_bp, account_bp, docs_bp, absence_bp, operations_bp,
+        student_lifecycle_bp,
     )
 
     for bp in [
@@ -90,15 +91,28 @@ def create_app(config_path: str | None = None) -> Flask:
         integrity_bp, campus_bp, evaluation_bp, communication_bp,
         counseling_bp, emergency_bp, virtual_classroom_bp, equipment_bp,
         election_bp, document_bp, credential_bp, office_hours_bp, ta_bp,
-        mfa_bp, account_bp, docs_bp, absence_bp,
+        mfa_bp, account_bp, docs_bp, absence_bp, operations_bp,
+        student_lifecycle_bp,
     ]:
         app.register_blueprint(bp)
 
     # Shared authentication
     from education_system.platform.delivery.api.auth import auth_bp, init_auth
     from education_system.platform.identity.auth.db import AUTH_DB_FILE
+    app.config["AUTH_DB_PATH"] = str(AUTH_DB_FILE)
     init_auth(auth_db_path=str(AUTH_DB_FILE), jwt_secret=config["jwt"]["secret_key"])
     app.register_blueprint(auth_bp)
+
+    from education_system.platform.governance.security.csrf import register_csrf_middleware
+    register_csrf_middleware(app)
+
+    # Standalone mode must enforce the same authenticated tenant boundary as
+    # the unified server; client-supplied tenant selectors are assertions only.
+    from education_system.platform.delivery.api.tenant_middleware import register_tenant_middleware
+    from education_system.platform.kernel.core.tenant_models import init_tenant_db
+    tenant_db = os.path.join(os.path.dirname(str(AUTH_DB_FILE)), "tenants.db")
+    init_tenant_db(tenant_db)
+    register_tenant_middleware(app, tenants_db_path=tenant_db)
 
     # Health check
     from education_system.platform.delivery.api.health import health_bp as shared_health_bp, init_health
@@ -149,6 +163,14 @@ def run_api_server(host: str = "localhost", port: int = 5000):
     """Run the University API server."""
     app = create_app()
     debug = os.getenv("UNI_API_DEBUG", "false").lower() == "true"
+    if debug and not is_development():
+        # register_security_headers checked app.debug at creation time, but
+        # app.run(debug=True) flips it afterwards — so the guard must also
+        # sit here, exactly as run_unified_api does for API_DEBUG.
+        raise RuntimeError(
+            "UNI_API_DEBUG=true is refused because APP_ENV is production. "
+            "The debugger exposes stack traces and a remote console."
+        )
     print("\n  University Management System API")
     print(f"  Running on http://{host}:{port}")
     print(f"  Docs:    http://{host}:{port}/api/docs")

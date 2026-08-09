@@ -1,0 +1,11 @@
+{
+  "template_id": "calendar_rsvp_request",
+  "description": "Invites the audience of an RSVP event to book a place, noting the capacity where one is set. Triggered when staff send the RSVP request for an event.",
+  "channel": "Email",
+  "category": "Calendar",
+  "priority": "Normal",
+  "from_name": "Sixth Form Calendar",
+  "from_address": "calendar@sixthform.ac.uk",
+  "subject": "RSVP: {{event_title}} — {{event_date}}",
+  "body": "Hi {{first_name}},\n\nYou are invited to:\n\n  Event: {{event_title}}\n  When:  {{event_date}}, {{event_time}}\n  Where: {{event_location}}\n\nPlaces\n------\n{{capacity_line}}\n\nPlease book your place as soon as you can. If the event fills up you will be offered the waiting list, and places freed by cancellations go to the waiting list automatically, in order.\n\n{{system_name}}"
+}

@@ -1,5 +1,7 @@
 """Admin role-based dashboard tab."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 import logging
@@ -37,7 +39,7 @@ def create_admin_dashboard(parent_frame, auth, service):
               font=('Arial', 14, 'bold')).pack(anchor="w", padx=15, pady=(15, 5))
 
     # Summary Cards
-    summary_frame = ttk.LabelFrame(scrollable, text="System Overview", padding="10")
+    summary_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.admin_dashboard.labels.system_overview', default="System Overview"), padding="10")
     summary_frame.pack(fill=tk.X, padx=15, pady=5)
 
     cards_frame = ttk.Frame(summary_frame)
@@ -51,7 +53,7 @@ def create_admin_dashboard(parent_frame, auth, service):
     _create_stat_card(cards_frame, "Enrollments", str(data['total_active_enrollments']), 0, 3)
 
     # System Stats
-    stats_frame = ttk.LabelFrame(scrollable, text="System Statistics", padding="10")
+    stats_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.admin_dashboard.labels.system_statistics', default="System Statistics"), padding="10")
     stats_frame.pack(fill=tk.X, padx=15, pady=5)
 
     total_users = data.get('system_stats', {}).get('total_users', 'N/A')
@@ -64,16 +66,16 @@ def create_admin_dashboard(parent_frame, auth, service):
         ttk.Label(stats_frame, text=f"Total Payments Received: £{0:,.2f}").pack(anchor="w")
 
     # Recent Registrations
-    reg_frame = ttk.LabelFrame(scrollable, text="Recent Student Registrations (Last 7 Days)", padding="10")
+    reg_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.admin_dashboard.labels.recent_student_registrations_last_7_days', default="Recent Student Registrations (Last 7 Days)"), padding="10")
     reg_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['recent_registrations']:
         cols = ('student_id', 'name', 'date')
         tree = ttk.Treeview(reg_frame, columns=cols, show='headings',
                             height=min(8, len(data['recent_registrations'])))
-        tree.heading('student_id', text='Student ID')
-        tree.heading('name', text='Name')
-        tree.heading('date', text='Registered')
+        tree.heading('student_id', text=_t('gui.shell.main.dashboard.admin_dashboard.headings.student_id', default='Student ID'))
+        tree.heading('name', text=_t('gui.shell.main.dashboard.admin_dashboard.headings.name', default='Name'))
+        tree.heading('date', text=_t('gui.shell.main.dashboard.admin_dashboard.headings.registered', default='Registered'))
         tree.column('student_id', width=120)
         tree.column('name', width=250)
         tree.column('date', width=150)
@@ -85,10 +87,10 @@ def create_admin_dashboard(parent_frame, auth, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(reg_frame, text="No recent registrations.").pack(anchor="w")
+        ttk.Label(reg_frame, text=_t('gui.shell.main.dashboard.admin_dashboard.labels.no_recent_registrations', default="No recent registrations.")).pack(anchor="w")
 
     # Admin Tools - quick access to admin-only GUIs
-    tools_frame = ttk.LabelFrame(scrollable, text="Admin Tools", padding="10")
+    tools_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.admin_dashboard.labels.admin_tools', default="Admin Tools"), padding="10")
     tools_frame.pack(fill=tk.X, padx=15, pady=5)
 
     tools_grid = ttk.Frame(tools_frame)
@@ -114,9 +116,9 @@ def create_admin_dashboard(parent_frame, auth, service):
 
     # "Branding & Customization" used to sit at row 0, column 2. It now lives
     # in the dashboard title row next to "Close extra tabs".
-    ttk.Button(tools_grid, text="Alert & Notifications",
+    ttk.Button(tools_grid, text=_t('gui.shell.main.dashboard.admin_dashboard.buttons.alert_notifications', default="Alert & Notifications"),
                command=_open_alert_config).grid(row=0, column=0, padx=5, pady=5, sticky="ew")
-    ttk.Button(tools_grid, text="Department Management",
+    ttk.Button(tools_grid, text=_t('gui.shell.main.dashboard.admin_dashboard.buttons.department_management', default="Department Management"),
                command=_open_dept_management).grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
     from education_system.systems.university.interfaces.gui.shell.main.dashboard.evaluation_launchers import (

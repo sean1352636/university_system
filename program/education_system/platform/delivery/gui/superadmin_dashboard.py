@@ -22,6 +22,7 @@ SYSTEM_COLORS = {
     "secondary": "#8e44ad",
     "primary": "#e67e22",
     "nursery": "#16a085",
+    "apprenticeships": "#c0392b",
 }
 
 SYSTEM_LABELS = {
@@ -30,9 +31,11 @@ SYSTEM_LABELS = {
     "secondary": "Secondary School",
     "sixth_form": "Sixth Form College",
     "university": "University",
+    "apprenticeships": "Apprenticeships",
 }
 
-SYSTEM_ORDER = ["nursery", "primary", "secondary", "sixth_form", "university"]
+SYSTEM_ORDER = ["nursery", "primary", "secondary", "sixth_form", "university",
+                "apprenticeships"]
 
 # ---------------------------------------------------------------------------
 # i18n helper (Feature 12)
@@ -165,6 +168,8 @@ class SuperAdminDashboard(tk.Tk):
         self._build_ui()
         self._show_section("dashboard")
         self._start_auto_refresh()
+        # Wait until the root window is visible before presenting a modal.
+        self.after(350, self._show_locked_account_alert)
 
     # ------------------------------------------------------------------
     # Service accessors (lazy imports)
@@ -211,6 +216,94 @@ class SuperAdminDashboard(tk.Tk):
             except Exception:
                 return None
         return self._journey_service
+
+    def _show_locked_account_alert(self):
+        """Offer an immediate one-use password reset for every locked user."""
+        svc = self._get_admin_service()
+        if not svc:
+            return
+        try:
+            locked_accounts = svc.get_locked_accounts()
+        except Exception:
+            return
+
+        for account in locked_accounts:
+            username = account.get("username", "")
+            display_name = account.get("display_name") or username
+            attempts = account.get("failed_login_attempts")
+            attempts_text = (
+                f" after {attempts} failed login attempts" if attempts is not None else ""
+            )
+            reset_now = messagebox.askyesno(
+                "User Account Locked",
+                f"{display_name} ({username}) has been locked out{attempts_text}.\n\n"
+                "Set a secure temporary password and unlock this account now?",
+                parent=self,
+            )
+            if not reset_now:
+                continue
+            try:
+                result = self.auth.unlock_and_reset_password(username)
+            except Exception as exc:
+                messagebox.showerror(
+                    "Temporary Password Failed", str(exc), parent=self
+                )
+                continue
+            self._show_temporary_password(result)
+
+        if locked_accounts and self._current_section == "dashboard":
+            self._show_section("dashboard")
+
+    def _show_temporary_password(self, result):
+        """Display a generated password in a selectable, copyable field."""
+        dlg = tk.Toplevel(self)
+        dlg.title("Temporary Password Created")
+        dlg.geometry("500x255")
+        dlg.resizable(False, False)
+        dlg.transient(self)
+        dlg.grab_set()
+
+        username = result.get("username", "user")
+        emailed = result.get("email_sent", False)
+        tk.Label(
+            dlg,
+            text=f"'{username}' is unlocked.",
+            font=("Segoe UI", 14, "bold"),
+        ).pack(pady=(20, 6))
+        tk.Label(
+            dlg,
+            text="Temporary password (the user must change it at next login):",
+            font=("Segoe UI", 10),
+        ).pack(pady=(0, 8))
+
+        password = result.get("temp_password", "")
+        pw_var = tk.StringVar(value=password)
+        entry = tk.Entry(
+            dlg, textvariable=pw_var, font=("Consolas", 12),
+            justify=tk.CENTER, state="readonly", width=34,
+        )
+        entry.pack(ipady=5)
+
+        status = "A copy was also emailed to the user." if emailed else (
+            "Email could not be sent; copy this password and give it to the user securely."
+        )
+        tk.Label(dlg, text=status, font=("Segoe UI", 9), fg=TEXT_MUTED).pack(pady=9)
+
+        buttons = tk.Frame(dlg)
+        buttons.pack()
+
+        def _copy():
+            self.clipboard_clear()
+            self.clipboard_append(password)
+            self.update_idletasks()
+
+        tk.Button(buttons, text="Copy Password", command=_copy, padx=12).pack(
+            side=tk.LEFT, padx=5
+        )
+        tk.Button(buttons, text="Done", command=dlg.destroy, padx=18).pack(
+            side=tk.LEFT, padx=5
+        )
+        dlg.wait_window()
 
     # ------------------------------------------------------------------
     # UI construction
@@ -375,6 +468,7 @@ class SuperAdminDashboard(tk.Tk):
             ("journey", _t("nav.journey", "Student Journey")),
             ("permissions", _t("nav.permissions", "Permission Matrix")),
             ("password_policy", _t("nav.password_policy", "Password Policy")),
+            ("security_training", _t("nav.security_training", "ICT Security Training")),
             ("audit", _t("nav.audit", "Audit Log")),
             ("backup", _t("nav.backup", "Backup / Restore")),
             ("dbreport", _t("nav.dbreport", "Database Report")),
@@ -440,6 +534,7 @@ class SuperAdminDashboard(tk.Tk):
             "journey": self._build_journey,
             "permissions": self._build_permissions,
             "password_policy": self._build_password_policy,
+            "security_training": self._build_security_training,
             "audit": self._build_audit,
             "backup": self._build_backup,
             "dbreport": self._build_db_report,
@@ -2125,6 +2220,175 @@ class SuperAdminDashboard(tk.Tk):
             AcademicMisconductPanel(window, auth=auth, system_key=system_key)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open misconduct panel:\n{e}")
+
+    # ------------------------------------------------------------------
+    # Section: Cross-System Notifications
+    # ------------------------------------------------------------------
+
+    def _build_security_training(self):
+        """Launch and report authorised click-only awareness simulations."""
+        tk.Label(
+            self._content_frame, text="ICT Security Training Simulations",
+            font=("Segoe UI", 18, "bold"), bg=CONTENT_BG, fg=TEXT_DARK,
+        ).pack(anchor=tk.W, padx=24, pady=(20, 4))
+        tk.Label(
+            self._content_frame,
+            text="Send a signed test link to every active user with an email address. "
+                 "Clicks are recorded without collecting credentials.",
+            font=("Segoe UI", 10), bg=CONTENT_BG, fg=TEXT_MUTED, wraplength=850,
+            justify=tk.LEFT,
+        ).pack(anchor=tk.W, padx=24, pady=(0, 14))
+
+        from education_system.platform.governance.security.training_simulation import (
+            SimulationError, default_simulation,
+        )
+        try:
+            service = default_simulation()
+        except SimulationError as exc:
+            self._show_error(str(exc))
+            return
+
+        form = tk.LabelFrame(
+            self._content_frame, text=" New campaign ", font=("Segoe UI", 11, "bold"),
+            bg=CARD_BG, fg=TEXT_DARK, padx=14, pady=12,
+        )
+        form.pack(fill=tk.X, padx=24, pady=(0, 14))
+
+        date_var = tk.StringVar(value=(datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d"))
+        time_var = tk.StringVar(value="09:00")
+        course_var = tk.StringVar(value="ICT Security Awareness Training")
+        location_var = tk.StringVar(value="Online")
+        fields = [
+            ("Training date", date_var),
+            ("Training time (24-hour HH:MM)", time_var),
+            ("Course name", course_var), ("Location", location_var),
+        ]
+        for row, (label, variable) in enumerate(fields):
+            tk.Label(form, text=label, bg=CARD_BG, fg=TEXT_DARK).grid(
+                row=row, column=0, sticky="w", padx=(0, 8), pady=4)
+            tk.Entry(form, textvariable=variable, width=42).grid(
+                row=row, column=1, sticky="ew", pady=4)
+        form.columnconfigure(1, weight=1)
+
+        def launch_campaign():
+            if not messagebox.askyesno(
+                "Confirm security test",
+                "Send this simulation to every active user with an email address "
+                "and add the course to their calendars?",
+            ):
+                return
+            try:
+                result = service.launch_all(
+                    date_var.get().strip(),
+                    int(self.user_info.get("id") or self.user_info.get("user_id")),
+                    course_var.get().strip() or "ICT Security Awareness Training",
+                    location_var.get().strip() or "Online",
+                    time_var.get().strip() or "09:00",
+                )
+                summary = (
+                    f"Users targeted: {result['targeted']}\n"
+                    f"Emails stored in database: {result['sent']}\n"
+                    f"Failed: {result['failed']}\n"
+                    f"Calendar events: {len(result['calendar_event_ids'])}"
+                )
+                failures = [item for item in result["recipients"] if item["status"] == "failed"]
+                if failures:
+                    details = "\n".join(
+                        f"• {item['email']}: {item.get('error', 'Unknown delivery error')}"
+                        for item in failures
+                    )
+                    messagebox.showwarning(
+                        "Campaign launched with delivery failures",
+                        f"{summary}\n\nDelivery errors:\n{details}\n\n"
+                        "Check the application database and recipient account, then retry.",
+                    )
+                else:
+                    messagebox.showinfo("Campaign launched", summary)
+                self._show_section("security_training")
+            except (SimulationError, TypeError, ValueError) as exc:
+                messagebox.showerror("Campaign not launched", str(exc))
+            except Exception as exc:
+                messagebox.showerror("Campaign not launched", f"Unexpected error: {exc}")
+
+        tk.Button(
+            form, text="Send to All", command=launch_campaign,
+            bg="#c0392b", fg=TEXT_LIGHT, relief=tk.FLAT, cursor="hand2", padx=14, pady=7,
+        ).grid(row=0, column=2, sticky="w", padx=(24, 0), pady=4)
+
+        report = tk.LabelFrame(
+            self._content_frame, text=" Campaign report ", font=("Segoe UI", 11, "bold"),
+            bg=CARD_BG, fg=TEXT_DARK, padx=10, pady=10,
+        )
+        report.pack(fill=tk.BOTH, expand=True, padx=24, pady=(0, 20))
+        columns = ("date", "course", "system", "recipients", "sent", "clicked", "failed")
+        tree = ttk.Treeview(report, columns=columns, show="headings", height=7)
+        headings = {
+            "date": "Training date", "course": "Course", "system": "System",
+            "recipients": "Recipients", "sent": "Stored", "clicked": "Clicked", "failed": "Failed",
+        }
+        for column in columns:
+            tree.heading(column, text=headings[column])
+            tree.column(column, width=90 if column != "course" else 240, anchor="center")
+        tree.pack(fill=tk.BOTH, expand=True)
+        for row in service.campaign_report():
+            tree.insert("", tk.END, values=(
+                row["training_date"], row["course_name"], row["target_system"],
+                row["recipients"] or 0, row["sent"] or 0,
+                row["clicked"] or 0, row["failed"] or 0,
+            ))
+
+        register_rows = service.training_register()
+        notebook = ttk.Notebook(report)
+        notebook.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+
+        clicked_tab = ttk.Frame(notebook)
+        register_tab = ttk.Frame(notebook)
+        clicked_rows = [row for row in register_rows if row["first_clicked_at"]]
+        attending_rows = [row for row in register_rows if row["registered"]]
+        notebook.add(clicked_tab, text=f"Clicked links ({len(clicked_rows)})")
+        notebook.add(register_tab, text=f"Course register ({len(attending_rows)})")
+
+        def _register_tree(parent, columns_and_headings):
+            holder = ttk.Frame(parent)
+            holder.pack(fill=tk.BOTH, expand=True)
+            scrollbar = ttk.Scrollbar(holder, orient=tk.VERTICAL)
+            result_tree = ttk.Treeview(
+                holder, columns=tuple(column for column, _heading, _width in columns_and_headings),
+                show="headings", height=8, yscrollcommand=scrollbar.set,
+            )
+            scrollbar.config(command=result_tree.yview)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            result_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            for column, heading, width in columns_and_headings:
+                result_tree.heading(column, text=heading)
+                result_tree.column(column, width=width, minwidth=70, anchor="center")
+            return result_tree
+
+        clicked_tree = _register_tree(clicked_tab, (
+            ("name", "User", 160), ("email", "Email", 190),
+            ("course", "Course", 210), ("date", "Training date", 100),
+            ("clicked", "First clicked", 155), ("clicks", "Clicks", 60),
+        ))
+        for row in clicked_rows:
+            clicked_tree.insert("", tk.END, values=(
+                row["display_name"] or row["username"], row["email"], row["course_name"],
+                row["training_date"], row["first_clicked_at"][:19], row["click_count"],
+            ))
+
+        attending_tree = _register_tree(register_tab, (
+            ("name", "User", 150), ("email", "Email", 180),
+            ("system", "System", 90), ("course", "Course", 190),
+            ("date", "Date", 90), ("time", "Time", 65),
+            ("location", "Location", 100), ("clicked", "Link clicked", 85),
+            ("invitation", "Invitation", 85),
+        ))
+        for row in attending_rows:
+            attending_tree.insert("", tk.END, values=(
+                row["display_name"] or row["username"], row["email"], row["target_system"],
+                row["course_name"], row["training_date"], row["training_time"],
+                row["location"], "Yes" if row["first_clicked_at"] else "No",
+                row["invitation_delivery_status"].title(),
+            ))
 
     # ------------------------------------------------------------------
     # Section: Cross-System Notifications

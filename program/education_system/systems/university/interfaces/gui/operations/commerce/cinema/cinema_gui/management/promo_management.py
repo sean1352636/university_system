@@ -79,7 +79,7 @@ def refresh_promo_list(self):
 def show_add_promo_form(self):
     """Show form to add promo code."""
     form_window = tk.Toplevel(self.root)
-    form_window.title("Add Promo Code")
+    form_window.title(_t('gui.operations.commerce.cinema.cinema_gui.management.promo_management.windows.add_promo_code', default="Add Promo Code"))
     form_window.geometry("450x400")
     form_window.configure(bg="#ecf0f1")
     form_window.transient(self.root)
@@ -98,7 +98,7 @@ def show_add_promo_form(self):
 
     # Type
     tk.Label(fields_frame, text=_t("cinema.promo.type_label"), bg="#ffffff", fg="#333333").grid(row=2, column=0, sticky="w", pady=5)
-    type_var = tk.StringVar(value="percentage")
+    type_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.management.promo_management.values.percentage', default="percentage"))
     type_combo = ttk.Combobox(fields_frame, textvariable=type_var, width=32,
                               values=["percentage", "fixed"])
     type_combo.grid(row=2, column=1, pady=5)
@@ -148,7 +148,7 @@ def show_add_promo_form(self):
                 VALUES (?, ?, ?, ?, ?, ?)
             ''', (code, type_var.get(), value, min_purchase, max_uses, valid_entry.get()))
             conn.commit()
-            messagebox.showinfo(_t("cinema.common.success"), "Promo code created!")
+            messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.management.promo_management.dialogs.promo_code_created', default="Promo code created!"))
             form_window.destroy()
             self.refresh_promo_list()
         except sqlite3.IntegrityError:
@@ -188,5 +188,5 @@ def deactivate_selected_promo(self):
     finally:
         conn.close()
 
-    messagebox.showinfo(_t("cinema.common.success"), "Promo code deactivated")
+    messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.management.promo_management.dialogs.promo_code_deactivated', default="Promo code deactivated"))
     self.refresh_promo_list()

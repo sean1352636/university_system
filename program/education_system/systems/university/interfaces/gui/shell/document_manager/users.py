@@ -55,36 +55,36 @@ class UserManager:
     def add_user(self):
         """Add new user"""
         # Placeholder - would integrate with main_gui implementation
-        messagebox.showinfo("Feature", "User management should be done from the main menu.")
+        messagebox.showinfo(_t('gui.shell.document_manager.users.dialogs.feature', default="Feature"), _t('gui.shell.document_manager.users.dialogs.user_management_should_be_done_from_the_main_menu', default="User management should be done from the main menu."))
 
     def edit_user(self):
         """Edit selected user"""
         # Placeholder - would integrate with main_gui implementation
-        messagebox.showinfo("Feature", "User management should be done from the main menu.")
+        messagebox.showinfo(_t('gui.shell.document_manager.users.dialogs.feature', default="Feature"), _t('gui.shell.document_manager.users.dialogs.user_management_should_be_done_from_the_main_menu', default="User management should be done from the main menu."))
 
     def reset_user_password(self):
         """Reset user password"""
         if not hasattr(self.gui, 'users_tree'):
-            messagebox.showerror("Error", "User list not available")
+            messagebox.showerror(_t('gui.shell.document_manager.users.dialogs.error', default="Error"), _t('gui.shell.document_manager.users.dialogs.user_list_not_available', default="User list not available"))
             return
         selection = self.gui.users_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a user to reset password")
+            messagebox.showwarning(_t('gui.shell.document_manager.users.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.users.dialogs.please_select_a_user_to_reset_password', default="Please select a user to reset password"))
             return
         # Placeholder - refer to main menu for full user management
-        messagebox.showinfo("Feature", "Password reset should be done from the main menu for full functionality.")
+        messagebox.showinfo(_t('gui.shell.document_manager.users.dialogs.feature', default="Feature"), _t('gui.shell.document_manager.users.dialogs.password_reset_should_be_done_from_the_main_menu_for_full_functi', default="Password reset should be done from the main menu for full functionality."))
 
     def deactivate_user(self):
         """Deactivate selected user"""
         if not hasattr(self.gui, 'users_tree'):
-            messagebox.showerror("Error", "User list not available")
+            messagebox.showerror(_t('gui.shell.document_manager.users.dialogs.error', default="Error"), _t('gui.shell.document_manager.users.dialogs.user_list_not_available', default="User list not available"))
             return
         selection = self.gui.users_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a user to deactivate")
+            messagebox.showwarning(_t('gui.shell.document_manager.users.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.users.dialogs.please_select_a_user_to_deactivate', default="Please select a user to deactivate"))
             return
         # Placeholder - refer to main menu for full user management
-        messagebox.showinfo("Feature", "User deactivation should be done from the main menu.")
+        messagebox.showinfo(_t('gui.shell.document_manager.users.dialogs.feature', default="Feature"), _t('gui.shell.document_manager.users.dialogs.user_deactivation_should_be_done_from_the_main_menu', default="User deactivation should be done from the main menu."))
 
     def ensure_login(self, required_role=None):
         """
@@ -102,8 +102,8 @@ class UserManager:
         try:
             # Check if authenticated
             if not self.gui.check_authentication():
-                messagebox.showerror("Authentication Required",
-                                   "You must be logged in to perform this action.")
+                messagebox.showerror(_t('gui.shell.document_manager.users.dialogs.authentication_required', default="Authentication Required"),
+                                   _t('gui.shell.document_manager.users.dialogs.you_must_be_logged_in_to_perform_this_action', default="You must be logged in to perform this action."))
                 return False
 
             # Check role if required
@@ -117,7 +117,7 @@ class UserManager:
 
                 # Check specific role
                 if user_role != required_role_lower:
-                    messagebox.showerror("Permission Denied",
+                    messagebox.showerror(_t('gui.shell.document_manager.users.dialogs.permission_denied', default="Permission Denied"),
                                        f"This action requires '{required_role}' role.\n"
                                        f"Your role: '{user_role}'")
                     raise PermissionError(f"User role '{user_role}' does not have access "
@@ -135,5 +135,5 @@ class UserManager:
         except PermissionError:
             raise
         except Exception as e:
-            messagebox.showerror("Error", f"Authentication check failed: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.users.dialogs.error', default="Error"), f"Authentication check failed: {e}")
             return False

@@ -1,5 +1,7 @@
 """Institutional budget tab (admin/staff only)"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 
@@ -10,10 +12,10 @@ class InstitutionalBudgetMixin:
     def create_institutional_budget_tab(self, notebook):
         """Create institutional budget management tab (admin/staff only)"""
         tab = ttk.Frame(notebook, padding="10")
-        notebook.add(tab, text="Institutional Budgets")
+        notebook.add(tab, text=_t('gui.finance.finance.budget_manager.institutional.tabs.institutional_budgets', default="Institutional Budgets"))
 
         # Budget plans section
-        plans_frame = ttk.LabelFrame(tab, text="Budget Plans", padding="10")
+        plans_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.institutional.labels.budget_plans', default="Budget Plans"), padding="10")
         plans_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         self.budget_plans_tree = ttk.Treeview(plans_frame,
@@ -32,7 +34,7 @@ class InstitutionalBudgetMixin:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Budget categories section
-        categories_frame = ttk.LabelFrame(tab, text="Budget Categories", padding="10")
+        categories_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.institutional.labels.budget_categories', default="Budget Categories"), padding="10")
         categories_frame.pack(fill=tk.BOTH, expand=True)
 
         self.budget_categories_tree = ttk.Treeview(categories_frame,

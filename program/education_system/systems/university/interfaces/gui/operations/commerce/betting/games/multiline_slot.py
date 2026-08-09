@@ -9,6 +9,8 @@ symbols land on consecutive reels starting from reel 1. WILD substitutes for
 any symbol. Total bet = 5 x line bet.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -72,7 +74,7 @@ def evaluate(grid):
 class MultilineSlot:
     def __init__(self, root):
         self.root = root
-        root.title("Multiline Video Slot")
+        root.title(_t('gui.operations.commerce.betting.games.multiline_slot.windows.multiline_video_slot', default="Multiline Video Slot"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -87,7 +89,7 @@ class MultilineSlot:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=14)
         f.pack()
-        tk.Label(f, text="VIDEO SLOT \u2014 5 LINES", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.multiline_slot.labels.video_slot_5_lines', default="VIDEO SLOT \u2014 5 LINES"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 19, "bold")).pack()
         w = COLS * CELL + (COLS + 1) * GAP
         h = ROWS * CELL + (ROWS + 1) * GAP
@@ -97,8 +99,8 @@ class MultilineSlot:
         self.msg = tk.Label(f, text="", bg=FELT, fg="white",
                             font=("Helvetica", 12, "bold"))
         self.msg.pack()
-        tk.Label(f, text="\u2605 200  \u25c6 150  \u2665 100  \u2660 80  "
-                 "\u2663 60  (5 on a line)   W = WILD", bg=FELT, fg="#9fb3c8",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.multiline_slot.labels.value_200_150_100_80_60_5_on_a_line_w_wild', default="\u2605 200  \u25c6 150  \u2665 100  \u2660 80  "
+                 "\u2663 60  (5 on a line)   W = WILD"), bg=FELT, fg="#9fb3c8",
                  font=("Helvetica", 9)).pack(pady=2)
 
         bar = tk.Frame(f, bg=FELT, pady=8)
@@ -109,7 +111,7 @@ class MultilineSlot:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-1),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Line", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.multiline_slot.labels.line', default="Line"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 12, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=4,
@@ -125,7 +127,7 @@ class MultilineSlot:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(1),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.multiline_slot.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -173,7 +175,7 @@ class MultilineSlot:
             return
         total = self.line_bet * 5
         if self.credits < total:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.multiline_slot.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= total
         self.win_cells = {}
@@ -214,10 +216,10 @@ class MultilineSlot:
             lines = ", ".join(f"L{li + 1}" for li, *_ in wins)
             self.msg.config(text=f"WIN {total_win}!  ({lines})", fg=GOLD)
         else:
-            self.msg.config(text="No win. Spin again!", fg="white")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.multiline_slot.text.no_win_spin_again', default="No win. Spin again!"), fg="white")
         self.render()
         if self.credits < 5:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.multiline_slot.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.line_bet = min(self.line_bet, max(1, self.credits // 5))
         self.refresh()

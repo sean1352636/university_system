@@ -23,7 +23,7 @@ from flask import Blueprint, g, jsonify, request
 logger = logging.getLogger(__name__)
 
 progression_bp = Blueprint(
-    "sf_progression", __name__, url_prefix="/api/sixthform/progression")
+    "sf_progression", __name__, url_prefix="/api/progression")
 
 
 def _token_required(view):

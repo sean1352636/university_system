@@ -1,0 +1,1 @@
+"""University command-line interfaces."""

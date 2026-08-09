@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -8,7 +10,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 matplotlib.use('TkAgg')
 import numpy as np
 
@@ -88,12 +90,12 @@ def get_admin_email():
 def send_report_to_admin(report_title, report_content, parent_window=None):
     """Send a report to the admin via email"""
     if not HAS_EMAIL:
-        messagebox.showerror("Error", "Email system not available")
+        messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.email_system_not_available', default="Email system not available"))
         return False
 
     admin_email = get_admin_email()
     if not admin_email:
-        messagebox.showerror("Error", "No admin email found in database.\nPlease ensure an admin user has an email configured.")
+        messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.no_admin_email_found_in_database_please_ensure_an_admin_user_has', default="No admin email found in database.\nPlease ensure an admin user has an email configured."))
         return False
 
     try:
@@ -115,13 +117,13 @@ def send_report_to_admin(report_title, report_content, parent_window=None):
 
         result = send_email(admin_email, subject, body)
         if result:
-            messagebox.showinfo("Success", f"Report sent to admin at:\n{admin_email}")
+            messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.success', default="Success"), f"Report sent to admin at:\n{admin_email}")
             return True
         else:
-            messagebox.showerror("Error", "Failed to send email. Please check email configuration.")
+            messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.failed_to_send_email_please_check_email_configuration', default="Failed to send email. Please check email configuration."))
             return False
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to send report:\n{e}")
+        messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Failed to send report:\n{e}")
         return False
 
 
@@ -139,7 +141,7 @@ def create_analysis_tab(self):
 
     # Analysis type selection
     ttk.Label(controls_frame, text=_("finance_reporting.analysis.type")).grid(row=0, column=0, sticky=tk.W)
-    self.analysis_type = tk.StringVar(value="forecasting")
+    self.analysis_type = tk.StringVar(value=_t('gui.finance.finance_reporting.analysis_tab.values.forecasting', default="forecasting"))
     analysis_combo = ttk.Combobox(controls_frame, textvariable=self.analysis_type,
                                  values=["forecasting", "risk_analysis", "cash_flow", "scenario_planning",
                                          "anomaly_detection", "lifecycle", "comparative"],
@@ -196,13 +198,13 @@ def run_student_lifecycle_analysis(self):
                 self.root.after(0, lambda: [
                     self.log_activity("Student lifecycle analysis failed - no data available"),
                     self.update_status("Ready"),
-                    messagebox.showinfo("Analysis Complete", "No data available for student lifecycle analysis")
+                    messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.analysis_complete', default="Analysis Complete"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.no_data_available_for_student_lifecycle_analysis', default="No data available for student lifecycle analysis"))
                 ])
         except Exception as e:
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Lifecycle analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Student lifecycle analysis failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Student lifecycle analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=analysis_in_background)
@@ -218,11 +220,11 @@ def show_lifecycle_results(self, lifecycle_data):
     main_frame = ttk.Frame(lifecycle_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Student Lifecycle Analysis Results",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.student_lifecycle_analysis_results', default="Student Lifecycle Analysis Results"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Summary stats
-    stats_frame = ttk.LabelFrame(main_frame, text="Summary Statistics", padding="10")
+    stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.summary_statistics', default="Summary Statistics"), padding="10")
     stats_frame.pack(fill=tk.X, pady=(0, 10))
 
     summary = lifecycle_data['summary_stats']
@@ -231,11 +233,11 @@ def show_lifecycle_results(self, lifecycle_data):
 
     # Results treeview
     results_tree = ttk.Treeview(main_frame, columns=('Stage', 'Collection Rate', 'Payment Frequency', 'Total Fees'), height=15)
-    results_tree.heading('#0', text='Student Name')
-    results_tree.heading('Stage', text='Lifecycle Stage')
-    results_tree.heading('Collection Rate', text='Collection Rate')
-    results_tree.heading('Payment Frequency', text='Payment Frequency')
-    results_tree.heading('Total Fees', text='Total Fees')
+    results_tree.heading('#0', text=_t('gui.finance.finance_reporting.analysis_tab.headings.student_name', default='Student Name'))
+    results_tree.heading('Stage', text=_t('gui.finance.finance_reporting.analysis_tab.headings.lifecycle_stage', default='Lifecycle Stage'))
+    results_tree.heading('Collection Rate', text=_t('gui.finance.finance_reporting.analysis_tab.headings.collection_rate', default='Collection Rate'))
+    results_tree.heading('Payment Frequency', text=_t('gui.finance.finance_reporting.analysis_tab.headings.payment_frequency', default='Payment Frequency'))
+    results_tree.heading('Total Fees', text=_t('gui.finance.finance_reporting.analysis_tab.headings.total_fees', default='Total Fees'))
     results_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     # Populate results
@@ -246,7 +248,7 @@ def show_lifecycle_results(self, lifecycle_data):
                                 f"{row['payment_frequency']:.2f}",
                                 f"£{row['total_fees']:,.2f}"))
 
-    ttk.Button(main_frame, text="Close", command=lifecycle_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=lifecycle_window.destroy).pack(pady=10)
 
 def run_comparative_analysis(self):
     """Run comparative analysis with GUI display"""
@@ -268,7 +270,7 @@ def run_comparative_analysis(self):
             self.root.after(0, lambda: [
                 self.log_activity(f"Comparative analysis error: {error_msg}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Comparative analysis failed: {error_msg}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Comparative analysis failed: {error_msg}")
             ])
 
     thread = threading.Thread(target=analysis_in_background)
@@ -284,7 +286,7 @@ def show_comparative_results(self, yoy_data, dept_data):
     main_frame = ttk.Frame(comp_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Comparative Analysis Results",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.comparative_analysis_results', default="Comparative Analysis Results"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Create notebook for different analyses
@@ -293,15 +295,15 @@ def show_comparative_results(self, yoy_data, dept_data):
 
     # Year-over-Year tab
     yoy_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(yoy_frame, text="Year-over-Year")
+    notebook.add(yoy_frame, text=_t('gui.finance.finance_reporting.analysis_tab.tabs.year_over_year', default="Year-over-Year"))
 
     if yoy_data:
         yoy_tree = ttk.Treeview(yoy_frame, columns=('Expected', 'Collected', 'Rate', 'Students'), height=10)
-        yoy_tree.heading('#0', text='Academic Year')
-        yoy_tree.heading('Expected', text='Expected Revenue')
-        yoy_tree.heading('Collected', text='Collected Revenue')
-        yoy_tree.heading('Rate', text='Collection Rate')
-        yoy_tree.heading('Students', text='Student Count')
+        yoy_tree.heading('#0', text=_t('gui.finance.finance_reporting.analysis_tab.headings.academic_year', default='Academic Year'))
+        yoy_tree.heading('Expected', text=_t('gui.finance.finance_reporting.analysis_tab.headings.expected_revenue', default='Expected Revenue'))
+        yoy_tree.heading('Collected', text=_t('gui.finance.finance_reporting.analysis_tab.headings.collected_revenue', default='Collected Revenue'))
+        yoy_tree.heading('Rate', text=_t('gui.finance.finance_reporting.analysis_tab.headings.collection_rate', default='Collection Rate'))
+        yoy_tree.heading('Students', text=_t('gui.finance.finance_reporting.analysis_tab.headings.student_count', default='Student Count'))
         yoy_tree.pack(fill=tk.BOTH, expand=True)
 
         for year, data in yoy_data.items():
@@ -313,15 +315,15 @@ def show_comparative_results(self, yoy_data, dept_data):
 
     # Department comparison tab
     dept_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(dept_frame, text="Department Comparison")
+    notebook.add(dept_frame, text=_t('gui.finance.finance_reporting.analysis_tab.tabs.department_comparison', default="Department Comparison"))
 
     if dept_data is not None and len(dept_data) > 0:
         dept_tree = ttk.Treeview(dept_frame, columns=('Students', 'Total Fees', 'Collected', 'Rate'), height=15)
-        dept_tree.heading('#0', text='Department')
-        dept_tree.heading('Students', text='Student Count')
-        dept_tree.heading('Total Fees', text='Total Fees')
-        dept_tree.heading('Collected', text='Collected Fees')
-        dept_tree.heading('Rate', text='Collection Rate')
+        dept_tree.heading('#0', text=_t('gui.finance.finance_reporting.analysis_tab.headings.department', default='Department'))
+        dept_tree.heading('Students', text=_t('gui.finance.finance_reporting.analysis_tab.headings.student_count', default='Student Count'))
+        dept_tree.heading('Total Fees', text=_t('gui.finance.finance_reporting.analysis_tab.headings.total_fees', default='Total Fees'))
+        dept_tree.heading('Collected', text=_t('gui.finance.finance_reporting.analysis_tab.headings.collected_fees', default='Collected Fees'))
+        dept_tree.heading('Rate', text=_t('gui.finance.finance_reporting.analysis_tab.headings.collection_rate', default='Collection Rate'))
         dept_tree.pack(fill=tk.BOTH, expand=True)
 
         for idx, row in dept_data.iterrows():
@@ -383,7 +385,7 @@ def run_performance_optimization(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Performance optimization error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Performance optimization failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Performance optimization failed: {_e}")
             ])
 
     thread = threading.Thread(target=optimize_in_background)
@@ -399,24 +401,24 @@ def show_optimization_results(self, steps, table_info):
     main_frame = ttk.Frame(opt_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Performance Optimization Results",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.performance_optimization_results', default="Performance Optimization Results"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Optimization steps
-    steps_frame = ttk.LabelFrame(main_frame, text="Optimization Steps Completed", padding="10")
+    steps_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.optimization_steps_completed', default="Optimization Steps Completed"), padding="10")
     steps_frame.pack(fill=tk.X, pady=(0, 10))
 
     for i, step in enumerate(steps, 1):
         ttk.Label(steps_frame, text=f"{i}. {step}").pack(anchor=tk.W)
 
     # Table information
-    info_frame = ttk.LabelFrame(main_frame, text="Database Information", padding="10")
+    info_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.database_information', default="Database Information"), padding="10")
     info_frame.pack(fill=tk.X, pady=(0, 10))
 
     for info in table_info:
         ttk.Label(info_frame, text=info).pack(anchor=tk.W)
 
-    ttk.Button(main_frame, text="Close", command=opt_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=opt_window.destroy).pack(pady=10)
 
 def run_data_quality_assessment(self):
     """Run data quality assessment with GUI display"""
@@ -469,7 +471,7 @@ def run_data_quality_assessment(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Data quality assessment error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Data quality assessment failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Data quality assessment failed: {_e}")
             ])
 
     thread = threading.Thread(target=assess_in_background)
@@ -485,14 +487,14 @@ def show_data_quality_results(self, quality_checks):
     main_frame = ttk.Frame(quality_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Data Quality Assessment Results",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.data_quality_assessment_results', default="Data Quality Assessment Results"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Results treeview
     results_tree = ttk.Treeview(main_frame, columns=('Status', 'Issues'), height=15)
-    results_tree.heading('#0', text='Quality Check')
-    results_tree.heading('Status', text='Status')
-    results_tree.heading('Issues', text='Issues Found')
+    results_tree.heading('#0', text=_t('gui.finance.finance_reporting.analysis_tab.headings.quality_check', default='Quality Check'))
+    results_tree.heading('Status', text=_t('gui.finance.finance_reporting.analysis_tab.headings.status', default='Status'))
+    results_tree.heading('Issues', text=_t('gui.finance.finance_reporting.analysis_tab.headings.issues_found', default='Issues Found'))
     results_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     total_issues = 0
@@ -520,7 +522,7 @@ def show_data_quality_results(self, quality_checks):
     status_label = ttk.Label(summary_frame, text=f"Overall Data Quality: {status_text}")
     status_label.pack()
 
-    ttk.Button(main_frame, text="Close", command=quality_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=quality_window.destroy).pack(pady=10)
 
 def run_selected_analysis(self):
     """Run the selected analysis type"""
@@ -733,9 +735,9 @@ def show_analysis_results_window(self, analysis_type, results):
 
                 with open(filename, 'w') as f:
                     f.write(content)
-                messagebox.showinfo("Success", f"Report saved to:\n{filename}")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.success', default="Success"), f"Report saved to:\n{filename}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save report:\n{e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Failed to save report:\n{e}")
 
     def send_to_admin():
         """Send results to admin via email"""
@@ -748,9 +750,9 @@ def show_analysis_results_window(self, analysis_type, results):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(button_frame, text="Save as TXT", command=save_as_txt).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Send to Admin", command=send_to_admin).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Close", command=results_window.destroy).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.save_as_txt', default="Save as TXT"), command=save_as_txt).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.send_to_admin', default="Send to Admin"), command=send_to_admin).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=results_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 def run_yoy_analysis(self):
     """Run year-over-year analysis"""
@@ -783,7 +785,7 @@ def run_yoy_analysis(self):
                 ])
             else:
                 self.root.after(0, lambda: [
-                    messagebox.showinfo("YoY Analysis", "Insufficient data for year-over-year analysis"),
+                    messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.yoy_analysis', default="YoY Analysis"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.insufficient_data_for_year_over_year_analysis', default="Insufficient data for year-over-year analysis")),
                     self.update_status("Ready")
                 ])
 
@@ -791,7 +793,7 @@ def run_yoy_analysis(self):
 
         except Exception as e:
             self.root.after(0, lambda _e=e: [
-                messagebox.showerror("Error", f"Year-over-year analysis failed: {_e}"),
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Year-over-year analysis failed: {_e}"),
                 self.update_status("Error")
             ])
 
@@ -808,7 +810,7 @@ def show_yoy_results(self, yoy_data):
     main_frame = ttk.Frame(yoy_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Year-over-Year Financial Analysis",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.year_over_year_financial_analysis', default="Year-over-Year Financial Analysis"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     results_text = ScrolledText(main_frame, height=20, wrap=tk.WORD)
@@ -850,9 +852,9 @@ def show_yoy_results(self, yoy_data):
                     f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
                     f.write("=" * 80 + "\n\n")
                     f.write(content)
-                messagebox.showinfo("Success", f"Report saved to:\n{filename}")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.success', default="Success"), f"Report saved to:\n{filename}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save report:\n{e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Failed to save report:\n{e}")
 
     def send_to_admin():
         """Send results to admin via email"""
@@ -865,9 +867,9 @@ def show_yoy_results(self, yoy_data):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
 
-    ttk.Button(button_frame, text="Save as TXT", command=save_as_txt).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Send to Admin", command=send_to_admin).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Close", command=yoy_window.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.save_as_txt', default="Save as TXT"), command=save_as_txt).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.send_to_admin', default="Send to Admin"), command=send_to_admin).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=yoy_window.destroy).pack(side=tk.LEFT, padx=5)
 
 def run_department_comparison(self):
     """Run department comparison analysis"""
@@ -903,7 +905,7 @@ def run_department_comparison(self):
                 ])
             else:
                 self.root.after(0, lambda: [
-                    messagebox.showinfo("Department Analysis", "No department data available"),
+                    messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.department_analysis', default="Department Analysis"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.no_department_data_available', default="No department data available")),
                     self.update_status("Ready")
                 ])
 
@@ -912,7 +914,7 @@ def run_department_comparison(self):
         except Exception as e:
             error_msg = str(e)
             self.root.after(0, lambda msg=error_msg: [
-                messagebox.showerror("Error", f"Department comparison failed: {msg}"),
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Department comparison failed: {msg}"),
                 self.update_status("Error")
             ])
 
@@ -929,7 +931,7 @@ def show_department_results(self, dept_data):
     main_frame = ttk.Frame(dept_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Department Financial Comparison",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.department_financial_comparison', default="Department Financial Comparison"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     results_text = ScrolledText(main_frame, height=20, wrap=tk.WORD)
@@ -960,9 +962,9 @@ def show_department_results(self, dept_data):
                 results_text.configure(state='disabled')
                 with open(filename, 'w') as f:
                     f.write(content)
-                messagebox.showinfo("Success", f"Report saved to:\n{filename}")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.success', default="Success"), f"Report saved to:\n{filename}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save report:\n{e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Failed to save report:\n{e}")
 
     def send_to_admin():
         results_text.configure(state='normal')
@@ -972,9 +974,9 @@ def show_department_results(self, dept_data):
 
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
-    ttk.Button(button_frame, text="Save as TXT", command=save_as_txt).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Send to Admin", command=send_to_admin).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Close", command=dept_window.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.save_as_txt', default="Save as TXT"), command=save_as_txt).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.send_to_admin', default="Send to Admin"), command=send_to_admin).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=dept_window.destroy).pack(side=tk.LEFT, padx=5)
 
 def run_benchmarking_analysis(self):
     """Run peer benchmarking analysis"""
@@ -1019,13 +1021,13 @@ def run_benchmarking_analysis(self):
                 ])
             else:
                 self.root.after(0, lambda: [
-                    messagebox.showinfo("Benchmarking", "Insufficient data for benchmarking"),
+                    messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.benchmarking', default="Benchmarking"), _t('gui.finance.finance_reporting.analysis_tab.dialogs.insufficient_data_for_benchmarking', default="Insufficient data for benchmarking")),
                     self.update_status("Ready")
                 ])
 
         except Exception as e:
             self.root.after(0, lambda _e=e: [
-                messagebox.showerror("Error", f"Benchmarking analysis failed: {_e}"),
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Benchmarking analysis failed: {_e}"),
                 self.update_status("Error")
             ])
 
@@ -1042,7 +1044,7 @@ def show_benchmarking_results(self, data):
     main_frame = ttk.Frame(bench_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Peer Benchmarking Analysis",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.peer_benchmarking_analysis', default="Peer Benchmarking Analysis"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     results_text = ScrolledText(main_frame, height=20, wrap=tk.WORD)
@@ -1092,9 +1094,9 @@ def show_benchmarking_results(self, data):
                 results_text.configure(state='disabled')
                 with open(filename, 'w') as f:
                     f.write(content)
-                messagebox.showinfo("Success", f"Report saved to:\n{filename}")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.analysis_tab.dialogs.success', default="Success"), f"Report saved to:\n{filename}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save report:\n{e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Failed to save report:\n{e}")
 
     def send_to_admin():
         results_text.configure(state='normal')
@@ -1104,9 +1106,9 @@ def show_benchmarking_results(self, data):
 
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
-    ttk.Button(button_frame, text="Save as TXT", command=save_as_txt).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Send to Admin", command=send_to_admin).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Close", command=bench_window.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.save_as_txt', default="Save as TXT"), command=save_as_txt).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.send_to_admin', default="Send to Admin"), command=send_to_admin).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=bench_window.destroy).pack(side=tk.LEFT, padx=5)
 
 def run_payment_frequency_analysis(self):
     """Analyze payment frequency patterns"""
@@ -1144,7 +1146,7 @@ def run_payment_frequency_analysis(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Payment frequency analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Payment frequency analysis failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Payment frequency analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=frequency_in_background)
@@ -1160,15 +1162,15 @@ def show_frequency_analysis_results(self, frequency_data):
     main_frame = ttk.Frame(freq_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Payment Frequency Analysis",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.payment_frequency_analysis', default="Payment Frequency Analysis"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Results table
     results_tree = ttk.Treeview(main_frame, columns=('Hour', 'Count', 'Amount'), height=20)
-    results_tree.heading('#0', text='Day of Week')
-    results_tree.heading('Hour', text='Hour')
-    results_tree.heading('Count', text='Payment Count')
-    results_tree.heading('Amount', text='Total Amount')
+    results_tree.heading('#0', text=_t('gui.finance.finance_reporting.analysis_tab.headings.day_of_week', default='Day of Week'))
+    results_tree.heading('Hour', text=_t('gui.finance.finance_reporting.analysis_tab.headings.hour', default='Hour'))
+    results_tree.heading('Count', text=_t('gui.finance.finance_reporting.analysis_tab.headings.payment_count', default='Payment Count'))
+    results_tree.heading('Amount', text=_t('gui.finance.finance_reporting.analysis_tab.headings.total_amount', default='Total Amount'))
     results_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -1179,7 +1181,7 @@ def show_frequency_analysis_results(self, frequency_data):
         results_tree.insert('', 'end', text=day_name,
                           values=(hour_formatted, count, f"£{amount:,.2f}"))
 
-    ttk.Button(main_frame, text="Close", command=freq_window.destroy).pack(pady=5)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=freq_window.destroy).pack(pady=5)
 
 def run_fee_structure_analysis(self):
     """Analyze fee structure effectiveness"""
@@ -1220,7 +1222,7 @@ def run_fee_structure_analysis(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Fee structure analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Fee structure analysis failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Fee structure analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=fee_analysis_in_background)
@@ -1236,18 +1238,18 @@ def show_fee_structure_results(self, fee_data):
     main_frame = ttk.Frame(fee_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Fee Structure Analysis",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.fee_structure_analysis', default="Fee Structure Analysis"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Results table
     results_tree = ttk.Treeview(main_frame, columns=('Standard', 'Students', 'Paid', 'Collection Rate', 'Total Expected', 'Total Collected'), height=15)
-    results_tree.heading('#0', text='Fee Type')
-    results_tree.heading('Standard', text='Standard Amount')
-    results_tree.heading('Students', text='Students Assigned')
-    results_tree.heading('Paid', text='Students Paid')
-    results_tree.heading('Collection Rate', text='Collection Rate')
-    results_tree.heading('Total Expected', text='Total Expected')
-    results_tree.heading('Total Collected', text='Total Collected')
+    results_tree.heading('#0', text=_t('gui.finance.finance_reporting.analysis_tab.headings.fee_type', default='Fee Type'))
+    results_tree.heading('Standard', text=_t('gui.finance.finance_reporting.analysis_tab.headings.standard_amount', default='Standard Amount'))
+    results_tree.heading('Students', text=_t('gui.finance.finance_reporting.analysis_tab.headings.students_assigned', default='Students Assigned'))
+    results_tree.heading('Paid', text=_t('gui.finance.finance_reporting.analysis_tab.headings.students_paid', default='Students Paid'))
+    results_tree.heading('Collection Rate', text=_t('gui.finance.finance_reporting.analysis_tab.headings.collection_rate', default='Collection Rate'))
+    results_tree.heading('Total Expected', text=_t('gui.finance.finance_reporting.analysis_tab.headings.total_expected', default='Total Expected'))
+    results_tree.heading('Total Collected', text=_t('gui.finance.finance_reporting.analysis_tab.headings.total_collected', default='Total Collected'))
     results_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     for fee_name, standard_amount, students_assigned, students_paid, avg_actual, total_expected, total_collected in fee_data:
@@ -1260,7 +1262,7 @@ def show_fee_structure_results(self, fee_data):
                                 f"£{total_expected:,.2f}",
                                 f"£{total_collected:,.2f}"))
 
-    ttk.Button(main_frame, text="Close", command=fee_window.destroy).pack(pady=5)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=fee_window.destroy).pack(pady=5)
 
 def run_student_retention_analysis(self):
     """Analyze student retention vs financial performance"""
@@ -1306,7 +1308,7 @@ def run_student_retention_analysis(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Student retention analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Student retention analysis failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.analysis_tab.dialogs.error', default="Error"), f"Student retention analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=retention_in_background)
@@ -1322,16 +1324,16 @@ def show_retention_analysis_results(self, retention_data):
     main_frame = ttk.Frame(retention_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Student Retention Analysis",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.student_retention_analysis', default="Student Retention Analysis"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Results table
     results_tree = ttk.Treeview(main_frame, columns=('Count', 'Collection Rate', 'Avg Fees', 'Total Fees'), height=10)
-    results_tree.heading('#0', text='Student Status')
-    results_tree.heading('Count', text='Student Count')
-    results_tree.heading('Collection Rate', text='Avg Collection Rate')
-    results_tree.heading('Avg Fees', text='Average Fees')
-    results_tree.heading('Total Fees', text='Total Fees')
+    results_tree.heading('#0', text=_t('gui.finance.finance_reporting.analysis_tab.headings.student_status', default='Student Status'))
+    results_tree.heading('Count', text=_t('gui.finance.finance_reporting.analysis_tab.headings.student_count', default='Student Count'))
+    results_tree.heading('Collection Rate', text=_t('gui.finance.finance_reporting.analysis_tab.headings.avg_collection_rate', default='Avg Collection Rate'))
+    results_tree.heading('Avg Fees', text=_t('gui.finance.finance_reporting.analysis_tab.headings.average_fees', default='Average Fees'))
+    results_tree.heading('Total Fees', text=_t('gui.finance.finance_reporting.analysis_tab.headings.total_fees', default='Total Fees'))
     results_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     for status, count, collection_rate, avg_fees, total_fees in retention_data:
@@ -1342,7 +1344,7 @@ def show_retention_analysis_results(self, retention_data):
                                 f"£{total_fees:,.2f}"))
 
     # Analysis summary
-    summary_frame = ttk.LabelFrame(main_frame, text="Retention Insights", padding="10")
+    summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.labels.retention_insights', default="Retention Insights"), padding="10")
     summary_frame.pack(fill=tk.X, pady=(10, 0))
 
     summary_text = ScrolledText(summary_frame, height=8, wrap=tk.WORD)
@@ -1378,6 +1380,6 @@ def show_retention_analysis_results(self, retention_data):
     summary_text.insert(1.0, summary_content)
     summary_text.configure(state='disabled')
 
-    ttk.Button(main_frame, text="Close", command=retention_window.destroy).pack(pady=5)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.analysis_tab.buttons.close', default="Close"), command=retention_window.destroy).pack(pady=5)
 
 # Method registration is handled by main.py

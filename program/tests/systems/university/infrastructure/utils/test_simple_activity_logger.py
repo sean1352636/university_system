@@ -348,7 +348,7 @@ class TestEnhancedActivityLogger:
         with open(config_path, 'w') as f:
             json.dump(logger_config, f)
 
-        with patch('education_system.systems.university.infrastructure.paths.LOG_DIR', temp_log_dir):
+        with patch('education_system.paths.UNIVERSITY_LOG_DIR', temp_log_dir):
             logger = EnhancedActivityLogger(config_path)
             assert logger is not None
             # Give time for background thread to start
@@ -359,7 +359,7 @@ class TestEnhancedActivityLogger:
 
     def test_logger_initialization_without_config(self, temp_log_dir):
         """Test logger initialization without configuration"""
-        with patch('education_system.systems.university.infrastructure.paths.LOG_DIR', temp_log_dir):
+        with patch('education_system.paths.UNIVERSITY_LOG_DIR', temp_log_dir):
             logger = EnhancedActivityLogger(None)
             assert logger is not None
             # Give time for background thread to start
@@ -578,7 +578,7 @@ class TestHelperFunctions:
             with open(config_path, 'w') as f:
                 json.dump(config_data, f)
 
-            with patch('education_system.systems.university.infrastructure.paths.LOG_DIR', tmpdir):
+            with patch('education_system.paths.UNIVERSITY_LOG_DIR', tmpdir):
                 # load_logger_config doesn't return anything, it updates global logger
                 load_logger_config(config_path)
                 # Get the global logger instance
@@ -665,7 +665,7 @@ class TestIntegration:
         with open(config_path, 'w') as f:
             json.dump(config, f)
 
-        with patch('education_system.systems.university.infrastructure.paths.LOG_DIR', temp_dir):
+        with patch('education_system.paths.UNIVERSITY_LOG_DIR', temp_dir):
             logger = EnhancedActivityLogger(config_path)
 
             # Give background thread time to start

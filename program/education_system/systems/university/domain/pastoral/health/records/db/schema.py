@@ -1,4 +1,4 @@
-from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
+from education_system.systems.university.infrastructure.health.storage import sqlite3, get_connection
 from datetime import datetime, timedelta
 
 

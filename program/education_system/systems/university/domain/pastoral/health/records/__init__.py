@@ -1,3 +1,20 @@
 """records for student health services and records."""
 
-__all__ = ['backup_export', 'data_purge', 'quality_assurance', 'admin', 'analytics', 'clinical', 'db', 'records', 'referrals', 'screening', 'student', 'vaccinations', 'wellness']
+__all__ = [
+    "admin",
+    "analytics",
+    "backup_export",
+    "clinical",
+    "data_purge",
+    "db",
+    "models",
+    "permissions",
+    "quality_assurance",
+    "records",
+    "referrals",
+    "screening",
+    "service",
+    "student",
+    "vaccinations",
+    "wellness",
+]

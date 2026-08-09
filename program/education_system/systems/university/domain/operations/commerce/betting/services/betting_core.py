@@ -413,16 +413,22 @@ class AccountManager:
             return False
 
     @staticmethod
-    def add_winnings(user_id: str, amount: float, description: str = 'Bet won') -> bool:
-        """Add winnings to account balance"""
+    def add_winnings(user_id: str, amount: float, description: str = 'Bet won',
+                     conn=None) -> bool:
+        """Add winnings, optionally using an existing atomic transaction."""
         try:
-            with transaction() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
+            def apply_winnings(active_conn):
+                active_conn.execute('''
                     UPDATE betting_accounts
                     SET balance = balance + ?, total_won = total_won + ?, updated_at = ?
                     WHERE user_id = ?
                 ''', (amount, amount, datetime.now().isoformat(), user_id))
+
+            if conn is not None:
+                apply_winnings(conn)
+            else:
+                with transaction() as winnings_conn:
+                    apply_winnings(winnings_conn)
 
             return True
 
@@ -668,7 +674,11 @@ class SportsBettingManager:
                             SET status = 'won', actual_return = ?, settled_at = ?
                             WHERE bet_id = ?
                         ''', (potential_return, datetime.now().isoformat(), bet_id))
-                        AccountManager.add_winnings(user_id, potential_return, 'Bet won')
+                        # Reuse the settlement transaction. Opening another
+                        # BEGIN IMMEDIATE here deadlocks against our own lock.
+                        AccountManager.add_winnings(
+                            user_id, potential_return, 'Bet won', conn=conn
+                        )
                     else:
                         # Loser
                         cursor.execute('''
@@ -850,7 +860,9 @@ class PredictionMarketManager:
                             SET status = 'won', actual_return = ?, settled_at = ?
                             WHERE bet_id = ?
                         ''', (potential_return, datetime.now().isoformat(), bet_id))
-                        AccountManager.add_winnings(user_id, potential_return, 'Prediction bet won')
+                        AccountManager.add_winnings(
+                            user_id, potential_return, 'Prediction bet won', conn=conn
+                        )
                     else:
                         cursor.execute('''
                             UPDATE prediction_bets

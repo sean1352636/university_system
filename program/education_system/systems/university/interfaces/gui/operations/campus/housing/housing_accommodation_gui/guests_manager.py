@@ -7,6 +7,8 @@ front desk is logging an in-person request).
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import datetime
 import logging
 import sqlite3
@@ -31,21 +33,21 @@ def show_guests(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Guest / Visitor Passes",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.labels.guest_visitor_passes', default="Guest / Visitor Passes"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
 
     # ── Filter bar ──
     bar = ttk.Frame(parent)
     bar.pack(fill="x", padx=8, pady=4)
-    status_var = tk.StringVar(value="Pending")
-    ttk.Label(bar, text="Status:").pack(side="left")
+    status_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.values.pending', default="Pending"))
+    ttk.Label(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.labels.status', default="Status:")).pack(side="left")
     ttk.Combobox(bar, textvariable=status_var, state="readonly", width=12,
                  values=["Pending", "Approved", "Denied", "Cancelled",
                          "(all)"]).pack(side="left", padx=4)
-    ttk.Button(bar, text="Apply",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.buttons.apply', default="Apply"),
                command=lambda: reload()).pack(side="left", padx=8)
-    ttk.Button(bar, text="New request…",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.buttons.new_request', default="New request…"),
                command=lambda: _new_request(gui_instance,
                                               reload)).pack(side="right")
 
@@ -96,7 +98,7 @@ def show_guests(gui_instance) -> None:
     def _do(label: str, action):
         sel = tree.focus()
         if not sel:
-            messagebox.showinfo("Guests", "Select a pass first.",
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.dialogs.guests', default="Guests"), _t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.dialogs.select_a_pass_first', default="Select a pass first."),
                                  parent=gui_instance.root)
             return
         who = (gui_instance.auth.current_user.get('username')
@@ -111,25 +113,25 @@ def show_guests(gui_instance) -> None:
             return
         if not ok:
             messagebox.showwarning(label,
-                                    "No change — already terminal or "
-                                    "wrong state.",
+                                    _t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.dialogs.no_change_already_terminal_or_wrong_state', default="No change — already terminal or "
+                                    "wrong state."),
                                     parent=gui_instance.root)
             return
         log_activity(f"{label} guest pass {sel} ({who})")
         reload()
 
-    ttk.Button(act, text="Approve",
+    ttk.Button(act, text=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.buttons.approve', default="Approve"),
                command=lambda: _do(
                    "Approve",
                    lambda pid, who: extras.decide_guest_pass(
                        pid, approved=True, decision_by=who))).pack(side="left")
-    ttk.Button(act, text="Deny",
+    ttk.Button(act, text=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.buttons.deny', default="Deny"),
                command=lambda: _do(
                    "Deny",
                    lambda pid, who: extras.decide_guest_pass(
                        pid, approved=False, decision_by=who))).pack(side="left",
                                                                      padx=4)
-    ttk.Button(act, text="Cancel",
+    ttk.Button(act, text=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.buttons.cancel', default="Cancel"),
                command=lambda: _do(
                    "Cancel",
                    lambda pid, who: extras.cancel_guest_pass(
@@ -141,12 +143,12 @@ def show_guests(gui_instance) -> None:
 def _new_request(gui_instance, on_done):
     asgs = _load_active_assignments()
     if not asgs:
-        messagebox.showinfo("New request",
-                            "No active assignments.",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.dialogs.new_request', default="New request"),
+                            _t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.dialogs.no_active_assignments', default="No active assignments."),
                             parent=gui_instance.root)
         return
     dlg = tk.Toplevel(gui_instance.root)
-    dlg.title("New guest pass request")
+    dlg.title(_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.windows.new_guest_pass_request', default="New guest pass request"))
     dlg.geometry("520x340")
     dlg.transient(gui_instance.root)
     body = ttk.Frame(dlg, padding=10)
@@ -215,8 +217,8 @@ def _new_request(gui_instance, on_done):
             overnight=overnight_var.get(),
             requested_by=who)
         if not pid:
-            messagebox.showerror("Guest pass",
-                                  "Could not create request (see logs).",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.dialogs.guest_pass', default="Guest pass"),
+                                  _t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.dialogs.could_not_create_request_see_logs', default="Could not create request (see logs)."),
                                   parent=dlg)
             return
         log_activity(f"Guest pass {pid} requested for {asgs[i][0]} "
@@ -226,9 +228,9 @@ def _new_request(gui_instance, on_done):
 
     bar = ttk.Frame(body)
     bar.grid(row=grid_row, column=0, columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(bar, text="Cancel", command=dlg.destroy).pack(side="right",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side="right",
                                                               padx=4)
-    ttk.Button(bar, text="Submit", command=submit).pack(side="right")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.guests_manager.buttons.submit', default="Submit"), command=submit).pack(side="right")
 
 
 def _load_active_assignments() -> list[tuple[str, str]]:

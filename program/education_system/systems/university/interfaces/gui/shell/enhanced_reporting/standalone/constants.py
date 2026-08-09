@@ -6,7 +6,7 @@ should import from here rather than duplicating the setup.
 """
 
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 import logging
 import hashlib
 import pickle
@@ -50,8 +50,8 @@ except ImportError:
     logging.warning("Pandas not available, some features will be limited")
 
 # Use centralized path configuration
-DB_PATH = str(paths.DEFAULT_DB_PATH)
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DB_PATH = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -98,9 +98,9 @@ except ImportError:
 # Local CONFIG dict — falls back to empty when enhanced is not available
 CONFIG = {
     'database': DB_PATH,
-    'reports_dir': str(paths.REPORTS_DIR),
-    'templates_dir': str(paths.REPORT_TEMPLATES_DIR),
-    'cache_dir': str(paths.REPORT_CACHE_DIR),
+    'reports_dir': str(paths.UNIVERSITY_REPORTS_DIR),
+    'templates_dir': str(paths.UNIVERSITY_REPORT_TEMPLATES_DIR),
+    'cache_dir': str(paths.UNIVERSITY_REPORT_CACHE_DIR),
     'email': {
         'enabled': False,
         'smtp_server': 'localhost',
@@ -115,4 +115,4 @@ CONFIG = {
 
 def get_log_file(filename):
     """Get path to log file"""
-    return str(paths.LOG_DIR / filename)
+    return str(paths.UNIVERSITY_LOG_DIR / filename)

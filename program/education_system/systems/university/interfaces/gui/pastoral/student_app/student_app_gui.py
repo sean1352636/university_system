@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -9,7 +11,7 @@ logger = logging.getLogger(__name__)
 class StudentAppGUI:
     def __init__(self, parent=None, auth=None):
         self.root = tk.Toplevel(parent) if parent else tk.Tk()
-        self.root.title("Student App")
+        self.root.title(_t('gui.pastoral.student_app.student_app.windows.student_app', default="Student App"))
         self.root.geometry("1200x800")
         try:
             from education_system.systems.university.domain.pastoral.student_app.services.student_app_service import StudentAppService
@@ -46,21 +48,21 @@ class StudentAppGUI:
 
     def _create_documents_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Status Letters")
+        notebook.add(tab, text=_t('gui.pastoral.student_app.student_app.tabs.status_letters', default="Status Letters"))
         ttk.Label(
             tab,
-            text="Enrolment verification & status letters",
+            text=_t('gui.pastoral.student_app.student_app.labels.enrolment_verification_status_letters', default="Enrolment verification & status letters"),
             font=("", 14, "bold"),
         ).pack(padx=10, pady=(15, 5))
         ttk.Label(
             tab,
             text=(
-                "Self-serve proof of study for council tax, mortgage,\n"
-                "employer, visa / UKVI, and bank account opening."
+                _t('gui.pastoral.student_app.student_app.labels.self_serve_proof_of_study_for_council_tax_mortgage_employer_visa', default="Self-serve proof of study for council tax, mortgage,\n"
+                "employer, visa / UKVI, and bank account opening.")
             ),
             justify="left",
         ).pack(padx=10, pady=5, anchor="w")
-        ttk.Button(tab, text="Open Status Letters", command=self._open_documents).pack(
+        ttk.Button(tab, text=_t('gui.pastoral.student_app.student_app.buttons.open_status_letters', default="Open Status Letters"), command=self._open_documents).pack(
             padx=10, pady=15, anchor="w"
         )
 
@@ -72,22 +74,22 @@ class StudentAppGUI:
             DocumentationGUI(parent=self.root, auth=self.auth)
         except Exception as exc:
             logger.error("Failed to open documentation GUI: %s", exc)
-            messagebox.showerror("Error", f"Could not open Status Letters: {exc}")
+            messagebox.showerror(_t('gui.pastoral.student_app.student_app.dialogs.error', default="Error"), f"Could not open Status Letters: {exc}")
 
     # -------------------------------------------------------------- Dashboard
     def _create_dashboard_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Dashboard")
+        notebook.add(tab, text=_t('gui.pastoral.student_app.student_app.tabs.dashboard', default="Dashboard"))
 
         # Welcome
-        self.welcome_label = ttk.Label(tab, text="Welcome, Student!", font=("", 16, "bold"))
+        self.welcome_label = ttk.Label(tab, text=_t('gui.pastoral.student_app.student_app.labels.welcome_student', default="Welcome, Student!"), font=("", 16, "bold"))
         self.welcome_label.pack(padx=10, pady=(15, 5))
 
         content = ttk.Frame(tab)
         content.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Today's Timetable
-        tt_frame = ttk.LabelFrame(content, text="Today's Timetable")
+        tt_frame = ttk.LabelFrame(content, text=_t('gui.pastoral.student_app.student_app.labels.today_s_timetable', default="Today's Timetable"))
         tt_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
 
         cols = ("time", "module", "room", "lecturer")
@@ -101,7 +103,7 @@ class StudentAppGUI:
         right = ttk.Frame(content)
         right.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
 
-        grades_frame = ttk.LabelFrame(right, text="Recent Grades")
+        grades_frame = ttk.LabelFrame(right, text=_t('gui.pastoral.student_app.student_app.labels.recent_grades', default="Recent Grades"))
         grades_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
 
         grade_cols = ("module", "assessment", "grade", "date")
@@ -111,13 +113,13 @@ class StudentAppGUI:
             self.grades_tree.column(c, width=100)
         self.grades_tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        unread_frame = ttk.LabelFrame(right, text="Notifications")
+        unread_frame = ttk.LabelFrame(right, text=_t('gui.pastoral.student_app.student_app.labels.notifications', default="Notifications"))
         unread_frame.pack(fill=tk.X, pady=(5, 0))
-        self.unread_label = ttk.Label(unread_frame, text="Unread notifications: 0",
+        self.unread_label = ttk.Label(unread_frame, text=_t('gui.pastoral.student_app.student_app.labels.unread_notifications_0', default="Unread notifications: 0"),
                                        font=("", 11))
         self.unread_label.pack(padx=10, pady=10)
 
-        ttk.Button(tab, text="Refresh Dashboard", command=self._refresh_dashboard).pack(pady=5)
+        ttk.Button(tab, text=_t('gui.pastoral.student_app.student_app.buttons.refresh_dashboard', default="Refresh Dashboard"), command=self._refresh_dashboard).pack(pady=5)
         self._refresh_dashboard()
 
     def _refresh_dashboard(self):
@@ -151,7 +153,7 @@ class StudentAppGUI:
     # ---------------------------------------------------------- Notifications
     def _create_notifications_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Notifications")
+        notebook.add(tab, text=_t('gui.pastoral.student_app.student_app.tabs.notifications', default="Notifications"))
 
         cols = ("type", "title", "message", "date", "read")
         self.notif_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -162,9 +164,9 @@ class StudentAppGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Mark Read", command=self._mark_read).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Mark All Read", command=self._mark_all_read).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_notifications).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_app.student_app.buttons.mark_read', default="Mark Read"), command=self._mark_read).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_app.student_app.buttons.mark_all_read', default="Mark All Read"), command=self._mark_all_read).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_app.student_app.buttons.refresh', default="Refresh"), command=self._refresh_notifications).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_notifications()
 
@@ -187,49 +189,49 @@ class StudentAppGUI:
     def _mark_read(self):
         sel = self.notif_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a notification first.", parent=self.root)
+            messagebox.showwarning(_t('gui.pastoral.student_app.student_app.dialogs.selection', default="Selection"), _t('gui.pastoral.student_app.student_app.dialogs.select_a_notification_first', default="Select a notification first."), parent=self.root)
             return
         values = self.notif_tree.item(sel[0], "values")
         try:
             self.service.mark_notification_read(values[1])
             self._refresh_notifications()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.pastoral.student_app.student_app.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _mark_all_read(self):
         try:
             self.service.mark_all_notifications_read(self.student_id)
             self._refresh_notifications()
-            messagebox.showinfo("Success", "All notifications marked as read.", parent=self.root)
+            messagebox.showinfo(_t('gui.pastoral.student_app.student_app.dialogs.success', default="Success"), _t('gui.pastoral.student_app.student_app.dialogs.all_notifications_marked_as_read', default="All notifications marked as read."), parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.pastoral.student_app.student_app.dialogs.error', default="Error"), str(e), parent=self.root)
 
     # ----------------------------------------------------------- Preferences
     def _create_preferences_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Preferences")
+        notebook.add(tab, text=_t('gui.pastoral.student_app.student_app.tabs.preferences', default="Preferences"))
 
-        pref_frame = ttk.LabelFrame(tab, text="App Preferences")
+        pref_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.student_app.student_app.labels.app_preferences', default="App Preferences"))
         pref_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(pref_frame, text="Theme:").grid(row=0, column=0, padx=10, pady=8, sticky=tk.W)
-        self.theme_var = tk.StringVar(value="Light")
+        ttk.Label(pref_frame, text=_t('gui.pastoral.student_app.student_app.labels.theme', default="Theme:")).grid(row=0, column=0, padx=10, pady=8, sticky=tk.W)
+        self.theme_var = tk.StringVar(value=_t('gui.pastoral.student_app.student_app.values.light', default="Light"))
         ttk.Combobox(pref_frame, textvariable=self.theme_var, values=[
             "Light", "Dark", "System Default",
         ], state="readonly", width=20).grid(row=0, column=1, padx=10, pady=8)
 
         self.notif_enabled_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(pref_frame, text="Enable Notifications",
+        ttk.Checkbutton(pref_frame, text=_t('gui.pastoral.student_app.student_app.buttons.enable_notifications', default="Enable Notifications"),
                          variable=self.notif_enabled_var).grid(
             row=1, column=0, columnspan=2, padx=10, pady=8, sticky=tk.W)
 
-        ttk.Label(pref_frame, text="Language:").grid(row=2, column=0, padx=10, pady=8, sticky=tk.W)
-        self.lang_var = tk.StringVar(value="English")
+        ttk.Label(pref_frame, text=_t('gui.pastoral.student_app.student_app.labels.language', default="Language:")).grid(row=2, column=0, padx=10, pady=8, sticky=tk.W)
+        self.lang_var = tk.StringVar(value=_t('gui.pastoral.student_app.student_app.values.english', default="English"))
         ttk.Combobox(pref_frame, textvariable=self.lang_var, values=[
             "English", "Welsh", "French", "Spanish", "Mandarin",
         ], state="readonly", width=20).grid(row=2, column=1, padx=10, pady=8)
 
-        ttk.Button(pref_frame, text="Save Preferences", command=self._save_preferences).grid(
+        ttk.Button(pref_frame, text=_t('gui.pastoral.student_app.student_app.buttons.save_preferences', default="Save Preferences"), command=self._save_preferences).grid(
             row=3, column=0, columnspan=2, pady=15)
 
         self._load_preferences()
@@ -255,28 +257,28 @@ class StudentAppGUI:
                 notifications_enabled=1 if self.notif_enabled_var.get() else 0,
                 language=self.lang_var.get(),
             )
-            messagebox.showinfo("Success", "Preferences saved.", parent=self.root)
+            messagebox.showinfo(_t('gui.pastoral.student_app.student_app.dialogs.success', default="Success"), _t('gui.pastoral.student_app.student_app.dialogs.preferences_saved', default="Preferences saved."), parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.pastoral.student_app.student_app.dialogs.error', default="Error"), str(e), parent=self.root)
 
     # ----------------------------------------------------------- Quick Links
     def _create_quick_links_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Quick Links")
+        notebook.add(tab, text=_t('gui.pastoral.student_app.student_app.tabs.quick_links', default="Quick Links"))
 
         cols = ("title", "url")
         self.links_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
-        self.links_tree.heading("title", text="Title")
+        self.links_tree.heading("title", text=_t('gui.pastoral.student_app.student_app.headings.title', default="Title"))
         self.links_tree.column("title", width=300)
-        self.links_tree.heading("url", text="URL")
+        self.links_tree.heading("url", text=_t('gui.pastoral.student_app.student_app.headings.url', default="URL"))
         self.links_tree.column("url", width=500)
         self.links_tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Add", command=self._add_link).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Remove", command=self._remove_link).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_links).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_app.student_app.buttons.add', default="Add"), command=self._add_link).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_app.student_app.buttons.remove', default="Remove"), command=self._remove_link).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_app.student_app.buttons.refresh', default="Refresh"), command=self._refresh_links).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_links()
 
@@ -297,22 +299,22 @@ class StudentAppGUI:
 
     def _add_link(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Add Quick Link")
+        dlg.title(_t('gui.pastoral.student_app.student_app.windows.add_quick_link', default="Add Quick Link"))
         dlg.geometry("400x200")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Title:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.pastoral.student_app.student_app.labels.title', default="Title:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         title_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=title_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="URL:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.pastoral.student_app.student_app.labels.url', default="URL:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         url_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=url_var).pack(fill=tk.X, padx=10)
 
         def save():
             if not title_var.get() or not url_var.get():
-                messagebox.showwarning("Validation", "All fields are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.pastoral.student_app.student_app.dialogs.validation', default="Validation"), _t('gui.pastoral.student_app.student_app.dialogs.all_fields_are_required', default="All fields are required."), parent=dlg)
                 return
             try:
                 self.service.add_quick_link(
@@ -321,20 +323,20 @@ class StudentAppGUI:
                 dlg.destroy()
                 self._refresh_links()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.pastoral.student_app.student_app.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.pastoral.student_app.student_app.buttons.save', default="Save"), command=save).pack(pady=15)
 
     def _remove_link(self):
         sel = self.links_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a link first.", parent=self.root)
+            messagebox.showwarning(_t('gui.pastoral.student_app.student_app.dialogs.selection', default="Selection"), _t('gui.pastoral.student_app.student_app.dialogs.select_a_link_first', default="Select a link first."), parent=self.root)
             return
         values = self.links_tree.item(sel[0], "values")
-        if not messagebox.askyesno("Confirm", f"Remove link '{values[0]}'?", parent=self.root):
+        if not messagebox.askyesno(_t('gui.pastoral.student_app.student_app.dialogs.confirm', default="Confirm"), f"Remove link '{values[0]}'?", parent=self.root):
             return
         try:
             self.service.remove_quick_link(int(sel[0]))
             self._refresh_links()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.pastoral.student_app.student_app.dialogs.error', default="Error"), str(e), parent=self.root)

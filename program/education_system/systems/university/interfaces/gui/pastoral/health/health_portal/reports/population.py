@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime, timedelta
@@ -8,22 +10,22 @@ class PopulationReportsMixin:
 
     def create_health_reports(self):
         """Create health reports interface"""
-        title = ttk.Label(self.content_frame, text="Health Reports & Analytics", style='Title.TLabel')
+        title = ttk.Label(self.content_frame, text=_t('gui.pastoral.health.health_portal.reports.population.labels.health_reports_analytics', default="Health Reports & Analytics"), style='Title.TLabel')
         title.grid(row=0, column=0, pady=10)
 
         notebook = ttk.Notebook(self.content_frame)
         notebook.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
 
         population_tab = ttk.Frame(notebook)
-        notebook.add(population_tab, text="Population Health")
+        notebook.add(population_tab, text=_t('gui.pastoral.health.health_portal.reports.population.tabs.population_health', default="Population Health"))
         self.create_population_health_report(population_tab)
 
         vaccination_tab = ttk.Frame(notebook)
-        notebook.add(vaccination_tab, text="Vaccination Coverage")
+        notebook.add(vaccination_tab, text=_t('gui.pastoral.health.health_portal.reports.population.tabs.vaccination_coverage', default="Vaccination Coverage"))
         self.create_vaccination_coverage_report(vaccination_tab)
 
         appointment_tab = ttk.Frame(notebook)
-        notebook.add(appointment_tab, text="Appointment Statistics")
+        notebook.add(appointment_tab, text=_t('gui.pastoral.health.health_portal.reports.population.tabs.appointment_statistics', default="Appointment Statistics"))
         self.create_appointment_statistics_report(appointment_tab)
 
         self.content_frame.columnconfigure(0, weight=1)
@@ -34,18 +36,18 @@ class PopulationReportsMixin:
         main_frame = ttk.Frame(parent, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        controls_frame = ttk.LabelFrame(main_frame, text="Report Parameters", padding="5")
+        controls_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.health_portal.reports.population.labels.report_parameters', default="Report Parameters"), padding="5")
         controls_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-        ttk.Label(controls_frame, text="Date From:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        ttk.Label(controls_frame, text=_t('gui.pastoral.health.health_portal.reports.population.labels.date_from', default="Date From:")).grid(row=0, column=0, sticky=tk.W, pady=2)
         self.report_date_from = tk.StringVar(value=(datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d'))
         ttk.Entry(controls_frame, textvariable=self.report_date_from, width=15).grid(row=0, column=1, pady=2, padx=(5, 10))
 
-        ttk.Label(controls_frame, text="Date To:").grid(row=0, column=2, sticky=tk.W, pady=2)
+        ttk.Label(controls_frame, text=_t('gui.pastoral.health.health_portal.reports.population.labels.date_to', default="Date To:")).grid(row=0, column=2, sticky=tk.W, pady=2)
         self.report_date_to = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(controls_frame, textvariable=self.report_date_to, width=15).grid(row=0, column=3, pady=2, padx=(5, 10))
 
-        ttk.Button(controls_frame, text="Generate Report", command=self.generate_population_report).grid(row=0, column=4, padx=10)
+        ttk.Button(controls_frame, text=_t('gui.pastoral.health.health_portal.reports.population.buttons.generate_report', default="Generate Report"), command=self.generate_population_report).grid(row=0, column=4, padx=10)
 
         report_frame = ttk.Frame(main_frame)
         report_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -53,7 +55,7 @@ class PopulationReportsMixin:
         self.population_report_text = scrolledtext.ScrolledText(report_frame, width=80, height=25, font=('Consolas', 10))
         self.population_report_text.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Button(main_frame, text="Export Report", command=self.export_population_report).grid(row=2, column=0, pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.health_portal.reports.population.buttons.export_report', default="Export Report"), command=self.export_population_report).grid(row=2, column=0, pady=10)
 
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(0, weight=1)
@@ -205,7 +207,7 @@ class PopulationReportsMixin:
             self.log_audit_event('generate_population_report', 'report', 'population_health')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.population.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
     def export_population_report(self):
         """Export population health report to file"""
@@ -213,7 +215,7 @@ class PopulationReportsMixin:
             filename = filedialog.asksaveasfilename(
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                title="Save Population Health Report"
+                title=_t('gui.pastoral.health.health_portal.reports.population.dialogs.save_population_health_report', default="Save Population Health Report")
             )
 
             if filename:
@@ -222,7 +224,7 @@ class PopulationReportsMixin:
                     f.write(report_content)
 
                 self.log_audit_event('export_population_report', 'report_export', filename)
-                messagebox.showinfo("Success", f"Report exported to: {filename}")
+                messagebox.showinfo(_t('gui.pastoral.health.health_portal.reports.population.dialogs.success', default="Success"), f"Report exported to: {filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export report: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.population.dialogs.error', default="Error"), f"Failed to export report: {str(e)}")

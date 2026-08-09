@@ -24,7 +24,7 @@ class FileFormatConverterDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.converter.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -58,7 +58,7 @@ class FileFormatConverterDialog:
         input_entry = ttk.Entry(input_frame, textvariable=self.input_var, state='readonly', width=60)
         input_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        ttk.Button(input_frame, text="Browse...", command=self.select_input_file).pack(side=tk.RIGHT, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(input_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.converter.buttons.browse', default="Browse..."), command=self.select_input_file).pack(side=tk.RIGHT, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Output file selection
         output_frame = ttk.LabelFrame(main_frame, text=_t("plagiarism.output_file"), padding=GuiConfig.PADDING_MEDIUM)
@@ -68,7 +68,7 @@ class FileFormatConverterDialog:
         output_entry = ttk.Entry(output_frame, textvariable=self.output_var, width=60)
         output_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        ttk.Button(output_frame, text="Browse...", command=self.select_output_file).pack(side=tk.RIGHT, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(output_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.converter.buttons.browse', default="Browse..."), command=self.select_output_file).pack(side=tk.RIGHT, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Format options
         format_frame = ttk.LabelFrame(main_frame, text=_t("plagiarism.conversion_options"), padding=GuiConfig.PADDING_MEDIUM)
@@ -76,7 +76,7 @@ class FileFormatConverterDialog:
 
         ttk.Label(format_frame, text=_t("plagiarism.output_format")).grid(row=0, column=0, sticky=tk.W)
 
-        self.format_var = tk.StringVar(value="txt")
+        self.format_var = tk.StringVar(value=_t('gui.academics.plagiarism_main_gui.dialogs.converter.values.txt', default="txt"))
         formats = [("Plain Text (.txt)", "txt"), ("HTML (.html)", "html"), ("Markdown (.md)", "md")]
 
         for i, (text, value) in enumerate(formats):
@@ -84,7 +84,7 @@ class FileFormatConverterDialog:
 
         # Conversion options
         self.preserve_formatting_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(format_frame, text="Preserve formatting", variable=self.preserve_formatting_var).grid(row=4, column=0, sticky=tk.W, pady=(GuiConfig.PADDING_MEDIUM, 0))
+        ttk.Checkbutton(format_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.converter.buttons.preserve_formatting', default="Preserve formatting"), variable=self.preserve_formatting_var).grid(row=4, column=0, sticky=tk.W, pady=(GuiConfig.PADDING_MEDIUM, 0))
 
         # Progress
         self.progress_var = tk.DoubleVar()
@@ -99,13 +99,13 @@ class FileFormatConverterDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(GuiConfig.PADDING_MEDIUM, 0))
 
-        ttk.Button(button_frame, text="Convert", command=self.convert_file).pack(side=tk.LEFT)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.converter.buttons.convert', default="Convert"), command=self.convert_file).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.converter.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def select_input_file(self):
         """Select input file"""
         filename = filedialog.askopenfilename(
-            title="Select Input File",
+            title=_t('gui.academics.plagiarism_main_gui.dialogs.converter.dialogs.select_input_file', default="Select Input File"),
             filetypes=[
                 ("All supported", "*.txt;*.pdf;*.docx;*.doc"),
                 ("Text files", "*.txt"),
@@ -129,7 +129,7 @@ class FileFormatConverterDialog:
         format_ext = {"txt": ".txt", "html": ".html", "md": ".md"}[self.format_var.get()]
 
         filename = filedialog.asksaveasfilename(
-            title="Save Converted File",
+            title=_t('gui.academics.plagiarism_main_gui.dialogs.converter.dialogs.save_converted_file', default="Save Converted File"),
             defaultextension=format_ext,
             filetypes=[
                 (f"{self.format_var.get().upper()} files", f"*{format_ext}"),
@@ -144,12 +144,12 @@ class FileFormatConverterDialog:
     def convert_file(self):
         """Convert the file"""
         if not self.input_file:
-            messagebox.showwarning("No Input", "Please select an input file.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.converter.dialogs.no_input', default="No Input"), _t('gui.academics.plagiarism_main_gui.dialogs.converter.dialogs.please_select_an_input_file', default="Please select an input file."))
             return
 
         output_file = self.output_var.get().strip()
         if not output_file:
-            messagebox.showwarning("No Output", "Please specify an output file.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.converter.dialogs.no_output', default="No Output"), _t('gui.academics.plagiarism_main_gui.dialogs.converter.dialogs.please_specify_an_output_file', default="Please specify an output file."))
             return
 
         def convert_task():
@@ -181,12 +181,12 @@ class FileFormatConverterDialog:
 
                 self.dialog.after(0, lambda: self.progress_var.set(100))
                 self.dialog.after(0, lambda: self.status_var.set("Conversion completed"))
-                self.dialog.after(0, lambda: messagebox.showinfo("Success", f"File converted successfully!\nOutput: {output_file}"))
+                self.dialog.after(0, lambda: messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.converter.dialogs.success', default="Success"), f"File converted successfully!\nOutput: {output_file}"))
 
             except Exception as e:
                 error_msg = str(e)
                 self.dialog.after(0, lambda: self.status_var.set("Conversion failed"))
-                self.dialog.after(0, lambda err=error_msg: messagebox.showerror("Error", f"Conversion failed: {err}"))
+                self.dialog.after(0, lambda err=error_msg: messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.converter.dialogs.error', default="Error"), f"Conversion failed: {err}"))
 
         thread = threading.Thread(target=convert_task, daemon=True)
         thread.start()

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # search.py
 # Search functionality mixin for AccommodationGUI.
 
@@ -89,7 +91,7 @@ class SearchMixin:
                 self.status_var.set(f"Found {len(results)} matching accommodations")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Search failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.search.dialogs.error', default="Error"), f"Search failed: {str(e)}")
 
     def clear_search(self):
         """Clear all search criteria"""

@@ -29,6 +29,7 @@ PROJECT_ROOT = REPO_ROOT / "education_system"
 # bare imports like `from core.paths import ...`; those are now fully qualified,
 # so nothing needs it. Import via the `education_system.` prefix only.
 
+
 def pytest_configure(config):
     """Configure pytest before test collection begins."""
     os.chdir(str(REPO_ROOT))
@@ -49,6 +50,25 @@ def pytest_configure(config):
 
     # Initialize authentication system before any imports that might need it
     _initialize_test_auth()
+
+
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_collection_modifyitems(items):
+    """Classify security tests by their stable filesystem location or name.
+
+    This keeps ``pytest -m security`` useful without requiring every security
+    test module to repeat a module-level marker. Explicit markers continue to
+    work for tests outside the conventional security paths.
+    """
+    security_marker = pytest.mark.security
+
+    for item in items:
+        path = Path(str(item.path))
+        is_security_test = "security" in path.parts or "security" in path.name.casefold()
+        if is_security_test and item.get_closest_marker("security") is None:
+            item.add_marker(security_marker)
+
+    yield
 
 
 def _setup_headless_tkinter():
@@ -74,10 +94,22 @@ def _setup_headless_tkinter():
         tk._HEADLESS_REAL = {
             name: getattr(tk.Tk, name)
             for name in (
-                "__init__", "mainloop", "destroy", "update", "update_idletasks",
-                "winfo_screenwidth", "winfo_screenheight", "winfo_exists",
-                "withdraw", "deiconify", "title", "geometry", "protocol",
-                "after", "configure", "config",
+                "__init__",
+                "mainloop",
+                "destroy",
+                "update",
+                "update_idletasks",
+                "winfo_screenwidth",
+                "winfo_screenheight",
+                "winfo_exists",
+                "withdraw",
+                "deiconify",
+                "title",
+                "geometry",
+                "protocol",
+                "after",
+                "configure",
+                "config",
             )
         }
 
@@ -86,7 +118,7 @@ def _setup_headless_tkinter():
             self.tk = MagicMock()
             self.children = {}
             self._tclCommands = None
-            self._w = '.'
+            self._w = "."
             self.master = None
 
         tk.Tk.__init__ = _mock_tk_init
@@ -113,25 +145,26 @@ def _setup_headless_tkinter():
     except (ImportError, Exception):
         # If tkinter genuinely isn't installed, fall back to MagicMock
         from unittest.mock import MagicMock
+
         mock_tk = MagicMock()
         mock_tk.TclError = Exception
-        sys.modules.setdefault('tkinter', mock_tk)
-        sys.modules.setdefault('tkinter.ttk', MagicMock())
-        sys.modules.setdefault('tkinter.messagebox', MagicMock())
-        sys.modules.setdefault('tkinter.simpledialog', MagicMock())
-        sys.modules.setdefault('tkinter.filedialog', MagicMock())
-        sys.modules.setdefault('tkinter.font', MagicMock())
-        sys.modules.setdefault('tkinter.scrolledtext', MagicMock())
+        sys.modules.setdefault("tkinter", mock_tk)
+        sys.modules.setdefault("tkinter.ttk", MagicMock())
+        sys.modules.setdefault("tkinter.messagebox", MagicMock())
+        sys.modules.setdefault("tkinter.simpledialog", MagicMock())
+        sys.modules.setdefault("tkinter.filedialog", MagicMock())
+        sys.modules.setdefault("tkinter.font", MagicMock())
+        sys.modules.setdefault("tkinter.scrolledtext", MagicMock())
 
 
 def _relax_mock_spec_checks():
     """Allow a few legacy tests to spec patched tkinter mocks."""
-    original = getattr(_mock, '_is_instance_mock', None)
+    original = getattr(_mock, "_is_instance_mock", None)
     if not callable(original):
         return
 
     def _compat_is_instance_mock(obj):
-        if isinstance(obj, _mock.NonCallableMock) and getattr(obj, '_mock_name', None) == 'Tk':
+        if isinstance(obj, _mock.NonCallableMock) and getattr(obj, "_mock_name", None) == "Tk":
             return False
         return original(obj)
 
@@ -151,6 +184,7 @@ def _relax_mock_spec_checks():
 @pytest.fixture(autouse=True)
 def _project_cwd(monkeypatch):
     monkeypatch.chdir(PROJECT_ROOT)
+
 
 def _initialize_test_auth():
     """Initialize the authentication system for test collection.
@@ -184,9 +218,11 @@ def _initialize_test_auth():
     except Exception as e:
         print(f"Warning: Could not initialize test auth: {e}")
 
+
 # ============================================================================
 # Fixtures
 # ============================================================================
+
 
 @pytest.fixture(scope="session")
 def _template_db():
@@ -226,6 +262,7 @@ class _UnclosableConnection:
     Note: sqlite3.Connection is a C type in Python 3.11+ and does not
     allow setting arbitrary attributes, so we use delegation instead.
     """
+
     def __init__(self, db_path):
         self._conn = sqlite3.connect(db_path)
         self._conn.row_factory = sqlite3.Row
@@ -264,6 +301,7 @@ def _isolate_db(_template_db, monkeypatch):
     shutil.copy2(_template_db, db_path)
 
     import education_system.systems.university.infrastructure.database.db as _db_mod
+
     monkeypatch.setattr(_db_mod, "DEFAULT_DB_PATH", db_path)
     monkeypatch.setattr(_db_mod, "DEFAULT_DB_NAME", os.path.basename(db_path))
 
@@ -284,6 +322,7 @@ def temp_db(_isolate_db):
     """
     return _isolate_db
 
+
 @pytest.fixture
 def db_connection(temp_db):
     """Provide a database connection for tests."""
@@ -291,6 +330,7 @@ def db_connection(temp_db):
     conn.row_factory = sqlite3.Row
     yield conn
     conn.close()
+
 
 def _create_test_database(db_path):
     """Create a test database with full schema."""
@@ -889,18 +929,19 @@ def _create_test_database(db_path):
     conn.commit()
     conn.close()
 
+
 @pytest.fixture
 def mock_auth():
     """Provide a mock authentication object."""
     auth = MagicMock()
     auth.current_user = {
-        'id': 1,
-        'user_id': 1,
-        'username': 'test_admin',
-        'email': 'admin@test.edu',
-        'role': 'admin',
-        'first_name': 'Test',
-        'last_name': 'Admin'
+        "id": 1,
+        "user_id": 1,
+        "username": "test_admin",
+        "email": "admin@test.edu",
+        "role": "admin",
+        "first_name": "Test",
+        "last_name": "Admin",
     }
     auth.is_logged_in.return_value = True
     auth.check_permission.return_value = True
@@ -908,43 +949,49 @@ def mock_auth():
     auth.has_permission.return_value = True
     return auth
 
+
 @pytest.fixture
 def mock_student_auth():
     """Provide a mock authentication object for a student."""
     auth = MagicMock()
     auth.current_user = {
-        'id': 2,
-        'user_id': 2,
-        'username': 'test_student',
-        'email': 'student@test.edu',
-        'role': 'student',
-        'first_name': 'Test',
-        'last_name': 'Student'
+        "id": 2,
+        "user_id": 2,
+        "username": "test_student",
+        "email": "student@test.edu",
+        "role": "student",
+        "first_name": "Test",
+        "last_name": "Student",
     }
     auth.is_logged_in.return_value = True
-    auth.check_permission.side_effect = lambda p: p in ['view_own_grades', 'view_courses']
+    auth.check_permission.side_effect = lambda p: p in ["view_own_grades", "view_courses"]
     auth.get_current_user.return_value = auth.current_user
     return auth
+
 
 @pytest.fixture
 def mock_instructor_auth():
     """Provide a mock authentication object for an instructor."""
     auth = MagicMock()
     auth.current_user = {
-        'id': 3,
-        'user_id': 3,
-        'username': 'test_instructor',
-        'email': 'instructor@test.edu',
-        'role': 'instructor',
-        'first_name': 'Test',
-        'last_name': 'Instructor'
+        "id": 3,
+        "user_id": 3,
+        "username": "test_instructor",
+        "email": "instructor@test.edu",
+        "role": "instructor",
+        "first_name": "Test",
+        "last_name": "Instructor",
     }
     auth.is_logged_in.return_value = True
     auth.check_permission.side_effect = lambda p: p in [
-        'view_students', 'view_courses', 'edit_grades', 'view_grades'
+        "view_students",
+        "view_courses",
+        "edit_grades",
+        "view_grades",
     ]
     auth.get_current_user.return_value = auth.current_user
     return auth
+
 
 @pytest.fixture
 def mock_tk():
@@ -962,6 +1009,7 @@ def mock_tk():
         },
     ):
         yield
+
 
 @pytest.fixture
 def mock_root():
@@ -981,6 +1029,7 @@ def mock_root():
     root.after = MagicMock()
     return root
 
+
 @pytest.fixture
 def temp_file():
     """Create a temporary file for testing."""
@@ -992,6 +1041,7 @@ def temp_file():
     except Exception:
         pass
 
+
 @pytest.fixture
 def temp_dir():
     """Create a temporary directory for testing."""
@@ -1002,95 +1052,108 @@ def temp_dir():
     except Exception:
         pass
 
+
 @pytest.fixture
 def sample_student_data():
     """Provide sample student data for testing."""
     return {
-        'student_id': 'STU001',
-        'first_name': 'John',
-        'last_name': 'Doe',
-        'email': 'john.doe@test.edu',
-        'phone': '555-0100',
-        'date_of_birth': '2000-01-15',
-        'enrollment_date': '2023-09-01',
-        'major': 'Computer Science',
-        'status': 'active'
+        "student_id": "STU001",
+        "first_name": "John",
+        "last_name": "Doe",
+        "email": "john.doe@test.edu",
+        "phone": "555-0100",
+        "date_of_birth": "2000-01-15",
+        "enrollment_date": "2023-09-01",
+        "major": "Computer Science",
+        "status": "active",
     }
+
 
 @pytest.fixture
 def sample_course_data():
     """Provide sample course data for testing."""
     return {
-        'course_code': 'CS101',
-        'course_name': 'Introduction to Programming',
-        'description': 'Basic programming concepts',
-        'credits': 3,
-        'department': 'Computer Science',
-        'max_enrollment': 30,
-        'semester': 'Fall',
-        'year': 2024,
-        'status': 'active'
+        "course_code": "CS101",
+        "course_name": "Introduction to Programming",
+        "description": "Basic programming concepts",
+        "credits": 3,
+        "department": "Computer Science",
+        "max_enrollment": 30,
+        "semester": "Fall",
+        "year": 2024,
+        "status": "active",
     }
+
 
 @pytest.fixture
 def sample_grade_data():
     """Provide sample grade data for testing."""
     return {
-        'assignment_name': 'Midterm Exam',
-        'assignment_type': 'exam',
-        'score': 85.5,
-        'max_score': 100,
-        'weight': 0.3,
-        'comments': 'Good work'
+        "assignment_name": "Midterm Exam",
+        "assignment_type": "exam",
+        "score": 85.5,
+        "max_score": 100,
+        "weight": 0.3,
+        "comments": "Good work",
     }
+
 
 # ============================================================================
 # Test helpers
 # ============================================================================
 
+
 def insert_test_student(conn, student_data):
     """Helper to insert a test student."""
     cursor = conn.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO students (student_id, first_name, last_name, email, phone,
                             date_of_birth, enrollment_date, major, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-    """, (
-        student_data['student_id'],
-        student_data['first_name'],
-        student_data['last_name'],
-        student_data['email'],
-        student_data.get('phone', ''),
-        student_data.get('date_of_birth', ''),
-        student_data.get('enrollment_date', ''),
-        student_data.get('major', ''),
-        student_data.get('status', 'active')
-    ))
+    """,
+        (
+            student_data["student_id"],
+            student_data["first_name"],
+            student_data["last_name"],
+            student_data["email"],
+            student_data.get("phone", ""),
+            student_data.get("date_of_birth", ""),
+            student_data.get("enrollment_date", ""),
+            student_data.get("major", ""),
+            student_data.get("status", "active"),
+        ),
+    )
     conn.commit()
     return cursor.lastrowid
+
 
 def insert_test_course(conn, course_data):
     """Helper to insert a test course."""
     cursor = conn.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO courses (course_code, course_name, description, credits,
                            department, max_enrollment, semester, year, status, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-    """, (
-        course_data['course_code'],
-        course_data['course_name'],
-        course_data.get('description', ''),
-        course_data.get('credits', 3),
-        course_data.get('department', ''),
-        course_data.get('max_enrollment', 30),
-        course_data.get('semester', ''),
-        course_data.get('year', 2024),
-        course_data.get('status', 'active')
-    ))
+    """,
+        (
+            course_data["course_code"],
+            course_data["course_name"],
+            course_data.get("description", ""),
+            course_data.get("credits", 3),
+            course_data.get("department", ""),
+            course_data.get("max_enrollment", 30),
+            course_data.get("semester", ""),
+            course_data.get("year", 2024),
+            course_data.get("status", "active"),
+        ),
+    )
     conn.commit()
     return cursor.lastrowid
 
-def insert_test_user(conn, user_data, password='TestPassword123'):
+
+def insert_test_user(conn, user_data, password="TestPassword123"):
     """Helper to insert a test user with both legacy and shared auth entries."""
     import hashlib
     import secrets
@@ -1098,12 +1161,13 @@ def insert_test_user(conn, user_data, password='TestPassword123'):
 
     try:
         import bcrypt
+
         has_bcrypt = True
     except ImportError:
         has_bcrypt = False
 
     cursor = conn.cursor()
-    role = user_data.get('role', 'student')
+    role = user_data.get("role", "student")
 
     # Create bcrypt hash for shared auth (primary), fall back to PBKDF2
     # Use minimal rounds/iterations for test speed — not security-relevant
@@ -1112,49 +1176,50 @@ def insert_test_user(conn, user_data, password='TestPassword123'):
         legacy_salt = None
     else:
         salt = secrets.token_hex(16)
-        bcrypt_hash = hashlib.pbkdf2_hmac(
-            'sha256', password.encode(), salt.encode(), 1000
-        ).hex()
+        bcrypt_hash = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 1000).hex()
         legacy_salt = salt
 
     # Insert user with shared auth fields
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO users (username, first_name, last_name, email, role,
                           password_hash, legacy_salt, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        user_data['username'],
-        user_data.get('first_name', 'Test'),
-        user_data.get('last_name', 'User'),
-        user_data.get('email', f"{user_data['username']}@test.edu"),
-        role,
-        bcrypt_hash,
-        legacy_salt,
-        datetime.now().isoformat()
-    ))
+    """,
+        (
+            user_data["username"],
+            user_data.get("first_name", "Test"),
+            user_data.get("last_name", "User"),
+            user_data.get("email", f"{user_data['username']}@test.edu"),
+            role,
+            bcrypt_hash,
+            legacy_salt,
+            datetime.now().isoformat(),
+        ),
+    )
     user_id = cursor.lastrowid
 
     # Insert legacy account for backward compatibility
     legacy_salt_val = legacy_salt or secrets.token_hex(16)
     legacy_hash = hashlib.pbkdf2_hmac(
-        'sha256', password.encode(), legacy_salt_val.encode(), 1000
+        "sha256", password.encode(), legacy_salt_val.encode(), 1000
     ).hex()
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO user_accounts (username, password_hash, salt, user_id, is_active, created_at)
         VALUES (?, ?, ?, ?, 1, ?)
-    """, (
-        user_data['username'],
-        legacy_hash,
-        legacy_salt_val,
-        user_id,
-        datetime.now().isoformat()
-    ))
+    """,
+        (user_data["username"], legacy_hash, legacy_salt_val, user_id, datetime.now().isoformat()),
+    )
 
     # Insert user_systems entry for shared auth
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT OR IGNORE INTO user_systems (user_id, system_key, role)
         VALUES (?, 'university', ?)
-    """, (user_id, role))
+    """,
+        (user_id, role),
+    )
 
     conn.commit()
     return user_id

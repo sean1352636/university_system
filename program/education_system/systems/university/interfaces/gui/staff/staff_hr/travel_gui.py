@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -36,7 +38,7 @@ class TravelGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Travel Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), _t('gui.staff.staff_hr.travel.dialogs.login_required_to_access_travel_management', default="Login required to access Travel Management"))
             return
 
         if parent_notebook:
@@ -51,21 +53,21 @@ class TravelGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Travel")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.travel.tabs.travel', default="Travel"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Travel & Conference Management")
+        self.window.title(_t('gui.staff.staff_hr.travel.windows.travel_conference_management', default="Travel & Conference Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.travel.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.travel.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -92,16 +94,16 @@ class TravelGUI:
     def _create_my_trips_tab(self):
         """Create my trips tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Trips")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.travel.tabs.my_trips', default="My Trips"))
 
         # Header with filter
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Travel Requests", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.travel.labels.my_travel_requests', default="My Travel Requests"), style='Header.TLabel').pack(side=tk.LEFT)
 
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.travel.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.trips_status_filter = ttk.Combobox(
             filter_frame,
             values=['All', 'Draft', 'Pending', 'Approved', 'Rejected', 'Completed', 'Cancelled'],
@@ -110,7 +112,7 @@ class TravelGUI:
         self.trips_status_filter.set('All')
         self.trips_status_filter.pack(side=tk.LEFT, padx=5)
         self.trips_status_filter.bind('<<ComboboxSelected>>', lambda e: self._load_my_trips())
-        ttk.Button(filter_frame, text="Refresh", command=self._load_my_trips).pack(side=tk.LEFT, padx=10)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.travel.buttons.refresh', default="Refresh"), command=self._load_my_trips).pack(side=tk.LEFT, padx=10)
 
         # Trips treeview
         tree_frame = ttk.Frame(tab)
@@ -185,11 +187,11 @@ class TravelGUI:
         try:
             request = TravelManager.get_request(request_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load trip details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), f"Could not load trip details: {e}")
             return
 
         if not request:
-            messagebox.showerror("Error", "Travel request not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), _t('gui.staff.staff_hr.travel.dialogs.travel_request_not_found', default="Travel request not found"))
             return
 
         dialog = tk.Toplevel(self.root)
@@ -210,7 +212,7 @@ class TravelGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Request details
-        details_frame = ttk.LabelFrame(scroll_frame, text="Request Details", padding=15)
+        details_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.travel.labels.request_details', default="Request Details"), padding=15)
         details_frame.pack(fill=tk.X, padx=10, pady=10)
 
         fields = [
@@ -236,7 +238,7 @@ class TravelGUI:
         # Justification
         justification = request.get('justification', '')
         if justification:
-            just_frame = ttk.LabelFrame(scroll_frame, text="Justification", padding=10)
+            just_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.travel.labels.justification', default="Justification"), padding=10)
             just_frame.pack(fill=tk.X, padx=10, pady=5)
             ttk.Label(just_frame, text=justification, wraplength=600).pack(anchor='w')
 
@@ -249,13 +251,13 @@ class TravelGUI:
                 breakdown = []
 
             if breakdown:
-                budget_frame = ttk.LabelFrame(scroll_frame, text="Budget Breakdown", padding=10)
+                budget_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.travel.labels.budget_breakdown', default="Budget Breakdown"), padding=10)
                 budget_frame.pack(fill=tk.X, padx=10, pady=5)
 
                 budget_cols = ('Item', 'Amount')
                 budget_tree = ttk.Treeview(budget_frame, columns=budget_cols, show='headings', height=5)
-                budget_tree.heading('Item', text='Item')
-                budget_tree.heading('Amount', text='Amount')
+                budget_tree.heading('Item', text=_t('gui.staff.staff_hr.travel.headings.item', default='Item'))
+                budget_tree.heading('Amount', text=_t('gui.staff.staff_hr.travel.headings.amount', default='Amount'))
                 budget_tree.column('Item', width=300)
                 budget_tree.column('Amount', width=150)
 
@@ -273,7 +275,7 @@ class TravelGUI:
             itinerary = []
 
         if itinerary:
-            itin_frame = ttk.LabelFrame(scroll_frame, text="Itinerary", padding=10)
+            itin_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.travel.labels.itinerary', default="Itinerary"), padding=10)
             itin_frame.pack(fill=tk.X, padx=10, pady=5)
 
             itin_cols = ('Leg', 'Type', 'From', 'To', 'Departure', 'Arrival', 'Carrier', 'Cost')
@@ -301,14 +303,14 @@ class TravelGUI:
         # Close button
         btn_frame = ttk.Frame(scroll_frame)
         btn_frame.pack(fill=tk.X, padx=10, pady=15)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # ==================== TAB 2: NEW REQUEST ====================
 
     def _create_new_request_tab(self):
         """Create new travel request tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="New Request")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.travel.tabs.new_request', default="New Request"))
 
         # Scrollable area
         canvas = tk.Canvas(tab)
@@ -325,35 +327,35 @@ class TravelGUI:
         # Header
         header_frame = ttk.Frame(scroll_frame)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="New Travel Request", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.travel.labels.new_travel_request', default="New Travel Request"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Form
-        form_frame = ttk.LabelFrame(scroll_frame, text="Request Details", padding=15)
+        form_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.travel.labels.request_details', default="Request Details"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 0: Purpose
-        ttk.Label(form_frame, text="Purpose:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.travel.labels.purpose', default="Purpose:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.purpose_entry = ttk.Entry(form_frame, width=50)
         self.purpose_entry.grid(row=0, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Row 1: Destination
-        ttk.Label(form_frame, text="Destination:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.travel.labels.destination', default="Destination:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.destination_entry = ttk.Entry(form_frame, width=50)
         self.destination_entry.grid(row=1, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Row 2: Departure Date, Return Date
-        ttk.Label(form_frame, text="Departure Date:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.travel.labels.departure_date', default="Departure Date:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.departure_entry = ttk.Entry(form_frame, width=15)
         self.departure_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         self.departure_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Return Date:").grid(row=2, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.travel.labels.return_date', default="Return Date:")).grid(row=2, column=2, sticky='e', padx=10, pady=8)
         self.return_entry = ttk.Entry(form_frame, width=15)
         self.return_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         self.return_entry.grid(row=2, column=3, padx=10, pady=8, sticky='w')
 
         # Row 3: Funding Source
-        ttk.Label(form_frame, text="Funding Source:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.travel.labels.funding_source', default="Funding Source:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         self.funding_combo = ttk.Combobox(
             form_frame, values=['department', 'grant', 'personal', 'mixed'],
             width=15, state='readonly'
@@ -362,12 +364,12 @@ class TravelGUI:
         self.funding_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Row 4: Justification
-        ttk.Label(form_frame, text="Justification:").grid(row=4, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.travel.labels.justification_variant_2', default="Justification:")).grid(row=4, column=0, sticky='ne', padx=10, pady=8)
         self.justification_text = tk.Text(form_frame, width=60, height=4)
         self.justification_text.grid(row=4, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Budget Breakdown
-        budget_frame = ttk.LabelFrame(scroll_frame, text="Budget Breakdown", padding=10)
+        budget_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.travel.labels.budget_breakdown', default="Budget Breakdown"), padding=10)
         budget_frame.pack(fill=tk.X, padx=10, pady=10)
 
         budget_tree_frame = ttk.Frame(budget_frame)
@@ -375,30 +377,30 @@ class TravelGUI:
 
         budget_cols = ('Item', 'Amount')
         self.budget_tree = ttk.Treeview(budget_tree_frame, columns=budget_cols, show='headings', height=5)
-        self.budget_tree.heading('Item', text='Item')
-        self.budget_tree.heading('Amount', text='Amount')
+        self.budget_tree.heading('Item', text=_t('gui.staff.staff_hr.travel.headings.item', default='Item'))
+        self.budget_tree.heading('Amount', text=_t('gui.staff.staff_hr.travel.headings.amount', default='Amount'))
         self.budget_tree.column('Item', width=350)
         self.budget_tree.column('Amount', width=150)
         self.budget_tree.pack(fill=tk.X)
 
         budget_btn_frame = ttk.Frame(budget_frame)
         budget_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(budget_btn_frame, text="Add Item", command=self._add_budget_item).pack(side=tk.LEFT, padx=5)
-        ttk.Button(budget_btn_frame, text="Remove Selected", command=self._remove_budget_item).pack(side=tk.LEFT, padx=5)
+        ttk.Button(budget_btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.add_item', default="Add Item"), command=self._add_budget_item).pack(side=tk.LEFT, padx=5)
+        ttk.Button(budget_btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.remove_selected', default="Remove Selected"), command=self._remove_budget_item).pack(side=tk.LEFT, padx=5)
 
-        self.budget_total_label = ttk.Label(budget_btn_frame, text="Total: £0.00", font=('Arial', 10, 'bold'))
+        self.budget_total_label = ttk.Label(budget_btn_frame, text=_t('gui.staff.staff_hr.travel.labels.total_0_00', default="Total: £0.00"), font=('Arial', 10, 'bold'))
         self.budget_total_label.pack(side=tk.RIGHT, padx=10)
 
         # Submit buttons
         submit_frame = ttk.Frame(scroll_frame)
         submit_frame.pack(fill=tk.X, padx=10, pady=15)
-        ttk.Button(submit_frame, text="Save Draft", command=self._save_draft).pack(side=tk.LEFT, padx=5)
-        ttk.Button(submit_frame, text="Submit Request", command=self._submit_request).pack(side=tk.LEFT, padx=5)
+        ttk.Button(submit_frame, text=_t('gui.staff.staff_hr.travel.buttons.save_draft', default="Save Draft"), command=self._save_draft).pack(side=tk.LEFT, padx=5)
+        ttk.Button(submit_frame, text=_t('gui.staff.staff_hr.travel.buttons.submit_request', default="Submit Request"), command=self._submit_request).pack(side=tk.LEFT, padx=5)
 
     def _add_budget_item(self):
         """Add a budget line item via dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Budget Item")
+        dialog.title(_t('gui.staff.staff_hr.travel.windows.add_budget_item', default="Add Budget Item"))
         dialog.geometry("350x180")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -406,11 +408,11 @@ class TravelGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Item Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.item_name', default="Item Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         item_entry = ttk.Entry(frame, width=25)
         item_entry.grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(frame, text="Amount ($):").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.amount', default="Amount ($):")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         amount_entry = ttk.Entry(frame, width=15)
         amount_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
@@ -433,8 +435,8 @@ class TravelGUI:
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=2, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Add", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.add', default="Add"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         item_entry.focus_set()
 
@@ -442,7 +444,7 @@ class TravelGUI:
         """Remove selected budget item."""
         selection = self.budget_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a budget item to remove")
+            messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.info', default="Info"), _t('gui.staff.staff_hr.travel.dialogs.please_select_a_budget_item_to_remove', default="Please select a budget item to remove"))
             return
 
         self.budget_tree.delete(selection[0])
@@ -492,7 +494,7 @@ class TravelGUI:
             dep_dt = datetime.strptime(departure_date, '%Y-%m-%d')
             ret_dt = datetime.strptime(return_date, '%Y-%m-%d')
             if ret_dt < dep_dt:
-                messagebox.showerror("Validation Error", "Return date cannot be before departure date.")
+                messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.travel.dialogs.return_date_cannot_be_before_departure_date', default="Return date cannot be before departure date."))
                 return
         except ValueError:
             pass
@@ -523,11 +525,11 @@ class TravelGUI:
                 justification=justification,
                 department=department
             )
-            messagebox.showinfo("Success", f"Travel request saved as draft. ID: {request_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.success', default="Success"), f"Travel request saved as draft. ID: {request_id}")
             self._clear_request_form()
             self._load_my_trips()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), str(e))
 
     def _submit_request(self):
         """Save and submit travel request for approval."""
@@ -546,7 +548,7 @@ class TravelGUI:
             dep_dt = datetime.strptime(departure_date, '%Y-%m-%d')
             ret_dt = datetime.strptime(return_date, '%Y-%m-%d')
             if ret_dt < dep_dt:
-                messagebox.showerror("Validation Error", "Return date cannot be before departure date.")
+                messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.travel.dialogs.return_date_cannot_be_before_departure_date', default="Return date cannot be before departure date."))
                 return
         except ValueError:
             pass
@@ -578,11 +580,11 @@ class TravelGUI:
                 department=department
             )
             TravelManager.submit_request(request_id, self._get_user_id())
-            messagebox.showinfo("Success", f"Travel request submitted for approval. ID: {request_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.success', default="Success"), f"Travel request submitted for approval. ID: {request_id}")
             self._clear_request_form()
             self._load_my_trips()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), str(e))
 
     def _clear_request_form(self):
         """Clear the new request form."""
@@ -603,14 +605,14 @@ class TravelGUI:
     def _create_conferences_tab(self):
         """Create conferences tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Conferences")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.travel.tabs.conferences', default="Conferences"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Conference Registrations", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Register", command=self._register_conference).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text="Refresh", command=self._load_conferences).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.travel.labels.conference_registrations', default="Conference Registrations"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.travel.buttons.register', default="Register"), command=self._register_conference).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.travel.buttons.refresh', default="Refresh"), command=self._load_conferences).pack(side=tk.RIGHT, padx=5)
 
         # Conferences treeview
         tree_frame = ttk.Frame(tab)
@@ -668,7 +670,7 @@ class TravelGUI:
     def _register_conference(self):
         """Open conference registration dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Register for Conference")
+        dialog.title(_t('gui.staff.staff_hr.travel.windows.register_for_conference', default="Register for Conference"))
         dialog.geometry("500x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -689,60 +691,60 @@ class TravelGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Conference Name
-        ttk.Label(frame, text="Conference Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.conference_name', default="Conference Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         conf_name_entry = ttk.Entry(frame, width=35)
         conf_name_entry.grid(row=0, column=1, padx=10, pady=8)
 
         # URL
-        ttk.Label(frame, text="Conference URL:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.conference_url', default="Conference URL:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         conf_url_entry = ttk.Entry(frame, width=35)
         conf_url_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Location
-        ttk.Label(frame, text="Location:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.location', default="Location:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         conf_location_entry = ttk.Entry(frame, width=35)
         conf_location_entry.grid(row=2, column=1, padx=10, pady=8)
 
         # Start Date
-        ttk.Label(frame, text="Start Date:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.start_date', default="Start Date:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         conf_start_entry = ttk.Entry(frame, width=15)
         conf_start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         conf_start_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # End Date
-        ttk.Label(frame, text="End Date:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.end_date', default="End Date:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         conf_end_entry = ttk.Entry(frame, width=15)
         conf_end_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         conf_end_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Fee
-        ttk.Label(frame, text="Registration Fee ($):").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.registration_fee', default="Registration Fee ($):")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         conf_fee_entry = ttk.Entry(frame, width=15)
         conf_fee_entry.insert(0, "0.00")
         conf_fee_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Is Presenting
         presenting_var = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="Presenting at Conference", variable=presenting_var).grid(
+        ttk.Checkbutton(frame, text=_t('gui.staff.staff_hr.travel.buttons.presenting_at_conference', default="Presenting at Conference"), variable=presenting_var).grid(
             row=6, column=0, columnspan=2, pady=8)
 
         # Presentation Title
-        ttk.Label(frame, text="Presentation Title:").grid(row=7, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.presentation_title', default="Presentation Title:")).grid(row=7, column=0, sticky='e', padx=10, pady=8)
         conf_pres_title_entry = ttk.Entry(frame, width=35)
         conf_pres_title_entry.grid(row=7, column=1, padx=10, pady=8)
 
         # Presentation Type
-        ttk.Label(frame, text="Presentation Type:").grid(row=8, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.presentation_type', default="Presentation Type:")).grid(row=8, column=0, sticky='e', padx=10, pady=8)
         conf_pres_type_combo = ttk.Combobox(
             frame, values=['paper', 'poster', 'talk'], width=15, state='readonly'
         )
         conf_pres_type_combo.grid(row=8, column=1, padx=10, pady=8, sticky='w')
 
         # Travel Request ID (optional link)
-        ttk.Label(frame, text="Travel Request ID:").grid(row=9, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.travel_request_id', default="Travel Request ID:")).grid(row=9, column=0, sticky='e', padx=10, pady=8)
         conf_travel_id_entry = ttk.Entry(frame, width=15)
         conf_travel_id_entry.grid(row=9, column=1, padx=10, pady=8, sticky='w')
-        ttk.Label(frame, text="(optional - link to existing travel request)",
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.optional_link_to_existing_travel_request', default="(optional - link to existing travel request)"),
                   font=('Arial', 8)).grid(row=10, column=1, padx=10, sticky='w')
 
         def save():
@@ -760,7 +762,7 @@ class TravelGUI:
                 s_dt = datetime.strptime(start_date, '%Y-%m-%d')
                 e_dt = datetime.strptime(end_date, '%Y-%m-%d')
                 if e_dt < s_dt:
-                    messagebox.showerror("Validation Error", "End date cannot be before start date.",
+                    messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.travel.dialogs.end_date_cannot_be_before_start_date', default="End date cannot be before start date."),
                                          parent=dialog)
                     return
             except ValueError:
@@ -785,8 +787,8 @@ class TravelGUI:
                 try:
                     travel_request_id = int(travel_id_str)
                 except ValueError:
-                    messagebox.showerror("Validation Error",
-                                         "Travel Request ID must be a number.", parent=dialog)
+                    messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.validation_error', default="Validation Error"),
+                                         _t('gui.staff.staff_hr.travel.dialogs.travel_request_id_must_be_a_number', default="Travel Request ID must be a number."), parent=dialog)
                     return
 
             try:
@@ -803,19 +805,19 @@ class TravelGUI:
                     presentation_type=pres_type,
                     is_presenting=presenting_var.get()
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.success', default="Success"),
                                     f"Conference registration saved. ID: {reg_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_conferences()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=11, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         conf_name_entry.focus_set()
 
@@ -824,13 +826,13 @@ class TravelGUI:
     def _create_approvals_tab(self):
         """Create travel approvals tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Approvals")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.travel.tabs.approvals', default="Approvals"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Travel Approvals", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_travel_approvals).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.travel.labels.travel_approvals', default="Travel Approvals"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.travel.buttons.refresh', default="Refresh"), command=self._load_travel_approvals).pack(side=tk.RIGHT)
 
         # Approvals treeview
         tree_frame = ttk.Frame(tab)
@@ -856,9 +858,9 @@ class TravelGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Approve Selected",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.approve_selected', default="Approve Selected"),
                    command=self._approve_travel_request).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Reject Selected",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.reject_selected', default="Reject Selected"),
                    command=self._reject_travel_request).pack(side=tk.LEFT, padx=5)
 
         self._load_travel_approvals()
@@ -894,7 +896,7 @@ class TravelGUI:
         """Approve selected travel request."""
         selection = self.travel_approvals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an approval to process")
+            messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.info', default="Info"), _t('gui.staff.staff_hr.travel.dialogs.please_select_an_approval_to_process', default="Please select an approval to process"))
             return
 
         item = self.travel_approvals_tree.item(selection[0])
@@ -902,7 +904,7 @@ class TravelGUI:
 
         # Comment dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Approval Comments")
+        dialog.title(_t('gui.staff.staff_hr.travel.windows.approval_comments', default="Approval Comments"))
         dialog.geometry("400x180")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -910,7 +912,7 @@ class TravelGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Enter approval comments (optional):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.enter_approval_comments_optional', default="Enter approval comments (optional):")).pack(anchor='w', pady=(0, 5))
         comments_text = tk.Text(frame, width=45, height=4)
         comments_text.pack(fill=tk.X, pady=5)
 
@@ -918,22 +920,22 @@ class TravelGUI:
             comments = comments_text.get("1.0", "end-1c").strip() or None
             try:
                 TravelManager.approve_request(approval_id, self._get_user_id(), comments)
-                messagebox.showinfo("Success", "Travel request approved")
+                messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.success', default="Success"), _t('gui.staff.staff_hr.travel.dialogs.travel_request_approved', default="Travel request approved"))
                 dialog.destroy()
                 self._load_travel_approvals()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Approve", command=confirm).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.approve', default="Approve"), command=confirm).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _reject_travel_request(self):
         """Reject selected travel request."""
         selection = self.travel_approvals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an approval to process")
+            messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.info', default="Info"), _t('gui.staff.staff_hr.travel.dialogs.please_select_an_approval_to_process', default="Please select an approval to process"))
             return
 
         item = self.travel_approvals_tree.item(selection[0])
@@ -941,7 +943,7 @@ class TravelGUI:
 
         # Reason dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Rejection Reason")
+        dialog.title(_t('gui.staff.staff_hr.travel.windows.rejection_reason', default="Rejection Reason"))
         dialog.geometry("400x180")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -949,56 +951,56 @@ class TravelGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Enter rejection reason (required):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.travel.labels.enter_rejection_reason_required', default="Enter rejection reason (required):")).pack(anchor='w', pady=(0, 5))
         reason_text = tk.Text(frame, width=45, height=4)
         reason_text.pack(fill=tk.X, pady=5)
 
         def confirm():
             reason = reason_text.get("1.0", "end-1c").strip()
             if not reason:
-                messagebox.showerror("Error", "Rejection reason is required", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), _t('gui.staff.staff_hr.travel.dialogs.rejection_reason_is_required', default="Rejection reason is required"), parent=dialog)
                 return
             try:
                 TravelManager.reject_request(approval_id, self._get_user_id(), reason)
-                messagebox.showinfo("Success", "Travel request rejected")
+                messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.success', default="Success"), _t('gui.staff.staff_hr.travel.dialogs.travel_request_rejected', default="Travel request rejected"))
                 dialog.destroy()
                 self._load_travel_approvals()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Reject", command=confirm).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.reject', default="Reject"), command=confirm).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     # ==================== TAB 5: EXPENSES (ADMIN) ====================
 
     def _create_expenses_tab(self):
         """Create travel expenses tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Expenses")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.travel.tabs.expenses', default="Expenses"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Travel Expenses", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.travel.labels.travel_expenses', default="Travel Expenses"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Request selector
-        selector_frame = ttk.LabelFrame(tab, text="Select Travel Request", padding=10)
+        selector_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.travel.labels.select_travel_request', default="Select Travel Request"), padding=10)
         selector_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(selector_frame, text="Travel Request:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.travel.labels.travel_request', default="Travel Request:")).pack(side=tk.LEFT, padx=5)
         self.expense_request_combo = ttk.Combobox(selector_frame, width=50, state='readonly')
         self.expense_request_combo.pack(side=tk.LEFT, padx=5)
         self.expense_request_combo.bind('<<ComboboxSelected>>', lambda e: self._load_travel_expenses())
-        ttk.Button(selector_frame, text="Refresh List",
+        ttk.Button(selector_frame, text=_t('gui.staff.staff_hr.travel.buttons.refresh_list', default="Refresh List"),
                    command=self._load_expense_requests).pack(side=tk.LEFT, padx=10)
 
         # Store request mapping
         self.expense_request_map = {}
 
         # Linked expenses treeview
-        tree_frame = ttk.LabelFrame(tab, text="Linked Expense Claims", padding=10)
+        tree_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.travel.labels.linked_expense_claims', default="Linked Expense Claims"), padding=10)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         y_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
@@ -1018,7 +1020,7 @@ class TravelGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Create Expense Claim",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.travel.buttons.create_expense_claim', default="Create Expense Claim"),
                    command=self._create_expense_from_travel).pack(side=tk.LEFT, padx=5)
 
         # Load initial request list
@@ -1083,35 +1085,35 @@ class TravelGUI:
         """Create an expense claim from the selected travel request."""
         request_id = self._get_selected_request_id()
         if not request_id:
-            messagebox.showinfo("Info", "Please select a travel request first")
+            messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.info', default="Info"), _t('gui.staff.staff_hr.travel.dialogs.please_select_a_travel_request_first', default="Please select a travel request first"))
             return
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.travel.dialogs.confirm', default="Confirm"),
                                     f"Create expense claim for travel request #{request_id}?"):
             return
 
         try:
             claim_id = TravelManager.create_expense_from_travel(request_id, self._get_user_id())
-            messagebox.showinfo("Success", f"Expense claim created. Claim ID: {claim_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.travel.dialogs.success', default="Success"), f"Expense claim created. Claim ID: {claim_id}")
             self._load_travel_expenses()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.travel.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 6: REPORTS (ADMIN) ====================
 
     def _create_reports_tab(self):
         """Create travel reports tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Reports")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.travel.tabs.reports', default="Reports"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Travel Reports", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_travel_stats).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.travel.labels.travel_reports', default="Travel Reports"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.travel.buttons.refresh', default="Refresh"), command=self._load_travel_stats).pack(side=tk.RIGHT)
 
         # Statistics overview
-        stats_frame = ttk.LabelFrame(tab, text="Overview", padding=15)
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.travel.labels.overview', default="Overview"), padding=15)
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.travel_stats = {}
@@ -1123,7 +1125,7 @@ class TravelGUI:
             ttk.Label(frame, text=label).pack()
 
         # By Department summary
-        dept_frame = ttk.LabelFrame(tab, text="By Department", padding=10)
+        dept_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.travel.labels.by_department', default="By Department"), padding=10)
         dept_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         columns = ('Department', 'Requests', 'Total Budget')

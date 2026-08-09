@@ -1,5 +1,7 @@
 """Payment plans management mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
@@ -85,7 +87,7 @@ class PaymentPlansMixin:
         installments_entry.grid(row=2, column=1, pady=5)
 
         tk.Label(form_frame, text=_("finance_gui.labels.frequency") + ":").grid(row=3, column=0, sticky='w', pady=5)
-        frequency_var = tk.StringVar(value="monthly")
+        frequency_var = tk.StringVar(value=_t('gui.finance.finance.layout.payment_plans.values.monthly', default="monthly"))
         frequency_combo = ttk.Combobox(form_frame, textvariable=frequency_var,
                                       values=['weekly', 'biweekly', 'monthly', 'quarterly'],
                                       state='readonly', width=27)

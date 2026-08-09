@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 from cryptography.fernet import Fernet
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 try:
     from education_system.systems.university.infrastructure.security.audit_helpers import safe_log_security_event
@@ -52,7 +52,7 @@ class AuthEncryptionMixin:
         """Get or create a valid Fernet key for sensitive data."""
         from cryptography.fernet import Fernet as RealFernet
 
-        key_file = str(paths.DATA_DIR / 'health_encryption.key')
+        key_file = str(paths.UNIVERSITY_DATA_DIR / 'health_encryption.key')
 
         if os.path.exists(key_file):
             with open(key_file, 'rb') as f:
@@ -79,7 +79,7 @@ class AuthEncryptionMixin:
 
     def setup_logging(self):
         """Configure logging for audit trail"""
-        log_dir = str(paths.LOG_DIR)
+        log_dir = str(paths.UNIVERSITY_LOG_DIR)
 
         logging.basicConfig(
             level=logging.INFO,
@@ -177,5 +177,5 @@ class AuthEncryptionMixin:
             from education_system.systems.university.infrastructure.database.db import get_connection as central_get_connection
             return central_get_connection()
         except Exception:
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))

@@ -1,5 +1,7 @@
 """Student-facing assignment views"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
@@ -12,7 +14,7 @@ class StudentViewsMixin:
         """Show student's assignments"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="My Assignments", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assignment_manager.student_views.labels.my_assignments', default="My Assignments"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create assignments table
@@ -47,11 +49,11 @@ class StudentViewsMixin:
         buttons_frame = ttk.Frame(self.gui.layout.content_area)
         buttons_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(buttons_frame, text="Submit Assignment",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.student_views.buttons.submit_assignment', default="Submit Assignment"),
                   command=self.gui.submissions.show_submit_assignment).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="View Details",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.student_views.buttons.view_details', default="View Details"),
                   command=lambda: self.view_assignment_details(tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="Refresh",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assignment_manager.student_views.buttons.refresh', default="Refresh"),
                   command=lambda: self.load_assignments_data(tree)).pack(side='left')
 
 
@@ -105,14 +107,14 @@ class StudentViewsMixin:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.student_views.dialogs.error', default="Error"), f"Failed to load assignments: {e}")
 
 
     def view_assignment_details(self, tree):
         """View selected assignment details"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.student_views.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.student_views.dialogs.please_select_an_assignment', default="Please select an assignment"))
             return
 
         item = tree.item(selection[0])
@@ -120,7 +122,7 @@ class StudentViewsMixin:
 
         # Create details window
         details_window = tk.Toplevel(self.root)
-        details_window.title("Assignment Details")
+        details_window.title(_t('gui.academics.assignment_system.assignment_manager.student_views.windows.assignment_details', default="Assignment Details"))
         details_window.geometry("600x400")
 
         # Load and display assignment details
@@ -147,4 +149,4 @@ class StudentViewsMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignment details: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.student_views.dialogs.error', default="Error"), f"Failed to load assignment details: {e}")

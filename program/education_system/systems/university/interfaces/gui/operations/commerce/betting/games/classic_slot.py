@@ -8,6 +8,8 @@ Match three symbols on the centre line. Two hearts pay a small consolation,
 one heart pays your bet back. Sevens are the jackpot.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -38,7 +40,7 @@ START_CREDITS, MIN_BET = 200, 5
 class ClassicSlot:
     def __init__(self, root):
         self.root = root
-        root.title("Classic Slot \u2014 777")
+        root.title(_t('gui.operations.commerce.betting.games.classic_slot.windows.classic_slot_777', default="Classic Slot \u2014 777"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -53,7 +55,7 @@ class ClassicSlot:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=20, pady=16)
         f.pack()
-        tk.Label(f, text="\u2605 CLASSIC SLOT \u2605", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.classic_slot.labels.classic_slot', default="\u2605 CLASSIC SLOT \u2605"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 20, "bold")).pack()
         w = COLS * CELL + (COLS + 1) * GAP
         h = ROWS * CELL + (ROWS + 1) * GAP
@@ -63,8 +65,8 @@ class ClassicSlot:
         self.msg = tk.Label(f, text="", bg=FELT, fg="white",
                             font=("Helvetica", 13, "bold"))
         self.msg.pack()
-        tk.Label(f, text="777=100x  BAR=40x  \u2605=20x  \u25c6=12x  "
-                 "\u2665=8x  \u2663=5x  (per bet)", bg=FELT, fg="#9fb3c8",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.classic_slot.labels.value_777_100x_bar_40x_20x_12x_8x_5x_per_bet', default="777=100x  BAR=40x  \u2605=20x  \u25c6=12x  "
+                 "\u2665=8x  \u2663=5x  (per bet)"), bg=FELT, fg="#9fb3c8",
                  font=("Helvetica", 9)).pack(pady=2)
 
         bar = tk.Frame(f, bg=FELT, pady=8)
@@ -75,7 +77,7 @@ class ClassicSlot:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 12, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.classic_slot.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -88,7 +90,7 @@ class ClassicSlot:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 12, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.classic_slot.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 15, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -140,7 +142,7 @@ class ClassicSlot:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.classic_slot.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.win_cells = set()
@@ -187,11 +189,11 @@ class ClassicSlot:
             self.credits += win
             self.msg.config(text=f"{label}  \u2014  WIN {win}!", fg=GOLD)
         else:
-            self.msg.config(text="No win. Spin again!", fg="white")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.classic_slot.text.no_win_spin_again', default="No win. Spin again!"), fg="white")
 
         self.render()
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits to keep playing!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.classic_slot.text.out_of_credits_buy_more_credits_to_keep_playing', default="Out of credits \u2014 buy more credits to keep playing!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

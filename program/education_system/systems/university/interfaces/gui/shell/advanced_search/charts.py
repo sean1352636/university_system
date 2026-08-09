@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -975,7 +977,7 @@ def email_chart_to_admin(self, parent_dialog):
 
     # Chart type selection
     ttk.Label(frame, text=f"{_t('advanced_search.charts.chart_type')}:").pack(anchor='w', pady=(0, 5))
-    chart_var = tk.StringVar(value="age_histogram")
+    chart_var = tk.StringVar(value=_t('gui.shell.advanced_search.charts.values.age_histogram', default="age_histogram"))
     chart_options = [
         (_t('advanced_search.charts.age_histogram'), "age_histogram"),
         (_t('advanced_search.charts.course_pie'), "course_pie"),

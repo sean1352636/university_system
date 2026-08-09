@@ -10,6 +10,8 @@ Provides visual interface for event discovery with:
 - Social features and ratings
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -33,8 +35,8 @@ class EventsGUI:
             try:
                 from tkinter import messagebox
                 messagebox.showerror(
-                    "Login required",
-                    "You must be logged in via the main GUI to use Events.",
+                    _t('gui.pastoral.student_life.events.events.dialogs.login_required', default="Login required"),
+                    _t('gui.pastoral.student_life.events.events.dialogs.you_must_be_logged_in_via_the_main_gui_to_use_events', default="You must be logged in via the main GUI to use Events."),
                 )
             except Exception:
                 pass
@@ -118,7 +120,7 @@ class EventsGUI:
         # Title
         title_label = tk.Label(
             header,
-            text="Event Discovery Engine",
+            text=_t('gui.pastoral.student_life.events.events.labels.event_discovery_engine', default="Event Discovery Engine"),
             font=('Helvetica', 24, 'bold'),
             bg=self.colors['primary'],
             fg='white'
@@ -209,7 +211,7 @@ class EventsGUI:
 
         tk.Label(
             search_frame,
-            text="Search:",
+            text=_t('gui.pastoral.student_life.events.events.labels.search', default="Search:"),
             font=('Helvetica', 10, 'bold'),
             bg='white'
         ).pack(anchor=tk.W)
@@ -229,12 +231,12 @@ class EventsGUI:
 
         tk.Label(
             category_frame,
-            text="Category:",
+            text=_t('gui.pastoral.student_life.events.events.labels.category', default="Category:"),
             font=('Helvetica', 10, 'bold'),
             bg='white'
         ).pack(anchor=tk.W)
 
-        self.category_var = tk.StringVar(value="All")
+        self.category_var = tk.StringVar(value=_t('gui.pastoral.student_life.events.events.values.all', default="All"))
         categories = ["All"] + self.service.CATEGORIES
 
         for cat in categories:
@@ -255,7 +257,7 @@ class EventsGUI:
 
         tk.Button(
             btn_frame,
-            text="Apply Filters",
+            text=_t('gui.pastoral.student_life.events.events.buttons.apply_filters', default="Apply Filters"),
             command=self.apply_filters,
             bg=self.colors['primary'],
             fg='white',
@@ -265,7 +267,7 @@ class EventsGUI:
 
         tk.Button(
             btn_frame,
-            text="Clear",
+            text=_t('gui.pastoral.student_life.events.events.buttons.clear', default="Clear"),
             command=self.clear_filters,
             bg=self.colors['background'],
             relief=tk.FLAT,
@@ -281,7 +283,7 @@ class EventsGUI:
 
         self.event_list_title = tk.Label(
             header,
-            text="Upcoming Events",
+            text=_t('gui.pastoral.student_life.events.events.labels.upcoming_events', default="Upcoming Events"),
             font=('Helvetica', 16, 'bold'),
             bg='white',
             anchor=tk.W
@@ -499,7 +501,7 @@ class EventsGUI:
 
         tk.Button(
             btn_frame,
-            text="View Details",
+            text=_t('gui.pastoral.student_life.events.events.buttons.view_details', default="View Details"),
             command=lambda: self.show_event_details(event['event_id']),
             bg=self.colors['background'],
             relief=tk.FLAT,
@@ -510,7 +512,7 @@ class EventsGUI:
 
         tk.Button(
             btn_frame,
-            text="RSVP",
+            text=_t('gui.pastoral.student_life.events.events.buttons.rsvp', default="RSVP"),
             command=lambda: self.rsvp_dialog(event['event_id']),
             bg=self.colors['primary'],
             fg='white',
@@ -580,7 +582,7 @@ class EventsGUI:
         # RSVP button
         tk.Button(
             content,
-            text="RSVP Now",
+            text=_t('gui.pastoral.student_life.events.events.buttons.rsvp_now', default="RSVP Now"),
             command=lambda: self.rsvp_dialog(event['event_id']),
             bg=self.colors['primary'],
             fg='white',
@@ -730,7 +732,7 @@ class EventsGUI:
             try:
                 events = self.service.get_upcoming_events(limit=50)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load events: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to load events: {e}")
                 return
 
         # Update count
@@ -739,7 +741,7 @@ class EventsGUI:
         if not events:
             tk.Label(
                 self.event_list_frame,
-                text="No events found",
+                text=_t('gui.pastoral.student_life.events.events.labels.no_events_found', default="No events found"),
                 font=('Helvetica', 12),
                 bg=self.colors['background'],
                 fg=self.colors['text_light']
@@ -768,7 +770,7 @@ class EventsGUI:
             if not recommendations:
                 tk.Label(
                     self.recommendations_frame,
-                    text="No recommendations yet.\n\nSet your interests to get\npersonalized suggestions!",
+                    text=_t('gui.pastoral.student_life.events.events.labels.no_recommendations_yet_set_your_interests_to_get_personalized_su', default="No recommendations yet.\n\nSet your interests to get\npersonalized suggestions!"),
                     font=('Helvetica', 10),
                     bg='white',
                     fg=self.colors['text_light'],
@@ -777,7 +779,7 @@ class EventsGUI:
 
                 tk.Button(
                     self.recommendations_frame,
-                    text="Set Interests",
+                    text=_t('gui.pastoral.student_life.events.events.buttons.set_interests', default="Set Interests"),
                     command=self.manage_interests_dialog,
                     bg=self.colors['primary'],
                     fg='white',
@@ -794,7 +796,7 @@ class EventsGUI:
                 card.pack(fill=tk.X, pady=(0, 5))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load recommendations: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to load recommendations: {e}")
 
     def apply_filters(self):
         """Apply search and category filters"""
@@ -813,7 +815,7 @@ class EventsGUI:
             self.load_events(events)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to search events: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to search events: {e}")
 
     def clear_filters(self):
         """Clear all filters"""
@@ -833,7 +835,7 @@ class EventsGUI:
     def rsvp_dialog(self, event_id: int):
         """Show RSVP dialog"""
         dialog = tk.Toplevel(self.parent)
-        dialog.title("RSVP to Event")
+        dialog.title(_t('gui.pastoral.student_life.events.events.windows.rsvp_to_event', default="RSVP to Event"))
         dialog.geometry("500x400")
         dialog.transient(self.parent)
         dialog.grab_set()
@@ -842,12 +844,12 @@ class EventsGUI:
         try:
             event = self.service.get_event(event_id)
             if not event:
-                messagebox.showerror("Error", "Event not found")
+                messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), _t('gui.pastoral.student_life.events.events.dialogs.event_not_found', default="Event not found"))
                 dialog.destroy()
                 return
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load event: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to load event: {e}")
             dialog.destroy()
             return
 
@@ -888,12 +890,12 @@ class EventsGUI:
         # RSVP options
         tk.Label(
             details_frame,
-            text="Your Response:",
+            text=_t('gui.pastoral.student_life.events.events.labels.your_response', default="Your Response:"),
             font=('Helvetica', 12, 'bold'),
             bg='white'
         ).pack(anchor=tk.W, pady=(20, 10))
 
-        rsvp_var = tk.StringVar(value="Going")
+        rsvp_var = tk.StringVar(value=_t('gui.pastoral.student_life.events.events.values.going', default="Going"))
 
         for status in self.service.RSVP_STATUS:
             tk.Radiobutton(
@@ -909,7 +911,7 @@ class EventsGUI:
         calendar_var = tk.BooleanVar(value=True)
         tk.Checkbutton(
             details_frame,
-            text="Add to my calendar",
+            text=_t('gui.pastoral.student_life.events.events.buttons.add_to_my_calendar', default="Add to my calendar"),
             variable=calendar_var,
             font=('Helvetica', 11),
             bg='white'
@@ -929,18 +931,18 @@ class EventsGUI:
                     add_to_calendar=calendar_var.get()
                 )
 
-                messagebox.showinfo("Success", f"RSVP saved as '{rsvp_var.get()}'!")
+                messagebox.showinfo(_t('gui.pastoral.student_life.events.events.dialogs.success', default="Success"), f"RSVP saved as '{rsvp_var.get()}'!")
                 dialog.destroy()
                 self.refresh_all()
 
             except ValueError as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), str(e))
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to RSVP: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to RSVP: {e}")
 
         tk.Button(
             btn_frame,
-            text="Submit RSVP",
+            text=_t('gui.pastoral.student_life.events.events.buttons.submit_rsvp', default="Submit RSVP"),
             command=submit_rsvp,
             bg=self.colors['success'],
             fg='white',
@@ -953,7 +955,7 @@ class EventsGUI:
 
         tk.Button(
             btn_frame,
-            text="Cancel",
+            text=_t('gui.pastoral.student_life.events.events.buttons.cancel', default="Cancel"),
             command=dialog.destroy,
             bg=self.colors['background'],
             font=('Helvetica', 11),
@@ -966,7 +968,7 @@ class EventsGUI:
     def show_event_details(self, event_id: int):
         """Show detailed event information"""
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Event Details")
+        dialog.title(_t('gui.pastoral.student_life.events.events.windows.event_details', default="Event Details"))
         dialog.geometry("700x600")
         dialog.transient(self.parent)
 
@@ -990,7 +992,7 @@ class EventsGUI:
         try:
             event = self.service.get_event(event_id)
             if not event:
-                messagebox.showerror("Error", "Event not found")
+                messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), _t('gui.pastoral.student_life.events.events.dialogs.event_not_found', default="Event not found"))
                 dialog.destroy()
                 return
 
@@ -1048,7 +1050,7 @@ class EventsGUI:
             if event['description']:
                 tk.Label(
                     content,
-                    text="Description",
+                    text=_t('gui.pastoral.student_life.events.events.labels.description', default="Description"),
                     font=('Helvetica', 12, 'bold'),
                     bg='white'
                 ).pack(anchor=tk.W, pady=(20, 10))
@@ -1068,7 +1070,7 @@ class EventsGUI:
 
             tk.Label(
                 content,
-                text="Event Statistics",
+                text=_t('gui.pastoral.student_life.events.events.labels.event_statistics', default="Event Statistics"),
                 font=('Helvetica', 12, 'bold'),
                 bg='white'
             ).pack(anchor=tk.W, pady=(20, 10))
@@ -1094,7 +1096,7 @@ class EventsGUI:
 
             tk.Button(
                 btn_frame,
-                text="RSVP to Event",
+                text=_t('gui.pastoral.student_life.events.events.buttons.rsvp_to_event', default="RSVP to Event"),
                 command=lambda: [dialog.destroy(), self.rsvp_dialog(event_id)],
                 bg=self.colors['primary'],
                 fg='white',
@@ -1107,7 +1109,7 @@ class EventsGUI:
 
             tk.Button(
                 btn_frame,
-                text="Check In",
+                text=_t('gui.pastoral.student_life.events.events.buttons.check_in', default="Check In"),
                 command=lambda: self.check_in_to_event(event_id),
                 bg=self.colors['success'],
                 fg='white',
@@ -1119,7 +1121,7 @@ class EventsGUI:
             ).pack(side=tk.LEFT)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load event details: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to load event details: {e}")
             dialog.destroy()
 
     def check_in_to_event(self, event_id: int):
@@ -1128,18 +1130,18 @@ class EventsGUI:
             user_id = self.auth.get_current_user()['id']
             self.service.check_in_to_event(event_id=event_id, user_id=user_id)
 
-            messagebox.showinfo("Success", "Successfully checked in to the event!\nEnjoy the event!")
+            messagebox.showinfo(_t('gui.pastoral.student_life.events.events.dialogs.success', default="Success"), _t('gui.pastoral.student_life.events.events.dialogs.successfully_checked_in_to_the_event_enjoy_the_event', default="Successfully checked in to the event!\nEnjoy the event!"))
             self.refresh_all()
 
         except ValueError as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), str(e))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to check in: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to check in: {e}")
 
     def show_my_rsvps(self):
         """Show user's RSVPs"""
         dialog = tk.Toplevel(self.parent)
-        dialog.title("My RSVPs")
+        dialog.title(_t('gui.pastoral.student_life.events.events.windows.my_rsvps', default="My RSVPs"))
         dialog.geometry("600x500")
         dialog.transient(self.parent)
 
@@ -1168,7 +1170,7 @@ class EventsGUI:
             if not rsvps:
                 tk.Label(
                     content,
-                    text="You haven't RSVP'd to any events yet.",
+                    text=_t('gui.pastoral.student_life.events.events.labels.you_haven_t_rsvp_d_to_any_events_yet', default="You haven't RSVP'd to any events yet."),
                     font=('Helvetica', 12),
                     bg='white',
                     fg=self.colors['text_light']
@@ -1204,12 +1206,12 @@ class EventsGUI:
                     card.pack(fill=tk.X, pady=(0, 10))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load RSVPs: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to load RSVPs: {e}")
 
     def manage_interests_dialog(self):
         """Show interest preferences dialog"""
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Manage Interest Preferences")
+        dialog.title(_t('gui.pastoral.student_life.events.events.windows.manage_interest_preferences', default="Manage Interest Preferences"))
         dialog.geometry("500x600")
         dialog.transient(self.parent)
         dialog.grab_set()
@@ -1221,7 +1223,7 @@ class EventsGUI:
 
         tk.Label(
             header,
-            text="Interest Preferences",
+            text=_t('gui.pastoral.student_life.events.events.labels.interest_preferences', default="Interest Preferences"),
             font=('Helvetica', 18, 'bold'),
             bg=self.colors['primary'],
             fg='white'
@@ -1233,7 +1235,7 @@ class EventsGUI:
 
         tk.Label(
             content,
-            text="Set your interest level for each category (1-10):",
+            text=_t('gui.pastoral.student_life.events.events.labels.set_your_interest_level_for_each_category_1_10', default="Set your interest level for each category (1-10):"),
             font=('Helvetica', 11),
             bg='white'
         ).pack(anchor=tk.W, pady=(0, 20))
@@ -1285,16 +1287,16 @@ class EventsGUI:
                             interest_level=slider.get()
                         )
 
-                    messagebox.showinfo("Success", "Interest preferences saved!\n\nYour recommendations will be updated.")
+                    messagebox.showinfo(_t('gui.pastoral.student_life.events.events.dialogs.success', default="Success"), _t('gui.pastoral.student_life.events.events.dialogs.interest_preferences_saved_your_recommendations_will_be_updated', default="Interest preferences saved!\n\nYour recommendations will be updated."))
                     dialog.destroy()
                     self.load_recommendations()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save preferences: {e}")
+                    messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to save preferences: {e}")
 
             tk.Button(
                 content,
-                text="Save Preferences",
+                text=_t('gui.pastoral.student_life.events.events.buttons.save_preferences', default="Save Preferences"),
                 command=save_interests,
                 bg=self.colors['success'],
                 fg='white',
@@ -1306,13 +1308,13 @@ class EventsGUI:
             ).pack(pady=30)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load preferences: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to load preferences: {e}")
             dialog.destroy()
 
     def create_event_dialog(self):
         """Show create event dialog"""
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Create New Event")
+        dialog.title(_t('gui.pastoral.student_life.events.events.windows.create_new_event', default="Create New Event"))
         dialog.geometry("600x700")
         dialog.transient(self.parent)
         dialog.grab_set()
@@ -1337,7 +1339,7 @@ class EventsGUI:
         # Header
         tk.Label(
             content,
-            text="Create New Event",
+            text=_t('gui.pastoral.student_life.events.events.labels.create_new_event', default="Create New Event"),
             font=('Helvetica', 18, 'bold'),
             bg='white'
         ).pack(anchor=tk.W, pady=(0, 20))
@@ -1386,7 +1388,7 @@ class EventsGUI:
                 # Get values
                 title = fields["Event Title *"].get().strip()
                 if not title:
-                    messagebox.showerror("Error", "Event title is required")
+                    messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), _t('gui.pastoral.student_life.events.events.dialogs.event_title_is_required', default="Event title is required"))
                     return
 
                 description = fields["Description"].get("1.0", tk.END).strip()
@@ -1399,7 +1401,7 @@ class EventsGUI:
                 max_capacity = fields["Max Capacity (0 for unlimited)"].get().strip()
 
                 if not all([start_datetime, end_datetime, location]):
-                    messagebox.showerror("Error", "Please fill in all required fields")
+                    messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), _t('gui.pastoral.student_life.events.events.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
                     return
 
                 max_capacity = int(max_capacity) if max_capacity.isdigit() else 0
@@ -1420,16 +1422,16 @@ class EventsGUI:
                 user_id = self.auth.get_current_user()['id']
                 event_id = self.service.create_event(event_data, user_id)
 
-                messagebox.showinfo("Success", f"Event created successfully!\nEvent ID: {event_id}")
+                messagebox.showinfo(_t('gui.pastoral.student_life.events.events.dialogs.success', default="Success"), f"Event created successfully!\nEvent ID: {event_id}")
                 dialog.destroy()
                 self.refresh_all()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create event: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to create event: {e}")
 
         tk.Button(
             content,
-            text="Create Event",
+            text=_t('gui.pastoral.student_life.events.events.buttons.create_event', default="Create Event"),
             command=submit,
             bg=self.colors['success'],
             fg='white',
@@ -1443,7 +1445,7 @@ class EventsGUI:
     def show_statistics(self):
         """Show user statistics"""
         dialog = tk.Toplevel(self.parent)
-        dialog.title("My Event Statistics")
+        dialog.title(_t('gui.pastoral.student_life.events.events.windows.my_event_statistics', default="My Event Statistics"))
         dialog.geometry("500x400")
         dialog.transient(self.parent)
 
@@ -1452,7 +1454,7 @@ class EventsGUI:
 
         tk.Label(
             content,
-            text="My Event Statistics",
+            text=_t('gui.pastoral.student_life.events.events.labels.my_event_statistics', default="My Event Statistics"),
             font=('Helvetica', 18, 'bold'),
             bg='white'
         ).pack(anchor=tk.W, pady=(0, 20))
@@ -1494,7 +1496,7 @@ class EventsGUI:
             if stats['attendance_by_category']:
                 tk.Label(
                     content,
-                    text="Attendance by Category",
+                    text=_t('gui.pastoral.student_life.events.events.labels.attendance_by_category', default="Attendance by Category"),
                     font=('Helvetica', 12, 'bold'),
                     bg='white'
                 ).pack(anchor=tk.W, pady=(20, 10))
@@ -1525,7 +1527,7 @@ class EventsGUI:
                     ).pack(side=tk.LEFT)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load statistics: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_life.events.events.dialogs.error', default="Error"), f"Failed to load statistics: {e}")
             dialog.destroy()
 
     # Helper methods
@@ -1561,7 +1563,7 @@ def main(parent=None):
         if require_launcher_auth("Events GUI") is None:
             return
         root = tk.Tk()
-        root.title("Event Discovery Engine")
+        root.title(_t('gui.pastoral.student_life.events.events.windows.event_discovery_engine', default="Event Discovery Engine"))
         root.geometry("1400x800")
         parent = root
     else:

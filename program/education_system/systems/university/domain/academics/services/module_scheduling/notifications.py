@@ -72,10 +72,10 @@ class NotificationsMixin:
                     'message': message
                 })
 
-                # Fallback if template not found
+                # A missing template is an installation/configuration error;
+                # do not silently reintroduce an inline hardcoded email body.
                 if not subject or not body:
-                    subject = f"Module Scheduling Notification - {notification_type.replace('_', ' ').title()}"
-                    body = f"Dear {recipient_name},\n\n{message}\n\nBest regards,\nUniversity Module Scheduling System"
+                    raise RuntimeError("module_scheduling_notification template is empty")
 
                 send_email(email_address, subject, body)
 

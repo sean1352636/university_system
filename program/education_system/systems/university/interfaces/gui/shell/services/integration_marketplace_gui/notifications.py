@@ -23,7 +23,7 @@ class NotificationsMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to configure alerts")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.notifications.dialogs.please_select_an_integration_to_configure_alerts', default="Please select an integration to configure alerts"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
@@ -35,32 +35,32 @@ class NotificationsMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Configure Alert Rules",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.configure_alert_rules', default="Configure Alert Rules"),
                      style='Title.TLabel').pack(pady=10)
 
             # Error threshold
-            ttk.Label(dialog, text="Alert on consecutive failures:").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.alert_on_consecutive_failures', default="Alert on consecutive failures:")).pack(anchor='w', padx=10, pady=5)
             failures_var = tk.StringVar(value="3")
             ttk.Spinbox(dialog, from_=1, to=10, textvariable=failures_var, width=10).pack(anchor='w', padx=10)
 
             # Error rate threshold
-            ttk.Label(dialog, text="Alert when error rate exceeds (%):").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.alert_when_error_rate_exceeds', default="Alert when error rate exceeds (%):")).pack(anchor='w', padx=10, pady=5)
             rate_var = tk.StringVar(value="20")
             ttk.Spinbox(dialog, from_=1, to=100, textvariable=rate_var, width=10).pack(anchor='w', padx=10)
 
             # No sync alert
-            ttk.Label(dialog, text="Alert if no sync for (hours):").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.alert_if_no_sync_for_hours', default="Alert if no sync for (hours):")).pack(anchor='w', padx=10, pady=5)
             hours_var = tk.StringVar(value="24")
             ttk.Spinbox(dialog, from_=1, to=168, textvariable=hours_var, width=10).pack(anchor='w', padx=10)
 
             # Notification methods
-            ttk.Label(dialog, text="Notification Methods:").pack(anchor='w', padx=10, pady=10)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.notification_methods', default="Notification Methods:")).pack(anchor='w', padx=10, pady=10)
 
             email_var = tk.BooleanVar(value=True)
-            ttk.Checkbutton(dialog, text="Email", variable=email_var).pack(anchor='w', padx=20)
+            ttk.Checkbutton(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.buttons.email', default="Email"), variable=email_var).pack(anchor='w', padx=20)
 
             webhook_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(dialog, text="Webhook", variable=webhook_var).pack(anchor='w', padx=20)
+            ttk.Checkbutton(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.buttons.webhook', default="Webhook"), variable=webhook_var).pack(anchor='w', padx=20)
 
             def save_rules():
                 rules = [
@@ -98,10 +98,10 @@ class NotificationsMixin:
                 log_activity('configure', 'alert_rules', install_id,
                             details={'rules_count': len(rules)})
 
-                messagebox.showinfo(_t("common.success"), "Alert rules configured successfully!")
+                messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.notifications.dialogs.alert_rules_configured_successfully', default="Alert rules configured successfully!"))
                 dialog.destroy()
 
-            ttk.Button(dialog, text="Save Alert Rules", command=save_rules).pack(pady=20)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.buttons.save_alert_rules', default="Save Alert Rules"), command=save_rules).pack(pady=20)
 
         except Exception as e:
             logger.error(f"Error configuring alert rules: {e}")
@@ -112,7 +112,7 @@ class NotificationsMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to subscribe")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.notifications.dialogs.please_select_an_integration_to_subscribe', default="Please select an integration to subscribe"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
@@ -124,14 +124,14 @@ class NotificationsMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Subscribe to Notifications",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.subscribe_to_notifications', default="Subscribe to Notifications"),
                      style='Title.TLabel').pack(pady=10)
 
-            ttk.Label(dialog, text="Email Address:").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.email_address', default="Email Address:")).pack(anchor='w', padx=10, pady=5)
             email_var = tk.StringVar(value=f"{self.auth.current_user.get('username', 'user')}@university.edu")
             ttk.Entry(dialog, textvariable=email_var, width=40).pack(padx=10)
 
-            ttk.Label(dialog, text="Subscribe to Events:").pack(anchor='w', padx=10, pady=10)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.subscribe_to_events', default="Subscribe to Events:")).pack(anchor='w', padx=10, pady=10)
 
             event_vars = {}
             events = ['sync_complete', 'sync_failed', 'error_threshold', 'credential_expiring', 'status_change']
@@ -143,12 +143,12 @@ class NotificationsMixin:
             def subscribe():
                 email = email_var.get().strip()
                 if not email:
-                    messagebox.showwarning(_t("common.warning"), "Please enter an email address")
+                    messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.notifications.dialogs.please_enter_an_email_address', default="Please enter an email address"))
                     return
 
                 selected_events = [event for event, var in event_vars.items() if var.get()]
                 if not selected_events:
-                    messagebox.showwarning(_t("common.warning"), "Please select at least one event")
+                    messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.notifications.dialogs.please_select_at_least_one_event', default="Please select at least one event"))
                     return
 
                 subscription = {
@@ -189,7 +189,7 @@ class NotificationsMixin:
                 messagebox.showinfo(_t("common.success"), f"Subscribed {email} to {len(selected_events)} event(s)")
                 dialog.destroy()
 
-            ttk.Button(dialog, text="Subscribe", command=subscribe).pack(pady=20)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.buttons.subscribe', default="Subscribe"), command=subscribe).pack(pady=20)
 
         except Exception as e:
             logger.error(f"Error subscribing to notifications: {e}")
@@ -203,7 +203,7 @@ class NotificationsMixin:
             dialog.geometry("800x500")
             dialog.transient(self.root)
 
-            ttk.Label(dialog, text="Notification History",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.notification_history', default="Notification History"),
                      style='Title.TLabel').pack(pady=10)
 
             # History tree
@@ -255,11 +255,11 @@ class NotificationsMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Test Notification Channel",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.test_notification_channel', default="Test Notification Channel"),
                      style='Title.TLabel').pack(pady=10)
 
-            ttk.Label(dialog, text="Channel Type:").pack(anchor='w', padx=10, pady=5)
-            channel_var = tk.StringVar(value='email')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.channel_type', default="Channel Type:")).pack(anchor='w', padx=10, pady=5)
+            channel_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.notifications.values.email', default='email'))
             channel_frame = ttk.Frame(dialog)
             channel_frame.pack(fill='x', padx=10, pady=5)
 
@@ -267,14 +267,14 @@ class NotificationsMixin:
                 ttk.Radiobutton(channel_frame, text=channel.title(), variable=channel_var,
                                value=channel).pack(side='left', padx=10)
 
-            ttk.Label(dialog, text="Target (email/URL/channel):").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.target_email_url_channel', default="Target (email/URL/channel):")).pack(anchor='w', padx=10, pady=5)
             target_var = tk.StringVar(value=f"{self.auth.current_user.get('username', 'user')}@university.edu")
             ttk.Entry(dialog, textvariable=target_var, width=50).pack(padx=10)
 
-            result_frame = ttk.LabelFrame(dialog, text="Test Result", padding=10)
+            result_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.test_result', default="Test Result"), padding=10)
             result_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-            result_label = ttk.Label(result_frame, text="Click 'Send Test' to test the notification channel")
+            result_label = ttk.Label(result_frame, text=_t('gui.shell.services.integration_marketplace_gui.notifications.labels.click_send_test_to_test_the_notification_channel', default="Click 'Send Test' to test the notification channel"))
             result_label.pack(pady=20)
 
             def send_test():
@@ -282,7 +282,7 @@ class NotificationsMixin:
                 target = target_var.get().strip()
 
                 if not target:
-                    messagebox.showwarning(_t("common.warning"), "Please enter a target")
+                    messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.notifications.dialogs.please_enter_a_target', default="Please enter a target"))
                     return
 
                 # Simulate test
@@ -305,7 +305,7 @@ class NotificationsMixin:
                 log_activity('test', 'notification_channel', None,
                             details={'channel': channel, 'target': target, 'success': success})
 
-            ttk.Button(dialog, text="Send Test", command=send_test).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.notifications.buttons.send_test', default="Send Test"), command=send_test).pack(pady=10)
             ttk.Button(dialog, text=_t("common.close"), command=dialog.destroy).pack(pady=5)
 
         except Exception as e:

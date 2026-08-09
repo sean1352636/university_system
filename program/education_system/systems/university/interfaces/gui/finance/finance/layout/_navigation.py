@@ -1,5 +1,7 @@
 """Navigation and tab management mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -125,6 +127,15 @@ class NavigationMixin:
         self.create_period_close_tab()
         self.create_bank_rec_tab()
         self.create_statements_tab()
+        self.create_accounts_payable_tab()
+        self.create_purchase_orders_tab()
+        self.create_suppliers_tab()
+        self.create_cash_flow_tab()
+        self.create_tax_vat_tab()
+        self.create_fixed_assets_tab()
+        self.create_approval_inbox_tab()
+        self.create_fraud_investigations_tab()
+        self.create_close_checklist_tab()
 
         # Show default tab
         self.show_tab('dashboard')
@@ -144,6 +155,15 @@ class NavigationMixin:
             (_("finance_gui.nav.dashboard"), "dashboard", "all"),  # Available to all
             (_("finance_gui.nav.my_finances"), "my_finances", "student"),  # Students only - view own finances
             (_("finance_gui.nav.core_finance"), "core_finance", "admin_staff"),  # Admin and Staff only
+            ("Accounts Payable", "accounts_payable", "admin_staff"),
+            ("Purchase Orders", "purchase_orders", "admin_staff"),
+            ("Suppliers", "suppliers", "admin_staff"),
+            ("Cash Flow", "cash_flow", "admin_staff"),
+            ("Tax & VAT", "tax_vat", "admin_staff"),
+            ("Fixed Assets", "fixed_assets", "admin_staff"),
+            ("Approval Inbox", "approval_inbox", "admin_staff"),
+            ("Fraud Investigations", "fraud_investigations", "admin_staff"),
+            ("Close Checklist", "close_checklist", "admin_staff"),
             (_("finance_gui.nav.payments"), "payments", "all"),  # All can view payments
             (_("finance_gui.nav.payment_plans"), "payment_plans", "admin_staff"),  # Admin and Staff only
             (_("finance_gui.nav.refunds"), "refunds", "admin_staff"),  # Admin and Staff only
@@ -364,7 +384,7 @@ class NavigationMixin:
             from education_system.systems.university.domain.finance.bursary.bursary_app import _Frame as BursaryFrame
         except Exception as e:
             log.exception("Bursary import failed")
-            messagebox.showerror("Bursary Management", f"Failed to load module: {e}")
+            messagebox.showerror(_t('gui.finance.finance.layout.navigation.dialogs.bursary_management', default="Bursary Management"), f"Failed to load module: {e}")
             return
         frame = tk.Frame(self.content_frame, bg='white')
         self.tab_frames['bursary'] = frame
@@ -373,4 +393,4 @@ class NavigationMixin:
             log.info("Bursary tab embedded in Finance GUI content area")
         except Exception as e:
             log.exception("Bursary render failed")
-            messagebox.showerror("Bursary Management", f"Failed to render: {e}")
+            messagebox.showerror(_t('gui.finance.finance.layout.navigation.dialogs.bursary_management', default="Bursary Management"), f"Failed to render: {e}")

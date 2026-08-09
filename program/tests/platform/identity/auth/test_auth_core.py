@@ -153,7 +153,7 @@ class TestProvisionUser:
 
 class TestLockout:
     def test_lockout_after_max_attempts(self, auth):
-        for _ in range(MAX_LOGIN_ATTEMPTS):
+        for _ in range(MAX_LOGIN_ATTEMPTS - 1):
             with pytest.raises(AuthError, match="Invalid username or password"):
                 auth.login("staff1", "wrong")
 
@@ -161,17 +161,21 @@ class TestLockout:
             auth.login("staff1", "wrong")
 
     def test_lockout_persists_with_correct_password(self, auth):
-        for _ in range(MAX_LOGIN_ATTEMPTS):
+        for _ in range(MAX_LOGIN_ATTEMPTS - 1):
             with pytest.raises(AuthError):
                 auth.login("staff1", "wrong")
 
         with pytest.raises(AuthError, match="locked"):
+            auth.login("staff1", "wrong")
+        with pytest.raises(AuthError, match="locked"):
             auth.login("staff1", "staff1234")  # correct password, still locked
 
     def test_lockout_expires(self, auth, auth_db):
-        for _ in range(MAX_LOGIN_ATTEMPTS):
+        for _ in range(MAX_LOGIN_ATTEMPTS - 1):
             with pytest.raises(AuthError):
                 auth.login("staff1", "wrong")
+        with pytest.raises(AuthError, match="locked"):
+            auth.login("staff1", "wrong")
 
         # Manually expire the lockout
         past = (datetime.utcnow() - timedelta(minutes=LOCKOUT_DURATION_MINUTES + 1)).isoformat()

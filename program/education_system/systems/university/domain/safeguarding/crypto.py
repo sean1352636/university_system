@@ -6,7 +6,6 @@ import os
 import re
 import secrets
 import shutil
-import sqlite3
 import sys
 import tkinter as tk
 import webbrowser
@@ -54,7 +53,7 @@ def _decrypt_field(blob):
 
 
 def _ensure_dirs():
-    for d in (_SECURE_DIR, _DRAFT_DIR):
+    for d in (_SECURE_DIR, _DRAFT_DIR, os.path.dirname(_KEY_FILE)):
         os.makedirs(d, exist_ok=True)
         try:
             os.chmod(d, 0o700)

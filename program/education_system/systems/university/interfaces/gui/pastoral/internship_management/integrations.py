@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.pastoral.internship_management._imports import tk, messagebox, display_internship_menu
 
 
@@ -11,7 +13,7 @@ class IntegrationsMixin:
             # Import and run the original CLI function
             display_internship_menu()
         except Exception as e:
-            messagebox.showerror("CLI Mode Error", f"Error launching CLI mode: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.integrations.dialogs.cli_mode_error', default="CLI Mode Error"), f"Error launching CLI mode: {e}")
         finally:
             # Show the GUI window again
             self.root.deiconify()
@@ -24,7 +26,7 @@ class IntegrationsMixin:
         title_frame = tk.Frame(self.content_frame, bg='white')
         title_frame.pack(fill='x', padx=20, pady=(20, 10))
 
-        tk.Label(title_frame, text="Integration Services",
+        tk.Label(title_frame, text=_t('gui.pastoral.internship_management.integrations.labels.integration_services', default="Integration Services"),
                 font=('Arial', 18, 'bold'), bg='white', fg='#2c3e50').pack(side='left')
 
         # Create main content frame
@@ -32,59 +34,59 @@ class IntegrationsMixin:
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
         # Grade Management Integration
-        grade_frame = tk.LabelFrame(main_frame, text="Grade Management",
+        grade_frame = tk.LabelFrame(main_frame, text=_t('gui.pastoral.internship_management.integrations.labels.grade_management', default="Grade Management"),
                                    font=('Arial', 14, 'bold'), bg='white', fg='#2c3e50',
                                    padx=10, pady=10)
         grade_frame.pack(fill='x', pady=(0, 15))
 
-        tk.Label(grade_frame, text="Check student grades and eligibility for internships",
+        tk.Label(grade_frame, text=_t('gui.pastoral.internship_management.integrations.labels.check_student_grades_and_eligibility_for_internships', default="Check student grades and eligibility for internships"),
                 font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', pady=(0, 10))
 
         grade_btn_frame = tk.Frame(grade_frame, bg='white')
         grade_btn_frame.pack(anchor='w')
 
         if self.auth.check_permission('view_grades') or self.auth.check_permission('view_student_grades'):
-            tk.Button(grade_btn_frame, text="View Student Grades",
+            tk.Button(grade_btn_frame, text=_t('gui.pastoral.internship_management.integrations.buttons.view_student_grades', default="View Student Grades"),
                      command=self.open_grade_gui,
                      bg='#3498db', fg='white', font=('Arial', 10),
                      padx=15, pady=8, relief='flat').pack(side='left', padx=(0, 10))
 
         if self.auth.current_user.get('role') == 'student':
-            tk.Button(grade_btn_frame, text="Check My Eligibility",
+            tk.Button(grade_btn_frame, text=_t('gui.pastoral.internship_management.integrations.buttons.check_my_eligibility', default="Check My Eligibility"),
                      command=self.show_my_eligibility,
                      bg='#9b59b6', fg='white', font=('Arial', 10),
                      padx=15, pady=8, relief='flat').pack(side='left', padx=(0, 10))
 
         # Email Integration
-        email_frame = tk.LabelFrame(main_frame, text="Email Management",
+        email_frame = tk.LabelFrame(main_frame, text=_t('gui.pastoral.internship_management.integrations.labels.email_management', default="Email Management"),
                                    font=('Arial', 14, 'bold'), bg='white', fg='#2c3e50',
                                    padx=10, pady=10)
         email_frame.pack(fill='x', pady=(0, 15))
 
-        tk.Label(email_frame, text="Send notifications and manage email communications",
+        tk.Label(email_frame, text=_t('gui.pastoral.internship_management.integrations.labels.send_notifications_and_manage_email_communications', default="Send notifications and manage email communications"),
                 font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', pady=(0, 10))
 
         email_btn_frame = tk.Frame(email_frame, bg='white')
         email_btn_frame.pack(anchor='w')
 
-        tk.Button(email_btn_frame, text="Open Email Manager",
+        tk.Button(email_btn_frame, text=_t('gui.pastoral.internship_management.integrations.buttons.open_email_manager', default="Open Email Manager"),
                  command=self.open_email_manager,
                  bg='#e74c3c', fg='white', font=('Arial', 10),
                  padx=15, pady=8, relief='flat').pack(side='left', padx=(0, 10))
 
         # Finance Integration
-        finance_frame = tk.LabelFrame(main_frame, text="Finance Integration",
+        finance_frame = tk.LabelFrame(main_frame, text=_t('gui.pastoral.internship_management.integrations.labels.finance_integration', default="Finance Integration"),
                                      font=('Arial', 14, 'bold'), bg='white', fg='#2c3e50',
                                      padx=10, pady=10)
         finance_frame.pack(fill='x', pady=(0, 15))
 
-        tk.Label(finance_frame, text="Access financial services and payment systems",
+        tk.Label(finance_frame, text=_t('gui.pastoral.internship_management.integrations.labels.access_financial_services_and_payment_systems', default="Access financial services and payment systems"),
                 font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w', pady=(0, 10))
 
         finance_btn_frame = tk.Frame(finance_frame, bg='white')
         finance_btn_frame.pack(anchor='w')
 
-        tk.Button(finance_btn_frame, text="Open Finance System",
+        tk.Button(finance_btn_frame, text=_t('gui.pastoral.internship_management.integrations.buttons.open_finance_system', default="Open Finance System"),
                  command=self.open_finance_gui,
                  bg='#27ae60', fg='white', font=('Arial', 10),
                  padx=15, pady=8, relief='flat').pack(side='left', padx=(0, 10))
@@ -94,13 +96,13 @@ class IntegrationsMixin:
         try:
             from education_system.systems.university.interfaces.gui.shell.email.email_gui import EmailManagerGUI
             email_window = tk.Toplevel(self.root)
-            email_window.title("Email Manager")
+            email_window.title(_t('gui.pastoral.internship_management.integrations.windows.email_manager', default="Email Manager"))
             email_window.geometry("800x600")
             email_gui = EmailManagerGUI(email_window, auth=self.auth)
         except ImportError:
-            messagebox.showerror("Error", "Email Manager GUI not available")
+            messagebox.showerror(_t('gui.pastoral.internship_management.integrations.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.integrations.dialogs.email_manager_gui_not_available', default="Email Manager GUI not available"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error opening Email Manager: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.integrations.dialogs.error', default="Error"), f"Error opening Email Manager: {e}")
 
     def return_to_main_menu(self):
         """Return to the main menu"""
@@ -126,10 +128,10 @@ class IntegrationsMixin:
         try:
             from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
             finance_window = tk.Toplevel(self.root)
-            finance_window.title("Finance Management")
+            finance_window.title(_t('gui.pastoral.internship_management.integrations.windows.finance_management', default="Finance Management"))
             finance_window.geometry("1000x700")
             finance_gui = FinanceGUI(finance_window, auth=self.auth)
         except ImportError:
-            messagebox.showerror("Error", "Finance GUI not available")
+            messagebox.showerror(_t('gui.pastoral.internship_management.integrations.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.integrations.dialogs.finance_gui_not_available', default="Finance GUI not available"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error opening Finance GUI: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.integrations.dialogs.error', default="Error"), f"Error opening Finance GUI: {e}")

@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH, REPORTS_DIR
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH, UNIVERSITY_REPORTS_DIR
 from education_system.systems.university.infrastructure.i18n import get_text
 import logging
 import time

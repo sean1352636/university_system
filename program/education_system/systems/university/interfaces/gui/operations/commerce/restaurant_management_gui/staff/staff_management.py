@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -72,7 +74,7 @@ def view_staff_gui(self):
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.database_connection_failed', default="Database connection failed"))
             return
 
         cursor = conn.cursor()
@@ -95,56 +97,56 @@ def view_staff_gui(self):
             ))
 
         conn.close()
-        messagebox.showinfo("Success", f"Loaded {len(staff)} staff members")
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.success', default="Success"), f"Loaded {len(staff)} staff members")
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to load staff: {str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.error', default="Error"), f"Failed to load staff: {str(e)}")
 
 def add_staff_dialog(self):
     """Show dialog to add new staff"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Add Staff Member")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.windows.add_staff_member', default="Add Staff Member"))
     dialog.geometry("500x500")
     dialog.transient(self.root)
     dialog.grab_set()
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Add New Staff Member", font=('Arial', 12, 'bold')).pack(pady=10)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.labels.add_new_staff_member', default="Add New Staff Member"), font=('Arial', 12, 'bold')).pack(pady=10)
     # Form
     form_frame = ttk.Frame(main_frame)
     form_frame.pack(fill='both', expand=True, pady=10)
     fields = {}
     row = 0
-    ttk.Label(form_frame, text="Name:*").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.labels.name', default="Name:*")).grid(row=row, column=0, sticky='w', pady=5)
     fields['name'] = ttk.Entry(form_frame, width=30)
     fields['name'].grid(row=row, column=1, pady=5, padx=10)
     row += 1
-    ttk.Label(form_frame, text="Role:*").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.labels.role', default="Role:*")).grid(row=row, column=0, sticky='w', pady=5)
     fields['role'] = ttk.Combobox(form_frame, values=['Waiter', 'Chef', 'Manager', 'Bartender', 'Host', 'Cleaner'], width=28)
     fields['role'].grid(row=row, column=1, pady=5, padx=10)
     fields['role'].current(0)
     row += 1
-    ttk.Label(form_frame, text="Hourly Rate (£):*").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.labels.hourly_rate', default="Hourly Rate (£):*")).grid(row=row, column=0, sticky='w', pady=5)
     fields['hourly_rate'] = ttk.Entry(form_frame, width=30)
     fields['hourly_rate'].grid(row=row, column=1, pady=5, padx=10)
     fields['hourly_rate'].insert(0, "10.00")
     row += 1
-    ttk.Label(form_frame, text="Email:").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.labels.email', default="Email:")).grid(row=row, column=0, sticky='w', pady=5)
     fields['email'] = ttk.Entry(form_frame, width=30)
     fields['email'].grid(row=row, column=1, pady=5, padx=10)
     row += 1
-    ttk.Label(form_frame, text="Phone:").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.labels.phone', default="Phone:")).grid(row=row, column=0, sticky='w', pady=5)
     fields['phone'] = ttk.Entry(form_frame, width=30)
     fields['phone'].grid(row=row, column=1, pady=5, padx=10)
     row += 1
-    ttk.Label(form_frame, text="Status:").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.labels.status', default="Status:")).grid(row=row, column=0, sticky='w', pady=5)
     fields['status'] = ttk.Combobox(form_frame, values=['Active', 'On Leave', 'Inactive'], width=28)
     fields['status'].grid(row=row, column=1, pady=5, padx=10)
     fields['status'].current(0)
     def save_staff():
         name = fields['name'].get().strip()
         if not name:
-            messagebox.showerror("Error", "Name is required")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.name_is_required', default="Name is required"))
             return
         try:
             conn = get_db_connection()
@@ -163,22 +165,22 @@ def add_staff_dialog(self):
             ))
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", f"Staff member {name} added successfully")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.success', default="Success"), f"Staff member {name} added successfully")
             self.view_staff_gui()
             dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to add staff member: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.error', default="Error"), f"Failed to add staff member: {e}")
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(pady=10)
-    ttk.Button(buttons_frame, text="Save", command=save_staff).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.buttons.save', default="Save"), command=save_staff).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
 
 def show_staff_analytics(self):
     """Show staff analytics"""
     try:
         analytics_window = tk.Toplevel(self.root)
-        analytics_window.title("Staff Analytics")
+        analytics_window.title(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.windows.staff_analytics', default="Staff Analytics"))
         analytics_window.geometry("800x600")
 
         text_area = ScrolledText(analytics_window, height=30, width=80)
@@ -189,7 +191,7 @@ def show_staff_analytics(self):
         text_area.config(state='disabled')
 
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate analytics: {str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.error', default="Error"), f"Failed to generate analytics: {str(e)}")
 
 def generate_staff_analytics(self):
     """Generate staff analytics text"""
@@ -230,7 +232,7 @@ def view_schedule_conflicts(self):
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Find overlapping shifts
@@ -272,12 +274,12 @@ def view_schedule_conflicts(self):
         conn.close()
         # Display conflicts
         conflict_dialog = tk.Toplevel(self.root)
-        conflict_dialog.title("Schedule Conflicts")
+        conflict_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.windows.schedule_conflicts', default="Schedule Conflicts"))
         conflict_dialog.geometry("900x700")
         conflict_dialog.transient(self.root)
         main_frame = ttk.Frame(conflict_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Schedule Conflicts & Issues",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.labels.schedule_conflicts_issues', default="Schedule Conflicts & Issues"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         report_text = ScrolledText(main_frame, height=35, width=100)
         report_text.pack(fill='both', expand=True)
@@ -332,10 +334,10 @@ def view_schedule_conflicts(self):
             report += "• Continue monitoring for future conflicts\n"
         report_text.insert(1.0, report)
         report_text.config(state='disabled')
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.buttons.close', default="Close"),
                   command=conflict_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to check schedule conflicts:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.error', default="Error"), f"Failed to check schedule conflicts:\n{str(e)}")
 
 def manage_schedules_dialog(self):
     """Launch the Shifts Management & Scheduling GUI"""
@@ -350,7 +352,7 @@ def manage_schedules_dialog(self):
 
         # Create and show the Shifts Management GUI
         shifts_window = tk.Toplevel(self.root)
-        shifts_window.title("Shifts Management & Payroll")
+        shifts_window.title(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.windows.shifts_management_payroll', default="Shifts Management & Payroll"))
         shifts_window.geometry("1400x800")
         shifts_window.transient(self.root)
 
@@ -358,7 +360,7 @@ def manage_schedules_dialog(self):
         ShiftsManagementGUI(shifts_window)
 
     except ImportError as e:
-        messagebox.showerror("Error", f"Failed to load Shifts Management module:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.error', default="Error"), f"Failed to load Shifts Management module:\n{str(e)}")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to launch Shifts Management:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.staff.staff_management.dialogs.error', default="Error"), f"Failed to launch Shifts Management:\n{str(e)}")
 

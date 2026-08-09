@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>University application and enrolment</title>
+  <link rel="stylesheet" href="/static/css/journey.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <a class="brand" href="/portal">University portal</a>
+    <p id="session-status" role="status">Checking your session…</p>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="Application journey">
+      <ol class="steps" id="journey-navigation">
+        <li><a href="#application">Apply</a></li>
+        <li><a href="#status">Status and offer</a></li>
+        <li><a href="#evidence">Checks and evidence</a></li>
+        <li><a href="#registration">Registration</a></li>
+        <li><a href="#modules">Module selection</a></li>
+        <li><a href="#study">Study</a></li>
+        <li><a href="#finance">Fees</a></li>
+        <li><a href="#support">Support</a></li>
+        <li><a href="#graduation">Graduation progress</a></li>
+        <li class="staff-only"><a href="#staff-work">Staff work queue</a></li>
+        <li class="staff-only"><a href="#operations">Event operations</a></li>
+      </ol>
+    </nav>
+
+    <main id="main" tabindex="-1">
+      <div id="page-message" class="message" role="alert" aria-live="assertive"
+           tabindex="-1" hidden></div>
+
+      <section id="application" aria-labelledby="application-heading">
+        <h1 id="application-heading">Apply to the university</h1>
+        <p>Create an applicant record first. Becoming an applicant does not
+          create an active student account.</p>
+        <form id="application-form">
+          <fieldset>
+            <legend>Your details</legend>
+            <div class="grid">
+              <label>First name
+                <input name="first_name" autocomplete="given-name" required>
+              </label>
+              <label>Last name
+                <input name="last_name" autocomplete="family-name" required>
+              </label>
+              <label>Email
+                <input name="email" type="email" autocomplete="email" required>
+              </label>
+              <label>Date of birth
+                <input name="date_of_birth" type="date" required>
+              </label>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Course choice</legend>
+            <div class="grid">
+              <label>Programme code
+                <input name="programme_code" required>
+              </label>
+              <label>Programme name
+                <input name="programme_name" required>
+              </label>
+              <label>Entry year
+                <input name="academic_year" placeholder="2026/27"
+                       pattern="[0-9]{4}/[0-9]{2}" required>
+              </label>
+              <label>Entry semester
+                <select name="semester" required>
+                  <option value="">Choose</option>
+                  <option value="autumn">Autumn</option>
+                  <option value="spring">Spring</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+          <button type="submit">Submit application</button>
+        </form>
+      </section>
+
+      <section id="status" aria-labelledby="status-heading">
+        <h2 id="status-heading">Application status and offer</h2>
+        <form id="load-application-form" class="inline-form">
+          <label>Application number
+            <input id="application-id" name="application_id" inputmode="numeric"
+                   required>
+          </label>
+          <button type="submit">Load application</button>
+        </form>
+        <div id="application-summary" aria-live="polite"></div>
+        <button id="accept-offer" type="button" disabled>Accept selected offer</button>
+      </section>
+
+      <section id="evidence" aria-labelledby="evidence-heading">
+        <h2 id="evidence-heading">Documents, conditions and right to study</h2>
+        <p>Outstanding requirements and offer conditions appear here. Uploaded
+          evidence is checked by authorized admissions staff.</p>
+        <div class="columns">
+          <div>
+            <h3>Required checks</h3>
+            <ul id="requirement-list"><li>Load an application to continue.</li></ul>
+          </div>
+          <div>
+            <h3>Offer conditions</h3>
+            <ul id="condition-list"><li>Load an application to continue.</li></ul>
+          </div>
+        </div>
+        <form id="evidence-form">
+          <label>Evidence reference
+            <input name="evidence_reference" required
+                   aria-describedby="evidence-help">
+          </label>
+          <p id="evidence-help" class="hint">Enter the secure document-service
+            reference. Do not enter passport or health information here.</p>
+          <button type="submit">Submit evidence reference</button>
+        </form>
+      </section>
+
+      <section id="registration" aria-labelledby="registration-heading">
+        <h2 id="registration-heading">Registration</h2>
+        <p id="readiness-status" role="status">Load an application to check readiness.</p>
+        <form id="registration-form">
+          <div class="grid">
+            <label>Academic year
+              <input name="academic_year" pattern="[0-9]{4}/[0-9]{2}" required>
+            </label>
+            <label>Mode of study
+              <select name="mode_of_study" required>
+                <option value="full-time">Full-time</option>
+                <option value="part-time">Part-time</option>
+              </select>
+            </label>
+            <label>Campus
+              <input name="campus_code" value="MAIN" required>
+            </label>
+          </div>
+          <label class="check">
+            <input name="terms_accepted" type="checkbox" required>
+            I confirm that my details are accurate and accept the registration terms.
+          </label>
+          <button type="submit" disabled id="register-button">Complete registration</button>
+        </form>
+      </section>
+
+      <section id="modules" aria-labelledby="modules-heading">
+        <h2 id="modules-heading">Select modules</h2>
+        <form id="module-form">
+          <label>Module code
+            <input name="module_code" required>
+          </label>
+          <button type="submit">Add module selection</button>
+        </form>
+        <ul id="module-list"><li>No modules selected.</li></ul>
+      </section>
+
+      <section id="study" aria-labelledby="study-heading">
+        <h2 id="study-heading">Timetable, deadlines and feedback</h2>
+        <div class="card-grid">
+          <article><h3>Timetable and deadlines</h3><p>No sessions published.</p>
+            <a href="/portal/student/timetable">Open timetable and deadlines</a></article>
+          <article><h3>Submissions and feedback</h3><p>No feedback available.</p>
+            <a href="/portal/student/submissions">Open submissions and feedback</a></article>
+          <article><h3>Study progress</h3><p>Track the tasks needed for your award.</p>
+            <a href="/portal/student/graduation">Open graduation progress</a></article>
+        </div>
+      </section>
+
+      <section id="finance" aria-labelledby="finance-heading">
+        <h2 id="finance-heading">Fees and payments</h2>
+        <div id="finance-content">No open charges.</div>
+        <a class="button-link" href="/portal/student/fees">View fees and pay securely</a>
+      </section>
+
+      <section id="support" aria-labelledby="support-heading">
+        <h2 id="support-heading">Request support</h2>
+        <p><a href="/portal/student/support">Open the full support request page</a></p>
+        <form id="support-form">
+          <label>Support area
+            <select name="category" required>
+              <option value="">Choose</option>
+              <option value="academic">Academic</option>
+              <option value="finance">Finance</option>
+              <option value="wellbeing">Wellbeing</option>
+              <option value="disability">Disability support</option>
+            </select>
+          </label>
+          <label>How can we help?
+            <textarea name="description" rows="5" required></textarea>
+          </label>
+          <button type="submit">Send support request</button>
+        </form>
+      </section>
+
+      <section id="graduation" aria-labelledby="graduation-heading">
+        <h2 id="graduation-heading">Graduation progress</h2>
+        <div id="graduation-content">Award progress becomes available after registration.</div>
+      </section>
+
+      <section id="staff-work" class="staff-only" aria-labelledby="staff-heading">
+        <h2 id="staff-heading">Admissions staff work queue</h2>
+        <form id="work-filter-form" class="inline-form">
+          <label>Status
+            <select name="status">
+              <option value="">All active</option>
+              <option value="documents_pending">Documents pending</option>
+              <option value="under_review">Under review</option>
+              <option value="decision_pending">Decision pending</option>
+              <option value="ready_to_enrol">Ready to enrol</option>
+            </select>
+          </label>
+          <button type="submit">Refresh queue</button>
+        </form>
+        <div class="table-scroll" tabindex="0" aria-label="Scrollable admissions queue">
+          <table>
+            <caption>Applications requiring staff action</caption>
+            <thead><tr><th scope="col">Application</th><th scope="col">Applicant</th>
+              <th scope="col">Status</th><th scope="col">Action</th></tr></thead>
+            <tbody id="work-queue"><tr><td colspan="4">No applications loaded.</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="operations" class="staff-only" aria-labelledby="operations-heading">
+        <h2 id="operations-heading">Failed event deliveries</h2>
+        <button type="button" id="refresh-deliveries">Refresh deliveries</button>
+        <div id="delivery-list" aria-live="polite">No failures loaded.</div>
+      </section>
+    </main>
+  </div>
+  <script src="/static/js/journey.js"></script>
+</body>
+</html>

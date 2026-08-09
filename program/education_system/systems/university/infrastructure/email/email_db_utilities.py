@@ -27,7 +27,7 @@ from education_system.systems.university.infrastructure.database.constants impor
     RETRY_DELAY,
 )
 from education_system.systems.university.infrastructure.logs import handle_exception, log_event, logger
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.sql_safety import (
     validate_column_definition,
     safe_alter_table_add_column,
@@ -36,8 +36,8 @@ from education_system.systems.university.infrastructure.sql_safety import (
 
 # Core path configuration shared with the email system
 MAIN_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = paths.PROJECT_ROOT
-DB_PATH = os.fspath(paths.DEFAULT_DB_PATH)
+PROJECT_ROOT = paths.UNIVERSITY_PROJECT_ROOT
+DB_PATH = os.fspath(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
 _DB_READY = False
 
@@ -428,7 +428,7 @@ def _get_or_create_sender_id(cursor, sender_email, sender_name, current_time):
 def ensure_db_directory():
     """Ensure the database directory exists"""
     import os
-    db_dir = os.fspath(paths.DB_DIR)
+    db_dir = os.fspath(paths.UNIVERSITY_DB_DIR)
     if not os.path.exists(db_dir):
         os.makedirs(db_dir, exist_ok=True)
         log_event('info', f"Created database directory: {db_dir}")

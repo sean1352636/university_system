@@ -20,7 +20,7 @@ except ImportError:
     _t = lambda key, **kwargs: key if "default" not in kwargs else kwargs.get("default")
 
 try:
-    from education_system.systems.university.infrastructure import paths
+    from education_system import paths
 except ImportError:
     paths = None
 
@@ -33,7 +33,7 @@ class SettingsManager:
     def system_settings(self):
         """Show system settings dialog"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("System Settings")
+        dialog.title(_t('gui.shell.document_manager.settings.windows.system_settings', default="System Settings"))
         dialog.geometry("850x700")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -65,17 +65,17 @@ class SettingsManager:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Save Settings", command=self.save_settings).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Reset to Defaults", command=self.reset_settings).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.settings.buttons.save_settings', default="Save Settings"), command=self.save_settings).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.settings.buttons.reset_to_defaults', default="Reset to Defaults"), command=self.reset_settings).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.settings.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
     def create_doc_types_tab(self, notebook):
         """Create document types settings tab"""
         doc_types_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(doc_types_frame, text="Document Types")
+        notebook.add(doc_types_frame, text=_t('gui.shell.document_manager.settings.tabs.document_types', default="Document Types"))
 
         # Title
-        ttk.Label(doc_types_frame, text="Document Type Management", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(doc_types_frame, text=_t('gui.shell.document_manager.settings.labels.document_type_management', default="Document Type Management"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Document types list
         list_frame = ttk.Frame(doc_types_frame)
@@ -104,62 +104,62 @@ class SettingsManager:
         buttons_frame = ttk.Frame(doc_types_frame)
         buttons_frame.pack(fill='x')
 
-        ttk.Button(buttons_frame, text="\u2795 Add Type", command=self.gui.add_document_type).pack(side='left', padx=5)
-        ttk.Button(buttons_frame, text="\u270f\ufe0f Edit Type", command=self.gui.edit_document_type).pack(side='left', padx=5)
-        ttk.Button(buttons_frame, text="\U0001f5d1\ufe0f Delete Type", command=self.gui.delete_document_type).pack(side='left', padx=5)
-        ttk.Button(buttons_frame, text="\U0001f504 Refresh", command=self.gui.load_document_types).pack(side='left', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.settings.buttons.add_type', default="\u2795 Add Type"), command=self.gui.add_document_type).pack(side='left', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.settings.buttons.edit_type', default="\u270f\ufe0f Edit Type"), command=self.gui.edit_document_type).pack(side='left', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.settings.buttons.delete_type', default="\U0001f5d1\ufe0f Delete Type"), command=self.gui.delete_document_type).pack(side='left', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.settings.buttons.refresh', default="\U0001f504 Refresh"), command=self.gui.load_document_types).pack(side='left', padx=5)
 
     def create_system_settings_tab(self, notebook):
         """Create system settings tab"""
         settings_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(settings_frame, text="System Settings")
+        notebook.add(settings_frame, text=_t('gui.shell.document_manager.settings.tabs.system_settings', default="System Settings"))
 
         # Email settings
-        email_frame = ttk.LabelFrame(settings_frame, text="Email Configuration", padding=10)
+        email_frame = ttk.LabelFrame(settings_frame, text=_t('gui.shell.document_manager.settings.labels.email_configuration', default="Email Configuration"), padding=10)
         email_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(email_frame, text="SMTP Server:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(email_frame, text=_t('gui.shell.document_manager.settings.labels.smtp_server', default="SMTP Server:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.gui.smtp_server = tk.Entry(email_frame, width=30)
         self.gui.smtp_server.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-        ttk.Label(email_frame, text="SMTP Port:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(email_frame, text=_t('gui.shell.document_manager.settings.labels.smtp_port', default="SMTP Port:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.gui.smtp_port = tk.Entry(email_frame, width=30)
         self.gui.smtp_port.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
-        ttk.Label(email_frame, text="Email Username:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(email_frame, text=_t('gui.shell.document_manager.settings.labels.email_username', default="Email Username:")).grid(row=2, column=0, sticky='w', padx=5, pady=5)
         self.gui.email_username = tk.Entry(email_frame, width=30)
         self.gui.email_username.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
 
-        ttk.Label(email_frame, text="Email Password:").grid(row=3, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(email_frame, text=_t('gui.shell.document_manager.settings.labels.email_password', default="Email Password:")).grid(row=3, column=0, sticky='w', padx=5, pady=5)
         self.gui.email_password = tk.Entry(email_frame, width=30, show='*')
         self.gui.email_password.grid(row=3, column=1, padx=5, pady=5, sticky='ew')
 
         email_frame.grid_columnconfigure(1, weight=1)
 
         # File settings
-        file_frame = ttk.LabelFrame(settings_frame, text="File Settings", padding=10)
+        file_frame = ttk.LabelFrame(settings_frame, text=_t('gui.shell.document_manager.settings.labels.file_settings', default="File Settings"), padding=10)
         file_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(file_frame, text="Max File Size (MB):").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(file_frame, text=_t('gui.shell.document_manager.settings.labels.max_file_size_mb', default="Max File Size (MB):")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.gui.max_file_size = tk.Entry(file_frame, width=30)
         self.gui.max_file_size.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-        ttk.Label(file_frame, text="Document Retention (Years):").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(file_frame, text=_t('gui.shell.document_manager.settings.labels.document_retention_years', default="Document Retention (Years):")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.gui.doc_retention = tk.Entry(file_frame, width=30)
         self.gui.doc_retention.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
         file_frame.grid_columnconfigure(1, weight=1)
 
         # Notification settings
-        notif_frame = ttk.LabelFrame(settings_frame, text="Notification Settings", padding=10)
+        notif_frame = ttk.LabelFrame(settings_frame, text=_t('gui.shell.document_manager.settings.labels.notification_settings', default="Notification Settings"), padding=10)
         notif_frame.pack(fill='x')
 
         self.gui.email_notifications_enabled = tk.BooleanVar()
-        ttk.Checkbutton(notif_frame, text="Enable Email Notifications",
+        ttk.Checkbutton(notif_frame, text=_t('gui.shell.document_manager.settings.buttons.enable_email_notifications', default="Enable Email Notifications"),
                        variable=self.gui.email_notifications_enabled).pack(anchor='w', pady=5)
 
         self.gui.auto_backup_enabled = tk.BooleanVar()
-        ttk.Checkbutton(notif_frame, text="Enable Automatic Backups",
+        ttk.Checkbutton(notif_frame, text=_t('gui.shell.document_manager.settings.buttons.enable_automatic_backups', default="Enable Automatic Backups"),
                        variable=self.gui.auto_backup_enabled).pack(anchor='w', pady=5)
 
         # Load current settings
@@ -168,9 +168,9 @@ class SettingsManager:
     def create_user_management_tab(self, notebook):
         """Create user management tab"""
         users_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(users_frame, text="Users")
+        notebook.add(users_frame, text=_t('gui.shell.document_manager.settings.tabs.users', default="Users"))
 
-        ttk.Label(users_frame, text="User Management", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(users_frame, text=_t('gui.shell.document_manager.settings.labels.user_management', default="User Management"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Users list
         users_list_frame = ttk.Frame(users_frame)
@@ -196,40 +196,40 @@ class SettingsManager:
         user_buttons_frame = ttk.Frame(users_frame)
         user_buttons_frame.pack(fill='x')
 
-        ttk.Button(user_buttons_frame, text="\u2795 Add User", command=self.gui.add_user).pack(side='left', padx=5)
-        ttk.Button(user_buttons_frame, text="\u270f\ufe0f Edit User", command=self.gui.edit_user).pack(side='left', padx=5)
-        ttk.Button(user_buttons_frame, text="\U0001f512 Reset Password", command=self.gui.reset_user_password).pack(side='left', padx=5)
-        ttk.Button(user_buttons_frame, text="\u274c Deactivate", command=self.gui.deactivate_user).pack(side='left', padx=5)
+        ttk.Button(user_buttons_frame, text=_t('gui.shell.document_manager.settings.buttons.add_user', default="\u2795 Add User"), command=self.gui.add_user).pack(side='left', padx=5)
+        ttk.Button(user_buttons_frame, text=_t('gui.shell.document_manager.settings.buttons.edit_user', default="\u270f\ufe0f Edit User"), command=self.gui.edit_user).pack(side='left', padx=5)
+        ttk.Button(user_buttons_frame, text=_t('gui.shell.document_manager.settings.buttons.reset_password', default="\U0001f512 Reset Password"), command=self.gui.reset_user_password).pack(side='left', padx=5)
+        ttk.Button(user_buttons_frame, text=_t('gui.shell.document_manager.settings.buttons.deactivate', default="\u274c Deactivate"), command=self.gui.deactivate_user).pack(side='left', padx=5)
 
     def create_backup_settings_tab(self, notebook):
         """Create backup settings tab"""
         backup_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(backup_frame, text="Backup")
+        notebook.add(backup_frame, text=_t('gui.shell.document_manager.settings.tabs.backup', default="Backup"))
 
-        ttk.Label(backup_frame, text="Backup & Recovery", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(backup_frame, text=_t('gui.shell.document_manager.settings.labels.backup_recovery', default="Backup & Recovery"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Backup settings
-        backup_settings_frame = ttk.LabelFrame(backup_frame, text="Backup Settings", padding=10)
+        backup_settings_frame = ttk.LabelFrame(backup_frame, text=_t('gui.shell.document_manager.settings.labels.backup_settings', default="Backup Settings"), padding=10)
         backup_settings_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(backup_settings_frame, text="Backup Location:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(backup_settings_frame, text=_t('gui.shell.document_manager.settings.labels.backup_location', default="Backup Location:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.gui.backup_location = tk.Entry(backup_settings_frame, width=40)
         self.gui.backup_location.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-        ttk.Button(backup_settings_frame, text="Browse...", command=self.gui.browse_backup_location).grid(row=0, column=2, padx=5)
+        ttk.Button(backup_settings_frame, text=_t('gui.shell.document_manager.settings.buttons.browse', default="Browse..."), command=self.gui.browse_backup_location).grid(row=0, column=2, padx=5)
 
-        ttk.Label(backup_settings_frame, text="Backup Frequency (Days):").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(backup_settings_frame, text=_t('gui.shell.document_manager.settings.labels.backup_frequency_days', default="Backup Frequency (Days):")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.gui.backup_frequency = tk.Entry(backup_settings_frame, width=40)
         self.gui.backup_frequency.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
         backup_settings_frame.grid_columnconfigure(1, weight=1)
 
         # Backup actions
-        backup_actions_frame = ttk.LabelFrame(backup_frame, text="Backup Actions", padding=10)
+        backup_actions_frame = ttk.LabelFrame(backup_frame, text=_t('gui.shell.document_manager.settings.labels.backup_actions', default="Backup Actions"), padding=10)
         backup_actions_frame.pack(fill='x')
 
-        ttk.Button(backup_actions_frame, text="\U0001f5c2\ufe0f Create Backup Now", command=self.gui.create_backup_now).pack(side='left', padx=5, pady=5)
-        ttk.Button(backup_actions_frame, text="\U0001f4c1 View Backups", command=self.gui.view_backups).pack(side='left', padx=5, pady=5)
-        ttk.Button(backup_actions_frame, text="\U0001f504 Restore from Backup", command=self.gui.restore_backup).pack(side='left', padx=5, pady=5)
+        ttk.Button(backup_actions_frame, text=_t('gui.shell.document_manager.settings.buttons.create_backup_now', default="\U0001f5c2\ufe0f Create Backup Now"), command=self.gui.create_backup_now).pack(side='left', padx=5, pady=5)
+        ttk.Button(backup_actions_frame, text=_t('gui.shell.document_manager.settings.buttons.view_backups', default="\U0001f4c1 View Backups"), command=self.gui.view_backups).pack(side='left', padx=5, pady=5)
+        ttk.Button(backup_actions_frame, text=_t('gui.shell.document_manager.settings.buttons.restore_from_backup', default="\U0001f504 Restore from Backup"), command=self.gui.restore_backup).pack(side='left', padx=5, pady=5)
 
     def load_system_settings(self):
         """Load current system settings"""
@@ -242,13 +242,13 @@ class SettingsManager:
 
     def save_settings(self):
         """Save system settings"""
-        messagebox.showinfo("Settings", "Settings saved successfully!")
+        messagebox.showinfo(_t('gui.shell.document_manager.settings.dialogs.settings', default="Settings"), _t('gui.shell.document_manager.settings.dialogs.settings_saved_successfully', default="Settings saved successfully!"))
 
     def reset_settings(self):
         """Reset settings to defaults"""
-        if messagebox.askyesno("Reset Settings", "Are you sure you want to reset all settings to defaults?"):
+        if messagebox.askyesno(_t('gui.shell.document_manager.settings.dialogs.reset_settings', default="Reset Settings"), _t('gui.shell.document_manager.settings.dialogs.are_you_sure_you_want_to_reset_all_settings_to_defaults', default="Are you sure you want to reset all settings to defaults?")):
             self.load_system_settings()
-            messagebox.showinfo("Settings", "Settings reset to defaults!")
+            messagebox.showinfo(_t('gui.shell.document_manager.settings.dialogs.settings', default="Settings"), _t('gui.shell.document_manager.settings.dialogs.settings_reset_to_defaults', default="Settings reset to defaults!"))
 
     def set_course_requirements(self):
         """
@@ -256,7 +256,7 @@ class SettingsManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Set Course Requirements")
+            dialog.title(_t('gui.shell.document_manager.settings.windows.set_course_requirements', default="Set Course Requirements"))
             dialog.geometry("900x700")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -265,28 +265,28 @@ class SettingsManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Set Course Document Requirements",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.settings.labels.set_course_document_requirements', default="Set Course Document Requirements"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Course selection
-            course_frame = ttk.LabelFrame(main_frame, text="Course/Program Information", padding=10)
+            course_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.course_program_information', default="Course/Program Information"), padding=10)
             course_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(course_frame, text="Course Code:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(course_frame, text=_t('gui.shell.document_manager.settings.labels.course_code', default="Course Code:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
             course_code = tk.StringVar()
             ttk.Entry(course_frame, textvariable=course_code, width=20).grid(row=0, column=1, padx=5, pady=5, sticky='w')
 
-            ttk.Label(course_frame, text="Program:").grid(row=0, column=2, sticky='w', padx=5, pady=5)
+            ttk.Label(course_frame, text=_t('gui.shell.document_manager.settings.labels.program', default="Program:")).grid(row=0, column=2, sticky='w', padx=5, pady=5)
             program = tk.StringVar()
             ttk.Entry(course_frame, textvariable=program, width=30).grid(row=0, column=3, padx=5, pady=5, sticky='w')
 
-            ttk.Label(course_frame, text="Year:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
-            year = tk.StringVar(value="All")
+            ttk.Label(course_frame, text=_t('gui.shell.document_manager.settings.labels.year', default="Year:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            year = tk.StringVar(value=_t('gui.shell.document_manager.settings.values.all', default="All"))
             year_combo = ttk.Combobox(course_frame, textvariable=year, values=['All', '1', '2', '3', '4'], width=17, state='readonly')
             year_combo.grid(row=1, column=1, padx=5, pady=5, sticky='w')
 
             # Required documents
-            docs_frame = ttk.LabelFrame(main_frame, text="Required Documents", padding=10)
+            docs_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.required_documents', default="Required Documents"), padding=10)
             docs_frame.pack(fill='both', expand=True, pady=(0, 15))
 
             # Document list
@@ -335,7 +335,7 @@ class SettingsManager:
             deadline_frame = ttk.Frame(docs_frame)
             deadline_frame.pack(fill='x', pady=(10, 0))
 
-            ttk.Label(deadline_frame, text="Set deadline (days) for selected:").pack(side='left', padx=5)
+            ttk.Label(deadline_frame, text=_t('gui.shell.document_manager.settings.labels.set_deadline_days_for_selected', default="Set deadline (days) for selected:")).pack(side='left', padx=5)
             deadline_var = tk.StringVar(value="30")
             ttk.Entry(deadline_frame, textvariable=deadline_var, width=10).pack(side='left', padx=5)
 
@@ -349,11 +349,11 @@ class SettingsManager:
                             values[2] = str(days)
                             docs_tree.item(item, values=values)
                     except ValueError:
-                        messagebox.showerror("Error", "Please enter a valid number of days")
+                        messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), _t('gui.shell.document_manager.settings.dialogs.please_enter_a_valid_number_of_days', default="Please enter a valid number of days"))
                 else:
-                    messagebox.showwarning("Warning", "Please select documents first")
+                    messagebox.showwarning(_t('gui.shell.document_manager.settings.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.settings.dialogs.please_select_documents_first', default="Please select documents first"))
 
-            ttk.Button(deadline_frame, text="Set Deadline", command=set_deadline).pack(side='left', padx=5)
+            ttk.Button(deadline_frame, text=_t('gui.shell.document_manager.settings.buttons.set_deadline', default="Set Deadline"), command=set_deadline).pack(side='left', padx=5)
 
             # Action buttons
             action_frame = ttk.Frame(main_frame)
@@ -364,7 +364,7 @@ class SettingsManager:
                 prog = program.get().strip()
 
                 if not code and not prog:
-                    messagebox.showerror("Error", "Please enter course code or program name")
+                    messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), _t('gui.shell.document_manager.settings.dialogs.please_enter_course_code_or_program_name', default="Please enter course code or program name"))
                     return
 
                 # Get checked documents
@@ -379,7 +379,7 @@ class SettingsManager:
                         })
 
                 if not required_docs:
-                    messagebox.showerror("Error", "Please select at least one required document")
+                    messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), _t('gui.shell.document_manager.settings.dialogs.please_select_at_least_one_required_document', default="Please select at least one required document"))
                     return
 
                 try:
@@ -425,19 +425,19 @@ class SettingsManager:
                         'required_docs': len(required_docs)
                     })
 
-                    messagebox.showinfo("Success",
+                    messagebox.showinfo(_t('gui.shell.document_manager.settings.dialogs.success', default="Success"),
                                       f"Requirements saved for {code or prog}\n"
                                       f"{len(required_docs)} required documents set")
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save requirements: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to save requirements: {e}")
 
-            ttk.Button(action_frame, text="Save Requirements", command=save_requirements).pack(side='right', padx=5)
-            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.save_requirements', default="Save Requirements"), command=save_requirements).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open course requirements: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to open course requirements: {e}")
 
     def email_settings(self):
         """
@@ -445,7 +445,7 @@ class SettingsManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Email Notification Settings")
+            dialog.title(_t('gui.shell.document_manager.settings.windows.email_notification_settings', default="Email Notification Settings"))
             dialog.geometry("800x700")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -454,19 +454,19 @@ class SettingsManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Email Notification Settings",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.settings.labels.email_notification_settings', default="Email Notification Settings"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Enable/Disable email notifications
-            enable_frame = ttk.LabelFrame(main_frame, text="Email Notifications", padding=15)
+            enable_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.email_notifications', default="Email Notifications"), padding=15)
             enable_frame.pack(fill='x', pady=(0, 15))
 
             enable_email = tk.BooleanVar(value=True)
-            ttk.Checkbutton(enable_frame, text="Enable email notifications for document events",
+            ttk.Checkbutton(enable_frame, text=_t('gui.shell.document_manager.settings.buttons.enable_email_notifications_for_document_events', default="Enable email notifications for document events"),
                           variable=enable_email).pack(anchor='w', pady=5)
 
             # Notification triggers
-            triggers_frame = ttk.LabelFrame(main_frame, text="Send Email When...", padding=15)
+            triggers_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.send_email_when', default="Send Email When..."), padding=15)
             triggers_frame.pack(fill='x', pady=(0, 15))
 
             trigger_upload = tk.BooleanVar(value=True)
@@ -475,26 +475,26 @@ class SettingsManager:
             trigger_expiry = tk.BooleanVar(value=True)
             trigger_workflow = tk.BooleanVar(value=False)
 
-            ttk.Checkbutton(triggers_frame, text="Document uploaded", variable=trigger_upload).pack(anchor='w', pady=3)
-            ttk.Checkbutton(triggers_frame, text="Document approved", variable=trigger_approval).pack(anchor='w', pady=3)
-            ttk.Checkbutton(triggers_frame, text="Document rejected", variable=trigger_rejection).pack(anchor='w', pady=3)
-            ttk.Checkbutton(triggers_frame, text="Document expiring soon (7 days)", variable=trigger_expiry).pack(anchor='w', pady=3)
-            ttk.Checkbutton(triggers_frame, text="Workflow step completed", variable=trigger_workflow).pack(anchor='w', pady=3)
+            ttk.Checkbutton(triggers_frame, text=_t('gui.shell.document_manager.settings.buttons.document_uploaded', default="Document uploaded"), variable=trigger_upload).pack(anchor='w', pady=3)
+            ttk.Checkbutton(triggers_frame, text=_t('gui.shell.document_manager.settings.buttons.document_approved', default="Document approved"), variable=trigger_approval).pack(anchor='w', pady=3)
+            ttk.Checkbutton(triggers_frame, text=_t('gui.shell.document_manager.settings.buttons.document_rejected', default="Document rejected"), variable=trigger_rejection).pack(anchor='w', pady=3)
+            ttk.Checkbutton(triggers_frame, text=_t('gui.shell.document_manager.settings.buttons.document_expiring_soon_7_days', default="Document expiring soon (7 days)"), variable=trigger_expiry).pack(anchor='w', pady=3)
+            ttk.Checkbutton(triggers_frame, text=_t('gui.shell.document_manager.settings.buttons.workflow_step_completed', default="Workflow step completed"), variable=trigger_workflow).pack(anchor='w', pady=3)
 
             # Recipients
-            recipients_frame = ttk.LabelFrame(main_frame, text="Email Recipients", padding=15)
+            recipients_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.email_recipients', default="Email Recipients"), padding=15)
             recipients_frame.pack(fill='x', pady=(0, 15))
 
             notify_student = tk.BooleanVar(value=True)
             notify_admin = tk.BooleanVar(value=True)
             notify_staff = tk.BooleanVar(value=False)
 
-            ttk.Checkbutton(recipients_frame, text="Notify student", variable=notify_student).pack(anchor='w', pady=3)
-            ttk.Checkbutton(recipients_frame, text="Notify administrators", variable=notify_admin).pack(anchor='w', pady=3)
-            ttk.Checkbutton(recipients_frame, text="Notify assigned staff", variable=notify_staff).pack(anchor='w', pady=3)
+            ttk.Checkbutton(recipients_frame, text=_t('gui.shell.document_manager.settings.buttons.notify_student', default="Notify student"), variable=notify_student).pack(anchor='w', pady=3)
+            ttk.Checkbutton(recipients_frame, text=_t('gui.shell.document_manager.settings.buttons.notify_administrators', default="Notify administrators"), variable=notify_admin).pack(anchor='w', pady=3)
+            ttk.Checkbutton(recipients_frame, text=_t('gui.shell.document_manager.settings.buttons.notify_assigned_staff', default="Notify assigned staff"), variable=notify_staff).pack(anchor='w', pady=3)
 
             # Email template preview
-            template_frame = ttk.LabelFrame(main_frame, text="Email Template Preview", padding=10)
+            template_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.email_template_preview', default="Email Template Preview"), padding=10)
             template_frame.pack(fill='both', expand=True, pady=(0, 15))
 
             template_text = tk.Text(template_frame, height=10, wrap=tk.WORD, font=('Arial', 9))
@@ -527,41 +527,41 @@ University Document Management System
 
             def send_test_email():
                 test_dialog = tk.Toplevel(dialog)
-                test_dialog.title("Send Test Email")
+                test_dialog.title(_t('gui.shell.document_manager.settings.windows.send_test_email', default="Send Test Email"))
                 test_dialog.geometry("400x200")
                 test_dialog.transient(dialog)
                 test_dialog.grab_set()
 
-                ttk.Label(test_dialog, text="Send Test Email", font=('Arial', 12, 'bold')).pack(pady=10)
+                ttk.Label(test_dialog, text=_t('gui.shell.document_manager.settings.labels.send_test_email', default="Send Test Email"), font=('Arial', 12, 'bold')).pack(pady=10)
 
                 email_frame = ttk.Frame(test_dialog, padding=10)
                 email_frame.pack(fill='x')
 
-                ttk.Label(email_frame, text="Recipient Email:").pack(anchor='w')
+                ttk.Label(email_frame, text=_t('gui.shell.document_manager.settings.labels.recipient_email', default="Recipient Email:")).pack(anchor='w')
                 test_email = tk.StringVar()
                 ttk.Entry(email_frame, textvariable=test_email, width=40).pack(fill='x', pady=5)
 
                 def send():
                     email = test_email.get().strip()
                     if not email:
-                        messagebox.showerror("Error", "Please enter an email address")
+                        messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), _t('gui.shell.document_manager.settings.dialogs.please_enter_an_email_address', default="Please enter an email address"))
                         return
 
                     try:
                         # Send test email (integrate with email service)
-                        messagebox.showinfo("Success",
+                        messagebox.showinfo(_t('gui.shell.document_manager.settings.dialogs.success', default="Success"),
                                           f"Test email sent to {email}\n\n"
                                           "Please check your inbox.")
                         test_dialog.destroy()
                     except Exception as e:
-                        messagebox.showerror("Error", f"Failed to send test email: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to send test email: {e}")
 
                 btn_frame = ttk.Frame(test_dialog)
                 btn_frame.pack(pady=10)
-                ttk.Button(btn_frame, text="Send", command=send).pack(side='left', padx=5)
-                ttk.Button(btn_frame, text="Cancel", command=test_dialog.destroy).pack(side='left', padx=5)
+                ttk.Button(btn_frame, text=_t('gui.shell.document_manager.settings.buttons.send', default="Send"), command=send).pack(side='left', padx=5)
+                ttk.Button(btn_frame, text=_t('gui.shell.document_manager.settings.buttons.cancel', default="Cancel"), command=test_dialog.destroy).pack(side='left', padx=5)
 
-            ttk.Button(test_frame, text="Send Test Email", command=send_test_email).pack(side='left', padx=5)
+            ttk.Button(test_frame, text=_t('gui.shell.document_manager.settings.buttons.send_test_email', default="Send Test Email"), command=send_test_email).pack(side='left', padx=5)
 
             # Action buttons
             action_frame = ttk.Frame(main_frame)
@@ -588,17 +588,17 @@ University Document Management System
                     # Save to database or config file
                     self.gui.log_event('update', 'email_settings', None, settings)
 
-                    messagebox.showinfo("Success", "Email notification settings saved successfully")
+                    messagebox.showinfo(_t('gui.shell.document_manager.settings.dialogs.success', default="Success"), _t('gui.shell.document_manager.settings.dialogs.email_notification_settings_saved_successfully', default="Email notification settings saved successfully"))
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save settings: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to save settings: {e}")
 
-            ttk.Button(action_frame, text="Save Settings", command=save_settings).pack(side='right', padx=5)
-            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.save_settings', default="Save Settings"), command=save_settings).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open email settings: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to open email settings: {e}")
 
     def email_configuration(self):
         """
@@ -606,7 +606,7 @@ University Document Management System
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Email Server Configuration")
+            dialog.title(_t('gui.shell.document_manager.settings.windows.email_server_configuration', default="Email Server Configuration"))
             dialog.geometry("700x650")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -615,22 +615,22 @@ University Document Management System
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Email Server Configuration",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.settings.labels.email_server_configuration', default="Email Server Configuration"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # SMTP Settings
-            smtp_frame = ttk.LabelFrame(main_frame, text="SMTP Server Settings", padding=15)
+            smtp_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.smtp_server_settings', default="SMTP Server Settings"), padding=15)
             smtp_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(smtp_frame, text="SMTP Host:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
-            smtp_host = tk.StringVar(value="smtp.gmail.com")
+            ttk.Label(smtp_frame, text=_t('gui.shell.document_manager.settings.labels.smtp_host', default="SMTP Host:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            smtp_host = tk.StringVar(value=_t('gui.shell.document_manager.settings.values.smtp_gmail_com', default="smtp.gmail.com"))
             ttk.Entry(smtp_frame, textvariable=smtp_host, width=40).grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-            ttk.Label(smtp_frame, text="SMTP Port:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(smtp_frame, text=_t('gui.shell.document_manager.settings.labels.smtp_port', default="SMTP Port:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
             smtp_port = tk.StringVar(value="587")
             ttk.Entry(smtp_frame, textvariable=smtp_port, width=40).grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
-            ttk.Label(smtp_frame, text="Encryption:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(smtp_frame, text=_t('gui.shell.document_manager.settings.labels.encryption', default="Encryption:")).grid(row=2, column=0, sticky='w', padx=5, pady=5)
             encryption = ttk.Combobox(smtp_frame, values=['TLS', 'SSL', 'None'], width=37, state='readonly')
             encryption.set('TLS')
             encryption.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
@@ -638,14 +638,14 @@ University Document Management System
             smtp_frame.grid_columnconfigure(1, weight=1)
 
             # Authentication
-            auth_frame = ttk.LabelFrame(main_frame, text="Authentication", padding=15)
+            auth_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.authentication', default="Authentication"), padding=15)
             auth_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(auth_frame, text="Username:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(auth_frame, text=_t('gui.shell.document_manager.settings.labels.username', default="Username:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
             smtp_user = tk.StringVar()
             ttk.Entry(auth_frame, textvariable=smtp_user, width=40).grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-            ttk.Label(auth_frame, text="Password:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(auth_frame, text=_t('gui.shell.document_manager.settings.labels.password', default="Password:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
             smtp_pass = tk.StringVar()
             ttk.Entry(auth_frame, textvariable=smtp_pass, width=40, show='*').grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
@@ -654,20 +654,20 @@ University Document Management System
                 pass_entry = auth_frame.grid_slaves(row=1, column=1)[0]
                 pass_entry.config(show='' if show_password.get() else '*')
 
-            ttk.Checkbutton(auth_frame, text="Show password", variable=show_password, command=toggle_password).grid(row=2, column=1, sticky='w', padx=5)
+            ttk.Checkbutton(auth_frame, text=_t('gui.shell.document_manager.settings.buttons.show_password', default="Show password"), variable=show_password, command=toggle_password).grid(row=2, column=1, sticky='w', padx=5)
 
             auth_frame.grid_columnconfigure(1, weight=1)
 
             # Sender settings
-            sender_frame = ttk.LabelFrame(main_frame, text="Sender Information", padding=15)
+            sender_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.sender_information', default="Sender Information"), padding=15)
             sender_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(sender_frame, text="From Email:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
-            from_email = tk.StringVar(value="noreply@university.edu")
+            ttk.Label(sender_frame, text=_t('gui.shell.document_manager.settings.labels.from_email', default="From Email:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            from_email = tk.StringVar(value=_t('gui.shell.document_manager.settings.values.noreply_university_edu', default="noreply@university.edu"))
             ttk.Entry(sender_frame, textvariable=from_email, width=40).grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
-            ttk.Label(sender_frame, text="From Name:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
-            from_name = tk.StringVar(value="University Document System")
+            ttk.Label(sender_frame, text=_t('gui.shell.document_manager.settings.labels.from_name', default="From Name:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            from_name = tk.StringVar(value=_t('gui.shell.document_manager.settings.values.university_document_system', default="University Document System"))
             ttk.Entry(sender_frame, textvariable=from_name, width=40).grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
             sender_frame.grid_columnconfigure(1, weight=1)
@@ -680,7 +680,7 @@ University Document Management System
             test_result_label.pack(pady=5)
 
             def test_connection():
-                test_result_label.config(text="Testing connection...", foreground='blue')
+                test_result_label.config(text=_t('gui.shell.document_manager.settings.text.testing_connection', default="Testing connection..."), foreground='blue')
                 dialog.update()
 
                 try:
@@ -693,12 +693,12 @@ University Document Management System
                     server.login(smtp_user.get(), smtp_pass.get())
                     server.quit()
 
-                    test_result_label.config(text="\u2713 Connection successful!", foreground='green')
+                    test_result_label.config(text=_t('gui.shell.document_manager.settings.text.connection_successful', default="\u2713 Connection successful!"), foreground='green')
 
                 except Exception as e:
                     test_result_label.config(text=f"\u2717 Connection failed: {str(e)[:50]}...", foreground='red')
 
-            ttk.Button(test_frame, text="Test Connection", command=test_connection).pack(side='left', padx=5)
+            ttk.Button(test_frame, text=_t('gui.shell.document_manager.settings.buttons.test_connection', default="Test Connection"), command=test_connection).pack(side='left', padx=5)
 
             # Action buttons
             action_frame = ttk.Frame(main_frame)
@@ -722,17 +722,17 @@ University Document Management System
                         'smtp_port': int(smtp_port.get())
                     })
 
-                    messagebox.showinfo("Success", "Email configuration saved successfully")
+                    messagebox.showinfo(_t('gui.shell.document_manager.settings.dialogs.success', default="Success"), _t('gui.shell.document_manager.settings.dialogs.email_configuration_saved_successfully', default="Email configuration saved successfully"))
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save configuration: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to save configuration: {e}")
 
-            ttk.Button(action_frame, text="Save Configuration", command=save_config).pack(side='right', padx=5)
-            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.save_configuration', default="Save Configuration"), command=save_config).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open email configuration: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to open email configuration: {e}")
 
     def view_current_settings(self):
         """
@@ -740,7 +740,7 @@ University Document Management System
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("System Settings")
+            dialog.title(_t('gui.shell.document_manager.settings.windows.system_settings', default="System Settings"))
             dialog.geometry("900x750")
             dialog.transient(self.root)
 
@@ -748,7 +748,7 @@ University Document Management System
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="System Settings Overview",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.settings.labels.system_settings_overview', default="System Settings Overview"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Notebook with tabs
@@ -757,13 +757,13 @@ University Document Management System
 
             # Tab 1: General Settings
             general_tab = ttk.Frame(notebook, padding=15)
-            notebook.add(general_tab, text="General")
+            notebook.add(general_tab, text=_t('gui.shell.document_manager.settings.tabs.general', default="General"))
 
             general_settings = {
                 'System Name': 'University Document Management System',
                 'Version': '5.0.0',
-                'Database Path': str(paths.DEFAULT_DB_PATH) if paths else 'N/A',
-                'Upload Directory': str(paths.UPLOAD_DIR) if paths else 'N/A',
+                'Database Path': str(paths.UNIVERSITY_DEFAULT_DB_PATH) if paths else 'N/A',
+                'Upload Directory': str(paths.UNIVERSITY_UPLOAD_DIR) if paths else 'N/A',
                 'Max File Size': '50 MB',
                 'Allowed Formats': 'PDF, JPG, PNG, DOC, DOCX',
                 'Session Timeout': '30 minutes',
@@ -778,7 +778,7 @@ University Document Management System
 
             # Tab 2: Security Settings
             security_tab = ttk.Frame(notebook, padding=15)
-            notebook.add(security_tab, text="Security")
+            notebook.add(security_tab, text=_t('gui.shell.document_manager.settings.tabs.security', default="Security"))
 
             security_settings = {
                 'Password Hashing': 'PBKDF2-SHA256 (1,000,000 iterations)',
@@ -799,7 +799,7 @@ University Document Management System
 
             # Tab 3: Email Settings
             email_tab = ttk.Frame(notebook, padding=15)
-            notebook.add(email_tab, text="Email")
+            notebook.add(email_tab, text=_t('gui.shell.document_manager.settings.tabs.email', default="Email"))
 
             email_settings = {
                 'Email Notifications': 'Enabled',
@@ -820,13 +820,13 @@ University Document Management System
 
             # Tab 4: Backup Settings
             backup_tab = ttk.Frame(notebook, padding=15)
-            notebook.add(backup_tab, text="Backup")
+            notebook.add(backup_tab, text=_t('gui.shell.document_manager.settings.tabs.backup', default="Backup"))
 
             backup_settings = {
                 'Auto-Backup': 'Disabled',
                 'Backup Frequency': 'Daily',
                 'Backup Time': '02:00 AM',
-                'Backup Location': str(paths.BACKUP_DIR) if paths else 'N/A',
+                'Backup Location': str(paths.UNIVERSITY_BACKUP_DIR) if paths else 'N/A',
                 'Retention Period': '30 days',
                 'Compression': 'Enabled',
                 'Last Backup': 'Never',
@@ -843,13 +843,13 @@ University Document Management System
             action_frame = ttk.Frame(main_frame)
             action_frame.pack(fill='x')
 
-            ttk.Button(action_frame, text="Edit Email Settings", command=self.email_settings).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Edit Security Settings", command=self.security_settings).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Edit Backup Settings", command=self.gui.backup_settings).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.edit_email_settings', default="Edit Email Settings"), command=self.email_settings).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.edit_security_settings', default="Edit Security Settings"), command=self.security_settings).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.edit_backup_settings', default="Edit Backup Settings"), command=self.gui.backup_settings).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open settings: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to open settings: {e}")
 
     def security_settings(self):
         """
@@ -857,7 +857,7 @@ University Document Management System
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Security Settings")
+            dialog.title(_t('gui.shell.document_manager.settings.windows.security_settings', default="Security Settings"))
             dialog.geometry("800x700")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -866,14 +866,14 @@ University Document Management System
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Security Settings",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.settings.labels.security_settings', default="Security Settings"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Password policy
-            password_frame = ttk.LabelFrame(main_frame, text="Password Policy", padding=15)
+            password_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.password_policy', default="Password Policy"), padding=15)
             password_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(password_frame, text="Minimum password length:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(password_frame, text=_t('gui.shell.document_manager.settings.labels.minimum_password_length', default="Minimum password length:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
             min_length = tk.StringVar(value="8")
             ttk.Spinbox(password_frame, from_=6, to=20, textvariable=min_length, width=10).grid(row=0, column=1, sticky='w', padx=5, pady=5)
 
@@ -882,43 +882,43 @@ University Document Management System
             require_numbers = tk.BooleanVar(value=True)
             require_special = tk.BooleanVar(value=True)
 
-            ttk.Checkbutton(password_frame, text="Require uppercase letters", variable=require_uppercase).grid(row=1, column=0, columnspan=2, sticky='w', padx=5, pady=3)
-            ttk.Checkbutton(password_frame, text="Require lowercase letters", variable=require_lowercase).grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=3)
-            ttk.Checkbutton(password_frame, text="Require numbers", variable=require_numbers).grid(row=3, column=0, columnspan=2, sticky='w', padx=5, pady=3)
-            ttk.Checkbutton(password_frame, text="Require special characters", variable=require_special).grid(row=4, column=0, columnspan=2, sticky='w', padx=5, pady=3)
+            ttk.Checkbutton(password_frame, text=_t('gui.shell.document_manager.settings.buttons.require_uppercase_letters', default="Require uppercase letters"), variable=require_uppercase).grid(row=1, column=0, columnspan=2, sticky='w', padx=5, pady=3)
+            ttk.Checkbutton(password_frame, text=_t('gui.shell.document_manager.settings.buttons.require_lowercase_letters', default="Require lowercase letters"), variable=require_lowercase).grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=3)
+            ttk.Checkbutton(password_frame, text=_t('gui.shell.document_manager.settings.buttons.require_numbers', default="Require numbers"), variable=require_numbers).grid(row=3, column=0, columnspan=2, sticky='w', padx=5, pady=3)
+            ttk.Checkbutton(password_frame, text=_t('gui.shell.document_manager.settings.buttons.require_special_characters', default="Require special characters"), variable=require_special).grid(row=4, column=0, columnspan=2, sticky='w', padx=5, pady=3)
 
             # Session settings
-            session_frame = ttk.LabelFrame(main_frame, text="Session Management", padding=15)
+            session_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.session_management', default="Session Management"), padding=15)
             session_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(session_frame, text="Session timeout (minutes):").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(session_frame, text=_t('gui.shell.document_manager.settings.labels.session_timeout_minutes', default="Session timeout (minutes):")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
             session_timeout = tk.StringVar(value="30")
             ttk.Spinbox(session_frame, from_=5, to=120, increment=5, textvariable=session_timeout, width=10).grid(row=0, column=1, sticky='w', padx=5, pady=5)
 
-            ttk.Label(session_frame, text="Max concurrent sessions:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(session_frame, text=_t('gui.shell.document_manager.settings.labels.max_concurrent_sessions', default="Max concurrent sessions:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
             max_sessions = tk.StringVar(value="3")
             ttk.Spinbox(session_frame, from_=1, to=10, textvariable=max_sessions, width=10).grid(row=1, column=1, sticky='w', padx=5, pady=5)
 
             auto_logout = tk.BooleanVar(value=True)
-            ttk.Checkbutton(session_frame, text="Auto-logout on inactivity", variable=auto_logout).grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=3)
+            ttk.Checkbutton(session_frame, text=_t('gui.shell.document_manager.settings.buttons.auto_logout_on_inactivity', default="Auto-logout on inactivity"), variable=auto_logout).grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=3)
 
             # Login security
-            login_frame = ttk.LabelFrame(main_frame, text="Login Security", padding=15)
+            login_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.login_security', default="Login Security"), padding=15)
             login_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(login_frame, text="Max failed login attempts:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(login_frame, text=_t('gui.shell.document_manager.settings.labels.max_failed_login_attempts', default="Max failed login attempts:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
             max_failed = tk.StringVar(value="5")
             ttk.Spinbox(login_frame, from_=3, to=10, textvariable=max_failed, width=10).grid(row=0, column=1, sticky='w', padx=5, pady=5)
 
-            ttk.Label(login_frame, text="Account lock duration (minutes):").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+            ttk.Label(login_frame, text=_t('gui.shell.document_manager.settings.labels.account_lock_duration_minutes', default="Account lock duration (minutes):")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
             lock_duration = tk.StringVar(value="30")
             ttk.Spinbox(login_frame, from_=10, to=120, increment=10, textvariable=lock_duration, width=10).grid(row=1, column=1, sticky='w', padx=5, pady=5)
 
             enable_mfa = tk.BooleanVar(value=True)
-            ttk.Checkbutton(login_frame, text="Enable Multi-Factor Authentication (MFA)", variable=enable_mfa).grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=3)
+            ttk.Checkbutton(login_frame, text=_t('gui.shell.document_manager.settings.buttons.enable_multi_factor_authentication_mfa', default="Enable Multi-Factor Authentication (MFA)"), variable=enable_mfa).grid(row=2, column=0, columnspan=2, sticky='w', padx=5, pady=3)
 
             # Audit logging
-            audit_frame = ttk.LabelFrame(main_frame, text="Audit & Logging", padding=15)
+            audit_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.audit_logging', default="Audit & Logging"), padding=15)
             audit_frame.pack(fill='x', pady=(0, 15))
 
             enable_audit = tk.BooleanVar(value=True)
@@ -926,10 +926,10 @@ University Document Management System
             log_modifications = tk.BooleanVar(value=True)
             log_access = tk.BooleanVar(value=False)
 
-            ttk.Checkbutton(audit_frame, text="Enable audit logging", variable=enable_audit).pack(anchor='w', pady=3)
-            ttk.Checkbutton(audit_frame, text="Log all login attempts", variable=log_logins).pack(anchor='w', pady=3)
-            ttk.Checkbutton(audit_frame, text="Log data modifications", variable=log_modifications).pack(anchor='w', pady=3)
-            ttk.Checkbutton(audit_frame, text="Log file access", variable=log_access).pack(anchor='w', pady=3)
+            ttk.Checkbutton(audit_frame, text=_t('gui.shell.document_manager.settings.buttons.enable_audit_logging', default="Enable audit logging"), variable=enable_audit).pack(anchor='w', pady=3)
+            ttk.Checkbutton(audit_frame, text=_t('gui.shell.document_manager.settings.buttons.log_all_login_attempts', default="Log all login attempts"), variable=log_logins).pack(anchor='w', pady=3)
+            ttk.Checkbutton(audit_frame, text=_t('gui.shell.document_manager.settings.buttons.log_data_modifications', default="Log data modifications"), variable=log_modifications).pack(anchor='w', pady=3)
+            ttk.Checkbutton(audit_frame, text=_t('gui.shell.document_manager.settings.buttons.log_file_access', default="Log file access"), variable=log_access).pack(anchor='w', pady=3)
 
             # Action buttons
             action_frame = ttk.Frame(main_frame)
@@ -965,17 +965,17 @@ University Document Management System
 
                     self.gui.log_event('update', 'security_settings', None, settings)
 
-                    messagebox.showinfo("Success", "Security settings saved successfully")
+                    messagebox.showinfo(_t('gui.shell.document_manager.settings.dialogs.success', default="Success"), _t('gui.shell.document_manager.settings.dialogs.security_settings_saved_successfully', default="Security settings saved successfully"))
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save settings: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to save settings: {e}")
 
-            ttk.Button(action_frame, text="Save Settings", command=save_security_settings).pack(side='right', padx=5)
-            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.save_settings', default="Save Settings"), command=save_security_settings).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open security settings: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to open security settings: {e}")
 
     def view_access_logs(self):
         """
@@ -983,7 +983,7 @@ University Document Management System
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Access Logs")
+            dialog.title(_t('gui.shell.document_manager.settings.windows.access_logs', default="Access Logs"))
             dialog.geometry("1200x750")
             dialog.transient(self.root)
 
@@ -991,31 +991,31 @@ University Document Management System
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Security Access Logs",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.settings.labels.security_access_logs', default="Security Access Logs"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Filter frame
             filter_frame = ttk.Frame(main_frame)
             filter_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(filter_frame, text="Log Type:").pack(side='left', padx=5)
+            ttk.Label(filter_frame, text=_t('gui.shell.document_manager.settings.labels.log_type', default="Log Type:")).pack(side='left', padx=5)
             log_type = ttk.Combobox(filter_frame, values=['All', 'Login', 'Logout', 'Data Access', 'Modification', 'Failed Login'],
                                    width=15, state='readonly')
             log_type.set('All')
             log_type.pack(side='left', padx=5)
 
-            ttk.Label(filter_frame, text="User:").pack(side='left', padx=5)
+            ttk.Label(filter_frame, text=_t('gui.shell.document_manager.settings.labels.user', default="User:")).pack(side='left', padx=5)
             user_filter = ttk.Entry(filter_frame, width=20)
             user_filter.pack(side='left', padx=5)
 
-            ttk.Label(filter_frame, text="Date:").pack(side='left', padx=5)
+            ttk.Label(filter_frame, text=_t('gui.shell.document_manager.settings.labels.date', default="Date:")).pack(side='left', padx=5)
             date_range = ttk.Combobox(filter_frame, values=['Today', 'Last 7 Days', 'Last 30 Days', 'All Time'],
                                      width=15, state='readonly')
             date_range.set('Today')
             date_range.pack(side='left', padx=5)
 
             # Access logs list
-            logs_frame = ttk.LabelFrame(main_frame, text="Access Log Entries", padding=10)
+            logs_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.settings.labels.access_log_entries', default="Access Log Entries"), padding=10)
             logs_frame.pack(fill='both', expand=True, pady=(0, 15))
 
             columns = ('Timestamp', 'User', 'Role', 'Action', 'Entity', 'IP Address', 'Status')
@@ -1075,7 +1075,7 @@ University Document Management System
                         logs_tree.insert('', 'end', values=log)
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load logs: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to load logs: {e}")
 
             load_logs()
 
@@ -1098,14 +1098,14 @@ University Document Management System
                             for item in logs_tree.get_children():
                                 writer.writerow(logs_tree.item(item)['values'])
 
-                        messagebox.showinfo("Success", f"Logs exported to:\n{file_path}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.settings.dialogs.success', default="Success"), f"Logs exported to:\n{file_path}")
                     except Exception as e:
-                        messagebox.showerror("Error", f"Failed to export: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to export: {e}")
 
-            ttk.Button(action_frame, text="Apply Filters", command=load_logs).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Export Logs", command=export_logs).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Clear Filters", command=lambda: [log_type.set('All'), user_filter.delete(0, tk.END), date_range.set('Today'), load_logs()]).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.apply_filters', default="Apply Filters"), command=load_logs).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.export_logs', default="Export Logs"), command=export_logs).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.clear_filters', default="Clear Filters"), command=lambda: [log_type.set('All'), user_filter.delete(0, tk.END), date_range.set('Today'), load_logs()]).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.settings.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open access logs: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.settings.dialogs.error', default="Error"), f"Failed to open access logs: {e}")

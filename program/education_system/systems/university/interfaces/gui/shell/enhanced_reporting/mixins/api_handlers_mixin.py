@@ -1,5 +1,7 @@
 """API handler methods mixin for the enhanced reporting GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox, simpledialog,
     ScrolledText,
@@ -36,12 +38,12 @@ class ApiHandlersMixin:
 
     def not_found_handler(self, error_msg):
         """Handle 404-like errors in GUI context"""
-        messagebox.showerror("Not Found", f"Resource not found: {error_msg}")
+        messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.not_found', default="Not Found"), f"Resource not found: {error_msg}")
         self.update_status("Resource not found", "error")
 
     def internal_error_handler(self, error_msg):
         """Handle 500-like errors in GUI context"""
-        messagebox.showerror("Internal Error", f"An internal error occurred: {error_msg}")
+        messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.internal_error', default="Internal Error"), f"An internal error occurred: {error_msg}")
         self.update_status("Internal error occurred", "error")
         logging.error(f"Internal error: {error_msg}")
 
@@ -66,7 +68,7 @@ class ApiHandlersMixin:
 
             # Display in dialog
             health_window = tk.Toplevel(self.root)
-            health_window.title("System Health Check")
+            health_window.title(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.windows.system_health_check', default="System Health Check"))
             health_window.geometry("400x300")
 
             health_text = ScrolledText(health_window, wrap=tk.WORD)
@@ -92,7 +94,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
     def get_section_data_dialog(self, section=None):
         """Get section data and display in dialog"""
         if not section:
-            section = simpledialog.askstring("Section Data", "Enter section name:")
+            section = simpledialog.askstring(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.section_data', default="Section Data"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.enter_section_name', default="Enter section name:"))
 
         if section:
             try:
@@ -122,10 +124,10 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                     tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
                     # Add export button
-                    ttk.Button(data_window, text="Export to CSV",
+                    ttk.Button(data_window, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.export_to_csv', default="Export to CSV"),
                              command=lambda: self.export_dataframe_csv(df, section)).pack(pady=5)
                 else:
-                    messagebox.showinfo("No Data", f"No data found for section: {section}")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_data', default="No Data"), f"No data found for section: {section}")
 
             except Exception as e:
                 self.internal_error_handler(str(e))
@@ -141,10 +143,10 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
 
             if file_path:
                 df.to_csv(file_path, index=False)
-                messagebox.showinfo("Export Success", f"Data exported to {file_path}")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.export_success', default="Export Success"), f"Data exported to {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export data: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.export_error', default="Export Error"), f"Failed to export data: {str(e)}")
 
     def show_templates_dialog(self):
         """Show templates in a dialog (API equivalent)"""
@@ -153,7 +155,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
 
             # Create templates window
             templates_window = tk.Toplevel(self.root)
-            templates_window.title("All Templates")
+            templates_window.title(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.windows.all_templates', default="All Templates"))
             templates_window.geometry("700x500")
 
             # Create treeview
@@ -182,7 +184,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
             button_frame = ttk.Frame(templates_window)
             button_frame.pack(fill=tk.X, padx=10, pady=5)
 
-            ttk.Button(button_frame, text="Close", command=templates_window.destroy).pack(side=tk.RIGHT)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.close', default="Close"), command=templates_window.destroy).pack(side=tk.RIGHT)
 
         except Exception as e:
             self.internal_error_handler(str(e))
@@ -192,26 +194,26 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
         try:
             # Create input dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Create Template (API Style)")
+            dialog.title(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.windows.create_template_api_style', default="Create Template (API Style)"))
             dialog.geometry("500x400")
             dialog.transient(self.root)
 
             # Template data inputs
-            ttk.Label(dialog, text="Template Name:").pack(anchor=tk.W, padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.template_name', default="Template Name:")).pack(anchor=tk.W, padx=10, pady=5)
             name_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=name_var, width=50).pack(fill=tk.X, padx=10)
 
-            ttk.Label(dialog, text="Description:").pack(anchor=tk.W, padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.description', default="Description:")).pack(anchor=tk.W, padx=10, pady=5)
             desc_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=desc_var, width=50).pack(fill=tk.X, padx=10)
 
-            ttk.Label(dialog, text="Sections (comma-separated):").pack(anchor=tk.W, padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.sections_comma_separated', default="Sections (comma-separated):")).pack(anchor=tk.W, padx=10, pady=5)
             sections_text = tk.Text(dialog, height=4, width=50)
             sections_text.pack(fill=tk.X, padx=10)
             sections_text.insert(1.0, "student_overview,course_distribution,gender_distribution")
 
-            ttk.Label(dialog, text="Security Level:").pack(anchor=tk.W, padx=10, pady=5)
-            security_var = tk.StringVar(value="normal")
+            ttk.Label(dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.security_level', default="Security Level:")).pack(anchor=tk.W, padx=10, pady=5)
+            security_var = tk.StringVar(value=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.values.normal', default="normal"))
             security_combo = ttk.Combobox(dialog, textvariable=security_var,
                                         values=["normal", "confidential", "restricted"], state="readonly")
             security_combo.pack(fill=tk.X, padx=10)
@@ -220,12 +222,12 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                 try:
                     name = name_var.get().strip()
                     if not name:
-                        messagebox.showerror("Validation Error", "Template name is required")
+                        messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.validation_error', default="Validation Error"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.template_name_is_required', default="Template name is required"))
                         return
 
                     sections = [s.strip() for s in sections_text.get(1.0, tk.END).strip().split(',') if s.strip()]
                     if not sections:
-                        messagebox.showerror("Validation Error", "At least one section is required")
+                        messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.validation_error', default="Validation Error"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.at_least_one_section_is_required', default="At least one section is required"))
                         return
 
                     template_data = {
@@ -247,19 +249,19 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                         with open(os.path.join(CONFIG.get('templates_dir', str(paths.REPORT_TEMPLATES_DIR)), "templates.json"), 'w') as f:
                             json.dump(templates, f, indent=4)
 
-                    messagebox.showinfo("Success", f"Template '{name}' created successfully!")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.success', default="Success"), f"Template '{name}' created successfully!")
                     dialog.destroy()
                     self.refresh_data()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to create template: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), f"Failed to create template: {str(e)}")
 
             # Buttons
             button_frame = ttk.Frame(dialog)
             button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Button(button_frame, text="Create Template", command=save_template).pack(side=tk.RIGHT, padx=(5, 0))
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.create_template', default="Create Template"), command=save_template).pack(side=tk.RIGHT, padx=(5, 0))
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.RIGHT)
 
         except Exception as e:
             self.internal_error_handler(str(e))
@@ -269,12 +271,12 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
         try:
             # Create dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Generate Report (API Style)")
+            dialog.title(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.windows.generate_report_api_style', default="Generate Report (API Style)"))
             dialog.geometry("500x350")
             dialog.transient(self.root)
 
             # Parameters
-            ttk.Label(dialog, text="Template Name:").pack(anchor=tk.W, padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.template_name', default="Template Name:")).pack(anchor=tk.W, padx=10, pady=5)
             template_var = tk.StringVar()
             template_combo = ttk.Combobox(dialog, textvariable=template_var, state="readonly")
             template_combo.pack(fill=tk.X, padx=10)
@@ -286,16 +288,16 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                 if templates:
                     template_combo.set(templates[0]['name'])
 
-            ttk.Label(dialog, text="Start Date (YYYY-MM-DD):").pack(anchor=tk.W, padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).pack(anchor=tk.W, padx=10, pady=5)
             start_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"))
             ttk.Entry(dialog, textvariable=start_var).pack(fill=tk.X, padx=10)
 
-            ttk.Label(dialog, text="End Date (YYYY-MM-DD):").pack(anchor=tk.W, padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).pack(anchor=tk.W, padx=10, pady=5)
             end_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
             ttk.Entry(dialog, textvariable=end_var).pack(fill=tk.X, padx=10)
 
-            ttk.Label(dialog, text="Format:").pack(anchor=tk.W, padx=10, pady=5)
-            format_var = tk.StringVar(value="pdf")
+            ttk.Label(dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.format', default="Format:")).pack(anchor=tk.W, padx=10, pady=5)
+            format_var = tk.StringVar(value=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.values.pdf', default="pdf"))
             format_combo = ttk.Combobox(dialog, textvariable=format_var,
                                       values=["pdf", "excel", "interactive"], state="readonly")
             format_combo.pack(fill=tk.X, padx=10)
@@ -308,7 +310,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                     format_type = format_var.get()
 
                     if not template_name:
-                        messagebox.showerror("Error", "Please select a template")
+                        messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.please_select_a_template', default="Please select a template"))
                         return
 
                     # Validate dates
@@ -316,7 +318,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                         datetime.strptime(start_date, "%Y-%m-%d")
                         datetime.strptime(end_date, "%Y-%m-%d")
                     except ValueError:
-                        messagebox.showerror("Error", "Invalid date format")
+                        messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.invalid_date_format', default="Invalid date format"))
                         return
 
                     self.update_status("Generating report via API...")
@@ -329,36 +331,36 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
                                 if report_path:
                                     self.root.after(0, lambda: [
                                         self.update_status("Report generated successfully"),
-                                        messagebox.showinfo("Success", f"Report generated: {os.path.basename(report_path)}"),
+                                        messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.success', default="Success"), f"Report generated: {os.path.basename(report_path)}"),
                                         self.refresh_reports()
                                     ])
                                 else:
                                     self.root.after(0, lambda: [
                                         self.update_status("Report generation failed", "error"),
-                                        messagebox.showerror("Error", "Failed to generate report")
+                                        messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.failed_to_generate_report', default="Failed to generate report"))
                                     ])
                             else:
                                 self.root.after(0, lambda: [
                                     self.update_status("Enhanced features not available", "warning"),
-                                    messagebox.showwarning("Feature Unavailable", "Enhanced reporting not available")
+                                    messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.enhanced_reporting_not_available', default="Enhanced reporting not available"))
                                 ])
                         except Exception as e:
                             self.root.after(0, lambda _e=e: [
                                 self.update_status(f"Error: {str(_e)}", "error"),
-                                messagebox.showerror("Error", f"Generation failed: {str(_e)}")
+                                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), f"Generation failed: {str(_e)}")
                             ])
 
                     threading.Thread(target=generate_task, daemon=True).start()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
             # Buttons
             button_frame = ttk.Frame(dialog)
             button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Button(button_frame, text="Generate", command=generate).pack(side=tk.RIGHT, padx=(5, 0))
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.generate', default="Generate"), command=generate).pack(side=tk.RIGHT, padx=(5, 0))
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.RIGHT)
 
         except Exception as e:
             self.internal_error_handler(str(e))
@@ -368,7 +370,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
         try:
             # Create quality dialog
             quality_window = tk.Toplevel(self.root)
-            quality_window.title("Data Quality Dashboard")
+            quality_window.title(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.windows.data_quality_dashboard', default="Data Quality Dashboard"))
             quality_window.geometry("800x600")
 
             # Create notebook for different quality aspects
@@ -377,21 +379,21 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
 
             # Overview tab
             overview_frame = ttk.Frame(quality_notebook)
-            quality_notebook.add(overview_frame, text="Overview")
+            quality_notebook.add(overview_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.tabs.overview', default="Overview"))
 
             self.quality_overview_text = ScrolledText(overview_frame, wrap=tk.WORD)
             self.quality_overview_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             # Missing data tab
             missing_frame = ttk.Frame(quality_notebook)
-            quality_notebook.add(missing_frame, text="Missing Data")
+            quality_notebook.add(missing_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.tabs.missing_data', default="Missing Data"))
 
             self.missing_data_text = ScrolledText(missing_frame, wrap=tk.WORD)
             self.missing_data_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             # Duplicates tab
             duplicates_frame = ttk.Frame(quality_notebook)
-            quality_notebook.add(duplicates_frame, text="Duplicates")
+            quality_notebook.add(duplicates_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.tabs.duplicates', default="Duplicates"))
 
             self.duplicates_text = ScrolledText(duplicates_frame, wrap=tk.WORD)
             self.duplicates_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -400,11 +402,11 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
             button_frame = ttk.Frame(quality_window)
             button_frame.pack(fill=tk.X, padx=10, pady=5)
 
-            ttk.Button(button_frame, text="Refresh Quality Check",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.refresh_quality_check', default="Refresh Quality Check"),
                      command=self.run_comprehensive_quality_check).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Export Report",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.export_report', default="Export Report"),
                      command=self.export_quality_report).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.close', default="Close"),
                      command=quality_window.destroy).pack(side=tk.RIGHT)
 
             # Run initial quality check
@@ -416,7 +418,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
     def run_comprehensive_quality_check(self):
         """Run comprehensive quality check and display results"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable", "Data quality checking requires enhanced features")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.data_quality_checking_requires_enhanced_features', default="Data quality checking requires enhanced features"))
             return
 
         self.update_status("Running comprehensive quality check...")
@@ -428,7 +430,7 @@ Enhanced Features: {'Available' if ENHANCED_AVAILABLE else 'Not Available'}
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Quality check failed", "error"),
-                    messagebox.showerror("Error", f"Quality check failed: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), f"Quality check failed: {str(_e)}")
                 ])
 
         threading.Thread(target=quality_task, daemon=True).start()
@@ -501,7 +503,7 @@ Summary:
         try:
             # Create analytics dialog
             analytics_window = tk.Toplevel(self.root)
-            analytics_window.title("Predictive Analytics Dashboard")
+            analytics_window.title(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.windows.predictive_analytics_dashboard', default="Predictive Analytics Dashboard"))
             analytics_window.geometry("900x700")
 
             # Create notebook for different analytics
@@ -510,21 +512,21 @@ Summary:
 
             # Dropout Risk tab
             dropout_frame = ttk.Frame(analytics_notebook)
-            analytics_notebook.add(dropout_frame, text="Dropout Risk")
+            analytics_notebook.add(dropout_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.tabs.dropout_risk', default="Dropout Risk"))
 
             self.dropout_text = ScrolledText(dropout_frame, wrap=tk.WORD)
             self.dropout_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             # Model Performance tab
             performance_frame = ttk.Frame(analytics_notebook)
-            analytics_notebook.add(performance_frame, text="Model Performance")
+            analytics_notebook.add(performance_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.tabs.model_performance', default="Model Performance"))
 
             self.performance_text = ScrolledText(performance_frame, wrap=tk.WORD)
             self.performance_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             # Recommendations tab
             recommendations_frame = ttk.Frame(analytics_notebook)
-            analytics_notebook.add(recommendations_frame, text="Recommendations")
+            analytics_notebook.add(recommendations_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.tabs.recommendations', default="Recommendations"))
 
             self.recommendations_text = ScrolledText(recommendations_frame, wrap=tk.WORD)
             self.recommendations_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -533,11 +535,11 @@ Summary:
             button_frame = ttk.Frame(analytics_window)
             button_frame.pack(fill=tk.X, padx=10, pady=5)
 
-            ttk.Button(button_frame, text="Run Analysis",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.run_analysis', default="Run Analysis"),
                      command=self.run_comprehensive_predictions).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Export Results",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.export_results', default="Export Results"),
                      command=self.export_predictions_report).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.close', default="Close"),
                      command=analytics_window.destroy).pack(side=tk.RIGHT)
 
             # Run initial analysis
@@ -549,7 +551,7 @@ Summary:
     def run_comprehensive_predictions(self):
         """Run comprehensive predictive analysis"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable", "Predictive analytics requires enhanced features")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.predictive_analytics_requires_enhanced_features', default="Predictive analytics requires enhanced features"))
             return
 
         self.update_status("Running predictive analytics...")
@@ -561,7 +563,7 @@ Summary:
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Predictions failed", "error"),
-                    messagebox.showerror("Error", f"Predictions failed: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), f"Predictions failed: {str(_e)}")
                 ])
 
         threading.Thread(target=predictions_task, daemon=True).start()
@@ -646,7 +648,7 @@ Summary:
         """Export predictions report to file"""
         try:
             if not hasattr(self, 'dropout_text'):
-                messagebox.showwarning("No Data", "No predictions data to export")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_data', default="No Data"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_predictions_data_to_export', default="No predictions data to export"))
                 return
 
             file_path = filedialog.asksaveasfilename(
@@ -668,17 +670,17 @@ Summary:
                     if hasattr(self, 'recommendations_text'):
                         f.write(self.recommendations_text.get(1.0, tk.END))
 
-                messagebox.showinfo("Export Success", f"Predictions report exported to {file_path}")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.export_success', default="Export Success"), f"Predictions report exported to {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.export_error', default="Export Error"), f"Failed to export report: {str(e)}")
 
     def show_anomaly_detection_dialog(self):
         """Show anomaly detection in dedicated dialog"""
         try:
             # Create anomaly dialog
             anomaly_window = tk.Toplevel(self.root)
-            anomaly_window.title("Anomaly Detection Dashboard")
+            anomaly_window.title(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.windows.anomaly_detection_dashboard', default="Anomaly Detection Dashboard"))
             anomaly_window.geometry("800x600")
 
             # Results display
@@ -689,11 +691,11 @@ Summary:
             button_frame = ttk.Frame(anomaly_window)
             button_frame.pack(fill=tk.X, padx=10, pady=5)
 
-            ttk.Button(button_frame, text="Run Detection",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.run_detection', default="Run Detection"),
                      command=self.run_comprehensive_anomaly_detection).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Export Results",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.export_results', default="Export Results"),
                      command=self.export_anomaly_report).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.close', default="Close"),
                      command=anomaly_window.destroy).pack(side=tk.RIGHT)
 
             # Run initial detection
@@ -705,7 +707,7 @@ Summary:
     def run_comprehensive_anomaly_detection(self):
         """Run comprehensive anomaly detection"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable", "Anomaly detection requires enhanced features")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.anomaly_detection_requires_enhanced_features', default="Anomaly detection requires enhanced features"))
             return
 
         self.update_status("Running anomaly detection...")
@@ -717,7 +719,7 @@ Summary:
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Anomaly detection failed", "error"),
-                    messagebox.showerror("Error", f"Anomaly detection failed: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), f"Anomaly detection failed: {str(_e)}")
                 ])
 
         threading.Thread(target=anomaly_task, daemon=True).start()
@@ -779,12 +781,12 @@ Summary:
         """Export anomaly detection report"""
         try:
             if not hasattr(self, 'anomaly_results_text'):
-                messagebox.showwarning("No Data", "No anomaly data to export")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_data', default="No Data"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_anomaly_data_to_export', default="No anomaly data to export"))
                 return
 
             content = self.anomaly_results_text.get(1.0, tk.END).strip()
             if not content:
-                messagebox.showwarning("No Data", "No anomaly data to export")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_data', default="No Data"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_anomaly_data_to_export', default="No anomaly data to export"))
                 return
 
             file_path = filedialog.asksaveasfilename(
@@ -796,17 +798,17 @@ Summary:
             if file_path:
                 with open(file_path, 'w') as f:
                     f.write(content)
-                messagebox.showinfo("Export Success", f"Anomaly report exported to {file_path}")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.export_success', default="Export Success"), f"Anomaly report exported to {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.export_error', default="Export Error"), f"Failed to export report: {str(e)}")
 
     def show_correlation_analysis_dialog(self):
         """Show correlation analysis in dedicated dialog"""
         try:
             # Create correlation dialog
             correlation_window = tk.Toplevel(self.root)
-            correlation_window.title("Correlation Analysis Dashboard")
+            correlation_window.title(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.windows.correlation_analysis_dashboard', default="Correlation Analysis Dashboard"))
             correlation_window.geometry("900x700")
 
             # Create notebook for different correlation views
@@ -815,14 +817,14 @@ Summary:
 
             # Matrix tab
             matrix_frame = ttk.Frame(correlation_notebook)
-            correlation_notebook.add(matrix_frame, text="Correlation Matrix")
+            correlation_notebook.add(matrix_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.tabs.correlation_matrix', default="Correlation Matrix"))
 
             self.correlation_text = ScrolledText(matrix_frame, wrap=tk.WORD)
             self.correlation_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             # Insights tab
             insights_frame = ttk.Frame(correlation_notebook)
-            correlation_notebook.add(insights_frame, text="Key Insights")
+            correlation_notebook.add(insights_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.tabs.key_insights', default="Key Insights"))
 
             self.insights_text = ScrolledText(insights_frame, wrap=tk.WORD)
             self.insights_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -831,13 +833,13 @@ Summary:
             button_frame = ttk.Frame(correlation_window)
             button_frame.pack(fill=tk.X, padx=10, pady=5)
 
-            ttk.Button(button_frame, text="Run Analysis",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.run_analysis', default="Run Analysis"),
                      command=self.run_comprehensive_correlation).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Generate Heatmap",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.generate_heatmap', default="Generate Heatmap"),
                      command=self.generate_correlation_heatmap).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Export Results",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.export_results', default="Export Results"),
                      command=self.export_correlation_report).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.close', default="Close"),
                      command=correlation_window.destroy).pack(side=tk.RIGHT)
 
             # Run initial analysis
@@ -849,7 +851,7 @@ Summary:
     def run_comprehensive_correlation(self):
         """Run comprehensive correlation analysis"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable", "Correlation analysis requires enhanced features")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.correlation_analysis_requires_enhanced_features', default="Correlation analysis requires enhanced features"))
             return
 
         self.update_status("Running correlation analysis...")
@@ -873,13 +875,13 @@ Summary:
                 else:
                     self.root.after(0, lambda: [
                         self.update_status("No correlation data available", "warning"),
-                        messagebox.showwarning("No Data", "Insufficient data for correlation analysis")
+                        messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_data', default="No Data"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.insufficient_data_for_correlation_analysis', default="Insufficient data for correlation analysis"))
                     ])
 
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Correlation analysis failed", "error"),
-                    messagebox.showerror("Error", f"Correlation analysis failed: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), f"Correlation analysis failed: {str(_e)}")
                 ])
 
         threading.Thread(target=correlation_task, daemon=True).start()
@@ -970,7 +972,7 @@ Summary:
     def generate_correlation_heatmap(self):
         """Generate correlation heatmap visualization"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable", "Heatmap generation requires enhanced features")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.heatmap_generation_requires_enhanced_features', default="Heatmap generation requires enhanced features"))
             return
 
         self.update_status("Generating correlation heatmap...")
@@ -988,7 +990,7 @@ Summary:
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status("Heatmap generation failed", "error"),
-                    messagebox.showerror("Error", f"Heatmap generation failed: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), f"Heatmap generation failed: {str(_e)}")
                 ])
 
         threading.Thread(target=heatmap_task, daemon=True).start()
@@ -996,22 +998,22 @@ Summary:
     def show_correlation_heatmap_result(self, chart_path):
         """Show correlation heatmap result"""
         if chart_path and os.path.exists(chart_path):
-            result = messagebox.askyesno("Heatmap Generated",
+            result = messagebox.askyesno(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.heatmap_generated', default="Heatmap Generated"),
                                        f"Correlation heatmap generated successfully!\n\nFile: {os.path.basename(chart_path)}\n\nWould you like to open it now?")
 
             if result:
                 try:
                     webbrowser.open(f"file://{os.path.abspath(chart_path)}")
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to open heatmap: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.error', default="Error"), f"Failed to open heatmap: {str(e)}")
         else:
-            messagebox.showwarning("Generation Failed", "Unable to generate correlation heatmap - insufficient data")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.generation_failed', default="Generation Failed"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.unable_to_generate_correlation_heatmap_insufficient_data', default="Unable to generate correlation heatmap - insufficient data"))
 
     def export_correlation_report(self):
         """Export correlation analysis report"""
         try:
             if not hasattr(self, 'correlation_text') or not hasattr(self, 'insights_text'):
-                messagebox.showwarning("No Data", "No correlation data to export")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_data', default="No Data"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.no_correlation_data_to_export', default="No correlation data to export"))
                 return
 
             file_path = filedialog.asksaveasfilename(
@@ -1029,46 +1031,46 @@ Summary:
                     f.write("\n\nKEY INSIGHTS:\n")
                     f.write(self.insights_text.get(1.0, tk.END))
 
-                messagebox.showinfo("Export Success", f"Correlation report exported to {file_path}")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.export_success', default="Export Success"), f"Correlation report exported to {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.export_error', default="Export Error"), f"Failed to export report: {str(e)}")
 
     def start_api_server_gui(self):
         """Start API server with GUI interface"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Feature Unavailable", "API server requires enhanced features")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.api_server_requires_enhanced_features', default="API server requires enhanced features"))
                 return
 
             # Enhanced API server dialog
             api_dialog = tk.Toplevel(self.root)
-            api_dialog.title("API Server Configuration")
+            api_dialog.title(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.windows.api_server_configuration', default="API Server Configuration"))
             api_dialog.geometry("600x500")
             api_dialog.transient(self.root)
 
             # Configuration section
-            config_frame = ttk.LabelFrame(api_dialog, text="Server Configuration", padding="10")
+            config_frame = ttk.LabelFrame(api_dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.server_configuration', default="Server Configuration"), padding="10")
             config_frame.pack(fill=tk.X, padx=10, pady=10)
 
             # Host setting
-            ttk.Label(config_frame, text="Host:").grid(row=0, column=0, sticky=tk.W, pady=5)
-            host_var = tk.StringVar(value="localhost")
+            ttk.Label(config_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.host', default="Host:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+            host_var = tk.StringVar(value=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.values.localhost', default="localhost"))
             ttk.Entry(config_frame, textvariable=host_var).grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(10, 0), pady=5)
 
             # Port setting
-            ttk.Label(config_frame, text="Port:").grid(row=1, column=0, sticky=tk.W, pady=5)
+            ttk.Label(config_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.port', default="Port:")).grid(row=1, column=0, sticky=tk.W, pady=5)
             port_var = tk.StringVar(value="5000")
             ttk.Entry(config_frame, textvariable=port_var).grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(10, 0), pady=5)
 
             # Debug mode
             debug_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(config_frame, text="Debug Mode", variable=debug_var).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
+            ttk.Checkbutton(config_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.debug_mode', default="Debug Mode"), variable=debug_var).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
 
             config_frame.columnconfigure(1, weight=1)
 
             # API endpoints info
-            endpoints_frame = ttk.LabelFrame(api_dialog, text="Available Endpoints", padding="10")
+            endpoints_frame = ttk.LabelFrame(api_dialog, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.available_endpoints', default="Available Endpoints"), padding="10")
             endpoints_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             endpoints_text = ScrolledText(endpoints_frame, height=15, wrap=tk.WORD)
@@ -1114,7 +1116,7 @@ curl -X POST http://localhost:5000/api/reports/generate \\
             status_frame = ttk.Frame(api_dialog)
             status_frame.pack(fill=tk.X, padx=10, pady=5)
 
-            self.api_status_label = ttk.Label(status_frame, text="Server Status: Stopped", style='Info.TLabel')
+            self.api_status_label = ttk.Label(status_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.labels.server_status_stopped', default="Server Status: Stopped"), style='Info.TLabel')
             self.api_status_label.pack(side=tk.LEFT)
 
             # Control buttons
@@ -1129,39 +1131,39 @@ curl -X POST http://localhost:5000/api/reports/generate \\
 
                     # In a real implementation, this would start the Flask server
                     self.api_status_label.config(text=f"Server Status: Running on http://{host}:{port}", style='Success.TLabel')
-                    messagebox.showinfo("API Server",
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.api_server', default="API Server"),
                                       f"API server started successfully!\n\nURL: http://{host}:{port}\nDebug Mode: {debug}")
 
                     # Store server config for stopping later
                     self.api_server_config = {'host': host, 'port': port, 'debug': debug, 'running': True}
 
                 except ValueError:
-                    messagebox.showerror("Invalid Port", "Please enter a valid port number")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.invalid_port', default="Invalid Port"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.please_enter_a_valid_port_number', default="Please enter a valid port number"))
                 except Exception as e:
-                    messagebox.showerror("Server Error", f"Failed to start server: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.server_error', default="Server Error"), f"Failed to start server: {str(e)}")
 
             def stop_server():
                 if hasattr(self, 'api_server_config') and self.api_server_config.get('running'):
-                    self.api_status_label.config(text="Server Status: Stopped", style='Info.TLabel')
+                    self.api_status_label.config(text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.text.server_status_stopped', default="Server Status: Stopped"), style='Info.TLabel')
                     self.api_server_config['running'] = False
-                    messagebox.showinfo("API Server", "API server stopped successfully!")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.api_server', default="API Server"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.api_server_stopped_successfully', default="API server stopped successfully!"))
                 else:
-                    messagebox.showwarning("Server Not Running", "API server is not currently running")
+                    messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.server_not_running', default="Server Not Running"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.api_server_is_not_currently_running', default="API server is not currently running"))
 
             def test_connection():
                 if hasattr(self, 'api_server_config') and self.api_server_config.get('running'):
                     host = self.api_server_config['host']
                     port = self.api_server_config['port']
-                    messagebox.showinfo("Connection Test", f"API server is responding at http://{host}:{port}")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.connection_test', default="Connection Test"), f"API server is responding at http://{host}:{port}")
                 else:
-                    messagebox.showwarning("Server Not Running", "Please start the API server first")
+                    messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.server_not_running', default="Server Not Running"), _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.please_start_the_api_server_first', default="Please start the API server first"))
 
-            ttk.Button(button_frame, text="Start Server", command=start_server,
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.start_server', default="Start Server"), command=start_server,
                      style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Stop Server", command=stop_server,
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.stop_server', default="Stop Server"), command=stop_server,
                      style='Warning.TButton').pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Test Connection", command=test_connection).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Button(button_frame, text="Close", command=api_dialog.destroy).pack(side=tk.RIGHT)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.test_connection', default="Test Connection"), command=test_connection).pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.buttons.close', default="Close"), command=api_dialog.destroy).pack(side=tk.RIGHT)
 
         except Exception as e:
             self.internal_error_handler(str(e))
@@ -1206,7 +1208,7 @@ curl -X POST http://localhost:5000/api/reports/generate \\
 
         except Exception as e:
             logging.error(f"Failed to initialize GUI application: {str(e)}")
-            messagebox.showerror("Initialization Error",
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.initialization_error', default="Initialization Error"),
                                f"Failed to initialize application: {str(e)}\n\nThe application may not function correctly.")
 
     def check_system_requirements(self):
@@ -1241,8 +1243,8 @@ curl -X POST http://localhost:5000/api/reports/generate \\
                 logging.warning(warning_msg)
 
                 if 'database' in missing:
-                    messagebox.showwarning("Database Warning",
-                                         "Database connection failed. Reports and analytics will be limited.")
+                    messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.database_warning', default="Database Warning"),
+                                         _t('gui.shell.enhanced_reporting.mixins.api_handlers_mixin.dialogs.database_connection_failed_reports_and_analytics_will_be_limited', default="Database connection failed. Reports and analytics will be limited."))
 
         except Exception as e:
             logging.error(f"Requirements check failed: {str(e)}")

@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import datetime
 
 
@@ -39,7 +39,7 @@ class SecurityAndDocumentsMixin:
 
             conn = None
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
                 conn.execute("PRAGMA busy_timeout = 30000")
                 cursor = conn.cursor()
 
@@ -110,7 +110,7 @@ class SecurityAndDocumentsMixin:
                 # Validate the source file and copy it into the managed document store.
                 import shutil
                 from pathlib import Path
-                from education_system.systems.university.infrastructure import paths
+                from education_system import paths
 
                 MAX_DOCUMENT_BYTES = 25 * 1024 * 1024  # 25 MB
 
@@ -123,7 +123,7 @@ class SecurityAndDocumentsMixin:
                     print("Error: document exceeds the 25 MB size limit. Document not uploaded.")
                     return
 
-                dest_dir = paths.STUDENT_DOCUMENTS_DIR / str(student_id)
+                dest_dir = paths.UNIVERSITY_STUDENT_DOCUMENTS_DIR / str(student_id)
                 dest_dir.mkdir(parents=True, exist_ok=True)
                 safe_name = "".join(
                     c if c.isalnum() or c in ('-', '_', '.') else '_'
@@ -188,7 +188,7 @@ class SecurityAndDocumentsMixin:
 
             conn = None
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
                 conn.execute("PRAGMA busy_timeout = 30000")
                 cursor = conn.cursor()
 
@@ -329,7 +329,7 @@ class SecurityAndDocumentsMixin:
 
             conn = None
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
                 conn.execute("PRAGMA busy_timeout = 30000")
                 cursor = conn.cursor()
 

@@ -1,5 +1,7 @@
 """Budget reports and analytics"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import sys
 import io
 import tkinter as tk
@@ -23,23 +25,23 @@ class BudgetReportsMixin:
     def create_budget_reports_tab(self, notebook):
         """Create budget reports and analytics tab"""
         tab = ttk.Frame(notebook, padding="10")
-        notebook.add(tab, text="Reports")
+        notebook.add(tab, text=_t('gui.finance.finance.budget_manager.reports.tabs.reports', default="Reports"))
 
         # Report selection
-        select_frame = ttk.LabelFrame(tab, text="Select Report", padding="10")
+        select_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.reports.labels.select_report', default="Select Report"), padding="10")
         select_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Button(select_frame, text="Financial Summary", command=self.show_financial_summary,
+        ttk.Button(select_frame, text=_t('gui.finance.finance.budget_manager.reports.buttons.financial_summary', default="Financial Summary"), command=self.show_financial_summary,
                   width=22).pack(side=tk.LEFT, padx=5)
-        ttk.Button(select_frame, text="Budget vs Actual", command=self.show_budget_performance,
+        ttk.Button(select_frame, text=_t('gui.finance.finance.budget_manager.reports.buttons.budget_vs_actual', default="Budget vs Actual"), command=self.show_budget_performance,
                   width=22).pack(side=tk.LEFT, padx=5)
-        ttk.Button(select_frame, text="Spending by Category", command=self.show_spending_analysis,
+        ttk.Button(select_frame, text=_t('gui.finance.finance.budget_manager.reports.buttons.spending_by_category', default="Spending by Category"), command=self.show_spending_analysis,
                   width=22).pack(side=tk.LEFT, padx=5)
-        ttk.Button(select_frame, text="Spending Trends", command=self.show_spending_trends,
+        ttk.Button(select_frame, text=_t('gui.finance.finance.budget_manager.reports.buttons.spending_trends', default="Spending Trends"), command=self.show_spending_trends,
                   width=22).pack(side=tk.LEFT, padx=5)
 
         # Report display (kept for backward compat with toolbar wrappers)
-        report_frame = ttk.LabelFrame(tab, text="Report Output", padding="10")
+        report_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.reports.labels.report_output', default="Report Output"), padding="10")
         report_frame.pack(fill=tk.BOTH, expand=True)
 
         self.budget_report_text = ScrolledText(report_frame, wrap=tk.WORD,
@@ -67,13 +69,13 @@ class BudgetReportsMixin:
         btn_frame = ttk.Frame(window)
         btn_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
 
-        ttk.Button(btn_frame, text="Save as TXT",
+        ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.reports.buttons.save_as_txt', default="Save as TXT"),
                   command=lambda: self._save_report_as_txt(title, report_content)
                   ).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Email to Admin",
+        ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.reports.buttons.email_to_admin', default="Email to Admin"),
                   command=lambda: self._email_report_to_admin(title, report_content)
                   ).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Close",
+        ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.reports.buttons.close', default="Close"),
                   command=window.destroy).pack(side=tk.RIGHT, padx=5)
 
     def _save_report_as_txt(self, title, content):
@@ -83,15 +85,15 @@ class BudgetReportsMixin:
             defaultextension='.txt',
             filetypes=[('Text files', '*.txt'), ('All files', '*.*')],
             initialfile=default_name,
-            title="Save Report"
+            title=_t('gui.finance.finance.budget_manager.reports.dialogs.save_report', default="Save Report")
         )
         if file_path:
             try:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(content)
-                messagebox.showinfo("Saved", f"Report saved to:\n{file_path}")
+                messagebox.showinfo(_t('gui.finance.finance.budget_manager.reports.dialogs.saved', default="Saved"), f"Report saved to:\n{file_path}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save report: {e}")
+                messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to save report: {e}")
 
     def _email_report_to_admin(self, subject, body):
         """Send the report to admin via the university email system."""
@@ -134,14 +136,14 @@ class BudgetReportsMixin:
 
             result = send_email(admin_email, email_subject, email_body)
             if result is not False:
-                messagebox.showinfo("Email Sent",
+                messagebox.showinfo(_t('gui.finance.finance.budget_manager.reports.dialogs.email_sent', default="Email Sent"),
                     f"Report emailed to admin ({admin_email}).")
             else:
-                messagebox.showwarning("Email",
-                    "Email queued but delivery could not be confirmed.")
+                messagebox.showwarning(_t('gui.finance.finance.budget_manager.reports.dialogs.email', default="Email"),
+                    _t('gui.finance.finance.budget_manager.reports.dialogs.email_queued_but_delivery_could_not_be_confirmed', default="Email queued but delivery could not be confirmed."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send email: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to send email: {e}")
 
     # ------------------------------------------------------------------
     # Report generators
@@ -202,7 +204,7 @@ class BudgetReportsMixin:
             self._open_report_window("Financial Summary", output)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
     def show_spending_analysis(self):
         """Show spending by category breakdown in a new window"""
@@ -247,7 +249,7 @@ class BudgetReportsMixin:
             self._open_report_window("Spending by Category", output)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
     def show_budget_performance(self):
         """Show budget vs actual performance report in a new window"""
@@ -259,7 +261,7 @@ class BudgetReportsMixin:
 
             budgets = BudgetManager.get_student_budgets(student_id, active_only=True)
             if not budgets:
-                messagebox.showinfo("No Data", "No active budgets found.")
+                messagebox.showinfo(_t('gui.finance.finance.budget_manager.reports.dialogs.no_data', default="No Data"), _t('gui.finance.finance.budget_manager.reports.dialogs.no_active_budgets_found', default="No active budgets found."))
                 return
 
             budget_id = budgets[0]['budget_id']
@@ -310,7 +312,7 @@ class BudgetReportsMixin:
             self._open_report_window("Budget vs Actual", output)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
     def show_spending_trends(self):
         """Show spending trends analysis in a new window"""
@@ -351,7 +353,7 @@ class BudgetReportsMixin:
             self._open_report_window("Spending Trends", output)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
     # ------------------------------------------------------------------
     # Toolbar wrapper methods (kept for backward compat with manager.py)
@@ -374,7 +376,7 @@ class BudgetReportsMixin:
             self.update_status("Budget vs actual analysis generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate budget vs actual analysis: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to generate budget vs actual analysis: {e}")
 
     def gui_variance_analysis_report(self):
         """GUI wrapper for variance_analysis_report"""
@@ -393,7 +395,7 @@ class BudgetReportsMixin:
             self.update_status("Variance analysis report generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate variance analysis report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to generate variance analysis report: {e}")
 
     def gui_budget_performance_trends(self):
         """GUI wrapper for budget_performance_trends"""
@@ -412,7 +414,7 @@ class BudgetReportsMixin:
             self.update_status("Budget performance trends report generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate budget performance trends: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to generate budget performance trends: {e}")
 
     def gui_category_performance_report(self):
         """GUI wrapper for category_performance_report"""
@@ -431,11 +433,11 @@ class BudgetReportsMixin:
             self.update_status("Category performance report generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate category performance report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.reports.dialogs.error', default="Error"), f"Failed to generate category performance report: {e}")
 
     def gui_apply_credit_to_fees(self):
         """Wrapper to call transaction manager's apply credit function"""
         if hasattr(self.gui, 'transactions'):
             self.gui.transactions.gui_apply_credit_to_fees()
         else:
-            messagebox.showwarning("Not Available", "Transaction manager not initialized")
+            messagebox.showwarning(_t('gui.finance.finance.budget_manager.reports.dialogs.not_available', default="Not Available"), _t('gui.finance.finance.budget_manager.reports.dialogs.transaction_manager_not_initialized', default="Transaction manager not initialized"))

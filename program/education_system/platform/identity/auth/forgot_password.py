@@ -33,10 +33,11 @@ from education_system.platform.identity.auth.schema import (
     MIN_ANSWER_LENGTH,
 )
 from education_system.platform.identity.auth.session_manager import SessionManager
+from education_system.paths import PLATFORM_EMAIL_TEMPLATES_DIR
 
 logger = logging.getLogger(__name__)
 
-_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates" / "email"
+_TEMPLATES_DIR = PLATFORM_EMAIL_TEMPLATES_DIR
 
 # ── Rate-limiting constants ──────────────────────────────────────────────────
 MAX_SQ_ATTEMPTS_PER_USER = 5     # max failed attempts per username within window
@@ -343,7 +344,7 @@ class ForgotPasswordService:
 
             conn.execute(
                 "UPDATE users SET password_hash = ?, legacy_salt = NULL, "
-                "password_changed_at = NULL, "
+                "password_changed_at = NULL, must_change_password = 1, "
                 "failed_login_attempts = 0, locked_until = NULL, "
                 "updated_at = datetime('now') WHERE id = ?",
                 (pw_hash, user["id"]),

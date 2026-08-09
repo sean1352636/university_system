@@ -56,24 +56,29 @@ class WebInterfaceMixin:
             print(f"Database error: {e}")
 
     def generate_mobile_interface(self):
-        """Generate mobile-responsive interface code"""
+        """Install the bundled mobile-responsive document interface."""
         print("\n📱 GENERATE MOBILE INTERFACE")
 
-        print("\nMobile interface generation would create:")
+        print("\nMobile interface generation creates:")
         print("1. Responsive HTML templates")
         print("2. Mobile-optimized CSS")
         print("3. Touch-friendly UI components")
         print("4. Progressive Web App (PWA) manifest")
 
-        print("\nNote: Full mobile interface generation requires web framework setup.")
-        print("This feature would generate mobile-responsive HTML/CSS/JS files.")
-
         generate = input("\nGenerate basic mobile template? (y/n): ").strip().lower()
 
         if generate == 'y':
-            print("\nBasic mobile interface template generated.")
-            print("Files would be created in: web/mobile/")
-            print("\nNote: This is a placeholder. Full implementation requires web framework setup.")
+            from pathlib import Path
+            from education_system import paths
+            source = Path(__file__).resolve().parents[3] / "assets" / "web" / "mobile"
+            destination = Path(paths.UNIVERSITY_DATA_DIR) / "document_manager" / "web" / "mobile"
+            destination.mkdir(parents=True, exist_ok=True)
+            for asset in source.iterdir():
+                if asset.is_file():
+                    (destination / asset.name).write_bytes(asset.read_bytes())
+            print("\nMobile interface generated.")
+            print(f"Files created in: {destination}")
+            return destination
 
     def mobile_app_qr_code(self):
         """Generate QR code for mobile app access"""

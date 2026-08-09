@@ -11,6 +11,8 @@ Main launcher that integrates all staff HR features:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional
@@ -256,37 +258,37 @@ class StaffHRGUI:
                    command=lambda: self._select_sidebar(7)).grid(row=1, column=1, padx=8, pady=5)
         ttk.Button(actions_grid, text=_t("staff_hr.dashboard.actions.file_grievance"), width=18,
                    command=lambda: self._select_sidebar(8)).grid(row=1, column=2, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Payroll", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.payroll', default="Payroll"), width=18,
                    command=lambda: self._select_sidebar(9)).grid(row=1, column=3, padx=8, pady=5)
-        ttk.Button(actions_grid, text="My Schedule", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.my_schedule', default="My Schedule"), width=18,
                    command=lambda: self._select_sidebar(10)).grid(row=2, column=0, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Curriculum", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.curriculum', default="Curriculum"), width=18,
                    command=lambda: self._select_sidebar(11)).grid(row=2, column=1, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Travel", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.travel', default="Travel"), width=18,
                    command=lambda: self._select_sidebar(12)).grid(row=2, column=2, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Sabbatical", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.sabbatical', default="Sabbatical"), width=18,
                    command=lambda: self._select_sidebar(13)).grid(row=2, column=3, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Committees", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.committees', default="Committees"), width=18,
                    command=lambda: self._select_sidebar(14)).grid(row=3, column=0, padx=8, pady=5)
-        ttk.Button(actions_grid, text="IP Management", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.ip_management', default="IP Management"), width=18,
                    command=lambda: self._select_sidebar(15)).grid(row=3, column=1, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Equipment", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.equipment', default="Equipment"), width=18,
                    command=lambda: self._select_sidebar(16)).grid(row=3, column=2, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Cover", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.cover', default="Cover"), width=18,
                    command=lambda: self._select_sidebar(17)).grid(row=3, column=3, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Workload", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.workload', default="Workload"), width=18,
                    command=lambda: self._select_sidebar(18)).grid(row=4, column=0, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Directory", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.directory', default="Directory"), width=18,
                    command=lambda: self._select_sidebar(19)).grid(row=4, column=1, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Mentoring", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.mentoring', default="Mentoring"), width=18,
                    command=lambda: self._select_sidebar(20)).grid(row=4, column=2, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Grant Budget", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.grant_budget', default="Grant Budget"), width=18,
                    command=lambda: self._select_sidebar(21)).grid(row=4, column=3, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Peer Review", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.peer_review', default="Peer Review"), width=18,
                    command=lambda: self._select_sidebar(22)).grid(row=5, column=0, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Comm Hub", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.comm_hub', default="Comm Hub"), width=18,
                    command=lambda: self._select_sidebar(23)).grid(row=5, column=1, padx=8, pady=5)
-        ttk.Button(actions_grid, text="Teaching Load", width=18,
+        ttk.Button(actions_grid, text=_t('gui.staff.staff_hr.staff_hr.buttons.teaching_load', default="Teaching Load"), width=18,
                    command=lambda: self._select_sidebar(24)).grid(row=5, column=2, padx=8, pady=5)
 
         # Notifications frame
@@ -783,5 +785,5 @@ def launch_staff_hr_gui(root, auth):
     try:
         return StaffHRGUI(root, auth)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to launch Staff HR GUI: {e}")
+        messagebox.showerror(_t('gui.staff.staff_hr.staff_hr.dialogs.error', default="Error"), f"Failed to launch Staff HR GUI: {e}")
         return None

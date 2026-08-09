@@ -1,6 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import json
 import os
@@ -122,7 +124,7 @@ class _My_dataMixin:
         finally:
             conn.close()
         integrations.audit(self.principal.username, "self_update", "person", ref)
-        messagebox.showinfo("Saved", "Your record and consent have been updated.")
+        messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.my_data.dialogs.saved', default="Saved"), _t('gui.pastoral.equality_diversity.mixins.my_data.dialogs.your_record_and_consent_have_been_updated', default="Your record and consent have been updated."))
 
     # ================================================================= Admin
 

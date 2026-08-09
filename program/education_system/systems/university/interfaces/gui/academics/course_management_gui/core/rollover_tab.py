@@ -6,6 +6,8 @@ copies every section (and its meeting times) from a *source* term into a
 meeting times forward — the common registrar "roll the term forward" task.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     tk, ttk, messagebox, _, logger,
 )
@@ -23,44 +25,44 @@ class RolloverTabMixin:
                                             default="Term Rollover"))
 
             if not self._ext_can_edit():
-                ttk.Label(frame, text="Term rollover is available to staff and "
-                                      "administrators only.",
+                ttk.Label(frame, text=_t('gui.academics.course_management_gui.core.rollover_tab.labels.term_rollover_is_available_to_staff_and_administrators_only', default="Term rollover is available to staff and "
+                                      "administrators only."),
                           font=("Arial", 11), foreground="#6b7280").pack(pady=40)
                 return
 
-            ctl = ttk.LabelFrame(frame, text="Roll sections forward", padding=12)
+            ctl = ttk.LabelFrame(frame, text=_t('gui.academics.course_management_gui.core.rollover_tab.labels.roll_sections_forward', default="Roll sections forward"), padding=12)
             ctl.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Label(ctl, text="Copy FROM term:").grid(row=0, column=0, sticky=tk.W,
+            ttk.Label(ctl, text=_t('gui.academics.course_management_gui.core.rollover_tab.labels.copy_from_term', default="Copy FROM term:")).grid(row=0, column=0, sticky=tk.W,
                                                         padx=5, pady=6)
             self._ro_src = ttk.Combobox(ctl, width=34, state="readonly")
             self._ro_src.grid(row=0, column=1, padx=5, pady=6)
             self._ro_src.bind("<<ComboboxSelected>>", self._refresh_rollover_preview)
 
-            ttk.Label(ctl, text="Copy TO term:").grid(row=1, column=0, sticky=tk.W,
+            ttk.Label(ctl, text=_t('gui.academics.course_management_gui.core.rollover_tab.labels.copy_to_term', default="Copy TO term:")).grid(row=1, column=0, sticky=tk.W,
                                                       padx=5, pady=6)
             self._ro_dst = ttk.Combobox(ctl, width=34, state="readonly")
             self._ro_dst.grid(row=1, column=1, padx=5, pady=6)
 
             self._ro_reset_enrol = tk.BooleanVar(value=True)
-            ttk.Checkbutton(ctl, text="Reset enrolment to 0 in copies",
+            ttk.Checkbutton(ctl, text=_t('gui.academics.course_management_gui.core.rollover_tab.buttons.reset_enrolment_to_0_in_copies', default="Reset enrolment to 0 in copies"),
                             variable=self._ro_reset_enrol).grid(
                 row=2, column=1, sticky=tk.W, padx=5)
             self._ro_copy_meetings = tk.BooleanVar(value=True)
-            ttk.Checkbutton(ctl, text="Copy meeting times too",
+            ttk.Checkbutton(ctl, text=_t('gui.academics.course_management_gui.core.rollover_tab.buttons.copy_meeting_times_too', default="Copy meeting times too"),
                             variable=self._ro_copy_meetings).grid(
                 row=3, column=1, sticky=tk.W, padx=5)
             self._ro_skip_existing = tk.BooleanVar(value=True)
-            ttk.Checkbutton(ctl, text="Skip sections that already exist in target",
+            ttk.Checkbutton(ctl, text=_t('gui.academics.course_management_gui.core.rollover_tab.buttons.skip_sections_that_already_exist_in_target', default="Skip sections that already exist in target"),
                             variable=self._ro_skip_existing).grid(
                 row=4, column=1, sticky=tk.W, padx=5)
 
-            ttk.Button(ctl, text="Refresh", command=self._reload_rollover_terms).grid(
+            ttk.Button(ctl, text=_t('gui.academics.course_management_gui.core.rollover_tab.buttons.refresh', default="Refresh"), command=self._reload_rollover_terms).grid(
                 row=0, column=2, padx=10)
-            ttk.Button(ctl, text="Run Rollover", command=self._run_rollover).grid(
+            ttk.Button(ctl, text=_t('gui.academics.course_management_gui.core.rollover_tab.buttons.run_rollover', default="Run Rollover"), command=self._run_rollover).grid(
                 row=1, column=2, padx=10)
 
-            prev = ttk.LabelFrame(frame, text="Preview (sections in source term)",
+            prev = ttk.LabelFrame(frame, text=_t('gui.academics.course_management_gui.core.rollover_tab.labels.preview_sections_in_source_term', default="Preview (sections in source term)"),
                                   padding=8)
             prev.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
             cols = ("Course", "Section", "Instructor", "Cap", "Mode", "Status")
@@ -121,11 +123,11 @@ class RolloverTabMixin:
         dst_id = self._ro_term_map.get(dst_name) if hasattr(self, "_ro_term_map") else None
         if src_id is None or dst_id is None:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Choose both a source and a target term.")
+                                   _t('gui.academics.course_management_gui.core.rollover_tab.dialogs.choose_both_a_source_and_a_target_term', default="Choose both a source and a target term."))
             return
         if src_id == dst_id:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Source and target term must differ.")
+                                   _t('gui.academics.course_management_gui.core.rollover_tab.dialogs.source_and_target_term_must_differ', default="Source and target term must differ."))
             return
         if not messagebox.askyesno(
                 _("common.confirm", default="Confirm"),

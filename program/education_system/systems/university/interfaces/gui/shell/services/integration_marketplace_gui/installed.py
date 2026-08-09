@@ -33,7 +33,7 @@ class InstalledMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to configure")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.installed.dialogs.please_select_an_integration_to_configure', default="Please select an integration to configure"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
@@ -51,7 +51,7 @@ class InstalledMixin:
                 result = cursor.fetchone()
 
             if not result:
-                messagebox.showerror(_t("common.error"), "Installation not found")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.installed.dialogs.installation_not_found', default="Installation not found"))
                 return
 
             current_config, sync_freq, integration_name = result
@@ -114,12 +114,12 @@ class InstalledMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to sync")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.installed.dialogs.please_select_an_integration_to_sync', default="Please select an integration to sync"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
 
-            if messagebox.askyesno(_t("common.confirm"), "Start manual sync for this integration?"):
+            if messagebox.askyesno(_t("common.confirm"), _t('gui.shell.services.integration_marketplace_gui.installed.dialogs.start_manual_sync_for_this_integration', default="Start manual sync for this integration?")):
                 # Start sync
                 if MANAGERS_AVAILABLE:
                     log_id = SyncManager.start_sync(install_id)
@@ -172,13 +172,13 @@ class InstalledMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to uninstall")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.installed.dialogs.please_select_an_integration_to_uninstall', default="Please select an integration to uninstall"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
             integration_name = self.installed_tree.item(selected[0])['values'][1]
 
-            if messagebox.askyesno("Confirm Uninstall",
+            if messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.installed.dialogs.confirm_uninstall', default="Confirm Uninstall"),
                                   f"Uninstall '{integration_name}'?\n\n"
                                   f"This will deactivate the integration and remove its credentials."):
                 if MANAGERS_AVAILABLE:
@@ -195,7 +195,7 @@ class InstalledMixin:
                 log_activity('delete', 'installed_integration', install_id,
                             details={'action': 'uninstalled'})
 
-                messagebox.showinfo(_t("common.success"), "Integration uninstalled successfully")
+                messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.installed.dialogs.integration_uninstalled_successfully', default="Integration uninstalled successfully"))
                 self.load_installed()
 
         except Exception as e:

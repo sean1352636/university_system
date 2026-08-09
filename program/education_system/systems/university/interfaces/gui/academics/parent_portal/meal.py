@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -51,21 +53,21 @@ def check_meal_balance(self):
     if is_admin:
         students_list = self._load_all_students_from_db()
         if not students_list:
-            messagebox.showinfo("No Students", "No students found in the system.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.meal.dialogs.no_students', default="No Students"), _t('gui.academics.parent_portal.meal.dialogs.no_students_found_in_the_system', default="No students found in the system."))
             return
     else:
         # Non-admin users can only access their linked students
         if not self.children:
-            messagebox.showinfo("No Students", "No students linked to your guardian account.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.meal.dialogs.no_students', default="No Students"), _t('gui.academics.parent_portal.meal.dialogs.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account."))
             return
         students_list = self.children
 
     balance_window = tk.Toplevel(self.root)
-    balance_window.title("Meal Account Management")
+    balance_window.title(_t('gui.academics.parent_portal.meal.windows.meal_account_management', default="Meal Account Management"))
     balance_window.geometry("750x700")
     balance_window.minsize(700, 600)
 
-    title = ttk.Label(balance_window, text="Meal Account Management", font=('Arial', 16, 'bold'))
+    title = ttk.Label(balance_window, text=_t('gui.academics.parent_portal.meal.labels.meal_account_management', default="Meal Account Management"), font=('Arial', 16, 'bold'))
     title.pack(pady=10)
 
     # Create scrollable canvas for main content
@@ -89,7 +91,7 @@ def check_meal_balance(self):
     canvas.bind_all("<MouseWheel>", _on_mousewheel)
 
     # Student selection
-    selection_frame = ttk.LabelFrame(main_frame, text="Select Student", padding=10)
+    selection_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.meal.labels.select_student', default="Select Student"), padding=10)
     selection_frame.pack(fill=tk.X, pady=5)
 
     student_var = tk.StringVar()
@@ -100,16 +102,16 @@ def check_meal_balance(self):
     student_combo.pack(fill=tk.X, pady=5)
 
     # Balance display frame
-    balance_frame = ttk.LabelFrame(main_frame, text="Account Balance", padding=10)
+    balance_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.meal.labels.account_balance', default="Account Balance"), padding=10)
     balance_frame.pack(fill=tk.X, pady=5)
 
-    balance_label = ttk.Label(balance_frame, text="Balance: Loading...", font=('Arial', 14))
+    balance_label = ttk.Label(balance_frame, text=_t('gui.academics.parent_portal.meal.labels.balance_loading', default="Balance: Loading..."), font=('Arial', 14))
     balance_label.pack(anchor='w')
 
-    status_label = ttk.Label(balance_frame, text="Status: Loading...", font=('Arial', 12))
+    status_label = ttk.Label(balance_frame, text=_t('gui.academics.parent_portal.meal.labels.status_loading', default="Status: Loading..."), font=('Arial', 12))
     status_label.pack(anchor='w')
 
-    threshold_label = ttk.Label(balance_frame, text="Low Balance Threshold: Loading...", font=('Arial', 10))
+    threshold_label = ttk.Label(balance_frame, text=_t('gui.academics.parent_portal.meal.labels.low_balance_threshold_loading', default="Low Balance Threshold: Loading..."), font=('Arial', 10))
     threshold_label.pack(anchor='w')
 
     # Cross-domain: show the campus restaurant POS balance derived
@@ -118,21 +120,21 @@ def check_meal_balance(self):
     # top-up was recorded somewhere that didn't mirror to the bus.
     pos_balance_label = ttk.Label(
         balance_frame,
-        text="Campus restaurant balance: Loading...",
+        text=_t('gui.academics.parent_portal.meal.labels.campus_restaurant_balance_loading', default="Campus restaurant balance: Loading..."),
         font=('Arial', 10), foreground='#06c',
     )
     threshold_label.pack(anchor='w')
 
     # Transaction history frame
-    history_frame = ttk.LabelFrame(main_frame, text="Recent Transactions", padding=10)
+    history_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.meal.labels.recent_transactions', default="Recent Transactions"), padding=10)
     history_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
     trans_tree = ttk.Treeview(history_frame, columns=("Date", "Type", "Amount", "Description", "Balance After"), show='headings', height=8)
-    trans_tree.heading("Date", text="Date")
-    trans_tree.heading("Type", text="Type")
-    trans_tree.heading("Amount", text="Amount")
-    trans_tree.heading("Description", text="Description")
-    trans_tree.heading("Balance After", text="Balance After")
+    trans_tree.heading("Date", text=_t('gui.academics.parent_portal.meal.headings.date', default="Date"))
+    trans_tree.heading("Type", text=_t('gui.academics.parent_portal.meal.headings.type', default="Type"))
+    trans_tree.heading("Amount", text=_t('gui.academics.parent_portal.meal.headings.amount', default="Amount"))
+    trans_tree.heading("Description", text=_t('gui.academics.parent_portal.meal.headings.description', default="Description"))
+    trans_tree.heading("Balance After", text=_t('gui.academics.parent_portal.meal.headings.balance_after', default="Balance After"))
 
     trans_tree.column("Date", width=100)
     trans_tree.column("Type", width=60)
@@ -146,13 +148,13 @@ def check_meal_balance(self):
     trans_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Top-up frame
-    topup_frame = ttk.LabelFrame(main_frame, text="Add Funds", padding=10)
+    topup_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.meal.labels.add_funds', default="Add Funds"), padding=10)
     topup_frame.pack(fill=tk.X, pady=5)
 
     topup_row = ttk.Frame(topup_frame)
     topup_row.pack(fill=tk.X)
 
-    ttk.Label(topup_row, text="Amount (£):").pack(side=tk.LEFT, padx=5)
+    ttk.Label(topup_row, text=_t('gui.academics.parent_portal.meal.labels.amount', default="Amount (£):")).pack(side=tk.LEFT, padx=5)
     amount_var = tk.StringVar(value="20.00")
     amount_entry = ttk.Entry(topup_row, textvariable=amount_var, width=15)
     amount_entry.pack(side=tk.LEFT, padx=5)
@@ -161,7 +163,7 @@ def check_meal_balance(self):
     preset_frame = ttk.Frame(topup_frame)
     preset_frame.pack(fill=tk.X, pady=5)
 
-    ttk.Label(preset_frame, text="Quick amounts:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(preset_frame, text=_t('gui.academics.parent_portal.meal.labels.quick_amounts', default="Quick amounts:")).pack(side=tk.LEFT, padx=5)
     for amount in ["10.00", "20.00", "50.00", "100.00"]:
         ttk.Button(preset_frame, text=f"£{amount}", width=8,
                   command=lambda a=amount: amount_var.set(a)).pack(side=tk.LEFT, padx=2)
@@ -205,15 +207,15 @@ def check_meal_balance(self):
                 balance_label.config(text=f"Balance: £{balance:.2f}")
 
                 if balance < threshold:
-                    status_label.config(text="Status: LOW BALANCE", foreground="red")
+                    status_label.config(text=_t('gui.academics.parent_portal.meal.text.status_low_balance', default="Status: LOW BALANCE"), foreground="red")
                 else:
-                    status_label.config(text="Status: OK", foreground="green")
+                    status_label.config(text=_t('gui.academics.parent_portal.meal.text.status_ok', default="Status: OK"), foreground="green")
 
                 threshold_label.config(text=f"Low Balance Threshold: £{threshold:.2f}")
             else:
-                balance_label.config(text="Balance: £0.00")
-                status_label.config(text="Status: No Account", foreground="orange")
-                threshold_label.config(text="Low Balance Threshold: £10.00 (default)")
+                balance_label.config(text=_t('gui.academics.parent_portal.meal.text.balance_0_00', default="Balance: £0.00"))
+                status_label.config(text=_t('gui.academics.parent_portal.meal.text.status_no_account', default="Status: No Account"), foreground="orange")
+                threshold_label.config(text=_t('gui.academics.parent_portal.meal.text.low_balance_threshold_10_00_default', default="Low Balance Threshold: £10.00 (default)"))
 
             # Cross-domain: pull the campus restaurant POS balance
             # from restaurant_bus so the parent can confirm the
@@ -228,7 +230,7 @@ def check_meal_balance(self):
                 )
             except Exception:
                 pos_balance_label.config(
-                    text="Campus restaurant balance: (unavailable)"
+                    text=_t('gui.academics.parent_portal.meal.text.campus_restaurant_balance_unavailable', default="Campus restaurant balance: (unavailable)")
                 )
 
             # Get recent transactions
@@ -259,24 +261,24 @@ def check_meal_balance(self):
     def add_funds():
         student_id = get_student_id()
         if not student_id:
-            messagebox.showwarning("Error", "Please select a student.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.meal.dialogs.error', default="Error"), _t('gui.academics.parent_portal.meal.dialogs.please_select_a_student', default="Please select a student."))
             return
 
         try:
             amount = float(amount_var.get())
             if amount <= 0:
-                messagebox.showwarning("Invalid Amount", "Please enter a positive amount.")
+                messagebox.showwarning(_t('gui.academics.parent_portal.meal.dialogs.invalid_amount', default="Invalid Amount"), _t('gui.academics.parent_portal.meal.dialogs.please_enter_a_positive_amount', default="Please enter a positive amount."))
                 return
             if amount > 500:
-                messagebox.showwarning("Amount Too High", "Maximum top-up is £500.")
+                messagebox.showwarning(_t('gui.academics.parent_portal.meal.dialogs.amount_too_high', default="Amount Too High"), _t('gui.academics.parent_portal.meal.dialogs.maximum_top_up_is_500', default="Maximum top-up is £500."))
                 return
         except ValueError:
-            messagebox.showwarning("Invalid Amount", "Please enter a valid number.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.meal.dialogs.invalid_amount', default="Invalid Amount"), _t('gui.academics.parent_portal.meal.dialogs.please_enter_a_valid_number', default="Please enter a valid number."))
             return
 
         # Confirm top-up
         selected_name = student_var.get().split(" (ID:")[0]
-        if not messagebox.askyesno("Confirm Top-Up",
+        if not messagebox.askyesno(_t('gui.academics.parent_portal.meal.dialogs.confirm_top_up', default="Confirm Top-Up"),
             f"Add £{amount:.2f} to {selected_name}'s meal account?"):
             return
 
@@ -379,16 +381,16 @@ def check_meal_balance(self):
                 except Exception as email_error:
                     print(f"Email notification error: {email_error}")
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.parent_portal.meal.dialogs.success', default="Success"),
                 f"Successfully added £{amount:.2f} to meal account.\n\nNew Balance: £{new_balance:.2f}\n\nNotification sent to student.")
 
             load_balance()  # Refresh display
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error adding funds: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.meal.dialogs.error', default="Error"), f"Error adding funds: {e}")
 
     # Top-up button
-    ttk.Button(topup_frame, text="Add Funds", command=add_funds).pack(pady=10)
+    ttk.Button(topup_frame, text=_t('gui.academics.parent_portal.meal.buttons.add_funds', default="Add Funds"), command=add_funds).pack(pady=10)
 
     # Bind student selection change
     student_combo.bind("<<ComboboxSelected>>", lambda e: load_balance())
@@ -397,8 +399,8 @@ def check_meal_balance(self):
     btn_frame = ttk.Frame(balance_window)
     btn_frame.pack(pady=10)
 
-    ttk.Button(btn_frame, text="Refresh", command=load_balance).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Close", command=balance_window.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.meal.buttons.refresh', default="Refresh"), command=load_balance).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.meal.buttons.close', default="Close"), command=balance_window.destroy).pack(side=tk.LEFT, padx=5)
 
     # Load initial balance
     load_balance()
@@ -446,18 +448,18 @@ def show_meal_interface(self):
     self.clear_content()
     self.update_status("Meal Accounts")
 
-    title = ttk.Label(self.content_frame, text="Meal Accounts", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.meal.labels.meal_accounts', default="Meal Accounts"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.meal.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.meal.labels.select_student_variant_2', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -466,7 +468,7 @@ def show_meal_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Meal account display frame
-    meal_frame = ttk.LabelFrame(self.content_frame, text="Meal Account Information", padding=15)
+    meal_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.meal.labels.meal_account_information', default="Meal Account Information"), padding=15)
     meal_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_meal_info():
@@ -475,7 +477,7 @@ def show_meal_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(meal_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(meal_frame, text=_t('gui.academics.parent_portal.meal.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -500,7 +502,7 @@ def show_meal_interface(self):
 
                 if meal_data:
                     # Balance information
-                    balance_frame = ttk.LabelFrame(meal_frame, text="Account Balance", padding=10)
+                    balance_frame = ttk.LabelFrame(meal_frame, text=_t('gui.academics.parent_portal.meal.labels.account_balance', default="Account Balance"), padding=10)
                     balance_frame.pack(fill=tk.X, pady=(0, 10))
 
                     balance_val = float(meal_data[0]) if meal_data[0] else 0.0
@@ -514,10 +516,10 @@ def show_meal_interface(self):
 
                     # Auto top-up information
                     if meal_data[2]:  # auto_topup_enabled
-                        topup_frame = ttk.LabelFrame(meal_frame, text="Auto Top-Up Settings", padding=10)
+                        topup_frame = ttk.LabelFrame(meal_frame, text=_t('gui.academics.parent_portal.meal.labels.auto_top_up_settings', default="Auto Top-Up Settings"), padding=10)
                         topup_frame.pack(fill=tk.X, pady=(0, 10))
 
-                        ttk.Label(topup_frame, text="Auto Top-Up: Enabled",
+                        ttk.Label(topup_frame, text=_t('gui.academics.parent_portal.meal.labels.auto_top_up_enabled', default="Auto Top-Up: Enabled"),
                                  font=('Arial', 10), foreground='green').pack(anchor='w', pady=3)
                         ttk.Label(topup_frame, text=f"Top-Up Amount: £{float(meal_data[3] or 20.0):.2f}",
                                  font=('Arial', 10)).pack(anchor='w', pady=3)
@@ -534,7 +536,7 @@ def show_meal_interface(self):
                     transactions = cursor.fetchall()
 
                     if transactions:
-                        trans_frame = ttk.LabelFrame(meal_frame, text="Recent Transactions", padding=10)
+                        trans_frame = ttk.LabelFrame(meal_frame, text=_t('gui.academics.parent_portal.meal.labels.recent_transactions', default="Recent Transactions"), padding=10)
                         trans_frame.pack(fill=tk.BOTH, expand=True)
 
                         columns = ("Date", "Type", "Amount", "Description")
@@ -556,15 +558,15 @@ def show_meal_interface(self):
                     # Action buttons
                     btn_frame = ttk.Frame(meal_frame)
                     btn_frame.pack(pady=10)
-                    ttk.Button(btn_frame, text="Add Funds",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.meal.buttons.add_funds', default="Add Funds"),
                               command=lambda: self.add_meal_funds(student_id)).pack(side=tk.LEFT, padx=5)
-                    ttk.Button(btn_frame, text="Update Meal Plan",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.meal.buttons.update_meal_plan', default="Update Meal Plan"),
                               command=lambda: self.update_meal_plan(student_id)).pack(side=tk.LEFT, padx=5)
                 else:
-                    ttk.Label(meal_frame, text="No meal account found",
+                    ttk.Label(meal_frame, text=_t('gui.academics.parent_portal.meal.labels.no_meal_account_found', default="No meal account found"),
                              font=('Arial', 11)).pack(pady=50)
             else:
-                ttk.Label(meal_frame, text="Meal account system not configured",
+                ttk.Label(meal_frame, text=_t('gui.academics.parent_portal.meal.labels.meal_account_system_not_configured', default="Meal account system not configured"),
                          font=('Arial', 11)).pack(pady=20)
 
             conn.close()
@@ -573,14 +575,14 @@ def show_meal_interface(self):
             ttk.Label(meal_frame, text=f"Error loading meal account: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Meal Info", command=load_meal_info).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.meal.buttons.load_meal_info', default="Load Meal Info"), command=load_meal_info).pack(side=tk.LEFT, padx=5)
     load_meal_info()
 ParentPortalGUI.show_meal_interface = show_meal_interface
 
 def add_meal_funds(self, student_id):
     """Add funds to meal account"""
     # Ask for amount
-    amount = simpledialog.askfloat("Add Funds", "Enter amount to add to meal account:", minvalue=0.01)
+    amount = simpledialog.askfloat(_t('gui.academics.parent_portal.meal.dialogs.add_funds', default="Add Funds"), _t('gui.academics.parent_portal.meal.dialogs.enter_amount_to_add_to_meal_account', default="Enter amount to add to meal account:"), minvalue=0.01)
 
     if not amount:
         return
@@ -596,7 +598,7 @@ def add_meal_funds(self, student_id):
         """)
 
         if not cursor.fetchone():
-            messagebox.showwarning("Not Available", "Meal account system not configured.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.meal.dialogs.not_available', default="Not Available"), _t('gui.academics.parent_portal.meal.dialogs.meal_account_system_not_configured', default="Meal account system not configured."))
             conn.close()
             return
 
@@ -620,17 +622,17 @@ def add_meal_funds(self, student_id):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"£{amount:.2f} has been added to the meal account!")
+        messagebox.showinfo(_t('gui.academics.parent_portal.meal.dialogs.success', default="Success"), f"£{amount:.2f} has been added to the meal account!")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to add funds: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.meal.dialogs.error', default="Error"), f"Failed to add funds: {str(e)}")
 ParentPortalGUI.add_meal_funds = add_meal_funds
 
 def update_meal_plan(self, student_id):
     """Update meal plan"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Update Meal Plan")
+    dialog.title(_t('gui.academics.parent_portal.meal.windows.update_meal_plan', default="Update Meal Plan"))
     dialog.geometry("500x400")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -639,7 +641,7 @@ def update_meal_plan(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Update Meal Plan",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.meal.labels.update_meal_plan', default="Update Meal Plan"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Get current meal plan
@@ -653,7 +655,7 @@ def update_meal_plan(self, student_id):
         """)
 
         if not cursor.fetchone():
-            messagebox.showwarning("Not Available", "Meal account system not configured.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.meal.dialogs.not_available', default="Not Available"), _t('gui.academics.parent_portal.meal.dialogs.meal_account_system_not_configured', default="Meal account system not configured."))
             conn.close()
             dialog.destroy()
             return
@@ -666,12 +668,12 @@ def update_meal_plan(self, student_id):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load meal plan: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.meal.dialogs.error', default="Error"), f"Failed to load meal plan: {str(e)}")
         dialog.destroy()
         return
 
     # Meal plan options
-    ttk.Label(main_frame, text="Select Meal Plan:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.meal.labels.select_meal_plan', default="Select Meal Plan:")).pack(anchor='w', pady=(5, 0))
 
     meal_plans = [
         ('Standard', 'Standard meal plan - All meals included'),
@@ -696,7 +698,7 @@ def update_meal_plan(self, student_id):
 
     def save_plan():
         if not plan_var.get():
-            messagebox.showwarning("Validation Error", "Please select a meal plan.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.meal.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.meal.dialogs.please_select_a_meal_plan', default="Please select a meal plan."))
             return
 
         try:
@@ -713,16 +715,16 @@ def update_meal_plan(self, student_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Meal plan updated to: {plan_var.get()}")
+            messagebox.showinfo(_t('gui.academics.parent_portal.meal.dialogs.success', default="Success"), f"Meal plan updated to: {plan_var.get()}")
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update meal plan: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.meal.dialogs.error', default="Error"), f"Failed to update meal plan: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Save", command=save_plan).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.meal.buttons.save', default="Save"), command=save_plan).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.meal.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.update_meal_plan = update_meal_plan

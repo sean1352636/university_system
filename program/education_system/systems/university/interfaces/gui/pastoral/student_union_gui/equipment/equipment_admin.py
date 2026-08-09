@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -33,7 +35,7 @@ from education_system.systems.university.interfaces.gui.pastoral.student_union_g
 )
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -70,7 +72,7 @@ class ManageEquipmentSystemDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Equipment Management System")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.windows.equipment_management_system', default="Equipment Management System"))
         self.dialog.geometry("950x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -81,27 +83,27 @@ class ManageEquipmentSystemDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🎬 Equipment Management",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.equipment_management', default="🎬 Equipment Management"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # System overview
-        overview_frame = ttk.LabelFrame(main_frame, text="System Overview")
+        overview_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.system_overview', default="System Overview"))
         overview_frame.pack(fill='x', pady=(0, 15))
 
         overview_grid = ttk.Frame(overview_frame)
         overview_grid.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(overview_grid, text="Total Equipment:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
-        ttk.Label(overview_grid, text="156 items").grid(row=0, column=1, sticky='w', padx=10)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.total_equipment', default="Total Equipment:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.value_156_items', default="156 items")).grid(row=0, column=1, sticky='w', padx=10)
 
-        ttk.Label(overview_grid, text="Available Now:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
-        ttk.Label(overview_grid, text="98 items (63%)", foreground='green').grid(row=1, column=1, sticky='w', padx=10)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.available_now', default="Available Now:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.value_98_items_63', default="98 items (63%)"), foreground='green').grid(row=1, column=1, sticky='w', padx=10)
 
-        ttk.Label(overview_grid, text="Checked Out:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
-        ttk.Label(overview_grid, text="45 items (29%)").grid(row=2, column=1, sticky='w', padx=10)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.checked_out', default="Checked Out:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.value_45_items_29', default="45 items (29%)")).grid(row=2, column=1, sticky='w', padx=10)
 
-        ttk.Label(overview_grid, text="Under Maintenance:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
-        ttk.Label(overview_grid, text="13 items (8%)", foreground='orange').grid(row=3, column=1, sticky='w', padx=10)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.under_maintenance', default="Under Maintenance:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.value_13_items_8', default="13 items (8%)"), foreground='orange').grid(row=3, column=1, sticky='w', padx=10)
 
         # Action cards
         cards_frame = ttk.Frame(main_frame)
@@ -125,25 +127,25 @@ class ManageEquipmentSystemDialog:
 
         # Admin section (if admin)
         if True:  # Check admin status
-            admin_frame = ttk.LabelFrame(main_frame, text="Admin Functions")
+            admin_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.admin_functions', default="Admin Functions"))
             admin_frame.pack(fill='x', pady=(0, 15))
 
             admin_buttons = ttk.Frame(admin_frame)
             admin_buttons.pack(padx=15, pady=10)
 
-            ttk.Button(admin_buttons, text="➕ Add New Equipment", command=self.add_equipment, width=20).pack(side='left', padx=(0, 10))
-            ttk.Button(admin_buttons, text="📊 Generate Reports", command=self.generate_reports, width=20).pack(side='left', padx=(0, 10))
-            ttk.Button(admin_buttons, text="⚙️ Update Status", command=self.update_status, width=20).pack(side='left')
+            ttk.Button(admin_buttons, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.add_new_equipment', default="➕ Add New Equipment"), command=self.add_equipment, width=20).pack(side='left', padx=(0, 10))
+            ttk.Button(admin_buttons, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.generate_reports', default="📊 Generate Reports"), command=self.generate_reports, width=20).pack(side='left', padx=(0, 10))
+            ttk.Button(admin_buttons, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.update_status_variant_2', default="⚙️ Update Status"), command=self.update_status, width=20).pack(side='left')
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def create_action_card(self, parent, title, description, command):
         card = ttk.Frame(parent, relief='raised', borderwidth=1)
 
         ttk.Label(card, text=title, font=('Arial', 11, 'bold')).pack(pady=(10, 5), padx=10)
         ttk.Label(card, text=description, font=('Arial', 9), wraplength=150).pack(pady=(0, 10), padx=10)
-        ttk.Button(card, text="Open", command=command).pack(pady=(0, 10))
+        ttk.Button(card, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.open', default="Open"), command=command).pack(pady=(0, 10))
 
         return card
 
@@ -185,7 +187,7 @@ class AddNewEquipmentDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Add New Equipment")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.windows.add_new_equipment', default="Add New Equipment"))
         self.dialog.geometry("700x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -197,7 +199,7 @@ class AddNewEquipmentDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Add New Equipment",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.add_new_equipment', default="Add New Equipment"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Scrollable form
@@ -259,8 +261,8 @@ class AddNewEquipmentDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(button_frame, text="Add Equipment", command=self.add_equipment).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.add_equipment', default="Add Equipment"), command=self.add_equipment).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='right')
 
     def _get_field_value(self, key):
         """Get the value from a form field widget."""
@@ -276,10 +278,10 @@ class AddNewEquipmentDialog:
         category = self._get_field_value("category")
 
         if not name:
-            messagebox.showwarning("Validation Error", "Equipment Name is required.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.equipment_name_is_required', default="Equipment Name is required."), parent=self.dialog)
             return
         if not category:
-            messagebox.showwarning("Validation Error", "Category is required.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.category_is_required', default="Category is required."), parent=self.dialog)
             return
 
         description = self._get_field_value("description")
@@ -294,8 +296,8 @@ class AddNewEquipmentDialog:
             try:
                 datetime.strptime(purchase_date, "%Y-%m-%d")
             except ValueError:
-                messagebox.showwarning("Validation Error",
-                                       "Purchase Date must be in YYYY-MM-DD format.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"),
+                                       _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.purchase_date_must_be_in_yyyy_mm_dd_format', default="Purchase Date must be in YYYY-MM-DD format."),
                                        parent=self.dialog)
                 return
 
@@ -305,8 +307,8 @@ class AddNewEquipmentDialog:
             try:
                 replacement_cost = float(replacement_cost_str.replace(",", "").replace("£", "").replace("$", ""))
             except ValueError:
-                messagebox.showwarning("Validation Error",
-                                       "Replacement Cost must be a valid number.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"),
+                                       _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.replacement_cost_must_be_a_valid_number', default="Replacement Cost must be a valid number."),
                                        parent=self.dialog)
                 return
 
@@ -328,7 +330,7 @@ class AddNewEquipmentDialog:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Equipment Added",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.equipment_added', default="Equipment Added"),
                                 f"New equipment added successfully!\n\n"
                                 f"Equipment ID: {new_id}\n"
                                 f"Name: {name}\n"
@@ -339,7 +341,7 @@ class AddNewEquipmentDialog:
             self.dialog.destroy()
         except Exception as e:
             logging.error("Failed to add equipment: %s", e)
-            messagebox.showerror("Database Error",
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.database_error', default="Database Error"),
                                  f"Failed to add equipment:\n{e}",
                                  parent=self.dialog)
 
@@ -366,7 +368,7 @@ class UpdateEquipmentStatusDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Update Equipment Status")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.windows.update_equipment_status', default="Update Equipment Status"))
         self.dialog.geometry("900x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -383,11 +385,11 @@ class UpdateEquipmentStatusDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Update Equipment Status",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.update_equipment_status', default="Update Equipment Status"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Equipment list
-        list_frame = ttk.LabelFrame(main_frame, text="Equipment Inventory")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.equipment_inventory', default="Equipment Inventory"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('ID', 'Name', 'Category', 'Current Status', 'Condition', 'Location')
@@ -409,29 +411,29 @@ class UpdateEquipmentStatusDialog:
         scrollbar.pack(side='right', fill='y')
 
         # Update form
-        update_frame = ttk.LabelFrame(main_frame, text="Update Status")
+        update_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.update_status', default="Update Status"))
         update_frame.pack(fill='x', pady=(0, 15))
 
         update_content = ttk.Frame(update_frame)
         update_content.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(update_content, text="New Status:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(update_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.new_status', default="New Status:")).grid(row=0, column=0, sticky='w', pady=5)
         self.status_combo = ttk.Combobox(update_content, width=25, state='readonly')
         self.status_combo['values'] = ('available', 'in_use', 'maintenance', 'damaged', 'retired')
         self.status_combo.current(0)
         self.status_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(update_content, text="New Condition:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(update_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.new_condition', default="New Condition:")).grid(row=1, column=0, sticky='w', pady=5)
         self.condition_combo = ttk.Combobox(update_content, width=25, state='readonly')
         self.condition_combo['values'] = ('good', 'fair', 'poor')
         self.condition_combo.current(0)
         self.condition_combo.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(update_content, text="New Location:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(update_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.new_location', default="New Location:")).grid(row=2, column=0, sticky='w', pady=5)
         self.location_entry = ttk.Entry(update_content, width=27)
         self.location_entry.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(update_content, text="Notes:").grid(row=3, column=0, sticky='nw', pady=5)
+        ttk.Label(update_content, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.notes', default="Notes:")).grid(row=3, column=0, sticky='nw', pady=5)
         self.notes_text = scrolledtext.ScrolledText(update_content, height=3, width=27)
         self.notes_text.grid(row=3, column=1, sticky='ew', padx=10, pady=5)
 
@@ -441,9 +443,9 @@ class UpdateEquipmentStatusDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Update Status", command=self.update_status).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Refresh", command=self.load_equipment).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.update_status', default="Update Status"), command=self.update_status).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.refresh', default="Refresh"), command=self.load_equipment).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_equipment(self):
         """Load equipment from the database into the treeview."""
@@ -471,15 +473,15 @@ class UpdateEquipmentStatusDialog:
                 ))
         except Exception as e:
             logging.error("Failed to load equipment: %s", e)
-            messagebox.showerror("Database Error",
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.database_error', default="Database Error"),
                                  f"Failed to load equipment:\n{e}",
                                  parent=self.dialog)
 
     def update_status(self):
         selected = self.tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection",
-                                   "Please select an equipment item to update.",
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.no_selection', default="No Selection"),
+                                   _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.please_select_an_equipment_item_to_update', default="Please select an equipment item to update."),
                                    parent=self.dialog)
             return
 
@@ -512,7 +514,7 @@ class UpdateEquipmentStatusDialog:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Status Updated",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.status_updated', default="Status Updated"),
                                 f"Equipment status updated!\n\n"
                                 f"ID: {equipment_id} - {equipment_name}\n"
                                 f"Old Status: {old_status}\n"
@@ -522,7 +524,7 @@ class UpdateEquipmentStatusDialog:
             self.load_equipment()
         except Exception as e:
             logging.error("Failed to update equipment status: %s", e)
-            messagebox.showerror("Database Error",
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.database_error', default="Database Error"),
                                  f"Failed to update status:\n{e}",
                                  parent=self.dialog)
 
@@ -536,7 +538,7 @@ class EquipmentMaintenanceTrackingDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Equipment Maintenance Tracking")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.windows.equipment_maintenance_tracking', default="Equipment Maintenance Tracking"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -550,7 +552,7 @@ class EquipmentMaintenanceTrackingDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Equipment Maintenance",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.equipment_maintenance', default="Equipment Maintenance"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Create notebook
@@ -559,7 +561,7 @@ class EquipmentMaintenanceTrackingDialog:
 
         # Current Maintenance tab - equipment with condition issues or maintenance status
         current_frame = ttk.Frame(notebook)
-        notebook.add(current_frame, text="Needs Maintenance")
+        notebook.add(current_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.tabs.needs_maintenance', default="Needs Maintenance"))
 
         current_columns = ('ID', 'Equipment', 'Category', 'Condition', 'Status', 'Location', 'Maintenance Due')
         self.current_tree = ttk.Treeview(current_frame, columns=current_columns, show='headings', height=10)
@@ -578,7 +580,7 @@ class EquipmentMaintenanceTrackingDialog:
 
         # Scheduled Maintenance tab - equipment with upcoming maintenance_due dates
         schedule_frame = ttk.Frame(notebook)
-        notebook.add(schedule_frame, text="Scheduled Maintenance")
+        notebook.add(schedule_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.tabs.scheduled_maintenance', default="Scheduled Maintenance"))
 
         sched_columns = ('ID', 'Equipment', 'Category', 'Condition', 'Maintenance Due', 'Location')
         self.scheduled_tree = ttk.Treeview(schedule_frame, columns=sched_columns, show='headings', height=10)
@@ -599,11 +601,11 @@ class EquipmentMaintenanceTrackingDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Report Issue", command=self.report_issue).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Complete Maintenance", command=self.complete_maintenance).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Schedule Maintenance", command=self.schedule_maintenance).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Refresh", command=self.load_maintenance_data).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.report_issue', default="Report Issue"), command=self.report_issue).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.complete_maintenance', default="Complete Maintenance"), command=self.complete_maintenance).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.schedule_maintenance', default="Schedule Maintenance"), command=self.schedule_maintenance).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.refresh', default="Refresh"), command=self.load_maintenance_data).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_maintenance_data(self):
         """Load maintenance-related equipment data from the database."""
@@ -650,14 +652,14 @@ class EquipmentMaintenanceTrackingDialog:
                 conn.close()
         except Exception as e:
             logging.error("Failed to load maintenance data: %s", e)
-            messagebox.showerror("Database Error",
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.database_error', default="Database Error"),
                                  f"Failed to load maintenance data:\n{e}",
                                  parent=self.dialog)
 
     def report_issue(self):
         """Show a form dialog to report an equipment issue."""
         report_dlg = tk.Toplevel(self.dialog)
-        report_dlg.title("Report Equipment Issue")
+        report_dlg.title(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.windows.report_equipment_issue', default="Report Equipment Issue"))
         report_dlg.geometry("450x400")
         report_dlg.transient(self.dialog)
         report_dlg.grab_set()
@@ -665,13 +667,13 @@ class EquipmentMaintenanceTrackingDialog:
         frame = ttk.Frame(report_dlg)
         frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(frame, text="Report Equipment Issue", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.report_equipment_issue', default="Report Equipment Issue"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         form = ttk.Frame(frame)
         form.pack(fill='x')
 
         # Equipment ID
-        ttk.Label(form, text="Equipment ID:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.equipment_id', default="Equipment ID:")).grid(row=0, column=0, sticky='w', pady=5)
         eq_id_entry = ttk.Entry(form, width=30)
         eq_id_entry.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
@@ -682,12 +684,12 @@ class EquipmentMaintenanceTrackingDialog:
             eq_id_entry.insert(0, str(vals[0]))
 
         # Problem description
-        ttk.Label(form, text="Problem:").grid(row=1, column=0, sticky='nw', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.problem', default="Problem:")).grid(row=1, column=0, sticky='nw', pady=5)
         problem_text = scrolledtext.ScrolledText(form, height=4, width=30)
         problem_text.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
 
         # Severity
-        ttk.Label(form, text="Severity:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.severity', default="Severity:")).grid(row=2, column=0, sticky='w', pady=5)
         severity_combo = ttk.Combobox(form, width=28, state='readonly')
         severity_combo['values'] = ('Low', 'Medium', 'High', 'Critical')
         severity_combo.current(1)
@@ -701,11 +703,11 @@ class EquipmentMaintenanceTrackingDialog:
             severity = severity_combo.get()
 
             if not eid or not eid.isdigit():
-                messagebox.showwarning("Validation Error", "Please enter a valid Equipment ID.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.please_enter_a_valid_equipment_id', default="Please enter a valid Equipment ID."),
                                        parent=report_dlg)
                 return
             if not problem:
-                messagebox.showwarning("Validation Error", "Please describe the problem.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.please_describe_the_problem', default="Please describe the problem."),
                                        parent=report_dlg)
                 return
 
@@ -717,7 +719,7 @@ class EquipmentMaintenanceTrackingDialog:
                     cursor.execute('SELECT equipment_name FROM union_equipment WHERE equipment_id = ?', (int(eid),))
                     eq_row = cursor.fetchone()
                     if not eq_row:
-                        messagebox.showwarning("Not Found",
+                        messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.not_found', default="Not Found"),
                                                f"Equipment ID {eid} not found.",
                                                parent=report_dlg)
                         return
@@ -734,7 +736,7 @@ class EquipmentMaintenanceTrackingDialog:
                 finally:
                     conn.close()
 
-                messagebox.showinfo("Issue Reported",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.issue_reported', default="Issue Reported"),
                                     f"Issue reported for: {eq_row[0]}\n"
                                     f"Severity: {severity}\n"
                                     f"Equipment marked for maintenance.",
@@ -743,21 +745,21 @@ class EquipmentMaintenanceTrackingDialog:
                 self.load_maintenance_data()
             except Exception as e:
                 logging.error("Failed to report issue: %s", e)
-                messagebox.showerror("Database Error",
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.database_error', default="Database Error"),
                                      f"Failed to report issue:\n{e}",
                                      parent=report_dlg)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(15, 0))
-        ttk.Button(btn_frame, text="Submit", command=submit_issue).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=report_dlg.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.submit', default="Submit"), command=submit_issue).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.cancel', default="Cancel"), command=report_dlg.destroy).pack(side='right')
 
     def complete_maintenance(self):
         """Mark the selected maintenance item as complete, update equipment condition."""
         selected = self.current_tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection",
-                                   "Please select an equipment item from the 'Needs Maintenance' tab.",
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.no_selection', default="No Selection"),
+                                   _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.please_select_an_equipment_item_from_the_needs_maintenance_tab', default="Please select an equipment item from the 'Needs Maintenance' tab."),
                                    parent=self.dialog)
             return
 
@@ -767,7 +769,7 @@ class EquipmentMaintenanceTrackingDialog:
 
         # Ask for post-maintenance condition
         complete_dlg = tk.Toplevel(self.dialog)
-        complete_dlg.title("Complete Maintenance")
+        complete_dlg.title(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.windows.complete_maintenance', default="Complete Maintenance"))
         complete_dlg.geometry("400x250")
         complete_dlg.transient(self.dialog)
         complete_dlg.grab_set()
@@ -781,13 +783,13 @@ class EquipmentMaintenanceTrackingDialog:
         form = ttk.Frame(frame)
         form.pack(fill='x')
 
-        ttk.Label(form, text="Condition After:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.condition_after', default="Condition After:")).grid(row=0, column=0, sticky='w', pady=5)
         cond_combo = ttk.Combobox(form, width=20, state='readonly')
         cond_combo['values'] = ('good', 'fair', 'poor')
         cond_combo.current(0)
         cond_combo.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(form, text="Next Maintenance\n(YYYY-MM-DD):").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.next_maintenance_yyyy_mm_dd', default="Next Maintenance\n(YYYY-MM-DD):")).grid(row=1, column=0, sticky='w', pady=5)
         next_maint_entry = ttk.Entry(form, width=22)
         next_maint_entry.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
 
@@ -801,8 +803,8 @@ class EquipmentMaintenanceTrackingDialog:
                 try:
                     datetime.strptime(next_date, '%Y-%m-%d')
                 except ValueError:
-                    messagebox.showwarning("Validation Error",
-                                           "Next maintenance date must be YYYY-MM-DD format.",
+                    messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"),
+                                           _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.next_maintenance_date_must_be_yyyy_mm_dd_format', default="Next maintenance date must be YYYY-MM-DD format."),
                                            parent=complete_dlg)
                     return
 
@@ -821,7 +823,7 @@ class EquipmentMaintenanceTrackingDialog:
                 finally:
                     conn.close()
 
-                messagebox.showinfo("Maintenance Complete",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.maintenance_complete', default="Maintenance Complete"),
                                     f"Maintenance completed for {equipment_name}.\n"
                                     f"Condition: {new_condition}\n"
                                     f"Status: {new_availability}",
@@ -830,19 +832,19 @@ class EquipmentMaintenanceTrackingDialog:
                 self.load_maintenance_data()
             except Exception as e:
                 logging.error("Failed to complete maintenance: %s", e)
-                messagebox.showerror("Database Error",
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.database_error', default="Database Error"),
                                      f"Failed to complete maintenance:\n{e}",
                                      parent=complete_dlg)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(15, 0))
-        ttk.Button(btn_frame, text="Complete", command=do_complete).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=complete_dlg.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.complete', default="Complete"), command=do_complete).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.cancel', default="Cancel"), command=complete_dlg.destroy).pack(side='right')
 
     def schedule_maintenance(self):
         """Show a form to schedule future maintenance for an equipment item."""
         sched_dlg = tk.Toplevel(self.dialog)
-        sched_dlg.title("Schedule Maintenance")
+        sched_dlg.title(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.windows.schedule_maintenance', default="Schedule Maintenance"))
         sched_dlg.geometry("420x280")
         sched_dlg.transient(self.dialog)
         sched_dlg.grab_set()
@@ -850,13 +852,13 @@ class EquipmentMaintenanceTrackingDialog:
         frame = ttk.Frame(sched_dlg)
         frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(frame, text="Schedule Maintenance", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.schedule_maintenance', default="Schedule Maintenance"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         form = ttk.Frame(frame)
         form.pack(fill='x')
 
         # Equipment selector
-        ttk.Label(form, text="Equipment ID:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.equipment_id', default="Equipment ID:")).grid(row=0, column=0, sticky='w', pady=5)
         eq_id_entry = ttk.Entry(form, width=25)
         eq_id_entry.grid(row=0, column=1, sticky='ew', padx=10, pady=5)
 
@@ -868,11 +870,11 @@ class EquipmentMaintenanceTrackingDialog:
                 eq_id_entry.insert(0, str(vals[0]))
                 break
 
-        ttk.Label(form, text="Maintenance Date\n(YYYY-MM-DD):").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.maintenance_date_yyyy_mm_dd', default="Maintenance Date\n(YYYY-MM-DD):")).grid(row=1, column=0, sticky='w', pady=5)
         date_entry = ttk.Entry(form, width=25)
         date_entry.grid(row=1, column=1, sticky='ew', padx=10, pady=5)
 
-        ttk.Label(form, text="Notes:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.notes', default="Notes:")).grid(row=2, column=0, sticky='nw', pady=5)
         notes_entry = scrolledtext.ScrolledText(form, height=3, width=25)
         notes_entry.grid(row=2, column=1, sticky='ew', padx=10, pady=5)
 
@@ -883,20 +885,20 @@ class EquipmentMaintenanceTrackingDialog:
             maint_date = date_entry.get().strip()
 
             if not eid or not eid.isdigit():
-                messagebox.showwarning("Validation Error",
-                                       "Please enter a valid Equipment ID.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"),
+                                       _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.please_enter_a_valid_equipment_id', default="Please enter a valid Equipment ID."),
                                        parent=sched_dlg)
                 return
             if not maint_date:
-                messagebox.showwarning("Validation Error",
-                                       "Please enter a maintenance date.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"),
+                                       _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.please_enter_a_maintenance_date', default="Please enter a maintenance date."),
                                        parent=sched_dlg)
                 return
             try:
                 datetime.strptime(maint_date, '%Y-%m-%d')
             except ValueError:
-                messagebox.showwarning("Validation Error",
-                                       "Date must be in YYYY-MM-DD format.",
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.validation_error', default="Validation Error"),
+                                       _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.date_must_be_in_yyyy_mm_dd_format', default="Date must be in YYYY-MM-DD format."),
                                        parent=sched_dlg)
                 return
 
@@ -907,7 +909,7 @@ class EquipmentMaintenanceTrackingDialog:
                     cursor.execute('SELECT equipment_name FROM union_equipment WHERE equipment_id = ?', (int(eid),))
                     eq_row = cursor.fetchone()
                     if not eq_row:
-                        messagebox.showwarning("Not Found",
+                        messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.not_found', default="Not Found"),
                                                f"Equipment ID {eid} not found.",
                                                parent=sched_dlg)
                         return
@@ -921,7 +923,7 @@ class EquipmentMaintenanceTrackingDialog:
                 finally:
                     conn.close()
 
-                messagebox.showinfo("Maintenance Scheduled",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.maintenance_scheduled', default="Maintenance Scheduled"),
                                     f"Maintenance scheduled for {eq_row[0]}.\n"
                                     f"Date: {maint_date}",
                                     parent=sched_dlg)
@@ -929,14 +931,14 @@ class EquipmentMaintenanceTrackingDialog:
                 self.load_maintenance_data()
             except Exception as e:
                 logging.error("Failed to schedule maintenance: %s", e)
-                messagebox.showerror("Database Error",
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.database_error', default="Database Error"),
                                      f"Failed to schedule maintenance:\n{e}",
                                      parent=sched_dlg)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(15, 0))
-        ttk.Button(btn_frame, text="Schedule", command=do_schedule).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=sched_dlg.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.schedule', default="Schedule"), command=do_schedule).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.cancel', default="Cancel"), command=sched_dlg.destroy).pack(side='right')
 
 
 
@@ -956,7 +958,7 @@ class GenerateEquipmentReportsDialog:
         self.current_report_text = ""
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Equipment Reports")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.windows.equipment_reports', default="Equipment Reports"))
         self.dialog.geometry("900x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -968,11 +970,11 @@ class GenerateEquipmentReportsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Equipment Reports",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.equipment_reports', default="Equipment Reports"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Report type buttons
-        btn_frame = ttk.LabelFrame(main_frame, text="Generate Report")
+        btn_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.generate_report', default="Generate Report"))
         btn_frame.pack(fill='x', pady=(0, 10))
         btn_inner = ttk.Frame(btn_frame)
         btn_inner.pack(padx=10, pady=10)
@@ -982,7 +984,7 @@ class GenerateEquipmentReportsDialog:
                        command=lambda m=method_name: self._run_report(m)).pack(side='left', padx=(0, 10))
 
         # Report display area
-        display_frame = ttk.LabelFrame(main_frame, text="Report Output")
+        display_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.labels.report_output', default="Report Output"))
         display_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         self.report_display = scrolledtext.ScrolledText(display_frame, wrap=tk.WORD, font=('Courier', 9))
@@ -994,9 +996,9 @@ class GenerateEquipmentReportsDialog:
         action_frame = ttk.Frame(main_frame)
         action_frame.pack(fill='x')
 
-        ttk.Button(action_frame, text="Save as TXT", command=self._save_as_txt).pack(side='left', padx=(0, 10))
-        ttk.Button(action_frame, text="Email to Admin", command=self._email_to_admin).pack(side='left', padx=(0, 10))
-        ttk.Button(action_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(action_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.save_as_txt', default="Save as TXT"), command=self._save_as_txt).pack(side='left', padx=(0, 10))
+        ttk.Button(action_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.email_to_admin', default="Email to Admin"), command=self._email_to_admin).pack(side='left', padx=(0, 10))
+        ttk.Button(action_frame, text=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     # ------------------------------------------------------------------
     # Report generation helpers
@@ -1259,14 +1261,14 @@ class GenerateEquipmentReportsDialog:
     def _save_as_txt(self):
         """Save the currently displayed report to a TXT file."""
         if not self.current_report_text:
-            messagebox.showwarning("No Report",
-                                   "Please generate a report first.",
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.no_report', default="No Report"),
+                                   _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.please_generate_a_report_first', default="Please generate a report first."),
                                    parent=self.dialog)
             return
 
         filepath = filedialog.asksaveasfilename(
             parent=self.dialog,
-            title="Save Report As",
+            title=_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.save_report_as', default="Save Report As"),
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
             initialfile=f"equipment_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
@@ -1277,20 +1279,20 @@ class GenerateEquipmentReportsDialog:
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(self.current_report_text)
-            messagebox.showinfo("Saved",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.saved', default="Saved"),
                                 f"Report saved to:\n{filepath}",
                                 parent=self.dialog)
         except Exception as e:
             logging.error("Failed to save report: %s", e)
-            messagebox.showerror("Save Error",
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.save_error', default="Save Error"),
                                  f"Failed to save report:\n{e}",
                                  parent=self.dialog)
 
     def _email_to_admin(self):
         """Email the current report to admin users."""
         if not self.current_report_text:
-            messagebox.showwarning("No Report",
-                                   "Please generate a report first.",
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.no_report', default="No Report"),
+                                   _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.please_generate_a_report_first', default="Please generate a report first."),
                                    parent=self.dialog)
             return
 
@@ -1329,9 +1331,9 @@ class GenerateEquipmentReportsDialog:
                 pass
 
         if not admin_emails:
-            messagebox.showwarning("No Admin Email",
-                                   "Could not find an admin email address.\n"
-                                   "Please ensure admin accounts have email addresses configured.",
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.no_admin_email', default="No Admin Email"),
+                                   _t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.could_not_find_an_admin_email_address_please_ensure_admin_accoun', default="Could not find an admin email address.\n"
+                                   "Please ensure admin accounts have email addresses configured."),
                                    parent=self.dialog)
             return
 
@@ -1341,12 +1343,12 @@ class GenerateEquipmentReportsDialog:
             from education_system.systems.university.infrastructure.email.email_service.core import send_email
             for email_addr in admin_emails:
                 send_email(email_addr, subject, self.current_report_text)
-            messagebox.showinfo("Email Sent",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.email_sent', default="Email Sent"),
                                 f"Report emailed to: {', '.join(admin_emails)}",
                                 parent=self.dialog)
         except Exception as e:
             logging.error("Failed to email report: %s", e)
-            messagebox.showerror("Email Error",
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.equipment.equipment_admin.dialogs.email_error', default="Email Error"),
                                  f"Failed to send email:\n{e}",
                                  parent=self.dialog)
 

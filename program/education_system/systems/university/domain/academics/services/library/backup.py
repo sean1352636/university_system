@@ -10,7 +10,7 @@ import random
 import json
 import requests
 from datetime import datetime, timedelta
-from education_system.systems.university.infrastructure.paths import QR_CODES_DIR, BACKUP_DIR
+from education_system.paths import UNIVERSITY_QR_CODES_DIR, UNIVERSITY_BACKUP_DIR
 from education_system.systems.university.infrastructure.email import (
     send_book_checkout_confirmation,
     send_book_return_reminder,
@@ -28,7 +28,7 @@ import logging
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.utils.finance_integration import record_payment_to_finance
 from education_system.systems.university.infrastructure.i18n import (
     get_text,
@@ -39,7 +39,7 @@ from education_system.systems.university.infrastructure.utils.language_selector 
 )
 from education_system.systems.university.domain.academics.services.library.database import get_db_connection, log_audit_event
 from education_system.systems.university.domain.academics.services.library.settings import get_current_user_id, get_library_settings, update_library_setting, validate_library_configuration
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Configure logging
 logger = configure_logging(name=__name__)
@@ -67,7 +67,7 @@ def enhanced_system_backup():
 
     try:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_dir = BACKUP_DIR / f"backup_{timestamp}"
+        backup_dir = UNIVERSITY_BACKUP_DIR / f"backup_{timestamp}"
         backup_dir.mkdir(parents=True, exist_ok=True)
 
         if choice in ['1', '2']:
@@ -287,7 +287,7 @@ def _build_backup_script(script_path):
     cover_images asset directories into a timestamped folder under BACKUP_DIR),
     writes a manifest, and prunes folders older than 7 days.
     """
-    backup_root = str(BACKUP_DIR)
+    backup_root = str(UNIVERSITY_BACKUP_DIR)
     return f'''#!/bin/bash
 # Library System Backup Script
 # Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} by setup_scheduled_backups()
@@ -369,7 +369,7 @@ def setup_scheduled_backups():
     print("======================")
 
     # Write the generated backup script to a real, executable file on disk.
-    scripts_dir = BACKUP_DIR / "scripts"
+    scripts_dir = UNIVERSITY_BACKUP_DIR / "scripts"
     scripts_dir.mkdir(parents=True, exist_ok=True)
     script_path = scripts_dir / "library_backup.sh"
 
@@ -461,7 +461,7 @@ def restore_from_backup():
 
             # Create current backup before restore
             print("Creating safety backup of current data...")
-            safety_backup_dir = BACKUP_DIR / f"pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            safety_backup_dir = UNIVERSITY_BACKUP_DIR / f"pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             safety_backup_dir.mkdir(parents=True, exist_ok=True)
             shutil.copy2(DATABASE_FILE, safety_backup_dir)
 

@@ -1,4 +1,6 @@
 """Vehicles tab mixin for ParkingManagementGUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -82,7 +84,7 @@ class VehiclesMixin:
 
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh vehicles: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.vehicles.dialogs.error', default="Error"), f"Failed to refresh vehicles: {e}")
 
     def filter_vehicles(self, event=None):
         """Filter vehicles based on search term"""
@@ -110,13 +112,13 @@ class VehiclesMixin:
                 self.refresh_vehicles()
                 self.update_status("Vehicle registered successfully")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to register vehicle: {e}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.vehicles.dialogs.error', default="Error"), f"Failed to register vehicle: {e}")
 
     def edit_selected_vehicle(self):
         """Edit the selected vehicle"""
         selected = self.vehicles_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a vehicle to edit")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.vehicles.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.tabs.vehicles.dialogs.please_select_a_vehicle_to_edit', default="Please select a vehicle to edit"))
             return
 
         vehicle_id = self.vehicles_tree.item(selected[0])['values'][0]
@@ -137,18 +139,18 @@ class VehiclesMixin:
                     self.refresh_vehicles()
                     self.update_status("Vehicle updated successfully")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to edit vehicle: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.vehicles.dialogs.error', default="Error"), f"Failed to edit vehicle: {e}")
 
     def delete_selected_vehicle(self):
         """Delete the selected vehicle"""
         selected = self.vehicles_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a vehicle to delete")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.vehicles.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.tabs.vehicles.dialogs.please_select_a_vehicle_to_delete', default="Please select a vehicle to delete"))
             return
 
         vehicle_id = self.vehicles_tree.item(selected[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete vehicle {vehicle_id}?"):
+        if messagebox.askyesno(_t('gui.operations.campus.mobility.parking_management.tabs.vehicles.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete vehicle {vehicle_id}?"):
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
@@ -159,7 +161,7 @@ class VehiclesMixin:
                 self.refresh_vehicles()
                 self.update_status("Vehicle deleted successfully")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete vehicle: {e}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.vehicles.dialogs.error', default="Error"), f"Failed to delete vehicle: {e}")
 
     def register_vehicle_from_data(self, data):
         """Register a vehicle from dialog data"""

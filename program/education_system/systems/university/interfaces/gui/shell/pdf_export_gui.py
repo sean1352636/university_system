@@ -6,6 +6,8 @@ with options for charts, tables, and customization.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import os
 import threading
@@ -45,7 +47,7 @@ class PDFExportGUI:
         self.auth = auth
         self.export_window: Optional[tk.Toplevel] = None
         self.progress_var = tk.DoubleVar(value=0)
-        self.status_var = tk.StringVar(value="Ready")
+        self.status_var = tk.StringVar(value=_t('gui.shell.pdf_export.values.ready', default="Ready"))
         self.is_exporting = False
 
     def show_export_window(self):
@@ -130,11 +132,11 @@ class PDFExportGUI:
 
         # Set default output path
         try:
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
             from datetime import datetime
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            default_path = os.path.join(str(paths.EXPORTS_PDF_DIR), f"database_export_{timestamp}.pdf")
+            default_path = os.path.join(str(paths.UNIVERSITY_EXPORTS_PDF_DIR), f"database_export_{timestamp}.pdf")
             self.output_path_var.set(default_path)
         except Exception:
             self.output_path_var.set("database_export.pdf")

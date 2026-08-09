@@ -41,7 +41,7 @@ _TENANTS_BASE = (_SHARED_ROOT / "data" / "tenants").resolve()
 _SLUG_RE = re.compile(r"\A[A-Za-z0-9_\-]{1,64}\Z")
 
 #: Systems we know how to provision (all five; keys match the canonical
-#: SYSTEM_DB_PATHS registry in shared/database/paths.py).
+#: SYSTEM_DB_PATHS registry in education_system/paths.py).
 KNOWN_SYSTEMS: tuple[str, ...] = ("nursery", "primary", "secondary", "sixth_form", "university")
 
 #: Maximum cached connections per (slug, system_key) pair.
@@ -146,6 +146,26 @@ def _tenant_dir(tenant_slug: str) -> Path:
     return _safe_tenant_path(tenant_slug)
 
 
+def _guard_cross_tenant(tenant_slug: str) -> None:
+    """Refuse an operation on a tenant other than the one bound to the request.
+
+    Administrative flows (provision/backup/delete/migrate) run outside a
+    request context, where no tenant is bound and the call is permitted. But
+    if one of these is ever reached from within a bound tenant context, it
+    must not be able to act on a *different* tenant's data — that is a
+    cross-tenant escalation. This complements the request-scope check in
+    ``get_tenant_connection``.
+    """
+    from education_system.platform.kernel.core.tenant import get_current_tenant
+
+    current = get_current_tenant()
+    if current is not None and current.slug != tenant_slug:
+        raise PermissionError(
+            f"Refusing cross-tenant operation: bound tenant {current.slug!r} "
+            f"may not act on {tenant_slug!r}"
+        )
+
+
 def _db_path_for(tenant_slug: str, system_key: str) -> str:
     """Return the absolute DB path for *tenant_slug* / *system_key* (validated).
 
@@ -213,6 +233,47 @@ class TenantDatabaseManager:
     # ── Provisioning ─────────────────────────────────────────────────────
 
     @staticmethod
+    def migrate_database_to_tenant(
+        source_path: str | Path,
+        tenant_slug: str,
+        system_key: str,
+        *,
+        overwrite: bool = False,
+    ) -> str:
+        """Copy a legacy system database into a tenant boundary safely.
+
+        The SQLite online-backup API provides a consistent snapshot. The
+        destination is integrity-checked before it replaces an existing file.
+        """
+        _guard_cross_tenant(tenant_slug)
+        _validate_slug(tenant_slug)
+        if system_key not in KNOWN_SYSTEMS:
+            raise ValueError(f"Unknown system: {system_key}")
+        source = Path(source_path).resolve()
+        if not source.is_file():
+            raise FileNotFoundError(f"Source database not found: {source}")
+        destination = Path(_db_path_for(tenant_slug, system_key))
+        if destination.exists() and not overwrite:
+            raise FileExistsError(f"Tenant database already exists: {destination}")
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        temporary = destination.with_suffix(".db.migrating")
+        if temporary.exists():
+            temporary.unlink()
+        source_conn = sqlite3.connect(str(source))
+        target_conn = sqlite3.connect(str(temporary))
+        try:
+            source_conn.backup(target_conn)
+            result = target_conn.execute("PRAGMA integrity_check").fetchone()
+            if not result or result[0] != "ok":
+                raise RuntimeError("Migrated database failed integrity check")
+        finally:
+            source_conn.close()
+            target_conn.close()
+        _pool_evict(tenant_slug, system_key)
+        temporary.replace(destination)
+        return str(destination)
+
+    @staticmethod
     def provision_tenant(
         tenant_slug: str,
         systems: list[str] | None = None,
@@ -230,6 +291,7 @@ class TenantDatabaseManager:
         -------
         dict mapping system_key → absolute db_path for each provisioned system.
         """
+        _guard_cross_tenant(tenant_slug)
         systems = systems or list(KNOWN_SYSTEMS)
         tenant_dir = _tenant_dir(tenant_slug)
         tenant_dir.mkdir(parents=True, exist_ok=True)
@@ -263,6 +325,7 @@ class TenantDatabaseManager:
         system_key: str,
         *,
         use_pool: bool = True,
+        allow_unscoped: bool = False,
     ) -> sqlite3.Connection:
         """Return a ``sqlite3.Connection`` for *tenant_slug* / *system_key*.
 
@@ -276,6 +339,23 @@ class TenantDatabaseManager:
             If the tenant database file does not exist (tenant not yet
             provisioned).
         """
+        # A request-bound tenant context is authoritative. When a tenant IS
+        # bound, the slug must match it. When one is NOT bound, only trusted
+        # out-of-request callers may pass a slug, and they must opt in
+        # explicitly via allow_unscoped=True — otherwise request code that
+        # forgot to bind a tenant could read any tenant's database by naming
+        # its slug. The previous check only guarded the mismatch case and
+        # silently accepted an arbitrary slug whenever no tenant was bound.
+        from education_system.platform.kernel.core.tenant import get_current_tenant
+        current = get_current_tenant()
+        if current is not None:
+            if current.slug != tenant_slug:
+                raise PermissionError("Tenant database access outside current tenant scope")
+        elif not allow_unscoped:
+            raise PermissionError(
+                "No tenant is bound; refusing to open an arbitrary tenant database. "
+                "Trusted background jobs must pass allow_unscoped=True explicitly."
+            )
         db_path = _db_path_for(tenant_slug, system_key)
         if not Path(db_path).exists():
             raise FileNotFoundError(
@@ -319,6 +399,7 @@ class TenantDatabaseManager:
         Absolute path to the backup directory created.
         """
         # Validate slug before constructing any paths.
+        _guard_cross_tenant(tenant_slug)
         _validate_slug(tenant_slug)
         tenant_dir = _tenant_dir(tenant_slug)
 
@@ -363,6 +444,7 @@ class TenantDatabaseManager:
 
         Returns True if the directory was removed, False if it did not exist.
         """
+        _guard_cross_tenant(tenant_slug)
         tenant_dir = _tenant_dir(tenant_slug)
         if not tenant_dir.exists():
             logger.warning("delete_tenant_data: directory not found for %r", tenant_slug)

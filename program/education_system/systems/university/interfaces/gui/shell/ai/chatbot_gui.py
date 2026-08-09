@@ -35,6 +35,10 @@ from education_system.systems.university.interfaces.gui.shell.ai.features.notifi
 from education_system.systems.university.interfaces.gui.shell.ai.features.session import SessionMixin
 from education_system.systems.university.interfaces.gui.shell.ai.features.export import ExportMixin
 from education_system.systems.university.interfaces.gui.shell.ai.features.booking import BookingMixin
+from education_system.systems.university.interfaces.gui.shell.ai.features.conversations import ConversationsMixin
+from education_system.systems.university.interfaces.gui.shell.ai.features.attachments import AttachmentsMixin
+from education_system.systems.university.interfaces.gui.shell.ai.features.hardening import HardeningMixin
+from education_system.systems.university.interfaces.gui.shell.ai.chatbot_security import ChatbotSecurityPolicy
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -57,6 +61,9 @@ class ChatbotGUI(
     SessionMixin,
     ExportMixin,
     BookingMixin,
+    ConversationsMixin,
+    AttachmentsMixin,
+    HardeningMixin,
 ):
     """Modern GUI interface for the University Chatbot"""
 
@@ -100,8 +107,12 @@ class ChatbotGUI(
         else:
             self.root = tk.Tk()
             self.root.title(_t("chatbot.window_title", default="University Chatbot - Student Support System"))
-            self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
-            self.root.minsize(1200, 800)
+            screen_w = self.root.winfo_screenwidth()
+            screen_h = self.root.winfo_screenheight()
+            width = min(1200, max(680, screen_w - 80))
+            height = min(820, max(560, screen_h - 100))
+            self.root.geometry(f"{width}x{height}+{max(0, (screen_w-width)//2)}+{max(0, (screen_h-height)//2)}")
+            self.root.minsize(min(680, screen_w), min(560, screen_h))
 
         # Default all popups (messagebox / filedialog) to this window so they
         # don't fall back to the main-GUI root — that fallback raises the main
@@ -119,11 +130,16 @@ class ChatbotGUI(
 
         # Check if user is already authenticated and use current user
         self.setup_current_user()
+        self.initialize_conversation_management()
+        self.initialize_attachments()
+        self.initialize_hardening()
+        self.security_policy = ChatbotSecurityPolicy(self.current_user.get('username','unknown'), self.current_user.get('role','student'))
 
         # Initialize helper systems
         self.show_notification = self.create_notification_system()
         self.show_search = self.create_search_functionality()
         self.apply_theme = self.create_theme_manager()
+        self.apply_theme("default")
         self.update_session_stats, self.get_session_summary = self.create_session_management()
 
         # Add menu bar

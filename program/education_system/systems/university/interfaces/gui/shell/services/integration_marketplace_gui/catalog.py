@@ -75,13 +75,13 @@ class CatalogMixin:
             provider_entry.grid(row=1, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=_t("integration_marketplace.labels.integration_type")).grid(row=2, column=0, padx=10, pady=5, sticky='w')
-            type_var = tk.StringVar(value='API')
+            type_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.catalog.values.api', default='API'))
             ttk.Combobox(dialog, textvariable=type_var,
                         values=['API', 'OAuth', 'SAML', 'Database', 'Webhook'],
                         width=33, state='readonly').grid(row=2, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=_t("integration_marketplace.labels.category")).grid(row=3, column=0, padx=10, pady=5, sticky='w')
-            category_var = tk.StringVar(value='LMS')
+            category_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.catalog.values.lms', default='LMS'))
             ttk.Combobox(dialog, textvariable=category_var,
                         values=['LMS', 'SIS', 'CRM', 'Analytics', 'Communication', 'Storage'],
                         width=33, state='readonly').grid(row=3, column=1, padx=10, pady=5)
@@ -163,7 +163,7 @@ class CatalogMixin:
         try:
             selected = self.catalog_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to view details")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.catalog.dialogs.please_select_an_integration_to_view_details', default="Please select an integration to view details"))
                 return
 
             integration_id = self.catalog_tree.item(selected[0])['values'][0]
@@ -181,7 +181,7 @@ class CatalogMixin:
                 integration = cursor.fetchone()
 
             if not integration:
-                messagebox.showerror(_t("common.error"), "Integration not found")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.catalog.dialogs.integration_not_found', default="Integration not found"))
                 return
 
             details = "Integration Details\n\n"
@@ -196,7 +196,7 @@ class CatalogMixin:
             details += f"Documentation: {integration[9] or _t('common.na')}\n\n"
             details += f"Description:\n{integration[4] or 'No description available.'}"
 
-            messagebox.showinfo("Integration Details", details)
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.catalog.dialogs.integration_details', default="Integration Details"), details)
 
         except Exception as e:
             logger.error(f"Error viewing integration details: {e}")
@@ -207,14 +207,14 @@ class CatalogMixin:
         try:
             selected = self.catalog_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to install")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.catalog.dialogs.please_select_an_integration_to_install', default="Please select an integration to install"))
                 return
 
             values = self.catalog_tree.item(selected[0])['values']
             integration_id = values[0]
             integration_name = values[1]
 
-            if messagebox.askyesno("Confirm Installation",
+            if messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.catalog.dialogs.confirm_installation', default="Confirm Installation"),
                                   f"Install '{integration_name}'?\n\nThis will add the integration to your system."):
                 try:
                     installed_by = self.auth.current_user.get('username', 'Unknown')

@@ -6,6 +6,8 @@ state. Mirrors the External-QA widget pattern.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk
@@ -23,15 +25,15 @@ class IRStatusStrip(ttk.Frame):
     def __init__(self, parent, poll_seconds: int = 60, **kw):
         super().__init__(parent, **kw)
         self._svc = InformationRightsService()
-        ttk.Label(self, text="Information Rights:",
+        ttk.Label(self, text=_t('gui.governance.legal.information_rights.ir_widgets.labels.information_rights', default="Information Rights:"),
                   font=("TkDefaultFont", 9, "bold")).pack(side=tk.LEFT,
                                                           padx=(0, 6))
-        self._open = ttk.Label(self, text="open —", padding=(6, 0))
+        self._open = ttk.Label(self, text=_t('gui.governance.legal.information_rights.ir_widgets.labels.open', default="open —"), padding=(6, 0))
         self._open.pack(side=tk.LEFT)
-        self._due = ttk.Label(self, text="due 7d —",
+        self._due = ttk.Label(self, text=_t('gui.governance.legal.information_rights.ir_widgets.labels.due_7d', default="due 7d —"),
                                 padding=(6, 0), foreground="#c47f00")
         self._due.pack(side=tk.LEFT)
-        self._overdue = ttk.Label(self, text="overdue —",
+        self._overdue = ttk.Label(self, text=_t('gui.governance.legal.information_rights.ir_widgets.labels.overdue', default="overdue —"),
                                     padding=(6, 0), foreground="#a32424")
         self._overdue.pack(side=tk.LEFT)
         self._poll_ms = max(0, int(poll_seconds * 1000))

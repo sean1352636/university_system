@@ -46,7 +46,7 @@ def show_polls_page(self):
 
 def create_poll(self):
     form = tk.Toplevel(self.root)
-    form.title("Create Poll")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.community.polls.windows.create_poll', default="Create Poll"))
     form.geometry("450x400")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -69,7 +69,7 @@ def create_poll(self):
         title = title_e.get().strip()
         opts = [o.strip() for o in opts_t.get("1.0", tk.END).strip().split('\n') if o.strip()]
         if not title or len(opts) < 2:
-            messagebox.showwarning(_t("cinema.common.warning"), "Title and 2+ options required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.polls.dialogs.title_and_2_options_required', default="Title and 2+ options required"))
             return
         conn = sqlite3.connect(DB_FILE)
         try:
@@ -81,7 +81,7 @@ def create_poll(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Poll created!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.community.polls.dialogs.poll_created', default="Poll created!"))
         form.destroy()
         self.show_polls_page()
     ttk.Button(frame, text=_t("cinema.btn.create"), style="Success.TButton", command=save).pack(pady=10)
@@ -89,7 +89,7 @@ def create_poll(self):
 def view_results(self):
     selected = self.poll_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a poll")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.polls.dialogs.select_a_poll', default="Select a poll"))
         return
     poll_id = self.poll_tree.item(selected[0])['values'][0]
     poll_title = self.poll_tree.item(selected[0])['values'][1]
@@ -115,7 +115,7 @@ def view_results(self):
 def cast_vote(self):
     selected = self.poll_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a poll")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.polls.dialogs.select_a_poll', default="Select a poll"))
         return
     poll_id = self.poll_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
@@ -126,7 +126,7 @@ def cast_vote(self):
     finally:
         conn.close()
     vote_win = tk.Toplevel(self.root)
-    vote_win.title("Cast Vote")
+    vote_win.title(_t('gui.operations.commerce.cinema.cinema_gui.community.polls.windows.cast_vote', default="Cast Vote"))
     vote_win.geometry("350x300")
     vote_win.configure(bg="#ecf0f1")
     vote_win.transient(self.root)
@@ -139,7 +139,7 @@ def cast_vote(self):
     def submit():
         opt_id = sel_opt.get()
         if not opt_id:
-            messagebox.showwarning(_t("cinema.common.warning"), "Select an option")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.polls.dialogs.select_an_option', default="Select an option"))
             return
         conn = sqlite3.connect(DB_FILE)
         try:
@@ -148,7 +148,7 @@ def cast_vote(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Vote recorded!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.community.polls.dialogs.vote_recorded', default="Vote recorded!"))
         vote_win.destroy()
         self.show_polls_page()
     ttk.Button(frame, text=_t("cinema.btn.submit"), style="Success.TButton", command=submit).pack(pady=20)

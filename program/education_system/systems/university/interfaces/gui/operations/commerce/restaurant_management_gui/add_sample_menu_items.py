@@ -6,7 +6,7 @@ for testing the order placement system.
 """
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH as DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH as DB_PATH
 
 def add_sample_menu_items():
     """Add sample menu items to the database"""

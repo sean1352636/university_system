@@ -1,4 +1,6 @@
 """Permit creation/editing dialog."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
@@ -25,49 +27,49 @@ class PermitDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # Student Lookup Section
-        lookup_frame = ttk.LabelFrame(main_frame, text="Student Lookup", padding="5")
+        lookup_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.labels.student_lookup', default="Student Lookup"), padding="5")
         lookup_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 10))
 
-        ttk.Label(lookup_frame, text="Student ID:").grid(row=0, column=0, sticky="w", padx=5)
+        ttk.Label(lookup_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="w", padx=5)
         self.student_id_var = tk.StringVar()
         self.student_id_entry = ttk.Entry(lookup_frame, textvariable=self.student_id_var, width=20)
         self.student_id_entry.grid(row=0, column=1, padx=5)
 
-        ttk.Button(lookup_frame, text="Lookup Student",
+        ttk.Button(lookup_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.buttons.lookup_student', default="Lookup Student"),
                   command=self.lookup_student).grid(row=0, column=2, padx=5)
 
         # User info
-        ttk.Label(main_frame, text="Full Name:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.labels.full_name', default="Full Name:")).grid(row=1, column=0, sticky="w", pady=5)
         self.name_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.name_var).grid(row=1, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Email:").grid(row=2, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.labels.email', default="Email:")).grid(row=2, column=0, sticky="w", pady=5)
         self.email_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.email_var).grid(row=2, column=1, sticky="ew", pady=5)
 
         # Permit info
-        ttk.Label(main_frame, text="Zone:").grid(row=3, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.labels.zone', default="Zone:")).grid(row=3, column=0, sticky="w", pady=5)
         self.zone_var = tk.StringVar()
         zone_combo = ttk.Combobox(main_frame, textvariable=self.zone_var,
                                  values=list(PARKING_ZONES.keys()), state="readonly")
         zone_combo.grid(row=3, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Permit Type:").grid(row=4, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.labels.permit_type', default="Permit Type:")).grid(row=4, column=0, sticky="w", pady=5)
         self.type_var = tk.StringVar()
         type_combo = ttk.Combobox(main_frame, textvariable=self.type_var,
                                  values=PERMIT_TYPES, state="readonly")
         type_combo.grid(row=4, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Start Date:").grid(row=5, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.labels.start_date', default="Start Date:")).grid(row=5, column=0, sticky="w", pady=5)
         self.start_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(main_frame, textvariable=self.start_var).grid(row=5, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="End Date:").grid(row=6, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.labels.end_date', default="End Date:")).grid(row=6, column=0, sticky="w", pady=5)
         self.end_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.end_var).grid(row=6, column=1, sticky="ew", pady=5)
 
         # Vehicle selection
-        ttk.Label(main_frame, text="Vehicle (optional):").grid(row=7, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.labels.vehicle_optional', default="Vehicle (optional):")).grid(row=7, column=0, sticky="w", pady=5)
         self.vehicle_var = tk.StringVar()
         self.vehicle_combo = ttk.Combobox(main_frame, textvariable=self.vehicle_var, state="readonly")
         self.vehicle_combo.grid(row=7, column=1, sticky="ew", pady=5)
@@ -79,8 +81,8 @@ class PermitDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=8, column=0, columnspan=2, pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.buttons.save', default="Save"), command=self.save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         main_frame.columnconfigure(1, weight=1)
 
@@ -110,7 +112,7 @@ class PermitDialog:
         student_id = self.student_id_var.get().strip()
 
         if not student_id:
-            messagebox.showwarning("Warning", "Please enter a Student ID")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.dialogs.please_enter_a_student_id', default="Please enter a Student ID"))
             return
 
         try:
@@ -164,14 +166,14 @@ class PermitDialog:
                     if len(vehicles) > 0:
                         self.vehicle_combo.current(1)  # Select first student vehicle
 
-                messagebox.showinfo("Success", f"Student found: {full_name}\nForm auto-filled with student information.")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.dialogs.success', default="Success"), f"Student found: {full_name}\nForm auto-filled with student information.")
             else:
-                messagebox.showerror("Not Found", f"No student found with ID: {student_id}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.dialogs.not_found', default="Not Found"), f"No student found with ID: {student_id}")
 
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to lookup student: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.dialogs.error', default="Error"), f"Failed to lookup student: {e}")
             logging.error(f"Student lookup error: {e}")
 
     def calculate_end_date(self, event=None):
@@ -205,7 +207,7 @@ class PermitDialog:
         # Validate required fields
         if not all([self.name_var.get(), self.email_var.get(),
                    self.zone_var.get(), self.type_var.get()]):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.parking_management.dialogs.permit_dialog.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         # Get vehicle ID if selected

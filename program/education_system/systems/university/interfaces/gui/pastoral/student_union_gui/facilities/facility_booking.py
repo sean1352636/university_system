@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -35,7 +37,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -203,7 +205,7 @@ class FacilityBookingDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load facilities: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.error', default="Error"), f"Failed to load facilities: {str(e)}")
 
     def on_facility_selected(self, event=None):
         """Handle facility selection"""
@@ -349,7 +351,7 @@ class FacilityApprovalDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load bookings: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.error', default="Error"), f"Failed to load bookings: {str(e)}")
 
     def approve_booking(self):
         """Approve selected booking"""
@@ -408,7 +410,7 @@ class ApproveFacilityBookingsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Approve Facility Bookings")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.facilities.facility_booking.windows.approve_facility_bookings', default="Approve Facility Bookings"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -419,30 +421,30 @@ class ApproveFacilityBookingsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="✅ Facility Booking Approvals",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.facility_booking_approvals', default="✅ Facility Booking Approvals"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Approval queue overview
-        overview_frame = ttk.LabelFrame(main_frame, text="Approval Queue")
+        overview_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.approval_queue', default="Approval Queue"))
         overview_frame.pack(fill='x', pady=(0, 15))
 
         overview_grid = ttk.Frame(overview_frame)
         overview_grid.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(overview_grid, text="Pending Approvals:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.pending_approvals', default="Pending Approvals:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
         ttk.Label(overview_grid, text="8", foreground='orange').grid(row=0, column=1, sticky='w', padx=10)
 
-        ttk.Label(overview_grid, text="Urgent (< 48h):", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.urgent_48h', default="Urgent (< 48h):"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
         ttk.Label(overview_grid, text="3", foreground='red').grid(row=1, column=1, sticky='w', padx=10)
 
-        ttk.Label(overview_grid, text="Approved Today:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.approved_today', default="Approved Today:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
         ttk.Label(overview_grid, text="12").grid(row=2, column=1, sticky='w', padx=10)
 
-        ttk.Label(overview_grid, text="Average Approval Time:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
-        ttk.Label(overview_grid, text="6.5 hours").grid(row=3, column=1, sticky='w', padx=10)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.average_approval_time', default="Average Approval Time:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
+        ttk.Label(overview_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.value_6_5_hours', default="6.5 hours")).grid(row=3, column=1, sticky='w', padx=10)
 
         # Pending bookings
-        bookings_frame = ttk.LabelFrame(main_frame, text="Pending Booking Requests")
+        bookings_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.pending_booking_requests', default="Pending Booking Requests"))
         bookings_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('ID', 'Club/Student', 'Facility', 'Date', 'Time', 'Purpose', 'Priority', 'Status')
@@ -483,37 +485,37 @@ class ApproveFacilityBookingsDialog:
         tree.bind('<Double-1>', lambda e: self.show_booking_details())
 
         # Action buttons
-        action_frame = ttk.LabelFrame(main_frame, text="Booking Actions")
+        action_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.booking_actions', default="Booking Actions"))
         action_frame.pack(fill='x', pady=(0, 15))
 
         button_grid = ttk.Frame(action_frame)
         button_grid.pack(padx=15, pady=10)
 
-        ttk.Button(button_grid, text="✓ Approve", command=self.approve_booking, width=15).grid(row=0, column=0, padx=5, pady=3)
-        ttk.Button(button_grid, text="✗ Reject", command=self.reject_booking, width=15).grid(row=0, column=1, padx=5, pady=3)
-        ttk.Button(button_grid, text="⚠ Request Changes", command=self.request_changes, width=15).grid(row=0, column=2, padx=5, pady=3)
-        ttk.Button(button_grid, text="📋 View Details", command=self.show_booking_details, width=15).grid(row=1, column=0, padx=5, pady=3)
-        ttk.Button(button_grid, text="📧 Contact Requester", command=self.contact_requester, width=15).grid(row=1, column=1, padx=5, pady=3)
-        ttk.Button(button_grid, text="📅 Check Calendar", command=self.check_calendar, width=15).grid(row=1, column=2, padx=5, pady=3)
+        ttk.Button(button_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.approve', default="✓ Approve"), command=self.approve_booking, width=15).grid(row=0, column=0, padx=5, pady=3)
+        ttk.Button(button_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.reject', default="✗ Reject"), command=self.reject_booking, width=15).grid(row=0, column=1, padx=5, pady=3)
+        ttk.Button(button_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.request_changes', default="⚠ Request Changes"), command=self.request_changes, width=15).grid(row=0, column=2, padx=5, pady=3)
+        ttk.Button(button_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.view_details', default="📋 View Details"), command=self.show_booking_details, width=15).grid(row=1, column=0, padx=5, pady=3)
+        ttk.Button(button_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.contact_requester', default="📧 Contact Requester"), command=self.contact_requester, width=15).grid(row=1, column=1, padx=5, pady=3)
+        ttk.Button(button_grid, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.check_calendar', default="📅 Check Calendar"), command=self.check_calendar, width=15).grid(row=1, column=2, padx=5, pady=3)
 
         # Filters
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Filter:").pack(side='left', padx=(0, 10))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.filter', default="Filter:")).pack(side='left', padx=(0, 10))
         filter_combo = ttk.Combobox(filter_frame, width=20, state='readonly')
         filter_combo['values'] = ('All Pending', 'Urgent Only', 'High Priority', 'By Facility', 'By Date Range')
         filter_combo.current(0)
         filter_combo.pack(side='left', padx=(0, 20))
 
-        ttk.Button(filter_frame, text="📊 View Approval History", command=self.view_history).pack(side='left', padx=(0, 10))
-        ttk.Button(filter_frame, text="⚙️ Approval Settings", command=self.approval_settings).pack(side='left')
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.view_approval_history', default="📊 View Approval History"), command=self.view_history).pack(side='left', padx=(0, 10))
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.approval_settings', default="⚙️ Approval Settings"), command=self.approval_settings).pack(side='left')
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def show_booking_details(self):
-        messagebox.showinfo("Booking Details",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.booking_details', default="Booking Details"),
                           "BOOKING REQUEST DETAILS\n\n" +
                           "ID: FB001\n" +
                           "Requester: Drama Society\n" +
@@ -534,7 +536,7 @@ class ApproveFacilityBookingsDialog:
                           "Previous Bookings: 8 (all successful)")
 
     def approve_booking(self):
-        result = messagebox.askyesno("Approve Booking",
+        result = messagebox.askyesno(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.approve_booking', default="Approve Booking"),
                                      "Approve this facility booking?\n\n" +
                                      "FB001 - Drama Society\n" +
                                      "Main Hall - April 15, 2025\n\n" +
@@ -544,7 +546,7 @@ class ApproveFacilityBookingsDialog:
                                      "- Add to calendar\n" +
                                      "- Generate confirmation")
         if result:
-            messagebox.showinfo("Approved",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.approved', default="Approved"),
                               "Booking approved!\n\n" +
                               "Confirmation email sent to Drama Society.\n" +
                               "Facility reserved in calendar.\n" +
@@ -557,25 +559,25 @@ class ApproveFacilityBookingsDialog:
 
     def reject_booking(self):
         reason_window = tk.Toplevel(self.dialog)
-        reason_window.title("Reject Booking")
+        reason_window.title(_t('gui.pastoral.student_union_gui.facilities.facility_booking.windows.reject_booking', default="Reject Booking"))
         reason_window.geometry("400x300")
         reason_window.transient(self.dialog)
         reason_window.grab_set()
 
-        ttk.Label(reason_window, text="Rejection Reason:").pack(padx=15, pady=(15, 5))
+        ttk.Label(reason_window, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.rejection_reason', default="Rejection Reason:")).pack(padx=15, pady=(15, 5))
 
         reason_text = scrolledtext.ScrolledText(reason_window, height=8, wrap=tk.WORD)
         reason_text.pack(fill='both', expand=True, padx=15, pady=(0, 15))
         reason_text.insert('1.0', "Please provide reason for rejection...")
 
         def submit_rejection():
-            messagebox.showinfo("Rejected", "Booking rejected.\n\nRejection notice sent to requester with reason.\nThey can resubmit with modifications.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.rejected', default="Rejected"), _t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.booking_rejected_rejection_notice_sent_to_requester_with_reason', default="Booking rejected.\n\nRejection notice sent to requester with reason.\nThey can resubmit with modifications."))
             reason_window.destroy()
 
-        ttk.Button(reason_window, text="Submit Rejection", command=submit_rejection).pack(pady=(0, 15))
+        ttk.Button(reason_window, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.submit_rejection', default="Submit Rejection"), command=submit_rejection).pack(pady=(0, 15))
 
     def request_changes(self):
-        messagebox.showinfo("Request Changes",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.request_changes', default="Request Changes"),
                           "Request changes to booking:\n\n" +
                           "Common requests:\n" +
                           "- Change date/time (conflict)\n" +
@@ -587,7 +589,7 @@ class ApproveFacilityBookingsDialog:
                           "resubmit with requested changes.")
 
     def contact_requester(self):
-        messagebox.showinfo("Contact Requester",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.contact_requester', default="Contact Requester"),
                           "Contact Information:\n\n" +
                           "Club: Drama Society\n" +
                           "President: Sarah Johnson\n" +
@@ -596,7 +598,7 @@ class ApproveFacilityBookingsDialog:
                           "Opening email client...")
 
     def check_calendar(self):
-        messagebox.showinfo("Facility Calendar",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.facility_calendar', default="Facility Calendar"),
                           "Main Hall - April 2025\n\n" +
                           "April 15 (Requested):\n" +
                           "18:00-22:00 - REQUESTED (Drama Society)\n\n" +
@@ -607,7 +609,7 @@ class ApproveFacilityBookingsDialog:
                           "Status: AVAILABLE ✓")
 
     def view_history(self):
-        messagebox.showinfo("Approval History",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.approval_history', default="Approval History"),
                           "Approval History (Last 30 days):\n\n" +
                           "Total Requests: 156\n" +
                           "Approved: 124 (79%)\n" +
@@ -620,7 +622,7 @@ class ApproveFacilityBookingsDialog:
                           "Most Active Club: Music Society (12 bookings)")
 
     def approval_settings(self):
-        messagebox.showinfo("Approval Settings",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.approval_settings', default="Approval Settings"),
                           "Approval Configuration:\n\n" +
                           "Auto-approve if:\n" +
                           "☑ Requester has good history (5+ bookings)\n" +
@@ -647,39 +649,39 @@ def show_facilities_content(self):
 def _render_facilities_tab(self, parent_frame):
     """Render facilities content in the provided parent frame"""
     # Facilities content
-    ttk.Label(parent_frame, text="Facility Booking System",
+    ttk.Label(parent_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.facility_booking_system', default="Facility Booking System"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     # Booking form
-    booking_frame = ttk.LabelFrame(parent_frame, text="Book a Facility")
+    booking_frame = ttk.LabelFrame(parent_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.book_a_facility', default="Book a Facility"))
     booking_frame.pack(fill=tk.X, padx=20, pady=10)
     form_frame = ttk.Frame(booking_frame)
     form_frame.pack(padx=20, pady=20)
     # Facility selection
-    ttk.Label(form_frame, text="Facility:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.facility', default="Facility:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     self.facility_combo = ttk.Combobox(form_frame, width=30)
     self.facility_combo.grid(row=0, column=1, padx=10, pady=5)
     # Date selection
-    ttk.Label(form_frame, text="Date:").grid(row=1, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.date', default="Date:")).grid(row=1, column=0, sticky=tk.W, pady=5)
     self.booking_date_entry = ttk.Entry(form_frame, width=32)
     self.booking_date_entry.grid(row=1, column=1, padx=10, pady=5)
     # Time selection
-    ttk.Label(form_frame, text="Start Time:").grid(row=2, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.start_time', default="Start Time:")).grid(row=2, column=0, sticky=tk.W, pady=5)
     self.start_time_entry = ttk.Entry(form_frame, width=32)
     self.start_time_entry.grid(row=2, column=1, padx=10, pady=5)
-    ttk.Label(form_frame, text="End Time:").grid(row=3, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.end_time', default="End Time:")).grid(row=3, column=0, sticky=tk.W, pady=5)
     self.end_time_entry = ttk.Entry(form_frame, width=32)
     self.end_time_entry.grid(row=3, column=1, padx=10, pady=5)
     # Purpose
-    ttk.Label(form_frame, text="Purpose:").grid(row=4, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.purpose', default="Purpose:")).grid(row=4, column=0, sticky=tk.W, pady=5)
     self.purpose_entry = ttk.Entry(form_frame, width=32)
     self.purpose_entry.grid(row=4, column=1, padx=10, pady=5)
     # Submit button
-    ttk.Button(form_frame, text="Submit Booking Request",
+    ttk.Button(form_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.submit_booking_request', default="Submit Booking Request"),
               command=self.submit_booking_request).grid(row=5, column=1, pady=20)
     # Load facilities
     self.load_facilities()
     # My bookings section
-    bookings_frame = ttk.LabelFrame(parent_frame, text="My Bookings")
+    bookings_frame = ttk.LabelFrame(parent_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.my_bookings', default="My Bookings"))
     bookings_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
     # Bookings treeview
     booking_columns = ('ID', 'Facility', 'Date', 'Time', 'Status', 'Purpose')
@@ -699,7 +701,7 @@ def show_facilities_tab(self):
     """Legacy method for backwards compatibility - creates tab in notebook if exists"""
     if hasattr(self, 'notebook') and self.notebook:
         facilities_frame = ttk.Frame(self.notebook)
-        self.notebook.add(facilities_frame, text="Facilities")
+        self.notebook.add(facilities_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.tabs.facilities', default="Facilities"))
         self._render_facilities_tab(facilities_frame)
     else:
         # Fall back to content display
@@ -793,14 +795,14 @@ def submit_booking_request(self):
     purpose = self.purpose_entry.get().strip()
 
     if not all([facility, date, start_time, end_time, purpose]):
-        messagebox.showerror("Error", "Please fill in all fields")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.please_fill_in_all_fields', default="Please fill in all fields"))
         return
 
     # Validate date format
     try:
         datetime.strptime(date, '%Y-%m-%d')
     except ValueError:
-        messagebox.showerror("Error", "Date must be in YYYY-MM-DD format")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.date_must_be_in_yyyy_mm_dd_format', default="Date must be in YYYY-MM-DD format"))
         return
 
     try:
@@ -814,7 +816,7 @@ def submit_booking_request(self):
               datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
         conn.commit()
-        messagebox.showinfo("Success", f"Booking request for {facility} submitted successfully!")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.success', default="Success"), f"Booking request for {facility} submitted successfully!")
 
         # Send email confirmation if email service is available
         if EMAIL_SERVICE_AVAILABLE and self.current_user.get('email'):
@@ -836,7 +838,7 @@ def submit_booking_request(self):
                 print(f"Failed to send confirmation email: {e}")
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Failed to submit booking: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.database_error', default="Database Error"), f"Failed to submit booking: {e}")
     finally:
         if conn:
             conn.close()
@@ -875,7 +877,7 @@ def refresh_my_bookings(self):
 
         conn.close()
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Failed to load bookings: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.database_error', default="Database Error"), f"Failed to load bookings: {e}")
 
 
 def open_approve_facility_bookings_dialog(self):
@@ -887,23 +889,23 @@ def open_approve_facility_bookings_dialog(self):
 def create_facilities_tab(self):
     """Create facilities booking tab"""
     facilities_frame = ttk.Frame(self.notebook)
-    self.notebook.add(facilities_frame, text="Facilities")
+    self.notebook.add(facilities_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.tabs.facilities', default="Facilities"))
 
     # Left panel
-    left_panel = ttk.LabelFrame(facilities_frame, text="Facility Actions")
+    left_panel = ttk.LabelFrame(facilities_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.facility_actions', default="Facility Actions"))
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
 
-    ttk.Button(left_panel, text="View Facilities",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.view_facilities', default="View Facilities"),
               command=self.view_facilities).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Book Facility",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.book_facility', default="Book Facility"),
               command=self.request_facility_booking_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="My Bookings",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.my_bookings', default="My Bookings"),
               command=self.view_my_bookings).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Approve Bookings",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.buttons.approve_bookings', default="Approve Bookings"),
               command=self.approve_facility_bookings_gui).pack(fill='x', pady=2)
 
     # Right panel
-    right_panel = ttk.LabelFrame(facilities_frame, text="Facility Information")
+    right_panel = ttk.LabelFrame(facilities_frame, text=_t('gui.pastoral.student_union_gui.facilities.facility_booking.labels.facility_information', default="Facility Information"))
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
 
     self.facilities_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
@@ -953,6 +955,6 @@ def approve_facility_bookings_gui(self):
         dialog = FacilityApprovalDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.facilities.facility_booking.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

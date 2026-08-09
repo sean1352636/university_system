@@ -2,6 +2,8 @@
 Database query and search tab for the Activity Logger GUI.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.activity_logger._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     json,
@@ -72,7 +74,7 @@ class QueryTab(ttk.Frame):
         self.filter_user = tk.StringVar()
         self.filter_action = tk.StringVar()
         self.filter_module = tk.StringVar()
-        self.filter_status = tk.StringVar(value="ALL")
+        self.filter_status = tk.StringVar(value=_t('gui.shell.activity_logger.tabs.query.values.all', default="ALL"))
 
         ttk.Label(filter_row1, text=_t("activity_logger.query.user"), style='AL.Info.TLabel').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Entry(filter_row1, textvariable=self.filter_user, width=15).pack(side=tk.LEFT, padx=(0, 10))
@@ -92,8 +94,8 @@ class QueryTab(ttk.Frame):
         filter_row2 = ttk.Frame(filter_frame)
         filter_row2.pack(fill=tk.X)
 
-        self.filter_level = tk.StringVar(value="ALL")
-        self.filter_security = tk.StringVar(value="ALL")
+        self.filter_level = tk.StringVar(value=_t('gui.shell.activity_logger.tabs.query.values.all', default="ALL"))
+        self.filter_security = tk.StringVar(value=_t('gui.shell.activity_logger.tabs.query.values.all', default="ALL"))
         self.search_text = tk.StringVar()
 
         ttk.Label(filter_row2, text=_t("activity_logger.query.log_level"), style='AL.Info.TLabel').pack(side=tk.LEFT, padx=(0, 5))
@@ -241,7 +243,7 @@ class QueryTab(ttk.Frame):
             self.display_results(results)
 
         except Exception as e:
-            messagebox.showerror("Query Error", f"Failed to execute query: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.query.dialogs.query_error', default="Query Error"), f"Failed to execute query: {str(e)}")
 
     def display_results(self, results: List[Dict]):
         """Display query results"""
@@ -308,7 +310,7 @@ class QueryTab(ttk.Frame):
 
         try:
             file_path = filedialog.asksaveasfilename(
-                title="Export Query Results",
+                title=_t('gui.shell.activity_logger.tabs.query.dialogs.export_query_results', default="Export Query Results"),
                 defaultextension=".json",
                 filetypes=[
                     ("JSON files", "*.json"),
@@ -354,16 +356,16 @@ class QueryTab(ttk.Frame):
                     with open(file_path, 'w', encoding='utf-8') as f:
                         json.dump(self.current_results, f, indent=2, default=str)
 
-                messagebox.showinfo("Export Complete", f"Results exported to: {file_path}")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.query.dialogs.export_complete', default="Export Complete"), f"Results exported to: {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export results: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.query.dialogs.export_error', default="Export Error"), f"Failed to export results: {str(e)}")
 
     def save_query(self):
         """Save current query parameters"""
         try:
             file_path = filedialog.asksaveasfilename(
-                title="Save Query",
+                title=_t('gui.shell.activity_logger.tabs.query.dialogs.save_query', default="Save Query"),
                 defaultextension=".json",
                 filetypes=[("JSON files", "*.json")]
             )
@@ -385,16 +387,16 @@ class QueryTab(ttk.Frame):
                 with open(file_path, 'w') as f:
                     json.dump(query_data, f, indent=2)
 
-                messagebox.showinfo("Query Saved", f"Query saved to: {file_path}")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.query.dialogs.query_saved', default="Query Saved"), f"Query saved to: {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Save Error", f"Failed to save query: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.query.dialogs.save_error', default="Save Error"), f"Failed to save query: {str(e)}")
 
     def load_query(self):
         """Load saved query parameters"""
         try:
             file_path = filedialog.askopenfilename(
-                title="Load Query",
+                title=_t('gui.shell.activity_logger.tabs.query.dialogs.load_query', default="Load Query"),
                 filetypes=[("JSON files", "*.json")]
             )
 
@@ -413,10 +415,10 @@ class QueryTab(ttk.Frame):
                 self.filter_security.set(query_data.get('filter_security', 'ALL'))
                 self.search_text.set(query_data.get('search_text', ''))
 
-                messagebox.showinfo("Query Loaded", f"Query loaded from: {file_path}")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.query.dialogs.query_loaded', default="Query Loaded"), f"Query loaded from: {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Load Error", f"Failed to load query: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.query.dialogs.load_error', default="Load Error"), f"Failed to load query: {str(e)}")
 
     def show_result_details(self, event):
         """Show detailed information for selected result"""

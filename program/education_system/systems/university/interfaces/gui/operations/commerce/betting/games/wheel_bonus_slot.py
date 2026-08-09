@@ -8,6 +8,8 @@ Match three on the centre line for normal wins. Land three B (bonus) symbols
 to launch the wheel, which spins and lands on a multiplier of your bet.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import math
 import random
 import tkinter as tk
@@ -41,7 +43,7 @@ START_CREDITS, MIN_BET = 200, 5
 class WheelBonusSlot:
     def __init__(self, root):
         self.root = root
-        root.title("Wheel Bonus Slot")
+        root.title(_t('gui.operations.commerce.betting.games.wheel_bonus_slot.windows.wheel_bonus_slot', default="Wheel Bonus Slot"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -58,7 +60,7 @@ class WheelBonusSlot:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=20, pady=14)
         f.pack()
-        tk.Label(f, text="\u2605 WHEEL BONUS \u2605", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.wheel_bonus_slot.labels.wheel_bonus', default="\u2605 WHEEL BONUS \u2605"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 19, "bold")).pack()
         body = tk.Frame(f, bg=FELT)
         body.pack()
@@ -78,10 +80,10 @@ class WheelBonusSlot:
                                highlightthickness=0)
         self.wheel.pack()
 
-        self.msg = tk.Label(f, text="Land 3 B to spin the wheel!", bg=FELT,
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.wheel_bonus_slot.labels.land_3_b_to_spin_the_wheel', default="Land 3 B to spin the wheel!"), bg=FELT,
                             fg="white", font=("Helvetica", 13, "bold"))
         self.msg.pack(pady=4)
-        tk.Label(f, text="777=50x  \u2605=25x  \u25c6=14x  \u2665=8x  \u2663=5x",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.wheel_bonus_slot.labels.value_777_50x_25x_14x_8x_5x', default="777=50x  \u2605=25x  \u25c6=14x  \u2665=8x  \u2663=5x"),
                  bg=FELT, fg="#9fb3c8", font=("Helvetica", 9)).pack()
 
         bar = tk.Frame(f, bg=FELT, pady=8)
@@ -92,7 +94,7 @@ class WheelBonusSlot:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.wheel_bonus_slot.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -105,7 +107,7 @@ class WheelBonusSlot:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.wheel_bonus_slot.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -180,7 +182,7 @@ class WheelBonusSlot:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.wheel_bonus_slot.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.win_cells = set()
@@ -211,7 +213,7 @@ class WheelBonusSlot:
         if line[0] == line[1] == line[2] == "bonus":
             self.win_cells = {(c, 1) for c in range(COLS)}
             self.render()
-            self.msg.config(text="BONUS! Spinning the wheel...", fg=GOLD)
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.wheel_bonus_slot.text.bonus_spinning_the_wheel', default="BONUS! Spinning the wheel..."), fg=GOLD)
             self._spin_wheel()
             return
         if line[0] == line[1] == line[2] and line[0] in PAYOUT:
@@ -221,7 +223,7 @@ class WheelBonusSlot:
             self.msg.config(text=f"Three {SYM[line[0]][0]}  \u2014  WIN {win}!",
                             fg=GOLD)
         else:
-            self.msg.config(text="No win. Spin again!", fg="white")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.wheel_bonus_slot.text.no_win_spin_again', default="No win. Spin again!"), fg="white")
         self.render()
         self._finish()
 
@@ -258,7 +260,7 @@ class WheelBonusSlot:
 
     def _finish(self):
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.wheel_bonus_slot.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

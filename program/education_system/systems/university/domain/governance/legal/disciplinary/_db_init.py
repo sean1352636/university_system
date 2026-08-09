@@ -17,9 +17,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 
-from education_system.systems.university.infrastructure.paths import (
-    DEFAULT_DB_PATH,
-)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +104,7 @@ def ensure_disciplinary_schema(db_path=None) -> None:
     others (a fresh DB might have one of the parent tables missing
     on first run, etc.).
     """
-    path = str(db_path or DEFAULT_DB_PATH)
+    path = str(db_path or UNIVERSITY_DEFAULT_DB_PATH)
     try:
         conn = sqlite3.connect(path)
     except sqlite3.Error:

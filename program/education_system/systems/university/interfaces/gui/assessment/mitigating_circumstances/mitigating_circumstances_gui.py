@@ -1,5 +1,7 @@
 """Mitigating Circumstances (MC/EC) GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from datetime import datetime
@@ -11,7 +13,7 @@ logger = logging.getLogger(__name__)
 class MitigatingCircumstancesGUI:
     def __init__(self, parent=None):
         self.root = tk.Toplevel(parent) if parent else tk.Tk()
-        self.root.title("Mitigating Circumstances (MC / EC)")
+        self.root.title(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.windows.mitigating_circumstances_mc_ec', default="Mitigating Circumstances (MC / EC)"))
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
 
@@ -47,7 +49,7 @@ class MitigatingCircumstancesGUI:
     # --------------------------------------------------------------- Claims
     def _build_claims_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Claims")
+        notebook.add(tab, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.tabs.claims', default="Claims"))
 
         cols = ("id", "student", "module", "assessment", "grounds", "status", "submitted")
         self.claims_tree = ttk.Treeview(tab, columns=cols, show="headings", height=20)
@@ -60,10 +62,10 @@ class MitigatingCircumstancesGUI:
 
         btns = ttk.Frame(tab)
         btns.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btns, text="Submit Claim", command=self._submit_claim).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="View / Update Status", command=self._view_claim).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Withdraw", command=self._withdraw_claim).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Refresh", command=self._refresh_claims).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.submit_claim', default="Submit Claim"), command=self._submit_claim).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.view_update_status', default="View / Update Status"), command=self._view_claim).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.withdraw', default="Withdraw"), command=self._withdraw_claim).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.refresh', default="Refresh"), command=self._refresh_claims).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_claims()
 
@@ -86,7 +88,7 @@ class MitigatingCircumstancesGUI:
         from education_system.systems.university.domain.assessment.mitigating_circumstances.services.mitigating_circumstances_service import VALID_GROUNDS
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("Submit MC Claim")
+        dlg.title(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.windows.submit_mc_claim', default="Submit MC Claim"))
         dlg.geometry("520x600")
         dlg.transient(self.root)
         dlg.grab_set()
@@ -111,18 +113,18 @@ class MitigatingCircumstancesGUI:
                 ttk.Entry(dlg, textvariable=var).pack(fill=tk.X, padx=10)
             vars_[key] = var
 
-        ttk.Label(dlg, text="Description:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.description', default="Description:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         desc_text = tk.Text(dlg, height=4)
         desc_text.pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Impact statement:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.impact_statement', default="Impact statement:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         impact_text = tk.Text(dlg, height=4)
         impact_text.pack(fill=tk.X, padx=10)
 
         def save():
             data = {k: v.get() or None for k, v in vars_.items()}
             if not data.get('student_id'):
-                messagebox.showwarning("Validation", "Student ID is required.", parent=dlg)
+                messagebox.showwarning(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.validation', default="Validation"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.student_id_is_required', default="Student ID is required."), parent=dlg)
                 return
             data['description'] = desc_text.get("1.0", tk.END).strip() or None
             data['impact_statement'] = impact_text.get("1.0", tk.END).strip() or None
@@ -131,16 +133,16 @@ class MitigatingCircumstancesGUI:
                 cid = self.service.submit_claim(**data)
                 dlg.destroy()
                 self._refresh_claims()
-                messagebox.showinfo("Submitted", f"Claim #{cid} submitted.", parent=self.root)
+                messagebox.showinfo(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.submitted', default="Submitted"), f"Claim #{cid} submitted.", parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Submit", command=save).pack(pady=12)
+        ttk.Button(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.submit', default="Submit"), command=save).pack(pady=12)
 
     def _selected_claim_id(self):
         sel = self.claims_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a claim first.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.selection', default="Selection"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.select_a_claim_first', default="Select a claim first."), parent=self.root)
             return None
         return int(self.claims_tree.item(sel[0], "values")[0])
 
@@ -177,7 +179,7 @@ class MitigatingCircumstancesGUI:
 
         status_frame = ttk.Frame(dlg)
         status_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Label(status_frame, text="Status:").pack(side=tk.LEFT)
+        ttk.Label(status_frame, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.status', default="Status:")).pack(side=tk.LEFT)
         status_var = tk.StringVar(value=claim['status'])
         ttk.Combobox(status_frame, textvariable=status_var, values=list(VALID_STATUSES),
                      state="readonly").pack(side=tk.LEFT, padx=5)
@@ -186,37 +188,37 @@ class MitigatingCircumstancesGUI:
             try:
                 self.service.update_claim_status(cid, status_var.get())
                 self._refresh_claims()
-                messagebox.showinfo("Updated", "Status updated.", parent=dlg)
+                messagebox.showinfo(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.updated', default="Updated"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.status_updated', default="Status updated."), parent=dlg)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(status_frame, text="Update", command=update_status).pack(side=tk.LEFT, padx=5)
+        ttk.Button(status_frame, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.update', default="Update"), command=update_status).pack(side=tk.LEFT, padx=5)
 
     def _withdraw_claim(self):
         cid = self._selected_claim_id()
         if not cid:
             return
-        if not messagebox.askyesno("Withdraw", f"Withdraw claim #{cid}?", parent=self.root):
+        if not messagebox.askyesno(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.withdraw', default="Withdraw"), f"Withdraw claim #{cid}?", parent=self.root):
             return
         try:
             self.service.withdraw_claim(cid)
             self._refresh_claims()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=self.root)
 
     # ------------------------------------------------------------- Evidence
     def _build_evidence_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Evidence")
+        notebook.add(tab, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.tabs.evidence', default="Evidence"))
 
         top = ttk.Frame(tab)
         top.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(top, text="Claim ID:").pack(side=tk.LEFT)
+        ttk.Label(top, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.claim_id', default="Claim ID:")).pack(side=tk.LEFT)
         self.evidence_claim_var = tk.StringVar()
         ttk.Entry(top, textvariable=self.evidence_claim_var, width=10).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Load", command=self._refresh_evidence).pack(side=tk.LEFT, padx=2)
-        ttk.Button(top, text="Add Evidence", command=self._add_evidence).pack(side=tk.LEFT, padx=2)
-        ttk.Button(top, text="Verify Selected", command=self._verify_evidence).pack(side=tk.LEFT, padx=2)
+        ttk.Button(top, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.load', default="Load"), command=self._refresh_evidence).pack(side=tk.LEFT, padx=2)
+        ttk.Button(top, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.add_evidence', default="Add Evidence"), command=self._add_evidence).pack(side=tk.LEFT, padx=2)
+        ttk.Button(top, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.verify_selected', default="Verify Selected"), command=self._verify_evidence).pack(side=tk.LEFT, padx=2)
 
         cols = ("id", "type", "description", "document", "received", "verified", "verified_by")
         self.evidence_tree = ttk.Treeview(tab, columns=cols, show="headings", height=18)
@@ -236,7 +238,7 @@ class MitigatingCircumstancesGUI:
         try:
             cid = int(cid_str)
         except ValueError:
-            messagebox.showwarning("Validation", "Claim ID must be numeric.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.validation', default="Validation"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.claim_id_must_be_numeric', default="Claim ID must be numeric."), parent=self.root)
             return
         try:
             for e in self.service.list_evidence(cid):
@@ -251,7 +253,7 @@ class MitigatingCircumstancesGUI:
     def _add_evidence(self):
         cid_str = self.evidence_claim_var.get().strip()
         if not cid_str:
-            messagebox.showwarning("Validation", "Enter a Claim ID first.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.validation', default="Validation"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.enter_a_claim_id_first', default="Enter a Claim ID first."), parent=self.root)
             return
         try:
             cid = int(cid_str)
@@ -264,22 +266,22 @@ class MitigatingCircumstancesGUI:
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Type:").pack(padx=10, pady=(10, 0), anchor=tk.W)
-        type_var = tk.StringVar(value="medical_letter")
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.type', default="Type:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
+        type_var = tk.StringVar(value=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.values.medical_letter', default="medical_letter"))
         ttk.Combobox(dlg, textvariable=type_var, values=[
             "medical_letter", "death_certificate", "police_report",
             "email_correspondence", "screenshot", "other",
         ]).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Description:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.description', default="Description:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         desc_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=desc_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Document ref / path:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.document_ref_path', default="Document ref / path:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         doc_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=doc_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Received (YYYY-MM-DD):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.received_yyyy_mm_dd', default="Received (YYYY-MM-DD):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         recv_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
         ttk.Entry(dlg, textvariable=recv_var).pack(fill=tk.X, padx=10)
 
@@ -294,26 +296,26 @@ class MitigatingCircumstancesGUI:
                 self._refresh_evidence()
                 self._refresh_claims()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=12)
+        ttk.Button(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.save', default="Save"), command=save).pack(pady=12)
 
     def _verify_evidence(self):
         sel = self.evidence_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an evidence row.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.selection', default="Selection"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.select_an_evidence_row', default="Select an evidence row."), parent=self.root)
             return
         eid = int(self.evidence_tree.item(sel[0], "values")[0])
         try:
             self.service.verify_evidence(eid, verified_by=self._username, verified=True)
             self._refresh_evidence()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=self.root)
 
     # --------------------------------------------------------------- Panels
     def _build_panels_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Panels")
+        notebook.add(tab, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.tabs.panels', default="Panels"))
 
         left = ttk.Frame(tab)
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -328,14 +330,14 @@ class MitigatingCircumstancesGUI:
 
         btns = ttk.Frame(left)
         btns.pack(fill=tk.X, pady=4)
-        ttk.Button(btns, text="Schedule Panel", command=self._schedule_panel).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Close Panel", command=self._close_panel).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Refresh", command=self._refresh_panels).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.schedule_panel', default="Schedule Panel"), command=self._schedule_panel).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.close_panel', default="Close Panel"), command=self._close_panel).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.refresh', default="Refresh"), command=self._refresh_panels).pack(side=tk.RIGHT, padx=2)
 
         right = ttk.Frame(tab)
         right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        ttk.Label(right, text="Panel Items / Decisions").pack(anchor=tk.W)
+        ttk.Label(right, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.panel_items_decisions', default="Panel Items / Decisions")).pack(anchor=tk.W)
         cols2 = ("id", "claim", "student", "module", "decision", "outcome")
         self.panel_items_tree = ttk.Treeview(right, columns=cols2, show="headings", height=20)
         for c in cols2:
@@ -345,8 +347,8 @@ class MitigatingCircumstancesGUI:
 
         btns2 = ttk.Frame(right)
         btns2.pack(fill=tk.X, pady=4)
-        ttk.Button(btns2, text="Assign Claim", command=self._assign_claim).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns2, text="Record Decision", command=self._record_decision).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns2, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.assign_claim', default="Assign Claim"), command=self._assign_claim).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns2, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.record_decision', default="Record Decision"), command=self._record_decision).pack(side=tk.LEFT, padx=2)
 
         self._refresh_panels()
 
@@ -381,24 +383,24 @@ class MitigatingCircumstancesGUI:
 
     def _schedule_panel(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Schedule Panel")
+        dlg.title(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.windows.schedule_panel', default="Schedule Panel"))
         dlg.geometry("400x320")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Date (YYYY-MM-DD):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
         ttk.Entry(dlg, textvariable=date_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Chair:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.chair', default="Chair:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         chair_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=chair_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Members (comma separated):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.members_comma_separated', default="Members (comma separated):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         members_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=members_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Location:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.location', default="Location:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         loc_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=loc_var).pack(fill=tk.X, padx=10)
 
@@ -411,29 +413,29 @@ class MitigatingCircumstancesGUI:
                 dlg.destroy()
                 self._refresh_panels()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=12)
+        ttk.Button(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.save', default="Save"), command=save).pack(pady=12)
 
     def _close_panel(self):
         pid = self._selected_panel_id()
         if not pid:
-            messagebox.showwarning("Selection", "Select a panel.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.selection', default="Selection"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.select_a_panel', default="Select a panel."), parent=self.root)
             return
         try:
             self.service.close_panel(pid)
             self._refresh_panels()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _assign_claim(self):
         pid = self._selected_panel_id()
         if not pid:
-            messagebox.showwarning("Selection", "Select a panel first.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.selection', default="Selection"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.select_a_panel_first', default="Select a panel first."), parent=self.root)
             return
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("Assign Claim to Panel")
+        dlg.title(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.windows.assign_claim_to_panel', default="Assign Claim to Panel"))
         dlg.geometry("320x150")
         dlg.transient(self.root)
         dlg.grab_set()
@@ -449,9 +451,9 @@ class MitigatingCircumstancesGUI:
                 self._refresh_panel_items()
                 self._refresh_claims()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Assign", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.assign', default="Assign"), command=save).pack(pady=10)
 
     def _record_decision(self):
         from education_system.systems.university.domain.assessment.mitigating_circumstances.services.mitigating_circumstances_service import VALID_OUTCOMES
@@ -459,7 +461,7 @@ class MitigatingCircumstancesGUI:
         pid = self._selected_panel_id()
         sel = self.panel_items_tree.selection()
         if not pid or not sel:
-            messagebox.showwarning("Selection", "Select a panel and a claim row.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.selection', default="Selection"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.select_a_panel_and_a_claim_row', default="Select a panel and a claim row."), parent=self.root)
             return
         item_values = self.panel_items_tree.item(sel[0], "values")
         cid = int(item_values[1])
@@ -470,18 +472,18 @@ class MitigatingCircumstancesGUI:
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Decision:").pack(padx=10, pady=(10, 0), anchor=tk.W)
-        decision_var = tk.StringVar(value="approved")
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.decision', default="Decision:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
+        decision_var = tk.StringVar(value=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.values.approved', default="approved"))
         ttk.Combobox(dlg, textvariable=decision_var,
                      values=["approved", "rejected", "deferred"],
                      state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Outcome:").pack(padx=10, pady=(10, 0), anchor=tk.W)
-        outcome_var = tk.StringVar(value="extension_granted")
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.outcome', default="Outcome:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
+        outcome_var = tk.StringVar(value=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.values.extension_granted', default="extension_granted"))
         ttk.Combobox(dlg, textvariable=outcome_var, values=list(VALID_OUTCOMES),
                      state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Rationale:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.rationale', default="Rationale:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         rationale_text = tk.Text(dlg, height=6)
         rationale_text.pack(fill=tk.BOTH, padx=10, expand=True)
 
@@ -495,14 +497,14 @@ class MitigatingCircumstancesGUI:
                 self._refresh_panel_items()
                 self._refresh_claims()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.save', default="Save"), command=save).pack(pady=10)
 
     # ----------------------------------------------------------- Extensions
     def _build_extensions_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Extensions")
+        notebook.add(tab, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.tabs.extensions', default="Extensions"))
 
         cols = ("id", "claim", "student", "module", "assessment",
                 "original", "new", "days", "applied", "granted_by")
@@ -517,9 +519,9 @@ class MitigatingCircumstancesGUI:
 
         btns = ttk.Frame(tab)
         btns.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btns, text="Grant Extension", command=self._grant_extension).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Mark Applied", command=self._mark_applied).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Refresh", command=self._refresh_extensions).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.grant_extension', default="Grant Extension"), command=self._grant_extension).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.mark_applied', default="Mark Applied"), command=self._mark_applied).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.refresh', default="Refresh"), command=self._refresh_extensions).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_extensions()
 
@@ -540,28 +542,28 @@ class MitigatingCircumstancesGUI:
 
     def _grant_extension(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Grant Deadline Extension")
+        dlg.title(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.windows.grant_deadline_extension', default="Grant Deadline Extension"))
         dlg.geometry("440x380")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Claim ID:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.claim_id', default="Claim ID:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         cid_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=cid_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Original deadline (YYYY-MM-DD):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.original_deadline_yyyy_mm_dd', default="Original deadline (YYYY-MM-DD):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         orig_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=orig_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Extension days:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.extension_days', default="Extension days:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         days_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=days_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="…or new deadline (YYYY-MM-DD):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.or_new_deadline_yyyy_mm_dd', default="…or new deadline (YYYY-MM-DD):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         new_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=new_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Reason:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.labels.reason', default="Reason:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         reason_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=reason_var).pack(fill=tk.X, padx=10)
 
@@ -579,31 +581,31 @@ class MitigatingCircumstancesGUI:
                 dlg.destroy()
                 self._refresh_extensions()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Grant", command=save).pack(pady=12)
+        ttk.Button(dlg, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.grant', default="Grant"), command=save).pack(pady=12)
 
     def _mark_applied(self):
         sel = self.ext_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an extension row.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.selection', default="Selection"), _t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.select_an_extension_row', default="Select an extension row."), parent=self.root)
             return
         ext_id = int(self.ext_tree.item(sel[0], "values")[0])
         try:
             self.service.mark_extension_applied(ext_id)
             self._refresh_extensions()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.dialogs.error', default="Error"), str(e), parent=self.root)
 
     # ---------------------------------------------------------------- Stats
     def _build_stats_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Statistics")
+        notebook.add(tab, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.tabs.statistics', default="Statistics"))
 
         self.stats_text = tk.Text(tab, wrap=tk.WORD, height=30)
         self.stats_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Button(tab, text="Refresh", command=self._refresh_stats).pack(pady=5)
+        ttk.Button(tab, text=_t('gui.assessment.mitigating_circumstances.mitigating_circumstances.buttons.refresh', default="Refresh"), command=self._refresh_stats).pack(pady=5)
         self._refresh_stats()
 
     def _refresh_stats(self):

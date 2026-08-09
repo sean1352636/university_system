@@ -2,6 +2,8 @@
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import threading
@@ -22,7 +24,7 @@ class _PrerequisitesMixin:
     def _create_prerequisites_tab(self):
         """Add the prerequisites tab frame (content built lazily on first view)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Prerequisites")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.tabs.prerequisites', default="Prerequisites"))
         self._register_lazy_tab(tab, self._populate_prerequisites_tab)
 
     def _populate_prerequisites_tab(self, tab):
@@ -31,17 +33,17 @@ class _PrerequisitesMixin:
         control_frame = ttk.Frame(tab)
         control_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(control_frame, text="Course ID:", font=('Arial', 11)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.labels.course_id', default="Course ID:"), font=('Arial', 11)).pack(side=tk.LEFT, padx=5)
         self.prereq_course_entry = ttk.Entry(control_frame, width=15, font=('Arial', 11))
         self.prereq_course_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(control_frame, text="Visualize Prerequisites",
+        ttk.Button(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.buttons.visualize_prerequisites', default="Visualize Prerequisites"),
                   command=self._visualize_prerequisites).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Check Eligibility",
+        ttk.Button(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.buttons.check_eligibility', default="Check Eligibility"),
                   command=self._check_eligibility).pack(side=tk.LEFT, padx=5)
 
         # Display area
-        display_frame = ttk.LabelFrame(tab, text="Prerequisite Visualization", padding=10)
+        display_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.labels.prerequisite_visualization', default="Prerequisite Visualization"), padding=10)
         display_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.prereq_text = scrolledtext.ScrolledText(display_frame, wrap=tk.WORD,
@@ -52,7 +54,7 @@ class _PrerequisitesMixin:
         """Visualize prerequisite chain."""
         course_id = self.prereq_course_entry.get().strip().upper()
         if not course_id:
-            messagebox.showwarning("Warning", "Please enter a course ID.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.dialogs.please_enter_a_course_id', default="Please enter a course ID."))
             return
 
         try:
@@ -85,13 +87,13 @@ class _PrerequisitesMixin:
             self.status_bar.config(text=f"Visualized prerequisites for {course_id}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to visualize prerequisites: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.dialogs.error', default="Error"), f"Failed to visualize prerequisites: {e}")
 
     def _check_eligibility(self):
         """Check prerequisite eligibility."""
         course_id = self.prereq_course_entry.get().strip().upper()
         if not course_id:
-            messagebox.showwarning("Warning", "Please enter a course ID.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.dialogs.please_enter_a_course_id', default="Please enter a course ID."))
             return
 
         try:
@@ -129,5 +131,5 @@ class _PrerequisitesMixin:
             self.status_bar.config(text=f"Checked eligibility for {course_id}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to check eligibility: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.prerequisites.dialogs.error', default="Error"), f"Failed to check eligibility: {e}")
 

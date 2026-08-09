@@ -337,18 +337,21 @@ class ApplicationManager:
                     "FROM admission_applications WHERE application_id = ?",
                     (application_id,),
                 ).fetchone()
-            try:
-                from education_system.systems.university.services.bus.integration_bus import (
-                    publish_admissions_decision,
+                from education_system.systems.university.infrastructure.events import (
+                    transactional_publisher,
                 )
-                publish_admissions_decision(
-                    application_id=int(application_id),
-                    decision=decision,
-                    applicant_id=str(row[0]) if row and row[0] else None,
-                    fee_paid=bool(row[1]) if row else False,
+                transactional_publisher.publish(
+                    conn,
+                    "admissions.decision.recorded",
+                    {
+                        "application_id": int(application_id),
+                        "decision": decision,
+                        "applicant_id": str(row[0]) if row and row[0] else None,
+                        "fee_paid": bool(row[1]) if row else False,
+                    },
+                    aggregate_id=str(application_id),
+                    idempotency_key=f"admissions:{application_id}:{decision}:{decision_date}",
                 )
-            except Exception:
-                pass
             # Notify the applicant: positive decisions use the offer-letter
             # template (deposit details supplied); everything else uses the
             # generic decision-notification template.

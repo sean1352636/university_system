@@ -96,6 +96,13 @@ New to the system? Start here:
 2. **[Security Policy](../../../SECURITY.md)** — Security features and hardening
 3. **[MFA Setup](security/MFA_QUICK_START.md)** — Enable multi-factor authentication
 
+## Modernisation
+
+- **[Modernisation tasklist](MODERNISATION_TASKLIST.md)** — Prioritised delivery
+  backlog and acceptance criteria
+- **[Core scope and ownership](CORE_SCOPE_AND_OWNERSHIP.md)** — Supported core,
+  plugin boundary, infrastructure owners and target installation profiles
+
 ## By Topic
 
 ### Security & Authentication

@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
@@ -73,8 +75,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -129,12 +131,12 @@ def checkout_dialog(self):
     try:
         current_user = get_current_user()
         if not current_user:
-            messagebox.showerror(_("common.error"), "No user logged in. Please log in to checkout books.")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.no_user_logged_in_please_log_in_to_checkout_books', default="No user logged in. Please log in to checkout books."))
             return
 
         current_user_id = current_user.get('username') or current_user.get('user_id') or current_user.get('id')
         if not current_user_id:
-            messagebox.showerror(_("common.error"), "Could not determine current user ID.")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.could_not_determine_current_user_id', default="Could not determine current user ID."))
             return
 
         # Store current user ID for checkout
@@ -160,7 +162,7 @@ def checkout_dialog(self):
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # Current user display
-    user_frame = ttk.LabelFrame(main_frame, text="Borrowing As")
+    user_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.checkout_return.labels.borrowing_as', default="Borrowing As"))
     user_frame.pack(fill=tk.X, pady=(0, 10))
 
     user_info = f"User ID: {current_user_id}\nRole: {current_user.get('role', 'N/A')}"
@@ -173,12 +175,12 @@ def checkout_dialog(self):
     book_frame = ttk.LabelFrame(main_frame, text=_("library.frames.book_information"))
     book_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(book_frame, text="Book ID or Barcode:").pack(anchor='w', padx=5, pady=5)
+    ttk.Label(book_frame, text=_t('gui.academics.library.checkout_return.labels.book_id_or_barcode', default="Book ID or Barcode:")).pack(anchor='w', padx=5, pady=5)
     self.checkout_book_var = tk.StringVar()
     book_entry = ttk.Entry(book_frame, textvariable=self.checkout_book_var, width=30)
     book_entry.pack(anchor='w', padx=5, pady=5)
 
-    ttk.Button(book_frame, text="Lookup Book", command=self.lookup_checkout_book).pack(anchor='w', padx=5, pady=5)
+    ttk.Button(book_frame, text=_t('gui.academics.library.checkout_return.buttons.lookup_book', default="Lookup Book"), command=self.lookup_checkout_book).pack(anchor='w', padx=5, pady=5)
 
     # Book details display
     self.checkout_book_info = tk.Text(book_frame, height=4, wrap=tk.WORD, state=tk.DISABLED)
@@ -188,7 +190,7 @@ def checkout_dialog(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    self.checkout_button = ttk.Button(button_frame, text="Checkout", command=lambda: self.process_checkout(dialog), state=tk.DISABLED)
+    self.checkout_button = ttk.Button(button_frame, text=_t('gui.academics.library.checkout_return.buttons.checkout', default="Checkout"), command=lambda: self.process_checkout(dialog), state=tk.DISABLED)
     self.checkout_button.pack(side=tk.LEFT, padx=5)
 
     ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
@@ -200,7 +202,7 @@ def lookup_checkout_book(self):
     """Lookup book for checkout"""
     book_identifier = self.checkout_book_var.get().strip()
     if not book_identifier:
-        messagebox.showwarning(_("common.warning"), "Please enter a book ID or barcode")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_enter_a_book_id_or_barcode', default="Please enter a book ID or barcode"))
         return
 
     try:
@@ -235,7 +237,7 @@ def lookup_checkout_book(self):
                     self.selected_book_id = book_id
                     self.check_checkout_ready()
             else:
-                messagebox.showerror(_("common.error"), "Book not found")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.book_not_found', default="Book not found"))
                 self.checkout_book_info.config(state=tk.NORMAL)
                 self.checkout_book_info.delete("1.0", tk.END)
                 self.checkout_book_info.config(state=tk.DISABLED)
@@ -257,7 +259,7 @@ def verify_checkout_user(self):
     user_type = self.user_type_var.get()
 
     if not user_id:
-        messagebox.showwarning(_("common.warning"), "Please enter a user ID")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_enter_a_user_id', default="Please enter a user ID"))
         return
 
     try:
@@ -317,7 +319,7 @@ def process_checkout(self, dialog):
             success = self.checkout_book_database(self.selected_book_id, self.selected_user_id)
 
             if success:
-                messagebox.showinfo(_("common.success"), "Book checked out successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.checkout_return.dialogs.book_checked_out_successfully', default="Book checked out successfully!"))
 
                 # Send checkout confirmation email
                 self._send_checkout_confirmation_email(self.selected_book_id, self.selected_user_id)
@@ -325,7 +327,7 @@ def process_checkout(self, dialog):
                 dialog.destroy()
                 self.refresh_books_table() if hasattr(self, 'books_tree') else None
             else:
-                messagebox.showerror(_("common.error"), "Checkout failed")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.checkout_failed', default="Checkout failed"))
         else:
             # Demo mode
             messagebox.showinfo(_("common.demo"), f"Book {self.selected_book_id} checked out to {self.selected_user_id}")
@@ -410,7 +412,7 @@ def checkout_selected_book(self):
     ttk.Label(dialog, text=f"Checkout Book: {book_id}", font=('Arial', 12, 'bold')).pack(pady=10)
     ttk.Label(dialog, text=f"Title: {item['values'][1]}").pack(pady=5)
 
-    ttk.Label(dialog, text="User ID or Email:").pack(pady=10)
+    ttk.Label(dialog, text=_t('gui.academics.library.checkout_return.labels.user_id_or_email', default="User ID or Email:")).pack(pady=10)
     user_var = tk.StringVar()
     user_entry = ttk.Entry(dialog, textvariable=user_var, width=30)
     user_entry.pack(pady=5)
@@ -420,7 +422,7 @@ def checkout_selected_book(self):
         try:
             user_id = user_var.get().strip()
             if not user_id:
-                messagebox.showwarning(_("common.warning"), "Please enter a user ID")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_enter_a_user_id', default="Please enter a user ID"))
                 return
 
             # Verify user exists
@@ -434,7 +436,7 @@ def checkout_selected_book(self):
 
             user = cursor.fetchone()
             if not user:
-                messagebox.showerror(_("common.error"), "User not found")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.user_not_found', default="User not found"))
                 conn.close()
                 return
 
@@ -445,7 +447,7 @@ def checkout_selected_book(self):
             book_info = cursor.fetchone()
 
             if not book_info or book_info[0] <= 0:
-                messagebox.showerror(_("common.error"), "Book not available for checkout")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.book_not_available_for_checkout', default="Book not available for checkout"))
                 conn.close()
                 return
 
@@ -474,7 +476,7 @@ def checkout_selected_book(self):
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Checkout failed: {str(e)}")
 
-    ttk.Button(dialog, text="Checkout", command=process_quick_checkout).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.academics.library.checkout_return.buttons.checkout', default="Checkout"), command=process_quick_checkout).pack(pady=10)
     ttk.Button(dialog, text=_("common.cancel"), command=dialog.destroy).pack(pady=5)
 
 def show_return(self):
@@ -502,15 +504,15 @@ def return_dialog(self):
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # Book identification
-    book_frame = ttk.LabelFrame(main_frame, text="Book Identification")
+    book_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.checkout_return.labels.book_identification', default="Book Identification"))
     book_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(book_frame, text="Book ID or Barcode:").pack(anchor='w', padx=5, pady=5)
+    ttk.Label(book_frame, text=_t('gui.academics.library.checkout_return.labels.book_id_or_barcode', default="Book ID or Barcode:")).pack(anchor='w', padx=5, pady=5)
     self.return_book_var = tk.StringVar()
     book_entry = ttk.Entry(book_frame, textvariable=self.return_book_var, width=30)
     book_entry.pack(anchor='w', padx=5, pady=5)
 
-    ttk.Button(book_frame, text="Lookup Book", command=self.lookup_return_book).pack(anchor='w', padx=5, pady=5)
+    ttk.Button(book_frame, text=_t('gui.academics.library.checkout_return.buttons.lookup_book', default="Lookup Book"), command=self.lookup_return_book).pack(anchor='w', padx=5, pady=5)
 
     # Loan details
     loan_frame = ttk.LabelFrame(main_frame, text=_("library.frames.loan_details"))
@@ -523,11 +525,11 @@ def return_dialog(self):
     condition_frame = ttk.LabelFrame(main_frame, text=_("library.frames.book_condition"))
     condition_frame.pack(fill=tk.X, pady=(0, 10))
 
-    self.book_condition_var = tk.StringVar(value="Good")
-    ttk.Radiobutton(condition_frame, text="Good Condition", variable=self.book_condition_var, value="Good").pack(anchor='w', padx=5, pady=2)
-    ttk.Radiobutton(condition_frame, text="Damaged", variable=self.book_condition_var, value="Damaged").pack(anchor='w', padx=5, pady=2)
+    self.book_condition_var = tk.StringVar(value=_t('gui.academics.library.checkout_return.values.good', default="Good"))
+    ttk.Radiobutton(condition_frame, text=_t('gui.academics.library.checkout_return.buttons.good_condition', default="Good Condition"), variable=self.book_condition_var, value="Good").pack(anchor='w', padx=5, pady=2)
+    ttk.Radiobutton(condition_frame, text=_t('gui.academics.library.checkout_return.buttons.damaged', default="Damaged"), variable=self.book_condition_var, value="Damaged").pack(anchor='w', padx=5, pady=2)
 
-    ttk.Label(condition_frame, text="Notes (if damaged):").pack(anchor='w', padx=5, pady=(5, 0))
+    ttk.Label(condition_frame, text=_t('gui.academics.library.checkout_return.labels.notes_if_damaged', default="Notes (if damaged):")).pack(anchor='w', padx=5, pady=(5, 0))
     self.condition_notes = tk.Text(condition_frame, height=2, width=50)
     self.condition_notes.pack(anchor='w', padx=5, pady=5)
 
@@ -535,7 +537,7 @@ def return_dialog(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    self.return_button = ttk.Button(button_frame, text="Return Book", command=lambda: self.process_return(dialog), state=tk.DISABLED)
+    self.return_button = ttk.Button(button_frame, text=_t('gui.academics.library.checkout_return.buttons.return_book', default="Return Book"), command=lambda: self.process_return(dialog), state=tk.DISABLED)
     self.return_button.pack(side=tk.LEFT, padx=5)
 
     ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
@@ -547,7 +549,7 @@ def lookup_return_book(self):
     """Lookup book for return"""
     book_identifier = self.return_book_var.get().strip()
     if not book_identifier:
-        messagebox.showwarning(_("common.warning"), "Please enter a book ID or barcode")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_enter_a_book_id_or_barcode', default="Please enter a book ID or barcode"))
         return
 
     try:
@@ -618,7 +620,7 @@ Status: {status.upper()}"""
                 self.return_button.config(state=tk.NORMAL)
 
             else:
-                messagebox.showerror(_("common.error"), "No active loan found for this book")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.no_active_loan_found_for_this_book', default="No active loan found for this book"))
                 self.return_loan_info.config(state=tk.NORMAL)
                 self.return_loan_info.delete("1.0", tk.END)
                 self.return_loan_info.config(state=tk.DISABLED)
@@ -646,14 +648,14 @@ def process_return(self, dialog):
             # Only allow the borrower or staff/admin to return
             if hasattr(self, 'return_borrower_id'):
                 if current_user_id != self.return_borrower_id and current_user_role not in ['admin', 'staff', 'librarian']:
-                    messagebox.showerror("Access Denied",
+                    messagebox.showerror(_t('gui.academics.library.checkout_return.dialogs.access_denied', default="Access Denied"),
                                        f"Only the borrower ({self.return_borrower_id}) or library staff can return this book.")
                     return
 
             success = self.return_book_database()
 
             if success:
-                messagebox.showinfo(_("common.success"), "Book returned successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.checkout_return.dialogs.book_returned_successfully', default="Book returned successfully!"))
 
                 # Send return confirmation email
                 if hasattr(self, 'return_borrower_id'):
@@ -662,10 +664,10 @@ def process_return(self, dialog):
                 dialog.destroy()
                 self.refresh_books_table() if hasattr(self, 'books_tree') else None
             else:
-                messagebox.showerror(_("common.error"), "Return failed")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.return_failed', default="Return failed"))
         else:
             # Demo mode
-            messagebox.showinfo(_("common.demo"), "Book returned successfully!")
+            messagebox.showinfo(_("common.demo"), _t('gui.academics.library.checkout_return.dialogs.book_returned_successfully', default="Book returned successfully!"))
             dialog.destroy()
 
     except tk.TclError as e:
@@ -739,28 +741,28 @@ def return_book_database(self):
 def enhanced_checkout_book_gui(self, book_id=None):
     """Enhanced checkout with reading level check and notifications"""
     checkout_window = tk.Toplevel(self.master)
-    checkout_window.title("Enhanced Book Checkout")
+    checkout_window.title(_t('gui.academics.library.checkout_return.windows.enhanced_book_checkout', default="Enhanced Book Checkout"))
     checkout_window.geometry("600x500")
 
-    ttk.Label(checkout_window, text="Enhanced Book Checkout",
+    ttk.Label(checkout_window, text=_t('gui.academics.library.checkout_return.labels.enhanced_book_checkout', default="Enhanced Book Checkout"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Book selection frame
-    book_frame = ttk.LabelFrame(checkout_window, text="Book Selection", padding=15)
+    book_frame = ttk.LabelFrame(checkout_window, text=_t('gui.academics.library.checkout_return.labels.book_selection', default="Book Selection"), padding=15)
     book_frame.pack(fill=tk.X, padx=10, pady=10)
 
     book_id_var = tk.StringVar(value=book_id or "")
     user_id_var = tk.StringVar()
-    book_info_var = tk.StringVar(value="No book selected")
+    book_info_var = tk.StringVar(value=_t('gui.academics.library.checkout_return.values.no_book_selected', default="No book selected"))
 
-    ttk.Label(book_frame, text="Book ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(book_frame, text=_t('gui.academics.library.checkout_return.labels.book_id', default="Book ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     book_id_entry = ttk.Entry(book_frame, textvariable=book_id_var, width=30)
     book_id_entry.grid(row=0, column=1, padx=10, pady=5)
 
     def lookup_book():
         bid = book_id_var.get().strip()
         if not bid:
-            messagebox.showwarning(_("common.warning"), "Please enter a Book ID")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_enter_a_book_id', default="Please enter a Book ID"))
             return
 
         try:
@@ -780,11 +782,11 @@ def enhanced_checkout_book_gui(self, book_id=None):
                     messagebox.showwarning(_("common.warning"), f"This book is currently {status}")
             else:
                 book_info_var.set("Book not found")
-                messagebox.showerror(_("common.error"), "Book not found")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.book_not_found', default="Book not found"))
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Failed to lookup book: {str(e)}")
 
-    ttk.Button(book_frame, text="Lookup", command=lookup_book).grid(row=0, column=2, padx=5)
+    ttk.Button(book_frame, text=_t('gui.academics.library.checkout_return.buttons.lookup', default="Lookup"), command=lookup_book).grid(row=0, column=2, padx=5)
 
     # Book info display
     ttk.Label(book_frame, textvariable=book_info_var, foreground='blue').grid(
@@ -794,19 +796,19 @@ def enhanced_checkout_book_gui(self, book_id=None):
     user_frame = ttk.LabelFrame(checkout_window, text=_("library.frames.user_information"), padding=15)
     user_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(user_frame, text="User/Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(user_frame, text=_t('gui.academics.library.checkout_return.labels.user_student_id', default="User/Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     ttk.Entry(user_frame, textvariable=user_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
 
     # Checkout options
-    options_frame = ttk.LabelFrame(checkout_window, text="Checkout Options", padding=15)
+    options_frame = ttk.LabelFrame(checkout_window, text=_t('gui.academics.library.checkout_return.labels.checkout_options', default="Checkout Options"), padding=15)
     options_frame.pack(fill=tk.X, padx=10, pady=10)
 
     check_reading_level_var = tk.BooleanVar(value=True)
     send_notification_var = tk.BooleanVar(value=True)
 
-    ttk.Checkbutton(options_frame, text="Check Reading Level Compatibility",
+    ttk.Checkbutton(options_frame, text=_t('gui.academics.library.checkout_return.buttons.check_reading_level_compatibility', default="Check Reading Level Compatibility"),
                    variable=check_reading_level_var).pack(anchor=tk.W, pady=2)
-    ttk.Checkbutton(options_frame, text="Send Email Notification",
+    ttk.Checkbutton(options_frame, text=_t('gui.academics.library.checkout_return.buttons.send_email_notification', default="Send Email Notification"),
                    variable=send_notification_var).pack(anchor=tk.W, pady=2)
 
     def perform_checkout():
@@ -814,7 +816,7 @@ def enhanced_checkout_book_gui(self, book_id=None):
         uid = user_id_var.get().strip()
 
         if not bid or not uid:
-            messagebox.showerror(_("common.error"), "Please provide both Book ID and User ID")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.please_provide_both_book_id_and_user_id', default="Please provide both Book ID and User ID"))
             return
 
         try:
@@ -826,7 +828,7 @@ def enhanced_checkout_book_gui(self, book_id=None):
             book = cursor.fetchone()
 
             if not book:
-                messagebox.showerror(_("common.error"), "Book not found")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.checkout_return.dialogs.book_not_found', default="Book not found"))
                 conn.close()
                 return
 
@@ -909,36 +911,36 @@ def enhanced_checkout_book_gui(self, book_id=None):
     button_frame = ttk.Frame(checkout_window)
     button_frame.pack(fill=tk.X, padx=10, pady=20)
 
-    ttk.Button(button_frame, text="Checkout", command=perform_checkout).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.checkout_return.buttons.checkout', default="Checkout"), command=perform_checkout).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=checkout_window.destroy).pack(side=tk.LEFT, padx=5)
 
 def enhanced_return_book_gui(self):
     """Enhanced book return with fine calculation"""
     return_window = tk.Toplevel(self.master)
-    return_window.title("Enhanced Book Return")
+    return_window.title(_t('gui.academics.library.checkout_return.windows.enhanced_book_return', default="Enhanced Book Return"))
     return_window.geometry("600x500")
 
-    ttk.Label(return_window, text="Enhanced Book Return",
+    ttk.Label(return_window, text=_t('gui.academics.library.checkout_return.labels.enhanced_book_return', default="Enhanced Book Return"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Search frame
-    search_frame = ttk.LabelFrame(return_window, text="Find Loan", padding=15)
+    search_frame = ttk.LabelFrame(return_window, text=_t('gui.academics.library.checkout_return.labels.find_loan', default="Find Loan"), padding=15)
     search_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    search_type = tk.StringVar(value="book_id")
+    search_type = tk.StringVar(value=_t('gui.academics.library.checkout_return.values.book_id', default="book_id"))
     search_value = tk.StringVar()
 
-    ttk.Radiobutton(search_frame, text="By Book ID", variable=search_type,
+    ttk.Radiobutton(search_frame, text=_t('gui.academics.library.checkout_return.buttons.by_book_id', default="By Book ID"), variable=search_type,
                    value="book_id").grid(row=0, column=0, sticky=tk.W, padx=5)
-    ttk.Radiobutton(search_frame, text="By User ID", variable=search_type,
+    ttk.Radiobutton(search_frame, text=_t('gui.academics.library.checkout_return.buttons.by_user_id', default="By User ID"), variable=search_type,
                    value="user_id").grid(row=0, column=1, sticky=tk.W, padx=5)
-    ttk.Radiobutton(search_frame, text="By Loan ID", variable=search_type,
+    ttk.Radiobutton(search_frame, text=_t('gui.academics.library.checkout_return.buttons.by_loan_id', default="By Loan ID"), variable=search_type,
                    value="loan_id").grid(row=0, column=2, sticky=tk.W, padx=5)
 
     ttk.Entry(search_frame, textvariable=search_value, width=30).grid(row=1, column=0, columnspan=2, padx=5, pady=10)
 
     # Results frame
-    results_frame = ttk.LabelFrame(return_window, text="Active Loans", padding=10)
+    results_frame = ttk.LabelFrame(return_window, text=_t('gui.academics.library.checkout_return.labels.active_loans', default="Active Loans"), padding=10)
     results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     columns = ('Loan ID', 'Book ID', 'Title', 'User ID', 'Due Date', 'Fine')
@@ -959,7 +961,7 @@ def enhanced_return_book_gui(self):
         svalue = search_value.get().strip()
 
         if not svalue:
-            messagebox.showwarning(_("common.warning"), "Please enter a search value")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_enter_a_search_value', default="Please enter a search value"))
             return
 
         try:
@@ -1017,7 +1019,7 @@ def enhanced_return_book_gui(self):
             conn.close()
 
             if not loans:
-                messagebox.showinfo("No Results", "No active loans found")
+                messagebox.showinfo(_t('gui.academics.library.checkout_return.dialogs.no_results', default="No Results"), _t('gui.academics.library.checkout_return.dialogs.no_active_loans_found', default="No active loans found"))
 
         except tk.TclError as e:
             messagebox.showerror(_("common.error"), f"Search failed: {str(e)}")
@@ -1027,7 +1029,7 @@ def enhanced_return_book_gui(self):
     def return_selected():
         selection = results_tree.selection()
         if not selection:
-            messagebox.showwarning(_("common.warning"), "Please select a loan to return")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_select_a_loan_to_return', default="Please select a loan to return"))
             return
 
         item = results_tree.item(selection[0])
@@ -1038,7 +1040,7 @@ def enhanced_return_book_gui(self):
 
         # Confirm return
         if fine_amount > 0:
-            confirm = messagebox.askyesno("Confirm Return",
+            confirm = messagebox.askyesno(_t('gui.academics.library.checkout_return.dialogs.confirm_return', default="Confirm Return"),
                 f"Return this book?\n\nLoan ID: {loan_id}\n" +
                 f"Book ID: {book_id}\n" +
                 f"Fine: £{fine_amount:.2f}\n\n" +
@@ -1046,7 +1048,7 @@ def enhanced_return_book_gui(self):
             if not confirm:
                 return
         else:
-            confirm = messagebox.askyesno("Confirm Return",
+            confirm = messagebox.askyesno(_t('gui.academics.library.checkout_return.dialogs.confirm_return', default="Confirm Return"),
                 f"Return this book?\n\nLoan ID: {loan_id}\nBook ID: {book_id}")
             if not confirm:
                 return
@@ -1087,28 +1089,28 @@ def enhanced_return_book_gui(self):
     button_frame = ttk.Frame(return_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Return Selected", command=return_selected).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.checkout_return.buttons.return_selected', default="Return Selected"), command=return_selected).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=return_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 def renew_book_gui(self):
     """Renew book loan"""
     renew_window = tk.Toplevel(self.master)
-    renew_window.title("Renew Book Loan")
+    renew_window.title(_t('gui.academics.library.checkout_return.windows.renew_book_loan', default="Renew Book Loan"))
     renew_window.geometry("700x500")
 
-    ttk.Label(renew_window, text="Renew Book Loan",
+    ttk.Label(renew_window, text=_t('gui.academics.library.checkout_return.labels.renew_book_loan', default="Renew Book Loan"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Search frame
-    search_frame = ttk.LabelFrame(renew_window, text="Find Loan", padding=15)
+    search_frame = ttk.LabelFrame(renew_window, text=_t('gui.academics.library.checkout_return.labels.find_loan', default="Find Loan"), padding=15)
     search_frame.pack(fill=tk.X, padx=10, pady=10)
 
     search_value = tk.StringVar()
-    ttk.Label(search_frame, text="Book ID or User ID:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(search_frame, text=_t('gui.academics.library.checkout_return.labels.book_id_or_user_id', default="Book ID or User ID:")).pack(side=tk.LEFT, padx=5)
     ttk.Entry(search_frame, textvariable=search_value, width=30).pack(side=tk.LEFT, padx=5)
 
     # Results frame
-    results_frame = ttk.LabelFrame(renew_window, text="Renewable Loans", padding=10)
+    results_frame = ttk.LabelFrame(renew_window, text=_t('gui.academics.library.checkout_return.labels.renewable_loans', default="Renewable Loans"), padding=10)
     results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     columns = ('Loan ID', 'Book', 'User', 'Checkout', 'Due Date', 'Renewals', 'Status')
@@ -1126,7 +1128,7 @@ def renew_book_gui(self):
 
         svalue = search_value.get().strip()
         if not svalue:
-            messagebox.showwarning(_("common.warning"), "Please enter a search value")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_enter_a_search_value', default="Please enter a search value"))
             return
 
         try:
@@ -1150,7 +1152,7 @@ def renew_book_gui(self):
                 ))
 
             if not loans:
-                messagebox.showinfo("No Results", "No renewable loans found")
+                messagebox.showinfo(_t('gui.academics.library.checkout_return.dialogs.no_results', default="No Results"), _t('gui.academics.library.checkout_return.dialogs.no_renewable_loans_found', default="No renewable loans found"))
 
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Search failed: {str(e)}")
@@ -1160,7 +1162,7 @@ def renew_book_gui(self):
     def renew_selected():
         selection = results_tree.selection()
         if not selection:
-            messagebox.showwarning(_("common.warning"), "Please select a loan to renew")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.checkout_return.dialogs.please_select_a_loan_to_renew', default="Please select a loan to renew"))
             return
 
         item = results_tree.item(selection[0])
@@ -1215,7 +1217,7 @@ def renew_book_gui(self):
     button_frame = ttk.Frame(renew_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Renew Selected", command=renew_selected).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.checkout_return.buttons.renew_selected', default="Renew Selected"), command=renew_selected).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=renew_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 def view_loan_history_gui(self):
@@ -1230,19 +1232,19 @@ def view_loan_history_gui(self):
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # Options frame
-    options_frame = ttk.LabelFrame(main_frame, text="View Options")
+    options_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.checkout_return.labels.view_options', default="View Options"))
     options_frame.pack(fill=tk.X, pady=(0, 10))
 
-    self.loan_history_type = tk.StringVar(value="all")
-    ttk.Radiobutton(options_frame, text="All Recent Loans", variable=self.loan_history_type, value="all").pack(anchor='w', padx=5, pady=2)
-    ttk.Radiobutton(options_frame, text="By User", variable=self.loan_history_type, value="user").pack(anchor='w', padx=5, pady=2)
-    ttk.Radiobutton(options_frame, text="By Book", variable=self.loan_history_type, value="book").pack(anchor='w', padx=5, pady=2)
+    self.loan_history_type = tk.StringVar(value=_t('gui.academics.library.checkout_return.values.all', default="all"))
+    ttk.Radiobutton(options_frame, text=_t('gui.academics.library.checkout_return.buttons.all_recent_loans', default="All Recent Loans"), variable=self.loan_history_type, value="all").pack(anchor='w', padx=5, pady=2)
+    ttk.Radiobutton(options_frame, text=_t('gui.academics.library.checkout_return.buttons.by_user', default="By User"), variable=self.loan_history_type, value="user").pack(anchor='w', padx=5, pady=2)
+    ttk.Radiobutton(options_frame, text=_t('gui.academics.library.checkout_return.buttons.by_book', default="By Book"), variable=self.loan_history_type, value="book").pack(anchor='w', padx=5, pady=2)
 
     # Search frame
     search_frame = ttk.Frame(options_frame)
     search_frame.pack(fill=tk.X, padx=5, pady=5)
 
-    ttk.Label(search_frame, text="User/Book ID:").pack(side=tk.LEFT)
+    ttk.Label(search_frame, text=_t('gui.academics.library.checkout_return.labels.user_book_id', default="User/Book ID:")).pack(side=tk.LEFT)
     self.loan_search_var = tk.StringVar()
     ttk.Entry(search_frame, textvariable=self.loan_search_var, width=20).pack(side=tk.LEFT, padx=5)
     ttk.Button(search_frame, text=_("common.search"), command=self.load_loan_history).pack(side=tk.LEFT, padx=5)

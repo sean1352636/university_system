@@ -7,7 +7,54 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    current_subject_id,
+    is_staff,
+    staff_required,
+    token_required,
+)
+
+
+def _deny_unless_betting_owner_or_staff(username):
+    """403 tuple unless staff or the wallet's own username matches the caller."""
+    if is_staff():
+        return None
+    me = current_subject_id()
+    if me is None or str(username or "") != me:
+        return jsonify({"error": "Forbidden", "status": 403}), 403
+    return None
+
+
+def _username_for_betting_user(conn, user_id):
+    r = conn.execute(
+        "SELECT username FROM betting_accounts WHERE user_id = ?", (user_id,)
+    ).fetchone()
+    return r[0] if r else None
+
+
+def _username_for_bet(conn, bet_id):
+    r = conn.execute(
+        """SELECT a.username
+           FROM sports_bets b
+           JOIN betting_accounts a ON b.user_id = a.user_id
+           WHERE b.bet_id = ?""",
+        (bet_id,),
+    ).fetchone()
+    return r[0] if r else None
+
+
+def _authorize_account_owner_or_staff(account_row) -> bool:
+    """Staff may manage any wallet; a user may act only on their own.
+
+    Compared by username (the account's ``username`` column equals the JWT
+    ``sub``), since the betting user_id is an app-internal id distinct from
+    the auth-database id.
+    """
+    if is_staff():
+        return True
+    me = current_subject_id()
+    acct = dict(account_row) if account_row is not None else {}
+    return me is not None and str(acct.get("username") or "") == me
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -78,6 +125,9 @@ def get_account(account_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"accounts {account_id} not found")
+    denial = _deny_unless_betting_owner_or_staff(_row_to_dict(row).get("username"))
+    if denial:
+        return denial
     log_activity("view", "betting_accounts", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -162,6 +212,10 @@ def get_bet(bet_id: int):
         row = conn.execute(
             "SELECT * FROM sports_bets WHERE bet_id = ?", (bet_id,)
         ).fetchone()
+        if row is not None:
+            denial = _deny_unless_betting_owner_or_staff(_username_for_bet(conn, bet_id))
+            if denial:
+                return denial
     if not row:
         raise ValidationError(f"bets {bet_id} not found")
     log_activity("view", "sports_bets", user=g.current_user.get("sub"))
@@ -304,6 +358,8 @@ def deposit(account_id: int):
         ).fetchone()
     if not account:
         raise ValidationError(f"Account {account_id} not found")
+    if not _authorize_account_owner_or_staff(account):
+        return jsonify({"error": "Forbidden", "status": 403}), 403
 
     acct = _row_to_dict(account)
     balance_before = acct.get("balance", 0) or 0
@@ -353,6 +409,8 @@ def withdraw(account_id: int):
         ).fetchone()
     if not account:
         raise ValidationError(f"Account {account_id} not found")
+    if not _authorize_account_owner_or_staff(account):
+        return jsonify({"error": "Forbidden", "status": 403}), 403
 
     acct = _row_to_dict(account)
     balance_before = acct.get("balance", 0) or 0
@@ -396,6 +454,9 @@ def get_account_by_user(user_id: str):
         ).fetchone()
     if not row:
         raise ValidationError(f"Account for user {user_id} not found")
+    denial = _deny_unless_betting_owner_or_staff(_row_to_dict(row).get("username"))
+    if denial:
+        return denial
     log_activity("view", "betting_account", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -409,6 +470,9 @@ def get_transaction_history(user_id: str):
     limit = int(request.args.get("limit", 50))
 
     with get_connection() as conn:
+        denial = _deny_unless_betting_owner_or_staff(_username_for_betting_user(conn, user_id))
+        if denial:
+            return denial
         rows = conn.execute(
             """SELECT * FROM transactions
                WHERE source_type = 'betting' AND student_id = ?
@@ -449,6 +513,7 @@ def get_upcoming_events():
 
 @betting_bp.route("/events/<int:event_id>/settle", methods=["POST"])
 @token_required
+@staff_required
 def settle_event(event_id: int):
     """Settle an event and resolve all pending bets."""
     data = request.get_json(silent=True) or {}
@@ -577,6 +642,9 @@ def cash_out_bet(bet_id: int):
         raise ValidationError("Missing required field: user_id")
 
     with get_connection() as conn:
+        denial = _deny_unless_betting_owner_or_staff(_username_for_betting_user(conn, user_id))
+        if denial:
+            return denial
         bet = conn.execute(
             "SELECT * FROM sports_bets WHERE bet_id = ? AND user_id = ? AND status = 'pending'",
             (bet_id, user_id),
@@ -612,6 +680,10 @@ def cash_out_bet(bet_id: int):
 @token_required
 def get_user_bets(user_id: str):
     """Get all bets for a user with event details."""
+    with get_connection() as conn:
+        denial = _deny_unless_betting_owner_or_staff(_username_for_betting_user(conn, user_id))
+        if denial:
+            return denial
     status = request.args.get("status")
 
     query = """SELECT sb.*, be.event_name, be.team_a, be.team_b, be.event_date

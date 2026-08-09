@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 
 class AuditSecurityMixin:
@@ -11,18 +13,18 @@ class AuditSecurityMixin:
 
     def create_security_audit(self):
         """Create security audit interface"""
-        title = ttk.Label(self.content_frame, text="Security Audit", style='Title.TLabel')
+        title = ttk.Label(self.content_frame, text=_t('gui.pastoral.health.health_portal.audit_security.labels.security_audit', default="Security Audit"), style='Title.TLabel')
         title.grid(row=0, column=0, pady=10)
 
         notebook = ttk.Notebook(self.content_frame)
         notebook.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
 
         audit_tab = ttk.Frame(notebook)
-        notebook.add(audit_tab, text="Audit Log")
+        notebook.add(audit_tab, text=_t('gui.pastoral.health.health_portal.audit_security.tabs.audit_log', default="Audit Log"))
         self.create_audit_log_viewer(audit_tab)
 
         summary_tab = ttk.Frame(notebook)
-        notebook.add(summary_tab, text="Access Summary")
+        notebook.add(summary_tab, text=_t('gui.pastoral.health.health_portal.audit_security.tabs.access_summary', default="Access Summary"))
         self.create_access_summary(summary_tab)
 
         self.content_frame.columnconfigure(0, weight=1)
@@ -33,27 +35,27 @@ class AuditSecurityMixin:
         main_frame = ttk.Frame(parent, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        filter_frame = ttk.LabelFrame(main_frame, text="Filters", padding="5")
+        filter_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.health_portal.audit_security.labels.filters', default="Filters"), padding="5")
         filter_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-        ttk.Label(filter_frame, text="User ID:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        ttk.Label(filter_frame, text=_t('gui.pastoral.health.health_portal.audit_security.labels.user_id', default="User ID:")).grid(row=0, column=0, sticky=tk.W, pady=2)
         self.audit_user_filter = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.audit_user_filter, width=15).grid(row=0, column=1, pady=2, padx=(5, 10))
 
-        ttk.Label(filter_frame, text="Action:").grid(row=0, column=2, sticky=tk.W, pady=2)
+        ttk.Label(filter_frame, text=_t('gui.pastoral.health.health_portal.audit_security.labels.action', default="Action:")).grid(row=0, column=2, sticky=tk.W, pady=2)
         self.audit_action_filter = tk.StringVar()
         action_combo = ttk.Combobox(filter_frame, textvariable=self.audit_action_filter, width=15,
                                    values=['', 'login', 'logout', 'add_health_record', 'view_health_record',
                                           'schedule_appointment', 'record_vaccination'])
         action_combo.grid(row=0, column=3, pady=2, padx=(5, 10))
 
-        ttk.Button(filter_frame, text="Filter", command=self.filter_audit_log).grid(row=0, column=4, padx=5)
-        ttk.Button(filter_frame, text="Clear", command=self.clear_audit_filters).grid(row=0, column=5, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.pastoral.health.health_portal.audit_security.buttons.filter', default="Filter"), command=self.filter_audit_log).grid(row=0, column=4, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.pastoral.health.health_portal.audit_security.buttons.clear', default="Clear"), command=self.clear_audit_filters).grid(row=0, column=5, padx=5)
 
         self.audit_log_text = scrolledtext.ScrolledText(main_frame, width=100, height=20, font=('Consolas', 9))
         self.audit_log_text.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        ttk.Button(main_frame, text="Export Audit Log", command=self.export_audit_log).grid(row=2, column=0, pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.health_portal.audit_security.buttons.export_audit_log', default="Export Audit Log"), command=self.export_audit_log).grid(row=2, column=0, pady=10)
 
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(0, weight=1)
@@ -65,9 +67,9 @@ class AuditSecurityMixin:
     def load_audit_log(self):
         """Load audit log from file"""
         try:
-            log_file = paths.LOG_DIR / "app.log"
+            log_file = paths.UNIVERSITY_LOG_DIR / "app.log"
             if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
-                log_file = paths.LOG_DIR / "app.log"
+                log_file = paths.UNIVERSITY_LOG_DIR / "app.log"
 
             if os.path.exists(log_file):
                 with open(log_file, 'r', encoding='utf-8') as f:
@@ -82,7 +84,7 @@ class AuditSecurityMixin:
                 self.audit_log_text.insert(tk.END, "No audit log file found. Audit events will be logged here as they occur.")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load audit log: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.audit_security.dialogs.error', default="Error"), f"Failed to load audit log: {str(e)}")
 
     def filter_audit_log(self):
         """Filter audit log based on criteria"""
@@ -94,9 +96,9 @@ class AuditSecurityMixin:
             return
 
         try:
-            log_file = paths.LOG_DIR / "app.log"
+            log_file = paths.UNIVERSITY_LOG_DIR / "app.log"
             if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
-                log_file = paths.LOG_DIR / "app.log"
+                log_file = paths.UNIVERSITY_LOG_DIR / "app.log"
 
             if os.path.exists(log_file):
                 with open(log_file, 'r', encoding='utf-8') as f:
@@ -119,7 +121,7 @@ class AuditSecurityMixin:
                 self.audit_log_text.insert(tk.END, ''.join(filtered_lines))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to filter audit log: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.audit_security.dialogs.error', default="Error"), f"Failed to filter audit log: {str(e)}")
 
     def clear_audit_filters(self):
         """Clear audit log filters"""
@@ -133,7 +135,7 @@ class AuditSecurityMixin:
             filename = filedialog.asksaveasfilename(
                 defaultextension=".log",
                 filetypes=[("Log files", "*.log"), ("Text files", "*.txt"), ("All files", "*.*")],
-                title="Save Audit Log"
+                title=_t('gui.pastoral.health.health_portal.audit_security.dialogs.save_audit_log', default="Save Audit Log")
             )
 
             if filename:
@@ -142,10 +144,10 @@ class AuditSecurityMixin:
                     f.write(log_content)
 
                 self.log_audit_event('export_audit_log', 'audit_export', filename)
-                messagebox.showinfo("Success", f"Audit log exported to: {filename}")
+                messagebox.showinfo(_t('gui.pastoral.health.health_portal.audit_security.dialogs.success', default="Success"), f"Audit log exported to: {filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export audit log: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.audit_security.dialogs.error', default="Error"), f"Failed to export audit log: {str(e)}")
 
     def create_access_summary(self, parent):
         """Create access summary report"""
@@ -155,7 +157,7 @@ class AuditSecurityMixin:
         self.access_summary_text = scrolledtext.ScrolledText(main_frame, width=80, height=25, font=('Consolas', 10))
         self.access_summary_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        ttk.Button(main_frame, text="Generate Access Summary", command=self.generate_access_summary).grid(row=1, column=0, pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.health_portal.audit_security.buttons.generate_access_summary', default="Generate Access Summary"), command=self.generate_access_summary).grid(row=1, column=0, pady=10)
 
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(0, weight=1)
@@ -175,9 +177,9 @@ class AuditSecurityMixin:
             report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             report.append("")
 
-            log_file = paths.LOG_DIR / "app.log"
+            log_file = paths.UNIVERSITY_LOG_DIR / "app.log"
             if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
-                log_file = paths.LOG_DIR / "app.log"
+                log_file = paths.UNIVERSITY_LOG_DIR / "app.log"
 
             if os.path.exists(log_file):
                 try:
@@ -262,4 +264,4 @@ class AuditSecurityMixin:
             self.access_summary_text.insert(tk.END, "\n".join(report))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate access summary: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.audit_security.dialogs.error', default="Error"), f"Failed to generate access summary: {str(e)}")

@@ -25,7 +25,7 @@ class TestingMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to test")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.testing.dialogs.please_select_an_integration_to_test', default="Please select an integration to test"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
@@ -40,7 +40,7 @@ class TestingMixin:
                 cred = cursor.fetchone()
 
             if not cred or not cred[0]:
-                messagebox.showwarning(_t("common.warning"), "No endpoint URL configured for this integration")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.testing.dialogs.no_endpoint_url_configured_for_this_integration', default="No endpoint URL configured for this integration"))
                 return
 
             # Simulate connection test
@@ -58,7 +58,7 @@ class TestingMixin:
             log_activity('test', 'integration_connection', install_id,
                         details={'endpoint': cred[0], 'latency_ms': latency})
 
-            messagebox.showinfo("Connection Test", result)
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.testing.dialogs.connection_test', default="Connection Test"), result)
 
         except Exception as e:
             logger.error(f"Error testing connection: {e}")
@@ -69,7 +69,7 @@ class TestingMixin:
         try:
             selected = self.mappings_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select a mapping to validate")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.testing.dialogs.please_select_a_mapping_to_validate', default="Please select a mapping to validate"))
                 return
 
             mapping_id = self.mappings_tree.item(selected[0])['values'][0]
@@ -84,7 +84,7 @@ class TestingMixin:
                 mapping = cursor.fetchone()
 
             if not mapping:
-                messagebox.showerror(_t("common.error"), "Mapping not found")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.testing.dialogs.mapping_not_found', default="Mapping not found"))
                 return
 
             rule = mapping[0]
@@ -123,7 +123,7 @@ class TestingMixin:
 
             log_activity('validate', 'mapping_rule', mapping_id)
 
-            messagebox.showinfo("Mapping Validation", result)
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.testing.dialogs.mapping_validation', default="Mapping Validation"), result)
 
         except Exception as e:
             logger.error(f"Error validating mapping: {e}")
@@ -134,13 +134,13 @@ class TestingMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration for dry run")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.testing.dialogs.please_select_an_integration_for_dry_run', default="Please select an integration for dry run"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
             integration_name = self.installed_tree.item(selected[0])['values'][1]
 
-            if messagebox.askyesno("Dry Run Sync",
+            if messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.testing.dialogs.dry_run_sync', default="Dry Run Sync"),
                                   f"Perform dry run sync for '{integration_name}'?\n\n"
                                   f"This will simulate the sync without making actual changes."):
 
@@ -163,7 +163,7 @@ class TestingMixin:
                             details={'sample_size': sample_size, 'would_create': would_create,
                                     'would_update': would_update})
 
-                messagebox.showinfo("Dry Run Complete", result)
+                messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.testing.dialogs.dry_run_complete', default="Dry Run Complete"), result)
 
         except Exception as e:
             logger.error(f"Error performing dry run: {e}")
@@ -174,7 +174,7 @@ class TestingMixin:
         try:
             selected = self.webhooks_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select a webhook to test")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.testing.dialogs.please_select_a_webhook_to_test', default="Please select a webhook to test"))
                 return
 
             webhook_id = self.webhooks_tree.item(selected[0])['values'][0]
@@ -188,7 +188,7 @@ class TestingMixin:
                 webhook = cursor.fetchone()
 
             if not webhook:
-                messagebox.showerror(_t("common.error"), "Webhook not found")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.testing.dialogs.webhook_not_found', default="Webhook not found"))
                 return
 
             test_payload = {
@@ -218,7 +218,7 @@ class TestingMixin:
             log_activity('test', 'webhook_delivery', webhook_id,
                         details={'url': webhook[0]})
 
-            messagebox.showinfo("Webhook Test", result)
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.testing.dialogs.webhook_test', default="Webhook Test"), result)
             self.load_webhooks()
 
         except Exception as e:
@@ -230,7 +230,7 @@ class TestingMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to validate configuration")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.testing.dialogs.please_select_an_integration_to_validate_configuration', default="Please select an integration to validate configuration"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
@@ -264,7 +264,7 @@ class TestingMixin:
 
             log_activity('validate', 'json_configuration', install_id)
 
-            messagebox.showinfo("Configuration Validation", result)
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.testing.dialogs.configuration_validation', default="Configuration Validation"), result)
 
         except Exception as e:
             logger.error(f"Error validating configuration: {e}")
@@ -275,7 +275,7 @@ class TestingMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to diagnose")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.testing.dialogs.please_select_an_integration_to_diagnose', default="Please select an integration to diagnose"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
@@ -404,7 +404,7 @@ class TestingMixin:
 
             button_frame = ttk.Frame(dialog)
             button_frame.pack(pady=10)
-            ttk.Button(button_frame, text="Re-run Diagnostics", command=run_checks).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.services.integration_marketplace_gui.testing.buttons.re_run_diagnostics', default="Re-run Diagnostics"), command=run_checks).pack(side='left', padx=5)
             ttk.Button(button_frame, text=_t("common.close"), command=dialog.destroy).pack(side='left', padx=5)
 
         except Exception as e:

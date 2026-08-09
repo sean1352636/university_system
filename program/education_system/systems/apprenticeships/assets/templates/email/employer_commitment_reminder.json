@@ -1,0 +1,8 @@
+{
+  "subject": "Commitment statement outstanding — {{apprentice_name}}",
+  "body": "Dear {{recipient_name}},\n\nWe are still missing your signature on the commitment statement and training plan for {{apprentice_name}}, started {{start_date}}.\n\nWe cannot claim funding for an apprentice without a signed commitment statement in place, and an audit would treat the whole programme as ineligible. It is a short document — it sets out what each of the three parties is agreeing to.\n\nA copy is attached to {{apprentice_name}}'s record in the employer portal, or reply and we will send it again.\n\n{{sender_name}}\n{{provider_name}}",
+  "from_name": "{{provider_name}}",
+  "from_address": "compliance@provider.ac.uk",
+  "category": "Compliance",
+  "priority": "High"
+}

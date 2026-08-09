@@ -5,6 +5,7 @@ role picker logic, menu helpers, and the dispatch table completeness.
 """
 
 import pytest
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 
@@ -31,13 +32,56 @@ class TestDispatchTable:
         assert AUTH_CLI_SYSTEMS == expected
 
 
+class TestSystemTestLaunchers:
+    @pytest.mark.parametrize(("function_name", "test_path"), [
+        ("run_university_tests", "program/tests/systems/university"),
+        ("run_sixthform_tests", "program/tests/systems/sixth_form"),
+        ("run_secondarysch_tests", "program/tests/systems/secondary"),
+        ("run_primarysch_tests", "program/tests/systems/primary"),
+        ("run_nursery_tests", "program/tests/systems/nursery"),
+    ])
+    def test_system_runner_uses_consolidated_test_path(self, function_name, test_path):
+        from education_system.launcher import systems
+
+        completed = MagicMock(returncode=0)
+        with patch("education_system.launcher.systems.subprocess.run", return_value=completed) as run:
+            assert getattr(systems, function_name)() is True
+
+        command = run.call_args.args[0]
+        assert test_path in command
+        assert run.call_args.kwargs["cwd"] == str(Path(__file__).resolve().parents[3])
+
+    def test_run_all_system_tests_uses_systems_root(self):
+        from education_system.launcher import systems
+
+        completed = MagicMock(returncode=0)
+        with patch("education_system.launcher.systems.subprocess.run", return_value=completed) as run:
+            assert systems.run_all_system_tests() is True
+
+        assert "program/tests/systems" in run.call_args.args[0]
+
+    def test_university_support_runner_points_at_suite_root(self):
+        from tests.systems.university._support import run_all_tests
+
+        assert run_all_tests.TESTS_DIR.name == "university"
+        assert (run_all_tests.TESTS_DIR / "domain").is_dir()
+
+
 # ── Role picker ──────────────────────────────────────────────────────────────
 
 class TestRoles:
-    def test_is_superadmin_university_admin(self):
+    def test_is_superadmin_cross_system_admin(self):
+        from education_system.launcher.roles import is_superadmin
+        user = {"systems": [
+            {"system_key": system, "role": "admin"}
+            for system in ("university", "sixth_form", "secondary", "primary")
+        ]}
+        assert is_superadmin(user)
+
+    def test_is_superadmin_university_admin_only(self):
         from education_system.launcher.roles import is_superadmin
         user = {"systems": [{"system_key": "university", "role": "admin"}]}
-        assert is_superadmin(user)
+        assert not is_superadmin(user)
 
     def test_is_superadmin_non_admin_role(self):
         from education_system.launcher.roles import is_superadmin

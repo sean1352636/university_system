@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.simpledialog import Dialog
@@ -13,7 +15,7 @@ class ExportDataDialog(Dialog):
 
     def body(self, master):
         """Create the dialog body"""
-        ttk.Label(master, text="Select data to export:", font=('Arial', 10, 'bold')).pack(pady=(0, 10))
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.labels.select_data_to_export', default="Select data to export:"), font=('Arial', 10, 'bold')).pack(pady=(0, 10))
 
         # Export options
         self.export_trips_var = tk.BooleanVar(value=True)
@@ -21,21 +23,21 @@ class ExportDataDialog(Dialog):
         self.export_expenses_var = tk.BooleanVar()
         self.export_staff_var = tk.BooleanVar()
 
-        ttk.Checkbutton(master, text="Trip Information", variable=self.export_trips_var).pack(anchor=tk.W, pady=2)
-        ttk.Checkbutton(master, text="Participant Data", variable=self.export_participants_var).pack(anchor=tk.W, pady=2)
+        ttk.Checkbutton(master, text=_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.buttons.trip_information', default="Trip Information"), variable=self.export_trips_var).pack(anchor=tk.W, pady=2)
+        ttk.Checkbutton(master, text=_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.buttons.participant_data', default="Participant Data"), variable=self.export_participants_var).pack(anchor=tk.W, pady=2)
 
         if self.auth.check_permission('view_financial_reports'):
-            ttk.Checkbutton(master, text="Expense Data", variable=self.export_expenses_var).pack(anchor=tk.W, pady=2)
+            ttk.Checkbutton(master, text=_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.buttons.expense_data', default="Expense Data"), variable=self.export_expenses_var).pack(anchor=tk.W, pady=2)
 
         if self.auth.check_permission('manage_trips'):
-            ttk.Checkbutton(master, text="Staff Assignments", variable=self.export_staff_var).pack(anchor=tk.W, pady=2)
+            ttk.Checkbutton(master, text=_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.buttons.staff_assignments', default="Staff Assignments"), variable=self.export_staff_var).pack(anchor=tk.W, pady=2)
 
         # Format selection
-        ttk.Label(master, text="Export format:", font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=(20, 5))
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.labels.export_format', default="Export format:"), font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=(20, 5))
 
-        self.format_var = tk.StringVar(value="CSV")
-        ttk.Radiobutton(master, text="CSV (Comma Separated Values)", variable=self.format_var, value="CSV").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(master, text="TSV (Tab Separated Values)", variable=self.format_var, value="TSV").pack(anchor=tk.W, pady=2)
+        self.format_var = tk.StringVar(value=_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.values.csv', default="CSV"))
+        ttk.Radiobutton(master, text=_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.buttons.csv_comma_separated_values', default="CSV (Comma Separated Values)"), variable=self.format_var, value="CSV").pack(anchor=tk.W, pady=2)
+        ttk.Radiobutton(master, text=_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.buttons.tsv_tab_separated_values', default="TSV (Tab Separated Values)"), variable=self.format_var, value="TSV").pack(anchor=tk.W, pady=2)
 
         return None
 
@@ -43,7 +45,7 @@ class ExportDataDialog(Dialog):
         """Validate export options"""
         if not any([self.export_trips_var.get(), self.export_participants_var.get(),
                    self.export_expenses_var.get(), self.export_staff_var.get()]):
-            messagebox.showerror("Validation Error", "Please select at least one data type to export.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.export_dialog.dialogs.please_select_at_least_one_data_type_to_export', default="Please select at least one data type to export."))
             return False
         return True
 
@@ -87,10 +89,10 @@ class ExportDataDialog(Dialog):
                 if self.export_staff_var.get() and self.auth.check_permission('manage_trips'):
                     self.export_staff_data(writer)
 
-            messagebox.showinfo("Success", f"Data exported successfully to:\n{filename}")
+            messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.dialogs.success', default="Success"), f"Data exported successfully to:\n{filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export data: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.export_dialog.dialogs.error', default="Error"), f"Failed to export data: {e}")
 
     def export_trips_data(self, writer):
         """Export trips data"""

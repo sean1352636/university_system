@@ -19,11 +19,11 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.UNIVERSITY_VISITS_DB
+DB_PATH = paths.SIXTH_FORM_UNIVERSITY_VISITS_DB
 
 VISIT_TYPES: tuple[str, ...] = (
     "Open Day", "Taster Day", "Applicant Visit Day",
@@ -135,7 +135,7 @@ class VisitRow:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

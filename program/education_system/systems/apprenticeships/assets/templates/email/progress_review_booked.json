@@ -1,0 +1,8 @@
+{
+  "subject": "Progress review — {{apprentice_name}} on {{review_date}}",
+  "body": "Dear {{recipient_name}},\n\nThe next progress review for {{apprentice_name}} is booked for {{review_date}} at {{review_time}}, at {{review_location}}.\n\nA review needs all three of us: the apprentice, you as the employer, and {{tutor_name}} for the provider. It is a funding requirement that the employer takes part, so if the date does not work please tell us now and we will move it.\n\nWe will cover progress against the standard, off-the-job hours, English and maths, and what the next three months should look like. Nothing needs preparing in advance.\n\n{{tutor_name}}\n{{provider_name}}",
+  "from_name": "{{provider_name}}",
+  "from_address": "training@provider.ac.uk",
+  "category": "Review",
+  "priority": "Normal"
+}

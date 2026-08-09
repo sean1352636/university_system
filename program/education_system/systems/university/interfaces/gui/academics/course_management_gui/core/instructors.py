@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core._imports import (
     _, messagebox, tk, sqlite3, DEFAULT_DB_PATH,
@@ -31,7 +33,7 @@ class InstructorsMixin:
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='instructors'")
                 if not cursor.fetchone():
                     self.instructor_count_label.config(
-                        text="No instructors table found. Please add an instructor first."
+                        text=_t('gui.academics.course_management_gui.core.instructors.text.no_instructors_table_found_please_add_an_instructor_first', default="No instructors table found. Please add an instructor first.")
                     )
                     return
 
@@ -60,7 +62,7 @@ class InstructorsMixin:
                     ), tags=(tag,))
                 self.instructor_count_label.config(text=f"Total Instructors: {len(instructors)}")
             else:
-                self.instructor_count_label.config(text="No instructors found in the system.")
+                self.instructor_count_label.config(text=_t('gui.academics.course_management_gui.core.instructors.text.no_instructors_found_in_the_system', default="No instructors found in the system."))
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), _("course_management.messages.failed_generate_analytics", error=str(e)))

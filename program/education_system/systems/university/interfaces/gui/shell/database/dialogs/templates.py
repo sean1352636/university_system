@@ -4,6 +4,8 @@ Provides the TemplateSelectionDialog for choosing backup templates and the
 TemplateManagerDialog for managing (loading, deleting, renaming) templates.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 import json
@@ -22,13 +24,13 @@ class TemplateSelectionDialog:
         self.template_data = template_data or {}
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Select Backup Template")
+        self.dialog.title(_t('gui.shell.database.dialogs.templates.windows.select_backup_template', default="Select Backup Template"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
         # Template list
-        list_frame = ttk.LabelFrame(self.dialog, text="Available Templates", padding=10)
+        list_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.templates.labels.available_templates', default="Available Templates"), padding=10)
         list_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         self.template_var = tk.StringVar()
@@ -57,8 +59,8 @@ class TemplateSelectionDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Load", command=self.ok).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.templates.buttons.load', default="Load"), command=self.ok).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.templates.buttons.cancel', default="Cancel"), command=self.cancel).pack(side="right")
 
         parent.wait_window(self.dialog)
 
@@ -78,7 +80,7 @@ class TemplateManagerDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Template Manager")
+        self.dialog.title(_t('gui.shell.database.dialogs.templates.windows.template_manager', default="Template Manager"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
 
@@ -88,7 +90,7 @@ class TemplateManagerDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Template list
-        list_frame = ttk.LabelFrame(self.dialog, text="Templates", padding=10)
+        list_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.templates.labels.templates', default="Templates"), padding=10)
         list_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         # Listbox with scrollbar
@@ -105,7 +107,7 @@ class TemplateManagerDialog:
         self.template_listbox.bind("<<ListboxSelect>>", self.show_template_details)
 
         # Template details
-        details_frame = ttk.LabelFrame(self.dialog, text="Template Details", padding=10)
+        details_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.templates.labels.template_details', default="Template Details"), padding=10)
         details_frame.pack(fill="x", padx=10, pady=5)
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=8, wrap=tk.WORD)
@@ -115,10 +117,10 @@ class TemplateManagerDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Load Template", command=self.load_template).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Delete Template", command=self.delete_template).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Rename Template", command=self.rename_template).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.templates.buttons.load_template', default="Load Template"), command=self.load_template).pack(side="left", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.templates.buttons.delete_template', default="Delete Template"), command=self.delete_template).pack(side="left", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.templates.buttons.rename_template', default="Rename Template"), command=self.rename_template).pack(side="left", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.templates.buttons.close', default="Close"), command=self.dialog.destroy).pack(side="right")
 
     def load_templates(self):
         """Load template list from JSON files and config"""
@@ -181,42 +183,42 @@ class TemplateManagerDialog:
         """Load selected template"""
         selection = self.template_listbox.curselection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to load")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.templates.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.templates.dialogs.please_select_a_template_to_load', default="Please select a template to load"))
             return
 
         template_name = self.template_listbox.get(selection[0])
 
-        if messagebox.askyesno("Load Template", f"Load template '{template_name}'?\n\nThis will overwrite current settings."):
+        if messagebox.askyesno(_t('gui.shell.database.dialogs.templates.dialogs.load_template', default="Load Template"), f"Load template '{template_name}'?\n\nThis will overwrite current settings."):
             if load_backup_template(template_name):
-                messagebox.showinfo("Success", f"Template '{template_name}' loaded successfully!")
+                messagebox.showinfo(_t('gui.shell.database.dialogs.templates.dialogs.success', default="Success"), f"Template '{template_name}' loaded successfully!")
                 self.dialog.destroy()
             else:
-                messagebox.showerror("Error", "Failed to load template")
+                messagebox.showerror(_t('gui.shell.database.dialogs.templates.dialogs.error', default="Error"), _t('gui.shell.database.dialogs.templates.dialogs.failed_to_load_template', default="Failed to load template"))
 
     def delete_template(self):
         """Delete selected template"""
         selection = self.template_listbox.curselection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to delete")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.templates.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.templates.dialogs.please_select_a_template_to_delete', default="Please select a template to delete"))
             return
 
         template_name = self.template_listbox.get(selection[0])
 
-        if messagebox.askyesno("Delete Template", f"Are you sure you want to delete template '{template_name}'?"):
+        if messagebox.askyesno(_t('gui.shell.database.dialogs.templates.dialogs.delete_template', default="Delete Template"), f"Are you sure you want to delete template '{template_name}'?"):
             try:
                 del config["backup_templates"][template_name]
                 save_config()
                 self.load_templates()
                 self.details_text.delete(1.0, tk.END)
-                messagebox.showinfo("Success", f"Template '{template_name}' deleted successfully!")
+                messagebox.showinfo(_t('gui.shell.database.dialogs.templates.dialogs.success', default="Success"), f"Template '{template_name}' deleted successfully!")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete template: {e}")
+                messagebox.showerror(_t('gui.shell.database.dialogs.templates.dialogs.error', default="Error"), f"Failed to delete template: {e}")
 
     def rename_template(self):
         """Rename selected template"""
         selection = self.template_listbox.curselection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to rename")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.templates.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.templates.dialogs.please_select_a_template_to_rename', default="Please select a template to rename"))
             return
 
         old_name = self.template_listbox.get(selection[0])
@@ -224,7 +226,7 @@ class TemplateManagerDialog:
 
         if new_name and new_name != old_name:
             if new_name in self.templates:
-                messagebox.showerror("Error", "Template with that name already exists")
+                messagebox.showerror(_t('gui.shell.database.dialogs.templates.dialogs.error', default="Error"), _t('gui.shell.database.dialogs.templates.dialogs.template_with_that_name_already_exists', default="Template with that name already exists"))
                 return
 
             try:
@@ -232,6 +234,6 @@ class TemplateManagerDialog:
                 del config["backup_templates"][old_name]
                 save_config()
                 self.load_templates()
-                messagebox.showinfo("Success", f"Template renamed to '{new_name}'")
+                messagebox.showinfo(_t('gui.shell.database.dialogs.templates.dialogs.success', default="Success"), f"Template renamed to '{new_name}'")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to rename template: {e}")
+                messagebox.showerror(_t('gui.shell.database.dialogs.templates.dialogs.error', default="Error"), f"Failed to rename template: {e}")

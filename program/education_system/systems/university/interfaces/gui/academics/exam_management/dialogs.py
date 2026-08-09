@@ -1,5 +1,7 @@
 """Dialog windows for the Exam Scheduling System."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -24,7 +26,7 @@ class DialogsMixin:
         room_selection = self.room_var.get()
 
         if not all([date, start, end, room_selection]):
-            messagebox.showwarning("Incomplete", "Please fill in date, start time, end time, and room")
+            messagebox.showwarning(_t('gui.academics.exam_management.dialogs.dialogs.incomplete', default="Incomplete"), _t('gui.academics.exam_management.dialogs.dialogs.please_fill_in_date_start_time_end_time_and_room', default="Please fill in date, start time, end time, and room"))
             return
 
         room_name = room_selection.split(' (')[0]
@@ -41,12 +43,12 @@ class DialogsMixin:
                 for e in conflicts
             ])
             messagebox.showwarning(
-                "Room Conflict",
+                _t('gui.academics.exam_management.dialogs.dialogs.room_conflict', default="Room Conflict"),
                 f"Room {room_name} has conflicts:\n\n{conflict_info}"
             )
         else:
             messagebox.showinfo(
-                "Available",
+                _t('gui.academics.exam_management.dialogs.dialogs.available', default="Available"),
                 f"✓ Room {room_name} is available on {date} from {start} to {end}"
             )
 
@@ -54,7 +56,7 @@ class DialogsMixin:
         """Check if room capacity is sufficient for enrolled students."""
         room_selection = self.room_var.get()
         if not room_selection:
-            messagebox.showwarning("No Room", "Please select a room first")
+            messagebox.showwarning(_t('gui.academics.exam_management.dialogs.dialogs.no_room', default="No Room"), _t('gui.academics.exam_management.dialogs.dialogs.please_select_a_room_first', default="Please select a room first"))
             return
 
         # Find the room
@@ -67,12 +69,12 @@ class DialogsMixin:
         student_count = len(self.enrolled_student_ids)
 
         if student_count == 0:
-            messagebox.showinfo("No Students", "No students enrolled yet")
+            messagebox.showinfo(_t('gui.academics.exam_management.dialogs.dialogs.no_students', default="No Students"), _t('gui.academics.exam_management.dialogs.dialogs.no_students_enrolled_yet', default="No students enrolled yet"))
             return
 
         if room.capacity < student_count:
             messagebox.showwarning(
-                "Insufficient Capacity",
+                _t('gui.academics.exam_management.dialogs.dialogs.insufficient_capacity', default="Insufficient Capacity"),
                 f"⚠ Room capacity: {room.capacity}\n"
                 f"Students enrolled: {student_count}\n"
                 f"Shortage: {student_count - room.capacity} seats"
@@ -80,7 +82,7 @@ class DialogsMixin:
         else:
             spare = room.capacity - student_count
             messagebox.showinfo(
-                "Capacity OK",
+                _t('gui.academics.exam_management.dialogs.dialogs.capacity_ok', default="Capacity OK"),
                 f"✓ Room capacity: {room.capacity}\n"
                 f"Students enrolled: {student_count}\n"
                 f"Spare seats: {spare}"
@@ -94,11 +96,11 @@ class DialogsMixin:
         instructor_id = self.get_selected_instructor_id()
 
         if not all([date, start, end]):
-            messagebox.showwarning("Incomplete", "Please fill in date, start time, and end time first")
+            messagebox.showwarning(_t('gui.academics.exam_management.dialogs.dialogs.incomplete', default="Incomplete"), _t('gui.academics.exam_management.dialogs.dialogs.please_fill_in_date_start_time_and_end_time_first', default="Please fill in date, start time, and end time first"))
             return
 
         if not instructor_id:
-            messagebox.showwarning("No Instructor", "Please select an instructor first")
+            messagebox.showwarning(_t('gui.academics.exam_management.dialogs.dialogs.no_instructor', default="No Instructor"), _t('gui.academics.exam_management.dialogs.dialogs.please_select_an_instructor_first', default="Please select an instructor first"))
             return
 
         # Get conflicting exams
@@ -115,19 +117,19 @@ class DialogsMixin:
                 for e in conflicts
             ])
             messagebox.showwarning(
-                "Instructor Conflict",
+                _t('gui.academics.exam_management.dialogs.dialogs.instructor_conflict', default="Instructor Conflict"),
                 f"{instructor_name} has conflicts on {date}:\n\n{conflict_info}"
             )
         else:
             messagebox.showinfo(
-                "Available",
+                _t('gui.academics.exam_management.dialogs.dialogs.available', default="Available"),
                 f"✓ {instructor_name} is available on {date} from {start} to {end}"
             )
 
     def show_advanced_filters(self):
         """Show advanced filtering dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Advanced Filters")
+        dialog.title(_t('gui.academics.exam_management.dialogs.windows.advanced_filters', default="Advanced Filters"))
         dialog.geometry("400x300")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -136,20 +138,20 @@ class DialogsMixin:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Date range filter
-        ttk.Label(frame, text="Date Range:", font=('Helvetica', 10, 'bold')).grid(
+        ttk.Label(frame, text=_t('gui.academics.exam_management.dialogs.labels.date_range', default="Date Range:"), font=('Helvetica', 10, 'bold')).grid(
             row=0, column=0, columnspan=2, sticky=tk.W, pady=(0, 10)
         )
 
-        ttk.Label(frame, text="From:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.academics.exam_management.dialogs.labels.from', default="From:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         start_date_var = tk.StringVar()
         ttk.Entry(frame, textvariable=start_date_var, width=15).grid(row=1, column=1, sticky=tk.W, pady=5)
 
-        ttk.Label(frame, text="To:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.academics.exam_management.dialogs.labels.to', default="To:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         end_date_var = tk.StringVar()
         ttk.Entry(frame, textvariable=end_date_var, width=15).grid(row=2, column=1, sticky=tk.W, pady=5)
 
         # Instructor filter
-        ttk.Label(frame, text="Instructor:", font=('Helvetica', 10, 'bold')).grid(
+        ttk.Label(frame, text=_t('gui.academics.exam_management.dialogs.labels.instructor', default="Instructor:"), font=('Helvetica', 10, 'bold')).grid(
             row=3, column=0, columnspan=2, sticky=tk.W, pady=(15, 10)
         )
 
@@ -161,7 +163,7 @@ class DialogsMixin:
         instructor_combo.grid(row=4, column=0, columnspan=2, sticky=tk.W, pady=5)
 
         # Room filter
-        ttk.Label(frame, text="Room:", font=('Helvetica', 10, 'bold')).grid(
+        ttk.Label(frame, text=_t('gui.academics.exam_management.dialogs.labels.room', default="Room:"), font=('Helvetica', 10, 'bold')).grid(
             row=5, column=0, columnspan=2, sticky=tk.W, pady=(15, 10)
         )
 
@@ -188,7 +190,7 @@ class DialogsMixin:
                 try:
                     filtered_exams = self.data_manager.get_exams_by_date_range(start_date, end_date)
                 except (ValueError, TypeError):
-                    messagebox.showerror("Error", "Invalid date range")
+                    messagebox.showerror(_t('gui.academics.exam_management.dialogs.dialogs.error', default="Error"), _t('gui.academics.exam_management.dialogs.dialogs.invalid_date_range', default="Invalid date range"))
                     return
 
             # Apply instructor filter
@@ -215,22 +217,22 @@ class DialogsMixin:
                     time_str, exam.room, exam.instructor_name, exam.students_enrolled
                 ))
 
-            messagebox.showinfo("Filters Applied", f"Showing {len(filtered_exams)} exams")
+            messagebox.showinfo(_t('gui.academics.exam_management.dialogs.dialogs.filters_applied', default="Filters Applied"), f"Showing {len(filtered_exams)} exams")
             dialog.destroy()
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=20)
 
-        ttk.Button(btn_frame, text="Apply", command=apply_filters).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.dialogs.buttons.apply', default="Apply"), command=apply_filters).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.dialogs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def export_selected_exams(self):
         """Export selected exams from the schedule view."""
         selected_items = self.schedule_tree.selection()
 
         if not selected_items:
-            messagebox.showwarning("No Selection", "Please select exams to export")
+            messagebox.showwarning(_t('gui.academics.exam_management.dialogs.dialogs.no_selection', default="No Selection"), _t('gui.academics.exam_management.dialogs.dialogs.please_select_exams_to_export', default="Please select exams to export"))
             return
 
         filepath = filedialog.asksaveasfilename(
@@ -259,10 +261,10 @@ class DialogsMixin:
                             exam.instructor_name, exam.students_enrolled
                         ])
 
-            messagebox.showinfo("Success", f"Exported {len(selected_items)} exams to:\n{filepath}")
+            messagebox.showinfo(_t('gui.academics.exam_management.dialogs.dialogs.success', default="Success"), f"Exported {len(selected_items)} exams to:\n{filepath}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export: {e}")
+            messagebox.showerror(_t('gui.academics.exam_management.dialogs.dialogs.error', default="Error"), f"Failed to export: {e}")
 
     def suggest_available_rooms(self):
         """Show available rooms based on current date/time/capacity requirements."""
@@ -271,7 +273,7 @@ class DialogsMixin:
         end = self.exam_vars['end_time'].get()
 
         if not all([date, start, end]):
-            messagebox.showwarning("Incomplete", "Please fill in date, start time, and end time first")
+            messagebox.showwarning(_t('gui.academics.exam_management.dialogs.dialogs.incomplete', default="Incomplete"), _t('gui.academics.exam_management.dialogs.dialogs.please_fill_in_date_start_time_and_end_time_first', default="Please fill in date, start time, and end time first"))
             return
 
         # Get minimum capacity requirement
@@ -312,7 +314,7 @@ class DialogsMixin:
 
         if not available_rooms:
             messagebox.showinfo(
-                "No Rooms Available",
+                _t('gui.academics.exam_management.dialogs.dialogs.no_rooms_available', default="No Rooms Available"),
                 f"No rooms available on {date} from {start} to {end}\n"
                 f"with capacity >= {min_capacity}"
             )
@@ -320,7 +322,7 @@ class DialogsMixin:
 
         # Show dialog with available rooms
         dialog = tk.Toplevel(self.root)
-        dialog.title("Available Rooms")
+        dialog.title(_t('gui.academics.exam_management.dialogs.windows.available_rooms', default="Available Rooms"))
         dialog.geometry("500x400")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -338,10 +340,10 @@ class DialogsMixin:
         columns = ('name', 'building', 'capacity', 'facilities')
         tree = ttk.Treeview(frame, columns=columns, show='headings', height=12)
 
-        tree.heading('name', text='Room')
-        tree.heading('building', text='Building')
-        tree.heading('capacity', text='Capacity')
-        tree.heading('facilities', text='Facilities')
+        tree.heading('name', text=_t('gui.academics.exam_management.dialogs.headings.room', default='Room'))
+        tree.heading('building', text=_t('gui.academics.exam_management.dialogs.headings.building', default='Building'))
+        tree.heading('capacity', text=_t('gui.academics.exam_management.dialogs.headings.capacity', default='Capacity'))
+        tree.heading('facilities', text=_t('gui.academics.exam_management.dialogs.headings.facilities', default='Facilities'))
 
         tree.column('name', width=100)
         tree.column('building', width=120)
@@ -376,7 +378,7 @@ class DialogsMixin:
             """Select the room from the dialog."""
             selection = tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a room")
+                messagebox.showwarning(_t('gui.academics.exam_management.dialogs.dialogs.no_selection', default="No Selection"), _t('gui.academics.exam_management.dialogs.dialogs.please_select_a_room', default="Please select a room"))
                 return
 
             item = tree.item(selection[0])
@@ -390,8 +392,8 @@ class DialogsMixin:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(pady=10)
 
-        ttk.Button(btn_frame, text="Select Room", command=select_room).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.dialogs.buttons.select_room', default="Select Room"), command=select_room).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.dialogs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         if min_capacity > 0:
             ttk.Label(
@@ -435,12 +437,12 @@ class DialogsMixin:
                         })
 
         if not conflicts_found:
-            messagebox.showinfo("No Conflicts", "✓ No scheduling conflicts found!")
+            messagebox.showinfo(_t('gui.academics.exam_management.dialogs.dialogs.no_conflicts', default="No Conflicts"), _t('gui.academics.exam_management.dialogs.dialogs.no_scheduling_conflicts_found', default="✓ No scheduling conflicts found!"))
             return
 
         # Show conflicts dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Scheduling Conflicts")
+        dialog.title(_t('gui.academics.exam_management.dialogs.windows.scheduling_conflicts', default="Scheduling Conflicts"))
         dialog.geometry("700x400")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -459,11 +461,11 @@ class DialogsMixin:
         columns = ('type', 'location', 'date', 'exam1', 'exam2')
         tree = ttk.Treeview(frame, columns=columns, show='headings', height=12)
 
-        tree.heading('type', text='Type')
-        tree.heading('location', text='Resource')
-        tree.heading('date', text='Date')
-        tree.heading('exam1', text='Exam 1')
-        tree.heading('exam2', text='Exam 2')
+        tree.heading('type', text=_t('gui.academics.exam_management.dialogs.headings.type', default='Type'))
+        tree.heading('location', text=_t('gui.academics.exam_management.dialogs.headings.resource', default='Resource'))
+        tree.heading('date', text=_t('gui.academics.exam_management.dialogs.headings.date', default='Date'))
+        tree.heading('exam1', text=_t('gui.academics.exam_management.dialogs.headings.exam_1', default='Exam 1'))
+        tree.heading('exam2', text=_t('gui.academics.exam_management.dialogs.headings.exam_2', default='Exam 2'))
 
         tree.column('type', width=80)
         tree.column('location', width=120)
@@ -491,8 +493,8 @@ class DialogsMixin:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(pady=10)
 
-        ttk.Button(btn_frame, text="Export to CSV", command=lambda: self.export_conflicts(conflicts_found)).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.dialogs.buttons.export_to_csv', default="Export to CSV"), command=lambda: self.export_conflicts(conflicts_found)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.dialogs.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def export_conflicts(self, conflicts: List[Dict]):
         """Export conflicts to CSV file."""
@@ -511,6 +513,6 @@ class DialogsMixin:
                 writer.writeheader()
                 writer.writerows(conflicts)
 
-            messagebox.showinfo("Success", f"Exported {len(conflicts)} conflicts to:\n{filepath}")
+            messagebox.showinfo(_t('gui.academics.exam_management.dialogs.dialogs.success', default="Success"), f"Exported {len(conflicts)} conflicts to:\n{filepath}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export: {e}")
+            messagebox.showerror(_t('gui.academics.exam_management.dialogs.dialogs.error', default="Error"), f"Failed to export: {e}")

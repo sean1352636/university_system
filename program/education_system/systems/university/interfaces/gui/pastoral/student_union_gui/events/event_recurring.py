@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -28,7 +30,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -66,7 +68,7 @@ class RecurringEventDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create Recurring Event")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_recurring.windows.create_recurring_event', default="Create Recurring Event"))
         self.dialog.geometry("600x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -79,47 +81,47 @@ class RecurringEventDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        ttk.Label(main_frame, text="Create Recurring Event", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.create_recurring_event', default="Create Recurring Event"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Event details
-        details_frame = ttk.LabelFrame(main_frame, text="Event Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.event_details', default="Event Details"))
         details_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(details_frame, text="Event Name:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(details_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.event_name', default="Event Name:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.name_var = tk.StringVar()
         ttk.Entry(details_frame, textvariable=self.name_var, width=40).grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(details_frame, text="Description:").grid(row=1, column=0, sticky='nw', padx=5, pady=5)
+        ttk.Label(details_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.description', default="Description:")).grid(row=1, column=0, sticky='nw', padx=5, pady=5)
         self.description_text = tk.Text(details_frame, height=4, width=40)
         self.description_text.grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Label(details_frame, text="Location:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(details_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.location', default="Location:")).grid(row=2, column=0, sticky='w', padx=5, pady=5)
         self.location_var = tk.StringVar()
         ttk.Entry(details_frame, textvariable=self.location_var, width=40).grid(row=2, column=1, padx=5, pady=5)
 
         # Recurrence pattern
-        recurrence_frame = ttk.LabelFrame(main_frame, text="Recurrence Pattern")
+        recurrence_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.recurrence_pattern', default="Recurrence Pattern"))
         recurrence_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(recurrence_frame, text="Pattern:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
-        self.pattern_var = tk.StringVar(value="weekly")
+        ttk.Label(recurrence_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.pattern', default="Pattern:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        self.pattern_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.events.event_recurring.values.weekly_variant_2', default="weekly"))
         patterns = ttk.Combobox(recurrence_frame, textvariable=self.pattern_var,
                                values=["daily", "weekly", "monthly"], state="readonly", width=20)
         patterns.grid(row=0, column=1, sticky='w', padx=5, pady=5)
 
-        ttk.Label(recurrence_frame, text="Start Date:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(recurrence_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.start_date', default="Start Date:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.start_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(recurrence_frame, textvariable=self.start_date_var, width=20).grid(row=1, column=1, sticky='w', padx=5, pady=5)
 
-        ttk.Label(recurrence_frame, text="End Date:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(recurrence_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.end_date', default="End Date:")).grid(row=2, column=0, sticky='w', padx=5, pady=5)
         self.end_date_var = tk.StringVar(value=(datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d'))
         ttk.Entry(recurrence_frame, textvariable=self.end_date_var, width=20).grid(row=2, column=1, sticky='w', padx=5, pady=5)
 
-        ttk.Label(recurrence_frame, text="Time:").grid(row=3, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(recurrence_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.time', default="Time:")).grid(row=3, column=0, sticky='w', padx=5, pady=5)
         self.time_var = tk.StringVar(value="10:00")
         ttk.Entry(recurrence_frame, textvariable=self.time_var, width=20).grid(row=3, column=1, sticky='w', padx=5, pady=5)
 
-        ttk.Label(recurrence_frame, text="Duration (hours):").grid(row=4, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(recurrence_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.duration_hours', default="Duration (hours):")).grid(row=4, column=0, sticky='w', padx=5, pady=5)
         self.duration_var = tk.StringVar(value="2")
         ttk.Entry(recurrence_frame, textvariable=self.duration_var, width=20).grid(row=4, column=1, sticky='w', padx=5, pady=5)
 
@@ -127,14 +129,14 @@ class RecurringEventDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(button_frame, text="Create", command=self.create_event).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.create', default="Create"), command=self.create_event).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.cancel', default="Cancel"), command=self.cancel).pack(side='left')
 
     def create_event(self):
         """Create the recurring event"""
         name = self.name_var.get().strip()
         if not name:
-            messagebox.showwarning("Warning", "Please enter an event name.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.please_enter_an_event_name', default="Please enter an event name."))
             return
 
         try:
@@ -153,11 +155,11 @@ class RecurringEventDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Recurring event '{name}' created successfully!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.success', default="Success"), f"Recurring event '{name}' created successfully!")
             self.result = {'name': name}
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to create event: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.error', default="Error"), f"Failed to create event: {str(e)}")
 
     def cancel(self):
         """Cancel the dialog"""
@@ -173,7 +175,7 @@ class RecurringEventsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Recurring Events")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_recurring.windows.recurring_events', default="Recurring Events"))
         self.dialog.geometry("1000x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -184,11 +186,11 @@ class RecurringEventsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📅 Recurring Events Manager",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.recurring_events_manager', default="📅 Recurring Events Manager"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Series list
-        list_frame = ttk.LabelFrame(main_frame, text="Event Series")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.event_series', default="Event Series"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Series', 'Pattern', 'Next Occurrence', 'Total', 'Status')
@@ -214,10 +216,10 @@ class RecurringEventsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Create Series", command=self.create_series).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Edit Series", command=self.edit_series).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel Occurrence", command=self.cancel_occurrence).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.create_series', default="Create Series"), command=self.create_series).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.edit_series', default="Edit Series"), command=self.edit_series).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.cancel_occurrence', default="Cancel Occurrence"), command=self.cancel_occurrence).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def create_series(self):
         dialog = CreateRecurringSeriesDialog(self.dialog, self.auth)
@@ -228,7 +230,7 @@ class RecurringEventsDialog:
         self.dialog.wait_window(dialog.dialog)
 
     def cancel_occurrence(self):
-        messagebox.showinfo("Cancel", "Select specific occurrence to cancel.\n\nSeries will continue after canceled event.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.cancel', default="Cancel"), _t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.select_specific_occurrence_to_cancel_series_will_continue_after', default="Select specific occurrence to cancel.\n\nSeries will continue after canceled event."))
 
 
 
@@ -240,7 +242,7 @@ class CreateRecurringSeriesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create Recurring Event Series")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_recurring.windows.create_recurring_event_series', default="Create Recurring Event Series"))
         self.dialog.geometry("650x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -251,29 +253,29 @@ class CreateRecurringSeriesDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Create Recurring Event Series", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.create_recurring_event_series', default="Create Recurring Event Series"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Event name
-        ttk.Label(main_frame, text="Event Name/Series Title:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.event_name_series_title', default="Event Name/Series Title:")).pack(anchor='w', pady=(0, 5))
         self.name_entry = ttk.Entry(main_frame, width=60)
         self.name_entry.pack(fill='x', pady=(0, 10))
         self.name_entry.insert(0, "Weekly Study Group")
 
         # Recurrence pattern
-        pattern_frame = ttk.LabelFrame(main_frame, text="Recurrence Pattern")
+        pattern_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.recurrence_pattern', default="Recurrence Pattern"))
         pattern_frame.pack(fill='x', pady=(0, 10))
 
         pattern_inner = ttk.Frame(pattern_frame)
         pattern_inner.pack(padx=15, pady=15, fill='x')
 
-        ttk.Label(pattern_inner, text="Pattern:").grid(row=0, column=0, sticky='w', pady=(0, 10))
-        self.pattern_var = tk.StringVar(value="Weekly")
+        ttk.Label(pattern_inner, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.pattern', default="Pattern:")).grid(row=0, column=0, sticky='w', pady=(0, 10))
+        self.pattern_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.events.event_recurring.values.weekly', default="Weekly"))
         pattern_combo = ttk.Combobox(pattern_inner, textvariable=self.pattern_var, width=20, state='readonly')
         pattern_combo['values'] = ('Daily', 'Weekly', 'Bi-Weekly', 'Monthly', 'Custom')
         pattern_combo.grid(row=0, column=1, sticky='w', pady=(0, 10), padx=(5, 0))
 
-        ttk.Label(pattern_inner, text="Day of Week:").grid(row=1, column=0, sticky='w', pady=(0, 10))
-        self.day_var = tk.StringVar(value="Monday")
+        ttk.Label(pattern_inner, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.day_of_week', default="Day of Week:")).grid(row=1, column=0, sticky='w', pady=(0, 10))
+        self.day_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.events.event_recurring.values.monday', default="Monday"))
         day_combo = ttk.Combobox(pattern_inner, textvariable=self.day_var, width=20, state='readonly')
         day_combo['values'] = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
         day_combo.grid(row=1, column=1, sticky='w', pady=(0, 10), padx=(5, 0))
@@ -282,12 +284,12 @@ class CreateRecurringSeriesDialog:
         dates_frame = ttk.Frame(main_frame)
         dates_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(dates_frame, text="Start Date:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(dates_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.start_date', default="Start Date:")).grid(row=0, column=0, sticky='w', pady=(0, 5))
         self.start_entry = ttk.Entry(dates_frame, width=15)
         self.start_entry.grid(row=0, column=1, sticky='w', padx=(5, 10))
         self.start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-        ttk.Label(dates_frame, text="End Date:").grid(row=0, column=2, sticky='w', pady=(0, 5))
+        ttk.Label(dates_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.end_date', default="End Date:")).grid(row=0, column=2, sticky='w', pady=(0, 5))
         self.end_entry = ttk.Entry(dates_frame, width=15)
         self.end_entry.grid(row=0, column=3, sticky='w', padx=(5, 0))
         self.end_entry.insert(0, (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d'))
@@ -296,24 +298,24 @@ class CreateRecurringSeriesDialog:
         time_frame = ttk.Frame(main_frame)
         time_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(time_frame, text="Start Time:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(time_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.start_time', default="Start Time:")).grid(row=0, column=0, sticky='w', pady=(0, 5))
         self.start_time_entry = ttk.Entry(time_frame, width=10)
         self.start_time_entry.grid(row=0, column=1, sticky='w', padx=(5, 10))
         self.start_time_entry.insert(0, "18:00")
 
-        ttk.Label(time_frame, text="Duration (hours):").grid(row=0, column=2, sticky='w', pady=(0, 5))
+        ttk.Label(time_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.duration_hours', default="Duration (hours):")).grid(row=0, column=2, sticky='w', pady=(0, 5))
         self.duration_entry = ttk.Entry(time_frame, width=10)
         self.duration_entry.grid(row=0, column=3, sticky='w', padx=(5, 0))
         self.duration_entry.insert(0, "2")
 
         # Location
-        ttk.Label(main_frame, text="Location:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.location', default="Location:")).pack(anchor='w', pady=(0, 5))
         self.location_entry = ttk.Entry(main_frame, width=60)
         self.location_entry.pack(fill='x', pady=(0, 10))
         self.location_entry.insert(0, "Room 101, Student Union Building")
 
         # Description
-        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.description', default="Description:")).pack(anchor='w', pady=(0, 5))
         self.description_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
         self.description_text.pack(fill='both', expand=True, pady=(0, 15))
         self.description_text.insert(1.0, "Regular meeting for students to study together...")
@@ -322,8 +324,8 @@ class CreateRecurringSeriesDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Create Series", command=self.create_series).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.create_series', default="Create Series"), command=self.create_series).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def create_series(self):
         name = self.name_entry.get().strip()
@@ -337,7 +339,7 @@ class CreateRecurringSeriesDialog:
         description = self.description_text.get(1.0, tk.END).strip()
 
         if not all([name, pattern, start_date, end_date, start_time, duration, location]):
-            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields."))
             return
 
         try:
@@ -345,7 +347,7 @@ class CreateRecurringSeriesDialog:
             if duration_float <= 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showwarning("Warning", "Please enter a valid duration.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.please_enter_a_valid_duration', default="Please enter a valid duration."))
             return
 
         try:
@@ -385,10 +387,10 @@ class CreateRecurringSeriesDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Recurring series '{name}' created!\n\nPattern: {pattern} on {day}s\nFrom: {start_date} to {end_date}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.success', default="Success"), f"Recurring series '{name}' created!\n\nPattern: {pattern} on {day}s\nFrom: {start_date} to {end_date}")
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to create series: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.error', default="Error"), f"Failed to create series: {str(e)}")
 
 
 
@@ -400,7 +402,7 @@ class EditRecurringSeriesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Edit Recurring Event Series")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_recurring.windows.edit_recurring_event_series', default="Edit Recurring Event Series"))
         self.dialog.geometry("650x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -411,10 +413,10 @@ class EditRecurringSeriesDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Edit Recurring Event Series", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.edit_recurring_event_series', default="Edit Recurring Event Series"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Series selection
-        ttk.Label(main_frame, text="Select Series to Edit:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.select_series_to_edit', default="Select Series to Edit:")).pack(anchor='w', pady=(0, 5))
         self.series_var = tk.StringVar()
         series_combo = ttk.Combobox(main_frame, textvariable=self.series_var, width=57, state='readonly')
         series_combo['values'] = ('Weekly Tech Talks', 'Monthly Networking', 'Bi-Weekly Study Group')
@@ -422,31 +424,31 @@ class EditRecurringSeriesDialog:
         series_combo.current(0)
 
         # Edit options
-        options_frame = ttk.LabelFrame(main_frame, text="What would you like to modify?")
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.what_would_you_like_to_modify', default="What would you like to modify?"))
         options_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         options_inner = ttk.Frame(options_frame)
         options_inner.pack(padx=20, pady=20, fill='both', expand=True)
 
-        self.edit_option = tk.StringVar(value="future")
+        self.edit_option = tk.StringVar(value=_t('gui.pastoral.student_union_gui.events.event_recurring.values.future', default="future"))
 
-        ttk.Radiobutton(options_inner, text="Edit future occurrences only",
+        ttk.Radiobutton(options_inner, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.edit_future_occurrences_only', default="Edit future occurrences only"),
                        variable=self.edit_option, value="future").pack(anchor='w', pady=(0, 10))
 
-        ttk.Radiobutton(options_inner, text="Edit all occurrences (past and future)",
+        ttk.Radiobutton(options_inner, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.edit_all_occurrences_past_and_future', default="Edit all occurrences (past and future)"),
                        variable=self.edit_option, value="all").pack(anchor='w', pady=(0, 10))
 
-        ttk.Radiobutton(options_inner, text="Change recurrence pattern",
+        ttk.Radiobutton(options_inner, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.change_recurrence_pattern', default="Change recurrence pattern"),
                        variable=self.edit_option, value="pattern").pack(anchor='w', pady=(0, 10))
 
-        ttk.Radiobutton(options_inner, text="End series early",
+        ttk.Radiobutton(options_inner, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.end_series_early', default="End series early"),
                        variable=self.edit_option, value="end").pack(anchor='w', pady=(0, 10))
 
         # New end date (for ending series early)
         end_frame = ttk.Frame(main_frame)
         end_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(end_frame, text="New End Date (if ending early):").pack(side='left', padx=(0, 10))
+        ttk.Label(end_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.labels.new_end_date_if_ending_early', default="New End Date (if ending early):")).pack(side='left', padx=(0, 10))
         self.new_end_entry = ttk.Entry(end_frame, width=20)
         self.new_end_entry.pack(side='left')
         self.new_end_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
@@ -455,8 +457,8 @@ class EditRecurringSeriesDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Apply Changes", command=self.apply_changes).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.apply_changes', default="Apply Changes"), command=self.apply_changes).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_recurring.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def apply_changes(self):
         series = self.series_var.get()
@@ -464,7 +466,7 @@ class EditRecurringSeriesDialog:
         new_end = self.new_end_entry.get().strip()
 
         if not series:
-            messagebox.showwarning("Warning", "Please select a series to edit.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.please_select_a_series_to_edit', default="Please select a series to edit."))
             return
 
         option_messages = {
@@ -475,7 +477,7 @@ class EditRecurringSeriesDialog:
         }
 
         message = option_messages.get(option, "Changes applied!")
-        messagebox.showinfo("Success", f"Series '{series}' has been updated!\n\n{message}")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.success', default="Success"), f"Series '{series}' has been updated!\n\n{message}")
         self.dialog.destroy()
 
 
@@ -496,7 +498,7 @@ def create_recurring_event_gui(self):
         dialog = RecurringEventDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def manage_recurring_events(self):
@@ -505,6 +507,6 @@ def manage_recurring_events(self):
         dialog = EventManagementDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_recurring.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

@@ -9,6 +9,8 @@ Provides comprehensive refund functionality for restaurant payments including:
 - Finance GUI integration
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, sqlite3
@@ -26,30 +28,30 @@ def create_refunds_tab(self, parent):
     # Header
     header_frame = ttk.Frame(parent)
     header_frame.pack(fill=tk.X, pady=(0, 10))
-    ttk.Label(header_frame, text="Restaurant Payment Refunds",
+    ttk.Label(header_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.labels.restaurant_payment_refunds', default="Restaurant Payment Refunds"),
              font=('Arial', 12, 'bold')).pack(anchor=tk.W)
 
     # Search frame
-    search_frame = ttk.LabelFrame(parent, text="Search Payments", padding="10")
+    search_frame = ttk.LabelFrame(parent, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.labels.search_payments', default="Search Payments"), padding="10")
     search_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(search_frame, text="Order ID or Customer ID:").grid(row=0, column=0, sticky=tk.W, padx=5)
+    ttk.Label(search_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.labels.order_id_or_customer_id', default="Order ID or Customer ID:")).grid(row=0, column=0, sticky=tk.W, padx=5)
     search_var = tk.StringVar()
     ttk.Entry(search_frame, textvariable=search_var, width=30).grid(row=0, column=1, padx=5)
 
     # Payments list frame
-    list_frame = ttk.LabelFrame(parent, text="All Restaurant Payments", padding="5")
+    list_frame = ttk.LabelFrame(parent, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.labels.all_restaurant_payments', default="All Restaurant Payments"), padding="5")
     list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     columns = ('order_id', 'customer', 'date', 'total', 'method', 'status')
     payments_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
 
-    payments_tree.heading('order_id', text='Order ID')
-    payments_tree.heading('customer', text='Customer ID')
-    payments_tree.heading('date', text='Date/Time')
-    payments_tree.heading('total', text='Total (GBP)')
-    payments_tree.heading('method', text='Payment Method')
-    payments_tree.heading('status', text='Status')
+    payments_tree.heading('order_id', text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.headings.order_id', default='Order ID'))
+    payments_tree.heading('customer', text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.headings.customer_id', default='Customer ID'))
+    payments_tree.heading('date', text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.headings.date_time', default='Date/Time'))
+    payments_tree.heading('total', text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.headings.total_gbp', default='Total (GBP)'))
+    payments_tree.heading('method', text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.headings.payment_method', default='Payment Method'))
+    payments_tree.heading('status', text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.headings.status', default='Status'))
 
     payments_tree.column('order_id', width=80)
     payments_tree.column('customer', width=100)
@@ -71,7 +73,7 @@ def create_refunds_tab(self, parent):
         try:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror("Error", "Database connection failed")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.database_connection_failed', default="Database connection failed"))
                 return
 
             cursor = conn.cursor()
@@ -119,19 +121,19 @@ def create_refunds_tab(self, parent):
 
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load payments: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.error', default="Error"), f"Failed to load payments: {e}")
 
     def view_payment_details():
         """View detailed payment information."""
         selection = payments_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a payment to view details")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.please_select_a_payment_to_view_details', default="Please select a payment to view details"))
             return
 
         try:
             values = payments_tree.item(selection[0])['values']
             if len(values) < 6:
-                messagebox.showerror("Data Error", "Payment record is incomplete")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.data_error', default="Data Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.payment_record_is_incomplete', default="Payment record is incomplete"))
                 return
 
             details = f"""PAYMENT DETAILS
@@ -143,9 +145,9 @@ Total Amount: GBP {values[3]}
 Payment Method: {values[4]}
 Status: {values[5]}
 """
-            messagebox.showinfo("Payment Details", details)
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.payment_details', default="Payment Details"), details)
         except Exception as e:
-            messagebox.showerror("Error", f"Error viewing payment details: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.error', default="Error"), f"Error viewing payment details: {e}")
 
     def export_payments_csv():
         """Export payments to CSV file."""
@@ -166,21 +168,21 @@ Status: {values[5]}
                         values = payments_tree.item(item)['values']
                         writer.writerow(values)
 
-                messagebox.showinfo("Export Successful", f"Payments exported to:\n{filepath}")
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.export_successful', default="Export Successful"), f"Payments exported to:\n{filepath}")
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export payments: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.export_error', default="Export Error"), f"Failed to export payments: {e}")
 
     def process_refund():
         """Process a refund with cash/card/student account options."""
         selection = payments_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a payment to refund")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.please_select_a_payment_to_refund', default="Please select a payment to refund"))
             return
 
         try:
             values = payments_tree.item(selection[0])['values']
             if len(values) < 6:
-                messagebox.showerror("Data Error", "Payment record is incomplete")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.data_error', default="Data Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.payment_record_is_incomplete', default="Payment record is incomplete"))
                 return
 
             order_id = values[0]
@@ -190,19 +192,19 @@ Status: {values[5]}
             payment_method = values[4]
             status = values[5]
         except (IndexError, ValueError) as e:
-            messagebox.showerror("Error", f"Error reading payment data: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.error', default="Error"), f"Error reading payment data: {e}")
             return
 
         if status in ('Refunded', 'Partially Refunded'):
-            messagebox.showinfo("Already Refunded", "This payment has already been refunded")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.already_refunded', default="Already Refunded"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.this_payment_has_already_been_refunded', default="This payment has already been refunded"))
             return
 
         if status not in ('Paid', 'Completed'):
-            messagebox.showwarning("Cannot Refund", "Only paid/completed orders can be refunded")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.cannot_refund', default="Cannot Refund"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.only_paid_completed_orders_can_be_refunded', default="Only paid/completed orders can be refunded"))
             return
 
         # Confirm refund
-        if not messagebox.askyesno("Confirm Refund",
+        if not messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.confirm_refund', default="Confirm Refund"),
                                    f"Refund GBP {amount:.2f} for Order #{order_id}?\n\n"
                                    f"Customer ID: {customer_id}\n"
                                    f"Date: {order_date}\n"
@@ -230,8 +232,8 @@ Status: {values[5]}
 
         if refund_method == 'Finance Account':
             if not payer_id:
-                messagebox.showerror("Refund Failed",
-                                    "Cannot refund to Finance Account — no account linked to this order")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.refund_failed', default="Refund Failed"),
+                                    _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.cannot_refund_to_finance_account_no_account_linked_to_this_order', default="Cannot refund to Finance Account — no account linked to this order"))
                 return
             success = add_refund_to_student_account(payer_id, amount, order_id)
         else:
@@ -243,7 +245,7 @@ Status: {values[5]}
             try:
                 conn = get_db_connection()
                 if not conn:
-                    messagebox.showerror("Error", "Database connection failed")
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.database_connection_failed', default="Database connection failed"))
                     return
 
                 cursor = conn.cursor()
@@ -294,24 +296,24 @@ Status: {values[5]}
                 elif payer_email:
                     success_msg += "\n\nCould not send email receipt"
 
-                messagebox.showinfo("Refund Processed", success_msg)
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.refund_processed', default="Refund Processed"), success_msg)
 
                 refresh_payments_list()
             except Exception as e:
-                messagebox.showerror("Refund Error", f"Failed to process refund: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.refund_error', default="Refund Error"), f"Failed to process refund: {e}")
         else:
-            messagebox.showerror("Refund Failed", "Failed to process finance account refund")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.refund_failed', default="Refund Failed"), _t('gui.operations.commerce.restaurant_management_gui.orders.refunds.dialogs.failed_to_process_finance_account_refund', default="Failed to process finance account refund"))
 
     # Button frame
     button_frame = ttk.Frame(parent)
     button_frame.pack(fill=tk.X, padx=10)
 
-    ttk.Button(button_frame, text="Search", command=refresh_payments_list).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Show All",
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.buttons.search', default="Search"), command=refresh_payments_list).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.buttons.show_all', default="Show All"),
               command=lambda: [search_var.set(''), refresh_payments_list()]).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Process Refund", command=process_refund).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="View Details", command=view_payment_details).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Export to CSV", command=export_payments_csv).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.buttons.process_refund', default="Process Refund"), command=process_refund).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.buttons.view_details', default="View Details"), command=view_payment_details).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.buttons.export_to_csv', default="Export to CSV"), command=export_payments_csv).pack(side=tk.LEFT, padx=5)
 
     # Initial load
     refresh_payments_list()
@@ -322,7 +324,7 @@ def show_refund_method_dialog(amount: float, order_id: int, parent_window,
                               payer_id: str = None) -> Optional[str]:
     """Show refund method selection dialog with payer details."""
     dialog = tk.Toplevel(parent_window)
-    dialog.title("Select Refund Method")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.windows.select_refund_method', default="Select Refund Method"))
     dialog.geometry("450x400")
     dialog.transient(parent_window)
     dialog.grab_set()
@@ -330,7 +332,7 @@ def show_refund_method_dialog(amount: float, order_id: int, parent_window,
     result = {'method': None}
 
     # Refund info frame
-    info_frame = ttk.LabelFrame(dialog, text="Refund Details", padding="10")
+    info_frame = ttk.LabelFrame(dialog, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.labels.refund_details', default="Refund Details"), padding="10")
     info_frame.pack(fill=tk.X, padx=10, pady=10)
 
     ttk.Label(info_frame, text=f"Order ID: {order_id}").pack(anchor=tk.W)
@@ -345,7 +347,7 @@ def show_refund_method_dialog(amount: float, order_id: int, parent_window,
                  font=('Arial', 10)).pack(anchor=tk.W)
 
     # Refund method selection
-    method_frame = ttk.LabelFrame(dialog, text="Select Refund Method", padding="10")
+    method_frame = ttk.LabelFrame(dialog, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.labels.select_refund_method', default="Select Refund Method"), padding="10")
     method_frame.pack(fill=tk.X, padx=10, pady=10)
 
     def select_method(method):
@@ -374,12 +376,12 @@ def show_refund_method_dialog(amount: float, order_id: int, parent_window,
         ttk.Button(method_frame, text=finance_text, width=30,
                   command=lambda: select_method('Finance Account')).pack(pady=5)
     else:
-        btn = ttk.Button(method_frame, text="Finance Account (No account linked)", width=30)
+        btn = ttk.Button(method_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.buttons.finance_account_no_account_linked', default="Finance Account (No account linked)"), width=30)
         btn.pack(pady=5)
         btn.configure(state='disabled')
 
     # Cancel button
-    ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.operations.commerce.restaurant_management_gui.orders.refunds.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(pady=10)
 
     dialog.wait_window()
     return result['method']

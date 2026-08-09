@@ -1,5 +1,7 @@
 """Faculty assignment management - CRUD, editing, status toggling"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
@@ -17,35 +19,35 @@ class ManagementMixin:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Manage Assignments", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.manage_assignments', default="Manage Assignments"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Filter and search frame
-        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Filters & Search", padding=10)
+        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.filters_search', default="Filters & Search"), padding=10)
         filter_frame.pack(fill='x', pady=(0, 10))
 
         # Module filter
-        ttk.Label(filter_frame, text="Module:").grid(row=0, column=0, sticky='w', padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.module', default="Module:")).grid(row=0, column=0, sticky='w', padx=5)
         self.manage_module_filter_var = tk.StringVar()
         module_combo = ttk.Combobox(filter_frame, textvariable=self.manage_module_filter_var, width=20)
         module_combo.grid(row=0, column=1, padx=5)
         self.load_modules_for_filter(module_combo)
 
         # Status filter
-        ttk.Label(filter_frame, text="Status:").grid(row=0, column=2, sticky='w', padx=5)
-        self.manage_status_filter_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.status', default="Status:")).grid(row=0, column=2, sticky='w', padx=5)
+        self.manage_status_filter_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.management.values.all', default="All"))
         status_combo = ttk.Combobox(filter_frame, textvariable=self.manage_status_filter_var,
                                    values=["All", "Active", "Inactive", "Upcoming", "Overdue"], width=15)
         status_combo.grid(row=0, column=3, padx=5)
 
         # Search
-        ttk.Label(filter_frame, text="Search:").grid(row=0, column=4, sticky='w', padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.search', default="Search:")).grid(row=0, column=4, sticky='w', padx=5)
         self.manage_search_var = tk.StringVar()
         search_entry = ttk.Entry(filter_frame, textvariable=self.manage_search_var, width=20)
         search_entry.grid(row=0, column=5, padx=5)
 
         # Apply filter button
-        ttk.Button(filter_frame, text="Apply Filters",
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.apply_filters', default="Apply Filters"),
                   command=self.load_managed_assignments).grid(row=0, column=6, padx=10)
 
         # Assignments table
@@ -78,44 +80,44 @@ class ManagementMixin:
         action_frame = ttk.Frame(self.gui.layout.content_area)
         action_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Label(action_frame, text="Single Assignment Actions:", font=('TkDefaultFont', 9, 'bold')).pack(side='left', padx=(0, 10))
+        ttk.Label(action_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.single_assignment_actions', default="Single Assignment Actions:"), font=('TkDefaultFont', 9, 'bold')).pack(side='left', padx=(0, 10))
 
-        ttk.Button(action_frame, text="Edit Assignment",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.edit_assignment', default="Edit Assignment"),
                   command=self.edit_selected_assignment).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Clone",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.clone', default="Clone"),
                   command=self.duplicate_selected_assignment).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Toggle Status",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.toggle_status', default="Toggle Status"),
                   command=self.toggle_assignment_status).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="View Submissions",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.view_submissions', default="View Submissions"),
                   command=self.view_assignment_submissions).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Export Data",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.export_data', default="Export Data"),
                   command=self.export_assignment_data).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Download All",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.download_all', default="Download All"),
                   command=self.download_all_submissions).pack(side='left', padx=(0, 5))
 
         # Action buttons - Row 2: Bulk Operations
         bulk_frame = ttk.Frame(self.gui.layout.content_area)
         bulk_frame.pack(fill='x', pady=(5, 0))
 
-        ttk.Label(bulk_frame, text="Bulk Actions:", font=('TkDefaultFont', 9, 'bold')).pack(side='left', padx=(0, 10))
+        ttk.Label(bulk_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.bulk_actions', default="Bulk Actions:"), font=('TkDefaultFont', 9, 'bold')).pack(side='left', padx=(0, 10))
 
-        ttk.Button(bulk_frame, text="Archive Selected",
+        ttk.Button(bulk_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.archive_selected', default="Archive Selected"),
                   command=self.bulk_archive_assignments).pack(side='left', padx=(0, 5))
-        ttk.Button(bulk_frame, text="Delete Selected",
+        ttk.Button(bulk_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.delete_selected', default="Delete Selected"),
                   command=self.bulk_delete_assignments).pack(side='left', padx=(0, 5))
-        ttk.Button(bulk_frame, text="Change Due Dates",
+        ttk.Button(bulk_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.change_due_dates', default="Change Due Dates"),
                   command=self.bulk_change_due_dates).pack(side='left', padx=(0, 5))
-        ttk.Button(bulk_frame, text="Export Selected",
+        ttk.Button(bulk_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.export_selected', default="Export Selected"),
                   command=self.bulk_export_assignments).pack(side='left', padx=(0, 5))
-        ttk.Button(bulk_frame, text="Send Reminders",
+        ttk.Button(bulk_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.send_reminders', default="Send Reminders"),
                   command=self.bulk_send_reminders).pack(side='left', padx=(0, 5))
 
         # Statistics button
-        ttk.Button(bulk_frame, text="View Statistics",
+        ttk.Button(bulk_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.view_statistics', default="View Statistics"),
                   command=self.show_assignment_statistics).pack(side='right', padx=(0, 5))
 
         # Assignment details frame
-        self.assignment_details_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Assignment Details", padding=10)
+        self.assignment_details_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.assignment_details', default="Assignment Details"), padding=10)
         self.assignment_details_frame.pack(fill='both', expand=True, pady=(10, 0))
 
         # Load assignments
@@ -204,7 +206,7 @@ class ManagementMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), f"Failed to load assignments: {e}")
 
 
     def on_manage_assignment_select(self, event):
@@ -252,7 +254,7 @@ class ManagementMixin:
 
             # Basic info tab
             basic_frame = ttk.Frame(details_notebook)
-            details_notebook.add(basic_frame, text="Basic Info")
+            details_notebook.add(basic_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.tabs.basic_info', default="Basic Info"))
 
             # Display basic info
             ttk.Label(basic_frame, text=f"Title: {assignment[2]}").pack(pady=5)
@@ -260,13 +262,13 @@ class ManagementMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignment details: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), f"Failed to load assignment details: {e}")
 
     def edit_selected_assignment(self):
         """Edit the selected assignment"""
         selection = self.manage_assignments_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment to edit")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.management.dialogs.please_select_an_assignment_to_edit', default="Please select an assignment to edit"))
             return
 
         item = self.manage_assignments_tree.item(selection[0])
@@ -282,7 +284,7 @@ class ManagementMixin:
             conn.close()
 
             if not assignment:
-                messagebox.showerror("Error", "Assignment not found")
+                messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.assignment_manager.management.dialogs.assignment_not_found', default="Assignment not found"))
                 return
 
             # Create edit window
@@ -306,43 +308,43 @@ class ManagementMixin:
             canvas.configure(yscrollcommand=scrollbar.set)
 
             # Form fields
-            form_frame = ttk.LabelFrame(scrollable_frame, text="Assignment Details", padding=20)
+            form_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.assignment_details', default="Assignment Details"), padding=20)
             form_frame.pack(fill='x', padx=10, pady=10)
 
             # Title
-            ttk.Label(form_frame, text="Title:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.title', default="Title:")).grid(row=0, column=0, sticky='w', pady=5)
             title_var = tk.StringVar(value=assignment['title'])
             ttk.Entry(form_frame, textvariable=title_var, width=50).grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
 
             # Module
-            ttk.Label(form_frame, text="Module:").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.module', default="Module:")).grid(row=1, column=0, sticky='w', pady=5)
             module_var = tk.StringVar(value=assignment['module_code'])
             ttk.Label(form_frame, text=assignment['module_code']).grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
             # Due Date
-            ttk.Label(form_frame, text="Due Date (YYYY-MM-DD HH:MM):").grid(row=2, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.due_date_yyyy_mm_dd_hh_mm', default="Due Date (YYYY-MM-DD HH:MM):")).grid(row=2, column=0, sticky='w', pady=5)
             due_var = tk.StringVar(value=assignment['due_date'])
             ttk.Entry(form_frame, textvariable=due_var, width=30).grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
 
             # Max Marks
-            ttk.Label(form_frame, text="Max Marks:").grid(row=3, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.max_marks', default="Max Marks:")).grid(row=3, column=0, sticky='w', pady=5)
             marks_var = tk.StringVar(value=str(assignment['max_marks']))
             ttk.Entry(form_frame, textvariable=marks_var, width=10).grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
 
             # Description
-            ttk.Label(form_frame, text="Description:").grid(row=4, column=0, sticky='nw', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.description', default="Description:")).grid(row=4, column=0, sticky='nw', pady=5)
             desc_text = scrolledtext.ScrolledText(form_frame, height=5, width=50)
             desc_text.grid(row=4, column=1, sticky='ew', pady=5, padx=(10, 0))
             desc_text.insert('1.0', assignment['description'] or '')
 
             # Instructions
-            ttk.Label(form_frame, text="Instructions:").grid(row=5, column=0, sticky='nw', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.instructions', default="Instructions:")).grid(row=5, column=0, sticky='nw', pady=5)
             instr_text = scrolledtext.ScrolledText(form_frame, height=5, width=50)
             instr_text.grid(row=5, column=1, sticky='ew', pady=5, padx=(10, 0))
             instr_text.insert('1.0', assignment.get('instructions', ''))
 
             # Assignment Type
-            ttk.Label(form_frame, text="Type:").grid(row=6, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.labels.type', default="Type:")).grid(row=6, column=0, sticky='w', pady=5)
             type_var = tk.StringVar(value=assignment.get('assignment_type', 'individual'))
             type_combo = ttk.Combobox(form_frame, textvariable=type_var,
                                      values=['individual', 'group'], state='readonly', width=15)
@@ -373,33 +375,33 @@ class ManagementMixin:
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo("Success", "Assignment updated successfully")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.success', default="Success"), _t('gui.academics.assignment_system.assignment_manager.management.dialogs.assignment_updated_successfully', default="Assignment updated successfully"))
                     edit_window.destroy()
                     self.load_managed_assignments()
 
                 except ValueError:
-                    messagebox.showerror("Error", "Max marks must be a valid number")
+                    messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.assignment_manager.management.dialogs.max_marks_must_be_a_valid_number', default="Max marks must be a valid number"))
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to update assignment: {e}")
+                    messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), f"Failed to update assignment: {e}")
 
             # Buttons
             button_frame = ttk.Frame(scrollable_frame)
             button_frame.pack(fill='x', padx=10, pady=10)
-            ttk.Button(button_frame, text="Save Changes", command=save_changes,
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.save_changes', default="Save Changes"), command=save_changes,
                       style='Accent.TButton').pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=edit_window.destroy).pack(side='right', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.cancel', default="Cancel"), command=edit_window.destroy).pack(side='right', padx=5)
 
             canvas.pack(side='left', fill='both', expand=True)
             scrollbar.pack(side='right', fill='y')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open edit window: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), f"Failed to open edit window: {e}")
 
     def duplicate_selected_assignment(self):
         """Duplicate the selected assignment"""
         selection = self.manage_assignments_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment to duplicate")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.management.dialogs.please_select_an_assignment_to_duplicate', default="Please select an assignment to duplicate"))
             return
 
         item = self.manage_assignments_tree.item(selection[0])
@@ -418,7 +420,7 @@ class ManagementMixin:
             original = cursor.fetchone()
 
             if not original:
-                messagebox.showerror("Error", "Assignment not found")
+                messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.assignment_manager.management.dialogs.assignment_not_found', default="Assignment not found"))
                 conn.close()
                 return
 
@@ -457,18 +459,18 @@ class ManagementMixin:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Assignment duplicated as '{new_title}'")
+            messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.success', default="Success"), f"Assignment duplicated as '{new_title}'")
             self.load_managed_assignments()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to duplicate assignment: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), f"Failed to duplicate assignment: {e}")
 
 
     def toggle_assignment_status(self):
         """Toggle assignment active/inactive status"""
         selection = self.manage_assignments_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.management.dialogs.please_select_an_assignment', default="Please select an assignment"))
             return
 
         item = self.manage_assignments_tree.item(selection[0])
@@ -486,24 +488,24 @@ class ManagementMixin:
             new_status = 0 if current_status else 1
             action = "activate" if new_status else "deactivate"
 
-            if messagebox.askyesno("Confirm", f"Are you sure you want to {action} '{assignment_title}'?"):
+            if messagebox.askyesno(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.confirm', default="Confirm"), f"Are you sure you want to {action} '{assignment_title}'?"):
                 cursor.execute('UPDATE assignments SET is_active = ? WHERE id = ?', (new_status, assignment_id))
                 conn.commit()
 
-                messagebox.showinfo("Success", f"Assignment {action}d successfully")
+                messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.success', default="Success"), f"Assignment {action}d successfully")
                 self.load_managed_assignments()
 
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to toggle status: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), f"Failed to toggle status: {e}")
 
 
     def view_assignment_submissions(self):
         """View submissions for selected assignment"""
         selection = self.manage_assignments_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.management.dialogs.please_select_an_assignment', default="Please select an assignment"))
             return
 
         item = self.manage_assignments_tree.item(selection[0])
@@ -578,8 +580,8 @@ class ManagementMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.management.dialogs.error', default="Error"), f"Failed to load submissions: {e}")
 
         # Back button
-        ttk.Button(self.gui.layout.content_area, text="Back to Manage Assignments",
+        ttk.Button(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assignment_manager.management.buttons.back_to_manage_assignments', default="Back to Manage Assignments"),
                   command=self.show_manage_assignments).pack(pady=(10, 0))

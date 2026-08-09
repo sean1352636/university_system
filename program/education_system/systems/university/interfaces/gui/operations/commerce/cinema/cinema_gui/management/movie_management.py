@@ -140,7 +140,7 @@ def show_movie_form(self, movie_data):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Movie saved!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.management.movie_management.dialogs.movie_saved', default="Movie saved!"))
         form_window.destroy()
         self.refresh_movie_list()
 

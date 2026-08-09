@@ -29,7 +29,7 @@ import logging
 import re
 from typing import Any
 
-from education_system.systems.nursery.infrastructure import paths
+from education_system import paths
 from education_system.systems.nursery.domain.operations.communications.email_centre import (
     email_centre as _messages,
 )
@@ -45,14 +45,14 @@ class TemplateError(Exception):
 
 def list_templates() -> list[str]:
     """Return the available template names (filename stems), sorted."""
-    paths.ensure_directories()
-    return sorted(p.stem for p in paths.EMAIL_TEMPLATES_DIR.glob("*.json"))
+    paths.ensure_nursery_directories()
+    return sorted(p.stem for p in paths.NURSERY_EMAIL_TEMPLATES_DIR.glob("*.json"))
 
 
 def load_template(name: str) -> dict[str, Any]:
     """Load and JSON-parse one template by filename stem."""
-    paths.ensure_directories()
-    path = paths.EMAIL_TEMPLATES_DIR / f"{name}.json"
+    paths.ensure_nursery_directories()
+    path = paths.NURSERY_EMAIL_TEMPLATES_DIR / f"{name}.json"
     if not path.is_file():
         raise TemplateError(f"Email template not found: {name}")
     try:

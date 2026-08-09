@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class ElectionsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Elections & Campaigns")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_core.windows.elections_campaigns', default="Elections & Campaigns"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -76,10 +78,10 @@ class ElectionsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Elections & Campaigns", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.elections_campaigns', default="Elections & Campaigns"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Elections list
-        list_frame = ttk.LabelFrame(main_frame, text="Current & Upcoming Elections")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.current_upcoming_elections', default="Current & Upcoming Elections"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('ID', 'Position', 'Department', 'Voting Period', 'Candidates', 'Status')
@@ -104,11 +106,11 @@ class ElectionsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="View Candidates", command=self.view_candidates).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Vote", command=self.vote_in_election).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Nominate Myself", command=self.nominate_self).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Results", command=self.view_results).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.view_candidates', default="View Candidates"), command=self.view_candidates).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.vote', default="Vote"), command=self.vote_in_election).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.nominate_myself', default="Nominate Myself"), command=self.nominate_self).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.results', default="Results"), command=self.view_results).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_elections(self):
         try:
@@ -131,12 +133,12 @@ class ElectionsDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load elections: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.error', default="Error"), f"Failed to load elections: {str(e)}")
 
     def view_candidates(self, event=None):
         selection = self.elections_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an election.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.please_select_an_election', default="Please select an election."))
             return
 
         item = self.elections_tree.item(selection[0])
@@ -148,7 +150,7 @@ class ElectionsDialog:
     def vote_in_election(self):
         selection = self.elections_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an election.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.please_select_an_election', default="Please select an election."))
             return
 
         item = self.elections_tree.item(selection[0])
@@ -156,7 +158,7 @@ class ElectionsDialog:
         status = item['values'][5]
 
         if status != 'voting':
-            messagebox.showwarning("Warning", "Voting is not currently open for this election.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.voting_is_not_currently_open_for_this_election', default="Voting is not currently open for this election."))
             return
 
         dialog = VotingDialog(self.dialog, self.auth, election_id)
@@ -170,7 +172,7 @@ class ElectionsDialog:
     def view_results(self):
         selection = self.elections_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an election.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.please_select_an_election', default="Please select an election."))
             return
 
         item = self.elections_tree.item(selection[0])
@@ -190,7 +192,7 @@ class CandidatesDialog:
         self.election_id = election_id
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Candidates & Campaigns")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_core.windows.candidates_campaigns', default="Candidates & Campaigns"))
         self.dialog.geometry("900x650")
         self.dialog.transient(parent)
         self.dialog.update_idletasks()
@@ -206,7 +208,7 @@ class CandidatesDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Candidates & Campaigns", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.candidates_campaigns', default="Candidates & Campaigns"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Candidates list
         list_frame = ttk.Frame(main_frame)
@@ -231,7 +233,7 @@ class CandidatesDialog:
         self.candidates_tree.bind('<<TreeviewSelect>>', self.on_candidate_selected)
 
         # Manifesto display
-        manifesto_frame = ttk.LabelFrame(main_frame, text="Candidate Manifesto")
+        manifesto_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.candidate_manifesto', default="Candidate Manifesto"))
         manifesto_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         self.manifesto_text = scrolledtext.ScrolledText(manifesto_frame, height=10, wrap=tk.WORD)
@@ -241,8 +243,8 @@ class CandidatesDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="View Campaign Materials", command=self.view_materials).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.view_campaign_materials', default="View Campaign Materials"), command=self.view_materials).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_candidates(self):
         try:
@@ -269,7 +271,7 @@ class CandidatesDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load candidates: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.error', default="Error"), f"Failed to load candidates: {str(e)}")
 
     def on_candidate_selected(self, event):
         selection = self.candidates_tree.selection()
@@ -283,7 +285,7 @@ class CandidatesDialog:
         self.manifesto_text.insert(1.0, manifesto)
 
     def view_materials(self):
-        messagebox.showinfo("Info", "Campaign materials viewer would display videos, photos, and documents here.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.info', default="Info"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.campaign_materials_viewer_would_display_videos_photos_and_docume', default="Campaign materials viewer would display videos, photos, and documents here."))
 
 
 
@@ -296,7 +298,7 @@ class VotingDialog:
         self.election_id = election_id
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Cast Your Vote")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_core.windows.cast_your_vote', default="Cast Your Vote"))
         self.dialog.geometry("700x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -308,14 +310,14 @@ class VotingDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Cast Your Vote", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.cast_your_vote', default="Cast Your Vote"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
-        info_label = ttk.Label(main_frame, text="Your vote is secret and anonymous.\nSelect your preferred candidate below:",
+        info_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.your_vote_is_secret_and_anonymous_select_your_preferred_candidat', default="Your vote is secret and anonymous.\nSelect your preferred candidate below:"),
                               justify='center', foreground='blue')
         info_label.pack(pady=(0, 15))
 
         # Candidates frame
-        candidates_frame = ttk.LabelFrame(main_frame, text="Select Candidate")
+        candidates_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.select_candidate', default="Select Candidate"))
         candidates_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         self.candidate_var = tk.StringVar()
@@ -354,8 +356,8 @@ class VotingDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Submit Vote", command=self.submit_vote, style='Accent.TButton').pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.submit_vote', default="Submit Vote"), command=self.submit_vote, style='Accent.TButton').pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def check_already_voted(self):
         try:
@@ -379,7 +381,7 @@ class VotingDialog:
             ''', (self.election_id, student_id))
 
             if cursor.fetchone()[0] > 0:
-                messagebox.showinfo("Already Voted", "You have already cast your vote in this election.")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.already_voted', default="Already Voted"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.you_have_already_cast_your_vote_in_this_election', default="You have already cast your vote in this election."))
                 self.dialog.destroy()
 
             conn.close()
@@ -388,11 +390,11 @@ class VotingDialog:
 
     def submit_vote(self):
         if not self.candidate_var.get():
-            messagebox.showwarning("Warning", "Please select a candidate.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.please_select_a_candidate', default="Please select a candidate."))
             return
 
-        if messagebox.askyesno("Confirm Vote",
-                              "Are you sure you want to cast your vote?\nThis action cannot be undone."):
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.confirm_vote', default="Confirm Vote"),
+                              _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.are_you_sure_you_want_to_cast_your_vote_this_action_cannot_be_un', default="Are you sure you want to cast your vote?\nThis action cannot be undone.")):
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
@@ -408,10 +410,10 @@ class VotingDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Your vote has been recorded!\n\nThank you for participating.")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.your_vote_has_been_recorded_thank_you_for_participating', default="Your vote has been recorded!\n\nThank you for participating."))
                 self.dialog.destroy()
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to record vote: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.error', default="Error"), f"Failed to record vote: {str(e)}")
 
 
 
@@ -424,7 +426,7 @@ class NominationDialog:
         self.election_data = {}  # Initialize to prevent AttributeError
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Submit Nomination")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_core.windows.submit_nomination', default="Submit Nomination"))
         self.dialog.geometry("700x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -435,10 +437,10 @@ class NominationDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Submit Election Nomination", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.submit_election_nomination', default="Submit Election Nomination"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Election selection
-        ttk.Label(main_frame, text="Select Election:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.select_election', default="Select Election:")).pack(anchor='w', pady=(0, 5))
         self.election_var = tk.StringVar()
         self.election_combo = ttk.Combobox(main_frame, textvariable=self.election_var, state='readonly', width=50)
         self.election_combo.pack(fill='x', pady=(0, 15))
@@ -446,13 +448,13 @@ class NominationDialog:
         self.load_elections()
 
         # Manifesto
-        ttk.Label(main_frame, text="Your Manifesto (Why should students vote for you?):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.your_manifesto_why_should_students_vote_for_you', default="Your Manifesto (Why should students vote for you?):")).pack(anchor='w', pady=(0, 5))
         self.manifesto_text = scrolledtext.ScrolledText(main_frame, height=15, wrap=tk.WORD)
         self.manifesto_text.pack(fill='both', expand=True, pady=(0, 15))
         self.manifesto_text.insert(1.0, "Enter your campaign manifesto here...\n\nInclude:\n- Your vision\n- Key policies\n- Why you're the best candidate")
 
         # Endorsements
-        ttk.Label(main_frame, text="Endorsements (optional):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.endorsements_optional', default="Endorsements (optional):")).pack(anchor='w', pady=(0, 5))
         self.endorsements_entry = ttk.Entry(main_frame, width=50)
         self.endorsements_entry.pack(fill='x', pady=(0, 15))
 
@@ -460,8 +462,8 @@ class NominationDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Submit Nomination", command=self.submit_nomination).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.submit_nomination', default="Submit Nomination"), command=self.submit_nomination).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def load_elections(self):
         try:
@@ -489,16 +491,16 @@ class NominationDialog:
         except sqlite3.Error as e:
             self.election_data = {}  # Ensure it's set even on error
             self.election_combo['values'] = ["Error loading elections"]
-            messagebox.showerror("Error", f"Failed to load elections: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.error', default="Error"), f"Failed to load elections: {str(e)}")
 
     def submit_nomination(self):
         if not self.election_var.get() or self.election_var.get() not in self.election_data:
-            messagebox.showwarning("Warning", "Please select an election.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.please_select_an_election', default="Please select an election."))
             return
 
         manifesto = self.manifesto_text.get(1.0, tk.END).strip()
         if not manifesto or len(manifesto) < 100:
-            messagebox.showwarning("Warning", "Please provide a detailed manifesto (at least 100 characters).")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.please_provide_a_detailed_manifesto_at_least_100_characters', default="Please provide a detailed manifesto (at least 100 characters)."))
             return
 
         try:
@@ -518,10 +520,10 @@ class NominationDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Your nomination has been submitted!\n\nGood luck with your campaign!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.elections.election_core.dialogs.your_nomination_has_been_submitted_good_luck_with_your_campaign', default="Your nomination has been submitted!\n\nGood luck with your campaign!"))
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to submit nomination: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_core.dialogs.error', default="Error"), f"Failed to submit nomination: {str(e)}")
 
 
 
@@ -534,7 +536,7 @@ class ElectionResultsDialog:
         self.election_id = election_id
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Election Results")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_core.windows.election_results', default="Election Results"))
         self.dialog.geometry("800x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -546,13 +548,13 @@ class ElectionResultsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Election Results", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.labels.election_results', default="Election Results"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Results display
         self.results_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 10))
         self.results_text.pack(fill='both', expand=True, pady=(0, 15))
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_core.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def load_results(self):
         try:

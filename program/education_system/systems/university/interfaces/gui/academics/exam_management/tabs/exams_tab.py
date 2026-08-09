@@ -1,5 +1,7 @@
 """Exam management tab for the Exam Scheduling System."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
@@ -122,8 +124,8 @@ class ExamsTabMixin:
         date_frame.grid(row=current_row, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
         self.exam_vars['date'] = tk.StringVar()
         ttk.Entry(date_frame, textvariable=self.exam_vars['date'], width=15).pack(side=tk.LEFT)
-        ttk.Button(date_frame, text="Today", command=lambda: self.set_date_today(), width=6).pack(side=tk.LEFT, padx=2)
-        ttk.Button(date_frame, text="+7d", command=lambda: self.set_date_offset(7), width=5).pack(side=tk.LEFT, padx=2)
+        ttk.Button(date_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.today', default="Today"), command=lambda: self.set_date_today(), width=6).pack(side=tk.LEFT, padx=2)
+        ttk.Button(date_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.value_7d', default="+7d"), command=lambda: self.set_date_offset(7), width=5).pack(side=tk.LEFT, padx=2)
         current_row += 1
 
         # Start Time with quick buttons
@@ -143,9 +145,9 @@ class ExamsTabMixin:
         end_time_frame.grid(row=current_row, column=1, sticky=tk.EW, pady=5, padx=(10, 0))
         self.exam_vars['end_time'] = tk.StringVar()
         ttk.Entry(end_time_frame, textvariable=self.exam_vars['end_time'], width=10).pack(side=tk.LEFT)
-        ttk.Button(end_time_frame, text="+1h", command=lambda: self.add_duration(60), width=5).pack(side=tk.LEFT, padx=1)
-        ttk.Button(end_time_frame, text="+2h", command=lambda: self.add_duration(120), width=5).pack(side=tk.LEFT, padx=1)
-        ttk.Button(end_time_frame, text="+3h", command=lambda: self.add_duration(180), width=5).pack(side=tk.LEFT, padx=1)
+        ttk.Button(end_time_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.value_1h', default="+1h"), command=lambda: self.add_duration(60), width=5).pack(side=tk.LEFT, padx=1)
+        ttk.Button(end_time_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.value_2h', default="+2h"), command=lambda: self.add_duration(120), width=5).pack(side=tk.LEFT, padx=1)
+        ttk.Button(end_time_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.value_3h', default="+3h"), command=lambda: self.add_duration(180), width=5).pack(side=tk.LEFT, padx=1)
         current_row += 1
 
         # Instructor Dropdown
@@ -156,7 +158,7 @@ class ExamsTabMixin:
         self.instructor_combo = ttk.Combobox(instructor_frame, textvariable=self.instructor_var, width=27, state='readonly')
         self.instructor_combo.pack(side=tk.LEFT)
         self.update_instructor_combo()
-        ttk.Button(instructor_frame, text="Check", command=self.check_instructor_availability, width=8).pack(side=tk.LEFT, padx=5)
+        ttk.Button(instructor_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.check', default="Check"), command=self.check_instructor_availability, width=8).pack(side=tk.LEFT, padx=5)
         current_row += 1
 
         # Room dropdown with helper buttons
@@ -172,9 +174,9 @@ class ExamsTabMixin:
         # Room helper buttons
         room_btns_frame = ttk.Frame(form_frame)
         room_btns_frame.grid(row=current_row, column=1, sticky=tk.W, pady=2, padx=(10, 0))
-        ttk.Button(room_btns_frame, text="Suggest Rooms", command=self.suggest_available_rooms, width=13).pack(side=tk.LEFT, padx=1)
-        ttk.Button(room_btns_frame, text="Check Available", command=self.check_room_availability, width=13).pack(side=tk.LEFT, padx=1)
-        ttk.Button(room_btns_frame, text="Check Capacity", command=self.validate_room_capacity, width=13).pack(side=tk.LEFT, padx=1)
+        ttk.Button(room_btns_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.suggest_rooms', default="Suggest Rooms"), command=self.suggest_available_rooms, width=13).pack(side=tk.LEFT, padx=1)
+        ttk.Button(room_btns_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.check_available', default="Check Available"), command=self.check_room_availability, width=13).pack(side=tk.LEFT, padx=1)
+        ttk.Button(room_btns_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.check_capacity', default="Check Capacity"), command=self.validate_room_capacity, width=13).pack(side=tk.LEFT, padx=1)
         current_row += 1
 
         # Students Enrolled Section
@@ -199,7 +201,7 @@ class ExamsTabMixin:
         # Refresh-roster button: re-pull current enrollments from
         # student_modules without changing the selected module. Useful
         # when editing an exam after new students have enrolled.
-        ttk.Button(students_frame, text="🔄 Refresh roster from enrolment",
+        ttk.Button(students_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.refresh_roster_from_enrolment', default="🔄 Refresh roster from enrolment"),
                    command=self.refresh_roster_from_module).pack(
             anchor=tk.W, pady=(4, 0))
 
@@ -216,7 +218,7 @@ class ExamsTabMixin:
         ttk.Button(btn_frame, text=_("exam_scheduler.buttons.duplicate"), command=self.duplicate_exam).pack(side=tk.LEFT, padx=3)
         ttk.Button(btn_frame, text=_("exam_scheduler.buttons.delete"), command=self.delete_exam).pack(side=tk.LEFT, padx=3)
         ttk.Button(btn_frame, text=_("exam_scheduler.buttons.clear"), command=self.clear_exam_form).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btn_frame, text="External examiners…",
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.external_examiners', default="External examiners…"),
                    command=self.open_external_examiners_dialog).pack(
                        side=tk.LEFT, padx=3)
 
@@ -356,8 +358,8 @@ class ExamsTabMixin:
         per-exam)."""
         if not self.selected_exam_id:
             messagebox.showinfo(
-                "External examiners",
-                "Select an exam in the list before managing examiners.",
+                _t('gui.academics.exam_management.tabs.exams_tab.dialogs.external_examiners', default="External examiners"),
+                _t('gui.academics.exam_management.tabs.exams_tab.dialogs.select_an_exam_in_the_list_before_managing_examiners', default="Select an exam in the list before managing examiners."),
             )
             return
         ExternalExaminersDialog(
@@ -387,7 +389,7 @@ class ExamsTabMixin:
         if not module_code:
             messagebox.showinfo(
                 _("exam_scheduler.dialogs.warning"),
-                "Select a module first to load its enrolled students.",
+                _t('gui.academics.exam_management.tabs.exams_tab.dialogs.select_a_module_first_to_load_its_enrolled_students', default="Select a module first to load its enrolled students."),
             )
             return
         students = self.data_manager.get_enrolled_students(module_code)
@@ -535,7 +537,7 @@ class ExamsTabMixin:
             summary_text = format_accommodation_summary(summary)
             if summary_text:
                 if not messagebox.askyesno(
-                    "Accommodations on file",
+                    _t('gui.academics.exam_management.tabs.exams_tab.dialogs.accommodations_on_file', default="Accommodations on file"),
                     summary_text + "\n\nProceed with the exam as configured?",
                 ):
                     return
@@ -883,7 +885,7 @@ class ExamsTabMixin:
         """Add duration to start time to calculate end time."""
         start_time_str = self.exam_vars['start_time'].get()
         if not start_time_str:
-            messagebox.showwarning("Warning", "Please enter a start time first")
+            messagebox.showwarning(_t('gui.academics.exam_management.tabs.exams_tab.dialogs.warning', default="Warning"), _t('gui.academics.exam_management.tabs.exams_tab.dialogs.please_enter_a_start_time_first', default="Please enter a start time first"))
             return
 
         try:
@@ -891,12 +893,12 @@ class ExamsTabMixin:
             end_time = start_time + timedelta(minutes=minutes)
             self.exam_vars['end_time'].set(end_time.strftime('%H:%M'))
         except ValueError:
-            messagebox.showerror("Error", "Invalid start time format. Use HH:MM")
+            messagebox.showerror(_t('gui.academics.exam_management.tabs.exams_tab.dialogs.error', default="Error"), _t('gui.academics.exam_management.tabs.exams_tab.dialogs.invalid_start_time_format_use_hh_mm', default="Invalid start time format. Use HH:MM"))
 
     def duplicate_exam(self):
         """Duplicate the currently selected exam with a different date/time."""
         if not self.selected_exam_id:
-            messagebox.showwarning("No Selection", "Please select an exam to duplicate")
+            messagebox.showwarning(_t('gui.academics.exam_management.tabs.exams_tab.dialogs.no_selection', default="No Selection"), _t('gui.academics.exam_management.tabs.exams_tab.dialogs.please_select_an_exam_to_duplicate', default="Please select an exam to duplicate"))
             return
 
         # Find the exam
@@ -916,8 +918,8 @@ class ExamsTabMixin:
             pass
 
         messagebox.showinfo(
-            "Duplicate Mode",
-            "Exam details loaded. Change the date/time and click 'Add Exam' to create a duplicate."
+            _t('gui.academics.exam_management.tabs.exams_tab.dialogs.duplicate_mode', default="Duplicate Mode"),
+            _t('gui.academics.exam_management.tabs.exams_tab.dialogs.exam_details_loaded_change_the_date_time_and_click_add_exam_to_c', default="Exam details loaded. Change the date/time and click 'Add Exam' to create a duplicate.")
         )
 
 
@@ -939,14 +941,14 @@ class ExternalExaminersDialog(tk.Toplevel):
 
         ttk.Label(
             wrap,
-            text="Examiners are pulled from the external_examiners "
+            text=_t('gui.academics.exam_management.tabs.exams_tab.labels.examiners_are_pulled_from_the_external_examiners_module_add_new', default="Examiners are pulled from the external_examiners "
                  "module. Add new examiners there; this dialog only "
-                 "manages who is attached to this exam.",
+                 "manages who is attached to this exam."),
             foreground="#555", wraplength=520, justify="left",
         ).pack(anchor="w", pady=(0, 8))
 
         # Currently attached
-        ttk.Label(wrap, text="Attached to this exam",
+        ttk.Label(wrap, text=_t('gui.academics.exam_management.tabs.exams_tab.labels.attached_to_this_exam', default="Attached to this exam"),
                   font=("Helvetica", 10, "bold")).pack(anchor="w")
         self._attached_tree = ttk.Treeview(
             wrap,
@@ -960,14 +962,14 @@ class ExternalExaminersDialog(tk.Toplevel):
             self._attached_tree.column(c, width=w, anchor="w")
         self._attached_tree.pack(fill=tk.BOTH, expand=True, pady=(2, 6))
 
-        ttk.Button(wrap, text="Remove selected",
+        ttk.Button(wrap, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.remove_selected', default="Remove selected"),
                    command=self._remove_selected).pack(anchor="w")
 
         # Add a new attachment
         sep = ttk.Separator(wrap)
         sep.pack(fill=tk.X, pady=12)
 
-        ttk.Label(wrap, text="Attach an examiner",
+        ttk.Label(wrap, text=_t('gui.academics.exam_management.tabs.exams_tab.labels.attach_an_examiner', default="Attach an examiner"),
                   font=("Helvetica", 10, "bold")).pack(anchor="w")
         row = ttk.Frame(wrap)
         row.pack(fill=tk.X, pady=4)
@@ -1014,13 +1016,13 @@ class ExternalExaminersDialog(tk.Toplevel):
         self._combo.pack(side=tk.LEFT, padx=(0, 6))
         ttk.Entry(row, textvariable=self._role_var, width=18).pack(
             side=tk.LEFT, padx=(0, 6))
-        ttk.Label(row, text="(role, optional)",
+        ttk.Label(row, text=_t('gui.academics.exam_management.tabs.exams_tab.labels.role_optional', default="(role, optional)"),
                   foreground="#888").pack(side=tk.LEFT)
 
-        ttk.Button(wrap, text="Attach",
+        ttk.Button(wrap, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.attach', default="Attach"),
                    command=self._attach).pack(anchor="w", pady=(4, 0))
 
-        ttk.Button(wrap, text="Close",
+        ttk.Button(wrap, text=_t('gui.academics.exam_management.tabs.exams_tab.buttons.close', default="Close"),
                    command=self.destroy).pack(side=tk.RIGHT, pady=(8, 0))
 
         self._refresh_attached()
@@ -1040,19 +1042,19 @@ class ExternalExaminersDialog(tk.Toplevel):
     def _attach(self):
         label = self._examiner_var.get().strip()
         if not label:
-            messagebox.showinfo("Attach", "Pick an examiner first.",
+            messagebox.showinfo(_t('gui.academics.exam_management.tabs.exams_tab.dialogs.attach', default="Attach"), _t('gui.academics.exam_management.tabs.exams_tab.dialogs.pick_an_examiner_first', default="Pick an examiner first."),
                                 parent=self)
             return
         examiner_id = self._examiner_lookup.get(label)
         if not examiner_id:
-            messagebox.showerror("Attach", "Unknown examiner.", parent=self)
+            messagebox.showerror(_t('gui.academics.exam_management.tabs.exams_tab.dialogs.attach', default="Attach"), _t('gui.academics.exam_management.tabs.exams_tab.dialogs.unknown_examiner', default="Unknown examiner."), parent=self)
             return
         ok = self._dm.attach_external_examiner(
             self._exam_id, examiner_id, self._role_var.get().strip(),
         )
         if not ok:
             messagebox.showerror(
-                "Attach", "Could not save the attachment — see logs.",
+                _t('gui.academics.exam_management.tabs.exams_tab.dialogs.attach', default="Attach"), _t('gui.academics.exam_management.tabs.exams_tab.dialogs.could_not_save_the_attachment_see_logs', default="Could not save the attachment — see logs."),
                 parent=self)
             return
         self._role_var.set("")
@@ -1062,12 +1064,12 @@ class ExternalExaminersDialog(tk.Toplevel):
     def _remove_selected(self):
         sel = self._attached_tree.selection()
         if not sel:
-            messagebox.showinfo("Remove", "Pick an attached examiner.",
+            messagebox.showinfo(_t('gui.academics.exam_management.tabs.exams_tab.dialogs.remove', default="Remove"), _t('gui.academics.exam_management.tabs.exams_tab.dialogs.pick_an_attached_examiner', default="Pick an attached examiner."),
                                 parent=self)
             return
         examiner_id = int(sel[0])
         if not messagebox.askyesno(
-                "Remove", "Detach this examiner from the exam?",
+                _t('gui.academics.exam_management.tabs.exams_tab.dialogs.remove', default="Remove"), _t('gui.academics.exam_management.tabs.exams_tab.dialogs.detach_this_examiner_from_the_exam', default="Detach this examiner from the exam?"),
                 parent=self):
             return
         self._dm.detach_external_examiner(self._exam_id, examiner_id)

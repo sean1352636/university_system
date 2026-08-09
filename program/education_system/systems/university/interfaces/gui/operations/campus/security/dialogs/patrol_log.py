@@ -12,7 +12,7 @@ class PatrolLogDialog(tk.Toplevel):
 
     def __init__(self, parent, colors, current_user, officers_list):
         super().__init__(parent)
-        self.title("Patrol Log Entry")
+        self.title(_t('gui.operations.campus.security.dialogs.patrol_log.windows.patrol_log_entry', default="Patrol Log Entry"))
         self.geometry("500x500")
         self.configure(bg=colors["bg_dark"])
         self.transient(parent)

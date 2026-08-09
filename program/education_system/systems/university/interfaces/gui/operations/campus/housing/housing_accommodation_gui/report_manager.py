@@ -9,7 +9,7 @@ from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.utils.activity_logger import log_activity
 from education_system.systems.university.infrastructure.i18n import get_text as _t
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from education_system.systems.university.interfaces.gui.operations.campus.housing.housing_accommodation_gui.export_manager import export_data_gui
 from education_system.systems.university.interfaces.gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports import show_scheduled_reports_manager
@@ -18,7 +18,7 @@ def show_reports(self):
         """Show reports and analytics interface"""
         self.clear_content()
 
-        ttk.Label(self.content_frame, text="Reports & Analytics",
+        ttk.Label(self.content_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.reports_analytics', default="Reports & Analytics"),
                  font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
         # Reports menu
@@ -26,7 +26,7 @@ def show_reports(self):
         reports_frame.pack(fill='both', expand=True)
 
         # Left side - report buttons
-        buttons_frame = ttk.LabelFrame(reports_frame, text="Available Reports", padding="20")
+        buttons_frame = ttk.LabelFrame(reports_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.available_reports', default="Available Reports"), padding="20")
         buttons_frame.pack(side='left', fill='y', padx=(0, 20))
 
         report_buttons = [
@@ -49,11 +49,11 @@ def show_reports(self):
                           command=command).pack(pady=5)
 
         # Right side - report display area
-        self.report_display_frame = ttk.LabelFrame(reports_frame, text="Report Output", padding="20")
+        self.report_display_frame = ttk.LabelFrame(reports_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.report_output', default="Report Output"), padding="20")
         self.report_display_frame.pack(side='right', fill='both', expand=True)
 
         ttk.Label(self.report_display_frame,
-                 text="Select a report from the menu to view results here").pack()
+                 text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.select_a_report_from_the_menu_to_view_results_here', default="Select a report from the menu to view results here")).pack()
 
 def open_report_window(self, title, report_content, report_type='text'):
         """Open a report in a new window with export and send options"""
@@ -84,26 +84,26 @@ def open_report_window(self, title, report_content, report_type='text'):
         button_frame.pack(fill='x', pady=(10, 0))
 
         # Export buttons
-        ttk.Label(button_frame, text="Export as:", font=('Arial', 10, 'bold')).pack(side='left', padx=(0, 10))
+        ttk.Label(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.export_as', default="Export as:"), font=('Arial', 10, 'bold')).pack(side='left', padx=(0, 10))
 
-        ttk.Button(button_frame, text="TXT", width=10,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.txt', default="TXT"), width=10,
                   command=lambda: export_report_as_txt(self, title, report_content, report_window)).pack(side='left', padx=5)
 
-        ttk.Button(button_frame, text="CSV", width=10,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.csv', default="CSV"), width=10,
                   command=lambda: export_report_as_csv(self, title, report_content, report_window)).pack(side='left', padx=5)
 
-        ttk.Button(button_frame, text="PDF", width=10,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.pdf', default="PDF"), width=10,
                   command=lambda: export_report_as_pdf(self, title, report_content, report_window)).pack(side='left', padx=5)
 
         # Separator
         ttk.Separator(button_frame, orient='vertical').pack(side='left', fill='y', padx=15)
 
         # Send to admin button
-        ttk.Button(button_frame, text="Send to Admin", width=15,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.send_to_admin', default="Send to Admin"), width=15,
                   command=lambda: send_report_to_admin(self, title, report_content, report_window)).pack(side='left', padx=5)
 
         # Close button
-        ttk.Button(button_frame, text="Close", width=10,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.close', default="Close"), width=10,
                   command=report_window.destroy).pack(side='right', padx=5)
 
 def export_report_as_txt(self, title, content, parent_window):
@@ -112,7 +112,7 @@ def export_report_as_txt(self, title, content, parent_window):
 
         filename = filedialog.asksaveasfilename(
             parent=parent_window,
-            title="Save Report as TXT",
+            title=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.save_report_as_txt', default="Save Report as TXT"),
             defaultextension=".txt",
             filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
         )
@@ -121,9 +121,9 @@ def export_report_as_txt(self, title, content, parent_window):
             try:
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write(content)
-                messagebox.showinfo("Success", f"Report exported to:\n{filename}", parent=parent_window)
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.success', default="Success"), f"Report exported to:\n{filename}", parent=parent_window)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export report:\n{str(e)}", parent=parent_window)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Failed to export report:\n{str(e)}", parent=parent_window)
 
 def export_report_as_csv(self, title, content, parent_window):
         """Export report as CSV file"""
@@ -132,7 +132,7 @@ def export_report_as_csv(self, title, content, parent_window):
 
         filename = filedialog.asksaveasfilename(
             parent=parent_window,
-            title="Save Report as CSV",
+            title=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.save_report_as_csv', default="Save Report as CSV"),
             defaultextension=".csv",
             filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")]
         )
@@ -153,9 +153,9 @@ def export_report_as_csv(self, title, content, parent_window):
                     for line in lines:
                         writer.writerow([line])
 
-                messagebox.showinfo("Success", f"Report exported to:\n{filename}", parent=parent_window)
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.success', default="Success"), f"Report exported to:\n{filename}", parent=parent_window)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export report:\n{str(e)}", parent=parent_window)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Failed to export report:\n{str(e)}", parent=parent_window)
 
 def export_report_as_pdf(self, title, content, parent_window):
         """Export report as PDF file"""
@@ -163,7 +163,7 @@ def export_report_as_pdf(self, title, content, parent_window):
 
         filename = filedialog.asksaveasfilename(
             parent=parent_window,
-            title="Save Report as PDF",
+            title=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.save_report_as_pdf', default="Save Report as PDF"),
             defaultextension=".pdf",
             filetypes=[("PDF Files", "*.pdf"), ("All Files", "*.*")]
         )
@@ -203,20 +203,20 @@ def export_report_as_pdf(self, title, content, parent_window):
                         y_position -= line_height
 
                     c.save()
-                    messagebox.showinfo("Success", f"Report exported to:\n{filename}", parent=parent_window)
+                    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.success', default="Success"), f"Report exported to:\n{filename}", parent=parent_window)
 
                 except ImportError:
                     # Fallback: save as text with .pdf extension
                     with open(filename, 'w', encoding='utf-8') as f:
                         f.write(f"{title}\n{'='*60}\n\n{content}")
-                    messagebox.showwarning("Limited PDF Support",
+                    messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.limited_pdf_support', default="Limited PDF Support"),
                                          f"reportlab not available. Report saved as text file with .pdf extension.\n\n"
                                          f"Install reportlab for proper PDF support:\n"
                                          f"pip install reportlab\n\n"
                                          f"File saved to: {filename}",
                                          parent=parent_window)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export report:\n{str(e)}", parent=parent_window)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Failed to export report:\n{str(e)}", parent=parent_window)
 
 def send_report_to_admin(self, title, content, parent_window):
         """Send report to admin via email"""
@@ -244,9 +244,9 @@ def send_report_to_admin(self, title, content, parent_window):
             admin = cursor.fetchone()
 
             if not admin:
-                messagebox.showerror("Error",
-                                   "No administrator email found in database.\n"
-                                   "Please ensure an administrator account exists.",
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"),
+                                   _t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.no_administrator_email_found_in_database_please_ensure_an_admini', default="No administrator email found in database.\n"
+                                   "Please ensure an administrator account exists."),
                                    parent=parent_window)
                 conn.close()
                 return
@@ -287,16 +287,16 @@ def send_report_to_admin(self, title, content, parent_window):
             )
 
             if success:
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.success', default="Success"),
                                   f"Report sent successfully to:\n{admin_name} ({admin_email})",
                                   parent=parent_window)
             else:
-                messagebox.showerror("Error",
-                                   "Failed to send email. Please check email configuration.",
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"),
+                                   _t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.failed_to_send_email_please_check_email_configuration', default="Failed to send email. Please check email configuration."),
                                    parent=parent_window)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send report to admin:\n{str(e)}", parent=parent_window)
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Failed to send report to admin:\n{str(e)}", parent=parent_window)
 
 def show_occupancy_report(self):
         """Show occupancy report in new window"""
@@ -378,7 +378,7 @@ def show_occupancy_report(self):
             open_report_window(self,"Housing Occupancy Report", report_content)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error generating report: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Error generating report: {str(e)}")
 
 def show_financial_summary(self):
         """Show financial summary in new window"""
@@ -447,7 +447,7 @@ def show_financial_summary(self):
             open_report_window(self,"Housing Financial Summary", report_content)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error generating report: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Error generating report: {str(e)}")
 
 def show_maintenance_summary_gui(self):
         """Show maintenance summary in new window"""
@@ -543,7 +543,7 @@ def show_maintenance_summary_gui(self):
             open_report_window(self,"Maintenance Requests Summary", report_content)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error generating report: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Error generating report: {str(e)}")
 
 def show_room_availability(self):
         """Show room availability report in new window"""
@@ -597,14 +597,14 @@ def show_room_availability(self):
             open_report_window(self,"Room Availability Report", report_content)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error generating report: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Error generating report: {str(e)}")
 
 def show_export_options(self):
         """Show data export options"""
         for widget in self.report_display_frame.winfo_children():
             widget.destroy()
 
-        ttk.Label(self.report_display_frame, text="Data Export Options",
+        ttk.Label(self.report_display_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.data_export_options', default="Data Export Options"),
                  font=('Arial', 14, 'bold')).pack(pady=20)
 
         export_buttons = [
@@ -623,17 +623,17 @@ def show_export_options(self):
 def show_report_template_settings(self):
         """Show report template customization settings"""
         settings_window = tk.Toplevel(self.root)
-        settings_window.title("Report Template Settings")
+        settings_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.windows.report_template_settings', default="Report Template Settings"))
         settings_window.geometry("700x650")
 
         main_frame = ttk.Frame(settings_window, padding="20")
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Report Template Settings",
+        ttk.Label(main_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.report_template_settings', default="Report Template Settings"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Load current settings or create defaults
-        template_file = paths.DATA_DIR / "report_templates.json"
+        template_file = paths.UNIVERSITY_DATA_DIR / "report_templates.json"
         default_settings = {
             'title_font': 'Arial',
             'title_size': 16,
@@ -667,60 +667,60 @@ def show_report_template_settings(self):
         form_frame.pack(fill='both', expand=True)
 
         # Title Font
-        ttk.Label(form_frame, text="Title Font:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.title_font', default="Title Font:")).grid(row=0, column=0, sticky='w', pady=5)
         title_font_var = tk.StringVar(value=current_settings.get('title_font', 'Arial'))
         ttk.Combobox(form_frame, textvariable=title_font_var, width=30,
                     values=['Arial', 'Helvetica', 'Times New Roman', 'Courier', 'Verdana'],
                     state='readonly').grid(row=0, column=1, pady=5, padx=5, sticky='w')
 
         # Title Size
-        ttk.Label(form_frame, text="Title Size:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.title_size', default="Title Size:")).grid(row=1, column=0, sticky='w', pady=5)
         title_size_var = tk.IntVar(value=current_settings.get('title_size', 16))
         ttk.Spinbox(form_frame, from_=10, to=24, textvariable=title_size_var, width=10).grid(row=1, column=1, pady=5, padx=5, sticky='w')
 
         # Content Font
-        ttk.Label(form_frame, text="Content Font:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.content_font', default="Content Font:")).grid(row=2, column=0, sticky='w', pady=5)
         content_font_var = tk.StringVar(value=current_settings.get('content_font', 'Courier'))
         ttk.Combobox(form_frame, textvariable=content_font_var, width=30,
                     values=['Arial', 'Helvetica', 'Times New Roman', 'Courier', 'Verdana'],
                     state='readonly').grid(row=2, column=1, pady=5, padx=5, sticky='w')
 
         # Content Size
-        ttk.Label(form_frame, text="Content Size:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.content_size', default="Content Size:")).grid(row=3, column=0, sticky='w', pady=5)
         content_size_var = tk.IntVar(value=current_settings.get('content_size', 10))
         ttk.Spinbox(form_frame, from_=8, to=14, textvariable=content_size_var, width=10).grid(row=3, column=1, pady=5, padx=5, sticky='w')
 
         # Line Spacing
-        ttk.Label(form_frame, text="Line Spacing:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.line_spacing', default="Line Spacing:")).grid(row=4, column=0, sticky='w', pady=5)
         line_spacing_var = tk.DoubleVar(value=current_settings.get('line_spacing', 1.2))
         ttk.Spinbox(form_frame, from_=1.0, to=2.0, increment=0.1, textvariable=line_spacing_var, width=10).grid(row=4, column=1, pady=5, padx=5, sticky='w')
 
         # Page Width
-        ttk.Label(form_frame, text="Page Width (chars):").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.page_width_chars', default="Page Width (chars):")).grid(row=5, column=0, sticky='w', pady=5)
         page_width_var = tk.IntVar(value=current_settings.get('page_width', 80))
         ttk.Spinbox(form_frame, from_=60, to=120, textvariable=page_width_var, width=10).grid(row=5, column=1, pady=5, padx=5, sticky='w')
 
         # Section Separator
-        ttk.Label(form_frame, text="Section Separator:").grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.section_separator', default="Section Separator:")).grid(row=6, column=0, sticky='w', pady=5)
         section_sep_var = tk.StringVar(value=current_settings.get('section_separator', '='))
         ttk.Combobox(form_frame, textvariable=section_sep_var, width=30,
                     values=['=', '-', '#', '*', '_', '~'],
                     state='readonly').grid(row=6, column=1, pady=5, padx=5, sticky='w')
 
         # Subsection Separator
-        ttk.Label(form_frame, text="Subsection Separator:").grid(row=7, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.subsection_separator', default="Subsection Separator:")).grid(row=7, column=0, sticky='w', pady=5)
         subsection_sep_var = tk.StringVar(value=current_settings.get('subsection_separator', '-'))
         ttk.Combobox(form_frame, textvariable=subsection_sep_var, width=30,
                     values=['=', '-', '#', '*', '_', '~'],
                     state='readonly').grid(row=7, column=1, pady=5, padx=5, sticky='w')
 
         # Currency Symbol
-        ttk.Label(form_frame, text="Currency Symbol:").grid(row=8, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.currency_symbol', default="Currency Symbol:")).grid(row=8, column=0, sticky='w', pady=5)
         currency_var = tk.StringVar(value=current_settings.get('currency_symbol', '£'))
         ttk.Entry(form_frame, textvariable=currency_var, width=10).grid(row=8, column=1, pady=5, padx=5, sticky='w')
 
         # Date Format
-        ttk.Label(form_frame, text="Date Format:").grid(row=9, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.date_format', default="Date Format:")).grid(row=9, column=0, sticky='w', pady=5)
         date_format_var = tk.StringVar(value=current_settings.get('date_format', '%Y-%m-%d'))
         ttk.Combobox(form_frame, textvariable=date_format_var, width=30,
                     values=['%Y-%m-%d', '%m/%d/%Y', '%d/%m/%Y', '%B %d, %Y'],
@@ -728,19 +728,19 @@ def show_report_template_settings(self):
 
         # Include Timestamp
         include_timestamp_var = tk.BooleanVar(value=current_settings.get('include_timestamp', True))
-        ttk.Checkbutton(form_frame, text="Include Timestamp", variable=include_timestamp_var).grid(row=10, column=1, sticky='w', pady=5)
+        ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.include_timestamp', default="Include Timestamp"), variable=include_timestamp_var).grid(row=10, column=1, sticky='w', pady=5)
 
         # Include Generator Name
         include_generator_var = tk.BooleanVar(value=current_settings.get('include_generator_name', True))
-        ttk.Checkbutton(form_frame, text="Include Generator Name", variable=include_generator_var).grid(row=11, column=1, sticky='w', pady=5)
+        ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.include_generator_name', default="Include Generator Name"), variable=include_generator_var).grid(row=11, column=1, sticky='w', pady=5)
 
         # Header Text
-        ttk.Label(form_frame, text="Header Text:").grid(row=12, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.header_text', default="Header Text:")).grid(row=12, column=0, sticky='w', pady=5)
         header_var = tk.StringVar(value=current_settings.get('header_text', 'Housing Management Report'))
         ttk.Entry(form_frame, textvariable=header_var, width=40).grid(row=12, column=1, pady=5, padx=5, sticky='w')
 
         # Footer Text
-        ttk.Label(form_frame, text="Footer Text:").grid(row=13, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.footer_text', default="Footer Text:")).grid(row=13, column=0, sticky='w', pady=5)
         footer_var = tk.StringVar(value=current_settings.get('footer_text', 'Generated by University Housing System'))
         ttk.Entry(form_frame, textvariable=footer_var, width=40).grid(row=13, column=1, pady=5, padx=5, sticky='w')
 
@@ -769,15 +769,15 @@ def show_report_template_settings(self):
                 with open(template_file, 'w') as f:
                     json.dump(new_settings, f, indent=4)
 
-                messagebox.showinfo("Success", "Report template settings saved successfully!", parent=settings_window)
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.report_template_settings_saved_successfully', default="Report template settings saved successfully!"), parent=settings_window)
                 settings_window.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save settings: {str(e)}", parent=settings_window)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Failed to save settings: {str(e)}", parent=settings_window)
 
         def reset_to_defaults():
-            result = messagebox.askyesno("Reset to Defaults",
-                                         "Reset all template settings to default values?",
+            result = messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.reset_to_defaults', default="Reset to Defaults"),
+                                         _t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.reset_all_template_settings_to_default_values', default="Reset all template settings to default values?"),
                                          parent=settings_window)
             if result:
                 try:
@@ -785,23 +785,23 @@ def show_report_template_settings(self):
                     with open(template_file, 'w') as f:
                         json.dump(default_settings, f, indent=4)
 
-                    messagebox.showinfo("Success", "Settings reset to defaults. Please reopen this window to see changes.",
+                    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.settings_reset_to_defaults_please_reopen_this_window_to_see_chan', default="Settings reset to defaults. Please reopen this window to see changes."),
                                       parent=settings_window)
                     settings_window.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to reset settings: {str(e)}", parent=settings_window)
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.dialogs.error', default="Error"), f"Failed to reset settings: {str(e)}", parent=settings_window)
 
         # Button frame
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="Save Settings", width=15, command=save_settings).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Reset to Defaults", width=18, command=reset_to_defaults).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", width=15, command=settings_window.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.save_settings', default="Save Settings"), width=15, command=save_settings).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.reset_to_defaults', default="Reset to Defaults"), width=18, command=reset_to_defaults).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.buttons.cancel', default="Cancel"), width=15, command=settings_window.destroy).pack(side='left', padx=5)
 
         # Preview section
-        preview_frame = ttk.LabelFrame(main_frame, text="Preview", padding="10")
+        preview_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.report_manager.labels.preview', default="Preview"), padding="10")
         preview_frame.pack(fill='x', pady=(10, 0))
 
         preview_text = f"""Font: {content_font_var.get()} {content_size_var.get()}pt
@@ -814,7 +814,7 @@ Footer: {footer_var.get()}"""
 
 def get_report_template_settings(self):
         """Load report template settings from file"""
-        template_file = paths.DATA_DIR / "report_templates.json"
+        template_file = paths.UNIVERSITY_DATA_DIR / "report_templates.json"
         default_settings = {
             'title_font': 'Arial',
             'title_size': 16,

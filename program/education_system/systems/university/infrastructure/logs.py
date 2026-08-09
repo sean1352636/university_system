@@ -34,7 +34,7 @@ def _get_state():
                 pass
     return state
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 try:
     from education_system.systems.university.infrastructure.logging.log_config import (
@@ -80,7 +80,7 @@ def get_log_file(filename: str) -> str:
             print(f"Warning: project_get_log_file hook failed: {e}", file=sys.stderr)
             # Fall through to default behavior
 
-    log_dir = paths.LOG_DIR
+    log_dir = paths.UNIVERSITY_LOG_DIR
     os.makedirs(log_dir, exist_ok=True)
     return os.path.join(log_dir, filename)
 
@@ -97,8 +97,8 @@ def configure_logging() -> None:
             # Fall through to fallback configuration
 
     # Use centralized app.log for all logging
-    log_file = project_get_log_file("app.log") if project_get_log_file else os.path.join(paths.LOG_DIR, "app.log")
-    os.makedirs(paths.LOG_DIR, exist_ok=True)
+    log_file = project_get_log_file("app.log") if project_get_log_file else os.path.join(paths.UNIVERSITY_LOG_DIR, "app.log")
+    os.makedirs(paths.UNIVERSITY_LOG_DIR, exist_ok=True)
 
     logging.basicConfig(
         level=logging.INFO,

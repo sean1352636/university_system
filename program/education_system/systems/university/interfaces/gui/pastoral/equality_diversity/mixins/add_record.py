@@ -1,6 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import json
 import os
@@ -89,7 +91,7 @@ class _Add_recordMixin:
         ref = self.form_vars["ref_code"].get().strip()
         ptype = self.form_vars["person_type"].get().strip()
         if not ref or not ptype:
-            messagebox.showerror("Validation", "Reference code + person type required.")
+            messagebox.showerror(_t('gui.pastoral.equality_diversity.mixins.add_record.dialogs.validation', default="Validation"), _t('gui.pastoral.equality_diversity.mixins.add_record.dialogs.reference_code_person_type_required', default="Reference code + person type required."))
             return
         # feature 3 duplicate detection
         conn = get_connection()
@@ -101,7 +103,7 @@ class _Add_recordMixin:
             conn.close()
         if dup:
             if not messagebox.askyesno(
-                "Duplicate",
+                _t('gui.pastoral.equality_diversity.mixins.add_record.dialogs.duplicate', default="Duplicate"),
                 f"Ref '{ref}' already exists (id {dup[0]}). "
                 "Open merge dialog?"):
                 return
@@ -142,7 +144,7 @@ class _Add_recordMixin:
                            {"ref_code": ref})
         hit = integrations.sync_link(new_id, ref)   # feature 10/29
         messagebox.showinfo(
-            "Saved",
+            _t('gui.pastoral.equality_diversity.mixins.add_record.dialogs.saved', default="Saved"),
             "Record created." + (f"\nLinked to {hit['kind']} {hit.get('name','')}."
                                   if hit else ""))
         for v in self.form_vars.values():

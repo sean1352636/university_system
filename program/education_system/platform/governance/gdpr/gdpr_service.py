@@ -1,18 +1,35 @@
 """GDPR Data Subject Request service.
 
-Searches and manages student/pupil data across all 4 education system
-databases for GDPR compliance: Subject Access Requests, data export,
-anonymisation, and data retention reporting.
+Searches and manages learner data across every education system database
+for GDPR compliance: Subject Access Requests, data export, anonymisation,
+and data retention reporting.
+
+The system list comes from ``paths.SYSTEM_DB_PATHS``, so a system that
+joins the registry is covered here without further change — which matters,
+because a system quietly missing from a SAR or an erasure is a compliance
+failure rather than a cosmetic gap.
 """
 
+import logging
 import os
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 from textwrap import dedent
 
-from education_system.platform.kernel.database.paths import SYSTEM_DB_PATHS, AUTH_DB, SYSTEM_LABELS, SYSTEM_ORDER
+from education_system.paths import (
+    SYSTEM_DB_PATHS,
+    PLATFORM_AUTH_DB,
+    SYSTEM_LABELS,
+    SYSTEM_ORDER,
+    learner_table,
+)
 from education_system.platform.kernel.database.sql_safety import validate_identifier  # nosec B608
+
+# Two audit-failure handlers below log through this. It was previously
+# undefined, so the moment an erasure or transfer audit failed, the except
+# block raised NameError over the top of the real error.
+logger = logging.getLogger(__name__)
 
 
 def _default_db_paths():
@@ -20,7 +37,7 @@ def _default_db_paths():
 
 
 def _auth_db_path():
-    return AUTH_DB
+    return PLATFORM_AUTH_DB
 
 
 def _connect(path):
@@ -43,6 +60,35 @@ def _get_columns(conn, table_name):
     validate_identifier(table_name)
     rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
     return {r[1] for r in rows}
+
+
+def _learner_table(system):
+    """The table holding ``system``'s learners.
+
+    Was ``"pupils" if system == "primary" else "students"``, which assumed
+    every non-primary system uses a ``students`` table. Apprenticeships
+    does not — it keeps ``apprentices`` — and under the old rule its
+    learners were silently absent from every search, export and erasure
+    here, which for a GDPR service is a compliance failure rather than a
+    missing feature. The registry now answers this in one place.
+    """
+    table, _id_col = learner_table(system)
+    return table
+
+
+def _learner_id_col(system, columns):
+    """The primary-key column for ``system``'s learner table.
+
+    ``columns`` is what the table actually has, so a database that
+    predates a rename still resolves rather than raising.
+    """
+    _table, id_col = learner_table(system)
+    if id_col in columns:
+        return id_col
+    for fallback in ("student_id", "pupil_id", "apprentice_id", "id"):
+        if fallback in columns:
+            return fallback
+    return "id"
 
 
 def _name_search_expr(columns):
@@ -88,14 +134,12 @@ class GDPRService:
             if not conn:
                 continue
             try:
-                table = "pupils" if system == "primary" else "students"
+                table = _learner_table(system)
                 if not _table_exists(conn, table):
                     continue
                 cols = _get_columns(conn, table)
                 name_expr = _name_search_expr(cols)
-                id_col = "pupil_id" if system == "primary" and "pupil_id" in cols else (
-                    "student_id" if "student_id" in cols else "id"
-                )
+                id_col = _learner_id_col(system, cols)
 
                 conditions = []
                 params = []
@@ -174,7 +218,7 @@ class GDPRService:
                 sys_data = {"personal_info": {}, "grades": [], "attendance": [],
                             "other_records": []}
 
-                table = "pupils" if system == "primary" else "students"
+                table = _learner_table(system)
                 if not _table_exists(conn, table):
                     continue
                 cols = _get_columns(conn, table)
@@ -193,9 +237,7 @@ class GDPRService:
                 sys_data["personal_info"] = dict(row)
 
                 rk = row.keys()
-                id_col = "pupil_id" if system == "primary" and "pupil_id" in rk else (
-                    "student_id" if "student_id" in rk else "id"
-                )
+                id_col = _learner_id_col(system, rk)
                 sid = row[id_col] if id_col in rk else row["id"] if "id" in rk else None
 
                 # Grades
@@ -386,7 +428,7 @@ class GDPRService:
             raise ValueError(f"Database not found for system: {system}")
 
         try:
-            table = "pupils" if system == "primary" else "students"
+            table = _learner_table(system)
             if not _table_exists(conn, table):
                 raise ValueError(f"Table '{table}' not found in {system} database")
 
@@ -440,9 +482,44 @@ class GDPRService:
             sql = f"UPDATE {table} SET {', '.join(updates)} WHERE rowid IN ({placeholders})"
             conn.execute(sql, rowids)
             conn.commit()
+
+            # A GDPR erasure MUST leave an audit trail (who erased whose data,
+            # when, how many records). The redaction has committed, so a failed
+            # audit is alerted rather than rolled back — but never silently
+            # dropped.
+            self._audit_erasure(student_name, system, len(rowids))
             return len(rowids)
         finally:
             conn.close()
+
+    @staticmethod
+    def _audit_erasure(student_name: str, system: str, record_count: int) -> None:
+        try:
+            from education_system.platform.governance.audit.audit_service import AuditService
+
+            AuditService().log(
+                action="gdpr_erasure",
+                system_key=system,
+                resource_type="student_data",
+                details={
+                    "student_name": student_name,
+                    "records_anonymised": record_count,
+                },
+                severity="warning",
+            )
+        except Exception as exc:
+            try:
+                from education_system.platform.governance.security.fail_closed import (
+                    alert_security_failure,
+                )
+                alert_security_failure(
+                    "gdpr.erasure_audit",
+                    f"erasure of {student_name!r} in {system} was not audited",
+                    severity="high",
+                    exc=exc,
+                )
+            except Exception:
+                logger.error("GDPR erasure audit failed and alerting unavailable", exc_info=True)
 
     # ------------------------------------------------------------------
     # Data Retention Report
@@ -470,14 +547,12 @@ class GDPRService:
             if not conn:
                 continue
             try:
-                table = "pupils" if system == "primary" else "students"
+                table = _learner_table(system)
                 if not _table_exists(conn, table):
                     continue
                 cols = _get_columns(conn, table)
                 name_expr = _name_search_expr(cols)
-                id_col = "pupil_id" if system == "primary" and "pupil_id" in cols else (
-                    "student_id" if "student_id" in cols else "id"
-                )
+                id_col = _learner_id_col(system, cols)
 
                 # Find a date column to check
                 date_col = None
@@ -546,7 +621,7 @@ class GDPRService:
             raise ValueError(f"Database not found for system: {system}")
 
         try:
-            table = "pupils" if system == "primary" else "students"
+            table = _learner_table(system)
             if not _table_exists(conn, table):
                 raise ValueError(f"Table '{table}' not found in {system}")
 
@@ -601,7 +676,7 @@ class GDPRService:
             raise ValueError(f"Database not found for system: {system}")
 
         try:
-            table = "pupils" if system == "primary" else "students"
+            table = _learner_table(system)
             if not _table_exists(conn, table):
                 raise ValueError(f"Table '{table}' not found in {system}")
 
@@ -648,7 +723,7 @@ class GDPRService:
             raise ValueError(f"Database not found for system: {system}")
 
         try:
-            table = "pupils" if system == "primary" else "students"
+            table = _learner_table(system)
             cols = _get_columns(conn, table)
             name_expr = _name_search_expr(cols)
             if not name_expr:
@@ -788,7 +863,10 @@ class GDPRService:
         if not source_data:
             raise ValueError(f"No data found for '{student_name}' in {source_system}")
 
-        # Log the transfer in audit
+        # Log the transfer in audit. A consent-gated transfer of personal data
+        # that is not recorded is a compliance gap: the audit is mandatory, so
+        # if it cannot be written we alert and refuse to report success rather
+        # than moving the data silently.
         try:
             from education_system.platform.governance.audit.audit_service import AuditService
             audit = AuditService()
@@ -805,8 +883,22 @@ class GDPRService:
                 },
                 severity="info",
             )
-        except Exception:
-            pass
+        except Exception as exc:
+            try:
+                from education_system.platform.governance.security.fail_closed import (
+                    alert_security_failure,
+                )
+                alert_security_failure(
+                    "gdpr.transfer_audit",
+                    f"cross-system transfer audit failed for {student_name!r}",
+                    severity="high",
+                    exc=exc,
+                )
+            except Exception:
+                logger.error("Cross-system transfer audit failed and alerting unavailable", exc_info=True)
+            raise RuntimeError(
+                "Cross-system data transfer could not be audited; refusing to complete it."
+            ) from exc
 
         return {
             "transferred": True,

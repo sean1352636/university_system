@@ -1,6 +1,6 @@
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.infrastructure.database.db import ensure_parent_dir
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
 import os
@@ -22,7 +22,7 @@ logger = configure_logging(name=__name__)
 class PlagiarismChecker:
     """Main plagiarism detection and document management system"""
 
-    def __init__(self, db_path=str(DEFAULT_DB_PATH)):
+    def __init__(self, db_path=str(UNIVERSITY_DEFAULT_DB_PATH)):
         self.db_path = db_path
         ensure_parent_dir(self.db_path)
         self.init_db()

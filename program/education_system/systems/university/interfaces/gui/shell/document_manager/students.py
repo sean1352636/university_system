@@ -31,7 +31,7 @@ class StudentsManager:
         """View selected student's profile"""
         selection = self.gui.students_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a student to view profile.")
+            messagebox.showwarning(_t('gui.shell.document_manager.students.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.students.dialogs.please_select_a_student_to_view_profile', default="Please select a student to view profile."))
             return
 
         item = self.gui.students_tree.item(selection[0])
@@ -53,22 +53,22 @@ class StudentsManager:
             if student_data:
                 self.show_student_profile_window(student_data, doc_count)
             else:
-                messagebox.showerror("Error", "Student not found.")
+                messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), _t('gui.shell.document_manager.students.dialogs.student_not_found_variant_2', default="Student not found."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load student profile: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), f"Failed to load student profile: {str(e)}")
 
     def show_student_profile_window(self, student_data, doc_count):
         """Show student profile in new window"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Student Profile")
+        dialog.title(_t('gui.shell.document_manager.students.windows.student_profile', default="Student Profile"))
         dialog.geometry("700x550")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Student Profile", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.students.labels.student_profile', default="Student Profile"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         profile_text = f"""Student Information
 ==================
@@ -90,13 +90,13 @@ Total Documents: {doc_count}
         text_widget.config(state='disabled')
         text_widget.pack(fill='both', expand=True)
 
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.shell.document_manager.students.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
     def view_student_documents(self):
         """View documents for selected student"""
         selection = self.gui.students_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a student to view documents.")
+            messagebox.showwarning(_t('gui.shell.document_manager.students.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.students.dialogs.please_select_a_student_to_view_documents', default="Please select a student to view documents."))
             return
 
         item = self.gui.students_tree.item(selection[0])
@@ -151,13 +151,13 @@ Total Documents: {doc_count}
         except Exception as e:
             ttk.Label(main_frame, text=f"Error loading documents: {e}").pack()
 
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.shell.document_manager.students.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
     def upload_for_student(self):
         """Upload document for selected student"""
         selection = self.gui.students_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a student first.")
+            messagebox.showwarning(_t('gui.shell.document_manager.students.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.students.dialogs.please_select_a_student_first', default="Please select a student first."))
             return
 
         item = self.gui.students_tree.item(selection[0])
@@ -174,7 +174,7 @@ Total Documents: {doc_count}
         """Send notification to selected student"""
         selection = self.gui.students_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a student to send notification to.")
+            messagebox.showwarning(_t('gui.shell.document_manager.students.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.students.dialogs.please_select_a_student_to_send_notification_to', default="Please select a student to send notification to."))
             return
 
         item = self.gui.students_tree.item(selection[0])
@@ -182,7 +182,7 @@ Total Documents: {doc_count}
         student_name = item['values'][1]
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Send Student Notification")
+        dialog.title(_t('gui.shell.document_manager.students.windows.send_student_notification', default="Send Student Notification"))
         dialog.geometry("600x500")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -190,14 +190,14 @@ Total Documents: {doc_count}
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Send notification to:", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.students.labels.send_notification_to', default="Send notification to:"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
         ttk.Label(main_frame, text=f"Student: {student_name} (ID: {student_id})").pack(anchor='w')
 
-        ttk.Label(main_frame, text="Subject:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.students.labels.subject', default="Subject:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
         subject_entry = tk.Entry(main_frame, width=40)
         subject_entry.pack(fill='x', pady=5)
 
-        ttk.Label(main_frame, text="Message:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.students.labels.message', default="Message:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
         message_text = tk.Text(main_frame, height=8, width=40)
         message_text.pack(fill='x', pady=5)
 
@@ -206,7 +206,7 @@ Total Documents: {doc_count}
             message = message_text.get('1.0', 'end-1c')
 
             if not subject or not message:
-                messagebox.showerror("Error", "Please enter both subject and message")
+                messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), _t('gui.shell.document_manager.students.dialogs.please_enter_both_subject_and_message', default="Please enter both subject and message"))
                 return
 
             try:
@@ -221,23 +221,23 @@ Total Documents: {doc_count}
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Notification sent successfully!")
+                messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.success', default="Success"), _t('gui.shell.document_manager.students.dialogs.notification_sent_successfully', default="Notification sent successfully!"))
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to send notification: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), f"Failed to send notification: {str(e)}")
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
 
-        ttk.Button(button_frame, text="Send", command=send_notification).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.students.buttons.send', default="Send"), command=send_notification).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.students.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def generate_student_report(self):
         """Generate report for selected student"""
         selection = self.gui.students_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a student to generate report for.")
+            messagebox.showwarning(_t('gui.shell.document_manager.students.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.students.dialogs.please_select_a_student_to_generate_report_for', default="Please select a student to generate report for."))
             return
 
         item = self.gui.students_tree.item(selection[0])
@@ -263,7 +263,7 @@ Total Documents: {doc_count}
             conn.close()
 
             if not student_data:
-                messagebox.showerror("Error", "Student not found")
+                messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), _t('gui.shell.document_manager.students.dialogs.student_not_found', default="Student not found"))
                 return
 
             # Create report window
@@ -302,10 +302,10 @@ Total Documents: {doc_count}
             text_widget.config(state='disabled')
             text_widget.pack(fill='both', expand=True)
 
-            ttk.Button(report_frame, text="Close", command=report_window.destroy).pack(pady=10)
+            ttk.Button(report_frame, text=_t('gui.shell.document_manager.students.buttons.close', default="Close"), command=report_window.destroy).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
     def edit_student(self):
         """Redirect to centralized student management"""
@@ -322,19 +322,19 @@ Total Documents: {doc_count}
     def show_student_management_redirect(self):
         """Redirect to centralized student management"""
         messagebox.showinfo(
-            "Student Management",
-            "Student creation, editing, and deletion have been centralized.\n\n"
+            _t('gui.shell.document_manager.students.dialogs.student_management', default="Student Management"),
+            _t('gui.shell.document_manager.students.dialogs.student_creation_editing_and_deletion_have_been_centralized_plea', default="Student creation, editing, and deletion have been centralized.\n\n"
             "Please use the main GUI (Student Management menu) or CLI to:\n"
             "• Create new students\n"
             "• Edit student information\n"
             "• Delete student records\n\n"
-            "This ensures consistent student data across all modules."
+            "This ensures consistent student data across all modules.")
         )
 
     def student_report_dialog(self):
         """Student report generation dialog"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Generate Student Report")
+        dialog.title(_t('gui.shell.document_manager.students.windows.generate_student_report', default="Generate Student Report"))
         dialog.geometry("600x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -342,14 +342,14 @@ Total Documents: {doc_count}
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Student Report Options", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.students.labels.student_report_options', default="Student Report Options"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
-        report_type = tk.StringVar(value="all_students")
+        report_type = tk.StringVar(value=_t('gui.shell.document_manager.students.values.all_students', default="all_students"))
 
-        ttk.Radiobutton(main_frame, text="All Students Summary", variable=report_type, value="all_students").pack(anchor='w', pady=5)
-        ttk.Radiobutton(main_frame, text="Students by Course", variable=report_type, value="by_course").pack(anchor='w', pady=5)
-        ttk.Radiobutton(main_frame, text="Non-Compliant Students", variable=report_type, value="non_compliant").pack(anchor='w', pady=5)
-        ttk.Radiobutton(main_frame, text="Students by Year", variable=report_type, value="by_year").pack(anchor='w', pady=5)
+        ttk.Radiobutton(main_frame, text=_t('gui.shell.document_manager.students.buttons.all_students_summary', default="All Students Summary"), variable=report_type, value="all_students").pack(anchor='w', pady=5)
+        ttk.Radiobutton(main_frame, text=_t('gui.shell.document_manager.students.buttons.students_by_course', default="Students by Course"), variable=report_type, value="by_course").pack(anchor='w', pady=5)
+        ttk.Radiobutton(main_frame, text=_t('gui.shell.document_manager.students.buttons.non_compliant_students', default="Non-Compliant Students"), variable=report_type, value="non_compliant").pack(anchor='w', pady=5)
+        ttk.Radiobutton(main_frame, text=_t('gui.shell.document_manager.students.buttons.students_by_year', default="Students by Year"), variable=report_type, value="by_year").pack(anchor='w', pady=5)
 
         def generate_report():
             report_option = report_type.get()
@@ -367,8 +367,8 @@ Total Documents: {doc_count}
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
 
-        ttk.Button(button_frame, text="Generate", command=generate_report).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.students.buttons.generate', default="Generate"), command=generate_report).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.students.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def generate_all_students_report(self):
         """Generate report for all students"""
@@ -394,7 +394,7 @@ Total Documents: {doc_count}
             self.show_students_report(students, "All Students Report")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
     def show_students_report(self, data, title):
         """Show students report in new window"""
@@ -431,16 +431,16 @@ Total Documents: {doc_count}
         button_frame = ttk.Frame(report_frame)
         button_frame.pack(fill='x', pady=10)
 
-        ttk.Button(button_frame, text="\U0001f4e7 Send to Admin",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.students.buttons.send_to_admin', default="\U0001f4e7 Send to Admin"),
                   command=lambda: self.send_report_to_admin(title, columns, data)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="\U0001f4c4 Export CSV",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.students.buttons.export_csv', default="\U0001f4c4 Export CSV"),
                   command=lambda: self.export_report_to_csv(title, columns, data)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.students.buttons.close', default="Close"), command=report_window.destroy).pack(side='right', padx=5)
 
     def send_report_to_admin(self, title, columns, data):
         """Send a report to admin via email"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Send Report to Admin")
+        dialog.title(_t('gui.shell.document_manager.students.windows.send_report_to_admin', default="Send Report to Admin"))
         dialog.geometry("500x400")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -448,7 +448,7 @@ Total Documents: {doc_count}
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Send Report to Admin", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.students.labels.send_report_to_admin', default="Send Report to Admin"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Get admin email from database
         admin_email = "admin@school.edu"
@@ -467,29 +467,29 @@ Total Documents: {doc_count}
         fields_frame = ttk.Frame(main_frame)
         fields_frame.pack(fill='x', pady=10)
 
-        ttk.Label(fields_frame, text="To (Admin Email):").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.shell.document_manager.students.labels.to_admin_email', default="To (Admin Email):")).grid(row=0, column=0, sticky='w', pady=5)
         to_entry = ttk.Entry(fields_frame, width=40)
         to_entry.insert(0, admin_email)
         to_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(fields_frame, text="Subject:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.shell.document_manager.students.labels.subject', default="Subject:")).grid(row=1, column=0, sticky='w', pady=5)
         subject_entry = ttk.Entry(fields_frame, width=40)
         subject_entry.insert(0, f"Document Manager Report: {title}")
         subject_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Label(fields_frame, text="Additional Notes:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(fields_frame, text=_t('gui.shell.document_manager.students.labels.additional_notes', default="Additional Notes:")).grid(row=2, column=0, sticky='nw', pady=5)
         notes_text = tk.Text(fields_frame, height=5, width=40)
         notes_text.grid(row=2, column=1, padx=5, pady=5)
 
         # Options
-        options_frame = ttk.LabelFrame(main_frame, text="Options", padding=10)
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.students.labels.options', default="Options"), padding=10)
         options_frame.pack(fill='x', pady=10)
 
         attach_csv = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Attach report as CSV file", variable=attach_csv).pack(anchor='w')
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.students.buttons.attach_report_as_csv_file', default="Attach report as CSV file"), variable=attach_csv).pack(anchor='w')
 
         include_summary = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Include summary in email body", variable=include_summary).pack(anchor='w')
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.students.buttons.include_summary_in_email_body', default="Include summary in email body"), variable=include_summary).pack(anchor='w')
 
         def send_email():
             recipient = to_entry.get().strip()
@@ -497,7 +497,7 @@ Total Documents: {doc_count}
             notes = notes_text.get('1.0', 'end').strip()
 
             if not recipient:
-                messagebox.showwarning("Warning", "Please enter admin email address")
+                messagebox.showwarning(_t('gui.shell.document_manager.students.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.students.dialogs.please_enter_admin_email_address', default="Please enter admin email address"))
                 return
 
             try:
@@ -558,7 +558,7 @@ Total Documents: {doc_count}
                         os.remove(attachment_path)
 
                     if result:
-                        messagebox.showinfo("Success", f"Report sent successfully to {recipient}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.success', default="Success"), f"Report sent successfully to {recipient}")
                         self.gui.log_event('send', 'email_report', details=f'Sent {title} to {recipient}')
                         dialog.destroy()
                     else:
@@ -575,20 +575,20 @@ Total Documents: {doc_count}
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo("Queued",
+                    messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.queued', default="Queued"),
                                       f"Report queued for sending to {recipient}.\n"
                                       "Email will be sent when the email scheduler runs.")
                     self.gui.log_event('queue', 'email_report', details=f'Queued {title} for {recipient}')
                     dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to send report: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), f"Failed to send report: {e}")
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=15)
 
-        ttk.Button(button_frame, text="\U0001f4e7 Send Email", command=send_email).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.students.buttons.send_email', default="\U0001f4e7 Send Email"), command=send_email).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.students.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
     def export_report_to_csv(self, title, columns, data):
         """Export report data to CSV file"""
@@ -616,11 +616,11 @@ Total Documents: {doc_count}
                     else:
                         writer.writerow(row)
 
-            messagebox.showinfo("Success", f"Report exported to:\n{file_path}")
+            messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.success', default="Success"), f"Report exported to:\n{file_path}")
             self.gui.log_event('export', 'report_csv', details=f'Exported {title}')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export report: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.error', default="Error"), f"Failed to export report: {e}")
 
     def show_students(self):
         """Show students management interface"""
@@ -634,21 +634,21 @@ Total Documents: {doc_count}
         title_frame = ttk.Frame(students_frame)
         title_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(title_frame, text="Student Management", font=('Arial', 18, 'bold')).pack(side='left')
+        ttk.Label(title_frame, text=_t('gui.shell.document_manager.students.labels.student_management', default="Student Management"), font=('Arial', 18, 'bold')).pack(side='left')
 
         # Control buttons
         controls_frame = ttk.Frame(title_frame)
         controls_frame.pack(side='right')
 
-        ttk.Button(controls_frame, text="\u2795 Add Student", command=self.add_student_dialog).pack(side='left', padx=2)
-        ttk.Button(controls_frame, text="\U0001f4ca Student Report", command=self.student_report_dialog).pack(side='left', padx=2)
-        ttk.Button(controls_frame, text="\U0001f504 Refresh", command=self.refresh_students).pack(side='left', padx=2)
+        ttk.Button(controls_frame, text=_t('gui.shell.document_manager.students.buttons.add_student', default="\u2795 Add Student"), command=self.add_student_dialog).pack(side='left', padx=2)
+        ttk.Button(controls_frame, text=_t('gui.shell.document_manager.students.buttons.student_report', default="\U0001f4ca Student Report"), command=self.student_report_dialog).pack(side='left', padx=2)
+        ttk.Button(controls_frame, text=_t('gui.shell.document_manager.students.buttons.refresh', default="\U0001f504 Refresh"), command=self.refresh_students).pack(side='left', padx=2)
 
         # Search frame
         search_frame = ttk.Frame(students_frame)
         search_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
+        ttk.Label(search_frame, text=_t('gui.shell.document_manager.students.labels.search', default="Search:")).pack(side='left', padx=5)
         self.gui.student_search_var = tk.StringVar()
         self.gui.student_search_entry = tk.Entry(search_frame, textvariable=self.gui.student_search_var, width=30)
         self.gui.student_search_entry.pack(side='left', padx=5)
@@ -699,15 +699,15 @@ Total Documents: {doc_count}
     def create_students_context_menu(self):
         """Create context menu for students table"""
         self.gui.students_context_menu = tk.Menu(self.root, tearoff=0)
-        self.gui.students_context_menu.add_command(label="View Profile", command=self.view_student_profile)
-        self.gui.students_context_menu.add_command(label="View Documents", command=self.view_student_documents)
-        self.gui.students_context_menu.add_command(label="Upload Document", command=self.upload_for_student)
+        self.gui.students_context_menu.add_command(label=_t('gui.shell.document_manager.students.menus.view_profile', default="View Profile"), command=self.view_student_profile)
+        self.gui.students_context_menu.add_command(label=_t('gui.shell.document_manager.students.menus.view_documents', default="View Documents"), command=self.view_student_documents)
+        self.gui.students_context_menu.add_command(label=_t('gui.shell.document_manager.students.menus.upload_document', default="Upload Document"), command=self.upload_for_student)
         self.gui.students_context_menu.add_separator()
-        self.gui.students_context_menu.add_command(label="Send Notification", command=self.send_student_notification)
-        self.gui.students_context_menu.add_command(label="Generate Report", command=self.generate_student_report)
+        self.gui.students_context_menu.add_command(label=_t('gui.shell.document_manager.students.menus.send_notification', default="Send Notification"), command=self.send_student_notification)
+        self.gui.students_context_menu.add_command(label=_t('gui.shell.document_manager.students.menus.generate_report', default="Generate Report"), command=self.generate_student_report)
         self.gui.students_context_menu.add_separator()
-        self.gui.students_context_menu.add_command(label="Edit Student", command=self.edit_student)
-        self.gui.students_context_menu.add_command(label="Deactivate", command=self.deactivate_student)
+        self.gui.students_context_menu.add_command(label=_t('gui.shell.document_manager.students.menus.edit_student', default="Edit Student"), command=self.edit_student)
+        self.gui.students_context_menu.add_command(label=_t('gui.shell.document_manager.students.menus.deactivate', default="Deactivate"), command=self.deactivate_student)
 
         # Bind right-click
         self.gui.students_tree.bind('<Button-3>', self.show_students_context_menu)
@@ -722,10 +722,10 @@ Total Documents: {doc_count}
     def search_student_for_upload(self):
         """Search for student in upload dialog"""
         if hasattr(self.gui, 'upload_student_id'):
-            search_term = simpledialog.askstring("Search Student", "Enter student ID or name:")
+            search_term = simpledialog.askstring(_t('gui.shell.document_manager.students.dialogs.search_student', default="Search Student"), _t('gui.shell.document_manager.students.dialogs.enter_student_id_or_name', default="Enter student ID or name:"))
             if search_term:
                 # Here you would implement actual search logic
-                messagebox.showinfo("Search", f"Searching for: {search_term}")
+                messagebox.showinfo(_t('gui.shell.document_manager.students.dialogs.search', default="Search"), f"Searching for: {search_term}")
 
     def get_students_list(self):
         """Get list of students"""
@@ -776,7 +776,7 @@ Total Documents: {doc_count}
                 self.gui.students_tree.insert('', 'end', values=tuple(student))
 
         except Exception as e:
-            messagebox.showerror("Data Error", f"Failed to load students: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.students.dialogs.data_error', default="Data Error"), f"Failed to load students: {str(e)}")
 
     def on_student_double_click(self, event):
         """Handle double-click on student"""

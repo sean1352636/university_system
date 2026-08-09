@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Case management · University portal</title><link rel="stylesheet" href="/portal/operations/assets/css/journey.css"></head><body data-workspace="cases">
+<a class="skip-link" href="#main">Skip to main content</a><header class="site-header"><a class="brand" href="/portal/operations">Institutional operations</a><p>Case management</p></header>
+<div class="layout"><nav aria-label="Operations"><ol class="steps"><li><a href="/portal/operations">Overview</a></li><li><a aria-current="page" href="/portal/operations/cases">Cases</a></li><li><a href="/portal/operations/identity">Identity</a></li><li><a href="/portal/operations/connectors">Connectors</a></li><li><a href="/portal/operations/timetabling">Timetabling</a></li><li><a href="/portal/operations/pgr">PGR</a></li><li><a href="/portal/operations/programmes">Programmes</a></li></ol></nav>
+<main id="main" tabindex="-1"><section><h1>Shared case management</h1><p>Open and track a controlled case using one institutional workflow.</p><p id="page-message" class="message" role="status" tabindex="-1" hidden></p>
+<form data-api-form><div class="grid">
+<label for="case-type">Case type<select id="case-type" required><option value="">Choose</option><option>Appeal</option><option>Complaint</option><option>Misconduct</option><option>Fitness to practise</option><option>Mitigating circumstances</option></select></label>
+<label for="case-student">Student ID<input id="case-student" required autocomplete="off"></label></div>
+<label for="case-summary">Summary<textarea id="case-summary" minlength="20" rows="5" required></textarea></label>
+<label for="case-owner">Owner ID<input id="case-owner" autocomplete="off"></label><button type="submit">Validate case draft</button></form></section>
+<section><h2>Active cases</h2><div class="table-scroll" tabindex="0"><table><caption>Cases requiring attention</caption><thead><tr><th>Case</th><th>Type</th><th>Stage</th><th>Owner</th></tr></thead><tbody id="case-rows"><tr><td colspan="4">Loading cases…</td></tr></tbody></table></div></section>
+</main></div><script src="/portal/operations/assets/js/institutional_pages.js"></script></body></html>

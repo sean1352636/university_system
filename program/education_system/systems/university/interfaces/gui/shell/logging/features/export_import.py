@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import json
@@ -29,7 +31,7 @@ class ExportImportMixin:
         format_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(format_frame, text=_t("log_management.export_options.format")).pack(side=tk.LEFT)
-        format_var = tk.StringVar(value="json")
+        format_var = tk.StringVar(value=_t('gui.shell.logging.features.export_import.values.json', default="json"))
         format_combo = ttk.Combobox(format_frame, textvariable=format_var,
                                    values=["json", "csv", "excel"], state="readonly")
         format_combo.pack(side=tk.LEFT, padx=5)
@@ -172,7 +174,7 @@ class ExportImportMixin:
         format_frame.pack(pady=10)
 
         ttk.Label(format_frame, text=_t("log_management.bulk_export.export_format")).grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        format_var = tk.StringVar(value="json")
+        format_var = tk.StringVar(value=_t('gui.shell.logging.features.export_import.values.json', default="json"))
         format_combo = ttk.Combobox(format_frame, textvariable=format_var, values=["json", "csv", "excel"])
         format_combo.grid(row=0, column=1, padx=5, pady=5)
 
@@ -229,7 +231,7 @@ class ExportImportMixin:
         template_frame = ttk.LabelFrame(format_window, text=_t("log_management.custom_format_export.templates"))
         template_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        template_var = tk.StringVar(value="detailed_csv")
+        template_var = tk.StringVar(value=_t('gui.shell.logging.features.export_import.values.detailed_csv', default="detailed_csv"))
         templates = [
             ("Detailed CSV", "detailed_csv"),
             ("Summary Report", "summary_report"),
@@ -241,7 +243,7 @@ class ExportImportMixin:
             ttk.Radiobutton(template_frame, text=text, variable=template_var, value=value).pack(anchor="w", padx=10, pady=2)
 
         # Custom fields selection
-        fields_frame = ttk.LabelFrame(format_window, text="Include Fields")
+        fields_frame = ttk.LabelFrame(format_window, text=_t('gui.shell.logging.features.export_import.labels.include_fields', default="Include Fields"))
         fields_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Create checkboxes for fields
@@ -255,7 +257,7 @@ class ExportImportMixin:
                 row=i//3, column=i%3, sticky="w", padx=10, pady=2)
 
         # Preview area
-        preview_frame = ttk.LabelFrame(format_window, text="Format Preview")
+        preview_frame = ttk.LabelFrame(format_window, text=_t('gui.shell.logging.features.export_import.labels.format_preview', default="Format Preview"))
         preview_frame.pack(fill=tk.X, padx=10, pady=5)
 
         preview_text = tk.Text(preview_frame, height=6, width=70)
@@ -299,7 +301,7 @@ class ExportImportMixin:
                 results = log_manager.db.search_logs(filters, limit=10000)
 
                 if not results:
-                    messagebox.showwarning("No Data", "No logs found for export")
+                    messagebox.showwarning(_t('gui.shell.logging.features.export_import.dialogs.no_data', default="No Data"), _t('gui.shell.logging.features.export_import.dialogs.no_logs_found_for_export', default="No logs found for export"))
                     return
 
                 # Get save location
@@ -328,11 +330,11 @@ class ExportImportMixin:
                                     f.write(f"{field}: {log.get(field, '')}\n")
                                 f.write("-" * 40 + "\n")
 
-                    messagebox.showinfo("Success", f"Custom export saved to {filename}")
+                    messagebox.showinfo(_t('gui.shell.logging.features.export_import.dialogs.success', default="Success"), f"Custom export saved to {filename}")
                     format_window.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Export failed: {str(e)}")
+                messagebox.showerror(_t('gui.shell.logging.features.export_import.dialogs.error', default="Error"), f"Export failed: {str(e)}")
 
         ttk.Button(format_window, text=_t("log_management.custom_format.buttons.export"), command=generate_custom_export).pack(pady=10)
 
@@ -346,7 +348,7 @@ class ExportImportMixin:
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # File selection frame
-        file_frame = ttk.LabelFrame(import_window, text="File Selection")
+        file_frame = ttk.LabelFrame(import_window, text=_t('gui.shell.logging.features.export_import.labels.file_selection', default="File Selection"))
         file_frame.pack(fill=tk.X, padx=10, pady=5)
 
         file_path_var = tk.StringVar()
@@ -355,7 +357,7 @@ class ExportImportMixin:
 
         def browse_file():
             filename = filedialog.askopenfilename(
-                title="Select log file to import",
+                title=_t('gui.shell.logging.features.export_import.dialogs.select_log_file_to_import', default="Select log file to import"),
                 filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv"), ("All files", "*.*")]
             )
             if filename:
@@ -364,19 +366,19 @@ class ExportImportMixin:
         ttk.Button(file_frame, text=_t("log_management.buttons.browse"), command=browse_file).pack(side=tk.RIGHT, padx=5, pady=10)
 
         # Import options frame
-        options_frame = ttk.LabelFrame(import_window, text="Import Options")
+        options_frame = ttk.LabelFrame(import_window, text=_t('gui.shell.logging.features.export_import.labels.import_options', default="Import Options"))
         options_frame.pack(fill=tk.X, padx=10, pady=5)
 
         validate_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Validate data before import",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.logging.features.export_import.buttons.validate_data_before_import', default="Validate data before import"),
                        variable=validate_var).pack(anchor="w", padx=10, pady=5)
 
         backup_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Create backup before import",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.logging.features.export_import.buttons.create_backup_before_import', default="Create backup before import"),
                        variable=backup_var).pack(anchor="w", padx=10, pady=5)
 
         # Progress frame
-        progress_frame = ttk.LabelFrame(import_window, text="Import Progress")
+        progress_frame = ttk.LabelFrame(import_window, text=_t('gui.shell.logging.features.export_import.labels.import_progress', default="Import Progress"))
         progress_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         progress_text = scrolledtext.ScrolledText(progress_frame, height=10)
@@ -388,11 +390,11 @@ class ExportImportMixin:
         def perform_import():
             file_path = file_path_var.get()
             if not file_path:
-                messagebox.showerror("Error", "Please select a file to import")
+                messagebox.showerror(_t('gui.shell.logging.features.export_import.dialogs.error', default="Error"), _t('gui.shell.logging.features.export_import.dialogs.please_select_a_file_to_import', default="Please select a file to import"))
                 return
 
             if not os.path.exists(file_path):
-                messagebox.showerror("Error", "File not found")
+                messagebox.showerror(_t('gui.shell.logging.features.export_import.dialogs.error', default="Error"), _t('gui.shell.logging.features.export_import.dialogs.file_not_found', default="File not found"))
                 return
 
             try:
@@ -405,7 +407,7 @@ class ExportImportMixin:
                         data = json.load(f)
                     logs = data.get('logs', []) if isinstance(data, dict) else data
                 else:
-                    messagebox.showerror("Error", "Only JSON files are currently supported")
+                    messagebox.showerror(_t('gui.shell.logging.features.export_import.dialogs.error', default="Error"), _t('gui.shell.logging.features.export_import.dialogs.only_json_files_are_currently_supported', default="Only JSON files are currently supported"))
                     return
 
                 if not logs:
@@ -446,12 +448,12 @@ class ExportImportMixin:
                 progress_text.insert(tk.END, f"Successfully imported: {imported_count}\n")
                 progress_text.insert(tk.END, f"Errors: {error_count}\n")
 
-                messagebox.showinfo("Import Complete",
+                messagebox.showinfo(_t('gui.shell.logging.features.export_import.dialogs.import_complete', default="Import Complete"),
                                    f"Successfully imported {imported_count}/{len(logs)} logs")
 
             except Exception as e:
                 progress_text.insert(tk.END, f"Import failed: {str(e)}\n")
-                messagebox.showerror("Import Error", f"Error importing logs: {str(e)}")
+                messagebox.showerror(_t('gui.shell.logging.features.export_import.dialogs.import_error', default="Import Error"), f"Error importing logs: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(import_window)
@@ -478,7 +480,7 @@ class ExportImportMixin:
                  font=("Arial", 10, "bold")).pack()
 
         # Cleanup options frame
-        options_frame = ttk.LabelFrame(cleanup_window, text="Cleanup Options")
+        options_frame = ttk.LabelFrame(cleanup_window, text=_t('gui.shell.logging.features.export_import.labels.cleanup_options', default="Cleanup Options"))
         options_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Date threshold
@@ -495,14 +497,14 @@ class ExportImportMixin:
         status_frame = ttk.Frame(options_frame)
         status_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        status_var = tk.StringVar(value="all")
+        status_var = tk.StringVar(value=_t('gui.shell.logging.features.export_import.values.all', default="all"))
         ttk.Label(status_frame, text=_t("log_management.bulk_cleanup.delete_by_status")).pack(side=tk.LEFT)
         status_combo = ttk.Combobox(status_frame, textvariable=status_var,
                                    values=["all", "success", "failure"], width=15)
         status_combo.pack(side=tk.LEFT, padx=5)
 
         # Preview frame
-        preview_frame = ttk.LabelFrame(cleanup_window, text="Cleanup Preview")
+        preview_frame = ttk.LabelFrame(cleanup_window, text=_t('gui.shell.logging.features.export_import.labels.cleanup_preview', default="Cleanup Preview"))
         preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         preview_text = scrolledtext.ScrolledText(preview_frame, height=8)
@@ -553,14 +555,14 @@ Sample logs to be deleted:
                 cutoff_date = datetime.now() - timedelta(days=days)
 
                 # Double confirmation
-                if not messagebox.askyesno("Confirm Cleanup",
+                if not messagebox.askyesno(_t('gui.shell.logging.features.export_import.dialogs.confirm_cleanup', default="Confirm Cleanup"),
                                           f"Delete logs older than {days} days?\n"
                                           f"This action cannot be undone!"):
                     return
 
-                if not messagebox.askyesno("Final Confirmation",
-                                          "Are you absolutely sure?\n"
-                                          "Type 'DELETE' in the next dialog to confirm."):
+                if not messagebox.askyesno(_t('gui.shell.logging.features.export_import.dialogs.final_confirmation', default="Final Confirmation"),
+                                          _t('gui.shell.logging.features.export_import.dialogs.are_you_absolutely_sure_type_delete_in_the_next_dialog_to_confir', default="Are you absolutely sure?\n"
+                                          "Type 'DELETE' in the next dialog to confirm.")):
                     return
 
                 confirmation = tk.simpledialog.askstring("Type DELETE",
@@ -568,7 +570,7 @@ Sample logs to be deleted:
                                                         show='*')
 
                 if confirmation != "DELETE":
-                    messagebox.showinfo("Cancelled", "Cleanup cancelled - confirmation failed")
+                    messagebox.showinfo(_t('gui.shell.logging.features.export_import.dialogs.cancelled', default="Cancelled"), _t('gui.shell.logging.features.export_import.dialogs.cleanup_cancelled_confirmation_failed', default="Cleanup cancelled - confirmation failed"))
                     return
 
                 # Perform cleanup (for demo, we'll just show what would happen)
@@ -582,19 +584,19 @@ Sample logs to be deleted:
                 preview_text.insert(tk.END, f"Would delete {len(logs_to_delete):,} logs\n")
                 preview_text.insert(tk.END, "Actual deletion not performed for safety\n")
 
-                messagebox.showinfo("Cleanup Complete",
+                messagebox.showinfo(_t('gui.shell.logging.features.export_import.dialogs.cleanup_complete', default="Cleanup Complete"),
                                    f"Cleanup simulation complete.\n"
                                    f"Would have deleted {len(logs_to_delete):,} logs.")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Cleanup failed: {str(e)}")
+                messagebox.showerror(_t('gui.shell.logging.features.export_import.dialogs.error', default="Error"), f"Cleanup failed: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(cleanup_window)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Preview Cleanup", command=preview_cleanup).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Perform Cleanup", command=perform_cleanup).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.export_import.buttons.preview_cleanup', default="Preview Cleanup"), command=preview_cleanup).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.export_import.buttons.perform_cleanup', default="Perform Cleanup"), command=perform_cleanup).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_t("log_management.buttons.close"), command=cleanup_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     def schedule_export(self, log_manager, auth):
@@ -612,7 +614,7 @@ Sample logs to be deleted:
 
         # Frequency selection
         ttk.Label(form_frame, text=_t("log_management.schedule_export.frequency")).grid(row=0, column=0, sticky="w", pady=5)
-        frequency_var = tk.StringVar(value="daily")
+        frequency_var = tk.StringVar(value=_t('gui.shell.logging.features.export_import.values.daily', default="daily"))
         frequency_combo = ttk.Combobox(form_frame, textvariable=frequency_var,
                                        values=["hourly", "daily", "weekly", "monthly"], state="readonly")
         frequency_combo.grid(row=0, column=1, sticky="ew", pady=5, padx=(10,0))
@@ -629,14 +631,14 @@ Sample logs to be deleted:
         ttk.Spinbox(time_frame, from_=0, to=59, width=5, textvariable=minute_var, format="%02.0f").pack(side=tk.LEFT)
 
         # Export format
-        ttk.Label(form_frame, text="Export Format:").grid(row=2, column=0, sticky="w", pady=5)
-        format_var = tk.StringVar(value="json")
+        ttk.Label(form_frame, text=_t('gui.shell.logging.features.export_import.labels.export_format', default="Export Format:")).grid(row=2, column=0, sticky="w", pady=5)
+        format_var = tk.StringVar(value=_t('gui.shell.logging.features.export_import.values.json', default="json"))
         format_combo = ttk.Combobox(form_frame, textvariable=format_var,
                                     values=["json", "csv", "txt"], state="readonly")
         format_combo.grid(row=2, column=1, sticky="ew", pady=5, padx=(10,0))
 
         # Export directory
-        ttk.Label(form_frame, text="Export Directory:").grid(row=3, column=0, sticky="w", pady=5)
+        ttk.Label(form_frame, text=_t('gui.shell.logging.features.export_import.labels.export_directory', default="Export Directory:")).grid(row=3, column=0, sticky="w", pady=5)
         dir_var = tk.StringVar(value=os.path.join(os.getcwd(), "exports"))
         dir_frame = ttk.Frame(form_frame)
         dir_frame.grid(row=3, column=1, sticky="ew", pady=5, padx=(10,0))
@@ -645,15 +647,15 @@ Sample logs to be deleted:
             filedialog.askdirectory(initialdir=dir_var.get()))).pack(side=tk.LEFT, padx=(5,0))
 
         # Filters
-        ttk.Label(form_frame, text="Level Filter:").grid(row=4, column=0, sticky="w", pady=5)
-        level_var = tk.StringVar(value="all")
+        ttk.Label(form_frame, text=_t('gui.shell.logging.features.export_import.labels.level_filter', default="Level Filter:")).grid(row=4, column=0, sticky="w", pady=5)
+        level_var = tk.StringVar(value=_t('gui.shell.logging.features.export_import.values.all', default="all"))
         level_combo = ttk.Combobox(form_frame, textvariable=level_var,
                                    values=["all", "info", "warning", "error", "critical"], state="readonly")
         level_combo.grid(row=4, column=1, sticky="ew", pady=5, padx=(10,0))
 
         # Enable/disable
         enabled_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(form_frame, text="Enable scheduled export",
+        ttk.Checkbutton(form_frame, text=_t('gui.shell.logging.features.export_import.buttons.enable_scheduled_export', default="Enable scheduled export"),
                        variable=enabled_var).grid(row=5, column=0, columnspan=2, pady=15)
 
         form_frame.columnconfigure(1, weight=1)
@@ -677,15 +679,15 @@ Sample logs to be deleted:
                 with open(config_file, 'w') as f:
                     json.dump(schedule_config, f, indent=2)
 
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.shell.logging.features.export_import.dialogs.success', default="Success"),
                     f"Export scheduled {frequency_var.get()} at {hour_var.get()}:{minute_var.get()}\n" +
                     f"Exports will be saved to: {dir_var.get()}")
                 schedule_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to schedule export: {str(e)}")
+                messagebox.showerror(_t('gui.shell.logging.features.export_import.dialogs.error', default="Error"), f"Failed to schedule export: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(schedule_window)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="Save Schedule", command=save_schedule).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=schedule_window.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.export_import.buttons.save_schedule', default="Save Schedule"), command=save_schedule).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.export_import.buttons.cancel', default="Cancel"), command=schedule_window.destroy).pack(side=tk.LEFT, padx=5)

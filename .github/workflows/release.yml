@@ -1,0 +1,135 @@
+name: Release
+
+# Signed, attested releases. A tag alone proves nothing about who built the
+# artifact or from what source; this workflow binds each artifact to this
+# repository, this workflow file and this commit via Sigstore, so a consumer
+# can verify provenance offline with `gh attestation verify` or `cosign`.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and sign"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Gate first: never sign an artifact that has not passed the security gate.
+  gate:
+    name: Security release gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install runtime and scanners
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-dev.txt
+          python -m pip install -e . --no-deps
+          python -m pip install "bandit[toml]" pip-audit
+      - name: Static supply-chain checks
+        run: python program/tools/supply_chain_check.py
+      - name: pip-audit (blocking)
+        run: pip-audit --requirement requirements.lock --strict --progress-spinner off
+      - name: Bandit (high severity)
+        run: bandit -r program/education_system/ -c pyproject.toml -lll
+      - name: Independent security test suite
+        env:
+          APP_ENV: test
+          EDU_DEV_SEED: "true"
+        run: pytest program/tests/security -n 0 --timeout=180 -v
+
+  build-sign:
+    name: Build, attest and sign
+    needs: gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # create the GitHub release
+      id-token: write        # OIDC token for keyless Sigstore signing
+      attestations: write    # record build provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      # Record SLSA build provenance: what built these files, from which
+      # commit and workflow. Verified later with `gh attestation verify`.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: "dist/*"
+
+      # Keyless signing — the certificate is bound to this workflow's OIDC
+      # identity, so there is no long-lived private key to steal or rotate.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+      - name: Sign each artifact
+        run: |
+          for artifact in dist/*; do
+            cosign sign-blob --yes \
+              --output-signature "${artifact}.sig" \
+              --output-certificate "${artifact}.pem" \
+              "${artifact}"
+          done
+
+      - name: Generate SBOM for the release
+        run: |
+          python -m pip install cyclonedx-bom
+          python -m venv /tmp/release
+          /tmp/release/bin/pip install --require-hashes --no-deps -r requirements.lock
+          cyclonedx-py environment /tmp/release/bin/python -o dist/sbom.json
+
+      - name: Record SHA-256 digests
+        run: |
+          cd dist && sha256sum * > SHA256SUMS && cat SHA256SUMS
+
+      # Verify what we just signed before publishing it, so a broken signing
+      # step fails here rather than shipping unverifiable artifacts.
+      - name: Verify signatures before publishing
+        run: |
+          for artifact in dist/*.whl dist/*.tar.gz; do
+            cosign verify-blob \
+              --certificate "${artifact}.pem" \
+              --signature "${artifact}.sig" \
+              --certificate-identity-regexp "^https://github.com/${GITHUB_REPOSITORY}/" \
+              --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+              "${artifact}"
+          done
+
+      - name: Publish the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
+          fail_on_unmatched_files: true
+          body: |
+            Artifacts are signed with Sigstore (keyless) and carry SLSA build
+            provenance.
+
+            Verify provenance:
+
+                gh attestation verify <artifact> --repo ${{ github.repository }}
+
+            Verify the signature:
+
+                cosign verify-blob \
+                  --certificate <artifact>.pem \
+                  --signature <artifact>.sig \
+                  --certificate-identity-regexp '^https://github.com/${{ github.repository }}/' \
+                  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+                  <artifact>
+
+            `sbom.json` lists the exact locked runtime dependency set and
+            `SHA256SUMS` the artifact digests.

@@ -1,6 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import json
 import os
@@ -176,7 +178,7 @@ class _LifecycleMixin:
                 return
             if self.principal.is_idle():
                 try:
-                    messagebox.showinfo("Session", "Session timed out (inactivity).", parent=self.root)
+                    messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.lifecycle.dialogs.session', default="Session"), _t('gui.pastoral.equality_diversity.mixins.lifecycle.dialogs.session_timed_out_inactivity', default="Session timed out (inactivity)."), parent=self.root)
                 except tk.TclError:
                     return
                 try:

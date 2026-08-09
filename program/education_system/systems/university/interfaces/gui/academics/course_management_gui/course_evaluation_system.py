@@ -23,6 +23,8 @@ same string still match. This file is the only reader/writer of the
 table, so the convention is local to this module.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import os
 import sqlite3
@@ -408,7 +410,7 @@ class CourseEvaluationApp:
         # ``open_in_workspace``), it has no ``wm_title`` — skip
         # window-chrome. Same shape as Library (8.117.34).
         if hasattr(self.root, "wm_title"):
-            self.root.title("University Course Evaluation System")
+            self.root.title(_t('gui.academics.course_management_gui.course_evaluation_system.windows.university_course_evaluation_system', default="University Course Evaluation System"))
             # Don't force a small geometry when the host is already sized
             # (the launcher now opens us in a maximised Toplevel).
             try:
@@ -442,14 +444,14 @@ class CourseEvaluationApp:
     def _show_no_auth(self):
         body = ttk.Frame(self.root)
         body.pack(fill="both", expand=True, padx=40, pady=60)
-        ttk.Label(body, text="🔒 Authentication Required",
+        ttk.Label(body, text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.authentication_required', default="🔒 Authentication Required"),
                   style="Header.TLabel",
                   font=("Arial", 16, "bold")).pack(pady=(40, 10))
         ttk.Label(body,
-                  text="Please launch this module from the main\n"
-                       "University System after signing in.",
+                  text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.please_launch_this_module_from_the_main_university_system_after', default="Please launch this module from the main\n"
+                       "University System after signing in."),
                   justify="center").pack(pady=10)
-        ttk.Button(body, text="Close",
+        ttk.Button(body, text=_t('gui.academics.course_management_gui.course_evaluation_system.buttons.close', default="Close"),
                    command=self.root.destroy).pack(pady=20)
 
     def setup_styles(self):
@@ -469,7 +471,7 @@ class CourseEvaluationApp:
         header = tk.Frame(self.root, bg="#f0f0f0", height=70)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="🎓 University Course Evaluation System",
+        tk.Label(header, text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.university_course_evaluation_system', default="🎓 University Course Evaluation System"),
                  font=("Arial", 18, "bold"), bg="#f0f0f0", fg="#000000"
                  ).pack(side="left", padx=20, pady=18)
         if self.user:
@@ -478,10 +480,10 @@ class CourseEvaluationApp:
                      font=("Arial", 10), bg="#f0f0f0", fg="#555555"
                      ).pack(side="right", padx=20, pady=22)
         if self.is_admin:
-            tk.Button(header, text="Operations…", bg="#f0f0f0",
+            tk.Button(header, text=_t('gui.academics.course_management_gui.course_evaluation_system.buttons.operations', default="Operations…"), bg="#f0f0f0",
                       command=self._launch_operations
                       ).pack(side="right", padx=4, pady=20)
-            tk.Button(header, text="Survey Designer…", bg="#f0f0f0",
+            tk.Button(header, text=_t('gui.academics.course_management_gui.course_evaluation_system.buttons.survey_designer', default="Survey Designer…"), bg="#f0f0f0",
                       command=self._launch_designer
                       ).pack(side="right", padx=4, pady=20)
 
@@ -492,7 +494,7 @@ class CourseEvaluationApp:
             )
         except ImportError as e:
             from tkinter import messagebox
-            messagebox.showerror("Survey Designer", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_system.dialogs.survey_designer', default="Survey Designer"), str(e))
             return
         launch_survey_designer(self.root, getattr(self, "auth", None))
 
@@ -503,7 +505,7 @@ class CourseEvaluationApp:
             )
         except ImportError as e:
             from tkinter import messagebox
-            messagebox.showerror("Operations", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_system.dialogs.operations', default="Operations"), str(e))
             return
         launch_operations_gui(self.root, getattr(self, "auth", None))
 
@@ -514,8 +516,8 @@ class CourseEvaluationApp:
         self.eval_frame = ttk.Frame(self.notebook)
         self.results_frame = ttk.Frame(self.notebook)
 
-        self.notebook.add(self.eval_frame, text="  Submit Evaluation  ")
-        self.notebook.add(self.results_frame, text="  View Results  ")
+        self.notebook.add(self.eval_frame, text=_t('gui.academics.course_management_gui.course_evaluation_system.tabs.submit_evaluation', default="  Submit Evaluation  "))
+        self.notebook.add(self.results_frame, text=_t('gui.academics.course_management_gui.course_evaluation_system.tabs.view_results', default="  View Results  "))
 
         self.build_eval_tab()
         self.build_results_tab()
@@ -526,7 +528,7 @@ class CourseEvaluationApp:
         container.pack(fill="both", expand=True, padx=20, pady=20)
 
         # Identity row — read-only, sourced from the logged-in user.
-        ttk.Label(container, text="Submitting as:",
+        ttk.Label(container, text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.submitting_as', default="Submitting as:"),
                   style="Header.TLabel").grid(row=0, column=0, sticky="w", pady=5)
         ttk.Label(container,
                   text=f"{self.full_name}  ({self.student_id})"
@@ -536,7 +538,7 @@ class CourseEvaluationApp:
                                             pady=5, padx=10)
 
         # Course selection
-        ttk.Label(container, text="Select Course:",
+        ttk.Label(container, text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.select_course', default="Select Course:"),
                   style="Header.TLabel").grid(row=1, column=0, sticky="w", pady=5)
         self.course_combo = ttk.Combobox(container, width=50,
                                           font=("Arial", 10), state="readonly")
@@ -545,7 +547,7 @@ class CourseEvaluationApp:
 
         # Rating section
         ratings_frame = ttk.LabelFrame(
-            container, text=" Rate the Course (1 = Poor, 5 = Excellent) ",
+            container, text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.rate_the_course_1_poor_5_excellent', default=" Rate the Course (1 = Poor, 5 = Excellent) "),
             padding=15)
         ratings_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=15)
 
@@ -568,7 +570,7 @@ class CourseEvaluationApp:
                 ttk.Radiobutton(scale_frame, text=str(val), variable=var,
                                 value=val).pack(side="left", padx=5)
 
-        ttk.Label(container, text="Comments (optional):",
+        ttk.Label(container, text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.comments_optional', default="Comments (optional):"),
                   style="Header.TLabel").grid(row=3, column=0, sticky="nw",
                                                 pady=5)
         self.comments_text = tk.Text(container, width=55, height=5,
@@ -577,10 +579,10 @@ class CourseEvaluationApp:
 
         btn_frame = ttk.Frame(container)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Submit Evaluation",
+        ttk.Button(btn_frame, text=_t('gui.academics.course_management_gui.course_evaluation_system.buttons.submit_evaluation', default="Submit Evaluation"),
                    command=self.submit_evaluation
                    ).pack(side="left", padx=10)
-        ttk.Button(btn_frame, text="Clear Form", command=self.clear_form
+        ttk.Button(btn_frame, text=_t('gui.academics.course_management_gui.course_evaluation_system.buttons.clear_form', default="Clear Form"), command=self.clear_form
                    ).pack(side="left", padx=10)
 
     def refresh_course_combo(self):
@@ -595,13 +597,13 @@ class CourseEvaluationApp:
     def submit_evaluation(self):
         course_selection = self.course_combo.get()
         if not course_selection:
-            messagebox.showwarning("Missing Info", "Please select a course.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_evaluation_system.dialogs.missing_info', default="Missing Info"), _t('gui.academics.course_management_gui.course_evaluation_system.dialogs.please_select_a_course', default="Please select a course."))
             return
         if not self.student_id:
             messagebox.showerror(
-                "Identity Error",
-                "Could not determine your student ID from the logged-in user. "
-                "Please relaunch from the main system.")
+                _t('gui.academics.course_management_gui.course_evaluation_system.dialogs.identity_error', default="Identity Error"),
+                _t('gui.academics.course_management_gui.course_evaluation_system.dialogs.could_not_determine_your_student_id_from_the_logged_in_user_plea', default="Could not determine your student ID from the logged-in user. "
+                "Please relaunch from the main system."))
             return
 
         course_id = self.course_map[course_selection]
@@ -620,10 +622,10 @@ class CourseEvaluationApp:
         try:
             self.db.submit_evaluation(data)
         except sqlite3.Error as e:
-            messagebox.showerror("Save Error", f"Could not save evaluation: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_system.dialogs.save_error', default="Save Error"), f"Could not save evaluation: {e}")
             return
-        messagebox.showinfo("Success",
-                            "Thank you! Your evaluation has been submitted.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_system.dialogs.success', default="Success"),
+                            _t('gui.academics.course_management_gui.course_evaluation_system.dialogs.thank_you_your_evaluation_has_been_submitted', default="Thank you! Your evaluation has been submitted."))
         self.clear_form()
         self.refresh_results()
 
@@ -639,26 +641,26 @@ class CourseEvaluationApp:
 
         top = ttk.Frame(container)
         top.pack(fill="x", pady=5)
-        ttk.Label(top, text="Select Course:",
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.select_course', default="Select Course:"),
                   style="Header.TLabel").pack(side="left")
         self.results_combo = ttk.Combobox(top, width=50,
                                            font=("Arial", 10), state="readonly")
         self.results_combo.pack(side="left", padx=10)
         self.results_combo.bind("<<ComboboxSelected>>",
                                 lambda e: self.show_course_results())
-        ttk.Button(top, text="Refresh",
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_system.buttons.refresh', default="Refresh"),
                    command=self.refresh_results).pack(side="left", padx=5)
 
-        self.stats_frame = ttk.LabelFrame(container, text=" Statistics ",
+        self.stats_frame = ttk.LabelFrame(container, text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.statistics', default=" Statistics "),
                                           padding=15)
         self.stats_frame.pack(fill="x", pady=10)
         self.stats_label = ttk.Label(self.stats_frame,
-                                     text="Select a course to view statistics.",
+                                     text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.select_a_course_to_view_statistics', default="Select a course to view statistics."),
                                      font=("Arial", 10))
         self.stats_label.pack(anchor="w")
 
         list_frame = ttk.LabelFrame(container,
-                                    text=" Individual Evaluations ", padding=10)
+                                    text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.individual_evaluations', default=" Individual Evaluations "), padding=10)
         list_frame.pack(fill="both", expand=True, pady=5)
 
         columns = ("student", "teaching", "content", "workload", "comm",
@@ -686,7 +688,7 @@ class CourseEvaluationApp:
         self.tree.bind("<<TreeviewSelect>>", self.show_comment)
 
         self.comment_label = ttk.Label(container,
-                                       text="Click a row to view comments.",
+                                       text=_t('gui.academics.course_management_gui.course_evaluation_system.labels.click_a_row_to_view_comments', default="Click a row to view comments."),
                                        font=("Arial", 9, "italic"),
                                        wraplength=800)
         self.comment_label.pack(fill="x", pady=5)
@@ -712,7 +714,7 @@ class CourseEvaluationApp:
         count = stats[0]
         if count == 0:
             self.stats_label.config(
-                text="No evaluations submitted yet for this course.")
+                text=_t('gui.academics.course_management_gui.course_evaluation_system.text.no_evaluations_submitted_yet_for_this_course', default="No evaluations submitted yet for this course."))
         else:
             text = (
                 f"Total Evaluations: {count}\n"
@@ -743,7 +745,7 @@ class CourseEvaluationApp:
             if comment:
                 self.comment_label.config(text=f"💬 Comment: {comment}")
             else:
-                self.comment_label.config(text="💬 No comment provided.")
+                self.comment_label.config(text=_t('gui.academics.course_management_gui.course_evaluation_system.text.no_comment_provided', default="💬 No comment provided."))
 
 
 if __name__ == "__main__":

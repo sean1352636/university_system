@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import base64
 import hashlib
 import json
@@ -41,15 +43,15 @@ from education_system.systems.university.domain.safeguarding.api import (
 class ToolsMixin:
     def _open_tools_menu(self):
         win = tk.Toplevel(self._host)
-        win.title("Safeguarding tools")
+        win.title(_t('gui.safeguarding.tools_mixin.windows.safeguarding_tools', default="Safeguarding tools"))
         win.configure(bg="#f4f6fa")
         tk.Label(
-            win, text="Privacy / reporting tools", bg="#f4f6fa", font=("Segoe UI", 11, "bold")
+            win, text=_t('gui.safeguarding.tools_mixin.labels.privacy_reporting_tools', default="Privacy / reporting tools"), bg="#f4f6fa", font=("Segoe UI", 11, "bold")
         ).pack(padx=14, pady=(12, 6))
 
         def _bulk_export():
             if not require(self.user, "export"):
-                messagebox.showerror("Permission denied", "Your role cannot export cases.")
+                messagebox.showerror(_t('gui.safeguarding.tools_mixin.dialogs.permission_denied', default="Permission denied"), _t('gui.safeguarding.tools_mixin.dialogs.your_role_cannot_export_cases', default="Your role cannot export cases."))
                 return
             path = filedialog.asksaveasfilename(
                 defaultextension=".csv",
@@ -59,20 +61,20 @@ class ToolsMixin:
             if not path:
                 return
             _, n = export_cases_csv(path, actor=self.user.get("username", "?"))
-            messagebox.showinfo("Export", f"Wrote {n} rows to {path}.")
+            messagebox.showinfo(_t('gui.safeguarding.tools_mixin.dialogs.export', default="Export"), f"Wrote {n} rows to {path}.")
 
         def _sar_export():
             if not require(self.user, "export"):
-                messagebox.showerror("Permission denied", "Your role cannot export SAR bundles.")
+                messagebox.showerror(_t('gui.safeguarding.tools_mixin.dialogs.permission_denied', default="Permission denied"), _t('gui.safeguarding.tools_mixin.dialogs.your_role_cannot_export_sar_bundles', default="Your role cannot export SAR bundles."))
                 return
             who = self._prompt("SAR — subject username", "Enter username:")
             if not who:
                 return
-            out_dir = filedialog.askdirectory(title="Choose output folder")
+            out_dir = filedialog.askdirectory(title=_t('gui.safeguarding.tools_mixin.dialogs.choose_output_folder', default="Choose output folder"))
             if not out_dir:
                 return
             path, n = generate_sar_bundle(who, out_dir, actor=self.user.get("username", "?"))
-            messagebox.showinfo("SAR bundle", f"Wrote {n} case(s) to {path}.")
+            messagebox.showinfo(_t('gui.safeguarding.tools_mixin.dialogs.sar_bundle', default="SAR bundle"), f"Wrote {n} case(s) to {path}.")
 
         def _audit_log():
             self._show_audit_log()
@@ -82,24 +84,24 @@ class ToolsMixin:
                 # Only admin-tier roles (which have * via _ROLE_PERMISSIONS).
                 if not can(self.user, "export"):
                     messagebox.showerror(
-                        "Permission denied", "Only admins may run retention purge."
+                        _t('gui.safeguarding.tools_mixin.dialogs.permission_denied', default="Permission denied"), _t('gui.safeguarding.tools_mixin.dialogs.only_admins_may_run_retention_purge', default="Only admins may run retention purge.")
                     )
                     return
             n, ids = purge_due_records(actor=self.user.get("username", "?"), dry_run=True)
             if not n:
-                messagebox.showinfo("Retention", "No records past retention horizon.")
+                messagebox.showinfo(_t('gui.safeguarding.tools_mixin.dialogs.retention', default="Retention"), _t('gui.safeguarding.tools_mixin.dialogs.no_records_past_retention_horizon', default="No records past retention horizon."))
                 return
-            if messagebox.askyesno("Retention purge", f"{n} case(s) past retention. Purge now?"):
+            if messagebox.askyesno(_t('gui.safeguarding.tools_mixin.dialogs.retention_purge', default="Retention purge"), f"{n} case(s) past retention. Purge now?"):
                 purge_due_records(actor=self.user.get("username", "?"))
-                messagebox.showinfo("Retention", f"Purged {n} case(s).")
+                messagebox.showinfo(_t('gui.safeguarding.tools_mixin.dialogs.retention', default="Retention"), f"Purged {n} case(s).")
 
         def _sla_alerts():
             n = stuck_case_alerts(actor=self.user.get("username", "?"))
-            messagebox.showinfo("SLA alerts", f"Queued {n} SLA-breach notification(s).")
+            messagebox.showinfo(_t('gui.safeguarding.tools_mixin.dialogs.sla_alerts', default="SLA alerts"), f"Queued {n} SLA-breach notification(s).")
 
         def _digest():
             body = daily_dsl_digest(actor=self.user.get("username", "?"))
-            messagebox.showinfo("Daily digest", body)
+            messagebox.showinfo(_t('gui.safeguarding.tools_mixin.dialogs.daily_digest', default="Daily digest"), body)
 
         def _mandatory_panel():
             self._show_mandatory_panel()
@@ -107,8 +109,8 @@ class ToolsMixin:
         def _wb_panel():
             if not can_view_whistleblowing(self.user):
                 messagebox.showerror(
-                    "Permission denied",
-                    "Only independent reviewers can open the whistleblowing channel.",
+                    _t('gui.safeguarding.tools_mixin.dialogs.permission_denied', default="Permission denied"),
+                    _t('gui.safeguarding.tools_mixin.dialogs.only_independent_reviewers_can_open_the_whistleblowing_channel', default="Only independent reviewers can open the whistleblowing channel."),
                 )
                 return
             self._show_wb_panel()
@@ -136,11 +138,11 @@ class ToolsMixin:
             ("Training tracker", _training),
         ):
             ttk.Button(win, text=label, command=cmd, width=34).pack(padx=14, pady=4)
-        ttk.Button(win, text="Close", command=win.destroy).pack(padx=14, pady=(8, 12))
+        ttk.Button(win, text=_t('gui.safeguarding.tools_mixin.buttons.close', default="Close"), command=win.destroy).pack(padx=14, pady=(8, 12))
 
     def _show_mandatory_panel(self):
         win = tk.Toplevel(self._host)
-        win.title("Mandatory-reporting queue")
+        win.title(_t('gui.safeguarding.tools_mixin.windows.mandatory_reporting_queue', default="Mandatory-reporting queue"))
         win.configure(bg="#f4f6fa")
         cols = ("id", "student", "severity", "status", "reported_at")
         tree = ttk.Treeview(win, columns=cols, show="headings", height=18)
@@ -164,11 +166,11 @@ class ToolsMixin:
             self._ack_mandatory(int(sel[0]))
             win.destroy()
 
-        ttk.Button(win, text="Mark selected as Reported…", command=_ack).pack(pady=(0, 8))
+        ttk.Button(win, text=_t('gui.safeguarding.tools_mixin.buttons.mark_selected_as_reported', default="Mark selected as Reported…"), command=_ack).pack(pady=(0, 8))
 
     def _show_wb_panel(self):
         win = tk.Toplevel(self._host)
-        win.title("Whistleblowing channel — independent reviewers only")
+        win.title(_t('gui.safeguarding.tools_mixin.windows.whistleblowing_channel_independent_reviewers_only', default="Whistleblowing channel — independent reviewers only"))
         win.configure(bg="#f4f6fa")
         cols = ("id", "student", "submitted", "severity", "status", "reviewer")
         tree = ttk.Treeview(win, columns=cols, show="headings", height=18)
@@ -194,7 +196,7 @@ class ToolsMixin:
 
     def _show_webhook_panel(self):
         win = tk.Toplevel(self._host)
-        win.title("Webhook endpoints")
+        win.title(_t('gui.safeguarding.tools_mixin.windows.webhook_endpoints', default="Webhook endpoints"))
         win.configure(bg="#f4f6fa")
         cols = ("id", "url", "filter", "active", "last_status", "last_sent")
         tree = ttk.Treeview(win, columns=cols, show="headings", height=10)
@@ -225,13 +227,13 @@ class ToolsMixin:
 
         form = tk.Frame(win, bg="#f4f6fa")
         form.pack(fill="x", padx=8, pady=8)
-        tk.Label(form, text="URL:", bg="#f4f6fa").grid(row=0, column=0, sticky="w")
+        tk.Label(form, text=_t('gui.safeguarding.tools_mixin.labels.url', default="URL:"), bg="#f4f6fa").grid(row=0, column=0, sticky="w")
         u_e = ttk.Entry(form, width=40)
         u_e.grid(row=0, column=1, padx=4)
-        tk.Label(form, text="Secret:", bg="#f4f6fa").grid(row=0, column=2, sticky="w")
+        tk.Label(form, text=_t('gui.safeguarding.tools_mixin.labels.secret', default="Secret:"), bg="#f4f6fa").grid(row=0, column=2, sticky="w")
         s_e = ttk.Entry(form, width=20)
         s_e.grid(row=0, column=3, padx=4)
-        tk.Label(form, text="Events (comma or *):", bg="#f4f6fa").grid(
+        tk.Label(form, text=_t('gui.safeguarding.tools_mixin.labels.events_comma_or', default="Events (comma or *):"), bg="#f4f6fa").grid(
             row=1, column=0, sticky="w", pady=4
         )
         f_e = ttk.Entry(form, width=30)
@@ -240,12 +242,12 @@ class ToolsMixin:
 
         def _add():
             if not require(self.user, "*"):
-                messagebox.showerror("Permission denied", "Admins only.")
+                messagebox.showerror(_t('gui.safeguarding.tools_mixin.dialogs.permission_denied', default="Permission denied"), _t('gui.safeguarding.tools_mixin.dialogs.admins_only', default="Admins only."))
                 return
             url = u_e.get().strip()
             sec = s_e.get().strip()
             if not url or not sec:
-                messagebox.showerror("Invalid", "URL and secret are required.")
+                messagebox.showerror(_t('gui.safeguarding.tools_mixin.dialogs.invalid', default="Invalid"), _t('gui.safeguarding.tools_mixin.dialogs.url_and_secret_are_required', default="URL and secret are required."))
                 return
             register_webhook(
                 url, sec, f_e.get().strip() or "*", actor=self.user.get("username", "?")
@@ -263,12 +265,12 @@ class ToolsMixin:
             disable_webhook(int(sel[0]), actor=self.user.get("username", "?"))
             _reload()
 
-        ttk.Button(form, text="Add webhook", command=_add).grid(row=1, column=3, padx=4)
-        ttk.Button(form, text="Disable selected", command=_disable).grid(row=1, column=4, padx=4)
+        ttk.Button(form, text=_t('gui.safeguarding.tools_mixin.buttons.add_webhook', default="Add webhook"), command=_add).grid(row=1, column=3, padx=4)
+        ttk.Button(form, text=_t('gui.safeguarding.tools_mixin.buttons.disable_selected', default="Disable selected"), command=_disable).grid(row=1, column=4, padx=4)
 
     def _show_leadership_stats(self):
         win = tk.Toplevel(self._host)
-        win.title("Leadership stats (90 days, anonymised)")
+        win.title(_t('gui.safeguarding.tools_mixin.windows.leadership_stats_90_days_anonymised', default="Leadership stats (90 days, anonymised)"))
         win.configure(bg="#f4f6fa")
         stats = leadership_stats(days=90)
         body = (
@@ -287,7 +289,7 @@ class ToolsMixin:
 
     def _show_training_panel(self):
         win = tk.Toplevel(self._host)
-        win.title("Safeguarding training tracker")
+        win.title(_t('gui.safeguarding.tools_mixin.windows.safeguarding_training_tracker', default="Safeguarding training tracker"))
         win.configure(bg="#f4f6fa")
         summary = training_compliance_summary()
         tk.Label(
@@ -307,7 +309,7 @@ class ToolsMixin:
         # Per-user lookup
         row = tk.Frame(win, bg="#f4f6fa")
         row.pack(fill="x", padx=14)
-        tk.Label(row, text="Lookup username:", bg="#f4f6fa").pack(side="left")
+        tk.Label(row, text=_t('gui.safeguarding.tools_mixin.labels.lookup_username', default="Lookup username:"), bg="#f4f6fa").pack(side="left")
         u = ttk.Entry(row, width=18)
         u.pack(side="left", padx=4)
         out = tk.Label(win, text="", bg="#f4f6fa", justify="left", font=("Segoe UI", 9))
@@ -317,17 +319,17 @@ class ToolsMixin:
             st = training_status(u.get().strip())
             out.config(text=str(st) if st else "(no records on file)")
 
-        ttk.Button(row, text="Check", command=_go).pack(side="left")
+        ttk.Button(row, text=_t('gui.safeguarding.tools_mixin.buttons.check', default="Check"), command=_go).pack(side="left")
 
         # Record completion
         form = tk.Frame(win, bg="#f4f6fa")
         form.pack(fill="x", padx=14, pady=(12, 14))
-        tk.Label(form, text="Record completion — username:", bg="#f4f6fa").grid(
+        tk.Label(form, text=_t('gui.safeguarding.tools_mixin.labels.record_completion_username', default="Record completion — username:"), bg="#f4f6fa").grid(
             row=0, column=0, sticky="w"
         )
         ru = ttk.Entry(form, width=16)
         ru.grid(row=0, column=1, padx=4)
-        tk.Label(form, text="Module:", bg="#f4f6fa").grid(row=0, column=2, sticky="w")
+        tk.Label(form, text=_t('gui.safeguarding.tools_mixin.labels.module', default="Module:"), bg="#f4f6fa").grid(row=0, column=2, sticky="w")
         rm = ttk.Combobox(
             form,
             width=24,
@@ -350,14 +352,14 @@ class ToolsMixin:
                 rm.get().strip(),
                 actor=self.user.get("username", "?"),
             )
-            messagebox.showinfo("Recorded", f"Training recorded for {ru.get().strip()}.")
+            messagebox.showinfo(_t('gui.safeguarding.tools_mixin.dialogs.recorded', default="Recorded"), f"Training recorded for {ru.get().strip()}.")
             win.destroy()
 
-        ttk.Button(form, text="Record", command=_record).grid(row=0, column=4, padx=6)
+        ttk.Button(form, text=_t('gui.safeguarding.tools_mixin.buttons.record', default="Record"), command=_record).grid(row=0, column=4, padx=6)
 
     def _show_audit_log(self):
         win = tk.Toplevel(self._host)
-        win.title("Safeguarding audit log")
+        win.title(_t('gui.safeguarding.tools_mixin.windows.safeguarding_audit_log', default="Safeguarding audit log"))
         win.configure(bg="#f4f6fa")
         cols = ("ts", "actor", "role", "action", "case", "details")
         tree = ttk.Treeview(win, columns=cols, show="headings", height=20)

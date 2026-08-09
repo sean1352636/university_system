@@ -238,7 +238,7 @@ class TestPostFeeAssignment:
         cur.execute(
             "INSERT INTO student_fees (student_id, fee_type_id, amount, status, due_date, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            ('S001', 1, 9000.00, 'pending', '2025-09-01', '2025-08-15'),
+            ('S001', 1, 9000.00, 'pending', date.today().isoformat(), date.today().isoformat()),
         )
         sfid = cur.lastrowid
         conn.commit()
@@ -312,13 +312,11 @@ class TestPeriods:
             "SELECT period_id FROM gl_periods WHERE start_date <= ? AND end_date >= ?",
             (today, today),
         ).fetchone()
-        return row[0] if row else None
+        assert row is not None, "init_ledger must seed a period covering today"
+        return row[0]
 
     def test_close_blocks_posting(self, gl_db):
         pid_period = self._today_period_id(gl_db)
-        if pid_period is None:
-            pytest.skip("Today's date isn't covered by seeded periods")
-
         # Close current period
         close_period(pid_period, closed_by='admin')
 
@@ -339,8 +337,6 @@ class TestPeriods:
 
     def test_reopen_after_close(self, gl_db):
         pid_period = self._today_period_id(gl_db)
-        if pid_period is None:
-            pytest.skip("Today's date isn't covered by seeded periods")
         close_period(pid_period, closed_by='admin')
         reopen_period(pid_period)
         # Should now post fine
@@ -358,8 +354,6 @@ class TestPeriods:
 
     def test_lock_cannot_be_reopened(self, gl_db):
         pid_period = self._today_period_id(gl_db)
-        if pid_period is None:
-            pytest.skip("Today's date isn't covered by seeded periods")
         lock_period(pid_period, locked_by='auditor')
         with pytest.raises(PeriodStateError):
             reopen_period(pid_period)

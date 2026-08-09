@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # templates.py
 # Template management mixin and dialog classes for AccommodationGUI.
 
@@ -22,19 +24,19 @@ class TemplateMixin:
     def import_medical_templates(self):
         """Import medical templates from JSON files into the database"""
         try:
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
 
-            medical_templates_dir = paths.MEDICAL_TEMPLATES_DIR
+            medical_templates_dir = paths.UNIVERSITY_MEDICAL_TEMPLATES_DIR
 
             if not medical_templates_dir.exists():
-                messagebox.showerror("Error", f"Medical templates directory not found: {medical_templates_dir}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Medical templates directory not found: {medical_templates_dir}")
                 return
 
             # Find all JSON files in the medical templates directory
             json_files = list(medical_templates_dir.glob("*.json"))
 
             if not json_files:
-                messagebox.showinfo("Import", "No medical template JSON files found in the directory.")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.import', default="Import"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.no_medical_template_json_files_found_in_the_directory', default="No medical template JSON files found in the directory."))
                 return
 
             imported_count = 0
@@ -88,16 +90,16 @@ class TemplateMixin:
             if error_count > 0:
                 message += f"\u2717 Errors: {error_count} templates\n"
 
-            messagebox.showinfo("Import Medical Templates", message)
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.import_medical_templates', default="Import Medical Templates"), message)
             self.refresh_templates()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to import medical templates: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to import medical templates: {str(e)}")
 
     def show_templates_usage_dialog(self):
         """Show dialog for templates usage statistics"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
         try:
@@ -113,22 +115,22 @@ class TemplateMixin:
                 usage_stats = cursor.fetchall()
 
             dialog = tk.Toplevel(self.root)
-            dialog.title("Template Usage Statistics")
+            dialog.title(_t('gui.pastoral.health.medical_accommodation.templates.windows.template_usage_statistics', default="Template Usage Statistics"))
             dialog.geometry("500x400")
             dialog.transient(self.root)
 
             tree = ttk.Treeview(dialog, columns=('Template', 'Usage Count'), show='headings')
-            tree.heading('Template', text='Template Name')
-            tree.heading('Usage Count', text='Times Used')
+            tree.heading('Template', text=_t('gui.pastoral.health.medical_accommodation.templates.headings.template_name', default='Template Name'))
+            tree.heading('Usage Count', text=_t('gui.pastoral.health.medical_accommodation.templates.headings.times_used', default='Times Used'))
             tree.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
             for template_name, count in usage_stats:
                 tree.insert('', 'end', values=(template_name, count))
 
-            ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load template usage: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to load template usage: {str(e)}")
 
     def save_template_dialog(self):
         """Show dialog to save new template"""
@@ -140,7 +142,7 @@ class TemplateMixin:
                     cursor.execute("SELECT name FROM [" + TEMPLATES_TABLE + "] WHERE name = ?",
                                  (dialog.result['name'],))
                     if cursor.fetchone():
-                        if not messagebox.askyesno("Template Exists",
+                        if not messagebox.askyesno(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.template_exists', default="Template Exists"),
                             f"Template '{dialog.result['name']}' already exists. Overwrite?"):
                             return
 
@@ -165,11 +167,11 @@ class TemplateMixin:
 
                 log_action('save_template', None, f"Saved template: {dialog.result['name']}")
 
-                messagebox.showinfo("Success", f"Template '{dialog.result['name']}' saved successfully")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.success', default="Success"), f"Template '{dialog.result['name']}' saved successfully")
                 self.refresh_templates()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to save template: {str(e)}")
 
     def apply_template_dialog(self):
         """Show dialog to apply template"""
@@ -185,7 +187,7 @@ class TemplateMixin:
 
                     template = cursor.fetchone()
                     if not template:
-                        messagebox.showerror("Error", "Template not found")
+                        messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.template_not_found', default="Template not found"))
                         return
 
                     typ, desc, offset, duration = template
@@ -196,8 +198,8 @@ class TemplateMixin:
                     if check_conflict(dialog.result['student_id'], typ,
                                     start_date.strftime('%Y-%m-%d'),
                                     end_date.strftime('%Y-%m-%d')):
-                        if not messagebox.askyesno("Conflict",
-                            "This accommodation overlaps with an existing record. Continue anyway?"):
+                        if not messagebox.askyesno(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.conflict', default="Conflict"),
+                            _t('gui.pastoral.health.medical_accommodation.templates.dialogs.this_accommodation_overlaps_with_an_existing_record_continue_any', default="This accommodation overlaps with an existing record. Continue anyway?")):
                             return
 
                     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -225,11 +227,11 @@ class TemplateMixin:
                 cli_notify_student(dialog.result['student_id'], 'Accommodation Template Applied',
                              f"Template '{dialog.result['template_name']}' for {typ} has been applied.")
 
-                messagebox.showinfo("Success", f"Template applied successfully to student {dialog.result['student_id']}")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.success', default="Success"), f"Template applied successfully to student {dialog.result['student_id']}")
                 self.refresh_data()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to apply template: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to apply template: {str(e)}")
 
     def apply_template_with_data(self, template_data):
         """Apply template with provided data"""
@@ -243,7 +245,7 @@ class TemplateMixin:
 
                 template = cursor.fetchone()
                 if not template:
-                    messagebox.showerror("Error", "Template not found")
+                    messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.template_not_found', default="Template not found"))
                     return
 
                 typ, desc, offset, duration = template
@@ -254,8 +256,8 @@ class TemplateMixin:
                 if check_conflict(template_data['student_id'], typ,
                                 start_date.strftime('%Y-%m-%d'),
                                 end_date.strftime('%Y-%m-%d')):
-                    if not messagebox.askyesno("Conflict",
-                        "This accommodation overlaps with an existing record. Continue anyway?"):
+                    if not messagebox.askyesno(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.conflict', default="Conflict"),
+                        _t('gui.pastoral.health.medical_accommodation.templates.dialogs.this_accommodation_overlaps_with_an_existing_record_continue_any', default="This accommodation overlaps with an existing record. Continue anyway?")):
                         return
 
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -275,17 +277,17 @@ class TemplateMixin:
                 ))
 
                 conn.commit()
-                messagebox.showinfo("Success", "Template applied successfully")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.success', default="Success"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.template_applied_successfully', default="Template applied successfully"))
                 self.refresh_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to apply template: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to apply template: {str(e)}")
 
     def edit_template_dialog(self):
         """Edit selected template"""
         selection = self.templates_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to edit")
+            messagebox.showwarning(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.please_select_a_template_to_edit', default="Please select a template to edit"))
             return
 
         template_name = self.templates_tree.item(selection[0])['values'][0]
@@ -298,7 +300,7 @@ class TemplateMixin:
                 template_data = cursor.fetchone()
 
             if not template_data:
-                messagebox.showerror("Error", "Template not found")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.template_not_found', default="Template not found"))
                 return
 
             dialog = TemplateDialog(self.root, "Edit Template", template_data)
@@ -321,22 +323,22 @@ class TemplateMixin:
                     ))
                     conn.commit()
 
-                messagebox.showinfo("Success", f"Template '{template_name}' updated successfully")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.success', default="Success"), f"Template '{template_name}' updated successfully")
                 self.refresh_templates()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to edit template: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to edit template: {str(e)}")
 
     def delete_template_dialog(self):
         """Delete selected template"""
         selection = self.templates_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to delete")
+            messagebox.showwarning(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.please_select_a_template_to_delete', default="Please select a template to delete"))
             return
 
         template_name = self.templates_tree.item(selection[0])['values'][0]
 
-        if not messagebox.askyesno("Confirm Deletion",
+        if not messagebox.askyesno(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.confirm_deletion', default="Confirm Deletion"),
             f"Are you sure you want to delete template '{template_name}'?"):
             return
 
@@ -346,11 +348,11 @@ class TemplateMixin:
                 cursor.execute("DELETE FROM [" + TEMPLATES_TABLE + "] WHERE name = ?", (template_name,))
                 conn.commit()
 
-            messagebox.showinfo("Success", f"Template '{template_name}' deleted successfully")
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.success', default="Success"), f"Template '{template_name}' deleted successfully")
             self.refresh_templates()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete template: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to delete template: {str(e)}")
 
     def manage_templates_dialog(self):
         """Show templates management dialog"""
@@ -385,47 +387,47 @@ class TemplateDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Template Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.labels.template_name', default="Template Name:")).grid(row=0, column=0, sticky='w', pady=5)
         self.name_var = tk.StringVar(value=current_data['name'] if current_data else '')
         ttk.Entry(main_frame, textvariable=self.name_var, width=30).grid(row=0, column=1, pady=5, sticky='ew')
 
-        ttk.Label(main_frame, text="Accommodation Type:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.labels.accommodation_type', default="Accommodation Type:")).grid(row=1, column=0, sticky='w', pady=5)
         self.type_var = tk.StringVar(value=current_data['accommodation_type'] if current_data else '')
         type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, width=28)
         if CLI_AVAILABLE:
             type_combo['values'] = get_accommodation_types()
         type_combo.grid(row=1, column=1, pady=5, sticky='ew')
 
-        ttk.Label(main_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw', pady=5)
         self.description_text = tk.Text(main_frame, height=3, width=30)
         if current_data and current_data['description']:
             self.description_text.insert(tk.END, current_data['description'])
         self.description_text.grid(row=2, column=1, pady=5, sticky='ew')
 
-        ttk.Label(main_frame, text="Start Offset (days):").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.labels.start_offset_days', default="Start Offset (days):")).grid(row=3, column=0, sticky='w', pady=5)
         self.offset_var = tk.StringVar(value=str(current_data['start_offset_days']) if current_data else '0')
         ttk.Entry(main_frame, textvariable=self.offset_var, width=30).grid(row=3, column=1, pady=5, sticky='ew')
 
-        ttk.Label(main_frame, text="Duration (days):").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.labels.duration_days', default="Duration (days):")).grid(row=4, column=0, sticky='w', pady=5)
         self.duration_var = tk.StringVar(value=str(current_data['duration_days']) if current_data else '365')
         ttk.Entry(main_frame, textvariable=self.duration_var, width=30).grid(row=4, column=1, pady=5, sticky='ew')
 
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=5, column=0, columnspan=2, pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.save', default="Save"), command=self.save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         main_frame.columnconfigure(1, weight=1)
 
     def save(self):
         """Save the template"""
         if not self.name_var.get().strip():
-            messagebox.showerror("Error", "Template name is required")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.template_name_is_required', default="Template name is required"))
             return
 
         if not self.type_var.get().strip():
-            messagebox.showerror("Error", "Accommodation type is required")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.accommodation_type_is_required', default="Accommodation type is required"))
             return
 
         try:
@@ -433,7 +435,7 @@ class TemplateDialog:
             if offset < 0:
                 raise ValueError
         except ValueError:
-            messagebox.showerror("Error", "Start offset must be a non-negative number")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.start_offset_must_be_a_non_negative_number', default="Start offset must be a non-negative number"))
             return
 
         try:
@@ -441,7 +443,7 @@ class TemplateDialog:
             if duration <= 0:
                 raise ValueError
         except ValueError:
-            messagebox.showerror("Error", "Duration must be a positive number")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.duration_must_be_a_positive_number', default="Duration must be a positive number"))
             return
 
         self.result = {
@@ -467,7 +469,7 @@ class ApplyTemplateDialog:
         self.student_map = {}
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Apply Template")
+        self.dialog.title(_t('gui.pastoral.health.medical_accommodation.templates.windows.apply_template', default="Apply Template"))
         self.dialog.geometry("450x300")
         self.dialog.transient(parent)
 
@@ -504,13 +506,13 @@ class ApplyTemplateDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Student:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.labels.student', default="Student:")).grid(row=0, column=0, sticky='w', pady=5)
         self.student_id_var = tk.StringVar()
         student_combo = ttk.Combobox(main_frame, textvariable=self.student_id_var, width=30)
         student_combo['values'] = self._load_students()
         student_combo.grid(row=0, column=1, pady=5, sticky='ew')
 
-        ttk.Label(main_frame, text="Template:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.labels.template', default="Template:")).grid(row=1, column=0, sticky='w', pady=5)
         self.template_var = tk.StringVar()
         self.template_combo = ttk.Combobox(main_frame, textvariable=self.template_var, width=28)
         self.template_combo.grid(row=1, column=1, pady=5, sticky='ew')
@@ -520,8 +522,8 @@ class ApplyTemplateDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=2, column=0, columnspan=2, pady=20)
 
-        ttk.Button(button_frame, text="Apply", command=self.apply).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.apply', default="Apply"), command=self.apply).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         main_frame.columnconfigure(1, weight=1)
 
@@ -537,7 +539,7 @@ class ApplyTemplateDialog:
                 templates = [row[0] for row in cursor.fetchall()]
                 self.template_combo['values'] = templates
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load templates: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to load templates: {str(e)}")
 
     def _get_student_id(self):
         """Extract student ID from dropdown selection or raw input."""
@@ -550,17 +552,17 @@ class ApplyTemplateDialog:
         """Apply the template"""
         student_id = self._get_student_id()
         if not student_id:
-            messagebox.showerror("Error", "Student is required")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.student_is_required', default="Student is required"))
             return
 
         if not self.template_var.get().strip():
-            messagebox.showerror("Error", "Please select a template")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.please_select_a_template', default="Please select a template"))
             return
 
         if CLI_AVAILABLE:
             from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation._common import validate_student_id
             if not validate_student_id(student_id):
-                messagebox.showerror("Error", "Student ID not found in the system")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.student_id_not_found_in_the_system', default="Student ID not found in the system"))
                 return
 
         self.result = {
@@ -582,7 +584,7 @@ class TemplateManagerDialog:
         self.gui_parent = gui_parent
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Template Manager")
+        self.dialog.title(_t('gui.pastoral.health.medical_accommodation.templates.windows.template_manager', default="Template Manager"))
         self.dialog.geometry("800x500")
         self.dialog.transient(parent)
 
@@ -594,7 +596,7 @@ class TemplateManagerDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        list_frame = ttk.LabelFrame(main_frame, text="Templates")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.labels.templates', default="Templates"))
         list_frame.pack(fill=tk.BOTH, expand=True)
 
         self.template_tree = ttk.Treeview(list_frame, columns=(
@@ -622,12 +624,12 @@ class TemplateManagerDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="New Template", command=self.new_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Edit Selected", command=self.edit_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Delete Selected", command=self.delete_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Apply Template", command=self.apply_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.load_templates).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.new_template', default="New Template"), command=self.new_template).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.edit_selected', default="Edit Selected"), command=self.edit_template).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.delete_selected', default="Delete Selected"), command=self.delete_template).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.apply_template', default="Apply Template"), command=self.apply_template).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.refresh', default="Refresh"), command=self.load_templates).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.templates.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_templates(self):
         """Load templates"""
@@ -659,7 +661,7 @@ class TemplateManagerDialog:
                     ))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load templates: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to load templates: {str(e)}")
 
     def new_template(self):
         """Create new template"""
@@ -671,7 +673,7 @@ class TemplateManagerDialog:
         """Edit selected template"""
         selection = self.template_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to edit")
+            messagebox.showwarning(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.please_select_a_template_to_edit', default="Please select a template to edit"))
             return
 
         template_name = self.template_tree.item(selection[0])['values'][0]
@@ -689,41 +691,41 @@ class TemplateManagerDialog:
                     self.update_template(template_name, dialog.result)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to edit template: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to edit template: {str(e)}")
 
     def delete_template(self):
         """Delete selected template"""
         selection = self.template_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to delete")
+            messagebox.showwarning(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.please_select_a_template_to_delete', default="Please select a template to delete"))
             return
 
         template_name = self.template_tree.item(selection[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", f"Delete template '{template_name}'?"):
+        if messagebox.askyesno(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.confirm_delete', default="Confirm Delete"), f"Delete template '{template_name}'?"):
             try:
                 with get_connection() as conn:
                     cursor = conn.cursor()
                     cursor.execute("DELETE FROM [" + TEMPLATES_TABLE + "] WHERE name = ?", (template_name,))
                     conn.commit()
 
-                messagebox.showinfo("Success", f"Template '{template_name}' deleted")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.success', default="Success"), f"Template '{template_name}' deleted")
                 self.load_templates()
                 self.gui_parent.refresh_templates()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete template: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to delete template: {str(e)}")
 
     def apply_template(self):
         """Apply selected template"""
         selection = self.template_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to apply")
+            messagebox.showwarning(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.please_select_a_template_to_apply', default="Please select a template to apply"))
             return
 
         template_name = self.template_tree.item(selection[0])['values'][0]
 
-        student_id = simpledialog.askstring("Apply Template", "Enter Student ID:")
+        student_id = simpledialog.askstring(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.apply_template', default="Apply Template"), _t('gui.pastoral.health.medical_accommodation.templates.dialogs.enter_student_id', default="Enter Student ID:"))
         if student_id:
             dialog = ApplyTemplateDialog(self.dialog)
             if dialog.result:
@@ -759,12 +761,12 @@ class TemplateManagerDialog:
                 ))
                 conn.commit()
 
-            messagebox.showinfo("Success", f"Template '{template_data['name']}' saved")
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.success', default="Success"), f"Template '{template_data['name']}' saved")
             self.load_templates()
             self.gui_parent.refresh_templates()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to save template: {str(e)}")
 
     def update_template(self, template_name, template_data):
         """Update existing template"""
@@ -792,9 +794,9 @@ class TemplateManagerDialog:
                 ))
                 conn.commit()
 
-            messagebox.showinfo("Success", f"Template '{template_name}' updated")
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.success', default="Success"), f"Template '{template_name}' updated")
             self.load_templates()
             self.gui_parent.refresh_templates()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update template: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.templates.dialogs.error', default="Error"), f"Failed to update template: {str(e)}")

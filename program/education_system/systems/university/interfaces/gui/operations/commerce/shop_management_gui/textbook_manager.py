@@ -90,19 +90,19 @@ def show_textbooks_browse(self):
     self.clear_content()
 
     row = 0
-    ttk.Label(self.content_frame, text="Browse Textbooks",
+    ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.browse_textbooks', default="Browse Textbooks"),
               style='Title.TLabel').grid(row=row, column=0, sticky=tk.W, pady=(0, 10))
 
     # Search bar
     row += 1
     search_frame = ttk.Frame(self.content_frame)
     search_frame.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
-    ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=2)
+    ttk.Label(search_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.search', default="Search:")).pack(side=tk.LEFT, padx=2)
     self._tb_search_entry = ttk.Entry(search_frame, width=30)
     self._tb_search_entry.pack(side=tk.LEFT, padx=2)
-    ttk.Button(search_frame, text="Search", command=self._tb_do_search).pack(side=tk.LEFT, padx=5)
+    ttk.Button(search_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.buttons.search', default="Search"), command=self._tb_do_search).pack(side=tk.LEFT, padx=5)
 
-    ttk.Label(search_frame, text="Module:").pack(side=tk.LEFT, padx=(15, 2))
+    ttk.Label(search_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.module', default="Module:")).pack(side=tk.LEFT, padx=(15, 2))
     self._tb_module_filter = ttk.Combobox(search_frame, values=["All"], state="readonly", width=10)
     self._tb_module_filter.set("All")
     self._tb_module_filter.pack(side=tk.LEFT, padx=2)
@@ -120,8 +120,8 @@ def show_textbooks_browse(self):
     row += 1
     btn = ttk.Frame(self.content_frame)
     btn.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=5)
-    ttk.Button(btn, text="View Details", command=self._tb_view_details).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn, text="Find Used Copies", command=self._tb_find_used).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.buttons.view_details', default="View Details"), command=self._tb_view_details).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.buttons.find_used_copies', default="Find Used Copies"), command=self._tb_find_used).pack(side=tk.LEFT, padx=5)
 
     self._tb_do_search()
 
@@ -131,10 +131,10 @@ def show_textbooks_exchange(self):
     self.clear_content()
 
     row = 0
-    ttk.Label(self.content_frame, text="Used Book Exchange",
+    ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.used_book_exchange', default="Used Book Exchange"),
               style='Title.TLabel').grid(row=row, column=0, sticky=tk.W, pady=(0, 5))
     row += 1
-    ttk.Label(self.content_frame, text="Available used textbooks from other students").grid(row=row, column=0, sticky=tk.W, pady=(0, 5))
+    ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.available_used_textbooks_from_other_students', default="Available used textbooks from other students")).grid(row=row, column=0, sticky=tk.W, pady=(0, 5))
 
     row += 1
     cols = ("listing_id", "title", "condition", "price", "seller", "listed_date", "status")
@@ -148,8 +148,8 @@ def show_textbooks_exchange(self):
     row += 1
     btn = ttk.Frame(self.content_frame)
     btn.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=5)
-    ttk.Button(btn, text="Buy Selected", command=self._tb_buy_used).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn, text="Refresh", command=self._tb_load_exchange).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.buttons.buy_selected', default="Buy Selected"), command=self._tb_buy_used).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.buttons.refresh', default="Refresh"), command=self._tb_load_exchange).pack(side=tk.LEFT, padx=5)
 
     self._tb_load_exchange()
 
@@ -158,40 +158,40 @@ def show_textbooks_sell(self):
     """Sell a textbook panel."""
     self.clear_content()
 
-    ttk.Label(self.content_frame, text="Sell a Textbook",
+    ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.sell_a_textbook', default="Sell a Textbook"),
               style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
 
-    form = ttk.LabelFrame(self.content_frame, text="List a Textbook for Sale", padding=15)
+    form = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.list_a_textbook_for_sale', default="List a Textbook for Sale"), padding=15)
     form.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=5)
 
     row = 0
-    ttk.Label(form, text="Select Textbook:").grid(row=row, column=0, sticky=tk.W, pady=3)
+    ttk.Label(form, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.select_textbook', default="Select Textbook:")).grid(row=row, column=0, sticky=tk.W, pady=3)
     self._tb_sell_combo = ttk.Combobox(form, state="readonly", width=50)
     self._tb_sell_combo.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
     row += 1
-    ttk.Label(form, text="Or enter ISBN:").grid(row=row, column=0, sticky=tk.W, pady=3)
+    ttk.Label(form, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.or_enter_isbn', default="Or enter ISBN:")).grid(row=row, column=0, sticky=tk.W, pady=3)
     self._tb_sell_isbn = ttk.Entry(form, width=20)
     self._tb_sell_isbn.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
     row += 1
-    ttk.Label(form, text="Condition:").grid(row=row, column=0, sticky=tk.W, pady=3)
+    ttk.Label(form, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.condition', default="Condition:")).grid(row=row, column=0, sticky=tk.W, pady=3)
     self._tb_sell_condition = ttk.Combobox(form, values=["like_new", "good", "fair", "poor"], state="readonly", width=15)
     self._tb_sell_condition.set("good")
     self._tb_sell_condition.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
     row += 1
-    ttk.Label(form, text="Asking Price (\u00a3):").grid(row=row, column=0, sticky=tk.W, pady=3)
+    ttk.Label(form, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.asking_price', default="Asking Price (\u00a3):")).grid(row=row, column=0, sticky=tk.W, pady=3)
     self._tb_sell_price = ttk.Entry(form, width=10)
     self._tb_sell_price.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
     row += 1
-    ttk.Label(form, text="Notes:").grid(row=row, column=0, sticky=tk.NW, pady=3)
+    ttk.Label(form, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.notes', default="Notes:")).grid(row=row, column=0, sticky=tk.NW, pady=3)
     self._tb_sell_notes = tk.Text(form, width=40, height=3)
     self._tb_sell_notes.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
     row += 1
-    ttk.Button(form, text="List for Sale", command=self._tb_list_for_sale).grid(
+    ttk.Button(form, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.buttons.list_for_sale', default="List for Sale"), command=self._tb_list_for_sale).grid(
         row=row, column=1, sticky=tk.W, pady=10, padx=5)
 
     # Load combos
@@ -209,7 +209,7 @@ def show_textbooks_orders(self):
     """Textbook orders panel."""
     self.clear_content()
 
-    ttk.Label(self.content_frame, text="My Textbook Orders",
+    ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.labels.my_textbook_orders', default="My Textbook Orders"),
               style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
 
     cols = ("order_id", "title", "price", "status", "date", "role")
@@ -219,7 +219,7 @@ def show_textbooks_orders(self):
         self._tb_orders_tree.column(c, width=w, minwidth=30)
     self._tb_orders_tree.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
     self.content_frame.rowconfigure(1, weight=1)
-    ttk.Button(self.content_frame, text="Refresh", command=self._tb_load_orders).grid(row=2, column=0, pady=5)
+    ttk.Button(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.textbook_manager.buttons.refresh', default="Refresh"), command=self._tb_load_orders).grid(row=2, column=0, pady=5)
 
     self._tb_load_orders()
 
@@ -313,7 +313,7 @@ def _tb_load_orders(self):
 def _tb_view_details(self):
     sel = self._tb_browse_tree.selection()
     if not sel:
-        messagebox.showwarning("Warning", "Select a textbook first.")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.select_a_textbook_first', default="Select a textbook first."))
         return
     vals = self._tb_browse_tree.item(sel[0])['values']
     try:
@@ -332,15 +332,15 @@ def _tb_view_details(self):
                     f"Price: \u00a3{row['price']:.2f}\n\n"
                     f"{row['description']}"
                 )
-                messagebox.showinfo("Textbook Details", info)
+                messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.textbook_details', default="Textbook Details"), info)
     except Exception as e:
-        messagebox.showerror("Error", str(e))
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.error', default="Error"), str(e))
 
 
 def _tb_find_used(self):
     sel = self._tb_browse_tree.selection()
     if not sel:
-        messagebox.showwarning("Warning", "Select a textbook first.")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.select_a_textbook_first', default="Select a textbook first."))
         return
     vals = self._tb_browse_tree.item(sel[0])['values']
     self.show_textbooks_exchange()
@@ -362,7 +362,7 @@ def _tb_find_used(self):
                     r["listed_date"], r["status"],
                 ))
             if not rows:
-                messagebox.showinfo("Info", "No used copies available for this textbook.")
+                messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.info', default="Info"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.no_used_copies_available_for_this_textbook', default="No used copies available for this textbook."))
     except Exception as e:
         logger.debug(f"Find used: {e}")
 
@@ -370,11 +370,11 @@ def _tb_find_used(self):
 def _tb_buy_used(self):
     sel = self._tb_exchange_tree.selection()
     if not sel:
-        messagebox.showwarning("Warning", "Select a listing to buy.")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.select_a_listing_to_buy', default="Select a listing to buy."))
         return
     vals = self._tb_exchange_tree.item(sel[0])['values']
     listing_id, title, price = vals[0], vals[1], vals[3]
-    if messagebox.askyesno("Confirm Purchase", f"Buy '{title}' for {price}?"):
+    if messagebox.askyesno(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.confirm_purchase', default="Confirm Purchase"), f"Buy '{title}' for {price}?"):
         try:
             user_id = _get_textbook_user_id(self)
             with get_connection() as conn:
@@ -382,10 +382,10 @@ def _tb_buy_used(self):
                     "SELECT * FROM textbook_listings WHERE listing_id = ?", (listing_id,)
                 ).fetchone()
                 if not listing or listing['status'] != 'available':
-                    messagebox.showerror("Error", "Listing no longer available.")
+                    messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.listing_no_longer_available', default="Listing no longer available."))
                     return
                 if listing['seller_id'] == user_id:
-                    messagebox.showerror("Error", "You cannot buy your own listing.")
+                    messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.you_cannot_buy_your_own_listing', default="You cannot buy your own listing."))
                     return
                 conn.execute(
                     "INSERT INTO textbook_orders (listing_id, buyer_id, seller_id, price, status) VALUES (?, ?, ?, ?, 'pending')",
@@ -393,22 +393,22 @@ def _tb_buy_used(self):
                 )
                 conn.execute("UPDATE textbook_listings SET status='sold' WHERE listing_id=?", (listing_id,))
                 conn.commit()
-            messagebox.showinfo("Success", "Order placed! Contact the seller to arrange pickup.")
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.success', default="Success"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.order_placed_contact_the_seller_to_arrange_pickup', default="Order placed! Contact the seller to arrange pickup."))
             self._tb_load_exchange()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.error', default="Error"), f"Failed: {e}")
 
 
 def _tb_list_for_sale(self):
     book_val = self._tb_sell_combo.get()
     price_str = self._tb_sell_price.get().strip()
     if not price_str:
-        messagebox.showwarning("Warning", "Enter an asking price.")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.enter_an_asking_price', default="Enter an asking price."))
         return
     try:
         price = float(price_str)
     except ValueError:
-        messagebox.showerror("Error", "Invalid price.")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.invalid_price', default="Invalid price."))
         return
 
     textbook_id = None
@@ -426,14 +426,14 @@ def _tb_list_for_sale(self):
                 if row:
                     textbook_id = row['textbook_id']
                 else:
-                    messagebox.showerror("Error", "ISBN not found in the textbook catalog.")
+                    messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.isbn_not_found_in_the_textbook_catalog', default="ISBN not found in the textbook catalog."))
                     return
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.error', default="Error"), str(e))
             return
 
     if not textbook_id:
-        messagebox.showwarning("Warning", "Select a textbook or enter an ISBN.")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.select_a_textbook_or_enter_an_isbn', default="Select a textbook or enter an ISBN."))
         return
 
     try:
@@ -445,8 +445,8 @@ def _tb_list_for_sale(self):
                  self._tb_sell_notes.get("1.0", tk.END).strip()),
             )
             conn.commit()
-        messagebox.showinfo("Success", "Textbook listed for sale!")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.success', default="Success"), _t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.textbook_listed_for_sale', default="Textbook listed for sale!"))
         self._tb_sell_price.delete(0, tk.END)
         self._tb_sell_notes.delete("1.0", tk.END)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.textbook_manager.dialogs.error', default="Error"), f"Failed: {e}")

@@ -8,7 +8,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 matplotlib.use('TkAgg')
 import numpy as np
 
@@ -88,7 +88,7 @@ def create_settings_tab(self):
     export_frame = ttk.Frame(system_frame)
     export_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=(5, 0))
 
-    self.export_path = tk.StringVar(value=str(paths.EXPORTS_REPORTS_DIR))
+    self.export_path = tk.StringVar(value=str(paths.UNIVERSITY_EXPORTS_REPORTS_DIR))
     ttk.Entry(export_frame, textvariable=self.export_path, width=40).grid(row=0, column=0, sticky=(tk.W, tk.E))
     ttk.Button(export_frame, text=_("common.browse"), command=self.browse_export_path).grid(row=0, column=1, padx=(5, 0))
 
@@ -130,8 +130,8 @@ def save_settings(self):
     }
 
     try:
-        paths.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-        with open(paths.FINANCE_GUI_SETTINGS_FILE, 'w') as f:
+        paths.UNIVERSITY_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        with open(paths.UNIVERSITY_FINANCE_GUI_SETTINGS_FILE, 'w') as f:
             json.dump(settings, f, indent=2)
 
         messagebox.showinfo(_("finance_reporting.messages.settings_saved"), _("finance_reporting.messages.settings_saved_msg"))
@@ -143,8 +143,8 @@ def save_settings(self):
 def load_settings(self):
     """Load application settings"""
     try:
-        if paths.FINANCE_GUI_SETTINGS_FILE.exists():
-            with open(paths.FINANCE_GUI_SETTINGS_FILE, 'r') as f:
+        if paths.UNIVERSITY_FINANCE_GUI_SETTINGS_FILE.exists():
+            with open(paths.UNIVERSITY_FINANCE_GUI_SETTINGS_FILE, 'r') as f:
                 settings = json.load(f)
 
             # Load alert thresholds

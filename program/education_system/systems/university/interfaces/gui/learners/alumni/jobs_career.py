@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -56,7 +58,7 @@ class JobsCareerMixin:
                      font=('Arial', 16, 'bold')).pack(pady=(0, 10))
 
             # Company info
-            company_frame = ttk.LabelFrame(main_frame, text="Company Information", padding=10)
+            company_frame = ttk.LabelFrame(main_frame, text=_t('gui.learners.alumni.jobs_career.labels.company_information', default="Company Information"), padding=10)
             company_frame.pack(fill=tk.X, pady=(0, 10))
 
             ttk.Label(company_frame, text=f"Company: {job_data[1]}",
@@ -65,7 +67,7 @@ class JobsCareerMixin:
                      font=('Arial', 11)).pack(anchor='w')
 
             # Job details
-            details_frame = ttk.LabelFrame(main_frame, text="Job Details", padding=10)
+            details_frame = ttk.LabelFrame(main_frame, text=_t('gui.learners.alumni.jobs_career.labels.job_details', default="Job Details"), padding=10)
             details_frame.pack(fill=tk.X, pady=(0, 10))
 
             ttk.Label(details_frame, text=f"Job Type: {job_data[3]}",
@@ -74,7 +76,7 @@ class JobsCareerMixin:
                      font=('Arial', 11)).pack(anchor='w')
 
             # Description
-            desc_frame = ttk.LabelFrame(main_frame, text="Job Description", padding=10)
+            desc_frame = ttk.LabelFrame(main_frame, text=_t('gui.learners.alumni.jobs_career.labels.job_description', default="Job Description"), padding=10)
             desc_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
             desc_text = ScrolledText(desc_frame, wrap=tk.WORD, height=8)
@@ -103,19 +105,19 @@ class JobsCareerMixin:
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(fill=tk.X)
 
-            ttk.Button(button_frame, text="Express Interest",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.jobs_career.buttons.express_interest', default="Express Interest"),
                       command=lambda: self._record_interest_from_detail(job_data[0], job_data[1], detail_window)).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.jobs_career.buttons.close', default="Close"),
                       command=detail_window.destroy).pack(side=tk.LEFT)
 
         def _record_interest_from_detail(self, job_title, company_name, window):
             """Record interest from job detail window"""
             try:
                 self.record_job_interest(job_title, company_name)
-                messagebox.showinfo("Success", "Your interest has been recorded!")
+                messagebox.showinfo(_t('gui.learners.alumni.jobs_career.dialogs.success', default="Success"), _t('gui.learners.alumni.jobs_career.dialogs.your_interest_has_been_recorded', default="Your interest has been recorded!"))
                 window.destroy()
             except (sqlite3.Error, ValueError) as e:
-                messagebox.showerror("Error", f"Failed to record interest: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.jobs_career.dialogs.error', default="Error"), f"Failed to record interest: {str(e)}")
 
         def clear_job_form(self):
             """Clear job posting form"""
@@ -126,7 +128,7 @@ class JobsCareerMixin:
 
         def create_counseling_form(self, parent):
             """Create career counseling scheduling form"""
-            ttk.Label(parent, text="Schedule Career Counseling Session",
+            ttk.Label(parent, text=_t('gui.learners.alumni.jobs_career.labels.schedule_career_counseling_session', default="Schedule Career Counseling Session"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             form_frame = ttk.Frame(parent)
@@ -138,7 +140,7 @@ class JobsCareerMixin:
             counselor_frame = ttk.Frame(form_frame)
             counselor_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(counselor_frame, text="Select Counselor:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(counselor_frame, text=_t('gui.learners.alumni.jobs_career.labels.select_counselor', default="Select Counselor:")).pack(side=tk.LEFT, padx=(0, 10))
             self.counseling_vars['counselor'] = tk.StringVar()
             counselor_combo = ttk.Combobox(counselor_frame, textvariable=self.counseling_vars['counselor'],
                                           values=["Sarah Johnson - Tech Careers", "Michael Chen - Finance", "Dr. Lisa Martinez - Healthcare"])
@@ -148,7 +150,7 @@ class JobsCareerMixin:
             type_frame = ttk.Frame(form_frame)
             type_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(type_frame, text="Session Type:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(type_frame, text=_t('gui.learners.alumni.jobs_career.labels.session_type', default="Session Type:")).pack(side=tk.LEFT, padx=(0, 10))
             self.counseling_vars['session_type'] = tk.StringVar()
             type_combo = ttk.Combobox(type_frame, textvariable=self.counseling_vars['session_type'],
                                      values=["Career Planning", "Resume Review", "Interview Preparation", "Industry Insights", "Networking Advice"])
@@ -158,7 +160,7 @@ class JobsCareerMixin:
             datetime_frame = ttk.Frame(form_frame)
             datetime_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(datetime_frame, text="Preferred Date & Time: (YYYY-MM-DD HH:MM)").pack(anchor='w')
+            ttk.Label(datetime_frame, text=_t('gui.learners.alumni.jobs_career.labels.preferred_date_time_yyyy_mm_dd_hh_mm', default="Preferred Date & Time: (YYYY-MM-DD HH:MM)")).pack(anchor='w')
             self.counseling_vars['datetime'] = tk.StringVar()
             ttk.Entry(datetime_frame, textvariable=self.counseling_vars['datetime']).pack(fill=tk.X, pady=(5, 0))
 
@@ -166,19 +168,19 @@ class JobsCareerMixin:
             duration_frame = ttk.Frame(form_frame)
             duration_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(duration_frame, text="Duration (minutes):").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(duration_frame, text=_t('gui.learners.alumni.jobs_career.labels.duration_minutes', default="Duration (minutes):")).pack(side=tk.LEFT, padx=(0, 10))
             self.counseling_vars['duration'] = tk.StringVar(value="60")
             duration_combo = ttk.Combobox(duration_frame, textvariable=self.counseling_vars['duration'],
                                          values=["30", "60", "90"])
             duration_combo.pack(side=tk.LEFT)
 
             # Notes
-            ttk.Label(form_frame, text="Additional Notes or Specific Topics:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(form_frame, text=_t('gui.learners.alumni.jobs_career.labels.additional_notes_or_specific_topics', default="Additional Notes or Specific Topics:")).pack(anchor='w', pady=(10, 5))
             self.counseling_notes = ScrolledText(form_frame, height=4, wrap=tk.WORD)
             self.counseling_notes.pack(fill=tk.X)
 
             # Submit button
-            ttk.Button(form_frame, text="Schedule Session",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.jobs_career.buttons.schedule_session', default="Schedule Session"),
                       command=self.submit_counseling_request).pack(pady=20)
 
         def load_job_listings(self):
@@ -260,7 +262,7 @@ class JobsCareerMixin:
             """Record user's interest in a job posting"""
             if not job_title or not company_name:
                 # Show job selection dialog
-                messagebox.showinfo("Info", "Please use 'View Job Details' to express interest in a job.")
+                messagebox.showinfo(_t('gui.learners.alumni.jobs_career.dialogs.info', default="Info"), _t('gui.learners.alumni.jobs_career.dialogs.please_use_view_job_details_to_express_interest_in_a_job', default="Please use 'View Job Details' to express interest in a job."))
                 return
 
             try:
@@ -287,8 +289,8 @@ class JobsCareerMixin:
                     """, (job_id, user_id))
 
                     if cursor.fetchone():
-                        messagebox.showinfo("Already Interested",
-                                          "You have already expressed interest in this job.")
+                        messagebox.showinfo(_t('gui.learners.alumni.jobs_career.dialogs.already_interested', default="Already Interested"),
+                                          _t('gui.learners.alumni.jobs_career.dialogs.you_have_already_expressed_interest_in_this_job', default="You have already expressed interest in this job."))
                         return
 
                     # Record interest
@@ -335,7 +337,7 @@ class JobsCareerMixin:
             self.clear_content()
             self.update_status("Career Counseling")
 
-            ttk.Label(self.content_frame, text="Career Counseling Services",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.jobs_career.labels.career_counseling_services', default="Career Counseling Services"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Tabs for different counseling views
@@ -344,7 +346,7 @@ class JobsCareerMixin:
 
             # Available counselors tab
             counselors_frame = ttk.Frame(notebook)
-            notebook.add(counselors_frame, text="Available Counselors")
+            notebook.add(counselors_frame, text=_t('gui.learners.alumni.jobs_career.tabs.available_counselors', default="Available Counselors"))
 
             counselors_text = ScrolledText(counselors_frame, wrap=tk.WORD)
             counselors_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -395,7 +397,7 @@ class JobsCareerMixin:
 
             # Schedule session tab
             schedule_frame = ttk.Frame(notebook)
-            notebook.add(schedule_frame, text="Schedule Session")
+            notebook.add(schedule_frame, text=_t('gui.learners.alumni.jobs_career.tabs.schedule_session', default="Schedule Session"))
 
             self.create_counseling_form(schedule_frame)
 
@@ -422,7 +424,7 @@ class JobsCareerMixin:
             self.clear_content()
             self.update_status("Post Job Opportunity")
 
-            ttk.Label(self.content_frame, text="Post Job Opportunity",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.jobs_career.labels.post_job_opportunity', default="Post Job Opportunity"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Create scrollable form
@@ -442,7 +444,7 @@ class JobsCareerMixin:
             self.job_vars = {}
 
             # Company info
-            company_frame = ttk.LabelFrame(scrollable_frame, text="Company Information", padding=10)
+            company_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.jobs_career.labels.company_information', default="Company Information"), padding=10)
             company_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             company_fields = [
@@ -467,7 +469,7 @@ class JobsCareerMixin:
             company_frame.columnconfigure(1, weight=1)
 
             # Job details
-            job_frame = ttk.LabelFrame(scrollable_frame, text="Job Details", padding=10)
+            job_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.jobs_career.labels.job_details', default="Job Details"), padding=10)
             job_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             job_fields = [
@@ -507,19 +509,19 @@ class JobsCareerMixin:
             salary_frame = ttk.Frame(job_frame)
             salary_frame.grid(row=2, column=0, columnspan=2, padx=10, pady=5, sticky='ew')
 
-            ttk.Label(salary_frame, text="Salary Range (optional)").pack(anchor='w')
+            ttk.Label(salary_frame, text=_t('gui.learners.alumni.jobs_career.labels.salary_range_optional', default="Salary Range (optional)")).pack(anchor='w')
             self.job_vars['salary_range'] = tk.StringVar()
             ttk.Entry(salary_frame, textvariable=self.job_vars['salary_range']).pack(fill=tk.X)
 
             # Job description
-            desc_frame = ttk.LabelFrame(scrollable_frame, text="Job Description", padding=10)
+            desc_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.jobs_career.labels.job_description', default="Job Description"), padding=10)
             desc_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10), padx=20)
 
-            ttk.Label(desc_frame, text="Job Description*:").pack(anchor='w')
+            ttk.Label(desc_frame, text=_t('gui.learners.alumni.jobs_career.labels.job_description_variant_2', default="Job Description*:")).pack(anchor='w')
             self.job_description = ScrolledText(desc_frame, height=6, wrap=tk.WORD)
             self.job_description.pack(fill=tk.BOTH, expand=True, pady=(5, 10))
 
-            ttk.Label(desc_frame, text="Requirements*:").pack(anchor='w')
+            ttk.Label(desc_frame, text=_t('gui.learners.alumni.jobs_career.labels.requirements', default="Requirements*:")).pack(anchor='w')
             self.job_requirements = ScrolledText(desc_frame, height=4, wrap=tk.WORD)
             self.job_requirements.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
 
@@ -527,9 +529,9 @@ class JobsCareerMixin:
             button_frame = ttk.Frame(scrollable_frame)
             button_frame.pack(fill=tk.X, pady=20, padx=20)
 
-            ttk.Button(button_frame, text="Post Job",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.jobs_career.buttons.post_job', default="Post Job"),
                       command=self.submit_job_posting).pack(side=tk.RIGHT, padx=(10, 0))
-            ttk.Button(button_frame, text="Clear Form",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.jobs_career.buttons.clear_form', default="Clear Form"),
                       command=self.clear_job_form).pack(side=tk.RIGHT)
 
             # Pack canvas and scrollbar
@@ -590,13 +592,13 @@ class JobsCareerMixin:
             notes = self.counseling_notes.get(1.0, tk.END).strip()
 
             if not counselor:
-                messagebox.showerror("Validation Error", "Please select a counselor!")
+                messagebox.showerror(_t('gui.learners.alumni.jobs_career.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.jobs_career.dialogs.please_select_a_counselor', default="Please select a counselor!"))
                 return
             if not session_type:
-                messagebox.showerror("Validation Error", "Please select a session type!")
+                messagebox.showerror(_t('gui.learners.alumni.jobs_career.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.jobs_career.dialogs.please_select_a_session_type', default="Please select a session type!"))
                 return
             if not session_dt:
-                messagebox.showerror("Validation Error", "Please enter preferred date and time!")
+                messagebox.showerror(_t('gui.learners.alumni.jobs_career.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.jobs_career.dialogs.please_enter_preferred_date_and_time', default="Please enter preferred date and time!"))
                 return
 
             user = getattr(self, 'current_user', {}) or {}
@@ -623,7 +625,7 @@ class JobsCareerMixin:
                     )
                     conn.commit()
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error",
+                messagebox.showerror(_t('gui.learners.alumni.jobs_career.dialogs.database_error', default="Database Error"),
                                      f"Could not schedule the session: {e}")
                 return
 
@@ -632,7 +634,7 @@ class JobsCareerMixin:
                 recipient_email, scheduler_name, counselor, session_type, session_dt, dur_int)
 
             messagebox.showinfo(
-                "Session Scheduled",
+                _t('gui.learners.alumni.jobs_career.dialogs.session_scheduled', default="Session Scheduled"),
                 "Career counseling session scheduled." +
                 ("\nDetails have been emailed to you." if emailed
                  else "\n(Confirmation email could not be sent.)"))
@@ -648,21 +650,21 @@ class JobsCareerMixin:
             required_fields = ['company_name', 'industry', 'contact_email', 'job_title', 'location', 'job_type', 'experience_level']
             for field in required_fields:
                 if not self.job_vars[field].get().strip():
-                    messagebox.showerror("Validation Error", f"{field.replace('_', ' ').title()} is required!")
+                    messagebox.showerror(_t('gui.learners.alumni.jobs_career.dialogs.validation_error', default="Validation Error"), f"{field.replace('_', ' ').title()} is required!")
                     return
 
             description = self.job_description.get(1.0, tk.END).strip()
             requirements = self.job_requirements.get(1.0, tk.END).strip()
 
             if not description:
-                messagebox.showerror("Validation Error", "Job description is required!")
+                messagebox.showerror(_t('gui.learners.alumni.jobs_career.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.jobs_career.dialogs.job_description_is_required', default="Job description is required!"))
                 return
 
             if not requirements:
-                messagebox.showerror("Validation Error", "Job requirements are required!")
+                messagebox.showerror(_t('gui.learners.alumni.jobs_career.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.jobs_career.dialogs.job_requirements_are_required', default="Job requirements are required!"))
                 return
 
-            messagebox.showinfo("Job Posted", "Job opportunity posted successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.jobs_career.dialogs.job_posted', default="Job Posted"), _t('gui.learners.alumni.jobs_career.dialogs.job_opportunity_posted_successfully', default="Job opportunity posted successfully!"))
             self.update_status("Job posting submitted")
             self.clear_job_form()
 
@@ -670,7 +672,7 @@ class JobsCareerMixin:
             """View details for a specific job posting"""
             # Create job selection dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Select Job to View")
+            dialog.title(_t('gui.learners.alumni.jobs_career.windows.select_job_to_view', default="Select Job to View"))
             dialog.geometry("700x500")
             dialog.configure(bg='white')
             dialog.grab_set()
@@ -678,7 +680,7 @@ class JobsCareerMixin:
             frame = ttk.Frame(dialog, padding=20)
             frame.pack(fill=tk.BOTH, expand=True)
 
-            ttk.Label(frame, text="Select a Job Posting",
+            ttk.Label(frame, text=_t('gui.learners.alumni.jobs_career.labels.select_a_job_posting', default="Select a Job Posting"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Job listings table
@@ -714,12 +716,12 @@ class JobsCareerMixin:
                         job_tree.insert('', tk.END, values=job[1:])
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load jobs: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.jobs_career.dialogs.database_error', default="Database Error"), f"Failed to load jobs: {str(e)}")
 
             def show_selected_job():
                 selection = job_tree.selection()
                 if not selection:
-                    messagebox.showwarning("No Selection", "Please select a job to view.")
+                    messagebox.showwarning(_t('gui.learners.alumni.jobs_career.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.jobs_career.dialogs.please_select_a_job_to_view', default="Please select a job to view."))
                     return
 
                 item = job_tree.item(selection[0])
@@ -731,8 +733,8 @@ class JobsCareerMixin:
             button_frame = ttk.Frame(frame)
             button_frame.pack(fill=tk.X)
 
-            ttk.Button(button_frame, text="View Details",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.jobs_career.buttons.view_details', default="View Details"),
                       command=show_selected_job).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Cancel",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.jobs_career.buttons.cancel', default="Cancel"),
                       command=dialog.destroy).pack(side=tk.LEFT)
 

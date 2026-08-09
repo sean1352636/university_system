@@ -409,9 +409,9 @@ class EquipmentRentalGUI:
         btn_frame3 = ttk.Frame(right_frame)
         btn_frame3.grid(row=5, column=0, columnspan=2, pady=5)
 
-        ttk.Button(btn_frame3, text="Refund Deposit",
+        ttk.Button(btn_frame3, text=_t('gui.operations.campus.equipment.equipment.buttons.refund_deposit', default="Refund Deposit"),
                    command=self.refund_deposit).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame3, text="View Transactions",
+        ttk.Button(btn_frame3, text=_t('gui.operations.campus.equipment.equipment.buttons.view_transactions', default="View Transactions"),
                    command=self.view_transactions).pack(side=tk.LEFT, padx=5)
 
     def create_reports_tab(self):
@@ -761,7 +761,7 @@ class EquipmentRentalGUI:
 
         rental = RentalManager.get_rental(rental_id)
         if not rental:
-            messagebox.showerror(_t("common.error"), "Rental not found")
+            messagebox.showerror(_t("common.error"), _t('gui.operations.campus.equipment.equipment.dialogs.rental_not_found', default="Rental not found"))
             return
 
         # Get return details from form
@@ -770,7 +770,7 @@ class EquipmentRentalGUI:
             late_fee = float(self.late_fee_entry.get() or 0)
             damage_fee = float(self.damage_fee_entry.get() or 0)
         except ValueError:
-            messagebox.showerror(_t("common.error"), "Invalid fee values")
+            messagebox.showerror(_t("common.error"), _t('gui.operations.campus.equipment.equipment.dialogs.invalid_fee_values', default="Invalid fee values"))
             return
 
         # Calculate total amount
@@ -778,7 +778,7 @@ class EquipmentRentalGUI:
 
         # Create payment dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Return Equipment & Payment")
+        dialog.title(_t('gui.operations.campus.equipment.equipment.windows.return_equipment_payment', default="Return Equipment & Payment"))
         dialog.geometry("400x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -824,7 +824,7 @@ class EquipmentRentalGUI:
             balance_text = f"Student Account (Balance: £{balance:.2f})"
             payment_options.append(balance_text)
 
-        payment_method_var = tk.StringVar(value='Card')
+        payment_method_var = tk.StringVar(value=_t('gui.operations.campus.equipment.equipment.values.card', default='Card'))
         for option in payment_options:
             ttk.Radiobutton(payment_frame, text=option, variable=payment_method_var, value=option).pack(anchor=tk.W)
 
@@ -835,7 +835,7 @@ class EquipmentRentalGUI:
             # Check balance for student account
             if actual_method == 'finance_account':
                 if balance is None or balance < total_amount:
-                    messagebox.showerror(_t("common.error"), "Insufficient balance in student account")
+                    messagebox.showerror(_t("common.error"), _t('gui.operations.campus.equipment.equipment.dialogs.insufficient_balance_in_student_account', default="Insufficient balance in student account"))
                     return
 
                 # Process student account payment
@@ -853,7 +853,7 @@ class EquipmentRentalGUI:
 
             # Complete the return
             if not RentalManager.return_item(rental_id, condition, late_fee, damage_fee):
-                messagebox.showerror(_t("common.error"), "Failed to complete return")
+                messagebox.showerror(_t("common.error"), _t('gui.operations.campus.equipment.equipment.dialogs.failed_to_complete_return', default="Failed to complete return"))
                 return
 
             # Record payment in rental system
@@ -1076,19 +1076,19 @@ class EquipmentRentalGUI:
         rental_id = self.active_rentals_tree.item(selected[0])['values'][0]
         rental = RentalManager.get_rental(rental_id)
         if not rental:
-            messagebox.showerror(_t("common.error"), "Rental not found")
+            messagebox.showerror(_t("common.error"), _t('gui.operations.campus.equipment.equipment.dialogs.rental_not_found', default="Rental not found"))
             return
 
         # Refund dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Refund Deposit")
+        dialog.title(_t('gui.operations.campus.equipment.equipment.windows.refund_deposit', default="Refund Deposit"))
         dialog.geometry("320x200")
         dialog.transient(self.root)
         dialog.grab_set()
 
         ttk.Label(dialog, text=f"Rental: {rental.get('rental_number', rental_id)}").pack(pady=(15, 5))
         default_deposit = rental.get('deposit_amount') or rental.get('deposit_required') or 0
-        ttk.Label(dialog, text="Refund amount (£):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.operations.campus.equipment.equipment.labels.refund_amount', default="Refund amount (£):")).pack(pady=5)
         amount_entry = ttk.Entry(dialog, width=20)
         amount_entry.insert(0, f"{float(default_deposit):.2f}")
         amount_entry.pack(pady=5)
@@ -1097,7 +1097,7 @@ class EquipmentRentalGUI:
             try:
                 amount = float(amount_entry.get())
             except ValueError:
-                messagebox.showerror(_t("common.error"), "Invalid amount", parent=dialog)
+                messagebox.showerror(_t("common.error"), _t('gui.operations.campus.equipment.equipment.dialogs.invalid_amount', default="Invalid amount"), parent=dialog)
                 return
 
             borrower_id = rental.get('borrower_id')
@@ -1112,7 +1112,7 @@ class EquipmentRentalGUI:
                     f"Deposit of £{amount:.2f} refunded (Transaction ID: {txn_id})")
                 dialog.destroy()
             else:
-                messagebox.showerror(_t("common.error"), "Failed to refund deposit", parent=dialog)
+                messagebox.showerror(_t("common.error"), _t('gui.operations.campus.equipment.equipment.dialogs.failed_to_refund_deposit', default="Failed to refund deposit"), parent=dialog)
 
         ttk.Button(dialog, text=_t("common.confirm"), command=confirm_refund).pack(pady=15)
 
@@ -1151,7 +1151,7 @@ class EquipmentRentalGUI:
 
         tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         if not transactions:
-            ttk.Label(window, text="No transactions found.").pack(pady=5)
+            ttk.Label(window, text=_t('gui.operations.campus.equipment.equipment.labels.no_transactions_found', default="No transactions found.")).pack(pady=5)
         ttk.Button(window, text=_t("equipment.btn.close"), command=window.destroy).pack(pady=(0, 10))
 
     def send_receipt_email(self, rental_id: int):
@@ -1233,7 +1233,7 @@ class EquipmentRentalGUI:
         """Export report as TXT file"""
         filename = filedialog.asksaveasfilename(
             parent=parent_window,
-            title="Save Report as TXT",
+            title=_t('gui.operations.campus.equipment.equipment.dialogs.save_report_as_txt', default="Save Report as TXT"),
             defaultextension=".txt",
             initialfile=f"{title.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
             filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
@@ -1273,8 +1273,8 @@ class EquipmentRentalGUI:
 
             if not admin:
                 messagebox.showerror(_t("equipment.msg_titles.error"),
-                                   "No administrator email found in database.\n"
-                                   "Please ensure an administrator account exists.",
+                                   _t('gui.operations.campus.equipment.equipment.dialogs.no_administrator_email_found_in_database_please_ensure_an_admini', default="No administrator email found in database.\n"
+                                   "Please ensure an administrator account exists."),
                                    parent=parent_window)
                 return
 
@@ -1344,7 +1344,7 @@ This report was generated automatically by the Equipment Rental Management Syste
                 logger.info(f"Report '{title}' emailed to {admin_email}")
             else:
                 messagebox.showerror(_t("equipment.msg_titles.error"),
-                                   "Failed to send email. Please check email configuration.",
+                                   _t('gui.operations.campus.equipment.equipment.dialogs.failed_to_send_email_please_check_email_configuration', default="Failed to send email. Please check email configuration."),
                                    parent=parent_window)
 
         except Exception as e:

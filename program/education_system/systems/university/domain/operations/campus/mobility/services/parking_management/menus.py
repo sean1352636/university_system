@@ -25,13 +25,90 @@ _t = get_text
 
 
 def pay_violation_fine():
-    print("Feature not yet implemented.")
+    """Mark an outstanding parking fine as paid after user confirmation."""
+    init_db()
+    violation_id = input("Enter violation ID to pay: ").strip()
+    if not violation_id:
+        print("Violation ID is required.")
+        return False
+    with core.get_connection() as conn:
+        row = conn.execute(
+            "SELECT violation_id, fine_amount, payment_status FROM parking_violations "
+            "WHERE violation_id = ?", (violation_id,),
+        ).fetchone()
+        if not row:
+            print(f"No violation found with ID: {violation_id}")
+            return False
+        if str(row[2]).lower() == "paid":
+            print(f"Violation {violation_id} has already been paid.")
+            return True
+        amount = float(row[1] or 0)
+        if input(f"Pay £{amount:.2f} for violation {violation_id}? (y/n): ").strip().lower() != "y":
+            print("Payment cancelled.")
+            return False
+        backup_before_operation("pay_violation_fine")
+        conn.execute(
+            "UPDATE parking_violations SET payment_status = 'Paid' WHERE violation_id = ?",
+            (violation_id,),
+        )
+        conn.commit()
+    print(f"Payment of £{amount:.2f} recorded for violation {violation_id}.")
+    return True
 
 def check_lot_availability():
-    print("Feature not yet implemented.")
+    """Display current capacity for one lot or all parking lots."""
+    init_db()
+    lot_id = input("Enter lot ID (leave blank for all lots): ").strip()
+    query = (
+        "SELECT lot_id, lot_name, location, total_spaces, available_spaces "
+        "FROM parking_lots"
+    )
+    params = ()
+    if lot_id:
+        query += " WHERE lot_id = ?"
+        params = (lot_id,)
+    query += " ORDER BY lot_id"
+    with core.get_connection() as conn:
+        rows = conn.execute(query, params).fetchall()
+    if not rows:
+        print("No matching parking lots found.")
+        return []
+    print(f"\n{'Lot':<8} {'Name':<28} {'Available':>10} {'Total':>8} Status")
+    print("-" * 72)
+    result = []
+    for row in rows:
+        available, total = int(row[4] or 0), int(row[3] or 0)
+        status = "Full" if available <= 0 else "Available"
+        print(f"{row[0]:<8} {row[1]:<28} {available:>10} {total:>8} {status}")
+        result.append({
+            "lot_id": row[0], "lot_name": row[1], "location": row[2],
+            "total_spaces": total, "available_spaces": available, "status": status,
+        })
+    return result
 
 def generate_occupancy_report():
-    print("Feature not yet implemented.")
+    """Display and return live occupancy percentages for every parking lot."""
+    init_db()
+    with core.get_connection() as conn:
+        rows = conn.execute(
+            "SELECT lot_id, lot_name, total_spaces, available_spaces "
+            "FROM parking_lots ORDER BY lot_id"
+        ).fetchall()
+    print(f"\n{'Lot':<8} {'Name':<28} {'Occupied':>10} {'Capacity':>10} {'Occupancy':>10}")
+    print("-" * 72)
+    report = []
+    for row in rows:
+        total = int(row[2] or 0)
+        available = max(0, int(row[3] or 0))
+        occupied = max(0, total - available)
+        occupancy = round((occupied / total * 100) if total else 0.0, 1)
+        print(f"{row[0]:<8} {row[1]:<28} {occupied:>10} {total:>10} {occupancy:>9.1f}%")
+        report.append({
+            "lot_id": row[0], "lot_name": row[1], "occupied_spaces": occupied,
+            "available_spaces": available, "total_spaces": total,
+            "occupancy_percent": occupancy,
+        })
+    return report
 
 
 def display_permit_menu():

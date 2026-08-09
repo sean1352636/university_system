@@ -14,8 +14,11 @@ dialogs rather than living in a separate tab, matching the original feel.
 """
 
 import logging
+import re
 import tkinter as tk
+import webbrowser
 from tkinter import ttk, messagebox, scrolledtext
+from urllib.parse import urlparse
 
 from education_system.platform.features.messaging.messaging_service import InterSystemMessagingService
 
@@ -40,6 +43,19 @@ KIND_LABEL = {
 # bell's total. The cap bounds worst-case work on a very large mailbox.
 _INBOX_PAGE_SIZE = 200
 _MAX_INBOX_PAGES = 25
+_MARKDOWN_LINK_RE = re.compile(r"\[([^\]\n]+)\]\((https?://[^\s)]+)\)")
+
+
+def _message_segments(body: str):
+    """Yield plain text and safe HTTP(S) links from a message body."""
+    offset = 0
+    for match in _MARKDOWN_LINK_RE.finditer(body or ""):
+        if match.start() > offset:
+            yield "text", body[offset:match.start()], None
+        yield "link", match.group(1), match.group(2)
+        offset = match.end()
+    if offset < len(body or ""):
+        yield "text", body[offset:], None
 
 
 class UnifiedInboxPanel(tk.Frame):
@@ -386,13 +402,31 @@ class UnifiedInboxPanel(tk.Frame):
         lines.append(f"Status: {'Read' if item['is_read'] else 'Unread'}")
         header = "\n".join(lines) + "\n" + ("-" * 50) + "\n\n"
 
-        self._message_text.insert("1.0", header + (item["body"] or ""))
+        self._message_text.insert("1.0", header)
+        for kind, text, url in _message_segments(item["body"] or ""):
+            if kind == "text":
+                self._message_text.insert(tk.END, text)
+                continue
+            tag = f"message_link_{len(self._message_text.tag_names())}"
+            self._message_text.insert(tk.END, text, tag)
+            self._message_text.tag_configure(tag, foreground="#1769aa", underline=True)
+            self._message_text.tag_bind(tag, "<Enter>", lambda _e: self._message_text.config(cursor="hand2"))
+            self._message_text.tag_bind(tag, "<Leave>", lambda _e: self._message_text.config(cursor=""))
+            self._message_text.tag_bind(tag, "<Button-1>", lambda _e, target=url: self._open_message_link(target))
         self._message_text.config(state=tk.DISABLED)
 
         self._selected_indicator.config(
             text="✓ Message selected — Ready to reply",
             foreground="#2E86AB", font=("Arial", 9, "bold"),
         )
+
+    @staticmethod
+    def _open_message_link(url: str):
+        """Open only absolute HTTP(S) links rendered by the message viewer."""
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return
+        webbrowser.open_new_tab(url)
 
     def _clear_viewer(self):
         self._message_text.config(state=tk.NORMAL)

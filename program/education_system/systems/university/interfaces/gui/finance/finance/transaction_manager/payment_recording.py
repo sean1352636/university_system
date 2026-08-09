@@ -1,5 +1,7 @@
 """Payment recording dialogs and payment detail views"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from unittest.mock import Mock
 
 from education_system.systems.university.interfaces.gui.finance.finance.transaction_manager._imports import (
@@ -105,7 +107,7 @@ class PaymentRecordingMixin:
         if isinstance(dialog, Mock) or not hasattr(dialog, "tk") or not hasattr(dialog, "_w"):
             return dialog
 
-        ttk.Label(dialog, text="Record Payment",
+        ttk.Label(dialog, text=_t('gui.finance.finance.transaction_manager.payment_recording.labels.record_payment', default="Record Payment"),
                  font=('Arial', 14, 'bold')).pack(pady=(10, 5))
 
         form_frame = ttk.Frame(dialog, padding=10)
@@ -137,10 +139,10 @@ class PaymentRecordingMixin:
         row += 1
 
         # --- Payment purpose ---
-        ttk.Label(form_frame, text="Payment For:", font=('Arial', 10)).grid(
+        ttk.Label(form_frame, text=_t('gui.finance.finance.transaction_manager.payment_recording.labels.payment_for', default="Payment For:"), font=('Arial', 10)).grid(
             row=row, column=0, sticky='w', pady=5, padx=5)
 
-        purpose_var = tk.StringVar(value="General Fee Payment")
+        purpose_var = tk.StringVar(value=_t('gui.finance.finance.transaction_manager.payment_recording.values.general_fee_payment', default="General Fee Payment"))
         payment_purposes = [
             "General Fee Payment",
             "Tuition Fees",
@@ -186,7 +188,7 @@ class PaymentRecordingMixin:
         # --- Payment method ---
         ttk.Label(form_frame, text=_("finance_gui.transaction_manager.payment_method_label") + ":",
                  font=('Arial', 10)).grid(row=row, column=0, sticky='w', pady=5, padx=5)
-        method_var = tk.StringVar(value="Card")
+        method_var = tk.StringVar(value=_t('gui.finance.finance.transaction_manager.payment_recording.values.card', default="Card"))
         method_combo = ttk.Combobox(form_frame, textvariable=method_var,
                                    values=["Student Finance Account", "Card", "Cash",
                                            "Bank Transfer", "Cheque", "Online"],
@@ -247,16 +249,16 @@ class PaymentRecordingMixin:
         def record_payment():
             selected_student = student_var.get()
             if not selected_student:
-                messagebox.showwarning(_("finance_gui.messages.warning"), "Please select a student.")
+                messagebox.showwarning(_("finance_gui.messages.warning"), _t('gui.finance.finance.transaction_manager.payment_recording.dialogs.please_select_a_student', default="Please select a student."))
                 return
 
             student_id = student_id_map.get(selected_student)
             if not student_id:
-                messagebox.showerror(_("finance_gui.messages.error"), "Invalid student selection.")
+                messagebox.showerror(_("finance_gui.messages.error"), _t('gui.finance.finance.transaction_manager.payment_recording.dialogs.invalid_student_selection', default="Invalid student selection."))
                 return
 
             if not amount_var.get().strip():
-                messagebox.showwarning(_("finance_gui.messages.warning"), "Please enter a payment amount.")
+                messagebox.showwarning(_("finance_gui.messages.warning"), _t('gui.finance.finance.transaction_manager.payment_recording.dialogs.please_enter_a_payment_amount', default="Please enter a payment amount."))
                 return
 
             try:
@@ -301,7 +303,7 @@ class PaymentRecordingMixin:
 
                     if not result:
                         messagebox.showerror(_("finance_gui.messages.error"),
-                                           "Student finance account not found.")
+                                           _t('gui.finance.finance.transaction_manager.payment_recording.dialogs.student_finance_account_not_found', default="Student finance account not found."))
                         conn.close()
                         return
 
@@ -547,7 +549,7 @@ class PaymentRecordingMixin:
                 import logging
                 logging.getLogger(__name__).debug("CAS payment update skipped: %s", _e)
 
-            messagebox.showinfo(_("finance_gui.messages.success"), "Payment recorded successfully.")
+            messagebox.showinfo(_("finance_gui.messages.success"), _t('gui.finance.finance.transaction_manager.payment_recording.dialogs.payment_recorded_successfully', default="Payment recorded successfully."))
             return True
         except Exception as e:
             messagebox.showerror(_("finance_gui.messages.error"), f"Failed to record payment: {e}")

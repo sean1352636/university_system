@@ -1,4 +1,4 @@
-from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
+from education_system.systems.university.infrastructure.health.storage import sqlite3, get_connection
 from datetime import datetime, timedelta
 from education_system.systems.university.infrastructure.database.data_backup import backup_before_operation
 from education_system.systems.university.domain.pastoral.health.records.db.audit import log_audit_event

@@ -16,12 +16,12 @@ import re
 import sqlite3
 from dataclasses import dataclass
 from typing import Any
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.learners.students.students import A_LEVEL_SUBJECTS
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.COURSES_DB
+DB_PATH = paths.SIXTH_FORM_COURSES_DB
 
 YEAR_GROUPS: tuple[int, ...] = (12, 13)
 DEFAULT_MAX_STUDENTS: int = 25
@@ -68,7 +68,7 @@ class Course:
 # ── DB plumbing ──────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

@@ -4,6 +4,7 @@ tutor-group agenda from concern, study-match auto-suggest on enrol."""
 from __future__ import annotations
 
 import sqlite3
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -85,8 +86,16 @@ def tmp_db(monkeypatch):
     from education_system.systems.university.services.bus import (
         integration_bus, attendance_bus, cases_bus, risk_bus,
     )
-    monkeypatch.setattr(integration_bus, "get_connection", fake_get)
-    monkeypatch.setattr(integration_bus, "transaction", fake_tx)
+    for name, module in tuple(sys.modules.items()):
+        if name.startswith(
+            "education_system.systems.university.services.bus.integration"
+        ) or name.startswith(
+            "education_system.systems.university.services.bus.jobs"
+        ):
+            if hasattr(module, "get_connection"):
+                monkeypatch.setattr(module, "get_connection", fake_get)
+            if hasattr(module, "transaction"):
+                monkeypatch.setattr(module, "transaction", fake_tx)
     monkeypatch.setattr(cases_bus, "get_connection", fake_get)
     monkeypatch.setattr(risk_bus, "get_connection", fake_get)
     # attendance_bus' weekly idempotency cache survives between tests

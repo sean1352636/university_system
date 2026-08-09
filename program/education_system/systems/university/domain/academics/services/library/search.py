@@ -7,7 +7,7 @@ import random
 import json
 import requests
 from datetime import datetime, timedelta
-from education_system.systems.university.infrastructure.paths import QR_CODES_DIR, BACKUP_DIR
+from education_system.paths import UNIVERSITY_QR_CODES_DIR, UNIVERSITY_BACKUP_DIR
 from education_system.systems.university.infrastructure.email import (
     send_book_checkout_confirmation,
     send_book_return_reminder,
@@ -25,7 +25,7 @@ import logging
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.utils.finance_integration import record_payment_to_finance
 from education_system.systems.university.infrastructure.i18n import (
     get_text,
@@ -41,7 +41,7 @@ from education_system.systems.university.domain.academics.services.library.book_
 from education_system.systems.university.domain.academics.services.library.reading_lists import add_to_reading_list
 from education_system.systems.university.domain.academics.services.library.circulation import reserve_book
 from education_system.systems.university.domain.academics.services.library.reviews import rate_and_review_book
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Configure logging
 logger = configure_logging(name=__name__)

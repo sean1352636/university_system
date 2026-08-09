@@ -15,6 +15,8 @@ auth.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import logging
 import statistics
@@ -185,14 +187,14 @@ class GradesBreakdownGUI:
         self.exam_weight_var = tk.IntVar(value=0)
 
         # ---- Filter / view state ----
-        self.year_filter_var = tk.StringVar(value="All")
-        self.term_filter_var = tk.StringVar(value="All")
-        self.module_status_var = tk.StringVar(value="Enrolled")
+        self.year_filter_var = tk.StringVar(value=_t('gui.assessment.academic_progress.grades_breakdown.values.all', default="All"))
+        self.term_filter_var = tk.StringVar(value=_t('gui.assessment.academic_progress.grades_breakdown.values.all', default="All"))
+        self.module_status_var = tk.StringVar(value=_t('gui.assessment.academic_progress.grades_breakdown.values.enrolled', default="Enrolled"))
         self.module_search_var = tk.StringVar(value="")
-        self.assign_type_filter_var = tk.StringVar(value="All")
-        self.assign_status_filter_var = tk.StringVar(value="All")
-        self.view_mode_var = tk.StringVar(value="Per module")
-        self.theme_var = tk.StringVar(value="light")
+        self.assign_type_filter_var = tk.StringVar(value=_t('gui.assessment.academic_progress.grades_breakdown.values.all', default="All"))
+        self.assign_status_filter_var = tk.StringVar(value=_t('gui.assessment.academic_progress.grades_breakdown.values.all', default="All"))
+        self.view_mode_var = tk.StringVar(value=_t('gui.assessment.academic_progress.grades_breakdown.values.per_module', default="Per module"))
+        self.theme_var = tk.StringVar(value=_t('gui.assessment.academic_progress.grades_breakdown.values.light', default="light"))
 
         # Recompute on settings/filter change.
         for var in (self.pass_mark_var, self.missing_policy_var,
@@ -326,10 +328,10 @@ class GradesBreakdownGUI:
         # Export menu
         export_btn = ttk.Menubutton(settings, text=_t('grades.export', 'Export…'))
         export_menu = tk.Menu(export_btn, tearoff=0)
-        export_menu.add_command(label='CSV (current view)…', command=self._export_csv)
-        export_menu.add_command(label='PDF transcript…', command=self._export_pdf)
+        export_menu.add_command(label=_t('gui.assessment.academic_progress.grades_breakdown.menus.csv_current_view', default='CSV (current view)…'), command=self._export_csv)
+        export_menu.add_command(label=_t('gui.assessment.academic_progress.grades_breakdown.menus.pdf_transcript', default='PDF transcript…'), command=self._export_pdf)
         export_menu.add_separator()
-        export_menu.add_command(label='Email to advisor…', command=self._email_advisor)
+        export_menu.add_command(label=_t('gui.assessment.academic_progress.grades_breakdown.menus.email_to_advisor', default='Email to advisor…'), command=self._email_advisor)
         export_btn.configure(menu=export_menu)
         export_btn.pack(side=tk.RIGHT)
 
@@ -390,9 +392,9 @@ class GradesBreakdownGUI:
         self.module_tree = ttk.Treeview(
             left_frame, columns=('count',), show='tree headings', height=24,
         )
-        self.module_tree.heading('#0', text='Module',
+        self.module_tree.heading('#0', text=_t('gui.assessment.academic_progress.grades_breakdown.headings.module', default='Module'),
                                  command=lambda: self._sort_module_tree('#0'))
-        self.module_tree.heading('count', text='Graded',
+        self.module_tree.heading('count', text=_t('gui.assessment.academic_progress.grades_breakdown.headings.graded', default='Graded'),
                                  command=lambda: self._sort_module_tree('count'))
         self.module_tree.column('#0', width=240)
         self.module_tree.column('count', width=70, anchor='center')
@@ -1246,7 +1248,7 @@ class GradesBreakdownGUI:
             return
         if not criteria:
             messagebox.showinfo(_t('grades.rubric', 'Rubric'),
-                                'No criteria found for this rubric.',
+                                _t('gui.assessment.academic_progress.grades_breakdown.dialogs.no_criteria_found_for_this_rubric', default='No criteria found for this rubric.'),
                                 parent=self.window)
             return
         win = tk.Toplevel(self.window)
@@ -1254,10 +1256,10 @@ class GradesBreakdownGUI:
         win.geometry('640x400')
         cols = ('criterion', 'max', 'weight', 'description')
         tree = ttk.Treeview(win, columns=cols, show='headings')
-        tree.heading('criterion', text='Criterion')
-        tree.heading('max', text='Max')
-        tree.heading('weight', text='Weight')
-        tree.heading('description', text='Description')
+        tree.heading('criterion', text=_t('gui.assessment.academic_progress.grades_breakdown.headings.criterion', default='Criterion'))
+        tree.heading('max', text=_t('gui.assessment.academic_progress.grades_breakdown.headings.max', default='Max'))
+        tree.heading('weight', text=_t('gui.assessment.academic_progress.grades_breakdown.headings.weight', default='Weight'))
+        tree.heading('description', text=_t('gui.assessment.academic_progress.grades_breakdown.headings.description', default='Description'))
         tree.column('criterion', width=160)
         tree.column('max', width=70, anchor='center')
         tree.column('weight', width=70, anchor='center')
@@ -1267,7 +1269,7 @@ class GradesBreakdownGUI:
                 c['criteria_name'], c['max_points'], c['weight'], c['description'] or '',
             ))
         tree.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
-        ttk.Button(win, text='Close', command=win.destroy).pack(pady=(0, 8))
+        ttk.Button(win, text=_t('gui.assessment.academic_progress.grades_breakdown.buttons.close', default='Close'), command=win.destroy).pack(pady=(0, 8))
 
     # ------------------------------------------------------------------
     # What-if + target calculators (items 13, 14)
@@ -1280,7 +1282,7 @@ class GradesBreakdownGUI:
             return
         messagebox.showinfo(
             _t('grades.what_if', 'What-If'),
-            'Select an unmarked assignment first, then click What-If.',
+            _t('gui.assessment.academic_progress.grades_breakdown.dialogs.select_an_unmarked_assignment_first_then_click_what_if', default='Select an unmarked assignment first, then click What-If.'),
             parent=self.window,
         )
 
@@ -1320,16 +1322,16 @@ class GradesBreakdownGUI:
             self._render_rows()
 
         bf = ttk.Frame(win); bf.pack(pady=10)
-        ttk.Button(bf, text='Apply', command=apply).pack(side=tk.LEFT, padx=4)
-        ttk.Button(bf, text='Clear', command=clear).pack(side=tk.LEFT, padx=4)
-        ttk.Button(bf, text='Cancel', command=win.destroy).pack(side=tk.LEFT, padx=4)
+        ttk.Button(bf, text=_t('gui.assessment.academic_progress.grades_breakdown.buttons.apply', default='Apply'), command=apply).pack(side=tk.LEFT, padx=4)
+        ttk.Button(bf, text=_t('gui.assessment.academic_progress.grades_breakdown.buttons.clear', default='Clear'), command=clear).pack(side=tk.LEFT, padx=4)
+        ttk.Button(bf, text=_t('gui.assessment.academic_progress.grades_breakdown.buttons.cancel', default='Cancel'), command=win.destroy).pack(side=tk.LEFT, padx=4)
 
     def _open_target(self):
         win = tk.Toplevel(self.window)
         win.title(_t('grades.target', 'Target Calculator'))
         win.geometry('420x220')
         win.transient(self.window)
-        ttk.Label(win, text='What overall % do you want to hit?').pack(pady=(12, 4))
+        ttk.Label(win, text=_t('gui.assessment.academic_progress.grades_breakdown.labels.what_overall_do_you_want_to_hit', default='What overall % do you want to hit?')).pack(pady=(12, 4))
         target_var = tk.DoubleVar(value=70.0)
         ttk.Spinbox(win, from_=0, to=100, increment=1,
                     textvariable=target_var, width=8).pack()
@@ -1370,8 +1372,8 @@ class GradesBreakdownGUI:
             elif need <= 0:
                 verdict += "  ✅ Already guaranteed."
             result_var.set(line + '\n\n' + verdict)
-        ttk.Button(win, text='Compute', command=compute).pack()
-        ttk.Button(win, text='Close', command=win.destroy).pack(pady=4)
+        ttk.Button(win, text=_t('gui.assessment.academic_progress.grades_breakdown.buttons.compute', default='Compute'), command=compute).pack()
+        ttk.Button(win, text=_t('gui.assessment.academic_progress.grades_breakdown.buttons.close', default='Close'), command=win.destroy).pack(pady=4)
 
     # ------------------------------------------------------------------
     # Export / share
@@ -1383,7 +1385,7 @@ class GradesBreakdownGUI:
             defaultextension='.csv',
             filetypes=[('CSV files', '*.csv'), ('All files', '*.*')],
             initialfile=f"grades_{self.student_id or 'student'}.csv",
-            title='Export current view to CSV',
+            title=_t('gui.assessment.academic_progress.grades_breakdown.dialogs.export_current_view_to_csv', default='Export current view to CSV'),
         )
         if not path:
             return
@@ -1410,7 +1412,7 @@ class GradesBreakdownGUI:
             defaultextension='.pdf',
             filetypes=[('PDF files', '*.pdf'), ('All files', '*.*')],
             initialfile=f"transcript_{self.student_id or 'student'}.pdf",
-            title='Export grade transcript to PDF',
+            title=_t('gui.assessment.academic_progress.grades_breakdown.dialogs.export_grade_transcript_to_pdf', default='Export grade transcript to PDF'),
         )
         if not path:
             return
@@ -1425,8 +1427,8 @@ class GradesBreakdownGUI:
         except ImportError:
             # Fallback: write a plain-text version with .pdf extension warning.
             messagebox.showinfo(
-                'PDF export unavailable',
-                'PDF export module not installed. Saving as plain text alongside.',
+                _t('gui.assessment.academic_progress.grades_breakdown.dialogs.pdf_export_unavailable', default='PDF export unavailable'),
+                _t('gui.assessment.academic_progress.grades_breakdown.dialogs.pdf_export_module_not_installed_saving_as_plain_text_alongside', default='PDF export module not installed. Saving as plain text alongside.'),
                 parent=self.window,
             )
             try:
@@ -1483,7 +1485,7 @@ class GradesBreakdownGUI:
         except Exception:
             messagebox.showinfo(
                 _t('grades.email', 'Email advisor'),
-                'Communications hub is not configured in this environment.',
+                _t('gui.assessment.academic_progress.grades_breakdown.dialogs.communications_hub_is_not_configured_in_this_environment', default='Communications hub is not configured in this environment.'),
                 parent=self.window,
             )
             return
@@ -1504,10 +1506,10 @@ class GradesBreakdownGUI:
         win.title(_t('grades.email', 'Email advisor'))
         win.geometry('500x320')
         win.transient(self.window)
-        ttk.Label(win, text='Advisor email:').pack(anchor='w', padx=8, pady=(8, 2))
+        ttk.Label(win, text=_t('gui.assessment.academic_progress.grades_breakdown.labels.advisor_email', default='Advisor email:')).pack(anchor='w', padx=8, pady=(8, 2))
         email_var = tk.StringVar(value=advisor or '')
         ttk.Entry(win, textvariable=email_var).pack(fill=tk.X, padx=8)
-        ttk.Label(win, text='Message:').pack(anchor='w', padx=8, pady=(8, 2))
+        ttk.Label(win, text=_t('gui.assessment.academic_progress.grades_breakdown.labels.message', default='Message:')).pack(anchor='w', padx=8, pady=(8, 2))
         body = tk.Text(win, height=8)
         body.insert('1.0', self._format_transcript_text())
         body.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
@@ -1522,7 +1524,7 @@ class GradesBreakdownGUI:
             except Exception as e:
                 messagebox.showerror(_t('common.error', 'Error'),
                                      f'Failed to send: {e}', parent=win)
-        ttk.Button(win, text='Send', command=go).pack(pady=6)
+        ttk.Button(win, text=_t('gui.assessment.academic_progress.grades_breakdown.buttons.send', default='Send'), command=go).pack(pady=6)
 
     def _copy_selection(self):
         rows = self.tree.selection()

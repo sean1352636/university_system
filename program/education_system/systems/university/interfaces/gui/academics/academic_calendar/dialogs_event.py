@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
@@ -40,7 +42,7 @@ class AddEventDialog:
 
         # Event type
         ttk.Label(main_frame, text=_("academic_calendar.labels.event_type")).pack(anchor=tk.W)
-        self.type_var = tk.StringVar(value="Academic")
+        self.type_var = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_event.values.academic', default="Academic"))
         type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, width=47,
                                 values=["Academic", "Holiday", "Administrative", "Social",
                                        "Sports", "Trip", "Deadline"])
@@ -50,7 +52,7 @@ class AddEventDialog:
         date_type_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.labels.date_configuration"), padding=10)
         date_type_frame.pack(fill=tk.X, pady=(0, 15))
 
-        self.date_type = tk.StringVar(value="single")
+        self.date_type = tk.StringVar(value=_t('gui.academics.academic_calendar.dialogs_event.values.single', default="single"))
         ttk.Radiobutton(date_type_frame, text=_("academic_calendar.labels.single_date"), variable=self.date_type,
                        value="single", command=self._toggle_date_fields).pack(anchor=tk.W)
         ttk.Radiobutton(date_type_frame, text=_("academic_calendar.labels.date_range"), variable=self.date_type,

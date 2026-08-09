@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -48,18 +50,18 @@ def show_activities_interface(self):
     self.clear_content()
     self.update_status("Extracurricular Activities")
 
-    title = ttk.Label(self.content_frame, text="Extracurricular Activities", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.activities.labels.extracurricular_activities', default="Extracurricular Activities"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.activities.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.activities.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -68,7 +70,7 @@ def show_activities_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Activities display frame
-    activities_frame = ttk.LabelFrame(self.content_frame, text="Activities", padding=15)
+    activities_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.activities.labels.activities', default="Activities"), padding=15)
     activities_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_activities():
@@ -77,7 +79,7 @@ def show_activities_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(activities_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(activities_frame, text=_t('gui.academics.parent_portal.activities.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -142,12 +144,12 @@ def show_activities_interface(self):
                         if activity[5]:
                             ttk.Label(activity_card, text=activity[5], wraplength=600).pack(anchor='w', pady=3)
                 else:
-                    ttk.Label(activities_frame, text="Not enrolled in any activities",
+                    ttk.Label(activities_frame, text=_t('gui.academics.parent_portal.activities.labels.not_enrolled_in_any_activities', default="Not enrolled in any activities"),
                              font=('Arial', 11)).pack(pady=50)
-                    ttk.Button(activities_frame, text="Browse Activities",
+                    ttk.Button(activities_frame, text=_t('gui.academics.parent_portal.activities.buttons.browse_activities', default="Browse Activities"),
                               command=self.browse_activities).pack()
             else:
-                ttk.Label(activities_frame, text="Activities system not configured",
+                ttk.Label(activities_frame, text=_t('gui.academics.parent_portal.activities.labels.activities_system_not_configured', default="Activities system not configured"),
                          font=('Arial', 11)).pack(pady=20)
 
             conn.close()
@@ -156,14 +158,14 @@ def show_activities_interface(self):
             ttk.Label(activities_frame, text=f"Error loading activities: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Activities", command=load_activities).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.activities.buttons.load_activities', default="Load Activities"), command=load_activities).pack(side=tk.LEFT, padx=5)
     load_activities()
 ParentPortalGUI.show_activities_interface = show_activities_interface
 
 def browse_activities(self):
     """Browse available activities"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Browse Available Activities")
+    dialog.title(_t('gui.academics.parent_portal.activities.windows.browse_available_activities', default="Browse Available Activities"))
     dialog.geometry("900x700")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -171,17 +173,17 @@ def browse_activities(self):
     # Title
     title_frame = ttk.Frame(dialog, padding=20)
     title_frame.pack(fill=tk.X)
-    ttk.Label(title_frame, text="Browse Extracurricular Activities",
+    ttk.Label(title_frame, text=_t('gui.academics.parent_portal.activities.labels.browse_extracurricular_activities', default="Browse Extracurricular Activities"),
              font=('Arial', 16, 'bold')).pack(anchor='w')
-    ttk.Label(title_frame, text="Explore available activities and programs for students",
+    ttk.Label(title_frame, text=_t('gui.academics.parent_portal.activities.labels.explore_available_activities_and_programs_for_students', default="Explore available activities and programs for students"),
              font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
 
     # Filter frame
-    filter_frame = ttk.LabelFrame(dialog, text="Filter Activities", padding=10)
+    filter_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.parent_portal.activities.labels.filter_activities', default="Filter Activities"), padding=10)
     filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-    ttk.Label(filter_frame, text="Category:").pack(side=tk.LEFT, padx=5)
-    category_var = tk.StringVar(value="All")
+    ttk.Label(filter_frame, text=_t('gui.academics.parent_portal.activities.labels.category', default="Category:")).pack(side=tk.LEFT, padx=5)
+    category_var = tk.StringVar(value=_t('gui.academics.parent_portal.activities.values.all', default="All"))
     categories = ["All", "Sports", "Arts", "Music", "Academic", "Technology", "Community Service"]
     category_combo = ttk.Combobox(filter_frame, textvariable=category_var,
                                  values=categories, state="readonly", width=20)
@@ -292,11 +294,11 @@ def browse_activities(self):
                         # Enroll button
                         btn_frame = ttk.Frame(card)
                         btn_frame.pack(anchor='e', pady=(5, 0))
-                        ttk.Button(btn_frame, text="Request Enrollment",
+                        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.activities.buttons.request_enrollment', default="Request Enrollment"),
                                   command=lambda a=activity[0]: self.request_activity_enrollment(a)).pack(side=tk.RIGHT)
 
                 else:
-                    ttk.Label(scrollable_frame, text="No activities found in this category.",
+                    ttk.Label(scrollable_frame, text=_t('gui.academics.parent_portal.activities.labels.no_activities_found_in_this_category', default="No activities found in this category."),
                              font=('Arial', 11)).pack(pady=50)
             else:
                 # Create sample activities if table doesn't exist
@@ -352,7 +354,7 @@ def browse_activities(self):
 
                     btn_frame = ttk.Frame(card)
                     btn_frame.pack(anchor='e', pady=(5, 0))
-                    ttk.Button(btn_frame, text="Request Enrollment",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.activities.buttons.request_enrollment', default="Request Enrollment"),
                               command=lambda a=activity[0]: self.request_activity_enrollment(a)).pack(side=tk.RIGHT)
 
             conn.close()
@@ -368,14 +370,14 @@ def browse_activities(self):
     load_activities()
 
     # Close button
-    ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.academics.parent_portal.activities.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 ParentPortalGUI.browse_activities = browse_activities
 
 def request_activity_enrollment(self, activity_name):
     """Request enrollment in an activity with DB record and email confirmation"""
     if not self.children:
-        messagebox.showwarning("No Students",
-                               "No students linked to your guardian account.")
+        messagebox.showwarning(_t('gui.academics.parent_portal.activities.dialogs.no_students', default="No Students"),
+                               _t('gui.academics.parent_portal.activities.dialogs.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account."))
         return
 
     # If multiple children, ask which one
@@ -384,12 +386,12 @@ def request_activity_enrollment(self, activity_name):
     else:
         # Build selection dialog
         sel_dialog = tk.Toplevel(self.root)
-        sel_dialog.title("Select Student")
+        sel_dialog.title(_t('gui.academics.parent_portal.activities.windows.select_student', default="Select Student"))
         sel_dialog.geometry("400x200")
         sel_dialog.transient(self.root)
         sel_dialog.grab_set()
 
-        ttk.Label(sel_dialog, text="Select the student to enroll:",
+        ttk.Label(sel_dialog, text=_t('gui.academics.parent_portal.activities.labels.select_the_student_to_enroll', default="Select the student to enroll:"),
                  font=('Arial', 11)).pack(pady=15)
         child_var = tk.StringVar()
         child_combo = ttk.Combobox(sel_dialog, textvariable=child_var, width=40, state="readonly")
@@ -405,7 +407,7 @@ def request_activity_enrollment(self, activity_name):
                 selected[0] = self.children[idx]
             sel_dialog.destroy()
 
-        ttk.Button(sel_dialog, text="Select", command=on_select).pack(pady=15)
+        ttk.Button(sel_dialog, text=_t('gui.academics.parent_portal.activities.buttons.select', default="Select"), command=on_select).pack(pady=15)
         sel_dialog.wait_window()
 
         child = selected[0]
@@ -428,7 +430,7 @@ def request_activity_enrollment(self, activity_name):
         activity_row = cursor.fetchone()
 
         if not activity_row:
-            messagebox.showwarning("Activity Not Found",
+            messagebox.showwarning(_t('gui.academics.parent_portal.activities.dialogs.activity_not_found', default="Activity Not Found"),
                                    f"Could not find activity '{activity_name}' in the database.")
             conn.close()
             return
@@ -445,10 +447,10 @@ def request_activity_enrollment(self, activity_name):
         if existing:
             status = existing[1]
             if status == 'active':
-                messagebox.showinfo("Already Enrolled",
+                messagebox.showinfo(_t('gui.academics.parent_portal.activities.dialogs.already_enrolled', default="Already Enrolled"),
                                     f"{student_name} is already enrolled in '{activity_name}'.")
             else:
-                messagebox.showinfo("Request Pending",
+                messagebox.showinfo(_t('gui.academics.parent_portal.activities.dialogs.request_pending', default="Request Pending"),
                                     f"An enrollment request for {student_name} in '{activity_name}' "
                                     f"already exists (status: {status}).")
             conn.close()
@@ -508,7 +510,7 @@ def request_activity_enrollment(self, activity_name):
                 # Email failure shouldn't block the enrollment request
                 print(f"Warning: Could not send confirmation email: {e}")
 
-        messagebox.showinfo("Enrollment Request Submitted",
+        messagebox.showinfo(_t('gui.academics.parent_portal.activities.dialogs.enrollment_request_submitted', default="Enrollment Request Submitted"),
                            f"Enrollment request for {student_name} in '{activity_name}' "
                            f"has been submitted successfully.\n\n"
                            f"Status: Pending Review\n"
@@ -517,5 +519,5 @@ def request_activity_enrollment(self, activity_name):
                               else "No email address on file for this student."))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to submit enrollment request: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.activities.dialogs.error', default="Error"), f"Failed to submit enrollment request: {str(e)}")
 ParentPortalGUI.request_activity_enrollment = request_activity_enrollment

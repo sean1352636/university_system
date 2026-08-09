@@ -6,6 +6,8 @@ caller can wire a button without rebuilding the dialog every time.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Any
@@ -36,7 +38,7 @@ def show_conflicts_dialog(parent: tk.Misc, *,
         rows = find_conflicts_for_course(course_code)
         scope = f"course {course_code}"
     else:
-        messagebox.showinfo("Conflicts", "No module or course supplied.")
+        messagebox.showinfo(_t('gui.academics.cross_dialogs.dialogs.conflicts', default="Conflicts"), _t('gui.academics.cross_dialogs.dialogs.no_module_or_course_supplied', default="No module or course supplied."))
         return
 
     win = tk.Toplevel(parent)
@@ -50,7 +52,7 @@ def show_conflicts_dialog(parent: tk.Misc, *,
 
     if not rows:
         ttk.Label(
-            win, text="No conflicts detected.",
+            win, text=_t('gui.academics.cross_dialogs.labels.no_conflicts_detected', default="No conflicts detected."),
             foreground="#27ae60",
         ).pack(padx=15, pady=20)
     else:
@@ -65,7 +67,7 @@ def show_conflicts_dialog(parent: tk.Misc, *,
             ))
         tree.pack(fill="both", expand=True, padx=10, pady=10)
 
-    ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
+    ttk.Button(win, text=_t('gui.academics.cross_dialogs.buttons.close', default="Close"), command=win.destroy).pack(pady=(0, 10))
 
 
 # ---------------------------------------------------------------------------
@@ -76,12 +78,12 @@ def show_instructor_workload_dialog(parent: tk.Misc,
                                     instructor_id: int | None = None) -> None:
     """Workload-for-instructor dialog — picker on top, details below."""
     win = tk.Toplevel(parent)
-    win.title("Instructor Workload")
+    win.title(_t('gui.academics.cross_dialogs.windows.instructor_workload', default="Instructor Workload"))
     win.geometry("780x540")
 
     top = ttk.Frame(win, padding=(15, 15, 15, 5))
     top.pack(fill="x")
-    ttk.Label(top, text="Instructor:").pack(side="left")
+    ttk.Label(top, text=_t('gui.academics.cross_dialogs.labels.instructor', default="Instructor:")).pack(side="left")
     var = tk.StringVar()
     rows = list_instructors()
     items = {r["label"]: r["id"] for r in rows}
@@ -93,7 +95,7 @@ def show_instructor_workload_dialog(parent: tk.Misc,
 
     body = ttk.Frame(win, padding=15)
     body.pack(fill="both", expand=True)
-    summary_var = tk.StringVar(value="Pick an instructor to view workload.")
+    summary_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.pick_an_instructor_to_view_workload', default="Pick an instructor to view workload."))
     ttk.Label(body, textvariable=summary_var, font=("Helvetica", 11)).pack(
         anchor="w", pady=(0, 8))
 
@@ -101,7 +103,7 @@ def show_instructor_workload_dialog(parent: tk.Misc,
     notebook.pack(fill="both", expand=True)
 
     slots_tab = ttk.Frame(notebook)
-    notebook.add(slots_tab, text="Teaching slots")
+    notebook.add(slots_tab, text=_t('gui.academics.cross_dialogs.tabs.teaching_slots', default="Teaching slots"))
     slots_cols = ("module_code", "day_of_week", "start_time", "end_time", "room")
     slots_tree = ttk.Treeview(slots_tab, columns=slots_cols, show="headings")
     for c, w in zip(slots_cols, (110, 110, 90, 90, 200)):
@@ -110,7 +112,7 @@ def show_instructor_workload_dialog(parent: tk.Misc,
     slots_tree.pack(fill="both", expand=True)
 
     panels_tab = ttk.Frame(notebook)
-    notebook.add(panels_tab, text="Examiner panels")
+    notebook.add(panels_tab, text=_t('gui.academics.cross_dialogs.tabs.examiner_panels', default="Examiner panels"))
     panel_cols = ("exam_id", "module_code", "role")
     panels_tree = ttk.Treeview(panels_tab, columns=panel_cols, show="headings")
     for c, w in zip(panel_cols, (90, 130, 160)):
@@ -147,7 +149,7 @@ def show_instructor_workload_dialog(parent: tk.Misc,
                 var.set(label)
                 break
     reload()
-    ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
+    ttk.Button(win, text=_t('gui.academics.cross_dialogs.buttons.close', default="Close"), command=win.destroy).pack(pady=(0, 10))
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +172,7 @@ def show_at_risk_dialog(parent: tk.Misc, *,
     ).pack(anchor="w", padx=15, pady=(15, 5))
     if not rows:
         ttk.Label(
-            win, text="No students currently flagged at this threshold.",
+            win, text=_t('gui.academics.cross_dialogs.labels.no_students_currently_flagged_at_this_threshold', default="No students currently flagged at this threshold."),
             foreground="#27ae60",
         ).pack(padx=15, pady=20)
     else:
@@ -183,7 +185,7 @@ def show_at_risk_dialog(parent: tk.Misc, *,
         for r in rows:
             tree.insert("", "end", values=tuple(str(r.get(c, "")) for c in cols))
         tree.pack(fill="both", expand=True, padx=10, pady=10)
-    ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
+    ttk.Button(win, text=_t('gui.academics.cross_dialogs.buttons.close', default="Close"), command=win.destroy).pack(pady=(0, 10))
 
 
 # ---------------------------------------------------------------------------
@@ -203,7 +205,7 @@ def show_module_timeline_dialog(parent: tk.Misc, module_code: str) -> None:
 
     if not rows:
         ttk.Label(
-            win, text="No events recorded for this module.",
+            win, text=_t('gui.academics.cross_dialogs.labels.no_events_recorded_for_this_module', default="No events recorded for this module."),
             foreground="#7f8c8d",
         ).pack(padx=15, pady=20)
     else:
@@ -215,7 +217,7 @@ def show_module_timeline_dialog(parent: tk.Misc, module_code: str) -> None:
         for r in rows:
             tree.insert("", "end", values=tuple(r.get(c, "") for c in cols))
         tree.pack(fill="both", expand=True, padx=10, pady=10)
-    ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
+    ttk.Button(win, text=_t('gui.academics.cross_dialogs.buttons.close', default="Close"), command=win.destroy).pack(pady=(0, 10))
 
 
 class ModuleTimelinePanel(ttk.Frame):
@@ -232,7 +234,7 @@ class ModuleTimelinePanel(ttk.Frame):
         super().__init__(master)
         self._module_code: str | None = None
 
-        self._heading_var = tk.StringVar(value="Module timeline")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.module_timeline', default="Module timeline"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),
@@ -313,9 +315,9 @@ class StudentFinancePanel(ttk.Frame):
         super().__init__(master)
         self._student_id: str | None = None
 
-        self._heading_var = tk.StringVar(value="Finance: —")
-        self._balance_var = tk.StringVar(value="Balance: —")
-        self._hold_var = tk.StringVar(value="Holds: —")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.finance', default="Finance: —"))
+        self._balance_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.balance', default="Balance: —"))
+        self._hold_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.holds', default="Holds: —"))
 
         ttk.Label(
             self, textvariable=self._heading_var,
@@ -421,7 +423,7 @@ class ResourceAvailabilityPanel(ttk.Frame):
         self._isbn: str | None = None
         self._module_code: str | None = None
 
-        self._heading_var = tk.StringVar(value="Library availability")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.library_availability', default="Library availability"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),
@@ -543,7 +545,7 @@ class ResearchOutputPanel(ttk.Frame):
         self._module_code = module_code
         self._limit = limit
 
-        self._heading_var = tk.StringVar(value="Recent research outputs")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.recent_research_outputs', default="Recent research outputs"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),
@@ -666,7 +668,7 @@ class WeeklyGridPanel(ttk.Frame):
         self._scope = scope
         self._scope_id = scope_id
         self._cells: dict[tuple[int, int], tk.Frame] = {}
-        self._heading_var = tk.StringVar(value="Weekly timetable")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.weekly_timetable', default="Weekly timetable"))
 
         ttk.Label(
             self, textvariable=self._heading_var,
@@ -712,7 +714,7 @@ class WeeklyGridPanel(ttk.Frame):
     def _build_grid(self) -> None:
         # Top-left corner.
         tk.Label(
-            self._grid_frame, text="Time", width=8,
+            self._grid_frame, text=_t('gui.academics.cross_dialogs.labels.time', default="Time"), width=8,
             font=("Helvetica", 9, "bold"), bg="#4a90e2", fg="white",
             relief="ridge",
         ).grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
@@ -969,7 +971,7 @@ class StaffWorkloadPanel(ttk.Frame):
         super().__init__(master)
         self._instructor_id: int | str | None = None
 
-        self._heading_var = tk.StringVar(value="Staff workload")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.staff_workload', default="Staff workload"))
         self._totals_var = tk.StringVar(value="—")
         ttk.Label(
             self, textvariable=self._heading_var,
@@ -1158,7 +1160,7 @@ class StaffCertificationsPanel(ttk.Frame):
         super().__init__(master)
         self._staff_id: str | None = None
 
-        self._heading_var = tk.StringVar(value="Certifications")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.certifications', default="Certifications"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),
@@ -1243,7 +1245,7 @@ class IncidentEvidencePanel(ttk.Frame):
         self._incident_id: str | None = None
         self._domain = domain
 
-        self._heading_var = tk.StringVar(value="Incident evidence")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.incident_evidence', default="Incident evidence"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),
@@ -1363,7 +1365,7 @@ class ChatbotPanel(ttk.Frame):
         self._entry = ttk.Entry(entry_frame)
         self._entry.pack(side="left", fill="x", expand=True)
         self._entry.bind("<Return>", lambda _e: self._send())
-        ttk.Button(entry_frame, text="Send", command=self._send).pack(
+        ttk.Button(entry_frame, text=_t('gui.academics.cross_dialogs.buttons.send', default="Send"), command=self._send).pack(
             side="left", padx=(4, 0),
         )
 
@@ -1440,7 +1442,7 @@ class OpenCasesPanel(ttk.Frame):
         super().__init__(master)
         self._subject_id: str | None = None
 
-        self._heading_var = tk.StringVar(value="Open cases")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.open_cases', default="Open cases"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),
@@ -1537,15 +1539,15 @@ class StudentUnionPanel(ttk.Frame):
         super().__init__(master)
         self._student_id: str | None = None
 
-        self._heading_var = tk.StringVar(value="Student Union")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.student_union', default="Student Union"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),
         ).pack(anchor="w", padx=8, pady=(8, 4))
 
-        self._clubs_var = tk.StringVar(value="Clubs: —")
-        self._charges_var = tk.StringVar(value="Outstanding fees: —")
-        self._advocacy_var = tk.StringVar(value="Advocacy: —")
+        self._clubs_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.clubs', default="Clubs: —"))
+        self._charges_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.outstanding_fees', default="Outstanding fees: —"))
+        self._advocacy_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.advocacy', default="Advocacy: —"))
         ttk.Label(self, textvariable=self._clubs_var).pack(anchor="w", padx=10)
         ttk.Label(self, textvariable=self._charges_var).pack(anchor="w", padx=10)
         ttk.Label(self, textvariable=self._advocacy_var).pack(
@@ -1665,7 +1667,7 @@ class EngagementsPanel(ttk.Frame):
         super().__init__(master)
         self._subject_id: str | None = None
 
-        self._heading_var = tk.StringVar(value="Engagements")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.engagements', default="Engagements"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),
@@ -1785,7 +1787,7 @@ class TripsAndParkingPanel(ttk.Frame):
         super().__init__(master)
         self._subject_id: str | None = None
 
-        self._heading_var = tk.StringVar(value="Trips & parking")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.trips_parking', default="Trips & parking"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),
@@ -1908,7 +1910,7 @@ class RestaurantPanel(ttk.Frame):
         super().__init__(master)
         self._student_id: str | None = None
 
-        self._heading_var = tk.StringVar(value="Restaurant")
+        self._heading_var = tk.StringVar(value=_t('gui.academics.cross_dialogs.values.restaurant', default="Restaurant"))
         ttk.Label(
             self, textvariable=self._heading_var,
             font=("Helvetica", 11, "bold"),

@@ -45,19 +45,19 @@ class AccountSecurityManager:
     Attributes:
         db_manager: Database manager instance for data operations
         activity_logger: Activity logger for audit trails
-        max_attempts: Maximum failed login attempts before lockout (default 5)
+        max_attempts: Maximum failed login attempts before lockout (default 3)
         lockout_time: Lockout duration in minutes (default 15)
         login_attempts: Dictionary tracking failed attempts {username: (attempts, timestamp)}
     """
 
-    def __init__(self, db_manager, activity_logger, max_attempts=5, lockout_time=15):
+    def __init__(self, db_manager, activity_logger, max_attempts=3, lockout_time=15):
         """
         Initialize the AccountSecurityManager.
 
         Parameters:
             db_manager: Database manager instance
             activity_logger: Activity logger instance
-            max_attempts: Maximum failed login attempts before lockout (default 5)
+            max_attempts: Maximum failed login attempts before lockout (default 3)
             lockout_time: Lockout duration in minutes (default 15)
         """
         self.db_manager = db_manager
@@ -101,6 +101,7 @@ class AccountSecurityManager:
                 failed_attempts=new_attempts,
                 lockout_duration_minutes=self.lockout_time
             )
+        return new_attempts
 
     def get_remaining_login_attempts(self, username: str) -> int:
         """
@@ -201,16 +202,25 @@ class AccountSecurityManager:
             - Uses constant-time comparison to prevent timing attacks
             - Logs all unlock attempts (successful and failed)
             - Checks if account is actually locked before unlocking
-            - Uses EMERGENCY_UNLOCK_PASSWORD environment variable
-            - Default password: 'UnlockMe2024!SecureAdmin' (documented in README)
+            - Uses EMERGENCY_UNLOCK_PASSWORD environment variable; when the
+              variable is unset the break-glass path is disabled entirely.
+              There is deliberately no default: a documented default password
+              is a public backdoor, not a control.
 
         Notes:
             - Only unlocks if account is actually locked out
             - Logs security events for audit trail
         """
-        # Verify emergency password using constant-time comparison
-        # Password is documented in README.md
-        expected_password = os.environ.get('EMERGENCY_UNLOCK_PASSWORD', 'UnlockMe2024!SecureAdmin')
+        expected_password = os.environ.get('EMERGENCY_UNLOCK_PASSWORD')
+        if not expected_password:
+            logger.warning("Emergency unlock attempted but EMERGENCY_UNLOCK_PASSWORD is unset")
+            if ACTIVITY_LOGGER_AVAILABLE:
+                log_activity('security', 'emergency_unlock_failed',
+                           details={'username': username, 'reason': 'not_configured'})
+            return {
+                'success': False,
+                'message': 'Emergency unlock is not configured on this deployment.'
+            }
 
         if not hmac.compare_digest(emergency_password, expected_password):
             # Log failed emergency unlock attempt
@@ -311,7 +321,17 @@ class AccountSecurityManager:
             - Clears all locked accounts from tracking
             - Comprehensive audit logging for compliance
         """
-        expected_password = os.environ.get('EMERGENCY_UNLOCK_PASSWORD', 'UnlockMe2024!SecureAdmin')
+        expected_password = os.environ.get('EMERGENCY_UNLOCK_PASSWORD')
+        if not expected_password:
+            logger.warning("Emergency unlock ALL attempted but EMERGENCY_UNLOCK_PASSWORD is unset")
+            if ACTIVITY_LOGGER_AVAILABLE:
+                log_activity('security', 'emergency_unlock_all_failed',
+                           details={'reason': 'not_configured'})
+            return {
+                'success': False,
+                'message': 'Emergency unlock is not configured on this deployment.',
+                'unlocked': []
+            }
 
         if not hmac.compare_digest(emergency_password, expected_password):
             logger.warning("Failed emergency unlock ALL attempt")

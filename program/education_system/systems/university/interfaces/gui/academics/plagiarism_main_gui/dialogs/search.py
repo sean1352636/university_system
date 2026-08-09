@@ -24,7 +24,7 @@ class RepositorySearchDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.search.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -61,10 +61,10 @@ class RepositorySearchDialog:
         search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=30)
         search_entry.grid(row=0, column=1, padx=(0, GuiConfig.PADDING_SMALL))
 
-        search_btn = ttk.Button(search_frame, text="Search", command=self.perform_search)
+        search_btn = ttk.Button(search_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.search.buttons.search', default="Search"), command=self.perform_search)
         search_btn.grid(row=0, column=2, padx=(0, GuiConfig.PADDING_SMALL))
 
-        clear_btn = ttk.Button(search_frame, text="Clear", command=self.clear_search)
+        clear_btn = ttk.Button(search_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.search.buttons.clear', default="Clear"), command=self.clear_search)
         clear_btn.grid(row=0, column=3)
 
         # Results
@@ -106,7 +106,7 @@ class RepositorySearchDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(GuiConfig.PADDING_MEDIUM, 0))
 
-        close_btn = ttk.Button(button_frame, text="Close", command=self.dialog.destroy)
+        close_btn = ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.search.buttons.close', default="Close"), command=self.dialog.destroy)
         close_btn.pack(side=tk.RIGHT)
 
         view_btn = ttk.Button(button_frame, text=_t("common.view_details"), command=self.view_selected_document)
@@ -191,7 +191,7 @@ class RepositorySearchDialog:
     def show_error(self, message):
         """Show error message"""
         self.status_var.set("Error occurred")
-        messagebox.showerror("Error", message)
+        messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.search.dialogs.error', default="Error"), message)
 
     def on_item_double_click(self, event):
         """Handle double-click on item"""
@@ -201,7 +201,7 @@ class RepositorySearchDialog:
         """View details of selected document"""
         selection = self.results_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a document to view")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.search.dialogs.warning', default="Warning"), _t('gui.academics.plagiarism_main_gui.dialogs.search.dialogs.please_select_a_document_to_view', default="Please select a document to view"))
             return
 
         # Get document ID from tags

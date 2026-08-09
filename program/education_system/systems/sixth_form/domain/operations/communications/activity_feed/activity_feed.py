@@ -19,14 +19,14 @@ import re
 import sqlite3
 from dataclasses import dataclass
 from typing import Any
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.operations.communications.activity_feed import (
     activity_feed as data,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.ACTIVITY_FEED_DB
+DB_PATH = paths.SIXTH_FORM_ACTIVITY_FEED_DB
 
 # Coarse-grained action verbs. Free text is allowed too; the enum
 # exists to keep filter UIs consistent.
@@ -128,7 +128,7 @@ class Summary:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     return conn

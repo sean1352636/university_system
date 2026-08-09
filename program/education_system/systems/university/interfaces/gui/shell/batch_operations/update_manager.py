@@ -1,4 +1,6 @@
 """Update operations manager for batch operations GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import threading
 
@@ -18,7 +20,7 @@ class UpdateManager:
     def batch_update_records(self):
         """GUI version of batch update records"""
         file_path = filedialog.askopenfilename(
-            title="Select file with update data (must contain student_id column)",
+            title=_t('gui.shell.batch_operations.update_manager.dialogs.select_file_with_update_data_must_contain_student_id_column', default="Select file with update data (must contain student_id column)"),
             filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx *.xls"), ("All files", "*.*")]
         )
 
@@ -27,9 +29,9 @@ class UpdateManager:
 
         # Show update confirmation
         if not messagebox.askyesno(_t("batch_ops.msg_titles.batch_update"),
-                                  "This will update existing student records.\n"
+                                  _t('gui.shell.batch_operations.update_manager.dialogs.this_will_update_existing_student_records_a_backup_will_be_creat', default="This will update existing student records.\n"
                                   "A backup will be created automatically.\n\n"
-                                  "Continue?"):
+                                  "Continue?")):
             return
 
         def update_worker():
@@ -67,28 +69,28 @@ class UpdateManager:
         operation_frame = ttk.LabelFrame(dialog, text=_t("batch_ops.labels.select_operation"), padding="10")
         operation_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        operation_var = tk.StringVar(value="add")
+        operation_var = tk.StringVar(value=_t('gui.shell.batch_operations.update_manager.values.add', default="add"))
 
-        ttk.Radiobutton(operation_frame, text="Add module to multiple students",
+        ttk.Radiobutton(operation_frame, text=_t('gui.shell.batch_operations.update_manager.buttons.add_module_to_multiple_students', default="Add module to multiple students"),
                        variable=operation_var, value="add").pack(anchor='w')
-        ttk.Radiobutton(operation_frame, text="Remove module from multiple students",
+        ttk.Radiobutton(operation_frame, text=_t('gui.shell.batch_operations.update_manager.buttons.remove_module_from_multiple_students', default="Remove module from multiple students"),
                        variable=operation_var, value="remove").pack(anchor='w')
-        ttk.Radiobutton(operation_frame, text="Replace module for multiple students",
+        ttk.Radiobutton(operation_frame, text=_t('gui.shell.batch_operations.update_manager.buttons.replace_module_for_multiple_students', default="Replace module for multiple students"),
                        variable=operation_var, value="replace").pack(anchor='w')
-        ttk.Radiobutton(operation_frame, text="Import module enrollments from file",
+        ttk.Radiobutton(operation_frame, text=_t('gui.shell.batch_operations.update_manager.buttons.import_module_enrollments_from_file', default="Import module enrollments from file"),
                        variable=operation_var, value="import").pack(anchor='w')
 
         # Student selection
         student_frame = ttk.LabelFrame(dialog, text=_t("batch_ops.labels.select_students"), padding="10")
         student_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        student_selection_var = tk.StringVar(value="course")
+        student_selection_var = tk.StringVar(value=_t('gui.shell.batch_operations.update_manager.values.course', default="course"))
 
-        ttk.Radiobutton(student_frame, text="Filter by course",
+        ttk.Radiobutton(student_frame, text=_t('gui.shell.batch_operations.update_manager.buttons.filter_by_course', default="Filter by course"),
                        variable=student_selection_var, value="course").pack(anchor='w')
-        ttk.Radiobutton(student_frame, text="Upload student ID list",
+        ttk.Radiobutton(student_frame, text=_t('gui.shell.batch_operations.update_manager.buttons.upload_student_id_list', default="Upload student ID list"),
                        variable=student_selection_var, value="file").pack(anchor='w')
-        ttk.Radiobutton(student_frame, text="All students",
+        ttk.Radiobutton(student_frame, text=_t('gui.shell.batch_operations.update_manager.buttons.all_students', default="All students"),
                        variable=student_selection_var, value="all").pack(anchor='w')
 
         # Course selection
@@ -129,7 +131,7 @@ class UpdateManager:
             if operation == "import":
                 # File import operation
                 file_path = filedialog.askopenfilename(
-                    title="Select module enrollment file",
+                    title=_t('gui.shell.batch_operations.update_manager.dialogs.select_module_enrollment_file', default="Select module enrollment file"),
                     filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
                 )
                 if file_path:
@@ -142,11 +144,11 @@ class UpdateManager:
                 module_type = module_type_combo.get()
 
                 if not module_code:
-                    messagebox.showerror(_t("batch_ops.msg_titles.error"), "Module code is required")
+                    messagebox.showerror(_t("batch_ops.msg_titles.error"), _t('gui.shell.batch_operations.update_manager.dialogs.module_code_is_required', default="Module code is required"))
                     return
 
                 if operation in ["add", "replace"] and not module_name:
-                    messagebox.showerror(_t("batch_ops.msg_titles.error"), "Module name is required for add/replace operations")
+                    messagebox.showerror(_t("batch_ops.msg_titles.error"), _t('gui.shell.batch_operations.update_manager.dialogs.module_name_is_required_for_add_replace_operations', default="Module name is required for add/replace operations"))
                     return
 
                 course = course_var.get()
@@ -166,7 +168,7 @@ class UpdateManager:
                     student_ids = self.gui.backend.get_students_by_course(course)
                 elif student_selection == "file":
                     file_path = filedialog.askopenfilename(
-                        title="Select file with student IDs",
+                        title=_t('gui.shell.batch_operations.update_manager.dialogs.select_file_with_student_ids', default="Select file with student IDs"),
                         filetypes=[("CSV files", "*.csv"), ("Text files", "*.txt"), ("All files", "*.*")]
                     )
                     if not file_path:
@@ -176,7 +178,7 @@ class UpdateManager:
                     student_ids = self.gui.backend.get_all_student_ids()
 
                 if not student_ids:
-                    messagebox.showerror(_t("batch_ops.msg_titles.error"), "No students found matching criteria")
+                    messagebox.showerror(_t("batch_ops.msg_titles.error"), _t('gui.shell.batch_operations.update_manager.dialogs.no_students_found_matching_criteria', default="No students found matching criteria"))
                     return
 
                 # Confirm operation
@@ -227,7 +229,7 @@ class UpdateManager:
     def import_grade_data(self):
         """GUI version of grade data import"""
         file_path = filedialog.askopenfilename(
-            title="Select grade data file (CSV with student_id, module_code, grade columns)",
+            title=_t('gui.shell.batch_operations.update_manager.dialogs.select_grade_data_file_csv_with_student_id_module_code_grade_col', default="Select grade data file (CSV with student_id, module_code, grade columns)"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
 

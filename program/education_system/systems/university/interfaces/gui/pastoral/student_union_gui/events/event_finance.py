@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class EventFinancesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Event Financial Tracking")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_finance.windows.event_financial_tracking', default="Event Financial Tracking"))
         self.dialog.geometry("900x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -78,10 +80,10 @@ class EventFinancesDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        ttk.Label(main_frame, text="Event Financial Tracking", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.event_financial_tracking', default="Event Financial Tracking"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Event selection
-        event_frame = ttk.LabelFrame(main_frame, text="Select Event")
+        event_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.select_event', default="Select Event"))
         event_frame.pack(fill='x', pady=(0, 10))
 
         self.event_var = tk.StringVar()
@@ -89,34 +91,34 @@ class EventFinancesDialog:
         self.event_combo.pack(side='left', padx=5, pady=5)
         self.event_combo.bind('<<ComboboxSelected>>', self.on_event_selected)
 
-        ttk.Button(event_frame, text="View Finances", command=self.view_finances).pack(side='left', padx=5)
-        ttk.Button(event_frame, text="Add Expense", command=self.add_expense).pack(side='left', padx=5)
+        ttk.Button(event_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.view_finances', default="View Finances"), command=self.view_finances).pack(side='left', padx=5)
+        ttk.Button(event_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.add_expense', default="Add Expense"), command=self.add_expense).pack(side='left', padx=5)
 
         # Financial summary
-        summary_frame = ttk.LabelFrame(main_frame, text="Financial Summary")
+        summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.financial_summary', default="Financial Summary"))
         summary_frame.pack(fill='x', pady=(0, 10))
 
         summary_grid = ttk.Frame(summary_frame)
         summary_grid.pack(fill='x', padx=10, pady=10)
 
-        ttk.Label(summary_grid, text="Budget:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5)
+        ttk.Label(summary_grid, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.budget', default="Budget:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5)
         self.budget_label = ttk.Label(summary_grid, text="£0.00")
         self.budget_label.grid(row=0, column=1, sticky='w', padx=5)
 
-        ttk.Label(summary_grid, text="Expenses:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5)
+        ttk.Label(summary_grid, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.expenses', default="Expenses:"), font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5)
         self.expenses_label = ttk.Label(summary_grid, text="£0.00")
         self.expenses_label.grid(row=0, column=3, sticky='w', padx=5)
 
-        ttk.Label(summary_grid, text="Revenue:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5)
+        ttk.Label(summary_grid, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.revenue', default="Revenue:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5)
         self.revenue_label = ttk.Label(summary_grid, text="£0.00")
         self.revenue_label.grid(row=1, column=1, sticky='w', padx=5)
 
-        ttk.Label(summary_grid, text="Balance:", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5)
+        ttk.Label(summary_grid, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.balance', default="Balance:"), font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5)
         self.balance_label = ttk.Label(summary_grid, text="£0.00")
         self.balance_label.grid(row=1, column=3, sticky='w', padx=5)
 
         # Transactions list
-        trans_frame = ttk.LabelFrame(main_frame, text="Transactions")
+        trans_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.transactions', default="Transactions"))
         trans_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Date', 'Type', 'Category', 'Amount', 'Description')
@@ -136,8 +138,8 @@ class EventFinancesDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Generate Report", command=self.generate_report).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.generate_report', default="Generate Report"), command=self.generate_report).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='left')
 
     def load_events(self):
         """Load events"""
@@ -165,7 +167,7 @@ class EventFinancesDialog:
             self.event_combo['values'] = event_options
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load events: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), f"Failed to load events: {str(e)}")
 
     def on_event_selected(self, event=None):
         """
@@ -181,7 +183,7 @@ class EventFinancesDialog:
         event_id = self.event_data[selection]
 
         try:
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             # Get financial data for this event
@@ -251,20 +253,20 @@ class EventFinancesDialog:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load financial data: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), f"Failed to load financial data: {str(e)}")
 
     def view_finances(self):
         """View finances for selected event"""
         selection = self.event_var.get()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an event.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.please_select_an_event', default="Please select an event."))
             return
 
         # Extract event_id from selection
         try:
             event_id = int(selection.split(':')[0])
         except (ValueError, IndexError):
-            messagebox.showerror("Error", "Invalid event selection")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.invalid_event_selection', default="Invalid event selection"))
             return
 
         # Load and display financial data
@@ -274,18 +276,18 @@ class EventFinancesDialog:
         """Add expense to event"""
         selection = self.event_var.get()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an event first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.please_select_an_event_first', default="Please select an event first."))
             return
 
         try:
             event_id = int(selection.split(':')[0])
         except (ValueError, IndexError):
-            messagebox.showerror("Error", "Invalid event selection")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.invalid_event_selection', default="Invalid event selection"))
             return
 
         # Create expense dialog
         expense_dialog = tk.Toplevel(self.dialog)
-        expense_dialog.title("Add Expense")
+        expense_dialog.title(_t('gui.pastoral.student_union_gui.events.event_finance.windows.add_expense', default="Add Expense"))
         expense_dialog.geometry("450x400")
         expense_dialog.transient(self.dialog)
         expense_dialog.grab_set()
@@ -293,35 +295,35 @@ class EventFinancesDialog:
         main_frame = ttk.Frame(expense_dialog, padding="10")
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Add Expense", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.add_expense', default="Add Expense"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill='both', expand=True)
 
         # Category
-        ttk.Label(form_frame, text="Category *").grid(row=0, column=0, sticky='w', pady=5)
-        category_var = tk.StringVar(value='Supplies')
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.category', default="Category *")).grid(row=0, column=0, sticky='w', pady=5)
+        category_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.events.event_finance.values.supplies', default='Supplies'))
         category_combo = ttk.Combobox(form_frame, textvariable=category_var, state='readonly', width=28)
         category_combo['values'] = ['Supplies', 'Venue', 'Catering', 'Equipment', 'Marketing', 'Transportation', 'Other']
         category_combo.grid(row=0, column=1, pady=5)
 
         # Amount
-        ttk.Label(form_frame, text="Amount ($) *").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.amount', default="Amount ($) *")).grid(row=1, column=0, sticky='w', pady=5)
         amount_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=amount_var, width=30).grid(row=1, column=1, pady=5)
 
         # Description
-        ttk.Label(form_frame, text="Description *").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.description', default="Description *")).grid(row=2, column=0, sticky='nw', pady=5)
         desc_text = tk.Text(form_frame, height=4, width=30)
         desc_text.grid(row=2, column=1, pady=5)
 
         # Vendor/Payee
-        ttk.Label(form_frame, text="Vendor/Payee").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.vendor_payee', default="Vendor/Payee")).grid(row=3, column=0, sticky='w', pady=5)
         vendor_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=vendor_var, width=30).grid(row=3, column=1, pady=5)
 
         # Date
-        ttk.Label(form_frame, text="Date (YYYY-MM-DD)").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD)")).grid(row=4, column=0, sticky='w', pady=5)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(form_frame, textvariable=date_var, width=30).grid(row=4, column=1, pady=5)
 
@@ -332,15 +334,15 @@ class EventFinancesDialog:
             try:
                 amount = float(amount_var.get())
                 if amount <= 0:
-                    messagebox.showerror("Error", "Amount must be positive", parent=expense_dialog)
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.amount_must_be_positive', default="Amount must be positive"), parent=expense_dialog)
                     return
             except ValueError:
-                messagebox.showerror("Error", "Invalid amount", parent=expense_dialog)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.invalid_amount', default="Invalid amount"), parent=expense_dialog)
                 return
 
             description = desc_text.get('1.0', 'end-1c').strip()
             if not description:
-                messagebox.showerror("Error", "Description is required", parent=expense_dialog)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.description_is_required', default="Description is required"), parent=expense_dialog)
                 return
 
             try:
@@ -375,15 +377,15 @@ class EventFinancesDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Expense added successfully!", parent=expense_dialog)
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.expense_added_successfully', default="Expense added successfully!"), parent=expense_dialog)
                 expense_dialog.destroy()
                 self.load_financial_data(event_id)
 
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to add expense: {str(e)}", parent=expense_dialog)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), f"Failed to add expense: {str(e)}", parent=expense_dialog)
 
-        ttk.Button(button_frame, text="Save Expense", command=save_expense).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=expense_dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.save_expense', default="Save Expense"), command=save_expense).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.cancel', default="Cancel"), command=expense_dialog.destroy).pack(side='left', padx=5)
 
     def generate_report(self):
         """Generate financial report for selected event"""
@@ -392,20 +394,20 @@ class EventFinancesDialog:
 
         selection = self.event_var.get()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an event first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.please_select_an_event_first', default="Please select an event first."))
             return
 
         try:
             event_id = int(selection.split(':')[0])
             event_name = selection.split(': ', 1)[1] if ': ' in selection else 'Event'
         except (ValueError, IndexError):
-            messagebox.showerror("Error", "Invalid event selection")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.invalid_event_selection', default="Invalid event selection"))
             return
 
         safe_name = event_name.replace(' ', '_').replace('/', '_')[:30]
 
         file_path = filedialog.asksaveasfilename(
-            title="Export Financial Report",
+            title=_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.export_financial_report', default="Export Financial Report"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
             initialfile=f"financial_report_{safe_name}"
@@ -452,10 +454,10 @@ class EventFinancesDialog:
                 writer.writerow(['Total Expenses', f"£{total_expenses:.2f}"])
                 writer.writerow(['Net Balance', f"£{(total_income - total_expenses):.2f}"])
 
-            messagebox.showinfo("Success", f"Report exported successfully to:\n{file_path}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.success', default="Success"), f"Report exported successfully to:\n{file_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
 
 
@@ -467,7 +469,7 @@ class EventFinancialTrackingDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Event Financial Tracking")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_finance.windows.event_financial_tracking', default="Event Financial Tracking"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -478,14 +480,14 @@ class EventFinancialTrackingDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="💰 Event Financial Tracking",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.event_financial_tracking_variant_2', default="💰 Event Financial Tracking"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Event selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(select_frame, text="Select Event:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.select_event_variant_2', default="Select Event:")).pack(side='left', padx=(0, 10))
         self.event_var = tk.StringVar()
         self.event_combo = ttk.Combobox(select_frame, textvariable=self.event_var, width=40, state='readonly')
         self.event_combo['values'] = ('Spring Festival 2025', 'Tech Workshop Series', 'Annual Gala')
@@ -498,27 +500,27 @@ class EventFinancialTrackingDialog:
 
         # Income tab
         income_frame = ttk.Frame(notebook)
-        notebook.add(income_frame, text="Income")
+        notebook.add(income_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.tabs.income', default="Income"))
         self.create_income_tab(income_frame)
 
         # Expenses tab
         expenses_frame = ttk.Frame(notebook)
-        notebook.add(expenses_frame, text="Expenses")
+        notebook.add(expenses_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.tabs.expenses', default="Expenses"))
         self.create_expenses_tab(expenses_frame)
 
         # Summary tab
         summary_frame = ttk.Frame(notebook)
-        notebook.add(summary_frame, text="Financial Summary")
+        notebook.add(summary_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.tabs.financial_summary', default="Financial Summary"))
         self.create_summary_tab(summary_frame)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Add Income", command=self.add_income).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Add Expense", command=self.add_expense).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Generate Report", command=self.generate_report).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.add_income', default="Add Income"), command=self.add_income).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.add_expense', default="Add Expense"), command=self.add_expense).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.generate_report', default="Generate Report"), command=self.generate_report).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def create_income_tab(self, parent):
         columns = ('Source', 'Amount', 'Date', 'Method', 'Notes')
@@ -617,7 +619,7 @@ STATUS: ✓ Event was profitable and under budget
     def add_income(self):
         event_name = self.event_var.get()
         if not event_name:
-            messagebox.showwarning("Warning", "Please select an event first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.please_select_an_event_first', default="Please select an event first."))
             return
 
         dialog = AddIncomeDialog(self.dialog, self.auth, event_name)
@@ -627,7 +629,7 @@ STATUS: ✓ Event was profitable and under budget
     def add_expense(self):
         event_name = self.event_var.get()
         if not event_name:
-            messagebox.showwarning("Warning", "Please select an event first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.please_select_an_event_first', default="Please select an event first."))
             return
 
         dialog = AddExpenseDialog(self.dialog, self.auth, event_name)
@@ -635,7 +637,7 @@ STATUS: ✓ Event was profitable and under budget
         self.load_finances()  # Refresh data
 
     def generate_report(self):
-        messagebox.showinfo("Report Generated", "Financial report exported to:\nreports/spring_festival_2025_finances.pdf")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.report_generated', default="Report Generated"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.financial_report_exported_to_reports_spring_festival_2025_financ', default="Financial report exported to:\nreports/spring_festival_2025_finances.pdf"))
 
 
 
@@ -648,7 +650,7 @@ class AddIncomeDialog:
         self.event_name = event_name
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Add Income")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_finance.windows.add_income', default="Add Income"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -663,7 +665,7 @@ class AddIncomeDialog:
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Source
-        ttk.Label(main_frame, text="Income Source:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.income_source', default="Income Source:")).pack(anchor='w', pady=(0, 5))
         self.source_var = tk.StringVar()
         source_combo = ttk.Combobox(main_frame, textvariable=self.source_var, width=57)
         source_combo['values'] = ('Ticket Sales', 'Sponsorships', 'Merchandise', 'Donations',
@@ -672,18 +674,18 @@ class AddIncomeDialog:
         source_combo.current(0)
 
         # Amount
-        ttk.Label(main_frame, text="Amount (£):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.amount_variant_2', default="Amount (£):")).pack(anchor='w', pady=(0, 5))
         self.amount_entry = ttk.Entry(main_frame, width=60)
         self.amount_entry.pack(fill='x', pady=(0, 10))
 
         # Date
-        ttk.Label(main_frame, text="Date (YYYY-MM-DD):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.date_yyyy_mm_dd_variant_2', default="Date (YYYY-MM-DD):")).pack(anchor='w', pady=(0, 5))
         self.date_entry = ttk.Entry(main_frame, width=60)
         self.date_entry.pack(fill='x', pady=(0, 10))
         self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
         # Payment Method
-        ttk.Label(main_frame, text="Payment Method:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.payment_method', default="Payment Method:")).pack(anchor='w', pady=(0, 5))
         self.method_var = tk.StringVar()
         method_combo = ttk.Combobox(main_frame, textvariable=self.method_var, width=57)
         method_combo['values'] = ('Cash', 'Card', 'Bank Transfer', 'Cheque', 'Online Payment', 'Mixed')
@@ -691,7 +693,7 @@ class AddIncomeDialog:
         method_combo.current(1)
 
         # Notes
-        ttk.Label(main_frame, text="Notes:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.notes', default="Notes:")).pack(anchor='w', pady=(0, 5))
         self.notes_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
         self.notes_text.pack(fill='both', expand=True, pady=(0, 15))
         self.notes_text.insert(1.0, "Additional details about this income...")
@@ -700,8 +702,8 @@ class AddIncomeDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Add Income", command=self.add_income).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.add_income', default="Add Income"), command=self.add_income).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def add_income(self):
         source = self.source_var.get()
@@ -711,7 +713,7 @@ class AddIncomeDialog:
         notes = self.notes_text.get(1.0, tk.END).strip()
 
         if not all([source, amount, date]):
-            messagebox.showwarning("Warning", "Please fill in Source, Amount, and Date fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.please_fill_in_source_amount_and_date_fields', default="Please fill in Source, Amount, and Date fields."))
             return
 
         try:
@@ -719,7 +721,7 @@ class AddIncomeDialog:
             if amount_float <= 0:
                 raise ValueError("Amount must be positive")
         except ValueError:
-            messagebox.showwarning("Warning", "Please enter a valid amount.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount."))
             return
 
         try:
@@ -755,10 +757,10 @@ class AddIncomeDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Income of £{amount_float:.2f} from {source} has been recorded!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.success', default="Success"), f"Income of £{amount_float:.2f} from {source} has been recorded!")
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to add income: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), f"Failed to add income: {str(e)}")
 
 
 
@@ -771,7 +773,7 @@ class AddExpenseDialog:
         self.event_name = event_name
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Add Expense")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_finance.windows.add_expense', default="Add Expense"))
         self.dialog.geometry("600x550")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -786,7 +788,7 @@ class AddExpenseDialog:
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Category
-        ttk.Label(main_frame, text="Expense Category:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.expense_category', default="Expense Category:")).pack(anchor='w', pady=(0, 5))
         self.category_var = tk.StringVar()
         category_combo = ttk.Combobox(main_frame, textvariable=self.category_var, width=57)
         category_combo['values'] = ('Venue', 'Catering', 'Equipment', 'Marketing', 'Entertainment',
@@ -795,18 +797,18 @@ class AddExpenseDialog:
         category_combo.current(0)
 
         # Amount
-        ttk.Label(main_frame, text="Amount (£):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.amount_variant_2', default="Amount (£):")).pack(anchor='w', pady=(0, 5))
         self.amount_entry = ttk.Entry(main_frame, width=60)
         self.amount_entry.pack(fill='x', pady=(0, 10))
 
         # Date
-        ttk.Label(main_frame, text="Date (YYYY-MM-DD):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.date_yyyy_mm_dd_variant_2', default="Date (YYYY-MM-DD):")).pack(anchor='w', pady=(0, 5))
         self.date_entry = ttk.Entry(main_frame, width=60)
         self.date_entry.pack(fill='x', pady=(0, 10))
         self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
         # Vendor
-        ttk.Label(main_frame, text="Vendor/Supplier:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.vendor_supplier', default="Vendor/Supplier:")).pack(anchor='w', pady=(0, 5))
         self.vendor_entry = ttk.Entry(main_frame, width=60)
         self.vendor_entry.pack(fill='x', pady=(0, 10))
 
@@ -815,15 +817,15 @@ class AddExpenseDialog:
         receipt_frame.pack(fill='x', pady=(0, 10))
 
         self.has_receipt_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(receipt_frame, text="Receipt Available",
+        ttk.Checkbutton(receipt_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.receipt_available', default="Receipt Available"),
                        variable=self.has_receipt_var).pack(side='left', padx=(0, 10))
 
-        ttk.Label(receipt_frame, text="Receipt #:").pack(side='left', padx=(0, 5))
+        ttk.Label(receipt_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.receipt', default="Receipt #:")).pack(side='left', padx=(0, 5))
         self.receipt_entry = ttk.Entry(receipt_frame, width=20)
         self.receipt_entry.pack(side='left')
 
         # Notes
-        ttk.Label(main_frame, text="Description/Notes:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.labels.description_notes', default="Description/Notes:")).pack(anchor='w', pady=(0, 5))
         self.notes_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
         self.notes_text.pack(fill='both', expand=True, pady=(0, 15))
         self.notes_text.insert(1.0, "Description of expense...")
@@ -832,8 +834,8 @@ class AddExpenseDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Add Expense", command=self.add_expense).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.add_expense', default="Add Expense"), command=self.add_expense).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_finance.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def add_expense(self):
         category = self.category_var.get()
@@ -845,7 +847,7 @@ class AddExpenseDialog:
         notes = self.notes_text.get(1.0, tk.END).strip()
 
         if not all([category, amount, date, vendor]):
-            messagebox.showwarning("Warning", "Please fill in Category, Amount, Date, and Vendor fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.please_fill_in_category_amount_date_and_vendor_fields', default="Please fill in Category, Amount, Date, and Vendor fields."))
             return
 
         try:
@@ -853,7 +855,7 @@ class AddExpenseDialog:
             if amount_float <= 0:
                 raise ValueError("Amount must be positive")
         except ValueError:
-            messagebox.showwarning("Warning", "Please enter a valid amount.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_finance.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount."))
             return
 
         try:
@@ -892,10 +894,10 @@ class AddExpenseDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Expense of £{amount_float:.2f} for {category} has been recorded!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.success', default="Success"), f"Expense of £{amount_float:.2f} for {category} has been recorded!")
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to add expense: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), f"Failed to add expense: {str(e)}")
 
 
 
@@ -911,6 +913,6 @@ def track_event_finances(self):
         dialog = EventFinancesDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_finance.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

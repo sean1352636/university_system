@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.sql_safety import validate_table_name, validate_identifier  # nosec B608
 import datetime
 import json
@@ -48,7 +48,7 @@ class AnalyticsMixin:
 
             conn = None
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
                 conn.execute("PRAGMA busy_timeout = 30000")
                 cursor = conn.cursor()
 
@@ -180,7 +180,7 @@ class AnalyticsMixin:
                 import matplotlib
                 matplotlib.use("Agg")  # headless backend, no display required
                 from matplotlib.figure import Figure
-                from education_system.systems.university.infrastructure import paths
+                from education_system import paths
 
                 matrix = qr.get_matrix()
                 fig = Figure(figsize=(4, 4))
@@ -189,9 +189,9 @@ class AnalyticsMixin:
                 ax.set_axis_off()
                 ax.set_title(f"Pickup QR - {selected_child[1]} {selected_child[3]}", fontsize=9)
 
-                paths.QR_CODES_DIR.mkdir(parents=True, exist_ok=True)
+                paths.UNIVERSITY_QR_CODES_DIR.mkdir(parents=True, exist_ok=True)
                 timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-                out_path = paths.QR_CODES_DIR / f"pickup_{parent_id}_{student_id}_{timestamp}.png"
+                out_path = paths.UNIVERSITY_QR_CODES_DIR / f"pickup_{parent_id}_{student_id}_{timestamp}.png"
                 fig.savefig(str(out_path), dpi=150, bbox_inches="tight")
 
                 print(f"\nQR Code generated for {selected_child[1]} {selected_child[3]}")
@@ -237,7 +237,7 @@ class AnalyticsMixin:
 
             conn = None
             try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
                 conn.execute("PRAGMA busy_timeout = 30000")
                 cursor = conn.cursor()
 

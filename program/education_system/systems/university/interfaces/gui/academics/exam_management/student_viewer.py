@@ -1,5 +1,7 @@
 """Read-only student exam viewer for the Exam Scheduling System."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from contextlib import closing
 import logging
 import tkinter as tk
@@ -23,7 +25,7 @@ class StudentExamViewer(tk.Toplevel):
     def __init__(self, parent, *, auth=None):
         super().__init__(parent)
         self.auth = auth
-        self.title("My Exam Schedule")
+        self.title(_t('gui.academics.exam_management.student_viewer.windows.my_exam_schedule', default="My Exam Schedule"))
         self.geometry("900x500")
         self.minsize(700, 350)
         self.transient(parent)
@@ -51,7 +53,7 @@ class StudentExamViewer(tk.Toplevel):
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(
-            main_frame, text="My Exam Schedule", font=("Helvetica", 14, "bold")
+            main_frame, text=_t('gui.academics.exam_management.student_viewer.labels.my_exam_schedule', default="My Exam Schedule"), font=("Helvetica", 14, "bold")
         ).pack(anchor=tk.W, pady=(0, 8))
 
         tree_frame = ttk.Frame(main_frame)
@@ -80,8 +82,8 @@ class StudentExamViewer(tk.Toplevel):
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill=tk.X, pady=(8, 0))
-        ttk.Button(btn_frame, text="Refresh", command=self._load_exams).pack(side=tk.LEFT)
-        ttk.Button(btn_frame, text="Close", command=self.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.student_viewer.buttons.refresh', default="Refresh"), command=self._load_exams).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.student_viewer.buttons.close', default="Close"), command=self.destroy).pack(side=tk.RIGHT)
 
     # ---- Data loading ----
 

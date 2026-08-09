@@ -4,6 +4,8 @@ Admin UI to configure notification triggers, manage alert rules,
 set delivery channels, and manage alert suppression/scheduling.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import logging
@@ -19,7 +21,7 @@ class AlertConfigConsole(tk.Toplevel):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.title("Alert & Notification Configuration")
+        self.title(_t('gui.shell.admin.alert_config.windows.alert_notification_configuration', default="Alert & Notification Configuration"))
         self.geometry("1000x700")
         self.transient(parent)
 
@@ -37,7 +39,7 @@ class AlertConfigConsole(tk.Toplevel):
         header = tk.Frame(self, bg="#2C3E50", height=50)
         header.pack(fill=tk.X)
         header.pack_propagate(False)
-        tk.Label(header, text="Alert & Notification Configuration",
+        tk.Label(header, text=_t('gui.shell.admin.alert_config.labels.alert_notification_configuration', default="Alert & Notification Configuration"),
                  font=("Arial", 14, "bold"), bg="#2C3E50", fg="white").pack(pady=12)
 
         # Notebook tabs
@@ -54,26 +56,26 @@ class AlertConfigConsole(tk.Toplevel):
     # ------------------------------------------------------------------
     def _create_templates_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Notification Templates")
+        self.notebook.add(tab, text=_t('gui.shell.admin.alert_config.tabs.notification_templates', default="Notification Templates"))
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Add Template",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.add_template', default="Add Template"),
                    command=self._add_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit Selected",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.edit_selected', default="Edit Selected"),
                    command=self._edit_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Toggle Active",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.toggle_active', default="Toggle Active"),
                    command=self._toggle_template_active).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.refresh', default="Refresh"),
                    command=self._load_templates).pack(side=tk.LEFT, padx=5)
 
         cols = ("template_id", "template_name", "template_type", "send_method", "is_active")
         self.templates_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
-        self.templates_tree.heading("template_id", text="ID")
-        self.templates_tree.heading("template_name", text="Name")
-        self.templates_tree.heading("template_type", text="Type")
-        self.templates_tree.heading("send_method", text="Channel")
-        self.templates_tree.heading("is_active", text="Active")
+        self.templates_tree.heading("template_id", text=_t('gui.shell.admin.alert_config.headings.id', default="ID"))
+        self.templates_tree.heading("template_name", text=_t('gui.shell.admin.alert_config.headings.name', default="Name"))
+        self.templates_tree.heading("template_type", text=_t('gui.shell.admin.alert_config.headings.type', default="Type"))
+        self.templates_tree.heading("send_method", text=_t('gui.shell.admin.alert_config.headings.channel', default="Channel"))
+        self.templates_tree.heading("is_active", text=_t('gui.shell.admin.alert_config.headings.active', default="Active"))
         self.templates_tree.column("template_id", width=50)
         self.templates_tree.column("template_name", width=250)
         self.templates_tree.column("template_type", width=200)
@@ -106,7 +108,7 @@ class AlertConfigConsole(tk.Toplevel):
     def _edit_template(self):
         sel = self.templates_tree.selection()
         if not sel:
-            messagebox.showinfo("Info", "Select a template first.")
+            messagebox.showinfo(_t('gui.shell.admin.alert_config.dialogs.info', default="Info"), _t('gui.shell.admin.alert_config.dialogs.select_a_template_first', default="Select a template first."))
             return
         template_id = self.templates_tree.item(sel[0])['values'][0]
         self._show_template_editor(template_id)
@@ -131,14 +133,14 @@ class AlertConfigConsole(tk.Toplevel):
             fields[key] = e
             row += 1
 
-        ttk.Label(dialog, text="Channel:").grid(row=row, column=0, sticky="w", padx=10, pady=5)
+        ttk.Label(dialog, text=_t('gui.shell.admin.alert_config.labels.channel', default="Channel:")).grid(row=row, column=0, sticky="w", padx=10, pady=5)
         channel = ttk.Combobox(dialog, values=["email", "sms", "push"], state="readonly", width=15)
         channel.set("email")
         channel.grid(row=row, column=1, padx=10, pady=5, sticky="w")
         fields['send_method'] = channel
         row += 1
 
-        ttk.Label(dialog, text="Body:").grid(row=row, column=0, sticky="nw", padx=10, pady=5)
+        ttk.Label(dialog, text=_t('gui.shell.admin.alert_config.labels.body', default="Body:")).grid(row=row, column=0, sticky="nw", padx=10, pady=5)
         body = scrolledtext.ScrolledText(dialog, height=10, width=50)
         body.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
         fields['body_template'] = body
@@ -174,7 +176,7 @@ class AlertConfigConsole(tk.Toplevel):
                 'body_template': fields['body_template'].get('1.0', tk.END).strip(),
             }
             if not vals['template_name'] or not vals['template_type']:
-                messagebox.showerror("Error", "Name and type are required.")
+                messagebox.showerror(_t('gui.shell.admin.alert_config.dialogs.error', default="Error"), _t('gui.shell.admin.alert_config.dialogs.name_and_type_are_required', default="Name and type are required."))
                 return
             try:
                 with transaction() as conn:
@@ -199,9 +201,9 @@ class AlertConfigConsole(tk.Toplevel):
                 dialog.destroy()
                 self._load_templates()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.shell.admin.alert_config.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(dialog, text="Save", command=save).grid(
+        ttk.Button(dialog, text=_t('gui.shell.admin.alert_config.buttons.save', default="Save"), command=save).grid(
             row=row, column=0, columnspan=2, pady=10)
 
     def _toggle_template_active(self):
@@ -218,36 +220,36 @@ class AlertConfigConsole(tk.Toplevel):
                 )
             self._load_templates()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.admin.alert_config.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------------
     # Notification Schedules Tab
     # ------------------------------------------------------------------
     def _create_schedules_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Alert Schedules")
+        self.notebook.add(tab, text=_t('gui.shell.admin.alert_config.tabs.alert_schedules', default="Alert Schedules"))
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Add Schedule",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.add_schedule', default="Add Schedule"),
                    command=self._add_schedule).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Toggle Active",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.toggle_active', default="Toggle Active"),
                    command=self._toggle_schedule_active).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete Selected",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.delete_selected', default="Delete Selected"),
                    command=self._delete_schedule).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.refresh', default="Refresh"),
                    command=self._load_schedules).pack(side=tk.LEFT, padx=5)
 
         cols = ("schedule_id", "template_id", "trigger_condition",
                 "days_before", "max_reminders", "interval_days", "is_active")
         self.schedules_tree = ttk.Treeview(tab, columns=cols, show="headings", height=12)
-        self.schedules_tree.heading("schedule_id", text="ID")
-        self.schedules_tree.heading("template_id", text="Template ID")
-        self.schedules_tree.heading("trigger_condition", text="Trigger Condition")
-        self.schedules_tree.heading("days_before", text="Days Before")
-        self.schedules_tree.heading("max_reminders", text="Max Reminders")
-        self.schedules_tree.heading("interval_days", text="Interval (Days)")
-        self.schedules_tree.heading("is_active", text="Active")
+        self.schedules_tree.heading("schedule_id", text=_t('gui.shell.admin.alert_config.headings.id', default="ID"))
+        self.schedules_tree.heading("template_id", text=_t('gui.shell.admin.alert_config.headings.template_id', default="Template ID"))
+        self.schedules_tree.heading("trigger_condition", text=_t('gui.shell.admin.alert_config.headings.trigger_condition', default="Trigger Condition"))
+        self.schedules_tree.heading("days_before", text=_t('gui.shell.admin.alert_config.headings.days_before', default="Days Before"))
+        self.schedules_tree.heading("max_reminders", text=_t('gui.shell.admin.alert_config.headings.max_reminders', default="Max Reminders"))
+        self.schedules_tree.heading("interval_days", text=_t('gui.shell.admin.alert_config.headings.interval_days', default="Interval (Days)"))
+        self.schedules_tree.heading("is_active", text=_t('gui.shell.admin.alert_config.headings.active', default="Active"))
         self.schedules_tree.column("schedule_id", width=50)
         self.schedules_tree.column("template_id", width=80)
         self.schedules_tree.column("trigger_condition", width=250)
@@ -279,7 +281,7 @@ class AlertConfigConsole(tk.Toplevel):
 
     def _add_schedule(self):
         dialog = tk.Toplevel(self)
-        dialog.title("New Alert Schedule")
+        dialog.title(_t('gui.shell.admin.alert_config.windows.new_alert_schedule', default="New Alert Schedule"))
         dialog.geometry("450x350")
         dialog.transient(self)
         dialog.grab_set()
@@ -317,9 +319,9 @@ class AlertConfigConsole(tk.Toplevel):
                 dialog.destroy()
                 self._load_schedules()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.shell.admin.alert_config.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(dialog, text="Save", command=save).grid(
+        ttk.Button(dialog, text=_t('gui.shell.admin.alert_config.buttons.save', default="Save"), command=save).grid(
             row=5, column=0, columnspan=2, pady=10)
 
     def _toggle_schedule_active(self):
@@ -336,14 +338,14 @@ class AlertConfigConsole(tk.Toplevel):
                 )
             self._load_schedules()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.admin.alert_config.dialogs.error', default="Error"), str(e))
 
     def _delete_schedule(self):
         sel = self.schedules_tree.selection()
         if not sel:
             return
         sid = self.schedules_tree.item(sel[0])['values'][0]
-        if messagebox.askyesno("Confirm", f"Delete schedule {sid}?"):
+        if messagebox.askyesno(_t('gui.shell.admin.alert_config.dialogs.confirm', default="Confirm"), f"Delete schedule {sid}?"):
             try:
                 with transaction() as conn:
                     conn.execute(
@@ -351,27 +353,27 @@ class AlertConfigConsole(tk.Toplevel):
                     )
                 self._load_schedules()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.shell.admin.alert_config.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------------
     # User Notification Preferences Tab
     # ------------------------------------------------------------------
     def _create_preferences_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="User Preferences")
+        self.notebook.add(tab, text=_t('gui.shell.admin.alert_config.tabs.user_preferences', default="User Preferences"))
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.refresh', default="Refresh"),
                    command=self._load_preferences).pack(side=tk.LEFT, padx=5)
 
         cols = ("user_id", "notification_type", "enabled", "method", "advance_time")
         self.prefs_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
-        self.prefs_tree.heading("user_id", text="User ID")
-        self.prefs_tree.heading("notification_type", text="Notification Type")
-        self.prefs_tree.heading("enabled", text="Enabled")
-        self.prefs_tree.heading("method", text="Method")
-        self.prefs_tree.heading("advance_time", text="Advance (min)")
+        self.prefs_tree.heading("user_id", text=_t('gui.shell.admin.alert_config.headings.user_id', default="User ID"))
+        self.prefs_tree.heading("notification_type", text=_t('gui.shell.admin.alert_config.headings.notification_type', default="Notification Type"))
+        self.prefs_tree.heading("enabled", text=_t('gui.shell.admin.alert_config.headings.enabled', default="Enabled"))
+        self.prefs_tree.heading("method", text=_t('gui.shell.admin.alert_config.headings.method', default="Method"))
+        self.prefs_tree.heading("advance_time", text=_t('gui.shell.admin.alert_config.headings.advance_min', default="Advance (min)"))
         self.prefs_tree.column("user_id", width=120)
         self.prefs_tree.column("notification_type", width=200)
         self.prefs_tree.column("enabled", width=80)
@@ -404,21 +406,21 @@ class AlertConfigConsole(tk.Toplevel):
     # ------------------------------------------------------------------
     def _create_queue_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Notification Queue")
+        self.notebook.add(tab, text=_t('gui.shell.admin.alert_config.tabs.notification_queue', default="Notification Queue"))
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.alert_config.buttons.refresh', default="Refresh"),
                    command=self._load_queue).pack(side=tk.LEFT, padx=5)
 
         cols = ("id", "user_id", "notification_type", "scheduled_time", "status", "sent_at")
         self.queue_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
-        self.queue_tree.heading("id", text="ID")
-        self.queue_tree.heading("user_id", text="User ID")
-        self.queue_tree.heading("notification_type", text="Type")
-        self.queue_tree.heading("scheduled_time", text="Scheduled")
-        self.queue_tree.heading("status", text="Status")
-        self.queue_tree.heading("sent_at", text="Sent At")
+        self.queue_tree.heading("id", text=_t('gui.shell.admin.alert_config.headings.id', default="ID"))
+        self.queue_tree.heading("user_id", text=_t('gui.shell.admin.alert_config.headings.user_id', default="User ID"))
+        self.queue_tree.heading("notification_type", text=_t('gui.shell.admin.alert_config.headings.type', default="Type"))
+        self.queue_tree.heading("scheduled_time", text=_t('gui.shell.admin.alert_config.headings.scheduled', default="Scheduled"))
+        self.queue_tree.heading("status", text=_t('gui.shell.admin.alert_config.headings.status', default="Status"))
+        self.queue_tree.heading("sent_at", text=_t('gui.shell.admin.alert_config.headings.sent_at', default="Sent At"))
         self.queue_tree.column("id", width=80)
         self.queue_tree.column("user_id", width=120)
         self.queue_tree.column("notification_type", width=180)

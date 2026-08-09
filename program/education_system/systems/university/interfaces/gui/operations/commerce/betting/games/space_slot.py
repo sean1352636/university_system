@@ -11,6 +11,8 @@ left (in any row) pays "ways" = the product of how many land on each reel.
 Bet is in steps of 10.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -73,7 +75,7 @@ def evaluate_ways(grid, unit):
 class SpaceSlot:
     def __init__(self, root):
         self.root = root
-        root.title("Space Slot \u2014 243 Ways")
+        root.title(_t('gui.operations.commerce.betting.games.space_slot.windows.space_slot_243_ways', default="Space Slot \u2014 243 Ways"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -89,7 +91,7 @@ class SpaceSlot:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=14)
         f.pack()
-        tk.Label(f, text="\u2726 SPACE SLOT \u2726", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.space_slot.labels.space_slot', default="\u2726 SPACE SLOT \u2726"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 20, "bold")).pack()
         self.free_lbl = tk.Label(f, text="", bg=FELT, fg="#48cae4",
                                  font=("Helvetica", 12, "bold"))
@@ -102,8 +104,8 @@ class SpaceSlot:
         self.msg = tk.Label(f, text="", bg=FELT, fg="white",
                             font=("Helvetica", 12, "bold"))
         self.msg.pack()
-        tk.Label(f, text="\u2605 rocket planet \u25c6  pay 3+ from left \u2014 "
-                 "more symbols = more ways.  W wild  \u2022  S scatter = free spins",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.space_slot.labels.rocket_planet_pay_3_from_left_more_symbols_more_ways_w_wild_s_sc', default="\u2605 rocket planet \u25c6  pay 3+ from left \u2014 "
+                 "more symbols = more ways.  W wild  \u2022  S scatter = free spins"),
                  bg=FELT, fg="#7f9cc0", font=("Helvetica", 9)).pack(pady=2)
 
         bar = tk.Frame(f, bg=FELT, pady=8)
@@ -114,7 +116,7 @@ class SpaceSlot:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-10),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.space_slot.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 12, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -127,7 +129,7 @@ class SpaceSlot:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(10),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.space_slot.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#3a0ca3",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -184,7 +186,7 @@ class SpaceSlot:
         free = self.free_spins > 0
         if not free:
             if self.credits < self.bet:
-                self.msg.config(text="Not enough credits.")
+                self.msg.config(text=_t('gui.operations.commerce.betting.games.space_slot.text.not_enough_credits', default="Not enough credits."))
                 return
             self.credits -= self.bet
         else:
@@ -236,16 +238,16 @@ class SpaceSlot:
                         fg=GOLD if parts else "white")
         self.render()
         if self.credits < 10 and self.free_spins == 0:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.space_slot.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, max(10, self.credits))
         self.refresh()
         self.busy = False
         self.spin_btn.config(state="normal")
         if self.free_spins > 0:
-            self.spin_btn.config(text="FREE SPIN")
+            self.spin_btn.config(text=_t('gui.operations.commerce.betting.games.space_slot.text.free_spin', default="FREE SPIN"))
         else:
-            self.spin_btn.config(text="SPIN")
+            self.spin_btn.config(text=_t('gui.operations.commerce.betting.games.space_slot.text.spin', default="SPIN"))
 
 
 def main():

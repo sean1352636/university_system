@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # dialogs/document_upload.py
 # Dialog for uploading documents to accommodations.
 
@@ -18,7 +20,7 @@ class DocumentUploadDialog:
         self.accommodation_id = accommodation_id
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Upload Document")
+        self.dialog.title(_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.windows.upload_document', default="Upload Document"))
         self.dialog.geometry("500x300")
         self.dialog.transient(parent)
 
@@ -38,31 +40,31 @@ class DocumentUploadDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # Document name
-        ttk.Label(main_frame, text="Document Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.labels.document_name', default="Document Name:")).grid(row=0, column=0, sticky='w', pady=5)
         self.doc_name_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.doc_name_var, width=40).grid(row=0, column=1, pady=5, sticky='ew')
 
         # File path
-        ttk.Label(main_frame, text="File Path:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.labels.file_path', default="File Path:")).grid(row=1, column=0, sticky='w', pady=5)
         path_frame = ttk.Frame(main_frame)
         path_frame.grid(row=1, column=1, sticky='ew', pady=5)
 
         self.file_path_var = tk.StringVar()
         ttk.Entry(path_frame, textvariable=self.file_path_var, width=30).pack(side=tk.LEFT, expand=True, fill=tk.X)
-        ttk.Button(path_frame, text="Browse", command=self.browse_file).pack(side=tk.RIGHT, padx=(5,0))
+        ttk.Button(path_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.buttons.browse', default="Browse"), command=self.browse_file).pack(side=tk.RIGHT, padx=(5,0))
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=2, column=0, columnspan=2, pady=20)
 
-        ttk.Button(button_frame, text="Upload", command=self.upload).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.buttons.upload', default="Upload"), command=self.upload).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         main_frame.columnconfigure(1, weight=1)
 
     def browse_file(self):
         file_path = filedialog.askopenfilename(
-            title="Select Document",
+            title=_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.dialogs.select_document', default="Select Document"),
             filetypes=[("All files", "*.*")]
         )
         if file_path:
@@ -73,15 +75,15 @@ class DocumentUploadDialog:
 
     def upload(self):
         if not self.doc_name_var.get().strip():
-            messagebox.showerror("Error", "Document name is required")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.dialogs.document_name_is_required', default="Document name is required"))
             return
 
         if not self.file_path_var.get().strip():
-            messagebox.showerror("Error", "File path is required")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.dialogs.file_path_is_required', default="File path is required"))
             return
 
         if not os.path.exists(self.file_path_var.get()):
-            messagebox.showerror("Error", "File does not exist")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.dialogs.file_does_not_exist', default="File does not exist"))
             return
 
         try:
@@ -98,7 +100,7 @@ class DocumentUploadDialog:
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Upload failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dialogs.document_upload.dialogs.error', default="Error"), f"Upload failed: {str(e)}")
 
     def do_upload(self):
         """Perform the actual file upload with secure validation"""

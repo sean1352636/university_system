@@ -2,9 +2,9 @@ from education_system.systems.university.infrastructure.utils.document_manager._
     os, csv, datetime, timedelta, sqlite3,
     get_connection, _t,
 )
-from education_system.systems.university.infrastructure import paths as _paths
+from education_system import paths as _paths
 
-_EXPORT_DIR = str(_paths.EXPORTS_DIR / "documents")
+_EXPORT_DIR = str(_paths.UNIVERSITY_EXPORTS_DIR / "documents")
 os.makedirs(_EXPORT_DIR, exist_ok=True)
 
 

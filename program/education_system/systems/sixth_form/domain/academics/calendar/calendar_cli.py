@@ -355,18 +355,21 @@ def set_status_flow() -> None:
 
 
 def delete_event_flow() -> None:
-    print("\n═══ Delete Event ═══")
+    """Archive, not destroy — recoverable from the Admin submenu's
+    Archive flow. Permanent deletion lives only there."""
+    print("\n═══ Archive Event ═══")
     try:
         e = _pick_event()
     except _UserAbort:
         print("\n  Cancelled.")
         return
-    if _input(f"Delete event #{e.event_id} ({e.title})? Type 'yes'",
+    if _input(f"Archive event #{e.event_id} ({e.title})? Type 'yes'",
               default="no").lower() != "yes":
         print("\n  Cancelled.")
         return
     if data.delete_event(e.event_id):
-        print(f"\n  ✓ Deleted #{e.event_id}")
+        print(f"\n  ✓ Archived #{e.event_id} (restorable from "
+              "Admin → Archive)")
     _pause()
 
 
@@ -420,6 +423,34 @@ def summary_flow() -> None:
     _pause()
 
 
+# ── Submenu dispatchers ───────────────────────────────────────────
+
+def planning_tools() -> None:
+    """Series, clash checks, term calendar and slot suggestions
+    (imported late — that module borrows this one's prompt
+    helpers)."""
+    from education_system.systems.sixth_form.domain.academics.calendar import (
+        calendar_planning_cli,
+    )
+    calendar_planning_cli.run()
+
+
+def comms_tools() -> None:
+    """Reminders, RSVP messages, digests and the send queue."""
+    from education_system.systems.sixth_form.domain.academics.calendar import (
+        calendar_comms_cli,
+    )
+    calendar_comms_cli.run()
+
+
+def admin_tools() -> None:
+    """Bookings, trips, files in/out, audit and the archive."""
+    from education_system.systems.sixth_form.domain.academics.calendar import (
+        calendar_insight_cli,
+    )
+    calendar_insight_cli.run()
+
+
 # ── Submenu ───────────────────────────────────────────────────────
 
 _MENU: list[tuple[str, Callable[[], None]]] = [
@@ -432,9 +463,12 @@ _MENU: list[tuple[str, Callable[[], None]]] = [
     ("New event",            new_event),
     ("Edit event",           edit_event),
     ("Change status",        set_status_flow),
-    ("Delete event",         delete_event_flow),
+    ("Archive event",        delete_event_flow),
     ("Look up a date",       lookup_date),
     ("Summary",              summary_flow),
+    ("Planning (series / clashes / terms)", planning_tools),
+    ("Communications (reminders / RSVP / digests)", comms_tools),
+    ("Admin (bookings / trips / files / audit)", admin_tools),
 ]
 
 

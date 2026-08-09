@@ -29,7 +29,7 @@ logger = configure_logging(name="ai_detector")
 
 # Application imports
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
 

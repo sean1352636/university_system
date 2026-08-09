@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 import os
@@ -5,7 +7,7 @@ from education_system.systems.university.infrastructure.email.template_utils imp
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -58,11 +60,11 @@ class StoriesPhotosMixin:
 
             selection = self.my_photos_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a photo to delete.")
+                messagebox.showwarning(_t('gui.learners.alumni.stories_photos.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.stories_photos.dialogs.please_select_a_photo_to_delete', default="Please select a photo to delete."))
                 return
 
-            if messagebox.askyesno("Confirm Deletion",
-                                   "Are you sure you want to delete this photo?"):
+            if messagebox.askyesno(_t('gui.learners.alumni.stories_photos.dialogs.confirm_deletion', default="Confirm Deletion"),
+                                   _t('gui.learners.alumni.stories_photos.dialogs.are_you_sure_you_want_to_delete_this_photo', default="Are you sure you want to delete this photo?")):
                 item = self.my_photos_tree.item(selection[0])
                 photo_data = item['values']
 
@@ -79,7 +81,7 @@ class StoriesPhotosMixin:
 
                         conn.commit()
 
-                    messagebox.showinfo("Success", "Photo deleted successfully!")
+                    messagebox.showinfo(_t('gui.learners.alumni.stories_photos.dialogs.success', default="Success"), _t('gui.learners.alumni.stories_photos.dialogs.photo_deleted_successfully', default="Photo deleted successfully!"))
                     self.view_my_photos()  # Refresh
 
                     # Log activity
@@ -87,7 +89,7 @@ class StoriesPhotosMixin:
                     log_activity('delete', 'photo', details={'photo_path': photo_data[1]})
 
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Failed to delete photo: {str(e)}")
+                    messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.database_error', default="Database Error"), f"Failed to delete photo: {str(e)}")
 
         def _load_alumni_stories(self):
             """Load alumni stories from database"""
@@ -124,7 +126,7 @@ class StoriesPhotosMixin:
                     self.update_status(f"Loaded {len(stories)} story/stories")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load stories: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.database_error', default="Database Error"), f"Failed to load stories: {str(e)}")
 
         def _load_event_photos(self):
             """Load photos for selected event"""
@@ -135,14 +137,14 @@ class StoriesPhotosMixin:
 
                 event_selection = self.event_photo_filter.get()
                 if not event_selection or event_selection == "No events available":
-                    messagebox.showwarning("No Event", "Please select an event.")
+                    messagebox.showwarning(_t('gui.learners.alumni.stories_photos.dialogs.no_event', default="No Event"), _t('gui.learners.alumni.stories_photos.dialogs.please_select_an_event_variant_2', default="Please select an event."))
                     return
 
                 # Extract event_id from selection (format: "Event Name (ID: 123)")
                 import re
                 match = re.search(r'ID:\s*(\d+)', event_selection)
                 if not match:
-                    messagebox.showerror("Error", "Invalid event selection.")
+                    messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.error', default="Error"), _t('gui.learners.alumni.stories_photos.dialogs.invalid_event_selection', default="Invalid event selection."))
                     return
 
                 event_id = int(match.group(1))
@@ -165,7 +167,7 @@ class StoriesPhotosMixin:
                     self.update_status(f"Loaded {len(photos)} photo(s) for event")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load event photos: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.database_error', default="Database Error"), f"Failed to load event photos: {str(e)}")
 
         def _load_photos_for_moderation(self):
             """Load photos for moderation based on filter"""
@@ -203,7 +205,7 @@ class StoriesPhotosMixin:
                     self.update_status(f"Loaded {len(photos)} photo(s) for moderation")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load photos: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.database_error', default="Database Error"), f"Failed to load photos: {str(e)}")
 
         def _moderate_photo_action(self, action):
             """Perform moderation action on selected photo"""
@@ -212,7 +214,7 @@ class StoriesPhotosMixin:
 
             selection = self.moderate_photos_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a photo.")
+                messagebox.showwarning(_t('gui.learners.alumni.stories_photos.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.stories_photos.dialogs.please_select_a_photo', default="Please select a photo."))
                 return
 
             item = self.moderate_photos_tree.item(selection[0])
@@ -238,7 +240,7 @@ class StoriesPhotosMixin:
 
                     conn.commit()
 
-                messagebox.showinfo("Success", message)
+                messagebox.showinfo(_t('gui.learners.alumni.stories_photos.dialogs.success', default="Success"), message)
                 self._load_photos_for_moderation()  # Refresh
 
                 # Log activity
@@ -247,12 +249,12 @@ class StoriesPhotosMixin:
                            details={'action': action, 'moderator': self._current_user_id()})
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to perform action: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.database_error', default="Database Error"), f"Failed to perform action: {str(e)}")
 
         def browse_photo_files(self):
             """Select photo files for upload and stage them for storage."""
             filepaths = filedialog.askopenfilenames(
-                title="Select photo files",
+                title=_t('gui.learners.alumni.stories_photos.dialogs.select_photo_files', default="Select photo files"),
                 filetypes=[
                     ("Image files", "*.png *.jpg *.jpeg *.gif *.bmp"),
                     ("All files", "*.*")
@@ -271,7 +273,7 @@ class StoriesPhotosMixin:
 
         def create_photo_upload_form(self, parent):
             """Create photo upload form"""
-            ttk.Label(parent, text="Upload Event Photos",
+            ttk.Label(parent, text=_t('gui.learners.alumni.stories_photos.labels.upload_event_photos', default="Upload Event Photos"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             form_frame = ttk.Frame(parent)
@@ -281,7 +283,7 @@ class StoriesPhotosMixin:
             event_frame = ttk.Frame(form_frame)
             event_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(event_frame, text="Select Event:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(event_frame, text=_t('gui.learners.alumni.stories_photos.labels.select_event', default="Select Event:")).pack(side=tk.LEFT, padx=(0, 10))
             self.photo_event = tk.StringVar()
             events = self._get_event_options()
             self._event_lookup = {row['event_name']: row['event_id'] for row in events}
@@ -302,30 +304,30 @@ class StoriesPhotosMixin:
             file_frame = ttk.Frame(form_frame)
             file_frame.pack(fill=tk.X, pady=10)
 
-            ttk.Label(file_frame, text="Select Photos:").pack(anchor='w')
+            ttk.Label(file_frame, text=_t('gui.learners.alumni.stories_photos.labels.select_photos', default="Select Photos:")).pack(anchor='w')
             file_info_frame = ttk.Frame(file_frame)
             file_info_frame.pack(fill=tk.X, pady=(5, 0))
 
-            self.selected_files = tk.StringVar(value="No files selected")
+            self.selected_files = tk.StringVar(value=_t('gui.learners.alumni.stories_photos.values.no_files_selected', default="No files selected"))
             ttk.Label(file_info_frame, textvariable=self.selected_files).pack(side=tk.LEFT)
-            ttk.Button(file_info_frame, text="Browse Files",
+            ttk.Button(file_info_frame, text=_t('gui.learners.alumni.stories_photos.buttons.browse_files', default="Browse Files"),
                       command=self.browse_photo_files).pack(side=tk.RIGHT)
 
             # Caption
             caption_frame = ttk.Frame(form_frame)
             caption_frame.pack(fill=tk.X, pady=10)
 
-            ttk.Label(caption_frame, text="Album Caption:").pack(anchor='w')
+            ttk.Label(caption_frame, text=_t('gui.learners.alumni.stories_photos.labels.album_caption', default="Album Caption:")).pack(anchor='w')
             self.photo_caption = ScrolledText(caption_frame, height=3, wrap=tk.WORD)
             self.photo_caption.pack(fill=tk.X, pady=(5, 0))
 
             # Upload button
-            ttk.Button(form_frame, text="Upload Photos",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.stories_photos.buttons.upload_photos', default="Upload Photos"),
                       command=self.upload_photos).pack(pady=20)
 
         def create_story_form(self, parent):
             """Create the story submission form"""
-            ttk.Label(parent, text="Share Your Alumni Story",
+            ttk.Label(parent, text=_t('gui.learners.alumni.stories_photos.labels.share_your_alumni_story', default="Share Your Alumni Story"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             form_frame = ttk.Frame(parent)
@@ -335,7 +337,7 @@ class StoriesPhotosMixin:
             type_frame = ttk.Frame(form_frame)
             type_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(type_frame, text="Story Type:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(type_frame, text=_t('gui.learners.alumni.stories_photos.labels.story_type', default="Story Type:")).pack(side=tk.LEFT, padx=(0, 10))
             self.story_type = tk.StringVar()
             type_combo = ttk.Combobox(type_frame, textvariable=self.story_type,
                                      values=["Career Achievement", "Community Service", "Entrepreneurship",
@@ -347,12 +349,12 @@ class StoriesPhotosMixin:
             title_frame = ttk.Frame(form_frame)
             title_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(title_frame, text="Story Title:").pack(anchor='w')
+            ttk.Label(title_frame, text=_t('gui.learners.alumni.stories_photos.labels.story_title', default="Story Title:")).pack(anchor='w')
             self.story_title = tk.StringVar()
             ttk.Entry(title_frame, textvariable=self.story_title).pack(fill=tk.X, pady=(5, 0))
 
             # Content
-            ttk.Label(form_frame, text="Your Story:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(form_frame, text=_t('gui.learners.alumni.stories_photos.labels.your_story', default="Your Story:")).pack(anchor='w', pady=(10, 5))
             self.story_content = ScrolledText(form_frame, height=12, wrap=tk.WORD)
             self.story_content.pack(fill=tk.BOTH, expand=True)
 
@@ -371,34 +373,34 @@ class StoriesPhotosMixin:
             self.story_content.insert(tk.END, placeholder_text)
 
             # Submit button
-            ttk.Button(form_frame, text="Submit Story",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.stories_photos.buttons.submit_story', default="Submit Story"),
                       command=self.submit_story).pack(pady=20)
 
         def moderate_photos(self):
             """Admin function to moderate uploaded photos"""
             if not self.has_permission('admin') and not self.has_permission('manage_alumni'):
-                messagebox.showerror("Permission Denied",
-                                   "You don't have permission to moderate photos.")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.permission_denied', default="Permission Denied"),
+                                   _t('gui.learners.alumni.stories_photos.dialogs.you_don_t_have_permission_to_moderate_photos', default="You don't have permission to moderate photos."))
                 return
 
             self.clear_content()
             self.update_status("Moderate Photos")
 
-            ttk.Label(self.content_frame, text="Photo Moderation",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.stories_photos.labels.photo_moderation', default="Photo Moderation"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Filter frame
             filter_frame = ttk.Frame(self.content_frame)
             filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-            ttk.Label(filter_frame, text="Filter by Status:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.stories_photos.labels.filter_by_status', default="Filter by Status:")).pack(side=tk.LEFT, padx=(0, 10))
             self.photo_status_filter = tk.StringVar()
             status_combo = ttk.Combobox(filter_frame, textvariable=self.photo_status_filter,
                                        values=["All", "pending", "approved", "rejected"])
             status_combo.pack(side=tk.LEFT, padx=(0, 20))
             status_combo.set("pending")
 
-            ttk.Button(filter_frame, text="Apply Filter",
+            ttk.Button(filter_frame, text=_t('gui.learners.alumni.stories_photos.buttons.apply_filter', default="Apply Filter"),
                       command=self._load_photos_for_moderation).pack(side=tk.LEFT)
 
             # Photos table
@@ -426,24 +428,24 @@ class StoriesPhotosMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="Approve",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.approve', default="Approve"),
                       command=lambda: self._moderate_photo_action('approved')).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Reject",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.reject', default="Reject"),
                       command=lambda: self._moderate_photo_action('rejected')).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Delete",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.delete', default="Delete"),
                       command=lambda: self._moderate_photo_action('deleted')).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.refresh', default="Refresh"),
                       command=self._load_photos_for_moderation).pack(side=tk.LEFT)
 
         def read_full_story(self):
             """View complete story details"""
             if not hasattr(self, 'stories_tree'):
-                messagebox.showwarning("Not Available", "Please use 'View Alumni Stories' first.")
+                messagebox.showwarning(_t('gui.learners.alumni.stories_photos.dialogs.not_available', default="Not Available"), _t('gui.learners.alumni.stories_photos.dialogs.please_use_view_alumni_stories_first', default="Please use 'View Alumni Stories' first."))
                 return
 
             selection = self.stories_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a story to read.")
+                messagebox.showwarning(_t('gui.learners.alumni.stories_photos.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.stories_photos.dialogs.please_select_a_story_to_read', default="Please select a story to read."))
                 return
 
             item = self.stories_tree.item(selection[0])
@@ -504,7 +506,7 @@ class StoriesPhotosMixin:
             story_text.config(state='disabled')
 
             # Close button
-            ttk.Button(main_frame, text="Close",
+            ttk.Button(main_frame, text=_t('gui.learners.alumni.stories_photos.buttons.close', default="Close"),
                       command=story_window.destroy).pack()
 
         def show_create_story(self):
@@ -512,7 +514,7 @@ class StoriesPhotosMixin:
             self.clear_content()
             self.update_status("Create Alumni Story")
 
-            ttk.Label(self.content_frame, text="Create Alumni Story",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.stories_photos.labels.create_alumni_story', default="Create Alumni Story"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Get current user's alumni ID
@@ -523,7 +525,7 @@ class StoriesPhotosMixin:
                 alumni_id_frame = ttk.Frame(self.content_frame)
                 alumni_id_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-                ttk.Label(alumni_id_frame, text="Alumni ID:").pack(side=tk.LEFT, padx=(0, 10))
+                ttk.Label(alumni_id_frame, text=_t('gui.learners.alumni.stories_photos.labels.alumni_id', default="Alumni ID:")).pack(side=tk.LEFT, padx=(0, 10))
                 self.story_alumni_id = tk.StringVar()
                 ttk.Entry(alumni_id_frame, textvariable=self.story_alumni_id).pack(side=tk.LEFT)
 
@@ -535,7 +537,7 @@ class StoriesPhotosMixin:
             type_frame = ttk.Frame(form_frame)
             type_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(type_frame, text="Story Type:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(type_frame, text=_t('gui.learners.alumni.stories_photos.labels.story_type', default="Story Type:")).pack(side=tk.LEFT, padx=(0, 10))
             self.story_type = tk.StringVar()
             type_combo = ttk.Combobox(type_frame, textvariable=self.story_type,
                                      values=["Career Achievement", "Community Service", "Entrepreneurship",
@@ -547,7 +549,7 @@ class StoriesPhotosMixin:
             title_frame = ttk.Frame(form_frame)
             title_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(title_frame, text="Story Title:").pack(anchor='w')
+            ttk.Label(title_frame, text=_t('gui.learners.alumni.stories_photos.labels.story_title', default="Story Title:")).pack(anchor='w')
             self.story_title = tk.StringVar()
             ttk.Entry(title_frame, textvariable=self.story_title).pack(fill=tk.X, pady=(5, 0))
 
@@ -555,7 +557,7 @@ class StoriesPhotosMixin:
             category_frame = ttk.Frame(form_frame)
             category_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(category_frame, text="Category:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(category_frame, text=_t('gui.learners.alumni.stories_photos.labels.category', default="Category:")).pack(side=tk.LEFT, padx=(0, 10))
             self.story_category = tk.StringVar()
             category_combo = ttk.Combobox(category_frame, textvariable=self.story_category,
                                          values=["Professional Success", "Community Impact", "Innovation",
@@ -564,12 +566,12 @@ class StoriesPhotosMixin:
             category_combo.set("Professional Success")
 
             # Content
-            ttk.Label(form_frame, text="Story Content:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(form_frame, text=_t('gui.learners.alumni.stories_photos.labels.story_content', default="Story Content:")).pack(anchor='w', pady=(10, 5))
             self.story_content = ScrolledText(form_frame, height=15, wrap=tk.WORD)
             self.story_content.pack(fill=tk.BOTH, expand=True)
 
             # Submit button
-            ttk.Button(form_frame, text="Submit Story",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.stories_photos.buttons.submit_story', default="Submit Story"),
                       command=self.submit_alumni_story).pack(pady=20)
 
         def show_photo_gallery(self):
@@ -577,7 +579,7 @@ class StoriesPhotosMixin:
             self.clear_content()
             self.update_status("Photo Gallery")
 
-            ttk.Label(self.content_frame, text="Alumni Photo Gallery",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.stories_photos.labels.alumni_photo_gallery', default="Alumni Photo Gallery"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Gallery tabs
@@ -586,13 +588,13 @@ class StoriesPhotosMixin:
 
             # Browse photos tab
             browse_frame = ttk.Frame(notebook)
-            notebook.add(browse_frame, text="Browse Photos")
+            notebook.add(browse_frame, text=_t('gui.learners.alumni.stories_photos.tabs.browse_photos', default="Browse Photos"))
 
             # Event filter
             filter_frame = ttk.Frame(browse_frame)
             filter_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Label(filter_frame, text="Filter by Event:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.stories_photos.labels.filter_by_event', default="Filter by Event:")).pack(side=tk.LEFT, padx=(0, 10))
             event_var = tk.StringVar()
             event_combo = ttk.Combobox(filter_frame, textvariable=event_var,
                                       values=["All Events", "Annual Gala 2025", "Tech Networking", "Class Reunions"])
@@ -633,7 +635,7 @@ class StoriesPhotosMixin:
 
             # Upload photos tab
             upload_frame = ttk.Frame(notebook)
-            notebook.add(upload_frame, text="Upload Photos")
+            notebook.add(upload_frame, text=_t('gui.learners.alumni.stories_photos.tabs.upload_photos', default="Upload Photos"))
 
             self.create_photo_upload_form(upload_frame)
 
@@ -642,7 +644,7 @@ class StoriesPhotosMixin:
             self.clear_content()
             self.update_status("Alumni Stories")
 
-            ttk.Label(self.content_frame, text="Alumni Stories & Spotlights",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.stories_photos.labels.alumni_stories_spotlights', default="Alumni Stories & Spotlights"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Stories tabs
@@ -651,7 +653,7 @@ class StoriesPhotosMixin:
 
             # Featured stories tab
             featured_frame = ttk.Frame(notebook)
-            notebook.add(featured_frame, text="Featured Stories")
+            notebook.add(featured_frame, text=_t('gui.learners.alumni.stories_photos.tabs.featured_stories', default="Featured Stories"))
 
             featured_text = ScrolledText(featured_frame, wrap=tk.WORD)
             featured_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -690,22 +692,22 @@ class StoriesPhotosMixin:
 
             # Submit story tab
             submit_frame = ttk.Frame(notebook)
-            notebook.add(submit_frame, text="Submit Your Story")
+            notebook.add(submit_frame, text=_t('gui.learners.alumni.stories_photos.tabs.submit_your_story', default="Submit Your Story"))
 
             self.create_story_form(submit_frame)
 
         def submit_alumni_story(self):
             """Submit alumni story"""
             if not self.story_title.get().strip():
-                messagebox.showerror("Validation Error", "Story title is required!")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.stories_photos.dialogs.story_title_is_required', default="Story title is required!"))
                 return
 
             content = self.story_content.get(1.0, tk.END).strip()
             if not content:
-                messagebox.showerror("Validation Error", "Story content is required!")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.stories_photos.dialogs.story_content_is_required', default="Story content is required!"))
                 return
 
-            messagebox.showinfo("Story Submitted", "Alumni story submitted successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.stories_photos.dialogs.story_submitted', default="Story Submitted"), _t('gui.learners.alumni.stories_photos.dialogs.alumni_story_submitted_successfully', default="Alumni story submitted successfully!"))
             self.update_status("Alumni story submitted")
 
             # Clear form
@@ -717,15 +719,15 @@ class StoriesPhotosMixin:
         def submit_story(self):
             """Submit alumni story"""
             if not self.story_title.get().strip():
-                messagebox.showerror("Validation Error", "Story title is required!")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.stories_photos.dialogs.story_title_is_required', default="Story title is required!"))
                 return
 
             content = self.story_content.get(1.0, tk.END).strip()
             if not content or content.startswith("Tell us your story"):
-                messagebox.showerror("Validation Error", "Please write your story content!")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.stories_photos.dialogs.please_write_your_story_content', default="Please write your story content!"))
                 return
 
-            messagebox.showinfo("Story Submitted", "Your story has been submitted for review. Thank you for sharing!")
+            messagebox.showinfo(_t('gui.learners.alumni.stories_photos.dialogs.story_submitted', default="Story Submitted"), _t('gui.learners.alumni.stories_photos.dialogs.your_story_has_been_submitted_for_review_thank_you_for_sharing', default="Your story has been submitted for review. Thank you for sharing!"))
             self.update_status("Alumni story submitted")
 
             # Clear form
@@ -735,17 +737,17 @@ class StoriesPhotosMixin:
         def upload_photos(self):
             """Upload photos"""
             if not self.photo_event.get():
-                messagebox.showerror("Validation Error", "Please select an event!")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.stories_photos.dialogs.please_select_an_event', default="Please select an event!"))
                 return
 
             if not getattr(self, "_photo_file_paths", None):
-                messagebox.showerror("Validation Error", "Please select photos to upload!")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.stories_photos.dialogs.please_select_photos_to_upload', default="Please select photos to upload!"))
                 return
 
             event_name = self.photo_event.get()
             event_id = self._event_lookup.get(event_name)
             if not event_id:
-                messagebox.showerror("Validation Error", "Selected event is not available.")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.stories_photos.dialogs.selected_event_is_not_available', default="Selected event is not available."))
                 return
 
             caption = self.photo_caption.get("1.0", tk.END).strip()
@@ -790,14 +792,14 @@ class StoriesPhotosMixin:
 
             if skipped_files:
                 messagebox.showwarning(
-                    "Some Files Skipped",
+                    _t('gui.learners.alumni.stories_photos.dialogs.some_files_skipped', default="Some Files Skipped"),
                     "The following files were skipped due to security validation:\n" +
                     "\n".join(skipped_files[:5]) +
                     (f"\n... and {len(skipped_files) - 5} more" if len(skipped_files) > 5 else "")
                 )
 
             if not stored_files:
-                messagebox.showerror("Upload Failed", "Selected files could not be processed.")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.upload_failed', default="Upload Failed"), _t('gui.learners.alumni.stories_photos.dialogs.selected_files_could_not_be_processed', default="Selected files could not be processed."))
                 return
 
             conn = self._get_db_connection()
@@ -813,7 +815,7 @@ class StoriesPhotosMixin:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Upload Complete", "Photos uploaded successfully to the gallery!")
+            messagebox.showinfo(_t('gui.learners.alumni.stories_photos.dialogs.upload_complete', default="Upload Complete"), _t('gui.learners.alumni.stories_photos.dialogs.photos_uploaded_successfully_to_the_gallery', default="Photos uploaded successfully to the gallery!"))
             self.update_status(f"Uploaded {len(stored_files)} photo(s) to gallery")
             self._photo_file_paths = []
             self.selected_files.set("No files selected")
@@ -824,14 +826,14 @@ class StoriesPhotosMixin:
             self.clear_content()
             self.update_status("Alumni Stories")
 
-            ttk.Label(self.content_frame, text="Alumni Stories",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.stories_photos.labels.alumni_stories', default="Alumni Stories"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Filter frame
             filter_frame = ttk.Frame(self.content_frame)
             filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-            ttk.Label(filter_frame, text="Category:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.stories_photos.labels.category', default="Category:")).pack(side=tk.LEFT, padx=(0, 10))
             self.story_filter_category = tk.StringVar()
             category_combo = ttk.Combobox(filter_frame, textvariable=self.story_filter_category,
                                          values=["All", "Career Success", "Entrepreneurship", "Community Impact",
@@ -839,7 +841,7 @@ class StoriesPhotosMixin:
             category_combo.pack(side=tk.LEFT, padx=(0, 20))
             category_combo.set("All")
 
-            ttk.Button(filter_frame, text="Filter",
+            ttk.Button(filter_frame, text=_t('gui.learners.alumni.stories_photos.buttons.filter', default="Filter"),
                       command=self._load_alumni_stories).pack(side=tk.LEFT)
 
             # Stories table
@@ -867,11 +869,11 @@ class StoriesPhotosMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="Read Full Story",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.read_full_story', default="Read Full Story"),
                       command=self.read_full_story).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Submit Your Story",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.submit_your_story', default="Submit Your Story"),
                       command=self.show_create_story).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.refresh', default="Refresh"),
                       command=self._load_alumni_stories).pack(side=tk.LEFT)
 
         def view_event_photos(self):
@@ -879,14 +881,14 @@ class StoriesPhotosMixin:
             self.clear_content()
             self.update_status("Event Photos")
 
-            ttk.Label(self.content_frame, text="Event Photos",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.stories_photos.labels.event_photos', default="Event Photos"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Event selection frame
             event_frame = ttk.Frame(self.content_frame)
             event_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-            ttk.Label(event_frame, text="Select Event:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(event_frame, text=_t('gui.learners.alumni.stories_photos.labels.select_event', default="Select Event:")).pack(side=tk.LEFT, padx=(0, 10))
             self.event_photo_filter = tk.StringVar()
 
             # Get event options
@@ -909,7 +911,7 @@ class StoriesPhotosMixin:
             if event_options and event_options[0] != "No events available":
                 event_combo.set(event_options[0])
 
-            ttk.Button(event_frame, text="Load Photos",
+            ttk.Button(event_frame, text=_t('gui.learners.alumni.stories_photos.buttons.load_photos', default="Load Photos"),
                       command=self._load_event_photos).pack(side=tk.LEFT)
 
             # Photos table
@@ -934,7 +936,7 @@ class StoriesPhotosMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.refresh', default="Refresh"),
                       command=self._load_event_photos).pack(side=tk.LEFT)
 
         def view_my_photos(self):
@@ -942,7 +944,7 @@ class StoriesPhotosMixin:
             self.clear_content()
             self.update_status("My Photos")
 
-            ttk.Label(self.content_frame, text="My Uploaded Photos",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.stories_photos.labels.my_uploaded_photos', default="My Uploaded Photos"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Photos table
@@ -990,14 +992,14 @@ class StoriesPhotosMixin:
                     self.update_status(f"Loaded {len(photos)} photo(s)")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load photos: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.stories_photos.dialogs.database_error', default="Database Error"), f"Failed to load photos: {str(e)}")
 
             # Action buttons
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="Delete Photo",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.delete_photo', default="Delete Photo"),
                       command=self._delete_my_photo).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.stories_photos.buttons.refresh', default="Refresh"),
                       command=self.view_my_photos).pack(side=tk.LEFT)
 

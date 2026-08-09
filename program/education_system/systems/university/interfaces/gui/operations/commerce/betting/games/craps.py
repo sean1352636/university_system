@@ -16,6 +16,8 @@ Pass / Don't Pass can only be placed on the come-out roll. Field can be
 placed before any roll.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -56,7 +58,7 @@ MIN_BET = 5
 class CrapsGame:
     def __init__(self, root):
         self.root = root
-        root.title("Craps")
+        root.title(_t('gui.operations.commerce.betting.games.craps.windows.craps', default="Craps"))
         root.configure(bg=FELT)
         root.resizable(False, False)
 
@@ -131,7 +133,7 @@ class CrapsGame:
         tk.Button(amt, text="\u2212", command=lambda: self.change_bet(-MIN_BET),
                   width=3, font=("Helvetica", 12, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(amt, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(amt, text=_t('gui.operations.commerce.betting.games.craps.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(amt, textvariable=self.bet_var, width=6,
@@ -148,12 +150,12 @@ class CrapsGame:
         # actions
         act = tk.Frame(f, bg=FELT, pady=10)
         act.pack()
-        self.roll_btn = tk.Button(act, text="Roll Dice", command=self.roll,
+        self.roll_btn = tk.Button(act, text=_t('gui.operations.commerce.betting.games.craps.buttons.roll_dice', default="Roll Dice"), command=self.roll,
                                   font=("Helvetica", 13, "bold"), width=14,
                                   bg="#1b7a4b", fg="white", activebackground=GOLD,
                                   bd=0, pady=6, cursor="hand2")
         self.roll_btn.pack(side="left", padx=6)
-        self.clear_btn = tk.Button(act, text="Clear Bets", command=self.clear_bets,
+        self.clear_btn = tk.Button(act, text=_t('gui.operations.commerce.betting.games.craps.buttons.clear_bets', default="Clear Bets"), command=self.clear_bets,
                                    font=("Helvetica", 13, "bold"), width=12,
                                    bg="#555", fg="white", activebackground=GOLD,
                                    bd=0, pady=6, cursor="hand2")
@@ -226,7 +228,7 @@ class CrapsGame:
         for k, lbl in self.spot_lbls.items():
             lbl.config(text=str(self.bets[k]))
         if self.point is None:
-            self.point_lbl.config(text="COME-OUT ROLL  \u2022  point OFF")
+            self.point_lbl.config(text=_t('gui.operations.commerce.betting.games.craps.text.come_out_roll_point_off', default="COME-OUT ROLL  \u2022  point OFF"))
         else:
             self.point_lbl.config(text=f"POINT IS {self.point}  \u2022  ON")
 

@@ -1,5 +1,7 @@
 """Barber Shop GUI - Staff tab creation."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, _t,
 )
@@ -20,7 +22,7 @@ class StaffTabMixin:
         columns = ('id', 'name', 'employee_id', 'specialties', 'status')
         self.staff_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
 
-        self.staff_tree.heading('id', text='ID')
+        self.staff_tree.heading('id', text=_t('gui.operations.commerce.barber.tabs.staff_tab.headings.id', default='ID'))
         self.staff_tree.heading('name', text=_t("barber.labels.name"))
         self.staff_tree.heading('employee_id', text=_t("barber.labels.employee_id"))
         self.staff_tree.heading('specialties', text=_t("barber.labels.specialties"))

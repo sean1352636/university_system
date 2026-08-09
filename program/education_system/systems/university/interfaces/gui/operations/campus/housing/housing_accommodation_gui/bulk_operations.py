@@ -19,6 +19,8 @@ including failures rather than aborting on the first error.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import datetime
 import logging
 import sqlite3
@@ -48,7 +50,7 @@ def show_bulk_operations(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Bulk Operations",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.labels.bulk_operations', default="Bulk Operations"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
 
@@ -58,9 +60,9 @@ def show_bulk_operations(gui_instance) -> None:
     tab_apps = ttk.Frame(nb, padding=8)
     tab_mout = ttk.Frame(nb, padding=8)
     tab_rent = ttk.Frame(nb, padding=8)
-    nb.add(tab_apps, text="Approve Applications")
-    nb.add(tab_mout, text="Mass Move-Out")
-    nb.add(tab_rent, text="Rent Adjustment")
+    nb.add(tab_apps, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.tabs.approve_applications', default="Approve Applications"))
+    nb.add(tab_mout, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.tabs.mass_move_out', default="Mass Move-Out"))
+    nb.add(tab_rent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.tabs.rent_adjustment', default="Rent Adjustment"))
 
     _build_bulk_approve(gui_instance, tab_apps)
     _build_mass_moveout(gui_instance, tab_mout)
@@ -71,10 +73,10 @@ def show_bulk_operations(gui_instance) -> None:
 
 def _build_bulk_approve(gui_instance, parent: ttk.Frame) -> None:
     ttk.Label(parent,
-              text=("Tick applications to approve. Each gets the first "
+              text=(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.labels.tick_applications_to_approve_each_gets_the_first_matching_availa', default="Tick applications to approve. Each gets the first "
                     "matching available room (preferred building first, "
                     "then any building). Applications with no match are "
-                    "skipped — use the Waitlist screen for those."),
+                    "skipped — use the Waitlist screen for those.")),
               wraplength=820, foreground="#555").pack(anchor="w",
                                                        pady=(0, 6))
 
@@ -120,7 +122,7 @@ def _build_bulk_approve(gui_instance, parent: ttk.Frame) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Bulk approve: load failed")
-            messagebox.showerror("Bulk approve",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.bulk_approve', default="Bulk approve"),
                                   f"Could not load applications:\n\n{e}",
                                   parent=gui_instance.root)
             return
@@ -135,11 +137,11 @@ def _build_bulk_approve(gui_instance, parent: ttk.Frame) -> None:
 
     bar = ttk.Frame(parent)
     bar.pack(fill="x", pady=(6, 0))
-    ttk.Button(bar, text="Refresh", command=reload).pack(side="left")
-    ttk.Button(bar, text="Select all",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.refresh', default="Refresh"), command=reload).pack(side="left")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.select_all', default="Select all"),
                command=lambda: tree.selection_set(tree.get_children())).pack(
         side="left", padx=4)
-    ttk.Button(bar, text="Approve selected →",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.approve_selected', default="Approve selected →"),
                command=lambda: _run_bulk_approve(
                    gui_instance, tree.selection(), reload)).pack(side="right")
 
@@ -149,11 +151,11 @@ def _build_bulk_approve(gui_instance, parent: ttk.Frame) -> None:
 def _run_bulk_approve(gui_instance, app_ids: tuple,
                       on_done) -> None:
     if not app_ids:
-        messagebox.showinfo("Bulk approve",
-                            "Select at least one application.",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.bulk_approve', default="Bulk approve"),
+                            _t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.select_at_least_one_application', default="Select at least one application."),
                             parent=gui_instance.root)
         return
-    if not messagebox.askyesno("Bulk approve",
+    if not messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.bulk_approve', default="Bulk approve"),
                                 f"Approve {len(app_ids)} application(s)?\n\n"
                                 "Each will be matched to the first available "
                                 "room of the requested type.",
@@ -176,7 +178,7 @@ def _run_bulk_approve(gui_instance, app_ids: tuple,
         conn = get_connection()
     except sqlite3.Error as e:
         logger.exception("Bulk approve: DB connect failed")
-        messagebox.showerror("Bulk approve", f"DB error: {e}",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.bulk_approve', default="Bulk approve"), f"DB error: {e}",
                               parent=gui_instance.root)
         return
 
@@ -246,7 +248,7 @@ def _run_bulk_approve(gui_instance, app_ids: tuple,
     if errors:
         msg += "\n\nFirst few errors:\n" + "\n".join(
             f"  {a}: {m}" for a, m in errors[:5])
-    messagebox.showinfo("Bulk approve — result", msg,
+    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.bulk_approve_result', default="Bulk approve — result"), msg,
                          parent=gui_instance.root)
     logger.info("Bulk approve summary: approved=%d, no_room=%d, errors=%d",
                 len(approved), len(no_room), len(errors))
@@ -280,20 +282,20 @@ def _find_first_available_room(cur, building_id: str | None,
 
 def _build_mass_moveout(gui_instance, parent: ttk.Frame) -> None:
     ttk.Label(parent,
-              text=("Pick a move-out date and tick assignments to "
+              text=(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.labels.pick_a_move_out_date_and_tick_assignments_to_terminate_each_will', default="Pick a move-out date and tick assignments to "
                     "terminate. Each will be marked Terminated, the room "
-                    "freed, and any matching waitlist entry promoted."),
+                    "freed, and any matching waitlist entry promoted.")),
               wraplength=820, foreground="#555").pack(anchor="w",
                                                        pady=(0, 6))
 
     top = ttk.Frame(parent)
     top.pack(fill="x")
-    ttk.Label(top, text="Move-out date (YYYY-MM-DD):").pack(side="left",
+    ttk.Label(top, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.labels.move_out_date_yyyy_mm_dd', default="Move-out date (YYYY-MM-DD):")).pack(side="left",
                                                               padx=(0, 4))
     date_var = tk.StringVar(value=datetime.date.today().isoformat())
     ttk.Entry(top, textvariable=date_var, width=14).pack(side="left",
                                                           padx=(0, 12))
-    ttk.Label(top, text="Filter by building:").pack(side="left")
+    ttk.Label(top, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.labels.filter_by_building', default="Filter by building:")).pack(side="left")
     building_var = tk.StringVar()
     building_combo = ttk.Combobox(top, textvariable=building_var,
                                     state="readonly", width=28)
@@ -349,7 +351,7 @@ def _build_mass_moveout(gui_instance, parent: ttk.Frame) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Mass move-out: load failed")
-            messagebox.showerror("Mass move-out",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.mass_move_out', default="Mass move-out"),
                                   f"Could not load assignments:\n\n{e}",
                                   parent=gui_instance.root)
             return
@@ -362,11 +364,11 @@ def _build_mass_moveout(gui_instance, parent: ttk.Frame) -> None:
 
     bar = ttk.Frame(parent)
     bar.pack(fill="x", pady=(6, 0))
-    ttk.Button(bar, text="Refresh", command=reload).pack(side="left")
-    ttk.Button(bar, text="Select all",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.refresh', default="Refresh"), command=reload).pack(side="left")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.select_all', default="Select all"),
                command=lambda: tree.selection_set(tree.get_children())).pack(
         side="left", padx=4)
-    ttk.Button(bar, text="Finalise selected →",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.finalise_selected', default="Finalise selected →"),
                command=lambda: _run_mass_moveout(
                    gui_instance, tree.selection(),
                    date_var.get().strip(), reload)).pack(side="right")
@@ -377,18 +379,18 @@ def _build_mass_moveout(gui_instance, parent: ttk.Frame) -> None:
 def _run_mass_moveout(gui_instance, asg_ids: tuple,
                       move_out_date: str, on_done) -> None:
     if not asg_ids:
-        messagebox.showinfo("Mass move-out",
-                            "Select at least one assignment.",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.mass_move_out', default="Mass move-out"),
+                            _t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.select_at_least_one_assignment', default="Select at least one assignment."),
                             parent=gui_instance.root)
         return
     try:
         datetime.date.fromisoformat(move_out_date)
     except ValueError:
-        messagebox.showwarning("Mass move-out",
-                                "Move-out date must be YYYY-MM-DD.",
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.mass_move_out', default="Mass move-out"),
+                                _t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.move_out_date_must_be_yyyy_mm_dd', default="Move-out date must be YYYY-MM-DD."),
                                 parent=gui_instance.root)
         return
-    if not messagebox.askyesno("Mass move-out",
+    if not messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.mass_move_out', default="Mass move-out"),
                                 f"Terminate {len(asg_ids)} assignment(s) "
                                 f"with move-out date {move_out_date}?\n\n"
                                 "Issued refunds and deductions are NOT "
@@ -406,7 +408,7 @@ def _run_mass_moveout(gui_instance, asg_ids: tuple,
         conn = get_connection()
     except sqlite3.Error as e:
         logger.exception("Mass move-out: DB connect failed")
-        messagebox.showerror("Mass move-out", f"DB error: {e}",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.mass_move_out', default="Mass move-out"), f"DB error: {e}",
                               parent=gui_instance.root)
         return
 
@@ -470,7 +472,7 @@ def _run_mass_moveout(gui_instance, asg_ids: tuple,
     if errors:
         msg += "\n\nFirst few errors:\n" + "\n".join(
             f"  {a}: {m}" for a, m in errors[:5])
-    messagebox.showinfo("Mass move-out — result", msg,
+    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.mass_move_out_result', default="Mass move-out — result"), msg,
                          parent=gui_instance.root)
     logger.info("Mass move-out summary: finalised=%d, promoted=%d, errors=%d",
                 len(finalised), len(promoted), len(errors))
@@ -481,17 +483,17 @@ def _run_mass_moveout(gui_instance, asg_ids: tuple,
 
 def _build_rent_adjustment(gui_instance, parent: ttk.Frame) -> None:
     ttk.Label(parent,
-              text=("Choose a building (and optionally a room type) "
+              text=(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.labels.choose_a_building_and_optionally_a_room_type_then_a_percentage_o', default="Choose a building (and optionally a room type) "
                     "then a percentage or flat-£ change. New rents are "
                     "rounded to 2dp; future bookings use the new rate. "
                     "Existing assignments keep their own monthly_rent "
-                    "unless you re-issue contracts."),
+                    "unless you re-issue contracts.")),
               wraplength=820, foreground="#555").pack(anchor="w",
                                                        pady=(0, 6))
 
     row = ttk.Frame(parent)
     row.pack(fill="x", pady=4)
-    ttk.Label(row, text="Building:").pack(side="left", padx=(0, 4))
+    ttk.Label(row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.labels.building', default="Building:")).pack(side="left", padx=(0, 4))
     building_var = tk.StringVar()
     building_combo = ttk.Combobox(row, textvariable=building_var,
                                     state="readonly", width=30)
@@ -501,7 +503,7 @@ def _build_rent_adjustment(gui_instance, parent: ttk.Frame) -> None:
         building_combo.current(0)
     building_combo.pack(side="left", padx=(0, 12))
 
-    ttk.Label(row, text="Room type (optional):").pack(side="left")
+    ttk.Label(row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.labels.room_type_optional', default="Room type (optional):")).pack(side="left")
     type_var = tk.StringVar()
     type_combo = ttk.Combobox(row, textvariable=type_var,
                                 state="readonly", width=18)
@@ -511,17 +513,17 @@ def _build_rent_adjustment(gui_instance, parent: ttk.Frame) -> None:
 
     row2 = ttk.Frame(parent)
     row2.pack(fill="x", pady=4)
-    mode_var = tk.StringVar(value="percent")
-    ttk.Radiobutton(row2, text="Percent change (e.g. 5 = +5%)",
+    mode_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.values.percent', default="percent"))
+    ttk.Radiobutton(row2, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.percent_change_e_g_5_5', default="Percent change (e.g. 5 = +5%)"),
                     variable=mode_var, value="percent").pack(side="left",
                                                               padx=4)
-    ttk.Radiobutton(row2, text="Flat £ change (e.g. -25 = £25 off)",
+    ttk.Radiobutton(row2, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.flat_change_e_g_25_25_off', default="Flat £ change (e.g. -25 = £25 off)"),
                     variable=mode_var, value="flat").pack(side="left",
                                                             padx=4)
 
     row3 = ttk.Frame(parent)
     row3.pack(fill="x", pady=4)
-    ttk.Label(row3, text="Amount:").pack(side="left", padx=(0, 4))
+    ttk.Label(row3, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.labels.amount', default="Amount:")).pack(side="left", padx=(0, 4))
     amt_var = tk.StringVar()
     ttk.Entry(row3, textvariable=amt_var, width=12).pack(side="left",
                                                           padx=(0, 12))
@@ -562,7 +564,7 @@ def _build_rent_adjustment(gui_instance, parent: ttk.Frame) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Rent preview query failed")
-            messagebox.showerror("Rent adjustment",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.rent_adjustment', default="Rent adjustment"),
                                   f"Could not load rooms:\n\n{e}",
                                   parent=gui_instance.root)
             return
@@ -587,19 +589,19 @@ def _build_rent_adjustment(gui_instance, parent: ttk.Frame) -> None:
     def apply() -> None:
         b_id = _selected_building_id()
         if not b_id:
-            messagebox.showinfo("Rent adjustment", "Pick a building first.",
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.rent_adjustment', default="Rent adjustment"), _t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.pick_a_building_first', default="Pick a building first."),
                                  parent=gui_instance.root)
             return
         try:
             amt = float(amt_var.get().strip())
         except ValueError:
-            messagebox.showwarning("Rent adjustment",
-                                    "Amount must be numeric.",
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.rent_adjustment', default="Rent adjustment"),
+                                    _t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.amount_must_be_numeric', default="Amount must be numeric."),
                                     parent=gui_instance.root)
             return
         rt = _selected_room_type()
         if not messagebox.askyesno(
-                "Rent adjustment",
+                _t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.rent_adjustment', default="Rent adjustment"),
                 ("Apply " +
                  (f"{amt:+.2f}% change" if mode_var.get() == 'percent'
                   else f"£{amt:+.2f} flat change") +
@@ -641,7 +643,7 @@ def _build_rent_adjustment(gui_instance, parent: ttk.Frame) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Rent adjustment apply failed")
-            messagebox.showerror("Rent adjustment",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.rent_adjustment', default="Rent adjustment"),
                                   f"Could not apply:\n\n{e}",
                                   parent=gui_instance.root)
             return
@@ -650,7 +652,7 @@ def _build_rent_adjustment(gui_instance, parent: ttk.Frame) -> None:
                      + (f" / {rt}" if rt else "")
                      + f": mode={mode_var.get()}, amount={amt}, "
                      f"updated={updated}, skipped={skipped}")
-        messagebox.showinfo("Rent adjustment",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.dialogs.rent_adjustment', default="Rent adjustment"),
                              f"Updated {updated} room(s). "
                              f"Skipped {skipped} (no change).",
                              parent=gui_instance.root)
@@ -658,8 +660,8 @@ def _build_rent_adjustment(gui_instance, parent: ttk.Frame) -> None:
 
     bar = ttk.Frame(parent)
     bar.pack(fill="x", pady=(4, 0))
-    ttk.Button(bar, text="Preview", command=preview).pack(side="left")
-    ttk.Button(bar, text="Apply →", command=apply).pack(side="right")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.preview', default="Preview"), command=preview).pack(side="left")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.bulk_operations.buttons.apply', default="Apply →"), command=apply).pack(side="right")
 
 
 # ── Shared helpers ─────────────────────────────────────────────────────

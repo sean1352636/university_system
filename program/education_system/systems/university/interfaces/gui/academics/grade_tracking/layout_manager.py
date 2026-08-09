@@ -1,5 +1,7 @@
 """UI layout and navigation"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -12,12 +14,12 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.interfaces.gui.academics.grade_tracking.utils import ensure_column_exists
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -189,7 +191,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.layout_manager.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -308,7 +310,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.layout_manager.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -356,7 +358,7 @@ class LayoutManager:
         sidebar_frame.pack_propagate(False)  # Maintain fixed width
 
         # Add header label to sidebar
-        header_label = ttk.Label(sidebar_frame, text="📋 Navigation",
+        header_label = ttk.Label(sidebar_frame, text=_t('gui.academics.grade_tracking.layout_manager.labels.navigation', default="📋 Navigation"),
                                 font=('Arial', 10, 'bold'),
                                 anchor='center')
         header_label.pack(fill=tk.X, pady=(0, 5))
@@ -469,16 +471,6 @@ class LayoutManager:
         # Default (no auth or unknown role) - show basic features
         else:
             self.view_buttons = [
-                ("Students", self.show_student_view),
-                ("Modules", self.show_module_view),
-                ("Assessments", self.show_assessment_view),
-                ("Grades", self.show_grades_view),
-                ("Grade Management", self.show_grade_management_view),
-                ("View Grades", self.show_view_grades_view),
-                ("Statistics & Analysis", self.show_statistics_view),
-                ("Transcripts", self.show_transcript_view),
-                ("Analytics", self.show_analytics_view),
-                ("Reports", self.show_reports_view),
                 ("🏠 Return to Main Menu", self.return_to_main_menu)
             ]
 
@@ -493,9 +485,14 @@ class LayoutManager:
         if is_student:
             # Students start with their grades view
             self.show_view_grades_view()
-        else:
+        elif is_admin or is_staff:
             # Admin and Staff start with student management view
             self.show_student_view()
+        else:
+            ttk.Label(
+                self.content_frame,
+                text="Access denied: your account is not authorised for grade tracking.",
+            ).pack(padx=20, pady=20)
 
         # Status bar
         self.status_var = tk.StringVar()
@@ -546,7 +543,7 @@ class LayoutManager:
         from education_system.systems.university.interfaces.gui.academics._cross_dialogs import (
             show_module_timeline_dialog,
         )
-        code = simpledialog.askstring("Module timeline", "Module code:")
+        code = simpledialog.askstring(_t('gui.academics.grade_tracking.layout_manager.dialogs.module_timeline', default="Module timeline"), _t('gui.academics.grade_tracking.layout_manager.dialogs.module_code', default="Module code:"))
         if code:
             show_module_timeline_dialog(self.root, code)
 
@@ -557,7 +554,7 @@ class LayoutManager:
         except Exception as e:
             from tkinter import messagebox
             messagebox.showerror(
-                "Error",
+                _t('gui.academics.grade_tracking.layout_manager.dialogs.error', default="Error"),
                 f"Failed to open integrations activity: {e}",
             )
 
@@ -571,7 +568,7 @@ class LayoutManager:
                 AssignmentSubmission,
             )
             assignment_window = tk.Toplevel(self.root)
-            assignment_window.title("Assignment System")
+            assignment_window.title(_t('gui.academics.grade_tracking.layout_manager.windows.assignment_system', default="Assignment System"))
             assignment_window.geometry("1200x800")
             assignment_window.minsize(1000, 600)
             try:
@@ -582,7 +579,7 @@ class LayoutManager:
         except Exception as e:
             from tkinter import messagebox
             messagebox.showerror(
-                "Error",
+                _t('gui.academics.grade_tracking.layout_manager.dialogs.error', default="Error"),
                 f"Failed to open Assignment System: {e}",
             )
 
@@ -650,9 +647,9 @@ class LayoutManager:
             if hasattr(self.app.analytics, 'create_analytics_content'):
                 self.app.analytics.create_analytics_content()
             else:
-                messagebox.showinfo("Info", "Analytics features are not available")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"), _t('gui.academics.grade_tracking.layout_manager.dialogs.analytics_features_are_not_available', default="Analytics features are not available"))
         else:
-            messagebox.showinfo("Info", "Grade management features are not available")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"), _t('gui.academics.grade_tracking.layout_manager.dialogs.grade_management_features_are_not_available', default="Grade management features are not available"))
 
     def show_view_grades_view(self):
         """Show view grades view - Read-only grade statistics and reports"""
@@ -665,9 +662,9 @@ class LayoutManager:
                 # Fallback to reports if statistics not available
                 self.app.analytics.create_reports_content()
             else:
-                messagebox.showinfo("Info", "Grade viewing features are not available")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"), _t('gui.academics.grade_tracking.layout_manager.dialogs.grade_viewing_features_are_not_available', default="Grade viewing features are not available"))
         else:
-            messagebox.showinfo("Info", "Grade viewing features are not available")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.layout_manager.dialogs.info', default="Info"), _t('gui.academics.grade_tracking.layout_manager.dialogs.grade_viewing_features_are_not_available', default="Grade viewing features are not available"))
 
     def show_statistics_view(self):
         """Show statistics view"""
@@ -720,12 +717,12 @@ class LayoutManager:
             from education_system.systems.university.interfaces.gui.assessment.academic_progress.progress_gui import AcademicProgressGUI
             import tkinter as tk
             window = tk.Toplevel(self.root)
-            window.title("Academic Progress")
+            window.title(_t('gui.academics.grade_tracking.layout_manager.windows.academic_progress', default="Academic Progress"))
             window.geometry("1200x800")
             AcademicProgressGUI(window, self.auth)
         except Exception as e:
             from tkinter import messagebox
-            messagebox.showerror("Error", f"Failed to open Academic Progress: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.layout_manager.dialogs.error', default="Error"), f"Failed to open Academic Progress: {e}")
 
     def show_analytics_view(self):
         """Show analytics view"""
@@ -759,4 +756,3 @@ class LayoutManager:
             self.status_var.set(message)
             if hasattr(self, 'root'):
                 self.root.update_idletasks()
-

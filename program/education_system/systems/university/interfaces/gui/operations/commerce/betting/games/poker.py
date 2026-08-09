@@ -11,6 +11,8 @@ Rules implemented:
   * The computer draws sensibly and bets/bluffs based on hand strength.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -131,7 +133,7 @@ MAX_RAISES = 3
 class PokerGame:
     def __init__(self, root):
         self.root = root
-        root.title("Five Card Draw \u2014 vs. Computer")
+        root.title(_t('gui.operations.commerce.betting.games.poker.windows.five_card_draw_vs_computer', default="Five Card Draw \u2014 vs. Computer"))
         root.configure(bg=FELT)
         root.resizable(False, False)
 

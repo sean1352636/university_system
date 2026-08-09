@@ -7,7 +7,11 @@ init function so the manager classes hit a real (but disposable) DB.
 
 from __future__ import annotations
 
+import importlib
 import pytest
+import sqlalchemy as sa
+from alembic.migration import MigrationContext
+from alembic.operations import Operations
 
 from education_system.systems.university.infrastructure.database import db as db_module
 from education_system.systems.university.infrastructure.database.schemas.admissions_schemas import (
@@ -28,6 +32,14 @@ def admissions_db(tmp_path, monkeypatch):
     db_path = str(tmp_path / "admissions_test.db")
     monkeypatch.setattr(db_module, "DEFAULT_DB_PATH", db_path)
     init_admissions_crm_system_db()
+    migration = importlib.import_module(
+        "education_system.migrations.versions."
+        "7c2e4a9b1d63_university_transactional_outbox"
+    )
+    engine = sa.create_engine(f"sqlite:///{db_path}")
+    with engine.begin() as connection:
+        migration.op = Operations(MigrationContext.configure(connection))
+        migration.upgrade()
     yield db_path
 
 

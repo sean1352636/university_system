@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -8,7 +10,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 matplotlib.use('TkAgg')
 import numpy as np
 
@@ -76,7 +78,7 @@ def run_risk_analysis(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Risk analysis error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Risk analysis failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"Risk analysis failed: {_e}")
             ])
 
     thread = threading.Thread(target=risk_in_background)
@@ -92,7 +94,7 @@ def show_comprehensive_risk_results(self, risk_students, anomalies):
     main_frame = ttk.Frame(risk_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Comprehensive Risk Analysis Results",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.comprehensive_risk_analysis_results', default="Comprehensive Risk Analysis Results"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Create notebook for different risk analyses
@@ -101,10 +103,10 @@ def show_comprehensive_risk_results(self, risk_students, anomalies):
 
     # Payment Risk Tab
     risk_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(risk_frame, text="Payment Risk Prediction")
+    notebook.add(risk_frame, text=_t('gui.finance.finance_reporting.ml_analytics.tabs.payment_risk_prediction', default="Payment Risk Prediction"))
 
     # Risk summary
-    risk_summary_frame = ttk.LabelFrame(risk_frame, text="Risk Summary", padding="10")
+    risk_summary_frame = ttk.LabelFrame(risk_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.risk_summary', default="Risk Summary"), padding="10")
     risk_summary_frame.pack(fill=tk.X, pady=(0, 10))
 
     high_risk = len([s for s in risk_students if s['risk_level'] == 'High'])
@@ -116,11 +118,11 @@ def show_comprehensive_risk_results(self, risk_students, anomalies):
 
     # Risk details
     risk_tree = ttk.Treeview(risk_frame, columns=('Risk Level', 'Risk Score', 'Total Fees', 'Payments'), height=15)
-    risk_tree.heading('#0', text='Student Name')
-    risk_tree.heading('Risk Level', text='Risk Level')
-    risk_tree.heading('Risk Score', text='Risk Score')
-    risk_tree.heading('Total Fees', text='Total Fees')
-    risk_tree.heading('Payments', text='Payments Made')
+    risk_tree.heading('#0', text=_t('gui.finance.finance_reporting.ml_analytics.headings.student_name', default='Student Name'))
+    risk_tree.heading('Risk Level', text=_t('gui.finance.finance_reporting.ml_analytics.headings.risk_level', default='Risk Level'))
+    risk_tree.heading('Risk Score', text=_t('gui.finance.finance_reporting.ml_analytics.headings.risk_score', default='Risk Score'))
+    risk_tree.heading('Total Fees', text=_t('gui.finance.finance_reporting.ml_analytics.headings.total_fees', default='Total Fees'))
+    risk_tree.heading('Payments', text=_t('gui.finance.finance_reporting.ml_analytics.headings.payments_made', default='Payments Made'))
     risk_tree.pack(fill=tk.BOTH, expand=True)
 
     for student in risk_students:
@@ -132,27 +134,27 @@ def show_comprehensive_risk_results(self, risk_students, anomalies):
 
     # Anomaly Detection Tab
     anomaly_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(anomaly_frame, text="Payment Anomalies")
+    notebook.add(anomaly_frame, text=_t('gui.finance.finance_reporting.ml_analytics.tabs.payment_anomalies', default="Payment Anomalies"))
 
     # Anomaly summary
-    anomaly_summary_frame = ttk.LabelFrame(anomaly_frame, text="Anomaly Summary", padding="10")
+    anomaly_summary_frame = ttk.LabelFrame(anomaly_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.anomaly_summary', default="Anomaly Summary"), padding="10")
     anomaly_summary_frame.pack(fill=tk.X, pady=(0, 10))
 
     ttk.Label(anomaly_summary_frame, text=f"Anomalies Detected: {len(anomalies)}").pack(anchor=tk.W)
 
     if len(anomalies) > 0:
-        ttk.Label(anomaly_summary_frame, text="⚠ Unusual payment patterns detected - review recommended",
+        ttk.Label(anomaly_summary_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.unusual_payment_patterns_detected_review_recommended', default="⚠ Unusual payment patterns detected - review recommended"),
                  foreground="orange").pack(anchor=tk.W)
     else:
-        ttk.Label(anomaly_summary_frame, text="✓ No unusual payment patterns detected",
+        ttk.Label(anomaly_summary_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.no_unusual_payment_patterns_detected', default="✓ No unusual payment patterns detected"),
                  foreground="green").pack(anchor=tk.W)
 
     # Anomaly details
     if anomalies:
         anomaly_tree = ttk.Treeview(anomaly_frame, columns=('Amount', 'Reason'), height=15)
-        anomaly_tree.heading('#0', text='Student ID')
-        anomaly_tree.heading('Amount', text='Amount')
-        anomaly_tree.heading('Reason', text='Anomaly Reason')
+        anomaly_tree.heading('#0', text=_t('gui.finance.finance_reporting.ml_analytics.headings.student_id', default='Student ID'))
+        anomaly_tree.heading('Amount', text=_t('gui.finance.finance_reporting.ml_analytics.headings.amount', default='Amount'))
+        anomaly_tree.heading('Reason', text=_t('gui.finance.finance_reporting.ml_analytics.headings.anomaly_reason', default='Anomaly Reason'))
         anomaly_tree.column('#0', width=150)
         anomaly_tree.column('Amount', width=150)
         anomaly_tree.column('Reason', width=300)
@@ -173,14 +175,14 @@ def show_comprehensive_risk_results(self, risk_students, anomalies):
             anomaly_tree.insert('', 'end', text=str(student_id),
                               values=(f"£{amount:,.2f}", reason))
 
-    ttk.Button(main_frame, text="Close", command=risk_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.buttons.close', default="Close"), command=risk_window.destroy).pack(pady=10)
 
     # Export button
     def export_results():
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title="Save Risk Analysis Results"
+            title=_t('gui.finance.finance_reporting.ml_analytics.dialogs.save_risk_analysis_results', default="Save Risk Analysis Results")
         )
         if filename:
             try:
@@ -196,11 +198,11 @@ def show_comprehensive_risk_results(self, risk_students, anomalies):
                             student['total_fees'],
                             student['payments_made']
                         ])
-                messagebox.showinfo("Export Complete", f"Results exported to {filename}")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.ml_analytics.dialogs.export_complete', default="Export Complete"), f"Results exported to {filename}")
             except Exception as e:
-                messagebox.showerror("Export Error", f"Failed to export: {e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.export_error', default="Export Error"), f"Failed to export: {e}")
 
-    ttk.Button(main_frame, text="📊 Export Results", command=export_results).pack(pady=5)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.buttons.export_results', default="📊 Export Results"), command=export_results).pack(pady=5)
 
 def run_ml_model_training(self):
     """Run ML model training with GUI display"""
@@ -223,7 +225,7 @@ def run_ml_model_training(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"ML training error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"ML model training failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"ML model training failed: {_e}")
             ])
 
     thread = threading.Thread(target=train_in_background)
@@ -239,23 +241,23 @@ def show_ml_training_results(self, success):
     main_frame = ttk.Frame(training_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="ML Model Training Results",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.ml_model_training_results', default="ML Model Training Results"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     if success:
-        ttk.Label(main_frame, text="✓ Payment prediction model trained successfully",
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.payment_prediction_model_trained_successfully', default="✓ Payment prediction model trained successfully"),
                  foreground="green").pack(pady=5)
-        ttk.Label(main_frame, text="✓ Model saved to payment_prediction_model.pkl").pack(pady=5)
-        ttk.Label(main_frame, text="✓ Risk prediction system is now operational").pack(pady=5)
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.model_saved_to_payment_prediction_model_pkl', default="✓ Model saved to payment_prediction_model.pkl")).pack(pady=5)
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.risk_prediction_system_is_now_operational', default="✓ Risk prediction system is now operational")).pack(pady=5)
     else:
-        ttk.Label(main_frame, text="✗ Model training failed",
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.model_training_failed', default="✗ Model training failed"),
                  foreground="red").pack(pady=5)
-        ttk.Label(main_frame, text="Possible causes:").pack(pady=5)
-        ttk.Label(main_frame, text="• Insufficient training data").pack(pady=2)
-        ttk.Label(main_frame, text="• Missing required libraries").pack(pady=2)
-        ttk.Label(main_frame, text="• Data quality issues").pack(pady=2)
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.possible_causes', default="Possible causes:")).pack(pady=5)
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.insufficient_training_data', default="• Insufficient training data")).pack(pady=2)
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.missing_required_libraries', default="• Missing required libraries")).pack(pady=2)
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.data_quality_issues', default="• Data quality issues")).pack(pady=2)
 
-    ttk.Button(main_frame, text="Close", command=training_window.destroy).pack(pady=20)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.buttons.close', default="Close"), command=training_window.destroy).pack(pady=20)
 
 def run_anomaly_detection(self):
     """Run anomaly detection with GUI display"""
@@ -276,7 +278,7 @@ def run_anomaly_detection(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Anomaly detection error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Anomaly detection failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"Anomaly detection failed: {_e}")
             ])
 
     thread = threading.Thread(target=detect_in_background)
@@ -292,33 +294,33 @@ def show_anomaly_results(self, anomalies):
     main_frame = ttk.Frame(anomaly_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Payment Anomaly Detection Results",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.payment_anomaly_detection_results', default="Payment Anomaly Detection Results"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Summary
-    summary_frame = ttk.LabelFrame(main_frame, text="Detection Summary", padding="10")
+    summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.detection_summary', default="Detection Summary"), padding="10")
     summary_frame.pack(fill=tk.X, pady=(0, 10))
 
     ttk.Label(summary_frame, text=f"Total Anomalies Detected: {len(anomalies)}").pack(anchor=tk.W)
 
     if len(anomalies) == 0:
-        ttk.Label(summary_frame, text="✓ No unusual payment patterns detected",
+        ttk.Label(summary_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.no_unusual_payment_patterns_detected', default="✓ No unusual payment patterns detected"),
                  foreground="green").pack(anchor=tk.W)
     else:
-        ttk.Label(summary_frame, text="⚠ Anomalous payments require review",
+        ttk.Label(summary_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.anomalous_payments_require_review', default="⚠ Anomalous payments require review"),
                  foreground="orange").pack(anchor=tk.W)
 
     # Results table
     if anomalies:
-        results_frame = ttk.LabelFrame(main_frame, text="Detected Anomalies", padding="10")
+        results_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.detected_anomalies', default="Detected Anomalies"), padding="10")
         results_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         results_tree = ttk.Treeview(results_frame, columns=('Amount', 'Date', 'Method', 'Reason'), height=15)
-        results_tree.heading('#0', text='Student Name')
-        results_tree.heading('Amount', text='Amount')
-        results_tree.heading('Date', text='Payment Date')
-        results_tree.heading('Method', text='Payment Method')
-        results_tree.heading('Reason', text='Anomaly Reason')
+        results_tree.heading('#0', text=_t('gui.finance.finance_reporting.ml_analytics.headings.student_name', default='Student Name'))
+        results_tree.heading('Amount', text=_t('gui.finance.finance_reporting.ml_analytics.headings.amount', default='Amount'))
+        results_tree.heading('Date', text=_t('gui.finance.finance_reporting.ml_analytics.headings.payment_date', default='Payment Date'))
+        results_tree.heading('Method', text=_t('gui.finance.finance_reporting.ml_analytics.headings.payment_method', default='Payment Method'))
+        results_tree.heading('Reason', text=_t('gui.finance.finance_reporting.ml_analytics.headings.anomaly_reason', default='Anomaly Reason'))
         results_tree.pack(fill=tk.BOTH, expand=True)
 
         for anomaly in anomalies:
@@ -328,7 +330,7 @@ def show_anomaly_results(self, anomalies):
                                     anomaly['payment_method'],
                                     anomaly['anomaly_reason']))
 
-    ttk.Button(main_frame, text="Close", command=anomaly_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.buttons.close', default="Close"), command=anomaly_window.destroy).pack(pady=10)
 
 def run_cash_flow_forecasting(self):
     """Run cash flow forecasting with GUI display"""
@@ -349,7 +351,7 @@ def run_cash_flow_forecasting(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Cash flow forecast error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Cash flow forecasting failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"Cash flow forecasting failed: {_e}")
             ])
 
     thread = threading.Thread(target=forecast_in_background)
@@ -365,12 +367,12 @@ def show_cash_flow_results(self, forecast):
     main_frame = ttk.Frame(forecast_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Cash Flow Forecast Results",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.cash_flow_forecast_results', default="Cash Flow Forecast Results"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     if forecast:
         # Summary statistics
-        summary_frame = ttk.LabelFrame(main_frame, text="Forecast Summary", padding="10")
+        summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.forecast_summary', default="Forecast Summary"), padding="10")
         summary_frame.pack(fill=tk.X, pady=(0, 10))
 
         total_forecast = sum(item['forecast_amount'] for item in forecast['forecast_data'])
@@ -379,14 +381,14 @@ def show_cash_flow_results(self, forecast):
         ttk.Label(summary_frame, text=f"Trend: £{forecast['trend']:,.2f} per month").pack(anchor=tk.W)
 
         # Monthly forecast table
-        forecast_frame = ttk.LabelFrame(main_frame, text="Monthly Forecast", padding="10")
+        forecast_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.monthly_forecast', default="Monthly Forecast"), padding="10")
         forecast_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         forecast_tree = ttk.Treeview(forecast_frame, columns=('Amount', 'Confidence', 'Cumulative'), height=12)
-        forecast_tree.heading('#0', text='Month')
-        forecast_tree.heading('Amount', text='Forecast Amount')
-        forecast_tree.heading('Confidence', text='Confidence')
-        forecast_tree.heading('Cumulative', text='Cumulative')
+        forecast_tree.heading('#0', text=_t('gui.finance.finance_reporting.ml_analytics.headings.month', default='Month'))
+        forecast_tree.heading('Amount', text=_t('gui.finance.finance_reporting.ml_analytics.headings.forecast_amount', default='Forecast Amount'))
+        forecast_tree.heading('Confidence', text=_t('gui.finance.finance_reporting.ml_analytics.headings.confidence', default='Confidence'))
+        forecast_tree.heading('Cumulative', text=_t('gui.finance.finance_reporting.ml_analytics.headings.cumulative', default='Cumulative'))
         forecast_tree.pack(fill=tk.BOTH, expand=True)
 
         for item in forecast['forecast_data']:
@@ -395,10 +397,10 @@ def show_cash_flow_results(self, forecast):
                                       f"{item['confidence']:.1%}",
                                       f"£{item['cumulative_cash']:,.2f}"))
     else:
-        ttk.Label(main_frame, text="No forecast data available",
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.no_forecast_data_available', default="No forecast data available"),
                  foreground="red").pack(pady=20)
 
-    ttk.Button(main_frame, text="Close", command=forecast_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.buttons.close', default="Close"), command=forecast_window.destroy).pack(pady=10)
 
 def run_peer_benchmarking(self):
     """Run peer institution benchmarking analysis"""
@@ -457,7 +459,7 @@ def run_peer_benchmarking(self):
             self.root.after(0, lambda _e=e: [
                 self.log_activity(f"Peer benchmarking error: {_e}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Peer benchmarking failed: {_e}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.ml_analytics.dialogs.error', default="Error"), f"Peer benchmarking failed: {_e}")
             ])
 
     thread = threading.Thread(target=benchmark_in_background)
@@ -475,11 +477,11 @@ def show_benchmarking_results_UNUSED_DUPLICATE(self, benchmark_data):
     main_frame = ttk.Frame(benchmark_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Peer Institution Benchmarking",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.peer_institution_benchmarking', default="Peer Institution Benchmarking"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Our performance summary
-    our_frame = ttk.LabelFrame(main_frame, text="Our Institution Performance", padding="10")
+    our_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.our_institution_performance', default="Our Institution Performance"), padding="10")
     our_frame.pack(fill=tk.X, pady=(0, 10))
 
     # Use .get() to avoid KeyError
@@ -490,15 +492,15 @@ def show_benchmarking_results_UNUSED_DUPLICATE(self, benchmark_data):
     ttk.Label(our_frame, text=f"Percentile Ranking: {our_perf.get('percentile', 50):.0f}th percentile").pack(anchor=tk.W)
 
     # Peer comparison
-    peer_frame = ttk.LabelFrame(main_frame, text="Peer Comparison", padding="10")
+    peer_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.labels.peer_comparison', default="Peer Comparison"), padding="10")
     peer_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     peer_tree = ttk.Treeview(peer_frame, columns=('Collection Rate', 'Avg Fee', 'Students', 'Comparison'), height=10)
-    peer_tree.heading('#0', text='Institution')
-    peer_tree.heading('Collection Rate', text='Collection Rate')
-    peer_tree.heading('Avg Fee', text='Average Fee')
-    peer_tree.heading('Students', text='Students')
-    peer_tree.heading('Comparison', text='vs Our Rate')
+    peer_tree.heading('#0', text=_t('gui.finance.finance_reporting.ml_analytics.headings.institution', default='Institution'))
+    peer_tree.heading('Collection Rate', text=_t('gui.finance.finance_reporting.ml_analytics.headings.collection_rate', default='Collection Rate'))
+    peer_tree.heading('Avg Fee', text=_t('gui.finance.finance_reporting.ml_analytics.headings.average_fee', default='Average Fee'))
+    peer_tree.heading('Students', text=_t('gui.finance.finance_reporting.ml_analytics.headings.students', default='Students'))
+    peer_tree.heading('Comparison', text=_t('gui.finance.finance_reporting.ml_analytics.headings.vs_our_rate', default='vs Our Rate'))
     peer_tree.pack(fill=tk.BOTH, expand=True)
 
     for institution, data in benchmark_data['peer_data'].items():
@@ -509,6 +511,6 @@ def show_benchmarking_results_UNUSED_DUPLICATE(self, benchmark_data):
                               f"{data['students']:,}",
                               comparison))
 
-    ttk.Button(main_frame, text="Close", command=benchmark_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.ml_analytics.buttons.close', default="Close"), command=benchmark_window.destroy).pack(pady=10)
 
 # Method registration is handled by main.py

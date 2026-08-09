@@ -43,7 +43,7 @@ def show_applications(gui_instance):
     """Show housing applications interface"""
     gui_instance.clear_content()
 
-    ttk.Label(gui_instance.content_frame, text="Housing Applications",
+    ttk.Label(gui_instance.content_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.housing_applications', default="Housing Applications"),
              font=('Arial', 16, 'bold')).grid(row=0, column=0, pady=(0, 20), sticky='w')
 
     # Create notebook
@@ -52,28 +52,28 @@ def show_applications(gui_instance):
 
     # Applications list tab
     list_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(list_frame, text="Applications List")
+    notebook.add(list_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.tabs.applications_list', default="Applications List"))
     create_applications_list(gui_instance, list_frame)
 
     # New application tab
     new_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(new_frame, text="New Application")
+    notebook.add(new_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.tabs.new_application', default="New Application"))
     create_new_application_form(gui_instance, new_frame)
 
 
 def create_applications_list(gui_instance, parent):
     """Create applications list view"""
     # Filter frame
-    filter_frame = ttk.LabelFrame(parent, text="Filter Applications", padding="10")
+    filter_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.filter_applications', default="Filter Applications"), padding="10")
     filter_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 20))
 
-    ttk.Label(filter_frame, text="Status:").grid(row=0, column=0, sticky='w')
+    ttk.Label(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.status', default="Status:")).grid(row=0, column=0, sticky='w')
     gui_instance.app_status_filter = ttk.Combobox(filter_frame,
                                         values=['All', 'Pending', 'Approved', 'Rejected', 'Waiting List'])
     gui_instance.app_status_filter.set('All')
     gui_instance.app_status_filter.grid(row=0, column=1, padx=10)
 
-    ttk.Button(filter_frame, text="Apply Filter",
+    ttk.Button(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.buttons.apply_filter', default="Apply Filter"),
               command=lambda: refresh_applications_list(gui_instance)).grid(row=0, column=2, padx=10)
 
     # Applications treeview
@@ -100,9 +100,9 @@ def create_applications_list(gui_instance, parent):
     buttons_frame = ttk.Frame(parent)
     buttons_frame.grid(row=2, column=0, columnspan=2, pady=20)
 
-    ttk.Button(buttons_frame, text="Refresh", command=lambda: refresh_applications_list(gui_instance)).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="View Details", command=lambda: view_application_details(gui_instance)).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Process Application", command=lambda: process_selected_application(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.buttons.refresh', default="Refresh"), command=lambda: refresh_applications_list(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.buttons.view_details', default="View Details"), command=lambda: view_application_details(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.buttons.process_application', default="Process Application"), command=lambda: process_selected_application(gui_instance)).pack(side='left', padx=5)
 
     # Load applications
     refresh_applications_list(gui_instance)
@@ -147,14 +147,14 @@ def refresh_applications_list(gui_instance):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load applications: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), f"Failed to load applications: {str(e)}")
 
 
 def view_application_details(gui_instance):
     """View details of selected application"""
     selected = gui_instance.applications_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select an application to view")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.please_select_an_application_to_view', default="Please select an application to view"))
         return
 
     application_id = gui_instance.applications_tree.item(selected[0])['values'][0]
@@ -164,7 +164,7 @@ def view_application_details(gui_instance):
 def show_application_details_dialog(gui_instance, application_id):
     """Show application details dialog"""
     details_window = tk.Toplevel(gui_instance.root)
-    details_window.title("Application Details")
+    details_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.windows.application_details', default="Application Details"))
     details_window.geometry("600x500")
     details_window.transient(gui_instance.root)
     details_window.grab_set()
@@ -187,7 +187,7 @@ def show_application_details_dialog(gui_instance, application_id):
         conn.close()
 
         if not app_data:
-            messagebox.showerror("Error", "Application not found")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.application_not_found', default="Application not found"))
             details_window.destroy()
             return
 
@@ -223,11 +223,11 @@ Status: {app_data[12]}
         text_widget.config(state='disabled')
 
         # Close button
-        ttk.Button(details_window, text="Close",
+        ttk.Button(details_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.buttons.close', default="Close"),
                   command=details_window.destroy).pack(pady=10)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load application details: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), f"Failed to load application details: {str(e)}")
         details_window.destroy()
 
 
@@ -235,7 +235,7 @@ def process_selected_application(gui_instance):
     """Process the selected application"""
     selected = gui_instance.applications_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select an application to process")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.please_select_an_application_to_process', default="Please select an application to process"))
         return
 
     application_id = gui_instance.applications_tree.item(selected[0])['values'][0]
@@ -245,13 +245,13 @@ def process_selected_application(gui_instance):
 def show_process_application_dialog(gui_instance, application_id):
     """Show dialog to process application"""
     process_window = tk.Toplevel(gui_instance.root)
-    process_window.title("Process Application")
+    process_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.windows.process_application', default="Process Application"))
     process_window.geometry("500x400")
     process_window.transient(gui_instance.root)
     process_window.grab_set()
 
     # Decision frame
-    decision_frame = ttk.LabelFrame(process_window, text="Decision", padding="10")
+    decision_frame = ttk.LabelFrame(process_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.decision', default="Decision"), padding="10")
     decision_frame.pack(fill='x', padx=10, pady=10)
 
     decision_var = tk.StringVar()
@@ -267,7 +267,7 @@ def show_process_application_dialog(gui_instance, application_id):
                        value=value).grid(row=i//2, column=i%2, sticky='w', pady=5)
 
     # Notes frame
-    notes_frame = ttk.LabelFrame(process_window, text="Notes", padding="10")
+    notes_frame = ttk.LabelFrame(process_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.notes', default="Notes"), padding="10")
     notes_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     notes_text = scrolledtext.ScrolledText(notes_frame, height=6)
@@ -278,7 +278,7 @@ def show_process_application_dialog(gui_instance, application_id):
         notes = notes_text.get('1.0', tk.END).strip()
 
         if not decision:
-            messagebox.showerror("Error", "Please select a decision")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.please_select_a_decision', default="Please select a decision"))
             return
 
         try:
@@ -296,7 +296,7 @@ def show_process_application_dialog(gui_instance, application_id):
             app_info = cursor.fetchone()
 
             if not app_info:
-                messagebox.showerror("Error", "Application not found")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.application_not_found', default="Application not found"))
                 conn.close()
                 return
 
@@ -360,12 +360,12 @@ def show_process_application_dialog(gui_instance, application_id):
             # Log activity
             log_update('housing_application', f"Application {decision.lower()} by {reviewer_name} - ID: {application_id}")
 
-            messagebox.showinfo("Success", f"Application has been {decision.lower()}{email_msg}")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.success', default="Success"), f"Application has been {decision.lower()}{email_msg}")
             refresh_applications_list(gui_instance)
             process_window.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to process application: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), f"Failed to process application: {str(e)}")
             import traceback
             traceback.print_exc()
 
@@ -373,62 +373,62 @@ def show_process_application_dialog(gui_instance, application_id):
     buttons_frame = ttk.Frame(process_window)
     buttons_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Button(buttons_frame, text="Process", command=process_application).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Cancel", command=process_window.destroy).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.buttons.process', default="Process"), command=process_application).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.buttons.cancel', default="Cancel"), command=process_window.destroy).pack(side='left', padx=5)
 
 
 def create_new_application_form(gui_instance, parent):
     """Create new application form"""
     # Student selection for staff
     if gui_instance.auth.check_permission('manage_accommodations'):
-        student_frame = ttk.LabelFrame(parent, text="Select Student", padding="10")
+        student_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.select_student', default="Select Student"), padding="10")
         student_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 20))
 
-        ttk.Label(student_frame, text="Student ID:").grid(row=0, column=0, sticky='w')
+        ttk.Label(student_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky='w')
         gui_instance.student_id_entry = ttk.Entry(student_frame, width=20)
         gui_instance.student_id_entry.grid(row=0, column=1, padx=10)
 
-        ttk.Button(student_frame, text="Search Student",
+        ttk.Button(student_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.buttons.search_student', default="Search Student"),
                   command=lambda: search_student(gui_instance)).grid(row=0, column=2, padx=10)
 
         gui_instance.student_info_label = ttk.Label(student_frame, text="")
         gui_instance.student_info_label.grid(row=1, column=0, columnspan=3, pady=10)
 
     # Application form
-    form_frame = ttk.LabelFrame(parent, text="Application Details", padding="10")
+    form_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.application_details', default="Application Details"), padding="10")
     form_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
 
     # Building preference
-    ttk.Label(form_frame, text="Preferred Building:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.preferred_building', default="Preferred Building:")).grid(row=0, column=0, sticky='w', pady=5)
     gui_instance.building_combo = ttk.Combobox(form_frame, width=30)
     gui_instance.building_combo.grid(row=0, column=1, sticky='w', pady=5, padx=10)
     load_buildings_combo(gui_instance)
 
     # Room type
-    ttk.Label(form_frame, text="Preferred Room Type:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.preferred_room_type', default="Preferred Room Type:")).grid(row=1, column=0, sticky='w', pady=5)
     gui_instance.room_type_combo = ttk.Combobox(form_frame,
                                       values=["Single", "Double", "Triple", "Suite", "Studio", "Apartment"])
     gui_instance.room_type_combo.grid(row=1, column=1, sticky='w', pady=5, padx=10)
 
     # Move-in date
-    ttk.Label(form_frame, text="Requested Move-in Date:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.requested_move_in_date', default="Requested Move-in Date:")).grid(row=2, column=0, sticky='w', pady=5)
     gui_instance.move_in_entry = ttk.Entry(form_frame, width=30)
     gui_instance.move_in_entry.grid(row=2, column=1, sticky='w', pady=5, padx=10)
     gui_instance.move_in_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
     # Duration
-    ttk.Label(form_frame, text="Duration (months):").grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.duration_months', default="Duration (months):")).grid(row=3, column=0, sticky='w', pady=5)
     gui_instance.duration_entry = ttk.Entry(form_frame, width=30)
     gui_instance.duration_entry.grid(row=3, column=1, sticky='w', pady=5, padx=10)
     gui_instance.duration_entry.insert(0, "9")
 
     # Special requirements
-    ttk.Label(form_frame, text="Special Requirements:").grid(row=4, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.labels.special_requirements', default="Special Requirements:")).grid(row=4, column=0, sticky='w', pady=5)
     gui_instance.requirements_text = tk.Text(form_frame, width=40, height=4)
     gui_instance.requirements_text.grid(row=4, column=1, sticky='w', pady=5, padx=10)
 
     # Submit button
-    ttk.Button(form_frame, text="Submit Application",
+    ttk.Button(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.buttons.submit_application', default="Submit Application"),
               command=lambda: submit_application(gui_instance)).grid(row=5, column=0, pady=20)
 
 
@@ -453,7 +453,7 @@ def search_student(gui_instance):
     """Search for student by ID"""
     student_id = gui_instance.student_id_entry.get().strip()
     if not student_id:
-        messagebox.showwarning("Warning", "Please enter a student ID")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
         return
 
     try:
@@ -472,10 +472,10 @@ def search_student(gui_instance):
                 text=f"Student: {student[1]} {student[2]} ({student[0]}) - {student[3]}"
             )
         else:
-            gui_instance.student_info_label.config(text="Student not found", foreground='red')
+            gui_instance.student_info_label.config(text=_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.text.student_not_found', default="Student not found"), foreground='red')
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to search student: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), f"Failed to search student: {str(e)}")
 
 
 def submit_application(gui_instance):
@@ -485,7 +485,7 @@ def submit_application(gui_instance):
         if gui_instance.auth.check_permission('manage_accommodations'):
             student_id = gui_instance.student_id_entry.get().strip()
             if not student_id:
-                messagebox.showerror("Error", "Please enter a student ID")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
                 return
         else:
             # For students, get from auth
@@ -496,7 +496,7 @@ def submit_application(gui_instance):
             conn.close()
 
             if not result:
-                messagebox.showerror("Error", "No student ID associated with your account")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.no_student_id_associated_with_your_account', default="No student ID associated with your account"))
                 return
             student_id = result[0]
 
@@ -506,7 +506,7 @@ def submit_application(gui_instance):
         duration = gui_instance.duration_entry.get()
 
         if not all([room_type, move_in_date, duration]):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         try:
@@ -515,7 +515,7 @@ def submit_application(gui_instance):
             if duration_months <= 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid date (YYYY-MM-DD) and duration")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.please_enter_valid_date_yyyy_mm_dd_and_duration', default="Please enter valid date (YYYY-MM-DD) and duration"))
             return
 
         # Get building preference
@@ -565,7 +565,7 @@ def submit_application(gui_instance):
         }
         send_housing_email('receipt', student_id, application_data)
 
-        messagebox.showinfo("Success", f"Application submitted successfully!\nApplication ID: {application_id}\n\nA confirmation email has been sent to your registered email address.")
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.success', default="Success"), f"Application submitted successfully!\nApplication ID: {application_id}\n\nA confirmation email has been sent to your registered email address.")
 
         # Log activity
         log_create('housing_application', application_id, f"Student {student_id} submitted housing application")
@@ -602,4 +602,4 @@ def submit_application(gui_instance):
         refresh_applications_list(gui_instance)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to submit application: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.application_manager.dialogs.error', default="Error"), f"Failed to submit application: {str(e)}")

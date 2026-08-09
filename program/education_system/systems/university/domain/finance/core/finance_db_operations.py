@@ -825,10 +825,10 @@ def complete_database_fix():
     print("🔧 Setting up complete finance database...")
 
     # Remove existing problematic database
-    from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-    if os.path.exists(str(DEFAULT_DB_PATH)):
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+    if os.path.exists(str(UNIVERSITY_DEFAULT_DB_PATH)):
         print("🗑️  Removing existing database...")
-        os.remove(str(DEFAULT_DB_PATH))
+        os.remove(str(UNIVERSITY_DEFAULT_DB_PATH))
 
     # Create new database with complete schema
     conn = get_connection()
@@ -1627,8 +1627,8 @@ def quick_fix_database():
 def ensure_database_exists():
     """Ensure database file exists and is accessible"""
     try:
-        from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-        if not os.path.exists(str(DEFAULT_DB_PATH)):
+        from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+        if not os.path.exists(str(UNIVERSITY_DEFAULT_DB_PATH)):
             print("🔧 Creating new database...")
             complete_database_fix()
         return True

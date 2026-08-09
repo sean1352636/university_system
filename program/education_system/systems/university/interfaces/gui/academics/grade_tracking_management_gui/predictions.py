@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from tkinter import messagebox, simpledialog
 import threading
 
@@ -19,12 +21,12 @@ class PredictionsMixin:
     def batch_grade_predictions_gui(self):
         """Perform batch grade predictions for multiple students"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to batch predict grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_must_be_logged_in_to_batch_predict_grades', default="You must be logged in to batch predict grades."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('use_ml_models')):
-            messagebox.showerror("Error", "You don't have permission to use batch predictions.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_don_t_have_permission_to_use_batch_predictions', default="You don't have permission to use batch predictions."))
             return
 
         try:
@@ -43,19 +45,19 @@ class PredictionsMixin:
                 thread = threading.Thread(target=predict, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Batch grade predictions not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.batch_grade_predictions_not_available', default="Batch grade predictions not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to perform batch predictions: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), f"Failed to perform batch predictions: {str(e)}")
 
     def batch_predict_next_assessments_gui(self):
         """Predict next assessment grades for all students"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to predict next assessments.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_must_be_logged_in_to_predict_next_assessments', default="You must be logged in to predict next assessments."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('use_ml_models')):
-            messagebox.showerror("Error", "You don't have permission to use batch predictions.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_don_t_have_permission_to_use_batch_predictions', default="You don't have permission to use batch predictions."))
             return
 
         try:
@@ -74,14 +76,14 @@ class PredictionsMixin:
                 thread = threading.Thread(target=predict, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Batch predict next assessments not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.batch_predict_next_assessments_not_available', default="Batch predict next assessments not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to predict next assessments: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), f"Failed to predict next assessments: {str(e)}")
 
     def predict_student_next_grade_gui(self, student_id=None):
         """Predict next grade for specific student"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to predict student grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_must_be_logged_in_to_predict_student_grades', default="You must be logged in to predict student grades."))
             return
 
         try:
@@ -89,7 +91,7 @@ class PredictionsMixin:
                 from education_system.systems.university.infrastructure.database.db import get_connection
 
                 if not student_id:
-                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    student_id = simpledialog.askstring(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.student_id', default="Student ID"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.enter_student_id', default="Enter Student ID:"), parent=self.root)
                     if not student_id:
                         return
 
@@ -106,19 +108,19 @@ class PredictionsMixin:
                 thread = threading.Thread(target=predict, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Predict student next grade not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.predict_student_next_grade_not_available', default="Predict student next grade not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to predict next grade: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), f"Failed to predict next grade: {str(e)}")
 
     def batch_predict_module_grades_gui(self):
         """Predict final module grades for specific module"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to predict module grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_must_be_logged_in_to_predict_module_grades', default="You must be logged in to predict module grades."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('use_ml_models')):
-            messagebox.showerror("Error", "You don't have permission to predict module grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_don_t_have_permission_to_predict_module_grades', default="You don't have permission to predict module grades."))
             return
 
         try:
@@ -137,14 +139,14 @@ class PredictionsMixin:
                 thread = threading.Thread(target=predict, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Batch predict module grades not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.batch_predict_module_grades_not_available', default="Batch predict module grades not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to predict module grades: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), f"Failed to predict module grades: {str(e)}")
 
     def predict_module_final_grade_gui(self, student_id=None, module_code=None):
         """Predict final module grade for student"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to predict module grades.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_must_be_logged_in_to_predict_module_grades', default="You must be logged in to predict module grades."))
             return
 
         try:
@@ -152,12 +154,12 @@ class PredictionsMixin:
                 from education_system.systems.university.infrastructure.database.db import get_connection
 
                 if not student_id:
-                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    student_id = simpledialog.askstring(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.student_id', default="Student ID"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.enter_student_id', default="Enter Student ID:"), parent=self.root)
                     if not student_id:
                         return
 
                 if not module_code:
-                    module_code = simpledialog.askstring("Module Code", "Enter Module Code:", parent=self.root)
+                    module_code = simpledialog.askstring(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.module_code', default="Module Code"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.enter_module_code', default="Enter Module Code:"), parent=self.root)
                     if not module_code:
                         return
 
@@ -174,19 +176,19 @@ class PredictionsMixin:
                 thread = threading.Thread(target=predict, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Predict module final grade not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.predict_module_final_grade_not_available', default="Predict module final grade not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to predict module final grade: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), f"Failed to predict module final grade: {str(e)}")
 
     def batch_predict_end_term_gpas_gui(self):
         """Predict end-of-term GPAs for all students"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to predict end-term GPAs.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_must_be_logged_in_to_predict_end_term_gpas', default="You must be logged in to predict end-term GPAs."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('use_ml_models')):
-            messagebox.showerror("Error", "You don't have permission to predict GPAs.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_don_t_have_permission_to_predict_gpas', default="You don't have permission to predict GPAs."))
             return
 
         try:
@@ -205,14 +207,14 @@ class PredictionsMixin:
                 thread = threading.Thread(target=predict, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Batch predict end-term GPAs not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.batch_predict_end_term_gpas_not_available', default="Batch predict end-term GPAs not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to predict end-term GPAs: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), f"Failed to predict end-term GPAs: {str(e)}")
 
     def predict_end_term_gpa_gui(self, student_id=None):
         """Predict end-of-term GPA for student"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to predict student GPA.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_must_be_logged_in_to_predict_student_gpa', default="You must be logged in to predict student GPA."))
             return
 
         try:
@@ -220,7 +222,7 @@ class PredictionsMixin:
                 from education_system.systems.university.infrastructure.database.db import get_connection
 
                 if not student_id:
-                    student_id = simpledialog.askstring("Student ID", "Enter Student ID:", parent=self.root)
+                    student_id = simpledialog.askstring(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.student_id', default="Student ID"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.enter_student_id', default="Enter Student ID:"), parent=self.root)
                     if not student_id:
                         return
 
@@ -237,19 +239,19 @@ class PredictionsMixin:
                 thread = threading.Thread(target=predict, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Predict end-term GPA not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.predict_end_term_gpa_not_available', default="Predict end-term GPA not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to predict end-term GPA: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), f"Failed to predict end-term GPA: {str(e)}")
 
     def forecast_assessment_performance_gui(self):
         """Forecast assessment performance trends"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to forecast assessment performance.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_must_be_logged_in_to_forecast_assessment_performance', default="You must be logged in to forecast assessment performance."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('view_reports')):
-            messagebox.showerror("Error", "You don't have permission to forecast performance.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.you_don_t_have_permission_to_forecast_performance', default="You don't have permission to forecast performance."))
             return
 
         try:
@@ -268,6 +270,6 @@ class PredictionsMixin:
                 thread = threading.Thread(target=forecast, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Forecast assessment performance not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictions.dialogs.forecast_assessment_performance_not_available', default="Forecast assessment performance not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to forecast assessment performance: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictions.dialogs.error', default="Error"), f"Failed to forecast assessment performance: {str(e)}")

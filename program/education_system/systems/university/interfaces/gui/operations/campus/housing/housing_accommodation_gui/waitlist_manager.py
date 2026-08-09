@@ -14,6 +14,8 @@ cases (skip-queue, manual prioritisation, removing stale entries).
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import sqlite3
 import tkinter as tk
@@ -37,22 +39,22 @@ def show_waitlist(gui_instance) -> None:
     # ── Header + filter bar ──
     header = ttk.Frame(parent)
     header.pack(fill="x", padx=8, pady=(8, 4))
-    ttk.Label(header, text="Housing Waitlist",
+    ttk.Label(header, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.labels.housing_waitlist', default="Housing Waitlist"),
               font=("Arial", 14, "bold")).pack(side="left")
-    ttk.Button(header, text="Refresh",
+    ttk.Button(header, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.buttons.refresh', default="Refresh"),
                command=lambda: show_waitlist(gui_instance)).pack(side="right")
 
-    filters = ttk.LabelFrame(parent, text="Filters", padding=6)
+    filters = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.labels.filters', default="Filters"), padding=6)
     filters.pack(fill="x", padx=8, pady=4)
 
-    status_var = tk.StringVar(value="Waiting")
-    ttk.Label(filters, text="Status:").pack(side="left")
+    status_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.values.waiting', default="Waiting"))
+    ttk.Label(filters, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.labels.status', default="Status:")).pack(side="left")
     ttk.Combobox(filters, textvariable=status_var,
                  values=["Waiting", "Promoted", "Removed", "(all)"],
                  state="readonly", width=12).pack(side="left", padx=(4, 12))
 
     building_var = tk.StringVar()
-    ttk.Label(filters, text="Building:").pack(side="left")
+    ttk.Label(filters, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.labels.building', default="Building:")).pack(side="left")
     building_combo = ttk.Combobox(filters, textvariable=building_var,
                                    width=28, state="readonly")
     building_combo.pack(side="left", padx=(4, 12))
@@ -61,7 +63,7 @@ def show_waitlist(gui_instance) -> None:
     building_combo.current(0)
 
     room_type_var = tk.StringVar()
-    ttk.Label(filters, text="Room type:").pack(side="left")
+    ttk.Label(filters, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.labels.room_type', default="Room type:")).pack(side="left")
     ttk.Entry(filters, textvariable=room_type_var,
               width=14).pack(side="left", padx=(4, 12))
 
@@ -100,7 +102,7 @@ def show_waitlist(gui_instance) -> None:
                 building_id=b_id, room_type=rt)
         except Exception as e:
             logger.exception("Waitlist load failed")
-            messagebox.showerror("Waitlist",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.waitlist', default="Waitlist"),
                                  f"Could not load waitlist:\n\n{e}",
                                  parent=gui_instance.root)
             return
@@ -116,18 +118,18 @@ def show_waitlist(gui_instance) -> None:
             ))
         summary_var.set(f"{len(rows)} entr{'y' if len(rows) == 1 else 'ies'}")
 
-    ttk.Button(filters, text="Apply", command=reload).pack(side="left")
+    ttk.Button(filters, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.buttons.apply', default="Apply"), command=reload).pack(side="left")
 
     # ── Actions ──
     actions = ttk.Frame(parent)
     actions.pack(fill="x", padx=8, pady=4)
-    ttk.Button(actions, text="Add application…",
+    ttk.Button(actions, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.buttons.add_application', default="Add application…"),
                command=lambda: _add_dialog(gui_instance, reload)).pack(
         side="left")
-    ttk.Button(actions, text="Remove selected",
+    ttk.Button(actions, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.buttons.remove_selected', default="Remove selected"),
                command=lambda: _remove_selected(tree, gui_instance, reload)).pack(
         side="left", padx=4)
-    ttk.Button(actions, text="Promote next available…",
+    ttk.Button(actions, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.buttons.promote_next_available', default="Promote next available…"),
                command=lambda: _promote_dialog(gui_instance, reload)).pack(
         side="left", padx=4)
 
@@ -152,13 +154,13 @@ def _load_buildings() -> list[tuple[str, str]]:
 
 def _add_dialog(gui_instance, on_done):
     dlg = tk.Toplevel(gui_instance.root)
-    dlg.title("Add to waitlist")
+    dlg.title(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.windows.add_to_waitlist', default="Add to waitlist"))
     dlg.geometry("520x220")
     dlg.transient(gui_instance.root)
     body = ttk.Frame(dlg, padding=10)
     body.pack(fill="both", expand=True)
 
-    ttk.Label(body, text="Application ID:").grid(row=0, column=0, sticky="e")
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.labels.application_id', default="Application ID:")).grid(row=0, column=0, sticky="e")
     app_var = tk.StringVar()
     app_combo = ttk.Combobox(body, textvariable=app_var, width=46,
                               state="readonly")
@@ -188,13 +190,13 @@ def _add_dialog(gui_instance, on_done):
     else:
         app_combo.configure(state="disabled")
 
-    ttk.Label(body, text="Priority (higher first):").grid(row=1, column=0,
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.labels.priority_higher_first', default="Priority (higher first):")).grid(row=1, column=0,
                                                           sticky="e", pady=2)
     pri_var = tk.IntVar(value=0)
     ttk.Spinbox(body, from_=0, to=100, textvariable=pri_var,
                 width=8).grid(row=1, column=1, sticky="w")
 
-    ttk.Label(body, text="Notes (optional):").grid(row=2, column=0,
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.labels.notes_optional', default="Notes (optional):")).grid(row=2, column=0,
                                                     sticky="e", pady=2)
     notes_var = tk.StringVar()
     ttk.Entry(body, textvariable=notes_var, width=46).grid(
@@ -210,43 +212,43 @@ def _add_dialog(gui_instance, on_done):
                                        notes=notes_var.get().strip() or None)
         except Exception as e:
             logger.exception("Add-to-waitlist failed")
-            messagebox.showerror("Waitlist", f"Could not add:\n\n{e}",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.waitlist', default="Waitlist"), f"Could not add:\n\n{e}",
                                  parent=dlg)
             return
         if not wid:
-            messagebox.showerror("Waitlist", "Failed to add application "
-                                              "(see logs).", parent=dlg)
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.waitlist', default="Waitlist"), _t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.failed_to_add_application_see_logs', default="Failed to add application "
+                                              "(see logs)."), parent=dlg)
             return
         dlg.destroy()
         on_done()
 
     bar = ttk.Frame(body)
     bar.grid(row=3, column=0, columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(bar, text="Cancel", command=dlg.destroy).pack(side="right",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side="right",
                                                               padx=4)
-    ttk.Button(bar, text="Add", command=save).pack(side="right")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.buttons.add', default="Add"), command=save).pack(side="right")
 
 
 def _remove_selected(tree, gui_instance, on_done):
     sel = tree.focus()
     if not sel:
-        messagebox.showinfo("Waitlist", "Select an entry first.",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.waitlist', default="Waitlist"), _t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.select_an_entry_first', default="Select an entry first."),
                             parent=gui_instance.root)
         return
-    reason = simpledialog.askstring("Remove from waitlist",
-                                     "Reason (optional):",
+    reason = simpledialog.askstring(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.remove_from_waitlist', default="Remove from waitlist"),
+                                     _t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.reason_optional', default="Reason (optional):"),
                                      parent=gui_instance.root)
     try:
         if svc.remove(sel, reason=reason):
             on_done()
         else:
-            messagebox.showwarning("Waitlist",
-                                    "Could not remove — already terminal "
-                                    "or not found.",
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.waitlist', default="Waitlist"),
+                                    _t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.could_not_remove_already_terminal_or_not_found', default="Could not remove — already terminal "
+                                    "or not found."),
                                     parent=gui_instance.root)
     except Exception as e:
         logger.exception("Waitlist remove failed")
-        messagebox.showerror("Waitlist", f"Remove failed:\n\n{e}",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.waitlist', default="Waitlist"), f"Remove failed:\n\n{e}",
                               parent=gui_instance.root)
 
 
@@ -267,7 +269,7 @@ def _promote_dialog(gui_instance, on_done):
             conn.close()
     except sqlite3.Error as e:
         logger.exception("Could not list available rooms")
-        messagebox.showerror("Promote", f"Could not list rooms:\n\n{e}",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.promote', default="Promote"), f"Could not list rooms:\n\n{e}",
                               parent=gui_instance.root)
         return
 
@@ -288,7 +290,7 @@ def _promote_dialog(gui_instance, on_done):
             logger.exception("Promotion attempt failed for room %s", room_id)
             skipped += 1
 
-    messagebox.showinfo("Promote",
+    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.waitlist_manager.dialogs.promote', default="Promote"),
                          f"Available rooms scanned: {len(rooms)}\n"
                          f"Promoted: {promoted}\n"
                          f"No-match / skipped: {skipped}",

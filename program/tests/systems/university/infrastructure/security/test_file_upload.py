@@ -429,7 +429,7 @@ class TestConvenienceFunctions:
 
     def test_validate_upload(self):
         with patch(
-            "university_system.infrastructure.security.file_upload.get_upload_handler"
+            "education_system.systems.university.infrastructure.security.file_upload.get_upload_handler"
         ) as mock_get:
             mock_handler = MagicMock()
             mock_handler.validate_file.return_value = {"valid": True}
@@ -440,7 +440,7 @@ class TestConvenienceFunctions:
 
     def test_save_upload(self):
         with patch(
-            "university_system.infrastructure.security.file_upload.get_upload_handler"
+            "education_system.systems.university.infrastructure.security.file_upload.get_upload_handler"
         ) as mock_get:
             mock_handler = MagicMock()
             mock_handler.save_file.return_value = {"success": True}

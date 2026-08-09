@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -124,17 +126,17 @@ def show_reading_lists(self):
     self.clear_content_area()
 
     lists_frame = ttk.Frame(self.notebook)
-    self.notebook.add(lists_frame, text="Reading Lists")
+    self.notebook.add(lists_frame, text=_t('gui.academics.library.reading_lists.tabs.reading_lists', default="Reading Lists"))
 
-    title_label = ttk.Label(lists_frame, text="Reading Lists Management", style='Title.TLabel')
+    title_label = ttk.Label(lists_frame, text=_t('gui.academics.library.reading_lists.labels.reading_lists_management', default="Reading Lists Management"), style='Title.TLabel')
     title_label.pack(pady=10)
 
     # Control buttons
     control_frame = ttk.Frame(lists_frame)
     control_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(control_frame, text="Create New List", command=self.create_reading_list_dialog).pack(side=tk.LEFT, padx=5)
-    ttk.Button(control_frame, text="Import List", command=self.import_reading_list_dialog).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.reading_lists.buttons.create_new_list', default="Create New List"), command=self.create_reading_list_dialog).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.reading_lists.buttons.import_list', default="Import List"), command=self.import_reading_list_dialog).pack(side=tk.LEFT, padx=5)
     ttk.Button(control_frame, text=_("common.refresh"), command=self.refresh_reading_lists).pack(side=tk.LEFT, padx=5)
 
     # Reading lists table
@@ -167,15 +169,15 @@ def show_reading_lists(self):
 def create_reading_lists_context_menu(self):
     """Create context menu for reading lists"""
     self.reading_lists_context_menu = tk.Menu(self.master, tearoff=0)
-    self.reading_lists_context_menu.add_command(label="View Details", command=self.view_reading_list_details)
-    self.reading_lists_context_menu.add_command(label="Add Book", command=self.add_book_to_list)
-    self.reading_lists_context_menu.add_command(label="Edit List", command=self.edit_reading_list)
+    self.reading_lists_context_menu.add_command(label=_t('gui.academics.library.reading_lists.menus.view_details', default="View Details"), command=self.view_reading_list_details)
+    self.reading_lists_context_menu.add_command(label=_t('gui.academics.library.reading_lists.menus.add_book', default="Add Book"), command=self.add_book_to_list)
+    self.reading_lists_context_menu.add_command(label=_t('gui.academics.library.reading_lists.menus.edit_list', default="Edit List"), command=self.edit_reading_list)
     self.reading_lists_context_menu.add_separator()
-    self.reading_lists_context_menu.add_command(label="Share List", command=self.share_reading_list)
-    self.reading_lists_context_menu.add_command(label="Delete List", command=self.delete_reading_list)
+    self.reading_lists_context_menu.add_command(label=_t('gui.academics.library.reading_lists.menus.share_list', default="Share List"), command=self.share_reading_list)
+    self.reading_lists_context_menu.add_command(label=_t('gui.academics.library.reading_lists.menus.delete_list', default="Delete List"), command=self.delete_reading_list)
     self.reading_lists_context_menu.add_separator()
     self.reading_lists_context_menu.add_command(
-        label="📁 Open document attachments",
+        label=_t('gui.academics.library.reading_lists.menus.open_document_attachments', default="📁 Open document attachments"),
         command=lambda: _reading_list_jump_to_documents(self),
     )
 
@@ -274,7 +276,7 @@ def import_reading_list_dialog(self):
     import csv
 
     file_path = filedialog.askopenfilename(
-        title="Import Reading List",
+        title=_t('gui.academics.library.reading_lists.dialogs.import_reading_list', default="Import Reading List"),
         filetypes=[("CSV files", "*.csv"), ("Text files", "*.txt"), ("All files", "*.*")]
     )
     if not file_path:
@@ -286,7 +288,7 @@ def import_reading_list_dialog(self):
             reader = csv.reader(f)
             header = next(reader, None)
             if not header:
-                messagebox.showerror("Error", "CSV file is empty.")
+                messagebox.showerror(_t('gui.academics.library.reading_lists.dialogs.error', default="Error"), _t('gui.academics.library.reading_lists.dialogs.csv_file_is_empty', default="CSV file is empty."))
                 return
 
             # Determine column mapping
@@ -306,12 +308,12 @@ def import_reading_list_dialog(self):
                     entries.append(row[book_col].strip())
 
         if not entries:
-            messagebox.showinfo("Import", "No entries found in the file.")
+            messagebox.showinfo(_t('gui.academics.library.reading_lists.dialogs.import', default="Import"), _t('gui.academics.library.reading_lists.dialogs.no_entries_found_in_the_file', default="No entries found in the file."))
             return
 
         # Ask for list name
         dialog = tk.Toplevel(self.master)
-        dialog.title("Import Reading List")
+        dialog.title(_t('gui.academics.library.reading_lists.windows.import_reading_list', default="Import Reading List"))
         dialog.geometry("400x200")
         dialog.transient(self.master)
         dialog.grab_set()
@@ -319,14 +321,14 @@ def import_reading_list_dialog(self):
         ttk.Label(dialog, text=f"Found {len(entries)} entries to import",
                  font=('Arial', 11, 'bold')).pack(pady=(15, 5))
 
-        ttk.Label(dialog, text="Reading List Name:").pack(anchor='w', padx=20)
+        ttk.Label(dialog, text=_t('gui.academics.library.reading_lists.labels.reading_list_name', default="Reading List Name:")).pack(anchor='w', padx=20)
         name_var = tk.StringVar(value=os.path.splitext(os.path.basename(file_path))[0])
         ttk.Entry(dialog, textvariable=name_var, width=40).pack(padx=20, pady=5)
 
         def do_import():
             list_name = name_var.get().strip()
             if not list_name:
-                messagebox.showerror("Error", "Please enter a list name.", parent=dialog)
+                messagebox.showerror(_t('gui.academics.library.reading_lists.dialogs.error', default="Error"), _t('gui.academics.library.reading_lists.dialogs.please_enter_a_list_name_variant_2', default="Please enter a list name."), parent=dialog)
                 return
 
             try:
@@ -369,21 +371,21 @@ def import_reading_list_dialog(self):
 
                 dialog.destroy()
                 self.load_reading_lists()
-                messagebox.showinfo("Import Complete",
+                messagebox.showinfo(_t('gui.academics.library.reading_lists.dialogs.import_complete', default="Import Complete"),
                     f"Reading list '{list_name}' created.\n\n"
                     f"Books matched and added: {added}\n"
                     f"Entries not found: {not_found}")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Import failed: {e}", parent=dialog)
+                messagebox.showerror(_t('gui.academics.library.reading_lists.dialogs.error', default="Error"), f"Import failed: {e}", parent=dialog)
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text="Import", command=do_import).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.library.reading_lists.buttons.import', default="Import"), command=do_import).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.library.reading_lists.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to read file: {e}")
+        messagebox.showerror(_t('gui.academics.library.reading_lists.dialogs.error', default="Error"), f"Failed to read file: {e}")
 
 
 def create_reading_list_dialog(self):
@@ -398,29 +400,29 @@ def create_reading_list_dialog(self):
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # Form fields
-    ttk.Label(main_frame, text="List Name:").pack(anchor='w', pady=(0, 5))
+    ttk.Label(main_frame, text=_t('gui.academics.library.reading_lists.labels.list_name', default="List Name:")).pack(anchor='w', pady=(0, 5))
     name_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=name_var, width=40).pack(anchor='w', pady=(0, 10))
 
-    ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+    ttk.Label(main_frame, text=_t('gui.academics.library.reading_lists.labels.description', default="Description:")).pack(anchor='w', pady=(0, 5))
     desc_text = tk.Text(main_frame, height=4, width=40)
     desc_text.pack(anchor='w', pady=(0, 10))
 
-    ttk.Label(main_frame, text="Category:").pack(anchor='w', pady=(0, 5))
+    ttk.Label(main_frame, text=_t('gui.academics.library.reading_lists.labels.category', default="Category:")).pack(anchor='w', pady=(0, 5))
     category_var = tk.StringVar()
     category_combo = ttk.Combobox(main_frame, textvariable=category_var, width=37)
     category_combo['values'] = ('General', 'Fiction', 'Non-Fiction', 'Science', 'History', 'Educational')
     category_combo.pack(anchor='w', pady=(0, 10))
 
     # Options
-    options_frame = ttk.LabelFrame(main_frame, text="Options")
+    options_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.reading_lists.labels.options', default="Options"))
     options_frame.pack(fill=tk.X, pady=(0, 10))
 
     is_public_var = tk.BooleanVar()
-    ttk.Checkbutton(options_frame, text="Make this list public", variable=is_public_var).pack(anchor='w', padx=5, pady=5)
+    ttk.Checkbutton(options_frame, text=_t('gui.academics.library.reading_lists.buttons.make_this_list_public', default="Make this list public"), variable=is_public_var).pack(anchor='w', padx=5, pady=5)
 
     is_collaborative_var = tk.BooleanVar()
-    ttk.Checkbutton(options_frame, text="Allow others to add books", variable=is_collaborative_var).pack(anchor='w', padx=5, pady=5)
+    ttk.Checkbutton(options_frame, text=_t('gui.academics.library.reading_lists.buttons.allow_others_to_add_books', default="Allow others to add books"), variable=is_collaborative_var).pack(anchor='w', padx=5, pady=5)
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
@@ -432,7 +434,7 @@ def create_reading_list_dialog(self):
         category = category_var.get().strip()
 
         if not name:
-            messagebox.showwarning(_("common.warning"), "Please enter a list name")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reading_lists.dialogs.please_enter_a_list_name', default="Please enter a list name"))
             return
 
         try:
@@ -444,14 +446,14 @@ def create_reading_list_dialog(self):
                     dialog.destroy()
                     self.refresh_reading_lists()
                 else:
-                    messagebox.showerror(_("common.error"), "Failed to create reading list")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.library.reading_lists.dialogs.failed_to_create_reading_list', default="Failed to create reading list"))
             else:
                 messagebox.showinfo(_("common.demo"), f"Reading list '{name}' would be created")
                 dialog.destroy()
         except tk.TclError as e:
             messagebox.showerror(_("common.error"), f"Error creating reading list: {str(e)}")
 
-    ttk.Button(button_frame, text="Create", command=create_list).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reading_lists.buttons.create', default="Create"), command=create_list).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
 def create_reading_list_database(self, name, description, category, is_public, is_collaborative):
@@ -505,7 +507,7 @@ def view_reading_list_details(self, event=None):
     if not selection:
         if event:  # Called from double-click
             return
-        messagebox.showwarning(_("common.warning"), "Please select a reading list first")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reading_lists.dialogs.please_select_a_reading_list_first', default="Please select a reading list first"))
         return
 
     item = self.reading_lists_tree.item(selection[0])
@@ -518,7 +520,7 @@ def view_reading_list_details(self, event=None):
     self.notebook.select(details_frame)
 
     # List info
-    info_frame = ttk.LabelFrame(details_frame, text="List Information")
+    info_frame = ttk.LabelFrame(details_frame, text=_t('gui.academics.library.reading_lists.labels.list_information', default="List Information"))
     info_frame.pack(fill=tk.X, padx=10, pady=5)
 
     # Get and display list details
@@ -531,7 +533,7 @@ def view_reading_list_details(self, event=None):
         ttk.Label(info_frame, text=f"Created: {list_details['created_date'][:10]}").pack(anchor='w', padx=5, pady=2)
 
     # List items
-    items_frame = ttk.LabelFrame(details_frame, text="Books in this List")
+    items_frame = ttk.LabelFrame(details_frame, text=_t('gui.academics.library.reading_lists.labels.books_in_this_list', default="Books in this List"))
     items_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # Items table
@@ -629,17 +631,17 @@ def load_reading_list_items(self, tree, list_id):
 def manage_reading_lists_gui(self):
     """Manage reading lists"""
     lists_window = tk.Toplevel(self.master)
-    lists_window.title("Reading Lists")
+    lists_window.title(_t('gui.academics.library.reading_lists.windows.reading_lists', default="Reading Lists"))
     lists_window.geometry("900x600")
 
-    ttk.Label(lists_window, text="Reading Lists Management",
+    ttk.Label(lists_window, text=_t('gui.academics.library.reading_lists.labels.reading_lists_management', default="Reading Lists Management"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Button frame
     button_frame = ttk.Frame(lists_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Create New List", command=self.create_reading_list_gui).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reading_lists.buttons.create_new_list', default="Create New List"), command=self.create_reading_list_gui).pack(side=tk.LEFT, padx=5)
 
     # Lists table
     table_frame = ttk.Frame(lists_window)
@@ -689,7 +691,7 @@ def manage_reading_lists_gui(self):
     def view_list_details():
         selection = lists_tree.selection()
         if not selection:
-            messagebox.showwarning(_("common.warning"), "Please select a list")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reading_lists.dialogs.please_select_a_list', default="Please select a list"))
             return
 
         item = lists_tree.item(selection[0])
@@ -699,14 +701,14 @@ def manage_reading_lists_gui(self):
     def delete_list():
         selection = lists_tree.selection()
         if not selection:
-            messagebox.showwarning(_("common.warning"), "Please select a list to delete")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reading_lists.dialogs.please_select_a_list_to_delete', default="Please select a list to delete"))
             return
 
         item = lists_tree.item(selection[0])
         list_id = item['values'][0]
         list_name = item['values'][1]
 
-        if messagebox.askyesno("Confirm Delete", f"Delete reading list '{list_name}'?"):
+        if messagebox.askyesno(_t('gui.academics.library.reading_lists.dialogs.confirm_delete', default="Confirm Delete"), f"Delete reading list '{list_name}'?"):
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
@@ -720,7 +722,7 @@ def manage_reading_lists_gui(self):
                 conn.close()
 
                 log_audit_event(get_current_user_id(), f"Deleted reading list {list_id}", "reading_lists")
-                messagebox.showinfo(_("common.success"), "Reading list deleted")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.reading_lists.dialogs.reading_list_deleted', default="Reading list deleted"))
                 load_lists()
 
             except (sqlite3.Error, DatabaseError, tk.TclError) as e:
@@ -730,8 +732,8 @@ def manage_reading_lists_gui(self):
     action_frame = ttk.Frame(lists_window)
     action_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(action_frame, text="View Details", command=view_list_details).pack(side=tk.LEFT, padx=5)
-    ttk.Button(action_frame, text="Delete List", command=delete_list).pack(side=tk.LEFT, padx=5)
+    ttk.Button(action_frame, text=_t('gui.academics.library.reading_lists.buttons.view_details', default="View Details"), command=view_list_details).pack(side=tk.LEFT, padx=5)
+    ttk.Button(action_frame, text=_t('gui.academics.library.reading_lists.buttons.delete_list', default="Delete List"), command=delete_list).pack(side=tk.LEFT, padx=5)
     ttk.Button(action_frame, text=_("common.refresh"), command=load_lists).pack(side=tk.LEFT, padx=5)
     ttk.Button(action_frame, text=_("common.close"), command=lists_window.destroy).pack(side=tk.RIGHT, padx=5)
 
@@ -741,14 +743,14 @@ def manage_reading_lists_gui(self):
 def create_reading_list_gui(self):
     """Create a new reading list"""
     create_window = tk.Toplevel(self.master)
-    create_window.title("Create Reading List")
+    create_window.title(_t('gui.academics.library.reading_lists.windows.create_reading_list', default="Create Reading List"))
     create_window.geometry("500x350")
 
-    ttk.Label(create_window, text="Create New Reading List",
+    ttk.Label(create_window, text=_t('gui.academics.library.reading_lists.labels.create_new_reading_list', default="Create New Reading List"),
              font=('Arial', 14, 'bold')).pack(pady=10)
 
     # Form frame
-    form_frame = ttk.LabelFrame(create_window, text="List Information", padding=15)
+    form_frame = ttk.LabelFrame(create_window, text=_t('gui.academics.library.reading_lists.labels.list_information', default="List Information"), padding=15)
     form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     name_var = tk.StringVar()
@@ -756,17 +758,17 @@ def create_reading_list_gui(self):
     is_public_var = tk.BooleanVar(value=False)
     is_collaborative_var = tk.BooleanVar(value=False)
 
-    ttk.Label(form_frame, text="List Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.library.reading_lists.labels.list_name', default="List Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     ttk.Entry(form_frame, textvariable=name_var, width=40).grid(row=0, column=1, padx=10, pady=5)
 
-    ttk.Label(form_frame, text="Description:").grid(row=1, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.library.reading_lists.labels.description', default="Description:")).grid(row=1, column=0, sticky=tk.W, pady=5)
     desc_entry = tk.Text(form_frame, height=4, width=40)
     desc_entry.grid(row=1, column=1, padx=10, pady=5)
 
-    ttk.Checkbutton(form_frame, text="Public (visible to everyone)",
+    ttk.Checkbutton(form_frame, text=_t('gui.academics.library.reading_lists.buttons.public_visible_to_everyone', default="Public (visible to everyone)"),
                    variable=is_public_var).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
 
-    ttk.Checkbutton(form_frame, text="Collaborative (others can add books)",
+    ttk.Checkbutton(form_frame, text=_t('gui.academics.library.reading_lists.buttons.collaborative_others_can_add_books', default="Collaborative (others can add books)"),
                    variable=is_collaborative_var).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
 
     def create_list():
@@ -774,7 +776,7 @@ def create_reading_list_gui(self):
         description = desc_entry.get('1.0', tk.END).strip()
 
         if not name:
-            messagebox.showerror(_("common.error"), "Please enter a list name")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.reading_lists.dialogs.please_enter_a_list_name', default="Please enter a list name"))
             return
 
         try:
@@ -797,7 +799,7 @@ def create_reading_list_gui(self):
 
             log_audit_event(creator_id, f"Created reading list: {name}", "reading_lists")
 
-            messagebox.showinfo(_("common.success"), "Reading list created successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.library.reading_lists.dialogs.reading_list_created_successfully', default="Reading list created successfully!"))
             create_window.destroy()
 
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
@@ -807,20 +809,20 @@ def create_reading_list_gui(self):
     button_frame = ttk.Frame(create_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Create", command=create_list).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reading_lists.buttons.create', default="Create"), command=create_list).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=create_window.destroy).pack(side=tk.LEFT, padx=5)
 
 def view_reading_list_details_gui(self, list_id):
     """View details of a specific reading list"""
     details_window = tk.Toplevel(self.master)
-    details_window.title("Reading List Details")
+    details_window.title(_t('gui.academics.library.reading_lists.windows.reading_list_details', default="Reading List Details"))
     details_window.geometry("800x600")
 
-    ttk.Label(details_window, text="Reading List Details",
+    ttk.Label(details_window, text=_t('gui.academics.library.reading_lists.labels.reading_list_details', default="Reading List Details"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # List info frame
-    info_frame = ttk.LabelFrame(details_window, text="List Information", padding=10)
+    info_frame = ttk.LabelFrame(details_window, text=_t('gui.academics.library.reading_lists.labels.list_information', default="List Information"), padding=10)
     info_frame.pack(fill=tk.X, padx=10, pady=10)
 
     try:
@@ -848,7 +850,7 @@ def view_reading_list_details_gui(self, list_id):
         return
 
     # Books in list
-    books_frame = ttk.LabelFrame(details_window, text="Books in List", padding=10)
+    books_frame = ttk.LabelFrame(details_window, text=_t('gui.academics.library.reading_lists.labels.books_in_list', default="Books in List"), padding=10)
     books_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     columns = ('Book ID', 'Title', 'Author', 'Added Date', 'Added By')

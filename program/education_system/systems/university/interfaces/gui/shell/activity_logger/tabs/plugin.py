@@ -2,6 +2,8 @@
 Plugin management tab for the Activity Logger GUI.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.activity_logger._imports import (
     tk, ttk, messagebox, scrolledtext,
     LOGGER_AVAILABLE,
@@ -197,7 +199,7 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
         """Add default plugins to the logger"""
         try:
             if not LOGGER_AVAILABLE:
-                messagebox.showwarning("Add Plugins", "Logger not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.tabs.plugin.dialogs.add_plugins', default="Add Plugins"), _t('gui.shell.activity_logger.tabs.plugin.dialogs.logger_not_available', default="Logger not available."))
                 return
 
             # Define default plugins
@@ -245,19 +247,19 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
                     print(f"Error adding plugin {name}: {e}")
 
             if added_count > 0:
-                messagebox.showinfo("Plugins Added", f"Added {added_count} default plugins.")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.plugin.dialogs.plugins_added', default="Plugins Added"), f"Added {added_count} default plugins.")
                 self.refresh_plugins()
             else:
-                messagebox.showinfo("Plugins", "All default plugins are already installed.")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.plugin.dialogs.plugins', default="Plugins"), _t('gui.shell.activity_logger.tabs.plugin.dialogs.all_default_plugins_are_already_installed', default="All default plugins are already installed."))
 
         except Exception as e:
-            messagebox.showerror("Plugin Error", f"Failed to add default plugins: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.plugin.dialogs.plugin_error', default="Plugin Error"), f"Failed to add default plugins: {str(e)}")
 
     def configure_plugin(self):
         """Configure selected plugin"""
         selection = self.plugin_tree.selection()
         if not selection:
-            messagebox.showwarning("Configure Plugin", "Please select a plugin to configure.")
+            messagebox.showwarning(_t('gui.shell.activity_logger.tabs.plugin.dialogs.configure_plugin', default="Configure Plugin"), _t('gui.shell.activity_logger.tabs.plugin.dialogs.please_select_a_plugin_to_configure', default="Please select a plugin to configure."))
             return
 
         item = self.plugin_tree.item(selection[0])
@@ -314,20 +316,20 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
 
                         # Here you would update the actual plugin configuration
                         # This would require extending the plugin system
-                        messagebox.showinfo("Configuration Saved",
+                        messagebox.showinfo(_t('gui.shell.activity_logger.tabs.plugin.dialogs.configuration_saved', default="Configuration Saved"),
                                           f"Configuration for {plugin_name} has been updated.")
                         config_window.destroy()
 
                     except Exception as e:
-                        messagebox.showerror("Configuration Error",
+                        messagebox.showerror(_t('gui.shell.activity_logger.tabs.plugin.dialogs.configuration_error', default="Configuration Error"),
                                            f"Failed to save configuration: {str(e)}")
 
                 ttk.Button(button_frame, text=_t("activity_logger.plugin_config.save"), command=save_config).pack(side=tk.LEFT, padx=5)
-                ttk.Button(button_frame, text="Cancel",
+                ttk.Button(button_frame, text=_t('gui.shell.activity_logger.tabs.plugin.buttons.cancel', default="Cancel"),
                           command=config_window.destroy).pack(side=tk.LEFT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Configuration Error", f"Failed to load plugin configuration: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.plugin.dialogs.configuration_error', default="Configuration Error"), f"Failed to load plugin configuration: {str(e)}")
 
     def create_slack_config(self, parent, current_config):
         """Create Slack plugin configuration widgets"""
@@ -335,7 +337,7 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
 
         # Enabled checkbox
         config_vars['enabled'] = tk.BooleanVar(value=current_config.get('enabled', False))
-        ttk.Checkbutton(parent, text="Enable Slack Notifications",
+        ttk.Checkbutton(parent, text=_t('gui.shell.activity_logger.tabs.plugin.buttons.enable_slack_notifications', default="Enable Slack Notifications"),
                        variable=config_vars['enabled']).pack(anchor=tk.W, pady=2)
 
         # Webhook URL
@@ -356,7 +358,7 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
 
         # Enabled checkbox
         config_vars['enabled'] = tk.BooleanVar(value=current_config.get('enabled', False))
-        ttk.Checkbutton(parent, text="Enable Email Notifications",
+        ttk.Checkbutton(parent, text=_t('gui.shell.activity_logger.tabs.plugin.buttons.enable_email_notifications', default="Enable Email Notifications"),
                        variable=config_vars['enabled']).pack(anchor=tk.W, pady=2)
 
         # SMTP settings
@@ -384,7 +386,7 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
 
         # Enabled checkbox
         config_vars['enabled'] = tk.BooleanVar(value=current_config.get('enabled', True))
-        ttk.Checkbutton(parent, text="Enable Metrics Collection",
+        ttk.Checkbutton(parent, text=_t('gui.shell.activity_logger.tabs.plugin.buttons.enable_metrics_collection', default="Enable Metrics Collection"),
                        variable=config_vars['enabled']).pack(anchor=tk.W, pady=2)
 
         # Reset interval
@@ -400,7 +402,7 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
 
         # Enabled checkbox
         config_vars['enabled'] = tk.BooleanVar(value=current_config.get('enabled', True))
-        ttk.Checkbutton(parent, text="Enable Audit Trail",
+        ttk.Checkbutton(parent, text=_t('gui.shell.activity_logger.tabs.plugin.buttons.enable_audit_trail', default="Enable Audit Trail"),
                        variable=config_vars['enabled']).pack(anchor=tk.W, pady=2)
 
         # Audit file
@@ -414,7 +416,7 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
         """Enable/disable selected plugin"""
         selection = self.plugin_tree.selection()
         if not selection:
-            messagebox.showwarning("Toggle Plugin", "Please select a plugin to enable/disable.")
+            messagebox.showwarning(_t('gui.shell.activity_logger.tabs.plugin.dialogs.toggle_plugin', default="Toggle Plugin"), _t('gui.shell.activity_logger.tabs.plugin.dialogs.please_select_a_plugin_to_enable_disable', default="Please select a plugin to enable/disable."))
             return
 
         item = self.plugin_tree.item(selection[0])
@@ -423,7 +425,7 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
 
         # This would require extending the plugin system to support enabling/disabling
         action = "disable" if current_status == "Enabled" else "enable"
-        messagebox.showinfo("Toggle Plugin", f"Plugin {plugin_name} would be {action}d.")
+        messagebox.showinfo(_t('gui.shell.activity_logger.tabs.plugin.dialogs.toggle_plugin', default="Toggle Plugin"), f"Plugin {plugin_name} would be {action}d.")
 
         # Refresh the display
         self.refresh_plugins()
@@ -432,19 +434,19 @@ Error Rate: {metrics.get('error_rate', 0):.2f}%
         """Remove selected plugin"""
         selection = self.plugin_tree.selection()
         if not selection:
-            messagebox.showwarning("Remove Plugin", "Please select a plugin to remove.")
+            messagebox.showwarning(_t('gui.shell.activity_logger.tabs.plugin.dialogs.remove_plugin', default="Remove Plugin"), _t('gui.shell.activity_logger.tabs.plugin.dialogs.please_select_a_plugin_to_remove', default="Please select a plugin to remove."))
             return
 
         item = self.plugin_tree.item(selection[0])
         plugin_name = item['values'][0]
 
-        if messagebox.askyesno("Remove Plugin", f"Are you sure you want to remove the plugin '{plugin_name}'?"):
+        if messagebox.askyesno(_t('gui.shell.activity_logger.tabs.plugin.dialogs.remove_plugin', default="Remove Plugin"), f"Are you sure you want to remove the plugin '{plugin_name}'?"):
             try:
                 if LOGGER_AVAILABLE:
                     plugin_manager.unregister_plugin(plugin_name)
-                    messagebox.showinfo("Plugin Removed", f"Plugin '{plugin_name}' has been removed.")
+                    messagebox.showinfo(_t('gui.shell.activity_logger.tabs.plugin.dialogs.plugin_removed', default="Plugin Removed"), f"Plugin '{plugin_name}' has been removed.")
                     self.refresh_plugins()
                     self.plugin_info.delete(1.0, tk.END)
 
             except Exception as e:
-                messagebox.showerror("Remove Error", f"Failed to remove plugin: {str(e)}")
+                messagebox.showerror(_t('gui.shell.activity_logger.tabs.plugin.dialogs.remove_error', default="Remove Error"), f"Failed to remove plugin: {str(e)}")

@@ -14,6 +14,8 @@ course-evaluation roadmap:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, ttk
@@ -42,7 +44,7 @@ class SurveyDesignerGUI:
         self.auth = auth
         self.user = self._user_id(auth)
         self.root = tk.Toplevel(parent) if parent else tk.Tk()
-        self.root.title("Course Evaluation — Survey Designer")
+        self.root.title(_t('gui.academics.course_management_gui.course_evaluation_designer.windows.course_evaluation_survey_designer', default="Course Evaluation — Survey Designer"))
         sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
         self.root.geometry(f"{_WINDOW_W}x{_WINDOW_H}+{(sw - _WINDOW_W)//2}+{(sh - _WINDOW_H)//2}")
         self.root.minsize(_MIN_W, _MIN_H)
@@ -68,14 +70,14 @@ class SurveyDesignerGUI:
 
         header = ttk.Frame(outer)
         header.pack(fill=tk.X, pady=(0, 8))
-        ttk.Label(header, text="Survey Designer",
+        ttk.Label(header, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.survey_designer', default="Survey Designer"),
                   font=("TkDefaultFont", 16, "bold")).pack(side=tk.LEFT)
-        ttk.Label(header, text="  Template:").pack(side=tk.LEFT)
+        ttk.Label(header, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.template', default="  Template:")).pack(side=tk.LEFT)
         self.template_combo = ttk.Combobox(header, state="readonly", width=50)
         self.template_combo.pack(side=tk.LEFT, padx=6)
         self.template_combo.bind("<<ComboboxSelected>>", self._on_template_change)
-        ttk.Button(header, text="Refresh", command=self._refresh_templates).pack(side=tk.LEFT, padx=2)
-        ttk.Label(header, text="  Evaluation:").pack(side=tk.LEFT, padx=(12, 0))
+        ttk.Button(header, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.refresh', default="Refresh"), command=self._refresh_templates).pack(side=tk.LEFT, padx=2)
+        ttk.Label(header, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.evaluation', default="  Evaluation:")).pack(side=tk.LEFT, padx=(12, 0))
         self.eval_combo = ttk.Combobox(header, state="readonly", width=40)
         self.eval_combo.pack(side=tk.LEFT, padx=4)
         self.eval_combo.bind("<<ComboboxSelected>>", self._on_eval_change)
@@ -99,13 +101,13 @@ class SurveyDesignerGUI:
     # ------------------------------------------------------------ Library
     def _build_library_tab(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="1. Library")
+        self.nb.add(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.tabs.value_1_library', default="1. Library"))
 
         actions = ttk.Frame(tab)
         actions.pack(fill=tk.X, pady=4)
-        ttk.Button(actions, text="Clone Template…", command=self._clone_template).pack(side=tk.LEFT, padx=4)
-        ttk.Button(actions, text="Export to JSON…", command=self._export_template).pack(side=tk.LEFT, padx=4)
-        ttk.Button(actions, text="Snapshot Current Version",
+        ttk.Button(actions, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.clone_template', default="Clone Template…"), command=self._clone_template).pack(side=tk.LEFT, padx=4)
+        ttk.Button(actions, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.export_to_json', default="Export to JSON…"), command=self._export_template).pack(side=tk.LEFT, padx=4)
+        ttk.Button(actions, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.snapshot_current_version', default="Snapshot Current Version"),
                    command=self._snapshot_version).pack(side=tk.LEFT, padx=4)
 
         cols = ("id", "name", "type", "description", "created_by", "created_at")
@@ -131,18 +133,18 @@ class SurveyDesignerGUI:
 
     def _clone_template(self):
         if not self.selected_template_id:
-            messagebox.showinfo("Clone", "Select a template first.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.clone', default="Clone"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.select_a_template_first', default="Select a template first."))
             return
         new_name = _ask_string(self.root, "Clone Template", "New template name:")
         if not new_name:
             return
         nid = authoring.clone_template(self.selected_template_id, new_name, created_by=self.user)
-        messagebox.showinfo("Clone", f"Created template #{nid}.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.clone', default="Clone"), f"Created template #{nid}.")
         self._refresh_templates()
 
     def _export_template(self):
         if not self.selected_template_id:
-            messagebox.showinfo("Export", "Select a template first.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.export', default="Export"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.select_a_template_first', default="Select a template first."))
             return
         path = filedialog.asksaveasfilename(defaultextension=".json",
                                             filetypes=[("JSON", "*.json")])
@@ -150,27 +152,27 @@ class SurveyDesignerGUI:
             return
         with open(path, "w", encoding="utf-8") as f:
             f.write(authoring.export_template(self.selected_template_id))
-        messagebox.showinfo("Export", f"Wrote {path}.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.export', default="Export"), f"Wrote {path}.")
 
     # ------------------------------------------------------------ Bank
     def _build_bank_tab(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="2. Question Bank")
+        self.nb.add(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.tabs.value_2_question_bank', default="2. Question Bank"))
 
-        top = ttk.LabelFrame(tab, text="Filter", padding=8)
+        top = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.filter', default="Filter"), padding=8)
         top.pack(fill=tk.X)
-        ttk.Label(top, text="Search:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.search', default="Search:")).grid(row=0, column=0, sticky=tk.W)
         self.bank_search = ttk.Entry(top, width=30)
         self.bank_search.grid(row=0, column=1, padx=4)
-        ttk.Label(top, text="Tag:").grid(row=0, column=2, sticky=tk.W, padx=(8, 0))
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.tag', default="Tag:")).grid(row=0, column=2, sticky=tk.W, padx=(8, 0))
         self.bank_tag = ttk.Entry(top, width=15)
         self.bank_tag.grid(row=0, column=3, padx=4)
-        ttk.Label(top, text="Dept:").grid(row=0, column=4, sticky=tk.W, padx=(8, 0))
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.dept', default="Dept:")).grid(row=0, column=4, sticky=tk.W, padx=(8, 0))
         self.bank_dept = ttk.Entry(top, width=15)
         self.bank_dept.grid(row=0, column=5, padx=4)
-        ttk.Button(top, text="Search", command=self._refresh_bank).grid(row=0, column=6, padx=6)
-        ttk.Button(top, text="New Question…", command=self._new_bank_question).grid(row=0, column=7)
-        ttk.Button(top, text="Add to Current Template",
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.search', default="Search"), command=self._refresh_bank).grid(row=0, column=6, padx=6)
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.new_question', default="New Question…"), command=self._new_bank_question).grid(row=0, column=7)
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.add_to_current_template', default="Add to Current Template"),
                    command=self._add_bank_to_template).grid(row=0, column=8, padx=6)
 
         cols = ("id", "text", "type", "category", "department", "tags")
@@ -204,25 +206,25 @@ class SurveyDesignerGUI:
 
     def _add_bank_to_template(self):
         if not self.selected_template_id:
-            messagebox.showinfo("Add", "Pick a template in the header first.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.add', default="Add"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.pick_a_template_in_the_header_first', default="Pick a template in the header first."))
             return
         sel = self.bank_tree.selection()
         if not sel:
-            messagebox.showinfo("Add", "Select a bank question first.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.add', default="Add"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.select_a_bank_question_first', default="Select a bank question first."))
             return
         bank_id = int(self.bank_tree.item(sel[0])["values"][0])
         authoring.insert_bank_question_into_template(bank_id, self.selected_template_id)
-        messagebox.showinfo("Add", "Question copied into the template.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.add', default="Add"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.question_copied_into_the_template', default="Question copied into the template."))
         self._refresh_questions()
 
     # ------------------------------------------------------------ Designer
     def _build_designer_tab(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="3. Designer")
+        self.nb.add(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.tabs.value_3_designer', default="3. Designer"))
 
         left = ttk.Frame(tab)
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        right = ttk.LabelFrame(tab, text="Edit Question", padding=8)
+        right = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.edit_question', default="Edit Question"), padding=8)
         right.pack(side=tk.RIGHT, fill=tk.Y, padx=(8, 0))
 
         cols = ("id", "order", "text", "type", "required", "branch")
@@ -234,46 +236,46 @@ class SurveyDesignerGUI:
         self.q_tree.bind("<<TreeviewSelect>>", self._on_question_select)
 
         # --- right panel
-        ttk.Label(right, text="Type:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        ttk.Label(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.type', default="Type:")).grid(row=0, column=0, sticky=tk.W, pady=2)
         self.q_type = ttk.Combobox(right, state="readonly",
                                    values=list(authoring.SUPPORTED_TYPES), width=18)
         self.q_type.grid(row=0, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(right, text="Scale min/max:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        ttk.Label(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.scale_min_max', default="Scale min/max:")).grid(row=1, column=0, sticky=tk.W, pady=2)
         self.q_min = ttk.Spinbox(right, from_=0, to=100, width=5)
         self.q_min.grid(row=1, column=1, sticky=tk.W, pady=2)
         self.q_max = ttk.Spinbox(right, from_=0, to=100, width=5)
         self.q_max.grid(row=1, column=1, sticky=tk.E, pady=2)
 
-        ttk.Label(right, text="Options (one/line):").grid(row=2, column=0, sticky=tk.NW, pady=2)
+        ttk.Label(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.options_one_line', default="Options (one/line):")).grid(row=2, column=0, sticky=tk.NW, pady=2)
         self.q_options = tk.Text(right, width=28, height=6)
         self.q_options.grid(row=2, column=1, sticky=tk.W, pady=2)
 
         self.q_required = tk.BooleanVar(value=True)
-        ttk.Checkbutton(right, text="Required", variable=self.q_required).grid(
+        ttk.Checkbutton(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.required', default="Required"), variable=self.q_required).grid(
             row=3, column=1, sticky=tk.W, pady=4)
 
-        ttk.Button(right, text="Save Type / Required",
+        ttk.Button(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.save_type_required', default="Save Type / Required"),
                    command=self._save_question).grid(row=4, column=0, columnspan=2,
                                                       sticky=tk.EW, pady=(8, 4))
 
         ttk.Separator(right).grid(row=5, column=0, columnspan=2, sticky=tk.EW, pady=8)
-        ttk.Label(right, text="Branching — show this question only if:",
+        ttk.Label(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.branching_show_this_question_only_if', default="Branching — show this question only if:"),
                   font=("TkDefaultFont", 9, "bold")).grid(row=6, column=0, columnspan=2, sticky=tk.W)
-        ttk.Label(right, text="Parent Q ID:").grid(row=7, column=0, sticky=tk.W, pady=2)
+        ttk.Label(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.parent_q_id', default="Parent Q ID:")).grid(row=7, column=0, sticky=tk.W, pady=2)
         self.b_parent = ttk.Entry(right, width=10)
         self.b_parent.grid(row=7, column=1, sticky=tk.W, pady=2)
-        ttk.Label(right, text="Operator:").grid(row=8, column=0, sticky=tk.W, pady=2)
+        ttk.Label(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.operator', default="Operator:")).grid(row=8, column=0, sticky=tk.W, pady=2)
         self.b_op = ttk.Combobox(right, state="readonly",
                                  values=list(authoring.SUPPORTED_OPS), width=8)
         self.b_op.grid(row=8, column=1, sticky=tk.W, pady=2)
-        ttk.Label(right, text="Value:").grid(row=9, column=0, sticky=tk.W, pady=2)
+        ttk.Label(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.value', default="Value:")).grid(row=9, column=0, sticky=tk.W, pady=2)
         self.b_val = ttk.Entry(right, width=18)
         self.b_val.grid(row=9, column=1, sticky=tk.W, pady=2)
-        ttk.Button(right, text="Set Branching",
+        ttk.Button(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.set_branching', default="Set Branching"),
                    command=self._save_branching).grid(row=10, column=0, columnspan=2,
                                                        sticky=tk.EW, pady=(6, 2))
-        ttk.Button(right, text="Clear Branching",
+        ttk.Button(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.clear_branching', default="Clear Branching"),
                    command=self._clear_branching).grid(row=11, column=0, columnspan=2, sticky=tk.EW)
 
     def _on_question_select(self, _event=None):
@@ -312,7 +314,7 @@ class SurveyDesignerGUI:
             )
             authoring.set_required(qid, self.q_required.get())
         except ValueError as e:
-            messagebox.showerror("Save", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.save', default="Save"), str(e))
             return
         self._refresh_questions()
 
@@ -328,7 +330,7 @@ class SurveyDesignerGUI:
                 self.b_val.get(),
             )
         except (ValueError, TypeError) as e:
-            messagebox.showerror("Branching", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.branching', default="Branching"), str(e))
             return
         self._refresh_questions()
 
@@ -342,25 +344,25 @@ class SurveyDesignerGUI:
     # ------------------------------------------------------------ Locales
     def _build_locales_tab(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="4. Locales")
+        self.nb.add(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.tabs.value_4_locales', default="4. Locales"))
 
         top = ttk.Frame(tab)
         top.pack(fill=tk.X, pady=4)
-        ttk.Label(top, text="Question (designer selection):").pack(side=tk.LEFT)
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.question_designer_selection', default="Question (designer selection):")).pack(side=tk.LEFT)
         self.loc_qid_lbl = ttk.Label(top, text="—", font=("TkDefaultFont", 10, "bold"))
         self.loc_qid_lbl.pack(side=tk.LEFT, padx=6)
-        ttk.Button(top, text="Reload", command=self._refresh_locales).pack(side=tk.LEFT, padx=6)
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.reload', default="Reload"), command=self._refresh_locales).pack(side=tk.LEFT, padx=6)
 
-        editor = ttk.LabelFrame(tab, text="Add / Update translation", padding=8)
+        editor = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.add_update_translation', default="Add / Update translation"), padding=8)
         editor.pack(fill=tk.X, pady=6)
-        ttk.Label(editor, text="Locale (e.g. fr, es, zh):").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(editor, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.locale_e_g_fr_es_zh', default="Locale (e.g. fr, es, zh):")).grid(row=0, column=0, sticky=tk.W)
         self.loc_code = ttk.Entry(editor, width=8); self.loc_code.grid(row=0, column=1, sticky=tk.W)
-        ttk.Label(editor, text="Translated text:").grid(row=1, column=0, sticky=tk.NW, pady=4)
+        ttk.Label(editor, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.translated_text', default="Translated text:")).grid(row=1, column=0, sticky=tk.NW, pady=4)
         self.loc_text = tk.Text(editor, height=3, width=90)
         self.loc_text.grid(row=1, column=1, sticky=tk.W, pady=4)
-        ttk.Label(editor, text="Aria-label (optional):").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(editor, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.aria_label_optional', default="Aria-label (optional):")).grid(row=2, column=0, sticky=tk.W)
         self.loc_aria = ttk.Entry(editor, width=90); self.loc_aria.grid(row=2, column=1, sticky=tk.W)
-        ttk.Button(editor, text="Save translation",
+        ttk.Button(editor, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.save_translation', default="Save translation"),
                    command=self._save_locale).grid(row=3, column=1, sticky=tk.E, pady=6)
 
         cols = ("locale", "text", "aria")
@@ -375,7 +377,7 @@ class SurveyDesignerGUI:
             self.loc_tree.delete(i)
         q = self._current_question()
         if not q:
-            self.loc_qid_lbl.config(text="—  (select a question in tab 3)")
+            self.loc_qid_lbl.config(text=_t('gui.academics.course_management_gui.course_evaluation_designer.text.select_a_question_in_tab_3', default="—  (select a question in tab 3)"))
             return
         self.loc_qid_lbl.config(text=f"#{q['question_id']} · {q['question_text'][:80]}")
         for code, d in authoring.get_locales(q["question_id"]).items():
@@ -385,12 +387,12 @@ class SurveyDesignerGUI:
     def _save_locale(self):
         q = self._current_question()
         if not q:
-            messagebox.showinfo("Locale", "Pick a question in the Designer tab first.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.locale', default="Locale"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.pick_a_question_in_the_designer_tab_first', default="Pick a question in the Designer tab first."))
             return
         code = self.loc_code.get().strip().lower()
         text = self.loc_text.get("1.0", tk.END).strip()
         if not code or not text:
-            messagebox.showinfo("Locale", "Locale code and text are required.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.locale', default="Locale"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.locale_code_and_text_are_required', default="Locale code and text are required."))
             return
         authoring.set_locale_text(q["question_id"], code, text,
                                   aria_label=self.loc_aria.get().strip() or None)
@@ -399,16 +401,16 @@ class SurveyDesignerGUI:
     # ------------------------------------------------------------ A11y
     def _build_a11y_tab(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="5. Accessibility")
+        self.nb.add(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.tabs.value_5_accessibility', default="5. Accessibility"))
 
         controls = ttk.Frame(tab)
         controls.pack(fill=tk.X, pady=4)
-        ttk.Label(controls, text="FG color:").pack(side=tk.LEFT)
+        ttk.Label(controls, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.fg_color', default="FG color:")).pack(side=tk.LEFT)
         self.a_fg = ttk.Entry(controls, width=10); self.a_fg.insert(0, "#000000"); self.a_fg.pack(side=tk.LEFT, padx=4)
-        ttk.Label(controls, text="BG color:").pack(side=tk.LEFT)
+        ttk.Label(controls, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.bg_color', default="BG color:")).pack(side=tk.LEFT)
         self.a_bg = ttk.Entry(controls, width=10); self.a_bg.insert(0, "#f0f0f0"); self.a_bg.pack(side=tk.LEFT, padx=4)
-        ttk.Button(controls, text="Run Audit", command=self._run_audit).pack(side=tk.LEFT, padx=8)
-        self.a_summary = ttk.Label(controls, text="No audit run yet.")
+        ttk.Button(controls, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.run_audit', default="Run Audit"), command=self._run_audit).pack(side=tk.LEFT, padx=8)
+        self.a_summary = ttk.Label(controls, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.no_audit_run_yet', default="No audit run yet."))
         self.a_summary.pack(side=tk.LEFT, padx=12)
 
         cols = ("severity", "rule", "qid", "message")
@@ -420,7 +422,7 @@ class SurveyDesignerGUI:
 
     def _run_audit(self):
         if not self.selected_template_id:
-            messagebox.showinfo("Audit", "Select a template first.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.audit', default="Audit"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.select_a_template_first', default="Select a template first."))
             return
         findings = authoring.audit_template(
             self.selected_template_id,
@@ -444,12 +446,12 @@ class SurveyDesignerGUI:
     # ------------------------------------------------------------ Versions
     def _build_versions_tab(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="6. Versions")
+        self.nb.add(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.tabs.value_6_versions', default="6. Versions"))
 
         top = ttk.Frame(tab); top.pack(fill=tk.X, pady=4)
-        ttk.Button(top, text="Snapshot Now…", command=self._snapshot_version).pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Diff Selected (2)", command=self._diff_versions).pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Refresh", command=self._refresh_versions).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.snapshot_now', default="Snapshot Now…"), command=self._snapshot_version).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.diff_selected_2', default="Diff Selected (2)"), command=self._diff_versions).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.refresh', default="Refresh"), command=self._refresh_versions).pack(side=tk.LEFT, padx=4)
 
         cols = ("version_id", "version_number", "changed_by", "changed_at", "summary")
         self.v_tree = ttk.Treeview(tab, columns=cols, show="headings", height=12, selectmode="extended")
@@ -463,24 +465,24 @@ class SurveyDesignerGUI:
 
     def _snapshot_version(self):
         if not self.selected_template_id:
-            messagebox.showinfo("Snapshot", "Select a template first.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.snapshot', default="Snapshot"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.select_a_template_first', default="Select a template first."))
             return
         summary = _ask_string(self.root, "Snapshot", "Change summary (optional):") or ""
         vid = authoring.save_version(self.selected_template_id,
                                      change_summary=summary, changed_by=self.user)
-        messagebox.showinfo("Snapshot", f"Saved version (id {vid}).")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.snapshot', default="Snapshot"), f"Saved version (id {vid}).")
         self._refresh_versions()
 
     def _diff_versions(self):
         sel = self.v_tree.selection()
         if len(sel) != 2:
-            messagebox.showinfo("Diff", "Select exactly two versions.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.diff', default="Diff"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.select_exactly_two_versions', default="Select exactly two versions."))
             return
         a, b = (int(self.v_tree.item(s)["values"][0]) for s in sel)
         try:
             text = authoring.diff_versions(a, b)
         except ValueError as e:
-            messagebox.showerror("Diff", str(e)); return
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.diff', default="Diff"), str(e)); return
         self.v_diff.delete("1.0", tk.END)
         self.v_diff.insert("1.0", text or "(no differences)")
 
@@ -577,61 +579,61 @@ class SurveyDesignerGUI:
     # ------------------------------------------------------------ Distribution (9-14)
     def _build_distribution_tab(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="7. Distribution")
+        self.nb.add(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.tabs.value_7_distribution', default="7. Distribution"))
 
         # --- window + embargo
-        win = ttk.LabelFrame(tab, text="Window & embargo", padding=8)
+        win = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.window_embargo', default="Window & embargo"), padding=8)
         win.pack(fill=tk.X, pady=4)
-        ttk.Label(win, text="Start (YYYY-MM-DD):").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(win, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.start_yyyy_mm_dd', default="Start (YYYY-MM-DD):")).grid(row=0, column=0, sticky=tk.W)
         self.win_start = ttk.Entry(win, width=14); self.win_start.grid(row=0, column=1, padx=4)
-        ttk.Label(win, text="End:").grid(row=0, column=2, sticky=tk.W)
+        ttk.Label(win, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.end', default="End:")).grid(row=0, column=2, sticky=tk.W)
         self.win_end = ttk.Entry(win, width=14); self.win_end.grid(row=0, column=3, padx=4)
         self.win_auto = tk.BooleanVar(value=True)
-        ttk.Checkbutton(win, text="Auto open/close", variable=self.win_auto).grid(row=0, column=4, padx=8)
-        ttk.Button(win, text="Save window", command=self._save_window).grid(row=0, column=5, padx=4)
-        ttk.Button(win, text="Run auto-transition now",
+        ttk.Checkbutton(win, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.auto_open_close', default="Auto open/close"), variable=self.win_auto).grid(row=0, column=4, padx=8)
+        ttk.Button(win, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.save_window', default="Save window"), command=self._save_window).grid(row=0, column=5, padx=4)
+        ttk.Button(win, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.run_auto_transition_now', default="Run auto-transition now"),
                    command=self._run_auto_transition).grid(row=0, column=6, padx=4)
         self.embargo_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(win, text="Embargo results until grades submitted",
+        ttk.Checkbutton(win, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.embargo_results_until_grades_submitted', default="Embargo results until grades submitted"),
                         variable=self.embargo_var, command=self._save_embargo).grid(
             row=1, column=0, columnspan=4, sticky=tk.W, pady=(6, 0))
-        ttk.Button(win, text="Mark grades submitted",
+        ttk.Button(win, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.mark_grades_submitted', default="Mark grades submitted"),
                    command=self._mark_grades_submitted).grid(row=1, column=5, columnspan=2, sticky=tk.W, pady=(6, 0))
 
         # --- reminders
-        rem = ttk.LabelFrame(tab, text="Reminder cadence", padding=8)
+        rem = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.reminder_cadence', default="Reminder cadence"), padding=8)
         rem.pack(fill=tk.X, pady=4)
-        ttk.Label(rem, text="Offset days from start:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(rem, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.offset_days_from_start', default="Offset days from start:")).grid(row=0, column=0, sticky=tk.W)
         self.rem_offset = ttk.Spinbox(rem, from_=-30, to=30, width=5); self.rem_offset.grid(row=0, column=1, padx=4)
-        ttk.Label(rem, text="Channel:").grid(row=0, column=2, sticky=tk.W)
+        ttk.Label(rem, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.channel', default="Channel:")).grid(row=0, column=2, sticky=tk.W)
         self.rem_chan = ttk.Combobox(rem, state="readonly", values=("email", "sms", "portal"), width=8)
         self.rem_chan.current(0); self.rem_chan.grid(row=0, column=3, padx=4)
-        ttk.Label(rem, text="Message:").grid(row=0, column=4, sticky=tk.W)
+        ttk.Label(rem, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.message', default="Message:")).grid(row=0, column=4, sticky=tk.W)
         self.rem_msg = ttk.Entry(rem, width=30); self.rem_msg.grid(row=0, column=5, padx=4)
-        ttk.Button(rem, text="Add reminder", command=self._add_reminder).grid(row=0, column=6, padx=4)
+        ttk.Button(rem, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.add_reminder', default="Add reminder"), command=self._add_reminder).grid(row=0, column=6, padx=4)
 
         self.rem_tree = ttk.Treeview(rem, columns=("id", "offset", "channel", "message", "sent_at"),
                                      show="headings", height=4)
         for c, w in zip(("id", "offset", "channel", "message", "sent_at"), (50, 70, 80, 380, 160)):
             self.rem_tree.heading(c, text=c.title()); self.rem_tree.column(c, width=w, anchor=tk.W)
         self.rem_tree.grid(row=1, column=0, columnspan=7, sticky=tk.EW, pady=6)
-        ttk.Button(rem, text="Delete selected",
+        ttk.Button(rem, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.delete_selected', default="Delete selected"),
                    command=self._delete_reminder).grid(row=2, column=0, sticky=tk.W)
 
         # --- bulk invites + tokens + QR
-        inv = ttk.LabelFrame(tab, text="Bulk invitations · tokenised links · QR", padding=8)
+        inv = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.bulk_invitations_tokenised_links_qr', default="Bulk invitations · tokenised links · QR"), padding=8)
         inv.pack(fill=tk.BOTH, expand=True, pady=4)
         left = ttk.Frame(inv); left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         right = ttk.Frame(inv); right.pack(side=tk.RIGHT, fill=tk.Y, padx=(8, 0))
 
-        ttk.Label(left, text="Student IDs (one per line):").pack(anchor=tk.W)
+        ttk.Label(left, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.student_ids_one_per_line', default="Student IDs (one per line):")).pack(anchor=tk.W)
         self.inv_ids = scrolledtext.ScrolledText(left, height=6)
         self.inv_ids.pack(fill=tk.X)
         bar = ttk.Frame(left); bar.pack(fill=tk.X, pady=4)
-        ttk.Label(bar, text="Cohort:").pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.cohort', default="Cohort:")).pack(side=tk.LEFT)
         self.inv_cohort = ttk.Entry(bar, width=18); self.inv_cohort.pack(side=tk.LEFT, padx=4)
-        ttk.Button(bar, text="Send invites", command=self._send_invites).pack(side=tk.LEFT, padx=4)
-        ttk.Button(bar, text="Snapshot as roster",
+        ttk.Button(bar, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.send_invites', default="Send invites"), command=self._send_invites).pack(side=tk.LEFT, padx=4)
+        ttk.Button(bar, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.snapshot_as_roster', default="Snapshot as roster"),
                    command=self._roster_from_box).pack(side=tk.LEFT, padx=4)
 
         self.inv_tree = ttk.Treeview(left, columns=("recipient", "cohort", "used", "url"),
@@ -641,14 +643,14 @@ class SurveyDesignerGUI:
         self.inv_tree.pack(fill=tk.BOTH, expand=True, pady=4)
         self.inv_tree.bind("<<TreeviewSelect>>", self._render_qr)
 
-        ttk.Label(right, text="QR / ASCII:").pack(anchor=tk.W)
+        ttk.Label(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.qr_ascii', default="QR / ASCII:")).pack(anchor=tk.W)
         self.qr_box = scrolledtext.ScrolledText(right, width=42, height=22, font=("TkFixedFont", 8))
         self.qr_box.pack(fill=tk.BOTH, expand=True)
 
     # --- distribution callbacks
     def _require_eval(self) -> int | None:
         if not self.selected_evaluation_id:
-            messagebox.showinfo("Evaluation", "Pick an evaluation in the header first.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.evaluation', default="Evaluation"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.pick_an_evaluation_in_the_header_first', default="Pick an evaluation in the header first."))
             return None
         return self.selected_evaluation_id
 
@@ -661,13 +663,13 @@ class SurveyDesignerGUI:
                                   self.win_end.get().strip(),
                                   auto_open=self.win_auto.get())
         except Exception as e:
-            messagebox.showerror("Window", str(e)); return
-        messagebox.showinfo("Window", "Saved.")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.window', default="Window"), str(e)); return
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.window', default="Window"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.saved', default="Saved."))
         self._refresh_evaluations()
 
     def _run_auto_transition(self):
         res = scheduling.auto_transition()
-        messagebox.showinfo("Auto-transition",
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.auto_transition', default="Auto-transition"),
                             f"Opened: {res['opened']}\nClosed: {res['closed']}")
 
     def _save_embargo(self):
@@ -681,7 +683,7 @@ class SurveyDesignerGUI:
         if not eid:
             return
         scheduling.mark_grades_submitted(eid)
-        messagebox.showinfo("Grades", "Grades submission timestamp recorded.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.grades', default="Grades"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.grades_submission_timestamp_recorded', default="Grades submission timestamp recorded."))
 
     def _add_reminder(self):
         eid = self._require_eval()
@@ -690,7 +692,7 @@ class SurveyDesignerGUI:
         try:
             offset = int(self.rem_offset.get())
         except ValueError:
-            messagebox.showerror("Reminder", "Offset must be a number."); return
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.reminder', default="Reminder"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.offset_must_be_a_number', default="Offset must be a number.")); return
         scheduling.schedule_reminder(eid, offset,
                                      channel=self.rem_chan.get() or "email",
                                      message=self.rem_msg.get().strip())
@@ -710,9 +712,9 @@ class SurveyDesignerGUI:
             return
         ids = [ln.strip() for ln in self.inv_ids.get("1.0", tk.END).splitlines() if ln.strip()]
         if not ids:
-            messagebox.showinfo("Invites", "No recipient IDs entered."); return
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.invites', default="Invites"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.no_recipient_ids_entered', default="No recipient IDs entered.")); return
         issued = scheduling.bulk_invite(eid, ids, cohort=self.inv_cohort.get().strip())
-        messagebox.showinfo("Invites", f"Issued {len(issued)} new tokens.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.invites', default="Invites"), f"Issued {len(issued)} new tokens.")
         self._refresh_invitations()
 
     def _roster_from_box(self):
@@ -721,7 +723,7 @@ class SurveyDesignerGUI:
             return
         ids = [ln.strip() for ln in self.inv_ids.get("1.0", tk.END).splitlines() if ln.strip()]
         n = scheduling.set_roster(eid, ids)
-        messagebox.showinfo("Roster", f"Stored roster of {n} students.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.roster', default="Roster"), f"Stored roster of {n} students.")
 
     def _render_qr(self, _event=None):
         sel = self.inv_tree.selection()
@@ -763,54 +765,54 @@ class SurveyDesignerGUI:
     # ------------------------------------------------------------ Respondent UX (15-19)
     def _build_respondent_tab(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="8. Respondent UX")
+        self.nb.add(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.tabs.value_8_respondent_ux', default="8. Respondent UX"))
 
         top = ttk.Frame(tab); top.pack(fill=tk.X, pady=4)
-        ttk.Button(top, text="Compute / refresh ETC",
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.compute_refresh_etc', default="Compute / refresh ETC"),
                    command=self._refresh_etc).pack(side=tk.LEFT, padx=4)
-        self.etc_label = ttk.Label(top, text="Estimated time: —",
+        self.etc_label = ttk.Label(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.estimated_time', default="Estimated time: —"),
                                    font=("TkDefaultFont", 11, "bold"))
         self.etc_label.pack(side=tk.LEFT, padx=12)
-        ttk.Label(top, text="  Mobile viewport (px):").pack(side=tk.LEFT)
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.mobile_viewport_px', default="  Mobile viewport (px):")).pack(side=tk.LEFT)
         self.viewport = ttk.Spinbox(top, from_=320, to=1920, width=6); self.viewport.insert(0, "1200")
         self.viewport.pack(side=tk.LEFT)
-        self.viewport_label = ttk.Label(top, text=" → 4 cols")
+        self.viewport_label = ttk.Label(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.value_4_cols', default=" → 4 cols"))
         self.viewport_label.pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Preview layout", command=self._preview_responsive).pack(side=tk.LEFT, padx=8)
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.preview_layout', default="Preview layout"), command=self._preview_responsive).pack(side=tk.LEFT, padx=8)
 
         # Sentiment preview
-        sent = ttk.LabelFrame(tab, text="Sentiment preview (feature 19)", padding=8)
+        sent = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.sentiment_preview_feature_19', default="Sentiment preview (feature 19)"), padding=8)
         sent.pack(fill=tk.X, pady=6)
-        ttk.Label(sent, text="Draft comment:").pack(anchor=tk.W)
+        ttk.Label(sent, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.draft_comment', default="Draft comment:")).pack(anchor=tk.W)
         self.sent_text = scrolledtext.ScrolledText(sent, height=4)
         self.sent_text.pack(fill=tk.X)
         self.sent_label = ttk.Label(sent, text="", font=("TkDefaultFont", 11))
         self.sent_label.pack(anchor=tk.W, pady=4)
-        ttk.Button(sent, text="Preview sentiment",
+        ttk.Button(sent, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.preview_sentiment', default="Preview sentiment"),
                    command=self._preview_sentiment).pack(anchor=tk.W)
 
         # Redaction
-        red = ttk.LabelFrame(tab, text="Profanity & PII redaction (feature 18)", padding=8)
+        red = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.profanity_pii_redaction_feature_18', default="Profanity & PII redaction (feature 18)"), padding=8)
         red.pack(fill=tk.BOTH, expand=True, pady=6)
-        ttk.Label(red, text="Text to redact:").pack(anchor=tk.W)
+        ttk.Label(red, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.text_to_redact', default="Text to redact:")).pack(anchor=tk.W)
         self.red_in = scrolledtext.ScrolledText(red, height=3)
         self.red_in.pack(fill=tk.X)
-        ttk.Button(red, text="Redact", command=self._do_redact).pack(anchor=tk.W, pady=2)
-        ttk.Label(red, text="Result:").pack(anchor=tk.W)
+        ttk.Button(red, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.redact', default="Redact"), command=self._do_redact).pack(anchor=tk.W, pady=2)
+        ttk.Label(red, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.result', default="Result:")).pack(anchor=tk.W)
         self.red_out = scrolledtext.ScrolledText(red, height=3, foreground="#444")
         self.red_out.pack(fill=tk.X)
 
         rules_bar = ttk.Frame(red); rules_bar.pack(fill=tk.X, pady=4)
-        ttk.Label(rules_bar, text="Custom rule (regex):").pack(side=tk.LEFT)
+        ttk.Label(rules_bar, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.custom_rule_regex', default="Custom rule (regex):")).pack(side=tk.LEFT)
         self.red_pat = ttk.Entry(rules_bar, width=30); self.red_pat.pack(side=tk.LEFT, padx=4)
-        ttk.Label(rules_bar, text="Replacement:").pack(side=tk.LEFT)
+        ttk.Label(rules_bar, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.replacement', default="Replacement:")).pack(side=tk.LEFT)
         self.red_repl = ttk.Entry(rules_bar, width=15); self.red_repl.insert(0, "[redacted]")
         self.red_repl.pack(side=tk.LEFT, padx=4)
-        ttk.Button(rules_bar, text="Add rule", command=self._add_redaction).pack(side=tk.LEFT, padx=4)
+        ttk.Button(rules_bar, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.add_rule', default="Add rule"), command=self._add_redaction).pack(side=tk.LEFT, padx=4)
 
     def _refresh_etc(self):
         if not self.selected_template_id:
-            messagebox.showinfo("ETC", "Pick a template first."); return
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.etc', default="ETC"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.pick_a_template_first', default="Pick a template first.")); return
         mins = respondent.estimate_minutes(self.selected_template_id)
         self.etc_label.config(text=f"Estimated time: ~{mins} min")
         if self.selected_evaluation_id:
@@ -839,24 +841,24 @@ class SurveyDesignerGUI:
             return
         try:
             respondent.add_redaction_rule(pat, self.red_repl.get().strip() or "[redacted]")
-            messagebox.showinfo("Redaction", "Rule added.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.redaction', default="Redaction"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.rule_added', default="Rule added."))
         except Exception as e:
-            messagebox.showerror("Redaction", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.redaction', default="Redaction"), str(e))
 
     # ------------------------------------------------------------ Analytics (20-25)
     def _build_analytics_tab(self):
         tab = ttk.Frame(self.nb, padding=10)
-        self.nb.add(tab, text="9. Analytics")
+        self.nb.add(tab, text=_t('gui.academics.course_management_gui.course_evaluation_designer.tabs.value_9_analytics', default="9. Analytics"))
 
         top = ttk.Frame(tab); top.pack(fill=tk.X)
-        ttk.Button(top, text="Refresh dashboard", command=self._refresh_dashboard).pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Run sentiment scoring",
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.refresh_dashboard', default="Refresh dashboard"), command=self._refresh_dashboard).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.run_sentiment_scoring', default="Run sentiment scoring"),
                    command=self._run_sentiment).pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Flag suspicious",
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.flag_suspicious', default="Flag suspicious"),
                    command=self._run_flag_suspicious).pack(side=tk.LEFT, padx=4)
-        ttk.Label(top, text="  Department prefix for benchmark:").pack(side=tk.LEFT, padx=(12, 0))
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.department_prefix_for_benchmark', default="  Department prefix for benchmark:")).pack(side=tk.LEFT, padx=(12, 0))
         self.bench_dept = ttk.Entry(top, width=8); self.bench_dept.pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Run benchmark", command=self._run_benchmark).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.run_benchmark', default="Run benchmark"), command=self._run_benchmark).pack(side=tk.LEFT, padx=4)
 
         cols = ("eval_id", "module", "year", "sem", "instructor", "responses",
                 "roster", "percent")
@@ -867,23 +869,23 @@ class SurveyDesignerGUI:
 
         mid = ttk.Frame(tab); mid.pack(fill=tk.BOTH, expand=True, pady=4)
 
-        wc = ttk.LabelFrame(mid, text="Word cloud / topics (free-text)", padding=6)
+        wc = ttk.LabelFrame(mid, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.word_cloud_topics_free_text', default="Word cloud / topics (free-text)"), padding=6)
         wc.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.wc_box = scrolledtext.ScrolledText(wc, height=20, font=("TkFixedFont", 10))
         self.wc_box.pack(fill=tk.BOTH, expand=True)
 
         right = ttk.Frame(mid); right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6, 0))
 
-        tr = ttk.LabelFrame(right, text="Cross-term trend", padding=6)
+        tr = ttk.LabelFrame(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.cross_term_trend', default="Cross-term trend"), padding=6)
         tr.pack(fill=tk.BOTH, expand=True)
         tr_bar = ttk.Frame(tr); tr_bar.pack(fill=tk.X)
-        ttk.Button(tr_bar, text="Module trend", command=self._show_module_trend).pack(side=tk.LEFT)
-        ttk.Button(tr_bar, text="Instructor trend",
+        ttk.Button(tr_bar, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.module_trend', default="Module trend"), command=self._show_module_trend).pack(side=tk.LEFT)
+        ttk.Button(tr_bar, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.instructor_trend', default="Instructor trend"),
                    command=self._show_instructor_trend).pack(side=tk.LEFT, padx=4)
         self.trend_box = scrolledtext.ScrolledText(tr, height=10, font=("TkFixedFont", 10))
         self.trend_box.pack(fill=tk.BOTH, expand=True)
 
-        flags = ttk.LabelFrame(right, text="Suspicious-response flags", padding=6)
+        flags = ttk.LabelFrame(right, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.suspicious_response_flags', default="Suspicious-response flags"), padding=6)
         flags.pack(fill=tk.BOTH, expand=True, pady=(6, 0))
         self.flag_tree = ttk.Treeview(flags, columns=("response_id", "flag", "score"),
                                       show="headings", height=6)
@@ -906,7 +908,7 @@ class SurveyDesignerGUI:
         if not eid:
             return
         res = analytics.score_all_text(eid)
-        messagebox.showinfo("Sentiment",
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.sentiment', default="Sentiment"),
                             f"{res['total']} comments scored.\n"
                             f"+{res['counts']['positive']} / ·{res['counts']['neutral']} / −{res['counts']['negative']}\n"
                             f"Net: {res['net']:+.2f}")
@@ -941,7 +943,7 @@ class SurveyDesignerGUI:
         for f in flagged:
             self.flag_tree.insert("", tk.END,
                                   values=(f["response_id"], f["flag"], f["score"]))
-        messagebox.showinfo("Flags", f"{len(flagged)} flag(s) recorded.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.flags', default="Flags"), f"{len(flagged)} flag(s) recorded.")
 
     def _run_benchmark(self):
         eid = self._require_eval()
@@ -950,11 +952,11 @@ class SurveyDesignerGUI:
         try:
             res = analytics.benchmark(eid, department=self.bench_dept.get().strip() or None)
         except ValueError as e:
-            messagebox.showerror("Benchmark", str(e)); return
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.benchmark', default="Benchmark"), str(e)); return
         msg = (f"Course avg:       {res['course_avg']}\n"
                f"Department avg:   {res['department_avg']}  Δ {res['vs_department']}\n"
                f"Institution avg:  {res['institution_avg']}  Δ {res['vs_institution']}")
-        messagebox.showinfo("Benchmark", msg)
+        messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.benchmark', default="Benchmark"), msg)
 
     def _show_module_trend(self):
         eid = self._require_eval()
@@ -1058,8 +1060,8 @@ def _ask_string(parent, title: str, prompt: str) -> str | None:
         top.destroy()
 
     btns = ttk.Frame(top); btns.pack(pady=8)
-    ttk.Button(btns, text="OK", command=ok).pack(side=tk.LEFT, padx=4)
-    ttk.Button(btns, text="Cancel", command=top.destroy).pack(side=tk.LEFT, padx=4)
+    ttk.Button(btns, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.ok', default="OK"), command=ok).pack(side=tk.LEFT, padx=4)
+    ttk.Button(btns, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.cancel', default="Cancel"), command=top.destroy).pack(side=tk.LEFT, padx=4)
     entry.bind("<Return>", lambda _e: ok())
     parent.wait_window(top)
     return result["value"]
@@ -1069,47 +1071,47 @@ class _NewBankDialog:
     def __init__(self, parent):
         self.result: dict | None = None
         self.top = tk.Toplevel(parent)
-        self.top.title("New Bank Question")
+        self.top.title(_t('gui.academics.course_management_gui.course_evaluation_designer.windows.new_bank_question', default="New Bank Question"))
         self.top.transient(parent)
         self.top.grab_set()
 
         frm = ttk.Frame(self.top, padding=10)
         frm.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frm, text="Question text:").grid(row=0, column=0, sticky=tk.NW, pady=2)
+        ttk.Label(frm, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.question_text', default="Question text:")).grid(row=0, column=0, sticky=tk.NW, pady=2)
         self.text = tk.Text(frm, width=60, height=3)
         self.text.grid(row=0, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(frm, text="Type:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        ttk.Label(frm, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.type', default="Type:")).grid(row=1, column=0, sticky=tk.W, pady=2)
         self.qtype = ttk.Combobox(frm, state="readonly",
                                   values=list(authoring.SUPPORTED_TYPES), width=18)
         self.qtype.current(0)
         self.qtype.grid(row=1, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(frm, text="Category:").grid(row=2, column=0, sticky=tk.W, pady=2)
+        ttk.Label(frm, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.category', default="Category:")).grid(row=2, column=0, sticky=tk.W, pady=2)
         self.cat = ttk.Entry(frm, width=30)
         self.cat.grid(row=2, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(frm, text="Department:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        ttk.Label(frm, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.department', default="Department:")).grid(row=3, column=0, sticky=tk.W, pady=2)
         self.dept = ttk.Entry(frm, width=30)
         self.dept.grid(row=3, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(frm, text="Tags (comma):").grid(row=4, column=0, sticky=tk.W, pady=2)
+        ttk.Label(frm, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.tags_comma', default="Tags (comma):")).grid(row=4, column=0, sticky=tk.W, pady=2)
         self.tags = ttk.Entry(frm, width=40)
         self.tags.grid(row=4, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(frm, text="Options (one/line):").grid(row=5, column=0, sticky=tk.NW, pady=2)
+        ttk.Label(frm, text=_t('gui.academics.course_management_gui.course_evaluation_designer.labels.options_one_line', default="Options (one/line):")).grid(row=5, column=0, sticky=tk.NW, pady=2)
         self.opts = tk.Text(frm, width=40, height=5)
         self.opts.grid(row=5, column=1, sticky=tk.W, pady=2)
 
         btns = ttk.Frame(frm); btns.grid(row=6, column=1, sticky=tk.E, pady=8)
-        ttk.Button(btns, text="Save", command=self._save).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btns, text="Cancel", command=self.top.destroy).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.save', default="Save"), command=self._save).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.course_evaluation_designer.buttons.cancel', default="Cancel"), command=self.top.destroy).pack(side=tk.LEFT, padx=4)
 
     def _save(self):
         text = self.text.get("1.0", tk.END).strip()
         if not text:
-            messagebox.showinfo("New Question", "Question text is required.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.new_question', default="New Question"), _t('gui.academics.course_management_gui.course_evaluation_designer.dialogs.question_text_is_required', default="Question text is required."))
             return
         opts = [ln.strip() for ln in self.opts.get("1.0", tk.END).splitlines() if ln.strip()]
         self.result = {

@@ -16,6 +16,8 @@ accumulate the values without hitting the DB yet.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import threading
 import tkinter as tk
@@ -102,13 +104,13 @@ class GradeSubmissionDialog:
         ttk.Label(frame, text='   |   '.join(header_bits)
                   ).pack(anchor='w', pady=(0, 10))
 
-        ttk.Label(frame, text="Grade:").pack(anchor='w')
+        ttk.Label(frame, text=_t('gui.academics.assignment_system.grading.labels.grade', default="Grade:")).pack(anchor='w')
         seed = '' if current_score is None else f"{float(current_score):g}"
         self.grade_var = tk.StringVar(value=seed)
         ttk.Entry(frame, textvariable=self.grade_var, width=18
                   ).pack(anchor='w')
 
-        ttk.Label(frame, text="Feedback:").pack(anchor='w', pady=(10, 2))
+        ttk.Label(frame, text=_t('gui.academics.assignment_system.grading.labels.feedback', default="Feedback:")).pack(anchor='w', pady=(10, 2))
         self.fb_text = tk.Text(frame, width=54, height=9, wrap='word')
         self.fb_text.pack(fill='both', expand=True)
         if current_feedback:
@@ -116,9 +118,9 @@ class GradeSubmissionDialog:
 
         btns = ttk.Frame(frame)
         btns.pack(fill='x', pady=(10, 0))
-        ttk.Button(btns, text="Save Grade", command=self._save
+        ttk.Button(btns, text=_t('gui.academics.assignment_system.grading.buttons.save_grade', default="Save Grade"), command=self._save
                    ).pack(side='right', padx=4)
-        ttk.Button(btns, text="Cancel", command=self.dialog.destroy
+        ttk.Button(btns, text=_t('gui.academics.assignment_system.grading.buttons.cancel', default="Cancel"), command=self.dialog.destroy
                    ).pack(side='right', padx=4)
 
     def _save(self):
@@ -126,13 +128,13 @@ class GradeSubmissionDialog:
         try:
             score = float(raw)
         except ValueError:
-            messagebox.showerror("Invalid Grade",
-                                 "Grade must be a number.",
+            messagebox.showerror(_t('gui.academics.assignment_system.grading.dialogs.invalid_grade', default="Invalid Grade"),
+                                 _t('gui.academics.assignment_system.grading.dialogs.grade_must_be_a_number', default="Grade must be a number."),
                                  parent=self.dialog)
             return
         if score < 0 or score > self.max_marks:
             if not messagebox.askyesno(
-                    "Out of Range",
+                    _t('gui.academics.assignment_system.grading.dialogs.out_of_range', default="Out of Range"),
                     f"Grade {score:g} is outside 0–{self.max_marks:g}. "
                     "Save anyway?", parent=self.dialog):
                 return

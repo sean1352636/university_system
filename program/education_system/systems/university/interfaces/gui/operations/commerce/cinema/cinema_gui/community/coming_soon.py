@@ -26,7 +26,7 @@ def show_coming_soon_page(self):
     btn_frame = ttk.Frame(self.content_frame, style="Main.TFrame")
     btn_frame.pack(fill="x", pady=10)
 
-    ttk.Button(btn_frame, text="+ Add Coming Soon Movie", style="Success.TButton",
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.buttons.add_coming_soon_movie', default="+ Add Coming Soon Movie"), style="Success.TButton",
               command=self.add_coming_soon).pack(side="left", padx=5)
 
     tree_frame = ttk.Frame(self.content_frame, style="Card.TFrame")
@@ -78,7 +78,7 @@ def show_coming_soon_page(self):
 
 def add_coming_soon(self):
     form = tk.Toplevel(self.root)
-    form.title("Add Coming Soon Movie")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.windows.add_coming_soon_movie', default="Add Coming Soon Movie"))
     form.geometry("500x450")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -96,7 +96,7 @@ def add_coming_soon(self):
     entries['release'].insert(0, (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d"))
     def save():
         if not entries['title'].get().strip() or not entries['release'].get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Title and release date required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.title_and_release_date_required', default="Title and release date required"))
             return
         conn = sqlite3.connect(DB_FILE)
         try:
@@ -106,7 +106,7 @@ def add_coming_soon(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Movie added!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.movie_added', default="Movie added!"))
         form.destroy()
         self.show_coming_soon_page()
     ttk.Button(frame, text=_t("cinema.buttons.save"), style="Success.TButton", command=save).grid(row=len(fields)+1, column=0, columnspan=2, pady=20)
@@ -114,7 +114,7 @@ def add_coming_soon(self):
 def watch_trailer(self):
     selected = self.coming_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a movie")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.select_a_movie', default="Select a movie"))
         return
     movie_id = self.coming_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
@@ -127,12 +127,12 @@ def watch_trailer(self):
     if result and result[0]:
         webbrowser.open(result[0])
     else:
-        messagebox.showinfo(_t("cinema.common.info"), "No trailer available")
+        messagebox.showinfo(_t("cinema.common.info"), _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.no_trailer_available', default="No trailer available"))
 
 def notify_me(self):
     selected = self.coming_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a movie")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.select_a_movie', default="Select a movie"))
         return
     movie_id = self.coming_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)
@@ -142,20 +142,20 @@ def notify_me(self):
         conn.commit()
     finally:
         conn.close()
-    messagebox.showinfo(_t("cinema.common.success"), "You'll be notified!")
+    messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.you_ll_be_notified', default="You'll be notified!"))
     self.show_coming_soon_page()
 
 def activate_movie(self):
     selected = self.coming_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a movie")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.select_a_movie', default="Select a movie"))
         return
     movie_id = self.coming_tree.item(selected[0])['values'][0]
 
     # Prompt for movie duration
     duration = simpledialog.askinteger(
-        "Movie Duration",
-        "Enter movie duration in minutes:",
+        _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.movie_duration', default="Movie Duration"),
+        _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.enter_movie_duration_in_minutes', default="Enter movie duration in minutes:"),
         minvalue=1,
         maxvalue=500,
         initialvalue=120
@@ -183,9 +183,9 @@ def activate_movie(self):
 def delete_coming(self):
     selected = self.coming_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a movie")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.select_a_movie', default="Select a movie"))
         return
-    if not messagebox.askyesno(_t("cinema.common.confirm"), "Delete this movie?"):
+    if not messagebox.askyesno(_t("cinema.common.confirm"), _t('gui.operations.commerce.cinema.cinema_gui.community.coming_soon.dialogs.delete_this_movie', default="Delete this movie?")):
         return
     movie_id = self.coming_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)

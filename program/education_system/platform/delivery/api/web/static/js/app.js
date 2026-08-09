@@ -188,6 +188,9 @@
                 Sign In
               </button>
             </form>
+            <a class="btn btn-outline login-home-btn" href="/portal/">
+              Return to homepage
+            </a>
             <div class="login-footer">
               Education System &copy; ${new Date().getFullYear()}
             </div>

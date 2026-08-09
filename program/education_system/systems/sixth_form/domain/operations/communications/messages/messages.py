@@ -30,11 +30,11 @@ import sqlite3
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.MESSAGES_DB
+DB_PATH = paths.SIXTH_FORM_MESSAGES_DB
 
 DIRECTIONS: tuple[str, ...] = ("Outgoing", "Incoming")
 DEFAULT_DIRECTION: str = "Outgoing"
@@ -182,7 +182,7 @@ class Thread:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

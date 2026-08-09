@@ -993,8 +993,8 @@ def generate_comprehensive_risk_report(risk_data):
     if 'recommendations' not in risk_data or risk_data['recommendations'] is None:
         risk_data['recommendations'] = []
     # Create reports directory within the university system
-    from education_system.systems.university.infrastructure.paths import REPORTS_DIR
-    reports_dir = str(REPORTS_DIR / 'risk_reports')
+    from education_system.paths import UNIVERSITY_REPORTS_DIR
+    reports_dir = str(UNIVERSITY_REPORTS_DIR / 'risk_reports')
     if not os.path.exists(reports_dir):
         os.makedirs(reports_dir)
 

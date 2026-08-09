@@ -1,5 +1,7 @@
 """Financial aid management mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
@@ -94,7 +96,7 @@ class FinancialAidMixin:
         amount_entry.grid(row=2, column=1, pady=5)
 
         tk.Label(form_frame, text=_("finance_gui.aid_tab.status_label")).grid(row=3, column=0, sticky='w', pady=5)
-        status_var = tk.StringVar(value="pending")
+        status_var = tk.StringVar(value=_t('gui.finance.finance.layout.financial_aid.values.pending', default="pending"))
         status_combo = ttk.Combobox(form_frame, textvariable=status_var,
                                    values=['pending', 'approved', 'disbursed', 'completed', 'cancelled'],
                                    state='readonly', width=27)

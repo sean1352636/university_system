@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -81,10 +83,10 @@ def show_order_history(self):
     self.update_status("Loading order history...")
 
     # Title
-    ttk.Label(self.content_frame, text="Order History", style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 20))
+    ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.order_history', default="Order History"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 20))
 
     # Orders list
-    orders_frame = ttk.LabelFrame(self.content_frame, text="Your Orders", padding="10")
+    orders_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.your_orders', default="Your Orders"), padding="10")
     orders_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     orders_frame.columnconfigure(0, weight=1)
     orders_frame.rowconfigure(0, weight=1)
@@ -120,8 +122,8 @@ def show_order_history(self):
     action_frame = ttk.Frame(self.content_frame)
     action_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
 
-    ttk.Button(action_frame, text="View Details", command=self.view_order_details).grid(row=0, column=0, padx=5)
-    ttk.Button(action_frame, text="Refresh", command=self.load_order_history).grid(row=0, column=1, padx=5)
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.buttons.view_details', default="View Details"), command=self.view_order_details).grid(row=0, column=0, padx=5)
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.buttons.refresh', default="Refresh"), command=self.load_order_history).grid(row=0, column=1, padx=5)
 
     self.update_status("Order history loaded")
 
@@ -168,14 +170,14 @@ def load_order_history(self):
                 self.orders_tree.insert('', 'end', values=order)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load order history: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.error', default="Error"), f"Failed to load order history: {e}")
 
 
 def view_order_details(self, event=None):
     """View detailed order information"""
     selection = self.orders_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select an order first")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.please_select_an_order_first', default="Please select an order first"))
         return
 
     item = self.orders_tree.item(selection[0])
@@ -199,7 +201,7 @@ def view_order_details(self, event=None):
     main_frame.rowconfigure(1, weight=1)
 
     # Order info
-    info_frame = ttk.LabelFrame(main_frame, text="Order Information", padding="10")
+    info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.order_information', default="Order Information"), padding="10")
     info_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
     try:
@@ -216,7 +218,7 @@ def view_order_details(self, event=None):
         ttk.Label(info_frame, text=f"Error loading order details: {e}", style='Error.TLabel').grid(row=0, column=0)
 
     # Items list
-    items_frame = ttk.LabelFrame(main_frame, text="Order Items", padding="10")
+    items_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.order_items', default="Order Items"), padding="10")
     items_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     items_frame.columnconfigure(0, weight=1)
     items_frame.rowconfigure(0, weight=1)
@@ -251,7 +253,7 @@ def view_order_details(self, event=None):
         items_tree.insert('', 'end', values=('Error', 'Failed to load items', '', '', ''))
 
     # Close button
-    ttk.Button(main_frame, text="Close", command=details_window.destroy).grid(row=2, column=0, pady=10)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.buttons.close', default="Close"), command=details_window.destroy).grid(row=2, column=0, pady=10)
 
 
 def get_order_details(self, transaction_id):
@@ -306,7 +308,7 @@ def show_all_transactions(self):
 
     # Check permissions
     if self.current_user.get('role') not in ['admin', 'staff', 'shop_manager']:
-        ttk.Label(self.content_frame, text="Access Denied", style='Error.TLabel').grid(row=0, column=0)
+        ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.access_denied', default="Access Denied"), style='Error.TLabel').grid(row=0, column=0)
         return
 
     # Title and filters
@@ -314,31 +316,31 @@ def show_all_transactions(self):
     title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
     title_frame.columnconfigure(1, weight=1)
 
-    ttk.Label(title_frame, text="Transaction Management", style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(title_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.transaction_management', default="Transaction Management"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
 
     # Quick stats
     stats_frame = ttk.Frame(title_frame)
     stats_frame.grid(row=0, column=1, sticky=tk.E)
 
-    self.transaction_stats_label = ttk.Label(stats_frame, text="Loading...")
+    self.transaction_stats_label = ttk.Label(stats_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.loading', default="Loading..."))
     self.transaction_stats_label.grid(row=0, column=0)
 
     # Filters
-    filter_frame = ttk.LabelFrame(self.content_frame, text="Filters", padding="10")
+    filter_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.filters', default="Filters"), padding="10")
     filter_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-    ttk.Label(filter_frame, text="Date Range:").grid(row=0, column=0)
+    ttk.Label(filter_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.date_range', default="Date Range:")).grid(row=0, column=0)
     self.trans_start_date = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
     ttk.Entry(filter_frame, textvariable=self.trans_start_date, width=12).grid(row=0, column=1, padx=5)
-    ttk.Label(filter_frame, text="to").grid(row=0, column=2)
+    ttk.Label(filter_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.to', default="to")).grid(row=0, column=2)
     self.trans_end_date = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
     ttk.Entry(filter_frame, textvariable=self.trans_end_date, width=12).grid(row=0, column=3, padx=5)
 
-    ttk.Button(filter_frame, text="Apply Filter", command=self.load_transactions).grid(row=0, column=4, padx=10)
-    ttk.Button(filter_frame, text="Export", command=self.export_transactions).grid(row=0, column=5, padx=5)
+    ttk.Button(filter_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.buttons.apply_filter', default="Apply Filter"), command=self.load_transactions).grid(row=0, column=4, padx=10)
+    ttk.Button(filter_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.buttons.export', default="Export"), command=self.export_transactions).grid(row=0, column=5, padx=5)
 
     # Transactions table
-    trans_frame = ttk.LabelFrame(self.content_frame, text="Transactions", padding="10")
+    trans_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.transactions', default="Transactions"), padding="10")
     trans_frame.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     trans_frame.columnconfigure(0, weight=1)
     trans_frame.rowconfigure(0, weight=1)
@@ -418,7 +420,7 @@ def load_transactions(self):
             conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load transactions: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.error', default="Error"), f"Failed to load transactions: {e}")
 
 
 def view_transaction_details(self, event=None):
@@ -441,7 +443,7 @@ def view_order_details_by_id(self, transaction_id):
         order_data = self.get_order_details(transaction_id)
 
         if not order_data:
-            messagebox.showerror("Error", "Transaction not found")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.transaction_not_found', default="Transaction not found"))
             return
 
         # Create details window (reuse existing code)
@@ -460,7 +462,7 @@ def view_order_details_by_id(self, transaction_id):
         main_frame.rowconfigure(1, weight=1)
 
         # Transaction info
-        info_frame = ttk.LabelFrame(main_frame, text="Transaction Information", padding="10")
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.transaction_information', default="Transaction Information"), padding="10")
         info_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
         transaction = order_data['transaction']
@@ -471,7 +473,7 @@ def view_order_details_by_id(self, transaction_id):
         ttk.Label(info_frame, text=f"Status: {transaction['status']}").grid(row=4, column=0, sticky=tk.W)
 
         # Items list
-        items_frame = ttk.LabelFrame(main_frame, text="Transaction Items", padding="10")
+        items_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.labels.transaction_items', default="Transaction Items"), padding="10")
         items_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         items_frame.columnconfigure(0, weight=1)
         items_frame.rowconfigure(0, weight=1)
@@ -500,10 +502,10 @@ def view_order_details_by_id(self, transaction_id):
             ))
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=details_window.destroy).grid(row=2, column=0, pady=10)
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.shop_management_gui.order_manager.buttons.close', default="Close"), command=details_window.destroy).grid(row=2, column=0, pady=10)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load transaction details: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.error', default="Error"), f"Failed to load transaction details: {e}")
 
 
 def export_transactions(self):
@@ -517,14 +519,14 @@ def export_transactions(self):
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title="Export Transactions"
+            title=_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.export_transactions', default="Export Transactions")
         )
 
         if not filename:
             return
 
         if 'get_connection' not in globals():
-            messagebox.showwarning("Warning", "Database not available for export")
+            messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.database_not_available_for_export', default="Database not available for export"))
             return
 
         # Get transaction data
@@ -564,24 +566,24 @@ def export_transactions(self):
                     trans['notes'] or ''
                 ])
 
-        messagebox.showinfo("Success", f"Transactions exported to {filename}")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.success', default="Success"), f"Transactions exported to {filename}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export transactions: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.error', default="Error"), f"Failed to export transactions: {e}")
 
 
 def view_refund_transaction_details(self):
     """View detailed information for selected transaction"""
     selection = self.refunds_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a transaction to view details.")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.please_select_a_transaction_to_view_details', default="Please select a transaction to view details."))
         return
 
     item = self.refunds_tree.item(selection[0])
     values = item['values']
 
     if len(values) < 6:
-        messagebox.showerror("Error", "Invalid transaction data.")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.order_manager.dialogs.invalid_transaction_data', default="Invalid transaction data."))
         return
 
     transaction_id = values[0]

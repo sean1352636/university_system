@@ -9,7 +9,7 @@ import random
 import re
 from pathlib import Path
 from typing import Any, Callable
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.learners.advanced_search import (
     advanced_search as data,
 )
@@ -52,7 +52,7 @@ _ACTION_LOG_NAME = "advanced_search_action_log.json"
 
 
 def _ann_store_path() -> Path:
-    return paths.DATA_DIR / _ANN_STORE_NAME
+    return paths.SIXTH_FORM_DATA_DIR / _ANN_STORE_NAME
 
 
 def _load_ann_store() -> dict:
@@ -79,7 +79,7 @@ def _get_annotation(scope: str, entity_id: str) -> dict:
 
 
 def _ui_store_path() -> Path:
-    return paths.DATA_DIR / _UI_STORE_NAME
+    return paths.SIXTH_FORM_DATA_DIR / _UI_STORE_NAME
 
 
 def _load_ui_store() -> dict:
@@ -103,7 +103,7 @@ def _save_ui_store(store: dict) -> None:
 def _append_action_log(action: str, detail: str = "", count: int = 0) -> None:
     """Record an operator action (flag/message/export…) to the shared log."""
     try:
-        path = paths.DATA_DIR / _ACTION_LOG_NAME
+        path = paths.SIXTH_FORM_DATA_DIR / _ACTION_LOG_NAME
         log: list = []
         if path.exists():
             with open(path, encoding="utf-8") as fh:
@@ -122,7 +122,7 @@ def _append_action_log(action: str, detail: str = "", count: int = 0) -> None:
 
 def _read_action_log() -> list[dict]:
     try:
-        with open(paths.DATA_DIR / _ACTION_LOG_NAME, encoding="utf-8") as fh:
+        with open(paths.SIXTH_FORM_DATA_DIR / _ACTION_LOG_NAME, encoding="utf-8") as fh:
             loaded = json.load(fh)
         if isinstance(loaded, list):
             return loaded
@@ -134,7 +134,7 @@ def _read_action_log() -> list[dict]:
 def _save_json(path: Path, obj) -> None:
     """Atomically write *obj* as JSON. Failures are logged, not raised."""
     try:
-        paths.DATA_DIR.mkdir(parents=True, exist_ok=True)
+        paths.SIXTH_FORM_DATA_DIR.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".json.tmp")
         with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(obj, fh, indent=2)

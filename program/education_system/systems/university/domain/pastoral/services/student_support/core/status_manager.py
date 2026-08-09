@@ -19,7 +19,11 @@ from functools import wraps
 from education_system.systems.university.infrastructure.database.db import get_connection, sqlite3, DatabaseManager
 from education_system.systems.university.infrastructure.email.email_manager import send_email
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
+from education_system.paths import (
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_TICKET_TEMPLATES_DIR,
+    UNIVERSITY_UPLOAD_DIR,
+)
 from education_system.systems.university.infrastructure.logging.log_config import get_log_file
 
 from education_system.systems.university.domain.pastoral.services.student_support.config import (

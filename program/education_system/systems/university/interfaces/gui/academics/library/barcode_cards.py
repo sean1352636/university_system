@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
@@ -73,8 +75,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -130,31 +132,31 @@ def show_barcode_generator(self):
     main_frame = ttk.Frame(dialog)
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    title_label = ttk.Label(main_frame, text="Generate Barcodes", style='Title.TLabel')
+    title_label = ttk.Label(main_frame, text=_t('gui.academics.library.barcode_cards.labels.generate_barcodes', default="Generate Barcodes"), style='Title.TLabel')
     title_label.pack(pady=(0, 20))
 
     # Options frame
-    options_frame = ttk.LabelFrame(main_frame, text="Generation Options")
+    options_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.barcode_cards.labels.generation_options', default="Generation Options"))
     options_frame.pack(fill=tk.X, pady=(0, 10))
 
-    self.barcode_type = tk.StringVar(value="single")
-    ttk.Radiobutton(options_frame, text="Single Book", variable=self.barcode_type, value="single").pack(anchor='w', padx=5, pady=2)
-    ttk.Radiobutton(options_frame, text="Multiple Books", variable=self.barcode_type, value="multiple").pack(anchor='w', padx=5, pady=2)
-    ttk.Radiobutton(options_frame, text="All Books", variable=self.barcode_type, value="all").pack(anchor='w', padx=5, pady=2)
+    self.barcode_type = tk.StringVar(value=_t('gui.academics.library.barcode_cards.values.single', default="single"))
+    ttk.Radiobutton(options_frame, text=_t('gui.academics.library.barcode_cards.buttons.single_book', default="Single Book"), variable=self.barcode_type, value="single").pack(anchor='w', padx=5, pady=2)
+    ttk.Radiobutton(options_frame, text=_t('gui.academics.library.barcode_cards.buttons.multiple_books', default="Multiple Books"), variable=self.barcode_type, value="multiple").pack(anchor='w', padx=5, pady=2)
+    ttk.Radiobutton(options_frame, text=_t('gui.academics.library.barcode_cards.buttons.all_books', default="All Books"), variable=self.barcode_type, value="all").pack(anchor='w', padx=5, pady=2)
 
     # Input frame
     input_frame = ttk.Frame(main_frame)
     input_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(input_frame, text="Book ID(s) (comma-separated):").pack(anchor='w')
+    ttk.Label(input_frame, text=_t('gui.academics.library.barcode_cards.labels.book_id_s_comma_separated', default="Book ID(s) (comma-separated):")).pack(anchor='w')
     self.barcode_input = tk.Text(input_frame, height=3)
     self.barcode_input.pack(fill=tk.X, pady=5)
 
     # Generate button
-    ttk.Button(main_frame, text="Generate Barcodes", command=self.generate_barcodes).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.academics.library.barcode_cards.buttons.generate_barcodes', default="Generate Barcodes"), command=self.generate_barcodes).pack(pady=10)
 
     # Results area
-    results_frame = ttk.LabelFrame(main_frame, text="Results")
+    results_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.barcode_cards.labels.results', default="Results"))
     results_frame.pack(fill=tk.BOTH, expand=True)
 
     self.barcode_results = ScrolledText(results_frame, height=8)
@@ -184,7 +186,7 @@ def generate_barcodes(self):
                 book_ids = ["B10001", "B10002", "B10003"]  # Demo data
 
         if not book_ids:
-            messagebox.showwarning(_("common.warning"), "Please enter book IDs or select 'All Books'")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_enter_book_ids_or_select_all_books', default="Please enter book IDs or select 'All Books'"))
             return
 
         # Generate barcode labels
@@ -240,17 +242,17 @@ def show_barcode_scanner(self):
     main_frame = ttk.Frame(scanner_dialog)
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    title_label = ttk.Label(main_frame, text="Barcode Scanner", style='Title.TLabel')
+    title_label = ttk.Label(main_frame, text=_t('gui.academics.library.barcode_cards.labels.barcode_scanner', default="Barcode Scanner"), style='Title.TLabel')
     title_label.pack(pady=(0, 20))
 
     # Scanner input
-    ttk.Label(main_frame, text="Scan or Enter Barcode:").pack(anchor='w', pady=(0, 5))
+    ttk.Label(main_frame, text=_t('gui.academics.library.barcode_cards.labels.scan_or_enter_barcode', default="Scan or Enter Barcode:")).pack(anchor='w', pady=(0, 5))
     self.barcode_var = tk.StringVar()
     barcode_entry = ttk.Entry(main_frame, textvariable=self.barcode_var, width=40, font=('Courier', 12))
     barcode_entry.pack(pady=(0, 10))
 
     # Result display
-    result_frame = ttk.LabelFrame(main_frame, text="Scan Result")
+    result_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.barcode_cards.labels.scan_result', default="Scan Result"))
     result_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     self.barcode_result = tk.Text(result_frame, height=8, wrap=tk.WORD, state=tk.DISABLED)
@@ -260,7 +262,7 @@ def show_barcode_scanner(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
 
-    ttk.Button(button_frame, text="Process Scan", command=self.process_barcode_scan).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.barcode_cards.buttons.process_scan', default="Process Scan"), command=self.process_barcode_scan).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.clear"), command=self.clear_barcode_scan).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=scanner_dialog.destroy).pack(side=tk.LEFT, padx=5)
 
@@ -273,7 +275,7 @@ def process_barcode_scan(self):
     barcode = self.barcode_var.get().strip()
 
     if not barcode:
-        messagebox.showwarning(_("common.warning"), "Please enter a barcode")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_enter_a_barcode', default="Please enter a barcode"))
         return
 
     self.barcode_result.config(state=tk.NORMAL)
@@ -334,19 +336,19 @@ def show_library_cards_generator(self):
     dialog.geometry("700x600")
     dialog.transient(self.master)
 
-    ttk.Label(dialog, text="Library Card Generator", font=('Arial', 14, 'bold')).pack(pady=10)
+    ttk.Label(dialog, text=_t('gui.academics.library.barcode_cards.labels.library_card_generator', default="Library Card Generator"), font=('Arial', 14, 'bold')).pack(pady=10)
 
     # User selection frame
-    selection_frame = ttk.LabelFrame(dialog, text="Select User")
+    selection_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.library.barcode_cards.labels.select_user', default="Select User"))
     selection_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(selection_frame, text="User ID or Username:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(selection_frame, text=_t('gui.academics.library.barcode_cards.labels.user_id_or_username', default="User ID or Username:")).pack(side=tk.LEFT, padx=5)
     user_var = tk.StringVar()
     user_entry = ttk.Entry(selection_frame, textvariable=user_var, width=30)
     user_entry.pack(side=tk.LEFT, padx=5)
 
     # Card preview frame
-    preview_frame = ttk.LabelFrame(dialog, text="Card Preview")
+    preview_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.library.barcode_cards.labels.card_preview', default="Card Preview"))
     preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     preview_canvas = tk.Canvas(preview_frame, bg='white', height=300)
@@ -356,7 +358,7 @@ def show_library_cards_generator(self):
         try:
             user_id = user_var.get().strip()
             if not user_id:
-                messagebox.showwarning(_("common.warning"), "Please enter a user ID or username")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_enter_a_user_id_or_username', default="Please enter a user ID or username"))
                 return
 
             # Get user info
@@ -373,7 +375,7 @@ def show_library_cards_generator(self):
             conn.close()
 
             if not user:
-                messagebox.showerror(_("common.error"), "User not found")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.barcode_cards.dialogs.user_not_found', default="User not found"))
                 return
 
             # Clear canvas
@@ -410,7 +412,7 @@ def show_library_cards_generator(self):
             preview_canvas.create_text(x_offset + card_width//2, y + 20,
                                      text=barcode_text, font=('Courier', 20, 'bold'))
 
-            messagebox.showinfo(_("common.success"), "Library card generated successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.library.barcode_cards.dialogs.library_card_generated_successfully', default="Library card generated successfully!"))
 
         except tk.TclError as e:
             messagebox.showerror(_("common.error"), f"Card generation failed: {str(e)}")
@@ -418,13 +420,13 @@ def show_library_cards_generator(self):
     def save_card():
         try:
             file_path = filedialog.asksaveasfilename(
-                title="Save Library Card",
+                title=_t('gui.academics.library.barcode_cards.dialogs.save_library_card', default="Save Library Card"),
                 defaultextension=".png",
                 filetypes=[("PNG files", "*.png"), ("All files", "*.*")]
             )
 
             if file_path:
-                messagebox.showinfo("Info", "Card save functionality requires PIL/Pillow library")
+                messagebox.showinfo(_t('gui.academics.library.barcode_cards.dialogs.info', default="Info"), _t('gui.academics.library.barcode_cards.dialogs.card_save_functionality_requires_pil_pillow_library', default="Card save functionality requires PIL/Pillow library"))
 
         except (OSError, IOError, tk.TclError, ValueError, TypeError) as e:
             messagebox.showerror(_("common.error"), f"Save failed: {str(e)}")
@@ -433,29 +435,29 @@ def show_library_cards_generator(self):
     button_frame = ttk.Frame(dialog)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Generate Card", command=generate_card).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Save Card", command=save_card).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.barcode_cards.buttons.generate_card', default="Generate Card"), command=generate_card).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.barcode_cards.buttons.save_card', default="Save Card"), command=save_card).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
 def generate_library_card_gui(self):
     """Generate library card for a student"""
     card_window = tk.Toplevel(self.master)
-    card_window.title("Generate Library Card")
+    card_window.title(_t('gui.academics.library.barcode_cards.windows.generate_library_card', default="Generate Library Card"))
     card_window.geometry("700x600")
 
-    ttk.Label(card_window, text="Generate Library Card",
+    ttk.Label(card_window, text=_t('gui.academics.library.barcode_cards.labels.generate_library_card', default="Generate Library Card"),
              font=('Arial', 14, 'bold')).pack(pady=10)
 
     # Student search
-    search_frame = ttk.LabelFrame(card_window, text="Find Student", padding=10)
+    search_frame = ttk.LabelFrame(card_window, text=_t('gui.academics.library.barcode_cards.labels.find_student', default="Find Student"), padding=10)
     search_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(search_frame, text="Student ID:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(search_frame, text=_t('gui.academics.library.barcode_cards.labels.student_id', default="Student ID:")).pack(side=tk.LEFT, padx=5)
     student_id_entry = ttk.Entry(search_frame, width=30)
     student_id_entry.pack(side=tk.LEFT, padx=5)
 
     # Card preview
-    preview_frame = ttk.LabelFrame(card_window, text="Card Preview", padding=10)
+    preview_frame = ttk.LabelFrame(card_window, text=_t('gui.academics.library.barcode_cards.labels.card_preview', default="Card Preview"), padding=10)
     preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     preview_text = ScrolledText(preview_frame, height=20, width=70, font=('Courier', 10))
@@ -464,7 +466,7 @@ def generate_library_card_gui(self):
     def generate_card():
         student_id = student_id_entry.get().strip()
         if not student_id:
-            messagebox.showwarning(_("common.warning"), "Please enter a student ID")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
             return
 
         try:
@@ -555,7 +557,7 @@ For assistance, contact: library@university.edu
     def save_card():
         content = preview_text.get('1.0', tk.END)
         if not content.strip():
-            messagebox.showwarning(_("common.warning"), "No card to save. Generate a card first.")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.no_card_to_save_generate_a_card_first', default="No card to save. Generate a card first."))
             return
 
         file_path = filedialog.asksaveasfilename(
@@ -573,37 +575,37 @@ For assistance, contact: library@university.edu
     button_frame = ttk.Frame(card_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Generate Card", command=generate_card).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Save to File", command=save_card).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.barcode_cards.buttons.generate_card', default="Generate Card"), command=generate_card).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.barcode_cards.buttons.save_to_file', default="Save to File"), command=save_card).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=card_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 def bulk_generate_library_cards_gui(self):
     """Bulk generate library cards for multiple students"""
     bulk_window = tk.Toplevel(self.master)
-    bulk_window.title("Bulk Generate Library Cards")
+    bulk_window.title(_t('gui.academics.library.barcode_cards.windows.bulk_generate_library_cards', default="Bulk Generate Library Cards"))
     bulk_window.geometry("600x500")
 
-    ttk.Label(bulk_window, text="Bulk Generate Library Cards",
+    ttk.Label(bulk_window, text=_t('gui.academics.library.barcode_cards.labels.bulk_generate_library_cards', default="Bulk Generate Library Cards"),
              font=('Arial', 14, 'bold')).pack(pady=10)
 
     # Selection criteria
-    criteria_frame = ttk.LabelFrame(bulk_window, text="Selection Criteria", padding=10)
+    criteria_frame = ttk.LabelFrame(bulk_window, text=_t('gui.academics.library.barcode_cards.labels.selection_criteria', default="Selection Criteria"), padding=10)
     criteria_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(criteria_frame, text="Generate cards for:").pack(anchor=tk.W)
+    ttk.Label(criteria_frame, text=_t('gui.academics.library.barcode_cards.labels.generate_cards_for', default="Generate cards for:")).pack(anchor=tk.W)
 
-    selection_var = tk.StringVar(value="all")
-    ttk.Radiobutton(criteria_frame, text="All students without cards", variable=selection_var, value="all").pack(anchor=tk.W)
-    ttk.Radiobutton(criteria_frame, text="Specific program", variable=selection_var, value="program").pack(anchor=tk.W)
+    selection_var = tk.StringVar(value=_t('gui.academics.library.barcode_cards.values.all', default="all"))
+    ttk.Radiobutton(criteria_frame, text=_t('gui.academics.library.barcode_cards.buttons.all_students_without_cards', default="All students without cards"), variable=selection_var, value="all").pack(anchor=tk.W)
+    ttk.Radiobutton(criteria_frame, text=_t('gui.academics.library.barcode_cards.buttons.specific_program', default="Specific program"), variable=selection_var, value="program").pack(anchor=tk.W)
 
     program_frame = ttk.Frame(criteria_frame)
     program_frame.pack(fill=tk.X, pady=5)
-    ttk.Label(program_frame, text="Program:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(program_frame, text=_t('gui.academics.library.barcode_cards.labels.program', default="Program:")).pack(side=tk.LEFT, padx=5)
     program_entry = ttk.Entry(program_frame, width=30)
     program_entry.pack(side=tk.LEFT, padx=5)
 
     # Results display
-    results_frame = ttk.LabelFrame(bulk_window, text="Generation Results", padding=10)
+    results_frame = ttk.LabelFrame(bulk_window, text=_t('gui.academics.library.barcode_cards.labels.generation_results', default="Generation Results"), padding=10)
     results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     results_text = ScrolledText(results_frame, height=15, width=70, font=('Courier', 9))
@@ -686,35 +688,35 @@ def bulk_generate_library_cards_gui(self):
     button_frame = ttk.Frame(bulk_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Generate Cards", command=generate_bulk).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.barcode_cards.buttons.generate_cards', default="Generate Cards"), command=generate_bulk).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=bulk_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 def print_library_card_gui(self):
     """Print/export library card design"""
     print_window = tk.Toplevel(self.master)
-    print_window.title("Print Library Card")
+    print_window.title(_t('gui.academics.library.barcode_cards.windows.print_library_card', default="Print Library Card"))
     print_window.geometry("600x400")
 
-    ttk.Label(print_window, text="Print Library Card",
+    ttk.Label(print_window, text=_t('gui.academics.library.barcode_cards.labels.print_library_card', default="Print Library Card"),
              font=('Arial', 14, 'bold')).pack(pady=10)
 
     # Card number input
-    input_frame = ttk.LabelFrame(print_window, text="Card Information", padding=10)
+    input_frame = ttk.LabelFrame(print_window, text=_t('gui.academics.library.barcode_cards.labels.card_information', default="Card Information"), padding=10)
     input_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(input_frame, text="Card Number or Student ID:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(input_frame, text=_t('gui.academics.library.barcode_cards.labels.card_number_or_student_id', default="Card Number or Student ID:")).pack(side=tk.LEFT, padx=5)
     card_input = ttk.Entry(input_frame, width=30)
     card_input.pack(side=tk.LEFT, padx=5)
 
-    info_frame = ttk.LabelFrame(print_window, text="Export Options", padding=10)
+    info_frame = ttk.LabelFrame(print_window, text=_t('gui.academics.library.barcode_cards.labels.export_options', default="Export Options"), padding=10)
     info_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(info_frame, text="Select export format and click Export").pack()
+    ttk.Label(info_frame, text=_t('gui.academics.library.barcode_cards.labels.select_export_format_and_click_export', default="Select export format and click Export")).pack()
 
     def export_card():
         card_id = card_input.get().strip()
         if not card_id:
-            messagebox.showwarning(_("common.warning"), "Please enter card number or student ID")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.please_enter_card_number_or_student_id', default="Please enter card number or student ID"))
             return
 
         try:
@@ -734,7 +736,7 @@ def print_library_card_gui(self):
             conn.close()
 
             if not result:
-                messagebox.showwarning(_("common.warning"), "Card not found")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.barcode_cards.dialogs.card_not_found', default="Card not found"))
                 return
 
             card_number, issue_date, expiry_date, status, student_id, first_name, last_name, program = result
@@ -780,7 +782,7 @@ Contact: library@university.edu
     button_frame = ttk.Frame(print_window)
     button_frame.pack(fill=tk.X, padx=10, pady=20)
 
-    ttk.Button(button_frame, text="Export Card", command=export_card).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.barcode_cards.buttons.export_card', default="Export Card"), command=export_card).pack(side=tk.LEFT, padx=5)
 
     def open_access_card_in_bm():
         """Cross-jump: open Building Management → Access Cards filtered
@@ -791,7 +793,7 @@ Contact: library@university.edu
         ident = card_input.get().strip()
         if not ident:
             messagebox.showwarning(_("common.warning"),
-                                   "Enter a card number or student ID first.",
+                                   _t('gui.academics.library.barcode_cards.dialogs.enter_a_card_number_or_student_id_first', default="Enter a card number or student ID first."),
                                    parent=print_window)
             return
         try:
@@ -812,9 +814,9 @@ Contact: library@university.edu
             )
             _jump("building_mgmt", {"user_id": str(user_id)})
             messagebox.showinfo(
-                "Opening…",
-                "Building Management is opening — switch to it and check "
-                "the Access Cards tab for this user.",
+                _t('gui.academics.library.barcode_cards.dialogs.opening', default="Opening…"),
+                _t('gui.academics.library.barcode_cards.dialogs.building_management_is_opening_switch_to_it_and_check_the_access', default="Building Management is opening — switch to it and check "
+                "the Access Cards tab for this user."),
                 parent=print_window)
         except Exception as exc:
             messagebox.showerror(
@@ -822,7 +824,7 @@ Contact: library@university.edu
                 f"Could not open Building Management:\n{exc}",
                 parent=print_window)
 
-    ttk.Button(button_frame, text="🏢 View Building Access Card",
+    ttk.Button(button_frame, text=_t('gui.academics.library.barcode_cards.buttons.view_building_access_card', default="🏢 View Building Access Card"),
                command=open_access_card_in_bm).pack(side=tk.LEFT, padx=5)
 
     ttk.Button(button_frame, text=_("common.close"), command=print_window.destroy).pack(side=tk.RIGHT, padx=5)

@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -35,7 +37,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -184,7 +186,7 @@ class ElectionAccessibilityFeaturesDialog:
         contact_email = self.contact_email.get().strip()
 
         if not issue_type or not description:
-            messagebox.showwarning("Missing Information", "Please select an issue type and provide a description.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.missing_information', default="Missing Information"), _t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.please_select_an_issue_type_and_provide_a_description', default="Please select an issue type and provide a description."))
             return
 
         username = self.auth.current_user.get('username', 'Anonymous') if self.auth.current_user else 'Anonymous'
@@ -261,7 +263,7 @@ class ElectionAccessibilityFeaturesDialog:
                 except Exception as e:
                     print(f"Failed to send feedback emails: {e}")
 
-            messagebox.showinfo("Submitted", "Thank you for your feedback! Your concerns will be reviewed promptly.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.submitted', default="Submitted"), _t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.thank_you_for_your_feedback_your_concerns_will_be_reviewed_promp', default="Thank you for your feedback! Your concerns will be reviewed promptly."))
 
             # Clear form
             self.issue_type.set('')
@@ -269,13 +271,13 @@ class ElectionAccessibilityFeaturesDialog:
             self.contact_email.delete(0, tk.END)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to submit feedback: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.error', default="Error"), f"Failed to submit feedback: {e}")
 
     def request_accommodation(self):
         """Request election accessibility accommodation"""
         # Create accommodation request dialog
         request_window = tk.Toplevel(self.dialog)
-        request_window.title("Request Accommodation")
+        request_window.title(_t('gui.pastoral.student_union_gui.elections.election_accessibility.windows.request_accommodation', default="Request Accommodation"))
         request_window.geometry("600x500")
         request_window.transient(self.dialog)
         request_window.grab_set()
@@ -283,11 +285,11 @@ class ElectionAccessibilityFeaturesDialog:
         main_frame = ttk.Frame(request_window)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Request Election Accessibility Accommodation",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.request_election_accessibility_accommodation', default="Request Election Accessibility Accommodation"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         # Accommodation type
-        ttk.Label(main_frame, text="Type of Accommodation Needed:").pack(anchor='w', pady=(5,0))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.type_of_accommodation_needed', default="Type of Accommodation Needed:")).pack(anchor='w', pady=(5,0))
         accom_type = ttk.Combobox(main_frame, state='readonly', width=50)
         accom_type['values'] = (
             'Screen reader compatible ballot',
@@ -301,7 +303,7 @@ class ElectionAccessibilityFeaturesDialog:
         accom_type.pack(fill='x', pady=(0, 10))
 
         # Description
-        ttk.Label(main_frame, text="Additional Details:").pack(anchor='w', pady=(5,0))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.additional_details', default="Additional Details:")).pack(anchor='w', pady=(5,0))
         accom_desc = scrolledtext.ScrolledText(main_frame, height=8, wrap=tk.WORD)
         accom_desc.pack(fill='both', expand=True, pady=(0, 10))
 
@@ -310,7 +312,7 @@ class ElectionAccessibilityFeaturesDialog:
             accom_desc_val = accom_desc.get("1.0", tk.END).strip()
 
             if not accom_type_val:
-                messagebox.showwarning("Missing Information", "Please select an accommodation type.")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.missing_information', default="Missing Information"), _t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.please_select_an_accommodation_type', default="Please select an accommodation type."))
                 return
 
             username = self.auth.current_user.get('username', 'Student') if self.auth.current_user else 'Student'
@@ -359,32 +361,32 @@ class ElectionAccessibilityFeaturesDialog:
                     except Exception as e:
                         print(f"Failed to send accommodation confirmation email: {e}")
 
-                messagebox.showinfo("Request Submitted",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.request_submitted', default="Request Submitted"),
                                    "Your accommodation request has been submitted successfully.\n\n" +
                                    "You will be contacted within 2 business days.")
                 request_window.destroy()
 
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to submit request: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.error', default="Error"), f"Failed to submit request: {e}")
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(button_frame, text="Submit Request", command=submit_request).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=request_window.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.submit_request', default="Submit Request"), command=submit_request).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.cancel', default="Cancel"), command=request_window.destroy).pack(side='left')
 
     def show_guide(self):
         """Show accessibility guide"""
         guide_window = tk.Toplevel(self.dialog)
-        guide_window.title("Election Accessibility Guide")
+        guide_window.title(_t('gui.pastoral.student_union_gui.elections.election_accessibility.windows.election_accessibility_guide', default="Election Accessibility Guide"))
         guide_window.geometry("700x600")
         guide_window.transient(self.dialog)
 
         main_frame = ttk.Frame(guide_window)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Election Accessibility Guide",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.election_accessibility_guide', default="Election Accessibility Guide"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         guide_text = scrolledtext.ScrolledText(main_frame, height=25, wrap=tk.WORD, font=('Arial', 10))
@@ -490,12 +492,12 @@ Your participation matters!
         guide_text.insert('1.0', guide_content)
         guide_text.config(state='disabled')
 
-        ttk.Button(main_frame, text="Close", command=guide_window.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.close', default="Close"), command=guide_window.destroy).pack()
 
     def test_system(self):
         """Full practice voting system with multi-step ballot simulation"""
         test_window = tk.Toplevel(self.dialog)
-        test_window.title("Test Voting System")
+        test_window.title(_t('gui.pastoral.student_union_gui.elections.election_accessibility.windows.test_voting_system', default="Test Voting System"))
         test_window.geometry("800x700")
         test_window.transient(self.dialog)
         test_window.grab_set()
@@ -503,10 +505,10 @@ Your participation matters!
         main_frame = ttk.Frame(test_window)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Practice Voting System",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.practice_voting_system', default="Practice Voting System"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 5))
 
-        ttk.Label(main_frame, text="This is a practice ballot. No real votes will be recorded.",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.this_is_a_practice_ballot_no_real_votes_will_be_recorded', default="This is a practice ballot. No real votes will be recorded."),
                  font=('Arial', 10, 'italic'), foreground='blue').pack(pady=(0, 15))
 
         # Progress indicator
@@ -574,10 +576,10 @@ Your participation matters!
             state['step'] = 0
             highlight_step(0)
 
-            ttk.Label(content_frame, text="Step 1: Identity Verification",
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.step_1_identity_verification', default="Step 1: Identity Verification"),
                      font=('Arial', 12, 'bold')).pack(pady=(10, 15))
 
-            info_frame = ttk.LabelFrame(content_frame, text="Your Details", padding=15)
+            info_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.your_details', default="Your Details"), padding=15)
             info_frame.pack(fill='x', pady=(0, 15))
 
             username = self.auth.current_user.get('username', 'Test User') if self.auth and self.auth.current_user else 'Test User'
@@ -585,13 +587,13 @@ Your participation matters!
 
             ttk.Label(info_frame, text=f"Name: {username}").pack(anchor='w', pady=2)
             ttk.Label(info_frame, text=f"User ID: {user_id}").pack(anchor='w', pady=2)
-            ttk.Label(info_frame, text="Eligibility: Verified (Practice Mode)").pack(anchor='w', pady=2)
+            ttk.Label(info_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.eligibility_verified_practice_mode', default="Eligibility: Verified (Practice Mode)")).pack(anchor='w', pady=2)
 
-            ttk.Label(content_frame, text="In a real election, your student ID would be verified\n"
-                     "against the electoral register before proceeding.",
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.in_a_real_election_your_student_id_would_be_verified_against_the', default="In a real election, your student ID would be verified\n"
+                     "against the electoral register before proceeding."),
                      font=('Arial', 9, 'italic')).pack(pady=15)
 
-            ttk.Button(content_frame, text="Confirm Identity & Proceed",
+            ttk.Button(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.confirm_identity_proceed', default="Confirm Identity & Proceed"),
                       command=show_step_2).pack(pady=10)
 
         def show_step_2():
@@ -600,10 +602,10 @@ Your participation matters!
             state['step'] = 1
             highlight_step(1)
 
-            ttk.Label(content_frame, text="Step 2: Select Position",
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.step_2_select_position', default="Step 2: Select Position"),
                      font=('Arial', 12, 'bold')).pack(pady=(10, 15))
 
-            ttk.Label(content_frame, text="Choose which position you would like to vote for:",
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.choose_which_position_you_would_like_to_vote_for', default="Choose which position you would like to vote for:"),
                      font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
 
             position_var = tk.StringVar()
@@ -617,7 +619,7 @@ Your participation matters!
 
             def proceed():
                 if not position_var.get():
-                    messagebox.showwarning("No Selection", "Please select a position.",
+                    messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.please_select_a_position', default="Please select a position."),
                                          parent=test_window)
                     return
                 state['position'] = position_var.get()
@@ -625,8 +627,8 @@ Your participation matters!
 
             btn_frame = ttk.Frame(content_frame)
             btn_frame.pack(pady=20)
-            ttk.Button(btn_frame, text="Back", command=show_step_1).pack(side='left', padx=5)
-            ttk.Button(btn_frame, text="Proceed to Ballot", command=proceed).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.back', default="Back"), command=show_step_1).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.proceed_to_ballot', default="Proceed to Ballot"), command=proceed).pack(side='left', padx=5)
 
         def show_step_3():
             """Step 3: Cast vote"""
@@ -634,13 +636,13 @@ Your participation matters!
             state['step'] = 2
             highlight_step(2)
 
-            ttk.Label(content_frame, text="Step 3: Cast Your Vote",
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.step_3_cast_your_vote', default="Step 3: Cast Your Vote"),
                      font=('Arial', 12, 'bold')).pack(pady=(10, 5))
 
             ttk.Label(content_frame, text=f"Position: {state['position']}",
                      font=('Arial', 11), foreground='navy').pack(pady=(0, 15))
 
-            ttk.Label(content_frame, text="Select your preferred candidate:",
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.select_your_preferred_candidate', default="Select your preferred candidate:"),
                      font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
 
             candidate_var = tk.StringVar()
@@ -654,19 +656,19 @@ Your participation matters!
 
             # Abstain option
             ttk.Separator(content_frame).pack(fill='x', padx=20, pady=10)
-            ttk.Radiobutton(content_frame, text="Abstain (no vote for this position)",
+            ttk.Radiobutton(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.abstain_no_vote_for_this_position', default="Abstain (no vote for this position)"),
                            variable=candidate_var, value='ABSTAIN').pack(anchor='w', padx=20)
 
             # Accessibility info
-            acc_frame = ttk.LabelFrame(content_frame, text="Accessibility", padding=10)
+            acc_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.accessibility', default="Accessibility"), padding=10)
             acc_frame.pack(fill='x', pady=15)
-            ttk.Label(acc_frame, text="Tab: Navigate options | Space: Select | Enter: Confirm",
+            ttk.Label(acc_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.tab_navigate_options_space_select_enter_confirm', default="Tab: Navigate options | Space: Select | Enter: Confirm"),
                      font=('Arial', 9)).pack(anchor='w')
 
             def proceed():
                 if not candidate_var.get():
-                    messagebox.showwarning("No Selection",
-                        "Please select a candidate or choose to abstain.",
+                    messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.no_selection', default="No Selection"),
+                        _t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.please_select_a_candidate_or_choose_to_abstain', default="Please select a candidate or choose to abstain."),
                         parent=test_window)
                     return
                 state['candidate'] = candidate_var.get()
@@ -674,8 +676,8 @@ Your participation matters!
 
             btn_frame = ttk.Frame(content_frame)
             btn_frame.pack(pady=10)
-            ttk.Button(btn_frame, text="Back", command=show_step_2).pack(side='left', padx=5)
-            ttk.Button(btn_frame, text="Review Vote", command=proceed).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.back', default="Back"), command=show_step_2).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.review_vote', default="Review Vote"), command=proceed).pack(side='left', padx=5)
 
         def show_step_4():
             """Step 4: Review and confirm"""
@@ -683,10 +685,10 @@ Your participation matters!
             state['step'] = 3
             highlight_step(3)
 
-            ttk.Label(content_frame, text="Step 4: Review & Confirm",
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.step_4_review_confirm', default="Step 4: Review & Confirm"),
                      font=('Arial', 12, 'bold')).pack(pady=(10, 15))
 
-            review_frame = ttk.LabelFrame(content_frame, text="Your Vote Summary", padding=20)
+            review_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.your_vote_summary', default="Your Vote Summary"), padding=20)
             review_frame.pack(fill='x', pady=(0, 20))
 
             ttk.Label(review_frame, text=f"Position: {state['position']}",
@@ -699,20 +701,20 @@ Your participation matters!
             ttk.Label(review_frame, text=f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
                      font=('Arial', 10)).pack(anchor='w', pady=3)
 
-            ttk.Label(content_frame, text="Please review your selection carefully.\n"
-                     "Once confirmed, your vote cannot be changed.",
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.please_review_your_selection_carefully_once_confirmed_your_vote', default="Please review your selection carefully.\n"
+                     "Once confirmed, your vote cannot be changed."),
                      font=('Arial', 10), foreground='red').pack(pady=15)
 
             # Confirmation checkbox
             confirm_var = tk.BooleanVar()
             ttk.Checkbutton(content_frame,
-                text="I confirm this is my intended vote",
+                text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.i_confirm_this_is_my_intended_vote', default="I confirm this is my intended vote"),
                 variable=confirm_var).pack(pady=10)
 
             def confirm():
                 if not confirm_var.get():
-                    messagebox.showwarning("Confirmation Required",
-                        "Please tick the confirmation checkbox to proceed.",
+                    messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.confirmation_required', default="Confirmation Required"),
+                        _t('gui.pastoral.student_union_gui.elections.election_accessibility.dialogs.please_tick_the_confirmation_checkbox_to_proceed', default="Please tick the confirmation checkbox to proceed."),
                         parent=test_window)
                     return
                 vote_hash = hashlib.sha256(
@@ -723,8 +725,8 @@ Your participation matters!
 
             btn_frame = ttk.Frame(content_frame)
             btn_frame.pack(pady=10)
-            ttk.Button(btn_frame, text="Back - Change Vote", command=show_step_3).pack(side='left', padx=5)
-            ttk.Button(btn_frame, text="Confirm & Submit Vote", command=confirm).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.back_change_vote', default="Back - Change Vote"), command=show_step_3).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.confirm_submit_vote', default="Confirm & Submit Vote"), command=confirm).pack(side='left', padx=5)
 
         def show_step_5():
             """Step 5: Receipt"""
@@ -732,10 +734,10 @@ Your participation matters!
             state['step'] = 4
             highlight_step(4)
 
-            ttk.Label(content_frame, text="Vote Successfully Submitted!",
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.vote_successfully_submitted', default="Vote Successfully Submitted!"),
                      font=('Arial', 14, 'bold'), foreground='green').pack(pady=(10, 15))
 
-            receipt_frame = ttk.LabelFrame(content_frame, text="Vote Receipt (Practice)", padding=20)
+            receipt_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.vote_receipt_practice', default="Vote Receipt (Practice)"), padding=20)
             receipt_frame.pack(fill='x', pady=(0, 15))
 
             vote_text = state['candidate'] if state['candidate'] != 'ABSTAIN' else 'Abstain'
@@ -749,13 +751,13 @@ Your participation matters!
             for line in receipt_lines:
                 ttk.Label(receipt_frame, text=line, font=('Arial', 10)).pack(anchor='w', pady=2)
 
-            ttk.Label(content_frame, text="In a real election, your vote would be encrypted\n"
+            ttk.Label(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.in_a_real_election_your_vote_would_be_encrypted_and_stored_anony', default="In a real election, your vote would be encrypted\n"
                      "and stored anonymously. You would receive this receipt\n"
-                     "as proof of voting (without revealing your choice).",
+                     "as proof of voting (without revealing your choice)."),
                      font=('Arial', 9, 'italic')).pack(pady=15)
 
             # System test results
-            results_frame = ttk.LabelFrame(content_frame, text="System Test Results", padding=15)
+            results_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.labels.system_test_results', default="System Test Results"), padding=15)
             results_frame.pack(fill='x', pady=(0, 15))
 
             tests = [
@@ -777,11 +779,11 @@ Your participation matters!
 
             btn_frame = ttk.Frame(content_frame)
             btn_frame.pack(pady=10)
-            ttk.Button(btn_frame, text="Vote Again (Practice)",
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.vote_again_practice', default="Vote Again (Practice)"),
                       command=show_step_2).pack(side='left', padx=5)
-            ttk.Button(btn_frame, text="Start Over",
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.start_over', default="Start Over"),
                       command=show_step_1).pack(side='left', padx=5)
-            ttk.Button(btn_frame, text="Close",
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_accessibility.buttons.close', default="Close"),
                       command=test_window.destroy).pack(side='left', padx=5)
 
         # Start at step 1

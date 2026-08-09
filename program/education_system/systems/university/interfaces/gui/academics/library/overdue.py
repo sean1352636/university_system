@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -124,25 +126,25 @@ def show_overdue_books(self):
     self.clear_content_area()
 
     overdue_frame = ttk.Frame(self.notebook)
-    self.notebook.add(overdue_frame, text="Overdue Books")
+    self.notebook.add(overdue_frame, text=_t('gui.academics.library.overdue.tabs.overdue_books', default="Overdue Books"))
 
-    title_label = ttk.Label(overdue_frame, text="Overdue Books Management", style='Title.TLabel')
+    title_label = ttk.Label(overdue_frame, text=_t('gui.academics.library.overdue.labels.overdue_books_management', default="Overdue Books Management"), style='Title.TLabel')
     title_label.pack(pady=10)
 
     # Control frame
     control_frame = ttk.Frame(overdue_frame)
     control_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(control_frame, text="Send Reminders", command=self.send_overdue_reminders).pack(side=tk.LEFT, padx=5)
-    ttk.Button(control_frame, text="Process Fines", command=self.process_overdue_fines).pack(side=tk.LEFT, padx=5)
-    ttk.Button(control_frame, text="Export Report", command=self.export_overdue_report).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.overdue.buttons.send_reminders', default="Send Reminders"), command=self.send_overdue_reminders).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.overdue.buttons.process_fines', default="Process Fines"), command=self.process_overdue_fines).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.overdue.buttons.export_report', default="Export Report"), command=self.export_overdue_report).pack(side=tk.LEFT, padx=5)
     ttk.Button(control_frame, text=_("common.refresh"), command=self.refresh_overdue_books).pack(side=tk.LEFT, padx=5)
 
     # Summary frame
-    summary_frame = ttk.LabelFrame(overdue_frame, text="Summary")
+    summary_frame = ttk.LabelFrame(overdue_frame, text=_t('gui.academics.library.overdue.labels.summary', default="Summary"))
     summary_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    self.overdue_summary_label = ttk.Label(summary_frame, text="Loading summary...")
+    self.overdue_summary_label = ttk.Label(summary_frame, text=_t('gui.academics.library.overdue.labels.loading_summary', default="Loading summary..."))
     self.overdue_summary_label.pack(pady=10)
 
     # Overdue books table
@@ -172,11 +174,11 @@ def show_overdue_books(self):
 def create_overdue_context_menu(self):
     """Create context menu for overdue books"""
     self.overdue_context_menu = tk.Menu(self.master, tearoff=0)
-    self.overdue_context_menu.add_command(label="Contact User", command=self.contact_overdue_user)
-    self.overdue_context_menu.add_command(label="Process Return", command=self.process_overdue_return)
-    self.overdue_context_menu.add_command(label="Waive Fine", command=self.waive_fine)
+    self.overdue_context_menu.add_command(label=_t('gui.academics.library.overdue.menus.contact_user', default="Contact User"), command=self.contact_overdue_user)
+    self.overdue_context_menu.add_command(label=_t('gui.academics.library.overdue.menus.process_return', default="Process Return"), command=self.process_overdue_return)
+    self.overdue_context_menu.add_command(label=_t('gui.academics.library.overdue.menus.waive_fine', default="Waive Fine"), command=self.waive_fine)
     self.overdue_context_menu.add_separator()
-    self.overdue_context_menu.add_command(label="View User History", command=self.view_user_history)
+    self.overdue_context_menu.add_command(label=_t('gui.academics.library.overdue.menus.view_user_history', default="View User History"), command=self.view_user_history)
 
     self.overdue_tree.bind('<Button-3>', self.show_overdue_context_menu)
 
@@ -264,7 +266,7 @@ def load_overdue_books(self):
             for book in demo_overdue:
                 self.overdue_tree.insert('', 'end', values=book)
 
-            self.overdue_summary_label.config(text="Demo Mode: 2 overdue items | Total Fines: £6.00")
+            self.overdue_summary_label.config(text=_t('gui.academics.library.overdue.text.demo_mode_2_overdue_items_total_fines_6_00', default="Demo Mode: 2 overdue items | Total Fines: £6.00"))
 
     except tk.TclError as e:
         messagebox.showerror(_("common.error"), f"Error loading overdue books: {str(e)}")
@@ -299,7 +301,7 @@ def send_overdue_reminders(self):
                 conn.close()
 
                 if not overdue_books:
-                    messagebox.showinfo("No Overdue Books", "No overdue books found.")
+                    messagebox.showinfo(_t('gui.academics.library.overdue.dialogs.no_overdue_books', default="No Overdue Books"), _t('gui.academics.library.overdue.dialogs.no_overdue_books_found', default="No overdue books found."))
                     return
 
                 # Send reminder emails
@@ -335,7 +337,7 @@ def send_overdue_reminders(self):
                     else:
                         self._show_library_email_fallback(f"{first_name} {last_name}", email, subject, message, "Overdue Reminder")
 
-                messagebox.showinfo("Reminders Sent",
+                messagebox.showinfo(_t('gui.academics.library.overdue.dialogs.reminders_sent', default="Reminders Sent"),
                     f"Overdue reminder emails sent to {sent_count} students with overdue books.")
 
     except (tk.TclError, ValueError, TypeError) as e:
@@ -382,7 +384,7 @@ def process_overdue_fines(self):
             messagebox.showinfo(_("common.success"), f"Processed fines for {count} overdue items")
             self.refresh_overdue_books()
         else:
-            messagebox.showinfo(_("common.demo"), "Overdue fines would be calculated and updated")
+            messagebox.showinfo(_("common.demo"), _t('gui.academics.library.overdue.dialogs.overdue_fines_would_be_calculated_and_updated', default="Overdue fines would be calculated and updated"))
     except (tk.TclError, ValueError, TypeError) as e:
         messagebox.showerror(_("common.error"), f"Error processing fines: {str(e)}")
 
@@ -468,7 +470,7 @@ def calculate_overdue_fines(self):
 def export_overdue_report(self):
     """Export overdue report"""
     file_path = filedialog.asksaveasfilename(
-        title="Export Overdue Report",
+        title=_t('gui.academics.library.overdue.dialogs.export_overdue_report', default="Export Overdue Report"),
         defaultextension=".csv",
         filetypes=[("CSV files", "*.csv"), ("PDF files", "*.pdf"), ("All files", "*.*")]
     )
@@ -480,7 +482,7 @@ def export_overdue_report(self):
                 if success:
                     messagebox.showinfo(_("common.success"), f"Overdue report exported to {file_path}")
                 else:
-                    messagebox.showerror(_("common.error"), "Export failed")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.library.overdue.dialogs.export_failed', default="Export failed"))
             else:
                 messagebox.showinfo(_("common.demo"), f"Would export overdue report to {file_path}")
         except (OSError, IOError, tk.TclError) as e:
@@ -536,7 +538,7 @@ def create_overdue_export(self, file_path):
             # For now, convert to CSV
             csv_path = file_path.replace('.pdf', '.csv')
             df.to_csv(csv_path, index=False)
-            messagebox.showinfo("Note", f"Exported as CSV: {csv_path}")
+            messagebox.showinfo(_t('gui.academics.library.overdue.dialogs.note', default="Note"), f"Exported as CSV: {csv_path}")
         else:
             df.to_excel(file_path, index=False)
 
@@ -586,7 +588,7 @@ def check_and_display_late_fees(self):
             notification_label.pack(side=tk.LEFT, padx=10, pady=5)
 
             # Add "Pay Now" button
-            pay_button = ttk.Button(notification_frame, text="Pay via Finance System",
+            pay_button = ttk.Button(notification_frame, text=_t('gui.academics.library.overdue.buttons.pay_via_finance_system', default="Pay via Finance System"),
                                   command=lambda: self.open_finance_payment_for_user(current_user_id, total_fines))
             pay_button.pack(side=tk.RIGHT, padx=10, pady=5)
 

@@ -407,9 +407,240 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Groundwork for the ADR 0018 repository-layout consolidation, staged as a
-parallel tree so nothing in the live layout moves yet. Plus one live bug fix
-found along the way.
+The ADR 0018 layout is now the active development tree under `program/`.
+This release consolidates the multi-system platform, adds canonical university
+lifecycles and operational APIs, breaks the largest university modules into
+smaller packages while retaining their public import paths, and builds out the
+Sixth Form attendance package from lesson registers into a full attendance
+operation.
+
+### Added — canonical platform and university lifecycles
+
+- Added application-layer university workflows, boundary errors, degraded-state
+  reporting, operational-health checks, event services, a transactional outbox,
+  and unit-of-work support.
+- Added canonical enrolment, progression, handover and transition contracts for
+  cross-system student journeys, backed by adapters and integration-bus jobs.
+- Added university lifecycle services for admissions, students, assessment
+  boards, finance, programme governance and postgraduate research.
+- Added Alembic migrations for canonical university lifecycles, feature-owned
+  schemas, institutional operations, admissions policy/consumer receipts and
+  the transactional outbox.
+- Added institutional and student-lifecycle API routes, including operations,
+  submissions, support, fees, graduation, timetabling, connector, identity,
+  programme and PGR endpoints.
+- Added matching university web pages, shared feature-page assets, journey
+  styling/scripts and mobile web assets.
+
+### Added — sixth-form attendance
+
+Forty features taking the Sixth Form attendance package from lesson registers
+and reporting to a full attendance operation: 31 new domain modules under
+`education_system/systems/sixth_form/domain/academics/attendance/`, reachable
+from seven new CLI submenus on the Attendance menu.
+
+- **Capture.** Kiosk and QR self check-in with room-bound devices, revocable
+  learner tokens and a tap that returns an outcome rather than raising at a
+  doorway. Offline register bundles carrying a digest, with per-learner
+  conflict detection on sync and server-wins / device-wins / hold resolution.
+  Cover registers with allocation, permission checks and fairness counts.
+  Bulk CSV import with dry-run preview, batch tracking and exact rollback.
+- **Off-timetable registers.** Tutorial, assembly, enrichment, EPQ supervision
+  and supervised-study activities with their own rosters and a `required` flag
+  so a voluntary club cannot drag down a reported figure. Work-placement days
+  confirmed by the employer supervisor and written through to the college
+  register. Exam-room registers with seating plans, the one-hour reportable
+  threshold and invigilator sign-off. Emergency roll call over a list frozen
+  at the moment the alarm sounds.
+- **Absence intake.** An inbound reporting queue for calls and portal
+  messages, learner self-certification capped per term, planned-leave requests
+  with notice tracking and exam-clash detection, evidence with deadlines that
+  revert a mark to unauthorised when unmet, and appeals against a mark routed
+  to the tutor.
+- **Chasing and communications.** First-day calling with a risk-ordered list
+  that skips anything already explained, guardian absence alerts and weekly
+  statements queued rather than sent, register nudges escalating teacher →
+  head of department → SLT, and threshold-triggered letters issued once per
+  stage per year.
+- **Intervention.** An escalation ladder with owners and review dates,
+  measurable attendance contracts, meeting logs, punctuality tracking counted
+  in minutes of teaching lost, persistent- and severe-absence cohorts with
+  snapshots and movement between them, a safeguarding bridge raising DSL
+  alerts and children-missing-education referrals, 16–19 bursary holds with
+  hardship exemptions, and attendance and most-improved awards.
+- **Analysis and returns.** Attendance-versus-attainment correlation reported
+  with its sample size, subject-level comparison, end-of-year forecast with
+  remaining headroom, year-on-year benchmarking, a week × period heatmap,
+  marking-anomaly detection, a one-page governor report in text, Markdown or
+  JSON, and census/ILR extracts that refuse to export until validation passes.
+- **Configuration.** A single threshold table scoped college / year group /
+  cohort that every other module reads, and an attendance calendar of terms,
+  closures, INSET days, bank holidays and per-year-group study leave, so
+  session counts stop approximating term dates.
+- Added 31 test files (~914 tests) covering the new modules, and registered
+  every new module in the shared attendance test fixture so no test can write
+  to the live `sixthform.db`.
+
+### Added — incubating FE college and apprenticeships skeletons
+
+- Relocated the `college_and_apprenticeships` starter scaffold into the
+  canonical tree as two incubating system skeletons (stub modules only, not
+  wired into the launcher, auth or unified API):
+  `education_system/systems/fe_college/` and
+  `education_system/systems/apprenticeships/`, each reshaped to the standard
+  system layout (`domain/`, `infrastructure/persistence/`,
+  `interfaces/{api,cli,gui,portals}/`, `services/`), with placeholder docs
+  under `docs/fe_college/`, `docs/apprenticeships/` and
+  `docs/reference/college_and_apprenticeships/`, stub scripts under
+  `tools/college_and_apprenticeships/`, and stub test modules under
+  `tests/systems/{fe_college,apprenticeships}/`.
+
+### Added — university student finance
+
+- Added student-to-student money transfers to the University bank: a Send Money
+  dialog in the Student Bank app, an atomic `transfer_student_finance_funds`
+  service recording both `transfer_out`/`transfer_in` legs in the unified
+  transactions ledger under a shared `TRF-` reference number plus a free-text
+  reference (e.g. "Meal out", "Money owed"), a JSON-templated HTML receipt
+  emailed to the sender, and an in-app Notifications Hub message delivered to
+  the recipient.
+
+### Added — security and operations
+
+- Completed university GUI internationalization by routing remaining static
+  widget, window, menu, heading and dialog text through the shared translation
+  service with readable, module- and widget-context semantic keys plus English
+  fallbacks. Added a repeatable AST audit and migration tool, with regression
+  tests, to detect future hardcoded GUI text while leaving SQL, paths,
+  identifiers and persisted values unchanged.
+- Added generated `gui_auto.json` source catalogs for every installed university
+  locale. Their JSON structure follows readable feature, module and widget-role
+  namespaces (for example `gui.staff.staff_hr.grievance.labels.status`) rather
+  than opaque hash identifiers. Existing human translations remain untouched,
+  while new untranslated entries have a version-controlled English baseline.
+- Completed the supported GraphQL API alongside REST: Strawberry is now a
+  default runtime dependency, the unified server mounts an authenticated
+  production endpoint, queries require a caller, mutations enforce staff/admin
+  roles, depth and rate controls remain active, canonical databases for all five
+  systems are registered, and production startup fails closed if GraphQL cannot
+  initialize.
+- Completed institution-hosted tamper-evident academic credentials: canonical
+  payloads are signed with HMAC-SHA256 using a persistent secret, and the shared
+  service now drives GUI, CLI and API issuance, integrity verification,
+  verification logging and signed revocation records. Public hash verification
+  detects relational or metadata tampering without exposing write operations.
+- Added security ports and adapters, sensitive-access controls, secret handling,
+  security-training simulations and their email templates.
+- Added a modular university authentication implementation covering password,
+  MFA, WebAuthn, biometric and federated login; recovery; session management;
+  account linking; delegated access; persistence; bootstrap; and immutable audit
+  events. Compatibility façades preserve existing authentication imports.
+- Added admissions-policy enforcement and receipt tracking, database schema
+  version support, feature-owned schema helpers and operational architecture
+  checks.
+- Added completed-feature, migration, lifecycle, contract, browser, security,
+  operational-health and atomic-conversion test coverage.
+
+### Changed — repository and runtime layout
+
+- Promoted `program/` from a migration preview to the canonical source, test,
+  documentation and tooling layout. Launchers, Make targets, CI, packaging,
+  environment examples and ignore rules now use this structure.
+- Consolidated platform code under `education_system/platform`, system-specific
+  code under `education_system/systems`, tests under `program/tests`, tools under
+  `program/tools`, and runtime data beneath the configured `var` directories.
+- Moved the remaining staged `other/` content into its owned `program/`
+  packages, repaired imports and removed the obsolete staging locations.
+- Updated platform, nursery, sixth-form and university path resolution so
+  runtime and repository paths are derived consistently from the canonical
+  root.
+- Updated the unified server, launcher and top-level entry points for the new
+  routing and package boundaries.
+
+### Changed — university module decomposition
+
+- Split all 32 remaining university Python modules at or above 80 KB into
+  import-compatible façades, shared module state and bounded implementation
+  components. The batch covers commerce and transport GUIs, butcher/barber
+  CLIs, database schemas, LMS and academic tooling, advanced search, backup and
+  shell administration, research, assessment, early warning, first aid, green
+  initiatives and elections. Original callable bodies and public entry points
+  are retained while no Python file in the university tree now exceeds 80 KB.
+- Split the authentication façade/core, integration bus, university CLI menu
+  router and café CLI into focused compatibility façades, services, handlers,
+  repositories and supporting modules.
+- Split Academic Calendar into a manager package for schema, events, periods,
+  exports, maintenance and trips while retaining the original calendar API.
+- Split Grade Tracking into focused grade-management modules while retaining
+  `grade_manager.py` as the stable entry point.
+- Split Church/Community Management, Dentist/Health Portal, Advanced Search
+  demographics and Enhanced Reporting dialogs into smaller packages with
+  compatibility imports from their original modules.
+- Split the Betting Shop GUI into a composed application, shared dependencies,
+  tab mixins and payment/receipt services. All 47 original GUI methods remain
+  available through `BettingShopGUI` and `launch_betting_shop_gui`.
+- Split bakery POS, marketplace, shop-management, document-management,
+  plagiarism-search, library, finance and student-analytics responsibilities
+  into smaller helpers where appropriate.
+- Removed duplicate implementations exposed during the package moves and made
+  canonical modules the single source of behaviour.
+
+### Changed — university domains and integrations
+
+- Reworked the café domain into models, persistence repositories, integrations
+  and services for checkout, inventory, loyalty, menus, permissions, reporting,
+  reservations, scheduling and suppliers.
+- Reworked dental services into models, persistence, finance/email integrations
+  and focused appointment, patient, payment, prescription, refund, reporting and
+  treatment services.
+- Reworked health records around explicit models, permissions and services, with
+  focused contacts, vaccination and reporting packages and updated health-portal
+  integration.
+- Reworked Student Union events into domain, application, infrastructure and
+  reporting layers covering attendance, registration, ticketing, finance,
+  recurrence, sustainability and virtual events.
+- Updated admissions, finance, safeguarding, campus operations, certificates,
+  messaging, analytics and data export to use the new platform boundaries and
+  shared infrastructure.
+
+### Changed — sixth-form attendance core
+
+- **`save_register` and `update_record` now enforce a retro-marking window.**
+  Inside it nothing changes; past it a write needs a `reason`; past the
+  cutoff it is refused. Both gained `allow_retro` for deliberate backfills,
+  and every use is written to an override log with the actor who forced it.
+  The curated amendment paths — authorising, unauthorising, recoding,
+  off-site marking — pass it and so still reach a mark of any age, which is
+  the point: after the window shuts they are the only way in. A save landing
+  outside the window is now written to the amendment trail whether or not the
+  register was ever submitted.
+- **Timetable expansion honours an A/B week cycle.**
+  `attendance_sessions.expected_lessons`,
+  `attendance_register.unsubmitted_registers` and `mark_range` now drop slots
+  that do not run in a given date's week. A college with no cycle configured
+  gets exactly the answers it did before — an unconfigured system is a
+  one-week system.
+- `mark_range` gained `skipped_closed`, naming the dates the retro-marking
+  window has closed rather than failing the whole batch, and `mark_all`,
+  `mark_by_key` and `copy_previous_register` now carry a `reason` through to
+  the save.
+- Arrival and departure stamps go through the same window check: a clock time
+  typed six weeks later is a reconstruction, not an observation.
+- Added `cover` to `attendance_codes.DATA_SOURCES`, so marks taken by
+  somebody who does not know the class stay distinguishable from the rest.
+
+### Changed — documentation and verification
+
+- Added the canonical data dictionary, scope/ownership guide, modernisation task
+  list, module-classification data, platform overview documents and supporting
+  documentation assets.
+- Updated ADR 0018 and the university documentation for the implemented layout
+  and ownership model.
+- Updated launcher, migration, integration, health, admissions, academic
+  calendar, event-management and path tests for the canonical imports and new
+  service boundaries.
+- Expanded CI and project configuration for architecture checks, migrations,
+  security workflows and the reorganised test suite.
 
 ### Fixed
 
@@ -424,31 +655,7 @@ found along the way.
   Six references corrected across four files; all 102 imports in the block now
   resolve.
 
-### Added
-
-- **`program/` — a complete, reviewable preview of the ADR 0018 target layout.**
-  8,400+ files: five systems under `systems/`, `shared/` → `platform/`, a single
-  `tests/` tree, `tools/`, `docs/`, and `var/` for runtime data. Imports are
-  rewritten throughout (31,908 substitutions across 5,753 files). The live tree
-  is untouched.
-- **`docs/operations/layout-migration-map.tsv`** — 1,598 source → destination
-  pairs covering every file, audited path-by-path in both directions with zero
-  unmapped files and zero orphans.
-- **`docs/operations/LAYOUT_MIGRATION_MAP.md`** — the reasoning, the rejected
-  changes, and the failure modes found while building it.
-
-### Changed
-
-- **`docs/` is now covered by the migration map.** It does not move; the only
-  documentation the migration produces is three package READMEs. The
-  `education_system/README.md` destination was retargeted to
-  `docs/education_system.md` so it no longer collides with the documentation
-  hub's own `docs/README.md`.
-- **ADR 0018 amended** to match what was actually built: a `services/` pillar
-  per system, `learners` added to the shared domain vocabulary (ten areas →
-  eleven), and a corrected target `tests/` tree.
-
-### Fixed in the staged tree
+### Fixed — layout migration follow-ups
 
 - **The `platform` stdlib collision is gone, without renaming the package.** The
   university conftest added `education_system/` to `sys.path`, which made
@@ -470,13 +677,6 @@ found along the way.
   repository root rather than being an alias for the package directory.
 - **Root `docs/` links repointed at `docs/`** — 30 lines across
   `README.md` and `CHANGELOG.md`; all link targets verified to exist.
-
-### Known issues
-
-- `paths.py` still resolves `TEMPLATES_DIR`, `ASSETS_DIR` and `SCRIPTS_DIR`
-  relative to the package. Templates moved to `assets/templates/` and scripts to
-  `tools/university/`, so those three are stale.
-- Nothing in `program/` has executed a test — verification is collection-only.
 
 ---
 
@@ -20133,4 +20333,3 @@ Students can now be imported from the previous education stage when creating a n
   - `college_system/` → `education_system/college_system/`
   - Updated all Python imports across 2,570 files (`from X.` → `from education_system.X.`)
   - Updated `run.py`, `pyproject.toml`, `security_scan.sh`, and test path configs
-

@@ -22,7 +22,7 @@ from education_system.platform.cross_system import (
     progression,
     student_view,
 )
-from education_system.platform.kernel.database.paths import SYSTEM_LABELS, SYSTEM_ORDER
+from education_system.paths import SYSTEM_LABELS, SYSTEM_ORDER
 
 _HEADER_BG = "#1a5276"
 _BODY_BG = "#ecf0f1"

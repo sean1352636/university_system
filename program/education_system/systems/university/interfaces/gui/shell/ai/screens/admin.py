@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 import os
@@ -79,7 +81,7 @@ class AdminPanelMixin:
 
         # Refresh button
         refresh_button = ttk.Button(metrics_frame,
-                                   text="Refresh Status",
+                                   text=_t('gui.shell.ai.screens.admin.buttons.refresh_status', default="Refresh Status"),
                                    command=self.refresh_system_status)
         refresh_button.pack(pady=(10, 0))
 
@@ -128,17 +130,17 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     def create_user_management_tab(self, parent):
         """Create user management interface with bot interaction history"""
         # User list frame
-        users_frame = ttk.LabelFrame(parent, text="Users Who Interacted With Bot", padding=10)
+        users_frame = ttk.LabelFrame(parent, text=_t('gui.shell.ai.screens.admin.labels.users_who_interacted_with_bot', default="Users Who Interacted With Bot"), padding=10)
         users_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # User list
         columns = ('Username', 'Role', 'Messages', 'Last Activity')
         self.user_tree = ttk.Treeview(users_frame, columns=columns, show='headings', height=10)
 
-        self.user_tree.heading('Username', text='Username')
-        self.user_tree.heading('Role', text='Role')
-        self.user_tree.heading('Messages', text='Messages')
-        self.user_tree.heading('Last Activity', text='Last Activity')
+        self.user_tree.heading('Username', text=_t('gui.shell.ai.screens.admin.headings.username', default='Username'))
+        self.user_tree.heading('Role', text=_t('gui.shell.ai.screens.admin.headings.role', default='Role'))
+        self.user_tree.heading('Messages', text=_t('gui.shell.ai.screens.admin.headings.messages', default='Messages'))
+        self.user_tree.heading('Last Activity', text=_t('gui.shell.ai.screens.admin.headings.last_activity', default='Last Activity'))
 
         self.user_tree.column('Username', width=150)
         self.user_tree.column('Role', width=100)
@@ -154,7 +156,7 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         self.user_tree.bind('<Double-1>', lambda e: self.view_user_chats())
 
         # Hint label
-        hint_label = ttk.Label(parent, text="Double-click a username to view their chat history",
+        hint_label = ttk.Label(parent, text=_t('gui.shell.ai.screens.admin.labels.double_click_a_username_to_view_their_chat_history', default="Double-click a username to view their chat history"),
                                font=('Arial', 9, 'italic'))
         hint_label.pack(anchor=tk.W, padx=15)
 
@@ -162,15 +164,15 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         user_buttons_frame = ttk.Frame(parent)
         user_buttons_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
 
-        ttk.Button(user_buttons_frame, text="Refresh Users",
+        ttk.Button(user_buttons_frame, text=_t('gui.shell.ai.screens.admin.buttons.refresh_users', default="Refresh Users"),
                    command=self.refresh_user_list).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(user_buttons_frame, text="View Chats",
+        ttk.Button(user_buttons_frame, text=_t('gui.shell.ai.screens.admin.buttons.view_chats', default="View Chats"),
                    command=self.view_user_chats).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(user_buttons_frame, text="Export Chats as TXT",
+        ttk.Button(user_buttons_frame, text=_t('gui.shell.ai.screens.admin.buttons.export_chats_as_txt', default="Export Chats as TXT"),
                    command=self.export_user_chats_txt).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(user_buttons_frame, text="Email Chats to Me",
+        ttk.Button(user_buttons_frame, text=_t('gui.shell.ai.screens.admin.buttons.email_chats_to_me', default="Email Chats to Me"),
                    command=self.email_user_chats).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(user_buttons_frame, text="Send Message",
+        ttk.Button(user_buttons_frame, text=_t('gui.shell.ai.screens.admin.buttons.send_message', default="Send Message"),
                    command=self.send_admin_message).pack(side=tk.LEFT)
 
         # Initialize user list
@@ -332,9 +334,9 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         def email_this():
             self._email_conversations(username, conversations)
 
-        ttk.Button(btn_frame, text="Export as TXT", command=export_this).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(btn_frame, text="Email to Me", command=email_this).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(btn_frame, text="Close", command=details_window.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btn_frame, text=_t('gui.shell.ai.screens.admin.buttons.export_as_txt', default="Export as TXT"), command=export_this).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(btn_frame, text=_t('gui.shell.ai.screens.admin.buttons.email_to_me', default="Email to Me"), command=email_this).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(btn_frame, text=_t('gui.shell.ai.screens.admin.buttons.close', default="Close"), command=details_window.destroy).pack(side=tk.RIGHT)
 
     def export_user_chats_txt(self):
         """Export selected user's chats as a TXT file"""
@@ -347,14 +349,14 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     def _export_conversations_txt(self, username, conversations):
         """Save conversations to a TXT file via save dialog"""
         if not conversations:
-            messagebox.showinfo("No Data", f"No conversations found for {username}.")
+            messagebox.showinfo(_t('gui.shell.ai.screens.admin.dialogs.no_data', default="No Data"), f"No conversations found for {username}.")
             return
 
         filename = filedialog.asksaveasfilename(
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt")],
             initialfile=f"chatbot_history_{username}.txt",
-            title="Export Chat History"
+            title=_t('gui.shell.ai.screens.admin.dialogs.export_chat_history', default="Export Chat History")
         )
         if not filename:
             return
@@ -363,9 +365,9 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             text = self._format_conversations_text(username, conversations)
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(text)
-            messagebox.showinfo("Export Complete", f"Chat history exported to:\n{filename}")
+            messagebox.showinfo(_t('gui.shell.ai.screens.admin.dialogs.export_complete', default="Export Complete"), f"Chat history exported to:\n{filename}")
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export: {e}")
+            messagebox.showerror(_t('gui.shell.ai.screens.admin.dialogs.export_error', default="Export Error"), f"Failed to export: {e}")
 
     def email_user_chats(self):
         """Email selected user's chats to the current admin"""
@@ -378,7 +380,7 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     def _email_conversations(self, username, conversations):
         """Email conversations to the current admin user"""
         if not conversations:
-            messagebox.showinfo("No Data", f"No conversations found for {username}.")
+            messagebox.showinfo(_t('gui.shell.ai.screens.admin.dialogs.no_data', default="No Data"), f"No conversations found for {username}.")
             return
 
         admin_email = None
@@ -403,8 +405,8 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                 pass
 
         if not admin_email:
-            messagebox.showwarning("No Email",
-                                   "Could not find your email address.\nPlease export the chats as TXT instead.")
+            messagebox.showwarning(_t('gui.shell.ai.screens.admin.dialogs.no_email', default="No Email"),
+                                   _t('gui.shell.ai.screens.admin.dialogs.could_not_find_your_email_address_please_export_the_chats_as_txt', default="Could not find your email address.\nPlease export the chats as TXT instead."))
             return
 
         try:
@@ -418,10 +420,10 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                 subject=subject,
                 body=body,
             )
-            messagebox.showinfo("Email Sent",
+            messagebox.showinfo(_t('gui.shell.ai.screens.admin.dialogs.email_sent', default="Email Sent"),
                                 f"Chat history for {username} sent to {admin_email}")
         except Exception as e:
-            messagebox.showerror("Email Error", f"Failed to send email: {e}")
+            messagebox.showerror(_t('gui.shell.ai.screens.admin.dialogs.email_error', default="Email Error"), f"Failed to send email: {e}")
 
     def send_admin_message(self):
         """Send administrative message to user"""
@@ -467,7 +469,7 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
     def create_analytics_tab(self, parent):
         """Create analytics dashboard tab"""
         # Analytics frame
-        analytics_frame = ttk.LabelFrame(parent, text="Usage Analytics", padding=10)
+        analytics_frame = ttk.LabelFrame(parent, text=_t('gui.shell.ai.screens.admin.labels.usage_analytics', default="Usage Analytics"), padding=10)
         analytics_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Analytics display
@@ -478,11 +480,11 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         analytics_buttons = ttk.Frame(analytics_frame)
         analytics_buttons.pack(fill=tk.X)
 
-        ttk.Button(analytics_buttons, text="Generate Report",
+        ttk.Button(analytics_buttons, text=_t('gui.shell.ai.screens.admin.buttons.generate_report', default="Generate Report"),
                    command=self.generate_analytics_report).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(analytics_buttons, text="Export Data",
+        ttk.Button(analytics_buttons, text=_t('gui.shell.ai.screens.admin.buttons.export_data', default="Export Data"),
                    command=self.export_analytics).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(analytics_buttons, text="Clear Cache",
+        ttk.Button(analytics_buttons, text=_t('gui.shell.ai.screens.admin.buttons.clear_cache', default="Clear Cache"),
                    command=self.clear_analytics_cache).pack(side=tk.LEFT)
 
         # Auto-generate initial report
@@ -548,7 +550,7 @@ RECOMMENDATIONS:
             filename = filedialog.asksaveasfilename(
                 defaultextension=".json",
                 filetypes=[("JSON files", "*.json"), ("Text files", "*.txt")],
-                title="Export Analytics Data"
+                title=_t('gui.shell.ai.screens.admin.dialogs.export_analytics_data', default="Export Analytics Data")
             )
 
             if filename:
@@ -603,24 +605,24 @@ RECOMMENDATIONS:
     def create_logs_tab(self, parent):
         """Create system logs viewing tab"""
         # Logs frame
-        logs_frame = ttk.LabelFrame(parent, text="System Logs", padding=10)
+        logs_frame = ttk.LabelFrame(parent, text=_t('gui.shell.ai.screens.admin.labels.system_logs', default="System Logs"), padding=10)
         logs_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Log filter frame
         filter_frame = ttk.Frame(logs_frame)
         filter_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Log Level:").pack(side=tk.LEFT, padx=(0, 5))
-        self.log_level_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.shell.ai.screens.admin.labels.log_level', default="Log Level:")).pack(side=tk.LEFT, padx=(0, 5))
+        self.log_level_var = tk.StringVar(value=_t('gui.shell.ai.screens.admin.values.all', default="All"))
         log_level_combo = ttk.Combobox(filter_frame,
                                       textvariable=self.log_level_var,
                                       values=["All", "Error", "Warning", "Info"],
                                       state="readonly", width=10)
         log_level_combo.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Button(filter_frame, text="Refresh Logs",
+        ttk.Button(filter_frame, text=_t('gui.shell.ai.screens.admin.buttons.refresh_logs', default="Refresh Logs"),
                    command=self.refresh_logs).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(filter_frame, text="Clear Logs",
+        ttk.Button(filter_frame, text=_t('gui.shell.ai.screens.admin.buttons.clear_logs', default="Clear Logs"),
                    command=self.clear_logs).pack(side=tk.LEFT)
 
         # Logs display

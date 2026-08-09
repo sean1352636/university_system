@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.student_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.student_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -355,73 +357,73 @@ class StudentDialog:
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Student ID
-        ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_id_var = tk.StringVar(value=data[0] if data else "")
         ttk.Entry(form_frame, textvariable=self.student_id_var, width=30).grid(row=0, column=1, pady=5)
 
         # First Name
-        ttk.Label(form_frame, text="First Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.first_name', default="First Name:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.first_name_var = tk.StringVar(value=data[1] if data else "")
         ttk.Entry(form_frame, textvariable=self.first_name_var, width=30).grid(row=1, column=1, pady=5)
 
         # Middle Name
-        ttk.Label(form_frame, text="Middle Name:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.middle_name', default="Middle Name:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.middle_name_var = tk.StringVar(value=data[2] if data else "")
         ttk.Entry(form_frame, textvariable=self.middle_name_var, width=30).grid(row=2, column=1, pady=5)
 
         # Last Name
-        ttk.Label(form_frame, text="Last Name:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.last_name', default="Last Name:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.last_name_var = tk.StringVar(value=data[3] if data else "")
         ttk.Entry(form_frame, textvariable=self.last_name_var, width=30).grid(row=3, column=1, pady=5)
 
         # Course
-        ttk.Label(form_frame, text="Course:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.course', default="Course:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.course_var = tk.StringVar(value=data[4] if data else "")
         course_combo = ttk.Combobox(form_frame, textvariable=self.course_var, width=27)
         course_combo['values'] = ("Computer Science", "Engineering", "Mathematics", "Physics", "Chemistry", "Biology")
         course_combo.grid(row=4, column=1, pady=5)
 
         # Email
-        ttk.Label(form_frame, text="Email:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.email', default="Email:")).grid(row=5, column=0, sticky=tk.W, pady=5)
         self.email_var = tk.StringVar(value=data[5] if data else "")
         ttk.Entry(form_frame, textvariable=self.email_var, width=30).grid(row=5, column=1, pady=5)
 
         # Phone
-        ttk.Label(form_frame, text="Phone:").grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.phone', default="Phone:")).grid(row=6, column=0, sticky=tk.W, pady=5)
         self.phone_var = tk.StringVar(value=data[6] if data else "")
         ttk.Entry(form_frame, textvariable=self.phone_var, width=30).grid(row=6, column=1, pady=5)
 
         # Address
-        ttk.Label(form_frame, text="Address:").grid(row=7, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.address', default="Address:")).grid(row=7, column=0, sticky=tk.W, pady=5)
         self.address_var = tk.StringVar(value=data[7] if data else "")
         ttk.Entry(form_frame, textvariable=self.address_var, width=30).grid(row=7, column=1, pady=5)
 
         # Enrollment Date
-        ttk.Label(form_frame, text="Enrollment Date:").grid(row=8, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.enrollment_date', default="Enrollment Date:")).grid(row=8, column=0, sticky=tk.W, pady=5)
         self.enrollment_date_var = tk.StringVar(value=data[8] if data else datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(form_frame, textvariable=self.enrollment_date_var, width=30).grid(row=8, column=1, pady=5)
 
         # Status
-        ttk.Label(form_frame, text="Status:").grid(row=9, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.status', default="Status:")).grid(row=9, column=0, sticky=tk.W, pady=5)
         self.status_var = tk.StringVar(value=data[9] if data else "Active")
         status_combo = ttk.Combobox(form_frame, textvariable=self.status_var, width=27)
         status_combo['values'] = ("Active", "Inactive", "Graduated", "Withdrawn")
         status_combo.grid(row=9, column=1, pady=5)
 
         # DOB
-        ttk.Label(form_frame, text="Date of Birth:").grid(row=10, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.date_of_birth', default="Date of Birth:")).grid(row=10, column=0, sticky=tk.W, pady=5)
         self.dob_var = tk.StringVar(value=data[10] if data else "")
         ttk.Entry(form_frame, textvariable=self.dob_var, width=30).grid(row=10, column=1, pady=5)
 
         # Gender
-        ttk.Label(form_frame, text="Gender:").grid(row=11, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.gender', default="Gender:")).grid(row=11, column=0, sticky=tk.W, pady=5)
         self.gender_var = tk.StringVar(value=data[11] if data else "")
         gender_combo = ttk.Combobox(form_frame, textvariable=self.gender_var, width=27)
         gender_combo['values'] = ("Male", "Female", "Other", "Prefer not to say")
         gender_combo.grid(row=11, column=1, pady=5)
 
         # Nationality
-        ttk.Label(form_frame, text="Nationality:").grid(row=12, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.labels.nationality', default="Nationality:")).grid(row=12, column=0, sticky=tk.W, pady=5)
         self.nationality_var = tk.StringVar(value=data[12] if data else "")
         ttk.Entry(form_frame, textvariable=self.nationality_var, width=30).grid(row=12, column=1, pady=5)
 
@@ -429,14 +431,14 @@ class StudentDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save_student).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.buttons.save', default="Save"), command=self.save_student).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.student_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def save_student(self):
         # Validate required fields
         if not all([self.student_id_var.get(), self.first_name_var.get(),
                    self.last_name_var.get(), self.course_var.get()]):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.student_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.student_dialog.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         self.result = (

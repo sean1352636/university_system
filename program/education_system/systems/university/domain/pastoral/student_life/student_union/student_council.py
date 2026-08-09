@@ -29,11 +29,11 @@ from education_system.systems.university.infrastructure.shared_context import (
     get_auth,
     get_current_user,
 )
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = str(paths.DEFAULT_DB_PATH)
+DB_PATH = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
 
 # ---------- Schema ----------------------------------------------------------

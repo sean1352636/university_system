@@ -12,7 +12,7 @@ from education_system.systems.university.domain.finance.reporting.revenue_analyt
 )
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 from education_system.systems.university.domain.finance.reporting.revenue_analytics.reports import (
     generate_financial_reports,

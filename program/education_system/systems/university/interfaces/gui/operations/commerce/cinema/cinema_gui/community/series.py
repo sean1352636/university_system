@@ -82,7 +82,7 @@ def on_series_select(self, event):
 
 def create_series(self):
     form = tk.Toplevel(self.root)
-    form.title("New Series")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.community.series.windows.new_series', default="New Series"))
     form.geometry("400x300")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -103,7 +103,7 @@ def create_series(self):
 
     def save():
         if not name_e.get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Enter series name")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.series.dialogs.enter_series_name', default="Enter series name"))
             return
         conn = sqlite3.connect(DB_FILE)
         try:
@@ -113,7 +113,7 @@ def create_series(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Series created")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.community.series.dialogs.series_created', default="Series created"))
         form.destroy()
         self.show_series_page()
 
@@ -121,7 +121,7 @@ def create_series(self):
 
 def link_movie_to_series(self):
     form = tk.Toplevel(self.root)
-    form.title("Link Movie to Series")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.community.series.windows.link_movie_to_series', default="Link Movie to Series"))
     form.geometry("400x350")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -161,7 +161,7 @@ def link_movie_to_series(self):
 
     def save():
         if not series_var.get() or not movie_var.get():
-            messagebox.showwarning(_t("cinema.common.warning"), "Select series and movie")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.series.dialogs.select_series_and_movie', default="Select series and movie"))
             return
         series_id = int(series_var.get().split(":")[0])
         movie_id = int(movie_var.get().split(":")[0])
@@ -175,7 +175,7 @@ def link_movie_to_series(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Movie linked to series")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.community.series.dialogs.movie_linked_to_series', default="Movie linked to series"))
         form.destroy()
         self.show_series_page()
 

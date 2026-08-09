@@ -4,6 +4,8 @@ Configure institution name/logo/colors, customize email templates,
 system message customization, and UI theme selection.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, colorchooser
 import logging
@@ -13,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.infrastructure.paths import BRANDING_DIR
+from education_system.paths import UNIVERSITY_BRANDING_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +81,7 @@ def get_logo_path():
         return None
     p = Path(raw)
     if not p.is_absolute():
-        p = BRANDING_DIR / p
+        p = UNIVERSITY_BRANDING_DIR / p
     return p if p.is_file() else None
 
 
@@ -94,7 +96,7 @@ def _load_image(path, max_height=48):
         return None
     path = Path(path)
     if not path.is_absolute():
-        path = BRANDING_DIR / path
+        path = UNIVERSITY_BRANDING_DIR / path
     if not path.is_file():
         return None
     try:
@@ -133,7 +135,7 @@ class BrandingConfigGUI(tk.Toplevel):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self.title("Institution Branding & Customization")
+        self.title(_t('gui.shell.admin.branding_config.windows.institution_branding_customization', default="Institution Branding & Customization"))
         self.geometry("900x650")
         self.transient(parent)
 
@@ -185,16 +187,16 @@ class BrandingConfigGUI(tk.Toplevel):
                             "VALUES (?, ?, ?, 'admin')",
                             (setting_name, str(value), now)
                         )
-            messagebox.showinfo("Saved", "Branding settings saved successfully.")
+            messagebox.showinfo(_t('gui.shell.admin.branding_config.dialogs.saved', default="Saved"), _t('gui.shell.admin.branding_config.dialogs.branding_settings_saved_successfully', default="Branding settings saved successfully."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save settings: {e}")
+            messagebox.showerror(_t('gui.shell.admin.branding_config.dialogs.error', default="Error"), f"Failed to save settings: {e}")
 
     def _create_widgets(self):
         # Header
         header = tk.Frame(self, bg="#8E24AA", height=50)
         header.pack(fill=tk.X)
         header.pack_propagate(False)
-        tk.Label(header, text="Institution Branding & Customization",
+        tk.Label(header, text=_t('gui.shell.admin.branding_config.labels.institution_branding_customization', default="Institution Branding & Customization"),
                  font=("Arial", 14, "bold"), bg="#8E24AA", fg="white").pack(pady=12)
 
         self.notebook = ttk.Notebook(self)
@@ -209,9 +211,9 @@ class BrandingConfigGUI(tk.Toplevel):
         # Save button at bottom
         save_frame = ttk.Frame(self)
         save_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(save_frame, text="Save All Settings",
+        ttk.Button(save_frame, text=_t('gui.shell.admin.branding_config.buttons.save_all_settings', default="Save All Settings"),
                    command=self._save_all).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(save_frame, text="Reset to Defaults",
+        ttk.Button(save_frame, text=_t('gui.shell.admin.branding_config.buttons.reset_to_defaults', default="Reset to Defaults"),
                    command=self._reset_defaults).pack(side=tk.RIGHT, padx=5)
 
     # ------------------------------------------------------------------
@@ -219,7 +221,7 @@ class BrandingConfigGUI(tk.Toplevel):
     # ------------------------------------------------------------------
     def _create_identity_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Identity")
+        self.notebook.add(tab, text=_t('gui.shell.admin.branding_config.tabs.identity', default="Identity"))
 
         container = ttk.Frame(tab, padding="20")
         container.pack(fill=tk.BOTH, expand=True)
@@ -244,20 +246,20 @@ class BrandingConfigGUI(tk.Toplevel):
             self.identity_entries[key] = e
 
         # Logo browse button
-        ttk.Button(container, text="Browse...",
+        ttk.Button(container, text=_t('gui.shell.admin.branding_config.buttons.browse', default="Browse..."),
                    command=self._browse_logo).grid(row=3, column=2, padx=5)
 
         # Tell the admin where the file actually ends up — browsing copies it
         # here, and dropping a file in by hand works just as well.
         ttk.Label(container,
-                  text=f"Logos are stored in:  {BRANDING_DIR}",
+                  text=f"Logos are stored in:  {UNIVERSITY_BRANDING_DIR}",
                   font=('Arial', 8), foreground='#666666').grid(
             row=4, column=1, columnspan=2, sticky="w", padx=10)
 
         container.columnconfigure(1, weight=1)
 
         # Preview
-        preview_frame = ttk.LabelFrame(container, text="Preview", padding="15")
+        preview_frame = ttk.LabelFrame(container, text=_t('gui.shell.admin.branding_config.labels.preview', default="Preview"), padding="15")
         preview_frame.grid(row=len(fields) + 1, column=0, columnspan=3,
                            sticky="ew", pady=15)
 
@@ -271,13 +273,13 @@ class BrandingConfigGUI(tk.Toplevel):
         self.preview_tagline.pack()
         self._update_identity_preview()
 
-        ttk.Button(container, text="Update Preview",
+        ttk.Button(container, text=_t('gui.shell.admin.branding_config.buttons.update_preview', default="Update Preview"),
                    command=self._update_identity_preview).grid(
             row=len(fields) + 2, column=1, pady=5)
 
     def _browse_logo(self):
         path = filedialog.askopenfilename(
-            title="Select Logo Image",
+            title=_t('gui.shell.admin.branding_config.dialogs.select_logo_image', default="Select Logo Image"),
             filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp"), ("All", "*.*")]
         )
         if not path:
@@ -287,15 +289,15 @@ class BrandingConfigGUI(tk.Toplevel):
         # stick would break for every other user and on the next machine.
         stored = path
         try:
-            BRANDING_DIR.mkdir(parents=True, exist_ok=True)
-            dest = BRANDING_DIR / f"logo{Path(path).suffix.lower()}"
+            UNIVERSITY_BRANDING_DIR.mkdir(parents=True, exist_ok=True)
+            dest = UNIVERSITY_BRANDING_DIR / f"logo{Path(path).suffix.lower()}"
             if Path(path).resolve() != dest.resolve():
                 shutil.copyfile(path, dest)
             stored = str(dest)
         except OSError as e:
-            logger.warning(f"Could not copy logo into {BRANDING_DIR}: {e}")
+            logger.warning(f"Could not copy logo into {UNIVERSITY_BRANDING_DIR}: {e}")
             messagebox.showwarning(
-                "Logo",
+                _t('gui.shell.admin.branding_config.dialogs.logo', default="Logo"),
                 f"Could not copy the logo into the branding folder:\n{e}\n\n"
                 "The original path will be used instead, which may not resolve "
                 "on another machine."
@@ -331,7 +333,7 @@ class BrandingConfigGUI(tk.Toplevel):
     # ------------------------------------------------------------------
     def _create_colors_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Colors")
+        self.notebook.add(tab, text=_t('gui.shell.admin.branding_config.tabs.colors', default="Colors"))
 
         container = ttk.Frame(tab, padding="20")
         container.pack(fill=tk.BOTH, expand=True)
@@ -360,12 +362,12 @@ class BrandingConfigGUI(tk.Toplevel):
             swatch.grid(row=i, column=2, padx=5, pady=8)
             self.color_swatches[key] = swatch
 
-            ttk.Button(container, text="Pick",
+            ttk.Button(container, text=_t('gui.shell.admin.branding_config.buttons.pick', default="Pick"),
                        command=lambda k=key: self._pick_color(k)).grid(
                 row=i, column=3, padx=5, pady=8)
 
         # Color preview
-        preview = ttk.LabelFrame(container, text="Color Preview", padding="15")
+        preview = ttk.LabelFrame(container, text=_t('gui.shell.admin.branding_config.labels.color_preview', default="Color Preview"), padding="15")
         preview.grid(row=len(color_fields), column=0, columnspan=4,
                      sticky="ew", pady=15)
 
@@ -411,7 +413,7 @@ class BrandingConfigGUI(tk.Toplevel):
     # ------------------------------------------------------------------
     def _create_messages_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Messages")
+        self.notebook.add(tab, text=_t('gui.shell.admin.branding_config.tabs.messages', default="Messages"))
 
         container = ttk.Frame(tab, padding="20")
         container.pack(fill=tk.BOTH, expand=True)
@@ -419,7 +421,7 @@ class BrandingConfigGUI(tk.Toplevel):
         self.message_entries = {}
 
         # Welcome message
-        ttk.Label(container, text="System Welcome Message:",
+        ttk.Label(container, text=_t('gui.shell.admin.branding_config.labels.system_welcome_message', default="System Welcome Message:"),
                   font=('Arial', 10)).pack(anchor="w")
         welcome = ttk.Entry(container, width=70)
         welcome.insert(0, self.settings.get('system_welcome_message', ''))
@@ -427,7 +429,7 @@ class BrandingConfigGUI(tk.Toplevel):
         self.message_entries['system_welcome_message'] = welcome
 
         # Footer text
-        ttk.Label(container, text="Footer Text:",
+        ttk.Label(container, text=_t('gui.shell.admin.branding_config.labels.footer_text', default="Footer Text:"),
                   font=('Arial', 10)).pack(anchor="w")
         footer = ttk.Entry(container, width=70)
         footer.insert(0, self.settings.get('footer_text', ''))
@@ -435,7 +437,7 @@ class BrandingConfigGUI(tk.Toplevel):
         self.message_entries['footer_text'] = footer
 
         # Email signature
-        ttk.Label(container, text="Email Signature:",
+        ttk.Label(container, text=_t('gui.shell.admin.branding_config.labels.email_signature', default="Email Signature:"),
                   font=('Arial', 10)).pack(anchor="w")
         sig = tk.Text(container, height=6, width=70)
         sig.insert('1.0', self.settings.get('email_signature', ''))
@@ -447,15 +449,15 @@ class BrandingConfigGUI(tk.Toplevel):
     # ------------------------------------------------------------------
     def _create_theme_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="UI Theme")
+        self.notebook.add(tab, text=_t('gui.shell.admin.branding_config.tabs.ui_theme', default="UI Theme"))
 
         container = ttk.Frame(tab, padding="20")
         container.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(container, text="UI Theme Selection",
+        ttk.Label(container, text=_t('gui.shell.admin.branding_config.labels.ui_theme_selection', default="UI Theme Selection"),
                   font=('Arial', 13, 'bold')).pack(anchor="w", pady=(0, 15))
 
-        self.theme_var = tk.StringVar(value="light")
+        self.theme_var = tk.StringVar(value=_t('gui.shell.admin.branding_config.values.light', default="light"))
 
         # Try to read current theme
         try:
@@ -466,22 +468,22 @@ class BrandingConfigGUI(tk.Toplevel):
         except Exception:
             pass
 
-        themes = ttk.LabelFrame(container, text="Select Theme", padding="15")
+        themes = ttk.LabelFrame(container, text=_t('gui.shell.admin.branding_config.labels.select_theme', default="Select Theme"), padding="15")
         themes.pack(fill=tk.X, pady=5)
 
-        ttk.Radiobutton(themes, text="Light Mode",
+        ttk.Radiobutton(themes, text=_t('gui.shell.admin.branding_config.buttons.light_mode', default="Light Mode"),
                         variable=self.theme_var, value="light").pack(anchor="w", pady=3)
-        ttk.Radiobutton(themes, text="Dark Mode",
+        ttk.Radiobutton(themes, text=_t('gui.shell.admin.branding_config.buttons.dark_mode', default="Dark Mode"),
                         variable=self.theme_var, value="dark").pack(anchor="w", pady=3)
 
-        ttk.Button(container, text="Apply Theme",
+        ttk.Button(container, text=_t('gui.shell.admin.branding_config.buttons.apply_theme', default="Apply Theme"),
                    command=self._apply_theme).pack(anchor="w", pady=15)
 
         # Info
-        info = ttk.LabelFrame(container, text="Theme Info", padding="15")
+        info = ttk.LabelFrame(container, text=_t('gui.shell.admin.branding_config.labels.theme_info', default="Theme Info"), padding="15")
         info.pack(fill=tk.X, pady=5)
-        ttk.Label(info, text="Theme changes will apply to newly opened windows.\n"
-                  "The main application may need to be restarted for full effect.",
+        ttk.Label(info, text=_t('gui.shell.admin.branding_config.labels.theme_changes_will_apply_to_newly_opened_windows_the_main_applic', default="Theme changes will apply to newly opened windows.\n"
+                  "The main application may need to be restarted for full effect."),
                   wraplength=400).pack(anchor="w")
 
     def _apply_theme(self):
@@ -490,32 +492,32 @@ class BrandingConfigGUI(tk.Toplevel):
             tm = ThemeManager()
             dark = self.theme_var.get() == "dark"
             tm.set_dark_mode(dark)
-            messagebox.showinfo("Theme Applied",
+            messagebox.showinfo(_t('gui.shell.admin.branding_config.dialogs.theme_applied', default="Theme Applied"),
                                 f"{'Dark' if dark else 'Light'} mode activated.\n"
                                 "New windows will use the selected theme.")
         except Exception as e:
-            messagebox.showerror("Error", f"Could not apply theme: {e}")
+            messagebox.showerror(_t('gui.shell.admin.branding_config.dialogs.error', default="Error"), f"Could not apply theme: {e}")
 
     # ------------------------------------------------------------------
     # Email Templates Tab
     # ------------------------------------------------------------------
     def _create_templates_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Email Templates")
+        self.notebook.add(tab, text=_t('gui.shell.admin.branding_config.tabs.email_templates', default="Email Templates"))
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Refresh",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.branding_config.buttons.refresh', default="Refresh"),
                    command=self._load_email_templates).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit Selected",
+        ttk.Button(btn_frame, text=_t('gui.shell.admin.branding_config.buttons.edit_selected', default="Edit Selected"),
                    command=self._edit_email_template).pack(side=tk.LEFT, padx=5)
 
         cols = ("name", "category", "subject")
         self.email_templates_tree = ttk.Treeview(tab, columns=cols, show="headings",
                                                   height=15)
-        self.email_templates_tree.heading("name", text="Template Name")
-        self.email_templates_tree.heading("category", text="Category")
-        self.email_templates_tree.heading("subject", text="Subject")
+        self.email_templates_tree.heading("name", text=_t('gui.shell.admin.branding_config.headings.template_name', default="Template Name"))
+        self.email_templates_tree.heading("category", text=_t('gui.shell.admin.branding_config.headings.category', default="Category"))
+        self.email_templates_tree.heading("subject", text=_t('gui.shell.admin.branding_config.headings.subject', default="Subject"))
         self.email_templates_tree.column("name", width=250)
         self.email_templates_tree.column("category", width=150)
         self.email_templates_tree.column("subject", width=350)
@@ -547,7 +549,7 @@ class BrandingConfigGUI(tk.Toplevel):
     def _edit_email_template(self):
         sel = self.email_templates_tree.selection()
         if not sel:
-            messagebox.showinfo("Info", "Select a template first.")
+            messagebox.showinfo(_t('gui.shell.admin.branding_config.dialogs.info', default="Info"), _t('gui.shell.admin.branding_config.dialogs.select_a_template_first', default="Select a template first."))
             return
         template_name = self.email_templates_tree.item(sel[0])['values'][0]
 
@@ -557,7 +559,7 @@ class BrandingConfigGUI(tk.Toplevel):
             )
             data = load_template(template_name)
             if not data:
-                messagebox.showerror("Error", "Could not load template.")
+                messagebox.showerror(_t('gui.shell.admin.branding_config.dialogs.error', default="Error"), _t('gui.shell.admin.branding_config.dialogs.could_not_load_template', default="Could not load template."))
                 return
 
             dialog = tk.Toplevel(self)
@@ -566,12 +568,12 @@ class BrandingConfigGUI(tk.Toplevel):
             dialog.transient(self)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Subject:").pack(anchor="w", padx=10, pady=(10, 0))
+            ttk.Label(dialog, text=_t('gui.shell.admin.branding_config.labels.subject', default="Subject:")).pack(anchor="w", padx=10, pady=(10, 0))
             subject_entry = ttk.Entry(dialog, width=60)
             subject_entry.insert(0, data.get('subject', ''))
             subject_entry.pack(fill=tk.X, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Body:").pack(anchor="w", padx=10)
+            ttk.Label(dialog, text=_t('gui.shell.admin.branding_config.labels.body', default="Body:")).pack(anchor="w", padx=10)
             body_text = tk.Text(dialog, height=15, width=60)
             body_text.insert('1.0', data.get('body', ''))
             body_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -585,14 +587,14 @@ class BrandingConfigGUI(tk.Toplevel):
                     )
                     dialog.destroy()
                     self._load_email_templates()
-                    messagebox.showinfo("Saved", f"Template '{template_name}' updated.")
+                    messagebox.showinfo(_t('gui.shell.admin.branding_config.dialogs.saved', default="Saved"), f"Template '{template_name}' updated.")
                 except Exception as e:
-                    messagebox.showerror("Error", str(e))
+                    messagebox.showerror(_t('gui.shell.admin.branding_config.dialogs.error', default="Error"), str(e))
 
-            ttk.Button(dialog, text="Save", command=save).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.shell.admin.branding_config.buttons.save', default="Save"), command=save).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not edit template: {e}")
+            messagebox.showerror(_t('gui.shell.admin.branding_config.dialogs.error', default="Error"), f"Could not edit template: {e}")
 
     # ------------------------------------------------------------------
     # Save / Reset
@@ -617,7 +619,7 @@ class BrandingConfigGUI(tk.Toplevel):
         self._save_settings()
 
     def _reset_defaults(self):
-        if messagebox.askyesno("Reset", "Reset all branding settings to defaults?"):
+        if messagebox.askyesno(_t('gui.shell.admin.branding_config.dialogs.reset', default="Reset"), _t('gui.shell.admin.branding_config.dialogs.reset_all_branding_settings_to_defaults', default="Reset all branding settings to defaults?")):
             self.settings = dict(DEFAULT_BRANDING)
             self._save_settings()
             self.destroy()

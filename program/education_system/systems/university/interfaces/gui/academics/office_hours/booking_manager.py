@@ -4,6 +4,8 @@ Provides a Treeview-based interface for students to browse available
 office hours, create bookings, and manage (cancel) existing bookings.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -32,7 +34,7 @@ class BookingManager:
 
         # ---- Available office hours ---- #
         avail_frame = ttk.LabelFrame(
-            main_frame, text="Available Office Hours", padding="5",
+            main_frame, text=_t('gui.academics.office_hours.booking_manager.labels.available_office_hours', default="Available Office Hours"), padding="5",
         )
         avail_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
@@ -56,15 +58,15 @@ class BookingManager:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill=tk.X, pady=(0, 10))
         ttk.Button(
-            btn_frame, text="Book Selected", command=self._book_selected,
+            btn_frame, text=_t('gui.academics.office_hours.booking_manager.buttons.book_selected', default="Book Selected"), command=self._book_selected,
         ).pack(side=tk.LEFT, padx=5)
         ttk.Button(
-            btn_frame, text="Refresh", command=self._refresh_available,
+            btn_frame, text=_t('gui.academics.office_hours.booking_manager.buttons.refresh', default="Refresh"), command=self._refresh_available,
         ).pack(side=tk.LEFT, padx=5)
 
         # ---- My bookings ---- #
         my_frame = ttk.LabelFrame(
-            main_frame, text="My Bookings", padding="5",
+            main_frame, text=_t('gui.academics.office_hours.booking_manager.labels.my_bookings', default="My Bookings"), padding="5",
         )
         my_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -89,10 +91,10 @@ class BookingManager:
         btn_frame2 = ttk.Frame(my_frame)
         btn_frame2.pack(fill=tk.X, pady=5)
         ttk.Button(
-            btn_frame2, text="Cancel Selected", command=self._cancel_selected,
+            btn_frame2, text=_t('gui.academics.office_hours.booking_manager.buttons.cancel_selected', default="Cancel Selected"), command=self._cancel_selected,
         ).pack(side=tk.LEFT, padx=5)
         ttk.Button(
-            btn_frame2, text="Refresh Bookings", command=self._refresh_bookings,
+            btn_frame2, text=_t('gui.academics.office_hours.booking_manager.buttons.refresh_bookings', default="Refresh Bookings"), command=self._refresh_bookings,
         ).pack(side=tk.LEFT, padx=5)
 
         self._refresh_bookings()
@@ -131,7 +133,7 @@ class BookingManager:
         except Exception as e:
             logger.error("Error refreshing available office hours: %s", e)
             messagebox.showerror(
-                "Error", f"Failed to load available office hours:\n{e}",
+                _t('gui.academics.office_hours.booking_manager.dialogs.error', default="Error"), f"Failed to load available office hours:\n{e}",
             )
 
     def _refresh_bookings(self):
@@ -159,7 +161,7 @@ class BookingManager:
         except Exception as e:
             logger.error("Error refreshing student bookings: %s", e)
             messagebox.showerror(
-                "Error", f"Failed to load your bookings:\n{e}",
+                _t('gui.academics.office_hours.booking_manager.dialogs.error', default="Error"), f"Failed to load your bookings:\n{e}",
             )
 
     # ------------------------------------------------------------------ #
@@ -171,8 +173,8 @@ class BookingManager:
         selected = self.avail_tree.selection()
         if not selected:
             messagebox.showwarning(
-                "No Selection",
-                "Please select an office hours entry to book.",
+                _t('gui.academics.office_hours.booking_manager.dialogs.no_selection', default="No Selection"),
+                _t('gui.academics.office_hours.booking_manager.dialogs.please_select_an_office_hours_entry_to_book', default="Please select an office hours entry to book."),
             )
             return
 
@@ -187,14 +189,14 @@ class BookingManager:
         student_id = self._get_student_id()
         if not student_id:
             messagebox.showwarning(
-                "Not Logged In",
-                "You must be logged in to book an appointment.",
+                _t('gui.academics.office_hours.booking_manager.dialogs.not_logged_in', default="Not Logged In"),
+                _t('gui.academics.office_hours.booking_manager.dialogs.you_must_be_logged_in_to_book_an_appointment', default="You must be logged in to book an appointment."),
             )
             return
 
         # Show booking dialog
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Book Appointment")
+        dialog.title(_t('gui.academics.office_hours.booking_manager.windows.book_appointment', default="Book Appointment"))
         dialog.geometry("400x250")
         dialog.transient(self.parent)
         dialog.grab_set()
@@ -224,7 +226,7 @@ class BookingManager:
         )
 
         # Booking date
-        ttk.Label(frame, text="Booking Date (YYYY-MM-DD):").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.booking_manager.labels.booking_date_yyyy_mm_dd', default="Booking Date (YYYY-MM-DD):")).grid(
             row=4, column=0, sticky=tk.W, pady=5,
         )
         date_var = tk.StringVar()
@@ -233,7 +235,7 @@ class BookingManager:
         )
 
         # Notes
-        ttk.Label(frame, text="Notes (optional):").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.booking_manager.labels.notes_optional', default="Notes (optional):")).grid(
             row=5, column=0, sticky=tk.W, pady=5,
         )
         notes_var = tk.StringVar()
@@ -247,8 +249,8 @@ class BookingManager:
 
             if not booking_date:
                 messagebox.showwarning(
-                    "Missing Date",
-                    "Please enter a booking date in YYYY-MM-DD format.",
+                    _t('gui.academics.office_hours.booking_manager.dialogs.missing_date', default="Missing Date"),
+                    _t('gui.academics.office_hours.booking_manager.dialogs.please_enter_a_booking_date_in_yyyy_mm_dd_format', default="Please enter a booking date in YYYY-MM-DD format."),
                     parent=dialog,
                 )
                 return
@@ -257,8 +259,8 @@ class BookingManager:
             parts = booking_date.split('-')
             if len(parts) != 3 or not all(p.isdigit() for p in parts):
                 messagebox.showwarning(
-                    "Invalid Date",
-                    "Date must be in YYYY-MM-DD format (e.g. 2026-03-15).",
+                    _t('gui.academics.office_hours.booking_manager.dialogs.invalid_date', default="Invalid Date"),
+                    _t('gui.academics.office_hours.booking_manager.dialogs.date_must_be_in_yyyy_mm_dd_format_e_g_2026_03_15', default="Date must be in YYYY-MM-DD format (e.g. 2026-03-15)."),
                     parent=dialog,
                 )
                 return
@@ -271,7 +273,7 @@ class BookingManager:
                     notes=notes,
                 )
                 messagebox.showinfo(
-                    "Success",
+                    _t('gui.academics.office_hours.booking_manager.dialogs.success', default="Success"),
                     f"Appointment booked successfully (Booking ID: {booking_id}).",
                     parent=dialog,
                 )
@@ -289,21 +291,21 @@ class BookingManager:
                     booking_date=booking_date,
                 )
             except ValueError as e:
-                messagebox.showwarning("Booking Error", str(e), parent=dialog)
+                messagebox.showwarning(_t('gui.academics.office_hours.booking_manager.dialogs.booking_error', default="Booking Error"), str(e), parent=dialog)
             except Exception as e:
                 logger.error("Error booking appointment: %s", e)
                 messagebox.showerror(
-                    "Error",
+                    _t('gui.academics.office_hours.booking_manager.dialogs.error', default="Error"),
                     f"Failed to book appointment:\n{e}",
                     parent=dialog,
                 )
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=6, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Book", command=_on_book).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.booking_manager.buttons.book', default="Book"), command=_on_book).pack(
             side=tk.LEFT, padx=10,
         )
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.booking_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(
             side=tk.LEFT, padx=10,
         )
 
@@ -316,8 +318,8 @@ class BookingManager:
         selected = self.bookings_tree.selection()
         if not selected:
             messagebox.showwarning(
-                "No Selection",
-                "Please select a booking to cancel.",
+                _t('gui.academics.office_hours.booking_manager.dialogs.no_selection', default="No Selection"),
+                _t('gui.academics.office_hours.booking_manager.dialogs.please_select_a_booking_to_cancel', default="Please select a booking to cancel."),
             )
             return
 
@@ -327,7 +329,7 @@ class BookingManager:
 
         if status != 'confirmed':
             messagebox.showinfo(
-                "Cannot Cancel",
+                _t('gui.academics.office_hours.booking_manager.dialogs.cannot_cancel', default="Cannot Cancel"),
                 f"This booking has status '{status}' and cannot be cancelled.",
             )
             return
@@ -335,8 +337,8 @@ class BookingManager:
         student_id = self._get_student_id()
         if not student_id:
             messagebox.showwarning(
-                "Not Logged In",
-                "You must be logged in to cancel a booking.",
+                _t('gui.academics.office_hours.booking_manager.dialogs.not_logged_in', default="Not Logged In"),
+                _t('gui.academics.office_hours.booking_manager.dialogs.you_must_be_logged_in_to_cancel_a_booking', default="You must be logged in to cancel a booking."),
             )
             return
 
@@ -346,7 +348,7 @@ class BookingManager:
         date = values[5]
 
         confirm = messagebox.askyesno(
-            "Confirm Cancellation",
+            _t('gui.academics.office_hours.booking_manager.dialogs.confirm_cancellation', default="Confirm Cancellation"),
             f"Cancel booking {booking_id}?\n\n"
             f"Instructor: {instructor}\n"
             f"Schedule: {day} {time_str}\n"
@@ -358,7 +360,7 @@ class BookingManager:
         try:
             success = self.service.cancel_booking(booking_id, student_id)
             if success:
-                messagebox.showinfo("Success", "Booking cancelled successfully.")
+                messagebox.showinfo(_t('gui.academics.office_hours.booking_manager.dialogs.success', default="Success"), _t('gui.academics.office_hours.booking_manager.dialogs.booking_cancelled_successfully', default="Booking cancelled successfully."))
                 self._refresh_bookings()
 
                 # Email both parties about cancellation
@@ -371,14 +373,14 @@ class BookingManager:
                 )
             else:
                 messagebox.showwarning(
-                    "Not Cancelled",
-                    "Booking not found or could not be cancelled.\n"
-                    "It may have already been cancelled.",
+                    _t('gui.academics.office_hours.booking_manager.dialogs.not_cancelled', default="Not Cancelled"),
+                    _t('gui.academics.office_hours.booking_manager.dialogs.booking_not_found_or_could_not_be_cancelled_it_may_have_already', default="Booking not found or could not be cancelled.\n"
+                    "It may have already been cancelled."),
                 )
         except Exception as e:
             logger.error("Error cancelling booking %s: %s", booking_id, e)
             messagebox.showerror(
-                "Error", f"Failed to cancel booking:\n{e}",
+                _t('gui.academics.office_hours.booking_manager.dialogs.error', default="Error"), f"Failed to cancel booking:\n{e}",
             )
 
     # ------------------------------------------------------------------ #

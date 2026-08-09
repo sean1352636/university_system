@@ -324,7 +324,7 @@ class TestCreateSecurityHeadersBlueprint:
         )
         # The function imports flask inside itself, so we patch that
         with patch(
-            'university_system.infrastructure.security.flask_security_headers.create_security_headers_blueprint'
+            'education_system.systems.university.infrastructure.security.flask_security_headers.create_security_headers_blueprint'
         ) as mock_fn:
             mock_fn.return_value = None
             result = mock_fn()

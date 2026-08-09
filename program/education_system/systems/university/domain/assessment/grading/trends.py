@@ -10,9 +10,12 @@ from education_system.systems.university.infrastructure.database.db import get_c
 from education_system.systems.university.domain.assessment.grading.utils import calculate_trend_slope, select_student
 from education_system.systems.university.domain.assessment.grading.forecasting import forecast_success_rates
 
-_DATA_REPORTS_DIR = os.path.join(
-    os.path.dirname(__file__), '..', '..', '..', '..', 'data', 'reports'
-)
+# Canonical runtime reports directory (ADR 0018). The old relative walk
+# resolved to `systems/data/reports` -- inside the importable package, and
+# not where anything else reads reports from.
+from education_system.paths import UNIVERSITY_REPORTS_DIR as _REPORTS_DIR
+
+_DATA_REPORTS_DIR = str(_REPORTS_DIR)
 
 def analyze_individual_student_trends(cursor):
     """Analyze performance trends for individual students"""

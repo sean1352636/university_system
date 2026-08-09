@@ -7,7 +7,7 @@ import random
 import json
 import requests
 from datetime import datetime, timedelta
-from education_system.systems.university.infrastructure.paths import QR_CODES_DIR, BACKUP_DIR
+from education_system.paths import UNIVERSITY_QR_CODES_DIR, UNIVERSITY_BACKUP_DIR
 from education_system.systems.university.infrastructure.email import (
     send_book_checkout_confirmation,
     send_book_return_reminder,
@@ -25,7 +25,7 @@ import logging
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.utils.finance_integration import record_payment_to_finance
 from education_system.systems.university.infrastructure.i18n import (
     get_text,
@@ -36,7 +36,7 @@ from education_system.systems.university.infrastructure.utils.language_selector 
 )
 from education_system.systems.university.domain.academics.services.library.database import get_db_connection, log_audit_event
 from education_system.systems.university.domain.academics.services.library.settings import get_current_user_id
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Configure logging
 logger = configure_logging(name=__name__)
@@ -65,7 +65,7 @@ def generate_qr_code(book_id: str, title: str) -> str:
         qr_img = qr.make_image(fill_color="black", back_color="white")
 
         # Save QR code
-        qr_path = QR_CODES_DIR / f"book_{book_id}.png"
+        qr_path = UNIVERSITY_QR_CODES_DIR / f"book_{book_id}.png"
         qr_img.save(str(qr_path))
 
         return qr_path

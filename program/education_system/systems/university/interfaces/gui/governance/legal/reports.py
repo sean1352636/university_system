@@ -1,5 +1,7 @@
 """Reports mixin for the Legal Services GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.governance.legal._imports import (
     tk, ttk, messagebox, scrolledtext, filedialog, simpledialog, traceback,
     datetime,
@@ -176,7 +178,7 @@ By Payment Method:
 
         if '@' not in admin_email:
             logger.info(f"Report email skipped - invalid email format: {admin_email}")
-            messagebox.showwarning(_t("common.warning", default="Warning"), "Invalid email address")
+            messagebox.showwarning(_t("common.warning", default="Warning"), _t('gui.governance.legal.reports.dialogs.invalid_email_address', default="Invalid email address"))
             return
 
         try:
@@ -218,7 +220,7 @@ By Payment Method:
         """Save the current report to file"""
         report_content = self.report_text.get('1.0', tk.END).strip()
         if not report_content:
-            messagebox.showwarning(_t("common.warning", default="Warning"), "No report to save")
+            messagebox.showwarning(_t("common.warning", default="Warning"), _t('gui.governance.legal.reports.dialogs.no_report_to_save', default="No report to save"))
             return
 
         file_path = filedialog.asksaveasfilename(
@@ -230,4 +232,4 @@ By Payment Method:
         if file_path:
             with open(file_path, 'w') as f:
                 f.write(report_content)
-            messagebox.showinfo(_t("common.success", default="Success"), "Report saved successfully")
+            messagebox.showinfo(_t("common.success", default="Success"), _t('gui.governance.legal.reports.dialogs.report_saved_successfully', default="Report saved successfully"))

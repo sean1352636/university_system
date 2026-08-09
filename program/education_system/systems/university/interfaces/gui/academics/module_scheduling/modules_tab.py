@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -432,7 +434,7 @@ ModuleSchedulingGUI.get_available_courses = get_available_courses
 def show_add_module_dialog(self):
     """Dialog to add a new module with course selection"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Add New Module")
+    dialog.title(_t('gui.academics.module_scheduling.modules_tab.windows.add_new_module', default="Add New Module"))
     dialog.geometry("500x300")
 
     # Get available courses from the courses table
@@ -444,7 +446,7 @@ def show_add_module_dialog(self):
         "Type": tk.StringVar(),
         "Course": tk.StringVar(),
         "Credits": tk.StringVar(value="3"),
-        "Semester": tk.StringVar(value="Fall"),
+        "Semester": tk.StringVar(value=_t('gui.academics.module_scheduling.modules_tab.values.fall', default="Fall")),
     }
 
     # Create form fields
@@ -482,9 +484,9 @@ def show_add_module_dialog(self):
             self.log_activity(f"Module added: {module_data['code']} - {module_data['name']}")
             dialog.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add module: {e}", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.modules_tab.dialogs.error', default="Error"), f"Failed to add module: {e}", parent=self.root)
 
-    ttk.Button(dialog, text="Save", command=save, style="Success.TButton").grid(
+    ttk.Button(dialog, text=_t('gui.academics.module_scheduling.modules_tab.buttons.save', default="Save"), command=save, style="Success.TButton").grid(
         row=len(fields), column=0, columnspan=2, pady=15
     )
 
@@ -494,7 +496,7 @@ def edit_selected_module(self):
     """Edit the currently selected module"""
     selected = self.modules_tree.selection()
     if not selected:
-        messagebox.showwarning("No Selection", "Please select a module to edit.", parent=self.root)
+        messagebox.showwarning(_t('gui.academics.module_scheduling.modules_tab.dialogs.no_selection', default="No Selection"), _t('gui.academics.module_scheduling.modules_tab.dialogs.please_select_a_module_to_edit', default="Please select a module to edit."), parent=self.root)
         return
 
     values = self.modules_tree.item(selected[0], "values")
@@ -502,7 +504,7 @@ def edit_selected_module(self):
 
     # Prefill with current values
     dialog = tk.Toplevel(self.root)
-    dialog.title("Edit Module")
+    dialog.title(_t('gui.academics.module_scheduling.modules_tab.windows.edit_module', default="Edit Module"))
     dialog.geometry("400x200")
 
     fields = {
@@ -523,9 +525,9 @@ def edit_selected_module(self):
             self.log_activity(f"Module updated: {updated_data['code']} - {updated_data['name']}")
             dialog.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update module: {e}", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.modules_tab.dialogs.error', default="Error"), f"Failed to update module: {e}", parent=self.root)
 
-    ttk.Button(dialog, text="Save Changes", command=save, style="Success.TButton").grid(
+    ttk.Button(dialog, text=_t('gui.academics.module_scheduling.modules_tab.buttons.save_changes', default="Save Changes"), command=save, style="Success.TButton").grid(
         row=len(fields), column=0, columnspan=2, pady=15
     )
 
@@ -535,14 +537,14 @@ def delete_selected_module(self):
     """Delete the selected module"""
     selected = self.modules_tree.selection()
     if not selected:
-        messagebox.showwarning("No Selection", "Please select a module to delete.", parent=self.root)
+        messagebox.showwarning(_t('gui.academics.module_scheduling.modules_tab.dialogs.no_selection', default="No Selection"), _t('gui.academics.module_scheduling.modules_tab.dialogs.please_select_a_module_to_delete', default="Please select a module to delete."), parent=self.root)
         return
 
     values = self.modules_tree.item(selected[0], "values")
     module_id, module_code, module_name = values[0], values[1], values[2]
 
     confirm = messagebox.askyesno(
-        "Confirm Delete",
+        _t('gui.academics.module_scheduling.modules_tab.dialogs.confirm_delete', default="Confirm Delete"),
         f"Are you sure you want to delete module {module_code} - {module_name}?"
     , parent=self.root)
     if not confirm:
@@ -553,7 +555,7 @@ def delete_selected_module(self):
         self.refresh_modules()
         self.log_activity(f"Module deleted: {module_code} - {module_name}")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to delete module: {e}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.modules_tab.dialogs.error', default="Error"), f"Failed to delete module: {e}", parent=self.root)
 
 ModuleSchedulingGUI.delete_selected_module = delete_selected_module
 
@@ -574,7 +576,7 @@ def generate_module_report(self):
     try:
         modules = self.scheduler.get_all_modules()
         if not modules:
-            messagebox.showinfo("Report", "No modules available.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.modules_tab.dialogs.report', default="Report"), _t('gui.academics.module_scheduling.modules_tab.dialogs.no_modules_available', default="No modules available."), parent=self.root)
             return
 
         report = "Module Report\n\n"
@@ -582,7 +584,7 @@ def generate_module_report(self):
             report += f"{m.get('code')} - {m.get('name')} ({m.get('credits')} credits, Semester {m.get('semester')})\n"
 
         report_window = tk.Toplevel(self.root)
-        report_window.title("Module Report")
+        report_window.title(_t('gui.academics.module_scheduling.modules_tab.windows.module_report', default="Module Report"))
         report_window.geometry("900x600")
         report_window.transient(self.root)
         text = scrolledtext.ScrolledText(report_window, width=80, height=25)
@@ -604,20 +606,20 @@ def generate_module_report(self):
             try:
                 with open(filename, "w", encoding="utf-8") as handle:
                     handle.write(report)
-                messagebox.showinfo("Report Saved", f"Report saved to {filename}", parent=self.root)
+                messagebox.showinfo(_t('gui.academics.module_scheduling.modules_tab.dialogs.report_saved', default="Report Saved"), f"Report saved to {filename}", parent=self.root)
             except Exception as exc:
-                messagebox.showerror("Save Error", f"Failed to save report: {exc}", parent=self.root)
+                messagebox.showerror(_t('gui.academics.module_scheduling.modules_tab.dialogs.save_error', default="Save Error"), f"Failed to save report: {exc}", parent=self.root)
 
         def email_report():
             recipient_email = self._get_admin_email()
             if not recipient_email:
                 recipient_email = simpledialog.askstring(
-                    "Admin Email",
-                    "Enter admin email address:",
+                    _t('gui.academics.module_scheduling.modules_tab.dialogs.admin_email', default="Admin Email"),
+                    _t('gui.academics.module_scheduling.modules_tab.dialogs.enter_admin_email_address', default="Enter admin email address:"),
                     parent=report_window,
                 )
             if not recipient_email or "@" not in recipient_email:
-                messagebox.showwarning("Invalid Email", "Please enter a valid admin email address.", parent=self.root)
+                messagebox.showwarning(_t('gui.academics.module_scheduling.modules_tab.dialogs.invalid_email', default="Invalid Email"), _t('gui.academics.module_scheduling.modules_tab.dialogs.please_enter_a_valid_admin_email_address', default="Please enter a valid admin email address."), parent=self.root)
                 return
             try:
                 from education_system.systems.university.infrastructure.email.email_service import send_email
@@ -656,18 +658,18 @@ This email was sent from the Module Scheduling GUI.
                     subject=subject,
                     body=email_body,
                 )
-                messagebox.showinfo("Email Sent", f"Report sent to {recipient_email}.", parent=self.root)
+                messagebox.showinfo(_t('gui.academics.module_scheduling.modules_tab.dialogs.email_sent', default="Email Sent"), f"Report sent to {recipient_email}.", parent=self.root)
                 self.update_activity_log(f"Emailed module report to {recipient_email}")
             except Exception as exc:
-                messagebox.showerror("Email Error", f"Failed to send email: {exc}", parent=self.root)
+                messagebox.showerror(_t('gui.academics.module_scheduling.modules_tab.dialogs.email_error', default="Email Error"), f"Failed to send email: {exc}", parent=self.root)
 
-        ttk.Button(button_frame, text="Save as TXT", command=save_report).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Email to Admin", command=email_report).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.modules_tab.buttons.save_as_txt', default="Save as TXT"), command=save_report).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.modules_tab.buttons.email_to_admin', default="Email to Admin"), command=email_report).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.modules_tab.buttons.close', default="Close"), command=report_window.destroy).pack(side=tk.RIGHT, padx=5)
 
         self.log_activity("Module report generated")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate report: {e}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.modules_tab.dialogs.error', default="Error"), f"Failed to generate report: {e}", parent=self.root)
 
 ModuleSchedulingGUI.generate_module_report = generate_module_report
 

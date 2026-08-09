@@ -1,4 +1,6 @@
 """Utility operations manager for batch operations GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import json
 import shutil
@@ -344,7 +346,7 @@ Built with Python and tkinter
     def open_database(self):
         """Open a different database file - already implemented but ensure it's complete"""
         db_file = filedialog.askopenfilename(
-            title="Select database file",
+            title=_t('gui.shell.batch_operations.utility_manager.dialogs.select_database_file', default="Select database file"),
             filetypes=[("Database files", "*.db"), ("All files", "*.*")]
         )
 
@@ -364,8 +366,8 @@ Built with Python and tkinter
     def open_command_line_mode(self):
         """Open the original command-line interface in a background thread."""
         if messagebox.askyesno(
-            "Command Line Mode",
-            "This will open the original command-line interface in a new window/terminal.\nContinue?"
+            _t('gui.shell.batch_operations.utility_manager.dialogs.command_line_mode', default="Command Line Mode"),
+            _t('gui.shell.batch_operations.utility_manager.dialogs.this_will_open_the_original_command_line_interface_in_a_new_wind', default="This will open the original command-line interface in a new window/terminal.\nContinue?")
         ):
             try:
                 def cli_worker():
@@ -394,38 +396,38 @@ Built with Python and tkinter
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        header = ttk.Label(dialog, text="Generate Import Template", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.utility_manager.labels.generate_import_template', default="Generate Import Template"), font=("Arial", 14, "bold"))
         header.pack(pady=10)
 
         # Template type
-        type_frame = ttk.LabelFrame(dialog, text="Template Type", padding="10")
+        type_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.utility_manager.labels.template_type', default="Template Type"), padding="10")
         type_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        template_var = tk.StringVar(value="new_students")
+        template_var = tk.StringVar(value=_t('gui.shell.batch_operations.utility_manager.values.new_students', default="new_students"))
 
-        ttk.Radiobutton(type_frame, text="New Student Import",
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.new_student_import', default="New Student Import"),
                        variable=template_var, value="new_students").pack(anchor='w')
-        ttk.Radiobutton(type_frame, text="Student Update",
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.student_update', default="Student Update"),
                        variable=template_var, value="update_students").pack(anchor='w')
-        ttk.Radiobutton(type_frame, text="Module Enrollment",
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.module_enrollment', default="Module Enrollment"),
                        variable=template_var, value="module_enrollment").pack(anchor='w')
-        ttk.Radiobutton(type_frame, text="Grade Import",
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.grade_import', default="Grade Import"),
                        variable=template_var, value="grade_import").pack(anchor='w')
-        ttk.Radiobutton(type_frame, text="Custom Template",
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.custom_template', default="Custom Template"),
                        variable=template_var, value="custom").pack(anchor='w')
 
         # Format selection
-        format_frame = ttk.LabelFrame(dialog, text="File Format", padding="10")
+        format_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.utility_manager.labels.file_format', default="File Format"), padding="10")
         format_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        format_var = tk.StringVar(value="csv")
+        format_var = tk.StringVar(value=_t('gui.shell.batch_operations.utility_manager.values.csv', default="csv"))
 
-        ttk.Radiobutton(format_frame, text="CSV", variable=format_var, value="csv").pack(anchor='w')
-        ttk.Radiobutton(format_frame, text="Excel", variable=format_var, value="xlsx").pack(anchor='w')
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.csv', default="CSV"), variable=format_var, value="csv").pack(anchor='w')
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.excel', default="Excel"), variable=format_var, value="xlsx").pack(anchor='w')
 
         # Include examples
         examples_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(format_frame, text="Include example data",
+        ttk.Checkbutton(format_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.include_example_data', default="Include example data"),
                        variable=examples_var).pack(anchor='w', pady=5)
 
         # Buttons
@@ -459,7 +461,7 @@ Built with Python and tkinter
                 file_types = [("Excel files", "*.xlsx")]
 
             output_file = filedialog.asksaveasfilename(
-                title="Save template as",
+                title=_t('gui.shell.batch_operations.utility_manager.dialogs.save_template_as', default="Save template as"),
                 defaultextension=file_extension,
                 filetypes=file_types + [("All files", "*.*")]
             )
@@ -527,7 +529,7 @@ Built with Python and tkinter
 
     def create_backup(self):
         """GUI version of create backup"""
-        if messagebox.askyesno(_t("batch_ops.msg_titles.create_backup"), "Create a backup of the current database?"):
+        if messagebox.askyesno(_t("batch_ops.msg_titles.create_backup"), _t('gui.shell.batch_operations.utility_manager.dialogs.create_a_backup_of_the_current_database', default="Create a backup of the current database?")):
             def backup_worker():
                 try:
                     self.gui.update_status("Creating database backup...")
@@ -547,14 +549,14 @@ Built with Python and tkinter
     def restore_backup(self):
         """GUI version of restore backup"""
         backup_file = filedialog.askopenfilename(
-            title="Select backup file to restore",
+            title=_t('gui.shell.batch_operations.utility_manager.dialogs.select_backup_file_to_restore', default="Select backup file to restore"),
             filetypes=[("Database files", "*.db"), ("All files", "*.*")]
         )
 
         if not backup_file:
             return
 
-        if messagebox.askyesno("Restore Backup",
+        if messagebox.askyesno(_t('gui.shell.batch_operations.utility_manager.dialogs.restore_backup', default="Restore Backup"),
                               f"This will replace the current database with the backup.\n"
                               f"Current data will be lost!\n\n"
                               f"Restore from: {os.path.basename(backup_file)}?"):
@@ -565,7 +567,7 @@ Built with Python and tkinter
                 # Restore from selected backup
                 shutil.copy2(backup_file, self.gui.backend.db_path)
 
-                messagebox.showinfo("Restore Complete",
+                messagebox.showinfo(_t('gui.shell.batch_operations.utility_manager.dialogs.restore_complete', default="Restore Complete"),
                                    f"Database restored successfully from {os.path.basename(backup_file)}\n"
                                    f"Previous database backed up to: {current_backup}")
 
@@ -583,7 +585,7 @@ Built with Python and tkinter
                 with open(IMPORT_HISTORY_PATH, 'r') as f:
                     self.gui.backend.import_history = json.load(f)
         except FileNotFoundError:
-            messagebox.showinfo("No History", "No import history found")
+            messagebox.showinfo(_t('gui.shell.batch_operations.utility_manager.dialogs.no_history', default="No History"), _t('gui.shell.batch_operations.utility_manager.dialogs.no_import_history_found', default="No import history found"))
             return
 
         if not self.gui.backend.import_history:
@@ -603,11 +605,11 @@ Built with Python and tkinter
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        header = ttk.Label(dialog, text="⚠️ Undo Last Import", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.utility_manager.labels.undo_last_import', default="⚠️ Undo Last Import"), font=("Arial", 14, "bold"))
         header.pack(pady=10)
 
         # Import details
-        details_frame = ttk.LabelFrame(dialog, text="Last Import Details", padding="10")
+        details_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.utility_manager.labels.last_import_details', default="Last Import Details"), padding="10")
         details_frame.pack(fill=tk.X, padx=20, pady=10)
 
         details_text = f"""Date: {last_import['timestamp']}
@@ -671,7 +673,7 @@ This action cannot be undone!"""
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        header = ttk.Label(dialog, text="Application Settings", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.utility_manager.labels.application_settings', default="Application Settings"), font=("Arial", 14, "bold"))
         header.pack(pady=10)
 
         # Settings notebook
@@ -680,20 +682,20 @@ This action cannot be undone!"""
 
         # General settings
         general_frame = ttk.Frame(settings_notebook)
-        settings_notebook.add(general_frame, text="General")
+        settings_notebook.add(general_frame, text=_t('gui.shell.batch_operations.utility_manager.tabs.general', default="General"))
 
         # Database settings
-        db_frame = ttk.LabelFrame(general_frame, text="Database", padding="10")
+        db_frame = ttk.LabelFrame(general_frame, text=_t('gui.shell.batch_operations.utility_manager.labels.database', default="Database"), padding="10")
         db_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(db_frame, text="Database Path:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(db_frame, text=_t('gui.shell.batch_operations.utility_manager.labels.database_path', default="Database Path:")).grid(row=0, column=0, sticky='w', pady=5)
         db_path_var = tk.StringVar(value=self.gui.backend.db_path)
         db_entry = ttk.Entry(db_frame, textvariable=db_path_var, width=40)
         db_entry.grid(row=0, column=1, padx=(10, 0), pady=5)
 
         def browse_db():
             file_path = filedialog.askopenfilename(
-                title="Select database file",
+                title=_t('gui.shell.batch_operations.utility_manager.dialogs.select_database_file', default="Select database file"),
                 filetypes=[("Database files", "*.db"), ("All files", "*.*")]
             )
             if file_path:
@@ -711,24 +713,24 @@ This action cannot be undone!"""
         backup_entry.grid(row=0, column=1, padx=(10, 0), pady=5)
 
         auto_backup_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(backup_frame, text="Automatic backup before imports",
+        ttk.Checkbutton(backup_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.automatic_backup_before_imports', default="Automatic backup before imports"),
                        variable=auto_backup_var).grid(row=1, column=0, columnspan=2, sticky='w', pady=5)
 
         # Import settings
         import_frame = ttk.Frame(settings_notebook)
-        settings_notebook.add(import_frame, text="Import")
+        settings_notebook.add(import_frame, text=_t('gui.shell.batch_operations.utility_manager.tabs.import', default="Import"))
 
-        import_settings_frame = ttk.LabelFrame(import_frame, text="Import Behavior", padding="10")
+        import_settings_frame = ttk.LabelFrame(import_frame, text=_t('gui.shell.batch_operations.utility_manager.labels.import_behavior', default="Import Behavior"), padding="10")
         import_settings_frame.pack(fill=tk.X, pady=10)
 
         duplicate_threshold_var = tk.DoubleVar(value=0.7)
-        ttk.Label(import_settings_frame, text="Duplicate Detection Threshold:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(import_settings_frame, text=_t('gui.shell.batch_operations.utility_manager.labels.duplicate_detection_threshold', default="Duplicate Detection Threshold:")).grid(row=0, column=0, sticky='w', pady=5)
         threshold_scale = ttk.Scale(import_settings_frame, from_=0.5, to=0.95,
                                    variable=duplicate_threshold_var, orient='horizontal')
         threshold_scale.grid(row=0, column=1, padx=(10, 0), pady=5, sticky='ew')
 
         validate_on_import_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(import_settings_frame, text="Validate data during import",
+        ttk.Checkbutton(import_settings_frame, text=_t('gui.shell.batch_operations.utility_manager.buttons.validate_data_during_import', default="Validate data during import"),
                        variable=validate_on_import_var).grid(row=1, column=0, columnspan=2, sticky='w', pady=5)
 
         # Buttons
@@ -754,7 +756,7 @@ This action cannot be undone!"""
                     json.dump(settings, f, indent=2)
 
                 dialog.destroy()
-                messagebox.showinfo("Settings Saved", "Settings have been saved successfully")
+                messagebox.showinfo(_t('gui.shell.batch_operations.utility_manager.dialogs.settings_saved', default="Settings Saved"), _t('gui.shell.batch_operations.utility_manager.dialogs.settings_have_been_saved_successfully', default="Settings have been saved successfully"))
 
             except Exception as e:
                 messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))

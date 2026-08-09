@@ -1,5 +1,7 @@
 """Analytics and reporting"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -13,7 +15,7 @@ import html
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from collections import deque
 
 
@@ -40,7 +42,7 @@ class AnalyticsManager:
         """Show analytics dashboard with charts"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Analytics Dashboard", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.analytics.labels.analytics_dashboard', default="Analytics Dashboard"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create notebook for different analytics views
@@ -49,15 +51,15 @@ class AnalyticsManager:
 
         # Overview tab
         overview_frame = ttk.Frame(notebook)
-        notebook.add(overview_frame, text="Overview")
+        notebook.add(overview_frame, text=_t('gui.academics.assignment_system.analytics.tabs.overview', default="Overview"))
 
         # Grades tab
         grades_frame = ttk.Frame(notebook)
-        notebook.add(grades_frame, text="Grade Distribution")
+        notebook.add(grades_frame, text=_t('gui.academics.assignment_system.analytics.tabs.grade_distribution', default="Grade Distribution"))
 
         # Submissions tab
         submissions_frame = ttk.Frame(notebook)
-        notebook.add(submissions_frame, text="Submission Trends")
+        notebook.add(submissions_frame, text=_t('gui.academics.assignment_system.analytics.tabs.submission_trends', default="Submission Trends"))
 
         # Create analytics content
         self.create_overview_analytics(overview_frame)
@@ -68,7 +70,7 @@ class AnalyticsManager:
     def create_overview_analytics(self, parent):
         """Create overview analytics"""
         # Statistics summary
-        stats_frame = ttk.LabelFrame(parent, text="System Statistics", padding=10)
+        stats_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.analytics.labels.system_statistics', default="System Statistics"), padding=10)
         stats_frame.pack(fill='x', padx=10, pady=10)
 
         try:
@@ -109,14 +111,14 @@ class AnalyticsManager:
             ttk.Label(stats_frame, text=f"Error loading statistics: {e}").pack()
 
         # Recent activity
-        activity_frame = ttk.LabelFrame(parent, text="Recent Activity", padding=10)
+        activity_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.analytics.labels.recent_activity', default="Recent Activity"), padding=10)
         activity_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Activity tree
         activity_tree = ttk.Treeview(activity_frame, columns=('Type', 'Description', 'Date'), show='headings')
-        activity_tree.heading('Type', text='Type')
-        activity_tree.heading('Description', text='Description')
-        activity_tree.heading('Date', text='Date')
+        activity_tree.heading('Type', text=_t('gui.academics.assignment_system.analytics.headings.type', default='Type'))
+        activity_tree.heading('Description', text=_t('gui.academics.assignment_system.analytics.headings.description', default='Description'))
+        activity_tree.heading('Date', text=_t('gui.academics.assignment_system.analytics.headings.date', default='Date'))
 
         activity_tree.pack(fill='both', expand=True)
 
@@ -211,12 +213,12 @@ class AnalyticsManager:
 
             # Module performance table
             if module_data:
-                module_frame = ttk.LabelFrame(parent, text="Module Performance", padding=10)
+                module_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.analytics.labels.module_performance', default="Module Performance"), padding=10)
                 module_frame.pack(fill='x', padx=10, pady=10)
 
                 module_tree = ttk.Treeview(module_frame, columns=('Module', 'Average Grade'), show='headings')
-                module_tree.heading('Module', text='Module')
-                module_tree.heading('Average Grade', text='Average Grade')
+                module_tree.heading('Module', text=_t('gui.academics.assignment_system.analytics.headings.module', default='Module'))
+                module_tree.heading('Average Grade', text=_t('gui.academics.assignment_system.analytics.headings.average_grade', default='Average Grade'))
 
                 for module, avg_grade in module_data:
                     module_tree.insert('', 'end', values=(module, f"{avg_grade:.1f}%"))
@@ -274,11 +276,11 @@ class AnalyticsManager:
                 no_data_frame = ttk.Frame(parent)
                 no_data_frame.pack(fill='both', expand=True, padx=10, pady=50)
 
-                ttk.Label(no_data_frame, text="No Submission Data Available",
+                ttk.Label(no_data_frame, text=_t('gui.academics.assignment_system.analytics.labels.no_submission_data_available', default="No Submission Data Available"),
                          font=('Arial', 14, 'bold')).pack(pady=10)
-                ttk.Label(no_data_frame, text="No submissions have been made in the last 30 days.",
+                ttk.Label(no_data_frame, text=_t('gui.academics.assignment_system.analytics.labels.no_submissions_have_been_made_in_the_last_30_days', default="No submissions have been made in the last 30 days."),
                          font=('Arial', 11)).pack(pady=5)
-                ttk.Label(no_data_frame, text="Submit some assignments to see trends appear here.",
+                ttk.Label(no_data_frame, text=_t('gui.academics.assignment_system.analytics.labels.submit_some_assignments_to_see_trends_appear_here', default="Submit some assignments to see trends appear here."),
                          font=('Arial', 10), foreground='gray').pack(pady=5)
 
             # Late submission statistics
@@ -291,7 +293,7 @@ class AnalyticsManager:
 
             total, late_count = cursor.fetchone()
 
-            stats_frame = ttk.LabelFrame(parent, text="Submission Statistics", padding=10)
+            stats_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.analytics.labels.submission_statistics', default="Submission Statistics"), padding=10)
             stats_frame.pack(fill='x', padx=10, pady=10)
 
             if total > 0:
@@ -314,30 +316,30 @@ class AnalyticsManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Advanced Analytics", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.analytics.labels.advanced_analytics', default="Advanced Analytics"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Parameters frame
-        params_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Analysis Parameters", padding=10)
+        params_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.analytics.labels.analysis_parameters', default="Analysis Parameters"), padding=10)
         params_frame.pack(fill='x', pady=(0, 10))
 
         # Date range
         date_frame = ttk.Frame(params_frame)
         date_frame.pack(fill='x', pady=5)
 
-        ttk.Label(date_frame, text="Date Range:").pack(side='left')
+        ttk.Label(date_frame, text=_t('gui.academics.assignment_system.analytics.labels.date_range', default="Date Range:")).pack(side='left')
         self.start_date_var = tk.StringVar(value="2024-01-01")
         self.end_date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
 
         ttk.Entry(date_frame, textvariable=self.start_date_var, width=12).pack(side='left', padx=5)
-        ttk.Label(date_frame, text="to").pack(side='left')
+        ttk.Label(date_frame, text=_t('gui.academics.assignment_system.analytics.labels.to', default="to")).pack(side='left')
         ttk.Entry(date_frame, textvariable=self.end_date_var, width=12).pack(side='left', padx=5)
 
         # Module filter
         module_frame = ttk.Frame(params_frame)
         module_frame.pack(fill='x', pady=5)
 
-        ttk.Label(module_frame, text="Module:").pack(side='left')
+        ttk.Label(module_frame, text=_t('gui.academics.assignment_system.analytics.labels.module', default="Module:")).pack(side='left')
         self.module_filter_var = tk.StringVar()
         module_combo = ttk.Combobox(module_frame, textvariable=self.module_filter_var)
         module_combo.pack(side='left', padx=5)
@@ -349,8 +351,8 @@ class AnalyticsManager:
         analysis_frame = ttk.Frame(params_frame)
         analysis_frame.pack(fill='x', pady=5)
 
-        ttk.Label(analysis_frame, text="Analysis Type:").pack(side='left')
-        self.analysis_type_var = tk.StringVar(value="performance")
+        ttk.Label(analysis_frame, text=_t('gui.academics.assignment_system.analytics.labels.analysis_type', default="Analysis Type:")).pack(side='left')
+        self.analysis_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.analytics.values.performance', default="performance"))
 
         analysis_types = [
             ("Performance Trends", "performance"),
@@ -365,7 +367,7 @@ class AnalyticsManager:
                            value=value).pack(side='left', padx=10)
 
         # Generate button
-        ttk.Button(params_frame, text="Generate Analysis",
+        ttk.Button(params_frame, text=_t('gui.academics.assignment_system.analytics.buttons.generate_analysis', default="Generate Analysis"),
                   command=self.generate_custom_analysis).pack(pady=10)
 
         # Results frame
@@ -420,7 +422,7 @@ class AnalyticsManager:
                 self.generate_engagement_analysis()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate analysis: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.analytics.dialogs.error', default="Error"), f"Failed to generate analysis: {e}")
 
 
     def generate_performance_analysis(self):
@@ -453,7 +455,7 @@ class AnalyticsManager:
 
     def generate_submission_patterns(self):
         """Generate submission pattern analysis"""
-        patterns_frame = ttk.LabelFrame(self.analysis_results_frame, text="Submission Patterns", padding=10)
+        patterns_frame = ttk.LabelFrame(self.analysis_results_frame, text=_t('gui.academics.assignment_system.analytics.labels.submission_patterns', default="Submission Patterns"), padding=10)
         patterns_frame.pack(fill='both', expand=True)
 
         # Sample pattern data
@@ -500,7 +502,7 @@ class AnalyticsManager:
 
     def generate_late_submission_analysis(self):
         """Generate late submission analysis"""
-        late_frame = ttk.LabelFrame(self.analysis_results_frame, text="Late Submission Analysis", padding=10)
+        late_frame = ttk.LabelFrame(self.analysis_results_frame, text=_t('gui.academics.assignment_system.analytics.labels.late_submission_analysis', default="Late Submission Analysis"), padding=10)
         late_frame.pack(fill='both', expand=True)
 
         # Sample late submission data
@@ -522,7 +524,7 @@ class AnalyticsManager:
 
     def generate_engagement_analysis(self):
         """Generate student engagement analysis"""
-        engagement_frame = ttk.LabelFrame(self.analysis_results_frame, text="Student Engagement", padding=10)
+        engagement_frame = ttk.LabelFrame(self.analysis_results_frame, text=_t('gui.academics.assignment_system.analytics.labels.student_engagement', default="Student Engagement"), padding=10)
         engagement_frame.pack(fill='both', expand=True)
 
         # Sample engagement metrics
@@ -549,15 +551,15 @@ class AnalyticsManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Custom Reports", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.analytics.labels.custom_reports', default="Custom Reports"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Report options
-        options_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Report Options", padding=20)
+        options_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.analytics.labels.report_options', default="Report Options"), padding=20)
         options_frame.pack(fill='x', pady=(0, 20))
 
         # Report type
-        self.report_type_var = tk.StringVar(value="student_performance")
+        self.report_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.analytics.values.student_performance', default="student_performance"))
         report_types = [
             ("Student Performance Report", "student_performance"),
             ("Assignment Statistics Report", "assignment_stats"),
@@ -566,7 +568,7 @@ class AnalyticsManager:
             ("Grade Analysis Report", "grade_analysis")
         ]
 
-        ttk.Label(options_frame, text="Report Type:", font=('Arial', 12, 'bold')).pack(anchor='w', pady=(0, 10))
+        ttk.Label(options_frame, text=_t('gui.academics.assignment_system.analytics.labels.report_type', default="Report Type:"), font=('Arial', 12, 'bold')).pack(anchor='w', pady=(0, 10))
 
         for text, value in report_types:
             ttk.Radiobutton(options_frame, text=text, variable=self.report_type_var,
@@ -576,25 +578,25 @@ class AnalyticsManager:
         format_frame = ttk.Frame(options_frame)
         format_frame.pack(fill='x', pady=(20, 0))
 
-        ttk.Label(format_frame, text="Output Format:", font=('Arial', 12, 'bold')).pack(side='left')
-        self.output_format_var = tk.StringVar(value="excel")
+        ttk.Label(format_frame, text=_t('gui.academics.assignment_system.analytics.labels.output_format', default="Output Format:"), font=('Arial', 12, 'bold')).pack(side='left')
+        self.output_format_var = tk.StringVar(value=_t('gui.academics.assignment_system.analytics.values.excel', default="excel"))
 
-        ttk.Radiobutton(format_frame, text="Excel (.xlsx)", variable=self.output_format_var,
+        ttk.Radiobutton(format_frame, text=_t('gui.academics.assignment_system.analytics.buttons.excel_xlsx', default="Excel (.xlsx)"), variable=self.output_format_var,
                        value="excel").pack(side='left', padx=(20, 10))
-        ttk.Radiobutton(format_frame, text="CSV (.csv)", variable=self.output_format_var,
+        ttk.Radiobutton(format_frame, text=_t('gui.academics.assignment_system.analytics.buttons.csv_csv', default="CSV (.csv)"), variable=self.output_format_var,
                        value="csv").pack(side='left', padx=(0, 10))
-        ttk.Radiobutton(format_frame, text="PDF (.pdf)", variable=self.output_format_var,
+        ttk.Radiobutton(format_frame, text=_t('gui.academics.assignment_system.analytics.buttons.pdf_pdf', default="PDF (.pdf)"), variable=self.output_format_var,
                        value="pdf").pack(side='left')
 
         # Action buttons
         button_frame = ttk.Frame(options_frame)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="📊 View Report",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.analytics.buttons.view_report', default="📊 View Report"),
                   command=self.view_custom_report).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="💾 Save Report",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.analytics.buttons.save_report', default="💾 Save Report"),
                   command=self.create_custom_report).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="📧 Email to Admin",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.analytics.buttons.email_to_admin', default="📧 Email to Admin"),
                   command=self.email_custom_report).pack(side='left', padx=5)
 
 
@@ -637,10 +639,10 @@ class AnalyticsManager:
             elif report_type == "grade_analysis":
                 self.create_grade_analysis_report(save_path, output_format)
 
-            messagebox.showinfo("Success", f"Report saved to: {save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.analytics.dialogs.success', default="Success"), f"Report saved to: {save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.analytics.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
 
     def view_custom_report(self):
@@ -652,7 +654,7 @@ class AnalyticsManager:
             report_data, report_title = self._get_report_data(report_type)
 
             if not report_data:
-                messagebox.showinfo("No Data", "No data available for this report")
+                messagebox.showinfo(_t('gui.academics.assignment_system.analytics.dialogs.no_data', default="No Data"), _t('gui.academics.assignment_system.analytics.dialogs.no_data_available_for_this_report', default="No data available for this report"))
                 return
 
             # Create view window
@@ -696,10 +698,10 @@ class AnalyticsManager:
             button_frame = ttk.Frame(view_window)
             button_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Button(button_frame, text="Close", command=view_window.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.analytics.buttons.close', default="Close"), command=view_window.destroy).pack(side='right')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to view report: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.analytics.dialogs.error', default="Error"), f"Failed to view report: {e}")
 
 
     def email_custom_report(self):
@@ -711,7 +713,7 @@ class AnalyticsManager:
             report_data, report_title = self._get_report_data(report_type)
 
             if not report_data:
-                messagebox.showinfo("No Data", "No data available for this report")
+                messagebox.showinfo(_t('gui.academics.assignment_system.analytics.dialogs.no_data', default="No Data"), _t('gui.academics.assignment_system.analytics.dialogs.no_data_available_for_this_report', default="No data available for this report"))
                 return
 
             # Get admin email
@@ -722,7 +724,7 @@ class AnalyticsManager:
             conn.close()
 
             if not admin_result:
-                messagebox.showerror("Error", "No admin email found in system")
+                messagebox.showerror(_t('gui.academics.assignment_system.analytics.dialogs.error', default="Error"), _t('gui.academics.assignment_system.analytics.dialogs.no_admin_email_found_in_system', default="No admin email found in system"))
                 return
 
             admin_email = admin_result[0]
@@ -802,10 +804,10 @@ class AnalyticsManager:
                 body=email_body
             )
 
-            messagebox.showinfo("Success", f"Report emailed to admin ({admin_email})")
+            messagebox.showinfo(_t('gui.academics.assignment_system.analytics.dialogs.success', default="Success"), f"Report emailed to admin ({admin_email})")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to email report: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.analytics.dialogs.error', default="Error"), f"Failed to email report: {e}")
 
 
     def _get_report_data(self, report_type):
@@ -1247,7 +1249,7 @@ class AnalyticsManager:
         """Show advanced analytics with more detailed reporting"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Advanced Analytics", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.analytics.labels.advanced_analytics', default="Advanced Analytics"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create notebook for different analytics
@@ -1256,32 +1258,32 @@ class AnalyticsManager:
 
         # Performance Analytics tab
         performance_frame = ttk.Frame(notebook)
-        notebook.add(performance_frame, text="Performance Analytics")
+        notebook.add(performance_frame, text=_t('gui.academics.assignment_system.analytics.tabs.performance_analytics', default="Performance Analytics"))
 
         # Submission Analytics tab
         submission_frame = ttk.Frame(notebook)
-        notebook.add(submission_frame, text="Submission Analytics")
+        notebook.add(submission_frame, text=_t('gui.academics.assignment_system.analytics.tabs.submission_analytics', default="Submission Analytics"))
 
         # Comparative Analytics tab
         comparative_frame = ttk.Frame(notebook)
-        notebook.add(comparative_frame, text="Comparative Analysis")
+        notebook.add(comparative_frame, text=_t('gui.academics.assignment_system.analytics.tabs.comparative_analysis', default="Comparative Analysis"))
 
         # Add controls for analytics
         controls_frame = ttk.Frame(performance_frame)
         controls_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Label(controls_frame, text="Date Range:").pack(side='left')
-        ttk.Button(controls_frame, text="Last 30 Days",
+        ttk.Label(controls_frame, text=_t('gui.academics.assignment_system.analytics.labels.date_range', default="Date Range:")).pack(side='left')
+        ttk.Button(controls_frame, text=_t('gui.academics.assignment_system.analytics.buttons.last_30_days', default="Last 30 Days"),
                   command=lambda: self.load_analytics_data("30days")).pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="Last Semester",
+        ttk.Button(controls_frame, text=_t('gui.academics.assignment_system.analytics.buttons.last_semester', default="Last Semester"),
                   command=lambda: self.load_analytics_data("semester")).pack(side='left', padx=5)
-        ttk.Button(controls_frame, text="Export Report",
+        ttk.Button(controls_frame, text=_t('gui.academics.assignment_system.analytics.buttons.export_report', default="Export Report"),
                   command=self.export_detailed_report).pack(side='right')
 
 
     def load_analytics_data(self, period):
         """Load analytics data for specified period"""
-        messagebox.showinfo("Analytics", f"Loading analytics for {period}...")
+        messagebox.showinfo(_t('gui.academics.assignment_system.analytics.dialogs.analytics', default="Analytics"), f"Loading analytics for {period}...")
 
 
     def export_detailed_report(self):
@@ -1291,7 +1293,7 @@ class AnalyticsManager:
             filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")]
         )
         if save_path:
-            messagebox.showinfo("Export", f"Report would be exported to: {save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.analytics.dialogs.export', default="Export"), f"Report would be exported to: {save_path}")
 
 
     def generate_analytics_dashboard(self, *args, **kwargs):
@@ -1345,10 +1347,10 @@ class AnalyticsManager:
                     headers = list(data[0].keys()) if isinstance(data[0], dict) else None
                     self._create_pdf_report(save_path, f"{report_type} Report", headers, data)
 
-            messagebox.showinfo("Success", f"Analytics report exported successfully to:\n{save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.analytics.dialogs.success', default="Success"), f"Analytics report exported successfully to:\n{save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export analytics report: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.analytics.dialogs.error', default="Error"), f"Failed to export analytics report: {e}")
 
 
     def _launch_gui_feature(self, callback, feature_name):
@@ -1356,6 +1358,6 @@ class AnalyticsManager:
         try:
             callback()
         except Exception as e:
-            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.analytics.dialogs.error', default="Error"), f"Error launching {feature_name}: {str(e)}")
 
 

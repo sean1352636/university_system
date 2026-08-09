@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -73,13 +75,13 @@ from education_system.systems.university.interfaces.gui.operations.commerce.rest
 def manage_customer_feedback(self):
     """Main customer feedback management interface"""
     feedback_dialog = tk.Toplevel(self.root)
-    feedback_dialog.title("Customer Feedback Management")
+    feedback_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.windows.customer_feedback_management', default="Customer Feedback Management"))
     feedback_dialog.geometry("1000x700")
     feedback_dialog.transient(self.root)
     feedback_dialog.grab_set()
     main_frame = ttk.Frame(feedback_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Customer Feedback Management",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.customer_feedback_management', default="Customer Feedback Management"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     # Create feedback table if it doesn't exist
     try:
@@ -108,35 +110,35 @@ def manage_customer_feedback(self):
             conn.commit()
             conn.close()
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Failed to initialize feedback table: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.database_error', default="Database Error"), f"Failed to initialize feedback table: {e}")
         feedback_dialog.destroy()
         return
     # Action buttons frame
-    btn_frame = ttk.LabelFrame(main_frame, text="Actions", padding=15)
+    btn_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.actions', default="Actions"), padding=15)
     btn_frame.pack(fill='x', pady=10)
     # Row 1: Viewing and Managing
     row1 = ttk.Frame(btn_frame)
     row1.pack(fill='x', pady=5)
-    ttk.Button(row1, text="View Recent Feedback",
+    ttk.Button(row1, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.view_recent_feedback', default="View Recent Feedback"),
               command=lambda: self.view_recent_feedback(feedback_dialog),
               width=25).pack(side='left', padx=5)
-    ttk.Button(row1, text="Respond to Feedback",
+    ttk.Button(row1, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.respond_to_feedback', default="Respond to Feedback"),
               command=lambda: self.respond_to_feedback(feedback_dialog),
               width=25).pack(side='left', padx=5)
-    ttk.Button(row1, text="Submit New Feedback (Demo)",
+    ttk.Button(row1, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.submit_new_feedback_demo', default="Submit New Feedback (Demo)"),
               command=lambda: self.submit_demo_feedback(feedback_dialog),
               width=25).pack(side='left', padx=5)
     # Row 2: Reporting
     row2 = ttk.Frame(btn_frame)
     row2.pack(fill='x', pady=5)
-    ttk.Button(row2, text="Export Feedback Report (CSV)",
+    ttk.Button(row2, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.export_feedback_report_csv', default="Export Feedback Report (CSV)"),
               command=self.export_feedback_report,
               width=25).pack(side='left', padx=5)
-    ttk.Button(row2, text="Generate Analytics Report",
+    ttk.Button(row2, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.generate_analytics_report', default="Generate Analytics Report"),
               command=lambda: self.export_feedback_report_pdf(feedback_dialog),
               width=25).pack(side='left', padx=5)
     # Statistics frame
-    stats_frame = ttk.LabelFrame(main_frame, text="Feedback Statistics", padding=15)
+    stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.feedback_statistics', default="Feedback Statistics"), padding=15)
     stats_frame.pack(fill='x', pady=10)
     def update_stats():
         try:
@@ -167,47 +169,47 @@ def manage_customer_feedback(self):
                 stats_label.config(text=stats_text)
         except sqlite3.Error as e:
             stats_label.config(text=f"Error loading statistics: {e}")
-    stats_label = ttk.Label(stats_frame, text="Loading statistics...", font=('Arial', 9))
+    stats_label = ttk.Label(stats_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.loading_statistics', default="Loading statistics..."), font=('Arial', 9))
     stats_label.pack()
     update_stats()
     # Refresh and close buttons
     bottom_frame = ttk.Frame(main_frame)
     bottom_frame.pack(fill='x', pady=10)
-    ttk.Button(bottom_frame, text="Refresh Statistics",
+    ttk.Button(bottom_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.refresh_statistics', default="Refresh Statistics"),
               command=update_stats).pack(side='left', padx=5)
-    ttk.Button(bottom_frame, text="Close",
+    ttk.Button(bottom_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.close', default="Close"),
               command=feedback_dialog.destroy).pack(side='right', padx=5)
 
 def view_recent_feedback(self, parent_dialog):
     """View and browse customer feedback with filters"""
     view_dialog = tk.Toplevel(parent_dialog)
-    view_dialog.title("View Customer Feedback")
+    view_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.windows.view_customer_feedback', default="View Customer Feedback"))
     view_dialog.geometry("1200x700")
     view_dialog.transient(parent_dialog)
     view_dialog.grab_set()
     main_frame = ttk.Frame(view_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Customer Feedback",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.customer_feedback', default="Customer Feedback"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     # Filter frame
-    filter_frame = ttk.LabelFrame(main_frame, text="Filters", padding=10)
+    filter_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.filters', default="Filters"), padding=10)
     filter_frame.pack(fill='x', pady=10)
     filter_row = ttk.Frame(filter_frame)
     filter_row.pack(fill='x', pady=5)
-    ttk.Label(filter_row, text="Status:").pack(side='left', padx=5)
-    status_var = tk.StringVar(value='All')
+    ttk.Label(filter_row, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.status', default="Status:")).pack(side='left', padx=5)
+    status_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.values.all', default='All'))
     status_combo = ttk.Combobox(filter_row, textvariable=status_var,
                                values=['All', 'Pending', 'Responded'],
                                width=15, state='readonly')
     status_combo.pack(side='left', padx=5)
-    ttk.Label(filter_row, text="Rating:").pack(side='left', padx=20)
-    rating_var = tk.StringVar(value='All')
+    ttk.Label(filter_row, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.rating', default="Rating:")).pack(side='left', padx=20)
+    rating_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.values.all', default='All'))
     rating_combo = ttk.Combobox(filter_row, textvariable=rating_var,
                                values=['All', '5', '4', '3', '2', '1'],
                                width=10, state='readonly')
     rating_combo.pack(side='left', padx=5)
-    ttk.Label(filter_row, text="Category:").pack(side='left', padx=20)
-    category_var = tk.StringVar(value='All')
+    ttk.Label(filter_row, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.category', default="Category:")).pack(side='left', padx=20)
+    category_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.values.all', default='All'))
     category_combo = ttk.Combobox(filter_row, textvariable=category_var,
                                  values=['All', 'Food Quality', 'Service', 'Cleanliness',
                                         'Pricing', 'Ambiance', 'Other'],
@@ -279,12 +281,12 @@ def view_recent_feedback(self, parent_dialog):
                     ))
                 conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load feedback: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), f"Failed to load feedback: {e}")
     def view_full_feedback():
         """View complete feedback details"""
         selection = feedback_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select feedback to view details")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.please_select_feedback_to_view_details', default="Please select feedback to view details"))
             return
         item = feedback_tree.item(selection[0])
         feedback_id = item['values'][0]
@@ -319,31 +321,31 @@ Response:
 {'Response date: ' + fb[9] if fb[9] else ''}
                         """.strip()
 
-                    messagebox.showinfo("Feedback Details", details)
+                    messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.feedback_details', default="Feedback Details"), details)
         except (sqlite3.Error, tk.TclError) as e:
-            messagebox.showerror("Error", f"Failed to load feedback details: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), f"Failed to load feedback details: {e}")
     load_feedback()
     # Button frame
     btn_frame = ttk.Frame(main_frame)
     btn_frame.pack(fill='x', pady=10)
-    ttk.Button(btn_frame, text="Apply Filters", command=load_feedback).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="View Full Details", command=view_full_feedback).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Refresh", command=load_feedback).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Close", command=view_dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.apply_filters', default="Apply Filters"), command=load_feedback).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.view_full_details', default="View Full Details"), command=view_full_feedback).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.refresh', default="Refresh"), command=load_feedback).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.close', default="Close"), command=view_dialog.destroy).pack(side='right', padx=5)
 
 def respond_to_feedback(self, parent_dialog):
     """Respond to customer feedback"""
     # First select feedback to respond to
     select_dialog = tk.Toplevel(parent_dialog)
-    select_dialog.title("Select Feedback to Respond")
+    select_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.windows.select_feedback_to_respond', default="Select Feedback to Respond"))
     select_dialog.geometry("1000x600")
     select_dialog.transient(parent_dialog)
     select_dialog.grab_set()
     main_frame = ttk.Frame(select_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Select Feedback to Respond To",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.select_feedback_to_respond_to', default="Select Feedback to Respond To"),
              font=('Arial', 12, 'bold')).pack(pady=10)
-    ttk.Label(main_frame, text="Only showing pending feedback that needs a response",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.only_showing_pending_feedback_that_needs_a_response', default="Only showing pending feedback that needs a response"),
              foreground='blue').pack(pady=5)
     # Feedback list
     tree_frame = ttk.Frame(main_frame)
@@ -381,12 +383,12 @@ def respond_to_feedback(self, parent_dialog):
                     ))
                 conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load feedback: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), f"Failed to load feedback: {e}")
     load_pending_feedback()
     def proceed_to_respond():
         selection = fb_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select feedback to respond to")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.please_select_feedback_to_respond_to', default="Please select feedback to respond to"))
             return
         item = fb_tree.item(selection[0])
         feedback_id = item['values'][0]
@@ -395,13 +397,13 @@ def respond_to_feedback(self, parent_dialog):
     def show_response_dialog(feedback_id):
         """Show response composition dialog"""
         response_dialog = tk.Toplevel(parent_dialog)
-        response_dialog.title("Respond to Customer Feedback")
+        response_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.windows.respond_to_customer_feedback', default="Respond to Customer Feedback"))
         response_dialog.geometry("700x600")
         response_dialog.transient(parent_dialog)
         response_dialog.grab_set()
         main_frame = ttk.Frame(response_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Respond to Customer Feedback",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.respond_to_customer_feedback', default="Respond to Customer Feedback"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         # Load feedback details
         try:
@@ -417,15 +419,15 @@ def respond_to_feedback(self, parent_dialog):
             fb = cursor.fetchone()
             conn.close()
             if not fb:
-                messagebox.showerror("Error", "Feedback not found")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.feedback_not_found', default="Feedback not found"))
                 response_dialog.destroy()
                 return
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load feedback: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), f"Failed to load feedback: {e}")
             response_dialog.destroy()
             return
         # Display original feedback
-        feedback_frame = ttk.LabelFrame(main_frame, text="Original Feedback", padding=15)
+        feedback_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.original_feedback', default="Original Feedback"), padding=15)
         feedback_frame.pack(fill='x', pady=10)
         feedback_info = f"""
 Customer: {fb[1] or 'Anonymous'}
@@ -439,16 +441,16 @@ Feedback:
         ttk.Label(feedback_frame, text=feedback_info, justify='left',
                  font=('Arial', 9)).pack(pady=5)
         # Response composition
-        response_frame = ttk.LabelFrame(main_frame, text="Your Response", padding=15)
+        response_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.your_response', default="Your Response"), padding=15)
         response_frame.pack(fill='both', expand=True, pady=10)
-        ttk.Label(response_frame, text="Compose your response to the customer:",
+        ttk.Label(response_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.compose_your_response_to_the_customer', default="Compose your response to the customer:"),
                  foreground='blue').pack(pady=5)
         response_text = ScrolledText(response_frame, height=10, width=60, font=('Arial', 10))
         response_text.pack(fill='both', expand=True, pady=5)
         # Quick response templates
         templates_frame = ttk.Frame(response_frame)
         templates_frame.pack(fill='x', pady=5)
-        ttk.Label(templates_frame, text="Quick Templates:").pack(side='left', padx=5)
+        ttk.Label(templates_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.quick_templates', default="Quick Templates:")).pack(side='left', padx=5)
         def insert_template(template):
             response_text.delete('1.0', tk.END)
             response_text.insert('1.0', template)
@@ -463,7 +465,7 @@ Feedback:
         def save_response():
             response = response_text.get('1.0', tk.END).strip()
             if not response:
-                messagebox.showwarning("Empty Response", "Please enter a response")
+                messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.empty_response', default="Empty Response"), _t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.please_enter_a_response', default="Please enter a response"))
                 return
             # Get current user
             current_user = "System"
@@ -489,55 +491,55 @@ Feedback:
                     ''', (response, current_user, feedback_id))
                     conn.commit()
                     conn.close()
-                    messagebox.showinfo("Success",
+                    messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.success', default="Success"),
                                       f"Response submitted successfully!\n\n"
                                       f"Feedback ID: {feedback_id}\n"
                                       f"Responded by: {current_user}")
                     response_dialog.destroy()
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to save response: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), f"Failed to save response: {e}")
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill='x', pady=10)
-        ttk.Button(btn_frame, text="Submit Response",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.submit_response', default="Submit Response"),
                   command=save_response).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Cancel",
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.cancel', default="Cancel"),
                   command=response_dialog.destroy).pack(side='right', padx=5)
     # Buttons
     btn_frame = ttk.Frame(main_frame)
     btn_frame.pack(fill='x', pady=10)
-    ttk.Button(btn_frame, text="Respond to Selected",
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.respond_to_selected', default="Respond to Selected"),
               command=proceed_to_respond).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Refresh", command=load_pending_feedback).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=select_dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.refresh', default="Refresh"), command=load_pending_feedback).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.cancel', default="Cancel"), command=select_dialog.destroy).pack(side='right', padx=5)
 
 def submit_demo_feedback(self, parent_dialog):
     """Submit demo feedback for testing purposes"""
     demo_dialog = tk.Toplevel(parent_dialog)
-    demo_dialog.title("Submit Feedback (Demo)")
+    demo_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.windows.submit_feedback_demo', default="Submit Feedback (Demo)"))
     demo_dialog.geometry("600x500")
     demo_dialog.transient(parent_dialog)
     demo_dialog.grab_set()
     main_frame = ttk.Frame(demo_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Submit Customer Feedback",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.submit_customer_feedback', default="Submit Customer Feedback"),
              font=('Arial', 12, 'bold')).pack(pady=10)
     form_frame = ttk.Frame(main_frame)
     form_frame.pack(fill='both', expand=True, pady=10)
     fields = {}
     row = 0
-    ttk.Label(form_frame, text="Customer Name:").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.customer_name', default="Customer Name:")).grid(row=row, column=0, sticky='w', pady=5)
     fields['name'] = ttk.Entry(form_frame, width=40)
     fields['name'].grid(row=row, column=1, pady=5, padx=10)
     row += 1
-    ttk.Label(form_frame, text="Rating:*").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.rating_variant_2', default="Rating:*")).grid(row=row, column=0, sticky='w', pady=5)
     fields['rating'] = ttk.Combobox(form_frame, values=['5 - Excellent', '4 - Good', '3 - Average',
                                                         '2 - Poor', '1 - Very Poor'],
                                    width=38, state='readonly')
     fields['rating'].grid(row=row, column=1, pady=5, padx=10)
     fields['rating'].current(0)
     row += 1
-    ttk.Label(form_frame, text="Category:*").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.category_variant_2', default="Category:*")).grid(row=row, column=0, sticky='w', pady=5)
     fields['category'] = ttk.Combobox(form_frame,
                                      values=['Food Quality', 'Service', 'Cleanliness',
                                             'Pricing', 'Ambiance', 'Other'],
@@ -545,14 +547,14 @@ def submit_demo_feedback(self, parent_dialog):
     fields['category'].grid(row=row, column=1, pady=5, padx=10)
     fields['category'].current(0)
     row += 1
-    ttk.Label(form_frame, text="Feedback:*").grid(row=row, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.feedback', default="Feedback:*")).grid(row=row, column=0, sticky='nw', pady=5)
     fields['feedback'] = ScrolledText(form_frame, height=10, width=40, font=('Arial', 10))
     fields['feedback'].grid(row=row, column=1, pady=5, padx=10)
     def submit_feedback():
         try:
             feedback_text = fields['feedback'].get('1.0', tk.END).strip()
             if not feedback_text:
-                messagebox.showwarning("Missing Info", "Please enter feedback")
+                messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.missing_info', default="Missing Info"), _t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.please_enter_feedback', default="Please enter feedback"))
                 return
             rating_text = fields['rating'].get()
             rating = int(rating_text.split(' - ')[0])
@@ -569,15 +571,15 @@ def submit_demo_feedback(self, parent_dialog):
                       feedback_text))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success", "Feedback submitted successfully!")
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.feedback_submitted_successfully', default="Feedback submitted successfully!"))
                 demo_dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to submit feedback: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), f"Failed to submit feedback: {e}")
     # Buttons
     btn_frame = ttk.Frame(main_frame)
     btn_frame.pack(fill='x', pady=10)
-    ttk.Button(btn_frame, text="Submit Feedback", command=submit_feedback).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=demo_dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.submit_feedback', default="Submit Feedback"), command=submit_feedback).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.cancel', default="Cancel"), command=demo_dialog.destroy).pack(side='right', padx=5)
 
 def export_feedback_report(self):
     """Export feedback data to CSV with statistics"""
@@ -646,28 +648,28 @@ def export_feedback_report(self):
         filepath = os.path.join(os.getcwd(), filename)
         with open(filepath, 'w', newline='', encoding='utf-8') as f:
             f.write(csv_content)
-        messagebox.showinfo("Export Success",
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.export_success', default="Export Success"),
                           f"Feedback report exported successfully!\n\n"
                           f"File: {filename}\n"
                           f"Location: {filepath}\n"
                           f"Total Feedback: {total}\n"
                           f"Average Rating: {avg_rating:.2f}/5.0")
     except (OSError, IOError) as e:
-        messagebox.showerror("Error", f"Failed to export feedback report: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), f"Failed to export feedback report: {e}")
 
 def export_feedback_report_pdf(self, parent_dialog):
     """Generate comprehensive feedback analytics report"""
     report_dialog = tk.Toplevel(parent_dialog)
-    report_dialog.title("Feedback Analytics Report")
+    report_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.windows.feedback_analytics_report', default="Feedback Analytics Report"))
     report_dialog.geometry("900x700")
     report_dialog.transient(parent_dialog)
     report_dialog.grab_set()
     main_frame = ttk.Frame(report_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Customer Feedback Analytics",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.customer_feedback_analytics', default="Customer Feedback Analytics"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     # Report output
-    output_frame = ttk.LabelFrame(main_frame, text="Analytics Report", padding=10)
+    output_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.labels.analytics_report', default="Analytics Report"), padding=10)
     output_frame.pack(fill='both', expand=True, pady=10)
     output_text = ScrolledText(output_frame, height=30, width=100, font=('Courier', 9))
     output_text.pack(fill='both', expand=True)
@@ -792,7 +794,7 @@ RECENT FEEDBACK SAMPLES:
             output_text.delete('1.0', tk.END)
             output_text.insert('1.0', report)
         except (sqlite3.Error, tk.TclError) as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), f"Failed to generate report: {e}")
     generate_report()
     # Export button
     def export_report():
@@ -802,15 +804,15 @@ RECENT FEEDBACK SAMPLES:
         try:
             with open(filepath, 'w', encoding='utf-8') as f:
                 f.write(report_content)
-            messagebox.showinfo("Export Success",
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.export_success', default="Export Success"),
                               f"Analytics report exported!\n\n"
                               f"File: {filename}\n"
                               f"Location: {filepath}")
         except (OSError, IOError) as e:
-            messagebox.showerror("Error", f"Failed to export: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.dialogs.error', default="Error"), f"Failed to export: {e}")
     btn_frame = ttk.Frame(main_frame)
     btn_frame.pack(fill='x', pady=10)
-    ttk.Button(btn_frame, text="Export to File", command=export_report).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Refresh", command=generate_report).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Close", command=report_dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.export_to_file', default="Export to File"), command=export_report).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.refresh', default="Refresh"), command=generate_report).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.customers.feedback.buttons.close', default="Close"), command=report_dialog.destroy).pack(side='right', padx=5)
 

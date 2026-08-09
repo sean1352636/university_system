@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -112,8 +114,8 @@ def _analytics_ready(self):
         return True
     try:
         messagebox.showinfo(
-            "Analytics",
-            "The Scheduling Analytics view is no longer open. Reopen it and try again.",
+            _t('gui.academics.module_scheduling.analytics_tab.dialogs.analytics', default="Analytics"),
+            _t('gui.academics.module_scheduling.analytics_tab.dialogs.the_scheduling_analytics_view_is_no_longer_open_reopen_it_and_tr', default="The Scheduling Analytics view is no longer open. Reopen it and try again."),
             parent=_safe_parent(self))
     except Exception:
         pass
@@ -195,7 +197,7 @@ def show_room_utilization(self):
         self.update_activity_log("Generated room utilization report")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate room utilization report: {str(e)}", parent=self._safe_parent())
+        messagebox.showerror(_t('gui.academics.module_scheduling.analytics_tab.dialogs.error', default="Error"), f"Failed to generate room utilization report: {str(e)}", parent=self._safe_parent())
 
 ModuleSchedulingGUI.show_room_utilization = show_room_utilization
 
@@ -248,7 +250,7 @@ def show_instructor_workload(self):
         self.update_activity_log("Generated instructor workload report")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate instructor workload report: {str(e)}", parent=self._safe_parent())
+        messagebox.showerror(_t('gui.academics.module_scheduling.analytics_tab.dialogs.error', default="Error"), f"Failed to generate instructor workload report: {str(e)}", parent=self._safe_parent())
 
 ModuleSchedulingGUI.show_instructor_workload = show_instructor_workload
 
@@ -294,7 +296,7 @@ def show_peak_usage(self):
         self.update_activity_log("Generated peak usage analysis")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate peak usage analysis: {str(e)}", parent=self._safe_parent())
+        messagebox.showerror(_t('gui.academics.module_scheduling.analytics_tab.dialogs.error', default="Error"), f"Failed to generate peak usage analysis: {str(e)}", parent=self._safe_parent())
 
 ModuleSchedulingGUI.show_peak_usage = show_peak_usage
 
@@ -323,17 +325,17 @@ def generate_charts(self):
             )
 
             # Ask if user wants to open charts
-            if messagebox.askyesno("Open Charts", f"Charts generated successfully!\n\nPath: {chart_path}\n\nWould you like to open the charts?", parent=self._safe_parent()):
+            if messagebox.askyesno(_t('gui.academics.module_scheduling.analytics_tab.dialogs.open_charts', default="Open Charts"), f"Charts generated successfully!\n\nPath: {chart_path}\n\nWould you like to open the charts?", parent=self._safe_parent()):
                 webbrowser.open(f"file://{os.path.abspath(chart_path)}")
 
             self.update_activity_log("Generated utilization charts")
         else:
-            messagebox.showinfo("Info", "Charts generated. Check the analytics folder.", parent=self._safe_parent())
+            messagebox.showinfo(_t('gui.academics.module_scheduling.analytics_tab.dialogs.info', default="Info"), _t('gui.academics.module_scheduling.analytics_tab.dialogs.charts_generated_check_the_analytics_folder', default="Charts generated. Check the analytics folder."), parent=self._safe_parent())
 
         self.update_status("Ready")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate charts: {str(e)}", parent=self._safe_parent())
+        messagebox.showerror(_t('gui.academics.module_scheduling.analytics_tab.dialogs.error', default="Error"), f"Failed to generate charts: {str(e)}", parent=self._safe_parent())
         self.update_status("Ready")
 
 ModuleSchedulingGUI.generate_charts = generate_charts
@@ -362,7 +364,7 @@ def generate_room_utilization_report(self):
         room_data = cursor.fetchall()
 
     if not room_data:
-        messagebox.showinfo("No Data", "No room data available.", parent=self._safe_parent())
+        messagebox.showinfo(_t('gui.academics.module_scheduling.analytics_tab.dialogs.no_data', default="No Data"), _t('gui.academics.module_scheduling.analytics_tab.dialogs.no_room_data_available', default="No room data available."), parent=self._safe_parent())
         return
 
     # Calculate utilization metrics
@@ -384,7 +386,7 @@ def generate_room_utilization_report(self):
 
     # Create dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Room Utilization Report")
+    dialog.title(_t('gui.academics.module_scheduling.analytics_tab.windows.room_utilization_report', default="Room Utilization Report"))
     dialog.geometry("1000x600")
     dialog.transient(self.root)
 
@@ -430,7 +432,7 @@ def generate_room_utilization_report(self):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.analytics_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.generate_room_utilization_report = generate_room_utilization_report
 
@@ -476,7 +478,7 @@ def generate_instructor_workload_report(self):
 
     # Create dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Instructor Workload Report")
+    dialog.title(_t('gui.academics.module_scheduling.analytics_tab.windows.instructor_workload_report', default="Instructor Workload Report"))
     dialog.geometry("1100x600")
     dialog.transient(self.root)
 
@@ -523,7 +525,7 @@ def generate_instructor_workload_report(self):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.analytics_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.generate_instructor_workload_report = generate_instructor_workload_report
 
@@ -531,7 +533,7 @@ def generate_scheduling_analytics_dashboard(self):
     """Generate comprehensive scheduling analytics dashboard"""
     # This combines multiple analytics into one dashboard
     dialog = tk.Toplevel(self.root)
-    dialog.title("Scheduling Analytics Dashboard")
+    dialog.title(_t('gui.academics.module_scheduling.analytics_tab.windows.scheduling_analytics_dashboard', default="Scheduling Analytics Dashboard"))
     dialog.geometry("1200x700")
     dialog.transient(self.root)
 
@@ -541,7 +543,7 @@ def generate_scheduling_analytics_dashboard(self):
 
     # Tab 1: Peak Usage Analysis
     peak_frame = ttk.Frame(notebook)
-    notebook.add(peak_frame, text="Peak Usage")
+    notebook.add(peak_frame, text=_t('gui.academics.module_scheduling.analytics_tab.tabs.peak_usage', default="Peak Usage"))
 
     peak_data = self._analyze_peak_usage()
     if peak_data:
@@ -561,7 +563,7 @@ def generate_scheduling_analytics_dashboard(self):
 
     # Tab 2: Module Distribution
     dist_frame = ttk.Frame(notebook)
-    notebook.add(dist_frame, text="Module Distribution")
+    notebook.add(dist_frame, text=_t('gui.academics.module_scheduling.analytics_tab.tabs.module_distribution', default="Module Distribution"))
 
     dist_data = self._analyze_module_distribution()
     if dist_data:
@@ -578,7 +580,7 @@ def generate_scheduling_analytics_dashboard(self):
 
     # Tab 3: Room Efficiency
     efficiency_frame = ttk.Frame(notebook)
-    notebook.add(efficiency_frame, text="Room Efficiency")
+    notebook.add(efficiency_frame, text=_t('gui.academics.module_scheduling.analytics_tab.tabs.room_efficiency', default="Room Efficiency"))
 
     efficiency_data = self._analyze_room_efficiency()
     if efficiency_data:
@@ -602,7 +604,7 @@ def generate_scheduling_analytics_dashboard(self):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.analytics_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.generate_scheduling_analytics_dashboard = generate_scheduling_analytics_dashboard
 
@@ -745,7 +747,7 @@ This email was automatically sent from the Module Scheduling GUI Management tab.
                 body=email_body
             )
 
-            messagebox.showinfo("Reports Generated & Emailed",
+            messagebox.showinfo(_t('gui.academics.module_scheduling.analytics_tab.dialogs.reports_generated_emailed', default="Reports Generated & Emailed"),
                               f"✅ Reports generated and automatically emailed to {admin_email}\n\n"
                               f"A detailed report window has also been opened for your review.", parent=self._safe_parent())
 
@@ -753,15 +755,15 @@ This email was automatically sent from the Module Scheduling GUI Management tab.
 
         except Exception as email_error:
             print(f"Note: Could not auto-send email: {email_error}")
-            messagebox.showinfo("Reports Generated",
-                              "Reports generated successfully!\n\n"
-                              "Note: Automatic email failed. You can send manually from the report window.", parent=self._safe_parent())
+            messagebox.showinfo(_t('gui.academics.module_scheduling.analytics_tab.dialogs.reports_generated', default="Reports Generated"),
+                              _t('gui.academics.module_scheduling.analytics_tab.dialogs.reports_generated_successfully_note_automatic_email_failed_you_c', default="Reports generated successfully!\n\n"
+                              "Note: Automatic email failed. You can send manually from the report window."), parent=self._safe_parent())
             self.update_activity_log("Generated comprehensive reports")
 
         self.update_status("Ready")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate reports: {str(e)}", parent=self._safe_parent())
+        messagebox.showerror(_t('gui.academics.module_scheduling.analytics_tab.dialogs.error', default="Error"), f"Failed to generate reports: {str(e)}", parent=self._safe_parent())
         self.update_status("Ready")
 
 ModuleSchedulingGUI.generate_reports = generate_reports
@@ -794,7 +796,7 @@ def _show_report_with_email_option(self, report_title, report_text, report_type=
     report_display.config(state='disabled')
 
     # Email section
-    email_frame = ttk.LabelFrame(main_frame, text="Email Report to Admin", padding=10)
+    email_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.module_scheduling.analytics_tab.labels.email_report_to_admin', default="Email Report to Admin"), padding=10)
     email_frame.pack(fill=tk.X, pady=(10, 0))
 
     # Get admin email
@@ -804,7 +806,7 @@ def _show_report_with_email_option(self, report_title, report_text, report_type=
     email_input_frame = ttk.Frame(email_frame)
     email_input_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(email_input_frame, text="Admin Email:").pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Label(email_input_frame, text=_t('gui.academics.module_scheduling.analytics_tab.labels.admin_email', default="Admin Email:")).pack(side=tk.LEFT, padx=(0, 5))
     email_var = tk.StringVar(value=admin_email)
     email_entry = ttk.Entry(email_input_frame, textvariable=email_var, width=40)
     email_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
@@ -821,12 +823,12 @@ def _show_report_with_email_option(self, report_title, report_text, report_type=
                 if len(admins) > 1:
                     # Show selection dialog
                     admin_select_dialog = tk.Toplevel(report_dialog)
-                    admin_select_dialog.title("Select Admin")
+                    admin_select_dialog.title(_t('gui.academics.module_scheduling.analytics_tab.windows.select_admin', default="Select Admin"))
                     admin_select_dialog.geometry("400x300")
                     admin_select_dialog.transient(report_dialog)
                     admin_select_dialog.grab_set()
 
-                    ttk.Label(admin_select_dialog, text="Select Admin User:",
+                    ttk.Label(admin_select_dialog, text=_t('gui.academics.module_scheduling.analytics_tab.labels.select_admin_user', default="Select Admin User:"),
                              font=('Arial', 12, 'bold')).pack(pady=10)
 
                     admin_listbox = tk.Listbox(admin_select_dialog, height=10)
@@ -842,15 +844,15 @@ def _show_report_with_email_option(self, report_title, report_text, report_type=
                             email_var.set(selected_email)
                         admin_select_dialog.destroy()
 
-                    ttk.Button(admin_select_dialog, text="Select",
+                    ttk.Button(admin_select_dialog, text=_t('gui.academics.module_scheduling.analytics_tab.buttons.select', default="Select"),
                               command=select_admin).pack(pady=10)
                 else:
                     email_var.set(admins[0][1])
-                    messagebox.showinfo("Admin Email", f"Using admin email: {admins[0][1]}", parent=self._safe_parent())
+                    messagebox.showinfo(_t('gui.academics.module_scheduling.analytics_tab.dialogs.admin_email', default="Admin Email"), f"Using admin email: {admins[0][1]}", parent=self._safe_parent())
             else:
-                messagebox.showwarning("No Admins", "No admin users found in database.", parent=self._safe_parent())
+                messagebox.showwarning(_t('gui.academics.module_scheduling.analytics_tab.dialogs.no_admins', default="No Admins"), _t('gui.academics.module_scheduling.analytics_tab.dialogs.no_admin_users_found_in_database', default="No admin users found in database."), parent=self._safe_parent())
         except Exception as e:
-            messagebox.showerror("Database Error", f"Could not fetch admin emails: {str(e)}", parent=self._safe_parent())
+            messagebox.showerror(_t('gui.academics.module_scheduling.analytics_tab.dialogs.database_error', default="Database Error"), f"Could not fetch admin emails: {str(e)}", parent=self._safe_parent())
 
     ttk.Button(email_input_frame, text="🔄", command=refresh_admin_email, width=3).pack(side=tk.LEFT)
 
@@ -860,7 +862,7 @@ def _show_report_with_email_option(self, report_title, report_text, report_type=
             recipient_email = email_var.get().strip()
 
             if not recipient_email or '@' not in recipient_email:
-                messagebox.showwarning("Invalid Email", "Please enter a valid admin email address.", parent=self._safe_parent())
+                messagebox.showwarning(_t('gui.academics.module_scheduling.analytics_tab.dialogs.invalid_email', default="Invalid Email"), _t('gui.academics.module_scheduling.analytics_tab.dialogs.please_enter_a_valid_admin_email_address', default="Please enter a valid admin email address."), parent=self._safe_parent())
                 return
 
             # Render email from template
@@ -903,13 +905,13 @@ This email was sent from the Module Scheduling GUI.
                 body=email_body
             )
 
-            messagebox.showinfo("Email Sent",
+            messagebox.showinfo(_t('gui.academics.module_scheduling.analytics_tab.dialogs.email_sent', default="Email Sent"),
                               f"✅ Report sent successfully to {recipient_email}\n\n"
                               f"Report: {report_title}", parent=self._safe_parent())
             self.update_activity_log(f"Emailed {report_type} report to {recipient_email}")
 
         except Exception as e:
-            messagebox.showerror("Email Error",
+            messagebox.showerror(_t('gui.academics.module_scheduling.analytics_tab.dialogs.email_error', default="Email Error"),
                                f"Failed to send email: {str(e)}\n\n"
                                f"Please check email configuration.", parent=self._safe_parent())
             print(f"Email error: {str(e)}")
@@ -918,9 +920,9 @@ This email was sent from the Module Scheduling GUI.
     button_frame = ttk.Frame(email_frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="📧 Send Email",
+    ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.analytics_tab.buttons.send_email', default="📧 Send Email"),
               command=send_report_email).pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(button_frame, text="❌ Close",
+    ttk.Button(button_frame, text=_t('gui.academics.module_scheduling.analytics_tab.buttons.close_variant_2', default="❌ Close"),
               command=report_dialog.destroy).pack(side=tk.LEFT)
 
 ModuleSchedulingGUI._show_report_with_email_option = _show_report_with_email_option

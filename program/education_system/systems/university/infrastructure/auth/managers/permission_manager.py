@@ -92,6 +92,38 @@ class PermissionManager:
         except Exception:
             return False
 
+    def authorize_object(self, permission: str, *, owner_id=None,
+                         tenant_id=None, resource_tenant_id=None,
+                         current_user: dict = None) -> bool:
+        """Authorize an operation and its object scope at the service boundary.
+
+        A role/button check is not sufficient: callers must hold the
+        permission, belong to the same tenant, and either be privileged or own
+        the target object. Missing context or an auth/database error denies.
+        """
+        try:
+            user = current_user or self.get_current_user()
+            if not user or not self.check_session():
+                return False
+            if not self.has_permission(permission, user):
+                return False
+            if tenant_id is not None and resource_tenant_id is not None:
+                if str(tenant_id) != str(resource_tenant_id):
+                    return False
+            role = str(user.get('role', '')).lower()
+            if role in {'admin', 'superadmin'}:
+                return True
+            if owner_id is None:
+                return False
+            principals = {
+                str(user.get('id', '')), str(user.get('user_id', '')),
+                str(user.get('username', '')), str(user.get('student_id', '')),
+            }
+            return str(owner_id) in principals
+        except Exception:
+            logger.exception("Object authorization failed closed")
+            return False
+
     def _check_delegated_permission(self, delegate_user_id: int, target_user_id: int, permission: str) -> bool:
         """Check if delegate has a specific delegated permission for target user.
 

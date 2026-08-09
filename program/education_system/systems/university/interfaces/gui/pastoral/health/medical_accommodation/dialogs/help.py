@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # dialogs/help.py
 # Dialog for help / user guide.
 
@@ -9,7 +11,7 @@ class HelpDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("User Guide")
+        self.dialog.title(_t('gui.pastoral.health.medical_accommodation.dialogs.help.windows.user_guide', default="User Guide"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
 
@@ -104,4 +106,4 @@ For technical support, contact your system administrator.
         help_text.insert(tk.END, help_content)
         help_text.config(state=tk.DISABLED)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.help.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)

@@ -28,9 +28,9 @@ from education_system.systems.university.infrastructure.sql_safety import (
 
 # Database path - mirrors database.py
 try:
-    from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
-    DB_FILE = str(DEFAULT_DB_PATH)
+    DB_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 except ImportError:
     DB_FILE = os.path.join(
         os.path.dirname(__file__), "../../../../data/db_files/student_records.db"

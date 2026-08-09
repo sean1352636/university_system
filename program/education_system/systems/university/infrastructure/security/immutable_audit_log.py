@@ -112,7 +112,16 @@ class ImmutableAuditLog:
             if key:
                 ImmutableAuditLog._SECRET_KEY = key.encode('utf-8')
             else:
-                # Generate a random key and warn - should be persistent in production
+                app_env = os.getenv("APP_ENV", "production").strip().lower()
+                if app_env not in ("development", "dev", "local", "test", "testing"):
+                    # A per-process random key makes every prior entry fail
+                    # verification after each restart — the chain becomes
+                    # unverifiable exactly where verification matters.
+                    raise RuntimeError(
+                        "AUDIT_LOG_SECRET must be set in production: an "
+                        "ephemeral key silently breaks audit chain "
+                        "verification across restarts."
+                    )
                 logger.warning(
                     "AUDIT_LOG_SECRET not configured. Generating random key. "
                     "Set AUDIT_LOG_SECRET environment variable for production!"
@@ -159,6 +168,26 @@ class ImmutableAuditLog:
                 conn.execute("""
                     CREATE INDEX IF NOT EXISTS idx_audit_resource
                     ON immutable_audit_log(resource_type, resource_id, timestamp)
+                """)
+
+                # Enforce append-only at the database level. Without these the
+                # "immutable" claim was documentation only: any writer with a
+                # handle could UPDATE or DELETE a row and the hash chain would
+                # only reveal it if something bothered to verify it. Mirrors
+                # the sensitive_access_audit triggers in the auth schema.
+                conn.execute("""
+                    CREATE TRIGGER IF NOT EXISTS prevent_immutable_audit_update
+                    BEFORE UPDATE ON immutable_audit_log
+                    BEGIN
+                        SELECT RAISE(ABORT, 'immutable audit log records cannot be modified');
+                    END
+                """)
+                conn.execute("""
+                    CREATE TRIGGER IF NOT EXISTS prevent_immutable_audit_delete
+                    BEFORE DELETE ON immutable_audit_log
+                    BEGIN
+                        SELECT RAISE(ABORT, 'immutable audit log records cannot be deleted');
+                    END
                 """)
 
                 logger.debug("Immutable audit log table initialized")

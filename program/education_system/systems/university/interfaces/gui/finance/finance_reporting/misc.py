@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -8,7 +10,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 matplotlib.use('TkAgg')
 import numpy as np
 
@@ -891,7 +893,7 @@ def generate_financial_forecasting():
 
                 plt.figure(figsize=(12, 6))
                 plt.plot(months, amounts, marker='o', linewidth=2, label='Historical')
-                plt.title('Monthly Revenue Trend')
+                plt.title(_t('gui.finance.finance_reporting.misc.windows.monthly_revenue_trend', default='Monthly Revenue Trend'))
                 plt.xlabel('Month')
                 plt.ylabel('Revenue (£)')
                 plt.xticks(rotation=45)
@@ -1109,13 +1111,13 @@ def generate_comprehensive_budget_variance_report():
 
         # Create report window
         report_window = tk.Toplevel()
-        report_window.title("Comprehensive Budget Variance Report")
+        report_window.title(_t('gui.finance.finance_reporting.misc.windows.comprehensive_budget_variance_report', default="Comprehensive Budget Variance Report"))
         report_window.geometry("1000x700")
 
         main_frame = ttk.Frame(report_window, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="📊 Comprehensive Budget Variance Report",
+        ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.misc.labels.comprehensive_budget_variance_report', default="📊 Comprehensive Budget Variance Report"),
                  font=('Arial', 16, 'bold')).pack(pady=(0, 10))
 
         # Create scrolled text widget for report
@@ -1289,11 +1291,11 @@ def generate_comprehensive_budget_variance_report():
         report_text.config(state='disabled')
 
         # Add close button
-        ttk.Button(main_frame, text="Close", command=report_window.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.misc.buttons.close', default="Close"), command=report_window.destroy).pack(pady=10)
         return True
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error generating budget variance report: {e}")
+        messagebox.showerror(_t('gui.finance.finance_reporting.misc.dialogs.error', default="Error"), f"Error generating budget variance report: {e}")
         return False
 
 
@@ -1609,19 +1611,19 @@ def backup_database():
     """Create database backup"""
     try:
         from education_system.systems.university.infrastructure.database.db import get_connection
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         import shutil
         from datetime import datetime
 
         # Create backup filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        backup_path = paths.BACKUP_FINANCE_DIR / f"finance_backup_{timestamp}.db"
+        backup_path = paths.UNIVERSITY_BACKUP_FINANCE_DIR / f"finance_backup_{timestamp}.db"
 
         # Ensure backup directory exists
         backup_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Copy database file
-        shutil.copy2(paths.DEFAULT_DB_PATH, backup_path)
+        shutil.copy2(paths.UNIVERSITY_DEFAULT_DB_PATH, backup_path)
 
         print(f"✓ Database backup created: {backup_path}")
         return str(backup_path)
@@ -1714,7 +1716,7 @@ def test_email_service():
 def save_general_settings():
     """Save general settings"""
     try:
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         import json
 
         settings = {
@@ -1725,7 +1727,7 @@ def save_general_settings():
             'decimal_places': 2
         }
 
-        settings_file = paths.DATA_DIR / 'finance_settings.json'
+        settings_file = paths.UNIVERSITY_DATA_DIR / 'finance_settings.json'
         settings_file.parent.mkdir(parents=True, exist_ok=True)
 
         with open(settings_file, 'w') as f:

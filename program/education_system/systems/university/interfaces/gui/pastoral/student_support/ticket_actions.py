@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import tkinter.font as tkFont
@@ -10,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import i18n for language support
 from education_system.systems.university.infrastructure.i18n import (
@@ -43,8 +45,8 @@ except ImportError:
     render_template = lambda *args, **kwargs: (None, None)
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this module when targeting the
@@ -163,12 +165,12 @@ class TicketActionsMixin:
         """Assign ticket to current user"""
         user_id, username = self._get_current_user_identity()
         if not user_id or not username:
-            messagebox.showerror("Error", "You must be signed in to assign tickets.")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.you_must_be_signed_in_to_assign_tickets', default="You must be signed in to assign tickets."))
             return
 
         role = self.auth.current_user.get('role') if self.auth and self.auth.current_user else None
         if role not in ('staff', 'admin'):
-            messagebox.showwarning("Permission Denied", "Only staff members can self-assign tickets.")
+            messagebox.showwarning(_t('gui.pastoral.student_support.ticket_actions.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.student_support.ticket_actions.dialogs.only_staff_members_can_self_assign_tickets', default="Only staff members can self-assign tickets."))
             return
 
         try:
@@ -213,25 +215,25 @@ class TicketActionsMixin:
             if not result['updated']:
                 reason = result.get('reason')
                 if reason == 'not_found':
-                    messagebox.showerror("Error", f"Ticket #{ticket_id} was not found.")
+                    messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Ticket #{ticket_id} was not found.")
                 elif reason == 'already_assigned':
-                    messagebox.showinfo("Information", "You are already assigned to this ticket.")
+                    messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.information', default="Information"), _t('gui.pastoral.student_support.ticket_actions.dialogs.you_are_already_assigned_to_this_ticket', default="You are already assigned to this ticket."))
                 elif reason == 'closed':
-                    messagebox.showwarning("Ticket Closed", "Closed or resolved tickets cannot be reassigned.")
+                    messagebox.showwarning(_t('gui.pastoral.student_support.ticket_actions.dialogs.ticket_closed', default="Ticket Closed"), _t('gui.pastoral.student_support.ticket_actions.dialogs.closed_or_resolved_tickets_cannot_be_reassigned', default="Closed or resolved tickets cannot be reassigned."))
                 else:
-                    messagebox.showwarning("No Changes", "Ticket assignment was not updated.")
+                    messagebox.showwarning(_t('gui.pastoral.student_support.ticket_actions.dialogs.no_changes', default="No Changes"), _t('gui.pastoral.student_support.ticket_actions.dialogs.ticket_assignment_was_not_updated', default="Ticket assignment was not updated."))
                 return
 
-            messagebox.showinfo("Success", f"Ticket #{ticket_id} assigned to you (status: {result['new_status']}).")
+            messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), f"Ticket #{ticket_id} assigned to you (status: {result['new_status']}).")
             self.refresh_data()
         except Exception as e:
-            messagebox.showerror("Error", f"Could not assign ticket: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not assign ticket: {e}")
 
     def show_add_response_dialog(self, ticket):
         """Show dialog to add response to ticket"""
         # Handle None or invalid ticket
         if ticket is None or not isinstance(ticket, dict):
-            messagebox.showerror("Error", "Invalid ticket data")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.invalid_ticket_data', default="Invalid ticket data"))
             return
 
         ticket_id = ticket.get('ticket_id', 'N/A')
@@ -251,7 +253,7 @@ class TicketActionsMixin:
                  style='Heading.TLabel').pack(anchor="w", pady=(0, 15))
 
         # Response text
-        ttk.Label(form_frame, text="Response:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.response', default="Response:")).pack(anchor="w")
         response_text = scrolledtext.ScrolledText(form_frame, height=12, wrap=tk.WORD)
         response_text.pack(fill="both", expand=True, pady=(5, 15))
 
@@ -262,7 +264,7 @@ class TicketActionsMixin:
         # Internal note checkbox (for staff)
         if self.auth.current_user['role'] in ('staff', 'admin'):
             self.is_internal_var = tk.BooleanVar()
-            ttk.Checkbutton(options_frame, text="🔒 Internal note (staff only)",
+            ttk.Checkbutton(options_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.internal_note_staff_only_variant_2', default="🔒 Internal note (staff only)"),
                            variable=self.is_internal_var).pack(side="left")
 
         # Buttons
@@ -272,21 +274,21 @@ class TicketActionsMixin:
         def submit_response():
             text = response_text.get(1.0, tk.END).strip()
             if not text:
-                messagebox.showerror("Error", "Response cannot be empty")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.response_cannot_be_empty', default="Response cannot be empty"))
                 return
 
             try:
                 is_internal = getattr(self, 'is_internal_var', tk.BooleanVar()).get()
                 self.support.add_ticket_response(ticket_id, text, is_internal=is_internal)
-                messagebox.showinfo("Success", "Response added successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.student_support.ticket_actions.dialogs.response_added_successfully', default="Response added successfully!"))
                 response_dialog.destroy()
                 self.refresh_data()
             except Exception as e:
-                messagebox.showerror("Error", f"Could not add response: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not add response: {e}")
 
-        ttk.Button(btn_frame, text="💬 Add Response", command=submit_response,
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.add_response_variant_2', default="💬 Add Response"), command=submit_response,
                   style='Primary.TButton').pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=response_dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.cancel_variant_2', default="❌ Cancel"), command=response_dialog.destroy).pack(side="left")
 
     def show_add_response_dialog_by_id(self, ticket_id):
         """Show add response dialog by ticket ID"""
@@ -294,7 +296,7 @@ class TicketActionsMixin:
             ticket = self.support.get_ticket_details(ticket_id)
             self.show_add_response_dialog(ticket)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load ticket: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not load ticket: {e}")
 
     def can_respond_to_ticket(self, ticket):
         """Check if current user can respond to ticket"""
@@ -362,23 +364,23 @@ class TicketActionsMixin:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Ticket #{ticket_id} escalated successfully!")
+            messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), f"Ticket #{ticket_id} escalated successfully!")
             self.refresh_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not escalate ticket: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not escalate ticket: {e}")
 
     def show_merge_dialog(self, ticket):
         """Show dialog to merge tickets"""
         # Handle None or invalid ticket
         if ticket is None or not isinstance(ticket, dict):
-            messagebox.showerror("Error", "Invalid ticket data")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.invalid_ticket_data', default="Invalid ticket data"))
             return
 
         ticket_id = ticket.get('ticket_id', 'N/A')
 
         merge_dialog = tk.Toplevel(self.root)
-        merge_dialog.title("Merge Tickets")
+        merge_dialog.title(_t('gui.pastoral.student_support.ticket_actions.windows.merge_tickets', default="Merge Tickets"))
         merge_dialog.geometry("1000x650")
         merge_dialog.transient(self.root)
         merge_dialog.grab_set()
@@ -389,11 +391,11 @@ class TicketActionsMixin:
         ttk.Label(form_frame, text=f"Merge into Ticket #{ticket_id}",
                  style='Heading.TLabel').pack(pady=(0, 15))
 
-        ttk.Label(form_frame, text="Secondary ticket IDs (comma-separated):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.secondary_ticket_ids_comma_separated', default="Secondary ticket IDs (comma-separated):")).pack(anchor="w")
         secondary_ids_entry = ttk.Entry(form_frame, width=40)
         secondary_ids_entry.pack(fill="x", pady=(5, 10))
 
-        ttk.Label(form_frame, text="Merge reason:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.merge_reason', default="Merge reason:")).pack(anchor="w")
         reason_text = scrolledtext.ScrolledText(form_frame, height=4, wrap=tk.WORD)
         reason_text.pack(fill="both", expand=True, pady=(5, 15))
 
@@ -402,39 +404,39 @@ class TicketActionsMixin:
             reason = reason_text.get(1.0, tk.END).strip()
 
             if not secondary_ids or not reason:
-                messagebox.showerror("Error", "Please provide secondary ticket IDs and reason")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.please_provide_secondary_ticket_ids_and_reason', default="Please provide secondary ticket IDs and reason"))
                 return
 
             try:
                 ids = [int(id.strip()) for id in secondary_ids.split(',')]
                 self.support.merge_tickets(ticket_id, ids, reason)
-                messagebox.showinfo("Success", "Tickets merged successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.student_support.ticket_actions.dialogs.tickets_merged_successfully', default="Tickets merged successfully!"))
                 merge_dialog.destroy()
                 self.refresh_data()
             except Exception as e:
-                messagebox.showerror("Error", f"Could not merge tickets: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not merge tickets: {e}")
 
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
 
-        ttk.Button(btn_frame, text="Merge Tickets", command=perform_merge).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=merge_dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.merge_tickets', default="Merge Tickets"), command=perform_merge).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.cancel', default="Cancel"), command=merge_dialog.destroy).pack(side="left")
 
     def export_ticket(self, ticket):
         """Export individual ticket data"""
         # Handle None or invalid ticket
         if ticket is None or not isinstance(ticket, dict):
-            messagebox.showerror("Error", "Invalid ticket data")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.invalid_ticket_data', default="Invalid ticket data"))
             return
 
         ticket_id = ticket.get('ticket_id')
         if not ticket_id:
-            messagebox.showerror("Error", "No ticket ID found")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.no_ticket_id_found', default="No ticket ID found"))
             return
 
         try:
             filename = filedialog.asksaveasfilename(
-                title="Export Ticket",
+                title=_t('gui.pastoral.student_support.ticket_actions.dialogs.export_ticket', default="Export Ticket"),
                 defaultextension=".json",
                 filetypes=[("JSON files", "*.json"), ("Text files", "*.txt")]
             )
@@ -451,7 +453,7 @@ class TicketActionsMixin:
             else:
                 # Export as formatted text with safe access
                 if not ticket_details or not isinstance(ticket_details, dict):
-                    messagebox.showerror("Error", "Could not retrieve ticket details")
+                    messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.could_not_retrieve_ticket_details', default="Could not retrieve ticket details"))
                     return
 
                 with open(filename, 'w') as f:
@@ -473,10 +475,10 @@ class TicketActionsMixin:
                                 f.write(f"\n[{response.get('response_datetime', 'N/A')}] {response.get('responder_role', 'N/A')}:\n")
                                 f.write(f"{response.get('response_text', '')}\n")
 
-            messagebox.showinfo("Success", f"Ticket exported to {filename}")
+            messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), f"Ticket exported to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not export ticket: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not export ticket: {e}")
 
     def show_ticket_history(self, ticket_id):
         """Show complete ticket history in a new window"""
@@ -550,13 +552,13 @@ class TicketActionsMixin:
             scrollbar.pack(side="right", fill="y")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load ticket history: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not load ticket history: {e}")
 
     def show_add_internal_note_dialog(self, ticket):
         """Show dialog to add internal note"""
         # Handle None or invalid ticket
         if ticket is None or not isinstance(ticket, dict):
-            messagebox.showerror("Error", "Invalid ticket data")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.invalid_ticket_data', default="Invalid ticket data"))
             return
 
         ticket_id = ticket.get('ticket_id', 'N/A')
@@ -570,7 +572,7 @@ class TicketActionsMixin:
         form_frame = ttk.Frame(note_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
 
-        ttk.Label(form_frame, text="Internal Note (Staff Only)",
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.internal_note_staff_only', default="Internal Note (Staff Only)"),
                  style='Heading.TLabel').pack(pady=(0, 15))
 
         note_text = scrolledtext.ScrolledText(form_frame, height=8, wrap=tk.WORD)
@@ -579,27 +581,27 @@ class TicketActionsMixin:
         def add_note():
             text = note_text.get(1.0, tk.END).strip()
             if not text:
-                messagebox.showerror("Error", "Note cannot be empty")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.note_cannot_be_empty', default="Note cannot be empty"))
                 return
 
             try:
                 self.support.add_ticket_response(ticket_id, text, is_internal=True)
-                messagebox.showinfo("Success", "Internal note added successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.student_support.ticket_actions.dialogs.internal_note_added_successfully', default="Internal note added successfully!"))
                 note_dialog.destroy()
                 self.refresh_data()
             except Exception as e:
-                messagebox.showerror("Error", f"Could not add note: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not add note: {e}")
 
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
 
-        ttk.Button(btn_frame, text="Add Note", command=add_note).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=note_dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.add_note', default="Add Note"), command=add_note).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.cancel', default="Cancel"), command=note_dialog.destroy).pack(side="left")
 
     def show_response_template_dialog(self, ticket):
         """Show dialog to use response template"""
         template_dialog = tk.Toplevel(self.root)
-        template_dialog.title("Use Response Template")
+        template_dialog.title(_t('gui.pastoral.student_support.ticket_actions.windows.use_response_template', default="Use Response Template"))
         template_dialog.geometry("1400x800")
         template_dialog.transient(self.root)
         template_dialog.grab_set()
@@ -607,19 +609,19 @@ class TicketActionsMixin:
         form_frame = ttk.Frame(template_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
 
-        ttk.Label(form_frame, text="Select Response Template",
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.select_response_template', default="Select Response Template"),
                  style='Heading.TLabel').pack(pady=(0, 15))
 
         # Get templates
         templates = self.support.get_response_templates()
 
         if not templates:
-            ttk.Label(form_frame, text="No response templates available").pack()
-            ttk.Button(form_frame, text="Close", command=template_dialog.destroy).pack(pady=10)
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.no_response_templates_available', default="No response templates available")).pack()
+            ttk.Button(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.close', default="Close"), command=template_dialog.destroy).pack(pady=10)
             return
 
         # Template selection
-        template_frame = ttk.LabelFrame(form_frame, text="Templates", padding="10")
+        template_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.templates', default="Templates"), padding="10")
         template_frame.pack(fill="x", pady=(0, 10))
 
         template_var = tk.StringVar()
@@ -628,7 +630,7 @@ class TicketActionsMixin:
         template_combo.pack(fill="x")
 
         # Preview area
-        preview_frame = ttk.LabelFrame(form_frame, text="Preview", padding="10")
+        preview_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.preview', default="Preview"), padding="10")
         preview_frame.pack(fill="both", expand=True, pady=(0, 10))
 
         preview_text = scrolledtext.ScrolledText(preview_frame, height=8, wrap=tk.WORD, state='disabled')
@@ -648,7 +650,7 @@ class TicketActionsMixin:
         def use_template():
             selection = template_combo.current()
             if selection < 0:
-                messagebox.showerror("Error", "Please select a template")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.please_select_a_template', default="Please select a template"))
                 return
 
             template = templates[selection]
@@ -660,17 +662,17 @@ class TicketActionsMixin:
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
 
-        ttk.Button(btn_frame, text="Use Template", command=use_template).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=template_dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.use_template', default="Use Template"), command=use_template).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.cancel', default="Cancel"), command=template_dialog.destroy).pack(side="left")
 
     def show_add_response_dialog_with_template(self, ticket, template):
         """Show add response dialog with template pre-filled"""
         # Handle None or invalid ticket
         if ticket is None or not isinstance(ticket, dict):
-            messagebox.showerror("Error", "Invalid ticket data")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.invalid_ticket_data', default="Invalid ticket data"))
             return
         if template is None or not isinstance(template, dict):
-            messagebox.showerror("Error", "Invalid template data")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.invalid_template_data', default="Invalid template data"))
             return
 
         ticket_id = ticket.get('ticket_id', 'N/A')
@@ -691,7 +693,7 @@ class TicketActionsMixin:
                  style='Heading.TLabel').pack(anchor="w", pady=(0, 15))
 
         # Response text with template content
-        ttk.Label(form_frame, text="Response:").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.response', default="Response:")).pack(anchor="w")
         response_text = scrolledtext.ScrolledText(form_frame, height=12, wrap=tk.WORD)
         response_text.pack(fill="both", expand=True, pady=(5, 15))
         response_text.insert(1.0, template_content)
@@ -702,13 +704,13 @@ class TicketActionsMixin:
 
         if self.auth and self.auth.current_user and self.auth.current_user.get('role') in ('staff', 'admin'):
             self.is_internal_var = tk.BooleanVar()
-            ttk.Checkbutton(options_frame, text="Internal note (staff only)",
+            ttk.Checkbutton(options_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.internal_note_staff_only', default="Internal note (staff only)"),
                            variable=self.is_internal_var).pack(side="left")
 
         def submit_response():
             text = response_text.get(1.0, tk.END).strip()
             if not text:
-                messagebox.showerror("Error", "Response cannot be empty")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.response_cannot_be_empty', default="Response cannot be empty"))
                 return
 
             try:
@@ -718,26 +720,26 @@ class TicketActionsMixin:
                     template_id=template_id,
                     is_internal=is_internal
                 )
-                messagebox.showinfo("Success", "Response added successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.student_support.ticket_actions.dialogs.response_added_successfully', default="Response added successfully!"))
                 response_dialog.destroy()
                 self.refresh_data()
             except Exception as e:
-                messagebox.showerror("Error", f"Could not add response: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not add response: {e}")
 
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
 
-        ttk.Button(btn_frame, text="Add Response", command=submit_response).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=response_dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.add_response', default="Add Response"), command=submit_response).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.cancel', default="Cancel"), command=response_dialog.destroy).pack(side="left")
 
     def show_satisfaction_rating(self):
         """Show satisfaction rating dialog for resolved tickets"""
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'student':
-            messagebox.showerror("Error", "Only students can submit satisfaction ratings")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.only_students_can_submit_satisfaction_ratings', default="Only students can submit satisfaction ratings"))
             return
 
         rating_dialog = tk.Toplevel(self.root)
-        rating_dialog.title("Submit Satisfaction Rating")
+        rating_dialog.title(_t('gui.pastoral.student_support.ticket_actions.windows.submit_satisfaction_rating', default="Submit Satisfaction Rating"))
         rating_dialog.geometry("1300x800")
         rating_dialog.transient(self.root)
         rating_dialog.grab_set()
@@ -745,7 +747,7 @@ class TicketActionsMixin:
         form_frame = ttk.Frame(rating_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
 
-        ttk.Label(form_frame, text="Rate Your Support Experience",
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.rate_your_support_experience', default="Rate Your Support Experience"),
                  style='Title.TLabel').pack(pady=(0, 20))
 
         # Get resolved tickets for this student
@@ -758,7 +760,7 @@ class TicketActionsMixin:
             conn.close()
 
             if not result:
-                messagebox.showerror("Error", "No student ID found")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.no_student_id_found', default="No student ID found"))
                 rating_dialog.destroy()
                 return
 
@@ -768,26 +770,26 @@ class TicketActionsMixin:
 
             # Handle None or invalid result
             if result is None:
-                ttk.Label(form_frame, text="No resolved tickets to rate").pack()
-                ttk.Button(form_frame, text="Close", command=rating_dialog.destroy).pack(pady=10)
+                ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.no_resolved_tickets_to_rate', default="No resolved tickets to rate")).pack()
+                ttk.Button(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.close', default="Close"), command=rating_dialog.destroy).pack(pady=10)
                 return
 
             resolved_tickets = result.get('tickets', []) if isinstance(result, dict) else []
 
             if not resolved_tickets:
-                ttk.Label(form_frame, text="No resolved tickets to rate").pack()
-                ttk.Button(form_frame, text="Close", command=rating_dialog.destroy).pack(pady=10)
+                ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.no_resolved_tickets_to_rate', default="No resolved tickets to rate")).pack()
+                ttk.Button(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.close', default="Close"), command=rating_dialog.destroy).pack(pady=10)
                 return
 
             # Ticket selection
-            ttk.Label(form_frame, text="Select Ticket:").pack(anchor="w")
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.select_ticket', default="Select Ticket:")).pack(anchor="w")
             ticket_var = tk.StringVar()
             ticket_combo = ttk.Combobox(form_frame, textvariable=ticket_var, state="readonly")
             ticket_combo['values'] = [f"#{t['ticket_id']} - {t['subject']}" for t in resolved_tickets]
             ticket_combo.pack(fill="x", pady=(5, 10))
 
             # Rating
-            ttk.Label(form_frame, text="Rating (1-5 stars):").pack(anchor="w")
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.rating_1_5_stars', default="Rating (1-5 stars):")).pack(anchor="w")
             rating_var = tk.IntVar(value=5)
             rating_frame = ttk.Frame(form_frame)
             rating_frame.pack(anchor="w", pady=(5, 10))
@@ -797,25 +799,25 @@ class TicketActionsMixin:
                                variable=rating_var, value=i).pack(side="left", padx=(0, 10))
 
             # Feedback
-            ttk.Label(form_frame, text="Additional Feedback (optional):").pack(anchor="w")
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_support.ticket_actions.labels.additional_feedback_optional', default="Additional Feedback (optional):")).pack(anchor="w")
             feedback_text = scrolledtext.ScrolledText(form_frame, height=6, wrap=tk.WORD)
             feedback_text.pack(fill="both", expand=True, pady=(5, 15))
 
             def submit_rating():
                 selection = ticket_combo.current()
                 if selection < 0:
-                    messagebox.showerror("Error", "Please select a ticket")
+                    messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.please_select_a_ticket', default="Please select a ticket"))
                     return
 
                 ticket = resolved_tickets[selection]
                 # Handle None or invalid ticket
                 if ticket is None or not isinstance(ticket, dict):
-                    messagebox.showerror("Error", "Invalid ticket data")
+                    messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.invalid_ticket_data', default="Invalid ticket data"))
                     return
 
                 ticket_id = ticket.get('ticket_id')
                 if not ticket_id:
-                    messagebox.showerror("Error", "No ticket ID found")
+                    messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.no_ticket_id_found', default="No ticket ID found"))
                     return
 
                 rating = rating_var.get()
@@ -823,19 +825,19 @@ class TicketActionsMixin:
 
                 try:
                     self.support.submit_satisfaction_rating(ticket_id, rating, feedback)
-                    messagebox.showinfo("Success", "Thank you for your feedback!")
+                    messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.student_support.ticket_actions.dialogs.thank_you_for_your_feedback', default="Thank you for your feedback!"))
                     rating_dialog.destroy()
                 except Exception as e:
-                    messagebox.showerror("Error", f"Could not submit rating: {e}")
+                    messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not submit rating: {e}")
 
             btn_frame = ttk.Frame(form_frame)
             btn_frame.pack(fill="x")
 
-            ttk.Button(btn_frame, text="Submit Rating", command=submit_rating).pack(side="left", padx=(0, 10))
-            ttk.Button(btn_frame, text="Cancel", command=rating_dialog.destroy).pack(side="left")
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.submit_rating', default="Submit Rating"), command=submit_rating).pack(side="left", padx=(0, 10))
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.ticket_actions.buttons.cancel', default="Cancel"), command=rating_dialog.destroy).pack(side="left")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load tickets: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not load tickets: {e}")
             rating_dialog.destroy()
 
     def update_ticket_assignment(self, ticket_id, window):
@@ -879,19 +881,19 @@ class TicketActionsMixin:
                     f"Your ticket has been assigned to {assigned_to}. They will review your request and respond shortly."
                 )
 
-            messagebox.showinfo("Success", "Ticket assignment updated")
+            messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), _t('gui.pastoral.student_support.ticket_actions.dialogs.ticket_assignment_updated', default="Ticket assignment updated"))
             window.destroy()
             self.refresh_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not update assignment: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not update assignment: {e}")
 
     def update_ticket_status_action(self, ticket_id, window):
         """Update ticket status from actions tab"""
         try:
             new_status = self.new_status_var.get()
             if not new_status:
-                messagebox.showerror("Error", "Please select a status")
+                messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), _t('gui.pastoral.student_support.ticket_actions.dialogs.please_select_a_status', default="Please select a status"))
                 return
 
             # Get current status before update
@@ -911,10 +913,10 @@ class TicketActionsMixin:
                 changed_by = self.auth.current_user.get('username', 'Support Staff') if self.auth and self.auth.current_user else 'Support Staff'
                 self._send_ticket_status_change_notification(ticket_id, old_status, new_status, changed_by)
 
-            messagebox.showinfo("Success", f"Status updated to {new_status}")
+            messagebox.showinfo(_t('gui.pastoral.student_support.ticket_actions.dialogs.success', default="Success"), f"Status updated to {new_status}")
             window.destroy()
             self.refresh_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not update status: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.ticket_actions.dialogs.error', default="Error"), f"Could not update status: {e}")
 

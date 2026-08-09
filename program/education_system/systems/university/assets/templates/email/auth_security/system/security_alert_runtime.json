@@ -1,0 +1,4 @@
+{
+  "subject": "$emoji SECURITY ALERT - $level",
+  "body": "$emoji SECURITY ALERT - $level\n\n$title\n\nDetails:\n$details\nTimestamp: $timestamp\n\n---\nUniversity Management System Security Monitoring"
+}

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.pastoral.internship_management._imports import datetime, messagebox, get_connection, tk, scrolledtext
 
 
@@ -141,7 +143,7 @@ class NotificationsMixin:
             }
 
             send_template_email(template_name, student_email, template_vars)
-            messagebox.showinfo("Email Sent", f"Confirmation email sent to {student_name}")
+            messagebox.showinfo(_t('gui.pastoral.internship_management.notifications.dialogs.email_sent', default="Email Sent"), f"Confirmation email sent to {student_name}")
 
         except Exception as e:
             print(f"Failed to send application confirmation: {e}")
@@ -166,7 +168,7 @@ class NotificationsMixin:
             }
 
             send_template_email(template_name, student_email, template_vars)
-            messagebox.showinfo("Decision Email Sent", f"Application decision sent to {student_name}")
+            messagebox.showinfo(_t('gui.pastoral.internship_management.notifications.dialogs.decision_email_sent', default="Decision Email Sent"), f"Application decision sent to {student_name}")
 
         except Exception as e:
             print(f"Failed to send application decision: {e}")
@@ -209,6 +211,6 @@ class NotificationsMixin:
             details_text.insert('1.0', email_details)
             details_text.config(state='disabled')
 
-            tk.Button(fallback_window, text="Close", command=fallback_window.destroy).pack(pady=10)
+            tk.Button(fallback_window, text=_t('gui.pastoral.internship_management.notifications.buttons.close', default="Close"), command=fallback_window.destroy).pack(pady=10)
         except Exception as e:
             print(f"Failed to show email fallback: {e}")

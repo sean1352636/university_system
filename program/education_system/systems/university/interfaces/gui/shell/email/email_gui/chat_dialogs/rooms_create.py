@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from ._common import messagebox, tk, ttk
 
 class CreateChatRoomDialog:
@@ -5,7 +7,7 @@ class CreateChatRoomDialog:
         self.dashboard = dashboard
         self.refresh_callback = refresh_callback
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create Chat Room")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.windows.create_chat_room', default="Create Chat Room"))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -18,26 +20,26 @@ class CreateChatRoomDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Room name
-        ttk.Label(main_frame, text="Room Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.labels.room_name', default="Room Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_entry = ttk.Entry(main_frame, width=40)
         self.name_entry.grid(row=0, column=1, sticky=tk.EW, pady=5)
 
         # Description
-        ttk.Label(main_frame, text="Description:").grid(row=1, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.labels.description', default="Description:")).grid(row=1, column=0, sticky=tk.NW, pady=5)
         self.description_text = tk.Text(main_frame, width=40, height=5)
         self.description_text.grid(row=1, column=1, sticky=tk.NSEW, pady=5)
 
         # Room type
-        ttk.Label(main_frame, text="Room Type:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.type_var = tk.StringVar(value="public")
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.labels.room_type', default="Room Type:")).grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.type_var = tk.StringVar(value=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.values.public', default="public"))
         type_frame = ttk.Frame(main_frame)
         type_frame.grid(row=2, column=1, sticky=tk.W, pady=5)
 
-        ttk.Radiobutton(type_frame, text="Public", variable=self.type_var, value="public").pack(anchor=tk.W)
-        ttk.Radiobutton(type_frame, text="Private", variable=self.type_var, value="private").pack(anchor=tk.W)
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.buttons.public', default="Public"), variable=self.type_var, value="public").pack(anchor=tk.W)
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.buttons.private', default="Private"), variable=self.type_var, value="private").pack(anchor=tk.W)
 
         # Max members
-        ttk.Label(main_frame, text="Max Members:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.labels.max_members', default="Max Members:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.max_members_var = tk.StringVar(value="50")
         ttk.Spinbox(main_frame, from_=2, to=1000, textvariable=self.max_members_var, width=10).grid(row=3, column=1, sticky=tk.W, pady=5)
 
@@ -45,8 +47,8 @@ class CreateChatRoomDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=4, column=0, columnspan=2, pady=20)
 
-        ttk.Button(button_frame, text="Create", command=self.create_room).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.buttons.create', default="Create"), command=self.create_room).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         # Configure grid weights
         main_frame.columnconfigure(1, weight=1)
@@ -59,11 +61,11 @@ class CreateChatRoomDialog:
         max_members = int(self.max_members_var.get())
 
         if not name:
-            messagebox.showwarning("Missing Information", "Please provide a room name")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.missing_information', default="Missing Information"), _t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.please_provide_a_room_name', default="Please provide a room name"))
             return
 
         if not self.dashboard:
-            messagebox.showerror("Error", "Dashboard not initialized")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.dashboard_not_initialized', default="Dashboard not initialized"))
             return
 
         try:
@@ -74,24 +76,24 @@ class CreateChatRoomDialog:
                 max_members=max_members,
             )
             if result:
-                messagebox.showinfo("Success", f"Chat room '{name}' created successfully!")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.success', default="Success"), f"Chat room '{name}' created successfully!")
                 self.dialog.destroy()
                 if self.refresh_callback:
                     self.refresh_callback()
             else:
                 messagebox.showerror(
-                    "Error",
-                    "Failed to create chat room (name may already exist or you lack permission)",
+                    _t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.error', default="Error"),
+                    _t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.failed_to_create_chat_room_name_may_already_exist_or_you_lack_pe', default="Failed to create chat room (name may already exist or you lack permission)"),
                 )
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create chat room: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.error', default="Error"), f"Failed to create chat room: {e}")
 
 
 class ChatInvitationsDialog:
     def __init__(self, parent, dashboard):
         self.dashboard = dashboard
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Chat Room Invitations")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.windows.chat_room_invitations', default="Chat Room Invitations"))
         self.dialog.geometry("600x400")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -105,7 +107,7 @@ class ChatInvitationsDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        ttk.Label(main_frame, text="Pending Chat Room Invitations", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.labels.pending_chat_room_invitations', default="Pending Chat Room Invitations"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Invitations list
         columns = ("Room", "Invited By", "Date")
@@ -124,9 +126,9 @@ class ChatInvitationsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Accept", command=self.accept_invitation).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Decline", command=self.decline_invitation).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.buttons.accept', default="Accept"), command=self.accept_invitation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.buttons.decline', default="Decline"), command=self.decline_invitation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_invitations(self):
         # Clear existing items
@@ -143,7 +145,7 @@ class ChatInvitationsDialog:
                     invitation['invited_at']
                 ), tags=(invitation['id'],))
         except Exception as e:
-            messagebox.showerror("Error", f"Error loading invitations: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.error', default="Error"), f"Error loading invitations: {e}")
 
     def accept_invitation(self):
         selection = self.invitations_tree.selection()
@@ -153,12 +155,12 @@ class ChatInvitationsDialog:
 
             try:
                 if self.dashboard.respond_to_invitation(invitation_id, accept=True):
-                    messagebox.showinfo("Success", "Invitation accepted!")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.invitation_accepted', default="Invitation accepted!"))
                     self.load_invitations()
                 else:
-                    messagebox.showerror("Error", "Failed to accept invitation")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.failed_to_accept_invitation', default="Failed to accept invitation"))
             except Exception as e:
-                messagebox.showerror("Error", f"Error accepting invitation: {e}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.error', default="Error"), f"Error accepting invitation: {e}")
 
     def decline_invitation(self):
         selection = self.invitations_tree.selection()
@@ -168,12 +170,12 @@ class ChatInvitationsDialog:
 
             try:
                 if self.dashboard.respond_to_invitation(invitation_id, accept=False):
-                    messagebox.showinfo("Success", "Invitation declined")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.invitation_declined', default="Invitation declined"))
                     self.load_invitations()
                 else:
-                    messagebox.showerror("Error", "Failed to decline invitation")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.failed_to_decline_invitation', default="Failed to decline invitation"))
             except Exception as e:
-                messagebox.showerror("Error", f"Error declining invitation: {e}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.dialogs.error', default="Error"), f"Error declining invitation: {e}")
 
 
 class RoomSwitcherDialog:
@@ -184,7 +186,7 @@ class RoomSwitcherDialog:
         self.parent = parent
         self.current_room_id = current_room_id
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Switch room")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.rooms_create.windows.switch_room', default="Switch room"))
         self.dialog.geometry("420x360")
         self.dialog.transient(parent)
         self.dialog.bind('<Escape>', lambda e: self.dialog.destroy())

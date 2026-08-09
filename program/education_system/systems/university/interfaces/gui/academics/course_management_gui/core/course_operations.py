@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core._imports import _, messagebox, sqlite3, DEFAULT_DB_PATH, CourseEditDialog
 
 
@@ -13,8 +15,8 @@ class CourseOperationsMixin:
 
         if len(selection) > 1:
             messagebox.showinfo(_("common.info", default="Info"),
-                                "Select a single course to edit. "
-                                "For bulk edits use Tools → Bulk Update.")
+                                _t('gui.academics.course_management_gui.core.course_operations.dialogs.select_a_single_course_to_edit_for_bulk_edits_use_tools_bulk_upd', default="Select a single course to edit. "
+                                "For bulk edits use Tools → Bulk Update."))
             return
 
         item = self.course_tree.item(selection[0])

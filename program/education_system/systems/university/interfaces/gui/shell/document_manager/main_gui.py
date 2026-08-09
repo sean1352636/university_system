@@ -14,7 +14,7 @@ import time
 import logging
 from PIL import Image, ImageTk
 import webbrowser
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.security.file_upload import (
     get_upload_handler,
     validate_upload,

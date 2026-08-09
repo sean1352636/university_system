@@ -20,7 +20,7 @@ def show_inventory_page(self):
     ttk.Label(self.content_frame, text=_t("cinema.inventory.title"), style="Subtitle.TLabel").pack(pady=10)
     btn_frame = ttk.Frame(self.content_frame, style="Main.TFrame")
     btn_frame.pack(fill="x", pady=10)
-    ttk.Button(btn_frame, text="+ Add Item", style="Success.TButton", command=self.add_inv_item).pack(side="left", padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.inventory.buttons.add_item', default="+ Add Item"), style="Success.TButton", command=self.add_inv_item).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.btn.restock"), style="Primary.TButton", command=self.restock_inv).pack(side="left", padx=5)
     tree_frame = ttk.Frame(self.content_frame, style="Card.TFrame")
     tree_frame.pack(fill="both", expand=True, pady=10)
@@ -60,14 +60,14 @@ def show_inventory_page(self):
 
 def add_inv_item(self):
     form = tk.Toplevel(self.root)
-    form.title("Add Item")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.inventory.windows.add_item', default="Add Item"))
     form.geometry("400x350")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
     form.grab_set()
     frame = ttk.Frame(form, style="Card.TFrame", padding=20)
     frame.pack(fill="both", expand=True, padx=20, pady=20)
-    tk.Label(frame, text="Add Item", font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c").grid(row=0, column=0, columnspan=2, pady=10)
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.inventory.labels.add_item', default="Add Item"), font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c").grid(row=0, column=0, columnspan=2, pady=10)
     fields = [("Item:*", "name"), ("Unit:*", "unit"), ("Stock:", "stock"), ("Min Level:", "min"), ("Cost:", "cost")]
     entries = {}
     for i, (label, key) in enumerate(fields):
@@ -79,7 +79,7 @@ def add_inv_item(self):
     entries['min'].insert(0, "20")
     def save():
         if not entries['name'].get().strip() or not entries['unit'].get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Name and unit required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.inventory.dialogs.name_and_unit_required', default="Name and unit required"))
             return
         try:
             stock = int(entries['stock'].get() or 0)
@@ -95,7 +95,7 @@ def add_inv_item(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Item added!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.inventory.dialogs.item_added', default="Item added!"))
         form.destroy()
         self.show_inventory_page()
     ttk.Button(frame, text=_t("cinema.buttons.add"), style="Success.TButton", command=save).grid(row=len(fields)+1, column=0, columnspan=2, pady=20)
@@ -103,12 +103,12 @@ def add_inv_item(self):
 def restock_inv(self):
     selected = self.inv_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select an item")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.inventory.dialogs.select_an_item', default="Select an item"))
         return
     item_id = self.inv_tree.item(selected[0])['values'][0]
     item_name = self.inv_tree.item(selected[0])['values'][1]
     dialog = tk.Toplevel(self.root)
-    dialog.title("Restock")
+    dialog.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.inventory.windows.restock', default="Restock"))
     dialog.geometry("300x150")
     dialog.configure(bg="#ecf0f1")
     dialog.transient(self.root)
@@ -122,7 +122,7 @@ def restock_inv(self):
         try:
             qty = int(qty_e.get())
         except (ValueError, TypeError):
-            messagebox.showwarning(_t("cinema.common.warning"), "Invalid qty")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.inventory.dialogs.invalid_qty', default="Invalid qty"))
             return
         conn = sqlite3.connect(DB_FILE)
         try:

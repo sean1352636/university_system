@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sys
@@ -21,8 +23,8 @@ except ImportError as e:
 
 # Import shared database path if available
 try:
-    from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-    DB_PATH = str(DEFAULT_DB_PATH)
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+    DB_PATH = str(UNIVERSITY_DEFAULT_DB_PATH)
 except ImportError:
     DB_PATH = None
 
@@ -104,7 +106,7 @@ class HealthPortalManagementGUI:
 
             ttk.Label(check_frame, text=check_name, width=25).pack(side=tk.LEFT)
 
-            status_var = tk.StringVar(value="Checking...")
+            status_var = tk.StringVar(value=_t('gui.pastoral.health.health_portal_management.values.checking', default="Checking..."))
             status_label = ttk.Label(check_frame, textvariable=status_var)
             status_label.pack(side=tk.LEFT, padx=(10, 0))
 

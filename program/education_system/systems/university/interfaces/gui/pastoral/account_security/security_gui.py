@@ -4,6 +4,8 @@ Provides students with visibility into login history, MFA settings,
 and active session information.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -25,7 +27,7 @@ class AccountSecurityGUI:
             self.username = auth.current_user.get('username', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Account Security Dashboard")
+        self.window.title(_t('gui.pastoral.account_security.security.windows.account_security_dashboard', default="Account Security Dashboard"))
         self.window.geometry("900x650")
         self.window.transient(parent)
 
@@ -39,7 +41,7 @@ class AccountSecurityGUI:
         """Build the three-tab notebook interface."""
         ttk.Label(
             self.window,
-            text="Account Security Dashboard",
+            text=_t('gui.pastoral.account_security.security.labels.account_security_dashboard', default="Account Security Dashboard"),
             font=("Arial", 16, "bold"),
         ).pack(pady=(15, 5))
 
@@ -59,7 +61,7 @@ class AccountSecurityGUI:
         # Bottom close button
         btn_frame = ttk.Frame(self.window)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Close", command=self.window.destroy).pack()
+        ttk.Button(btn_frame, text=_t('gui.pastoral.account_security.security.buttons.close', default="Close"), command=self.window.destroy).pack()
 
     # ------------------------------------------------------------------
     # Tab 1 — Login History
@@ -68,10 +70,10 @@ class AccountSecurityGUI:
     def _create_login_history_tab(self):
         """Create the login history tab with a colour-coded Treeview."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Login History")
+        self.notebook.add(tab, text=_t('gui.pastoral.account_security.security.tabs.login_history', default="Login History"))
 
         ttk.Label(
-            tab, text="Recent Login Attempts (last 50)",
+            tab, text=_t('gui.pastoral.account_security.security.labels.recent_login_attempts_last_50', default="Recent Login Attempts (last 50)"),
             font=("Arial", 11, "bold"),
         ).pack(pady=(10, 5))
 
@@ -82,9 +84,9 @@ class AccountSecurityGUI:
         self.history_tree = ttk.Treeview(
             tree_frame, columns=cols, show="headings", height=18
         )
-        self.history_tree.heading("time", text="Time")
-        self.history_tree.heading("success", text="Result")
-        self.history_tree.heading("ip_address", text="IP Address")
+        self.history_tree.heading("time", text=_t('gui.pastoral.account_security.security.headings.time', default="Time"))
+        self.history_tree.heading("success", text=_t('gui.pastoral.account_security.security.headings.result', default="Result"))
+        self.history_tree.heading("ip_address", text=_t('gui.pastoral.account_security.security.headings.ip_address', default="IP Address"))
         self.history_tree.column("time", width=250)
         self.history_tree.column("success", width=120)
         self.history_tree.column("ip_address", width=200)
@@ -101,7 +103,7 @@ class AccountSecurityGUI:
         self.history_tree.tag_configure("failed", background="#f8d7da")
 
         ttk.Button(
-            tab, text="Refresh", command=self._load_login_history
+            tab, text=_t('gui.pastoral.account_security.security.buttons.refresh', default="Refresh"), command=self._load_login_history
         ).pack(pady=5)
 
         self._load_login_history()
@@ -151,18 +153,18 @@ class AccountSecurityGUI:
     def _create_mfa_tab(self):
         """Create the MFA settings tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="MFA Settings")
+        self.notebook.add(tab, text=_t('gui.pastoral.account_security.security.tabs.mfa_settings', default="MFA Settings"))
 
         ttk.Label(
-            tab, text="Multi-Factor Authentication",
+            tab, text=_t('gui.pastoral.account_security.security.labels.multi_factor_authentication', default="Multi-Factor Authentication"),
             font=("Arial", 14, "bold"),
         ).pack(pady=(20, 10))
 
         # Status display
-        status_frame = ttk.LabelFrame(tab, text="Current Status", padding=15)
+        status_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.account_security.security.labels.current_status', default="Current Status"), padding=15)
         status_frame.pack(padx=30, pady=10, fill=tk.X)
 
-        self.mfa_status_var = tk.StringVar(value="Loading...")
+        self.mfa_status_var = tk.StringVar(value=_t('gui.pastoral.account_security.security.values.loading', default="Loading..."))
         self.mfa_status_label = ttk.Label(
             status_frame, textvariable=self.mfa_status_var,
             font=("Arial", 13, "bold"),
@@ -171,12 +173,12 @@ class AccountSecurityGUI:
 
         # Toggle button
         self.mfa_toggle_btn = ttk.Button(
-            tab, text="Toggle MFA", command=self._toggle_mfa
+            tab, text=_t('gui.pastoral.account_security.security.buttons.toggle_mfa', default="Toggle MFA"), command=self._toggle_mfa
         )
         self.mfa_toggle_btn.pack(pady=15)
 
         # Info text
-        info_frame = ttk.LabelFrame(tab, text="About MFA", padding=10)
+        info_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.account_security.security.labels.about_mfa', default="About MFA"), padding=10)
         info_frame.pack(padx=30, pady=10, fill=tk.X)
 
         info_text = (
@@ -227,26 +229,26 @@ class AccountSecurityGUI:
                 self.mfa_status_label.configure(foreground="green")
             except Exception:
                 pass
-            self.mfa_toggle_btn.configure(text="Disable MFA")
+            self.mfa_toggle_btn.configure(text=_t('gui.pastoral.account_security.security.text.disable_mfa', default="Disable MFA"))
         else:
             self.mfa_status_var.set("Disabled")
             try:
                 self.mfa_status_label.configure(foreground="red")
             except Exception:
                 pass
-            self.mfa_toggle_btn.configure(text="Enable MFA")
+            self.mfa_toggle_btn.configure(text=_t('gui.pastoral.account_security.security.text.enable_mfa', default="Enable MFA"))
 
     def _toggle_mfa(self):
         """Toggle the MFA setting for the current user."""
         if not self.username:
-            messagebox.showwarning("Warning", "No account available.", parent=self.window)
+            messagebox.showwarning(_t('gui.pastoral.account_security.security.dialogs.warning', default="Warning"), _t('gui.pastoral.account_security.security.dialogs.no_account_available', default="No account available."), parent=self.window)
             return
 
         new_state = 0 if self.mfa_enabled else 1
         action_word = "disable" if self.mfa_enabled else "enable"
 
         confirm = messagebox.askyesno(
-            "Confirm",
+            _t('gui.pastoral.account_security.security.dialogs.confirm', default="Confirm"),
             f"Are you sure you want to {action_word} MFA?",
             parent=self.window,
         )
@@ -271,14 +273,14 @@ class AccountSecurityGUI:
 
             logger.info("MFA %sd for user %s", action_word, self.username)
             messagebox.showinfo(
-                "Success",
+                _t('gui.pastoral.account_security.security.dialogs.success', default="Success"),
                 f"MFA has been {action_word}d.",
                 parent=self.window,
             )
         except Exception as exc:
             logger.error("Failed to toggle MFA: %s", exc)
             messagebox.showerror(
-                "Error", f"Could not update MFA setting: {exc}", parent=self.window
+                _t('gui.pastoral.account_security.security.dialogs.error', default="Error"), f"Could not update MFA setting: {exc}", parent=self.window
             )
 
     # ------------------------------------------------------------------
@@ -288,10 +290,10 @@ class AccountSecurityGUI:
     def _create_sessions_tab(self):
         """Create the active sessions tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Active Sessions")
+        self.notebook.add(tab, text=_t('gui.pastoral.account_security.security.tabs.active_sessions', default="Active Sessions"))
 
         ttk.Label(
-            tab, text="Recent Successful Logins by IP",
+            tab, text=_t('gui.pastoral.account_security.security.labels.recent_successful_logins_by_ip', default="Recent Successful Logins by IP"),
             font=("Arial", 11, "bold"),
         ).pack(pady=(10, 5))
 
@@ -302,9 +304,9 @@ class AccountSecurityGUI:
         self.sessions_tree = ttk.Treeview(
             tree_frame, columns=cols, show="headings", height=15
         )
-        self.sessions_tree.heading("ip_address", text="IP Address")
-        self.sessions_tree.heading("login_count", text="Login Count")
-        self.sessions_tree.heading("last_login", text="Last Login")
+        self.sessions_tree.heading("ip_address", text=_t('gui.pastoral.account_security.security.headings.ip_address', default="IP Address"))
+        self.sessions_tree.heading("login_count", text=_t('gui.pastoral.account_security.security.headings.login_count', default="Login Count"))
+        self.sessions_tree.heading("last_login", text=_t('gui.pastoral.account_security.security.headings.last_login', default="Last Login"))
         self.sessions_tree.column("ip_address", width=220)
         self.sessions_tree.column("login_count", width=120)
         self.sessions_tree.column("last_login", width=250)
@@ -317,7 +319,7 @@ class AccountSecurityGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         ttk.Button(
-            tab, text="Refresh", command=self._load_sessions
+            tab, text=_t('gui.pastoral.account_security.security.buttons.refresh', default="Refresh"), command=self._load_sessions
         ).pack(pady=5)
 
         self._load_sessions()

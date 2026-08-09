@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -425,7 +427,7 @@ from education_system.systems.university.interfaces.gui.pastoral.helpdesk.base i
 def create_admin_tab(self):
     """Create admin tab"""
     admin_frame = ttk.Frame(self.notebook)
-    self.notebook.add(admin_frame, text="Administration")
+    self.notebook.add(admin_frame, text=_t('gui.pastoral.helpdesk.admin.tabs.administration', default="Administration"))
 
     # Create notebook for admin sections
     admin_notebook = ttk.Notebook(admin_frame)
@@ -446,47 +448,47 @@ HelpdeskGUI.create_admin_tab = create_admin_tab
 def create_system_management_tab(self, parent):
     """Create system management tab"""
     sys_frame = ttk.Frame(parent)
-    parent.add(sys_frame, text="System")
+    parent.add(sys_frame, text=_t('gui.pastoral.helpdesk.admin.tabs.system', default="System"))
 
     # System management options
-    options_frame = ttk.LabelFrame(sys_frame, text="System Management")
+    options_frame = ttk.LabelFrame(sys_frame, text=_t('gui.pastoral.helpdesk.admin.labels.system_management', default="System Management"))
     options_frame.pack(fill='x', padx=10, pady=10)
 
     # SLA Management
     sla_frame = ttk.Frame(options_frame)
     sla_frame.pack(fill='x', padx=5, pady=5)
-    ttk.Label(sla_frame, text="SLA Policies:", style='Heading.TLabel').pack(side='left')
-    ttk.Button(sla_frame, text="Manage SLAs", command=self.show_sla_management).pack(side='right')
+    ttk.Label(sla_frame, text=_t('gui.pastoral.helpdesk.admin.labels.sla_policies', default="SLA Policies:"), style='Heading.TLabel').pack(side='left')
+    ttk.Button(sla_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.manage_slas', default="Manage SLAs"), command=self.show_sla_management).pack(side='right')
 
     # Template Management
     template_frame = ttk.Frame(options_frame)
     template_frame.pack(fill='x', padx=5, pady=5)
-    ttk.Label(template_frame, text="Ticket Templates:", style='Heading.TLabel').pack(side='left')
-    ttk.Button(template_frame, text="Manage Templates", command=self.show_template_management).pack(side='right')
+    ttk.Label(template_frame, text=_t('gui.pastoral.helpdesk.admin.labels.ticket_templates', default="Ticket Templates:"), style='Heading.TLabel').pack(side='left')
+    ttk.Button(template_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.manage_templates', default="Manage Templates"), command=self.show_template_management).pack(side='right')
 
     # Department Management
     dept_frame = ttk.Frame(options_frame)
     dept_frame.pack(fill='x', padx=5, pady=5)
-    ttk.Label(dept_frame, text="Departments:", style='Heading.TLabel').pack(side='left')
-    ttk.Button(dept_frame, text="Manage Departments", command=self.show_department_management).pack(side='right')
+    ttk.Label(dept_frame, text=_t('gui.pastoral.helpdesk.admin.labels.departments', default="Departments:"), style='Heading.TLabel').pack(side='left')
+    ttk.Button(dept_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.manage_departments', default="Manage Departments"), command=self.show_department_management).pack(side='right')
 
     # Workflow Management
     workflow_frame = ttk.Frame(options_frame)
     workflow_frame.pack(fill='x', padx=5, pady=5)
-    ttk.Label(workflow_frame, text="Workflows:", style='Heading.TLabel').pack(side='left')
-    ttk.Button(workflow_frame, text="Manage Workflows", command=self.show_workflow_management).pack(side='right')
+    ttk.Label(workflow_frame, text=_t('gui.pastoral.helpdesk.admin.labels.workflows', default="Workflows:"), style='Heading.TLabel').pack(side='left')
+    ttk.Button(workflow_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.manage_workflows', default="Manage Workflows"), command=self.show_workflow_management).pack(side='right')
 
     # System Maintenance
-    maintenance_frame = ttk.LabelFrame(sys_frame, text="System Maintenance")
+    maintenance_frame = ttk.LabelFrame(sys_frame, text=_t('gui.pastoral.helpdesk.admin.labels.system_maintenance', default="System Maintenance"))
     maintenance_frame.pack(fill='x', padx=10, pady=10)
 
     maint_grid = ttk.Frame(maintenance_frame)
     maint_grid.pack(fill='x', padx=5, pady=5)
 
-    ttk.Button(maint_grid, text="Database Cleanup", command=self.show_database_cleanup).grid(row=0, column=0, padx=5, pady=5)
-    ttk.Button(maint_grid, text="Backup Database", command=self.backup_database).grid(row=0, column=1, padx=5, pady=5)
-    ttk.Button(maint_grid, text="Check Integrity", command=self.check_data_integrity).grid(row=1, column=0, padx=5, pady=5)
-    ttk.Button(maint_grid, text="Export Data", command=self.show_export_dialog).grid(row=1, column=1, padx=5, pady=5)
+    ttk.Button(maint_grid, text=_t('gui.pastoral.helpdesk.admin.buttons.database_cleanup', default="Database Cleanup"), command=self.show_database_cleanup).grid(row=0, column=0, padx=5, pady=5)
+    ttk.Button(maint_grid, text=_t('gui.pastoral.helpdesk.admin.buttons.backup_database', default="Backup Database"), command=self.backup_database).grid(row=0, column=1, padx=5, pady=5)
+    ttk.Button(maint_grid, text=_t('gui.pastoral.helpdesk.admin.buttons.check_integrity', default="Check Integrity"), command=self.check_data_integrity).grid(row=1, column=0, padx=5, pady=5)
+    ttk.Button(maint_grid, text=_t('gui.pastoral.helpdesk.admin.buttons.export_data', default="Export Data"), command=self.show_export_dialog).grid(row=1, column=1, padx=5, pady=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.create_system_management_tab = create_system_management_tab
@@ -504,7 +506,7 @@ HelpdeskGUI.show_system_management = show_system_management
 def show_settings(self):
     """Show system settings dialog"""
     settings_window = tk.Toplevel(self.root)
-    settings_window.title("System Settings")
+    settings_window.title(_t('gui.pastoral.helpdesk.admin.windows.system_settings', default="System Settings"))
     settings_window.geometry("700x550")
     settings_window.transient(self.root)
     settings_window.grab_set()
@@ -515,108 +517,108 @@ def show_settings(self):
 
     # === General Settings ===
     general_frame = ttk.Frame(settings_notebook, padding="10")
-    settings_notebook.add(general_frame, text="General")
+    settings_notebook.add(general_frame, text=_t('gui.pastoral.helpdesk.admin.tabs.general', default="General"))
 
     # System Name
-    ttk.Label(general_frame, text="System Name:").grid(row=0, column=0, sticky='w', pady=5)
-    self.setting_system_name = tk.StringVar(value="University Helpdesk")
+    ttk.Label(general_frame, text=_t('gui.pastoral.helpdesk.admin.labels.system_name', default="System Name:")).grid(row=0, column=0, sticky='w', pady=5)
+    self.setting_system_name = tk.StringVar(value=_t('gui.pastoral.helpdesk.admin.values.university_helpdesk', default="University Helpdesk"))
     ttk.Entry(general_frame, textvariable=self.setting_system_name, width=40).grid(row=0, column=1, pady=5, padx=5)
 
     # Default Ticket Priority
-    ttk.Label(general_frame, text="Default Priority:").grid(row=1, column=0, sticky='w', pady=5)
-    self.setting_default_priority = tk.StringVar(value="medium")
+    ttk.Label(general_frame, text=_t('gui.pastoral.helpdesk.admin.labels.default_priority', default="Default Priority:")).grid(row=1, column=0, sticky='w', pady=5)
+    self.setting_default_priority = tk.StringVar(value=_t('gui.pastoral.helpdesk.admin.values.medium', default="medium"))
     ttk.Combobox(general_frame, textvariable=self.setting_default_priority,
             values=['low', 'medium', 'high'], state='readonly', width=37).grid(row=1, column=1, pady=5, padx=5)
 
     # Auto-assign tickets
-    ttk.Label(general_frame, text="Auto-assign Tickets:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(general_frame, text=_t('gui.pastoral.helpdesk.admin.labels.auto_assign_tickets', default="Auto-assign Tickets:")).grid(row=2, column=0, sticky='w', pady=5)
     self.setting_auto_assign = tk.BooleanVar(value=False)
     ttk.Checkbutton(general_frame, variable=self.setting_auto_assign).grid(row=2, column=1, sticky='w', pady=5, padx=5)
 
     # Tickets per page
-    ttk.Label(general_frame, text="Tickets Per Page:").grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(general_frame, text=_t('gui.pastoral.helpdesk.admin.labels.tickets_per_page', default="Tickets Per Page:")).grid(row=3, column=0, sticky='w', pady=5)
     self.setting_tickets_per_page = tk.StringVar(value="25")
     ttk.Combobox(general_frame, textvariable=self.setting_tickets_per_page,
             values=['10', '25', '50', '100'], state='readonly', width=37).grid(row=3, column=1, pady=5, padx=5)
 
     # Session timeout
-    ttk.Label(general_frame, text="Session Timeout (min):").grid(row=4, column=0, sticky='w', pady=5)
+    ttk.Label(general_frame, text=_t('gui.pastoral.helpdesk.admin.labels.session_timeout_min', default="Session Timeout (min):")).grid(row=4, column=0, sticky='w', pady=5)
     self.setting_session_timeout = tk.StringVar(value="30")
     ttk.Entry(general_frame, textvariable=self.setting_session_timeout, width=40).grid(row=4, column=1, pady=5, padx=5)
 
     # === Email Settings ===
     email_frame = ttk.Frame(settings_notebook, padding="10")
-    settings_notebook.add(email_frame, text="Email")
+    settings_notebook.add(email_frame, text=_t('gui.pastoral.helpdesk.admin.tabs.email', default="Email"))
 
-    ttk.Label(email_frame, text="SMTP Server:").grid(row=0, column=0, sticky='w', pady=5)
-    self.setting_smtp_server = tk.StringVar(value="smtp.gmail.com")
+    ttk.Label(email_frame, text=_t('gui.pastoral.helpdesk.admin.labels.smtp_server', default="SMTP Server:")).grid(row=0, column=0, sticky='w', pady=5)
+    self.setting_smtp_server = tk.StringVar(value=_t('gui.pastoral.helpdesk.admin.values.smtp_gmail_com', default="smtp.gmail.com"))
     ttk.Entry(email_frame, textvariable=self.setting_smtp_server, width=40).grid(row=0, column=1, pady=5, padx=5)
 
-    ttk.Label(email_frame, text="SMTP Port:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(email_frame, text=_t('gui.pastoral.helpdesk.admin.labels.smtp_port', default="SMTP Port:")).grid(row=1, column=0, sticky='w', pady=5)
     self.setting_smtp_port = tk.StringVar(value="587")
     ttk.Entry(email_frame, textvariable=self.setting_smtp_port, width=40).grid(row=1, column=1, pady=5, padx=5)
 
-    ttk.Label(email_frame, text="SMTP Username:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(email_frame, text=_t('gui.pastoral.helpdesk.admin.labels.smtp_username', default="SMTP Username:")).grid(row=2, column=0, sticky='w', pady=5)
     self.setting_smtp_user = tk.StringVar(value="")
     ttk.Entry(email_frame, textvariable=self.setting_smtp_user, width=40).grid(row=2, column=1, pady=5, padx=5)
 
-    ttk.Label(email_frame, text="SMTP Password:").grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(email_frame, text=_t('gui.pastoral.helpdesk.admin.labels.smtp_password', default="SMTP Password:")).grid(row=3, column=0, sticky='w', pady=5)
     self.setting_smtp_password = tk.StringVar(value="")
     ttk.Entry(email_frame, textvariable=self.setting_smtp_password, show="*", width=40).grid(row=3, column=1, pady=5, padx=5)
 
-    ttk.Label(email_frame, text="From Email:").grid(row=4, column=0, sticky='w', pady=5)
-    self.setting_from_email = tk.StringVar(value="helpdesk@university.edu")
+    ttk.Label(email_frame, text=_t('gui.pastoral.helpdesk.admin.labels.from_email', default="From Email:")).grid(row=4, column=0, sticky='w', pady=5)
+    self.setting_from_email = tk.StringVar(value=_t('gui.pastoral.helpdesk.admin.values.helpdesk_university_edu', default="helpdesk@university.edu"))
     ttk.Entry(email_frame, textvariable=self.setting_from_email, width=40).grid(row=4, column=1, pady=5, padx=5)
 
-    ttk.Label(email_frame, text="Enable Email Notifications:").grid(row=5, column=0, sticky='w', pady=5)
+    ttk.Label(email_frame, text=_t('gui.pastoral.helpdesk.admin.labels.enable_email_notifications', default="Enable Email Notifications:")).grid(row=5, column=0, sticky='w', pady=5)
     self.setting_email_enabled = tk.BooleanVar(value=True)
     ttk.Checkbutton(email_frame, variable=self.setting_email_enabled).grid(row=5, column=1, sticky='w', pady=5, padx=5)
 
     # === Security Settings ===
     security_frame = ttk.Frame(settings_notebook, padding="10")
-    settings_notebook.add(security_frame, text="Security")
+    settings_notebook.add(security_frame, text=_t('gui.pastoral.helpdesk.admin.tabs.security', default="Security"))
 
-    ttk.Label(security_frame, text="Require Strong Passwords:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(security_frame, text=_t('gui.pastoral.helpdesk.admin.labels.require_strong_passwords', default="Require Strong Passwords:")).grid(row=0, column=0, sticky='w', pady=5)
     self.setting_strong_passwords = tk.BooleanVar(value=True)
     ttk.Checkbutton(security_frame, variable=self.setting_strong_passwords).grid(row=0, column=1, sticky='w', pady=5, padx=5)
 
-    ttk.Label(security_frame, text="Enable Two-Factor Auth:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(security_frame, text=_t('gui.pastoral.helpdesk.admin.labels.enable_two_factor_auth', default="Enable Two-Factor Auth:")).grid(row=1, column=0, sticky='w', pady=5)
     self.setting_2fa_enabled = tk.BooleanVar(value=False)
     ttk.Checkbutton(security_frame, variable=self.setting_2fa_enabled).grid(row=1, column=1, sticky='w', pady=5, padx=5)
 
-    ttk.Label(security_frame, text="Max Login Attempts:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(security_frame, text=_t('gui.pastoral.helpdesk.admin.labels.max_login_attempts', default="Max Login Attempts:")).grid(row=2, column=0, sticky='w', pady=5)
     self.setting_max_login_attempts = tk.StringVar(value="5")
     ttk.Entry(security_frame, textvariable=self.setting_max_login_attempts, width=40).grid(row=2, column=1, pady=5, padx=5)
 
-    ttk.Label(security_frame, text="Lockout Duration (min):").grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(security_frame, text=_t('gui.pastoral.helpdesk.admin.labels.lockout_duration_min', default="Lockout Duration (min):")).grid(row=3, column=0, sticky='w', pady=5)
     self.setting_lockout_duration = tk.StringVar(value="15")
     ttk.Entry(security_frame, textvariable=self.setting_lockout_duration, width=40).grid(row=3, column=1, pady=5, padx=5)
 
-    ttk.Label(security_frame, text="Password Expiry (days):").grid(row=4, column=0, sticky='w', pady=5)
+    ttk.Label(security_frame, text=_t('gui.pastoral.helpdesk.admin.labels.password_expiry_days', default="Password Expiry (days):")).grid(row=4, column=0, sticky='w', pady=5)
     self.setting_password_expiry = tk.StringVar(value="90")
     ttk.Entry(security_frame, textvariable=self.setting_password_expiry, width=40).grid(row=4, column=1, pady=5, padx=5)
 
     # === Notification Settings ===
     notif_frame = ttk.Frame(settings_notebook, padding="10")
-    settings_notebook.add(notif_frame, text="Notifications")
+    settings_notebook.add(notif_frame, text=_t('gui.pastoral.helpdesk.admin.tabs.notifications', default="Notifications"))
 
-    ttk.Label(notif_frame, text="Notify on New Ticket:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(notif_frame, text=_t('gui.pastoral.helpdesk.admin.labels.notify_on_new_ticket', default="Notify on New Ticket:")).grid(row=0, column=0, sticky='w', pady=5)
     self.setting_notify_new = tk.BooleanVar(value=True)
     ttk.Checkbutton(notif_frame, variable=self.setting_notify_new).grid(row=0, column=1, sticky='w', pady=5, padx=5)
 
-    ttk.Label(notif_frame, text="Notify on Assignment:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(notif_frame, text=_t('gui.pastoral.helpdesk.admin.labels.notify_on_assignment', default="Notify on Assignment:")).grid(row=1, column=0, sticky='w', pady=5)
     self.setting_notify_assign = tk.BooleanVar(value=True)
     ttk.Checkbutton(notif_frame, variable=self.setting_notify_assign).grid(row=1, column=1, sticky='w', pady=5, padx=5)
 
-    ttk.Label(notif_frame, text="Notify on Status Change:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(notif_frame, text=_t('gui.pastoral.helpdesk.admin.labels.notify_on_status_change', default="Notify on Status Change:")).grid(row=2, column=0, sticky='w', pady=5)
     self.setting_notify_status = tk.BooleanVar(value=True)
     ttk.Checkbutton(notif_frame, variable=self.setting_notify_status).grid(row=2, column=1, sticky='w', pady=5, padx=5)
 
-    ttk.Label(notif_frame, text="Notify on Reply:").grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(notif_frame, text=_t('gui.pastoral.helpdesk.admin.labels.notify_on_reply', default="Notify on Reply:")).grid(row=3, column=0, sticky='w', pady=5)
     self.setting_notify_reply = tk.BooleanVar(value=True)
     ttk.Checkbutton(notif_frame, variable=self.setting_notify_reply).grid(row=3, column=1, sticky='w', pady=5, padx=5)
 
-    ttk.Label(notif_frame, text="Send Satisfaction Surveys:").grid(row=4, column=0, sticky='w', pady=5)
+    ttk.Label(notif_frame, text=_t('gui.pastoral.helpdesk.admin.labels.send_satisfaction_surveys', default="Send Satisfaction Surveys:")).grid(row=4, column=0, sticky='w', pady=5)
     self.setting_send_surveys = tk.BooleanVar(value=True)
     ttk.Checkbutton(notif_frame, variable=self.setting_send_surveys).grid(row=4, column=1, sticky='w', pady=5, padx=5)
 
@@ -626,11 +628,11 @@ def show_settings(self):
 
     def save_settings():
         self._save_system_settings()
-        messagebox.showinfo("Success", "Settings saved successfully!")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.admin.dialogs.settings_saved_successfully', default="Settings saved successfully!"))
         settings_window.destroy()
 
-    ttk.Button(btn_frame, text="Save Settings", command=save_settings).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=settings_window.destroy).pack(side='right', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.save_settings', default="Save Settings"), command=save_settings).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.cancel', default="Cancel"), command=settings_window.destroy).pack(side='right', padx=5)
 
     # Load existing settings
     self._load_system_settings()
@@ -732,7 +734,7 @@ def _save_system_settings(self):
             log_activity('update', 'system_settings', details={'updated_by': self.current_user.get('username')})
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to save settings: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Failed to save settings: {str(e)}")
     finally:
         if conn:
             conn.close()
@@ -745,14 +747,14 @@ HelpdeskGUI._save_system_settings = _save_system_settings
 def show_database_cleanup(self):
     """Show database cleanup dialog"""
     cleanup_window = tk.Toplevel(self.root)
-    cleanup_window.title("Database Cleanup")
+    cleanup_window.title(_t('gui.pastoral.helpdesk.admin.windows.database_cleanup', default="Database Cleanup"))
     cleanup_window.geometry("500x400")
     cleanup_window.transient(self.root)
 
     main_frame = ttk.Frame(cleanup_window, padding="20")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Database Cleanup Options", font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.admin.labels.database_cleanup_options', default="Database Cleanup Options"), font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
 
     def cleanup_old_tickets():
         try:
@@ -764,9 +766,9 @@ def show_database_cleanup(self):
             deleted = cursor.rowcount
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", f"Deleted {deleted} old closed tickets (older than 1 year)")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), f"Deleted {deleted} old closed tickets (older than 1 year)")
         except Exception as e:
-            messagebox.showerror("Error", f"Cleanup failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Cleanup failed: {str(e)}")
 
     def cleanup_orphan_replies():
         try:
@@ -780,9 +782,9 @@ def show_database_cleanup(self):
             deleted = cursor.rowcount
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", f"Deleted {deleted} orphan replies")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), f"Deleted {deleted} orphan replies")
         except Exception as e:
-            messagebox.showerror("Error", f"Cleanup failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Cleanup failed: {str(e)}")
 
     def vacuum_database():
         try:
@@ -790,18 +792,18 @@ def show_database_cleanup(self):
             conn = get_connection()
             conn.execute("VACUUM")
             conn.close()
-            messagebox.showinfo("Success", "Database vacuumed successfully - freed up disk space")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.admin.dialogs.database_vacuumed_successfully_freed_up_disk_space', default="Database vacuumed successfully - freed up disk space"))
         except Exception as e:
-            messagebox.showerror("Error", f"Vacuum failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Vacuum failed: {str(e)}")
 
-    ttk.Button(main_frame, text="Delete Old Closed Tickets (>1 year)", command=cleanup_old_tickets).pack(fill='x', pady=5)
-    ttk.Button(main_frame, text="Remove Orphan Replies", command=cleanup_orphan_replies).pack(fill='x', pady=5)
-    ttk.Button(main_frame, text="Vacuum Database (Free Space)", command=vacuum_database).pack(fill='x', pady=5)
+    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.delete_old_closed_tickets_1_year', default="Delete Old Closed Tickets (>1 year)"), command=cleanup_old_tickets).pack(fill='x', pady=5)
+    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.remove_orphan_replies', default="Remove Orphan Replies"), command=cleanup_orphan_replies).pack(fill='x', pady=5)
+    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.vacuum_database_free_space', default="Vacuum Database (Free Space)"), command=vacuum_database).pack(fill='x', pady=5)
 
-    ttk.Label(main_frame, text="\nWarning: These operations cannot be undone.",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.admin.labels.warning_these_operations_cannot_be_undone', default="\nWarning: These operations cannot be undone."),
              foreground='red').pack(pady=20)
 
-    ttk.Button(main_frame, text="Close", command=cleanup_window.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.close', default="Close"), command=cleanup_window.destroy).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_database_cleanup = show_database_cleanup
@@ -810,28 +812,28 @@ def backup_database(self):
     """Backup database to file"""
     try:
         import shutil
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
 
         # Get source database path
-        db_path = paths.DEFAULT_DB_PATH
+        db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
 
         # Ask for backup location
         backup_path = filedialog.asksaveasfilename(
             defaultextension=".db",
             filetypes=[("SQLite Database", "*.db"), ("All files", "*.*")],
-            title="Save Database Backup",
+            title=_t('gui.pastoral.helpdesk.admin.dialogs.save_database_backup', default="Save Database Backup"),
             initialfile=f"helpdesk_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
         )
 
         if backup_path:
             shutil.copy2(db_path, backup_path)
-            messagebox.showinfo("Success", f"Database backed up to:\n{backup_path}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), f"Database backed up to:\n{backup_path}")
 
             if ACTIVITY_LOGGER_AVAILABLE:
                 log_activity('backup', 'database', details={'backup_path': backup_path})
 
     except Exception as e:
-        messagebox.showerror("Error", f"Backup failed: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Backup failed: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.backup_database = backup_database
@@ -881,12 +883,12 @@ def check_data_integrity(self):
             result_msg = "Data integrity issues found:\n\n" + "\n".join(issues)
             if integrity_result != 'ok':
                 result_msg += f"\n\nSQLite integrity: {integrity_result}"
-            messagebox.showwarning("Integrity Issues", result_msg)
+            messagebox.showwarning(_t('gui.pastoral.helpdesk.admin.dialogs.integrity_issues', default="Integrity Issues"), result_msg)
         else:
-            messagebox.showinfo("Success", f"Data integrity check completed - no issues found\nSQLite integrity: {integrity_result}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), f"Data integrity check completed - no issues found\nSQLite integrity: {integrity_result}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Integrity check failed: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Integrity check failed: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.check_data_integrity = check_data_integrity
@@ -894,22 +896,22 @@ HelpdeskGUI.check_data_integrity = check_data_integrity
 def show_export_dialog(self):
     """Show data export dialog"""
     export_window = tk.Toplevel(self.root)
-    export_window.title("Export Data")
+    export_window.title(_t('gui.pastoral.helpdesk.admin.windows.export_data', default="Export Data"))
     export_window.geometry("400x300")
     export_window.transient(self.root)
     export_window.grab_set()
 
-    ttk.Label(export_window, text="Data Export Options", style='Heading.TLabel').pack(pady=10)
+    ttk.Label(export_window, text=_t('gui.pastoral.helpdesk.admin.labels.data_export_options', default="Data Export Options"), style='Heading.TLabel').pack(pady=10)
 
     # Export options
-    options_frame = ttk.LabelFrame(export_window, text="Export Options")
+    options_frame = ttk.LabelFrame(export_window, text=_t('gui.pastoral.helpdesk.admin.labels.export_options', default="Export Options"))
     options_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Button(options_frame, text="Export All Tickets (CSV)",
+    ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.export_all_tickets_csv', default="Export All Tickets (CSV)"),
           command=self.export_tickets_csv).pack(fill='x', padx=5, pady=5)
-    ttk.Button(options_frame, text="Export Users (CSV)",
+    ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.export_users_csv', default="Export Users (CSV)"),
           command=self.export_users_csv).pack(fill='x', padx=5, pady=5)
-    ttk.Button(options_frame, text="Export Analytics (JSON)",
+    ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.export_analytics_json', default="Export Analytics (JSON)"),
           command=self.export_analytics_json).pack(fill='x', padx=5, pady=5)
 
 # Attach method to HelpdeskGUI class
@@ -917,7 +919,7 @@ HelpdeskGUI.show_export_dialog = show_export_dialog
 
 def show_import_dialog(self):
     """Show data import dialog"""
-    messagebox.showinfo("Info", "Data import functionality would integrate with the original system")
+    messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.info', default="Info"), _t('gui.pastoral.helpdesk.admin.dialogs.data_import_functionality_would_integrate_with_the_original_syst', default="Data import functionality would integrate with the original system"))
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_import_dialog = show_import_dialog
@@ -925,7 +927,7 @@ HelpdeskGUI.show_import_dialog = show_import_dialog
 def show_about(self):
     """Show about dialog"""
     about_window = tk.Toplevel(self.root)
-    about_window.title("About Enhanced Helpdesk System")
+    about_window.title(_t('gui.pastoral.helpdesk.admin.windows.about_enhanced_helpdesk_system', default="About Enhanced Helpdesk System"))
     about_window.geometry("400x300")
     about_window.transient(self.root)
     about_window.grab_set()
@@ -940,10 +942,10 @@ def show_about(self):
     content_frame = ttk.Frame(about_window)
     content_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-    ttk.Label(content_frame, text="Enhanced Helpdesk System",
+    ttk.Label(content_frame, text=_t('gui.pastoral.helpdesk.admin.labels.enhanced_helpdesk_system', default="Enhanced Helpdesk System"),
              style='Title.TLabel').pack(pady=10)
 
-    ttk.Label(content_frame, text="Version 2.0 GUI Edition").pack(pady=5)
+    ttk.Label(content_frame, text=_t('gui.pastoral.helpdesk.admin.labels.version_2_0_gui_edition', default="Version 2.0 GUI Edition")).pack(pady=5)
 
     info_text = """
 A comprehensive helpdesk and ticket management system
@@ -965,7 +967,7 @@ Backwards compatible with CLI version
 
     ttk.Label(content_frame, text=info_text, justify='center').pack(pady=10)
 
-    ttk.Button(content_frame, text="Close", command=about_window.destroy).pack(pady=10)
+    ttk.Button(content_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.close', default="Close"), command=about_window.destroy).pack(pady=10)
 
 # ============================================================================
 # ENHANCED TICKET MANAGEMENT FUNCTIONS (8 NEW FUNCTIONS)
@@ -977,7 +979,7 @@ HelpdeskGUI.show_about = show_about
 def show_user_guide(self):
     """Show user guide"""
     guide_window = tk.Toplevel(self.root)
-    guide_window.title("User Guide")
+    guide_window.title(_t('gui.pastoral.helpdesk.admin.windows.user_guide', default="User Guide"))
     guide_window.geometry("800x600")
     guide_window.transient(self.root)
 
@@ -1058,11 +1060,11 @@ HelpdeskGUI.show_user_guide = show_user_guide
 def system_management_menu_gui(self):
     """Show system management menu"""
     if not self.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to access system management.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.admin.dialogs.you_don_t_have_permission_to_access_system_management', default="You don't have permission to access system management."))
         return
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("System Management")
+    dialog.title(_t('gui.pastoral.helpdesk.admin.windows.system_management', default="System Management"))
     dialog.geometry("500x400")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1070,24 +1072,24 @@ def system_management_menu_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="System Management",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.admin.labels.system_management', default="System Management"),
              font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
 
     # Management options
     options_frame = ttk.Frame(main_frame)
     options_frame.pack(fill='both', expand=True)
 
-    ttk.Button(options_frame, text="📊 Generate Reports",
+    ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.generate_reports', default="📊 Generate Reports"),
               command=lambda: [dialog.destroy(), self.generate_enhanced_ticket_report_gui()]).pack(fill='x', pady=5)
-    ttk.Button(options_frame, text="💾 Data Import/Export",
+    ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.data_import_export', default="💾 Data Import/Export"),
               command=lambda: [dialog.destroy(), self.data_import_export_gui()]).pack(fill='x', pady=5)
-    ttk.Button(options_frame, text="🔧 System Maintenance",
+    ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.system_maintenance', default="🔧 System Maintenance"),
               command=lambda: [dialog.destroy(), self.system_maintenance_gui()]).pack(fill='x', pady=5)
-    ttk.Button(options_frame, text="📋 Audit Logs",
+    ttk.Button(options_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.audit_logs', default="📋 Audit Logs"),
               command=lambda: [dialog.destroy(), self.view_audit_logs_gui()]).pack(fill='x', pady=5)
 
     # Close button
-    ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(20, 0))
+    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.close', default="Close"), command=dialog.destroy).pack(pady=(20, 0))
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.system_management_menu_gui = system_management_menu_gui
@@ -1095,7 +1097,7 @@ HelpdeskGUI.system_management_menu_gui = system_management_menu_gui
 def system_maintenance_gui(self):
     """System maintenance functions"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("System Maintenance")
+    dialog.title(_t('gui.pastoral.helpdesk.admin.windows.system_maintenance', default="System Maintenance"))
     dialog.geometry("500x350")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1103,7 +1105,7 @@ def system_maintenance_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="System Maintenance",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.admin.labels.system_maintenance', default="System Maintenance"),
              font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
 
     info_frame = ttk.Frame(main_frame)
@@ -1113,26 +1115,26 @@ def system_maintenance_gui(self):
         try:
             from education_system.systems.university.domain.pastoral.services.helpdesk import check_data_integrity
             check_data_integrity(self.auth if hasattr(self, 'auth') else None)
-            messagebox.showinfo("Success", "Data integrity check completed")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.admin.dialogs.data_integrity_check_completed', default="Data integrity check completed"))
         except Exception as e:
-            messagebox.showerror("Error", f"Integrity check failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Integrity check failed: {str(e)}")
 
     def backup_db():
         try:
             from education_system.systems.university.domain.pastoral.services.helpdesk import backup_database
             backup_database(self.auth if hasattr(self, 'auth') else None)
-            messagebox.showinfo("Success", "Database backup completed")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.admin.dialogs.database_backup_completed', default="Database backup completed"))
         except Exception as e:
-            messagebox.showerror("Error", f"Backup failed: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Backup failed: {str(e)}")
 
-    ttk.Button(info_frame, text="🔍 Check Data Integrity",
+    ttk.Button(info_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.check_data_integrity', default="🔍 Check Data Integrity"),
               command=check_integrity).pack(fill='x', pady=5)
-    ttk.Button(info_frame, text="💾 Backup Database",
+    ttk.Button(info_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.backup_database_variant_2', default="💾 Backup Database"),
               command=backup_db).pack(fill='x', pady=5)
-    ttk.Button(info_frame, text="🧹 Database Cleanup",
-              command=lambda: messagebox.showinfo("Info", "Database cleanup functionality")).pack(fill='x', pady=5)
+    ttk.Button(info_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.database_cleanup_variant_2', default="🧹 Database Cleanup"),
+              command=lambda: messagebox.showinfo(_t('gui.pastoral.helpdesk.admin.dialogs.info', default="Info"), _t('gui.pastoral.helpdesk.admin.dialogs.database_cleanup_functionality', default="Database cleanup functionality"))).pack(fill='x', pady=5)
 
-    ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(20, 0))
+    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.close', default="Close"), command=dialog.destroy).pack(pady=(20, 0))
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.system_maintenance_gui = system_maintenance_gui
@@ -1143,13 +1145,13 @@ def view_audit_logs_gui(self):
         from education_system.systems.university.infrastructure.database.db import get_connection
 
         log_window = tk.Toplevel(self.root)
-        log_window.title("Audit Logs")
+        log_window.title(_t('gui.pastoral.helpdesk.admin.windows.audit_logs', default="Audit Logs"))
         log_window.geometry("1000x600")
 
         main_frame = ttk.Frame(log_window, padding="10")
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="📋 Ticket Audit Logs",
+        ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.admin.labels.ticket_audit_logs', default="📋 Ticket Audit Logs"),
                  font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
         # Create treeview
@@ -1190,10 +1192,10 @@ def view_audit_logs_gui(self):
                 details[:50] if details else ''
             ))
 
-        ttk.Button(main_frame, text="Close", command=log_window.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.admin.buttons.close', default="Close"), command=log_window.destroy).pack()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load audit logs: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.admin.dialogs.error', default="Error"), f"Failed to load audit logs: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.view_audit_logs_gui = view_audit_logs_gui

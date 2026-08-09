@@ -12,6 +12,8 @@ feed, and the view defaults to unread-only. The legacy ``notifications``
 table and its standalone management screens have been retired.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 
@@ -26,7 +28,7 @@ class NotificationsGUI:
         # something is read here, rather than waiting for its 60s poll.
         self._on_unread_change = on_unread_change
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title("Notifications — Unread Inbox")
+        self.window.title(_t('gui.operations.communications.notifications.notifications.windows.notifications_unread_inbox', default="Notifications — Unread Inbox"))
         self.window.geometry("1060x700")
         self.window.minsize(860, 550)
 
@@ -59,7 +61,7 @@ class NotificationsGUI:
             from tkinter import ttk
             ttk.Label(
                 self.window,
-                text="Inbox unavailable — please try again later.",
+                text=_t('gui.operations.communications.notifications.notifications.labels.inbox_unavailable_please_try_again_later', default="Inbox unavailable — please try again later."),
                 padding=20,
             ).pack(fill=tk.BOTH, expand=True)
 

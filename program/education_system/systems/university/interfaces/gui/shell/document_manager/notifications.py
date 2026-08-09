@@ -28,7 +28,7 @@ class NotificationManager:
     def notification_center(self):
         """Full notification center interface"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Notification Center")
+        dialog.title(_t('gui.shell.document_manager.notifications.windows.notification_center', default="Notification Center"))
         dialog.geometry("800x600")
         dialog.transient(self.root)
 
@@ -41,9 +41,9 @@ class NotificationManager:
 
         # Pending Notifications Tab
         pending_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(pending_frame, text="Pending Notifications")
+        notebook.add(pending_frame, text=_t('gui.shell.document_manager.notifications.tabs.pending_notifications', default="Pending Notifications"))
 
-        ttk.Label(pending_frame, text="Pending Notifications", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(pending_frame, text=_t('gui.shell.document_manager.notifications.labels.pending_notifications', default="Pending Notifications"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Notifications list
         notif_columns = ('ID', 'Recipient', 'Type', 'Title', 'Created', 'Priority', 'Status')
@@ -63,19 +63,19 @@ class NotificationManager:
         notif_actions_frame = ttk.Frame(pending_frame)
         notif_actions_frame.pack(fill='x', pady=10)
 
-        ttk.Button(notif_actions_frame, text="Send Selected", command=self.send_selected_notifications).pack(side='left', padx=5)
-        ttk.Button(notif_actions_frame, text="Mark as Sent", command=self.mark_notifications_sent).pack(side='left', padx=5)
-        ttk.Button(notif_actions_frame, text="Delete", command=self.delete_notifications).pack(side='left', padx=5)
-        ttk.Button(notif_actions_frame, text="Refresh", command=self.load_notifications).pack(side='right', padx=5)
+        ttk.Button(notif_actions_frame, text=_t('gui.shell.document_manager.notifications.buttons.send_selected', default="Send Selected"), command=self.send_selected_notifications).pack(side='left', padx=5)
+        ttk.Button(notif_actions_frame, text=_t('gui.shell.document_manager.notifications.buttons.mark_as_sent', default="Mark as Sent"), command=self.mark_notifications_sent).pack(side='left', padx=5)
+        ttk.Button(notif_actions_frame, text=_t('gui.shell.document_manager.notifications.buttons.delete', default="Delete"), command=self.delete_notifications).pack(side='left', padx=5)
+        ttk.Button(notif_actions_frame, text=_t('gui.shell.document_manager.notifications.buttons.refresh', default="Refresh"), command=self.load_notifications).pack(side='right', padx=5)
 
         # Send Notification Tab
         send_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(send_frame, text="Send Notification")
+        notebook.add(send_frame, text=_t('gui.shell.document_manager.notifications.tabs.send_notification', default="Send Notification"))
 
-        ttk.Label(send_frame, text="Send Custom Notification", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(send_frame, text=_t('gui.shell.document_manager.notifications.labels.send_custom_notification', default="Send Custom Notification"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         # Recipient selection
-        ttk.Label(send_frame, text="Recipient:").pack(anchor='w')
+        ttk.Label(send_frame, text=_t('gui.shell.document_manager.notifications.labels.recipient', default="Recipient:")).pack(anchor='w')
         self.notif_recipient = ttk.Combobox(send_frame, width=40)
         self.notif_recipient.pack(fill='x', pady=5)
 
@@ -93,34 +93,34 @@ class NotificationManager:
             pass
 
         # Notification type
-        ttk.Label(send_frame, text="Type:").pack(anchor='w', pady=(10, 0))
+        ttk.Label(send_frame, text=_t('gui.shell.document_manager.notifications.labels.type', default="Type:")).pack(anchor='w', pady=(10, 0))
         self.notif_type = ttk.Combobox(send_frame, values=['document_reminder', 'verification_complete', 'expiry_warning', 'general', 'urgent'])
         self.notif_type.set('general')
         self.notif_type.pack(fill='x', pady=5)
 
         # Priority
-        ttk.Label(send_frame, text="Priority:").pack(anchor='w', pady=(10, 0))
+        ttk.Label(send_frame, text=_t('gui.shell.document_manager.notifications.labels.priority', default="Priority:")).pack(anchor='w', pady=(10, 0))
         self.notif_priority = ttk.Combobox(send_frame, values=['low', 'normal', 'high', 'urgent'])
         self.notif_priority.set('normal')
         self.notif_priority.pack(fill='x', pady=5)
 
         # Title
-        ttk.Label(send_frame, text="Title:").pack(anchor='w', pady=(10, 0))
+        ttk.Label(send_frame, text=_t('gui.shell.document_manager.notifications.labels.title', default="Title:")).pack(anchor='w', pady=(10, 0))
         self.notif_title = tk.Entry(send_frame, width=50)
         self.notif_title.pack(fill='x', pady=5)
 
         # Message
-        ttk.Label(send_frame, text="Message:").pack(anchor='w', pady=(10, 0))
+        ttk.Label(send_frame, text=_t('gui.shell.document_manager.notifications.labels.message', default="Message:")).pack(anchor='w', pady=(10, 0))
         self.notif_message = tk.Text(send_frame, height=6, width=50)
         self.notif_message.pack(fill='x', pady=5)
 
-        ttk.Button(send_frame, text="Send Notification", command=self.send_custom_notification).pack(pady=15)
+        ttk.Button(send_frame, text=_t('gui.shell.document_manager.notifications.buttons.send_notification', default="Send Notification"), command=self.send_custom_notification).pack(pady=15)
 
         # Templates Tab
         templates_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(templates_frame, text="Templates")
+        notebook.add(templates_frame, text=_t('gui.shell.document_manager.notifications.tabs.templates', default="Templates"))
 
-        ttk.Label(templates_frame, text="Notification Templates", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(templates_frame, text=_t('gui.shell.document_manager.notifications.labels.notification_templates', default="Notification Templates"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         template_list = [
             ("Document Upload Confirmation", "Your document has been uploaded successfully."),
@@ -135,13 +135,13 @@ class NotificationManager:
             template_frame.pack(fill='x', pady=5)
 
             ttk.Label(template_frame, text=title, width=30).pack(side='left')
-            ttk.Button(template_frame, text="Use Template",
+            ttk.Button(template_frame, text=_t('gui.shell.document_manager.notifications.buttons.use_template', default="Use Template"),
                       command=lambda t=title, msg=template: self.use_notification_template(t, msg)).pack(side='right')
 
         # Load initial data
         self.load_notifications()
 
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.shell.document_manager.notifications.buttons.close', default="Close"), command=dialog.destroy).pack()
 
     def load_notifications(self):
         """Load pending notifications"""
@@ -182,7 +182,7 @@ class NotificationManager:
         message = self.notif_message.get('1.0', 'end-1c')
 
         if not recipient or not title or not message:
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), _t('gui.shell.document_manager.notifications.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         try:
@@ -201,7 +201,7 @@ class NotificationManager:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Notification created successfully!")
+            messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), _t('gui.shell.document_manager.notifications.dialogs.notification_created_successfully', default="Notification created successfully!"))
 
             # Clear form
             self.notif_title.delete(0, 'end')
@@ -209,13 +209,13 @@ class NotificationManager:
             self.load_notifications()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create notification: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to create notification: {str(e)}")
 
     def send_selected_notifications(self):
         """Send selected notifications"""
         selection = self.notifications_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select notifications to send.")
+            messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_send_variant_2', default="Please select notifications to send."))
             return
 
         try:
@@ -238,20 +238,20 @@ class NotificationManager:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Sent {sent_count} notifications successfully!")
+            messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), f"Sent {sent_count} notifications successfully!")
             self.load_notifications()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send notifications: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to send notifications: {str(e)}")
 
     def mark_notifications_sent(self):
         """Mark selected notifications as sent without actually sending"""
         selection = self.notifications_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select notifications to mark as sent.")
+            messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_mark_as_sent', default="Please select notifications to mark as sent."))
             return
 
-        if messagebox.askyesno("Confirm", "Mark selected notifications as sent?"):
+        if messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm', default="Confirm"), _t('gui.shell.document_manager.notifications.dialogs.mark_selected_notifications_as_sent', default="Mark selected notifications as sent?")):
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
@@ -267,20 +267,20 @@ class NotificationManager:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Notifications marked as sent!")
+                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), _t('gui.shell.document_manager.notifications.dialogs.notifications_marked_as_sent', default="Notifications marked as sent!"))
                 self.load_notifications()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to mark notifications: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to mark notifications: {str(e)}")
 
     def delete_notifications(self):
         """Delete selected notifications"""
         selection = self.notifications_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select notifications to delete.")
+            messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_delete_variant_2', default="Please select notifications to delete."))
             return
 
-        if messagebox.askyesno("Confirm Delete", f"Delete {len(selection)} selected notifications?"):
+        if messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_delete', default="Confirm Delete"), f"Delete {len(selection)} selected notifications?"):
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
@@ -292,11 +292,11 @@ class NotificationManager:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Notifications deleted successfully!")
+                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), _t('gui.shell.document_manager.notifications.dialogs.notifications_deleted_successfully', default="Notifications deleted successfully!"))
                 self.load_notifications()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete notifications: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to delete notifications: {str(e)}")
 
     def use_notification_template(self, title, message):
         """Use notification template"""
@@ -310,13 +310,13 @@ class NotificationManager:
         """Manage notification templates"""
         try:
             templates_window = tk.Toplevel(self.root)
-            templates_window.title("Notification Templates")
+            templates_window.title(_t('gui.shell.document_manager.notifications.windows.notification_templates', default="Notification Templates"))
             templates_window.geometry("900x700")
 
             main_frame = ttk.Frame(templates_window, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Notification Templates",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.notifications.labels.notification_templates', default="Notification Templates"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Pre-defined templates
@@ -344,7 +344,7 @@ class NotificationManager:
             scrollbar.pack(side='right', fill='y')
 
             # Template preview
-            preview_frame = ttk.LabelFrame(main_frame, text="Template Preview", padding=10)
+            preview_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.notifications.labels.template_preview', default="Template Preview"), padding=10)
             preview_frame.pack(fill='x', pady=10)
 
             preview_text = tk.Text(preview_frame, height=5, wrap=tk.WORD)
@@ -363,14 +363,14 @@ class NotificationManager:
             button_frame = ttk.Frame(templates_window)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="Use Template",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.use_template', default="Use Template"),
                       command=lambda: self.use_notification_template(
                           templates[template_listbox.curselection()[0]][1] if template_listbox.curselection() else None
                       )).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=templates_window.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.close', default="Close"), command=templates_window.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open templates: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to open templates: {e}")
 
     def create_notification(self, recipient_id, title, message, notification_type='info',
                           priority='normal', related_document_id=None):
@@ -421,7 +421,7 @@ class NotificationManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Pending Notifications")
+            dialog.title(_t('gui.shell.document_manager.notifications.windows.pending_notifications', default="Pending Notifications"))
             dialog.geometry("1100x700")
             dialog.transient(self.root)
 
@@ -429,7 +429,7 @@ class NotificationManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Pending Notifications",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.notifications.labels.pending_notifications', default="Pending Notifications"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Summary cards
@@ -470,13 +470,13 @@ class NotificationManager:
             filter_frame = ttk.Frame(main_frame)
             filter_frame.pack(fill='x', pady=(0, 10))
 
-            ttk.Label(filter_frame, text="Filter:").pack(side='left', padx=5)
+            ttk.Label(filter_frame, text=_t('gui.shell.document_manager.notifications.labels.filter', default="Filter:")).pack(side='left', padx=5)
             filter_status = ttk.Combobox(filter_frame, values=['All', 'Pending', 'Sent', 'Failed'], width=15, state='readonly')
             filter_status.set('Pending')
             filter_status.pack(side='left', padx=5)
 
             # Notifications list
-            notif_frame = ttk.LabelFrame(main_frame, text="Notification Queue", padding=10)
+            notif_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.notifications.labels.notification_queue', default="Notification Queue"), padding=10)
             notif_frame.pack(fill='both', expand=True)
 
             columns = ('ID', 'Recipient', 'Type', 'Title', 'Created', 'Status', 'Priority')
@@ -528,7 +528,7 @@ class NotificationManager:
                         notif_tree.insert('', 'end', values=tuple(notif))
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load notifications: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to load notifications: {e}")
 
             load_notifications()
             filter_status.bind('<<ComboboxSelected>>', lambda e: load_notifications())
@@ -540,10 +540,10 @@ class NotificationManager:
             def send_selected():
                 selection = notif_tree.selection()
                 if not selection:
-                    messagebox.showwarning("Warning", "Please select notifications to send")
+                    messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_send', default="Please select notifications to send"))
                     return
 
-                response = messagebox.askyesno("Confirm Send",
+                response = messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_send', default="Confirm Send"),
                                              f"Send {len(selection)} selected notifications?")
                 if response:
                     try:
@@ -558,19 +558,19 @@ class NotificationManager:
                         conn.commit()
                         conn.close()
 
-                        messagebox.showinfo("Success", f"Sent {len(selection)} notifications")
+                        messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), f"Sent {len(selection)} notifications")
                         load_notifications()
 
                     except Exception as e:
-                        messagebox.showerror("Error", f"Failed to send notifications: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to send notifications: {e}")
 
             def delete_selected():
                 selection = notif_tree.selection()
                 if not selection:
-                    messagebox.showwarning("Warning", "Please select notifications to delete")
+                    messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.notifications.dialogs.please_select_notifications_to_delete', default="Please select notifications to delete"))
                     return
 
-                response = messagebox.askyesno("Confirm Delete",
+                response = messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_delete', default="Confirm Delete"),
                                              f"Delete {len(selection)} selected notifications?")
                 if response:
                     try:
@@ -584,26 +584,26 @@ class NotificationManager:
                         conn.commit()
                         conn.close()
 
-                        messagebox.showinfo("Success", f"Deleted {len(selection)} notifications")
+                        messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), f"Deleted {len(selection)} notifications")
                         load_notifications()
 
                     except Exception as e:
-                        messagebox.showerror("Error", f"Failed to delete notifications: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to delete notifications: {e}")
 
-            ttk.Button(action_frame, text="Send Selected", command=send_selected).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Delete Selected", command=delete_selected).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Refresh", command=load_notifications).pack(side='left', padx=5)
-            ttk.Button(action_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.notifications.buttons.send_selected', default="Send Selected"), command=send_selected).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.notifications.buttons.delete_selected', default="Delete Selected"), command=delete_selected).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.notifications.buttons.refresh', default="Refresh"), command=load_notifications).pack(side='left', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.notifications.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open pending notifications: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to open pending notifications: {e}")
 
     def bulk_notification_send(self):
         """Send notifications to multiple students"""
         try:
             # Create dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Bulk Notification Send")
+            dialog.title(_t('gui.shell.document_manager.notifications.windows.bulk_notification_send', default="Bulk Notification Send"))
             dialog.geometry("850x700")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -611,36 +611,36 @@ class NotificationManager:
             main_frame = ttk.Frame(dialog, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Send Bulk Notifications",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.notifications.labels.send_bulk_notifications', default="Send Bulk Notifications"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Recipient selection
-            ttk.Label(main_frame, text="Select Recipients:", font=('Arial', 10, 'bold')).pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.notifications.labels.select_recipients_variant_2', default="Select Recipients:"), font=('Arial', 10, 'bold')).pack(anchor='w')
 
             recipient_frame = ttk.Frame(main_frame)
             recipient_frame.pack(fill='x', pady=10)
 
-            recipient_var = tk.StringVar(value="all_students")
-            ttk.Radiobutton(recipient_frame, text="All Students", variable=recipient_var,
+            recipient_var = tk.StringVar(value=_t('gui.shell.document_manager.notifications.values.all_students', default="all_students"))
+            ttk.Radiobutton(recipient_frame, text=_t('gui.shell.document_manager.notifications.buttons.all_students', default="All Students"), variable=recipient_var,
                            value="all_students").pack(anchor='w')
-            ttk.Radiobutton(recipient_frame, text="Students with Expiring Documents",
+            ttk.Radiobutton(recipient_frame, text=_t('gui.shell.document_manager.notifications.buttons.students_with_expiring_documents', default="Students with Expiring Documents"),
                            variable=recipient_var, value="expiring_docs").pack(anchor='w')
-            ttk.Radiobutton(recipient_frame, text="Students with Missing Documents",
+            ttk.Radiobutton(recipient_frame, text=_t('gui.shell.document_manager.notifications.buttons.students_with_missing_documents', default="Students with Missing Documents"),
                            variable=recipient_var, value="missing_docs").pack(anchor='w')
 
             # Notification type
-            ttk.Label(main_frame, text="Notification Type:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.notifications.labels.notification_type', default="Notification Type:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
             notification_type = ttk.Combobox(main_frame, values=['Email', 'SMS', 'In-App'], state='readonly', width=30)
             notification_type.set('Email')
             notification_type.pack(anchor='w')
 
             # Subject
-            ttk.Label(main_frame, text="Subject:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.notifications.labels.subject', default="Subject:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
             subject_entry = tk.Entry(main_frame, width=50)
             subject_entry.pack(fill='x')
 
             # Message
-            ttk.Label(main_frame, text="Message:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.notifications.labels.message', default="Message:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
             message_text = tk.Text(main_frame, height=8, width=50)
             message_text.pack(fill='both', expand=True)
 
@@ -649,7 +649,7 @@ class NotificationManager:
                 message = message_text.get("1.0", tk.END).strip()
 
                 if not subject or not message:
-                    messagebox.showwarning("Warning", "Please enter both subject and message")
+                    messagebox.showwarning(_t('gui.shell.document_manager.notifications.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.notifications.dialogs.please_enter_both_subject_and_message', default="Please enter both subject and message"))
                     return
 
                 try:
@@ -689,21 +689,21 @@ class NotificationManager:
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo("Success", f"Notifications sent to {len(recipients)} recipient(s)")
+                    messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.success', default="Success"), f"Notifications sent to {len(recipients)} recipient(s)")
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to send notifications: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to send notifications: {e}")
 
             # Buttons
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(pady=20)
 
-            ttk.Button(button_frame, text="Send Notifications", command=send_notifications).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.send_notifications', default="Send Notifications"), command=send_notifications).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open notification dialog: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.error', default="Error"), f"Failed to open notification dialog: {e}")
 
     def bulk_notification_campaign(self):
         """Send bulk notifications to students"""
@@ -712,45 +712,45 @@ class NotificationManager:
 
         # Create campaign window
         campaign_window = tk.Toplevel(self.root)
-        campaign_window.title("Bulk Notification Campaign")
+        campaign_window.title(_t('gui.shell.document_manager.notifications.windows.bulk_notification_campaign', default="Bulk Notification Campaign"))
         campaign_window.geometry("900x700")
         campaign_window.transient(self.root)
         campaign_window.grab_set()
 
         # Title
-        ttk.Label(campaign_window, text="Bulk Notification Campaign",
+        ttk.Label(campaign_window, text=_t('gui.shell.document_manager.notifications.labels.bulk_notification_campaign', default="Bulk Notification Campaign"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Recipient selection frame
-        recipient_frame = ttk.LabelFrame(campaign_window, text="Select Recipients", padding=10)
+        recipient_frame = ttk.LabelFrame(campaign_window, text=_t('gui.shell.document_manager.notifications.labels.select_recipients', default="Select Recipients"), padding=10)
         recipient_frame.pack(fill='x', padx=10, pady=5)
 
-        recipient_option = tk.StringVar(value="all_students")
+        recipient_option = tk.StringVar(value=_t('gui.shell.document_manager.notifications.values.all_students', default="all_students"))
 
-        ttk.Radiobutton(recipient_frame, text="All Students",
+        ttk.Radiobutton(recipient_frame, text=_t('gui.shell.document_manager.notifications.buttons.all_students', default="All Students"),
                        variable=recipient_option, value="all_students").pack(anchor='w')
-        ttk.Radiobutton(recipient_frame, text="Students with Pending Documents",
+        ttk.Radiobutton(recipient_frame, text=_t('gui.shell.document_manager.notifications.buttons.students_with_pending_documents', default="Students with Pending Documents"),
                        variable=recipient_option, value="pending_docs").pack(anchor='w')
-        ttk.Radiobutton(recipient_frame, text="Students with Expiring Documents",
+        ttk.Radiobutton(recipient_frame, text=_t('gui.shell.document_manager.notifications.buttons.students_with_expiring_documents', default="Students with Expiring Documents"),
                        variable=recipient_option, value="expiring_docs").pack(anchor='w')
-        ttk.Radiobutton(recipient_frame, text="Students with Rejected Documents",
+        ttk.Radiobutton(recipient_frame, text=_t('gui.shell.document_manager.notifications.buttons.students_with_rejected_documents', default="Students with Rejected Documents"),
                        variable=recipient_option, value="rejected_docs").pack(anchor='w')
-        ttk.Radiobutton(recipient_frame, text="Custom Student List (comma-separated IDs)",
+        ttk.Radiobutton(recipient_frame, text=_t('gui.shell.document_manager.notifications.buttons.custom_student_list_comma_separated_ids', default="Custom Student List (comma-separated IDs)"),
                        variable=recipient_option, value="custom").pack(anchor='w')
 
         custom_ids_entry = ttk.Entry(recipient_frame, width=70)
         custom_ids_entry.pack(fill='x', padx=20, pady=5)
 
         # Message frame
-        message_frame = ttk.LabelFrame(campaign_window, text="Notification Message", padding=10)
+        message_frame = ttk.LabelFrame(campaign_window, text=_t('gui.shell.document_manager.notifications.labels.notification_message', default="Notification Message"), padding=10)
         message_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
-        ttk.Label(message_frame, text="Subject:").pack(anchor='w')
+        ttk.Label(message_frame, text=_t('gui.shell.document_manager.notifications.labels.subject', default="Subject:")).pack(anchor='w')
         subject_entry = ttk.Entry(message_frame, width=80)
         subject_entry.insert(0, "Important Update Regarding Your Documents")
         subject_entry.pack(fill='x', pady=5)
 
-        ttk.Label(message_frame, text="Message Body:").pack(anchor='w')
+        ttk.Label(message_frame, text=_t('gui.shell.document_manager.notifications.labels.message_body', default="Message Body:")).pack(anchor='w')
         message_text = tk.Text(message_frame, width=80, height=15)
         message_text.insert('1.0', """Dear Student,
 
@@ -769,18 +769,18 @@ Administration""")
         message_text.pack(fill='both', expand=True, pady=5)
 
         # Options frame
-        options_frame = ttk.LabelFrame(campaign_window, text="Notification Options", padding=10)
+        options_frame = ttk.LabelFrame(campaign_window, text=_t('gui.shell.document_manager.notifications.labels.notification_options', default="Notification Options"), padding=10)
         options_frame.pack(fill='x', padx=10, pady=5)
 
         send_email_var = tk.BooleanVar(value=True)
         send_sms_var = tk.BooleanVar(value=False)
         create_portal_alert_var = tk.BooleanVar(value=True)
 
-        ttk.Checkbutton(options_frame, text="Send via Email",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.notifications.buttons.send_via_email', default="Send via Email"),
                        variable=send_email_var).pack(anchor='w')
-        ttk.Checkbutton(options_frame, text="Send via SMS",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.notifications.buttons.send_via_sms', default="Send via SMS"),
                        variable=send_sms_var).pack(anchor='w')
-        ttk.Checkbutton(options_frame, text="Create Portal Alert",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.notifications.buttons.create_portal_alert', default="Create Portal Alert"),
                        variable=create_portal_alert_var).pack(anchor='w')
 
         # Button frame
@@ -810,13 +810,13 @@ Delivery Methods:
 
 This is a preview. Click 'Send Campaign' to execute."""
 
-            messagebox.showinfo("Campaign Preview", preview_text)
+            messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.campaign_preview', default="Campaign Preview"), preview_text)
 
         def send_campaign():
             """Send the notification campaign"""
-            if not messagebox.askyesno("Confirm Send",
-                                      "Send this notification campaign?\n\n"
-                                      "All selected recipients will receive the notification."):
+            if not messagebox.askyesno(_t('gui.shell.document_manager.notifications.dialogs.confirm_send', default="Confirm Send"),
+                                      _t('gui.shell.document_manager.notifications.dialogs.send_this_notification_campaign_all_selected_recipients_will_rec', default="Send this notification campaign?\n\n"
+                                      "All selected recipients will receive the notification.")):
                 return
 
             try:
@@ -838,7 +838,7 @@ This is a preview. Click 'Send Campaign' to execute."""
                 else:
                     recipient_count = 0
 
-                messagebox.showinfo("Campaign Sent",
+                messagebox.showinfo(_t('gui.shell.document_manager.notifications.dialogs.campaign_sent', default="Campaign Sent"),
                                   f"Notification campaign sent successfully!\n\n"
                                   f"Recipients: {recipient_count}\n"
                                   f"Subject: {subject_entry.get()}\n\n"
@@ -851,13 +851,13 @@ This is a preview. Click 'Send Campaign' to execute."""
                 campaign_window.destroy()
 
             except Exception as e:
-                messagebox.showerror("Send Error", f"Failed to send campaign: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.notifications.dialogs.send_error', default="Send Error"), f"Failed to send campaign: {e}")
 
-        ttk.Button(button_frame, text="Preview Campaign",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.preview_campaign', default="Preview Campaign"),
                   command=preview_campaign).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Send Campaign",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.send_campaign', default="Send Campaign"),
                   command=send_campaign).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.notifications.buttons.cancel', default="Cancel"),
                   command=campaign_window.destroy).pack(side='right', padx=5)
 
     def bulk_email_notifications(self):

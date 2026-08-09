@@ -1,5 +1,7 @@
 """Charity Shop - Sales mixin for CharityShopApp."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui._imports import (
     messagebox, datetime,
     FINANCE_INTEGRATION_AVAILABLE, ACTIVITY_LOGGER_AVAILABLE, EMAIL_SERVICE_AVAILABLE,
@@ -19,11 +21,11 @@ class SalesMixin:
 
         item = self.get_selected_item()
         if not item:
-            messagebox.showwarning("No Selection", "Please select an item to sell.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.sales.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.sales.dialogs.please_select_an_item_to_sell', default="Please select an item to sell."))
             return
 
         if item["quantity"] <= 0:
-            messagebox.showwarning("No Stock", "This item is out of stock.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.sales.dialogs.no_stock', default="No Stock"), _t('gui.shell.services.charity_shop_gui.sales.dialogs.this_item_is_out_of_stock', default="This item is out of stock."))
             return
 
         # Open enhanced sell dialog with payment options (pass current user for auto-fill)
@@ -61,10 +63,10 @@ class SalesMixin:
                     payment_message = result.get('message', '')
 
                     if not payment_success:
-                        messagebox.showerror("Payment Failed", f"Finance Account payment failed: {payment_message}")
+                        messagebox.showerror(_t('gui.shell.services.charity_shop_gui.sales.dialogs.payment_failed', default="Payment Failed"), f"Finance Account payment failed: {payment_message}")
                         return
                 else:
-                    messagebox.showerror("Error", "Finance integration not available for student account payment")
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.sales.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.sales.dialogs.finance_integration_not_available_for_student_account_payment', default="Finance integration not available for student account payment"))
                     return
 
             # Mark item as sold in database
@@ -107,7 +109,7 @@ class SalesMixin:
             elif customer_email and not receipt_sent:
                 success_msg += "\n\n(Receipt email could not be sent)"
 
-            messagebox.showinfo("Sale Complete", success_msg)
+            messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.sales.dialogs.sale_complete', default="Sale Complete"), success_msg)
 
             # Log activity
             if ACTIVITY_LOGGER_AVAILABLE:
@@ -173,23 +175,23 @@ class SalesMixin:
         """Mark selected item as available (not sold)."""
         item = self.get_selected_item()
         if not item:
-            messagebox.showwarning("No Selection", "Please select an item.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.sales.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.sales.dialogs.please_select_an_item', default="Please select an item."))
             return
 
         if item["status"] == "Available":
-            messagebox.showinfo("Info", "Item is already marked as available.")
+            messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.sales.dialogs.info', default="Info"), _t('gui.shell.services.charity_shop_gui.sales.dialogs.item_is_already_marked_as_available', default="Item is already marked as available."))
             return
 
-        if messagebox.askyesno("Confirm", f"Mark '{item['name']}' as available?"):
+        if messagebox.askyesno(_t('gui.shell.services.charity_shop_gui.sales.dialogs.confirm', default="Confirm"), f"Mark '{item['name']}' as available?"):
             self.db.mark_as_available(item["id"])
             self.refresh_stock_list()
-            messagebox.showinfo("Success", "Item marked as available!")
+            messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.sales.dialogs.success', default="Success"), _t('gui.shell.services.charity_shop_gui.sales.dialogs.item_marked_as_available', default="Item marked as available!"))
 
     def adjust_quantity(self, delta: int):
         """Quickly adjust quantity of selected item."""
         item = self.get_selected_item()
         if not item:
-            messagebox.showwarning("No Selection", "Please select an item to adjust quantity.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.sales.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.sales.dialogs.please_select_an_item_to_adjust_quantity', default="Please select an item to adjust quantity."))
             return
 
         # Get full item data

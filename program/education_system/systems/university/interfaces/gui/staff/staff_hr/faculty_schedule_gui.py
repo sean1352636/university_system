@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -68,7 +70,7 @@ class FacultyScheduleGUI:
         self._canvas_block_items = {}
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Schedule Builder")
+            messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.login_required_to_access_schedule_builder', default="Login required to access Schedule Builder"))
             return
 
         if parent_notebook:
@@ -115,21 +117,21 @@ class FacultyScheduleGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Schedule")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.faculty_schedule.tabs.schedule', default="Schedule"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Faculty Schedule Builder")
+        self.window.title(_t('gui.staff.staff_hr.faculty_schedule.windows.faculty_schedule_builder', default="Faculty Schedule Builder"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.faculty_schedule.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -153,17 +155,17 @@ class FacultyScheduleGUI:
     def _create_weekly_view_tab(self):
         """Create the weekly schedule view tab with a colored grid."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Weekly View")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.faculty_schedule.tabs.weekly_view', default="Weekly View"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Weekly Schedule", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._draw_schedule_grid).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.weekly_schedule', default="Weekly Schedule"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.refresh', default="Refresh"), command=self._draw_schedule_grid).pack(side=tk.RIGHT, padx=5)
 
         # Legend frame
         legend_frame = ttk.Frame(tab)
         legend_frame.pack(fill=tk.X, padx=10, pady=(0, 5))
-        ttk.Label(legend_frame, text="Legend: ").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(legend_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.legend', default="Legend: ")).pack(side=tk.LEFT, padx=(0, 5))
         for at in self.activity_types:
             color = at.get('color', '#795548')
             label_text = at.get('label', at['name'])
@@ -380,31 +382,31 @@ class FacultyScheduleGUI:
     def _create_block_list_tab(self):
         """Create block list tab with filtering and CRUD buttons."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Block List")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.faculty_schedule.tabs.block_list', default="Block List"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Schedule Blocks", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.schedule_blocks', default="Schedule Blocks"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Filter frame
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(filter_frame, text="Day:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.day', default="Day:")).pack(side=tk.LEFT, padx=5)
         day_values = ['All'] + [DAY_NAMES[i] for i in range(7)]
         self.block_day_filter = ttk.Combobox(filter_frame, values=day_values, width=12, state='readonly')
         self.block_day_filter.set('All')
         self.block_day_filter.pack(side=tk.LEFT, padx=5)
         self.block_day_filter.bind('<<ComboboxSelected>>', lambda e: self._load_blocks())
 
-        ttk.Label(filter_frame, text="Type:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.type', default="Type:")).pack(side=tk.LEFT, padx=5)
         type_values = ['All'] + self._get_activity_type_names()
         self.block_type_filter = ttk.Combobox(filter_frame, values=type_values, width=14, state='readonly')
         self.block_type_filter.set('All')
         self.block_type_filter.pack(side=tk.LEFT, padx=5)
         self.block_type_filter.bind('<<ComboboxSelected>>', lambda e: self._load_blocks())
 
-        ttk.Button(filter_frame, text="Refresh", command=self._load_blocks).pack(side=tk.LEFT, padx=10)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.refresh', default="Refresh"), command=self._load_blocks).pack(side=tk.LEFT, padx=10)
 
         # Treeview
         tree_frame = ttk.Frame(tab)
@@ -434,9 +436,9 @@ class FacultyScheduleGUI:
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(btn_frame, text="Add Block", command=self._add_block_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit Block", command=self._edit_selected_block).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete Block", command=self._delete_block).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.add_block', default="Add Block"), command=self._add_block_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.edit_block', default="Edit Block"), command=self._edit_selected_block).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.delete_block', default="Delete Block"), command=self._delete_block).pack(side=tk.LEFT, padx=5)
 
         self._load_blocks()
 
@@ -487,7 +489,7 @@ class FacultyScheduleGUI:
     def _add_block_dialog(self, day=None, start_time=None, end_time=None):
         """Show dialog to add a new schedule block."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Schedule Block")
+        dialog.title(_t('gui.staff.staff_hr.faculty_schedule.windows.add_schedule_block', default="Add Schedule Block"))
         dialog.geometry("450x420")
         dialog.transient(self.root)
         dialog.wait_visibility()
@@ -497,45 +499,45 @@ class FacultyScheduleGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Day
-        ttk.Label(frame, text="Day:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.day', default="Day:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         day_combo = ttk.Combobox(frame, values=[DAY_NAMES[i] for i in range(7)], width=20, state='readonly')
         day_combo.grid(row=0, column=1, padx=10, pady=8, sticky='w')
         if day is not None:
             day_combo.set(DAY_NAMES.get(day, ''))
 
         # Start time
-        ttk.Label(frame, text="Start Time (HH:MM):").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.start_time_hh_mm', default="Start Time (HH:MM):")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         start_entry = ttk.Entry(frame, width=10)
         start_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
         if start_time:
             start_entry.insert(0, start_time)
 
         # End time
-        ttk.Label(frame, text="End Time (HH:MM):").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.end_time_hh_mm', default="End Time (HH:MM):")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         end_entry = ttk.Entry(frame, width=10)
         end_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
         if end_time:
             end_entry.insert(0, end_time)
 
         # Activity type
-        ttk.Label(frame, text="Activity Type:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.activity_type', default="Activity Type:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(frame, values=self._get_activity_type_names(), width=20, state='readonly')
         type_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
         if self.activity_types:
             type_combo.set(self.activity_types[0]['name'])
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.title', default="Title:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=30)
         title_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Location
-        ttk.Label(frame, text="Location:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.location', default="Location:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         location_entry = ttk.Entry(frame, width=30)
         location_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Course code
-        ttk.Label(frame, text="Course Code:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.course_code', default="Course Code:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         course_entry = ttk.Entry(frame, width=20)
         course_entry.grid(row=6, column=1, padx=10, pady=8, sticky='w')
 
@@ -554,7 +556,7 @@ class FacultyScheduleGUI:
                     selected_day = idx
                     break
             if selected_day is None:
-                messagebox.showerror("Error", "Please select a valid day", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.please_select_a_valid_day', default="Please select a valid day"), parent=dialog)
                 return
 
             # Validate times
@@ -567,7 +569,7 @@ class FacultyScheduleGUI:
 
             # Validate time format
             if not self._validate_time_format(s_time) or not self._validate_time_format(e_time):
-                messagebox.showerror("Error", "Time must be in HH:MM format (e.g. 09:00)", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.time_must_be_in_hh_mm_format_e_g_09_00', default="Time must be in HH:MM format (e.g. 09:00)"), parent=dialog)
                 return
 
             # Validate activity type
@@ -592,23 +594,23 @@ class FacultyScheduleGUI:
                     location=location_val,
                     course_code=course_val
                 )
-                messagebox.showinfo("Success", f"Block created successfully. ID: {block_id}", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.success', default="Success"), f"Block created successfully. ID: {block_id}", parent=dialog)
                 dialog.destroy()
                 self._load_blocks()
                 self._draw_schedule_grid()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _edit_selected_block(self):
         """Edit the block currently selected in the treeview."""
         selection = self.blocks_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a block to edit")
+            messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.info', default="Info"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.please_select_a_block_to_edit', default="Please select a block to edit"))
             return
         item = self.blocks_tree.item(selection[0])
         block_id = item['values'][0]
@@ -617,7 +619,7 @@ class FacultyScheduleGUI:
     def _edit_block_dialog(self, block_id=None):
         """Show dialog to edit an existing schedule block."""
         if block_id is None:
-            messagebox.showinfo("Info", "No block selected")
+            messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.info', default="Info"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.no_block_selected', default="No block selected"))
             return
 
         try:
@@ -626,7 +628,7 @@ class FacultyScheduleGUI:
             block = None
 
         if not block:
-            messagebox.showerror("Error", f"Block {block_id} not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), f"Block {block_id} not found")
             return
 
         dialog = tk.Toplevel(self.root)
@@ -640,7 +642,7 @@ class FacultyScheduleGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Day
-        ttk.Label(frame, text="Day:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.day', default="Day:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         day_combo = ttk.Combobox(frame, values=[DAY_NAMES[i] for i in range(7)], width=20, state='readonly')
         day_combo.grid(row=0, column=1, padx=10, pady=8, sticky='w')
         current_day = block.get('day_of_week')
@@ -648,37 +650,37 @@ class FacultyScheduleGUI:
             day_combo.set(DAY_NAMES.get(int(current_day), ''))
 
         # Start time
-        ttk.Label(frame, text="Start Time (HH:MM):").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.start_time_hh_mm', default="Start Time (HH:MM):")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         start_entry = ttk.Entry(frame, width=10)
         start_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
         start_entry.insert(0, block.get('start_time', ''))
 
         # End time
-        ttk.Label(frame, text="End Time (HH:MM):").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.end_time_hh_mm', default="End Time (HH:MM):")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         end_entry = ttk.Entry(frame, width=10)
         end_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
         end_entry.insert(0, block.get('end_time', ''))
 
         # Activity type
-        ttk.Label(frame, text="Activity Type:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.activity_type', default="Activity Type:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(frame, values=self._get_activity_type_names(), width=20, state='readonly')
         type_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
         type_combo.set(block.get('activity_type', ''))
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.title', default="Title:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=30)
         title_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
         title_entry.insert(0, block.get('title', '') or '')
 
         # Location
-        ttk.Label(frame, text="Location:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.location', default="Location:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         location_entry = ttk.Entry(frame, width=30)
         location_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
         location_entry.insert(0, block.get('location', '') or '')
 
         # Course code
-        ttk.Label(frame, text="Course Code:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.course_code', default="Course Code:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         course_entry = ttk.Entry(frame, width=20)
         course_entry.grid(row=6, column=1, padx=10, pady=8, sticky='w')
         course_entry.insert(0, block.get('course_code', '') or '')
@@ -697,7 +699,7 @@ class FacultyScheduleGUI:
                     selected_day = idx
                     break
             if selected_day is None:
-                messagebox.showerror("Error", "Please select a valid day", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.please_select_a_valid_day', default="Please select a valid day"), parent=dialog)
                 return
 
             # Validate times
@@ -709,7 +711,7 @@ class FacultyScheduleGUI:
                 return
 
             if not self._validate_time_format(s_time) or not self._validate_time_format(e_time):
-                messagebox.showerror("Error", "Time must be in HH:MM format (e.g. 09:00)", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.time_must_be_in_hh_mm_format_e_g_09_00', default="Time must be in HH:MM format (e.g. 09:00)"), parent=dialog)
                 return
 
             # Validate activity type
@@ -731,23 +733,23 @@ class FacultyScheduleGUI:
 
             try:
                 FacultyScheduleManager.update_block(block_id, **update_data)
-                messagebox.showinfo("Success", "Block updated successfully", parent=dialog)
+                messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.success', default="Success"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.block_updated_successfully', default="Block updated successfully"), parent=dialog)
                 dialog.destroy()
                 self._load_blocks()
                 self._draw_schedule_grid()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _delete_block(self):
         """Delete the selected schedule block after confirmation."""
         selection = self.blocks_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a block to delete")
+            messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.info', default="Info"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.please_select_a_block_to_delete', default="Please select a block to delete"))
             return
 
         item = self.blocks_tree.item(selection[0])
@@ -757,29 +759,29 @@ class FacultyScheduleGUI:
         end = item['values'][3]
 
         if not messagebox.askyesno(
-            "Confirm Delete",
+            _t('gui.staff.staff_hr.faculty_schedule.dialogs.confirm_delete', default="Confirm Delete"),
             f"Delete block on {day_name} ({start} - {end})?"
         ):
             return
 
         try:
             FacultyScheduleManager.delete_block(block_id)
-            messagebox.showinfo("Success", "Block deleted successfully")
+            messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.success', default="Success"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.block_deleted_successfully', default="Block deleted successfully"))
             self._load_blocks()
             self._draw_schedule_grid()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 3: IMPORT SCHEDULE ====================
 
     def _create_import_tab(self):
         """Create the import teaching schedule tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Import")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.faculty_schedule.tabs.import', default="Import"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Import Teaching Schedule", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.import_teaching_schedule', default="Import Teaching Schedule"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Description
         desc_frame = ttk.Frame(tab)
@@ -787,23 +789,23 @@ class FacultyScheduleGUI:
         ttk.Label(
             desc_frame,
             text=(
-                "Import your teaching schedule from the course management system. "
+                _t('gui.staff.staff_hr.faculty_schedule.labels.import_your_teaching_schedule_from_the_course_management_system', default="Import your teaching schedule from the course management system. "
                 "This will create locked schedule blocks for each assigned teaching slot. "
-                "Existing blocks will not be affected unless there is a time conflict."
+                "Existing blocks will not be affected unless there is a time conflict.")
             ),
             wraplength=700, justify=tk.LEFT
         ).pack(anchor='w')
 
         # Form
-        form_frame = ttk.LabelFrame(tab, text="Import Settings", padding=15)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.faculty_schedule.labels.import_settings', default="Import Settings"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=15)
 
-        ttk.Label(form_frame, text="Semester:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.semester', default="Semester:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.import_semester_entry = ttk.Entry(form_frame, width=20)
         self.import_semester_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
         self.import_semester_entry.insert(0, 'Fall')
 
-        ttk.Label(form_frame, text="Academic Year:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.academic_year', default="Academic Year:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.import_year_entry = ttk.Entry(form_frame, width=20)
         self.import_year_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
         current_year = datetime.now().year
@@ -811,14 +813,14 @@ class FacultyScheduleGUI:
 
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=2, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Import", command=self._import_schedule).pack()
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.import', default="Import"), command=self._import_schedule).pack()
 
         # Result area
-        result_frame = ttk.LabelFrame(tab, text="Import Result", padding=15)
+        result_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.faculty_schedule.labels.import_result', default="Import Result"), padding=15)
         result_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.import_result_label = ttk.Label(
-            result_frame, text="No import performed yet.", font=('Arial', 11)
+            result_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.no_import_performed_yet', default="No import performed yet."), font=('Arial', 11)
         )
         self.import_result_label.pack(anchor='w')
 
@@ -839,58 +841,58 @@ class FacultyScheduleGUI:
                     text=f"Successfully imported {count} teaching block(s).",
                     foreground='green'
                 )
-                messagebox.showinfo("Success", f"Imported {count} teaching block(s)")
+                messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.success', default="Success"), f"Imported {count} teaching block(s)")
                 self._load_blocks()
                 self._draw_schedule_grid()
             else:
                 self.import_result_label.config(
-                    text="No teaching blocks found to import. Check your course assignments.",
+                    text=_t('gui.staff.staff_hr.faculty_schedule.text.no_teaching_blocks_found_to_import_check_your_course_assignments', default="No teaching blocks found to import. Check your course assignments."),
                     foreground='orange'
                 )
-                messagebox.showinfo("Info", "No teaching blocks found to import")
+                messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.info', default="Info"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.no_teaching_blocks_found_to_import', default="No teaching blocks found to import"))
         except Exception as e:
             self.import_result_label.config(
                 text=f"Import failed: {str(e)}",
                 foreground='red'
             )
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 4: TEMPLATES ====================
 
     def _create_templates_tab(self):
         """Create the schedule templates tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Templates")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.faculty_schedule.tabs.templates', default="Templates"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Schedule Templates", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_templates).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.schedule_templates', default="Schedule Templates"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.refresh', default="Refresh"), command=self._load_templates).pack(side=tk.RIGHT, padx=5)
 
         # Save section
-        save_frame = ttk.LabelFrame(tab, text="Save Current Schedule as Template", padding=15)
+        save_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.faculty_schedule.labels.save_current_schedule_as_template', default="Save Current Schedule as Template"), padding=15)
         save_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(save_frame, text="Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(save_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.name', default="Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.template_name_entry = ttk.Entry(save_frame, width=30)
         self.template_name_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(save_frame, text="Description:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(save_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.description', default="Description:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.template_desc_entry = ttk.Entry(save_frame, width=40)
         self.template_desc_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         self.template_shared_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            save_frame, text="Share with other faculty",
+            save_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.share_with_other_faculty', default="Share with other faculty"),
             variable=self.template_shared_var
         ).grid(row=2, column=0, columnspan=2, pady=5)
 
-        ttk.Button(save_frame, text="Save Current", command=self._save_template).grid(
+        ttk.Button(save_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.save_current', default="Save Current"), command=self._save_template).grid(
             row=3, column=0, columnspan=2, pady=10
         )
 
         # Templates list
-        list_frame = ttk.LabelFrame(tab, text="Available Templates", padding=10)
+        list_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.faculty_schedule.labels.available_templates', default="Available Templates"), padding=10)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         tree_frame = ttk.Frame(list_frame)
@@ -919,11 +921,11 @@ class FacultyScheduleGUI:
 
         self.clear_existing_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
-            load_frame, text="Clear existing non-locked blocks before loading",
+            load_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.clear_existing_non_locked_blocks_before_loading', default="Clear existing non-locked blocks before loading"),
             variable=self.clear_existing_var
         ).pack(side=tk.LEFT, padx=10)
 
-        ttk.Button(load_frame, text="Load Template", command=self._load_selected_template).pack(side=tk.RIGHT, padx=10)
+        ttk.Button(load_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.load_template', default="Load Template"), command=self._load_selected_template).pack(side=tk.RIGHT, padx=10)
 
         self._load_templates()
 
@@ -931,7 +933,7 @@ class FacultyScheduleGUI:
         """Save the current schedule as a template."""
         name = self.template_name_entry.get().strip()
         if not name:
-            messagebox.showerror("Error", "Template name is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.template_name_is_required', default="Template name is required"))
             return
 
         description = self.template_desc_entry.get().strip() or None
@@ -944,13 +946,13 @@ class FacultyScheduleGUI:
                 description=description,
                 is_shared=is_shared
             )
-            messagebox.showinfo("Success", f"Template saved successfully. ID: {template_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.success', default="Success"), f"Template saved successfully. ID: {template_id}")
             self.template_name_entry.delete(0, tk.END)
             self.template_desc_entry.delete(0, tk.END)
             self.template_shared_var.set(False)
             self._load_templates()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), str(e))
 
     def _load_templates(self):
         """Load available templates into the treeview."""
@@ -981,7 +983,7 @@ class FacultyScheduleGUI:
         """Load the selected template into the user's schedule."""
         selection = self.templates_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a template to load")
+            messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.info', default="Info"), _t('gui.staff.staff_hr.faculty_schedule.dialogs.please_select_a_template_to_load', default="Please select a template to load"))
             return
 
         item = self.templates_tree.item(selection[0])
@@ -993,7 +995,7 @@ class FacultyScheduleGUI:
         if clear_existing:
             confirm_msg += '\n\nThis will remove all existing non-locked blocks first.'
 
-        if not messagebox.askyesno("Confirm Load Template", confirm_msg):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.faculty_schedule.dialogs.confirm_load_template', default="Confirm Load Template"), confirm_msg):
             return
 
         try:
@@ -1002,36 +1004,36 @@ class FacultyScheduleGUI:
                 user_id=self._get_user_id(),
                 clear_existing=clear_existing
             )
-            messagebox.showinfo("Success", f"Loaded {count} block(s) from template")
+            messagebox.showinfo(_t('gui.staff.staff_hr.faculty_schedule.dialogs.success', default="Success"), f"Loaded {count} block(s) from template")
             self._load_blocks()
             self._draw_schedule_grid()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.faculty_schedule.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 5: SUMMARY ====================
 
     def _create_summary_tab(self):
         """Create the weekly summary tab with hours breakdown and bar chart."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Summary")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.faculty_schedule.tabs.summary', default="Summary"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Weekly Summary", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._refresh_summary).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.weekly_summary', default="Weekly Summary"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.faculty_schedule.buttons.refresh', default="Refresh"), command=self._refresh_summary).pack(side=tk.RIGHT, padx=5)
 
         # Total hours label
         total_frame = ttk.Frame(tab)
         total_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.total_hours_label = ttk.Label(
-            total_frame, text="Total Weekly Hours: 0.0",
+            total_frame, text=_t('gui.staff.staff_hr.faculty_schedule.labels.total_weekly_hours_0_0', default="Total Weekly Hours: 0.0"),
             font=('Arial', 16, 'bold')
         )
         self.total_hours_label.pack(anchor='w')
 
         # Bar chart canvas
-        chart_frame = ttk.LabelFrame(tab, text="Hours by Activity Type", padding=10)
+        chart_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.faculty_schedule.labels.hours_by_activity_type', default="Hours by Activity Type"), padding=10)
         chart_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.summary_canvas = tk.Canvas(chart_frame, bg='white', height=300)

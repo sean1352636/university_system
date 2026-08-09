@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -90,7 +96,7 @@ class GamificationWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="🎮 Gamification Portal", font=('Arial', 16, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.labels.gamification_portal', default="🎮 Gamification Portal"), font=('Arial', 16, 'bold'))
         title_label.pack(pady=10)
 
         # Notebook for different views
@@ -99,7 +105,7 @@ class GamificationWindow:
 
         # Leaderboard tab
         leaderboard_frame = ttk.Frame(notebook)
-        notebook.add(leaderboard_frame, text="🏆 Leaderboard")
+        notebook.add(leaderboard_frame, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.tabs.leaderboard', default="🏆 Leaderboard"))
 
         # Leaderboard treeview
         lb_columns = ("Rank", "Student ID", "Name", "Points", "Level", "Streak", "Badges")
@@ -117,16 +123,16 @@ class GamificationWindow:
 
         # Student details tab
         details_frame = ttk.Frame(notebook)
-        notebook.add(details_frame, text="👤 Student Details")
+        notebook.add(details_frame, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.tabs.student_details', default="👤 Student Details"))
 
         # Student lookup
         lookup_frame = ttk.Frame(details_frame)
         lookup_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(lookup_frame, text="Student ID:").pack(side=tk.LEFT)
+        ttk.Label(lookup_frame, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.labels.student_id', default="Student ID:")).pack(side=tk.LEFT)
         self.lookup_var = tk.StringVar()
         ttk.Entry(lookup_frame, textvariable=self.lookup_var, width=15).pack(side=tk.LEFT, padx=(5, 10))
-        ttk.Button(lookup_frame, text="Lookup", command=self.lookup_student, style='Primary.TButton').pack(side=tk.LEFT)
+        ttk.Button(lookup_frame, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.buttons.lookup', default="Lookup"), command=self.lookup_student, style='Primary.TButton').pack(side=tk.LEFT)
 
         # Student details display
         self.details_text = tk.Text(details_frame, wrap=tk.WORD, height=20)
@@ -138,25 +144,25 @@ class GamificationWindow:
 
         # Awards tab
         awards_frame = ttk.Frame(notebook)
-        notebook.add(awards_frame, text="🎯 Award Points")
+        notebook.add(awards_frame, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.tabs.award_points', default="🎯 Award Points"))
 
         # Award form
-        award_form = ttk.LabelFrame(awards_frame, text="Award Points to Student", padding=20)
+        award_form = ttk.LabelFrame(awards_frame, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.labels.award_points_to_student', default="Award Points to Student"), padding=20)
         award_form.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(award_form, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(award_form, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.award_student_var = tk.StringVar()
         ttk.Entry(award_form, textvariable=self.award_student_var, width=20).grid(row=0, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(award_form, text="Points:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(award_form, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.labels.points', default="Points:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.award_points_var = tk.StringVar()
         ttk.Entry(award_form, textvariable=self.award_points_var, width=20).grid(row=1, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(award_form, text="Reason:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(award_form, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.labels.reason', default="Reason:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.award_reason_var = tk.StringVar()
         ttk.Entry(award_form, textvariable=self.award_reason_var, width=40).grid(row=2, column=1, padx=(10, 0), pady=5)
 
-        ttk.Button(award_form, text="Award Points", command=self.award_points, style='Success.TButton').grid(row=3, column=0, columnspan=2, pady=10)
+        ttk.Button(award_form, text=_t('gui.academics.attendance_tracker.misc_windows.gamification.buttons.award_points', default="Award Points"), command=self.award_points, style='Success.TButton').grid(row=3, column=0, columnspan=2, pady=10)
 
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
@@ -170,7 +176,7 @@ class GamificationWindow:
         # Load real leaderboard data from database
         try:
 
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
                 # Try to get gamification/points data
@@ -232,7 +238,7 @@ class GamificationWindow:
         """Lookup student gamification details"""
         student_id = self.lookup_var.get()
         if not student_id:
-            messagebox.showwarning(_("common.warning"), "Please enter a student ID")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.misc_windows.gamification.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
             return
 
         # Sample student details
@@ -267,7 +273,7 @@ Last Attendance: 2024-12-20"""
             reason = self.award_reason_var.get()
 
             if not all([student_id, points, reason]):
-                messagebox.showwarning(_("common.warning"), "Please fill in all fields")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.misc_windows.gamification.dialogs.please_fill_in_all_fields', default="Please fill in all fields"))
                 return
 
             messagebox.showinfo(_("common.success"), f"Awarded {points} points to {student_id} for: {reason}")
@@ -279,5 +285,5 @@ Last Attendance: 2024-12-20"""
 
         except ValueError:
             logger.exception("misc_windows.py:1022 %s", 'except ValueError')
-            messagebox.showerror(_("common.error"), "Please enter a valid number of points")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.misc_windows.gamification.dialogs.please_enter_a_valid_number_of_points', default="Please enter a valid number of points"))
 

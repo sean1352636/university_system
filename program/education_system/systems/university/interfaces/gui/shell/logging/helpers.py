@@ -1,6 +1,8 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import PROJECT_ROOT, LOG_DIR
+from education_system.paths import UNIVERSITY_PROJECT_ROOT, UNIVERSITY_LOG_DIR
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -43,7 +45,7 @@ except ImportError:
     def show_gui_language_selector(parent):
         """Fallback language selector"""
         from tkinter import messagebox
-        messagebox.showinfo("Info", "Language selection not available")
+        messagebox.showinfo(_t('gui.shell.logging.helpers.dialogs.info', default="Info"), _t('gui.shell.logging.helpers.dialogs.language_selection_not_available', default="Language selection not available"))
 
 # Availability flags
 STUDENT_SYSTEM_AVAILABLE = False  # define up front

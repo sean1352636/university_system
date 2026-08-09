@@ -7,6 +7,8 @@ Window sizing follows the project convention (1400x900, minsize
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import os
 import sys
 import tkinter as tk
@@ -78,7 +80,7 @@ class InformationRightsGUI:
         self.app = app
 
         self.root = master or tk.Tk()
-        self.root.title("Information Rights — SAR / FOI / EIR")
+        self.root.title(_t('gui.governance.legal.information_rights.information_rights.windows.information_rights_sar_foi_eir', default="Information Rights — SAR / FOI / EIR"))
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
 
@@ -112,10 +114,10 @@ class InformationRightsGUI:
         self.tab_intake = ttk.Frame(nb)
         self.tab_detail = ttk.Frame(nb)
 
-        nb.add(self.tab_dash, text="Dashboard")
-        nb.add(self.tab_list, text="All requests")
-        nb.add(self.tab_intake, text="New request")
-        nb.add(self.tab_detail, text="Request detail")
+        nb.add(self.tab_dash, text=_t('gui.governance.legal.information_rights.information_rights.tabs.dashboard', default="Dashboard"))
+        nb.add(self.tab_list, text=_t('gui.governance.legal.information_rights.information_rights.tabs.all_requests', default="All requests"))
+        nb.add(self.tab_intake, text=_t('gui.governance.legal.information_rights.information_rights.tabs.new_request', default="New request"))
+        nb.add(self.tab_detail, text=_t('gui.governance.legal.information_rights.information_rights.tabs.request_detail', default="Request detail"))
 
         self._build_dashboard(self.tab_dash)
         self._build_list(self.tab_list)
@@ -128,20 +130,20 @@ class InformationRightsGUI:
     def _build_dashboard(self, parent: ttk.Frame) -> None:
         head = ttk.Frame(parent)
         head.pack(fill="x", pady=(8, 4), padx=8)
-        ttk.Label(head, text="Statutory deadline dashboard",
+        ttk.Label(head, text=_t('gui.governance.legal.information_rights.information_rights.labels.statutory_deadline_dashboard', default="Statutory deadline dashboard"),
                   font=("TkDefaultFont", 14, "bold")).pack(side="left")
-        ttk.Button(head, text="Refresh",
+        ttk.Button(head, text=_t('gui.governance.legal.information_rights.information_rights.buttons.refresh', default="Refresh"),
                    command=self.refresh_all).pack(side="right")
 
         self.lbl_summary = ttk.Label(parent, text="", justify="left",
                                      font=("TkFixedFont", 10))
         self.lbl_summary.pack(fill="x", padx=8, pady=4)
 
-        sec = ttk.LabelFrame(parent, text="OVERDUE")
+        sec = ttk.LabelFrame(parent, text=_t('gui.governance.legal.information_rights.information_rights.labels.overdue', default="OVERDUE"))
         sec.pack(fill="both", expand=True, padx=8, pady=4)
         self.tv_overdue = self._make_request_tree(sec)
 
-        sec2 = ttk.LabelFrame(parent, text="Due within 7 days")
+        sec2 = ttk.LabelFrame(parent, text=_t('gui.governance.legal.information_rights.information_rights.labels.due_within_7_days', default="Due within 7 days"))
         sec2.pack(fill="both", expand=True, padx=8, pady=4)
         self.tv_due_soon = self._make_request_tree(sec2)
 
@@ -164,7 +166,7 @@ class InformationRightsGUI:
         try:
             r = self.svc.get_by_reference(ref)
         except InformationRightsError as e:
-            messagebox.showerror("Open request", str(e))
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.open_request', default="Open request"), str(e))
             return
         self._load_detail(r["request_id"])
         self.notebook.select(self.tab_detail)
@@ -173,22 +175,22 @@ class InformationRightsGUI:
     def _build_list(self, parent: ttk.Frame) -> None:
         bar = ttk.Frame(parent)
         bar.pack(fill="x", padx=8, pady=6)
-        ttk.Label(bar, text="Type:").pack(side="left")
-        self.var_filter_type = tk.StringVar(value="(all)")
+        ttk.Label(bar, text=_t('gui.governance.legal.information_rights.information_rights.labels.type', default="Type:")).pack(side="left")
+        self.var_filter_type = tk.StringVar(value=_t('gui.governance.legal.information_rights.information_rights.values.all', default="(all)"))
         ttk.Combobox(bar, textvariable=self.var_filter_type,
                      values=("(all)",) + REQUEST_TYPES,
                      state="readonly", width=8).pack(side="left", padx=4)
 
-        ttk.Label(bar, text="Status:").pack(side="left", padx=(10, 0))
-        self.var_filter_status = tk.StringVar(value="(all open)")
+        ttk.Label(bar, text=_t('gui.governance.legal.information_rights.information_rights.labels.status', default="Status:")).pack(side="left", padx=(10, 0))
+        self.var_filter_status = tk.StringVar(value=_t('gui.governance.legal.information_rights.information_rights.values.all_open', default="(all open)"))
         ttk.Combobox(bar, textvariable=self.var_filter_status,
                      values=("(all open)", "(all incl. closed)") +
                             REQUEST_STATUSES,
                      state="readonly", width=20).pack(side="left", padx=4)
 
-        ttk.Button(bar, text="Apply",
+        ttk.Button(bar, text=_t('gui.governance.legal.information_rights.information_rights.buttons.apply', default="Apply"),
                    command=self._refresh_list).pack(side="left", padx=8)
-        ttk.Button(bar, text="Open",
+        ttk.Button(bar, text=_t('gui.governance.legal.information_rights.information_rights.buttons.open', default="Open"),
                    command=lambda: self._open_from_tree(self.tv_list)) \
             .pack(side="right")
 
@@ -223,11 +225,11 @@ class InformationRightsGUI:
 
     # ------------------------------------------------------- INTAKE tab
     def _build_intake(self, parent: ttk.Frame) -> None:
-        frm = ttk.LabelFrame(parent, text="Log a new request")
+        frm = ttk.LabelFrame(parent, text=_t('gui.governance.legal.information_rights.information_rights.labels.log_a_new_request', default="Log a new request"))
         frm.pack(fill="x", padx=8, pady=8)
 
         self.intake_vars = {
-            "request_type": tk.StringVar(value="SAR"),
+            "request_type": tk.StringVar(value=_t('gui.governance.legal.information_rights.information_rights.values.sar', default="SAR")),
             "requester_name": tk.StringVar(),
             "requester_email": tk.StringVar(),
             "requester_phone": tk.StringVar(),
@@ -258,14 +260,14 @@ class InformationRightsGUI:
                           width=60).grid(row=i, column=1,
                                          sticky="w", padx=4)
 
-        ttk.Label(frm, text="Scope details").grid(row=len(rows), column=0,
+        ttk.Label(frm, text=_t('gui.governance.legal.information_rights.information_rights.labels.scope_details', default="Scope details")).grid(row=len(rows), column=0,
                                                   sticky="ne", padx=6,
                                                   pady=3)
         self.txt_scope = tk.Text(frm, height=4, width=60)
         self.txt_scope.grid(row=len(rows), column=1, sticky="w", padx=4,
                             pady=3)
 
-        ttk.Button(frm, text="Create request",
+        ttk.Button(frm, text=_t('gui.governance.legal.information_rights.information_rights.buttons.create_request', default="Create request"),
                    command=self._submit_intake) \
             .grid(row=len(rows) + 1, column=1, sticky="w", padx=4, pady=8)
 
@@ -284,10 +286,10 @@ class InformationRightsGUI:
                 actor=self.actor,
             )
         except InformationRightsError as exc:
-            messagebox.showerror("Create request", str(exc))
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.create_request', default="Create request"), str(exc))
             return
         messagebox.showinfo(
-            "Created",
+            _t('gui.governance.legal.information_rights.information_rights.dialogs.created', default="Created"),
             f"{r['reference']} created.\nDeadline: {r['deadline_on']}",
         )
         for var in self.intake_vars.values():
@@ -304,33 +306,33 @@ class InformationRightsGUI:
     def _build_detail(self, parent: ttk.Frame) -> None:
         top = ttk.Frame(parent)
         top.pack(fill="x", padx=8, pady=6)
-        ttk.Label(top, text="Reference:").pack(side="left")
+        ttk.Label(top, text=_t('gui.governance.legal.information_rights.information_rights.labels.reference', default="Reference:")).pack(side="left")
         self.var_lookup = tk.StringVar()
         ttk.Entry(top, textvariable=self.var_lookup, width=18) \
             .pack(side="left", padx=4)
-        ttk.Button(top, text="Load",
+        ttk.Button(top, text=_t('gui.governance.legal.information_rights.information_rights.buttons.load', default="Load"),
                    command=self._load_by_ref).pack(side="left")
 
-        self.lbl_detail = ttk.Label(parent, text="(no request loaded)",
+        self.lbl_detail = ttk.Label(parent, text=_t('gui.governance.legal.information_rights.information_rights.labels.no_request_loaded', default="(no request loaded)"),
                                     justify="left",
                                     font=("TkFixedFont", 10))
         self.lbl_detail.pack(fill="x", padx=8, pady=6)
 
         actions = ttk.Frame(parent)
         actions.pack(fill="x", padx=8, pady=4)
-        ttk.Button(actions, text="Verify ID (SAR)",
+        ttk.Button(actions, text=_t('gui.governance.legal.information_rights.information_rights.buttons.verify_id_sar', default="Verify ID (SAR)"),
                    command=self._action_verify_id).pack(side="left", padx=2)
-        ttk.Button(actions, text="Apply 2-month extension",
+        ttk.Button(actions, text=_t('gui.governance.legal.information_rights.information_rights.buttons.apply_2_month_extension', default="Apply 2-month extension"),
                    command=self._action_extension).pack(side="left", padx=2)
-        ttk.Button(actions, text="Change status",
+        ttk.Button(actions, text=_t('gui.governance.legal.information_rights.information_rights.buttons.change_status', default="Change status"),
                    command=self._action_status).pack(side="left", padx=2)
-        ttk.Button(actions, text="Log communication",
+        ttk.Button(actions, text=_t('gui.governance.legal.information_rights.information_rights.buttons.log_communication', default="Log communication"),
                    command=self._action_comm).pack(side="left", padx=2)
-        ttk.Button(actions, text="Apply exemption",
+        ttk.Button(actions, text=_t('gui.governance.legal.information_rights.information_rights.buttons.apply_exemption', default="Apply exemption"),
                    command=self._action_exemption).pack(side="left", padx=2)
-        ttk.Button(actions, text="Log redaction",
+        ttk.Button(actions, text=_t('gui.governance.legal.information_rights.information_rights.buttons.log_redaction', default="Log redaction"),
                    command=self._action_redaction).pack(side="left", padx=2)
-        ttk.Button(actions, text="Close request",
+        ttk.Button(actions, text=_t('gui.governance.legal.information_rights.information_rights.buttons.close_request', default="Close request"),
                    command=self._action_close).pack(side="left", padx=2)
 
         nb = ttk.Notebook(parent)
@@ -339,10 +341,10 @@ class InformationRightsGUI:
         self.tab_exempts = ttk.Frame(nb)
         self.tab_redacts = ttk.Frame(nb)
         self.tab_audit = ttk.Frame(nb)
-        nb.add(self.tab_comms, text="Communications")
-        nb.add(self.tab_exempts, text="Exemptions")
-        nb.add(self.tab_redacts, text="Redactions")
-        nb.add(self.tab_audit, text="Audit log")
+        nb.add(self.tab_comms, text=_t('gui.governance.legal.information_rights.information_rights.tabs.communications', default="Communications"))
+        nb.add(self.tab_exempts, text=_t('gui.governance.legal.information_rights.information_rights.tabs.exemptions', default="Exemptions"))
+        nb.add(self.tab_redacts, text=_t('gui.governance.legal.information_rights.information_rights.tabs.redactions', default="Redactions"))
+        nb.add(self.tab_audit, text=_t('gui.governance.legal.information_rights.information_rights.tabs.audit_log', default="Audit log"))
 
         self.tv_comms = self._tree(self.tab_comms,
                                    ("when", "dir", "channel", "summary"),
@@ -374,7 +376,7 @@ class InformationRightsGUI:
         try:
             r = self.svc.get_by_reference(ref)
         except InformationRightsError as e:
-            messagebox.showerror("Load", str(e))
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.load', default="Load"), str(e))
             return
         self._load_detail(r["request_id"])
 
@@ -382,7 +384,7 @@ class InformationRightsGUI:
         try:
             r = self.svc.get_request(request_id)
         except InformationRightsError as e:
-            messagebox.showerror("Load", str(e))
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.load', default="Load"), str(e))
             return
         self.current_request = r
         self.var_lookup.set(r["reference"])
@@ -425,7 +427,7 @@ class InformationRightsGUI:
     # --------------------------------------------------- detail actions
     def _need_request(self) -> Optional[dict]:
         if not self.current_request:
-            messagebox.showinfo("Action", "Load a request first.")
+            messagebox.showinfo(_t('gui.governance.legal.information_rights.information_rights.dialogs.action', default="Action"), _t('gui.governance.legal.information_rights.information_rights.dialogs.load_a_request_first', default="Load a request first."))
             return None
         return self.current_request
 
@@ -437,8 +439,8 @@ class InformationRightsGUI:
             out = self.svc.mark_identity_verified(
                 r["request_id"], actor=self.actor)
         except InformationRightsError as e:
-            messagebox.showerror("Verify ID", str(e)); return
-        messagebox.showinfo("Verify ID",
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.verify_id', default="Verify ID"), str(e)); return
+        messagebox.showinfo(_t('gui.governance.legal.information_rights.information_rights.dialogs.verify_id', default="Verify ID"),
                             f"Clock restarted. New deadline: "
                             f"{out['deadline_on']}")
         self._load_detail(r["request_id"]); self.refresh_all()
@@ -456,9 +458,9 @@ class InformationRightsGUI:
             out = self.svc.apply_extension(r["request_id"], reason,
                                            actor=self.actor)
         except InformationRightsError as e:
-            messagebox.showerror("Extension", str(e)); return
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.extension', default="Extension"), str(e)); return
         messagebox.showinfo(
-            "Extension",
+            _t('gui.governance.legal.information_rights.information_rights.dialogs.extension', default="Extension"),
             f"Applied. New deadline: {out['deadline_on']}")
         self._load_detail(r["request_id"]); self.refresh_all()
 
@@ -476,7 +478,7 @@ class InformationRightsGUI:
             self.svc.set_status(r["request_id"], new, actor=self.actor,
                                 note=note)
         except InformationRightsError as e:
-            messagebox.showerror("Status", str(e)); return
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.status', default="Status"), str(e)); return
         self._load_detail(r["request_id"]); self.refresh_all()
 
     def _action_comm(self) -> None:
@@ -502,7 +504,7 @@ class InformationRightsGUI:
                 r["request_id"], direction, channel, summary, body,
                 author=self.actor)
         except InformationRightsError as e:
-            messagebox.showerror("Communication", str(e)); return
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.communication', default="Communication"), str(e)); return
         self._load_detail(r["request_id"])
 
     def _action_exemption(self) -> None:
@@ -531,7 +533,7 @@ class InformationRightsGUI:
             self.svc.apply_exemption(r["request_id"], regime, code, reason,
                                      actor=self.actor)
         except InformationRightsError as e:
-            messagebox.showerror("Exemption", str(e)); return
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.exemption', default="Exemption"), str(e)); return
         self._load_detail(r["request_id"])
 
     def _action_redaction(self) -> None:
@@ -560,7 +562,7 @@ class InformationRightsGUI:
                                    page=page, location=location,
                                    actor=self.actor)
         except InformationRightsError as e:
-            messagebox.showerror("Redaction", str(e)); return
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.redaction', default="Redaction"), str(e)); return
         self._load_detail(r["request_id"])
 
     def _action_close(self) -> None:
@@ -577,7 +579,7 @@ class InformationRightsGUI:
             self.svc.close_request(r["request_id"], outcome,
                                    actor=self.actor, note=note)
         except InformationRightsError as e:
-            messagebox.showerror("Close", str(e)); return
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.close', default="Close"), str(e)); return
         self._load_detail(r["request_id"]); self.refresh_all()
 
     # --------------------------------------------------------- refresh
@@ -605,7 +607,7 @@ class InformationRightsGUI:
     def _build_open_in_bar(self, parent) -> None:
         bar = ttk.Frame(parent, padding=(8, 4, 8, 0))
         bar.pack(fill="x")
-        ttk.Label(bar, text="Open in:",
+        ttk.Label(bar, text=_t('gui.governance.legal.information_rights.information_rights.labels.open_in', default="Open in:"),
                   font=("TkDefaultFont", 9, "bold")).pack(side="left",
                                                           padx=(0, 6))
         for label, method in self._OPEN_IN_TARGETS:
@@ -620,7 +622,7 @@ class InformationRightsGUI:
         # request — read in :func:`_selected_request`).
         ttk.Separator(bar, orient="vertical").pack(side="left",
                                                     padx=8, fill="y")
-        ttk.Label(bar, text="Selected request:",
+        ttk.Label(bar, text=_t('gui.governance.legal.information_rights.information_rights.labels.selected_request', default="Selected request:"),
                   font=("TkDefaultFont", 9, "italic")).pack(side="left",
                                                             padx=(0, 4))
         for label, method in (
@@ -645,15 +647,15 @@ class InformationRightsGUI:
         sibling launcher reads it transparently."""
         if not self.app:
             messagebox.showinfo(
-                "Not available",
-                "Cross-module navigation requires the main GUI; open "
-                "this dashboard from the main menu rather than standalone.",
+                _t('gui.governance.legal.information_rights.information_rights.dialogs.not_available', default="Not available"),
+                _t('gui.governance.legal.information_rights.information_rights.dialogs.cross_module_navigation_requires_the_main_gui_open_this_dashboar', default="Cross-module navigation requires the main GUI; open "
+                "this dashboard from the main menu rather than standalone."),
                 parent=self.root,
             )
             return
         fn = getattr(self.app, method_name, None)
         if fn is None:
-            messagebox.showwarning("Not available",
+            messagebox.showwarning(_t('gui.governance.legal.information_rights.information_rights.dialogs.not_available', default="Not available"),
                                     f"{label} is not registered on this build.",
                                     parent=self.root)
             return
@@ -664,7 +666,7 @@ class InformationRightsGUI:
         try:
             fn()
         except Exception as exc:
-            messagebox.showerror("Failed to open",
+            messagebox.showerror(_t('gui.governance.legal.information_rights.information_rights.dialogs.failed_to_open', default="Failed to open"),
                                   f"Could not open {label}: {exc}",
                                   parent=self.root)
 
@@ -704,7 +706,7 @@ class InformationRightsGUI:
         req = self._selected_request()
         if not req:
             messagebox.showinfo(
-                "Pick a request",
+                _t('gui.governance.legal.information_rights.information_rights.dialogs.pick_a_request', default="Pick a request"),
                 f"Select a request first to {action}.",
                 parent=self.root,
             )
@@ -891,8 +893,8 @@ def _choose(master, title: str, msg: str,
 
     btns = ttk.Frame(win)
     btns.pack(pady=(4, 12))
-    ttk.Button(btns, text="OK", command=ok).pack(side="left", padx=4)
-    ttk.Button(btns, text="Cancel", command=cancel).pack(side="left", padx=4)
+    ttk.Button(btns, text=_t('gui.governance.legal.information_rights.information_rights.buttons.ok', default="OK"), command=ok).pack(side="left", padx=4)
+    ttk.Button(btns, text=_t('gui.governance.legal.information_rights.information_rights.buttons.cancel', default="Cancel"), command=cancel).pack(side="left", padx=4)
     win.wait_window()
     return result["v"]
 

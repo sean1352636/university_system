@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -66,17 +68,17 @@ def show_club_selection_for_merchandise(self):
         clubs = [row[0] for row in cursor.fetchall()]
         conn.close()
         if not clubs:
-            messagebox.showinfo("No Clubs", "No active clubs found")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_clubs', default="No Clubs"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_active_clubs_found', default="No active clubs found"))
             return
         # Create selection dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Select Club for Merchandise")
+        dialog.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.select_club_for_merchandise', default="Select Club for Merchandise"))
         dialog.geometry("300x200")
         dialog.transient(self.root)
         dialog.grab_set()
         main_frame = ttk.Frame(dialog, padding="20")
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Select a club:", font=('Arial', 10, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.labels.select_a_club', default="Select a club:"), font=('Arial', 10, 'bold')).pack(pady=10)
         club_var = tk.StringVar()
         club_combo = ttk.Combobox(main_frame, textvariable=club_var, values=clubs, state="readonly")
         club_combo.pack(fill='x', pady=10)
@@ -86,13 +88,13 @@ def show_club_selection_for_merchandise(self):
                 dialog.destroy()
                 self.open_shop_for_club_merchandise(selected_club)
             else:
-                messagebox.showwarning("No Selection", "Please select a club")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.please_select_a_club', default="Please select a club"))
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
-        ttk.Button(button_frame, text="Open Shop", command=open_merchandise_shop).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.buttons.open_shop', default="Open Shop"), command=open_merchandise_shop).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not show club selection: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), f"Could not show club selection: {e}")
 
 
 def show_club_selection_for_dining(self):
@@ -105,17 +107,17 @@ def show_club_selection_for_dining(self):
         clubs = [row[0] for row in cursor.fetchall()]
         conn.close()
         if not clubs:
-            messagebox.showinfo("No Clubs", "No active clubs found")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_clubs', default="No Clubs"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_active_clubs_found', default="No active clubs found"))
             return
         # Create selection dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Select Club for Dining Reservation")
+        dialog.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.select_club_for_dining_reservation', default="Select Club for Dining Reservation"))
         dialog.geometry("300x200")
         dialog.transient(self.root)
         dialog.grab_set()
         main_frame = ttk.Frame(dialog, padding="20")
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Select a club:", font=('Arial', 10, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.labels.select_a_club', default="Select a club:"), font=('Arial', 10, 'bold')).pack(pady=10)
         club_var = tk.StringVar()
         club_combo = ttk.Combobox(main_frame, textvariable=club_var, values=clubs, state="readonly")
         club_combo.pack(fill='x', pady=10)
@@ -125,13 +127,13 @@ def show_club_selection_for_dining(self):
                 dialog.destroy()
                 self.book_club_dining_dialog(selected_club)
             else:
-                messagebox.showwarning("No Selection", "Please select a club")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.please_select_a_club', default="Please select a club"))
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
-        ttk.Button(button_frame, text="Book Dining", command=open_dining_booking).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.buttons.book_dining', default="Book Dining"), command=open_dining_booking).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not show club selection: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), f"Could not show club selection: {e}")
 
 
 def show_club_selection_for_trips(self):
@@ -144,17 +146,17 @@ def show_club_selection_for_trips(self):
         clubs = [row[0] for row in cursor.fetchall()]
         conn.close()
         if not clubs:
-            messagebox.showinfo("No Clubs", "No active clubs found")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_clubs', default="No Clubs"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_active_clubs_found', default="No active clubs found"))
             return
         # Create selection dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Select Club for Trip Management")
+        dialog.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.select_club_for_trip_management', default="Select Club for Trip Management"))
         dialog.geometry("300x250")
         dialog.transient(self.root)
         dialog.grab_set()
         main_frame = ttk.Frame(dialog, padding="20")
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Select a club:", font=('Arial', 10, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.labels.select_a_club', default="Select a club:"), font=('Arial', 10, 'bold')).pack(pady=10)
         club_var = tk.StringVar()
         club_combo = ttk.Combobox(main_frame, textvariable=club_var, values=clubs, state="readonly")
         club_combo.pack(fill='x', pady=10)
@@ -164,21 +166,21 @@ def show_club_selection_for_trips(self):
                 dialog.destroy()
                 self.create_club_trip_dialog(selected_club)
             else:
-                messagebox.showwarning("No Selection", "Please select a club")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.please_select_a_club', default="Please select a club"))
         def manage_trips():
             selected_club = club_var.get()
             if selected_club:
                 dialog.destroy()
                 self.open_trip_management_for_club(selected_club)
             else:
-                messagebox.showwarning("No Selection", "Please select a club")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.please_select_a_club', default="Please select a club"))
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
-        ttk.Button(button_frame, text="Create New Trip", command=create_trip).pack(pady=5)
-        ttk.Button(button_frame, text="Manage Existing Trips", command=manage_trips).pack(pady=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(pady=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.buttons.create_new_trip', default="Create New Trip"), command=create_trip).pack(pady=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.buttons.manage_existing_trips', default="Manage Existing Trips"), command=manage_trips).pack(pady=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(pady=5)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not show club selection: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), f"Could not show club selection: {e}")
 # =========================================================================
 # CALENDAR INTEGRATION METHODS
 # =========================================================================
@@ -190,13 +192,13 @@ def open_calendar_with_club_events(self, club_name=None):
         from education_system.systems.university.infrastructure.database.db import get_connection
 
         cal_win = tk.Toplevel(self.root)
-        cal_win.title("Student Union Events Calendar")
+        cal_win.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.student_union_events_calendar', default="Student Union Events Calendar"))
         cal_win.geometry("1050x550")
         cal_win.transient(self.root)
         cal_win.grab_set()
 
         header = tk.Label(
-            cal_win, text="Student Union Events Calendar",
+            cal_win, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.labels.student_union_events_calendar', default="Student Union Events Calendar"),
             font=("Helvetica", 16, "bold"), pady=10
         )
         header.pack(fill=tk.X)
@@ -267,20 +269,20 @@ def open_calendar_with_club_events(self, club_name=None):
                 if not rows:
                     tree.insert("", tk.END, values=("No events found", "", "", "", "", "", "", ""))
             except Exception as e:
-                messagebox.showerror("Database Error", f"Could not load events: {e}", parent=cal_win)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.database_error', default="Database Error"), f"Could not load events: {e}", parent=cal_win)
             finally:
                 if conn:
                     conn.close()
 
         btn_frame = tk.Frame(cal_win)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Refresh", command=refresh_events).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Close", command=cal_win.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.buttons.refresh', default="Refresh"), command=refresh_events).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.integrations.external_integrations.buttons.close', default="Close"), command=cal_win.destroy).pack(side=tk.RIGHT, padx=5)
 
         refresh_events()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Could not open events calendar: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), f"Could not open events calendar: {e}")
 
 
 def _add_club_events_to_calendar(self, calendar_gui, club_name=None):
@@ -328,13 +330,13 @@ def open_shop_gui_direct(self):
     try:
         from education_system.systems.university.interfaces.gui.operations.commerce.shop_management_gui.main_gui import UniversityShopGUI
         shop_window = tk.Toplevel(self.root)
-        shop_window.title("University Shop Management")
+        shop_window.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.university_shop_management', default="University Shop Management"))
         shop_window.geometry("1200x800")
         shop_gui = UniversityShopGUI(shop_window, auth=self.auth_manager)
     except ImportError:
-        messagebox.showerror("Error", "Shop system is not available")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.shop_system_is_not_available', default="Shop system is not available"))
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not open shop system: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), f"Could not open shop system: {e}")
 
 
 def open_shop_for_club_merchandise(self):
@@ -342,18 +344,18 @@ def open_shop_for_club_merchandise(self):
     try:
         from education_system.systems.university.interfaces.gui.operations.commerce.shop_management_gui.main_gui import UniversityShopGUI
         shop_window = tk.Toplevel(self.root)
-        shop_window.title("University Shop - Club Merchandise")
+        shop_window.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.university_shop_club_merchandise', default="University Shop - Club Merchandise"))
         shop_window.geometry("1200x800")
         shop_gui = UniversityShopGUI(shop_window, auth=self.auth_manager)
         # Show club merchandise selection page directly
         if hasattr(shop_gui, 'show_club_merchandise_selection'):
             shop_gui.show_club_merchandise_selection()
         else:
-            messagebox.showinfo("Shop Opened", "Browse the shop for club merchandise")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.shop_opened', default="Shop Opened"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.browse_the_shop_for_club_merchandise', default="Browse the shop for club merchandise"))
     except ImportError:
-        messagebox.showerror("Error", "Shop system is not available")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.shop_system_is_not_available', default="Shop system is not available"))
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not open shop system: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), f"Could not open shop system: {e}")
 # =========================================================================
 # RESTAURANT INTEGRATION METHODS
 # =========================================================================
@@ -367,9 +369,9 @@ def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
         restaurant_gui = RestaurantManagementGUI(self.root, auth=self.auth_manager)
         restaurant_gui.show_restaurant_management()
     except ImportError:
-        messagebox.showerror("Error", "Restaurant system is not available")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.restaurant_system_is_not_available', default="Restaurant system is not available"))
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not open restaurant system: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), f"Could not open restaurant system: {e}")
 # =========================================================================
 # TRIP INTEGRATION METHODS
 # =========================================================================
@@ -380,14 +382,14 @@ def open_trip_gui_direct(self):
     try:
         from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui import TripManagementGUI
         trip_window = tk.Toplevel(self.root)
-        trip_window.title("Trip Management")
+        trip_window.title(_t('gui.pastoral.student_union_gui.integrations.external_integrations.windows.trip_management', default="Trip Management"))
         trip_window.geometry("1200x800")
         # TripManagementGUI uses auth_instance and root parameters
         trip_gui = TripManagementGUI(auth_instance=self.auth_manager, root=trip_window)
     except ImportError:
-        messagebox.showerror("Error", "Trip management system is not available")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.trip_management_system_is_not_available', default="Trip management system is not available"))
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not open trip management: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), f"Could not open trip management: {e}")
 
 
 def create_club_trip_dialog(self, club_name):
@@ -400,8 +402,8 @@ def create_club_trip_dialog(self, club_name):
         # TripManagementGUI uses auth_instance and root parameters
         trip_gui = TripManagementGUI(auth_instance=self.auth_manager, root=trip_window)
     except ImportError:
-        messagebox.showerror("Error", "Trip management system is not available")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.trip_management_system_is_not_available', default="Trip management system is not available"))
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not open trip management: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.integrations.external_integrations.dialogs.error', default="Error"), f"Could not open trip management: {e}")
 
 

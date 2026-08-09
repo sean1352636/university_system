@@ -6,12 +6,32 @@ import logging
 import os
 import time
 
+_DEV_ENVIRONMENTS = ("development", "dev", "local", "test", "testing")
+
+
+def _resolve_key(secret_key=None) -> bytes:
+    """Resolve the HMAC key, refusing a public default in production.
+
+    A well-known fallback key lets anyone re-sign a tampered log line, which
+    silently defeats the whole point of signing. Unset APP_ENV counts as
+    production.
+    """
+    key = secret_key or os.environ.get("LOG_HMAC_KEY")
+    if key:
+        return key.encode()
+    if os.getenv("APP_ENV", "production").strip().lower() in _DEV_ENVIRONMENTS:
+        return b"dev-only-log-key"
+    raise RuntimeError(
+        "LOG_HMAC_KEY must be set in production: without it, log tamper "
+        "signatures are forgeable by anyone who reads the source."
+    )
+
 
 class SecureLogger:
     """Logger that appends HMAC signatures to each log entry."""
 
     def __init__(self, name, secret_key=None, log_file=None):
-        self._secret = (secret_key or os.environ.get("LOG_HMAC_KEY", "default-log-key")).encode()
+        self._secret = _resolve_key(secret_key)
         self._logger = logging.getLogger(name)
         if log_file:
             handler = logging.FileHandler(log_file)
@@ -42,7 +62,7 @@ class SecureLogger:
 
 def verify_log_file(filepath, secret_key=None):
     """Verify integrity of a log file. Returns list of tampered line numbers."""
-    secret = (secret_key or os.environ.get("LOG_HMAC_KEY", "default-log-key")).encode()
+    secret = _resolve_key(secret_key)
     tampered = []
     with open(filepath) as f:
         for line_num, line in enumerate(f, 1):

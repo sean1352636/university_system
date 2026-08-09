@@ -32,7 +32,7 @@ class VersionManager:
         """View all versions of selected document"""
         selection = self.gui.docs_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a document to view versions.")
+            messagebox.showwarning(_t('gui.shell.document_manager.versions.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.versions.dialogs.please_select_a_document_to_view_versions', default="Please select a document to view versions."))
             return
 
         item = self.gui.docs_tree.item(selection[0])
@@ -57,22 +57,22 @@ class VersionManager:
             if versions:
                 self.show_versions_window(versions)
             else:
-                messagebox.showinfo("Info", "No version history found.")
+                messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.info', default="Info"), _t('gui.shell.document_manager.versions.dialogs.no_version_history_found', default="No version history found."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load versions: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to load versions: {str(e)}")
 
     def show_versions_window(self, versions):
         """Show document versions in a new window"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Document Versions")
+        dialog.title(_t('gui.shell.document_manager.versions.windows.document_versions', default="Document Versions"))
         dialog.geometry("950x600")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Document Version History", font=('Arial', 12, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.versions.labels.document_version_history', default="Document Version History"), font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         # Create treeview for versions
         columns = ('Version', 'Upload Date', 'Status', 'Current', 'Filename', 'Uploaded By')
@@ -95,7 +95,7 @@ class VersionManager:
             current_text = "Yes" if is_current else "No"
             versions_tree.insert('', 'end', values=(version_num, upload_date, status, current_text, filename, uploaded_by))
 
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.shell.document_manager.versions.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
     def view_document_history(self):
         """View complete version history of a document"""
@@ -103,7 +103,7 @@ class VersionManager:
             # Get selected document
             selected = self.gui.tree.selection()
             if not selected:
-                messagebox.showwarning("Warning", "Please select a document to view history")
+                messagebox.showwarning(_t('gui.shell.document_manager.versions.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.versions.dialogs.please_select_a_document_to_view_history', default="Please select a document to view history"))
                 return
 
             doc_id = self.gui.tree.item(selected[0])['values'][0]
@@ -128,12 +128,12 @@ class VersionManager:
             conn.close()
 
             if not versions:
-                messagebox.showinfo("Info", "No version history found for this document")
+                messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.info', default="Info"), _t('gui.shell.document_manager.versions.dialogs.no_version_history_found_for_this_document', default="No version history found for this document"))
                 return
 
             # Create history window
             history_window = tk.Toplevel(self.root)
-            history_window.title("Document Version History")
+            history_window.title(_t('gui.shell.document_manager.versions.windows.document_version_history', default="Document Version History"))
             history_window.geometry("1200x700")
 
             main_frame = ttk.Frame(history_window, padding=20)
@@ -186,21 +186,21 @@ class VersionManager:
             button_frame = ttk.Frame(history_window)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="Compare Versions",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.compare_versions', default="Compare Versions"),
                       command=lambda: self.compare_document_versions_dialog(tree)).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Restore Version",
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.restore_version', default="Restore Version"),
                       command=lambda: self.restore_previous_version_dialog(tree)).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=history_window.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.close', default="Close"), command=history_window.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to view document history: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to view document history: {e}")
 
     def compare_document_versions_dialog(self, history_tree):
         """Compare two versions from history"""
         try:
             selected = history_tree.selection()
             if len(selected) != 2:
-                messagebox.showwarning("Warning", "Please select exactly 2 versions to compare")
+                messagebox.showwarning(_t('gui.shell.document_manager.versions.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.versions.dialogs.please_select_exactly_2_versions_to_compare', default="Please select exactly 2 versions to compare"))
                 return
 
             doc_id1 = history_tree.item(selected[0])['values'][0]
@@ -224,18 +224,18 @@ class VersionManager:
             conn.close()
 
             if len(docs) != 2:
-                messagebox.showerror("Error", "Could not find both documents")
+                messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), _t('gui.shell.document_manager.versions.dialogs.could_not_find_both_documents', default="Could not find both documents"))
                 return
 
             # Create comparison window
             compare_window = tk.Toplevel()
-            compare_window.title("Version Comparison")
+            compare_window.title(_t('gui.shell.document_manager.versions.windows.version_comparison', default="Version Comparison"))
             compare_window.geometry("900x600")
 
             main_frame = ttk.Frame(compare_window, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Version Comparison",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.versions.labels.version_comparison', default="Version Comparison"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Create comparison table
@@ -263,23 +263,23 @@ class VersionManager:
 
             tree.pack(fill='both', expand=True, pady=10)
 
-            ttk.Button(compare_window, text="Close", command=compare_window.destroy).pack(pady=10)
+            ttk.Button(compare_window, text=_t('gui.shell.document_manager.versions.buttons.close', default="Close"), command=compare_window.destroy).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to compare versions: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to compare versions: {e}")
 
     def restore_previous_version_dialog(self, history_tree):
         """Restore a previous version as current"""
         try:
             selected = history_tree.selection()
             if not selected:
-                messagebox.showwarning("Warning", "Please select a version to restore")
+                messagebox.showwarning(_t('gui.shell.document_manager.versions.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.versions.dialogs.please_select_a_version_to_restore', default="Please select a version to restore"))
                 return
 
             doc_id = history_tree.item(selected[0])['values'][0]
             version_num = history_tree.item(selected[0])['values'][1]
 
-            confirm = messagebox.askyesno("Confirm Restore",
+            confirm = messagebox.askyesno(_t('gui.shell.document_manager.versions.dialogs.confirm_restore', default="Confirm Restore"),
                                          f"Are you sure you want to restore version {version_num} as the current version?")
             if not confirm:
                 return
@@ -296,7 +296,7 @@ class VersionManager:
 
             doc_info = cursor.fetchone()
             if not doc_info:
-                messagebox.showerror("Error", "Document not found")
+                messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), _t('gui.shell.document_manager.versions.dialogs.document_not_found', default="Document not found"))
                 conn.close()
                 return
 
@@ -319,11 +319,11 @@ class VersionManager:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Version {version_num} has been restored as current")
+            messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.success', default="Success"), f"Version {version_num} has been restored as current")
             self.gui.load_documents_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to restore version: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to restore version: {e}")
 
     def version_analytics(self):
         """
@@ -331,7 +331,7 @@ class VersionManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Version Analytics")
+            dialog.title(_t('gui.shell.document_manager.versions.windows.version_analytics', default="Version Analytics"))
             dialog.geometry("1000x700")
             dialog.transient(self.root)
 
@@ -339,7 +339,7 @@ class VersionManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Document Version Analytics",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.versions.labels.document_version_analytics', default="Document Version Analytics"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Summary cards
@@ -383,7 +383,7 @@ class VersionManager:
                          foreground='red').pack()
 
             # Version distribution
-            dist_frame = ttk.LabelFrame(main_frame, text="Version Distribution", padding=10)
+            dist_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.versions.labels.version_distribution', default="Version Distribution"), padding=10)
             dist_frame.pack(fill='both', expand=True, pady=(0, 10))
 
             columns = ('Document ID', 'Student', 'Type', 'Versions', 'Current Version', 'Last Updated')
@@ -473,16 +473,16 @@ class VersionManager:
                                            'Version', 'Upload Date', 'File Name'])
                             writer.writerows(versions)
 
-                        messagebox.showinfo("Success", f"Analytics exported to:\n{file_path}")
+                        messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.success', default="Success"), f"Analytics exported to:\n{file_path}")
 
                     except Exception as e:
-                        messagebox.showerror("Error", f"Failed to export: {e}")
+                        messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to export: {e}")
 
-            ttk.Button(button_frame, text="Export Analytics", command=export_analytics).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.export_analytics', default="Export Analytics"), command=export_analytics).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open version analytics: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to open version analytics: {e}")
 
     def template_analytics(self):
         """
@@ -490,7 +490,7 @@ class VersionManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Template Analytics")
+            dialog.title(_t('gui.shell.document_manager.versions.windows.template_analytics', default="Template Analytics"))
             dialog.geometry("1000x700")
             dialog.transient(self.root)
 
@@ -498,7 +498,7 @@ class VersionManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Workflow Template Analytics",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.versions.labels.workflow_template_analytics', default="Workflow Template Analytics"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Summary
@@ -536,7 +536,7 @@ class VersionManager:
                          foreground='red').pack()
 
             # Template usage
-            usage_frame = ttk.LabelFrame(main_frame, text="Template Usage Statistics", padding=10)
+            usage_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.versions.labels.template_usage_statistics', default="Template Usage Statistics"), padding=10)
             usage_frame.pack(fill='both', expand=True)
 
             columns = ('Template', 'Document Type', 'Steps', 'Created By', 'Status')
@@ -583,10 +583,10 @@ class VersionManager:
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(fill='x', pady=(20, 0))
 
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open template analytics: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to open template analytics: {e}")
 
     def archive_old_versions(self):
         """
@@ -594,7 +594,7 @@ class VersionManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Archive Old Versions")
+            dialog.title(_t('gui.shell.document_manager.versions.windows.archive_old_versions', default="Archive Old Versions"))
             dialog.geometry("700x600")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -603,28 +603,28 @@ class VersionManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Archive Old Document Versions",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.versions.labels.archive_old_document_versions', default="Archive Old Document Versions"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Options
-            options_frame = ttk.LabelFrame(main_frame, text="Archive Options", padding=15)
+            options_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.versions.labels.archive_options', default="Archive Options"), padding=15)
             options_frame.pack(fill='x', pady=(0, 15))
 
-            ttk.Label(options_frame, text="Archive versions older than:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(options_frame, text=_t('gui.shell.document_manager.versions.labels.archive_versions_older_than', default="Archive versions older than:")).grid(row=0, column=0, sticky='w', pady=5)
             days_var = tk.StringVar(value="365")
             ttk.Entry(options_frame, textvariable=days_var, width=10).grid(row=0, column=1, padx=5, pady=5, sticky='w')
-            ttk.Label(options_frame, text="days").grid(row=0, column=2, sticky='w', pady=5)
+            ttk.Label(options_frame, text=_t('gui.shell.document_manager.versions.labels.days', default="days")).grid(row=0, column=2, sticky='w', pady=5)
 
             keep_current = tk.BooleanVar(value=True)
-            ttk.Checkbutton(options_frame, text="Keep current version (recommended)",
+            ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.versions.buttons.keep_current_version_recommended', default="Keep current version (recommended)"),
                           variable=keep_current).grid(row=1, column=0, columnspan=3, sticky='w', pady=5)
 
             create_backup = tk.BooleanVar(value=True)
-            ttk.Checkbutton(options_frame, text="Create backup before archiving",
+            ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.versions.buttons.create_backup_before_archiving', default="Create backup before archiving"),
                           variable=create_backup).grid(row=2, column=0, columnspan=3, sticky='w', pady=5)
 
             # Preview frame
-            preview_frame = ttk.LabelFrame(main_frame, text="Documents to Archive (Preview)", padding=10)
+            preview_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.versions.labels.documents_to_archive_preview', default="Documents to Archive (Preview)"), padding=10)
             preview_frame.pack(fill='both', expand=True, pady=(0, 15))
 
             columns = ('Document ID', 'Student', 'Type', 'Version', 'Upload Date')
@@ -679,12 +679,12 @@ class VersionManager:
                     stats_label.config(text=f"Found {len(docs)} versions to archive")
 
                 except ValueError:
-                    messagebox.showerror("Error", "Please enter a valid number of days")
+                    messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), _t('gui.shell.document_manager.versions.dialogs.please_enter_a_valid_number_of_days', default="Please enter a valid number of days"))
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load preview: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to load preview: {e}")
 
             # Preview button
-            ttk.Button(options_frame, text="Load Preview", command=load_preview).grid(row=3, column=0, columnspan=3, pady=10)
+            ttk.Button(options_frame, text=_t('gui.shell.document_manager.versions.buttons.load_preview', default="Load Preview"), command=load_preview).grid(row=3, column=0, columnspan=3, pady=10)
 
             # Action buttons
             action_frame = ttk.Frame(main_frame)
@@ -692,10 +692,10 @@ class VersionManager:
 
             def perform_archive():
                 if len(preview_tree.get_children()) == 0:
-                    messagebox.showwarning("Warning", "No documents to archive. Click 'Load Preview' first.")
+                    messagebox.showwarning(_t('gui.shell.document_manager.versions.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.versions.dialogs.no_documents_to_archive_click_load_preview_first', default="No documents to archive. Click 'Load Preview' first."))
                     return
 
-                response = messagebox.askyesno("Confirm Archive",
+                response = messagebox.askyesno(_t('gui.shell.document_manager.versions.dialogs.confirm_archive', default="Confirm Archive"),
                                              f"Archive {len(preview_tree.get_children())} document versions?\n\n"
                                              "This will mark them as archived in the database.")
 
@@ -705,10 +705,10 @@ class VersionManager:
                 try:
                     # Create backup if requested
                     if create_backup.get():
-                        from education_system.systems.university.infrastructure import paths
-                        paths.BACKUP_DIR.mkdir(parents=True, exist_ok=True)
-                        backup_path = paths.BACKUP_DIR / f"pre_archive_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-                        shutil.copy2(paths.DEFAULT_DB_PATH, backup_path)
+                        from education_system import paths
+                        paths.UNIVERSITY_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+                        backup_path = paths.UNIVERSITY_BACKUP_DIR / f"pre_archive_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+                        shutil.copy2(paths.UNIVERSITY_DEFAULT_DB_PATH, backup_path)
 
                     days = int(days_var.get())
                     cutoff_date = (datetime.now() - timedelta(days=days)).isoformat()
@@ -741,22 +741,22 @@ class VersionManager:
                         'days_threshold': days
                     })
 
-                    messagebox.showinfo("Success",
+                    messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.success', default="Success"),
                                       f"Successfully archived {archived_count} document versions\n"
                                       f"Backup created: {backup_path if create_backup.get() else 'None'}")
                     dialog.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to archive documents: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to archive documents: {e}")
 
-            ttk.Button(action_frame, text="Archive Documents", command=perform_archive).pack(side='right', padx=5)
-            ttk.Button(action_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.versions.buttons.archive_documents', default="Archive Documents"), command=perform_archive).pack(side='right', padx=5)
+            ttk.Button(action_frame, text=_t('gui.shell.document_manager.versions.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
             # Load initial preview
             load_preview()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open archive dialog: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.error', default="Error"), f"Failed to open archive dialog: {e}")
 
     def validate_and_import_document(self, file_path, student_id, doc_type_id):
         """
@@ -970,12 +970,12 @@ class VersionManager:
 
         # Create report window
         report_window = tk.Toplevel(self.root)
-        report_window.title("Version Distribution Report")
+        report_window.title(_t('gui.shell.document_manager.versions.windows.version_distribution_report', default="Version Distribution Report"))
         report_window.geometry("800x600")
         report_window.transient(self.root)
         report_window.grab_set()
 
-        ttk.Label(report_window, text="Version Distribution Report",
+        ttk.Label(report_window, text=_t('gui.shell.document_manager.versions.labels.version_distribution_report', default="Version Distribution Report"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         report_text = tk.Text(report_window, width=90, height=30, wrap='word')
@@ -1023,7 +1023,7 @@ RECOMMENDATIONS
             report_text.insert('1.0', f"Error generating report: {e}")
             report_text.config(state='disabled')
 
-        ttk.Button(report_window, text="Close",
+        ttk.Button(report_window, text=_t('gui.shell.document_manager.versions.buttons.close', default="Close"),
                   command=report_window.destroy).pack(pady=10)
 
         self.gui.log_event('generate', 'version_distribution_report',
@@ -1034,37 +1034,37 @@ RECOMMENDATIONS
         if not self.gui.ensure_login('admin'):
             return
 
-        if not messagebox.askyesno("Cleanup Duplicates",
-                                   "This will identify and remove duplicate document versions.\n\n"
+        if not messagebox.askyesno(_t('gui.shell.document_manager.versions.dialogs.cleanup_duplicates', default="Cleanup Duplicates"),
+                                   _t('gui.shell.document_manager.versions.dialogs.this_will_identify_and_remove_duplicate_document_versions_only_e', default="This will identify and remove duplicate document versions.\n\n"
                                    "Only exact file duplicates will be removed.\n"
                                    "The most recent version will be kept.\n\n"
-                                   "Continue?"):
+                                   "Continue?")):
             return
 
         try:
             # Simulated cleanup process
-            messagebox.showinfo("Cleanup Complete",
-                              "Duplicate cleanup completed!\n\n"
+            messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.cleanup_complete', default="Cleanup Complete"),
+                              _t('gui.shell.document_manager.versions.dialogs.duplicate_cleanup_completed_results_scanned_378_document_version', default="Duplicate cleanup completed!\n\n"
                               "Results:\n"
                               "- Scanned: 378 document versions\n"
                               "- Duplicates found: 12\n"
                               "- Duplicates removed: 12\n"
                               "- Storage freed: 156 MB\n\n"
-                              "Latest versions were retained.")
+                              "Latest versions were retained."))
 
             self.gui.log_event('cleanup', 'duplicate_versions',
                           details='Cleaned up 12 duplicate versions')
 
         except Exception as e:
-            messagebox.showerror("Cleanup Error", f"Failed to cleanup duplicates: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.versions.dialogs.cleanup_error', default="Cleanup Error"), f"Failed to cleanup duplicates: {e}")
 
     def version_storage_report(self):
         """Generate version storage report"""
         if not self.gui.ensure_login():
             return
 
-        messagebox.showinfo("Version Storage Report",
-                          "STORAGE USAGE BY DOCUMENT VERSIONS\n\n"
+        messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.version_storage_report', default="Version Storage Report"),
+                          _t('gui.shell.document_manager.versions.dialogs.storage_usage_by_document_versions_current_version_storage_1_87', default="STORAGE USAGE BY DOCUMENT VERSIONS\n\n"
                           "Current Version Storage:  1.87 GB (76%)\n"
                           "Old Version Storage:      0.58 GB (24%)\n"
                           "Total Storage:            2.45 GB\n\n"
@@ -1072,7 +1072,7 @@ RECOMMENDATIONS
                           "1. Large PDF files:       845 MB\n"
                           "2. Image scans:           623 MB\n"
                           "3. Word documents:        412 MB\n\n"
-                          "Recommendation: Archive versions older than 1 year")
+                          "Recommendation: Archive versions older than 1 year"))
 
         self.gui.log_event('generate', 'storage_report', details='Generated version storage report')
 
@@ -1083,58 +1083,58 @@ RECOMMENDATIONS
 
         # Create settings window
         settings_window = tk.Toplevel(self.root)
-        settings_window.title("Version Retention Settings")
+        settings_window.title(_t('gui.shell.document_manager.versions.windows.version_retention_settings', default="Version Retention Settings"))
         settings_window.geometry("600x500")
         settings_window.transient(self.root)
         settings_window.grab_set()
 
-        ttk.Label(settings_window, text="Version Retention Policy",
+        ttk.Label(settings_window, text=_t('gui.shell.document_manager.versions.labels.version_retention_policy', default="Version Retention Policy"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
-        settings_frame = ttk.LabelFrame(settings_window, text="Retention Rules", padding=15)
+        settings_frame = ttk.LabelFrame(settings_window, text=_t('gui.shell.document_manager.versions.labels.retention_rules', default="Retention Rules"), padding=15)
         settings_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         # Keep versions for X days
-        ttk.Label(settings_frame, text="Keep old versions for:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(settings_frame, text=_t('gui.shell.document_manager.versions.labels.keep_old_versions_for', default="Keep old versions for:")).grid(row=0, column=0, sticky='w', pady=5)
         days_spinbox = ttk.Spinbox(settings_frame, from_=30, to=3650, width=15)
         days_spinbox.set(365)
         days_spinbox.grid(row=0, column=1, sticky='w', pady=5)
-        ttk.Label(settings_frame, text="days").grid(row=0, column=2, sticky='w', pady=5, padx=5)
+        ttk.Label(settings_frame, text=_t('gui.shell.document_manager.versions.labels.days', default="days")).grid(row=0, column=2, sticky='w', pady=5, padx=5)
 
         # Maximum versions per document
-        ttk.Label(settings_frame, text="Maximum versions per document:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(settings_frame, text=_t('gui.shell.document_manager.versions.labels.maximum_versions_per_document', default="Maximum versions per document:")).grid(row=1, column=0, sticky='w', pady=5)
         max_versions_spinbox = ttk.Spinbox(settings_frame, from_=1, to=50, width=15)
         max_versions_spinbox.set(10)
         max_versions_spinbox.grid(row=1, column=1, sticky='w', pady=5)
 
         # Auto-archive old versions
         auto_archive_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(settings_frame, text="Automatically archive old versions",
+        ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.automatically_archive_old_versions', default="Automatically archive old versions"),
                        variable=auto_archive_var).grid(row=2, column=0, columnspan=3, sticky='w', pady=10)
 
         # Delete versions older than
         delete_old_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(settings_frame, text="Delete versions older than:",
+        ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.delete_versions_older_than', default="Delete versions older than:"),
                        variable=delete_old_var).grid(row=3, column=0, sticky='w', pady=5)
         delete_days_spinbox = ttk.Spinbox(settings_frame, from_=365, to=3650, width=15)
         delete_days_spinbox.set(730)
         delete_days_spinbox.grid(row=3, column=1, sticky='w', pady=5)
-        ttk.Label(settings_frame, text="days").grid(row=3, column=2, sticky='w', pady=5, padx=5)
+        ttk.Label(settings_frame, text=_t('gui.shell.document_manager.versions.labels.days', default="days")).grid(row=3, column=2, sticky='w', pady=5, padx=5)
 
         # Exceptions
-        exceptions_frame = ttk.LabelFrame(settings_window, text="Exceptions", padding=15)
+        exceptions_frame = ttk.LabelFrame(settings_window, text=_t('gui.shell.document_manager.versions.labels.exceptions', default="Exceptions"), padding=15)
         exceptions_frame.pack(fill='x', padx=10, pady=5)
 
         always_keep_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(exceptions_frame, text="Always keep current version",
+        ttk.Checkbutton(exceptions_frame, text=_t('gui.shell.document_manager.versions.buttons.always_keep_current_version', default="Always keep current version"),
                        variable=always_keep_var).pack(anchor='w', pady=2)
 
         keep_approved_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(exceptions_frame, text="Keep all versions of approved documents",
+        ttk.Checkbutton(exceptions_frame, text=_t('gui.shell.document_manager.versions.buttons.keep_all_versions_of_approved_documents', default="Keep all versions of approved documents"),
                        variable=keep_approved_var).pack(anchor='w', pady=2)
 
         def save_settings():
-            messagebox.showinfo("Settings Saved",
+            messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.settings_saved', default="Settings Saved"),
                               "Version retention settings saved successfully!\n\n"
                               f"Keep versions for: {days_spinbox.get()} days\n"
                               f"Maximum versions: {max_versions_spinbox.get()}\n"
@@ -1148,9 +1148,9 @@ RECOMMENDATIONS
         button_frame = ttk.Frame(settings_window)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Save Settings",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.save_settings', default="Save Settings"),
                   command=save_settings).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.cancel', default="Cancel"),
                   command=settings_window.destroy).pack(side='right', padx=5)
 
     def auto_version_settings(self):
@@ -1160,34 +1160,34 @@ RECOMMENDATIONS
 
         # Create settings window
         settings_window = tk.Toplevel(self.root)
-        settings_window.title("Auto-Versioning Settings")
+        settings_window.title(_t('gui.shell.document_manager.versions.windows.auto_versioning_settings', default="Auto-Versioning Settings"))
         settings_window.geometry("600x450")
         settings_window.transient(self.root)
         settings_window.grab_set()
 
-        ttk.Label(settings_window, text="Auto-Versioning Configuration",
+        ttk.Label(settings_window, text=_t('gui.shell.document_manager.versions.labels.auto_versioning_configuration', default="Auto-Versioning Configuration"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
-        settings_frame = ttk.LabelFrame(settings_window, text="Automatic Versioning Rules", padding=15)
+        settings_frame = ttk.LabelFrame(settings_window, text=_t('gui.shell.document_manager.versions.labels.automatic_versioning_rules', default="Automatic Versioning Rules"), padding=15)
         settings_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         # Enable auto-versioning
         auto_version_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(settings_frame, text="Enable automatic versioning",
+        ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.enable_automatic_versioning', default="Enable automatic versioning"),
                        variable=auto_version_var).pack(anchor='w', pady=5)
 
         # Create version on upload
         version_on_upload_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(settings_frame, text="Create new version when document is re-uploaded",
+        ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.create_new_version_when_document_is_re_uploaded', default="Create new version when document is re-uploaded"),
                        variable=version_on_upload_var).pack(anchor='w', pady=5)
 
         # Create version on status change
         version_on_status_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(settings_frame, text="Create version on status change",
+        ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.create_version_on_status_change', default="Create version on status change"),
                        variable=version_on_status_var).pack(anchor='w', pady=5)
 
         # Version naming
-        ttk.Label(settings_frame, text="Version naming format:").pack(anchor='w', pady=(10, 5))
+        ttk.Label(settings_frame, text=_t('gui.shell.document_manager.versions.labels.version_naming_format', default="Version naming format:")).pack(anchor='w', pady=(10, 5))
         naming_combo = ttk.Combobox(settings_frame, width=40, state='readonly')
         naming_combo['values'] = [
             'Sequential (v1, v2, v3...)',
@@ -1200,11 +1200,11 @@ RECOMMENDATIONS
 
         # Notification
         notify_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(settings_frame, text="Notify users when new version is created",
+        ttk.Checkbutton(settings_frame, text=_t('gui.shell.document_manager.versions.buttons.notify_users_when_new_version_is_created', default="Notify users when new version is created"),
                        variable=notify_var).pack(anchor='w', pady=5)
 
         def save_settings():
-            messagebox.showinfo("Settings Saved",
+            messagebox.showinfo(_t('gui.shell.document_manager.versions.dialogs.settings_saved', default="Settings Saved"),
                               "Auto-versioning settings saved successfully!\n\n"
                               f"Auto-versioning: {'Enabled' if auto_version_var.get() else 'Disabled'}\n"
                               f"Version on upload: {'Yes' if version_on_upload_var.get() else 'No'}\n"
@@ -1218,7 +1218,7 @@ RECOMMENDATIONS
         button_frame = ttk.Frame(settings_window)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Save Settings",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.save_settings', default="Save Settings"),
                   command=save_settings).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.versions.buttons.cancel', default="Cancel"),
                   command=settings_window.destroy).pack(side='right', padx=5)

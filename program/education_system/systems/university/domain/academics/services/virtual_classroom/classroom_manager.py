@@ -7,14 +7,14 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 
 class VirtualClassroomManager:
     """Manager for virtual classroom operations"""
 
     def __init__(self, db_path: str = None):
-        self.db_path = db_path or DEFAULT_DB_PATH
+        self.db_path = db_path or UNIVERSITY_DEFAULT_DB_PATH
 
     def _get_connection(self):
         """Get database connection"""

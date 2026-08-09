@@ -1,4 +1,4 @@
-from education_system.systems.university.infrastructure.paths import NLTK_DATA_DIR
+from education_system.paths import UNIVERSITY_NLTK_DATA_DIR
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
 logger = configure_logging(name=__name__)
@@ -7,7 +7,7 @@ logger = configure_logging(name=__name__)
 try:
     import nltk
     # Use centralized NLTK data path
-    custom_nltk_path = str(NLTK_DATA_DIR)
+    custom_nltk_path = str(UNIVERSITY_NLTK_DATA_DIR)
     if custom_nltk_path not in nltk.data.path:
         nltk.data.path.insert(0, custom_nltk_path)
 

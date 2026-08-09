@@ -26,7 +26,7 @@ class BulkOperationsMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Select integrations to install:",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.bulk_operations.labels.select_integrations_to_install', default="Select integrations to install:"),
                      style='Title.TLabel').pack(pady=10)
 
             with get_connection() as conn:
@@ -44,7 +44,7 @@ class BulkOperationsMixin:
                 available = cursor.fetchall()
 
             if not available:
-                messagebox.showinfo(_t("common.info"), "No available integrations to install")
+                messagebox.showinfo(_t("common.info"), _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.no_available_integrations_to_install', default="No available integrations to install"))
                 dialog.destroy()
                 return
 
@@ -65,7 +65,7 @@ class BulkOperationsMixin:
                 try:
                     selected_indices = listbox.curselection()
                     if not selected_indices:
-                        messagebox.showwarning(_t("common.warning"), "Please select at least one integration")
+                        messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.please_select_at_least_one_integration', default="Please select at least one integration"))
                         return
 
                     installed_by = self.auth.current_user.get('username', 'Unknown')
@@ -101,7 +101,7 @@ class BulkOperationsMixin:
                     log_activity('bulk_install', 'installed_integrations', None,
                                 details={'success_count': success_count, 'error_count': error_count})
 
-                    messagebox.showinfo("Bulk Install Complete",
+                    messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.bulk_install_complete', default="Bulk Install Complete"),
                                       f"Successfully installed: {success_count}\nErrors: {error_count}")
                     dialog.destroy()
                     self.load_catalog()
@@ -111,7 +111,7 @@ class BulkOperationsMixin:
                     logger.error(f"Error in bulk install: {e}")
                     messagebox.showerror(_t("common.error"), f"Bulk install failed: {e}")
 
-            ttk.Button(dialog, text="Install Selected", command=install_selected,
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.bulk_operations.buttons.install_selected', default="Install Selected"), command=install_selected,
                       style='Accent.TButton').pack(pady=10)
 
         except Exception as e:
@@ -123,10 +123,10 @@ class BulkOperationsMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select integrations to uninstall")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.please_select_integrations_to_uninstall', default="Please select integrations to uninstall"))
                 return
 
-            if not messagebox.askyesno("Confirm Bulk Uninstall",
+            if not messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.confirm_bulk_uninstall', default="Confirm Bulk Uninstall"),
                                        f"Uninstall {len(selected)} selected integration(s)?"):
                 return
 
@@ -151,7 +151,7 @@ class BulkOperationsMixin:
             log_activity('bulk_uninstall', 'installed_integrations', None,
                         details={'success_count': success_count, 'error_count': error_count})
 
-            messagebox.showinfo("Bulk Uninstall Complete",
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.bulk_uninstall_complete', default="Bulk Uninstall Complete"),
                               f"Successfully uninstalled: {success_count}\nErrors: {error_count}")
             self.load_installed()
 
@@ -164,7 +164,7 @@ class BulkOperationsMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select integrations to enable")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.please_select_integrations_to_enable', default="Please select integrations to enable"))
                 return
 
             success_count = 0
@@ -188,7 +188,7 @@ class BulkOperationsMixin:
             log_activity('bulk_enable', 'installed_integrations', None,
                         details={'success_count': success_count, 'error_count': error_count})
 
-            messagebox.showinfo("Bulk Enable Complete",
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.bulk_enable_complete', default="Bulk Enable Complete"),
                               f"Successfully enabled: {success_count}\nErrors: {error_count}")
             self.load_installed()
 
@@ -201,7 +201,7 @@ class BulkOperationsMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select integrations to disable")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.please_select_integrations_to_disable', default="Please select integrations to disable"))
                 return
 
             success_count = 0
@@ -225,7 +225,7 @@ class BulkOperationsMixin:
             log_activity('bulk_disable', 'installed_integrations', None,
                         details={'success_count': success_count, 'error_count': error_count})
 
-            messagebox.showinfo("Bulk Disable Complete",
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.bulk_disable_complete', default="Bulk Disable Complete"),
                               f"Successfully disabled: {success_count}\nErrors: {error_count}")
             self.load_installed()
 
@@ -239,8 +239,8 @@ class BulkOperationsMixin:
             selected = self.installed_tree.selection()
             if not selected:
                 # If none selected, sync all enabled
-                if not messagebox.askyesno("Bulk Sync",
-                                          "No integrations selected. Sync all enabled integrations?"):
+                if not messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.bulk_sync', default="Bulk Sync"),
+                                          _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.no_integrations_selected_sync_all_enabled_integrations', default="No integrations selected. Sync all enabled integrations?")):
                     return
 
                 with get_connection() as conn:
@@ -254,7 +254,7 @@ class BulkOperationsMixin:
                 install_ids = [self.installed_tree.item(item)['values'][0] for item in selected]
 
             if not install_ids:
-                messagebox.showinfo(_t("common.info"), "No integrations to sync")
+                messagebox.showinfo(_t("common.info"), _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.no_integrations_to_sync', default="No integrations to sync"))
                 return
 
             success_count = 0
@@ -283,7 +283,7 @@ class BulkOperationsMixin:
             log_activity('bulk_sync', 'installed_integrations', None,
                         details={'success_count': success_count, 'error_count': error_count})
 
-            messagebox.showinfo("Bulk Sync Complete",
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.bulk_sync_complete', default="Bulk Sync Complete"),
                               f"Successfully synced: {success_count}\nErrors: {error_count}")
             self.load_installed()
             self.load_sync_logs()
@@ -296,19 +296,19 @@ class BulkOperationsMixin:
         """Update endpoint URLs for multiple credentials at once"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Bulk Update Credential Endpoints")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.bulk_operations.windows.bulk_update_credential_endpoints', default="Bulk Update Credential Endpoints"))
             dialog.geometry("600x400")
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Bulk Update Endpoint URLs",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.bulk_operations.labels.bulk_update_endpoint_urls', default="Bulk Update Endpoint URLs"),
                      style='Title.TLabel').pack(pady=10)
 
-            ttk.Label(dialog, text="Old URL Pattern (will be replaced):").pack(anchor='w', padx=10)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.bulk_operations.labels.old_url_pattern_will_be_replaced', default="Old URL Pattern (will be replaced):")).pack(anchor='w', padx=10)
             old_url_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=old_url_var, width=60).pack(padx=10, pady=5)
 
-            ttk.Label(dialog, text="New URL Pattern:").pack(anchor='w', padx=10)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.bulk_operations.labels.new_url_pattern', default="New URL Pattern:")).pack(anchor='w', padx=10)
             new_url_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=new_url_var, width=60).pack(padx=10, pady=5)
 
@@ -324,7 +324,7 @@ class BulkOperationsMixin:
                 new_pattern = new_url_var.get().strip()
 
                 if not old_pattern:
-                    messagebox.showwarning(_t("common.warning"), "Please enter old URL pattern")
+                    messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.please_enter_old_url_pattern', default="Please enter old URL pattern"))
                     return
 
                 with get_connection() as conn:
@@ -350,10 +350,10 @@ class BulkOperationsMixin:
                 new_pattern = new_url_var.get().strip()
 
                 if not old_pattern:
-                    messagebox.showwarning(_t("common.warning"), "Please enter old URL pattern")
+                    messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.please_enter_old_url_pattern', default="Please enter old URL pattern"))
                     return
 
-                if not messagebox.askyesno(_t("common.confirm"), "Apply URL changes to all matching credentials?"):
+                if not messagebox.askyesno(_t("common.confirm"), _t('gui.shell.services.integration_marketplace_gui.bulk_operations.dialogs.apply_url_changes_to_all_matching_credentials', default="Apply URL changes to all matching credentials?")):
                     return
 
                 try:

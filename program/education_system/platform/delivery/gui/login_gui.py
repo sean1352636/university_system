@@ -28,6 +28,7 @@ _SYSTEM_COLOURS = {
     "secondary":     ("#8e44ad", "#9b59b6"),
     "primary":    ("#e67e22", "#f39c12"),
     "nursery":    ("#16a085", "#1abc9c"),
+    "apprenticeships": ("#c0392b", "#e74c3c"),
 }
 
 
@@ -985,9 +986,9 @@ class UniversalLoginWindow(tk.Tk):
             self._build_login_ui()
             return
 
-        # Send a confirmation email and flag the session so the system GUI
-        # opens the email manager once it loads.
-        self._send_change_confirmation_email(new_user_info)
+        # ``UserAuth.change_password`` sends the confirmation email for every
+        # delivery surface (GUI, CLI and API).  Flag the session so the system
+        # GUI opens the email manager once it loads.
         new_user_info["_open_email_after_login"] = True
 
         messagebox.showinfo(

@@ -1,5 +1,7 @@
 """Charity Shop - Basket operations mixin for CharityShopApp."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui._imports import (
     messagebox, datetime, json, sqlite3,
     FINANCE_INTEGRATION_AVAILABLE, ACTIVITY_LOGGER_AVAILABLE, EMAIL_SERVICE_AVAILABLE,
@@ -28,15 +30,15 @@ class BasketOpsMixin:
         """Add selected item to the shopping basket."""
         item = self.get_selected_item()
         if not item:
-            messagebox.showwarning("No Selection", "Please select an item to add to basket.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.please_select_an_item_to_add_to_basket', default="Please select an item to add to basket."))
             return
 
         if item["quantity"] <= 0:
-            messagebox.showwarning("Out of Stock", "This item is out of stock.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.out_of_stock', default="Out of Stock"), _t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.this_item_is_out_of_stock', default="This item is out of stock."))
             return
 
         if item["status"] == "Sold":
-            messagebox.showwarning("Not Available", "This item has been sold.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.not_available', default="Not Available"), _t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.this_item_has_been_sold', default="This item has been sold."))
             return
 
         # Check if item is already in basket
@@ -44,11 +46,11 @@ class BasketOpsMixin:
             if basket_item['id'] == item['id']:
                 # Check if we can add more
                 if basket_item['quantity'] >= item['quantity']:
-                    messagebox.showwarning("Limit Reached", f"Maximum available quantity ({item['quantity']}) already in basket.")
+                    messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.limit_reached', default="Limit Reached"), f"Maximum available quantity ({item['quantity']}) already in basket.")
                     return
                 basket_item['quantity'] += 1
                 self.update_basket_window()
-                messagebox.showinfo("Added", f"Added another '{item['name']}' to basket.\nBasket now has {len(self.basket)} item type(s).")
+                messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.added', default="Added"), f"Added another '{item['name']}' to basket.\nBasket now has {len(self.basket)} item type(s).")
                 return
 
         # Add new item to basket
@@ -60,7 +62,7 @@ class BasketOpsMixin:
             'max_qty': item['quantity']
         })
         self.update_basket_window()
-        messagebox.showinfo("Added to Basket", f"Added '{item['name']}' to basket.\nBasket now has {len(self.basket)} item type(s).")
+        messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.added_to_basket', default="Added to Basket"), f"Added '{item['name']}' to basket.\nBasket now has {len(self.basket)} item type(s).")
 
     def remove_from_basket(self, index: int):
         """Remove item at specified index from basket."""
@@ -83,7 +85,7 @@ class BasketOpsMixin:
         from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui.dialogs import CheckoutDialog
 
         if not self.basket:
-            messagebox.showwarning("Empty Basket", "Please add items to basket before checkout.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.empty_basket', default="Empty Basket"), _t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.please_add_items_to_basket_before_checkout', default="Please add items to basket before checkout."))
             return
 
         # Calculate total
@@ -119,10 +121,10 @@ class BasketOpsMixin:
                     processed_by=processed_by
                 )
                 if not result.get('success', False):
-                    messagebox.showerror("Payment Failed", f"Finance Account payment failed: {result.get('message', '')}")
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.payment_failed', default="Payment Failed"), f"Finance Account payment failed: {result.get('message', '')}")
                     return
             else:
-                messagebox.showerror("Error", "Finance integration not available for student account payment")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.finance_integration_not_available_for_student_account_payment', default="Finance integration not available for student account payment"))
                 return
 
         # Save transaction to database
@@ -178,7 +180,7 @@ class BasketOpsMixin:
         elif customer_email and not receipt_sent:
             success_msg += "\n\n(Receipt email could not be sent)"
 
-        messagebox.showinfo("Checkout Complete", success_msg)
+        messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.basket_ops.dialogs.checkout_complete', default="Checkout Complete"), success_msg)
 
         # Log activity
         if ACTIVITY_LOGGER_AVAILABLE:

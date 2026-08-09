@@ -7,7 +7,8 @@ coordination of open days, transition events, training days, holidays, etc.
 import sqlite3
 from datetime import datetime, timedelta
 
-from education_system.platform.identity.auth.db import AUTH_DB_FILE, connect as auth_connect
+from education_system.paths import PLATFORM_AUTH_DB_FILE
+from education_system.platform.identity.auth.db import connect as auth_connect
 from education_system.platform.kernel.database.sql_safety import validate_identifier  # nosec B608
 
 EVENT_TYPES = ("open_day", "transition", "training", "holiday", "meeting", "other")
@@ -33,7 +34,7 @@ class CrossSystemCalendarService:
     """Manage cross-system calendar events in the shared auth DB."""
 
     def __init__(self, db_path=None):
-        self._db_path = db_path or str(AUTH_DB_FILE)
+        self._db_path = db_path or str(PLATFORM_AUTH_DB_FILE)
         self._ensure_table()
 
     # ------------------------------------------------------------------

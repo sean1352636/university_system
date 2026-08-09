@@ -1,0 +1,5 @@
+{
+  "subject": "$notification_title - $system_name",
+  "body": "Hello $user_name,\n\n$notification_body\n\nBest regards,\n$system_name",
+  "html_body": "<html><body style=\"font-family:Arial,sans-serif;background:#f5f5f5;padding:20px\"><div style=\"max-width:520px;margin:auto;background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);padding:30px\"><h2 style=\"color:#2c3e50;margin-top:0\">$notification_title</h2><p>Hello <strong>$user_name</strong>,</p><p>$notification_body</p><hr style=\"border:none;border-top:1px solid #eee;margin:20px 0\"><p style=\"color:#999;font-size:12px\">$system_name</p></div></body></html>"
+}

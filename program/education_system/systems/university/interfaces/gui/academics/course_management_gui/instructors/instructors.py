@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -208,7 +210,7 @@ def refresh_instructor_list(self):
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='instructors'")
             if not cursor.fetchone():
                 self.instructor_count_label.config(
-                    text="No instructors table found. Please add an instructor first."
+                    text=_t('gui.academics.course_management_gui.instructors.instructors.text.no_instructors_table_found_please_add_an_instructor_first', default="No instructors table found. Please add an instructor first.")
                 )
                 return
 
@@ -237,7 +239,7 @@ def refresh_instructor_list(self):
                 ), tags=(tag,))
             self.instructor_count_label.config(text=f"Total Instructors: {len(instructors)}")
         else:
-            self.instructor_count_label.config(text="No instructors found in the system.")
+            self.instructor_count_label.config(text=_t('gui.academics.course_management_gui.instructors.instructors.text.no_instructors_found_in_the_system', default="No instructors found in the system."))
 
     except sqlite3.Error as e:
         messagebox.showerror(_("common.database_error"), f"Failed to load instructors: {e}")
@@ -287,7 +289,7 @@ class InstructorCreateDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Add New Instructor")
+        self.dialog.title(_t('gui.academics.course_management_gui.instructors.instructors.windows.add_new_instructor', default="Add New Instructor"))
         self.dialog.geometry("640x760")
         self.dialog.minsize(600, 680)
         self.dialog.transient(parent)
@@ -316,70 +318,70 @@ class InstructorCreateDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Personal Information
-        personal_frame = ttk.LabelFrame(main_frame, text="Personal Information", padding=10)
+        personal_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.personal_information', default="Personal Information"), padding=10)
         personal_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(personal_frame, text="First Name:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.first_name', default="First Name:")).grid(row=0, column=0, sticky=tk.W)
         self.first_name_var = tk.StringVar()
         self.first_name_var.trace_add('write', self._update_university_email)
         ttk.Entry(personal_frame, textvariable=self.first_name_var, width=25).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(personal_frame, text="Last Name:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.last_name', default="Last Name:")).grid(row=1, column=0, sticky=tk.W)
         self.last_name_var = tk.StringVar()
         self.last_name_var.trace_add('write', self._update_university_email)
         ttk.Entry(personal_frame, textvariable=self.last_name_var, width=25).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(personal_frame, text="University Email:").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.university_email', default="University Email:")).grid(row=2, column=0, sticky=tk.W)
         self.university_email_var = tk.StringVar()
         uni_email_entry = ttk.Entry(personal_frame, textvariable=self.university_email_var, width=35, state='readonly')
         uni_email_entry.grid(row=2, column=1, sticky=tk.W, padx=5)
-        ttk.Label(personal_frame, text="(auto-generated from name)", font=('Arial', 8)).grid(row=3, column=1, sticky=tk.W, padx=5)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.auto_generated_from_name', default="(auto-generated from name)"), font=('Arial', 8)).grid(row=3, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(personal_frame, text="Personal Email:").grid(row=4, column=0, sticky=tk.W)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.personal_email', default="Personal Email:")).grid(row=4, column=0, sticky=tk.W)
         self.personal_email_var = tk.StringVar()
         ttk.Entry(personal_frame, textvariable=self.personal_email_var, width=35).grid(row=4, column=1, sticky=tk.W, padx=5)
-        ttk.Label(personal_frame, text="(optional)", font=('Arial', 8)).grid(row=5, column=1, sticky=tk.W, padx=5)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.optional', default="(optional)"), font=('Arial', 8)).grid(row=5, column=1, sticky=tk.W, padx=5)
 
         # Professional Information
-        prof_frame = ttk.LabelFrame(main_frame, text="Professional Information", padding=10)
+        prof_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.professional_information', default="Professional Information"), padding=10)
         prof_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(prof_frame, text="Department:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.department', default="Department:")).grid(row=0, column=0, sticky=tk.W)
         self.department_var = tk.StringVar()
         ttk.Entry(prof_frame, textvariable=self.department_var, width=25).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(prof_frame, text="Specialization:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.specialization', default="Specialization:")).grid(row=1, column=0, sticky=tk.W)
         self.specialization_var = tk.StringVar()
         ttk.Entry(prof_frame, textvariable=self.specialization_var, width=35).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(prof_frame, text="Max Courses/Semester:").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.max_courses_semester', default="Max Courses/Semester:")).grid(row=2, column=0, sticky=tk.W)
         self.max_courses_var = tk.StringVar(value="4")
         ttk.Entry(prof_frame, textvariable=self.max_courses_var, width=10).grid(row=2, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(prof_frame, text="Max Hours/Week:").grid(row=3, column=0, sticky=tk.W)
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.max_hours_week', default="Max Hours/Week:")).grid(row=3, column=0, sticky=tk.W)
         self.max_hours_var = tk.StringVar(value="40")
         ttk.Entry(prof_frame, textvariable=self.max_hours_var, width=10).grid(row=3, column=1, sticky=tk.W, padx=5)
 
         # Scheduling Preferences
-        sched_frame = ttk.LabelFrame(main_frame, text="Scheduling Preferences", padding=10)
+        sched_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.scheduling_preferences', default="Scheduling Preferences"), padding=10)
         sched_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(sched_frame, text="Preferred Days:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.preferred_days', default="Preferred Days:")).grid(row=0, column=0, sticky=tk.W)
         self.preferred_days_var = tk.StringVar()
         ttk.Entry(sched_frame, textvariable=self.preferred_days_var, width=35).grid(row=0, column=1, sticky=tk.W, padx=5)
-        ttk.Label(sched_frame, text="(comma-separated, e.g., Monday,Tuesday)", font=('Arial', 8)).grid(row=1, column=1, sticky=tk.W, padx=5)
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.comma_separated_e_g_monday_tuesday', default="(comma-separated, e.g., Monday,Tuesday)"), font=('Arial', 8)).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(sched_frame, text="Preferred Times:").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.preferred_times', default="Preferred Times:")).grid(row=2, column=0, sticky=tk.W)
         self.preferred_times_var = tk.StringVar()
         ttk.Entry(sched_frame, textvariable=self.preferred_times_var, width=35).grid(row=2, column=1, sticky=tk.W, padx=5)
-        ttk.Label(sched_frame, text="(comma-separated, e.g., 09:00,10:00)", font=('Arial', 8)).grid(row=3, column=1, sticky=tk.W, padx=5)
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.comma_separated_e_g_09_00_10_00', default="(comma-separated, e.g., 09:00,10:00)"), font=('Arial', 8)).grid(row=3, column=1, sticky=tk.W, padx=5)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Add Instructor", command=self.add_instructor).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.add_instructor', default="Add Instructor"), command=self.add_instructor).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def add_instructor(self):
         try:
@@ -388,19 +390,19 @@ class InstructorCreateDialog:
             last_name = self.last_name_var.get().strip()
 
             if not first_name or not last_name:
-                messagebox.showerror(_("common.validation_error"), "First name and last name are required.")
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.first_name_and_last_name_are_required', default="First name and last name are required."))
                 return
 
             university_email = self.university_email_var.get().strip()
             if not university_email:
-                messagebox.showerror(_("common.validation_error"), "University email could not be generated. Please enter first and last name.")
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.university_email_could_not_be_generated_please_enter_first_and_l', default="University email could not be generated. Please enter first and last name."))
                 return
 
             personal_email = self.personal_email_var.get().strip()
             if personal_email:
                 email_pattern = r'^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$'
                 if not re.match(email_pattern, personal_email):
-                    messagebox.showerror(_("common.validation_error"), "Please enter a valid personal email address.")
+                    messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_enter_a_valid_personal_email_address', default="Please enter a valid personal email address."))
                     return
 
             department = self.department_var.get().strip()
@@ -409,13 +411,13 @@ class InstructorCreateDialog:
             try:
                 max_courses = int(self.max_courses_var.get())
             except ValueError:
-                messagebox.showerror(_("common.validation_error"), "Max courses must be a number.")
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.max_courses_must_be_a_number', default="Max courses must be a number."))
                 return
 
             try:
                 max_hours = int(self.max_hours_var.get())
             except ValueError:
-                messagebox.showerror(_("common.validation_error"), "Max hours must be a number.")
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.max_hours_must_be_a_number', default="Max hours must be a number."))
                 return
 
             preferred_days = self.preferred_days_var.get().strip()
@@ -488,7 +490,7 @@ class InstructorDetailsDialog:
 
         self.instructor = self._load_instructor()
         if not self.instructor:
-            messagebox.showerror(_("common.error"), "Instructor not found.")
+            messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.instructor_not_found', default="Instructor not found."))
             return
 
         self.dialog = tk.Toplevel(parent)
@@ -531,13 +533,13 @@ class InstructorDetailsDialog:
         notebook.pack(fill=tk.BOTH, expand=True)
 
         details_tab = ttk.Frame(notebook)
-        notebook.add(details_tab, text="Details")
+        notebook.add(details_tab, text=_t('gui.academics.course_management_gui.instructors.instructors.tabs.details', default="Details"))
         self._build_details_tab(details_tab)
 
         # Course assignment is an admin-only action, mirroring the tab buttons.
         if self.editable:
             assign_tab = ttk.Frame(notebook)
-            notebook.add(assign_tab, text="Assign to Course")
+            notebook.add(assign_tab, text=_t('gui.academics.course_management_gui.instructors.instructors.tabs.assign_to_course', default="Assign to Course"))
             self._build_assign_tab(assign_tab)
 
     # ---- Details tab -------------------------------------------------
@@ -545,82 +547,82 @@ class InstructorDetailsDialog:
         entry_state = "normal" if self.editable else "readonly"
         ins = self.instructor
 
-        personal_frame = ttk.LabelFrame(tab, text="Personal Information", padding=10)
+        personal_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.personal_information', default="Personal Information"), padding=10)
         personal_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(personal_frame, text="First Name:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.first_name', default="First Name:")).grid(row=0, column=0, sticky=tk.W)
         self.first_name_var = tk.StringVar(value=ins["first_name"] or "")
         ttk.Entry(personal_frame, textvariable=self.first_name_var, width=25, state=entry_state).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(personal_frame, text="Last Name:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.last_name', default="Last Name:")).grid(row=1, column=0, sticky=tk.W)
         self.last_name_var = tk.StringVar(value=ins["last_name"] or "")
         ttk.Entry(personal_frame, textvariable=self.last_name_var, width=25, state=entry_state).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(personal_frame, text="Email:").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(personal_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.email', default="Email:")).grid(row=2, column=0, sticky=tk.W)
         self.email_var = tk.StringVar(value=ins["email"] or "")
         # Email is the login/account key — always read-only here.
         ttk.Entry(personal_frame, textvariable=self.email_var, width=35, state="readonly").grid(row=2, column=1, sticky=tk.W, padx=5)
 
-        prof_frame = ttk.LabelFrame(tab, text="Professional Information", padding=10)
+        prof_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.professional_information', default="Professional Information"), padding=10)
         prof_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(prof_frame, text="Department:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.department', default="Department:")).grid(row=0, column=0, sticky=tk.W)
         self.department_var = tk.StringVar(value=ins["department"] or "")
         ttk.Entry(prof_frame, textvariable=self.department_var, width=25, state=entry_state).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(prof_frame, text="Specialization:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.specialization', default="Specialization:")).grid(row=1, column=0, sticky=tk.W)
         self.specialization_var = tk.StringVar(value=ins["specialization"] or "")
         ttk.Entry(prof_frame, textvariable=self.specialization_var, width=35, state=entry_state).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(prof_frame, text="Max Courses/Semester:").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.max_courses_semester', default="Max Courses/Semester:")).grid(row=2, column=0, sticky=tk.W)
         self.max_courses_var = tk.StringVar(value=str(ins["max_courses_per_semester"] if ins["max_courses_per_semester"] is not None else 4))
         ttk.Entry(prof_frame, textvariable=self.max_courses_var, width=10, state=entry_state).grid(row=2, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(prof_frame, text="Max Hours/Week:").grid(row=3, column=0, sticky=tk.W)
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.max_hours_week', default="Max Hours/Week:")).grid(row=3, column=0, sticky=tk.W)
         self.max_hours_var = tk.StringVar(value=str(ins["max_hours_per_week"] if ins["max_hours_per_week"] is not None else 40))
         ttk.Entry(prof_frame, textvariable=self.max_hours_var, width=10, state=entry_state).grid(row=3, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(prof_frame, text="Status:").grid(row=4, column=0, sticky=tk.W)
+        ttk.Label(prof_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.status', default="Status:")).grid(row=4, column=0, sticky=tk.W)
         self.status_var = tk.StringVar(value=ins["status"] or "Active")
         status_state = "readonly" if self.editable else "disabled"
         ttk.Combobox(prof_frame, textvariable=self.status_var, width=15, state=status_state,
                      values=["Active", "Inactive", "On Leave"]).grid(row=4, column=1, sticky=tk.W, padx=5)
 
-        sched_frame = ttk.LabelFrame(tab, text="Scheduling Preferences", padding=10)
+        sched_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.scheduling_preferences', default="Scheduling Preferences"), padding=10)
         sched_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(sched_frame, text="Preferred Days:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.preferred_days', default="Preferred Days:")).grid(row=0, column=0, sticky=tk.W)
         self.preferred_days_var = tk.StringVar(value=ins["preferred_days"] or "")
         ttk.Entry(sched_frame, textvariable=self.preferred_days_var, width=35, state=entry_state).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(sched_frame, text="Preferred Times:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(sched_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.preferred_times', default="Preferred Times:")).grid(row=1, column=0, sticky=tk.W)
         self.preferred_times_var = tk.StringVar(value=ins["preferred_times"] or "")
         ttk.Entry(sched_frame, textvariable=self.preferred_times_var, width=35, state=entry_state).grid(row=1, column=1, sticky=tk.W, padx=5)
 
         button_frame = ttk.Frame(tab)
         button_frame.pack(fill=tk.X, pady=10)
         if self.editable:
-            ttk.Button(button_frame, text="Save Changes", command=self.save_details).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.save_changes', default="Save Changes"), command=self.save_details).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def save_details(self):
         first_name = self.first_name_var.get().strip()
         last_name = self.last_name_var.get().strip()
 
         if not first_name or not last_name:
-            messagebox.showerror(_("common.validation_error"), "First name and last name are required.")
+            messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.first_name_and_last_name_are_required', default="First name and last name are required."))
             return
 
         try:
             max_courses = int(self.max_courses_var.get())
         except ValueError:
-            messagebox.showerror(_("common.validation_error"), "Max courses must be a number.")
+            messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.max_courses_must_be_a_number', default="Max courses must be a number."))
             return
 
         try:
             max_hours = int(self.max_hours_var.get())
         except ValueError:
-            messagebox.showerror(_("common.validation_error"), "Max hours must be a number.")
+            messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.max_hours_must_be_a_number', default="Max hours must be a number."))
             return
 
         try:
@@ -660,30 +662,30 @@ class InstructorDetailsDialog:
         ttk.Label(tab, text=f"Assign {name or 'this instructor'} to a course",
                   font=("Arial", 11, "bold")).pack(pady=10)
 
-        course_frame = ttk.LabelFrame(tab, text="Select Course", padding=10)
+        course_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.select_course', default="Select Course"), padding=10)
         course_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(course_frame, text="Course:").pack(anchor=tk.W)
+        ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.course', default="Course:")).pack(anchor=tk.W)
         self.course_combo = ttk.Combobox(course_frame, width=50, state="readonly")
         self.course_combo.pack(fill=tk.X, pady=2)
 
-        schedule_frame = ttk.LabelFrame(tab, text="Schedule Information", padding=10)
+        schedule_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.schedule_information', default="Schedule Information"), padding=10)
         schedule_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(schedule_frame, text="Semester:").grid(row=0, column=0, sticky=tk.W)
-        self.semester_var = tk.StringVar(value="Fall")
+        ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.semester', default="Semester:")).grid(row=0, column=0, sticky=tk.W)
+        self.semester_var = tk.StringVar(value=_t('gui.academics.course_management_gui.instructors.instructors.values.fall', default="Fall"))
         ttk.Combobox(schedule_frame, textvariable=self.semester_var,
                      values=["Fall", "Spring", "Summer", "Winter"]).grid(row=0, column=1, sticky=tk.W, padx=5)
-        ttk.Label(schedule_frame, text="Year:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.year', default="Year:")).grid(row=1, column=0, sticky=tk.W)
         self.year_var = tk.StringVar(value=str(datetime.now().year))
         ttk.Entry(schedule_frame, textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        current_frame = ttk.LabelFrame(tab, text="Current Assignments", padding=10)
+        current_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.current_assignments', default="Current Assignments"), padding=10)
         current_frame.pack(fill=tk.BOTH, expand=True, pady=5)
         self.assignments_list = tk.Listbox(current_frame, height=6)
         self.assignments_list.pack(fill=tk.BOTH, expand=True)
 
         button_frame = ttk.Frame(tab)
         button_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(button_frame, text="Assign", command=self.assign_to_course).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.assign', default="Assign"), command=self.assign_to_course).pack(side=tk.RIGHT, padx=5)
 
         self._load_assign_data()
         self._refresh_assignments()
@@ -742,16 +744,16 @@ class InstructorDetailsDialog:
     def assign_to_course(self):
         course_text = self.course_combo.get()
         if not course_text:
-            messagebox.showwarning(_("common.selection_required"), "Please select a course.")
+            messagebox.showwarning(_("common.selection_required"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_select_a_course', default="Please select a course."))
             return
         course_id = self.course_id_map.get(course_text)
         if not course_id:
-            messagebox.showerror(_("common.error"), "Invalid course selection.")
+            messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.invalid_course_selection', default="Invalid course selection."))
             return
         try:
             year_int = int(self.year_var.get())
         except ValueError:
-            messagebox.showerror(_("common.error"), "Please enter a valid year.")
+            messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_enter_a_valid_year', default="Please enter a valid year."))
             return
         semester = self.semester_var.get()
 
@@ -806,7 +808,7 @@ class AssignInstructorDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Assign Instructor to Course")
+        self.dialog.title(_t('gui.academics.course_management_gui.instructors.instructors.windows.assign_instructor_to_course', default="Assign Instructor to Course"))
         self.dialog.geometry("640x560")
         self.dialog.minsize(600, 500)
         self.dialog.transient(parent)
@@ -820,35 +822,35 @@ class AssignInstructorDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Assign Instructor to Course", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.assign_instructor_to_course', default="Assign Instructor to Course"), font=("Arial", 12, "bold")).pack(pady=10)
 
         # Course selection
-        course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding=10)
+        course_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.select_course', default="Select Course"), padding=10)
         course_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(course_frame, text="Course:").pack(anchor=tk.W)
+        ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.course', default="Course:")).pack(anchor=tk.W)
         self.course_combo = ttk.Combobox(course_frame, width=50)
         self.course_combo.pack(fill=tk.X, pady=2)
 
         # Instructor selection
-        instructor_frame = ttk.LabelFrame(main_frame, text="Select Instructor", padding=10)
+        instructor_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.select_instructor', default="Select Instructor"), padding=10)
         instructor_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(instructor_frame, text="Instructor:").pack(anchor=tk.W)
+        ttk.Label(instructor_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.instructor', default="Instructor:")).pack(anchor=tk.W)
         self.instructor_combo = ttk.Combobox(instructor_frame, width=50)
         self.instructor_combo.pack(fill=tk.X, pady=2)
 
         # Schedule information
-        schedule_frame = ttk.LabelFrame(main_frame, text="Schedule Information", padding=10)
+        schedule_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.schedule_information', default="Schedule Information"), padding=10)
         schedule_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(schedule_frame, text="Semester:").grid(row=0, column=0, sticky=tk.W)
-        self.semester_var = tk.StringVar(value="Fall")
+        ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.semester', default="Semester:")).grid(row=0, column=0, sticky=tk.W)
+        self.semester_var = tk.StringVar(value=_t('gui.academics.course_management_gui.instructors.instructors.values.fall', default="Fall"))
         semester_combo = ttk.Combobox(schedule_frame, textvariable=self.semester_var,
                                      values=["Fall", "Spring", "Summer", "Winter"])
         semester_combo.grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(schedule_frame, text="Year:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.labels.year', default="Year:")).grid(row=1, column=0, sticky=tk.W)
         self.year_var = tk.StringVar(value=str(datetime.now().year))
         ttk.Entry(schedule_frame, textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
 
@@ -856,8 +858,8 @@ class AssignInstructorDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Assign", command=self.assign_instructor).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.assign', default="Assign"), command=self.assign_instructor).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.instructors.instructors.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_data(self):
         try:
@@ -917,20 +919,20 @@ class AssignInstructorDialog:
             year = self.year_var.get()
 
             if not course_text or not instructor_text:
-                messagebox.showwarning(_("common.selection_required"), "Please select both course and instructor.")
+                messagebox.showwarning(_("common.selection_required"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_select_both_course_and_instructor', default="Please select both course and instructor."))
                 return
 
             course_id = self.course_id_map.get(course_text)
             instructor_id = self.instructor_id_map.get(instructor_text)
 
             if not course_id or not instructor_id:
-                messagebox.showerror(_("common.error"), "Invalid selection.")
+                messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.invalid_selection', default="Invalid selection."))
                 return
 
             try:
                 year_int = int(year)
             except ValueError:
-                messagebox.showerror(_("common.error"), "Please enter a valid year.")
+                messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.instructors.instructors.dialogs.please_enter_a_valid_year', default="Please enter a valid year."))
                 return
 
             # Create schedule table if it doesn't exist and assign instructor

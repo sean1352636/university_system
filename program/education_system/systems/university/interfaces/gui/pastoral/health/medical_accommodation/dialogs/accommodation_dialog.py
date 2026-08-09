@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # dialogs/accommodation_dialog.py
 # Dialog for adding/editing accommodation records.
 
@@ -70,7 +72,7 @@ class AccommodationDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # Student ID - dropdown with search
-        ttk.Label(main_frame, text="Student:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.labels.student', default="Student:")).grid(row=0, column=0, sticky='w', pady=5)
         self.student_id_var = tk.StringVar()
         students_list, self.student_map = _load_students()
 
@@ -92,7 +94,7 @@ class AccommodationDialog:
                 self.student_id_var.set(sid)
 
         # Accommodation Type
-        ttk.Label(main_frame, text="Accommodation Type:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.labels.accommodation_type', default="Accommodation Type:")).grid(row=1, column=0, sticky='w', pady=5)
         self.type_var = tk.StringVar(value=current_data['accommodation_type'] if current_data else '')
         type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, width=28)
         if CLI_AVAILABLE:
@@ -100,14 +102,14 @@ class AccommodationDialog:
         type_combo.grid(row=1, column=1, pady=5, sticky='ew')
 
         # Description
-        ttk.Label(main_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw', pady=5)
         self.description_text = tk.Text(main_frame, height=3, width=30)
         if current_data and current_data['description']:
             self.description_text.insert(tk.END, current_data['description'])
         self.description_text.grid(row=2, column=1, pady=5, sticky='ew')
 
         # Start Date
-        ttk.Label(main_frame, text="Start Date:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.labels.start_date', default="Start Date:")).grid(row=3, column=0, sticky='w', pady=5)
         if DATEPICKER_AVAILABLE:
             start_val = current_data['start_date'] if current_data and current_data['start_date'] else ''
             self.start_date_entry = DateEntry(main_frame, width=28, date_pattern='yyyy-mm-dd')
@@ -122,7 +124,7 @@ class AccommodationDialog:
             ttk.Entry(main_frame, textvariable=self.start_date_var, width=30).grid(row=3, column=1, pady=5, sticky='ew')
 
         # End Date
-        ttk.Label(main_frame, text="End Date:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.labels.end_date', default="End Date:")).grid(row=4, column=0, sticky='w', pady=5)
         if DATEPICKER_AVAILABLE:
             end_val = current_data['end_date'] if current_data and current_data['end_date'] else ''
             self.end_date_entry = DateEntry(main_frame, width=28, date_pattern='yyyy-mm-dd')
@@ -137,14 +139,14 @@ class AccommodationDialog:
             ttk.Entry(main_frame, textvariable=self.end_date_var, width=30).grid(row=4, column=1, pady=5, sticky='ew')
 
         # Status
-        ttk.Label(main_frame, text="Status:").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.labels.status', default="Status:")).grid(row=5, column=0, sticky='w', pady=5)
         self.status_var = tk.StringVar(value=current_data['status'] if current_data else 'active')
         status_combo = ttk.Combobox(main_frame, textvariable=self.status_var, width=28)
         status_combo['values'] = ['active', 'pending', 'suspended', 'expired']
         status_combo.grid(row=5, column=1, pady=5, sticky='ew')
 
         # Notes
-        ttk.Label(main_frame, text="Notes:").grid(row=6, column=0, sticky='nw', pady=5)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.labels.notes', default="Notes:")).grid(row=6, column=0, sticky='nw', pady=5)
         self.notes_text = tk.Text(main_frame, height=3, width=30)
         if current_data and current_data['notes']:
             self.notes_text.insert(tk.END, current_data['notes'])
@@ -154,8 +156,8 @@ class AccommodationDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=7, column=0, columnspan=2, pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.buttons.save', default="Save"), command=self.save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         # Configure grid weights
         main_frame.columnconfigure(1, weight=1)
@@ -183,11 +185,11 @@ class AccommodationDialog:
         # Validate required fields
         student_id = self._get_student_id()
         if not student_id:
-            messagebox.showerror("Error", "Student is required")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.student_is_required', default="Student is required"))
             return
 
         if not self.type_var.get().strip():
-            messagebox.showerror("Error", "Accommodation type is required")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.accommodation_type_is_required', default="Accommodation type is required"))
             return
 
         # Validate and parse dates
@@ -201,19 +203,19 @@ class AccommodationDialog:
             try:
                 start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
             except ValueError:
-                messagebox.showerror("Error", "Invalid start date format. Use YYYY-MM-DD")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.invalid_start_date_format_use_yyyy_mm_dd', default="Invalid start date format. Use YYYY-MM-DD"))
                 return
 
         if end_date_str:
             try:
                 end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
             except ValueError:
-                messagebox.showerror("Error", "Invalid end date format. Use YYYY-MM-DD")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.invalid_end_date_format_use_yyyy_mm_dd', default="Invalid end date format. Use YYYY-MM-DD"))
                 return
 
         # Check date range
         if start_date and end_date and end_date <= start_date:
-            messagebox.showerror("Error", "End date must be after start date")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dialogs.accommodation_dialog.dialogs.end_date_must_be_after_start_date', default="End date must be after start date"))
             return
 
         # Collect data

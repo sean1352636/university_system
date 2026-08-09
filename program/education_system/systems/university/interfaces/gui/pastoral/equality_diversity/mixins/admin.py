@@ -1,6 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import json
 import os
@@ -44,42 +46,42 @@ class _AdminMixin:
         # Lives at the front of the Admin notebook because it's the
         # action admins want first when bootstrapping the module.
         sync_tab = Frame(nb, bg=t["panel"])
-        nb.add(sync_tab, text="Roster sync")
+        nb.add(sync_tab, text=_t('gui.pastoral.equality_diversity.mixins.admin.tabs.roster_sync', default="Roster sync"))
         self._build_roster_sync(sync_tab)
 
         # 31 — audit log viewer
         audit_tab = Frame(nb, bg=t["panel"])
-        nb.add(audit_tab, text="Audit log")
+        nb.add(audit_tab, text=_t('gui.pastoral.equality_diversity.mixins.admin.tabs.audit_log', default="Audit log"))
         self._build_audit_viewer(audit_tab)
 
         # 4 + 40 — pending deletions
         del_tab = Frame(nb, bg=t["panel"])
-        nb.add(del_tab, text="Pending deletions")
+        nb.add(del_tab, text=_t('gui.pastoral.equality_diversity.mixins.admin.tabs.pending_deletions', default="Pending deletions"))
         self._build_deletions(del_tab)
 
         # 24 — scheduled reports
         sched_tab = Frame(nb, bg=t["panel"])
-        nb.add(sched_tab, text="Schedules")
+        nb.add(sched_tab, text=_t('gui.pastoral.equality_diversity.mixins.admin.tabs.schedules', default="Schedules"))
         self._build_schedules(sched_tab)
 
         # 45 — consent overview
         consent_tab = Frame(nb, bg=t["panel"])
-        nb.add(consent_tab, text="Consent")
+        nb.add(consent_tab, text=_t('gui.pastoral.equality_diversity.mixins.admin.tabs.consent', default="Consent"))
         self._build_consent_admin(consent_tab)
 
         # 46 — anonymous tokens
         token_tab = Frame(nb, bg=t["panel"])
-        nb.add(token_tab, text="Anon tokens")
+        nb.add(token_tab, text=_t('gui.pastoral.equality_diversity.mixins.admin.tabs.anon_tokens', default="Anon tokens"))
         self._build_tokens(token_tab)
 
         # 42 — view-log explorer
         views_tab = Frame(nb, bg=t["panel"])
-        nb.add(views_tab, text="View log")
+        nb.add(views_tab, text=_t('gui.pastoral.equality_diversity.mixins.admin.tabs.view_log', default="View log"))
         self._build_view_log(views_tab)
 
         # 32/33 — GDPR
         gdpr_tab = Frame(nb, bg=t["panel"])
-        nb.add(gdpr_tab, text="GDPR")
+        nb.add(gdpr_tab, text=_t('gui.pastoral.equality_diversity.mixins.admin.tabs.gdpr', default="GDPR"))
         self._build_gdpr(gdpr_tab)
 
     def _build_roster_sync(self, root):
@@ -109,7 +111,7 @@ class _AdminMixin:
 
         if not self.principal.is_admin:
             Label(root,
-                  text="(admin only)",
+                  text=_t('gui.pastoral.equality_diversity.mixins.admin.labels.admin_only', default="(admin only)"),
                   bg=t["panel"], fg=t["danger"],
                   font=("Helvetica", 10, "italic")
                   ).pack(anchor="w", padx=12)
@@ -141,7 +143,7 @@ class _AdminMixin:
                 r = integrations.sync_from_students()
                 _show(r, "students")
             except Exception as e:
-                messagebox.showerror("Roster sync",
+                messagebox.showerror(_t('gui.pastoral.equality_diversity.mixins.admin.dialogs.roster_sync', default="Roster sync"),
                                       f"Sync failed:\n{e}")
 
         def _run_staff():
@@ -152,7 +154,7 @@ class _AdminMixin:
                 r = integrations.sync_from_staff()
                 _show(r, "staff")
             except Exception as e:
-                messagebox.showerror("Roster sync",
+                messagebox.showerror(_t('gui.pastoral.equality_diversity.mixins.admin.dialogs.roster_sync', default="Roster sync"),
                                       f"Sync failed:\n{e}")
 
         def _run_all():
@@ -166,20 +168,20 @@ class _AdminMixin:
                        "students": r["students"],
                        "staff": r["staff"]}, "all rosters")
             except Exception as e:
-                messagebox.showerror("Roster sync",
+                messagebox.showerror(_t('gui.pastoral.equality_diversity.mixins.admin.dialogs.roster_sync', default="Roster sync"),
                                       f"Sync failed:\n{e}")
 
-        Button(button_row, text="Sync from students",
+        Button(button_row, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.sync_from_students', default="Sync from students"),
                command=_run_students,
                bg=t["accent"], fg=t["header_fg"],
                relief="flat", padx=12, pady=6
                ).pack(side="left", padx=4)
-        Button(button_row, text="Sync from staff",
+        Button(button_row, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.sync_from_staff', default="Sync from staff"),
                command=_run_staff,
                bg=t["accent"], fg=t["header_fg"],
                relief="flat", padx=12, pady=6
                ).pack(side="left", padx=4)
-        Button(button_row, text="Sync all rosters",
+        Button(button_row, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.sync_all_rosters', default="Sync all rosters"),
                command=_run_all,
                bg="#16a34a", fg="white",
                relief="flat", padx=12, pady=6
@@ -207,7 +209,7 @@ class _AdminMixin:
                 conn.close()
             for r in rows:
                 tree.insert("", END, values=r)
-        Button(root, text="Refresh", command=refresh,
+        Button(root, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.refresh', default="Refresh"), command=refresh,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=10).pack(pady=4)
         refresh()
@@ -235,8 +237,8 @@ class _AdminMixin:
             result = access.approve_deletion(qid, self.principal.username)
             if not result:
                 messagebox.showinfo(
-                    "Approve",
-                    "Cannot approve (already approved or self-approval).")
+                    _t('gui.pastoral.equality_diversity.mixins.admin.dialogs.approve', default="Approve"),
+                    _t('gui.pastoral.equality_diversity.mixins.admin.dialogs.cannot_approve_already_approved_or_self_approval', default="Cannot approve (already approved or self-approval)."))
                 return
             entity, entity_id, _snap = result
             if entity == "person":
@@ -279,13 +281,13 @@ class _AdminMixin:
 
         bf = Frame(root, bg=self.theme["panel"])
         bf.pack(pady=4)
-        Button(bf, text="Approve & hard-delete", command=approve,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.approve_hard_delete', default="Approve & hard-delete"), command=approve,
                bg="#c0392b", fg="white", relief="flat",
                padx=10).pack(side="left", padx=4)
-        Button(bf, text="Restore", command=restore,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.restore', default="Restore"), command=restore,
                bg="#27ae60", fg="white", relief="flat",
                padx=10).pack(side="left", padx=4)
-        Button(bf, text="Refresh", command=refresh,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.refresh', default="Refresh"), command=refresh,
                bg="#6c757d", fg="white", relief="flat",
                padx=10).pack(side="left", padx=4)
 
@@ -310,19 +312,19 @@ class _AdminMixin:
 
         def run_now():
             paths = reports_engine.run_due_schedules()
-            messagebox.showinfo("Schedules",
+            messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.admin.dialogs.schedules', default="Schedules"),
                                 f"Ran {len(paths)} schedule(s).")
             refresh()
 
         bf = Frame(root, bg=self.theme["panel"])
         bf.pack(pady=4)
-        Button(bf, text="New…", command=new,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.new', default="New…"), command=new,
                bg="#27ae60", fg="white", relief="flat",
                padx=10).pack(side="left", padx=4)
-        Button(bf, text="Run due now", command=run_now,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.run_due_now', default="Run due now"), command=run_now,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=10).pack(side="left", padx=4)
-        Button(bf, text="Refresh", command=refresh,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.refresh', default="Refresh"), command=refresh,
                bg="#6c757d", fg="white", relief="flat",
                padx=10).pack(side="left", padx=4)
 
@@ -386,10 +388,10 @@ class _AdminMixin:
                 conn.commit()
             finally:
                 conn.close()
-            messagebox.showinfo("Tokens issued", "\n".join(tokens))
+            messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.admin.dialogs.tokens_issued', default="Tokens issued"), "\n".join(tokens))
             refresh()
 
-        Button(root, text="Issue…", command=issue,
+        Button(root, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.issue', default="Issue…"), command=issue,
                bg="#27ae60", fg="white", relief="flat",
                padx=10).pack(pady=4)
 
@@ -411,13 +413,13 @@ class _AdminMixin:
             tree.insert("", END, values=r)
 
     def _build_gdpr(self, root):
-        Label(root, text="Subject-Access Request / Right-to-Erasure",
+        Label(root, text=_t('gui.pastoral.equality_diversity.mixins.admin.labels.subject_access_request_right_to_erasure', default="Subject-Access Request / Right-to-Erasure"),
               bg=self.theme["panel"], fg=self.theme["accent"],
               font=("Helvetica", 12, "bold")).pack(anchor="w", padx=12, pady=8)
         ref_var = StringVar()
         entry_frame = Frame(root, bg=self.theme["panel"])
         entry_frame.pack(fill="x", padx=12)
-        Label(entry_frame, text="ref_code:",
+        Label(entry_frame, text=_t('gui.pastoral.equality_diversity.mixins.admin.labels.ref_code', default="ref_code:"),
               bg=self.theme["panel"], fg=self.theme["text"]
               ).pack(side="left")
         Entry(entry_frame, textvariable=ref_var, width=30).pack(side="left", padx=6)
@@ -431,22 +433,22 @@ class _AdminMixin:
                 return
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(data, f, default=str, indent=2)
-            messagebox.showinfo("SAR", f"Saved to {path}")
+            messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.admin.dialogs.sar', default="SAR"), f"Saved to {path}")
 
         def erase():
             ref = ref_var.get().strip()
             if not ref or not messagebox.askyesno(
-                    "Erase", f"Permanently erase all data for '{ref}'?"):
+                    _t('gui.pastoral.equality_diversity.mixins.admin.dialogs.erase', default="Erase"), f"Permanently erase all data for '{ref}'?"):
                 return
             n = integrations.erase_person(ref, self.principal.username)
-            messagebox.showinfo("Erase", f"Rows removed/updated: {n}")
+            messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.admin.dialogs.erase', default="Erase"), f"Rows removed/updated: {n}")
 
         bf = Frame(root, bg=self.theme["panel"])
         bf.pack(pady=8)
-        Button(bf, text="Export SAR", command=sar,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.export_sar', default="Export SAR"), command=sar,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=10).pack(side="left", padx=4)
-        Button(bf, text="Right-to-erasure", command=erase,
+        Button(bf, text=_t('gui.pastoral.equality_diversity.mixins.admin.buttons.right_to_erasure', default="Right-to-erasure"), command=erase,
                bg="#c0392b", fg="white", relief="flat",
                padx=10).pack(side="left", padx=4)
 

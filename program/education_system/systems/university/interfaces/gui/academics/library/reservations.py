@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
@@ -73,8 +75,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -125,14 +127,14 @@ def show_reservations(self):
     self.clear_content_area()
 
     reservations_frame = ttk.Frame(self.notebook)
-    self.notebook.add(reservations_frame, text="Reservations")
+    self.notebook.add(reservations_frame, text=_t('gui.academics.library.reservations.tabs.reservations', default="Reservations"))
 
     # Control frame
     control_frame = ttk.Frame(reservations_frame)
     control_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(control_frame, text="New Reservation", command=self.new_reservation_dialog).pack(side=tk.LEFT, padx=5)
-    ttk.Button(control_frame, text="Cancel Reservation", command=self.cancel_reservation).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.reservations.buttons.new_reservation', default="New Reservation"), command=self.new_reservation_dialog).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.reservations.buttons.cancel_reservation', default="Cancel Reservation"), command=self.cancel_reservation).pack(side=tk.LEFT, padx=5)
     ttk.Button(control_frame, text=_("common.refresh"), command=self.refresh_reservations).pack(side=tk.LEFT, padx=5)
 
     # Reservations table
@@ -220,7 +222,7 @@ def new_reservation_dialog(self):
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # Book selection dropdown
-    ttk.Label(main_frame, text="Select Book:").pack(anchor='w', pady=5)
+    ttk.Label(main_frame, text=_t('gui.academics.library.reservations.labels.select_book', default="Select Book:")).pack(anchor='w', pady=5)
     book_var = tk.StringVar()
     book_combo = ttk.Combobox(main_frame, textvariable=book_var, width=55, state='readonly')
     book_combo.pack(anchor='w', pady=5)
@@ -244,7 +246,7 @@ def new_reservation_dialog(self):
         pass
 
     # User ID — auto-fill from current user
-    ttk.Label(main_frame, text="User ID:").pack(anchor='w', pady=5)
+    ttk.Label(main_frame, text=_t('gui.academics.library.reservations.labels.user_id', default="User ID:")).pack(anchor='w', pady=5)
     user_id_var = tk.StringVar()
     if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
         user_id_var.set(self.auth.current_user.get('username', ''))
@@ -260,7 +262,7 @@ def new_reservation_dialog(self):
         user_id = user_id_var.get().strip()
 
         if not book_id or not user_id:
-            messagebox.showwarning(_("common.warning"), "Please select a book and enter a User ID")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reservations.dialogs.please_select_a_book_and_enter_a_user_id', default="Please select a book and enter a User ID"))
             return
 
         try:
@@ -269,18 +271,18 @@ def new_reservation_dialog(self):
                 if success:
                     # Email user about reservation
                     self._send_reservation_email(user_id, book_id, 'created')
-                    messagebox.showinfo(_("common.success"), "Reservation created successfully!")
+                    messagebox.showinfo(_("common.success"), _t('gui.academics.library.reservations.dialogs.reservation_created_successfully', default="Reservation created successfully!"))
                     dialog.destroy()
                     self.refresh_reservations()
                 else:
-                    messagebox.showerror(_("common.error"), "Failed to create reservation")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.library.reservations.dialogs.failed_to_create_reservation', default="Failed to create reservation"))
             else:
                 messagebox.showinfo(_("common.demo"), f"Reservation created for book {book_id} by user {user_id}")
                 dialog.destroy()
         except tk.TclError as e:
             messagebox.showerror(_("common.error"), f"Error creating reservation: {str(e)}")
 
-    ttk.Button(button_frame, text="Create Reservation", command=create_reservation).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reservations.buttons.create_reservation', default="Create Reservation"), command=create_reservation).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
 def create_reservation_database(self, book_id, user_id):
@@ -297,7 +299,7 @@ def create_reservation_database(self, book_id, user_id):
         book = cursor.fetchone()
 
         if not book:
-            messagebox.showerror(_("common.error"), "Book not found")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.reservations.dialogs.book_not_found', default="Book not found"))
             return False
 
         title, status = book
@@ -309,7 +311,7 @@ def create_reservation_database(self, book_id, user_id):
         ''', (book_id, user_id))
 
         if cursor.fetchone():
-            messagebox.showwarning(_("common.warning"), "User already has a reservation for this book")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reservations.dialogs.user_already_has_a_reservation_for_this_book', default="User already has a reservation for this book"))
             return False
 
         # Get next priority order
@@ -365,7 +367,7 @@ def cancel_reservation(self):
     """Cancel selected reservation"""
     selection = self.reservations_tree.selection()
     if not selection:
-        messagebox.showwarning(_("common.warning"), "Please select a reservation to cancel")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reservations.dialogs.please_select_a_reservation_to_cancel', default="Please select a reservation to cancel"))
         return
 
     item = self.reservations_tree.item(selection[0])
@@ -373,7 +375,7 @@ def cancel_reservation(self):
     book_title = item['values'][2]
     user_id = item['values'][3]
 
-    result = messagebox.askyesno("Confirm", f"Cancel reservation for '{book_title}' by {user_id}?")
+    result = messagebox.askyesno(_t('gui.academics.library.reservations.dialogs.confirm', default="Confirm"), f"Cancel reservation for '{book_title}' by {user_id}?")
 
     if result:
         try:
@@ -394,10 +396,10 @@ def cancel_reservation(self):
                     # Email user about cancellation
                     self._send_reservation_email(user_id, item['values'][1], 'cancelled')
 
-                    messagebox.showinfo(_("common.success"), "Reservation cancelled successfully!")
+                    messagebox.showinfo(_("common.success"), _t('gui.academics.library.reservations.dialogs.reservation_cancelled_successfully', default="Reservation cancelled successfully!"))
                     self.refresh_reservations()
             else:
-                messagebox.showinfo(_("common.demo"), "Reservation cancelled!")
+                messagebox.showinfo(_("common.demo"), _t('gui.academics.library.reservations.dialogs.reservation_cancelled_variant_2', default="Reservation cancelled!"))
                 self.refresh_reservations()
 
         except tk.TclError as e:
@@ -422,7 +424,7 @@ def reserve_selected_book(self):
     ttk.Label(dialog, text=f"Reserve Book: {book_id}", font=('Arial', 12, 'bold')).pack(pady=10)
     ttk.Label(dialog, text=f"Title: {item['values'][1]}").pack(pady=5)
 
-    ttk.Label(dialog, text="User ID or Email:").pack(pady=10)
+    ttk.Label(dialog, text=_t('gui.academics.library.reservations.labels.user_id_or_email', default="User ID or Email:")).pack(pady=10)
     user_var = tk.StringVar()
     user_entry = ttk.Entry(dialog, textvariable=user_var, width=30)
     user_entry.pack(pady=5)
@@ -432,7 +434,7 @@ def reserve_selected_book(self):
         try:
             user_id = user_var.get().strip()
             if not user_id:
-                messagebox.showwarning(_("common.warning"), "Please enter a user ID")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reservations.dialogs.please_enter_a_user_id', default="Please enter a user ID"))
                 return
 
             # Verify user exists
@@ -446,7 +448,7 @@ def reserve_selected_book(self):
 
             user = cursor.fetchone()
             if not user:
-                messagebox.showerror(_("common.error"), "User not found")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.reservations.dialogs.user_not_found', default="User not found"))
                 conn.close()
                 return
 
@@ -459,7 +461,7 @@ def reserve_selected_book(self):
             ''', (book_id, actual_user_id))
 
             if cursor.fetchone()[0] > 0:
-                messagebox.showwarning(_("common.warning"), "This book is already reserved by this user")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reservations.dialogs.this_book_is_already_reserved_by_this_user', default="This book is already reserved by this user"))
                 conn.close()
                 return
 
@@ -474,22 +476,22 @@ def reserve_selected_book(self):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo(_("common.success"), "Book reserved successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.library.reservations.dialogs.book_reserved_successfully', default="Book reserved successfully!"))
             dialog.destroy()
 
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Reservation failed: {str(e)}")
 
-    ttk.Button(dialog, text="Reserve", command=process_quick_reservation).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.academics.library.reservations.buttons.reserve', default="Reserve"), command=process_quick_reservation).pack(pady=10)
     ttk.Button(dialog, text=_("common.cancel"), command=dialog.destroy).pack(pady=5)
 
 def reserve_book_gui(self, book_id=None):
     """Reserve a book that's currently unavailable"""
     reserve_window = tk.Toplevel(self.master)
-    reserve_window.title("Reserve Book")
+    reserve_window.title(_t('gui.academics.library.reservations.windows.reserve_book', default="Reserve Book"))
     reserve_window.geometry("500x400")
 
-    ttk.Label(reserve_window, text="Reserve Book",
+    ttk.Label(reserve_window, text=_t('gui.academics.library.reservations.labels.reserve_book', default="Reserve Book"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Book info frame
@@ -498,15 +500,15 @@ def reserve_book_gui(self, book_id=None):
 
     book_id_var = tk.StringVar(value=book_id or "")
     user_id_var = tk.StringVar()
-    book_info_var = tk.StringVar(value="No book selected")
+    book_info_var = tk.StringVar(value=_t('gui.academics.library.reservations.values.no_book_selected', default="No book selected"))
 
-    ttk.Label(book_frame, text="Book ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(book_frame, text=_t('gui.academics.library.reservations.labels.book_id', default="Book ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     ttk.Entry(book_frame, textvariable=book_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
 
     def lookup_book():
         bid = book_id_var.get().strip()
         if not bid:
-            messagebox.showwarning(_("common.warning"), "Please enter a Book ID")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reservations.dialogs.please_enter_a_book_id', default="Please enter a Book ID"))
             return
 
         try:
@@ -520,17 +522,17 @@ def reserve_book_gui(self, book_id=None):
                 book_info_var.set(f"{title} by {author}\nStatus: {status}")
 
                 if status == 'available':
-                    messagebox.showinfo("Available",
-                        "This book is currently available. You can check it out directly instead of reserving it.")
+                    messagebox.showinfo(_t('gui.academics.library.reservations.dialogs.available', default="Available"),
+                        _t('gui.academics.library.reservations.dialogs.this_book_is_currently_available_you_can_check_it_out_directly_i', default="This book is currently available. You can check it out directly instead of reserving it."))
             else:
                 book_info_var.set("Book not found")
-                messagebox.showerror(_("common.error"), "Book not found")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.reservations.dialogs.book_not_found', default="Book not found"))
 
             conn.close()
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Failed to lookup book: {str(e)}")
 
-    ttk.Button(book_frame, text="Lookup", command=lookup_book).grid(row=0, column=2, padx=5)
+    ttk.Button(book_frame, text=_t('gui.academics.library.reservations.buttons.lookup', default="Lookup"), command=lookup_book).grid(row=0, column=2, padx=5)
 
     ttk.Label(book_frame, textvariable=book_info_var, foreground='blue').grid(
         row=1, column=0, columnspan=3, pady=10, sticky=tk.W)
@@ -539,7 +541,7 @@ def reserve_book_gui(self, book_id=None):
     user_frame = ttk.LabelFrame(reserve_window, text=_("library.frames.user_information"), padding=15)
     user_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Label(user_frame, text="User/Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(user_frame, text=_t('gui.academics.library.reservations.labels.user_student_id', default="User/Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     ttk.Entry(user_frame, textvariable=user_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
 
     def perform_reservation():
@@ -547,7 +549,7 @@ def reserve_book_gui(self, book_id=None):
         uid = user_id_var.get().strip()
 
         if not bid or not uid:
-            messagebox.showerror(_("common.error"), "Please provide both Book ID and User ID")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.reservations.dialogs.please_provide_both_book_id_and_user_id', default="Please provide both Book ID and User ID"))
             return
 
         try:
@@ -559,7 +561,7 @@ def reserve_book_gui(self, book_id=None):
             book = cursor.fetchone()
 
             if not book:
-                messagebox.showerror(_("common.error"), "Book not found")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.reservations.dialogs.book_not_found', default="Book not found"))
                 conn.close()
                 return
 
@@ -572,7 +574,7 @@ def reserve_book_gui(self, book_id=None):
             ''', (bid, uid))
 
             if cursor.fetchone():
-                messagebox.showerror(_("common.error"), "User already has an active reservation for this book")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.reservations.dialogs.user_already_has_an_active_reservation_for_this_book', default="User already has an active reservation for this book"))
                 conn.close()
                 return
 
@@ -620,24 +622,24 @@ def reserve_book_gui(self, book_id=None):
     button_frame = ttk.Frame(reserve_window)
     button_frame.pack(fill=tk.X, padx=10, pady=20)
 
-    ttk.Button(button_frame, text="Reserve", command=perform_reservation).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reservations.buttons.reserve', default="Reserve"), command=perform_reservation).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=reserve_window.destroy).pack(side=tk.LEFT, padx=5)
 
 def manage_reservations_gui(self):
     """Manage all book reservations"""
     manage_window = tk.Toplevel(self.master)
-    manage_window.title("Manage Reservations")
+    manage_window.title(_t('gui.academics.library.reservations.windows.manage_reservations', default="Manage Reservations"))
     manage_window.geometry("900x600")
 
-    ttk.Label(manage_window, text="Manage Book Reservations",
+    ttk.Label(manage_window, text=_t('gui.academics.library.reservations.labels.manage_book_reservations', default="Manage Book Reservations"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Filter frame
-    filter_frame = ttk.LabelFrame(manage_window, text="Filter", padding=10)
+    filter_frame = ttk.LabelFrame(manage_window, text=_t('gui.academics.library.reservations.labels.filter', default="Filter"), padding=10)
     filter_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    status_filter = tk.StringVar(value="active")
-    ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+    status_filter = tk.StringVar(value=_t('gui.academics.library.reservations.values.active', default="active"))
+    ttk.Label(filter_frame, text=_t('gui.academics.library.reservations.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
     ttk.Combobox(filter_frame, textvariable=status_filter,
                 values=["all", "active", "fulfilled", "expired", "cancelled"],
                 width=15).pack(side=tk.LEFT, padx=5)
@@ -703,13 +705,13 @@ def manage_reservations_gui(self):
     def cancel_reservation():
         selection = res_tree.selection()
         if not selection:
-            messagebox.showwarning(_("common.warning"), "Please select a reservation to cancel")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reservations.dialogs.please_select_a_reservation_to_cancel', default="Please select a reservation to cancel"))
             return
 
         item = res_tree.item(selection[0])
         res_id = item['values'][0]
 
-        if messagebox.askyesno("Confirm", "Cancel this reservation?"):
+        if messagebox.askyesno(_t('gui.academics.library.reservations.dialogs.confirm', default="Confirm"), _t('gui.academics.library.reservations.dialogs.cancel_this_reservation', default="Cancel this reservation?")):
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
@@ -718,7 +720,7 @@ def manage_reservations_gui(self):
                 conn.close()
 
                 log_audit_event(get_current_user_id(), f"Cancelled reservation {res_id}", "book_reservations")
-                messagebox.showinfo(_("common.success"), "Reservation cancelled")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.reservations.dialogs.reservation_cancelled', default="Reservation cancelled"))
                 load_reservations()
 
             except (sqlite3.Error, DatabaseError, tk.TclError) as e:
@@ -728,7 +730,7 @@ def manage_reservations_gui(self):
     button_frame = ttk.Frame(manage_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Cancel Selected", command=cancel_reservation).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reservations.buttons.cancel_selected', default="Cancel Selected"), command=cancel_reservation).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=manage_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     # Load initial data

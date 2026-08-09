@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -890,7 +892,7 @@ def show_comprehensive_reports(self):
     ttk.Label(frame, text=_t('advanced_search.reports.comprehensive_reports_title'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Report types
-    reports_frame = ttk.LabelFrame(frame, text="Available Reports", padding="10")
+    reports_frame = ttk.LabelFrame(frame, text=_t('gui.shell.advanced_search.reports.labels.available_reports', default="Available Reports"), padding="10")
     reports_frame.pack(fill=tk.X, pady=(0, 20))
 
     report_options = [
@@ -1000,7 +1002,7 @@ def _save_report_as_txt(self, report_content, report_title):
         defaultextension=".txt",
         filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
         initialfile=default_filename,
-        title="Save Report As"
+        title=_t('gui.shell.advanced_search.reports.dialogs.save_report_as', default="Save Report As")
     )
 
     if file_path:
@@ -1076,7 +1078,7 @@ def _send_report_to_admin(self, report_content, report_title):
         # Show confirmation dialog with admin emails
         admin_list = "\n".join([f"  - {email}" for email in admin_emails])
         confirm = messagebox.askyesno(
-            "Confirm Send",
+            _t('gui.shell.advanced_search.reports.dialogs.confirm_send', default="Confirm Send"),
             f"Send report to the following admin(s)?\n\n{admin_list}\n\n"
             f"Report: {report_title}"
         )
@@ -1095,24 +1097,8 @@ def _send_report_to_admin(self, report_content, report_title):
         subject = f"Advanced Search Report: {report_title}"
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        body = f"""Dear Administrator,
-
-Please find the requested report below:
-
-Report Title: {report_title}
-Generated: {timestamp}
-
-{'=' * 70}
-
-{report_content}
-
-{'=' * 70}
-
-This is an automated report from the University Advanced Search System.
-
-Best regards,
-Advanced Search System
-"""
+        from education_system.systems.university.infrastructure.email.template_utils import render_template
+        subject, body = render_template("reports/advanced_search_report", {"report_title": report_title, "timestamp": timestamp, "report_content": report_content})
 
         # Send to all admins
         success_count = 0
@@ -1519,7 +1505,7 @@ def generate_demographics_analysis(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Demographics Analysis Report",
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.reports.labels.demographics_analysis_report', default="Demographics Analysis Report"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     result_text = scrolledtext.ScrolledText(frame, height=20, wrap=tk.WORD, font=('Courier', 9))
@@ -1620,8 +1606,8 @@ def generate_demographics_analysis(self):
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="🔄 Refresh", command=generate_analysis).pack(side=tk.LEFT)
-    ttk.Button(button_frame, text="💾 Export",
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.reports.buttons.refresh', default="🔄 Refresh"), command=generate_analysis).pack(side=tk.LEFT)
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.reports.buttons.export', default="💾 Export"),
               command=lambda: self.export_report_to_file(result_text.get(1.0, tk.END), "demographics")).pack(side=tk.LEFT, padx=(10, 0))
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.generate_demographics_analysis = generate_demographics_analysis
@@ -1645,7 +1631,7 @@ def generate_performance_report(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Academic Performance Report",
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.reports.labels.academic_performance_report', default="Academic Performance Report"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     result_text = scrolledtext.ScrolledText(frame, height=25, wrap=tk.WORD, font=('Courier', 9))
@@ -1728,8 +1714,8 @@ def generate_performance_report(self):
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="🔄 Refresh", command=generate_report).pack(side=tk.LEFT)
-    ttk.Button(button_frame, text="💾 Export",
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.reports.buttons.refresh', default="🔄 Refresh"), command=generate_report).pack(side=tk.LEFT)
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.reports.buttons.export', default="💾 Export"),
               command=lambda: self.export_report_to_file(result_text.get(1.0, tk.END), "performance")).pack(side=tk.LEFT, padx=(10, 0))
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.generate_performance_report = generate_performance_report

@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import staff_required, token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -399,6 +399,7 @@ def get_available_slots(dentist_id: str):
 
 @dentist_bp.route("/patients/<int:patient_id>", methods=["PUT"])
 @token_required
+@staff_required
 def update_patient(patient_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -465,6 +466,7 @@ def search_patients():
 
 @dentist_bp.route("/patients/<int:patient_id>/treatments", methods=["GET"])
 @token_required
+@staff_required
 def get_patient_treatments(patient_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -522,6 +524,7 @@ def create_prescription():
 
 @dentist_bp.route("/patients/<int:patient_id>/prescriptions", methods=["GET"])
 @token_required
+@staff_required
 def get_patient_prescriptions(patient_id: int):
     with get_connection() as conn:
         row = conn.execute(

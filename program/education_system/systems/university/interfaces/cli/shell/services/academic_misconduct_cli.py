@@ -10,7 +10,7 @@ from pathlib import Path
 import json
 
 # Database and utilities imports
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 try:
     from education_system.systems.university.infrastructure.email.email_service import queue_email
@@ -28,7 +28,7 @@ except ImportError:
 
 def init_misconduct_tables():
     """Create the academic misconduct tables if they don't exist."""
-    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+    conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
     try:
         cursor = conn.cursor()
 
@@ -90,7 +90,7 @@ def init_misconduct_tables():
 def get_next_case_id():
     """Generate the next case ID in format AM-YYYY-NNNN."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         year = datetime.now().year
@@ -119,7 +119,7 @@ def get_next_case_id():
 def load_all_cases():
     """Load all cases from the database."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute('''
@@ -159,7 +159,7 @@ def load_all_cases():
 def get_case_by_id(case_id):
     """Get a specific case by ID."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute('''
@@ -198,7 +198,7 @@ def get_case_by_id(case_id):
 def save_case(case_data):
     """Save a new case to the database."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO academic_misconduct_cases
@@ -229,7 +229,7 @@ def save_case(case_data):
 def update_case(case_data):
     """Update an existing case in the database."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
         cursor.execute('''
             UPDATE academic_misconduct_cases
@@ -254,7 +254,7 @@ def update_case(case_data):
 def delete_case(case_id):
     """Delete a case from the database."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
         cursor.execute('DELETE FROM academic_misconduct_history WHERE case_id=?', (case_id,))
         cursor.execute('DELETE FROM academic_misconduct_evidence WHERE case_id=?', (case_id,))
@@ -269,7 +269,7 @@ def delete_case(case_id):
 def add_case_history(case_id, description, event_type='info'):
     """Add an entry to case history."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO academic_misconduct_history (case_id, event_date, event_description, event_type)
@@ -285,7 +285,7 @@ def add_case_history(case_id, description, event_type='info'):
 def get_case_history(case_id):
     """Get history for a specific case."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute('''
@@ -304,7 +304,7 @@ def get_case_history(case_id):
 def get_case_evidence(case_id):
     """Get evidence for a specific case."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute('''
@@ -324,7 +324,7 @@ def get_case_evidence(case_id):
 def add_evidence(case_id, file_name, file_path='', file_size='', uploaded_by=''):
     """Add evidence to a case."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
         cursor.execute('''
             INSERT INTO academic_misconduct_evidence
@@ -342,7 +342,7 @@ def add_evidence(case_id, file_name, file_path='', file_size='', uploaded_by='')
 def get_dashboard_stats():
     """Get statistics for dashboard."""
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         stats = {}

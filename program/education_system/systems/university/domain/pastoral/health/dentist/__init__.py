@@ -1,32 +1,30 @@
-"""
-Dentist/Dental Clinic Module
+"""University dental-clinic domain API."""
 
-Provides comprehensive dental clinic management including
-appointments, treatments, patient records, and billing with
-email and finance integration.
-"""
-
-from education_system.systems.university.domain.pastoral.health.dentist.services.dentist_core import (
-    PatientManager,
+from .constants import APPOINTMENT_SLOTS, DENTIST_STAFF, TREATMENT_TYPES
+from .models import Appointment, Patient, Payment, Treatment
+from .services.dentist_core import (
     AppointmentManager,
-    TreatmentManager,
+    PatientManager,
     PrescriptionManager,
-    TransactionManager,
     ReportManager,
+    TransactionManager,
+    TreatmentManager,
     init_dentist_db,
-    TREATMENT_TYPES,
-    DENTIST_STAFF
 )
 
-
 __all__ = [
-    'PatientManager',
-    'AppointmentManager',
-    'TreatmentManager',
-    'PrescriptionManager',
-    'TransactionManager',
-    'ReportManager',
-    'init_dentist_db',
-    'TREATMENT_TYPES',
-    'DENTIST_STAFF'
+    "Appointment",
+    "Patient",
+    "Payment",
+    "Treatment",
+    "AppointmentManager",
+    "PatientManager",
+    "PrescriptionManager",
+    "ReportManager",
+    "TransactionManager",
+    "TreatmentManager",
+    "init_dentist_db",
+    "APPOINTMENT_SLOTS",
+    "DENTIST_STAFF",
+    "TREATMENT_TYPES",
 ]

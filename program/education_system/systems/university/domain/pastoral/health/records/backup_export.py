@@ -1,4 +1,4 @@
-from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager, get_connection, DEFAULT_DB_PATH
+from education_system.systems.university.infrastructure.health.storage import sqlite3, DatabaseManager, get_connection, DEFAULT_DB_PATH
 from education_system.systems.university.domain.pastoral.health.services import validate_csv_format, log_audit_event
 from datetime import datetime, timedelta
 import random
@@ -354,8 +354,8 @@ def restore_from_backup(auth):
     print("All current data will be lost!")
 
     # List available backups
-    from education_system.systems.university.infrastructure import paths as _paths
-    backup_dir = str(_paths.BACKUP_HEALTH_DIR)
+    from education_system import paths as _paths
+    backup_dir = str(_paths.UNIVERSITY_BACKUP_HEALTH_DIR)
     if not os.path.exists(backup_dir):
         print("No backup directory found.")
         return
@@ -544,10 +544,10 @@ def create_database_backup(auth):
     import shutil
     import os
 
-    from education_system.systems.university.infrastructure import paths as _paths
+    from education_system import paths as _paths
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     backup_filename = f"student_records_backup_{timestamp}.db"
-    backup_dir = str(_paths.BACKUP_HEALTH_DIR)
+    backup_dir = str(_paths.UNIVERSITY_BACKUP_HEALTH_DIR)
 
     # Create backup directory if it doesn't exist
     if not os.path.exists(backup_dir):
@@ -573,8 +573,8 @@ def view_backup_history(auth):
     import os
     import glob
 
-    from education_system.systems.university.infrastructure import paths as _paths
-    backup_dir = str(_paths.BACKUP_HEALTH_DIR)
+    from education_system import paths as _paths
+    backup_dir = str(_paths.UNIVERSITY_BACKUP_HEALTH_DIR)
 
     if not os.path.exists(backup_dir):
         print("No backup directory found.")

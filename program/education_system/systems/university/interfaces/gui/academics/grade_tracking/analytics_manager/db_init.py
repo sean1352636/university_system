@@ -1,5 +1,7 @@
 """Database initialization for analytics manager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from tkinter import messagebox
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -82,7 +84,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.db_init.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 
@@ -202,5 +204,5 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.db_init.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False

@@ -6,12 +6,12 @@ appointments, treatments, patient records, and billing with
 email and finance integration.
 """
 
-from education_system.systems.university.infrastructure.database.db import sqlite3
+from education_system.systems.university.infrastructure.health.storage import sqlite3
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any, Tuple
 
-from education_system.systems.university.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.infrastructure.health.storage import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, escape_like  # nosec B608
 

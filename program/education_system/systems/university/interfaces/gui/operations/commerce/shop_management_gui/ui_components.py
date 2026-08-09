@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -78,7 +80,7 @@ logger = logging.getLogger(__name__)
 def show_about(self):
     """Show about dialog"""
     about_window = tk.Toplevel(self.root)
-    about_window.title("About")
+    about_window.title(_t('gui.operations.commerce.shop_management_gui.ui_components.windows.about', default="About"))
     about_window.geometry("600x500")
     about_window.resizable(True, True)
 
@@ -89,11 +91,11 @@ def show_about(self):
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
     # About content
-    ttk.Label(main_frame, text="University Shop Management System",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.ui_components.labels.university_shop_management_system', default="University Shop Management System"),
              style='Title.TLabel').grid(row=0, column=0, pady=10)
 
-    ttk.Label(main_frame, text="GUI Version with CLI Compatibility").grid(row=1, column=0, pady=5)
-    ttk.Label(main_frame, text="Built with Python & Tkinter").grid(row=2, column=0, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.ui_components.labels.gui_version_with_cli_compatibility', default="GUI Version with CLI Compatibility")).grid(row=1, column=0, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.ui_components.labels.built_with_python_tkinter', default="Built with Python & Tkinter")).grid(row=2, column=0, pady=5)
 
     info_text = """
 This GUI application provides a modern interface for the
@@ -119,7 +121,7 @@ called directly for automation or scripting purposes.
     text_widget.insert('1.0', info_text.strip())
     text_widget.configure(state='disabled')
 
-    ttk.Button(main_frame, text="Close", command=about_window.destroy).grid(row=4, column=0, pady=10)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.shop_management_gui.ui_components.buttons.close', default="Close"), command=about_window.destroy).grid(row=4, column=0, pady=10)
 
     # Now that window is fully created, make it modal
     about_window.update_idletasks()

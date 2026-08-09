@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH,
 )
@@ -9,7 +11,7 @@ class AlternativeCourseDialog:
         self.auth = auth
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Find Alternative Courses")
+        self.dialog.title(_t('gui.academics.course_management_gui.recommendations.alternative_dialog.windows.find_alternative_courses', default="Find Alternative Courses"))
         self.dialog.geometry("800x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -22,18 +24,18 @@ class AlternativeCourseDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Course selection
-        selection_frame = ttk.LabelFrame(main_frame, text="Select Reference Course", padding=10)
+        selection_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.alternative_dialog.labels.select_reference_course', default="Select Reference Course"), padding=10)
         selection_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(selection_frame, text="Course:").pack(side=tk.LEFT)
+        ttk.Label(selection_frame, text=_t('gui.academics.course_management_gui.recommendations.alternative_dialog.labels.course', default="Course:")).pack(side=tk.LEFT)
         self.course_combo = ttk.Combobox(selection_frame, width=50)
         self.course_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(selection_frame, text="Find Alternatives",
+        ttk.Button(selection_frame, text=_t('gui.academics.course_management_gui.recommendations.alternative_dialog.buttons.find_alternatives', default="Find Alternatives"),
                   command=self.find_alternatives).pack(side=tk.RIGHT, padx=5)
 
         # Results display
-        results_frame = ttk.LabelFrame(main_frame, text="Alternative Courses", padding=10)
+        results_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.alternative_dialog.labels.alternative_courses', default="Alternative Courses"), padding=10)
         results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         columns = ("Code", "Name", "Department", "Level", "Match Type", "Available")
@@ -50,7 +52,7 @@ class AlternativeCourseDialog:
 
         self.load_course_options()
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.academics.course_management_gui.recommendations.alternative_dialog.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)
 
     def load_course_options(self):
         try:
@@ -78,7 +80,7 @@ class AlternativeCourseDialog:
     def find_alternatives(self):
         selected_text = self.course_combo.get()
         if selected_text not in self.course_id_map:
-            messagebox.showwarning(_("common.selection_required"), "Please select a course.")
+            messagebox.showwarning(_("common.selection_required"), _t('gui.academics.course_management_gui.recommendations.alternative_dialog.dialogs.please_select_a_course', default="Please select a course."))
             return
 
         course_id = self.course_id_map[selected_text]
@@ -159,7 +161,7 @@ class AlternativeCourseDialog:
             conn.close()
 
             if not alternatives:
-                messagebox.showinfo(_("common.no_results"), "No alternative courses found.")
+                messagebox.showinfo(_("common.no_results"), _t('gui.academics.course_management_gui.recommendations.alternative_dialog.dialogs.no_alternative_courses_found', default="No alternative courses found."))
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to find alternatives: {e}")

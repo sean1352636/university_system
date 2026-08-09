@@ -10,6 +10,8 @@ After some losing spins the machine offers a feature:
 Match three on the centre line to win.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -38,7 +40,7 @@ START_CREDITS, MIN_BET = 200, 5
 class FruitMachine:
     def __init__(self, root):
         self.root = root
-        root.title("Fruit Machine \u2014 Hold & Nudge")
+        root.title(_t('gui.operations.commerce.betting.games.fruit_machine.windows.fruit_machine_hold_nudge', default="Fruit Machine \u2014 Hold & Nudge"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -56,7 +58,7 @@ class FruitMachine:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=20, pady=16)
         f.pack()
-        tk.Label(f, text="\u2605 FRUIT MACHINE \u2605", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.fruit_machine.labels.fruit_machine', default="\u2605 FRUIT MACHINE \u2605"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 19, "bold")).pack()
         w = COLS * CELL + (COLS + 1) * GAP
         h = ROWS * CELL + (ROWS + 1) * GAP
@@ -75,8 +77,8 @@ class FruitMachine:
         self.msg = tk.Label(f, text="", bg=FELT, fg="white",
                             font=("Helvetica", 13, "bold"))
         self.msg.pack(pady=2)
-        tk.Label(f, text="777=60x  BAR=30x  \u25c6=16x  \u2665=10x  "
-                 "\u25cf=8x  \u2663=5x", bg=FELT, fg="#9fb3c8",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.fruit_machine.labels.value_777_60x_bar_30x_16x_10x_8x_5x', default="777=60x  BAR=30x  \u25c6=16x  \u2665=10x  "
+                 "\u25cf=8x  \u2663=5x"), bg=FELT, fg="#9fb3c8",
                  font=("Helvetica", 9)).pack()
 
         bar = tk.Frame(f, bg=FELT, pady=8)
@@ -87,7 +89,7 @@ class FruitMachine:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.fruit_machine.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -103,12 +105,12 @@ class FruitMachine:
 
         btns = tk.Frame(f, bg=FELT, pady=6)
         btns.pack()
-        self.spin_btn = tk.Button(btns, text="SPIN", command=self.spin, width=12,
+        self.spin_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.fruit_machine.buttons.spin', default="SPIN"), command=self.spin, width=12,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
         self.spin_btn.pack(side="left", padx=6)
-        self.done_btn = tk.Button(btns, text="COLLECT", command=self.finish_nudge,
+        self.done_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.fruit_machine.buttons.collect', default="COLLECT"), command=self.finish_nudge,
                                   width=12, font=("Helvetica", 14, "bold"),
                                   bg="#555", fg="white", activebackground=GOLD,
                                   bd=0, pady=8, cursor="hand2", state="disabled")
@@ -137,7 +139,7 @@ class FruitMachine:
             if self.mode == "hold":
                 self.hold_lbls[c].config(text="HELD" if self.held[c] else "hold?")
             elif self.mode == "nudge":
-                self.hold_lbls[c].config(text="nudge \u2193")
+                self.hold_lbls[c].config(text=_t('gui.operations.commerce.betting.games.fruit_machine.text.nudge', default="nudge \u2193"))
             else:
                 self.hold_lbls[c].config(text="")
 
@@ -187,7 +189,7 @@ class FruitMachine:
         free = self.mode == "hold"
         if not free:
             if self.credits < self.bet:
-                self.msg.config(text="Not enough credits.")
+                self.msg.config(text=_t('gui.operations.commerce.betting.games.fruit_machine.text.not_enough_credits', default="Not enough credits."))
                 return
             self.credits -= self.bet
             self.held = [False, False, False]
@@ -240,7 +242,7 @@ class FruitMachine:
         r = random.random()
         if not free and r < 0.30:
             self.mode = "hold"
-            self.msg.config(text="HOLD offered! Click reels to hold, then SPIN.",
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.fruit_machine.text.hold_offered_click_reels_to_hold_then_spin', default="HOLD offered! Click reels to hold, then SPIN."),
                             fg=GOLD)
             self.render()
             self._enable_idle_controls()
@@ -253,7 +255,7 @@ class FruitMachine:
             self.busy = False
             self.done_btn.config(state="normal")
         else:
-            self.msg.config(text="No win. Spin again!", fg="white")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.fruit_machine.text.no_win_spin_again', default="No win. Spin again!"), fg="white")
             self._end_turn()
 
     def finish_nudge(self):
@@ -268,7 +270,7 @@ class FruitMachine:
             self.win_cells = {(c, 1) for c in range(COLS)}
             self.msg.config(text=f"Nudge WIN {win}!", fg=GOLD)
         else:
-            self.msg.config(text="No win from nudges.", fg="white")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.fruit_machine.text.no_win_from_nudges', default="No win from nudges."), fg="white")
         self._end_turn()
 
     def _enable_idle_controls(self):
@@ -278,7 +280,7 @@ class FruitMachine:
     def _end_turn(self):
         self.render()
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.fruit_machine.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

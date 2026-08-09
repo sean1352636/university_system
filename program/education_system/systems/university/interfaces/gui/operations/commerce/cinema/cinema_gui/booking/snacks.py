@@ -144,7 +144,7 @@ def show_snacks_only_page(self):
 
 def create_snack_order(self):
     form = tk.Toplevel(self.root)
-    form.title("New Snack Order")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.booking.snacks.windows.new_snack_order', default="New Snack Order"))
     form.geometry("400x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -155,7 +155,7 @@ def create_snack_order(self):
     tk.Label(frame, text=_t("cinema.labels.customer_label"), bg="#ffffff", fg="#333333").pack(anchor="w")
     name_e = ttk.Entry(frame, width=35)
     name_e.pack(pady=5)
-    tk.Label(frame, text="Select Items:", bg="#ffffff", fg="#333333").pack(anchor="w")
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.booking.snacks.labels.select_items', default="Select Items:"), bg="#ffffff", fg="#333333").pack(anchor="w")
     item_vars = {}
     for item in list(SNACKS_MENU.keys())[:6]:
         var = tk.IntVar(value=0)
@@ -166,7 +166,7 @@ def create_snack_order(self):
     def order():
         items = {item: 1 for item, var in item_vars.items() if var.get()}
         if not items:
-            messagebox.showwarning(_t("cinema.common.warning"), "Select items")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.booking.snacks.dialogs.select_items', default="Select items"))
             return
         total = sum(SNACKS_MENU[item] for item in items.keys())
         items_str = ", ".join(items.keys())

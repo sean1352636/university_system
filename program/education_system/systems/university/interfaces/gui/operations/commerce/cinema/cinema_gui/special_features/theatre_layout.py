@@ -33,7 +33,7 @@ def show_theatre_layout_page(self):
     selector_frame = ttk.Frame(self.content_frame, style="Card.TFrame", padding=15)
     selector_frame.pack(fill="x", pady=10)
 
-    tk.Label(selector_frame, text="Select Screen:", bg="#ffffff", fg="#333333").pack(side="left")
+    tk.Label(selector_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.special_features.theatre_layout.labels.select_screen', default="Select Screen:"), bg="#ffffff", fg="#333333").pack(side="left")
     screen_var = tk.StringVar(value="1")
     screen_combo = ttk.Combobox(selector_frame, textvariable=screen_var, width=10,
                                 values=["1", "2", "3", "4", "5", "6", "7", "8"])
@@ -60,7 +60,7 @@ def show_theatre_layout_page(self):
     fields['seats_per_row'].set(12)
     fields['seats_per_row'].grid(row=2, column=1, pady=5, padx=10, sticky="w")
 
-    tk.Label(config_frame, text="VIP Rows (comma-separated):", bg="#ffffff", fg="#333333").grid(row=3, column=0, sticky="w", pady=5)
+    tk.Label(config_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.special_features.theatre_layout.labels.vip_rows_comma_separated', default="VIP Rows (comma-separated):"), bg="#ffffff", fg="#333333").grid(row=3, column=0, sticky="w", pady=5)
     fields['vip_rows'] = ttk.Entry(config_frame, width=30)
     fields['vip_rows'].insert(0, "A, B")
     fields['vip_rows'].grid(row=3, column=1, pady=5, padx=10, sticky="w")

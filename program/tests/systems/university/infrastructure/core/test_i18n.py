@@ -688,3 +688,52 @@ class TestI18nAllExports:
         ]
         for name in expected:
             assert name in i18n_mod.__all__
+
+
+class TestI18nEdgeCases:
+    """Regression coverage for locale boundaries used by the UI."""
+
+    def test_rtl_translation_and_unicode_are_preserved(self):
+        _core._loaded = True
+        _core._current_language = "ar"
+        _core._translations = {"ar": {"welcome": "مرحباً بك"}, "en": {}}
+
+        value = i18n_mod.get_text("welcome")
+
+        assert value == "مرحباً بك"
+        assert any("\u0600" <= character <= "\u06ff" for character in value)
+
+    def test_translated_text_can_expand_without_truncation(self):
+        _core._loaded = True
+        _core._current_language = "de"
+        expanded = "Eine deutlich längere Übersetzung für {name} mit zusätzlichen Details"
+        _core._translations = {"de": {"notice": expanded}, "en": {}}
+
+        value = i18n_mod.get_text("notice", name="Alex")
+
+        assert value == expanded.replace("{name}", "Alex")
+        assert len(value) > len("Notice Alex")
+
+    def test_locale_specific_date_and_currency_values_are_format_arguments(self):
+        _core._loaded = True
+        _core._current_language = "fr"
+        _core._translations = {
+            "fr": {"invoice": "Total : {amount} EUR — échéance {date}"},
+            "en": {},
+        }
+
+        assert i18n_mod.get_text(
+            "invoice", amount="1 234,50", date="31/12/2026"
+        ) == "Total : 1 234,50 EUR — échéance 31/12/2026"
+
+    def test_runtime_switch_between_ltr_and_rtl_locales(self):
+        _core._loaded = True
+        _core._translations = {
+            "en": {"direction_probe": "Left to right"},
+            "ur": {"direction_probe": "دائیں سے بائیں"},
+        }
+
+        assert i18n_mod.set_language("en", save=False)
+        assert i18n_mod.get_text("direction_probe") == "Left to right"
+        assert i18n_mod.set_language("ur", save=False)
+        assert i18n_mod.get_text("direction_probe") == "دائیں سے بائیں"

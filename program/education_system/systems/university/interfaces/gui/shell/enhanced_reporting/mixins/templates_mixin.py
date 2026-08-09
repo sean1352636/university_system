@@ -1,5 +1,7 @@
 """Template management methods mixin for the enhanced reporting GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox, simpledialog,
     ScrolledText,
@@ -60,18 +62,18 @@ class TemplatesMixin:
             self.load_templates()
             self.update_overview_cards()
             self.update_status("Templates refreshed successfully")
-            messagebox.showinfo("Success", "Templates refreshed successfully!")
+            messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.templates_refreshed_successfully', default="Templates refreshed successfully!"))
         except Exception as e:
             logging.error(f"Error refreshing templates: {e}")
             self.update_status(f"Error refreshing templates: {str(e)}", "error")
-            messagebox.showerror("Error", f"Failed to refresh templates: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to refresh templates: {str(e)}")
 
     def import_template_dialog(self):
         """Import template from JSON file"""
         try:
             file_path = filedialog.askopenfilename(
                 filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-                title="Import Template"
+                title=_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.import_template', default="Import Template")
             )
 
             if file_path:
@@ -81,13 +83,13 @@ class TemplatesMixin:
                 # Validate template structure
                 required_fields = ['name', 'sections']
                 if not all(field in template_data for field in required_fields):
-                    messagebox.showerror("Invalid Template", "Template file is missing required fields")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.invalid_template', default="Invalid Template"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.template_file_is_missing_required_fields', default="Template file is missing required fields"))
                     return
 
                 # Check if template already exists
                 existing_template = get_template(template_data['name'])
                 if existing_template:
-                    if not messagebox.askyesno("Template Exists",
+                    if not messagebox.askyesno(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.template_exists', default="Template Exists"),
                                              f"Template '{template_data['name']}' already exists. Overwrite?"):
                         return
 
@@ -96,10 +98,10 @@ class TemplatesMixin:
                     save_template_dict(template_data)
 
                 self.refresh_data()
-                messagebox.showinfo("Success", f"Template '{template_data['name']}' imported successfully!")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.success', default="Success"), f"Template '{template_data['name']}' imported successfully!")
 
         except Exception as e:
-            messagebox.showerror("Import Error", f"Failed to import template: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.import_error', default="Import Error"), f"Failed to import template: {str(e)}")
 
     def on_template_select(self, event):
         """Handle template selection"""
@@ -148,7 +150,7 @@ Sections ({len(template_data.get('sections', []))} total):
         from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.core import TemplateDialog
         selection = self.template_listbox.curselection()
         if not selection or not hasattr(self, 'templates_data'):
-            messagebox.showwarning("No Selection", "Please select a template to edit.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.please_select_a_template_to_edit', default="Please select a template to edit."))
             return
 
         template_data = self.templates_data[selection[0]]
@@ -160,29 +162,29 @@ Sections ({len(template_data.get('sections', []))} total):
         """Delete selected template"""
         selection = self.template_listbox.curselection()
         if not selection or not hasattr(self, 'templates_data'):
-            messagebox.showwarning("No Selection", "Please select a template to delete.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.please_select_a_template_to_delete_variant_2', default="Please select a template to delete."))
             return
 
         template_data = self.templates_data[selection[0]]
 
-        if messagebox.askyesno("Confirm Delete",
+        if messagebox.askyesno(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.confirm_delete', default="Confirm Delete"),
                               f"Are you sure you want to delete template '{template_data['name']}'?"):
             try:
                 if ENHANCED_AVAILABLE:
                     _service_delete_template_from_db(template_data['name'])
 
                 self.refresh_data()
-                messagebox.showinfo("Success", "Template deleted successfully!")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.template_deleted_successfully_variant_2', default="Template deleted successfully!"))
 
             except Exception as e:
                 logging.error(f"Failed to delete template: {e}")
-                messagebox.showerror("Error", f"Failed to delete template: {str(e)}")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to delete template: {str(e)}")
 
     def export_template(self):
         """Export selected template"""
         selection = self.template_listbox.curselection()
         if not selection or not hasattr(self, 'templates_data'):
-            messagebox.showwarning("No Selection", "Please select a template to export.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.please_select_a_template_to_export', default="Please select a template to export."))
             return
 
         template_data = self.templates_data[selection[0]]
@@ -197,22 +199,22 @@ Sections ({len(template_data.get('sections', []))} total):
             try:
                 with open(file_path, 'w') as f:
                     json.dump(template_data, f, indent=4)
-                messagebox.showinfo("Success", f"Template exported to {file_path}")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.success', default="Success"), f"Template exported to {file_path}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export template: {str(e)}")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to export template: {str(e)}")
 
     def duplicate_template(self):
         """Duplicate selected template"""
         selection = self.template_listbox.curselection()
         if not selection or not hasattr(self, 'templates_data'):
-            messagebox.showwarning("No Selection", "Please select a template to duplicate.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.please_select_a_template_to_duplicate', default="Please select a template to duplicate."))
             return
 
         template_data = self.templates_data[selection[0]].copy()
 
         # Get new name
-        new_name = simpledialog.askstring("Duplicate Template",
-                                         "Enter name for duplicated template:",
+        new_name = simpledialog.askstring(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.duplicate_template', default="Duplicate Template"),
+                                         _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.enter_name_for_duplicated_template', default="Enter name for duplicated template:"),
                                          initialvalue=f"{template_data['name']} Copy")
 
         if new_name:
@@ -225,17 +227,17 @@ Sections ({len(template_data.get('sections', []))} total):
                     save_template_dict(template_data)
 
                 self.refresh_data()
-                messagebox.showinfo("Success", "Template duplicated successfully!")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.template_duplicated_successfully', default="Template duplicated successfully!"))
 
             except Exception as e:
                 logging.error(f"Failed to duplicate template: {e}")
-                messagebox.showerror("Error", f"Failed to duplicate template: {str(e)}")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to duplicate template: {str(e)}")
 
     def preview_template(self):
         """Preview selected template"""
         selection = self.template_listbox.curselection()
         if not selection or not hasattr(self, 'templates_data'):
-            messagebox.showwarning("No Selection", "Please select a template to preview.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.please_select_a_template_to_preview', default="Please select a template to preview."))
             return
 
         template_data = self.templates_data[selection[0]]
@@ -298,7 +300,7 @@ Report Configuration:
         """Save a report template to database (GUI wrapper)"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return False
 
             save_template(template)
@@ -307,14 +309,14 @@ Report Configuration:
             return True
         except Exception as e:
             logging.error(f"Error saving template: {e}")
-            messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to save template: {str(e)}")
             return False
 
     def save_template_dict_method(self, template_data):
         """Save template dictionary to database (GUI wrapper)"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return False
 
             save_template_dict(template_data)
@@ -323,7 +325,7 @@ Report Configuration:
             return True
         except Exception as e:
             logging.error(f"Error saving template: {e}")
-            messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to save template: {str(e)}")
             return False
 
     def view_templates_menu(self):
@@ -332,7 +334,7 @@ Report Configuration:
             # This will open the existing templates dialog
             self.show_templates_dialog()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show templates: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to show templates: {str(e)}")
 
     def to_dict_report_template(self, template):
         """Convert report template to dictionary"""
@@ -354,7 +356,7 @@ Report Configuration:
         try:
             self.create_template()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create template: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to create template: {str(e)}")
 
     def delete_template_from_db(self, template_name):
         """Delete template from database"""
@@ -368,7 +370,7 @@ Report Configuration:
             return True
         except Exception as e:
             logging.error(f"Error deleting template: {str(e)}")
-            messagebox.showerror("Error", f"Failed to delete template: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to delete template: {str(e)}")
             return False
 
     def delete_template_menu(self):
@@ -376,16 +378,16 @@ Report Configuration:
         try:
             templates = load_templates()
             if not templates:
-                messagebox.showinfo("No Templates", "No templates available to delete")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.no_templates', default="No Templates"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.no_templates_available_to_delete', default="No templates available to delete"))
                 return
 
             # Create selection dialog
             delete_window = tk.Toplevel(self.root)
-            delete_window.title("Delete Template")
+            delete_window.title(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.windows.delete_template', default="Delete Template"))
             delete_window.geometry("500x400")
             delete_window.transient(self.root)
 
-            ttk.Label(delete_window, text="Select Template to Delete",
+            ttk.Label(delete_window, text=_t('gui.shell.enhanced_reporting.mixins.templates_mixin.labels.select_template_to_delete', default="Select Template to Delete"),
                      font=('Arial', 12, 'bold')).pack(pady=10)
 
             # Listbox for templates
@@ -405,21 +407,21 @@ Report Configuration:
             def delete_selected():
                 selection = template_listbox.curselection()
                 if not selection:
-                    messagebox.showwarning("No Selection", "Please select a template to delete")
+                    messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.please_select_a_template_to_delete', default="Please select a template to delete"))
                     return
 
                 template_name = template_listbox.get(selection[0])
-                if messagebox.askyesno("Confirm Delete", f"Delete template '{template_name}'?"):
+                if messagebox.askyesno(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.confirm_delete', default="Confirm Delete"), f"Delete template '{template_name}'?"):
                     if self.delete_template_from_db(template_name):
-                        messagebox.showinfo("Success", "Template deleted successfully")
+                        messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.template_deleted_successfully', default="Template deleted successfully"))
                         delete_window.destroy()
 
             # Buttons
             button_frame = ttk.Frame(delete_window)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="Delete", command=delete_selected).pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="Cancel", command=delete_window.destroy).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.templates_mixin.buttons.delete', default="Delete"), command=delete_selected).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.templates_mixin.buttons.cancel', default="Cancel"), command=delete_window.destroy).pack(side=tk.LEFT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show delete dialog: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.templates_mixin.dialogs.error', default="Error"), f"Failed to show delete dialog: {str(e)}")

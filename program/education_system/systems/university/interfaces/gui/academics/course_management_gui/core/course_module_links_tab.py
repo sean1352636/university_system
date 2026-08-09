@@ -11,6 +11,8 @@ course_code equals a module_code) are auto-seeded, and non-identity links can be
 added/removed here.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     tk, ttk, messagebox, _, logger,
 )
@@ -44,10 +46,10 @@ class CourseModuleLinksTabMixin:
                 add = ttk.LabelFrame(frame, text=_("common.add", default="Add link"),
                                      padding=8)
                 add.pack(fill=tk.X, padx=8, pady=4)
-                ttk.Label(add, text="Course:").pack(side=tk.LEFT, padx=4)
+                ttk.Label(add, text=_t('gui.academics.course_management_gui.core.course_module_links_tab.labels.course', default="Course:")).pack(side=tk.LEFT, padx=4)
                 self._cml_course = ttk.Combobox(add, width=28, state="readonly")
                 self._cml_course.pack(side=tk.LEFT, padx=4)
-                ttk.Label(add, text="Module:").pack(side=tk.LEFT, padx=4)
+                ttk.Label(add, text=_t('gui.academics.course_management_gui.core.course_module_links_tab.labels.module', default="Module:")).pack(side=tk.LEFT, padx=4)
                 self._cml_module = ttk.Combobox(add, width=28, state="readonly")
                 self._cml_module.pack(side=tk.LEFT, padx=4)
                 ttk.Button(add, text=_("common.add", default="Add"),
@@ -115,19 +117,19 @@ class CourseModuleLinksTabMixin:
         module = (self._cml_module.get() or "").strip()
         if not course or not module:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Pick both a course and a module.")
+                                   _t('gui.academics.course_management_gui.core.course_module_links_tab.dialogs.pick_both_a_course_and_a_module', default="Pick both a course and a module."))
             return
         if _bridge.link_course_module(course, module):
             self._cml_reload()
         else:
             messagebox.showerror(_("common.error", default="Error"),
-                                 "Could not save the link.")
+                                 _t('gui.academics.course_management_gui.core.course_module_links_tab.dialogs.could_not_save_the_link', default="Could not save the link."))
 
     def _cml_remove_link(self):
         sel = self._cml_tree.selection()
         if not sel:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a link to remove.")
+                                   _t('gui.academics.course_management_gui.core.course_module_links_tab.dialogs.select_a_link_to_remove', default="Select a link to remove."))
             return
         course, module, source = self._cml_tree.item(sel[0])["values"]
         if not messagebox.askyesno(_("common.confirm", default="Confirm"),

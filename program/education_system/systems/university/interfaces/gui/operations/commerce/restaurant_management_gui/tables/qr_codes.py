@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -70,39 +72,39 @@ from education_system.systems.university.interfaces.gui.operations.commerce.rest
 def generate_qr_dialog(self):
     """Show QR code management menu"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("QR Code Management")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.windows.qr_code_management', default="QR Code Management"))
     dialog.geometry("500x600")
     dialog.transient(self.root)
     dialog.grab_set()
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="QR Code Management",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.labels.qr_code_management', default="QR Code Management"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     # Generate QR Codes section
-    generate_section = ttk.LabelFrame(main_frame, text="Generate QR Codes", padding=15)
+    generate_section = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.labels.generate_qr_codes', default="Generate QR Codes"), padding=15)
     generate_section.pack(fill='x', pady=10)
-    ttk.Button(generate_section, text="Generate Single QR Code",
+    ttk.Button(generate_section, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.generate_single_qr_code', default="Generate Single QR Code"),
               command=self.create_qr_code_image,
               width=30).pack(pady=5)
-    ttk.Button(generate_section, text="Generate Enhanced Branded QR",
+    ttk.Button(generate_section, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.generate_enhanced_branded_qr', default="Generate Enhanced Branded QR"),
               command=self.create_enhanced_qr_image,
               width=30).pack(pady=5)
-    ttk.Button(generate_section, text="Batch Print QR Codes",
+    ttk.Button(generate_section, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.batch_print_qr_codes', default="Batch Print QR Codes"),
               command=self.print_qr_codes,
               width=30).pack(pady=5)
     # Analytics section
-    analytics_section = ttk.LabelFrame(main_frame, text="QR Code Analytics", padding=15)
+    analytics_section = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.labels.qr_code_analytics', default="QR Code Analytics"), padding=15)
     analytics_section.pack(fill='x', pady=10)
-    ttk.Button(analytics_section, text="View QR Code Usage Analytics",
+    ttk.Button(analytics_section, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.view_qr_code_usage_analytics', default="View QR Code Usage Analytics"),
               command=self.scan_qr_code_usage,
               width=30).pack(pady=5)
     # Management section
-    mgmt_section = ttk.LabelFrame(main_frame, text="QR Code Database", padding=15)
+    mgmt_section = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.labels.qr_code_database', default="QR Code Database"), padding=15)
     mgmt_section.pack(fill='x', pady=10)
-    ttk.Button(mgmt_section, text="Update QR Database Records",
+    ttk.Button(mgmt_section, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.update_qr_database_records', default="Update QR Database Records"),
               command=self.update_qr_database_record,
               width=30).pack(pady=5)
-    ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=15)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.close', default="Close"), command=dialog.destroy).pack(pady=15)
 
 def create_qr_code_image(self):
     """Generate individual QR code image for a table"""
@@ -111,8 +113,8 @@ def create_qr_code_image(self):
         from tkinter import filedialog
         import os
         # Ask for table number
-        table_number = simpledialog.askstring("Generate QR Code",
-                                              "Enter table number:")
+        table_number = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.generate_qr_code', default="Generate QR Code"),
+                                              _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.enter_table_number', default="Enter table number:"))
         if not table_number:
             return
         # Create QR code data
@@ -155,17 +157,17 @@ def create_qr_code_image(self):
                 ''', (table_number, qr_data, filename))
                 conn.commit()
                 conn.close()
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.success', default="Success"),
                                "QR code generated successfully!\n\n" +
                                f"Table: {table_number}\n" +
                                f"Saved to: {filename}\n" +
                                "Size: High resolution (suitable for printing)")
     except ImportError:
-        messagebox.showerror("Missing Library",
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.missing_library', default="Missing Library"),
                             "QR code generation requires the 'qrcode' library.\n\n" +
                             "Install with: pip install qrcode[pil]")
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate QR code:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), f"Failed to generate QR code:\n{str(e)}")
 
 def create_enhanced_qr_image(self):
     """Generate branded QR code with logo and colors"""
@@ -174,13 +176,13 @@ def create_enhanced_qr_image(self):
         from PIL import Image, ImageDraw, ImageFont
         from tkinter import filedialog
         # Ask for table number
-        table_number = simpledialog.askstring("Generate Enhanced QR",
-                                              "Enter table number:")
+        table_number = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.generate_enhanced_qr', default="Generate Enhanced QR"),
+                                              _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.enter_table_number', default="Enter table number:"))
         if not table_number:
             return
         # Ask for customization
-        include_label = messagebox.askyesno("Customization",
-                                           "Include table number label on QR code?")
+        include_label = messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.customization', default="Customization"),
+                                           _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.include_table_number_label_on_qr_code', default="Include table number label on QR code?"))
         # Create QR code data
         qr_data = f"https://restaurant.example.com/table/{table_number}"
         # Generate QR code with higher error correction for logo overlay
@@ -243,17 +245,17 @@ def create_enhanced_qr_image(self):
                 ''', (table_number, qr_data, filename))
                 conn.commit()
                 conn.close()
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.success', default="Success"),
                                "Enhanced QR code generated!\n\n" +
                                f"Table: {table_number}\n" +
                                f"Saved to: {filename}\n" +
                                "Features: High quality, labeled")
     except ImportError:
-        messagebox.showerror("Missing Library",
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.missing_library', default="Missing Library"),
                             "Enhanced QR code generation requires 'qrcode' and 'Pillow'.\n\n" +
                             "Install with: pip install qrcode[pil] Pillow")
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate enhanced QR code:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), f"Failed to generate enhanced QR code:\n{str(e)}")
 
 def print_qr_codes(self):
     """Batch generate and print QR codes for multiple tables"""
@@ -262,18 +264,18 @@ def print_qr_codes(self):
         from PIL import Image, ImageDraw, ImageFont
         from tkinter import filedialog
         # Ask for table range
-        start_table = simpledialog.askinteger("Batch Generate",
-                                             "Start table number:",
+        start_table = simpledialog.askinteger(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.batch_generate', default="Batch Generate"),
+                                             _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.start_table_number', default="Start table number:"),
                                              minvalue=1, maxvalue=100)
         if not start_table:
             return
-        end_table = simpledialog.askinteger("Batch Generate",
-                                           "End table number:",
+        end_table = simpledialog.askinteger(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.batch_generate', default="Batch Generate"),
+                                           _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.end_table_number', default="End table number:"),
                                            minvalue=start_table, maxvalue=100)
         if not end_table:
             return
         # Ask for save directory
-        save_dir = filedialog.askdirectory(title="Select folder to save QR codes")
+        save_dir = filedialog.askdirectory(title=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.select_folder_to_save_qr_codes', default="Select folder to save QR codes"))
         if not save_dir:
             return
         generated_count = 0
@@ -342,20 +344,20 @@ def print_qr_codes(self):
             result_msg += "\n".join(errors[:5])  # Show first 5 errors
             if len(errors) > 5:
                 result_msg += f"\n... and {len(errors) - 5} more"
-        messagebox.showinfo("Batch Generation Complete", result_msg)
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.batch_generation_complete', default="Batch Generation Complete"), result_msg)
     except ImportError:
-        messagebox.showerror("Missing Library",
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.missing_library', default="Missing Library"),
                             "Batch QR code generation requires 'qrcode' and 'Pillow'.\n\n" +
                             "Install with: pip install qrcode[pil] Pillow")
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Batch generation failed:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), f"Batch generation failed:\n{str(e)}")
 
 def scan_qr_code_usage(self):
     """Display QR code scanning analytics"""
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Create tables if they don't exist
@@ -401,12 +403,12 @@ def scan_qr_code_usage(self):
         conn.close()
         # Display analytics
         analytics_dialog = tk.Toplevel(self.root)
-        analytics_dialog.title("QR Code Usage Analytics")
+        analytics_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.windows.qr_code_usage_analytics', default="QR Code Usage Analytics"))
         analytics_dialog.geometry("800x600")
         analytics_dialog.transient(self.root)
         main_frame = ttk.Frame(analytics_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="QR Code Usage Analytics",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.labels.qr_code_usage_analytics', default="QR Code Usage Analytics"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         # Create scrolled text for report
         report_text = ScrolledText(main_frame, height=30, width=90)
@@ -456,7 +458,7 @@ def scan_qr_code_usage(self):
         report_text.config(state='disabled')
         # Add simulate scan button for testing
         def simulate_scan():
-            table = simpledialog.askstring("Simulate Scan", "Enter table number:")
+            table = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.simulate_scan', default="Simulate Scan"), _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.enter_table_number', default="Enter table number:"))
             if table:
                 try:
                     conn = get_db_connection()
@@ -468,26 +470,26 @@ def scan_qr_code_usage(self):
                         ''', (table,))
                         conn.commit()
                         conn.close()
-                        messagebox.showinfo("Success", f"Simulated scan for Table {table}")
+                        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.success', default="Success"), f"Simulated scan for Table {table}")
                         analytics_dialog.destroy()
                         self.scan_qr_code_usage()  # Refresh
                 except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Failed to simulate scan: {e}")
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), f"Failed to simulate scan: {e}")
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="Simulate Scan (Testing)",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.simulate_scan_testing', default="Simulate Scan (Testing)"),
                   command=simulate_scan).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.close', default="Close"),
                   command=analytics_dialog.destroy).pack(side='left', padx=5)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to load QR analytics:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), f"Failed to load QR analytics:\n{str(e)}")
 
 def update_qr_database_record(self):
     """Update QR code database records"""
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Create table if doesn't exist
@@ -513,18 +515,18 @@ def update_qr_database_record(self):
         qr_records = cursor.fetchall()
         conn.close()
         if not qr_records:
-            messagebox.showinfo("No Records",
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.no_records', default="No Records"),
                                "No QR code records found in database.\n\n" +
                                "Generate QR codes first to create records.")
             return
         # Show management dialog
         mgmt_dialog = tk.Toplevel(self.root)
-        mgmt_dialog.title("QR Code Database Management")
+        mgmt_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.windows.qr_code_database_management', default="QR Code Database Management"))
         mgmt_dialog.geometry("800x500")
         mgmt_dialog.transient(self.root)
         main_frame = ttk.Frame(mgmt_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="QR Code Database Records",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.labels.qr_code_database_records', default="QR Code Database Records"),
                  font=('Arial', 12, 'bold')).pack(pady=10)
         # Create treeview
         tree_frame = ttk.Frame(main_frame)
@@ -546,12 +548,12 @@ def update_qr_database_record(self):
         def regenerate_qr():
             selection = tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a QR code to regenerate")
+                messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.please_select_a_qr_code_to_regenerate', default="Please select a QR code to regenerate"))
                 return
             item = tree.item(selection[0])
             qr_id = item['values'][0]
             table_num = item['values'][1]
-            if messagebox.askyesno("Confirm", f"Regenerate QR code for Table {table_num}?"):
+            if messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.confirm', default="Confirm"), f"Regenerate QR code for Table {table_num}?"):
                 try:
                     conn = get_db_connection()
                     if conn:
@@ -564,15 +566,15 @@ def update_qr_database_record(self):
                         ''', (qr_id,))
                         conn.commit()
                         conn.close()
-                        messagebox.showinfo("Success", f"QR code record updated for Table {table_num}")
+                        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.success', default="Success"), f"QR code record updated for Table {table_num}")
                         mgmt_dialog.destroy()
                         self.update_qr_database_record()  # Refresh
                 except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Failed to update record: {e}")
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), f"Failed to update record: {e}")
         def toggle_active():
             selection = tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a QR code")
+                messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.please_select_a_qr_code', default="Please select a QR code"))
                 return
             item = tree.item(selection[0])
             qr_id = item['values'][0]
@@ -590,21 +592,21 @@ def update_qr_database_record(self):
                     ''', (new_status, qr_id))
                     conn.commit()
                     conn.close()
-                    messagebox.showinfo("Success",
+                    messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.success', default="Success"),
                                        f"Table {table_num} QR code " +
                                        ("activated" if new_status else "deactivated"))
                     mgmt_dialog.destroy()
                     self.update_qr_database_record()  # Refresh
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to update status: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), f"Failed to update status: {e}")
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="Regenerate Selected",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.regenerate_selected', default="Regenerate Selected"),
                   command=regenerate_qr).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Toggle Active/Inactive",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.toggle_active_inactive', default="Toggle Active/Inactive"),
                   command=toggle_active).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.buttons.close', default="Close"),
                   command=mgmt_dialog.destroy).pack(side='left', padx=5)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to manage QR database:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.qr_codes.dialogs.error', default="Error"), f"Failed to manage QR database:\n{str(e)}")
 

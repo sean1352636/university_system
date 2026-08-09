@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -195,7 +197,7 @@ def show_print_labels_dialog(self):
     ttk.Label(main_frame, text=_t("shop_management.titles.print_labels"), style='Title.TLabel').grid(row=0, column=0, pady=(0, 20))
 
     # Options
-    print_option = tk.StringVar(value="all")
+    print_option = tk.StringVar(value=_t('gui.operations.commerce.shop_management_gui.utils.values.all', default="all"))
 
     ttk.Radiobutton(main_frame, text=_t("shop_management.labels.print_all_products"),
                    variable=print_option, value="all").grid(row=1, column=0, sticky=tk.W, pady=5)
@@ -311,12 +313,12 @@ def display_product_labels_gui(self, product_ids=None):
         conn.close()
 
         if not products:
-            messagebox.showinfo("No Products", "No products found to print labels.")
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.no_products', default="No Products"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.no_products_found_to_print_labels', default="No products found to print labels."))
             return
 
         # Create labels window
         labels_window = tk.Toplevel(self.root)
-        labels_window.title("Product Labels")
+        labels_window.title(_t('gui.operations.commerce.shop_management_gui.utils.windows.product_labels', default="Product Labels"))
         labels_window.geometry("800x600")
         labels_window.transient(self.root)
 
@@ -366,25 +368,66 @@ ID: {product['product_id']}
         button_frame = ttk.Frame(labels_window, padding="10")
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Print Labels",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.buttons.print_labels', default="Print Labels"),
                   command=lambda: self._print_labels_to_printer(products)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Export to PDF",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.buttons.export_to_pdf', default="Export to PDF"),
                   command=lambda: self._export_labels_to_pdf(products)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Export to Text File",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.buttons.export_to_text_file', default="Export to Text File"),
                   command=lambda: self._export_labels_to_file(products)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.buttons.close', default="Close"),
                   command=labels_window.destroy).pack(side='left', padx=5)
 
     except Exception as e:
         logger.error(f"Error displaying product labels: {e}")
-        messagebox.showerror("Error", f"Failed to display product labels: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.error', default="Error"), f"Failed to display product labels: {e}")
 
 
 def _print_labels_to_printer(self, products):
-    """Send labels to printer (placeholder)"""
-    messagebox.showinfo("Print Labels",
-                      f"Sending {len(products)} labels to printer...\n\n"
-                      "Note: This feature requires printer configuration.")
+    """Create a label job and submit it to the operating-system spooler."""
+    import shutil
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    if not products:
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.print_labels', default="Print Labels"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.there_are_no_labels_to_print', default="There are no labels to print."))
+        return False
+    copies = simpledialog.askinteger(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.print_labels', default="Print Labels"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.copies', default="Copies:"), initialvalue=1,
+                                    minvalue=1, maxvalue=100)
+    if copies is None:
+        return False
+    media = simpledialog.askstring(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.print_labels', default="Print Labels"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.page_size', default="Page size:"), initialvalue="A4") or "A4"
+    lines = []
+    for product in products:
+        values = list(product.values()) if isinstance(product, dict) else list(product)
+        lines.append(" | ".join(str(value) for value in values))
+    with tempfile.NamedTemporaryFile("w", suffix=".txt", encoding="utf-8", delete=False) as job:
+        job.write("\n\n".join(lines))
+        job_path = Path(job.name)
+    try:
+        if os.name == 'nt':
+            os.startfile(str(job_path), "print")  # type: ignore[attr-defined]
+        else:
+            spooler = shutil.which("lp") or shutil.which("lpr")
+            if not spooler:
+                raise RuntimeError("No lp/lpr print spooler is installed")
+            command = [spooler]
+            if Path(spooler).name == "lp":
+                command += ["-n", str(copies), "-o", f"media={media}"]
+            else:
+                command += ["-#", str(copies)]
+            command.append(str(job_path))
+            subprocess.run(command, check=True, timeout=30, capture_output=True, text=True)
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.print_labels', default="Print Labels"), f"Submitted {len(products)} label(s) to the printer.")
+        return True
+    except Exception as exc:
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.print_labels', default="Print Labels"), f"Print submission failed: {exc}")
+        return False
+    finally:
+        try:
+            job_path.unlink()
+        except OSError:
+            pass
 
 
 def _export_labels_to_pdf(self, products):
@@ -401,11 +444,11 @@ def _export_labels_to_pdf(self, products):
             pdf_available = True
         except ImportError:
             pdf_available = False
-            messagebox.showerror("PDF Export Not Available",
-                               "The reportlab library is not installed.\n\n"
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.pdf_export_not_available', default="PDF Export Not Available"),
+                               _t('gui.operations.commerce.shop_management_gui.utils.dialogs.the_reportlab_library_is_not_installed_to_enable_pdf_export_inst', default="The reportlab library is not installed.\n\n"
                                "To enable PDF export, install it with:\n"
                                "pip install reportlab\n\n"
-                               "Use 'Export to Text File' instead.")
+                               "Use 'Export to Text File' instead."))
             return
 
         from tkinter import filedialog
@@ -497,13 +540,13 @@ def _export_labels_to_pdf(self, products):
         # Save PDF
         pdf.save()
 
-        messagebox.showinfo("Export Successful",
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.export_successful', default="Export Successful"),
                           f"PDF exported successfully to:\n{filename}\n\n"
                           f"Total labels: {len(products)}")
 
     except Exception as e:
         logger.error(f"Error exporting labels to PDF: {e}")
-        messagebox.showerror("Export Error", f"Failed to export PDF: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.export_error', default="Export Error"), f"Failed to export PDF: {e}")
 
 
 def _export_labels_to_file(self, products):
@@ -534,11 +577,11 @@ def _export_labels_to_file(self, products):
                 f.write(f"ID: {product['product_id']}\n")
                 f.write("\n")
 
-        messagebox.showinfo("Export Successful", f"Labels exported to:\n{filename}")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.export_successful', default="Export Successful"), f"Labels exported to:\n{filename}")
 
     except Exception as e:
         logger.error(f"Error exporting labels: {e}")
-        messagebox.showerror("Export Error", f"Failed to export labels: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.export_error', default="Export Error"), f"Failed to export labels: {e}")
 
 
 def clear_content(self):
@@ -614,7 +657,7 @@ def load_products(self):
                 self.products_tree.insert('', 'end', values=product)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load products: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.error', default="Error"), f"Failed to load products: {e}")
 
 
 def view_product_sales(self):
@@ -624,7 +667,7 @@ def view_product_sales(self):
 
     selection = self.mgmt_products_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a product")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.please_select_a_product', default="Please select a product"))
         return
 
     item = self.mgmt_products_tree.item(selection[0])
@@ -656,7 +699,7 @@ def view_product_sales(self):
         sales_data = self.get_product_sales_data(product_id)
 
         if not sales_data:
-            ttk.Label(main_frame, text="No sales data found for this product").grid(row=1, column=0)
+            ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.labels.no_sales_data_found_for_this_product', default="No sales data found for this product")).grid(row=1, column=0)
         else:
             # Sales table
             sales_frame = ttk.Frame(main_frame)
@@ -703,7 +746,7 @@ def view_product_sales(self):
         ttk.Label(main_frame, text=f"Error loading sales data: {e}").grid(row=1, column=0)
 
     # Close button
-    ttk.Button(main_frame, text="Close", command=sales_window.destroy).grid(row=3, column=0, pady=10)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.buttons.close', default="Close"), command=sales_window.destroy).grid(row=3, column=0, pady=10)
 
 
 def get_product_sales_data(self, product_id):
@@ -741,7 +784,7 @@ def edit_selected_product(self):
 
     selection = self.mgmt_products_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a product to edit")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.please_select_a_product_to_edit', default="Please select a product to edit"))
         return
 
     item = self.mgmt_products_tree.item(selection[0])
@@ -752,7 +795,7 @@ def edit_selected_product(self):
     try:
         product_data = self.get_product_details(product_id)
         if not product_data:
-            messagebox.showerror("Error", "Product not found")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.product_not_found', default="Product not found"))
             return
 
         # Create edit window
@@ -769,35 +812,35 @@ def edit_selected_product(self):
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         # Form fields with current values
-        ttk.Label(main_frame, text="Product ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.labels.product_id', default="Product ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         ttk.Label(main_frame, text=product_id, font=('Arial', 10, 'bold')).grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=5)
 
-        ttk.Label(main_frame, text="Product Name*:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.labels.product_name', default="Product Name*:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         name_var = tk.StringVar(value=product_data.get('name', ''))
         ttk.Entry(main_frame, textvariable=name_var, width=40).grid(row=1, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(main_frame, text="Description:").grid(row=2, column=0, sticky=(tk.W, tk.N), pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.labels.description', default="Description:")).grid(row=2, column=0, sticky=(tk.W, tk.N), pady=5)
         desc_text = tk.Text(main_frame, height=4, width=40)
         desc_text.grid(row=2, column=1, pady=5, padx=(10, 0))
         desc_text.insert('1.0', product_data.get('description', ''))
 
-        ttk.Label(main_frame, text="Price (£)*:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.labels.price', default="Price (£)*:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         price_var = tk.StringVar(value=str(product_data.get('price', '')))
         ttk.Entry(main_frame, textvariable=price_var, width=40).grid(row=3, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(main_frame, text="Category*:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.labels.category', default="Category*:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         category_var = tk.StringVar(value=product_data.get('category', ''))
         ttk.Entry(main_frame, textvariable=category_var, width=40).grid(row=4, column=1, pady=5, padx=(10, 0))
 
-        ttk.Label(main_frame, text="Tax Rate (%):").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.labels.tax_rate', default="Tax Rate (%):")).grid(row=5, column=0, sticky=tk.W, pady=5)
         tax_rate = product_data.get('tax_rate', 0.2) * 100
         tax_var = tk.StringVar(value=str(tax_rate))
         ttk.Entry(main_frame, textvariable=tax_var, width=40).grid(row=5, column=1, pady=5, padx=(10, 0))
 
         # Status
-        ttk.Label(main_frame, text="Status:").grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.labels.status', default="Status:")).grid(row=6, column=0, sticky=tk.W, pady=5)
         status_var = tk.BooleanVar(value=product_data.get('is_active', True))
-        ttk.Checkbutton(main_frame, text="Active", variable=status_var).grid(row=6, column=1, sticky=tk.W, padx=(10, 0), pady=5)
+        ttk.Checkbutton(main_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.buttons.active', default="Active"), variable=status_var).grid(row=6, column=1, sticky=tk.W, padx=(10, 0), pady=5)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
@@ -807,7 +850,7 @@ def edit_selected_product(self):
             try:
                 # Validate inputs
                 if not all([name_var.get().strip(), price_var.get().strip(), category_var.get().strip()]):
-                    messagebox.showerror("Error", "Please fill in all required fields (*)")
+                    messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields (*)"))
                     return
 
                 # Update product
@@ -823,19 +866,19 @@ def edit_selected_product(self):
                 self.update_product(product_id, updated_data)
                 edit_window.destroy()
                 self.load_products_for_management()
-                messagebox.showinfo("Success", "Product updated successfully!")
+                messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.success', default="Success"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.product_updated_successfully', default="Product updated successfully!"))
 
             except ValueError:
-                messagebox.showerror("Error", "Please enter valid numeric values")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.please_enter_valid_numeric_values', default="Please enter valid numeric values"))
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update product: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.error', default="Error"), f"Failed to update product: {e}")
 
-        ttk.Button(button_frame, text="Save Changes", command=save_changes,
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.buttons.save_changes', default="Save Changes"), command=save_changes,
                   style='Success.TButton').grid(row=0, column=0, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=edit_window.destroy).grid(row=0, column=1, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.utils.buttons.cancel', default="Cancel"), command=edit_window.destroy).grid(row=0, column=1, padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load product for editing: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.error', default="Error"), f"Failed to load product for editing: {e}")
 
 
 def delete_selected_product(self):
@@ -845,7 +888,7 @@ def delete_selected_product(self):
 
     selection = self.mgmt_products_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a product to delete")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.utils.dialogs.please_select_a_product_to_delete', default="Please select a product to delete"))
         return
 
     item = self.mgmt_products_tree.item(selection[0])
@@ -853,14 +896,13 @@ def delete_selected_product(self):
     product_id = values[0]
     product_name = values[1]
 
-    if messagebox.askyesno("Confirm Delete",
+    if messagebox.askyesno(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.confirm_delete', default="Confirm Delete"),
                           f"Are you sure you want to delete product '{product_name}' ({product_id})?\n\n"
                           "This action cannot be undone!"):
         try:
             self.delete_product(product_id)
             self.load_products_for_management()
-            messagebox.showinfo("Success", f"Product {product_id} deleted successfully")
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.success', default="Success"), f"Product {product_id} deleted successfully")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete product: {e}")
-
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.utils.dialogs.error', default="Error"), f"Failed to delete product: {e}")
 

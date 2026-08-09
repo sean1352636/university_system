@@ -14,6 +14,7 @@ import sys
 import os
 import argparse
 import logging
+import warnings
 
 # Add the project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -25,7 +26,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
     from dotenv import load_dotenv as _load_dotenv
 
-    _root_env = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    # program/run.py lives one level below the repository configuration.
+    # Keep this aligned with README.md and .env.example at the repository root.
+    _root_env = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"
+    )
     if os.path.exists(_root_env):
         _load_dotenv(_root_env)
 except ImportError:
@@ -47,14 +52,20 @@ _VERBOSE_STARTUP = (
     "--verbose" in sys.argv or "-v" in sys.argv or os.environ.get("EDU_VERBOSE") == "1"
 )
 
-# Default log format by launch mode. The unified API server defaults to JSON
-# (good for log aggregation), and it runs setup_structured_logging() at import
-# time — which also fires when GUI/CLI features transitively import shared.api,
-# flooding the terminal with JSON. Plain text reads better for interactive
-# launches, so default everything except --api to "text". setdefault() means an
-# explicit LOG_FORMAT env var still wins. Must run before any education_system
-# import so it's in place before unified_server's import-time logging setup.
-os.environ.setdefault("LOG_FORMAT", "json" if "--api" in sys.argv else "text")
+# Interactive launches default to compact warnings. Operators can opt into
+# request/startup detail with --verbose, or retain machine-readable production
+# logging by explicitly setting LOG_FORMAT=json and LOG_LEVEL=INFO.
+os.environ.setdefault("LOG_FORMAT", "text")
+os.environ.setdefault("LOG_LEVEL", "INFO" if _VERBOSE_STARTUP else "WARNING")
+
+# Eventlet is pulled in by the current Socket.IO transport and emits a long
+# third-party migration notice on every launch. Keep it out of the normal
+# console; it remains visible when Python warnings are explicitly enabled.
+warnings.filterwarnings(
+    "ignore",
+    message=r"\s*Eventlet is deprecated.*",
+    category=Warning,
+)
 
 
 def _quiet_console():
@@ -88,16 +99,22 @@ _quiet_console()
 
 SYSTEM_PACKAGE_DIRS = {
     "university": "systems/university",
-    "college": "systems/sixth_form",
-    "school": "systems/secondary",
+    "sixth_form": "systems/sixth_form",
+    "secondary": "systems/secondary",
     "primary": "systems/primary",
+    "nursery": "systems/nursery",
+    "apprenticeships": "systems/apprenticeships",
+    "fe_college": "systems/fe_college",
 }
 
 SYSTEM_DISPLAY_NAMES = {
     "university": "University",
-    "college": "Sixth Form",
-    "school": "Secondary School",
+    "sixth_form": "Sixth Form",
+    "secondary": "Secondary School",
     "primary": "Primary School",
+    "nursery": "Nursery",
+    "apprenticeships": "Apprenticeships",
+    "fe_college": "FE College",
 }
 
 
@@ -263,7 +280,9 @@ def run_web_server(system="university", port=8000, open_browser=True,
     # The web pages talk to the API via an absolute URL and only link to each
     # other, so the web/ directory is self-contained.
     serve_root = web_dir
-    url = f"http://localhost:{port}/login.html"
+    # Start at the public welcome page. Authentication is an explicit user
+    # action from there rather than the first screen shown at launch.
+    url = f"http://localhost:{port}/university.html"
 
     handler = partial(http.server.SimpleHTTPRequestHandler, directory=str(serve_root))
 
@@ -274,7 +293,13 @@ def run_web_server(system="university", port=8000, open_browser=True,
     api_status = "already running"
     if start_api and not _api_is_running(port=api_port):
         _start_api_in_background(port=api_port, cors_origins=web_origins)
-        api_status = "starting (may take ~30s)"
+        # Importing the unified application can take several seconds. Do not
+        # open the login page until its API is actually accepting connections.
+        import time
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline and not _api_is_running(port=api_port):
+            time.sleep(0.25)
+        api_status = "running" if _api_is_running(port=api_port) else "still starting"
 
     print()
     print("  " + "=" * 56)
@@ -420,6 +445,18 @@ def main():
     _quiet_console()  # alembic's fileConfig reset the root console handler
     _seed_demo_if_fresh()
 
+    # Windows across the tree hardcode sizes drawn on a desktop monitor —
+    # 1400x900 with a 1200x800 floor is the house convention. On a smaller
+    # display that opens taller than the screen and the minsize stops the
+    # user shrinking it, so whatever is packed last (usually the action
+    # buttons) is unreachable. Clamping here covers every window, including
+    # the login dialog shown before a system is chosen.
+    try:
+        from education_system.platform.delivery.gui.window_sizing import install
+        install()
+    except Exception as exc:
+        logger.debug("window sizing not installed: %s", exc)
+
     # Bootstrap cross-domain bus schemas + eagerly import every bus
     # module so self-registering subscribers (email_bus,
     # student_union_bus calendar publisher, etc.) wire up before the
@@ -472,6 +509,10 @@ def main():
     sys_group.add_argument("--primary", action="store_true", help="Primary School system")
     sys_group.add_argument("--nursery", action="store_true",
                            help="Nursery / Early Years system")
+    sys_group.add_argument("--apprenticeships", "--apprenticeship", action="store_true",
+                           dest="apprenticeships", help="Apprenticeships system")
+    sys_group.add_argument("--fecollege", "--fe-college", action="store_true",
+                           dest="fecollege", help="FE College system")
 
     args = parser.parse_args()
 
@@ -495,13 +536,17 @@ def main():
     if args.university:
         system = "university"
     elif args.college:
-        system = "college"
+        system = "sixth_form"
     elif args.secondary:
-        system = "school"
+        system = "secondary"
     elif args.primary:
         system = "primary"
     elif args.nursery:
         system = "nursery"
+    elif args.apprenticeships:
+        system = "apprenticeships"
+    elif args.fecollege:
+        system = "fe_college"
     else:
         system = None
 

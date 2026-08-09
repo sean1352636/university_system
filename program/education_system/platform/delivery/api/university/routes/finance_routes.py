@@ -7,7 +7,7 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import scoped_to, token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import validate_payment_create
 from education_system.systems.university.infrastructure.exceptions import StudentNotFoundError, ValidationError
@@ -156,6 +156,7 @@ def list_scholarships():
 
 @finance_bp.route("/account/<student_id>", methods=["GET"])
 @token_required
+@scoped_to("student_id")
 def student_account(student_id: str):
     _get_student_or_404(student_id)
 

@@ -1,5 +1,7 @@
 """Collections and compliance management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 from education_system.systems.university.infrastructure.i18n import get_text as _
 import tkinter as tk
@@ -49,8 +51,8 @@ except ImportError:
 
     def get_log_file(name):
         """Fallback log file path resolution."""
-        from education_system.systems.university.infrastructure import paths
-        return str(paths.LOG_DIR / name)
+        from education_system import paths
+        return str(paths.UNIVERSITY_LOG_DIR / name)
 
 # Import finance functions from common_imports module (explicit imports)
 from education_system.systems.university.interfaces.gui.finance.finance.common_imports import (
@@ -962,7 +964,7 @@ class CollectionsManager:
 
         # Notice type
         ttk.Label(form_frame, text=_("finance_gui.compliance.notice_type_label")).pack(anchor='w', pady=5)
-        notice_type_var = tk.StringVar(value="first_notice")
+        notice_type_var = tk.StringVar(value=_t('gui.finance.finance.compliance.values.first_notice', default="first_notice"))
         notice_combo = ttk.Combobox(form_frame, textvariable=notice_type_var,
                                    values=["first_notice", "second_notice", "final_notice"])
         notice_combo.pack(anchor='w', fill='x', pady=5)

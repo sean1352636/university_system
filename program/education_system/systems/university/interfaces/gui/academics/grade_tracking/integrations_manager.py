@@ -9,6 +9,8 @@ grade appeals, calendar events, aid GPA reviews, legal cases).
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
@@ -41,7 +43,7 @@ class GradeIntegrationsManager:
     def show_child_grades(self, student_id: str):
         """Show recorded grades for a child — meant for parent users."""
         if not student_id:
-            messagebox.showinfo("Child Grades", "No student selected.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.integrations_manager.dialogs.child_grades', default="Child Grades"), _t('gui.academics.grade_tracking.integrations_manager.dialogs.no_student_selected', default="No student selected."))
             return
         rows = fetch_child_grades(student_id)
         win = tk.Toplevel(self.root)
@@ -53,7 +55,7 @@ class GradeIntegrationsManager:
         ).pack(anchor="w", padx=15, pady=(15, 5))
         if not rows:
             ttk.Label(
-                win, text="No grades recorded yet.", foreground="#7f8c8d",
+                win, text=_t('gui.academics.grade_tracking.integrations_manager.labels.no_grades_recorded_yet', default="No grades recorded yet."), foreground="#7f8c8d",
             ).pack(padx=15, pady=20)
         else:
             cols = ("module_code", "module_name", "assessment_name",
@@ -67,23 +69,23 @@ class GradeIntegrationsManager:
                     r.get(c, "") if r.get(c) is not None else "" for c in cols
                 ))
             tree.pack(fill="both", expand=True, padx=10, pady=10)
-        ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
+        ttk.Button(win, text=_t('gui.academics.grade_tracking.integrations_manager.buttons.close', default="Close"), command=win.destroy).pack(pady=(0, 10))
 
     def open_wellbeing_referral(self, student_id: str):
         """Prompt for a description, then create a wellbeing referral."""
         if not student_id:
-            messagebox.showinfo("Referral", "No student selected.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.integrations_manager.dialogs.referral', default="Referral"), _t('gui.academics.grade_tracking.integrations_manager.dialogs.no_student_selected', default="No student selected."))
             return
         desc = simpledialog.askstring(
-            "Wellbeing Referral",
+            _t('gui.academics.grade_tracking.integrations_manager.dialogs.wellbeing_referral', default="Wellbeing Referral"),
             f"Describe the academic concern for student {student_id}:",
             parent=self.root,
         )
         if not desc:
             return
         urgency = simpledialog.askstring(
-            "Wellbeing Referral",
-            "Urgency (low / medium / high):",
+            _t('gui.academics.grade_tracking.integrations_manager.dialogs.wellbeing_referral', default="Wellbeing Referral"),
+            _t('gui.academics.grade_tracking.integrations_manager.dialogs.urgency_low_medium_high', default="Urgency (low / medium / high):"),
             initialvalue="medium",
             parent=self.root,
         ) or "medium"
@@ -95,22 +97,22 @@ class GradeIntegrationsManager:
         )
         if rid:
             messagebox.showinfo(
-                "Referral", f"Wellbeing referral #{rid} created.",
+                _t('gui.academics.grade_tracking.integrations_manager.dialogs.referral', default="Referral"), f"Wellbeing referral #{rid} created.",
             )
         else:
             messagebox.showwarning(
-                "Referral",
-                "Could not create referral (table missing or insert failed).",
+                _t('gui.academics.grade_tracking.integrations_manager.dialogs.referral', default="Referral"),
+                _t('gui.academics.grade_tracking.integrations_manager.dialogs.could_not_create_referral_table_missing_or_insert_failed', default="Could not create referral (table missing or insert failed)."),
             )
 
     def open_grade_appeal(self, *, student_id: str, module_code: str = "",
                           assessment_name: str = "", current_grade: str = ""):
         """Modal: ask for reason, then file a helpdesk ticket."""
         if not student_id:
-            messagebox.showinfo("Appeal", "No student selected.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.integrations_manager.dialogs.appeal', default="Appeal"), _t('gui.academics.grade_tracking.integrations_manager.dialogs.no_student_selected', default="No student selected."))
             return
         reason = simpledialog.askstring(
-            "Grade Appeal",
+            _t('gui.academics.grade_tracking.integrations_manager.dialogs.grade_appeal', default="Grade Appeal"),
             f"Reason for appeal of {assessment_name or 'this grade'}:",
             parent=self.root,
         )
@@ -127,27 +129,27 @@ class GradeIntegrationsManager:
         )
         if ticket_id:
             messagebox.showinfo(
-                "Appeal Filed",
+                _t('gui.academics.grade_tracking.integrations_manager.dialogs.appeal_filed', default="Appeal Filed"),
                 f"Helpdesk ticket #{ticket_id} opened. Academic Affairs will follow up.",
             )
         else:
             messagebox.showwarning(
-                "Appeal", "Could not file appeal ticket (helpdesk table missing).",
+                _t('gui.academics.grade_tracking.integrations_manager.dialogs.appeal', default="Appeal"), _t('gui.academics.grade_tracking.integrations_manager.dialogs.could_not_file_appeal_ticket_helpdesk_table_missing', default="Could not file appeal ticket (helpdesk table missing)."),
             )
 
     def export_audit_for_legal(self, student_id: str):
         if not student_id:
-            messagebox.showinfo("Audit Export", "No student selected.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.integrations_manager.dialogs.audit_export', default="Audit Export"), _t('gui.academics.grade_tracking.integrations_manager.dialogs.no_student_selected', default="No student selected."))
             return
         if not messagebox.askyesno(
-            "Audit Export",
+            _t('gui.academics.grade_tracking.integrations_manager.dialogs.audit_export', default="Audit Export"),
             f"Export grade-audit trail for {student_id} and open a legal case?",
         ):
             payload = export_grade_audit_for_legal(student_id=student_id)
             if payload is None:
                 return
             messagebox.showinfo(
-                "Audit Export",
+                _t('gui.academics.grade_tracking.integrations_manager.dialogs.audit_export', default="Audit Export"),
                 f"Bundled {len(payload['audit_rows'])} audit row(s). "
                 "No legal case opened.",
             )
@@ -160,7 +162,7 @@ class GradeIntegrationsManager:
             created_by=str(user.get("id", "")),
         )
         if not payload:
-            messagebox.showwarning("Audit Export", "Export failed.")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.integrations_manager.dialogs.audit_export', default="Audit Export"), _t('gui.academics.grade_tracking.integrations_manager.dialogs.export_failed', default="Export failed."))
             return
         case_part = (
             f"Legal case #{payload['case_id']} opened. "
@@ -168,7 +170,7 @@ class GradeIntegrationsManager:
             "Legal case could not be opened (legal services unavailable). "
         )
         messagebox.showinfo(
-            "Audit Export",
+            _t('gui.academics.grade_tracking.integrations_manager.dialogs.audit_export', default="Audit Export"),
             f"{case_part}{len(payload['audit_rows'])} audit row(s) attached.",
         )
 
@@ -202,14 +204,14 @@ class GradeIntegrationsManager:
 
     def show_integrations_activity(self):
         win = tk.Toplevel(self.root)
-        win.title("Cross-Domain Activity — Grade Tracking")
+        win.title(_t('gui.academics.grade_tracking.integrations_manager.windows.cross_domain_activity_grade_tracking', default="Cross-Domain Activity — Grade Tracking"))
         win.geometry("960x560")
         ttk.Label(
             win,
             text=(
-                "Recent rows produced by the grade-tracking GUI in other "
+                _t('gui.academics.grade_tracking.integrations_manager.labels.recent_rows_produced_by_the_grade_tracking_gui_in_other_subsyste', default="Recent rows produced by the grade-tracking GUI in other "
                 "subsystems. Empty tabs = the trigger action hasn't fired "
-                "yet."
+                "yet.")
             ),
             wraplength=920, justify="left",
         ).pack(anchor="w", padx=15, pady=(15, 5))
@@ -238,8 +240,8 @@ class GradeIntegrationsManager:
 
         bar = ttk.Frame(win)
         bar.pack(fill="x", padx=10, pady=(0, 10))
-        ttk.Button(bar, text="Refresh", command=reload).pack(side="left")
-        ttk.Button(bar, text="Close", command=win.destroy).pack(side="right")
+        ttk.Button(bar, text=_t('gui.academics.grade_tracking.integrations_manager.buttons.refresh', default="Refresh"), command=reload).pack(side="left")
+        ttk.Button(bar, text=_t('gui.academics.grade_tracking.integrations_manager.buttons.close', default="Close"), command=win.destroy).pack(side="right")
         reload()
 
     @staticmethod

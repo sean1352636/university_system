@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import html
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -35,32 +37,32 @@ class ReportGeneratorDialog(Dialog):
                  font=('Arial', 10, 'bold')).pack(pady=(0, 10))
 
         # Format selection
-        ttk.Label(master, text="Select format:").pack(anchor=tk.W)
-        self.format_var = tk.StringVar(value="TXT")
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.labels.select_format', default="Select format:")).pack(anchor=tk.W)
+        self.format_var = tk.StringVar(value=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.values.txt', default="TXT"))
 
         format_frame = ttk.Frame(master)
         format_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Radiobutton(format_frame, text="Text (TXT)", variable=self.format_var,
+        ttk.Radiobutton(format_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.buttons.text_txt', default="Text (TXT)"), variable=self.format_var,
                        value="TXT").pack(side=tk.LEFT, padx=(0, 20))
 
         if PDF_AVAILABLE:
-            ttk.Radiobutton(format_frame, text="PDF", variable=self.format_var,
+            ttk.Radiobutton(format_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.buttons.pdf', default="PDF"), variable=self.format_var,
                            value="PDF").pack(side=tk.LEFT)
 
         # Specific options for participant reports
         if self.report_type == "PARTICIPANT_LIST":
-            ttk.Label(master, text="Options:").pack(anchor=tk.W, pady=(20, 5))
+            ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.labels.options', default="Options:")).pack(anchor=tk.W, pady=(20, 5))
 
             self.specific_trip_var = tk.BooleanVar()
-            ttk.Checkbutton(master, text="Generate for specific trip only",
+            ttk.Checkbutton(master, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.buttons.generate_for_specific_trip_only', default="Generate for specific trip only"),
                            variable=self.specific_trip_var,
                            command=self.toggle_trip_selection).pack(anchor=tk.W)
 
             self.trip_selection_frame = ttk.Frame(master)
             self.trip_selection_frame.pack(fill=tk.X, pady=5)
 
-            ttk.Label(self.trip_selection_frame, text="Select trip:").pack(side=tk.LEFT)
+            ttk.Label(self.trip_selection_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.labels.select_trip', default="Select trip:")).pack(side=tk.LEFT)
             self.trip_var = tk.StringVar()
             self.trip_combo = ttk.Combobox(self.trip_selection_frame, textvariable=self.trip_var,
                                           state="disabled", width=40)
@@ -117,27 +119,27 @@ class ReportGeneratorDialog(Dialog):
 
             if not TRIP_REPORTS_AVAILABLE or TripReportGenerator is None:
                 log_async("Trip report generator module is not available in this environment.")
-                messagebox.showerror("Reports Unavailable",
-                                     "Trip report generation support is not installed.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.reports_unavailable', default="Reports Unavailable"),
+                                     _t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.trip_report_generation_support_is_not_installed', default="Trip report generation support is not installed."))
                 return
 
             if not self.auth or not self.auth.current_user:
                 log_async("You must be logged in to generate reports.")
-                messagebox.showerror("Authentication Required",
-                                     "You must be logged in to generate reports.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.authentication_required', default="Authentication Required"),
+                                     _t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.you_must_be_logged_in_to_generate_reports', default="You must be logged in to generate reports."))
                 return
 
             if not self.auth.check_permission('view_trip_reports'):
                 log_async("You do not have permission to generate reports.")
-                messagebox.showerror("Permission Denied",
-                                     "You do not have permission to generate trip reports.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.permission_denied', default="Permission Denied"),
+                                     _t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.you_do_not_have_permission_to_generate_trip_reports', default="You do not have permission to generate trip reports."))
                 return
 
             if (self.report_type == "FINANCIAL_REPORT"
                     and not self.auth.check_permission('view_financial_reports')):
                 log_async("Financial reports require additional permissions.")
-                messagebox.showerror("Permission Denied",
-                                     "You do not have permission to generate financial reports.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.permission_denied', default="Permission Denied"),
+                                     _t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.you_do_not_have_permission_to_generate_financial_reports', default="You do not have permission to generate financial reports."))
                 return
 
             log_async("Starting report generation...")
@@ -159,7 +161,7 @@ class ReportGeneratorDialog(Dialog):
                 def notify_error(message):
                     if parent_widget:
                         try:
-                            parent_widget.after(0, lambda: messagebox.showerror("Report Error", message))
+                            parent_widget.after(0, lambda: messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.report_error', default="Report Error"), message))
                         except Exception as e:
                             logger.debug(f"Failed to show error dialog: {e}")
 
@@ -216,7 +218,7 @@ class ReportGeneratorDialog(Dialog):
         except Exception as e:
             error_msg = f"Error starting report generation: {e}"
             self.log_message(f"\u2717 {error_msg}")
-            messagebox.showerror("Error", error_msg)
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.error', default="Error"), error_msg)
 
     def log_message(self, message):
         """Log message to the report log widget"""
@@ -267,7 +269,7 @@ class ReportViewerDialog(tk.Toplevel):
                  font=('Arial', 9)).pack()
 
         # Report content area
-        content_frame = ttk.LabelFrame(self, text="Report Content")
+        content_frame = ttk.LabelFrame(self, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.labels.report_content', default="Report Content"))
         content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Text widget with scrollbar
@@ -294,17 +296,17 @@ class ReportViewerDialog(tk.Toplevel):
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Export buttons
-        ttk.Button(button_frame, text="Export as TXT", command=self.export_as_txt).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.buttons.export_as_txt', default="Export as TXT"), command=self.export_as_txt).pack(side=tk.LEFT, padx=5)
 
         if PDF_AVAILABLE:
-            ttk.Button(button_frame, text="Export as PDF", command=self.export_as_pdf).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.buttons.export_as_pdf', default="Export as PDF"), command=self.export_as_pdf).pack(side=tk.LEFT, padx=5)
 
         # Send to admin button
         if EMAIL_SERVICE_AVAILABLE:
-            ttk.Button(button_frame, text="Send to Admin", command=self.send_to_admin).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.buttons.send_to_admin', default="Send to Admin"), command=self.send_to_admin).pack(side=tk.LEFT, padx=5)
 
         # Close button
-        ttk.Button(button_frame, text="Close", command=self.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.buttons.close', default="Close"), command=self.destroy).pack(side=tk.RIGHT, padx=5)
 
     def export_as_txt(self):
         """Export report as TXT file"""
@@ -320,19 +322,19 @@ class ReportViewerDialog(tk.Toplevel):
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write(self.report_content)
 
-                messagebox.showinfo("Success", f"Report exported successfully to:\n{filename}")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.success', default="Success"), f"Report exported successfully to:\n{filename}")
                 logging.info(f"Report exported as TXT: {filename}")
 
         except Exception as e:
             error_msg = f"Error exporting report as TXT: {e}"
             logging.error(error_msg)
-            messagebox.showerror("Export Error", error_msg)
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.export_error', default="Export Error"), error_msg)
 
     def export_as_pdf(self):
         """Export report as PDF file"""
         if not PDF_AVAILABLE:
-            messagebox.showerror("PDF Not Available",
-                               "PDF export is not available. ReportLab library is required.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.pdf_not_available', default="PDF Not Available"),
+                               _t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.pdf_export_is_not_available_reportlab_library_is_required', default="PDF export is not available. ReportLab library is required."))
             return
 
         try:
@@ -348,19 +350,19 @@ class ReportViewerDialog(tk.Toplevel):
                 report_generator = TripReportGenerator(self.auth)
                 report_generator.generate_pdf_report(self.report_data, self.report_type, filename)
 
-                messagebox.showinfo("Success", f"Report exported successfully to:\n{filename}")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.success', default="Success"), f"Report exported successfully to:\n{filename}")
                 logging.info(f"Report exported as PDF: {filename}")
 
         except Exception as e:
             error_msg = f"Error exporting report as PDF: {e}"
             logging.error(error_msg)
-            messagebox.showerror("Export Error", error_msg)
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.export_error', default="Export Error"), error_msg)
 
     def send_to_admin(self):
         """Send report to admin users via email"""
         if not EMAIL_SERVICE_AVAILABLE:
-            messagebox.showerror("Email Not Available",
-                               "Email service is not available. Please contact support.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.email_not_available', default="Email Not Available"),
+                               _t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.email_service_is_not_available_please_contact_support', default="Email service is not available. Please contact support."))
             return
 
         try:
@@ -369,18 +371,18 @@ class ReportViewerDialog(tk.Toplevel):
             admins = report_generator.get_admin_emails()
 
             if not admins:
-                messagebox.showerror("No Admins Found",
-                                   "No admin users with email addresses found.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.no_admins_found', default="No Admins Found"),
+                                   _t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.no_admin_users_with_email_addresses_found', default="No admin users with email addresses found."))
                 return
 
             # Create admin selection dialog
             admin_dialog = tk.Toplevel(self)
-            admin_dialog.title("Select Admin Recipients")
+            admin_dialog.title(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.windows.select_admin_recipients', default="Select Admin Recipients"))
             admin_dialog.geometry("400x300")
             admin_dialog.transient(self)
             admin_dialog.grab_set()
 
-            ttk.Label(admin_dialog, text="Select admin recipients:",
+            ttk.Label(admin_dialog, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.labels.select_admin_recipients', default="Select admin recipients:"),
                      font=('Arial', 10, 'bold')).pack(pady=10)
 
             # Listbox for admin selection
@@ -409,7 +411,7 @@ class ReportViewerDialog(tk.Toplevel):
             def send_emails():
                 selected_indices = admin_listbox.curselection()
                 if not selected_indices:
-                    messagebox.showwarning("No Selection", "Please select at least one admin.")
+                    messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.please_select_at_least_one_admin', default="Please select at least one admin."))
                     return
 
                 selected_admins = [admins[i] for i in selected_indices]
@@ -455,8 +457,8 @@ Trip Management System
 """
 
                             # Create temporary file for attachment
-                            from education_system.systems.university.infrastructure.paths import TEMP_DIR
-                            temp_file = TEMP_DIR / f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+                            from education_system.paths import UNIVERSITY_TEMP_DIR
+                            temp_file = UNIVERSITY_TEMP_DIR / f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
                             temp_file.parent.mkdir(parents=True, exist_ok=True)
 
                             with open(temp_file, 'w', encoding='utf-8') as f:
@@ -484,16 +486,16 @@ Trip Management System
 
                     # Show result
                     self.after(0, lambda: messagebox.showinfo(
-                        "Email Sent",
+                        _t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.email_sent', default="Email Sent"),
                         f"Report sent successfully to {success_count} of {len(selected_admins)} admin(s)."
                     ))
 
                 Thread(target=send_email_thread, daemon=True).start()
 
-            ttk.Button(button_frame, text="Send", command=send_emails).pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="Cancel", command=admin_dialog.destroy).pack(side=tk.RIGHT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.buttons.send', default="Send"), command=send_emails).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.buttons.cancel', default="Cancel"), command=admin_dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         except Exception as e:
             error_msg = f"Error sending report to admin: {e}"
             logging.error(error_msg)
-            messagebox.showerror("Email Error", error_msg)
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.report_dialogs.dialogs.email_error', default="Email Error"), error_msg)

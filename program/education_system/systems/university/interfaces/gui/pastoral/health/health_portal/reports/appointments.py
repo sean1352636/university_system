@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -14,7 +16,7 @@ class AppointmentReportsMixin:
         self.appointment_report_text = scrolledtext.ScrolledText(main_frame, width=80, height=25, font=('Consolas', 10))
         self.appointment_report_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        ttk.Button(main_frame, text="Generate Appointment Statistics Report",
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.health_portal.reports.appointments.buttons.generate_appointment_statistics_report', default="Generate Appointment Statistics Report"),
                   command=self.generate_appointment_report).grid(row=1, column=0, pady=10)
 
         parent.columnconfigure(0, weight=1)
@@ -125,4 +127,4 @@ class AppointmentReportsMixin:
             self.log_audit_event('generate_appointment_report', 'report', 'appointment_statistics')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate appointment report: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.appointments.dialogs.error', default="Error"), f"Failed to generate appointment report: {str(e)}")

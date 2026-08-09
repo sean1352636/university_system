@@ -1,0 +1,11 @@
+{
+  "template_id": "assignment_teacher_digest",
+  "description": "Daily or weekly coursework summary for one teacher: what is due, what is waiting to be marked, and who has not handed in. Only sent when there is something outstanding — an empty digest every morning trains people to ignore the useful ones.",
+  "channel": "Email",
+  "category": "Academic",
+  "priority": "Normal",
+  "from_name": "Sixth Form Assignments",
+  "from_address": "assignments@sixthform.ac.uk",
+  "subject": "Coursework digest ({{period}}): {{to_mark}} to mark, {{missing}} not handed in",
+  "body": "{{teacher}},\n\n{{summary}}.\n\n{{body}}\n\nThis digest covers assignments you own and any you are currently covering for a colleague. If a figure here looks wrong, it is worth checking the record rather than assuming the digest is at fault — it reads the same data the students and their parents see.\n\n{{system_name}}"
+}

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.assessment_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.assessment_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -359,19 +361,19 @@ class AssessmentDialog:
         source_data = copy_data if copy_data else data
 
         # Assessment Name
-        ttk.Label(form_frame, text="Assessment Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.labels.assessment_name', default="Assessment Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_var = tk.StringVar(value=source_data[0] if source_data else "")
         ttk.Entry(form_frame, textvariable=self.name_var, width=30).grid(row=0, column=1, pady=5)
 
         # Assessment Type
-        ttk.Label(form_frame, text="Assessment Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.labels.assessment_type', default="Assessment Type:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.type_var = tk.StringVar(value=source_data[1] if source_data else "")
         type_combo = ttk.Combobox(form_frame, textvariable=self.type_var, width=27)
         type_combo['values'] = ("Assignment", "Exam", "Quiz", "Project", "Lab", "Presentation", "Essay")
         type_combo.grid(row=1, column=1, pady=5)
 
         # Module Code
-        ttk.Label(form_frame, text="Module Code:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.labels.module_code', default="Module Code:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.module_var = tk.StringVar(value=source_data[2] if source_data else "")
         module_combo = ttk.Combobox(form_frame, textvariable=self.module_var, width=27)
 
@@ -386,29 +388,29 @@ class AssessmentDialog:
         module_combo.grid(row=2, column=1, pady=5)
 
         # Max Points
-        ttk.Label(form_frame, text="Max Points:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.labels.max_points', default="Max Points:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.max_points_var = tk.StringVar(value=str(source_data[3]) if source_data else "100")
         ttk.Entry(form_frame, textvariable=self.max_points_var, width=30).grid(row=3, column=1, pady=5)
 
         # Weight
-        ttk.Label(form_frame, text="Weight (%):").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.labels.weight', default="Weight (%):")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.weight_var = tk.StringVar(value=str(source_data[4]) if source_data else "10")
         ttk.Entry(form_frame, textvariable=self.weight_var, width=30).grid(row=4, column=1, pady=5)
 
         # Due Date
-        ttk.Label(form_frame, text="Due Date:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.labels.due_date', default="Due Date:")).grid(row=5, column=0, sticky=tk.W, pady=5)
         self.due_date_var = tk.StringVar(value=source_data[5] if source_data else "")
         ttk.Entry(form_frame, textvariable=self.due_date_var, width=30).grid(row=5, column=1, pady=5)
 
         # Description
-        ttk.Label(form_frame, text="Description:").grid(row=6, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.labels.description', default="Description:")).grid(row=6, column=0, sticky=tk.NW, pady=5)
         self.description_text = tk.Text(form_frame, height=4, width=30)
         self.description_text.grid(row=6, column=1, pady=5)
         if source_data and len(source_data) > 6:
             self.description_text.insert(1.0, source_data[6])
 
         # Rubric
-        ttk.Label(form_frame, text="Rubric:").grid(row=7, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.labels.rubric', default="Rubric:")).grid(row=7, column=0, sticky=tk.NW, pady=5)
         self.rubric_text = tk.Text(form_frame, height=3, width=30)
         self.rubric_text.grid(row=7, column=1, pady=5)
         if source_data and len(source_data) > 7:
@@ -418,20 +420,20 @@ class AssessmentDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save_assessment).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.buttons.save', default="Save"), command=self.save_assessment).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.assessment_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def save_assessment(self):
         if not all([self.name_var.get(), self.type_var.get(),
                    self.module_var.get(), self.max_points_var.get(), self.weight_var.get()]):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.assessment_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.assessment_dialog.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         try:
             max_points = float(self.max_points_var.get())
             weight = float(self.weight_var.get())
         except ValueError:
-            messagebox.showerror("Error", "Max points and weight must be numbers")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.assessment_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.assessment_dialog.dialogs.max_points_and_weight_must_be_numbers', default="Max points and weight must be numbers"))
             return
 
         self.result = (

@@ -15,7 +15,7 @@ def show_scheduled_reports_manager(self):
         """Show scheduled reports management window"""
         # Create window
         manager_window = tk.Toplevel(self.root)
-        manager_window.title("Scheduled Reports Manager")
+        manager_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.windows.scheduled_reports_manager', default="Scheduled Reports Manager"))
         manager_window.geometry("1000x600")
 
         # Main frame
@@ -23,22 +23,22 @@ def show_scheduled_reports_manager(self):
         main_frame.pack(fill='both', expand=True)
 
         # Title
-        ttk.Label(main_frame, text="Scheduled Reports Manager",
+        ttk.Label(main_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.scheduled_reports_manager', default="Scheduled Reports Manager"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Button frame
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Button(button_frame, text="Add Schedule", width=15,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.add_schedule', default="Add Schedule"), width=15,
                   command=lambda: add_scheduled_report(self, manager_window, tree)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Edit Schedule", width=15,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.edit_schedule', default="Edit Schedule"), width=15,
                   command=lambda: edit_scheduled_report(self, tree, manager_window)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Delete Schedule", width=15,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.delete_schedule', default="Delete Schedule"), width=15,
                   command=lambda: delete_scheduled_report(self, tree)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Run Now", width=15,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.run_now', default="Run Now"), width=15,
                   command=lambda: run_scheduled_report_now(self, tree)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Refresh", width=15,
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.refresh', default="Refresh"), width=15,
                   command=lambda: load_scheduled_reports(self, tree)).pack(side='left', padx=5)
 
         # Tree view for scheduled reports
@@ -52,14 +52,14 @@ def show_scheduled_reports_manager(self):
                            columns=('ID', 'Name', 'Type', 'Frequency', 'Recipients', 'Last Run', 'Next Run', 'Status'),
                            show='headings', height=15)
 
-        tree.heading('ID', text='ID')
-        tree.heading('Name', text='Report Name')
-        tree.heading('Type', text='Report Type')
-        tree.heading('Frequency', text='Frequency')
-        tree.heading('Recipients', text='Recipients')
-        tree.heading('Last Run', text='Last Run')
-        tree.heading('Next Run', text='Next Run')
-        tree.heading('Status', text='Status')
+        tree.heading('ID', text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.headings.id', default='ID'))
+        tree.heading('Name', text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.headings.report_name', default='Report Name'))
+        tree.heading('Type', text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.headings.report_type', default='Report Type'))
+        tree.heading('Frequency', text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.headings.frequency', default='Frequency'))
+        tree.heading('Recipients', text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.headings.recipients', default='Recipients'))
+        tree.heading('Last Run', text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.headings.last_run', default='Last Run'))
+        tree.heading('Next Run', text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.headings.next_run', default='Next Run'))
+        tree.heading('Status', text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.headings.status', default='Status'))
 
         tree.column('ID', width=50)
         tree.column('Name', width=150)
@@ -77,7 +77,7 @@ def show_scheduled_reports_manager(self):
         load_scheduled_reports(self, tree)
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=manager_window.destroy).pack(pady=(10, 0))
+        ttk.Button(main_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.close', default="Close"), command=manager_window.destroy).pack(pady=(10, 0))
 
 def load_scheduled_reports(self, tree):
         """Load scheduled reports into tree view"""
@@ -112,63 +112,63 @@ def load_scheduled_reports(self, tree):
                 tree.insert('', 'end', values=values)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load scheduled reports: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.error', default="Error"), f"Failed to load scheduled reports: {str(e)}")
 
 def add_scheduled_report(self, parent_window, tree):
         """Add a new scheduled report"""
         dialog = tk.Toplevel(parent_window)
-        dialog.title("Add Scheduled Report")
+        dialog.title(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.windows.add_scheduled_report', default="Add Scheduled Report"))
         dialog.geometry("600x550")
         dialog.transient(parent_window)
 
-        ttk.Label(dialog, text="Add Scheduled Report",
+        ttk.Label(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.add_scheduled_report', default="Add Scheduled Report"),
                  font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(dialog, padding=20)
         form_frame.pack(fill='both', expand=True)
 
         # Report Name
-        ttk.Label(form_frame, text="Report Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.report_name', default="Report Name:")).grid(row=0, column=0, sticky='w', pady=5)
         name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=name_var, width=40).grid(row=0, column=1, pady=5, padx=5)
 
         # Report Type
-        ttk.Label(form_frame, text="Report Type:").grid(row=1, column=0, sticky='w', pady=5)
-        type_var = tk.StringVar(value="Occupancy Report")
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.report_type', default="Report Type:")).grid(row=1, column=0, sticky='w', pady=5)
+        type_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.values.occupancy_report', default="Occupancy Report"))
         ttk.Combobox(form_frame, textvariable=type_var, width=38,
                     values=['Occupancy Report', 'Financial Summary', 'Maintenance Summary', 'Room Availability'],
                     state='readonly').grid(row=1, column=1, pady=5, padx=5)
 
         # Frequency
-        ttk.Label(form_frame, text="Frequency:").grid(row=2, column=0, sticky='w', pady=5)
-        frequency_var = tk.StringVar(value="Weekly")
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.frequency', default="Frequency:")).grid(row=2, column=0, sticky='w', pady=5)
+        frequency_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.values.weekly', default="Weekly"))
         ttk.Combobox(form_frame, textvariable=frequency_var, width=38,
                     values=['Daily', 'Weekly', 'Monthly', 'Quarterly'],
                     state='readonly').grid(row=2, column=1, pady=5, padx=5)
 
         # Recipients
-        ttk.Label(form_frame, text="Recipients:").grid(row=3, column=0, sticky='nw', pady=5)
-        ttk.Label(form_frame, text="(comma-separated emails)", font=('TkDefaultFont', 8)).grid(row=4, column=0, sticky='w')
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.recipients', default="Recipients:")).grid(row=3, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.comma_separated_emails', default="(comma-separated emails)"), font=('TkDefaultFont', 8)).grid(row=4, column=0, sticky='w')
         recipients_text = tk.Text(form_frame, height=4, width=40)
         recipients_text.grid(row=3, column=1, rowspan=2, pady=5, padx=5)
 
         # Active
         active_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(form_frame, text="Active", variable=active_var).grid(row=5, column=1, sticky='w', pady=5)
+        ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.active', default="Active"), variable=active_var).grid(row=5, column=1, sticky='w', pady=5)
 
         # Description
-        ttk.Label(form_frame, text="Description:").grid(row=6, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.description', default="Description:")).grid(row=6, column=0, sticky='nw', pady=5)
         desc_text = tk.Text(form_frame, height=4, width=40)
         desc_text.grid(row=6, column=1, pady=5, padx=5)
 
         def save_schedule():
             if not name_var.get().strip():
-                messagebox.showwarning("Missing Info", "Please enter a report name", parent=dialog)
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.missing_info', default="Missing Info"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.please_enter_a_report_name', default="Please enter a report name"), parent=dialog)
                 return
 
             recipients = recipients_text.get("1.0", tk.END).strip()
             if not recipients:
-                messagebox.showwarning("Missing Info", "Please enter at least one recipient email", parent=dialog)
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.missing_info', default="Missing Info"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.please_enter_at_least_one_recipient_email', default="Please enter at least one recipient email"), parent=dialog)
                 return
 
             try:
@@ -203,23 +203,23 @@ def add_scheduled_report(self, parent_window, tree):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Scheduled report added successfully!", parent=dialog)
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.scheduled_report_added_successfully', default="Scheduled report added successfully!"), parent=dialog)
                 dialog.destroy()
                 load_scheduled_reports(self, tree)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to add scheduled report: {str(e)}", parent=dialog)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.error', default="Error"), f"Failed to add scheduled report: {str(e)}", parent=dialog)
 
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="Save", command=save_schedule).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.save', default="Save"), command=save_schedule).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
 def edit_scheduled_report(self, tree, parent_window):
         """Edit an existing scheduled report"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a scheduled report to edit", parent=parent_window)
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.please_select_a_scheduled_report_to_edit', default="Please select a scheduled report to edit"), parent=parent_window)
             return
 
         report_id = tree.item(selection[0], 'values')[0]
@@ -239,7 +239,7 @@ def edit_scheduled_report(self, tree, parent_window):
             conn.close()
 
             if not report:
-                messagebox.showerror("Error", "Report not found", parent=parent_window)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.report_not_found', default="Report not found"), parent=parent_window)
                 return
 
             report_name, report_type, frequency, recipients, is_active, report_config = report
@@ -255,7 +255,7 @@ def edit_scheduled_report(self, tree, parent_window):
                     description = ''
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load report: {str(e)}", parent=parent_window)
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.error', default="Error"), f"Failed to load report: {str(e)}", parent=parent_window)
             return
 
         # Create edit dialog
@@ -265,56 +265,56 @@ def edit_scheduled_report(self, tree, parent_window):
         dialog.transient(parent_window)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Edit Scheduled Report",
+        ttk.Label(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.edit_scheduled_report', default="Edit Scheduled Report"),
                  font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(dialog, padding=20)
         form_frame.pack(fill='both', expand=True)
 
         # Report Name
-        ttk.Label(form_frame, text="Report Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.report_name', default="Report Name:")).grid(row=0, column=0, sticky='w', pady=5)
         name_var = tk.StringVar(value=report_name)
         ttk.Entry(form_frame, textvariable=name_var, width=40).grid(row=0, column=1, pady=5, padx=5)
 
         # Report Type
-        ttk.Label(form_frame, text="Report Type:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.report_type', default="Report Type:")).grid(row=1, column=0, sticky='w', pady=5)
         type_var = tk.StringVar(value=report_type)
         ttk.Combobox(form_frame, textvariable=type_var, width=38,
                     values=['Occupancy Report', 'Financial Summary', 'Maintenance Summary', 'Room Availability'],
                     state='readonly').grid(row=1, column=1, pady=5, padx=5)
 
         # Frequency
-        ttk.Label(form_frame, text="Frequency:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.frequency', default="Frequency:")).grid(row=2, column=0, sticky='w', pady=5)
         frequency_var = tk.StringVar(value=frequency)
         ttk.Combobox(form_frame, textvariable=frequency_var, width=38,
                     values=['Daily', 'Weekly', 'Monthly', 'Quarterly'],
                     state='readonly').grid(row=2, column=1, pady=5, padx=5)
 
         # Recipients
-        ttk.Label(form_frame, text="Recipients:").grid(row=3, column=0, sticky='nw', pady=5)
-        ttk.Label(form_frame, text="(comma-separated emails)", font=('TkDefaultFont', 8)).grid(row=4, column=0, sticky='w')
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.recipients', default="Recipients:")).grid(row=3, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.comma_separated_emails', default="(comma-separated emails)"), font=('TkDefaultFont', 8)).grid(row=4, column=0, sticky='w')
         recipients_text = tk.Text(form_frame, height=4, width=40)
         recipients_text.insert('1.0', recipients or '')
         recipients_text.grid(row=3, column=1, rowspan=2, pady=5, padx=5)
 
         # Active
         active_var = tk.BooleanVar(value=bool(is_active))
-        ttk.Checkbutton(form_frame, text="Active", variable=active_var).grid(row=5, column=1, sticky='w', pady=5)
+        ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.active', default="Active"), variable=active_var).grid(row=5, column=1, sticky='w', pady=5)
 
         # Description
-        ttk.Label(form_frame, text="Description:").grid(row=6, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.labels.description', default="Description:")).grid(row=6, column=0, sticky='nw', pady=5)
         desc_text = tk.Text(form_frame, height=4, width=40)
         desc_text.insert('1.0', description)
         desc_text.grid(row=6, column=1, pady=5, padx=5)
 
         def save_changes():
             if not name_var.get().strip():
-                messagebox.showwarning("Missing Info", "Please enter a report name", parent=dialog)
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.missing_info', default="Missing Info"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.please_enter_a_report_name', default="Please enter a report name"), parent=dialog)
                 return
 
             new_recipients = recipients_text.get("1.0", tk.END).strip()
             if not new_recipients:
-                messagebox.showwarning("Missing Info", "Please enter at least one recipient email", parent=dialog)
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.missing_info', default="Missing Info"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.please_enter_at_least_one_recipient_email', default="Please enter at least one recipient email"), parent=dialog)
                 return
 
             try:
@@ -350,30 +350,30 @@ def edit_scheduled_report(self, tree, parent_window):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Scheduled report updated successfully!", parent=dialog)
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.scheduled_report_updated_successfully', default="Scheduled report updated successfully!"), parent=dialog)
                 dialog.destroy()
                 load_scheduled_reports(self, tree)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update scheduled report: {str(e)}", parent=dialog)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.error', default="Error"), f"Failed to update scheduled report: {str(e)}", parent=dialog)
 
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
 def delete_scheduled_report(self, tree):
         """Delete a scheduled report"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a scheduled report to delete")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.please_select_a_scheduled_report_to_delete', default="Please select a scheduled report to delete"))
             return
 
         values = tree.item(selection[0], 'values')
         report_id = values[0]
         report_name = values[1]
 
-        result = messagebox.askyesno("Confirm Delete",
+        result = messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.confirm_delete', default="Confirm Delete"),
                                      f"Delete scheduled report '{report_name}'?\n\nThis will stop all future report generation and emails.")
         if result:
             try:
@@ -383,17 +383,17 @@ def delete_scheduled_report(self, tree):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Scheduled report '{report_name}' deleted successfully")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.success', default="Success"), f"Scheduled report '{report_name}' deleted successfully")
                 load_scheduled_reports(self, tree)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete scheduled report: {str(e)}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.error', default="Error"), f"Failed to delete scheduled report: {str(e)}")
 
 def run_scheduled_report_now(self, tree):
         """Run a scheduled report immediately"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a scheduled report to run")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.please_select_a_scheduled_report_to_run', default="Please select a scheduled report to run"))
             return
 
         values = tree.item(selection[0], 'values')
@@ -402,7 +402,7 @@ def run_scheduled_report_now(self, tree):
         report_type = values[2]
         recipients = values[4]
 
-        result = messagebox.askyesno("Confirm Run",
+        result = messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.confirm_run', default="Confirm Run"),
                                      f"Run '{report_name}' now and email to:\n{recipients}?")
         if result:
             try:
@@ -416,7 +416,7 @@ def run_scheduled_report_now(self, tree):
                 elif report_type == 'Room Availability':
                     report_content = generate_room_availability_content(self)
                 else:
-                    messagebox.showerror("Error", "Unknown report type")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.unknown_report_type', default="Unknown report type"))
                     return
 
                 # Send email to recipients
@@ -443,11 +443,11 @@ def run_scheduled_report_now(self, tree):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Report '{report_name}' generated and emailed successfully!")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.success', default="Success"), f"Report '{report_name}' generated and emailed successfully!")
                 load_scheduled_reports(self, tree)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to run report: {str(e)}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.scheduled_reports.dialogs.error', default="Error"), f"Failed to run report: {str(e)}")
 
 def generate_occupancy_report_content(self):
         """Generate occupancy report content (returns string)"""

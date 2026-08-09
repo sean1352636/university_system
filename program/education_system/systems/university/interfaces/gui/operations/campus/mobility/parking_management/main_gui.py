@@ -1,4 +1,6 @@
 """Main ParkingManagementGUI class assembled from mixins."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -228,7 +230,7 @@ class ParkingManagementGUI(
 
         # Payments & Refunds tab
         self.payments_frame = ttk.Frame(self.notebook)
-        self.notebook.add(self.payments_frame, text="Payments & Refunds")
+        self.notebook.add(self.payments_frame, text=_t('gui.operations.campus.mobility.parking_management.main.tabs.payments_refunds', default="Payments & Refunds"))
         self.setup_payments_tab()
 
         # Dashboard tab
@@ -318,7 +320,7 @@ Features:
 - Data Export
 - Email Notifications
         """
-        messagebox.showinfo("About", about_text)
+        messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.main.dialogs.about', default="About"), about_text)
 
 
 # Console compatibility function
@@ -345,8 +347,8 @@ def main():
             existing_menubar = root.nametowidget(root['menu']) if root['menu'] else None
             if existing_menubar:
                 console_menu = tk.Menu(existing_menubar, tearoff=0)
-                console_menu.add_command(label="Switch to Console", command=run_console_interface)
-                existing_menubar.add_cascade(label="Interface", menu=console_menu)
+                console_menu.add_command(label=_t('gui.operations.campus.mobility.parking_management.main.menus.switch_to_console', default="Switch to Console"), command=run_console_interface)
+                existing_menubar.add_cascade(label=_t('gui.operations.campus.mobility.parking_management.main.menus.interface', default="Interface"), menu=console_menu)
         except Exception as e:
             print(f"Warning: Could not add console menu: {e}")
 

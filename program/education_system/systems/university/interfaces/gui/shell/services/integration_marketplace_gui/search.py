@@ -22,7 +22,7 @@ class SearchMixin:
         try:
             search_term = self.catalog_search_var.get().strip()
             if not search_term:
-                messagebox.showwarning(_t("common.warning"), "Please enter a search term")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.search.dialogs.please_enter_a_search_term', default="Please enter a search term"))
                 return
 
             # Clear existing items
@@ -78,7 +78,7 @@ class SearchMixin:
         try:
             min_rating = self.catalog_rating_var.get()
             if not min_rating:
-                messagebox.showwarning(_t("common.warning"), "Please select a minimum rating")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.search.dialogs.please_select_a_minimum_rating', default="Please select a minimum rating"))
                 return
 
             min_rating = float(min_rating)
@@ -107,7 +107,7 @@ class SearchMixin:
                     integration[7] or 0, is_official
                 ))
 
-            messagebox.showinfo("Filter Results",
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.search.dialogs.filter_results', default="Filter Results"),
                               f"Found {len(integrations)} integration(s) with rating >= {min_rating}")
 
         except Exception as e:
@@ -158,7 +158,7 @@ class SearchMixin:
                     integration[7] or 0, is_official
                 ))
 
-            messagebox.showinfo("Compatibility Filter",
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.search.dialogs.compatibility_filter', default="Compatibility Filter"),
                               f"Found {len(compatible)} integration(s) compatible with system v{system_version}")
 
         except Exception as e:
@@ -170,7 +170,7 @@ class SearchMixin:
         try:
             selected = self.catalog_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to find similar ones")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.search.dialogs.please_select_an_integration_to_find_similar_ones', default="Please select an integration to find similar ones"))
                 return
 
             values = self.catalog_tree.item(selected[0])['values']
@@ -199,12 +199,12 @@ class SearchMixin:
                 similar = cursor.fetchall()
 
             if not similar:
-                messagebox.showinfo("Similar Integrations", "No similar integrations found")
+                messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.search.dialogs.similar_integrations', default="Similar Integrations"), _t('gui.shell.services.integration_marketplace_gui.search.dialogs.no_similar_integrations_found', default="No similar integrations found"))
                 return
 
             # Show in a dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Similar Integrations")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.search.windows.similar_integrations', default="Similar Integrations"))
             dialog.geometry("700x400")
             dialog.transient(self.root)
 
@@ -255,23 +255,23 @@ class SearchMixin:
             dialog.grab_set()
 
             # Date range
-            ttk.Label(dialog, text="Start Date (YYYY-MM-DD):").grid(row=0, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=0, column=0, padx=10, pady=5, sticky='w')
             start_date_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
             ttk.Entry(dialog, textvariable=start_date_var, width=20).grid(row=0, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="End Date (YYYY-MM-DD):").grid(row=1, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=1, column=0, padx=10, pady=5, sticky='w')
             end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
             ttk.Entry(dialog, textvariable=end_date_var, width=20).grid(row=1, column=1, padx=10, pady=5)
 
             # Status filter
-            ttk.Label(dialog, text="Status:").grid(row=2, column=0, padx=10, pady=5, sticky='w')
-            status_var = tk.StringVar(value='all')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.status', default="Status:")).grid(row=2, column=0, padx=10, pady=5, sticky='w')
+            status_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.search.values.all', default='all'))
             ttk.Combobox(dialog, textvariable=status_var,
                         values=['all', 'success', 'failed', 'running'],
                         width=18, state='readonly').grid(row=2, column=1, padx=10, pady=5)
 
             # Error message search
-            ttk.Label(dialog, text="Error Contains:").grid(row=3, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.error_contains', default="Error Contains:")).grid(row=3, column=0, padx=10, pady=5, sticky='w')
             error_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=error_var, width=30).grid(row=3, column=1, padx=10, pady=5)
 
@@ -320,14 +320,14 @@ class SearchMixin:
                             log[6] if log[6] is not None else 0
                         ))
 
-                    messagebox.showinfo("Search Results", f"Found {len(logs)} log entries")
+                    messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.search.dialogs.search_results', default="Search Results"), f"Found {len(logs)} log entries")
                     dialog.destroy()
 
                 except Exception as e:
                     logger.error(f"Error searching sync logs: {e}")
                     messagebox.showerror(_t("common.error"), f"Failed to search: {e}")
 
-            ttk.Button(dialog, text="Search", command=perform_search).grid(row=4, column=0, columnspan=2, pady=20)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.search.buttons.search', default="Search"), command=perform_search).grid(row=4, column=0, columnspan=2, pady=20)
 
         except Exception as e:
             logger.error(f"Error opening search dialog: {e}")
@@ -342,52 +342,52 @@ class SearchMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Advanced Filter Options", style='Title.TLabel').pack(pady=10)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.advanced_filter_options', default="Advanced Filter Options"), style='Title.TLabel').pack(pady=10)
 
             # Filter frame
-            filter_frame = ttk.LabelFrame(dialog, text="Filter Criteria", padding=10)
+            filter_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.filter_criteria', default="Filter Criteria"), padding=10)
             filter_frame.pack(fill='x', padx=10, pady=5)
 
             # Category
-            ttk.Label(filter_frame, text="Category:").grid(row=0, column=0, padx=5, pady=5, sticky='w')
+            ttk.Label(filter_frame, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.category', default="Category:")).grid(row=0, column=0, padx=5, pady=5, sticky='w')
             category_var = tk.StringVar()
             ttk.Combobox(filter_frame, textvariable=category_var,
                         values=['', 'LMS', 'SIS', 'CRM', 'Analytics', 'Communication', 'Storage'],
                         width=20).grid(row=0, column=1, padx=5, pady=5)
 
             # Type
-            ttk.Label(filter_frame, text="Integration Type:").grid(row=1, column=0, padx=5, pady=5, sticky='w')
+            ttk.Label(filter_frame, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.integration_type', default="Integration Type:")).grid(row=1, column=0, padx=5, pady=5, sticky='w')
             type_var = tk.StringVar()
             ttk.Combobox(filter_frame, textvariable=type_var,
                         values=['', 'API', 'OAuth', 'SAML', 'Database', 'Webhook'],
                         width=20).grid(row=1, column=1, padx=5, pady=5)
 
             # Provider
-            ttk.Label(filter_frame, text="Provider Contains:").grid(row=2, column=0, padx=5, pady=5, sticky='w')
+            ttk.Label(filter_frame, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.provider_contains', default="Provider Contains:")).grid(row=2, column=0, padx=5, pady=5, sticky='w')
             provider_var = tk.StringVar()
             ttk.Entry(filter_frame, textvariable=provider_var, width=22).grid(row=2, column=1, padx=5, pady=5)
 
             # Min Rating
-            ttk.Label(filter_frame, text="Minimum Rating:").grid(row=3, column=0, padx=5, pady=5, sticky='w')
+            ttk.Label(filter_frame, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.minimum_rating', default="Minimum Rating:")).grid(row=3, column=0, padx=5, pady=5, sticky='w')
             rating_var = tk.StringVar()
             ttk.Spinbox(filter_frame, from_=0, to=5, textvariable=rating_var, width=20).grid(row=3, column=1, padx=5, pady=5)
 
             # Min Installs
-            ttk.Label(filter_frame, text="Minimum Installs:").grid(row=4, column=0, padx=5, pady=5, sticky='w')
+            ttk.Label(filter_frame, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.minimum_installs', default="Minimum Installs:")).grid(row=4, column=0, padx=5, pady=5, sticky='w')
             installs_var = tk.StringVar(value='0')
             ttk.Entry(filter_frame, textvariable=installs_var, width=22).grid(row=4, column=1, padx=5, pady=5)
 
             # Official only
             official_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(filter_frame, text="Official Integrations Only",
+            ttk.Checkbutton(filter_frame, text=_t('gui.shell.services.integration_marketplace_gui.search.buttons.official_integrations_only', default="Official Integrations Only"),
                            variable=official_var).grid(row=5, column=0, columnspan=2, padx=5, pady=5)
 
             # Logic
-            ttk.Label(filter_frame, text="Filter Logic:").grid(row=6, column=0, padx=5, pady=5, sticky='w')
-            logic_var = tk.StringVar(value='AND')
-            ttk.Radiobutton(filter_frame, text="AND (all criteria)", variable=logic_var,
+            ttk.Label(filter_frame, text=_t('gui.shell.services.integration_marketplace_gui.search.labels.filter_logic', default="Filter Logic:")).grid(row=6, column=0, padx=5, pady=5, sticky='w')
+            logic_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.search.values.and', default='AND'))
+            ttk.Radiobutton(filter_frame, text=_t('gui.shell.services.integration_marketplace_gui.search.buttons.and_all_criteria', default="AND (all criteria)"), variable=logic_var,
                            value='AND').grid(row=6, column=1, padx=5, pady=2, sticky='w')
-            ttk.Radiobutton(filter_frame, text="OR (any criteria)", variable=logic_var,
+            ttk.Radiobutton(filter_frame, text=_t('gui.shell.services.integration_marketplace_gui.search.buttons.or_any_criteria', default="OR (any criteria)"), variable=logic_var,
                            value='OR').grid(row=7, column=1, padx=5, pady=2, sticky='w')
 
             def apply_filter():
@@ -457,7 +457,7 @@ class SearchMixin:
                             integration[7] or 0, is_official
                         ))
 
-                    messagebox.showinfo("Filter Results", f"Found {len(integrations)} integration(s)")
+                    messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.search.dialogs.filter_results', default="Filter Results"), f"Found {len(integrations)} integration(s)")
                     dialog.destroy()
 
                 except Exception as e:

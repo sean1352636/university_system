@@ -1,5 +1,7 @@
 """Billing mixin for the Legal Services GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.governance.legal._imports import (
     tk, ttk, messagebox, scrolledtext, filedialog, traceback,
     datetime,
@@ -101,7 +103,7 @@ class BillingMixin:
             case_number = case_selection.split(' - ')[0]
             case = CaseManager.get_case_by_number(case_number)
             if not case:
-                messagebox.showerror(_t("common.error", default="Error"), "Case not found")
+                messagebox.showerror(_t("common.error", default="Error"), _t('gui.governance.legal.billing.dialogs.case_not_found', default="Case not found"))
                 return
 
             # Get payments and services
@@ -137,7 +139,7 @@ class BillingMixin:
                 if file_path:
                     with open(file_path, 'w') as f:
                         f.write(invoice_text)
-                    messagebox.showinfo(_t("common.success", default="Success"), "Invoice saved successfully")
+                    messagebox.showinfo(_t("common.success", default="Success"), _t('gui.governance.legal.billing.dialogs.invoice_saved_successfully', default="Invoice saved successfully"))
 
             def email_invoice():
                 client_email = case.get('client_email', '')
@@ -150,17 +152,17 @@ class BillingMixin:
                         )
                         if result:
                             logger.info(f"Invoice email sent to {client_email}")
-                            messagebox.showinfo(_t("common.success", default="Success"), "Invoice sent successfully")
+                            messagebox.showinfo(_t("common.success", default="Success"), _t('gui.governance.legal.billing.dialogs.invoice_sent_successfully', default="Invoice sent successfully"))
                         else:
-                            messagebox.showerror(_t("common.error", default="Error"), "Failed to send invoice")
+                            messagebox.showerror(_t("common.error", default="Error"), _t('gui.governance.legal.billing.dialogs.failed_to_send_invoice', default="Failed to send invoice"))
                     else:
-                        messagebox.showwarning(_t("common.warning", default="Warning"), "Email service not available")
+                        messagebox.showwarning(_t("common.warning", default="Warning"), _t('gui.governance.legal.billing.dialogs.email_service_not_available', default="Email service not available"))
                 else:
                     logger.info(f"Invoice email skipped - invalid email format: {client_email}")
-                    messagebox.showwarning(_t("common.warning", default="Warning"), "No valid client email available")
+                    messagebox.showwarning(_t("common.warning", default="Warning"), _t('gui.governance.legal.billing.dialogs.no_valid_client_email_available', default="No valid client email available"))
 
             ttk.Button(btn_frame, text=_t("common.save_invoice"), command=save_invoice).pack(side=tk.LEFT, padx=10)
-            ttk.Button(btn_frame, text="Email Invoice", command=email_invoice).pack(side=tk.LEFT, padx=10)
+            ttk.Button(btn_frame, text=_t('gui.governance.legal.billing.buttons.email_invoice', default="Email Invoice"), command=email_invoice).pack(side=tk.LEFT, padx=10)
             ttk.Button(btn_frame, text=_t("common.close", default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=10)
 
         except Exception as e:

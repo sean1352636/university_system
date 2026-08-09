@@ -1,5 +1,7 @@
 """Analytics methods mixin for the enhanced reporting GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox,
     ScrolledText,
@@ -19,8 +21,8 @@ class AnalyticsMixin:
     def run_quality_check(self):
         """Run data quality check"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable",
-                                 "Data quality checking requires the enhanced system.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.feature_unavailable', default="Feature Unavailable"),
+                                 _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.data_quality_checking_requires_the_enhanced_system', default="Data quality checking requires the enhanced system."))
             return
 
         self.update_status("Running data quality check...")
@@ -33,7 +35,7 @@ class AnalyticsMixin:
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status(f"Quality check failed: {_e}", "error"),
-                    messagebox.showerror("Error", f"Failed to run quality check: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to run quality check: {str(_e)}")
                 ])
 
         threading.Thread(target=quality_task, daemon=True).start()
@@ -45,7 +47,7 @@ class AnalyticsMixin:
 
         # Create new window for quality results
         quality_window = tk.Toplevel(self.root)
-        quality_window.title("Data Quality Report")
+        quality_window.title(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.windows.data_quality_report', default="Data Quality Report"))
         quality_window.geometry("700x600")
 
         # Results display
@@ -125,18 +127,18 @@ class AnalyticsMixin:
         button_frame = ttk.Frame(quality_window)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(button_frame, text="💾 Save Report",
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.save_report', default="💾 Save Report"),
                   command=lambda: self._save_analytics_report(output, "quality_report")).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="📧 Send to Admin",
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.send_to_admin', default="📧 Send to Admin"),
                   command=lambda: self._send_report_to_admin(output, "Data Quality Report")).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.close', default="Close"),
                   command=quality_window.destroy).pack(side=tk.RIGHT)
 
     def export_quality_report(self):
         """Export quality report to file"""
         content = self.quality_display.get(1.0, tk.END).strip()
         if not content:
-            messagebox.showwarning("No Data", "No quality report data to export.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.no_data', default="No Data"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.no_quality_report_data_to_export', default="No quality report data to export."))
             return
 
         file_path = filedialog.asksaveasfilename(
@@ -149,15 +151,15 @@ class AnalyticsMixin:
             try:
                 with open(file_path, 'w') as f:
                     f.write(content)
-                messagebox.showinfo("Success", f"Quality report exported to {file_path}")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.success', default="Success"), f"Quality report exported to {file_path}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export report: {str(e)}")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to export report: {str(e)}")
 
     def run_predictions(self):
         """Run predictive analytics"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable",
-                                 "Predictive analytics requires the enhanced system.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.feature_unavailable', default="Feature Unavailable"),
+                                 _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.predictive_analytics_requires_the_enhanced_system', default="Predictive analytics requires the enhanced system."))
             return
 
         self.update_status("Running predictive analytics...")
@@ -171,7 +173,7 @@ class AnalyticsMixin:
                 self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
                     self.update_status(f"Predictions failed: {str(_e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to run predictions: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to run predictions: {str(_e)}")
                 ])
 
         threading.Thread(target=predictions_task, daemon=True).start()
@@ -183,7 +185,7 @@ class AnalyticsMixin:
 
         # Create new window for predictions results
         predictions_window = tk.Toplevel(self.root)
-        predictions_window.title("Predictive Analytics Report")
+        predictions_window.title(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.windows.predictive_analytics_report', default="Predictive Analytics Report"))
         predictions_window.geometry("700x600")
 
         # Results display
@@ -240,18 +242,18 @@ class AnalyticsMixin:
         button_frame = ttk.Frame(predictions_window)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(button_frame, text="💾 Save Report",
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.save_report', default="💾 Save Report"),
                   command=lambda: self._save_analytics_report(output, "predictions_report")).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="📧 Send to Admin",
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.send_to_admin', default="📧 Send to Admin"),
                   command=lambda: self._send_report_to_admin(output, "Predictive Analytics Report")).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.close', default="Close"),
                   command=predictions_window.destroy).pack(side=tk.RIGHT)
 
     def run_anomaly_detection(self):
         """Run anomaly detection"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable",
-                                 "Anomaly detection requires the enhanced system.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.feature_unavailable', default="Feature Unavailable"),
+                                 _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.anomaly_detection_requires_the_enhanced_system', default="Anomaly detection requires the enhanced system."))
             return
 
         self.update_status("Running anomaly detection...")
@@ -265,7 +267,7 @@ class AnalyticsMixin:
                 self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
                     self.update_status(f"Anomaly detection failed: {str(_e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to run anomaly detection: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to run anomaly detection: {str(_e)}")
                 ])
 
         threading.Thread(target=anomaly_task, daemon=True).start()
@@ -277,7 +279,7 @@ class AnalyticsMixin:
 
         # Create new window for anomaly results
         anomaly_window = tk.Toplevel(self.root)
-        anomaly_window.title("Anomaly Detection Results")
+        anomaly_window.title(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.windows.anomaly_detection_results', default="Anomaly Detection Results"))
         anomaly_window.geometry("700x600")
 
         # Results display
@@ -325,18 +327,18 @@ class AnalyticsMixin:
         button_frame = ttk.Frame(anomaly_window)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(button_frame, text="💾 Save Report",
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.save_report', default="💾 Save Report"),
                   command=lambda: self._save_analytics_report(output, "anomaly_report")).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="📧 Send to Admin",
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.send_to_admin', default="📧 Send to Admin"),
                   command=lambda: self._send_report_to_admin(output, "Anomaly Detection Report")).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.close', default="Close"),
                   command=anomaly_window.destroy).pack(side=tk.RIGHT)
 
     def run_correlation_analysis(self):
         """Run correlation analysis"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable",
-                                 "Correlation analysis requires the enhanced system.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.feature_unavailable', default="Feature Unavailable"),
+                                 _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.correlation_analysis_requires_the_enhanced_system', default="Correlation analysis requires the enhanced system."))
             return
 
         self.update_status("Running correlation analysis...")
@@ -357,7 +359,7 @@ class AnalyticsMixin:
                 self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
                     self.update_status(f"Correlation analysis failed: {str(_e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to run correlation analysis: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to run correlation analysis: {str(_e)}")
                 ])
 
         threading.Thread(target=correlation_task, daemon=True).start()
@@ -365,16 +367,16 @@ class AnalyticsMixin:
     def _show_correlation_results(self, chart_path):
         """Show correlation analysis results"""
         if chart_path and os.path.exists(chart_path):
-            messagebox.showinfo("Correlation Analysis",
+            messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.correlation_analysis', default="Correlation Analysis"),
                               f"✅ Correlation matrix generated successfully!\n\n📊 Chart saved to: {os.path.basename(chart_path)}")
 
             # Open the chart
             try:
                 webbrowser.open(f"file://{os.path.abspath(chart_path)}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to open chart: {str(e)}")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to open chart: {str(e)}")
         else:
-            messagebox.showwarning("No Results", "❌ Unable to generate correlation matrix - insufficient data")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.no_results', default="No Results"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.unable_to_generate_correlation_matrix_insufficient_data', default="❌ Unable to generate correlation matrix - insufficient data"))
 
     def run_quality_checks(self):
         """Run comprehensive data quality checks and display results"""
@@ -386,14 +388,14 @@ class AnalyticsMixin:
                 try:
                     if not ENHANCED_AVAILABLE:
                         self.root.after(0, lambda: messagebox.showwarning(
-                            "Not Available", "Enhanced features not available"))
+                            _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available")))
                         return
 
                     quality_report = DataQualityMonitor.run_quality_checks()
                     self.root.after(0, lambda: self.display_quality_checks_results(quality_report))
                 except Exception as e:
                     self.root.after(0, lambda _e=e: messagebox.showerror(
-                        "Error", f"Quality check failed: {str(_e)}"))
+                        _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Quality check failed: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Quality checks complete"))
@@ -401,13 +403,13 @@ class AnalyticsMixin:
             threading.Thread(target=run_checks, daemon=True).start()
         except Exception as e:
             self.stop_progress()
-            messagebox.showerror("Error", f"Failed to start quality checks: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to start quality checks: {str(e)}")
 
     def display_quality_checks_results(self, quality_report):
         """Display quality check results in a GUI dialog"""
         try:
             results_window = tk.Toplevel(self.root)
-            results_window.title("Data Quality Check Results")
+            results_window.title(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.windows.data_quality_check_results', default="Data Quality Check Results"))
             results_window.geometry("700x600")
             results_window.transient(self.root)
 
@@ -415,7 +417,7 @@ class AnalyticsMixin:
             header_frame = ttk.Frame(results_window)
             header_frame.pack(fill=tk.X, padx=20, pady=10)
 
-            ttk.Label(header_frame, text="🔍 Data Quality Dashboard",
+            ttk.Label(header_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.labels.data_quality_dashboard', default="🔍 Data Quality Dashboard"),
                      font=('Arial', 16, 'bold')).pack(anchor=tk.W)
             ttk.Label(header_frame, text=f"Generated: {quality_report.get('timestamp', 'N/A')}",
                      font=('Arial', 10)).pack(anchor=tk.W)
@@ -429,7 +431,7 @@ class AnalyticsMixin:
             # Missing Data Tab
             if 'missing_data' in checks:
                 missing_frame = ttk.Frame(notebook)
-                notebook.add(missing_frame, text="Missing Data")
+                notebook.add(missing_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.tabs.missing_data', default="Missing Data"))
 
                 missing_text = ScrolledText(missing_frame, wrap=tk.WORD, height=20)
                 missing_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -443,7 +445,7 @@ class AnalyticsMixin:
             # Duplicates Tab
             if 'duplicates' in checks:
                 dup_frame = ttk.Frame(notebook)
-                notebook.add(dup_frame, text="Duplicates")
+                notebook.add(dup_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.tabs.duplicates', default="Duplicates"))
 
                 dup_text = ScrolledText(dup_frame, wrap=tk.WORD, height=20)
                 dup_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -461,7 +463,7 @@ class AnalyticsMixin:
             # Invalid Data Tab
             if 'invalid_data' in checks:
                 invalid_frame = ttk.Frame(notebook)
-                notebook.add(invalid_frame, text="Invalid Data")
+                notebook.add(invalid_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.tabs.invalid_data', default="Invalid Data"))
 
                 invalid_text = ScrolledText(invalid_frame, wrap=tk.WORD, height=20)
                 invalid_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -474,7 +476,7 @@ class AnalyticsMixin:
             # Data Freshness Tab
             if 'data_freshness' in checks:
                 fresh_frame = ttk.Frame(notebook)
-                notebook.add(fresh_frame, text="Data Freshness")
+                notebook.add(fresh_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.tabs.data_freshness', default="Data Freshness"))
 
                 fresh_text = ScrolledText(fresh_frame, wrap=tk.WORD, height=20)
                 fresh_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -486,11 +488,11 @@ class AnalyticsMixin:
                 fresh_text.config(state=tk.DISABLED)
 
             # Close button
-            ttk.Button(results_window, text="Close",
+            ttk.Button(results_window, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.close', default="Close"),
                       command=results_window.destroy).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to display quality results: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to display quality results: {str(e)}")
 
     def show_data_quality_dashboard(self):
         """Show comprehensive data quality dashboard"""
@@ -562,7 +564,7 @@ class AnalyticsMixin:
         """Create and display correlation matrix"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return
 
             self.update_status("Creating correlation matrix...")
@@ -572,7 +574,7 @@ class AnalyticsMixin:
                 try:
                     conn = get_db_connection()
                     if not conn:
-                        self.root.after(0, lambda: messagebox.showerror("Error", "Database connection failed"))
+                        self.root.after(0, lambda: messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.database_connection_failed', default="Database connection failed")))
                         return
 
                     chart_path = AdvancedVisualization.create_correlation_matrix(conn)
@@ -582,10 +584,10 @@ class AnalyticsMixin:
                             chart_path, "Correlation Matrix"))
                     else:
                         self.root.after(0, lambda: messagebox.showwarning(
-                            "No Data", "Insufficient data to create correlation matrix"))
+                            _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.no_data', default="No Data"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.insufficient_data_to_create_correlation_matrix', default="Insufficient data to create correlation matrix")))
                 except Exception as e:
                     self.root.after(0, lambda _e=e: messagebox.showerror(
-                        "Error", f"Failed to create correlation matrix: {str(_e)}"))
+                        _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to create correlation matrix: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Ready"))
@@ -593,7 +595,7 @@ class AnalyticsMixin:
             threading.Thread(target=create_matrix, daemon=True).start()
         except Exception as e:
             self.stop_progress()
-            messagebox.showerror("Error", f"Failed to start correlation analysis: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to start correlation analysis: {str(e)}")
 
     def create_heatmap(self, data, title, x_col, y_col, value_col):
         """Create heatmap visualization"""
@@ -615,7 +617,7 @@ class AnalyticsMixin:
         """Create interactive dashboard"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return
 
             self.update_status("Creating interactive dashboard...")
@@ -625,7 +627,7 @@ class AnalyticsMixin:
                 try:
                     conn = get_db_connection()
                     if not conn:
-                        self.root.after(0, lambda: messagebox.showerror("Error", "Database connection failed"))
+                        self.root.after(0, lambda: messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.database_connection_failed', default="Database connection failed")))
                         return
 
                     # Gather data for dashboard
@@ -647,10 +649,10 @@ class AnalyticsMixin:
                             dashboard_path, "Interactive Dashboard", is_html=True))
                     else:
                         self.root.after(0, lambda: messagebox.showwarning(
-                            "No Data", "Could not create dashboard"))
+                            _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.no_data', default="No Data"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.could_not_create_dashboard', default="Could not create dashboard")))
                 except Exception as e:
                     self.root.after(0, lambda _e=e: messagebox.showerror(
-                        "Error", f"Failed to create dashboard: {str(_e)}"))
+                        _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to create dashboard: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Ready"))
@@ -658,7 +660,7 @@ class AnalyticsMixin:
             threading.Thread(target=create_dashboard, daemon=True).start()
         except Exception as e:
             self.stop_progress()
-            messagebox.showerror("Error", f"Failed to start dashboard creation: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to start dashboard creation: {str(e)}")
 
     def show_visualization_result(self, file_path, title, is_html=False):
         """Show visualization result in browser or viewer"""
@@ -680,20 +682,20 @@ class AnalyticsMixin:
                 try:
                     webbrowser.open(f"file://{os.path.abspath(file_path)}")
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to open file: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to open file: {str(e)}")
 
-            ttk.Button(button_frame, text="Open File", command=open_file,
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.open_file', default="Open File"), command=open_file,
                       style='Success.TButton').pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="Close", command=result_window.destroy).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.buttons.close', default="Close"), command=result_window.destroy).pack(side=tk.LEFT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show result: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to show result: {str(e)}")
 
     def detect_anomalies(self):
         """Detect anomalies in student data"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return
 
             self.update_status("Detecting anomalies...")
@@ -705,7 +707,7 @@ class AnalyticsMixin:
                     self.root.after(0, lambda: self.display_comprehensive_anomalies(anomalies))
                 except Exception as e:
                     self.root.after(0, lambda _e=e: messagebox.showerror(
-                        "Error", f"Anomaly detection failed: {str(_e)}"))
+                        _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Anomaly detection failed: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Anomaly detection complete"))
@@ -713,13 +715,13 @@ class AnalyticsMixin:
             threading.Thread(target=detect, daemon=True).start()
         except Exception as e:
             self.stop_progress()
-            messagebox.showerror("Error", f"Failed to start anomaly detection: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to start anomaly detection: {str(e)}")
 
     def predict_dropout_risk(self):
         """Predict student dropout risk"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return
 
             self.update_status("Predicting dropout risk...")
@@ -731,7 +733,7 @@ class AnalyticsMixin:
                     self.root.after(0, lambda: self.display_comprehensive_predictions(predictions))
                 except Exception as e:
                     self.root.after(0, lambda _e=e: messagebox.showerror(
-                        "Error", f"Prediction failed: {str(_e)}"))
+                        _t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Prediction failed: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Prediction complete"))
@@ -739,4 +741,4 @@ class AnalyticsMixin:
             threading.Thread(target=predict, daemon=True).start()
         except Exception as e:
             self.stop_progress()
-            messagebox.showerror("Error", f"Failed to start prediction: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.analytics_mixin.dialogs.error', default="Error"), f"Failed to start prediction: {str(e)}")

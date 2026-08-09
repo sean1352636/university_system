@@ -71,8 +71,8 @@ class ImportExportMixin:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
         # Ensure directory exists
-        from education_system.systems.university.infrastructure import paths
-        timetable_reports_dir = paths.REPORTS_DIR / 'timetable_reports'
+        from education_system import paths
+        timetable_reports_dir = paths.UNIVERSITY_REPORTS_DIR / 'timetable_reports'
         os.makedirs(str(timetable_reports_dir), exist_ok=True)
 
         filename = os.path.join(str(timetable_reports_dir), f"all_schedules_export_{timestamp}.csv")

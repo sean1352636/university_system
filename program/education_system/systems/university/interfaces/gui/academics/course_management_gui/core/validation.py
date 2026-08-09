@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -117,7 +119,7 @@ class CourseValidationDialog:
         self.auth = auth
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Course Data Validation")
+        self.dialog.title(_t('gui.academics.course_management_gui.core.validation.windows.course_data_validation', default="Course Data Validation"))
         self.dialog.geometry("700x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -129,43 +131,43 @@ class CourseValidationDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Course Data Validation", font=("Arial", 14, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.core.validation.labels.course_data_validation', default="Course Data Validation"), font=("Arial", 14, "bold")).pack(pady=10)
 
         # Validation options
-        options_frame = ttk.LabelFrame(main_frame, text="Validation Checks", padding=10)
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.core.validation.labels.validation_checks', default="Validation Checks"), padding=10)
         options_frame.pack(fill=tk.X, pady=5)
 
         self.check_enrollment = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Check enrollment vs capacity",
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.core.validation.buttons.check_enrollment_vs_capacity', default="Check enrollment vs capacity"),
                        variable=self.check_enrollment).pack(anchor=tk.W)
 
         self.check_codes = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Validate course code formats",
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.core.validation.buttons.validate_course_code_formats', default="Validate course code formats"),
                        variable=self.check_codes).pack(anchor=tk.W)
 
         self.check_orphans = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Find orphaned records",
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.core.validation.buttons.find_orphaned_records', default="Find orphaned records"),
                        variable=self.check_orphans).pack(anchor=tk.W)
 
         self.check_duplicates = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Check for duplicate course codes",
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.core.validation.buttons.check_for_duplicate_course_codes', default="Check for duplicate course codes"),
                        variable=self.check_duplicates).pack(anchor=tk.W)
 
         self.check_missing = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Find missing required data",
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.core.validation.buttons.find_missing_required_data', default="Find missing required data"),
                        variable=self.check_missing).pack(anchor=tk.W)
 
         # Buttons — pack before results so they stay visible on resize
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10, side=tk.BOTTOM)
 
-        ttk.Button(button_frame, text="Run Validation", command=self.run_validation).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Fix Issues", command=self.fix_issues).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Export Report", command=self.export_validation_report).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.core.validation.buttons.run_validation', default="Run Validation"), command=self.run_validation).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.core.validation.buttons.fix_issues', default="Fix Issues"), command=self.fix_issues).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.core.validation.buttons.export_report', default="Export Report"), command=self.export_validation_report).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.core.validation.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Results display
-        results_frame = ttk.LabelFrame(main_frame, text="Validation Results", padding=10)
+        results_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.core.validation.labels.validation_results', default="Validation Results"), padding=10)
         results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.results_text = ScrolledText(results_frame, wrap=tk.WORD)
@@ -390,10 +392,10 @@ class CourseValidationDialog:
 
     def fix_issues(self):
         if not self.issues_found:
-            messagebox.showinfo("No Issues", "No issues found to fix. Run validation first.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.core.validation.dialogs.no_issues', default="No Issues"), _t('gui.academics.course_management_gui.core.validation.dialogs.no_issues_found_to_fix_run_validation_first', default="No issues found to fix. Run validation first."))
             return
 
-        if not messagebox.askyesno("Confirm Fix", "This will attempt to automatically fix found issues. Continue?"):
+        if not messagebox.askyesno(_t('gui.academics.course_management_gui.core.validation.dialogs.confirm_fix', default="Confirm Fix"), _t('gui.academics.course_management_gui.core.validation.dialogs.this_will_attempt_to_automatically_fix_found_issues_continue', default="This will attempt to automatically fix found issues. Continue?")):
             return
 
         try:
@@ -433,14 +435,14 @@ class CourseValidationDialog:
             self.results_text.insert(tk.END, f"\n✅ Fixed {fixed_count} issues automatically.\n")
             self.results_text.insert(tk.END, "Some issues may require manual intervention.\n")
 
-            messagebox.showinfo("Fix Complete", f"Fixed {fixed_count} issues automatically.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.core.validation.dialogs.fix_complete', default="Fix Complete"), f"Fixed {fixed_count} issues automatically.")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Fix Error", f"Failed to fix issues: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.core.validation.dialogs.fix_error', default="Fix Error"), f"Failed to fix issues: {e}")
 
     def export_validation_report(self):
         filename = filedialog.asksaveasfilename(
-            title="Export Validation Report",
+            title=_t('gui.academics.course_management_gui.core.validation.dialogs.export_validation_report', default="Export Validation Report"),
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
         )

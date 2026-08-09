@@ -4,6 +4,8 @@ Displays active user sessions, database connection pool status,
 query performance metrics, error rate monitoring, and table statistics.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 import logging
@@ -35,11 +37,11 @@ def create_system_health_tab(parent_frame, service):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Title
-    ttk.Label(scrollable, text="DB Performance",
+    ttk.Label(scrollable, text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.db_performance', default="DB Performance"),
               font=('Arial', 14, 'bold')).pack(anchor="w", padx=15, pady=(15, 5))
 
     # --- Top-level summary ---
-    summary_frame = ttk.LabelFrame(scrollable, text="System Summary", padding="10")
+    summary_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.system_summary', default="System Summary"), padding="10")
     summary_frame.pack(fill=tk.X, padx=15, pady=5)
 
     cards = ttk.Frame(summary_frame)
@@ -56,7 +58,7 @@ def create_system_health_tab(parent_frame, service):
 
     # --- Connection Pool Status ---
     pool = data.get('pool_stats', {})
-    pool_frame = ttk.LabelFrame(scrollable, text="Connection Pool Status", padding="10")
+    pool_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.connection_pool_status', default="Connection Pool Status"), padding="10")
     pool_frame.pack(fill=tk.X, padx=15, pady=5)
 
     current = pool.get('current', {})
@@ -81,7 +83,7 @@ def create_system_health_tab(parent_frame, service):
 
     # Pool cumulative stats
     if cumulative:
-        cum_frame = ttk.LabelFrame(pool_frame, text="Cumulative Pool Stats", padding="10")
+        cum_frame = ttk.LabelFrame(pool_frame, text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.cumulative_pool_stats', default="Cumulative Pool Stats"), padding="10")
         cum_frame.pack(fill=tk.X, pady=(10, 0))
 
         cum_cards = ttk.Frame(cum_frame)
@@ -100,7 +102,7 @@ def create_system_health_tab(parent_frame, service):
 
     # Wait times
     if wait_times and any(v for v in wait_times.values()):
-        wait_frame = ttk.LabelFrame(pool_frame, text="Connection Wait Times", padding="10")
+        wait_frame = ttk.LabelFrame(pool_frame, text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.connection_wait_times', default="Connection Wait Times"), padding="10")
         wait_frame.pack(fill=tk.X, pady=(10, 0))
 
         wait_cards = ttk.Frame(wait_frame)
@@ -119,7 +121,7 @@ def create_system_health_tab(parent_frame, service):
 
     # --- Query Performance ---
     qs = data.get('query_stats', {})
-    query_frame = ttk.LabelFrame(scrollable, text="Query Performance", padding="10")
+    query_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.query_performance', default="Query Performance"), padding="10")
     query_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if qs:
@@ -148,16 +150,16 @@ def create_system_health_tab(parent_frame, service):
         # Top slow queries if available
         top_queries = qs.get('top_queries', [])
         if top_queries:
-            tq_frame = ttk.LabelFrame(query_frame, text="Top Queries by Total Time", padding="10")
+            tq_frame = ttk.LabelFrame(query_frame, text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.top_queries_by_total_time', default="Top Queries by Total Time"), padding="10")
             tq_frame.pack(fill=tk.X, pady=(10, 0))
 
             cols = ('pattern', 'executions', 'avg_ms', 'total_ms')
             tree = ttk.Treeview(tq_frame, columns=cols, show='headings',
                                 height=min(8, len(top_queries)))
-            tree.heading('pattern', text='Query Pattern')
-            tree.heading('executions', text='Executions')
-            tree.heading('avg_ms', text='Avg (ms)')
-            tree.heading('total_ms', text='Total (ms)')
+            tree.heading('pattern', text=_t('gui.shell.main.dashboard.system_health_dashboard.headings.query_pattern', default='Query Pattern'))
+            tree.heading('executions', text=_t('gui.shell.main.dashboard.system_health_dashboard.headings.executions', default='Executions'))
+            tree.heading('avg_ms', text=_t('gui.shell.main.dashboard.system_health_dashboard.headings.avg_ms', default='Avg (ms)'))
+            tree.heading('total_ms', text=_t('gui.shell.main.dashboard.system_health_dashboard.headings.total_ms', default='Total (ms)'))
             tree.column('pattern', width=300)
             tree.column('executions', width=80, anchor='center')
             tree.column('avg_ms', width=80, anchor='center')
@@ -172,23 +174,23 @@ def create_system_health_tab(parent_frame, service):
             tree.pack(fill=tk.X)
     else:
         ttk.Label(query_frame,
-                  text="Query monitoring data not yet available. "
-                       "Metrics accumulate as queries execute.").pack(anchor="w")
+                  text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.query_monitoring_data_not_yet_available_metrics_accumulate_as_qu', default="Query monitoring data not yet available. "
+                       "Metrics accumulate as queries execute.")).pack(anchor="w")
 
     # --- Database Table Row Counts ---
     rows_data = data.get('table_row_counts', [])
     if rows_data:
-        table_frame = ttk.LabelFrame(scrollable, text="Database Table Statistics", padding="10")
+        table_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.database_table_statistics', default="Database Table Statistics"), padding="10")
         table_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
 
-        ttk.Label(table_frame, text="Double-click a table to view its data",
+        ttk.Label(table_frame, text=_t('gui.shell.main.dashboard.system_health_dashboard.labels.double_click_a_table_to_view_its_data', default="Double-click a table to view its data"),
                   font=('Arial', 9, 'italic')).pack(anchor="w", pady=(0, 5))
 
         cols = ('table', 'rows')
         tree = ttk.Treeview(table_frame, columns=cols, show='headings',
                             height=min(10, len(rows_data)))
-        tree.heading('table', text='Table')
-        tree.heading('rows', text='Row Count')
+        tree.heading('table', text=_t('gui.shell.main.dashboard.system_health_dashboard.headings.table', default='Table'))
+        tree.heading('rows', text=_t('gui.shell.main.dashboard.system_health_dashboard.headings.row_count', default='Row Count'))
         tree.column('table', width=250)
         tree.column('rows', width=120, anchor='center')
         for r in rows_data:
@@ -209,7 +211,7 @@ def create_system_health_tab(parent_frame, service):
             widget.destroy()
         create_system_health_tab(parent_frame, service)
 
-    ttk.Button(btn_frame, text="Refresh", command=refresh).pack(anchor="e")
+    ttk.Button(btn_frame, text=_t('gui.shell.main.dashboard.system_health_dashboard.buttons.refresh', default="Refresh"), command=refresh).pack(anchor="e")
 
 
 def _on_table_double_click(event, parent_frame):

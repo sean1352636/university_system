@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
@@ -773,8 +775,8 @@ Academic Calendar System"""
         sel = self.events_tree.selection() if hasattr(self, 'events_tree') else ()
         if not sel:
             from tkinter import messagebox
-            messagebox.showwarning("Open chat",
-                                   "Select an event first.")
+            messagebox.showwarning(_t('gui.academics.academic_calendar.events_view.dialogs.open_chat', default="Open chat"),
+                                   _t('gui.academics.academic_calendar.events_view.dialogs.select_an_event_first', default="Select an event first."))
             return
         item = self.events_tree.item(sel[0])
         # Tree text holds the event name; the ID column is values[0].
@@ -785,7 +787,7 @@ Academic Calendar System"""
             event_id = None
         if not event_id:
             from tkinter import messagebox
-            messagebox.showerror("Open chat", "Could not determine event id.")
+            messagebox.showerror(_t('gui.academics.academic_calendar.events_view.dialogs.open_chat', default="Open chat"), _t('gui.academics.academic_calendar.events_view.dialogs.could_not_determine_event_id', default="Could not determine event id."))
             return
         try:
             from education_system.systems.university.infrastructure.email.admin import (
@@ -796,7 +798,7 @@ Academic Calendar System"""
             )
         except Exception as e:
             from tkinter import messagebox
-            messagebox.showerror("Open chat", f"Chat module unavailable: {e}")
+            messagebox.showerror(_t('gui.academics.academic_calendar.events_view.dialogs.open_chat', default="Open chat"), f"Chat module unavailable: {e}")
             return
         dashboard = CommunicationDashboard(
             auth=getattr(self, 'auth_manager', None) or getattr(self, 'auth', None),

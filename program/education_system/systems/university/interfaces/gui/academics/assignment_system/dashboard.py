@@ -12,7 +12,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from collections import deque
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -66,7 +66,7 @@ class DashboardManager:
                 side='left', padx=(0, 6))
 
         ttk.Button(
-            topbar, text="About",
+            topbar, text=_t('gui.academics.assignment_system.dashboard.buttons.about', default="About"),
             command=self._show_about_dialog,
         ).pack(side='right')
 
@@ -85,11 +85,11 @@ class DashboardManager:
             parent_bar.pack(fill='x', pady=(0, 15))
             ttk.Label(
                 parent_bar,
-                text="Parent view: track your children's assignments",
+                text=_t('gui.academics.assignment_system.dashboard.labels.parent_view_track_your_children_s_assignments', default="Parent view: track your children's assignments"),
             ).pack(side='left')
             ttk.Button(
                 parent_bar,
-                text="My Children's Assignments",
+                text=_t('gui.academics.assignment_system.dashboard.buttons.my_children_s_assignments', default="My Children's Assignments"),
                 command=self.gui.show_parent_assignments_view,
             ).pack(side='right')
 
@@ -99,13 +99,13 @@ class DashboardManager:
             ttk.Label(
                 integ_bar,
                 text=(
-                    "Cross-domain activity: fines, dispute tickets, "
-                    "integrity cases, gradebook syncs, calendar events"
+                    _t('gui.academics.assignment_system.dashboard.labels.cross_domain_activity_fines_dispute_tickets_integrity_cases_grad', default="Cross-domain activity: fines, dispute tickets, "
+                    "integrity cases, gradebook syncs, calendar events")
                 ),
             ).pack(side='left')
             ttk.Button(
                 integ_bar,
-                text="View Integrations Activity",
+                text=_t('gui.academics.assignment_system.dashboard.buttons.view_integrations_activity', default="View Integrations Activity"),
                 command=self.gui.show_integrations_activity,
             ).pack(side='right')
 
@@ -124,27 +124,27 @@ class DashboardManager:
         Wires the same commands the old button rows did, so behaviour
         is unchanged — just compacted into a single dropdown.
         """
-        mb = ttk.Menubutton(parent, text="Cross-domain  ▾", direction='below')
+        mb = ttk.Menubutton(parent, text=_t('gui.academics.assignment_system.dashboard.buttons.cross_domain', default="Cross-domain  ▾"), direction='below')
         menu = tk.Menu(mb, tearoff=0)
 
         # Group 1: sibling academic GUIs
-        menu.add_command(label="🎓 Grade Management",
+        menu.add_command(label=_t('gui.academics.assignment_system.dashboard.menus.grade_management', default="🎓 Grade Management"),
                          command=self.gui.open_grade_management)
-        menu.add_command(label="📚 Course Management",
+        menu.add_command(label=_t('gui.academics.assignment_system.dashboard.menus.course_management', default="📚 Course Management"),
                          command=self.gui.open_course_management)
-        menu.add_command(label="🗓 Module Scheduling",
+        menu.add_command(label=_t('gui.academics.assignment_system.dashboard.menus.module_scheduling', default="🗓 Module Scheduling"),
                          command=self.gui.open_module_scheduling)
-        menu.add_command(label="📝 Exam Scheduler",
+        menu.add_command(label=_t('gui.academics.assignment_system.dashboard.menus.exam_scheduler', default="📝 Exam Scheduler"),
                          command=self.gui.open_exam_scheduler)
 
         menu.add_separator()
 
         # Group 2: cross-domain reports
-        menu.add_command(label="📈 Module Timeline",
+        menu.add_command(label=_t('gui.academics.assignment_system.dashboard.menus.module_timeline', default="📈 Module Timeline"),
                          command=self.gui.show_module_timeline)
-        menu.add_command(label="⚠ At-Risk (unified)",
+        menu.add_command(label=_t('gui.academics.assignment_system.dashboard.menus.at_risk_unified', default="⚠ At-Risk (unified)"),
                          command=self.gui.show_at_risk_unified)
-        menu.add_command(label="👥 Instructor Workload",
+        menu.add_command(label=_t('gui.academics.assignment_system.dashboard.menus.instructor_workload', default="👥 Instructor Workload"),
                          command=self.gui.show_instructor_workload)
 
         mb['menu'] = menu
@@ -164,9 +164,9 @@ class DashboardManager:
             return
         try:
             messagebox.showinfo(
-                "About — Assignment System",
+                _t('gui.academics.assignment_system.dashboard.dialogs.about_assignment_system', default="About — Assignment System"),
                 (
-                    "Assignment System\n\n"
+                    _t('gui.academics.assignment_system.dashboard.dialogs.assignment_system_manages_assignment_creation_submission_grading', default="Assignment System\n\n"
                     "Manages assignment creation, submission, grading,\n"
                     "extensions, peer review, and analytics.\n\n"
                     "Cross-domain integrations:\n"
@@ -179,7 +179,7 @@ class DashboardManager:
                     "  • Calendar — due-date publishing\n\n"
                     "Use the Cross-domain ▾ button (top-left) to open\n"
                     "any of the four sibling academic GUIs or one of the\n"
-                    "three cross-domain reports."
+                    "three cross-domain reports.")
                 ),
                 parent=self.root,
             )

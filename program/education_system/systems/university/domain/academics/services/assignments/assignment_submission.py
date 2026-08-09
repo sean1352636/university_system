@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager, ensure_parent_dir
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH, SUBMISSIONS_DIR
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH, UNIVERSITY_SUBMISSIONS_DIR
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
 from education_system.systems.university.infrastructure.sql_safety import validate_table_name, validate_identifier  # nosec B608
@@ -67,9 +67,9 @@ class AssignmentSubmission(
     AIAssistantMixin,
 ):
     def __init__(self, db_path=None, submission_dir=None, auth=None):
-        self.db_path = str(db_path) if db_path else str(DEFAULT_DB_PATH)
+        self.db_path = str(db_path) if db_path else str(UNIVERSITY_DEFAULT_DB_PATH)
         ensure_parent_dir(self.db_path)
-        self.submission_dir = str(submission_dir) if submission_dir else str(SUBMISSIONS_DIR)
+        self.submission_dir = str(submission_dir) if submission_dir else str(UNIVERSITY_SUBMISSIONS_DIR)
         # Use provided auth or create a new UserAuth instance
         self.auth = auth if auth is not None else UserAuth(db_path=self.db_path)
         self._init_db()

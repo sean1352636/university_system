@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -338,7 +340,7 @@ def safe_combo_update(obj, combo_attr, values):
 class RecordGradesDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Record Assessment Grades")
+        self.dialog.title(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.windows.record_assessment_grades', default="Record Assessment Grades"))
         self.dialog.geometry("800x600")
         safe_grab_set(self.dialog)
 
@@ -347,24 +349,24 @@ class RecordGradesDialog:
     def setup_dialog(self):
         """Setup the record grades dialog"""
         # Title
-        ttk.Label(self.dialog, text="Record Assessment Grades",
+        ttk.Label(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.labels.record_assessment_grades', default="Record Assessment Grades"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Assessment selection frame
-        assess_frame = ttk.LabelFrame(self.dialog, text="Select Assessment")
+        assess_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.labels.select_assessment', default="Select Assessment"))
         assess_frame.pack(fill=tk.X, padx=20, pady=10)
 
         self.assessment_var = tk.StringVar()
         self.assessment_combo = ttk.Combobox(assess_frame, textvariable=self.assessment_var, width=50)
         self.assessment_combo.pack(side=tk.LEFT, padx=10, pady=10)
 
-        ttk.Button(assess_frame, text="Load Assessments",
+        ttk.Button(assess_frame, text=_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.buttons.load_assessments', default="Load Assessments"),
                   command=self.load_assessments).pack(side=tk.LEFT, padx=10)
-        ttk.Button(assess_frame, text="Select",
+        ttk.Button(assess_frame, text=_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.buttons.select', default="Select"),
                   command=self.select_assessment).pack(side=tk.LEFT, padx=10)
 
         # Students frame
-        students_frame = ttk.LabelFrame(self.dialog, text="Students")
+        students_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.labels.students', default="Students"))
         students_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Treeview for students and grades
@@ -382,18 +384,18 @@ class RecordGradesDialog:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Grade entry frame
-        entry_frame = ttk.LabelFrame(self.dialog, text="Grade Entry")
+        entry_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.labels.grade_entry', default="Grade Entry"))
         entry_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(entry_frame, text="Select student and double-click to edit grade").pack(pady=5)
+        ttk.Label(entry_frame, text=_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.labels.select_student_and_double_click_to_edit_grade', default="Select student and double-click to edit grade")).pack(pady=5)
 
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Save All Grades",
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.buttons.save_all_grades', default="Save All Grades"),
                   command=self.save_all_grades).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.buttons.close', default="Close"),
                   command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
         # Bind double-click event
@@ -424,17 +426,17 @@ class RecordGradesDialog:
             conn.close()
 
             if assessment_list:
-                messagebox.showinfo("Success", f"Loaded {len(assessment_list)} assessments")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.success', default="Success"), f"Loaded {len(assessment_list)} assessments")
             else:
-                messagebox.showwarning("Warning", "No assessments found")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.no_assessments_found', default="No assessments found"))
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading assessments: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.database_error', default="Database Error"), f"Error loading assessments: {e}")
 
     def select_assessment(self):
         """Select an assessment and load enrolled students"""
         if not self.assessment_var.get():
-            messagebox.showwarning("Warning", "Please select an assessment first")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.please_select_an_assessment_first', default="Please select an assessment first"))
             return
 
         # Extract assessment ID
@@ -455,7 +457,7 @@ class RecordGradesDialog:
             assessment = cursor.fetchone()
 
             if not assessment:
-                messagebox.showerror("Error", "Assessment not found")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.assessment_not_found', default="Assessment not found"))
                 return
 
             assessment_name, module_code, max_points, module_name = assessment
@@ -504,10 +506,10 @@ class RecordGradesDialog:
 
             conn.close()
 
-            messagebox.showinfo("Success", f"Loaded {len(students)} students for {assessment_name}")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.success', default="Success"), f"Loaded {len(students)} students for {assessment_name}")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading students: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.database_error', default="Database Error"), f"Error loading students: {e}")
 
     def edit_grade(self, event):
         """Edit grade for selected student"""
@@ -538,14 +540,30 @@ class RecordGradesDialog:
     def save_all_grades(self):
         """Save all grades to the database"""
         if not self.assessment_id:
-            messagebox.showwarning("Warning", "Please select an assessment first")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.please_select_an_assessment_first', default="Please select an assessment first"))
             return
 
         try:
             conn = get_connection()
             cursor = conn.cursor()
 
+            # Fail-closed authorization for the batch (permission + module
+            # ownership), on the same connection as the writes below.
+            from education_system.systems.university.interfaces.gui.academics.grade_tracking.grades.authz import (
+                require_grade_mutation,
+            )
+            if not require_grade_mutation("update", cursor=cursor, assessment_id=self.assessment_id):
+                conn.close()
+                return
+
+            from education_system.systems.university.interfaces.gui.academics.grade_tracking.grades.authz import (
+                is_student_enrolled,
+                module_code_for,
+            )
+            module_code = module_code_for(cursor, assessment_id=self.assessment_id)
+
             saved_count = 0
+            skipped_not_enrolled = 0
             submission_date = datetime.now().strftime('%Y-%m-%d')
 
             for item in self.students_tree.get_children():
@@ -553,6 +571,10 @@ class RecordGradesDialog:
                 student_id, _, _, score, letter_grade, comments = values
 
                 if score and letter_grade:  # Only save if both score and grade are provided
+                    # Recheck enrolment per student inside the transaction.
+                    if not is_student_enrolled(cursor, student_id, module_code):
+                        skipped_not_enrolled += 1
+                        continue
                     # Check if grade already exists
                     cursor.execute('''
                     SELECT grade_id FROM grades
@@ -580,11 +602,11 @@ class RecordGradesDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Saved {saved_count} grades successfully")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.success', default="Success"), f"Saved {saved_count} grades successfully")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error saving grades: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.database_error', default="Database Error"), f"Error saving grades: {e}")
         except ValueError as e:
-            messagebox.showerror("Input Error", f"Invalid score value: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.record_grades_dialog.dialogs.input_error', default="Input Error"), f"Invalid score value: {e}")
 
 

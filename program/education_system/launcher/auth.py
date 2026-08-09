@@ -21,8 +21,8 @@ def sync_university_mfa_to_shared():
     TOTP when logging in via the universal login.
     """
     # Read TOTP secrets from university DB
-    from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-    uni_conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+    uni_conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
     uni_conn.row_factory = sqlite3.Row
     try:
         rows = uni_conn.execute(

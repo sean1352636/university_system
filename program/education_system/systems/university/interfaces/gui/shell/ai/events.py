@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 import logging
 
@@ -68,7 +70,7 @@ class EventsMixin:
             self.generate_analytics_report()
             self.refresh_logs()
         elif hasattr(self, 'chat_frame') and self.chat_frame.winfo_viewable():
-            self.status_label.config(text="View refreshed")
+            self.status_label.config(text=_t('gui.shell.ai.events.text.view_refreshed', default="View refreshed"))
 
     def on_click(self, event):
         """Handle click events for focus management"""
@@ -85,6 +87,22 @@ class EventsMixin:
     def handle_exit(self):
         """Handle exit to main GUI"""
         try:
+            if hasattr(self, 'save_draft'):
+                self.save_draft()
+            # Invalidate background work before destroying Tk. Workers may
+            # finish naturally, but their results can no longer update widgets.
+            if getattr(self, '_processing_message', False):
+                self._generation_token = getattr(self, '_generation_token', 0) + 1
+                self._processing_message = False
+            for after_name in ('_typing_after_id', '_responsive_after_id',
+                               '_status_after_id'):
+                after_id = getattr(self, after_name, None)
+                if after_id:
+                    try:
+                        self.root.after_cancel(after_id)
+                    except Exception:
+                        pass
+
             # Stop defaulting popups to this window before it goes away, so the
             # main GUI's own dialogs behave normally again.
             if hasattr(self, '_restore_dialog_parenting'):

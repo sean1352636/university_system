@@ -10,6 +10,8 @@ student's behalf, instead of trying to enrol their own non-student
 account (which previously tripped a foreign-key error).
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 
@@ -62,7 +64,7 @@ class StudentRegistrationPortal(BrowseModulesMixin, EnrollmentMixin):
         bar = ttk.Frame(self.parent_frame)
         bar.pack(fill='x', padx=10, pady=(10, 0))
 
-        ttk.Label(bar, text="Acting as student:",
+        ttk.Label(bar, text=_t('gui.academics.student_registration.registration_portal.labels.acting_as_student', default="Acting as student:"),
                   font=('Arial', 10, 'bold')).pack(side='left', padx=(0, 6))
 
         self._student_choices = self._load_students()
@@ -76,7 +78,7 @@ class StudentRegistrationPortal(BrowseModulesMixin, EnrollmentMixin):
         self.student_combo.bind('<<ComboboxSelected>>', self._on_student_picked)
 
         self._picker_status = ttk.Label(
-            bar, text="(no student selected)", foreground='#888888')
+            bar, text=_t('gui.academics.student_registration.registration_portal.labels.no_student_selected', default="(no student selected)"), foreground='#888888')
         self._picker_status.pack(side='left', padx=10)
 
     def _load_students(self):
@@ -117,15 +119,15 @@ class StudentRegistrationPortal(BrowseModulesMixin, EnrollmentMixin):
             child.destroy()
 
         dash_frame = ttk.Frame(self.notebook)
-        self.notebook.add(dash_frame, text='Registration Dashboard')
+        self.notebook.add(dash_frame, text=_t('gui.academics.student_registration.registration_portal.tabs.registration_dashboard', default='Registration Dashboard'))
         self.show_registration_dashboard(dash_frame)
 
         browse_frame = ttk.Frame(self.notebook)
-        self.notebook.add(browse_frame, text='Available Modules')
+        self.notebook.add(browse_frame, text=_t('gui.academics.student_registration.registration_portal.tabs.available_modules', default='Available Modules'))
         self.show_available_modules(browse_frame)
 
         enroll_frame = ttk.Frame(self.notebook)
-        self.notebook.add(enroll_frame, text='My Enrollment')
+        self.notebook.add(enroll_frame, text=_t('gui.academics.student_registration.registration_portal.tabs.my_enrollment', default='My Enrollment'))
         self.show_my_enrollment(enroll_frame)
 
     # Backwards-compatible alias for the original entry point.

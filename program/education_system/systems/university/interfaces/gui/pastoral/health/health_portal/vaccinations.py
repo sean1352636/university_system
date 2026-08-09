@@ -5,9 +5,9 @@ from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.infrastructure.i18n import get_text as _t
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 
 class VaccinationsMixin:
@@ -98,7 +98,7 @@ class VaccinationsMixin:
             if not all([self.vax_student_id.get().strip(), self.vax_name.get().strip(),
                        self.vax_date.get().strip(), self.vax_lot.get().strip(),
                        self.vax_manufacturer.get().strip(), self.vax_admin_by.get().strip()]):
-                messagebox.showerror("Error", "Please fill in all required fields")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
                 return
 
             conn = self.get_connection()
@@ -106,7 +106,7 @@ class VaccinationsMixin:
 
             cursor.execute("SELECT COUNT(*) FROM students WHERE student_id = ?", (self.vax_student_id.get().strip(),))
             if cursor.fetchone()[0] == 0:
-                messagebox.showerror("Error", "Student ID not found")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.student_id_not_found', default="Student ID not found"))
                 conn.close()
                 return
 
@@ -139,15 +139,15 @@ class VaccinationsMixin:
             self.log_audit_event('record_vaccination', 'vaccination', vax_id)
 
             if adverse_reaction:
-                messagebox.showwarning("Vaccination Recorded",
-                                     "Vaccination recorded successfully!\nADVERSE REACTION REPORTED - Monitor patient closely")
+                messagebox.showwarning(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.vaccination_recorded', default="Vaccination Recorded"),
+                                     _t('gui.pastoral.health.health_portal.vaccinations.dialogs.vaccination_recorded_successfully_adverse_reaction_reported_moni', default="Vaccination recorded successfully!\nADVERSE REACTION REPORTED - Monitor patient closely"))
             else:
-                messagebox.showinfo("Success", "Vaccination recorded successfully!")
+                messagebox.showinfo(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.success', default="Success"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.vaccination_recorded_successfully', default="Vaccination recorded successfully!"))
 
             self.clear_vaccination_form()
 
         except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.error', default="Error"), f"An error occurred: {str(e)}")
 
     def clear_vaccination_form(self):
         """Clear the vaccination form"""
@@ -167,15 +167,15 @@ class VaccinationsMixin:
         main_frame = ttk.Frame(parent, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        search_frame = ttk.LabelFrame(main_frame, text="Search", padding="5")
+        search_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.labels.search', default="Search"), padding="5")
         search_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-        ttk.Label(search_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        ttk.Label(search_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=2)
         self.vax_search_student = tk.StringVar()
         ttk.Entry(search_frame, textvariable=self.vax_search_student, width=20).grid(row=0, column=1, sticky=tk.W, pady=2, padx=(5, 10))
 
-        ttk.Button(search_frame, text="Search", command=self.search_vaccinations).grid(row=0, column=2, padx=5)
-        ttk.Button(search_frame, text="Show All", command=self.load_all_vaccinations).grid(row=0, column=3, padx=5)
+        ttk.Button(search_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.buttons.search', default="Search"), command=self.search_vaccinations).grid(row=0, column=2, padx=5)
+        ttk.Button(search_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.buttons.show_all', default="Show All"), command=self.load_all_vaccinations).grid(row=0, column=3, padx=5)
 
         tree_frame = ttk.Frame(main_frame)
         tree_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -199,9 +199,9 @@ class VaccinationsMixin:
         buttons_frame = ttk.Frame(main_frame)
         buttons_frame.grid(row=2, column=0, pady=10)
 
-        ttk.Button(buttons_frame, text="View Details", command=self.view_vaccination_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.buttons.view_details', default="View Details"), command=self.view_vaccination_details).pack(side=tk.LEFT, padx=5)
         if self.auth.check_permission('verify_vaccinations'):
-            ttk.Button(buttons_frame, text="Verify Record", command=self.verify_vaccination).pack(side=tk.LEFT, padx=5)
+            ttk.Button(buttons_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.buttons.verify_record', default="Verify Record"), command=self.verify_vaccination).pack(side=tk.LEFT, padx=5)
 
         parent.columnconfigure(0, weight=1)
         parent.rowconfigure(0, weight=1)
@@ -259,13 +259,13 @@ class VaccinationsMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load vaccination records: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.error', default="Error"), f"Failed to load vaccination records: {str(e)}")
 
     def view_vaccination_details(self):
         """View details of selected vaccination record"""
         selection = self.vax_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a vaccination record to view.")
+            messagebox.showwarning(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.please_select_a_vaccination_record_to_view', default="Please select a vaccination record to view."))
             return
 
         record_id = self.vax_tree.item(selection[0])['values'][0]
@@ -288,11 +288,11 @@ class VaccinationsMixin:
             conn.close()
 
             if not record:
-                messagebox.showerror("Error", "Vaccination record not found")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.vaccination_record_not_found', default="Vaccination record not found"))
                 return
 
             dialog = tk.Toplevel(self.root)
-            dialog.title("Vaccination Details")
+            dialog.title(_t('gui.pastoral.health.health_portal.vaccinations.windows.vaccination_details', default="Vaccination Details"))
             dialog.geometry("600x700")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -300,9 +300,9 @@ class VaccinationsMixin:
             main_frame = ttk.Frame(dialog, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Vaccination Record Details", font=('Arial', 14, 'bold')).pack(pady=10)
+            ttk.Label(main_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.labels.vaccination_record_details', default="Vaccination Record Details"), font=('Arial', 14, 'bold')).pack(pady=10)
 
-            details_frame = ttk.LabelFrame(main_frame, text="Record Information", padding=15)
+            details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.labels.record_information', default="Record Information"), padding=15)
             details_frame.pack(fill='both', expand=True, pady=10)
 
             info_text = tk.Text(details_frame, height=25, width=60, wrap='word', font=('Courier', 10))
@@ -342,21 +342,21 @@ Verified Date:   {record[14] if record[14] else 'N/A'}
             info_text.insert('1.0', details)
             info_text.config(state='disabled')
 
-            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+            ttk.Button(main_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load vaccination details: {e}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.error', default="Error"), f"Failed to load vaccination details: {e}")
 
     def verify_vaccination(self):
         """Verify selected vaccination record"""
         selection = self.vax_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a vaccination record to verify.")
+            messagebox.showwarning(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.please_select_a_vaccination_record_to_verify', default="Please select a vaccination record to verify."))
             return
 
         record_id = self.vax_tree.item(selection[0])['values'][0]
 
-        if messagebox.askyesno("Verify Vaccination", "Verify this vaccination record?"):
+        if messagebox.askyesno(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.verify_vaccination', default="Verify Vaccination"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.verify_this_vaccination_record', default="Verify this vaccination record?")):
             try:
                 conn = self.get_connection()
                 cursor = conn.cursor()
@@ -371,39 +371,39 @@ Verified Date:   {record[14] if record[14] else 'N/A'}
                 conn.close()
 
                 self.log_audit_event('verify_vaccination', 'vaccination', record_id)
-                messagebox.showinfo("Success", "Vaccination record verified successfully!")
+                messagebox.showinfo(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.success', default="Success"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.vaccination_record_verified_successfully', default="Vaccination record verified successfully!"))
                 self.load_vaccinations(self.vax_search_student.get().strip())
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to verify vaccination: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.error', default="Error"), f"Failed to verify vaccination: {str(e)}")
 
     def create_view_vaccination_records(self):
         """View and manage vaccination records"""
         content_frame = ttk.Frame(self.content_area)
         content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        title_label = ttk.Label(content_frame, text="Vaccination Records",
+        title_label = ttk.Label(content_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.labels.vaccination_records', default="Vaccination Records"),
                                font=('Arial', 16, 'bold'))
         title_label.pack(pady=(0, 20))
 
-        add_frame = ttk.LabelFrame(content_frame, text="Add Vaccination Record", padding=15)
+        add_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.labels.add_vaccination_record', default="Add Vaccination Record"), padding=15)
         add_frame.pack(fill=tk.X, pady=(0, 20))
 
-        ttk.Label(add_frame, text="Vaccine Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(add_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.labels.vaccine_name', default="Vaccine Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.vaccine_name = ttk.Combobox(add_frame, width=25, values=[
             "COVID-19", "Influenza (Flu)", "Hepatitis B", "MMR", "Tdap", "Meningococcal", "HPV", "Other"
         ])
         self.vaccine_name.grid(row=0, column=1, sticky=tk.W, padx=(10, 20), pady=5)
 
-        ttk.Label(add_frame, text="Date:").grid(row=0, column=2, sticky=tk.W, pady=5)
+        ttk.Label(add_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.labels.date', default="Date:")).grid(row=0, column=2, sticky=tk.W, pady=5)
         self.vaccine_date = ttk.Entry(add_frame, width=15)
         self.vaccine_date.grid(row=0, column=3, sticky=tk.W, padx=(10, 0), pady=5)
         self.vaccine_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-        ttk.Button(add_frame, text="Add Vaccination",
+        ttk.Button(add_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.buttons.add_vaccination', default="Add Vaccination"),
                   command=self.add_vaccination_record).grid(row=0, column=4, padx=(20, 0))
 
-        status_frame = ttk.LabelFrame(content_frame, text="Current Vaccination Status", padding=15)
+        status_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.health.health_portal.vaccinations.labels.current_vaccination_status', default="Current Vaccination Status"), padding=15)
         status_frame.pack(fill=tk.BOTH, expand=True)
 
         self.vaccination_text = scrolledtext.ScrolledText(status_frame, wrap=tk.WORD, height=15)
@@ -414,11 +414,11 @@ Verified Date:   {record[14] if record[14] else 'N/A'}
     def add_vaccination_record(self):
         """Add a new vaccination record"""
         if not self.vaccine_name.get().strip():
-            messagebox.showerror("Validation Error", "Vaccine name is required.")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.vaccine_name_is_required', default="Vaccine name is required."))
             return
 
         if not self.vaccine_date.get().strip():
-            messagebox.showerror("Validation Error", "Vaccination date is required.")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.vaccination_date_is_required', default="Vaccination date is required."))
             return
 
         try:
@@ -434,11 +434,11 @@ Verified Date:   {record[14] if record[14] else 'N/A'}
             self.vaccine_date.delete(0, tk.END)
             self.vaccine_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-            messagebox.showinfo("Success", "Vaccination record added successfully!")
+            messagebox.showinfo(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.success', default="Success"), _t('gui.pastoral.health.health_portal.vaccinations.dialogs.vaccination_record_added_successfully', default="Vaccination record added successfully!"))
             self.log_audit_event('add_vaccination', 'vaccination', self.vaccine_name.get())
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add vaccination record: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.vaccinations.dialogs.error', default="Error"), f"Failed to add vaccination record: {str(e)}")
 
     def load_vaccination_display(self):
         """Load and display vaccination records"""

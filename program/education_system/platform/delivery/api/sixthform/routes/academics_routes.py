@@ -22,7 +22,7 @@ from flask import Blueprint, g, jsonify, request
 logger = logging.getLogger(__name__)
 
 academics_bp = Blueprint(
-    "sf_academics", __name__, url_prefix="/api/sixthform/academics")
+    "sf_academics", __name__, url_prefix="/api/academics")
 
 
 def _token_required(view):

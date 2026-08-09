@@ -1,12 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from tkinter import messagebox
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
-
-try:
-    from education_system.systems.university.domain.pastoral.health.services.health_portal import init_enhanced_health_db
-except ImportError:
-    init_enhanced_health_db = None
+from education_system import paths
 
 
 class DatabaseMixin:
@@ -15,17 +12,6 @@ class DatabaseMixin:
     def init_database(self):
         """Initialize the database with all required tables"""
         try:
-            if init_enhanced_health_db:
-                try:
-                    import education_system.systems.university.infrastructure.database.db as _db_module
-                    _old_db_path = getattr(_db_module, 'DEFAULT_DB_PATH', None)
-                    _db_module.DEFAULT_DB_PATH = str(paths.DEFAULT_DB_PATH)
-                    init_enhanced_health_db()
-                    if _old_db_path is not None:
-                        _db_module.DEFAULT_DB_PATH = _old_db_path
-                except Exception as e:
-                    print(f"Warning: failed to initialize enhanced health DB: {e}")
-
             conn = self.get_connection()
             cursor = conn.cursor()
 
@@ -409,4 +395,4 @@ class DatabaseMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error initializing database: {e}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.database.dialogs.database_error', default="Database Error"), f"Error initializing database: {e}")

@@ -17,14 +17,14 @@ import re
 import sqlite3
 from dataclasses import dataclass
 from typing import Any
-from education_system.systems.secondary.infrastructure import paths
+from education_system import paths
 from education_system.systems.secondary.domain.academics.calendar import (
     calendar as data,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.CALENDAR_DB
+DB_PATH = paths.SECONDARY_CALENDAR_DB
 
 
 EVENT_TYPES: tuple[str, ...] = (
@@ -160,7 +160,7 @@ class Summary:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_secondary_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     return conn

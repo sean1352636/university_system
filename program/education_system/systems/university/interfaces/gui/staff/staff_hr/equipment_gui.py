@@ -10,6 +10,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -34,7 +36,7 @@ class EquipmentGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Equipment Booking")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), _t('gui.staff.staff_hr.equipment.dialogs.login_required_to_access_equipment_booking', default="Login required to access Equipment Booking"))
             return
 
         # Cache categories and equipment lists for combobox use
@@ -52,19 +54,19 @@ class EquipmentGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Equipment")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.equipment.tabs.equipment', default="Equipment"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Lab/Equipment Booking")
+        self.window.title(_t('gui.staff.staff_hr.equipment.windows.lab_equipment_booking', default="Lab/Equipment Booking"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.equipment.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.equipment.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         self._build_interface(self.window)
 
@@ -144,19 +146,19 @@ class EquipmentGUI:
     def _create_browse_tab(self):
         """Create the Browse Equipment tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Browse Equipment")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.equipment.tabs.browse_equipment', default="Browse Equipment"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Browse Equipment", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_browse_equipment).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.equipment.labels.browse_equipment', default="Browse Equipment"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.equipment.buttons.refresh', default="Refresh"), command=self._load_browse_equipment).pack(side=tk.RIGHT, padx=5)
 
         # Filter frame
-        filter_frame = ttk.LabelFrame(tab, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.equipment.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Category:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.equipment.labels.category', default="Category:")).pack(side=tk.LEFT, padx=5)
         self.browse_category_filter = ttk.Combobox(
             filter_frame, values=self._get_category_names(include_all=True),
             width=20, state='readonly'
@@ -165,7 +167,7 @@ class EquipmentGUI:
         self.browse_category_filter.pack(side=tk.LEFT, padx=5)
         self.browse_category_filter.bind('<<ComboboxSelected>>', lambda e: self._load_browse_equipment())
 
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=15)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.equipment.labels.status', default="Status:")).pack(side=tk.LEFT, padx=15)
         self.browse_status_filter = ttk.Combobox(
             filter_frame,
             values=["All", "available", "maintenance", "retired"],
@@ -245,7 +247,7 @@ class EquipmentGUI:
             self._update_status(f"Loaded {len(items)} equipment items")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load equipment: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to load equipment: {e}")
 
     def _view_equipment_details(self, event=None):
         """Open a detail Toplevel for the selected equipment item."""
@@ -259,7 +261,7 @@ class EquipmentGUI:
         try:
             equip = EquipmentManager.get_equipment(equipment_id)
             if not equip:
-                messagebox.showerror("Error", "Equipment not found")
+                messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), _t('gui.staff.staff_hr.equipment.dialogs.equipment_not_found', default="Equipment not found"))
                 return
 
             # Fetch maintenance history
@@ -278,7 +280,7 @@ class EquipmentGUI:
                       font=('Arial', 16, 'bold')).pack(anchor=tk.W, pady=(0, 15))
 
             # Details grid
-            details_frame = ttk.LabelFrame(main_frame, text="Equipment Information", padding=10)
+            details_frame = ttk.LabelFrame(main_frame, text=_t('gui.staff.staff_hr.equipment.labels.equipment_information', default="Equipment Information"), padding=10)
             details_frame.pack(fill=tk.X, pady=5)
 
             cat_display = self._get_category_name_by_id(equip.get('category_id')) or 'N/A'
@@ -308,13 +310,13 @@ class EquipmentGUI:
 
             # Description
             desc = equip.get('description') or 'No description provided'
-            desc_frame = ttk.LabelFrame(main_frame, text="Description", padding=10)
+            desc_frame = ttk.LabelFrame(main_frame, text=_t('gui.staff.staff_hr.equipment.labels.description', default="Description"), padding=10)
             desc_frame.pack(fill=tk.X, pady=5)
             ttk.Label(desc_frame, text=desc, wraplength=540, anchor=tk.W, justify=tk.LEFT).pack(
                 fill=tk.X)
 
             # Maintenance history
-            maint_frame = ttk.LabelFrame(main_frame, text="Maintenance History", padding=10)
+            maint_frame = ttk.LabelFrame(main_frame, text=_t('gui.staff.staff_hr.equipment.labels.maintenance_history', default="Maintenance History"), padding=10)
             maint_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
             maint_columns = ('ID', 'Type', 'Scheduled', 'Completed', 'Status')
@@ -337,23 +339,23 @@ class EquipmentGUI:
                     (m.get('status') or '-').capitalize(),
                 ))
 
-            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+            ttk.Button(main_frame, text=_t('gui.staff.staff_hr.equipment.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load equipment details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to load equipment details: {e}")
 
     # ==================== TAB 2: MY BOOKINGS ====================
 
     def _create_my_bookings_tab(self):
         """Create the My Bookings tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Bookings")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.equipment.tabs.my_bookings', default="My Bookings"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Bookings", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_my_bookings).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.equipment.labels.my_bookings', default="My Bookings"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.equipment.buttons.refresh', default="Refresh"), command=self._load_my_bookings).pack(side=tk.RIGHT, padx=5)
 
         # Treeview
         tree_frame = ttk.Frame(tab)
@@ -386,9 +388,9 @@ class EquipmentGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Cancel Booking", command=self._cancel_selected_booking).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Check In", command=self._check_in_selected).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Check Out", command=self._check_out_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.equipment.buttons.cancel_booking', default="Cancel Booking"), command=self._cancel_selected_booking).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.equipment.buttons.check_in', default="Check In"), command=self._check_in_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.equipment.buttons.check_out', default="Check Out"), command=self._check_out_selected).pack(side=tk.LEFT, padx=5)
 
         self._load_my_bookings()
 
@@ -429,13 +431,13 @@ class EquipmentGUI:
             self._update_status(f"Loaded {len(bookings)} bookings")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load bookings: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to load bookings: {e}")
 
     def _get_selected_booking(self):
         """Get the selected booking ID and status from the bookings treeview."""
         selection = self.bookings_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a booking first")
+            messagebox.showwarning(_t('gui.staff.staff_hr.equipment.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.equipment.dialogs.please_select_a_booking_first', default="Please select a booking first"))
             return None, None
         item = self.bookings_tree.item(selection[0])
         booking_id = item['values'][0]
@@ -449,18 +451,18 @@ class EquipmentGUI:
             return
 
         if status not in ('pending', 'approved'):
-            messagebox.showwarning("Warning", "Only pending or approved bookings can be cancelled")
+            messagebox.showwarning(_t('gui.staff.staff_hr.equipment.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.equipment.dialogs.only_pending_or_approved_bookings_can_be_cancelled', default="Only pending or approved bookings can be cancelled"))
             return
 
-        if not messagebox.askyesno("Confirm", "Are you sure you want to cancel this booking?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.equipment.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.equipment.dialogs.are_you_sure_you_want_to_cancel_this_booking', default="Are you sure you want to cancel this booking?")):
             return
 
         try:
             EquipmentManager.cancel_booking(booking_id)
-            messagebox.showinfo("Success", "Booking cancelled successfully")
+            messagebox.showinfo(_t('gui.staff.staff_hr.equipment.dialogs.success', default="Success"), _t('gui.staff.staff_hr.equipment.dialogs.booking_cancelled_successfully', default="Booking cancelled successfully"))
             self._load_my_bookings()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to cancel booking: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to cancel booking: {e}")
 
     def _check_in_selected(self):
         """Check in for the selected booking."""
@@ -469,15 +471,15 @@ class EquipmentGUI:
             return
 
         if status != 'approved':
-            messagebox.showwarning("Warning", "Only approved bookings can be checked in")
+            messagebox.showwarning(_t('gui.staff.staff_hr.equipment.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.equipment.dialogs.only_approved_bookings_can_be_checked_in', default="Only approved bookings can be checked in"))
             return
 
         try:
             EquipmentManager.check_in(booking_id)
-            messagebox.showinfo("Success", "Checked in successfully")
+            messagebox.showinfo(_t('gui.staff.staff_hr.equipment.dialogs.success', default="Success"), _t('gui.staff.staff_hr.equipment.dialogs.checked_in_successfully', default="Checked in successfully"))
             self._load_my_bookings()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to check in: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to check in: {e}")
 
     def _check_out_selected(self):
         """Check out from the selected booking."""
@@ -489,41 +491,41 @@ class EquipmentGUI:
         item = self.bookings_tree.item(self.bookings_tree.selection()[0])
         checked_in_val = item['values'][5]
         if checked_in_val == '-':
-            messagebox.showwarning("Warning", "You must check in before checking out")
+            messagebox.showwarning(_t('gui.staff.staff_hr.equipment.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.equipment.dialogs.you_must_check_in_before_checking_out', default="You must check in before checking out"))
             return
 
         checked_out_val = item['values'][6]
         if checked_out_val != '-':
-            messagebox.showwarning("Warning", "Already checked out")
+            messagebox.showwarning(_t('gui.staff.staff_hr.equipment.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.equipment.dialogs.already_checked_out', default="Already checked out"))
             return
 
         try:
             EquipmentManager.check_out(booking_id)
-            messagebox.showinfo("Success", "Checked out successfully")
+            messagebox.showinfo(_t('gui.staff.staff_hr.equipment.dialogs.success', default="Success"), _t('gui.staff.staff_hr.equipment.dialogs.checked_out_successfully', default="Checked out successfully"))
             self._load_my_bookings()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to check out: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to check out: {e}")
 
     # ==================== TAB 3: BOOK EQUIPMENT ====================
 
     def _create_book_tab(self):
         """Create the Book Equipment tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Book Equipment")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.equipment.tabs.book_equipment', default="Book Equipment"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Book Equipment", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.equipment.labels.book_equipment', default="Book Equipment"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Form frame
-        form_frame = ttk.LabelFrame(tab, text="Booking Details", padding=15)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.equipment.labels.booking_details', default="Booking Details"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=5)
 
         # Equipment selector: Category filters Equipment
         row1 = ttk.Frame(form_frame)
         row1.pack(fill=tk.X, pady=5)
-        ttk.Label(row1, text="Category:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row1, text=_t('gui.staff.staff_hr.equipment.labels.category', default="Category:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         self.book_category_combo = ttk.Combobox(
             row1, values=self._get_category_names(include_all=False),
             width=25, state='readonly'
@@ -533,7 +535,7 @@ class EquipmentGUI:
 
         row2 = ttk.Frame(form_frame)
         row2.pack(fill=tk.X, pady=5)
-        ttk.Label(row2, text="Equipment:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row2, text=_t('gui.staff.staff_hr.equipment.labels.equipment', default="Equipment:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         self.book_equipment_combo = ttk.Combobox(row2, width=35, state='readonly')
         self.book_equipment_combo.pack(side=tk.LEFT, padx=5)
         # Store the mapping of display name -> equipment_id
@@ -542,47 +544,47 @@ class EquipmentGUI:
         # Date entry
         row3 = ttk.Frame(form_frame)
         row3.pack(fill=tk.X, pady=5)
-        ttk.Label(row3, text="Date:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row3, text=_t('gui.staff.staff_hr.equipment.labels.date', default="Date:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         self.book_date_entry = ttk.Entry(row3, width=15)
         self.book_date_entry.insert(0, datetime.now().strftime("%Y-%m-%d"))
         self.book_date_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Label(row3, text="(YYYY-MM-DD)", font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(row3, text=_t('gui.staff.staff_hr.equipment.labels.yyyy_mm_dd', default="(YYYY-MM-DD)"), font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
 
         # Start Time entry
         row4 = ttk.Frame(form_frame)
         row4.pack(fill=tk.X, pady=5)
-        ttk.Label(row4, text="Start Time:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row4, text=_t('gui.staff.staff_hr.equipment.labels.start_time', default="Start Time:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         self.book_start_time_entry = ttk.Entry(row4, width=10)
         self.book_start_time_entry.insert(0, "09:00")
         self.book_start_time_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Label(row4, text="(HH:MM)", font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(row4, text=_t('gui.staff.staff_hr.equipment.labels.hh_mm', default="(HH:MM)"), font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
 
         # End Time entry
         row5 = ttk.Frame(form_frame)
         row5.pack(fill=tk.X, pady=5)
-        ttk.Label(row5, text="End Time:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row5, text=_t('gui.staff.staff_hr.equipment.labels.end_time', default="End Time:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         self.book_end_time_entry = ttk.Entry(row5, width=10)
         self.book_end_time_entry.insert(0, "10:00")
         self.book_end_time_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Label(row5, text="(HH:MM)", font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(row5, text=_t('gui.staff.staff_hr.equipment.labels.hh_mm', default="(HH:MM)"), font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
 
         # Purpose
         row6 = ttk.Frame(form_frame)
         row6.pack(fill=tk.X, pady=5)
-        ttk.Label(row6, text="Purpose:", width=15, anchor=tk.W).pack(side=tk.LEFT, anchor=tk.N)
+        ttk.Label(row6, text=_t('gui.staff.staff_hr.equipment.labels.purpose', default="Purpose:"), width=15, anchor=tk.W).pack(side=tk.LEFT, anchor=tk.N)
         self.book_purpose_text = tk.Text(row6, height=3, width=40)
         self.book_purpose_text.pack(side=tk.LEFT, padx=5)
 
         # Buttons
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Check Availability",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.equipment.buttons.check_availability', default="Check Availability"),
                    command=self._check_availability).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Submit Booking",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.equipment.buttons.submit_booking', default="Submit Booking"),
                    command=self._submit_booking).pack(side=tk.LEFT, padx=5)
 
         # Availability display
-        avail_frame = ttk.LabelFrame(tab, text="Existing Bookings for Selected Date", padding=10)
+        avail_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.equipment.labels.existing_bookings_for_selected_date', default="Existing Bookings for Selected Date"), padding=10)
         avail_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         avail_columns = ('ID', 'User', 'Start', 'End', 'Status')
@@ -624,7 +626,7 @@ class EquipmentGUI:
         """Check and display existing bookings for the selected equipment and date."""
         equipment_id = self._get_selected_book_equipment_id()
         if not equipment_id:
-            messagebox.showwarning("Warning", "Please select an equipment item first")
+            messagebox.showwarning(_t('gui.staff.staff_hr.equipment.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.equipment.dialogs.please_select_an_equipment_item_first', default="Please select an equipment item first"))
             return
 
         try:
@@ -651,13 +653,13 @@ class EquipmentGUI:
                     ))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to check availability: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to check availability: {e}")
 
     def _submit_booking(self):
         """Submit a new equipment booking."""
         equipment_id = self._get_selected_book_equipment_id()
         if not equipment_id:
-            messagebox.showwarning("Warning", "Please select a category and equipment item")
+            messagebox.showwarning(_t('gui.staff.staff_hr.equipment.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.equipment.dialogs.please_select_a_category_and_equipment_item', default="Please select a category and equipment item"))
             return
 
         # Validate inputs
@@ -680,7 +682,7 @@ class EquipmentGUI:
             return
 
         if end_time <= start_time:
-            messagebox.showerror("Validation Error", "End time must be after start time")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.equipment.dialogs.end_time_must_be_after_start_time', default="End time must be after start time"))
             return
 
         purpose = self.book_purpose_text.get("1.0", "end-1c").strip() or None
@@ -696,7 +698,7 @@ class EquipmentGUI:
                 end_time=end_time,
                 purpose=purpose,
             )
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.staff.staff_hr.equipment.dialogs.success', default="Success"),
                                 f"Booking created successfully (ID: {booking_id})")
             # Clear purpose
             self.book_purpose_text.delete("1.0", "end")
@@ -707,28 +709,28 @@ class EquipmentGUI:
                 self._load_my_bookings()
 
         except ValueError as e:
-            messagebox.showerror("Booking Conflict", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.booking_conflict', default="Booking Conflict"), str(e))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create booking: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to create booking: {e}")
 
     # ==================== TAB 4: MAINTENANCE (ADMIN) ====================
 
     def _create_maintenance_tab(self):
         """Create the Maintenance tab (admin/staff only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Maintenance")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.equipment.tabs.maintenance', default="Maintenance"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Equipment Maintenance", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_maintenance).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.equipment.labels.equipment_maintenance', default="Equipment Maintenance"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.equipment.buttons.refresh', default="Refresh"), command=self._load_maintenance).pack(side=tk.RIGHT, padx=5)
 
         # Equipment selector for filtering
-        filter_frame = ttk.LabelFrame(tab, text="Filter", padding=10)
+        filter_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.equipment.labels.filter', default="Filter"), padding=10)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Equipment:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.equipment.labels.equipment', default="Equipment:")).pack(side=tk.LEFT, padx=5)
         self._maint_equipment_map = {}
         self.maint_equipment_combo = ttk.Combobox(filter_frame, width=35, state='readonly')
         self.maint_equipment_combo.pack(side=tk.LEFT, padx=5)
@@ -764,9 +766,9 @@ class EquipmentGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Schedule Maintenance",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.equipment.buttons.schedule_maintenance', default="Schedule Maintenance"),
                    command=self._show_schedule_maintenance_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Complete",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.equipment.buttons.complete', default="Complete"),
                    command=self._complete_selected_maintenance).pack(side=tk.LEFT, padx=5)
 
         self._load_maintenance()
@@ -828,12 +830,12 @@ class EquipmentGUI:
             self._update_status(f"Loaded {len(records)} maintenance records")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load maintenance records: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to load maintenance records: {e}")
 
     def _show_schedule_maintenance_dialog(self):
         """Show a dialog to schedule new maintenance."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Schedule Maintenance")
+        dialog.title(_t('gui.staff.staff_hr.equipment.windows.schedule_maintenance', default="Schedule Maintenance"))
         dialog.geometry("450x400")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -841,13 +843,13 @@ class EquipmentGUI:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Schedule Equipment Maintenance",
+        ttk.Label(main_frame, text=_t('gui.staff.staff_hr.equipment.labels.schedule_equipment_maintenance', default="Schedule Equipment Maintenance"),
                   font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Equipment selector
         row1 = ttk.Frame(main_frame)
         row1.pack(fill=tk.X, pady=5)
-        ttk.Label(row1, text="Equipment:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row1, text=_t('gui.staff.staff_hr.equipment.labels.equipment', default="Equipment:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         sched_equip_map = self._get_equipment_name_map(category_id=None)
         sched_equip_combo = ttk.Combobox(row1, values=list(sched_equip_map.keys()),
                                          width=30, state='readonly')
@@ -856,7 +858,7 @@ class EquipmentGUI:
         # Maintenance type
         row2 = ttk.Frame(main_frame)
         row2.pack(fill=tk.X, pady=5)
-        ttk.Label(row2, text="Type:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row2, text=_t('gui.staff.staff_hr.equipment.labels.type', default="Type:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         type_combo = ttk.Combobox(row2, values=['routine', 'repair', 'calibration'],
                                   width=20, state='readonly')
         type_combo.set('routine')
@@ -865,23 +867,23 @@ class EquipmentGUI:
         # Description
         row3 = ttk.Frame(main_frame)
         row3.pack(fill=tk.X, pady=5)
-        ttk.Label(row3, text="Description:", width=15, anchor=tk.W).pack(side=tk.LEFT, anchor=tk.N)
+        ttk.Label(row3, text=_t('gui.staff.staff_hr.equipment.labels.description_variant_2', default="Description:"), width=15, anchor=tk.W).pack(side=tk.LEFT, anchor=tk.N)
         desc_text = tk.Text(row3, height=3, width=35)
         desc_text.pack(side=tk.LEFT, padx=5)
 
         # Scheduled date
         row4 = ttk.Frame(main_frame)
         row4.pack(fill=tk.X, pady=5)
-        ttk.Label(row4, text="Scheduled Date:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row4, text=_t('gui.staff.staff_hr.equipment.labels.scheduled_date', default="Scheduled Date:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         date_entry = ttk.Entry(row4, width=15)
         date_entry.insert(0, datetime.now().strftime("%Y-%m-%d"))
         date_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Label(row4, text="(YYYY-MM-DD)", font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(row4, text=_t('gui.staff.staff_hr.equipment.labels.yyyy_mm_dd', default="(YYYY-MM-DD)"), font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
 
         # Cost
         row5 = ttk.Frame(main_frame)
         row5.pack(fill=tk.X, pady=5)
-        ttk.Label(row5, text="Est. Cost:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row5, text=_t('gui.staff.staff_hr.equipment.labels.est_cost', default="Est. Cost:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         cost_entry = ttk.Entry(row5, width=12)
         cost_entry.insert(0, "0.00")
         cost_entry.pack(side=tk.LEFT, padx=5)
@@ -892,17 +894,17 @@ class EquipmentGUI:
         def save():
             equip_sel = sched_equip_combo.get()
             if not equip_sel:
-                error_label.config(text="Please select an equipment item")
+                error_label.config(text=_t('gui.staff.staff_hr.equipment.text.please_select_an_equipment_item', default="Please select an equipment item"))
                 return
 
             eid = sched_equip_map.get(equip_sel)
             if not eid:
-                error_label.config(text="Invalid equipment selection")
+                error_label.config(text=_t('gui.staff.staff_hr.equipment.text.invalid_equipment_selection', default="Invalid equipment selection"))
                 return
 
             maint_type = type_combo.get()
             if not maint_type:
-                error_label.config(text="Please select a maintenance type")
+                error_label.config(text=_t('gui.staff.staff_hr.equipment.text.please_select_a_maintenance_type', default="Please select a maintenance type"))
                 return
 
             try:
@@ -916,7 +918,7 @@ class EquipmentGUI:
             try:
                 cost = float(cost_entry.get().strip() or '0')
             except ValueError:
-                error_label.config(text="Cost must be a valid number")
+                error_label.config(text=_t('gui.staff.staff_hr.equipment.text.cost_must_be_a_valid_number', default="Cost must be a valid number"))
                 return
 
             try:
@@ -927,7 +929,7 @@ class EquipmentGUI:
                     scheduled_date=sched_date,
                     cost=cost,
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.equipment.dialogs.success', default="Success"),
                                     f"Maintenance scheduled (ID: {maintenance_id})")
                 dialog.destroy()
                 self._load_maintenance()
@@ -939,14 +941,14 @@ class EquipmentGUI:
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text="Schedule", command=save).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.equipment.buttons.schedule', default="Schedule"), command=save).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.equipment.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _complete_selected_maintenance(self):
         """Mark the selected maintenance record as complete."""
         selection = self.maint_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a maintenance record")
+            messagebox.showwarning(_t('gui.staff.staff_hr.equipment.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.equipment.dialogs.please_select_a_maintenance_record', default="Please select a maintenance record"))
             return
 
         item = self.maint_tree.item(selection[0])
@@ -954,10 +956,10 @@ class EquipmentGUI:
         maint_status = item['values'][5].lower()
 
         if maint_status == 'completed':
-            messagebox.showwarning("Warning", "This maintenance is already completed")
+            messagebox.showwarning(_t('gui.staff.staff_hr.equipment.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.equipment.dialogs.this_maintenance_is_already_completed', default="This maintenance is already completed"))
             return
 
-        if not messagebox.askyesno("Confirm", "Mark this maintenance as completed?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.equipment.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.equipment.dialogs.mark_this_maintenance_as_completed', default="Mark this maintenance as completed?")):
             return
 
         performed_by = self.current_user.get('username') or self._get_user_id()
@@ -967,53 +969,53 @@ class EquipmentGUI:
                 maintenance_id=maintenance_id,
                 performed_by=performed_by,
             )
-            messagebox.showinfo("Success", "Maintenance marked as completed")
+            messagebox.showinfo(_t('gui.staff.staff_hr.equipment.dialogs.success', default="Success"), _t('gui.staff.staff_hr.equipment.dialogs.maintenance_marked_as_completed', default="Maintenance marked as completed"))
             self._load_maintenance()
             # Also refresh browse since equipment status changes
             if hasattr(self, 'browse_tree'):
                 self._load_browse_equipment()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to complete maintenance: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to complete maintenance: {e}")
 
     # ==================== TAB 5: REPORTS (ADMIN) ====================
 
     def _create_reports_tab(self):
         """Create the Reports tab (admin/staff only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Reports")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.equipment.tabs.reports', default="Reports"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Equipment Usage Reports", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_reports).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.equipment.labels.equipment_usage_reports', default="Equipment Usage Reports"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.equipment.buttons.refresh', default="Refresh"), command=self._load_reports).pack(side=tk.RIGHT, padx=5)
 
         # Summary frame
-        summary_frame = ttk.LabelFrame(tab, text="Usage Statistics", padding=15)
+        summary_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.equipment.labels.usage_statistics', default="Usage Statistics"), padding=15)
         summary_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        self.report_total_label = ttk.Label(summary_frame, text="Total Bookings: 0",
+        self.report_total_label = ttk.Label(summary_frame, text=_t('gui.staff.staff_hr.equipment.labels.total_bookings_0', default="Total Bookings: 0"),
                                             font=('Arial', 11))
         self.report_total_label.pack(side=tk.LEFT, padx=20)
 
-        self.report_approved_label = ttk.Label(summary_frame, text="Approved: 0",
+        self.report_approved_label = ttk.Label(summary_frame, text=_t('gui.staff.staff_hr.equipment.labels.approved_0', default="Approved: 0"),
                                                font=('Arial', 11), foreground='green')
         self.report_approved_label.pack(side=tk.LEFT, padx=20)
 
-        self.report_rejected_label = ttk.Label(summary_frame, text="Rejected: 0",
+        self.report_rejected_label = ttk.Label(summary_frame, text=_t('gui.staff.staff_hr.equipment.labels.rejected_0', default="Rejected: 0"),
                                                font=('Arial', 11), foreground='red')
         self.report_rejected_label.pack(side=tk.LEFT, padx=20)
 
-        self.report_pending_label = ttk.Label(summary_frame, text="Pending: 0",
+        self.report_pending_label = ttk.Label(summary_frame, text=_t('gui.staff.staff_hr.equipment.labels.pending_0', default="Pending: 0"),
                                               font=('Arial', 11), foreground='orange')
         self.report_pending_label.pack(side=tk.LEFT, padx=20)
 
-        self.report_cancelled_label = ttk.Label(summary_frame, text="Cancelled: 0",
+        self.report_cancelled_label = ttk.Label(summary_frame, text=_t('gui.staff.staff_hr.equipment.labels.cancelled_0', default="Cancelled: 0"),
                                                 font=('Arial', 11), foreground='gray')
         self.report_cancelled_label.pack(side=tk.LEFT, padx=20)
 
         # Utilization treeview
-        util_frame = ttk.LabelFrame(tab, text="Equipment Utilization", padding=10)
+        util_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.equipment.labels.equipment_utilization', default="Equipment Utilization"), padding=10)
         util_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         util_columns = ('Equipment Name', 'Total Bookings', 'Utilization')
@@ -1069,7 +1071,7 @@ class EquipmentGUI:
             self._update_status(f"Reports loaded - {total} total bookings")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load reports: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to load reports: {e}")
 
 
 def launch_equipment_gui(root, auth):
@@ -1077,5 +1079,5 @@ def launch_equipment_gui(root, auth):
     try:
         return EquipmentGUI(root, auth)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to launch Equipment GUI: {e}")
+        messagebox.showerror(_t('gui.staff.staff_hr.equipment.dialogs.error', default="Error"), f"Failed to launch Equipment GUI: {e}")
         return None

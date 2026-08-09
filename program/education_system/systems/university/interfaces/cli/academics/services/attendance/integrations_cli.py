@@ -3,7 +3,7 @@
 import datetime
 import uuid
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.infrastructure.paths import EXPORTS_DIR
+from education_system.paths import UNIVERSITY_EXPORTS_DIR
 
 
 def handle_lms_integration():
@@ -41,7 +41,7 @@ def handle_lms_integration():
             print("No attendance data available to export.")
             return
 
-        export_dir = EXPORTS_DIR / "lms"
+        export_dir = UNIVERSITY_EXPORTS_DIR / "lms"
         export_dir.mkdir(parents=True, exist_ok=True)
 
         stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -187,7 +187,7 @@ def handle_calendar_sync():
             print("No events had a parseable date; nothing to export.")
             return
 
-        export_dir = EXPORTS_DIR / "calendar"
+        export_dir = UNIVERSITY_EXPORTS_DIR / "calendar"
         export_dir.mkdir(parents=True, exist_ok=True)
         stamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
         output_path = export_dir / f"academic_calendar_{stamp}.ics"

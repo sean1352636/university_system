@@ -20,7 +20,7 @@ def show_corporate_page(self):
     ttk.Label(self.content_frame, text=_t("cinema.corporate.title"), style="Subtitle.TLabel").pack(pady=10)
     btn_frame = ttk.Frame(self.content_frame, style="Main.TFrame")
     btn_frame.pack(fill="x", pady=10)
-    ttk.Button(btn_frame, text="+ Add Account", style="Success.TButton", command=self.add_corporate).pack(side="left", padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.corporate.buttons.add_account', default="+ Add Account"), style="Success.TButton", command=self.add_corporate).pack(side="left", padx=5)
     tree_frame = ttk.Frame(self.content_frame, style="Card.TFrame")
     tree_frame.pack(fill="both", expand=True, pady=10)
     columns = ("ID", "Company", "Contact", "Email", "Credit", "Balance", "Discount", "Status")
@@ -42,7 +42,7 @@ def show_corporate_page(self):
 
 def add_corporate(self):
     form = tk.Toplevel(self.root)
-    form.title("Add Corporate Account")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.corporate.windows.add_corporate_account', default="Add Corporate Account"))
     form.geometry("450x400")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -61,7 +61,7 @@ def add_corporate(self):
     entries['discount'].insert(0, "10")
     def save():
         if not entries['company'].get().strip() or not entries['contact'].get().strip() or not entries['email'].get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Company, contact, email required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.corporate.dialogs.company_contact_email_required', default="Company, contact, email required"))
             return
         try:
             credit = float(entries['credit'].get() or 1000)
@@ -76,7 +76,7 @@ def add_corporate(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Account created!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.corporate.dialogs.account_created', default="Account created!"))
         form.destroy()
         self.show_corporate_page()
     ttk.Button(frame, text=_t("cinema.btn.create"), style="Success.TButton", command=save).grid(row=len(fields)+1, column=0, columnspan=2, pady=20)

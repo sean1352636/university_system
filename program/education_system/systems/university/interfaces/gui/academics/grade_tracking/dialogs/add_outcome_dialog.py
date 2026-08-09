@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -338,7 +340,7 @@ def safe_combo_update(obj, combo_attr, values):
 class AddLearningOutcomeDialog:
     def __init__(self, parent, callback):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Add Learning Outcome")
+        self.dialog.title(_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.windows.add_learning_outcome', default="Add Learning Outcome"))
         self.dialog.geometry("500x400")
         safe_grab_set(self.dialog)
 
@@ -348,7 +350,7 @@ class AddLearningOutcomeDialog:
     def setup_dialog(self):
         """Setup the add learning outcome dialog"""
         # Title
-        ttk.Label(self.dialog, text="Add New Learning Outcome",
+        ttk.Label(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.labels.add_new_learning_outcome', default="Add New Learning Outcome"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Form frame
@@ -356,32 +358,32 @@ class AddLearningOutcomeDialog:
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Course
-        ttk.Label(form_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.labels.course', default="Course:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.course_var = tk.StringVar()
         self.course_entry = ttk.Entry(form_frame, textvariable=self.course_var, width=30)
         self.course_entry.grid(row=0, column=1, sticky=tk.W, pady=5)
 
         # Outcome Code
-        ttk.Label(form_frame, text="Outcome Code:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.labels.outcome_code', default="Outcome Code:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.code_var = tk.StringVar()
         self.code_entry = ttk.Entry(form_frame, textvariable=self.code_var, width=30)
         self.code_entry.grid(row=1, column=1, sticky=tk.W, pady=5)
 
         # Category
-        ttk.Label(form_frame, text="Category:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.labels.category', default="Category:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.category_var = tk.StringVar()
         category_combo = ttk.Combobox(form_frame, textvariable=self.category_var, width=27)
         category_combo['values'] = ("Knowledge", "Skills", "Attitudes", "Application", "Analysis", "Synthesis")
         category_combo.grid(row=2, column=1, sticky=tk.W, pady=5)
 
         # Importance
-        ttk.Label(form_frame, text="Importance (1-5):").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.labels.importance_1_5', default="Importance (1-5):")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.importance_var = tk.StringVar(value="3")
         importance_spin = ttk.Spinbox(form_frame, textvariable=self.importance_var, from_=1, to=5, width=28)
         importance_spin.grid(row=3, column=1, sticky=tk.W, pady=5)
 
         # Description
-        ttk.Label(form_frame, text="Description:").grid(row=4, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.labels.description', default="Description:")).grid(row=4, column=0, sticky=tk.NW, pady=5)
         self.description_text = tk.Text(form_frame, height=6, width=40)
         self.description_text.grid(row=4, column=1, sticky=tk.W, pady=5)
 
@@ -389,8 +391,8 @@ class AddLearningOutcomeDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Add Outcome", command=self.add_outcome).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.buttons.add_outcome', default="Add Outcome"), command=self.add_outcome).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def add_outcome(self):
         """Add the learning outcome to the database"""
@@ -401,7 +403,7 @@ class AddLearningOutcomeDialog:
         description = self.description_text.get(1.0, tk.END).strip()
 
         if not all([course, code, category, importance, description]):
-            messagebox.showerror("Error", "Please fill in all fields")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.dialogs.please_fill_in_all_fields', default="Please fill in all fields"))
             return
 
         try:
@@ -428,7 +430,7 @@ class AddLearningOutcomeDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Learning outcome added successfully")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.dialogs.learning_outcome_added_successfully', default="Learning outcome added successfully"))
 
             if self.callback:
                 self.callback()
@@ -436,6 +438,6 @@ class AddLearningOutcomeDialog:
             self.dialog.destroy()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error adding outcome: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.add_outcome_dialog.dialogs.database_error', default="Database Error"), f"Error adding outcome: {e}")
 
 

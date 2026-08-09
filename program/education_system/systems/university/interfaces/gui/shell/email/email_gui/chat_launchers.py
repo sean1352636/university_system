@@ -16,6 +16,8 @@ Usage:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 from tkinter import messagebox
 
@@ -28,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 def _open_room(parent, dashboard, room_id, room_name):
     if not room_id:
-        messagebox.showerror("Error", "Could not open chat room.", parent=parent)
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_launchers.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_launchers.dialogs.could_not_open_chat_room', default="Could not open chat room."), parent=parent)
         return None
     return ChatRoomWindow(parent, dashboard, room_id, room_name)
 
@@ -39,7 +41,7 @@ def open_chat_for_event(parent, dashboard, event_id, event_title):
         rid = dashboard.get_or_create_event_room(event_id, event_title)
     except Exception as e:
         logger.exception("open_chat_for_event failed")
-        messagebox.showerror("Error", str(e), parent=parent)
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_launchers.dialogs.error', default="Error"), str(e), parent=parent)
         return None
     return _open_room(parent, dashboard, rid, f"Event: {event_title}")
 
@@ -52,7 +54,7 @@ def open_chat_for_club(parent, dashboard, club_id, club_name, member_user_ids=No
         )
     except Exception as e:
         logger.exception("open_chat_for_club failed")
-        messagebox.showerror("Error", str(e), parent=parent)
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_launchers.dialogs.error', default="Error"), str(e), parent=parent)
         return None
     return _open_room(parent, dashboard, rid, f"Club: {club_name}")
 
@@ -66,7 +68,7 @@ def open_chat_for_residence(parent, dashboard, residence_id, residence_name,
         )
     except Exception as e:
         logger.exception("open_chat_for_residence failed")
-        messagebox.showerror("Error", str(e), parent=parent)
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_launchers.dialogs.error', default="Error"), str(e), parent=parent)
         return None
     return _open_room(parent, dashboard, rid, f"Residence: {residence_name}")
 
@@ -81,6 +83,6 @@ def open_chat_for_advisor_oh(parent, dashboard, advisor_user_id, student_user_id
         )
     except Exception as e:
         logger.exception("open_chat_for_advisor_oh failed")
-        messagebox.showerror("Error", str(e), parent=parent)
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_launchers.dialogs.error', default="Error"), str(e), parent=parent)
         return None
     return _open_room(parent, dashboard, rid, "Career advisor — office hours")

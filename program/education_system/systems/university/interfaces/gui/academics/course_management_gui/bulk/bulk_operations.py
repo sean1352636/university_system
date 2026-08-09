@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -130,7 +132,7 @@ class BulkUpdateDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Bulk Update Courses")
+        self.dialog.title(_t('gui.academics.course_management_gui.bulk.bulk_operations.windows.bulk_update_courses', default="Bulk Update Courses"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -142,36 +144,36 @@ class BulkUpdateDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Bulk Update Courses", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.labels.bulk_update_courses', default="Bulk Update Courses"), font=("Arial", 12, "bold")).pack(pady=10)
 
         # Selection criteria
-        criteria_frame = ttk.LabelFrame(main_frame, text="Select Courses to Update", padding=10)
+        criteria_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.labels.select_courses_to_update', default="Select Courses to Update"), padding=10)
         criteria_frame.pack(fill=tk.X, pady=5)
 
-        self.selection_method = tk.StringVar(value="department")
+        self.selection_method = tk.StringVar(value=_t('gui.academics.course_management_gui.bulk.bulk_operations.values.department', default="department"))
 
-        ttk.Radiobutton(criteria_frame, text="By Department", variable=self.selection_method,
+        ttk.Radiobutton(criteria_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.buttons.by_department', default="By Department"), variable=self.selection_method,
                        value="department").pack(anchor=tk.W)
-        ttk.Radiobutton(criteria_frame, text="By Level", variable=self.selection_method,
+        ttk.Radiobutton(criteria_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.buttons.by_level', default="By Level"), variable=self.selection_method,
                        value="level").pack(anchor=tk.W)
-        ttk.Radiobutton(criteria_frame, text="By Status", variable=self.selection_method,
+        ttk.Radiobutton(criteria_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.buttons.by_status', default="By Status"), variable=self.selection_method,
                        value="status").pack(anchor=tk.W)
 
-        ttk.Label(criteria_frame, text="Value:").pack(anchor=tk.W, pady=(10,0))
+        ttk.Label(criteria_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.labels.value', default="Value:")).pack(anchor=tk.W, pady=(10,0))
         self.criteria_value_var = tk.StringVar()
         ttk.Entry(criteria_frame, textvariable=self.criteria_value_var, width=30).pack(anchor=tk.W)
 
         # Update field
-        update_frame = ttk.LabelFrame(main_frame, text="Field to Update", padding=10)
+        update_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.labels.field_to_update', default="Field to Update"), padding=10)
         update_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(update_frame, text="Field:").pack(anchor=tk.W)
-        self.update_field = tk.StringVar(value="status")
+        ttk.Label(update_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.labels.field', default="Field:")).pack(anchor=tk.W)
+        self.update_field = tk.StringVar(value=_t('gui.academics.course_management_gui.bulk.bulk_operations.values.status', default="status"))
         field_combo = ttk.Combobox(update_frame, textvariable=self.update_field,
                                   values=["status", "max_enrollment", "course_fee", "course_type"])
         field_combo.pack(anchor=tk.W, pady=2)
 
-        ttk.Label(update_frame, text="New Value:").pack(anchor=tk.W, pady=(10,0))
+        ttk.Label(update_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.labels.new_value', default="New Value:")).pack(anchor=tk.W, pady=(10,0))
         self.new_value_var = tk.StringVar()
         ttk.Entry(update_frame, textvariable=self.new_value_var, width=30).pack(anchor=tk.W)
 
@@ -179,9 +181,9 @@ class BulkUpdateDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Preview", command=self.preview_update).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Update", command=self.perform_update).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.buttons.preview', default="Preview"), command=self.preview_update).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.buttons.update', default="Update"), command=self.perform_update).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.bulk.bulk_operations.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     _ALLOWED_SELECTION_COLUMNS = frozenset({'department', 'level', 'status'})
     _ALLOWED_UPDATE_COLUMNS = frozenset({'status', 'max_enrollment', 'course_fee', 'course_type'})
@@ -193,11 +195,11 @@ class BulkUpdateDialog:
             criteria_value = self.criteria_value_var.get().strip()
 
             if not criteria_value:
-                messagebox.showwarning(_("common.input_required"), "Please enter a value for the selection criteria.")
+                messagebox.showwarning(_("common.input_required"), _t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.please_enter_a_value_for_the_selection_criteria', default="Please enter a value for the selection criteria."))
                 return
 
             if selection_method not in self._ALLOWED_SELECTION_COLUMNS:
-                messagebox.showerror("Error", f"Invalid selection method: {selection_method}")
+                messagebox.showerror(_t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.error', default="Error"), f"Invalid selection method: {selection_method}")
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
@@ -215,9 +217,9 @@ class BulkUpdateDialog:
                 for code, name in courses:
                     preview_text += f"• {code} - {name}\n"
 
-                messagebox.showinfo("Update Preview", preview_text)
+                messagebox.showinfo(_t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.update_preview', default="Update Preview"), preview_text)
             else:
-                messagebox.showinfo("No Matches", "No courses match the specified criteria.")
+                messagebox.showinfo(_t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.no_matches', default="No Matches"), _t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.no_courses_match_the_specified_criteria', default="No courses match the specified criteria."))
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Preview failed: {e}")
@@ -230,18 +232,18 @@ class BulkUpdateDialog:
             new_value = self.new_value_var.get().strip()
 
             if not criteria_value or not new_value:
-                messagebox.showwarning(_("common.input_required"), "Please fill in all fields.")
+                messagebox.showwarning(_("common.input_required"), _t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.please_fill_in_all_fields', default="Please fill in all fields."))
                 return
 
             if selection_method not in self._ALLOWED_SELECTION_COLUMNS:
-                messagebox.showerror("Error", f"Invalid selection method: {selection_method}")
+                messagebox.showerror(_t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.error', default="Error"), f"Invalid selection method: {selection_method}")
                 return
             if update_field not in self._ALLOWED_UPDATE_COLUMNS:
-                messagebox.showerror("Error", f"Invalid update field: {update_field}")
+                messagebox.showerror(_t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.error', default="Error"), f"Invalid update field: {update_field}")
                 return
 
             # Confirm update
-            if not messagebox.askyesno("Confirm Update", f"Update all courses where {selection_method} = '{criteria_value}'?\n\nField: {update_field}\nNew Value: {new_value}"):
+            if not messagebox.askyesno(_t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.confirm_update', default="Confirm Update"), f"Update all courses where {selection_method} = '{criteria_value}'?\n\nField: {update_field}\nNew Value: {new_value}"):
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
@@ -271,7 +273,7 @@ class BulkUpdateDialog:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Update Complete", f"Successfully updated {updated_count} courses.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.bulk.bulk_operations.dialogs.update_complete', default="Update Complete"), f"Successfully updated {updated_count} courses.")
             self.result = True
             self.dialog.destroy()
 

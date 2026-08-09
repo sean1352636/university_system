@@ -10,6 +10,8 @@ usual export / clipboard / refresh wiring.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import json
 import logging
@@ -59,7 +61,7 @@ class GPACalculatorGUI:
         self.student_id = self._resolve_student_id(auth, self.username)
 
         self.window = tk.Toplevel(parent)
-        self.window.title("What-If GPA Calculator")
+        self.window.title(_t('gui.assessment.academic_progress.gpa_calculator.windows.what_if_gpa_calculator', default="What-If GPA Calculator"))
         self.window.geometry("1024x720")
         self.window.minsize(900, 600)
         self.window.transient(parent)
@@ -69,7 +71,7 @@ class GPACalculatorGUI:
         self._enrolled: list[dict] = []
         self._completed: list[dict] = []
         self._term_history: list[dict] = []
-        self._scale_var = tk.StringVar(value='4-point')   # or 'UK %'
+        self._scale_var = tk.StringVar(value=_t('gui.assessment.academic_progress.gpa_calculator.values.value_4_point', default='4-point'))   # or 'UK %'
         self._scenarios: dict[str, dict] = self._load_saved_scenarios()
         self._prefs = self._load_user_preferences()
 
@@ -92,11 +94,11 @@ class GPACalculatorGUI:
         self._tab_required = ttk.Frame(self.notebook)
         self._tab_scenarios = ttk.Frame(self.notebook)
 
-        self.notebook.add(self._tab_calculator, text='Calculator')
-        self.notebook.add(self._tab_terms, text='Term History')
-        self.notebook.add(self._tab_major, text='Major / Cumulative')
-        self.notebook.add(self._tab_required, text='Required Average')
-        self.notebook.add(self._tab_scenarios, text='Scenarios')
+        self.notebook.add(self._tab_calculator, text=_t('gui.assessment.academic_progress.gpa_calculator.tabs.calculator', default='Calculator'))
+        self.notebook.add(self._tab_terms, text=_t('gui.assessment.academic_progress.gpa_calculator.tabs.term_history', default='Term History'))
+        self.notebook.add(self._tab_major, text=_t('gui.assessment.academic_progress.gpa_calculator.tabs.major_cumulative', default='Major / Cumulative'))
+        self.notebook.add(self._tab_required, text=_t('gui.assessment.academic_progress.gpa_calculator.tabs.required_average', default='Required Average'))
+        self.notebook.add(self._tab_scenarios, text=_t('gui.assessment.academic_progress.gpa_calculator.tabs.scenarios', default='Scenarios'))
 
         self._build_calculator_tab(self._tab_calculator)
         self._build_terms_tab(self._tab_terms)
@@ -131,7 +133,7 @@ class GPACalculatorGUI:
             self._refresh_major_tab()
         except Exception as e:
             logger.error(f"Error loading GPA calculator data: {e}")
-            messagebox.showerror("Error", f"Failed to load data: {e}", parent=self.window)
+            messagebox.showerror(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.error', default="Error"), f"Failed to load data: {e}", parent=self.window)
 
     def _add_module_row(self, module_code, current_display):
         row_frame = ttk.Frame(self.scrollable_frame)
@@ -145,7 +147,7 @@ class GPACalculatorGUI:
 
     def _calculate(self):
         if not self.student_id:
-            messagebox.showwarning("Warning", "No student logged in.", parent=self.window)
+            messagebox.showwarning(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.warning', default="Warning"), _t('gui.assessment.academic_progress.gpa_calculator.dialogs.no_student_logged_in', default="No student logged in."), parent=self.window)
             return
         hypothetical = {
             mc: combo.get() for mc, _d, combo in self._module_rows
@@ -169,7 +171,7 @@ class GPACalculatorGUI:
                 self.delta_var.set('')
         except Exception as e:
             logger.error(f"Error calculating projected GPA: {e}")
-            messagebox.showerror("Error", f"Failed to calculate GPA: {e}", parent=self.window)
+            messagebox.showerror(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.error', default="Error"), f"Failed to calculate GPA: {e}", parent=self.window)
 
     @staticmethod
     def _score_to_letter(score):
@@ -558,13 +560,13 @@ class GPACalculatorGUI:
         """[33] Title row + current GPA + scale switcher + global controls."""
         header = ttk.Frame(self.window)
         header.pack(fill=tk.X, padx=15, pady=(8, 4))
-        ttk.Label(header, text="What-If GPA Calculator",
+        ttk.Label(header, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.what_if_gpa_calculator', default="What-If GPA Calculator"),
                   font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
-        self.current_gpa_var = tk.StringVar(value="Current GPA: --")
+        self.current_gpa_var = tk.StringVar(value=_t('gui.assessment.academic_progress.gpa_calculator.values.current_gpa', default="Current GPA: --"))
         ttk.Label(header, textvariable=self.current_gpa_var,
                   font=('Arial', 12, 'bold')).pack(side=tk.LEFT, padx=20)
-        ttk.Button(header, text='Refresh', command=self._on_refresh).pack(side=tk.RIGHT, padx=4)
-        ttk.Button(header, text='Reset', command=self._on_reset_hypotheticals).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(header, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.refresh', default='Refresh'), command=self._on_refresh).pack(side=tk.RIGHT, padx=4)
+        ttk.Button(header, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.reset', default='Reset'), command=self._on_reset_hypotheticals).pack(side=tk.RIGHT, padx=4)
         self._build_export_menu(header)
         self._build_settings_bar()
 
@@ -572,15 +574,15 @@ class GPACalculatorGUI:
         """[34] Scale switcher + dean's / honours threshold spinboxes."""
         bar = ttk.Frame(self.window)
         bar.pack(fill=tk.X, padx=15, pady=(0, 4))
-        ttk.Label(bar, text='Scale:').pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.scale', default='Scale:')).pack(side=tk.LEFT)
         ttk.Combobox(bar, textvariable=self._scale_var,
                      values=('4-point', 'UK %'), state='readonly',
                      width=10).pack(side=tk.LEFT, padx=(4, 12))
-        ttk.Label(bar, text="Dean's threshold:").pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.dean_s_threshold', default="Dean's threshold:")).pack(side=tk.LEFT)
         self._dean_threshold_var = tk.DoubleVar(value=self._prefs['dean_threshold'])
         ttk.Spinbox(bar, from_=0, to=4.0, increment=0.05, width=6,
                     textvariable=self._dean_threshold_var).pack(side=tk.LEFT, padx=(4, 12))
-        ttk.Label(bar, text='Honours threshold:').pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.honours_threshold', default='Honours threshold:')).pack(side=tk.LEFT)
         self._honours_threshold_var = tk.DoubleVar(value=self._prefs['honours_threshold'])
         ttk.Spinbox(bar, from_=0, to=4.0, increment=0.05, width=6,
                     textvariable=self._honours_threshold_var).pack(side=tk.LEFT, padx=(4, 12))
@@ -589,13 +591,13 @@ class GPACalculatorGUI:
         """[35] Year / term filter combos used by the term-history tab."""
         bar = ttk.Frame(parent)
         bar.pack(fill=tk.X, padx=8, pady=4)
-        self._year_filter = tk.StringVar(value='All')
-        self._term_filter = tk.StringVar(value='All')
-        ttk.Label(bar, text='Year:').pack(side=tk.LEFT)
+        self._year_filter = tk.StringVar(value=_t('gui.assessment.academic_progress.gpa_calculator.values.all', default='All'))
+        self._term_filter = tk.StringVar(value=_t('gui.assessment.academic_progress.gpa_calculator.values.all', default='All'))
+        ttk.Label(bar, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.year', default='Year:')).pack(side=tk.LEFT)
         self._year_combo = ttk.Combobox(bar, textvariable=self._year_filter,
                                         values=('All',), state='readonly', width=10)
         self._year_combo.pack(side=tk.LEFT, padx=(4, 12))
-        ttk.Label(bar, text='Term:').pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.term', default='Term:')).pack(side=tk.LEFT)
         self._term_combo = ttk.Combobox(bar, textvariable=self._term_filter,
                                         values=('All',), state='readonly', width=12)
         self._term_combo.pack(side=tk.LEFT, padx=(4, 12))
@@ -604,7 +606,7 @@ class GPACalculatorGUI:
 
     def _build_summary_panel(self, parent):
         """[36] Shared summary block — current GPA, projected, dean's-list."""
-        f = ttk.LabelFrame(parent, text='Summary', padding=8)
+        f = ttk.LabelFrame(parent, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.summary', default='Summary'), padding=8)
         f.pack(fill=tk.X, padx=8, pady=4)
         self._summary_var = tk.StringVar(value='—')
         ttk.Label(f, textvariable=self._summary_var, font=('Arial', 11),
@@ -613,39 +615,39 @@ class GPACalculatorGUI:
 
     def _build_scenario_panel(self, parent):
         """[37] List of saved scenarios + load/delete/save controls."""
-        ttk.Label(parent, text='Saved Scenarios', font=('Arial', 12, 'bold')).pack(
+        ttk.Label(parent, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.saved_scenarios', default='Saved Scenarios'), font=('Arial', 12, 'bold')).pack(
             anchor='w', padx=8, pady=(8, 4))
         self._scenario_list = tk.Listbox(parent, height=12, font=('Arial', 11))
         self._scenario_list.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
         self._refresh_scenario_list()
         bar = ttk.Frame(parent)
         bar.pack(fill=tk.X, padx=8, pady=8)
-        ttk.Button(bar, text='Save current as…',
+        ttk.Button(bar, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.save_current_as', default='Save current as…'),
                    command=self._on_save_scenario).pack(side=tk.LEFT, padx=4)
-        ttk.Button(bar, text='Load selected',
+        ttk.Button(bar, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.load_selected', default='Load selected'),
                    command=lambda: self._on_load_scenario(self._selected_scenario())
                    ).pack(side=tk.LEFT, padx=4)
-        ttk.Button(bar, text='Delete selected',
+        ttk.Button(bar, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.delete_selected', default='Delete selected'),
                    command=lambda: self._on_delete_scenario(self._selected_scenario())
                    ).pack(side=tk.LEFT, padx=4)
 
     def _build_export_menu(self, parent):
         """[38] Toolbar Export menu — CSV / PDF / clipboard / email / print."""
-        mb = ttk.Menubutton(parent, text='Export…')
+        mb = ttk.Menubutton(parent, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.export', default='Export…'))
         menu = tk.Menu(mb, tearoff=0)
-        menu.add_command(label='Save as CSV…', command=self._on_export_csv)
-        menu.add_command(label='Save as PDF…', command=self._on_export_pdf)
-        menu.add_command(label='Copy to clipboard', command=self._on_copy_clipboard)
-        menu.add_command(label='Print…', command=self._on_print)
+        menu.add_command(label=_t('gui.assessment.academic_progress.gpa_calculator.menus.save_as_csv', default='Save as CSV…'), command=self._on_export_csv)
+        menu.add_command(label=_t('gui.assessment.academic_progress.gpa_calculator.menus.save_as_pdf', default='Save as PDF…'), command=self._on_export_pdf)
+        menu.add_command(label=_t('gui.assessment.academic_progress.gpa_calculator.menus.copy_to_clipboard', default='Copy to clipboard'), command=self._on_copy_clipboard)
+        menu.add_command(label=_t('gui.assessment.academic_progress.gpa_calculator.menus.print', default='Print…'), command=self._on_print)
         menu.add_separator()
-        menu.add_command(label='Email to advisor…', command=self._on_email_advisor)
+        menu.add_command(label=_t('gui.assessment.academic_progress.gpa_calculator.menus.email_to_advisor', default='Email to advisor…'), command=self._on_email_advisor)
         mb.configure(menu=menu)
         mb.pack(side=tk.RIGHT, padx=4)
         return mb
 
     def _build_chart_panel(self, parent):
         """[39] tk.Canvas line graph of GPA across terms."""
-        f = ttk.LabelFrame(parent, text='Term GPA Trend', padding=4)
+        f = ttk.LabelFrame(parent, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.term_gpa_trend', default='Term GPA Trend'), padding=4)
         f.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
         self._chart_canvas = tk.Canvas(f, height=180, bg='#ecf0f1',
                                        highlightthickness=0)
@@ -655,18 +657,18 @@ class GPACalculatorGUI:
 
     def _build_required_panel(self, parent):
         """[40] Calculator: target GPA + remaining credits → required avg."""
-        f = ttk.LabelFrame(parent, text='Required Average', padding=10)
+        f = ttk.LabelFrame(parent, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.required_average', default='Required Average'), padding=10)
         f.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(f, text='Target GPA:').grid(row=0, column=0, sticky='w', pady=4)
+        ttk.Label(f, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.target_gpa', default='Target GPA:')).grid(row=0, column=0, sticky='w', pady=4)
         self._target_var = tk.DoubleVar(value=3.5)
         ttk.Spinbox(f, from_=0, to=4.0, increment=0.05, width=8,
                     textvariable=self._target_var).grid(row=0, column=1, sticky='w', padx=4)
-        ttk.Label(f, text='Remaining credits:').grid(row=1, column=0, sticky='w', pady=4)
+        ttk.Label(f, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.remaining_credits', default='Remaining credits:')).grid(row=1, column=0, sticky='w', pady=4)
         self._remaining_var = tk.DoubleVar(value=60)
         ttk.Spinbox(f, from_=0, to=480, increment=5, width=8,
                     textvariable=self._remaining_var).grid(row=1, column=1, sticky='w', padx=4)
         self._required_var = tk.StringVar(value='—')
-        ttk.Button(f, text='Compute', command=self._compute_required_into_label
+        ttk.Button(f, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.compute', default='Compute'), command=self._compute_required_into_label
                    ).grid(row=2, column=0, sticky='w', pady=10)
         ttk.Label(f, textvariable=self._required_var, font=('Arial', 11, 'bold'),
                   wraplength=560, justify='left').grid(row=2, column=1, sticky='w')
@@ -695,9 +697,9 @@ class GPACalculatorGUI:
     def _on_save_scenario(self):
         """[43] Persist current overrides under a user-supplied name."""
         win = tk.Toplevel(self.window)
-        win.title('Save Scenario')
+        win.title(_t('gui.assessment.academic_progress.gpa_calculator.windows.save_scenario', default='Save Scenario'))
         win.geometry('360x140')
-        ttk.Label(win, text='Scenario name:').pack(pady=(12, 4))
+        ttk.Label(win, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.scenario_name', default='Scenario name:')).pack(pady=(12, 4))
         name_var = tk.StringVar()
         ttk.Entry(win, textvariable=name_var, width=40).pack(padx=8)
 
@@ -713,7 +715,7 @@ class GPACalculatorGUI:
             self._persist_scenarios()
             self._refresh_scenario_list()
             win.destroy()
-        ttk.Button(win, text='Save', command=go).pack(pady=8)
+        ttk.Button(win, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.save', default='Save'), command=go).pack(pady=8)
 
     def _on_load_scenario(self, name: str | None):
         """[44] Apply a saved scenario's overrides to the comboboxes."""
@@ -728,7 +730,7 @@ class GPACalculatorGUI:
         """[45] Remove a saved scenario from the JSON store."""
         if not name or name not in self._scenarios:
             return
-        if not messagebox.askyesno('Delete scenario',
+        if not messagebox.askyesno(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.delete_scenario', default='Delete scenario'),
                                    f"Delete '{name}'?", parent=self.window):
             return
         del self._scenarios[name]
@@ -750,9 +752,9 @@ class GPACalculatorGUI:
                 w.writerow(['module_code', 'current', 'hypothetical'])
                 for mc, disp, combo in self._module_rows:
                     w.writerow([mc, disp, combo.get()])
-            messagebox.showinfo('Saved', f'Exported {path}', parent=self.window)
+            messagebox.showinfo(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.saved', default='Saved'), f'Exported {path}', parent=self.window)
         except Exception as e:
-            messagebox.showerror('Error', f'Failed: {e}', parent=self.window)
+            messagebox.showerror(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.error', default='Error'), f'Failed: {e}', parent=self.window)
 
     def _on_export_pdf(self):
         """[47] PDF export via the shared ExportManager when available."""
@@ -772,13 +774,13 @@ class GPACalculatorGUI:
                              for mc, disp, combo in self._module_rows]},
                 path, title='What-If GPA',
             )
-            messagebox.showinfo('Saved', f'Exported {path}', parent=self.window)
+            messagebox.showinfo(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.saved', default='Saved'), f'Exported {path}', parent=self.window)
         except ImportError:
-            messagebox.showinfo('PDF unavailable',
-                                'PDF export module not installed.',
+            messagebox.showinfo(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.pdf_unavailable', default='PDF unavailable'),
+                                _t('gui.assessment.academic_progress.gpa_calculator.dialogs.pdf_export_module_not_installed', default='PDF export module not installed.'),
                                 parent=self.window)
         except Exception as e:
-            messagebox.showerror('Error', f'Failed: {e}', parent=self.window)
+            messagebox.showerror(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.error', default='Error'), f'Failed: {e}', parent=self.window)
 
     def _on_copy_clipboard(self):
         """[48] Copy the calculator state to the clipboard as TSV."""
@@ -803,15 +805,15 @@ class GPACalculatorGUI:
             from education_system.platform.integrations.email.email_service import send_email
         except Exception:
             messagebox.showinfo(
-                'Email unavailable',
-                'Communications hub is not configured here.',
+                _t('gui.assessment.academic_progress.gpa_calculator.dialogs.email_unavailable', default='Email unavailable'),
+                _t('gui.assessment.academic_progress.gpa_calculator.dialogs.communications_hub_is_not_configured_here', default='Communications hub is not configured here.'),
                 parent=self.window,
             )
             return
         win = tk.Toplevel(self.window)
-        win.title('Email advisor')
+        win.title(_t('gui.assessment.academic_progress.gpa_calculator.windows.email_advisor', default='Email advisor'))
         win.geometry('480x300')
-        ttk.Label(win, text='Advisor email:').pack(anchor='w', padx=8, pady=(8, 2))
+        ttk.Label(win, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.advisor_email', default='Advisor email:')).pack(anchor='w', padx=8, pady=(8, 2))
         email_var = tk.StringVar()
         ttk.Entry(win, textvariable=email_var).pack(fill=tk.X, padx=8)
         body = tk.Text(win, height=8)
@@ -827,8 +829,8 @@ class GPACalculatorGUI:
                            body=body.get('1.0', 'end'))
                 win.destroy()
             except Exception as e:
-                messagebox.showerror('Error', str(e), parent=win)
-        ttk.Button(win, text='Send', command=go).pack(pady=6)
+                messagebox.showerror(_t('gui.assessment.academic_progress.gpa_calculator.dialogs.error', default='Error'), str(e), parent=win)
+        ttk.Button(win, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.send', default='Send'), command=go).pack(pady=6)
 
     # =================================================================
     # ─── Internal glue (NOT counted in the 50) ─────────────────────────
@@ -836,7 +838,7 @@ class GPACalculatorGUI:
 
     def _build_calculator_tab(self, parent):
         """Original calculator UI inside its tab."""
-        canvas_frame = ttk.LabelFrame(parent, text='Enrolled Modules', padding=5)
+        canvas_frame = ttk.LabelFrame(parent, text=_t('gui.assessment.academic_progress.gpa_calculator.labels.enrolled_modules', default='Enrolled Modules'), padding=5)
         canvas_frame.pack(fill=tk.BOTH, expand=True, padx=8, pady=4)
         self.canvas = tk.Canvas(canvas_frame)
         scrollbar = ttk.Scrollbar(canvas_frame, orient=tk.VERTICAL,
@@ -853,7 +855,7 @@ class GPACalculatorGUI:
 
         bottom = ttk.Frame(parent)
         bottom.pack(fill=tk.X, padx=8, pady=4)
-        ttk.Button(bottom, text='Calculate Projected GPA',
+        ttk.Button(bottom, text=_t('gui.assessment.academic_progress.gpa_calculator.buttons.calculate_projected_gpa', default='Calculate Projected GPA'),
                    command=self._calculate).pack(side=tk.LEFT, padx=10)
         self.result_var = tk.StringVar(value='')
         self.result_label = ttk.Label(bottom, textvariable=self.result_var,

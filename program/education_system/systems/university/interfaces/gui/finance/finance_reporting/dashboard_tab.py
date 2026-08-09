@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -8,7 +10,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 matplotlib.use('TkAgg')
 import numpy as np
 
@@ -383,11 +385,11 @@ def show_realtime_dashboard(self):
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     # Title
-    ttk.Label(main_frame, text="Real-Time Financial Dashboard",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.dashboard_tab.labels.real_time_financial_dashboard', default="Real-Time Financial Dashboard"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Metrics frame
-    metrics_frame = ttk.LabelFrame(main_frame, text="Live Metrics", padding="10")
+    metrics_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.dashboard_tab.labels.live_metrics', default="Live Metrics"), padding="10")
     metrics_frame.pack(fill=tk.X, pady=(0, 10))
 
     # Real-time metrics display
@@ -397,29 +399,29 @@ def show_realtime_dashboard(self):
     # Current hour payments
     hour_frame = ttk.Frame(realtime_metrics)
     hour_frame.pack(side=tk.LEFT, padx=10)
-    ttk.Label(hour_frame, text="Current Hour", font=('Arial', 10, 'bold')).pack()
-    hour_value = tk.StringVar(value="Loading...")
+    ttk.Label(hour_frame, text=_t('gui.finance.finance_reporting.dashboard_tab.labels.current_hour', default="Current Hour"), font=('Arial', 10, 'bold')).pack()
+    hour_value = tk.StringVar(value=_t('gui.finance.finance_reporting.dashboard_tab.values.loading', default="Loading..."))
     ttk.Label(hour_frame, textvariable=hour_value, font=('Arial', 12),
              foreground='#27ae60').pack()
 
     # Payment velocity
     velocity_frame = ttk.Frame(realtime_metrics)
     velocity_frame.pack(side=tk.LEFT, padx=10)
-    ttk.Label(velocity_frame, text="Payment Velocity", font=('Arial', 10, 'bold')).pack()
-    velocity_value = tk.StringVar(value="Loading...")
+    ttk.Label(velocity_frame, text=_t('gui.finance.finance_reporting.dashboard_tab.labels.payment_velocity', default="Payment Velocity"), font=('Arial', 10, 'bold')).pack()
+    velocity_value = tk.StringVar(value=_t('gui.finance.finance_reporting.dashboard_tab.values.loading', default="Loading..."))
     ttk.Label(velocity_frame, textvariable=velocity_value, font=('Arial', 12),
              foreground='#3498db').pack()
 
     # System status
     status_frame = ttk.Frame(realtime_metrics)
     status_frame.pack(side=tk.LEFT, padx=10)
-    ttk.Label(status_frame, text="System Status", font=('Arial', 10, 'bold')).pack()
-    system_status = tk.StringVar(value="Online")
+    ttk.Label(status_frame, text=_t('gui.finance.finance_reporting.dashboard_tab.labels.system_status', default="System Status"), font=('Arial', 10, 'bold')).pack()
+    system_status = tk.StringVar(value=_t('gui.finance.finance_reporting.dashboard_tab.values.online', default="Online"))
     ttk.Label(status_frame, textvariable=system_status, font=('Arial', 12),
              foreground='#27ae60').pack()
 
     # Activity log
-    activity_frame = ttk.LabelFrame(main_frame, text="Live Activity", padding="10")
+    activity_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.dashboard_tab.labels.live_activity', default="Live Activity"), padding="10")
     activity_frame.pack(fill=tk.BOTH, expand=True)
 
     activity_log = ScrolledText(activity_frame, height=15, wrap=tk.WORD)
@@ -495,7 +497,7 @@ def show_realtime_dashboard(self):
     update_realtime()
 
     # Auto-refresh button
-    ttk.Button(main_frame, text="🔄 Manual Refresh",
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.dashboard_tab.buttons.manual_refresh', default="🔄 Manual Refresh"),
               command=update_realtime).pack(pady=10)
 
 # Method registration is handled by main.py

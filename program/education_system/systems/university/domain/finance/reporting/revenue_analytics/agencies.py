@@ -1,5 +1,6 @@
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from datetime import datetime
+import json
 
 
 def manage_collection_agencies():
@@ -255,11 +256,179 @@ def deactivate_collection_agency():
         print(f"Error deactivating collection agency: {e}")
 
 def setup_collection_workflows():
-    """Setup automated collection workflows"""
+    """Create and persist an automated collection workflow."""
     print("\nCollection Workflow Setup:")
-    print("This would configure automated workflows for:")
-    print("- Automatic case creation for overdue accounts")
-    print("- Agency assignment based on debt amount")
-    print("- Escalation procedures")
-    print("- Reminder schedules")
-    print("\n[Feature would be implemented with workflow engine]")
+    name = input("Workflow name: ").strip() or "Default overdue workflow"
+    try:
+        minimum_debt = float(input("Minimum overdue debt (£): ").strip() or "100")
+        reminder_days = int(input("Reminder interval (days): ").strip() or "14")
+        escalation_days = int(input("Escalate after (days): ").strip() or "30")
+    except ValueError:
+        print("Invalid numeric value.")
+        return None
+    auto_assign = input("Automatically assign an eligible agency? (y/n): ").strip().lower() == 'y'
+    workflow_id = save_collection_workflow(
+        name, minimum_debt, reminder_days, escalation_days, auto_assign
+    )
+    print(f"Workflow saved (ID: {workflow_id}).")
+    if input("Run it now? (y/n): ").strip().lower() == 'y':
+        result = run_collection_workflow(workflow_id)
+        print(f"Created {result['created']} case(s); assigned {result['assigned']} case(s).")
+    return workflow_id
+
+
+def _ensure_workflow_table(conn):
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS collection_workflows (
+            workflow_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            workflow_name TEXT NOT NULL,
+            minimum_debt REAL NOT NULL DEFAULT 100,
+            reminder_days INTEGER NOT NULL DEFAULT 14,
+            escalation_days INTEGER NOT NULL DEFAULT 30,
+            auto_assign INTEGER NOT NULL DEFAULT 0,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            last_run_at TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+    ''')
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS collection_workflow_actions (
+            action_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            workflow_id INTEGER NOT NULL,
+            case_id INTEGER NOT NULL,
+            action_type TEXT NOT NULL,
+            status TEXT NOT NULL,
+            details TEXT,
+            created_at TEXT NOT NULL
+        )
+    ''')
+
+
+def save_collection_workflow(name, minimum_debt=100, reminder_days=14,
+                             escalation_days=30, auto_assign=False):
+    """Persist workflow configuration and return its identifier."""
+    if minimum_debt < 0 or reminder_days < 1 or escalation_days < 1:
+        raise ValueError("Workflow thresholds must be positive")
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    with transaction() as conn:
+        _ensure_workflow_table(conn)
+        cursor = conn.execute('''
+            INSERT INTO collection_workflows
+                (workflow_name, minimum_debt, reminder_days, escalation_days,
+                 auto_assign, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (name, minimum_debt, reminder_days, escalation_days,
+              int(auto_assign), now, now))
+        return cursor.lastrowid
+
+
+def run_collection_workflow(workflow_id):
+    """Create cases for overdue balances and optionally assign agencies."""
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    created = assigned = reminded = escalated = 0
+    notifications = []
+    with transaction() as conn:
+        _ensure_workflow_table(conn)
+        workflow = conn.execute(
+            "SELECT * FROM collection_workflows WHERE workflow_id=? AND is_active=1",
+            (workflow_id,),
+        ).fetchone()
+        if not workflow:
+            raise ValueError(f"Active collection workflow {workflow_id} not found")
+        minimum_debt = workflow['minimum_debt']
+        active_cases = conn.execute('''
+            SELECT case_id, student_id, case_status, created_at
+            FROM collection_cases WHERE case_status NOT IN ('resolved','closed')
+        ''').fetchall()
+        for case in active_cases:
+            try:
+                opened = datetime.fromisoformat(case['created_at'])
+                age_days = (datetime.now() - opened).days
+            except (TypeError, ValueError):
+                age_days = 0
+            if age_days >= workflow['escalation_days'] and case['case_status'] in ('new', 'assigned'):
+                conn.execute(
+                    "UPDATE collection_cases SET case_status='in_progress', updated_at=? WHERE case_id=?",
+                    (now, case['case_id']),
+                )
+                conn.execute('''INSERT INTO collection_workflow_actions
+                    (workflow_id, case_id, action_type, status, details, created_at)
+                    VALUES (?, ?, 'escalation', 'completed', ?, ?)''',
+                    (workflow_id, case['case_id'], f"Escalated after {age_days} days", now))
+                escalated += 1
+            last_reminder = conn.execute('''
+                SELECT created_at FROM collection_workflow_actions
+                WHERE workflow_id=? AND case_id=? AND action_type='reminder'
+                ORDER BY action_id DESC LIMIT 1
+            ''', (workflow_id, case['case_id'])).fetchone()
+            due = not last_reminder
+            if last_reminder:
+                try:
+                    due = (datetime.now() - datetime.fromisoformat(last_reminder[0])).days >= workflow['reminder_days']
+                except (TypeError, ValueError):
+                    due = True
+            if due:
+                columns = {row[1] for row in conn.execute("PRAGMA table_info(students)")}
+                email_col = 'email' if 'email' in columns else ('email_address' if 'email_address' in columns else None)
+                email = None
+                if email_col:
+                    student = conn.execute(
+                        f"SELECT {email_col} FROM students WHERE student_id=?", (case['student_id'],)
+                    ).fetchone()
+                    email = student[0] if student else None
+                status = 'queued' if email else 'no_email'
+                conn.execute('''INSERT INTO collection_workflow_actions
+                    (workflow_id, case_id, action_type, status, details, created_at)
+                    VALUES (?, ?, 'reminder', ?, ?, ?)''',
+                    (workflow_id, case['case_id'], status, case['student_id'], now))
+                if email:
+                    notifications.append((email, case['case_id']))
+                reminded += 1
+        balances = conn.execute('''
+            SELECT sf.student_id,
+                   SUM(sf.amount) - COALESCE(SUM(pa.amount), 0) AS debt
+            FROM student_fees sf
+            LEFT JOIN payment_allocations pa ON pa.student_fee_id=sf.student_fee_id
+            WHERE sf.status IN ('unpaid','partial') AND DATE(sf.due_date) < DATE('now')
+            GROUP BY sf.student_id
+            HAVING debt >= ?
+        ''', (minimum_debt,)).fetchall()
+        for student_id, debt in balances:
+            exists = conn.execute('''
+                SELECT 1 FROM collection_cases
+                WHERE student_id=? AND case_status NOT IN ('resolved','closed')
+            ''', (student_id,)).fetchone()
+            if exists:
+                continue
+            agency_id = None
+            status = 'new'
+            if workflow['auto_assign']:
+                agency = conn.execute('''
+                    SELECT agency_id FROM collection_agencies
+                    WHERE is_active=1 AND COALESCE(minimum_amount,0) <= ?
+                    ORDER BY commission_rate, agency_id LIMIT 1
+                ''', (debt,)).fetchone()
+                if agency:
+                    agency_id, status, assigned = agency[0], 'assigned', assigned + 1
+            conn.execute('''
+                INSERT INTO collection_cases
+                    (student_id, agency_id, total_debt, case_status, assigned_date,
+                     notes, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (student_id, agency_id, debt, status,
+                  now if agency_id else None,
+                  f"Created by workflow {workflow_id}", now, now))
+            created += 1
+        conn.execute(
+            "UPDATE collection_workflows SET last_run_at=?, updated_at=? WHERE workflow_id=?",
+            (now, now, workflow_id),
+        )
+    # Email only after releasing the finance write lock.
+    if notifications:
+        from education_system.systems.university.infrastructure.email.email_service import send_email
+        for email, case_id in notifications:
+            send_email(recipient_email=email, subject="Outstanding account reminder",
+                       body=f"Please contact Student Finance regarding collection case {case_id}.")
+    return {"created": created, "assigned": assigned,
+            "reminded": reminded, "escalated": escalated}

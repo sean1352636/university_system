@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -35,7 +37,7 @@ class MentoringGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Mentoring Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), _t('gui.staff.staff_hr.mentoring.dialogs.login_required_to_access_mentoring_management', default="Login required to access Mentoring Management"))
             return
 
         if parent_notebook:
@@ -50,21 +52,21 @@ class MentoringGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Mentoring")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.mentoring.tabs.mentoring', default="Mentoring"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Mentoring Programme Management")
+        self.window.title(_t('gui.staff.staff_hr.mentoring.windows.mentoring_programme_management', default="Mentoring Programme Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.mentoring.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -90,13 +92,13 @@ class MentoringGUI:
     def _create_my_mentoring_tab(self):
         """Create my mentoring relationships tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Mentoring")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.mentoring.tabs.my_mentoring', default="My Mentoring"))
 
         # Header with Refresh button
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Mentoring Relationships", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_my_mentoring).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.mentoring.labels.my_mentoring_relationships', default="My Mentoring Relationships"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.refresh', default="Refresh"), command=self._load_my_mentoring).pack(side=tk.RIGHT, padx=5)
 
         # Mentoring treeview
         tree_frame = ttk.Frame(tab)
@@ -208,11 +210,11 @@ class MentoringGUI:
         try:
             match = MentoringManager.get_match(match_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load match details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), f"Could not load match details: {e}")
             return
 
         if not match:
-            messagebox.showerror("Error", "Match not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), _t('gui.staff.staff_hr.mentoring.dialogs.match_not_found', default="Match not found"))
             return
 
         dialog = tk.Toplevel(self.root)
@@ -224,7 +226,7 @@ class MentoringGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Match details
-        details_frame = ttk.LabelFrame(frame, text="Match Details", padding=15)
+        details_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.mentoring.labels.match_details', default="Match Details"), padding=15)
         details_frame.pack(fill=tk.X, pady=(0, 10))
 
         programme_id = match.get('programme_id')
@@ -261,30 +263,30 @@ class MentoringGUI:
         # Close button
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # ==================== TAB 2: SESSIONS ====================
 
     def _create_sessions_tab(self):
         """Create sessions tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Sessions")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.mentoring.tabs.sessions', default="Sessions"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Mentoring Sessions", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.mentoring.labels.mentoring_sessions', default="Mentoring Sessions"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Match selector
         selector_frame = ttk.Frame(tab)
         selector_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(selector_frame, text="Match:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.mentoring.labels.match', default="Match:")).pack(side=tk.LEFT, padx=5)
         self.sessions_match_combo = ttk.Combobox(selector_frame, width=50, state='readonly')
         self.sessions_match_combo.pack(side=tk.LEFT, padx=5)
         self.sessions_match_combo.bind('<<ComboboxSelected>>', lambda e: self._load_sessions())
 
-        ttk.Button(selector_frame, text="Refresh",
+        ttk.Button(selector_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.refresh', default="Refresh"),
                    command=self._refresh_sessions).pack(side=tk.LEFT, padx=5)
 
         # Store match mapping
@@ -293,9 +295,9 @@ class MentoringGUI:
         # Buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        ttk.Button(btn_frame, text="Log Session",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.log_session', default="Log Session"),
                    command=self._log_session_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Complete Session",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.complete_session', default="Complete Session"),
                    command=self._complete_session).pack(side=tk.LEFT, padx=5)
 
         # Sessions treeview
@@ -395,11 +397,11 @@ class MentoringGUI:
         """Open dialog to log a new mentoring session."""
         match_id = self._get_selected_sessions_match_id()
         if not match_id:
-            messagebox.showinfo("Info", "Please select a match first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.info', default="Info"), _t('gui.staff.staff_hr.mentoring.dialogs.please_select_a_match_first', default="Please select a match first."))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Log Mentoring Session")
+        dialog.title(_t('gui.staff.staff_hr.mentoring.windows.log_mentoring_session', default="Log Mentoring Session"))
         dialog.geometry("500x520")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -408,19 +410,19 @@ class MentoringGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Date
-        ttk.Label(frame, text="Date (YYYY-MM-DD):").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         date_entry = ttk.Entry(frame, width=15)
         date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         date_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
         # Duration
-        ttk.Label(frame, text="Duration (min):").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.duration_min', default="Duration (min):")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         duration_entry = ttk.Entry(frame, width=10)
         duration_entry.insert(0, "60")
         duration_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Type
-        ttk.Label(frame, text="Type:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.type', default="Type:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(
             frame, values=['one_on_one', 'group', 'virtual', 'workshop'],
             width=20, state='readonly'
@@ -429,22 +431,22 @@ class MentoringGUI:
         type_combo.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Location
-        ttk.Label(frame, text="Location:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.location', default="Location:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         location_entry = ttk.Entry(frame, width=35)
         location_entry.grid(row=3, column=1, padx=10, pady=8)
 
         # Virtual Link
-        ttk.Label(frame, text="Virtual Link:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.virtual_link', default="Virtual Link:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         virtual_link_entry = ttk.Entry(frame, width=35)
         virtual_link_entry.grid(row=4, column=1, padx=10, pady=8)
 
         # Topics
-        ttk.Label(frame, text="Topics:").grid(row=5, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.topics', default="Topics:")).grid(row=5, column=0, sticky='ne', padx=10, pady=8)
         topics_text = tk.Text(frame, width=35, height=3)
         topics_text.grid(row=5, column=1, padx=10, pady=8)
 
         # Action Items
-        ttk.Label(frame, text="Action Items:").grid(row=6, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.action_items', default="Action Items:")).grid(row=6, column=0, sticky='ne', padx=10, pady=8)
         action_items_text = tk.Text(frame, width=35, height=3)
         action_items_text.grid(row=6, column=1, padx=10, pady=8)
 
@@ -483,19 +485,19 @@ class MentoringGUI:
                     topics_discussed=topics or '',
                     action_items=action_items or ''
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.success', default="Success"),
                                     f"Session logged. ID: {session_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_sessions()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Log Session", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.log_session', default="Log Session"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         date_entry.focus_set()
 
@@ -503,7 +505,7 @@ class MentoringGUI:
         """Complete the selected session."""
         selection = self.sessions_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a session to complete.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.info', default="Info"), _t('gui.staff.staff_hr.mentoring.dialogs.please_select_a_session_to_complete', default="Please select a session to complete."))
             return
 
         item = self.sessions_tree.item(selection[0])
@@ -511,41 +513,41 @@ class MentoringGUI:
         session_status = item['values'][4]
 
         if session_status.lower() == 'completed':
-            messagebox.showinfo("Info", "This session is already completed.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.info', default="Info"), _t('gui.staff.staff_hr.mentoring.dialogs.this_session_is_already_completed', default="This session is already completed."))
             return
 
-        if not messagebox.askyesno("Confirm", "Mark this session as completed?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.mentoring.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.mentoring.dialogs.mark_this_session_as_completed', default="Mark this session as completed?")):
             return
 
         try:
             MentoringManager.complete_session(session_id)
-            messagebox.showinfo("Success", "Session marked as completed.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.success', default="Success"), _t('gui.staff.staff_hr.mentoring.dialogs.session_marked_as_completed', default="Session marked as completed."))
             self._load_sessions()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 3: GOALS ====================
 
     def _create_goals_tab(self):
         """Create goals tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Goals")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.mentoring.tabs.goals', default="Goals"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Mentoring Goals", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.mentoring.labels.mentoring_goals', default="Mentoring Goals"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Match selector
         selector_frame = ttk.Frame(tab)
         selector_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(selector_frame, text="Match:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.mentoring.labels.match', default="Match:")).pack(side=tk.LEFT, padx=5)
         self.goals_match_combo = ttk.Combobox(selector_frame, width=50, state='readonly')
         self.goals_match_combo.pack(side=tk.LEFT, padx=5)
         self.goals_match_combo.bind('<<ComboboxSelected>>', lambda e: self._load_goals())
 
-        ttk.Button(selector_frame, text="Refresh",
+        ttk.Button(selector_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.refresh', default="Refresh"),
                    command=self._refresh_goals).pack(side=tk.LEFT, padx=5)
 
         # Store match mapping
@@ -554,11 +556,11 @@ class MentoringGUI:
         # Buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        ttk.Button(btn_frame, text="Add Goal",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.add_goal', default="Add Goal"),
                    command=self._add_goal_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Update Progress",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.update_progress', default="Update Progress"),
                    command=self._update_progress_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Complete Goal",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.complete_goal', default="Complete Goal"),
                    command=self._complete_goal).pack(side=tk.LEFT, padx=5)
 
         # Goals treeview
@@ -658,11 +660,11 @@ class MentoringGUI:
         """Open dialog to add a new goal."""
         match_id = self._get_selected_goals_match_id()
         if not match_id:
-            messagebox.showinfo("Info", "Please select a match first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.info', default="Info"), _t('gui.staff.staff_hr.mentoring.dialogs.please_select_a_match_first', default="Please select a match first."))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Mentoring Goal")
+        dialog.title(_t('gui.staff.staff_hr.mentoring.windows.add_mentoring_goal', default="Add Mentoring Goal"))
         dialog.geometry("500x400")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -671,17 +673,17 @@ class MentoringGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.title', default="Title:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         title_entry = ttk.Entry(frame, width=35)
         title_entry.grid(row=0, column=1, padx=10, pady=8)
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=1, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.description', default="Description:")).grid(row=1, column=0, sticky='ne', padx=10, pady=8)
         desc_text = tk.Text(frame, width=35, height=4)
         desc_text.grid(row=1, column=1, padx=10, pady=8)
 
         # Target Date
-        ttk.Label(frame, text="Target Date (YYYY-MM-DD):").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.target_date_yyyy_mm_dd', default="Target Date (YYYY-MM-DD):")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         target_date_entry = ttk.Entry(frame, width=15)
         target_date_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
@@ -707,19 +709,19 @@ class MentoringGUI:
                     description=description,
                     target_date=target_date
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.success', default="Success"),
                                     f"Goal created. ID: {goal_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_goals()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Add Goal", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.add_goal', default="Add Goal"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         title_entry.focus_set()
 
@@ -727,7 +729,7 @@ class MentoringGUI:
         """Open dialog to update progress on the selected goal."""
         selection = self.goals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a goal to update.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.info', default="Info"), _t('gui.staff.staff_hr.mentoring.dialogs.please_select_a_goal_to_update', default="Please select a goal to update."))
             return
 
         item = self.goals_tree.item(selection[0])
@@ -754,7 +756,7 @@ class MentoringGUI:
                   font=('Arial', 10)).pack(anchor='w', pady=(0, 15))
 
         # Progress slider
-        ttk.Label(frame, text="New Progress (%):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.new_progress', default="New Progress (%):")).pack(anchor='w', pady=(0, 5))
 
         progress_var = tk.IntVar(value=current_progress)
         progress_scale = ttk.Scale(frame, from_=0, to=100, orient=tk.HORIZONTAL,
@@ -784,32 +786,32 @@ class MentoringGUI:
                 if progress < 0 or progress > 100:
                     raise ValueError
             except ValueError:
-                messagebox.showerror("Validation Error",
-                                     "Progress must be an integer between 0 and 100.",
+                messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.validation_error', default="Validation Error"),
+                                     _t('gui.staff.staff_hr.mentoring.dialogs.progress_must_be_an_integer_between_0_and_100', default="Progress must be an integer between 0 and 100."),
                                      parent=dialog)
                 return
 
             try:
                 MentoringManager.update_goal(goal_id, progress_pct=progress)
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.success', default="Success"),
                                     f"Progress updated to {progress}%.",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_goals()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Update", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.update', default="Update"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _complete_goal(self):
         """Complete the selected goal."""
         selection = self.goals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a goal to complete.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.info', default="Info"), _t('gui.staff.staff_hr.mentoring.dialogs.please_select_a_goal_to_complete', default="Please select a goal to complete."))
             return
 
         item = self.goals_tree.item(selection[0])
@@ -817,42 +819,42 @@ class MentoringGUI:
         goal_status = item['values'][4]
 
         if goal_status.lower() == 'completed':
-            messagebox.showinfo("Info", "This goal is already completed.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.info', default="Info"), _t('gui.staff.staff_hr.mentoring.dialogs.this_goal_is_already_completed', default="This goal is already completed."))
             return
 
-        if not messagebox.askyesno("Confirm", "Mark this goal as completed?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.mentoring.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.mentoring.dialogs.mark_this_goal_as_completed', default="Mark this goal as completed?")):
             return
 
         try:
             MentoringManager.complete_goal(goal_id)
-            messagebox.showinfo("Success", "Goal marked as completed.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.success', default="Success"), _t('gui.staff.staff_hr.mentoring.dialogs.goal_marked_as_completed', default="Goal marked as completed."))
             self._load_goals()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 4: FIND MENTORS ====================
 
     def _create_find_mentors_tab(self):
         """Create find mentors tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Find Mentors")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.mentoring.tabs.find_mentors', default="Find Mentors"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Available Mentors", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.mentoring.labels.available_mentors', default="Available Mentors"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Filter and action controls
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(filter_frame, text="Programme:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.mentoring.labels.programme', default="Programme:")).pack(side=tk.LEFT, padx=5)
         self.mentors_programme_filter = ttk.Combobox(filter_frame, width=25, state='readonly')
         self.mentors_programme_filter.pack(side=tk.LEFT, padx=5)
         self.mentors_programme_filter.bind('<<ComboboxSelected>>', lambda e: self._load_mentors())
-        ttk.Button(filter_frame, text="Refresh",
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.refresh', default="Refresh"),
                    command=self._refresh_mentors).pack(side=tk.LEFT, padx=5)
-        ttk.Button(filter_frame, text="Register as Mentor",
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.register_as_mentor', default="Register as Mentor"),
                    command=self._register_mentor_dialog).pack(side=tk.LEFT, padx=5)
 
         # Store programme mapping for filter
@@ -954,7 +956,7 @@ class MentoringGUI:
     def _register_mentor_dialog(self):
         """Open dialog to register as a mentor."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Register as Mentor")
+        dialog.title(_t('gui.staff.staff_hr.mentoring.windows.register_as_mentor', default="Register as Mentor"))
         dialog.geometry("500x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -963,7 +965,7 @@ class MentoringGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Programme selector
-        ttk.Label(frame, text="Programme:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.programme', default="Programme:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         programme_combo = ttk.Combobox(frame, width=30, state='readonly')
         programme_combo.grid(row=0, column=1, padx=10, pady=8)
 
@@ -984,18 +986,18 @@ class MentoringGUI:
             programme_combo.current(0)
 
         # Expertise
-        ttk.Label(frame, text="Expertise:").grid(row=1, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.expertise', default="Expertise:")).grid(row=1, column=0, sticky='ne', padx=10, pady=8)
         expertise_text = tk.Text(frame, width=35, height=4)
         expertise_text.grid(row=1, column=1, padx=10, pady=8)
 
         # Max Mentees
-        ttk.Label(frame, text="Max Mentees:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.max_mentees', default="Max Mentees:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         max_mentees_entry = ttk.Entry(frame, width=10)
         max_mentees_entry.insert(0, "3")
         max_mentees_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Bio
-        ttk.Label(frame, text="Bio:").grid(row=3, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.mentoring.labels.bio', default="Bio:")).grid(row=3, column=0, sticky='ne', padx=10, pady=8)
         bio_text = tk.Text(frame, width=35, height=4)
         bio_text.grid(row=3, column=1, padx=10, pady=8)
 
@@ -1008,7 +1010,7 @@ class MentoringGUI:
 
             selected_programme_id = programme_map.get(programme_label)
             if not selected_programme_id:
-                messagebox.showerror("Error", "Please select a valid programme.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), _t('gui.staff.staff_hr.mentoring.dialogs.please_select_a_valid_programme', default="Please select a valid programme."), parent=dialog)
                 return
 
             try:
@@ -1033,19 +1035,19 @@ class MentoringGUI:
                     max_mentees=max_mentees,
                     bio=bio
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.success', default="Success"),
                                     f"Registered as mentor. ID: {mentor_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_mentors()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Register", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.register', default="Register"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         expertise_text.focus_set()
 
@@ -1054,7 +1056,7 @@ class MentoringGUI:
     def _create_admin_tab(self):
         """Create admin tab for programme management (admin only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Admin")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.mentoring.tabs.admin', default="Admin"))
 
         # Scrollable content
         canvas = tk.Canvas(tab)
@@ -1069,21 +1071,21 @@ class MentoringGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Programme CRUD Section ----
-        crud_frame = ttk.LabelFrame(scroll_frame, text="Create Programme", padding=15)
+        crud_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.mentoring.labels.create_programme', default="Create Programme"), padding=15)
         crud_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Name
-        ttk.Label(crud_frame, text="Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.mentoring.labels.name', default="Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.admin_prog_name_entry = ttk.Entry(crud_frame, width=35)
         self.admin_prog_name_entry.grid(row=0, column=1, columnspan=2, padx=10, pady=8, sticky='w')
 
         # Description
-        ttk.Label(crud_frame, text="Description:").grid(row=1, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.mentoring.labels.description', default="Description:")).grid(row=1, column=0, sticky='ne', padx=10, pady=8)
         self.admin_prog_desc_text = tk.Text(crud_frame, width=40, height=3)
         self.admin_prog_desc_text.grid(row=1, column=1, columnspan=2, padx=10, pady=8, sticky='w')
 
         # Type
-        ttk.Label(crud_frame, text="Type:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.mentoring.labels.type', default="Type:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.admin_prog_type_combo = ttk.Combobox(
             crud_frame, values=['research', 'teaching', 'buddy', 'leadership', 'general'],
             width=20, state='readonly'
@@ -1092,51 +1094,51 @@ class MentoringGUI:
         self.admin_prog_type_combo.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Department
-        ttk.Label(crud_frame, text="Department:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.mentoring.labels.department', default="Department:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         self.admin_prog_dept_entry = ttk.Entry(crud_frame, width=25)
         self.admin_prog_dept_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Duration
-        ttk.Label(crud_frame, text="Duration (months):").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(crud_frame, text=_t('gui.staff.staff_hr.mentoring.labels.duration_months', default="Duration (months):")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         self.admin_prog_duration_entry = ttk.Entry(crud_frame, width=10)
         self.admin_prog_duration_entry.insert(0, "12")
         self.admin_prog_duration_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Create button
-        ttk.Button(crud_frame, text="Create Programme",
+        ttk.Button(crud_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.create_programme', default="Create Programme"),
                    command=self._create_programme).grid(row=5, column=1, padx=10, pady=15, sticky='w')
 
         # ---- Create/Activate Match Section ----
-        match_frame = ttk.LabelFrame(scroll_frame, text="Create & Activate Match", padding=15)
+        match_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.mentoring.labels.create_activate_match', default="Create & Activate Match"), padding=15)
         match_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Programme selector for match
-        ttk.Label(match_frame, text="Programme:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(match_frame, text=_t('gui.staff.staff_hr.mentoring.labels.programme', default="Programme:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.admin_match_prog_combo = ttk.Combobox(match_frame, width=30, state='readonly')
         self.admin_match_prog_combo.grid(row=0, column=1, padx=10, pady=8, sticky='w')
         self.admin_match_prog_combo.bind('<<ComboboxSelected>>', lambda e: self._load_admin_mentors())
 
         # Mentor selector
-        ttk.Label(match_frame, text="Mentor:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(match_frame, text=_t('gui.staff.staff_hr.mentoring.labels.mentor', default="Mentor:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.admin_match_mentor_combo = ttk.Combobox(match_frame, width=30, state='readonly')
         self.admin_match_mentor_combo.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Mentee user ID
-        ttk.Label(match_frame, text="Mentee User ID:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(match_frame, text=_t('gui.staff.staff_hr.mentoring.labels.mentee_user_id', default="Mentee User ID:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.admin_match_mentee_entry = ttk.Entry(match_frame, width=25)
         self.admin_match_mentee_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Match reason
-        ttk.Label(match_frame, text="Match Reason:").grid(row=3, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(match_frame, text=_t('gui.staff.staff_hr.mentoring.labels.match_reason', default="Match Reason:")).grid(row=3, column=0, sticky='ne', padx=10, pady=8)
         self.admin_match_reason_text = tk.Text(match_frame, width=35, height=2)
         self.admin_match_reason_text.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Buttons
         match_btn_frame = ttk.Frame(match_frame)
         match_btn_frame.grid(row=4, column=0, columnspan=2, pady=10)
-        ttk.Button(match_btn_frame, text="Create Match",
+        ttk.Button(match_btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.create_match', default="Create Match"),
                    command=self._admin_create_match).pack(side=tk.LEFT, padx=5)
-        ttk.Button(match_btn_frame, text="Refresh Lists",
+        ttk.Button(match_btn_frame, text=_t('gui.staff.staff_hr.mentoring.buttons.refresh_lists', default="Refresh Lists"),
                    command=self._refresh_admin_match_lists).pack(side=tk.LEFT, padx=5)
 
         # Store mappings for admin match section
@@ -1144,16 +1146,16 @@ class MentoringGUI:
         self.admin_match_mentor_map = {}
 
         # ---- Statistics Section ----
-        stats_frame = ttk.LabelFrame(scroll_frame, text="Programme Statistics", padding=15)
+        stats_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.mentoring.labels.programme_statistics', default="Programme Statistics"), padding=15)
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Programme selector for stats
         stats_selector_row = ttk.Frame(stats_frame)
         stats_selector_row.pack(fill=tk.X, pady=5)
-        ttk.Label(stats_selector_row, text="Programme:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(stats_selector_row, text=_t('gui.staff.staff_hr.mentoring.labels.programme', default="Programme:")).pack(side=tk.LEFT, padx=5)
         self.admin_stats_prog_combo = ttk.Combobox(stats_selector_row, width=30, state='readonly')
         self.admin_stats_prog_combo.pack(side=tk.LEFT, padx=5)
-        ttk.Button(stats_selector_row, text="Load Statistics",
+        ttk.Button(stats_selector_row, text=_t('gui.staff.staff_hr.mentoring.buttons.load_statistics', default="Load Statistics"),
                    command=self._load_statistics).pack(side=tk.LEFT, padx=5)
 
         # Statistics display
@@ -1161,7 +1163,7 @@ class MentoringGUI:
         self.stats_display_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.stats_label = ttk.Label(self.stats_display_frame,
-                                     text="Select a programme and click 'Load Statistics'.",
+                                     text=_t('gui.staff.staff_hr.mentoring.labels.select_a_programme_and_click_load_statistics', default="Select a programme and click 'Load Statistics'."),
                                      wraplength=600, justify=tk.LEFT)
         self.stats_label.pack(anchor='w')
 
@@ -1248,7 +1250,7 @@ class MentoringGUI:
 
         description = self.admin_prog_desc_text.get("1.0", "end-1c").strip()
         if not description:
-            messagebox.showerror("Validation Error", "Description is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.mentoring.dialogs.description_is_required', default="Description is required."))
             return
 
         try:
@@ -1281,7 +1283,7 @@ class MentoringGUI:
                 duration_months=duration,
                 created_by=user_id
             )
-            messagebox.showinfo("Success", f"Programme created. ID: {programme_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.success', default="Success"), f"Programme created. ID: {programme_id}")
             # Clear form
             self.admin_prog_name_entry.delete(0, tk.END)
             self.admin_prog_desc_text.delete("1.0", tk.END)
@@ -1292,7 +1294,7 @@ class MentoringGUI:
             # Refresh lists
             self._refresh_admin_match_lists()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), str(e))
 
     def _admin_create_match(self):
         """Create a new mentor-mentee match from admin form."""
@@ -1305,7 +1307,7 @@ class MentoringGUI:
 
         selected_programme_id = self.admin_match_prog_map.get(prog_label)
         if not selected_programme_id:
-            messagebox.showerror("Error", "Please select a valid programme.")
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), _t('gui.staff.staff_hr.mentoring.dialogs.please_select_a_valid_programme', default="Please select a valid programme."))
             return
 
         # Validate mentor selection
@@ -1317,7 +1319,7 @@ class MentoringGUI:
 
         selected_mentor_id = self.admin_match_mentor_map.get(mentor_label)
         if not selected_mentor_id:
-            messagebox.showerror("Error", "Please select a valid mentor.")
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), _t('gui.staff.staff_hr.mentoring.dialogs.please_select_a_valid_mentor', default="Please select a valid mentor."))
             return
 
         # Validate mentee user ID
@@ -1349,7 +1351,7 @@ class MentoringGUI:
             except Exception:
                 pass  # Match was created but activation failed; still report success
 
-            messagebox.showinfo("Success", f"Match created and activated. ID: {match_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.success', default="Success"), f"Match created and activated. ID: {match_id}")
             self.admin_match_mentee_entry.delete(0, tk.END)
             self.admin_match_reason_text.delete("1.0", tk.END)
             self._load_admin_mentors()
@@ -1359,7 +1361,7 @@ class MentoringGUI:
             except Exception:
                 pass
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), str(e))
 
     def _load_statistics(self):
         """Load and display statistics for the selected programme."""
@@ -1367,13 +1369,13 @@ class MentoringGUI:
         programme_id = self.admin_stats_prog_map.get(selected)
 
         if not programme_id:
-            messagebox.showinfo("Info", "Please select a programme first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.mentoring.dialogs.info', default="Info"), _t('gui.staff.staff_hr.mentoring.dialogs.please_select_a_programme_first', default="Please select a programme first."))
             return
 
         try:
             stats = MentoringManager.get_programme_statistics(programme_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load statistics: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.mentoring.dialogs.error', default="Error"), f"Could not load statistics: {e}")
             return
 
         stats_text = (

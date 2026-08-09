@@ -1,4 +1,6 @@
 """Vehicle registration/editing dialog."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -25,50 +27,50 @@ class VehicleDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # Student/Owner Lookup Section
-        lookup_frame = ttk.LabelFrame(main_frame, text="Owner Lookup", padding="5")
+        lookup_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.owner_lookup', default="Owner Lookup"), padding="5")
         lookup_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 10))
 
-        ttk.Label(lookup_frame, text="Student ID:").grid(row=0, column=0, sticky="w", padx=5)
+        ttk.Label(lookup_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="w", padx=5)
         self.owner_id_var = tk.StringVar()
         self.owner_id_entry = ttk.Entry(lookup_frame, textvariable=self.owner_id_var, width=20)
         self.owner_id_entry.grid(row=0, column=1, padx=5)
 
-        ttk.Button(lookup_frame, text="Lookup Owner",
+        ttk.Button(lookup_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.buttons.lookup_owner', default="Lookup Owner"),
                   command=self.lookup_owner).grid(row=0, column=2, padx=5)
 
         # Owner name display (read-only)
-        ttk.Label(main_frame, text="Owner Name:").grid(row=1, column=0, sticky="w", pady=5)
-        self.owner_name_var = tk.StringVar(value="Not linked")
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.owner_name', default="Owner Name:")).grid(row=1, column=0, sticky="w", pady=5)
+        self.owner_name_var = tk.StringVar(value=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.values.not_linked', default="Not linked"))
         ttk.Entry(main_frame, textvariable=self.owner_name_var, state="readonly").grid(row=1, column=1, sticky="ew", pady=5)
 
         # Vehicle info
-        ttk.Label(main_frame, text="License Plate:").grid(row=2, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.license_plate', default="License Plate:")).grid(row=2, column=0, sticky="w", pady=5)
         self.plate_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.plate_var).grid(row=2, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Make:").grid(row=3, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.make', default="Make:")).grid(row=3, column=0, sticky="w", pady=5)
         self.make_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.make_var).grid(row=3, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Model:").grid(row=4, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.model', default="Model:")).grid(row=4, column=0, sticky="w", pady=5)
         self.model_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.model_var).grid(row=4, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Year:").grid(row=5, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.year', default="Year:")).grid(row=5, column=0, sticky="w", pady=5)
         self.year_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.year_var).grid(row=5, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Color:").grid(row=6, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.color', default="Color:")).grid(row=6, column=0, sticky="w", pady=5)
         self.color_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.color_var).grid(row=6, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Vehicle Type:").grid(row=7, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.vehicle_type', default="Vehicle Type:")).grid(row=7, column=0, sticky="w", pady=5)
         self.type_var = tk.StringVar()
         type_combo = ttk.Combobox(main_frame, textvariable=self.type_var,
                                  values=VEHICLE_TYPES, state="readonly")
         type_combo.grid(row=7, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Registration State:").grid(row=8, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.labels.registration_state', default="Registration State:")).grid(row=8, column=0, sticky="w", pady=5)
         self.state_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.state_var).grid(row=8, column=1, sticky="ew", pady=5)
 
@@ -76,8 +78,8 @@ class VehicleDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=9, column=0, columnspan=2, pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.buttons.save', default="Save"), command=self.save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         main_frame.columnconfigure(1, weight=1)
 
@@ -127,7 +129,7 @@ class VehicleDialog:
                 self.owner_name_var.set(owner_name)
                 # Update the owner_id_var to the actual user.id for foreign key
                 self.owner_id_var.set(str(user[0]))
-                messagebox.showinfo("Success", f"Owner found: {owner_name}")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.dialogs.success', default="Success"), f"Owner found: {owner_name}")
             else:
                 # Fallback to students table
                 cursor.execute('''
@@ -141,7 +143,7 @@ class VehicleDialog:
                 if student:
                     owner_name = f"{student[0]} {student[1]}"
                     self.owner_name_var.set(owner_name)
-                    messagebox.showwarning("Note",
+                    messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.dialogs.note', default="Note"),
                         f"Student found: {owner_name}\n\n"
                         f"However, this student doesn't have a user account.\n"
                         f"Vehicle will be registered without owner link.\n"
@@ -150,7 +152,7 @@ class VehicleDialog:
                     self.owner_id_var.set("")
                 else:
                     self.owner_name_var.set("Not found")
-                    messagebox.showwarning("Not Found",
+                    messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.dialogs.not_found', default="Not Found"),
                         f"No user or student found with ID: {owner_id}\n\n"
                         f"Owner ID field will be cleared.")
                     self.owner_id_var.set("")
@@ -158,14 +160,14 @@ class VehicleDialog:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to lookup owner: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.dialogs.error', default="Error"), f"Failed to lookup owner: {e}")
             logging.error(f"Owner lookup error: {e}")
 
     def save(self):
         # Validate required fields
         if not all([self.plate_var.get(), self.make_var.get(),
                    self.model_var.get(), self.year_var.get()]):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         try:
@@ -173,7 +175,7 @@ class VehicleDialog:
             if year < 1900 or year > datetime.now().year + 1:
                 raise ValueError("Invalid year")
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid year")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.parking_management.dialogs.vehicle_dialog.dialogs.please_enter_a_valid_year', default="Please enter a valid year"))
             return
 
         self.result = {

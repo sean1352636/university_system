@@ -12,7 +12,7 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import ttk
 
-from education_system.platform.kernel.database.paths import SYSTEM_LABELS, SYSTEM_ORDER
+from education_system.paths import SYSTEM_LABELS, SYSTEM_ORDER
 
 _HEADER_BG = "#1a5276"
 _BODY_BG = "#ecf0f1"

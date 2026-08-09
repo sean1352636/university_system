@@ -28,9 +28,9 @@ class BackupScheduler:
     """
 
     def __init__(self, backup_dir: Optional[str] = None):
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
 
-        self.backup_dir = Path(backup_dir) if backup_dir else Path(paths.DATA_DIR) / 'backups'
+        self.backup_dir = Path(backup_dir) if backup_dir else Path(paths.UNIVERSITY_DATA_DIR) / 'backups'
         self.backup_dir.mkdir(parents=True, exist_ok=True)
 
         # Retention settings (days to keep backups)
@@ -56,14 +56,14 @@ class BackupScheduler:
             Dictionary with backup info
         """
         try:
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             backup_name = f'backup_{backup_type}_{timestamp}.db'
             backup_path = self.backup_dir / backup_name
 
             # Copy database file
-            shutil.copy2(paths.DEFAULT_DB_PATH, backup_path)
+            shutil.copy2(paths.UNIVERSITY_DEFAULT_DB_PATH, backup_path)
 
             # Verify backup
             is_valid = self._verify_backup(backup_path)

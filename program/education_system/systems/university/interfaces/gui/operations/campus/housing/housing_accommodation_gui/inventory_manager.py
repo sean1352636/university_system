@@ -15,15 +15,15 @@ def show_inventory(self):
         """Show room inventory management"""
         self.clear_content()
 
-        ttk.Label(self.content_frame, text="Room Inventory Management",
+        ttk.Label(self.content_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.labels.room_inventory_management', default="Room Inventory Management"),
                  font=('Arial', 16, 'bold')).pack(pady=(0, 15), anchor='w')
 
         filter_frame = ttk.Frame(self.content_frame)
         filter_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Building:").pack(side=tk.LEFT)
-        building_var = tk.StringVar(value="All")
-        status_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.labels.building', default="Building:")).pack(side=tk.LEFT)
+        building_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.values.all', default="All"))
+        status_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.values.all', default="All"))
         accessible_var = tk.BooleanVar(value=False)
 
         building_map = {}
@@ -35,7 +35,7 @@ def show_inventory(self):
                 building_map[building_name] = building_id
             conn.close()
         except Exception as e:
-            messagebox.showerror("Database Error", f"Could not load buildings: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.dialogs.database_error', default="Database Error"), f"Could not load buildings: {str(e)}")
 
         building_choices = ['All'] + sorted(building_map.keys())
         building_combo = ttk.Combobox(filter_frame, textvariable=building_var, values=building_choices,
@@ -44,18 +44,18 @@ def show_inventory(self):
         if building_choices:
             building_combo.current(0)
 
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT)
+        ttk.Label(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.labels.status', default="Status:")).pack(side=tk.LEFT)
         status_combo = ttk.Combobox(filter_frame, textvariable=status_var,
                                     values=['All', 'Available', 'Occupied', 'Maintenance'],
                                     state='readonly', width=15)
         status_combo.pack(side=tk.LEFT, padx=(5, 15))
         status_combo.current(0)
 
-        ttk.Checkbutton(filter_frame, text="Accessible rooms only", variable=accessible_var).pack(side=tk.LEFT)
+        ttk.Checkbutton(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.buttons.accessible_rooms_only', default="Accessible rooms only"), variable=accessible_var).pack(side=tk.LEFT)
 
-        ttk.Button(filter_frame, text="Refresh", command=lambda: load_inventory()).pack(side=tk.RIGHT)
+        ttk.Button(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.buttons.refresh', default="Refresh"), command=lambda: load_inventory()).pack(side=tk.RIGHT)
 
-        summary_var = tk.StringVar(value="No data loaded")
+        summary_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.values.no_data_loaded', default="No data loaded"))
         ttk.Label(self.content_frame, textvariable=summary_var, font=('Arial', 10, 'italic')).pack(anchor='w')
 
         columns = ('Room ID', 'Building', 'Room', 'Floor', 'Type', 'Capacity', 'Occupants', 'Accessible', 'Status', 'Monthly Rent')
@@ -79,7 +79,7 @@ def show_inventory(self):
         def change_status(new_status):
             selected = inventory_tree.selection()
             if not selected:
-                messagebox.showwarning("No Selection", "Please select a room to update.")
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.dialogs.please_select_a_room_to_update', default="Please select a room to update."))
                 return
 
             items = inventory_tree.item(selected[0])
@@ -96,13 +96,13 @@ def show_inventory(self):
                 conn.commit()
                 conn.close()
                 load_inventory()
-                messagebox.showinfo("Status Updated", f"Room {room_id} status changed to {new_status}.")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.dialogs.status_updated', default="Status Updated"), f"Room {room_id} status changed to {new_status}.")
             except Exception as e:
-                messagebox.showerror("Update Failed", f"Could not update room status: {str(e)}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.dialogs.update_failed', default="Update Failed"), f"Could not update room status: {str(e)}")
 
-        ttk.Button(action_frame, text="Mark Available", command=lambda: change_status('Available')).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(action_frame, text="Mark Occupied", command=lambda: change_status('Occupied')).pack(side=tk.LEFT, padx=10)
-        ttk.Button(action_frame, text="Mark Maintenance", command=lambda: change_status('Maintenance')).pack(side=tk.LEFT, padx=10)
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.buttons.mark_available', default="Mark Available"), command=lambda: change_status('Available')).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.buttons.mark_occupied', default="Mark Occupied"), command=lambda: change_status('Occupied')).pack(side=tk.LEFT, padx=10)
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.buttons.mark_maintenance', default="Mark Maintenance"), command=lambda: change_status('Maintenance')).pack(side=tk.LEFT, padx=10)
 
         def show_room_details(event=None):
             selected = inventory_tree.selection()
@@ -134,7 +134,7 @@ def show_inventory(self):
                 ttk.Label(detail_frame, text=f"{label}:", font=('Arial', 10, 'bold')).grid(row=idx, column=0, sticky='w', pady=3)
                 ttk.Label(detail_frame, text=str(val)).grid(row=idx, column=1, sticky='w', pady=3)
 
-            ttk.Button(detail_frame, text="Close", command=detail_window.destroy).grid(row=len(labels), column=0, columnspan=2, pady=(15, 0))
+            ttk.Button(detail_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.buttons.close', default="Close"), command=detail_window.destroy).grid(row=len(labels), column=0, columnspan=2, pady=(15, 0))
 
         inventory_tree.bind('<Double-1>', show_room_details)
 
@@ -200,10 +200,10 @@ def show_inventory(self):
                     ))
 
                 if not rows:
-                    messagebox.showinfo("Room Inventory", "No rooms match the selected filters.")
+                    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.dialogs.room_inventory', default="Room Inventory"), _t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.dialogs.no_rooms_match_the_selected_filters', default="No rooms match the selected filters."))
 
             except Exception as e:
                 summary_var.set("Unable to load room data")
-                messagebox.showerror("Database Error", f"Could not load room inventory: {str(e)}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.inventory_manager.dialogs.database_error', default="Database Error"), f"Could not load room inventory: {str(e)}")
 
         load_inventory()

@@ -23,7 +23,7 @@ def show_equipment_page(self):
     # Action buttons
     btn_frame = ttk.Frame(self.content_frame, style="Main.TFrame")
     btn_frame.pack(fill="x", pady=10)
-    ttk.Button(btn_frame, text="+ Add Equipment", style="Success.TButton", command=self.add_equipment).pack(side="left", padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.buttons.add_equipment', default="+ Add Equipment"), style="Success.TButton", command=self.add_equipment).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.btn.log_maintenance"), style="Primary.TButton", command=self.log_equipment_maintenance).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.btn.update_hours"), style="Secondary.TButton", command=self.update_equipment_hours).pack(side="left", padx=5)
     ttk.Button(btn_frame, text=_t("cinema.maintenance.schedule"), style="Secondary.TButton", command=self.show_maintenance_schedule).pack(side="left", padx=5)
@@ -97,7 +97,7 @@ def show_equipment_page(self):
 def add_equipment(self):
     """Add new equipment to the system."""
     form = tk.Toplevel(self.root)
-    form.title("Add Equipment")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.windows.add_equipment', default="Add Equipment"))
     form.geometry("450x550")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -106,7 +106,7 @@ def add_equipment(self):
     frame = ttk.Frame(form, style="Card.TFrame", padding=20)
     frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-    tk.Label(frame, text="Add Equipment", font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c").grid(row=0, column=0, columnspan=2, pady=10)
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.labels.add_equipment', default="Add Equipment"), font=("Helvetica", 14, "bold"), bg="#ffffff", fg="#e74c3c").grid(row=0, column=0, columnspan=2, pady=10)
 
     fields = {}
 
@@ -118,7 +118,7 @@ def add_equipment(self):
         tk.Label(frame, text=label, bg="#ffffff", fg="#333333").grid(row=i+1, column=0, sticky="w", pady=5)
 
         if key == "type":
-            type_var = tk.StringVar(value="projector")
+            type_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.values.projector', default="projector"))
             types = ["projector", "sound_system", "hvac", "seating", "screen", "lighting", "other"]
             e = ttk.Combobox(frame, textvariable=type_var, values=types, width=27)
             fields['type_var'] = type_var
@@ -133,7 +133,7 @@ def add_equipment(self):
 
     def save():
         if not fields['name'].get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Name is required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.name_is_required', default="Name is required"))
             return
 
         screen = None
@@ -163,18 +163,18 @@ def add_equipment(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Equipment added!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.equipment_added', default="Equipment added!"))
         form.destroy()
         self.show_equipment_page()
 
-    ttk.Button(frame, text="Add Equipment", style="Success.TButton", command=save).grid(row=len(labels)+1, column=0, columnspan=2, pady=20)
+    ttk.Button(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.buttons.add_equipment_variant_2', default="Add Equipment"), style="Success.TButton", command=save).grid(row=len(labels)+1, column=0, columnspan=2, pady=20)
 
 def log_equipment_maintenance(self):
     """Log maintenance performed on equipment."""
     selected = self.equip_tree.selection() if hasattr(self, 'equip_tree') else None
 
     form = tk.Toplevel(self.root)
-    form.title("Log Maintenance")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.windows.log_maintenance', default="Log Maintenance"))
     form.geometry("450x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -213,7 +213,7 @@ def log_equipment_maintenance(self):
 
     tk.Label(frame, text=_t("cinema.maintenance.type_label"), bg="#ffffff", fg="#333333").grid(row=2, column=0, sticky="w", pady=5)
     maint_types = ["routine", "repair", "replacement", "inspection", "cleaning", "calibration", "emergency"]
-    maint_var = tk.StringVar(value="routine")
+    maint_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.values.routine', default="routine"))
     maint_combo = ttk.Combobox(frame, textvariable=maint_var, values=maint_types, width=27)
     maint_combo.grid(row=2, column=1, pady=5)
     fields['maint_var'] = maint_var
@@ -251,7 +251,7 @@ def log_equipment_maintenance(self):
 
     def save():
         if not fields['equip_var'].get():
-            messagebox.showwarning(_t("cinema.common.warning"), "Please select equipment")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.please_select_equipment', default="Please select equipment"))
             return
 
         equip_id = equip_ids.get(fields['equip_var'].get())
@@ -303,7 +303,7 @@ def log_equipment_maintenance(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Maintenance logged!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.maintenance_logged', default="Maintenance logged!"))
         form.destroy()
         self.show_equipment_page()
 
@@ -313,7 +313,7 @@ def update_equipment_hours(self):
     """Update usage hours for equipment."""
     selected = self.equip_tree.selection() if hasattr(self, 'equip_tree') else None
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select equipment to update")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.please_select_equipment_to_update', default="Please select equipment to update"))
         return
 
     equip_id = self.equip_tree.item(selected[0])['values'][0]
@@ -321,7 +321,7 @@ def update_equipment_hours(self):
     current_hours = self.equip_tree.item(selected[0])['values'][4]
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Update Hours")
+    dialog.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.windows.update_hours', default="Update Hours"))
     dialog.geometry("300x200")
     dialog.configure(bg="#ecf0f1")
     dialog.transient(self.root)
@@ -342,7 +342,7 @@ def update_equipment_hours(self):
         try:
             new_hours = int(hours_e.get())
         except (ValueError, TypeError):
-            messagebox.showwarning(_t("cinema.common.warning"), "Invalid hours value")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.invalid_hours_value', default="Invalid hours value"))
             return
 
         conn = sqlite3.connect(DB_FILE)
@@ -353,7 +353,7 @@ def update_equipment_hours(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Hours updated!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.hours_updated', default="Hours updated!"))
         dialog.destroy()
         self.show_equipment_page()
 
@@ -363,7 +363,7 @@ def view_equipment_history(self):
     """View maintenance history for selected equipment."""
     selected = self.equip_tree.selection() if hasattr(self, 'equip_tree') else None
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select equipment")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.please_select_equipment', default="Please select equipment"))
         return
 
     equip_id = self.equip_tree.item(selected[0])['values'][0]
@@ -413,7 +413,7 @@ def edit_equipment(self):
     """Edit selected equipment details."""
     selected = self.equip_tree.selection() if hasattr(self, 'equip_tree') else None
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select equipment")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.please_select_equipment', default="Please select equipment"))
         return
 
     equip_id = self.equip_tree.item(selected[0])['values'][0]
@@ -427,11 +427,11 @@ def edit_equipment(self):
         conn.close()
 
     if not equip:
-        messagebox.showerror(_t("cinema.common.error"), "Equipment not found")
+        messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.equipment_not_found', default="Equipment not found"))
         return
 
     form = tk.Toplevel(self.root)
-    form.title("Edit Equipment")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.windows.edit_equipment', default="Edit Equipment"))
     form.geometry("400x400")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -473,7 +473,7 @@ def edit_equipment(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Equipment updated!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.equipment_updated', default="Equipment updated!"))
         form.destroy()
         self.show_equipment_page()
 
@@ -483,7 +483,7 @@ def mark_equipment_out_of_service(self):
     """Mark selected equipment as out of service."""
     selected = self.equip_tree.selection() if hasattr(self, 'equip_tree') else None
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select equipment")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.please_select_equipment', default="Please select equipment"))
         return
 
     equip_id = self.equip_tree.item(selected[0])['values'][0]
@@ -500,13 +500,13 @@ def mark_equipment_out_of_service(self):
     finally:
         conn.close()
 
-    messagebox.showinfo(_t("cinema.common.success"), "Equipment marked as out of service")
+    messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.dialogs.equipment_marked_as_out_of_service', default="Equipment marked as out of service"))
     self.show_equipment_page()
 
 def show_maintenance_schedule(self):
     """Show preventive maintenance schedule."""
     form = tk.Toplevel(self.root)
-    form.title("Maintenance Schedule")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.equipment.windows.maintenance_schedule', default="Maintenance Schedule"))
     form.geometry("800x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)

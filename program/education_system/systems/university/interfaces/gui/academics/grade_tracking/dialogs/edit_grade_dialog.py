@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -339,7 +341,7 @@ class EditGradeDialog:
     def __init__(self, parent, grade_id, student_id, assessment_id, current_score,
                  current_grade, max_points, current_feedback, callback):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Edit Grade")
+        self.dialog.title(_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.windows.edit_grade', default="Edit Grade"))
         self.dialog.geometry("400x350")
         safe_grab_set(self.dialog)
 
@@ -354,7 +356,7 @@ class EditGradeDialog:
     def setup_dialog(self, current_score, current_grade, current_feedback):
         """Setup the edit grade dialog"""
         # Title
-        ttk.Label(self.dialog, text="Edit Grade",
+        ttk.Label(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.labels.edit_grade', default="Edit Grade"),
                  font=('Arial', 12, 'bold')).pack(pady=10)
 
         # Score entry
@@ -371,7 +373,7 @@ class EditGradeDialog:
         grade_frame = ttk.Frame(self.dialog)
         grade_frame.pack(pady=10)
 
-        ttk.Label(grade_frame, text="Letter Grade:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(grade_frame, text=_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.labels.letter_grade', default="Letter Grade:")).pack(side=tk.LEFT, padx=5)
 
         self.grade_var = tk.StringVar(value=current_grade)
         grade_values = list(GRADE_SYSTEMS["letter"].keys())
@@ -380,7 +382,7 @@ class EditGradeDialog:
         self.grade_combo.pack(side=tk.LEFT, padx=5)
 
         # Feedback entry
-        feedback_frame = ttk.LabelFrame(self.dialog, text="Feedback")
+        feedback_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.labels.feedback', default="Feedback"))
         feedback_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         self.feedback_text = tk.Text(feedback_frame, height=6)
@@ -392,9 +394,9 @@ class EditGradeDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Update",
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.buttons.update', default="Update"),
                   command=self.update_grade).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.buttons.cancel', default="Cancel"),
                   command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def update_grade(self):
@@ -405,15 +407,24 @@ class EditGradeDialog:
             feedback = self.feedback_text.get(1.0, tk.END).strip()
 
             if not (0 <= score <= self.max_points):
-                messagebox.showerror("Error", f"Score must be between 0 and {self.max_points}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.error', default="Error"), f"Score must be between 0 and {self.max_points}")
                 return
 
             if letter_grade not in GRADE_SYSTEMS["letter"]:
-                messagebox.showerror("Error", "Please select a valid letter grade")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.please_select_a_valid_letter_grade', default="Please select a valid letter grade"))
                 return
 
             conn = get_connection()
             cursor = conn.cursor()
+
+            # Fail-closed authorization: permission + module ownership, checked
+            # against the row inside the same connection/transaction as the write.
+            from education_system.systems.university.interfaces.gui.academics.grade_tracking.grades.authz import (
+                require_grade_mutation,
+            )
+            if not require_grade_mutation("update", cursor=cursor, grade_id=self.grade_id):
+                conn.close()
+                return
 
             cursor.execute('''
             UPDATE grades
@@ -424,7 +435,7 @@ class EditGradeDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Grade updated successfully")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.grade_updated_successfully', default="Grade updated successfully"))
 
             if self.callback:
                 self.callback()
@@ -432,7 +443,7 @@ class EditGradeDialog:
             self.dialog.destroy()
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid numeric score")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.please_enter_a_valid_numeric_score', default="Please enter a valid numeric score"))
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error updating grade: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.edit_grade_dialog.dialogs.database_error', default="Database Error"), f"Error updating grade: {e}")
 

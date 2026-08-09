@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core._imports import (
@@ -35,7 +37,7 @@ class DialogsMixin:
                 if self.notebook.tab(i, "text") == _("lms.title"):
                     self.notebook.select(i)
                     return
-            messagebox.showinfo("LMS", "LMS tab is available in the Course Management tabs above.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.core.dialogs.dialogs.lms', default="LMS"), _t('gui.academics.course_management_gui.core.dialogs.dialogs.lms_tab_is_available_in_the_course_management_tabs_above', default="LMS tab is available in the Course Management tabs above."))
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to open LMS tab: {e}")
 

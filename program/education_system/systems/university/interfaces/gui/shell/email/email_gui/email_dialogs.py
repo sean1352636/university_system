@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from tkinter.simpledialog import askstring, askinteger
@@ -66,7 +68,7 @@ class ComposeEmailDialog:
         self.auth = auth
         self.recipient = recipient
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Compose Email")
+        self.dialog.title(_t('gui.shell.email.email_gui.email_dialogs.windows.compose_email', default="Compose Email"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -83,32 +85,32 @@ class ComposeEmailDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Recipients
-        ttk.Label(main_frame, text="To:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.to', default="To:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.to_entry = ttk.Entry(main_frame, width=50)
         self.to_entry.grid(row=0, column=1, columnspan=2, sticky=tk.EW, pady=5)
 
-        ttk.Button(main_frame, text="Select Recipients", command=self.select_recipients).grid(row=0, column=3, padx=5)
+        ttk.Button(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.select_recipients', default="Select Recipients"), command=self.select_recipients).grid(row=0, column=3, padx=5)
 
         # CC
-        ttk.Label(main_frame, text="CC:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.cc', default="CC:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.cc_entry = ttk.Entry(main_frame, width=50)
         self.cc_entry.grid(row=1, column=1, columnspan=2, sticky=tk.EW, pady=5)
 
         # Subject
-        ttk.Label(main_frame, text="Subject:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.subject', default="Subject:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.subject_entry = ttk.Entry(main_frame, width=50)
         self.subject_entry.grid(row=2, column=1, columnspan=2, sticky=tk.EW, pady=5)
 
         # Template
-        ttk.Label(main_frame, text="Template:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.template', default="Template:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.template_var = tk.StringVar()
         self.template_combo = ttk.Combobox(main_frame, textvariable=self.template_var, width=30)
         self.template_combo.grid(row=3, column=1, sticky=tk.W, pady=5)
 
-        ttk.Button(main_frame, text="Load Template", command=self.load_template).grid(row=3, column=2, padx=5)
+        ttk.Button(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.load_template', default="Load Template"), command=self.load_template).grid(row=3, column=2, padx=5)
 
         # Body
-        ttk.Label(main_frame, text="Message:").grid(row=4, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.message', default="Message:")).grid(row=4, column=0, sticky=tk.NW, pady=5)
         self.body_text = scrolledtext.ScrolledText(main_frame, width=60, height=15)
         self.body_text.grid(row=4, column=1, columnspan=3, sticky=tk.NSEW, pady=5)
 
@@ -116,9 +118,9 @@ class ComposeEmailDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=5, column=0, columnspan=4, pady=10)
 
-        ttk.Button(button_frame, text="Send", command=self.send_email).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Save Draft", command=self.save_draft).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.send', default="Send"), command=self.send_email).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.save_draft', default="Save Draft"), command=self.save_draft).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         # Configure grid weights
         main_frame.columnconfigure(1, weight=1)
@@ -159,7 +161,7 @@ class ComposeEmailDialog:
                     self.body_text.delete(1.0, tk.END)
                     self.body_text.insert(1.0, body)
             except Exception as e:
-                messagebox.showerror("Error", f"Error loading template: {e}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Error loading template: {e}")
 
     def send_email(self):
         """Send the composed email"""
@@ -170,15 +172,15 @@ class ComposeEmailDialog:
             body = self.body_text.get(1.0, tk.END).strip()
 
             if not recipients:
-                messagebox.showerror("Error", "Please enter at least one recipient")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_enter_at_least_one_recipient', default="Please enter at least one recipient"))
                 return
 
             if not subject:
-                messagebox.showerror("Error", "Please enter a subject")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_enter_a_subject', default="Please enter a subject"))
                 return
 
             if not body:
-                messagebox.showerror("Error", "Please enter a message")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_enter_a_message', default="Please enter a message"))
                 return
 
             # Send emails via university email service
@@ -202,19 +204,19 @@ class ComposeEmailDialog:
                     errors.append(f"{recipient}: {send_err}")
 
             if success_count > 0 and not errors:
-                messagebox.showinfo("Success", f"Email sent to {success_count} recipient(s)")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), f"Email sent to {success_count} recipient(s)")
                 self.dialog.destroy()
             elif success_count > 0:
                 messagebox.showwarning(
-                    "Partial Success",
+                    _t('gui.shell.email.email_gui.email_dialogs.dialogs.partial_success', default="Partial Success"),
                     f"Sent to {success_count} recipient(s), but failed for:\n" + "\n".join(errors)
                 )
                 self.dialog.destroy()
             else:
-                messagebox.showerror("Error", "Failed to send emails:\n" + "\n".join(errors))
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), "Failed to send emails:\n" + "\n".join(errors))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error sending email: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Error sending email: {e}")
 
     def save_draft(self):
         """Save email as draft"""
@@ -228,7 +230,7 @@ class ComposeEmailDialog:
             body = self.body_text.get(1.0, tk.END).strip()
 
             if not recipients and not subject and not body:
-                messagebox.showwarning("Empty Draft", "Cannot save an empty draft")
+                messagebox.showwarning(_t('gui.shell.email.email_gui.email_dialogs.dialogs.empty_draft', default="Empty Draft"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.cannot_save_an_empty_draft', default="Cannot save an empty draft"))
                 return
 
             conn = get_db_connection()
@@ -258,18 +260,18 @@ class ComposeEmailDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Draft saved successfully (ID: {draft_id})")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), f"Draft saved successfully (ID: {draft_id})")
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save draft: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Failed to save draft: {e}")
 
 
 class RecipientSelectorDialog:
     def __init__(self, parent, entry_widget):
         self.entry_widget = entry_widget
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Select Recipients")
+        self.dialog.title(_t('gui.shell.email.email_gui.email_dialogs.windows.select_recipients', default="Select Recipients"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -287,7 +289,7 @@ class RecipientSelectorDialog:
         search_frame = ttk.Frame(main_frame)
         search_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.search', default="Search:")).pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(search_frame, width=30)
         self.search_entry.pack(side=tk.LEFT, padx=5)
         self.search_entry.bind('<KeyRelease>', self.on_search)
@@ -311,9 +313,9 @@ class RecipientSelectorDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Add Selected", command=self.add_selected).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="OK", command=self.confirm_selection).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.add_selected', default="Add Selected"), command=self.add_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.ok', default="OK"), command=self.confirm_selection).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_users(self):
         """Load users into the tree from database"""
@@ -410,7 +412,7 @@ class BulkEmailDialog:
     def __init__(self, parent, auth):
         self.auth = auth
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Send Bulk Email")
+        self.dialog.title(_t('gui.shell.email.email_gui.email_dialogs.windows.send_bulk_email', default="Send Bulk Email"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -423,24 +425,24 @@ class BulkEmailDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Target audience
-        ttk.Label(main_frame, text="Target Audience:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.target_audience', default="Target Audience:")).grid(row=0, column=0, sticky=tk.W, pady=5)
 
-        self.audience_var = tk.StringVar(value="all")
+        self.audience_var = tk.StringVar(value=_t('gui.shell.email.email_gui.email_dialogs.values.all', default="all"))
         audience_frame = ttk.Frame(main_frame)
         audience_frame.grid(row=0, column=1, sticky=tk.W, pady=5)
 
-        ttk.Radiobutton(audience_frame, text="All Users", variable=self.audience_var, value="all").pack(side=tk.LEFT)
-        ttk.Radiobutton(audience_frame, text="Students", variable=self.audience_var, value="students").pack(side=tk.LEFT, padx=10)
-        ttk.Radiobutton(audience_frame, text="Staff", variable=self.audience_var, value="staff").pack(side=tk.LEFT)
-        ttk.Radiobutton(audience_frame, text="Instructors", variable=self.audience_var, value="instructors").pack(side=tk.LEFT, padx=10)
+        ttk.Radiobutton(audience_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.all_users', default="All Users"), variable=self.audience_var, value="all").pack(side=tk.LEFT)
+        ttk.Radiobutton(audience_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.students', default="Students"), variable=self.audience_var, value="students").pack(side=tk.LEFT, padx=10)
+        ttk.Radiobutton(audience_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.staff', default="Staff"), variable=self.audience_var, value="staff").pack(side=tk.LEFT)
+        ttk.Radiobutton(audience_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.instructors', default="Instructors"), variable=self.audience_var, value="instructors").pack(side=tk.LEFT, padx=10)
 
         # Subject
-        ttk.Label(main_frame, text="Subject:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.subject', default="Subject:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.subject_entry = ttk.Entry(main_frame, width=50)
         self.subject_entry.grid(row=1, column=1, sticky=tk.EW, pady=5)
 
         # Template
-        ttk.Label(main_frame, text="Template:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.template', default="Template:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         template_frame = ttk.Frame(main_frame)
         template_frame.grid(row=2, column=1, sticky=tk.W, pady=5)
 
@@ -448,10 +450,10 @@ class BulkEmailDialog:
         self.template_combo = ttk.Combobox(template_frame, textvariable=self.template_var, width=30)
         self.template_combo.pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Button(template_frame, text="Load Template", command=self.load_selected_template).pack(side=tk.LEFT)
+        ttk.Button(template_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.load_template', default="Load Template"), command=self.load_selected_template).pack(side=tk.LEFT)
 
         # Body
-        ttk.Label(main_frame, text="Message:").grid(row=3, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.message', default="Message:")).grid(row=3, column=0, sticky=tk.NW, pady=5)
         self.body_text = scrolledtext.ScrolledText(main_frame, width=60, height=15)
         self.body_text.grid(row=3, column=1, sticky=tk.NSEW, pady=5)
 
@@ -459,9 +461,9 @@ class BulkEmailDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=4, column=0, columnspan=2, pady=10)
 
-        ttk.Button(button_frame, text="Send Bulk Email", command=self.send_bulk).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Preview", command=self.preview_email).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.send_bulk_email', default="Send Bulk Email"), command=self.send_bulk).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.preview', default="Preview"), command=self.preview_email).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         # Configure grid weights
         main_frame.columnconfigure(1, weight=1)
@@ -484,7 +486,7 @@ class BulkEmailDialog:
         """Load the selected template into subject and body fields"""
         template_name = self.template_var.get()
         if not template_name:
-            messagebox.showwarning("No Selection", "Please select a template first")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.email_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_select_a_template_first', default="Please select a template first"))
             return
 
         try:
@@ -506,13 +508,13 @@ class BulkEmailDialog:
                         self.body_text.delete(1.0, tk.END)
                         self.body_text.insert(1.0, body)
 
-                    messagebox.showinfo("Success", f"Template '{template_name}' loaded successfully!")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), f"Template '{template_name}' loaded successfully!")
                 else:
-                    messagebox.showerror("Error", f"Failed to load template '{template_name}'")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Failed to load template '{template_name}'")
             else:
-                messagebox.showerror("Error", "Template loading functionality not available")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.template_loading_functionality_not_available', default="Template loading functionality not available"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error loading template: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Error loading template: {e}")
 
     def send_bulk(self):
         """Send bulk email"""
@@ -522,11 +524,11 @@ class BulkEmailDialog:
             body = self.body_text.get(1.0, tk.END).strip()
 
             if not subject or not body:
-                messagebox.showerror("Error", "Please enter subject and message")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_enter_subject_and_message', default="Please enter subject and message"))
                 return
 
             # Confirm sending
-            if not messagebox.askyesno("Confirm", f"Send bulk email to {audience}?"):
+            if not messagebox.askyesno(_t('gui.shell.email.email_gui.email_dialogs.dialogs.confirm', default="Confirm"), f"Send bulk email to {audience}?"):
                 return
 
             # Use existing bulk send functionality
@@ -542,7 +544,7 @@ class BulkEmailDialog:
 
                 success, failed, total = send_batch_announcement(subject, body, filter_criteria)
 
-                messagebox.showinfo("Result",
+                messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.result', default="Result"),
                     f"Bulk email completed:\n"
                     f"Total: {total}\n"
                     f"Success: {success}\n"
@@ -551,10 +553,10 @@ class BulkEmailDialog:
                 if success > 0:
                     self.dialog.destroy()
             else:
-                messagebox.showerror("Error", "Bulk email functionality not available")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.bulk_email_functionality_not_available', default="Bulk email functionality not available"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error sending bulk email: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Error sending bulk email: {e}")
 
     def preview_email(self):
         """Preview the email"""
@@ -564,7 +566,7 @@ class BulkEmailDialog:
         preview_text = f"Subject: {subject}\n\nMessage:\n{body}"
 
         preview_dialog = tk.Toplevel(self.dialog)
-        preview_dialog.title("Email Preview")
+        preview_dialog.title(_t('gui.shell.email.email_gui.email_dialogs.windows.email_preview', default="Email Preview"))
         preview_dialog.geometry("500x400")
 
         text_widget = scrolledtext.ScrolledText(preview_dialog, wrap=tk.WORD)
@@ -576,7 +578,7 @@ class BulkEmailDialog:
 class ScheduleEmailDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Schedule Email")
+        self.dialog.title(_t('gui.shell.email.email_gui.email_dialogs.windows.schedule_email', default="Schedule Email"))
         self.dialog.geometry("500x600")
         self.dialog.transient(parent)
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
@@ -588,32 +590,32 @@ class ScheduleEmailDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        ttk.Label(main_frame, text="Schedule Email", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.schedule_email', default="Schedule Email"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Recipient
-        ttk.Label(main_frame, text="Recipient Email:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.recipient_email', default="Recipient Email:")).pack(anchor=tk.W)
         self.recipient_entry = ttk.Entry(main_frame, width=50)
         self.recipient_entry.pack(fill=tk.X, pady=(0, 10))
 
         # Subject
-        ttk.Label(main_frame, text="Subject:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.subject', default="Subject:")).pack(anchor=tk.W)
         self.subject_entry = ttk.Entry(main_frame, width=50)
         self.subject_entry.pack(fill=tk.X, pady=(0, 10))
 
         # Body
-        ttk.Label(main_frame, text="Message Body:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.message_body', default="Message Body:")).pack(anchor=tk.W)
         self.body_text = scrolledtext.ScrolledText(main_frame, height=10, wrap=tk.WORD)
         self.body_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         # Schedule date/time frame
-        schedule_frame = ttk.LabelFrame(main_frame, text="Schedule For", padding=10)
+        schedule_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.schedule_for', default="Schedule For"), padding=10)
         schedule_frame.pack(fill=tk.X, pady=(0, 10))
 
         # Date selection
         date_frame = ttk.Frame(schedule_frame)
         date_frame.pack(fill=tk.X, pady=(0, 5))
 
-        ttk.Label(date_frame, text="Date:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(date_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.date', default="Date:")).pack(side=tk.LEFT, padx=(0, 5))
 
         # Year
         self.year_var = tk.StringVar(value=str(datetime.now().year))
@@ -635,7 +637,7 @@ class ScheduleEmailDialog:
         time_frame = ttk.Frame(schedule_frame)
         time_frame.pack(fill=tk.X)
 
-        ttk.Label(time_frame, text="Time:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(time_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.time', default="Time:")).pack(side=tk.LEFT, padx=(0, 5))
 
         # Hour
         self.hour_var = tk.StringVar(value=str(datetime.now().hour))
@@ -653,9 +655,9 @@ class ScheduleEmailDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(10, 0))
 
-        ttk.Button(button_frame, text="Schedule", command=self.schedule_email).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Send Now", command=self.send_now).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.schedule', default="Schedule"), command=self.schedule_email).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.send_now', default="Send Now"), command=self.send_now).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def schedule_email(self):
         """Schedule the email for later"""
@@ -664,7 +666,7 @@ class ScheduleEmailDialog:
         body = self.body_text.get(1.0, tk.END).strip()
 
         if not recipient or not subject:
-            messagebox.showwarning("Missing Information", "Please fill in recipient and subject")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.email_dialogs.dialogs.missing_information', default="Missing Information"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_fill_in_recipient_and_subject', default="Please fill in recipient and subject"))
             return
 
         try:
@@ -678,7 +680,7 @@ class ScheduleEmailDialog:
             scheduled_time = datetime(year, month, day, hour, minute)
 
             if scheduled_time <= datetime.now():
-                messagebox.showwarning("Invalid Time", "Scheduled time must be in the future")
+                messagebox.showwarning(_t('gui.shell.email.email_gui.email_dialogs.dialogs.invalid_time', default="Invalid Time"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.scheduled_time_must_be_in_the_future', default="Scheduled time must be in the future"))
                 return
 
             # Store scheduled email in database
@@ -715,13 +717,13 @@ class ScheduleEmailDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Email scheduled for {scheduled_time.strftime('%Y-%m-%d %H:%M')}")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), f"Email scheduled for {scheduled_time.strftime('%Y-%m-%d %H:%M')}")
             self.dialog.destroy()
 
         except ValueError as e:
-            messagebox.showerror("Invalid Date/Time", f"Please enter valid date and time values: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.invalid_date_time', default="Invalid Date/Time"), f"Please enter valid date and time values: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to schedule email: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Failed to schedule email: {e}")
 
     def send_now(self):
         """Send the email immediately"""
@@ -730,27 +732,27 @@ class ScheduleEmailDialog:
         body = self.body_text.get(1.0, tk.END).strip()
 
         if not recipient or not subject:
-            messagebox.showwarning("Missing Information", "Please fill in recipient and subject")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.email_dialogs.dialogs.missing_information', default="Missing Information"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_fill_in_recipient_and_subject', default="Please fill in recipient and subject"))
             return
 
         try:
             if send_email:
                 result = send_email(recipient, subject, body)
                 if result:
-                    messagebox.showinfo("Success", "Email sent successfully!")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.email_sent_successfully', default="Email sent successfully!"))
                     self.dialog.destroy()
                 else:
-                    messagebox.showerror("Error", "Failed to send email")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.failed_to_send_email', default="Failed to send email"))
             else:
-                messagebox.showerror("Error", "Email service not available")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.email_service_not_available', default="Email service not available"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send email: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Failed to send email: {e}")
 
 
 class TemplateManagerDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Template Manager")
+        self.dialog.title(_t('gui.shell.email.email_gui.email_dialogs.windows.template_manager', default="Template Manager"))
         self.dialog.geometry("800x600")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -765,20 +767,20 @@ class TemplateManagerDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        title_label = ttk.Label(main_frame, text="Email Template Manager", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.email_template_manager', default="Email Template Manager"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Button frame
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Button(button_frame, text="New Template", command=self.create_new_template).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Edit Selected", command=self.edit_selected_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Delete Selected", command=self.delete_selected_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.load_templates).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.new_template', default="New Template"), command=self.create_new_template).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.edit_selected', default="Edit Selected"), command=self.edit_selected_template).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.delete_selected', default="Delete Selected"), command=self.delete_selected_template).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.refresh', default="Refresh"), command=self.load_templates).pack(side=tk.LEFT, padx=5)
 
         # Templates list frame
-        list_frame = ttk.LabelFrame(main_frame, text="Available Templates", padding=10)
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.available_templates', default="Available Templates"), padding=10)
         list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         # Create treeview with scrollbar
@@ -786,10 +788,10 @@ class TemplateManagerDialog:
         tree_frame.pack(fill=tk.BOTH, expand=True)
 
         self.templates_tree = ttk.Treeview(tree_frame, columns=('Type', 'Subject', 'Preview'), show='tree headings')
-        self.templates_tree.heading('#0', text='Template Name')
-        self.templates_tree.heading('Type', text='Type')
-        self.templates_tree.heading('Subject', text='Subject')
-        self.templates_tree.heading('Preview', text='Body Preview')
+        self.templates_tree.heading('#0', text=_t('gui.shell.email.email_gui.email_dialogs.headings.template_name', default='Template Name'))
+        self.templates_tree.heading('Type', text=_t('gui.shell.email.email_gui.email_dialogs.headings.type', default='Type'))
+        self.templates_tree.heading('Subject', text=_t('gui.shell.email.email_gui.email_dialogs.headings.subject', default='Subject'))
+        self.templates_tree.heading('Preview', text=_t('gui.shell.email.email_gui.email_dialogs.headings.body_preview', default='Body Preview'))
 
         self.templates_tree.column('#0', width=150)
         self.templates_tree.column('Type', width=80)
@@ -806,7 +808,7 @@ class TemplateManagerDialog:
         self.templates_tree.bind('<Double-1>', lambda e: self.edit_selected_template())
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=(10, 0))
+        ttk.Button(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=(10, 0))
 
     def load_templates(self):
         """Load and display templates in the tree"""
@@ -827,7 +829,7 @@ class TemplateManagerDialog:
                                                template.get('subject', ''),
                                                template.get('body_preview', '')))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load templates: {str(e)}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Failed to load templates: {str(e)}")
 
     def create_new_template(self):
         """Open dialog to create a new template"""
@@ -839,7 +841,7 @@ class TemplateManagerDialog:
         """Edit the selected template"""
         selection = self.templates_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to edit.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.email_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_select_a_template_to_edit', default="Please select a template to edit."))
             return
 
         template_name = self.templates_tree.item(selection[0])['text']
@@ -851,26 +853,26 @@ class TemplateManagerDialog:
         """Delete the selected template"""
         selection = self.templates_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to delete.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.email_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_select_a_template_to_delete', default="Please select a template to delete."))
             return
 
         template_name = self.templates_tree.item(selection[0])['text']
         template_type = self.templates_tree.item(selection[0])['values'][0]
 
         if template_type == "Default":
-            messagebox.showwarning("Cannot Delete", "Default templates cannot be deleted.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.email_dialogs.dialogs.cannot_delete', default="Cannot Delete"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.default_templates_cannot_be_deleted', default="Default templates cannot be deleted."))
             return
 
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete the template '{template_name}'?"):
+        if messagebox.askyesno(_t('gui.shell.email.email_gui.email_dialogs.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete the template '{template_name}'?"):
             try:
                 from education_system.systems.university.infrastructure.email.template_utils import delete_template
                 if delete_template(template_name):
-                    messagebox.showinfo("Success", f"Template '{template_name}' deleted successfully.")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), f"Template '{template_name}' deleted successfully.")
                     self.load_templates()
                 else:
-                    messagebox.showerror("Error", f"Failed to delete template '{template_name}'.")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Failed to delete template '{template_name}'.")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete template: {str(e)}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Failed to delete template: {str(e)}")
 
 
 class TemplateEditDialog:
@@ -894,7 +896,7 @@ class TemplateEditDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Template name
-        ttk.Label(main_frame, text="Template Name:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.template_name', default="Template Name:")).pack(anchor=tk.W)
         self.name_var = tk.StringVar()
         self.name_entry = ttk.Entry(main_frame, textvariable=self.name_var, width=50)
         self.name_entry.pack(fill=tk.X, pady=(0, 10))
@@ -904,12 +906,12 @@ class TemplateEditDialog:
             self.name_entry.config(state='readonly')
 
         # Subject
-        ttk.Label(main_frame, text="Subject:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.subject', default="Subject:")).pack(anchor=tk.W)
         self.subject_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.subject_var, width=50).pack(fill=tk.X, pady=(0, 10))
 
         # Body
-        ttk.Label(main_frame, text="Body:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.body', default="Body:")).pack(anchor=tk.W)
         body_frame = ttk.Frame(main_frame)
         body_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
@@ -917,7 +919,7 @@ class TemplateEditDialog:
         self.body_text.pack(fill=tk.BOTH, expand=True)
 
         # Variables help
-        help_frame = ttk.LabelFrame(main_frame, text="Available Variables", padding=5)
+        help_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.available_variables', default="Available Variables"), padding=5)
         help_frame.pack(fill=tk.X, pady=(0, 10))
 
         help_text = ("Common variables: $student_name, $student_id, $email_address, $course, "
@@ -928,8 +930,8 @@ class TemplateEditDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X)
 
-        ttk.Button(button_frame, text="Save", command=self.save_template).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.save', default="Save"), command=self.save_template).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT)
 
     def load_template_data(self):
         """Load existing template data"""
@@ -940,7 +942,7 @@ class TemplateEditDialog:
                 self.subject_var.set(template_data.get('subject', ''))
                 self.body_text.insert('1.0', template_data.get('body', ''))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load template: {str(e)}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Failed to load template: {str(e)}")
 
     def save_template(self):
         """Save the template"""
@@ -949,7 +951,7 @@ class TemplateEditDialog:
         body = self.body_text.get('1.0', tk.END).strip()
 
         if not name or not subject or not body:
-            messagebox.showerror("Validation Error", "All fields are required.")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.all_fields_are_required', default="All fields are required."))
             return
 
         try:
@@ -957,28 +959,28 @@ class TemplateEditDialog:
                 # Update existing template
                 from education_system.systems.university.infrastructure.email.template_utils import update_template
                 if update_template(name, subject=subject, body=body):
-                    messagebox.showinfo("Success", "Template updated successfully.")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.template_updated_successfully', default="Template updated successfully."))
                     self.result = True
                     self.dialog.destroy()
                 else:
-                    messagebox.showerror("Error", "Failed to update template.")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.failed_to_update_template', default="Failed to update template."))
             else:
                 # Create new template
                 from education_system.systems.university.infrastructure.email.template_utils import create_template
                 if create_template(name, subject, body):
-                    messagebox.showinfo("Success", "Template created successfully.")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.template_created_successfully', default="Template created successfully."))
                     self.result = True
                     self.dialog.destroy()
                 else:
-                    messagebox.showerror("Error", "Failed to create template. Template may already exist.")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.failed_to_create_template_template_may_already_exist', default="Failed to create template. Template may already exist."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save template: {str(e)}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Failed to save template: {str(e)}")
 
 
 class EmailConfigDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Email Configuration")
+        self.dialog.title(_t('gui.shell.email.email_gui.email_dialogs.windows.email_configuration', default="Email Configuration"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -992,62 +994,62 @@ class EmailConfigDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Mode selection
-        mode_frame = ttk.LabelFrame(main_frame, text="Email Mode", padding=10)
+        mode_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.email_mode', default="Email Mode"), padding=10)
         mode_frame.pack(fill=tk.X, pady=5)
 
         self.mode_var = tk.StringVar()
-        ttk.Radiobutton(mode_frame, text="Database Only Mode", variable=self.mode_var, value="database").pack(anchor=tk.W)
-        ttk.Radiobutton(mode_frame, text="SMTP Sending Mode", variable=self.mode_var, value="smtp").pack(anchor=tk.W)
+        ttk.Radiobutton(mode_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.database_only_mode', default="Database Only Mode"), variable=self.mode_var, value="database").pack(anchor=tk.W)
+        ttk.Radiobutton(mode_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.smtp_sending_mode', default="SMTP Sending Mode"), variable=self.mode_var, value="smtp").pack(anchor=tk.W)
 
         # SMTP settings
-        smtp_frame = ttk.LabelFrame(main_frame, text="SMTP Settings", padding=10)
+        smtp_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.smtp_settings', default="SMTP Settings"), padding=10)
         smtp_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(smtp_frame, text="SMTP Server:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        ttk.Label(smtp_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.smtp_server', default="SMTP Server:")).grid(row=0, column=0, sticky=tk.W, pady=2)
         self.smtp_server_entry = ttk.Entry(smtp_frame, width=30)
         self.smtp_server_entry.grid(row=0, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(smtp_frame, text="SMTP Port:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        ttk.Label(smtp_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.smtp_port', default="SMTP Port:")).grid(row=1, column=0, sticky=tk.W, pady=2)
         self.smtp_port_entry = ttk.Entry(smtp_frame, width=10)
         self.smtp_port_entry.grid(row=1, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(smtp_frame, text="Username:").grid(row=2, column=0, sticky=tk.W, pady=2)
+        ttk.Label(smtp_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.username', default="Username:")).grid(row=2, column=0, sticky=tk.W, pady=2)
         self.username_entry = ttk.Entry(smtp_frame, width=30)
         self.username_entry.grid(row=2, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(smtp_frame, text="Password:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        ttk.Label(smtp_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.password', default="Password:")).grid(row=3, column=0, sticky=tk.W, pady=2)
         self.password_entry = ttk.Entry(smtp_frame, width=30, show="*")
         self.password_entry.grid(row=3, column=1, sticky=tk.W, pady=2)
 
         # Sender settings
-        sender_frame = ttk.LabelFrame(main_frame, text="Sender Information", padding=10)
+        sender_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.sender_information', default="Sender Information"), padding=10)
         sender_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(sender_frame, text="Sender Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        ttk.Label(sender_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.sender_email', default="Sender Email:")).grid(row=0, column=0, sticky=tk.W, pady=2)
         self.sender_email_entry = ttk.Entry(sender_frame, width=40)
         self.sender_email_entry.grid(row=0, column=1, sticky=tk.W, pady=2)
 
-        ttk.Label(sender_frame, text="Sender Name:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        ttk.Label(sender_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.sender_name', default="Sender Name:")).grid(row=1, column=0, sticky=tk.W, pady=2)
         self.sender_name_entry = ttk.Entry(sender_frame, width=40)
         self.sender_name_entry.grid(row=1, column=1, sticky=tk.W, pady=2)
 
         # Options
-        options_frame = ttk.LabelFrame(main_frame, text="Options", padding=10)
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.options', default="Options"), padding=10)
         options_frame.pack(fill=tk.X, pady=5)
 
         self.use_tls_var = tk.BooleanVar()
-        ttk.Checkbutton(options_frame, text="Use TLS", variable=self.use_tls_var).pack(anchor=tk.W)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.use_tls', default="Use TLS"), variable=self.use_tls_var).pack(anchor=tk.W)
 
         self.use_auth_var = tk.BooleanVar()
-        ttk.Checkbutton(options_frame, text="Use Authentication", variable=self.use_auth_var).pack(anchor=tk.W)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.use_authentication', default="Use Authentication"), variable=self.use_auth_var).pack(anchor=tk.W)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Save", command=self.save_config).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Test", command=self.test_config).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.save', default="Save"), command=self.save_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.test', default="Test"), command=self.test_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_config(self):
         """Load current configuration"""
@@ -1098,24 +1100,24 @@ class EmailConfigDialog:
                 if 'save_config' in globals():
                     save_config()
 
-                messagebox.showinfo("Success", "Configuration saved successfully")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.configuration_saved_successfully', default="Configuration saved successfully"))
                 self.dialog.destroy()
             else:
-                messagebox.showerror("Error", "Configuration system not available")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.configuration_system_not_available', default="Configuration system not available"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error saving configuration: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Error saving configuration: {e}")
 
     def test_config(self):
         """Test email configuration"""
         try:
             if 'test_email_configuration' in globals():
                 test_email_configuration()
-                messagebox.showinfo("Test", "Check console for test results")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.test', default="Test"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.check_console_for_test_results', default="Check console for test results"))
             else:
-                messagebox.showinfo("Test", "Test functionality not available")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.test', default="Test"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.test_functionality_not_available', default="Test functionality not available"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error testing configuration: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Error testing configuration: {e}")
 
 
 class EmailDetailsDialog:
@@ -1144,7 +1146,7 @@ class EmailDetailsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_email_details(self):
         """Load email details"""
@@ -1218,12 +1220,12 @@ class TemplateEditor:
         info_frame = ttk.Frame(main_frame)
         info_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(info_frame, text="Name:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(info_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.name', default="Name:")).grid(row=0, column=0, sticky=tk.W)
         self.name_entry = ttk.Entry(info_frame, width=30)
         self.name_entry.grid(row=0, column=1, sticky=tk.W, padx=5)
 
         # Subject
-        ttk.Label(main_frame, text="Subject:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.subject', default="Subject:")).pack(anchor=tk.W)
         self.subject_entry = ttk.Entry(main_frame, width=80)
         self.subject_entry.pack(fill=tk.X, pady=5)
 
@@ -1232,7 +1234,7 @@ class TemplateEditor:
         body_frame.pack(fill=tk.BOTH, expand=True)
 
         # Variables panel
-        vars_frame = ttk.LabelFrame(body_frame, text="Available Variables", padding=5)
+        vars_frame = ttk.LabelFrame(body_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.available_variables', default="Available Variables"), padding=5)
         vars_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
 
         variables = [
@@ -1249,7 +1251,7 @@ class TemplateEditor:
         editor_frame = ttk.Frame(body_frame)
         editor_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        ttk.Label(editor_frame, text="Body:").pack(anchor=tk.W)
+        ttk.Label(editor_frame, text=_t('gui.shell.email.email_gui.email_dialogs.labels.body', default="Body:")).pack(anchor=tk.W)
         self.body_text = scrolledtext.ScrolledText(editor_frame, wrap=tk.WORD)
         self.body_text.pack(fill=tk.BOTH, expand=True)
 
@@ -1257,9 +1259,9 @@ class TemplateEditor:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Save", command=self.save_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Preview", command=self.preview_template).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.save', default="Save"), command=self.save_template).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.preview', default="Preview"), command=self.preview_template).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def insert_variable(self, variable):
         """Insert variable at cursor position"""
@@ -1280,7 +1282,7 @@ class TemplateEditor:
                     self.subject_entry.insert(0, template_data.get('subject', ''))
                     self.body_text.insert(1.0, body)
             except Exception as e:
-                messagebox.showerror("Error", f"Error loading template: {e}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Error loading template: {e}")
 
     def save_template(self):
         """Save template"""
@@ -1290,20 +1292,20 @@ class TemplateEditor:
             body = self.body_text.get(1.0, tk.END).strip()
 
             if not name or not subject or not body:
-                messagebox.showerror("Error", "Please fill in all fields")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.please_fill_in_all_fields', default="Please fill in all fields"))
                 return
 
             if 'create_template' in globals():
                 if create_template(name, subject, body):
-                    messagebox.showinfo("Success", f"Template '{name}' saved successfully")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.email_dialogs.dialogs.success', default="Success"), f"Template '{name}' saved successfully")
                     self.dialog.destroy()
                 else:
-                    messagebox.showerror("Error", "Failed to save template")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.failed_to_save_template', default="Failed to save template"))
             else:
-                messagebox.showerror("Error", "Template system not available")
+                messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.email_dialogs.dialogs.template_system_not_available', default="Template system not available"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error saving template: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.email_dialogs.dialogs.error', default="Error"), f"Error saving template: {e}")
 
     def preview_template(self):
         """Preview template with sample data"""
@@ -1332,7 +1334,7 @@ class TemplateEditor:
 
         # Show preview
         preview_dialog = tk.Toplevel(self.dialog)
-        preview_dialog.title("Template Preview")
+        preview_dialog.title(_t('gui.shell.email.email_gui.email_dialogs.windows.template_preview', default="Template Preview"))
         preview_dialog.geometry("500x400")
 
         preview_frame = ttk.Frame(preview_dialog, padding=10)
@@ -1347,6 +1349,6 @@ class TemplateEditor:
         preview_text.insert(1.0, preview_body)
         preview_text.config(state=tk.DISABLED)
 
-        ttk.Button(preview_frame, text="Close", command=preview_dialog.destroy).pack(pady=10)
+        ttk.Button(preview_frame, text=_t('gui.shell.email.email_gui.email_dialogs.buttons.close', default="Close"), command=preview_dialog.destroy).pack(pady=10)
 
 

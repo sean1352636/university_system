@@ -2,6 +2,8 @@
 Financial Aid mixin - applying for financial aid.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from typing import Dict, Optional
 
 from education_system.systems.university.interfaces.gui.finance.financial_aid.common_imports import (
@@ -87,7 +89,7 @@ class FinancialAidMixin:
         type_frame = ttk.Frame(form_frame)
         type_frame.pack(fill='x', pady=10)
         ttk.Label(type_frame, text=get_text("financial_aid.student_portal.form.aid_type", "Aid Type Requested:"), width=20).pack(side='left')
-        type_var = tk.StringVar(value='Grant')
+        type_var = tk.StringVar(value=_t('gui.finance.financial_aid.student_portal.financial_aid.values.grant', default='Grant'))
         ttk.Combobox(type_frame, textvariable=type_var, values=[
             get_text("financial_aid.student_portal.aid_types.grant", "Grant"),
             get_text("financial_aid.student_portal.aid_types.loan", "Loan"),

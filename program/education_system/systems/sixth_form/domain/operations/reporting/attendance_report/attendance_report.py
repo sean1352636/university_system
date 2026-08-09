@@ -27,11 +27,11 @@ import sqlite3
 from dataclasses import dataclass, field
 from typing import Any
 from education_system.systems.sixth_form.domain.academics.attendance import attendance as _att
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.ATTENDANCE_DB
+DB_PATH = paths.SIXTH_FORM_ATTENDANCE_DB
 
 STATUSES: tuple[str, ...] = ("Present", "Late", "Absent", "Authorised")
 ATTENDING_STATUSES: tuple[str, ...] = ("Present", "Late")

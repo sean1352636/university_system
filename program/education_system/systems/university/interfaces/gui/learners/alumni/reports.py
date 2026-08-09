@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -45,7 +47,7 @@ class ReportsMixin:
             widget = output_widget if output_widget is not None else self.report_output
             report_content = widget.get(1.0, tk.END).strip()
             if not report_content or report_content.startswith("Select a quick report"):
-                messagebox.showwarning("No Report", "Please generate a report first before emailing.")
+                messagebox.showwarning(_t('gui.learners.alumni.reports.dialogs.no_report', default="No Report"), _t('gui.learners.alumni.reports.dialogs.please_generate_a_report_first_before_emailing', default="Please generate a report first before emailing."))
                 return
 
             try:
@@ -77,7 +79,7 @@ class ReportsMixin:
                         admin_email = None
 
                 if not admin_email:
-                    messagebox.showerror("Error", "No admin email found")
+                    messagebox.showerror(_t('gui.learners.alumni.reports.dialogs.error', default="Error"), _t('gui.learners.alumni.reports.dialogs.no_admin_email_found', default="No admin email found"))
                     return
 
                 # Use template for email
@@ -98,14 +100,14 @@ class ReportsMixin:
                 result = send_email(admin_email, subject, body)
 
                 if result:
-                    messagebox.showinfo("Success", f"Report emailed successfully to {admin_email}")
+                    messagebox.showinfo(_t('gui.learners.alumni.reports.dialogs.success', default="Success"), f"Report emailed successfully to {admin_email}")
                 else:
-                    messagebox.showinfo("Queued", f"Report has been queued for delivery to {admin_email}")
+                    messagebox.showinfo(_t('gui.learners.alumni.reports.dialogs.queued', default="Queued"), f"Report has been queued for delivery to {admin_email}")
 
             except ImportError:
-                messagebox.showerror("Error", "Email service is not available. Please check email configuration.")
+                messagebox.showerror(_t('gui.learners.alumni.reports.dialogs.error', default="Error"), _t('gui.learners.alumni.reports.dialogs.email_service_is_not_available_please_check_email_configuration', default="Email service is not available. Please check email configuration."))
             except (sqlite3.Error, AttributeError) as e:
-                messagebox.showerror("Error", f"Failed to send email: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.reports.dialogs.error', default="Error"), f"Failed to send email: {str(e)}")
 
         def _generate_custom_report_content(self):
             """Generate custom report based on selected sections"""
@@ -157,11 +159,11 @@ class ReportsMixin:
 
             btns = ttk.Frame(win)
             btns.pack(fill=tk.X, padx=10, pady=(0, 10))
-            ttk.Button(btns, text="💾 Save as TXT",
+            ttk.Button(btns, text=_t('gui.learners.alumni.reports.buttons.save_as_txt', default="💾 Save as TXT"),
                        command=lambda: self._save_report_as_txt(out)).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(btns, text="✉ Email to Admin",
+            ttk.Button(btns, text=_t('gui.learners.alumni.reports.buttons.email_to_admin', default="✉ Email to Admin"),
                        command=lambda: self._email_report_to_admin(out)).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(btns, text="Close", command=win.destroy).pack(side=tk.RIGHT)
+            ttk.Button(btns, text=_t('gui.learners.alumni.reports.buttons.close', default="Close"), command=win.destroy).pack(side=tk.RIGHT)
 
             # Mirror into the inline panel too, if the reports view built one.
             try:
@@ -308,7 +310,7 @@ class ReportsMixin:
             widget = output_widget if output_widget is not None else self.report_output
             report_content = widget.get(1.0, tk.END).strip()
             if not report_content or report_content.startswith("Select a quick report"):
-                messagebox.showwarning("No Report", "Please generate a report first before saving.")
+                messagebox.showwarning(_t('gui.learners.alumni.reports.dialogs.no_report', default="No Report"), _t('gui.learners.alumni.reports.dialogs.please_generate_a_report_first_before_saving', default="Please generate a report first before saving."))
                 return
 
             file_path = filedialog.asksaveasfilename(
@@ -321,9 +323,9 @@ class ReportsMixin:
                 try:
                     with open(file_path, 'w', encoding='utf-8') as f:
                         f.write(report_content)
-                    messagebox.showinfo("Success", f"Report saved successfully to:\n{file_path}")
+                    messagebox.showinfo(_t('gui.learners.alumni.reports.dialogs.success', default="Success"), f"Report saved successfully to:\n{file_path}")
                 except (OSError, IOError) as e:
-                    messagebox.showerror("File Error", f"Failed to save report: {str(e)}")
+                    messagebox.showerror(_t('gui.learners.alumni.reports.dialogs.file_error', default="File Error"), f"Failed to save report: {str(e)}")
 
         def generate_alumni_summary(self):
             """Generate alumni summary report"""
@@ -408,7 +410,7 @@ class ReportsMixin:
             selected_sections = [key for key, var in self.report_sections.items() if var.get()]
 
             if not selected_sections:
-                messagebox.showwarning("No Sections Selected", "Please select at least one report section.")
+                messagebox.showwarning(_t('gui.learners.alumni.reports.dialogs.no_sections_selected', default="No Sections Selected"), _t('gui.learners.alumni.reports.dialogs.please_select_at_least_one_report_section', default="Please select at least one report section."))
                 return
 
             self.report_output.delete(1.0, tk.END)
@@ -986,7 +988,7 @@ class ReportsMixin:
             self.clear_content()
             self.update_status("System Analytics")
 
-            ttk.Label(self.content_frame, text="Alumni System Analytics",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.reports.labels.alumni_system_analytics', default="Alumni System Analytics"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Analytics tabs
@@ -995,7 +997,7 @@ class ReportsMixin:
 
             # Usage analytics tab
             usage_frame = ttk.Frame(notebook)
-            notebook.add(usage_frame, text="Usage Analytics")
+            notebook.add(usage_frame, text=_t('gui.learners.alumni.reports.tabs.usage_analytics', default="Usage Analytics"))
 
             usage_text = ScrolledText(usage_frame, wrap=tk.WORD)
             usage_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1074,7 +1076,7 @@ class ReportsMixin:
 
             # Performance analytics tab
             performance_frame = ttk.Frame(notebook)
-            notebook.add(performance_frame, text="Performance Metrics")
+            notebook.add(performance_frame, text=_t('gui.learners.alumni.reports.tabs.performance_metrics', default="Performance Metrics"))
 
             performance_text = ScrolledText(performance_frame, wrap=tk.WORD)
             performance_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1141,7 +1143,7 @@ class ReportsMixin:
             """Show report generation interface in a separate window"""
             # Create new Toplevel window for reports
             self.reports_window = tk.Toplevel(self.root)
-            self.reports_window.title("Alumni Reports & Analytics")
+            self.reports_window.title(_t('gui.learners.alumni.reports.windows.alumni_reports_analytics', default="Alumni Reports & Analytics"))
             self.reports_window.geometry("900x700")
             self.reports_window.transient(self.root)
 
@@ -1149,18 +1151,18 @@ class ReportsMixin:
             main_frame = ttk.Frame(self.reports_window, padding=10)
             main_frame.pack(fill=tk.BOTH, expand=True)
 
-            ttk.Label(main_frame, text="Alumni Reports & Analytics",
+            ttk.Label(main_frame, text=_t('gui.learners.alumni.reports.labels.alumni_reports_analytics', default="Alumni Reports & Analytics"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Report types frame
-            reports_frame = ttk.LabelFrame(main_frame, text="Available Reports", padding=10)
+            reports_frame = ttk.LabelFrame(main_frame, text=_t('gui.learners.alumni.reports.labels.available_reports', default="Available Reports"), padding=10)
             reports_frame.pack(fill=tk.X, pady=(0, 20))
 
             # Quick reports
             quick_frame = ttk.Frame(reports_frame)
             quick_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(quick_frame, text="Quick Reports:", font=('Arial', 10, 'bold')).pack(anchor='w')
+            ttk.Label(quick_frame, text=_t('gui.learners.alumni.reports.labels.quick_reports', default="Quick Reports:"), font=('Arial', 10, 'bold')).pack(anchor='w')
 
             quick_buttons = [
                 ("Alumni Summary Report", lambda: self._generate_report_in_window('summary')),
@@ -1174,7 +1176,7 @@ class ReportsMixin:
                 ttk.Button(btn_frame, text=text, command=command).pack(side=tk.LEFT, padx=(0, 10))
 
             # Custom report builder
-            custom_frame = ttk.LabelFrame(main_frame, text="Custom Report Builder", padding=10)
+            custom_frame = ttk.LabelFrame(main_frame, text=_t('gui.learners.alumni.reports.labels.custom_report_builder', default="Custom Report Builder"), padding=10)
             custom_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
             # Report parameters
@@ -1185,10 +1187,10 @@ class ReportsMixin:
             date_frame = ttk.Frame(params_frame)
             date_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(date_frame, text="Date Range:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(date_frame, text=_t('gui.learners.alumni.reports.labels.date_range', default="Date Range:")).pack(side=tk.LEFT, padx=(0, 10))
             self.report_start_date = tk.StringVar(value="2024-01-01")
             ttk.Entry(date_frame, textvariable=self.report_start_date, width=12).pack(side=tk.LEFT, padx=(0, 5))
-            ttk.Label(date_frame, text="to").pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Label(date_frame, text=_t('gui.learners.alumni.reports.labels.to', default="to")).pack(side=tk.LEFT, padx=(0, 5))
             self.report_end_date = tk.StringVar(value="2025-08-19")
             ttk.Entry(date_frame, textvariable=self.report_end_date, width=12).pack(side=tk.LEFT)
 
@@ -1196,7 +1198,7 @@ class ReportsMixin:
             sections_frame = ttk.Frame(params_frame)
             sections_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(sections_frame, text="Include Sections:").pack(anchor='w')
+            ttk.Label(sections_frame, text=_t('gui.learners.alumni.reports.labels.include_sections', default="Include Sections:")).pack(anchor='w')
 
             self.report_sections = {}
             sections = [
@@ -1217,11 +1219,11 @@ class ReportsMixin:
                                variable=self.report_sections[key]).grid(row=i//2, column=i%2, sticky='w', padx=(0, 20))
 
             # Generate button
-            ttk.Button(params_frame, text="Generate Custom Report",
+            ttk.Button(params_frame, text=_t('gui.learners.alumni.reports.buttons.generate_custom_report', default="Generate Custom Report"),
                       command=lambda: self._generate_report_in_window('custom')).pack(pady=10)
 
             # Report output area
-            output_frame = ttk.LabelFrame(custom_frame, text="Report Output", padding=10)
+            output_frame = ttk.LabelFrame(custom_frame, text=_t('gui.learners.alumni.reports.labels.report_output', default="Report Output"), padding=10)
             output_frame.pack(fill=tk.BOTH, expand=True)
 
             self.report_output = ScrolledText(output_frame, wrap=tk.WORD)
@@ -1235,10 +1237,10 @@ class ReportsMixin:
             action_frame = ttk.Frame(main_frame)
             action_frame.pack(fill=tk.X, pady=(10, 0))
 
-            ttk.Button(action_frame, text="Save Report as TXT",
+            ttk.Button(action_frame, text=_t('gui.learners.alumni.reports.buttons.save_report_as_txt', default="Save Report as TXT"),
                       command=self._save_report_as_txt).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(action_frame, text="Email Report to Admin",
+            ttk.Button(action_frame, text=_t('gui.learners.alumni.reports.buttons.email_report_to_admin', default="Email Report to Admin"),
                       command=self._email_report_to_admin).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(action_frame, text="Close",
+            ttk.Button(action_frame, text=_t('gui.learners.alumni.reports.buttons.close', default="Close"),
                       command=self.reports_window.destroy).pack(side=tk.RIGHT)
 

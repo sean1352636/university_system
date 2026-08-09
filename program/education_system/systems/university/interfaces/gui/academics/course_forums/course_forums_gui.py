@@ -4,6 +4,8 @@ Provides a forum interface for module discussions, including threaded posts,
 topic creation, replies, and likes. Organised by enrolled modules.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from datetime import datetime
@@ -30,7 +32,7 @@ class CourseForumsGUI:
         self.selected_post_id = None
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Module Discussion Forums")
+        self.window.title(_t('gui.academics.course_forums.course_forums.windows.module_discussion_forums', default="Module Discussion Forums"))
         self.window.geometry("1000x700")
         self.window.transient(parent)
 
@@ -83,7 +85,7 @@ class CourseForumsGUI:
         """Build the forum interface."""
         ttk.Label(
             self.window,
-            text="Module Discussion Forums",
+            text=_t('gui.academics.course_forums.course_forums.labels.module_discussion_forums', default="Module Discussion Forums"),
             font=('Arial', 16, 'bold'),
         ).pack(pady=(10, 5))
 
@@ -91,7 +93,7 @@ class CourseForumsGUI:
         top_frame = ttk.Frame(self.window)
         top_frame.pack(fill=tk.X, padx=15, pady=5)
 
-        ttk.Label(top_frame, text="Module:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(top_frame, text=_t('gui.academics.course_forums.course_forums.labels.module', default="Module:")).pack(side=tk.LEFT, padx=(0, 5))
         self.module_var = tk.StringVar()
         self.module_combo = ttk.Combobox(
             top_frame, textvariable=self.module_var, state='readonly', width=50
@@ -107,7 +109,7 @@ class CourseForumsGUI:
         middle_paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # -- Left: forum list --
-        forum_frame = ttk.LabelFrame(middle_paned, text="Forums")
+        forum_frame = ttk.LabelFrame(middle_paned, text=_t('gui.academics.course_forums.course_forums.labels.forums', default="Forums"))
         middle_paned.add(forum_frame, weight=1)
 
         forum_tree_frame = ttk.Frame(forum_frame)
@@ -117,9 +119,9 @@ class CourseForumsGUI:
         self.forum_tree = ttk.Treeview(
             forum_tree_frame, columns=cols, show='headings', selectmode='browse'
         )
-        self.forum_tree.heading('title', text='Title')
-        self.forum_tree.heading('posts_count', text='Posts')
-        self.forum_tree.heading('last_activity', text='Last Activity')
+        self.forum_tree.heading('title', text=_t('gui.academics.course_forums.course_forums.headings.title', default='Title'))
+        self.forum_tree.heading('posts_count', text=_t('gui.academics.course_forums.course_forums.headings.posts', default='Posts'))
+        self.forum_tree.heading('last_activity', text=_t('gui.academics.course_forums.course_forums.headings.last_activity', default='Last Activity'))
         self.forum_tree.column('title', width=200)
         self.forum_tree.column('posts_count', width=60, anchor=tk.CENTER)
         self.forum_tree.column('last_activity', width=140)
@@ -136,7 +138,7 @@ class CourseForumsGUI:
         self._forum_map = {}
 
         # -- Right: posts view --
-        posts_frame = ttk.LabelFrame(middle_paned, text="Posts")
+        posts_frame = ttk.LabelFrame(middle_paned, text=_t('gui.academics.course_forums.course_forums.labels.posts', default="Posts"))
         middle_paned.add(posts_frame, weight=2)
 
         posts_container = ttk.Frame(posts_frame)
@@ -173,16 +175,16 @@ class CourseForumsGUI:
         btn_frame.pack(fill=tk.X, padx=15, pady=(5, 10))
 
         ttk.Button(
-            btn_frame, text="New Topic", command=self._new_topic
+            btn_frame, text=_t('gui.academics.course_forums.course_forums.buttons.new_topic', default="New Topic"), command=self._new_topic
         ).pack(side=tk.LEFT, padx=5)
         ttk.Button(
-            btn_frame, text="Reply", command=self._reply_to_post
+            btn_frame, text=_t('gui.academics.course_forums.course_forums.buttons.reply', default="Reply"), command=self._reply_to_post
         ).pack(side=tk.LEFT, padx=5)
         ttk.Button(
-            btn_frame, text="Like", command=self._like_post
+            btn_frame, text=_t('gui.academics.course_forums.course_forums.buttons.like', default="Like"), command=self._like_post
         ).pack(side=tk.LEFT, padx=5)
         ttk.Button(
-            btn_frame, text="Refresh", command=self._refresh_current
+            btn_frame, text=_t('gui.academics.course_forums.course_forums.buttons.refresh', default="Refresh"), command=self._refresh_current
         ).pack(side=tk.RIGHT, padx=5)
 
     # ------------------------------------------------------------------
@@ -385,21 +387,21 @@ class CourseForumsGUI:
         """Create a new forum topic for the selected module."""
         if not self.selected_lms_course_id:
             messagebox.showwarning(
-                "No Module", "Please select a module first.", parent=self.window
+                _t('gui.academics.course_forums.course_forums.dialogs.no_module', default="No Module"), _t('gui.academics.course_forums.course_forums.dialogs.please_select_a_module_first', default="Please select a module first."), parent=self.window
             )
             return
 
         dialog = tk.Toplevel(self.window)
-        dialog.title("New Forum Topic")
+        dialog.title(_t('gui.academics.course_forums.course_forums.windows.new_forum_topic', default="New Forum Topic"))
         dialog.geometry("400x250")
         dialog.transient(self.window)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Title:").pack(anchor=tk.W, padx=10, pady=(10, 2))
+        ttk.Label(dialog, text=_t('gui.academics.course_forums.course_forums.labels.title', default="Title:")).pack(anchor=tk.W, padx=10, pady=(10, 2))
         title_entry = ttk.Entry(dialog, width=50)
         title_entry.pack(padx=10, pady=(0, 5))
 
-        ttk.Label(dialog, text="Description:").pack(anchor=tk.W, padx=10, pady=(5, 2))
+        ttk.Label(dialog, text=_t('gui.academics.course_forums.course_forums.labels.description', default="Description:")).pack(anchor=tk.W, padx=10, pady=(5, 2))
         desc_text = tk.Text(dialog, height=5, width=50)
         desc_text.pack(padx=10, pady=(0, 10))
 
@@ -408,7 +410,7 @@ class CourseForumsGUI:
             description = desc_text.get('1.0', tk.END).strip()
             if not title:
                 messagebox.showwarning(
-                    "Missing Title", "Please enter a topic title.", parent=dialog
+                    _t('gui.academics.course_forums.course_forums.dialogs.missing_title', default="Missing Title"), _t('gui.academics.course_forums.course_forums.dialogs.please_enter_a_topic_title', default="Please enter a topic title."), parent=dialog
                 )
                 return
             try:
@@ -433,16 +435,16 @@ class CourseForumsGUI:
             except Exception as exc:
                 logger.error("Failed to create topic: %s", exc)
                 messagebox.showerror(
-                    "Error", f"Failed to create topic: {exc}", parent=dialog
+                    _t('gui.academics.course_forums.course_forums.dialogs.error', default="Error"), f"Failed to create topic: {exc}", parent=dialog
                 )
 
-        ttk.Button(dialog, text="Create Topic", command=_create).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.academics.course_forums.course_forums.buttons.create_topic', default="Create Topic"), command=_create).pack(pady=10)
 
     def _reply_to_post(self):
         """Reply to the selected post or create a root post in the selected forum."""
         if self.selected_forum_id is None:
             messagebox.showwarning(
-                "No Forum", "Please select a forum first.", parent=self.window
+                _t('gui.academics.course_forums.course_forums.dialogs.no_forum', default="No Forum"), _t('gui.academics.course_forums.course_forums.dialogs.please_select_a_forum_first', default="Please select a forum first."), parent=self.window
             )
             return
 
@@ -454,7 +456,7 @@ class CourseForumsGUI:
         dialog.transient(self.window)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Your reply:").pack(anchor=tk.W, padx=10, pady=(10, 2))
+        ttk.Label(dialog, text=_t('gui.academics.course_forums.course_forums.labels.your_reply', default="Your reply:")).pack(anchor=tk.W, padx=10, pady=(10, 2))
         reply_text = tk.Text(dialog, height=5, width=50)
         reply_text.pack(padx=10, pady=(0, 10))
 
@@ -462,7 +464,7 @@ class CourseForumsGUI:
             content = reply_text.get('1.0', tk.END).strip()
             if not content:
                 messagebox.showwarning(
-                    "Empty Reply", "Please enter your reply.", parent=dialog
+                    _t('gui.academics.course_forums.course_forums.dialogs.empty_reply', default="Empty Reply"), _t('gui.academics.course_forums.course_forums.dialogs.please_enter_your_reply', default="Please enter your reply."), parent=dialog
                 )
                 return
             try:
@@ -488,17 +490,17 @@ class CourseForumsGUI:
             except Exception as exc:
                 logger.error("Failed to create reply: %s", exc)
                 messagebox.showerror(
-                    "Error", f"Failed to create reply: {exc}", parent=dialog
+                    _t('gui.academics.course_forums.course_forums.dialogs.error', default="Error"), f"Failed to create reply: {exc}", parent=dialog
                 )
 
-        ttk.Button(dialog, text="Submit", command=_submit).pack(pady=5)
+        ttk.Button(dialog, text=_t('gui.academics.course_forums.course_forums.buttons.submit', default="Submit"), command=_submit).pack(pady=5)
 
     def _like_post(self):
         """Increment like count on the selected post."""
         if self.selected_post_id is None:
             messagebox.showwarning(
-                "No Post Selected",
-                "Please click on a post to select it before liking.",
+                _t('gui.academics.course_forums.course_forums.dialogs.no_post_selected', default="No Post Selected"),
+                _t('gui.academics.course_forums.course_forums.dialogs.please_click_on_a_post_to_select_it_before_liking', default="Please click on a post to select it before liking."),
                 parent=self.window,
             )
             return
@@ -516,7 +518,7 @@ class CourseForumsGUI:
         except Exception as exc:
             logger.error("Failed to like post: %s", exc)
             messagebox.showerror(
-                "Error", f"Failed to like post: {exc}", parent=self.window
+                _t('gui.academics.course_forums.course_forums.dialogs.error', default="Error"), f"Failed to like post: {exc}", parent=self.window
             )
 
     def _refresh_current(self):

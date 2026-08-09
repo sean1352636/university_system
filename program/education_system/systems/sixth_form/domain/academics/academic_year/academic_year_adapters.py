@@ -36,11 +36,31 @@ logger = logging.getLogger(__name__)
 # 17 — Attendance
 def attendance_denominator(year_id: int, *,
                               date_from: str | None = None,
-                              date_to: str | None = None) -> int:
-    """Number of teaching days in the window — the denominator the
-    attendance module should divide present-days by."""
-    return data.teaching_days_in(year_id,
-                                    date_from=date_from, date_to=date_to)
+                              date_to: str | None = None,
+                              group_label: str | None = None) -> float:
+    """Teaching days in the window — the denominator the attendance
+    module should divide present-days by.
+
+    Counts half days as 0.5 and excludes non-teaching terms (study
+    leave), so a Y13 denominator doesn't include weeks they were
+    never expected in. Pass ``group_label`` for a single year group.
+    """
+    return data.teaching_days_in(
+        year_id, date_from=date_from, date_to=date_to,
+        group_label=group_label, half_days=True)
+
+
+def attendance_denominator_sessions(
+    year_id: int, *,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    group_label: str | None = None,
+) -> int:
+    """The same window in AM/PM registers — the unit a statutory
+    attendance return is filed in."""
+    return data.teaching_sessions_in(
+        year_id, date_from=date_from, date_to=date_to,
+        group_label=group_label)
 
 
 # 18 — Timetable

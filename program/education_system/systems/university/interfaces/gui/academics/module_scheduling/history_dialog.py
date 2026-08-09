@@ -6,15 +6,17 @@ delete_module_schedule) so opening this against any row created or modified
 through the GUI gives a complete audit trail of who changed what.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import tkinter as tk
 from tkinter import ttk
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)
 
 
@@ -65,7 +67,7 @@ class ScheduleHistoryDialog:
         header.pack(fill=tk.X)
         ttk.Label(header, text=f"Change history for schedule #{self.schedule_id}",
                   font=("Arial", 12, "bold")).pack(side=tk.LEFT)
-        ttk.Button(header, text="Refresh", command=self._load).pack(side=tk.RIGHT)
+        ttk.Button(header, text=_t('gui.academics.module_scheduling.history_dialog.buttons.refresh', default="Refresh"), command=self._load).pack(side=tk.RIGHT)
 
         body = ttk.Frame(self.dialog, padding=(10, 0))
         body.pack(fill=tk.BOTH, expand=True)
@@ -84,7 +86,7 @@ class ScheduleHistoryDialog:
         self.tree.bind("<<TreeviewSelect>>", lambda _e: self._render_diff())
 
         # Detail pane underneath
-        detail_frame = ttk.LabelFrame(self.dialog, text="Diff", padding=10)
+        detail_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.module_scheduling.history_dialog.labels.diff', default="Diff"), padding=10)
         detail_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(8, 10))
         self.detail = tk.Text(detail_frame, wrap=tk.WORD, height=8,
                               font=("Courier", 9))
@@ -94,7 +96,7 @@ class ScheduleHistoryDialog:
         self.status_var = tk.StringVar(value="")
         ttk.Label(self.dialog, textvariable=self.status_var,
                   anchor=tk.W, padding=(10, 5)).pack(fill=tk.X)
-        ttk.Button(self.dialog, text="Close",
+        ttk.Button(self.dialog, text=_t('gui.academics.module_scheduling.history_dialog.buttons.close', default="Close"),
                    command=self.dialog.destroy).pack(pady=8)
 
     def _load(self):

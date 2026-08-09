@@ -1,5 +1,7 @@
 """Payment analytics and email reminder functionality"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.finance.finance.transaction_manager._imports import (
     tk, ttk, messagebox, simpledialog, _, datetime, get_connection, get_auth,
 )
@@ -22,7 +24,7 @@ class AnalyticsEmailMixin:
     def send_payment_email_reminders(self):
         """Send email reminders for payments and financial matters"""
         if not hasattr(self.root, 'tk'):
-            messagebox.showinfo(_("finance_gui.messages.success"), "Payment reminder workflow initialized.")
+            messagebox.showinfo(_("finance_gui.messages.success"), _t('gui.finance.finance.transaction_manager.analytics_email.dialogs.payment_reminder_workflow_initialized', default="Payment reminder workflow initialized."))
             return
 
         # Create email reminder dialog
@@ -62,7 +64,7 @@ class AnalyticsEmailMixin:
         type_frame = ttk.LabelFrame(scrollable_frame, text=_("finance_gui.transaction_manager.email_type_frame"), padding=10)
         type_frame.pack(fill='x', padx=10, pady=10)
 
-        email_type_var = tk.StringVar(value="overdue_payment")
+        email_type_var = tk.StringVar(value=_t('gui.finance.finance.transaction_manager.analytics_email.values.overdue_payment', default="overdue_payment"))
         email_types = [
             ("overdue_payment", _("finance_gui.transaction_manager.email_type_overdue")),
             ("upcoming_payment", _("finance_gui.transaction_manager.email_type_upcoming")),
@@ -81,7 +83,7 @@ class AnalyticsEmailMixin:
         recipient_frame = ttk.LabelFrame(scrollable_frame, text=_("finance_gui.transaction_manager.recipients_frame"), padding=10)
         recipient_frame.pack(fill='x', padx=10, pady=10)
 
-        recipient_var = tk.StringVar(value="overdue_students")
+        recipient_var = tk.StringVar(value=_t('gui.finance.finance.transaction_manager.analytics_email.values.overdue_students', default="overdue_students"))
         recipient_options = [
             ("overdue_students", _("finance_gui.transaction_manager.recipient_overdue")),
             ("upcoming_due", _("finance_gui.transaction_manager.recipient_upcoming")),

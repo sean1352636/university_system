@@ -2,13 +2,13 @@
 
 Covers suggestion items 25-31:
 
-* GET  /api/sixthform/academic-year/current
-* GET  /api/sixthform/academic-year/<id>/summary
-* GET  /api/sixthform/academic-year/lookup?date=YYYY-MM-DD&year_id=N
-* POST /api/sixthform/academic-year/import       (JSON body)
-* POST /api/sixthform/academic-year/webhooks/subscribe
-* GET  /api/sixthform/academic-year/<id>/calendar.ics
-* GET  /api/sixthform/academic-year/                     (list)
+* GET  /api/v1/sixthform/academic-year/current
+* GET  /api/v1/sixthform/academic-year/<id>/summary
+* GET  /api/v1/sixthform/academic-year/lookup?date=YYYY-MM-DD&year_id=N
+* POST /api/v1/sixthform/academic-year/import       (JSON body)
+* POST /api/v1/sixthform/academic-year/webhooks/subscribe
+* GET  /api/v1/sixthform/academic-year/<id>/calendar.ics
+* GET  /api/v1/sixthform/academic-year/                     (list)
 
 All read endpoints emit an ETag derived from row counts + latest
 ``updated_at`` so clients can cache cheaply. Year data changes rarely
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 
 academic_year_bp = Blueprint(
     "sf_academic_year", __name__,
-    url_prefix="/api/sixthform/academic-year")
+    url_prefix="/api/academic-year")
 
 
 # ── Optional auth shim ────────────────────────────────────────────

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.health.storage import get_connection
 from education_system.systems.university.infrastructure.database.data_backup import backup_before_operation
 from education_system.systems.university.domain.pastoral.health.services.audit import log_audit_event
 from education_system.systems.university.domain.pastoral.health.services.contacts import get_user_student_id

@@ -54,6 +54,128 @@ def init_admissions_crm_system_db():
         )
         ''')
 
+        # End-to-end admissions lifecycle.  These tables deliberately sit
+        # beside the long-standing CRM tables: prospects/applicants remain
+        # separate from enrolled students and an application may contain
+        # several ranked course choices.
+        for column, definition in (
+            ("journey_id", "TEXT"),
+            ("external_reference", "TEXT"),
+            ("accepted_choice_id", "INTEGER"),
+            ("converted_student_id", "TEXT"),
+            ("lifecycle_updated_at", "TEXT"),
+        ):
+            columns = {
+                row[1] for row in cursor.execute(
+                    "PRAGMA table_info(admission_applications)"
+                ).fetchall()
+            }
+            if column not in columns:
+                cursor.execute(
+                    f"ALTER TABLE admission_applications "
+                    f"ADD COLUMN {column} {definition}"
+                )
+
+        cursor.execute('''
+        CREATE UNIQUE INDEX IF NOT EXISTS
+            idx_admission_applications_journey_external
+        ON admission_applications(journey_id, external_reference)
+        WHERE journey_id IS NOT NULL AND external_reference IS NOT NULL
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admission_application_choices (
+            choice_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            application_id INTEGER NOT NULL,
+            programme_code TEXT NOT NULL,
+            programme_name TEXT,
+            entry_year TEXT,
+            rank INTEGER NOT NULL DEFAULT 1,
+            choice_status TEXT NOT NULL DEFAULT 'active',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(application_id, programme_code),
+            FOREIGN KEY (application_id)
+                REFERENCES admission_applications(application_id)
+                ON DELETE CASCADE
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admission_requirements (
+            requirement_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            application_id INTEGER NOT NULL,
+            requirement_type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            required INTEGER NOT NULL DEFAULT 1,
+            status TEXT NOT NULL DEFAULT 'outstanding',
+            evidence_document_id INTEGER,
+            due_date TEXT,
+            verified_by TEXT,
+            verified_at TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(application_id, requirement_type, description),
+            FOREIGN KEY (application_id)
+                REFERENCES admission_applications(application_id)
+                ON DELETE CASCADE
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admission_interviews (
+            interview_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            application_id INTEGER NOT NULL,
+            activity_type TEXT NOT NULL DEFAULT 'interview',
+            scheduled_at TEXT NOT NULL,
+            format TEXT,
+            location TEXT,
+            panel TEXT,
+            status TEXT NOT NULL DEFAULT 'scheduled',
+            outcome TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (application_id)
+                REFERENCES admission_applications(application_id)
+                ON DELETE CASCADE
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admission_conditions (
+            condition_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            application_id INTEGER NOT NULL,
+            condition_type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            amount REAL,
+            currency TEXT,
+            sponsor_name TEXT,
+            due_date TEXT,
+            status TEXT NOT NULL DEFAULT 'outstanding',
+            satisfied_at TEXT,
+            evidence_reference TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(application_id, condition_type, description),
+            FOREIGN KEY (application_id)
+                REFERENCES admission_applications(application_id)
+                ON DELETE CASCADE
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS admission_status_history (
+            history_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            application_id INTEGER NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            reason TEXT,
+            actor_id TEXT,
+            changed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (application_id)
+                REFERENCES admission_applications(application_id)
+                ON DELETE CASCADE
+        )
+        ''')
+
         # application_documents merged into unified documents table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS documents (
@@ -211,5 +333,4 @@ def init_admissions_crm_system_db():
 # ============================================================================
 # PREDICTIVE ANALYTICS DASHBOARD SCHEMAS
 # ============================================================================
-
 

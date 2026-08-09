@@ -1,5 +1,7 @@
 """Extension request management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -12,7 +14,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from collections import deque
 
@@ -114,7 +116,7 @@ class ExtensionManager:
 
         # Status filter
         ttk.Label(filter_frame, text=_("extension.status")).grid(row=0, column=0, sticky='w', padx=5)
-        self.ext_status_filter_var = tk.StringVar(value="pending")
+        self.ext_status_filter_var = tk.StringVar(value=_t('gui.academics.assignment_system.extension_manager.values.pending', default="pending"))
         status_combo = ttk.Combobox(filter_frame, textvariable=self.ext_status_filter_var,
                                    values=["All", "pending", "approved", "denied"], width=15)
         status_combo.grid(row=0, column=1, padx=5)
@@ -147,7 +149,7 @@ class ExtensionManager:
         self.extensions_tree.bind('<<TreeviewSelect>>', self.on_extension_select)
 
         # Details frame
-        self.extension_details_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Request Details", padding=10)
+        self.extension_details_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.extension_manager.labels.request_details', default="Request Details"), padding=10)
         self.extension_details_frame.pack(fill='x', pady=(10, 0))
 
         # Load extension requests
@@ -216,7 +218,7 @@ class ExtensionManager:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load extension requests: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.extension_manager.dialogs.error', default="Error"), f"Failed to load extension requests: {e}")
 
 
     def on_extension_select(self, event):
@@ -260,7 +262,7 @@ class ExtensionManager:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load extension details: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.extension_manager.dialogs.error', default="Error"), f"Failed to load extension details: {e}")
 
     def process_extension_decision(self, request_id, decision):
         """Process extension request decision"""
@@ -270,7 +272,7 @@ class ExtensionManager:
                 comments = self.review_comments_text.get(1.0, tk.END).strip()
 
             if not comments and decision == 'denied':
-                if not messagebox.askyesno("No Comments", "Are you sure you want to deny without comments?"):
+                if not messagebox.askyesno(_t('gui.academics.assignment_system.extension_manager.dialogs.no_comments', default="No Comments"), _t('gui.academics.assignment_system.extension_manager.dialogs.are_you_sure_you_want_to_deny_without_comments', default="Are you sure you want to deny without comments?")):
                     return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -332,7 +334,7 @@ class ExtensionManager:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Extension request {decision}!")
+            messagebox.showinfo(_t('gui.academics.assignment_system.extension_manager.dialogs.success', default="Success"), f"Extension request {decision}!")
 
             # Refresh the list
             self.load_extension_requests()
@@ -342,7 +344,7 @@ class ExtensionManager:
                 widget.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to process decision: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.extension_manager.dialogs.error', default="Error"), f"Failed to process decision: {e}")
 
     # MESSAGING SYSTEM (missing from GUI)
 
@@ -350,15 +352,15 @@ class ExtensionManager:
         """Show extension request form"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Request Extension", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.extension_manager.labels.request_extension', default="Request Extension"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Extension request form
-        form_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Extension Request", padding=20)
+        form_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.extension_manager.labels.extension_request', default="Extension Request"), padding=20)
         form_frame.pack(fill='x', pady=(0, 20))
 
         # Assignment selection
-        ttk.Label(form_frame, text="Assignment:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.extension_manager.labels.assignment', default="Assignment:")).grid(row=0, column=0, sticky='w', pady=5)
         self.ext_assignment_var = tk.StringVar()
         ext_combo = ttk.Combobox(form_frame, textvariable=self.ext_assignment_var, width=50)
         ext_combo.grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
@@ -367,19 +369,19 @@ class ExtensionManager:
         self.load_extension_assignments(ext_combo)
 
         # New due date
-        ttk.Label(form_frame, text="Requested Due Date:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.extension_manager.labels.requested_due_date', default="Requested Due Date:")).grid(row=1, column=0, sticky='w', pady=5)
         self.ext_date_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.ext_date_var, width=20).grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Reason
-        ttk.Label(form_frame, text="Reason:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.extension_manager.labels.reason', default="Reason:")).grid(row=2, column=0, sticky='nw', pady=5)
         self.ext_reason_text = scrolledtext.ScrolledText(form_frame, height=6, width=50)
         self.ext_reason_text.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         form_frame.grid_columnconfigure(1, weight=1)
 
         # Submit button
-        submit_btn = ttk.Button(form_frame, text="Submit Request", command=self.submit_extension_request)
+        submit_btn = ttk.Button(form_frame, text=_t('gui.academics.assignment_system.extension_manager.buttons.submit_request', default="Submit Request"), command=self.submit_extension_request)
         submit_btn.grid(row=3, column=1, sticky='e', pady=(20, 0))
 
         # Status frame
@@ -479,7 +481,7 @@ class ExtensionManager:
         try:
             student_id = self._get_student_id_safe()
             if not student_id:
-                messagebox.showerror("Error", "Could not identify student")
+                messagebox.showerror(_t('gui.academics.assignment_system.extension_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.extension_manager.dialogs.could_not_identify_student', default="Could not identify student"))
                 return False
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -557,6 +559,6 @@ class ExtensionManager:
         try:
             callback()
         except Exception as e:
-            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.extension_manager.dialogs.error', default="Error"), f"Error launching {feature_name}: {str(e)}")
 
 

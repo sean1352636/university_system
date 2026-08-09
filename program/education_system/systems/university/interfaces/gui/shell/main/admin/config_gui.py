@@ -44,32 +44,32 @@ def edit_system_settings(self):
         scrollbar.pack(side="right", fill="y")
 
         # ── Session & Security ─────────────────────────────────────
-        sec_frame = ttk.LabelFrame(inner, text="Session & Security", padding=10)
+        sec_frame = ttk.LabelFrame(inner, text=_t('gui.shell.main.admin.config.labels.session_security', default="Session & Security"), padding=10)
         sec_frame.pack(fill="x", padx=5, pady=5)
 
-        ttk.Label(sec_frame, text="Session Timeout (minutes):").grid(row=0, column=0, sticky="w", pady=3)
+        ttk.Label(sec_frame, text=_t('gui.shell.main.admin.config.labels.session_timeout_minutes', default="Session Timeout (minutes):")).grid(row=0, column=0, sticky="w", pady=3)
         timeout_var = tk.StringVar(value=str(shared_auth.get_setting("session_timeout", "30")))
         ttk.Spinbox(sec_frame, from_=5, to=480, textvariable=timeout_var, width=8).grid(row=0, column=1, sticky="w", padx=10)
 
-        ttk.Label(sec_frame, text="Max Login Attempts:").grid(row=1, column=0, sticky="w", pady=3)
+        ttk.Label(sec_frame, text=_t('gui.shell.main.admin.config.labels.max_login_attempts', default="Max Login Attempts:")).grid(row=1, column=0, sticky="w", pady=3)
         attempts_var = tk.StringVar(value=str(shared_auth.get_setting("max_login_attempts", "5")))
         ttk.Spinbox(sec_frame, from_=3, to=20, textvariable=attempts_var, width=8).grid(row=1, column=1, sticky="w", padx=10)
 
-        ttk.Label(sec_frame, text="Password Expiry (days):").grid(row=2, column=0, sticky="w", pady=3)
+        ttk.Label(sec_frame, text=_t('gui.shell.main.admin.config.labels.password_expiry_days', default="Password Expiry (days):")).grid(row=2, column=0, sticky="w", pady=3)
         expiry_var = tk.StringVar(value=str(shared_auth.get_setting("password_expiry_days", "90")))
         ttk.Spinbox(sec_frame, from_=30, to=365, textvariable=expiry_var, width=8).grid(row=2, column=1, sticky="w", padx=10)
 
         # ── Application ────────────────────────────────────────────
-        app_frame = ttk.LabelFrame(inner, text="Application", padding=10)
+        app_frame = ttk.LabelFrame(inner, text=_t('gui.shell.main.admin.config.labels.application', default="Application"), padding=10)
         app_frame.pack(fill="x", padx=5, pady=5)
 
         debug_var = tk.BooleanVar(value=shared_auth.get_setting("debug_mode", False))
-        ttk.Checkbutton(app_frame, text="Debug Mode", variable=debug_var).pack(anchor="w")
+        ttk.Checkbutton(app_frame, text=_t('gui.shell.main.admin.config.buttons.debug_mode', default="Debug Mode"), variable=debug_var).pack(anchor="w")
 
         auto_save_var = tk.BooleanVar(value=shared_auth.get_setting("auto_save", True))
-        ttk.Checkbutton(app_frame, text="Auto-Save Enabled", variable=auto_save_var).pack(anchor="w")
+        ttk.Checkbutton(app_frame, text=_t('gui.shell.main.admin.config.buttons.auto_save_enabled', default="Auto-Save Enabled"), variable=auto_save_var).pack(anchor="w")
 
-        ttk.Label(app_frame, text="Log Level:").pack(anchor="w", pady=(8, 0))
+        ttk.Label(app_frame, text=_t('gui.shell.main.admin.config.labels.log_level', default="Log Level:")).pack(anchor="w", pady=(8, 0))
         log_level_var = tk.StringVar(value=str(shared_auth.get_setting("log_level", "INFO")))
         ttk.Combobox(app_frame, textvariable=log_level_var,
                      values=["DEBUG", "INFO", "WARNING", "ERROR"], state="readonly",
@@ -86,11 +86,11 @@ def edit_system_settings(self):
             shared_auth.set_setting("debug_mode", debug_var.get())
             shared_auth.set_setting("auto_save", auto_save_var.get())
             shared_auth.set_setting("log_level", log_level_var.get())
-            messagebox.showinfo("Settings Saved", "System settings updated successfully.",
+            messagebox.showinfo(_t('gui.shell.main.admin.config.dialogs.settings_saved', default="Settings Saved"), _t('gui.shell.main.admin.config.dialogs.system_settings_updated_successfully', default="System settings updated successfully."),
                                 parent=settings_window)
 
-        ttk.Button(btn_frame, text="Save Settings", command=_save_settings).pack(side="right", padx=5)
-        ttk.Button(btn_frame, text="Close", command=settings_window.destroy).pack(side="right")
+        ttk.Button(btn_frame, text=_t('gui.shell.main.admin.config.buttons.save_settings', default="Save Settings"), command=_save_settings).pack(side="right", padx=5)
+        ttk.Button(btn_frame, text=_t('gui.shell.main.admin.config.buttons.close', default="Close"), command=settings_window.destroy).pack(side="right")
 
     except Exception as e:
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_edit_settings", error=str(e)))
@@ -98,7 +98,7 @@ def edit_system_settings(self):
 def configure_email(self):
     """Configure email SMTP settings with functional controls"""
     try:
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         import os
 
         email_window = tk.Toplevel(self.root)
@@ -109,7 +109,7 @@ def configure_email(self):
         ttk.Label(email_window, text=_t("config_gui.email.header"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
-        env_path = paths.PROJECT_ROOT / '.env'
+        env_path = paths.UNIVERSITY_PROJECT_ROOT / '.env'
         env_vars = {}
         if env_path.exists():
             for line in env_path.read_text().splitlines():
@@ -119,7 +119,7 @@ def configure_email(self):
                     env_vars[k.strip()] = v.strip()
 
         # ── SMTP Settings ──────────────────────────────────────────
-        smtp_frame = ttk.LabelFrame(email_window, text="SMTP Configuration", padding=12)
+        smtp_frame = ttk.LabelFrame(email_window, text=_t('gui.shell.main.admin.config.labels.smtp_configuration', default="SMTP Configuration"), padding=12)
         smtp_frame.pack(fill="x", padx=15, pady=(0, 10))
 
         labels = ["SMTP Host:", "SMTP Port:", "SMTP User:", "SMTP Password:"]
@@ -137,11 +137,11 @@ def configure_email(self):
         smtp_frame.columnconfigure(1, weight=1)
 
         # ── Features ───────────────────────────────────────────────
-        feat_frame = ttk.LabelFrame(email_window, text="Features", padding=12)
+        feat_frame = ttk.LabelFrame(email_window, text=_t('gui.shell.main.admin.config.labels.features', default="Features"), padding=12)
         feat_frame.pack(fill="x", padx=15, pady=(0, 10))
 
-        ttk.Label(feat_frame, text="Async email queue, template support, bulk sending,\n"
-                  "and email logging are built-in and always active.",
+        ttk.Label(feat_frame, text=_t('gui.shell.main.admin.config.labels.async_email_queue_template_support_bulk_sending_and_email_loggin', default="Async email queue, template support, bulk sending,\n"
+                  "and email logging are built-in and always active."),
                   font=('Arial', 9), foreground="#555").pack(anchor="w")
 
         # ── Status ─────────────────────────────────────────────────
@@ -184,11 +184,11 @@ def configure_email(self):
                     new_lines.append(f"{key}={var.get()}")
 
             env_path.write_text("\n".join(new_lines) + "\n")
-            messagebox.showinfo("Email Settings", "SMTP settings saved to .env",
+            messagebox.showinfo(_t('gui.shell.main.admin.config.dialogs.email_settings', default="Email Settings"), _t('gui.shell.main.admin.config.dialogs.smtp_settings_saved_to_env', default="SMTP settings saved to .env"),
                                 parent=email_window)
 
-        ttk.Button(btn_frame, text="Save to .env", command=_save_email).pack(side="right", padx=5)
-        ttk.Button(btn_frame, text="Close", command=email_window.destroy).pack(side="right")
+        ttk.Button(btn_frame, text=_t('gui.shell.main.admin.config.buttons.save_to_env', default="Save to .env"), command=_save_email).pack(side="right", padx=5)
+        ttk.Button(btn_frame, text=_t('gui.shell.main.admin.config.buttons.close', default="Close"), command=email_window.destroy).pack(side="right")
 
     except Exception as e:
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_configure_email", error=str(e)))
@@ -196,7 +196,7 @@ def configure_email(self):
 def configure_backup(self):
     """Configure backup settings with functional controls"""
     try:
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         from education_system.platform.identity.auth.core import UserAuth as _SharedAuth
         shared_auth = _SharedAuth()
 
@@ -209,40 +209,40 @@ def configure_backup(self):
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # ── Backup Location ────────────────────────────────────────
-        loc_frame = ttk.LabelFrame(backup_window, text="Backup Location", padding=10)
+        loc_frame = ttk.LabelFrame(backup_window, text=_t('gui.shell.main.admin.config.labels.backup_location', default="Backup Location"), padding=10)
         loc_frame.pack(fill="x", padx=15, pady=(0, 8))
-        ttk.Label(loc_frame, text=str(paths.BACKUP_DIR), font=('Arial', 9)).pack(anchor="w")
+        ttk.Label(loc_frame, text=str(paths.UNIVERSITY_BACKUP_DIR), font=('Arial', 9)).pack(anchor="w")
 
         # ── Schedule ───────────────────────────────────────────────
-        sched_frame = ttk.LabelFrame(backup_window, text="Schedule", padding=10)
+        sched_frame = ttk.LabelFrame(backup_window, text=_t('gui.shell.main.admin.config.labels.schedule', default="Schedule"), padding=10)
         sched_frame.pack(fill="x", padx=15, pady=(0, 8))
 
         auto_var = tk.BooleanVar(value=shared_auth.get_setting("backup_auto", True))
-        ttk.Checkbutton(sched_frame, text="Auto-Backup Enabled", variable=auto_var).grid(
+        ttk.Checkbutton(sched_frame, text=_t('gui.shell.main.admin.config.buttons.auto_backup_enabled', default="Auto-Backup Enabled"), variable=auto_var).grid(
             row=0, column=0, columnspan=2, sticky="w", pady=3)
 
-        ttk.Label(sched_frame, text="Frequency:").grid(row=1, column=0, sticky="w", pady=3)
+        ttk.Label(sched_frame, text=_t('gui.shell.main.admin.config.labels.frequency', default="Frequency:")).grid(row=1, column=0, sticky="w", pady=3)
         freq_var = tk.StringVar(value=str(shared_auth.get_setting("backup_frequency", "Daily")))
         ttk.Combobox(sched_frame, textvariable=freq_var,
                      values=["Hourly", "Daily", "Weekly", "Monthly"],
                      state="readonly", width=12).grid(row=1, column=1, sticky="w", padx=10)
 
-        ttk.Label(sched_frame, text="Retention (days):").grid(row=2, column=0, sticky="w", pady=3)
+        ttk.Label(sched_frame, text=_t('gui.shell.main.admin.config.labels.retention_days', default="Retention (days):")).grid(row=2, column=0, sticky="w", pady=3)
         retention_var = tk.StringVar(value=str(shared_auth.get_setting("backup_retention_days", "30")))
         ttk.Spinbox(sched_frame, from_=7, to=365, textvariable=retention_var, width=8).grid(
             row=2, column=1, sticky="w", padx=10)
 
         # ── Options ────────────────────────────────────────────────
-        opt_frame = ttk.LabelFrame(backup_window, text="Options", padding=10)
+        opt_frame = ttk.LabelFrame(backup_window, text=_t('gui.shell.main.admin.config.labels.options', default="Options"), padding=10)
         opt_frame.pack(fill="x", padx=15, pady=(0, 8))
 
         compress_var = tk.BooleanVar(value=shared_auth.get_setting("backup_compression", True))
-        ttk.Checkbutton(opt_frame, text="Enable Compression (GZIP)", variable=compress_var).pack(anchor="w")
+        ttk.Checkbutton(opt_frame, text=_t('gui.shell.main.admin.config.buttons.enable_compression_gzip', default="Enable Compression (GZIP)"), variable=compress_var).pack(anchor="w")
 
         encrypt_var = tk.BooleanVar(value=shared_auth.get_setting("backup_encryption", False))
-        ttk.Checkbutton(opt_frame, text="Enable Encryption (AES)", variable=encrypt_var).pack(anchor="w")
+        ttk.Checkbutton(opt_frame, text=_t('gui.shell.main.admin.config.buttons.enable_encryption_aes', default="Enable Encryption (AES)"), variable=encrypt_var).pack(anchor="w")
 
-        ttk.Label(opt_frame, text="Backup Type:").pack(anchor="w", pady=(8, 0))
+        ttk.Label(opt_frame, text=_t('gui.shell.main.admin.config.labels.backup_type', default="Backup Type:")).pack(anchor="w", pady=(8, 0))
         type_var = tk.StringVar(value=str(shared_auth.get_setting("backup_type", "Full")))
         ttk.Combobox(opt_frame, textvariable=type_var,
                      values=["Full", "Incremental", "Differential"],
@@ -259,11 +259,11 @@ def configure_backup(self):
             shared_auth.set_setting("backup_compression", compress_var.get())
             shared_auth.set_setting("backup_encryption", encrypt_var.get())
             shared_auth.set_setting("backup_type", type_var.get())
-            messagebox.showinfo("Backup Settings", "Backup configuration saved.",
+            messagebox.showinfo(_t('gui.shell.main.admin.config.dialogs.backup_settings', default="Backup Settings"), _t('gui.shell.main.admin.config.dialogs.backup_configuration_saved', default="Backup configuration saved."),
                                 parent=backup_window)
 
-        ttk.Button(btn_frame, text="Save Settings", command=_save_backup).pack(side="right", padx=5)
-        ttk.Button(btn_frame, text="Close", command=backup_window.destroy).pack(side="right")
+        ttk.Button(btn_frame, text=_t('gui.shell.main.admin.config.buttons.save_settings', default="Save Settings"), command=_save_backup).pack(side="right", padx=5)
+        ttk.Button(btn_frame, text=_t('gui.shell.main.admin.config.buttons.close', default="Close"), command=backup_window.destroy).pack(side="right")
 
     except Exception as e:
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_configure_backup", error=str(e)))
@@ -281,7 +281,7 @@ def configure_security(self):
 
         # ── Forced Password Reset toggle ──────────────────────────────
         toggle_frame = ttk.LabelFrame(security_window,
-                                       text="Password Reset Policy", padding=15)
+                                       text=_t('gui.shell.main.admin.config.labels.password_reset_policy', default="Password Reset Policy"), padding=15)
         toggle_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         # Read current setting from shared auth
@@ -293,9 +293,9 @@ def configure_security(self):
 
         desc_label = ttk.Label(
             toggle_frame,
-            text="When enabled, University users whose password has expired\n"
+            text=_t('gui.shell.main.admin.config.labels.when_enabled_university_users_whose_password_has_expired_90_days', default="When enabled, University users whose password has expired\n"
                  "(>90 days) or was never set must change it on login.\n"
-                 "(This setting applies to the University system only.)",
+                 "(This setting applies to the University system only.)"),
             wraplength=550, justify=tk.LEFT,
         )
         desc_label.pack(anchor=tk.W, pady=(0, 8))
@@ -314,17 +314,17 @@ def configure_security(self):
                 _shared_auth.set_system_password_policy("university", new_val)
                 _update_status()
                 state_text = "enabled" if new_val else "disabled"
-                messagebox.showinfo("Setting Updated",
+                messagebox.showinfo(_t('gui.shell.main.admin.config.dialogs.setting_updated', default="Setting Updated"),
                                     f"Forced password reset has been {state_text}.",
                                     parent=security_window)
             except Exception as exc:
-                messagebox.showerror("Error",
+                messagebox.showerror(_t('gui.shell.main.admin.config.dialogs.error', default="Error"),
                                      f"Failed to update setting: {exc}",
                                      parent=security_window)
 
         toggle_btn = ttk.Checkbutton(
             toggle_frame,
-            text="Force password reset for expired passwords",
+            text=_t('gui.shell.main.admin.config.buttons.force_password_reset_for_expired_passwords', default="Force password reset for expired passwords"),
             variable=force_reset_var,
             command=_toggle_force_reset,
         )

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -45,7 +47,7 @@ class EmailReportingMixin:
         ttk.Entry(weekly_frame, textvariable=weekly_email_var, width=30).grid(row=0, column=1, padx=5, pady=2)
 
         ttk.Label(weekly_frame, text=_t("log_management.scheduled_reports.day_of_week")).grid(row=1, column=0, sticky="w", padx=5, pady=2)
-        day_var = tk.StringVar(value="Monday")
+        day_var = tk.StringVar(value=_t('gui.shell.logging.features.email_reporting.values.monday', default="Monday"))
         day_combo = ttk.Combobox(weekly_frame, textvariable=day_var,
                                 values=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
         day_combo.grid(row=1, column=1, sticky="w", padx=5, pady=2)
@@ -69,7 +71,7 @@ class EmailReportingMixin:
                  font=("Arial", 12, "bold")).pack(pady=10)
 
         # Email settings
-        email_frame = ttk.LabelFrame(weekly_window, text="Email Configuration")
+        email_frame = ttk.LabelFrame(weekly_window, text=_t('gui.shell.logging.features.email_reporting.labels.email_configuration', default="Email Configuration"))
         email_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(email_frame, text=_t("log_management.security_alerts_config.email_address")).grid(row=0, column=0, sticky="w", padx=5, pady=5)
@@ -77,11 +79,11 @@ class EmailReportingMixin:
         ttk.Entry(email_frame, textvariable=email_var, width=30).grid(row=0, column=1, padx=5, pady=5)
 
         # Schedule settings
-        schedule_frame = ttk.LabelFrame(weekly_window, text="Schedule Configuration")
+        schedule_frame = ttk.LabelFrame(weekly_window, text=_t('gui.shell.logging.features.email_reporting.labels.schedule_configuration', default="Schedule Configuration"))
         schedule_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(schedule_frame, text=_t("log_management.weekly_report.day_of_week")).grid(row=0, column=0, sticky="w", padx=5, pady=5)
-        day_var = tk.StringVar(value="Monday")
+        day_var = tk.StringVar(value=_t('gui.shell.logging.features.email_reporting.values.monday', default="Monday"))
         day_combo = ttk.Combobox(schedule_frame, textvariable=day_var,
                                 values=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
         day_combo.grid(row=0, column=1, padx=5, pady=5)
@@ -91,17 +93,17 @@ class EmailReportingMixin:
         ttk.Entry(schedule_frame, textvariable=time_var, width=10).grid(row=1, column=1, sticky="w", padx=5, pady=5)
 
         # Report content
-        content_frame = ttk.LabelFrame(weekly_window, text="Report Content")
+        content_frame = ttk.LabelFrame(weekly_window, text=_t('gui.shell.logging.features.email_reporting.labels.report_content', default="Report Content"))
         content_frame.pack(fill=tk.X, padx=10, pady=5)
 
         include_summary_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(content_frame, text="Activity Summary", variable=include_summary_var).pack(anchor="w", padx=10, pady=2)
+        ttk.Checkbutton(content_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.activity_summary', default="Activity Summary"), variable=include_summary_var).pack(anchor="w", padx=10, pady=2)
 
         include_charts_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(content_frame, text="Activity Charts", variable=include_charts_var).pack(anchor="w", padx=10, pady=2)
+        ttk.Checkbutton(content_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.activity_charts', default="Activity Charts"), variable=include_charts_var).pack(anchor="w", padx=10, pady=2)
 
         include_alerts_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(content_frame, text="Security Alerts", variable=include_alerts_var).pack(anchor="w", padx=10, pady=2)
+        ttk.Checkbutton(content_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.security_alerts', default="Security Alerts"), variable=include_alerts_var).pack(anchor="w", padx=10, pady=2)
 
         def save_weekly_settings():
             try:
@@ -115,18 +117,18 @@ class EmailReportingMixin:
                 self.log_manager.config.set('weekly_include_charts', include_charts_var.get())
                 self.log_manager.config.set('weekly_include_alerts', include_alerts_var.get())
 
-                messagebox.showinfo("Success", f"Weekly reports configured!\nReports will be sent every {day_var.get()} at {time_var.get()}")
+                messagebox.showinfo(_t('gui.shell.logging.features.email_reporting.dialogs.success', default="Success"), f"Weekly reports configured!\nReports will be sent every {day_var.get()} at {time_var.get()}")
                 weekly_window.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Error saving settings: {str(e)}")
+                messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.error', default="Error"), f"Error saving settings: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(weekly_window)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Save Settings", command=save_weekly_settings).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=weekly_window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.save_settings', default="Save Settings"), command=save_weekly_settings).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.cancel', default="Cancel"), command=weekly_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     def setup_daily_email_report_gui(self):
         """GUI version of daily email report setup"""
@@ -138,7 +140,7 @@ class EmailReportingMixin:
                  font=("Arial", 12, "bold")).pack(pady=10)
 
         # Email settings
-        email_frame = ttk.LabelFrame(daily_window, text="Email Configuration")
+        email_frame = ttk.LabelFrame(daily_window, text=_t('gui.shell.logging.features.email_reporting.labels.email_configuration', default="Email Configuration"))
         email_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(email_frame, text=_t("log_management.security_alerts_config.email_address")).grid(row=0, column=0, sticky="w", padx=5, pady=5)
@@ -150,7 +152,7 @@ class EmailReportingMixin:
         ttk.Entry(email_frame, textvariable=time_var, width=10).grid(row=1, column=1, sticky="w", padx=5, pady=5)
 
         # SMTP settings
-        smtp_frame = ttk.LabelFrame(daily_window, text="SMTP Configuration")
+        smtp_frame = ttk.LabelFrame(daily_window, text=_t('gui.shell.logging.features.email_reporting.labels.smtp_configuration', default="SMTP Configuration"))
         smtp_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(smtp_frame, text=_t("log_management.daily_report.smtp_server")).grid(row=0, column=0, sticky="w", padx=5, pady=2)
@@ -168,20 +170,20 @@ class EmailReportingMixin:
                 self.log_manager.config.set('smtp_server', smtp_server_var.get())
                 self.log_manager.config.set('smtp_port', int(smtp_port_var.get()))
 
-                messagebox.showinfo("Success", f"Daily email reports configured!\nReports will be sent at {time_var.get()} daily")
+                messagebox.showinfo(_t('gui.shell.logging.features.email_reporting.dialogs.success', default="Success"), f"Daily email reports configured!\nReports will be sent at {time_var.get()} daily")
                 daily_window.destroy()
 
             except ValueError:
-                messagebox.showerror("Error", "Please enter a valid port number")
+                messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.error', default="Error"), _t('gui.shell.logging.features.email_reporting.dialogs.please_enter_a_valid_port_number', default="Please enter a valid port number"))
             except Exception as e:
-                messagebox.showerror("Error", f"Error saving settings: {str(e)}")
+                messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.error', default="Error"), f"Error saving settings: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(daily_window)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Save Settings", command=save_daily_settings).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=daily_window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.save_settings', default="Save Settings"), command=save_daily_settings).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.cancel', default="Cancel"), command=daily_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     def setup_security_alerts_gui(self):
         """GUI version of security alerts setup"""
@@ -193,7 +195,7 @@ class EmailReportingMixin:
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Email configuration
-        email_frame = ttk.LabelFrame(alerts_window, text="Alert Email Settings")
+        email_frame = ttk.LabelFrame(alerts_window, text=_t('gui.shell.logging.features.email_reporting.labels.alert_email_settings', default="Alert Email Settings"))
         email_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(email_frame, text=_t("log_management.security_alerts_config.email_address")).grid(row=0, column=0, sticky="w", padx=5, pady=5)
@@ -201,7 +203,7 @@ class EmailReportingMixin:
         ttk.Entry(email_frame, textvariable=email_var, width=30).grid(row=0, column=1, padx=5, pady=5)
 
         # Threshold settings
-        threshold_frame = ttk.LabelFrame(alerts_window, text="Alert Thresholds")
+        threshold_frame = ttk.LabelFrame(alerts_window, text=_t('gui.shell.logging.features.email_reporting.labels.alert_thresholds', default="Alert Thresholds"))
         threshold_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(threshold_frame, text=_t("log_management.security_alerts_config.failed_login_threshold")).grid(row=0, column=0, sticky="w", padx=5, pady=5)
@@ -213,20 +215,20 @@ class EmailReportingMixin:
         ttk.Spinbox(threshold_frame, from_=5, to=100, textvariable=rapid_threshold_var, width=10).grid(row=1, column=1, padx=5, pady=5)
 
         # Alert types
-        types_frame = ttk.LabelFrame(alerts_window, text="Alert Types")
+        types_frame = ttk.LabelFrame(alerts_window, text=_t('gui.shell.logging.features.email_reporting.labels.alert_types', default="Alert Types"))
         types_frame.pack(fill=tk.X, padx=10, pady=5)
 
         failed_logins_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(types_frame, text="Failed Login Attempts", variable=failed_logins_var).pack(anchor="w", padx=10, pady=2)
+        ttk.Checkbutton(types_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.failed_login_attempts', default="Failed Login Attempts"), variable=failed_logins_var).pack(anchor="w", padx=10, pady=2)
 
         unusual_hours_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(types_frame, text="Unusual Activity Hours", variable=unusual_hours_var).pack(anchor="w", padx=10, pady=2)
+        ttk.Checkbutton(types_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.unusual_activity_hours', default="Unusual Activity Hours"), variable=unusual_hours_var).pack(anchor="w", padx=10, pady=2)
 
         rapid_actions_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(types_frame, text="Rapid Fire Actions", variable=rapid_actions_var).pack(anchor="w", padx=10, pady=2)
+        ttk.Checkbutton(types_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.rapid_fire_actions', default="Rapid Fire Actions"), variable=rapid_actions_var).pack(anchor="w", padx=10, pady=2)
 
         admin_actions_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(types_frame, text="Admin Actions", variable=admin_actions_var).pack(anchor="w", padx=10, pady=2)
+        ttk.Checkbutton(types_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.admin_actions', default="Admin Actions"), variable=admin_actions_var).pack(anchor="w", padx=10, pady=2)
 
         def save_security_settings():
             try:
@@ -238,29 +240,29 @@ class EmailReportingMixin:
                 self.log_manager.config.set('alert_rapid_actions', rapid_actions_var.get())
                 self.log_manager.config.set('alert_admin_actions', admin_actions_var.get())
 
-                messagebox.showinfo("Success", "Security alert settings saved successfully!")
+                messagebox.showinfo(_t('gui.shell.logging.features.email_reporting.dialogs.success', default="Success"), _t('gui.shell.logging.features.email_reporting.dialogs.security_alert_settings_saved_successfully', default="Security alert settings saved successfully!"))
 
             except ValueError:
-                messagebox.showerror("Error", "Please enter valid threshold values")
+                messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.error', default="Error"), _t('gui.shell.logging.features.email_reporting.dialogs.please_enter_valid_threshold_values', default="Please enter valid threshold values"))
             except Exception as e:
-                messagebox.showerror("Error", f"Error saving settings: {str(e)}")
+                messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.error', default="Error"), f"Error saving settings: {str(e)}")
 
         def test_security_alerts():
             try:
                 alerts = self.log_manager.alerts.run_alert_checks()
                 if alerts:
-                    messagebox.showinfo("Test Results", f"Found {len(alerts)} alerts")
+                    messagebox.showinfo(_t('gui.shell.logging.features.email_reporting.dialogs.test_results', default="Test Results"), f"Found {len(alerts)} alerts")
                 else:
-                    messagebox.showinfo("Test Results", "No alerts found")
+                    messagebox.showinfo(_t('gui.shell.logging.features.email_reporting.dialogs.test_results', default="Test Results"), _t('gui.shell.logging.features.email_reporting.dialogs.no_alerts_found', default="No alerts found"))
             except Exception as e:
-                messagebox.showerror("Error", f"Error testing alerts: {str(e)}")
+                messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.error', default="Error"), f"Error testing alerts: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(alerts_window)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Save Settings", command=save_security_settings).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Test Alerts", command=test_security_alerts).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.save_settings', default="Save Settings"), command=save_security_settings).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.test_alerts', default="Test Alerts"), command=test_security_alerts).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_t("log_management.buttons.close"), command=alerts_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     def send_test_email(self):
@@ -271,7 +273,7 @@ class EmailReportingMixin:
             alert_email = self.log_manager.config.get('alert_email')
 
             if not alert_email:
-                messagebox.showerror("Configuration Error", "Alert email not configured")
+                messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.configuration_error', default="Configuration Error"), _t('gui.shell.logging.features.email_reporting.dialogs.alert_email_not_configured', default="Alert email not configured"))
                 return
 
             body = "This is a test email from Log Management System"
@@ -289,12 +291,12 @@ class EmailReportingMixin:
             )
 
             if success:
-                messagebox.showinfo("Success", f"Test email sent to {alert_email}")
+                messagebox.showinfo(_t('gui.shell.logging.features.email_reporting.dialogs.success', default="Success"), f"Test email sent to {alert_email}")
             else:
-                messagebox.showerror("Email Error", "Failed to send test email")
+                messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.email_error', default="Email Error"), _t('gui.shell.logging.features.email_reporting.dialogs.failed_to_send_test_email', default="Failed to send test email"))
 
         except Exception as e:
-            messagebox.showerror("Email Error", f"Failed to send test email: {str(e)}")
+            messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.email_error', default="Email Error"), f"Failed to send test email: {str(e)}")
 
     def email_report_dialog(self):
         """Dialog for sending email reports"""
@@ -310,12 +312,12 @@ class EmailReportingMixin:
         type_frame.pack(pady=10)
 
         ttk.Label(type_frame, text=_t("log_management.email_report.report_type")).pack(anchor="w")
-        report_type = tk.StringVar(value="daily")
-        ttk.Radiobutton(type_frame, text="Daily Summary",
+        report_type = tk.StringVar(value=_t('gui.shell.logging.features.email_reporting.values.daily', default="daily"))
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.daily_summary', default="Daily Summary"),
                        variable=report_type, value="daily").pack(anchor="w")
-        ttk.Radiobutton(type_frame, text="Weekly Analytics",
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.weekly_analytics', default="Weekly Analytics"),
                        variable=report_type, value="weekly").pack(anchor="w")
-        ttk.Radiobutton(type_frame, text="Security Alert",
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.security_alert', default="Security Alert"),
                        variable=report_type, value="security").pack(anchor="w")
 
         # Email address - get admin email from database
@@ -349,7 +351,7 @@ class EmailReportingMixin:
 
                 email_addr = email_var.get().strip()
                 if not email_addr:
-                    messagebox.showerror("Error", "Email address required")
+                    messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.error', default="Error"), _t('gui.shell.logging.features.email_reporting.dialogs.email_address_required', default="Email address required"))
                     return
 
                 # Generate report based on type
@@ -381,20 +383,20 @@ This report was automatically generated by the Log Management System.
                 )
 
                 if result:
-                    messagebox.showinfo("Success", f"Report sent successfully to {email_addr}")
+                    messagebox.showinfo(_t('gui.shell.logging.features.email_reporting.dialogs.success', default="Success"), f"Report sent successfully to {email_addr}")
                 else:
-                    messagebox.showinfo("Queued", f"Report queued for delivery to {email_addr}")
+                    messagebox.showinfo(_t('gui.shell.logging.features.email_reporting.dialogs.queued', default="Queued"), f"Report queued for delivery to {email_addr}")
                 email_window.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to send report: {str(e)}")
+                messagebox.showerror(_t('gui.shell.logging.features.email_reporting.dialogs.error', default="Error"), f"Failed to send report: {str(e)}")
 
         button_frame = ttk.Frame(email_window)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="Send Report", command=send_report).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Test Email", command=self.send_test_email).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=email_window.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.send_report', default="Send Report"), command=send_report).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.test_email', default="Test Email"), command=self.send_test_email).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.email_reporting.buttons.cancel', default="Cancel"), command=email_window.destroy).pack(side=tk.LEFT, padx=5)
 
     def generate_email_report_content(self, report_type):
         """Generate content for email reports"""

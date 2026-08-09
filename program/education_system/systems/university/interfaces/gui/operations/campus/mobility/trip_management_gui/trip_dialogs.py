@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.simpledialog import Dialog
@@ -15,7 +17,7 @@ class TripDetailsDialog(Dialog):
     def body(self, master):
         """Create the dialog body"""
         # Trip information
-        info_frame = ttk.LabelFrame(master, text="Trip Information", padding=10)
+        info_frame = ttk.LabelFrame(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.trip_information', default="Trip Information"), padding=10)
         info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         trip = self.trip_data
@@ -49,10 +51,10 @@ class TripDetailsDialog(Dialog):
             # Create treeview for participants
             participants_tree = ttk.Treeview(participants_frame, columns=('name', 'email', 'registration', 'payment'), show='headings', height=8)
 
-            participants_tree.heading('name', text='Name')
-            participants_tree.heading('email', text='Email')
-            participants_tree.heading('registration', text='Registration Date')
-            participants_tree.heading('payment', text='Payment Status')
+            participants_tree.heading('name', text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.headings.name', default='Name'))
+            participants_tree.heading('email', text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.headings.email', default='Email'))
+            participants_tree.heading('registration', text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.headings.registration_date', default='Registration Date'))
+            participants_tree.heading('payment', text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.headings.payment_status', default='Payment Status'))
 
             for participant in self.participants_data:
                 name = participant[9] if participant[9] else "Unknown"
@@ -64,14 +66,14 @@ class TripDetailsDialog(Dialog):
 
             participants_tree.pack(fill=tk.BOTH, expand=True)
         else:
-            ttk.Label(participants_frame, text="No participants registered yet.").pack()
+            ttk.Label(participants_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.no_participants_registered_yet', default="No participants registered yet.")).pack()
 
         return None  # No initial focus
 
     def buttonbox(self):
         """Create button box"""
         box = ttk.Frame(self)
-        ttk.Button(box, text="Close", command=self.ok).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(box, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.buttons.close', default="Close"), command=self.ok).pack(side=tk.RIGHT, padx=5)
         box.pack(pady=5)
 
 
@@ -84,44 +86,44 @@ class CreateTripDialog(Dialog):
     def body(self, master):
         """Create the dialog body"""
         # Trip name
-        ttk.Label(master, text="Trip Name:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.trip_name', default="Trip Name:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.name_var = tk.StringVar()
         self.name_entry = ttk.Entry(master, textvariable=self.name_var, width=40)
         self.name_entry.grid(row=0, column=1, padx=5, pady=5)
 
         # Description
-        ttk.Label(master, text="Description:").grid(row=1, column=0, sticky=tk.NW, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.description', default="Description:")).grid(row=1, column=0, sticky=tk.NW, padx=5, pady=5)
         self.description_text = tk.Text(master, width=40, height=3)
         self.description_text.grid(row=1, column=1, padx=5, pady=5)
 
         # Destination
-        ttk.Label(master, text="Destination:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.destination', default="Destination:")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.destination_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.destination_var, width=40).grid(row=2, column=1, padx=5, pady=5)
 
         # Start date
-        ttk.Label(master, text="Start Date (YYYY-MM-DD):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
         self.start_date_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.start_date_var, width=40).grid(row=3, column=1, padx=5, pady=5)
 
         # End date
-        ttk.Label(master, text="End Date (YYYY-MM-DD):").grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
         self.end_date_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.end_date_var, width=40).grid(row=4, column=1, padx=5, pady=5)
 
         # Max participants
-        ttk.Label(master, text="Max Participants:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.max_participants', default="Max Participants:")).grid(row=5, column=0, sticky=tk.W, padx=5, pady=5)
         self.max_participants_var = tk.StringVar(value="50")
         ttk.Entry(master, textvariable=self.max_participants_var, width=40).grid(row=5, column=1, padx=5, pady=5)
 
         # Cost
-        ttk.Label(master, text="Cost per person (\u00a3):").grid(row=6, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.cost_per_person', default="Cost per person (\u00a3):")).grid(row=6, column=0, sticky=tk.W, padx=5, pady=5)
         self.cost_var = tk.StringVar(value="0.0")
         ttk.Entry(master, textvariable=self.cost_var, width=40).grid(row=6, column=1, padx=5, pady=5)
 
         # Status
-        ttk.Label(master, text="Status:").grid(row=7, column=0, sticky=tk.W, padx=5, pady=5)
-        self.status_var = tk.StringVar(value="planning")
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.status', default="Status:")).grid(row=7, column=0, sticky=tk.W, padx=5, pady=5)
+        self.status_var = tk.StringVar(value=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.values.planning', default="planning"))
         status_combo = ttk.Combobox(master, textvariable=self.status_var,
                                    values=["planning", "open"], state="readonly", width=37)
         status_combo.grid(row=7, column=1, padx=5, pady=5)
@@ -133,11 +135,11 @@ class CreateTripDialog(Dialog):
         try:
             # Validate required fields
             if len(self.name_var.get().strip()) < 3:
-                messagebox.showerror("Validation Error", "Trip name must be at least 3 characters long.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.trip_name_must_be_at_least_3_characters_long', default="Trip name must be at least 3 characters long."))
                 return False
 
             if len(self.destination_var.get().strip()) < 3:
-                messagebox.showerror("Validation Error", "Destination must be at least 3 characters long.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.destination_must_be_at_least_3_characters_long', default="Destination must be at least 3 characters long."))
                 return False
 
             # Validate dates
@@ -145,28 +147,28 @@ class CreateTripDialog(Dialog):
             end_date = datetime.strptime(self.end_date_var.get(), '%Y-%m-%d')
 
             if start_date.date() <= datetime.now().date():
-                messagebox.showerror("Validation Error", "Start date must be in the future.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.start_date_must_be_in_the_future', default="Start date must be in the future."))
                 return False
 
             if end_date.date() <= start_date.date():
-                messagebox.showerror("Validation Error", "End date must be after start date.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.end_date_must_be_after_start_date', default="End date must be after start date."))
                 return False
 
             # Validate numbers
             max_participants = int(self.max_participants_var.get())
             if max_participants <= 0:
-                messagebox.showerror("Validation Error", "Maximum participants must be greater than 0.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.maximum_participants_must_be_greater_than_0', default="Maximum participants must be greater than 0."))
                 return False
 
             cost = float(self.cost_var.get())
             if cost < 0:
-                messagebox.showerror("Validation Error", "Cost cannot be negative.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.cost_cannot_be_negative', default="Cost cannot be negative."))
                 return False
 
             return True
 
         except ValueError as e:
-            messagebox.showerror("Validation Error", f"Invalid input: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), f"Invalid input: {e}")
             return False
 
     def apply(self):
@@ -201,11 +203,11 @@ class CreateTripDialog(Dialog):
         trip_id = safe_db_operation(create_trip_operation)
 
         if trip_id:
-            messagebox.showinfo("Success", f"Trip '{self.name_var.get()}' created successfully!")
+            messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.success', default="Success"), f"Trip '{self.name_var.get()}' created successfully!")
             if self.refresh_callback:
                 self.refresh_callback()
         else:
-            messagebox.showerror("Error", "Failed to create trip.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.failed_to_create_trip', default="Failed to create trip."))
 
 
 class UpdateTripDialog(Dialog):
@@ -232,51 +234,51 @@ class UpdateTripDialog(Dialog):
     def body(self, master):
         """Create the dialog body"""
         if not self.trip_data:
-            ttk.Label(master, text="Trip not found.").pack(pady=20)
+            ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.trip_not_found', default="Trip not found.")).pack(pady=20)
             return None
 
         # Pre-populate fields with existing data
         trip = self.trip_data
 
         # Trip name
-        ttk.Label(master, text="Trip Name:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.trip_name', default="Trip Name:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.name_var = tk.StringVar(value=trip[1])
         self.name_entry = ttk.Entry(master, textvariable=self.name_var, width=40)
         self.name_entry.grid(row=0, column=1, padx=5, pady=5)
 
         # Description
-        ttk.Label(master, text="Description:").grid(row=1, column=0, sticky=tk.NW, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.description', default="Description:")).grid(row=1, column=0, sticky=tk.NW, padx=5, pady=5)
         self.description_text = tk.Text(master, width=40, height=3)
         self.description_text.insert(1.0, trip[2] or "")
         self.description_text.grid(row=1, column=1, padx=5, pady=5)
 
         # Destination
-        ttk.Label(master, text="Destination:").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.destination', default="Destination:")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.destination_var = tk.StringVar(value=trip[3])
         ttk.Entry(master, textvariable=self.destination_var, width=40).grid(row=2, column=1, padx=5, pady=5)
 
         # Start date
-        ttk.Label(master, text="Start Date (YYYY-MM-DD):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
         self.start_date_var = tk.StringVar(value=trip[4])
         ttk.Entry(master, textvariable=self.start_date_var, width=40).grid(row=3, column=1, padx=5, pady=5)
 
         # End date
-        ttk.Label(master, text="End Date (YYYY-MM-DD):").grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=4, column=0, sticky=tk.W, padx=5, pady=5)
         self.end_date_var = tk.StringVar(value=trip[5])
         ttk.Entry(master, textvariable=self.end_date_var, width=40).grid(row=4, column=1, padx=5, pady=5)
 
         # Max participants
-        ttk.Label(master, text="Max Participants:").grid(row=5, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.max_participants', default="Max Participants:")).grid(row=5, column=0, sticky=tk.W, padx=5, pady=5)
         self.max_participants_var = tk.StringVar(value=str(trip[6]))
         ttk.Entry(master, textvariable=self.max_participants_var, width=40).grid(row=5, column=1, padx=5, pady=5)
 
         # Cost
-        ttk.Label(master, text="Cost per person (\u00a3):").grid(row=6, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.cost_per_person', default="Cost per person (\u00a3):")).grid(row=6, column=0, sticky=tk.W, padx=5, pady=5)
         self.cost_var = tk.StringVar(value=str(trip[7]))
         ttk.Entry(master, textvariable=self.cost_var, width=40).grid(row=6, column=1, padx=5, pady=5)
 
         # Status
-        ttk.Label(master, text="Status:").grid(row=7, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.status', default="Status:")).grid(row=7, column=0, sticky=tk.W, padx=5, pady=5)
         self.status_var = tk.StringVar(value=trip[8])
         status_combo = ttk.Combobox(master, textvariable=self.status_var,
                                    values=["planning", "open", "full", "cancelled", "completed"],
@@ -290,11 +292,11 @@ class UpdateTripDialog(Dialog):
         try:
             # Validate required fields
             if len(self.name_var.get().strip()) < 3:
-                messagebox.showerror("Validation Error", "Trip name must be at least 3 characters long.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.trip_name_must_be_at_least_3_characters_long', default="Trip name must be at least 3 characters long."))
                 return False
 
             if len(self.destination_var.get().strip()) < 3:
-                messagebox.showerror("Validation Error", "Destination must be at least 3 characters long.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.destination_must_be_at_least_3_characters_long', default="Destination must be at least 3 characters long."))
                 return False
 
             # Validate dates
@@ -304,18 +306,18 @@ class UpdateTripDialog(Dialog):
             # Validate numbers
             max_participants = int(self.max_participants_var.get())
             if max_participants <= 0:
-                messagebox.showerror("Validation Error", "Maximum participants must be greater than 0.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.maximum_participants_must_be_greater_than_0', default="Maximum participants must be greater than 0."))
                 return False
 
             cost = float(self.cost_var.get())
             if cost < 0:
-                messagebox.showerror("Validation Error", "Cost cannot be negative.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.cost_cannot_be_negative', default="Cost cannot be negative."))
                 return False
 
             return True
 
         except ValueError as e:
-            messagebox.showerror("Validation Error", f"Invalid input: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.validation_error', default="Validation Error"), f"Invalid input: {e}")
             return False
 
     def apply(self):
@@ -347,11 +349,11 @@ class UpdateTripDialog(Dialog):
 
 
         if safe_db_operation(update_trip_operation):
-            messagebox.showinfo("Success", "Trip updated successfully!")
+            messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.trip_updated_successfully', default="Trip updated successfully!"))
             if self.refresh_callback:
                 self.refresh_callback()
         else:
-            messagebox.showerror("Error", "Failed to update trip.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.failed_to_update_trip', default="Failed to update trip."))
 
 
 class TripSelectionDialog(Dialog):
@@ -363,7 +365,7 @@ class TripSelectionDialog(Dialog):
 
     def body(self, master):
         """Create the dialog body"""
-        ttk.Label(master, text="Select a trip:", font=('Arial', 10, 'bold')).pack(pady=(0, 10))
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.labels.select_a_trip', default="Select a trip:"), font=('Arial', 10, 'bold')).pack(pady=(0, 10))
 
         # Trip selection listbox
         self.trip_listbox = tk.Listbox(master, width=60, height=15)
@@ -407,7 +409,7 @@ class TripSelectionDialog(Dialog):
         """Validate selection"""
         selection = self.trip_listbox.curselection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a trip.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.trip_dialogs.dialogs.please_select_a_trip', default="Please select a trip."))
             return False
 
         # Extract trip ID from selection

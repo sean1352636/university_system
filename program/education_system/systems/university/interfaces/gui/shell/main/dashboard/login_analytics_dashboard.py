@@ -4,6 +4,8 @@ Displays login attempt trends, failed login analysis,
 user activity patterns, and MFA adoption rates.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 import logging
@@ -33,11 +35,11 @@ def create_login_analytics_tab(parent_frame, service):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Title
-    ttk.Label(scrollable, text="User Access & Login Analytics",
+    ttk.Label(scrollable, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.user_access_login_analytics', default="User Access & Login Analytics"),
               font=('Arial', 14, 'bold')).pack(anchor="w", padx=15, pady=(15, 5))
 
     # --- Summary Cards ---
-    summary_frame = ttk.LabelFrame(scrollable, text="Overview (Last 30 Days)", padding="10")
+    summary_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.overview_last_30_days', default="Overview (Last 30 Days)"), padding="10")
     summary_frame.pack(fill=tk.X, padx=15, pady=5)
 
     cards = ttk.Frame(summary_frame)
@@ -54,7 +56,7 @@ def create_login_analytics_tab(parent_frame, service):
     _create_stat_card(cards, "MFA Adoption", f"{mfa['rate_pct']}%", 0, 4)
 
     # --- Active Users ---
-    active_frame = ttk.LabelFrame(scrollable, text="Active Users", padding="10")
+    active_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.active_users', default="Active Users"), padding="10")
     active_frame.pack(fill=tk.X, padx=15, pady=5)
 
     active_cards = ttk.Frame(active_frame)
@@ -71,17 +73,17 @@ def create_login_analytics_tab(parent_frame, service):
     )
 
     # --- Daily Login Trends ---
-    trends_frame = ttk.LabelFrame(scrollable, text="Daily Login Trends (Last 30 Days)", padding="10")
+    trends_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.daily_login_trends_last_30_days', default="Daily Login Trends (Last 30 Days)"), padding="10")
     trends_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['daily_login_trends']:
         cols = ('day', 'successful', 'failed', 'total')
         tree = ttk.Treeview(trends_frame, columns=cols, show='headings',
                             height=min(10, len(data['daily_login_trends'])))
-        tree.heading('day', text='Date')
-        tree.heading('successful', text='Successful')
-        tree.heading('failed', text='Failed')
-        tree.heading('total', text='Total')
+        tree.heading('day', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.date', default='Date'))
+        tree.heading('successful', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.successful', default='Successful'))
+        tree.heading('failed', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.failed', default='Failed'))
+        tree.heading('total', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.total', default='Total'))
         tree.column('day', width=120)
         tree.column('successful', width=100, anchor='center')
         tree.column('failed', width=100, anchor='center')
@@ -93,10 +95,10 @@ def create_login_analytics_tab(parent_frame, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(trends_frame, text="No login data available.").pack(anchor="w")
+        ttk.Label(trends_frame, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.no_login_data_available', default="No login data available.")).pack(anchor="w")
 
     # --- Hourly Activity Pattern ---
-    hourly_frame = ttk.LabelFrame(scrollable, text="Hourly Activity Pattern (Last 7 Days)", padding="10")
+    hourly_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.hourly_activity_pattern_last_7_days', default="Hourly Activity Pattern (Last 7 Days)"), padding="10")
     hourly_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['hourly_activity']:
@@ -115,11 +117,11 @@ def create_login_analytics_tab(parent_frame, service):
         text_widget.insert(tk.END, bar_text)
         text_widget.config(state=tk.DISABLED)
     else:
-        ttk.Label(hourly_frame, text="No hourly data available.").pack(anchor="w")
+        ttk.Label(hourly_frame, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.no_hourly_data_available', default="No hourly data available.")).pack(anchor="w")
 
     # --- Failed Logins by User ---
     failed_user_frame = ttk.LabelFrame(
-        scrollable, text="Top Failed Logins by User (Last 7 Days)", padding="10"
+        scrollable, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.top_failed_logins_by_user_last_7_days', default="Top Failed Logins by User (Last 7 Days)"), padding="10"
     )
     failed_user_frame.pack(fill=tk.X, padx=15, pady=5)
 
@@ -127,9 +129,9 @@ def create_login_analytics_tab(parent_frame, service):
         cols = ('username', 'fail_count', 'last_attempt')
         tree = ttk.Treeview(failed_user_frame, columns=cols, show='headings',
                             height=min(8, len(data['failed_logins_by_user'])))
-        tree.heading('username', text='Username')
-        tree.heading('fail_count', text='Failed Attempts')
-        tree.heading('last_attempt', text='Last Attempt')
+        tree.heading('username', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.username', default='Username'))
+        tree.heading('fail_count', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.failed_attempts', default='Failed Attempts'))
+        tree.heading('last_attempt', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.last_attempt', default='Last Attempt'))
         tree.column('username', width=180)
         tree.column('fail_count', width=120, anchor='center')
         tree.column('last_attempt', width=180)
@@ -140,18 +142,18 @@ def create_login_analytics_tab(parent_frame, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(failed_user_frame, text="No failed logins recorded.").pack(anchor="w")
+        ttk.Label(failed_user_frame, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.no_failed_logins_recorded', default="No failed logins recorded.")).pack(anchor="w")
 
     # --- Top Failed IPs ---
-    ip_frame = ttk.LabelFrame(scrollable, text="Top Failed Login IPs (Last 7 Days)", padding="10")
+    ip_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.top_failed_login_ips_last_7_days', default="Top Failed Login IPs (Last 7 Days)"), padding="10")
     ip_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['top_failed_ips']:
         cols = ('ip_address', 'fail_count')
         tree = ttk.Treeview(ip_frame, columns=cols, show='headings',
                             height=min(6, len(data['top_failed_ips'])))
-        tree.heading('ip_address', text='IP Address')
-        tree.heading('fail_count', text='Failed Attempts')
+        tree.heading('ip_address', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.ip_address', default='IP Address'))
+        tree.heading('fail_count', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.failed_attempts', default='Failed Attempts'))
         tree.column('ip_address', width=200)
         tree.column('fail_count', width=120, anchor='center')
         for r in data['top_failed_ips']:
@@ -160,19 +162,19 @@ def create_login_analytics_tab(parent_frame, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(ip_frame, text="No IP data available.").pack(anchor="w")
+        ttk.Label(ip_frame, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.no_ip_data_available', default="No IP data available.")).pack(anchor="w")
 
     # --- Recent Failed Login Attempts ---
-    recent_frame = ttk.LabelFrame(scrollable, text="Recent Failed Login Attempts", padding="10")
+    recent_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.recent_failed_login_attempts', default="Recent Failed Login Attempts"), padding="10")
     recent_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
 
     if data['recent_failed_logins']:
         cols = ('username', 'attempt_time', 'ip_address')
         tree = ttk.Treeview(recent_frame, columns=cols, show='headings',
                             height=min(10, len(data['recent_failed_logins'])))
-        tree.heading('username', text='Username')
-        tree.heading('attempt_time', text='Time')
-        tree.heading('ip_address', text='IP Address')
+        tree.heading('username', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.username', default='Username'))
+        tree.heading('attempt_time', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.time', default='Time'))
+        tree.heading('ip_address', text=_t('gui.shell.main.dashboard.login_analytics_dashboard.headings.ip_address', default='IP Address'))
         tree.column('username', width=160)
         tree.column('attempt_time', width=180)
         tree.column('ip_address', width=150)
@@ -183,7 +185,7 @@ def create_login_analytics_tab(parent_frame, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(recent_frame, text="No recent failed logins.").pack(anchor="w")
+        ttk.Label(recent_frame, text=_t('gui.shell.main.dashboard.login_analytics_dashboard.labels.no_recent_failed_logins', default="No recent failed logins.")).pack(anchor="w")
 
 
 def _create_stat_card(parent, label, value, row, col):

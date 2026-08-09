@@ -1,5 +1,7 @@
 """Course-Targeted Student Messaging GUI (Feature 26)."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -22,7 +24,7 @@ class CourseMessagingGUI:
             self.instructor_id = auth.current_user.get('username', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Module Messaging")
+        self.window.title(_t('gui.academics.course_messaging.messaging.windows.module_messaging', default="Module Messaging"))
         self.window.geometry("1000x800")
         self.window.minsize(900, 700)
         self.window.transient(parent)
@@ -34,12 +36,12 @@ class CourseMessagingGUI:
     def _setup_ui(self):
         """Build the messaging UI."""
         ttk.Label(
-            self.window, text="Module-Targeted Messaging",
+            self.window, text=_t('gui.academics.course_messaging.messaging.labels.module_targeted_messaging', default="Module-Targeted Messaging"),
             font=('Arial', 16, 'bold')
         ).pack(pady=(10, 5))
 
         # Step 1: Module selector
-        course_frame = ttk.LabelFrame(self.window, text="Step 1: Select Module", padding="10")
+        course_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.course_messaging.messaging.labels.step_1_select_module', default="Step 1: Select Module"), padding="10")
         course_frame.pack(fill=tk.X, padx=15, pady=5)
 
         self.course_var = tk.StringVar()
@@ -51,14 +53,14 @@ class CourseMessagingGUI:
         self.course_combo.bind('<<ComboboxSelected>>', lambda e: self._load_students())
 
         # Step 2: Student selector (fixed height, no expand)
-        student_frame = ttk.LabelFrame(self.window, text="Step 2: Select Recipients", padding="10")
+        student_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.course_messaging.messaging.labels.step_2_select_recipients', default="Step 2: Select Recipients"), padding="10")
         student_frame.pack(fill=tk.X, padx=15, pady=5)
 
         btn_row = ttk.Frame(student_frame)
         btn_row.pack(fill=tk.X, pady=(0, 5))
-        ttk.Button(btn_row, text="Select All", command=self._select_all).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_row, text="Deselect All", command=self._deselect_all).pack(side=tk.LEFT, padx=5)
-        self.selected_label = ttk.Label(btn_row, text="0 selected")
+        ttk.Button(btn_row, text=_t('gui.academics.course_messaging.messaging.buttons.select_all', default="Select All"), command=self._select_all).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.academics.course_messaging.messaging.buttons.deselect_all', default="Deselect All"), command=self._deselect_all).pack(side=tk.LEFT, padx=5)
+        self.selected_label = ttk.Label(btn_row, text=_t('gui.academics.course_messaging.messaging.labels.value_0_selected', default="0 selected"))
         self.selected_label.pack(side=tk.RIGHT, padx=5)
 
         tree_container = ttk.Frame(student_frame)
@@ -66,10 +68,10 @@ class CourseMessagingGUI:
 
         cols = ('selected', 'student_id', 'name', 'email')
         self.student_tree = ttk.Treeview(tree_container, columns=cols, show='headings', height=6)
-        self.student_tree.heading('selected', text='Select')
-        self.student_tree.heading('student_id', text='Student ID')
-        self.student_tree.heading('name', text='Name')
-        self.student_tree.heading('email', text='Email')
+        self.student_tree.heading('selected', text=_t('gui.academics.course_messaging.messaging.headings.select', default='Select'))
+        self.student_tree.heading('student_id', text=_t('gui.academics.course_messaging.messaging.headings.student_id', default='Student ID'))
+        self.student_tree.heading('name', text=_t('gui.academics.course_messaging.messaging.headings.name', default='Name'))
+        self.student_tree.heading('email', text=_t('gui.academics.course_messaging.messaging.headings.email', default='Email'))
         self.student_tree.column('selected', width=60, anchor='center')
         self.student_tree.column('student_id', width=120)
         self.student_tree.column('name', width=250)
@@ -84,12 +86,12 @@ class CourseMessagingGUI:
         self.selected_students = set()
 
         # Step 3: Message composer (expands to fill remaining space)
-        msg_frame = ttk.LabelFrame(self.window, text="Step 3: Compose Message", padding="10")
+        msg_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.course_messaging.messaging.labels.step_3_compose_message', default="Step 3: Compose Message"), padding="10")
         msg_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
         subj_row = ttk.Frame(msg_frame)
         subj_row.pack(fill=tk.X, pady=2)
-        ttk.Label(subj_row, text="Subject:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(subj_row, text=_t('gui.academics.course_messaging.messaging.labels.subject', default="Subject:")).pack(side=tk.LEFT, padx=(0, 5))
         self.subject_var = tk.StringVar()
         ttk.Entry(subj_row, textvariable=self.subject_var, width=70).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
@@ -99,9 +101,9 @@ class CourseMessagingGUI:
         # Send button bar (always visible at bottom)
         send_frame = ttk.Frame(self.window)
         send_frame.pack(fill=tk.X, padx=15, pady=(5, 10))
-        self.status_var = tk.StringVar(value="Select a module and recipients.")
+        self.status_var = tk.StringVar(value=_t('gui.academics.course_messaging.messaging.values.select_a_module_and_recipients', default="Select a module and recipients."))
         ttk.Label(send_frame, textvariable=self.status_var).pack(side=tk.LEFT)
-        ttk.Button(send_frame, text="Send Email", command=self._send_message).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(send_frame, text=_t('gui.academics.course_messaging.messaging.buttons.send_email', default="Send Email"), command=self._send_message).pack(side=tk.RIGHT, padx=5)
 
     def _load_courses(self):
         """Load modules based on user role."""
@@ -199,16 +201,16 @@ class CourseMessagingGUI:
     def _send_message(self):
         """Send email to selected students."""
         if not self.selected_students:
-            messagebox.showwarning("No Recipients", "Please select at least one student.", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.course_messaging.messaging.dialogs.no_recipients', default="No Recipients"), _t('gui.academics.course_messaging.messaging.dialogs.please_select_at_least_one_student', default="Please select at least one student."), parent=self.window)
             return
         subject = self.subject_var.get().strip()
         body = self.body_text.get("1.0", tk.END).strip()
         if not subject or not body:
-            messagebox.showwarning("Missing Fields", "Please enter a subject and message body.", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.course_messaging.messaging.dialogs.missing_fields', default="Missing Fields"), _t('gui.academics.course_messaging.messaging.dialogs.please_enter_a_subject_and_message_body', default="Please enter a subject and message body."), parent=self.window)
             return
 
         if not messagebox.askyesno(
-            "Confirm Send",
+            _t('gui.academics.course_messaging.messaging.dialogs.confirm_send', default="Confirm Send"),
             f"Send message to {len(self.selected_students)} students?",
             parent=self.window
         ):
@@ -242,7 +244,7 @@ class CourseMessagingGUI:
 
         self.status_var.set(f"Sent: {sent}, Failed: {failed}")
         messagebox.showinfo(
-            "Messages Sent",
+            _t('gui.academics.course_messaging.messaging.dialogs.messages_sent', default="Messages Sent"),
             f"Successfully sent to {sent} student(s)." + (f"\nFailed: {failed}" if failed else ""),
             parent=self.window
         )

@@ -12,7 +12,7 @@ class PrintingServicesGUI:
 
     def __init__(self, parent=None):
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title("Printing Services")
+        self.window.title(_t('gui.operations.campus.printing.printing.windows.printing_services', default="Printing Services"))
         self.window.geometry("950x650")
 
         try:
@@ -98,10 +98,10 @@ class PrintingServicesGUI:
 
     def _build_quota_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Print Quota")
+        self.notebook.add(tab, text=_t('gui.operations.campus.printing.printing.tabs.my_print_quota', default="My Print Quota"))
 
         # Quota display
-        quota_frame = ttk.LabelFrame(tab, text="Print Quota Summary", padding=20)
+        quota_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.printing.printing.labels.print_quota_summary', default="Print Quota Summary"), padding=20)
         quota_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.quota_labels = {}
@@ -122,57 +122,57 @@ class PrintingServicesGUI:
         # Progress bar
         prog_frame = ttk.Frame(quota_frame)
         prog_frame.pack(fill=tk.X, pady=(10, 0))
-        ttk.Label(prog_frame, text="Usage:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(prog_frame, text=_t('gui.operations.campus.printing.printing.labels.usage', default="Usage:")).pack(side=tk.LEFT, padx=5)
         self.quota_progress = ttk.Progressbar(prog_frame, maximum=100, length=400)
         self.quota_progress.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self.quota_pct_label = ttk.Label(prog_frame, text="0%")
         self.quota_pct_label.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(tab, text="Refresh", command=self._load_quota).pack(pady=10)
+        ttk.Button(tab, text=_t('gui.operations.campus.printing.printing.buttons.refresh', default="Refresh"), command=self._load_quota).pack(pady=10)
 
     def _build_print_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Submit Print Job")
+        self.notebook.add(tab, text=_t('gui.operations.campus.printing.printing.tabs.submit_print_job', default="Submit Print Job"))
 
-        form = ttk.LabelFrame(tab, text="Print Job Details", padding=15)
+        form = ttk.LabelFrame(tab, text=_t('gui.operations.campus.printing.printing.labels.print_job_details', default="Print Job Details"), padding=15)
         form.pack(fill=tk.X, padx=10, pady=10)
 
         row = 0
-        ttk.Label(form, text="File Name:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.printing.printing.labels.file_name', default="File Name:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         file_frame = ttk.Frame(form)
         file_frame.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
         self.file_entry = ttk.Entry(file_frame, width=30)
         self.file_entry.pack(side=tk.LEFT)
-        ttk.Button(file_frame, text="Browse...", command=self._browse_file).pack(side=tk.LEFT, padx=5)
+        ttk.Button(file_frame, text=_t('gui.operations.campus.printing.printing.buttons.browse', default="Browse..."), command=self._browse_file).pack(side=tk.LEFT, padx=5)
 
         row += 1
-        ttk.Label(form, text="Pages:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.printing.printing.labels.pages', default="Pages:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.pages_entry = ttk.Spinbox(form, from_=1, to=200, width=8)
         self.pages_entry.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Copies:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.printing.printing.labels.copies', default="Copies:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.copies_entry = ttk.Spinbox(form, from_=1, to=20, width=8)
         self.copies_entry.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
         self.color_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(form, text="Color printing (2 credits/page)", variable=self.color_var).grid(
+        ttk.Checkbutton(form, text=_t('gui.operations.campus.printing.printing.buttons.color_printing_2_credits_page', default="Color printing (2 credits/page)"), variable=self.color_var).grid(
             row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
         self.duplex_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(form, text="Double-sided printing", variable=self.duplex_var).grid(
+        ttk.Checkbutton(form, text=_t('gui.operations.campus.printing.printing.buttons.double_sided_printing', default="Double-sided printing"), variable=self.duplex_var).grid(
             row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Paper Size:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.printing.printing.labels.paper_size', default="Paper Size:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.paper_combo = ttk.Combobox(form, values=["A4", "A3", "Letter", "Legal"], state="readonly", width=10)
         self.paper_combo.set("A4")
         self.paper_combo.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Printer:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.printing.printing.labels.printer', default="Printer:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.printer_combo = ttk.Combobox(form, values=[
             "Library - Ground Floor", "Library - 1st Floor", "Student Center",
             "Computer Lab A", "Computer Lab B", "Engineering Building"
@@ -181,7 +181,7 @@ class PrintingServicesGUI:
         self.printer_combo.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        self.cost_label = ttk.Label(form, text="Estimated cost: 1 credit(s)", font=("", 10))
+        self.cost_label = ttk.Label(form, text=_t('gui.operations.campus.printing.printing.labels.estimated_cost_1_credit_s', default="Estimated cost: 1 credit(s)"), font=("", 10))
         self.cost_label.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
 
         # Update cost estimate on changes
@@ -191,16 +191,16 @@ class PrintingServicesGUI:
         self.duplex_var.trace_add("write", lambda *a: self._update_cost())
 
         row += 1
-        ttk.Button(form, text="Submit Print Job", command=self._submit_job).grid(
+        ttk.Button(form, text=_t('gui.operations.campus.printing.printing.buttons.submit_print_job', default="Submit Print Job"), command=self._submit_job).grid(
             row=row, column=1, sticky=tk.W, pady=10, padx=5)
 
     def _build_history_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Print History")
+        self.notebook.add(tab, text=_t('gui.operations.campus.printing.printing.tabs.print_history', default="Print History"))
 
         toolbar = ttk.Frame(tab)
         toolbar.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_history).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text=_t('gui.operations.campus.printing.printing.buttons.refresh', default="Refresh"), command=self._load_history).pack(side=tk.LEFT, padx=2)
 
         cols = ("job_id", "file", "pages", "copies", "color", "duplex", "printer", "cost", "status", "submitted")
         self.history_tree = ttk.Treeview(tab, columns=cols, show="headings", height=16)
@@ -211,12 +211,12 @@ class PrintingServicesGUI:
 
     def _build_credits_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Buy Credits")
+        self.notebook.add(tab, text=_t('gui.operations.campus.printing.printing.tabs.buy_credits', default="Buy Credits"))
 
-        info = ttk.LabelFrame(tab, text="Purchase Print Credits", padding=15)
+        info = ttk.LabelFrame(tab, text=_t('gui.operations.campus.printing.printing.labels.purchase_print_credits', default="Purchase Print Credits"), padding=15)
         info.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(info, text="Add pages to your print quota:", font=("", 11)).pack(anchor=tk.W, pady=(0, 10))
+        ttk.Label(info, text=_t('gui.operations.campus.printing.printing.labels.add_pages_to_your_print_quota', default="Add pages to your print quota:"), font=("", 11)).pack(anchor=tk.W, pady=(0, 10))
 
         packages = [
             ("50 pages", 50, "2.50"),
@@ -228,10 +228,10 @@ class PrintingServicesGUI:
             f = ttk.Frame(info)
             f.pack(fill=tk.X, pady=3)
             ttk.Label(f, text=f"{label} - \u00a3{price}", width=25).pack(side=tk.LEFT)
-            ttk.Button(f, text="Purchase", command=lambda p=pages, pr=price: self._purchase_credits(p, pr)).pack(side=tk.LEFT, padx=10)
+            ttk.Button(f, text=_t('gui.operations.campus.printing.printing.buttons.purchase', default="Purchase"), command=lambda p=pages, pr=price: self._purchase_credits(p, pr)).pack(side=tk.LEFT, padx=10)
 
         # Transaction history
-        ttk.Label(tab, text="Transaction History", font=("", 11, "bold")).pack(anchor=tk.W, padx=10, pady=(15, 5))
+        ttk.Label(tab, text=_t('gui.operations.campus.printing.printing.labels.transaction_history', default="Transaction History"), font=("", 11, "bold")).pack(anchor=tk.W, padx=10, pady=(15, 5))
         cols = ("id", "amount", "type", "description", "date")
         self.trans_tree = ttk.Treeview(tab, columns=cols, show="headings", height=8)
         for c, w in zip(cols, (50, 80, 80, 200, 150)):
@@ -335,14 +335,14 @@ class PrintingServicesGUI:
     def _submit_job(self):
         file_name = self.file_entry.get().strip()
         if not file_name:
-            messagebox.showwarning("Warning", "Please select or enter a file name.")
+            messagebox.showwarning(_t('gui.operations.campus.printing.printing.dialogs.warning', default="Warning"), _t('gui.operations.campus.printing.printing.dialogs.please_select_or_enter_a_file_name', default="Please select or enter a file name."))
             return
 
         try:
             pages = int(self.pages_entry.get())
             copies = int(self.copies_entry.get())
         except ValueError:
-            messagebox.showerror("Error", "Invalid pages or copies value.")
+            messagebox.showerror(_t('gui.operations.campus.printing.printing.dialogs.error', default="Error"), _t('gui.operations.campus.printing.printing.dialogs.invalid_pages_or_copies_value', default="Invalid pages or copies value."))
             return
 
         color = 1 if self.color_var.get() else 0
@@ -359,7 +359,7 @@ class PrintingServicesGUI:
                 quota = self._ensure_quota(conn, student_id)
                 remaining = quota["total_pages"] - quota["used_pages"]
                 if cost > remaining:
-                    messagebox.showerror("Error", f"Insufficient print credits. Need {cost}, have {remaining}.\nPurchase more credits in the 'Buy Credits' tab.")
+                    messagebox.showerror(_t('gui.operations.campus.printing.printing.dialogs.error', default="Error"), f"Insufficient print credits. Need {cost}, have {remaining}.\nPurchase more credits in the 'Buy Credits' tab.")
                     return
 
                 conn.execute("""INSERT INTO print_jobs
@@ -375,16 +375,16 @@ class PrintingServicesGUI:
                     (student_id, -cost, f"Print job: {file_name} ({pages}p x{copies})"))
                 conn.commit()
 
-            messagebox.showinfo("Success", f"Print job submitted! Cost: {cost} credits.\nCollect from: {self.printer_combo.get()}")
+            messagebox.showinfo(_t('gui.operations.campus.printing.printing.dialogs.success', default="Success"), f"Print job submitted! Cost: {cost} credits.\nCollect from: {self.printer_combo.get()}")
             self.file_entry.delete(0, tk.END)
             self._load_data()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed: {e}")
+            messagebox.showerror(_t('gui.operations.campus.printing.printing.dialogs.error', default="Error"), f"Failed: {e}")
 
     def _purchase_credits(self, pages, price):
         """Open a payment dialog to buy print credits via cash, card, or student finance account."""
         dlg = tk.Toplevel(self.window)
-        dlg.title("Purchase Print Credits")
+        dlg.title(_t('gui.operations.campus.printing.printing.windows.purchase_print_credits', default="Purchase Print Credits"))
         dlg.geometry("500x540")
         dlg.transient(self.window)
         dlg.grab_set()
@@ -395,10 +395,10 @@ class PrintingServicesGUI:
             font=("", 12, "bold"),
         ).pack(pady=(15, 10))
 
-        method_frame = ttk.LabelFrame(dlg, text="Payment Method", padding=10)
+        method_frame = ttk.LabelFrame(dlg, text=_t('gui.operations.campus.printing.printing.labels.payment_method', default="Payment Method"), padding=10)
         method_frame.pack(fill=tk.X, padx=15, pady=5)
 
-        method_var = tk.StringVar(value="cash")
+        method_var = tk.StringVar(value=_t('gui.operations.campus.printing.printing.values.cash', default="cash"))
         for label, value in (
             ("Cash", "cash"),
             ("Card", "card"),
@@ -409,21 +409,21 @@ class PrintingServicesGUI:
         details_container = ttk.Frame(dlg)
         details_container.pack(fill=tk.X, padx=15, pady=5)
 
-        card_frame = ttk.LabelFrame(details_container, text="Card Details", padding=10)
-        ttk.Label(card_frame, text="Card Number:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        card_frame = ttk.LabelFrame(details_container, text=_t('gui.operations.campus.printing.printing.labels.card_details', default="Card Details"), padding=10)
+        ttk.Label(card_frame, text=_t('gui.operations.campus.printing.printing.labels.card_number', default="Card Number:")).grid(row=0, column=0, sticky=tk.W, pady=2)
         card_number = ttk.Entry(card_frame, width=25)
         card_number.grid(row=0, column=1, pady=2, padx=5, sticky=tk.W)
-        ttk.Label(card_frame, text="Expiry (MM/YY):").grid(row=1, column=0, sticky=tk.W, pady=2)
+        ttk.Label(card_frame, text=_t('gui.operations.campus.printing.printing.labels.expiry_mm_yy', default="Expiry (MM/YY):")).grid(row=1, column=0, sticky=tk.W, pady=2)
         card_expiry = ttk.Entry(card_frame, width=10)
         card_expiry.grid(row=1, column=1, pady=2, padx=5, sticky=tk.W)
-        ttk.Label(card_frame, text="CVV:").grid(row=2, column=0, sticky=tk.W, pady=2)
+        ttk.Label(card_frame, text=_t('gui.operations.campus.printing.printing.labels.cvv', default="CVV:")).grid(row=2, column=0, sticky=tk.W, pady=2)
         card_cvv = ttk.Entry(card_frame, width=6, show="*")
         card_cvv.grid(row=2, column=1, pady=2, padx=5, sticky=tk.W)
-        ttk.Label(card_frame, text="Name on Card:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        ttk.Label(card_frame, text=_t('gui.operations.campus.printing.printing.labels.name_on_card', default="Name on Card:")).grid(row=3, column=0, sticky=tk.W, pady=2)
         card_name = ttk.Entry(card_frame, width=25)
         card_name.grid(row=3, column=1, pady=2, padx=5, sticky=tk.W)
 
-        balance_frame = ttk.LabelFrame(details_container, text="Student Finance Account", padding=10)
+        balance_frame = ttk.LabelFrame(details_container, text=_t('gui.operations.campus.printing.printing.labels.student_finance_account', default="Student Finance Account"), padding=10)
         balance_label = ttk.Label(balance_frame, text="")
         balance_label.pack(anchor=tk.W)
 
@@ -465,29 +465,29 @@ class PrintingServicesGUI:
                 cvv = card_cvv.get().strip()
                 name = card_name.get().strip()
                 if not num.isdigit() or not (12 <= len(num) <= 19):
-                    messagebox.showerror("Invalid Card", "Enter a valid card number (12-19 digits).", parent=dlg)
+                    messagebox.showerror(_t('gui.operations.campus.printing.printing.dialogs.invalid_card', default="Invalid Card"), _t('gui.operations.campus.printing.printing.dialogs.enter_a_valid_card_number_12_19_digits', default="Enter a valid card number (12-19 digits)."), parent=dlg)
                     return
                 if not re.match(r"^(0[1-9]|1[0-2])/\d{2}$", exp):
-                    messagebox.showerror("Invalid Card", "Expiry must be in MM/YY format.", parent=dlg)
+                    messagebox.showerror(_t('gui.operations.campus.printing.printing.dialogs.invalid_card', default="Invalid Card"), _t('gui.operations.campus.printing.printing.dialogs.expiry_must_be_in_mm_yy_format', default="Expiry must be in MM/YY format."), parent=dlg)
                     return
                 if not cvv.isdigit() or len(cvv) not in (3, 4):
-                    messagebox.showerror("Invalid Card", "CVV must be 3 or 4 digits.", parent=dlg)
+                    messagebox.showerror(_t('gui.operations.campus.printing.printing.dialogs.invalid_card', default="Invalid Card"), _t('gui.operations.campus.printing.printing.dialogs.cvv_must_be_3_or_4_digits', default="CVV must be 3 or 4 digits."), parent=dlg)
                     return
                 if not name:
-                    messagebox.showerror("Invalid Card", "Enter the name on the card.", parent=dlg)
+                    messagebox.showerror(_t('gui.operations.campus.printing.printing.dialogs.invalid_card', default="Invalid Card"), _t('gui.operations.campus.printing.printing.dialogs.enter_the_name_on_the_card', default="Enter the name on the card."), parent=dlg)
                     return
             if self._process_credit_purchase(pages, price, method, dlg):
                 dlg.destroy()
 
-        ttk.Button(btn_frame, text="Cancel", command=dlg.destroy).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(btn_frame, text="Pay Now", command=_confirm).pack(side=tk.RIGHT)
+        ttk.Button(btn_frame, text=_t('gui.operations.campus.printing.printing.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.campus.printing.printing.buttons.pay_now', default="Pay Now"), command=_confirm).pack(side=tk.RIGHT)
 
     def _process_credit_purchase(self, pages, price, method, parent):
         """Run the payment, credit the quota, and send a receipt email."""
         try:
             price_f = float(price)
         except (TypeError, ValueError):
-            messagebox.showerror("Error", f"Invalid price: {price}", parent=parent)
+            messagebox.showerror(_t('gui.operations.campus.printing.printing.dialogs.error', default="Error"), f"Invalid price: {price}", parent=parent)
             return False
 
         student_id = self._get_user_id()
@@ -509,7 +509,7 @@ class PrintingServicesGUI:
                 )
                 if not result.get("success"):
                     messagebox.showerror(
-                        "Payment Failed",
+                        _t('gui.operations.campus.printing.printing.dialogs.payment_failed', default="Payment Failed"),
                         result.get("message", "Payment could not be processed."),
                         parent=parent,
                     )
@@ -534,8 +534,8 @@ class PrintingServicesGUI:
                 )
                 if not payment_id:
                     messagebox.showerror(
-                        "Payment Failed",
-                        "Could not record payment in the finance system.",
+                        _t('gui.operations.campus.printing.printing.dialogs.payment_failed', default="Payment Failed"),
+                        _t('gui.operations.campus.printing.printing.dialogs.could_not_record_payment_in_the_finance_system', default="Could not record payment in the finance system."),
                         parent=parent,
                     )
                     return False
@@ -581,13 +581,13 @@ class PrintingServicesGUI:
                 f"New quota total: {new_total} pages"
             )
             summary += "\nReceipt emailed." if email_sent else "\n(Receipt email could not be sent.)"
-            messagebox.showinfo("Purchase Successful", summary, parent=parent)
+            messagebox.showinfo(_t('gui.operations.campus.printing.printing.dialogs.purchase_successful', default="Purchase Successful"), summary, parent=parent)
             self._load_data()
             return True
 
         except Exception as e:
             logger.exception("Print credit purchase failed")
-            messagebox.showerror("Error", f"Purchase failed: {e}", parent=parent)
+            messagebox.showerror(_t('gui.operations.campus.printing.printing.dialogs.error', default="Error"), f"Purchase failed: {e}", parent=parent)
             return False
 
     def _send_credits_receipt_email(self, student_id, pages, price, payment_method,

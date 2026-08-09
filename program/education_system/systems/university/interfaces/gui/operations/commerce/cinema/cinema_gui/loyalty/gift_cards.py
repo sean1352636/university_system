@@ -87,7 +87,7 @@ def refresh_gift_cards(self):
 def create_gift_card(self):
     """Create a new gift card."""
     form_window = tk.Toplevel(self.root)
-    form_window.title("Create Gift Card")
+    form_window.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.gift_cards.windows.create_gift_card', default="Create Gift Card"))
     form_window.geometry("500x450")
     form_window.configure(bg="#ecf0f1")
     form_window.transient(self.root)
@@ -132,7 +132,7 @@ def create_gift_card(self):
         try:
             value = float(value_var.get())
         except (ValueError, TypeError):
-            messagebox.showwarning(_t("cinema.common.warning"), "Invalid value")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.gift_cards.dialogs.invalid_value', default="Invalid value"))
             return
 
         code = generate_code()
@@ -174,7 +174,7 @@ def create_gift_card(self):
 def check_gift_card_balance(self):
     """Check gift card balance."""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Check Gift Card Balance")
+    dialog.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.gift_cards.windows.check_gift_card_balance', default="Check Gift Card Balance"))
     dialog.geometry("400x250")
     dialog.configure(bg="#ecf0f1")
     dialog.transient(self.root)
@@ -220,20 +220,20 @@ def view_gift_card_details(self):
     """View gift card details."""
     selected = self.gc_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a gift card")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.gift_cards.dialogs.please_select_a_gift_card', default="Please select a gift card"))
         return
-    messagebox.showinfo(_t("cinema.common.info"), "Gift card details displayed in the list")
+    messagebox.showinfo(_t("cinema.common.info"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.gift_cards.dialogs.gift_card_details_displayed_in_the_list', default="Gift card details displayed in the list"))
 
 def deactivate_gift_card(self):
     """Deactivate a gift card."""
     selected = self.gc_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a gift card")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.gift_cards.dialogs.please_select_a_gift_card', default="Please select a gift card"))
         return
 
     gc_id = self.gc_tree.item(selected[0])['values'][0]
 
-    if not messagebox.askyesno(_t("cinema.common.confirm"), "Deactivate this gift card?"):
+    if not messagebox.askyesno(_t("cinema.common.confirm"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.gift_cards.dialogs.deactivate_this_gift_card', default="Deactivate this gift card?")):
         return
 
     conn = sqlite3.connect(DB_FILE)

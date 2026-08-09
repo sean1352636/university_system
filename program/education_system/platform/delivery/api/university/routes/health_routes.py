@@ -7,7 +7,19 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    current_subject_id,
+    is_staff,
+    token_required,
+)
+
+
+def _authorize_owner_or_staff(owner_student_id) -> bool:
+    """Staff see all health records; everyone else only their own."""
+    if is_staff():
+        return True
+    me = current_subject_id()
+    return me is not None and str(owner_student_id) == me
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import validate_health_appointment_create
 from education_system.systems.university.infrastructure.exceptions import StudentNotFoundError, ValidationError
@@ -72,8 +84,11 @@ def get_appointment(appointment_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Appointment {appointment_id} not found")
+    appt = _row_to_dict(row)
+    if not _authorize_owner_or_staff(appt.get("student_id")):
+        return jsonify({"error": "Forbidden", "status": 403}), 403
     log_activity("view", "health_appointment", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(appt)
 
 
 @health_bp.route("/appointments", methods=["POST"])
@@ -116,10 +131,12 @@ def create_appointment():
 def update_appointment(appointment_id: int):
     with get_connection() as conn:
         existing = conn.execute(
-            "SELECT 1 FROM health_appointments WHERE id = ?", (appointment_id,)
+            "SELECT student_id FROM health_appointments WHERE id = ?", (appointment_id,)
         ).fetchone()
     if not existing:
         raise ValidationError(f"Appointment {appointment_id} not found")
+    if not _authorize_owner_or_staff(existing[0]):
+        return jsonify({"error": "Forbidden", "status": 403}), 403
 
     data = request.get_json(silent=True) or {}
     if not data:

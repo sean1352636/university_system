@@ -1,5 +1,7 @@
 """General Ledger tabs: Trial Balance + Journals."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import date
@@ -71,7 +73,7 @@ class LedgerMixin:
                     end_date=end_var.get().strip() or None,
                 )
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load trial balance: {e}")
+                messagebox.showerror(_t('gui.finance.finance.layout.ledger.dialogs.error', default="Error"), f"Failed to load trial balance: {e}")
                 return
             total_dr = total_cr = 0.0
             for r in rows:
@@ -107,7 +109,7 @@ class LedgerMixin:
                   font=('Arial', 14, 'bold')).pack(side='left')
 
         ttk.Label(toolbar, text=_("finance_gui.ledger.source", default="Source:")).pack(side='left', padx=(20, 5))
-        source_var = tk.StringVar(value='all')
+        source_var = tk.StringVar(value=_t('gui.finance.finance.layout.ledger.values.all', default='all'))
         ttk.Combobox(
             toolbar, textvariable=source_var, width=14, state='readonly',
             values=('all', 'payment', 'refund', 'fee_assignment', 'manual'),
@@ -142,7 +144,7 @@ class LedgerMixin:
                     source_type=None if source_var.get() == 'all' else source_var.get(),
                 )
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load journals: {e}")
+                messagebox.showerror(_t('gui.finance.finance.layout.ledger.dialogs.error', default="Error"), f"Failed to load journals: {e}")
                 return
             for r in rows:
                 j_tree.insert('', 'end', values=(
@@ -216,34 +218,34 @@ class LedgerMixin:
         try:
             init_ledger()
             messagebox.showinfo(
-                "Ledger initialized",
-                "Schema ensured, default entity and chart of accounts seeded, "
-                "and periods created for the current fiscal year.",
+                _t('gui.finance.finance.layout.ledger.dialogs.ledger_initialized', default="Ledger initialized"),
+                _t('gui.finance.finance.layout.ledger.dialogs.schema_ensured_default_entity_and_chart_of_accounts_seeded_and_p', default="Schema ensured, default entity and chart of accounts seeded, "
+                "and periods created for the current fiscal year."),
             )
             if hasattr(self, '_tb_reload'):
                 self._tb_reload()
         except Exception as e:
-            messagebox.showerror("Init failed", str(e))
+            messagebox.showerror(_t('gui.finance.finance.layout.ledger.dialogs.init_failed', default="Init failed"), str(e))
 
     def _backfill_action(self):
         from education_system.systems.university.domain.finance.ledger import backfill
         if not messagebox.askyesno(
-            "Backfill",
-            "Replay all payments, refunds, and fee assignments into the ledger?\n\n"
-            "Already-posted rows are skipped automatically. Safe to re-run.",
+            _t('gui.finance.finance.layout.ledger.dialogs.backfill', default="Backfill"),
+            _t('gui.finance.finance.layout.ledger.dialogs.replay_all_payments_refunds_and_fee_assignments_into_the_ledger', default="Replay all payments, refunds, and fee assignments into the ledger?\n\n"
+            "Already-posted rows are skipped automatically. Safe to re-run."),
         ):
             return
         try:
             summary = backfill(posted_by='gui_backfill')
         except Exception as e:
-            messagebox.showerror("Backfill failed", str(e))
+            messagebox.showerror(_t('gui.finance.finance.layout.ledger.dialogs.backfill_failed', default="Backfill failed"), str(e))
             return
         msg = f"Posted: {summary['posted']}\nErrors: {len(summary['errors'])}"
         if summary['errors']:
             sample = "\n".join(f"  [{st}] {sid}: {err[:80]}"
                                for st, sid, err in summary['errors'][:10])
             msg += f"\n\nFirst errors:\n{sample}"
-        messagebox.showinfo("Backfill complete", msg)
+        messagebox.showinfo(_t('gui.finance.finance.layout.ledger.dialogs.backfill_complete', default="Backfill complete"), msg)
         if hasattr(self, '_tb_reload'):
             self._tb_reload()
 
@@ -323,7 +325,7 @@ class LedgerMixin:
             try:
                 rows = list_periods()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load periods: {e}")
+                messagebox.showerror(_t('gui.finance.finance.layout.ledger.dialogs.error', default="Error"), f"Failed to load periods: {e}")
                 return
             for r in rows:
                 tag = r['status']  # open/closed/locked → tag for color
@@ -344,18 +346,18 @@ class LedgerMixin:
             if pid is None:
                 return
             if status != 'open':
-                messagebox.showwarning("Cannot close", f"Period status is '{status}'; only 'open' periods can be closed.")
+                messagebox.showwarning(_t('gui.finance.finance.layout.ledger.dialogs.cannot_close', default="Cannot close"), f"Period status is '{status}'; only 'open' periods can be closed.")
                 return
-            if not messagebox.askyesno("Confirm close",
+            if not messagebox.askyesno(_t('gui.finance.finance.layout.ledger.dialogs.confirm_close', default="Confirm close"),
                                       f"Close period {pid}?\n\nPosting into this period "
                                       "will be rejected until it is reopened."):
                 return
             try:
                 close_period(pid, closed_by=_resolve_user())
             except (PeriodStateError, Exception) as e:
-                messagebox.showerror("Close failed", str(e))
+                messagebox.showerror(_t('gui.finance.finance.layout.ledger.dialogs.close_failed', default="Close failed"), str(e))
                 return
-            messagebox.showinfo("Closed", f"Period {pid} is now closed.")
+            messagebox.showinfo(_t('gui.finance.finance.layout.ledger.dialogs.closed', default="Closed"), f"Period {pid} is now closed.")
             reload_periods()
 
         def reopen_action():
@@ -365,19 +367,19 @@ class LedgerMixin:
             if pid is None:
                 return
             if status == 'locked':
-                messagebox.showwarning("Cannot reopen",
+                messagebox.showwarning(_t('gui.finance.finance.layout.ledger.dialogs.cannot_reopen', default="Cannot reopen"),
                                       f"Period {pid} is locked. Only superseding journals in a "
                                       "later period can correct entries here.")
                 return
             if status == 'open':
                 return
-            if not messagebox.askyesno("Confirm reopen",
+            if not messagebox.askyesno(_t('gui.finance.finance.layout.ledger.dialogs.confirm_reopen', default="Confirm reopen"),
                                       f"Reopen period {pid}? Posting will be allowed again."):
                 return
             try:
                 reopen_period(pid)
             except (PeriodStateError, Exception) as e:
-                messagebox.showerror("Reopen failed", str(e))
+                messagebox.showerror(_t('gui.finance.finance.layout.ledger.dialogs.reopen_failed', default="Reopen failed"), str(e))
                 return
             reload_periods()
 
@@ -388,7 +390,7 @@ class LedgerMixin:
                 return
             if status == 'locked':
                 return
-            if not messagebox.askyesno("Confirm lock",
+            if not messagebox.askyesno(_t('gui.finance.finance.layout.ledger.dialogs.confirm_lock', default="Confirm lock"),
                                       f"Lock period {pid}?\n\nThis cannot be reversed. After "
                                       "locking, only superseding journals in a later period can "
                                       "correct entries."):
@@ -396,9 +398,9 @@ class LedgerMixin:
             try:
                 lock_period(pid, locked_by=_resolve_user())
             except Exception as e:
-                messagebox.showerror("Lock failed", str(e))
+                messagebox.showerror(_t('gui.finance.finance.layout.ledger.dialogs.lock_failed', default="Lock failed"), str(e))
                 return
-            messagebox.showinfo("Locked", f"Period {pid} is now locked.")
+            messagebox.showinfo(_t('gui.finance.finance.layout.ledger.dialogs.locked', default="Locked"), f"Period {pid} is now locked.")
             reload_periods()
 
         ttk.Button(action_frame, text=_("finance_gui.ledger.close_period", default="Close"),
@@ -415,8 +417,8 @@ class LedgerMixin:
         help_frame.pack(fill='x', padx=10, pady=(0, 10))
         ttk.Label(
             help_frame,
-            text=("Open → Closed: posting into the period is rejected. Reversible by admin.\n"
-                  "Closed → Locked: stronger close (e.g. after external audit). Cannot be reversed."),
+            text=(_t('gui.finance.finance.layout.ledger.labels.open_closed_posting_into_the_period_is_rejected_reversible_by_ad', default="Open → Closed: posting into the period is rejected. Reversible by admin.\n"
+                  "Closed → Locked: stronger close (e.g. after external audit). Cannot be reversed.")),
             foreground='#666',
         ).pack(side='left')
 

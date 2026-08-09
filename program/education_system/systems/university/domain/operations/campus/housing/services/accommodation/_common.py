@@ -57,14 +57,14 @@ except ImportError:
         logger.info(f"Backup requested before {operation_type} operation, but data_backup module not available")
 
 # Shared path constants keep runtime artefacts inside program/data
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Configuration constants
-DB_PATH = os.fspath(paths.DEFAULT_DB_PATH)
+DB_PATH = os.fspath(paths.UNIVERSITY_DEFAULT_DB_PATH)
 NOTIFICATION_THRESHOLD_DAYS = 7
 TEMPLATES_TABLE = 'accommodation_templates'
-ACCOMMODATION_LOG_PATH = os.fspath(paths.LOG_DIR / 'accommodation')
-UPLOADS_DIR = os.fspath(paths.DATA_DIR / 'uploads' / 'accommodation')
+ACCOMMODATION_LOG_PATH = os.fspath(paths.UNIVERSITY_LOG_DIR / 'accommodation')
+UPLOADS_DIR = os.fspath(paths.UNIVERSITY_DATA_DIR / 'uploads' / 'accommodation')
 
 # Ensure required directories exist
 for directory in [ACCOMMODATION_LOG_PATH, UPLOADS_DIR]:

@@ -361,7 +361,7 @@ PERMISSIONS: Dict[str, List[str]] = {
 
 # Session and Security Constants
 DEFAULT_SESSION_TIMEOUT: int = 30  # minutes
-DEFAULT_MAX_LOGIN_ATTEMPTS: int = 5
+DEFAULT_MAX_LOGIN_ATTEMPTS: int = 3
 DEFAULT_LOCKOUT_TIME: int = 15  # minutes
 
 # Password Security Constants

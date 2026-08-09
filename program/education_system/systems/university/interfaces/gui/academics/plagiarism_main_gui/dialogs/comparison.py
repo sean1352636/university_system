@@ -31,7 +31,7 @@ class DocumentComparisonDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -62,7 +62,7 @@ class DocumentComparisonDialog:
         selection_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
         # Document 1 selection
-        doc1_frame = ttk.LabelFrame(selection_frame, text="Document 1", padding=GuiConfig.PADDING_SMALL)
+        doc1_frame = ttk.LabelFrame(selection_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.comparison.labels.document_1', default="Document 1"), padding=GuiConfig.PADDING_SMALL)
         doc1_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, GuiConfig.PADDING_SMALL))
 
         self.doc1_var = tk.StringVar()
@@ -72,7 +72,7 @@ class DocumentComparisonDialog:
         ttk.Button(doc1_frame, text=_t("plagiarism.select_document_1"), command=lambda: self.select_document(1)).pack()
 
         # Document 2 selection
-        doc2_frame = ttk.LabelFrame(selection_frame, text="Document 2", padding=GuiConfig.PADDING_SMALL)
+        doc2_frame = ttk.LabelFrame(selection_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.comparison.labels.document_2', default="Document 2"), padding=GuiConfig.PADDING_SMALL)
         doc2_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(GuiConfig.PADDING_SMALL, 0))
 
         self.doc2_var = tk.StringVar()
@@ -128,7 +128,7 @@ class DocumentComparisonDialog:
         button_frame.pack(fill=tk.X)
 
         ttk.Button(button_frame, text=_t("plagiarism.export_comparison"), command=self.export_comparison).pack(side=tk.LEFT)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.comparison.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def select_document(self, doc_number):
         """Select a document for comparison"""
@@ -146,7 +146,7 @@ class DocumentComparisonDialog:
         search_frame = ttk.Frame(main_frame)
         search_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.comparison.labels.search', default="Search:")).pack(side=tk.LEFT)
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=GuiConfig.PADDING_SMALL, fill=tk.X, expand=True)
@@ -156,7 +156,7 @@ class DocumentComparisonDialog:
             docs = self.checker.search_repository(term) if term else self.checker.search_repository()
             populate_list(docs)
 
-        ttk.Button(search_frame, text="Search", command=search_docs).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(search_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.comparison.buttons.search', default="Search"), command=search_docs).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Document list
         list_frame = ttk.Frame(main_frame)
@@ -196,7 +196,7 @@ class DocumentComparisonDialog:
             documents = self.checker.search_repository()
             populate_list(documents)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load documents: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.error', default="Error"), f"Failed to load documents: {e}")
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
@@ -205,7 +205,7 @@ class DocumentComparisonDialog:
         def on_select():
             selection = doc_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a document.")
+                messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.no_selection', default="No Selection"), _t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.please_select_a_document', default="Please select a document."))
                 return
 
             item = selection[0]
@@ -221,13 +221,13 @@ class DocumentComparisonDialog:
 
             selection_dialog.destroy()
 
-        ttk.Button(button_frame, text="Cancel", command=selection_dialog.destroy).pack(side=tk.RIGHT)
-        ttk.Button(button_frame, text="Select", command=on_select).pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.comparison.buttons.cancel', default="Cancel"), command=selection_dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.comparison.buttons.select', default="Select"), command=on_select).pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
 
     def compare_documents(self):
         """Compare the selected documents"""
         if not self.doc1_id or not self.doc2_id:
-            messagebox.showwarning("Missing Documents", "Please select both documents to compare.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.missing_documents', default="Missing Documents"), _t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.please_select_both_documents_to_compare', default="Please select both documents to compare."))
             return
 
         try:
@@ -269,12 +269,12 @@ class DocumentComparisonDialog:
             self.doc2_text.config(state=tk.DISABLED)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to compare documents: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.error', default="Error"), f"Failed to compare documents: {e}")
 
     def highlight_similarities(self):
         """Highlight similar text passages"""
         if not self.doc1_id or not self.doc2_id:
-            messagebox.showwarning("Missing Documents", "Please compare documents first.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.missing_documents', default="Missing Documents"), _t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.please_compare_documents_first', default="Please compare documents first."))
             return
 
         try:
@@ -326,7 +326,7 @@ class DocumentComparisonDialog:
             common_ngrams = set(ngrams1.keys()) & set(ngrams2.keys())
 
             if not common_ngrams:
-                messagebox.showinfo("No Matches", "No significant text similarities found to highlight.")
+                messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.no_matches', default="No Matches"), _t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.no_significant_text_similarities_found_to_highlight', default="No significant text similarities found to highlight."))
                 return
 
             # Enable text widgets for editing
@@ -402,17 +402,17 @@ class DocumentComparisonDialog:
             self.doc2_text.config(state=tk.DISABLED)
 
             similarity_pct = (len(highlighted_words1) + len(highlighted_words2)) / (len(words1) + len(words2)) * 100
-            messagebox.showinfo("Highlighting Complete",
+            messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.highlighting_complete', default="Highlighting Complete"),
                               f"Highlighted {len(common_ngrams)} similar phrases.\n"
                               f"Approximate similarity: {similarity_pct:.1f}%")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to highlight similarities: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.error', default="Error"), f"Failed to highlight similarities: {e}")
 
     def export_comparison(self):
         """Export the comparison results"""
         if not self.doc1_id or not self.doc2_id:
-            messagebox.showwarning("Missing Documents", "Please compare documents first.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.missing_documents', default="Missing Documents"), _t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.please_compare_documents_first', default="Please compare documents first."))
             return
 
         try:
@@ -421,7 +421,7 @@ class DocumentComparisonDialog:
             filename = filedialog.asksaveasfilename(
                 defaultextension=".html",
                 filetypes=[("HTML files", "*.html"), ("Text files", "*.txt"), ("All files", "*.*")],
-                title="Export Comparison"
+                title=_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.export_comparison', default="Export Comparison")
             )
 
             if filename:
@@ -443,7 +443,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write(report)
 
-                messagebox.showinfo("Export Complete", f"Comparison exported to {filename}")
+                messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.export_complete', default="Export Complete"), f"Comparison exported to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export comparison: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.comparison.dialogs.export_error', default="Export Error"), f"Failed to export comparison: {e}")

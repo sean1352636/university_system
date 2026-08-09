@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import messagebox
 from cryptography.fernet import Fernet
@@ -96,7 +98,7 @@ class HealthPortalGUI(
         try:
             self.root.mainloop()
         except Exception as e:
-            messagebox.showerror("Application Error", f"An error occurred: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.main.dialogs.application_error', default="Application Error"), f"An error occurred: {str(e)}")
 
 
 def launch_health_portal_gui(auth=None):

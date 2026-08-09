@@ -3,7 +3,7 @@
 import json
 from datetime import datetime
 
-from education_system.systems.university.infrastructure.paths import LOG_DIR
+from education_system.paths import UNIVERSITY_LOG_DIR
 
 
 def display_activity_dashboard(log_manager, auth):
@@ -88,7 +88,7 @@ def generate_activity_summary_menu(log_manager, auth):
     export = input("\nExport summary to file? (y/n): ")
     if export.lower() == 'y':
         filename = f"activity_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        reports_dir = LOG_DIR / "reports"
+        reports_dir = UNIVERSITY_LOG_DIR / "reports"
         reports_dir.mkdir(parents=True, exist_ok=True)
         filepath = str(reports_dir / filename)
 
@@ -164,7 +164,7 @@ def create_charts_menu(log_manager, auth):
 
     save_path = input("Enter save path (or press Enter for auto-path): ")
     if not save_path:
-        charts_dir = LOG_DIR / "charts"
+        charts_dir = UNIVERSITY_LOG_DIR / "charts"
         charts_dir.mkdir(parents=True, exist_ok=True)
         save_path = str(charts_dir / f"activity_chart_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
 

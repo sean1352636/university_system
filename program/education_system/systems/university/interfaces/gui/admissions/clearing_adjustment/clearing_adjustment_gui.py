@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -14,7 +16,7 @@ class ClearingAdjustmentGUI:
             self.root = parent
         else:
             self.root = tk.Toplevel(parent) if parent else tk.Tk()
-            self.root.title("Clearing & Adjustment")
+            self.root.title(_t('gui.admissions.clearing_adjustment.clearing_adjustment.windows.clearing_adjustment', default="Clearing & Adjustment"))
             self.root.geometry("1200x800")
         try:
             from education_system.systems.university.domain.admissions.clearing_adjustment.services.clearing_adjustment_service import ClearingAdjustmentService
@@ -40,7 +42,7 @@ class ClearingAdjustmentGUI:
     # -------------------------------------------------------------- Vacancies
     def _create_vacancies_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Vacancies")
+        notebook.add(tab, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.tabs.vacancies', default="Vacancies"))
 
         cols = ("course", "department", "places", "min_tariff")
         self.vacancies_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -51,9 +53,9 @@ class ClearingAdjustmentGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Add", command=self._add_vacancy).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Update", command=self._update_vacancy).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_vacancies).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.add', default="Add"), command=self._add_vacancy).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.update', default="Update"), command=self._update_vacancy).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.refresh', default="Refresh"), command=self._refresh_vacancies).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_vacancies()
 
@@ -74,36 +76,36 @@ class ClearingAdjustmentGUI:
 
     def _add_vacancy(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Add Vacancy")
+        dlg.title(_t('gui.admissions.clearing_adjustment.clearing_adjustment.windows.add_vacancy', default="Add Vacancy"))
         dlg.geometry("450x350")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Course:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.course', default="Course:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         course_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=course_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Department:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.department', default="Department:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         dept_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=dept_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Available Places:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.available_places', default="Available Places:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         places_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=places_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Minimum UCAS Tariff:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.minimum_ucas_tariff', default="Minimum UCAS Tariff:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         tariff_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=tariff_var).pack(fill=tk.X, padx=10)
 
         def save():
             if not course_var.get() or not dept_var.get():
-                messagebox.showwarning("Validation", "Course and department are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.validation', default="Validation"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.course_and_department_are_required', default="Course and department are required."), parent=dlg)
                 return
             try:
                 places = int(places_var.get())
                 tariff = int(tariff_var.get())
             except ValueError:
-                messagebox.showwarning("Validation", "Places and tariff must be numbers.", parent=dlg)
+                messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.validation', default="Validation"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.places_and_tariff_must_be_numbers', default="Places and tariff must be numbers."), parent=dlg)
                 return
             try:
                 self.service.add_vacancy(
@@ -115,32 +117,32 @@ class ClearingAdjustmentGUI:
                 )
                 dlg.destroy()
                 self._refresh_vacancies()
-                messagebox.showinfo("Success", "Vacancy added.", parent=self.root)
+                messagebox.showinfo(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.success', default="Success"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.vacancy_added', default="Vacancy added."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.save', default="Save"), command=save).pack(pady=15)
 
     def _update_vacancy(self):
         sel = self.vacancies_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a vacancy first.", parent=self.root)
+            messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.selection', default="Selection"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.select_a_vacancy_first', default="Select a vacancy first."), parent=self.root)
             return
         values = self.vacancies_tree.item(sel[0], "values")
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("Update Vacancy")
+        dlg.title(_t('gui.admissions.clearing_adjustment.clearing_adjustment.windows.update_vacancy', default="Update Vacancy"))
         dlg.geometry("400x250")
         dlg.transient(self.root)
         dlg.grab_set()
 
         ttk.Label(dlg, text=f"Course: {values[0]}", font=("", 10, "bold")).pack(padx=10, pady=10)
 
-        ttk.Label(dlg, text="Available Places:").pack(padx=10, anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.available_places', default="Available Places:")).pack(padx=10, anchor=tk.W)
         places_var = tk.StringVar(value=str(values[2]))
         ttk.Entry(dlg, textvariable=places_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Minimum Tariff:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.minimum_tariff', default="Minimum Tariff:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         tariff_var = tk.StringVar(value=str(values[3]))
         ttk.Entry(dlg, textvariable=tariff_var).pack(fill=tk.X, padx=10)
 
@@ -153,14 +155,14 @@ class ClearingAdjustmentGUI:
                 dlg.destroy()
                 self._refresh_vacancies()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Update", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.update', default="Update"), command=save).pack(pady=15)
 
     # ----------------------------------------------------------- Applications
     def _create_applications_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Applications")
+        notebook.add(tab, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.tabs.applications', default="Applications"))
 
         cols = ("name", "ucas_id", "tariff", "course", "status")
         self.apps_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -171,14 +173,14 @@ class ClearingAdjustmentGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Submit Application", command=self._submit_application).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="View", command=self._view_application).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Shortlist", command=lambda: self._update_app_status("Shortlisted")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Offer", command=lambda: self._update_app_status("Offered")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Reject", command=lambda: self._update_app_status("Rejected")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Auto-Shortlist", command=self._auto_shortlist).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Create APL claim", command=self._create_apl_from_app).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_applications).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.submit_application', default="Submit Application"), command=self._submit_application).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.view', default="View"), command=self._view_application).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.shortlist', default="Shortlist"), command=lambda: self._update_app_status("Shortlisted")).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.offer', default="Offer"), command=lambda: self._update_app_status("Offered")).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.reject', default="Reject"), command=lambda: self._update_app_status("Rejected")).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.auto_shortlist', default="Auto-Shortlist"), command=self._auto_shortlist).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.create_apl_claim', default="Create APL claim"), command=self._create_apl_from_app).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.refresh', default="Refresh"), command=self._refresh_applications).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_applications()
 
@@ -204,7 +206,7 @@ class ClearingAdjustmentGUI:
 
     def _submit_application(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Submit Clearing Application")
+        dlg.title(_t('gui.admissions.clearing_adjustment.clearing_adjustment.windows.submit_clearing_application', default="Submit Clearing Application"))
         dlg.geometry("450x450")
         dlg.transient(self.root)
         dlg.grab_set()
@@ -227,13 +229,13 @@ class ClearingAdjustmentGUI:
 
         def save():
             if not vars_["applicant_name"].get().strip():
-                messagebox.showwarning("Validation", "Applicant name is required.", parent=dlg)
+                messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.validation', default="Validation"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.applicant_name_is_required', default="Applicant name is required."), parent=dlg)
                 return
             tariff_raw = vars_["tariff_points"].get().strip()
             try:
                 tariff = int(tariff_raw) if tariff_raw else 0
             except ValueError:
-                messagebox.showwarning("Validation", "Tariff points must be a number.", parent=dlg)
+                messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.validation', default="Validation"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.tariff_points_must_be_a_number', default="Tariff points must be a number."), parent=dlg)
                 return
             try:
                 aid = self.service.submit_clearing_application(
@@ -247,16 +249,16 @@ class ClearingAdjustmentGUI:
                 )
                 dlg.destroy()
                 self._refresh_applications()
-                messagebox.showinfo("Success", f"Application submitted with ID: {aid}", parent=self.root)
+                messagebox.showinfo(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.success', default="Success"), f"Application submitted with ID: {aid}", parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Submit", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.submit', default="Submit"), command=save).pack(pady=15)
 
     def _view_application(self):
         sel = self.apps_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an application first.", parent=self.root)
+            messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.selection', default="Selection"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.select_an_application_first', default="Select an application first."), parent=self.root)
             return
         values = self.apps_tree.item(sel[0], "values")
         try:
@@ -282,47 +284,47 @@ class ClearingAdjustmentGUI:
                 ttk.Label(frame, text=f"{label}:", font=("", 9, "bold"), width=18).pack(side=tk.LEFT)
                 ttk.Label(frame, text=str(val)).pack(side=tk.LEFT)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _update_app_status(self, new_status):
         sel = self.apps_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an application first.", parent=self.root)
+            messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.selection', default="Selection"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.select_an_application_first', default="Select an application first."), parent=self.root)
             return
         values = self.apps_tree.item(sel[0], "values")
-        if not messagebox.askyesno("Confirm", f"Set status to '{new_status}' for {values[0]}?",
+        if not messagebox.askyesno(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.confirm', default="Confirm"), f"Set status to '{new_status}' for {values[0]}?",
                                     parent=self.root):
             return
         try:
             self.service.update_application_status(values[1], new_status)
             self._refresh_applications()
-            messagebox.showinfo("Success", f"Status updated to {new_status}.", parent=self.root)
+            messagebox.showinfo(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.success', default="Success"), f"Status updated to {new_status}.", parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _auto_shortlist(self):
-        if not messagebox.askyesno("Confirm",
-                                    "Auto-shortlist all applicants meeting minimum tariff?",
+        if not messagebox.askyesno(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.confirm', default="Confirm"),
+                                    _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.auto_shortlist_all_applicants_meeting_minimum_tariff', default="Auto-shortlist all applicants meeting minimum tariff?"),
                                     parent=self.root):
             return
         try:
             count = self.service.auto_shortlist()
             self._refresh_applications()
-            messagebox.showinfo("Success", f"{count} applicants shortlisted.", parent=self.root)
+            messagebox.showinfo(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.success', default="Success"), f"{count} applicants shortlisted.", parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _create_apl_from_app(self):
         sel = self.apps_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an application first.", parent=self.root)
+            messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.selection', default="Selection"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.select_an_application_first', default="Select an application first."), parent=self.root)
             return
         try:
             app_id = int(sel[0])
         except ValueError:
             messagebox.showerror(
-                "Error",
-                "Could not read application id from selection.",
+                _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"),
+                _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.could_not_read_application_id_from_selection', default="Could not read application id from selection."),
                 parent=self.root,
             )
             return
@@ -333,15 +335,15 @@ class ClearingAdjustmentGUI:
             apl = PriorLearningService()
             cid = apl.create_claim_from_clearing(app_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create APL claim: {e}", parent=self.root)
+            messagebox.showerror(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), f"Failed to create APL claim: {e}", parent=self.root)
             return
         if not cid:
             messagebox.showerror(
-                "Error", "Could not load the clearing application.", parent=self.root,
+                _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.could_not_load_the_clearing_application', default="Could not load the clearing application."), parent=self.root,
             )
             return
         messagebox.showinfo(
-            "APL claim created",
+            _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.apl_claim_created', default="APL claim created"),
             f"Draft APL claim #{cid} created from clearing application #{app_id}.\n"
             "Open Prior Learning (APL/RPL) from the navigation to review.",
             parent=self.root,
@@ -350,7 +352,7 @@ class ClearingAdjustmentGUI:
     # ------------------------------------------------------------- Adjustment
     def _create_adjustment_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Adjustment")
+        notebook.add(tab, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.tabs.adjustment', default="Adjustment"))
 
         cols = ("student", "original_course", "requested_course", "status")
         self.adj_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -361,10 +363,10 @@ class ClearingAdjustmentGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Submit", command=self._submit_adjustment).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Approve", command=lambda: self._update_adj_status("Approved")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Reject", command=lambda: self._update_adj_status("Rejected")).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_adjustments).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.submit', default="Submit"), command=self._submit_adjustment).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.approve', default="Approve"), command=lambda: self._update_adj_status("Approved")).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.reject', default="Reject"), command=lambda: self._update_adj_status("Rejected")).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.refresh', default="Refresh"), command=self._refresh_adjustments).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_adjustments()
 
@@ -385,26 +387,26 @@ class ClearingAdjustmentGUI:
 
     def _submit_adjustment(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Submit Adjustment Request")
+        dlg.title(_t('gui.admissions.clearing_adjustment.clearing_adjustment.windows.submit_adjustment_request', default="Submit Adjustment Request"))
         dlg.geometry("450x300")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Student Name:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.student_name', default="Student Name:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         student_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=student_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Original Course:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.original_course', default="Original Course:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         orig_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=orig_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Requested Course:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.requested_course', default="Requested Course:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         req_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=req_var).pack(fill=tk.X, padx=10)
 
         def save():
             if not student_var.get() or not orig_var.get() or not req_var.get():
-                messagebox.showwarning("Validation", "All fields are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.validation', default="Validation"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.all_fields_are_required', default="All fields are required."), parent=dlg)
                 return
             try:
                 self.service.submit_adjustment({
@@ -415,31 +417,31 @@ class ClearingAdjustmentGUI:
                 })
                 dlg.destroy()
                 self._refresh_adjustments()
-                messagebox.showinfo("Success", "Adjustment request submitted.", parent=self.root)
+                messagebox.showinfo(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.success', default="Success"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.adjustment_request_submitted', default="Adjustment request submitted."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Submit", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.submit', default="Submit"), command=save).pack(pady=15)
 
     def _update_adj_status(self, new_status):
         sel = self.adj_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an adjustment request first.", parent=self.root)
+            messagebox.showwarning(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.selection', default="Selection"), _t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.select_an_adjustment_request_first', default="Select an adjustment request first."), parent=self.root)
             return
         values = self.adj_tree.item(sel[0], "values")
         try:
             self.service.update_adjustment_status(values[0], values[2], new_status)
             self._refresh_adjustments()
-            messagebox.showinfo("Success", f"Status updated to {new_status}.", parent=self.root)
+            messagebox.showinfo(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.success', default="Success"), f"Status updated to {new_status}.", parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.admissions.clearing_adjustment.clearing_adjustment.dialogs.error', default="Error"), str(e), parent=self.root)
 
     # ------------------------------------------------------------- Statistics
     def _create_statistics_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Statistics")
+        notebook.add(tab, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.tabs.statistics', default="Statistics"))
 
-        stats_frame = ttk.LabelFrame(tab, text="Clearing & Adjustment Statistics")
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.labels.clearing_adjustment_statistics', default="Clearing & Adjustment Statistics"))
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.stats_labels = {}
@@ -457,7 +459,7 @@ class ClearingAdjustmentGUI:
             lbl.grid(row=row, column=col + 1, padx=15, pady=12, sticky=tk.W)
             self.stats_labels[name] = lbl
 
-        ttk.Button(stats_frame, text="Refresh Statistics", command=self._refresh_statistics).grid(
+        ttk.Button(stats_frame, text=_t('gui.admissions.clearing_adjustment.clearing_adjustment.buttons.refresh_statistics', default="Refresh Statistics"), command=self._refresh_statistics).grid(
             row=len(stat_names) // 2 + 1, column=0, columnspan=4, pady=15)
 
         self._refresh_statistics()

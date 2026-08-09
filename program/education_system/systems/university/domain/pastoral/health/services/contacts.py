@@ -4,7 +4,7 @@ from datetime import datetime
 
 from education_system.systems.university.domain.pastoral.health.services.audit import log_audit_event
 from education_system.systems.university.infrastructure.database.data_backup import backup_before_operation
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.health.storage import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 def get_user_student_id(auth):

@@ -1,5 +1,7 @@
 """Admin/system management mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.scrolledtext import ScrolledText
@@ -88,15 +90,15 @@ class AdminMixin:
         try:
             import shutil
             from pathlib import Path
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup_dir = paths.BACKUP_DIR
+            backup_dir = paths.UNIVERSITY_BACKUP_DIR
             backup_dir.mkdir(parents=True, exist_ok=True)
 
             backup_path = backup_dir / f"student_records_backup_{timestamp}.db"
 
-            shutil.copy2(paths.DEFAULT_DB_PATH, backup_path)
+            shutil.copy2(paths.UNIVERSITY_DEFAULT_DB_PATH, backup_path)
             messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.admin_tab.backup_success", path=str(backup_path)))
         except Exception as e:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.admin_tab.backup_failed", error=str(e)))
@@ -281,7 +283,7 @@ class AdminMixin:
         max_amount_entry.grid(row=2, column=1, pady=5)
 
         tk.Label(form_frame, text=_("finance_gui.admin_tab.category_label")).grid(row=3, column=0, sticky='w', pady=5)
-        category_var = tk.StringVar(value="grant")
+        category_var = tk.StringVar(value=_t('gui.finance.finance.layout.admin.values.grant', default="grant"))
         category_combo = ttk.Combobox(form_frame, textvariable=category_var,
                                      values=['grant', 'loan', 'scholarship', 'work_study'],
                                      state='readonly', width=27)
@@ -296,7 +298,7 @@ class AdminMixin:
                 category = category_var.get()
 
                 if not name:
-                    messagebox.showwarning(_("finance_gui.messages.warning"), "Aid type name is required.")
+                    messagebox.showwarning(_("finance_gui.messages.warning"), _t('gui.finance.finance.layout.admin.dialogs.aid_type_name_is_required', default="Aid type name is required."))
                     return
 
                 conn = get_connection()

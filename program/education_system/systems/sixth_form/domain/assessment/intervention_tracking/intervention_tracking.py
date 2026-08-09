@@ -22,14 +22,14 @@ import re
 import sqlite3
 from dataclasses import dataclass, field
 from typing import Any
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.intervention_tracking import (
     intervention_tracking as data,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.INTERVENTION_TRACKING_DB
+DB_PATH = paths.SIXTH_FORM_INTERVENTION_TRACKING_DB
 
 
 INTERVENTION_TYPES: tuple[str, ...] = (
@@ -260,7 +260,7 @@ class Summary:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

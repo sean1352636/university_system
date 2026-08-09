@@ -124,8 +124,23 @@ class BackupMixin:
 
             print(f"\nRestoring from {backups[choice]}...")
 
-            with zipfile.ZipFile(selected_backup, 'r') as backup_zip:
-                backup_zip.extractall('.')
+            # Restore beneath the project root via safe_extract, never
+            # extractall(): a backup archive is untrusted input (it may have
+            # been swapped on disk) and extractall would honour "../" members
+            # and symlink members, writing anywhere the process can reach.
+            from education_system.platform.kernel.core.safe_paths import (
+                PathSecurityError,
+                safe_extract,
+            )
+
+            restore_root = str(getattr(paths, 'PROJECT_ROOT', os.getcwd()))
+            try:
+                with zipfile.ZipFile(selected_backup, 'r') as backup_zip:
+                    safe_extract(backup_zip, restore_root)
+            except PathSecurityError as e:
+                logger.error("Refused unsafe backup archive %s: %s", selected_backup, e)
+                print(f"❌ Restore refused — the backup archive is unsafe: {e}")
+                return
 
             print("✅ System restored successfully!")
             print("⚠️  Please restart the application.")

@@ -18,6 +18,7 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
+from education_system.platform.kernel.core.safe_paths import harden_path, secure_temp_dir
 from education_system.systems.sixth_form.domain.governance.user_management import (
     lifecycle,
 )
@@ -166,11 +167,13 @@ def bundle_sar(auth: Any, user_id: int, *,
     if _ua.get_user(auth, user_id) is None:
         raise UserAccountError(f"No user #{user_id}")
     data = collect_sar(auth, user_id)
+    # A SAR bundle is a zip of one person's entire record. Writing it to a
+    # predictable, world-readable /tmp path exposed it to every local user and
+    # invited a symlink pre-plant on the destination; it now goes to a private
+    # 0o700 directory with a 0o600 archive inside.
     if output_path is None:
         ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-        output_path = (f"/tmp/sar-user-{user_id}-{ts}.zip"
-                        if Path("/tmp").is_dir()
-                        else f"sar-user-{user_id}-{ts}.zip")
+        output_path = str(secure_temp_dir(prefix="sar_") / f"sar-user-{user_id}-{ts}.zip")
     try:
         with zipfile.ZipFile(output_path, "w",
                               compression=zipfile.ZIP_DEFLATED) as zf:
@@ -186,6 +189,7 @@ def bundle_sar(auth: Any, user_id: int, *,
     except OSError as e:
         logger.exception("bundle_sar zip write failed")
         raise UserAccountError(f"Could not write SAR: {e}") from e
+    harden_path(output_path)
     lifecycle._audit(auth, "sar_export", user_id,
                       {"output_path": output_path,
                        "tables": list(data.keys())})

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -70,33 +72,33 @@ from education_system.systems.university.interfaces.gui.operations.commerce.rest
 def inventory_reports(self):
     """Show comprehensive inventory reports menu"""
     reports_dialog = tk.Toplevel(self.root)
-    reports_dialog.title("Inventory Reports")
+    reports_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.windows.inventory_reports', default="Inventory Reports"))
     reports_dialog.geometry("450x500")
     reports_dialog.transient(self.root)
     reports_dialog.grab_set()
     main_frame = ttk.Frame(reports_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Inventory Reports",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.labels.inventory_reports', default="Inventory Reports"),
              font=('Arial', 14, 'bold')).pack(pady=20)
-    ttk.Button(main_frame, text="Inventory Valuation Report",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.inventory_valuation_report', default="Inventory Valuation Report"),
               command=lambda: [reports_dialog.destroy(), self.inventory_valuation_report()],
               width=35).pack(pady=5)
-    ttk.Button(main_frame, text="Stock Movement Report",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.stock_movement_report', default="Stock Movement Report"),
               command=lambda: [reports_dialog.destroy(), self.stock_movement_report()],
               width=35).pack(pady=5)
-    ttk.Button(main_frame, text="Low Stock Report",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.low_stock_report', default="Low Stock Report"),
               command=lambda: [reports_dialog.destroy(), self.low_stock_report()],
               width=35).pack(pady=5)
-    ttk.Button(main_frame, text="Expiry Report",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.expiry_report', default="Expiry Report"),
               command=lambda: [reports_dialog.destroy(), self.expiry_report()],
               width=35).pack(pady=5)
-    ttk.Button(main_frame, text="ABC Analysis",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.abc_analysis', default="ABC Analysis"),
               command=lambda: [reports_dialog.destroy(), self.abc_analysis()],
               width=35).pack(pady=5)
-    ttk.Button(main_frame, text="Inventory Transactions Log",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.inventory_transactions_log', default="Inventory Transactions Log"),
               command=lambda: [reports_dialog.destroy(), self.inventory_transactions()],
               width=35).pack(pady=5)
-    ttk.Button(main_frame, text="Close",
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.close', default="Close"),
               command=reports_dialog.destroy,
               width=35).pack(pady=20)
 
@@ -105,7 +107,7 @@ def inventory_valuation_report(self):
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Get inventory valuation by category/item
@@ -119,12 +121,12 @@ def inventory_valuation_report(self):
         conn.close()
         # Display report
         report_dialog = tk.Toplevel(self.root)
-        report_dialog.title("Inventory Valuation Report")
+        report_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.windows.inventory_valuation_report', default="Inventory Valuation Report"))
         report_dialog.geometry("900x600")
         report_dialog.transient(self.root)
         main_frame = ttk.Frame(report_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Inventory Valuation Report",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.labels.inventory_valuation_report', default="Inventory Valuation Report"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         report_text = ScrolledText(main_frame, height=30, width=100)
         report_text.pack(fill='both', expand=True)
@@ -140,23 +142,23 @@ def inventory_valuation_report(self):
         report += f"{'TOTAL INVENTORY VALUE:':<64} £{total_value:<14.2f}\n"
         report_text.insert(1.0, report)
         report_text.config(state='disabled')
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.close', default="Close"),
                   command=report_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate valuation report:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), f"Failed to generate valuation report:\n{str(e)}")
 
 def stock_movement_report(self):
     """Track inventory movements (received, used, waste)"""
     try:
-        start_date = simpledialog.askstring("Stock Movement", "Enter start date (YYYY-MM-DD):")
+        start_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.stock_movement', default="Stock Movement"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.enter_start_date_yyyy_mm_dd', default="Enter start date (YYYY-MM-DD):"))
         if not start_date:
             return
-        end_date = simpledialog.askstring("Stock Movement", "Enter end date (YYYY-MM-DD):")
+        end_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.stock_movement', default="Stock Movement"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.enter_end_date_yyyy_mm_dd', default="Enter end date (YYYY-MM-DD):"))
         if not end_date:
             return
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Get movements data (purchases, waste)
@@ -178,7 +180,7 @@ def stock_movement_report(self):
         conn.close()
         # Display report
         report_dialog = tk.Toplevel(self.root)
-        report_dialog.title("Stock Movement Report")
+        report_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.windows.stock_movement_report', default="Stock Movement Report"))
         report_dialog.geometry("900x600")
         report_dialog.transient(self.root)
         main_frame = ttk.Frame(report_dialog, padding=20)
@@ -205,17 +207,17 @@ def stock_movement_report(self):
         report += f"Net Movement: {total_received - total_waste:.1f} units\n"
         report_text.insert(1.0, report)
         report_text.config(state='disabled')
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.close', default="Close"),
                   command=report_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate stock movement report:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), f"Failed to generate stock movement report:\n{str(e)}")
 
 def low_stock_report(self):
     """Report on items below reorder level"""
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Get low stock items
@@ -230,16 +232,16 @@ def low_stock_report(self):
         low_stock = cursor.fetchall()
         conn.close()
         if not low_stock:
-            messagebox.showinfo("Low Stock", "No items are currently low on stock!")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.low_stock', default="Low Stock"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.no_items_are_currently_low_on_stock', default="No items are currently low on stock!"))
             return
         # Display report
         report_dialog = tk.Toplevel(self.root)
-        report_dialog.title("Low Stock Report")
+        report_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.windows.low_stock_report', default="Low Stock Report"))
         report_dialog.geometry("1000x600")
         report_dialog.transient(self.root)
         main_frame = ttk.Frame(report_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Low Stock Report",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.labels.low_stock_report', default="Low Stock Report"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         report_text = ScrolledText(main_frame, height=30, width=110)
         report_text.pack(fill='both', expand=True)
@@ -259,17 +261,17 @@ def low_stock_report(self):
         report += f"Total Restock Cost: £{total_restock_cost:.2f}\n"
         report_text.insert(1.0, report)
         report_text.config(state='disabled')
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.close', default="Close"),
                   command=report_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate low stock report:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), f"Failed to generate low stock report:\n{str(e)}")
 
 def expiry_report(self):
     """Track expiring inventory"""
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Add expiry_date column if it doesn't exist
@@ -293,12 +295,12 @@ def expiry_report(self):
         conn.close()
         # Display report
         report_dialog = tk.Toplevel(self.root)
-        report_dialog.title("Expiry Report")
+        report_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.windows.expiry_report', default="Expiry Report"))
         report_dialog.geometry("1000x600")
         report_dialog.transient(self.root)
         main_frame = ttk.Frame(report_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Inventory Expiry Report",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.labels.inventory_expiry_report', default="Inventory Expiry Report"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         report_text = ScrolledText(main_frame, height=30, width=110)
         report_text.pack(fill='both', expand=True)
@@ -357,17 +359,17 @@ def expiry_report(self):
         report += f"Expiring in 30 Days: {len(expires_30_days)}\n"
         report_text.insert(1.0, report)
         report_text.config(state='disabled')
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.close', default="Close"),
                   command=report_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate expiry report:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), f"Failed to generate expiry report:\n{str(e)}")
 
 def abc_analysis(self):
     """ABC analysis for inventory optimization"""
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Get inventory value data
@@ -381,7 +383,7 @@ def abc_analysis(self):
         items = cursor.fetchall()
         conn.close()
         if not items:
-            messagebox.showinfo("No Data", "No inventory data available for ABC analysis")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.no_data', default="No Data"), _t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.no_inventory_data_available_for_abc_analysis', default="No inventory data available for ABC analysis"))
             return
         # Perform ABC analysis
         total_value = sum(item[4] for item in items)
@@ -400,12 +402,12 @@ def abc_analysis(self):
                 c_items.append(item)
         # Display report
         report_dialog = tk.Toplevel(self.root)
-        report_dialog.title("ABC Analysis")
+        report_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.windows.abc_analysis', default="ABC Analysis"))
         report_dialog.geometry("900x700")
         report_dialog.transient(self.root)
         main_frame = ttk.Frame(report_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="ABC Inventory Analysis",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.labels.abc_inventory_analysis', default="ABC Inventory Analysis"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         report_text = ScrolledText(main_frame, height=35, width=100)
         report_text.pack(fill='both', expand=True)
@@ -449,8 +451,8 @@ def abc_analysis(self):
         report += "  • Consider reducing stock variety\n"
         report_text.insert(1.0, report)
         report_text.config(state='disabled')
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.buttons.close', default="Close"),
                   command=report_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate ABC analysis:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.inventory.inventory_reports.dialogs.error', default="Error"), f"Failed to generate ABC analysis:\n{str(e)}")
 

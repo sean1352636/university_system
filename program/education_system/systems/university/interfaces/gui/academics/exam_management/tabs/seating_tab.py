@@ -5,6 +5,8 @@ exam_management.seating handles all writes and the allocation algorithm; this
 tab is a thin form + a Canvas grid that visualises layouts and allocations.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -128,7 +130,7 @@ class SeatingTabMixin:
             logger.exception("seating init failed")
 
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="Seating")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.tabs.seating_tab.tabs.seating', default="Seating"))
 
         self._seating_state = {
             'exam_id': None,
@@ -144,10 +146,10 @@ class SeatingTabMixin:
         top = ttk.Frame(tab)
         top.pack(fill='x', pady=(0, 8))
 
-        ttk.Label(top, text="Exam:").pack(side='left', padx=(0, 4))
+        ttk.Label(top, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.exam', default="Exam:")).pack(side='left', padx=(0, 4))
         self._seating_exam_combo = ttk.Combobox(top, width=70, state='readonly')
         self._seating_exam_combo.pack(side='left', padx=4)
-        ttk.Button(top, text="Reload exams",
+        ttk.Button(top, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.reload_exams', default="Reload exams"),
                    command=self._seating_load_exam_options).pack(side='left', padx=4)
         self._seating_load_exam_options()
         self._seating_exam_combo.bind(
@@ -157,23 +159,23 @@ class SeatingTabMixin:
         actions = ttk.Frame(tab)
         actions.pack(fill='x', pady=(0, 8))
 
-        ttk.Label(actions, text="Policy:").pack(side='left', padx=(0, 4))
+        ttk.Label(actions, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.policy', default="Policy:")).pack(side='left', padx=(0, 4))
         self._seating_policy = ttk.Combobox(
             actions, values=list(_seating.POLICIES), state='readonly', width=14)
         self._seating_policy.set('alphabetical')
         self._seating_policy.pack(side='left', padx=4)
 
-        ttk.Button(actions, text="Define / Edit Layout",
+        ttk.Button(actions, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.define_edit_layout', default="Define / Edit Layout"),
                    command=self._seating_define_layout).pack(side='left', padx=4)
-        ttk.Button(actions, text="Auto-allocate",
+        ttk.Button(actions, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.auto_allocate', default="Auto-allocate"),
                    command=self._seating_auto_allocate).pack(side='left', padx=4)
-        ttk.Button(actions, text="Clear allocation",
+        ttk.Button(actions, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.clear_allocation', default="Clear allocation"),
                    command=self._seating_clear_allocation).pack(side='left', padx=4)
-        ttk.Button(actions, text="Export CSV",
+        ttk.Button(actions, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.export_csv', default="Export CSV"),
                    command=self._seating_export_csv).pack(side='left', padx=4)
-        ttk.Button(actions, text="Export PDF",
+        ttk.Button(actions, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.export_pdf', default="Export PDF"),
                    command=self._seating_export_pdf).pack(side='left', padx=4)
-        ttk.Button(actions, text="Invigilator zones…",
+        ttk.Button(actions, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.invigilator_zones', default="Invigilator zones…"),
                    command=self._seating_zones_dialog).pack(side='left', padx=4)
 
         # Status line
@@ -409,15 +411,15 @@ class SeatingTabMixin:
             ).pack(padx=10)
         else:
             ttk.Label(win, foreground='#888',
-                      text="Unallocated").pack(padx=10)
+                      text=_t('gui.academics.exam_management.tabs.seating_tab.labels.unallocated', default="Unallocated")).pack(padx=10)
 
         btns = ttk.Frame(win)
         btns.pack(padx=10, pady=10)
 
         def reassign():
             new_sid = simpledialog.askstring(
-                "Reassign", "Student ID for this seat "
-                "(blank to clear):", parent=win)
+                _t('gui.academics.exam_management.tabs.seating_tab.dialogs.reassign', default="Reassign"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.student_id_for_this_seat_blank_to_clear', default="Student ID for this seat "
+                "(blank to clear):"), parent=win)
             if new_sid is None:
                 return
             new_sid = new_sid.strip() or None
@@ -475,7 +477,7 @@ class SeatingTabMixin:
             win.destroy()
             self._seating_refresh()
 
-        ttk.Button(btns, text="Reassign / clear student",
+        ttk.Button(btns, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.reassign_clear_student', default="Reassign / clear student"),
                    command=reassign).pack(side='left', padx=4)
         ttk.Button(btns, text=("Mark in-service" if seat['is_disabled']
                                else "Mark out-of-service"),
@@ -489,7 +491,7 @@ class SeatingTabMixin:
                                else "Mark left-handed"),
                    command=lambda: toggle_attr(
                        'is_left_handed', 'left_handed')).pack(side='left', padx=4)
-        ttk.Button(btns, text="Close",
+        ttk.Button(btns, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.close', default="Close"),
                    command=win.destroy).pack(side='right', padx=4)
 
     # ── Actions ──────────────────────────────────────────────────────
@@ -499,8 +501,8 @@ class SeatingTabMixin:
         room_id = st['room_id']
         if not room_id:
             messagebox.showwarning(
-                "No room",
-                "Select an exam first — its room is used as the layout target.")
+                _t('gui.academics.exam_management.tabs.seating_tab.dialogs.no_room', default="No room"),
+                _t('gui.academics.exam_management.tabs.seating_tab.dialogs.select_an_exam_first_its_room_is_used_as_the_layout_target', default="Select an exam first — its room is used as the layout target."))
             return
 
         existing = _seating.get_layout(room_id)
@@ -512,25 +514,25 @@ class SeatingTabMixin:
                   font=('Arial', 10, 'bold')).grid(
             row=0, column=0, columnspan=2, sticky='w', padx=10, pady=(10, 4))
 
-        ttk.Label(win, text="Rows:").grid(row=1, column=0, sticky='e', padx=8, pady=4)
+        ttk.Label(win, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.rows', default="Rows:")).grid(row=1, column=0, sticky='e', padx=8, pady=4)
         rows_e = ttk.Entry(win, width=8)
         rows_e.grid(row=1, column=1, sticky='w', padx=8, pady=4)
         rows_e.insert(0, str(existing['rows_n']) if existing else '8')
 
-        ttk.Label(win, text="Cols:").grid(row=2, column=0, sticky='e', padx=8, pady=4)
+        ttk.Label(win, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.cols', default="Cols:")).grid(row=2, column=0, sticky='e', padx=8, pady=4)
         cols_e = ttk.Entry(win, width=8)
         cols_e.grid(row=2, column=1, sticky='w', padx=8, pady=4)
         cols_e.insert(0, str(existing['cols_n']) if existing else '10')
 
-        ttk.Label(win, text="Accessible (CSV labels):").grid(
+        ttk.Label(win, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.accessible_csv_labels', default="Accessible (CSV labels):")).grid(
             row=3, column=0, sticky='e', padx=8, pady=4)
         acc_e = ttk.Entry(win, width=40)
         acc_e.grid(row=3, column=1, sticky='w', padx=8, pady=4)
-        ttk.Label(win, text="Left-handed (CSV labels):").grid(
+        ttk.Label(win, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.left_handed_csv_labels', default="Left-handed (CSV labels):")).grid(
             row=4, column=0, sticky='e', padx=8, pady=4)
         lh_e = ttk.Entry(win, width=40)
         lh_e.grid(row=4, column=1, sticky='w', padx=8, pady=4)
-        ttk.Label(win, text="Out-of-service (CSV labels):").grid(
+        ttk.Label(win, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.out_of_service_csv_labels', default="Out-of-service (CSV labels):")).grid(
             row=5, column=0, sticky='e', padx=8, pady=4)
         dis_e = ttk.Entry(win, width=40)
         dis_e.grid(row=5, column=1, sticky='w', padx=8, pady=4)
@@ -548,7 +550,7 @@ class SeatingTabMixin:
                 rows_n = int(rows_e.get())
                 cols_n = int(cols_e.get())
             except ValueError:
-                messagebox.showerror("Invalid", "Rows and cols must be integers.",
+                messagebox.showerror(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.invalid', default="Invalid"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.rows_and_cols_must_be_integers', default="Rows and cols must be integers."),
                                      parent=win)
                 return
             acc = {tok.strip().upper() for tok in acc_e.get().split(',') if tok.strip()}
@@ -561,35 +563,35 @@ class SeatingTabMixin:
                     disabled_seats=dis,
                 )
             except (ValueError, RuntimeError) as e:
-                messagebox.showerror("Cannot save", str(e), parent=win)
+                messagebox.showerror(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.cannot_save', default="Cannot save"), str(e), parent=win)
                 return
             win.destroy()
             self._seating_refresh()
-            messagebox.showinfo("Saved", "Layout saved.")
+            messagebox.showinfo(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.saved', default="Saved"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.layout_saved', default="Layout saved."))
 
-        ttk.Button(win, text="Save", command=save).grid(
+        ttk.Button(win, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.save', default="Save"), command=save).grid(
             row=6, column=0, columnspan=2, pady=10)
 
     def _seating_auto_allocate(self):
         st = self._seating_state
         if not st['exam_id']:
-            messagebox.showwarning("Select", "Pick an exam first.")
+            messagebox.showwarning(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.select', default="Select"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.pick_an_exam_first', default="Pick an exam first."))
             return
         if not st['layout']:
             messagebox.showwarning(
-                "No layout",
-                "Define a layout for this room before allocating seats.")
+                _t('gui.academics.exam_management.tabs.seating_tab.dialogs.no_layout', default="No layout"),
+                _t('gui.academics.exam_management.tabs.seating_tab.dialogs.define_a_layout_for_this_room_before_allocating_seats', default="Define a layout for this room before allocating seats."))
             return
         policy = self._seating_policy.get()
         if not messagebox.askyesno(
-            "Allocate?",
+            _t('gui.academics.exam_management.tabs.seating_tab.dialogs.allocate', default="Allocate?"),
             f"Run auto-allocation with policy '{policy}'?\n\n"
             "This clears any existing allocation for the exam first."):
             return
         try:
             result = _seating.auto_allocate(st['exam_id'], policy=policy)
         except ValueError as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.error', default="Error"), str(e))
             return
         lines = [
             f"Allocated: {result['allocated']}",
@@ -601,23 +603,23 @@ class SeatingTabMixin:
             lines.append(f"  …and {len(result['unallocated']) - 8} more.")
         for w in result['warnings']:
             lines.append(f"⚠ {w}")
-        messagebox.showinfo("Allocation result", "\n".join(lines))
+        messagebox.showinfo(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.allocation_result', default="Allocation result"), "\n".join(lines))
         self._seating_refresh()
 
     def _seating_clear_allocation(self):
         st = self._seating_state
         if not st['exam_id']:
             return
-        if not messagebox.askyesno("Clear", "Clear all allocations for this exam?"):
+        if not messagebox.askyesno(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.clear', default="Clear"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.clear_all_allocations_for_this_exam', default="Clear all allocations for this exam?")):
             return
         n = _seating.clear_allocation(st['exam_id'])
-        messagebox.showinfo("Cleared", f"Removed {n} allocation(s).")
+        messagebox.showinfo(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.cleared', default="Cleared"), f"Removed {n} allocation(s).")
         self._seating_refresh()
 
     def _seating_export_csv(self):
         st = self._seating_state
         if not st['exam_id'] or not st['layout']:
-            messagebox.showwarning("Nothing to export", "Pick an exam with a layout.")
+            messagebox.showwarning(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.nothing_to_export', default="Nothing to export"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.pick_an_exam_with_a_layout', default="Pick an exam with a layout."))
             return
         path = filedialog.asksaveasfilename(
             defaultextension='.csv',
@@ -628,14 +630,14 @@ class SeatingTabMixin:
         try:
             n = _seating.export_chart_csv(st['exam_id'], path)
         except RuntimeError as e:
-            messagebox.showerror("Export failed", str(e))
+            messagebox.showerror(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.export_failed', default="Export failed"), str(e))
             return
-        messagebox.showinfo("Exported", f"Wrote {n} row(s) to:\n{path}")
+        messagebox.showinfo(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.exported', default="Exported"), f"Wrote {n} row(s) to:\n{path}")
 
     def _seating_export_pdf(self):
         st = self._seating_state
         if not st['exam_id'] or not st['layout']:
-            messagebox.showwarning("Nothing to export", "Pick an exam with a layout.")
+            messagebox.showwarning(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.nothing_to_export', default="Nothing to export"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.pick_an_exam_with_a_layout', default="Pick an exam with a layout."))
             return
         path = filedialog.asksaveasfilename(
             defaultextension='.pdf',
@@ -646,13 +648,13 @@ class SeatingTabMixin:
         ok = _export_pdf(st['exam_id'], path, st['layout'],
                          st['allocations_by_seat'], st['room_label'])
         if ok:
-            messagebox.showinfo("Exported", f"PDF saved to:\n{path}")
+            messagebox.showinfo(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.exported', default="Exported"), f"PDF saved to:\n{path}")
         else:
             # Fallback: write the Canvas as PostScript.
             ps_path = path.rsplit('.', 1)[0] + '.ps'
             self._seating_canvas.postscript(file=ps_path)
             messagebox.showwarning(
-                "reportlab unavailable",
+                _t('gui.academics.exam_management.tabs.seating_tab.dialogs.reportlab_unavailable', default="reportlab unavailable"),
                 f"PDF backend not installed — saved PostScript to:\n{ps_path}")
 
     # ── Invigilator zones dialog ─────────────────────────────────────
@@ -660,11 +662,11 @@ class SeatingTabMixin:
     def _seating_zones_dialog(self):
         st = self._seating_state
         if not st['exam_id']:
-            messagebox.showwarning("Select", "Pick an exam first.")
+            messagebox.showwarning(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.select', default="Select"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.pick_an_exam_first', default="Pick an exam first."))
             return
         eid = st['exam_id']
         win = tk.Toplevel(self.notebook)
-        win.title("Invigilator zones")
+        win.title(_t('gui.academics.exam_management.tabs.seating_tab.windows.invigilator_zones', default="Invigilator zones"))
         win.transient(self.notebook.winfo_toplevel())
 
         cols = ('id', 'invigilator', 'zone', 'rows', 'cols')
@@ -690,7 +692,7 @@ class SeatingTabMixin:
         refresh()
 
         # Add zone
-        form = ttk.LabelFrame(win, text="Add zone", padding=8)
+        form = ttk.LabelFrame(win, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.add_zone', default="Add zone"), padding=8)
         form.pack(fill='x', padx=10, pady=(0, 8))
         invig_e = ttk.Entry(form, width=20)
         invig_e.grid(row=0, column=1, padx=4, pady=2, sticky='w')
@@ -704,12 +706,12 @@ class SeatingTabMixin:
         cs_e.grid(row=3, column=1, padx=4, pady=2, sticky='w')
         ce_e = ttk.Entry(form, width=6)
         ce_e.grid(row=3, column=3, padx=4, pady=2, sticky='w')
-        ttk.Label(form, text="Invigilator:").grid(row=0, column=0, sticky='e')
-        ttk.Label(form, text="Zone label:").grid(row=1, column=0, sticky='e')
-        ttk.Label(form, text="Row start:").grid(row=2, column=0, sticky='e')
-        ttk.Label(form, text="Row end:").grid(row=2, column=2, sticky='e')
-        ttk.Label(form, text="Col start:").grid(row=3, column=0, sticky='e')
-        ttk.Label(form, text="Col end:").grid(row=3, column=2, sticky='e')
+        ttk.Label(form, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.invigilator', default="Invigilator:")).grid(row=0, column=0, sticky='e')
+        ttk.Label(form, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.zone_label', default="Zone label:")).grid(row=1, column=0, sticky='e')
+        ttk.Label(form, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.row_start', default="Row start:")).grid(row=2, column=0, sticky='e')
+        ttk.Label(form, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.row_end', default="Row end:")).grid(row=2, column=2, sticky='e')
+        ttk.Label(form, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.col_start', default="Col start:")).grid(row=3, column=0, sticky='e')
+        ttk.Label(form, text=_t('gui.academics.exam_management.tabs.seating_tab.labels.col_end', default="Col end:")).grid(row=3, column=2, sticky='e')
 
         def _opt_int(s):
             s = s.strip()
@@ -722,7 +724,7 @@ class SeatingTabMixin:
 
         def add():
             if not invig_e.get().strip() or not label_e.get().strip():
-                messagebox.showerror("Required", "Invigilator and label required.",
+                messagebox.showerror(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.required', default="Required"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.invigilator_and_label_required', default="Invigilator and label required."),
                                      parent=win)
                 return
             _seating.assign_invigilator_zone(
@@ -736,18 +738,18 @@ class SeatingTabMixin:
                 e.delete(0, tk.END)
             refresh()
 
-        ttk.Button(form, text="Add", command=add).grid(row=4, column=0,
+        ttk.Button(form, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.add', default="Add"), command=add).grid(row=4, column=0,
                                                        columnspan=4, pady=6)
 
         def clear_all():
-            if messagebox.askyesno("Clear?", "Clear all zones for this exam?",
+            if messagebox.askyesno(_t('gui.academics.exam_management.tabs.seating_tab.dialogs.clear_variant_2', default="Clear?"), _t('gui.academics.exam_management.tabs.seating_tab.dialogs.clear_all_zones_for_this_exam', default="Clear all zones for this exam?"),
                                    parent=win):
                 _seating.clear_zones(eid)
                 refresh()
 
         btns = ttk.Frame(win)
         btns.pack(fill='x', padx=10, pady=(0, 10))
-        ttk.Button(btns, text="Clear all zones",
+        ttk.Button(btns, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.clear_all_zones', default="Clear all zones"),
                    command=clear_all).pack(side='left')
-        ttk.Button(btns, text="Close",
+        ttk.Button(btns, text=_t('gui.academics.exam_management.tabs.seating_tab.buttons.close', default="Close"),
                    command=win.destroy).pack(side='right')

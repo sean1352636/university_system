@@ -10,7 +10,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Runtime state lives under var/, not inside the package (ADR 0018).
-from education_system.platform.paths import AUTH_DB_FILE, DB_FILES_DIR as _AUTH_DB_DIR
+from education_system.paths import PLATFORM_AUTH_DB_FILE, PLATFORM_DB_FILES_DIR as _AUTH_DB_DIR
 
 
 def _secure_db_permissions(path: str) -> None:
@@ -30,7 +30,7 @@ def _secure_db_permissions(path: str) -> None:
 
 def connect(db_path: str | None = None, max_retries: int = 3, retry_delay: float = 0.2) -> sqlite3.Connection:
     """Open a connection to the auth database with retry on lock."""
-    path = db_path or str(AUTH_DB_FILE)
+    path = db_path or str(PLATFORM_AUTH_DB_FILE)
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     for attempt in range(max_retries):
         try:

@@ -8,7 +8,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 
 logger = logging.getLogger("virtual_classroom.emails")
@@ -47,7 +47,7 @@ class SessionManager:
     """Manager for virtual session operations"""
 
     def __init__(self, db_path: str = None):
-        self.db_path = db_path or DEFAULT_DB_PATH
+        self.db_path = db_path or UNIVERSITY_DEFAULT_DB_PATH
 
     def _get_connection(self):
         """Get database connection"""

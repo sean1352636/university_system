@@ -65,11 +65,11 @@ class CommunicationDashboard(
         """Initialize using the same database path as auth system with logging integration"""
         try:
             # Use auth database path if available, with proper fallback
-            from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+            from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
             if auth and hasattr(auth, 'db_path') and auth.db_path:
                 self.db_path = auth.db_path
             else:
-                self.db_path = db_path or str(DEFAULT_DB_PATH)
+                self.db_path = db_path or str(UNIVERSITY_DEFAULT_DB_PATH)
 
             self.auth = auth
 

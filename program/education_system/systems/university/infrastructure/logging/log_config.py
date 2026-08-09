@@ -5,13 +5,13 @@ from logging.handlers import RotatingFileHandler
 
 def get_log_dir() -> str:
     """Return absolute path to centralized log directory."""
-    from education_system.systems.university.infrastructure import paths
-    return str(paths.LOG_DIR)
+    from education_system import paths
+    return str(paths.UNIVERSITY_LOG_DIR)
 
 def get_log_file(name: str) -> str:
     """Return absolute path to a log file inside centralized logs directory."""
-    from education_system.systems.university.infrastructure import paths
-    return str(paths.LOG_DIR / name)
+    from education_system import paths
+    return str(paths.UNIVERSITY_LOG_DIR / name)
 
 def configure_logging(level=logging.INFO, name=None):
     """Configure root logger with rotating file handler in core/logs/app.log and return a named logger."""

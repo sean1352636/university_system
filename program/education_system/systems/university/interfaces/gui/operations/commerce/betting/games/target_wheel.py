@@ -9,6 +9,8 @@ The wheel has 24 numbered slots. Choose how many adjacent slots to cover
 return is about 94% whatever you choose, so pick your own risk level.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import math
 import random
 import tkinter as tk
@@ -32,7 +34,7 @@ def return_multiplier(covered):
 class TargetWheel:
     def __init__(self, root):
         self.root = root
-        root.title("Target Wheel")
+        root.title(_t('gui.operations.commerce.betting.games.target_wheel.windows.target_wheel', default="Target Wheel"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -48,18 +50,18 @@ class TargetWheel:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=10)
         f.pack()
-        tk.Label(f, text="TARGET WHEEL", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.target_wheel.labels.target_wheel', default="TARGET WHEEL"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 18, "bold")).pack()
         self.wheel = tk.Canvas(f, width=WR * 2 + 20, height=WR * 2 + 30,
                                bg=FELT, highlightthickness=0)
         self.wheel.pack(pady=4)
-        self.msg = tk.Label(f, text="Choose your coverage and spin!", bg=FELT,
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.target_wheel.labels.choose_your_coverage_and_spin', default="Choose your coverage and spin!"), bg=FELT,
                             fg="white", font=("Helvetica", 12, "bold"))
         self.msg.pack()
 
         cov = tk.Frame(f, bg=FELT, pady=4)
         cov.pack()
-        tk.Label(cov, text="Cover:", bg=FELT, fg="white",
+        tk.Label(cov, text=_t('gui.operations.commerce.betting.games.target_wheel.labels.cover', default="Cover:"), bg=FELT, fg="white",
                  font=("Helvetica", 12, "bold")).pack(side="left")
         tk.Button(cov, text="\u2212", width=3, command=lambda: self.cover(-1),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
@@ -70,7 +72,7 @@ class TargetWheel:
         tk.Button(cov, text="+", width=3, command=lambda: self.cover(1),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Button(cov, text="Move", width=6, command=self.move_arc,
+        tk.Button(cov, text=_t('gui.operations.commerce.betting.games.target_wheel.buttons.move', default="Move"), width=6, command=self.move_arc,
                   font=("Helvetica", 10, "bold"), bg="#3a5a8a", fg="white",
                   bd=0).pack(side="left", padx=6)
 
@@ -82,7 +84,7 @@ class TargetWheel:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.target_wheel.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -95,7 +97,7 @@ class TargetWheel:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.target_wheel.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -174,12 +176,12 @@ class TargetWheel:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.target_wheel.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.busy = True
         self.spin_btn.config(state="disabled")
-        self.msg.config(text="Spinning...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.target_wheel.text.spinning', default="Spinning..."), fg="white")
         self.refresh()
         target = random.randrange(N_SLOTS)
         seg = 360 / N_SLOTS
@@ -210,7 +212,7 @@ class TargetWheel:
             self.msg.config(text=f"Landed {self._target + 1} \u2014 missed.",
                             fg="white")
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.target_wheel.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

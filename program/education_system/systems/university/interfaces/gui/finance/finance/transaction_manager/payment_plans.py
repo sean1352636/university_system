@@ -1,5 +1,7 @@
 """Payment plan management GUI"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.finance.finance.transaction_manager._imports import (
     tk, ttk, messagebox, _, datetime, timedelta, get_connection, auth,
 )
@@ -438,7 +440,7 @@ class PaymentPlansMixin:
         ttk.Entry(payment_frame, textvariable=amount_var, font=('Arial', 12)).pack(anchor='w', pady=5)
 
         ttk.Label(payment_frame, text=_("finance_gui.transaction_manager.payment_method_select_label"), font=('Arial', 12)).pack(anchor='w')
-        method_var = tk.StringVar(value="Card")
+        method_var = tk.StringVar(value=_t('gui.finance.finance.transaction_manager.payment_plans.values.card', default="Card"))
         method_combo = ttk.Combobox(payment_frame, textvariable=method_var,
                                    values=["Card", "Cash", "Bank Transfer", "Cheque"],
                                    state='readonly', font=('Arial', 12))

@@ -22,6 +22,8 @@ otherwise to stderr at INFO.
 """
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import os
 import pathlib
@@ -235,7 +237,7 @@ class CRUDTab(ttk.Frame):
         self.tree.bind("<<TreeviewSelect>>", self._on_select)
         self.tree.bind("<Button-3>", self._on_right_click)
 
-        form = ttk.LabelFrame(self, text="Details", padding=8)
+        form = ttk.LabelFrame(self, text=_t('gui.operations.campus.facilities.building_management_app.labels.details', default="Details"), padding=8)
         form.grid(row=1, column=0, sticky="ew", pady=(8, 0))
         for c in (1, 3):
             form.columnconfigure(c, weight=1)
@@ -261,15 +263,15 @@ class CRUDTab(ttk.Frame):
 
         btn_bar = ttk.Frame(self)
         btn_bar.grid(row=2, column=0, sticky="ew", pady=(8, 0))
-        ttk.Button(btn_bar, text="Add",
+        ttk.Button(btn_bar, text=_t('gui.operations.campus.facilities.building_management_app.buttons.add', default="Add"),
                    command=self._safe(self._on_save)).pack(side="left", padx=2)
-        ttk.Button(btn_bar, text="Update Selected",
+        ttk.Button(btn_bar, text=_t('gui.operations.campus.facilities.building_management_app.buttons.update_selected', default="Update Selected"),
                    command=self._safe(self._on_update)).pack(side="left", padx=2)
-        ttk.Button(btn_bar, text="Delete Selected",
+        ttk.Button(btn_bar, text=_t('gui.operations.campus.facilities.building_management_app.buttons.delete_selected', default="Delete Selected"),
                    command=self._safe(self._on_delete)).pack(side="left", padx=2)
-        ttk.Button(btn_bar, text="Clear Form",
+        ttk.Button(btn_bar, text=_t('gui.operations.campus.facilities.building_management_app.buttons.clear_form', default="Clear Form"),
                    command=self._clear_form).pack(side="left", padx=2)
-        ttk.Button(btn_bar, text="Refresh",
+        ttk.Button(btn_bar, text=_t('gui.operations.campus.facilities.building_management_app.buttons.refresh', default="Refresh"),
                    command=self._safe(self.refresh)).pack(side="right", padx=2)
 
     def _safe(self, fn):
@@ -279,16 +281,16 @@ class CRUDTab(ttk.Frame):
             except sqlite3.IntegrityError as e:
                 logger.warning("DB integrity in %s: %s",
                                self.__class__.__name__, e)
-                messagebox.showwarning("Validation",
+                messagebox.showwarning(_t('gui.operations.campus.facilities.building_management_app.dialogs.validation', default="Validation"),
                                        f"Could not save: {e}",
                                        parent=self.app.root)
             except ValueError as e:
-                messagebox.showwarning("Invalid input", str(e),
+                messagebox.showwarning(_t('gui.operations.campus.facilities.building_management_app.dialogs.invalid_input', default="Invalid input"), str(e),
                                        parent=self.app.root)
             except Exception as e:
                 logger.exception("Unhandled error in %s",
                                  self.__class__.__name__)
-                messagebox.showerror("Error", f"Operation failed: {e}",
+                messagebox.showerror(_t('gui.operations.campus.facilities.building_management_app.dialogs.error', default="Error"), f"Operation failed: {e}",
                                      parent=self.app.root)
         return _wrapped
 
@@ -343,8 +345,8 @@ class CRUDTab(ttk.Frame):
         if not self.selected_id:
             raise ValueError("Select a row to delete.")
         if not messagebox.askyesno(
-                "Confirm",
-                "Delete the selected record? This cannot be undone.",
+                _t('gui.operations.campus.facilities.building_management_app.dialogs.confirm', default="Confirm"),
+                _t('gui.operations.campus.facilities.building_management_app.dialogs.delete_the_selected_record_this_cannot_be_undone', default="Delete the selected record? This cannot be undone."),
                 parent=self.app.root):
             return
         self.delete_row()
@@ -905,7 +907,7 @@ class OccupancyTab(_BuildingPickerMixin, CRUDTab):
         self._update_analytics()
 
     def _build_analytics(self):
-        panel = ttk.LabelFrame(self, text="Utilisation Summary", padding=8)
+        panel = ttk.LabelFrame(self, text=_t('gui.operations.campus.facilities.building_management_app.labels.utilisation_summary', default="Utilisation Summary"), padding=8)
         panel.grid(row=3, column=0, sticky="ew", pady=(8, 0))
         self._analytics_label = ttk.Label(
             panel, text="—", justify="left", font=("Arial", 10))
@@ -931,7 +933,7 @@ class OccupancyTab(_BuildingPickerMixin, CRUDTab):
                 "GROUP BY b.building_code "
                 "ORDER BY AVG(o.utilization_pct) DESC")
             if not rows:
-                self._analytics_label.config(text="No occupancy data yet.")
+                self._analytics_label.config(text=_t('gui.operations.campus.facilities.building_management_app.text.no_occupancy_data_yet', default="No occupancy data yet."))
                 return
             lines = ["{:<10} avg={:>5.1f}%  peak={:>5.1f}%  n={}".format(
                 r[0] or "?", r[1] or 0, r[2] or 0, r[3]) for r in rows]
@@ -1377,9 +1379,9 @@ class ReportsTab(ttk.Frame):
 
         top = ttk.Frame(self)
         top.grid(row=0, column=0, sticky="ew", pady=(0, 6))
-        ttk.Button(top, text="Refresh",
+        ttk.Button(top, text=_t('gui.operations.campus.facilities.building_management_app.buttons.refresh', default="Refresh"),
                    command=self.refresh).pack(side="right")
-        ttk.Label(top, text="Facilities Reports & Analytics",
+        ttk.Label(top, text=_t('gui.operations.campus.facilities.building_management_app.labels.facilities_reports_analytics', default="Facilities Reports & Analytics"),
                   font=("Arial", 12, "bold")).pack(side="left")
 
         self.text = tk.Text(self, wrap="word", font=("Courier", 10))
@@ -1507,7 +1509,7 @@ class BuildingManagementApp:
             self.root = tk.Tk()
         else:
             self.root = tk.Toplevel(parent)
-        self.root.title("Facilities Management")
+        self.root.title(_t('gui.operations.campus.facilities.building_management_app.windows.facilities_management', default="Facilities Management"))
         self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
         self._build_header()
@@ -1518,7 +1520,7 @@ class BuildingManagementApp:
         header = tk.Frame(self.root, bg="#2c3e50", height=46)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="🏢 Facilities Management",
+        tk.Label(header, text=_t('gui.operations.campus.facilities.building_management_app.labels.facilities_management', default="🏢 Facilities Management"),
                  font=("Arial", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=12)
         tk.Label(header,
@@ -1593,8 +1595,8 @@ def main():
         try:
             from tkinter import messagebox
             messagebox.showerror(
-                "Facilities Management",
-                "Failed to start. See logs for details.")
+                _t('gui.operations.campus.facilities.building_management_app.dialogs.facilities_management', default="Facilities Management"),
+                _t('gui.operations.campus.facilities.building_management_app.dialogs.failed_to_start_see_logs_for_details', default="Failed to start. See logs for details."))
         except Exception:
             pass
         raise

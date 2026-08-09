@@ -4,6 +4,8 @@ Launches the existing ParentPortalGUI in a dedicated Tk root window with
 Return to Login and Shutdown buttons, matching the other role portals.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 import logging
@@ -24,7 +26,7 @@ class ParentPortalWrapper:
             install_destroy_race_filter(self.root)
         except Exception:
             pass
-        self.root.title("Parent Portal")
+        self.root.title(_t('gui.shell.main.parent_portal_wrapper.windows.parent_portal', default="Parent Portal"))
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
 
@@ -58,11 +60,11 @@ class ParentPortalWrapper:
                  font=('Arial', 15, 'bold'), bg='#2c3e50', fg='white'
                  ).pack(side='left', padx=20, pady=10)
 
-        tk.Button(header, text="Shutdown", bg='#c0392b', fg='white',
+        tk.Button(header, text=_t('gui.shell.main.parent_portal_wrapper.buttons.shutdown', default="Shutdown"), bg='#c0392b', fg='white',
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
                   command=self._shutdown).pack(side='right', padx=10, pady=10)
 
-        tk.Button(header, text="Return to Login", bg='#e67e22', fg='white',
+        tk.Button(header, text=_t('gui.shell.main.parent_portal_wrapper.buttons.return_to_login', default="Return to Login"), bg='#e67e22', fg='white',
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
                   command=self._return_to_login).pack(side='right', padx=10, pady=10)
 
@@ -77,7 +79,7 @@ class ParentPortalWrapper:
             portal.load_user_data()
         except Exception as e:
             logger.error(f"Error loading parent portal: {e}")
-            ttk.Label(self.root, text="Welcome, parent!",
+            ttk.Label(self.root, text=_t('gui.shell.main.parent_portal_wrapper.labels.welcome_parent', default="Welcome, parent!"),
                       font=('Arial', 14, 'bold')).pack(pady=20)
             ttk.Label(self.root,
                       text=f"The parent portal could not be loaded: {e}",

@@ -10,6 +10,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -34,7 +36,7 @@ class ExitGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Exit Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.exit.dialogs.error', default="Error"), _t('gui.staff.staff_hr.exit.dialogs.login_required_to_access_exit_management', default="Login required to access Exit Management"))
             return
 
         if parent_notebook:
@@ -49,21 +51,21 @@ class ExitGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Exit Management")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.exit.tabs.exit_management', default="Exit Management"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Exit Management & Turnover Analytics")
+        self.window.title(_t('gui.staff.staff_hr.exit.windows.exit_management_turnover_analytics', default="Exit Management & Turnover Analytics"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.exit.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.exit.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -88,18 +90,18 @@ class ExitGUI:
     def _create_my_checklist_tab(self):
         """Create my exit checklist tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Checklist")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.exit.tabs.my_checklist', default="My Checklist"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Exit Checklist", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_my_checklist).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.exit.labels.my_exit_checklist', default="My Exit Checklist"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.exit.buttons.refresh', default="Refresh"), command=self._load_my_checklist).pack(side=tk.RIGHT)
 
         # Progress
         self.progress_frame = ttk.Frame(tab)
         self.progress_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        self.progress_label = ttk.Label(self.progress_frame, text="No active exit process")
+        self.progress_label = ttk.Label(self.progress_frame, text=_t('gui.staff.staff_hr.exit.labels.no_active_exit_process', default="No active exit process"))
         self.progress_label.pack(side=tk.LEFT)
 
         self.progress_bar = ttk.Progressbar(self.progress_frame, length=300, mode='determinate')
@@ -125,7 +127,7 @@ class ExitGUI:
         # Complete button
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Mark Selected as Complete", command=self._complete_my_item).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.exit.buttons.mark_selected_as_complete', default="Mark Selected as Complete"), command=self._complete_my_item).pack(side=tk.LEFT)
 
         self._load_my_checklist()
 
@@ -138,7 +140,7 @@ class ExitGUI:
         items = ExitManager.get_user_checklist(user_id)
 
         if not items:
-            self.progress_label.config(text="No active exit process")
+            self.progress_label.config(text=_t('gui.staff.staff_hr.exit.text.no_active_exit_process', default="No active exit process"))
             self.progress_bar['value'] = 0
             return
 
@@ -166,40 +168,40 @@ class ExitGUI:
         """Complete a checklist item."""
         selection = self.my_checklist_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an item to complete")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.info', default="Info"), _t('gui.staff.staff_hr.exit.dialogs.please_select_an_item_to_complete', default="Please select an item to complete"))
             return
 
         item = self.my_checklist_tree.item(selection[0])
         if item['values'][5] == 'Completed':
-            messagebox.showinfo("Info", "This item is already completed")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.info', default="Info"), _t('gui.staff.staff_hr.exit.dialogs.this_item_is_already_completed', default="This item is already completed"))
             return
 
         item_id = item['values'][0]
         notes = tk.simpledialog.askstring("Notes", "Completion notes (optional):", parent=self.root)
 
         ExitManager.complete_checklist_item(item_id, self._get_user_id(), notes or '')
-        messagebox.showinfo("Success", "Item marked as complete")
+        messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), _t('gui.staff.staff_hr.exit.dialogs.item_marked_as_complete', default="Item marked as complete"))
         self._load_my_checklist()
 
     def _create_initiate_exit_tab(self):
         """Create initiate exit tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Initiate Exit")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.exit.tabs.initiate_exit', default="Initiate Exit"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Initiate Exit Process", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.exit.labels.initiate_exit_process', default="Initiate Exit Process"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Form
-        form_frame = ttk.LabelFrame(tab, text="Exit Details", padding=15)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.exit.labels.exit_details', default="Exit Details"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 1
-        ttk.Label(form_frame, text="Employee User ID:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.exit.labels.employee_user_id', default="Employee User ID:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.exit_user_id = ttk.Entry(form_frame, width=20)
         self.exit_user_id.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Exit Type:").grid(row=0, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.exit.labels.exit_type', default="Exit Type:")).grid(row=0, column=2, sticky='e', padx=10, pady=8)
         self.exit_type = ttk.Combobox(form_frame, values=[
             'resignation', 'retirement', 'termination', 'end_of_contract', 'redundancy', 'other'
         ], width=15, state='readonly')
@@ -207,29 +209,29 @@ class ExitGUI:
         self.exit_type.grid(row=0, column=3, padx=10, pady=8, sticky='w')
 
         # Row 2
-        ttk.Label(form_frame, text="Last Working Day:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.exit.labels.last_working_day', default="Last Working Day:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.exit_last_day = ttk.Entry(form_frame, width=15)
         self.exit_last_day.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Department:").grid(row=1, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.exit.labels.department', default="Department:")).grid(row=1, column=2, sticky='e', padx=10, pady=8)
         self.exit_dept = ttk.Entry(form_frame, width=20)
         self.exit_dept.grid(row=1, column=3, padx=10, pady=8, sticky='w')
 
         # Row 3
-        ttk.Label(form_frame, text="Manager ID:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.exit.labels.manager_id', default="Manager ID:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.exit_manager = ttk.Entry(form_frame, width=20)
         self.exit_manager.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Row 4
-        ttk.Label(form_frame, text="Reason:").grid(row=3, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.exit.labels.reason', default="Reason:")).grid(row=3, column=0, sticky='ne', padx=10, pady=8)
         self.exit_reason = scrolledtext.ScrolledText(form_frame, width=50, height=4)
         self.exit_reason.grid(row=3, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Template selection
-        template_frame = ttk.LabelFrame(tab, text="Checklist Template", padding=10)
+        template_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.exit.labels.checklist_template', default="Checklist Template"), padding=10)
         template_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(template_frame, text="Apply Template:").pack(side=tk.LEFT, padx=10)
+        ttk.Label(template_frame, text=_t('gui.staff.staff_hr.exit.labels.apply_template', default="Apply Template:")).pack(side=tk.LEFT, padx=10)
         self.exit_template = ttk.Combobox(template_frame, width=30, state='readonly')
         self._load_templates_combo()
         self.exit_template.pack(side=tk.LEFT, padx=10)
@@ -237,7 +239,7 @@ class ExitGUI:
         # Submit
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Button(btn_frame, text="Initiate Exit Process", command=self._initiate_exit).pack()
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.exit.buttons.initiate_exit_process', default="Initiate Exit Process"), command=self._initiate_exit).pack()
 
     def _load_templates_combo(self):
         """Load templates into combo."""
@@ -251,12 +253,12 @@ class ExitGUI:
         """Initiate exit process."""
         user_id = self.exit_user_id.get().strip()
         if not user_id:
-            messagebox.showerror("Error", "Employee User ID is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.exit.dialogs.error', default="Error"), _t('gui.staff.staff_hr.exit.dialogs.employee_user_id_is_required', default="Employee User ID is required"))
             return
 
         last_day = self.exit_last_day.get().strip()
         if not last_day:
-            messagebox.showerror("Error", "Last working day is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.exit.dialogs.error', default="Error"), _t('gui.staff.staff_hr.exit.dialogs.last_working_day_is_required', default="Last working day is required"))
             return
 
         try:
@@ -275,7 +277,7 @@ class ExitGUI:
                 template_id = self.templates_data[template_name]['template_id']
                 ExitManager.apply_template(user_id, template_id)
 
-            messagebox.showinfo("Success", f"Exit process initiated.\nReference: EXIT-{exit_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), f"Exit process initiated.\nReference: EXIT-{exit_id}")
 
             # Clear form
             self.exit_user_id.delete(0, tk.END)
@@ -285,27 +287,27 @@ class ExitGUI:
             self.exit_reason.delete("1.0", tk.END)
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.exit.dialogs.error', default="Error"), str(e))
 
     def _create_manage_exits_tab(self):
         """Create manage exits tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Manage")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.exit.tabs.manage', default="Manage"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Manage Exit Processes", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.exit.labels.manage_exit_processes', default="Manage Exit Processes"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Filter
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.exit.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.exit_status_filter = ttk.Combobox(filter_frame,
             values=['All', 'In Progress', 'Completed'], width=12, state='readonly')
         self.exit_status_filter.set('In Progress')
         self.exit_status_filter.pack(side=tk.LEFT, padx=5)
         self.exit_status_filter.bind('<<ComboboxSelected>>', lambda e: self._load_exit_records())
-        ttk.Button(filter_frame, text="Refresh", command=self._load_exit_records).pack(side=tk.LEFT, padx=10)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.exit.buttons.refresh', default="Refresh"), command=self._load_exit_records).pack(side=tk.LEFT, padx=10)
 
         # Exit records list
         tree_frame = ttk.Frame(tab)
@@ -326,9 +328,9 @@ class ExitGUI:
         action_frame = ttk.Frame(tab)
         action_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(action_frame, text="View Checklist", command=self._view_exit_checklist).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Add Checklist Item", command=self._add_checklist_item).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Complete Exit", command=self._complete_exit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.staff.staff_hr.exit.buttons.view_checklist', default="View Checklist"), command=self._view_exit_checklist).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.staff.staff_hr.exit.buttons.add_checklist_item', default="Add Checklist Item"), command=self._add_checklist_item).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.staff.staff_hr.exit.buttons.complete_exit', default="Complete Exit"), command=self._complete_exit).pack(side=tk.LEFT, padx=5)
 
         self._load_exit_records()
 
@@ -401,21 +403,21 @@ class ExitGUI:
                 row=i, column=0, sticky='e', padx=10, pady=5)
             ttk.Label(frame, text=str(value or '-')).grid(row=i, column=1, sticky='w', padx=10, pady=5)
 
-        ttk.Label(frame, text="Reason:", font=('Arial', 10, 'bold')).grid(
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.reason', default="Reason:"), font=('Arial', 10, 'bold')).grid(
             row=len(fields), column=0, sticky='ne', padx=10, pady=5)
         reason_text = scrolledtext.ScrolledText(frame, width=40, height=5, state='normal')
         reason_text.insert("1.0", record.get('reason', ''))
         reason_text.config(state='disabled')
         reason_text.grid(row=len(fields), column=1, padx=10, pady=5)
 
-        ttk.Button(frame, text="Close", command=dialog.destroy).grid(
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.exit.buttons.close', default="Close"), command=dialog.destroy).grid(
             row=len(fields)+1, column=0, columnspan=2, pady=20)
 
     def _view_exit_checklist(self):
         """View exit checklist for selected employee."""
         selection = self.exits_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an exit record")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.info', default="Info"), _t('gui.staff.staff_hr.exit.dialogs.please_select_an_exit_record', default="Please select an exit record"))
             return
 
         item = self.exits_tree.item(selection[0])
@@ -464,14 +466,14 @@ class ExitGUI:
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Complete Selected", command=complete_item).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.exit.buttons.complete_selected', default="Complete Selected"), command=complete_item).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.exit.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def _add_checklist_item(self):
         """Add checklist item to selected exit."""
         selection = self.exits_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an exit record")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.info', default="Info"), _t('gui.staff.staff_hr.exit.dialogs.please_select_an_exit_record', default="Please select an exit record"))
             return
 
         item = self.exits_tree.item(selection[0])
@@ -485,31 +487,31 @@ class ExitGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Task Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.task_name', default="Task Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         task_entry = ttk.Entry(frame, width=30)
         task_entry.grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(frame, text="Category:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.category', default="Category:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         cat_combo = ttk.Combobox(frame, values=['it', 'hr', 'finance', 'facilities', 'other'], width=15)
         cat_combo.set('other')
         cat_combo.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(frame, text="Assign To:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.assign_to', default="Assign To:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         assign_entry = ttk.Entry(frame, width=20)
         assign_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(frame, text="Due Date:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.due_date', default="Due Date:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         due_entry = ttk.Entry(frame, width=15)
         due_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         required_var = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="Required", variable=required_var).grid(
+        ttk.Checkbutton(frame, text=_t('gui.staff.staff_hr.exit.buttons.required', default="Required"), variable=required_var).grid(
             row=4, column=1, sticky='w', padx=10, pady=5)
 
         def save():
             task_name = task_entry.get().strip()
             if not task_name:
-                messagebox.showerror("Error", "Task name is required")
+                messagebox.showerror(_t('gui.staff.staff_hr.exit.dialogs.error', default="Error"), _t('gui.staff.staff_hr.exit.dialogs.task_name_is_required', default="Task name is required"))
                 return
 
             try:
@@ -521,19 +523,19 @@ class ExitGUI:
                     due_date=due_entry.get().strip() or None,
                     is_required=required_var.get()
                 )
-                messagebox.showinfo("Success", "Checklist item added")
+                messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), _t('gui.staff.staff_hr.exit.dialogs.checklist_item_added', default="Checklist item added"))
                 dialog.destroy()
                 self._load_exit_records()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.staff.staff_hr.exit.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(frame, text="Add Item", command=save).grid(row=5, column=0, columnspan=2, pady=20)
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.exit.buttons.add_item', default="Add Item"), command=save).grid(row=5, column=0, columnspan=2, pady=20)
 
     def _complete_exit(self):
         """Complete exit process."""
         selection = self.exits_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an exit record")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.info', default="Info"), _t('gui.staff.staff_hr.exit.dialogs.please_select_an_exit_record', default="Please select an exit record"))
             return
 
         item = self.exits_tree.item(selection[0])
@@ -544,24 +546,24 @@ class ExitGUI:
         required_pending = [i for i in checklist if i.get('is_required') and not i.get('completed')]
 
         if required_pending:
-            if not messagebox.askyesno("Warning",
+            if not messagebox.askyesno(_t('gui.staff.staff_hr.exit.dialogs.warning', default="Warning"),
                 f"{len(required_pending)} required items are not completed.\nComplete exit anyway?"):
                 return
 
         ExitManager.complete_exit(user_id)
-        messagebox.showinfo("Success", "Exit process marked as complete")
+        messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), _t('gui.staff.staff_hr.exit.dialogs.exit_process_marked_as_complete', default="Exit process marked as complete"))
         self._load_exit_records()
 
     def _create_interviews_tab(self):
         """Create exit interviews tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Interviews")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.exit.tabs.interviews', default="Interviews"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Exit Interviews", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Schedule Interview", command=self._schedule_interview).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text="Refresh", command=self._load_interviews).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.exit.labels.exit_interviews', default="Exit Interviews"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.exit.buttons.schedule_interview', default="Schedule Interview"), command=self._schedule_interview).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.exit.buttons.refresh', default="Refresh"), command=self._load_interviews).pack(side=tk.RIGHT, padx=5)
 
         # Interviews list
         tree_frame = ttk.Frame(tab)
@@ -583,8 +585,8 @@ class ExitGUI:
         action_frame = ttk.Frame(tab)
         action_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(action_frame, text="Conduct Interview", command=self._conduct_interview).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="View Details", command=self._view_interview_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.staff.staff_hr.exit.buttons.conduct_interview', default="Conduct Interview"), command=self._conduct_interview).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.staff.staff_hr.exit.buttons.view_details', default="View Details"), command=self._view_interview_details).pack(side=tk.LEFT, padx=5)
 
         self._load_interviews()
 
@@ -611,27 +613,27 @@ class ExitGUI:
     def _schedule_interview(self):
         """Schedule exit interview."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Schedule Exit Interview")
+        dialog.title(_t('gui.staff.staff_hr.exit.windows.schedule_exit_interview', default="Schedule Exit Interview"))
         dialog.geometry("400x250")
         dialog.transient(self.root)
 
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Employee User ID:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.employee_user_id', default="Employee User ID:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         user_entry = ttk.Entry(frame, width=20)
         user_entry.grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(frame, text="Interviewer ID:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.interviewer_id', default="Interviewer ID:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         interviewer_entry = ttk.Entry(frame, width=20)
         interviewer_entry.insert(0, self._get_user_id())
         interviewer_entry.grid(row=1, column=1, padx=10, pady=8)
 
-        ttk.Label(frame, text="Date (YYYY-MM-DD):").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         date_entry = ttk.Entry(frame, width=15)
         date_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(frame, text="Time (HH:MM):").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.time_hh_mm', default="Time (HH:MM):")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         time_entry = ttk.Entry(frame, width=10)
         time_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
@@ -643,31 +645,31 @@ class ExitGUI:
                     interview_date=date_entry.get().strip(),
                     interview_time=time_entry.get().strip()
                 )
-                messagebox.showinfo("Success", f"Interview scheduled. ID: {interview_id}")
+                messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), f"Interview scheduled. ID: {interview_id}")
                 dialog.destroy()
                 self._load_interviews()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.staff.staff_hr.exit.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(frame, text="Schedule", command=save).grid(row=4, column=0, columnspan=2, pady=20)
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.exit.buttons.schedule', default="Schedule"), command=save).grid(row=4, column=0, columnspan=2, pady=20)
 
     def _conduct_interview(self):
         """Conduct exit interview."""
         selection = self.interviews_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an interview")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.info', default="Info"), _t('gui.staff.staff_hr.exit.dialogs.please_select_an_interview', default="Please select an interview"))
             return
 
         item = self.interviews_tree.item(selection[0])
         if item['values'][4] == 'Completed':
-            messagebox.showinfo("Info", "This interview is already completed")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.info', default="Info"), _t('gui.staff.staff_hr.exit.dialogs.this_interview_is_already_completed', default="This interview is already completed"))
             return
 
         interview_id = item['values'][0]
 
         # Interview form dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Conduct Exit Interview")
+        dialog.title(_t('gui.staff.staff_hr.exit.windows.conduct_exit_interview', default="Conduct Exit Interview"))
         dialog.geometry("600x600")
         dialog.transient(self.root)
 
@@ -675,7 +677,7 @@ class ExitGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Reason for leaving
-        ttk.Label(frame, text="Primary Reason for Leaving:").grid(row=0, column=0, sticky='e', padx=10, pady=5)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.primary_reason_for_leaving', default="Primary Reason for Leaving:")).grid(row=0, column=0, sticky='e', padx=10, pady=5)
         reason_combo = ttk.Combobox(frame, values=[
             'better_opportunity', 'career_advancement', 'compensation',
             'work_life_balance', 'management_issues', 'company_culture',
@@ -702,17 +704,17 @@ class ExitGUI:
         recommend_var = tk.BooleanVar()
         return_var = tk.BooleanVar()
 
-        ttk.Checkbutton(frame, text="Would recommend as employer", variable=recommend_var).grid(
+        ttk.Checkbutton(frame, text=_t('gui.staff.staff_hr.exit.buttons.would_recommend_as_employer', default="Would recommend as employer"), variable=recommend_var).grid(
             row=5, column=0, columnspan=2, pady=5)
-        ttk.Checkbutton(frame, text="Would consider returning", variable=return_var).grid(
+        ttk.Checkbutton(frame, text=_t('gui.staff.staff_hr.exit.buttons.would_consider_returning', default="Would consider returning"), variable=return_var).grid(
             row=6, column=0, columnspan=2, pady=5)
 
         # Feedback
-        ttk.Label(frame, text="Positive Feedback:").grid(row=7, column=0, sticky='ne', padx=10, pady=5)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.positive_feedback', default="Positive Feedback:")).grid(row=7, column=0, sticky='ne', padx=10, pady=5)
         positive_text = scrolledtext.ScrolledText(frame, width=40, height=4)
         positive_text.grid(row=7, column=1, padx=10, pady=5)
 
-        ttk.Label(frame, text="Areas for Improvement:").grid(row=8, column=0, sticky='ne', padx=10, pady=5)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.areas_for_improvement', default="Areas for Improvement:")).grid(row=8, column=0, sticky='ne', padx=10, pady=5)
         negative_text = scrolledtext.ScrolledText(frame, width=40, height=4)
         negative_text.grid(row=8, column=1, padx=10, pady=5)
 
@@ -730,19 +732,19 @@ class ExitGUI:
                     feedback_positive=positive_text.get("1.0", tk.END).strip(),
                     feedback_negative=negative_text.get("1.0", tk.END).strip()
                 )
-                messagebox.showinfo("Success", "Interview completed")
+                messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), _t('gui.staff.staff_hr.exit.dialogs.interview_completed', default="Interview completed"))
                 dialog.destroy()
                 self._load_interviews()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.staff.staff_hr.exit.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(frame, text="Complete Interview", command=save).grid(row=9, column=0, columnspan=2, pady=20)
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.exit.buttons.complete_interview', default="Complete Interview"), command=save).grid(row=9, column=0, columnspan=2, pady=20)
 
     def _view_interview_details(self):
         """View interview details."""
         selection = self.interviews_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an interview")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.info', default="Info"), _t('gui.staff.staff_hr.exit.dialogs.please_select_an_interview', default="Please select an interview"))
             return
 
         item = self.interviews_tree.item(selection[0])
@@ -787,18 +789,18 @@ Areas for Improvement:
         text.config(state='disabled')
         text.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Button(frame, text="Close", command=dialog.destroy).pack(pady=10)
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.exit.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
     def _create_knowledge_transfer_tab(self):
         """Create knowledge transfer tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Knowledge Transfer")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.exit.tabs.knowledge_transfer', default="Knowledge Transfer"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Knowledge Transfer", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Create New", command=self._create_knowledge_transfer).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text="Refresh", command=self._load_knowledge_transfers).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.exit.labels.knowledge_transfer', default="Knowledge Transfer"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.exit.buttons.create_new', default="Create New"), command=self._create_knowledge_transfer).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.exit.buttons.refresh', default="Refresh"), command=self._load_knowledge_transfers).pack(side=tk.RIGHT, padx=5)
 
         # Transfers list
         tree_frame = ttk.Frame(tab)
@@ -822,7 +824,7 @@ Areas for Improvement:
         action_frame = ttk.Frame(tab)
         action_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(action_frame, text="Mark Complete", command=self._complete_kt).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.staff.staff_hr.exit.buttons.mark_complete', default="Mark Complete"), command=self._complete_kt).pack(side=tk.LEFT, padx=5)
 
         self._load_knowledge_transfers()
 
@@ -859,35 +861,35 @@ Areas for Improvement:
     def _create_knowledge_transfer(self):
         """Create knowledge transfer dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create Knowledge Transfer")
+        dialog.title(_t('gui.staff.staff_hr.exit.windows.create_knowledge_transfer', default="Create Knowledge Transfer"))
         dialog.geometry("500x350")
         dialog.transient(self.root)
 
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="From (Departing):").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.from_departing', default="From (Departing):")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         from_entry = ttk.Entry(frame, width=20)
         from_entry.grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(frame, text="To (Receiving):").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.to_receiving', default="To (Receiving):")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         to_entry = ttk.Entry(frame, width=20)
         to_entry.grid(row=1, column=1, padx=10, pady=8)
 
-        ttk.Label(frame, text="Topic:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.topic', default="Topic:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         topic_entry = ttk.Entry(frame, width=30)
         topic_entry.grid(row=2, column=1, padx=10, pady=8)
 
-        ttk.Label(frame, text="Priority:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.priority', default="Priority:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         priority_combo = ttk.Combobox(frame, values=['low', 'medium', 'high', 'critical'], width=15)
         priority_combo.set('medium')
         priority_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(frame, text="Due Date:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.due_date', default="Due Date:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         due_entry = ttk.Entry(frame, width=15)
         due_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(frame, text="Description:").grid(row=5, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.exit.labels.description', default="Description:")).grid(row=5, column=0, sticky='ne', padx=10, pady=8)
         desc_text = scrolledtext.ScrolledText(frame, width=35, height=4)
         desc_text.grid(row=5, column=1, padx=10, pady=8)
 
@@ -901,45 +903,45 @@ Areas for Improvement:
                     priority=priority_combo.get(),
                     due_date=due_entry.get().strip() or None
                 )
-                messagebox.showinfo("Success", f"Transfer created. ID: {transfer_id}")
+                messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), f"Transfer created. ID: {transfer_id}")
                 dialog.destroy()
                 self._load_knowledge_transfers()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.staff.staff_hr.exit.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(frame, text="Create", command=save).grid(row=6, column=0, columnspan=2, pady=20)
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.exit.buttons.create', default="Create"), command=save).grid(row=6, column=0, columnspan=2, pady=20)
 
     def _complete_kt(self):
         """Complete knowledge transfer."""
         selection = self.kt_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a transfer")
+            messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.info', default="Info"), _t('gui.staff.staff_hr.exit.dialogs.please_select_a_transfer', default="Please select a transfer"))
             return
 
         item = self.kt_tree.item(selection[0])
         transfer_id = item['values'][0]
 
         ExitManager.complete_knowledge_transfer(transfer_id)
-        messagebox.showinfo("Success", "Transfer marked as complete")
+        messagebox.showinfo(_t('gui.staff.staff_hr.exit.dialogs.success', default="Success"), _t('gui.staff.staff_hr.exit.dialogs.transfer_marked_as_complete', default="Transfer marked as complete"))
         self._load_knowledge_transfers()
 
     def _create_analytics_tab(self):
         """Create analytics tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Analytics")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.exit.tabs.analytics', default="Analytics"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Turnover Analytics", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.exit.labels.turnover_analytics', default="Turnover Analytics"), style='Header.TLabel').pack(side=tk.LEFT)
 
-        ttk.Label(header_frame, text="Year:").pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.exit.labels.year', default="Year:")).pack(side=tk.RIGHT, padx=5)
         self.analytics_year = ttk.Spinbox(header_frame, from_=2020, to=2030, width=6)
         self.analytics_year.set(datetime.now().year)
         self.analytics_year.pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text="Load", command=self._load_analytics).pack(side=tk.RIGHT, padx=10)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.exit.buttons.load', default="Load"), command=self._load_analytics).pack(side=tk.RIGHT, padx=10)
 
         # Summary stats
-        stats_frame = ttk.LabelFrame(tab, text="Summary", padding=15)
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.exit.labels.summary', default="Summary"), padding=15)
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.analytics_stats = {}
@@ -951,7 +953,7 @@ Areas for Improvement:
             ttk.Label(frame, text=label).pack()
 
         # By department
-        dept_frame = ttk.LabelFrame(tab, text="By Department", padding=10)
+        dept_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.exit.labels.by_department', default="By Department"), padding=10)
         dept_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         columns = ('Department', 'Exits', 'Turnover Rate', 'Avg Tenure')

@@ -9,9 +9,9 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import token_required, authorize_object
 
-_STAFF_ROLES = {"admin", "staff", "superadmin"}
+_STAFF_ROLES = {"admin", "staff", "superadmin", "instructor", "teacher", "faculty"}
 
 
 def _is_staff() -> bool:
@@ -123,6 +123,14 @@ def _student_to_dict(s: Student) -> dict:
 @student_bp.route("", methods=["GET"])
 @token_required
 def list_students():
+    if not _is_staff():
+        denied = authorize_object((g.current_user or {}).get("sub"))
+        if denied is not None:
+            return denied
+        student = get_student_repository().get_by_id((g.current_user or {}).get("sub"))
+        if not student:
+            return jsonify({"items": [], "total": 0})
+        return jsonify({"items": [_student_to_dict(student)], "total": 1})
     repo = get_student_repository()
     search_query = request.args.get("search")
     status_filter = request.args.get("status")
@@ -164,6 +172,9 @@ def get_student(student_id: str):
 @student_bp.route("", methods=["POST"])
 @token_required
 def create_student():
+    denied = authorize_object("staff-boundary", permission="manage_students")
+    if denied is not None:
+        return denied
     data = request.get_json(silent=True) or {}
     validate_student_create(data)
 

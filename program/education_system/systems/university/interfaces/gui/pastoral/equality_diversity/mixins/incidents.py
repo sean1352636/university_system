@@ -1,6 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import json
 import os
@@ -43,35 +45,35 @@ class _IncidentsMixin:
               font=("Helvetica", 13, "bold"),
               bg=t["panel"], fg=t["accent"]).pack(anchor="w", pady=(0, 10))
 
-        Label(left, text="Category", bg=t["panel"], fg=t["text"]).pack(anchor="w")
+        Label(left, text=_t('gui.pastoral.equality_diversity.mixins.incidents.labels.category', default="Category"), bg=t["panel"], fg=t["text"]).pack(anchor="w")
         self.inc_category = StringVar(value=INCIDENT_CATEGORIES[0])
         OptionMenu(left, self.inc_category, *INCIDENT_CATEGORIES
                    ).pack(fill="x", pady=(0, 8))
 
-        Label(left, text="Department", bg=t["panel"], fg=t["text"]).pack(anchor="w")
+        Label(left, text=_t('gui.pastoral.equality_diversity.mixins.incidents.labels.department', default="Department"), bg=t["panel"], fg=t["text"]).pack(anchor="w")
         self.inc_dept = StringVar(value=DEPARTMENTS[0])
         OptionMenu(left, self.inc_dept, *DEPARTMENTS).pack(fill="x", pady=(0, 8))
 
-        Label(left, text="Severity (sets SLA)",
+        Label(left, text=_t('gui.pastoral.equality_diversity.mixins.incidents.labels.severity_sets_sla', default="Severity (sets SLA)"),
               bg=t["panel"], fg=t["text"]).pack(anchor="w")
-        self.inc_sev = StringVar(value="Medium")
+        self.inc_sev = StringVar(value=_t('gui.pastoral.equality_diversity.mixins.incidents.values.medium', default="Medium"))
         OptionMenu(left, self.inc_sev, *SEVERITIES).pack(fill="x", pady=(0, 8))
 
-        Label(left, text="Respondent (ref)", bg=t["panel"], fg=t["text"]).pack(anchor="w")
+        Label(left, text=_t('gui.pastoral.equality_diversity.mixins.incidents.labels.respondent_ref', default="Respondent (ref)"), bg=t["panel"], fg=t["text"]).pack(anchor="w")
         self.inc_resp = StringVar()
         Entry(left, textvariable=self.inc_resp).pack(fill="x", pady=(0, 8))
 
-        Label(left, text="Witnesses (comma-sep refs)",
+        Label(left, text=_t('gui.pastoral.equality_diversity.mixins.incidents.labels.witnesses_comma_sep_refs', default="Witnesses (comma-sep refs)"),
               bg=t["panel"], fg=t["text"]).pack(anchor="w")
         self.inc_wit = StringVar()
         Entry(left, textvariable=self.inc_wit).pack(fill="x", pady=(0, 8))
 
-        Label(left, text="Description", bg=t["panel"], fg=t["text"]).pack(anchor="w")
+        Label(left, text=_t('gui.pastoral.equality_diversity.mixins.incidents.labels.description', default="Description"), bg=t["panel"], fg=t["text"]).pack(anchor="w")
         self.inc_desc = Text(left, width=34, height=6, font=("Helvetica", 10))
         self.inc_desc.pack(pady=(0, 8))
 
         self.inc_anon = IntVar(value=0)
-        Checkbutton(left, text="Report anonymously",
+        Checkbutton(left, text=_t('gui.pastoral.equality_diversity.mixins.incidents.buttons.report_anonymously', default="Report anonymously"),
                     variable=self.inc_anon, bg=t["panel"], fg=t["text"],
                     selectcolor=t["panel"]).pack(anchor="w")
 
@@ -101,18 +103,18 @@ class _IncidentsMixin:
 
         br = Frame(right, bg=t["panel"])
         br.pack(fill="x", pady=8)
-        Button(br, text="Refresh", command=self._load_incidents,
+        Button(br, text=_t('gui.pastoral.equality_diversity.mixins.incidents.buttons.refresh', default="Refresh"), command=self._load_incidents,
                bg="#6c757d", fg="white", relief="flat", padx=12
                ).pack(side="left", padx=4)
         if self.principal.can("update_incident"):
-            Button(br, text="Update status",
+            Button(br, text=_t('gui.pastoral.equality_diversity.mixins.incidents.buttons.update_status', default="Update status"),
                    command=self._update_incident_status,
                    bg=t["accent"], fg=t["header_fg"], relief="flat", padx=12
                    ).pack(side="left", padx=4)
-            Button(br, text="Assign…", command=self._assign_incident,
+            Button(br, text=_t('gui.pastoral.equality_diversity.mixins.incidents.buttons.assign', default="Assign…"), command=self._assign_incident,
                    bg="#27ae60", fg="white", relief="flat", padx=12
                    ).pack(side="left", padx=4)
-            Button(br, text="Refer to safeguarding",
+            Button(br, text=_t('gui.pastoral.equality_diversity.mixins.incidents.buttons.refer_to_safeguarding', default="Refer to safeguarding"),
                    command=self._refer_incident,
                    bg="#c0392b", fg="white", relief="flat", padx=12
                    ).pack(side="left", padx=4)
@@ -121,7 +123,7 @@ class _IncidentsMixin:
     def _save_incident(self):
         desc = self.inc_desc.get("1.0", END).strip()
         if not desc:
-            messagebox.showerror("Incident", "Description is required.")
+            messagebox.showerror(_t('gui.pastoral.equality_diversity.mixins.incidents.dialogs.incident', default="Incident"), _t('gui.pastoral.equality_diversity.mixins.incidents.dialogs.description_is_required', default="Description is required."))
             return
         sev = self.inc_sev.get()
         sla_due = (datetime.now() + timedelta(days=SLA_DAYS[sev])
@@ -144,7 +146,7 @@ class _IncidentsMixin:
             conn.close()
         integrations.audit(reporter, "create", "incident", inc_id,
                            {"category": self.inc_category.get(), "severity": sev})
-        messagebox.showinfo("Submitted", "Incident reported.")
+        messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.incidents.dialogs.submitted', default="Submitted"), _t('gui.pastoral.equality_diversity.mixins.incidents.dialogs.incident_reported', default="Incident reported."))
         self.inc_desc.delete("1.0", END)
         self._load_incidents()
 
@@ -169,7 +171,7 @@ class _IncidentsMixin:
     def _selected_incident(self) -> int | None:
         sel = self.inc_tree.selection()
         if not sel:
-            messagebox.showinfo("Incidents", "Select an incident first.")
+            messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.incidents.dialogs.incidents', default="Incidents"), _t('gui.pastoral.equality_diversity.mixins.incidents.dialogs.select_an_incident_first', default="Select an incident first."))
             return None
         return int(self.inc_tree.item(sel[0])["values"][0])
 
@@ -185,7 +187,7 @@ class _IncidentsMixin:
         if iid is None:
             return
         win = Toplevel(self.root)
-        win.title("Status")
+        win.title(_t('gui.pastoral.equality_diversity.mixins.incidents.windows.status', default="Status"))
         win.configure(bg=self.theme["panel"])
         v = StringVar(value=INCIDENT_STATUS[0])
         OptionMenu(win, v, *INCIDENT_STATUS).pack(padx=14, pady=10)
@@ -204,7 +206,7 @@ class _IncidentsMixin:
             win.destroy()
             self._load_incidents()
 
-        Button(win, text="Apply", command=apply,
+        Button(win, text=_t('gui.pastoral.equality_diversity.mixins.incidents.buttons.apply', default="Apply"), command=apply,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=12).pack(pady=6)
 
@@ -234,7 +236,7 @@ class _IncidentsMixin:
         if not reason:
             return
         ok = integrations.refer_to_safeguarding(iid, self.principal.username, reason)
-        messagebox.showinfo("Referral",
+        messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.incidents.dialogs.referral', default="Referral"),
                             "Referred." if ok else "Safeguarding module unavailable.")
 
     # ================================================================= Reports

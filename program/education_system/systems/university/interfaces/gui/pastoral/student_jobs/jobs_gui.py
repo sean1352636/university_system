@@ -7,6 +7,8 @@ Features tabbed interface for job browsing, applications, work hours, and skills
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -43,7 +45,7 @@ class StudentJobsGUI:
                 self.root = tk.Tk()
             else:
                 self.root = tk.Toplevel(parent)
-            self.root.title("Student Job Board")
+            self.root.title(_t('gui.pastoral.student_jobs.jobs.windows.student_job_board', default="Student Job Board"))
             self.root.geometry("1400x900")
             self.root.configure(bg='#f0f0f0')
 
@@ -80,38 +82,38 @@ class StudentJobsGUI:
 
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="File", menu=file_menu)
-        file_menu.add_command(label="Refresh All", command=self.refresh_all_data)
+        menubar.add_cascade(label=_t('gui.pastoral.student_jobs.jobs.menus.file', default="File"), menu=file_menu)
+        file_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.refresh_all', default="Refresh All"), command=self.refresh_all_data)
         file_menu.add_separator()
-        file_menu.add_command(label="Close", command=self.root.destroy)
+        file_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.close', default="Close"), command=self.root.destroy)
 
         # Jobs menu
         jobs_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Jobs", menu=jobs_menu)
-        jobs_menu.add_command(label="Browse All Jobs", command=lambda: self.notebook.select(0))
-        jobs_menu.add_command(label="View My Applications", command=lambda: self.notebook.select(1))
-        jobs_menu.add_command(label="My Jobs & Hours", command=lambda: self.notebook.select(2))
+        menubar.add_cascade(label=_t('gui.pastoral.student_jobs.jobs.menus.jobs', default="Jobs"), menu=jobs_menu)
+        jobs_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.browse_all_jobs', default="Browse All Jobs"), command=lambda: self.notebook.select(0))
+        jobs_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.view_my_applications', default="View My Applications"), command=lambda: self.notebook.select(1))
+        jobs_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.my_jobs_hours', default="My Jobs & Hours"), command=lambda: self.notebook.select(2))
 
         # Skills menu
         skills_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Skills", menu=skills_menu)
-        skills_menu.add_command(label="Manage Skills", command=lambda: self.notebook.select(3))
-        skills_menu.add_command(label="Find Matching Jobs", command=self.find_matching_jobs)
+        menubar.add_cascade(label=_t('gui.pastoral.student_jobs.jobs.menus.skills', default="Skills"), menu=skills_menu)
+        skills_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.manage_skills', default="Manage Skills"), command=lambda: self.notebook.select(3))
+        skills_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.find_matching_jobs', default="Find Matching Jobs"), command=self.find_matching_jobs)
 
         # Admin menu (if applicable)
         if self._is_admin_or_staff():
             admin_menu = tk.Menu(menubar, tearoff=0)
-            menubar.add_cascade(label="Administration", menu=admin_menu)
-            admin_menu.add_command(label="Post New Job", command=self.show_post_job_dialog)
-            admin_menu.add_command(label="Manage Postings", command=lambda: self.notebook.select(4))
-            admin_menu.add_command(label="Review Applications", command=self.show_review_applications)
-            admin_menu.add_command(label="Approve Hours", command=self.show_approve_hours)
+            menubar.add_cascade(label=_t('gui.pastoral.student_jobs.jobs.menus.administration', default="Administration"), menu=admin_menu)
+            admin_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.post_new_job', default="Post New Job"), command=self.show_post_job_dialog)
+            admin_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.manage_postings', default="Manage Postings"), command=lambda: self.notebook.select(4))
+            admin_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.review_applications', default="Review Applications"), command=self.show_review_applications)
+            admin_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.approve_hours', default="Approve Hours"), command=self.show_approve_hours)
 
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="User Guide", command=self.show_help)
-        help_menu.add_command(label="About", command=self.show_about)
+        menubar.add_cascade(label=_t('gui.pastoral.student_jobs.jobs.menus.help', default="Help"), menu=help_menu)
+        help_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.user_guide', default="User Guide"), command=self.show_help)
+        help_menu.add_command(label=_t('gui.pastoral.student_jobs.jobs.menus.about', default="About"), command=self.show_about)
 
     def create_main_interface(self):
         """Create main tabbed interface"""
@@ -131,37 +133,37 @@ class StudentJobsGUI:
     def create_job_search_tab(self):
         """Create job search and browse tab"""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Browse Jobs")
+        self.notebook.add(tab, text=_t('gui.pastoral.student_jobs.jobs.tabs.browse_jobs', default="Browse Jobs"))
 
         # Search and filter frame
-        search_frame = ttk.LabelFrame(tab, text="Search & Filter", padding=10)
+        search_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.student_jobs.jobs.labels.search_filter', default="Search & Filter"), padding=10)
         search_frame.pack(fill=tk.X, padx=10, pady=5)
 
         # Search fields
-        ttk.Label(search_frame, text="Category:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(search_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.category', default="Category:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=2)
         self.search_category = ttk.Entry(search_frame, width=20)
         self.search_category.grid(row=0, column=1, padx=5, pady=2)
 
-        ttk.Label(search_frame, text="Type:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(search_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.type', default="Type:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=2)
         self.search_type = ttk.Combobox(search_frame, width=18, state='readonly')
         self.search_type['values'] = ('All', 'work-study', 'part-time', 'internship', 'temp')
         self.search_type.current(0)
         self.search_type.grid(row=0, column=3, padx=5, pady=2)
 
-        ttk.Label(search_frame, text="Location:").grid(row=0, column=4, sticky=tk.W, padx=5, pady=2)
+        ttk.Label(search_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.location', default="Location:")).grid(row=0, column=4, sticky=tk.W, padx=5, pady=2)
         self.search_location = ttk.Entry(search_frame, width=20)
         self.search_location.grid(row=0, column=5, padx=5, pady=2)
 
-        ttk.Button(search_frame, text="Search", command=self.search_jobs).grid(row=0, column=6, padx=10, pady=2)
-        ttk.Button(search_frame, text="Clear", command=self.clear_job_search).grid(row=0, column=7, padx=5, pady=2)
+        ttk.Button(search_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.search', default="Search"), command=self.search_jobs).grid(row=0, column=6, padx=10, pady=2)
+        ttk.Button(search_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.clear', default="Clear"), command=self.clear_job_search).grid(row=0, column=7, padx=5, pady=2)
 
         # Work-study only checkbox
         self.work_study_only = tk.BooleanVar()
-        ttk.Checkbutton(search_frame, text="Work-Study Only", variable=self.work_study_only,
+        ttk.Checkbutton(search_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.work_study_only', default="Work-Study Only"), variable=self.work_study_only,
                        command=self.search_jobs).grid(row=1, column=0, columnspan=2, sticky=tk.W, padx=5, pady=2)
 
         # Job listings frame
-        listings_frame = ttk.LabelFrame(tab, text="Available Jobs", padding=10)
+        listings_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.student_jobs.jobs.labels.available_jobs', default="Available Jobs"), padding=10)
         listings_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Create treeview for job listings
@@ -169,15 +171,15 @@ class StudentJobsGUI:
         self.jobs_tree = ttk.Treeview(listings_frame, columns=columns, show='headings', height=15)
 
         # Configure columns
-        self.jobs_tree.heading('ID', text='Job ID')
-        self.jobs_tree.heading('Title', text='Job Title')
-        self.jobs_tree.heading('Employer', text='Employer')
-        self.jobs_tree.heading('Category', text='Category')
-        self.jobs_tree.heading('Type', text='Type')
-        self.jobs_tree.heading('Rate', text='Rate/Hr')
-        self.jobs_tree.heading('Location', text='Location')
-        self.jobs_tree.heading('Positions', text='Positions')
-        self.jobs_tree.heading('Deadline', text='Deadline')
+        self.jobs_tree.heading('ID', text=_t('gui.pastoral.student_jobs.jobs.headings.job_id', default='Job ID'))
+        self.jobs_tree.heading('Title', text=_t('gui.pastoral.student_jobs.jobs.headings.job_title', default='Job Title'))
+        self.jobs_tree.heading('Employer', text=_t('gui.pastoral.student_jobs.jobs.headings.employer', default='Employer'))
+        self.jobs_tree.heading('Category', text=_t('gui.pastoral.student_jobs.jobs.headings.category', default='Category'))
+        self.jobs_tree.heading('Type', text=_t('gui.pastoral.student_jobs.jobs.headings.type', default='Type'))
+        self.jobs_tree.heading('Rate', text=_t('gui.pastoral.student_jobs.jobs.headings.rate_hr', default='Rate/Hr'))
+        self.jobs_tree.heading('Location', text=_t('gui.pastoral.student_jobs.jobs.headings.location', default='Location'))
+        self.jobs_tree.heading('Positions', text=_t('gui.pastoral.student_jobs.jobs.headings.positions', default='Positions'))
+        self.jobs_tree.heading('Deadline', text=_t('gui.pastoral.student_jobs.jobs.headings.deadline', default='Deadline'))
 
         self.jobs_tree.column('ID', width=60)
         self.jobs_tree.column('Title', width=200)
@@ -205,20 +207,20 @@ class StudentJobsGUI:
         buttons_frame = ttk.Frame(tab)
         buttons_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(buttons_frame, text="View Details", command=self.view_job_details).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Apply for Job", command=self.apply_for_job_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Refresh", command=self.refresh_jobs).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.view_details', default="View Details"), command=self.view_job_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.apply_for_job', default="Apply for Job"), command=self.apply_for_job_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.refresh', default="Refresh"), command=self.refresh_jobs).pack(side=tk.LEFT, padx=5)
 
     def create_applications_tab(self):
         """Create my applications tab"""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Applications")
+        self.notebook.add(tab, text=_t('gui.pastoral.student_jobs.jobs.tabs.my_applications', default="My Applications"))
 
         # Filter frame
-        filter_frame = ttk.LabelFrame(tab, text="Filter", padding=10)
+        filter_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.student_jobs.jobs.labels.filter', default="Filter"), padding=10)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Status:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.status', default="Status:")).grid(row=0, column=0, sticky=tk.W, padx=5)
         self.app_status_filter = ttk.Combobox(filter_frame, width=20, state='readonly')
         self.app_status_filter['values'] = ('All', 'pending', 'reviewed', 'interview', 'offered', 'accepted', 'rejected')
         self.app_status_filter.current(0)
@@ -226,18 +228,18 @@ class StudentJobsGUI:
         self.app_status_filter.bind('<<ComboboxSelected>>', lambda e: self.refresh_applications())
 
         # Applications list
-        list_frame = ttk.LabelFrame(tab, text="My Applications", padding=10)
+        list_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.student_jobs.jobs.labels.my_applications', default="My Applications"), padding=10)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         columns = ('App ID', 'Job Title', 'Employer', 'Rate', 'Applied Date', 'Status')
         self.apps_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
 
-        self.apps_tree.heading('App ID', text='Application ID')
-        self.apps_tree.heading('Job Title', text='Job Title')
-        self.apps_tree.heading('Employer', text='Employer')
-        self.apps_tree.heading('Rate', text='Rate/Hr')
-        self.apps_tree.heading('Applied Date', text='Applied Date')
-        self.apps_tree.heading('Status', text='Status')
+        self.apps_tree.heading('App ID', text=_t('gui.pastoral.student_jobs.jobs.headings.application_id', default='Application ID'))
+        self.apps_tree.heading('Job Title', text=_t('gui.pastoral.student_jobs.jobs.headings.job_title', default='Job Title'))
+        self.apps_tree.heading('Employer', text=_t('gui.pastoral.student_jobs.jobs.headings.employer', default='Employer'))
+        self.apps_tree.heading('Rate', text=_t('gui.pastoral.student_jobs.jobs.headings.rate_hr', default='Rate/Hr'))
+        self.apps_tree.heading('Applied Date', text=_t('gui.pastoral.student_jobs.jobs.headings.applied_date', default='Applied Date'))
+        self.apps_tree.heading('Status', text=_t('gui.pastoral.student_jobs.jobs.headings.status', default='Status'))
 
         self.apps_tree.column('App ID', width=100)
         self.apps_tree.column('Job Title', width=250)
@@ -261,14 +263,14 @@ class StudentJobsGUI:
         buttons_frame = ttk.Frame(tab)
         buttons_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(buttons_frame, text="View Details", command=self.view_application_details).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Withdraw", command=self.withdraw_application).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Refresh", command=self.refresh_applications).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.view_details', default="View Details"), command=self.view_application_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.withdraw', default="Withdraw"), command=self.withdraw_application).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.refresh', default="Refresh"), command=self.refresh_applications).pack(side=tk.LEFT, padx=5)
 
     def create_my_jobs_tab(self):
         """Create my jobs and work hours tab"""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Jobs & Hours")
+        self.notebook.add(tab, text=_t('gui.pastoral.student_jobs.jobs.tabs.my_jobs_hours', default="My Jobs & Hours"))
 
         # Create sub-notebook
         sub_notebook = ttk.Notebook(tab)
@@ -276,9 +278,9 @@ class StudentJobsGUI:
 
         # Current jobs sub-tab
         jobs_tab = ttk.Frame(sub_notebook)
-        sub_notebook.add(jobs_tab, text="Current Jobs")
+        sub_notebook.add(jobs_tab, text=_t('gui.pastoral.student_jobs.jobs.tabs.current_jobs', default="Current Jobs"))
 
-        jobs_frame = ttk.LabelFrame(jobs_tab, text="My Current Jobs", padding=10)
+        jobs_frame = ttk.LabelFrame(jobs_tab, text=_t('gui.pastoral.student_jobs.jobs.labels.my_current_jobs', default="My Current Jobs"), padding=10)
         jobs_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         columns = ('Emp ID', 'Position', 'Employer', 'Rate', 'Max Hours', 'Start Date', 'Status')
@@ -296,25 +298,25 @@ class StudentJobsGUI:
 
         # Work hours sub-tab
         hours_tab = ttk.Frame(sub_notebook)
-        sub_notebook.add(hours_tab, text="Work Hours")
+        sub_notebook.add(hours_tab, text=_t('gui.pastoral.student_jobs.jobs.tabs.work_hours', default="Work Hours"))
 
         # Date range filter
         filter_frame = ttk.Frame(hours_tab)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="From:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.from', default="From:")).pack(side=tk.LEFT, padx=5)
         self.hours_start_date = ttk.Entry(filter_frame, width=12)
         self.hours_start_date.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="To:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.to', default="To:")).pack(side=tk.LEFT, padx=5)
         self.hours_end_date = ttk.Entry(filter_frame, width=12)
         self.hours_end_date.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(filter_frame, text="Filter", command=self.refresh_hours).pack(side=tk.LEFT, padx=5)
-        ttk.Button(filter_frame, text="This Week", command=self.filter_hours_this_week).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.filter', default="Filter"), command=self.refresh_hours).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.this_week', default="This Week"), command=self.filter_hours_this_week).pack(side=tk.LEFT, padx=5)
 
         # Hours list
-        hours_frame = ttk.LabelFrame(hours_tab, text="Work Hours Log", padding=10)
+        hours_frame = ttk.LabelFrame(hours_tab, text=_t('gui.pastoral.student_jobs.jobs.labels.work_hours_log', default="Work Hours Log"), padding=10)
         hours_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         columns = ('Log ID', 'Date', 'Position', 'Clock In', 'Clock Out', 'Hours', 'Earnings', 'Status')
@@ -331,50 +333,50 @@ class StudentJobsGUI:
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Summary frame
-        summary_frame = ttk.LabelFrame(hours_tab, text="Summary", padding=10)
+        summary_frame = ttk.LabelFrame(hours_tab, text=_t('gui.pastoral.student_jobs.jobs.labels.summary', default="Summary"), padding=10)
         summary_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        self.hours_summary_label = ttk.Label(summary_frame, text="Total Hours: 0.00 | Total Earnings: £0.00")
+        self.hours_summary_label = ttk.Label(summary_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.total_hours_0_00_total_earnings_0_00', default="Total Hours: 0.00 | Total Earnings: £0.00"))
         self.hours_summary_label.pack()
 
         # Buttons
         buttons_frame = ttk.Frame(hours_tab)
         buttons_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(buttons_frame, text="Clock In", command=self.clock_in_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Clock Out", command=self.clock_out_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Weekly Summary", command=self.show_weekly_summary).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.clock_in', default="Clock In"), command=self.clock_in_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.clock_out', default="Clock Out"), command=self.clock_out_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.weekly_summary', default="Weekly Summary"), command=self.show_weekly_summary).pack(side=tk.LEFT, padx=5)
 
         # Work-Study sub-tab
         ws_tab = ttk.Frame(sub_notebook)
-        sub_notebook.add(ws_tab, text="Work-Study")
+        sub_notebook.add(ws_tab, text=_t('gui.pastoral.student_jobs.jobs.tabs.work_study', default="Work-Study"))
 
-        ws_info_frame = ttk.LabelFrame(ws_tab, text="Work-Study Information", padding=10)
+        ws_info_frame = ttk.LabelFrame(ws_tab, text=_t('gui.pastoral.student_jobs.jobs.labels.work_study_information', default="Work-Study Information"), padding=10)
         ws_info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.ws_info_text = scrolledtext.ScrolledText(ws_info_frame, height=20, wrap=tk.WORD)
         self.ws_info_text.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Button(ws_tab, text="Refresh", command=self.refresh_work_study_info).pack(pady=5)
+        ttk.Button(ws_tab, text=_t('gui.pastoral.student_jobs.jobs.buttons.refresh', default="Refresh"), command=self.refresh_work_study_info).pack(pady=5)
 
     def create_skills_tab(self):
         """Create skills management tab"""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Skills & Matching")
+        self.notebook.add(tab, text=_t('gui.pastoral.student_jobs.jobs.tabs.skills_matching', default="Skills & Matching"))
 
         # My skills section
-        skills_frame = ttk.LabelFrame(tab, text="My Skills", padding=10)
+        skills_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.student_jobs.jobs.labels.my_skills', default="My Skills"), padding=10)
         skills_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         columns = ('Skill ID', 'Skill Name', 'Category', 'Proficiency', 'Experience', 'Verified')
         self.skills_tree = ttk.Treeview(skills_frame, columns=columns, show='headings', height=10)
 
-        self.skills_tree.heading('Skill ID', text='ID')
-        self.skills_tree.heading('Skill Name', text='Skill Name')
-        self.skills_tree.heading('Category', text='Category')
-        self.skills_tree.heading('Proficiency', text='Proficiency')
-        self.skills_tree.heading('Experience', text='Experience (yrs)')
-        self.skills_tree.heading('Verified', text='Verified')
+        self.skills_tree.heading('Skill ID', text=_t('gui.pastoral.student_jobs.jobs.headings.id', default='ID'))
+        self.skills_tree.heading('Skill Name', text=_t('gui.pastoral.student_jobs.jobs.headings.skill_name', default='Skill Name'))
+        self.skills_tree.heading('Category', text=_t('gui.pastoral.student_jobs.jobs.headings.category', default='Category'))
+        self.skills_tree.heading('Proficiency', text=_t('gui.pastoral.student_jobs.jobs.headings.proficiency', default='Proficiency'))
+        self.skills_tree.heading('Experience', text=_t('gui.pastoral.student_jobs.jobs.headings.experience_yrs', default='Experience (yrs)'))
+        self.skills_tree.heading('Verified', text=_t('gui.pastoral.student_jobs.jobs.headings.verified', default='Verified'))
 
         self.skills_tree.column('Skill ID', width=60)
         self.skills_tree.column('Skill Name', width=200)
@@ -393,43 +395,43 @@ class StudentJobsGUI:
         buttons_frame = ttk.Frame(tab)
         buttons_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(buttons_frame, text="Add Skill", command=self.add_skill_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Find Matching Jobs", command=self.find_matching_jobs).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Refresh", command=self.refresh_skills).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.add_skill', default="Add Skill"), command=self.add_skill_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.find_matching_jobs', default="Find Matching Jobs"), command=self.find_matching_jobs).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.refresh', default="Refresh"), command=self.refresh_skills).pack(side=tk.LEFT, padx=5)
 
     def create_admin_tab(self):
         """Create admin management tab"""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Administration")
+        self.notebook.add(tab, text=_t('gui.pastoral.student_jobs.jobs.tabs.administration', default="Administration"))
 
         # Admin functions frame
-        functions_frame = ttk.LabelFrame(tab, text="Administrative Functions", padding=20)
+        functions_frame = ttk.LabelFrame(tab, text=_t('gui.pastoral.student_jobs.jobs.labels.administrative_functions', default="Administrative Functions"), padding=20)
         functions_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Create buttons in a grid
-        ttk.Button(functions_frame, text="Post New Job", command=self.show_post_job_dialog,
+        ttk.Button(functions_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.post_new_job', default="Post New Job"), command=self.show_post_job_dialog,
                   width=25).grid(row=0, column=0, padx=10, pady=10)
-        ttk.Button(functions_frame, text="Manage Job Postings", command=self.show_manage_postings,
+        ttk.Button(functions_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.manage_job_postings', default="Manage Job Postings"), command=self.show_manage_postings,
                   width=25).grid(row=0, column=1, padx=10, pady=10)
 
-        ttk.Button(functions_frame, text="Review Applications", command=self.show_review_applications,
+        ttk.Button(functions_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.review_applications', default="Review Applications"), command=self.show_review_applications,
                   width=25).grid(row=1, column=0, padx=10, pady=10)
-        ttk.Button(functions_frame, text="Hire Student", command=self.show_hire_student_dialog,
+        ttk.Button(functions_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.hire_student', default="Hire Student"), command=self.show_hire_student_dialog,
                   width=25).grid(row=1, column=1, padx=10, pady=10)
 
-        ttk.Button(functions_frame, text="Approve Work Hours", command=self.show_approve_hours,
+        ttk.Button(functions_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.approve_work_hours', default="Approve Work Hours"), command=self.show_approve_hours,
                   width=25).grid(row=2, column=0, padx=10, pady=10)
-        ttk.Button(functions_frame, text="Create Performance Review", command=self.show_performance_review_dialog,
+        ttk.Button(functions_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.create_performance_review', default="Create Performance Review"), command=self.show_performance_review_dialog,
                   width=25).grid(row=2, column=1, padx=10, pady=10)
 
-        ttk.Button(functions_frame, text="Manage Employment Records", command=self.show_manage_employment,
+        ttk.Button(functions_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.manage_employment_records', default="Manage Employment Records"), command=self.show_manage_employment,
                   width=25).grid(row=3, column=0, padx=10, pady=10)
-        ttk.Button(functions_frame, text="View Reports", command=self.show_reports,
+        ttk.Button(functions_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.view_reports', default="View Reports"), command=self.show_reports,
                   width=25).grid(row=3, column=1, padx=10, pady=10)
 
     def create_status_bar(self):
         """Create status bar"""
-        self.status_bar = ttk.Label(self.root, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.root, text=_t('gui.pastoral.student_jobs.jobs.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
     # ======================== DATA LOADING METHODS ========================
@@ -452,7 +454,7 @@ class StudentJobsGUI:
             self.update_jobs_tree()
             self.update_status(f"Loaded {len(self.jobs_list)} active jobs")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load jobs: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to load jobs: {e}")
 
     def refresh_applications(self):
         """Refresh applications"""
@@ -471,7 +473,7 @@ class StudentJobsGUI:
             self.update_applications_tree()
             self.update_status(f"Loaded {len(self.applications_list)} applications")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load applications: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to load applications: {e}")
 
     def refresh_employment(self):
         """Refresh employment records"""
@@ -483,7 +485,7 @@ class StudentJobsGUI:
             self.employment_list = EmploymentManager.get_student_employment(student_id, active_only=True)
             self.update_employment_tree()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load employment: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to load employment: {e}")
 
     def refresh_hours(self):
         """Refresh work hours"""
@@ -499,7 +501,7 @@ class StudentJobsGUI:
             self.update_hours_tree()
             self.update_hours_summary()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load hours: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to load hours: {e}")
 
     def refresh_skills(self):
         """Refresh skills"""
@@ -511,7 +513,7 @@ class StudentJobsGUI:
             self.skills_list = SkillMatchingManager.get_student_skills(student_id)
             self.update_skills_tree()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load skills: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to load skills: {e}")
 
     def refresh_work_study_info(self):
         """Refresh work-study information"""
@@ -686,7 +688,7 @@ class StudentJobsGUI:
             self.update_jobs_tree()
             self.update_status(f"Found {len(self.jobs_list)} matching jobs")
         except Exception as e:
-            messagebox.showerror("Error", f"Search failed: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Search failed: {e}")
 
     def clear_job_search(self):
         """Clear job search filters"""
@@ -716,7 +718,7 @@ class StudentJobsGUI:
         """View detailed job information"""
         selected = self.jobs_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a job to view.")
+            messagebox.showwarning(_t('gui.pastoral.student_jobs.jobs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_jobs.jobs.dialogs.please_select_a_job_to_view', default="Please select a job to view."))
             return
 
         values = self.jobs_tree.item(selected[0])['values']
@@ -725,7 +727,7 @@ class StudentJobsGUI:
         try:
             job = JobPostingManager.get_job_details(job_id)
             if not job:
-                messagebox.showerror("Error", "Job not found.")
+                messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.job_not_found', default="Job not found."))
                 return
 
             # Create details window
@@ -789,17 +791,17 @@ class StudentJobsGUI:
 
             # Apply button
             if self.current_user and self.current_user.get('role') == 'student':
-                ttk.Button(details_window, text="Apply for this Job",
+                ttk.Button(details_window, text=_t('gui.pastoral.student_jobs.jobs.buttons.apply_for_this_job', default="Apply for this Job"),
                           command=lambda: self.apply_for_specific_job(job_id, details_window)).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load job details: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to load job details: {e}")
 
     def apply_for_job_dialog(self):
         """Show apply for job dialog"""
         selected = self.jobs_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a job to apply for.")
+            messagebox.showwarning(_t('gui.pastoral.student_jobs.jobs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_jobs.jobs.dialogs.please_select_a_job_to_apply_for', default="Please select a job to apply for."))
             return
 
         values = self.jobs_tree.item(selected[0])['values']
@@ -810,32 +812,32 @@ class StudentJobsGUI:
     def apply_for_specific_job(self, job_id, parent_window=None):
         """Apply for a specific job"""
         if not self.current_user or self.current_user.get('role') != 'student':
-            messagebox.showerror("Error", "Only students can apply for jobs.")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.only_students_can_apply_for_jobs', default="Only students can apply for jobs."))
             return
 
         # Create application dialog
         dialog = tk.Toplevel(parent_window if parent_window else self.root)
-        dialog.title("Apply for Job")
+        dialog.title(_t('gui.pastoral.student_jobs.jobs.windows.apply_for_job', default="Apply for Job"))
         dialog.geometry("600x500")
 
         # Form fields
-        ttk.Label(dialog, text="Cover Letter (optional):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.cover_letter_optional', default="Cover Letter (optional):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         cover_letter_text = scrolledtext.ScrolledText(dialog, height=8, wrap=tk.WORD)
         cover_letter_text.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
 
-        ttk.Label(dialog, text="Resume URL (optional):").pack(padx=10, pady=(5, 0), anchor=tk.W)
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.resume_url_optional', default="Resume URL (optional):")).pack(padx=10, pady=(5, 0), anchor=tk.W)
         resume_entry = ttk.Entry(dialog, width=60)
         resume_entry.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="Availability:").pack(padx=10, pady=(5, 0), anchor=tk.W)
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.availability', default="Availability:")).pack(padx=10, pady=(5, 0), anchor=tk.W)
         availability_entry = ttk.Entry(dialog, width=60)
         availability_entry.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="Expected Hours per Week:").pack(padx=10, pady=(5, 0), anchor=tk.W)
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.expected_hours_per_week', default="Expected Hours per Week:")).pack(padx=10, pady=(5, 0), anchor=tk.W)
         hours_entry = ttk.Entry(dialog, width=20)
         hours_entry.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="References (optional):").pack(padx=10, pady=(5, 0), anchor=tk.W)
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.references_optional', default="References (optional):")).pack(padx=10, pady=(5, 0), anchor=tk.W)
         references_entry = ttk.Entry(dialog, width=60)
         references_entry.pack(padx=10, pady=5)
 
@@ -861,27 +863,27 @@ class StudentJobsGUI:
                     references=references
                 )
 
-                messagebox.showinfo("Success", f"Application submitted successfully!\nApplication ID: {application_id}")
+                messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.success', default="Success"), f"Application submitted successfully!\nApplication ID: {application_id}")
                 dialog.destroy()
                 if parent_window:
                     parent_window.destroy()
                 self.refresh_applications()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to submit application: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to submit application: {e}")
 
         # Buttons
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Submit Application", command=submit_application).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.submit_application', default="Submit Application"), command=submit_application).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_jobs.jobs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def view_application_details(self):
         """View application details"""
         selected = self.apps_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select an application to view.")
+            messagebox.showwarning(_t('gui.pastoral.student_jobs.jobs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_jobs.jobs.dialogs.please_select_an_application_to_view', default="Please select an application to view."))
             return
 
         values = self.apps_tree.item(selected[0])['values']
@@ -890,7 +892,7 @@ class StudentJobsGUI:
         app = next((a for a in self.applications_list if a['application_id'] == app_id), None)
 
         if not app:
-            messagebox.showerror("Error", "Application not found.")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.application_not_found', default="Application not found."))
             return
 
         # Create details window
@@ -940,37 +942,37 @@ class StudentJobsGUI:
         """Withdraw an application"""
         selected = self.apps_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select an application to withdraw.")
+            messagebox.showwarning(_t('gui.pastoral.student_jobs.jobs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_jobs.jobs.dialogs.please_select_an_application_to_withdraw', default="Please select an application to withdraw."))
             return
 
         values = self.apps_tree.item(selected[0])['values']
         app_id = values[0]
 
-        if not messagebox.askyesno("Confirm", f"Are you sure you want to withdraw application {app_id}?"):
+        if not messagebox.askyesno(_t('gui.pastoral.student_jobs.jobs.dialogs.confirm', default="Confirm"), f"Are you sure you want to withdraw application {app_id}?"):
             return
 
         try:
             JobApplicationManager.update_application_status(app_id, 'withdrawn', 'Withdrawn by student')
-            messagebox.showinfo("Success", "Application withdrawn successfully.")
+            messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.success', default="Success"), _t('gui.pastoral.student_jobs.jobs.dialogs.application_withdrawn_successfully', default="Application withdrawn successfully."))
             self.refresh_applications()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to withdraw application: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to withdraw application: {e}")
 
     def clock_in_dialog(self):
         """Clock in dialog"""
         if not self.current_user or self.current_user.get('role') != 'student':
-            messagebox.showerror("Error", "Only students can clock in.")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.only_students_can_clock_in', default="Only students can clock in."))
             return
 
         if not self.employment_list:
-            messagebox.showwarning("Warning", "You don't have any active jobs.")
+            messagebox.showwarning(_t('gui.pastoral.student_jobs.jobs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_jobs.jobs.dialogs.you_don_t_have_any_active_jobs', default="You don't have any active jobs."))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Clock In")
+        dialog.title(_t('gui.pastoral.student_jobs.jobs.windows.clock_in', default="Clock In"))
         dialog.geometry("400x300")
 
-        ttk.Label(dialog, text="Select Job:").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.select_job', default="Select Job:")).pack(padx=10, pady=(10, 0))
 
         job_var = tk.StringVar()
         job_combo = ttk.Combobox(dialog, textvariable=job_var, state='readonly', width=50)
@@ -981,17 +983,17 @@ class StudentJobsGUI:
         if job_combo['values']:
             job_combo.current(0)
 
-        ttk.Label(dialog, text="Work Date (YYYY-MM-DD):").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.work_date_yyyy_mm_dd', default="Work Date (YYYY-MM-DD):")).pack(padx=10, pady=(10, 0))
         date_entry = ttk.Entry(dialog, width=20)
         date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         date_entry.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="Clock In Time (HH:MM):").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.clock_in_time_hh_mm', default="Clock In Time (HH:MM):")).pack(padx=10, pady=(10, 0))
         time_entry = ttk.Entry(dialog, width=20)
         time_entry.insert(0, datetime.now().strftime('%H:%M'))
         time_entry.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="Task Description (optional):").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.task_description_optional', default="Task Description (optional):")).pack(padx=10, pady=(10, 0))
         task_entry = ttk.Entry(dialog, width=50)
         task_entry.pack(padx=10, pady=5)
 
@@ -1011,35 +1013,35 @@ class StudentJobsGUI:
                     task_description=task_description
                 )
 
-                messagebox.showinfo("Success", f"Clocked in successfully!\nLog ID: {log_id}")
+                messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.success', default="Success"), f"Clocked in successfully!\nLog ID: {log_id}")
                 dialog.destroy()
                 self.refresh_hours()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to clock in: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to clock in: {e}")
 
-        ttk.Button(dialog, text="Clock In", command=submit).pack(pady=20)
+        ttk.Button(dialog, text=_t('gui.pastoral.student_jobs.jobs.buttons.clock_in', default="Clock In"), command=submit).pack(pady=20)
 
     def clock_out_dialog(self):
         """Clock out dialog"""
         if not self.current_user or self.current_user.get('role') != 'student':
-            messagebox.showerror("Error", "Only students can clock out.")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.only_students_can_clock_out', default="Only students can clock out."))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Clock Out")
+        dialog.title(_t('gui.pastoral.student_jobs.jobs.windows.clock_out', default="Clock Out"))
         dialog.geometry("400x250")
 
-        ttk.Label(dialog, text="Log ID (from when you clocked in):").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.log_id_from_when_you_clocked_in', default="Log ID (from when you clocked in):")).pack(padx=10, pady=(10, 0))
         log_id_entry = ttk.Entry(dialog, width=20)
         log_id_entry.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="Clock Out Time (HH:MM):").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.clock_out_time_hh_mm', default="Clock Out Time (HH:MM):")).pack(padx=10, pady=(10, 0))
         time_entry = ttk.Entry(dialog, width=20)
         time_entry.insert(0, datetime.now().strftime('%H:%M'))
         time_entry.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="Break Duration (minutes):").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.break_duration_minutes', default="Break Duration (minutes):")).pack(padx=10, pady=(10, 0))
         break_entry = ttk.Entry(dialog, width=20)
         break_entry.insert(0, "0")
         break_entry.pack(padx=10, pady=5)
@@ -1056,19 +1058,19 @@ class StudentJobsGUI:
                     break_duration_minutes=break_duration
                 )
 
-                messagebox.showinfo("Success", "Clocked out successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.success', default="Success"), _t('gui.pastoral.student_jobs.jobs.dialogs.clocked_out_successfully', default="Clocked out successfully!"))
                 dialog.destroy()
                 self.refresh_hours()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to clock out: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to clock out: {e}")
 
-        ttk.Button(dialog, text="Clock Out", command=submit).pack(pady=20)
+        ttk.Button(dialog, text=_t('gui.pastoral.student_jobs.jobs.buttons.clock_out', default="Clock Out"), command=submit).pack(pady=20)
 
     def show_weekly_summary(self):
         """Show weekly hours summary"""
         if not self.current_user or self.current_user.get('role') != 'student':
-            messagebox.showerror("Error", "Only students can view weekly summary.")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.only_students_can_view_weekly_summary', default="Only students can view weekly summary."))
             return
 
         # Get Monday of current week
@@ -1081,7 +1083,7 @@ class StudentJobsGUI:
             summary = WorkHoursManager.get_weekly_summary(student_id, week_start)
 
             dialog = tk.Toplevel(self.root)
-            dialog.title("Weekly Hours Summary")
+            dialog.title(_t('gui.pastoral.student_jobs.jobs.windows.weekly_hours_summary', default="Weekly Hours Summary"))
             dialog.geometry("500x400")
 
             text = scrolledtext.ScrolledText(dialog, wrap=tk.WORD, padx=10, pady=10)
@@ -1104,35 +1106,35 @@ class StudentJobsGUI:
             text.config(state=tk.DISABLED)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load weekly summary: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to load weekly summary: {e}")
 
     def add_skill_dialog(self):
         """Add skill dialog"""
         if not self.current_user or self.current_user.get('role') != 'student':
-            messagebox.showerror("Error", "Only students can add skills.")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.only_students_can_add_skills', default="Only students can add skills."))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Skill")
+        dialog.title(_t('gui.pastoral.student_jobs.jobs.windows.add_skill', default="Add Skill"))
         dialog.geometry("400x400")
 
-        ttk.Label(dialog, text="Skill Name:").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.skill_name', default="Skill Name:")).pack(padx=10, pady=(10, 0))
         skill_entry = ttk.Entry(dialog, width=40)
         skill_entry.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="Category:").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.category', default="Category:")).pack(padx=10, pady=(10, 0))
         category_combo = ttk.Combobox(dialog, width=38, state='readonly')
         category_combo['values'] = ('technical', 'language', 'software', 'certification', 'soft-skill', 'other')
         category_combo.current(0)
         category_combo.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="Proficiency Level:").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.proficiency_level', default="Proficiency Level:")).pack(padx=10, pady=(10, 0))
         proficiency_combo = ttk.Combobox(dialog, width=38, state='readonly')
         proficiency_combo['values'] = ('beginner', 'intermediate', 'advanced', 'expert')
         proficiency_combo.current(0)
         proficiency_combo.pack(padx=10, pady=5)
 
-        ttk.Label(dialog, text="Years of Experience:").pack(padx=10, pady=(10, 0))
+        ttk.Label(dialog, text=_t('gui.pastoral.student_jobs.jobs.labels.years_of_experience', default="Years of Experience:")).pack(padx=10, pady=(10, 0))
         years_entry = ttk.Entry(dialog, width=20)
         years_entry.insert(0, "0")
         years_entry.pack(padx=10, pady=5)
@@ -1146,7 +1148,7 @@ class StudentJobsGUI:
                 years_experience = float(years_entry.get())
 
                 if not skill_name:
-                    messagebox.showwarning("Warning", "Skill name is required.")
+                    messagebox.showwarning(_t('gui.pastoral.student_jobs.jobs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_jobs.jobs.dialogs.skill_name_is_required', default="Skill name is required."))
                     return
 
                 skill_id = SkillMatchingManager.add_student_skill(
@@ -1157,19 +1159,19 @@ class StudentJobsGUI:
                     years_experience=years_experience
                 )
 
-                messagebox.showinfo("Success", f"Skill added successfully!\nSkill ID: {skill_id}")
+                messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.success', default="Success"), f"Skill added successfully!\nSkill ID: {skill_id}")
                 dialog.destroy()
                 self.refresh_skills()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to add skill: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to add skill: {e}")
 
-        ttk.Button(dialog, text="Add Skill", command=submit).pack(pady=20)
+        ttk.Button(dialog, text=_t('gui.pastoral.student_jobs.jobs.buttons.add_skill', default="Add Skill"), command=submit).pack(pady=20)
 
     def find_matching_jobs(self):
         """Find jobs matching student's skills"""
         if not self.current_user or self.current_user.get('role') != 'student':
-            messagebox.showerror("Error", "Only students can use skill matching.")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.only_students_can_use_skill_matching', default="Only students can use skill matching."))
             return
 
         # Ask for minimum match percentage
@@ -1185,7 +1187,7 @@ class StudentJobsGUI:
             matching_jobs = SkillMatchingManager.find_matching_jobs(student_id, min_match)
 
             if not matching_jobs:
-                messagebox.showinfo("No Matches", f"No jobs found matching your skills (minimum {min_match}% match).")
+                messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.no_matches', default="No Matches"), f"No jobs found matching your skills (minimum {min_match}% match).")
                 return
 
             # Create results window
@@ -1234,14 +1236,14 @@ class StudentJobsGUI:
             tree.bind('<Double-Button-1>', on_double_click)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to find matching jobs: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to find matching jobs: {e}")
 
     def view_specific_job_details(self, job_id):
         """View details for a specific job ID"""
         try:
             job = JobPostingManager.get_job_details(job_id)
             if not job:
-                messagebox.showerror("Error", "Job not found.")
+                messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.job_not_found', default="Job not found."))
                 return
 
             # Create details window (similar to view_job_details but standalone)
@@ -1264,18 +1266,18 @@ class StudentJobsGUI:
             text.config(state=tk.DISABLED)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load job details: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to load job details: {e}")
 
     # ======================== ADMIN METHODS ========================
 
     def show_post_job_dialog(self):
         """Show post job dialog (admin only)"""
         if not self._is_admin_or_staff():
-            messagebox.showerror("Error", "You don't have permission to post jobs.")
+            messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), _t('gui.pastoral.student_jobs.jobs.dialogs.you_don_t_have_permission_to_post_jobs', default="You don't have permission to post jobs."))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Post New Job")
+        dialog.title(_t('gui.pastoral.student_jobs.jobs.windows.post_new_job', default="Post New Job"))
         dialog.geometry("600x700")
 
         # Create scrollable frame
@@ -1294,50 +1296,50 @@ class StudentJobsGUI:
         # Form fields
         fields = {}
 
-        ttk.Label(scrollable_frame, text="Employer/Department Name:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.employer_department_name', default="Employer/Department Name:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
         fields['employer_name'] = ttk.Entry(scrollable_frame, width=40)
         fields['employer_name'].grid(row=0, column=1, padx=10, pady=5)
 
-        ttk.Label(scrollable_frame, text="Job Title:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.job_title', default="Job Title:")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
         fields['job_title'] = ttk.Entry(scrollable_frame, width=40)
         fields['job_title'].grid(row=1, column=1, padx=10, pady=5)
 
-        ttk.Label(scrollable_frame, text="Job Category:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.job_category', default="Job Category:")).grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
         fields['job_category'] = ttk.Entry(scrollable_frame, width=40)
         fields['job_category'].grid(row=2, column=1, padx=10, pady=5)
 
-        ttk.Label(scrollable_frame, text="Employment Type:").grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.employment_type', default="Employment Type:")).grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
         fields['employment_type'] = ttk.Combobox(scrollable_frame, width=38, state='readonly')
         fields['employment_type']['values'] = ('work-study', 'part-time', 'internship', 'temp')
         fields['employment_type'].current(1)
         fields['employment_type'].grid(row=3, column=1, padx=10, pady=5)
 
-        ttk.Label(scrollable_frame, text="Hourly Rate ($):").grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.hourly_rate', default="Hourly Rate ($):")).grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
         fields['hourly_rate'] = ttk.Entry(scrollable_frame, width=20)
         fields['hourly_rate'].grid(row=4, column=1, padx=10, pady=5, sticky=tk.W)
 
-        ttk.Label(scrollable_frame, text="Hours per Week:").grid(row=5, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.hours_per_week', default="Hours per Week:")).grid(row=5, column=0, sticky=tk.W, padx=10, pady=5)
         fields['hours_per_week'] = ttk.Entry(scrollable_frame, width=20)
         fields['hours_per_week'].grid(row=5, column=1, padx=10, pady=5, sticky=tk.W)
 
-        ttk.Label(scrollable_frame, text="Number of Positions:").grid(row=6, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.number_of_positions', default="Number of Positions:")).grid(row=6, column=0, sticky=tk.W, padx=10, pady=5)
         fields['total_positions'] = ttk.Entry(scrollable_frame, width=20)
         fields['total_positions'].insert(0, "1")
         fields['total_positions'].grid(row=6, column=1, padx=10, pady=5, sticky=tk.W)
 
-        ttk.Label(scrollable_frame, text="Location:").grid(row=7, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.location', default="Location:")).grid(row=7, column=0, sticky=tk.W, padx=10, pady=5)
         fields['location'] = ttk.Entry(scrollable_frame, width=40)
         fields['location'].grid(row=7, column=1, padx=10, pady=5)
 
-        ttk.Label(scrollable_frame, text="Job Description:").grid(row=8, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.job_description', default="Job Description:")).grid(row=8, column=0, sticky=tk.W, padx=10, pady=5)
         fields['job_description'] = scrolledtext.ScrolledText(scrollable_frame, width=40, height=6)
         fields['job_description'].grid(row=8, column=1, padx=10, pady=5)
 
-        ttk.Label(scrollable_frame, text="Contact Email:").grid(row=9, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.contact_email', default="Contact Email:")).grid(row=9, column=0, sticky=tk.W, padx=10, pady=5)
         fields['contact_email'] = ttk.Entry(scrollable_frame, width=40)
         fields['contact_email'].grid(row=9, column=1, padx=10, pady=5)
 
-        ttk.Label(scrollable_frame, text="Application Deadline:").grid(row=10, column=0, sticky=tk.W, padx=10, pady=5)
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_jobs.jobs.labels.application_deadline', default="Application Deadline:")).grid(row=10, column=0, sticky=tk.W, padx=10, pady=5)
         fields['application_deadline'] = ttk.Entry(scrollable_frame, width=20)
         fields['application_deadline'].grid(row=10, column=1, padx=10, pady=5, sticky=tk.W)
 
@@ -1352,7 +1354,7 @@ class StudentJobsGUI:
                 location = fields['location'].get().strip()
 
                 if not all([employer_name, job_title, job_category, job_description, location]):
-                    messagebox.showwarning("Warning", "Please fill in all required fields.")
+                    messagebox.showwarning(_t('gui.pastoral.student_jobs.jobs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_jobs.jobs.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields."))
                     return
 
                 kwargs = {}
@@ -1378,45 +1380,45 @@ class StudentJobsGUI:
                     **kwargs
                 )
 
-                messagebox.showinfo("Success", f"Job posted successfully!\nJob ID: {job_id}")
+                messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.success', default="Success"), f"Job posted successfully!\nJob ID: {job_id}")
                 dialog.destroy()
                 self.refresh_jobs()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to post job: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_jobs.jobs.dialogs.error', default="Error"), f"Failed to post job: {e}")
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        ttk.Button(dialog, text="Post Job", command=submit).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.pastoral.student_jobs.jobs.buttons.post_job', default="Post Job"), command=submit).pack(pady=10)
 
     def show_manage_postings(self):
         """Show manage postings dialog"""
-        messagebox.showinfo("Manage Postings", "This feature allows you to update and deactivate job postings.\n\nSelect a job from the Browse Jobs tab and use the admin functions.")
+        messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.manage_postings', default="Manage Postings"), _t('gui.pastoral.student_jobs.jobs.dialogs.this_feature_allows_you_to_update_and_deactivate_job_postings_se', default="This feature allows you to update and deactivate job postings.\n\nSelect a job from the Browse Jobs tab and use the admin functions."))
 
     def show_review_applications(self):
         """Show review applications dialog"""
-        messagebox.showinfo("Review Applications", "This feature allows you to review and process applications.\n\nImplement application review interface as needed.")
+        messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.review_applications', default="Review Applications"), _t('gui.pastoral.student_jobs.jobs.dialogs.this_feature_allows_you_to_review_and_process_applications_imple', default="This feature allows you to review and process applications.\n\nImplement application review interface as needed."))
 
     def show_hire_student_dialog(self):
         """Show hire student dialog"""
-        messagebox.showinfo("Hire Student", "This feature allows you to hire students for positions.\n\nImplement hiring interface as needed.")
+        messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.hire_student', default="Hire Student"), _t('gui.pastoral.student_jobs.jobs.dialogs.this_feature_allows_you_to_hire_students_for_positions_implement', default="This feature allows you to hire students for positions.\n\nImplement hiring interface as needed."))
 
     def show_approve_hours(self):
         """Show approve hours dialog"""
-        messagebox.showinfo("Approve Hours", "This feature allows you to approve work hours.\n\nImplement hours approval interface as needed.")
+        messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.approve_hours', default="Approve Hours"), _t('gui.pastoral.student_jobs.jobs.dialogs.this_feature_allows_you_to_approve_work_hours_implement_hours_ap', default="This feature allows you to approve work hours.\n\nImplement hours approval interface as needed."))
 
     def show_performance_review_dialog(self):
         """Show performance review dialog"""
-        messagebox.showinfo("Performance Review", "This feature allows you to create performance reviews.\n\nImplement review interface as needed.")
+        messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.performance_review', default="Performance Review"), _t('gui.pastoral.student_jobs.jobs.dialogs.this_feature_allows_you_to_create_performance_reviews_implement', default="This feature allows you to create performance reviews.\n\nImplement review interface as needed."))
 
     def show_manage_employment(self):
         """Show manage employment dialog"""
-        messagebox.showinfo("Manage Employment", "This feature allows you to manage employment records.\n\nImplement employment management interface as needed.")
+        messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.manage_employment', default="Manage Employment"), _t('gui.pastoral.student_jobs.jobs.dialogs.this_feature_allows_you_to_manage_employment_records_implement_e', default="This feature allows you to manage employment records.\n\nImplement employment management interface as needed."))
 
     def show_reports(self):
         """Show reports dialog"""
-        messagebox.showinfo("Reports", "This feature provides various reports and analytics.\n\nImplement reporting interface as needed.")
+        messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.reports', default="Reports"), _t('gui.pastoral.student_jobs.jobs.dialogs.this_feature_provides_various_reports_and_analytics_implement_re', default="This feature provides various reports and analytics.\n\nImplement reporting interface as needed."))
 
     # ======================== HELPER METHODS ========================
 
@@ -1461,7 +1463,7 @@ class StudentJobsGUI:
 
         For more help, contact support.
         """
-        messagebox.showinfo("User Guide", help_text)
+        messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.user_guide', default="User Guide"), help_text)
 
     def show_about(self):
         """Show about dialog"""
@@ -1481,7 +1483,7 @@ class StudentJobsGUI:
         • Work-study management
         • Performance reviews
         """
-        messagebox.showinfo("About", about_text)
+        messagebox.showinfo(_t('gui.pastoral.student_jobs.jobs.dialogs.about', default="About"), about_text)
 
 
 def main():

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -44,7 +46,7 @@ class StudentIntegrationMixin:
     def open_student_system(self):
         """Open student management system in new window"""
         if not STUDENT_SYSTEM_AVAILABLE:
-            messagebox.showerror("Error", "Student management system not available")
+            messagebox.showerror(_t('gui.shell.logging.features.student_integration.dialogs.error', default="Error"), _t('gui.shell.logging.features.student_integration.dialogs.student_management_system_not_available', default="Student management system not available"))
             return
 
         try:
@@ -72,13 +74,13 @@ class StudentIntegrationMixin:
                 student_app.show_main_interface()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open student system: {str(e)}")
+            messagebox.showerror(_t('gui.shell.logging.features.student_integration.dialogs.error', default="Error"), f"Failed to open student system: {str(e)}")
 
     def sync_student_data(self):
         """Sync data between student system and log system"""
         try:
             if not STUDENT_SYSTEM_AVAILABLE:
-                messagebox.showerror("Error", "Student management system not available")
+                messagebox.showerror(_t('gui.shell.logging.features.student_integration.dialogs.error', default="Error"), _t('gui.shell.logging.features.student_integration.dialogs.student_management_system_not_available', default="Student management system not available"))
                 return
 
             # Get student data
@@ -102,11 +104,11 @@ class StudentIntegrationMixin:
                     }
                     self.log_manager.db.insert_log(sync_log)
 
-                messagebox.showinfo("Success", f"Synced {len(students)} student records")
+                messagebox.showinfo(_t('gui.shell.logging.features.student_integration.dialogs.success', default="Success"), f"Synced {len(students)} student records")
                 self.load_student_stats()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Sync failed: {str(e)}")
+            messagebox.showerror(_t('gui.shell.logging.features.student_integration.dialogs.error', default="Error"), f"Sync failed: {str(e)}")
 
     def load_student_stats(self):
         """Load student system statistics"""
@@ -194,7 +196,7 @@ class StudentIntegrationMixin:
     def view_student_logs(self):
         """View logs related to student activities"""
         if not self.log_manager:
-            messagebox.showerror("Error", "Log manager not available")
+            messagebox.showerror(_t('gui.shell.logging.features.student_integration.dialogs.error', default="Error"), _t('gui.shell.logging.features.student_integration.dialogs.log_manager_not_available', default="Log manager not available"))
             return
 
         # Create filter for student-related activities
@@ -236,4 +238,4 @@ class StudentIntegrationMixin:
             info_label.pack(pady=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load student logs: {str(e)}")
+            messagebox.showerror(_t('gui.shell.logging.features.student_integration.dialogs.error', default="Error"), f"Failed to load student logs: {str(e)}")

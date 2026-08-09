@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -66,9 +68,9 @@ class MentorshipBrowseDialog:
 
         self.dialog = tk.Toplevel(parent)
         if mode == 'find':
-            self.dialog.title("Find a Mentor")
+            self.dialog.title(_t('gui.pastoral.student_union_gui.mentorship.mentorship.windows.find_a_mentor', default="Find a Mentor"))
         else:
-            self.dialog.title("Become a Mentor")
+            self.dialog.title(_t('gui.pastoral.student_union_gui.mentorship.mentorship.windows.become_a_mentor', default="Become a Mentor"))
         self.dialog.geometry("700x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -82,10 +84,10 @@ class MentorshipBrowseDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         if self.mode == 'find':
-            title_label = ttk.Label(main_frame, text="Find a Mentor", font=('Arial', 14, 'bold'))
+            title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.find_a_mentor', default="Find a Mentor"), font=('Arial', 14, 'bold'))
             title_label.pack(pady=(0, 10))
 
-            list_frame = ttk.LabelFrame(main_frame, text="Available Mentors")
+            list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.available_mentors', default="Available Mentors"))
             list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
             columns = ('Mentor', 'Skill Area', 'Rating', 'Active Mentees')
@@ -109,13 +111,13 @@ class MentorshipBrowseDialog:
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(fill='x')
 
-            ttk.Button(button_frame, text="Request Mentorship", command=self.request_mentor).pack(side='left', padx=(0, 10))
-            ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.request_mentorship', default="Request Mentorship"), command=self.request_mentor).pack(side='left', padx=(0, 10))
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
         else:
-            title_label = ttk.Label(main_frame, text="Become a Mentor", font=('Arial', 12, 'bold'))
+            title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.become_a_mentor', default="Become a Mentor"), font=('Arial', 12, 'bold'))
             title_label.pack(pady=(0, 20))
 
-            ttk.Label(main_frame, text="Skill Area:").pack(anchor='w', pady=(0, 5))
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.skill_area', default="Skill Area:")).pack(anchor='w', pady=(0, 5))
             self.skill_var = tk.StringVar()
             skill_combo = ttk.Combobox(main_frame, textvariable=self.skill_var, width=47)
             skill_combo['values'] = ('Academic - Math', 'Academic - Science', 'Academic - English',
@@ -123,19 +125,19 @@ class MentorshipBrowseDialog:
                                     'Campus Life', 'Programming', 'Study Skills', 'Other')
             skill_combo.pack(fill='x', pady=(0, 10))
 
-            ttk.Label(main_frame, text="Experience/Qualifications:").pack(anchor='w', pady=(0, 5))
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.experience_qualifications', default="Experience/Qualifications:")).pack(anchor='w', pady=(0, 5))
             self.experience_text = scrolledtext.ScrolledText(main_frame, height=10, wrap=tk.WORD)
             self.experience_text.pack(fill='both', expand=True, pady=(0, 10))
 
-            ttk.Label(main_frame, text="Max Mentees:").pack(anchor='w', pady=(0, 5))
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.max_mentees', default="Max Mentees:")).pack(anchor='w', pady=(0, 5))
             self.max_var = tk.StringVar(value="3")
             ttk.Entry(main_frame, textvariable=self.max_var, width=10).pack(anchor='w', pady=(0, 10))
 
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(fill='x')
 
-            ttk.Button(button_frame, text="Submit", command=self.become_mentor).pack(side='left', padx=(0, 10))
-            ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.submit', default="Submit"), command=self.become_mentor).pack(side='left', padx=(0, 10))
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def load_mentors(self):
         try:
@@ -162,12 +164,12 @@ class MentorshipBrowseDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load mentors: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to load mentors: {str(e)}")
 
     def request_mentor(self):
         selection = self.mentors_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a mentor.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.please_select_a_mentor', default="Please select a mentor."))
             return
 
         item = self.mentors_tree.item(selection[0])
@@ -175,7 +177,7 @@ class MentorshipBrowseDialog:
         mentor_name = item['values'][0]
         skill_area = item['values'][1]
 
-        if messagebox.askyesno("Confirm", f"Request mentorship from {mentor_name} for {skill_area}?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.confirm', default="Confirm"), f"Request mentorship from {mentor_name} for {skill_area}?"):
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
@@ -192,10 +194,10 @@ class MentorshipBrowseDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Mentorship request submitted!")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.mentorship_request_submitted', default="Mentorship request submitted!"))
                 self.dialog.destroy()
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to request mentorship: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to request mentorship: {str(e)}")
 
     def become_mentor(self):
         skill = self.skill_var.get().strip()
@@ -203,10 +205,10 @@ class MentorshipBrowseDialog:
         max_mentees = self.max_var.get().strip()
 
         if not all([skill, experience, max_mentees]):
-            messagebox.showwarning("Warning", "Please fill in all fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.please_fill_in_all_fields', default="Please fill in all fields."))
             return
 
-        messagebox.showinfo("Success", "Your mentor application has been submitted!\n\nYou will be notified once your application is approved.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.your_mentor_application_has_been_submitted_you_will_be_notified', default="Your mentor application has been submitted!\n\nYou will be notified once your application is approved."))
         self.dialog.destroy()
 
 
@@ -219,7 +221,7 @@ class MyMentorshipsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("My Mentorships")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.mentorship.mentorship.windows.my_mentorships', default="My Mentorships"))
         self.dialog.geometry("900x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -231,7 +233,7 @@ class MyMentorshipsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        title_label = ttk.Label(main_frame, text="My Mentorships", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.my_mentorships', default="My Mentorships"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Notebook
@@ -240,7 +242,7 @@ class MyMentorshipsDialog:
 
         # As Mentee tab
         mentee_frame = ttk.Frame(notebook)
-        notebook.add(mentee_frame, text="As Mentee")
+        notebook.add(mentee_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.tabs.as_mentee', default="As Mentee"))
 
         columns = ('Mentor', 'Skill Area', 'Start Date', 'Status', 'Rating')
         self.mentee_tree = ttk.Treeview(mentee_frame, columns=columns, show='tree headings', height=10)
@@ -257,7 +259,7 @@ class MyMentorshipsDialog:
 
         # As Mentor tab
         mentor_frame = ttk.Frame(notebook)
-        notebook.add(mentor_frame, text="As Mentor")
+        notebook.add(mentor_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.tabs.as_mentor', default="As Mentor"))
 
         columns = ('Mentee', 'Skill Area', 'Start Date', 'Status', 'Rating')
         self.mentor_tree = ttk.Treeview(mentor_frame, columns=columns, show='tree headings', height=10)
@@ -276,9 +278,9 @@ class MyMentorshipsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Schedule Session", command=self.schedule_session).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Sessions", command=self.view_sessions).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.schedule_session', default="Schedule Session"), command=self.schedule_session).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.view_sessions', default="View Sessions"), command=self.view_sessions).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         try:
@@ -326,10 +328,10 @@ class MyMentorshipsDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load mentorships: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to load mentorships: {str(e)}")
 
     def schedule_session(self):
-        messagebox.showinfo("Schedule Session", "This would open a dialog to schedule a mentorship session with date, time, and agenda.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.schedule_session', default="Schedule Session"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.this_would_open_a_dialog_to_schedule_a_mentorship_session_with_d', default="This would open a dialog to schedule a mentorship session with date, time, and agenda."))
 
     def view_sessions(self):
         dialog = MentorshipSessionsDialog(self.dialog, self.auth)
@@ -345,7 +347,7 @@ class MentorshipSessionsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Mentorship Sessions")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.mentorship.mentorship.windows.mentorship_sessions', default="Mentorship Sessions"))
         self.dialog.geometry("900x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -357,10 +359,10 @@ class MentorshipSessionsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        title_label = ttk.Label(main_frame, text="Mentorship Sessions", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.mentorship_sessions', default="Mentorship Sessions"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
-        list_frame = ttk.LabelFrame(main_frame, text="Sessions")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.sessions', default="Sessions"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Date', 'Duration', 'With', 'Role', 'Progress', 'Notes')
@@ -382,7 +384,7 @@ class MentorshipSessionsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         try:
@@ -426,7 +428,7 @@ class MentorshipSessionsDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load sessions: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to load sessions: {str(e)}")
 # Main execution
 
 class ScheduleMentorshipSessionDialog:
@@ -437,7 +439,7 @@ class ScheduleMentorshipSessionDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Schedule Mentorship Session")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.mentorship.mentorship.windows.schedule_mentorship_session', default="Schedule Mentorship Session"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -449,10 +451,10 @@ class ScheduleMentorshipSessionDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Schedule Mentorship Session", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.schedule_mentorship_session', default="Schedule Mentorship Session"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Select relationship
-        ttk.Label(main_frame, text="Select Mentorship Relationship:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.select_mentorship_relationship', default="Select Mentorship Relationship:")).pack(anchor='w', pady=(0, 5))
         self.relationship_var = tk.StringVar()
         self.relationship_combo = ttk.Combobox(main_frame, textvariable=self.relationship_var, state='readonly', width=55)
         self.relationship_combo.pack(fill='x', pady=(0, 15))
@@ -461,30 +463,30 @@ class ScheduleMentorshipSessionDialog:
         datetime_frame = ttk.Frame(main_frame)
         datetime_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(datetime_frame, text="Date:").grid(row=0, column=0, sticky='w', padx=(0, 10))
+        ttk.Label(datetime_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.date', default="Date:")).grid(row=0, column=0, sticky='w', padx=(0, 10))
         self.date_entry = ttk.Entry(datetime_frame, width=15)
         self.date_entry.grid(row=0, column=1, sticky='w')
         self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-        ttk.Label(datetime_frame, text="Time:").grid(row=0, column=2, sticky='w', padx=(20, 10))
+        ttk.Label(datetime_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.time', default="Time:")).grid(row=0, column=2, sticky='w', padx=(20, 10))
         self.time_entry = ttk.Entry(datetime_frame, width=10)
         self.time_entry.grid(row=0, column=3, sticky='w')
         self.time_entry.insert(0, "14:00")
 
         # Duration
-        ttk.Label(datetime_frame, text="Duration (min):").grid(row=1, column=0, sticky='w', padx=(0, 10), pady=(10, 0))
+        ttk.Label(datetime_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.duration_min', default="Duration (min):")).grid(row=1, column=0, sticky='w', padx=(0, 10), pady=(10, 0))
         self.duration_entry = ttk.Entry(datetime_frame, width=10)
         self.duration_entry.grid(row=1, column=1, sticky='w', pady=(10, 0))
         self.duration_entry.insert(0, "60")
 
         # Location
-        ttk.Label(main_frame, text="Location/Meeting Link:").pack(anchor='w', pady=(10, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.location_meeting_link', default="Location/Meeting Link:")).pack(anchor='w', pady=(10, 5))
         self.location_entry = ttk.Entry(main_frame, width=55)
         self.location_entry.pack(fill='x', pady=(0, 10))
         self.location_entry.insert(0, "Zoom Meeting (link to be sent)")
 
         # Agenda
-        ttk.Label(main_frame, text="Agenda/Topics:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.agenda_topics', default="Agenda/Topics:")).pack(anchor='w', pady=(0, 5))
         self.agenda_text = scrolledtext.ScrolledText(main_frame, height=8, wrap=tk.WORD)
         self.agenda_text.pack(fill='both', expand=True, pady=(0, 15))
 
@@ -492,8 +494,8 @@ class ScheduleMentorshipSessionDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Schedule Session", command=self.schedule_session).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.schedule_session', default="Schedule Session"), command=self.schedule_session).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def load_relationships(self):
         try:
@@ -540,11 +542,11 @@ class ScheduleMentorshipSessionDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load relationships: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to load relationships: {str(e)}")
 
     def schedule_session(self):
         if not self.relationship_combo.current() >= 0 or not hasattr(self, 'relationship_data'):
-            messagebox.showwarning("Warning", "Please select a mentorship relationship.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.please_select_a_mentorship_relationship', default="Please select a mentorship relationship."))
             return
 
         date = self.date_entry.get().strip()
@@ -554,7 +556,7 @@ class ScheduleMentorshipSessionDialog:
         agenda = self.agenda_text.get(1.0, tk.END).strip()
 
         if not all([date, time, location]):
-            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields."))
             return
 
         try:
@@ -577,10 +579,10 @@ class ScheduleMentorshipSessionDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Mentorship session scheduled successfully!\n\nBoth parties will be notified.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.mentorship_session_scheduled_successfully_both_parties_will_be_n', default="Mentorship session scheduled successfully!\n\nBoth parties will be notified."))
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to schedule session: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to schedule session: {str(e)}")
 
 
 
@@ -592,7 +594,7 @@ class RateMentorshipDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Rate Mentorship Experience")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.mentorship.mentorship.windows.rate_mentorship_experience', default="Rate Mentorship Experience"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -604,19 +606,19 @@ class RateMentorshipDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Rate Mentorship Experience", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.rate_mentorship_experience', default="Rate Mentorship Experience"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Select session
-        ttk.Label(main_frame, text="Select Completed Session:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.select_completed_session', default="Select Completed Session:")).pack(anchor='w', pady=(0, 5))
         self.session_var = tk.StringVar()
         self.session_combo = ttk.Combobox(main_frame, textvariable=self.session_var, state='readonly', width=55)
         self.session_combo.pack(fill='x', pady=(0, 15))
 
         # Rating
-        rating_frame = ttk.LabelFrame(main_frame, text="Your Rating")
+        rating_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.your_rating', default="Your Rating"))
         rating_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(rating_frame, text="Overall Experience:", font=('Arial', 10, 'bold')).pack(pady=(10, 5))
+        ttk.Label(rating_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.overall_experience', default="Overall Experience:"), font=('Arial', 10, 'bold')).pack(pady=(10, 5))
 
         # Star rating
         stars_frame = ttk.Frame(rating_frame)
@@ -627,21 +629,21 @@ class RateMentorshipDialog:
             ttk.Radiobutton(stars_frame, text=f"{'⭐' * i}", variable=self.rating_var, value=i).pack(side='left', padx=5)
 
         # Feedback
-        ttk.Label(main_frame, text="Feedback (optional):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.feedback_optional', default="Feedback (optional):")).pack(anchor='w', pady=(0, 5))
         self.feedback_text = scrolledtext.ScrolledText(main_frame, height=10, wrap=tk.WORD)
         self.feedback_text.pack(fill='both', expand=True, pady=(0, 10))
         self.feedback_text.insert(1.0, "Share your experience, what went well, and suggestions for improvement...")
 
         # Anonymous option
         self.anonymous_var = tk.BooleanVar()
-        ttk.Checkbutton(main_frame, text="Submit anonymously", variable=self.anonymous_var).pack(anchor='w', pady=(0, 15))
+        ttk.Checkbutton(main_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.submit_anonymously', default="Submit anonymously"), variable=self.anonymous_var).pack(anchor='w', pady=(0, 15))
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Submit Rating", command=self.submit_rating).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.submit_rating', default="Submit Rating"), command=self.submit_rating).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def load_sessions(self):
         try:
@@ -690,11 +692,11 @@ class RateMentorshipDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load sessions: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to load sessions: {str(e)}")
 
     def submit_rating(self):
         if not self.session_combo.current() >= 0 or not hasattr(self, 'session_data'):
-            messagebox.showwarning("Warning", "Please select a session to rate.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.please_select_a_session_to_rate', default="Please select a session to rate."))
             return
 
         rating = self.rating_var.get()
@@ -720,35 +722,35 @@ class RateMentorshipDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Thank you for your feedback!\n\nYour rating has been submitted.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.thank_you_for_your_feedback_your_rating_has_been_submitted', default="Thank you for your feedback!\n\nYour rating has been submitted."))
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to submit rating: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to submit rating: {str(e)}")
 
 
 
 def create_mentorship_tab(self):
     """Create mentorship tab"""
     mentorship_frame = ttk.Frame(self.notebook)
-    self.notebook.add(mentorship_frame, text="Mentorship")
+    self.notebook.add(mentorship_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.tabs.mentorship', default="Mentorship"))
 
     # Left panel
-    left_panel = ttk.LabelFrame(mentorship_frame, text="Mentorship Actions")
+    left_panel = ttk.LabelFrame(mentorship_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.mentorship_actions', default="Mentorship Actions"))
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
 
-    ttk.Button(left_panel, text="Find a Mentor",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.find_a_mentor', default="Find a Mentor"),
               command=self.find_mentor_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Become a Mentor",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.become_a_mentor', default="Become a Mentor"),
               command=self.become_mentor_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="My Relationships",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.my_relationships', default="My Relationships"),
               command=self.view_my_mentorship_relationships).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Schedule Session",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.schedule_session', default="Schedule Session"),
               command=self.schedule_mentorship_session_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="View Sessions",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.buttons.view_sessions', default="View Sessions"),
               command=self.view_mentorship_sessions).pack(fill='x', pady=2)
 
     # Right panel
-    right_panel = ttk.LabelFrame(mentorship_frame, text="Mentorship Information")
+    right_panel = ttk.LabelFrame(mentorship_frame, text=_t('gui.pastoral.student_union_gui.mentorship.mentorship.labels.mentorship_information', default="Mentorship Information"))
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
 
     self.mentorship_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
@@ -763,7 +765,7 @@ def schedule_mentorship_session_enhanced(self):
         dialog = ScheduleMentorshipSessionDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def rate_mentorship_experience(self):
@@ -772,7 +774,7 @@ def rate_mentorship_experience(self):
         dialog = RateMentorshipDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def find_mentor_gui(self):
@@ -781,7 +783,7 @@ def find_mentor_gui(self):
         dialog = MentorshipBrowseDialog(self.root, self.auth_manager, mode='find')
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def become_mentor_gui(self):
@@ -790,7 +792,7 @@ def become_mentor_gui(self):
         dialog = MentorshipBrowseDialog(self.root, self.auth_manager, mode='become')
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def view_my_mentorship_relationships(self):
@@ -799,7 +801,7 @@ def view_my_mentorship_relationships(self):
         dialog = MyMentorshipsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def schedule_mentorship_session_gui(self):
@@ -808,7 +810,7 @@ def schedule_mentorship_session_gui(self):
         dialog = MyMentorshipsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def view_mentorship_sessions(self):
@@ -817,6 +819,6 @@ def view_mentorship_sessions(self):
         dialog = MentorshipSessionsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.mentorship.mentorship.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

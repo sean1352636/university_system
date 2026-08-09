@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -169,7 +171,7 @@ def _show_library_email_fallback(self, student_name, email, subject, message, em
                  text=f"Library {email_type.lower()} email for {student_name} - Please send manually:",
                  font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', padx=10, pady=10)
 
-        details_frame = ttk.LabelFrame(fallback_window, text="Email Details", padding=10)
+        details_frame = ttk.LabelFrame(fallback_window, text=_t('gui.academics.library.notifications.labels.email_details', default="Email Details"), padding=10)
         details_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         details_text = ScrolledText(details_frame, height=20, width=80)
@@ -302,10 +304,10 @@ def _send_return_confirmation_email(self, book_id, user_id):
 def send_automated_notifications_gui(self):
     """Automated notification management interface"""
     notif_window = tk.Toplevel(self.master)
-    notif_window.title("Automated Notifications")
+    notif_window.title(_t('gui.academics.library.notifications.windows.automated_notifications', default="Automated Notifications"))
     notif_window.geometry("700x600")
 
-    ttk.Label(notif_window, text="Automated Notification System",
+    ttk.Label(notif_window, text=_t('gui.academics.library.notifications.labels.automated_notification_system', default="Automated Notification System"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Notebook for different notification types
@@ -314,13 +316,13 @@ def send_automated_notifications_gui(self):
 
     # Tab 1: Due Date Reminders
     due_tab = ttk.Frame(notebook)
-    notebook.add(due_tab, text="Due Date Reminders")
+    notebook.add(due_tab, text=_t('gui.academics.library.notifications.tabs.due_date_reminders', default="Due Date Reminders"))
 
-    ttk.Label(due_tab, text="Send due date reminders to users with books due soon",
+    ttk.Label(due_tab, text=_t('gui.academics.library.notifications.labels.send_due_date_reminders_to_users_with_books_due_soon', default="Send due date reminders to users with books due soon"),
              wraplength=600).pack(pady=10, padx=10)
 
     days_before_var = tk.IntVar(value=3)
-    ttk.Label(due_tab, text="Days before due date:").pack(pady=5)
+    ttk.Label(due_tab, text=_t('gui.academics.library.notifications.labels.days_before_due_date', default="Days before due date:")).pack(pady=5)
     ttk.Spinbox(due_tab, from_=1, to=14, textvariable=days_before_var, width=10).pack(pady=5)
 
     def send_due_reminders():
@@ -342,7 +344,7 @@ def send_automated_notifications_gui(self):
             conn.close()
 
             if not reminders:
-                messagebox.showinfo("No Reminders", "No books due in the next {days} days")
+                messagebox.showinfo(_t('gui.academics.library.notifications.dialogs.no_reminders', default="No Reminders"), _t('gui.academics.library.notifications.dialogs.no_books_due_in_the_next_days_days', default="No books due in the next {days} days"))
                 return
 
             # Simulate sending (in real system, would send emails)
@@ -356,13 +358,13 @@ def send_automated_notifications_gui(self):
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Failed to send reminders: {str(e)}")
 
-    ttk.Button(due_tab, text="Send Due Date Reminders", command=send_due_reminders).pack(pady=20)
+    ttk.Button(due_tab, text=_t('gui.academics.library.notifications.buttons.send_due_date_reminders', default="Send Due Date Reminders"), command=send_due_reminders).pack(pady=20)
 
     # Tab 2: Overdue Notifications
     overdue_tab = ttk.Frame(notebook)
-    notebook.add(overdue_tab, text="Overdue Notifications")
+    notebook.add(overdue_tab, text=_t('gui.academics.library.notifications.tabs.overdue_notifications', default="Overdue Notifications"))
 
-    ttk.Label(overdue_tab, text="Send notifications to users with overdue books",
+    ttk.Label(overdue_tab, text=_t('gui.academics.library.notifications.labels.send_notifications_to_users_with_overdue_books', default="Send notifications to users with overdue books"),
              wraplength=600).pack(pady=10, padx=10)
 
     def send_overdue_notifs():
@@ -382,7 +384,7 @@ def send_automated_notifications_gui(self):
             conn.close()
 
             if not overdue:
-                messagebox.showinfo("No Overdue", "No overdue books found")
+                messagebox.showinfo(_t('gui.academics.library.notifications.dialogs.no_overdue', default="No Overdue"), _t('gui.academics.library.notifications.dialogs.no_overdue_books_found', default="No overdue books found"))
                 return
 
             count = len(overdue)
@@ -394,13 +396,13 @@ def send_automated_notifications_gui(self):
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Failed to send notifications: {str(e)}")
 
-    ttk.Button(overdue_tab, text="Send Overdue Notifications", command=send_overdue_notifs).pack(pady=20)
+    ttk.Button(overdue_tab, text=_t('gui.academics.library.notifications.buttons.send_overdue_notifications', default="Send Overdue Notifications"), command=send_overdue_notifs).pack(pady=20)
 
     # Tab 3: Reservation Notifications
     reservation_tab = ttk.Frame(notebook)
-    notebook.add(reservation_tab, text="Reservation Alerts")
+    notebook.add(reservation_tab, text=_t('gui.academics.library.notifications.tabs.reservation_alerts', default="Reservation Alerts"))
 
-    ttk.Label(reservation_tab, text="Send notifications for available reserved books",
+    ttk.Label(reservation_tab, text=_t('gui.academics.library.notifications.labels.send_notifications_for_available_reserved_books', default="Send notifications for available reserved books"),
              wraplength=600).pack(pady=10, padx=10)
 
     def send_reservation_available():
@@ -419,7 +421,7 @@ def send_automated_notifications_gui(self):
             available = cursor.fetchall()
 
             if not available:
-                messagebox.showinfo("No Notifications", "No reserved books are available")
+                messagebox.showinfo(_t('gui.academics.library.notifications.dialogs.no_notifications', default="No Notifications"), _t('gui.academics.library.notifications.dialogs.no_reserved_books_are_available', default="No reserved books are available"))
                 conn.close()
                 return
 
@@ -439,7 +441,7 @@ def send_automated_notifications_gui(self):
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Failed to send notifications: {str(e)}")
 
-    ttk.Button(reservation_tab, text="Send Reservation Available Notifications",
+    ttk.Button(reservation_tab, text=_t('gui.academics.library.notifications.buttons.send_reservation_available_notifications', default="Send Reservation Available Notifications"),
               command=send_reservation_available).pack(pady=20)
 
     # Close button
@@ -450,7 +452,7 @@ def open_calendar_with_due_dates(self):
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror(_("common.error"), "Could not connect to database")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.notifications.dialogs.could_not_connect_to_database', default="Could not connect to database"))
             return
 
         cursor = conn.cursor()
@@ -474,11 +476,11 @@ def open_calendar_with_due_dates(self):
 
         # Create window
         dialog = tk.Toplevel(self.master)
-        dialog.title("Book Return Calendar")
+        dialog.title(_t('gui.academics.library.notifications.windows.book_return_calendar', default="Book Return Calendar"))
         dialog.geometry("900x500")
         dialog.transient(self.master)
 
-        ttk.Label(dialog, text="Book Return Dates", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.library.notifications.labels.book_return_dates', default="Book Return Dates"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Treeview
         columns = ('Loan ID', 'Book ID', 'Title', 'Author', 'User', 'Checked Out', 'Due Date', 'Returned', 'Status')
@@ -514,7 +516,7 @@ def open_calendar_with_due_dates(self):
         tree.tag_configure('overdue', background='#ffebee')
         tree.tag_configure('returned', background='#e8f5e9')
 
-        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.academics.library.notifications.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
     except Exception as e:
         messagebox.showerror(_("common.error"), f"Could not load return dates: {e}")
@@ -525,7 +527,7 @@ def add_calendar_button_to_interface(self):
         # Add button to the control frame if it exists
         if hasattr(self, 'control_frame'):
             calendar_button = ttk.Button(self.control_frame,
-                                       text="📅 View Return Calendar",
+                                       text=_t('gui.academics.library.notifications.buttons.view_return_calendar', default="📅 View Return Calendar"),
                                        command=self.open_calendar_with_due_dates)
             calendar_button.pack(side=tk.LEFT, padx=5)
     except tk.TclError as e:

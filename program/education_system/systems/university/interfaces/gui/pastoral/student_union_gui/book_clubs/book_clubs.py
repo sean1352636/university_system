@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class BookClubDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Book Club Management")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.windows.book_club_management', default="Book Club Management"))
         self.dialog.geometry("900x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -76,13 +78,13 @@ class BookClubDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Book Club Features", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.book_club_features', default="Book Club Features"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Club selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(select_frame, text="Select Book Club:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.select_book_club', default="Select Book Club:")).pack(side='left', padx=(0, 10))
         self.club_var = tk.StringVar()
         self.club_combo = ttk.Combobox(select_frame, textvariable=self.club_var, state='readonly', width=40)
         self.club_combo.pack(side='left', fill='x', expand=True)
@@ -94,26 +96,26 @@ class BookClubDialog:
 
         # Tab 1: Current Book
         current_book_frame = ttk.Frame(notebook)
-        notebook.add(current_book_frame, text="Current Book")
+        notebook.add(current_book_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.tabs.current_book', default="Current Book"))
         self.create_current_book_tab(current_book_frame)
 
         # Tab 2: Reading Schedule
         schedule_frame = ttk.Frame(notebook)
-        notebook.add(schedule_frame, text="Reading Schedule")
+        notebook.add(schedule_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.tabs.reading_schedule', default="Reading Schedule"))
         self.create_schedule_tab(schedule_frame)
 
         # Tab 3: Reviews
         reviews_frame = ttk.Frame(notebook)
-        notebook.add(reviews_frame, text="Book Reviews")
+        notebook.add(reviews_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.tabs.book_reviews', default="Book Reviews"))
         self.create_reviews_tab(reviews_frame)
 
         # Tab 4: Reading Challenge
         challenge_frame = ttk.Frame(notebook)
-        notebook.add(challenge_frame, text="Reading Challenge")
+        notebook.add(challenge_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.tabs.reading_challenge', default="Reading Challenge"))
         self.create_challenge_tab(challenge_frame)
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def create_current_book_tab(self, parent):
         # Current book display
@@ -121,14 +123,14 @@ class BookClubDialog:
         self.current_book_text.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Button to set new book
-        ttk.Button(parent, text="Select New Book", command=self.select_new_book).pack(pady=5)
+        ttk.Button(parent, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.select_new_book', default="Select New Book"), command=self.select_new_book).pack(pady=5)
 
     def create_schedule_tab(self, parent):
         # Reading schedule
         self.schedule_text = scrolledtext.ScrolledText(parent, height=15, wrap=tk.WORD)
         self.schedule_text.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Button(parent, text="Update Schedule", command=self.update_schedule).pack(pady=5)
+        ttk.Button(parent, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.update_schedule', default="Update Schedule"), command=self.update_schedule).pack(pady=5)
 
     def create_reviews_tab(self, parent):
         # Reviews list
@@ -151,7 +153,7 @@ class BookClubDialog:
         self.reviews_tree.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
 
-        ttk.Button(parent, text="Add Review", command=self.add_review).pack(pady=5)
+        ttk.Button(parent, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.add_review', default="Add Review"), command=self.add_review).pack(pady=5)
 
     def create_challenge_tab(self, parent):
         # Challenge display
@@ -172,7 +174,7 @@ Join the challenge by clicking 'Join Challenge' below!
 """
         self.challenge_text.insert(1.0, challenge_info)
 
-        ttk.Button(parent, text="Join Challenge", command=self.join_challenge).pack(pady=5)
+        ttk.Button(parent, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.join_challenge', default="Join Challenge"), command=self.join_challenge).pack(pady=5)
 
     def load_book_clubs(self):
         try:
@@ -214,7 +216,7 @@ Join the challenge by clicking 'Join Challenge' below!
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load book clubs: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.error', default="Error"), f"Failed to load book clubs: {str(e)}")
 
     def on_club_selected(self, event=None):
         if not self.club_combo.current() >= 0 or not hasattr(self, 'club_data'):
@@ -230,7 +232,7 @@ Join the challenge by clicking 'Join Challenge' below!
 
     def select_new_book(self):
         if not self.club_combo.current() >= 0 or not hasattr(self, 'club_data'):
-            messagebox.showwarning("Warning", "Please select a book club first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.please_select_a_book_club_first', default="Please select a book club first."))
             return
 
         selected_index = self.club_combo.current()
@@ -241,7 +243,7 @@ Join the challenge by clicking 'Join Challenge' below!
 
     def update_schedule(self):
         if not self.club_combo.current() >= 0 or not hasattr(self, 'club_data'):
-            messagebox.showwarning("Warning", "Please select a book club first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.please_select_a_book_club_first', default="Please select a book club first."))
             return
 
         selected_index = self.club_combo.current()
@@ -253,7 +255,7 @@ Join the challenge by clicking 'Join Challenge' below!
 
     def add_review(self):
         if not self.club_combo.current() >= 0 or not hasattr(self, 'club_data'):
-            messagebox.showwarning("Warning", "Please select a book club first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.please_select_a_book_club_first', default="Please select a book club first."))
             return
 
         selected_index = self.club_combo.current()
@@ -263,7 +265,7 @@ Join the challenge by clicking 'Join Challenge' below!
         self.dialog.wait_window(dialog.dialog)
 
     def join_challenge(self):
-        messagebox.showinfo("Success", "You've joined the reading challenge!\n\nGood luck reaching your reading goals!")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.you_ve_joined_the_reading_challenge_good_luck_reaching_your_read', default="You've joined the reading challenge!\n\nGood luck reaching your reading goals!"))
 
 
 
@@ -276,7 +278,7 @@ class BookSelectionDialog:
         self.club_id = club_id
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Select Next Book")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.windows.select_next_book', default="Select Next Book"))
         self.dialog.geometry("700x550")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -287,25 +289,25 @@ class BookSelectionDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Select Next Book to Read", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.select_next_book_to_read', default="Select Next Book to Read"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Book Title
-        ttk.Label(main_frame, text="Book Title:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.book_title', default="Book Title:")).pack(anchor='w', pady=(0, 5))
         self.title_entry = ttk.Entry(main_frame, width=60)
         self.title_entry.pack(fill='x', pady=(0, 10))
 
         # Author
-        ttk.Label(main_frame, text="Author:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.author', default="Author:")).pack(anchor='w', pady=(0, 5))
         self.author_entry = ttk.Entry(main_frame, width=60)
         self.author_entry.pack(fill='x', pady=(0, 10))
 
         # ISBN (optional)
-        ttk.Label(main_frame, text="ISBN (optional):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.isbn_optional', default="ISBN (optional):")).pack(anchor='w', pady=(0, 5))
         self.isbn_entry = ttk.Entry(main_frame, width=60)
         self.isbn_entry.pack(fill='x', pady=(0, 10))
 
         # Genre
-        ttk.Label(main_frame, text="Genre:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.genre', default="Genre:")).pack(anchor='w', pady=(0, 5))
         self.genre_var = tk.StringVar()
         genre_combo = ttk.Combobox(main_frame, textvariable=self.genre_var, width=57)
         genre_combo['values'] = ('Fiction', 'Non-Fiction', 'Mystery', 'Science Fiction', 'Fantasy',
@@ -314,18 +316,18 @@ class BookSelectionDialog:
         genre_combo.current(0)
 
         # Page Count
-        ttk.Label(main_frame, text="Page Count:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.page_count', default="Page Count:")).pack(anchor='w', pady=(0, 5))
         self.pages_entry = ttk.Entry(main_frame, width=60)
         self.pages_entry.pack(fill='x', pady=(0, 10))
 
         # Description
-        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.description', default="Description:")).pack(anchor='w', pady=(0, 5))
         self.description_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
         self.description_text.pack(fill='both', expand=True, pady=(0, 10))
         self.description_text.insert(1.0, "Brief description of the book...")
 
         # Proposed Discussion Date
-        ttk.Label(main_frame, text="Proposed Discussion Date (YYYY-MM-DD):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.proposed_discussion_date_yyyy_mm_dd', default="Proposed Discussion Date (YYYY-MM-DD):")).pack(anchor='w', pady=(0, 5))
         self.date_entry = ttk.Entry(main_frame, width=60)
         self.date_entry.pack(fill='x', pady=(0, 15))
         default_date = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
@@ -335,8 +337,8 @@ class BookSelectionDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Propose Book", command=self.propose_book).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.propose_book', default="Propose Book"), command=self.propose_book).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def propose_book(self):
         title = self.title_entry.get().strip()
@@ -348,7 +350,7 @@ class BookSelectionDialog:
         discussion_date = self.date_entry.get().strip()
 
         if not all([title, author, pages, discussion_date]):
-            messagebox.showwarning("Warning", "Please fill in all required fields (Title, Author, Pages, Discussion Date).")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.please_fill_in_all_required_fields_title_author_pages_discussion', default="Please fill in all required fields (Title, Author, Pages, Discussion Date)."))
             return
 
         try:
@@ -356,7 +358,7 @@ class BookSelectionDialog:
             if pages_int <= 0:
                 raise ValueError("Page count must be positive")
         except ValueError:
-            messagebox.showwarning("Warning", "Please enter a valid page count.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.please_enter_a_valid_page_count', default="Please enter a valid page count."))
             return
 
         try:
@@ -398,10 +400,10 @@ class BookSelectionDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Book '{title}' has been proposed!\n\nMembers can now vote on reading this book.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.success', default="Success"), f"Book '{title}' has been proposed!\n\nMembers can now vote on reading this book.")
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to propose book: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.error', default="Error"), f"Failed to propose book: {str(e)}")
 
 
 
@@ -414,7 +416,7 @@ class ScheduleUpdateDialog:
         self.club_id = club_id
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Update Reading Schedule")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.windows.update_reading_schedule', default="Update Reading Schedule"))
         self.dialog.geometry("650x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -425,18 +427,18 @@ class ScheduleUpdateDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Update Reading Schedule", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.update_reading_schedule', default="Update Reading Schedule"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
-        ttk.Label(main_frame, text="Enter the reading schedule for your book club:",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.enter_the_reading_schedule_for_your_book_club', default="Enter the reading schedule for your book club:"),
                  font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
 
         # Book Title Reference
-        ttk.Label(main_frame, text="Book Title (reference):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.book_title_reference', default="Book Title (reference):")).pack(anchor='w', pady=(0, 5))
         self.book_entry = ttk.Entry(main_frame, width=60)
         self.book_entry.pack(fill='x', pady=(0, 10))
 
         # Schedule Details
-        ttk.Label(main_frame, text="Reading Schedule:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.reading_schedule', default="Reading Schedule:")).pack(anchor='w', pady=(0, 5))
         self.schedule_text = scrolledtext.ScrolledText(main_frame, height=15, wrap=tk.WORD)
         self.schedule_text.pack(fill='both', expand=True, pady=(0, 10))
 
@@ -461,15 +463,15 @@ Notes:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Save Schedule", command=self.save_schedule).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.save_schedule', default="Save Schedule"), command=self.save_schedule).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def save_schedule(self):
         book_title = self.book_entry.get().strip()
         schedule_content = self.schedule_text.get(1.0, tk.END).strip()
 
         if not all([book_title, schedule_content]):
-            messagebox.showwarning("Warning", "Please fill in all fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.please_fill_in_all_fields', default="Please fill in all fields."))
             return
 
         try:
@@ -503,10 +505,10 @@ Notes:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Reading schedule has been updated!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.reading_schedule_has_been_updated', default="Reading schedule has been updated!"))
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to save schedule: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.error', default="Error"), f"Failed to save schedule: {str(e)}")
 
 
 
@@ -519,7 +521,7 @@ class BookReviewDialog:
         self.club_id = club_id
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Submit Book Review")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.windows.submit_book_review', default="Submit Book Review"))
         self.dialog.geometry("700x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -530,23 +532,23 @@ class BookReviewDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Submit Book Review", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.submit_book_review', default="Submit Book Review"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Book Title
-        ttk.Label(main_frame, text="Book Title:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.book_title', default="Book Title:")).pack(anchor='w', pady=(0, 5))
         self.title_entry = ttk.Entry(main_frame, width=60)
         self.title_entry.pack(fill='x', pady=(0, 10))
 
         # Author
-        ttk.Label(main_frame, text="Author:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.author', default="Author:")).pack(anchor='w', pady=(0, 5))
         self.author_entry = ttk.Entry(main_frame, width=60)
         self.author_entry.pack(fill='x', pady=(0, 10))
 
         # Rating
-        rating_frame = ttk.LabelFrame(main_frame, text="Your Rating")
+        rating_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.your_rating', default="Your Rating"))
         rating_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(rating_frame, text="Overall Rating:", font=('Arial', 10, 'bold')).pack(pady=(10, 5))
+        ttk.Label(rating_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.overall_rating', default="Overall Rating:"), font=('Arial', 10, 'bold')).pack(pady=(10, 5))
 
         # Star rating
         stars_frame = ttk.Frame(rating_frame)
@@ -557,22 +559,22 @@ class BookReviewDialog:
             ttk.Radiobutton(stars_frame, text=f"{'⭐' * i}", variable=self.rating_var, value=i).pack(side='left', padx=5)
 
         # Review Text
-        ttk.Label(main_frame, text="Your Review:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.labels.your_review', default="Your Review:")).pack(anchor='w', pady=(0, 5))
         self.review_text = scrolledtext.ScrolledText(main_frame, height=12, wrap=tk.WORD)
         self.review_text.pack(fill='both', expand=True, pady=(0, 10))
         self.review_text.insert(1.0, "Share your thoughts about the book...\n\nWhat did you like? What didn't you like? Would you recommend it to others?")
 
         # Would Recommend
         self.recommend_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(main_frame, text="I would recommend this book to others",
+        ttk.Checkbutton(main_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.i_would_recommend_this_book_to_others', default="I would recommend this book to others"),
                        variable=self.recommend_var).pack(anchor='w', pady=(0, 15))
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Submit Review", command=self.submit_review).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.submit_review', default="Submit Review"), command=self.submit_review).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def submit_review(self):
         title = self.title_entry.get().strip()
@@ -582,7 +584,7 @@ class BookReviewDialog:
         recommend = self.recommend_var.get()
 
         if not all([title, author, review_content]):
-            messagebox.showwarning("Warning", "Please fill in all fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.please_fill_in_all_fields', default="Please fill in all fields."))
             return
 
         try:
@@ -620,10 +622,10 @@ class BookReviewDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Thank you for your review!\n\nYour review has been submitted successfully.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.thank_you_for_your_review_your_review_has_been_submitted_success', default="Thank you for your review!\n\nYour review has been submitted successfully."))
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to submit review: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.error', default="Error"), f"Failed to submit review: {str(e)}")
 
 
 # ============================================================================
@@ -637,6 +639,6 @@ def manage_book_clubs(self):
         dialog = BookClubDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.book_clubs.book_clubs.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

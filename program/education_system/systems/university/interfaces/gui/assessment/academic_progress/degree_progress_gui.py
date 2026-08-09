@@ -4,6 +4,8 @@ Displays a visual progress bar, summary statistics, and a colour-coded
 requirements checklist for the currently logged-in student.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import tkinter as tk
@@ -32,7 +34,7 @@ class DegreeProgressGUI:
         self._progress_pct = 0.0
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Degree Progress Tracker")
+        self.window.title(_t('gui.assessment.academic_progress.degree_progress.windows.degree_progress_tracker', default="Degree Progress Tracker"))
         self.window.geometry("900x720")
         self.window.transient(parent)
 
@@ -47,7 +49,7 @@ class DegreeProgressGUI:
         """Build the degree progress layout."""
         ttk.Label(
             self.window,
-            text="Degree Progress Tracker",
+            text=_t('gui.assessment.academic_progress.degree_progress.labels.degree_progress_tracker', default="Degree Progress Tracker"),
             font=('Arial', 16, 'bold'),
         ).pack(pady=(10, 5))
 
@@ -96,7 +98,7 @@ class DegreeProgressGUI:
         # Pack later in `_load_data` if a classification is computable.
 
         # ---- Requirements checklist ----
-        req_frame = ttk.LabelFrame(self.window, text="Requirements Checklist", padding="5")
+        req_frame = ttk.LabelFrame(self.window, text=_t('gui.assessment.academic_progress.degree_progress.labels.requirements_checklist', default="Requirements Checklist"), padding="5")
         req_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(5, 10))
 
         cols = (
@@ -104,11 +106,11 @@ class DegreeProgressGUI:
             'credits_needed', 'credits_completed',
         )
         self.tree = ttk.Treeview(req_frame, columns=cols, show='headings', height=14)
-        self.tree.heading('requirement_name', text='Requirement')
-        self.tree.heading('type', text='Type')
-        self.tree.heading('status', text='Status')
-        self.tree.heading('credits_needed', text='Credits Needed')
-        self.tree.heading('credits_completed', text='Credits Completed')
+        self.tree.heading('requirement_name', text=_t('gui.assessment.academic_progress.degree_progress.headings.requirement', default='Requirement'))
+        self.tree.heading('type', text=_t('gui.assessment.academic_progress.degree_progress.headings.type', default='Type'))
+        self.tree.heading('status', text=_t('gui.assessment.academic_progress.degree_progress.headings.status', default='Status'))
+        self.tree.heading('credits_needed', text=_t('gui.assessment.academic_progress.degree_progress.headings.credits_needed', default='Credits Needed'))
+        self.tree.heading('credits_completed', text=_t('gui.assessment.academic_progress.degree_progress.headings.credits_completed', default='Credits Completed'))
 
         self.tree.column('requirement_name', width=250)
         self.tree.column('type', width=120, anchor='center')
@@ -130,11 +132,11 @@ class DegreeProgressGUI:
         footer = ttk.Frame(self.window)
         footer.pack(fill=tk.X, padx=20, pady=(0, 8))
 
-        self.status_var = tk.StringVar(value="Loading...")
+        self.status_var = tk.StringVar(value=_t('gui.assessment.academic_progress.degree_progress.values.loading', default="Loading..."))
         ttk.Label(footer, textvariable=self.status_var).pack(side=tk.LEFT)
 
         ttk.Button(
-            footer, text="Export as JSON…", command=self._export_progress,
+            footer, text=_t('gui.assessment.academic_progress.degree_progress.buttons.export_as_json', default="Export as JSON…"), command=self._export_progress,
         ).pack(side=tk.RIGHT)
 
     def _create_stat_card(self, parent, title, text_var, row, column):
@@ -241,7 +243,7 @@ class DegreeProgressGUI:
             logger.error(f"Error loading degree progress: {e}")
             self.status_var.set(f"Error: {e}")
             messagebox.showerror(
-                "Error", f"Failed to load degree progress: {e}", parent=self.window
+                _t('gui.assessment.academic_progress.degree_progress.dialogs.error', default="Error"), f"Failed to load degree progress: {e}", parent=self.window
             )
 
     def _load_requirements_from_db(self):
@@ -354,8 +356,8 @@ class DegreeProgressGUI:
         """Export the loaded summary dict to a user-chosen JSON file."""
         if not self._last_summary:
             messagebox.showinfo(
-                "Nothing to export",
-                "Degree progress has not been loaded yet.",
+                _t('gui.assessment.academic_progress.degree_progress.dialogs.nothing_to_export', default="Nothing to export"),
+                _t('gui.assessment.academic_progress.degree_progress.dialogs.degree_progress_has_not_been_loaded_yet', default="Degree progress has not been loaded yet."),
                 parent=self.window,
             )
             return
@@ -365,7 +367,7 @@ class DegreeProgressGUI:
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
             initialfile=f"degree_progress_{self.student_id or 'student'}.json",
-            title="Export degree progress",
+            title=_t('gui.assessment.academic_progress.degree_progress.dialogs.export_degree_progress', default="Export degree progress"),
         )
         if not path:
             return
@@ -388,7 +390,7 @@ class DegreeProgressGUI:
         except Exception as e:
             logger.exception("Failed to export degree progress")
             messagebox.showerror(
-                "Export failed", f"Could not write file: {e}", parent=self.window,
+                _t('gui.assessment.academic_progress.degree_progress.dialogs.export_failed', default="Export failed"), f"Could not write file: {e}", parent=self.window,
             )
 
     # ------------------------------------------------------------------

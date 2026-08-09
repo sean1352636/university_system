@@ -41,7 +41,7 @@ class CredentialsMixin:
             ttk.Entry(dialog, textvariable=install_id_var, width=35).grid(row=0, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=_t("integration_marketplace.labels.credential_type")).grid(row=1, column=0, padx=10, pady=5, sticky='w')
-            cred_type_var = tk.StringVar(value='api_key')
+            cred_type_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.credentials.values.api_key', default='api_key'))
             ttk.Combobox(dialog, textvariable=cred_type_var,
                         values=['api_key', 'oauth', 'basic_auth', 'bearer_token'],
                         width=33, state='readonly').grid(row=1, column=1, padx=10, pady=5)
@@ -72,7 +72,7 @@ class CredentialsMixin:
                     oauth_token = oauth_var.get().strip()
 
                     if not install_id:
-                        messagebox.showerror(_t("common.error"), "Installation ID is required")
+                        messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.installation_id_is_required', default="Installation ID is required"))
                         return
 
                     if MANAGERS_AVAILABLE:
@@ -96,7 +96,7 @@ class CredentialsMixin:
                     log_activity('create', 'integration_credentials', cred_id,
                                 details={'install_id': install_id})
 
-                    messagebox.showinfo(_t("common.success"), "Credentials saved successfully")
+                    messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.credentials_saved_successfully', default="Credentials saved successfully"))
                     dialog.destroy()
                     self.load_credentials()
 
@@ -104,7 +104,7 @@ class CredentialsMixin:
                     logger.error("Error saving credentials")
                     messagebox.showerror(_t("common.error"), f"Failed to save credentials: {e}")
 
-            ttk.Button(dialog, text="Save Credentials", command=save_credentials).grid(
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.credentials.buttons.save_credentials', default="Save Credentials"), command=save_credentials).grid(
                 row=6, column=0, columnspan=2, pady=20)
 
         except Exception as e:
@@ -116,7 +116,7 @@ class CredentialsMixin:
         try:
             selected = self.cred_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select credentials to edit")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.please_select_credentials_to_edit', default="Please select credentials to edit"))
                 return
 
             credential_id = self.cred_tree.item(selected[0])['values'][0]
@@ -133,24 +133,24 @@ class CredentialsMixin:
                 cred = cursor.fetchone()
 
             if not cred:
-                messagebox.showerror(_t("common.error"), "Credentials not found")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.credentials_not_found', default="Credentials not found"))
                 return
 
             dialog = tk.Toplevel(self.root)
             dialog.title(_t("integration_marketplace.dialogs.edit_credentials"))
             dialog.geometry("500x350")
 
-            ttk.Label(dialog, text="Credential Type:").grid(row=0, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.credentials.labels.credential_type', default="Credential Type:")).grid(row=0, column=0, padx=10, pady=5, sticky='w')
             cred_type_var = tk.StringVar(value=cred[1])
             ttk.Combobox(dialog, textvariable=cred_type_var,
                         values=['api_key', 'oauth', 'basic_auth', 'bearer_token'],
                         width=33, state='readonly').grid(row=0, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="New API Key (Optional):").grid(row=1, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.credentials.labels.new_api_key_optional', default="New API Key (Optional):")).grid(row=1, column=0, padx=10, pady=5, sticky='w')
             api_key_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=api_key_var, width=35, show='*').grid(row=1, column=1, padx=10, pady=5)
 
-            ttk.Label(dialog, text="Endpoint URL:").grid(row=2, column=0, padx=10, pady=5, sticky='w')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.credentials.labels.endpoint_url', default="Endpoint URL:")).grid(row=2, column=0, padx=10, pady=5, sticky='w')
             endpoint_var = tk.StringVar(value=cred[2] or '')
             ttk.Entry(dialog, textvariable=endpoint_var, width=35).grid(row=2, column=1, padx=10, pady=5)
 
@@ -179,7 +179,7 @@ class CredentialsMixin:
                     log_activity('update', 'integration_credentials', credential_id,
                                 details={'action': 'updated'})
 
-                    messagebox.showinfo(_t("common.success"), "Credentials updated successfully")
+                    messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.credentials_updated_successfully', default="Credentials updated successfully"))
                     dialog.destroy()
                     self.load_credentials()
 
@@ -187,7 +187,7 @@ class CredentialsMixin:
                     logger.error("Error updating credentials")
                     messagebox.showerror(_t("common.error"), f"Failed to update credentials: {e}")
 
-            ttk.Button(dialog, text="Update Credentials", command=update_credentials).grid(
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.credentials.buttons.update_credentials', default="Update Credentials"), command=update_credentials).grid(
                 row=3, column=0, columnspan=2, pady=20)
 
         except Exception as e:
@@ -199,12 +199,12 @@ class CredentialsMixin:
         try:
             selected = self.cred_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select credentials to delete")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.please_select_credentials_to_delete', default="Please select credentials to delete"))
                 return
 
             credential_id = self.cred_tree.item(selected[0])['values'][0]
 
-            if messagebox.askyesno("Confirm Delete", "Delete these credentials?"):
+            if messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.delete_these_credentials', default="Delete these credentials?")):
                 with transaction() as conn:
                     cursor = conn.cursor()
                     cursor.execute('''
@@ -215,7 +215,7 @@ class CredentialsMixin:
                 log_activity('delete', 'integration_credentials', credential_id,
                             details={'action': 'deleted'})
 
-                messagebox.showinfo(_t("common.success"), "Credentials deleted successfully")
+                messagebox.showinfo(_t("common.success"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.credentials_deleted_successfully', default="Credentials deleted successfully"))
                 self.load_credentials()
 
         except Exception as e:
@@ -227,15 +227,15 @@ class CredentialsMixin:
         try:
             selected = self.cred_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select credentials to rotate")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.please_select_credentials_to_rotate', default="Please select credentials to rotate"))
                 return
 
             credential_id = self.cred_tree.item(selected[0])['values'][0]
 
-            if messagebox.askyesno("Confirm Rotation",
-                                   "Rotate API credentials?\n\n"
+            if messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.confirm_rotation', default="Confirm Rotation"),
+                                   _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.rotate_api_credentials_this_will_generate_new_api_key_and_secret', default="Rotate API credentials?\n\n"
                                    "This will generate new API key and secret.\n"
-                                   "The old credentials will be invalidated."):
+                                   "The old credentials will be invalidated.")):
                 new_api_key = secrets.token_urlsafe(32)
                 new_secret = secrets.token_urlsafe(48)
 
@@ -264,15 +264,15 @@ class CredentialsMixin:
         """Scan and alert for expiring credentials"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Credential Expiry Check")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.credentials.windows.credential_expiry_check', default="Credential Expiry Check"))
             dialog.geometry("700x500")
             dialog.transient(self.root)
 
-            ttk.Label(dialog, text="Days until expiry threshold:").pack(padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.credentials.labels.days_until_expiry_threshold', default="Days until expiry threshold:")).pack(padx=10, pady=5)
             days_var = tk.StringVar(value="30")
             ttk.Spinbox(dialog, from_=1, to=365, textvariable=days_var, width=10).pack(padx=10, pady=5)
 
-            results_frame = ttk.LabelFrame(dialog, text="Expiring Credentials", padding=10)
+            results_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.credentials.labels.expiring_credentials', default="Expiring Credentials"), padding=10)
             results_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
             columns = ('credential_id', 'integration', 'expiry_date', 'days_left', 'status')
@@ -320,13 +320,13 @@ class CredentialsMixin:
                             pass
 
                 if expiring_count == 0:
-                    messagebox.showinfo("Check Complete",
+                    messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.check_complete', default="Check Complete"),
                                        f"No credentials expiring within {days_threshold} days")
                 else:
-                    messagebox.showwarning("Expiring Credentials",
+                    messagebox.showwarning(_t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.expiring_credentials', default="Expiring Credentials"),
                                           f"Found {expiring_count} credential(s) expiring soon!")
 
-            ttk.Button(dialog, text="Check Expiry", command=check_expiry).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.credentials.buttons.check_expiry', default="Check Expiry"), command=check_expiry).pack(pady=10)
             ttk.Button(dialog, text=_t("common.close"), command=dialog.destroy).pack(pady=5)
 
         except Exception as e:
@@ -338,7 +338,7 @@ class CredentialsMixin:
         try:
             selected = self.cred_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select credentials to validate")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.please_select_credentials_to_validate', default="Please select credentials to validate"))
                 return
 
             credential_id = self.cred_tree.item(selected[0])['values'][0]
@@ -355,11 +355,11 @@ class CredentialsMixin:
                 cred = cursor.fetchone()
 
             if not cred:
-                messagebox.showerror(_t("common.error"), "Credentials not found")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.credentials_not_found', default="Credentials not found"))
                 return
 
             if not cred[0]:
-                messagebox.showwarning(_t("common.warning"), "No endpoint URL configured for these credentials")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.no_endpoint_url_configured_for_these_credentials', default="No endpoint URL configured for these credentials"))
                 return
 
             # Simulate validation
@@ -378,7 +378,7 @@ class CredentialsMixin:
             log_activity('validate', 'integration_credentials', credential_id,
                         details={'endpoint': cred[0], 'status': 'valid'})
 
-            messagebox.showinfo("Validation Result", result)
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.validation_result', default="Validation Result"), result)
 
         except Exception as e:
             logger.error("Error validating credentials")
@@ -387,17 +387,17 @@ class CredentialsMixin:
     def encrypt_export_credentials(self):
         """Export credentials with password encryption"""
         try:
-            password = simpledialog.askstring("Encryption Password",
-                                             "Enter password to encrypt exported credentials:",
+            password = simpledialog.askstring(_t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.encryption_password', default="Encryption Password"),
+                                             _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.enter_password_to_encrypt_exported_credentials', default="Enter password to encrypt exported credentials:"),
                                              show='*')
             if not password:
                 return
 
-            confirm = simpledialog.askstring("Confirm Password",
-                                            "Confirm password:",
+            confirm = simpledialog.askstring(_t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.confirm_password', default="Confirm Password"),
+                                            _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.confirm_password_variant_2', default="Confirm password:"),
                                             show='*')
             if password != confirm:
-                messagebox.showerror(_t("common.error"), "Passwords do not match")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.passwords_do_not_match', default="Passwords do not match"))
                 return
 
             filename = filedialog.asksaveasfilename(
@@ -444,17 +444,17 @@ class CredentialsMixin:
         """View log of credential access events"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Credential Access Audit Log")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.credentials.windows.credential_access_audit_log', default="Credential Access Audit Log"))
             dialog.geometry("800x500")
             dialog.transient(self.root)
 
-            ttk.Label(dialog, text="Credential Access Audit Log",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.credentials.labels.credential_access_audit_log', default="Credential Access Audit Log"),
                      style='Title.TLabel').pack(pady=10)
 
             # Note frame
             note_frame = ttk.Frame(dialog)
             note_frame.pack(fill='x', padx=10, pady=5)
-            ttk.Label(note_frame, text="Note: Audit logging requires activity_logger integration.",
+            ttk.Label(note_frame, text=_t('gui.shell.services.integration_marketplace_gui.credentials.labels.note_audit_logging_requires_activity_logger_integration', default="Note: Audit logging requires activity_logger integration."),
                      font=('Arial', 9, 'italic')).pack()
 
             # Audit log tree
@@ -500,13 +500,13 @@ class CredentialsMixin:
             selected = self.installed_tree.selection()
             if not selected:
                 messagebox.showwarning(_t("common.warning"),
-                                      "Please select an integration from the Installed tab to revoke tokens")
+                                      _t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.please_select_an_integration_from_the_installed_tab_to_revoke_to', default="Please select an integration from the Installed tab to revoke tokens"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
             integration_name = self.installed_tree.item(selected[0])['values'][1]
 
-            if messagebox.askyesno("EMERGENCY TOKEN REVOCATION",
+            if messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.emergency_token_revocation', default="EMERGENCY TOKEN REVOCATION"),
                                    f"Revoke ALL OAuth tokens for '{integration_name}'?\n\n"
                                    f"WARNING: This is an emergency action!\n"
                                    f"All OAuth tokens will be invalidated.\n"
@@ -524,7 +524,7 @@ class CredentialsMixin:
                 log_activity('revoke', 'integration_credentials', install_id,
                             details={'action': 'emergency_token_revocation', 'revoked_count': revoked_count})
 
-                messagebox.showinfo("Tokens Revoked",
+                messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.credentials.dialogs.tokens_revoked', default="Tokens Revoked"),
                                    f"Successfully revoked {revoked_count} token(s) for {integration_name}.\n\n"
                                    f"The integration will need to be re-authenticated.")
                 self.load_credentials()

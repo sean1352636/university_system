@@ -27,9 +27,9 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 
-DB_PATH = paths.SYSTEM_LOGS_DB
+DB_PATH = paths.SIXTH_FORM_SYSTEM_LOGS_DB
 
 # Sixth-form student ids look like "C" + exactly 7 digits (see
 # ``students.generate_student_id``). Word boundaries keep us from
@@ -71,7 +71,7 @@ def _connect() -> sqlite3.Connection:
     WAL mode + a busy timeout lets those inserts proceed instead of
     racing into ``OperationalError: database is locked``.
     """
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH), timeout=5.0)
     conn.row_factory = sqlite3.Row
     # WAL: writer doesn't block readers and is much friendlier under

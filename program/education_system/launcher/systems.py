@@ -10,25 +10,30 @@ from education_system.launcher.auth import init_shared_auth, gui_universal_login
 logger = logging.getLogger(__name__)
 
 
+def _start_security_training_links() -> None:
+    """Keep database-inbox training links live in every desktop system."""
+    try:
+        from education_system.platform.governance.security.training_simulation import (
+            default_simulation,
+        )
+        default_simulation()
+    except Exception as exc:
+        logger.debug("Security-training invitation listener not started: %s", exc)
+
+
 # ── University ───────────────────────────────────────────────────────────────
 
 def _init_university():
     """One-time university system bootstrap (env, i18n, auth, DB)."""
     init_shared_auth()
 
-    try:
-        from dotenv import load_dotenv
-        env = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "..",
-            "post_18", "university_system", ".env",
-        )
-        if os.path.exists(env):
-            load_dotenv(env)
-    except ImportError:
-        pass
+    # No per-university .env is loaded here: the path this used to build
+    # (``education_system/post_18/university_system/.env``) has not existed
+    # since the ADR 0018 move, so the block never fired. run.py already loads
+    # the repository-root .env before any bootstrap runs.
 
-    from education_system.systems.university.infrastructure.paths import ensure_directories
-    ensure_directories()
+    from education_system.paths import ensure_university_directories
+    ensure_university_directories()
 
     from education_system.systems.university.infrastructure.i18n import init_i18n
     try:
@@ -46,6 +51,13 @@ def _init_university():
 
     from education_system.systems.university.infrastructure.database.database_utils import init_db
     init_db()
+
+    # Keep database-stored security-training links usable for every signed-in
+    # university user.  In desktop mode there is no web API process, so the
+    # localhost-only invitation endpoint must live for the lifetime of the app.
+    # This also covers links copied from an inbox into a browser and campaigns
+    # created during an earlier application session.
+    _start_security_training_links()
 
     try:
         from education_system.systems.university.infrastructure.auth.migration_to_shared import migrate
@@ -134,9 +146,9 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
     legacy_user_id = None
     student_id = None
     try:
-        from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+        from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
         import sqlite3 as _sqlite3
-        _conn = _sqlite3.connect(str(DEFAULT_DB_PATH))
+        _conn = _sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         _row = _conn.execute(
             "SELECT id, student_id FROM users WHERE username = ?",
             (user_info["username"],)
@@ -183,9 +195,44 @@ _PROGRESSION_INTAKES = {
 }
 
 
+# system_key -> dotted module path exposing register(); the system's side of
+# the platform transition contract. Registering is what turns a recorded move
+# into a real local record: without it the platform can still log that a
+# learner went to apprenticeships, but has nobody to call to create the
+# apprentice. Kept here rather than in each package's __init__ so importing a
+# system never drags the platform's cross-system stack in behind it.
+_PHASE_ADAPTERS = {
+    "apprenticeships":
+        "education_system.systems.apprenticeships.integrations.cross_system_adapter",
+    "fe_college":
+        "education_system.systems.fe_college.services.cross_system_adapter",
+}
+
+
+def _register_phase_adapter(system_key):
+    """Register ``system_key``'s transition adapter with the platform.
+
+    Best-effort and idempotent: a system whose adapter fails to load still
+    launches, it just cannot receive learners until the cause is fixed —
+    which is strictly better than refusing to start the whole system.
+    """
+    module_path = _PHASE_ADAPTERS.get(system_key)
+    if not module_path:
+        return
+    try:
+        import importlib
+        importlib.import_module(module_path).register()
+        logger.debug("Registered %s phase adapter", system_key)
+    except Exception as exc:
+        logger.warning(
+            "%s phase adapter not registered (%s); cross-system transfers "
+            "into this system will not create local records", system_key, exc)
+
+
 def _drain_progression(system_key):
     """Drain pending cross-system progression transfers for ``system_key``
     from the durable bus (idempotent; safe if there's nothing waiting)."""
+    _register_phase_adapter(system_key)
     module_path = _PROGRESSION_INTAKES.get(system_key)
     if module_path:
         try:
@@ -197,6 +244,16 @@ def _drain_progression(system_key):
                             n, system_key)
         except Exception as exc:
             logger.debug("%s intake drain skipped: %s", system_key, exc)
+    elif system_key in _PHASE_ADAPTERS:
+        # No bespoke intake module, but the system implements the adapter
+        # contract — so its ``create_applicant`` is the intake. Systems
+        # that joined the platform after the adapter contract existed use
+        # this path instead of hand-writing a fourth intake module.
+        try:
+            from education_system.platform.cross_system import adapter_intake
+            adapter_intake.drain(system_key)
+        except Exception as exc:
+            logger.debug("%s adapter intake skipped: %s", system_key, exc)
     # Promote the bus to a real-time backbone: a background thread keeps
     # draining while this system runs, so safeguarding / GDPR / parent
     # events propagate continuously rather than only at next launch.
@@ -213,6 +270,7 @@ def run_sixthform_cli(user_info=None, role=None, shared_auth=None):
     from education_system.systems.sixth_form import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("sixth_form")
+    _start_security_training_links()
     from education_system.systems.sixth_form.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -222,6 +280,7 @@ def run_sixthform_gui(user_info=None, role=None, shared_auth=None):
     from education_system.systems.sixth_form import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("sixth_form")
+    _start_security_training_links()
     from education_system.systems.sixth_form.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -231,6 +290,7 @@ def run_secondarysch_cli(user_info=None, role=None, shared_auth=None):
     from education_system.systems.secondary import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("secondary")
+    _start_security_training_links()
     from education_system.systems.secondary.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -240,6 +300,7 @@ def run_secondarysch_gui(user_info=None, role=None, shared_auth=None):
     from education_system.systems.secondary import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("secondary")
+    _start_security_training_links()
     from education_system.systems.secondary.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -249,6 +310,7 @@ def run_primarysch_cli(user_info=None, role=None, shared_auth=None):
     from education_system.systems.primary import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("primary")
+    _start_security_training_links()
     from education_system.systems.primary.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -258,7 +320,48 @@ def run_primarysch_gui(user_info=None, role=None, shared_auth=None):
     from education_system.systems.primary import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
     _drain_progression("primary")
+    _start_security_training_links()
     from education_system.systems.primary.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_apprenticeships_cli(user_info=None, role=None, shared_auth=None):
+    from education_system.platform import branding
+    from education_system.systems.apprenticeships import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _drain_progression("apprenticeships")
+    _start_security_training_links()
+    from education_system.systems.apprenticeships.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_apprenticeships_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.platform import branding
+    from education_system.systems.apprenticeships import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _drain_progression("apprenticeships")
+    _start_security_training_links()
+    from education_system.systems.apprenticeships.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_fecollege_cli(user_info=None, role=None, shared_auth=None):
+    from education_system.platform import branding
+    from education_system.systems.fe_college import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _drain_progression("fe_college")
+    _start_security_training_links()
+    from education_system.systems.fe_college.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_fecollege_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.platform import branding
+    from education_system.systems.fe_college import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
+    _drain_progression("fe_college")
+    _start_security_training_links()
+    from education_system.systems.fe_college.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -266,6 +369,7 @@ def run_nursery_cli(user_info=None, role=None, shared_auth=None):
     from education_system.platform import branding
     from education_system.systems.nursery import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
     from education_system.systems.nursery.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -274,6 +378,7 @@ def run_nursery_gui(user_info=None, role=None, shared_auth=None):
     from education_system.platform import branding
     from education_system.systems.nursery import SYSTEM_NAME
     branding.set_system_name(SYSTEM_NAME)
+    _start_security_training_links()
     from education_system.systems.nursery.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
@@ -293,24 +398,31 @@ def run_unified_api():
 
 
 def run_university_tests():
-    from education_system.systems.university.tests.run_all_tests import run_all_tests
-    return run_all_tests()
+    return _run_pytest("program/tests/systems/university")
 
 
 def run_sixthform_tests():
-    return _run_pytest("education_system/sixthform_system/tests/")
+    return _run_pytest("program/tests/systems/sixth_form")
 
 
 def run_secondarysch_tests():
-    return _run_pytest("education_system/secondarysch_system/tests/")
+    return _run_pytest("program/tests/systems/secondary")
 
 
 def run_primarysch_tests():
-    return _run_pytest("education_system/primarysch_system/tests/")
+    return _run_pytest("program/tests/systems/primary")
 
 
 def run_nursery_tests():
-    return _run_pytest("education_system/nursery_system/tests/")
+    return _run_pytest("program/tests/systems/nursery")
+
+
+def run_fecollege_tests():
+    return _run_pytest("program/tests/systems/fe_college")
+
+
+def run_apprenticeships_tests():
+    return _run_pytest("program/tests/systems/apprenticeships")
 
 
 def _run_pytest(test_dir):
@@ -322,16 +434,17 @@ def _run_pytest(test_dir):
 
 
 def _repo_root():
-    """Return the repository root (three levels up from this file)."""
-    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    """Return the repository root containing ``program/tests``."""
+    from pathlib import Path
+    return str(Path(__file__).resolve().parents[3])
 
 
 def run_all_system_tests():
-    """Run the university test suite."""
-    test_dirs = ["education_system/post_18/university_system/tests/"]
+    """Run every system test suite from the consolidated tests tree."""
+    test_dirs = ["program/tests/systems"]
     print()
     print("=" * 60)
-    print("  RUNNING UNIVERSITY TESTS")
+    print("  RUNNING ALL SYSTEM TESTS")
     print("=" * 60)
     print()
     result = subprocess.run(
@@ -387,8 +500,30 @@ LAUNCHERS = {
     ("nursery", "cli"):     run_nursery_cli,
     ("nursery", "gui"):     run_nursery_gui,
     ("nursery", "test"):    run_nursery_tests,
+    # Apprenticeships system — auth seed key is "apprenticeships". A full
+    # cross-system member, but a post-16 destination beside the phase chain
+    # rather than a step on it: secondary, sixth form and FE feed it, it runs
+    # concurrently with university for a degree apprenticeship, and it feeds
+    # back into university for a top-up. See progression.PARALLEL_SYSTEMS.
+    ("apprenticeships", "cli"):  run_apprenticeships_cli,
+    ("apprenticeships", "gui"):  run_apprenticeships_gui,
+    ("apprenticeships", "test"): run_apprenticeships_tests,
+    # FE College system — auth seed key is "fe_college". Now a full member of
+    # the cross-system registry: its own student_journey slot, an entry in
+    # paths.SYSTEM_DB_PATHS, and a PhaseAdapter, so learners move in and out
+    # of it like any other system. Its intake is adapter-backed rather than a
+    # bespoke module — see _drain_progression.
+    ("fe_college", "cli"):  run_fecollege_cli,
+    ("fe_college", "gui"):  run_fecollege_gui,
+    ("fe_college", "test"): run_fecollege_tests,
 }
 
 # Systems that support pre-authenticated launch
-AUTH_GUI_SYSTEMS = {"university", "sixth_form", "secondary", "primary", "nursery"}
-AUTH_CLI_SYSTEMS = {"university", "sixth_form", "secondary", "primary", "nursery"}
+AUTH_GUI_SYSTEMS = {
+    "university", "sixth_form", "secondary", "primary", "nursery",
+    "apprenticeships", "fe_college",
+}
+AUTH_CLI_SYSTEMS = {
+    "university", "sixth_form", "secondary", "primary", "nursery",
+    "apprenticeships", "fe_college",
+}

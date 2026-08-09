@@ -5,6 +5,8 @@ Comprehensive Tkinter interface for managing prospective students, applications,
 reviews, communication campaigns, campus tours, and yield predictions.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -161,7 +163,7 @@ class AdmissionsCRMGUI:
         ttk.Button(btn_frame, text=_t("admissions_crm.prospects.add"), command=self._add_prospect).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("admissions_crm.prospects.log_interaction"), command=self._log_interaction).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("admissions_crm.prospects.refresh"), command=self._load_prospects).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Draft APL claim", command=self._draft_apl_for_prospect).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.admissions.admissions_crm.buttons.draft_apl_claim', default="Draft APL claim"), command=self._draft_apl_for_prospect).pack(side=tk.LEFT, padx=5)
 
         # Prospects list
         list_frame = ttk.LabelFrame(tab, text=_t("admissions_crm.prospects.title"), padding="10")
@@ -601,7 +603,7 @@ class AdmissionsCRMGUI:
             messagebox.showerror(_t("common.error"), f"Failed to draft APL claim: {e}")
             return
         messagebox.showinfo(
-            "APL claim drafted",
+            _t('gui.admissions.admissions_crm.dialogs.apl_claim_drafted', default="APL claim drafted"),
             f"Draft APL claim #{cid} created for prospect #{prospect_id} ({name}).\n"
             "Open Prior Learning (APL/RPL) from the navigation to review.",
         )

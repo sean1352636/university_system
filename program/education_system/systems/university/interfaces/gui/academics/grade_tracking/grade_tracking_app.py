@@ -1,5 +1,7 @@
 """Main Grade Tracking Application"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -12,12 +14,12 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.interfaces.gui.academics.grade_tracking.utils import ensure_column_exists
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -189,7 +191,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.grade_tracking_app.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -312,7 +314,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.grade_tracking_app.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -352,6 +354,17 @@ class GradeTrackingApp:
         self.root = root
         self.auth = auth
         self.conn = None
+
+        # Grade data is sensitive: do not initialise managers, open the
+        # database, or construct navigation until authentication is known.
+        user = getattr(auth, 'current_user', None) if auth else None
+        role = str((user or {}).get('role', '')).lower()
+        if not user or role not in {'admin', 'staff', 'instructor', 'faculty', 'student'}:
+            frame = ttk.Frame(root, padding=30)
+            frame.pack(fill=tk.BOTH, expand=True)
+            ttk.Label(frame, text="Access denied", font=('Arial', 16, 'bold')).pack(pady=10)
+            ttk.Label(frame, text="Sign in with an authorised university account to access grades.").pack()
+            return
 
         # Initialize managers
         self.layout = LayoutManager(self)
@@ -471,7 +484,7 @@ class GradeTrackingApp:
         except Exception as e:
             error_msg = f"Error initializing database: {e}"
             print(error_msg)
-            messagebox.showerror("Database Error",
+            messagebox.showerror(_t('gui.academics.grade_tracking.grade_tracking_app.dialogs.database_error', default="Database Error"),
                                f"Failed to connect to database:\n{e}\n\nPlease check the database path and permissions.")
             # Set to None but we need to handle this in methods
             self.conn = None

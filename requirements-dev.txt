@@ -23,6 +23,7 @@ pytest-xdist>=3.3.0            # Parallel test execution
 pytest-timeout>=2.1.0          # Test timeout support
 pytest-benchmark>=4.0.0        # Performance benchmarking
 hypothesis>=6.82.0             # Property-based testing
+mutmut>=3.3.0                  # Mutation testing for assertion strength
 
 # ===============================
 # CODE QUALITY

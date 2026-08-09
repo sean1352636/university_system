@@ -1,5 +1,7 @@
 """Accreditation of Prior Learning (APL/RPL) GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -67,7 +69,7 @@ class PriorLearningGUI:
     # ------------------------------------------------------------------ claims
     def _build_claims_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Claims")
+        notebook.add(tab, text=_t('gui.admissions.prior_learning_recognition.prior_learning.tabs.claims', default="Claims"))
 
         cols = ("id", "claimant", "type", "target", "requested", "awarded", "status")
         self.claims_tree = ttk.Treeview(tab, columns=cols, show="headings", height=18)
@@ -80,11 +82,11 @@ class PriorLearningGUI:
 
         btns = ttk.Frame(tab)
         btns.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btns, text="New Claim", command=self._new_claim).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Submit", command=self._submit_claim).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Review", command=self._review_claim).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Withdraw", command=self._withdraw_claim).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Refresh", command=self._refresh_claims).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btns, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.new_claim', default="New Claim"), command=self._new_claim).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.submit', default="Submit"), command=self._submit_claim).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.review', default="Review"), command=self._review_claim).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.withdraw', default="Withdraw"), command=self._withdraw_claim).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.refresh', default="Refresh"), command=self._refresh_claims).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_claims()
 
@@ -126,7 +128,7 @@ class PriorLearningGUI:
             return
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("New APL/RPL Claim")
+        dlg.title(_t('gui.admissions.prior_learning_recognition.prior_learning.windows.new_apl_rpl_claim', default="New APL/RPL Claim"))
         dlg.geometry("520x460")
         dlg.transient(self.root)
         dlg.grab_set()
@@ -161,7 +163,7 @@ class PriorLearningGUI:
                     else:
                         vals[key] = w.get().strip() or None
                 if not vals.get("claimant_id") or not vals.get("claim_type"):
-                    messagebox.showerror("Error", "Claimant ID and claim type required.")
+                    messagebox.showerror(_t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.error', default="Error"), _t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.claimant_id_and_claim_type_required', default="Claimant ID and claim type required."))
                     return
                 try:
                     credits = int(vals.get("credits_requested") or 0)
@@ -179,12 +181,12 @@ class PriorLearningGUI:
                 dlg.destroy()
                 self._refresh_claims()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.error', default="Error"), str(e))
 
         btn_row = ttk.Frame(dlg)
         btn_row.grid(row=len(rows), column=0, columnspan=2, pady=10)
-        ttk.Button(btn_row, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_row, text="Cancel", command=dlg.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side=tk.LEFT, padx=5)
 
     def _submit_claim(self):
         cid = self._selected_claim_id()
@@ -197,7 +199,7 @@ class PriorLearningGUI:
         cid = self._selected_claim_id()
         if not cid or not self.service:
             return
-        if messagebox.askyesno("Confirm", f"Withdraw claim {cid}?"):
+        if messagebox.askyesno(_t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.confirm', default="Confirm"), f"Withdraw claim {cid}?"):
             self.service.withdraw_claim(cid)
             self._refresh_claims()
 
@@ -211,7 +213,7 @@ class PriorLearningGUI:
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Decision:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=6)
+        ttk.Label(dlg, text=_t('gui.admissions.prior_learning_recognition.prior_learning.labels.decision', default="Decision:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=6)
         decision = ttk.Combobox(
             dlg,
             values=["approved", "partial", "rejected", "under_review"],
@@ -220,14 +222,14 @@ class PriorLearningGUI:
         )
         decision.grid(row=0, column=1, padx=10, pady=6)
 
-        ttk.Label(dlg, text="Notes:").grid(row=1, column=0, sticky=tk.NW, padx=10, pady=6)
+        ttk.Label(dlg, text=_t('gui.admissions.prior_learning_recognition.prior_learning.labels.notes', default="Notes:")).grid(row=1, column=0, sticky=tk.NW, padx=10, pady=6)
         notes = tk.Text(dlg, width=34, height=6)
         notes.grid(row=1, column=1, padx=10, pady=6)
 
         def save():
             d = decision.get().strip()
             if not d:
-                messagebox.showerror("Error", "Pick a decision.")
+                messagebox.showerror(_t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.error', default="Error"), _t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.pick_a_decision', default="Pick a decision."))
                 return
             try:
                 self.service.review_claim(
@@ -237,26 +239,26 @@ class PriorLearningGUI:
                 dlg.destroy()
                 self._refresh_claims()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.error', default="Error"), str(e))
 
         btn_row = ttk.Frame(dlg)
         btn_row.grid(row=2, column=0, columnspan=2, pady=10)
-        ttk.Button(btn_row, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_row, text="Cancel", command=dlg.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side=tk.LEFT, padx=5)
 
     # ------------------------------------------------------------- evidence
     def _build_evidence_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Evidence")
+        notebook.add(tab, text=_t('gui.admissions.prior_learning_recognition.prior_learning.tabs.evidence', default="Evidence"))
 
         top = ttk.Frame(tab)
         top.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(top, text="Claim ID:").pack(side=tk.LEFT, padx=4)
+        ttk.Label(top, text=_t('gui.admissions.prior_learning_recognition.prior_learning.labels.claim_id', default="Claim ID:")).pack(side=tk.LEFT, padx=4)
         self.evidence_claim_var = tk.StringVar()
         ttk.Entry(top, textvariable=self.evidence_claim_var, width=10).pack(side=tk.LEFT)
-        ttk.Button(top, text="Load", command=self._refresh_evidence).pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Add Evidence", command=self._add_evidence).pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Verify Selected", command=self._verify_evidence).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.load', default="Load"), command=self._refresh_evidence).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.add_evidence', default="Add Evidence"), command=self._add_evidence).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.verify_selected', default="Verify Selected"), command=self._verify_evidence).pack(side=tk.LEFT, padx=4)
 
         cols = ("id", "type", "title", "issuer", "issued", "verified")
         self.evidence_tree = ttk.Treeview(tab, columns=cols, show="headings", height=18)
@@ -285,13 +287,13 @@ class PriorLearningGUI:
         try:
             cid = int(self.evidence_claim_var.get().strip())
         except ValueError:
-            messagebox.showerror("Error", "Enter a claim ID first.")
+            messagebox.showerror(_t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.error', default="Error"), _t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.enter_a_claim_id_first', default="Enter a claim ID first."))
             return
         if not self.service:
             return
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("Add Evidence")
+        dlg.title(_t('gui.admissions.prior_learning_recognition.prior_learning.windows.add_evidence', default="Add Evidence"))
         dlg.geometry("500x420")
         dlg.transient(self.root)
         dlg.grab_set()
@@ -319,7 +321,7 @@ class PriorLearningGUI:
                 else:
                     vals[k] = w.get().strip() or None
             if not vals.get("title"):
-                messagebox.showerror("Error", "Title required.")
+                messagebox.showerror(_t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.error', default="Error"), _t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.title_required', default="Title required."))
                 return
             self.service.add_evidence(
                 cid,
@@ -335,8 +337,8 @@ class PriorLearningGUI:
 
         btn_row = ttk.Frame(dlg)
         btn_row.grid(row=len(rows), column=0, columnspan=2, pady=10)
-        ttk.Button(btn_row, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_row, text="Cancel", command=dlg.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side=tk.LEFT, padx=5)
 
     def _verify_evidence(self):
         sel = self.evidence_tree.selection()
@@ -349,15 +351,15 @@ class PriorLearningGUI:
     # --------------------------------------------------------------- awards
     def _build_awards_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Credit Awards")
+        notebook.add(tab, text=_t('gui.admissions.prior_learning_recognition.prior_learning.tabs.credit_awards', default="Credit Awards"))
 
         top = ttk.Frame(tab)
         top.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(top, text="Claim ID:").pack(side=tk.LEFT, padx=4)
+        ttk.Label(top, text=_t('gui.admissions.prior_learning_recognition.prior_learning.labels.claim_id', default="Claim ID:")).pack(side=tk.LEFT, padx=4)
         self.awards_claim_var = tk.StringVar()
         ttk.Entry(top, textvariable=self.awards_claim_var, width=10).pack(side=tk.LEFT)
-        ttk.Button(top, text="Load", command=self._refresh_awards).pack(side=tk.LEFT, padx=4)
-        ttk.Button(top, text="Award Credits", command=self._award_credits).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.load', default="Load"), command=self._refresh_awards).pack(side=tk.LEFT, padx=4)
+        ttk.Button(top, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.award_credits', default="Award Credits"), command=self._award_credits).pack(side=tk.LEFT, padx=4)
 
         cols = ("id", "module_code", "module_name", "level", "credits", "grade", "awarded_by")
         self.awards_tree = ttk.Treeview(tab, columns=cols, show="headings", height=18)
@@ -386,13 +388,13 @@ class PriorLearningGUI:
         try:
             cid = int(self.awards_claim_var.get().strip())
         except ValueError:
-            messagebox.showerror("Error", "Enter a claim ID first.")
+            messagebox.showerror(_t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.error', default="Error"), _t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.enter_a_claim_id_first', default="Enter a claim ID first."))
             return
         if not self.service:
             return
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("Award Credits")
+        dlg.title(_t('gui.admissions.prior_learning_recognition.prior_learning.windows.award_credits', default="Award Credits"))
         dlg.geometry("460x380")
         dlg.transient(self.root)
         dlg.grab_set()
@@ -416,7 +418,7 @@ class PriorLearningGUI:
             try:
                 credits = int(widgets["credits_awarded"].get().strip())
             except ValueError:
-                messagebox.showerror("Error", "Credits must be an integer.")
+                messagebox.showerror(_t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.error', default="Error"), _t('gui.admissions.prior_learning_recognition.prior_learning.dialogs.credits_must_be_an_integer', default="Credits must be an integer."))
                 return
             try:
                 level = int(widgets["level"].get().strip()) if widgets["level"].get().strip() else None
@@ -438,18 +440,18 @@ class PriorLearningGUI:
 
         btn_row = ttk.Frame(dlg)
         btn_row.grid(row=len(rows), column=0, columnspan=2, pady=10)
-        ttk.Button(btn_row, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_row, text="Cancel", command=dlg.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side=tk.LEFT, padx=5)
 
     # ---------------------------------------------------------------- stats
     def _build_stats_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Statistics")
+        notebook.add(tab, text=_t('gui.admissions.prior_learning_recognition.prior_learning.tabs.statistics', default="Statistics"))
 
         self.stats_text = tk.Text(tab, wrap=tk.WORD, height=30)
         self.stats_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Button(tab, text="Refresh", command=self._refresh_stats).pack(pady=5)
+        ttk.Button(tab, text=_t('gui.admissions.prior_learning_recognition.prior_learning.buttons.refresh', default="Refresh"), command=self._refresh_stats).pack(pady=5)
         self._refresh_stats()
 
     def _refresh_stats(self):

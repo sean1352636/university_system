@@ -13,7 +13,7 @@ from pathlib import Path
 # ── Auth defaults (shared baseline) ─────────────────────────────────────
 SESSION_TIMEOUT_MINUTES = 30
 MIN_PASSWORD_LENGTH = 8
-MAX_LOGIN_ATTEMPTS = 5
+MAX_LOGIN_ATTEMPTS = 3
 LOCKOUT_DURATION_MINUTES = 15
 
 # Staff ID prefix is the same across all school systems

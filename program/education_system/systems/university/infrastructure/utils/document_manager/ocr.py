@@ -20,6 +20,23 @@ def run_ocr(file_path):
     if not file_path or not os.path.exists(file_path):
         return OCRResult(False, "", f"File not found: {file_path}")
 
+    suffix = os.path.splitext(file_path)[1].lower()
+    if suffix in {".txt", ".md", ".csv", ".json"}:
+        try:
+            with open(file_path, "r", encoding="utf-8") as source:
+                return OCRResult(True, source.read(), None)
+        except (OSError, UnicodeError) as exc:
+            return OCRResult(False, "", f"Text extraction failed: {exc}")
+    if suffix == ".pdf":
+        try:
+            from pypdf import PdfReader
+            text = "\n\n".join(page.extract_text() or "" for page in PdfReader(file_path).pages)
+            return OCRResult(True, text, None)
+        except ImportError as exc:
+            return OCRResult(False, "", f"PDF text extraction is unavailable: {exc}")
+        except Exception as exc:
+            return OCRResult(False, "", f"PDF text extraction failed: {exc}")
+
     # pytesseract and PIL are imported lazily so this module still imports
     # cleanly in environments where the OCR engine is absent.
     try:

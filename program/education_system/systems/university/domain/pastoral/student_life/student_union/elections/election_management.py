@@ -918,7 +918,7 @@ def track_campaign_expenses(cursor, conn):
             import shutil
             from pathlib import Path
 
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
 
             candidate_ids = [c[0] for c in candidacies]
             placeholders = ','.join('?' * len(candidate_ids))
@@ -981,7 +981,7 @@ def track_campaign_expenses(cursor, conn):
                     return
 
             # Copy the validated file into the managed uploads directory.
-            dest_dir = paths.UPLOADS_DIR / "campaign_receipts"
+            dest_dir = paths.UNIVERSITY_UPLOADS_DIR / "campaign_receipts"
             dest_dir.mkdir(parents=True, exist_ok=True)
             dest_name = (f"expense_{expense_id}_"
                          f"{datetime.now().strftime('%Y%m%d%H%M%S')}{suffix}")

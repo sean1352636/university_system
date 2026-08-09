@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core._imports import (
     _, csv, datetime, filedialog, messagebox, tk, ttk,
     sqlite3, ScrolledText, DEFAULT_DB_PATH,
@@ -10,7 +12,7 @@ class DataIOMixin:
     def import_csv(self):
         """Import courses from CSV file"""
         file_path = filedialog.askopenfilename(
-            title="Select CSV file to import",
+            title=_t('gui.academics.course_management_gui.core.data_io.dialogs.select_csv_file_to_import', default="Select CSV file to import"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
 
@@ -93,7 +95,7 @@ class DataIOMixin:
     def export_csv(self):
         """Export courses to CSV file"""
         file_path = filedialog.asksaveasfilename(
-            title="Save CSV file",
+            title=_t('gui.academics.course_management_gui.core.data_io.dialogs.save_csv_file', default="Save CSV file"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
@@ -128,7 +130,7 @@ class DataIOMixin:
     def backup_database(self):
         """Create database backup - enhanced version"""
         file_path = filedialog.asksaveasfilename(
-            title="Save database backup",
+            title=_t('gui.academics.course_management_gui.core.data_io.dialogs.save_database_backup', default="Save database backup"),
             defaultextension=".sql",
             filetypes=[("SQL files", "*.sql"), ("SQLite files", "*.db"), ("All files", "*.*")]
         )

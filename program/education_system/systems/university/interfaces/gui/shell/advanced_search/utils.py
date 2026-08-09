@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -827,8 +829,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -847,10 +849,10 @@ def show_audit_trail(self):
 
     filter_frame = ttk.Frame(frame)
     filter_frame.pack(fill=tk.X, pady=(0, 8))
-    ttk.Label(filter_frame, text="Limit:").pack(side=tk.LEFT)
+    ttk.Label(filter_frame, text=_t('gui.shell.advanced_search.utils.labels.limit', default="Limit:")).pack(side=tk.LEFT)
     limit_var = tk.StringVar(value="200")
     ttk.Entry(filter_frame, textvariable=limit_var, width=6).pack(side=tk.LEFT, padx=(4, 12))
-    ttk.Label(filter_frame, text="User filter:").pack(side=tk.LEFT)
+    ttk.Label(filter_frame, text=_t('gui.shell.advanced_search.utils.labels.user_filter', default="User filter:")).pack(side=tk.LEFT)
     user_var = tk.StringVar()
     ttk.Entry(filter_frame, textvariable=user_var, width=18).pack(side=tk.LEFT, padx=(4, 12))
 
@@ -922,7 +924,7 @@ def show_audit_trail(self):
             path = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV", "*.csv")],
-                title="Export audit trail",
+                title=_t('gui.shell.advanced_search.utils.dialogs.export_audit_trail', default="Export audit trail"),
             )
             if not path:
                 return
@@ -937,9 +939,9 @@ def show_audit_trail(self):
 
     btns = ttk.Frame(filter_frame)
     btns.pack(side=tk.RIGHT)
-    ttk.Button(btns, text="🔄 Refresh", command=load).pack(side=tk.LEFT, padx=4)
-    ttk.Button(btns, text="💾 Export CSV", command=export_csv).pack(side=tk.LEFT, padx=4)
-    ttk.Button(btns, text="Close", command=dialog.destroy).pack(side=tk.LEFT, padx=4)
+    ttk.Button(btns, text=_t('gui.shell.advanced_search.utils.buttons.refresh', default="🔄 Refresh"), command=load).pack(side=tk.LEFT, padx=4)
+    ttk.Button(btns, text=_t('gui.shell.advanced_search.utils.buttons.export_csv', default="💾 Export CSV"), command=export_csv).pack(side=tk.LEFT, padx=4)
+    ttk.Button(btns, text=_t('gui.shell.advanced_search.utils.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.LEFT, padx=4)
 
     load()
 AdvancedSearchGUI.show_audit_trail = show_audit_trail

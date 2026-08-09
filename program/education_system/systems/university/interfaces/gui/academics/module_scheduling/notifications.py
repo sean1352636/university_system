@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -220,7 +222,7 @@ def send_schedule_change_notifications(self, schedule_id, change_description):
     try:
         messagebox.showinfo(_t("scheduling.notifications.notifications_sent_title"), _t("scheduling.notifications.notifications_sent_message", description=change_description), parent=self.root)
     except Exception:
-        messagebox.showinfo("Notifications Sent", f"Notifications sent for schedule change: {change_description}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.notifications.dialogs.notifications_sent', default="Notifications Sent"), f"Notifications sent for schedule change: {change_description}", parent=self.root)
 
 ModuleSchedulingGUI.send_schedule_change_notifications = send_schedule_change_notifications
 

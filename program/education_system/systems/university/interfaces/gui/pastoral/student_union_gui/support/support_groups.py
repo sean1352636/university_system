@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class SupportGroupsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Peer Support Groups")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.support.support_groups.windows.peer_support_groups', default="Peer Support Groups"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -78,24 +80,24 @@ class SupportGroupsDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        title_label = ttk.Label(main_frame, text="Peer Support Groups", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.peer_support_groups', default="Peer Support Groups"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Filter by Type:").pack(side='left', padx=(0, 10))
-        self.type_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.filter_by_type', default="Filter by Type:")).pack(side='left', padx=(0, 10))
+        self.type_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.support.support_groups.values.all', default="All"))
         type_combo = ttk.Combobox(filter_frame, textvariable=self.type_var, width=20)
         type_combo['values'] = ('All', 'Mental Health', 'Academic', 'Career', 'Social', 'Wellness')
         type_combo.pack(side='left', padx=(0, 10))
         type_combo.bind('<<ComboboxSelected>>', lambda e: self.load_data())
 
-        ttk.Button(filter_frame, text="Create New Group", command=self.create_group).pack(side='right')
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.create_new_group', default="Create New Group"), command=self.create_group).pack(side='right')
 
         # Groups list
-        list_frame = ttk.LabelFrame(main_frame, text="Available Support Groups")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.available_support_groups', default="Available Support Groups"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('ID', 'Name', 'Type', 'Facilitator', 'Members', 'Max', 'Schedule', 'Status')
@@ -117,7 +119,7 @@ class SupportGroupsDialog:
         scrollbar.pack(side='right', fill='y')
 
         # Details frame
-        details_frame = ttk.LabelFrame(main_frame, text="Group Description")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.group_description', default="Group Description"))
         details_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=6, wrap=tk.WORD)
@@ -129,9 +131,9 @@ class SupportGroupsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Join Selected Group", command=self.join_group).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="My Groups", command=self.view_my_groups).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.join_selected_group', default="Join Selected Group"), command=self.join_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.my_groups', default="My Groups"), command=self.view_my_groups).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         """Load support groups"""
@@ -171,7 +173,7 @@ class SupportGroupsDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load groups: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to load groups: {str(e)}")
 
     def show_details(self, event):
         """Show group details"""
@@ -200,7 +202,7 @@ class SupportGroupsDialog:
         """Join selected support group"""
         selection = self.groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group to join.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.please_select_a_group_to_join', default="Please select a group to join."))
             return
 
         item = self.groups_tree.item(selection[0])
@@ -210,10 +212,10 @@ class SupportGroupsDialog:
         max_members = item['values'][5]
 
         if current_members >= max_members:
-            messagebox.showwarning("Warning", "This group is full.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.this_group_is_full', default="This group is full."))
             return
 
-        if messagebox.askyesno("Confirm", f"Join '{group_name}'?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.confirm', default="Confirm"), f"Join '{group_name}'?"):
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
@@ -238,10 +240,10 @@ class SupportGroupsDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Successfully joined the support group!")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.successfully_joined_the_support_group', default="Successfully joined the support group!"))
                 self.load_data()
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to join group: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to join group: {str(e)}")
 
     def create_group(self):
         """Create new support group"""
@@ -264,7 +266,7 @@ class CreateSupportGroupDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create Support Group")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.support.support_groups.windows.create_support_group', default="Create Support Group"))
         self.dialog.geometry("600x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -277,43 +279,43 @@ class CreateSupportGroupDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        title_label = ttk.Label(main_frame, text="Create New Support Group", font=('Arial', 12, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.create_new_support_group', default="Create New Support Group"), font=('Arial', 12, 'bold'))
         title_label.pack(pady=(0, 20))
 
         # Group name
-        ttk.Label(main_frame, text="Group Name:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.group_name', default="Group Name:")).pack(anchor='w', pady=(0, 5))
         self.name_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.name_var, width=50).pack(fill='x', pady=(0, 10))
 
         # Support type
-        ttk.Label(main_frame, text="Support Type:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.support_type', default="Support Type:")).pack(anchor='w', pady=(0, 5))
         self.type_var = tk.StringVar()
         type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, width=47)
         type_combo['values'] = ('Mental Health', 'Academic', 'Career', 'Social', 'Wellness', 'Other')
         type_combo.pack(fill='x', pady=(0, 10))
 
         # Description
-        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.description_variant_2', default="Description:")).pack(anchor='w', pady=(0, 5))
         self.description_text = scrolledtext.ScrolledText(main_frame, height=8, wrap=tk.WORD)
         self.description_text.pack(fill='both', expand=True, pady=(0, 10))
 
         # Max members
-        ttk.Label(main_frame, text="Maximum Members:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.maximum_members', default="Maximum Members:")).pack(anchor='w', pady=(0, 5))
         self.max_var = tk.StringVar(value="10")
         ttk.Entry(main_frame, textvariable=self.max_var, width=10).pack(anchor='w', pady=(0, 10))
 
         # Meeting schedule
-        ttk.Label(main_frame, text="Meeting Schedule:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.meeting_schedule', default="Meeting Schedule:")).pack(anchor='w', pady=(0, 5))
         self.schedule_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.schedule_var, width=50).pack(fill='x', pady=(0, 10))
-        ttk.Label(main_frame, text="(e.g., 'Every Monday 6:00 PM')", font=('Arial', 8)).pack(anchor='w', pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.e_g_every_monday_6_00_pm', default="(e.g., 'Every Monday 6:00 PM')"), font=('Arial', 8)).pack(anchor='w', pady=(0, 10))
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Create", command=self.create).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.create', default="Create"), command=self.create).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def create(self):
         """Create the support group"""
@@ -324,16 +326,16 @@ class CreateSupportGroupDialog:
         schedule = self.schedule_var.get().strip()
 
         if not all([name, support_type, description, max_members, schedule]):
-            messagebox.showwarning("Warning", "Please fill in all fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.please_fill_in_all_fields', default="Please fill in all fields."))
             return
 
         try:
             max_members = int(max_members)
             if max_members < 2:
-                messagebox.showwarning("Warning", "Maximum members must be at least 2.")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.maximum_members_must_be_at_least_2', default="Maximum members must be at least 2."))
                 return
         except ValueError:
-            messagebox.showwarning("Warning", "Maximum members must be a number.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.maximum_members_must_be_a_number', default="Maximum members must be a number."))
             return
 
         try:
@@ -360,10 +362,10 @@ class CreateSupportGroupDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Support group created successfully!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.support_group_created_successfully', default="Support group created successfully!"))
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to create group: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to create group: {str(e)}")
 
 
 
@@ -375,7 +377,7 @@ class MySupportGroupsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("My Support Groups")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.support.support_groups.windows.my_support_groups', default="My Support Groups"))
         self.dialog.geometry("900x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -389,11 +391,11 @@ class MySupportGroupsDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        title_label = ttk.Label(main_frame, text="My Support Groups", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.my_support_groups', default="My Support Groups"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Groups list
-        list_frame = ttk.LabelFrame(main_frame, text="My Groups")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.my_groups', default="My Groups"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Group Name', 'Type', 'Role', 'Join Date', 'Schedule', 'Members')
@@ -416,8 +418,8 @@ class MySupportGroupsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Leave Selected Group", command=self.leave_group).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.leave_selected_group', default="Leave Selected Group"), command=self.leave_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         """Load user's support groups"""
@@ -454,13 +456,13 @@ class MySupportGroupsDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load groups: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to load groups: {str(e)}")
 
     def leave_group(self):
         """Leave selected group"""
         selection = self.groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group to leave.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.please_select_a_group_to_leave', default="Please select a group to leave."))
             return
 
         item = self.groups_tree.item(selection[0])
@@ -468,13 +470,13 @@ class MySupportGroupsDialog:
         role = item['values'][2]
 
         if role == 'Facilitator':
-            messagebox.showwarning("Warning",
-                                   "You are the facilitator of this group. "
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.warning', default="Warning"),
+                                   _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.you_are_the_facilitator_of_this_group_please_transfer_facilitato', default="You are the facilitator of this group. "
                                    "Please transfer facilitator role before leaving, "
-                                   "or disband the group.")
+                                   "or disband the group."))
             return
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.confirm', default="Confirm"),
                                     f"Are you sure you want to leave '{group_name}'?"):
             return
 
@@ -487,7 +489,7 @@ class MySupportGroupsDialog:
                            (self.auth.current_user['id'],))
             result = cursor.fetchone()
             if not result:
-                messagebox.showerror("Error", "Could not identify your student record.")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.could_not_identify_your_student_record', default="Could not identify your student record."))
                 return
             student_id = result[0]
 
@@ -500,7 +502,7 @@ class MySupportGroupsDialog:
             group_row = cursor.fetchone()
 
             if not group_row:
-                messagebox.showerror("Error", "Could not find your membership for this group.")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.could_not_find_your_membership_for_this_group', default="Could not find your membership for this group."))
                 conn.close()
                 return
 
@@ -519,14 +521,14 @@ class MySupportGroupsDialog:
             ''', (group_id,))
 
             conn.commit()
-            messagebox.showinfo("Success", f"You have left '{group_name}'.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.success', default="Success"), f"You have left '{group_name}'.")
 
             # Refresh the list
             for tree_item in self.groups_tree.get_children():
                 self.groups_tree.delete(tree_item)
             self.load_data()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to leave group: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to leave group: {e}")
         finally:
             if conn:
                 conn.close()
@@ -541,7 +543,7 @@ class BrowseSupportGroupsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Browse Support Groups")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.support.support_groups.windows.browse_support_groups', default="Browse Support Groups"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -553,14 +555,14 @@ class BrowseSupportGroupsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📋 Support Group Directory",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.support_group_directory', default="📋 Support Group Directory"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Topic:").pack(side='left', padx=(0, 5))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.topic', default="Topic:")).pack(side='left', padx=(0, 5))
         self.topic_var = tk.StringVar()
         topic_combo = ttk.Combobox(filter_frame, textvariable=self.topic_var, width=20, state='readonly')
         topic_combo['values'] = ('All', 'Anxiety', 'Depression', 'Stress Management',
@@ -568,10 +570,10 @@ class BrowseSupportGroupsDialog:
         topic_combo.current(0)
         topic_combo.pack(side='left', padx=(0, 15))
 
-        ttk.Button(filter_frame, text="Filter", command=self.load_groups).pack(side='left')
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.filter', default="Filter"), command=self.load_groups).pack(side='left')
 
         # Groups list
-        list_frame = ttk.LabelFrame(main_frame, text="Available Groups")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.available_groups', default="Available Groups"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Group Name', 'Topic', 'Meeting Schedule', 'Members', 'Privacy', 'Status')
@@ -595,7 +597,7 @@ class BrowseSupportGroupsDialog:
         self.groups_tree.bind('<<TreeviewSelect>>', self.on_select)
 
         # Details frame
-        details_frame = ttk.LabelFrame(main_frame, text="Group Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.group_details', default="Group Details"))
         details_frame.pack(fill='x', pady=(0, 15))
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=6, wrap=tk.WORD)
@@ -605,9 +607,9 @@ class BrowseSupportGroupsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Join Group", command=self.join_group).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Details", command=self.view_full_details).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.join_group', default="Join Group"), command=self.join_group).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.view_details', default="View Details"), command=self.view_full_details).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_groups(self):
         """Load support groups from DB, with topic filter"""
@@ -701,7 +703,7 @@ class BrowseSupportGroupsDialog:
             except sqlite3.Error:
                 pass
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load groups: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to load groups: {e}")
         finally:
             if conn:
                 conn.close()
@@ -723,7 +725,7 @@ class BrowseSupportGroupsDialog:
         """Join the selected support group via DB"""
         selection = self.groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group to join.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.please_select_a_group_to_join', default="Please select a group to join."))
             return
 
         item = self.groups_tree.item(selection[0])
@@ -734,22 +736,22 @@ class BrowseSupportGroupsDialog:
 
         # For default/sample entries (group_id "0" or non-numeric), show info-only message
         if not group_id_str or group_id_str == '0':
-            messagebox.showinfo("Info",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.info', default="Info"),
                                 f"'{group_name}' is a sample group. "
                                 "Create a real group first using the main Support Groups dialog.")
             return
 
         if privacy == "Closed":
-            if not messagebox.askyesno("Join Request",
+            if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.join_request', default="Join Request"),
                                        f"'{group_name}' is a closed group.\n\nSubmit a join request?"):
                 return
             # For closed groups, just show confirmation (would need approval workflow)
-            messagebox.showinfo("Submitted",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.submitted', default="Submitted"),
                                 f"Join request submitted for '{group_name}'.\n\n"
                                 "The group moderator will review your request.")
             return
 
-        if not messagebox.askyesno("Confirm", f"Join '{group_name}'?"):
+        if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.confirm', default="Confirm"), f"Join '{group_name}'?"):
             return
 
         conn = None
@@ -763,7 +765,7 @@ class BrowseSupportGroupsDialog:
                            (self.auth.current_user['id'],))
             result = cursor.fetchone()
             if not result:
-                messagebox.showerror("Error", "Could not identify your student record.")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.could_not_identify_your_student_record', default="Could not identify your student record."))
                 return
             student_id = result[0]
 
@@ -773,7 +775,7 @@ class BrowseSupportGroupsDialog:
                 WHERE group_id = ? AND student_id = ? AND status = 'active'
             ''', (group_id, student_id))
             if cursor.fetchone():
-                messagebox.showinfo("Info", "You are already a member of this group.")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.info', default="Info"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.you_are_already_a_member_of_this_group', default="You are already a member of this group."))
                 return
 
             # Check capacity
@@ -781,7 +783,7 @@ class BrowseSupportGroupsDialog:
                            (group_id,))
             cap_row = cursor.fetchone()
             if cap_row and cap_row[0] >= cap_row[1]:
-                messagebox.showwarning("Full", "This group is currently full.")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.full', default="Full"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.this_group_is_currently_full', default="This group is currently full."))
                 return
 
             # Generate anonymous ID
@@ -798,14 +800,14 @@ class BrowseSupportGroupsDialog:
             ''', (group_id,))
 
             conn.commit()
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.success', default="Success"),
                                 f"You've joined '{group_name}'!\n\n"
                                 "You'll receive meeting reminders and can access group resources.")
             self.load_groups()
         except sqlite3.IntegrityError:
-            messagebox.showinfo("Info", "You are already a member of this group.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.info', default="Info"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.you_are_already_a_member_of_this_group', default="You are already a member of this group."))
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to join group: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to join group: {e}")
         finally:
             if conn:
                 conn.close()
@@ -814,7 +816,7 @@ class BrowseSupportGroupsDialog:
         """Open Toplevel showing full group details from DB"""
         selection = self.groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.support_groups.dialogs.please_select_a_group', default="Please select a group."))
             return
 
         item = self.groups_tree.item(selection[0])
@@ -842,7 +844,7 @@ class BrowseSupportGroupsDialog:
         ttk.Label(main_frame, text=group_name, font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Basic info grid
-        info_frame = ttk.LabelFrame(main_frame, text="Group Information")
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.group_information', default="Group Information"))
         info_frame.pack(fill='x', pady=(0, 10))
 
         info_grid = ttk.Frame(info_frame)
@@ -914,7 +916,7 @@ class BrowseSupportGroupsDialog:
                 row=i, column=1, sticky='w', pady=2)
 
         # Description
-        desc_frame = ttk.LabelFrame(main_frame, text="Description")
+        desc_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.description', default="Description"))
         desc_frame.pack(fill='x', pady=(0, 10))
 
         desc_text = scrolledtext.ScrolledText(desc_frame, height=5, wrap=tk.WORD)
@@ -923,13 +925,13 @@ class BrowseSupportGroupsDialog:
         desc_text.config(state='disabled')
 
         # Member list (anonymous)
-        member_frame = ttk.LabelFrame(main_frame, text="Members (Anonymous IDs)")
+        member_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.members_anonymous_ids', default="Members (Anonymous IDs)"))
         member_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         mem_columns = ('Anonymous ID', 'Joined')
         mem_tree = ttk.Treeview(member_frame, columns=mem_columns, show='headings', height=6)
-        mem_tree.heading('Anonymous ID', text='Anonymous ID')
-        mem_tree.heading('Joined', text='Joined')
+        mem_tree.heading('Anonymous ID', text=_t('gui.pastoral.student_union_gui.support.support_groups.headings.anonymous_id', default='Anonymous ID'))
+        mem_tree.heading('Joined', text=_t('gui.pastoral.student_union_gui.support.support_groups.headings.joined', default='Joined'))
         mem_tree.column('Anonymous ID', width=200)
         mem_tree.column('Joined', width=200)
 
@@ -951,32 +953,32 @@ class BrowseSupportGroupsDialog:
         else:
             mem_tree.insert('', 'end', values=("No member data available", ""))
 
-        ttk.Button(main_frame, text="Close", command=detail_win.destroy).pack(anchor='e')
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.close', default="Close"), command=detail_win.destroy).pack(anchor='e')
 
 
 
 def create_support_tab(self):
     """Create peer support tab"""
     support_frame = ttk.Frame(self.notebook)
-    self.notebook.add(support_frame, text="Peer Support")
+    self.notebook.add(support_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.tabs.peer_support', default="Peer Support"))
 
     # Left panel
-    left_panel = ttk.LabelFrame(support_frame, text="Support Actions")
+    left_panel = ttk.LabelFrame(support_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.support_actions', default="Support Actions"))
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
 
-    ttk.Button(left_panel, text="Browse Support Groups",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.browse_support_groups', default="Browse Support Groups"),
               command=self.browse_support_groups).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Join Support Group",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.join_support_group', default="Join Support Group"),
               command=self.join_support_group_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="My Support Groups",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.my_support_groups', default="My Support Groups"),
               command=self.view_my_support_groups).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Create Support Group",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.create_support_group', default="Create Support Group"),
               command=self.create_support_group_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Wellness Resources",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.support.support_groups.buttons.wellness_resources', default="Wellness Resources"),
               command=self.view_wellness_resources).pack(fill='x', pady=2)
 
     # Right panel
-    right_panel = ttk.LabelFrame(support_frame, text="Support Information")
+    right_panel = ttk.LabelFrame(support_frame, text=_t('gui.pastoral.student_union_gui.support.support_groups.labels.support_information', default="Support Information"))
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
 
     self.support_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
@@ -990,7 +992,7 @@ def browse_support_groups(self):
         dialog = SupportGroupsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def join_support_group_gui(self):
@@ -999,7 +1001,7 @@ def join_support_group_gui(self):
         dialog = SupportGroupsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def view_my_support_groups(self):
@@ -1008,7 +1010,7 @@ def view_my_support_groups(self):
         dialog = MySupportGroupsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def create_support_group_gui(self):
@@ -1017,6 +1019,6 @@ def create_support_group_gui(self):
         dialog = CreateSupportGroupDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.support.support_groups.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

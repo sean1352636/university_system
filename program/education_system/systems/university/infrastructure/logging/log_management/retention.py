@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH as _DB_PATH
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import LOG_DIR
+from education_system.paths import UNIVERSITY_LOG_DIR
 
 from education_system.systems.university.infrastructure.logging.log_management.config import LogConfig
 from education_system.systems.university.infrastructure.logging.log_management.database import LogDatabase
@@ -36,7 +36,7 @@ class LogRetention:
             return
 
         # Create archive
-        archive_path = LOG_DIR / "archives"
+        archive_path = UNIVERSITY_LOG_DIR / "archives"
         archive_path.mkdir(parents=True, exist_ok=True)
         archive_path = str(archive_path)
 
@@ -75,8 +75,8 @@ class LogRetention:
         cutoff_timestamp = cutoff_date.timestamp()
 
         import os
-        for filename in os.listdir(LOG_DIR):
-            filepath = LOG_DIR / filename
+        for filename in os.listdir(UNIVERSITY_LOG_DIR):
+            filepath = UNIVERSITY_LOG_DIR / filename
             if filepath.is_file():
                 # Check if it's an old log file
                 if any(filename.startswith(prefix) for prefix in ['activity.', 'activity_log_', 'enhanced_log_']):

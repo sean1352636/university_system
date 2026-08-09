@@ -11,7 +11,7 @@ class StudyRoomBookingGUI:
 
     def __init__(self, parent=None):
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title("Study Room Booking")
+        self.window.title(_t('gui.operations.campus.study_rooms.study_room.windows.study_room_booking', default="Study Room Booking"))
         self.window.geometry("1000x650")
 
         try:
@@ -100,28 +100,28 @@ class StudyRoomBookingGUI:
 
     def _build_available_rooms_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Available Rooms")
+        self.notebook.add(tab, text=_t('gui.operations.campus.study_rooms.study_room.tabs.available_rooms', default="Available Rooms"))
 
         # Filters
-        filt_frame = ttk.LabelFrame(tab, text="Filter", padding=5)
+        filt_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.study_rooms.study_room.labels.filter', default="Filter"), padding=5)
         filt_frame.pack(fill=tk.X, padx=5, pady=5)
 
-        ttk.Label(filt_frame, text="Date:").pack(side=tk.LEFT, padx=2)
+        ttk.Label(filt_frame, text=_t('gui.operations.campus.study_rooms.study_room.labels.date', default="Date:")).pack(side=tk.LEFT, padx=2)
         self.filter_date = ttk.Entry(filt_frame, width=12)
         self.filter_date.pack(side=tk.LEFT, padx=2)
         self.filter_date.insert(0, date.today().isoformat())
 
-        ttk.Label(filt_frame, text="Building:").pack(side=tk.LEFT, padx=(10, 2))
+        ttk.Label(filt_frame, text=_t('gui.operations.campus.study_rooms.study_room.labels.building', default="Building:")).pack(side=tk.LEFT, padx=(10, 2))
         self.filter_building = ttk.Combobox(filt_frame, values=["All"], state="readonly", width=15)
         self.filter_building.set("All")
         self.filter_building.pack(side=tk.LEFT, padx=2)
 
-        ttk.Label(filt_frame, text="Type:").pack(side=tk.LEFT, padx=(10, 2))
+        ttk.Label(filt_frame, text=_t('gui.operations.campus.study_rooms.study_room.labels.type', default="Type:")).pack(side=tk.LEFT, padx=(10, 2))
         self.filter_type = ttk.Combobox(filt_frame, values=["All", "study", "group_study", "lab_study"], state="readonly", width=12)
         self.filter_type.set("All")
         self.filter_type.pack(side=tk.LEFT, padx=2)
 
-        ttk.Button(filt_frame, text="Search", command=self._load_rooms).pack(side=tk.LEFT, padx=10)
+        ttk.Button(filt_frame, text=_t('gui.operations.campus.study_rooms.study_room.buttons.search', default="Search"), command=self._load_rooms).pack(side=tk.LEFT, padx=10)
 
         # Room list
         cols = ("room_id", "room_number", "building", "capacity", "type", "whiteboard", "projector", "status")
@@ -131,65 +131,65 @@ class StudyRoomBookingGUI:
             self.room_tree.column(c, width=w, minwidth=40)
         self.room_tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        ttk.Button(tab, text="Book Selected Room", command=self._quick_book).pack(pady=5)
+        ttk.Button(tab, text=_t('gui.operations.campus.study_rooms.study_room.buttons.book_selected_room', default="Book Selected Room"), command=self._quick_book).pack(pady=5)
 
     def _build_book_room_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Book a Room")
+        self.notebook.add(tab, text=_t('gui.operations.campus.study_rooms.study_room.tabs.book_a_room', default="Book a Room"))
 
-        form = ttk.LabelFrame(tab, text="Booking Details", padding=15)
+        form = ttk.LabelFrame(tab, text=_t('gui.operations.campus.study_rooms.study_room.labels.booking_details', default="Booking Details"), padding=15)
         form.pack(fill=tk.X, padx=10, pady=10)
 
         row = 0
-        ttk.Label(form, text="Room:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.study_rooms.study_room.labels.room', default="Room:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.book_room_combo = ttk.Combobox(form, state="readonly", width=30)
         self.book_room_combo.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Date (YYYY-MM-DD):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.study_rooms.study_room.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.book_date = ttk.Entry(form, width=15)
         self.book_date.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
         self.book_date.insert(0, date.today().isoformat())
 
         row += 1
-        ttk.Label(form, text="Start Time (HH:MM):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.study_rooms.study_room.labels.start_time_hh_mm', default="Start Time (HH:MM):")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.book_start = ttk.Combobox(form, values=[f"{h:02d}:00" for h in range(8, 22)], width=10)
         self.book_start.set("09:00")
         self.book_start.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="End Time (HH:MM):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.study_rooms.study_room.labels.end_time_hh_mm', default="End Time (HH:MM):")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.book_end = ttk.Combobox(form, values=[f"{h:02d}:00" for h in range(9, 23)], width=10)
         self.book_end.set("11:00")
         self.book_end.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Group Size:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.study_rooms.study_room.labels.group_size', default="Group Size:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.book_group = ttk.Spinbox(form, from_=1, to=20, width=5)
         self.book_group.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Purpose:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.study_rooms.study_room.labels.purpose', default="Purpose:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.book_purpose = ttk.Combobox(form, values=["study", "group_project", "exam_prep", "tutoring", "meeting"], state="readonly", width=15)
         self.book_purpose.set("study")
         self.book_purpose.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Notes:").grid(row=row, column=0, sticky=tk.NW, pady=3)
+        ttk.Label(form, text=_t('gui.operations.campus.study_rooms.study_room.labels.notes', default="Notes:")).grid(row=row, column=0, sticky=tk.NW, pady=3)
         self.book_notes = tk.Text(form, width=30, height=3)
         self.book_notes.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Button(form, text="Book Room", command=self._book_room).grid(row=row, column=1, sticky=tk.W, pady=10, padx=5)
+        ttk.Button(form, text=_t('gui.operations.campus.study_rooms.study_room.buttons.book_room', default="Book Room"), command=self._book_room).grid(row=row, column=1, sticky=tk.W, pady=10, padx=5)
 
     def _build_my_bookings_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Bookings")
+        self.notebook.add(tab, text=_t('gui.operations.campus.study_rooms.study_room.tabs.my_bookings', default="My Bookings"))
 
         toolbar = ttk.Frame(tab)
         toolbar.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(toolbar, text="Refresh", command=self._load_my_bookings).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="Cancel Selected", command=self._cancel_booking).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text=_t('gui.operations.campus.study_rooms.study_room.buttons.refresh', default="Refresh"), command=self._load_my_bookings).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text=_t('gui.operations.campus.study_rooms.study_room.buttons.cancel_selected', default="Cancel Selected"), command=self._cancel_booking).pack(side=tk.LEFT, padx=2)
 
         cols = ("booking_id", "room", "date", "start", "end", "purpose", "group_size", "status")
         self.booking_tree = ttk.Treeview(tab, columns=cols, show="headings", height=16)
@@ -271,7 +271,7 @@ class StudyRoomBookingGUI:
     def _quick_book(self):
         sel = self.room_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a room first.")
+            messagebox.showwarning(_t('gui.operations.campus.study_rooms.study_room.dialogs.warning', default="Warning"), _t('gui.operations.campus.study_rooms.study_room.dialogs.select_a_room_first', default="Select a room first."))
             return
         vals = self.room_tree.item(sel[0])['values']
         room_id = vals[0]
@@ -289,7 +289,7 @@ class StudyRoomBookingGUI:
     def _book_room(self):
         room_val = self.book_room_combo.get()
         if not room_val:
-            messagebox.showwarning("Warning", "Select a room.")
+            messagebox.showwarning(_t('gui.operations.campus.study_rooms.study_room.dialogs.warning', default="Warning"), _t('gui.operations.campus.study_rooms.study_room.dialogs.select_a_room', default="Select a room."))
             return
         room_id = int(room_val.split(" - ")[0])
         bdate = self.book_date.get().strip()
@@ -299,10 +299,10 @@ class StudyRoomBookingGUI:
         try:
             datetime.strptime(bdate, "%Y-%m-%d")
         except ValueError:
-            messagebox.showerror("Error", "Invalid date format.")
+            messagebox.showerror(_t('gui.operations.campus.study_rooms.study_room.dialogs.error', default="Error"), _t('gui.operations.campus.study_rooms.study_room.dialogs.invalid_date_format', default="Invalid date format."))
             return
         if start >= end:
-            messagebox.showerror("Error", "End time must be after start time.")
+            messagebox.showerror(_t('gui.operations.campus.study_rooms.study_room.dialogs.error', default="Error"), _t('gui.operations.campus.study_rooms.study_room.dialogs.end_time_must_be_after_start_time', default="End time must be after start time."))
             return
 
         try:
@@ -316,7 +316,7 @@ class StudyRoomBookingGUI:
                     AND start_time < ? AND end_time > ?
                 """, (room_id, bdate, end, start)).fetchone()[0]
                 if conflict > 0:
-                    messagebox.showerror("Error", "Room is already booked for that time slot.")
+                    messagebox.showerror(_t('gui.operations.campus.study_rooms.study_room.dialogs.error', default="Error"), _t('gui.operations.campus.study_rooms.study_room.dialogs.room_is_already_booked_for_that_time_slot', default="Room is already booked for that time slot."))
                     return
 
                 conn.execute("""INSERT INTO study_room_bookings
@@ -326,22 +326,22 @@ class StudyRoomBookingGUI:
                      self.book_purpose.get(), int(self.book_group.get()),
                      self.book_notes.get("1.0", tk.END).strip()))
                 conn.commit()
-            messagebox.showinfo("Success", "Room booked successfully!")
+            messagebox.showinfo(_t('gui.operations.campus.study_rooms.study_room.dialogs.success', default="Success"), _t('gui.operations.campus.study_rooms.study_room.dialogs.room_booked_successfully', default="Room booked successfully!"))
             self._load_my_bookings()
             self.notebook.select(2)  # Switch to my bookings
         except Exception as e:
-            messagebox.showerror("Error", f"Booking failed: {e}")
+            messagebox.showerror(_t('gui.operations.campus.study_rooms.study_room.dialogs.error', default="Error"), f"Booking failed: {e}")
 
     def _cancel_booking(self):
         sel = self.booking_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a booking to cancel.")
+            messagebox.showwarning(_t('gui.operations.campus.study_rooms.study_room.dialogs.warning', default="Warning"), _t('gui.operations.campus.study_rooms.study_room.dialogs.select_a_booking_to_cancel', default="Select a booking to cancel."))
             return
         vals = self.booking_tree.item(sel[0])['values']
         if vals[7] == 'cancelled':
-            messagebox.showinfo("Info", "Already cancelled.")
+            messagebox.showinfo(_t('gui.operations.campus.study_rooms.study_room.dialogs.info', default="Info"), _t('gui.operations.campus.study_rooms.study_room.dialogs.already_cancelled', default="Already cancelled."))
             return
-        if messagebox.askyesno("Confirm", "Cancel this booking?"):
+        if messagebox.askyesno(_t('gui.operations.campus.study_rooms.study_room.dialogs.confirm', default="Confirm"), _t('gui.operations.campus.study_rooms.study_room.dialogs.cancel_this_booking', default="Cancel this booking?")):
             try:
                 from education_system.systems.university.infrastructure.database.db import get_connection
                 with get_connection() as conn:
@@ -349,7 +349,7 @@ class StudyRoomBookingGUI:
                     conn.commit()
                 self._load_my_bookings()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed: {e}")
+                messagebox.showerror(_t('gui.operations.campus.study_rooms.study_room.dialogs.error', default="Error"), f"Failed: {e}")
 
 
 def launch_study_room_gui(parent=None):

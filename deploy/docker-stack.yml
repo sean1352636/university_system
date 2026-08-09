@@ -1,0 +1,48 @@
+version: "3.9"
+services:
+  api:
+    image: education-system:${IMAGE_TAG:-latest}
+    command: >-
+      /bin/sh -c 'API_SECRET_KEY="$$(cat /run/secrets/api_secret_key)"
+      JWT_SECRET_KEY="$$(cat /run/secrets/jwt_secret_key)"
+      CREDENTIAL_SIGNING_KEY="$$(cat /run/secrets/credential_signing_key)"
+      gunicorn --bind=0.0.0.0:5000 --workers=2 --threads=4
+      "education_system.platform.delivery.api.unified_server:create_unified_app()"'
+    environment:
+      APP_ENV: production
+      PYTHONPATH: /app/program
+      MULTI_TENANT_REQUIRED: "true"
+    secrets: [api_secret_key, jwt_secret_key, credential_signing_key]
+    volumes: [education_data:/app/program/var]
+    networks: [frontend, backend]
+    deploy:
+      replicas: 1
+      restart_policy: {condition: on-failure}
+      resources: {limits: {cpus: "1.0", memory: 1G}}
+  verifier:
+    image: education-system:${IMAGE_TAG:-latest}
+    command: >-
+      /bin/sh -c 'CREDENTIAL_SIGNING_KEY="$$(cat /run/secrets/credential_signing_key)"
+      gunicorn --bind=0.0.0.0:5010 --workers=2
+      "education_system.systems.university.services.credential_verifier:create_app()"'
+    environment: {PYTHONPATH: /app/program}
+    secrets: [credential_signing_key]
+    volumes: [education_data:/app/program/var:ro]
+    networks: [frontend, backend]
+    deploy:
+      replicas: 1
+      restart_policy: {condition: on-failure}
+  proxy:
+    image: nginx:alpine
+    ports: ["80:80", "443:443"]
+    networks: [frontend]
+    deploy: {replicas: 2}
+networks:
+  frontend: {}
+  backend: {internal: true}
+volumes:
+  education_data: {}
+secrets:
+  api_secret_key: {external: true}
+  jwt_secret_key: {external: true}
+  credential_signing_key: {external: true}

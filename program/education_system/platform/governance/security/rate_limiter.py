@@ -5,7 +5,11 @@ import time
 import threading
 import os
 
-_DEFAULT_DB = os.path.join(os.path.dirname(__file__), "..", "data", "db_files", "rate_limits.db")
+# Runtime state lives under var/, not inside the package (ADR 0018). This
+# used an os.path form, which is why it survived the first sweep.
+from education_system.paths import PLATFORM_RATE_LIMITS_DB_FILE
+
+_DEFAULT_DB = str(PLATFORM_RATE_LIMITS_DB_FILE)
 
 
 class PersistentRateLimiter:

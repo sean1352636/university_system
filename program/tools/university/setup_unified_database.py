@@ -7,13 +7,13 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 import os
 import shutil
 from datetime import datetime
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH, DB_DIR
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH, UNIVERSITY_DB_DIR
 from education_system.systems.university.infrastructure.i18n import get_text
 
 def backup_existing_database():
     """Backup the existing student_records.db"""
-    original_path = DEFAULT_DB_PATH
-    backup_path = DB_DIR / f"student_records_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+    original_path = UNIVERSITY_DEFAULT_DB_PATH
+    backup_path = UNIVERSITY_DB_DIR / f"student_records_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
 
     if original_path.exists():
         shutil.copy2(str(original_path), str(backup_path))
@@ -27,7 +27,7 @@ def create_unified_database():
     Uses CREATE TABLE IF NOT EXISTS so it can safely be called on an
     existing database to add any missing tables without destroying data.
     """
-    db_path = str(DEFAULT_DB_PATH)
+    db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
 
     print(get_text("setup.unified_database.creating", path=db_path))
 
@@ -724,7 +724,7 @@ def add_initial_data(cursor):
 
 def seed_default_staff(db_path=None):
     """Seed default staff profiles into the staff_profiles table (university)."""
-    path = str(db_path or DEFAULT_DB_PATH)
+    path = str(db_path or UNIVERSITY_DEFAULT_DB_PATH)
     conn = sqlite3.connect(path)
     try:
         cursor = conn.cursor()
@@ -783,7 +783,7 @@ def migrate_existing_data():
     print("🔄 Migrating existing data...")
 
     # This is a basic migration - in a real scenario you might want more sophisticated logic
-    existing_db = DEFAULT_DB_PATH
+    existing_db = UNIVERSITY_DEFAULT_DB_PATH
     if os.path.exists(existing_db):
         print(f"Found existing database: {existing_db}")
         # For now, we'll just note this - the new database has sample data
@@ -792,14 +792,14 @@ def migrate_existing_data():
 
 def update_database_connections():
     """Update database connection code to use the unified database"""
-    print(f"🔧 Database connections should be updated to use: {DEFAULT_DB_PATH}")
+    print(f"🔧 Database connections should be updated to use: {UNIVERSITY_DEFAULT_DB_PATH}")
     print("   Update your get_connection() function to point to the new location.")
 
 def test_unified_database():
     """Test the unified database"""
     print("🧪 Testing unified database...")
 
-    db_path = str(DEFAULT_DB_PATH)
+    db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
 
     try:
         conn = sqlite3.connect(db_path)

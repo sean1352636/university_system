@@ -22,11 +22,12 @@ try:
         get_student_finance_account_balance,
         ensure_student_finance_account_exists,
         top_up_student_finance_account,
+        transfer_student_finance_funds,
         get_student_financial_summary,
         get_student_info,
         _ensure_finance_tables_exist
     )
-    from education_system.systems.university.infrastructure import paths
+    from education_system import paths
     FINANCE_INTEGRATION_AVAILABLE = True
 except ImportError:
     FINANCE_INTEGRATION_AVAILABLE = False
@@ -314,7 +315,7 @@ class BankApp:
             return []
 
         try:
-            conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             # Get transactions from transactions table
@@ -395,6 +396,8 @@ class BankApp:
 
         ttk.Button(actions_frame, text=_t("bank_app.buttons.top_up"), style="Action.TButton",
                    command=self.show_topup_dialog, width=18).pack(side="left", padx=10)
+        ttk.Button(actions_frame, text=_t("bank_app.buttons.send_money", default="Send Money"), style="Action.TButton",
+                   command=self.show_send_money_dialog, width=18).pack(side="left", padx=10)
         ttk.Button(actions_frame, text=_t("bank_app.buttons.transaction_history"), style="Action.TButton",
                    command=self.show_student_transaction_history, width=18).pack(side="left", padx=10)
         ttk.Button(actions_frame, text=_t("bank_app.buttons.financial_summary"), style="Action.TButton",
@@ -454,7 +457,7 @@ class BankApp:
                 desc = txn.get('description', '')
 
                 # Format amount
-                if txn_type in ['top_up', 'topup', 'deposit', 'credit', 'refund']:
+                if txn_type in ['top_up', 'topup', 'deposit', 'credit', 'refund', 'transfer_in']:
                     amount_str = f"+£{amount:,.2f}"
                 else:
                     amount_str = f"-£{amount:,.2f}"
@@ -513,7 +516,7 @@ class BankApp:
         method_frame.pack(pady=10)
 
         ttk.Label(method_frame, text=_t("bank_app.topup.payment_method")).pack(side="left")
-        method_var = tk.StringVar(value="card")
+        method_var = tk.StringVar(value=_t('gui.finance.bank_app.values.card', default="card"))
         ttk.Radiobutton(method_frame, text=_t("bank_app.topup.method_card"), variable=method_var, value="card").pack(side="left", padx=10)
         ttk.Radiobutton(method_frame, text=_t("bank_app.topup.method_bank_transfer"), variable=method_var, value="bank_transfer").pack(side="left", padx=10)
         ttk.Radiobutton(method_frame, text=_t("bank_app.topup.method_cash"), variable=method_var, value="cash").pack(side="left", padx=10)
@@ -551,6 +554,108 @@ class BankApp:
 
         ttk.Button(dialog, text=_t("bank_app.buttons.complete_topup"), style="Action.TButton",
                    command=process_topup).pack(pady=20)
+
+    def show_send_money_dialog(self):
+        """Show dialog for sending money to another student's finance account."""
+        dialog = tk.Toplevel(self.root)
+        dialog.title(_t("bank_app.send_money.window_title", default="Send Money"))
+        dialog.geometry("480x420")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        ttk.Label(dialog, text=_t("bank_app.send_money.header", default="Send Money"),
+                  style="Header.TLabel").pack(pady=15)
+
+        current_balance = self._get_student_balance()
+        ttk.Label(dialog,
+                  text=_t("bank_app.send_money.available",
+                          default="Available: £{balance}").format(balance=f"{current_balance:,.2f}"),
+                  style="Money.TLabel").pack()
+
+        form = ttk.Frame(dialog)
+        form.pack(pady=15, padx=30, fill="x")
+        form.columnconfigure(1, weight=1)
+
+        ttk.Label(form, text=_t("bank_app.send_money.recipient_label",
+                                default="Recipient (Student ID or username):")).grid(
+            row=0, column=0, sticky="w", pady=5)
+        recipient_entry = ttk.Entry(form, width=22)
+        recipient_entry.grid(row=0, column=1, sticky="ew", padx=5, pady=5)
+        recipient_entry.focus()
+
+        ttk.Label(form, text=_t("bank_app.send_money.amount_label", default="Amount: £")).grid(
+            row=1, column=0, sticky="w", pady=5)
+        amount_entry = ttk.Entry(form, width=22)
+        amount_entry.grid(row=1, column=1, sticky="ew", padx=5, pady=5)
+
+        ttk.Label(form, text=_t("bank_app.send_money.reference_label", default="Reference:")).grid(
+            row=2, column=0, sticky="w", pady=5)
+        reference_entry = ttk.Entry(form, width=22)
+        reference_entry.grid(row=2, column=1, sticky="ew", padx=5, pady=5)
+
+        ttk.Label(form, text=_t("bank_app.send_money.reference_hint",
+                                default="e.g. Meal out, money owed"),
+                  font=("Helvetica", 9, "italic"), foreground="gray").grid(
+            row=3, column=1, sticky="w", padx=5)
+
+        def process_transfer():
+            recipient = recipient_entry.get().strip()
+            reference = reference_entry.get().strip()
+
+            if not recipient:
+                messagebox.showerror(_t("bank_app.error.title"),
+                    _t("bank_app.send_money.missing_recipient", default="Please enter a recipient"))
+                return
+            if not reference:
+                messagebox.showerror(_t("bank_app.error.title"),
+                    _t("bank_app.send_money.missing_reference",
+                       default="Please enter a reference (e.g. Meal out, money owed)"))
+                return
+
+            try:
+                amount = float(amount_entry.get())
+            except ValueError:
+                messagebox.showerror(_t("bank_app.error.title"), _t("bank_app.error.valid_amount"))
+                return
+            if amount <= 0:
+                messagebox.showerror(_t("bank_app.error.title"), _t("bank_app.error.positive_amount"))
+                return
+            if recipient == self.student_id:
+                messagebox.showerror(_t("bank_app.error.title"), _t("bank_app.transfer.self_transfer_error"))
+                return
+
+            if not messagebox.askyesno(
+                    _t("bank_app.send_money.confirm_title", default="Confirm Transfer"),
+                    _t("bank_app.send_money.confirm_message",
+                       default="Send £{amount} to {recipient}?\nReference: {reference}").format(
+                        amount=f"{amount:,.2f}", recipient=recipient, reference=reference)):
+                return
+
+            result = transfer_student_finance_funds(
+                from_student_id=self.student_id,
+                to_student_id=recipient,
+                amount=amount,
+                reference=reference,
+                processed_by=self.student_id
+            )
+
+            if result.get('success'):
+                dialog.destroy()
+                messagebox.showinfo(
+                    _t("bank_app.success.title"),
+                    _t("bank_app.send_money.success_message",
+                       default="£{amount} sent to {recipient}.\n\nReference Number: {reference_number}\nNew balance: £{balance}").format(
+                        amount=f"{amount:,.2f}",
+                        recipient=result.get('recipient_name') or recipient,
+                        reference_number=result.get('reference_number') or '',
+                        balance=f"{result.get('new_balance') or 0:,.2f}"))
+                self.show_student_dashboard()
+            else:
+                messagebox.showerror(_t("bank_app.error.title"),
+                                     result.get('message') or _t("bank_app.transfer.failed"))
+
+        ttk.Button(dialog, text=_t("bank_app.send_money.send_button", default="Send Money"),
+                   style="Action.TButton", command=process_transfer).pack(pady=15)
 
     def show_student_transaction_history(self):
         """Show full student transaction history."""
@@ -602,7 +707,7 @@ class BankApp:
                 balance = txn.get('balance_after', 0)
                 desc = txn.get('description', '')
 
-                if txn_type in ['top_up', 'topup', 'deposit', 'credit', 'refund']:
+                if txn_type in ['top_up', 'topup', 'deposit', 'credit', 'refund', 'transfer_in']:
                     amount_str = f"+£{amount:,.2f}"
                 else:
                     amount_str = f"-£{amount:,.2f}"
@@ -875,12 +980,12 @@ class BankApp:
     def show_withdraw_dialog(self):
         """Show withdrawal dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Make a Withdrawal")
+        dialog.title(_t('gui.finance.bank_app.windows.make_a_withdrawal', default="Make a Withdrawal"))
         dialog.geometry("400x250")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Withdraw Funds", style="Header.TLabel").pack(pady=20)
+        ttk.Label(dialog, text=_t('gui.finance.bank_app.labels.withdraw_funds', default="Withdraw Funds"), style="Header.TLabel").pack(pady=20)
         ttk.Label(dialog, text=f"Available: £{self.current_account.balance:,.2f}").pack()
 
         frame = ttk.Frame(dialog)
@@ -897,38 +1002,38 @@ class BankApp:
                 if amount <= 0:
                     raise ValueError("Amount must be positive")
                 if amount > self.current_account.balance:
-                    messagebox.showerror("Error", "Insufficient funds")
+                    messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.insufficient_funds', default="Insufficient funds"))
                     return
                 self.current_account.withdraw(amount)
                 self.bank.save_data()
                 dialog.destroy()
-                messagebox.showinfo("Success", f"Successfully withdrew £{amount:,.2f}")
+                messagebox.showinfo(_t('gui.finance.bank_app.dialogs.success', default="Success"), f"Successfully withdrew £{amount:,.2f}")
                 self.show_dashboard()
             except ValueError:
-                messagebox.showerror("Error", "Please enter a valid positive amount")
+                messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.please_enter_a_valid_positive_amount', default="Please enter a valid positive amount"))
 
-        ttk.Button(dialog, text="Withdraw", style="Action.TButton",
+        ttk.Button(dialog, text=_t('gui.finance.bank_app.buttons.withdraw', default="Withdraw"), style="Action.TButton",
                    command=process_withdrawal).pack(pady=20)
 
     def show_transfer_dialog(self):
         """Show transfer dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Transfer Funds")
+        dialog.title(_t('gui.finance.bank_app.windows.transfer_funds', default="Transfer Funds"))
         dialog.geometry("450x300")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Transfer Funds", style="Header.TLabel").pack(pady=20)
+        ttk.Label(dialog, text=_t('gui.finance.bank_app.labels.transfer_funds', default="Transfer Funds"), style="Header.TLabel").pack(pady=20)
         ttk.Label(dialog, text=f"Available: £{self.current_account.balance:,.2f}").pack()
 
         form = ttk.Frame(dialog, padding=20)
         form.pack()
 
-        ttk.Label(form, text="Recipient Account:").grid(row=0, column=0, sticky="w", pady=5)
+        ttk.Label(form, text=_t('gui.finance.bank_app.labels.recipient_account', default="Recipient Account:")).grid(row=0, column=0, sticky="w", pady=5)
         recipient_entry = ttk.Entry(form, width=25, font=("Helvetica", 12))
         recipient_entry.grid(row=0, column=1, pady=5)
 
-        ttk.Label(form, text="Amount: £").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Label(form, text=_t('gui.finance.bank_app.labels.amount', default="Amount: £")).grid(row=1, column=0, sticky="w", pady=5)
         amount_entry = ttk.Entry(form, width=25, font=("Helvetica", 12))
         amount_entry.grid(row=1, column=1, pady=5)
 
@@ -940,36 +1045,36 @@ class BankApp:
                 if amount <= 0:
                     raise ValueError("Amount must be positive")
                 if amount > self.current_account.balance:
-                    messagebox.showerror("Error", "Insufficient funds")
+                    messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.insufficient_funds', default="Insufficient funds"))
                     return
                 if recipient == self.current_account.account_number:
-                    messagebox.showerror("Error", "Cannot transfer to yourself")
+                    messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.cannot_transfer_to_yourself', default="Cannot transfer to yourself"))
                     return
                 if recipient not in self.bank.accounts:
-                    messagebox.showerror("Error", "Recipient account not found")
+                    messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.recipient_account_not_found', default="Recipient account not found"))
                     return
 
                 success = self.bank.transfer(self.current_account, recipient, amount)
                 if success:
                     dialog.destroy()
-                    messagebox.showinfo("Success", f"Successfully transferred £{amount:,.2f} to account {recipient}")
+                    messagebox.showinfo(_t('gui.finance.bank_app.dialogs.success', default="Success"), f"Successfully transferred £{amount:,.2f} to account {recipient}")
                     self.show_dashboard()
                 else:
-                    messagebox.showerror("Error", "Transfer failed")
+                    messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.transfer_failed', default="Transfer failed"))
             except ValueError:
-                messagebox.showerror("Error", "Please enter a valid amount")
+                messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount"))
 
-        ttk.Button(dialog, text="Transfer", style="Action.TButton",
+        ttk.Button(dialog, text=_t('gui.finance.bank_app.buttons.transfer', default="Transfer"), style="Action.TButton",
                    command=process_transfer).pack(pady=20)
 
     def show_transaction_history(self):
         """Show full transaction history."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Transaction History")
+        dialog.title(_t('gui.finance.bank_app.windows.transaction_history', default="Transaction History"))
         dialog.geometry("700x500")
         dialog.transient(self.root)
 
-        ttk.Label(dialog, text="Transaction History", style="Header.TLabel").pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.finance.bank_app.labels.transaction_history', default="Transaction History"), style="Header.TLabel").pack(pady=10)
 
         frame = ttk.Frame(dialog, padding=10)
         frame.pack(fill="both", expand=True)
@@ -1001,7 +1106,7 @@ class BankApp:
                 txn.description
             ))
 
-        ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.finance.bank_app.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
     def handle_login(self):
         """Handle login attempt."""
@@ -1009,7 +1114,7 @@ class BankApp:
         pin = self.login_pin_entry.get()
 
         if not account_num or not pin:
-            messagebox.showerror("Error", "Please enter account number and PIN")
+            messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.please_enter_account_number_and_pin', default="Please enter account number and PIN"))
             return
 
         account = self.bank.authenticate(account_num, pin)
@@ -1017,7 +1122,7 @@ class BankApp:
             self.current_account = account
             self.show_dashboard()
         else:
-            messagebox.showerror("Login Failed", "Invalid account number or PIN")
+            messagebox.showerror(_t('gui.finance.bank_app.dialogs.login_failed', default="Login Failed"), _t('gui.finance.bank_app.dialogs.invalid_account_number_or_pin', default="Invalid account number or PIN"))
 
     def handle_create_account(self):
         """Handle account creation."""
@@ -1031,20 +1136,20 @@ class BankApp:
             initial_deposit = 0.0
 
         if not name:
-            messagebox.showerror("Error", "Please enter your full name")
+            messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.please_enter_your_full_name', default="Please enter your full name"))
             return
         if len(pin) < 4 or len(pin) > 6 or not pin.isdigit():
-            messagebox.showerror("Error", "PIN must be 4-6 digits")
+            messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.pin_must_be_4_6_digits', default="PIN must be 4-6 digits"))
             return
         if pin != confirm_pin:
-            messagebox.showerror("Error", "PINs do not match")
+            messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.pins_do_not_match', default="PINs do not match"))
             return
         if initial_deposit < 0:
-            messagebox.showerror("Error", "Initial deposit cannot be negative")
+            messagebox.showerror(_t('gui.finance.bank_app.dialogs.error', default="Error"), _t('gui.finance.bank_app.dialogs.initial_deposit_cannot_be_negative', default="Initial deposit cannot be negative"))
             return
 
         account = self.bank.create_account(name, pin, initial_deposit)
-        messagebox.showinfo("Account Created",
+        messagebox.showinfo(_t('gui.finance.bank_app.dialogs.account_created', default="Account Created"),
             f"Your account has been created!\n\n"
             f"Account Number: {account.account_number}\n"
             f"Please remember your account number and PIN.")

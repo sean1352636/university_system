@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -376,7 +378,7 @@ class CourseCreateDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create New Course")
+        self.dialog.title(_t('gui.academics.course_management_gui.courses.course_crud.windows.create_new_course', default="Create New Course"))
         self.dialog.geometry("600x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -390,73 +392,73 @@ class CourseCreateDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Basic Information
-        basic_frame = ttk.LabelFrame(main_frame, text="Basic Information", padding=10)
+        basic_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.basic_information', default="Basic Information"), padding=10)
         basic_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(basic_frame, text="Course Code:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_code', default="Course Code:")).grid(row=0, column=0, sticky=tk.W)
         self.code_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=self.code_var, width=15).grid(row=0, column=1, sticky=tk.W, padx=5)
-        ttk.Label(basic_frame, text="(e.g. CS, DS, ENG)", font=('Arial', 8)).grid(row=0, column=2, sticky=tk.W, padx=5)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.e_g_cs_ds_eng', default="(e.g. CS, DS, ENG)"), font=('Arial', 8)).grid(row=0, column=2, sticky=tk.W, padx=5)
 
-        ttk.Label(basic_frame, text="Course Name:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_name', default="Course Name:")).grid(row=1, column=0, sticky=tk.W)
         self.name_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=self.name_var, width=40).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(basic_frame, text="Description:").grid(row=2, column=0, sticky=tk.NW)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.description', default="Description:")).grid(row=2, column=0, sticky=tk.NW)
         self.desc_text = tk.Text(basic_frame, width=40, height=3)
         self.desc_text.grid(row=2, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(basic_frame, text="Department:").grid(row=3, column=0, sticky=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.department', default="Department:")).grid(row=3, column=0, sticky=tk.W)
         self.dept_var = tk.StringVar()
         dept_combo = ttk.Combobox(basic_frame, textvariable=self.dept_var, width=25,
                                   values=["Computer Science", "Data Science", "Engineering",
                                           "Mathematics", "Business", "Arts", "Science", "Other"])
         dept_combo.grid(row=3, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(basic_frame, text="Level:").grid(row=4, column=0, sticky=tk.W)
-        self.level_var = tk.StringVar(value="Undergraduate")
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.level', default="Level:")).grid(row=4, column=0, sticky=tk.W)
+        self.level_var = tk.StringVar(value=_t('gui.academics.course_management_gui.courses.course_crud.values.undergraduate', default="Undergraduate"))
         level_combo = ttk.Combobox(basic_frame, textvariable=self.level_var, state='readonly',
                                   values=["Undergraduate", "Postgraduate", "PhD", "Certificate", "Diploma"])
         level_combo.grid(row=4, column=1, sticky=tk.W, padx=5)
 
         # Academic Details
-        academic_frame = ttk.LabelFrame(main_frame, text="Academic Details", padding=10)
+        academic_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.academic_details', default="Academic Details"), padding=10)
         academic_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(academic_frame, text="Credit Hours:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.credit_hours', default="Credit Hours:")).grid(row=0, column=0, sticky=tk.W)
         self.credits_var = tk.StringVar(value="3.0")
         ttk.Entry(academic_frame, textvariable=self.credits_var, width=10).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(academic_frame, text="Max Enrollment:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.max_enrollment', default="Max Enrollment:")).grid(row=1, column=0, sticky=tk.W)
         self.max_enroll_var = tk.StringVar(value="30")
         ttk.Entry(academic_frame, textvariable=self.max_enroll_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(academic_frame, text="Course Type:").grid(row=2, column=0, sticky=tk.W)
-        self.type_var = tk.StringVar(value="Degree Program")
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_type', default="Course Type:")).grid(row=2, column=0, sticky=tk.W)
+        self.type_var = tk.StringVar(value=_t('gui.academics.course_management_gui.courses.course_crud.values.degree_program', default="Degree Program"))
         type_combo = ttk.Combobox(academic_frame, textvariable=self.type_var, state='readonly',
                                  values=["Degree Program", "Certificate", "Diploma", "Short Course"])
         type_combo.grid(row=2, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(academic_frame, text="Course Fee:").grid(row=3, column=0, sticky=tk.W)
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_fee', default="Course Fee:")).grid(row=3, column=0, sticky=tk.W)
         self.fee_var = tk.StringVar(value="0.0")
         ttk.Entry(academic_frame, textvariable=self.fee_var, width=10).grid(row=3, column=1, sticky=tk.W, padx=5)
 
         # Additional Options
-        options_frame = ttk.LabelFrame(main_frame, text="Additional Options", padding=10)
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.additional_options', default="Additional Options"), padding=10)
         options_frame.pack(fill=tk.X, pady=5)
 
         self.lab_required = tk.BooleanVar()
-        ttk.Checkbutton(options_frame, text="Lab Required", variable=self.lab_required).grid(row=0, column=0, sticky=tk.W)
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.buttons.lab_required', default="Lab Required"), variable=self.lab_required).grid(row=0, column=0, sticky=tk.W)
 
         self.online_available = tk.BooleanVar()
-        ttk.Checkbutton(options_frame, text="Online Available", variable=self.online_available).grid(row=0, column=1, sticky=tk.W)
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.buttons.online_available', default="Online Available"), variable=self.online_available).grid(row=0, column=1, sticky=tk.W)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Create Course", command=self.create_course).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.buttons.create_course', default="Create Course"), command=self.create_course).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def create_course(self):
         try:
@@ -465,13 +467,13 @@ class CourseCreateDialog:
             course_name = self.name_var.get().strip()
 
             if not course_code or not course_name:
-                messagebox.showerror(_("common.validation_error"), "Course code and name are required.")
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.courses.course_crud.dialogs.course_code_and_name_are_required', default="Course code and name are required."))
                 return
 
             # Validate course code format — 2-4 uppercase letters, optionally followed by digits
             if not re.match(r'^[A-Z]{2,4}\d{0,4}$', course_code):
                 messagebox.showerror(_("common.validation_error"),
-                                     "Invalid course code format. Use 2-4 letters optionally followed by digits (e.g. CS, ENG, BUS101).")
+                                     _t('gui.academics.course_management_gui.courses.course_crud.dialogs.invalid_course_code_format_use_2_4_letters_optionally_followed_b', default="Invalid course code format. Use 2-4 letters optionally followed by digits (e.g. CS, ENG, BUS101)."))
                 return
 
             description = self.desc_text.get(1.0, tk.END).strip()
@@ -483,7 +485,7 @@ class CourseCreateDialog:
                 max_enrollment = int(self.max_enroll_var.get())
                 course_fee = float(self.fee_var.get())
             except ValueError:
-                messagebox.showerror(_("common.validation_error"), "Please enter valid numbers for credits, enrollment, and fee.")
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.courses.course_crud.dialogs.please_enter_valid_numbers_for_credits_enrollment_and_fee', default="Please enter valid numbers for credits, enrollment, and fee."))
                 return
 
             course_type = self.type_var.get()
@@ -552,7 +554,7 @@ class CourseEditDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Edit Course")
+        self.dialog.title(_t('gui.academics.course_management_gui.courses.course_crud.windows.edit_course', default="Edit Course"))
         self.dialog.geometry("600x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -573,7 +575,7 @@ class CourseEditDialog:
 
             if not row:
                 self.course_data = None
-                messagebox.showerror(_("common.error"), "Course not found.")
+                messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.courses.course_crud.dialogs.course_not_found', default="Course not found."))
                 self.dialog.destroy()
                 return
             self.course_data = dict(zip(self._course_columns, row))
@@ -593,75 +595,75 @@ class CourseEditDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Basic Information
-        basic_frame = ttk.LabelFrame(main_frame, text="Basic Information", padding=10)
+        basic_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.basic_information', default="Basic Information"), padding=10)
         basic_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(basic_frame, text="Course Code:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_code', default="Course Code:")).grid(row=0, column=0, sticky=tk.W)
         self.code_var = tk.StringVar(value=str(self._get("course_code", "code")))
         ttk.Entry(basic_frame, textvariable=self.code_var, width=15).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(basic_frame, text="Course Name:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_name', default="Course Name:")).grid(row=1, column=0, sticky=tk.W)
         self.name_var = tk.StringVar(value=str(self._get("course_name", "name")))
         ttk.Entry(basic_frame, textvariable=self.name_var, width=40).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(basic_frame, text="Description:").grid(row=2, column=0, sticky=tk.NW)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.description', default="Description:")).grid(row=2, column=0, sticky=tk.NW)
         self.desc_text = tk.Text(basic_frame, width=40, height=3)
         self.desc_text.grid(row=2, column=1, sticky=tk.W, padx=5)
         existing_desc = self._get("description")
         if existing_desc:
             self.desc_text.insert(1.0, str(existing_desc))
 
-        ttk.Label(basic_frame, text="Department:").grid(row=3, column=0, sticky=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.department', default="Department:")).grid(row=3, column=0, sticky=tk.W)
         self.dept_var = tk.StringVar(value=str(self._get("department")))
         ttk.Combobox(basic_frame, textvariable=self.dept_var, width=25,
                      values=["Computer Science", "Data Science", "Engineering",
                              "Mathematics", "Business", "Arts", "Science", "Other"]
                      ).grid(row=3, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(basic_frame, text="Level:").grid(row=4, column=0, sticky=tk.W)
+        ttk.Label(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.level', default="Level:")).grid(row=4, column=0, sticky=tk.W)
         self.level_var = tk.StringVar(value=str(self._get("level", default="Undergraduate")))
         ttk.Combobox(basic_frame, textvariable=self.level_var, state='readonly',
                      values=["Undergraduate", "Postgraduate", "PhD", "Certificate", "Diploma"]
                      ).grid(row=4, column=1, sticky=tk.W, padx=5)
 
         # Academic Details
-        academic_frame = ttk.LabelFrame(main_frame, text="Academic Details", padding=10)
+        academic_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.academic_details', default="Academic Details"), padding=10)
         academic_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(academic_frame, text="Credit Hours:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.credit_hours', default="Credit Hours:")).grid(row=0, column=0, sticky=tk.W)
         self.credits_var = tk.StringVar(value=str(self._get("credit_hours", "credits", default="3.0")))
         ttk.Entry(academic_frame, textvariable=self.credits_var, width=10).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(academic_frame, text="Max Enrollment:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.max_enrollment', default="Max Enrollment:")).grid(row=1, column=0, sticky=tk.W)
         self.max_enroll_var = tk.StringVar(value=str(self._get("max_enrollment", default="30")))
         ttk.Entry(academic_frame, textvariable=self.max_enroll_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(academic_frame, text="Course Type:").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_type', default="Course Type:")).grid(row=2, column=0, sticky=tk.W)
         self.type_var = tk.StringVar(value=str(self._get("course_type", default="Degree Program")))
         ttk.Combobox(academic_frame, textvariable=self.type_var, state='readonly',
                      values=["Degree Program", "Certificate", "Diploma", "Short Course"]
                      ).grid(row=2, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(academic_frame, text="Course Fee:").grid(row=3, column=0, sticky=tk.W)
+        ttk.Label(academic_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.course_fee', default="Course Fee:")).grid(row=3, column=0, sticky=tk.W)
         self.fee_var = tk.StringVar(value=str(self._get("course_fee", default="0.0")))
         ttk.Entry(academic_frame, textvariable=self.fee_var, width=10).grid(row=3, column=1, sticky=tk.W, padx=5)
 
         # Additional Options
-        options_frame = ttk.LabelFrame(main_frame, text="Additional Options", padding=10)
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.labels.additional_options', default="Additional Options"), padding=10)
         options_frame.pack(fill=tk.X, pady=5)
 
         self.lab_required = tk.BooleanVar(value=bool(self._get("lab_required", default=False)))
-        ttk.Checkbutton(options_frame, text="Lab Required", variable=self.lab_required).grid(row=0, column=0, sticky=tk.W)
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.buttons.lab_required', default="Lab Required"), variable=self.lab_required).grid(row=0, column=0, sticky=tk.W)
 
         self.online_available = tk.BooleanVar(value=bool(self._get("online_available", default=False)))
-        ttk.Checkbutton(options_frame, text="Online Available", variable=self.online_available).grid(row=0, column=1, sticky=tk.W)
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.buttons.online_available', default="Online Available"), variable=self.online_available).grid(row=0, column=1, sticky=tk.W)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Update Course", command=self.update_course).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.buttons.update_course', default="Update Course"), command=self.update_course).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.courses.course_crud.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def update_course(self):
         try:
@@ -670,7 +672,7 @@ class CourseEditDialog:
             description = self.desc_text.get(1.0, tk.END).strip()
 
             if not course_code or not course_name:
-                messagebox.showerror(_("common.validation_error"), "Course code and name are required.")
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.courses.course_crud.dialogs.course_code_and_name_are_required', default="Course code and name are required."))
                 return
 
             try:
@@ -679,11 +681,11 @@ class CourseEditDialog:
                 course_fee = float(self.fee_var.get())
             except ValueError:
                 messagebox.showerror(_("common.validation_error"),
-                                     "Please enter valid numbers for credits, enrollment, and fee.")
+                                     _t('gui.academics.course_management_gui.courses.course_crud.dialogs.please_enter_valid_numbers_for_credits_enrollment_and_fee', default="Please enter valid numbers for credits, enrollment, and fee."))
                 return
 
             if max_enrollment < 0:
-                messagebox.showerror(_("common.validation_error"), "Max enrollment cannot be negative.")
+                messagebox.showerror(_("common.validation_error"), _t('gui.academics.course_management_gui.courses.course_crud.dialogs.max_enrollment_cannot_be_negative', default="Max enrollment cannot be negative."))
                 return
 
             # Reject capacity below current enrollment so an admin doesn't
@@ -732,7 +734,7 @@ class CourseEditDialog:
                 }
                 set_cols = [c for c in fields if c in self._course_columns]
                 if not set_cols:
-                    messagebox.showerror(_("common.error"), "No editable columns found on courses table.")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.courses.course_crud.dialogs.no_editable_columns_found_on_courses_table', default="No editable columns found on courses table."))
                     return
                 set_sql = ", ".join(f"{c} = ?" for c in set_cols)
                 values = [fields[c] for c in set_cols] + [self.course_id]

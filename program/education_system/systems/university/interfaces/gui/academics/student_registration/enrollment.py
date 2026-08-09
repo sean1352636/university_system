@@ -5,6 +5,8 @@ Handles enrolling in modules, dropping modules, and displaying the
 student's current enrollment list.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from datetime import date
 from tkinter import ttk, messagebox
 
@@ -71,12 +73,12 @@ class EnrollmentMixin:
         if not self.student_id:
             if getattr(self, 'is_privileged', False):
                 messagebox.showinfo(
-                    "Select a student",
-                    "Choose a student from the picker at the top of the "
-                    "portal before changing module registration.")
+                    _t('gui.academics.student_registration.enrollment.dialogs.select_a_student', default="Select a student"),
+                    _t('gui.academics.student_registration.enrollment.dialogs.choose_a_student_from_the_picker_at_the_top_of_the_portal_before', default="Choose a student from the picker at the top of the "
+                    "portal before changing module registration."))
             else:
                 messagebox.showerror(
-                    "Error", "No student ID found. Please log in again.")
+                    _t('gui.academics.student_registration.enrollment.dialogs.error', default="Error"), _t('gui.academics.student_registration.enrollment.dialogs.no_student_id_found_please_log_in_again', default="No student ID found. Please log in again."))
             return
 
         try:
@@ -93,7 +95,7 @@ class EnrollmentMixin:
             )
             if not cursor.fetchone():
                 messagebox.showerror(
-                    "Not a student account",
+                    _t('gui.academics.student_registration.enrollment.dialogs.not_a_student_account', default="Not a student account"),
                     f"Account '{self.student_id}' has no student record, so it "
                     "cannot be enrolled in modules.\n\n"
                     "Log in with a student account to register for modules.",
@@ -111,7 +113,7 @@ class EnrollmentMixin:
             if existing:
                 if existing[0] == 'Enrolled':
                     messagebox.showwarning(
-                        "Already Enrolled",
+                        _t('gui.academics.student_registration.enrollment.dialogs.already_enrolled', default="Already Enrolled"),
                         f"You are already enrolled in {module_code}.",
                     )
                     conn.close()
@@ -126,7 +128,7 @@ class EnrollmentMixin:
                     )
                     conn.commit()
                     conn.close()
-                    messagebox.showinfo("Success", f"Re-enrolled in {module_code}.")
+                    messagebox.showinfo(_t('gui.academics.student_registration.enrollment.dialogs.success', default="Success"), f"Re-enrolled in {module_code}.")
                     if hasattr(self, '_refresh_enrollment_tree'):
                         self._refresh_enrollment_tree()
                     if hasattr(self, '_refresh_available_modules'):
@@ -140,7 +142,7 @@ class EnrollmentMixin:
             )
             row = cursor.fetchone()
             if not row:
-                messagebox.showerror("Error", f"Module {module_code} not found.")
+                messagebox.showerror(_t('gui.academics.student_registration.enrollment.dialogs.error', default="Error"), f"Module {module_code} not found.")
                 conn.close()
                 return
 
@@ -156,7 +158,7 @@ class EnrollmentMixin:
                     holds = list_active_holds(self.student_id)
                     reasons = ", ".join(h.get("reason", "") for h in holds[:3]) or "active hold"
                     messagebox.showerror(
-                        "Enrolment blocked",
+                        _t('gui.academics.student_registration.enrollment.dialogs.enrolment_blocked', default="Enrolment blocked"),
                         f"Cannot enrol {self.student_id} in {module_code}: "
                         f"finance hold active ({reasons}).\n\n"
                         "Resolve outstanding charges or have an admin "
@@ -178,7 +180,7 @@ class EnrollmentMixin:
                 current_count = cursor.fetchone()[0]
                 if current_count >= max_capacity:
                     messagebox.showwarning(
-                        "Module Full",
+                        _t('gui.academics.student_registration.enrollment.dialogs.module_full', default="Module Full"),
                         f"Module {module_code} has reached its maximum capacity "
                         f"({current_count}/{max_capacity}).",
                     )
@@ -197,7 +199,7 @@ class EnrollmentMixin:
             conn.close()
 
             messagebox.showinfo(
-                "Enrollment Successful",
+                _t('gui.academics.student_registration.enrollment.dialogs.enrollment_successful', default="Enrollment Successful"),
                 f"You have been enrolled in {module_code}.",
             )
             logger.info(
@@ -239,7 +241,7 @@ class EnrollmentMixin:
 
         except Exception as exc:
             logger.error("Enrollment error: %s", exc)
-            messagebox.showerror("Error", f"Failed to enroll: {exc}")
+            messagebox.showerror(_t('gui.academics.student_registration.enrollment.dialogs.error', default="Error"), f"Failed to enroll: {exc}")
 
     # ------------------------------------------------------------------ #
     #  Drop
@@ -249,16 +251,16 @@ class EnrollmentMixin:
         if not self.student_id:
             if getattr(self, 'is_privileged', False):
                 messagebox.showinfo(
-                    "Select a student",
-                    "Choose a student from the picker at the top of the "
-                    "portal before changing module registration.")
+                    _t('gui.academics.student_registration.enrollment.dialogs.select_a_student', default="Select a student"),
+                    _t('gui.academics.student_registration.enrollment.dialogs.choose_a_student_from_the_picker_at_the_top_of_the_portal_before', default="Choose a student from the picker at the top of the "
+                    "portal before changing module registration."))
             else:
                 messagebox.showerror(
-                    "Error", "No student ID found. Please log in again.")
+                    _t('gui.academics.student_registration.enrollment.dialogs.error', default="Error"), _t('gui.academics.student_registration.enrollment.dialogs.no_student_id_found_please_log_in_again', default="No student ID found. Please log in again."))
             return
 
         confirmed = messagebox.askyesno(
-            "Confirm Drop",
+            _t('gui.academics.student_registration.enrollment.dialogs.confirm_drop', default="Confirm Drop"),
             f"Are you sure you want to drop module {module_code}?\n"
             "This action can be undone by re-enrolling.",
         )
@@ -277,7 +279,7 @@ class EnrollmentMixin:
             conn.close()
 
             messagebox.showinfo(
-                "Module Dropped",
+                _t('gui.academics.student_registration.enrollment.dialogs.module_dropped', default="Module Dropped"),
                 f"You have dropped module {module_code}.",
             )
             logger.info(
@@ -305,7 +307,7 @@ class EnrollmentMixin:
 
         except Exception as exc:
             logger.error("Drop module error: %s", exc)
-            messagebox.showerror("Error", f"Failed to drop module: {exc}")
+            messagebox.showerror(_t('gui.academics.student_registration.enrollment.dialogs.error', default="Error"), f"Failed to drop module: {exc}")
 
     # ------------------------------------------------------------------ #
     #  My Enrollment tab
@@ -313,7 +315,7 @@ class EnrollmentMixin:
     def show_my_enrollment(self, parent):
         """Display a treeview of the student's enrolled modules."""
         header = ttk.Label(
-            parent, text="My Enrollment",
+            parent, text=_t('gui.academics.student_registration.enrollment.labels.my_enrollment', default="My Enrollment"),
             font=('Arial', 16, 'bold'),
         )
         header.pack(pady=(15, 10))
@@ -346,12 +348,12 @@ class EnrollmentMixin:
         btn_frame.pack(fill='x', padx=10, pady=(5, 10))
 
         ttk.Button(
-            btn_frame, text="Drop Selected Module",
+            btn_frame, text=_t('gui.academics.student_registration.enrollment.buttons.drop_selected_module', default="Drop Selected Module"),
             command=self._drop_selected_module,
         ).pack(side='left', padx=5)
 
         ttk.Button(
-            btn_frame, text="Refresh",
+            btn_frame, text=_t('gui.academics.student_registration.enrollment.buttons.refresh', default="Refresh"),
             command=self._refresh_enrollment_tree,
         ).pack(side='left', padx=5)
 
@@ -385,20 +387,20 @@ class EnrollmentMixin:
             conn.close()
         except Exception as exc:
             logger.error("Refresh enrollment error: %s", exc)
-            messagebox.showerror("Error", f"Failed to load enrollment: {exc}")
+            messagebox.showerror(_t('gui.academics.student_registration.enrollment.dialogs.error', default="Error"), f"Failed to load enrollment: {exc}")
 
     def _drop_selected_module(self):
         """Drop the module currently selected in the enrollment treeview."""
         sel = self.enrollment_tree.selection()
         if not sel:
-            messagebox.showwarning("No Selection", "Please select a module to drop.")
+            messagebox.showwarning(_t('gui.academics.student_registration.enrollment.dialogs.no_selection', default="No Selection"), _t('gui.academics.student_registration.enrollment.dialogs.please_select_a_module_to_drop', default="Please select a module to drop."))
             return
         values = self.enrollment_tree.item(sel[0], 'values')
         module_code = values[0]
         status = values[3]
         if status != 'Enrolled':
             messagebox.showwarning(
-                "Cannot Drop",
+                _t('gui.academics.student_registration.enrollment.dialogs.cannot_drop', default="Cannot Drop"),
                 f"Module {module_code} has status '{status}' and cannot be dropped.",
             )
             return

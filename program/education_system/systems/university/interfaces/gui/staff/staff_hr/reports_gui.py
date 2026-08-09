@@ -8,6 +8,8 @@ report button drives a real manager query and renders the results.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -33,7 +35,7 @@ class ReportsGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Reports")
+            messagebox.showerror(_t('gui.staff.staff_hr.reports.dialogs.error', default="Error"), _t('gui.staff.staff_hr.reports.dialogs.login_required_to_access_reports', default="Login required to access Reports"))
             return
 
         self.user_id = self.current_user.get('id') or self.current_user.get('username')
@@ -46,15 +48,15 @@ class ReportsGUI:
     # ------------------------------------------------------------------
     def create_as_tab(self, notebook: ttk.Notebook):
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Reports")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.reports.tabs.reports', default="Reports"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
-        self.window.title("Reports & Analytics")
+        self.window.title(_t('gui.staff.staff_hr.reports.windows.reports_analytics', default="Reports & Analytics"))
         self.window.geometry("1100x700")
         self.window.minsize(900, 600)
-        ttk.Button(self.window, text="Close", command=self.window.destroy).pack(
+        ttk.Button(self.window, text=_t('gui.staff.staff_hr.reports.buttons.close', default="Close"), command=self.window.destroy).pack(
             side=tk.BOTTOM, anchor=tk.E, padx=10, pady=5)
         self._build_interface(self.window)
 
@@ -64,13 +66,13 @@ class ReportsGUI:
 
         header = ttk.Frame(parent)
         header.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header, text="Reports & Analytics", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header, text=_t('gui.staff.staff_hr.reports.labels.reports_analytics', default="Reports & Analytics"), style='Header.TLabel').pack(side=tk.LEFT)
 
         body = ttk.Frame(parent)
         body.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Left: report selector
-        left = ttk.LabelFrame(body, text="Reports", padding=10)
+        left = ttk.LabelFrame(body, text=_t('gui.staff.staff_hr.reports.labels.reports', default="Reports"), padding=10)
         left.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
 
         self._reports = [

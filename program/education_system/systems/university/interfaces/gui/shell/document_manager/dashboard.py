@@ -80,7 +80,7 @@ class DashboardManager:
 
     def create_status_chart(self, parent):
         """Create document status distribution chart"""
-        chart_frame = ttk.LabelFrame(parent, text="Document Status Distribution", padding=10)
+        chart_frame = ttk.LabelFrame(parent, text=_t('gui.shell.document_manager.dashboard.labels.document_status_distribution', default="Document Status Distribution"), padding=10)
         chart_frame.pack(side='left', fill='both', expand=True, padx=(0, 10))
 
         # Get status data
@@ -117,14 +117,14 @@ class DashboardManager:
                     progress['value'] = percentage
                     progress.pack(side='right', padx=10)
             else:
-                ttk.Label(chart_frame, text="No data available").pack()
+                ttk.Label(chart_frame, text=_t('gui.shell.document_manager.dashboard.labels.no_data_available', default="No data available")).pack()
 
         except Exception as e:
             ttk.Label(chart_frame, text=f"Error loading data: {e}").pack()
 
     def create_recent_activity_table(self, parent):
         """Create recent activity table"""
-        activity_frame = ttk.LabelFrame(parent, text="Recent Activity", padding=10)
+        activity_frame = ttk.LabelFrame(parent, text=_t('gui.shell.document_manager.dashboard.labels.recent_activity', default="Recent Activity"), padding=10)
         activity_frame.pack(side='right', fill='both', expand=True)
 
         # Create treeview for recent activity
@@ -251,13 +251,13 @@ class DashboardManager:
 
         # Create dashboard window
         dashboard_window = tk.Toplevel(self.root)
-        dashboard_window.title("Document Manager Dashboard")
+        dashboard_window.title(_t('gui.shell.document_manager.dashboard.windows.document_manager_dashboard', default="Document Manager Dashboard"))
         dashboard_window.geometry("1200x800")
         dashboard_window.transient(self.root)
         dashboard_window.grab_set()
 
         # Title
-        title_label = ttk.Label(dashboard_window, text="Document Manager Dashboard",
+        title_label = ttk.Label(dashboard_window, text=_t('gui.shell.document_manager.dashboard.labels.document_manager_dashboard', default="Document Manager Dashboard"),
                                font=("Arial", 18, "bold"))
         title_label.pack(pady=10)
 
@@ -267,7 +267,7 @@ class DashboardManager:
 
         # Tab 1: Overview
         overview_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(overview_frame, text="Overview")
+        notebook.add(overview_frame, text=_t('gui.shell.document_manager.dashboard.tabs.overview', default="Overview"))
 
         # Quick stats at top
         stats_frame = ttk.Frame(overview_frame)
@@ -275,27 +275,27 @@ class DashboardManager:
         self.display_quick_stats(stats_frame)
 
         # Status overview
-        status_frame = ttk.LabelFrame(overview_frame, text="Status Overview", padding=10)
+        status_frame = ttk.LabelFrame(overview_frame, text=_t('gui.shell.document_manager.dashboard.labels.status_overview', default="Status Overview"), padding=10)
         status_frame.pack(fill='both', expand=True, pady=5)
         self.display_status_overview(status_frame)
 
         # Tab 2: Recent Activity
         activity_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(activity_frame, text="Recent Activity")
+        notebook.add(activity_frame, text=_t('gui.shell.document_manager.dashboard.tabs.recent_activity', default="Recent Activity"))
         self.display_recent_activity(activity_frame)
 
         # Tab 3: Expiry Alerts
         alerts_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(alerts_frame, text="Expiry Alerts")
+        notebook.add(alerts_frame, text=_t('gui.shell.document_manager.dashboard.tabs.expiry_alerts', default="Expiry Alerts"))
         self.gui.display_expiry_alerts(alerts_frame)
 
         # Tab 4: Performance Metrics
         performance_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(performance_frame, text="Performance")
+        notebook.add(performance_frame, text=_t('gui.shell.document_manager.dashboard.tabs.performance', default="Performance"))
         self.display_performance_metrics(performance_frame)
 
         # Close button
-        ttk.Button(dashboard_window, text="Close",
+        ttk.Button(dashboard_window, text=_t('gui.shell.document_manager.dashboard.buttons.close', default="Close"),
                   command=dashboard_window.destroy).pack(pady=10)
 
         # Log activity
@@ -364,15 +364,15 @@ class DashboardManager:
                 status_data = cursor.fetchall()
 
             if not status_data:
-                ttk.Label(parent_frame, text="No document data available").pack()
+                ttk.Label(parent_frame, text=_t('gui.shell.document_manager.dashboard.labels.no_document_data_available', default="No document data available")).pack()
                 return
 
             # Create treeview for status breakdown
             tree = ttk.Treeview(parent_frame, columns=('Status', 'Count', 'Percentage'),
                                show='headings', height=8)
-            tree.heading('Status', text='Status')
-            tree.heading('Count', text='Document Count')
-            tree.heading('Percentage', text='Percentage')
+            tree.heading('Status', text=_t('gui.shell.document_manager.dashboard.headings.status', default='Status'))
+            tree.heading('Count', text=_t('gui.shell.document_manager.dashboard.headings.document_count', default='Document Count'))
+            tree.heading('Percentage', text=_t('gui.shell.document_manager.dashboard.headings.percentage', default='Percentage'))
 
             tree.column('Status', width=150)
             tree.column('Count', width=150)
@@ -397,18 +397,18 @@ class DashboardManager:
         """Display recent activity feed"""
         try:
             # Title
-            ttk.Label(parent_frame, text="Recent Activity (Last 50 actions)",
+            ttk.Label(parent_frame, text=_t('gui.shell.document_manager.dashboard.labels.recent_activity_last_50_actions', default="Recent Activity (Last 50 actions)"),
                      font=("Arial", 12, "bold")).pack(pady=5)
 
             # Create treeview for activity log
             tree = ttk.Treeview(parent_frame,
                                columns=('Time', 'User', 'Action', 'Entity', 'Details'),
                                show='headings', height=20)
-            tree.heading('Time', text='Timestamp')
-            tree.heading('User', text='User')
-            tree.heading('Action', text='Action')
-            tree.heading('Entity', text='Entity Type')
-            tree.heading('Details', text='Details')
+            tree.heading('Time', text=_t('gui.shell.document_manager.dashboard.headings.timestamp', default='Timestamp'))
+            tree.heading('User', text=_t('gui.shell.document_manager.dashboard.headings.user', default='User'))
+            tree.heading('Action', text=_t('gui.shell.document_manager.dashboard.headings.action', default='Action'))
+            tree.heading('Entity', text=_t('gui.shell.document_manager.dashboard.headings.entity_type', default='Entity Type'))
+            tree.heading('Details', text=_t('gui.shell.document_manager.dashboard.headings.details', default='Details'))
 
             tree.column('Time', width=150)
             tree.column('User', width=120)
@@ -441,7 +441,7 @@ class DashboardManager:
             scrollbar.pack(side='right', fill='y', pady=5)
 
             # Export button
-            ttk.Button(parent_frame, text="Export Activity Log",
+            ttk.Button(parent_frame, text=_t('gui.shell.document_manager.dashboard.buttons.export_activity_log', default="Export Activity Log"),
                       command=lambda: self.gui.export_activity_log()).pack(pady=5)
 
         except Exception as e:
@@ -451,7 +451,7 @@ class DashboardManager:
         """Display performance metrics"""
         try:
             # Title
-            ttk.Label(parent_frame, text="System Performance Metrics",
+            ttk.Label(parent_frame, text=_t('gui.shell.document_manager.dashboard.labels.system_performance_metrics', default="System Performance Metrics"),
                      font=("Arial", 12, "bold")).pack(pady=5)
 
             with get_connection() as conn:
@@ -497,7 +497,7 @@ class DashboardManager:
             metrics_frame.pack(fill='both', expand=True, pady=5)
 
             # Left column - Stats
-            left_frame = ttk.LabelFrame(metrics_frame, text="Key Metrics", padding=10)
+            left_frame = ttk.LabelFrame(metrics_frame, text=_t('gui.shell.document_manager.dashboard.labels.key_metrics', default="Key Metrics"), padding=10)
             left_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
 
             ttk.Label(left_frame, text=f"Average Processing Time: {avg_processing:.1f} days",
@@ -511,13 +511,13 @@ class DashboardManager:
                          font=("Arial", 10)).pack(anchor='w', pady=5)
 
             # Daily uploads table
-            daily_frame = ttk.LabelFrame(left_frame, text="Daily Uploads (Last 30 Days)", padding=5)
+            daily_frame = ttk.LabelFrame(left_frame, text=_t('gui.shell.document_manager.dashboard.labels.daily_uploads_last_30_days', default="Daily Uploads (Last 30 Days)"), padding=5)
             daily_frame.pack(fill='both', expand=True, pady=10)
 
             daily_tree = ttk.Treeview(daily_frame, columns=('Date', 'Count'),
                                      show='headings', height=8)
-            daily_tree.heading('Date', text='Date')
-            daily_tree.heading('Count', text='Documents Uploaded')
+            daily_tree.heading('Date', text=_t('gui.shell.document_manager.dashboard.headings.date', default='Date'))
+            daily_tree.heading('Count', text=_t('gui.shell.document_manager.dashboard.headings.documents_uploaded', default='Documents Uploaded'))
             daily_tree.column('Date', width=150)
             daily_tree.column('Count', width=150)
 
@@ -527,14 +527,14 @@ class DashboardManager:
             daily_tree.pack(fill='both', expand=True)
 
             # Right column - Type distribution
-            right_frame = ttk.LabelFrame(metrics_frame, text="Document Type Distribution", padding=10)
+            right_frame = ttk.LabelFrame(metrics_frame, text=_t('gui.shell.document_manager.dashboard.labels.document_type_distribution', default="Document Type Distribution"), padding=10)
             right_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
 
             type_tree = ttk.Treeview(right_frame, columns=('Type', 'Count', 'Percentage'),
                                     show='headings', height=15)
-            type_tree.heading('Type', text='Document Type')
-            type_tree.heading('Count', text='Count')
-            type_tree.heading('Percentage', text='Percentage')
+            type_tree.heading('Type', text=_t('gui.shell.document_manager.dashboard.headings.document_type', default='Document Type'))
+            type_tree.heading('Count', text=_t('gui.shell.document_manager.dashboard.headings.count', default='Count'))
+            type_tree.heading('Percentage', text=_t('gui.shell.document_manager.dashboard.headings.percentage', default='Percentage'))
 
             type_tree.column('Type', width=150)
             type_tree.column('Count', width=100)
@@ -548,7 +548,7 @@ class DashboardManager:
             type_tree.pack(fill='both', expand=True)
 
             # Export button
-            ttk.Button(parent_frame, text="Export Performance Report",
+            ttk.Button(parent_frame, text=_t('gui.shell.document_manager.dashboard.buttons.export_performance_report', default="Export Performance Report"),
                       command=lambda: self.export_performance_report()).pack(pady=5)
 
         except Exception as e:
@@ -556,7 +556,7 @@ class DashboardManager:
 
     def export_performance_report(self):
         """Export performance metrics report"""
-        messagebox.showinfo("Export Performance Report",
-                          "Performance report will be generated and exported to CSV/PDF")
+        messagebox.showinfo(_t('gui.shell.document_manager.dashboard.dialogs.export_performance_report', default="Export Performance Report"),
+                          _t('gui.shell.document_manager.dashboard.dialogs.performance_report_will_be_generated_and_exported_to_csv_pdf', default="Performance report will be generated and exported to CSV/PDF"))
         self.gui.log_event('export', 'performance_report',
                       details='Exported system performance report')

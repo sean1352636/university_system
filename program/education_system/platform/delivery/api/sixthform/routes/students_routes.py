@@ -3,10 +3,10 @@
 Read endpoints the university (or any client) can call over HTTP instead
 of importing the sixth-form Python package directly:
 
-* GET /api/sixthform/students/year13          — Year 13 leavers
-* GET /api/sixthform/students/<student_id>     — one student
-* GET /api/sixthform/identity/<journey_id>     — canonical journey
-* GET /api/sixthform/identity/by-student/<system>/<student_id>
+* GET /api/v1/sixthform/students/year13          — Year 13 leavers
+* GET /api/v1/sixthform/students/<student_id>     — one student
+* GET /api/v1/sixthform/identity/<journey_id>     — canonical journey
+* GET /api/v1/sixthform/identity/by-student/<system>/<student_id>
 
 Auth mirrors the academic-year routes: a JWT bearer token (validated by
 the university ``token_required`` if importable) or an
@@ -24,7 +24,7 @@ from flask import Blueprint, g, jsonify, request
 logger = logging.getLogger(__name__)
 
 students_bp = Blueprint(
-    "sf_students", __name__, url_prefix="/api/sixthform")
+    "sf_students", __name__, url_prefix="/api")
 
 
 def _token_required(view):

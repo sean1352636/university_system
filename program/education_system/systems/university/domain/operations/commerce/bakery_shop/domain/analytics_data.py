@@ -181,8 +181,8 @@ class AnalyticsDataMixin:
 
     def _exports_dir(self):
         try:
-            from education_system.systems.university.infrastructure.paths import EXPORTS_BAKERY_DIR
-            path = str(EXPORTS_BAKERY_DIR)
+            from education_system.paths import UNIVERSITY_EXPORTS_BAKERY_DIR
+            path = str(UNIVERSITY_EXPORTS_BAKERY_DIR)
         except Exception:
             # Fallback: data/exports/bakery under the package root.
             here = os.path.dirname(os.path.abspath(__file__))

@@ -90,7 +90,7 @@ class ImportExportMixin:
                 import_data = json.load(f)
 
             if 'integrations' not in import_data:
-                messagebox.showerror(_t("common.error"), "Invalid import file format")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.import_export.dialogs.invalid_import_file_format', default="Invalid import file format"))
                 return
 
             imported_count = 0
@@ -130,7 +130,7 @@ class ImportExportMixin:
             log_activity('import', 'integration_catalog', None,
                         details={'filename': filename, 'imported': imported_count, 'skipped': skipped_count})
 
-            messagebox.showinfo("Import Complete",
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.import_export.dialogs.import_complete', default="Import Complete"),
                               f"Imported: {imported_count}\nSkipped (duplicates): {skipped_count}")
             self.load_catalog()
 
@@ -254,13 +254,13 @@ class ImportExportMixin:
                 bundle = json.load(f)
 
             if bundle.get('export_type') != 'configuration_bundle':
-                messagebox.showerror(_t("common.error"), "Invalid configuration bundle format")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.import_export.dialogs.invalid_configuration_bundle_format', default="Invalid configuration bundle format"))
                 return
 
-            if not messagebox.askyesno("Confirm Import",
-                                       "Import configuration bundle?\n\n"
+            if not messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.import_export.dialogs.confirm_import', default="Confirm Import"),
+                                       _t('gui.shell.services.integration_marketplace_gui.import_export.dialogs.import_configuration_bundle_this_will_add_new_data_mappings_and', default="Import configuration bundle?\n\n"
                                        "This will add new data mappings and webhooks.\n"
-                                       "Credentials will need to be reconfigured manually."):
+                                       "Credentials will need to be reconfigured manually.")):
                 return
 
             imported = {'mappings': 0, 'webhooks': 0}
@@ -299,7 +299,7 @@ class ImportExportMixin:
             log_activity('import', 'configuration_bundle', None,
                         details={'filename': filename, 'imported': imported})
 
-            messagebox.showinfo("Import Complete",
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.import_export.dialogs.import_complete', default="Import Complete"),
                               f"Imported:\n"
                               f"- Data mappings: {imported['mappings']}\n"
                               f"- Webhooks: {imported['webhooks']}\n\n"
@@ -322,8 +322,8 @@ class ImportExportMixin:
                 from reportlab.lib import colors
             except ImportError:
                 messagebox.showerror(_t("common.error"),
-                                   "PDF export requires reportlab library.\n"
-                                   "Install with: pip install reportlab")
+                                   _t('gui.shell.services.integration_marketplace_gui.import_export.dialogs.pdf_export_requires_reportlab_library_install_with_pip_install_r', default="PDF export requires reportlab library.\n"
+                                   "Install with: pip install reportlab"))
                 return
 
             filename = filedialog.asksaveasfilename(
@@ -415,8 +415,8 @@ class ImportExportMixin:
                 from openpyxl.styles import Font, PatternFill
             except ImportError:
                 messagebox.showerror(_t("common.error"),
-                                   "Excel export requires openpyxl library.\n"
-                                   "Install with: pip install openpyxl")
+                                   _t('gui.shell.services.integration_marketplace_gui.import_export.dialogs.excel_export_requires_openpyxl_library_install_with_pip_install', default="Excel export requires openpyxl library.\n"
+                                   "Install with: pip install openpyxl"))
                 return
 
             filename = filedialog.asksaveasfilename(

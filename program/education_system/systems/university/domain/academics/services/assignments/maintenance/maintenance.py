@@ -1,6 +1,9 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, ensure_parent_dir
 from education_system.systems.university.infrastructure.sql_safety import validate_table_name
-from education_system.systems.university.infrastructure.paths import BACKUP_SUBMISSIONS_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_SUBMISSIONS_DIR,
+    UNIVERSITY_DATABASE_BACKUP_FILENAME,
+)
 from education_system.systems.university.domain.academics.services.assignments.core.constants import (
     SUBDIR_EXPORTS, SUBDIR_SUBMITTED,
 )
@@ -26,13 +29,13 @@ class MaintenanceMixin:
             # tree (matching BACKUP_DATABASE_DIR / BACKUP_ATTENDANCE_DIR /
             # ... etc.) rather than nested inside the submissions data
             # tree. See core/paths.py BACKUP_SUBMISSIONS_DIR.
-            backup_dir = os.path.join(str(BACKUP_SUBMISSIONS_DIR), f'backup_{timestamp}')
+            backup_dir = os.path.join(str(UNIVERSITY_BACKUP_SUBMISSIONS_DIR), f'backup_{timestamp}')
             os.makedirs(backup_dir, exist_ok=True)
 
             print(f"\nCreating backup in: {backup_dir}")
 
             # Backup database
-            db_backup_path = os.path.join(backup_dir, 'database.db')
+            db_backup_path = os.path.join(backup_dir, UNIVERSITY_DATABASE_BACKUP_FILENAME)
             shutil.copy2(self.db_path, db_backup_path)
             print("Database backed up")
 
@@ -169,7 +172,7 @@ class MaintenanceMixin:
         try:
             if not archive_path:
                 archive_path = os.path.join(
-                    str(BACKUP_SUBMISSIONS_DIR),
+                    str(UNIVERSITY_BACKUP_SUBMISSIONS_DIR),
                     f'archive_{assignment_id}_{datetime.now().strftime("%Y%m%d")}.zip')
 
             ensure_parent_dir(archive_path)

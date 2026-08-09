@@ -88,7 +88,7 @@ def show_dashboard(content_frame):
                  foreground='red').pack()
 
     # Recent activity frame (placeholder)
-    activity_frame = ttk.LabelFrame(overview_frame, text="Recent Activity", padding="10")
+    activity_frame = ttk.LabelFrame(overview_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.dashboard_manager.labels.recent_activity', default="Recent Activity"), padding="10")
     activity_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-    ttk.Label(activity_frame, text="Recent activity will be displayed here").pack()
+    ttk.Label(activity_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.dashboard_manager.labels.recent_activity_will_be_displayed_here', default="Recent activity will be displayed here")).pack()

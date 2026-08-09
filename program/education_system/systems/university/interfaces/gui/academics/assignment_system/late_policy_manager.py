@@ -1,5 +1,7 @@
 """Late submission policy management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
@@ -125,14 +127,14 @@ class LatePolicyManager:
     def show_late_policies(self):
         """Main policy management dashboard"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied",
-                                   "You do not have permission to manage late policies.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.permission_denied', default="Permission Denied"),
+                                   _t('gui.academics.assignment_system.late_policy_manager.dialogs.you_do_not_have_permission_to_manage_late_policies', default="You do not have permission to manage late policies."))
             return
 
         self.gui.layout.clear_content_area()
 
         title = ttk.Label(self.gui.layout.content_area,
-                          text="Late Submission Policy Management",
+                          text=_t('gui.academics.assignment_system.late_policy_manager.labels.late_submission_policy_management', default="Late Submission Policy Management"),
                           style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
@@ -140,22 +142,22 @@ class LatePolicyManager:
         toolbar = ttk.Frame(self.gui.layout.content_area)
         toolbar.pack(fill='x', pady=(0, 10))
 
-        ttk.Button(toolbar, text="Create Policy",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.create_policy', default="Create Policy"),
                    command=self.create_policy).pack(side='left', padx=(0, 5))
-        ttk.Button(toolbar, text="Create from Template",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.create_from_template', default="Create from Template"),
                    command=self._create_from_template).pack(side='left', padx=(0, 5))
-        ttk.Button(toolbar, text="Apply Penalties (Batch)",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.apply_penalties_batch', default="Apply Penalties (Batch)"),
                    command=self.apply_late_penalties).pack(side='left', padx=(0, 5))
-        ttk.Button(toolbar, text="Late Submission Report",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.late_submission_report', default="Late Submission Report"),
                    command=self.show_late_submission_report).pack(side='left', padx=(0, 5))
-        ttk.Button(toolbar, text="Manage Late Passes",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.manage_late_passes', default="Manage Late Passes"),
                    command=self._show_late_passes).pack(side='left', padx=(0, 5))
-        ttk.Button(toolbar, text="Refresh",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.refresh', default="Refresh"),
                    command=self.show_late_policies).pack(side='right')
 
         # Policies treeview
         tree_frame = ttk.LabelFrame(self.gui.layout.content_area,
-                                    text="Configured Policies", padding=10)
+                                    text=_t('gui.academics.assignment_system.late_policy_manager.labels.configured_policies', default="Configured Policies"), padding=10)
         tree_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('ID', 'Name', 'Type', 'Penalty/Day', 'Max Days',
@@ -182,15 +184,15 @@ class LatePolicyManager:
         btn_frame = ttk.Frame(self.gui.layout.content_area)
         btn_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Button(btn_frame, text="Edit Selected",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.edit_selected', default="Edit Selected"),
                    command=self._edit_selected_policy).pack(side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="Delete Selected",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.delete_selected', default="Delete Selected"),
                    command=self._delete_selected_policy).pack(side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="Set as Default",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.set_as_default', default="Set as Default"),
                    command=self._set_default_policy).pack(side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="Apply to Assignment",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.apply_to_assignment', default="Apply to Assignment"),
                    command=self._prompt_apply_to_assignment).pack(side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="Apply to Module",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.apply_to_module', default="Apply to Module"),
                    command=self._prompt_apply_to_module).pack(side='left', padx=(0, 5))
 
         self._load_policies()
@@ -222,7 +224,7 @@ class LatePolicyManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load policies: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to load policies: {e}")
 
     # ------------------------------------------------------------------ #
     #  Create / Edit policy                                               #
@@ -239,8 +241,8 @@ class LatePolicyManager:
     def _show_policy_form(self, policy_id=None):
         """Show create / edit form for a late policy"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied",
-                                   "You do not have permission to manage late policies.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.permission_denied', default="Permission Denied"),
+                                   _t('gui.academics.assignment_system.late_policy_manager.dialogs.you_do_not_have_permission_to_manage_late_policies', default="You do not have permission to manage late policies."))
             return
 
         self.gui.layout.clear_content_area()
@@ -252,55 +254,55 @@ class LatePolicyManager:
         title.pack(anchor='w', pady=(0, 20))
 
         form_frame = ttk.LabelFrame(self.gui.layout.content_area,
-                                    text="Policy Details", padding=15)
+                                    text=_t('gui.academics.assignment_system.late_policy_manager.labels.policy_details', default="Policy Details"), padding=15)
         form_frame.pack(fill='x', pady=(0, 10))
 
         # Fields
         row = 0
-        ttk.Label(form_frame, text="Policy Name:").grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.late_policy_manager.labels.policy_name', default="Policy Name:")).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         name_var = tk.StringVar()
         name_entry = ttk.Entry(form_frame, textvariable=name_var, width=40)
         name_entry.grid(row=row, column=1, sticky='w', padx=5, pady=5)
 
         row += 1
-        ttk.Label(form_frame, text="Description:").grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.late_policy_manager.labels.description', default="Description:")).grid(
             row=row, column=0, sticky='nw', padx=5, pady=5)
         desc_text = scrolledtext.ScrolledText(form_frame, width=38, height=3)
         desc_text.grid(row=row, column=1, sticky='w', padx=5, pady=5)
 
         row += 1
-        ttk.Label(form_frame, text="Penalty Type:").grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.late_policy_manager.labels.penalty_type', default="Penalty Type:")).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
-        type_var = tk.StringVar(value='percentage')
+        type_var = tk.StringVar(value=_t('gui.academics.assignment_system.late_policy_manager.values.percentage', default='percentage'))
         type_combo = ttk.Combobox(form_frame, textvariable=type_var,
                                   values=['percentage', 'fixed', 'none'],
                                   state='readonly', width=20)
         type_combo.grid(row=row, column=1, sticky='w', padx=5, pady=5)
 
         row += 1
-        ttk.Label(form_frame, text="Penalty Per Day:").grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.late_policy_manager.labels.penalty_per_day', default="Penalty Per Day:")).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         penalty_var = tk.StringVar(value='10.0')
         ttk.Entry(form_frame, textvariable=penalty_var, width=15).grid(
             row=row, column=1, sticky='w', padx=5, pady=5)
 
         row += 1
-        ttk.Label(form_frame, text="Max Late Days:").grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.late_policy_manager.labels.max_late_days', default="Max Late Days:")).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         max_days_var = tk.StringVar(value='5')
         ttk.Entry(form_frame, textvariable=max_days_var, width=15).grid(
             row=row, column=1, sticky='w', padx=5, pady=5)
 
         row += 1
-        ttk.Label(form_frame, text="Grace Period (hours):").grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.late_policy_manager.labels.grace_period_hours', default="Grace Period (hours):")).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         grace_var = tk.StringVar(value='0')
         ttk.Entry(form_frame, textvariable=grace_var, width=15).grid(
             row=row, column=1, sticky='w', padx=5, pady=5)
 
         row += 1
-        ttk.Label(form_frame, text="Min Grade Floor:").grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.late_policy_manager.labels.min_grade_floor', default="Min Grade Floor:")).grid(
             row=row, column=0, sticky='w', padx=5, pady=5)
         floor_var = tk.StringVar(value='0.0')
         ttk.Entry(form_frame, textvariable=floor_var, width=15).grid(
@@ -308,7 +310,7 @@ class LatePolicyManager:
 
         row += 1
         default_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(form_frame, text="Set as default policy",
+        ttk.Checkbutton(form_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.set_as_default_policy', default="Set as default policy"),
                         variable=default_var).grid(
             row=row, column=1, sticky='w', padx=5, pady=5)
 
@@ -336,7 +338,7 @@ class LatePolicyManager:
                 finally:
                     conn.close()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load policy: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to load policy: {e}")
                 return
 
         # Buttons
@@ -346,7 +348,7 @@ class LatePolicyManager:
         def save_policy():
             name = name_var.get().strip()
             if not name:
-                messagebox.showwarning("Validation", "Policy name is required.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.policy_name_is_required', default="Policy name is required."))
                 return
             try:
                 penalty_per_day = float(penalty_var.get())
@@ -354,8 +356,8 @@ class LatePolicyManager:
                 grace_period_hours = int(grace_var.get())
                 min_grade_floor = float(floor_var.get())
             except ValueError:
-                messagebox.showwarning("Validation",
-                                       "Numeric fields must contain valid numbers.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.validation', default="Validation"),
+                                       _t('gui.academics.assignment_system.late_policy_manager.dialogs.numeric_fields_must_contain_valid_numbers', default="Numeric fields must contain valid numbers."))
                 return
 
             description = desc_text.get('1.0', 'end-1c').strip()
@@ -402,17 +404,17 @@ class LatePolicyManager:
                     conn.close()
 
                 action = "updated" if editing else "created"
-                messagebox.showinfo("Success", f"Policy '{name}' {action} successfully.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.success', default="Success"), f"Policy '{name}' {action} successfully.")
                 self.show_late_policies()
             except sqlite3.IntegrityError:
-                messagebox.showerror("Error",
+                messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"),
                                      f"A policy named '{name}' already exists.")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save policy: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to save policy: {e}")
 
-        ttk.Button(btn_frame, text="Save Policy", command=save_policy).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.save_policy', default="Save Policy"), command=save_policy).pack(
             side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="Cancel",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.cancel', default="Cancel"),
                    command=self.show_late_policies).pack(side='left')
 
     # ------------------------------------------------------------------ #
@@ -422,12 +424,12 @@ class LatePolicyManager:
     def _create_from_template(self):
         """Show dialog to pick and create a policy from a template"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create Policy from Template")
+        dialog.title(_t('gui.academics.assignment_system.late_policy_manager.windows.create_policy_from_template', default="Create Policy from Template"))
         dialog.geometry("400x320")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Select a template:").pack(
+        ttk.Label(dialog, text=_t('gui.academics.assignment_system.late_policy_manager.labels.select_a_template', default="Select a template:")).pack(
             anchor='w', padx=10, pady=(10, 5))
 
         template_var = tk.StringVar()
@@ -484,20 +486,20 @@ class LatePolicyManager:
                 finally:
                     conn.close()
                 dialog.destroy()
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.success', default="Success"),
                                     f"Policy '{tpl_name}' created from template.")
                 self.show_late_policies()
             except sqlite3.IntegrityError:
-                messagebox.showerror("Error",
+                messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"),
                                      f"A policy named '{tpl_name}' already exists.")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create policy: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to create policy: {e}")
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(fill='x', padx=10, pady=10)
-        ttk.Button(btn_frame, text="Create", command=apply_template).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.create', default="Create"), command=apply_template).pack(
             side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left')
 
     # ------------------------------------------------------------------ #
     #  Edit / delete helpers                                              #
@@ -507,7 +509,7 @@ class LatePolicyManager:
         """Edit the policy currently selected in the treeview"""
         sel = self.policy_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a policy to edit.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.selection', default="Selection"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.please_select_a_policy_to_edit', default="Please select a policy to edit."))
             return
         policy_id = int(self.policy_tree.item(sel[0], 'values')[0])
         self.edit_policy(policy_id)
@@ -516,12 +518,12 @@ class LatePolicyManager:
         """Delete the selected policy"""
         sel = self.policy_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a policy to delete.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.selection', default="Selection"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.please_select_a_policy_to_delete', default="Please select a policy to delete."))
             return
         policy_id = int(self.policy_tree.item(sel[0], 'values')[0])
         name = self.policy_tree.item(sel[0], 'values')[1]
 
-        if not messagebox.askyesno("Confirm Delete",
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.late_policy_manager.dialogs.confirm_delete', default="Confirm Delete"),
                                    f"Delete policy '{name}'? This cannot be undone."):
             return
 
@@ -535,16 +537,16 @@ class LatePolicyManager:
                 conn.commit()
             finally:
                 conn.close()
-            messagebox.showinfo("Deleted", f"Policy '{name}' deleted.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.deleted', default="Deleted"), f"Policy '{name}' deleted.")
             self._load_policies()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete policy: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to delete policy: {e}")
 
     def _set_default_policy(self):
         """Set selected policy as the default"""
         sel = self.policy_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a policy.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.selection', default="Selection"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.please_select_a_policy', default="Please select a policy."))
             return
         policy_id = int(self.policy_tree.item(sel[0], 'values')[0])
         try:
@@ -557,10 +559,10 @@ class LatePolicyManager:
                 conn.commit()
             finally:
                 conn.close()
-            messagebox.showinfo("Success", "Default policy updated.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.default_policy_updated', default="Default policy updated."))
             self._load_policies()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to set default: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to set default: {e}")
 
     # ------------------------------------------------------------------ #
     #  Apply policy to assignment / module                                #
@@ -585,7 +587,7 @@ class LatePolicyManager:
                 conn.close()
             return True
         except Exception as e:
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"),
                                  f"Failed to apply policy to assignment: {e}")
             return False
 
@@ -612,12 +614,12 @@ class LatePolicyManager:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.success', default="Success"),
                                 f"Policy applied to {len(assignment_ids)} assignment(s) "
                                 f"in module {module_code}.")
             return True
         except Exception as e:
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"),
                                  f"Failed to apply policy to module: {e}")
             return False
 
@@ -625,17 +627,17 @@ class LatePolicyManager:
         """Dialog to select an assignment and apply the selected policy"""
         sel = self.policy_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a policy first.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.selection', default="Selection"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.please_select_a_policy_first', default="Please select a policy first."))
             return
         policy_id = int(self.policy_tree.item(sel[0], 'values')[0])
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Apply Policy to Assignment")
+        dialog.title(_t('gui.academics.assignment_system.late_policy_manager.windows.apply_policy_to_assignment', default="Apply Policy to Assignment"))
         dialog.geometry("450x200")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Select Assignment:").pack(
+        ttk.Label(dialog, text=_t('gui.academics.assignment_system.late_policy_manager.labels.select_assignment', default="Select Assignment:")).pack(
             anchor='w', padx=10, pady=(10, 5))
 
         assignment_var = tk.StringVar()
@@ -661,7 +663,7 @@ class LatePolicyManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to load assignments: {e}")
             dialog.destroy()
             return
 
@@ -669,33 +671,33 @@ class LatePolicyManager:
             key = assignment_var.get()
             aid = assignment_map.get(key)
             if aid is None:
-                messagebox.showwarning("Selection", "Please select an assignment.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.selection', default="Selection"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.please_select_an_assignment', default="Please select an assignment."))
                 return
             if self.apply_policy_to_assignment(aid, policy_id):
-                messagebox.showinfo("Success", "Policy applied to assignment.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.policy_applied_to_assignment', default="Policy applied to assignment."))
                 dialog.destroy()
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(fill='x', padx=10, pady=10)
-        ttk.Button(btn_frame, text="Apply", command=do_apply).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.apply', default="Apply"), command=do_apply).pack(
             side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left')
 
     def _prompt_apply_to_module(self):
         """Dialog to select a module and apply the selected policy"""
         sel = self.policy_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a policy first.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.selection', default="Selection"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.please_select_a_policy_first', default="Please select a policy first."))
             return
         policy_id = int(self.policy_tree.item(sel[0], 'values')[0])
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Apply Policy to Module")
+        dialog.title(_t('gui.academics.assignment_system.late_policy_manager.windows.apply_policy_to_module', default="Apply Policy to Module"))
         dialog.geometry("400x200")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Select Module:").pack(
+        ttk.Label(dialog, text=_t('gui.academics.assignment_system.late_policy_manager.labels.select_module', default="Select Module:")).pack(
             anchor='w', padx=10, pady=(10, 5))
 
         module_var = tk.StringVar()
@@ -716,23 +718,23 @@ class LatePolicyManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load modules: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to load modules: {e}")
             dialog.destroy()
             return
 
         def do_apply():
             mcode = module_var.get().strip()
             if not mcode:
-                messagebox.showwarning("Selection", "Please select a module.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.selection', default="Selection"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.please_select_a_module', default="Please select a module."))
                 return
             self.apply_policy_to_module(mcode, policy_id)
             dialog.destroy()
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(fill='x', padx=10, pady=10)
-        ttk.Button(btn_frame, text="Apply", command=do_apply).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.apply', default="Apply"), command=do_apply).pack(
             side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left')
 
     # ------------------------------------------------------------------ #
     #  Late penalty calculation                                           #
@@ -903,9 +905,9 @@ class LatePolicyManager:
                 conn.close()
 
             if result is None:
-                messagebox.showinfo("Info",
-                                    "No penalty data available for this submission.\n"
-                                    "Check that a policy is assigned and the submission exists.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.info', default="Info"),
+                                    _t('gui.academics.assignment_system.late_policy_manager.dialogs.no_penalty_data_available_for_this_submission_check_that_a_polic', default="No penalty data available for this submission.\n"
+                                    "Check that a policy is assigned and the submission exists."))
                 return result
 
             lines = [
@@ -922,11 +924,11 @@ class LatePolicyManager:
             lines.append(f"Penalty: {result['penalty_amount']}")
             lines.append(f"Adjusted Grade: {result['adjusted_grade']}")
 
-            messagebox.showinfo("Late Penalty Calculation", "\n".join(lines))
+            messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.late_penalty_calculation', default="Late Penalty Calculation"), "\n".join(lines))
             return result
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to calculate penalty: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to calculate penalty: {e}")
             return None
 
     # ------------------------------------------------------------------ #
@@ -936,14 +938,14 @@ class LatePolicyManager:
     def apply_late_penalties(self):
         """Batch apply penalties to all late submissions"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied",
-                                   "You do not have permission to apply penalties.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.permission_denied', default="Permission Denied"),
+                                   _t('gui.academics.assignment_system.late_policy_manager.dialogs.you_do_not_have_permission_to_apply_penalties', default="You do not have permission to apply penalties."))
             return
 
         if not messagebox.askyesno(
-                "Confirm",
-                "This will apply late penalties to all graded late submissions "
-                "that have an assigned policy. Continue?"):
+                _t('gui.academics.assignment_system.late_policy_manager.dialogs.confirm', default="Confirm"),
+                _t('gui.academics.assignment_system.late_policy_manager.dialogs.this_will_apply_late_penalties_to_all_graded_late_submissions_th', default="This will apply late penalties to all graded late submissions "
+                "that have an assigned policy. Continue?")):
             return
 
         applied = 0
@@ -1003,12 +1005,12 @@ class LatePolicyManager:
                 conn.close()
 
             messagebox.showinfo(
-                "Batch Apply Complete",
+                _t('gui.academics.assignment_system.late_policy_manager.dialogs.batch_apply_complete', default="Batch Apply Complete"),
                 f"Penalties applied: {applied}\n"
                 f"Skipped (on time / late pass / no policy): {skipped}\n"
                 f"Errors: {errors}")
         except Exception as e:
-            messagebox.showerror("Error", f"Batch apply failed: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Batch apply failed: {e}")
 
     # ------------------------------------------------------------------ #
     #  Late submission report                                             #
@@ -1017,23 +1019,23 @@ class LatePolicyManager:
     def show_late_submission_report(self):
         """Report of all late submissions with penalties applied"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied",
-                                   "You do not have permission to view this report.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.permission_denied', default="Permission Denied"),
+                                   _t('gui.academics.assignment_system.late_policy_manager.dialogs.you_do_not_have_permission_to_view_this_report', default="You do not have permission to view this report."))
             return
 
         self.gui.layout.clear_content_area()
 
         title = ttk.Label(self.gui.layout.content_area,
-                          text="Late Submission Report",
+                          text=_t('gui.academics.assignment_system.late_policy_manager.labels.late_submission_report', default="Late Submission Report"),
                           style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Toolbar
         toolbar = ttk.Frame(self.gui.layout.content_area)
         toolbar.pack(fill='x', pady=(0, 10))
-        ttk.Button(toolbar, text="Back to Policies",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.back_to_policies', default="Back to Policies"),
                    command=self.show_late_policies).pack(side='left', padx=(0, 5))
-        ttk.Button(toolbar, text="Refresh",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.refresh', default="Refresh"),
                    command=self.show_late_submission_report).pack(side='left')
 
         # Report treeview
@@ -1067,7 +1069,7 @@ class LatePolicyManager:
         report_frame.rowconfigure(0, weight=1)
 
         # Summary label
-        summary_var = tk.StringVar(value="Loading...")
+        summary_var = tk.StringVar(value=_t('gui.academics.assignment_system.late_policy_manager.values.loading', default="Loading..."))
         ttk.Label(self.gui.layout.content_area,
                   textvariable=summary_var).pack(anchor='w', pady=(10, 0))
 
@@ -1127,24 +1129,24 @@ class LatePolicyManager:
     def _show_late_passes(self):
         """Show and manage late passes"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied",
-                                   "You do not have permission to manage late passes.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.permission_denied', default="Permission Denied"),
+                                   _t('gui.academics.assignment_system.late_policy_manager.dialogs.you_do_not_have_permission_to_manage_late_passes', default="You do not have permission to manage late passes."))
             return
 
         self.gui.layout.clear_content_area()
 
         title = ttk.Label(self.gui.layout.content_area,
-                          text="Late Pass Management",
+                          text=_t('gui.academics.assignment_system.late_policy_manager.labels.late_pass_management', default="Late Pass Management"),
                           style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         toolbar = ttk.Frame(self.gui.layout.content_area)
         toolbar.pack(fill='x', pady=(0, 10))
-        ttk.Button(toolbar, text="Grant Late Pass",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.grant_late_pass', default="Grant Late Pass"),
                    command=self._grant_late_pass_dialog).pack(side='left', padx=(0, 5))
-        ttk.Button(toolbar, text="Back to Policies",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.back_to_policies', default="Back to Policies"),
                    command=self.show_late_policies).pack(side='left', padx=(0, 5))
-        ttk.Button(toolbar, text="Refresh",
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.refresh', default="Refresh"),
                    command=self._show_late_passes).pack(side='right')
 
         # Late passes treeview
@@ -1170,7 +1172,7 @@ class LatePolicyManager:
         scrollbar.pack(side='right', fill='y')
 
         # Revoke button
-        ttk.Button(self.gui.layout.content_area, text="Revoke Selected Pass",
+        ttk.Button(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.revoke_selected_pass', default="Revoke Selected Pass"),
                    command=self._revoke_late_pass).pack(anchor='w', pady=(10, 0))
 
         self._load_late_passes()
@@ -1202,25 +1204,25 @@ class LatePolicyManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load late passes: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to load late passes: {e}")
 
     def _grant_late_pass_dialog(self):
         """Dialog to grant a late pass to a student"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Grant Late Pass")
+        dialog.title(_t('gui.academics.assignment_system.late_policy_manager.windows.grant_late_pass', default="Grant Late Pass"))
         dialog.geometry("420x320")
         dialog.transient(self.root)
         dialog.grab_set()
 
         row = 0
-        ttk.Label(dialog, text="Student ID:").grid(
+        ttk.Label(dialog, text=_t('gui.academics.assignment_system.late_policy_manager.labels.student_id', default="Student ID:")).grid(
             row=row, column=0, sticky='w', padx=10, pady=5)
         student_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=student_var, width=30).grid(
             row=row, column=1, sticky='w', padx=10, pady=5)
 
         row += 1
-        ttk.Label(dialog, text="Assignment (optional):").grid(
+        ttk.Label(dialog, text=_t('gui.academics.assignment_system.late_policy_manager.labels.assignment_optional', default="Assignment (optional):")).grid(
             row=row, column=0, sticky='w', padx=10, pady=5)
         assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(dialog, textvariable=assignment_var,
@@ -1250,7 +1252,7 @@ class LatePolicyManager:
             assignment_combo.current(0)
 
         row += 1
-        ttk.Label(dialog, text="Reason:").grid(
+        ttk.Label(dialog, text=_t('gui.academics.assignment_system.late_policy_manager.labels.reason', default="Reason:")).grid(
             row=row, column=0, sticky='nw', padx=10, pady=5)
         reason_text = scrolledtext.ScrolledText(dialog, width=28, height=4)
         reason_text.grid(row=row, column=1, sticky='w', padx=10, pady=5)
@@ -1258,7 +1260,7 @@ class LatePolicyManager:
         def do_grant():
             sid = student_var.get().strip()
             if not sid:
-                messagebox.showwarning("Validation", "Student ID is required.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.student_id_is_required', default="Student ID is required."))
                 return
             aid = assignment_map.get(assignment_var.get())
             reason = reason_text.get('1.0', 'end-1c').strip()
@@ -1284,27 +1286,27 @@ class LatePolicyManager:
                 finally:
                     conn.close()
                 dialog.destroy()
-                messagebox.showinfo("Success", "Late pass granted.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.late_pass_granted', default="Late pass granted."))
                 self._load_late_passes()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to grant late pass: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to grant late pass: {e}")
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.grid(row=row + 1, column=0, columnspan=2, pady=10, padx=10,
                        sticky='w')
-        ttk.Button(btn_frame, text="Grant", command=do_grant).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.grant', default="Grant"), command=do_grant).pack(
             side='left', padx=(0, 5))
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.late_policy_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left')
 
     def _revoke_late_pass(self):
         """Revoke (delete) the selected late pass"""
         sel = self.passes_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Please select a late pass to revoke.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.late_policy_manager.dialogs.selection', default="Selection"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.please_select_a_late_pass_to_revoke', default="Please select a late pass to revoke."))
             return
         pass_id = int(self.passes_tree.item(sel[0], 'values')[0])
 
-        if not messagebox.askyesno("Confirm", "Revoke this late pass?"):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.late_policy_manager.dialogs.confirm', default="Confirm"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.revoke_this_late_pass', default="Revoke this late pass?")):
             return
 
         try:
@@ -1315,7 +1317,7 @@ class LatePolicyManager:
                 conn.commit()
             finally:
                 conn.close()
-            messagebox.showinfo("Revoked", "Late pass revoked.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.late_policy_manager.dialogs.revoked', default="Revoked"), _t('gui.academics.assignment_system.late_policy_manager.dialogs.late_pass_revoked', default="Late pass revoked."))
             self._load_late_passes()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to revoke late pass: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.late_policy_manager.dialogs.error', default="Error"), f"Failed to revoke late pass: {e}")

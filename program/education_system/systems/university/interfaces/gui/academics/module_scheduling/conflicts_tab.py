@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -121,7 +123,7 @@ def refresh_conflicts(self):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh conflicts: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.error', default="Error"), f"Failed to refresh conflicts: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.refresh_conflicts = refresh_conflicts
 
@@ -159,10 +161,10 @@ def detect_all_conflicts(self):
     total = len(conflicts)
 
     if total == 0:
-        messagebox.showinfo("Conflict Detection", "No scheduling conflicts detected.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.conflict_detection', default="Conflict Detection"), _t('gui.academics.module_scheduling.conflicts_tab.dialogs.no_scheduling_conflicts_detected', default="No scheduling conflicts detected."), parent=self.root)
     else:
         messagebox.showwarning(
-            "Conflict Detection",
+            _t('gui.academics.module_scheduling.conflicts_tab.dialogs.conflict_detection', default="Conflict Detection"),
             f"Detected {total} conflict(s):\n\n"
             f"  Room conflicts: {room_count}\n"
             f"  Instructor conflicts: {instr_count}\n"
@@ -179,7 +181,7 @@ def resolve_selected_conflict(self):
     """Resolve the selected conflict"""
     selected = self.conflicts_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select a conflict to resolve.", parent=self.root)
+        messagebox.showwarning(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.conflicts_tab.dialogs.please_select_a_conflict_to_resolve', default="Please select a conflict to resolve."), parent=self.root)
         return
 
     conflict_data = self.conflicts_tree.item(selected[0])['values']
@@ -196,10 +198,10 @@ def resolve_selected_conflict(self):
             self.refresh_conflicts()
             self.refresh_dashboard()
             self.update_activity_log(f"Resolved conflict {conflict_id}")
-            messagebox.showinfo("Success", "Conflict resolved successfully.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.conflicts_tab.dialogs.conflict_resolved_successfully', default="Conflict resolved successfully."), parent=self.root)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to resolve conflict: {str(e)}", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.error', default="Error"), f"Failed to resolve conflict: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.resolve_selected_conflict = resolve_selected_conflict
 
@@ -361,9 +363,9 @@ def resolve_conflict(self, conflict_id, resolution_notes=""):
             WHERE id = ?
             ''', (resolution_notes, conflict_id))
 
-            messagebox.showinfo("Success", f"Conflict {conflict_id} marked as resolved.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.success', default="Success"), f"Conflict {conflict_id} marked as resolved.", parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to resolve conflict: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.error', default="Error"), f"Failed to resolve conflict: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.resolve_conflict = resolve_conflict
 
@@ -577,7 +579,7 @@ def display_student_conflicts(self, student_id=None):
     conflicts = self._get_student_conflicts(student_id)
 
     if not conflicts:
-        messagebox.showinfo("No Conflicts", f"No scheduling conflicts found for student {student_id}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.conflicts_tab.dialogs.no_conflicts', default="No Conflicts"), f"No scheduling conflicts found for student {student_id}", parent=self.root)
         return
 
     # Create dialog to show conflicts
@@ -617,7 +619,7 @@ def display_student_conflicts(self, student_id=None):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.conflicts_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.display_student_conflicts = display_student_conflicts
 

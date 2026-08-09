@@ -1,5 +1,7 @@
 """Schedule overview tab for the Exam Scheduling System."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 
@@ -35,9 +37,9 @@ class ScheduleTabMixin:
         ttk.Button(controls_frame, text=_("exam_scheduler.buttons.clear_filter"), command=self.clear_filter).pack(side=tk.LEFT, padx=5)
 
         # Advanced filters
-        ttk.Button(controls_frame, text="Advanced Filters", command=self.show_advanced_filters).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Export Selected", command=self.export_selected_exams).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Find Conflicts", command=self.find_all_conflicts).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.exam_management.tabs.schedule_tab.buttons.advanced_filters', default="Advanced Filters"), command=self.show_advanced_filters).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.exam_management.tabs.schedule_tab.buttons.export_selected', default="Export Selected"), command=self.export_selected_exams).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.academics.exam_management.tabs.schedule_tab.buttons.find_conflicts', default="Find Conflicts"), command=self.find_all_conflicts).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(controls_frame, text=_("exam_scheduler.buttons.refresh"), command=self.refresh_exam_list).pack(side=tk.RIGHT)
 

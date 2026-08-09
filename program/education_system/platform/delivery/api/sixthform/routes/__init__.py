@@ -36,9 +36,13 @@ from education_system.platform.delivery.api.sixthform.routes.student_services_ro
 from education_system.platform.delivery.api.sixthform.routes.advanced_search_routes import (
     advanced_search_bp,
 )
+from education_system.platform.delivery.api.sixthform.routes.calendar_routes import (
+    calendar_bp,
+)
 
 __all__ = [
     "academic_year_bp",
+    "calendar_bp",
     "students_bp",
     "academics_bp",
     "assessment_bp",

@@ -1,5 +1,7 @@
 """Library Finance Manager - Comprehensive library financial operations"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
 from datetime import datetime, timedelta
@@ -262,7 +264,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="🔍 Search",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.search', default="🔍 Search"),
             command=self.search_fines,
             bg=self.colors['secondary'],
             fg='white',
@@ -273,7 +275,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="➕ Create Fine",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.create_fine_variant_2', default="➕ Create Fine"),
             command=self.create_fine_dialog,
             bg=self.colors['success'],
             fg='white',
@@ -284,7 +286,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="✏️ Edit Fine",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.edit_fine', default="✏️ Edit Fine"),
             command=self.edit_fine_dialog,
             bg=self.colors['warning'],
             fg='white',
@@ -295,7 +297,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="🗑️ Delete Fine",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.delete_fine', default="🗑️ Delete Fine"),
             command=self.delete_fine,
             bg=self.colors['danger'],
             fg='white',
@@ -306,7 +308,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="💳 Process Payment",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.process_payment_variant_2', default="💳 Process Payment"),
             command=self.process_payment_dialog,
             bg=self.colors['library'],
             fg='white',
@@ -317,7 +319,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="🔄 Refresh",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.refresh', default="🔄 Refresh"),
             command=self.load_all_fines,
             bg=self.colors['info'],
             fg='white',
@@ -351,14 +353,14 @@ University Library System
         x_scroll.config(command=self.fines_tree.xview)
 
         # Configure columns
-        self.fines_tree.heading('Loan ID', text='Loan ID')
-        self.fines_tree.heading('User ID', text='User ID')
-        self.fines_tree.heading('Name', text='Name')
-        self.fines_tree.heading('Book ID', text='Book ID')
-        self.fines_tree.heading('Title', text='Book Title')
-        self.fines_tree.heading('Days Overdue', text='Days Overdue')
-        self.fines_tree.heading('Fine Amount', text='Fine Amount')
-        self.fines_tree.heading('Status', text='Status')
+        self.fines_tree.heading('Loan ID', text=_t('gui.finance.finance.library_finance_manager.headings.loan_id', default='Loan ID'))
+        self.fines_tree.heading('User ID', text=_t('gui.finance.finance.library_finance_manager.headings.user_id', default='User ID'))
+        self.fines_tree.heading('Name', text=_t('gui.finance.finance.library_finance_manager.headings.name', default='Name'))
+        self.fines_tree.heading('Book ID', text=_t('gui.finance.finance.library_finance_manager.headings.book_id', default='Book ID'))
+        self.fines_tree.heading('Title', text=_t('gui.finance.finance.library_finance_manager.headings.book_title', default='Book Title'))
+        self.fines_tree.heading('Days Overdue', text=_t('gui.finance.finance.library_finance_manager.headings.days_overdue', default='Days Overdue'))
+        self.fines_tree.heading('Fine Amount', text=_t('gui.finance.finance.library_finance_manager.headings.fine_amount', default='Fine Amount'))
+        self.fines_tree.heading('Status', text=_t('gui.finance.finance.library_finance_manager.headings.status', default='Status'))
 
         self.fines_tree.column('Loan ID', width=80, anchor='center')
         self.fines_tree.column('User ID', width=100)
@@ -374,7 +376,7 @@ University Library System
         # Summary
         self.fines_summary_label = tk.Label(
             parent,
-            text="Total Outstanding Fines: £0.00 | Total Items: 0",
+            text=_t('gui.finance.finance.library_finance_manager.labels.total_outstanding_fines_0_00_total_items_0', default="Total Outstanding Fines: £0.00 | Total Items: 0"),
             font=('Arial', 11, 'bold'),
             bg='white',
             fg=self.colors['primary']
@@ -390,19 +392,19 @@ University Library System
         toolbar = tk.Frame(parent, bg='white')
         toolbar.pack(fill='x', padx=10, pady=10)
 
-        tk.Label(toolbar, text="Start Date:", bg='white', font=('Arial', 10)).pack(side='left', padx=5)
+        tk.Label(toolbar, text=_t('gui.finance.finance.library_finance_manager.labels.start_date', default="Start Date:"), bg='white', font=('Arial', 10)).pack(side='left', padx=5)
         start_entry = ttk.Entry(toolbar, textvariable=self.start_date_var, width=12)
         start_entry.pack(side='left', padx=5)
         start_entry.insert(0, (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d'))
 
-        tk.Label(toolbar, text="End Date:", bg='white', font=('Arial', 10)).pack(side='left', padx=5)
+        tk.Label(toolbar, text=_t('gui.finance.finance.library_finance_manager.labels.end_date', default="End Date:"), bg='white', font=('Arial', 10)).pack(side='left', padx=5)
         end_entry = ttk.Entry(toolbar, textvariable=self.end_date_var, width=12)
         end_entry.pack(side='left', padx=5)
         end_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
         tk.Button(
             toolbar,
-            text="📊 Generate Report",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.generate_report', default="📊 Generate Report"),
             command=self.generate_revenue_report,
             bg=self.colors['secondary'],
             fg='white',
@@ -413,7 +415,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="📈 Show Charts",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.show_charts', default="📈 Show Charts"),
             command=self.show_revenue_charts,
             bg=self.colors['info'],
             fg='white',
@@ -424,7 +426,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="💾 Export CSV",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.export_csv', default="💾 Export CSV"),
             command=self.export_revenue_csv,
             bg=self.colors['success'],
             fg='white',
@@ -434,14 +436,14 @@ University Library System
         ).pack(side='left', padx=5)
 
         # Revenue statistics panel
-        stats_frame = tk.LabelFrame(parent, text="Revenue Statistics", bg='white', font=('Arial', 12, 'bold'))
+        stats_frame = tk.LabelFrame(parent, text=_t('gui.finance.finance.library_finance_manager.labels.revenue_statistics', default="Revenue Statistics"), bg='white', font=('Arial', 12, 'bold'))
         stats_frame.pack(fill='x', padx=10, pady=10)
 
         self.revenue_stats_text = tk.Text(stats_frame, height=12, bg='#f8f9fa', font=('Courier', 10))
         self.revenue_stats_text.pack(fill='x', padx=10, pady=10)
 
         # Chart area
-        chart_label = tk.Label(parent, text="Revenue Visualizations", bg='white', font=('Arial', 12, 'bold'))
+        chart_label = tk.Label(parent, text=_t('gui.finance.finance.library_finance_manager.labels.revenue_visualizations', default="Revenue Visualizations"), bg='white', font=('Arial', 12, 'bold'))
         chart_label.pack(pady=5)
 
         self.revenue_chart_frame = tk.Frame(parent, bg='white')
@@ -455,7 +457,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="➕ Add Book Cost",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.add_book_cost', default="➕ Add Book Cost"),
             command=self.add_book_cost_dialog,
             bg=self.colors['success'],
             fg='white',
@@ -466,7 +468,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="✏️ Edit Cost",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.edit_cost', default="✏️ Edit Cost"),
             command=self.edit_book_cost_dialog,
             bg=self.colors['warning'],
             fg='white',
@@ -477,7 +479,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="📊 Cost Analysis",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.cost_analysis', default="📊 Cost Analysis"),
             command=self.show_cost_analysis,
             bg=self.colors['info'],
             fg='white',
@@ -488,7 +490,7 @@ University Library System
 
         tk.Button(
             toolbar,
-            text="🔄 Refresh",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.refresh', default="🔄 Refresh"),
             command=self.load_book_costs,
             bg=self.colors['secondary'],
             fg='white',
@@ -539,7 +541,7 @@ University Library System
         # Summary
         self.costs_summary_label = tk.Label(
             parent,
-            text="Total Book Investment: £0.00 | Total Books: 0",
+            text=_t('gui.finance.finance.library_finance_manager.labels.total_book_investment_0_00_total_books_0', default="Total Book Investment: £0.00 | Total Books: 0"),
             font=('Arial', 11, 'bold'),
             bg='white',
             fg=self.colors['primary']
@@ -571,7 +573,7 @@ University Library System
         # Refresh button
         tk.Button(
             parent,
-            text="🔄 Refresh Overview",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.refresh_overview', default="🔄 Refresh Overview"),
             command=self.refresh_overview,
             bg=self.colors['secondary'],
             fg='white',
@@ -668,7 +670,7 @@ University Library System
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load fines:\n{str(e)}")
+            messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to load fines:\n{str(e)}")
 
     def search_fines(self):
         """Search fines by user ID or name"""
@@ -733,20 +735,20 @@ University Library System
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to search fines:\n{str(e)}")
+            messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to search fines:\n{str(e)}")
 
     def create_fine_dialog(self):
         """Dialog to create a new fine"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create New Fine")
+        dialog.title(_t('gui.finance.finance.library_finance_manager.windows.create_new_fine', default="Create New Fine"))
         dialog.geometry("400x300")
         dialog.transient(self.root)
 
-        tk.Label(dialog, text="Loan ID:", font=('Arial', 10)).grid(row=0, column=0, padx=10, pady=10, sticky='e')
+        tk.Label(dialog, text=_t('gui.finance.finance.library_finance_manager.labels.loan_id', default="Loan ID:"), font=('Arial', 10)).grid(row=0, column=0, padx=10, pady=10, sticky='e')
         loan_id_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=loan_id_var, width=30).grid(row=0, column=1, padx=10, pady=10)
 
-        tk.Label(dialog, text="Fine Amount (£):", font=('Arial', 10)).grid(row=1, column=0, padx=10, pady=10, sticky='e')
+        tk.Label(dialog, text=_t('gui.finance.finance.library_finance_manager.labels.fine_amount', default="Fine Amount (£):"), font=('Arial', 10)).grid(row=1, column=0, padx=10, pady=10, sticky='e')
         amount_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=amount_var, width=30).grid(row=1, column=1, padx=10, pady=10)
 
@@ -755,13 +757,13 @@ University Library System
             amount_str = amount_var.get().strip()
 
             if not loan_id or not amount_str:
-                messagebox.showwarning("Input Required", "Please fill all fields.", parent=dialog)
+                messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.input_required', default="Input Required"), _t('gui.finance.finance.library_finance_manager.dialogs.please_fill_all_fields', default="Please fill all fields."), parent=dialog)
                 return
 
             try:
                 amount = float(amount_str)
                 if amount <= 0:
-                    messagebox.showwarning("Invalid Amount", "Fine amount must be greater than 0.", parent=dialog)
+                    messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_amount', default="Invalid Amount"), _t('gui.finance.finance.library_finance_manager.dialogs.fine_amount_must_be_greater_than_0', default="Fine amount must be greater than 0."), parent=dialog)
                     return
 
                 conn = get_connection()
@@ -775,7 +777,7 @@ University Library System
                 ''', (amount, loan_id))
 
                 if cursor.rowcount == 0:
-                    messagebox.showerror("Error", f"Loan ID {loan_id} not found.", parent=dialog)
+                    messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Loan ID {loan_id} not found.", parent=dialog)
                     conn.close()
                     return
 
@@ -807,34 +809,34 @@ University Library System
                         )
 
                         if email_sent:
-                            messagebox.showinfo("Success",
+                            messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"),
                                 f"Fine of £{amount:.2f} created for Loan ID {loan_id}.\n\n"
                                 f"Email notification sent to {user_info['email']}",
                                 parent=dialog)
                         else:
-                            messagebox.showinfo("Success",
+                            messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"),
                                 f"Fine of £{amount:.2f} created for Loan ID {loan_id}.\n\n"
                                 f"Note: Email notification could not be sent.",
                                 parent=dialog)
                     else:
-                        messagebox.showinfo("Success",
+                        messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"),
                             f"Fine of £{amount:.2f} created for Loan ID {loan_id}.\n\n"
                             f"Note: User email not found.",
                             parent=dialog)
                 else:
-                    messagebox.showinfo("Success", f"Fine of £{amount:.2f} created for Loan ID {loan_id}.", parent=dialog)
+                    messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"), f"Fine of £{amount:.2f} created for Loan ID {loan_id}.", parent=dialog)
 
                 dialog.destroy()
                 self.load_all_fines()
 
             except ValueError:
-                messagebox.showwarning("Invalid Input", "Please enter a valid amount.", parent=dialog)
+                messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_input', default="Invalid Input"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount."), parent=dialog)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create fine:\n{str(e)}", parent=dialog)
+                messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to create fine:\n{str(e)}", parent=dialog)
 
         tk.Button(
             dialog,
-            text="Create Fine",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.create_fine', default="Create Fine"),
             command=create,
             bg=self.colors['success'],
             fg='white',
@@ -847,7 +849,7 @@ University Library System
         """Dialog to edit an existing fine"""
         selection = self.fines_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a fine to edit.")
+            messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.no_selection', default="No Selection"), _t('gui.finance.finance.library_finance_manager.dialogs.please_select_a_fine_to_edit', default="Please select a fine to edit."))
             return
 
         # Get selected fine
@@ -856,14 +858,14 @@ University Library System
         current_amount = float(values[6].replace('£', ''))
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Fine")
+        dialog.title(_t('gui.finance.finance.library_finance_manager.windows.edit_fine', default="Edit Fine"))
         dialog.geometry("400x250")
         dialog.transient(self.root)
 
         tk.Label(dialog, text=f"Loan ID: {loan_id}", font=('Arial', 11, 'bold')).pack(pady=10)
         tk.Label(dialog, text=f"Current Fine: £{current_amount:.2f}", font=('Arial', 10)).pack(pady=5)
 
-        tk.Label(dialog, text="New Fine Amount (£):", font=('Arial', 10)).pack(pady=5)
+        tk.Label(dialog, text=_t('gui.finance.finance.library_finance_manager.labels.new_fine_amount', default="New Fine Amount (£):"), font=('Arial', 10)).pack(pady=5)
         amount_var = tk.StringVar(value=str(current_amount))
         ttk.Entry(dialog, textvariable=amount_var, width=30).pack(pady=5)
 
@@ -871,13 +873,13 @@ University Library System
             amount_str = amount_var.get().strip()
 
             if not amount_str:
-                messagebox.showwarning("Input Required", "Please enter an amount.", parent=dialog)
+                messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.input_required', default="Input Required"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_an_amount', default="Please enter an amount."), parent=dialog)
                 return
 
             try:
                 amount = float(amount_str)
                 if amount < 0:
-                    messagebox.showwarning("Invalid Amount", "Fine amount cannot be negative.", parent=dialog)
+                    messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_amount', default="Invalid Amount"), _t('gui.finance.finance.library_finance_manager.dialogs.fine_amount_cannot_be_negative', default="Fine amount cannot be negative."), parent=dialog)
                     return
 
                 conn = get_connection()
@@ -892,18 +894,18 @@ University Library System
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Fine updated to £{amount:.2f}.", parent=dialog)
+                messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"), f"Fine updated to £{amount:.2f}.", parent=dialog)
                 dialog.destroy()
                 self.load_all_fines()
 
             except ValueError:
-                messagebox.showwarning("Invalid Input", "Please enter a valid amount.", parent=dialog)
+                messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_input', default="Invalid Input"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount."), parent=dialog)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update fine:\n{str(e)}", parent=dialog)
+                messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to update fine:\n{str(e)}", parent=dialog)
 
         tk.Button(
             dialog,
-            text="Update Fine",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.update_fine', default="Update Fine"),
             command=update,
             bg=self.colors['warning'],
             fg='white',
@@ -916,14 +918,14 @@ University Library System
         """Delete (waive) a fine"""
         selection = self.fines_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a fine to delete.")
+            messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.no_selection', default="No Selection"), _t('gui.finance.finance.library_finance_manager.dialogs.please_select_a_fine_to_delete', default="Please select a fine to delete."))
             return
 
         values = self.fines_tree.item(selection[0])['values']
         loan_id = values[0]
         fine_amount = values[6]
 
-        if not messagebox.askyesno("Confirm Deletion",
+        if not messagebox.askyesno(_t('gui.finance.finance.library_finance_manager.dialogs.confirm_deletion', default="Confirm Deletion"),
             f"Are you sure you want to waive this fine?\n\nLoan ID: {loan_id}\nAmount: {fine_amount}"):
             return
 
@@ -966,28 +968,28 @@ University Library System
                     )
 
                     if email_sent:
-                        messagebox.showinfo("Success",
+                        messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"),
                             f"Fine waived successfully.\n\n"
                             f"Email notification sent to {user_info['email']}")
                     else:
-                        messagebox.showinfo("Success",
-                            "Fine waived successfully.\n\n"
-                            "Note: Email notification could not be sent.")
+                        messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"),
+                            _t('gui.finance.finance.library_finance_manager.dialogs.fine_waived_successfully_note_email_notification_could_not_be_se', default="Fine waived successfully.\n\n"
+                            "Note: Email notification could not be sent."))
                 else:
-                    messagebox.showinfo("Success", "Fine waived successfully.")
+                    messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"), _t('gui.finance.finance.library_finance_manager.dialogs.fine_waived_successfully', default="Fine waived successfully."))
             else:
-                messagebox.showinfo("Success", "Fine waived successfully.")
+                messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"), _t('gui.finance.finance.library_finance_manager.dialogs.fine_waived_successfully', default="Fine waived successfully."))
 
             self.load_all_fines()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete fine:\n{str(e)}")
+            messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to delete fine:\n{str(e)}")
 
     def process_payment_dialog(self):
         """Dialog to process a fine payment"""
         selection = self.fines_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a fine to process payment.")
+            messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.no_selection', default="No Selection"), _t('gui.finance.finance.library_finance_manager.dialogs.please_select_a_fine_to_process_payment', default="Please select a fine to process payment."))
             return
 
         values = self.fines_tree.item(selection[0])['values']
@@ -996,7 +998,7 @@ University Library System
         fine_amount = float(values[6].replace('£', ''))
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Process Fine Payment")
+        dialog.title(_t('gui.finance.finance.library_finance_manager.windows.process_fine_payment', default="Process Fine Payment"))
         dialog.geometry("400x300")
         dialog.transient(self.root)
 
@@ -1004,12 +1006,12 @@ University Library System
         tk.Label(dialog, text=f"User ID: {user_id}", font=('Arial', 10)).pack(pady=5)
         tk.Label(dialog, text=f"Fine Amount: £{fine_amount:.2f}", font=('Arial', 10, 'bold')).pack(pady=5)
 
-        tk.Label(dialog, text="Payment Amount (£):", font=('Arial', 10)).pack(pady=5)
+        tk.Label(dialog, text=_t('gui.finance.finance.library_finance_manager.labels.payment_amount', default="Payment Amount (£):"), font=('Arial', 10)).pack(pady=5)
         payment_var = tk.StringVar(value=str(fine_amount))
         ttk.Entry(dialog, textvariable=payment_var, width=30).pack(pady=5)
 
-        tk.Label(dialog, text="Payment Method:", font=('Arial', 10)).pack(pady=5)
-        method_var = tk.StringVar(value="Cash")
+        tk.Label(dialog, text=_t('gui.finance.finance.library_finance_manager.labels.payment_method', default="Payment Method:"), font=('Arial', 10)).pack(pady=5)
+        method_var = tk.StringVar(value=_t('gui.finance.finance.library_finance_manager.values.cash', default="Cash"))
         methods = ["Cash", "Card", "Bank Transfer", "Online"]
         ttk.Combobox(dialog, textvariable=method_var, values=methods, state='readonly', width=28).pack(pady=5)
 
@@ -1017,17 +1019,17 @@ University Library System
             payment_str = payment_var.get().strip()
 
             if not payment_str:
-                messagebox.showwarning("Input Required", "Please enter payment amount.", parent=dialog)
+                messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.input_required', default="Input Required"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_payment_amount', default="Please enter payment amount."), parent=dialog)
                 return
 
             try:
                 payment_amount = float(payment_str)
                 if payment_amount <= 0:
-                    messagebox.showwarning("Invalid Amount", "Payment must be greater than 0.", parent=dialog)
+                    messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_amount', default="Invalid Amount"), _t('gui.finance.finance.library_finance_manager.dialogs.payment_must_be_greater_than_0', default="Payment must be greater than 0."), parent=dialog)
                     return
 
                 if payment_amount > fine_amount:
-                    messagebox.showwarning("Overpayment", "Payment exceeds fine amount.", parent=dialog)
+                    messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.overpayment', default="Overpayment"), _t('gui.finance.finance.library_finance_manager.dialogs.payment_exceeds_fine_amount', default="Payment exceeds fine amount."), parent=dialog)
                     return
 
                 conn = get_connection()
@@ -1106,17 +1108,17 @@ University Library System
                     )
 
                     if email_sent:
-                        messagebox.showinfo("Success",
+                        messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"),
                             f"Payment of £{payment_amount:.2f} processed successfully.\n"
                             f"Remaining fine: £{new_fine:.2f}\n\n"
                             f"Receipt sent to {user_info['email']}", parent=dialog)
                     else:
-                        messagebox.showinfo("Success",
+                        messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"),
                             f"Payment of £{payment_amount:.2f} processed successfully.\n"
                             f"Remaining fine: £{new_fine:.2f}\n\n"
                             f"Note: Receipt email could not be sent.", parent=dialog)
                 else:
-                    messagebox.showinfo("Success",
+                    messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"),
                         f"Payment of £{payment_amount:.2f} processed successfully.\n"
                         f"Remaining fine: £{new_fine:.2f}", parent=dialog)
 
@@ -1124,13 +1126,13 @@ University Library System
                 self.load_all_fines()
 
             except ValueError:
-                messagebox.showwarning("Invalid Input", "Please enter a valid amount.", parent=dialog)
+                messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_input', default="Invalid Input"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount."), parent=dialog)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to process payment:\n{str(e)}", parent=dialog)
+                messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to process payment:\n{str(e)}", parent=dialog)
 
         tk.Button(
             dialog,
-            text="Process Payment",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.process_payment', default="Process Payment"),
             command=process,
             bg=self.colors['success'],
             fg='white',
@@ -1147,7 +1149,7 @@ University Library System
         end_date = self.end_date_var.get().strip()
 
         if not start_date or not end_date:
-            messagebox.showwarning("Input Required", "Please enter both start and end dates.")
+            messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.input_required', default="Input Required"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_both_start_and_end_dates', default="Please enter both start and end dates."))
             return
 
         try:
@@ -1215,7 +1217,7 @@ Month          Payments      Revenue
             self.revenue_stats_text.insert('1.0', report)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate revenue report:\n{str(e)}")
+            messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to generate revenue report:\n{str(e)}")
 
     def show_revenue_charts(self):
         """Display revenue charts"""
@@ -1225,7 +1227,7 @@ Month          Payments      Revenue
         end_date = self.end_date_var.get().strip()
 
         if not start_date or not end_date:
-            messagebox.showwarning("Input Required", "Please enter date range first.")
+            messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.input_required', default="Input Required"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_date_range_first', default="Please enter date range first."))
             return
 
         try:
@@ -1254,7 +1256,7 @@ Month          Payments      Revenue
             conn.close()
 
             if not monthly_data:
-                messagebox.showinfo("No Data", "No revenue data found for the specified period.")
+                messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.no_data', default="No Data"), _t('gui.finance.finance.library_finance_manager.dialogs.no_revenue_data_found_for_the_specified_period', default="No revenue data found for the specified period."))
                 return
 
             # Create charts
@@ -1296,7 +1298,7 @@ Month          Payments      Revenue
             canvas.get_tk_widget().pack(fill='both', expand=True)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create charts:\n{str(e)}")
+            messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to create charts:\n{str(e)}")
 
     def export_revenue_csv(self):
         """Export revenue data to CSV"""
@@ -1304,7 +1306,7 @@ Month          Payments      Revenue
         end_date = self.end_date_var.get().strip()
 
         if not start_date or not end_date:
-            messagebox.showwarning("Input Required", "Please enter date range first.")
+            messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.input_required', default="Input Required"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_date_range_first', default="Please enter date range first."))
             return
 
         try:
@@ -1344,10 +1346,10 @@ Month          Payments      Revenue
                 for row in data:
                     writer.writerow(row)
 
-            messagebox.showinfo("Success", f"Revenue data exported to:\n{filename}")
+            messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"), f"Revenue data exported to:\n{filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export data:\n{str(e)}")
+            messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to export data:\n{str(e)}")
 
     # ==================== BOOK COSTS METHODS ====================
 
@@ -1416,12 +1418,12 @@ Month          Payments      Revenue
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load book costs:\n{str(e)}")
+            messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to load book costs:\n{str(e)}")
 
     def add_book_cost_dialog(self):
         """Dialog to add book cost information"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Book Cost")
+        dialog.title(_t('gui.finance.finance.library_finance_manager.windows.add_book_cost', default="Add Book Cost"))
         dialog.geometry("450x400")
         dialog.transient(self.root)
 
@@ -1448,7 +1450,7 @@ Month          Payments      Revenue
             qty_str = entries["Quantity:"].get().strip()
 
             if not book_id or not price_str:
-                messagebox.showwarning("Input Required", "Please fill required fields.", parent=dialog)
+                messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.input_required', default="Input Required"), _t('gui.finance.finance.library_finance_manager.dialogs.please_fill_required_fields', default="Please fill required fields."), parent=dialog)
                 return
 
             try:
@@ -1456,7 +1458,7 @@ Month          Payments      Revenue
                 qty = int(qty_str) if qty_str else 1
 
                 if price < 0 or qty < 1:
-                    messagebox.showwarning("Invalid Input", "Price and quantity must be positive.", parent=dialog)
+                    messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_input', default="Invalid Input"), _t('gui.finance.finance.library_finance_manager.dialogs.price_and_quantity_must_be_positive', default="Price and quantity must be positive."), parent=dialog)
                     return
 
                 conn = get_connection()
@@ -1469,25 +1471,25 @@ Month          Payments      Revenue
                 ''', (price, date, supplier, qty, book_id))
 
                 if cursor.rowcount == 0:
-                    messagebox.showerror("Error", f"Book ID {book_id} not found.", parent=dialog)
+                    messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Book ID {book_id} not found.", parent=dialog)
                     conn.close()
                     return
 
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Book cost information added.", parent=dialog)
+                messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"), _t('gui.finance.finance.library_finance_manager.dialogs.book_cost_information_added', default="Book cost information added."), parent=dialog)
                 dialog.destroy()
                 self.load_book_costs()
 
             except ValueError:
-                messagebox.showwarning("Invalid Input", "Please enter valid numbers.", parent=dialog)
+                messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_input', default="Invalid Input"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_valid_numbers', default="Please enter valid numbers."), parent=dialog)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to add book cost:\n{str(e)}", parent=dialog)
+                messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to add book cost:\n{str(e)}", parent=dialog)
 
         tk.Button(
             dialog,
-            text="Add Cost Info",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.add_cost_info', default="Add Cost Info"),
             command=add,
             bg=self.colors['success'],
             fg='white',
@@ -1500,7 +1502,7 @@ Month          Payments      Revenue
         """Dialog to edit book cost information"""
         selection = self.costs_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a book to edit.")
+            messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.no_selection', default="No Selection"), _t('gui.finance.finance.library_finance_manager.dialogs.please_select_a_book_to_edit', default="Please select a book to edit."))
             return
 
         values = self.costs_tree.item(selection[0])['values']
@@ -1508,7 +1510,7 @@ Month          Payments      Revenue
         current_price = float(values[4].replace('£', ''))
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Book Cost")
+        dialog.title(_t('gui.finance.finance.library_finance_manager.windows.edit_book_cost', default="Edit Book Cost"))
         dialog.geometry("450x300")
         dialog.transient(self.root)
 
@@ -1540,7 +1542,7 @@ Month          Payments      Revenue
                 qty = int(qty_str)
 
                 if price < 0 or qty < 1:
-                    messagebox.showwarning("Invalid Input", "Price and quantity must be positive.", parent=dialog)
+                    messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_input', default="Invalid Input"), _t('gui.finance.finance.library_finance_manager.dialogs.price_and_quantity_must_be_positive', default="Price and quantity must be positive."), parent=dialog)
                     return
 
                 conn = get_connection()
@@ -1555,18 +1557,18 @@ Month          Payments      Revenue
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Book cost updated.", parent=dialog)
+                messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.success', default="Success"), _t('gui.finance.finance.library_finance_manager.dialogs.book_cost_updated', default="Book cost updated."), parent=dialog)
                 dialog.destroy()
                 self.load_book_costs()
 
             except ValueError:
-                messagebox.showwarning("Invalid Input", "Please enter valid numbers.", parent=dialog)
+                messagebox.showwarning(_t('gui.finance.finance.library_finance_manager.dialogs.invalid_input', default="Invalid Input"), _t('gui.finance.finance.library_finance_manager.dialogs.please_enter_valid_numbers', default="Please enter valid numbers."), parent=dialog)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update:\n{str(e)}", parent=dialog)
+                messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to update:\n{str(e)}", parent=dialog)
 
         tk.Button(
             dialog,
-            text="Update Cost",
+            text=_t('gui.finance.finance.library_finance_manager.buttons.update_cost', default="Update Cost"),
             command=update,
             bg=self.colors['warning'],
             fg='white',
@@ -1610,10 +1612,10 @@ SUMMARY:
 {'='*60}
 """
 
-            messagebox.showinfo("Cost Analysis", report)
+            messagebox.showinfo(_t('gui.finance.finance.library_finance_manager.dialogs.cost_analysis', default="Cost Analysis"), report)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate analysis:\n{str(e)}")
+            messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to generate analysis:\n{str(e)}")
 
     # ==================== OVERVIEW METHODS ====================
 
@@ -1669,7 +1671,7 @@ SUMMARY:
             self.create_overview_chart(outstanding, this_month, ytd_revenue, book_investment)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh overview:\n{str(e)}")
+            messagebox.showerror(_t('gui.finance.finance.library_finance_manager.dialogs.error', default="Error"), f"Failed to refresh overview:\n{str(e)}")
 
     def create_overview_chart(self, outstanding, this_month, ytd, investment):
         """Create overview visualization"""

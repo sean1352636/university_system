@@ -191,7 +191,7 @@ MAX_SESSIONS_PER_USER = 5
 # ============================================================================
 
 # Maximum login attempts before lockout
-MAX_LOGIN_ATTEMPTS = 5
+MAX_LOGIN_ATTEMPTS = 3
 
 # Account lockout duration (seconds)
 LOCKOUT_DURATION = 900  # 15 minutes

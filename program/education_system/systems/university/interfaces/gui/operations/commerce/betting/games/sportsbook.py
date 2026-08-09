@@ -10,6 +10,8 @@ simulated from its true probabilities (the quoted odds carry a small house
 margin) and your winning singles pay stake x odds.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -91,7 +93,7 @@ def score_line(match, outcome):
 class Sportsbook:
     def __init__(self, root):
         self.root = root
-        root.title("Sportsbook")
+        root.title(_t('gui.operations.commerce.betting.games.sportsbook.windows.sportsbook', default="Sportsbook"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.balance = wallet.get_credits()
@@ -110,7 +112,7 @@ class Sportsbook:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=16, pady=12)
         f.pack()
-        tk.Label(f, text="\u2605 SPORTSBOOK \u2605", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.sportsbook.labels.sportsbook', default="\u2605 SPORTSBOOK \u2605"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 20, "bold")).pack()
 
         body = tk.Frame(f, bg=FELT)
@@ -123,7 +125,7 @@ class Sportsbook:
         # right: bet slip
         right = tk.Frame(body, bg="#0a1f16", padx=10, pady=8)
         right.pack(side="left", anchor="n")
-        tk.Label(right, text="BET SLIP", bg="#0a1f16", fg=GOLD,
+        tk.Label(right, text=_t('gui.operations.commerce.betting.games.sportsbook.labels.bet_slip', default="BET SLIP"), bg="#0a1f16", fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(anchor="w")
         self.slip_frame = tk.Frame(right, bg="#0a1f16")
         self.slip_frame.pack(fill="x")
@@ -137,7 +139,7 @@ class Sportsbook:
         self.bal_lbl = tk.Label(stakebar, text="", bg=FELT, fg="white",
                                 font=("Helvetica", 13, "bold"))
         self.bal_lbl.pack(side="left", padx=8)
-        tk.Label(stakebar, text="Stake:", bg=FELT, fg="white",
+        tk.Label(stakebar, text=_t('gui.operations.commerce.betting.games.sportsbook.labels.stake', default="Stake:"), bg=FELT, fg="white",
                  font=("Helvetica", 11)).pack(side="left")
         tk.Button(stakebar, text="\u2212", width=3, command=lambda: self.chg(-5),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
@@ -156,17 +158,17 @@ class Sportsbook:
 
         btns = tk.Frame(f, bg=FELT, pady=4)
         btns.pack()
-        self.place_btn = tk.Button(btns, text="Place Bets", command=self.place,
+        self.place_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.sportsbook.buttons.place_bets', default="Place Bets"), command=self.place,
                                    width=14, font=("Helvetica", 13, "bold"),
                                    bg="#1b7a4b", fg="white", activebackground=GOLD,
                                    bd=0, pady=6, cursor="hand2")
         self.place_btn.pack(side="left", padx=6)
-        tk.Button(btns, text="New Slate", command=self.new_slate, width=12,
+        tk.Button(btns, text=_t('gui.operations.commerce.betting.games.sportsbook.buttons.new_slate', default="New Slate"), command=self.new_slate, width=12,
                   font=("Helvetica", 13, "bold"), bg="#3a5a8a", fg="white",
                   activebackground=GOLD, bd=0, pady=6, cursor="hand2").pack(
             side="left", padx=6)
 
-        self.msg = tk.Label(f, text="Tap an outcome to add it to your slip.",
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.sportsbook.labels.tap_an_outcome_to_add_it_to_your_slip', default="Tap an outcome to add it to your slip."),
                             bg=FELT, fg="white", font=("Helvetica", 11, "bold"),
                             wraplength=560, justify="left")
         self.msg.pack(pady=6)
@@ -219,7 +221,7 @@ class Sportsbook:
         for w in self.slip_frame.winfo_children():
             w.destroy()
         if not self.slip:
-            tk.Label(self.slip_frame, text="(empty)", bg="#0a1f16", fg="#7f9c8c",
+            tk.Label(self.slip_frame, text=_t('gui.operations.commerce.betting.games.sportsbook.labels.empty', default="(empty)"), bg="#0a1f16", fg="#7f9c8c",
                      font=("Helvetica", 10, "italic")).pack(anchor="w")
             self.slip_total.config(text="")
             return
@@ -261,16 +263,16 @@ class Sportsbook:
         self._new_slate()
         self.render_matches()
         self.render_slip()
-        self.msg.config(text="New slate loaded. Tap outcomes to bet.", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.sportsbook.text.new_slate_loaded_tap_outcomes_to_bet', default="New slate loaded. Tap outcomes to bet."), fg="white")
 
     # ---- settlement ------------------------------------------------------
     def place(self):
         if not self.slip:
-            self.msg.config(text="Your bet slip is empty.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.sportsbook.text.your_bet_slip_is_empty', default="Your bet slip is empty."))
             return
         total_stake = sum(s["stake"] for s in self.slip)
         if total_stake > self.balance:
-            self.msg.config(text="Not enough balance for these stakes.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.sportsbook.text.not_enough_balance_for_these_stakes', default="Not enough balance for these stakes."))
             return
         self.balance -= total_stake
 

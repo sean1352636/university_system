@@ -15,7 +15,7 @@ class ComplaintFormDialog(tk.Toplevel):
 
     def __init__(self, parent, colors, current_user):
         super().__init__(parent)
-        self.title("File Complaint")
+        self.title(_t('gui.operations.campus.security.dialogs.complaint_form.windows.file_complaint', default="File Complaint"))
         self.geometry("550x600")
         self.configure(bg=colors["bg_dark"])
         self.transient(parent)

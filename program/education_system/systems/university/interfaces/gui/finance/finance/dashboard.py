@@ -49,8 +49,8 @@ except ImportError:
 
     def get_log_file(name):
         """Fallback log file path resolution."""
-        from education_system.systems.university.infrastructure import paths
-        return str(paths.LOG_DIR / name)
+        from education_system import paths
+        return str(paths.UNIVERSITY_LOG_DIR / name)
 
 # Import finance functions from common_imports module (explicit imports)
 # Note: dashboard.py does not use any functions from common_imports directly
@@ -146,6 +146,7 @@ class DashboardManager:
         # Quick stats frame
         stats_frame = tk.Frame(main_frame, bg='white')
         stats_frame.pack(fill='x', pady=10)
+        self.dashboard_stat_cards = []
 
         # Create stat cards
         self.create_stat_card(stats_frame, _("finance_gui.dashboard.stat_total_revenue"), _("finance_gui.dashboard.loading"), self.gui.layout.colors['success'], 0, 0)
@@ -174,6 +175,8 @@ class DashboardManager:
                            font=('Arial', 10), bg=self.gui.layout.colors['secondary'],
                            fg='white', padx=20, pady=5)
             btn.grid(row=0, column=i, padx=5)
+        self.dashboard_action_buttons = list(btn_frame.winfo_children())
+        dashboard_frame.bind('<Configure>', lambda e: self._reflow_dashboard(e.width))
 
         # Recent activity frame
         activity_frame = tk.LabelFrame(main_frame, text=_("finance_gui.dashboard.recent_activity_frame"),
@@ -199,6 +202,8 @@ class DashboardManager:
         """Create a statistics card"""
         card_frame = tk.Frame(parent, bg=color, relief='raised', bd=2)
         card_frame.grid(row=row, column=col, padx=10, pady=5, sticky='ew')
+        if hasattr(self, 'dashboard_stat_cards'):
+            self.dashboard_stat_cards.append((card_frame, parent))
         parent.grid_columnconfigure(col, weight=1)
 
         title_label = tk.Label(card_frame, text=title, font=('Arial', 10, 'bold'),
@@ -211,6 +216,16 @@ class DashboardManager:
 
         # Store reference for updating
         setattr(self, f"stat_{col}", value_label)
+
+    def _reflow_dashboard(self, width):
+        """Reflow KPI cards and actions for desktop, tablet and narrow views."""
+        columns = 4 if width >= 1100 else 2 if width >= 700 else 1
+        for index, (card, parent) in enumerate(getattr(self, 'dashboard_stat_cards', [])):
+            card.grid_configure(row=index // columns, column=index % columns)
+            for column in range(4):
+                parent.grid_columnconfigure(column, weight=1 if column < columns else 0)
+        for index, button in enumerate(getattr(self, 'dashboard_action_buttons', [])):
+            button.grid_configure(row=index // columns, column=index % columns, sticky='ew')
 
 
     def refresh_dashboard(self):
@@ -468,4 +483,3 @@ class DashboardManager:
             self.gui.layout.show_tab('reports')
         except Exception as e:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.dashboard.error_launch_reporting", error=str(e)))
-

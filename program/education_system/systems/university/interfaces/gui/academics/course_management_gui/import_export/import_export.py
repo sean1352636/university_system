@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -125,12 +127,12 @@ def export_pdf(self):
                                         Table, TableStyle)
     except ImportError:
         messagebox.showerror(_("common.error"),
-                             "PDF export requires reportlab. Install it with:\n"
-                             "  pip install reportlab")
+                             _t('gui.academics.course_management_gui.import_export.import_export.dialogs.pdf_export_requires_reportlab_install_it_with_pip_install_report', default="PDF export requires reportlab. Install it with:\n"
+                             "  pip install reportlab"))
         return
 
     file_path = filedialog.asksaveasfilename(
-        title="Save PDF file",
+        title=_t('gui.academics.course_management_gui.import_export.import_export.dialogs.save_pdf_file', default="Save PDF file"),
         defaultextension=".pdf",
         filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
     )
@@ -231,15 +233,15 @@ class ImportExportDialog:
 
     def create_import_widgets(self, parent):
         # File selection
-        file_frame = ttk.LabelFrame(parent, text="Select CSV File", padding=10)
+        file_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.import_export.import_export.labels.select_csv_file', default="Select CSV File"), padding=10)
         file_frame.pack(fill=tk.X, pady=5)
 
         self.file_var = tk.StringVar()
         ttk.Entry(file_frame, textvariable=self.file_var, width=50).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Button(file_frame, text="Browse", command=self.browse_file).pack(side=tk.RIGHT, padx=(5,0))
+        ttk.Button(file_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.buttons.browse', default="Browse"), command=self.browse_file).pack(side=tk.RIGHT, padx=(5,0))
 
         # Requirements
-        req_frame = ttk.LabelFrame(parent, text="CSV Requirements", padding=10)
+        req_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.import_export.import_export.labels.csv_requirements', default="CSV Requirements"), padding=10)
         req_frame.pack(fill=tk.X, pady=5)
 
         requirements = [
@@ -253,15 +255,15 @@ class ImportExportDialog:
             ttk.Label(req_frame, text=req).pack(anchor=tk.W)
 
         # Options
-        options_frame = ttk.LabelFrame(parent, text="Import Options", padding=10)
+        options_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.import_export.import_export.labels.import_options', default="Import Options"), padding=10)
         options_frame.pack(fill=tk.X, pady=5)
 
         self.skip_duplicates = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Skip duplicate course codes",
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.buttons.skip_duplicate_course_codes', default="Skip duplicate course codes"),
                        variable=self.skip_duplicates).pack(anchor=tk.W)
 
         self.validate_codes = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Validate course code format",
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.buttons.validate_course_code_format', default="Validate course code format"),
                        variable=self.validate_codes).pack(anchor=tk.W)
 
         # Progress display
@@ -272,35 +274,35 @@ class ImportExportDialog:
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Import", command=self.import_courses).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.buttons.import', default="Import"), command=self.import_courses).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def create_export_widgets(self, parent):
         # Filter options
-        filter_frame = ttk.LabelFrame(parent, text="Export Filters", padding=10)
+        filter_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.import_export.import_export.labels.export_filters', default="Export Filters"), padding=10)
         filter_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(filter_frame, text="Department:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(filter_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.labels.department', default="Department:")).grid(row=0, column=0, sticky=tk.W)
         self.dept_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.dept_var, width=20).grid(row=0, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(filter_frame, text="Level:").grid(row=1, column=0, sticky=tk.W)
+        ttk.Label(filter_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.labels.level', default="Level:")).grid(row=1, column=0, sticky=tk.W)
         self.level_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.level_var, width=20).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(filter_frame, text="Status:").grid(row=2, column=0, sticky=tk.W)
+        ttk.Label(filter_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.labels.status', default="Status:")).grid(row=2, column=0, sticky=tk.W)
         self.status_var = tk.StringVar()
         status_combo = ttk.Combobox(filter_frame, textvariable=self.status_var,
                                    values=["", "Active", "Inactive", "Archived", "Cancelled"])
         status_combo.grid(row=2, column=1, sticky=tk.W, padx=5)
 
         # File location
-        file_frame = ttk.LabelFrame(parent, text="Export Location", padding=10)
+        file_frame = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.import_export.import_export.labels.export_location', default="Export Location"), padding=10)
         file_frame.pack(fill=tk.X, pady=5)
 
         self.export_file_var = tk.StringVar()
         ttk.Entry(file_frame, textvariable=self.export_file_var, width=50).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Button(file_frame, text="Browse", command=self.browse_export_file).pack(side=tk.RIGHT, padx=(5,0))
+        ttk.Button(file_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.buttons.browse', default="Browse"), command=self.browse_export_file).pack(side=tk.RIGHT, padx=(5,0))
 
         # Progress display
         self.progress_text = ScrolledText(parent, height=8)
@@ -310,12 +312,12 @@ class ImportExportDialog:
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Export", command=self.export_courses).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.buttons.export', default="Export"), command=self.export_courses).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.import_export.import_export.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def browse_file(self):
         filename = filedialog.askopenfilename(
-            title="Select CSV file to import",
+            title=_t('gui.academics.course_management_gui.import_export.import_export.dialogs.select_csv_file_to_import', default="Select CSV file to import"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
         if filename:
@@ -323,7 +325,7 @@ class ImportExportDialog:
 
     def browse_export_file(self):
         filename = filedialog.asksaveasfilename(
-            title="Save CSV file",
+            title=_t('gui.academics.course_management_gui.import_export.import_export.dialogs.save_csv_file', default="Save CSV file"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
@@ -333,7 +335,7 @@ class ImportExportDialog:
     def import_courses(self):
         file_path = self.file_var.get()
         if not file_path:
-            messagebox.showwarning("No File", "Please select a CSV file to import.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.import_export.import_export.dialogs.no_file', default="No File"), _t('gui.academics.course_management_gui.import_export.import_export.dialogs.please_select_a_csv_file_to_import', default="Please select a CSV file to import."))
             return
 
         try:
@@ -418,14 +420,14 @@ class ImportExportDialog:
             self.result = imported_count > 0
 
         except FileNotFoundError:
-            messagebox.showerror("File Error", "File not found.")
+            messagebox.showerror(_t('gui.academics.course_management_gui.import_export.import_export.dialogs.file_error', default="File Error"), _t('gui.academics.course_management_gui.import_export.import_export.dialogs.file_not_found', default="File not found."))
         except Exception as e:
             messagebox.showerror(_("common.import_error"), f"Failed to import CSV: {e}")
 
     def export_courses(self):
         file_path = self.export_file_var.get()
         if not file_path:
-            messagebox.showwarning("No File", "Please specify a location to save the CSV file.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.import_export.import_export.dialogs.no_file', default="No File"), _t('gui.academics.course_management_gui.import_export.import_export.dialogs.please_specify_a_location_to_save_the_csv_file', default="Please specify a location to save the CSV file."))
             return
 
         try:

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -53,12 +55,12 @@ def emergency_contact_update(self):
     if is_admin:
         students_list = self._load_all_students_from_db()
         if not students_list:
-            messagebox.showinfo("No Students", "No students found in the system.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.account.dialogs.no_students', default="No Students"), _t('gui.academics.parent_portal.account.dialogs.no_students_found_in_the_system', default="No students found in the system."))
             return
     else:
         # Non-admin users can only access their linked students
         if not self.children:
-            messagebox.showinfo("No Students", "No students linked to your guardian account.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.account.dialogs.no_students', default="No Students"), _t('gui.academics.parent_portal.account.dialogs.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account."))
             return
         students_list = self.children
 
@@ -75,7 +77,7 @@ def view_activity_log(self):
     self.clear_content()
     self.update_status("Activity Log")
 
-    title = ttk.Label(self.content_frame, text="Activity Log", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.account.labels.activity_log', default="Activity Log"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Create activity log display
@@ -86,9 +88,9 @@ def view_activity_log(self):
     columns = ('Date/Time', 'User', 'Action')
     tree = ttk.Treeview(log_frame, columns=columns, show='headings', height=15)
 
-    tree.heading('Date/Time', text='Date/Time')
-    tree.heading('User', text='User')
-    tree.heading('Action', text='Action')
+    tree.heading('Date/Time', text=_t('gui.academics.parent_portal.account.headings.date_time', default='Date/Time'))
+    tree.heading('User', text=_t('gui.academics.parent_portal.account.headings.user', default='User'))
+    tree.heading('Action', text=_t('gui.academics.parent_portal.account.headings.action', default='Action'))
 
     tree.column('Date/Time', width=150)
     tree.column('User', width=120)
@@ -111,16 +113,16 @@ def view_activity_log(self):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Back button
-    ttk.Button(self.content_frame, text="← Back", command=self.show_settings_menu).pack(pady=10)
+    ttk.Button(self.content_frame, text=_t('gui.academics.parent_portal.account.buttons.back', default="← Back"), command=self.show_settings_menu).pack(pady=10)
 ParentPortalGUI.view_activity_log = view_activity_log
 
 def _load_activity_log_entries(self, max_entries=100):
     """Load activity log entries from log files"""
     activities = []
     try:
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
 
-        log_dir = paths.LOG_DIR
+        log_dir = paths.UNIVERSITY_LOG_DIR
         log_file = log_dir / 'app.log'
 
         # Try to read current activity log
@@ -180,7 +182,7 @@ class TwoFactorDialog:
         self.result = None
 
         dialog = tk.Toplevel(parent)
-        dialog.title("Enable Two-Factor Authentication")
+        dialog.title(_t('gui.academics.parent_portal.account.windows.enable_two_factor_authentication', default="Enable Two-Factor Authentication"))
         dialog.geometry("500x350")
         dialog.transient(parent)
         dialog.grab_set()
@@ -188,26 +190,26 @@ class TwoFactorDialog:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Two-Factor Authentication",
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.account.labels.two_factor_authentication', default="Two-Factor Authentication"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         ttk.Label(main_frame,
-                 text="Choose a method for two-factor authentication:",
+                 text=_t('gui.academics.parent_portal.account.labels.choose_a_method_for_two_factor_authentication', default="Choose a method for two-factor authentication:"),
                  font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
 
-        method_var = tk.StringVar(value="email")
-        ttk.Radiobutton(main_frame, text="Email verification code",
+        method_var = tk.StringVar(value=_t('gui.academics.parent_portal.account.values.email', default="email"))
+        ttk.Radiobutton(main_frame, text=_t('gui.academics.parent_portal.account.buttons.email_verification_code', default="Email verification code"),
                         variable=method_var, value="email").pack(anchor='w', pady=3)
-        ttk.Radiobutton(main_frame, text="SMS verification code",
+        ttk.Radiobutton(main_frame, text=_t('gui.academics.parent_portal.account.buttons.sms_verification_code', default="SMS verification code"),
                         variable=method_var, value="sms").pack(anchor='w', pady=3)
-        ttk.Radiobutton(main_frame, text="Authenticator app (TOTP)",
+        ttk.Radiobutton(main_frame, text=_t('gui.academics.parent_portal.account.buttons.authenticator_app_totp', default="Authenticator app (TOTP)"),
                         variable=method_var, value="totp").pack(anchor='w', pady=3)
 
         ttk.Separator(main_frame, orient='horizontal').pack(fill='x', pady=15)
 
         ttk.Label(main_frame,
-                 text="After enabling, you will be asked for a verification code "
-                      "each time you log in from a new device.",
+                 text=_t('gui.academics.parent_portal.account.labels.after_enabling_you_will_be_asked_for_a_verification_code_each_ti', default="After enabling, you will be asked for a verification code "
+                      "each time you log in from a new device."),
                  wraplength=400, font=('Arial', 9)).pack(anchor='w', pady=5)
 
         def submit():
@@ -216,8 +218,8 @@ class TwoFactorDialog:
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text="Enable 2FA", command=submit).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.account.buttons.enable_2fa', default="Enable 2FA"), command=submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.account.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         dialog.wait_window()
 
@@ -227,14 +229,14 @@ def enable_two_factor_auth(self):
     dialog = TwoFactorDialog(self.root)
     if dialog.result:
         self.update_status("Two-factor authentication enabled")
-        messagebox.showinfo("Success", "Two-factor authentication has been enabled.")
+        messagebox.showinfo(_t('gui.academics.parent_portal.account.dialogs.success', default="Success"), _t('gui.academics.parent_portal.account.dialogs.two_factor_authentication_has_been_enabled', default="Two-factor authentication has been enabled."))
 ParentPortalGUI.enable_two_factor_auth = enable_two_factor_auth
 
 def mark_notifications_read(self):
     """Mark all notifications as read"""
-    if messagebox.askyesno("Mark Read", "Mark all notifications as read?"):
+    if messagebox.askyesno(_t('gui.academics.parent_portal.account.dialogs.mark_read', default="Mark Read"), _t('gui.academics.parent_portal.account.dialogs.mark_all_notifications_as_read', default="Mark all notifications as read?")):
         # In real implementation, would update database
-        messagebox.showinfo("Success", "All notifications marked as read.")
+        messagebox.showinfo(_t('gui.academics.parent_portal.account.dialogs.success', default="Success"), _t('gui.academics.parent_portal.account.dialogs.all_notifications_marked_as_read', default="All notifications marked as read."))
         self.update_status("Notifications marked as read")
 ParentPortalGUI.mark_notifications_read = mark_notifications_read
 
@@ -243,29 +245,29 @@ def show_notifications_interface(self):
     self.clear_content()
     self.update_status("Notification Preferences")
 
-    title = ttk.Label(self.content_frame, text="Notification Preferences", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.account.labels.notification_preferences', default="Notification Preferences"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Notification settings frame
-    settings_frame = ttk.LabelFrame(self.content_frame, text="Notification Settings", padding=20)
+    settings_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.account.labels.notification_settings', default="Notification Settings"), padding=20)
     settings_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     # Email notifications
     email_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(settings_frame, text="Email Notifications", variable=email_var).pack(anchor='w', pady=5)
+    ttk.Checkbutton(settings_frame, text=_t('gui.academics.parent_portal.account.buttons.email_notifications', default="Email Notifications"), variable=email_var).pack(anchor='w', pady=5)
 
     # SMS notifications
     sms_var = tk.BooleanVar(value=False)
-    ttk.Checkbutton(settings_frame, text="SMS Notifications", variable=sms_var).pack(anchor='w', pady=5)
+    ttk.Checkbutton(settings_frame, text=_t('gui.academics.parent_portal.account.buttons.sms_notifications', default="SMS Notifications"), variable=sms_var).pack(anchor='w', pady=5)
 
     # Push notifications
     push_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(settings_frame, text="Push Notifications", variable=push_var).pack(anchor='w', pady=5)
+    ttk.Checkbutton(settings_frame, text=_t('gui.academics.parent_portal.account.buttons.push_notifications', default="Push Notifications"), variable=push_var).pack(anchor='w', pady=5)
 
     ttk.Separator(settings_frame, orient='horizontal').pack(fill='x', pady=15)
 
     # Notification categories
-    ttk.Label(settings_frame, text="Receive notifications for:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=5)
+    ttk.Label(settings_frame, text=_t('gui.academics.parent_portal.account.labels.receive_notifications_for', default="Receive notifications for:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=5)
 
     categories = {
         "Grades Posted": tk.BooleanVar(value=True),
@@ -283,7 +285,7 @@ def show_notifications_interface(self):
 
     # Save button
     def save_preferences():
-        messagebox.showinfo("Success", "Notification preferences saved successfully!")
+        messagebox.showinfo(_t('gui.academics.parent_portal.account.dialogs.success', default="Success"), _t('gui.academics.parent_portal.account.dialogs.notification_preferences_saved_successfully', default="Notification preferences saved successfully!"))
         self.update_status("Preferences saved")
 
     # Advanced settings button
@@ -293,14 +295,14 @@ def show_notifications_interface(self):
     btn_frame = ttk.Frame(self.content_frame)
     btn_frame.pack(pady=20)
 
-    ttk.Button(btn_frame, text="Save Preferences", command=save_preferences).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Advanced Settings", command=show_advanced_settings).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.account.buttons.save_preferences', default="Save Preferences"), command=save_preferences).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.account.buttons.advanced_settings', default="Advanced Settings"), command=show_advanced_settings).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.show_notifications_interface = show_notifications_interface
 
 def show_advanced_notification_settings(self):
     """Show advanced notification settings dialog"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Advanced Notification Settings")
+    dialog.title(_t('gui.academics.parent_portal.account.windows.advanced_notification_settings', default="Advanced Notification Settings"))
     dialog.geometry("500x500")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -308,7 +310,7 @@ def show_advanced_notification_settings(self):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Advanced Notification Settings",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.account.labels.advanced_notification_settings', default="Advanced Notification Settings"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Load current preferences from database - set defaults first
@@ -381,37 +383,37 @@ def show_advanced_notification_settings(self):
         }
 
     # Preferred notification time
-    time_frame = ttk.LabelFrame(main_frame, text="Preferred Notification Time", padding=15)
+    time_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.account.labels.preferred_notification_time', default="Preferred Notification Time"), padding=15)
     time_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Label(time_frame, text="Send daily summaries at:").pack(anchor='w', pady=5)
+    ttk.Label(time_frame, text=_t('gui.academics.parent_portal.account.labels.send_daily_summaries_at', default="Send daily summaries at:")).pack(anchor='w', pady=5)
     notification_time_var = tk.StringVar(value=current_prefs['notification_time'])
     time_combo = ttk.Combobox(time_frame, textvariable=notification_time_var, width=20, state='readonly')
     time_combo['values'] = ['07:00', '08:00', '09:00', '10:00', '12:00', '15:00', '17:00', '18:00', '20:00']
     time_combo.pack(fill=tk.X, pady=5)
 
     # Quiet hours
-    quiet_frame = ttk.LabelFrame(main_frame, text="Quiet Hours (No Notifications)", padding=15)
+    quiet_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.account.labels.quiet_hours_no_notifications', default="Quiet Hours (No Notifications)"), padding=15)
     quiet_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Label(quiet_frame, text="Start Time:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(quiet_frame, text=_t('gui.academics.parent_portal.account.labels.start_time', default="Start Time:")).grid(row=0, column=0, sticky='w', pady=5)
     quiet_start_var = tk.StringVar(value=current_prefs['quiet_start'])
     quiet_start_combo = ttk.Combobox(quiet_frame, textvariable=quiet_start_var, width=15, state='readonly')
     quiet_start_combo['values'] = [f"{h:02d}:00" for h in range(24)]
     quiet_start_combo.grid(row=0, column=1, pady=5, padx=5)
 
-    ttk.Label(quiet_frame, text="End Time:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(quiet_frame, text=_t('gui.academics.parent_portal.account.labels.end_time', default="End Time:")).grid(row=1, column=0, sticky='w', pady=5)
     quiet_end_var = tk.StringVar(value=current_prefs['quiet_end'])
     quiet_end_combo = ttk.Combobox(quiet_frame, textvariable=quiet_end_var, width=15, state='readonly')
     quiet_end_combo['values'] = [f"{h:02d}:00" for h in range(24)]
     quiet_end_combo.grid(row=1, column=1, pady=5, padx=5)
 
     # Subject-specific preferences
-    subject_frame = ttk.LabelFrame(main_frame, text="Subject-Specific Notifications", padding=15)
+    subject_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.account.labels.subject_specific_notifications', default="Subject-Specific Notifications"), padding=15)
     subject_frame.pack(fill=tk.X, pady=10)
 
     ttk.Label(subject_frame,
-             text="Get notifications only for specific subjects\n(comma-separated, leave empty for all):",
+             text=_t('gui.academics.parent_portal.account.labels.get_notifications_only_for_specific_subjects_comma_separated_lea', default="Get notifications only for specific subjects\n(comma-separated, leave empty for all):"),
              wraplength=400).pack(anchor='w', pady=5)
 
     # Parse current subjects
@@ -428,7 +430,7 @@ def show_advanced_notification_settings(self):
     subject_entry.insert(0, current_subjects)
     subject_entry.pack(fill=tk.X, pady=5)
 
-    ttk.Label(subject_frame, text="Example: Mathematics, Science, English",
+    ttk.Label(subject_frame, text=_t('gui.academics.parent_portal.account.labels.example_mathematics_science_english', default="Example: Mathematics, Science, English"),
              font=('Arial', 8, 'italic')).pack(anchor='w')
 
     # Save button
@@ -459,18 +461,18 @@ def show_advanced_notification_settings(self):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Advanced notification settings saved successfully!")
+            messagebox.showinfo(_t('gui.academics.parent_portal.account.dialogs.success', default="Success"), _t('gui.academics.parent_portal.account.dialogs.advanced_notification_settings_saved_successfully', default="Advanced notification settings saved successfully!"))
             self.update_status("Advanced notification settings saved")
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save settings: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), f"Failed to save settings: {str(e)}")
 
     btn_frame = ttk.Frame(main_frame)
     btn_frame.pack(pady=20)
 
-    ttk.Button(btn_frame, text="Save Settings", command=save_advanced_settings).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.account.buttons.save_settings', default="Save Settings"), command=save_advanced_settings).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.account.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.show_advanced_notification_settings = show_advanced_notification_settings
 
 def show_account_interface(self):
@@ -478,11 +480,11 @@ def show_account_interface(self):
     self.clear_content()
     self.update_status("Account Settings")
 
-    title = ttk.Label(self.content_frame, text="Account Settings", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.account.labels.account_settings', default="Account Settings"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Account information - get current user dynamically
-    account_frame = ttk.LabelFrame(self.content_frame, text="Account Information", padding=20)
+    account_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.account.labels.account_information', default="Account Information"), padding=20)
     account_frame.pack(fill=tk.X, padx=20, pady=10)
 
     current_user = self.get_current_user()
@@ -503,29 +505,29 @@ def show_account_interface(self):
             ttk.Label(account_frame, text=f"Parent ID: {self.parent_id}", font=('Arial', 10)).pack(anchor='w', pady=3)
 
     # Security settings
-    security_frame = ttk.LabelFrame(self.content_frame, text="Security", padding=20)
+    security_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.account.labels.security', default="Security"), padding=20)
     security_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Button(security_frame, text="Change Password",
+    ttk.Button(security_frame, text=_t('gui.academics.parent_portal.account.buttons.change_password', default="Change Password"),
               command=self.change_password).pack(fill=tk.X, pady=5)
-    ttk.Button(security_frame, text="Enable Two-Factor Authentication",
+    ttk.Button(security_frame, text=_t('gui.academics.parent_portal.account.buttons.enable_two_factor_authentication', default="Enable Two-Factor Authentication"),
               command=self.enable_two_factor_auth).pack(fill=tk.X, pady=5)
-    ttk.Button(security_frame, text="View Login History",
+    ttk.Button(security_frame, text=_t('gui.academics.parent_portal.account.buttons.view_login_history', default="View Login History"),
               command=self.view_login_history).pack(fill=tk.X, pady=5)
 
     # Contact preferences
-    contact_frame = ttk.LabelFrame(self.content_frame, text="Contact Preferences", padding=20)
+    contact_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.account.labels.contact_preferences', default="Contact Preferences"), padding=20)
     contact_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(contact_frame, text="Primary Email:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(contact_frame, text=_t('gui.academics.parent_portal.account.labels.primary_email', default="Primary Email:")).grid(row=0, column=0, sticky='w', pady=5)
     email_entry = ttk.Entry(contact_frame, width=40)
     email_entry.grid(row=0, column=1, pady=5, sticky='ew')
 
-    ttk.Label(contact_frame, text="Primary Phone:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(contact_frame, text=_t('gui.academics.parent_portal.account.labels.primary_phone', default="Primary Phone:")).grid(row=1, column=0, sticky='w', pady=5)
     phone_entry = ttk.Entry(contact_frame, width=40)
     phone_entry.grid(row=1, column=1, pady=5, sticky='ew')
 
-    ttk.Label(contact_frame, text="Address:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(contact_frame, text=_t('gui.academics.parent_portal.account.labels.address', default="Address:")).grid(row=2, column=0, sticky='w', pady=5)
     address_entry = ttk.Entry(contact_frame, width=40)
     address_entry.grid(row=2, column=1, pady=5, sticky='ew')
 
@@ -560,11 +562,11 @@ def show_account_interface(self):
 
         # Validate email
         if email and '@' not in email:
-            messagebox.showwarning("Validation Error", "Please enter a valid email address.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.account.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.account.dialogs.please_enter_a_valid_email_address', default="Please enter a valid email address."))
             return
 
         if not self.parent_id:
-            messagebox.showerror("Error", "Parent ID not found. Please log in again.")
+            messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.parent_id_not_found_please_log_in_again', default="Parent ID not found. Please log in again."))
             return
 
         try:
@@ -581,19 +583,19 @@ def show_account_interface(self):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Contact information updated successfully!")
+            messagebox.showinfo(_t('gui.academics.parent_portal.account.dialogs.success', default="Success"), _t('gui.academics.parent_portal.account.dialogs.contact_information_updated_successfully', default="Contact information updated successfully!"))
             self.update_status("Contact information updated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update contact information: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), f"Failed to update contact information: {str(e)}")
 
-    ttk.Button(self.content_frame, text="Save Changes", command=save_contact_info).pack(pady=20)
+    ttk.Button(self.content_frame, text=_t('gui.academics.parent_portal.account.buttons.save_changes', default="Save Changes"), command=save_contact_info).pack(pady=20)
 ParentPortalGUI.show_account_interface = show_account_interface
 
 def change_password(self):
     """Change password"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Change Password")
+    dialog.title(_t('gui.academics.parent_portal.account.windows.change_password', default="Change Password"))
     dialog.geometry("500x400")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -601,27 +603,27 @@ def change_password(self):
     # Title
     title_frame = ttk.Frame(dialog, padding=20)
     title_frame.pack(fill=tk.X)
-    ttk.Label(title_frame, text="Change Password",
+    ttk.Label(title_frame, text=_t('gui.academics.parent_portal.account.labels.change_password', default="Change Password"),
              font=('Arial', 16, 'bold')).pack(anchor='w')
-    ttk.Label(title_frame, text="Update your account password",
+    ttk.Label(title_frame, text=_t('gui.academics.parent_portal.account.labels.update_your_account_password', default="Update your account password"),
              font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
 
     # Form frame
-    form_frame = ttk.LabelFrame(dialog, text="Password Information", padding=20)
+    form_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.parent_portal.account.labels.password_information', default="Password Information"), padding=20)
     form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
 
     # Current password
-    ttk.Label(form_frame, text="Current Password:", font=('Arial', 10)).grid(row=0, column=0, sticky='w', pady=10)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.account.labels.current_password', default="Current Password:"), font=('Arial', 10)).grid(row=0, column=0, sticky='w', pady=10)
     current_password_entry = ttk.Entry(form_frame, width=30, show='*')
     current_password_entry.grid(row=0, column=1, pady=10, sticky='ew', padx=5)
 
     # New password
-    ttk.Label(form_frame, text="New Password:", font=('Arial', 10)).grid(row=1, column=0, sticky='w', pady=10)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.account.labels.new_password', default="New Password:"), font=('Arial', 10)).grid(row=1, column=0, sticky='w', pady=10)
     new_password_entry = ttk.Entry(form_frame, width=30, show='*')
     new_password_entry.grid(row=1, column=1, pady=10, sticky='ew', padx=5)
 
     # Confirm password
-    ttk.Label(form_frame, text="Confirm Password:", font=('Arial', 10)).grid(row=2, column=0, sticky='w', pady=10)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.account.labels.confirm_password', default="Confirm Password:"), font=('Arial', 10)).grid(row=2, column=0, sticky='w', pady=10)
     confirm_password_entry = ttk.Entry(form_frame, width=30, show='*')
     confirm_password_entry.grid(row=2, column=1, pady=10, sticky='ew', padx=5)
 
@@ -631,13 +633,13 @@ def change_password(self):
     requirements_frame = ttk.Frame(form_frame)
     requirements_frame.grid(row=3, column=0, columnspan=2, sticky='w', pady=10)
 
-    ttk.Label(requirements_frame, text="Password Requirements:",
+    ttk.Label(requirements_frame, text=_t('gui.academics.parent_portal.account.labels.password_requirements', default="Password Requirements:"),
              font=('Arial', 9, 'bold')).pack(anchor='w')
-    ttk.Label(requirements_frame, text="• At least 8 characters long",
+    ttk.Label(requirements_frame, text=_t('gui.academics.parent_portal.account.labels.at_least_8_characters_long', default="• At least 8 characters long"),
              font=('Arial', 8)).pack(anchor='w', padx=10)
-    ttk.Label(requirements_frame, text="• Contains uppercase and lowercase letters",
+    ttk.Label(requirements_frame, text=_t('gui.academics.parent_portal.account.labels.contains_uppercase_and_lowercase_letters', default="• Contains uppercase and lowercase letters"),
              font=('Arial', 8)).pack(anchor='w', padx=10)
-    ttk.Label(requirements_frame, text="• Contains at least one number",
+    ttk.Label(requirements_frame, text=_t('gui.academics.parent_portal.account.labels.contains_at_least_one_number', default="• Contains at least one number"),
              font=('Arial', 8)).pack(anchor='w', padx=10)
 
     # Buttons
@@ -651,35 +653,35 @@ def change_password(self):
 
         # Validation
         if not current_password:
-            messagebox.showerror("Error", "Please enter your current password.")
+            messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.please_enter_your_current_password', default="Please enter your current password."))
             return
         if not new_password:
-            messagebox.showerror("Error", "Please enter a new password.")
+            messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.please_enter_a_new_password', default="Please enter a new password."))
             return
         if new_password != confirm_password:
-            messagebox.showerror("Error", "New password and confirmation do not match.")
+            messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.new_password_and_confirmation_do_not_match', default="New password and confirmation do not match."))
             return
         if len(new_password) < 8:
-            messagebox.showerror("Error", "Password must be at least 8 characters long.")
+            messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.password_must_be_at_least_8_characters_long', default="Password must be at least 8 characters long."))
             return
 
         # Verify current password with auth system
         try:
             current_user = self.get_current_user()
             if not current_user:
-                messagebox.showerror("Error", "Could not verify current user.")
+                messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.could_not_verify_current_user', default="Could not verify current user."))
                 return
 
             username = current_user.get('username')
             if not username:
-                messagebox.showerror("Error", "Could not determine username.")
+                messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.could_not_determine_username', default="Could not determine username."))
                 return
 
             # Use the authentication system to verify and update password
             if self.auth:
                 # Verify current password
                 if not self.auth.authenticate(username, current_password):
-                    messagebox.showerror("Error", "Current password is incorrect.")
+                    messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.current_password_is_incorrect', default="Current password is incorrect."))
                     log_activity(
                         action='failed_password_change',
                         entity_type='user_account',
@@ -691,9 +693,9 @@ def change_password(self):
                 # Update to new password
                 success = self.auth.change_password(username, new_password)
                 if success:
-                    messagebox.showinfo("Success",
-                                      "Password changed successfully!\n\n"
-                                      "Please use your new password on your next login.")
+                    messagebox.showinfo(_t('gui.academics.parent_portal.account.dialogs.success', default="Success"),
+                                      _t('gui.academics.parent_portal.account.dialogs.password_changed_successfully_please_use_your_new_password_on_yo', default="Password changed successfully!\n\n"
+                                      "Please use your new password on your next login."))
                     log_activity(
                         action='password_change',
                         entity_type='user_account',
@@ -702,21 +704,21 @@ def change_password(self):
                     )
                     dialog.destroy()
                 else:
-                    messagebox.showerror("Error", "Failed to update password. Please try again.")
+                    messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.failed_to_update_password_please_try_again', default="Failed to update password. Please try again."))
             else:
-                messagebox.showerror("Error", "Authentication system not available.")
+                messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), _t('gui.academics.parent_portal.account.dialogs.authentication_system_not_available', default="Authentication system not available."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to change password: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.account.dialogs.error', default="Error"), f"Failed to change password: {str(e)}")
 
-    ttk.Button(button_frame, text="Update Password", command=update_password).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.account.buttons.update_password', default="Update Password"), command=update_password).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.account.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.change_password = change_password
 
 def view_login_history(self):
     """View login history"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Login History")
+    dialog.title(_t('gui.academics.parent_portal.account.windows.login_history', default="Login History"))
     dialog.geometry("900x600")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -724,9 +726,9 @@ def view_login_history(self):
     # Title
     title_frame = ttk.Frame(dialog, padding=20)
     title_frame.pack(fill=tk.X)
-    ttk.Label(title_frame, text="Login History",
+    ttk.Label(title_frame, text=_t('gui.academics.parent_portal.account.labels.login_history', default="Login History"),
              font=('Arial', 16, 'bold')).pack(anchor='w')
-    ttk.Label(title_frame, text="Recent authentication activity for your account",
+    ttk.Label(title_frame, text=_t('gui.academics.parent_portal.account.labels.recent_authentication_activity_for_your_account', default="Recent authentication activity for your account"),
              font=('Arial', 10)).pack(anchor='w', pady=(0, 10))
 
     # Main content frame
@@ -736,9 +738,9 @@ def view_login_history(self):
     try:
         current_user = self.get_current_user()
         if not current_user:
-            ttk.Label(main_frame, text="Could not retrieve user information.",
+            ttk.Label(main_frame, text=_t('gui.academics.parent_portal.account.labels.could_not_retrieve_user_information', default="Could not retrieve user information."),
                      font=('Arial', 11)).pack(pady=50)
-            ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.academics.parent_portal.account.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
             return
 
         username = current_user.get('username')
@@ -768,7 +770,7 @@ def view_login_history(self):
 
                 if history:
                     # Summary frame
-                    summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=10)
+                    summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.account.labels.summary', default="Summary"), padding=10)
                     summary_frame.pack(fill=tk.X, pady=(0, 10))
 
                     total_logins = len(history)
@@ -784,17 +786,17 @@ def view_login_history(self):
                                  font=('Arial', 10), foreground='red').pack(side=tk.LEFT, padx=20)
 
                     # History table
-                    history_frame = ttk.LabelFrame(main_frame, text="Login Activity", padding=10)
+                    history_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.account.labels.login_activity', default="Login Activity"), padding=10)
                     history_frame.pack(fill=tk.BOTH, expand=True)
 
                     columns = ("Date/Time", "Status", "IP Address", "Device", "Location")
                     tree = ttk.Treeview(history_frame, columns=columns, show="headings", height=20)
 
-                    tree.heading("Date/Time", text="Date/Time")
-                    tree.heading("Status", text="Status")
-                    tree.heading("IP Address", text="IP Address")
-                    tree.heading("Device", text="Device")
-                    tree.heading("Location", text="Location")
+                    tree.heading("Date/Time", text=_t('gui.academics.parent_portal.account.headings.date_time', default="Date/Time"))
+                    tree.heading("Status", text=_t('gui.academics.parent_portal.account.headings.status', default="Status"))
+                    tree.heading("IP Address", text=_t('gui.academics.parent_portal.account.headings.ip_address', default="IP Address"))
+                    tree.heading("Device", text=_t('gui.academics.parent_portal.account.headings.device', default="Device"))
+                    tree.heading("Location", text=_t('gui.academics.parent_portal.account.headings.location', default="Location"))
 
                     tree.column("Date/Time", width=180)
                     tree.column("Status", width=100)
@@ -823,7 +825,7 @@ def view_login_history(self):
                     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
                 else:
-                    ttk.Label(main_frame, text="No login history found.",
+                    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.account.labels.no_login_history_found', default="No login history found."),
                              font=('Arial', 11)).pack(pady=50)
             else:
                 # Create sample login history data for demo
@@ -836,7 +838,7 @@ def view_login_history(self):
                 ]
 
                 # Summary frame
-                summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=10)
+                summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.account.labels.summary', default="Summary"), padding=10)
                 summary_frame.pack(fill=tk.X, pady=(0, 10))
 
                 total_logins = len(sample_data)
@@ -852,17 +854,17 @@ def view_login_history(self):
                              font=('Arial', 10), foreground='red').pack(side=tk.LEFT, padx=20)
 
                 # History table
-                history_frame = ttk.LabelFrame(main_frame, text="Login Activity (Sample Data)", padding=10)
+                history_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.account.labels.login_activity_sample_data', default="Login Activity (Sample Data)"), padding=10)
                 history_frame.pack(fill=tk.BOTH, expand=True)
 
                 columns = ("Date/Time", "Status", "IP Address", "Device", "Location")
                 tree = ttk.Treeview(history_frame, columns=columns, show="headings", height=20)
 
-                tree.heading("Date/Time", text="Date/Time")
-                tree.heading("Status", text="Status")
-                tree.heading("IP Address", text="IP Address")
-                tree.heading("Device", text="Device")
-                tree.heading("Location", text="Location")
+                tree.heading("Date/Time", text=_t('gui.academics.parent_portal.account.headings.date_time', default="Date/Time"))
+                tree.heading("Status", text=_t('gui.academics.parent_portal.account.headings.status', default="Status"))
+                tree.heading("IP Address", text=_t('gui.academics.parent_portal.account.headings.ip_address', default="IP Address"))
+                tree.heading("Device", text=_t('gui.academics.parent_portal.account.headings.device', default="Device"))
+                tree.heading("Location", text=_t('gui.academics.parent_portal.account.headings.location', default="Location"))
 
                 tree.column("Date/Time", width=180)
                 tree.column("Status", width=100)
@@ -891,5 +893,5 @@ def view_login_history(self):
                  font=('Arial', 10)).pack(pady=50)
 
     # Close button
-    ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.academics.parent_portal.account.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 ParentPortalGUI.view_login_history = view_login_history

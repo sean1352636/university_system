@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.services.pdf_export.chart_builder import ChartBuilder
 from education_system.systems.university.services.pdf_export.data_aggregator import DataAggregator
 from education_system.systems.university.services.pdf_export.pdf_generator import PDFGenerator
@@ -35,8 +35,8 @@ class PDFExportManager:
             db_path: Optional path to the database file.
             output_dir: Optional directory for output files.
         """
-        self.db_path = db_path or str(paths.DEFAULT_DB_PATH)
-        self.output_dir = output_dir or str(paths.EXPORTS_PDF_DIR)
+        self.db_path = db_path or str(paths.UNIVERSITY_DEFAULT_DB_PATH)
+        self.output_dir = output_dir or str(paths.UNIVERSITY_EXPORTS_PDF_DIR)
 
         # Ensure output directory exists
         Path(self.output_dir).mkdir(parents=True, exist_ok=True)

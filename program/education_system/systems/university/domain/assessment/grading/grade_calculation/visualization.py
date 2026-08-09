@@ -1,5 +1,7 @@
 import os
 import numpy as np
+
+from education_system.paths import UNIVERSITY_ANALYTICS_PLOTS_DIR as _ANALYTICS_PLOTS_DIR
 try:
     import matplotlib
     import matplotlib.pyplot as plt
@@ -47,7 +49,7 @@ def create_trend_visualization(daily_trends, monthly_trends, filename_prefix):
         # Import here to allow tests to patch grade_calculation.os/plt
         from education_system.systems.university.domain.assessment.grading import grade_calculation
         # Create directory if it doesn't exist
-        plots_dir = grade_calculation.os.path.join(grade_calculation.os.path.dirname(__file__), '..', '..', '..', '..', '..', 'data', 'analytics', 'plots')
+        plots_dir = str(_ANALYTICS_PLOTS_DIR)
         plots_dir = grade_calculation.os.path.normpath(plots_dir)
         if not grade_calculation.os.path.exists(plots_dir):
             grade_calculation.os.makedirs(plots_dir)
@@ -237,7 +239,7 @@ def create_grade_visualizations(scores, letters, max_points, title, entity_type,
             print("Seaborn is not installed; cannot generate grade visualizations.")
             return
         # Create a directory for the plots if it doesn't exist
-        plots_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'data', 'analytics', 'plots')
+        plots_dir = str(_ANALYTICS_PLOTS_DIR)
         plots_dir = os.path.normpath(plots_dir)
         if not os.path.exists(plots_dir):
             os.makedirs(plots_dir)

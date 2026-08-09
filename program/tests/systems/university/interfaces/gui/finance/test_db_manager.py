@@ -159,7 +159,7 @@ class TestDatabaseBackup:
     def test_backup_database_no_db_file(self, mock_msgbox, db_manager):
         """Test backup when database file doesn't exist"""
         with patch(f'{DM_MODULE}.os.path.exists', return_value=False), \
-             patch('education_system.systems.university.infrastructure.paths') as mock_paths:
+             patch('education_system.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = '/test/db.db'
             db_manager.backup_database()
 
@@ -173,7 +173,7 @@ class TestDatabaseBackup:
 
         with patch(f'{DM_MODULE}.os.path.exists', return_value=True), \
              patch(f'{DM_MODULE}.os.path.getsize', return_value=1024 * 1024), \
-             patch('education_system.systems.university.infrastructure.paths') as mock_paths, \
+             patch('education_system.paths') as mock_paths, \
              patch('tkinter.filedialog.asksaveasfilename', return_value='/backup/test.db'), \
              patch('shutil.copy2') as mock_copy:
             mock_paths.DEFAULT_DB_PATH = '/test/db.db'
@@ -186,7 +186,7 @@ class TestDatabaseBackup:
     def test_backup_database_cancelled(self, mock_msgbox, db_manager):
         """Test backup cancelled by user"""
         with patch(f'{DM_MODULE}.os.path.exists', return_value=True), \
-             patch('education_system.systems.university.infrastructure.paths') as mock_paths, \
+             patch('education_system.paths') as mock_paths, \
              patch('tkinter.filedialog.asksaveasfilename', return_value=''):
             mock_paths.DEFAULT_DB_PATH = '/test/db.db'
             db_manager.backup_database()
@@ -202,7 +202,7 @@ class TestDatabaseStats:
     def test_show_database_stats(self, mock_os_path, mock_get_conn, mock_toplevel, db_manager):
         """Test showing database statistics"""
         # Patch paths at the source since the method imports it locally
-        with patch('education_system.systems.university.infrastructure.paths') as mock_paths:
+        with patch('education_system.paths') as mock_paths:
             mock_paths.DEFAULT_DB_PATH = '/test/db.db'
             mock_os_path.exists.return_value = True
             mock_os_path.getsize.return_value = 2048 * 1024  # 2MB

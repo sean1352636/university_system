@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -112,7 +114,7 @@ def create_place_order_tab(self, parent=None):
     from education_system.systems.university.interfaces.gui.operations.commerce.restaurant_management_gui.orders import place_order
     if parent is None:
         place_order_frame = ttk.Frame(self.notebook)
-        self.notebook.add(place_order_frame, text="📝 Place Order")
+        self.notebook.add(place_order_frame, text=_t('gui.operations.commerce.restaurant_management_gui.core.tabs.tabs.place_order', default="📝 Place Order"))
     else:
         place_order_frame = parent
     place_order.create_place_order_tab(self, place_order_frame)
@@ -170,7 +172,7 @@ def create_refunds_tab(self, parent=None):
     from education_system.systems.university.interfaces.gui.operations.commerce.restaurant_management_gui.orders import refunds
     if parent is None:
         refunds_frame = ttk.Frame(self.notebook)
-        self.notebook.add(refunds_frame, text="Refunds")
+        self.notebook.add(refunds_frame, text=_t('gui.operations.commerce.restaurant_management_gui.core.tabs.tabs.refunds', default="Refunds"))
     else:
         refunds_frame = parent
     refunds.create_refunds_tab(self, refunds_frame)
@@ -194,9 +196,9 @@ def create_customers_tab(self, parent=None):
               command=self.manage_loyalty_dialog).pack(side='left', padx=5)
     ttk.Button(btn_frame, text=_t("restaurant.customer_feedback"),
               command=self.manage_customer_feedback).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Meal Plan",
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.core.tabs.buttons.meal_plan', default="Meal Plan"),
               command=self.manage_meal_plan_dialog).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Staff Subsidy",
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.core.tabs.buttons.staff_subsidy', default="Staff Subsidy"),
               command=self.manage_staff_subsidy_dialog).pack(side='left', padx=5)
 
     columns = ('ID', 'Name', 'Email', 'Phone', 'Loyalty Tier', 'Points', 'Total Spent')

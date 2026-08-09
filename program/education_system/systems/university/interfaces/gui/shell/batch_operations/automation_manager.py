@@ -1,4 +1,6 @@
 """Automation operations manager for batch operations GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import json
 import random
@@ -10,7 +12,11 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 import schedule
 
 from education_system.systems.university.interfaces.gui.shell.batch_operations.constants import _t, logger, EXTERNAL_DB_CONFIG_PATH, EXTERNAL_API_CONFIG_PATH
-from education_system.systems.university.infrastructure.paths import CONFIG_DIR, PROJECT_ROOT, API_SERVER_CONFIG_FILE
+from education_system.paths import (
+    UNIVERSITY_CONFIG_DIR,
+    UNIVERSITY_PROJECT_ROOT,
+    UNIVERSITY_API_SERVER_CONFIG_FILE,
+)
 from education_system.systems.university.interfaces.gui.shell.batch_operations.progress_dialog import GUIProgressDialog
 
 
@@ -99,7 +105,7 @@ class AutomationManager:
 
             def browse_directory():
                 from tkinter import filedialog
-                selected_dir = filedialog.askdirectory(title="Select Import Directory")
+                selected_dir = filedialog.askdirectory(title=_t('gui.shell.batch_operations.automation_manager.dialogs.select_import_directory', default="Select Import Directory"))
                 if selected_dir:
                     dir_var.set(selected_dir)
 
@@ -150,11 +156,11 @@ class AutomationManager:
             notify_failure_var = tk.BooleanVar(value=True)
             notify_summary_var = tk.BooleanVar(value=False)
 
-            tk.Checkbutton(email_config_frame, text="Notify on successful import",
+            tk.Checkbutton(email_config_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.notify_on_successful_import', default="Notify on successful import"),
                           variable=notify_success_var, font=('Arial', 9)).pack(anchor='w')
-            tk.Checkbutton(email_config_frame, text="Notify on import failures",
+            tk.Checkbutton(email_config_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.notify_on_import_failures', default="Notify on import failures"),
                           variable=notify_failure_var, font=('Arial', 9)).pack(anchor='w')
-            tk.Checkbutton(email_config_frame, text="Send weekly summary report",
+            tk.Checkbutton(email_config_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.send_weekly_summary_report', default="Send weekly summary report"),
                           variable=notify_summary_var, font=('Arial', 9)).pack(anchor='w')
 
             # Import Options
@@ -166,7 +172,7 @@ class AutomationManager:
 
             # File type filter
             tk.Label(options_config_frame, text=_t("batch_ops.labels.file_types"), font=('Arial', 10)).grid(row=0, column=0, sticky='w')
-            file_types_var = tk.StringVar(value="*.csv, *.xlsx, *.json")
+            file_types_var = tk.StringVar(value=_t('gui.shell.batch_operations.automation_manager.values.csv_xlsx_json', default="*.csv, *.xlsx, *.json"))
             file_types_entry = tk.Entry(options_config_frame, textvariable=file_types_var,
                                        font=('Arial', 10), width=30)
             file_types_entry.grid(row=0, column=1, padx=(5, 0), sticky='ew')
@@ -176,11 +182,11 @@ class AutomationManager:
             validate_data_var = tk.BooleanVar(value=True)
             archive_processed_var = tk.BooleanVar(value=False)
 
-            tk.Checkbutton(options_config_frame, text="Backup database before import",
+            tk.Checkbutton(options_config_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.backup_database_before_import', default="Backup database before import"),
                           variable=backup_before_var, font=('Arial', 9)).grid(row=1, column=0, columnspan=2, sticky='w', pady=(10, 2))
-            tk.Checkbutton(options_config_frame, text="Validate data before import",
+            tk.Checkbutton(options_config_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.validate_data_before_import', default="Validate data before import"),
                           variable=validate_data_var, font=('Arial', 9)).grid(row=2, column=0, columnspan=2, sticky='w', pady=2)
-            tk.Checkbutton(options_config_frame, text="Archive processed files",
+            tk.Checkbutton(options_config_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.archive_processed_files', default="Archive processed files"),
                           variable=archive_processed_var, font=('Arial', 9)).grid(row=3, column=0, columnspan=2, sticky='w', pady=2)
 
             options_config_frame.columnconfigure(1, weight=1)
@@ -228,11 +234,11 @@ class AutomationManager:
                     # Validate inputs
                     directory_path = dir_var.get().strip()
                     if not directory_path:
-                        messagebox.showerror(_t("batch_ops.msg_titles.validation_error"), "Please select an import directory")
+                        messagebox.showerror(_t("batch_ops.msg_titles.validation_error"), _t('gui.shell.batch_operations.automation_manager.dialogs.please_select_an_import_directory', default="Please select an import directory"))
                         return
 
                     if not os.path.exists(directory_path):
-                        create_dir = messagebox.askyesno("Directory Not Found",
+                        create_dir = messagebox.askyesno(_t('gui.shell.batch_operations.automation_manager.dialogs.directory_not_found', default="Directory Not Found"),
                                                        f"Directory '{directory_path}' does not exist. Create it?")
                         if create_dir:
                             os.makedirs(directory_path, exist_ok=True)
@@ -384,7 +390,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
                 try:
                     directory_path = dir_var.get().strip()
                     if not directory_path:
-                        messagebox.showerror(_t("batch_ops.msg_titles.validation_error"), "Please select an import directory")
+                        messagebox.showerror(_t("batch_ops.msg_titles.validation_error"), _t('gui.shell.batch_operations.automation_manager.dialogs.please_select_an_import_directory', default="Please select an import directory"))
                         return
 
                     # Show test results
@@ -448,7 +454,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
 
             # Configuration Tab
             config_frame = ttk.Frame(notebook)
-            notebook.add(config_frame, text="Configuration")
+            notebook.add(config_frame, text=_t('gui.shell.batch_operations.automation_manager.tabs.configuration', default="Configuration"))
 
             # Server Configuration
             server_frame = tk.LabelFrame(config_frame, text=_t("batch_ops.labels.server_configuration"), font=('Arial', 10, 'bold'))
@@ -471,12 +477,12 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
 
             # Debug mode
             debug_var = tk.BooleanVar(value=False)
-            tk.Checkbutton(server_config_frame, text="Debug Mode", variable=debug_var,
+            tk.Checkbutton(server_config_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.debug_mode', default="Debug Mode"), variable=debug_var,
                           font=('Arial', 10)).grid(row=1, column=0, columnspan=2, sticky='w', pady=(10, 0))
 
             # SSL/HTTPS
             ssl_var = tk.BooleanVar(value=False)
-            tk.Checkbutton(server_config_frame, text="Enable SSL/HTTPS", variable=ssl_var,
+            tk.Checkbutton(server_config_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.enable_ssl_https', default="Enable SSL/HTTPS"), variable=ssl_var,
                           font=('Arial', 10)).grid(row=1, column=2, columnspan=2, sticky='w', pady=(10, 0))
 
             server_config_frame.columnconfigure(1, weight=1)
@@ -525,7 +531,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
 
             # Security Tab
             security_frame = ttk.Frame(notebook)
-            notebook.add(security_frame, text="Security")
+            notebook.add(security_frame, text=_t('gui.shell.batch_operations.automation_manager.tabs.security', default="Security"))
 
             # Authentication Configuration
             auth_frame = tk.LabelFrame(security_frame, text=_t("batch_ops.labels.authentication"), font=('Arial', 10, 'bold'))
@@ -535,7 +541,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
             auth_config_frame.pack(fill=tk.X, padx=10, pady=10)
 
             # Auth method selection
-            auth_method_var = tk.StringVar(value="API Key")
+            auth_method_var = tk.StringVar(value=_t('gui.shell.batch_operations.automation_manager.values.api_key', default="API Key"))
             tk.Label(auth_config_frame, text=_t("batch_ops.labels.authentication_method"), font=('Arial', 10)).pack(anchor='w')
             auth_methods = ["API Key", "JWT Token", "Basic Auth", "OAuth 2.0"]
             auth_dropdown = ttk.Combobox(auth_config_frame, textvariable=auth_method_var, values=auth_methods,
@@ -564,7 +570,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
             rate_config_frame.pack(fill=tk.X, padx=10, pady=10)
 
             enable_rate_limit_var = tk.BooleanVar(value=True)
-            tk.Checkbutton(rate_config_frame, text="Enable Rate Limiting", variable=enable_rate_limit_var,
+            tk.Checkbutton(rate_config_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.enable_rate_limiting', default="Enable Rate Limiting"), variable=enable_rate_limit_var,
                           font=('Arial', 10)).pack(anchor='w')
 
             rate_limit_frame = tk.Frame(rate_config_frame)
@@ -577,7 +583,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
 
             # Monitoring Tab
             monitoring_frame = ttk.Frame(notebook)
-            notebook.add(monitoring_frame, text="Monitoring")
+            notebook.add(monitoring_frame, text=_t('gui.shell.batch_operations.automation_manager.tabs.monitoring', default="Monitoring"))
 
             # Server Status (simulated)
             status_frame = tk.LabelFrame(monitoring_frame, text=_t("batch_ops.labels.current_server_status"), font=('Arial', 10, 'bold'))
@@ -642,7 +648,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
                 try:
                     # Validate configuration
                     if not host_var.get().strip():
-                        messagebox.showerror(_t("batch_ops.msg_titles.configuration_error"), "Host cannot be empty")
+                        messagebox.showerror(_t("batch_ops.msg_titles.configuration_error"), _t('gui.shell.batch_operations.automation_manager.dialogs.host_cannot_be_empty', default="Host cannot be empty"))
                         return
 
                     try:
@@ -672,7 +678,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
                     }
 
                     # Save configuration
-                    config_filename = str(API_SERVER_CONFIG_FILE)
+                    config_filename = str(UNIVERSITY_API_SERVER_CONFIG_FILE)
                     with open(config_filename, 'w') as f:
                         json.dump(server_config, f, indent=2)
 
@@ -768,7 +774,7 @@ if __name__ == '__main__':
 '''
 
                     # Save the server script
-                    script_filename = str(PROJECT_ROOT / "api" / "api_server.py")
+                    script_filename = str(UNIVERSITY_PROJECT_ROOT / "api" / "api_server.py")
                     with open(script_filename, 'w') as f:
                         f.write(server_script)
 
@@ -870,7 +876,7 @@ has been saved and the server script has been generated.
                              bg='#f0f0f0', padx=20, pady=5).pack(side=tk.LEFT)
 
                     # Update the main dialog status
-                    status_indicator.config(text="Configured", fg="#FF9800")
+                    status_indicator.config(text=_t('gui.shell.batch_operations.automation_manager.text.configured', default="Configured"), fg="#FF9800")
 
                 except Exception as e:
                     messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))
@@ -915,7 +921,7 @@ has been saved and the server script has been generated.
             tk.Button(button_frame, text=_t("batch_ops.buttons.test_configuration"), command=test_config,
                      bg='#FF9800', fg='white', padx=15, pady=5).pack(side=tk.LEFT, padx=(0, 10))
 
-            tk.Button(button_frame, text="Configure & Ready Server", command=start_server,
+            tk.Button(button_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.configure_ready_server', default="Configure & Ready Server"), command=start_server,
                      bg='#4CAF50', fg='white', padx=20, pady=5).pack(side=tk.LEFT, padx=(0, 10))
 
             tk.Button(button_frame, text=_t("batch_ops.buttons.cancel"), command=api_dialog.destroy,
@@ -936,7 +942,7 @@ has been saved and the server script has been generated.
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        header = ttk.Label(dialog, text="Schedule Daily Import", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.schedule_daily_import', default="Schedule Daily Import"), font=("Arial", 14, "bold"))
         header.pack(pady=10)
 
         # Directory selection
@@ -947,7 +953,7 @@ has been saved and the server script has been generated.
         ttk.Entry(dir_frame, textvariable=dir_var, width=40).pack(side=tk.LEFT, padx=(0, 10))
 
         def browse_directory():
-            directory = filedialog.askdirectory(title="Select directory to monitor")
+            directory = filedialog.askdirectory(title=_t('gui.shell.batch_operations.automation_manager.dialogs.select_directory_to_monitor', default="Select directory to monitor"))
             if directory:
                 dir_var.set(directory)
 
@@ -957,16 +963,16 @@ has been saved and the server script has been generated.
         time_frame = ttk.LabelFrame(dialog, text=_t("batch_ops.labels.schedule_time"), padding="10")
         time_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(time_frame, text="Time (24-hour format):").pack(anchor='w')
+        ttk.Label(time_frame, text=_t('gui.shell.batch_operations.automation_manager.labels.time_24_hour_format', default="Time (24-hour format):")).pack(anchor='w')
         time_var = tk.StringVar(value="02:00")
         ttk.Entry(time_frame, textvariable=time_var, width=10).pack(anchor='w', pady=5)
 
         # Email notification
-        email_frame = ttk.LabelFrame(dialog, text="Notification", padding="10")
+        email_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.notification', default="Notification"), padding="10")
         email_frame.pack(fill=tk.X, padx=20, pady=10)
 
         email_var = tk.StringVar()
-        ttk.Label(email_frame, text="Email (optional):").pack(anchor='w')
+        ttk.Label(email_frame, text=_t('gui.shell.batch_operations.automation_manager.labels.email_optional', default="Email (optional):")).pack(anchor='w')
         ttk.Entry(email_frame, textvariable=email_var, width=30).pack(anchor='w', pady=5)
 
         # Buttons
@@ -975,7 +981,7 @@ has been saved and the server script has been generated.
 
         def schedule_import():
             if not dir_var.get():
-                messagebox.showerror(_t("batch_ops.msg_titles.error"), "Please select a directory to monitor")
+                messagebox.showerror(_t("batch_ops.msg_titles.error"), _t('gui.shell.batch_operations.automation_manager.dialogs.please_select_a_directory_to_monitor', default="Please select a directory to monitor"))
                 return
 
             try:
@@ -986,17 +992,17 @@ has been saved and the server script has been generated.
                 self.gui.backend.schedule_daily_import(dir_var.get(), time_var.get(), email_var.get())
 
                 dialog.destroy()
-                messagebox.showinfo("Scheduled", f"Daily import scheduled for {time_var.get()}")
+                messagebox.showinfo(_t('gui.shell.batch_operations.automation_manager.dialogs.scheduled', default="Scheduled"), f"Daily import scheduled for {time_var.get()}")
 
                 # Update automation status
                 self.gui.update_automation_status()
 
             except ValueError:
-                messagebox.showerror(_t("batch_ops.msg_titles.error"), "Invalid time format. Use HH:MM (e.g., 14:30)")
+                messagebox.showerror(_t("batch_ops.msg_titles.error"), _t('gui.shell.batch_operations.automation_manager.dialogs.invalid_time_format_use_hh_mm_e_g_14_30', default="Invalid time format. Use HH:MM (e.g., 14:30)"))
             except Exception as e:
                 messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))
 
-        ttk.Button(button_frame, text="Schedule", command=schedule_import).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.schedule', default="Schedule"), command=schedule_import).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text=_t("batch_ops.buttons.cancel"), command=dialog.destroy).pack(side=tk.LEFT)
 
     def schedule_weekly_report(self):
@@ -1011,41 +1017,41 @@ has been saved and the server script has been generated.
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 50))
 
         # Header
-        header = ttk.Label(dialog, text="Schedule Weekly Report", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.schedule_weekly_report', default="Schedule Weekly Report"), font=("Arial", 14, "bold"))
         header.pack(pady=15)
 
         # Form frame
-        form_frame = ttk.LabelFrame(dialog, text="Report Configuration", padding="15")
+        form_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.report_configuration', default="Report Configuration"), padding="15")
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Day of week selection
-        ttk.Label(form_frame, text="Day of Week:").grid(row=0, column=0, sticky="w", pady=10)
-        day_var = tk.StringVar(value="Monday")
+        ttk.Label(form_frame, text=_t('gui.shell.batch_operations.automation_manager.labels.day_of_week', default="Day of Week:")).grid(row=0, column=0, sticky="w", pady=10)
+        day_var = tk.StringVar(value=_t('gui.shell.batch_operations.automation_manager.values.monday', default="Monday"))
         day_combo = ttk.Combobox(form_frame, textvariable=day_var, width=30, state="readonly",
                                 values=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
         day_combo.grid(row=0, column=1, sticky="ew", pady=10, padx=(10,0))
 
         # Time selection
-        ttk.Label(form_frame, text="Time (HH:MM):").grid(row=1, column=0, sticky="w", pady=10)
+        ttk.Label(form_frame, text=_t('gui.shell.batch_operations.automation_manager.labels.time_hh_mm', default="Time (HH:MM):")).grid(row=1, column=0, sticky="w", pady=10)
         time_var = tk.StringVar(value="09:00")
         time_entry = ttk.Entry(form_frame, textvariable=time_var, width=32)
         time_entry.grid(row=1, column=1, sticky="ew", pady=10, padx=(10,0))
 
         # Report type
         ttk.Label(form_frame, text=_t("batch_ops.labels.report_type")).grid(row=2, column=0, sticky="w", pady=10)
-        report_type_var = tk.StringVar(value="summary")
+        report_type_var = tk.StringVar(value=_t('gui.shell.batch_operations.automation_manager.values.summary', default="summary"))
         report_type_combo = ttk.Combobox(form_frame, textvariable=report_type_var, width=30, state="readonly",
                                         values=["summary", "detailed", "analytics", "comprehensive"])
         report_type_combo.grid(row=2, column=1, sticky="ew", pady=10, padx=(10,0))
 
         # Email recipient
-        ttk.Label(form_frame, text="Email To:").grid(row=3, column=0, sticky="w", pady=10)
+        ttk.Label(form_frame, text=_t('gui.shell.batch_operations.automation_manager.labels.email_to', default="Email To:")).grid(row=3, column=0, sticky="w", pady=10)
         email_var = tk.StringVar()
         email_entry = ttk.Entry(form_frame, textvariable=email_var, width=32)
         email_entry.grid(row=3, column=1, sticky="ew", pady=10, padx=(10,0))
 
         # Report options
-        options_frame = ttk.LabelFrame(form_frame, text="Include in Report", padding="10")
+        options_frame = ttk.LabelFrame(form_frame, text=_t('gui.shell.batch_operations.automation_manager.labels.include_in_report', default="Include in Report"), padding="10")
         options_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=15)
 
         include_summary = tk.BooleanVar(value=True)
@@ -1053,14 +1059,14 @@ has been saved and the server script has been generated.
         include_alerts = tk.BooleanVar(value=True)
         include_trends = tk.BooleanVar(value=False)
 
-        ttk.Checkbutton(options_frame, text="Summary Statistics", variable=include_summary).pack(anchor="w", pady=2)
-        ttk.Checkbutton(options_frame, text="Charts and Graphs", variable=include_charts).pack(anchor="w", pady=2)
-        ttk.Checkbutton(options_frame, text="Alerts and Warnings", variable=include_alerts).pack(anchor="w", pady=2)
-        ttk.Checkbutton(options_frame, text="Performance Trends", variable=include_trends).pack(anchor="w", pady=2)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.summary_statistics', default="Summary Statistics"), variable=include_summary).pack(anchor="w", pady=2)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.charts_and_graphs', default="Charts and Graphs"), variable=include_charts).pack(anchor="w", pady=2)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.alerts_and_warnings', default="Alerts and Warnings"), variable=include_alerts).pack(anchor="w", pady=2)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.performance_trends', default="Performance Trends"), variable=include_trends).pack(anchor="w", pady=2)
 
         # Format selection
-        ttk.Label(form_frame, text="Report Format:").grid(row=5, column=0, sticky="w", pady=10)
-        format_var = tk.StringVar(value="pdf")
+        ttk.Label(form_frame, text=_t('gui.shell.batch_operations.automation_manager.labels.report_format', default="Report Format:")).grid(row=5, column=0, sticky="w", pady=10)
+        format_var = tk.StringVar(value=_t('gui.shell.batch_operations.automation_manager.values.pdf', default="pdf"))
         format_combo = ttk.Combobox(form_frame, textvariable=format_var, width=30, state="readonly",
                                    values=["pdf", "html", "excel", "csv"])
         format_combo.grid(row=5, column=1, sticky="ew", pady=10, padx=(10,0))
@@ -1070,7 +1076,7 @@ has been saved and the server script has been generated.
         def schedule_report():
             try:
                 if not email_var.get():
-                    messagebox.showwarning("Missing Information", "Please enter an email address")
+                    messagebox.showwarning(_t('gui.shell.batch_operations.automation_manager.dialogs.missing_information', default="Missing Information"), _t('gui.shell.batch_operations.automation_manager.dialogs.please_enter_an_email_address', default="Please enter an email address"))
                     return
 
                 # Validate time format
@@ -1099,7 +1105,7 @@ has been saved and the server script has been generated.
                 with open(config_file, 'w') as f:
                     json.dump(schedule_config, f, indent=2)
 
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.shell.batch_operations.automation_manager.dialogs.success', default="Success"),
                     f"Weekly report scheduled for {day_var.get()}s at {time_var.get()}\n" +
                     f"Report Type: {report_type_var.get()}\n" +
                     f"Will be sent to: {email_var.get()}")
@@ -1113,7 +1119,7 @@ has been saved and the server script has been generated.
         # Buttons
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=15)
-        ttk.Button(button_frame, text="Schedule Report", command=schedule_report).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.schedule_report', default="Schedule Report"), command=schedule_report).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text=_t("batch_ops.buttons.cancel"), command=dialog.destroy).pack(side=tk.LEFT)
 
     def view_scheduled_tasks(self):
@@ -1136,7 +1142,7 @@ has been saved and the server script has been generated.
             dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
             # Header
-            header = ttk.Label(dialog, text="Scheduled Tasks", font=("Arial", 14, "bold"))
+            header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.scheduled_tasks', default="Scheduled Tasks"), font=("Arial", 14, "bold"))
             header.pack(pady=10)
 
             # Tasks list
@@ -1169,7 +1175,7 @@ has been saved and the server script has been generated.
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        header = ttk.Label(dialog, text="Start API Server", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.start_api_server', default="Start API Server"), font=("Arial", 14, "bold"))
         header.pack(pady=10)
 
         # Server configuration
@@ -1221,7 +1227,7 @@ GET /api/health - Health check"""
                 self.gui.update_automation_status()
 
             except ValueError:
-                messagebox.showerror(_t("batch_ops.msg_titles.error"), "Invalid port number")
+                messagebox.showerror(_t("batch_ops.msg_titles.error"), _t('gui.shell.batch_operations.automation_manager.dialogs.invalid_port_number', default="Invalid port number"))
             except Exception as e:
                 messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))
 
@@ -1240,16 +1246,16 @@ GET /api/health - Health check"""
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        header = ttk.Label(dialog, text="External Database Integration", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.external_database_integration', default="External Database Integration"), font=("Arial", 14, "bold"))
         header.pack(pady=10)
 
         # Database type
-        type_frame = ttk.LabelFrame(dialog, text="Database Type", padding="10")
+        type_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.database_type', default="Database Type"), padding="10")
         type_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        db_type_var = tk.StringVar(value="mysql")
-        ttk.Radiobutton(type_frame, text="MySQL", variable=db_type_var, value="mysql").pack(anchor='w')
-        ttk.Radiobutton(type_frame, text="PostgreSQL", variable=db_type_var, value="postgresql").pack(anchor='w')
+        db_type_var = tk.StringVar(value=_t('gui.shell.batch_operations.automation_manager.values.mysql', default="mysql"))
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.mysql', default="MySQL"), variable=db_type_var, value="mysql").pack(anchor='w')
+        ttk.Radiobutton(type_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.postgresql', default="PostgreSQL"), variable=db_type_var, value="postgresql").pack(anchor='w')
 
         # Connection details
         conn_frame = ttk.LabelFrame(dialog, text=_t("batch_ops.labels.connection_details"), padding="10")
@@ -1257,7 +1263,7 @@ GET /api/health - Health check"""
 
         # Host
         ttk.Label(conn_frame, text=_t("batch_ops.labels.host")).grid(row=0, column=0, sticky='w', pady=5)
-        host_var = tk.StringVar(value="localhost")
+        host_var = tk.StringVar(value=_t('gui.shell.batch_operations.automation_manager.values.localhost', default="localhost"))
         ttk.Entry(conn_frame, textvariable=host_var, width=20).grid(row=0, column=1, padx=(10, 0), pady=5)
 
         # Port
@@ -1266,7 +1272,7 @@ GET /api/health - Health check"""
         ttk.Entry(conn_frame, textvariable=port_var, width=10).grid(row=1, column=1, padx=(10, 0), pady=5)
 
         # Database
-        ttk.Label(conn_frame, text="Database:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(conn_frame, text=_t('gui.shell.batch_operations.automation_manager.labels.database', default="Database:")).grid(row=2, column=0, sticky='w', pady=5)
         database_var = tk.StringVar()
         ttk.Entry(conn_frame, textvariable=database_var, width=20).grid(row=2, column=1, padx=(10, 0), pady=5)
 
@@ -1313,7 +1319,7 @@ GET /api/health - Health check"""
                     conn = psycopg2.connect(host=host, port=int(port), dbname=database, user=username, password=password)
                     conn.close()
 
-                messagebox.showinfo("Success", "Database connection successful!")
+                messagebox.showinfo(_t('gui.shell.batch_operations.automation_manager.dialogs.success', default="Success"), _t('gui.shell.batch_operations.automation_manager.dialogs.database_connection_successful', default="Database connection successful!"))
 
             except Exception as e:
                 messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))
@@ -1331,13 +1337,13 @@ GET /api/health - Health check"""
 
                 self.gui.backend.save_external_db_config(config)
                 dialog.destroy()
-                messagebox.showinfo(_t("batch_ops.msg_titles.saved"), "External database configuration saved!")
+                messagebox.showinfo(_t("batch_ops.msg_titles.saved"), _t('gui.shell.batch_operations.automation_manager.dialogs.external_database_configuration_saved', default="External database configuration saved!"))
 
             except Exception as e:
                 messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))
 
         ttk.Button(button_frame, text=_t("batch_ops.buttons.test_connection"), command=test_connection).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Save Config", command=save_config).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.save_config', default="Save Config"), command=save_config).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text=_t("batch_ops.buttons.cancel"), command=dialog.destroy).pack(side=tk.LEFT)
 
     def setup_rest_api(self):
@@ -1352,7 +1358,7 @@ GET /api/health - Health check"""
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        header = ttk.Label(dialog, text="REST API Integration", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.rest_api_integration', default="REST API Integration"), font=("Arial", 14, "bold"))
         header.pack(pady=10)
 
         # API details
@@ -1379,9 +1385,9 @@ GET /api/health - Health check"""
                 success = self.gui.backend.test_rest_api_connection(url, api_key)
 
                 if success:
-                    messagebox.showinfo("Success", "API connection successful!")
+                    messagebox.showinfo(_t('gui.shell.batch_operations.automation_manager.dialogs.success', default="Success"), _t('gui.shell.batch_operations.automation_manager.dialogs.api_connection_successful', default="API connection successful!"))
                 else:
-                    messagebox.showerror(_t("batch_ops.msg_titles.failed"), "API connection failed!")
+                    messagebox.showerror(_t("batch_ops.msg_titles.failed"), _t('gui.shell.batch_operations.automation_manager.dialogs.api_connection_failed', default="API connection failed!"))
 
             except Exception as e:
                 messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))
@@ -1395,13 +1401,13 @@ GET /api/health - Health check"""
 
                 self.gui.backend.save_rest_api_config(config)
                 dialog.destroy()
-                messagebox.showinfo(_t("batch_ops.msg_titles.saved"), "REST API configuration saved!")
+                messagebox.showinfo(_t("batch_ops.msg_titles.saved"), _t('gui.shell.batch_operations.automation_manager.dialogs.rest_api_configuration_saved', default="REST API configuration saved!"))
 
             except Exception as e:
                 messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))
 
-        ttk.Button(button_frame, text="Test API", command=test_api).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Save Config", command=save_api_config).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.test_api', default="Test API"), command=test_api).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.shell.batch_operations.automation_manager.buttons.save_config', default="Save Config"), command=save_api_config).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text=_t("batch_ops.buttons.cancel"), command=dialog.destroy).pack(side=tk.LEFT)
 
     def test_connections(self):
@@ -1428,7 +1434,7 @@ GET /api/health - Health check"""
             jobs = schedule.get_jobs()
 
             if not jobs:
-                messagebox.showinfo(_t("batch_ops.msg_titles.no_tasks"), "No scheduled tasks to cancel")
+                messagebox.showinfo(_t("batch_ops.msg_titles.no_tasks"), _t('gui.shell.batch_operations.automation_manager.dialogs.no_scheduled_tasks_to_cancel', default="No scheduled tasks to cancel"))
                 return
 
             # Show selection dialog
@@ -1442,7 +1448,7 @@ GET /api/health - Health check"""
             dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
             # Header
-            header = ttk.Label(dialog, text="Select Task to Cancel", font=("Arial", 12, "bold"))
+            header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.automation_manager.labels.select_task_to_cancel', default="Select Task to Cancel"), font=("Arial", 12, "bold"))
             header.pack(pady=10)
 
             # Task selection
@@ -1461,10 +1467,10 @@ GET /api/health - Health check"""
                     if 0 <= job_index < len(jobs):
                         schedule.cancel_job(jobs[job_index])
                         dialog.destroy()
-                        messagebox.showinfo(_t("batch_ops.msg_titles.cancelled"), "Task cancelled successfully")
+                        messagebox.showinfo(_t("batch_ops.msg_titles.cancelled"), _t('gui.shell.batch_operations.automation_manager.dialogs.task_cancelled_successfully', default="Task cancelled successfully"))
                         self.gui.update_automation_status()
                     else:
-                        messagebox.showerror(_t("batch_ops.msg_titles.error"), "Please select a task to cancel")
+                        messagebox.showerror(_t("batch_ops.msg_titles.error"), _t('gui.shell.batch_operations.automation_manager.dialogs.please_select_a_task_to_cancel', default="Please select a task to cancel"))
                 except Exception as e:
                     messagebox.showerror(_t("batch_ops.msg_titles.error"), _t("batch_ops.errors.generic_error", error=str(e)))
 

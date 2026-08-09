@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ CONDITION_TYPES = ['new', 'mint', 'excellent', 'good', 'fair', 'poor']
 
 def get_musicshop_db_path():
     """Get the music shop database path"""
-    return str(paths.DEFAULT_DB_PATH)
+    return str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
 def init_musicshop_db():
     """Initialize the music shop database tables"""

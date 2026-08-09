@@ -8,6 +8,8 @@ error handling, and email notifications.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime, timedelta
@@ -22,7 +24,7 @@ import hashlib
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth as get_centralized_auth
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 
 # Language/i18n support
@@ -377,7 +379,7 @@ class MobileAppPWAGUI:
 
         # Filter
         ttk.Label(controls_frame, text=f"{_t('common.status')}:").pack(side='left', padx=5)
-        self.sync_filter_var = tk.StringVar(value='pending')
+        self.sync_filter_var = tk.StringVar(value=_t('gui.operations.campus.mobility.mobile_app_pwa.values.pending', default='pending'))
         ttk.Combobox(controls_frame, textvariable=self.sync_filter_var,
                     values=['all', 'pending', 'synced', 'failed'],
                     width=10, state='readonly').pack(side='left', padx=5)
@@ -786,7 +788,7 @@ class MobileAppPWAGUI:
             ttk.Entry(dialog, textvariable=user_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
 
             ttk.Label(dialog, text=f"{_t('mobile_app.device_type')}:").grid(row=1, column=0, padx=10, pady=5, sticky='w')
-            device_type_var = tk.StringVar(value='android')
+            device_type_var = tk.StringVar(value=_t('gui.operations.campus.mobility.mobile_app_pwa.values.android', default='android'))
             ttk.Combobox(dialog, textvariable=device_type_var,
                         values=['ios', 'android', 'web'],
                         width=28, state='readonly').grid(row=1, column=1, padx=10, pady=5)

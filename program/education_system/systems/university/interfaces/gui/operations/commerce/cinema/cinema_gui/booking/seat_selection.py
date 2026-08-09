@@ -45,7 +45,7 @@ def show_seat_selection(self, screening_id, movie):
     type_frame.pack(fill="x", pady=5)
 
     tk.Label(type_frame, text=_t("cinema.booking.ticket_type_label"), bg="#ffffff", fg="#333333").pack(side="left")
-    self.ticket_type_var = tk.StringVar(value="Adult")
+    self.ticket_type_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.booking.seat_selection.values.adult', default="Adult"))
     type_combo = ttk.Combobox(type_frame, textvariable=self.ticket_type_var, width=15,
                               values=list(TICKET_TYPES.keys()))
     type_combo.pack(side="left", padx=10)

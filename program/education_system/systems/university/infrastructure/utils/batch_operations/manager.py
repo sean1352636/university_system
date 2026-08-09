@@ -1,7 +1,7 @@
 import os
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 from education_system.systems.university.infrastructure.utils.batch_operations.validation import ValidationMixin
 from education_system.systems.university.infrastructure.utils.batch_operations.duplicates import DuplicatesMixin
@@ -33,10 +33,10 @@ class BatchOperationManager(
 
     def __init__(self, db_path: str = None):
         if db_path is None:
-            db_path = str(DEFAULT_DB_PATH)
+            db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
         self.db_path = db_path
-        from education_system.systems.university.infrastructure import paths
-        self.backup_dir = str(paths.BACKUP_DATABASE_DIR)
+        from education_system import paths
+        self.backup_dir = str(paths.UNIVERSITY_BACKUP_DATABASE_DIR)
         self.import_history = []
         self.api_app = None
         self.ensure_backup_directory()

@@ -191,7 +191,6 @@ pip install -e ".[dev]"          # tests, ruff, mypy, black  (or: -r requirement
 pip install -e ".[security]"     # bandit, safety, pip-audit, semgrep
 pip install -e ".[perf]"         # locust load testing
 pip install -e ".[ai]"           # torch / transformers / spaCy / OpenCV
-pip install -e ".[graphql]"      # GraphQL API layer
 pip install -e ".[realtime]"     # WebSocket / Socket.IO
 pip install -e ".[postgres]"     # PostgreSQL backend   (".[mysql]" for MySQL)
 pip install -e ".[cloud-aws]"    # AWS only (".[cloud-azure]", ".[cloud-gcp]", or ".[cloud]" for all)

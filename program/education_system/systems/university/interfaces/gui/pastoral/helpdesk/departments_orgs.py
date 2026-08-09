@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -428,14 +430,14 @@ def show_department_management(self):
         from education_system.systems.university.infrastructure.database.db import get_connection
 
         dept_window = tk.Toplevel(self.root)
-        dept_window.title("Department Management")
+        dept_window.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.department_management', default="Department Management"))
         dept_window.geometry("800x500")
         dept_window.transient(self.root)
 
         main_frame = ttk.Frame(dept_window, padding="10")
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Departments", font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.departments', default="Departments"), font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
         # Treeview for departments
         columns = ('ID', 'Name', 'Description', 'Email', 'Active')
@@ -463,11 +465,11 @@ def show_department_management(self):
         def add_dept():
             self._show_department_form(tree)
 
-        ttk.Button(btn_frame, text="Add Department", command=add_dept).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Close", command=dept_window.destroy).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.add_department', default="Add Department"), command=add_dept).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.close', default="Close"), command=dept_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load department management: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to load department management: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_department_management = show_department_management
@@ -475,7 +477,7 @@ HelpdeskGUI.show_department_management = show_department_management
 def _show_department_form(self, tree):
     """Show form to add new department"""
     form_window = tk.Toplevel(self.root)
-    form_window.title("Add Department")
+    form_window.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.add_department', default="Add Department"))
     form_window.geometry("400x300")
     form_window.transient(self.root)
     form_window.grab_set()
@@ -483,15 +485,15 @@ def _show_department_form(self, tree):
     frame = ttk.Frame(form_window, padding="20")
     frame.pack(fill='both', expand=True)
 
-    ttk.Label(frame, text="Department Name:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.department_name_variant_2', default="Department Name:")).grid(row=0, column=0, sticky='w', pady=5)
     name_var = tk.StringVar()
     ttk.Entry(frame, textvariable=name_var, width=30).grid(row=0, column=1, pady=5)
 
-    ttk.Label(frame, text="Description:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.description_variant_2', default="Description:")).grid(row=1, column=0, sticky='w', pady=5)
     desc_var = tk.StringVar()
     ttk.Entry(frame, textvariable=desc_var, width=30).grid(row=1, column=1, pady=5)
 
-    ttk.Label(frame, text="Email:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.email_variant_2', default="Email:")).grid(row=2, column=0, sticky='w', pady=5)
     email_var = tk.StringVar()
     ttk.Entry(frame, textvariable=email_var, width=30).grid(row=2, column=1, pady=5)
 
@@ -510,16 +512,16 @@ def _show_department_form(self, tree):
             dept_id = cursor.lastrowid
 
             tree.insert('', 'end', values=(dept_id, name_var.get(), desc_var.get(), email_var.get(), 'Yes'))
-            messagebox.showinfo("Success", "Department added successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.department_added_successfully', default="Department added successfully!"))
             form_window.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add department: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to add department: {str(e)}")
         finally:
             if conn:
                 conn.close()
 
-    ttk.Button(frame, text="Save", command=save).grid(row=3, column=0, pady=20)
-    ttk.Button(frame, text="Cancel", command=form_window.destroy).grid(row=3, column=1, pady=20)
+    ttk.Button(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.save', default="Save"), command=save).grid(row=3, column=0, pady=20)
+    ttk.Button(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.cancel', default="Cancel"), command=form_window.destroy).grid(row=3, column=1, pady=20)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._show_department_form = _show_department_form
@@ -527,11 +529,11 @@ HelpdeskGUI._show_department_form = _show_department_form
 def manage_departments_gui(self):
     """Manage departments"""
     if not self.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to manage departments.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.you_don_t_have_permission_to_manage_departments', default="You don't have permission to manage departments."))
         return
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Department Management")
+    dialog.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.department_management', default="Department Management"))
     dialog.geometry("900x600")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -539,20 +541,20 @@ def manage_departments_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Department Management",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.department_management', default="Department Management"),
              font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
     # Toolbar
     toolbar = ttk.Frame(main_frame)
     toolbar.pack(fill='x', pady=(0, 10))
 
-    ttk.Button(toolbar, text="➕ Create Department",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.create_department_variant_2', default="➕ Create Department"),
               command=lambda: self.create_department_gui()).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="✏️ Edit Department",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.edit_department', default="✏️ Edit Department"),
               command=lambda: self.edit_selected_department(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔄 Toggle Active",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.toggle_active', default="🔄 Toggle Active"),
               command=lambda: self.toggle_selected_department(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔃 Refresh",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.refresh', default="🔃 Refresh"),
               command=lambda: self.load_departments_list(tree)).pack(side='left', padx=5)
 
     # Departments list
@@ -575,7 +577,7 @@ def manage_departments_gui(self):
     self.load_departments_list(tree)
 
     # Close button
-    ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.manage_departments_gui = manage_departments_gui
@@ -614,7 +616,7 @@ def load_departments_list(self, tree):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load departments: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to load departments: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.load_departments_list = load_departments_list
@@ -622,7 +624,7 @@ HelpdeskGUI.load_departments_list = load_departments_list
 def create_department_gui(self):
     """Create a new department"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Create Department")
+    dialog.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.create_department', default="Create Department"))
     dialog.geometry("500x400")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -630,22 +632,22 @@ def create_department_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Create New Department",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.create_new_department', default="Create New Department"),
              font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
 
     # Form fields
     form_frame = ttk.Frame(main_frame)
     form_frame.pack(fill='both', expand=True)
 
-    ttk.Label(form_frame, text="Department Name *").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.department_name', default="Department Name *")).grid(row=0, column=0, sticky='w', pady=5)
     name_entry = ttk.Entry(form_frame, width=35)
     name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
-    ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.description', default="Description")).grid(row=1, column=0, sticky='nw', pady=5)
     desc_text = scrolledtext.ScrolledText(form_frame, height=5, width=35)
     desc_text.grid(row=1, column=1, sticky='ew', pady=5)
 
-    ttk.Label(form_frame, text="Email").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.email', default="Email")).grid(row=2, column=0, sticky='w', pady=5)
     email_entry = ttk.Entry(form_frame, width=35)
     email_entry.grid(row=2, column=1, sticky='ew', pady=5)
 
@@ -659,7 +661,7 @@ def create_department_gui(self):
         name = name_entry.get().strip()
 
         if not name:
-            messagebox.showerror("Error", "Department name is required")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.department_name_is_required', default="Department name is required"))
             return
 
         try:
@@ -684,14 +686,14 @@ def create_department_gui(self):
             dept_id = cursor.lastrowid
             conn.close()
 
-            messagebox.showinfo("Success", f"Department #{dept_id} created successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), f"Department #{dept_id} created successfully!")
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create department: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to create department: {str(e)}")
 
-    ttk.Button(button_frame, text="Create Department", command=save_department).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.create_department', default="Create Department"), command=save_department).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.create_department_gui = create_department_gui
@@ -700,7 +702,7 @@ def edit_selected_department(self, tree):
     """Edit selected department"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select a department to edit")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.please_select_a_department_to_edit', default="Please select a department to edit"))
         return
 
     dept_id = tree.item(selection[0])['values'][0]
@@ -722,7 +724,7 @@ def edit_department_gui(self, dept_id):
         conn.close()
 
         if not dept:
-            messagebox.showerror("Error", "Department not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.department_not_found', default="Department not found"))
             return
 
         # Create edit dialog
@@ -742,17 +744,17 @@ def edit_department_gui(self, dept_id):
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill='both', expand=True)
 
-        ttk.Label(form_frame, text="Department Name *").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.department_name', default="Department Name *")).grid(row=0, column=0, sticky='w', pady=5)
         name_entry = ttk.Entry(form_frame, width=35)
         name_entry.insert(0, dept[1])
         name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
-        ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.description', default="Description")).grid(row=1, column=0, sticky='nw', pady=5)
         desc_text = scrolledtext.ScrolledText(form_frame, height=5, width=35)
         desc_text.insert('1.0', dept[2] or '')
         desc_text.grid(row=1, column=1, sticky='ew', pady=5)
 
-        ttk.Label(form_frame, text="Email").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.email', default="Email")).grid(row=2, column=0, sticky='w', pady=5)
         email_entry = ttk.Entry(form_frame, width=35)
         email_entry.insert(0, dept[3] or '')
         email_entry.grid(row=2, column=1, sticky='ew', pady=5)
@@ -767,7 +769,7 @@ def edit_department_gui(self, dept_id):
             name = name_entry.get().strip()
 
             if not name:
-                messagebox.showerror("Error", "Department name is required")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.department_name_is_required', default="Department name is required"))
                 return
 
             try:
@@ -790,17 +792,17 @@ def edit_department_gui(self, dept_id):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Department updated successfully!")
+                messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.department_updated_successfully', default="Department updated successfully!"))
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update department: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to update department: {str(e)}")
 
-        ttk.Button(button_frame, text="Update Department", command=update_department).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.update_department', default="Update Department"), command=update_department).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load department: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to load department: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.edit_department_gui = edit_department_gui
@@ -809,7 +811,7 @@ def toggle_selected_department(self, tree):
     """Toggle active status of selected department"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select a department to toggle")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.please_select_a_department_to_toggle', default="Please select a department to toggle"))
         return
 
     dept_id = tree.item(selection[0])['values'][0]
@@ -830,7 +832,7 @@ def toggle_department_gui(self, dept_id, tree):
         result = cursor.fetchone()
 
         if not result:
-            messagebox.showerror("Error", "Department not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.department_not_found', default="Department not found"))
             conn.close()
             return
 
@@ -844,13 +846,13 @@ def toggle_department_gui(self, dept_id, tree):
         conn.close()
 
         status_text = "activated" if new_status else "deactivated"
-        messagebox.showinfo("Success", f"Department '{name}' has been {status_text}")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), f"Department '{name}' has been {status_text}")
 
         # Refresh tree
         self.load_departments_list(tree)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to toggle department: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to toggle department: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.toggle_department_gui = toggle_department_gui
@@ -865,11 +867,11 @@ HelpdeskGUI.view_departments_gui = view_departments_gui
 def manage_organizations_gui(self):
     """Manage organizations"""
     if not self.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to manage organizations.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.you_don_t_have_permission_to_manage_organizations', default="You don't have permission to manage organizations."))
         return
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Organization Management")
+    dialog.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.organization_management', default="Organization Management"))
     dialog.geometry("1000x600")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -877,20 +879,20 @@ def manage_organizations_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Organization Management",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.organization_management', default="Organization Management"),
              font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
     # Toolbar
     toolbar = ttk.Frame(main_frame)
     toolbar.pack(fill='x', pady=(0, 10))
 
-    ttk.Button(toolbar, text="➕ Add Organization",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.add_organization', default="➕ Add Organization"),
               command=lambda: self.add_organization_gui(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="✏️ Edit Organization",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.edit_organization', default="✏️ Edit Organization"),
               command=lambda: self.edit_selected_organization(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔄 Toggle Active",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.toggle_active', default="🔄 Toggle Active"),
               command=lambda: self.toggle_selected_organization(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔃 Refresh",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.refresh', default="🔃 Refresh"),
               command=lambda: self.load_organizations_list(tree)).pack(side='left', padx=5)
 
     # Organizations list
@@ -912,7 +914,7 @@ def manage_organizations_gui(self):
     self.load_organizations_list(tree)
 
     # Close button
-    ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.manage_organizations_gui = manage_organizations_gui
@@ -963,7 +965,7 @@ def load_organizations_list(self, tree):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load organizations: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to load organizations: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.load_organizations_list = load_organizations_list
@@ -971,7 +973,7 @@ HelpdeskGUI.load_organizations_list = load_organizations_list
 def add_organization_gui(self, tree):
     """Add a new organization"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Add Organization")
+    dialog.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.add_organization', default="Add Organization"))
     dialog.geometry("500x450")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -979,25 +981,25 @@ def add_organization_gui(self, tree):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Add New Organization",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.add_new_organization', default="Add New Organization"),
              font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
 
     form_frame = ttk.Frame(main_frame)
     form_frame.pack(fill='both', expand=True)
 
-    ttk.Label(form_frame, text="Organization Name *").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.organization_name', default="Organization Name *")).grid(row=0, column=0, sticky='w', pady=5)
     name_entry = ttk.Entry(form_frame, width=35)
     name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
-    ttk.Label(form_frame, text="Organization Code").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.organization_code', default="Organization Code")).grid(row=1, column=0, sticky='w', pady=5)
     code_entry = ttk.Entry(form_frame, width=35)
     code_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
-    ttk.Label(form_frame, text="Description").grid(row=2, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.description', default="Description")).grid(row=2, column=0, sticky='nw', pady=5)
     desc_text = scrolledtext.ScrolledText(form_frame, height=5, width=35)
     desc_text.grid(row=2, column=1, sticky='ew', pady=5)
 
-    ttk.Label(form_frame, text="Parent Organization").grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.parent_organization', default="Parent Organization")).grid(row=3, column=0, sticky='w', pady=5)
     parent_var = tk.StringVar()
     parent_combo = ttk.Combobox(form_frame, textvariable=parent_var, state="readonly", width=33)
     parent_combo.grid(row=3, column=1, sticky='ew', pady=5)
@@ -1024,7 +1026,7 @@ def add_organization_gui(self, tree):
     def save_organization():
         name = name_entry.get().strip()
         if not name:
-            messagebox.showerror("Error", "Organization name is required")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.organization_name_is_required', default="Organization name is required"))
             return
 
         try:
@@ -1052,15 +1054,15 @@ def add_organization_gui(self, tree):
             org_id = cursor.lastrowid
             conn.close()
 
-            messagebox.showinfo("Success", f"Organization #{org_id} created successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), f"Organization #{org_id} created successfully!")
             dialog.destroy()
             self.load_organizations_list(tree)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create organization: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to create organization: {str(e)}")
 
-    ttk.Button(button_frame, text="Create Organization", command=save_organization).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.create_organization', default="Create Organization"), command=save_organization).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.add_organization_gui = add_organization_gui
@@ -1069,7 +1071,7 @@ def edit_selected_organization(self, tree):
     """Edit selected organization"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select an organization to edit")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.please_select_an_organization_to_edit', default="Please select an organization to edit"))
         return
 
     org_id = tree.item(selection[0])['values'][0]
@@ -1091,7 +1093,7 @@ def edit_organization_gui(self, org_id, tree):
         conn.close()
 
         if not org:
-            messagebox.showerror("Error", "Organization not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.organization_not_found', default="Organization not found"))
             return
 
         dialog = tk.Toplevel(self.root)
@@ -1109,22 +1111,22 @@ def edit_organization_gui(self, org_id, tree):
         form_frame = ttk.Frame(main_frame)
         form_frame.pack(fill='both', expand=True)
 
-        ttk.Label(form_frame, text="Organization Name *").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.organization_name', default="Organization Name *")).grid(row=0, column=0, sticky='w', pady=5)
         name_entry = ttk.Entry(form_frame, width=35)
         name_entry.insert(0, org[0])
         name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
-        ttk.Label(form_frame, text="Organization Code").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.organization_code', default="Organization Code")).grid(row=1, column=0, sticky='w', pady=5)
         code_entry = ttk.Entry(form_frame, width=35)
         code_entry.insert(0, org[1] or '')
         code_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
-        ttk.Label(form_frame, text="Description").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.description', default="Description")).grid(row=2, column=0, sticky='nw', pady=5)
         desc_text = scrolledtext.ScrolledText(form_frame, height=5, width=35)
         desc_text.insert('1.0', org[2] or '')
         desc_text.grid(row=2, column=1, sticky='ew', pady=5)
 
-        ttk.Label(form_frame, text="Parent Organization").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.parent_organization', default="Parent Organization")).grid(row=3, column=0, sticky='w', pady=5)
         parent_var = tk.StringVar()
         parent_combo = ttk.Combobox(form_frame, textvariable=parent_var, state="readonly", width=33)
         parent_combo.grid(row=3, column=1, sticky='ew', pady=5)
@@ -1158,7 +1160,7 @@ def edit_organization_gui(self, org_id, tree):
         def update_organization():
             name = name_entry.get().strip()
             if not name:
-                messagebox.showerror("Error", "Organization name is required")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.organization_name_is_required', default="Organization name is required"))
                 return
 
             try:
@@ -1185,18 +1187,18 @@ def edit_organization_gui(self, org_id, tree):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Organization updated successfully!")
+                messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.organization_updated_successfully', default="Organization updated successfully!"))
                 dialog.destroy()
                 self.load_organizations_list(tree)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update organization: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to update organization: {str(e)}")
 
-        ttk.Button(button_frame, text="Update Organization", command=update_organization).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.update_organization', default="Update Organization"), command=update_organization).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load organization: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to load organization: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.edit_organization_gui = edit_organization_gui
@@ -1205,7 +1207,7 @@ def toggle_selected_organization(self, tree):
     """Toggle active status of selected organization"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select an organization to toggle")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.please_select_an_organization_to_toggle', default="Please select an organization to toggle"))
         return
 
     org_id = tree.item(selection[0])['values'][0]
@@ -1220,7 +1222,7 @@ def toggle_selected_organization(self, tree):
         result = cursor.fetchone()
 
         if not result:
-            messagebox.showerror("Error", "Organization not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.organization_not_found', default="Organization not found"))
             conn.close()
             return
 
@@ -1234,11 +1236,11 @@ def toggle_selected_organization(self, tree):
         conn.close()
 
         status_text = "activated" if new_status else "deactivated"
-        messagebox.showinfo("Success", f"Organization '{name}' has been {status_text}")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), f"Organization '{name}' has been {status_text}")
         self.load_organizations_list(tree)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to toggle organization: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to toggle organization: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.toggle_selected_organization = toggle_selected_organization
@@ -1256,14 +1258,14 @@ def show_template_management(self):
         from education_system.systems.university.infrastructure.database.db import get_connection
 
         template_window = tk.Toplevel(self.root)
-        template_window.title("Ticket Template Management")
+        template_window.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.ticket_template_management', default="Ticket Template Management"))
         template_window.geometry("900x550")
         template_window.transient(self.root)
 
         main_frame = ttk.Frame(template_window, padding="10")
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Ticket Templates", font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.ticket_templates', default="Ticket Templates"), font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
         # Treeview for templates
         columns = ('ID', 'Name', 'Category', 'Priority', 'Active')
@@ -1291,11 +1293,11 @@ def show_template_management(self):
         def add_template():
             self._show_template_form(tree)
 
-        ttk.Button(btn_frame, text="Add Template", command=add_template).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Close", command=template_window.destroy).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.add_template', default="Add Template"), command=add_template).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.close', default="Close"), command=template_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load template management: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to load template management: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_template_management = show_template_management
@@ -1303,7 +1305,7 @@ HelpdeskGUI.show_template_management = show_template_management
 def _show_template_form(self, tree):
     """Show form to add new ticket template"""
     form_window = tk.Toplevel(self.root)
-    form_window.title("Add Ticket Template")
+    form_window.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.add_ticket_template', default="Add Ticket Template"))
     form_window.geometry("500x450")
     form_window.transient(self.root)
     form_window.grab_set()
@@ -1311,24 +1313,24 @@ def _show_template_form(self, tree):
     frame = ttk.Frame(form_window, padding="20")
     frame.pack(fill='both', expand=True)
 
-    ttk.Label(frame, text="Template Name:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.template_name_variant_2', default="Template Name:")).grid(row=0, column=0, sticky='w', pady=5)
     name_var = tk.StringVar()
     ttk.Entry(frame, textvariable=name_var, width=40).grid(row=0, column=1, pady=5)
 
-    ttk.Label(frame, text="Category:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.category_variant_2', default="Category:")).grid(row=1, column=0, sticky='w', pady=5)
     category_var = tk.StringVar()
     ttk.Combobox(frame, textvariable=category_var,
                 values=['Technical', 'Academic', 'Administrative', 'Financial', 'Other'], width=37).grid(row=1, column=1, pady=5)
 
-    ttk.Label(frame, text="Title Template:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.title_template', default="Title Template:")).grid(row=2, column=0, sticky='w', pady=5)
     title_var = tk.StringVar()
     ttk.Entry(frame, textvariable=title_var, width=40).grid(row=2, column=1, pady=5)
 
-    ttk.Label(frame, text="Priority:").grid(row=3, column=0, sticky='w', pady=5)
-    priority_var = tk.StringVar(value="medium")
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.priority', default="Priority:")).grid(row=3, column=0, sticky='w', pady=5)
+    priority_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.departments_orgs.values.medium', default="medium"))
     ttk.Combobox(frame, textvariable=priority_var, values=['low', 'medium', 'high'], width=37).grid(row=3, column=1, pady=5)
 
-    ttk.Label(frame, text="Description Template:").grid(row=4, column=0, sticky='nw', pady=5)
+    ttk.Label(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.description_template', default="Description Template:")).grid(row=4, column=0, sticky='nw', pady=5)
     desc_text = scrolledtext.ScrolledText(frame, width=38, height=6)
     desc_text.grid(row=4, column=1, pady=5)
 
@@ -1350,16 +1352,16 @@ def _show_template_form(self, tree):
             template_id = cursor.lastrowid
 
             tree.insert('', 'end', values=(template_id, name_var.get(), category_var.get(), priority_var.get(), 'Yes'))
-            messagebox.showinfo("Success", "Template added successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.template_added_successfully', default="Template added successfully!"))
             form_window.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add template: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to add template: {str(e)}")
         finally:
             if conn:
                 conn.close()
 
-    ttk.Button(frame, text="Save", command=save).grid(row=5, column=0, pady=20)
-    ttk.Button(frame, text="Cancel", command=form_window.destroy).grid(row=5, column=1, pady=20)
+    ttk.Button(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.save', default="Save"), command=save).grid(row=5, column=0, pady=20)
+    ttk.Button(frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.cancel', default="Cancel"), command=form_window.destroy).grid(row=5, column=1, pady=20)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._show_template_form = _show_template_form
@@ -1367,11 +1369,11 @@ HelpdeskGUI._show_template_form = _show_template_form
 def manage_ticket_templates_gui(self):
     """Manage ticket templates"""
     if not self.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to manage templates.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.you_don_t_have_permission_to_manage_templates', default="You don't have permission to manage templates."))
         return
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Ticket Template Management")
+    dialog.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.ticket_template_management', default="Ticket Template Management"))
     dialog.geometry("900x600")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1379,20 +1381,20 @@ def manage_ticket_templates_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Ticket Template Management",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.ticket_template_management', default="Ticket Template Management"),
              font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
     # Toolbar
     toolbar = ttk.Frame(main_frame)
     toolbar.pack(fill='x', pady=(0, 10))
 
-    ttk.Button(toolbar, text="➕ Create Template",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.create_template_variant_2', default="➕ Create Template"),
               command=lambda: self.create_ticket_template_gui()).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="✏️ Edit Template",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.edit_template', default="✏️ Edit Template"),
               command=lambda: self.edit_selected_template(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔄 Toggle Active",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.toggle_active', default="🔄 Toggle Active"),
               command=lambda: self.toggle_selected_template(tree)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="🔃 Refresh",
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.refresh', default="🔃 Refresh"),
               command=lambda: self.load_templates_list(tree)).pack(side='left', padx=5)
 
     # Templates list
@@ -1415,7 +1417,7 @@ def manage_ticket_templates_gui(self):
     self.load_templates_list(tree)
 
     # Close button
-    ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.manage_ticket_templates_gui = manage_ticket_templates_gui
@@ -1452,7 +1454,7 @@ def load_templates_list(self, tree):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load templates: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to load templates: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.load_templates_list = load_templates_list
@@ -1460,7 +1462,7 @@ HelpdeskGUI.load_templates_list = load_templates_list
 def create_ticket_template_gui(self):
     """Create a new ticket template"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Create Ticket Template")
+    dialog.title(_t('gui.pastoral.helpdesk.departments_orgs.windows.create_ticket_template', default="Create Ticket Template"))
     dialog.geometry("600x700")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1468,7 +1470,7 @@ def create_ticket_template_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Create New Ticket Template",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.create_new_ticket_template', default="Create New Ticket Template"),
              font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
 
     # Form fields
@@ -1476,17 +1478,17 @@ def create_ticket_template_gui(self):
     form_frame.pack(fill='both', expand=True)
 
     # Name
-    ttk.Label(form_frame, text="Template Name *").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.template_name', default="Template Name *")).grid(row=0, column=0, sticky='w', pady=5)
     name_entry = ttk.Entry(form_frame, width=40)
     name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
     # Description
-    ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.description', default="Description")).grid(row=1, column=0, sticky='w', pady=5)
     desc_entry = ttk.Entry(form_frame, width=40)
     desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
     # Category
-    ttk.Label(form_frame, text="Category *").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.category', default="Category *")).grid(row=2, column=0, sticky='w', pady=5)
     category_var = tk.StringVar()
     category_combo = ttk.Combobox(form_frame, textvariable=category_var, state="readonly", width=38)
     category_combo['values'] = ['Technical Support', 'Academic Inquiry', 'Financial Services',
@@ -1494,32 +1496,32 @@ def create_ticket_template_gui(self):
     category_combo.grid(row=2, column=1, sticky='ew', pady=5)
 
     # Subject Template
-    ttk.Label(form_frame, text="Subject Template").grid(row=3, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.subject_template', default="Subject Template")).grid(row=3, column=0, sticky='nw', pady=5)
     subject_entry = ttk.Entry(form_frame, width=40)
     subject_entry.grid(row=3, column=1, sticky='ew', pady=5)
-    ttk.Label(form_frame, text="Use [FIELD_NAME] for placeholders", foreground='gray').grid(
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.use_field_name_for_placeholders', default="Use [FIELD_NAME] for placeholders"), foreground='gray').grid(
         row=4, column=1, sticky='w')
 
     # Message Template
-    ttk.Label(form_frame, text="Message Template").grid(row=5, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.message_template', default="Message Template")).grid(row=5, column=0, sticky='nw', pady=5)
     message_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
     message_text.grid(row=5, column=1, sticky='ew', pady=5)
 
     # Priority, Impact, Urgency
-    ttk.Label(form_frame, text="Default Priority").grid(row=6, column=0, sticky='w', pady=5)
-    priority_var = tk.StringVar(value='medium')
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.default_priority', default="Default Priority")).grid(row=6, column=0, sticky='w', pady=5)
+    priority_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.departments_orgs.values.medium', default='medium'))
     priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, state="readonly", width=15)
     priority_combo['values'] = ['low', 'medium', 'high']
     priority_combo.grid(row=6, column=1, sticky='w', pady=5)
 
-    ttk.Label(form_frame, text="Default Impact").grid(row=7, column=0, sticky='w', pady=5)
-    impact_var = tk.StringVar(value='low')
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.default_impact', default="Default Impact")).grid(row=7, column=0, sticky='w', pady=5)
+    impact_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.departments_orgs.values.low', default='low'))
     impact_combo = ttk.Combobox(form_frame, textvariable=impact_var, state="readonly", width=15)
     impact_combo['values'] = ['low', 'medium', 'high']
     impact_combo.grid(row=7, column=1, sticky='w', pady=5)
 
-    ttk.Label(form_frame, text="Default Urgency").grid(row=8, column=0, sticky='w', pady=5)
-    urgency_var = tk.StringVar(value='low')
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.default_urgency', default="Default Urgency")).grid(row=8, column=0, sticky='w', pady=5)
+    urgency_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.departments_orgs.values.low', default='low'))
     urgency_combo = ttk.Combobox(form_frame, textvariable=urgency_var, state="readonly", width=15)
     urgency_combo['values'] = ['low', 'medium', 'high']
     urgency_combo.grid(row=8, column=1, sticky='w', pady=5)
@@ -1535,7 +1537,7 @@ def create_ticket_template_gui(self):
         category = category_var.get()
 
         if not name or not category:
-            messagebox.showerror("Error", "Name and category are required")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.name_and_category_are_required', default="Name and category are required"))
             return
 
         try:
@@ -1568,14 +1570,14 @@ def create_ticket_template_gui(self):
             template_id = cursor.lastrowid
             conn.close()
 
-            messagebox.showinfo("Success", f"Template #{template_id} created successfully!")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), f"Template #{template_id} created successfully!")
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create template: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to create template: {str(e)}")
 
-    ttk.Button(button_frame, text="Create Template", command=save_template).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.create_template', default="Create Template"), command=save_template).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.create_ticket_template_gui = create_ticket_template_gui
@@ -1584,7 +1586,7 @@ def edit_selected_template(self, tree):
     """Edit selected template"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select a template to edit")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.please_select_a_template_to_edit', default="Please select a template to edit"))
         return
 
     template_id = tree.item(selection[0])['values'][0]
@@ -1606,7 +1608,7 @@ def edit_ticket_template_gui(self, template_id):
         conn.close()
 
         if not template:
-            messagebox.showerror("Error", "Template not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.template_not_found', default="Template not found"))
             return
 
         # Create edit dialog
@@ -1627,19 +1629,19 @@ def edit_ticket_template_gui(self, template_id):
         form_frame.pack(fill='both', expand=True)
 
         # Name
-        ttk.Label(form_frame, text="Template Name *").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.template_name', default="Template Name *")).grid(row=0, column=0, sticky='w', pady=5)
         name_entry = ttk.Entry(form_frame, width=40)
         name_entry.insert(0, template[1])
         name_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
         # Description
-        ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.description', default="Description")).grid(row=1, column=0, sticky='w', pady=5)
         desc_entry = ttk.Entry(form_frame, width=40)
         desc_entry.insert(0, template[2] or '')
         desc_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
         # Category
-        ttk.Label(form_frame, text="Category *").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.category', default="Category *")).grid(row=2, column=0, sticky='w', pady=5)
         category_var = tk.StringVar(value=template[3] or '')
         category_combo = ttk.Combobox(form_frame, textvariable=category_var, state="readonly", width=38)
         category_combo['values'] = ['Technical Support', 'Academic Inquiry', 'Financial Services',
@@ -1647,31 +1649,31 @@ def edit_ticket_template_gui(self, template_id):
         category_combo.grid(row=2, column=1, sticky='ew', pady=5)
 
         # Subject Template
-        ttk.Label(form_frame, text="Subject Template").grid(row=3, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.subject_template', default="Subject Template")).grid(row=3, column=0, sticky='nw', pady=5)
         subject_entry = ttk.Entry(form_frame, width=40)
         subject_entry.insert(0, template[4] or '')
         subject_entry.grid(row=3, column=1, sticky='ew', pady=5)
 
         # Message Template
-        ttk.Label(form_frame, text="Message Template").grid(row=4, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.message_template', default="Message Template")).grid(row=4, column=0, sticky='nw', pady=5)
         message_text = scrolledtext.ScrolledText(form_frame, height=8, width=40)
         message_text.insert('1.0', template[5] or '')
         message_text.grid(row=4, column=1, sticky='ew', pady=5)
 
         # Priority, Impact, Urgency
-        ttk.Label(form_frame, text="Default Priority").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.default_priority', default="Default Priority")).grid(row=5, column=0, sticky='w', pady=5)
         priority_var = tk.StringVar(value=template[6] or 'medium')
         priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, state="readonly", width=15)
         priority_combo['values'] = ['low', 'medium', 'high']
         priority_combo.grid(row=5, column=1, sticky='w', pady=5)
 
-        ttk.Label(form_frame, text="Default Impact").grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.default_impact', default="Default Impact")).grid(row=6, column=0, sticky='w', pady=5)
         impact_var = tk.StringVar(value=template[7] or 'low')
         impact_combo = ttk.Combobox(form_frame, textvariable=impact_var, state="readonly", width=15)
         impact_combo['values'] = ['low', 'medium', 'high']
         impact_combo.grid(row=6, column=1, sticky='w', pady=5)
 
-        ttk.Label(form_frame, text="Default Urgency").grid(row=7, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.labels.default_urgency', default="Default Urgency")).grid(row=7, column=0, sticky='w', pady=5)
         urgency_var = tk.StringVar(value=template[8] or 'low')
         urgency_combo = ttk.Combobox(form_frame, textvariable=urgency_var, state="readonly", width=15)
         urgency_combo['values'] = ['low', 'medium', 'high']
@@ -1688,7 +1690,7 @@ def edit_ticket_template_gui(self, template_id):
             category = category_var.get()
 
             if not name or not category:
-                messagebox.showerror("Error", "Name and category are required")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.name_and_category_are_required', default="Name and category are required"))
                 return
 
             try:
@@ -1718,17 +1720,17 @@ def edit_ticket_template_gui(self, template_id):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Template updated successfully!")
+                messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.template_updated_successfully', default="Template updated successfully!"))
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update template: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to update template: {str(e)}")
 
-        ttk.Button(button_frame, text="Update Template", command=update_template).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.update_template', default="Update Template"), command=update_template).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.departments_orgs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load template: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to load template: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.edit_ticket_template_gui = edit_ticket_template_gui
@@ -1737,7 +1739,7 @@ def toggle_selected_template(self, tree):
     """Toggle active status of selected template"""
     selection = tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select a template to toggle")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.please_select_a_template_to_toggle', default="Please select a template to toggle"))
         return
 
     template_id = tree.item(selection[0])['values'][0]
@@ -1759,7 +1761,7 @@ def toggle_ticket_template_gui(self, template_id, tree):
         result = cursor.fetchone()
 
         if not result:
-            messagebox.showerror("Error", "Template not found")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.departments_orgs.dialogs.template_not_found', default="Template not found"))
             conn.close()
             return
 
@@ -1773,13 +1775,13 @@ def toggle_ticket_template_gui(self, template_id, tree):
         conn.close()
 
         status_text = "activated" if new_status else "deactivated"
-        messagebox.showinfo("Success", f"Template '{name}' has been {status_text}")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.success', default="Success"), f"Template '{name}' has been {status_text}")
 
         # Refresh tree
         self.load_templates_list(tree)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to toggle template: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.departments_orgs.dialogs.error', default="Error"), f"Failed to toggle template: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.toggle_ticket_template_gui = toggle_ticket_template_gui

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -51,7 +53,7 @@ class DataExportDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Export Student Data")
+        self.dialog.title(_t('gui.academics.parent_portal.misc.windows.export_student_data', default="Export Student Data"))
         self.dialog.geometry("550x600")
         self.dialog.minsize(500, 500)
         self.dialog.transient(parent)
@@ -72,10 +74,10 @@ class DataExportDialog:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        ttk.Label(main_frame, text="Export Student Data", font=('Arial', 16, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.misc.labels.export_student_data', default="Export Student Data"), font=('Arial', 16, 'bold')).pack(pady=10)
 
         # Child selection
-        child_frame = ttk.LabelFrame(main_frame, text="Select Student", padding=10)
+        child_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.misc.labels.select_student', default="Select Student"), padding=10)
         child_frame.pack(fill=tk.X, pady=10)
 
         self.child_var = tk.StringVar()
@@ -88,7 +90,7 @@ class DataExportDialog:
             self.child_var.set(children[0][0])
 
         # Data type selection
-        data_frame = ttk.LabelFrame(main_frame, text="Select Data Types", padding=10)
+        data_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.misc.labels.select_data_types', default="Select Data Types"), padding=10)
         data_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         self.data_types = {}
@@ -109,20 +111,20 @@ class DataExportDialog:
             cb.pack(anchor='w')
 
         # Export format
-        format_frame = ttk.LabelFrame(main_frame, text="Export Format", padding=10)
+        format_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.misc.labels.export_format', default="Export Format"), padding=10)
         format_frame.pack(fill=tk.X, pady=10)
 
-        self.format_var = tk.StringVar(value="json")
-        ttk.Radiobutton(format_frame, text="JSON", variable=self.format_var, value="json").pack(anchor='w')
-        ttk.Radiobutton(format_frame, text="CSV", variable=self.format_var, value="csv").pack(anchor='w')
-        ttk.Radiobutton(format_frame, text="PDF Report", variable=self.format_var, value="pdf").pack(anchor='w')
+        self.format_var = tk.StringVar(value=_t('gui.academics.parent_portal.misc.values.json', default="json"))
+        ttk.Radiobutton(format_frame, text=_t('gui.academics.parent_portal.misc.buttons.json', default="JSON"), variable=self.format_var, value="json").pack(anchor='w')
+        ttk.Radiobutton(format_frame, text=_t('gui.academics.parent_portal.misc.buttons.csv', default="CSV"), variable=self.format_var, value="csv").pack(anchor='w')
+        ttk.Radiobutton(format_frame, text=_t('gui.academics.parent_portal.misc.buttons.pdf_report', default="PDF Report"), variable=self.format_var, value="pdf").pack(anchor='w')
 
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=20)
 
-        ttk.Button(btn_frame, text="Export", command=self.export_data).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.misc.buttons.export', default="Export"), command=self.export_data).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.misc.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         self.children = children
         self.dialog.wait_window()
@@ -133,7 +135,7 @@ class DataExportDialog:
         export_format = self.format_var.get()
 
         if not selected_child or not selected_types:
-            messagebox.showwarning("Selection Required", "Please select a child and at least one data type.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.misc.dialogs.selection_required', default="Selection Required"), _t('gui.academics.parent_portal.misc.dialogs.please_select_a_child_and_at_least_one_data_type', default="Please select a child and at least one data type."))
             return
 
         self.result = {
@@ -155,7 +157,7 @@ class TwoFactorDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Enable Two-Factor Authentication")
+        self.dialog.title(_t('gui.academics.parent_portal.misc.windows.enable_two_factor_authentication', default="Enable Two-Factor Authentication"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -163,7 +165,7 @@ class TwoFactorDialog:
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Enable Two-Factor Authentication", font=('Arial', 16, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.misc.labels.enable_two_factor_authentication', default="Enable Two-Factor Authentication"), font=('Arial', 16, 'bold')).pack(pady=10)
 
         info_text = """Two-factor authentication adds an extra layer of security to your account.
 
@@ -177,10 +179,10 @@ After enabling, you'll need to enter a code from your authenticator app each tim
         ttk.Label(main_frame, text=info_text, wraplength=450).pack(pady=10)
 
         # QR code placeholder
-        qr_frame = ttk.LabelFrame(main_frame, text="Scan QR Code with Authenticator App", padding=10)
+        qr_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.misc.labels.scan_qr_code_with_authenticator_app', default="Scan QR Code with Authenticator App"), padding=10)
         qr_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(qr_frame, text="[QR Code would appear here]",
+        ttk.Label(qr_frame, text=_t('gui.academics.parent_portal.misc.labels.qr_code_would_appear_here', default="[QR Code would appear here]"),
                  font=('Arial', 12), background='lightgray',
                  relief='sunken', padding=50).pack()
 
@@ -188,8 +190,8 @@ After enabling, you'll need to enter a code from your authenticator app each tim
         secret_frame = ttk.Frame(main_frame)
         secret_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(secret_frame, text="Manual Entry Key:").pack(anchor='w')
-        secret_var = tk.StringVar(value="ABCD EFGH IJKL MNOP")
+        ttk.Label(secret_frame, text=_t('gui.academics.parent_portal.misc.labels.manual_entry_key', default="Manual Entry Key:")).pack(anchor='w')
+        secret_var = tk.StringVar(value=_t('gui.academics.parent_portal.misc.values.abcd_efgh_ijkl_mnop', default="ABCD EFGH IJKL MNOP"))
         secret_entry = ttk.Entry(secret_frame, textvariable=secret_var, state='readonly')
         secret_entry.pack(fill=tk.X, pady=5)
 
@@ -197,7 +199,7 @@ After enabling, you'll need to enter a code from your authenticator app each tim
         verify_frame = ttk.Frame(main_frame)
         verify_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(verify_frame, text="Enter verification code from your app:").pack(anchor='w')
+        ttk.Label(verify_frame, text=_t('gui.academics.parent_portal.misc.labels.enter_verification_code_from_your_app', default="Enter verification code from your app:")).pack(anchor='w')
         self.code_entry = ttk.Entry(verify_frame, width=20)
         self.code_entry.pack(pady=5)
 
@@ -205,15 +207,15 @@ After enabling, you'll need to enter a code from your authenticator app each tim
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=20)
 
-        ttk.Button(btn_frame, text="Enable 2FA", command=self.enable).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.misc.buttons.enable_2fa', default="Enable 2FA"), command=self.enable).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.misc.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         self.dialog.wait_window()
 
     def enable(self):
         code = self.code_entry.get().strip()
         if not code:
-            messagebox.showwarning("Missing Code", "Please enter the verification code.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.misc.dialogs.missing_code', default="Missing Code"), _t('gui.academics.parent_portal.misc.dialogs.please_enter_the_verification_code', default="Please enter the verification code."))
             return
 
         # In real implementation, would verify the code
@@ -221,7 +223,7 @@ After enabling, you'll need to enter a code from your authenticator app each tim
             self.result = True
             self.dialog.destroy()
         else:
-            messagebox.showerror("Invalid Code", "Please enter a valid 6-digit code.")
+            messagebox.showerror(_t('gui.academics.parent_portal.misc.dialogs.invalid_code', default="Invalid Code"), _t('gui.academics.parent_portal.misc.dialogs.please_enter_a_valid_6_digit_code', default="Please enter a valid 6-digit code."))
 
     def cancel(self):
         self.dialog.destroy()
@@ -235,7 +237,7 @@ class DonationDialog:
         self.children = children
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Make Donation")
+        self.dialog.title(_t('gui.academics.parent_portal.misc.windows.make_donation', default="Make Donation"))
         self.dialog.geometry("550x600")
         self.dialog.minsize(500, 500)
         self.dialog.transient(parent)
@@ -256,10 +258,10 @@ class DonationDialog:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        ttk.Label(main_frame, text="Make a Donation", font=('Arial', 16, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.misc.labels.make_a_donation', default="Make a Donation"), font=('Arial', 16, 'bold')).pack(pady=10)
 
         # Campaign selection
-        campaign_frame = ttk.LabelFrame(main_frame, text="Select Campaign", padding=10)
+        campaign_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.misc.labels.select_campaign', default="Select Campaign"), padding=10)
         campaign_frame.pack(fill=tk.X, pady=10)
 
         self.campaign_var = tk.StringVar()
@@ -273,21 +275,21 @@ class DonationDialog:
             self.campaign_var.set(campaigns[0])
 
         # Amount
-        amount_frame = ttk.LabelFrame(main_frame, text="Donation Amount", padding=10)
+        amount_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.misc.labels.donation_amount', default="Donation Amount"), padding=10)
         amount_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(amount_frame, text="Amount (£):").pack(anchor='w')
+        ttk.Label(amount_frame, text=_t('gui.academics.parent_portal.misc.labels.amount', default="Amount (£):")).pack(anchor='w')
         self.amount_entry = ttk.Entry(amount_frame, width=20)
         self.amount_entry.pack(pady=5)
 
         # Child selection (optional)
         if children:
-            child_frame = ttk.LabelFrame(main_frame, text="Donate on behalf of (optional)", padding=10)
+            child_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.misc.labels.donate_on_behalf_of_optional', default="Donate on behalf of (optional)"), padding=10)
             child_frame.pack(fill=tk.X, pady=10)
 
             self.child_var = tk.StringVar()
 
-            rb = ttk.Radiobutton(child_frame, text="Anonymous donation", variable=self.child_var, value="anonymous")
+            rb = ttk.Radiobutton(child_frame, text=_t('gui.academics.parent_portal.misc.buttons.anonymous_donation', default="Anonymous donation"), variable=self.child_var, value="anonymous")
             rb.pack(anchor='w')
 
             for child in children:
@@ -301,8 +303,8 @@ class DonationDialog:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=20)
 
-        ttk.Button(btn_frame, text="Donate", command=self.donate).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.misc.buttons.donate', default="Donate"), command=self.donate).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.misc.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         self.dialog.wait_window()
 
@@ -311,7 +313,7 @@ class DonationDialog:
         amount_str = self.amount_entry.get().strip()
 
         if not campaign:
-            messagebox.showwarning("Missing Selection", "Please select a campaign.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.misc.dialogs.missing_selection', default="Missing Selection"), _t('gui.academics.parent_portal.misc.dialogs.please_select_a_campaign', default="Please select a campaign."))
             return
 
         try:
@@ -319,7 +321,7 @@ class DonationDialog:
             if amount <= 0:
                 raise ValueError
         except ValueError:
-            messagebox.showwarning("Invalid Amount", "Please enter a valid donation amount.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.misc.dialogs.invalid_amount', default="Invalid Amount"), _t('gui.academics.parent_portal.misc.dialogs.please_enter_a_valid_donation_amount', default="Please enter a valid donation amount."))
             return
 
         child = None
@@ -347,7 +349,7 @@ class QRCodeDialog:
         self.qr_image_label = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Generate QR Code")
+        self.dialog.title(_t('gui.academics.parent_portal.misc.windows.generate_qr_code', default="Generate QR Code"))
         self.dialog.geometry("550x650")
         self.dialog.minsize(500, 550)
         self.dialog.transient(parent)
@@ -368,9 +370,9 @@ class QRCodeDialog:
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        ttk.Label(self.main_frame, text="Generate QR Code", font=('Arial', 16, 'bold')).pack(pady=10)
+        ttk.Label(self.main_frame, text=_t('gui.academics.parent_portal.misc.labels.generate_qr_code', default="Generate QR Code"), font=('Arial', 16, 'bold')).pack(pady=10)
 
-        ttk.Label(self.main_frame, text="Select child for QR code generation:").pack(anchor='w', pady=10)
+        ttk.Label(self.main_frame, text=_t('gui.academics.parent_portal.misc.labels.select_child_for_qr_code_generation', default="Select child for QR code generation:")).pack(anchor='w', pady=10)
 
         # Child selection
         self.child_var = tk.StringVar()
@@ -383,7 +385,7 @@ class QRCodeDialog:
             self.child_var.set("0")
 
         # Purpose selection
-        purpose_frame = ttk.LabelFrame(self.main_frame, text="QR Code Purpose", padding=10)
+        purpose_frame = ttk.LabelFrame(self.main_frame, text=_t('gui.academics.parent_portal.misc.labels.qr_code_purpose', default="QR Code Purpose"), padding=10)
         purpose_frame.pack(fill=tk.X, pady=10)
 
         self.purpose_var = tk.StringVar()
@@ -397,17 +399,17 @@ class QRCodeDialog:
             self.purpose_var.set(purposes[0])
 
         # QR Code preview frame
-        self.preview_frame = ttk.LabelFrame(self.main_frame, text="QR Code Preview", padding=10)
+        self.preview_frame = ttk.LabelFrame(self.main_frame, text=_t('gui.academics.parent_portal.misc.labels.qr_code_preview', default="QR Code Preview"), padding=10)
         self.preview_frame.pack(fill=tk.X, pady=10)
-        self.preview_label = ttk.Label(self.preview_frame, text="Click 'Generate' to create QR code")
+        self.preview_label = ttk.Label(self.preview_frame, text=_t('gui.academics.parent_portal.misc.labels.click_generate_to_create_qr_code', default="Click 'Generate' to create QR code"))
         self.preview_label.pack(pady=20)
 
         # Buttons
         btn_frame = ttk.Frame(self.main_frame)
         btn_frame.pack(pady=20)
 
-        ttk.Button(btn_frame, text="Generate & Save", command=self.generate).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.misc.buttons.generate_save', default="Generate & Save"), command=self.generate).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.misc.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         self.dialog.wait_window()
 
@@ -416,7 +418,7 @@ class QRCodeDialog:
         purpose = self.purpose_var.get()
 
         if not child_index or not purpose:
-            messagebox.showwarning("Missing Selection", "Please select a child and purpose.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.misc.dialogs.missing_selection', default="Missing Selection"), _t('gui.academics.parent_portal.misc.dialogs.please_select_a_child_and_purpose', default="Please select a child and purpose."))
             return
 
         try:
@@ -431,17 +433,17 @@ class QRCodeDialog:
                 }
                 self.dialog.destroy()
         except ValueError:
-            messagebox.showerror("Error", "Invalid selection.")
+            messagebox.showerror(_t('gui.academics.parent_portal.misc.dialogs.error', default="Error"), _t('gui.academics.parent_portal.misc.dialogs.invalid_selection', default="Invalid selection."))
 
     def _generate_qr_code(self, child, purpose):
         """Actually generate the QR code and save it to the qr_codes directory"""
         try:
             import qrcode
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
             import json
 
             # Create QR codes directory if it doesn't exist
-            qr_dir = paths.QR_CODES_DIR
+            qr_dir = paths.UNIVERSITY_QR_CODES_DIR
             qr_dir.mkdir(parents=True, exist_ok=True)
 
             # Create QR code data
@@ -480,12 +482,12 @@ class QRCodeDialog:
             return str(filepath)
 
         except ImportError:
-            messagebox.showwarning("QR Code Library",
-                                 "QR code library not installed.\n"
-                                 "Install with: pip install qrcode[pil]")
+            messagebox.showwarning(_t('gui.academics.parent_portal.misc.dialogs.qr_code_library', default="QR Code Library"),
+                                 _t('gui.academics.parent_portal.misc.dialogs.qr_code_library_not_installed_install_with_pip_install_qrcode_pi', default="QR code library not installed.\n"
+                                 "Install with: pip install qrcode[pil]"))
             return None
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate QR code: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.misc.dialogs.error', default="Error"), f"Failed to generate QR code: {str(e)}")
             return None
 
     def cancel(self):
@@ -501,8 +503,8 @@ class DatabaseManager:
         try:
             from education_system.systems.university.infrastructure.database.db import sqlite3
             # Use centralized path system
-            from education_system.systems.university.infrastructure import paths
-            db_path = paths.DEFAULT_DB_PATH
+            from education_system import paths
+            db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             conn.execute("PRAGMA busy_timeout = 30000")
             return conn

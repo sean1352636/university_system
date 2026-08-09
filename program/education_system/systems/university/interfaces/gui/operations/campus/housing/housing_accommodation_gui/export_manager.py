@@ -124,7 +124,7 @@ def export_data_gui(self, data_type):
                 writer.writerow(headers)
                 writer.writerows(data)
 
-            messagebox.showinfo("Success", f"{data_type.title()} data exported successfully to:\n{filename}")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.export_manager.dialogs.success', default="Success"), f"{data_type.title()} data exported successfully to:\n{filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export data: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.export_manager.dialogs.error', default="Error"), f"Failed to export data: {str(e)}")

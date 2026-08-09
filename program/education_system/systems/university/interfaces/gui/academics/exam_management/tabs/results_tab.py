@@ -8,6 +8,8 @@ through to ``student_grades`` and ``student_modules`` via
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import tkinter as tk
@@ -38,16 +40,16 @@ class ResultsTabMixin:
 
     def create_results_tab(self):
         self.results_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.results_tab, text="📝 Results")
+        self.notebook.add(self.results_tab, text=_t('gui.academics.exam_management.tabs.results_tab.tabs.results', default="📝 Results"))
 
         wrap = ttk.Frame(self.results_tab, padding=10)
         wrap.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(
             wrap,
-            text="Double-click an exam to enter marks. Saved results "
+            text=_t('gui.academics.exam_management.tabs.results_tab.labels.double_click_an_exam_to_enter_marks_saved_results_propagate_to_s', default="Double-click an exam to enter marks. Saved results "
                  "propagate to student_grades, student_modules, and the "
-                 "grade audit log.",
+                 "grade audit log."),
             wraplength=900, justify="left",
         ).pack(anchor="w", pady=(0, 8))
 
@@ -74,9 +76,9 @@ class ResultsTabMixin:
 
         btns = ttk.Frame(wrap)
         btns.pack(fill=tk.X, pady=(8, 0))
-        ttk.Button(btns, text="🔄 Refresh",
+        ttk.Button(btns, text=_t('gui.academics.exam_management.tabs.results_tab.buttons.refresh', default="🔄 Refresh"),
                    command=self.refresh_results_list).pack(side=tk.LEFT)
-        ttk.Button(btns, text="📝 Enter / edit marks",
+        ttk.Button(btns, text=_t('gui.academics.exam_management.tabs.results_tab.buttons.enter_edit_marks', default="📝 Enter / edit marks"),
                    command=self._open_results_dialog_for_selected
                    ).pack(side=tk.LEFT, padx=8)
 
@@ -126,7 +128,7 @@ class ResultsTabMixin:
     def _open_results_dialog_for_selected(self):
         exam = self._selected_exam()
         if not exam:
-            messagebox.showinfo("Results", "Select an exam first.")
+            messagebox.showinfo(_t('gui.academics.exam_management.tabs.results_tab.dialogs.results', default="Results"), _t('gui.academics.exam_management.tabs.results_tab.dialogs.select_an_exam_first', default="Select an exam first."))
             return
         ResultsEntryDialog(self.root, exam, self.data_manager,
                            on_saved=self.refresh_results_list)
@@ -161,8 +163,8 @@ class ResultsEntryDialog(tk.Toplevel):
         ).pack(anchor="w")
         ttk.Label(
             header,
-            text="Enter a percentage (0–100) for each student. Blank "
-                 "rows are skipped.",
+            text=_t('gui.academics.exam_management.tabs.results_tab.labels.enter_a_percentage_0_100_for_each_student_blank_rows_are_skipped', default="Enter a percentage (0–100) for each student. Blank "
+                 "rows are skipped."),
             foreground="#555",
         ).pack(anchor="w", pady=(4, 0))
 
@@ -180,11 +182,11 @@ class ResultsEntryDialog(tk.Toplevel):
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Header row
-        ttk.Label(rows, text="Student ID", font=("Helvetica", 9, "bold"),
+        ttk.Label(rows, text=_t('gui.academics.exam_management.tabs.results_tab.labels.student_id', default="Student ID"), font=("Helvetica", 9, "bold"),
                   width=15, anchor="w").grid(row=0, column=0, padx=4, pady=4)
-        ttk.Label(rows, text="Name", font=("Helvetica", 9, "bold"),
+        ttk.Label(rows, text=_t('gui.academics.exam_management.tabs.results_tab.labels.name', default="Name"), font=("Helvetica", 9, "bold"),
                   width=28, anchor="w").grid(row=0, column=1, padx=4, pady=4)
-        ttk.Label(rows, text="Mark (%)", font=("Helvetica", 9, "bold"),
+        ttk.Label(rows, text=_t('gui.academics.exam_management.tabs.results_tab.labels.mark', default="Mark (%)"), font=("Helvetica", 9, "bold"),
                   width=10, anchor="w").grid(row=0, column=2, padx=4, pady=4)
 
         for i, s in enumerate(students, start=1):
@@ -201,15 +203,15 @@ class ResultsEntryDialog(tk.Toplevel):
                 row=i, column=2, padx=4, pady=2, sticky="w")
 
         if not students:
-            ttk.Label(rows, text="No students enrolled in this module.",
+            ttk.Label(rows, text=_t('gui.academics.exam_management.tabs.results_tab.labels.no_students_enrolled_in_this_module', default="No students enrolled in this module."),
                       foreground="#888").grid(row=1, column=0, columnspan=3,
                                               padx=4, pady=12)
 
         actions = ttk.Frame(self, padding=10)
         actions.pack(fill=tk.X)
-        ttk.Button(actions, text="Cancel",
+        ttk.Button(actions, text=_t('gui.academics.exam_management.tabs.results_tab.buttons.cancel', default="Cancel"),
                    command=self.destroy).pack(side=tk.RIGHT, padx=4)
-        ttk.Button(actions, text="💾 Save & write back",
+        ttk.Button(actions, text=_t('gui.academics.exam_management.tabs.results_tab.buttons.save_write_back', default="💾 Save & write back"),
                    command=self._save).pack(side=tk.RIGHT)
 
     def _save(self):
@@ -231,7 +233,7 @@ class ResultsEntryDialog(tk.Toplevel):
 
         if invalid:
             messagebox.showerror(
-                "Invalid marks",
+                _t('gui.academics.exam_management.tabs.results_tab.dialogs.invalid_marks', default="Invalid marks"),
                 "Some marks aren't valid percentages (0–100):\n"
                 + ", ".join(invalid),
                 parent=self,
@@ -239,8 +241,8 @@ class ResultsEntryDialog(tk.Toplevel):
             return
 
         if not results:
-            messagebox.showinfo("Nothing to save",
-                                "No marks were entered.", parent=self)
+            messagebox.showinfo(_t('gui.academics.exam_management.tabs.results_tab.dialogs.nothing_to_save', default="Nothing to save"),
+                                _t('gui.academics.exam_management.tabs.results_tab.dialogs.no_marks_were_entered', default="No marks were entered."), parent=self)
             return
 
         graded_by = "exam_management"
@@ -258,7 +260,7 @@ class ResultsEntryDialog(tk.Toplevel):
         msg = f"Saved {written} result(s)."
         if failed:
             msg += f"\n{failed} row(s) failed — see logs."
-        messagebox.showinfo("Results saved", msg, parent=self)
+        messagebox.showinfo(_t('gui.academics.exam_management.tabs.results_tab.dialogs.results_saved', default="Results saved"), msg, parent=self)
 
         if callable(self._on_saved):
             try:

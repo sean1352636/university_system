@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -159,7 +161,7 @@ def load_settings(self):
         self.auto_backup_var.set(auto_backup)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load settings: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), f"Failed to load settings: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.load_settings = load_settings
 
@@ -174,11 +176,11 @@ def save_settings(self):
         self.scheduler.update_system_setting('email_notifications', str(self.email_notifications_var.get()))
         self.scheduler.update_system_setting('auto_backup', str(self.auto_backup_var.get()))
 
-        messagebox.showinfo("Success", "Settings saved successfully!", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.settings_tab.dialogs.success', default="Success"), _t('gui.academics.module_scheduling.settings_tab.dialogs.settings_saved_successfully', default="Settings saved successfully!"), parent=self.root)
         self.update_activity_log("System settings updated")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to save settings: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), f"Failed to save settings: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.save_settings = save_settings
 
@@ -271,7 +273,7 @@ def refresh_holidays(self):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to refresh holidays: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), f"Failed to refresh holidays: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.refresh_holidays = refresh_holidays
 
@@ -290,7 +292,7 @@ def list_holidays(self):
 
     # Create dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Academic Holidays")
+    dialog.title(_t('gui.academics.module_scheduling.settings_tab.windows.academic_holidays', default="Academic Holidays"))
     dialog.geometry("900x500")
     dialog.transient(self.root)
 
@@ -317,7 +319,7 @@ def list_holidays(self):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.settings_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.list_holidays = list_holidays
 
@@ -337,7 +339,7 @@ def check_holiday_conflicts(self, date):
     if holiday:
         name, description = holiday
         messagebox.showwarning(
-            "Holiday Conflict",
+            _t('gui.academics.module_scheduling.settings_tab.dialogs.holiday_conflict', default="Holiday Conflict"),
             f"This date falls on a holiday: {name}\n\n"
             f"{description if description else 'No description available.'}"
         , parent=self.root)
@@ -386,13 +388,13 @@ def save_template(self):
                 except Exception as json_err:
                     print(f"Warning: Could not save JSON file: {json_err}")
 
-                messagebox.showinfo("Success", f"Template '{template_name}' saved successfully!", parent=self.root)
+                messagebox.showinfo(_t('gui.academics.module_scheduling.settings_tab.dialogs.success', default="Success"), f"Template '{template_name}' saved successfully!", parent=self.root)
                 self.update_activity_log(f"Saved template: {template_name}")
             else:
-                messagebox.showerror("Error", "Failed to save template.", parent=self.root)
+                messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.settings_tab.dialogs.failed_to_save_template', default="Failed to save template."), parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to save template: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), f"Failed to save template: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.save_template = save_template
 
@@ -407,20 +409,20 @@ def load_template(self):
                                                  parent=self.root)
 
         if template_name:
-            clear_existing = messagebox.askyesno("Load Template",
-                                               "Clear existing schedules before loading template?", parent=self.root)
+            clear_existing = messagebox.askyesno(_t('gui.academics.module_scheduling.settings_tab.dialogs.load_template', default="Load Template"),
+                                               _t('gui.academics.module_scheduling.settings_tab.dialogs.clear_existing_schedules_before_loading_template', default="Clear existing schedules before loading template?"), parent=self.root)
 
             success = self.scheduler.load_schedule_template(template_name, clear_existing)
 
             if success:
-                messagebox.showinfo("Success", f"Template '{template_name}' loaded successfully!", parent=self.root)
+                messagebox.showinfo(_t('gui.academics.module_scheduling.settings_tab.dialogs.success', default="Success"), f"Template '{template_name}' loaded successfully!", parent=self.root)
                 self.refresh_all_data()
                 self.update_activity_log(f"Loaded template: {template_name}")
             else:
-                messagebox.showerror("Error", "Failed to load template.", parent=self.root)
+                messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.settings_tab.dialogs.failed_to_load_template', default="Failed to load template."), parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load template: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), f"Failed to load template: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.load_template = load_template
 
@@ -462,7 +464,7 @@ def list_templates(self):
         self.notebook.select(7)  # Switch to management tab
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to list templates: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), f"Failed to list templates: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.list_templates = list_templates
 
@@ -470,16 +472,16 @@ def save_schedule_template(self):
     """Save current schedule as a template"""
     # Create dialog for template details
     dialog = tk.Toplevel(self.root)
-    dialog.title("Save Schedule Template")
+    dialog.title(_t('gui.academics.module_scheduling.settings_tab.windows.save_schedule_template', default="Save Schedule Template"))
     dialog.geometry("400x200")
     dialog.transient(self.root)
     dialog.grab_set()
 
-    ttk.Label(dialog, text="Template Name:").pack(pady=5)
+    ttk.Label(dialog, text=_t('gui.academics.module_scheduling.settings_tab.labels.template_name', default="Template Name:")).pack(pady=5)
     name_entry = ttk.Entry(dialog, width=40)
     name_entry.pack(pady=5)
 
-    ttk.Label(dialog, text="Description:").pack(pady=5)
+    ttk.Label(dialog, text=_t('gui.academics.module_scheduling.settings_tab.labels.description', default="Description:")).pack(pady=5)
     desc_text = tk.Text(dialog, width=40, height=4)
     desc_text.pack(pady=5)
 
@@ -488,7 +490,7 @@ def save_schedule_template(self):
         description = desc_text.get("1.0", tk.END).strip()
 
         if not template_name:
-            messagebox.showwarning("Warning", "Please enter a template name.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.module_scheduling.settings_tab.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.settings_tab.dialogs.please_enter_a_template_name', default="Please enter a template name."), parent=self.root)
             return
 
         try:
@@ -526,21 +528,22 @@ def save_schedule_template(self):
             # Also save as JSON file
             _save_template_json_file(template_name, description, template_entries)
 
-            messagebox.showinfo("Success", f"Template '{template_name}' saved successfully!", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.settings_tab.dialogs.success', default="Success"), f"Template '{template_name}' saved successfully!", parent=self.root)
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save template: {str(e)}", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), f"Failed to save template: {str(e)}", parent=self.root)
 
-    ttk.Button(dialog, text="Save", command=save_template).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.academics.module_scheduling.settings_tab.buttons.save', default="Save"), command=save_template).pack(pady=10)
 
 ModuleSchedulingGUI.save_schedule_template = save_schedule_template
 
 def _save_template_json_file(template_name, description, schedules):
     """Save a schedule template as a JSON file in templates/scheduling/"""
     import json
-    from education_system.systems.university.infrastructure.paths import TEMPLATES_DIR
-    templates_dir = TEMPLATES_DIR / "scheduling"
+    from education_system.paths import UNIVERSITY_TEMPLATES_DIR
+    from education_system.paths import UNIVERSITY_UI_TEMPLATES_DIR
+    templates_dir = UNIVERSITY_UI_TEMPLATES_DIR / "scheduling"
     templates_dir.mkdir(parents=True, exist_ok=True)
 
     # Sanitise filename
@@ -569,12 +572,12 @@ def load_schedule_template(self):
         templates = cursor.fetchall()
 
     if not templates:
-        messagebox.showinfo("No Templates", "No schedule templates found.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.settings_tab.dialogs.no_templates', default="No Templates"), _t('gui.academics.module_scheduling.settings_tab.dialogs.no_schedule_templates_found', default="No schedule templates found."), parent=self.root)
         return
 
     # Create selection dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Load Schedule Template")
+    dialog.title(_t('gui.academics.module_scheduling.settings_tab.windows.load_schedule_template', default="Load Schedule Template"))
     dialog.geometry("700x400")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -587,7 +590,7 @@ def load_schedule_template(self):
 
     def load_selected():
         if not listbox.curselection():
-            messagebox.showwarning("Warning", "Please select a template.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.module_scheduling.settings_tab.dialogs.warning', default="Warning"), _t('gui.academics.module_scheduling.settings_tab.dialogs.please_select_a_template', default="Please select a template."), parent=self.root)
             return
 
         idx = listbox.curselection()[0]
@@ -595,9 +598,9 @@ def load_schedule_template(self):
 
         # Confirm
         confirm = messagebox.askyesno(
-            "Confirm Load",
-            "This will REPLACE all current schedules with the template.\n\n"
-            "Are you sure you want to continue?"
+            _t('gui.academics.module_scheduling.settings_tab.dialogs.confirm_load', default="Confirm Load"),
+            _t('gui.academics.module_scheduling.settings_tab.dialogs.this_will_replace_all_current_schedules_with_the_template_are_yo', default="This will REPLACE all current schedules with the template.\n\n"
+            "Are you sure you want to continue?")
         , parent=self.root)
 
         if not confirm:
@@ -612,7 +615,7 @@ def load_schedule_template(self):
                 result = cursor.fetchone()
 
                 if not result:
-                    messagebox.showerror("Error", "Template not found.", parent=self.root)
+                    messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.settings_tab.dialogs.template_not_found', default="Template not found."), parent=self.root)
                     return
 
                 import json
@@ -629,15 +632,15 @@ def load_schedule_template(self):
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     ''', schedule)
 
-            messagebox.showinfo("Success", f"Template loaded successfully!\nLoaded {len(schedules)} schedules.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.settings_tab.dialogs.success', default="Success"), f"Template loaded successfully!\nLoaded {len(schedules)} schedules.", parent=self.root)
             self.refresh_all_data()
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load template: {str(e)}", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), f"Failed to load template: {str(e)}", parent=self.root)
 
-    ttk.Button(dialog, text="Load", command=load_selected).pack(pady=5)
-    ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=5)
+    ttk.Button(dialog, text=_t('gui.academics.module_scheduling.settings_tab.buttons.load', default="Load"), command=load_selected).pack(pady=5)
+    ttk.Button(dialog, text=_t('gui.academics.module_scheduling.settings_tab.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(pady=5)
 
 ModuleSchedulingGUI.load_schedule_template = load_schedule_template
 
@@ -654,12 +657,12 @@ def list_schedule_templates(self):
         templates = cursor.fetchall()
 
     if not templates:
-        messagebox.showinfo("No Templates", "No schedule templates found.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.settings_tab.dialogs.no_templates', default="No Templates"), _t('gui.academics.module_scheduling.settings_tab.dialogs.no_schedule_templates_found', default="No schedule templates found."), parent=self.root)
         return
 
     # Create dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Schedule Templates")
+    dialog.title(_t('gui.academics.module_scheduling.settings_tab.windows.schedule_templates', default="Schedule Templates"))
     dialog.geometry("900x500")
     dialog.transient(self.root)
 
@@ -685,7 +688,7 @@ def list_schedule_templates(self):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.settings_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.list_schedule_templates = list_schedule_templates
 
@@ -708,10 +711,10 @@ def update_system_setting(self, key, value):
                 VALUES (?, ?, ?)
                 ''', (key, value, f"Custom setting: {key}"))
 
-        messagebox.showinfo("Success", f"System setting '{key}' updated to '{value}'", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.settings_tab.dialogs.success', default="Success"), f"System setting '{key}' updated to '{value}'", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Error updating setting: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.settings_tab.dialogs.error', default="Error"), f"Error updating setting: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI.update_system_setting = update_system_setting
 
@@ -730,7 +733,7 @@ def list_system_settings(self):
 
     # Create dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("System Settings")
+    dialog.title(_t('gui.academics.module_scheduling.settings_tab.windows.system_settings', default="System Settings"))
     dialog.geometry("900x500")
     dialog.transient(self.root)
 
@@ -756,7 +759,6 @@ def list_system_settings(self):
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+    ttk.Button(btn_frame, text=_t('gui.academics.module_scheduling.settings_tab.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
 ModuleSchedulingGUI.list_system_settings = list_system_settings
-

@@ -6,6 +6,8 @@ called on a GUI instance and are preserved here with the same
 signature for backward compatibility.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox,
     os, logging, paths,
@@ -120,14 +122,14 @@ def show_theme_settings(self):
 
         # Theme selection
         ttk.Label(theme_frame, text=_t("enhanced_reporting.labels.theme")).pack(anchor=tk.W, pady=5)
-        theme_var = tk.StringVar(value="default")
+        theme_var = tk.StringVar(value=_t('gui.shell.enhanced_reporting.standalone.settings_functions.values.default', default="default"))
         theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var,
                                   values=["default", "dark", "light", "modern"], state="readonly")
         theme_combo.pack(fill=tk.X, pady=(0, 10))
 
         # Font settings
         ttk.Label(theme_frame, text=_t("enhanced_reporting.labels.font_family")).pack(anchor=tk.W, pady=5)
-        font_var = tk.StringVar(value="Arial")
+        font_var = tk.StringVar(value=_t('gui.shell.enhanced_reporting.standalone.settings_functions.values.arial', default="Arial"))
         font_combo = ttk.Combobox(theme_frame, textvariable=font_var,
                                  values=["Arial", "Helvetica", "Times New Roman", "Calibri", "Segoe UI"],
                                  state="readonly")
@@ -141,7 +143,7 @@ def show_theme_settings(self):
 
         # UI density
         ttk.Label(theme_frame, text=_t("enhanced_reporting.labels.ui_density")).pack(anchor=tk.W, pady=5)
-        density_var = tk.StringVar(value="normal")
+        density_var = tk.StringVar(value=_t('gui.shell.enhanced_reporting.standalone.settings_functions.values.normal', default="normal"))
         density_combo = ttk.Combobox(theme_frame, textvariable=density_var,
                                     values=["compact", "normal", "spacious"], state="readonly")
         density_combo.pack(fill=tk.X, pady=(0, 10))

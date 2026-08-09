@@ -1,10 +1,12 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -113,7 +115,7 @@ class AlumniCRUDMixin:
         def _open_alumni_editor(self, record: dict):
             """Open an editor dialog for the given alumni record."""
             if not record:
-                messagebox.showerror("Not Found", "Alumni record could not be located.")
+                messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.not_found', default="Not Found"), _t('gui.learners.alumni.alumni_crud.dialogs.alumni_record_could_not_be_located', default="Alumni record could not be located."))
                 return
 
             editor = tk.Toplevel(self.root)
@@ -160,16 +162,16 @@ class AlumniCRUDMixin:
                     self._save_alumni_updates(record, updates)
                     editor.destroy()
                     self.load_alumni_data()
-                    messagebox.showinfo("Success", "Alumni record updated successfully.")
+                    messagebox.showinfo(_t('gui.learners.alumni.alumni_crud.dialogs.success', default="Success"), _t('gui.learners.alumni.alumni_crud.dialogs.alumni_record_updated_successfully', default="Alumni record updated successfully."))
                 except ValueError as exc:
-                    messagebox.showerror("Validation Error", f"Invalid input: {exc}")
+                    messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.validation_error', default="Validation Error"), f"Invalid input: {exc}")
                 except sqlite3.Error as exc:
-                    messagebox.showerror("Database Error", f"Could not save changes: {exc}")
+                    messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.database_error', default="Database Error"), f"Could not save changes: {exc}")
 
             button_frame = ttk.Frame(form_frame)
             button_frame.pack(fill=tk.X, pady=20)
-            ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.LEFT)
-            ttk.Button(button_frame, text="Cancel", command=editor.destroy).pack(side=tk.RIGHT)
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side=tk.LEFT)
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.cancel', default="Cancel"), command=editor.destroy).pack(side=tk.RIGHT)
 
         def _save_alumni_updates(self, record: dict, updates: dict):
             """Persist updates to the alumni table."""
@@ -322,14 +324,14 @@ class AlumniCRUDMixin:
 
         def delete_alumni_record(self, alumni_id, alumni_name, alumni_email):
             """Delete alumni record with confirmation"""
-            result = messagebox.askyesno("Delete Alumni",
+            result = messagebox.askyesno(_t('gui.learners.alumni.alumni_crud.dialogs.delete_alumni', default="Delete Alumni"),
                                        f"Are you sure you want to permanently delete the alumni record for {alumni_name}?\n\n"
                                        "This action cannot be undone.")
             if result:
                 # Confirm deletion one more time
-                confirm = messagebox.askyesno("Final Confirmation",
-                                            "This will permanently delete all alumni data.\n\n"
-                                            "Are you absolutely sure?")
+                confirm = messagebox.askyesno(_t('gui.learners.alumni.alumni_crud.dialogs.final_confirmation', default="Final Confirmation"),
+                                            _t('gui.learners.alumni.alumni_crud.dialogs.this_will_permanently_delete_all_alumni_data_are_you_absolutely', default="This will permanently delete all alumni data.\n\n"
+                                            "Are you absolutely sure?"))
                 if confirm:
                     # Simulate deletion
                     # Here you would call the backend deletion function
@@ -337,13 +339,13 @@ class AlumniCRUDMixin:
                     # Send deletion confirmation email
                     self.send_profile_deletion_confirmation(alumni_email, alumni_name)
 
-                    messagebox.showinfo("Success", f"Alumni record for {alumni_name} has been deleted.\nConfirmation email sent.")
+                    messagebox.showinfo(_t('gui.learners.alumni.alumni_crud.dialogs.success', default="Success"), f"Alumni record for {alumni_name} has been deleted.\nConfirmation email sent.")
 
         def edit_selected_alumni(self):
             """Edit the selected alumni record"""
             selection = self.alumni_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select an alumni record to edit.")
+                messagebox.showwarning(_t('gui.learners.alumni.alumni_crud.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.alumni_crud.dialogs.please_select_an_alumni_record_to_edit', default="Please select an alumni record to edit."))
                 return
 
             item = self.alumni_tree.item(selection[0])
@@ -418,16 +420,16 @@ class AlumniCRUDMixin:
 
                 conn.close()
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load alumni data: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.database_error', default="Database Error"), f"Failed to load alumni data: {str(e)}")
 
         def load_alumni_for_update(self, alumni_id):
             """Load alumni data for updating"""
             if not alumni_id:
-                messagebox.showwarning("Input Required", "Please enter an Alumni ID")
+                messagebox.showwarning(_t('gui.learners.alumni.alumni_crud.dialogs.input_required', default="Input Required"), _t('gui.learners.alumni.alumni_crud.dialogs.please_enter_an_alumni_id', default="Please enter an Alumni ID"))
                 return
             record = self._fetch_alumni_record(alumni_id.strip())
             if not record:
-                messagebox.showerror("Not Found", f"No alumni or graduated student record found for ID {alumni_id}.")
+                messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.not_found', default="Not Found"), f"No alumni or graduated student record found for ID {alumni_id}.")
                 return
 
             self._open_alumni_editor(record)
@@ -513,7 +515,7 @@ class AlumniCRUDMixin:
 
                 self.update_status(f"Found {len(rows)} alumni matching '{search_term}'")
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Search failed: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.database_error', default="Database Error"), f"Search failed: {str(e)}")
 
         def _load_finance_people(self):
             """Return [(label, student_id, email)] for alumni + students that
@@ -555,12 +557,12 @@ class AlumniCRUDMixin:
             self.update_status("Finance Status Check")
 
             # Title
-            title_label = ttk.Label(self.content_frame, text="Finance Status Check",
+            title_label = ttk.Label(self.content_frame, text=_t('gui.learners.alumni.alumni_crud.labels.finance_status_check', default="Finance Status Check"),
                                    font=('Arial', 16, 'bold'))
             title_label.pack(pady=20)
 
             # Input frame
-            input_frame = ttk.LabelFrame(self.content_frame, text="Check Finance Status", padding=20)
+            input_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.alumni_crud.labels.check_finance_status', default="Check Finance Status"), padding=20)
             input_frame.pack(fill=tk.X, padx=20, pady=10)
 
             # Only users that exist in the DB are selectable (no free-text search).
@@ -568,7 +570,7 @@ class AlumniCRUDMixin:
             label_map = {label: (sid, email) for label, sid, email in people}
 
             # Person dropdown
-            ttk.Label(input_frame, text="Alumnus / Student:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(input_frame, text=_t('gui.learners.alumni.alumni_crud.labels.alumnus_student', default="Alumnus / Student:")).grid(row=0, column=0, sticky='w', pady=5)
             person_var = tk.StringVar()
             person_combo = ttk.Combobox(input_frame, textvariable=person_var, width=45,
                                         state='readonly',
@@ -576,13 +578,13 @@ class AlumniCRUDMixin:
             person_combo.grid(row=0, column=1, padx=10, pady=5, sticky='w')
 
             # Student ID (autofilled, read-only)
-            ttk.Label(input_frame, text="Student ID:").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Label(input_frame, text=_t('gui.learners.alumni.alumni_crud.labels.student_id', default="Student ID:")).grid(row=1, column=0, sticky='w', pady=5)
             student_id_var = tk.StringVar()
             ttk.Entry(input_frame, textvariable=student_id_var, width=20,
                       state='readonly').grid(row=1, column=1, padx=10, pady=5, sticky='w')
 
             # Email (autofilled, read-only)
-            ttk.Label(input_frame, text="Email:").grid(row=2, column=0, sticky='w', pady=5)
+            ttk.Label(input_frame, text=_t('gui.learners.alumni.alumni_crud.labels.email', default="Email:")).grid(row=2, column=0, sticky='w', pady=5)
             email_var = tk.StringVar()
             ttk.Entry(input_frame, textvariable=email_var, width=30,
                       state='readonly').grid(row=2, column=1, padx=10, pady=5, sticky='w')
@@ -595,39 +597,39 @@ class AlumniCRUDMixin:
 
             if not people:
                 ttk.Label(input_frame,
-                          text="No alumni or students found in the database.",
+                          text=_t('gui.learners.alumni.alumni_crud.labels.no_alumni_or_students_found_in_the_database', default="No alumni or students found in the database."),
                           foreground='#b3261e').grid(row=3, column=0, columnspan=2, pady=10)
 
             # Check button
             def check_finance():
                 student_id = student_id_var.get().strip()
                 if not student_id:
-                    messagebox.showerror("Selection Required",
-                                         "Please select an alumnus or student from the list.")
+                    messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.selection_required', default="Selection Required"),
+                                         _t('gui.learners.alumni.alumni_crud.dialogs.please_select_an_alumnus_or_student_from_the_list', default="Please select an alumnus or student from the list."))
                     return
 
                 finance_status = self.check_finance_status(student_id, email_var.get().strip())
 
                 if 'error' in finance_status:
-                    messagebox.showerror("Error", finance_status['error'])
+                    messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.error', default="Error"), finance_status['error'])
                 else:
                     self.show_finance_status_dialog(
                         finance_status, person_var.get() or f"Student {student_id}")
 
-            ttk.Button(input_frame, text="Check Finance Status",
+            ttk.Button(input_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.check_finance_status', default="Check Finance Status"),
                       command=check_finance).grid(row=4, column=0, columnspan=2, pady=20)
 
         def show_finance_status_dialog(self, finance_status, alumni_name):
             """Show dialog with finance status information"""
             dialog = tk.Toplevel(self.root)
-            dialog.title("Finance Status")
+            dialog.title(_t('gui.learners.alumni.alumni_crud.windows.finance_status', default="Finance Status"))
             dialog.geometry("400x300")
             dialog.configure(bg='white')
             dialog.grab_set()
 
             if finance_status['has_debt']:
                 # Show debt information
-                tk.Label(dialog, text="Outstanding Balance", font=('Arial', 14, 'bold'),
+                tk.Label(dialog, text=_t('gui.learners.alumni.alumni_crud.labels.outstanding_balance', default="Outstanding Balance"), font=('Arial', 14, 'bold'),
                         bg='white', fg='#e74c3c').pack(pady=10)
 
                 info_frame = tk.Frame(dialog, bg='white')
@@ -640,18 +642,18 @@ class AlumniCRUDMixin:
                 tk.Label(info_frame, text=f"Total Owed: £{finance_status['total_owed']:.2f}",
                         font=('Arial', 12, 'bold'), bg='white', fg='#e74c3c').pack(anchor='w', pady=(5, 0))
 
-                tk.Button(dialog, text="Open Finance System",
+                tk.Button(dialog, text=_t('gui.learners.alumni.alumni_crud.buttons.open_finance_system', default="Open Finance System"),
                          command=lambda: self.open_finance_gui(),
                          bg='#27ae60', fg='white', font=('Arial', 11),
                          padx=20, pady=8, relief='flat').pack(pady=10)
             else:
                 # No debt
-                tk.Label(dialog, text="Finance Status: Clear", font=('Arial', 14, 'bold'),
+                tk.Label(dialog, text=_t('gui.learners.alumni.alumni_crud.labels.finance_status_clear', default="Finance Status: Clear"), font=('Arial', 14, 'bold'),
                         bg='white', fg='#27ae60').pack(pady=20)
-                tk.Label(dialog, text="No outstanding balance found.",
+                tk.Label(dialog, text=_t('gui.learners.alumni.alumni_crud.labels.no_outstanding_balance_found', default="No outstanding balance found."),
                         font=('Arial', 11), bg='white', fg='#34495e').pack(pady=10)
 
-            tk.Button(dialog, text="Close", command=dialog.destroy,
+            tk.Button(dialog, text=_t('gui.learners.alumni.alumni_crud.buttons.close', default="Close"), command=dialog.destroy,
                      bg='#6c757d', fg='white', font=('Arial', 10),
                      padx=20, pady=5, relief='flat').pack(pady=10)
 
@@ -674,11 +676,11 @@ class AlumniCRUDMixin:
             canvas.configure(yscrollcommand=scrollbar.set)
 
             # Title
-            ttk.Label(scrollable_frame, text="Register New Alumni",
+            ttk.Label(scrollable_frame, text=_t('gui.learners.alumni.alumni_crud.labels.register_new_alumni', default="Register New Alumni"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Personal Information Section
-            personal_frame = ttk.LabelFrame(scrollable_frame, text="Personal Information", padding=10)
+            personal_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.alumni_crud.labels.personal_information', default="Personal Information"), padding=10)
             personal_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             # Create form fields
@@ -717,7 +719,7 @@ class AlumniCRUDMixin:
             personal_frame.columnconfigure(1, weight=1)
 
             # Academic Information Section
-            academic_frame = ttk.LabelFrame(scrollable_frame, text="Academic Information", padding=10)
+            academic_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.alumni_crud.labels.academic_information', default="Academic Information"), padding=10)
             academic_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             academic_fields = [
@@ -742,7 +744,7 @@ class AlumniCRUDMixin:
             academic_frame.columnconfigure(1, weight=1)
 
             # Employment Information Section
-            employment_frame = ttk.LabelFrame(scrollable_frame, text="Employment Information", padding=10)
+            employment_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.alumni_crud.labels.employment_information', default="Employment Information"), padding=10)
             employment_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             employment_fields = [
@@ -767,7 +769,7 @@ class AlumniCRUDMixin:
             employment_frame.columnconfigure(1, weight=1)
 
             # Contact Information Section
-            contact_frame = ttk.LabelFrame(scrollable_frame, text="Contact Information", padding=10)
+            contact_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.alumni_crud.labels.contact_information', default="Contact Information"), padding=10)
             contact_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             contact_fields = [
@@ -792,28 +794,28 @@ class AlumniCRUDMixin:
             contact_frame.columnconfigure(1, weight=1)
 
             # Additional Information Section
-            additional_frame = ttk.LabelFrame(scrollable_frame, text="Additional Information", padding=10)
+            additional_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.alumni_crud.labels.additional_information', default="Additional Information"), padding=10)
             additional_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             # Bio text area
-            ttk.Label(additional_frame, text="Biography/Description").pack(anchor='w')
+            ttk.Label(additional_frame, text=_t('gui.learners.alumni.alumni_crud.labels.biography_description', default="Biography/Description")).pack(anchor='w')
             self.form_vars['bio'] = tk.StringVar()
             bio_text = ScrolledText(additional_frame, height=4, wrap=tk.WORD)
             bio_text.pack(fill=tk.X, pady=(0, 10))
 
             # Skills
-            ttk.Label(additional_frame, text="Skills (comma-separated)").pack(anchor='w')
+            ttk.Label(additional_frame, text=_t('gui.learners.alumni.alumni_crud.labels.skills_comma_separated', default="Skills (comma-separated)")).pack(anchor='w')
             self.form_vars['skills'] = tk.StringVar()
             ttk.Entry(additional_frame, textvariable=self.form_vars['skills']).pack(fill=tk.X, pady=(0, 10))
 
             # Achievements
-            ttk.Label(additional_frame, text="Notable Achievements").pack(anchor='w')
+            ttk.Label(additional_frame, text=_t('gui.learners.alumni.alumni_crud.labels.notable_achievements', default="Notable Achievements")).pack(anchor='w')
             self.form_vars['achievements'] = tk.StringVar()
             achievements_text = ScrolledText(additional_frame, height=3, wrap=tk.WORD)
             achievements_text.pack(fill=tk.X)
 
             # Role Assignments Section
-            roles_frame = ttk.LabelFrame(scrollable_frame, text="Role Assignments", padding=10)
+            roles_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.alumni_crud.labels.role_assignments', default="Role Assignments"), padding=10)
             roles_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             self.form_vars['is_donor'] = tk.BooleanVar()
@@ -821,18 +823,18 @@ class AlumniCRUDMixin:
             self.form_vars['is_board_member'] = tk.BooleanVar()
             self.form_vars['is_ambassador'] = tk.BooleanVar()
 
-            ttk.Checkbutton(roles_frame, text="Alumni Donor", variable=self.form_vars['is_donor']).pack(anchor='w')
-            ttk.Checkbutton(roles_frame, text="Available as Mentor", variable=self.form_vars['is_mentor']).pack(anchor='w')
-            ttk.Checkbutton(roles_frame, text="Board Member", variable=self.form_vars['is_board_member']).pack(anchor='w')
-            ttk.Checkbutton(roles_frame, text="Alumni Ambassador", variable=self.form_vars['is_ambassador']).pack(anchor='w')
+            ttk.Checkbutton(roles_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.alumni_donor', default="Alumni Donor"), variable=self.form_vars['is_donor']).pack(anchor='w')
+            ttk.Checkbutton(roles_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.available_as_mentor', default="Available as Mentor"), variable=self.form_vars['is_mentor']).pack(anchor='w')
+            ttk.Checkbutton(roles_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.board_member', default="Board Member"), variable=self.form_vars['is_board_member']).pack(anchor='w')
+            ttk.Checkbutton(roles_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.alumni_ambassador', default="Alumni Ambassador"), variable=self.form_vars['is_ambassador']).pack(anchor='w')
 
             # Buttons
             button_frame = ttk.Frame(scrollable_frame)
             button_frame.pack(fill=tk.X, pady=20, padx=20)
 
-            ttk.Button(button_frame, text="Register Alumni",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.register_alumni', default="Register Alumni"),
                       command=self.submit_alumni_registration).pack(side=tk.RIGHT, padx=(10, 0))
-            ttk.Button(button_frame, text="Clear Form",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.clear_form', default="Clear Form"),
                       command=self.clear_alumni_form).pack(side=tk.RIGHT)
 
             # Pack the canvas and scrollbar
@@ -845,21 +847,21 @@ class AlumniCRUDMixin:
             self.update_status("Student Validation")
 
             # Title
-            title_label = ttk.Label(self.content_frame, text="Student Record Validation",
+            title_label = ttk.Label(self.content_frame, text=_t('gui.learners.alumni.alumni_crud.labels.student_record_validation', default="Student Record Validation"),
                                    font=('Arial', 16, 'bold'))
             title_label.pack(pady=20)
 
             # Input frame
-            input_frame = ttk.LabelFrame(self.content_frame, text="Validation Inputs", padding=20)
+            input_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.alumni_crud.labels.validation_inputs', default="Validation Inputs"), padding=20)
             input_frame.pack(fill=tk.X, padx=20, pady=10)
 
             # Student ID input
-            ttk.Label(input_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(input_frame, text=_t('gui.learners.alumni.alumni_crud.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky='w', pady=5)
             student_id_var = tk.StringVar()
             ttk.Entry(input_frame, textvariable=student_id_var, width=20).grid(row=0, column=1, padx=10, pady=5)
 
             # Email input
-            ttk.Label(input_frame, text="Email:").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Label(input_frame, text=_t('gui.learners.alumni.alumni_crud.labels.email', default="Email:")).grid(row=1, column=0, sticky='w', pady=5)
             email_var = tk.StringVar()
             ttk.Entry(input_frame, textvariable=email_var, width=30).grid(row=1, column=1, padx=10, pady=5)
 
@@ -869,24 +871,24 @@ class AlumniCRUDMixin:
                 email = email_var.get().strip()
 
                 if not student_id and not email:
-                    messagebox.showerror("Input Required", "Please enter either Student ID or Email")
+                    messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.input_required', default="Input Required"), _t('gui.learners.alumni.alumni_crud.dialogs.please_enter_either_student_id_or_email', default="Please enter either Student ID or Email"))
                     return
 
                 result = self.validate_student_record(student_id, email)
 
                 if result['valid']:
-                    messagebox.showinfo("Validation Result",
+                    messagebox.showinfo(_t('gui.learners.alumni.alumni_crud.dialogs.validation_result', default="Validation Result"),
                                       f"Valid Student Found!\n\n"
                                       f"Student ID: {result['student_id']}\n"
                                       f"Name: {result['name']}\n"
                                       f"Email: {result['email']}\n"
                                       f"Graduation Date: {result.get('graduation_date', 'N/A')}")
                 else:
-                    messagebox.showerror("Validation Result",
+                    messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.validation_result', default="Validation Result"),
                                        f"Validation Failed!\n\n"
                                        f"Error: {result['error']}")
 
-            ttk.Button(input_frame, text="Validate Student",
+            ttk.Button(input_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.validate_student', default="Validate Student"),
                       command=validate_student).grid(row=2, column=0, columnspan=2, pady=20)
 
         def show_update_alumni(self):
@@ -895,21 +897,21 @@ class AlumniCRUDMixin:
             self.update_status("Alumni Update Interface")
 
             # Implementation would be similar to registration form but with pre-filled data
-            ttk.Label(self.content_frame, text="Update Alumni Record",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.alumni_crud.labels.update_alumni_record', default="Update Alumni Record"),
                      font=('Arial', 16, 'bold')).pack(pady=20)
 
             # Alumni selection
-            selection_frame = ttk.LabelFrame(self.content_frame, text="Select Alumni to Update", padding=10)
+            selection_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.alumni_crud.labels.select_alumni_to_update', default="Select Alumni to Update"), padding=10)
             selection_frame.pack(fill=tk.X, pady=(0, 20), padx=20)
 
-            ttk.Label(selection_frame, text="Alumni ID:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(selection_frame, text=_t('gui.learners.alumni.alumni_crud.labels.alumni_id', default="Alumni ID:")).pack(side=tk.LEFT, padx=(0, 10))
             alumni_id_var = tk.StringVar()
             ttk.Entry(selection_frame, textvariable=alumni_id_var, width=15).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(selection_frame, text="Load Alumni Data",
+            ttk.Button(selection_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.load_alumni_data', default="Load Alumni Data"),
                       command=lambda: self.load_alumni_for_update(alumni_id_var.get())).pack(side=tk.LEFT)
 
             # Update form would go here (similar to registration form)
-            update_info = ttk.Label(self.content_frame, text="Enter Alumni ID above to load update form",
+            update_info = ttk.Label(self.content_frame, text=_t('gui.learners.alumni.alumni_crud.labels.enter_alumni_id_above_to_load_update_form', default="Enter Alumni ID above to load update form"),
                                    font=('Arial', 12))
             update_info.pack(pady=50)
 
@@ -922,13 +924,13 @@ class AlumniCRUDMixin:
             title_frame = ttk.Frame(self.content_frame)
             title_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(title_frame, text="Alumni Records",
+            ttk.Label(title_frame, text=_t('gui.learners.alumni.alumni_crud.labels.alumni_records', default="Alumni Records"),
                      font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
 
             search_frame = ttk.Frame(title_frame)
             search_frame.pack(side=tk.RIGHT)
 
-            ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+            ttk.Label(search_frame, text=_t('gui.learners.alumni.alumni_crud.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
             search_var = tk.StringVar()
             search_entry = ttk.Entry(search_frame, textvariable=search_var, width=20)
             search_entry.pack(side=tk.LEFT, padx=(0, 5))
@@ -966,11 +968,11 @@ class AlumniCRUDMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, pady=10)
 
-            ttk.Button(button_frame, text="View Details",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.view_details', default="View Details"),
                       command=self.view_alumni_details).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Edit Alumni",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.edit_alumni', default="Edit Alumni"),
                       command=self.edit_selected_alumni).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.alumni_crud.buttons.refresh', default="Refresh"),
                       command=self.load_alumni_data).pack(side=tk.LEFT)
 
         def submit_alumni_registration(self):
@@ -980,7 +982,7 @@ class AlumniCRUDMixin:
                 required_fields = ['first_name', 'last_name', 'email', 'graduation_year', 'degree']
                 for field in required_fields:
                     if not self.form_vars[field].get().strip():
-                        messagebox.showerror("Validation Error", f"{field.replace('_', ' ').title()} is required!")
+                        messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.validation_error', default="Validation Error"), f"{field.replace('_', ' ').title()} is required!")
                         return
 
                 # Get form data
@@ -993,7 +995,7 @@ class AlumniCRUDMixin:
                 if student_id or email:
                     validation_result = self.validate_student_record(student_id, email)
                     if not validation_result['valid']:
-                        messagebox.showerror("Validation Error",
+                        messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.validation_error', default="Validation Error"),
                                            f"Student validation failed: {validation_result['error']}\n\n"
                                            "You must be a valid student to register as alumni.")
                         return
@@ -1001,7 +1003,7 @@ class AlumniCRUDMixin:
                     # Check finance status
                     finance_status = self.check_finance_status(validation_result['student_id'], email)
                     if finance_status['has_debt']:
-                        result = messagebox.askyesno("Outstanding Balance",
+                        result = messagebox.askyesno(_t('gui.learners.alumni.alumni_crud.dialogs.outstanding_balance', default="Outstanding Balance"),
                                                    f"You have an outstanding balance of £{finance_status['total_owed']:.2f}.\n\n"
                                                    "Do you want to view your finance status before proceeding with registration?")
                         if result:
@@ -1018,21 +1020,21 @@ class AlumniCRUDMixin:
                         # Send confirmation email
                         self.send_alumni_registration_confirmation(email, f"{first_name} {last_name}")
 
-                        messagebox.showinfo("Success", "Alumni registered successfully!\nConfirmation email sent.")
+                        messagebox.showinfo(_t('gui.learners.alumni.alumni_crud.dialogs.success', default="Success"), _t('gui.learners.alumni.alumni_crud.dialogs.alumni_registered_successfully_confirmation_email_sent', default="Alumni registered successfully!\nConfirmation email sent."))
                         self.update_status("Alumni registration completed")
 
                         # Clear the form
                         self.clear_alumni_form()
                     else:
-                        messagebox.showerror("Error", "Registration failed. Please try again.")
+                        messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.error', default="Error"), _t('gui.learners.alumni.alumni_crud.dialogs.registration_failed_please_try_again', default="Registration failed. Please try again."))
 
                 except sqlite3.Error as reg_error:
-                    messagebox.showerror("Registration Error", f"Database error during registration: {str(reg_error)}")
+                    messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.registration_error', default="Registration Error"), f"Database error during registration: {str(reg_error)}")
 
             except (ValueError, KeyError) as e:
-                messagebox.showerror("Validation Error", f"Invalid input data: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.validation_error', default="Validation Error"), f"Invalid input data: {str(e)}")
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to register alumni: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.alumni_crud.dialogs.database_error', default="Database Error"), f"Failed to register alumni: {str(e)}")
 
         def validate_student_record(self, student_id, email):
             """Validate if user is a valid student in the database"""
@@ -1069,7 +1071,7 @@ class AlumniCRUDMixin:
             """View detailed information for selected alumni"""
             selection = self.alumni_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select an alumni record to view details.")
+                messagebox.showwarning(_t('gui.learners.alumni.alumni_crud.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.alumni_crud.dialogs.please_select_an_alumni_record_to_view_details', default="Please select an alumni record to view details."))
                 return
 
             item = self.alumni_tree.item(selection[0])

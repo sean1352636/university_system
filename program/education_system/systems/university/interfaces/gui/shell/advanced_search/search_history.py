@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -899,7 +901,7 @@ def show_cache_management(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Search Cache Management", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.search_history.labels.search_cache_management', default="Search Cache Management"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Cache info
     cache_size = len(getattr(self, 'search_cache', {}))
@@ -951,7 +953,7 @@ Cache helps speed up repeated searches by storing results temporarily.
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Cache Statistics", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.search_history.labels.cache_statistics', default="Cache Statistics"), style='Title.TLabel').pack(pady=(0, 20))
 
     stats_label = tk.Label(frame, text=stats_text, justify=tk.LEFT, font=('Courier', 10))
     stats_label.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
@@ -974,7 +976,7 @@ def show_search_history_detailed(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Search History & Management", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.search_history.labels.search_history_management', default="Search History & Management"), style='Title.TLabel').pack(pady=(0, 20))
 
     # History tree
     columns = ('Time', 'Type', 'Criteria', 'Results', 'Duration')
@@ -1022,7 +1024,7 @@ def show_search_history_detailed(self):
     def repeat_selected_search():
         selection = history_tree.selection()
         if not selection:
-            messagebox.showwarning(_t('advanced_search.no_selection'), "Please select a search to repeat.")
+            messagebox.showwarning(_t('advanced_search.no_selection'), _t('gui.shell.advanced_search.search_history.dialogs.please_select_a_search_to_repeat', default="Please select a search to repeat."))
             return
 
         item = history_tree.item(selection[0])
@@ -1049,7 +1051,7 @@ def show_search_history_detailed(self):
             messagebox.showerror(_t("advanced_search.search_history.export_failed"), f"Could not export history: {str(e)}")
 
     def clear_history():
-        if messagebox.askyesno("Confirm Clear", "Clear all search history? This cannot be undone."):
+        if messagebox.askyesno(_t('gui.shell.advanced_search.search_history.dialogs.confirm_clear', default="Confirm Clear"), _t('gui.shell.advanced_search.search_history.dialogs.clear_all_search_history_this_cannot_be_undone', default="Clear all search history? This cannot be undone.")):
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
@@ -1061,7 +1063,7 @@ def show_search_history_detailed(self):
                 for item in history_tree.get_children():
                     history_tree.delete(item)
 
-                messagebox.showinfo(_t("advanced_search.search_history.history_cleared"), "Search history has been cleared.")
+                messagebox.showinfo(_t("advanced_search.search_history.history_cleared"), _t('gui.shell.advanced_search.search_history.dialogs.search_history_has_been_cleared', default="Search history has been cleared."))
             except Exception as e:
                 messagebox.showerror(_t("advanced_search.search_history.clear_failed"), f"Could not clear history: {str(e)}")
 
@@ -1080,7 +1082,7 @@ def save_last_search_results(self):
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     default_name = f"last_search_results_{timestamp}.json"
     filename = filedialog.asksaveasfilename(
-        title="Save Search Results",
+        title=_t('gui.shell.advanced_search.search_history.dialogs.save_search_results', default="Save Search Results"),
         defaultextension=".json",
         initialfile=default_name,
         filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
@@ -1242,7 +1244,7 @@ AdvancedSearchGUI.repeat_last_search = repeat_last_search
 
 def clear_search_history(self):
     """Clear search history"""
-    if messagebox.askyesno("Confirm Clear", "This will clear all search history. Continue?"):
+    if messagebox.askyesno(_t('gui.shell.advanced_search.search_history.dialogs.confirm_clear', default="Confirm Clear"), _t('gui.shell.advanced_search.search_history.dialogs.this_will_clear_all_search_history_continue', default="This will clear all search history. Continue?")):
         try:
             # Clear search audit log
             log_filename = "search_audit_log.json"
@@ -1255,11 +1257,11 @@ def clear_search_history(self):
             if hasattr(self, 'last_search_criteria'):
                 delattr(self, 'last_search_criteria')
 
-            messagebox.showinfo(_t("advanced_search.search_history.history_cleared"), "Search history cleared successfully.")
+            messagebox.showinfo(_t("advanced_search.search_history.history_cleared"), _t('gui.shell.advanced_search.search_history.dialogs.search_history_cleared_successfully', default="Search history cleared successfully."))
             self.log_output("Search history cleared")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to clear search history: {str(e)}")
+            messagebox.showerror(_t('gui.shell.advanced_search.search_history.dialogs.error', default="Error"), f"Failed to clear search history: {str(e)}")
 AdvancedSearchGUI.clear_search_history = clear_search_history
 
 def show_search_history(self):
@@ -1273,7 +1275,7 @@ def show_search_history(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Search History & Favorites", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.search_history.labels.search_history_favorites', default="Search History & Favorites"), style='Title.TLabel').pack(pady=(0, 20))
 
     # History list
     columns = ('Time', 'Type', 'Criteria', 'Results')
@@ -1300,10 +1302,10 @@ def show_search_history(self):
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="🔄 Repeat",
-              command=lambda: messagebox.showinfo("Repeat", "Search would be repeated")).pack(side=tk.LEFT)
-    ttk.Button(button_frame, text="⭐ Favorite",
-              command=lambda: messagebox.showinfo("Favorite", "Search added to favorites")).pack(side=tk.LEFT, padx=(10, 0))
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.search_history.buttons.repeat', default="🔄 Repeat"),
+              command=lambda: messagebox.showinfo(_t('gui.shell.advanced_search.search_history.dialogs.repeat', default="Repeat"), _t('gui.shell.advanced_search.search_history.dialogs.search_would_be_repeated', default="Search would be repeated"))).pack(side=tk.LEFT)
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.search_history.buttons.favorite', default="⭐ Favorite"),
+              command=lambda: messagebox.showinfo(_t('gui.shell.advanced_search.search_history.dialogs.favorite', default="Favorite"), _t('gui.shell.advanced_search.search_history.dialogs.search_added_to_favorites', default="Search added to favorites"))).pack(side=tk.LEFT, padx=(10, 0))
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_search_history = show_search_history
 

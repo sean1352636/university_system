@@ -4,6 +4,8 @@ Allows students to view and edit their personal profile information
 including contact details, emergency contacts, and pronouns.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -25,7 +27,7 @@ class StudentProfileGUI:
             self.student_id = auth.current_user.get('username', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Student Profile Center")
+        self.window.title(_t('gui.pastoral.student_profile.profile.windows.student_profile_center', default="Student Profile Center"))
         self.window.geometry("900x600")
         self.window.transient(parent)
 
@@ -69,7 +71,7 @@ class StudentProfileGUI:
         """Build the profile form."""
         ttk.Label(
             self.window,
-            text="Student Profile Center",
+            text=_t('gui.pastoral.student_profile.profile.labels.student_profile_center', default="Student Profile Center"),
             font=("Arial", 16, "bold"),
         ).pack(pady=(15, 5))
 
@@ -116,13 +118,13 @@ class StudentProfileGUI:
         btn_frame = ttk.Frame(self.window)
         btn_frame.pack(pady=15)
 
-        ttk.Button(btn_frame, text="Save Changes", command=self._save_profile).pack(
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_profile.profile.buttons.save_changes', default="Save Changes"), command=self._save_profile).pack(
             side=tk.LEFT, padx=10
         )
-        ttk.Button(btn_frame, text="Refresh", command=self._load_profile).pack(
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_profile.profile.buttons.refresh', default="Refresh"), command=self._load_profile).pack(
             side=tk.LEFT, padx=10
         )
-        ttk.Button(btn_frame, text="Close", command=self.window.destroy).pack(
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_profile.profile.buttons.close', default="Close"), command=self.window.destroy).pack(
             side=tk.LEFT, padx=10
         )
 
@@ -198,7 +200,7 @@ class StudentProfileGUI:
     def _save_profile(self):
         """Save the edited profile fields back to the database."""
         if not self.student_id:
-            messagebox.showwarning("Warning", "No student ID available.", parent=self.window)
+            messagebox.showwarning(_t('gui.pastoral.student_profile.profile.dialogs.warning', default="Warning"), _t('gui.pastoral.student_profile.profile.dialogs.no_student_id_available', default="No student ID available."), parent=self.window)
             return
 
         email = self.field_entries["email"]["var"].get().strip()
@@ -226,13 +228,13 @@ class StudentProfileGUI:
             logger.info("Profile saved for student %s", self.student_id)
             self.status_var.set("Profile saved successfully.")
             messagebox.showinfo(
-                "Success", "Your profile has been updated.", parent=self.window
+                _t('gui.pastoral.student_profile.profile.dialogs.success', default="Success"), _t('gui.pastoral.student_profile.profile.dialogs.your_profile_has_been_updated', default="Your profile has been updated."), parent=self.window
             )
 
         except Exception as exc:
             logger.error("Failed to save profile for %s: %s", self.student_id, exc)
             messagebox.showerror(
-                "Error",
+                _t('gui.pastoral.student_profile.profile.dialogs.error', default="Error"),
                 f"Could not save profile: {exc}",
                 parent=self.window,
             )

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -9,7 +11,7 @@ logger = logging.getLogger(__name__)
 class AchievementBadgeGUI:
     def __init__(self, parent=None, auth=None):
         self.root = tk.Toplevel(parent) if parent else tk.Tk()
-        self.root.title("Achievement Badges")
+        self.root.title(_t('gui.pastoral.achievement_badges.achievement_badge.windows.achievement_badges', default="Achievement Badges"))
         self.root.geometry("1200x800")
         try:
             from education_system.systems.university.domain.pastoral.achievement_badges.services.achievement_badge_service import AchievementBadgeService
@@ -48,9 +50,9 @@ class AchievementBadgeGUI:
     # ------------------------------------------------------------- My Badges
     def _create_my_badges_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="My Badges")
+        notebook.add(tab, text=_t('gui.pastoral.achievement_badges.achievement_badge.tabs.my_badges', default="My Badges"))
 
-        self.badge_count_label = ttk.Label(tab, text="Total Badges Earned: 0",
+        self.badge_count_label = ttk.Label(tab, text=_t('gui.pastoral.achievement_badges.achievement_badge.labels.total_badges_earned_0', default="Total Badges Earned: 0"),
                                             font=("", 12, "bold"))
         self.badge_count_label.pack(padx=10, pady=10)
 
@@ -63,7 +65,7 @@ class AchievementBadgeGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_my_badges).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.refresh', default="Refresh"), command=self._refresh_my_badges).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_my_badges()
 
@@ -86,7 +88,7 @@ class AchievementBadgeGUI:
     # -------------------------------------------------------- Available Badges
     def _create_available_badges_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Available Badges")
+        notebook.add(tab, text=_t('gui.pastoral.achievement_badges.achievement_badge.tabs.available_badges', default="Available Badges"))
 
         cols = ("name", "category", "criteria", "points")
         self.available_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -97,7 +99,7 @@ class AchievementBadgeGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_available).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.refresh', default="Refresh"), command=self._refresh_available).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_available()
 
@@ -119,7 +121,7 @@ class AchievementBadgeGUI:
     # -------------------------------------------------------------- Progress
     def _create_progress_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Progress")
+        notebook.add(tab, text=_t('gui.pastoral.achievement_badges.achievement_badge.tabs.progress', default="Progress"))
 
         cols = ("badge", "progress", "percent")
         self.progress_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -130,7 +132,7 @@ class AchievementBadgeGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_progress).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.refresh', default="Refresh"), command=self._refresh_progress).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_progress()
 
@@ -155,7 +157,7 @@ class AchievementBadgeGUI:
     # ----------------------------------------------------------- Leaderboard
     def _create_leaderboard_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Leaderboard")
+        notebook.add(tab, text=_t('gui.pastoral.achievement_badges.achievement_badge.tabs.leaderboard', default="Leaderboard"))
 
         cols = ("rank", "student", "points", "badges")
         self.leaderboard_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -166,7 +168,7 @@ class AchievementBadgeGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_leaderboard).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.refresh', default="Refresh"), command=self._refresh_leaderboard).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_leaderboard()
 
@@ -188,14 +190,14 @@ class AchievementBadgeGUI:
     # ------------------------------------------------------------ Statistics
     def _create_statistics_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Statistics")
+        notebook.add(tab, text=_t('gui.pastoral.achievement_badges.achievement_badge.tabs.statistics', default="Statistics"))
 
         self.stats_text = tk.Text(tab, height=20, width=60, state="disabled")
         self.stats_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_statistics).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.refresh', default="Refresh"), command=self._refresh_statistics).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_statistics()
 
@@ -223,7 +225,7 @@ class AchievementBadgeGUI:
     # ---------------------------------------------------------------- Manage
     def _create_manage_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Manage")
+        notebook.add(tab, text=_t('gui.pastoral.achievement_badges.achievement_badge.tabs.manage', default="Manage"))
 
         cols = ("badge_id", "name", "category", "criteria", "points")
         self.manage_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -234,9 +236,9 @@ class AchievementBadgeGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Create", command=self._create_badge).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Award", command=self._award_badge).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_manage).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.create', default="Create"), command=self._create_badge).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.award', default="Award"), command=self._award_badge).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.refresh', default="Refresh"), command=self._refresh_manage).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_manage()
 
@@ -258,38 +260,38 @@ class AchievementBadgeGUI:
 
     def _create_badge(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Create Badge")
+        dlg.title(_t('gui.pastoral.achievement_badges.achievement_badge.windows.create_badge', default="Create Badge"))
         dlg.geometry("450x400")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Name:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.pastoral.achievement_badges.achievement_badge.labels.name', default="Name:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         name_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=name_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Category:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.pastoral.achievement_badges.achievement_badge.labels.category', default="Category:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         cat_var = tk.StringVar()
         ttk.Combobox(dlg, textvariable=cat_var, values=[
             "Academic", "Attendance", "Community", "Leadership",
             "Research", "Sports", "Volunteering",
         ], state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Criteria:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.pastoral.achievement_badges.achievement_badge.labels.criteria', default="Criteria:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         criteria_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=criteria_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Points:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.pastoral.achievement_badges.achievement_badge.labels.points', default="Points:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         points_var = tk.StringVar(value="10")
         ttk.Entry(dlg, textvariable=points_var).pack(fill=tk.X, padx=10)
 
         def save():
             if not name_var.get() or not cat_var.get() or not criteria_var.get():
-                messagebox.showwarning("Validation", "All fields are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.pastoral.achievement_badges.achievement_badge.dialogs.validation', default="Validation"), _t('gui.pastoral.achievement_badges.achievement_badge.dialogs.all_fields_are_required', default="All fields are required."), parent=dlg)
                 return
             try:
                 pts = int(points_var.get())
             except ValueError:
-                messagebox.showwarning("Validation", "Points must be a number.", parent=dlg)
+                messagebox.showwarning(_t('gui.pastoral.achievement_badges.achievement_badge.dialogs.validation', default="Validation"), _t('gui.pastoral.achievement_badges.achievement_badge.dialogs.points_must_be_a_number', default="Points must be a number."), parent=dlg)
                 return
             try:
                 self.service.create_badge(
@@ -301,40 +303,40 @@ class AchievementBadgeGUI:
                 dlg.destroy()
                 self._refresh_manage()
                 self._refresh_available()
-                messagebox.showinfo("Success", "Badge created.", parent=self.root)
+                messagebox.showinfo(_t('gui.pastoral.achievement_badges.achievement_badge.dialogs.success', default="Success"), _t('gui.pastoral.achievement_badges.achievement_badge.dialogs.badge_created', default="Badge created."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.pastoral.achievement_badges.achievement_badge.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.save', default="Save"), command=save).pack(pady=15)
 
     def _award_badge(self):
         sel = self.manage_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a badge first.", parent=self.root)
+            messagebox.showwarning(_t('gui.pastoral.achievement_badges.achievement_badge.dialogs.selection', default="Selection"), _t('gui.pastoral.achievement_badges.achievement_badge.dialogs.select_a_badge_first', default="Select a badge first."), parent=self.root)
             return
         values = self.manage_tree.item(sel[0], "values")
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("Award Badge")
+        dlg.title(_t('gui.pastoral.achievement_badges.achievement_badge.windows.award_badge', default="Award Badge"))
         dlg.geometry("400x200")
         dlg.transient(self.root)
         dlg.grab_set()
 
         ttk.Label(dlg, text=f"Badge: {values[1]}", font=("", 10, "bold")).pack(padx=10, pady=10)
 
-        ttk.Label(dlg, text="Student ID:").pack(padx=10, anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.pastoral.achievement_badges.achievement_badge.labels.student_id', default="Student ID:")).pack(padx=10, anchor=tk.W)
         student_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=student_var).pack(fill=tk.X, padx=10)
 
         def award():
             if not student_var.get():
-                messagebox.showwarning("Validation", "Enter a student ID.", parent=dlg)
+                messagebox.showwarning(_t('gui.pastoral.achievement_badges.achievement_badge.dialogs.validation', default="Validation"), _t('gui.pastoral.achievement_badges.achievement_badge.dialogs.enter_a_student_id', default="Enter a student ID."), parent=dlg)
                 return
             try:
                 self.service.award_badge(values[0], student_var.get())
                 dlg.destroy()
-                messagebox.showinfo("Success", f"Badge '{values[1]}' awarded.", parent=self.root)
+                messagebox.showinfo(_t('gui.pastoral.achievement_badges.achievement_badge.dialogs.success', default="Success"), f"Badge '{values[1]}' awarded.", parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.pastoral.achievement_badges.achievement_badge.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Award", command=award).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.pastoral.achievement_badges.achievement_badge.buttons.award', default="Award"), command=award).pack(pady=15)

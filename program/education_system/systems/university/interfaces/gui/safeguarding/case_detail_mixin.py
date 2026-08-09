@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import base64
 import hashlib
 import json
@@ -95,7 +97,7 @@ class CaseDetailMixin:
             chip_row = tk.Frame(host, bg="white")
             chip_row.pack(anchor="w", padx=12, pady=(0, 4))
             tk.Label(
-                chip_row, text="Vulnerability:", bg="white", font=("Segoe UI", 9, "bold")
+                chip_row, text=_t('gui.safeguarding.case_detail_mixin.labels.vulnerability', default="Vulnerability:"), bg="white", font=("Segoe UI", 9, "bold")
             ).pack(side="left")
             for f in vflags:
                 tk.Label(
@@ -116,7 +118,7 @@ class CaseDetailMixin:
         except (TypeError, ValueError):
             atts = []
         if atts or extra.get("audio_path") or extra.get("transcription"):
-            tk.Label(host, text="Attachments:", bg="white", font=("Segoe UI", 9, "bold")).pack(
+            tk.Label(host, text=_t('gui.safeguarding.case_detail_mixin.labels.attachments', default="Attachments:"), bg="white", font=("Segoe UI", 9, "bold")).pack(
                 anchor="w", **pad
             )
             for a in atts:
@@ -131,22 +133,22 @@ class CaseDetailMixin:
                 if a.get("stored"):
                     ttk.Button(
                         row,
-                        text="Open",
+                        text=_t('gui.safeguarding.case_detail_mixin.buttons.open', default="Open"),
                         command=lambda s=a["stored"]: self._open_attachment(s),
                     ).pack(side="left", padx=4)
             if extra.get("audio_path"):
                 row = tk.Frame(host, bg="white")
                 row.pack(anchor="w", padx=24, pady=1)
-                tk.Label(row, text="🎙 audio note", bg="white", font=("Segoe UI", 9)).pack(
+                tk.Label(row, text=_t('gui.safeguarding.case_detail_mixin.labels.audio_note', default="🎙 audio note"), bg="white", font=("Segoe UI", 9)).pack(
                     side="left"
                 )
                 ttk.Button(
                     row,
-                    text="Open",
+                    text=_t('gui.safeguarding.case_detail_mixin.buttons.open', default="Open"),
                     command=lambda s=extra["audio_path"]: self._open_attachment(s),
                 ).pack(side="left", padx=4)
             if extra.get("transcription"):
-                tk.Label(host, text="Transcript:", bg="white", font=("Segoe UI", 9, "bold")).pack(
+                tk.Label(host, text=_t('gui.safeguarding.case_detail_mixin.labels.transcript', default="Transcript:"), bg="white", font=("Segoe UI", 9, "bold")).pack(
                     anchor="w", **pad
                 )
                 tk.Label(
@@ -174,7 +176,7 @@ class CaseDetailMixin:
             nlp_cats = {}
         if cats or nlp_cats:
             tk.Label(
-                host, text="Flagged categories:", bg="white", font=("Segoe UI", 9, "bold")
+                host, text=_t('gui.safeguarding.case_detail_mixin.labels.flagged_categories', default="Flagged categories:"), bg="white", font=("Segoe UI", 9, "bold")
             ).pack(anchor="w", **pad)
             for cat, snippets in cats.items():
                 line = f"• {cat}"
@@ -207,11 +209,11 @@ class CaseDetailMixin:
                 ).pack(anchor="w", padx=24)
         else:
             tk.Label(
-                host, text="No automated flags.", bg="white", fg="#2e7d32", font=("Segoe UI", 9)
+                host, text=_t('gui.safeguarding.case_detail_mixin.labels.no_automated_flags', default="No automated flags."), bg="white", fg="#2e7d32", font=("Segoe UI", 9)
             ).pack(anchor="w", **pad)
 
         # Original content
-        tk.Label(host, text="Content:", bg="white", font=("Segoe UI", 9, "bold")).pack(
+        tk.Label(host, text=_t('gui.safeguarding.case_detail_mixin.labels.content', default="Content:"), bg="white", font=("Segoe UI", 9, "bold")).pack(
             anchor="w", **pad
         )
         content_box = scrolledtext.ScrolledText(
@@ -222,7 +224,7 @@ class CaseDetailMixin:
         content_box.pack(fill="x", padx=12, pady=4)
 
         # Review note + status buttons
-        tk.Label(host, text="Review note:", bg="white", font=("Segoe UI", 9, "bold")).pack(
+        tk.Label(host, text=_t('gui.safeguarding.case_detail_mixin.labels.review_note', default="Review note:"), bg="white", font=("Segoe UI", 9, "bold")).pack(
             anchor="w", **pad
         )
         note_box = tk.Text(host, height=3, font=("Segoe UI", 9))
@@ -254,33 +256,33 @@ class CaseDetailMixin:
                 new_status,
                 self.user.get("username"),
             )
-            messagebox.showinfo("Updated", f"Submission #{sid} marked as '{new_status}'.")
+            messagebox.showinfo(_t('gui.safeguarding.case_detail_mixin.dialogs.updated', default="Updated"), f"Submission #{sid} marked as '{new_status}'.")
             self._refresh_staff_list()
             self._render_empty_detail()
 
         ttk.Button(
-            actions, text="Mark In progress", command=lambda: set_status("In progress")
+            actions, text=_t('gui.safeguarding.case_detail_mixin.buttons.mark_in_progress', default="Mark In progress"), command=lambda: set_status("In progress")
         ).pack(side="left", padx=2)
-        ttk.Button(actions, text="Close case…", command=lambda: self._open_close_dialog(sid)).pack(
+        ttk.Button(actions, text=_t('gui.safeguarding.case_detail_mixin.buttons.close_case', default="Close case…"), command=lambda: self._open_close_dialog(sid)).pack(
             side="left", padx=2
         )
         ttk.Button(
-            actions, text="Escalate (DSL)", command=lambda: self._escalate_to_dsl(sid, note_box)
+            actions, text=_t('gui.safeguarding.case_detail_mixin.buttons.escalate_dsl', default="Escalate (DSL)"), command=lambda: self._escalate_to_dsl(sid, note_box)
         ).pack(side="left", padx=2)
 
         # Feature 26 / 27 / 30 — extra tooling row.
         more = tk.Frame(host, bg="white")
         more.pack(fill="x", padx=12, pady=(0, 10))
         ttk.Button(
-            more, text="Apply support template…", command=lambda: self._open_template_dialog(sid)
+            more, text=_t('gui.safeguarding.case_detail_mixin.buttons.apply_support_template', default="Apply support template…"), command=lambda: self._open_template_dialog(sid)
         ).pack(side="left", padx=2)
         ttk.Button(
-            more, text="Schedule review…", command=lambda: self._open_review_dialog(sid)
+            more, text=_t('gui.safeguarding.case_detail_mixin.buttons.schedule_review', default="Schedule review…"), command=lambda: self._open_review_dialog(sid)
         ).pack(side="left", padx=2)
-        ttk.Button(more, text="Merge…", command=lambda: self._open_merge_dialog(sid)).pack(
+        ttk.Button(more, text=_t('gui.safeguarding.case_detail_mixin.buttons.merge', default="Merge…"), command=lambda: self._open_merge_dialog(sid)).pack(
             side="left", padx=2
         )
-        ttk.Button(more, text="Split…", command=lambda: self._open_split_dialog(sid)).pack(
+        ttk.Button(more, text=_t('gui.safeguarding.case_detail_mixin.buttons.split', default="Split…"), command=lambda: self._open_split_dialog(sid)).pack(
             side="left", padx=2
         )
 
@@ -298,7 +300,7 @@ class CaseDetailMixin:
     def _render_notes_tab(self, host, sid):
         tk.Label(
             host,
-            text="Confidential case notes (append-only)",
+            text=_t('gui.safeguarding.case_detail_mixin.labels.confidential_case_notes_append_only', default="Confidential case notes (append-only)"),
             bg="white",
             font=("Segoe UI", 10, "bold"),
         ).pack(anchor="w", padx=12, pady=(10, 6))
@@ -326,10 +328,10 @@ class CaseDetailMixin:
                 w.destroy()
             self._render_notes_tab(host, sid)
 
-        ttk.Button(row, text="Append", command=_add).pack(side="right", padx=4)
+        ttk.Button(row, text=_t('gui.safeguarding.case_detail_mixin.buttons.append', default="Append"), command=_add).pack(side="right", padx=4)
 
     def _render_actions_tab(self, host, sid):
-        tk.Label(host, text="Action plan", bg="white", font=("Segoe UI", 10, "bold")).pack(
+        tk.Label(host, text=_t('gui.safeguarding.case_detail_mixin.labels.action_plan', default="Action plan"), bg="white", font=("Segoe UI", 10, "bold")).pack(
             anchor="w", padx=12, pady=(10, 6)
         )
         cols = ("id", "title", "owner", "due", "status")
@@ -346,13 +348,13 @@ class CaseDetailMixin:
 
         form = tk.Frame(host, bg="white")
         form.pack(fill="x", padx=12, pady=8)
-        tk.Label(form, text="Title:", bg="white").grid(row=0, column=0, sticky="w")
+        tk.Label(form, text=_t('gui.safeguarding.case_detail_mixin.labels.title', default="Title:"), bg="white").grid(row=0, column=0, sticky="w")
         t_e = ttk.Entry(form, width=32)
         t_e.grid(row=0, column=1, padx=4)
-        tk.Label(form, text="Owner:", bg="white").grid(row=0, column=2, sticky="w")
+        tk.Label(form, text=_t('gui.safeguarding.case_detail_mixin.labels.owner', default="Owner:"), bg="white").grid(row=0, column=2, sticky="w")
         o_e = ttk.Entry(form, width=14)
         o_e.grid(row=0, column=3, padx=4)
-        tk.Label(form, text="Due (YYYY-MM-DD):", bg="white").grid(
+        tk.Label(form, text=_t('gui.safeguarding.case_detail_mixin.labels.due_yyyy_mm_dd', default="Due (YYYY-MM-DD):"), bg="white").grid(
             row=1, column=0, sticky="w", pady=4
         )
         d_e = ttk.Entry(form, width=14)
@@ -376,13 +378,13 @@ class CaseDetailMixin:
                 w.destroy()
             self._render_actions_tab(host, sid)
 
-        ttk.Button(form, text="Add", command=_add).grid(row=1, column=3, padx=4)
-        ttk.Button(form, text="Mark complete", command=_complete).grid(row=1, column=4, padx=4)
+        ttk.Button(form, text=_t('gui.safeguarding.case_detail_mixin.buttons.add', default="Add"), command=_add).grid(row=1, column=3, padx=4)
+        ttk.Button(form, text=_t('gui.safeguarding.case_detail_mixin.buttons.mark_complete', default="Mark complete"), command=_complete).grid(row=1, column=4, padx=4)
 
     def _render_referrals_tab(self, host, sid):
         tk.Label(
             host,
-            text="External referrals (Police, LA, Social Care…)",
+            text=_t('gui.safeguarding.case_detail_mixin.labels.external_referrals_police_la_social_care', default="External referrals (Police, LA, Social Care…)"),
             bg="white",
             font=("Segoe UI", 10, "bold"),
         ).pack(anchor="w", padx=12, pady=(10, 6))
@@ -402,7 +404,7 @@ class CaseDetailMixin:
 
         form = tk.Frame(host, bg="white")
         form.pack(fill="x", padx=12, pady=8)
-        tk.Label(form, text="Agency:", bg="white").grid(row=0, column=0, sticky="w")
+        tk.Label(form, text=_t('gui.safeguarding.case_detail_mixin.labels.agency', default="Agency:"), bg="white").grid(row=0, column=0, sticky="w")
         a_e = ttk.Combobox(
             form,
             width=18,
@@ -417,13 +419,13 @@ class CaseDetailMixin:
             ],
         )
         a_e.grid(row=0, column=1, padx=4)
-        tk.Label(form, text="Contact:", bg="white").grid(row=0, column=2, sticky="w")
+        tk.Label(form, text=_t('gui.safeguarding.case_detail_mixin.labels.contact', default="Contact:"), bg="white").grid(row=0, column=2, sticky="w")
         c_e = ttk.Entry(form, width=16)
         c_e.grid(row=0, column=3, padx=4)
-        tk.Label(form, text="Ref #:", bg="white").grid(row=1, column=0, sticky="w", pady=4)
+        tk.Label(form, text=_t('gui.safeguarding.case_detail_mixin.labels.ref', default="Ref #:"), bg="white").grid(row=1, column=0, sticky="w", pady=4)
         r_e = ttk.Entry(form, width=14)
         r_e.grid(row=1, column=1, sticky="w", padx=4)
-        tk.Label(form, text="Note:", bg="white").grid(row=1, column=2, sticky="w", pady=4)
+        tk.Label(form, text=_t('gui.safeguarding.case_detail_mixin.labels.note', default="Note:"), bg="white").grid(row=1, column=2, sticky="w", pady=4)
         n_e = ttk.Entry(form, width=20)
         n_e.grid(row=1, column=3, padx=4)
 
@@ -436,13 +438,13 @@ class CaseDetailMixin:
                 w.destroy()
             self._render_referrals_tab(host, sid)
 
-        ttk.Button(form, text="Log referral", command=_add).grid(row=1, column=4, padx=6)
+        ttk.Button(form, text=_t('gui.safeguarding.case_detail_mixin.buttons.log_referral', default="Log referral"), command=_add).grid(row=1, column=4, padx=6)
 
     def _render_integrations_tab(self, host, sid, extra):
         pad = dict(padx=12, pady=4)
         tk.Label(
             host,
-            text="Cross-system links & external notifications",
+            text=_t('gui.safeguarding.case_detail_mixin.labels.cross_system_links_external_notifications', default="Cross-system links & external notifications"),
             bg="white",
             font=("Segoe UI", 10, "bold"),
         ).pack(anchor="w", padx=12, pady=(10, 6))
@@ -468,7 +470,7 @@ class CaseDetailMixin:
             if (extra.get("mandatory_status") or "Pending") == "Pending":
                 ttk.Button(
                     mrow,
-                    text="Acknowledge / mark reported…",
+                    text=_t('gui.safeguarding.case_detail_mixin.buttons.acknowledge_mark_reported', default="Acknowledge / mark reported…"),
                     command=lambda: self._ack_mandatory(sid),
                 ).pack(side="right", padx=6)
 
@@ -532,7 +534,7 @@ class CaseDetailMixin:
         if extra.get("tutor_notification_redacted"):
             tk.Label(
                 host,
-                text="Last sent to tutor (redacted):",
+                text=_t('gui.safeguarding.case_detail_mixin.labels.last_sent_to_tutor_redacted', default="Last sent to tutor (redacted):"),
                 bg="white",
                 font=("Segoe UI", 9, "bold"),
             ).pack(anchor="w", **pad)
@@ -548,13 +550,13 @@ class CaseDetailMixin:
 
     def _render_linked_tab(self, host, sid, extra):
         tk.Label(
-            host, text="Linked cases — same subject", bg="white", font=("Segoe UI", 10, "bold")
+            host, text=_t('gui.safeguarding.case_detail_mixin.labels.linked_cases_same_subject', default="Linked cases — same subject"), bg="white", font=("Segoe UI", 10, "bold")
         ).pack(anchor="w", padx=12, pady=(10, 6))
         subj = extra.get("linked_subject_id")
         if not subj:
             tk.Label(
                 host,
-                text="No subject id (anonymous case) — cannot link.",
+                text=_t('gui.safeguarding.case_detail_mixin.labels.no_subject_id_anonymous_case_cannot_link', default="No subject id (anonymous case) — cannot link."),
                 bg="white",
                 fg="#666",
                 font=("Segoe UI", 9, "italic"),
@@ -589,7 +591,7 @@ class CaseDetailMixin:
         ).pack(anchor="w", padx=12, pady=(8, 0))
 
     def _render_audit_tab(self, host, sid, extra):
-        tk.Label(host, text="Assignment history", bg="white", font=("Segoe UI", 10, "bold")).pack(
+        tk.Label(host, text=_t('gui.safeguarding.case_detail_mixin.labels.assignment_history', default="Assignment history"), bg="white", font=("Segoe UI", 10, "bold")).pack(
             anchor="w", padx=12, pady=(10, 6)
         )
         cols = ("assignee", "by", "at", "note")
@@ -604,10 +606,10 @@ class CaseDetailMixin:
         # Reassignment form
         form = tk.Frame(host, bg="white")
         form.pack(fill="x", padx=12, pady=8)
-        tk.Label(form, text="Reassign to (username):", bg="white").grid(row=0, column=0, sticky="w")
+        tk.Label(form, text=_t('gui.safeguarding.case_detail_mixin.labels.reassign_to_username', default="Reassign to (username):"), bg="white").grid(row=0, column=0, sticky="w")
         u_e = ttk.Entry(form, width=18)
         u_e.grid(row=0, column=1, padx=4)
-        tk.Label(form, text="Note:", bg="white").grid(row=0, column=2, sticky="w")
+        tk.Label(form, text=_t('gui.safeguarding.case_detail_mixin.labels.note', default="Note:"), bg="white").grid(row=0, column=2, sticky="w")
         n_e = ttk.Entry(form, width=24)
         n_e.grid(row=0, column=3, padx=4)
 
@@ -622,4 +624,4 @@ class CaseDetailMixin:
                 w.destroy()
             self._render_audit_tab(host, sid, extra)
 
-        ttk.Button(form, text="Reassign", command=_reassign).grid(row=0, column=4, padx=6)
+        ttk.Button(form, text=_t('gui.safeguarding.case_detail_mixin.buttons.reassign', default="Reassign"), command=_reassign).grid(row=0, column=4, padx=6)

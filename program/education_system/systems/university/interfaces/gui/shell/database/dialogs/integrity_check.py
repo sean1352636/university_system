@@ -1,4 +1,6 @@
 """Integrity check and advanced settings dialogs for the data backup GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import os
@@ -21,7 +23,7 @@ class IntegrityCheckDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Backup Integrity Check")
+        self.dialog.title(_t('gui.shell.database.dialogs.integrity_check.windows.backup_integrity_check', default="Backup Integrity Check"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
 
@@ -34,15 +36,15 @@ class IntegrityCheckDialog:
         controls_frame = ttk.Frame(self.dialog)
         controls_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="Check All Backups",
+        ttk.Button(controls_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.check_all_backups', default="Check All Backups"),
                   command=self.check_all_backups).pack(side="left", padx=5)
-        ttk.Button(controls_frame, text="Check Selected",
+        ttk.Button(controls_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.check_selected', default="Check Selected"),
                   command=self.check_selected).pack(side="left", padx=5)
-        ttk.Button(controls_frame, text="Export Report",
+        ttk.Button(controls_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.export_report', default="Export Report"),
                   command=self.export_report).pack(side="left", padx=5)
 
         # Results display
-        results_frame = ttk.LabelFrame(self.dialog, text="Integrity Check Results", padding=10)
+        results_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.integrity_check.labels.integrity_check_results', default="Integrity Check Results"), padding=10)
         results_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         # Treeview for results
@@ -66,17 +68,17 @@ class IntegrityCheckDialog:
         self.progress_bar.pack(padx=10, pady=5)
 
         # Status label
-        self.status_label = ttk.Label(self.dialog, text="Ready to check backups")
+        self.status_label = ttk.Label(self.dialog, text=_t('gui.shell.database.dialogs.integrity_check.labels.ready_to_check_backups', default="Ready to check backups"))
         self.status_label.pack(pady=5)
 
         # Close button
-        ttk.Button(self.dialog, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(self.dialog, text=_t('gui.shell.database.dialogs.integrity_check.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)
 
     def check_all_backups(self):
         """Check integrity of all backups"""
         backups = list_available_backups()
         if not backups:
-            messagebox.showinfo("No Backups", "No backups found to check")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.integrity_check.dialogs.no_backups', default="No Backups"), _t('gui.shell.database.dialogs.integrity_check.dialogs.no_backups_found_to_check', default="No backups found to check"))
             return
 
         self.run_integrity_check(backups)
@@ -85,15 +87,15 @@ class IntegrityCheckDialog:
         """Check selected backups"""
         backups = list_available_backups()
         if not backups:
-            messagebox.showinfo("No Backups", "No backups found to check")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.integrity_check.dialogs.no_backups', default="No Backups"), _t('gui.shell.database.dialogs.integrity_check.dialogs.no_backups_found_to_check', default="No backups found to check"))
             return
 
         dialog = tk.Toplevel(self.dialog)
-        dialog.title("Select Backups to Check")
+        dialog.title(_t('gui.shell.database.dialogs.integrity_check.windows.select_backups_to_check', default="Select Backups to Check"))
         dialog.transient(self.dialog)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Select one or more backups to verify:").pack(anchor="w", padx=10, pady=(10, 5))
+        ttk.Label(dialog, text=_t('gui.shell.database.dialogs.integrity_check.labels.select_one_or_more_backups_to_verify', default="Select one or more backups to verify:")).pack(anchor="w", padx=10, pady=(10, 5))
 
         listbox = tk.Listbox(dialog, selectmode=tk.MULTIPLE, width=70, height=10)
         listbox.pack(fill="both", expand=True, padx=10)
@@ -107,7 +109,7 @@ class IntegrityCheckDialog:
         def confirm_selection():
             indices = listbox.curselection()
             if not indices:
-                messagebox.showwarning("No Selection", "Please choose at least one backup.", parent=dialog)
+                messagebox.showwarning(_t('gui.shell.database.dialogs.integrity_check.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.integrity_check.dialogs.please_choose_at_least_one_backup', default="Please choose at least one backup."), parent=dialog)
                 return
             for idx in indices:
                 selected_backups.append(backups[idx])
@@ -115,8 +117,8 @@ class IntegrityCheckDialog:
 
         button_frame = ttk.Frame(dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
-        ttk.Button(button_frame, text="Check", command=confirm_selection).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.check', default="Check"), command=confirm_selection).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side="right")
 
         self.dialog.wait_window(dialog)
 
@@ -165,20 +167,20 @@ class IntegrityCheckDialog:
                     })
 
                 self.progress_var.set(100)
-                self.status_label.config(text="Integrity check completed")
+                self.status_label.config(text=_t('gui.shell.database.dialogs.integrity_check.text.integrity_check_completed', default="Integrity check completed"))
 
                 # Show summary
                 passed = sum(1 for r in self.check_results if "PASS" in r['status'])
                 failed = len(self.check_results) - passed
 
-                messagebox.showinfo("Check Complete",
+                messagebox.showinfo(_t('gui.shell.database.dialogs.integrity_check.dialogs.check_complete', default="Check Complete"),
                                    f"Integrity check completed\n\n"
                                    f"Passed: {passed}\n"
                                    f"Failed: {failed}")
 
             except Exception as e:
-                messagebox.showerror("Check Error", f"Integrity check failed: {e}")
-                self.status_label.config(text="Check failed")
+                messagebox.showerror(_t('gui.shell.database.dialogs.integrity_check.dialogs.check_error', default="Check Error"), f"Integrity check failed: {e}")
+                self.status_label.config(text=_t('gui.shell.database.dialogs.integrity_check.text.check_failed', default="Check failed"))
             finally:
                 self.progress_var.set(0)
 
@@ -193,7 +195,7 @@ class AdvancedSettingsDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Advanced Backup Settings")
+        self.dialog.title(_t('gui.shell.database.dialogs.integrity_check.windows.advanced_backup_settings', default="Advanced Backup Settings"))
         self.dialog.geometry("500x600")
         self.dialog.transient(parent)
 
@@ -203,43 +205,43 @@ class AdvancedSettingsDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Change detection settings
-        change_frame = ttk.LabelFrame(self.dialog, text="Change Detection", padding=10)
+        change_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.integrity_check.labels.change_detection', default="Change Detection"), padding=10)
         change_frame.pack(fill="x", padx=10, pady=5)
 
         self.change_detection_var = tk.BooleanVar()
-        ttk.Checkbutton(change_frame, text="Enable Change Detection",
+        ttk.Checkbutton(change_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.enable_change_detection', default="Enable Change Detection"),
                        variable=self.change_detection_var).pack(anchor="w")
 
         # Deduplication settings
-        dedup_frame = ttk.LabelFrame(self.dialog, text="Deduplication", padding=10)
+        dedup_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.integrity_check.labels.deduplication', default="Deduplication"), padding=10)
         dedup_frame.pack(fill="x", padx=10, pady=5)
 
         self.deduplication_var = tk.BooleanVar()
-        ttk.Checkbutton(dedup_frame, text="Enable Deduplication",
+        ttk.Checkbutton(dedup_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.enable_deduplication', default="Enable Deduplication"),
                        variable=self.deduplication_var).pack(anchor="w")
 
         # Performance settings
-        perf_frame = ttk.LabelFrame(self.dialog, text="Performance", padding=10)
+        perf_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.integrity_check.labels.performance', default="Performance"), padding=10)
         perf_frame.pack(fill="x", padx=10, pady=5)
 
         self.parallel_var = tk.BooleanVar()
-        ttk.Checkbutton(perf_frame, text="Enable Parallel Processing",
+        ttk.Checkbutton(perf_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.enable_parallel_processing', default="Enable Parallel Processing"),
                        variable=self.parallel_var).pack(anchor="w")
 
-        ttk.Label(perf_frame, text="Max Threads:").pack(anchor="w")
+        ttk.Label(perf_frame, text=_t('gui.shell.database.dialogs.integrity_check.labels.max_threads', default="Max Threads:")).pack(anchor="w")
         self.threads_var = tk.StringVar()
         ttk.Spinbox(perf_frame, textvariable=self.threads_var,
                    from_=1, to=8, width=10).pack(anchor="w")
 
-        ttk.Label(perf_frame, text="Bandwidth Limit (Mbps, 0=unlimited):").pack(anchor="w")
+        ttk.Label(perf_frame, text=_t('gui.shell.database.dialogs.integrity_check.labels.bandwidth_limit_mbps_0_unlimited', default="Bandwidth Limit (Mbps, 0=unlimited):")).pack(anchor="w")
         self.bandwidth_var = tk.StringVar()
         ttk.Entry(perf_frame, textvariable=self.bandwidth_var, width=10).pack(anchor="w")
 
         # Storage quota
-        storage_frame = ttk.LabelFrame(self.dialog, text="Storage Management", padding=10)
+        storage_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.integrity_check.labels.storage_management', default="Storage Management"), padding=10)
         storage_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(storage_frame, text="Storage Quota (GB):").pack(anchor="w")
+        ttk.Label(storage_frame, text=_t('gui.shell.database.dialogs.integrity_check.labels.storage_quota_gb', default="Storage Quota (GB):")).pack(anchor="w")
         self.quota_var = tk.StringVar()
         ttk.Entry(storage_frame, textvariable=self.quota_var, width=10).pack(anchor="w")
 
@@ -247,8 +249,8 @@ class AdvancedSettingsDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Save", command=self.save_settings).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.save', default="Save"), command=self.save_settings).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.integrity_check.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side="right")
 
     def load_current_settings(self):
         """Load current advanced settings"""
@@ -270,9 +272,9 @@ class AdvancedSettingsDialog:
             config["storage_quota_gb"] = int(self.quota_var.get())
 
             save_config()
-            messagebox.showinfo("Success", "Advanced settings saved!")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.integrity_check.dialogs.success', default="Success"), _t('gui.shell.database.dialogs.integrity_check.dialogs.advanced_settings_saved', default="Advanced settings saved!"))
             self.dialog.destroy()
         except ValueError as e:
-            messagebox.showerror("Invalid Input", f"Please check your input values: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.integrity_check.dialogs.invalid_input', default="Invalid Input"), f"Please check your input values: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save settings: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.integrity_check.dialogs.error', default="Error"), f"Failed to save settings: {e}")

@@ -26,7 +26,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 from education_system.systems.university.interfaces.gui.academics.attendance_tracker.admin_windows import (
     DiagnosticsWindow,
     ApiManagementWindow,
@@ -134,7 +138,7 @@ def refresh_audit_logs(self):
             self.audit_tree.delete(item)
 
         # Read from actual activity.log file
-        activity_log_path = os.path.join(LOG_DIR, 'app.log')
+        activity_log_path = os.path.join(UNIVERSITY_LOG_DIR, 'app.log')
 
         try:
             if os.path.exists(activity_log_path):
@@ -345,7 +349,7 @@ def cleanup_old_data(self):
             return
 
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 

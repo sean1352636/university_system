@@ -6,7 +6,23 @@ import re
 
 from flask import Blueprint, jsonify, make_response, current_app
 
+from education_system.platform.delivery.api.security_headers import is_development
+
 docs_bp = Blueprint("api_docs", __name__)
+
+
+def _protect_in_production(view):
+    """Docs stay open in development but require a valid token in production.
+
+    The OpenAPI spec is the complete route-and-schema inventory of the
+    platform — reconnaissance material that should not be anonymous on a
+    production host, matching how GraphiQL is gated in the unified server.
+    """
+    if is_development():
+        return view
+    from education_system.platform.delivery.api.auth import token_required
+
+    return token_required(view)
 
 _SWAGGER_UI_VERSION = "5.17.14"
 
@@ -112,6 +128,7 @@ def build_openapi_spec(app=None) -> dict:
 
 
 @docs_bp.route("/api/v1/docs", methods=["GET"])
+@_protect_in_production
 def swagger_ui():
     """Serve the Swagger UI HTML page."""
     response = make_response(_SWAGGER_HTML)
@@ -129,6 +146,7 @@ def swagger_ui():
 
 
 @docs_bp.route("/api/v1/openapi.json", methods=["GET"])
+@_protect_in_production
 def openapi_json():
     """Return the auto-generated OpenAPI specification as JSON."""
     return jsonify(build_openapi_spec())

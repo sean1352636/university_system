@@ -6,13 +6,13 @@ Handles session participants and attendance tracking
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Dict, List, Optional, Any
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 class ParticipantManager:
     """Manager for session participant operations"""
 
     def __init__(self, db_path: str = None):
-        self.db_path = db_path or DEFAULT_DB_PATH
+        self.db_path = db_path or UNIVERSITY_DEFAULT_DB_PATH
 
     def _get_connection(self):
         return sqlite3.connect(self.db_path)

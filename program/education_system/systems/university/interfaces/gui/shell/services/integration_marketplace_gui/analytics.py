@@ -54,7 +54,7 @@ class AnalyticsMixin:
             if top_metric:
                 summary += f"Most Tracked Metric: {top_metric[0]} ({top_metric[1]} times)"
 
-            messagebox.showinfo("Analytics Summary", summary)
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.analytics.dialogs.analytics_summary', default="Analytics Summary"), summary)
 
         except Exception as e:
             logger.error(f"Error viewing analytics summary: {e}")
@@ -104,7 +104,7 @@ class AnalyticsMixin:
         """Real-time dashboard with KPIs, charts, and status widgets"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Integration Dashboard")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.analytics.windows.integration_dashboard', default="Integration Dashboard"))
             dialog.geometry("900x700")
             dialog.transient(self.root)
 
@@ -148,7 +148,7 @@ class AnalyticsMixin:
                 top_integrations = cursor.fetchall()
 
             # KPI Frame
-            kpi_frame = ttk.LabelFrame(dialog, text="Key Performance Indicators", padding=10)
+            kpi_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.key_performance_indicators', default="Key Performance Indicators"), padding=10)
             kpi_frame.pack(fill='x', padx=10, pady=5)
 
             kpi_grid = ttk.Frame(kpi_frame)
@@ -171,17 +171,17 @@ class AnalyticsMixin:
                 kpi_grid.columnconfigure(i, weight=1)
 
             # Status Frame
-            status_frame = ttk.LabelFrame(dialog, text="Integration Status", padding=10)
+            status_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.integration_status', default="Integration Status"), padding=10)
             status_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
-            ttk.Label(status_frame, text="Top Integrations by Activity:",
+            ttk.Label(status_frame, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.top_integrations_by_activity', default="Top Integrations by Activity:"),
                      style='Section.TLabel').pack(anchor='w', pady=5)
 
             for name, count in top_integrations:
                 ttk.Label(status_frame, text=f"  {name}: {count} syncs").pack(anchor='w')
 
             # Health indicator
-            health_frame = ttk.LabelFrame(dialog, text="System Health", padding=10)
+            health_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.system_health', default="System Health"), padding=10)
             health_frame.pack(fill='x', padx=10, pady=5)
 
             if error_rate < 5:
@@ -333,15 +333,15 @@ class AnalyticsMixin:
             dialog.transient(self.root)
 
             # Error patterns frame
-            patterns_frame = ttk.LabelFrame(dialog, text="Error Patterns (Last 30 Days)", padding=10)
+            patterns_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.error_patterns_last_30_days', default="Error Patterns (Last 30 Days)"), padding=10)
             patterns_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
             columns = ('integration', 'error', 'count')
             tree = ttk.Treeview(patterns_frame, columns=columns, show='headings', height=10)
 
-            tree.heading('integration', text='Integration')
-            tree.heading('error', text='Error Details')
-            tree.heading('count', text='Count')
+            tree.heading('integration', text=_t('gui.shell.services.integration_marketplace_gui.analytics.headings.integration', default='Integration'))
+            tree.heading('error', text=_t('gui.shell.services.integration_marketplace_gui.analytics.headings.error_details', default='Error Details'))
+            tree.heading('count', text=_t('gui.shell.services.integration_marketplace_gui.analytics.headings.count', default='Count'))
 
             tree.column('integration', width=150)
             tree.column('error', width=400)
@@ -354,7 +354,7 @@ class AnalyticsMixin:
             tree.pack(fill='both', expand=True)
 
             # Trend frame
-            trend_frame = ttk.LabelFrame(dialog, text="Error Trend", padding=10)
+            trend_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.error_trend', default="Error Trend"), padding=10)
             trend_frame.pack(fill='x', padx=10, pady=5)
 
             if trends:
@@ -363,7 +363,7 @@ class AnalyticsMixin:
                 ttk.Label(trend_frame,
                          text=f"Total Errors: {total_errors} | Daily Average: {avg_errors:.1f}").pack()
             else:
-                ttk.Label(trend_frame, text="No errors in the last 30 days").pack()
+                ttk.Label(trend_frame, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.no_errors_in_the_last_30_days', default="No errors in the last 30 days")).pack()
 
             ttk.Button(dialog, text=_t("common.close"), command=dialog.destroy).pack(pady=10)
 
@@ -381,8 +381,8 @@ class AnalyticsMixin:
                 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
             except ImportError:
                 messagebox.showerror(_t("common.error"),
-                                   "Chart generation requires matplotlib.\n"
-                                   "Install with: pip install matplotlib")
+                                   _t('gui.shell.services.integration_marketplace_gui.analytics.dialogs.chart_generation_requires_matplotlib_install_with_pip_install_ma', default="Chart generation requires matplotlib.\n"
+                                   "Install with: pip install matplotlib"))
                 return
 
             with get_connection() as conn:
@@ -400,7 +400,7 @@ class AnalyticsMixin:
                 data = cursor.fetchall()
 
             if not data:
-                messagebox.showinfo(_t("common.info"), "No sync data available for the last 30 days")
+                messagebox.showinfo(_t("common.info"), _t('gui.shell.services.integration_marketplace_gui.analytics.dialogs.no_sync_data_available_for_the_last_30_days', default="No sync data available for the last 30 days"))
                 return
 
             dates = [row[0] for row in data]
@@ -408,7 +408,7 @@ class AnalyticsMixin:
             successes = [row[2] for row in data]
 
             dialog = tk.Toplevel(self.root)
-            dialog.title("Usage Trend Chart")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.analytics.windows.usage_trend_chart', default="Usage Trend Chart"))
             dialog.geometry("800x600")
             dialog.transient(self.root)
 
@@ -467,18 +467,18 @@ class AnalyticsMixin:
                 stats = cursor.fetchall()
 
             dialog = tk.Toplevel(self.root)
-            dialog.title("API Call Statistics")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.analytics.windows.api_call_statistics', default="API Call Statistics"))
             dialog.geometry("800x500")
             dialog.transient(self.root)
 
             columns = ('integration', 'total_calls', 'total_records', 'avg_records', 'success_rate')
             tree = ttk.Treeview(dialog, columns=columns, show='headings', height=15)
 
-            tree.heading('integration', text='Integration')
-            tree.heading('total_calls', text='Total API Calls')
-            tree.heading('total_records', text='Total Records')
-            tree.heading('avg_records', text='Avg Records/Call')
-            tree.heading('success_rate', text='Success Rate')
+            tree.heading('integration', text=_t('gui.shell.services.integration_marketplace_gui.analytics.headings.integration', default='Integration'))
+            tree.heading('total_calls', text=_t('gui.shell.services.integration_marketplace_gui.analytics.headings.total_api_calls', default='Total API Calls'))
+            tree.heading('total_records', text=_t('gui.shell.services.integration_marketplace_gui.analytics.headings.total_records', default='Total Records'))
+            tree.heading('avg_records', text=_t('gui.shell.services.integration_marketplace_gui.analytics.headings.avg_records_call', default='Avg Records/Call'))
+            tree.heading('success_rate', text=_t('gui.shell.services.integration_marketplace_gui.analytics.headings.success_rate', default='Success Rate'))
 
             tree.column('integration', width=200)
             tree.column('total_calls', width=120)
@@ -513,7 +513,7 @@ class AnalyticsMixin:
         """Side-by-side performance comparison"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Compare Integration Performance")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.analytics.windows.compare_integration_performance', default="Compare Integration Performance"))
             dialog.geometry("900x600")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -530,15 +530,15 @@ class AnalyticsMixin:
                 integrations = cursor.fetchall()
 
             if len(integrations) < 2:
-                messagebox.showinfo(_t("common.info"), "Need at least 2 active integrations to compare")
+                messagebox.showinfo(_t("common.info"), _t('gui.shell.services.integration_marketplace_gui.analytics.dialogs.need_at_least_2_active_integrations_to_compare', default="Need at least 2 active integrations to compare"))
                 dialog.destroy()
                 return
 
             # Selection frame
-            select_frame = ttk.LabelFrame(dialog, text="Select Integrations to Compare", padding=10)
+            select_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.select_integrations_to_compare', default="Select Integrations to Compare"), padding=10)
             select_frame.pack(fill='x', padx=10, pady=5)
 
-            ttk.Label(select_frame, text="Integration 1:").grid(row=0, column=0, padx=5, pady=5)
+            ttk.Label(select_frame, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.integration_1', default="Integration 1:")).grid(row=0, column=0, padx=5, pady=5)
             int1_var = tk.StringVar()
             int1_combo = ttk.Combobox(select_frame, textvariable=int1_var,
                                      values=[f"{i[0]}: {i[1]}" for i in integrations],
@@ -547,7 +547,7 @@ class AnalyticsMixin:
             if integrations:
                 int1_combo.current(0)
 
-            ttk.Label(select_frame, text="Integration 2:").grid(row=1, column=0, padx=5, pady=5)
+            ttk.Label(select_frame, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.integration_2', default="Integration 2:")).grid(row=1, column=0, padx=5, pady=5)
             int2_var = tk.StringVar()
             int2_combo = ttk.Combobox(select_frame, textvariable=int2_var,
                                      values=[f"{i[0]}: {i[1]}" for i in integrations],
@@ -557,7 +557,7 @@ class AnalyticsMixin:
                 int2_combo.current(1)
 
             # Results frame
-            results_frame = ttk.LabelFrame(dialog, text="Comparison Results", padding=10)
+            results_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.analytics.labels.comparison_results', default="Comparison Results"), padding=10)
             results_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
             results_text = scrolledtext.ScrolledText(results_frame, height=20)
@@ -566,7 +566,7 @@ class AnalyticsMixin:
             def compare():
                 try:
                     if not int1_var.get() or not int2_var.get():
-                        messagebox.showwarning(_t("common.warning"), "Please select both integrations")
+                        messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.analytics.dialogs.please_select_both_integrations', default="Please select both integrations"))
                         return
 
                     id1 = int(int1_var.get().split(':')[0])
@@ -721,7 +721,7 @@ class AnalyticsMixin:
 
             # Show report
             dialog = tk.Toplevel(self.root)
-            dialog.title("Compliance Report")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.analytics.windows.compliance_report', default="Compliance Report"))
             dialog.geometry("600x500")
             dialog.transient(self.root)
 

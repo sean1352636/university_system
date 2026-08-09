@@ -12,7 +12,7 @@ import tempfile
 
 # Import the module to test
 from education_system.systems.university.domain.operations.commerce.services.restaurant.operations import inventory_management
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 @pytest.fixture
 def test_db():

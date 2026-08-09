@@ -1,5 +1,7 @@
 """Assessment management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -12,7 +14,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.domain.academics.services.assessment_service import AssessmentAssignmentService
 from collections import deque
 
@@ -54,7 +56,7 @@ class AssessmentManager:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load modules: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), f"Failed to load modules: {e}")
 
     def create_assessment(self):
         """Create a new assessment"""
@@ -84,27 +86,27 @@ class AssessmentManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Create Assessment", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assessment_manager.labels.create_assessment', default="Create Assessment"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
-        form_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Assessment Details", padding=20)
+        form_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assessment_manager.labels.assessment_details', default="Assessment Details"), padding=20)
         form_frame.pack(fill='x', pady=(0, 20))
 
         # Assessment title
-        ttk.Label(form_frame, text="Title:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.title', default="Title:")).grid(row=0, column=0, sticky='w', pady=5)
         self.assessment_title_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.assessment_title_var, width=40).grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Module selection
-        ttk.Label(form_frame, text="Module:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.module', default="Module:")).grid(row=1, column=0, sticky='w', pady=5)
         self.assessment_module_var = tk.StringVar()
         module_combo = ttk.Combobox(form_frame, textvariable=self.assessment_module_var, width=35, state='readonly')
         module_combo.grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
         self.load_modules(module_combo)
 
         # Assessment type
-        ttk.Label(form_frame, text="Assessment Type:").grid(row=2, column=0, sticky='w', pady=5)
-        self.assessment_type_var = tk.StringVar(value="exam")
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.assessment_type', default="Assessment Type:")).grid(row=2, column=0, sticky='w', pady=5)
+        self.assessment_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.assessment_manager.values.exam', default="exam"))
         type_combo = ttk.Combobox(
             form_frame,
             textvariable=self.assessment_type_var,
@@ -115,7 +117,7 @@ class AssessmentManager:
         type_combo.grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Due date/time
-        ttk.Label(form_frame, text="Due Date:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.due_date', default="Due Date:")).grid(row=3, column=0, sticky='w', pady=5)
         default_date = (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d")
         default_time = "23:59"
         self.assessment_due_date_var = tk.StringVar(value=default_date)
@@ -124,23 +126,23 @@ class AssessmentManager:
         ttk.Entry(form_frame, textvariable=self.assessment_due_time_var, width=8).grid(row=3, column=1, sticky='w', pady=5, padx=(120, 0))
 
         # Duration
-        ttk.Label(form_frame, text="Duration (minutes):").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.duration_minutes', default="Duration (minutes):")).grid(row=4, column=0, sticky='w', pady=5)
         self.assessment_duration_var = tk.StringVar(value="120")
         ttk.Entry(form_frame, textvariable=self.assessment_duration_var, width=10).grid(row=4, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Max points
-        ttk.Label(form_frame, text="Max Points:").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.max_points', default="Max Points:")).grid(row=5, column=0, sticky='w', pady=5)
         self.assessment_max_points_var = tk.StringVar(value="100")
         ttk.Entry(form_frame, textvariable=self.assessment_max_points_var, width=10).grid(row=5, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Weight
-        ttk.Label(form_frame, text="Weight (%):").grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.weight', default="Weight (%):")).grid(row=6, column=0, sticky='w', pady=5)
         self.assessment_weight_var = tk.StringVar(value="25")
         ttk.Entry(form_frame, textvariable=self.assessment_weight_var, width=10).grid(row=6, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Status
-        ttk.Label(form_frame, text="Status:").grid(row=7, column=0, sticky='w', pady=5)
-        self.assessment_status_var = tk.StringVar(value="Active")
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.status', default="Status:")).grid(row=7, column=0, sticky='w', pady=5)
+        self.assessment_status_var = tk.StringVar(value=_t('gui.academics.assignment_system.assessment_manager.values.active', default="Active"))
         status_combo = ttk.Combobox(
             form_frame,
             textvariable=self.assessment_status_var,
@@ -151,7 +153,7 @@ class AssessmentManager:
         status_combo.grid(row=7, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Description
-        desc_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Description & Notes", padding=10)
+        desc_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assessment_manager.labels.description_notes', default="Description & Notes"), padding=10)
         desc_frame.pack(fill='both', expand=True, pady=(0, 20))
         self.assessment_description_text = scrolledtext.ScrolledText(desc_frame, height=6)
         self.assessment_description_text.pack(fill='both', expand=True)
@@ -159,9 +161,9 @@ class AssessmentManager:
         # Buttons
         button_frame = ttk.Frame(self.gui.layout.content_area)
         button_frame.pack(fill='x', pady=(0, 10))
-        ttk.Button(button_frame, text="Save Assessment", command=self.save_assessment, style='Accent.TButton').pack(side='left')
-        ttk.Button(button_frame, text="Clear Form", command=self.clear_assessment_form).pack(side='left', padx=(10, 0))
-        ttk.Button(button_frame, text="Manage Assessments", command=self.show_manage_assessments).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assessment_manager.buttons.save_assessment', default="Save Assessment"), command=self.save_assessment, style='Accent.TButton').pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assessment_manager.buttons.clear_form', default="Clear Form"), command=self.clear_assessment_form).pack(side='left', padx=(10, 0))
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assessment_manager.buttons.manage_assessments', default="Manage Assessments"), command=self.show_manage_assessments).pack(side='right')
 
         # Status frame for feedback
         self.assessment_status_frame = ttk.Frame(self.gui.layout.content_area)
@@ -334,7 +336,7 @@ class AssessmentManager:
         """Show assessment management interface"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Manage Assessments", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.assessment_manager.labels.manage_assessments', default="Manage Assessments"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create assessments table
@@ -365,10 +367,10 @@ class AssessmentManager:
         buttons_frame = ttk.Frame(self.gui.layout.content_area)
         buttons_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(buttons_frame, text="Edit Assessment", command=self.edit_assessment).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="Delete Assessment", command=self.delete_assessment).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="View Details", command=self.view_assessment_results).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="🔄 Sync from Assignments",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assessment_manager.buttons.edit_assessment', default="Edit Assessment"), command=self.edit_assessment).pack(side='left', padx=(0, 10))
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assessment_manager.buttons.delete_assessment', default="Delete Assessment"), command=self.delete_assessment).pack(side='left', padx=(0, 10))
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assessment_manager.buttons.view_details', default="View Details"), command=self.view_assessment_results).pack(side='left', padx=(0, 10))
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.assessment_manager.buttons.sync_from_assignments', default="🔄 Sync from Assignments"),
                   command=self.sync_assignments_to_assessments,
                   style='Accent.TButton').pack(side='right')
 
@@ -422,7 +424,7 @@ class AssessmentManager:
             if not rows:
                 tree.insert('', 'end', values=('–', 'No assessments found', '', '', '', '', '', ''))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load assessments: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), f"Failed to load assessments: {exc}")
 
 
     def edit_assessment(self):
@@ -430,12 +432,12 @@ class AssessmentManager:
         if not self._check_permission('manage_assignments'):
             return
         if not hasattr(self, 'assessment_tree') or not self.assessment_tree.get_children():
-            messagebox.showwarning("Warning", "No assessments to edit.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assessment_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assessment_manager.dialogs.no_assessments_to_edit', default="No assessments to edit."))
             return
 
         selection = self.assessment_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assessment to edit.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assessment_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assessment_manager.dialogs.please_select_an_assessment_to_edit', default="Please select an assessment to edit."))
             return
 
         assessment_id = self.assessment_tree.item(selection[0])['values'][0]
@@ -450,11 +452,11 @@ class AssessmentManager:
             record = cursor.fetchone()
             conn.close()
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load assessment: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), f"Failed to load assessment: {exc}")
             return
 
         if not record:
-            messagebox.showerror("Error", "Selected assessment no longer exists.")
+            messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.assessment_manager.dialogs.selected_assessment_no_longer_exists', default="Selected assessment no longer exists."))
             return
 
         editor = tk.Toplevel(self.root)
@@ -467,12 +469,12 @@ class AssessmentManager:
         form_frame.pack(fill='both', expand=True)
 
         title_var = tk.StringVar(value=record['assessment_name'])
-        ttk.Label(form_frame, text="Title:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.title', default="Title:")).grid(row=0, column=0, sticky='w', pady=5)
         ttk.Entry(form_frame, textvariable=title_var, width=40).grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
 
         module_var = tk.StringVar()
         module_combo = ttk.Combobox(form_frame, textvariable=module_var, width=35, state='readonly')
-        ttk.Label(form_frame, text="Module:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.module', default="Module:")).grid(row=1, column=0, sticky='w', pady=5)
         module_combo.grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
         self.load_modules(module_combo)
         for label, code in getattr(self, 'module_map', {}).items():
@@ -481,7 +483,7 @@ class AssessmentManager:
                 break
 
         type_var = tk.StringVar(value=record['assessment_type'])
-        ttk.Label(form_frame, text="Type:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.type', default="Type:")).grid(row=2, column=0, sticky='w', pady=5)
         type_combo = ttk.Combobox(form_frame, textvariable=type_var, values=["exam", "quiz", "test", "project", "presentation", "practical"], state='readonly', width=20)
         type_combo.grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
 
@@ -496,28 +498,28 @@ class AssessmentManager:
 
         due_date_var = tk.StringVar(value=due_date_default)
         due_time_var = tk.StringVar(value=due_time_default)
-        ttk.Label(form_frame, text="Due Date:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.due_date', default="Due Date:")).grid(row=3, column=0, sticky='w', pady=5)
         ttk.Entry(form_frame, textvariable=due_date_var, width=14).grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
         ttk.Entry(form_frame, textvariable=due_time_var, width=8).grid(row=3, column=1, sticky='w', pady=5, padx=(120, 0))
 
         max_points_var = tk.StringVar(value=str(record['max_points']))
-        ttk.Label(form_frame, text="Max Points:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.max_points', default="Max Points:")).grid(row=4, column=0, sticky='w', pady=5)
         ttk.Entry(form_frame, textvariable=max_points_var, width=10).grid(row=4, column=1, sticky='w', pady=5, padx=(10, 0))
 
         weight_var = tk.StringVar(value=str(record['weight']))
-        ttk.Label(form_frame, text="Weight (%):").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.weight', default="Weight (%):")).grid(row=5, column=0, sticky='w', pady=5)
         ttk.Entry(form_frame, textvariable=weight_var, width=10).grid(row=5, column=1, sticky='w', pady=5, padx=(10, 0))
 
         duration_var = tk.StringVar(value=str(record.get('duration_minutes', 0)))
-        ttk.Label(form_frame, text="Duration (minutes):").grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.duration_minutes', default="Duration (minutes):")).grid(row=6, column=0, sticky='w', pady=5)
         ttk.Entry(form_frame, textvariable=duration_var, width=10).grid(row=6, column=1, sticky='w', pady=5, padx=(10, 0))
 
         status_var = tk.StringVar(value=record.get('status', 'Active'))
-        ttk.Label(form_frame, text="Status:").grid(row=7, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.status', default="Status:")).grid(row=7, column=0, sticky='w', pady=5)
         status_combo = ttk.Combobox(form_frame, textvariable=status_var, values=["Active", "Draft", "Archived"], state='readonly', width=20)
         status_combo.grid(row=7, column=1, sticky='w', pady=5, padx=(10, 0))
 
-        ttk.Label(form_frame, text="Description:").grid(row=8, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.assessment_manager.labels.description', default="Description:")).grid(row=8, column=0, sticky='nw', pady=5)
         desc_text = scrolledtext.ScrolledText(form_frame, height=5, width=40)
         desc_text.grid(row=8, column=1, sticky='w', pady=5, padx=(10, 0))
         if record['description']:
@@ -569,16 +571,16 @@ class AssessmentManager:
 
                 editor.destroy()
                 self.load_assessments_data()
-                messagebox.showinfo("Success", "Assessment updated successfully.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.assessment_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.assessment_manager.dialogs.assessment_updated_successfully', default="Assessment updated successfully."))
             except ValueError as ve:
-                messagebox.showerror("Validation Error", str(ve))
+                messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.validation_error', default="Validation Error"), str(ve))
             except Exception as exc:
-                messagebox.showerror("Error", f"Failed to update assessment: {exc}")
+                messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), f"Failed to update assessment: {exc}")
 
         button_frame = ttk.Frame(editor)
         button_frame.pack(fill='x', pady=(0, 10))
-        ttk.Button(button_frame, text="Save Changes", command=save_changes, style='Accent.TButton').pack(side='left')
-        ttk.Button(button_frame, text="Cancel", command=editor.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assessment_manager.buttons.save_changes', default="Save Changes"), command=save_changes, style='Accent.TButton').pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assessment_manager.buttons.cancel', default="Cancel"), command=editor.destroy).pack(side='right')
 
 
     def delete_assessment(self):
@@ -586,16 +588,16 @@ class AssessmentManager:
         if not self._check_permission('manage_assignments'):
             return
         if not hasattr(self, 'assessment_tree') or not self.assessment_tree.get_children():
-            messagebox.showwarning("Warning", "No assessments to delete.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assessment_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assessment_manager.dialogs.no_assessments_to_delete', default="No assessments to delete."))
             return
 
         selection = self.assessment_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assessment to delete.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assessment_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assessment_manager.dialogs.please_select_an_assessment_to_delete', default="Please select an assessment to delete."))
             return
 
         assessment_id, title = self.assessment_tree.item(selection[0])['values'][:2]
-        if not messagebox.askyesno("Confirm", f"Delete assessment '{title}' (ID: {assessment_id})? This action cannot be undone."):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.assessment_manager.dialogs.confirm', default="Confirm"), f"Delete assessment '{title}' (ID: {assessment_id})? This action cannot be undone."):
             return
 
         try:
@@ -608,21 +610,21 @@ class AssessmentManager:
             conn.close()
 
             self.load_assessments_data()
-            messagebox.showinfo("Success", "Assessment deleted successfully.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.assessment_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.assessment_manager.dialogs.assessment_deleted_successfully', default="Assessment deleted successfully."))
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to delete assessment: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), f"Failed to delete assessment: {exc}")
 
 
     def view_assessment_results(self):
         if not self._check_permission('manage_assignments'):
             return
         if not hasattr(self, 'assessment_tree') or not self.assessment_tree.get_children():
-            messagebox.showwarning("Warning", "No assessments available.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assessment_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assessment_manager.dialogs.no_assessments_available', default="No assessments available."))
             return
 
         selection = self.assessment_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assessment to view.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assessment_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assessment_manager.dialogs.please_select_an_assessment_to_view', default="Please select an assessment to view."))
             return
 
         assessment_id = self.assessment_tree.item(selection[0])['values'][0]
@@ -634,7 +636,7 @@ class AssessmentManager:
             record = cursor.fetchone()
             if not record:
                 conn.close()
-                messagebox.showerror("Error", "Assessment record not found.")
+                messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.assessment_manager.dialogs.assessment_record_not_found', default="Assessment record not found."))
                 return
 
             cursor.execute('SELECT COUNT(*) FROM assessment_outcomes WHERE assessment_id = ?', (assessment_id,))
@@ -696,7 +698,7 @@ class AssessmentManager:
 
             text.config(state='disabled')
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to view assessment details: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.error', default="Error"), f"Failed to view assessment details: {exc}")
 
     def sync_assignments_to_assessments(self):
         """Sync assignments from the assignments table to assessments table"""
@@ -705,7 +707,7 @@ class AssessmentManager:
             assignments = AssessmentAssignmentService.get_all_assignments()
 
             if not assignments:
-                messagebox.showinfo("Sync Complete", "No assignments found to sync")
+                messagebox.showinfo(_t('gui.academics.assignment_system.assessment_manager.dialogs.sync_complete', default="Sync Complete"), _t('gui.academics.assignment_system.assessment_manager.dialogs.no_assignments_found_to_sync', default="No assignments found to sync"))
                 return
 
             synced_count = 0
@@ -725,11 +727,11 @@ class AssessmentManager:
             self.load_assessments_data()
 
             messagebox.showinfo(
-                "Sync Complete",
+                _t('gui.academics.assignment_system.assessment_manager.dialogs.sync_complete', default="Sync Complete"),
                 f"Synced {synced_count} assignment(s) to assessments.\n"
                 f"Skipped {skipped_count} (already exist or invalid)."
             )
 
         except Exception as e:
-            messagebox.showerror("Sync Error", f"Failed to sync assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assessment_manager.dialogs.sync_error', default="Sync Error"), f"Failed to sync assignments: {e}")
 

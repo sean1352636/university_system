@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict
 
 # Import centralized database and authentication
-from education_system.systems.university.infrastructure.database.db import get_connection, transaction
+from education_system.systems.university.infrastructure.health.storage import get_connection, transaction
 from education_system.systems.university.infrastructure.shared_context import get_auth
 
 # Import dentist core services

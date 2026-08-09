@@ -1,4 +1,6 @@
 """Standalone dialog classes for the Student Analytics GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.shell.student_analytics._imports import (
     tk, ttk, messagebox, datetime, _t, CONFIG,
 )
@@ -226,7 +228,7 @@ class CustomReportDialog:
         format_frame.pack(fill='x', pady=5)
 
         ttk.Label(format_frame, text=_t("analytics.labels.output_format")).pack(side='left')
-        self.format_var = tk.StringVar(value='PDF')
+        self.format_var = tk.StringVar(value=_t('gui.shell.student_analytics.dialogs.values.pdf', default='PDF'))
         format_combo = ttk.Combobox(format_frame, textvariable=self.format_var,
                                    values=['PDF', 'HTML', 'Word'], state='readonly')
         format_combo.pack(side='left', padx=10)

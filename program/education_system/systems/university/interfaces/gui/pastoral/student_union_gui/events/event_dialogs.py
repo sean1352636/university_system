@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -65,7 +67,7 @@ class EventRegistrationDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Register for Event")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_dialogs.windows.register_for_event', default="Register for Event"))
         self.dialog.geometry("700x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -79,11 +81,11 @@ class EventRegistrationDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        title_label = ttk.Label(main_frame, text="Register for Event", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.register_for_event', default="Register for Event"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Events list
-        list_frame = ttk.LabelFrame(main_frame, text="Upcoming Events")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.upcoming_events', default="Upcoming Events"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         # Treeview for events
@@ -101,7 +103,7 @@ class EventRegistrationDialog:
         scrollbar.pack(side='right', fill='y')
 
         # Event details
-        details_frame = ttk.LabelFrame(main_frame, text="Event Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.event_details', default="Event Details"))
         details_frame.pack(fill='x', pady=(0, 10))
 
         self.details_text = tk.Text(details_frame, height=5, wrap=tk.WORD)
@@ -114,9 +116,9 @@ class EventRegistrationDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(button_frame, text="Register for Selected Event",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.register_for_selected_event', default="Register for Selected Event"),
                   command=self.register_for_event).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.cancel', default="Cancel"),
                   command=self.cancel).pack(side='left')
 
     def load_events(self):
@@ -146,7 +148,7 @@ class EventRegistrationDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load events: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to load events: {str(e)}")
 
     def on_event_selected(self, event=None):
         """Handle event selection"""
@@ -172,20 +174,20 @@ class EventRegistrationDialog:
         """Register for the selected event"""
         selection = self.events_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an event to register for.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.please_select_an_event_to_register_for', default="Please select an event to register for."))
             return
 
         item = self.events_tree.item(selection[0])
         event_id = item['values'][0]
         event_name = item['values'][1]
 
-        if messagebox.askyesno("Confirm", f"Do you want to register for {event_name}?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.confirm', default="Confirm"), f"Do you want to register for {event_name}?"):
             try:
                 self.result = {'event_id': event_id, 'event_name': event_name}
-                messagebox.showinfo("Success", f"Successfully registered for {event_name}!")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.success', default="Success"), f"Successfully registered for {event_name}!")
                 self.dialog.destroy()
             except (tk.TclError, AttributeError) as e:
-                messagebox.showerror("Error", f"Failed to register for event: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to register for event: {str(e)}")
 
     def cancel(self):
         """Cancel the dialog"""
@@ -201,7 +203,7 @@ class EventManagementDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Manage Recurring Events")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_dialogs.windows.manage_recurring_events', default="Manage Recurring Events"))
         self.dialog.geometry("800x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -215,10 +217,10 @@ class EventManagementDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        ttk.Label(main_frame, text="Recurring Events Management", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.recurring_events_management', default="Recurring Events Management"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Events list
-        list_frame = ttk.LabelFrame(main_frame, text="Events")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.events', default="Events"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('ID', 'Name', 'Pattern', 'Start', 'End', 'Status')
@@ -238,10 +240,10 @@ class EventManagementDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(button_frame, text="Edit Selected", command=self.edit_event).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Pause/Resume", command=self.toggle_status).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Delete", command=self.delete_event).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.edit_selected', default="Edit Selected"), command=self.edit_event).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.pause_resume', default="Pause/Resume"), command=self.toggle_status).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.delete', default="Delete"), command=self.delete_event).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='left')
 
     def load_events(self):
         """Load recurring events"""
@@ -262,13 +264,13 @@ class EventManagementDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load events: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to load events: {str(e)}")
 
     def edit_event(self):
         """Edit selected event"""
         selection = self.events_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an event to edit.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.please_select_an_event_to_edit', default="Please select an event to edit."))
             return
 
         item = self.events_tree.item(selection[0])
@@ -286,7 +288,7 @@ class EventManagementDialog:
             conn.close()
 
             if not event:
-                messagebox.showerror("Error", "Event not found")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.event_not_found', default="Event not found"))
                 return
 
             name, desc, location, pattern, start_date, end_date, event_time, duration = event
@@ -301,52 +303,52 @@ class EventManagementDialog:
             main_frame = ttk.Frame(edit_dialog, padding="10")
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Edit Recurring Event",
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.edit_recurring_event', default="Edit Recurring Event"),
                      font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
             form_frame = ttk.Frame(main_frame)
             form_frame.pack(fill='both', expand=True)
 
             # Event Name
-            ttk.Label(form_frame, text="Event Name *").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.event_name', default="Event Name *")).grid(row=0, column=0, sticky='w', pady=5)
             name_var = tk.StringVar(value=name or '')
             ttk.Entry(form_frame, textvariable=name_var, width=35).grid(row=0, column=1, pady=5)
 
             # Description
-            ttk.Label(form_frame, text="Description").grid(row=1, column=0, sticky='nw', pady=5)
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.description', default="Description")).grid(row=1, column=0, sticky='nw', pady=5)
             desc_text = tk.Text(form_frame, height=4, width=35)
             desc_text.insert('1.0', desc or '')
             desc_text.grid(row=1, column=1, pady=5)
 
             # Location
-            ttk.Label(form_frame, text="Location").grid(row=2, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.location', default="Location")).grid(row=2, column=0, sticky='w', pady=5)
             location_var = tk.StringVar(value=location or '')
             ttk.Entry(form_frame, textvariable=location_var, width=35).grid(row=2, column=1, pady=5)
 
             # Recurrence Pattern
-            ttk.Label(form_frame, text="Recurrence Pattern").grid(row=3, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.recurrence_pattern', default="Recurrence Pattern")).grid(row=3, column=0, sticky='w', pady=5)
             pattern_var = tk.StringVar(value=pattern or 'weekly')
             pattern_combo = ttk.Combobox(form_frame, textvariable=pattern_var, state='readonly', width=33)
             pattern_combo['values'] = ['daily', 'weekly', 'biweekly', 'monthly']
             pattern_combo.grid(row=3, column=1, pady=5)
 
             # Start Date
-            ttk.Label(form_frame, text="Start Date (YYYY-MM-DD)").grid(row=4, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD)")).grid(row=4, column=0, sticky='w', pady=5)
             start_var = tk.StringVar(value=start_date or '')
             ttk.Entry(form_frame, textvariable=start_var, width=35).grid(row=4, column=1, pady=5)
 
             # End Date
-            ttk.Label(form_frame, text="End Date (YYYY-MM-DD)").grid(row=5, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD)")).grid(row=5, column=0, sticky='w', pady=5)
             end_var = tk.StringVar(value=end_date or '')
             ttk.Entry(form_frame, textvariable=end_var, width=35).grid(row=5, column=1, pady=5)
 
             # Event Time
-            ttk.Label(form_frame, text="Event Time (HH:MM)").grid(row=6, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.event_time_hh_mm', default="Event Time (HH:MM)")).grid(row=6, column=0, sticky='w', pady=5)
             time_var = tk.StringVar(value=event_time or '')
             ttk.Entry(form_frame, textvariable=time_var, width=35).grid(row=6, column=1, pady=5)
 
             # Duration
-            ttk.Label(form_frame, text="Duration (hours)").grid(row=7, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.duration_hours', default="Duration (hours)")).grid(row=7, column=0, sticky='w', pady=5)
             duration_var = tk.StringVar(value=str(duration or 1))
             ttk.Entry(form_frame, textvariable=duration_var, width=35).grid(row=7, column=1, pady=5)
 
@@ -356,7 +358,7 @@ class EventManagementDialog:
             def save_changes():
                 new_name = name_var.get().strip()
                 if not new_name:
-                    messagebox.showerror("Error", "Event name is required", parent=edit_dialog)
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.event_name_is_required', default="Event name is required"), parent=edit_dialog)
                     return
 
                 try:
@@ -384,7 +386,7 @@ class EventManagementDialog:
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo("Success", "Event updated successfully!", parent=edit_dialog)
+                    messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.event_updated_successfully', default="Event updated successfully!"), parent=edit_dialog)
                     edit_dialog.destroy()
 
                     # Refresh the events list
@@ -392,19 +394,19 @@ class EventManagementDialog:
                     self.load_events()
 
                 except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Failed to update event: {str(e)}", parent=edit_dialog)
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to update event: {str(e)}", parent=edit_dialog)
 
-            ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=edit_dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.cancel', default="Cancel"), command=edit_dialog.destroy).pack(side='left', padx=5)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load event: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to load event: {str(e)}")
 
     def toggle_status(self):
         """Toggle event status"""
         selection = self.events_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an event.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.please_select_an_event', default="Please select an event."))
             return
 
         item = self.events_tree.item(selection[0])
@@ -422,22 +424,22 @@ class EventManagementDialog:
             # Refresh list
             self.events_tree.delete(*self.events_tree.get_children())
             self.load_events()
-            messagebox.showinfo("Success", f"Event status changed to {new_status}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.success', default="Success"), f"Event status changed to {new_status}")
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to update status: {str(e)}")
 
     def delete_event(self):
         """Delete selected event"""
         selection = self.events_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an event to delete.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.please_select_an_event_to_delete', default="Please select an event to delete."))
             return
 
         item = self.events_tree.item(selection[0])
         event_id = item['values'][0]
         event_name = item['values'][1]
 
-        if messagebox.askyesno("Confirm", f"Delete recurring event '{event_name}'?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.confirm', default="Confirm"), f"Delete recurring event '{event_name}'?"):
             try:
                 conn = student_union_cli.get_connection()
                 cursor = conn.cursor()
@@ -446,9 +448,9 @@ class EventManagementDialog:
                 conn.close()
 
                 self.events_tree.delete(selection[0])
-                messagebox.showinfo("Success", "Event deleted successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.event_deleted_successfully', default="Event deleted successfully!"))
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to delete event: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to delete event: {str(e)}")
 
 
 
@@ -460,7 +462,7 @@ class EventAttendanceDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Event Attendance Management")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_dialogs.windows.event_attendance_management', default="Event Attendance Management"))
         self.dialog.geometry("900x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -474,10 +476,10 @@ class EventAttendanceDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        ttk.Label(main_frame, text="Event Attendance Tracking", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.event_attendance_tracking', default="Event Attendance Tracking"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Event selection
-        event_frame = ttk.LabelFrame(main_frame, text="Select Event")
+        event_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.select_event', default="Select Event"))
         event_frame.pack(fill='x', pady=(0, 10))
 
         self.event_var = tk.StringVar()
@@ -485,10 +487,10 @@ class EventAttendanceDialog:
         self.event_combo.pack(side='left', padx=5, pady=5)
         self.event_combo.bind('<<ComboboxSelected>>', self.on_event_selected)
 
-        ttk.Button(event_frame, text="View Attendance", command=self.view_attendance).pack(side='left', padx=5)
+        ttk.Button(event_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.view_attendance', default="View Attendance"), command=self.view_attendance).pack(side='left', padx=5)
 
         # Attendance details
-        details_frame = ttk.LabelFrame(main_frame, text="Attendance Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.attendance_details', default="Attendance Details"))
         details_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Student ID', 'Name', 'Check-in Time', 'Check-out Time', 'Status')
@@ -505,18 +507,18 @@ class EventAttendanceDialog:
         scrollbar.pack(side='right', fill='y')
 
         # Stats
-        stats_frame = ttk.LabelFrame(main_frame, text="Statistics")
+        stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.statistics', default="Statistics"))
         stats_frame.pack(fill='x', pady=(0, 10))
 
-        self.stats_label = ttk.Label(stats_frame, text="Select an event to view statistics")
+        self.stats_label = ttk.Label(stats_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.labels.select_an_event_to_view_statistics', default="Select an event to view statistics"))
         self.stats_label.pack(padx=10, pady=10)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Export", command=self.export_attendance).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.export', default="Export"), command=self.export_attendance).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='left')
 
     def load_events(self):
         """Load events for attendance tracking"""
@@ -544,7 +546,7 @@ class EventAttendanceDialog:
             self.event_combo['values'] = event_options
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load events: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to load events: {str(e)}")
 
     def on_event_selected(self, event=None):
         """
@@ -557,7 +559,7 @@ class EventAttendanceDialog:
         """View attendance for selected event"""
         selection = self.event_var.get()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an event.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.please_select_an_event', default="Please select an event."))
             return
 
         event_id = self.event_data[selection]
@@ -590,7 +592,7 @@ class EventAttendanceDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load attendance: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to load attendance: {str(e)}")
 
     def export_attendance(self):
         """Export attendance data to CSV"""
@@ -598,7 +600,7 @@ class EventAttendanceDialog:
         import csv
 
         if not hasattr(self, 'current_event_id') or not self.current_event_id:
-            messagebox.showwarning("Warning", "Please select an event first")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.please_select_an_event_first', default="Please select an event first"))
             return
 
         # Get event name for filename
@@ -607,7 +609,7 @@ class EventAttendanceDialog:
         safe_name = event_name.replace(' ', '_').replace('/', '_')[:30]
 
         file_path = filedialog.asksaveasfilename(
-            title="Export Attendance to CSV",
+            title=_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.export_attendance_to_csv', default="Export Attendance to CSV"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
             initialfile=f"attendance_{safe_name}"
@@ -650,10 +652,10 @@ class EventAttendanceDialog:
                 writer.writerow(['Attended', attended])
                 writer.writerow(['Attendance Rate', f"{(attended/total*100 if total > 0 else 0):.1f}%"])
 
-            messagebox.showinfo("Success", f"Attendance exported successfully to:\n{file_path}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.success', default="Success"), f"Attendance exported successfully to:\n{file_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export attendance: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_dialogs.dialogs.error', default="Error"), f"Failed to export attendance: {str(e)}")
 
 
 

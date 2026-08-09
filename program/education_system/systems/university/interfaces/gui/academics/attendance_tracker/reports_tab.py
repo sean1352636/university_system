@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -23,7 +25,7 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 # Import main database connection
 try:
@@ -174,7 +176,7 @@ def create_reports_tab(self):
 
         # Output format
         ttk.Label(params_grid, text=_("attendance.labels.format")).grid(row=0, column=4, sticky=tk.W, padx=(0, 5))
-        self.report_format_var = tk.StringVar(value="Excel")
+        self.report_format_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.reports_tab.values.excel', default="Excel"))
         format_combo = ttk.Combobox(params_grid, textvariable=self.report_format_var,
                                    values=["Excel", "PDF", "CSV"], state="readonly", width=10)
         format_combo.grid(row=0, column=5)
@@ -387,7 +389,7 @@ def generate_student_report(self):
 def generate_custom_report(self):
         """Generate custom report"""
         if CustomReportWindow is None:
-            messagebox.showerror(_("common.error"), "Custom report window is not available.")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.reports_tab.dialogs.custom_report_window_is_not_available', default="Custom report window is not available."))
             return
         CustomReportWindow(self.root)
 
@@ -481,13 +483,13 @@ def generate_trends_report(self):
         controls_frame.pack(fill='x', padx=20, pady=(0, 10))
 
         ttk.Label(controls_frame, text=_("attendance.trends.period")).grid(row=0, column=0, sticky='w', padx=(0, 10))
-        period_var = tk.StringVar(value="Last 30 Days")
+        period_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.reports_tab.values.last_30_days', default="Last 30 Days"))
         ttk.Combobox(controls_frame, textvariable=period_var,
                     values=["Last 7 Days", "Last 30 Days", "Last Semester", "Academic Year"],
                     width=20, state='readonly').grid(row=0, column=1, sticky='w')
 
         ttk.Label(controls_frame, text=_("attendance.trends.module_filter")).grid(row=0, column=2, sticky='w', padx=(20, 10))
-        module_filter_var = tk.StringVar(value="All Modules")
+        module_filter_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.reports_tab.values.all_modules', default="All Modules"))
 
         # Load actual modules for filter
         module_values = ["All Modules"]
@@ -629,10 +631,10 @@ def generate_trends_report(self):
 
         def export_txt():
             if not self._trends_report_content:
-                messagebox.showwarning(_("common.warning"), "Generate a report first.", parent=trends_window)
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.reports_tab.dialogs.generate_a_report_first', default="Generate a report first."), parent=trends_window)
                 return
             filename = filedialog.asksaveasfilename(
-                title="Export Trends Report",
+                title=_t('gui.academics.attendance_tracker.reports_tab.dialogs.export_trends_report', default="Export Trends Report"),
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
                 parent=trends_window)
@@ -641,11 +643,11 @@ def generate_trends_report(self):
                     f.write(self._trends_report_content)
                 messagebox.showinfo(_("common.success"), f"Report exported to {filename}", parent=trends_window)
 
-        ttk.Button(btn_frame, text="Export as TXT", command=export_txt).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.academics.attendance_tracker.reports_tab.buttons.export_as_txt', default="Export as TXT"), command=export_txt).pack(side=tk.LEFT, padx=(0, 10))
 
         def email_to_admin():
             if not self._trends_report_content:
-                messagebox.showwarning(_("common.warning"), "Generate a report first.", parent=trends_window)
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.reports_tab.dialogs.generate_a_report_first', default="Generate a report first."), parent=trends_window)
                 return
             try:
                 from education_system.systems.university.infrastructure.email.email_service import queue_email
@@ -653,15 +655,15 @@ def generate_trends_report(self):
                     to="admin@university.ac.uk",
                     subject=f"Attendance Trends Report - {datetime.datetime.now().strftime('%Y-%m-%d')}",
                     body=self._trends_report_content)
-                messagebox.showinfo(_("common.success"), "Report emailed to admin.", parent=trends_window)
+                messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.reports_tab.dialogs.report_emailed_to_admin', default="Report emailed to admin."), parent=trends_window)
             except ImportError:
                 logger.exception("reports_tab.py:644 %s", 'except ImportError')
-                messagebox.showerror(_("common.error"), "Email service not available.", parent=trends_window)
+                messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.reports_tab.dialogs.email_service_not_available', default="Email service not available."), parent=trends_window)
             except Exception as e:
                 logger.exception("reports_tab.py:646 %s", 'except Exception as e')
                 messagebox.showerror(_("common.error"), f"Failed to send email: {e}", parent=trends_window)
 
-        ttk.Button(btn_frame, text="Email to Admin", command=email_to_admin).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.academics.attendance_tracker.reports_tab.buttons.email_to_admin', default="Email to Admin"), command=email_to_admin).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(btn_frame, text=_("common.close"), command=trends_window.destroy).pack(side=tk.RIGHT)
 
 def _show_attendance_email_fallback(self, name, email, subject, message, attendance_rate):

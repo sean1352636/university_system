@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -8,7 +10,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 matplotlib.use('TkAgg')
 import numpy as np
 
@@ -94,18 +96,18 @@ def send_report_to_admin(report_title, report_content, parent_window=None):
             related_to="finance_report",
         )
         if msg_id:
-            messagebox.showinfo("Success", "Report sent to admin (logged in email_log).")
+            messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.success', default="Success"), _t('gui.finance.finance_reporting.reports_tab.dialogs.report_sent_to_admin_logged_in_email_log', default="Report sent to admin (logged in email_log)."))
             return True
     except Exception:
         pass
 
     if not HAS_EMAIL:
-        messagebox.showerror("Error", "Email system not available")
+        messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.reports_tab.dialogs.email_system_not_available', default="Email system not available"))
         return False
 
     admin_email = get_admin_email()
     if not admin_email:
-        messagebox.showerror("Error", "No admin email found in database.\nPlease ensure an admin user has an email configured.")
+        messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.reports_tab.dialogs.no_admin_email_found_in_database_please_ensure_an_admin_user_has', default="No admin email found in database.\nPlease ensure an admin user has an email configured."))
         return False
 
     try:
@@ -121,12 +123,12 @@ def send_report_to_admin(report_title, report_content, parent_window=None):
             subject = f"Finance Report: {report_title} - {generated_date}"
             body = f"Finance Report: {report_title}\nGenerated: {generated_timestamp}\n\n{report_content}"
         if send_email(admin_email, subject, body):
-            messagebox.showinfo("Success", f"Report sent to admin at:\n{admin_email}")
+            messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.success', default="Success"), f"Report sent to admin at:\n{admin_email}")
             return True
-        messagebox.showerror("Error", "Failed to send email. Please check email configuration.")
+        messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), _t('gui.finance.finance_reporting.reports_tab.dialogs.failed_to_send_email_please_check_email_configuration', default="Failed to send email. Please check email configuration."))
         return False
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to send report:\n{e}")
+        messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), f"Failed to send report:\n{e}")
         return False
 
 
@@ -144,7 +146,7 @@ def create_reports_tab(self):
 
     # Report type selection
     ttk.Label(gen_frame, text=_("finance_reporting.reports.type")).grid(row=0, column=0, sticky=tk.W)
-    self.report_type = tk.StringVar(value="comprehensive")
+    self.report_type = tk.StringVar(value=_t('gui.finance.finance_reporting.reports_tab.values.comprehensive', default="comprehensive"))
     report_combo = ttk.Combobox(gen_frame, textvariable=self.report_type,
                                values=["comprehensive", "executive_summary", "compliance", "custom"],
                                state="readonly")
@@ -152,7 +154,7 @@ def create_reports_tab(self):
 
     # Output format selection
     ttk.Label(gen_frame, text=_("finance_reporting.reports.format")).grid(row=1, column=0, sticky=tk.W, pady=(10, 0))
-    self.output_format = tk.StringVar(value="PDF")
+    self.output_format = tk.StringVar(value=_t('gui.finance.finance_reporting.reports_tab.values.pdf', default="PDF"))
     format_combo = ttk.Combobox(gen_frame, textvariable=self.output_format,
                                values=["PDF", "Excel", "CSV", "JSON", "All"],
                                state="readonly")
@@ -245,11 +247,11 @@ def generate_quick_report(self):
 
             self.root.after(0, lambda: [
                 self.log_activity(f"Quick report generated: {filename}"),
-                messagebox.showinfo("Report Generated", f"Quick report saved as {filename}")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.report_generated', default="Report Generated"), f"Quick report saved as {filename}")
             ])
 
         except Exception as e:
-            self.root.after(0, lambda _e=e: messagebox.showerror("Error", f"Failed to generate report: {_e}"))
+            self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), f"Failed to generate report: {_e}"))
 
     thread = threading.Thread(target=generate_in_background)
     thread.daemon = True
@@ -317,7 +319,7 @@ def generate_selected_report(self):
             self.root.after(0, lambda rt=report_type: [
                 self.log_activity(f"{rt} report generated"),
                 self.update_status("Ready"),
-                messagebox.showinfo("Report Generated", f"{rt} report generated successfully")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.report_generated', default="Report Generated"), f"{rt} report generated successfully")
             ])
 
         except Exception as e:
@@ -325,7 +327,7 @@ def generate_selected_report(self):
             self.root.after(0, lambda err=error_msg: [
                 self.log_activity(f"Report generation error: {err}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Report generation failed: {err}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.error', default="Error"), f"Report generation failed: {err}")
             ])
 
     thread = threading.Thread(target=generate_in_background)
@@ -341,11 +343,11 @@ def show_custom_report_builder(self):
     main_frame = ttk.Frame(builder_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Custom Report Builder",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.reports_tab.labels.custom_report_builder', default="Custom Report Builder"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Report components selection
-    components_frame = ttk.LabelFrame(main_frame, text="Select Report Components", padding="10")
+    components_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.reports_tab.labels.select_report_components', default="Select Report Components"), padding="10")
     components_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     # Component checkboxes
@@ -370,18 +372,18 @@ def show_custom_report_builder(self):
                            row=i//2, column=i%2, sticky=tk.W, padx=10, pady=5)
 
     # Report settings
-    settings_frame = ttk.LabelFrame(main_frame, text="Report Settings", padding="10")
+    settings_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.reports_tab.labels.report_settings', default="Report Settings"), padding="10")
     settings_frame.pack(fill=tk.X, pady=(0, 10))
 
     # Report name
-    ttk.Label(settings_frame, text="Report Name:").grid(row=0, column=0, sticky=tk.W)
-    self.custom_report_name = tk.StringVar(value="Custom Financial Report")
+    ttk.Label(settings_frame, text=_t('gui.finance.finance_reporting.reports_tab.labels.report_name', default="Report Name:")).grid(row=0, column=0, sticky=tk.W)
+    self.custom_report_name = tk.StringVar(value=_t('gui.finance.finance_reporting.reports_tab.values.custom_financial_report', default="Custom Financial Report"))
     ttk.Entry(settings_frame, textvariable=self.custom_report_name,
              width=30).grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(10, 0))
 
     # Output format
-    ttk.Label(settings_frame, text="Output Format:").grid(row=1, column=0, sticky=tk.W, pady=(10, 0))
-    self.custom_format = tk.StringVar(value="PDF")
+    ttk.Label(settings_frame, text=_t('gui.finance.finance_reporting.reports_tab.labels.output_format_variant_2', default="Output Format:")).grid(row=1, column=0, sticky=tk.W, pady=(10, 0))
+    self.custom_format = tk.StringVar(value=_t('gui.finance.finance_reporting.reports_tab.values.pdf', default="PDF"))
     format_combo = ttk.Combobox(settings_frame, textvariable=self.custom_format,
                                values=["PDF", "Excel", "HTML", "Text"], state="readonly")
     format_combo.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(10, 0), pady=(10, 0))
@@ -392,7 +394,7 @@ def show_custom_report_builder(self):
     def generate_custom_report():
         selected_components = [comp_id for comp_id, var in self.report_components.items() if var.get()]
         if not selected_components:
-            messagebox.showwarning("Warning", "Please select at least one report component.")
+            messagebox.showwarning(_t('gui.finance.finance_reporting.reports_tab.dialogs.warning', default="Warning"), _t('gui.finance.finance_reporting.reports_tab.dialogs.please_select_at_least_one_report_component', default="Please select at least one report component."))
             return
 
         report_name = self.custom_report_name.get()
@@ -409,10 +411,10 @@ def show_custom_report_builder(self):
             f.write("Custom report configuration saved.\n")
             f.write("Selected components will be generated based on available data.\n")
 
-        messagebox.showinfo("Report Generated", f"Custom report configuration saved as {filename}")
+        messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.report_generated', default="Report Generated"), f"Custom report configuration saved as {filename}")
         builder_window.destroy()
 
-    ttk.Button(main_frame, text="Generate Custom Report",
+    ttk.Button(main_frame, text=_t('gui.finance.finance_reporting.reports_tab.buttons.generate_custom_report', default="Generate Custom Report"),
               command=generate_custom_report, style='Accent.TButton').pack(pady=10)
 
 def populate_scheduled_reports(self):
@@ -446,7 +448,7 @@ def export_quick_report(self):
             ("HTML files", "*.html"),
             ("All files", "*.*")
         ],
-        title="Export Quick Report"
+        title=_t('gui.finance.finance_reporting.reports_tab.dialogs.export_quick_report', default="Export Quick Report")
     )
 
     if filename:
@@ -488,11 +490,11 @@ def export_quick_report(self):
             else:
                 self._export_txt(filename, total_collected, payment_count, student_count)
 
-            messagebox.showinfo("Export Complete", f"Quick report saved to {filename}")
+            messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.export_complete', default="Export Complete"), f"Quick report saved to {filename}")
             self.log_activity(f"Quick report exported to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export report: {e}")
+            messagebox.showerror(_t('gui.finance.finance_reporting.reports_tab.dialogs.export_error', default="Export Error"), f"Failed to export report: {e}")
 
 def _export_txt(self, filename, total_collected, payment_count, student_count):
     """Export report as text file"""
@@ -652,11 +654,11 @@ def export_comprehensive_report(self):
     main_frame = ttk.Frame(export_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Comprehensive Report Export",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.reports_tab.labels.comprehensive_report_export', default="Comprehensive Report Export"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Export options
-    options_frame = ttk.LabelFrame(main_frame, text="Export Options", padding="10")
+    options_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.reports_tab.labels.export_options', default="Export Options"), padding="10")
     options_frame.pack(fill=tk.X, pady=(0, 10))
 
     self.export_forecasting = tk.BooleanVar(value=True)
@@ -664,33 +666,33 @@ def export_comprehensive_report(self):
     self.export_analytics = tk.BooleanVar(value=True)
     self.export_charts = tk.BooleanVar(value=True)
 
-    ttk.Checkbutton(options_frame, text="Financial Forecasting Reports",
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.reports_tab.buttons.financial_forecasting_reports', default="Financial Forecasting Reports"),
                    variable=self.export_forecasting).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Dashboard Summaries",
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.reports_tab.buttons.dashboard_summaries', default="Dashboard Summaries"),
                    variable=self.export_dashboard).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Advanced Analytics",
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.reports_tab.buttons.advanced_analytics', default="Advanced Analytics"),
                    variable=self.export_analytics).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Charts and Visualizations",
+    ttk.Checkbutton(options_frame, text=_t('gui.finance.finance_reporting.reports_tab.buttons.charts_and_visualizations', default="Charts and Visualizations"),
                    variable=self.export_charts).pack(anchor=tk.W)
 
     # Format selection
-    format_frame = ttk.LabelFrame(main_frame, text="Output Format", padding="10")
+    format_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.reports_tab.labels.output_format', default="Output Format"), padding="10")
     format_frame.pack(fill=tk.X, pady=(0, 10))
 
-    self.export_format = tk.StringVar(value="PDF")
+    self.export_format = tk.StringVar(value=_t('gui.finance.finance_reporting.reports_tab.values.pdf', default="PDF"))
     formats = ["PDF", "Excel", "CSV", "All Formats"]
     for fmt in formats:
         ttk.Radiobutton(format_frame, text=fmt, variable=self.export_format,
                        value=fmt).pack(anchor=tk.W)
 
     # Progress area
-    progress_frame = ttk.LabelFrame(main_frame, text="Export Progress", padding="10")
+    progress_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.reports_tab.labels.export_progress', default="Export Progress"), padding="10")
     progress_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     self.export_progress = ttk.Progressbar(progress_frame, mode='determinate')
     self.export_progress.pack(fill=tk.X, pady=(0, 5))
 
-    self.export_status = tk.StringVar(value="Ready to export")
+    self.export_status = tk.StringVar(value=_t('gui.finance.finance_reporting.reports_tab.values.ready_to_export', default="Ready to export"))
     ttk.Label(progress_frame, textvariable=self.export_status).pack(anchor=tk.W)
 
     # Export log
@@ -712,7 +714,7 @@ def export_comprehensive_report(self):
             export_tasks.append(("Charts & Visualizations", self.export_charts_report))
 
         if not export_tasks:
-            messagebox.showwarning("Export", "Please select at least one export option")
+            messagebox.showwarning(_t('gui.finance.finance_reporting.reports_tab.dialogs.export', default="Export"), _t('gui.finance.finance_reporting.reports_tab.dialogs.please_select_at_least_one_export_option', default="Please select at least one export option"))
             return
 
         total_tasks = len(export_tasks)
@@ -734,7 +736,7 @@ def export_comprehensive_report(self):
 
         self.export_status.set("Export completed")
         self.export_log.insert(tk.END, "\nExport process completed!\n")
-        messagebox.showinfo("Export Complete", "Comprehensive report export completed successfully!")
+        messagebox.showinfo(_t('gui.finance.finance_reporting.reports_tab.dialogs.export_complete', default="Export Complete"), _t('gui.finance.finance_reporting.reports_tab.dialogs.comprehensive_report_export_completed_successfully', default="Comprehensive report export completed successfully!"))
 
     # Export task methods (simplified implementations)
     def export_forecasting_report(self):
@@ -766,8 +768,8 @@ def export_comprehensive_report(self):
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(buttons_frame, text="Start Export", command=run_export,
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.reports_tab.buttons.start_export', default="Start Export"), command=run_export,
               style='Accent.TButton').pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Close", command=export_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.reports_tab.buttons.close', default="Close"), command=export_window.destroy).pack(side=tk.RIGHT)
 
 # Method registration is handled by main.py

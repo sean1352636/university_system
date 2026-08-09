@@ -24,14 +24,14 @@ import re
 import sqlite3
 from dataclasses import dataclass, field
 from typing import Any
-from education_system.systems.primary.infrastructure import paths
+from education_system import paths
 from education_system.systems.primary.domain.academics.academic_year import (
     academic_year as data,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.ACADEMIC_YEAR_DB
+DB_PATH = paths.PRIMARY_ACADEMIC_YEAR_DB
 
 YEAR_STATUSES: tuple[str, ...] = ("Planning", "Active", "Archived")
 DEFAULT_YEAR_STATUS: str = "Planning"
@@ -178,7 +178,7 @@ class YearSummary:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_primary_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -310,7 +312,7 @@ class GamificationMixin:
             self.clear_content()
             self.update_status("Engagement Leaderboard")
 
-            ttk.Label(self.content_frame, text="Alumni Engagement Leaderboard",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.gamification.labels.alumni_engagement_leaderboard', default="Alumni Engagement Leaderboard"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Tabs for different leaderboard views
@@ -319,7 +321,7 @@ class GamificationMixin:
 
             # Overall leaderboard tab
             overall_frame = ttk.Frame(notebook)
-            notebook.add(overall_frame, text="Overall Leaderboard")
+            notebook.add(overall_frame, text=_t('gui.learners.alumni.gamification.tabs.overall_leaderboard', default="Overall Leaderboard"))
 
             overall_text = ScrolledText(overall_frame, wrap=tk.WORD)
             overall_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -378,7 +380,7 @@ class GamificationMixin:
 
             # Monthly leaderboard tab
             monthly_frame = ttk.Frame(notebook)
-            notebook.add(monthly_frame, text="This Month")
+            notebook.add(monthly_frame, text=_t('gui.learners.alumni.gamification.tabs.this_month', default="This Month"))
 
             monthly_text = ScrolledText(monthly_frame, wrap=tk.WORD)
             monthly_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -427,7 +429,7 @@ class GamificationMixin:
 
             # Badge leaderboard tab
             badges_frame = ttk.Frame(notebook)
-            notebook.add(badges_frame, text="Badge Champions")
+            notebook.add(badges_frame, text=_t('gui.learners.alumni.gamification.tabs.badge_champions', default="Badge Champions"))
 
             badges_text = ScrolledText(badges_frame, wrap=tk.WORD)
             badges_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -496,7 +498,7 @@ class GamificationMixin:
         def show_matching_parameters(self):
             """Show matching parameters window"""
             params_window = tk.Toplevel(self.root)
-            params_window.title("Smart Matching Parameters")
+            params_window.title(_t('gui.learners.alumni.gamification.windows.smart_matching_parameters', default="Smart Matching Parameters"))
             params_window.geometry("500x400")
 
             text_widget = ScrolledText(params_window, wrap=tk.WORD, padx=10, pady=10)
@@ -554,11 +556,11 @@ class GamificationMixin:
             self.clear_content()
             self.update_status("My Badges & Achievements")
 
-            ttk.Label(self.content_frame, text="My Alumni Badges & Achievements",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.gamification.labels.my_alumni_badges_achievements', default="My Alumni Badges & Achievements"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # User stats summary
-            stats_frame = ttk.LabelFrame(self.content_frame, text="My Engagement Summary", padding=10)
+            stats_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.gamification.labels.my_engagement_summary', default="My Engagement Summary"), padding=10)
             stats_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
             stats_text = """Current Status: Administrator | Total Points: 1,500 | Rank: #1 Overall
@@ -573,7 +575,7 @@ class GamificationMixin:
             ttk.Label(stats_frame, text=stats_text, justify=tk.LEFT).pack()
 
             # Badges earned
-            earned_frame = ttk.LabelFrame(self.content_frame, text="🏆 Badges Earned", padding=10)
+            earned_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.gamification.labels.badges_earned', default="🏆 Badges Earned"), padding=10)
             earned_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
             earned_text = ScrolledText(earned_frame, height=8, wrap=tk.WORD)
@@ -620,7 +622,7 @@ class GamificationMixin:
             earned_text.insert(tk.END, earned_badges)
 
             # Available badges
-            available_frame = ttk.LabelFrame(self.content_frame, text="🎯 Available Badges", padding=10)
+            available_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.gamification.labels.available_badges', default="🎯 Available Badges"), padding=10)
             available_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             available_text = ScrolledText(available_frame, height=6, wrap=tk.WORD)
@@ -657,16 +659,16 @@ class GamificationMixin:
             self.clear_content()
             self.update_status("Personalized Recommendations")
 
-            ttk.Label(self.content_frame, text="Personalized Engagement Recommendations",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.gamification.labels.personalized_engagement_recommendations', default="Personalized Engagement Recommendations"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Generate recommendations button
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-            ttk.Button(button_frame, text="🤖 Generate AI Recommendations",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.gamification.buttons.generate_ai_recommendations', default="🤖 Generate AI Recommendations"),
                       command=self.generate_recommendations).pack(side=tk.LEFT)
-            ttk.Button(button_frame, text="🔄 Refresh Recommendations",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.gamification.buttons.refresh_recommendations', default="🔄 Refresh Recommendations"),
                       command=self.refresh_recommendations).pack(side=tk.LEFT, padx=(10, 0))
 
             # Recommendations display
@@ -681,11 +683,11 @@ class GamificationMixin:
             self.clear_content()
             self.update_status("Smart Mentorship Matching")
 
-            ttk.Label(self.content_frame, text="AI-Powered Mentorship Matching",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.gamification.labels.ai_powered_mentorship_matching', default="AI-Powered Mentorship Matching"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Smart matching info
-            info_frame = ttk.LabelFrame(self.content_frame, text="Smart Matching System", padding=10)
+            info_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.gamification.labels.smart_matching_system', default="Smart Matching System"), padding=10)
             info_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
             info_text = """Our AI-powered matching system analyzes:
@@ -704,13 +706,13 @@ class GamificationMixin:
             controls_frame = ttk.Frame(self.content_frame)
             controls_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
-            ttk.Button(controls_frame, text="Run Smart Matching Analysis",
+            ttk.Button(controls_frame, text=_t('gui.learners.alumni.gamification.buttons.run_smart_matching_analysis', default="Run Smart Matching Analysis"),
                       command=self.run_smart_matching).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(controls_frame, text="View Matching Parameters",
+            ttk.Button(controls_frame, text=_t('gui.learners.alumni.gamification.buttons.view_matching_parameters', default="View Matching Parameters"),
                       command=self.show_matching_parameters).pack(side=tk.LEFT)
 
             # Results area
-            results_frame = ttk.LabelFrame(self.content_frame, text="Matching Results", padding=10)
+            results_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.gamification.labels.matching_results', default="Matching Results"), padding=10)
             results_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             self.matching_results = ScrolledText(results_frame, wrap=tk.WORD)

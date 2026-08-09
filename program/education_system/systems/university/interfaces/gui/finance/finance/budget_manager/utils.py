@@ -1,5 +1,7 @@
 """Budget manager utility methods"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
@@ -19,7 +21,7 @@ class BudgetUtilsMixin:
         text_widget.pack(fill='both', expand=True, padx=10, pady=10)
         text_widget.insert('1.0', content)
 
-        ttk.Button(window, text="Close", command=window.destroy).pack(pady=10)
+        ttk.Button(window, text=_t('gui.finance.finance.budget_manager.utils.buttons.close', default="Close"), command=window.destroy).pack(pady=10)
 
     def gui_manage_budgets(self):
         """Switch to budget tab"""

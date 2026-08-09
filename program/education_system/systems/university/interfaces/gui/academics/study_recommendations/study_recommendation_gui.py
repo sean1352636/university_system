@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -17,7 +19,7 @@ class StudyRecommendationGUI:
             self._owns_window = False
         else:
             self.root = tk.Toplevel(parent) if parent else tk.Tk()
-            self.root.title("Study Recommendations")
+            self.root.title(_t('gui.academics.study_recommendations.study_recommendation.windows.study_recommendations', default="Study Recommendations"))
             self.root.geometry("1200x800")
             self._owns_window = True
         try:
@@ -53,7 +55,7 @@ class StudyRecommendationGUI:
 
     def setup_ui(self):
         if not self.student_id:
-            ttk.Label(self.root, text="Please log in to access study recommendations.",
+            ttk.Label(self.root, text=_t('gui.academics.study_recommendations.study_recommendation.labels.please_log_in_to_access_study_recommendations', default="Please log in to access study recommendations."),
                      font=('Arial', 14)).pack(pady=40)
             return
 
@@ -67,7 +69,7 @@ class StudyRecommendationGUI:
     # -------------------------------------------------------- Recommendations
     def _create_recommendations_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Recommendations")
+        notebook.add(tab, text=_t('gui.academics.study_recommendations.study_recommendation.tabs.recommendations', default="Recommendations"))
 
         cols = ("module", "type", "title", "priority")
         self.recs_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -78,9 +80,9 @@ class StudyRecommendationGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Generate", command=self._generate_recommendations).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Mark Complete", command=self._mark_complete).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_recommendations).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.study_recommendations.study_recommendation.buttons.generate', default="Generate"), command=self._generate_recommendations).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.study_recommendations.study_recommendation.buttons.mark_complete', default="Mark Complete"), command=self._mark_complete).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.study_recommendations.study_recommendation.buttons.refresh', default="Refresh"), command=self._refresh_recommendations).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_recommendations()
 
@@ -105,14 +107,14 @@ class StudyRecommendationGUI:
         try:
             self.service.generate_recommendations(self.student_id)
             self._refresh_recommendations()
-            messagebox.showinfo("Success", "Recommendations generated.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.study_recommendations.study_recommendation.dialogs.success', default="Success"), _t('gui.academics.study_recommendations.study_recommendation.dialogs.recommendations_generated', default="Recommendations generated."), parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.study_recommendations.study_recommendation.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _mark_complete(self):
         sel = self.recs_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a recommendation first.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.study_recommendations.study_recommendation.dialogs.selection', default="Selection"), _t('gui.academics.study_recommendations.study_recommendation.dialogs.select_a_recommendation_first', default="Select a recommendation first."), parent=self.root)
             return
         values = self.recs_tree.item(sel[0], "values")
         try:
@@ -124,40 +126,40 @@ class StudyRecommendationGUI:
                     break
             self._refresh_recommendations()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.study_recommendations.study_recommendation.dialogs.error', default="Error"), str(e), parent=self.root)
 
     # ---------------------------------------------------------- Study Profile
     def _create_study_profile_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Study Profile")
+        notebook.add(tab, text=_t('gui.academics.study_recommendations.study_recommendation.tabs.study_profile', default="Study Profile"))
 
-        profile_frame = ttk.LabelFrame(tab, text="Your Study Profile")
+        profile_frame = ttk.LabelFrame(tab, text=_t('gui.academics.study_recommendations.study_recommendation.labels.your_study_profile', default="Your Study Profile"))
         profile_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(profile_frame, text="Learning Style:").grid(
+        ttk.Label(profile_frame, text=_t('gui.academics.study_recommendations.study_recommendation.labels.learning_style', default="Learning Style:")).grid(
             row=0, column=0, padx=10, pady=8, sticky=tk.W)
         self.learning_style_var = tk.StringVar()
         ttk.Combobox(profile_frame, textvariable=self.learning_style_var, values=[
             "visual", "auditory", "reading", "kinesthetic", "mixed",
         ], state="readonly", width=25).grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(profile_frame, text="Study Hours per Week:").grid(
+        ttk.Label(profile_frame, text=_t('gui.academics.study_recommendations.study_recommendation.labels.study_hours_per_week', default="Study Hours per Week:")).grid(
             row=1, column=0, padx=10, pady=8, sticky=tk.W)
         self.hours_var = tk.StringVar(value="20")
         ttk.Entry(profile_frame, textvariable=self.hours_var, width=27).grid(
             row=1, column=1, padx=10, pady=8)
 
-        ttk.Label(profile_frame, text="Strengths:").grid(
+        ttk.Label(profile_frame, text=_t('gui.academics.study_recommendations.study_recommendation.labels.strengths', default="Strengths:")).grid(
             row=2, column=0, padx=10, pady=(8, 0), sticky=tk.NW)
         self.strengths_text = tk.Text(profile_frame, height=4, width=40)
         self.strengths_text.grid(row=2, column=1, padx=10, pady=8)
 
-        ttk.Label(profile_frame, text="Weaknesses:").grid(
+        ttk.Label(profile_frame, text=_t('gui.academics.study_recommendations.study_recommendation.labels.weaknesses', default="Weaknesses:")).grid(
             row=3, column=0, padx=10, pady=(8, 0), sticky=tk.NW)
         self.weaknesses_text = tk.Text(profile_frame, height=4, width=40)
         self.weaknesses_text.grid(row=3, column=1, padx=10, pady=8)
 
-        ttk.Button(profile_frame, text="Save Profile", command=self._save_profile).grid(
+        ttk.Button(profile_frame, text=_t('gui.academics.study_recommendations.study_recommendation.buttons.save_profile', default="Save Profile"), command=self._save_profile).grid(
             row=4, column=0, columnspan=2, pady=15)
 
         self._load_profile()
@@ -183,7 +185,7 @@ class StudyRecommendationGUI:
         try:
             hours = float(self.hours_var.get())
         except ValueError:
-            messagebox.showwarning("Validation", "Hours must be a number.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.study_recommendations.study_recommendation.dialogs.validation', default="Validation"), _t('gui.academics.study_recommendations.study_recommendation.dialogs.hours_must_be_a_number', default="Hours must be a number."), parent=self.root)
             return
         try:
             self.service.create_profile(
@@ -193,14 +195,14 @@ class StudyRecommendationGUI:
                 strengths=self.strengths_text.get("1.0", tk.END).strip(),
                 weaknesses=self.weaknesses_text.get("1.0", tk.END).strip(),
             )
-            messagebox.showinfo("Success", "Profile saved.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.study_recommendations.study_recommendation.dialogs.success', default="Success"), _t('gui.academics.study_recommendations.study_recommendation.dialogs.profile_saved', default="Profile saved."), parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.study_recommendations.study_recommendation.dialogs.error', default="Error"), str(e), parent=self.root)
 
     # ------------------------------------------------------------- Study Log
     def _create_study_log_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Study Log")
+        notebook.add(tab, text=_t('gui.academics.study_recommendations.study_recommendation.tabs.study_log', default="Study Log"))
 
         cols = ("date", "module", "topic", "duration", "rating")
         self.log_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -211,8 +213,8 @@ class StudyRecommendationGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Log Session", command=self._log_session).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_log).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.study_recommendations.study_recommendation.buttons.log_session', default="Log Session"), command=self._log_session).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.study_recommendations.study_recommendation.buttons.refresh', default="Refresh"), command=self._refresh_log).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_log()
 
@@ -239,16 +241,16 @@ class StudyRecommendationGUI:
             return
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("Log Study Session")
+        dlg.title(_t('gui.academics.study_recommendations.study_recommendation.windows.log_study_session', default="Log Study Session"))
         dlg.geometry("450x400")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Date (YYYY-MM-DD):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.study_recommendations.study_recommendation.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
         ttk.Entry(dlg, textvariable=date_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Module:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.study_recommendations.study_recommendation.labels.module', default="Module:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         module_var = tk.StringVar()
         module_combo = ttk.Combobox(dlg, textvariable=module_var, state='readonly')
         module_combo.pack(fill=tk.X, padx=10)
@@ -277,15 +279,15 @@ class StudyRecommendationGUI:
         except Exception:
             pass
 
-        ttk.Label(dlg, text="Topic:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.study_recommendations.study_recommendation.labels.topic', default="Topic:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         topic_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=topic_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Duration (minutes):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.study_recommendations.study_recommendation.labels.duration_minutes', default="Duration (minutes):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         duration_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=duration_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Effectiveness Rating (1-5):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.study_recommendations.study_recommendation.labels.effectiveness_rating_1_5', default="Effectiveness Rating (1-5):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         rating_var = tk.IntVar(value=3)
         rating_frame = ttk.Frame(dlg)
         rating_frame.pack(padx=10, anchor=tk.W)
@@ -294,12 +296,12 @@ class StudyRecommendationGUI:
 
         def save():
             if not module_var.get() or not topic_var.get() or not duration_var.get():
-                messagebox.showwarning("Validation", "All fields are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.academics.study_recommendations.study_recommendation.dialogs.validation', default="Validation"), _t('gui.academics.study_recommendations.study_recommendation.dialogs.all_fields_are_required', default="All fields are required."), parent=dlg)
                 return
             try:
                 dur = int(duration_var.get())
             except ValueError:
-                messagebox.showwarning("Validation", "Duration must be a number.", parent=dlg)
+                messagebox.showwarning(_t('gui.academics.study_recommendations.study_recommendation.dialogs.validation', default="Validation"), _t('gui.academics.study_recommendations.study_recommendation.dialogs.duration_must_be_a_number', default="Duration must be a number."), parent=dlg)
                 return
             try:
                 # Extract module code from "CIS0001 - Module Name" format
@@ -315,18 +317,18 @@ class StudyRecommendationGUI:
                 )
                 dlg.destroy()
                 self._refresh_log()
-                messagebox.showinfo("Success", "Study session logged.", parent=self.root)
+                messagebox.showinfo(_t('gui.academics.study_recommendations.study_recommendation.dialogs.success', default="Success"), _t('gui.academics.study_recommendations.study_recommendation.dialogs.study_session_logged', default="Study session logged."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.study_recommendations.study_recommendation.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.academics.study_recommendations.study_recommendation.buttons.save', default="Save"), command=save).pack(pady=15)
 
     # ----------------------------------------------------------------- Stats
     def _create_stats_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Stats")
+        notebook.add(tab, text=_t('gui.academics.study_recommendations.study_recommendation.tabs.stats', default="Stats"))
 
-        stats_frame = ttk.LabelFrame(tab, text="Study Statistics")
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.academics.study_recommendations.study_recommendation.labels.study_statistics', default="Study Statistics"))
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.stats_labels = {}
@@ -338,7 +340,7 @@ class StudyRecommendationGUI:
             lbl.grid(row=i, column=1, padx=20, pady=12, sticky=tk.W)
             self.stats_labels[name] = lbl
 
-        ttk.Button(stats_frame, text="Refresh Statistics", command=self._refresh_stats).grid(
+        ttk.Button(stats_frame, text=_t('gui.academics.study_recommendations.study_recommendation.buttons.refresh_statistics', default="Refresh Statistics"), command=self._refresh_stats).grid(
             row=len(stat_names), column=0, columnspan=2, pady=15)
 
         self._refresh_stats()

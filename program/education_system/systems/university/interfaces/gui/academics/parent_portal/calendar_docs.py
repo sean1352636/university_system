@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -48,13 +50,13 @@ def update_profile_photo(self):
     from tkinter import filedialog
 
     file_path = filedialog.askopenfilename(
-        title="Select Profile Photo",
+        title=_t('gui.academics.parent_portal.calendar_docs.dialogs.select_profile_photo', default="Select Profile Photo"),
         filetypes=[("Image files", "*.jpg *.jpeg *.png *.gif *.bmp")]
     )
 
     if file_path:
         # In real implementation, would upload and process the image
-        messagebox.showinfo("Success", "Profile photo updated successfully.")
+        messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.success', default="Success"), _t('gui.academics.parent_portal.calendar_docs.dialogs.profile_photo_updated_successfully', default="Profile photo updated successfully."))
         self.update_status("Profile photo updated")
 ParentPortalGUI.update_profile_photo = update_profile_photo
 
@@ -65,7 +67,7 @@ class QRCodeDialog:
         self.result = None
 
         dialog = tk.Toplevel(parent)
-        dialog.title("Generate QR Code")
+        dialog.title(_t('gui.academics.parent_portal.calendar_docs.windows.generate_qr_code', default="Generate QR Code"))
         dialog.geometry("500x350")
         dialog.transient(parent)
         dialog.grab_set()
@@ -73,11 +75,11 @@ class QRCodeDialog:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Generate Student QR Code",
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.generate_student_qr_code', default="Generate Student QR Code"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Child selection
-        ttk.Label(main_frame, text="Select Student:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.select_student', default="Select Student:")).pack(anchor='w')
         child_var = tk.StringVar()
         child_combo = ttk.Combobox(main_frame, textvariable=child_var, width=45, state="readonly")
         child_combo['values'] = [f"{c[1]} {c[3]} (ID: {c[0]})" for c in children]
@@ -86,8 +88,8 @@ class QRCodeDialog:
         child_combo.pack(fill=tk.X, pady=(0, 10))
 
         # Purpose
-        ttk.Label(main_frame, text="Purpose:").pack(anchor='w')
-        purpose_var = tk.StringVar(value="Student Identification")
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.purpose', default="Purpose:")).pack(anchor='w')
+        purpose_var = tk.StringVar(value=_t('gui.academics.parent_portal.calendar_docs.values.student_identification', default="Student Identification"))
         purpose_combo = ttk.Combobox(main_frame, textvariable=purpose_var, width=45, state="readonly")
         purpose_combo['values'] = [
             "Student Identification", "Library Access", "Event Check-in",
@@ -100,7 +102,7 @@ class QRCodeDialog:
         save_var = tk.StringVar()
         path_frame = ttk.Frame(main_frame)
         path_frame.pack(fill=tk.X, pady=(0, 10))
-        ttk.Label(path_frame, text="Save to (optional):").pack(anchor='w')
+        ttk.Label(path_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.save_to_optional', default="Save to (optional):")).pack(anchor='w')
         path_entry = ttk.Entry(path_frame, textvariable=save_var, width=40)
         path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
@@ -108,17 +110,17 @@ class QRCodeDialog:
             path = filedialog.asksaveasfilename(
                 defaultextension=".png",
                 filetypes=[("PNG files", "*.png"), ("All files", "*.*")],
-                title="Save QR Code"
+                title=_t('gui.academics.parent_portal.calendar_docs.dialogs.save_qr_code', default="Save QR Code")
             )
             if path:
                 save_var.set(path)
 
-        ttk.Button(path_frame, text="Browse...", command=browse_path).pack(side=tk.RIGHT)
+        ttk.Button(path_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.browse', default="Browse..."), command=browse_path).pack(side=tk.RIGHT)
 
         def submit():
             idx = child_combo.current()
             if idx < 0:
-                messagebox.showwarning("No Student", "Please select a student.")
+                messagebox.showwarning(_t('gui.academics.parent_portal.calendar_docs.dialogs.no_student', default="No Student"), _t('gui.academics.parent_portal.calendar_docs.dialogs.please_select_a_student', default="Please select a student."))
                 return
             self.result = {
                 'child': children[idx],
@@ -129,8 +131,8 @@ class QRCodeDialog:
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text="Generate", command=submit).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.generate', default="Generate"), command=submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         dialog.wait_window()
 
@@ -138,7 +140,7 @@ class QRCodeDialog:
 def generate_qr_code_interface(self):
     """Generate QR code for student identification"""
     if not self.children:
-        messagebox.showinfo("No Students", "No students linked to your guardian account.")
+        messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.no_students', default="No Students"), _t('gui.academics.parent_portal.calendar_docs.dialogs.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account."))
         return
 
     dialog = QRCodeDialog(self.root, self.children)
@@ -148,13 +150,13 @@ def generate_qr_code_interface(self):
         qr_path = dialog.result.get('qr_path')
 
         if qr_path:
-            messagebox.showinfo("QR Code Generated",
+            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.qr_code_generated', default="QR Code Generated"),
                               f"QR code generated for {child[1]} {child[3]}.\n"
                               f"Purpose: {purpose}\n"
                               f"Saved to: {qr_path}\n\n"
                               "This can be used for secure student identification.")
         else:
-            messagebox.showinfo("QR Code Generated",
+            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.qr_code_generated', default="QR Code Generated"),
                               f"QR code generated for {child[1]} {child[3]}.\n"
                               "This can be used for secure student identification.")
 ParentPortalGUI.generate_qr_code_interface = generate_qr_code_interface
@@ -164,18 +166,18 @@ def show_photo_interface(self):
     self.clear_content()
     self.update_status("Photo Permissions")
 
-    title = ttk.Label(self.content_frame, text="Photo & Media Permissions", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.photo_media_permissions', default="Photo & Media Permissions"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -184,7 +186,7 @@ def show_photo_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Permissions display frame
-    perm_frame = ttk.LabelFrame(self.content_frame, text="Media Permissions", padding=15)
+    perm_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.media_permissions', default="Media Permissions"), padding=15)
     perm_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_photo_permissions():
@@ -193,7 +195,7 @@ def show_photo_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(perm_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(perm_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -236,20 +238,20 @@ def show_photo_interface(self):
                     # Show conditions if any
                     conditions_list = [p[2] for p in permissions if p[2]]
                     if conditions_list:
-                        notes_frame = ttk.LabelFrame(perm_frame, text="Conditions/Notes", padding=10)
+                        notes_frame = ttk.LabelFrame(perm_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.conditions_notes', default="Conditions/Notes"), padding=10)
                         notes_frame.pack(fill=tk.X, pady=(10, 0))
                         for cond in conditions_list:
                             ttk.Label(notes_frame, text=f"• {cond}", wraplength=500).pack(anchor='w')
 
-                    ttk.Button(perm_frame, text="Update Permissions",
+                    ttk.Button(perm_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.update_permissions', default="Update Permissions"),
                               command=lambda: self.update_photo_permissions(student_id)).pack(pady=10)
                 else:
-                    ttk.Label(perm_frame, text="No photo permissions set",
+                    ttk.Label(perm_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.no_photo_permissions_set', default="No photo permissions set"),
                              font=('Arial', 11)).pack(pady=50)
-                    ttk.Button(perm_frame, text="Set Permissions",
+                    ttk.Button(perm_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.set_permissions', default="Set Permissions"),
                               command=lambda: self.update_photo_permissions(student_id)).pack()
             else:
-                ttk.Label(perm_frame, text="Photo permissions system not configured",
+                ttk.Label(perm_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.photo_permissions_system_not_configured', default="Photo permissions system not configured"),
                          font=('Arial', 11)).pack(pady=20)
 
             conn.close()
@@ -258,7 +260,7 @@ def show_photo_interface(self):
             ttk.Label(perm_frame, text=f"Error loading permissions: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Permissions", command=load_photo_permissions).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.load_permissions', default="Load Permissions"), command=load_photo_permissions).pack(side=tk.LEFT, padx=5)
     load_photo_permissions()
 ParentPortalGUI.show_photo_interface = show_photo_interface
 
@@ -266,7 +268,7 @@ def update_photo_permissions(self, student_id):
     """Update photo permissions"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Update Photo Permissions")
+    dialog.title(_t('gui.academics.parent_portal.calendar_docs.windows.update_photo_permissions', default="Update Photo Permissions"))
     dialog.geometry("600x500")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -275,10 +277,10 @@ def update_photo_permissions(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Photo & Media Permissions",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.photo_media_permissions', default="Photo & Media Permissions"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
-    ttk.Label(main_frame, text="Please select which permissions you grant for your child:",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.please_select_which_permissions_you_grant_for_your_child', default="Please select which permissions you grant for your child:"),
              font=('Arial', 10)).pack(pady=(0, 20))
 
     # Get existing permissions from database (using correct schema)
@@ -308,7 +310,7 @@ def update_photo_permissions(self, student_id):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load permissions: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.calendar_docs.dialogs.error', default="Error"), f"Failed to load permissions: {str(e)}")
         dialog.destroy()
         return
 
@@ -374,18 +376,18 @@ def update_photo_permissions(self, student_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Photo permissions updated successfully!")
+            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.success', default="Success"), _t('gui.academics.parent_portal.calendar_docs.dialogs.photo_permissions_updated_successfully', default="Photo permissions updated successfully!"))
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update permissions: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.calendar_docs.dialogs.error', default="Error"), f"Failed to update permissions: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Save Permissions", command=save_permissions).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.save_permissions', default="Save Permissions"), command=save_permissions).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.update_photo_permissions = update_photo_permissions
 
 def show_documents_interface(self):
@@ -393,18 +395,18 @@ def show_documents_interface(self):
     self.clear_content()
     self.update_status("Document Management")
 
-    title = ttk.Label(self.content_frame, text="Document Management", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.document_management', default="Document Management"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -413,7 +415,7 @@ def show_documents_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Documents display frame
-    docs_frame = ttk.LabelFrame(self.content_frame, text="Documents", padding=15)
+    docs_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.documents', default="Documents"), padding=15)
     docs_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_documents():
@@ -422,7 +424,7 @@ def show_documents_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(docs_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(docs_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -471,11 +473,11 @@ def show_documents_interface(self):
                     columns = ("Document Name", "Type", "Upload Date", "Uploaded By", "Status")
                     tree = ttk.Treeview(docs_frame, columns=columns, show="headings", height=12)
 
-                    tree.heading("Document Name", text="Document Name")
-                    tree.heading("Type", text="Type")
-                    tree.heading("Upload Date", text="Upload Date")
-                    tree.heading("Uploaded By", text="Uploaded By")
-                    tree.heading("Status", text="Status")
+                    tree.heading("Document Name", text=_t('gui.academics.parent_portal.calendar_docs.headings.document_name', default="Document Name"))
+                    tree.heading("Type", text=_t('gui.academics.parent_portal.calendar_docs.headings.type', default="Type"))
+                    tree.heading("Upload Date", text=_t('gui.academics.parent_portal.calendar_docs.headings.upload_date', default="Upload Date"))
+                    tree.heading("Uploaded By", text=_t('gui.academics.parent_portal.calendar_docs.headings.uploaded_by', default="Uploaded By"))
+                    tree.heading("Status", text=_t('gui.academics.parent_portal.calendar_docs.headings.status', default="Status"))
 
                     tree.column("Document Name", width=180)
                     tree.column("Type", width=120)
@@ -503,22 +505,22 @@ def show_documents_interface(self):
                         if selected:
                             item = tree.item(selected[0])
                             doc_name = item['values'][0]
-                            messagebox.showinfo("Document Details",
+                            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.document_details', default="Document Details"),
                                                f"Document: {doc_name}\n\n"
                                                "To view the full document, please contact administration.")
 
                     btn_frame = ttk.Frame(docs_frame)
                     btn_frame.pack(pady=10)
-                    ttk.Button(btn_frame, text="View Document", command=view_document).pack(side=tk.LEFT, padx=5)
-                    ttk.Button(btn_frame, text="Upload Document",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.view_document', default="View Document"), command=view_document).pack(side=tk.LEFT, padx=5)
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.upload_document', default="Upload Document"),
                               command=lambda: self.upload_document(student_id)).pack(side=tk.LEFT, padx=5)
                 else:
-                    ttk.Label(docs_frame, text="No documents found for this student",
+                    ttk.Label(docs_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.no_documents_found_for_this_student', default="No documents found for this student"),
                              font=('Arial', 11)).pack(pady=50)
-                    ttk.Button(docs_frame, text="Upload Document",
+                    ttk.Button(docs_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.upload_document', default="Upload Document"),
                               command=lambda: self.upload_document(student_id)).pack()
             else:
-                ttk.Label(docs_frame, text="Document management system not configured",
+                ttk.Label(docs_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.document_management_system_not_configured', default="Document management system not configured"),
                          font=('Arial', 11)).pack(pady=20)
 
             conn.close()
@@ -527,7 +529,7 @@ def show_documents_interface(self):
             ttk.Label(docs_frame, text=f"Error loading documents: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Documents", command=load_documents).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.load_documents', default="Load Documents"), command=load_documents).pack(side=tk.LEFT, padx=5)
 
     # Link to full Document Manager GUI
     def open_document_manager():
@@ -537,11 +539,11 @@ def show_documents_interface(self):
             doc_window = tk.Toplevel(self.root)
             doc_gui = DocumentManagerGUI(doc_window)
         except ImportError as e:
-            messagebox.showinfo("Info", f"Document Manager GUI not available: {e}")
+            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.info', default="Info"), f"Document Manager GUI not available: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open Document Manager: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.calendar_docs.dialogs.error', default="Error"), f"Could not open Document Manager: {e}")
 
-    ttk.Button(child_frame, text="📁 Full Document Manager", command=open_document_manager).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.full_document_manager', default="📁 Full Document Manager"), command=open_document_manager).pack(side=tk.LEFT, padx=5)
 
     load_documents()
 ParentPortalGUI.show_documents_interface = show_documents_interface
@@ -553,7 +555,7 @@ def upload_document(self, student_id):
 
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Upload Document")
+    dialog.title(_t('gui.academics.parent_portal.calendar_docs.windows.upload_document', default="Upload Document"))
     dialog.geometry("600x450")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -562,7 +564,7 @@ def upload_document(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Upload Document",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.upload_document', default="Upload Document"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Parent documents now use the unified documents table with source_type = 'parent'
@@ -577,13 +579,13 @@ def upload_document(self, student_id):
     file_frame = ttk.Frame(main_frame)
     file_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Label(file_frame, text="Selected File:").pack(anchor='w')
+    ttk.Label(file_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.selected_file', default="Selected File:")).pack(anchor='w')
     file_label = ttk.Label(file_frame, textvariable=selected_file, relief=tk.SUNKEN, padding=5)
     file_label.pack(fill=tk.X, pady=5)
 
     def select_file():
         filename = filedialog.askopenfilename(
-            title="Select Document",
+            title=_t('gui.academics.parent_portal.calendar_docs.dialogs.select_document', default="Select Document"),
             filetypes=[
                 ("PDF files", "*.pdf"),
                 ("Word documents", "*.doc *.docx"),
@@ -594,10 +596,10 @@ def upload_document(self, student_id):
         if filename:
             selected_file.set(filename)
 
-    ttk.Button(file_frame, text="Browse...", command=select_file).pack(anchor='w', pady=5)
+    ttk.Button(file_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.browse', default="Browse..."), command=select_file).pack(anchor='w', pady=5)
 
     # Document Type
-    ttk.Label(main_frame, text="Document Type:").pack(anchor='w', pady=(10, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.document_type', default="Document Type:")).pack(anchor='w', pady=(10, 0))
     fields['document_type'] = ttk.Combobox(main_frame, width=50, state="readonly")
     fields['document_type']['values'] = ['Medical Form', 'Permission Slip', 'Report Card',
                                         'Transcript', 'ID Document', 'Insurance Card',
@@ -605,18 +607,18 @@ def upload_document(self, student_id):
     fields['document_type'].pack(fill=tk.X, pady=(0, 10))
 
     # Expiry Date (optional)
-    ttk.Label(main_frame, text="Expiry Date (optional, YYYY-MM-DD):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.expiry_date_optional_yyyy_mm_dd', default="Expiry Date (optional, YYYY-MM-DD):")).pack(anchor='w', pady=(5, 0))
     fields['expiry_date'] = ttk.Entry(main_frame, width=50)
     fields['expiry_date'].pack(fill=tk.X, pady=(0, 10))
 
     def upload_file():
         # Validate
         if not selected_file.get():
-            messagebox.showwarning("Validation Error", "Please select a file to upload.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.calendar_docs.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.calendar_docs.dialogs.please_select_a_file_to_upload', default="Please select a file to upload."))
             return
 
         if not fields['document_type'].get():
-            messagebox.showwarning("Validation Error", "Please select a document type.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.calendar_docs.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.calendar_docs.dialogs.please_select_a_document_type', default="Please select a document type."))
             return
 
         try:
@@ -648,21 +650,21 @@ def upload_document(self, student_id):
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.success', default="Success"),
                 f"Document '{file_name}' uploaded successfully!\n\n"
                 "Status: Pending review\n"
                 "Administration will verify the document shortly.")
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to upload document: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.calendar_docs.dialogs.error', default="Error"), f"Failed to upload document: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Upload", command=upload_file).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.upload', default="Upload"), command=upload_file).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.upload_document = upload_document
 
 def show_calendar_interface(self):
@@ -670,39 +672,39 @@ def show_calendar_interface(self):
     self.clear_content()
     self.update_status("Calendar Integration")
 
-    title = ttk.Label(self.content_frame, text="Calendar Integration", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.calendar_integration', default="Calendar Integration"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Calendar sync options
-    sync_frame = ttk.LabelFrame(self.content_frame, text="Calendar Export & Integration", padding=20)
+    sync_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.calendar_export_integration', default="Calendar Export & Integration"), padding=20)
     sync_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(sync_frame, text="Export university events to your personal calendar",
+    ttk.Label(sync_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.export_university_events_to_your_personal_calendar', default="Export university events to your personal calendar"),
              font=('Arial', 11)).pack(anchor='w', pady=5)
 
     export_btn_frame = ttk.Frame(sync_frame)
     export_btn_frame.pack(fill=tk.X, pady=5)
 
-    ttk.Button(export_btn_frame, text="Generate iCal File (.ics)",
+    ttk.Button(export_btn_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.generate_ical_file_ics', default="Generate iCal File (.ics)"),
               command=self.export_to_ical).pack(side=tk.LEFT, padx=5, pady=5)
-    ttk.Button(export_btn_frame, text="Generate Google Calendar CSV",
+    ttk.Button(export_btn_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.generate_google_calendar_csv', default="Generate Google Calendar CSV"),
               command=self.export_to_google_csv).pack(side=tk.LEFT, padx=5, pady=5)
-    ttk.Button(export_btn_frame, text="Show Subscription URL",
+    ttk.Button(export_btn_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.show_subscription_url', default="Show Subscription URL"),
               command=self.show_calendar_subscription_url).pack(side=tk.LEFT, padx=5, pady=5)
 
     # Event type filter
     filter_frame = ttk.Frame(self.content_frame)
     filter_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(filter_frame, text="Filter by Event Type:", font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=5)
-    event_type_var = tk.StringVar(value="all")
+    ttk.Label(filter_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.filter_by_event_type', default="Filter by Event Type:"), font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=5)
+    event_type_var = tk.StringVar(value=_t('gui.academics.parent_portal.calendar_docs.values.all', default="all"))
     event_type_combo = ttk.Combobox(filter_frame, textvariable=event_type_var, width=20, state='readonly')
     event_type_combo['values'] = ["All Events", "Academic", "Parent", "Holiday", "Sports", "Other"]
     event_type_combo.current(0)
     event_type_combo.pack(side=tk.LEFT, padx=5)
 
     # Upcoming events
-    events_frame = ttk.LabelFrame(self.content_frame, text="University Calendar - Upcoming Events", padding=15)
+    events_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.university_calendar_upcoming_events', default="University Calendar - Upcoming Events"), padding=15)
     events_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_calendar_events():
@@ -807,11 +809,11 @@ def show_calendar_interface(self):
                 columns = ("Event", "Date", "Time", "Location", "Type")
                 tree = ttk.Treeview(events_frame, columns=columns, show="headings", height=12)
 
-                tree.heading("Event", text="Event")
-                tree.heading("Date", text="Date")
-                tree.heading("Time", text="Time")
-                tree.heading("Location", text="Location")
-                tree.heading("Type", text="Type")
+                tree.heading("Event", text=_t('gui.academics.parent_portal.calendar_docs.headings.event', default="Event"))
+                tree.heading("Date", text=_t('gui.academics.parent_portal.calendar_docs.headings.date', default="Date"))
+                tree.heading("Time", text=_t('gui.academics.parent_portal.calendar_docs.headings.time', default="Time"))
+                tree.heading("Location", text=_t('gui.academics.parent_portal.calendar_docs.headings.location', default="Location"))
+                tree.heading("Type", text=_t('gui.academics.parent_portal.calendar_docs.headings.type', default="Type"))
 
                 tree.column("Event", width=250)
                 tree.column("Date", width=100)
@@ -839,7 +841,7 @@ def show_calendar_interface(self):
                         # Find full event details
                         for evt in events:
                             if evt[0] == event_name:
-                                messagebox.showinfo("Event Details",
+                                messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.event_details', default="Event Details"),
                                     f"Event: {evt[0]}\n\n"
                                     f"Description: {evt[1] or 'No description'}\n\n"
                                     f"Date: {evt[2]}\n"
@@ -850,10 +852,10 @@ def show_calendar_interface(self):
 
                 tree.bind('<Double-1>', show_event_details)
 
-                ttk.Label(events_frame, text="Double-click an event for details",
+                ttk.Label(events_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.double_click_an_event_for_details', default="Double-click an event for details"),
                          font=('Arial', 8, 'italic')).pack(pady=5)
             else:
-                ttk.Label(events_frame, text="No upcoming events found", font=('Arial', 11)).pack(pady=50)
+                ttk.Label(events_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.no_upcoming_events_found', default="No upcoming events found"), font=('Arial', 11)).pack(pady=50)
 
             conn.close()
             self.update_status(f"Showing {len(events)} upcoming events")
@@ -935,7 +937,7 @@ def export_to_ical(self):
         events = self._fetch_all_calendar_events()
 
         if not events:
-            messagebox.showinfo("Export", "No upcoming events to export.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.export', default="Export"), _t('gui.academics.parent_portal.calendar_docs.dialogs.no_upcoming_events_to_export', default="No upcoming events to export."))
             return
 
         # Generate iCal content
@@ -964,20 +966,20 @@ def export_to_ical(self):
         filename = filedialog.asksaveasfilename(
             defaultextension=".ics",
             filetypes=[("iCalendar files", "*.ics"), ("All files", "*.*")],
-            title="Save iCal File"
+            title=_t('gui.academics.parent_portal.calendar_docs.dialogs.save_ical_file', default="Save iCal File")
         )
 
         if filename:
             with open(filename, 'w') as f:
                 f.write(ical_content)
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.success', default="Success"),
                 f"Calendar exported successfully!\n\n"
                 f"File saved to: {filename}\n\n"
                 f"You can now import this file into your calendar application.")
             self.update_status("Calendar exported to iCal file")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export calendar: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.calendar_docs.dialogs.error', default="Error"), f"Failed to export calendar: {str(e)}")
 ParentPortalGUI.export_to_ical = export_to_ical
 
 def export_to_google_csv(self):
@@ -986,7 +988,7 @@ def export_to_google_csv(self):
         events = self._fetch_all_calendar_events()
 
         if not events:
-            messagebox.showinfo("Export", "No upcoming events to export.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.export', default="Export"), _t('gui.academics.parent_portal.calendar_docs.dialogs.no_upcoming_events_to_export', default="No upcoming events to export."))
             return
 
         # Generate Google Calendar CSV
@@ -1006,13 +1008,13 @@ def export_to_google_csv(self):
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title="Save Google Calendar CSV"
+            title=_t('gui.academics.parent_portal.calendar_docs.dialogs.save_google_calendar_csv', default="Save Google Calendar CSV")
         )
 
         if filename:
             with open(filename, 'w') as f:
                 f.write(csv_content)
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.success', default="Success"),
                 f"Calendar exported successfully!\n\n"
                 f"File saved to: {filename}\n\n"
                 f"Import this file to Google Calendar:\n"
@@ -1022,20 +1024,20 @@ def export_to_google_csv(self):
             self.update_status("Calendar exported to CSV file")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export calendar: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.calendar_docs.dialogs.error', default="Error"), f"Failed to export calendar: {str(e)}")
 ParentPortalGUI.export_to_google_csv = export_to_google_csv
 
 def show_calendar_subscription_url(self):
     """Show calendar subscription URL"""
     if not self.parent_id:
-        messagebox.showerror("Error", "Parent ID not found.")
+        messagebox.showerror(_t('gui.academics.parent_portal.calendar_docs.dialogs.error', default="Error"), _t('gui.academics.parent_portal.calendar_docs.dialogs.parent_id_not_found', default="Parent ID not found."))
         return
 
     # In a real implementation, this would be an actual webcal:// URL
     subscription_url = f"webcal://university.example.com/calendar/family/{self.parent_id}"
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Calendar Subscription URL")
+    dialog.title(_t('gui.academics.parent_portal.calendar_docs.windows.calendar_subscription_url', default="Calendar Subscription URL"))
     dialog.geometry("600x300")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1043,11 +1045,11 @@ def show_calendar_subscription_url(self):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Calendar Subscription URL",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.labels.calendar_subscription_url', default="Calendar Subscription URL"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     ttk.Label(main_frame,
-             text="Add this URL to your calendar app to automatically sync university events:",
+             text=_t('gui.academics.parent_portal.calendar_docs.labels.add_this_url_to_your_calendar_app_to_automatically_sync_universi', default="Add this URL to your calendar app to automatically sync university events:"),
              wraplength=500).pack(pady=10)
 
     url_frame = ttk.Frame(main_frame)
@@ -1061,23 +1063,23 @@ def show_calendar_subscription_url(self):
     def copy_url():
         dialog.clipboard_clear()
         dialog.clipboard_append(subscription_url)
-        messagebox.showinfo("Copied", "URL copied to clipboard!")
+        messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.copied', default="Copied"), _t('gui.academics.parent_portal.calendar_docs.dialogs.url_copied_to_clipboard', default="URL copied to clipboard!"))
 
-    ttk.Button(url_frame, text="Copy", command=copy_url).pack(side=tk.LEFT, padx=5)
+    ttk.Button(url_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.copy', default="Copy"), command=copy_url).pack(side=tk.LEFT, padx=5)
 
     ttk.Label(main_frame,
-             text="Instructions:\n\n"
+             text=_t('gui.academics.parent_portal.calendar_docs.labels.instructions_google_calendar_settings_add_calendar_from_url_appl', default="Instructions:\n\n"
                   "Google Calendar: Settings > Add calendar > From URL\n"
                   "Apple Calendar: File > New Calendar Subscription\n"
-                  "Outlook: Add calendar > Subscribe from web",
+                  "Outlook: Add calendar > Subscribe from web"),
              justify=tk.LEFT,
              wraplength=500).pack(pady=20)
 
-    ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.academics.parent_portal.calendar_docs.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 ParentPortalGUI.show_calendar_subscription_url = show_calendar_subscription_url
 
 def sync_calendar(self, calendar_type):
     """Sync with external calendar (deprecated - use export functions)"""
-    messagebox.showinfo("Calendar Sync",
+    messagebox.showinfo(_t('gui.academics.parent_portal.calendar_docs.dialogs.calendar_sync', default="Calendar Sync"),
                        f"Please use the Export buttons above to sync with {calendar_type}.")
 ParentPortalGUI.sync_calendar = sync_calendar

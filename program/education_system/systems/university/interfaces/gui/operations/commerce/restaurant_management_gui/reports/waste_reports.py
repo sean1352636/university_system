@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -70,42 +72,42 @@ from education_system.systems.university.interfaces.gui.operations.commerce.rest
 def view_waste_reports(self):
     """Show comprehensive waste reports and analytics"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Waste Reports & Analytics")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.windows.waste_reports_analytics', default="Waste Reports & Analytics"))
     dialog.geometry("1000x700")
     dialog.transient(self.root)
     dialog.grab_set()
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Waste Reports & Analytics",
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.labels.waste_reports_analytics', default="Waste Reports & Analytics"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     # Report type selection
-    report_frame = ttk.LabelFrame(main_frame, text="Select Report Type", padding=10)
+    report_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.labels.select_report_type', default="Select Report Type"), padding=10)
     report_frame.pack(fill='x', pady=10)
     btn_container = ttk.Frame(report_frame)
     btn_container.pack(fill='x')
-    ttk.Button(btn_container, text="Waste by Date Range",
+    ttk.Button(btn_container, text=_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.buttons.waste_by_date_range', default="Waste by Date Range"),
               command=lambda: self.generate_waste_by_date_range(output_text)).pack(side='left', padx=5)
-    ttk.Button(btn_container, text="Waste by Category",
+    ttk.Button(btn_container, text=_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.buttons.waste_by_category', default="Waste by Category"),
               command=lambda: self.generate_waste_by_category(output_text)).pack(side='left', padx=5)
-    ttk.Button(btn_container, text="Waste by Reason",
+    ttk.Button(btn_container, text=_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.buttons.waste_by_reason', default="Waste by Reason"),
               command=lambda: self.generate_waste_by_reason(output_text)).pack(side='left', padx=5)
-    ttk.Button(btn_container, text="Waste Trends",
+    ttk.Button(btn_container, text=_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.buttons.waste_trends', default="Waste Trends"),
               command=lambda: self.generate_waste_trends(output_text)).pack(side='left', padx=5)
-    ttk.Button(btn_container, text="Cost Analysis",
+    ttk.Button(btn_container, text=_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.buttons.cost_analysis', default="Cost Analysis"),
               command=lambda: self.generate_waste_cost_analysis(output_text)).pack(side='left', padx=5)
     # Output area
-    output_frame = ttk.LabelFrame(main_frame, text="Report Output", padding=10)
+    output_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.labels.report_output', default="Report Output"), padding=10)
     output_frame.pack(fill='both', expand=True, pady=10)
     output_text = ScrolledText(output_frame, height=30, width=100)
     output_text.pack(fill='both', expand=True)
-    ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
 def generate_waste_by_date_range(self, output_widget):
     """Generate waste report by date range"""
-    start_date = simpledialog.askstring("Date Range", "Enter start date (YYYY-MM-DD):")
+    start_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.dialogs.date_range', default="Date Range"), _t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.dialogs.enter_start_date_yyyy_mm_dd', default="Enter start date (YYYY-MM-DD):"))
     if not start_date:
         return
-    end_date = simpledialog.askstring("Date Range", "Enter end date (YYYY-MM-DD):")
+    end_date = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.dialogs.date_range', default="Date Range"), _t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.dialogs.enter_end_date_yyyy_mm_dd', default="Enter end date (YYYY-MM-DD):"))
     if not end_date:
         return
     try:
@@ -143,7 +145,7 @@ def generate_waste_by_date_range(self, output_widget):
             output_widget.delete(1.0, tk.END)
             output_widget.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate report: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
 def generate_waste_by_category(self, output_widget):
     """Generate waste report grouped by category"""
@@ -174,7 +176,7 @@ def generate_waste_by_category(self, output_widget):
             output_widget.delete(1.0, tk.END)
             output_widget.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate report: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
 def generate_waste_by_reason(self, output_widget):
     """Generate waste report grouped by reason"""
@@ -205,7 +207,7 @@ def generate_waste_by_reason(self, output_widget):
             output_widget.delete(1.0, tk.END)
             output_widget.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate report: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
 def generate_waste_trends(self, output_widget):
     """Generate waste trends over time"""
@@ -271,7 +273,7 @@ def generate_waste_trends(self, output_widget):
             output_widget.delete(1.0, tk.END)
             output_widget.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate trends report: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.dialogs.error', default="Error"), f"Failed to generate trends report: {e}")
 
 def generate_waste_cost_analysis(self, output_widget):
     """Generate detailed cost analysis of waste"""
@@ -335,5 +337,5 @@ def generate_waste_cost_analysis(self, output_widget):
             output_widget.delete(1.0, tk.END)
             output_widget.insert(tk.END, report)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to generate cost analysis: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.reports.waste_reports.dialogs.error', default="Error"), f"Failed to generate cost analysis: {e}")
 

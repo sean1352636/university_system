@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -102,7 +108,7 @@ class FaceRecognitionAttendanceWindow:
         title_frame = ttk.Frame(self.window)
         title_frame.pack(fill=tk.X, padx=20, pady=20)
 
-        ttk.Label(title_frame, text="👤 Face Recognition Attendance System",
+        ttk.Label(title_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.face_recognition_attendance_system', default="👤 Face Recognition Attendance System"),
                  font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
 
         info_label = ttk.Label(title_frame, text=f"Module: {self.module_code} | Date: {self.date}",
@@ -114,11 +120,11 @@ class FaceRecognitionAttendanceWindow:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
         # Left panel - Camera feed
-        left_panel = ttk.LabelFrame(main_frame, text="Camera Feed", padding=15)
+        left_panel = ttk.LabelFrame(main_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.camera_feed', default="Camera Feed"), padding=15)
         left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
 
         # Camera display
-        self.camera_label = ttk.Label(left_panel, text="📹\n\nInitializing camera...",
+        self.camera_label = ttk.Label(left_panel, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.initializing_camera', default="📹\n\nInitializing camera..."),
                                      font=('Arial', 12), anchor='center')
         self.camera_label.pack(fill=tk.BOTH, expand=True)
 
@@ -126,27 +132,27 @@ class FaceRecognitionAttendanceWindow:
         camera_controls = ttk.Frame(left_panel)
         camera_controls.pack(fill=tk.X, pady=(10, 0))
 
-        self.start_btn = ttk.Button(camera_controls, text="Start Camera",
+        self.start_btn = ttk.Button(camera_controls, text=_t('gui.academics.attendance_tracker.face_recognition_windows.buttons.start_camera', default="Start Camera"),
                                     command=self.start_camera, style='Success.TButton')
         self.start_btn.pack(side=tk.LEFT, padx=(0, 5))
 
-        self.stop_btn = ttk.Button(camera_controls, text="Stop Camera",
+        self.stop_btn = ttk.Button(camera_controls, text=_t('gui.academics.attendance_tracker.face_recognition_windows.buttons.stop_camera', default="Stop Camera"),
                                    command=self.stop_camera, style='Danger.TButton', state='disabled')
         self.stop_btn.pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Button(camera_controls, text="Capture Photo",
+        ttk.Button(camera_controls, text=_t('gui.academics.attendance_tracker.face_recognition_windows.buttons.capture_photo', default="Capture Photo"),
                   command=self.manual_capture, style='Primary.TButton').pack(side=tk.LEFT)
 
         # Right panel - Recognized students
-        right_panel = ttk.LabelFrame(main_frame, text="Recognized Students", padding=15)
+        right_panel = ttk.LabelFrame(main_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.recognized_students', default="Recognized Students"), padding=15)
         right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
 
         # Status info
         status_frame = ttk.Frame(right_panel)
         status_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(status_frame, text="Status:").pack(side=tk.LEFT)
-        self.status_label = ttk.Label(status_frame, text="Ready", foreground='green',
+        ttk.Label(status_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.status', default="Status:")).pack(side=tk.LEFT)
+        self.status_label = ttk.Label(status_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.ready', default="Ready"), foreground='green',
                                      font=('Arial', 10, 'bold'))
         self.status_label.pack(side=tk.LEFT, padx=(5, 0))
 
@@ -154,10 +160,10 @@ class FaceRecognitionAttendanceWindow:
         columns = ("Time", "Student ID", "Name", "Confidence")
         self.students_tree = ttk.Treeview(right_panel, columns=columns, show="headings", height=15)
 
-        self.students_tree.heading("Time", text="Time")
-        self.students_tree.heading("Student ID", text="Student ID")
-        self.students_tree.heading("Name", text="Name")
-        self.students_tree.heading("Confidence", text="Confidence")
+        self.students_tree.heading("Time", text=_t('gui.academics.attendance_tracker.face_recognition_windows.headings.time', default="Time"))
+        self.students_tree.heading("Student ID", text=_t('gui.academics.attendance_tracker.face_recognition_windows.headings.student_id', default="Student ID"))
+        self.students_tree.heading("Name", text=_t('gui.academics.attendance_tracker.face_recognition_windows.headings.name', default="Name"))
+        self.students_tree.heading("Confidence", text=_t('gui.academics.attendance_tracker.face_recognition_windows.headings.confidence', default="Confidence"))
 
         self.students_tree.column("Time", width=80)
         self.students_tree.column("Student ID", width=100)
@@ -174,7 +180,7 @@ class FaceRecognitionAttendanceWindow:
         stats_frame = ttk.Frame(right_panel)
         stats_frame.pack(fill=tk.X, pady=(10, 0))
 
-        ttk.Label(stats_frame, text="Total Recognized:").pack(side=tk.LEFT)
+        ttk.Label(stats_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.total_recognized', default="Total Recognized:")).pack(side=tk.LEFT)
         self.count_label = ttk.Label(stats_frame, text="0", font=('Arial', 12, 'bold'))
         self.count_label.pack(side=tk.LEFT, padx=(5, 0))
 
@@ -182,9 +188,9 @@ class FaceRecognitionAttendanceWindow:
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
-        ttk.Button(buttons_frame, text="Save & Close",
+        ttk.Button(buttons_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.buttons.save_close', default="Save & Close"),
                   command=self.save_and_close, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Enroll New Face",
+        ttk.Button(buttons_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.buttons.enroll_new_face', default="Enroll New Face"),
                   command=self.enroll_new_face, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.close"),
                   command=self.on_closing, style='Danger.TButton').pack(side=tk.RIGHT)
@@ -209,27 +215,27 @@ class FaceRecognitionAttendanceWindow:
                 sys.stderr = old_stderr
 
             if not self.camera.isOpened():
-                messagebox.showerror("Camera Not Available",
-                    "Could not access camera.\n\n"
+                messagebox.showerror(_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.camera_not_available', default="Camera Not Available"),
+                    _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.could_not_access_camera_this_system_does_not_have_a_webcam_or_th', default="Could not access camera.\n\n"
                     "This system does not have a webcam or the camera is not accessible.\n\n"
                     "Options:\n"
                     "1. Connect a USB webcam and try again\n"
                     "2. Use file-based face recognition (upload photos)\n"
-                    "3. Use alternative attendance methods (QR code, manual entry)")
+                    "3. Use alternative attendance methods (QR code, manual entry)"))
                 return
 
             self.is_running = True
             self.start_btn.configure(state='disabled')
             self.stop_btn.configure(state='normal')
-            self.status_label.configure(text="Camera Active", foreground='green')
+            self.status_label.configure(text=_t('gui.academics.attendance_tracker.face_recognition_windows.text.camera_active', default="Camera Active"), foreground='green')
 
             # Start video feed
             self.update_camera_feed()
 
         except ImportError:
             logger.exception("face_recognition_windows.py:231 %s", 'except ImportError')
-            messagebox.showerror(_("common.error"), "OpenCV (cv2) not installed.\n\n"
-                                         "Install with: pip install opencv-python")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.opencv_cv2_not_installed_install_with_pip_install_opencv_python', default="OpenCV (cv2) not installed.\n\n"
+                                         "Install with: pip install opencv-python"))
         except Exception as e:
             logger.exception("face_recognition_windows.py:234 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to start camera: {e}")
@@ -245,8 +251,8 @@ class FaceRecognitionAttendanceWindow:
 
         self.start_btn.configure(state='normal')
         self.stop_btn.configure(state='disabled')
-        self.status_label.configure(text="Camera Stopped", foreground='red')
-        self.camera_label.configure(image='', text="📹\n\nCamera stopped")
+        self.status_label.configure(text=_t('gui.academics.attendance_tracker.face_recognition_windows.text.camera_stopped', default="Camera Stopped"), foreground='red')
+        self.camera_label.configure(image='', text=_t('gui.academics.attendance_tracker.face_recognition_windows.text.camera_stopped_variant_2', default="📹\n\nCamera stopped"))
 
     def update_camera_feed(self):
         """Update camera feed with face detection"""
@@ -262,7 +268,7 @@ class FaceRecognitionAttendanceWindow:
             ret, frame = self.camera.read()
 
             if not ret:
-                self.status_label.configure(text="Camera Error", foreground='red')
+                self.status_label.configure(text=_t('gui.academics.attendance_tracker.face_recognition_windows.text.camera_error', default="Camera Error"), foreground='red')
                 return
 
             # Resize for faster processing
@@ -339,7 +345,7 @@ class FaceRecognitionAttendanceWindow:
             if face_count > 0:
                 self.status_label.configure(text=f"Detecting {face_count} face(s)", foreground='blue')
             else:
-                self.status_label.configure(text="No faces detected", foreground='orange')
+                self.status_label.configure(text=_t('gui.academics.attendance_tracker.face_recognition_windows.text.no_faces_detected', default="No faces detected"), foreground='orange')
 
             # Schedule next update
             self.window.after(33, self.update_camera_feed)  # ~30 FPS
@@ -349,7 +355,7 @@ class FaceRecognitionAttendanceWindow:
             print(f"Error in camera feed: {e}")
             import traceback
             traceback.print_exc()
-            self.status_label.configure(text="Processing Error", foreground='red')
+            self.status_label.configure(text=_t('gui.academics.attendance_tracker.face_recognition_windows.text.processing_error', default="Processing Error"), foreground='red')
             self.window.after(100, self.update_camera_feed)
 
     def add_recognized_student(self, student_id, confidence):
@@ -398,7 +404,7 @@ class FaceRecognitionAttendanceWindow:
     def manual_capture(self):
         """Manually capture current frame for recognition"""
         if not self.camera or not self.is_running:
-            messagebox.showwarning(_("common.warning"), "Camera is not running")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.camera_is_not_running', default="Camera is not running"))
             return
 
         try:
@@ -408,7 +414,7 @@ class FaceRecognitionAttendanceWindow:
             # Capture frame
             ret, frame = self.camera.read()
             if not ret:
-                messagebox.showerror(_("common.error"), "Failed to capture frame")
+                messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.failed_to_capture_frame', default="Failed to capture frame"))
                 return
 
             # Save to temporary file
@@ -426,7 +432,7 @@ class FaceRecognitionAttendanceWindow:
                 if student_id not in self.recognized_students:
                     self.add_recognized_student(student_id, 95.0)
             else:
-                messagebox.showwarning("Recognition Failed", message)
+                messagebox.showwarning(_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.recognition_failed', default="Recognition Failed"), message)
 
             # Clean up temp file
             import os
@@ -447,15 +453,15 @@ class FaceRecognitionAttendanceWindow:
 
         try:
             # Ask for student ID
-            student_id = simpledialog.askstring("Enroll Face", "Enter Student ID:")
+            student_id = simpledialog.askstring(_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.enroll_face', default="Enroll Face"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.enter_student_id', default="Enter Student ID:"))
             if not student_id:
                 return
 
             # Ask to take photo or select file
-            response = messagebox.askyesno("Photo Source",
-                                          "Take photo with camera?\n\n"
+            response = messagebox.askyesno(_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.photo_source', default="Photo Source"),
+                                          _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.take_photo_with_camera_yes_use_camera_no_select_file', default="Take photo with camera?\n\n"
                                           "Yes = Use camera\n"
-                                          "No = Select file")
+                                          "No = Select file"))
 
             if response:
                 # Take photo with camera
@@ -464,14 +470,14 @@ class FaceRecognitionAttendanceWindow:
 
                 temp_camera = cv2.VideoCapture(0)
                 if not temp_camera.isOpened():
-                    messagebox.showerror(_("common.error"), "Could not access camera")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.could_not_access_camera', default="Could not access camera"))
                     return
 
                 # Simple countdown window
                 countdown_window = tk.Toplevel(self.window)
-                countdown_window.title("Get Ready")
+                countdown_window.title(_t('gui.academics.attendance_tracker.face_recognition_windows.windows.get_ready', default="Get Ready"))
                 countdown_window.geometry("300x200")
-                countdown_label = ttk.Label(countdown_window, text="Get ready...",
+                countdown_label = ttk.Label(countdown_window, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.get_ready', default="Get ready..."),
                                            font=('Arial', 24, 'bold'))
                 countdown_label.pack(expand=True)
 
@@ -480,7 +486,7 @@ class FaceRecognitionAttendanceWindow:
                     countdown_window.update()
                     self.window.after(1000)
 
-                countdown_label.configure(text="Smile! 📸")
+                countdown_label.configure(text=_t('gui.academics.attendance_tracker.face_recognition_windows.text.smile', default="Smile! 📸"))
                 countdown_window.update()
 
                 # Capture photo
@@ -489,7 +495,7 @@ class FaceRecognitionAttendanceWindow:
                 countdown_window.destroy()
 
                 if not ret:
-                    messagebox.showerror(_("common.error"), "Failed to capture photo")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.failed_to_capture_photo', default="Failed to capture photo"))
                     return
 
                 # Save to temp file
@@ -501,7 +507,7 @@ class FaceRecognitionAttendanceWindow:
             else:
                 # Select from file
                 photo_path = filedialog.askopenfilename(
-                    title="Select Student Photo",
+                    title=_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.select_student_photo', default="Select Student Photo"),
                     filetypes=[("Image files", "*.jpg *.jpeg *.png"), ("All files", "*.*")]
                 )
                 if not photo_path:
@@ -515,7 +521,7 @@ class FaceRecognitionAttendanceWindow:
                 # Reload known faces
                 self.face_system.load_known_faces()
             else:
-                messagebox.showerror("Enrollment Failed", message)
+                messagebox.showerror(_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.enrollment_failed', default="Enrollment Failed"), message)
 
             # Clean up temp file if created
             if response:
@@ -535,7 +541,7 @@ class FaceRecognitionAttendanceWindow:
     def save_and_close(self):
         """Save all recognized attendance and close"""
         if not self.recognized_students:
-            messagebox.showinfo("Info", "No students recognized yet")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.info', default="Info"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.no_students_recognized_yet', default="No students recognized yet"))
             self.on_closing()
             return
 
@@ -576,18 +582,18 @@ class FaceRecognitionWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="👤 Face Recognition Setup", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.face_recognition_setup', default="👤 Face Recognition Setup"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Enrollment section
-        enroll_frame = ttk.LabelFrame(self.window, text="Enroll Student Face", padding=10)
+        enroll_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.enroll_student_face', default="Enroll Student Face"), padding=10)
         enroll_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(enroll_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(enroll_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_id_var = tk.StringVar()
         ttk.Entry(enroll_frame, textvariable=self.student_id_var, width=20).grid(row=0, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(enroll_frame, text="Photo Path:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(enroll_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.photo_path', default="Photo Path:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.photo_path_var = tk.StringVar()
         photo_frame = ttk.Frame(enroll_frame)
         photo_frame.grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=5)
@@ -595,13 +601,13 @@ class FaceRecognitionWindow:
         ttk.Entry(photo_frame, textvariable=self.photo_path_var, width=25).pack(side=tk.LEFT)
         ttk.Button(photo_frame, text=_("common.browse"), command=self.browse_photo).pack(side=tk.LEFT, padx=(5, 0))
 
-        ttk.Button(enroll_frame, text="Enroll Face", command=self.enroll_face, style='Success.TButton').grid(row=2, column=0, columnspan=2, pady=10)
+        ttk.Button(enroll_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.buttons.enroll_face', default="Enroll Face"), command=self.enroll_face, style='Success.TButton').grid(row=2, column=0, columnspan=2, pady=10)
 
         # Recognition section
-        recognize_frame = ttk.LabelFrame(self.window, text="Recognize Face", padding=10)
+        recognize_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.recognize_face', default="Recognize Face"), padding=10)
         recognize_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(recognize_frame, text="Image Path:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(recognize_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.image_path', default="Image Path:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.recognize_path_var = tk.StringVar()
         recognize_photo_frame = ttk.Frame(recognize_frame)
         recognize_photo_frame.grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=5)
@@ -609,10 +615,10 @@ class FaceRecognitionWindow:
         ttk.Entry(recognize_photo_frame, textvariable=self.recognize_path_var, width=25).pack(side=tk.LEFT)
         ttk.Button(recognize_photo_frame, text=_("common.browse"), command=self.browse_recognize_photo).pack(side=tk.LEFT, padx=(5, 0))
 
-        ttk.Button(recognize_frame, text="Recognize Face", command=self.recognize_face, style='Primary.TButton').grid(row=1, column=0, columnspan=2, pady=10)
+        ttk.Button(recognize_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.buttons.recognize_face', default="Recognize Face"), command=self.recognize_face, style='Primary.TButton').grid(row=1, column=0, columnspan=2, pady=10)
 
         # Enrolled students
-        enrolled_frame = ttk.LabelFrame(self.window, text="Enrolled Students", padding=10)
+        enrolled_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.enrolled_students', default="Enrolled Students"), padding=10)
         enrolled_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Enrolled students list
@@ -638,7 +644,7 @@ class FaceRecognitionWindow:
     def browse_photo(self):
         """Browse for photo file"""
         filename = filedialog.askopenfilename(
-            title="Select Student Photo",
+            title=_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.select_student_photo', default="Select Student Photo"),
             filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp"), ("All files", "*.*")]
         )
         if filename:
@@ -647,7 +653,7 @@ class FaceRecognitionWindow:
     def browse_recognize_photo(self):
         """Browse for recognition photo"""
         filename = filedialog.askopenfilename(
-            title="Select Photo for Recognition",
+            title=_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.select_photo_for_recognition', default="Select Photo for Recognition"),
             filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp"), ("All files", "*.*")]
         )
         if filename:
@@ -659,7 +665,7 @@ class FaceRecognitionWindow:
         photo_path = self.photo_path_var.get()
 
         if not student_id or not photo_path:
-            messagebox.showwarning(_("common.warning"), "Please enter student ID and select a photo")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.please_enter_student_id_and_select_a_photo', default="Please enter student ID and select a photo"))
             return
 
         try:
@@ -682,7 +688,7 @@ class FaceRecognitionWindow:
         image_path = self.recognize_path_var.get()
 
         if not image_path:
-            messagebox.showwarning(_("common.warning"), "Please select an image for recognition")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.please_select_an_image_for_recognition', default="Please select an image for recognition"))
             return
 
         try:
@@ -691,9 +697,9 @@ class FaceRecognitionWindow:
             )
 
             if success:
-                messagebox.showinfo("Recognition Success", f"{message}\nStudent ID: {student_id}")
+                messagebox.showinfo(_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.recognition_success', default="Recognition Success"), f"{message}\nStudent ID: {student_id}")
             else:
-                messagebox.showwarning("Recognition Failed", message)
+                messagebox.showwarning(_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.recognition_failed', default="Recognition Failed"), message)
 
         except Exception as e:
             logger.exception("face_recognition_windows.py:692 %s", 'except Exception as e')
@@ -707,7 +713,7 @@ class FaceRecognitionWindow:
 
         # Load enrolled students from database
         try:
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
                 cursor.execute('''
                     SELECT
@@ -743,7 +749,7 @@ class BiometricsManagementWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="👤 Biometrics Management", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.biometrics_management', default="👤 Biometrics Management"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Notebook for different biometric types
@@ -752,15 +758,15 @@ class BiometricsManagementWindow:
 
         # Face enrollment tab
         face_frame = ttk.Frame(notebook)
-        notebook.add(face_frame, text="Face Enrollment")
+        notebook.add(face_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.tabs.face_enrollment', default="Face Enrollment"))
 
         # Student ID
-        ttk.Label(face_frame, text="Student ID:").pack(anchor=tk.W, padx=10, pady=(10, 0))
+        ttk.Label(face_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.student_id', default="Student ID:")).pack(anchor=tk.W, padx=10, pady=(10, 0))
         self.student_id_var = tk.StringVar()
         ttk.Entry(face_frame, textvariable=self.student_id_var, width=30).pack(padx=10, pady=5)
 
         # Photo selection
-        ttk.Label(face_frame, text="Student Photo:").pack(anchor=tk.W, padx=10, pady=(10, 0))
+        ttk.Label(face_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.student_photo', default="Student Photo:")).pack(anchor=tk.W, padx=10, pady=(10, 0))
         photo_frame = ttk.Frame(face_frame)
         photo_frame.pack(fill=tk.X, padx=10, pady=5)
 
@@ -769,10 +775,10 @@ class BiometricsManagementWindow:
         ttk.Button(photo_frame, text=_("common.browse"), command=self.browse_photo).pack(side=tk.RIGHT, padx=(5, 0))
 
         # Enroll button
-        ttk.Button(face_frame, text="Enroll Face", command=self.enroll_face, style='Success.TButton').pack(pady=20)
+        ttk.Button(face_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.buttons.enroll_face', default="Enroll Face"), command=self.enroll_face, style='Success.TButton').pack(pady=20)
 
         # Enrolled students list
-        ttk.Label(face_frame, text="Enrolled Students:").pack(anchor=tk.W, padx=10)
+        ttk.Label(face_frame, text=_t('gui.academics.attendance_tracker.face_recognition_windows.labels.enrolled_students_variant_2', default="Enrolled Students:")).pack(anchor=tk.W, padx=10)
 
         list_frame = ttk.Frame(face_frame)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
@@ -798,7 +804,7 @@ class BiometricsManagementWindow:
 
     def browse_photo(self):
         filename = filedialog.askopenfilename(
-            title="Select Student Photo",
+            title=_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.select_student_photo', default="Select Student Photo"),
             filetypes=[("Image files", "*.jpg *.jpeg *.png *.bmp"), ("All files", "*.*")]
         )
         if filename:
@@ -809,7 +815,7 @@ class BiometricsManagementWindow:
         photo_path = self.photo_path_var.get()
 
         if not student_id or not photo_path:
-            messagebox.showwarning(_("common.warning"), "Please enter student ID and select a photo")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.please_enter_student_id_and_select_a_photo', default="Please enter student ID and select a photo"))
             return
 
         try:
@@ -825,7 +831,7 @@ class BiometricsManagementWindow:
                 else:
                     messagebox.showerror(_("common.error"), message)
             else:
-                messagebox.showinfo("Demo", "Face would be enrolled here (face recognition not available)")
+                messagebox.showinfo(_t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.demo', default="Demo"), _t('gui.academics.attendance_tracker.face_recognition_windows.dialogs.face_would_be_enrolled_here_face_recognition_not_available', default="Face would be enrolled here (face recognition not available)"))
 
         except Exception as e:
             logger.exception("face_recognition_windows.py:822 %s", 'except Exception as e')
@@ -840,7 +846,7 @@ class BiometricsManagementWindow:
         # Load real enrollment data from database
         try:
 
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
                 # Try to get student enrollment data

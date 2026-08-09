@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -1016,7 +1018,7 @@ def show_student_detail_window(self, student):
     title_label.pack(pady=(0, 20))
 
     # Information frame
-    info_frame = ttk.LabelFrame(main_frame, text="Basic Information", padding="10")
+    info_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.advanced_search.results.labels.basic_information', default="Basic Information"), padding="10")
     info_frame.pack(fill=tk.X, pady=(0, 10))
 
     # Display student information
@@ -1035,7 +1037,7 @@ def show_student_detail_window(self, student):
     info_label.pack(anchor='w')
 
     # Modules frame (placeholder for module information)
-    modules_frame = ttk.LabelFrame(main_frame, text="Module Information", padding="10")
+    modules_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.advanced_search.results.labels.module_information', default="Module Information"), padding="10")
     modules_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     # Load module information into a Treeview-based table
@@ -1045,9 +1047,9 @@ def show_student_detail_window(self, student):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="📧 Send Email",
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.results.buttons.send_email', default="📧 Send Email"),
               command=lambda: self.simulate_send_email(student)).pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(button_frame, text="💾 Export",
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.results.buttons.export', default="💾 Export"),
               command=lambda: self.export_single_student(student)).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.close_button')}",
               command=detail_window.destroy).pack(side=tk.RIGHT)
@@ -1099,7 +1101,7 @@ def load_student_modules(self, student_id, parent):
     header.pack(anchor="w", padx=4, pady=(2, 6))
 
     if not modules:
-        ttk.Label(parent, text="No modules enrolled.",
+        ttk.Label(parent, text=_t('gui.shell.advanced_search.results.labels.no_modules_enrolled', default="No modules enrolled."),
                   foreground="#666").pack(anchor="w", padx=4)
         return
 
@@ -1111,11 +1113,11 @@ def load_student_modules(self, student_id, parent):
         table_frame, columns=columns, show="headings",
         height=min(max(len(modules), 4), 12),
     )
-    tree.heading("type", text="Type")
-    tree.heading("code", text="Code")
-    tree.heading("name", text="Module")
-    tree.heading("grade", text="Grade")
-    tree.heading("enrolled", text="Enrolled")
+    tree.heading("type", text=_t('gui.shell.advanced_search.results.headings.type', default="Type"))
+    tree.heading("code", text=_t('gui.shell.advanced_search.results.headings.code', default="Code"))
+    tree.heading("name", text=_t('gui.shell.advanced_search.results.headings.module', default="Module"))
+    tree.heading("grade", text=_t('gui.shell.advanced_search.results.headings.grade', default="Grade"))
+    tree.heading("enrolled", text=_t('gui.shell.advanced_search.results.headings.enrolled', default="Enrolled"))
     tree.column("type", width=100, anchor="w")
     tree.column("code", width=90, anchor="w")
     tree.column("name", width=260, anchor="w")

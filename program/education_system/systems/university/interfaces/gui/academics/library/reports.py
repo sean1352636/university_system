@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -123,9 +125,9 @@ def show_reports(self):
     self.clear_content_area()
 
     reports_frame = ttk.Frame(self.notebook)
-    self.notebook.add(reports_frame, text="Reports")
+    self.notebook.add(reports_frame, text=_t('gui.academics.library.reports.tabs.reports', default="Reports"))
 
-    title_label = ttk.Label(reports_frame, text="Library Reports", style='Title.TLabel')
+    title_label = ttk.Label(reports_frame, text=_t('gui.academics.library.reports.labels.library_reports', default="Library Reports"), style='Title.TLabel')
     title_label.pack(pady=10)
 
     # Report types
@@ -164,11 +166,11 @@ def show_reports(self):
     action_button_frame = ttk.Frame(display_frame)
     action_button_frame.pack(fill=tk.X, padx=5, pady=5)
 
-    ttk.Button(action_button_frame, text="🔍 Open in New Window",
+    ttk.Button(action_button_frame, text=_t('gui.academics.library.reports.buttons.open_in_new_window', default="🔍 Open in New Window"),
               command=self.open_current_report_window).pack(side=tk.LEFT, padx=5)
-    ttk.Button(action_button_frame, text="📧 Email Report to Admin",
+    ttk.Button(action_button_frame, text=_t('gui.academics.library.reports.buttons.email_report_to_admin', default="📧 Email Report to Admin"),
               command=self.email_report_to_admin).pack(side=tk.LEFT, padx=5)
-    ttk.Button(action_button_frame, text="💾 Save Report to File",
+    ttk.Button(action_button_frame, text=_t('gui.academics.library.reports.buttons.save_report_to_file', default="💾 Save Report to File"),
               command=self.save_report_to_file).pack(side=tk.LEFT, padx=5)
 
 def generate_collection_report(self):
@@ -802,14 +804,14 @@ def email_report_to_admin(self):
     report_content = self.report_text.get("1.0", tk.END).strip()
 
     if not report_content or report_content == "":
-        messagebox.showwarning("No Report", "Please generate a report first before emailing.")
+        messagebox.showwarning(_t('gui.academics.library.reports.dialogs.no_report', default="No Report"), _t('gui.academics.library.reports.dialogs.please_generate_a_report_first_before_emailing', default="Please generate a report first before emailing."))
         return
 
     try:
         # Get admin email from database
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror(_("common.error"), "Database connection unavailable")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.reports.dialogs.database_connection_unavailable', default="Database connection unavailable"))
             return
 
         cursor = conn.cursor()
@@ -818,14 +820,14 @@ def email_report_to_admin(self):
         conn.close()
 
         if not admin or not admin[0]:
-            messagebox.showerror(_("common.error"), "No admin email address found in database")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.reports.dialogs.no_admin_email_address_found_in_database', default="No admin email address found in database"))
             return
 
         admin_email = admin[0]
 
         # Create email dialog
         dialog = tk.Toplevel(self.master)
-        dialog.title("Email Report")
+        dialog.title(_t('gui.academics.library.reports.windows.email_report', default="Email Report"))
         dialog.geometry("500x350")
         dialog.transient(self.master)
         dialog.grab_set()
@@ -833,12 +835,12 @@ def email_report_to_admin(self):
         main_frame = ttk.Frame(dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Email Library Report", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.library.reports.labels.email_library_report', default="Email Library Report"), font=('Arial', 12, 'bold')).pack(pady=10)
 
         # Recipient
         recipient_frame = ttk.Frame(main_frame)
         recipient_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(recipient_frame, text="To:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(recipient_frame, text=_t('gui.academics.library.reports.labels.to', default="To:")).pack(side=tk.LEFT, padx=5)
         recipient_entry = ttk.Entry(recipient_frame, width=40)
         recipient_entry.insert(0, admin_email)
         recipient_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
@@ -846,13 +848,13 @@ def email_report_to_admin(self):
         # Subject
         subject_frame = ttk.Frame(main_frame)
         subject_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(subject_frame, text="Subject:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(subject_frame, text=_t('gui.academics.library.reports.labels.subject', default="Subject:")).pack(side=tk.LEFT, padx=5)
         subject_entry = ttk.Entry(subject_frame, width=40)
         subject_entry.insert(0, "Library Report - " + datetime.now().strftime('%Y-%m-%d'))
         subject_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
         # Message
-        ttk.Label(main_frame, text="Additional Message:").pack(anchor='w', padx=5, pady=(10, 0))
+        ttk.Label(main_frame, text=_t('gui.academics.library.reports.labels.additional_message', default="Additional Message:")).pack(anchor='w', padx=5, pady=(10, 0))
         message_text = ScrolledText(main_frame, height=8, wrap=tk.WORD)
         message_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         message_text.insert(tk.END, "Please find the library report below:\n\n")
@@ -868,7 +870,7 @@ def email_report_to_admin(self):
                 message = message_text.get("1.0", tk.END).strip()
 
                 if not recipient or not subject:
-                    messagebox.showwarning("Missing Information", "Please provide recipient and subject")
+                    messagebox.showwarning(_t('gui.academics.library.reports.dialogs.missing_information', default="Missing Information"), _t('gui.academics.library.reports.dialogs.please_provide_recipient_and_subject', default="Please provide recipient and subject"))
                     return
 
                 # Render email from template
@@ -900,9 +902,9 @@ def email_report_to_admin(self):
                 dialog.destroy()
 
             except tk.TclError as e:
-                messagebox.showerror("Email Error", f"Failed to send email: {str(e)}")
+                messagebox.showerror(_t('gui.academics.library.reports.dialogs.email_error', default="Email Error"), f"Failed to send email: {str(e)}")
 
-        ttk.Button(button_frame, text="Send Email", command=send_email).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.library.reports.buttons.send_email', default="Send Email"), command=send_email).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     except (tk.TclError, ValueError, TypeError) as e:
@@ -913,15 +915,15 @@ def save_report_to_file(self):
     report_content = self.report_text.get("1.0", tk.END).strip()
 
     if not report_content or report_content == "":
-        messagebox.showwarning("No Report", "Please generate a report first before saving.")
+        messagebox.showwarning(_t('gui.academics.library.reports.dialogs.no_report', default="No Report"), _t('gui.academics.library.reports.dialogs.please_generate_a_report_first_before_saving', default="Please generate a report first before saving."))
         return
 
     try:
         from tkinter import filedialog
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
 
         # Create reports directory if it doesn't exist
-        reports_dir = paths.REPORTS_DIR
+        reports_dir = paths.UNIVERSITY_REPORTS_DIR
         reports_dir.mkdir(parents=True, exist_ok=True)
 
         # Default filename with timestamp
@@ -964,7 +966,7 @@ def show_report_in_window(self, title: str = "Library Report", report_content: s
             report_content = ""
 
     if not report_content:
-        messagebox.showwarning("No Report", "No report content to display.")
+        messagebox.showwarning(_t('gui.academics.library.reports.dialogs.no_report', default="No Report"), _t('gui.academics.library.reports.dialogs.no_report_content_to_display', default="No report content to display."))
         return
 
     # ---- Window scaffold -------------------------------------------------
@@ -999,7 +1001,7 @@ def show_report_in_window(self, title: str = "Library Report", report_content: s
     def _admin_emails():
         """All university admins from student_records.db users table."""
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
             try:
                 rows = conn.execute(
                     "SELECT email FROM users "
@@ -1013,26 +1015,26 @@ def show_report_in_window(self, title: str = "Library Report", report_content: s
         except Exception:
             import logging
             logging.getLogger(__name__).exception(
-                "Could not fetch admin emails from %s", DEFAULT_DB_PATH)
+                "Could not fetch admin emails from %s", UNIVERSITY_DEFAULT_DB_PATH)
             return []
 
     def email_to_admin():
         if not EMAIL_SERVICE_AVAILABLE:
             messagebox.showerror(
-                "Email unavailable",
-                "Email service is not available in this build.",
+                _t('gui.academics.library.reports.dialogs.email_unavailable', default="Email unavailable"),
+                _t('gui.academics.library.reports.dialogs.email_service_is_not_available_in_this_build', default="Email service is not available in this build."),
                 parent=report_window)
             return
         recipients = _admin_emails()
         if not recipients:
             messagebox.showwarning(
-                "No admin recipients",
-                "No university-system admins with an email address were "
-                "found in student_records.db (table: users, role=admin).",
+                _t('gui.academics.library.reports.dialogs.no_admin_recipients', default="No admin recipients"),
+                _t('gui.academics.library.reports.dialogs.no_university_system_admins_with_an_email_address_were_found_in', default="No university-system admins with an email address were "
+                "found in student_records.db (table: users, role=admin)."),
                 parent=report_window)
             return
         if not messagebox.askyesno(
-                "Confirm",
+                _t('gui.academics.library.reports.dialogs.confirm', default="Confirm"),
                 f"Send this report to {len(recipients)} admin "
                 f"recipient{'s' if len(recipients) != 1 else ''}?\n\n"
                 + "\n".join(recipients),
@@ -1062,23 +1064,23 @@ def show_report_in_window(self, title: str = "Library Report", report_content: s
 
         if sent_ok and not failed:
             messagebox.showinfo(
-                "Email sent",
+                _t('gui.academics.library.reports.dialogs.email_sent', default="Email sent"),
                 f"Report sent to {len(sent_ok)} admin "
                 f"recipient{'s' if len(sent_ok) != 1 else ''}:\n\n"
                 + "\n".join(sent_ok),
                 parent=report_window)
         elif sent_ok and failed:
             messagebox.showwarning(
-                "Partially sent",
+                _t('gui.academics.library.reports.dialogs.partially_sent', default="Partially sent"),
                 f"Sent: {len(sent_ok)}\nFailed: {len(failed)}\n\n"
                 f"Sent to: {', '.join(sent_ok)}\n"
                 f"Failed:  {', '.join(failed)}",
                 parent=report_window)
         else:
             messagebox.showerror(
-                "Email failed",
-                "Could not deliver the report to any admin. Check the "
-                "email service configuration / app logs.",
+                _t('gui.academics.library.reports.dialogs.email_failed', default="Email failed"),
+                _t('gui.academics.library.reports.dialogs.could_not_deliver_the_report_to_any_admin_check_the_email_servic', default="Could not deliver the report to any admin. Check the "
+                "email service configuration / app logs."),
                 parent=report_window)
 
     def save_as_txt():
@@ -1089,7 +1091,7 @@ def show_report_in_window(self, title: str = "Library Report", report_content: s
             )
             path = filedialog.asksaveasfilename(
                 parent=report_window,
-                title="Save report as…",
+                title=_t('gui.academics.library.reports.dialogs.save_report_as', default="Save report as…"),
                 defaultextension=".txt",
                 initialfile=default_name,
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
@@ -1099,29 +1101,29 @@ def show_report_in_window(self, title: str = "Library Report", report_content: s
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(report_content)
             messagebox.showinfo(
-                "Saved", f"Report saved to:\n{path}", parent=report_window)
+                _t('gui.academics.library.reports.dialogs.saved', default="Saved"), f"Report saved to:\n{path}", parent=report_window)
         except Exception as exc:
             import logging
             logging.getLogger(__name__).exception("Save as TXT failed")
             messagebox.showerror(
-                "Save failed", f"Could not save:\n{exc}",
+                _t('gui.academics.library.reports.dialogs.save_failed', default="Save failed"), f"Could not save:\n{exc}",
                 parent=report_window)
 
     # ---- Buttons (only the three the user wants) -------------------------
     btn_bar = ttk.Frame(report_window, padding=(8, 4, 8, 10))
     btn_bar.pack(fill="x")
-    ttk.Button(btn_bar, text="📧 Email to Admin",
+    ttk.Button(btn_bar, text=_t('gui.academics.library.reports.buttons.email_to_admin', default="📧 Email to Admin"),
                command=email_to_admin).pack(side="left", padx=4)
-    ttk.Button(btn_bar, text="💾 Save as TXT",
+    ttk.Button(btn_bar, text=_t('gui.academics.library.reports.buttons.save_as_txt', default="💾 Save as TXT"),
                command=save_as_txt).pack(side="left", padx=4)
-    ttk.Button(btn_bar, text="Close",
+    ttk.Button(btn_bar, text=_t('gui.academics.library.reports.buttons.close', default="Close"),
                command=report_window.destroy).pack(side="right", padx=4)
 
 def open_current_report_window(self):
     """Open the current report (from report_text) in a new window."""
     report_content = self.report_text.get("1.0", tk.END).strip()
     if not report_content:
-        messagebox.showwarning("No Report", "Please generate a report first.")
+        messagebox.showwarning(_t('gui.academics.library.reports.dialogs.no_report', default="No Report"), _t('gui.academics.library.reports.dialogs.please_generate_a_report_first', default="Please generate a report first."))
         return
     # Extract title from first line
     lines = report_content.split('\n')
@@ -1131,27 +1133,27 @@ def open_current_report_window(self):
 def generate_circulation_report_gui(self):
     """Generate circulation report"""
     report_window = tk.Toplevel(self.master)
-    report_window.title("Circulation Report")
+    report_window.title(_t('gui.academics.library.reports.windows.circulation_report', default="Circulation Report"))
     report_window.geometry("900x700")
 
-    ttk.Label(report_window, text="Circulation Report",
+    ttk.Label(report_window, text=_t('gui.academics.library.reports.labels.circulation_report', default="Circulation Report"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Date range selection
-    date_frame = ttk.LabelFrame(report_window, text="Date Range", padding=10)
+    date_frame = ttk.LabelFrame(report_window, text=_t('gui.academics.library.reports.labels.date_range', default="Date Range"), padding=10)
     date_frame.pack(fill=tk.X, padx=10, pady=10)
 
     start_date_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
     end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
 
-    ttk.Label(date_frame, text="Start Date:").grid(row=0, column=0, padx=5, pady=5)
+    ttk.Label(date_frame, text=_t('gui.academics.library.reports.labels.start_date', default="Start Date:")).grid(row=0, column=0, padx=5, pady=5)
     ttk.Entry(date_frame, textvariable=start_date_var, width=15).grid(row=0, column=1, padx=5, pady=5)
 
-    ttk.Label(date_frame, text="End Date:").grid(row=0, column=2, padx=5, pady=5)
+    ttk.Label(date_frame, text=_t('gui.academics.library.reports.labels.end_date', default="End Date:")).grid(row=0, column=2, padx=5, pady=5)
     ttk.Entry(date_frame, textvariable=end_date_var, width=15).grid(row=0, column=3, padx=5, pady=5)
 
     # Report display
-    report_frame = ttk.LabelFrame(report_window, text="Report", padding=10)
+    report_frame = ttk.LabelFrame(report_window, text=_t('gui.academics.library.reports.labels.report', default="Report"), padding=10)
     report_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     report_text = ScrolledText(report_frame, height=30, width=100, font=('Courier', 10))
@@ -1257,8 +1259,8 @@ Total Fines:        £{stats[4]:,.2f}
     button_frame = ttk.Frame(report_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Generate Report", command=generate_report).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Export Report", command=export_report).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reports.buttons.generate_report', default="Generate Report"), command=generate_report).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reports.buttons.export_report', default="Export Report"), command=export_report).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=report_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     # Auto-generate on open

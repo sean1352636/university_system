@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 from education_system.systems.secondary import SYSTEM_NAME
 from education_system.systems.secondary import SYSTEM_SLUG
-from education_system.systems.secondary.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +103,7 @@ class AboutInfo:
 # ── Builders ──────────────────────────────────────────────────────
 
 def _db_stats() -> list[TableStat]:
-    p = paths.STUDENTS_DB
+    p = paths.SECONDARY_PUPILS_DB
     if not Path(p).exists():
         return [TableStat(table=t, label=l, rows=None)
                 for t, l in _STATS_TABLES]
@@ -138,7 +138,7 @@ def _db_stats() -> list[TableStat]:
 
 
 def build(*, auth: Any = None) -> AboutInfo:
-    p = paths.STUDENTS_DB
+    p = paths.SECONDARY_PUPILS_DB
     db_exists = Path(p).exists()
     size = Path(p).stat().st_size if db_exists else 0
 

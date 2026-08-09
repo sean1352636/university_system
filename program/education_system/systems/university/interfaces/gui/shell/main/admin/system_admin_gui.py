@@ -126,7 +126,7 @@ def show_system_administration_gui(self):
             self.create_config_tab(config_frame)
 
             ops_outer, ops_frame = _make_scrollable_tab()
-            notebook.add(ops_outer, text="Operations")
+            notebook.add(ops_outer, text=_t('gui.shell.main.admin.system_admin.tabs.operations', default="Operations"))
             self.create_operations_tab(ops_frame)
 
         opener = getattr(self, "open_in_workspace", None)
@@ -201,7 +201,7 @@ def create_database_admin_tab(self, parent):
               command=self.optimize_database).grid(row=0, column=2, padx=5, pady=5)
     ttk.Button(tools_frame, text=_t("system_admin_gui.buttons.view_database_statistics"),
               command=self.show_db_statistics).grid(row=1, column=0, padx=5, pady=5)
-    ttk.Button(tools_frame, text="Wipe Database",
+    ttk.Button(tools_frame, text=_t('gui.shell.main.admin.system_admin.buttons.wipe_database', default="Wipe Database"),
               command=self.wipe_database).grid(row=1, column=1, padx=5, pady=5)
 
 def create_user_admin_tab(self, parent):
@@ -351,29 +351,29 @@ def create_config_tab(self, parent):
     config_text.pack(fill=tk.BOTH, expand=True)
 
     try:
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         import os
 
         config_info = f"""{_t("system_admin_gui.config.title")}
 {'='*50}
 
 {_t("system_admin_gui.config.file_paths")}:
-  {_t("system_admin_gui.config.database")}: {paths.DEFAULT_DB_PATH}
-  {_t("system_admin_gui.config.logs")}: {paths.LOG_DIR}
-  {_t("system_admin_gui.config.backups")}: {paths.BACKUP_DIR}
-    Database backups: {paths.BACKUP_DATABASE_DIR}
-    File backups: {paths.BACKUP_FILES_DIR}
-    Attendance: {paths.BACKUP_ATTENDANCE_DIR}
-    Finance: {paths.BACKUP_FINANCE_DIR}
-    Library: {paths.BACKUP_LIBRARY_DIR}
-    Health: {paths.BACKUP_HEALTH_DIR}
-    Settings: {paths.BACKUP_SETTINGS_DIR}
-    Calendar: {paths.BACKUP_CALENDAR_DIR}
-  {_t("system_admin_gui.config.uploads")}: {paths.UPLOAD_DIR}
+  {_t("system_admin_gui.config.database")}: {paths.UNIVERSITY_DEFAULT_DB_PATH}
+  {_t("system_admin_gui.config.logs")}: {paths.UNIVERSITY_LOG_DIR}
+  {_t("system_admin_gui.config.backups")}: {paths.UNIVERSITY_BACKUP_DIR}
+    Database backups: {paths.UNIVERSITY_BACKUP_DATABASE_DIR}
+    File backups: {paths.UNIVERSITY_BACKUP_FILES_DIR}
+    Attendance: {paths.UNIVERSITY_BACKUP_ATTENDANCE_DIR}
+    Finance: {paths.UNIVERSITY_BACKUP_FINANCE_DIR}
+    Library: {paths.UNIVERSITY_BACKUP_LIBRARY_DIR}
+    Health: {paths.UNIVERSITY_BACKUP_HEALTH_DIR}
+    Settings: {paths.UNIVERSITY_BACKUP_SETTINGS_DIR}
+    Calendar: {paths.UNIVERSITY_BACKUP_CALENDAR_DIR}
+  {_t("system_admin_gui.config.uploads")}: {paths.UNIVERSITY_UPLOAD_DIR}
 
 {_t("system_admin_gui.config.system_settings")}:
-  {_t("system_admin_gui.config.project_root")}: {paths.PROJECT_ROOT}
-  {_t("system_admin_gui.config.data_directory")}: {paths.DATA_DIR}
+  {_t("system_admin_gui.config.project_root")}: {paths.UNIVERSITY_PROJECT_ROOT}
+  {_t("system_admin_gui.config.data_directory")}: {paths.UNIVERSITY_DATA_DIR}
 
 {_t("system_admin_gui.config.database_configuration")}:
   {_t("system_admin_gui.config.type")}: SQLite
@@ -386,7 +386,7 @@ def create_config_tab(self, parent):
   {_t("system_admin_gui.config.session_management")}: {_t("system_admin_gui.config.token_based")}
 
 {_t("system_admin_gui.config.email_service")}:
-  {_t("system_admin_gui.system_status.status")}: {_t("system_admin_gui.config.configured") if os.path.exists(paths.PROJECT_ROOT / '.env') else _t("system_admin_gui.config.not_configured")}
+  {_t("system_admin_gui.system_status.status")}: {_t("system_admin_gui.config.configured") if os.path.exists(paths.UNIVERSITY_PROJECT_ROOT / '.env') else _t("system_admin_gui.config.not_configured")}
   {_t("system_admin_gui.config.queue_system")}: {_t("system_admin_gui.config.asynchronous")}
 
 {_t("system_admin_gui.config.logging")}:
@@ -411,7 +411,7 @@ def create_operations_tab(self, parent):
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     # Monitoring & Logs
-    logs_frame = ttk.LabelFrame(main_frame, text="Monitoring & Logs", padding="15")
+    logs_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.main.admin.system_admin.labels.monitoring_logs', default="Monitoring & Logs"), padding="15")
     logs_frame.pack(fill=tk.X, pady=(0, 15))
 
     def launch_feature(title, method_name):
@@ -420,9 +420,9 @@ def create_operations_tab(self, parent):
             if method:
                 method()
             else:
-                messagebox.showinfo("Info", f"{title} is accessible via the main menu.")
+                messagebox.showinfo(_t('gui.shell.main.admin.system_admin.dialogs.info', default="Info"), f"{title} is accessible via the main menu.")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open {title}: {e}")
+            messagebox.showerror(_t('gui.shell.main.admin.system_admin.dialogs.error', default="Error"), f"Failed to open {title}: {e}")
 
     row, col = 0, 0
     monitoring_buttons = [
@@ -441,7 +441,7 @@ def create_operations_tab(self, parent):
             row += 1
 
     # System Configuration
-    config_frame = ttk.LabelFrame(main_frame, text="System Configuration", padding="15")
+    config_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.main.admin.system_admin.labels.system_configuration', default="System Configuration"), padding="15")
     config_frame.pack(fill=tk.X, pady=(0, 15))
 
     row, col = 0, 0
@@ -462,7 +462,7 @@ def create_operations_tab(self, parent):
             row += 1
 
     # Data & Compliance
-    data_frame = ttk.LabelFrame(main_frame, text="Data & Compliance", padding="15")
+    data_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.main.admin.system_admin.labels.data_compliance', default="Data & Compliance"), padding="15")
     data_frame.pack(fill=tk.X, pady=(0, 15))
 
     row, col = 0, 0
@@ -591,11 +591,11 @@ def view_error_logs(self):
         error_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Try to load error logs from log file
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         import os
 
         try:
-            log_file = paths.LOG_DIR / "error.log"
+            log_file = paths.UNIVERSITY_LOG_DIR / "error.log"
             if os.path.exists(log_file):
                 with open(log_file, 'r') as f:
                     lines = f.readlines()[-100:]  # Last 100 lines

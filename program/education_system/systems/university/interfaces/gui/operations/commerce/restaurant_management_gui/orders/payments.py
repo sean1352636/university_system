@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -112,13 +114,13 @@ def add_tip(self):
     """Add tip to completed order"""
     selection = self.orders_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select an order to add a tip")
+        messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_select_an_order_to_add_a_tip', default="Please select an order to add a tip"))
         return
     item = self.orders_tree.item(selection[0])
     order_id = item['values'][0]
     # Create tip dialog
     tip_dialog = tk.Toplevel(self.root)
-    tip_dialog.title("Add Tip")
+    tip_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.add_tip', default="Add Tip"))
     tip_dialog.geometry("400x300")
     tip_dialog.transient(self.root)
     tip_dialog.grab_set()
@@ -139,30 +141,30 @@ def add_tip(self):
             order_data = cursor.fetchone()
             conn.close()
             if not order_data:
-                messagebox.showerror("Error", "Order not found")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.order_not_found', default="Order not found"))
                 tip_dialog.destroy()
                 return
             current_total, current_tip, order_status_val = order_data
             if order_status_val != 'Paid':
-                messagebox.showwarning("Cannot Add Tip", "Order must be paid before adding a tip")
+                messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.cannot_add_tip', default="Cannot Add Tip"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.order_must_be_paid_before_adding_a_tip', default="Order must be paid before adding a tip"))
                 tip_dialog.destroy()
                 return
             # Display current info
-            info_frame = ttk.LabelFrame(main_frame, text="Order Information", padding=10)
+            info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.order_information', default="Order Information"), padding=10)
             info_frame.pack(fill='x', pady=10)
             ttk.Label(info_frame, text=f"Current Total: £{current_total:.2f}").pack(anchor='w')
             ttk.Label(info_frame, text=f"Current Tip: £{current_tip or 0:.2f}").pack(anchor='w')
             # Tip entry
-            tip_frame = ttk.LabelFrame(main_frame, text="Add Tip", padding=10)
+            tip_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.add_tip', default="Add Tip"), padding=10)
             tip_frame.pack(fill='x', pady=10)
-            ttk.Label(tip_frame, text="Tip Amount (£):").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(tip_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.tip_amount', default="Tip Amount (£):")).grid(row=0, column=0, sticky='w', pady=5)
             tip_amount_var = tk.DoubleVar(value=0.0)
             tip_entry = ttk.Entry(tip_frame, textvariable=tip_amount_var, width=20)
             tip_entry.grid(row=0, column=1, pady=5, padx=5)
             # Quick tip buttons
             quick_frame = ttk.Frame(tip_frame)
             quick_frame.grid(row=1, column=0, columnspan=2, pady=10)
-            ttk.Label(quick_frame, text="Quick Select:").pack(side='left', padx=5)
+            ttk.Label(quick_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.quick_select', default="Quick Select:")).pack(side='left', padx=5)
             ttk.Button(quick_frame, text="10%",
                       command=lambda: tip_amount_var.set(round(current_total * 0.10, 2))).pack(side='left', padx=2)
             ttk.Button(quick_frame, text="15%",
@@ -172,7 +174,7 @@ def add_tip(self):
             def save_tip():
                 tip_amount = tip_amount_var.get()
                 if tip_amount <= 0:
-                    messagebox.showwarning("Invalid Amount", "Tip amount must be greater than 0")
+                    messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.invalid_amount', default="Invalid Amount"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.tip_amount_must_be_greater_than_0', default="Tip amount must be greater than 0"))
                     return
                 try:
                     conn = get_db_connection()
@@ -187,17 +189,17 @@ def add_tip(self):
                         ''', (new_tip_total, new_total, order_id))
                         conn.commit()
                         conn.close()
-                        messagebox.showinfo("Success", f"Tip of £{tip_amount:.2f} added successfully!\n\nNew Total: £{new_total:.2f}")
+                        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.success', default="Success"), f"Tip of £{tip_amount:.2f} added successfully!\n\nNew Total: £{new_total:.2f}")
                         tip_dialog.destroy()
                         self.view_orders_gui()  # Refresh
                 except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Failed to add tip: {e}")
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to add tip: {e}")
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(pady=10)
-            ttk.Button(button_frame, text="Add Tip", command=save_tip).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=tip_dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.add_tip', default="Add Tip"), command=save_tip).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.cancel', default="Cancel"), command=tip_dialog.destroy).pack(side='left', padx=5)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to load order: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to load order: {e}")
         tip_dialog.destroy()
 
 def refund_order(self):
@@ -207,13 +209,13 @@ def refund_order(self):
 
     selection = self.orders_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select an order to refund")
+        messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_select_an_order_to_refund', default="Please select an order to refund"))
         return
     item = self.orders_tree.item(selection[0])
     order_id = item['values'][0]
     # Create refund dialog
     refund_dialog = tk.Toplevel(self.root)
-    refund_dialog.title("Process Refund")
+    refund_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.process_refund', default="Process Refund"))
     refund_dialog.geometry("450x450")
     refund_dialog.transient(self.root)
     refund_dialog.grab_set()
@@ -233,28 +235,28 @@ def refund_order(self):
             order_data = cursor.fetchone()
             conn.close()
             if not order_data:
-                messagebox.showerror("Error", "Order not found")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.order_not_found', default="Order not found"))
                 refund_dialog.destroy()
                 return
             total_price, order_status_val, payment_method = order_data
             if order_status_val != 'Paid':
-                messagebox.showwarning("Cannot Refund", "Order must be paid before processing refund")
+                messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.cannot_refund', default="Cannot Refund"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.order_must_be_paid_before_processing_refund', default="Order must be paid before processing refund"))
                 refund_dialog.destroy()
                 return
             # Display order info
-            info_frame = ttk.LabelFrame(main_frame, text="Order Information", padding=10)
+            info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.order_information', default="Order Information"), padding=10)
             info_frame.pack(fill='x', pady=10)
             ttk.Label(info_frame, text=f"Order Total: £{total_price:.2f}").pack(anchor='w')
             ttk.Label(info_frame, text=f"Payment Method: {payment_method}").pack(anchor='w')
             # Refund type
-            refund_frame = ttk.LabelFrame(main_frame, text="Refund Details", padding=10)
+            refund_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.refund_details', default="Refund Details"), padding=10)
             refund_frame.pack(fill='x', pady=10)
-            refund_type_var = tk.StringVar(value="Full")
-            ttk.Radiobutton(refund_frame, text="Full Refund", variable=refund_type_var,
+            refund_type_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.values.full', default="Full"))
+            ttk.Radiobutton(refund_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.full_refund', default="Full Refund"), variable=refund_type_var,
                            value="Full").pack(anchor='w')
-            ttk.Radiobutton(refund_frame, text="Partial Refund", variable=refund_type_var,
+            ttk.Radiobutton(refund_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.partial_refund', default="Partial Refund"), variable=refund_type_var,
                            value="Partial").pack(anchor='w')
-            ttk.Label(refund_frame, text="Refund Amount (£):").pack(anchor='w', pady=(10,0))
+            ttk.Label(refund_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.refund_amount', default="Refund Amount (£):")).pack(anchor='w', pady=(10,0))
             refund_amount_var = tk.DoubleVar(value=total_price)
             refund_entry = ttk.Entry(refund_frame, textvariable=refund_amount_var, width=20)
             refund_entry.pack(anchor='w', padx=20)
@@ -267,28 +269,28 @@ def refund_order(self):
             refund_type_var.trace('w', update_refund_amount)
             update_refund_amount()
             # Reason
-            ttk.Label(refund_frame, text="Refund Reason:").pack(anchor='w', pady=(10,0))
+            ttk.Label(refund_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.refund_reason', default="Refund Reason:")).pack(anchor='w', pady=(10,0))
             reason_var = tk.StringVar()
             reason_combo = ttk.Combobox(refund_frame, textvariable=reason_var, width=30)
             reason_combo['values'] = ('Customer Request', 'Order Error', 'Quality Issue',
                                      'Late Delivery', 'Wrong Item', 'Other')
             reason_combo.pack(anchor='w', padx=20)
-            ttk.Label(refund_frame, text="Additional Notes:").pack(anchor='w', pady=(10,0))
+            ttk.Label(refund_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.additional_notes', default="Additional Notes:")).pack(anchor='w', pady=(10,0))
             notes_text = tk.Text(refund_frame, height=3, width=40)
             notes_text.pack(anchor='w', padx=20)
             def process_refund():
                 refund_amount = refund_amount_var.get()
                 if refund_amount <= 0 or refund_amount > total_price:
-                    messagebox.showwarning("Invalid Amount",
+                    messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.invalid_amount', default="Invalid Amount"),
                                          f"Refund amount must be between £0.01 and £{total_price:.2f}")
                     return
                 reason = reason_var.get()
                 if not reason:
-                    messagebox.showwarning("Missing Information", "Please select a refund reason")
+                    messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.missing_information', default="Missing Information"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_select_a_refund_reason', default="Please select a refund reason"))
                     return
                 notes = notes_text.get(1.0, tk.END).strip()
                 # Confirm refund
-                if not messagebox.askyesno("Confirm Refund",
+                if not messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.confirm_refund', default="Confirm Refund"),
                                           f"Process {refund_type_var.get()} refund of £{refund_amount:.2f}?\n\n" +
                                           f"Reason: {reason}\n" +
                                           "This action cannot be undone."):
@@ -355,7 +357,7 @@ def refund_order(self):
                         send_refund_receipt_email(order_id, refund_amount, payment_method,
                                                  refund_type_var.get(), reason)
 
-                        messagebox.showinfo("Success",
+                        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.success', default="Success"),
                                           "Refund processed successfully!\n\n" +
                                           f"Amount: £{refund_amount:.2f}\n" +
                                           f"Method: {payment_method}\n\n" +
@@ -364,13 +366,13 @@ def refund_order(self):
                         refund_dialog.destroy()
                         self.view_orders_gui()  # Refresh
                 except (sqlite3.Error, tk.TclError) as e:
-                    messagebox.showerror("Error", f"Failed to process refund: {e}")
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process refund: {e}")
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(pady=10)
-            ttk.Button(button_frame, text="Process Refund", command=process_refund).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=refund_dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.process_refund', default="Process Refund"), command=process_refund).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.cancel', default="Cancel"), command=refund_dialog.destroy).pack(side='left', padx=5)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to load order: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to load order: {e}")
         refund_dialog.destroy()
 
 def apply_discount(self):
@@ -380,13 +382,13 @@ def apply_discount(self):
 
     selection = self.orders_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select an order to apply discount")
+        messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_select_an_order_to_apply_discount', default="Please select an order to apply discount"))
         return
     item = self.orders_tree.item(selection[0])
     order_id = item['values'][0]
     # Create discount dialog
     discount_dialog = tk.Toplevel(self.root)
-    discount_dialog.title("Apply Discount")
+    discount_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.apply_discount', default="Apply Discount"))
     discount_dialog.geometry("450x450")
     discount_dialog.transient(self.root)
     discount_dialog.grab_set()
@@ -406,30 +408,30 @@ def apply_discount(self):
             order_data = cursor.fetchone()
             conn.close()
             if not order_data:
-                messagebox.showerror("Error", "Order not found")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.order_not_found', default="Order not found"))
                 discount_dialog.destroy()
                 return
             original_total, current_discount, order_status_val = order_data
             # Display order info
-            info_frame = ttk.LabelFrame(main_frame, text="Order Information", padding=10)
+            info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.order_information', default="Order Information"), padding=10)
             info_frame.pack(fill='x', pady=10)
             ttk.Label(info_frame, text=f"Original Total: £{original_total:.2f}").pack(anchor='w')
             ttk.Label(info_frame, text=f"Current Discount: £{current_discount or 0:.2f}").pack(anchor='w')
             ttk.Label(info_frame, text=f"Current Total: £{original_total - (current_discount or 0):.2f}").pack(anchor='w')
             # Discount details
-            discount_frame = ttk.LabelFrame(main_frame, text="Discount Details", padding=10)
+            discount_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.discount_details', default="Discount Details"), padding=10)
             discount_frame.pack(fill='x', pady=10)
-            discount_type_var = tk.StringVar(value="Percentage")
-            ttk.Radiobutton(discount_frame, text="Percentage (%)", variable=discount_type_var,
+            discount_type_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.values.percentage', default="Percentage"))
+            ttk.Radiobutton(discount_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.percentage', default="Percentage (%)"), variable=discount_type_var,
                            value="Percentage").pack(anchor='w')
-            ttk.Radiobutton(discount_frame, text="Fixed Amount (£)", variable=discount_type_var,
+            ttk.Radiobutton(discount_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.fixed_amount', default="Fixed Amount (£)"), variable=discount_type_var,
                            value="Fixed").pack(anchor='w')
-            ttk.Label(discount_frame, text="Discount Value:").pack(anchor='w', pady=(10,0))
+            ttk.Label(discount_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.discount_value', default="Discount Value:")).pack(anchor='w', pady=(10,0))
             discount_value_var = tk.DoubleVar(value=0.0)
             discount_entry = ttk.Entry(discount_frame, textvariable=discount_value_var, width=20)
             discount_entry.pack(anchor='w', padx=20)
             # Calculated discount display
-            calculated_label = ttk.Label(discount_frame, text="Discount Amount: £0.00", foreground='blue')
+            calculated_label = ttk.Label(discount_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.discount_amount_0_00', default="Discount Amount: £0.00"), foreground='blue')
             calculated_label.pack(anchor='w', padx=20, pady=5)
             def update_calculated_discount(*args):
                 try:
@@ -440,15 +442,15 @@ def apply_discount(self):
                     else:
                         calculated_label.config(text=f"Discount Amount: £{value:.2f}")
                 except (ValueError, TypeError, tk.TclError):
-                    calculated_label.config(text="Discount Amount: £0.00")
+                    calculated_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.discount_amount_0_00', default="Discount Amount: £0.00"))
             discount_value_var.trace('w', update_calculated_discount)
             discount_type_var.trace('w', update_calculated_discount)
             # Promotional code
-            ttk.Label(discount_frame, text="Promo Code (optional):").pack(anchor='w', pady=(10,0))
+            ttk.Label(discount_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.promo_code_optional', default="Promo Code (optional):")).pack(anchor='w', pady=(10,0))
             promo_var = tk.StringVar()
             ttk.Entry(discount_frame, textvariable=promo_var, width=20).pack(anchor='w', padx=20)
             # Reason
-            ttk.Label(discount_frame, text="Discount Reason:").pack(anchor='w', pady=(10,0))
+            ttk.Label(discount_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.discount_reason', default="Discount Reason:")).pack(anchor='w', pady=(10,0))
             reason_var = tk.StringVar()
             reason_combo = ttk.Combobox(discount_frame, textvariable=reason_var, width=30)
             reason_combo['values'] = ('Promotional Offer', 'Loyalty Reward', 'Compensation',
@@ -456,7 +458,7 @@ def apply_discount(self):
             reason_combo.pack(anchor='w', padx=20)
             # Manager approval for large discounts
             approval_var = tk.BooleanVar(value=False)
-            approval_check = ttk.Checkbutton(discount_frame, text="Manager Approval (for discounts > 20%)",
+            approval_check = ttk.Checkbutton(discount_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.manager_approval_for_discounts_20', default="Manager Approval (for discounts > 20%)"),
                                             variable=approval_var, state='disabled')
             approval_check.pack(anchor='w', pady=5)
             def check_approval_needed(*args):
@@ -474,28 +476,28 @@ def apply_discount(self):
             def apply_discount_action():
                 value = discount_value_var.get()
                 if value <= 0:
-                    messagebox.showwarning("Invalid Value", "Discount value must be greater than 0")
+                    messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.invalid_value', default="Invalid Value"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.discount_value_must_be_greater_than_0', default="Discount value must be greater than 0"))
                     return
                 # Calculate discount amount
                 if discount_type_var.get() == "Percentage":
                     if value > 100:
-                        messagebox.showwarning("Invalid Percentage", "Percentage cannot exceed 100%")
+                        messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.invalid_percentage', default="Invalid Percentage"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.percentage_cannot_exceed_100', default="Percentage cannot exceed 100%"))
                         return
                     discount_amount = (original_total * value) / 100
                     # Check for manager approval
                     if value > 20 and not approval_var.get():
-                        messagebox.showwarning("Approval Required",
-                                             "Manager approval required for discounts over 20%")
+                        messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.approval_required', default="Approval Required"),
+                                             _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.manager_approval_required_for_discounts_over_20', default="Manager approval required for discounts over 20%"))
                         return
                 else:
                     discount_amount = value
                     if discount_amount >= original_total:
-                        messagebox.showwarning("Invalid Amount",
+                        messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.invalid_amount', default="Invalid Amount"),
                                              f"Discount cannot exceed order total (£{original_total:.2f})")
                         return
                 reason = reason_var.get()
                 if not reason:
-                    messagebox.showwarning("Missing Information", "Please select a discount reason")
+                    messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.missing_information', default="Missing Information"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_select_a_discount_reason', default="Please select a discount reason"))
                     return
                 try:
                     conn = get_db_connection()
@@ -534,45 +536,45 @@ def apply_discount(self):
                         ''', (new_discount_total, new_total, order_id))
                         conn.commit()
                         conn.close()
-                        messagebox.showinfo("Success",
+                        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.success', default="Success"),
                                           "Discount applied successfully!\n\n" +
                                           f"Discount: £{discount_amount:.2f}\n" +
                                           f"New Total: £{new_total:.2f}")
                         discount_dialog.destroy()
                         self.view_orders_gui()  # Refresh
                 except sqlite3.Error as e:
-                    messagebox.showerror("Error", f"Failed to apply discount: {e}")
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to apply discount: {e}")
             button_frame = ttk.Frame(main_frame)
             button_frame.pack(pady=10)
-            ttk.Button(button_frame, text="Apply Discount", command=apply_discount_action).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=discount_dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.apply_discount', default="Apply Discount"), command=apply_discount_action).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.cancel', default="Cancel"), command=discount_dialog.destroy).pack(side='left', padx=5)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to load order: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to load order: {e}")
         discount_dialog.destroy()
 
 def process_cash_payment(self, order_id, total_amount):
     """Process cash payment with change calculation"""
     cash_dialog = tk.Toplevel(self.root)
-    cash_dialog.title("Cash Payment")
+    cash_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.cash_payment', default="Cash Payment"))
     cash_dialog.geometry("400x350")
     cash_dialog.transient(self.root)
     cash_dialog.grab_set()
     main_frame = ttk.Frame(cash_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Cash Payment", font=('Arial', 14, 'bold')).pack(pady=10)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.cash_payment', default="Cash Payment"), font=('Arial', 14, 'bold')).pack(pady=10)
     # Order info
-    info_frame = ttk.LabelFrame(main_frame, text="Payment Details", padding=10)
+    info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.payment_details', default="Payment Details"), padding=10)
     info_frame.pack(fill='x', pady=10)
     ttk.Label(info_frame, text=f"Order Total: £{total_amount:.2f}",
              font=('Arial', 12, 'bold'), foreground='blue').pack(anchor='w', pady=5)
     # Cash tendered
-    ttk.Label(info_frame, text="Cash Tendered (£):").pack(anchor='w', pady=(10,0))
+    ttk.Label(info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.cash_tendered', default="Cash Tendered (£):")).pack(anchor='w', pady=(10,0))
     cash_tendered_var = tk.DoubleVar(value=0.0)
     cash_entry = ttk.Entry(info_frame, textvariable=cash_tendered_var, width=20, font=('Arial', 12))
     cash_entry.pack(anchor='w', pady=5)
     cash_entry.focus()
     # Change display
-    change_label = ttk.Label(info_frame, text="Change: £0.00",
+    change_label = ttk.Label(info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.change_0_00', default="Change: £0.00"),
                             font=('Arial', 12, 'bold'), foreground='green')
     change_label.pack(anchor='w', pady=10)
     def update_change(*args):
@@ -584,19 +586,19 @@ def process_cash_payment(self, order_id, total_amount):
             else:
                 change_label.config(text=f"Insufficient: £{abs(change):.2f} short", foreground='red')
         except (ValueError, TypeError, tk.TclError):
-            change_label.config(text="Change: £0.00", foreground='green')
+            change_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.change_0_00', default="Change: £0.00"), foreground='green')
     cash_tendered_var.trace('w', update_change)
     # Quick amount buttons
     quick_frame = ttk.Frame(main_frame)
     quick_frame.pack(pady=10)
-    ttk.Label(quick_frame, text="Quick Amounts:").pack(side='left', padx=5)
+    ttk.Label(quick_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.quick_amounts', default="Quick Amounts:")).pack(side='left', padx=5)
     for amount in [10, 20, 50, 100]:
         ttk.Button(quick_frame, text=f"£{amount}",
                   command=lambda a=amount: cash_tendered_var.set(a)).pack(side='left', padx=2)
     def complete_payment():
         tendered = cash_tendered_var.get()
         if tendered < total_amount:
-            messagebox.showwarning("Insufficient Cash",
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.insufficient_cash', default="Insufficient Cash"),
                                  f"Cash tendered (£{tendered:.2f}) is less than order total (£{total_amount:.2f})")
             return
         change = tendered - total_amount
@@ -633,7 +635,7 @@ def process_cash_payment(self, order_id, total_amount):
                 send_payment_receipt_email(order_id, total_amount, 'Cash',
                                           cash_tendered=tendered, change_given=change)
 
-                messagebox.showinfo("Payment Complete",
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_complete', default="Payment Complete"),
                                   "Cash payment processed successfully!\n\n" +
                                   f"Cash Tendered: £{tendered:.2f}\n" +
                                   f"Change: £{change:.2f}\n\n" +
@@ -641,55 +643,55 @@ def process_cash_payment(self, order_id, total_amount):
                 cash_dialog.destroy()
                 self.view_orders_gui()  # Refresh
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to process cash payment: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process cash payment: {e}")
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
-    ttk.Button(button_frame, text="Complete Payment", command=complete_payment).pack(side='left', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=cash_dialog.destroy).pack(side='left', padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.complete_payment', default="Complete Payment"), command=complete_payment).pack(side='left', padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.cancel', default="Cancel"), command=cash_dialog.destroy).pack(side='left', padx=5)
 
 def process_card_payment(self, order_id, total_amount):
     """Process card payment"""
     card_dialog = tk.Toplevel(self.root)
-    card_dialog.title("Card Payment")
+    card_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.card_payment', default="Card Payment"))
     card_dialog.geometry("400x400")
     card_dialog.transient(self.root)
     card_dialog.grab_set()
     main_frame = ttk.Frame(card_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Card Payment", font=('Arial', 14, 'bold')).pack(pady=10)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.card_payment', default="Card Payment"), font=('Arial', 14, 'bold')).pack(pady=10)
     # Order info
-    info_frame = ttk.LabelFrame(main_frame, text="Payment Details", padding=10)
+    info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.payment_details', default="Payment Details"), padding=10)
     info_frame.pack(fill='x', pady=10)
     ttk.Label(info_frame, text=f"Order Total: £{total_amount:.2f}",
              font=('Arial', 12, 'bold'), foreground='blue').pack(anchor='w', pady=5)
     # Card type
-    ttk.Label(info_frame, text="Card Type:").pack(anchor='w', pady=(10,0))
-    card_type_var = tk.StringVar(value="Credit Card")
+    ttk.Label(info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.card_type', default="Card Type:")).pack(anchor='w', pady=(10,0))
+    card_type_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.values.credit_card', default="Credit Card"))
     card_type_combo = ttk.Combobox(info_frame, textvariable=card_type_var, width=25, state='readonly')
     card_type_combo['values'] = ('Credit Card', 'Debit Card', 'Contactless')
     card_type_combo.pack(anchor='w', pady=5)
     # Card last 4 digits (optional)
-    ttk.Label(info_frame, text="Card Last 4 Digits (optional):").pack(anchor='w', pady=(10,0))
+    ttk.Label(info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.card_last_4_digits_optional', default="Card Last 4 Digits (optional):")).pack(anchor='w', pady=(10,0))
     card_last4_var = tk.StringVar()
     ttk.Entry(info_frame, textvariable=card_last4_var, width=10).pack(anchor='w', pady=5)
     # Transaction ID
-    ttk.Label(info_frame, text="Transaction ID:").pack(anchor='w', pady=(10,0))
+    ttk.Label(info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.transaction_id', default="Transaction ID:")).pack(anchor='w', pady=(10,0))
     import random
     transaction_id = f"TXN{random.randint(100000, 999999)}"
     transaction_id_var = tk.StringVar(value=transaction_id)
     ttk.Entry(info_frame, textvariable=transaction_id_var, width=25, state='readonly').pack(anchor='w', pady=5)
     # Status display
-    status_label = ttk.Label(main_frame, text="Ready to process payment",
+    status_label = ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.ready_to_process_payment', default="Ready to process payment"),
                             font=('Arial', 10), foreground='blue')
     status_label.pack(pady=10)
     def authorize_payment():
         card_type = card_type_var.get()
         card_last4 = card_last4_var.get()
         if card_last4 and (not card_last4.isdigit() or len(card_last4) != 4):
-            messagebox.showwarning("Invalid Input", "Card last 4 digits must be exactly 4 digits")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.invalid_input', default="Invalid Input"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.card_last_4_digits_must_be_exactly_4_digits', default="Card last 4 digits must be exactly 4 digits"))
             return
         # Simulate payment authorization
-        status_label.config(text="Authorizing payment...", foreground='orange')
+        status_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.authorizing_payment', default="Authorizing payment..."), foreground='orange')
         card_dialog.update()
         import time
         time.sleep(1)  # Simulate processing
@@ -730,13 +732,13 @@ def process_card_payment(self, order_id, total_amount):
                     ''', (card_type, order_id))
                     conn.commit()
                     conn.close()
-                    status_label.config(text="Payment Authorized!", foreground='green')
+                    status_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.payment_authorized', default="Payment Authorized!"), foreground='green')
 
                     # Send payment receipt email
                     send_payment_receipt_email(order_id, total_amount, card_type,
                                               transaction_id=transaction_id, auth_code=auth_code)
 
-                    messagebox.showinfo("Payment Complete",
+                    messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_complete', default="Payment Complete"),
                                       "Card payment processed successfully!\n\n" +
                                       f"Card Type: {card_type}\n" +
                                       f"Amount: £{total_amount:.2f}\n" +
@@ -746,54 +748,54 @@ def process_card_payment(self, order_id, total_amount):
                     card_dialog.destroy()
                     self.view_orders_gui()  # Refresh
             except (sqlite3.Error, tk.TclError, ValueError, TypeError) as e:
-                status_label.config(text="Payment Failed", foreground='red')
-                messagebox.showerror("Error", f"Failed to process card payment: {e}")
+                status_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.payment_failed', default="Payment Failed"), foreground='red')
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process card payment: {e}")
         else:
-            status_label.config(text="Payment Declined", foreground='red')
-            messagebox.showerror("Payment Declined",
+            status_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.payment_declined', default="Payment Declined"), foreground='red')
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_declined', default="Payment Declined"),
                                "Card payment was declined.\n\n" +
                                "Please try another payment method or contact your bank.")
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
-    ttk.Button(button_frame, text="Authorize Payment", command=authorize_payment).pack(side='left', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=card_dialog.destroy).pack(side='left', padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.authorize_payment', default="Authorize Payment"), command=authorize_payment).pack(side='left', padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.cancel', default="Cancel"), command=card_dialog.destroy).pack(side='left', padx=5)
 
 def process_meal_plan_payment(self, order_id, total_amount):
     """Process meal plan payment"""
     meal_plan_dialog = tk.Toplevel(self.root)
-    meal_plan_dialog.title("Meal Plan Payment")
+    meal_plan_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.meal_plan_payment', default="Meal Plan Payment"))
     meal_plan_dialog.geometry("450x500")
     meal_plan_dialog.transient(self.root)
     meal_plan_dialog.grab_set()
     main_frame = ttk.Frame(meal_plan_dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Meal Plan Payment", font=('Arial', 14, 'bold')).pack(pady=10)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.meal_plan_payment', default="Meal Plan Payment"), font=('Arial', 14, 'bold')).pack(pady=10)
     # Order info
-    info_frame = ttk.LabelFrame(main_frame, text="Payment Details", padding=10)
+    info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.payment_details', default="Payment Details"), padding=10)
     info_frame.pack(fill='x', pady=10)
     ttk.Label(info_frame, text=f"Order Total: £{total_amount:.2f}",
              font=('Arial', 12, 'bold'), foreground='blue').pack(anchor='w', pady=5)
     # Student ID lookup
-    ttk.Label(info_frame, text="Student ID:").pack(anchor='w', pady=(10,0))
+    ttk.Label(info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.student_id', default="Student ID:")).pack(anchor='w', pady=(10,0))
     student_id_var = tk.StringVar()
     student_entry = ttk.Entry(info_frame, textvariable=student_id_var, width=20)
     student_entry.pack(anchor='w', pady=5)
     student_entry.focus()
     # Student info display
-    student_info_frame = ttk.LabelFrame(main_frame, text="Student Information", padding=10)
+    student_info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.student_information', default="Student Information"), padding=10)
     student_info_frame.pack(fill='x', pady=10)
-    student_name_label = ttk.Label(student_info_frame, text="Name: -")
+    student_name_label = ttk.Label(student_info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.name', default="Name: -"))
     student_name_label.pack(anchor='w')
-    plan_type_label = ttk.Label(student_info_frame, text="Plan Type: -")
+    plan_type_label = ttk.Label(student_info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.plan_type', default="Plan Type: -"))
     plan_type_label.pack(anchor='w')
-    balance_label = ttk.Label(student_info_frame, text="Balance: £0.00", foreground='gray')
+    balance_label = ttk.Label(student_info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.balance_0_00', default="Balance: £0.00"), foreground='gray')
     balance_label.pack(anchor='w')
-    status_label = ttk.Label(student_info_frame, text="Status: Not Checked", foreground='gray')
+    status_label = ttk.Label(student_info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.status_not_checked', default="Status: Not Checked"), foreground='gray')
     status_label.pack(anchor='w', pady=5)
     def check_meal_plan():
         student_id = student_id_var.get()
         if not student_id:
-            messagebox.showwarning("Missing Information", "Please enter Student ID")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.missing_information', default="Missing Information"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_enter_student_id', default="Please enter Student ID"))
             return
         try:
             conn = get_db_connection()
@@ -820,8 +822,8 @@ def process_meal_plan_payment(self, order_id, total_amount):
                 student_data = cursor.fetchone()
                 if not student_data:
                     # Create demo student for testing
-                    messagebox.showinfo("Demo Mode",
-                                      "Student not found. Creating demo meal plan for testing purposes.")
+                    messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.demo_mode', default="Demo Mode"),
+                                      _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.student_not_found_creating_demo_meal_plan_for_testing_purposes', default="Student not found. Creating demo meal plan for testing purposes."))
                     cursor.execute('''
                         INSERT INTO student_meal_plans
                         (student_id, student_name, plan_type, balance, is_active)
@@ -836,24 +838,24 @@ def process_meal_plan_payment(self, order_id, total_amount):
                 balance_label.config(text=f"Balance: £{balance:.2f}",
                                     foreground='green' if balance >= total_amount else 'red')
                 if not is_active:
-                    status_label.config(text="Status: Plan Inactive", foreground='red')
-                    messagebox.showwarning("Inactive Plan", "This meal plan is not active")
+                    status_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.status_plan_inactive', default="Status: Plan Inactive"), foreground='red')
+                    messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.inactive_plan', default="Inactive Plan"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.this_meal_plan_is_not_active', default="This meal plan is not active"))
                 elif balance < total_amount:
-                    status_label.config(text="Status: Insufficient Balance", foreground='red')
-                    messagebox.showwarning("Insufficient Balance",
+                    status_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.status_insufficient_balance', default="Status: Insufficient Balance"), foreground='red')
+                    messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.insufficient_balance', default="Insufficient Balance"),
                                          f"Current balance (£{balance:.2f}) is less than order total (£{total_amount:.2f})")
                 else:
-                    status_label.config(text="Status: Valid - Ready to Process", foreground='green')
+                    status_label.config(text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.text.status_valid_ready_to_process', default="Status: Valid - Ready to Process"), foreground='green')
         except (sqlite3.Error, tk.TclError) as e:
-            messagebox.showerror("Error", f"Failed to check meal plan: {e}")
-    ttk.Button(info_frame, text="Check Meal Plan", command=check_meal_plan).pack(pady=10)
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to check meal plan: {e}")
+    ttk.Button(info_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.check_meal_plan', default="Check Meal Plan"), command=check_meal_plan).pack(pady=10)
     def process_payment():
         student_id = student_id_var.get()
         if not student_id:
-            messagebox.showwarning("Missing Information", "Please enter Student ID")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.missing_information', default="Missing Information"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_enter_student_id', default="Please enter Student ID"))
             return
         if status_label.cget('text') != "Status: Valid - Ready to Process":
-            messagebox.showwarning("Cannot Process", "Please check meal plan first and ensure it's valid")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.cannot_process', default="Cannot Process"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_check_meal_plan_first_and_ensure_it_s_valid', default="Please check meal plan first and ensure it's valid"))
             return
         try:
             conn = get_db_connection()
@@ -888,7 +890,7 @@ def process_meal_plan_payment(self, order_id, total_amount):
                 send_payment_receipt_email(order_id, total_amount, 'Meal Plan',
                                           student_id=student_id, new_balance=new_balance)
 
-                messagebox.showinfo("Payment Complete",
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_complete', default="Payment Complete"),
                                   "Meal plan payment processed successfully!\n\n" +
                                   f"Student ID: {student_id}\n" +
                                   f"Amount Deducted: £{total_amount:.2f}\n" +
@@ -897,29 +899,29 @@ def process_meal_plan_payment(self, order_id, total_amount):
                 meal_plan_dialog.destroy()
                 self.view_orders_gui()  # Refresh
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to process meal plan payment: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process meal plan payment: {e}")
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=10)
-    ttk.Button(button_frame, text="Process Payment", command=process_payment).pack(side='left', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=meal_plan_dialog.destroy).pack(side='left', padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.process_payment', default="Process Payment"), command=process_payment).pack(side='left', padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.cancel', default="Cancel"), command=meal_plan_dialog.destroy).pack(side='left', padx=5)
 
 def open_finance_gui_for_payment(self, order_id=None, amount=None):
     """Open finance GUI for payment processing"""
     try:
         from education_system.systems.university.interfaces.gui.finance.finance import FinanceGUI
         finance_window = tk.Toplevel(self.root)
-        finance_window.title("Finance System - Restaurant Payment")
+        finance_window.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.finance_system_restaurant_payment', default="Finance System - Restaurant Payment"))
         finance_window.geometry("1000x700")
         # Initialize finance GUI
         finance_gui = FinanceGUI(finance_window, auth=self.auth if hasattr(self, 'auth') else None)
         # Pre-populate restaurant payment information if methods exist
         if order_id and amount and hasattr(finance_gui, 'prepopulate_restaurant_payment'):
             finance_gui.prepopulate_restaurant_payment(order_id, amount)
-        messagebox.showinfo("Finance System", "Finance system opened for payment processing")
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_system', default="Finance System"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_system_opened_for_payment_processing', default="Finance system opened for payment processing"))
     except ImportError:
-        messagebox.showerror("Error", "Finance system is not available")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_system_is_not_available', default="Finance system is not available"))
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Could not open finance system: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Could not open finance system: {e}")
 
 def add_finance_button_to_payment_options(self, parent_frame):
     """Add a 'Pay via Finance System' button to a payment options frame.
@@ -967,7 +969,7 @@ class PaymentDialog:
         self.order_id = order_id
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Process Payment")
+        self.dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.process_payment', default="Process Payment"))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -992,11 +994,11 @@ class PaymentDialog:
 
                 ttk.Label(main_frame, text=f"Total: £{total:.2f}").pack(pady=5)
             else:
-                ttk.Label(main_frame, text="Total: Unknown").pack(pady=5)
+                ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.total_unknown', default="Total: Unknown")).pack(pady=5)
         except sqlite3.Error:
-            ttk.Label(main_frame, text="Total: Unknown").pack(pady=5)
+            ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.total_unknown', default="Total: Unknown")).pack(pady=5)
 
-        ttk.Label(main_frame, text="Payment Method:").pack(pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.payment_method', default="Payment Method:")).pack(pady=5)
 
         self.payment_var = tk.StringVar()
         payment_combo = ttk.Combobox(main_frame, textvariable=self.payment_var,
@@ -1004,7 +1006,7 @@ class PaymentDialog:
         payment_combo.pack(pady=10)
 
         # Student ID field for student account payments
-        ttk.Label(main_frame, text="Student ID (for Finance Account payments):").pack(pady=(10, 0))
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.student_id_for_finance_account_payments', default="Student ID (for Finance Account payments):")).pack(pady=(10, 0))
         self.student_id_var = tk.StringVar()
         self.student_id_entry = ttk.Entry(main_frame, textvariable=self.student_id_var)
         self.student_id_entry.pack(pady=5)
@@ -1012,22 +1014,22 @@ class PaymentDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="Process", command=self.process_payment).pack(side='left', padx=10)
-        ttk.Button(button_frame, text="💳 Finance System", command=self.open_finance_system).pack(side='left', padx=10)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side='left', padx=10)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.process', default="Process"), command=self.process_payment).pack(side='left', padx=10)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.finance_system', default="💳 Finance System"), command=self.open_finance_system).pack(side='left', padx=10)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.cancel', default="Cancel"), command=self.cancel).pack(side='left', padx=10)
 
     def process_payment(self):
         """Process the payment"""
         payment_method = self.payment_var.get()
         if not payment_method:
-            messagebox.showerror("Error", "Please select a payment method")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_select_a_payment_method', default="Please select a payment method"))
             return
 
         # Validate student ID for Finance Account payments
         if payment_method == 'Finance Account':
             student_id = self.student_id_var.get().strip()
             if not student_id:
-                messagebox.showerror("Error", "Please enter a Student ID for Finance Account payments")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.please_enter_a_student_id_for_finance_account_payments', default="Please enter a Student ID for Finance Account payments"))
                 return
 
             # Process payment via finance system
@@ -1046,14 +1048,14 @@ class PaymentDialog:
 
             self.result = True
             self.dialog.destroy()
-            messagebox.showinfo("Success", "Payment processed successfully")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_processed_successfully', default="Payment processed successfully"))
 
             # Send order confirmation email if using Finance Account
             if payment_method == 'Finance Account':
                 self._send_order_confirmation_email(student_id)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to process payment: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process payment: {str(e)}")
 
     def _process_student_account_payment(self, student_id):
         """Process payment through student's finance account balance"""
@@ -1061,14 +1063,14 @@ class PaymentDialog:
             # Get order details
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror("Error", "Database connection failed")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.database_connection_failed', default="Database connection failed"))
                 return False
 
             cursor = conn.cursor()
             cursor.execute('SELECT total_amount FROM orders WHERE order_id = ?', (self.order_id,))
             result = cursor.fetchone()
             if not result:
-                messagebox.showerror("Error", "Order not found")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.order_not_found', default="Order not found"))
                 conn.close()
                 return False
 
@@ -1080,13 +1082,13 @@ class PaymentDialog:
                 # Check balance first
                 current_balance = get_student_finance_account_balance(student_id)
                 if current_balance is None:
-                    messagebox.showerror("Error",
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"),
                         f"No finance account found for student {student_id}.\n"
                         "Please create a finance account first or use a different payment method.")
                     return False
 
                 if current_balance < total_amount:
-                    messagebox.showerror("Insufficient Balance",
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.insufficient_balance', default="Insufficient Balance"),
                         f"Student finance account balance is insufficient.\n\n"
                         f"Current Balance: £{current_balance:.2f}\n"
                         f"Required Amount: £{total_amount:.2f}\n\n"
@@ -1106,7 +1108,7 @@ class PaymentDialog:
                 )
 
                 if not payment_result['success']:
-                    messagebox.showerror("Payment Failed", payment_result['message'])
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.payment_failed', default="Payment Failed"), payment_result['message'])
                     return False
 
                 new_balance = payment_result.get('new_balance', 0)
@@ -1121,13 +1123,13 @@ class PaymentDialog:
                 if low_balance_email_sent:
                     success_msg += "\n\n⚠ Low balance alert email sent to student"
 
-                messagebox.showinfo("Finance Account Payment", success_msg)
+                messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_account_payment', default="Finance Account Payment"), success_msg)
                 return True
 
             # Fallback: Legacy method - add to student_fees without balance deduction
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror("Error", "Database connection failed")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.database_connection_failed', default="Database connection failed"))
                 return False
 
             cursor = conn.cursor()
@@ -1136,7 +1138,7 @@ class PaymentDialog:
             cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
             student_result = cursor.fetchone()
             if not student_result:
-                messagebox.showerror("Error", f"Student ID {student_id} not found in system")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Student ID {student_id} not found in system")
                 conn.close()
                 return False
 
@@ -1170,13 +1172,13 @@ class PaymentDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Finance Integration",
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_integration', default="Finance Integration"),
                 f"Payment of £{total_amount:.2f} charged to {first_name} {last_name}'s student account (legacy)")
 
             return True
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to process student account payment: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Failed to process student account payment: {e}")
             return False
 
     def _send_order_confirmation_email(self, student_id):
@@ -1265,7 +1267,7 @@ class PaymentDialog:
         """Show fallback dialog for restaurant email"""
         try:
             fallback_window = tk.Toplevel(self.dialog)
-            fallback_window.title("Restaurant Order Email - Manual Send")
+            fallback_window.title(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.windows.restaurant_order_email_manual_send', default="Restaurant Order Email - Manual Send"))
             fallback_window.geometry("700x500")
             fallback_window.transient(self.dialog)
 
@@ -1273,7 +1275,7 @@ class PaymentDialog:
                      text=f"Restaurant order confirmation for {student_name} - Please send manually:",
                      font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', padx=10, pady=10)
 
-            details_frame = ttk.LabelFrame(fallback_window, text="Email Details", padding=10)
+            details_frame = ttk.LabelFrame(fallback_window, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.labels.email_details', default="Email Details"), padding=10)
             details_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
             details_text = ScrolledText(details_frame, height=20, width=80)
@@ -1283,7 +1285,7 @@ class PaymentDialog:
             details_text.insert('1.0', email_details)
             details_text.config(state='disabled')
 
-            ttk.Button(fallback_window, text="Close", command=fallback_window.destroy).pack(pady=10)
+            ttk.Button(fallback_window, text=_t('gui.operations.commerce.restaurant_management_gui.orders.payments.buttons.close', default="Close"), command=fallback_window.destroy).pack(pady=10)
         except (sqlite3.Error, tk.TclError) as e:
             print(f"Failed to show restaurant email fallback: {e}")
 
@@ -1314,12 +1316,12 @@ class PaymentDialog:
             if hasattr(finance_gui, 'prepopulate_restaurant_payment'):
                 finance_gui.prepopulate_restaurant_payment(self.order_id, amount)
 
-            messagebox.showinfo("Finance System", f"Finance system opened for order #{self.order_id} (£{amount:.2f})")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_system', default="Finance System"), f"Finance system opened for order #{self.order_id} (£{amount:.2f})")
 
         except ImportError:
-            messagebox.showerror("Error", "Finance system is not available")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.finance_system_is_not_available', default="Finance system is not available"))
         except (sqlite3.Error, tk.TclError) as e:
-            messagebox.showerror("Error", f"Could not open finance system: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.payments.dialogs.error', default="Error"), f"Could not open finance system: {e}")
 
     def cancel(self):
         """Cancel the dialog"""

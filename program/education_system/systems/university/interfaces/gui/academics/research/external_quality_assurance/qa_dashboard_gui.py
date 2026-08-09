@@ -7,6 +7,8 @@ submission" button that writes a CSV / JSON to disk.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from datetime import date
@@ -47,8 +49,8 @@ class _TextEditor(tk.Toplevel):
 
         bar = ttk.Frame(self)
         bar.pack(fill=tk.X, padx=10, pady=8)
-        ttk.Button(bar, text="Save", command=self._save).pack(side=tk.RIGHT)
-        ttk.Button(bar, text="Cancel", command=self.destroy).pack(side=tk.RIGHT, padx=6)
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.save', default="Save"), command=self._save).pack(side=tk.RIGHT)
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.cancel', default="Cancel"), command=self.destroy).pack(side=tk.RIGHT, padx=6)
 
     def _save(self):
         self.result = self.txt.get("1.0", tk.END).rstrip()
@@ -58,7 +60,7 @@ class _TextEditor(tk.Toplevel):
 class QADashboardGUI:
     def __init__(self, parent=None, app=None):
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title("External Quality Assurance — OfS / TEF / REF")
+        self.window.title(_t('gui.academics.research.external_quality_assurance.qa_dashboard.windows.external_quality_assurance_ofs_tef_ref', default="External Quality Assurance — OfS / TEF / REF"))
         self.window.geometry("1300x820")
         self.window.minsize(1100, 720)
 
@@ -115,7 +117,7 @@ class QADashboardGUI:
     def _build_open_in_bar(self, parent):
         bar = ttk.Frame(parent, padding=(10, 6, 10, 0))
         bar.pack(fill=tk.X)
-        ttk.Label(bar, text="Open in:",
+        ttk.Label(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.open_in', default="Open in:"),
                   font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(0, 6))
         for label, method in self._OPEN_IN_TARGETS:
             btn = ttk.Button(bar, text=label,
@@ -193,15 +195,15 @@ class QADashboardGUI:
         that don't simply open at their default state."""
         if not self.app:
             messagebox.showinfo(
-                "Not available",
-                "Cross-module navigation requires the main GUI; open this dashboard "
-                "from the main menu rather than standalone.",
+                _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.not_available', default="Not available"),
+                _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.cross_module_navigation_requires_the_main_gui_open_this_dashboar', default="Cross-module navigation requires the main GUI; open this dashboard "
+                "from the main menu rather than standalone."),
                 parent=self.window,
             )
             return
         fn = getattr(self.app, method_name, None)
         if fn is None:
-            messagebox.showwarning("Not available",
+            messagebox.showwarning(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.not_available', default="Not available"),
                                    f"{label} is not registered on this build.",
                                    parent=self.window)
             return
@@ -213,7 +215,7 @@ class QADashboardGUI:
             fn()
         except Exception as exc:
             logger.exception("Open-in %s failed", method_name)
-            messagebox.showerror("Failed to open",
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.failed_to_open', default="Failed to open"),
                                  f"Could not open {label}: {exc}",
                                  parent=self.window)
 
@@ -250,8 +252,8 @@ class QADashboardGUI:
         """1. Open Grades filtered to the cohort behind a B3 row."""
         ctx = self._selected_b3()
         if not ctx:
-            messagebox.showinfo("Pick a row",
-                                "Select a B3 metric row first.", parent=self.window)
+            messagebox.showinfo(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.pick_a_row', default="Pick a row"),
+                                _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.select_a_b3_metric_row_first', default="Select a B3 metric row first."), parent=self.window)
             return None
         payload = {"source": "eqa.b3", "cohort_year": ctx["cohort_year"],
                    "course": ctx["course"], "metric": ctx["metric"]}
@@ -275,8 +277,8 @@ class QADashboardGUI:
         events for the selected submission."""
         ctx = self._selected_submission()
         if not ctx:
-            messagebox.showinfo("Pick a row",
-                                "Select a submission first.", parent=self.window)
+            messagebox.showinfo(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.pick_a_row', default="Pick a row"),
+                                _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.select_a_submission_first', default="Select a submission first."), parent=self.window)
             return None
         payload = {
             "source": "eqa.submissions",
@@ -314,9 +316,9 @@ class QADashboardGUI:
 
     def _build_overview_tab(self, nb):
         f = ttk.Frame(nb, padding=10)
-        nb.add(f, text="Overview")
+        nb.add(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.tabs.overview', default="Overview"))
 
-        ttk.Label(f, text="Submissions tracker",
+        ttk.Label(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.submissions_tracker', default="Submissions tracker"),
                   font=("Arial", 12, "bold")).pack(anchor=tk.W)
         self.sub_tree = ttk.Treeview(
             f, columns=("id", "framework", "year", "status", "date", "notes"),
@@ -331,29 +333,29 @@ class QADashboardGUI:
 
         bar = ttk.Frame(f)
         bar.pack(fill=tk.X, pady=(4, 8))
-        ttk.Button(bar, text="New / update submission",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.new_update_submission', default="New / update submission"),
                    command=self._sub_create).pack(side=tk.LEFT)
-        ttk.Button(bar, text="Sign off selected",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.sign_off_selected', default="Sign off selected"),
                    command=self._sub_sign_off).pack(side=tk.LEFT, padx=6)
-        ttk.Button(bar, text="Refresh",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.refresh', default="Refresh"),
                    command=self._refresh_submissions).pack(side=tk.LEFT)
-        ttk.Button(bar, text="View audit log",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.view_audit_log', default="View audit log"),
                    command=self.open_audit_for_submission).pack(side=tk.LEFT, padx=6)
-        ttk.Button(bar, text="Open in BI",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.open_in_bi', default="Open in BI"),
                    command=self.open_bi_for_kpi).pack(side=tk.RIGHT, padx=6)
-        ttk.Button(bar, text="Recompute & publish KPIs",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.recompute_publish_kpis', default="Recompute & publish KPIs"),
                    command=self._publish_kpis).pack(side=tk.RIGHT)
 
         # Mitigating Circumstances (MC/EC) summary card. Volume and approval
         # rate feed Student Outcomes / B3 narratives so reviewers see them
         # alongside the submissions tracker.
-        mc_card = ttk.LabelFrame(f, text="Mitigating Circumstances (MC/EC)",
+        mc_card = ttk.LabelFrame(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.mitigating_circumstances_mc_ec', default="Mitigating Circumstances (MC/EC)"),
                                  padding=8)
         mc_card.pack(fill=tk.X, pady=(8, 4))
-        self._mc_summary_var = tk.StringVar(value="Loading…")
+        self._mc_summary_var = tk.StringVar(value=_t('gui.academics.research.external_quality_assurance.qa_dashboard.values.loading', default="Loading…"))
         ttk.Label(mc_card, textvariable=self._mc_summary_var,
                   font=("Arial", 10)).pack(anchor=tk.W)
-        ttk.Button(mc_card, text="Open MC GUI",
+        ttk.Button(mc_card, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.open_mc_gui', default="Open MC GUI"),
                    command=self._open_mc_gui).pack(anchor=tk.E)
         self._refresh_mc_summary()
 
@@ -389,7 +391,7 @@ class QADashboardGUI:
         except Exception as exc:
             try:
                 from tkinter import messagebox
-                messagebox.showerror("MC", f"Could not open MC GUI: {exc}",
+                messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.mc', default="MC"), f"Could not open MC GUI: {exc}",
                                      parent=self.window)
             except Exception:
                 pass
@@ -404,29 +406,29 @@ class QADashboardGUI:
 
     def _sub_create(self):
         framework = simpledialog.askstring(
-            "Framework", f"Framework ({'/'.join(qa.FRAMEWORKS)}):",
+            _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.framework', default="Framework"), f"Framework ({'/'.join(qa.FRAMEWORKS)}):",
             parent=self.window,
         )
         if not framework or framework not in qa.FRAMEWORKS:
             return
         year = simpledialog.askinteger(
-            "Year", "Submission year:", parent=self.window,
+            _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.year', default="Year"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.submission_year', default="Submission year:"), parent=self.window,
             initialvalue=date.today().year,
         )
         if not year:
             return
-        notes = simpledialog.askstring("Notes", "Notes (optional):",
+        notes = simpledialog.askstring(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.notes', default="Notes"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.notes_optional', default="Notes (optional):"),
                                        parent=self.window) or None
         try:
             qa.upsert_submission(framework, year, notes=notes)
             self._refresh_submissions()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     def _sub_sign_off(self):
         sel = self.sub_tree.selection()
         if not sel:
-            messagebox.showinfo("Pick one", "Select a submission first.")
+            messagebox.showinfo(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.pick_one', default="Pick one"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.select_a_submission_first', default="Select a submission first."))
             return
         sub_id = int(self.sub_tree.item(sel[0])["values"][0])
         signer = _user_id_from_auth(self.auth) or 0
@@ -434,19 +436,19 @@ class QADashboardGUI:
         if ok:
             self._refresh_submissions()
             messagebox.showinfo(
-                "Signed off",
+                _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.signed_off', default="Signed off"),
                 f"Submission marked submitted. {kpi_n} KPI(s) republished.",
             )
         else:
-            messagebox.showwarning("Already signed off",
-                                    "This submission was already submitted.")
+            messagebox.showwarning(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.already_signed_off', default="Already signed off"),
+                                    _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.this_submission_was_already_submitted', default="This submission was already submitted."))
 
     def _publish_kpis(self):
         try:
             n = qa.record_external_qa_kpis()
-            messagebox.showinfo("KPIs", f"Recorded {n} KPI metric(s).")
+            messagebox.showinfo(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.kpis', default="KPIs"), f"Recorded {n} KPI metric(s).")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------------
     # OfS tab — B3 metrics, APP milestones, Protection plans
@@ -454,30 +456,30 @@ class QADashboardGUI:
 
     def _build_ofs_tab(self, nb):
         f = ttk.Frame(nb, padding=10)
-        nb.add(f, text="OfS")
+        nb.add(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.tabs.ofs', default="OfS"))
 
         # B3 metrics row
-        b3 = ttk.LabelFrame(f, text="B3 metrics — continuation / completion / progression",
+        b3 = ttk.LabelFrame(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.b3_metrics_continuation_completion_progression', default="B3 metrics — continuation / completion / progression"),
                               padding=8)
         b3.pack(fill=tk.X)
-        ttk.Label(b3, text="Cohort year:").grid(row=0, column=0, padx=4)
+        ttk.Label(b3, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.cohort_year', default="Cohort year:")).grid(row=0, column=0, padx=4)
         self.b3_year = tk.IntVar(value=date.today().year - 1)
         ttk.Spinbox(b3, from_=2000, to=2100, textvariable=self.b3_year,
                     width=8).grid(row=0, column=1, padx=4)
-        ttk.Button(b3, text="Compute & store snapshot",
+        ttk.Button(b3, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.compute_store_snapshot', default="Compute & store snapshot"),
                    command=self._b3_compute).grid(row=0, column=2, padx=8)
-        ttk.Button(b3, text="Export OfS return (CSV)",
+        ttk.Button(b3, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.export_ofs_return_csv', default="Export OfS return (CSV)"),
                    command=self._ofs_export).grid(row=0, column=3, padx=4)
 
         drill = ttk.Frame(b3)
         drill.grid(row=2, column=0, columnspan=4, sticky=tk.W, pady=(6, 0))
-        ttk.Label(drill, text="Drill-through:",
+        ttk.Label(drill, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.drill_through', default="Drill-through:"),
                   font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(0, 6))
-        ttk.Button(drill, text="Cohort in Grades",
+        ttk.Button(drill, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.cohort_in_grades', default="Cohort in Grades"),
                    command=self.drill_through_b3).pack(side=tk.LEFT, padx=2)
-        ttk.Button(drill, text="Forecast in Predictive",
+        ttk.Button(drill, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.forecast_in_predictive', default="Forecast in Predictive"),
                    command=self.open_predictive_for_cohort).pack(side=tk.LEFT, padx=2)
-        ttk.Button(drill, text="HESA for year",
+        ttk.Button(drill, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.hesa_for_year', default="HESA for year"),
                    command=self.open_hesa_for_year).pack(side=tk.LEFT, padx=2)
 
         self.b3_tree = ttk.Treeview(
@@ -494,7 +496,7 @@ class QADashboardGUI:
                             sticky=(tk.W, tk.E), pady=(8, 0))
 
         # APP milestones
-        app = ttk.LabelFrame(f, text="Access & Participation Plan milestones", padding=8)
+        app = ttk.LabelFrame(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.access_participation_plan_milestones', default="Access & Participation Plan milestones"), padding=8)
         app.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
         self.app_tree = ttk.Treeview(
             app, columns=("id", "year", "text", "target", "current", "achieved", "due"),
@@ -510,17 +512,17 @@ class QADashboardGUI:
 
         bar = ttk.Frame(app)
         bar.pack(fill=tk.X, pady=(6, 0))
-        ttk.Button(bar, text="Add milestone", command=self._app_add).pack(side=tk.LEFT)
-        ttk.Button(bar, text="Mark selected achieved",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.add_milestone', default="Add milestone"), command=self._app_add).pack(side=tk.LEFT)
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.mark_selected_achieved', default="Mark selected achieved"),
                    command=self._app_mark_done).pack(side=tk.LEFT, padx=6)
-        ttk.Button(bar, text="Update current value",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.update_current_value', default="Update current value"),
                    command=self._app_set_current).pack(side=tk.LEFT)
-        ttk.Button(bar, text="Delete selected",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.delete_selected', default="Delete selected"),
                    command=self._app_delete).pack(side=tk.LEFT, padx=6)
-        ttk.Button(bar, text="Refresh", command=self._refresh_app).pack(side=tk.RIGHT)
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.refresh', default="Refresh"), command=self._refresh_app).pack(side=tk.RIGHT)
 
         # Protection plans
-        prot = ttk.LabelFrame(f, text="Student Protection Plans (versions)", padding=8)
+        prot = ttk.LabelFrame(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.student_protection_plans_versions', default="Student Protection Plans (versions)"), padding=8)
         prot.pack(fill=tk.X, pady=(10, 0))
         self.prot_tree = ttk.Treeview(
             prot, columns=("id", "version", "from", "to", "approved"),
@@ -533,16 +535,16 @@ class QADashboardGUI:
             self.prot_tree.heading(col, text=txt)
             self.prot_tree.column(col, width=w)
         self.prot_tree.pack(fill=tk.X)
-        ttk.Button(prot, text="Add new plan version",
+        ttk.Button(prot, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.add_new_plan_version', default="Add new plan version"),
                    command=self._prot_add).pack(anchor=tk.W, pady=(6, 0))
 
     def _b3_compute(self):
         try:
             n = qa.record_b3_snapshot(int(self.b3_year.get()))
             self._refresh_b3()
-            messagebox.showinfo("B3", f"Stored {n} metric snapshot(s).")
+            messagebox.showinfo(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.b3', default="B3"), f"Stored {n} metric snapshot(s).")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     def _refresh_b3(self):
         self.b3_tree.delete(*self.b3_tree.get_children())
@@ -563,9 +565,9 @@ class QADashboardGUI:
             return
         try:
             n = qa.export_ofs_return(int(self.b3_year.get()), path)
-            messagebox.showinfo("Export", f"Wrote {n} row(s) to {path}.")
+            messagebox.showinfo(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.export', default="Export"), f"Wrote {n} row(s) to {path}.")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     def _refresh_app(self):
         self.app_tree.delete(*self.app_tree.get_children())
@@ -577,19 +579,19 @@ class QADashboardGUI:
             ))
 
     def _app_add(self):
-        year = simpledialog.askinteger("Plan year", "Plan year:",
+        year = simpledialog.askinteger(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.plan_year', default="Plan year"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.plan_year_variant_2', default="Plan year:"),
                                         parent=self.window,
                                         initialvalue=date.today().year)
         if not year:
             return
-        text = simpledialog.askstring("Milestone", "Milestone text:",
+        text = simpledialog.askstring(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.milestone', default="Milestone"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.milestone_text', default="Milestone text:"),
                                        parent=self.window)
         if not text:
             return
-        target = simpledialog.askfloat("Target", "Target value (blank = none):",
+        target = simpledialog.askfloat(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.target', default="Target"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.target_value_blank_none', default="Target value (blank = none):"),
                                         parent=self.window)
-        target_date = simpledialog.askstring("Target date",
-                                              "Target date YYYY-MM-DD (blank = none):",
+        target_date = simpledialog.askstring(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.target_date', default="Target date"),
+                                              _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.target_date_yyyy_mm_dd_blank_none', default="Target date YYYY-MM-DD (blank = none):"),
                                               parent=self.window) or None
         try:
             qa.create_app_milestone(year, text, target_value=target,
@@ -597,7 +599,7 @@ class QADashboardGUI:
                                      owner_id=_user_id_from_auth(self.auth))
             self._refresh_app()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     def _app_mark_done(self):
         sel = self.app_tree.selection()
@@ -612,7 +614,7 @@ class QADashboardGUI:
         if not sel:
             return
         mid = int(self.app_tree.item(sel[0])["values"][0])
-        v = simpledialog.askfloat("Current value", "Current value:", parent=self.window)
+        v = simpledialog.askfloat(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.current_value', default="Current value"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.current_value_variant_2', default="Current value:"), parent=self.window)
         if v is None:
             return
         if qa.update_app_milestone(mid, current_value=v):
@@ -623,7 +625,7 @@ class QADashboardGUI:
         if not sel:
             return
         mid = int(self.app_tree.item(sel[0])["values"][0])
-        if not messagebox.askyesno("Delete", f"Delete milestone #{mid}?"):
+        if not messagebox.askyesno(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.delete', default="Delete"), f"Delete milestone #{mid}?"):
             return
         if qa.delete_app_milestone(mid):
             self._refresh_app()
@@ -637,12 +639,12 @@ class QADashboardGUI:
             ))
 
     def _prot_add(self):
-        version = simpledialog.askstring("Version", "Version label (e.g. 2026-v1):",
+        version = simpledialog.askstring(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.version', default="Version"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.version_label_e_g_2026_v1', default="Version label (e.g. 2026-v1):"),
                                           parent=self.window)
         if not version:
             return
         in_force_from = simpledialog.askstring(
-            "In force from", "Effective from YYYY-MM-DD:", parent=self.window,
+            _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.in_force_from', default="In force from"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.effective_from_yyyy_mm_dd', default="Effective from YYYY-MM-DD:"), parent=self.window,
             initialvalue=date.today().isoformat(),
         )
         if not in_force_from:
@@ -659,7 +661,7 @@ class QADashboardGUI:
             )
             self._refresh_prot()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------------
     # TEF tab — provider narratives + indicators
@@ -667,28 +669,28 @@ class QADashboardGUI:
 
     def _build_tef_tab(self, nb):
         f = ttk.Frame(nb, padding=10)
-        nb.add(f, text="TEF")
+        nb.add(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.tabs.tef', default="TEF"))
 
-        ind = ttk.LabelFrame(f, text="Computed indicators", padding=8)
+        ind = ttk.LabelFrame(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.computed_indicators', default="Computed indicators"), padding=8)
         ind.pack(fill=tk.X)
         self.tef_indicators_text = tk.Text(ind, height=6, wrap=tk.WORD,
                                             state=tk.DISABLED, bg=self.window.cget("bg"),
                                             relief="flat")
         self.tef_indicators_text.pack(fill=tk.X)
 
-        narr = ttk.LabelFrame(f, text="Provider narrative drafts", padding=8)
+        narr = ttk.LabelFrame(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.provider_narrative_drafts', default="Provider narrative drafts"), padding=8)
         narr.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
 
         bar = ttk.Frame(narr)
         bar.pack(fill=tk.X)
-        ttk.Label(bar, text="Submission year:").pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.submission_year', default="Submission year:")).pack(side=tk.LEFT)
         self.tef_year = tk.IntVar(value=date.today().year)
         ttk.Spinbox(bar, from_=2000, to=2100, textvariable=self.tef_year,
                     width=8, command=self._refresh_tef).pack(side=tk.LEFT, padx=4)
-        ttk.Button(bar, text="Refresh", command=self._refresh_tef).pack(side=tk.LEFT)
-        ttk.Button(bar, text="Add new version (selected section)",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.refresh', default="Refresh"), command=self._refresh_tef).pack(side=tk.LEFT)
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.add_new_version_selected_section', default="Add new version (selected section)"),
                    command=self._tef_add).pack(side=tk.LEFT, padx=6)
-        ttk.Button(bar, text="Export TEF JSON",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.export_tef_json', default="Export TEF JSON"),
                    command=self._tef_export).pack(side=tk.RIGHT)
 
         self.tef_tree = ttk.Treeview(
@@ -722,7 +724,7 @@ class QADashboardGUI:
 
     def _tef_add(self):
         section = simpledialog.askstring(
-            "Section", f"Section ({'/'.join(qa.TEF_SECTIONS)}):",
+            _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.section', default="Section"), f"Section ({'/'.join(qa.TEF_SECTIONS)}):",
             parent=self.window,
         )
         if not section or section not in qa.TEF_SECTIONS:
@@ -736,7 +738,7 @@ class QADashboardGUI:
                                   drafted_by=_user_id_from_auth(self.auth))
             self._refresh_tef()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     def _tef_export(self):
         path = filedialog.asksaveasfilename(
@@ -748,9 +750,9 @@ class QADashboardGUI:
             return
         try:
             n = qa.export_tef_submission(int(self.tef_year.get()), path)
-            messagebox.showinfo("Export", f"Wrote {n} section(s) to {path}.")
+            messagebox.showinfo(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.export', default="Export"), f"Wrote {n} section(s) to {path}.")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------------
     # REF tab — UoA summary, impact cases, environment statements
@@ -758,26 +760,26 @@ class QADashboardGUI:
 
     def _build_ref_tab(self, nb):
         f = ttk.Frame(nb, padding=10)
-        nb.add(f, text="REF")
+        nb.add(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.tabs.ref', default="REF"))
 
         bar = ttk.Frame(f)
         bar.pack(fill=tk.X)
-        ttk.Label(bar, text="Unit of Assessment:").pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.unit_of_assessment', default="Unit of Assessment:")).pack(side=tk.LEFT)
         self.ref_uoa = tk.StringVar(value=qa.REF_UOAS[0])
         ttk.Combobox(bar, textvariable=self.ref_uoa,
                      values=qa.REF_UOAS, width=10).pack(side=tk.LEFT, padx=4)
-        ttk.Button(bar, text="Refresh", command=self._refresh_ref).pack(side=tk.LEFT)
-        ttk.Button(bar, text="Export REF CSV",
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.refresh', default="Refresh"), command=self._refresh_ref).pack(side=tk.LEFT)
+        ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.export_ref_csv', default="Export REF CSV"),
                    command=self._ref_export).pack(side=tk.RIGHT)
 
-        sumf = ttk.LabelFrame(f, text="UoA summary", padding=8)
+        sumf = ttk.LabelFrame(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.uoa_summary', default="UoA summary"), padding=8)
         sumf.pack(fill=tk.X, pady=(8, 0))
         self.ref_summary_text = tk.Text(sumf, height=5, wrap=tk.WORD,
                                           state=tk.DISABLED, bg=self.window.cget("bg"),
                                           relief="flat")
         self.ref_summary_text.pack(fill=tk.X)
 
-        impact = ttk.LabelFrame(f, text="Impact case studies", padding=8)
+        impact = ttk.LabelFrame(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.impact_case_studies', default="Impact case studies"), padding=8)
         impact.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
         self.impact_tree = ttk.Treeview(
             impact, columns=("id", "title", "status", "lead", "rating"),
@@ -793,15 +795,15 @@ class QADashboardGUI:
 
         ibar = ttk.Frame(impact)
         ibar.pack(fill=tk.X, pady=(6, 0))
-        ttk.Button(ibar, text="Add case", command=self._impact_add).pack(side=tk.LEFT)
-        ttk.Button(ibar, text="Set status of selected",
+        ttk.Button(ibar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.add_case', default="Add case"), command=self._impact_add).pack(side=tk.LEFT)
+        ttk.Button(ibar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.set_status_of_selected', default="Set status of selected"),
                    command=self._impact_set_status).pack(side=tk.LEFT, padx=6)
-        ttk.Button(ibar, text="Set quality rating of selected",
+        ttk.Button(ibar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.set_quality_rating_of_selected', default="Set quality rating of selected"),
                    command=self._impact_set_rating).pack(side=tk.LEFT)
-        ttk.Button(ibar, text="Delete selected",
+        ttk.Button(ibar, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.delete_selected', default="Delete selected"),
                    command=self._impact_delete).pack(side=tk.LEFT, padx=6)
 
-        env = ttk.LabelFrame(f, text="Environment statement (latest 3 versions)", padding=8)
+        env = ttk.LabelFrame(f, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.labels.environment_statement_latest_3_versions', default="Environment statement (latest 3 versions)"), padding=8)
         env.pack(fill=tk.X, pady=(8, 0))
         self.env_tree = ttk.Treeview(
             env, columns=("id", "version", "drafted_at", "preview"),
@@ -813,7 +815,7 @@ class QADashboardGUI:
             self.env_tree.heading(col, text=txt)
             self.env_tree.column(col, width=w)
         self.env_tree.pack(fill=tk.X)
-        ttk.Button(env, text="Add new version",
+        ttk.Button(env, text=_t('gui.academics.research.external_quality_assurance.qa_dashboard.buttons.add_new_version', default="Add new version"),
                    command=self._env_add).pack(anchor=tk.W, pady=(6, 0))
 
     def _refresh_ref(self):
@@ -848,7 +850,7 @@ class QADashboardGUI:
             ))
 
     def _impact_add(self):
-        title = simpledialog.askstring("Title", "Case study title:",
+        title = simpledialog.askstring(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.title', default="Title"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.case_study_title', default="Case study title:"),
                                         parent=self.window)
         if not title:
             return
@@ -860,7 +862,7 @@ class QADashboardGUI:
                                    lead_author_id=_user_id_from_auth(self.auth))
             self._refresh_ref()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     def _impact_set_status(self):
         sel = self.impact_tree.selection()
@@ -868,7 +870,7 @@ class QADashboardGUI:
             return
         cid = int(self.impact_tree.item(sel[0])["values"][0])
         s = simpledialog.askstring(
-            "Status", f"New status ({'/'.join(qa.REF_IMPACT_STATUSES)}):",
+            _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.status', default="Status"), f"New status ({'/'.join(qa.REF_IMPACT_STATUSES)}):",
             parent=self.window,
         )
         if not s or s not in qa.REF_IMPACT_STATUSES:
@@ -881,7 +883,7 @@ class QADashboardGUI:
         if not sel:
             return
         cid = int(self.impact_tree.item(sel[0])["values"][0])
-        r = simpledialog.askstring("Rating", "Quality rating (1*–4*):",
+        r = simpledialog.askstring(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.rating', default="Rating"), _t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.quality_rating_1_4', default="Quality rating (1*–4*):"),
                                     parent=self.window)
         if not r:
             return
@@ -893,7 +895,7 @@ class QADashboardGUI:
         if not sel:
             return
         cid = int(self.impact_tree.item(sel[0])["values"][0])
-        if not messagebox.askyesno("Delete", f"Delete impact case #{cid}?"):
+        if not messagebox.askyesno(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.delete', default="Delete"), f"Delete impact case #{cid}?"):
             return
         if qa.delete_impact_case(cid):
             self._refresh_ref()
@@ -908,7 +910,7 @@ class QADashboardGUI:
                                           drafted_by=_user_id_from_auth(self.auth))
             self._refresh_ref()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     def _ref_export(self):
         uoa = self.ref_uoa.get().strip()
@@ -922,9 +924,9 @@ class QADashboardGUI:
             return
         try:
             n = qa.export_ref_submission(uoa, path)
-            messagebox.showinfo("Export", f"Wrote {n} row(s) to {path}.")
+            messagebox.showinfo(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.export', default="Export"), f"Wrote {n} row(s) to {path}.")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.research.external_quality_assurance.qa_dashboard.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------------
     # Refresh all tabs after init

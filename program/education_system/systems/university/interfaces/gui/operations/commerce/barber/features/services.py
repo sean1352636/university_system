@@ -1,5 +1,7 @@
 """Barber Shop GUI - Service management feature methods."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, messagebox, filedialog, logging,
     datetime, timedelta,
@@ -99,30 +101,30 @@ class ServicesMixin:
     def create_service_package(self):
         """Create service package."""
         pkg_window = tk.Toplevel(self.parent)
-        pkg_window.title("Create Service Package")
+        pkg_window.title(_t('gui.operations.commerce.barber.features.services.windows.create_service_package', default="Create Service Package"))
         pkg_window.geometry("450x450")
         pkg_window.transient(self.parent)
         pkg_window.grab_set()
 
-        ttk.Label(pkg_window, text="Create Service Package",
+        ttk.Label(pkg_window, text=_t('gui.operations.commerce.barber.features.services.labels.create_service_package', default="Create Service Package"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(pkg_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Package Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.package_name', default="Package Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         name_var = tk.StringVar()
         ttk.Entry(frame, textvariable=name_var, width=30).grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Description:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.description', default="Description:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         desc_text = tk.Text(frame, height=3, width=25)
         desc_text.grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Package Price (£):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.package_price', default="Package Price (£):")).grid(row=2, column=0, sticky=tk.W, pady=5)
         price_var = tk.StringVar()
         ttk.Entry(frame, textvariable=price_var, width=15).grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Select Services:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.select_services', default="Select Services:")).grid(row=3, column=0, sticky=tk.W, pady=5)
 
         services_listbox = tk.Listbox(frame, selectmode=tk.MULTIPLE, height=6, width=30)
         services_listbox.grid(row=3, column=1, pady=5)
@@ -132,7 +134,7 @@ class ServicesMixin:
 
         def save_package():
             if not name_var.get().strip() or not price_var.get().strip():
-                messagebox.showerror("Error", "Please fill in all required fields.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.services.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.services.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields."))
                 return
             try:
                 selected_indices = services_listbox.curselection()
@@ -148,18 +150,18 @@ class ServicesMixin:
                     price=float(price_var.get()),
                     service_ids=service_ids
                 )
-                messagebox.showinfo("Success", "Package created!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.services.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.services.dialogs.package_created', default="Package created!"))
                 pkg_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.services.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(pkg_window, text="Create Package", command=save_package).pack(pady=10)
+        ttk.Button(pkg_window, text=_t('gui.operations.commerce.barber.features.services.buttons.create_package', default="Create Package"), command=save_package).pack(pady=10)
 
     def set_service_availability(self):
         """Set service availability."""
         selected = self.services_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a service.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.services.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.services.dialogs.please_select_a_service', default="Please select a service."))
             return
 
         item = self.services_tree.item(selected[0])
@@ -178,7 +180,7 @@ class ServicesMixin:
         frame = ttk.Frame(avail_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Available Days:").pack(anchor=tk.W)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.available_days', default="Available Days:")).pack(anchor=tk.W)
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         day_vars = {}
         for day in days:
@@ -186,16 +188,16 @@ class ServicesMixin:
             day_vars[day] = var
             ttk.Checkbutton(frame, text=day, variable=var).pack(anchor=tk.W)
 
-        ttk.Label(frame, text="Available Hours:").pack(anchor=tk.W, pady=(10, 0))
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.available_hours', default="Available Hours:")).pack(anchor=tk.W, pady=(10, 0))
         hours_frame = ttk.Frame(frame)
         hours_frame.pack(fill=tk.X)
 
-        ttk.Label(hours_frame, text="From:").pack(side=tk.LEFT)
+        ttk.Label(hours_frame, text=_t('gui.operations.commerce.barber.features.services.labels.from', default="From:")).pack(side=tk.LEFT)
         from_combo = ttk.Combobox(hours_frame, values=self._get_time_slots(), width=8)
         from_combo.set('09:00')
         from_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(hours_frame, text="To:").pack(side=tk.LEFT, padx=(10, 0))
+        ttk.Label(hours_frame, text=_t('gui.operations.commerce.barber.features.services.labels.to', default="To:")).pack(side=tk.LEFT, padx=(10, 0))
         to_combo = ttk.Combobox(hours_frame, values=self._get_time_slots(), width=8)
         to_combo.set('17:00')
         to_combo.pack(side=tk.LEFT, padx=5)
@@ -210,51 +212,51 @@ class ServicesMixin:
                     start_time=from_combo.get(),
                     end_time=to_combo.get()
                 )
-                messagebox.showinfo("Success", "Availability updated!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.services.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.services.dialogs.availability_updated', default="Availability updated!"))
                 avail_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.services.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(avail_window, text="Save", command=save_availability).pack(pady=10)
+        ttk.Button(avail_window, text=_t('gui.operations.commerce.barber.features.services.buttons.save', default="Save"), command=save_availability).pack(pady=10)
 
     def add_service_addon(self):
         """Add service addon."""
         addon_window = tk.Toplevel(self.parent)
-        addon_window.title("Add Service Addon")
+        addon_window.title(_t('gui.operations.commerce.barber.features.services.windows.add_service_addon', default="Add Service Addon"))
         addon_window.geometry("400x350")
         addon_window.transient(self.parent)
         addon_window.grab_set()
 
-        ttk.Label(addon_window, text="Add Service Addon",
+        ttk.Label(addon_window, text=_t('gui.operations.commerce.barber.features.services.labels.add_service_addon', default="Add Service Addon"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(addon_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Addon Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.addon_name', default="Addon Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         name_var = tk.StringVar()
         ttk.Entry(frame, textvariable=name_var, width=25).grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Price (£):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.price', default="Price (£):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         price_var = tk.StringVar()
         ttk.Entry(frame, textvariable=price_var, width=15).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Duration (min):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.duration_min', default="Duration (min):")).grid(row=2, column=0, sticky=tk.W, pady=5)
         duration_var = tk.StringVar(value="10")
         ttk.Entry(frame, textvariable=duration_var, width=10).grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="For Service:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.for_service', default="For Service:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         service_combo = ttk.Combobox(frame, values=['All Services'] + list(self.appt_service_combo['values']), width=25)
         service_combo.set('All Services')
         service_combo.grid(row=3, column=1, pady=5)
 
-        ttk.Label(frame, text="Description:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.description', default="Description:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         desc_text = tk.Text(frame, height=3, width=25)
         desc_text.grid(row=4, column=1, pady=5)
 
         def save_addon():
             if not name_var.get().strip() or not price_var.get().strip():
-                messagebox.showerror("Error", "Name and price are required.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.services.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.services.dialogs.name_and_price_are_required', default="Name and price are required."))
                 return
             try:
                 service_id = None
@@ -269,18 +271,18 @@ class ServicesMixin:
                     service_id=service_id,
                     description=desc_text.get('1.0', tk.END).strip()
                 )
-                messagebox.showinfo("Success", "Addon created!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.services.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.services.dialogs.addon_created', default="Addon created!"))
                 addon_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.services.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(addon_window, text="Save Addon", command=save_addon).pack(pady=10)
+        ttk.Button(addon_window, text=_t('gui.operations.commerce.barber.features.services.buttons.save_addon', default="Save Addon"), command=save_addon).pack(pady=10)
 
     def duplicate_service(self):
         """Duplicate service."""
         selected = self.services_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a service to duplicate.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.services.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.services.dialogs.please_select_a_service_to_duplicate', default="Please select a service to duplicate."))
             return
 
         item = self.services_tree.item(selected[0])
@@ -289,38 +291,38 @@ class ServicesMixin:
         try:
             from education_system.systems.university.domain.operations.commerce.barber.services.barber_core import ServiceManager
             new_id = ServiceManager.duplicate_service(service_id)
-            messagebox.showinfo("Success", f"Service duplicated! New ID: {new_id}")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.services.dialogs.success', default="Success"), f"Service duplicated! New ID: {new_id}")
             self._load_services()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.services.dialogs.error', default="Error"), str(e))
 
     def archive_service(self):
         """Archive service."""
         selected = self.services_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a service to archive.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.services.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.services.dialogs.please_select_a_service_to_archive', default="Please select a service to archive."))
             return
 
         item = self.services_tree.item(selected[0])
         service_id = item['values'][0]
         service_name = item['values'][1]
 
-        if not messagebox.askyesno("Confirm", f"Archive service '{service_name}'?"):
+        if not messagebox.askyesno(_t('gui.operations.commerce.barber.features.services.dialogs.confirm', default="Confirm"), f"Archive service '{service_name}'?"):
             return
 
         try:
             from education_system.systems.university.domain.operations.commerce.barber.services.barber_core import ServiceManager
             ServiceManager.archive_service(service_id)
-            messagebox.showinfo("Success", "Service archived!")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.services.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.services.dialogs.service_archived', default="Service archived!"))
             self._load_services()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.services.dialogs.error', default="Error"), str(e))
 
     def set_seasonal_pricing(self):
         """Set seasonal pricing."""
         selected = self.services_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a service.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.services.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.services.dialogs.please_select_a_service', default="Please select a service."))
             return
 
         item = self.services_tree.item(selected[0])
@@ -339,23 +341,23 @@ class ServicesMixin:
         frame = ttk.Frame(pricing_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Season:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.season', default="Season:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         season_combo = ttk.Combobox(frame, values=['Spring', 'Summer', 'Autumn', 'Winter', 'Holiday', 'Custom'], width=15)
         season_combo.grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Start Date:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.start_date', default="Start Date:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         start_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(frame, textvariable=start_var, width=12).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="End Date:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.end_date', default="End Date:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         end_var = tk.StringVar(value=(datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'))
         ttk.Entry(frame, textvariable=end_var, width=12).grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Price Adjustment (%):").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.price_adjustment', default="Price Adjustment (%):")).grid(row=3, column=0, sticky=tk.W, pady=5)
         adjust_var = tk.StringVar(value="10")
         ttk.Entry(frame, textvariable=adjust_var, width=10).grid(row=3, column=1, pady=5)
 
-        ttk.Label(frame, text="(Positive = increase, Negative = discount)").grid(row=4, column=0, columnspan=2, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.services.labels.positive_increase_negative_discount', default="(Positive = increase, Negative = discount)")).grid(row=4, column=0, columnspan=2, pady=5)
 
         def save_pricing():
             try:
@@ -367,28 +369,28 @@ class ServicesMixin:
                     end_date=end_var.get(),
                     adjustment_percent=float(adjust_var.get())
                 )
-                messagebox.showinfo("Success", "Seasonal pricing set!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.services.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.services.dialogs.seasonal_pricing_set', default="Seasonal pricing set!"))
                 pricing_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.services.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(pricing_window, text="Save", command=save_pricing).pack(pady=10)
+        ttk.Button(pricing_window, text=_t('gui.operations.commerce.barber.features.services.buttons.save', default="Save"), command=save_pricing).pack(pady=10)
 
     def view_service_popularity(self):
         """View service popularity."""
         pop_window = tk.Toplevel(self.parent)
-        pop_window.title("Service Popularity")
+        pop_window.title(_t('gui.operations.commerce.barber.features.services.windows.service_popularity', default="Service Popularity"))
         pop_window.geometry("600x400")
         pop_window.transient(self.parent)
 
         columns = ('rank', 'service', 'bookings', 'revenue', 'avg_rating')
         tree = ttk.Treeview(pop_window, columns=columns, show='headings', height=15)
 
-        tree.heading('rank', text='Rank')
-        tree.heading('service', text='Service')
-        tree.heading('bookings', text='Bookings')
-        tree.heading('revenue', text='Revenue')
-        tree.heading('avg_rating', text='Avg Rating')
+        tree.heading('rank', text=_t('gui.operations.commerce.barber.features.services.headings.rank', default='Rank'))
+        tree.heading('service', text=_t('gui.operations.commerce.barber.features.services.headings.service', default='Service'))
+        tree.heading('bookings', text=_t('gui.operations.commerce.barber.features.services.headings.bookings', default='Bookings'))
+        tree.heading('revenue', text=_t('gui.operations.commerce.barber.features.services.headings.revenue', default='Revenue'))
+        tree.heading('avg_rating', text=_t('gui.operations.commerce.barber.features.services.headings.avg_rating', default='Avg Rating'))
 
         tree.column('rank', width=50)
         tree.column('service', width=200)
@@ -416,12 +418,12 @@ class ServicesMixin:
     def reorder_services(self):
         """Reorder services display order."""
         reorder_window = tk.Toplevel(self.parent)
-        reorder_window.title("Reorder Services")
+        reorder_window.title(_t('gui.operations.commerce.barber.features.services.windows.reorder_services', default="Reorder Services"))
         reorder_window.geometry("400x450")
         reorder_window.transient(self.parent)
         reorder_window.grab_set()
 
-        ttk.Label(reorder_window, text="Drag to Reorder Services",
+        ttk.Label(reorder_window, text=_t('gui.operations.commerce.barber.features.services.labels.drag_to_reorder_services', default="Drag to Reorder Services"),
                  font=('Helvetica', 12, 'bold')).pack(pady=10)
 
         listbox = tk.Listbox(reorder_window, height=15, width=40)
@@ -449,8 +451,8 @@ class ServicesMixin:
                 listbox.insert(idx[0] + 1, item)
                 listbox.selection_set(idx[0] + 1)
 
-        ttk.Button(btn_frame, text="Move Up", command=move_up).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Move Down", command=move_down).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.barber.features.services.buttons.move_up', default="Move Up"), command=move_up).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.barber.features.services.buttons.move_down', default="Move Down"), command=move_down).pack(side=tk.LEFT, padx=5)
 
         def save_order():
             try:
@@ -461,10 +463,10 @@ class ServicesMixin:
                     service_id = int(svc_str.split(':')[0])
                     order.append((service_id, i + 1))
                 ServiceManager.update_display_order(order)
-                messagebox.showinfo("Success", "Order saved!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.services.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.services.dialogs.order_saved', default="Order saved!"))
                 reorder_window.destroy()
                 self._load_services()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.services.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(reorder_window, text="Save Order", command=save_order).pack(pady=10)
+        ttk.Button(reorder_window, text=_t('gui.operations.commerce.barber.features.services.buttons.save_order', default="Save Order"), command=save_order).pack(pady=10)

@@ -22,6 +22,7 @@ from typing import Callable, Optional, Protocol
 from education_system.systems.university.infrastructure.email.config import config
 from education_system.systems.university.infrastructure.email.email_db_utilities import execute_db_operation
 from education_system.systems.university.infrastructure.logs import log_event
+from education_system.systems.university.infrastructure.exceptions import AttachmentError
 
 logger = logging.getLogger(__name__)
 
@@ -260,11 +261,22 @@ class SMTPClient:
 
                 for file_path in attachments.split(','):
                     file_path = file_path.strip()
-                    if os.path.exists(file_path):
-                        with open(file_path, 'rb') as file:
-                            part = MIMEApplication(file.read(), Name=os.path.basename(file_path))
-                            part['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
-                            msg.attach(part)
+                    if not file_path or not os.path.isfile(file_path):
+                        raise AttachmentError(
+                            f"Attachment does not exist or is not a file: {file_path}",
+                            code="EMAIL_ATTACHMENT_NOT_FOUND",
+                            details={"path": file_path},
+                        )
+                    if os.path.getsize(file_path) > config.get('attachment_size_limit', 10 * 1024 * 1024):
+                        raise AttachmentError(
+                            f"Attachment exceeds the configured size limit: {file_path}",
+                            code="EMAIL_ATTACHMENT_TOO_LARGE",
+                            details={"path": file_path},
+                        )
+                    with open(file_path, 'rb') as file:
+                        part = MIMEApplication(file.read(), Name=os.path.basename(file_path))
+                        part['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
+                        msg.attach(part)
 
             all_recipients = [recipient_email]
             if cc:

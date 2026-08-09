@@ -5,6 +5,8 @@ hours and student bookings. Delegates to InstructorManager and BookingManager
 sub-components depending on the authenticated user's role.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -29,7 +31,7 @@ class OfficeHoursGUI:
         # ``open_in_workspace``), it has no ``wm_title`` — skip
         # window-chrome. Same shape as Library/Student Records.
         if hasattr(self.window, "wm_title"):
-            self.window.title("Office Hours Management")
+            self.window.title(_t('gui.academics.office_hours.office_hours.windows.office_hours_management', default="Office Hours Management"))
             self.window.geometry("900x600")
 
         self._setup_ui()
@@ -39,7 +41,7 @@ class OfficeHoursGUI:
         # Title
         title = ttk.Label(
             self.window,
-            text="Office Hours Management",
+            text=_t('gui.academics.office_hours.office_hours.labels.office_hours_management', default="Office Hours Management"),
             font=('Arial', 16, 'bold'),
         )
         title.pack(pady=(10, 5))
@@ -62,14 +64,14 @@ class OfficeHoursGUI:
                 InstructorManager,
             )
             instructor_frame = ttk.Frame(self.notebook)
-            self.notebook.add(instructor_frame, text="Manage Office Hours")
+            self.notebook.add(instructor_frame, text=_t('gui.academics.office_hours.office_hours.tabs.manage_office_hours', default="Manage Office Hours"))
             self.instructor_manager = InstructorManager(
                 instructor_frame, self.service, self.auth,
             )
 
         # Booking tab for students (and admin)
         booking_frame = ttk.Frame(self.notebook)
-        self.notebook.add(booking_frame, text="Book Appointments")
+        self.notebook.add(booking_frame, text=_t('gui.academics.office_hours.office_hours.tabs.book_appointments', default="Book Appointments"))
         self.booking_manager = BookingManager(
             booking_frame, self.service, self.auth,
         )

@@ -65,7 +65,7 @@ class CriminalsMixin:
         """View criminal details"""
         selected = self.criminals_tree.selection()
         if not selected:
-            messagebox.showwarning(_t("police_station.msg_titles.warning"), "Please select a record to view.")
+            messagebox.showwarning(_t("police_station.msg_titles.warning"), _t('gui.operations.campus.security.tabs.criminals.dialogs.please_select_a_record_to_view', default="Please select a record to view."))
             return
 
         item = self.criminals_tree.item(selected[0])
@@ -91,13 +91,13 @@ Description:
         """Delete selected criminal record"""
         selected = self.criminals_tree.selection()
         if not selected:
-            messagebox.showwarning(_t("police_station.msg_titles.warning"), "Please select a record to delete.")
+            messagebox.showwarning(_t("police_station.msg_titles.warning"), _t('gui.operations.campus.security.tabs.criminals.dialogs.please_select_a_record_to_delete', default="Please select a record to delete."))
             return
 
-        if messagebox.askyesno(_t("police_station.buttons.confirm"), "Are you sure you want to delete this record?"):
+        if messagebox.askyesno(_t("police_station.buttons.confirm"), _t('gui.operations.campus.security.tabs.criminals.dialogs.are_you_sure_you_want_to_delete_this_record', default="Are you sure you want to delete this record?")):
             item = self.criminals_tree.item(selected[0])
             criminal_id = item["values"][0]
             if self._db_delete_criminal(criminal_id):
                 self.data["criminals"] = [c for c in self.data["criminals"] if c["id"] != criminal_id]
                 self.refresh_criminals()
-                messagebox.showinfo(_t("police_station.msg_titles.success"), "Record deleted successfully!")
+                messagebox.showinfo(_t("police_station.msg_titles.success"), _t('gui.operations.campus.security.tabs.criminals.dialogs.record_deleted_successfully', default="Record deleted successfully!"))

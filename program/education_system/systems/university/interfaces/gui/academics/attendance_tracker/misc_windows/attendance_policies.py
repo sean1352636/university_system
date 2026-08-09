@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -151,7 +157,7 @@ class AttendancePoliciesWindow:
         title_frame = ttk.Frame(self.window)
         title_frame.pack(fill=tk.X, padx=15, pady=15)
 
-        ttk.Label(title_frame, text="📋 Attendance Policies & Rules",
+        ttk.Label(title_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.attendance_policies_rules', default="📋 Attendance Policies & Rules"),
                  font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
 
         # Create notebook for different policy categories
@@ -160,35 +166,35 @@ class AttendancePoliciesWindow:
 
         # Basic policies tab
         basic_frame = ttk.Frame(notebook)
-        notebook.add(basic_frame, text="Basic Rules")
+        notebook.add(basic_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.tabs.basic_rules', default="Basic Rules"))
         self.create_basic_policies_tab(basic_frame)
 
         # Penalties tab
         penalties_frame = ttk.Frame(notebook)
-        notebook.add(penalties_frame, text="Penalties")
+        notebook.add(penalties_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.tabs.penalties', default="Penalties"))
         self.create_penalties_tab(penalties_frame)
 
         # Excused absences tab
         excused_frame = ttk.Frame(notebook)
-        notebook.add(excused_frame, text="Excused Absences")
+        notebook.add(excused_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.tabs.excused_absences', default="Excused Absences"))
         self.create_excused_absences_tab(excused_frame)
 
         # Advanced tab
         advanced_frame = ttk.Frame(notebook)
-        notebook.add(advanced_frame, text="Advanced")
+        notebook.add(advanced_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.tabs.advanced', default="Advanced"))
         self.create_advanced_tab(advanced_frame)
 
         # Action buttons
         button_frame = ttk.Frame(self.window)
         button_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        ttk.Button(button_frame, text="💾 Save Policies",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.save_policies', default="💾 Save Policies"),
                   command=self.save_policies, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Button(button_frame, text="🔄 Reset to Defaults",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.reset_to_defaults', default="🔄 Reset to Defaults"),
                   command=self.reset_to_defaults).pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Button(button_frame, text="📄 Export Policies",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.export_policies', default="📄 Export Policies"),
                   command=self.export_policies).pack(side=tk.LEFT)
 
         ttk.Button(button_frame, text=_("common.close"),
@@ -198,10 +204,10 @@ class AttendancePoliciesWindow:
         """Basic attendance policy settings"""
 
         # Minimum attendance
-        attendance_frame = ttk.LabelFrame(parent, text="Attendance Requirements", padding=15)
+        attendance_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.attendance_requirements', default="Attendance Requirements"), padding=15)
         attendance_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(attendance_frame, text="Minimum Attendance Percentage:").pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(attendance_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.minimum_attendance_percentage', default="Minimum Attendance Percentage:")).pack(anchor=tk.W, pady=(0, 5))
         self.minimum_attendance_var = tk.IntVar(value=self.policies['minimum_attendance_percentage'])
         min_scale = ttk.Scale(attendance_frame, from_=0, to=100,
                              variable=self.minimum_attendance_var,
@@ -216,71 +222,71 @@ class AttendancePoliciesWindow:
             text=f"{int(float(v))}%"))
 
         # Late arrival
-        ttk.Label(attendance_frame, text="Late Arrival Grace Period (minutes):").pack(anchor=tk.W, pady=(10, 5))
+        ttk.Label(attendance_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.late_arrival_grace_period_minutes', default="Late Arrival Grace Period (minutes):")).pack(anchor=tk.W, pady=(10, 5))
         self.late_arrival_var = tk.IntVar(value=self.policies['late_arrival_minutes'])
         ttk.Spinbox(attendance_frame, from_=0, to=60,
                    textvariable=self.late_arrival_var,
                    width=10).pack(anchor=tk.W)
 
         # Grace period
-        ttk.Label(attendance_frame, text="Grace Period at Semester Start (weeks):").pack(anchor=tk.W, pady=(10, 5))
+        ttk.Label(attendance_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.grace_period_at_semester_start_weeks', default="Grace Period at Semester Start (weeks):")).pack(anchor=tk.W, pady=(10, 5))
         self.grace_period_var = tk.IntVar(value=self.policies['grace_period_weeks'])
         ttk.Spinbox(attendance_frame, from_=0, to=8,
                    textvariable=self.grace_period_var,
                    width=10).pack(anchor=tk.W)
 
         # Retroactive changes
-        retro_frame = ttk.LabelFrame(parent, text="Record Modifications", padding=15)
+        retro_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.record_modifications', default="Record Modifications"), padding=15)
         retro_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.allow_retroactive_var = tk.BooleanVar(value=self.policies['allow_retroactive_changes'])
-        ttk.Checkbutton(retro_frame, text="Allow Retroactive Attendance Changes",
+        ttk.Checkbutton(retro_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.allow_retroactive_attendance_changes', default="Allow Retroactive Attendance Changes"),
                        variable=self.allow_retroactive_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Label(retro_frame, text="Retroactive Change Limit (days):").pack(anchor=tk.W, pady=(5, 5))
+        ttk.Label(retro_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.retroactive_change_limit_days', default="Retroactive Change Limit (days):")).pack(anchor=tk.W, pady=(5, 5))
         self.retroactive_days_var = tk.IntVar(value=self.policies['retroactive_days_limit'])
         ttk.Spinbox(retro_frame, from_=1, to=30,
                    textvariable=self.retroactive_days_var,
                    width=10).pack(anchor=tk.W)
 
         self.require_instructor_approval_var = tk.BooleanVar(value=self.policies['require_instructor_approval'])
-        ttk.Checkbutton(retro_frame, text="Require Instructor Approval for Changes",
+        ttk.Checkbutton(retro_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.require_instructor_approval_for_changes', default="Require Instructor Approval for Changes"),
                        variable=self.require_instructor_approval_var).pack(anchor=tk.W, pady=(10, 5))
 
     def create_penalties_tab(self, parent):
         """Configure penalty system"""
 
         # Penalty points
-        points_frame = ttk.LabelFrame(parent, text="Penalty Points System", padding=15)
+        points_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.penalty_points_system', default="Penalty Points System"), padding=15)
         points_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(points_frame, text="Points for Absence:").pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(points_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.points_for_absence', default="Points for Absence:")).pack(anchor=tk.W, pady=(0, 5))
         self.absence_penalty_var = tk.DoubleVar(value=self.policies['absence_penalty_points'])
         ttk.Spinbox(points_frame, from_=0, to=10, increment=0.5,
                    textvariable=self.absence_penalty_var,
                    width=10).pack(anchor=tk.W, pady=(0, 10))
 
-        ttk.Label(points_frame, text="Points for Late Arrival:").pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(points_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.points_for_late_arrival', default="Points for Late Arrival:")).pack(anchor=tk.W, pady=(0, 5))
         self.late_penalty_var = tk.DoubleVar(value=self.policies['late_penalty_points'])
         ttk.Spinbox(points_frame, from_=0, to=10, increment=0.5,
                    textvariable=self.late_penalty_var,
                    width=10).pack(anchor=tk.W, pady=(0, 10))
 
-        ttk.Label(points_frame, text="Maximum Penalty Points:").pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(points_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.maximum_penalty_points', default="Maximum Penalty Points:")).pack(anchor=tk.W, pady=(0, 5))
         self.max_penalty_var = tk.IntVar(value=self.policies['max_penalty_points'])
         ttk.Spinbox(points_frame, from_=1, to=50,
                    textvariable=self.max_penalty_var,
                    width=10).pack(anchor=tk.W)
 
         # Auto-fail
-        fail_frame = ttk.LabelFrame(parent, text="Auto-Fail Policy", padding=15)
+        fail_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.auto_fail_policy', default="Auto-Fail Policy"), padding=15)
         fail_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.auto_fail_var = tk.BooleanVar(value=self.policies['auto_fail_below_threshold'])
-        ttk.Checkbutton(fail_frame, text="Automatically Fail Students Below Threshold",
+        ttk.Checkbutton(fail_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.automatically_fail_students_below_threshold', default="Automatically Fail Students Below Threshold"),
                        variable=self.auto_fail_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Label(fail_frame, text="Auto-Fail Threshold (%):").pack(anchor=tk.W, pady=(5, 5))
+        ttk.Label(fail_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.auto_fail_threshold', default="Auto-Fail Threshold (%):")).pack(anchor=tk.W, pady=(5, 5))
         self.auto_fail_threshold_var = tk.IntVar(value=self.policies['auto_fail_threshold'])
         ttk.Scale(fail_frame, from_=0, to=100,
                  variable=self.auto_fail_threshold_var,
@@ -292,14 +298,14 @@ class AttendancePoliciesWindow:
     def create_excused_absences_tab(self, parent):
         """Configure excused absence types"""
 
-        frame = ttk.LabelFrame(parent, text="Excused Absence Management", padding=15)
+        frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.excused_absence_management', default="Excused Absence Management"), padding=15)
         frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.require_documentation_var = tk.BooleanVar(value=self.policies['require_absence_documentation'])
-        ttk.Checkbutton(frame, text="Require Documentation for Excused Absences",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.require_documentation_for_excused_absences', default="Require Documentation for Excused Absences"),
                        variable=self.require_documentation_var).pack(anchor=tk.W, pady=(0, 10))
 
-        ttk.Label(frame, text="Accepted Excused Absence Types:").pack(anchor=tk.W, pady=(0, 10))
+        ttk.Label(frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.accepted_excused_absence_types', default="Accepted Excused Absence Types:")).pack(anchor=tk.W, pady=(0, 10))
 
         # Listbox for absence types
         list_frame = ttk.Frame(frame)
@@ -320,53 +326,53 @@ class AttendancePoliciesWindow:
         button_frame = ttk.Frame(frame)
         button_frame.pack(fill=tk.X, pady=(10, 0))
 
-        ttk.Button(button_frame, text="➕ Add Type",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.add_type', default="➕ Add Type"),
                   command=self.add_absence_type).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="➖ Remove Type",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.remove_type', default="➖ Remove Type"),
                   command=self.remove_absence_type).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="✏️ Edit Type",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.edit_type', default="✏️ Edit Type"),
                   command=self.edit_absence_type).pack(side=tk.LEFT)
 
     def create_advanced_tab(self, parent):
         """Advanced policy settings"""
 
         # Self check-in
-        checkin_frame = ttk.LabelFrame(parent, text="Self Check-In Settings", padding=15)
+        checkin_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.self_check_in_settings', default="Self Check-In Settings"), padding=15)
         checkin_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.enable_self_checkin_var = tk.BooleanVar(value=self.policies['enable_self_check_in'])
-        ttk.Checkbutton(checkin_frame, text="Enable Student Self Check-In",
+        ttk.Checkbutton(checkin_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.enable_student_self_check_in', default="Enable Student Self Check-In"),
                        variable=self.enable_self_checkin_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Label(checkin_frame, text="Check-In Time Window (minutes before/after class):").pack(anchor=tk.W, pady=(5, 5))
+        ttk.Label(checkin_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.check_in_time_window_minutes_before_after_class', default="Check-In Time Window (minutes before/after class):")).pack(anchor=tk.W, pady=(5, 5))
         self.checkin_window_var = tk.IntVar(value=self.policies['check_in_time_window_minutes'])
         ttk.Spinbox(checkin_frame, from_=5, to=120,
                    textvariable=self.checkin_window_var,
                    width=10).pack(anchor=tk.W)
 
         # Geofencing
-        geo_frame = ttk.LabelFrame(parent, text="Geofencing Settings", padding=15)
+        geo_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.geofencing_settings', default="Geofencing Settings"), padding=15)
         geo_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.enable_geofencing_var = tk.BooleanVar(value=self.policies['enable_geofencing'])
-        ttk.Checkbutton(geo_frame, text="Enable Geofencing for Check-In",
+        ttk.Checkbutton(geo_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.enable_geofencing_for_check_in', default="Enable Geofencing for Check-In"),
                        variable=self.enable_geofencing_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Label(geo_frame, text="Geofence Radius (meters):").pack(anchor=tk.W, pady=(5, 5))
+        ttk.Label(geo_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.geofence_radius_meters', default="Geofence Radius (meters):")).pack(anchor=tk.W, pady=(5, 5))
         self.geofence_radius_var = tk.IntVar(value=self.policies['geofence_radius_meters'])
         ttk.Spinbox(geo_frame, from_=10, to=500,
                    textvariable=self.geofence_radius_var,
                    width=10).pack(anchor=tk.W)
 
         # Appeals
-        appeals_frame = ttk.LabelFrame(parent, text="Attendance Appeals", padding=15)
+        appeals_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.attendance_appeals', default="Attendance Appeals"), padding=15)
         appeals_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.enable_appeals_var = tk.BooleanVar(value=self.policies['enable_attendance_appeals'])
-        ttk.Checkbutton(appeals_frame, text="Enable Attendance Appeals Process",
+        ttk.Checkbutton(appeals_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.buttons.enable_attendance_appeals_process', default="Enable Attendance Appeals Process"),
                        variable=self.enable_appeals_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Label(appeals_frame, text="Appeal Deadline (days after attendance taken):").pack(anchor=tk.W, pady=(5, 5))
+        ttk.Label(appeals_frame, text=_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.labels.appeal_deadline_days_after_attendance_taken', default="Appeal Deadline (days after attendance taken):")).pack(anchor=tk.W, pady=(5, 5))
         self.appeal_deadline_var = tk.IntVar(value=self.policies['appeal_deadline_days'])
         ttk.Spinbox(appeals_frame, from_=1, to=60,
                    textvariable=self.appeal_deadline_var,
@@ -374,8 +380,8 @@ class AttendancePoliciesWindow:
 
     def add_absence_type(self):
         """Add new excused absence type"""
-        new_type = simpledialog.askstring("Add Absence Type",
-                                         "Enter new excused absence type:",
+        new_type = simpledialog.askstring(_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.add_absence_type', default="Add Absence Type"),
+                                         _t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.enter_new_excused_absence_type', default="Enter new excused absence type:"),
                                          parent=self.window)
         if new_type and new_type.strip():
             self.absence_types_listbox.insert(tk.END, new_type.strip())
@@ -386,22 +392,22 @@ class AttendancePoliciesWindow:
         if selection:
             self.absence_types_listbox.delete(selection[0])
         else:
-            messagebox.showwarning("No Selection", "Please select an absence type to remove.")
+            messagebox.showwarning(_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.no_selection', default="No Selection"), _t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.please_select_an_absence_type_to_remove', default="Please select an absence type to remove."))
 
     def edit_absence_type(self):
         """Edit selected absence type"""
         selection = self.absence_types_listbox.curselection()
         if selection:
             current_value = self.absence_types_listbox.get(selection[0])
-            new_value = simpledialog.askstring("Edit Absence Type",
-                                              "Edit absence type:",
+            new_value = simpledialog.askstring(_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.edit_absence_type', default="Edit Absence Type"),
+                                              _t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.edit_absence_type_variant_2', default="Edit absence type:"),
                                               initialvalue=current_value,
                                               parent=self.window)
             if new_value and new_value.strip():
                 self.absence_types_listbox.delete(selection[0])
                 self.absence_types_listbox.insert(selection[0], new_value.strip())
         else:
-            messagebox.showwarning("No Selection", "Please select an absence type to edit.")
+            messagebox.showwarning(_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.no_selection', default="No Selection"), _t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.please_select_an_absence_type_to_edit', default="Please select an absence type to edit."))
 
     def save_policies(self):
         """Save attendance policies to database"""
@@ -460,7 +466,7 @@ class AttendancePoliciesWindow:
                 conn.commit()
                 conn.close()
 
-            messagebox.showinfo(_("common.success"), "Attendance policies saved successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.attendance_policies_saved_successfully', default="Attendance policies saved successfully!"))
 
             # Log activity
             try:
@@ -477,8 +483,8 @@ class AttendancePoliciesWindow:
 
     def reset_to_defaults(self):
         """Reset policies to default values"""
-        if messagebox.askyesno("Confirm Reset",
-                              "Are you sure you want to reset all attendance policies to defaults?"):
+        if messagebox.askyesno(_t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.confirm_reset', default="Confirm Reset"),
+                              _t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.are_you_sure_you_want_to_reset_all_attendance_policies_to_defaul', default="Are you sure you want to reset all attendance policies to defaults?")):
             # Reset all variables to defaults
             self.minimum_attendance_var.set(75)
             self.late_arrival_var.set(15)
@@ -505,7 +511,7 @@ class AttendancePoliciesWindow:
             for absence_type in default_types:
                 self.absence_types_listbox.insert(tk.END, absence_type)
 
-            messagebox.showinfo(_("common.success"), "Policies reset to defaults!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.misc_windows.attendance_policies.dialogs.policies_reset_to_defaults', default="Policies reset to defaults!"))
 
     def export_policies(self):
         """Export policies to JSON file"""

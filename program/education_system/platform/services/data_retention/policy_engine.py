@@ -80,15 +80,18 @@ _ENTITY_MAP: dict[str, list[dict[str, Any]]] = {
 # DB path resolver
 # ---------------------------------------------------------------------------
 
-_shared_root = Path(__file__).resolve().parent.parent.parent.parent  # education_system/shared
-_education_root = _shared_root.parent                                  # education_system/
-
-
 def _resolve_db(system: str) -> Path | None:
-    """Return the filesystem path for a known system's database."""
+    """Return the filesystem path for a known system's database.
+
+    Sourced from the canonical registry rather than derived from ``__file__``:
+    the old relative walk still named the pre-migration ``post_18/`` tree, so
+    it silently resolved to a path that has not existed since the move.
+    """
+    from education_system.paths import PLATFORM_AUTH_DB, SYSTEM_DB_PATHS
+
     mapping = {
-        "university": _education_root / "post_18" / "university_system" / "data" / "db_files" / "student_records.db",
-        "auth":       _shared_root                          / "data" / "db_files" / "auth.db",
+        "university": SYSTEM_DB_PATHS["university"],
+        "auth": PLATFORM_AUTH_DB,
     }
     return mapping.get(system)
 

@@ -4,6 +4,8 @@ Campus Navigation GUI Interface
 Provides graphical interface for campus navigation with interactive map.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.campus.campus_navigation._imports import tk, ttk, NavigationService, get_auth, _t
 from education_system.systems.university.interfaces.gui.operations.campus.campus_navigation.map_canvas import MapCanvasMixin
 from education_system.systems.university.interfaces.gui.operations.campus.campus_navigation.tabs.directory import DirectoryTabMixin
@@ -29,9 +31,9 @@ class NavigationGUI(
             try:
                 from tkinter import messagebox
                 messagebox.showerror(
-                    "Login required",
-                    "You must be logged in via the main GUI to use "
-                    "Campus Navigation.",
+                    _t('gui.operations.campus.campus_navigation.navigation.dialogs.login_required', default="Login required"),
+                    _t('gui.operations.campus.campus_navigation.navigation.dialogs.you_must_be_logged_in_via_the_main_gui_to_use_campus_navigation', default="You must be logged in via the main GUI to use "
+                    "Campus Navigation."),
                 )
             except Exception:
                 pass

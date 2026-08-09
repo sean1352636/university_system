@@ -3,10 +3,10 @@ from education_system.systems.university.infrastructure.database.db import sqlit
 import time
 import threading
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 
-DB_PATH = str(paths.DEFAULT_DB_PATH)
+DB_PATH = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
 # Use this function for all DB operations safely
 def get_db_connection():

@@ -3,6 +3,8 @@ Grocery Shop GUI for University Management System
 Campus convenience store interface
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -49,7 +51,7 @@ from education_system.systems.university.infrastructure.utils.finance_integratio
 )
 
 # For database path
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 class GroceryGUI:
     """Grocery shop GUI"""
@@ -202,7 +204,7 @@ class GroceryGUI:
 
         # Add Management button for staff/admin users
         if self.current_user and self.current_user.get('role') in ['admin', 'staff']:
-            ttk.Button(header, text="Management", command=self.open_management_interface).pack(side=tk.RIGHT, padx=5)
+            ttk.Button(header, text=_t('gui.operations.commerce.grocery.buttons.management', default="Management"), command=self.open_management_interface).pack(side=tk.RIGHT, padx=5)
 
         # Search bar
         search_frame = ttk.Frame(parent)
@@ -513,7 +515,7 @@ class GroceryGUI:
         payment_frame = ttk.LabelFrame(main_frame, text=_t("grocery.payment_method"), padding=10)
         payment_frame.pack(fill=tk.X, pady=10)
 
-        payment_method = tk.StringVar(value="card")
+        payment_method = tk.StringVar(value=_t('gui.operations.commerce.grocery.values.card', default="card"))
 
         # Get finance account balance
         finance_balance = self.get_user_finance_balance(user_identifier)
@@ -708,7 +710,7 @@ class GroceryGUI:
 
     def open_management_interface(self):
         """Open the management interface - to be overridden by GroceryManagementGUI"""
-        messagebox.showinfo("Management", "Management features are not available in this view.")
+        messagebox.showinfo(_t('gui.operations.commerce.grocery.dialogs.management', default="Management"), _t('gui.operations.commerce.grocery.dialogs.management_features_are_not_available_in_this_view', default="Management features are not available in this view."))
 
 class GroceryManagementGUI(GroceryGUI):
     """Extended GUI with management features for staff/admin"""
@@ -739,7 +741,7 @@ class GroceryManagementGUI(GroceryGUI):
 
         # Refunds tab
         refunds_frame = ttk.Frame(notebook)
-        notebook.add(refunds_frame, text="Refunds")
+        notebook.add(refunds_frame, text=_t('gui.operations.commerce.grocery.tabs.refunds', default="Refunds"))
         self.setup_refunds_tab(refunds_frame)
 
     def setup_inventory_tab(self, parent):
@@ -893,37 +895,37 @@ class GroceryManagementGUI(GroceryGUI):
         header_left = ttk.Frame(header_frame)
         header_left.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10)
 
-        ttk.Label(header_left, text="Grocery Shop Payment Refunds",
+        ttk.Label(header_left, text=_t('gui.operations.commerce.grocery.labels.grocery_shop_payment_refunds', default="Grocery Shop Payment Refunds"),
                  font=('Arial', 12, 'bold')).pack(anchor=tk.W)
 
         # Show admin badge if user is admin
         if self.current_user and self.current_user.get('role') == 'admin':
-            ttk.Label(header_left, text="[ADMIN ACCESS]",
+            ttk.Label(header_left, text=_t('gui.operations.commerce.grocery.labels.admin_access', default="[ADMIN ACCESS]"),
                      font=('Arial', 9, 'bold'), foreground='blue').pack(anchor=tk.W, pady=(2, 0))
 
         # Search frame
-        search_frame = ttk.LabelFrame(parent, text="Search Transactions", padding="10")
+        search_frame = ttk.LabelFrame(parent, text=_t('gui.operations.commerce.grocery.labels.search_transactions', default="Search Transactions"), padding="10")
         search_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(search_frame, text="Transaction ID, Receipt #, Customer Name, or Student ID:").grid(row=0, column=0, sticky=tk.W, padx=5)
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.grocery.labels.transaction_id_receipt_customer_name_or_student_id', default="Transaction ID, Receipt #, Customer Name, or Student ID:")).grid(row=0, column=0, sticky=tk.W, padx=5)
         self.refund_search_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=self.refund_search_var, width=45).grid(row=0, column=1, padx=5)
 
         # Transactions list frame
-        list_frame = ttk.LabelFrame(parent, text="All Grocery Transactions", padding="5")
+        list_frame = ttk.LabelFrame(parent, text=_t('gui.operations.commerce.grocery.labels.all_grocery_transactions', default="All Grocery Transactions"), padding="5")
         list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         columns = ('trans_id', 'date', 'receipt', 'customer_name', 'student_id', 'total', 'method', 'status')
         self.refunds_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
 
-        self.refunds_tree.heading('trans_id', text='Transaction ID')
-        self.refunds_tree.heading('date', text='Date/Time')
-        self.refunds_tree.heading('receipt', text='Receipt #')
-        self.refunds_tree.heading('customer_name', text='Customer Name')
-        self.refunds_tree.heading('student_id', text='Student ID')
-        self.refunds_tree.heading('total', text='Total (GBP)')
-        self.refunds_tree.heading('method', text='Payment Method')
-        self.refunds_tree.heading('status', text='Status')
+        self.refunds_tree.heading('trans_id', text=_t('gui.operations.commerce.grocery.headings.transaction_id', default='Transaction ID'))
+        self.refunds_tree.heading('date', text=_t('gui.operations.commerce.grocery.headings.date_time', default='Date/Time'))
+        self.refunds_tree.heading('receipt', text=_t('gui.operations.commerce.grocery.headings.receipt', default='Receipt #'))
+        self.refunds_tree.heading('customer_name', text=_t('gui.operations.commerce.grocery.headings.customer_name', default='Customer Name'))
+        self.refunds_tree.heading('student_id', text=_t('gui.operations.commerce.grocery.headings.student_id', default='Student ID'))
+        self.refunds_tree.heading('total', text=_t('gui.operations.commerce.grocery.headings.total_gbp', default='Total (GBP)'))
+        self.refunds_tree.heading('method', text=_t('gui.operations.commerce.grocery.headings.payment_method', default='Payment Method'))
+        self.refunds_tree.heading('status', text=_t('gui.operations.commerce.grocery.headings.status', default='Status'))
 
         self.refunds_tree.column('trans_id', width=110)
         self.refunds_tree.column('date', width=140)
@@ -943,12 +945,12 @@ class GroceryManagementGUI(GroceryGUI):
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Search", command=self.refresh_refunds_list).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Show All",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.grocery.buttons.search', default="Search"), command=self.refresh_refunds_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.grocery.buttons.show_all', default="Show All"),
                   command=lambda: [self.refund_search_var.set(''), self.refresh_refunds_list()]).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Process Refund", command=self.process_grocery_refund).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="View Details", command=self.view_refund_transaction_details).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Export to CSV", command=self.export_refunds_csv).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.grocery.buttons.process_refund', default="Process Refund"), command=self.process_grocery_refund).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.grocery.buttons.view_details', default="View Details"), command=self.view_refund_transaction_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.grocery.buttons.export_to_csv', default="Export to CSV"), command=self.export_refunds_csv).pack(side=tk.LEFT, padx=5)
 
         # Initial load
         self.refresh_refunds_list()
@@ -1018,19 +1020,19 @@ class GroceryManagementGUI(GroceryGUI):
 
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load transactions: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.error', default="Error"), f"Failed to load transactions: {e}")
 
     def view_refund_transaction_details(self):
         """View detailed transaction information."""
         selection = self.refunds_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a transaction to view details")
+            messagebox.showwarning(_t('gui.operations.commerce.grocery.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.grocery.dialogs.please_select_a_transaction_to_view_details', default="Please select a transaction to view details"))
             return
 
         try:
             values = self.refunds_tree.item(selection[0])['values']
             if len(values) < 8:
-                messagebox.showerror("Data Error", "Transaction record is incomplete")
+                messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.data_error', default="Data Error"), _t('gui.operations.commerce.grocery.dialogs.transaction_record_is_incomplete', default="Transaction record is incomplete"))
                 return
 
             trans_id = values[0]
@@ -1067,9 +1069,9 @@ Payment Method: {values[6]}
 Status: {values[7]}
 {items_text}
 """
-            messagebox.showinfo("Transaction Details", details)
+            messagebox.showinfo(_t('gui.operations.commerce.grocery.dialogs.transaction_details', default="Transaction Details"), details)
         except Exception as e:
-            messagebox.showerror("Error", f"Error viewing transaction details: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.error', default="Error"), f"Error viewing transaction details: {e}")
 
     def export_refunds_csv(self):
         """Export transactions to CSV file."""
@@ -1093,9 +1095,9 @@ Status: {values[7]}
                         values = self.refunds_tree.item(item)['values']
                         writer.writerow(values)
 
-                messagebox.showinfo("Export Successful", f"Transactions exported to:\n{filepath}")
+                messagebox.showinfo(_t('gui.operations.commerce.grocery.dialogs.export_successful', default="Export Successful"), f"Transactions exported to:\n{filepath}")
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export transactions: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.export_error', default="Export Error"), f"Failed to export transactions: {e}")
 
     def process_grocery_refund(self):
         """Process a refund with cash/card/student account options.
@@ -1104,13 +1106,13 @@ Status: {values[7]}
         """
         selection = self.refunds_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a transaction to refund")
+            messagebox.showwarning(_t('gui.operations.commerce.grocery.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.grocery.dialogs.please_select_a_transaction_to_refund', default="Please select a transaction to refund"))
             return
 
         try:
             values = self.refunds_tree.item(selection[0])['values']
             if len(values) < 8:
-                messagebox.showerror("Data Error", "Transaction record is incomplete")
+                messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.data_error', default="Data Error"), _t('gui.operations.commerce.grocery.dialogs.transaction_record_is_incomplete', default="Transaction record is incomplete"))
                 return
 
             trans_id = values[0]
@@ -1122,15 +1124,15 @@ Status: {values[7]}
             payment_method = values[6]
             status = values[7]
         except (IndexError, ValueError) as e:
-            messagebox.showerror("Error", f"Error reading transaction data: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.error', default="Error"), f"Error reading transaction data: {e}")
             return
 
         if status == 'refunded':
-            messagebox.showinfo("Already Refunded", "This transaction has already been refunded")
+            messagebox.showinfo(_t('gui.operations.commerce.grocery.dialogs.already_refunded', default="Already Refunded"), _t('gui.operations.commerce.grocery.dialogs.this_transaction_has_already_been_refunded', default="This transaction has already been refunded"))
             return
 
         # Confirm refund
-        if not messagebox.askyesno("Confirm Refund",
+        if not messagebox.askyesno(_t('gui.operations.commerce.grocery.dialogs.confirm_refund', default="Confirm Refund"),
                                    f"Refund GBP {amount:.2f} for Transaction {trans_id}?\n\n"
                                    f"Customer: {customer_name}\n"
                                    f"Receipt: {receipt_number}\n"
@@ -1184,8 +1186,8 @@ Status: {values[7]}
                 # Last resort: prompt for student ID
                 if not student_id:
                     from tkinter import simpledialog
-                    student_id = simpledialog.askstring("Student ID",
-                        "Unable to automatically determine Student ID.\nPlease enter Student ID for refund:")
+                    student_id = simpledialog.askstring(_t('gui.operations.commerce.grocery.dialogs.student_id', default="Student ID"),
+                        _t('gui.operations.commerce.grocery.dialogs.unable_to_automatically_determine_student_id_please_enter_studen', default="Unable to automatically determine Student ID.\nPlease enter Student ID for refund:"))
                     if not student_id:
                         return
 
@@ -1235,21 +1237,21 @@ Status: {values[7]}
                 # Notify finance GUI
                 self.notify_grocery_finance_gui(trans_id, amount, refund_method, refund_ref, student_id)
 
-                messagebox.showinfo("Refund Processed",
+                messagebox.showinfo(_t('gui.operations.commerce.grocery.dialogs.refund_processed', default="Refund Processed"),
                                   f"Refund of GBP {amount:.2f} processed successfully\n\n"
                                   f"Method: {refund_method}\n"
                                   f"Refund Reference: {refund_ref}")
 
                 self.refresh_refunds_list()
             except Exception as e:
-                messagebox.showerror("Refund Error", f"Failed to process refund: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.refund_error', default="Refund Error"), f"Failed to process refund: {e}")
         else:
-            messagebox.showerror("Refund Failed", "Failed to process student account refund")
+            messagebox.showerror(_t('gui.operations.commerce.grocery.dialogs.refund_failed', default="Refund Failed"), _t('gui.operations.commerce.grocery.dialogs.failed_to_process_student_account_refund', default="Failed to process student account refund"))
 
     def show_grocery_refund_method_dialog(self, amount: float, trans_id: str, student_id=None, customer_name=None):
         """Show refund method selection dialog."""
         dialog = tk.Toplevel(self.mgmt_window)
-        dialog.title("Select Refund Method")
+        dialog.title(_t('gui.operations.commerce.grocery.windows.select_refund_method', default="Select Refund Method"))
         dialog.geometry("450x450")
         dialog.transient(self.mgmt_window)
         dialog.grab_set()
@@ -1257,7 +1259,7 @@ Status: {values[7]}
         result = {'method': None}
 
         # Refund info frame
-        info_frame = ttk.LabelFrame(dialog, text="Refund Details", padding="10")
+        info_frame = ttk.LabelFrame(dialog, text=_t('gui.operations.commerce.grocery.labels.refund_details', default="Refund Details"), padding="10")
         info_frame.pack(fill=tk.X, padx=10, pady=10)
 
         ttk.Label(info_frame, text=f"Transaction ID: {trans_id}").pack(anchor=tk.W)
@@ -1278,7 +1280,7 @@ Status: {values[7]}
                          foreground='green').pack(anchor=tk.W)
 
         # Refund method selection
-        method_frame = ttk.LabelFrame(dialog, text="Select Refund Method", padding="10")
+        method_frame = ttk.LabelFrame(dialog, text=_t('gui.operations.commerce.grocery.labels.select_refund_method', default="Select Refund Method"), padding="10")
         method_frame.pack(fill=tk.X, padx=10, pady=10)
 
         def select_method(method):
@@ -1286,19 +1288,19 @@ Status: {values[7]}
             dialog.destroy()
 
         # Cash button
-        ttk.Button(method_frame, text="Cash", width=30,
+        ttk.Button(method_frame, text=_t('gui.operations.commerce.grocery.buttons.cash', default="Cash"), width=30,
                   command=lambda: select_method('Cash')).pack(pady=5)
 
         # Card button
-        ttk.Button(method_frame, text="Card (Original Payment Method)", width=30,
+        ttk.Button(method_frame, text=_t('gui.operations.commerce.grocery.buttons.card_original_payment_method', default="Card (Original Payment Method)"), width=30,
                   command=lambda: select_method('Card')).pack(pady=5)
 
         # Student Account button
-        ttk.Button(method_frame, text="Student Finance Account", width=30,
+        ttk.Button(method_frame, text=_t('gui.operations.commerce.grocery.buttons.student_finance_account', default="Student Finance Account"), width=30,
                   command=lambda: select_method('Student Account')).pack(pady=5)
 
         # Cancel button
-        ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.operations.commerce.grocery.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(pady=10)
 
         dialog.wait_window()
         return result['method']

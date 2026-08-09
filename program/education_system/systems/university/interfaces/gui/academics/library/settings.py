@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -123,9 +125,9 @@ def show_settings(self):
     self.clear_content_area()
 
     settings_frame = ttk.Frame(self.notebook)
-    self.notebook.add(settings_frame, text="Settings")
+    self.notebook.add(settings_frame, text=_t('gui.academics.library.settings.tabs.settings', default="Settings"))
 
-    title_label = ttk.Label(settings_frame, text="System Settings", style='Title.TLabel')
+    title_label = ttk.Label(settings_frame, text=_t('gui.academics.library.settings.labels.system_settings', default="System Settings"), style='Title.TLabel')
     title_label.pack(pady=10)
 
     # Settings categories
@@ -138,26 +140,26 @@ def show_settings(self):
 
     # Library Settings tab
     library_tab = ttk.Frame(settings_notebook)
-    settings_notebook.add(library_tab, text="Library Settings")
+    settings_notebook.add(library_tab, text=_t('gui.academics.library.settings.tabs.library_settings', default="Library Settings"))
 
     self.create_library_settings_tab(library_tab)
 
     # System Settings tab
     system_tab = ttk.Frame(settings_notebook)
-    settings_notebook.add(system_tab, text="System Settings")
+    settings_notebook.add(system_tab, text=_t('gui.academics.library.settings.tabs.system_settings', default="System Settings"))
 
     self.create_system_settings_tab(system_tab)
 
     # User Settings tab
     user_tab = ttk.Frame(settings_notebook)
-    settings_notebook.add(user_tab, text="User Settings")
+    settings_notebook.add(user_tab, text=_t('gui.academics.library.settings.tabs.user_settings', default="User Settings"))
 
     self.create_user_settings_tab(user_tab)
 
 def create_library_settings_tab(self, parent):
     """Create library settings tab"""
     # Loan settings
-    loan_frame = ttk.LabelFrame(parent, text="Loan Settings")
+    loan_frame = ttk.LabelFrame(parent, text=_t('gui.academics.library.settings.labels.loan_settings', default="Loan Settings"))
     loan_frame.pack(fill=tk.X, padx=10, pady=5)
 
     # Load current settings
@@ -192,7 +194,7 @@ def create_library_settings_tab(self, parent):
         self.library_settings_vars[setting_name] = var
 
     # Notification settings
-    notification_frame = ttk.LabelFrame(parent, text="Notification Settings")
+    notification_frame = ttk.LabelFrame(parent, text=_t('gui.academics.library.settings.labels.notification_settings', default="Notification Settings"))
     notification_frame.pack(fill=tk.X, padx=10, pady=5)
 
     self.notification_vars = {}
@@ -222,62 +224,62 @@ def create_library_settings_tab(self, parent):
         self.notification_vars[setting_name] = var
 
     # Save button
-    ttk.Button(parent, text="Save Library Settings", command=self.save_library_settings).pack(pady=10)
+    ttk.Button(parent, text=_t('gui.academics.library.settings.buttons.save_library_settings', default="Save Library Settings"), command=self.save_library_settings).pack(pady=10)
 
 def create_system_settings_tab(self, parent):
     """Create system settings tab"""
     # Backup settings
-    backup_frame = ttk.LabelFrame(parent, text="Backup Settings")
+    backup_frame = ttk.LabelFrame(parent, text=_t('gui.academics.library.settings.labels.backup_settings', default="Backup Settings"))
     backup_frame.pack(fill=tk.X, padx=10, pady=5)
 
     self.auto_backup_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(backup_frame, text="Enable Automatic Backups", variable=self.auto_backup_var).pack(anchor='w', padx=5, pady=5)
+    ttk.Checkbutton(backup_frame, text=_t('gui.academics.library.settings.buttons.enable_automatic_backups', default="Enable Automatic Backups"), variable=self.auto_backup_var).pack(anchor='w', padx=5, pady=5)
 
-    ttk.Label(backup_frame, text="Backup Frequency (hours):").pack(anchor='w', padx=5, pady=5)
+    ttk.Label(backup_frame, text=_t('gui.academics.library.settings.labels.backup_frequency_hours', default="Backup Frequency (hours):")).pack(anchor='w', padx=5, pady=5)
     self.backup_frequency_var = tk.StringVar(value="24")
     ttk.Entry(backup_frame, textvariable=self.backup_frequency_var, width=10).pack(anchor='w', padx=20, pady=5)
 
     # Database settings
-    db_frame = ttk.LabelFrame(parent, text="Database Settings")
+    db_frame = ttk.LabelFrame(parent, text=_t('gui.academics.library.settings.labels.database_settings', default="Database Settings"))
     db_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(db_frame, text="Optimize Database", command=self.optimize_database).pack(anchor='w', padx=5, pady=5)
-    ttk.Button(db_frame, text="Check Integrity", command=self.check_database_integrity).pack(anchor='w', padx=5, pady=5)
-    ttk.Button(db_frame, text="View Audit Log", command=self.show_audit_log).pack(anchor='w', padx=5, pady=5)
+    ttk.Button(db_frame, text=_t('gui.academics.library.settings.buttons.optimize_database', default="Optimize Database"), command=self.optimize_database).pack(anchor='w', padx=5, pady=5)
+    ttk.Button(db_frame, text=_t('gui.academics.library.settings.buttons.check_integrity', default="Check Integrity"), command=self.check_database_integrity).pack(anchor='w', padx=5, pady=5)
+    ttk.Button(db_frame, text=_t('gui.academics.library.settings.buttons.view_audit_log', default="View Audit Log"), command=self.show_audit_log).pack(anchor='w', padx=5, pady=5)
 
     # Save button
-    ttk.Button(parent, text="Save System Settings", command=self.save_system_settings).pack(pady=10)
+    ttk.Button(parent, text=_t('gui.academics.library.settings.buttons.save_system_settings', default="Save System Settings"), command=self.save_system_settings).pack(pady=10)
 
 def create_user_settings_tab(self, parent):
     """Create user settings tab"""
     # User preferences
-    pref_frame = ttk.LabelFrame(parent, text="User Preferences")
+    pref_frame = ttk.LabelFrame(parent, text=_t('gui.academics.library.settings.labels.user_preferences', default="User Preferences"))
     pref_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Label(pref_frame, text="Default View:").pack(anchor='w', padx=5, pady=5)
-    self.default_view_var = tk.StringVar(value="Dashboard")
+    ttk.Label(pref_frame, text=_t('gui.academics.library.settings.labels.default_view', default="Default View:")).pack(anchor='w', padx=5, pady=5)
+    self.default_view_var = tk.StringVar(value=_t('gui.academics.library.settings.values.dashboard', default="Dashboard"))
     view_combo = ttk.Combobox(pref_frame, textvariable=self.default_view_var, width=20)
     view_combo['values'] = ('Dashboard', 'All Books', 'Search', 'Reports')
     view_combo.pack(anchor='w', padx=20, pady=5)
 
-    ttk.Label(pref_frame, text="Items per Page:").pack(anchor='w', padx=5, pady=5)
+    ttk.Label(pref_frame, text=_t('gui.academics.library.settings.labels.items_per_page', default="Items per Page:")).pack(anchor='w', padx=5, pady=5)
     self.items_per_page_var = tk.StringVar(value="50")
     items_combo = ttk.Combobox(pref_frame, textvariable=self.items_per_page_var, width=10)
     items_combo['values'] = ('25', '50', '100', '200')
     items_combo.pack(anchor='w', padx=20, pady=5)
 
     # Interface settings
-    interface_frame = ttk.LabelFrame(parent, text="Interface Settings")
+    interface_frame = ttk.LabelFrame(parent, text=_t('gui.academics.library.settings.labels.interface_settings', default="Interface Settings"))
     interface_frame.pack(fill=tk.X, padx=10, pady=5)
 
     self.confirm_deletes_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(interface_frame, text="Confirm Deletions", variable=self.confirm_deletes_var).pack(anchor='w', padx=5, pady=5)
+    ttk.Checkbutton(interface_frame, text=_t('gui.academics.library.settings.buttons.confirm_deletions', default="Confirm Deletions"), variable=self.confirm_deletes_var).pack(anchor='w', padx=5, pady=5)
 
     self.auto_refresh_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(interface_frame, text="Auto-refresh Data", variable=self.auto_refresh_var).pack(anchor='w', padx=5, pady=5)
+    ttk.Checkbutton(interface_frame, text=_t('gui.academics.library.settings.buttons.auto_refresh_data', default="Auto-refresh Data"), variable=self.auto_refresh_var).pack(anchor='w', padx=5, pady=5)
 
     # Save button
-    ttk.Button(parent, text="Save User Settings", command=self.save_user_settings).pack(pady=10)
+    ttk.Button(parent, text=_t('gui.academics.library.settings.buttons.save_user_settings', default="Save User Settings"), command=self.save_user_settings).pack(pady=10)
 
 def save_library_settings(self):
     """Save library settings"""
@@ -292,23 +294,23 @@ def save_library_settings(self):
                 value = 'true' if var.get() else 'false'
                 update_library_setting(setting_name, value)
 
-            messagebox.showinfo(_("common.success"), "Library settings saved successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.library.settings.dialogs.library_settings_saved_successfully', default="Library settings saved successfully!"))
 
             # Log the action
             log_audit_event(get_current_user_id(), "GUI: Updated library settings", "library_settings")
         else:
-            messagebox.showinfo(_("common.demo"), "Settings would be saved in full version")
+            messagebox.showinfo(_("common.demo"), _t('gui.academics.library.settings.dialogs.settings_would_be_saved_in_full_version', default="Settings would be saved in full version"))
 
     except (tk.TclError, ValueError, TypeError) as e:
         messagebox.showerror(_("common.error"), f"Error saving settings: {str(e)}")
 
 def save_system_settings(self):
     """Save system settings"""
-    messagebox.showinfo(_("common.success"), "System settings saved successfully!")
+    messagebox.showinfo(_("common.success"), _t('gui.academics.library.settings.dialogs.system_settings_saved_successfully', default="System settings saved successfully!"))
 
 def save_user_settings(self):
     """Save user settings"""
-    messagebox.showinfo(_("common.success"), "User settings saved successfully!")
+    messagebox.showinfo(_("common.success"), _t('gui.academics.library.settings.dialogs.user_settings_saved_successfully', default="User settings saved successfully!"))
 
 def show_user_preferences(self):
     """Show user preferences dialog"""
@@ -320,7 +322,7 @@ def show_user_preferences(self):
         current_user = self.auth.current_user
 
     if not current_user:
-        messagebox.showwarning(_("common.warning"), "Please log in first")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.settings.dialogs.please_log_in_first', default="Please log in first"))
         return
 
     prefs_dialog = tk.Toplevel(self.master)
@@ -338,15 +340,15 @@ def show_user_preferences(self):
 
     # General preferences
     general_frame = ttk.Frame(prefs_notebook)
-    prefs_notebook.add(general_frame, text="General")
+    prefs_notebook.add(general_frame, text=_t('gui.academics.library.settings.tabs.general', default="General"))
 
-    ttk.Label(general_frame, text="Default Dashboard View:").pack(anchor='w', pady=5)
-    self.default_dashboard_var = tk.StringVar(value="Statistics")
+    ttk.Label(general_frame, text=_t('gui.academics.library.settings.labels.default_dashboard_view', default="Default Dashboard View:")).pack(anchor='w', pady=5)
+    self.default_dashboard_var = tk.StringVar(value=_t('gui.academics.library.settings.values.statistics', default="Statistics"))
     dashboard_combo = ttk.Combobox(general_frame, textvariable=self.default_dashboard_var, width=30)
     dashboard_combo['values'] = ('Statistics', 'Recent Activity', 'Quick Actions', 'Reports')
     dashboard_combo.pack(anchor='w', padx=20, pady=5)
 
-    ttk.Label(general_frame, text="Items per Page:").pack(anchor='w', pady=5)
+    ttk.Label(general_frame, text=_t('gui.academics.library.settings.labels.items_per_page', default="Items per Page:")).pack(anchor='w', pady=5)
     self.items_per_page_pref_var = tk.StringVar(value="50")
     items_combo = ttk.Combobox(general_frame, textvariable=self.items_per_page_pref_var, width=10)
     items_combo['values'] = ('25', '50', '100', '200')
@@ -354,30 +356,30 @@ def show_user_preferences(self):
 
     # Interface preferences
     interface_frame = ttk.Frame(prefs_notebook)
-    prefs_notebook.add(interface_frame, text="Interface")
+    prefs_notebook.add(interface_frame, text=_t('gui.academics.library.settings.tabs.interface', default="Interface"))
 
     self.confirm_actions_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(interface_frame, text="Confirm dangerous actions",
+    ttk.Checkbutton(interface_frame, text=_t('gui.academics.library.settings.buttons.confirm_dangerous_actions', default="Confirm dangerous actions"),
                    variable=self.confirm_actions_var).pack(anchor='w', pady=5)
 
     self.auto_save_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(interface_frame, text="Auto-save form data",
+    ttk.Checkbutton(interface_frame, text=_t('gui.academics.library.settings.buttons.auto_save_form_data', default="Auto-save form data"),
                    variable=self.auto_save_var).pack(anchor='w', pady=5)
 
     self.show_tooltips_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(interface_frame, text="Show tooltips",
+    ttk.Checkbutton(interface_frame, text=_t('gui.academics.library.settings.buttons.show_tooltips', default="Show tooltips"),
                    variable=self.show_tooltips_var).pack(anchor='w', pady=5)
 
     # Notification preferences
     notification_frame = ttk.Frame(prefs_notebook)
-    prefs_notebook.add(notification_frame, text="Notifications")
+    prefs_notebook.add(notification_frame, text=_t('gui.academics.library.settings.tabs.notifications', default="Notifications"))
 
     self.desktop_notifications_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(notification_frame, text="Desktop notifications",
+    ttk.Checkbutton(notification_frame, text=_t('gui.academics.library.settings.buttons.desktop_notifications', default="Desktop notifications"),
                    variable=self.desktop_notifications_var).pack(anchor='w', pady=5)
 
     self.sound_alerts_var = tk.BooleanVar(value=False)
-    ttk.Checkbutton(notification_frame, text="Sound alerts",
+    ttk.Checkbutton(notification_frame, text=_t('gui.academics.library.settings.buttons.sound_alerts', default="Sound alerts"),
                    variable=self.sound_alerts_var).pack(anchor='w', pady=5)
 
     # Buttons
@@ -386,7 +388,7 @@ def show_user_preferences(self):
 
     ttk.Button(button_frame, text=_("common.save"), command=lambda: self.save_user_preferences(prefs_dialog)).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=prefs_dialog.destroy).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Reset to Defaults", command=self.reset_user_preferences).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.settings.buttons.reset_to_defaults', default="Reset to Defaults"), command=self.reset_user_preferences).pack(side=tk.LEFT, padx=5)
 
 def save_user_preferences(self, dialog):
     """Save user preferences"""
@@ -433,7 +435,7 @@ def save_user_preferences(self, dialog):
                 conn.commit()
                 conn.close()
 
-        messagebox.showinfo(_("common.success"), "Preferences saved successfully!")
+        messagebox.showinfo(_("common.success"), _t('gui.academics.library.settings.dialogs.preferences_saved_successfully', default="Preferences saved successfully!"))
         dialog.destroy()
 
     except (json.JSONDecodeError, tk.TclError) as e:
@@ -441,7 +443,7 @@ def save_user_preferences(self, dialog):
 
 def reset_user_preferences(self):
     """Reset user preferences to defaults"""
-    result = messagebox.askyesno("Confirm Reset", "Reset all preferences to default values?")
+    result = messagebox.askyesno(_t('gui.academics.library.settings.dialogs.confirm_reset', default="Confirm Reset"), _t('gui.academics.library.settings.dialogs.reset_all_preferences_to_default_values', default="Reset all preferences to default values?"))
 
     if result:
         self.default_dashboard_var.set("Statistics")
@@ -452,15 +454,15 @@ def reset_user_preferences(self):
         self.desktop_notifications_var.set(True)
         self.sound_alerts_var.set(False)
 
-        messagebox.showinfo(_("common.success"), "Preferences reset to defaults")
+        messagebox.showinfo(_("common.success"), _t('gui.academics.library.settings.dialogs.preferences_reset_to_defaults', default="Preferences reset to defaults"))
 
 def enhanced_settings_management_gui(self):
     """Enhanced settings management interface"""
     settings_window = tk.Toplevel(self.master)
-    settings_window.title("Library Settings Management")
+    settings_window.title(_t('gui.academics.library.settings.windows.library_settings_management', default="Library Settings Management"))
     settings_window.geometry("800x700")
 
-    ttk.Label(settings_window, text="Library Settings Management",
+    ttk.Label(settings_window, text=_t('gui.academics.library.settings.labels.library_settings_management', default="Library Settings Management"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Notebook for settings categories
@@ -469,9 +471,9 @@ def enhanced_settings_management_gui(self):
 
     # Tab 1: General Settings
     general_tab = ttk.Frame(notebook)
-    notebook.add(general_tab, text="General")
+    notebook.add(general_tab, text=_t('gui.academics.library.settings.tabs.general', default="General"))
 
-    general_frame = ttk.LabelFrame(general_tab, text="General Library Settings", padding=15)
+    general_frame = ttk.LabelFrame(general_tab, text=_t('gui.academics.library.settings.labels.general_library_settings', default="General Library Settings"), padding=15)
     general_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     settings_data = {}
@@ -490,63 +492,63 @@ def enhanced_settings_management_gui(self):
     # Create settings inputs
     settings_vars = {}
 
-    ttk.Label(general_frame, text="Max Loans Per User:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(general_frame, text=_t('gui.academics.library.settings.labels.max_loans_per_user', default="Max Loans Per User:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     settings_vars['max_loans'] = tk.IntVar(value=int(settings_data.get('max_loans', 5)))
     ttk.Spinbox(general_frame, from_=1, to=20, textvariable=settings_vars['max_loans'], width=10).grid(row=0, column=1, sticky=tk.W, pady=5)
 
-    ttk.Label(general_frame, text="Loan Period (days):").grid(row=1, column=0, sticky=tk.W, pady=5)
+    ttk.Label(general_frame, text=_t('gui.academics.library.settings.labels.loan_period_days', default="Loan Period (days):")).grid(row=1, column=0, sticky=tk.W, pady=5)
     settings_vars['loan_period_days'] = tk.IntVar(value=int(settings_data.get('loan_period_days', 14)))
     ttk.Spinbox(general_frame, from_=1, to=90, textvariable=settings_vars['loan_period_days'], width=10).grid(row=1, column=1, sticky=tk.W, pady=5)
 
-    ttk.Label(general_frame, text="Max Renewals:").grid(row=2, column=0, sticky=tk.W, pady=5)
+    ttk.Label(general_frame, text=_t('gui.academics.library.settings.labels.max_renewals', default="Max Renewals:")).grid(row=2, column=0, sticky=tk.W, pady=5)
     settings_vars['max_renewals'] = tk.IntVar(value=int(settings_data.get('max_renewals', 2)))
     ttk.Spinbox(general_frame, from_=0, to=10, textvariable=settings_vars['max_renewals'], width=10).grid(row=2, column=1, sticky=tk.W, pady=5)
 
-    ttk.Label(general_frame, text="Fine Per Day ($):").grid(row=3, column=0, sticky=tk.W, pady=5)
+    ttk.Label(general_frame, text=_t('gui.academics.library.settings.labels.fine_per_day', default="Fine Per Day ($):")).grid(row=3, column=0, sticky=tk.W, pady=5)
     settings_vars['fine_per_day'] = tk.DoubleVar(value=float(settings_data.get('fine_per_day', 0.50)))
     ttk.Spinbox(general_frame, from_=0, to=10, increment=0.10, textvariable=settings_vars['fine_per_day'], width=10).grid(row=3, column=1, sticky=tk.W, pady=5)
 
-    ttk.Label(general_frame, text="Reservation Period (days):").grid(row=4, column=0, sticky=tk.W, pady=5)
+    ttk.Label(general_frame, text=_t('gui.academics.library.settings.labels.reservation_period_days', default="Reservation Period (days):")).grid(row=4, column=0, sticky=tk.W, pady=5)
     settings_vars['reservation_period_days'] = tk.IntVar(value=int(settings_data.get('reservation_period_days', 3)))
     ttk.Spinbox(general_frame, from_=1, to=30, textvariable=settings_vars['reservation_period_days'], width=10).grid(row=4, column=1, sticky=tk.W, pady=5)
 
     # Tab 2: Notification Settings
     notif_tab = ttk.Frame(notebook)
-    notebook.add(notif_tab, text="Notifications")
+    notebook.add(notif_tab, text=_t('gui.academics.library.settings.tabs.notifications', default="Notifications"))
 
-    notif_frame = ttk.LabelFrame(notif_tab, text="Notification Settings", padding=15)
+    notif_frame = ttk.LabelFrame(notif_tab, text=_t('gui.academics.library.settings.labels.notification_settings', default="Notification Settings"), padding=15)
     notif_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    ttk.Label(notif_frame, text="Due Date Reminder (days before):").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(notif_frame, text=_t('gui.academics.library.settings.labels.due_date_reminder_days_before', default="Due Date Reminder (days before):")).grid(row=0, column=0, sticky=tk.W, pady=5)
     settings_vars['due_reminder_days'] = tk.IntVar(value=int(settings_data.get('due_reminder_days', 3)))
     ttk.Spinbox(notif_frame, from_=1, to=14, textvariable=settings_vars['due_reminder_days'], width=10).grid(row=0, column=1, sticky=tk.W, pady=5)
 
-    ttk.Label(notif_frame, text="Overdue Reminder Frequency (days):").grid(row=1, column=0, sticky=tk.W, pady=5)
+    ttk.Label(notif_frame, text=_t('gui.academics.library.settings.labels.overdue_reminder_frequency_days', default="Overdue Reminder Frequency (days):")).grid(row=1, column=0, sticky=tk.W, pady=5)
     settings_vars['overdue_reminder_freq'] = tk.IntVar(value=int(settings_data.get('overdue_reminder_freq', 7)))
     ttk.Spinbox(notif_frame, from_=1, to=30, textvariable=settings_vars['overdue_reminder_freq'], width=10).grid(row=1, column=1, sticky=tk.W, pady=5)
 
     settings_vars['email_notifications'] = tk.BooleanVar(value=settings_data.get('email_notifications', 'true') == 'true')
-    ttk.Checkbutton(notif_frame, text="Enable Email Notifications", variable=settings_vars['email_notifications']).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
+    ttk.Checkbutton(notif_frame, text=_t('gui.academics.library.settings.buttons.enable_email_notifications', default="Enable Email Notifications"), variable=settings_vars['email_notifications']).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
 
     settings_vars['sms_notifications'] = tk.BooleanVar(value=settings_data.get('sms_notifications', 'false') == 'true')
-    ttk.Checkbutton(notif_frame, text="Enable SMS Notifications", variable=settings_vars['sms_notifications']).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
+    ttk.Checkbutton(notif_frame, text=_t('gui.academics.library.settings.buttons.enable_sms_notifications', default="Enable SMS Notifications"), variable=settings_vars['sms_notifications']).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
 
     # Tab 3: System Settings
     system_tab = ttk.Frame(notebook)
-    notebook.add(system_tab, text="System")
+    notebook.add(system_tab, text=_t('gui.academics.library.settings.tabs.system', default="System"))
 
-    system_frame = ttk.LabelFrame(system_tab, text="System Settings", padding=15)
+    system_frame = ttk.LabelFrame(system_tab, text=_t('gui.academics.library.settings.labels.system_settings', default="System Settings"), padding=15)
     system_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    ttk.Label(system_frame, text="Library Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(system_frame, text=_t('gui.academics.library.settings.labels.library_name', default="Library Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     settings_vars['library_name'] = tk.StringVar(value=settings_data.get('library_name', 'University Library'))
     ttk.Entry(system_frame, textvariable=settings_vars['library_name'], width=40).grid(row=0, column=1, sticky=tk.W, pady=5)
 
-    ttk.Label(system_frame, text="Library Email:").grid(row=1, column=0, sticky=tk.W, pady=5)
+    ttk.Label(system_frame, text=_t('gui.academics.library.settings.labels.library_email', default="Library Email:")).grid(row=1, column=0, sticky=tk.W, pady=5)
     settings_vars['library_email'] = tk.StringVar(value=settings_data.get('library_email', 'library@university.edu'))
     ttk.Entry(system_frame, textvariable=settings_vars['library_email'], width=40).grid(row=1, column=1, sticky=tk.W, pady=5)
 
-    ttk.Label(system_frame, text="Library Phone:").grid(row=2, column=0, sticky=tk.W, pady=5)
+    ttk.Label(system_frame, text=_t('gui.academics.library.settings.labels.library_phone', default="Library Phone:")).grid(row=2, column=0, sticky=tk.W, pady=5)
     settings_vars['library_phone'] = tk.StringVar(value=settings_data.get('library_phone', ''))
     ttk.Entry(system_frame, textvariable=settings_vars['library_phone'], width=40).grid(row=2, column=1, sticky=tk.W, pady=5)
 
@@ -571,7 +573,7 @@ def enhanced_settings_management_gui(self):
 
             log_audit_event(get_current_user_id(), "Updated library settings", "library_settings")
 
-            messagebox.showinfo(_("common.success"), "All settings saved successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.library.settings.dialogs.all_settings_saved_successfully', default="All settings saved successfully!"))
 
         except (sqlite3.Error, DatabaseError, tk.TclError, ValueError, TypeError) as e:
             messagebox.showerror(_("common.error"), f"Failed to save settings: {str(e)}")
@@ -580,25 +582,25 @@ def enhanced_settings_management_gui(self):
     button_frame = ttk.Frame(settings_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Save All Settings", command=save_all_settings).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.settings.buttons.save_all_settings', default="Save All Settings"), command=save_all_settings).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=settings_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 def export_settings_gui(self):
     """Export library settings to file"""
     export_window = tk.Toplevel(self.master)
-    export_window.title("Export Settings")
+    export_window.title(_t('gui.academics.library.settings.windows.export_settings', default="Export Settings"))
     export_window.geometry("500x300")
 
-    ttk.Label(export_window, text="Export Library Settings",
+    ttk.Label(export_window, text=_t('gui.academics.library.settings.labels.export_library_settings', default="Export Library Settings"),
              font=('Arial', 14, 'bold')).pack(pady=10)
 
     # Format selection
-    format_frame = ttk.LabelFrame(export_window, text="Export Format", padding=10)
+    format_frame = ttk.LabelFrame(export_window, text=_t('gui.academics.library.settings.labels.export_format', default="Export Format"), padding=10)
     format_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    format_var = tk.StringVar(value="json")
-    ttk.Radiobutton(format_frame, text="JSON Format", variable=format_var, value="json").pack(anchor=tk.W)
-    ttk.Radiobutton(format_frame, text="CSV Format", variable=format_var, value="csv").pack(anchor=tk.W)
+    format_var = tk.StringVar(value=_t('gui.academics.library.settings.values.json', default="json"))
+    ttk.Radiobutton(format_frame, text=_t('gui.academics.library.settings.buttons.json_format', default="JSON Format"), variable=format_var, value="json").pack(anchor=tk.W)
+    ttk.Radiobutton(format_frame, text=_t('gui.academics.library.settings.buttons.csv_format', default="CSV Format"), variable=format_var, value="csv").pack(anchor=tk.W)
 
     def perform_export():
         try:
@@ -661,7 +663,7 @@ def export_settings_gui(self):
 def import_settings_gui(self):
     """Import library settings from file"""
     file_path = filedialog.askopenfilename(
-        title="Select Settings File",
+        title=_t('gui.academics.library.settings.dialogs.select_settings_file', default="Select Settings File"),
         filetypes=[("JSON files", "*.json"), ("CSV files", "*.csv"), ("All files", "*.*")]
     )
 
@@ -688,12 +690,12 @@ def import_settings_gui(self):
                 settings_to_import = list(reader)
 
         if not settings_to_import:
-            messagebox.showwarning(_("common.warning"), "No valid settings found in file")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.settings.dialogs.no_valid_settings_found_in_file', default="No valid settings found in file"))
             return
 
         # Confirm import
         confirm = messagebox.askyesno(
-            "Confirm Import",
+            _t('gui.academics.library.settings.dialogs.confirm_import', default="Confirm Import"),
             f"Import {len(settings_to_import)} settings?\nThis will overwrite existing values."
         )
 
@@ -721,8 +723,8 @@ def import_settings_gui(self):
 def reset_settings_to_default_gui(self):
     """Reset all settings to default values"""
     confirm = messagebox.askyesno(
-        "Confirm Reset",
-        "Are you sure you want to reset ALL settings to default values?\n\nThis action cannot be undone."
+        _t('gui.academics.library.settings.dialogs.confirm_reset', default="Confirm Reset"),
+        _t('gui.academics.library.settings.dialogs.are_you_sure_you_want_to_reset_all_settings_to_default_values_th', default="Are you sure you want to reset ALL settings to default values?\n\nThis action cannot be undone.")
     )
 
     if not confirm:
@@ -766,8 +768,8 @@ def backup_settings_only_gui(self):
     """Backup only library settings to a separate file"""
     try:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        from education_system.systems.university.infrastructure import paths as _paths
-        backup_dir = str(_paths.BACKUP_SETTINGS_DIR)
+        from education_system import paths as _paths
+        backup_dir = str(_paths.UNIVERSITY_BACKUP_SETTINGS_DIR)
         os.makedirs(backup_dir, exist_ok=True)
 
         backup_file = os.path.join(backup_dir, f'settings_backup_{timestamp}.json')

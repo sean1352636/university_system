@@ -1,5 +1,7 @@
 """Attendance-to-Grade Integration GUI (Feature 27)."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -21,7 +23,7 @@ class AttendanceGradeConfigGUI:
             self.instructor_id = auth.current_user.get('username', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Attendance-Grade Configuration")
+        self.window.title(_t('gui.academics.attendance_grade.attendance_grade.windows.attendance_grade_configuration', default="Attendance-Grade Configuration"))
         self.window.geometry("800x600")
         self.window.transient(parent)
 
@@ -50,14 +52,14 @@ class AttendanceGradeConfigGUI:
     def _setup_ui(self):
         """Build the configuration UI."""
         ttk.Label(
-            self.window, text="Module Attendance & Grades",
+            self.window, text=_t('gui.academics.attendance_grade.attendance_grade.labels.module_attendance_grades', default="Module Attendance & Grades"),
             font=('Arial', 16, 'bold')
         ).pack(pady=(10, 5))
 
         # Module selector
         top_frame = ttk.Frame(self.window)
         top_frame.pack(fill=tk.X, padx=15, pady=5)
-        ttk.Label(top_frame, text="Module:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(top_frame, text=_t('gui.academics.attendance_grade.attendance_grade.labels.module', default="Module:")).pack(side=tk.LEFT, padx=(0, 5))
         self.course_var = tk.StringVar()
         self.course_combo = ttk.Combobox(
             top_frame, textvariable=self.course_var,
@@ -67,12 +69,12 @@ class AttendanceGradeConfigGUI:
         self.course_combo.bind('<<ComboboxSelected>>', lambda e: self._load_config())
 
         # Configuration
-        config_frame = ttk.LabelFrame(self.window, text="Configuration", padding="10")
+        config_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_grade.attendance_grade.labels.configuration', default="Configuration"), padding="10")
         config_frame.pack(fill=tk.X, padx=15, pady=5)
 
         weight_row = ttk.Frame(config_frame)
         weight_row.pack(fill=tk.X, pady=5)
-        ttk.Label(weight_row, text="Attendance Weight (%):").pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Label(weight_row, text=_t('gui.academics.attendance_grade.attendance_grade.labels.attendance_weight', default="Attendance Weight (%):")).pack(side=tk.LEFT, padx=(0, 10))
         self.weight_var = tk.DoubleVar(value=10.0)
         self.weight_spin = ttk.Spinbox(
             weight_row, from_=0, to=100, increment=1,
@@ -82,7 +84,7 @@ class AttendanceGradeConfigGUI:
 
         min_row = ttk.Frame(config_frame)
         min_row.pack(fill=tk.X, pady=5)
-        ttk.Label(min_row, text="Minimum Attendance (%):").pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Label(min_row, text=_t('gui.academics.attendance_grade.attendance_grade.labels.minimum_attendance', default="Minimum Attendance (%):")).pack(side=tk.LEFT, padx=(0, 10))
         self.min_att_var = tk.DoubleVar(value=75.0)
         self.min_att_spin = ttk.Spinbox(
             min_row, from_=0, to=100, increment=1,
@@ -92,20 +94,20 @@ class AttendanceGradeConfigGUI:
 
         btn_row = ttk.Frame(config_frame)
         btn_row.pack(fill=tk.X, pady=5)
-        ttk.Button(btn_row, text="Save Configuration", command=self._save_config).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_row, text="Calculate Grades", command=self._calculate_preview).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.academics.attendance_grade.attendance_grade.buttons.save_configuration', default="Save Configuration"), command=self._save_config).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.academics.attendance_grade.attendance_grade.buttons.calculate_grades', default="Calculate Grades"), command=self._calculate_preview).pack(side=tk.LEFT, padx=5)
 
         # Student grades table
-        preview_frame = ttk.LabelFrame(self.window, text="Student Grades", padding="5")
+        preview_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_grade.attendance_grade.labels.student_grades', default="Student Grades"), padding="5")
         preview_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
         cols = ('student_id', 'name', 'avg_grade', 'assignments_graded', 'attendance_pct')
         self.tree = ttk.Treeview(preview_frame, columns=cols, show='headings')
-        self.tree.heading('student_id', text='Student ID')
-        self.tree.heading('name', text='Name')
-        self.tree.heading('avg_grade', text='Avg Grade')
-        self.tree.heading('assignments_graded', text='Graded')
-        self.tree.heading('attendance_pct', text='Attendance %')
+        self.tree.heading('student_id', text=_t('gui.academics.attendance_grade.attendance_grade.headings.student_id', default='Student ID'))
+        self.tree.heading('name', text=_t('gui.academics.attendance_grade.attendance_grade.headings.name', default='Name'))
+        self.tree.heading('avg_grade', text=_t('gui.academics.attendance_grade.attendance_grade.headings.avg_grade', default='Avg Grade'))
+        self.tree.heading('assignments_graded', text=_t('gui.academics.attendance_grade.attendance_grade.headings.graded', default='Graded'))
+        self.tree.heading('attendance_pct', text=_t('gui.academics.attendance_grade.attendance_grade.headings.attendance', default='Attendance %'))
         self.tree.column('student_id', width=120)
         self.tree.column('name', width=200)
         self.tree.column('avg_grade', width=100, anchor='center')
@@ -117,7 +119,7 @@ class AttendanceGradeConfigGUI:
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.status_var = tk.StringVar(value="Select a module to view grades.")
+        self.status_var = tk.StringVar(value=_t('gui.academics.attendance_grade.attendance_grade.values.select_a_module_to_view_grades', default="Select a module to view grades."))
         ttk.Label(self.window, textvariable=self.status_var).pack(anchor="w", padx=15, pady=5)
 
     def _load_courses(self):
@@ -177,7 +179,7 @@ class AttendanceGradeConfigGUI:
         """Save the attendance-grade configuration."""
         selection = self.course_var.get()
         if not selection:
-            messagebox.showwarning("No Course", "Please select a course.", parent=self.window)
+            messagebox.showwarning(_t('gui.academics.attendance_grade.attendance_grade.dialogs.no_course', default="No Course"), _t('gui.academics.attendance_grade.attendance_grade.dialogs.please_select_a_course', default="Please select a course."), parent=self.window)
             return
         module_code = selection.split(' - ')[0].strip()
 
@@ -214,10 +216,10 @@ class AttendanceGradeConfigGUI:
                 pass
 
             self.status_var.set(f"Configuration saved for {module_code}.")
-            messagebox.showinfo("Saved", "Configuration saved successfully.", parent=self.window)
+            messagebox.showinfo(_t('gui.academics.attendance_grade.attendance_grade.dialogs.saved', default="Saved"), _t('gui.academics.attendance_grade.attendance_grade.dialogs.configuration_saved_successfully', default="Configuration saved successfully."), parent=self.window)
         except Exception as e:
             logger.error(f"Error saving config: {e}")
-            messagebox.showerror("Error", f"Failed to save: {e}", parent=self.window)
+            messagebox.showerror(_t('gui.academics.attendance_grade.attendance_grade.dialogs.error', default="Error"), f"Failed to save: {e}", parent=self.window)
 
     def _calculate_preview(self):
         """Load student grades and attendance for the selected module."""

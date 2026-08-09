@@ -125,7 +125,7 @@ def set_incident_filter(self, filter_value):
 def report_incident(self):
     """Report a new incident."""
     form = tk.Toplevel(self.root)
-    form.title("Report Incident")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.windows.report_incident', default="Report Incident"))
     form.geometry("500x650")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -140,14 +140,14 @@ def report_incident(self):
 
     tk.Label(frame, text=_t("cinema.labels.incident_type"), bg="#ffffff", fg="#333333").grid(row=1, column=0, sticky="w", pady=5)
     types = ["spill", "medical", "disruption", "equipment_failure", "security", "injury", "complaint", "theft", "other"]
-    type_var = tk.StringVar(value="spill")
+    type_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.values.spill', default="spill"))
     type_combo = ttk.Combobox(frame, textvariable=type_var, values=types, width=27)
     type_combo.grid(row=1, column=1, pady=5)
     fields['type_var'] = type_var
 
     tk.Label(frame, text=_t("cinema.labels.severity_required"), bg="#ffffff", fg="#333333").grid(row=2, column=0, sticky="w", pady=5)
     severities = ["low", "medium", "high", "critical"]
-    sev_var = tk.StringVar(value="low")
+    sev_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.values.low', default="low"))
     sev_combo = ttk.Combobox(frame, textvariable=sev_var, values=severities, width=27)
     sev_combo.grid(row=2, column=1, pady=5)
     fields['sev_var'] = sev_var
@@ -172,7 +172,7 @@ def report_incident(self):
     wit_e.grid(row=6, column=1, pady=5)
     fields['witnesses'] = wit_e
 
-    tk.Label(frame, text="Immediate Action:", bg="#ffffff", fg="#333333").grid(row=7, column=0, sticky="nw", pady=5)
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.labels.immediate_action', default="Immediate Action:"), bg="#ffffff", fg="#333333").grid(row=7, column=0, sticky="nw", pady=5)
     action_text = tk.Text(frame, height=3, width=25, bg="#0f3460", fg="white")
     action_text.grid(row=7, column=1, pady=5)
     fields['action'] = action_text
@@ -195,7 +195,7 @@ def report_incident(self):
     def save():
         desc = fields['desc'].get("1.0", tk.END).strip()
         if not desc:
-            messagebox.showwarning(_t("cinema.common.warning"), "Description is required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.dialogs.description_is_required', default="Description is required"))
             return
 
         screen = None
@@ -221,7 +221,7 @@ def report_incident(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Incident reported!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.dialogs.incident_reported', default="Incident reported!"))
         form.destroy()
         self.show_incidents_page()
 
@@ -231,7 +231,7 @@ def view_incident_details(self):
     """View details of selected incident."""
     selected = self.incident_tree.selection() if hasattr(self, 'incident_tree') else None
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select an incident")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.dialogs.please_select_an_incident', default="Please select an incident"))
         return
 
     incident_id = self.incident_tree.item(selected[0])['values'][0]
@@ -245,11 +245,11 @@ def view_incident_details(self):
         conn.close()
 
     if not incident:
-        messagebox.showerror(_t("cinema.common.error"), "Incident not found")
+        messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.dialogs.incident_not_found', default="Incident not found"))
         return
 
     form = tk.Toplevel(self.root)
-    form.title("Incident Details")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.windows.incident_details', default="Incident Details"))
     form.geometry("500x550")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -319,7 +319,7 @@ def update_incident(self):
     """Update or resolve an incident."""
     selected = self.incident_tree.selection() if hasattr(self, 'incident_tree') else None
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select an incident")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.dialogs.please_select_an_incident', default="Please select an incident"))
         return
 
     incident_id = self.incident_tree.item(selected[0])['values'][0]
@@ -333,11 +333,11 @@ def update_incident(self):
         conn.close()
 
     if not incident:
-        messagebox.showerror(_t("cinema.common.error"), "Incident not found")
+        messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.dialogs.incident_not_found', default="Incident not found"))
         return
 
     form = tk.Toplevel(self.root)
-    form.title("Update Incident")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.windows.update_incident', default="Update Incident"))
     form.geometry("450x450")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -388,7 +388,7 @@ def update_incident(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Incident updated!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.dialogs.incident_updated', default="Incident updated!"))
         form.destroy()
         self.show_incidents_page()
 
@@ -397,7 +397,7 @@ def update_incident(self):
 def show_incident_stats(self):
     """Show incident statistics."""
     form = tk.Toplevel(self.root)
-    form.title("Incident Statistics")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.reports.incidents.windows.incident_statistics', default="Incident Statistics"))
     form.geometry("600x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -993,8 +995,8 @@ def create_search_form(self):
     # Entity selector
     entity_frame = ttk.Frame(main_frame)
     entity_frame.pack(fill=tk.X, pady=(0, 10))
-    ttk.Label(entity_frame, text="Entity Type:").pack(side=tk.LEFT, padx=(0, 8))
-    self.search_entity_type = tk.StringVar(value="students")
+    ttk.Label(entity_frame, text=_t('gui.shell.advanced_search.search_basic.labels.entity_type', default="Entity Type:")).pack(side=tk.LEFT, padx=(0, 8))
+    self.search_entity_type = tk.StringVar(value=_t('gui.shell.advanced_search.search_basic.values.students', default="students"))
     entity_combo = ttk.Combobox(
         entity_frame,
         textvariable=self.search_entity_type,
@@ -1093,7 +1095,7 @@ def show_date_search(self):
 
     # Preset options
     ttk.Label(frame, text=f"{_t('advanced_search.search_basic.quick_presets')}:").pack(anchor='w')
-    preset_var = tk.StringVar(value="custom")
+    preset_var = tk.StringVar(value=_t('gui.shell.advanced_search.search_basic.values.custom', default="custom"))
 
     presets = [
         (_t("advanced_search.search_basic.preset_custom_range"), "custom"),
@@ -1318,7 +1320,7 @@ def show_date_search(self):
 
     # Preset options
     ttk.Label(frame, text=f"{_t('advanced_search.search_basic.quick_presets')}:").pack(anchor='w')
-    preset_var = tk.StringVar(value="custom")
+    preset_var = tk.StringVar(value=_t('gui.shell.advanced_search.search_basic.values.custom', default="custom"))
 
     presets = [
         (_t("advanced_search.search_basic.preset_custom_range"), "custom"),
@@ -1551,7 +1553,7 @@ def show_combined_search(self):
         available_modules = []
 
     # Module match type
-    module_match_var = tk.StringVar(value="any")
+    module_match_var = tk.StringVar(value=_t('gui.shell.advanced_search.search_basic.values.any', default="any"))
     ttk.Label(module_list_frame, text=f"{_t('advanced_search.search_basic.students_must_be_enrolled')}:").pack(anchor='w')
     ttk.Radiobutton(module_list_frame, text=_t('advanced_search.search_basic.any_selected_modules'),
                    variable=module_match_var, value="any").pack(anchor='w')
@@ -1676,7 +1678,7 @@ def show_text_search(self):
 
     # Search type
     ttk.Label(frame, text=f"{_t('advanced_search.search_basic.search_type')}:").pack(anchor='w')
-    search_type_var = tk.StringVar(value="wildcard")
+    search_type_var = tk.StringVar(value=_t('gui.shell.advanced_search.search_basic.values.wildcard', default="wildcard"))
 
     search_types = [
         (_t("advanced_search.search_basic.wildcard_pattern_search"), "wildcard"),
@@ -1698,7 +1700,7 @@ def show_text_search(self):
     field_frame.pack(fill=tk.X, pady=(10, 20))
 
     ttk.Label(field_frame, text=_t('advanced_search.search_basic.search_field')).pack(side=tk.LEFT)
-    field_var = tk.StringVar(value="first_name")
+    field_var = tk.StringVar(value=_t('gui.shell.advanced_search.search_basic.values.first_name', default="first_name"))
     field_combo = ttk.Combobox(field_frame, textvariable=field_var,
                               values=["first_name", "last_name", "email", "student_id"],
                               state='readonly', width=15)

@@ -1,6 +1,6 @@
 import os
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
 from education_system.systems.university.domain.academics.services.plagiarism.checker import PlagiarismChecker
@@ -45,7 +45,7 @@ def check_requirements():
 
 def check_database():
     """Check if database exists and has required tables"""
-    if not os.path.exists(str(DEFAULT_DB_PATH)):
+    if not os.path.exists(str(UNIVERSITY_DEFAULT_DB_PATH)):
         print("Error: Database file str(DEFAULT_DB_PATH) not found.")
         print("Please initialize the main system first.")
         return False

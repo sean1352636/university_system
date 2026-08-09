@@ -31,11 +31,11 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.PARENT_PORTAL_DB
+DB_PATH = paths.SIXTH_FORM_PARENT_PORTAL_DB
 
 _PBKDF2_ROUNDS = 200_000
 
@@ -54,7 +54,7 @@ class ParentAccount:
 # ── DB plumbing ──────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
@@ -294,6 +294,30 @@ def student_snapshot(student_id: str) -> dict[str, Any]:
     except Exception:
         logger.debug("UCAS pipeline unavailable for %s", student_id, exc_info=True)
 
+    # Coursework: what is set, what is in, and only those results the
+    # student has already had released to them.
+    coursework = None
+    try:
+        from education_system.systems.sixth_form.domain.academics.assignments import (
+            assignments_scheduling as _scheduling,
+        )
+        coursework = {
+            "summary": _scheduling.parent_summary(student_id),
+            "recent": [
+                {
+                    "title": v.title, "subject": v.subject_name,
+                    "due_date": v.due_date, "state": v.state,
+                    "marks": v.marks, "max_marks": v.max_marks,
+                    "grade": v.grade,
+                    "feedback_available": v.feedback_available,
+                }
+                for v in _scheduling.parent_view(student_id, limit=10)
+            ],
+        }
+    except Exception:
+        logger.debug("Coursework unavailable for %s", student_id,
+                      exc_info=True)
+
     return {
         "student_id": student_id,
         "full_name": f"{s['first_name']} {s['last_name']}".strip(),
@@ -303,6 +327,7 @@ def student_snapshot(student_id: str) -> dict[str, Any]:
         "behaviour_30d": behaviour,
         "subjects": subjects,
         "ucas": ucas,
+        "coursework": coursework,
     }
 
 

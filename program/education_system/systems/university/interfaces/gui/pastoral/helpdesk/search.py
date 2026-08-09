@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -426,49 +428,49 @@ from education_system.systems.university.interfaces.gui.pastoral.helpdesk.base i
 def show_search_tickets(self):
     """Show advanced search dialog"""
     search_window = tk.Toplevel(self.root)
-    search_window.title("Advanced Ticket Search")
+    search_window.title(_t('gui.pastoral.helpdesk.search.windows.advanced_ticket_search', default="Advanced Ticket Search"))
     search_window.geometry("600x500")
     search_window.transient(self.root)
     search_window.grab_set()
 
     # Search form
-    form_frame = ttk.LabelFrame(search_window, text="Search Criteria")
+    form_frame = ttk.LabelFrame(search_window, text=_t('gui.pastoral.helpdesk.search.labels.search_criteria', default="Search Criteria"))
     form_frame.pack(fill='x', padx=10, pady=10)
 
     # Text search
-    ttk.Label(form_frame, text="Search Text:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.search.labels.search_text', default="Search Text:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
     search_text_entry = ttk.Entry(form_frame, width=40)
     search_text_entry.grid(row=0, column=1, columnspan=2, sticky='ew', padx=5, pady=5)
 
     # Status filter
-    ttk.Label(form_frame, text="Status:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
-    status_var = tk.StringVar(value="all")
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.search.labels.status', default="Status:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
+    status_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.search.values.all', default="all"))
     status_combo = ttk.Combobox(form_frame, textvariable=status_var,
                                values=["all", "open", "in progress", "resolved", "closed"],
                                state="readonly")
     status_combo.grid(row=1, column=1, sticky='ew', padx=5, pady=5)
 
     # Priority filter
-    ttk.Label(form_frame, text="Priority:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
-    priority_var = tk.StringVar(value="all")
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.search.labels.priority', default="Priority:")).grid(row=2, column=0, sticky='w', padx=5, pady=5)
+    priority_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.search.values.all', default="all"))
     priority_combo = ttk.Combobox(form_frame, textvariable=priority_var,
                                  values=["all", "low", "medium", "high"],
                                  state="readonly")
     priority_combo.grid(row=2, column=1, sticky='ew', padx=5, pady=5)
 
     # Date range
-    ttk.Label(form_frame, text="Date From:").grid(row=3, column=0, sticky='w', padx=5, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.search.labels.date_from', default="Date From:")).grid(row=3, column=0, sticky='w', padx=5, pady=5)
     date_from_entry = ttk.Entry(form_frame, width=15)
     date_from_entry.grid(row=3, column=1, sticky='w', padx=5, pady=5)
 
-    ttk.Label(form_frame, text="Date To:").grid(row=3, column=2, sticky='w', padx=5, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.helpdesk.search.labels.date_to', default="Date To:")).grid(row=3, column=2, sticky='w', padx=5, pady=5)
     date_to_entry = ttk.Entry(form_frame, width=15)
     date_to_entry.grid(row=3, column=3, sticky='w', padx=5, pady=5)
 
     form_frame.grid_columnconfigure(1, weight=1)
 
     # Results frame
-    results_frame = ttk.LabelFrame(search_window, text="Search Results")
+    results_frame = ttk.LabelFrame(search_window, text=_t('gui.pastoral.helpdesk.search.labels.search_results', default="Search Results"))
     results_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     # Results treeview
@@ -518,12 +520,12 @@ def show_search_tickets(self):
     button_frame = ttk.Frame(search_window)
     button_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Search", command=perform_search,
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.search.buttons.search', default="Search"), command=perform_search,
               style='Primary.TButton').pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Clear",
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.search.buttons.clear', default="Clear"),
               command=lambda: self.clear_search_form(search_text_entry, status_var, priority_var,
                                                     date_from_entry, date_to_entry, results_tree)).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Close", command=search_window.destroy).pack(side='right')
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.search.buttons.close', default="Close"), command=search_window.destroy).pack(side='right')
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_search_tickets = show_search_tickets
@@ -586,7 +588,7 @@ def search_tickets(self, criteria):
         return [dict(result) for result in results]
 
     except Exception as e:
-        messagebox.showerror("Error", f"Search failed: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.error', default="Error"), f"Search failed: {str(e)}")
         return []
 
 # Attach method to HelpdeskGUI class
@@ -609,12 +611,12 @@ HelpdeskGUI.clear_search_form = clear_search_form
 def show_saved_searches(self):
     """Show and execute saved searches"""
     search_window = tk.Toplevel(self.root)
-    search_window.title("Saved Searches")
+    search_window.title(_t('gui.pastoral.helpdesk.search.windows.saved_searches', default="Saved Searches"))
     search_window.geometry("600x400")
     search_window.transient(self.root)
     search_window.grab_set()
 
-    ttk.Label(search_window, text="Saved Searches", style='Heading.TLabel').pack(pady=10)
+    ttk.Label(search_window, text=_t('gui.pastoral.helpdesk.search.labels.saved_searches', default="Saved Searches"), style='Heading.TLabel').pack(pady=10)
 
     # Create treeview for saved searches
     columns = ('Name', 'Created')
@@ -649,7 +651,7 @@ def show_saved_searches(self):
         def execute_selected_search():
             selection = searches_tree.selection()
             if not selection:
-                messagebox.showwarning("Warning", "Please select a search")
+                messagebox.showwarning(_t('gui.pastoral.helpdesk.search.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.search.dialogs.please_select_a_search', default="Please select a search"))
                 return
 
             item = searches_tree.item(selection[0])
@@ -664,18 +666,18 @@ def show_saved_searches(self):
                         search_window.destroy()
                         self.display_search_results_window(results, f"Results for '{search_name}'")
                     except json.JSONDecodeError:
-                        messagebox.showerror("Error", "Invalid search data")
+                        messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.search.dialogs.invalid_search_data', default="Invalid search data"))
                     break
 
         button_frame = ttk.Frame(search_window)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Execute Search", command=execute_selected_search,
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.search.buttons.execute_search', default="Execute Search"), command=execute_selected_search,
                   style='Primary.TButton').pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close", command=search_window.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.search.buttons.close', default="Close"), command=search_window.destroy).pack(side='left', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load saved searches: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.error', default="Error"), f"Failed to load saved searches: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_saved_searches = show_saved_searches
@@ -746,7 +748,7 @@ def execute_search_criteria(self, criteria):
         return [dict(result) for result in results]
 
     except Exception as e:
-        messagebox.showerror("Error", f"Search failed: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.error', default="Error"), f"Search failed: {str(e)}")
         return []
 
 # Attach method to HelpdeskGUI class
@@ -762,8 +764,8 @@ def display_search_results_window(self, results, title="Search Results"):
     ttk.Label(results_window, text=title, style='Heading.TLabel').pack(pady=10)
 
     if not results:
-        ttk.Label(results_window, text="No tickets found matching your search criteria.").pack(pady=20)
-        ttk.Button(results_window, text="Close", command=results_window.destroy).pack(pady=10)
+        ttk.Label(results_window, text=_t('gui.pastoral.helpdesk.search.labels.no_tickets_found_matching_your_search_criteria', default="No tickets found matching your search criteria.")).pack(pady=20)
+        ttk.Button(results_window, text=_t('gui.pastoral.helpdesk.search.buttons.close', default="Close"), command=results_window.destroy).pack(pady=10)
         return
 
     # Create treeview for results
@@ -818,7 +820,7 @@ def display_search_results_window(self, results, title="Search Results"):
     results_tree.bind('<Double-1>', on_double_click)
 
     # Close button
-    ttk.Button(results_window, text="Close", command=results_window.destroy).pack(pady=10)
+    ttk.Button(results_window, text=_t('gui.pastoral.helpdesk.search.buttons.close', default="Close"), command=results_window.destroy).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.display_search_results_window = display_search_results_window
@@ -826,7 +828,7 @@ HelpdeskGUI.display_search_results_window = display_search_results_window
 def advanced_search_tickets_gui(self):
     """Advanced ticket search with multiple filters"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Advanced Ticket Search")
+    dialog.title(_t('gui.pastoral.helpdesk.search.windows.advanced_ticket_search', default="Advanced Ticket Search"))
     dialog.geometry("700x700")
 
     # Main frame with scrollbar
@@ -837,43 +839,43 @@ def advanced_search_tickets_gui(self):
     criteria = {}
 
     # Text search
-    ttk.Label(main_frame, text="Search Text (Subject/Message):").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.search.labels.search_text_subject_message', default="Search Text (Subject/Message):")).grid(row=0, column=0, sticky=tk.W, pady=5)
     text_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=text_var, width=50).grid(row=0, column=1, pady=5, padx=5)
 
     # Status filter
-    ttk.Label(main_frame, text="Status Filter:").grid(row=1, column=0, sticky=tk.W, pady=5)
-    status_var = tk.StringVar(value="all")
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.search.labels.status_filter', default="Status Filter:")).grid(row=1, column=0, sticky=tk.W, pady=5)
+    status_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.search.values.all', default="all"))
     status_combo = ttk.Combobox(main_frame, textvariable=status_var, width=47,
                                 values=["all", "open", "in progress", "resolved", "closed"])
     status_combo.grid(row=1, column=1, pady=5, padx=5)
 
     # Priority filter
-    ttk.Label(main_frame, text="Priority Filter:").grid(row=2, column=0, sticky=tk.W, pady=5)
-    priority_var = tk.StringVar(value="all")
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.search.labels.priority_filter', default="Priority Filter:")).grid(row=2, column=0, sticky=tk.W, pady=5)
+    priority_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.search.values.all', default="all"))
     priority_combo = ttk.Combobox(main_frame, textvariable=priority_var, width=47,
                                   values=["all", "low", "medium", "high"])
     priority_combo.grid(row=2, column=1, pady=5, padx=5)
 
     # Category filter
-    ttk.Label(main_frame, text="Category Filter:").grid(row=3, column=0, sticky=tk.W, pady=5)
-    category_var = tk.StringVar(value="all")
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.search.labels.category_filter', default="Category Filter:")).grid(row=3, column=0, sticky=tk.W, pady=5)
+    category_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.search.values.all', default="all"))
     categories = ["all", "Technical Support", "Academic Inquiry", "Financial Services",
                   "Account Access", "Other"]
     category_combo = ttk.Combobox(main_frame, textvariable=category_var, width=47, values=categories)
     category_combo.grid(row=3, column=1, pady=5, padx=5)
 
     # Date range
-    ttk.Label(main_frame, text="Start Date (YYYY-MM-DD):").grid(row=4, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.search.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=4, column=0, sticky=tk.W, pady=5)
     start_date_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=start_date_var, width=50).grid(row=4, column=1, pady=5, padx=5)
 
-    ttk.Label(main_frame, text="End Date (YYYY-MM-DD):").grid(row=5, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.search.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=5, column=0, sticky=tk.W, pady=5)
     end_date_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=end_date_var, width=50).grid(row=5, column=1, pady=5, padx=5)
 
     # Assigned user filter (admin only)
-    assigned_label = ttk.Label(main_frame, text="Assigned To (Username):")
+    assigned_label = ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.search.labels.assigned_to_username', default="Assigned To (Username):"))
     assigned_var = tk.StringVar()
     assigned_entry = ttk.Entry(main_frame, textvariable=assigned_var, width=50)
 
@@ -882,25 +884,25 @@ def advanced_search_tickets_gui(self):
         assigned_entry.grid(row=6, column=1, pady=5, padx=5)
 
     # Save search name
-    ttk.Label(main_frame, text="Save Search As:").grid(row=7, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.search.labels.save_search_as', default="Save Search As:")).grid(row=7, column=0, sticky=tk.W, pady=5)
     save_name_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=save_name_var, width=50).grid(row=7, column=1, pady=5, padx=5)
 
     # Results display
-    results_frame = ttk.LabelFrame(main_frame, text="Search Results", padding="10")
+    results_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.search.labels.search_results', default="Search Results"), padding="10")
     results_frame.grid(row=8, column=0, columnspan=2, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
 
     # Results treeview
     columns = ('id', 'subject', 'from', 'assigned', 'status', 'priority', 'updated')
     results_tree = ttk.Treeview(results_frame, columns=columns, show='headings', height=10)
 
-    results_tree.heading('id', text='ID')
-    results_tree.heading('subject', text='Subject')
-    results_tree.heading('from', text='From')
-    results_tree.heading('assigned', text='Assigned')
-    results_tree.heading('status', text='Status')
-    results_tree.heading('priority', text='Priority')
-    results_tree.heading('updated', text='Updated')
+    results_tree.heading('id', text=_t('gui.pastoral.helpdesk.search.headings.id', default='ID'))
+    results_tree.heading('subject', text=_t('gui.pastoral.helpdesk.search.headings.subject', default='Subject'))
+    results_tree.heading('from', text=_t('gui.pastoral.helpdesk.search.headings.from', default='From'))
+    results_tree.heading('assigned', text=_t('gui.pastoral.helpdesk.search.headings.assigned', default='Assigned'))
+    results_tree.heading('status', text=_t('gui.pastoral.helpdesk.search.headings.status', default='Status'))
+    results_tree.heading('priority', text=_t('gui.pastoral.helpdesk.search.headings.priority', default='Priority'))
+    results_tree.heading('updated', text=_t('gui.pastoral.helpdesk.search.headings.updated', default='Updated'))
 
     results_tree.column('id', width=40)
     results_tree.column('subject', width=200)
@@ -956,16 +958,16 @@ def advanced_search_tickets_gui(self):
     btn_frame = ttk.Frame(main_frame)
     btn_frame.grid(row=9, column=0, columnspan=2, pady=10)
 
-    ttk.Button(btn_frame, text="Search", command=execute_search).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Load Saved Search",
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.search.buttons.search', default="Search"), command=execute_search).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.search.buttons.load_saved_search', default="Load Saved Search"),
               command=lambda: self.load_saved_searches_gui(results_tree)).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Clear", command=lambda: [
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.search.buttons.clear', default="Clear"), command=lambda: [
         text_var.set(''), status_var.set('all'), priority_var.set('all'),
         category_var.set('all'), start_date_var.set(''), end_date_var.set(''),
         assigned_var.set(''), save_name_var.set(''),
         results_tree.delete(*results_tree.get_children())
     ]).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.search.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.advanced_search_tickets_gui = advanced_search_tickets_gui
@@ -987,10 +989,10 @@ def save_search_criteria_gui(self, name, criteria):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"Search '{name}' saved successfully!")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.search.dialogs.success', default="Success"), f"Search '{name}' saved successfully!")
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to save search: {e}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.error', default="Error"), f"Failed to save search: {e}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.save_search_criteria_gui = save_search_criteria_gui
@@ -1014,15 +1016,15 @@ def load_saved_searches_gui(self, results_tree):
         conn.close()
 
         if not searches:
-            messagebox.showinfo("No Saved Searches", "No saved searches found.")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.search.dialogs.no_saved_searches', default="No Saved Searches"), _t('gui.pastoral.helpdesk.search.dialogs.no_saved_searches_found', default="No saved searches found."))
             return
 
         # Create selection dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Load Saved Search")
+        dialog.title(_t('gui.pastoral.helpdesk.search.windows.load_saved_search', default="Load Saved Search"))
         dialog.geometry("400x300")
 
-        ttk.Label(dialog, text="Select a saved search:", padding="10").pack()
+        ttk.Label(dialog, text=_t('gui.pastoral.helpdesk.search.labels.select_a_saved_search', default="Select a saved search:"), padding="10").pack()
 
         # Listbox with saved searches
         listbox_frame = ttk.Frame(dialog)
@@ -1050,13 +1052,13 @@ def load_saved_searches_gui(self, results_tree):
                     self.display_search_results_gui(results, results_tree)
                     dialog.destroy()
                 except json.JSONDecodeError:
-                    messagebox.showerror("Error", "Corrupted search data")
+                    messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.search.dialogs.corrupted_search_data', default="Corrupted search data"))
 
-        ttk.Button(dialog, text="Execute", command=execute_selected).pack(pady=5)
-        ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=5)
+        ttk.Button(dialog, text=_t('gui.pastoral.helpdesk.search.buttons.execute', default="Execute"), command=execute_selected).pack(pady=5)
+        ttk.Button(dialog, text=_t('gui.pastoral.helpdesk.search.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(pady=5)
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to load searches: {e}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.error', default="Error"), f"Failed to load searches: {e}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.load_saved_searches_gui = load_saved_searches_gui
@@ -1131,7 +1133,7 @@ def execute_search_gui(self, criteria):
         return results
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Search failed: {e}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.error', default="Error"), f"Search failed: {e}")
         return []
 
 # Attach method to HelpdeskGUI class
@@ -1144,7 +1146,7 @@ def display_search_results_gui(self, results, tree_widget):
         tree_widget.delete(item)
 
     if not results:
-        messagebox.showinfo("No Results", "No tickets found matching your search criteria.")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.search.dialogs.no_results', default="No Results"), _t('gui.pastoral.helpdesk.search.dialogs.no_tickets_found_matching_your_search_criteria', default="No tickets found matching your search criteria."))
         return
 
     # Populate results
@@ -1167,7 +1169,7 @@ def display_search_results_gui(self, results, tree_widget):
             updated_at
         ))
 
-    messagebox.showinfo("Search Complete", f"Found {len(results)} ticket(s) matching your criteria.")
+    messagebox.showinfo(_t('gui.pastoral.helpdesk.search.dialogs.search_complete', default="Search Complete"), f"Found {len(results)} ticket(s) matching your criteria.")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.display_search_results_gui = display_search_results_gui
@@ -1175,10 +1177,10 @@ HelpdeskGUI.display_search_results_gui = display_search_results_gui
 def rebuild_search_indexes_gui(self):
     """Rebuild full-text search indexes"""
     if not self.auth.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to rebuild search indexes.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.search.dialogs.you_don_t_have_permission_to_rebuild_search_indexes', default="You don't have permission to rebuild search indexes."))
         return
 
-    if not messagebox.askyesno("Confirm", "Rebuild search indexes? This may take a moment."):
+    if not messagebox.askyesno(_t('gui.pastoral.helpdesk.search.dialogs.confirm', default="Confirm"), _t('gui.pastoral.helpdesk.search.dialogs.rebuild_search_indexes_this_may_take_a_moment', default="Rebuild search indexes? This may take a moment.")):
         return
 
     try:
@@ -1194,10 +1196,10 @@ def rebuild_search_indexes_gui(self):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", "Search indexes rebuilt successfully!")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.search.dialogs.success', default="Success"), _t('gui.pastoral.helpdesk.search.dialogs.search_indexes_rebuilt_successfully', default="Search indexes rebuilt successfully!"))
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to rebuild indexes: {e}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.search.dialogs.error', default="Error"), f"Failed to rebuild indexes: {e}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.rebuild_search_indexes_gui = rebuild_search_indexes_gui

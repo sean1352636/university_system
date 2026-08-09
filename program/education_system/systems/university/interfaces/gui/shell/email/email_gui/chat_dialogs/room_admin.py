@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from ._common import askinteger, askstring, datetime, messagebox, tk, ttk
 
 class EditRoomDialog:
@@ -22,22 +24,22 @@ class EditRoomDialog:
         frame.pack(fill=tk.BOTH, expand=True)
         frame.columnconfigure(1, weight=1)
 
-        ttk.Label(frame, text="Name:").grid(row=0, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.name', default="Name:")).grid(row=0, column=0, sticky=tk.W, pady=4)
         self.name_var = tk.StringVar(value=self.room.get('name', ''))
         ttk.Entry(frame, textvariable=self.name_var).grid(row=0, column=1, sticky=tk.EW, pady=4)
 
-        ttk.Label(frame, text="Description:").grid(row=1, column=0, sticky=tk.NW, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.description', default="Description:")).grid(row=1, column=0, sticky=tk.NW, pady=4)
         self.desc_text = tk.Text(frame, height=4, wrap=tk.WORD)
         self.desc_text.grid(row=1, column=1, sticky=tk.EW, pady=4)
         if self.room.get('description'):
             self.desc_text.insert("1.0", self.room['description'])
 
-        ttk.Label(frame, text="Type:").grid(row=2, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.type', default="Type:")).grid(row=2, column=0, sticky=tk.W, pady=4)
         self.type_var = tk.StringVar(value=self.room.get('room_type') or 'public')
         ttk.Combobox(frame, textvariable=self.type_var, values=self.ROOM_TYPES,
                      state="readonly").grid(row=2, column=1, sticky=tk.EW, pady=4)
 
-        ttk.Label(frame, text="Category:").grid(row=3, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.category', default="Category:")).grid(row=3, column=0, sticky=tk.W, pady=4)
         try:
             existing = self.dashboard.list_chat_categories() or []
         except Exception:
@@ -46,66 +48,66 @@ class EditRoomDialog:
         ttk.Combobox(frame, textvariable=self.category_var, values=existing).grid(
             row=3, column=1, sticky=tk.EW, pady=4)
 
-        ttk.Label(frame, text="Icon (emoji):").grid(row=4, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.icon_emoji', default="Icon (emoji):")).grid(row=4, column=0, sticky=tk.W, pady=4)
         self.icon_var = tk.StringVar(value=self.room.get('icon') or '')
         ttk.Entry(frame, textvariable=self.icon_var, width=6).grid(
             row=4, column=1, sticky=tk.W, pady=4)
 
-        ttk.Label(frame, text="Colour:").grid(row=5, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.colour', default="Colour:")).grid(row=5, column=0, sticky=tk.W, pady=4)
         self.colour_var = tk.StringVar(value=self.room.get('colour') or '')
         ttk.Combobox(frame, textvariable=self.colour_var, values=self.PRESET_COLOURS).grid(
             row=5, column=1, sticky=tk.EW, pady=4)
 
-        ttk.Label(frame, text="Max members:").grid(row=6, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.max_members', default="Max members:")).grid(row=6, column=0, sticky=tk.W, pady=4)
         self.max_var = tk.StringVar(value=str(self.room.get('max_members') or ''))
         ttk.Entry(frame, textvariable=self.max_var, width=8).grid(
             row=6, column=1, sticky=tk.W, pady=4)
 
-        ttk.Label(frame, text="Linked module:").grid(row=7, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.linked_module', default="Linked module:")).grid(row=7, column=0, sticky=tk.W, pady=4)
         self.course_var = tk.StringVar(value=self.room.get('linked_course_code') or '')
         ttk.Entry(frame, textvariable=self.course_var).grid(
             row=7, column=1, sticky=tk.EW, pady=4)
 
         self.ann_var = tk.BooleanVar(value=bool(self.room.get('announcement_mode')))
-        ttk.Checkbutton(frame, text="Announcement-only (only admins can post)",
+        ttk.Checkbutton(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.announcement_only_only_admins_can_post', default="Announcement-only (only admins can post)"),
                         variable=self.ann_var).grid(row=8, column=0, columnspan=2,
                                                     sticky=tk.W, pady=4)
 
-        ttk.Label(frame, text="Office hours start:").grid(row=9, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.office_hours_start', default="Office hours start:")).grid(row=9, column=0, sticky=tk.W, pady=4)
         self.oh_start_var = tk.StringVar(value=self.room.get('oh_starts_at') or '')
         ttk.Entry(frame, textvariable=self.oh_start_var).grid(
             row=9, column=1, sticky=tk.EW, pady=4)
-        ttk.Label(frame, text="Office hours end:").grid(row=10, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.office_hours_end', default="Office hours end:")).grid(row=10, column=0, sticky=tk.W, pady=4)
         self.oh_end_var = tk.StringVar(value=self.room.get('oh_ends_at') or '')
         ttk.Entry(frame, textvariable=self.oh_end_var).grid(
             row=10, column=1, sticky=tk.EW, pady=4)
-        ttk.Label(frame, text="(format: YYYY-MM-DD HH:MM:SS)",
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.format_yyyy_mm_dd_hh_mm_ss', default="(format: YYYY-MM-DD HH:MM:SS)"),
                   foreground="#666").grid(row=11, column=1, sticky=tk.W)
 
-        ttk.Label(frame, text="Retention (days):").grid(row=12, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.retention_days', default="Retention (days):")).grid(row=12, column=0, sticky=tk.W, pady=4)
         self.retention_var = tk.StringVar(value=str(self.room.get('retention_days') or ''))
         ttk.Entry(frame, textvariable=self.retention_var, width=8).grid(
             row=12, column=1, sticky=tk.W, pady=4)
 
-        ttk.Label(frame, text="Slow-mode (seconds):").grid(row=13, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.slow_mode_seconds', default="Slow-mode (seconds):")).grid(row=13, column=0, sticky=tk.W, pady=4)
         self.slow_var = tk.StringVar(value=str(self.room.get('slow_mode_seconds') or 0))
         ttk.Entry(frame, textvariable=self.slow_var, width=8).grid(
             row=13, column=1, sticky=tk.W, pady=4)
 
         self.enc_var = tk.BooleanVar(value=bool(self.room.get('is_encrypted')))
-        ttk.Checkbutton(frame, text="Encrypt new messages at rest (deterrent only)",
+        ttk.Checkbutton(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.encrypt_new_messages_at_rest_deterrent_only', default="Encrypt new messages at rest (deterrent only)"),
                         variable=self.enc_var).grid(row=14, column=0, columnspan=2,
                                                     sticky=tk.W, pady=4)
 
         btns = ttk.Frame(frame)
         btns.grid(row=15, column=0, columnspan=2, pady=12)
-        ttk.Button(btns, text="Save", command=self._save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btns, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.save', default="Save"), command=self._save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _save(self):
         name = self.name_var.get().strip()
         if not name:
-            messagebox.showwarning("Missing", "Name is required.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.missing', default="Missing"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.name_is_required', default="Name is required."))
             return
         for var, label_for_msg in ((self.oh_start_var, "Office-hours start"),
                                     (self.oh_end_var, "Office-hours end")):
@@ -114,7 +116,7 @@ class EditRoomDialog:
                 try:
                     datetime.strptime(v, '%Y-%m-%d %H:%M:%S')
                 except ValueError:
-                    messagebox.showwarning("Bad date",
+                    messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.bad_date', default="Bad date"),
                                            f"{label_for_msg} must be YYYY-MM-DD HH:MM:SS.")
                     return
         kwargs = {
@@ -135,14 +137,14 @@ class EditRoomDialog:
             try:
                 kwargs['max_members'] = int(max_str)
             except ValueError:
-                messagebox.showwarning("Invalid", "Max members must be a number.")
+                messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.invalid', default="Invalid"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.max_members_must_be_a_number', default="Max members must be a number."))
                 return
         ret_str = self.retention_var.get().strip()
         if ret_str:
             try:
                 kwargs['retention_days'] = int(ret_str)
             except ValueError:
-                messagebox.showwarning("Invalid", "Retention days must be a number.")
+                messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.invalid', default="Invalid"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.retention_days_must_be_a_number', default="Retention days must be a number."))
                 return
         else:
             kwargs['retention_days'] = ''
@@ -150,7 +152,7 @@ class EditRoomDialog:
         try:
             kwargs['slow_mode_seconds'] = int(slow_str) if slow_str else 0
         except ValueError:
-            messagebox.showwarning("Invalid", "Slow-mode seconds must be a number.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.invalid', default="Invalid"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.slow_mode_seconds_must_be_a_number', default="Slow-mode seconds must be a number."))
             return
         try:
             ok = self.dashboard.update_chat_room(self.room['id'], **kwargs)
@@ -159,9 +161,9 @@ class EditRoomDialog:
                 if self.refresh_callback:
                     self.refresh_callback()
             else:
-                messagebox.showerror("Error", "Could not update room (admin only).")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.could_not_update_room_admin_only', default="Could not update room (admin only)."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"), str(e))
 
 
 class ManageMembersDialog:
@@ -198,19 +200,19 @@ class ManageMembersDialog:
 
         btns = ttk.Frame(frame)
         btns.pack(fill=tk.X, pady=(8, 0))
-        ttk.Button(btns, text="Promote",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.promote', default="Promote"),
                    command=lambda: self._set_admin(True)).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Demote",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.demote', default="Demote"),
                    command=lambda: self._set_admin(False)).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Kick", command=self._kick).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Ban", command=self._ban_with_reason).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Bans…",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.kick', default="Kick"), command=self._kick).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.ban', default="Ban"), command=self._ban_with_reason).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.bans', default="Bans…"),
                    command=self._show_bans).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Mute…", command=self._mute).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Unmute", command=self._unmute).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Transfer Ownership",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.mute', default="Mute…"), command=self._mute).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.unmute', default="Unmute"), command=self._unmute).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.transfer_ownership', default="Transfer Ownership"),
                    command=self._transfer).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btns, text="Close",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.close', default="Close"),
                    command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def _load(self):
@@ -219,7 +221,7 @@ class ManageMembersDialog:
         try:
             members = self.dashboard.get_room_members(self.room_id) or []
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"), str(e))
             return
         for m in members:
             role = ("Creator" if m.get('is_creator')
@@ -246,7 +248,7 @@ class ManageMembersDialog:
     def _act(self, fn, *args, success_msg=None):
         uid = self._selected_user_id()
         if not uid:
-            messagebox.showwarning("Select", "Select a member first.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.select', default="Select"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.select_a_member_first', default="Select a member first."))
             return
         try:
             ok = fn(self.room_id, uid, *args)
@@ -257,17 +259,17 @@ class ManageMembersDialog:
                 if self.refresh_callback:
                     self.refresh_callback()
             else:
-                messagebox.showerror("Error",
-                                     "Action denied (creator can't be demoted/kicked, "
-                                     "or you lack permission).")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"),
+                                     _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.action_denied_creator_can_t_be_demoted_kicked_or_you_lack_permis', default="Action denied (creator can't be demoted/kicked, "
+                                     "or you lack permission)."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"), str(e))
 
     def _set_admin(self, promote):
         self._act(self.dashboard.set_room_admin, promote)
 
     def _kick(self):
-        if not messagebox.askyesno("Kick", "Remove the selected member from this room?"):
+        if not messagebox.askyesno(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.kick', default="Kick"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.remove_the_selected_member_from_this_room', default="Remove the selected member from this room?")):
             return
         reason = askstring(
             "Kick reason",
@@ -280,7 +282,7 @@ class ManageMembersDialog:
         # Underlying API now takes a reason kwarg.
         uid = self._selected_user_id()
         if not uid:
-            messagebox.showwarning("Select", "Select a member first.",
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.select', default="Select"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.select_a_member_first', default="Select a member first."),
                                    parent=self.dialog)
             return
         try:
@@ -291,23 +293,23 @@ class ManageMembersDialog:
                 if self.refresh_callback:
                     self.refresh_callback()
             else:
-                messagebox.showerror("Error",
-                                     "Action denied (creator can't be banned, "
-                                     "or you lack permission).",
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"),
+                                     _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.action_denied_creator_can_t_be_banned_or_you_lack_permission', default="Action denied (creator can't be banned, "
+                                     "or you lack permission)."),
                                      parent=self.dialog)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"), str(e), parent=self.dialog)
 
     def _ban_with_reason(self):
         uid = self._selected_user_id()
         if not uid:
-            messagebox.showwarning("Select", "Select a member first.",
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.select', default="Select"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.select_a_member_first', default="Select a member first."),
                                    parent=self.dialog)
             return
         if not messagebox.askyesno(
-            "Ban member",
-            "Ban this user from the room? They will be removed and unable "
-            "to rejoin until you unban them.",
+            _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.ban_member', default="Ban member"),
+            _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.ban_this_user_from_the_room_they_will_be_removed_and_unable_to_r', default="Ban this user from the room? They will be removed and unable "
+            "to rejoin until you unban them."),
             parent=self.dialog,
         ):
             return
@@ -320,7 +322,7 @@ class ManageMembersDialog:
         try:
             bans = self.dashboard.list_room_bans(self.room_id) or []
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"), str(e), parent=self.dialog)
             return
         dlg = tk.Toplevel(self.dialog)
         dlg.title(f"Bans — {self.room.get('name', '')}")
@@ -329,7 +331,7 @@ class ManageMembersDialog:
         frame = ttk.Frame(dlg, padding=10)
         frame.pack(fill=tk.BOTH, expand=True)
         if not bans:
-            ttk.Label(frame, text="No active bans.",
+            ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.labels.no_active_bans', default="No active bans."),
                       foreground="#666").pack(padx=10, pady=20)
         else:
             cols = ("User", "Banned at", "By", "Reason")
@@ -368,14 +370,14 @@ class ManageMembersDialog:
                         if self.refresh_callback:
                             self.refresh_callback()
                     else:
-                        messagebox.showerror("Error", "Could not unban.",
+                        messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.could_not_unban', default="Could not unban."),
                                              parent=dlg)
                 except Exception as e:
-                    messagebox.showerror("Error", str(e), parent=dlg)
+                    messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"), str(e), parent=dlg)
 
-            ttk.Button(frame, text="Unban selected",
+            ttk.Button(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.unban_selected', default="Unban selected"),
                        command=unban_selected).pack(pady=(8, 0))
-        ttk.Button(frame, text="Close",
+        ttk.Button(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_admin.buttons.close', default="Close"),
                    command=dlg.destroy).pack(pady=(8, 0))
 
     def _mute(self):
@@ -396,11 +398,11 @@ class ManageMembersDialog:
     def _transfer(self):
         uid = self._selected_user_id()
         if not uid:
-            messagebox.showwarning("Select", "Select the new owner first.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.select', default="Select"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.select_the_new_owner_first', default="Select the new owner first."))
             return
-        if not messagebox.askyesno("Transfer Ownership",
-                                   "Transfer ownership to this member? "
-                                   "You will remain an admin."):
+        if not messagebox.askyesno(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.transfer_ownership', default="Transfer Ownership"),
+                                   _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.transfer_ownership_to_this_member_you_will_remain_an_admin', default="Transfer ownership to this member? "
+                                   "You will remain an admin.")):
             return
         try:
             ok = self.dashboard.transfer_room_ownership(self.room_id, uid)
@@ -408,10 +410,10 @@ class ManageMembersDialog:
                 self._load()
                 if self.refresh_callback:
                     self.refresh_callback()
-                messagebox.showinfo("Transferred", "Ownership transferred.")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.transferred', default="Transferred"), _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.ownership_transferred', default="Ownership transferred."))
             else:
-                messagebox.showerror("Error",
-                                     "Only the current owner can transfer ownership.")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"),
+                                     _t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.only_the_current_owner_can_transfer_ownership', default="Only the current owner can transfer ownership."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_admin.dialogs.error', default="Error"), str(e))
 

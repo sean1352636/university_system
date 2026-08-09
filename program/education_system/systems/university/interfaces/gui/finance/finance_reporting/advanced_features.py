@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -8,7 +10,7 @@ import json
 import webbrowser
 from pathlib import Path
 import matplotlib
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 matplotlib.use('TkAgg')
 import numpy as np
 
@@ -728,7 +730,7 @@ def run_function_background(self, func_id):
         error_msg = f"Error executing {func_id}: {str(e)}"
         self.log_activity(error_msg)
         self.update_status("Error occurred")
-        messagebox.showerror("Error", error_msg)
+        messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), error_msg)
 
 def run_compliance_check(self):
     """Run compliance check"""
@@ -737,11 +739,11 @@ def run_compliance_check(self):
             self.compliance_audit_system()
             self.root.after(0, lambda: [
                 self.log_activity("Compliance check completed"),
-                messagebox.showinfo("Compliance Check", "Compliance audit completed. Check console for results.")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.compliance_check', default="Compliance Check"), _t('gui.finance.finance_reporting.advanced_features.dialogs.compliance_audit_completed_check_console_for_results', default="Compliance audit completed. Check console for results."))
             ])
         except Exception as e:
             error_msg = str(e)
-            self.root.after(0, lambda err=error_msg: messagebox.showerror("Error", f"Compliance check failed: {err}"))
+            self.root.after(0, lambda err=error_msg: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Compliance check failed: {err}"))
 
     thread = threading.Thread(target=check_in_background)
     thread.daemon = True
@@ -757,14 +759,14 @@ def run_advanced_forecasting(self):
             self.root.after(0, lambda: [
                 self.log_activity("Advanced forecasting completed"),
                 self.update_status("Ready"),
-                messagebox.showinfo("Analysis Complete", "Advanced forecasting analysis completed. Check generated charts and reports.")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.analysis_complete', default="Analysis Complete"), _t('gui.finance.finance_reporting.advanced_features.dialogs.advanced_forecasting_analysis_completed_check_generated_charts_a', default="Advanced forecasting analysis completed. Check generated charts and reports."))
             ])
         except Exception as e:
             error_msg = str(e)
             self.root.after(0, lambda err=error_msg: [
                 self.log_activity(f"Forecasting error: {err}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Forecasting failed: {err}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Forecasting failed: {err}")
             ])
 
     thread = threading.Thread(target=forecast_in_background)
@@ -782,7 +784,7 @@ def run_scenario_planning(self):
             self.root.after(0, lambda: [
                 self.log_activity("Scenario planning analysis completed"),
                 self.update_status("Ready"),
-                messagebox.showinfo("Scenario Planning", "Scenario planning analysis completed. Check console for detailed results and generated charts.")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.scenario_planning', default="Scenario Planning"), _t('gui.finance.finance_reporting.advanced_features.dialogs.scenario_planning_analysis_completed_check_console_for_detailed', default="Scenario planning analysis completed. Check console for detailed results and generated charts."))
             ])
 
         except Exception as e:
@@ -790,7 +792,7 @@ def run_scenario_planning(self):
             self.root.after(0, lambda err=error_msg: [
                 self.log_activity(f"Scenario planning error: {err}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Scenario planning failed: {err}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Scenario planning failed: {err}")
             ])
 
     thread = threading.Thread(target=scenario_in_background)
@@ -808,7 +810,7 @@ def run_compliance_audit(self):
             self.root.after(0, lambda: [
                 self.log_activity("Compliance audit completed"),
                 self.update_status("Ready"),
-                messagebox.showinfo("Compliance Audit", "Compliance audit completed. Check console for detailed results.")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.compliance_audit', default="Compliance Audit"), _t('gui.finance.finance_reporting.advanced_features.dialogs.compliance_audit_completed_check_console_for_detailed_results', default="Compliance audit completed. Check console for detailed results."))
             ])
 
         except Exception as e:
@@ -816,7 +818,7 @@ def run_compliance_audit(self):
             self.root.after(0, lambda err=error_msg: [
                 self.log_activity(f"Compliance audit error: {err}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Compliance audit failed: {err}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Compliance audit failed: {err}")
             ])
 
     thread = threading.Thread(target=audit_in_background)
@@ -834,7 +836,7 @@ def run_automated_reporting_setup(self):
             self.root.after(0, lambda: [
                 self.log_activity("Automated reporting system configured"),
                 self.update_status("Ready"),
-                messagebox.showinfo("Automated Reporting", "Automated reporting system configured successfully.")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.automated_reporting', default="Automated Reporting"), _t('gui.finance.finance_reporting.advanced_features.dialogs.automated_reporting_system_configured_successfully', default="Automated reporting system configured successfully."))
             ])
 
         except Exception as e:
@@ -842,7 +844,7 @@ def run_automated_reporting_setup(self):
             self.root.after(0, lambda err=error_msg: [
                 self.log_activity(f"Automated reporting setup error: {err}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Automated reporting setup failed: {err}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Automated reporting setup failed: {err}")
             ])
 
     thread = threading.Thread(target=setup_in_background)
@@ -860,7 +862,7 @@ def run_advanced_export(self):
             self.root.after(0, lambda: [
                 self.log_activity("Advanced export system accessed"),
                 self.update_status("Ready"),
-                messagebox.showinfo("Advanced Export", "Advanced export system completed. Check console for export options.")
+                messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.advanced_export', default="Advanced Export"), _t('gui.finance.finance_reporting.advanced_features.dialogs.advanced_export_system_completed_check_console_for_export_option', default="Advanced export system completed. Check console for export options."))
             ])
 
         except Exception as e:
@@ -868,7 +870,7 @@ def run_advanced_export(self):
             self.root.after(0, lambda err=error_msg: [
                 self.log_activity(f"Advanced export error: {err}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Advanced export failed: {err}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Advanced export failed: {err}")
             ])
 
     thread = threading.Thread(target=export_in_background)
@@ -985,7 +987,7 @@ def run_function_background_updated(self, func_id):
         error_msg = f"Error executing {func_id}: {str(e)}"
         self.log_activity(error_msg)
         self.update_status("Error occurred")
-        messagebox.showerror("Error", error_msg)
+        messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), error_msg)
 
 def run_advanced_forecasting_updated(self):
     """Updated advanced forecasting with better GUI integration"""
@@ -998,7 +1000,7 @@ def run_advanced_forecasting_updated(self):
             self.root.after(0, lambda: [
                 self.log_activity("Advanced forecasting completed"),
                 self.update_status("Ready"),
-                messagebox.showinfo("Forecasting Complete",
+                messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.forecasting_complete', default="Forecasting Complete"),
                     "Advanced financial forecasting completed successfully!\n\n" +
                     "Generated outputs:\n" +
                     "• Advanced cash flow forecast charts\n" +
@@ -1012,7 +1014,7 @@ def run_advanced_forecasting_updated(self):
             self.root.after(0, lambda err=error_msg: [
                 self.log_activity(f"Advanced forecasting error: {err}"),
                 self.update_status("Error"),
-                messagebox.showerror("Error", f"Advanced forecasting failed: {err}")
+                messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Advanced forecasting failed: {err}")
             ])
 
     thread = threading.Thread(target=forecast_in_background)
@@ -1146,7 +1148,7 @@ def run_payment_optimization(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror("Error",
+        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Payment optimization failed: {err}"))
 
 
@@ -1251,7 +1253,7 @@ def run_collection_strategy(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror("Error",
+        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Collection strategy failed: {err}"))
 
 
@@ -1363,7 +1365,7 @@ def run_scholarship_analysis(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror("Error",
+        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Scholarship analysis failed: {err}"))
 
 
@@ -1485,7 +1487,7 @@ def run_revenue_optimization(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror("Error",
+        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Revenue optimization failed: {err}"))
 
 
@@ -1497,9 +1499,9 @@ def run_api_config(self):
 def _build_api_config_dialog(self):
     """Read/write payment-gateway API settings to a JSON config file."""
     try:
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
 
-        config_dir = Path(paths.CONFIG_DIR)
+        config_dir = Path(paths.UNIVERSITY_CONFIG_DIR)
         config_dir.mkdir(parents=True, exist_ok=True)
         config_file = config_dir / "finance_payment_api.json"
 
@@ -1518,13 +1520,13 @@ def _build_api_config_dialog(self):
                 pass
 
         win = tk.Toplevel(self.root)
-        win.title("Payment Gateway API Configuration")
+        win.title(_t('gui.finance.finance_reporting.advanced_features.windows.payment_gateway_api_configuration', default="Payment Gateway API Configuration"))
         win.geometry("560x360")
         win.transient(self.root)
 
         frame = ttk.Frame(win, padding=16)
         frame.pack(fill=tk.BOTH, expand=True)
-        ttk.Label(frame, text="Payment Gateway API Configuration",
+        ttk.Label(frame, text=_t('gui.finance.finance_reporting.advanced_features.labels.payment_gateway_api_configuration', default="Payment Gateway API Configuration"),
                   font=('Arial', 13, 'bold')).grid(row=0, column=0, columnspan=2, pady=(0, 12))
 
         fields = [
@@ -1543,7 +1545,7 @@ def _build_api_config_dialog(self):
             entries[key] = var
 
         enabled_var = tk.BooleanVar(value=bool(current.get("enabled", False)))
-        ttk.Checkbutton(frame, text="Enable gateway integration",
+        ttk.Checkbutton(frame, text=_t('gui.finance.finance_reporting.advanced_features.buttons.enable_gateway_integration', default="Enable gateway integration"),
                         variable=enabled_var).grid(row=len(fields) + 1, column=1,
                                                     sticky=tk.W, pady=8)
 
@@ -1562,10 +1564,10 @@ def _build_api_config_dialog(self):
 
         btns = ttk.Frame(frame)
         btns.grid(row=len(fields) + 3, column=0, columnspan=2, pady=12)
-        ttk.Button(btns, text="Save", command=_save).pack(side=tk.LEFT, padx=6)
-        ttk.Button(btns, text="Close", command=win.destroy).pack(side=tk.LEFT, padx=6)
+        ttk.Button(btns, text=_t('gui.finance.finance_reporting.advanced_features.buttons.save', default="Save"), command=_save).pack(side=tk.LEFT, padx=6)
+        ttk.Button(btns, text=_t('gui.finance.finance_reporting.advanced_features.buttons.close', default="Close"), command=win.destroy).pack(side=tk.LEFT, padx=6)
     except Exception as e:
-        messagebox.showerror("Error", f"API configuration failed: {e}")
+        messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"API configuration failed: {e}")
 
 
 def run_regulatory_reporting(self):
@@ -1635,11 +1637,11 @@ def run_regulatory_reporting(self):
 
         def _present():
             win = tk.Toplevel(self.root)
-            win.title("Regulatory Reporting")
+            win.title(_t('gui.finance.finance_reporting.advanced_features.windows.regulatory_reporting', default="Regulatory Reporting"))
             win.geometry("680x520")
             win.transient(self.root)
 
-            ttk.Label(win, text="Regulatory / VAT Summary Report",
+            ttk.Label(win, text=_t('gui.finance.finance_reporting.advanced_features.labels.regulatory_vat_summary_report', default="Regulatory / VAT Summary Report"),
                       font=('Arial', 13, 'bold')).pack(pady=8)
             text = ScrolledText(win, wrap=tk.WORD, font=('Courier New', 10),
                                 fg="#000000", bg="#FFFFFF")
@@ -1648,8 +1650,8 @@ def run_regulatory_reporting(self):
             text.config(state=tk.DISABLED)
 
             def _export():
-                from education_system.systems.university.infrastructure import paths
-                out_dir = Path(paths.EXPORTS_REPORTS_DIR)
+                from education_system import paths
+                out_dir = Path(paths.UNIVERSITY_EXPORTS_REPORTS_DIR)
                 out_dir.mkdir(parents=True, exist_ok=True)
                 default = out_dir / "regulatory_vat_report.txt"
                 path = filedialog.asksaveasfilename(
@@ -1661,14 +1663,14 @@ def run_regulatory_reporting(self):
                 try:
                     Path(path).write_text(report_text, encoding="utf-8")
                     self.log_activity(f"Regulatory report exported to {path}")
-                    messagebox.showinfo("Exported", f"Report saved to:\n{path}", parent=win)
+                    messagebox.showinfo(_t('gui.finance.finance_reporting.advanced_features.dialogs.exported', default="Exported"), f"Report saved to:\n{path}", parent=win)
                 except OSError as e:
-                    messagebox.showerror("Error", f"Export failed: {e}", parent=win)
+                    messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"), f"Export failed: {e}", parent=win)
 
             btns = ttk.Frame(win)
             btns.pack(pady=8)
-            ttk.Button(btns, text="Export…", command=_export).pack(side=tk.LEFT, padx=6)
-            ttk.Button(btns, text="Close", command=win.destroy).pack(side=tk.LEFT, padx=6)
+            ttk.Button(btns, text=_t('gui.finance.finance_reporting.advanced_features.buttons.export', default="Export…"), command=_export).pack(side=tk.LEFT, padx=6)
+            ttk.Button(btns, text=_t('gui.finance.finance_reporting.advanced_features.buttons.close', default="Close"), command=win.destroy).pack(side=tk.LEFT, padx=6)
 
         self.root.after(0, lambda: [
             _present(),
@@ -1678,7 +1680,7 @@ def run_regulatory_reporting(self):
         ])
     except Exception as e:
         err = str(e)
-        self.root.after(0, lambda: messagebox.showerror("Error",
+        self.root.after(0, lambda: messagebox.showerror(_t('gui.finance.finance_reporting.advanced_features.dialogs.error', default="Error"),
             f"Regulatory reporting failed: {err}"))
 
 

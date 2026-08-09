@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -9,7 +11,7 @@ logger = logging.getLogger(__name__)
 class ExternalExaminerGUI:
     def __init__(self, parent=None):
         self.root = tk.Toplevel(parent) if parent else tk.Tk()
-        self.root.title("External Examiner Management")
+        self.root.title(_t('gui.assessment.external_examiners.external_examiner.windows.external_examiner_management', default="External Examiner Management"))
         self.root.geometry("1200x800")
         try:
             from education_system.systems.university.domain.assessment.external_examiners.services.external_examiner_service import ExternalExaminerService
@@ -35,7 +37,7 @@ class ExternalExaminerGUI:
     # --------------------------------------------------------------- Examiners
     def _create_examiners_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Examiners")
+        notebook.add(tab, text=_t('gui.assessment.external_examiners.external_examiner.tabs.examiners', default="Examiners"))
 
         cols = ("name", "institution", "specialisation", "status")
         self.examiners_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -46,27 +48,27 @@ class ExternalExaminerGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Add", command=self._add_examiner).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Edit", command=self._edit_examiner).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="View History", command=self._view_examiner_history).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_examiners).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.add', default="Add"), command=self._add_examiner).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.edit', default="Edit"), command=self._edit_examiner).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.view_history', default="View History"), command=self._view_examiner_history).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.refresh', default="Refresh"), command=self._refresh_examiners).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_examiners()
 
     def _view_examiner_history(self):
         sel = self.examiners_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an examiner first.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.external_examiners.external_examiner.dialogs.selection', default="Selection"), _t('gui.assessment.external_examiners.external_examiner.dialogs.select_an_examiner_first', default="Select an examiner first."), parent=self.root)
             return
         name = self.examiners_tree.item(sel[0], "values")[0]
         try:
             match = next((e for e in self.service.list_examiners() if e.get("name") == name), None)
             if not match:
-                messagebox.showerror("Error", "Could not resolve examiner.", parent=self.root)
+                messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), _t('gui.assessment.external_examiners.external_examiner.dialogs.could_not_resolve_examiner', default="Could not resolve examiner."), parent=self.root)
                 return
             history = self.service.get_examiner_history(match["id"])
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), str(e), parent=self.root)
             return
 
         ex = history["examiner"]
@@ -111,7 +113,7 @@ class ExternalExaminerGUI:
     def _edit_examiner(self):
         sel = self.examiners_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an examiner first.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.external_examiners.external_examiner.dialogs.selection', default="Selection"), _t('gui.assessment.external_examiners.external_examiner.dialogs.select_an_examiner_first', default="Select an examiner first."), parent=self.root)
             return
         values = self.examiners_tree.item(sel[0], "values")
         self._examiner_dialog(values)
@@ -132,7 +134,7 @@ class ExternalExaminerGUI:
             ttk.Entry(dlg, textvariable=var).pack(fill=tk.X, padx=10)
             vars_[key] = var
 
-        ttk.Label(dlg, text="Status:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.status', default="Status:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         status_var = tk.StringVar(value=existing[3] if existing else "Active")
         ttk.Combobox(dlg, textvariable=status_var, values=[
             "Active", "Inactive", "Pending Approval",
@@ -142,7 +144,7 @@ class ExternalExaminerGUI:
             data = {k: v.get() for k, v in vars_.items()}
             data["status"] = status_var.get()
             if not all(data.values()):
-                messagebox.showwarning("Validation", "All fields are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.assessment.external_examiners.external_examiner.dialogs.validation', default="Validation"), _t('gui.assessment.external_examiners.external_examiner.dialogs.all_fields_are_required', default="All fields are required."), parent=dlg)
                 return
             try:
                 if existing:
@@ -151,16 +153,16 @@ class ExternalExaminerGUI:
                     self.service.add_examiner(data)
                 dlg.destroy()
                 self._refresh_examiners()
-                messagebox.showinfo("Success", "Examiner saved.", parent=self.root)
+                messagebox.showinfo(_t('gui.assessment.external_examiners.external_examiner.dialogs.success', default="Success"), _t('gui.assessment.external_examiners.external_examiner.dialogs.examiner_saved', default="Examiner saved."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.assessment.external_examiners.external_examiner.buttons.save', default="Save"), command=save).pack(pady=15)
 
     # ----------------------------------------------------------------- Visits
     def _create_visits_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Visits")
+        notebook.add(tab, text=_t('gui.assessment.external_examiners.external_examiner.tabs.visits', default="Visits"))
 
         cols = ("id", "examiner", "date", "department", "rating")
         self.visits_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -172,10 +174,10 @@ class ExternalExaminerGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Schedule", command=self._schedule_visit).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Record Findings", command=self._record_findings).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="View Module Descriptor", command=self._open_descriptor_for_visit).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_visits).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.schedule', default="Schedule"), command=self._schedule_visit).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.record_findings', default="Record Findings"), command=self._record_findings).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.view_module_descriptor', default="View Module Descriptor"), command=self._open_descriptor_for_visit).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.refresh', default="Refresh"), command=self._refresh_visits).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_visits()
 
@@ -197,26 +199,26 @@ class ExternalExaminerGUI:
 
     def _schedule_visit(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Schedule Visit")
+        dlg.title(_t('gui.assessment.external_examiners.external_examiner.windows.schedule_visit', default="Schedule Visit"))
         dlg.geometry("400x350")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Examiner:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.examiner', default="Examiner:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         examiner_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=examiner_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Date (YYYY-MM-DD):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
         ttk.Entry(dlg, textvariable=date_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Department:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.department', default="Department:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         dept_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=dept_var).pack(fill=tk.X, padx=10)
 
         def save():
             if not examiner_var.get() or not date_var.get() or not dept_var.get():
-                messagebox.showwarning("Validation", "All fields are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.assessment.external_examiners.external_examiner.dialogs.validation', default="Validation"), _t('gui.assessment.external_examiners.external_examiner.dialogs.all_fields_are_required', default="All fields are required."), parent=dlg)
                 return
             try:
                 self.service.schedule_visit({
@@ -227,21 +229,21 @@ class ExternalExaminerGUI:
                 })
                 dlg.destroy()
                 self._refresh_visits()
-                messagebox.showinfo("Success", "Visit scheduled.", parent=self.root)
+                messagebox.showinfo(_t('gui.assessment.external_examiners.external_examiner.dialogs.success', default="Success"), _t('gui.assessment.external_examiners.external_examiner.dialogs.visit_scheduled', default="Visit scheduled."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.assessment.external_examiners.external_examiner.buttons.save', default="Save"), command=save).pack(pady=15)
 
     def _record_findings(self):
         sel = self.visits_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a visit first.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.external_examiners.external_examiner.dialogs.selection', default="Selection"), _t('gui.assessment.external_examiners.external_examiner.dialogs.select_a_visit_first', default="Select a visit first."), parent=self.root)
             return
         values = self.visits_tree.item(sel[0], "values")
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("Record Findings")
+        dlg.title(_t('gui.assessment.external_examiners.external_examiner.windows.record_findings', default="Record Findings"))
         dlg.geometry("450x400")
         dlg.transient(self.root)
         dlg.grab_set()
@@ -253,19 +255,19 @@ class ExternalExaminerGUI:
         ttk.Label(dlg, text=f"Visit #{visit_id}: {examiner} on {visit_date}",
                   font=("", 10, "bold")).pack(padx=10, pady=10)
 
-        ttk.Label(dlg, text="Rating:").pack(padx=10, anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.rating', default="Rating:")).pack(padx=10, anchor=tk.W)
         rating_var = tk.StringVar()
         ttk.Combobox(dlg, textvariable=rating_var, values=[
             "Excellent", "Good", "Satisfactory", "Needs Improvement",
         ], state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Findings:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.findings', default="Findings:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         findings_text = tk.Text(dlg, height=8)
         findings_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         def save():
             if not rating_var.get():
-                messagebox.showwarning("Validation", "Please provide a rating.", parent=dlg)
+                messagebox.showwarning(_t('gui.assessment.external_examiners.external_examiner.dialogs.validation', default="Validation"), _t('gui.assessment.external_examiners.external_examiner.dialogs.please_provide_a_rating', default="Please provide a rating."), parent=dlg)
                 return
             try:
                 self.service.record_findings(
@@ -275,16 +277,16 @@ class ExternalExaminerGUI:
                 )
                 dlg.destroy()
                 self._refresh_visits()
-                messagebox.showinfo("Success", "Findings recorded.", parent=self.root)
+                messagebox.showinfo(_t('gui.assessment.external_examiners.external_examiner.dialogs.success', default="Success"), _t('gui.assessment.external_examiners.external_examiner.dialogs.findings_recorded', default="Findings recorded."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.assessment.external_examiners.external_examiner.buttons.save', default="Save"), command=save).pack(pady=10)
 
     def _open_descriptor_for_visit(self):
         sel = self.visits_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a visit first.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.external_examiners.external_examiner.dialogs.selection', default="Selection"), _t('gui.assessment.external_examiners.external_examiner.dialogs.select_a_visit_first', default="Select a visit first."), parent=self.root)
             return
         visit_id = self.visits_tree.item(sel[0], "values")[0]
         try:
@@ -295,7 +297,7 @@ class ExternalExaminerGUI:
             descriptors = curr.list_module_descriptors()
             matches = [d for d in descriptors if d["module_code"] in modules_reviewed]
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), str(e), parent=self.root)
             return
 
         dlg = tk.Toplevel(self.root)
@@ -303,9 +305,9 @@ class ExternalExaminerGUI:
         dlg.geometry("800x420")
         dlg.transient(self.root)
         if not matches:
-            ttk.Label(dlg, text="No curriculum-spec descriptors match the modules\n"
+            ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.no_curriculum_spec_descriptors_match_the_modules_listed_for_this', default="No curriculum-spec descriptors match the modules\n"
                                 "listed for this visit. (Set 'Modules reviewed' on the\n"
-                                "visit using module codes.)",
+                                "visit using module codes.)"),
                       padding=20).pack()
             return
         cols = ("code", "version", "title", "credits", "level", "leader")
@@ -325,7 +327,7 @@ class ExternalExaminerGUI:
     # ------------------------------------------------------------- Action Items
     def _create_action_items_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Action Items")
+        notebook.add(tab, text=_t('gui.assessment.external_examiners.external_examiner.tabs.action_items', default="Action Items"))
 
         cols = ("id", "description", "responsible", "deadline", "status")
         self.actions_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -337,10 +339,10 @@ class ExternalExaminerGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="Add", command=self._add_action).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Update Status", command=self._update_action_status).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Overdue Actions", command=self._show_overdue_actions).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_actions).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.add', default="Add"), command=self._add_action).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.update_status', default="Update Status"), command=self._update_action_status).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.overdue_actions', default="Overdue Actions"), command=self._show_overdue_actions).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.refresh', default="Refresh"), command=self._refresh_actions).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_actions()
 
@@ -348,14 +350,14 @@ class ExternalExaminerGUI:
         try:
             overdue = self.service.get_overdue_actions()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), str(e), parent=self.root)
             return
         dlg = tk.Toplevel(self.root)
-        dlg.title("Overdue Actions")
+        dlg.title(_t('gui.assessment.external_examiners.external_examiner.windows.overdue_actions', default="Overdue Actions"))
         dlg.geometry("760x420")
         dlg.transient(self.root)
         if not overdue:
-            ttk.Label(dlg, text="No overdue actions.", padding=20).pack()
+            ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.no_overdue_actions', default="No overdue actions."), padding=20).pack()
             return
         cols = ("deadline", "description", "responsible", "status")
         tree = ttk.Treeview(dlg, columns=cols, show="headings", height=15)
@@ -387,26 +389,26 @@ class ExternalExaminerGUI:
 
     def _add_action(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Add Action Item")
+        dlg.title(_t('gui.assessment.external_examiners.external_examiner.windows.add_action_item', default="Add Action Item"))
         dlg.geometry("450x350")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Description:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.description', default="Description:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         desc_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=desc_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Responsible:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.responsible', default="Responsible:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         resp_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=resp_var).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Deadline (YYYY-MM-DD):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.deadline_yyyy_mm_dd', default="Deadline (YYYY-MM-DD):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         deadline_var = tk.StringVar()
         ttk.Entry(dlg, textvariable=deadline_var).pack(fill=tk.X, padx=10)
 
         def save():
             if not desc_var.get() or not resp_var.get() or not deadline_var.get():
-                messagebox.showwarning("Validation", "All fields are required.", parent=dlg)
+                messagebox.showwarning(_t('gui.assessment.external_examiners.external_examiner.dialogs.validation', default="Validation"), _t('gui.assessment.external_examiners.external_examiner.dialogs.all_fields_are_required', default="All fields are required."), parent=dlg)
                 return
             try:
                 self.service.add_action_item({
@@ -418,25 +420,25 @@ class ExternalExaminerGUI:
                 dlg.destroy()
                 self._refresh_actions()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.assessment.external_examiners.external_examiner.buttons.save', default="Save"), command=save).pack(pady=15)
 
     def _update_action_status(self):
         sel = self.actions_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select an action item first.", parent=self.root)
+            messagebox.showwarning(_t('gui.assessment.external_examiners.external_examiner.dialogs.selection', default="Selection"), _t('gui.assessment.external_examiners.external_examiner.dialogs.select_an_action_item_first', default="Select an action item first."), parent=self.root)
             return
         values = self.actions_tree.item(sel[0], "values")
 
         dlg = tk.Toplevel(self.root)
-        dlg.title("Update Status")
+        dlg.title(_t('gui.assessment.external_examiners.external_examiner.windows.update_status', default="Update Status"))
         dlg.geometry("350x200")
         dlg.transient(self.root)
         dlg.grab_set()
 
         ttk.Label(dlg, text=f"Action: {values[1][:60]}").pack(padx=10, pady=10)
-        ttk.Label(dlg, text="New Status:").pack(padx=10, anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.assessment.external_examiners.external_examiner.labels.new_status', default="New Status:")).pack(padx=10, anchor=tk.W)
         status_var = tk.StringVar(value=values[4])
         ttk.Combobox(dlg, textvariable=status_var, values=[
             "Open", "In Progress", "Completed", "Overdue",
@@ -448,16 +450,16 @@ class ExternalExaminerGUI:
                 dlg.destroy()
                 self._refresh_actions()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Update", command=save).pack(pady=15)
+        ttk.Button(dlg, text=_t('gui.assessment.external_examiners.external_examiner.buttons.update', default="Update"), command=save).pack(pady=15)
 
     # ---------------------------------------------------------------- Reports
     def _create_reports_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Reports")
+        notebook.add(tab, text=_t('gui.assessment.external_examiners.external_examiner.tabs.reports', default="Reports"))
 
-        report_frame = ttk.LabelFrame(tab, text="Department Summary")
+        report_frame = ttk.LabelFrame(tab, text=_t('gui.assessment.external_examiners.external_examiner.labels.department_summary', default="Department Summary"))
         report_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         cols = ("department", "examiners", "visits", "avg_rating", "open_actions")
@@ -467,7 +469,7 @@ class ExternalExaminerGUI:
             self.reports_tree.column(c, width=150)
         self.reports_tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        ttk.Button(report_frame, text="Generate Report", command=self._generate_report).pack(pady=5)
+        ttk.Button(report_frame, text=_t('gui.assessment.external_examiners.external_examiner.buttons.generate_report', default="Generate Report"), command=self._generate_report).pack(pady=5)
 
     def _generate_report(self):
         for row in self.reports_tree.get_children():
@@ -483,4 +485,4 @@ class ExternalExaminerGUI:
                     r.get("open_actions", 0),
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.assessment.external_examiners.external_examiner.dialogs.error', default="Error"), str(e), parent=self.root)

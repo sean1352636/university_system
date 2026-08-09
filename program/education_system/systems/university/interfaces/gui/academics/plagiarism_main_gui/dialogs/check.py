@@ -27,7 +27,7 @@ class PlagiarismCheckDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.check.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -56,15 +56,15 @@ class PlagiarismCheckDialog:
         search_frame = ttk.LabelFrame(main_frame, text=_t("plagiarism.search_documents"), padding=GuiConfig.PADDING_SMALL)
         search_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.check.labels.search', default="Search:")).pack(side=tk.LEFT)
         self.search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=GuiConfig.PADDING_SMALL)
 
-        search_btn = ttk.Button(search_frame, text="Search", command=self.search_documents)
+        search_btn = ttk.Button(search_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.check.buttons.search', default="Search"), command=self.search_documents)
         search_btn.pack(side=tk.LEFT, padx=GuiConfig.PADDING_SMALL)
 
-        refresh_btn = ttk.Button(search_frame, text="Refresh", command=self.load_documents)
+        refresh_btn = ttk.Button(search_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.check.buttons.refresh', default="Refresh"), command=self.load_documents)
         refresh_btn.pack(side=tk.LEFT)
 
         # Documents list
@@ -121,7 +121,7 @@ class PlagiarismCheckDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X)
 
-        cancel_btn = ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy)
+        cancel_btn = ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.check.buttons.cancel', default="Cancel"), command=self.dialog.destroy)
         cancel_btn.pack(side=tk.RIGHT)
 
         check_btn = ttk.Button(button_frame, text=_t("plagiarism.check_for_plagiarism"), command=self.start_check)
@@ -153,7 +153,7 @@ class PlagiarismCheckDialog:
 
             except Exception as e:
                 error_msg = str(e)
-                self.dialog.after(0, lambda err=error_msg: messagebox.showerror("Error", f"Failed to load documents: {err}"))
+                self.dialog.after(0, lambda err=error_msg: messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.check.dialogs.error', default="Error"), f"Failed to load documents: {err}"))
 
         thread = threading.Thread(target=load_task, daemon=True)
         thread.start()
@@ -187,7 +187,7 @@ class PlagiarismCheckDialog:
 
             except Exception as e:
                 error_msg = str(e)
-                self.dialog.after(0, lambda err=error_msg: messagebox.showerror("Error", f"Search failed: {err}"))
+                self.dialog.after(0, lambda err=error_msg: messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.check.dialogs.error', default="Error"), f"Search failed: {err}"))
 
         thread = threading.Thread(target=search_task, daemon=True)
         thread.start()
@@ -210,7 +210,7 @@ class PlagiarismCheckDialog:
         """Start plagiarism check"""
         selection = self.doc_tree.selection()
         if not selection:
-            messagebox.showerror("Error", "Please select a document to check")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.check.dialogs.error', default="Error"), _t('gui.academics.plagiarism_main_gui.dialogs.check.dialogs.please_select_a_document_to_check', default="Please select a document to check"))
             return
 
         # Get document ID from tags

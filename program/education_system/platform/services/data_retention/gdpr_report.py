@@ -14,8 +14,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from education_system.platform.governance.security.fail_closed import alert_security_failure
+
 from .anonymizer import Anonymizer
 from .models import _connect as _retention_connect, get_retention_db_path, init_retention_db
+from .verification import subject_reference
 
 logger = logging.getLogger(__name__)
 
@@ -23,13 +26,51 @@ logger = logging.getLogger(__name__)
 # System database registry
 # ---------------------------------------------------------------------------
 
-_shared_root = Path(__file__).resolve().parent.parent.parent.parent
-_edu_root = _shared_root.parent
+def _discover_system_dbs() -> dict[str, Path]:
+    """Resolve every system database from its own paths module.
 
-_SYSTEM_DBS: dict[str, Path] = {
-    "university": _edu_root / "post_18" / "university_system" / "data" / "db_files" / "student_records.db",
-    "auth":       _shared_root                    / "data" / "db_files" / "auth.db",
-}
+    These were previously hand-built relative paths
+    (``.../post_18/university_system/data/db_files/student_records.db`` and
+    ``.../education_system/data/db_files/auth.db``). Neither has existed since
+    the tree moved under ``program/var/``, and a non-existent path does not
+    error — ``_open_db`` simply returns None and the table is skipped. The
+    visible effect was that every DSAR returned "0 records found" and every
+    erasure reported "completed" having anonymised nothing.
+
+    Deriving from ``education_system.paths`` means a future layout change moves
+    these with it. All five systems are included because the other four hold
+    children's records; covering only university and auth left four systems'
+    worth of subject data outside both the access and the erasure workflow
+    entirely.
+    """
+    discovered: dict[str, Path] = {}
+
+    try:
+        from education_system.paths import PLATFORM_AUTH_DB_FILE, SYSTEM_DB_PATHS
+    except ImportError:  # pragma: no cover — education_system.paths always imports
+        logger.error("education_system.paths unavailable; DSAR scope is empty")
+        return discovered
+
+    discovered["auth"] = Path(PLATFORM_AUTH_DB_FILE)
+    for system, db_path in SYSTEM_DB_PATHS.items():
+        discovered[system] = Path(db_path)
+
+    return discovered
+
+
+def assert_dsar_scope_resolves() -> list[str]:
+    """Return the systems whose DSAR database path does not exist on disk.
+
+    A missing path is not an error at import time — a deployment may not run
+    every system — but it *is* something a subject-access request must not
+    silently skip. The security suite calls this and fails if a system that is
+    installed has an unresolvable database, which is what turned the previous
+    stale paths into an invisible no-op.
+    """
+    return [system for system, path in _SYSTEM_DBS.items() if not Path(path).exists()]
+
+
+_SYSTEM_DBS: dict[str, Path] = _discover_system_dbs()
 
 # Email column names to search in each table
 _EMAIL_COLUMNS = {"email", "email_address", "contact_email", "username"}
@@ -42,6 +83,22 @@ _SUBJECT_TABLES: dict[str, list[str]] = {
     ],
     "auth": [
         "users",
+    ],
+    # The four school systems hold children's records and were previously
+    # outside DSAR scope entirely. Tables absent from a given system are
+    # skipped by _table_exists_conn, so listing the superset is safe.
+    "nursery": [
+        "children", "pupils", "parent_contacts", "staff", "user_accounts",
+    ],
+    "primary": [
+        "pupils", "students", "parent_contacts", "staff", "user_accounts",
+    ],
+    "secondary": [
+        "pupils", "students", "parent_contacts", "staff", "user_accounts",
+    ],
+    "sixth_form": [
+        "students", "applications", "parent_contacts", "staff",
+        "user_accounts", "alumni",
     ],
 }
 
@@ -225,6 +282,7 @@ def process_erasure_request(
     total_anonymized = 0
     total_deleted = 0
     details: list[dict] = []
+    erasure_failures: list[dict] = []
 
     # ── Create pending request record ────────────────────────────────────
     conn = _retention_connect(r_db)
@@ -318,21 +376,40 @@ def process_erasure_request(
             finally:
                 a_conn.close()
         except Exception as exc:
-            logger.error("Failed to delete auth sessions for %s: %s", email, exc)
+            # Sessions are the subject's live access. Failing to revoke them
+            # while reporting the erasure "completed" would leave the person
+            # both erased and still logged in, so this is recorded as a
+            # failure rather than logged and forgotten.
+            alert_security_failure(
+                "gdpr.erasure.sessions",
+                f"Could not revoke auth sessions during erasure: {exc}",
+                exc=exc,
+            )
+            erasure_failures.append({"system": "auth", "stage": "sessions", "error": str(exc)})
 
     # ── Finalise request record ───────────────────────────────────────────
+    # The status reflects what actually happened. Marking a partially failed
+    # erasure 'completed' is how an unerased record becomes invisible.
     completed_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+    final_status = "completed" if not erasure_failures else "in_progress"
     conn = _retention_connect(r_db)
     try:
         conn.execute(
             """
             UPDATE data_subject_requests
-            SET status = 'completed',
+            SET status = ?,
                 systems_affected = ?,
-                completed_at = ?
+                completed_at = ?,
+                subject_email = ?,
+                subject_name = NULL
             WHERE id = ?
             """,
-            (", ".join(systems_affected), completed_at, request_id),
+            # Overwrite the address with its keyed pseudonym now the erasure
+            # has run: keeping it would make this table the last surviving
+            # copy of every address the estate was asked to forget, while the
+            # pseudonym still answers "did we already process this person?".
+            (final_status, ", ".join(systems_affected), completed_at,
+             subject_reference(email), request_id),
         )
         conn.commit()
     except Exception:
@@ -342,16 +419,21 @@ def process_erasure_request(
         conn.close()
 
     result = {
-        "email": email,
+        # The pseudonym, not the address: this dict is logged, returned over
+        # the API and often written to a report file.
+        "subject_ref": subject_reference(email),
         "processed_at": completed_at,
         "request_id": request_id,
+        "status": final_status,
         "systems_affected": systems_affected,
         "records_anonymized": total_anonymized,
         "records_deleted": total_deleted,
+        "failures": erasure_failures,
         "details": details,
     }
     logger.info(
-        "Erasure request %d for %s completed: %d anonymized, %d deleted",
-        request_id, email, total_anonymized, total_deleted,
+        "Erasure request %d (%s) %s: %d anonymized, %d deleted, %d failure(s)",
+        request_id, result["subject_ref"], final_status,
+        total_anonymized, total_deleted, len(erasure_failures),
     )
     return result

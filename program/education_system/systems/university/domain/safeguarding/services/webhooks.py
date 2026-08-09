@@ -6,7 +6,9 @@ import os
 import re
 import secrets
 import shutil
-import sqlite3
+from education_system.systems.university.infrastructure.database.db import (
+    sqlite3 as _db_errors,
+)
 import sys
 import tkinter as tk
 import webbrowser
@@ -21,6 +23,10 @@ from education_system.systems.university.domain.safeguarding.db import (
 )
 from education_system.systems.university.domain.safeguarding.permissions import (
     audit_log,
+)
+from education_system.systems.university.services.operations import (
+    OperationResult,
+    OperationalIssue,
 )
 
 
@@ -70,8 +76,7 @@ def _matches_filter(event, event_filter):
 
 
 def emit_webhook_event(event, payload, case_id=None):
-    """POST a signed JSON payload to every active matching webhook. Network
-    errors never raise; status is recorded on the delivery row + parent."""
+    """Deliver an event and return an observable success/degraded outcome."""
     try:
         conn = _connect()
         cur = conn.cursor()
@@ -80,10 +85,14 @@ def emit_webhook_event(event, payload, case_id=None):
         )
         hooks = cur.fetchall()
         conn.close()
-    except sqlite3.OperationalError:
-        return 0
+    except _db_errors.OperationalError as exc:
+        return OperationResult.failure(
+            OperationalIssue.from_exception(
+                exc, component="safeguarding_webhook_registry", retryable=True
+            )
+        )
     if not hooks:
-        return 0
+        return OperationResult.success(0)
 
     import hmac
     import urllib.request
@@ -92,6 +101,7 @@ def emit_webhook_event(event, payload, case_id=None):
         {"event": event, "payload": payload, "ts": datetime.now().isoformat()}
     ).encode("utf-8")
     sent = 0
+    issues = []
     for wid, url, secret, event_filter in hooks:
         if not _matches_filter(event, event_filter or "*"):
             continue
@@ -114,6 +124,13 @@ def emit_webhook_event(event, payload, case_id=None):
         except Exception as e:
             code = -1
             resp = f"{type(e).__name__}: {e}"[:512]
+            issues.append(
+                OperationalIssue.from_exception(
+                    e,
+                    component=f"safeguarding_webhook:{wid}",
+                    retryable=True,
+                )
+            )
         now = datetime.now().isoformat()
         try:
             conn = _connect()
@@ -130,10 +147,18 @@ def emit_webhook_event(event, payload, case_id=None):
             )
             conn.commit()
             conn.close()
-        except sqlite3.OperationalError:
-            pass
+        except _db_errors.OperationalError as exc:
+            issues.append(
+                OperationalIssue.from_exception(
+                    exc,
+                    component=f"safeguarding_delivery_store:{wid}",
+                    retryable=True,
+                )
+            )
         sent += 1
-    return sent
+    if issues:
+        return OperationResult.degraded(sent, *issues)
+    return OperationResult.success(sent)
 
 
 __all__ = [

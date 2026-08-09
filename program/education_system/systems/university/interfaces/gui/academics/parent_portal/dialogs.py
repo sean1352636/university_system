@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -55,7 +57,7 @@ class AbsenceReportDialog:
         self.selected_sessions = []
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Report Absence")
+        self.dialog.title(_t('gui.academics.parent_portal.dialogs.windows.report_absence', default="Report Absence"))
         self.dialog.geometry("800x750")
         self.dialog.minsize(750, 600)
         self.dialog.transient(parent)
@@ -115,15 +117,15 @@ class AbsenceReportDialog:
 
         self.dialog.protocol("WM_DELETE_WINDOW", on_close)
 
-        ttk.Label(main_frame, text="Report Student Absence", font=('Arial', 16, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.report_student_absence', default="Report Student Absence"), font=('Arial', 16, 'bold')).pack(pady=10)
 
         # Student selection frame
-        selection_frame = ttk.LabelFrame(main_frame, text="Select Student", padding=10)
+        selection_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.select_student', default="Select Student"), padding=10)
         selection_frame.pack(fill=tk.X, pady=5)
 
         if is_admin:
             # Admin: Search by student ID
-            ttk.Label(selection_frame, text="Search Student ID:").pack(anchor='w')
+            ttk.Label(selection_frame, text=_t('gui.academics.parent_portal.dialogs.labels.search_student_id', default="Search Student ID:")).pack(anchor='w')
             search_frame = ttk.Frame(selection_frame)
             search_frame.pack(fill=tk.X, pady=5)
 
@@ -131,7 +133,7 @@ class AbsenceReportDialog:
             self.search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=30)
             self.search_entry.pack(side=tk.LEFT, padx=(0, 5))
 
-            ttk.Button(search_frame, text="Search", command=self.search_student).pack(side=tk.LEFT)
+            ttk.Button(search_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.search', default="Search"), command=self.search_student).pack(side=tk.LEFT)
 
             self.student_info_label = ttk.Label(selection_frame, text="", foreground="blue")
             self.student_info_label.pack(anchor='w', pady=5)
@@ -139,7 +141,7 @@ class AbsenceReportDialog:
             self.selected_student = None
         else:
             # Parent: Select from children
-            ttk.Label(selection_frame, text="Select Student:").pack(anchor='w')
+            ttk.Label(selection_frame, text=_t('gui.academics.parent_portal.dialogs.labels.select_student_variant_2', default="Select Student:")).pack(anchor='w')
             self.child_var = tk.StringVar()
             self.child_combo = ttk.Combobox(selection_frame, textvariable=self.child_var, width=50, state="readonly")
             self.child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in children]
@@ -149,17 +151,17 @@ class AbsenceReportDialog:
             self.child_combo.bind("<<ComboboxSelected>>", self.on_child_selected)
 
         # Date selection
-        date_frame = ttk.LabelFrame(main_frame, text="Absence Date", padding=10)
+        date_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.absence_date', default="Absence Date"), padding=10)
         date_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(date_frame, text="Select Date:").pack(anchor='w')
+        ttk.Label(date_frame, text=_t('gui.academics.parent_portal.dialogs.labels.select_date', default="Select Date:")).pack(anchor='w')
         self.date_var = tk.StringVar(value=datetime.datetime.now().strftime('%Y-%m-%d'))
         self.date_entry = ttk.Entry(date_frame, textvariable=self.date_var, width=20)
         self.date_entry.pack(anchor='w', pady=5)
-        ttk.Label(date_frame, text="(Format: YYYY-MM-DD)", font=('Arial', 8)).pack(anchor='w')
+        ttk.Label(date_frame, text=_t('gui.academics.parent_portal.dialogs.labels.format_yyyy_mm_dd', default="(Format: YYYY-MM-DD)"), font=('Arial', 8)).pack(anchor='w')
 
         # Timetable frame
-        timetable_frame = ttk.LabelFrame(main_frame, text="Select Sessions to Mark Absent", padding=10)
+        timetable_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.select_sessions_to_mark_absent', default="Select Sessions to Mark Absent"), padding=10)
         timetable_frame.pack(fill=tk.X, pady=5)
 
         # Timetable treeview with increased height
@@ -167,11 +169,11 @@ class AbsenceReportDialog:
         self.timetable_tree = ttk.Treeview(timetable_frame, columns=columns, show='headings', height=12)
 
         self.timetable_tree.heading("Select", text="✓")
-        self.timetable_tree.heading("Module", text="Module")
-        self.timetable_tree.heading("Day", text="Day")
-        self.timetable_tree.heading("Time", text="Time")
-        self.timetable_tree.heading("Room", text="Room")
-        self.timetable_tree.heading("Instructor", text="Instructor")
+        self.timetable_tree.heading("Module", text=_t('gui.academics.parent_portal.dialogs.headings.module', default="Module"))
+        self.timetable_tree.heading("Day", text=_t('gui.academics.parent_portal.dialogs.headings.day', default="Day"))
+        self.timetable_tree.heading("Time", text=_t('gui.academics.parent_portal.dialogs.headings.time', default="Time"))
+        self.timetable_tree.heading("Room", text=_t('gui.academics.parent_portal.dialogs.headings.room', default="Room"))
+        self.timetable_tree.heading("Instructor", text=_t('gui.academics.parent_portal.dialogs.headings.instructor', default="Instructor"))
 
         self.timetable_tree.column("Select", width=40, anchor='center')
         self.timetable_tree.column("Module", width=180)
@@ -191,11 +193,11 @@ class AbsenceReportDialog:
         # Load timetable button
         load_btn_frame = ttk.Frame(main_frame)
         load_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(load_btn_frame, text="Load/Refresh Timetable", command=self.load_timetable).pack(side=tk.LEFT)
-        ttk.Label(load_btn_frame, text="  (Click on rows to select/deselect sessions)", font=('Arial', 9)).pack(side=tk.LEFT)
+        ttk.Button(load_btn_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.load_refresh_timetable', default="Load/Refresh Timetable"), command=self.load_timetable).pack(side=tk.LEFT)
+        ttk.Label(load_btn_frame, text=_t('gui.academics.parent_portal.dialogs.labels.click_on_rows_to_select_deselect_sessions', default="  (Click on rows to select/deselect sessions)"), font=('Arial', 9)).pack(side=tk.LEFT)
 
         # Reason
-        reason_frame = ttk.LabelFrame(main_frame, text="Reason for Absence", padding=10)
+        reason_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.reason_for_absence', default="Reason for Absence"), padding=10)
         reason_frame.pack(fill=tk.X, pady=5)
 
         self.reason_text = scrolledtext.ScrolledText(reason_frame, height=4, width=70)
@@ -205,10 +207,10 @@ class AbsenceReportDialog:
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
 
-        submit_btn = ttk.Button(btn_frame, text="Submit Absence Report", command=self.submit)
+        submit_btn = ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.submit_absence_report', default="Submit Absence Report"), command=self.submit)
         submit_btn.pack(side=tk.LEFT, padx=10)
 
-        cancel_btn = ttk.Button(btn_frame, text="Cancel", command=on_close)
+        cancel_btn = ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.cancel', default="Cancel"), command=on_close)
         cancel_btn.pack(side=tk.LEFT, padx=10)
 
         # Load timetable for first child if available
@@ -221,7 +223,7 @@ class AbsenceReportDialog:
         """Search for student by ID (admin function)"""
         student_id = self.search_var.get().strip()
         if not student_id:
-            messagebox.showwarning("Missing ID", "Please enter a student ID.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.dialogs.dialogs.missing_id', default="Missing ID"), _t('gui.academics.parent_portal.dialogs.dialogs.please_enter_a_student_id', default="Please enter a student ID."))
             return
 
         try:
@@ -243,10 +245,10 @@ class AbsenceReportDialog:
                 self.load_timetable()
             else:
                 self.selected_student = None
-                self.student_info_label.config(text="Student not found", foreground="red")
+                self.student_info_label.config(text=_t('gui.academics.parent_portal.dialogs.text.student_not_found', default="Student not found"), foreground="red")
                 self.clear_timetable()
         except Exception as e:
-            messagebox.showerror("Error", f"Error searching student: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.dialogs.dialogs.error', default="Error"), f"Error searching student: {e}")
 
     def on_child_selected(self, event=None):
         """Handle child selection change"""
@@ -335,7 +337,7 @@ class AbsenceReportDialog:
                 ))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error loading timetable: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.dialogs.dialogs.error', default="Error"), f"Error loading timetable: {e}")
 
     def toggle_session_selection(self, event):
         """Toggle selection of a timetable session"""
@@ -357,14 +359,14 @@ class AbsenceReportDialog:
         """Submit the absence report"""
         student_id = self.get_selected_student_id()
         if not student_id:
-            messagebox.showwarning("Missing Information", "Please select a student.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.dialogs.dialogs.missing_information', default="Missing Information"), _t('gui.academics.parent_portal.dialogs.dialogs.please_select_a_student', default="Please select a student."))
             return
 
         absence_date = self.date_var.get().strip()
         reason = self.reason_text.get(1.0, tk.END).strip()
 
         if not reason:
-            messagebox.showwarning("Missing Information", "Please provide a reason for absence.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.dialogs.dialogs.missing_information', default="Missing Information"), _t('gui.academics.parent_portal.dialogs.dialogs.please_provide_a_reason_for_absence', default="Please provide a reason for absence."))
             return
 
         # Get selected sessions
@@ -406,7 +408,7 @@ class EmergencyContactDialog:
         self.editing_contact_id = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Manage Emergency Contacts")
+        self.dialog.title(_t('gui.academics.parent_portal.dialogs.windows.manage_emergency_contacts', default="Manage Emergency Contacts"))
         self.dialog.geometry("900x750")
         self.dialog.minsize(850, 700)
         self.dialog.transient(parent)
@@ -418,11 +420,11 @@ class EmergencyContactDialog:
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Emergency Contacts Management", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.emergency_contacts_management', default="Emergency Contacts Management"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Student selection (for parents with multiple children)
         if self.children:
-            selection_frame = ttk.LabelFrame(main_frame, text="Select Student", padding=10)
+            selection_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.select_student', default="Select Student"), padding=10)
             selection_frame.pack(fill=tk.X, pady=5)
 
             self.student_var = tk.StringVar()
@@ -434,7 +436,7 @@ class EmergencyContactDialog:
             self.student_combo.bind("<<ComboboxSelected>>", self.on_student_selected)
 
         # Contacts list frame
-        list_frame = ttk.LabelFrame(main_frame, text="Existing Emergency Contacts", padding=10)
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.existing_emergency_contacts', default="Existing Emergency Contacts"), padding=10)
         list_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         # Contacts treeview
@@ -442,11 +444,11 @@ class EmergencyContactDialog:
         self.contacts_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=6)
 
         self.contacts_tree.heading("Priority", text="#")
-        self.contacts_tree.heading("Name", text="Name")
-        self.contacts_tree.heading("Relationship", text="Relationship")
-        self.contacts_tree.heading("Primary Phone", text="Primary Phone")
-        self.contacts_tree.heading("Email", text="Email")
-        self.contacts_tree.heading("Medical Decision", text="Medical Auth")
+        self.contacts_tree.heading("Name", text=_t('gui.academics.parent_portal.dialogs.headings.name', default="Name"))
+        self.contacts_tree.heading("Relationship", text=_t('gui.academics.parent_portal.dialogs.headings.relationship', default="Relationship"))
+        self.contacts_tree.heading("Primary Phone", text=_t('gui.academics.parent_portal.dialogs.headings.primary_phone', default="Primary Phone"))
+        self.contacts_tree.heading("Email", text=_t('gui.academics.parent_portal.dialogs.headings.email', default="Email"))
+        self.contacts_tree.heading("Medical Decision", text=_t('gui.academics.parent_portal.dialogs.headings.medical_auth', default="Medical Auth"))
 
         self.contacts_tree.column("Priority", width=30)
         self.contacts_tree.column("Name", width=150)
@@ -467,45 +469,45 @@ class EmergencyContactDialog:
         list_btn_frame = ttk.Frame(list_frame)
         list_btn_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(list_btn_frame, text="Edit Selected", command=self.edit_contact).pack(side=tk.LEFT, padx=2)
-        ttk.Button(list_btn_frame, text="Delete Selected", command=self.delete_contact).pack(side=tk.LEFT, padx=2)
-        ttk.Button(list_btn_frame, text="Move Up", command=lambda: self.change_priority(-1)).pack(side=tk.LEFT, padx=2)
-        ttk.Button(list_btn_frame, text="Move Down", command=lambda: self.change_priority(1)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(list_btn_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.edit_selected', default="Edit Selected"), command=self.edit_contact).pack(side=tk.LEFT, padx=2)
+        ttk.Button(list_btn_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.delete_selected', default="Delete Selected"), command=self.delete_contact).pack(side=tk.LEFT, padx=2)
+        ttk.Button(list_btn_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.move_up', default="Move Up"), command=lambda: self.change_priority(-1)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(list_btn_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.move_down', default="Move Down"), command=lambda: self.change_priority(1)).pack(side=tk.LEFT, padx=2)
 
         # Form frame for adding/editing contacts
-        form_frame = ttk.LabelFrame(main_frame, text="Add/Edit Contact", padding=10)
+        form_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.add_edit_contact', default="Add/Edit Contact"), padding=10)
         form_frame.pack(fill=tk.X, pady=5)
 
         # Form fields in grid layout
         form_grid = ttk.Frame(form_frame)
         form_grid.pack(fill=tk.X)
 
-        ttk.Label(form_grid, text="Contact Name:").grid(row=0, column=0, sticky='w', padx=5, pady=2)
+        ttk.Label(form_grid, text=_t('gui.academics.parent_portal.dialogs.labels.contact_name', default="Contact Name:")).grid(row=0, column=0, sticky='w', padx=5, pady=2)
         self.name_entry = ttk.Entry(form_grid, width=30)
         self.name_entry.grid(row=0, column=1, sticky='w', padx=5, pady=2)
 
-        ttk.Label(form_grid, text="Relationship:").grid(row=0, column=2, sticky='w', padx=5, pady=2)
+        ttk.Label(form_grid, text=_t('gui.academics.parent_portal.dialogs.labels.relationship', default="Relationship:")).grid(row=0, column=2, sticky='w', padx=5, pady=2)
         self.relationship_var = tk.StringVar()
         self.relationship_combo = ttk.Combobox(form_grid, textvariable=self.relationship_var, width=20)
         self.relationship_combo['values'] = ['Parent', 'Guardian', 'Grandparent', 'Sibling', 'Aunt/Uncle', 'Other Family', 'Friend', 'Other']
         self.relationship_combo.grid(row=0, column=3, sticky='w', padx=5, pady=2)
 
-        ttk.Label(form_grid, text="Primary Phone:").grid(row=1, column=0, sticky='w', padx=5, pady=2)
+        ttk.Label(form_grid, text=_t('gui.academics.parent_portal.dialogs.labels.primary_phone', default="Primary Phone:")).grid(row=1, column=0, sticky='w', padx=5, pady=2)
         self.phone_primary_entry = ttk.Entry(form_grid, width=30)
         self.phone_primary_entry.grid(row=1, column=1, sticky='w', padx=5, pady=2)
 
-        ttk.Label(form_grid, text="Secondary Phone:").grid(row=1, column=2, sticky='w', padx=5, pady=2)
+        ttk.Label(form_grid, text=_t('gui.academics.parent_portal.dialogs.labels.secondary_phone', default="Secondary Phone:")).grid(row=1, column=2, sticky='w', padx=5, pady=2)
         self.phone_secondary_entry = ttk.Entry(form_grid, width=20)
         self.phone_secondary_entry.grid(row=1, column=3, sticky='w', padx=5, pady=2)
 
-        ttk.Label(form_grid, text="Email:").grid(row=2, column=0, sticky='w', padx=5, pady=2)
+        ttk.Label(form_grid, text=_t('gui.academics.parent_portal.dialogs.labels.email', default="Email:")).grid(row=2, column=0, sticky='w', padx=5, pady=2)
         self.email_entry = ttk.Entry(form_grid, width=30)
         self.email_entry.grid(row=2, column=1, sticky='w', padx=5, pady=2)
 
         self.medical_var = tk.BooleanVar()
-        ttk.Checkbutton(form_grid, text="Medical Decision Maker", variable=self.medical_var).grid(row=2, column=2, columnspan=2, sticky='w', padx=5, pady=2)
+        ttk.Checkbutton(form_grid, text=_t('gui.academics.parent_portal.dialogs.buttons.medical_decision_maker', default="Medical Decision Maker"), variable=self.medical_var).grid(row=2, column=2, columnspan=2, sticky='w', padx=5, pady=2)
 
-        ttk.Label(form_grid, text="Address:").grid(row=3, column=0, sticky='w', padx=5, pady=2)
+        ttk.Label(form_grid, text=_t('gui.academics.parent_portal.dialogs.labels.address', default="Address:")).grid(row=3, column=0, sticky='w', padx=5, pady=2)
         self.address_entry = ttk.Entry(form_grid, width=60)
         self.address_entry.grid(row=3, column=1, columnspan=3, sticky='w', padx=5, pady=2)
 
@@ -513,12 +515,12 @@ class EmergencyContactDialog:
         form_btn_frame = ttk.Frame(form_frame)
         form_btn_frame.pack(fill=tk.X, pady=10)
 
-        self.save_btn = ttk.Button(form_btn_frame, text="Add Contact", command=self.save_contact)
+        self.save_btn = ttk.Button(form_btn_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.add_contact', default="Add Contact"), command=self.save_contact)
         self.save_btn.pack(side=tk.LEFT, padx=5)
-        ttk.Button(form_btn_frame, text="Clear Form", command=self.clear_form).pack(side=tk.LEFT, padx=5)
+        ttk.Button(form_btn_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.clear_form', default="Clear Form"), command=self.clear_form).pack(side=tk.LEFT, padx=5)
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.close_dialog).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.close', default="Close"), command=self.close_dialog).pack(pady=10)
 
         # Load contacts for first student
         if self.children:
@@ -590,7 +592,7 @@ class EmergencyContactDialog:
                 })
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error loading contacts: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.dialogs.dialogs.error', default="Error"), f"Error loading contacts: {e}")
 
     def on_contact_selected(self, event=None):
         """Handle contact selection in treeview"""
@@ -600,7 +602,7 @@ class EmergencyContactDialog:
         """Edit the selected contact"""
         selection = self.contacts_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a contact to edit.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.dialogs.dialogs.no_selection', default="No Selection"), _t('gui.academics.parent_portal.dialogs.dialogs.please_select_a_contact_to_edit', default="Please select a contact to edit."))
             return
 
         contact_id = int(selection[0])
@@ -628,19 +630,19 @@ class EmergencyContactDialog:
 
                 self.medical_var.set(contact['medical_decision_maker'] or False)
 
-                self.save_btn.config(text="Update Contact")
+                self.save_btn.config(text=_t('gui.academics.parent_portal.dialogs.text.update_contact', default="Update Contact"))
                 break
 
     def delete_contact(self):
         """Delete the selected contact"""
         selection = self.contacts_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a contact to delete.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.dialogs.dialogs.no_selection', default="No Selection"), _t('gui.academics.parent_portal.dialogs.dialogs.please_select_a_contact_to_delete', default="Please select a contact to delete."))
             return
 
         contact_id = int(selection[0])
 
-        if not messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this contact?"):
+        if not messagebox.askyesno(_t('gui.academics.parent_portal.dialogs.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.academics.parent_portal.dialogs.dialogs.are_you_sure_you_want_to_delete_this_contact', default="Are you sure you want to delete this contact?")):
             return
 
         try:
@@ -652,16 +654,16 @@ class EmergencyContactDialog:
 
             self.load_contacts()
             self.clear_form()
-            messagebox.showinfo("Success", "Contact deleted successfully.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.dialogs.dialogs.success', default="Success"), _t('gui.academics.parent_portal.dialogs.dialogs.contact_deleted_successfully', default="Contact deleted successfully."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error deleting contact: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.dialogs.dialogs.error', default="Error"), f"Error deleting contact: {e}")
 
     def change_priority(self, direction):
         """Change priority of selected contact (move up or down)"""
         selection = self.contacts_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a contact to move.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.dialogs.dialogs.no_selection', default="No Selection"), _t('gui.academics.parent_portal.dialogs.dialogs.please_select_a_contact_to_move', default="Please select a contact to move."))
             return
 
         contact_id = int(selection[0])
@@ -700,13 +702,13 @@ class EmergencyContactDialog:
             self.load_contacts()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error changing priority: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.dialogs.dialogs.error', default="Error"), f"Error changing priority: {e}")
 
     def save_contact(self):
         """Save (add or update) contact"""
         student_id = self.get_selected_student_id()
         if not student_id:
-            messagebox.showwarning("No Student", "Please select a student first.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.dialogs.dialogs.no_student', default="No Student"), _t('gui.academics.parent_portal.dialogs.dialogs.please_select_a_student_first', default="Please select a student first."))
             return
 
         name = self.name_entry.get().strip()
@@ -718,11 +720,11 @@ class EmergencyContactDialog:
         medical = 1 if self.medical_var.get() else 0
 
         if not name:
-            messagebox.showwarning("Missing Information", "Contact name is required.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.dialogs.dialogs.missing_information', default="Missing Information"), _t('gui.academics.parent_portal.dialogs.dialogs.contact_name_is_required', default="Contact name is required."))
             return
 
         if not phone_primary and not email:
-            messagebox.showwarning("Missing Information", "Please provide at least a phone number or email.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.dialogs.dialogs.missing_information', default="Missing Information"), _t('gui.academics.parent_portal.dialogs.dialogs.please_provide_at_least_a_phone_number_or_email', default="Please provide at least a phone number or email."))
             return
 
         try:
@@ -761,10 +763,10 @@ class EmergencyContactDialog:
 
             self.load_contacts()
             self.clear_form()
-            messagebox.showinfo("Success", message)
+            messagebox.showinfo(_t('gui.academics.parent_portal.dialogs.dialogs.success', default="Success"), message)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error saving contact: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.dialogs.dialogs.error', default="Error"), f"Error saving contact: {e}")
 
     def clear_form(self):
         """Clear the form fields"""
@@ -776,7 +778,7 @@ class EmergencyContactDialog:
         self.email_entry.delete(0, tk.END)
         self.address_entry.delete(0, tk.END)
         self.medical_var.set(False)
-        self.save_btn.config(text="Add Contact")
+        self.save_btn.config(text=_t('gui.academics.parent_portal.dialogs.text.add_contact', default="Add Contact"))
 
     def close_dialog(self):
         """Close the dialog"""
@@ -938,7 +940,7 @@ class ModernMessageBox:
         ttk.Label(main_frame, text=message, wraplength=350).pack(pady=10)
 
         # OK button
-        ttk.Button(main_frame, text="OK", command=dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.academics.parent_portal.dialogs.buttons.ok', default="OK"), command=dialog.destroy).pack(pady=10)
 
         dialog.wait_window()
 
@@ -959,7 +961,7 @@ class ProgressDialog:
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.label = ttk.Label(main_frame, text="Please wait...")
+        self.label = ttk.Label(main_frame, text=_t('gui.academics.parent_portal.dialogs.labels.please_wait', default="Please wait..."))
         self.label.pack(pady=10)
 
         self.progress = ttk.Progressbar(main_frame, mode='indeterminate')
@@ -987,7 +989,7 @@ class NotificationCenter:
     def show_notification(self, title, message, type="info"):
         """Show a notification popup"""
         notification = tk.Toplevel(self.parent)
-        notification.title("Notification")
+        notification.title(_t('gui.academics.parent_portal.dialogs.windows.notification', default="Notification"))
         notification.geometry("350x120")
         notification.attributes('-topmost', True)
 

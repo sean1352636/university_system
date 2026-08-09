@@ -5,7 +5,11 @@ import logging
 import threading
 from pathlib import Path
 
-from education_system.systems.university.infrastructure.paths import DATA_DIR, BACKUP_DATABASE_DIR
+from education_system.paths import (
+    UNIVERSITY_DATA_DIR,
+    UNIVERSITY_BACKUP_DATABASE_DIR,
+    UNIVERSITY_REMOTE_BACKUP_PATH,
+)
 from education_system.systems.university.infrastructure.i18n import get_text as _t, init_i18n
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
@@ -15,7 +19,7 @@ logger = configure_logging(name=__name__)
 
 # Enhanced default configuration
 DEFAULT_CONFIG = {
-    "backup_directory": str(BACKUP_DATABASE_DIR),
+    "backup_directory": str(UNIVERSITY_BACKUP_DATABASE_DIR),
     "scheduled_backup_time": "02:00",
     "backup_frequency": "daily",
     "max_backups": 10,
@@ -42,7 +46,7 @@ DEFAULT_CONFIG = {
     "remote_host": "",
     "remote_username": "",
     "remote_password": "",
-    "remote_path": "/backups",
+    "remote_path": UNIVERSITY_REMOTE_BACKUP_PATH,
     # Backup types
     "backup_type": "full",  # full, incremental, differential
     "enable_incremental": False,
@@ -102,7 +106,7 @@ def _active_config() -> dict:
 
 
 def _config_path() -> Path:
-    return Path(DATA_DIR) / "backup_config.json"
+    return Path(UNIVERSITY_DATA_DIR) / "backup_config.json"
 
 
 def load_config():

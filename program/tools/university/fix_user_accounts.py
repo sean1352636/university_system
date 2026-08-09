@@ -20,9 +20,9 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
-DB_PATH = str(paths.DEFAULT_DB_PATH)
+DB_PATH = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
 # System accounts that should always exist
 SYSTEM_ACCOUNTS = {

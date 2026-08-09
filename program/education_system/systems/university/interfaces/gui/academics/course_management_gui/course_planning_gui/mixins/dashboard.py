@@ -2,6 +2,8 @@
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import threading
@@ -22,19 +24,19 @@ class _DashboardMixin:
     def _create_dashboard_tab(self):
         """Create the dashboard overview tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Dashboard")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.tabs.dashboard', default="Dashboard"))
 
         # Welcome section
         welcome_frame = ttk.Frame(tab)
         welcome_frame.pack(fill=tk.X, padx=20, pady=20)
 
-        ttk.Label(welcome_frame, text="Course Planning Dashboard",
+        ttk.Label(welcome_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.labels.course_planning_dashboard', default="Course Planning Dashboard"),
                  font=('Arial', 18, 'bold')).pack(anchor=tk.W)
-        ttk.Label(welcome_frame, text="Plan your academic journey with intelligent course scheduling",
+        ttk.Label(welcome_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.labels.plan_your_academic_journey_with_intelligent_course_scheduling', default="Plan your academic journey with intelligent course scheduling"),
                  font=('Arial', 11)).pack(anchor=tk.W, pady=5)
 
         # Quick stats
-        stats_frame = ttk.LabelFrame(tab, text="Your Planning Overview", padding=15)
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.labels.your_planning_overview', default="Your Planning Overview"), padding=15)
         stats_frame.pack(fill=tk.X, padx=20, pady=10)
 
         stats_grid = ttk.Frame(stats_frame)
@@ -60,30 +62,30 @@ class _DashboardMixin:
         self._create_stat_card(stats_grid, "Recommendations", recommendations_count, 0, 2)
 
         # Recent plans
-        recent_frame = ttk.LabelFrame(tab, text="Recent Course Plans", padding=15)
+        recent_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.labels.recent_course_plans', default="Recent Course Plans"), padding=15)
         recent_frame.pack(fill=tk.X, padx=20, pady=10)
 
         # BUTTONS FIRST - at the TOP so they're always visible
         button_frame = ttk.Frame(recent_frame, relief=tk.RAISED, borderwidth=2)
         button_frame.pack(side=tk.TOP, fill=tk.X, pady=(0, 10), ipady=5)
-        ttk.Button(button_frame, text="Create New Plan",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.buttons.create_new_plan', default="Create New Plan"),
                   command=self._create_new_plan).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(button_frame, text="Load Plan",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.buttons.load_plan', default="Load Plan"),
                   command=self._load_selected_plan).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(button_frame, text="Auto-Generate Plan",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.buttons.auto_generate_plan', default="Auto-Generate Plan"),
                   command=self._auto_generate_plan).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(button_frame, text="Duplicate Plan",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.buttons.duplicate_plan', default="Duplicate Plan"),
                   command=self._duplicate_plan).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(button_frame, text="Delete Plan",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.buttons.delete_plan', default="Delete Plan"),
                   command=self._delete_plan).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(button_frame, text="Refresh",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.buttons.refresh', default="Refresh"),
                   command=self._refresh_plans_list).pack(side=tk.LEFT, padx=5, pady=5)
-        ttk.Button(button_frame, text="Programme Curriculum Map",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.buttons.programme_curriculum_map', default="Programme Curriculum Map"),
                   command=self._show_programme_curriculum_map).pack(side=tk.LEFT, padx=5, pady=5)
 
         # Admin-only button to switch students
         if self.viewing_as_admin:
-            ttk.Button(button_frame, text="Switch Student",
+            ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.dashboard.buttons.switch_student', default="Switch Student"),
                       command=self._switch_student).pack(side=tk.RIGHT, padx=5, pady=5)
 
         # Force geometry update to ensure buttons are visible

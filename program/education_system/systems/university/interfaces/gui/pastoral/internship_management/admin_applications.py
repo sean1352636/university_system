@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.pastoral.internship_management._imports import (
     messagebox, scrolledtext, tk, ttk, sqlite3, get_connection,
 )
@@ -9,14 +11,14 @@ class AdminApplicationsMixin:
         self.clear_content()
 
         if not self.auth.check_permission('view_all_applications'):
-            messagebox.showerror("Permission Error", "You don't have permission to view all applications.")
+            messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.permission_error', default="Permission Error"), _t('gui.pastoral.internship_management.admin_applications.dialogs.you_don_t_have_permission_to_view_all_applications', default="You don't have permission to view all applications."))
             return
 
         # Title
         title_frame = tk.Frame(self.content_frame, bg='white')
         title_frame.pack(fill='x', padx=20, pady=(20, 10))
 
-        tk.Label(title_frame, text="All Applications",
+        tk.Label(title_frame, text=_t('gui.pastoral.internship_management.admin_applications.labels.all_applications', default="All Applications"),
                 font=('Arial', 18, 'bold'), bg='white', fg='#2c3e50').pack(side='left')
 
         # Filter frame (multiple rows for different filters)
@@ -28,10 +30,10 @@ class AdminApplicationsMixin:
         filter_row1.pack(fill='x', pady=2)
 
         # Status filter
-        tk.Label(filter_row1, text="Filter by Status:", font=('Arial', 10),
+        tk.Label(filter_row1, text=_t('gui.pastoral.internship_management.admin_applications.labels.filter_by_status', default="Filter by Status:"), font=('Arial', 10),
                 bg='white', fg='#34495e').pack(side='left', padx=(0, 5))
 
-        self.status_filter = tk.StringVar(value="All")
+        self.status_filter = tk.StringVar(value=_t('gui.pastoral.internship_management.admin_applications.values.all', default="All"))
         status_combo = ttk.Combobox(filter_row1, textvariable=self.status_filter,
                                    values=["All", "pending", "approved", "rejected"],
                                    font=('Arial', 9), state='readonly', width=12)
@@ -39,7 +41,7 @@ class AdminApplicationsMixin:
         status_combo.bind('<<ComboboxSelected>>', lambda e: self.load_all_applications_data())
 
         # Internship ID filter
-        tk.Label(filter_row1, text="Internship ID:", font=('Arial', 10),
+        tk.Label(filter_row1, text=_t('gui.pastoral.internship_management.admin_applications.labels.internship_id', default="Internship ID:"), font=('Arial', 10),
                 bg='white', fg='#34495e').pack(side='left', padx=(15, 5))
 
         self.internship_id_filter = tk.StringVar()
@@ -47,7 +49,7 @@ class AdminApplicationsMixin:
                                         font=('Arial', 9), width=12)
         internship_id_entry.pack(side='left', padx=5)
 
-        tk.Button(filter_row1, text="Filter by Internship",
+        tk.Button(filter_row1, text=_t('gui.pastoral.internship_management.admin_applications.buttons.filter_by_internship', default="Filter by Internship"),
                  command=self.filter_by_internship_id,
                  bg='#3498db', fg='white', font=('Arial', 9),
                  padx=8, pady=2, relief='flat').pack(side='left', padx=5)
@@ -57,7 +59,7 @@ class AdminApplicationsMixin:
         filter_row2.pack(fill='x', pady=2)
 
         # Student ID filter
-        tk.Label(filter_row2, text="Filter by Student ID:", font=('Arial', 10),
+        tk.Label(filter_row2, text=_t('gui.pastoral.internship_management.admin_applications.labels.filter_by_student_id', default="Filter by Student ID:"), font=('Arial', 10),
                 bg='white', fg='#34495e').pack(side='left', padx=(0, 5))
 
         self.student_id_filter = tk.StringVar()
@@ -65,18 +67,18 @@ class AdminApplicationsMixin:
                                      font=('Arial', 9), width=12)
         student_id_entry.pack(side='left', padx=5)
 
-        tk.Button(filter_row2, text="Filter by Student",
+        tk.Button(filter_row2, text=_t('gui.pastoral.internship_management.admin_applications.buttons.filter_by_student', default="Filter by Student"),
                  command=self.filter_by_student_id,
                  bg='#9b59b6', fg='white', font=('Arial', 9),
                  padx=8, pady=2, relief='flat').pack(side='left', padx=5)
 
         # Clear filters and refresh buttons
-        tk.Button(filter_row2, text="Clear All Filters",
+        tk.Button(filter_row2, text=_t('gui.pastoral.internship_management.admin_applications.buttons.clear_all_filters', default="Clear All Filters"),
                  command=self.clear_all_filters,
                  bg='#e74c3c', fg='white', font=('Arial', 9),
                  padx=8, pady=2, relief='flat').pack(side='left', padx=(15, 5))
 
-        refresh_btn = tk.Button(filter_row2, text="Refresh", command=self.load_all_applications_data,
+        refresh_btn = tk.Button(filter_row2, text=_t('gui.pastoral.internship_management.admin_applications.buttons.refresh', default="Refresh"), command=self.load_all_applications_data,
                                bg='#27ae60', fg='white', font=('Arial', 9),
                                padx=8, pady=2, relief='flat')
         refresh_btn.pack(side='left', padx=5)
@@ -120,11 +122,11 @@ class AdminApplicationsMixin:
         btn_frame = tk.Frame(self.content_frame, bg='white')
         btn_frame.pack(fill='x', padx=20, pady=10)
 
-        tk.Button(btn_frame, text="View Details", command=self.view_all_app_details,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.admin_applications.buttons.view_details', default="View Details"), command=self.view_all_app_details,
                  bg='#3498db', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
         if self.auth.check_permission('approve_applications'):
-            tk.Button(btn_frame, text="Review Application", command=self.review_selected_application,
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.admin_applications.buttons.review_application', default="Review Application"), command=self.review_selected_application,
                      bg='#f39c12', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
     def load_all_applications_data(self):
@@ -204,18 +206,18 @@ class AdminApplicationsMixin:
                 filter_msg.append(f"Student ID: {self.student_id_filter.get()}")
 
             if filter_msg:
-                messagebox.showinfo("Filter Applied",
+                messagebox.showinfo(_t('gui.pastoral.internship_management.admin_applications.dialogs.filter_applied', default="Filter Applied"),
                                   f"Showing {len(applications)} application(s)\nFilters: {', '.join(filter_msg)}")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading applications: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.database_error', default="Database Error"), f"Error loading applications: {e}")
 
     def filter_by_internship_id(self):
         """Filter applications by internship ID"""
         internship_id = self.internship_id_filter.get().strip()
 
         if not internship_id:
-            messagebox.showwarning("Input Required", "Please enter an Internship ID to filter.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.admin_applications.dialogs.input_required', default="Input Required"), _t('gui.pastoral.internship_management.admin_applications.dialogs.please_enter_an_internship_id_to_filter', default="Please enter an Internship ID to filter."))
             return
 
         # Validate that internship exists
@@ -230,7 +232,7 @@ class AdminApplicationsMixin:
             conn.close()
 
             if not internship:
-                messagebox.showerror("Invalid ID",
+                messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.invalid_id', default="Invalid ID"),
                                    f"No internship found with ID: {internship_id}")
                 self.internship_id_filter.set("")
                 return
@@ -243,14 +245,14 @@ class AdminApplicationsMixin:
             self.load_all_applications_data()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error validating internship ID: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.database_error', default="Database Error"), f"Error validating internship ID: {e}")
 
     def filter_by_student_id(self):
         """Filter applications by student ID"""
         student_id = self.student_id_filter.get().strip()
 
         if not student_id:
-            messagebox.showwarning("Input Required", "Please enter a Student ID to filter.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.admin_applications.dialogs.input_required', default="Input Required"), _t('gui.pastoral.internship_management.admin_applications.dialogs.please_enter_a_student_id_to_filter', default="Please enter a Student ID to filter."))
             return
 
         # Validate that student exists
@@ -265,7 +267,7 @@ class AdminApplicationsMixin:
             conn.close()
 
             if not student:
-                messagebox.showerror("Invalid ID",
+                messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.invalid_id', default="Invalid ID"),
                                    f"No student found with ID: {student_id}")
                 self.student_id_filter.set("")
                 return
@@ -278,7 +280,7 @@ class AdminApplicationsMixin:
             self.load_all_applications_data()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error validating student ID: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.database_error', default="Database Error"), f"Error validating student ID: {e}")
 
     def clear_all_filters(self):
         """Clear all application filters and reload all data"""
@@ -295,13 +297,13 @@ class AdminApplicationsMixin:
         # Reload all applications
         self.load_all_applications_data()
 
-        messagebox.showinfo("Filters Cleared", "All filters have been cleared. Showing all applications.")
+        messagebox.showinfo(_t('gui.pastoral.internship_management.admin_applications.dialogs.filters_cleared', default="Filters Cleared"), _t('gui.pastoral.internship_management.admin_applications.dialogs.all_filters_have_been_cleared_showing_all_applications', default="All filters have been cleared. Showing all applications."))
 
     def view_all_app_details(self):
         """View details of selected application from all applications view"""
         selection = self.all_apps_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select an application to view.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.admin_applications.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.admin_applications.dialogs.please_select_an_application_to_view', default="Please select an application to view."))
             return
 
         item = self.all_apps_tree.item(selection[0])
@@ -327,19 +329,19 @@ class AdminApplicationsMixin:
             app_data = cursor.fetchone()
 
             if not app_data:
-                messagebox.showerror("Error", "Application not found.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.admin_applications.dialogs.application_not_found', default="Application not found."))
                 conn.close()
                 return
 
             # Create popup window
             popup = tk.Toplevel(self.root)
-            popup.title("Application Review")
+            popup.title(_t('gui.pastoral.internship_management.admin_applications.windows.application_review', default="Application Review"))
             popup.geometry("700x600")
             popup.configure(bg='white')
             popup.grab_set()
 
             # Title
-            tk.Label(popup, text="Application Review", font=('Arial', 16, 'bold'),
+            tk.Label(popup, text=_t('gui.pastoral.internship_management.admin_applications.labels.application_review', default="Application Review"), font=('Arial', 16, 'bold'),
                     bg='white', fg='#2c3e50').pack(pady=10)
 
             # Create scrollable frame
@@ -356,7 +358,7 @@ class AdminApplicationsMixin:
             canvas.configure(yscrollcommand=scrollbar.set)
 
             # Student info
-            student_frame = tk.LabelFrame(scrollable_frame, text="Student Information",
+            student_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.admin_applications.labels.student_information', default="Student Information"),
                                         font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             student_frame.pack(fill='x', padx=20, pady=10)
 
@@ -370,7 +372,7 @@ Course: {app_data[10]}
                     bg='white', fg='#34495e', justify='left').pack(anchor='w', padx=10, pady=5)
 
             # Internship info
-            internship_frame = tk.LabelFrame(scrollable_frame, text="Internship Information",
+            internship_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.admin_applications.labels.internship_information', default="Internship Information"),
                                            font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             internship_frame.pack(fill='x', padx=20, pady=10)
 
@@ -385,7 +387,7 @@ CV Filename: {app_data[5]}
                     bg='white', fg='#34495e', justify='left').pack(anchor='w', padx=10, pady=5)
 
             # Cover letter
-            cover_frame = tk.LabelFrame(scrollable_frame, text="Cover Letter",
+            cover_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.admin_applications.labels.cover_letter', default="Cover Letter"),
                                       font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             cover_frame.pack(fill='x', padx=20, pady=10)
 
@@ -396,7 +398,7 @@ CV Filename: {app_data[5]}
             cover_text.config(state='disabled')
 
             # Feedback section
-            feedback_frame = tk.LabelFrame(scrollable_frame, text="Feedback",
+            feedback_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.admin_applications.labels.feedback', default="Feedback"),
                                          font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             feedback_frame.pack(fill='x', padx=20, pady=10)
 
@@ -411,11 +413,11 @@ CV Filename: {app_data[5]}
             btn_frame = tk.Frame(scrollable_frame, bg='white')
             btn_frame.pack(fill='x', padx=20, pady=20)
 
-            tk.Button(btn_frame, text="Close", command=popup.destroy,
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.admin_applications.buttons.close', default="Close"), command=popup.destroy,
                      bg='#6c757d', fg='white', font=('Arial', 10), padx=20, pady=5, relief='flat').pack(side='left', padx=5)
 
             if self.auth.check_permission('approve_applications'):
-                tk.Button(btn_frame, text="Review/Update",
+                tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.admin_applications.buttons.review_update', default="Review/Update"),
                          command=lambda: self.open_review_dialog(app_id, popup),
                          bg='#f39c12', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
@@ -426,13 +428,13 @@ CV Filename: {app_data[5]}
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading application details: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.database_error', default="Database Error"), f"Error loading application details: {e}")
 
     def review_selected_application(self):
         """Review the selected application"""
         selection = self.all_apps_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select an application to review.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.admin_applications.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.admin_applications.dialogs.please_select_an_application_to_review', default="Please select an application to review."))
             return
 
         item = self.all_apps_tree.item(selection[0])
@@ -457,13 +459,13 @@ CV Filename: {app_data[5]}
             app_info = cursor.fetchone()
 
             if not app_info:
-                messagebox.showerror("Error", "Application not found.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.admin_applications.dialogs.application_not_found', default="Application not found."))
                 conn.close()
                 return
 
             # Create review dialog
             review_dialog = tk.Toplevel(self.root)
-            review_dialog.title("Review Application")
+            review_dialog.title(_t('gui.pastoral.internship_management.admin_applications.windows.review_application', default="Review Application"))
             review_dialog.geometry("650x550")
             review_dialog.configure(bg='white')
             review_dialog.grab_set()
@@ -483,7 +485,7 @@ CV Filename: {app_data[5]}
             status_frame = tk.Frame(review_dialog, bg='white')
             status_frame.pack(fill='x', padx=20, pady=10)
 
-            tk.Label(status_frame, text="New Status:", font=('Arial', 12, 'bold'),
+            tk.Label(status_frame, text=_t('gui.pastoral.internship_management.admin_applications.labels.new_status', default="New Status:"), font=('Arial', 12, 'bold'),
                     bg='white', fg='#2c3e50').pack(anchor='w')
 
             self.review_status = tk.StringVar(value=app_info[0])
@@ -497,7 +499,7 @@ CV Filename: {app_data[5]}
             feedback_frame = tk.Frame(review_dialog, bg='white')
             feedback_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
-            tk.Label(feedback_frame, text="Feedback:", font=('Arial', 12, 'bold'),
+            tk.Label(feedback_frame, text=_t('gui.pastoral.internship_management.admin_applications.labels.feedback_variant_2', default="Feedback:"), font=('Arial', 12, 'bold'),
                     bg='white', fg='#2c3e50').pack(anchor='w')
 
             self.review_feedback = scrolledtext.ScrolledText(feedback_frame, height=8, wrap='word',
@@ -511,17 +513,17 @@ CV Filename: {app_data[5]}
             btn_frame = tk.Frame(review_dialog, bg='white')
             btn_frame.pack(fill='x', padx=20, pady=10)
 
-            tk.Button(btn_frame, text="Update Application",
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.admin_applications.buttons.update_application', default="Update Application"),
                      command=lambda: self.update_application_status(app_id, review_dialog, parent_window),
                      bg='#27ae60', fg='white', font=('Arial', 11, 'bold'), padx=20, pady=8, relief='flat').pack(side='left', padx=5)
 
-            tk.Button(btn_frame, text="Cancel", command=review_dialog.destroy,
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.admin_applications.buttons.cancel', default="Cancel"), command=review_dialog.destroy,
                      bg='#6c757d', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading application for review: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.database_error', default="Database Error"), f"Error loading application for review: {e}")
 
     def update_application_status(self, app_id, dialog, parent_window=None):
         """Update application status and feedback"""
@@ -577,7 +579,7 @@ CV Filename: {app_data[5]}
                     import logging
                     logging.warning(f"Failed to send internship status notification: {e}")
 
-            messagebox.showinfo("Success", f"Application status updated to: {new_status}")
+            messagebox.showinfo(_t('gui.pastoral.internship_management.admin_applications.dialogs.success', default="Success"), f"Application status updated to: {new_status}")
 
             # Close dialogs and refresh
             dialog.destroy()
@@ -592,29 +594,29 @@ CV Filename: {app_data[5]}
                     conn.close()
                 except Exception:
                     pass
-            messagebox.showerror("Database Error", f"Error updating application: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.database_error', default="Database Error"), f"Error updating application: {e}")
 
     def create_placement_dialog(self, student_id, internship_id, parent_dialog):
         """Create placement record dialog"""
         placement_dialog = tk.Toplevel(self.root)
-        placement_dialog.title("Create Placement Record")
+        placement_dialog.title(_t('gui.pastoral.internship_management.admin_applications.windows.create_placement_record', default="Create Placement Record"))
         placement_dialog.geometry("400x300")
         placement_dialog.configure(bg='white')
         placement_dialog.grab_set()
 
-        tk.Label(placement_dialog, text="Create Placement Record",
+        tk.Label(placement_dialog, text=_t('gui.pastoral.internship_management.admin_applications.labels.create_placement_record', default="Create Placement Record"),
                 font=('Arial', 14, 'bold'), bg='white', fg='#2c3e50').pack(pady=10)
 
         # Form fields
         form_frame = tk.Frame(placement_dialog, bg='white')
         form_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
-        tk.Label(form_frame, text="Supervisor Name:", font=('Arial', 11),
+        tk.Label(form_frame, text=_t('gui.pastoral.internship_management.admin_applications.labels.supervisor_name', default="Supervisor Name:"), font=('Arial', 11),
                 bg='white', fg='#34495e').pack(anchor='w')
         supervisor_name_entry = tk.Entry(form_frame, font=('Arial', 10), width=40)
         supervisor_name_entry.pack(anchor='w', pady=(0, 10))
 
-        tk.Label(form_frame, text="Supervisor Email:", font=('Arial', 11),
+        tk.Label(form_frame, text=_t('gui.pastoral.internship_management.admin_applications.labels.supervisor_email', default="Supervisor Email:"), font=('Arial', 11),
                 bg='white', fg='#34495e').pack(anchor='w')
         supervisor_email_entry = tk.Entry(form_frame, font=('Arial', 10), width=40)
         supervisor_email_entry.pack(anchor='w', pady=(0, 10))
@@ -628,7 +630,7 @@ CV Filename: {app_data[5]}
             supervisor_email = supervisor_email_entry.get().strip()
 
             if not supervisor_name or not supervisor_email:
-                messagebox.showerror("Validation Error", "Please fill in all fields.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.admin_applications.dialogs.please_fill_in_all_fields', default="Please fill in all fields."))
                 return
 
             try:
@@ -655,16 +657,16 @@ CV Filename: {app_data[5]}
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Placement record created successfully!")
+                messagebox.showinfo(_t('gui.pastoral.internship_management.admin_applications.dialogs.success', default="Success"), _t('gui.pastoral.internship_management.admin_applications.dialogs.placement_record_created_successfully', default="Placement record created successfully!"))
                 placement_dialog.destroy()
                 parent_dialog.destroy()
                 self.load_all_applications_data()
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Error creating placement: {e}")
+                messagebox.showerror(_t('gui.pastoral.internship_management.admin_applications.dialogs.database_error', default="Database Error"), f"Error creating placement: {e}")
 
-        tk.Button(btn_frame, text="Create Placement", command=create_placement,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.admin_applications.buttons.create_placement', default="Create Placement"), command=create_placement,
                  bg='#27ae60', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
-        tk.Button(btn_frame, text="Skip", command=lambda: [placement_dialog.destroy(), parent_dialog.destroy()],
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.admin_applications.buttons.skip', default="Skip"), command=lambda: [placement_dialog.destroy(), parent_dialog.destroy()],
                  bg='#6c757d', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)

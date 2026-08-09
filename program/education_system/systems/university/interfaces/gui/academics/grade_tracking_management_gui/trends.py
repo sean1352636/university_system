@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from tkinter import messagebox
 import threading
 
@@ -17,7 +19,7 @@ class TrendsMixin:
     def analyze_overall_grade_trends_gui(self):
         """Analyze overall grade trends across time"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to analyze grade trends.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.you_must_be_logged_in_to_analyze_grade_trends', default="You must be logged in to analyze grade trends."))
             return
 
         try:
@@ -36,14 +38,14 @@ class TrendsMixin:
                 thread = threading.Thread(target=analyze, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Analyze overall grade trends not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.analyze_overall_grade_trends_not_available', default="Analyze overall grade trends not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to analyze overall grade trends: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), f"Failed to analyze overall grade trends: {str(e)}")
 
     def analyze_by_assessment_type_gui(self):
         """Analyze performance by assessment type"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to analyze by assessment type.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.you_must_be_logged_in_to_analyze_by_assessment_type', default="You must be logged in to analyze by assessment type."))
             return
 
         try:
@@ -62,14 +64,14 @@ class TrendsMixin:
                 thread = threading.Thread(target=analyze, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Analyze by assessment type not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.analyze_by_assessment_type_not_available', default="Analyze by assessment type not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to analyze by assessment type: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), f"Failed to analyze by assessment type: {str(e)}")
 
     def analyze_all_assessments_gui(self):
         """Analyze all assessments performance"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to analyze all assessments.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.you_must_be_logged_in_to_analyze_all_assessments', default="You must be logged in to analyze all assessments."))
             return
 
         try:
@@ -88,14 +90,14 @@ class TrendsMixin:
                 thread = threading.Thread(target=analyze, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Analyze all assessments not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.analyze_all_assessments_not_available', default="Analyze all assessments not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to analyze all assessments: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), f"Failed to analyze all assessments: {str(e)}")
 
     def analyze_distribution_by_assessment_type_gui(self):
         """Analyze grade distribution by assessment type"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to analyze distribution.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.you_must_be_logged_in_to_analyze_distribution', default="You must be logged in to analyze distribution."))
             return
 
         try:
@@ -114,14 +116,14 @@ class TrendsMixin:
                 thread = threading.Thread(target=analyze, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Analyze distribution by assessment type not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.analyze_distribution_by_assessment_type_not_available', default="Analyze distribution by assessment type not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to analyze distribution: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), f"Failed to analyze distribution: {str(e)}")
 
     def compare_by_grade_threshold_gui(self):
         """Compare students above and below grade threshold"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to compare by threshold.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.you_must_be_logged_in_to_compare_by_threshold', default="You must be logged in to compare by threshold."))
             return
 
         try:
@@ -140,14 +142,14 @@ class TrendsMixin:
                 thread = threading.Thread(target=compare, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Compare by grade threshold not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.compare_by_grade_threshold_not_available', default="Compare by grade threshold not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to compare by threshold: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), f"Failed to compare by threshold: {str(e)}")
 
     def analyze_assessment_performance_trends_gui(self):
         """Analyze performance trends by assessment type over time"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to analyze performance trends.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.you_must_be_logged_in_to_analyze_performance_trends', default="You must be logged in to analyze performance trends."))
             return
 
         try:
@@ -166,6 +168,6 @@ class TrendsMixin:
                 thread = threading.Thread(target=analyze, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Analyze assessment performance trends not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.trends.dialogs.analyze_assessment_performance_trends_not_available', default="Analyze assessment performance trends not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to analyze performance trends: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.trends.dialogs.error', default="Error"), f"Failed to analyze performance trends: {str(e)}")

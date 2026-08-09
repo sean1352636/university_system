@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "community-services",
+  "version": "1.0.0",
+  "platform": {"minimum": "9.7.0", "maximumExclusive": "10.0.0"},
+  "capabilities": ["campus.church", "campus.community-events"],
+  "routes": [],
+  "optionalDependencies": ["education-system[campus-services]"],
+  "permissions": ["plugin.community-services.use", "plugin.community-services.admin"],
+  "dataClassifications": ["personal", "restricted"],
+  "canonicalWrites": [],
+  "support": "community",
+  "retention": "Participation records: 12 months unless consent is renewed",
+  "healthCheck": "plugin database availability",
+  "uninstall": "Export consented community records and delete expired participation data"
+}

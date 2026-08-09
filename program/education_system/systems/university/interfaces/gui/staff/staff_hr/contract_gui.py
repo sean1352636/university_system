@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
@@ -35,7 +37,7 @@ class ContractGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Contract Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.contract.dialogs.error', default="Error"), _t('gui.staff.staff_hr.contract.dialogs.login_required_to_access_contract_management', default="Login required to access Contract Management"))
             return
 
         if parent_notebook:
@@ -50,21 +52,21 @@ class ContractGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Contracts")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.contract.tabs.contracts', default="Contracts"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Contract Management")
+        self.window.title(_t('gui.staff.staff_hr.contract.windows.contract_management', default="Contract Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.contract.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.contract.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -90,16 +92,16 @@ class ContractGUI:
     def _create_my_contract_tab(self):
         """Create my contract tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Contract")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.contract.tabs.my_contract', default="My Contract"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Current Contract Details", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_my_contract).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.contract.labels.current_contract_details', default="Current Contract Details"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.contract.buttons.refresh', default="Refresh"), command=self._load_my_contract).pack(side=tk.RIGHT, padx=5)
 
         # Contract details frame
-        self.contract_frame = ttk.LabelFrame(tab, text="Contract Information", padding=15)
+        self.contract_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.contract.labels.contract_information', default="Contract Information"), padding=15)
         self.contract_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Create labels for contract details
@@ -148,17 +150,17 @@ class ContractGUI:
                 text=contract.get('probation_end_date', 'N/A'))
         else:
             for key in self.contract_labels:
-                self.contract_labels[key].config(text="No active contract")
+                self.contract_labels[key].config(text=_t('gui.staff.staff_hr.contract.text.no_active_contract', default="No active contract"))
 
     def _create_history_tab(self):
         """Create contract history tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="History")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.contract.tabs.history', default="History"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Contract History", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_history).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.contract.labels.contract_history', default="Contract History"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.contract.buttons.refresh', default="Refresh"), command=self._load_history).pack(side=tk.RIGHT)
 
         # Treeview
         tree_frame = ttk.Frame(tab)
@@ -207,15 +209,15 @@ class ContractGUI:
     def _create_probation_tab(self):
         """Create probation tracking tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Probation")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.contract.tabs.probation', default="Probation"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Probation Status", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_probation).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.contract.labels.probation_status', default="Probation Status"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.contract.buttons.refresh', default="Refresh"), command=self._load_probation).pack(side=tk.RIGHT)
 
         # Status frame
-        self.probation_status_frame = ttk.LabelFrame(tab, text="Current Status", padding=15)
+        self.probation_status_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.contract.labels.current_status', default="Current Status"), padding=15)
         self.probation_status_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.probation_labels = {}
@@ -228,7 +230,7 @@ class ContractGUI:
             self.probation_labels[key].grid(row=0, column=i*2+1, sticky='w', padx=10, pady=5)
 
         # Reviews treeview
-        reviews_frame = ttk.LabelFrame(tab, text="Probation Reviews", padding=10)
+        reviews_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.contract.labels.probation_reviews', default="Probation Reviews"), padding=10)
         reviews_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         columns = ('Date', 'Type', 'Reviewer', 'Rating', 'Outcome', 'Comments')
@@ -248,7 +250,7 @@ class ContractGUI:
         contract = ContractManager.get_active_contract(user_id)
 
         if contract and contract.get('probation_end_date'):
-            self.probation_labels['status'].config(text="On Probation", foreground='orange')
+            self.probation_labels['status'].config(text=_t('gui.staff.staff_hr.contract.text.on_probation', default="On Probation"), foreground='orange')
             self.probation_labels['end_date'].config(text=contract['probation_end_date'])
 
             try:
@@ -258,7 +260,7 @@ class ContractGUI:
             except (ValueError, TypeError):
                 self.probation_labels['days_remaining'].config(text='-')
         else:
-            self.probation_labels['status'].config(text="Not on Probation", foreground='green')
+            self.probation_labels['status'].config(text=_t('gui.staff.staff_hr.contract.text.not_on_probation', default="Not on Probation"), foreground='green')
             self.probation_labels['end_date'].config(text='-')
             self.probation_labels['days_remaining'].config(text='-')
 
@@ -280,29 +282,29 @@ class ContractGUI:
     def _create_search_tab(self):
         """Create contract search tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Search")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.contract.tabs.search', default="Search"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Search Contracts", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.contract.labels.search_contracts', default="Search Contracts"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Search filters
-        filter_frame = ttk.LabelFrame(tab, text="Search Filters", padding=10)
+        filter_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.contract.labels.search_filters', default="Search Filters"), padding=10)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="User/Name:").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.contract.labels.user_name', default="User/Name:")).grid(row=0, column=0, padx=5, pady=5)
         self.search_term = ttk.Entry(filter_frame, width=20)
         self.search_term.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(filter_frame, text="Department:").grid(row=0, column=2, padx=5, pady=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.contract.labels.department', default="Department:")).grid(row=0, column=2, padx=5, pady=5)
         self.search_dept = ttk.Entry(filter_frame, width=15)
         self.search_dept.grid(row=0, column=3, padx=5, pady=5)
 
-        ttk.Label(filter_frame, text="Type:").grid(row=0, column=4, padx=5, pady=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.contract.labels.type', default="Type:")).grid(row=0, column=4, padx=5, pady=5)
         self.search_type = ttk.Combobox(filter_frame, values=['', 'permanent', 'fixed-term', 'temporary', 'casual', 'contractor'], width=12)
         self.search_type.grid(row=0, column=5, padx=5, pady=5)
 
-        ttk.Button(filter_frame, text="Search", command=self._search_contracts).grid(row=0, column=6, padx=15, pady=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.contract.buttons.search', default="Search"), command=self._search_contracts).grid(row=0, column=6, padx=15, pady=5)
 
         # Results
         results_frame = ttk.Frame(tab)
@@ -386,60 +388,60 @@ class ContractGUI:
                 row=i, column=0, sticky='e', padx=10, pady=3)
             ttk.Label(frame, text=str(value)).grid(row=i, column=1, sticky='w', padx=10, pady=3)
 
-        ttk.Button(frame, text="Close", command=dialog.destroy).grid(
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.contract.buttons.close', default="Close"), command=dialog.destroy).grid(
             row=len(fields), column=0, columnspan=2, pady=20)
 
     def _create_manage_tab(self):
         """Create contract management tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Manage")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.contract.tabs.manage', default="Manage"))
 
         # Create new contract section
-        create_frame = ttk.LabelFrame(tab, text="Create New Contract", padding=10)
+        create_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.contract.labels.create_new_contract', default="Create New Contract"), padding=10)
         create_frame.pack(fill=tk.X, padx=10, pady=10)
 
         fields_frame = ttk.Frame(create_frame)
         fields_frame.pack(fill=tk.X)
 
         # Row 1
-        ttk.Label(fields_frame, text="User ID:").grid(row=0, column=0, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.user_id', default="User ID:")).grid(row=0, column=0, padx=5, pady=5)
         self.new_user_id = ttk.Entry(fields_frame, width=15)
         self.new_user_id.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(fields_frame, text="Type:").grid(row=0, column=2, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.type', default="Type:")).grid(row=0, column=2, padx=5, pady=5)
         self.new_type = ttk.Combobox(fields_frame, values=['permanent', 'fixed-term', 'temporary', 'casual', 'contractor'], width=12)
         self.new_type.set('permanent')
         self.new_type.grid(row=0, column=3, padx=5, pady=5)
 
-        ttk.Label(fields_frame, text="Start Date:").grid(row=0, column=4, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.start_date', default="Start Date:")).grid(row=0, column=4, padx=5, pady=5)
         self.new_start = ttk.Entry(fields_frame, width=12)
         self.new_start.insert(0, datetime.now().strftime('%Y-%m-%d'))
         self.new_start.grid(row=0, column=5, padx=5, pady=5)
 
         # Row 2
-        ttk.Label(fields_frame, text="Department:").grid(row=1, column=0, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.department', default="Department:")).grid(row=1, column=0, padx=5, pady=5)
         self.new_dept = ttk.Entry(fields_frame, width=15)
         self.new_dept.grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Label(fields_frame, text="Job Title:").grid(row=1, column=2, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.staff.staff_hr.contract.labels.job_title', default="Job Title:")).grid(row=1, column=2, padx=5, pady=5)
         self.new_title = ttk.Entry(fields_frame, width=20)
         self.new_title.grid(row=1, column=3, columnspan=2, padx=5, pady=5, sticky='w')
 
-        ttk.Button(fields_frame, text="Create Contract", command=self._create_contract).grid(
+        ttk.Button(fields_frame, text=_t('gui.staff.staff_hr.contract.buttons.create_contract', default="Create Contract"), command=self._create_contract).grid(
             row=1, column=5, padx=10, pady=5)
 
         # Expiring contracts section
-        expiring_frame = ttk.LabelFrame(tab, text="Expiring Contracts", padding=10)
+        expiring_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.contract.labels.expiring_contracts', default="Expiring Contracts"), padding=10)
         expiring_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         header = ttk.Frame(expiring_frame)
         header.pack(fill=tk.X)
 
-        ttk.Label(header, text="Days ahead:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(header, text=_t('gui.staff.staff_hr.contract.labels.days_ahead', default="Days ahead:")).pack(side=tk.LEFT, padx=5)
         self.expiry_days = ttk.Spinbox(header, from_=30, to=180, width=5)
         self.expiry_days.set(90)
         self.expiry_days.pack(side=tk.LEFT, padx=5)
-        ttk.Button(header, text="Refresh", command=self._load_expiring).pack(side=tk.LEFT, padx=10)
+        ttk.Button(header, text=_t('gui.staff.staff_hr.contract.buttons.refresh', default="Refresh"), command=self._load_expiring).pack(side=tk.LEFT, padx=10)
 
         columns = ('ID', 'User', 'Type', 'End Date', 'Days Left', 'Job Title', 'Department')
         self.expiring_tree = ttk.Treeview(expiring_frame, columns=columns, show='headings', height=8)
@@ -477,12 +479,12 @@ class ContractGUI:
                 department=values['department'],
                 job_title=values['job_title']
             )
-            messagebox.showinfo("Success", f"Contract created. ID: {contract_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.contract.dialogs.success', default="Success"), f"Contract created. ID: {contract_id}")
             self.new_user_id.delete(0, tk.END)
             self.new_dept.delete(0, tk.END)
             self.new_title.delete(0, tk.END)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.contract.dialogs.error', default="Error"), str(e))
 
     def _load_expiring(self):
         """Load expiring contracts."""
@@ -524,15 +526,15 @@ class ContractGUI:
     def _create_reports_tab(self):
         """Create reports tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Reports")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.contract.tabs.reports', default="Reports"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Contract Statistics", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_statistics).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.contract.labels.contract_statistics', default="Contract Statistics"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.contract.buttons.refresh', default="Refresh"), command=self._load_statistics).pack(side=tk.RIGHT)
 
         # Statistics frame
-        stats_frame = ttk.LabelFrame(tab, text="Overview", padding=15)
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.contract.labels.overview', default="Overview"), padding=15)
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.stats_labels = {}
@@ -550,7 +552,7 @@ class ContractGUI:
             ttk.Label(frame, text=label).pack()
 
         # By type frame
-        type_frame = ttk.LabelFrame(tab, text="By Contract Type", padding=15)
+        type_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.contract.labels.by_contract_type', default="By Contract Type"), padding=15)
         type_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         columns = ('Type', 'Count', 'Percentage')

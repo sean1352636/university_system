@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 import logging
 from tkinter import ttk, messagebox, scrolledtext
@@ -25,45 +27,45 @@ class MenuMixin:
 
         # File menu
         file_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="File", menu=file_menu)
+        menubar.add_cascade(label=_t('gui.shell.ai.menu.menus.file', default="File"), menu=file_menu)
 
         export_conversations = self.create_conversation_export()
         backup_system, restore_system = self.create_backup_restore()
 
-        file_menu.add_command(label="Export Conversations", command=export_conversations)
+        file_menu.add_command(label=_t('gui.shell.ai.menu.menus.export_conversations', default="Export Conversations"), command=export_conversations)
         file_menu.add_separator()
-        file_menu.add_command(label="Backup System", command=backup_system)
-        file_menu.add_command(label="Restore System", command=restore_system)
+        file_menu.add_command(label=_t('gui.shell.ai.menu.menus.backup_system', default="Backup System"), command=backup_system)
+        file_menu.add_command(label=_t('gui.shell.ai.menu.menus.restore_system', default="Restore System"), command=restore_system)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.on_closing)
+        file_menu.add_command(label=_t('gui.shell.ai.menu.menus.exit', default="Exit"), command=self.on_closing)
 
         # Edit menu
         edit_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Edit", menu=edit_menu)
-        edit_menu.add_command(label="Clear Chat", command=self.clear_chat_history)
-        edit_menu.add_command(label="Preferences", command=self.show_settings_screen)
+        menubar.add_cascade(label=_t('gui.shell.ai.menu.menus.edit', default="Edit"), menu=edit_menu)
+        edit_menu.add_command(label=_t('gui.shell.ai.menu.menus.clear_chat', default="Clear Chat"), command=self.clear_chat_history)
+        edit_menu.add_command(label=_t('gui.shell.ai.menu.menus.preferences', default="Preferences"), command=self.show_settings_screen)
 
         # Actions menu
         actions_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Actions", menu=actions_menu)
+        menubar.add_cascade(label=_t('gui.shell.ai.menu.menus.actions', default="Actions"), menu=actions_menu)
         actions_menu.add_command(
             label=_t("chatbot.book_room_menu", default="Book a Room…"),
             command=self.show_book_room_dialog)
 
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="View", menu=view_menu)
-        view_menu.add_command(label="Chat", command=self.show_chat_screen)
-        view_menu.add_command(label="Settings", command=self.show_settings_screen)
+        menubar.add_cascade(label=_t('gui.shell.ai.menu.menus.view', default="View"), menu=view_menu)
+        view_menu.add_command(label=_t('gui.shell.ai.menu.menus.chat', default="Chat"), command=self.show_chat_screen)
+        view_menu.add_command(label=_t('gui.shell.ai.menu.menus.settings', default="Settings"), command=self.show_settings_screen)
         if self.current_user and self.current_user.get('role') in ['admin', 'staff']:
-            view_menu.add_command(label="Admin Panel", command=self.show_admin_panel)
+            view_menu.add_command(label=_t('gui.shell.ai.menu.menus.admin_panel', default="Admin Panel"), command=self.show_admin_panel)
 
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="User Guide", command=self.show_user_guide)
-        help_menu.add_command(label="Keyboard Shortcuts", command=self.show_shortcuts)
-        help_menu.add_command(label="About", command=self.show_about_dialog)
+        menubar.add_cascade(label=_t('gui.shell.ai.menu.menus.help', default="Help"), menu=help_menu)
+        help_menu.add_command(label=_t('gui.shell.ai.menu.menus.user_guide', default="User Guide"), command=self.show_user_guide)
+        help_menu.add_command(label=_t('gui.shell.ai.menu.menus.keyboard_shortcuts', default="Keyboard Shortcuts"), command=self.show_shortcuts)
+        help_menu.add_command(label=_t('gui.shell.ai.menu.menus.about', default="About"), command=self.show_about_dialog)
 
     def clear_chat_history(self):
         """Clear the chat transcript and reset the conversation context."""
@@ -85,6 +87,7 @@ class MenuMixin:
         self.chat_display.config(state=tk.NORMAL)
         self.chat_display.delete(1.0, tk.END)
         self.chat_display.config(state=tk.DISABLED)
+        self._message_cards = []
 
         # Reset the backend conversation context so a cleared chat is a genuine
         # fresh start — this drops remembered intent history and entities (e.g.

@@ -4,6 +4,8 @@ Run with:  python roulette.py
 Requires only the Python standard library.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 try:
     import wallet  # shared credit wallet when launched as a standalone script
@@ -75,7 +77,7 @@ BETS = make_bets()
 class Roulette:
     def __init__(self, root):
         self.root = root
-        root.title("European Roulette")
+        root.title(_t('gui.operations.commerce.betting.games.roulette.windows.european_roulette', default="European Roulette"))
         root.configure(bg=FELT_DARK)
         root.resizable(False, False)
 
@@ -98,14 +100,14 @@ class Roulette:
         header = tk.Frame(self.root, bg=FELT_DARK)
         header.grid(row=0, column=0, columnspan=2, sticky="ew", padx=12, pady=(12, 4))
 
-        tk.Label(header, text="\u265b  ROULETTE  \u265b", font=("Georgia", 22, "bold"),
+        tk.Label(header, text=_t('gui.operations.commerce.betting.games.roulette.labels.roulette', default="\u265b  ROULETTE  \u265b"), font=("Georgia", 22, "bold"),
                  fg=GOLD, bg=FELT_DARK).pack(side="left")
 
         self.balance_lbl = tk.Label(header, text=f"Balance: ${self.balance}",
                                     font=("Consolas", 16, "bold"), fg="white", bg=FELT_DARK)
         self.balance_lbl.pack(side="right")
 
-        self.bet_total_lbl = tk.Label(header, text="On table: $0",
+        self.bet_total_lbl = tk.Label(header, text=_t('gui.operations.commerce.betting.games.roulette.labels.on_table_0', default="On table: $0"),
                                       font=("Consolas", 12), fg="#cfe8d8", bg=FELT_DARK)
         self.bet_total_lbl.pack(side="right", padx=16)
 
@@ -118,7 +120,7 @@ class Roulette:
                                highlightthickness=0)
         self.wheel.pack()
 
-        self.result_lbl = tk.Label(left, text="Place your bets",
+        self.result_lbl = tk.Label(left, text=_t('gui.operations.commerce.betting.games.roulette.labels.place_your_bets', default="Place your bets"),
                                    font=("Georgia", 18, "bold"), fg="white",
                                    bg=FELT_DARK, width=16)
         self.result_lbl.pack(pady=6)
@@ -223,7 +225,7 @@ class Roulette:
         chips = tk.Frame(self.root, bg=FELT_DARK)
         chips.grid(row=2, column=0, columnspan=2, pady=(4, 2))
 
-        tk.Label(chips, text="Chip:", font=("Consolas", 12, "bold"),
+        tk.Label(chips, text=_t('gui.operations.commerce.betting.games.roulette.labels.chip', default="Chip:"), font=("Consolas", 12, "bold"),
                  fg="white", bg=FELT_DARK).pack(side="left", padx=(0, 8))
 
         self.chip_buttons = {}
@@ -235,7 +237,7 @@ class Roulette:
             b.bind("<Button-1>", lambda e, v=val: self.select_chip(v))
             self.chip_buttons[val] = b
 
-        tk.Label(chips, text="Custom:", font=("Consolas", 12, "bold"),
+        tk.Label(chips, text=_t('gui.operations.commerce.betting.games.roulette.labels.custom', default="Custom:"), font=("Consolas", 12, "bold"),
                  fg="white", bg=FELT_DARK).pack(side="left", padx=(16, 4))
         self.chip_var = tk.StringVar(value=str(self.selected_chip))
         self.chip_entry = tk.Entry(chips, textvariable=self.chip_var, width=6,
@@ -259,15 +261,15 @@ class Roulette:
         ctrl = tk.Frame(self.root, bg=FELT_DARK)
         ctrl.grid(row=3, column=0, columnspan=2, pady=(4, 14))
 
-        self.spin_btn = tk.Button(ctrl, text="\u25b6 SPIN", font=("Georgia", 14, "bold"),
+        self.spin_btn = tk.Button(ctrl, text=_t('gui.operations.commerce.betting.games.roulette.buttons.spin', default="\u25b6 SPIN"), font=("Georgia", 14, "bold"),
                                   bg=GOLD, fg="#2b2b2b", width=10, relief="raised",
                                   command=self.spin)
         self.spin_btn.pack(side="left", padx=8)
 
-        tk.Button(ctrl, text="Clear Bets", font=("Georgia", 12),
+        tk.Button(ctrl, text=_t('gui.operations.commerce.betting.games.roulette.buttons.clear_bets', default="Clear Bets"), font=("Georgia", 12),
                   bg="#8a3b2e", fg="white", command=self.clear_all).pack(side="left", padx=8)
 
-        tk.Label(ctrl, text="Left-click a spot to bet  \u2022  Right-click to remove",
+        tk.Label(ctrl, text=_t('gui.operations.commerce.betting.games.roulette.labels.left_click_a_spot_to_bet_right_click_to_remove', default="Left-click a spot to bet  \u2022  Right-click to remove"),
                  font=("Consolas", 9), fg="#9fd4b4", bg=FELT_DARK).pack(side="left", padx=12)
 
     # ---- Chip badge on a bet spot --------------------------------------
@@ -311,7 +313,7 @@ class Roulette:
         if self.spinning:
             return
         if self.selected_chip > self.balance - self._table_total():
-            self.msg_lbl.config(text="Not enough balance for that chip.")
+            self.msg_lbl.config(text=_t('gui.operations.commerce.betting.games.roulette.text.not_enough_balance_for_that_chip', default="Not enough balance for that chip."))
             return
         self.bets[key] = self.bets.get(key, 0) + self.selected_chip
         self._refresh_badge(key)
@@ -345,12 +347,12 @@ class Roulette:
         if self.spinning:
             return
         if not self.bets:
-            self.msg_lbl.config(text="Place at least one bet first.")
+            self.msg_lbl.config(text=_t('gui.operations.commerce.betting.games.roulette.text.place_at_least_one_bet_first', default="Place at least one bet first."))
             return
         self.spinning = True
         self.spin_btn.config(state="disabled")
         self.msg_lbl.config(text="")
-        self.result_lbl.config(bg=FELT_DARK, text="Spinning...")
+        self.result_lbl.config(bg=FELT_DARK, text=_t('gui.operations.commerce.betting.games.roulette.text.spinning', default="Spinning..."))
 
         result = random.randint(0, 36)
         # find where result sits in the wheel order to land the pointer on it
@@ -411,9 +413,9 @@ class Roulette:
         self.spin_btn.config(state="normal")
 
         if self.balance <= 0:
-            messagebox.showinfo("Out of chips",
-                                "You're out of credits! Buy more from the betting "
-                                "shop to keep playing.")
+            messagebox.showinfo(_t('gui.operations.commerce.betting.games.roulette.dialogs.out_of_chips', default="Out of chips"),
+                                _t('gui.operations.commerce.betting.games.roulette.dialogs.you_re_out_of_credits_buy_more_from_the_betting_shop_to_keep_pla', default="You're out of credits! Buy more from the betting "
+                                "shop to keep playing."))
             wallet.close_game(self.root)
 
 

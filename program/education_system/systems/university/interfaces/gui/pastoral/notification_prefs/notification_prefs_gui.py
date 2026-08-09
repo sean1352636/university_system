@@ -8,6 +8,8 @@ Matches the actual notification_preferences table schema:
   bundle_time_window, created_at, updated_at.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -35,7 +37,7 @@ class NotificationPrefsGUI:
             self.user_id = auth.current_user.get('username', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Notification Preferences")
+        self.window.title(_t('gui.pastoral.notification_prefs.notification_prefs.windows.notification_preferences', default="Notification Preferences"))
         self.window.geometry("600x450")
         self.window.transient(parent)
 
@@ -50,7 +52,7 @@ class NotificationPrefsGUI:
         """Build the preferences form."""
         ttk.Label(
             self.window,
-            text="Notification Preferences",
+            text=_t('gui.pastoral.notification_prefs.notification_prefs.labels.notification_preferences', default="Notification Preferences"),
             font=("Arial", 16, "bold"),
         ).pack(pady=(15, 5))
 
@@ -68,12 +70,12 @@ class NotificationPrefsGUI:
         # ---- Quiet Hours ----
         ttk.Label(
             form_frame,
-            text="Quiet Hours",
+            text=_t('gui.pastoral.notification_prefs.notification_prefs.labels.quiet_hours', default="Quiet Hours"),
             font=("Arial", 12, "bold"),
         ).grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=(0, 5))
         row += 1
 
-        ttk.Label(form_frame, text="Start:").grid(
+        ttk.Label(form_frame, text=_t('gui.pastoral.notification_prefs.notification_prefs.labels.start', default="Start:")).grid(
             row=row, column=0, sticky=tk.W, padx=(0, 10), pady=4
         )
         self.quiet_start_var = tk.StringVar(value="22:00")
@@ -86,7 +88,7 @@ class NotificationPrefsGUI:
         ).grid(row=row, column=1, sticky=tk.W, pady=4)
         row += 1
 
-        ttk.Label(form_frame, text="End:").grid(
+        ttk.Label(form_frame, text=_t('gui.pastoral.notification_prefs.notification_prefs.labels.end', default="End:")).grid(
             row=row, column=0, sticky=tk.W, padx=(0, 10), pady=4
         )
         self.quiet_end_var = tk.StringVar(value="08:00")
@@ -107,7 +109,7 @@ class NotificationPrefsGUI:
         # ---- Daily Digest ----
         ttk.Label(
             form_frame,
-            text="Daily Digest",
+            text=_t('gui.pastoral.notification_prefs.notification_prefs.labels.daily_digest', default="Daily Digest"),
             font=("Arial", 12, "bold"),
         ).grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=(0, 5))
         row += 1
@@ -115,12 +117,12 @@ class NotificationPrefsGUI:
         self.digest_enabled_var = tk.IntVar(value=0)
         ttk.Checkbutton(
             form_frame,
-            text="Enable daily digest",
+            text=_t('gui.pastoral.notification_prefs.notification_prefs.buttons.enable_daily_digest', default="Enable daily digest"),
             variable=self.digest_enabled_var,
         ).grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=4)
         row += 1
 
-        ttk.Label(form_frame, text="Digest Time:").grid(
+        ttk.Label(form_frame, text=_t('gui.pastoral.notification_prefs.notification_prefs.labels.digest_time', default="Digest Time:")).grid(
             row=row, column=0, sticky=tk.W, padx=(0, 10), pady=4
         )
         self.digest_time_var = tk.StringVar(value="08:00")
@@ -141,7 +143,7 @@ class NotificationPrefsGUI:
         # ---- Notification Bundling ----
         ttk.Label(
             form_frame,
-            text="Notification Bundling",
+            text=_t('gui.pastoral.notification_prefs.notification_prefs.labels.notification_bundling', default="Notification Bundling"),
             font=("Arial", 12, "bold"),
         ).grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=(0, 5))
         row += 1
@@ -149,12 +151,12 @@ class NotificationPrefsGUI:
         self.bundle_var = tk.IntVar(value=0)
         ttk.Checkbutton(
             form_frame,
-            text="Enable notification bundling",
+            text=_t('gui.pastoral.notification_prefs.notification_prefs.buttons.enable_notification_bundling', default="Enable notification bundling"),
             variable=self.bundle_var,
         ).grid(row=row, column=0, columnspan=2, sticky=tk.W, pady=4)
         row += 1
 
-        ttk.Label(form_frame, text="Bundle Window (min):").grid(
+        ttk.Label(form_frame, text=_t('gui.pastoral.notification_prefs.notification_prefs.labels.bundle_window_min', default="Bundle Window (min):")).grid(
             row=row, column=0, sticky=tk.W, padx=(0, 10), pady=4
         )
         self.bundle_window_var = tk.StringVar(value="15")
@@ -177,13 +179,13 @@ class NotificationPrefsGUI:
         btn_frame = ttk.Frame(self.window)
         btn_frame.pack(pady=15)
 
-        ttk.Button(btn_frame, text="Save", command=self._save_preferences).pack(
+        ttk.Button(btn_frame, text=_t('gui.pastoral.notification_prefs.notification_prefs.buttons.save', default="Save"), command=self._save_preferences).pack(
             side=tk.LEFT, padx=10
         )
-        ttk.Button(btn_frame, text="Refresh", command=self._load_preferences).pack(
+        ttk.Button(btn_frame, text=_t('gui.pastoral.notification_prefs.notification_prefs.buttons.refresh', default="Refresh"), command=self._load_preferences).pack(
             side=tk.LEFT, padx=10
         )
-        ttk.Button(btn_frame, text="Close", command=self.window.destroy).pack(
+        ttk.Button(btn_frame, text=_t('gui.pastoral.notification_prefs.notification_prefs.buttons.close', default="Close"), command=self.window.destroy).pack(
             side=tk.LEFT, padx=10
         )
 
@@ -247,7 +249,7 @@ class NotificationPrefsGUI:
     def _save_preferences(self):
         """Upsert preferences into the database."""
         if not self.user_id:
-            messagebox.showwarning("Warning", "No user ID available.", parent=self.window)
+            messagebox.showwarning(_t('gui.pastoral.notification_prefs.notification_prefs.dialogs.warning', default="Warning"), _t('gui.pastoral.notification_prefs.notification_prefs.dialogs.no_user_id_available', default="No user ID available."), parent=self.window)
             return
 
         quiet_start = self.quiet_start_var.get()
@@ -311,12 +313,12 @@ class NotificationPrefsGUI:
             logger.info("Notification preferences saved for %s", self.user_id)
             self.status_var.set("Preferences saved.")
             messagebox.showinfo(
-                "Success", "Notification preferences saved.", parent=self.window
+                _t('gui.pastoral.notification_prefs.notification_prefs.dialogs.success', default="Success"), _t('gui.pastoral.notification_prefs.notification_prefs.dialogs.notification_preferences_saved', default="Notification preferences saved."), parent=self.window
             )
         except Exception as exc:
             logger.error("Failed to save notification preferences: %s", exc)
             messagebox.showerror(
-                "Error",
+                _t('gui.pastoral.notification_prefs.notification_prefs.dialogs.error', default="Error"),
                 f"Could not save preferences: {exc}",
                 parent=self.window,
             )

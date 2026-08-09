@@ -1,5 +1,7 @@
 """Charity Shop - Refunds mixin for CharityShopApp."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 
 from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui._imports import (
@@ -19,7 +21,7 @@ class RefundsMixin:
     def show_refunds_window(self):
         """Display refunds management window"""
         refunds_window = tk.Toplevel(self.root)
-        refunds_window.title("Charity Shop Refunds")
+        refunds_window.title(_t('gui.shell.services.charity_shop_gui.refunds.windows.charity_shop_refunds', default="Charity Shop Refunds"))
         refunds_window.geometry("900x600")
         refunds_window.transient(self.root)
 
@@ -27,15 +29,15 @@ class RefundsMixin:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Header
-        header_label = ttk.Label(main_frame, text="Charity Shop Transaction Refunds",
+        header_label = ttk.Label(main_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.labels.charity_shop_transaction_refunds', default="Charity Shop Transaction Refunds"),
                                 font=('Arial', 16, 'bold'))
         header_label.pack(pady=10)
 
         # Search frame
-        search_frame = ttk.LabelFrame(main_frame, text="Search Transactions", padding="10")
+        search_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.labels.search_transactions', default="Search Transactions"), padding="10")
         search_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(search_frame, text="Search by Transaction ID or Student ID:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.labels.search_by_transaction_id_or_student_id', default="Search by Transaction ID or Student ID:")).pack(side=tk.LEFT, padx=5)
         refunds_search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=refunds_search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=5)
@@ -47,12 +49,12 @@ class RefundsMixin:
         columns = ('transaction_id', 'date', 'student_id', 'amount', 'payment_method', 'status')
         refunds_tree = ttk.Treeview(trans_frame, columns=columns, show='headings', height=15)
 
-        refunds_tree.heading('transaction_id', text='Transaction ID')
-        refunds_tree.heading('date', text='Date')
-        refunds_tree.heading('student_id', text='Student ID')
-        refunds_tree.heading('amount', text='Amount')
-        refunds_tree.heading('payment_method', text='Payment Method')
-        refunds_tree.heading('status', text='Status')
+        refunds_tree.heading('transaction_id', text=_t('gui.shell.services.charity_shop_gui.refunds.headings.transaction_id', default='Transaction ID'))
+        refunds_tree.heading('date', text=_t('gui.shell.services.charity_shop_gui.refunds.headings.date', default='Date'))
+        refunds_tree.heading('student_id', text=_t('gui.shell.services.charity_shop_gui.refunds.headings.student_id', default='Student ID'))
+        refunds_tree.heading('amount', text=_t('gui.shell.services.charity_shop_gui.refunds.headings.amount', default='Amount'))
+        refunds_tree.heading('payment_method', text=_t('gui.shell.services.charity_shop_gui.refunds.headings.payment_method', default='Payment Method'))
+        refunds_tree.heading('status', text=_t('gui.shell.services.charity_shop_gui.refunds.headings.status', default='Status'))
 
         refunds_tree.column('transaction_id', width=200)
         refunds_tree.column('date', width=150)
@@ -120,20 +122,20 @@ class RefundsMixin:
                 conn.close()
 
             except Exception as e:
-                messagebox.showerror("Database Error", f"Error loading transactions: {e}")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.database_error', default="Database Error"), f"Error loading transactions: {e}")
 
         def process_refund():
             """Process a refund for selected transaction"""
             selection = refunds_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a transaction to refund.")
+                messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.refunds.dialogs.please_select_a_transaction_to_refund', default="Please select a transaction to refund."))
                 return
 
             item = refunds_tree.item(selection[0])
             values = item['values']
 
             if len(values) < 6:
-                messagebox.showerror("Error", "Invalid transaction data.")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.refunds.dialogs.invalid_transaction_data', default="Invalid transaction data."))
                 return
 
             transaction_id = values[0]
@@ -141,18 +143,18 @@ class RefundsMixin:
             try:
                 amount = float(amount_str)
             except ValueError:
-                messagebox.showerror("Error", "Invalid amount format.")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.refunds.dialogs.invalid_amount_format', default="Invalid amount format."))
                 return
 
             status = values[5]
 
             # Check if already refunded
             if status == 'REFUNDED':
-                messagebox.showinfo("Already Refunded", "This transaction has already been refunded.")
+                messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.already_refunded', default="Already Refunded"), _t('gui.shell.services.charity_shop_gui.refunds.dialogs.this_transaction_has_already_been_refunded', default="This transaction has already been refunded."))
                 return
 
             # Confirm refund
-            if not messagebox.askyesno("Confirm Refund", f"Process refund of \u00a3{amount:.2f} for transaction {transaction_id}?"):
+            if not messagebox.askyesno(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.confirm_refund', default="Confirm Refund"), f"Process refund of \u00a3{amount:.2f} for transaction {transaction_id}?"):
                 return
 
             # Get transaction details
@@ -170,14 +172,14 @@ class RefundsMixin:
                 conn.close()
 
                 if not trans_data:
-                    messagebox.showerror("Error", "Transaction not found in database.")
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.refunds.dialogs.transaction_not_found_in_database', default="Transaction not found in database."))
                     return
 
                 student_id = trans_data[0]
                 payment_method = trans_data[1]
 
             except Exception as e:
-                messagebox.showerror("Database Error", f"Error fetching transaction details: {e}")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.database_error', default="Database Error"), f"Error fetching transaction details: {e}")
                 return
 
             # Show refund method dialog
@@ -230,8 +232,8 @@ class RefundsMixin:
                 if refund_method == 'Student Account':
                     success = self._add_charity_refund_to_student_account(student_id, amount, refund_ref)
                     if not success:
-                        messagebox.showwarning("Partial Success",
-                                             "Refund recorded but failed to credit student account. Please credit manually.")
+                        messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.partial_success', default="Partial Success"),
+                                             _t('gui.shell.services.charity_shop_gui.refunds.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
                 # Send refund receipt email
                 self._send_charity_refund_receipt(transaction_id, student_id, amount, refund_method, refund_ref)
@@ -239,27 +241,27 @@ class RefundsMixin:
                 # Notify finance GUI
                 self._notify_charity_finance_gui(transaction_id, amount, refund_method, refund_ref, student_id)
 
-                messagebox.showinfo("Refund Processed",
+                messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.refund_processed', default="Refund Processed"),
                                   f"Refund of \u00a3{amount:.2f} processed successfully.\nRefund Reference: {refund_ref}")
 
                 # Refresh the list
                 refresh_transactions_list()
 
             except Exception as e:
-                messagebox.showerror("Database Error", f"Error processing refund: {e}")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.database_error', default="Database Error"), f"Error processing refund: {e}")
 
         def view_transaction_details():
             """View detailed transaction information"""
             selection = refunds_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a transaction to view details.")
+                messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.no_selection', default="No Selection"), _t('gui.shell.services.charity_shop_gui.refunds.dialogs.please_select_a_transaction_to_view_details', default="Please select a transaction to view details."))
                 return
 
             item = refunds_tree.item(selection[0])
             values = item['values']
 
             if len(values) < 6:
-                messagebox.showerror("Error", "Invalid transaction data.")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.refunds.dialogs.invalid_transaction_data', default="Invalid transaction data."))
                 return
 
             transaction_id = values[0]
@@ -280,7 +282,7 @@ class RefundsMixin:
                 conn.close()
 
                 if not trans:
-                    messagebox.showerror("Error", "Transaction not found.")
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.refunds.dialogs.transaction_not_found', default="Transaction not found."))
                     return
 
                 # Create details window
@@ -332,10 +334,10 @@ TOTAL:              \u00a3{trans[3]:.2f}
                 info_text.insert('1.0', details)
                 info_text.config(state='disabled')
 
-                ttk.Button(details_frame, text="Close", command=details_window.destroy).pack(pady=10)
+                ttk.Button(details_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.close', default="Close"), command=details_window.destroy).pack(pady=10)
 
             except Exception as e:
-                messagebox.showerror("Database Error", f"Error loading transaction details: {e}")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.database_error', default="Database Error"), f"Error loading transaction details: {e}")
 
         def export_to_csv():
             """Export transactions list to CSV file"""
@@ -361,21 +363,21 @@ TOTAL:              \u00a3{trans[3]:.2f}
                         values = refunds_tree.item(item)['values']
                         writer.writerow(values)
 
-                messagebox.showinfo("Export Successful", f"Data exported to:\n{filename}")
+                messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.export_successful', default="Export Successful"), f"Data exported to:\n{filename}")
 
             except Exception as e:
-                messagebox.showerror("Export Error", f"Error exporting data: {e}")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.export_error', default="Export Error"), f"Error exporting data: {e}")
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Search", command=refresh_transactions_list).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Show All", command=lambda: [refunds_search_var.set(''), refresh_transactions_list()]).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Process Refund", command=process_refund).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="View Details", command=view_transaction_details).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Export to CSV", command=export_to_csv).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=refunds_window.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.search', default="Search"), command=refresh_transactions_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.show_all', default="Show All"), command=lambda: [refunds_search_var.set(''), refresh_transactions_list()]).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.process_refund', default="Process Refund"), command=process_refund).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.view_details', default="View Details"), command=view_transaction_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.export_to_csv', default="Export to CSV"), command=export_to_csv).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.close', default="Close"), command=refunds_window.destroy).pack(side=tk.LEFT, padx=5)
 
         # Initial load
         refresh_transactions_list()
@@ -383,7 +385,7 @@ TOTAL:              \u00a3{trans[3]:.2f}
     def _show_charity_refund_method_dialog(self, parent, amount, transaction_id, student_id):
         """Show dialog to select refund method"""
         dialog = tk.Toplevel(parent)
-        dialog.title("Select Refund Method")
+        dialog.title(_t('gui.shell.services.charity_shop_gui.refunds.windows.select_refund_method', default="Select Refund Method"))
         dialog.geometry("400x350")
         dialog.transient(parent)
         dialog.grab_set()
@@ -399,7 +401,7 @@ TOTAL:              \u00a3{trans[3]:.2f}
                 current_balance = get_student_finance_account_balance(student_id)
                 if current_balance is not None:
                     new_balance = current_balance + amount
-                    balance_frame = ttk.LabelFrame(dialog, text="Student Finance Account", padding=10)
+                    balance_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.charity_shop_gui.refunds.labels.student_finance_account', default="Student Finance Account"), padding=10)
                     balance_frame.pack(pady=10, padx=20, fill=tk.X)
 
                     ttk.Label(balance_frame, text=f"Current Balance: \u00a3{current_balance:.2f}").pack(anchor='w')
@@ -408,7 +410,7 @@ TOTAL:              \u00a3{trans[3]:.2f}
             except Exception as e:
                 logger.error(f"Error getting balance: {e}")
 
-        ttk.Label(dialog, text="Select refund method:", font=('Arial', 10)).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.shell.services.charity_shop_gui.refunds.labels.select_refund_method', default="Select refund method:"), font=('Arial', 10)).pack(pady=10)
 
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=20)
@@ -423,18 +425,18 @@ TOTAL:              \u00a3{trans[3]:.2f}
 
         def select_student_account():
             if not student_id:
-                messagebox.showerror("Error", "No student ID associated with this transaction.")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.refunds.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.refunds.dialogs.no_student_id_associated_with_this_transaction', default="No student ID associated with this transaction."))
                 return
             result['method'] = 'Student Account'
             dialog.destroy()
 
-        ttk.Button(button_frame, text="Cash Refund", command=select_cash, width=20).pack(pady=5)
-        ttk.Button(button_frame, text="Card Refund", command=select_card, width=20).pack(pady=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.cash_refund', default="Cash Refund"), command=select_cash, width=20).pack(pady=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.card_refund', default="Card Refund"), command=select_card, width=20).pack(pady=5)
 
         if student_id and FINANCE_INTEGRATION_AVAILABLE:
-            ttk.Button(button_frame, text="Student Finance Account", command=select_student_account, width=20).pack(pady=5)
+            ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.student_finance_account', default="Student Finance Account"), command=select_student_account, width=20).pack(pady=5)
 
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=20).pack(pady=10)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.refunds.buttons.cancel', default="Cancel"), command=dialog.destroy, width=20).pack(pady=10)
 
         dialog.wait_window()
         return result['method']

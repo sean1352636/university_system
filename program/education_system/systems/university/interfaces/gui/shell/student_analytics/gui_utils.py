@@ -1,4 +1,6 @@
 """GUI utility mixin for the Student Analytics GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.shell.student_analytics._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     plt, sys, queue, _t, CONFIG,
@@ -162,7 +164,7 @@ class GUIUtilsMixin:
     def show_color_dialog(self):
         """Show color scheme dialog"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Color Scheme Settings")
+        dialog.title(_t('gui.shell.student_analytics.gui_utils.windows.color_scheme_settings', default="Color Scheme Settings"))
         dialog.geometry("500x400")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -183,7 +185,7 @@ class GUIUtilsMixin:
             "Bold": ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00', '#ffff33']
         }
 
-        selected_scheme = tk.StringVar(value="Default")
+        selected_scheme = tk.StringVar(value=_t('gui.shell.student_analytics.gui_utils.values.default', default="Default"))
 
         for scheme_name in schemes.keys():
             ttk.Radiobutton(main_frame, text=scheme_name, variable=selected_scheme,
@@ -256,7 +258,7 @@ class GUIUtilsMixin:
         dpi_combo.grid(row=0, column=1, sticky=tk.W, pady=5)
 
         ttk.Label(quality_frame, text=_t("analytics.labels.figure_size")).grid(row=1, column=0, sticky=tk.W, pady=5)
-        size_var = tk.StringVar(value="15x10")
+        size_var = tk.StringVar(value=_t('gui.shell.student_analytics.gui_utils.values.value_15x10', default="15x10"))
         size_combo = ttk.Combobox(quality_frame, textvariable=size_var, values=['10x8', '15x10', '20x15'], width=10)
         size_combo.grid(row=1, column=1, sticky=tk.W, pady=5)
 
@@ -265,7 +267,7 @@ class GUIUtilsMixin:
         naming_frame.pack(fill=tk.X, pady=10)
 
         ttk.Label(naming_frame, text=_t("analytics.labels.prefix")).grid(row=0, column=0, sticky=tk.W, pady=5)
-        prefix_var = tk.StringVar(value="analytics_")
+        prefix_var = tk.StringVar(value=_t('gui.shell.student_analytics.gui_utils.values.analytics', default="analytics_"))
         ttk.Entry(naming_frame, textvariable=prefix_var, width=20).grid(row=0, column=1, sticky=tk.W, pady=5)
 
         include_timestamp = tk.BooleanVar(value=True)

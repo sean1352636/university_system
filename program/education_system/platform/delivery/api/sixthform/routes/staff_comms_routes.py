@@ -15,7 +15,7 @@ from flask import Blueprint, g, jsonify, request
 
 logger = logging.getLogger(__name__)
 
-staff_comms_bp = Blueprint("sf_staff_comms", __name__, url_prefix="/api/sixthform/staff-comms")
+staff_comms_bp = Blueprint("sf_staff_comms", __name__, url_prefix="/api/staff-comms")
 
 
 def _token_required(view):

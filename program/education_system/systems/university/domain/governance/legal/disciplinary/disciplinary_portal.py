@@ -35,9 +35,7 @@ if 'education_system' not in sys.modules:
     if _here and _here not in sys.path:
         sys.path.insert(0, _here)
 
-from education_system.systems.university.infrastructure.paths import (
-    DEFAULT_DB_PATH,
-)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 
 def _bootstrap_auth_from_env():
@@ -137,7 +135,7 @@ class DatabaseManager:
     """
 
     def __init__(self, db_path=None):
-        self.db_path = str(db_path) if db_path else str(DEFAULT_DB_PATH)
+        self.db_path = str(db_path) if db_path else str(UNIVERSITY_DEFAULT_DB_PATH)
         # Single source of truth for the bridge schema (extra columns,
         # severity normalisation, status-sync triggers). See _db_init.
         try:

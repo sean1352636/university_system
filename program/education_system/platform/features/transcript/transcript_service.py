@@ -14,11 +14,7 @@ import sqlite3
 from datetime import datetime
 from pathlib import Path
 
-from education_system.platform.kernel.database.paths import (
-    SYSTEM_DB_PATHS as _DB_PATHS,
-    SYSTEM_ORDER,
-    SYSTEM_LABELS,
-)
+from education_system.paths import SYSTEM_DB_PATHS as _DB_PATHS, SYSTEM_ORDER, SYSTEM_LABELS
 
 
 # ---------------------------------------------------------------------------

@@ -30,6 +30,8 @@ Constructor for every panel::
                          connection factory pointed at a temp DB copy.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -95,10 +97,10 @@ class _ClinicalPanelBase:
         return cursor.fetchone()[0] > 0
 
     def _err(self, msg):
-        messagebox.showerror("Error", msg)
+        messagebox.showerror(_t('gui.pastoral.health.health_portal.clinical_panels.dialogs.error', default="Error"), msg)
 
     def _info(self, msg):
-        messagebox.showinfo("Success", msg)
+        messagebox.showinfo(_t('gui.pastoral.health.health_portal.clinical_panels.dialogs.success', default="Success"), msg)
 
     # -- widget builders ---------------------------------------------------
     def _header(self):
@@ -178,11 +180,11 @@ class _ClinicalPanelBase:
         self.vars['_search_student']."""
         bar = ttk.Frame(parent)
         bar.pack(fill=tk.X, padx=10, pady=(6, 0))
-        ttk.Label(bar, text="Filter by Student ID:").pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.filter_by_student_id', default="Filter by Student ID:")).pack(side=tk.LEFT)
         var = tk.StringVar()
         self.vars["_search_student"] = var
         ttk.Entry(bar, textvariable=var, width=18).pack(side=tk.LEFT, padx=(6, 8))
-        ttk.Button(bar, text="Refresh", command=self.refresh).pack(side=tk.LEFT)
+        ttk.Button(bar, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.refresh', default="Refresh"), command=self.refresh).pack(side=tk.LEFT)
         return var
 
     # -- subclass hooks ----------------------------------------------------
@@ -202,7 +204,7 @@ class AllergiesPanel(_ClinicalPanelBase):
 
     def build(self):
         self._header()
-        form = ttk.LabelFrame(self.parent, text="Add Allergy", padding=12)
+        form = ttk.LabelFrame(self.parent, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.add_allergy', default="Add Allergy"), padding=12)
         form.pack(fill=tk.X, padx=10, pady=(0, 6))
         self._build_form(form, [
             {"key": "student_id", "label": "Student ID:"},
@@ -215,7 +217,7 @@ class AllergiesPanel(_ClinicalPanelBase):
             {"key": "provider", "label": "Provider:"},
             {"key": "verified", "label": "Verified:", "kind": "check"},
         ])
-        ttk.Button(form, text="Add Allergy", command=self.add).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.add_allergy', default="Add Allergy"), command=self.add).grid(
             row=99, column=1, sticky=tk.W, pady=(8, 0))
         self._search_row(self.parent)
         self._make_tree([
@@ -297,7 +299,7 @@ class PrescriptionsPanel(_ClinicalPanelBase):
 
     def build(self):
         self._header()
-        form = ttk.LabelFrame(self.parent, text="Add Prescription", padding=12)
+        form = ttk.LabelFrame(self.parent, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.add_prescription', default="Add Prescription"), padding=12)
         form.pack(fill=tk.X, padx=10, pady=(0, 6))
         self._build_form(form, [
             {"key": "student_id", "label": "Student ID:"},
@@ -312,7 +314,7 @@ class PrescriptionsPanel(_ClinicalPanelBase):
             {"key": "pharmacy", "label": "Pharmacy:"},
             {"key": "notes", "label": "Notes:", "kind": "text"},
         ])
-        ttk.Button(form, text="Add Prescription", command=self.add).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.add_prescription', default="Add Prescription"), command=self.add).grid(
             row=99, column=1, sticky=tk.W, pady=(8, 0))
         self._search_row(self.parent)
         self._make_tree([
@@ -321,7 +323,7 @@ class PrescriptionsPanel(_ClinicalPanelBase):
         ])
         btns = ttk.Frame(self.parent)
         btns.pack(fill=tk.X, padx=10, pady=(0, 8))
-        ttk.Button(btns, text="Update Status", command=self.update_status).pack(
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.update_status', default="Update Status"), command=self.update_status).pack(
             side=tk.LEFT)
         self.refresh()
 
@@ -421,7 +423,7 @@ class LabResultsPanel(_ClinicalPanelBase):
 
     def build(self):
         self._header()
-        form = ttk.LabelFrame(self.parent, text="Add Lab Result", padding=12)
+        form = ttk.LabelFrame(self.parent, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.add_lab_result', default="Add Lab Result"), padding=12)
         form.pack(fill=tk.X, padx=10, pady=(0, 6))
         self._build_form(form, [
             {"key": "student_id", "label": "Student ID:"},
@@ -443,7 +445,7 @@ class LabResultsPanel(_ClinicalPanelBase):
             {"key": "abnormal_flag", "label": "Abnormal flag:", "kind": "combo",
              "values": self.FLAG},
         ])
-        ttk.Button(form, text="Add Lab Result", command=self.add).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.add_lab_result', default="Add Lab Result"), command=self.add).grid(
             row=99, column=1, sticky=tk.W, pady=(8, 0))
         self._search_row(self.parent)
         self._make_tree([
@@ -539,7 +541,7 @@ class ConditionsPanel(_ClinicalPanelBase):
 
     def build(self):
         self._header()
-        form = ttk.LabelFrame(self.parent, text="Add Condition", padding=12)
+        form = ttk.LabelFrame(self.parent, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.add_condition', default="Add Condition"), padding=12)
         form.pack(fill=tk.X, padx=10, pady=(0, 6))
         self._build_form(form, [
             {"key": "student_id", "label": "Student ID:"},
@@ -552,7 +554,7 @@ class ConditionsPanel(_ClinicalPanelBase):
             {"key": "provider", "label": "Provider:"},
             {"key": "notes", "label": "Notes:", "kind": "text"},
         ])
-        ttk.Button(form, text="Add Condition", command=self.add).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.add_condition', default="Add Condition"), command=self.add).grid(
             row=99, column=1, sticky=tk.W, pady=(8, 0))
         self._search_row(self.parent)
         self._make_tree([
@@ -561,7 +563,7 @@ class ConditionsPanel(_ClinicalPanelBase):
         ])
         btns = ttk.Frame(self.parent)
         btns.pack(fill=tk.X, padx=10, pady=(0, 8))
-        ttk.Button(btns, text="Update Status", command=self.update_status).pack(
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.update_status', default="Update Status"), command=self.update_status).pack(
             side=tk.LEFT)
         self.refresh()
 
@@ -654,7 +656,7 @@ class CarePlansPanel(_ClinicalPanelBase):
 
     def build(self):
         self._header()
-        form = ttk.LabelFrame(self.parent, text="Create Care Plan", padding=12)
+        form = ttk.LabelFrame(self.parent, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.create_care_plan', default="Create Care Plan"), padding=12)
         form.pack(fill=tk.X, padx=10, pady=(0, 6))
         self._build_form(form, [
             {"key": "student_id", "label": "Student ID:"},
@@ -666,7 +668,7 @@ class CarePlansPanel(_ClinicalPanelBase):
             {"key": "goals", "label": "Goals:", "kind": "text"},
             {"key": "interventions", "label": "Interventions:", "kind": "text"},
         ])
-        ttk.Button(form, text="Create Care Plan", command=self.add).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.create_care_plan', default="Create Care Plan"), command=self.add).grid(
             row=99, column=1, sticky=tk.W, pady=(8, 0))
         self._search_row(self.parent)
         self._make_tree([
@@ -675,7 +677,7 @@ class CarePlansPanel(_ClinicalPanelBase):
         ])
         btns = ttk.Frame(self.parent)
         btns.pack(fill=tk.X, padx=10, pady=(0, 8))
-        ttk.Button(btns, text="Update Status", command=self.update_status).pack(
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.update_status', default="Update Status"), command=self.update_status).pack(
             side=tk.LEFT)
         self.refresh()
 
@@ -775,7 +777,7 @@ class ReferralsPanel(_ClinicalPanelBase):
 
     def build(self):
         self._header()
-        form = ttk.LabelFrame(self.parent, text="Create Referral", padding=12)
+        form = ttk.LabelFrame(self.parent, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.create_referral', default="Create Referral"), padding=12)
         form.pack(fill=tk.X, padx=10, pady=(0, 6))
         self._build_form(form, [
             {"key": "student_id", "label": "Student ID:"},
@@ -788,7 +790,7 @@ class ReferralsPanel(_ClinicalPanelBase):
              "values": self.URGENCY},
             {"key": "notes", "label": "Notes:", "kind": "text"},
         ])
-        ttk.Button(form, text="Create Referral", command=self.add).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.create_referral', default="Create Referral"), command=self.add).grid(
             row=99, column=1, sticky=tk.W, pady=(8, 0))
         self._search_row(self.parent)
         self._make_tree([
@@ -797,7 +799,7 @@ class ReferralsPanel(_ClinicalPanelBase):
         ])
         btns = ttk.Frame(self.parent)
         btns.pack(fill=tk.X, padx=10, pady=(0, 8))
-        ttk.Button(btns, text="Track / Update Status",
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.track_update_status', default="Track / Update Status"),
                    command=self.update_status).pack(side=tk.LEFT)
         self.refresh()
 
@@ -894,7 +896,7 @@ class ScreeningPanel(_ClinicalPanelBase):
 
     def build(self):
         self._header()
-        form = ttk.LabelFrame(self.parent, text="Schedule Screening", padding=12)
+        form = ttk.LabelFrame(self.parent, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.schedule_screening', default="Schedule Screening"), padding=12)
         form.pack(fill=tk.X, padx=10, pady=(0, 6))
         self._build_form(form, [
             {"key": "student_id", "label": "Student ID:"},
@@ -905,17 +907,17 @@ class ScreeningPanel(_ClinicalPanelBase):
             {"key": "due_date", "label": "Due date (blank=auto):"},
             {"key": "provider", "label": "Provider:"},
         ])
-        ttk.Button(form, text="Schedule", command=self.add).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.schedule', default="Schedule"), command=self.add).grid(
             row=99, column=1, sticky=tk.W, pady=(8, 0))
 
         bar = ttk.Frame(self.parent)
         bar.pack(fill=tk.X, padx=10, pady=(6, 0))
-        ttk.Label(bar, text="Show:").pack(side=tk.LEFT)
-        self.vars["_scope"] = tk.StringVar(value="due")
+        ttk.Label(bar, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.show', default="Show:")).pack(side=tk.LEFT)
+        self.vars["_scope"] = tk.StringVar(value=_t('gui.pastoral.health.health_portal.clinical_panels.values.due', default="due"))
         ttk.Combobox(bar, textvariable=self.vars["_scope"],
                      values=["due", "overdue", "all"], width=10,
                      state="readonly").pack(side=tk.LEFT, padx=(6, 8))
-        ttk.Button(bar, text="Refresh", command=self.refresh).pack(side=tk.LEFT)
+        ttk.Button(bar, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.refresh', default="Refresh"), command=self.refresh).pack(side=tk.LEFT)
 
         self._make_tree([
             ("ID", 50), ("Student", 90), ("Type", 200), ("Due", 100),
@@ -923,7 +925,7 @@ class ScreeningPanel(_ClinicalPanelBase):
         ])
         btns = ttk.Frame(self.parent)
         btns.pack(fill=tk.X, padx=10, pady=(0, 8))
-        ttk.Button(btns, text="Record Results",
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.record_results', default="Record Results"),
                    command=self.record_results).pack(side=tk.LEFT)
         self.refresh()
 
@@ -1000,16 +1002,16 @@ class ScreeningPanel(_ClinicalPanelBase):
             self._err("You don't have permission to record results.")
             return
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Record Screening Results")
+        dialog.title(_t('gui.pastoral.health.health_portal.clinical_panels.windows.record_screening_results', default="Record Screening Results"))
         dialog.transient(self.parent.winfo_toplevel())
         frame = ttk.Frame(dialog, padding=16)
         frame.pack(fill=tk.BOTH, expand=True)
-        ttk.Label(frame, text="Completed date (YYYY-MM-DD):").grid(
+        ttk.Label(frame, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.completed_date_yyyy_mm_dd', default="Completed date (YYYY-MM-DD):")).grid(
             row=0, column=0, sticky=tk.W, pady=4)
         completed = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
         ttk.Entry(frame, textvariable=completed, width=20).grid(
             row=0, column=1, pady=4)
-        ttk.Label(frame, text="Results:").grid(row=1, column=0, sticky=tk.NW,
+        ttk.Label(frame, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.results', default="Results:")).grid(row=1, column=0, sticky=tk.NW,
                                                 pady=4)
         results = tk.Text(frame, width=40, height=4)
         results.grid(row=1, column=1, pady=4)
@@ -1019,7 +1021,7 @@ class ScreeningPanel(_ClinicalPanelBase):
                                results.get("1.0", tk.END).strip())
             dialog.destroy()
 
-        ttk.Button(frame, text="Save", command=save).grid(
+        ttk.Button(frame, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.save', default="Save"), command=save).grid(
             row=2, column=1, sticky=tk.E, pady=(8, 0))
 
     def _save_results(self, rid, completed_date, results_text):
@@ -1056,13 +1058,13 @@ class WellnessPanel(_ClinicalPanelBase):
 
     def build(self):
         self._header()
-        form = ttk.LabelFrame(self.parent, text="Enroll in Program", padding=12)
+        form = ttk.LabelFrame(self.parent, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.enroll_in_program', default="Enroll in Program"), padding=12)
         form.pack(fill=tk.X, padx=10, pady=(0, 6))
         self._build_form(form, [
             {"key": "student_id", "label": "Student ID:"},
             {"key": "program_name", "label": "Program name:"},
         ])
-        ttk.Button(form, text="Enroll", command=self.add).grid(
+        ttk.Button(form, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.enroll', default="Enroll"), command=self.add).grid(
             row=99, column=1, sticky=tk.W, pady=(8, 0))
         self._search_row(self.parent)
         self._make_tree([
@@ -1071,7 +1073,7 @@ class WellnessPanel(_ClinicalPanelBase):
         ])
         btns = ttk.Frame(self.parent)
         btns.pack(fill=tk.X, padx=10, pady=(0, 8))
-        ttk.Button(btns, text="Update Progress",
+        ttk.Button(btns, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.update_progress', default="Update Progress"),
                    command=self.update_progress).pack(side=tk.LEFT)
         self.refresh()
 
@@ -1141,11 +1143,11 @@ class WellnessPanel(_ClinicalPanelBase):
         if rid is None:
             return
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Update Progress")
+        dialog.title(_t('gui.pastoral.health.health_portal.clinical_panels.windows.update_progress', default="Update Progress"))
         dialog.transient(self.parent.winfo_toplevel())
         frame = ttk.Frame(dialog, padding=16)
         frame.pack(fill=tk.BOTH, expand=True)
-        ttk.Label(frame, text="Progress score (0-100):").grid(
+        ttk.Label(frame, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.progress_score_0_100', default="Progress score (0-100):")).grid(
             row=0, column=0, sticky=tk.W, pady=4)
         score = tk.StringVar(value="0")
         ttk.Entry(frame, textvariable=score, width=8).grid(row=0, column=1,
@@ -1155,7 +1157,7 @@ class WellnessPanel(_ClinicalPanelBase):
             self._save_progress(rid, score.get())
             dialog.destroy()
 
-        ttk.Button(frame, text="Save", command=save).grid(
+        ttk.Button(frame, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.save', default="Save"), command=save).grid(
             row=1, column=1, sticky=tk.E, pady=(8, 0))
 
     def _save_progress(self, rid, raw_score):
@@ -1194,7 +1196,7 @@ def _selected_id(tree):
     warning."""
     selection = tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a row first.")
+        messagebox.showwarning(_t('gui.pastoral.health.health_portal.clinical_panels.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.health_portal.clinical_panels.dialogs.please_select_a_row_first', default="Please select a row first."))
         return None
     try:
         return tree.item(selection[0])["values"][0]
@@ -1209,7 +1211,7 @@ def _status_dialog(parent, title, options, on_save):
     dialog.transient(parent.winfo_toplevel())
     frame = ttk.Frame(dialog, padding=16)
     frame.pack(fill=tk.BOTH, expand=True)
-    ttk.Label(frame, text="New status:").grid(row=0, column=0, sticky=tk.W,
+    ttk.Label(frame, text=_t('gui.pastoral.health.health_portal.clinical_panels.labels.new_status', default="New status:")).grid(row=0, column=0, sticky=tk.W,
                                                pady=4, padx=(0, 8))
     var = tk.StringVar(value=options[0])
     ttk.Combobox(frame, textvariable=var, values=options, state="readonly",
@@ -1219,7 +1221,7 @@ def _status_dialog(parent, title, options, on_save):
         on_save(var.get())
         dialog.destroy()
 
-    ttk.Button(frame, text="Save", command=save).grid(
+    ttk.Button(frame, text=_t('gui.pastoral.health.health_portal.clinical_panels.buttons.save', default="Save"), command=save).grid(
         row=1, column=1, sticky=tk.E, pady=(8, 0))
     return dialog
 

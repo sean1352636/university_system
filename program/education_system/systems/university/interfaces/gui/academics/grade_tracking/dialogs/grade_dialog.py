@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -356,7 +358,7 @@ class GradeDialog:
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Student selection
-        ttk.Label(form_frame, text="Student:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_dialog.labels.student', default="Student:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_var = tk.StringVar()
         student_combo = ttk.Combobox(form_frame, textvariable=self.student_var, width=30)
 
@@ -371,7 +373,7 @@ class GradeDialog:
         student_combo.grid(row=0, column=1, pady=5)
 
         # Assessment selection
-        ttk.Label(form_frame, text="Assessment:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_dialog.labels.assessment', default="Assessment:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.assessment_var = tk.StringVar()
         assessment_combo = ttk.Combobox(form_frame, textvariable=self.assessment_var, width=30)
 
@@ -386,23 +388,23 @@ class GradeDialog:
         assessment_combo.grid(row=1, column=1, pady=5)
 
         # Score
-        ttk.Label(form_frame, text="Score:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_dialog.labels.score', default="Score:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.score_var = tk.StringVar(value=str(data[2]) if data else "")
         ttk.Entry(form_frame, textvariable=self.score_var, width=30).grid(row=2, column=1, pady=5)
 
         # Max Points (read-only, filled when assessment selected)
-        ttk.Label(form_frame, text="Max Points:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_dialog.labels.max_points', default="Max Points:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.max_points_var = tk.StringVar(value=str(data[3]) if data else "100")
         max_points_entry = ttk.Entry(form_frame, textvariable=self.max_points_var, width=30, state='readonly')
         max_points_entry.grid(row=3, column=1, pady=5)
 
         # Submission Date
-        ttk.Label(form_frame, text="Submission Date:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_dialog.labels.submission_date', default="Submission Date:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.submission_date_var = tk.StringVar(value=data[4] if data else datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(form_frame, textvariable=self.submission_date_var, width=30).grid(row=4, column=1, pady=5)
 
         # Feedback
-        ttk.Label(form_frame, text="Feedback:").grid(row=5, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_dialog.labels.feedback', default="Feedback:")).grid(row=5, column=0, sticky=tk.NW, pady=5)
         self.feedback_text = tk.Text(form_frame, height=4, width=30)
         self.feedback_text.grid(row=5, column=1, pady=5)
         if data and len(data) > 5:
@@ -420,8 +422,8 @@ class GradeDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save_grade).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_dialog.buttons.save', default="Save"), command=self.save_grade).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.grade_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def update_max_points(self, event):
         """Update max points when assessment is selected"""
@@ -437,18 +439,18 @@ class GradeDialog:
 
     def save_grade(self):
         if not all([self.student_var.get(), self.assessment_var.get(), self.score_var.get()]):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.grade_dialog.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         try:
             score = float(self.score_var.get())
             max_points = float(self.max_points_var.get())
         except ValueError:
-            messagebox.showerror("Error", "Score and max points must be numbers")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.grade_dialog.dialogs.score_and_max_points_must_be_numbers', default="Score and max points must be numbers"))
             return
 
         if score < 0 or score > max_points:
-            messagebox.showerror("Error", f"Score must be between 0 and {max_points}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.grade_dialog.dialogs.error', default="Error"), f"Score must be between 0 and {max_points}")
             return
 
         student_id = self.student_var.get().split(' - ')[0]

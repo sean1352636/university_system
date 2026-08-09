@@ -43,7 +43,7 @@ def show_screening_management(self):
     finally:
         conn.close()
 
-    movie_var = tk.StringVar(value="all")
+    movie_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.management.screening_management.values.all', default="all"))
     movie_combo = ttk.Combobox(filter_frame, textvariable=movie_var, width=30,
                                values=[m[1] for m in movies])
     movie_combo.pack(side="left", padx=10)
@@ -127,7 +127,7 @@ def show_screening_management(self):
 def show_add_screening_form(self):
     """Show form to add a new screening."""
     form_window = tk.Toplevel(self.root)
-    form_window.title("Add Screening")
+    form_window.title(_t('gui.operations.commerce.cinema.cinema_gui.management.screening_management.windows.add_screening', default="Add Screening"))
     form_window.geometry("500x400")
     form_window.configure(bg="#ecf0f1")
     form_window.transient(self.root)
@@ -260,7 +260,7 @@ def edit_selected_screening(self):
         return
 
     form_window = tk.Toplevel(self.root)
-    form_window.title("Edit Screening")
+    form_window.title(_t('gui.operations.commerce.cinema.cinema_gui.management.screening_management.windows.edit_screening', default="Edit Screening"))
     form_window.geometry("400x300")
     form_window.configure(bg="#ecf0f1")
     form_window.transient(self.root)
@@ -306,7 +306,7 @@ def edit_selected_screening(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Screening updated!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.management.screening_management.dialogs.screening_updated', default="Screening updated!"))
         form_window.destroy()
         self.show_screening_management()
 
@@ -340,5 +340,5 @@ def cancel_selected_screening(self):
     finally:
         conn.close()
 
-    messagebox.showinfo(_t("cinema.common.success"), "Screening cancelled")
+    messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.management.screening_management.dialogs.screening_cancelled', default="Screening cancelled"))
     self.show_screening_management()

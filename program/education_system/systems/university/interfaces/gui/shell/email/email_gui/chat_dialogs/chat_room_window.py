@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from ._common import (
     askinteger,
     askstring,
@@ -93,23 +95,23 @@ class ChatRoomWindow:
         # Top toolbar: history + presence + search
         history_frame = ttk.Frame(main_frame)
         history_frame.pack(fill=tk.X)
-        self.load_older_button = ttk.Button(history_frame, text="Load Older", command=self.load_older)
+        self.load_older_button = ttk.Button(history_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.load_older', default="Load Older"), command=self.load_older)
         self.load_older_button.pack(side=tk.LEFT)
         self.history_status = ttk.Label(history_frame, text="")
         self.history_status.pack(side=tk.LEFT, padx=10)
-        self.presence_label = ttk.Label(history_frame, text="● 0 online", foreground="#888")
+        self.presence_label = ttk.Label(history_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.labels.value_0_online', default="● 0 online"), foreground="#888")
         self.presence_label.pack(side=tk.RIGHT)
-        ttk.Button(history_frame, text="Pinned", command=self.show_pinned).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(history_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.pinned', default="Pinned"), command=self.show_pinned).pack(side=tk.RIGHT, padx=5)
 
         # Search bar (in-room)
         search_frame = ttk.Frame(main_frame)
         search_frame.pack(fill=tk.X, pady=(4, 4))
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.labels.search', default="Search:")).pack(side=tk.LEFT)
         self.search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=self.search_var)
         search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         search_entry.bind('<Return>', lambda e: self.do_search())
-        ttk.Button(search_frame, text="Find", command=self.do_search).pack(side=tk.LEFT)
+        ttk.Button(search_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.find', default="Find"), command=self.do_search).pack(side=tk.LEFT)
 
         # Resizable two-pane layout: chat on the left, members sidebar on the right.
         self.paned = ttk.PanedWindow(main_frame, orient=tk.HORIZONTAL)
@@ -120,7 +122,7 @@ class ChatRoomWindow:
         self.paned.add(self.members_pane, weight=1)
 
         # Members sidebar contents
-        ttk.Label(self.members_pane, text="Members",
+        ttk.Label(self.members_pane, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.labels.members', default="Members"),
                   font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, padx=4, pady=(2, 2))
         cols = ("Status", "Member", "Role")
         self.members_tree = ttk.Treeview(self.members_pane, columns=cols, show="headings")
@@ -224,36 +226,36 @@ class ChatRoomWindow:
 
         button_col = ttk.Frame(input_frame)
         button_col.pack(side=tk.RIGHT)
-        ttk.Button(button_col, text="📎 Attach", command=self.attach_file).pack(fill=tk.X)
-        ttk.Button(button_col, text="Send", command=self.send_message).pack(fill=tk.X, pady=(2, 0))
+        ttk.Button(button_col, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.attach', default="📎 Attach"), command=self.attach_file).pack(fill=tk.X)
+        ttk.Button(button_col, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.send', default="Send"), command=self.send_message).pack(fill=tk.X, pady=(2, 0))
 
         # Controls frame
         controls_frame = ttk.Frame(main_frame)
         controls_frame.pack(fill=tk.X)
 
-        ttk.Button(controls_frame, text="Members", command=self.show_members).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Invite", command=self.invite_user).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.members', default="Members"), command=self.show_members).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.invite', default="Invite"), command=self.invite_user).pack(side=tk.LEFT, padx=5)
         # Admins/creator: full member-management dialog (kick / ban / mute /
         # promote / transfer ownership). Hidden for ordinary members.
         if (self.room_info or {}).get('is_admin'):
-            ttk.Button(controls_frame, text="Manage…",
+            ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.manage', default="Manage…"),
                        command=self.open_manage_members
                        ).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Seen By", command=self.show_seen_by).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Notes", command=self.open_notes).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Poll…", command=self.create_poll).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.seen_by', default="Seen By"), command=self.show_seen_by).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.notes', default="Notes"), command=self.open_notes).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.poll', default="Poll…"), command=self.create_poll).pack(side=tk.LEFT, padx=5)
         # Course-linked controls (only meaningful when the room maps to a module)
         if (self.room_info or {}).get('linked_course_code'):
-            ttk.Button(controls_frame, text="📚 Module",
+            ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.module', default="📚 Module"),
                        command=self.show_module_info).pack(side=tk.LEFT, padx=5)
-            ttk.Button(controls_frame, text="Post Due Dates",
+            ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.post_due_dates', default="Post Due Dates"),
                        command=self.post_due_dates).pack(side=tk.LEFT, padx=5)
-        self.hand_button = ttk.Button(controls_frame, text="🙋 Raise Hand",
+        self.hand_button = ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.raise_hand', default="🙋 Raise Hand"),
                                       command=self.toggle_hand)
         self.hand_button.pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Queue", command=self.show_queue).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Leave Room", command=self.leave_room).pack(side=tk.LEFT, padx=5)
-        ttk.Button(controls_frame, text="Close", command=self._on_close).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.queue', default="Queue"), command=self.show_queue).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.leave_room', default="Leave Room"), command=self.leave_room).pack(side=tk.LEFT, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.close', default="Close"), command=self._on_close).pack(side=tk.RIGHT, padx=5)
 
     # ---- rendering helpers ----------------------------------------------
 
@@ -580,7 +582,7 @@ class ChatRoomWindow:
             if ok:
                 self.load_messages()
         except Exception as e:
-            messagebox.showerror("Error", f"Vote failed: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Vote failed: {e}")
 
     def _update_mode_banner(self):
         """Show announcement-only / office-hours banner when relevant."""
@@ -688,7 +690,7 @@ class ChatRoomWindow:
             self._update_history_controls()
         except Exception as e:
             logger.exception("Error loading older chat messages")
-            messagebox.showerror("Error", f"Error loading older messages: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Error loading older messages: {e}")
 
     def _on_return(self, event):
         """Enter sends; Shift+Enter falls through to insert newline."""
@@ -700,7 +702,7 @@ class ChatRoomWindow:
     def send_message(self, event=None):
         """Send a message to the chat room"""
         if not self.dashboard:
-            messagebox.showerror("Error", "Dashboard not initialized. Cannot send message.")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.dashboard_not_initialized_cannot_send_message', default="Dashboard not initialized. Cannot send message."))
             return
         text = self.message_entry.get("1.0", tk.END).strip()
         att = self._pending_attachment
@@ -729,9 +731,9 @@ class ChatRoomWindow:
                 self._last_typing_ping = 0.0
                 self._poll_once()
             else:
-                messagebox.showerror("Error", "Failed to send message")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.failed_to_send_message', default="Failed to send message"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error sending message: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Error sending message: {e}")
             logger.exception("Error sending chat message")
 
     # ---- live updates: polling, typing, presence -----------------------
@@ -913,7 +915,7 @@ class ChatRoomWindow:
                 self._members_visible = True
                 self._refresh_members_panel()
         except Exception as e:
-            messagebox.showerror("Error", f"Error toggling members: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Error toggling members: {e}")
 
     def _refresh_members_panel(self):
         """Re-populate the members sidebar from get_room_members + presence.
@@ -949,8 +951,8 @@ class ChatRoomWindow:
         """Admin shortcut: open the full member-management dialog (kick / ban /
         mute / promote / transfer ownership / Bans viewer)."""
         if not (self.room_info or {}).get('is_admin'):
-            messagebox.showinfo("Manage members",
-                                "You need to be a room admin to manage members.")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.manage_members', default="Manage members"),
+                                _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.you_need_to_be_a_room_admin_to_manage_members', default="You need to be a room admin to manage members."))
             return
         ManageMembersDialog(self.window, self.dashboard, self.room_info,
                             refresh_callback=self._refresh_members_panel)
@@ -984,32 +986,32 @@ class ChatRoomWindow:
         menu = tk.Menu(self.window, tearoff=0)
         if member.get('is_admin'):
             menu.add_command(
-                label="Demote to member",
+                label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.demote_to_member', default="Demote to member"),
                 command=lambda: self._do_member_action(
                     self.dashboard.set_room_admin, target_uid, False,
                 ),
             )
         else:
             menu.add_command(
-                label="Promote to admin",
+                label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.promote_to_admin', default="Promote to admin"),
                 command=lambda: self._do_member_action(
                     self.dashboard.set_room_admin, target_uid, True,
                 ),
             )
         menu.add_separator()
         menu.add_command(
-            label="Kick from room",
+            label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.kick_from_room', default="Kick from room"),
             command=lambda: self._confirm_and(
                 "Kick", "Remove this member from the room?",
                 self.dashboard.kick_room_member, target_uid,
             ),
         )
         menu.add_command(
-            label="Ban from room…",
+            label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.ban_from_room', default="Ban from room…"),
             command=lambda: self._ban_from_sidebar(target_uid),
         )
         menu.add_command(
-            label="Mute…",
+            label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.mute', default="Mute…"),
             command=lambda: self._mute_from_sidebar(target_uid),
         )
         try:
@@ -1023,11 +1025,11 @@ class ChatRoomWindow:
             if ok:
                 self._refresh_members_panel()
             else:
-                messagebox.showerror("Error",
-                                     "Action denied (creator can't be acted on, "
-                                     "or you lack permission).")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"),
+                                     _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.action_denied_creator_can_t_be_acted_on_or_you_lack_permission', default="Action denied (creator can't be acted on, "
+                                     "or you lack permission)."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e))
 
     def _confirm_and(self, title, prompt, fn, target_uid, *args):
         if not messagebox.askyesno(title, prompt, parent=self.window):
@@ -1046,19 +1048,19 @@ class ChatRoomWindow:
                 if ok:
                     self._refresh_members_panel()
                 else:
-                    messagebox.showerror("Error",
-                                         "Action denied (creator can't be acted on, "
-                                         "or you lack permission).")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"),
+                                         _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.action_denied_creator_can_t_be_acted_on_or_you_lack_permission', default="Action denied (creator can't be acted on, "
+                                         "or you lack permission)."))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e))
             return
         self._do_member_action(fn, target_uid, *args)
 
     def _ban_from_sidebar(self, target_uid):
         if not messagebox.askyesno(
-            "Ban member",
-            "Ban this user from the room? They will be removed and unable "
-            "to rejoin until you unban them.",
+            _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.ban_member', default="Ban member"),
+            _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.ban_this_user_from_the_room_they_will_be_removed_and_unable_to_r', default="Ban this user from the room? They will be removed and unable "
+            "to rejoin until you unban them."),
             parent=self.window,
         ):
             return
@@ -1072,9 +1074,9 @@ class ChatRoomWindow:
             if ok:
                 self._refresh_members_panel()
             else:
-                messagebox.showerror("Error", "Could not ban (creator?).")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.could_not_ban_creator', default="Could not ban (creator?)."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e))
 
     def _mute_from_sidebar(self, target_uid):
         minutes = askinteger("Mute", "Mute for how many minutes?",
@@ -1093,19 +1095,19 @@ class ChatRoomWindow:
             if ok:
                 self._refresh_members_panel()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e))
 
     def show_seen_by(self):
         """Show who has read up to the latest message."""
         if not self.dashboard or not self.last_message_id:
-            messagebox.showinfo("Seen By", "No messages yet.")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.seen_by', default="Seen By"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.no_messages_yet', default="No messages yet."))
             return
         try:
             readers = self.dashboard.get_chat_message_readers(
                 self.room_id, self.last_message_id
             )
             if not readers:
-                messagebox.showinfo("Seen By", "Nobody else has read the latest message yet.")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.seen_by', default="Seen By"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.nobody_else_has_read_the_latest_message_yet', default="Nobody else has read the latest message yet."))
                 return
             lines = [f"• {r['full_name']} (@{r['username']})  — {r['read_at']}" for r in readers]
             messagebox.showinfo(
@@ -1113,7 +1115,7 @@ class ChatRoomWindow:
                 "Latest message has been read by:\n\n" + "\n".join(lines),
             )
         except Exception as e:
-            messagebox.showerror("Error", f"Error fetching read receipts: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Error fetching read receipts: {e}")
 
     # ---- per-message context menu and actions --------------------------
 
@@ -1139,33 +1141,33 @@ class ChatRoomWindow:
         if not is_deleted:
             if msg.get('poll'):
                 menu.add_command(
-                    label="Propose dates to calendar",
+                    label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.propose_dates_to_calendar', default="Propose dates to calendar"),
                     command=lambda: self._propose_poll_to_calendar(msg_id),
                 )
                 menu.add_separator()
-            menu.add_command(label="Reply", command=lambda: self._reply_to(msg_id))
+            menu.add_command(label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.reply', default="Reply"), command=lambda: self._reply_to(msg_id))
             react_menu = tk.Menu(menu, tearoff=0)
             for emoji in self.REACTION_PALETTE:
                 react_menu.add_command(
                     label=emoji,
                     command=lambda em=emoji: self._toggle_reaction(msg_id, em, mine=False),
                 )
-            menu.add_cascade(label="React", menu=react_menu)
+            menu.add_cascade(label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.react', default="React"), menu=react_menu)
             pin_label = "Unpin" if msg.get('pinned_at') else "Pin"
             menu.add_command(label=pin_label,
                              command=lambda: self._toggle_pin(msg_id, not msg.get('pinned_at')))
             menu.add_separator()
-            menu.add_command(label="Copy text", command=lambda: self._copy_message(msg_id))
-            menu.add_command(label="Copy link", command=lambda: self._copy_message_link(msg_id))
+            menu.add_command(label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.copy_text', default="Copy text"), command=lambda: self._copy_message(msg_id))
+            menu.add_command(label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.copy_link', default="Copy link"), command=lambda: self._copy_message_link(msg_id))
             menu.add_separator()
-            menu.add_command(label="Report message…",
+            menu.add_command(label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.report_message', default="Report message…"),
                              command=lambda: self._report_message(msg_id))
             if is_own:
                 menu.add_separator()
-                menu.add_command(label="Edit…", command=lambda: self._edit_message(msg_id))
-                menu.add_command(label="Delete", command=lambda: self._delete_message(msg_id))
+                menu.add_command(label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.edit', default="Edit…"), command=lambda: self._edit_message(msg_id))
+                menu.add_command(label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.delete', default="Delete"), command=lambda: self._delete_message(msg_id))
         else:
-            menu.add_command(label="Copy link", command=lambda: self._copy_message_link(msg_id))
+            menu.add_command(label=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.menus.copy_link', default="Copy link"), command=lambda: self._copy_message_link(msg_id))
         try:
             menu.tk_popup(event.x_root, event.y_root)
         finally:
@@ -1192,7 +1194,7 @@ class ChatRoomWindow:
         self.reply_cancel.pack_forget()
 
     def attach_file(self):
-        path = filedialog.askopenfilename(parent=self.window, title="Attach file")
+        path = filedialog.askopenfilename(parent=self.window, title=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.attach_file', default="Attach file"))
         if not path:
             return
         try:
@@ -1223,7 +1225,7 @@ class ChatRoomWindow:
         try:
             webbrowser.open(path if path.startswith(("http://", "https://")) else f"file://{os.path.abspath(path)}")
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open attachment: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Could not open attachment: {e}")
 
     def _toggle_reaction(self, msg_id, emoji, mine):
         if not self.dashboard:
@@ -1236,7 +1238,7 @@ class ChatRoomWindow:
             if ok:
                 self._refresh_message(msg_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Reaction failed: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Reaction failed: {e}")
 
     def _toggle_pin(self, msg_id, pin):
         try:
@@ -1244,9 +1246,9 @@ class ChatRoomWindow:
             if ok:
                 self._refresh_message(msg_id)
             else:
-                messagebox.showerror("Error", "Could not change pin (need admin or own message).")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.could_not_change_pin_need_admin_or_own_message', default="Could not change pin (need admin or own message)."))
         except Exception as e:
-            messagebox.showerror("Error", f"Pin failed: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Pin failed: {e}")
 
     def _edit_message(self, msg_id):
         msg = self._messages_by_id.get(msg_id)
@@ -1265,21 +1267,21 @@ class ChatRoomWindow:
             if ok:
                 self._refresh_message(msg_id)
             else:
-                messagebox.showerror("Error", "Edit failed (own messages only).")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.edit_failed_own_messages_only', default="Edit failed (own messages only)."))
         except Exception as e:
-            messagebox.showerror("Error", f"Edit failed: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Edit failed: {e}")
 
     def _delete_message(self, msg_id):
-        if not messagebox.askyesno("Delete", "Delete this message?"):
+        if not messagebox.askyesno(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.delete', default="Delete"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.delete_this_message', default="Delete this message?")):
             return
         try:
             ok = self.dashboard.delete_chat_message(msg_id)
             if ok:
                 self._refresh_message(msg_id)
             else:
-                messagebox.showerror("Error", "Delete failed (own messages or admin only).")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.delete_failed_own_messages_or_admin_only', default="Delete failed (own messages or admin only)."))
         except Exception as e:
-            messagebox.showerror("Error", f"Delete failed: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Delete failed: {e}")
 
     def _copy_message(self, msg_id):
         msg = self._messages_by_id.get(msg_id) or {}
@@ -1291,19 +1293,19 @@ class ChatRoomWindow:
 
     def _report_message(self, msg_id):
         dlg = tk.Toplevel(self.window)
-        dlg.title("Report message")
+        dlg.title(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.windows.report_message', default="Report message"))
         dlg.geometry("420x260")
         dlg.transient(self.window)
         dlg.after(100, lambda: dlg.grab_set() if dlg.winfo_exists() else None)
         frame = ttk.Frame(dlg, padding=10)
         frame.pack(fill=tk.BOTH, expand=True)
-        ttk.Label(frame, text="Why are you reporting this message?").pack(anchor=tk.W)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.labels.why_are_you_reporting_this_message', default="Why are you reporting this message?")).pack(anchor=tk.W)
         text = scrolledtext.ScrolledText(frame, height=6, wrap=tk.WORD)
         text.pack(fill=tk.BOTH, expand=True, pady=(4, 8))
         escalate_var = tk.BooleanVar()
         ttk.Checkbutton(
             frame,
-            text="Escalate as a safeguarding concern (creates a case file)",
+            text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.escalate_as_a_safeguarding_concern_creates_a_case_file', default="Escalate as a safeguarding concern (creates a case file)"),
             variable=escalate_var,
         ).pack(anchor=tk.W)
 
@@ -1315,23 +1317,23 @@ class ChatRoomWindow:
                     escalate_safeguarding=bool(escalate_var.get()),
                 )
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e), parent=dlg)
                 return
             if ok:
                 messagebox.showinfo(
-                    "Reported",
-                    "Thank you. A moderator will review the report.",
+                    _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.reported', default="Reported"),
+                    _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.thank_you_a_moderator_will_review_the_report', default="Thank you. A moderator will review the report."),
                     parent=dlg,
                 )
                 dlg.destroy()
             else:
-                messagebox.showerror("Error", "Could not submit report.",
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.could_not_submit_report', default="Could not submit report."),
                                      parent=dlg)
 
         btns = ttk.Frame(frame)
         btns.pack(fill=tk.X, pady=(8, 0))
-        ttk.Button(btns, text="Submit", command=submit).pack(side=tk.RIGHT)
-        ttk.Button(btns, text="Cancel",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.submit', default="Submit"), command=submit).pack(side=tk.RIGHT)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.cancel', default="Cancel"),
                    command=dlg.destroy).pack(side=tk.RIGHT, padx=5)
 
     def _copy_message_link(self, msg_id):
@@ -1340,7 +1342,7 @@ class ChatRoomWindow:
             self.window.clipboard_clear()
             self.window.clipboard_append(link)
             self.window.update()
-            messagebox.showinfo("Copied", f"Link copied:\n{link}")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.copied', default="Copied"), f"Link copied:\n{link}")
         except Exception:
             pass
 
@@ -1363,10 +1365,10 @@ class ChatRoomWindow:
         try:
             hits = self.dashboard.search_chat_messages(query, room_id=self.room_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Search failed: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Search failed: {e}")
             return
         if not hits:
-            messagebox.showinfo("Search", f"No matches for '{query}' in this room.")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.search', default="Search"), f"No matches for '{query}' in this room.")
             return
         # Highlight matches in the currently rendered window.
         self.chat_text.tag_remove("search_hit", "1.0", tk.END)
@@ -1383,7 +1385,7 @@ class ChatRoomWindow:
             idx = end
         if first_hit:
             self.chat_text.see(first_hit)
-        messagebox.showinfo("Search", f"{len(hits)} match(es) in this room "
+        messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.search', default="Search"), f"{len(hits)} match(es) in this room "
                                        "(highlighted in view; older matches may be off-screen).")
 
     def show_pinned(self):
@@ -1392,14 +1394,14 @@ class ChatRoomWindow:
         try:
             pinned = self.dashboard.get_pinned_messages(self.room_id) or []
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load pinned messages: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Could not load pinned messages: {e}")
             return
         dlg = tk.Toplevel(self.window)
         dlg.title(f"Pinned in {self.room_name}")
         dlg.geometry("520x400")
         dlg.transient(self.window)
         if not pinned:
-            ttk.Label(dlg, text="No pinned messages.").pack(padx=20, pady=20)
+            ttk.Label(dlg, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.labels.no_pinned_messages', default="No pinned messages.")).pack(padx=20, pady=20)
         else:
             txt = scrolledtext.ScrolledText(dlg, wrap=tk.WORD, state=tk.NORMAL)
             txt.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1410,22 +1412,22 @@ class ChatRoomWindow:
             txt.tag_configure("header", font=("TkDefaultFont", 10, "bold"),
                               foreground="#b8860b")
             txt.config(state=tk.DISABLED)
-        ttk.Button(dlg, text="Close", command=dlg.destroy).pack(pady=(0, 10))
+        ttk.Button(dlg, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.close', default="Close"), command=dlg.destroy).pack(pady=(0, 10))
 
     # ---- academics + staff_hr integration ------------------------------
 
     def show_module_info(self):
         code = (self.room_info or {}).get('linked_course_code')
         if not code:
-            messagebox.showinfo("Module", "This room isn't linked to a module.")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.module', default="Module"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.this_room_isn_t_linked_to_a_module', default="This room isn't linked to a module."))
             return
         try:
             info = self.dashboard.get_module_info(code)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e))
             return
         if not info:
-            messagebox.showinfo("Module",
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.module', default="Module"),
                                 f"No module record found for '{code}'.")
             return
 
@@ -1447,7 +1449,7 @@ class ChatRoomWindow:
             desc.config(state=tk.DISABLED)
             desc.pack(fill=tk.X, pady=(0, 8))
 
-        ttk.Label(frame, text="Upcoming assignments",
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.labels.upcoming_assignments', default="Upcoming assignments"),
                   font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, pady=(4, 2))
         cols = ("Title", "Due", "Type", "Marks")
         tree = ttk.Treeview(frame, columns=cols, show="headings", height=10)
@@ -1464,43 +1466,43 @@ class ChatRoomWindow:
             ))
         tree.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Button(frame, text="Close", command=dlg.destroy).pack(pady=(8, 0))
+        ttk.Button(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.close', default="Close"), command=dlg.destroy).pack(pady=(8, 0))
 
     def post_due_dates(self):
         code = (self.room_info or {}).get('linked_course_code')
         if not code:
-            messagebox.showinfo("Due dates", "This room isn't linked to a module.")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.due_dates', default="Due dates"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.this_room_isn_t_linked_to_a_module', default="This room isn't linked to a module."))
             return
         try:
             n = self.dashboard.post_assignment_due_dates(self.room_id)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e))
             return
         if n:
             self.load_messages()
-            messagebox.showinfo("Due dates",
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.due_dates', default="Due dates"),
                                 f"Posted {n} new due-date notice(s).")
         else:
-            messagebox.showinfo("Due dates",
-                                "No new upcoming assignments to post.")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.due_dates', default="Due dates"),
+                                _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.no_new_upcoming_assignments_to_post', default="No new upcoming assignments to post."))
 
     def _propose_poll_to_calendar(self, msg_id):
         try:
             proposed = self.dashboard.propose_poll_dates_to_calendar(msg_id)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e))
             return
         if not proposed:
             messagebox.showinfo(
-                "Calendar",
-                "No date-formatted options found in this poll, or the calendar "
+                _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.calendar', default="Calendar"),
+                _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.no_date_formatted_options_found_in_this_poll_or_the_calendar_tab', default="No date-formatted options found in this poll, or the calendar "
                 "table isn't available.\n\n"
-                "Tip: write options like '2026-05-14' or '2026-05-14 14:00'.",
+                "Tip: write options like '2026-05-14' or '2026-05-14 14:00'."),
             )
             return
         lines = [f"• {p['date']}  ({p['option']})" for p in proposed]
         messagebox.showinfo(
-            "Calendar",
+            _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.calendar', default="Calendar"),
             f"Added {len(proposed)} tentative event(s):\n\n" + "\n".join(lines),
         )
 
@@ -1512,7 +1514,7 @@ class ChatRoomWindow:
         except Exception:
             uid = None
         if not uid:
-            messagebox.showinfo("Profile",
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.profile', default="Profile"),
                                 f"No profile found for @{handle}.")
             return
         UserProfileDialog(self.window, self.dashboard, uid)
@@ -1521,7 +1523,7 @@ class ChatRoomWindow:
         try:
             members = self.dashboard.get_team_members(team_name) or []
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e))
             return
         dlg = tk.Toplevel(self.window)
         dlg.title(f"Team: {team_name}")
@@ -1547,7 +1549,7 @@ class ChatRoomWindow:
                     m['job_title'],
                 ))
             tree.pack(fill=tk.BOTH, expand=True)
-        ttk.Button(dlg, text="Close", command=dlg.destroy).pack(pady=(8, 0))
+        ttk.Button(dlg, text=_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.buttons.close', default="Close"), command=dlg.destroy).pack(pady=(8, 0))
 
     def _open_room_switcher(self, _event=None):
         """Ctrl+K: jump to another room via a quick-find dialog."""
@@ -1582,7 +1584,7 @@ class ChatRoomWindow:
                     text="✋ Lower Hand" if not mine else "🙋 Raise Hand"
                 )
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), str(e))
 
     def show_queue(self):
         if not self.dashboard:
@@ -1601,24 +1603,24 @@ class ChatRoomWindow:
                     user = users[0]
                     result = self.dashboard.invite_user_to_room(self.room_id, user['id'])
                     if result == True:
-                        messagebox.showinfo("Success", f"Invitation sent to {username}")
+                        messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.success', default="Success"), f"Invitation sent to {username}")
                     elif result == "already_member":
-                        messagebox.showinfo("Info", f"{username} is already a member")
+                        messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.info', default="Info"), f"{username} is already a member")
                     else:
-                        messagebox.showerror("Error", "Failed to send invitation")
+                        messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.failed_to_send_invitation', default="Failed to send invitation"))
                 else:
-                    messagebox.showerror("Error", f"User '{username}' not found")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"User '{username}' not found")
             except Exception as e:
-                messagebox.showerror("Error", f"Error inviting user: {e}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Error inviting user: {e}")
 
     def leave_room(self):
-        if messagebox.askyesno("Confirm", f"Leave room '{self.room_name}'?"):
+        if messagebox.askyesno(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.confirm', default="Confirm"), f"Leave room '{self.room_name}'?"):
             try:
                 if self.dashboard.leave_chat_room(self.room_id):
-                    messagebox.showinfo("Success", f"Left room '{self.room_name}'")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.success', default="Success"), f"Left room '{self.room_name}'")
                     self._on_close()
                 else:
-                    messagebox.showerror("Error", "Failed to leave room")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.failed_to_leave_room', default="Failed to leave room"))
             except Exception as e:
-                messagebox.showerror("Error", f"Error leaving room: {e}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.chat_room_window.dialogs.error', default="Error"), f"Error leaving room: {e}")
 

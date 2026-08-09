@@ -37,7 +37,7 @@ def show_ticket_management(self):
     search_entry.pack(side="left", padx=10)
 
     tk.Label(search_frame, text=_t("cinema.screenings.status_label"), bg="#ffffff", fg="#333333").pack(side="left", padx=(20, 5))
-    status_var = tk.StringVar(value="all")
+    status_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.management.ticket_management.values.all', default="all"))
     status_combo = ttk.Combobox(search_frame, textvariable=status_var, width=15,
                                 values=["all", "active", "cancelled", "pending"])
     status_combo.pack(side="left")
@@ -242,7 +242,7 @@ def edit_selected_ticket(self):
                   payment_var.get(), pay_status_var.get(), notes_text.get("1.0", tk.END).strip(), booking_id))
 
             conn.commit()
-            messagebox.showinfo(_t("cinema.common.success"), "Booking updated successfully!")
+            messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.management.ticket_management.dialogs.booking_updated_successfully', default="Booking updated successfully!"))
             form_window.destroy()
             self.show_ticket_management()
 

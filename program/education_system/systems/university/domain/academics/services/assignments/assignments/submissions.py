@@ -4,7 +4,7 @@ import os
 import shutil
 import zipfile
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.domain.academics.services.assignments.core.constants import SUBDIR_EXPORTS
 
 
@@ -476,7 +476,7 @@ class SubmissionsMixin:
             source_path, file_name = result
 
             if not download_path:
-                downloads_dir = paths.EXPORTS_SUBMISSIONS_DIR
+                downloads_dir = paths.UNIVERSITY_EXPORTS_SUBMISSIONS_DIR
                 downloads_dir.mkdir(parents=True, exist_ok=True)
                 download_path = str(downloads_dir / file_name)
 

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -48,18 +50,18 @@ def show_transport_interface(self):
     self.clear_content()
     self.update_status("Transportation Information")
 
-    title = ttk.Label(self.content_frame, text="Transportation Information", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.transport.labels.transportation_information', default="Transportation Information"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.transport.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.transport.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -68,7 +70,7 @@ def show_transport_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Transportation display frame
-    transport_frame = ttk.LabelFrame(self.content_frame, text="Transportation Details", padding=15)
+    transport_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.transport.labels.transportation_details', default="Transportation Details"), padding=15)
     transport_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_transport_info():
@@ -77,7 +79,7 @@ def show_transport_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(transport_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(transport_frame, text=_t('gui.academics.parent_portal.transport.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -109,7 +111,7 @@ def show_transport_interface(self):
                     info_frame.pack(fill=tk.BOTH, expand=True)
 
                     # Route information
-                    route_frame = ttk.LabelFrame(info_frame, text="Route Information", padding=10)
+                    route_frame = ttk.LabelFrame(info_frame, text=_t('gui.academics.parent_portal.transport.labels.route_information', default="Route Information"), padding=10)
                     route_frame.pack(fill=tk.X, pady=(0, 10))
 
                     ttk.Label(route_frame, text=f"Route Name: {transport_data[0] or 'Not specified'}",
@@ -118,7 +120,7 @@ def show_transport_interface(self):
                              font=('Arial', 10)).pack(anchor='w', pady=3)
 
                     # Schedule information
-                    schedule_frame = ttk.LabelFrame(info_frame, text="Schedule", padding=10)
+                    schedule_frame = ttk.LabelFrame(info_frame, text=_t('gui.academics.parent_portal.transport.labels.schedule', default="Schedule"), padding=10)
                     schedule_frame.pack(fill=tk.X, pady=(0, 10))
 
                     ttk.Label(schedule_frame, text=f"Pickup Time: {transport_data[2] or 'Not specified'}",
@@ -131,7 +133,7 @@ def show_transport_interface(self):
                              font=('Arial', 10)).pack(anchor='w', pady=3)
 
                     # Driver information
-                    driver_frame = ttk.LabelFrame(info_frame, text="Driver Information", padding=10)
+                    driver_frame = ttk.LabelFrame(info_frame, text=_t('gui.academics.parent_portal.transport.labels.driver_information', default="Driver Information"), padding=10)
                     driver_frame.pack(fill=tk.X)
 
                     ttk.Label(driver_frame, text=f"Driver Name: {transport_data[6] or 'Not assigned'}",
@@ -142,19 +144,19 @@ def show_transport_interface(self):
                     # Action buttons
                     btn_frame = ttk.Frame(transport_frame)
                     btn_frame.pack(pady=10)
-                    ttk.Button(btn_frame, text="Update Transportation",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.transport.buttons.update_transportation', default="Update Transportation"),
                               command=lambda: self.update_transport_info(student_id)).pack(side=tk.LEFT, padx=5)
-                    ttk.Button(btn_frame, text="Report Issue",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.transport.buttons.report_issue', default="Report Issue"),
                               command=lambda: self.report_transport_issue(student_id)).pack(side=tk.LEFT, padx=5)
                 else:
-                    ttk.Label(transport_frame, text="No transportation information found",
+                    ttk.Label(transport_frame, text=_t('gui.academics.parent_portal.transport.labels.no_transportation_information_found', default="No transportation information found"),
                              font=('Arial', 11)).pack(pady=50)
-                    ttk.Button(transport_frame, text="Request Transportation",
+                    ttk.Button(transport_frame, text=_t('gui.academics.parent_portal.transport.buttons.request_transportation', default="Request Transportation"),
                               command=lambda: self.request_transportation(student_id)).pack()
             else:
-                ttk.Label(transport_frame, text="Transportation system not configured",
+                ttk.Label(transport_frame, text=_t('gui.academics.parent_portal.transport.labels.transportation_system_not_configured', default="Transportation system not configured"),
                          font=('Arial', 11)).pack(pady=20)
-                ttk.Label(transport_frame, text="Please contact university administration for transportation services.",
+                ttk.Label(transport_frame, text=_t('gui.academics.parent_portal.transport.labels.please_contact_university_administration_for_transportation_serv', default="Please contact university administration for transportation services."),
                          font=('Arial', 9, 'italic')).pack()
 
             conn.close()
@@ -163,7 +165,7 @@ def show_transport_interface(self):
             ttk.Label(transport_frame, text=f"Error loading transportation info: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Transport Info", command=load_transport_info).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.transport.buttons.load_transport_info', default="Load Transport Info"), command=load_transport_info).pack(side=tk.LEFT, padx=5)
     load_transport_info()
 ParentPortalGUI.show_transport_interface = show_transport_interface
 
@@ -171,7 +173,7 @@ def update_transport_info(self, student_id):
     """Update transportation information"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Update Transportation Information")
+    dialog.title(_t('gui.academics.parent_portal.transport.windows.update_transportation_information', default="Update Transportation Information"))
     dialog.geometry("600x550")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -180,7 +182,7 @@ def update_transport_info(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Update Transportation Information",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.update_transportation_information', default="Update Transportation Information"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Fetch existing transportation info
@@ -194,7 +196,7 @@ def update_transport_info(self, student_id):
         """)
 
         if not cursor.fetchone():
-            messagebox.showwarning("Not Available", "Transportation system not configured.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.not_available', default="Not Available"), _t('gui.academics.parent_portal.transport.dialogs.transportation_system_not_configured', default="Transportation system not configured."))
             conn.close()
             dialog.destroy()
             return
@@ -209,12 +211,12 @@ def update_transport_info(self, student_id):
         conn.close()
 
         if not existing_data:
-            messagebox.showwarning("No Record", "No transportation record found. Please request transportation first.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.no_record', default="No Record"), _t('gui.academics.parent_portal.transport.dialogs.no_transportation_record_found_please_request_transportation_fir', default="No transportation record found. Please request transportation first."))
             dialog.destroy()
             return
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load transportation information: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to load transportation information: {str(e)}")
         dialog.destroy()
         return
 
@@ -222,42 +224,42 @@ def update_transport_info(self, student_id):
     fields = {}
 
     # Route Number
-    ttk.Label(main_frame, text="Route Number:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.route_number', default="Route Number:")).pack(anchor='w', pady=(5, 0))
     fields['route_number'] = ttk.Entry(main_frame, width=50)
     fields['route_number'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[0]:
         fields['route_number'].insert(0, existing_data[0])
 
     # Bus Number
-    ttk.Label(main_frame, text="Bus Number:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.bus_number', default="Bus Number:")).pack(anchor='w', pady=(5, 0))
     fields['bus_number'] = ttk.Entry(main_frame, width=50)
     fields['bus_number'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[1]:
         fields['bus_number'].insert(0, existing_data[1])
 
     # Pickup Time
-    ttk.Label(main_frame, text="Pickup Time (HH:MM AM/PM):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.pickup_time_hh_mm_am_pm', default="Pickup Time (HH:MM AM/PM):")).pack(anchor='w', pady=(5, 0))
     fields['pickup_time'] = ttk.Entry(main_frame, width=50)
     fields['pickup_time'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[2]:
         fields['pickup_time'].insert(0, existing_data[2])
 
     # Pickup Location
-    ttk.Label(main_frame, text="Pickup Location:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.pickup_location', default="Pickup Location:")).pack(anchor='w', pady=(5, 0))
     fields['pickup_location'] = ttk.Entry(main_frame, width=50)
     fields['pickup_location'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[3]:
         fields['pickup_location'].insert(0, existing_data[3])
 
     # Dropoff Time
-    ttk.Label(main_frame, text="Dropoff Time (HH:MM AM/PM):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.dropoff_time_hh_mm_am_pm', default="Dropoff Time (HH:MM AM/PM):")).pack(anchor='w', pady=(5, 0))
     fields['dropoff_time'] = ttk.Entry(main_frame, width=50)
     fields['dropoff_time'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[4]:
         fields['dropoff_time'].insert(0, existing_data[4])
 
     # Dropoff Location
-    ttk.Label(main_frame, text="Dropoff Location:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.dropoff_location', default="Dropoff Location:")).pack(anchor='w', pady=(5, 0))
     fields['dropoff_location'] = ttk.Entry(main_frame, width=50)
     fields['dropoff_location'].pack(fill=tk.X, pady=(0, 10))
     if existing_data and existing_data[5]:
@@ -287,25 +289,25 @@ def update_transport_info(self, student_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Transportation information updated successfully!")
+            messagebox.showinfo(_t('gui.academics.parent_portal.transport.dialogs.success', default="Success"), _t('gui.academics.parent_portal.transport.dialogs.transportation_information_updated_successfully', default="Transportation information updated successfully!"))
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update transportation information: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to update transportation information: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Save", command=save_info).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.save', default="Save"), command=save_info).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.update_transport_info = update_transport_info
 
 def request_transportation(self, student_id):
     """Request transportation for a student"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Request Transportation")
+    dialog.title(_t('gui.academics.parent_portal.transport.windows.request_transportation', default="Request Transportation"))
     dialog.geometry("600x500")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -314,7 +316,7 @@ def request_transportation(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Request Transportation",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.request_transportation', default="Request Transportation"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Ensure table exists
@@ -344,7 +346,7 @@ def request_transportation(self, student_id):
 
         conn.close()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to initialize database: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to initialize database: {str(e)}")
         dialog.destroy()
         return
 
@@ -352,23 +354,23 @@ def request_transportation(self, student_id):
     fields = {}
 
     # Service Type
-    ttk.Label(main_frame, text="Service Type:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.service_type', default="Service Type:")).pack(anchor='w', pady=(5, 0))
     fields['service_type'] = ttk.Combobox(main_frame, width=50, state="readonly")
     fields['service_type']['values'] = ['Bus Service', 'Van Service', 'Special Needs Transport', 'Other']
     fields['service_type'].pack(fill=tk.X, pady=(0, 10))
 
     # Route Preference
-    ttk.Label(main_frame, text="Route Preference:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.route_preference', default="Route Preference:")).pack(anchor='w', pady=(5, 0))
     fields['route_preference'] = ttk.Entry(main_frame, width=50)
     fields['route_preference'].pack(fill=tk.X, pady=(0, 10))
 
     # Special Needs
-    ttk.Label(main_frame, text="Special Needs/Accommodations:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.special_needs_accommodations', default="Special Needs/Accommodations:")).pack(anchor='w', pady=(5, 0))
     fields['special_needs'] = scrolledtext.ScrolledText(main_frame, width=50, height=6)
     fields['special_needs'].pack(fill=tk.X, pady=(0, 10))
 
     # Start Date
-    ttk.Label(main_frame, text="Requested Start Date (YYYY-MM-DD):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.requested_start_date_yyyy_mm_dd', default="Requested Start Date (YYYY-MM-DD):")).pack(anchor='w', pady=(5, 0))
     fields['start_date'] = ttk.Entry(main_frame, width=50)
     fields['start_date'].pack(fill=tk.X, pady=(0, 10))
     # Set default to today
@@ -377,11 +379,11 @@ def request_transportation(self, student_id):
     def submit_request():
         # Validate required fields
         if not fields['service_type'].get():
-            messagebox.showwarning("Validation Error", "Please select a service type.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_select_a_service_type', default="Please select a service type."))
             return
 
         if not fields['start_date'].get():
-            messagebox.showwarning("Validation Error", "Please enter a start date.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_enter_a_start_date', default="Please enter a start date."))
             return
 
         try:
@@ -450,26 +452,26 @@ def request_transportation(self, student_id):
                 except Exception as email_error:
                     print(f"Email notification error: {email_error}")
 
-            messagebox.showinfo("Success", "Transportation request submitted successfully!\n\n"
-                                          "The transportation office will review your request and contact you.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.transport.dialogs.success', default="Success"), _t('gui.academics.parent_portal.transport.dialogs.transportation_request_submitted_successfully_the_transportation', default="Transportation request submitted successfully!\n\n"
+                                          "The transportation office will review your request and contact you."))
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to submit request: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to submit request: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Submit Request", command=submit_request).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.submit_request', default="Submit Request"), command=submit_request).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.request_transportation = request_transportation
 
 def report_transport_issue(self, student_id):
     """Report transportation issue"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Report Transportation Issue")
+    dialog.title(_t('gui.academics.parent_portal.transport.windows.report_transportation_issue', default="Report Transportation Issue"))
     dialog.geometry("600x450")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -478,7 +480,7 @@ def report_transport_issue(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Report Transportation Issue",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.report_transportation_issue', default="Report Transportation Issue"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Ensure table exists
@@ -508,7 +510,7 @@ def report_transport_issue(self, student_id):
 
         conn.close()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to initialize database: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to initialize database: {str(e)}")
         dialog.destroy()
         return
 
@@ -516,35 +518,35 @@ def report_transport_issue(self, student_id):
     fields = {}
 
     # Issue Type
-    ttk.Label(main_frame, text="Issue Type:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.issue_type', default="Issue Type:")).pack(anchor='w', pady=(5, 0))
     fields['issue_type'] = ttk.Combobox(main_frame, width=50, state="readonly")
     fields['issue_type']['values'] = ['Late Arrival', 'Missed Pickup', 'Safety Concern', 'Driver Behavior', 'Vehicle Condition', 'Other']
     fields['issue_type'].pack(fill=tk.X, pady=(0, 10))
 
     # Issue Date
-    ttk.Label(main_frame, text="Date of Issue (YYYY-MM-DD):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.date_of_issue_yyyy_mm_dd', default="Date of Issue (YYYY-MM-DD):")).pack(anchor='w', pady=(5, 0))
     fields['issue_date'] = ttk.Entry(main_frame, width=50)
     fields['issue_date'].pack(fill=tk.X, pady=(0, 10))
     fields['issue_date'].insert(0, datetime.datetime.now().strftime('%Y-%m-%d'))
 
     # Issue Time
-    ttk.Label(main_frame, text="Time of Issue (HH:MM AM/PM):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.time_of_issue_hh_mm_am_pm', default="Time of Issue (HH:MM AM/PM):")).pack(anchor='w', pady=(5, 0))
     fields['issue_time'] = ttk.Entry(main_frame, width=50)
     fields['issue_time'].pack(fill=tk.X, pady=(0, 10))
 
     # Description
-    ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.description', default="Description:")).pack(anchor='w', pady=(5, 0))
     fields['description'] = scrolledtext.ScrolledText(main_frame, width=50, height=8)
     fields['description'].pack(fill=tk.X, pady=(0, 10))
 
     def submit_report():
         # Validate required fields
         if not fields['issue_type'].get():
-            messagebox.showwarning("Validation Error", "Please select an issue type.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_select_an_issue_type', default="Please select an issue type."))
             return
 
         if not fields['description'].get('1.0', tk.END).strip():
-            messagebox.showwarning("Validation Error", "Please provide a description of the issue.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_provide_a_description_of_the_issue', default="Please provide a description of the issue."))
             return
 
         try:
@@ -567,19 +569,19 @@ def report_transport_issue(self, student_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Transportation issue reported successfully!\n\n"
-                                          "The transportation office will review your report and contact you.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.transport.dialogs.success', default="Success"), _t('gui.academics.parent_portal.transport.dialogs.transportation_issue_reported_successfully_the_transportation_of', default="Transportation issue reported successfully!\n\n"
+                                          "The transportation office will review your report and contact you."))
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to submit report: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to submit report: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Submit Report", command=submit_report).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.submit_report', default="Submit Report"), command=submit_report).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.report_transport_issue = report_transport_issue
 
 def show_pickup_interface(self):
@@ -587,18 +589,18 @@ def show_pickup_interface(self):
     self.clear_content()
     self.update_status("Authorized Representatives")
 
-    title = ttk.Label(self.content_frame, text="Authorized Representatives", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.transport.labels.authorized_representatives', default="Authorized Representatives"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.transport.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.transport.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -607,7 +609,7 @@ def show_pickup_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Authorized persons display frame
-    pickup_frame = ttk.LabelFrame(self.content_frame, text="Authorized Representatives", padding=15)
+    pickup_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.transport.labels.authorized_representatives', default="Authorized Representatives"), padding=15)
     pickup_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_pickup_info():
@@ -616,7 +618,7 @@ def show_pickup_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(pickup_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(pickup_frame, text=_t('gui.academics.parent_portal.transport.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -671,18 +673,18 @@ def show_pickup_interface(self):
                     # Action buttons
                     btn_frame = ttk.Frame(pickup_frame)
                     btn_frame.pack(pady=10, fill=tk.X)
-                    ttk.Button(btn_frame, text="Add Person",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.transport.buttons.add_person', default="Add Person"),
                               command=lambda: self.add_authorized_person(student_id)).pack(side=tk.LEFT, padx=5)
-                    ttk.Button(btn_frame, text="Remove Person",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.transport.buttons.remove_person', default="Remove Person"),
                               command=lambda: self.remove_authorized_person(student_id, tree)).pack(side=tk.LEFT, padx=5)
-                    ttk.Button(btn_frame, text="Emergency Contact Request",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.transport.buttons.emergency_contact_request', default="Emergency Contact Request"),
                               command=lambda: self.emergency_pickup_request(student_id)).pack(side=tk.LEFT, padx=5)
             else:
-                ttk.Label(pickup_frame, text="No authorized pickup persons found",
+                ttk.Label(pickup_frame, text=_t('gui.academics.parent_portal.transport.labels.no_authorized_pickup_persons_found', default="No authorized pickup persons found"),
                          font=('Arial', 11)).pack(pady=30)
-                ttk.Label(pickup_frame, text="Add people who are authorized to pick up this student.",
+                ttk.Label(pickup_frame, text=_t('gui.academics.parent_portal.transport.labels.add_people_who_are_authorized_to_pick_up_this_student', default="Add people who are authorized to pick up this student."),
                          font=('Arial', 9, 'italic')).pack(pady=5)
-                ttk.Button(pickup_frame, text="Add Authorized Person",
+                ttk.Button(pickup_frame, text=_t('gui.academics.parent_portal.transport.buttons.add_authorized_person', default="Add Authorized Person"),
                           command=lambda: self.add_authorized_person(student_id)).pack(pady=10)
 
             conn.close()
@@ -691,7 +693,7 @@ def show_pickup_interface(self):
             ttk.Label(pickup_frame, text=f"Error loading pickup authorization: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Authorized Persons", command=load_pickup_info).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.transport.buttons.load_authorized_persons', default="Load Authorized Persons"), command=load_pickup_info).pack(side=tk.LEFT, padx=5)
     load_pickup_info()
 ParentPortalGUI.show_pickup_interface = show_pickup_interface
 
@@ -699,7 +701,7 @@ def add_authorized_person(self, student_id):
     """Add authorized pickup person"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Add Authorized Pickup Person")
+    dialog.title(_t('gui.academics.parent_portal.transport.windows.add_authorized_pickup_person', default="Add Authorized Pickup Person"))
     dialog.geometry("650x650")
     dialog.minsize(600, 600)
     dialog.transient(self.root)
@@ -709,7 +711,7 @@ def add_authorized_person(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Add Authorized Pickup Person",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.add_authorized_pickup_person', default="Add Authorized Pickup Person"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Ensure table exists
@@ -740,7 +742,7 @@ def add_authorized_person(self, student_id):
 
         conn.close()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to initialize database: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to initialize database: {str(e)}")
         dialog.destroy()
         return
 
@@ -748,46 +750,46 @@ def add_authorized_person(self, student_id):
     fields = {}
 
     # Name
-    ttk.Label(main_frame, text="Full Name: *").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.full_name', default="Full Name: *")).pack(anchor='w', pady=(5, 0))
     fields['name'] = ttk.Entry(main_frame, width=50)
     fields['name'].pack(fill=tk.X, pady=(0, 10))
 
     # Relationship
-    ttk.Label(main_frame, text="Relationship to Student:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.relationship_to_student', default="Relationship to Student:")).pack(anchor='w', pady=(5, 0))
     fields['relationship'] = ttk.Combobox(main_frame, width=50, state="readonly")
     fields['relationship']['values'] = ['Parent', 'Guardian', 'Grandparent', 'Aunt/Uncle', 'Sibling', 'Family Friend', 'Other']
     fields['relationship'].pack(fill=tk.X, pady=(0, 10))
 
     # Phone
-    ttk.Label(main_frame, text="Phone Number: *").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.phone_number', default="Phone Number: *")).pack(anchor='w', pady=(5, 0))
     fields['phone'] = ttk.Entry(main_frame, width=50)
     fields['phone'].pack(fill=tk.X, pady=(0, 10))
 
     # ID Number
-    ttk.Label(main_frame, text="ID Number (Driver's License, etc.):").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.id_number_driver_s_license_etc', default="ID Number (Driver's License, etc.):")).pack(anchor='w', pady=(5, 0))
     fields['id_number'] = ttk.Entry(main_frame, width=50)
     fields['id_number'].pack(fill=tk.X, pady=(0, 10))
 
     # Photo on File
-    ttk.Label(main_frame, text="Photo ID on File:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.photo_id_on_file', default="Photo ID on File:")).pack(anchor='w', pady=(5, 0))
     fields['photo_on_file'] = ttk.Combobox(main_frame, width=50, state="readonly")
     fields['photo_on_file']['values'] = ['Yes', 'No']
     fields['photo_on_file'].set('No')
     fields['photo_on_file'].pack(fill=tk.X, pady=(0, 10))
 
     # Notes
-    ttk.Label(main_frame, text="Notes:").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.notes', default="Notes:")).pack(anchor='w', pady=(5, 0))
     fields['notes'] = scrolledtext.ScrolledText(main_frame, width=50, height=4)
     fields['notes'].pack(fill=tk.X, pady=(0, 10))
 
     def save_person():
         # Validate required fields
         if not fields['name'].get():
-            messagebox.showwarning("Validation Error", "Please enter a name.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_enter_a_name', default="Please enter a name."))
             return
 
         if not fields['phone'].get():
-            messagebox.showwarning("Validation Error", "Please enter a phone number.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_enter_a_phone_number', default="Please enter a phone number."))
             return
 
         try:
@@ -812,25 +814,25 @@ def add_authorized_person(self, student_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Authorized person added successfully!")
+            messagebox.showinfo(_t('gui.academics.parent_portal.transport.dialogs.success', default="Success"), _t('gui.academics.parent_portal.transport.dialogs.authorized_person_added_successfully', default="Authorized person added successfully!"))
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add authorized person: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to add authorized person: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Save", command=save_person).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.save', default="Save"), command=save_person).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.add_authorized_person = add_authorized_person
 
 def remove_authorized_person(self, student_id, tree):
     """Remove authorized pickup person"""
     selected = tree.selection()
     if not selected:
-        messagebox.showwarning("No Selection", "Please select a person to remove.")
+        messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.no_selection', default="No Selection"), _t('gui.academics.parent_portal.transport.dialogs.please_select_a_person_to_remove', default="Please select a person to remove."))
         return
 
     # Get the selected person's name
@@ -838,7 +840,7 @@ def remove_authorized_person(self, student_id, tree):
     person_name = item['values'][0]
 
     # Confirm deletion
-    if not messagebox.askyesno("Confirm Removal",
+    if not messagebox.askyesno(_t('gui.academics.parent_portal.transport.dialogs.confirm_removal', default="Confirm Removal"),
                                f"Are you sure you want to remove '{person_name}' from the authorized pickup list?\n\n"
                                "This person will no longer be able to pick up the student."):
         return
@@ -856,20 +858,20 @@ def remove_authorized_person(self, student_id, tree):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"'{person_name}' has been removed from the authorized pickup list.")
+        messagebox.showinfo(_t('gui.academics.parent_portal.transport.dialogs.success', default="Success"), f"'{person_name}' has been removed from the authorized pickup list.")
 
         # Remove from treeview
         tree.delete(selected[0])
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to remove authorized person: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to remove authorized person: {str(e)}")
 ParentPortalGUI.remove_authorized_person = remove_authorized_person
 
 def emergency_pickup_request(self, student_id):
     """Request emergency pickup"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Emergency Contact Request")
+    dialog.title(_t('gui.academics.parent_portal.transport.windows.emergency_contact_request', default="Emergency Contact Request"))
     dialog.geometry("600x450")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -878,7 +880,7 @@ def emergency_pickup_request(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Emergency Contact Request",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.emergency_contact_request', default="Emergency Contact Request"),
              font=('Arial', 14, 'bold'), foreground='red').pack(pady=(0, 20))
 
     # Ensure table exists
@@ -908,7 +910,7 @@ def emergency_pickup_request(self, student_id):
 
         conn.close()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to initialize database: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to initialize database: {str(e)}")
         dialog.destroy()
         return
 
@@ -916,43 +918,43 @@ def emergency_pickup_request(self, student_id):
     fields = {}
 
     # Pickup Person
-    ttk.Label(main_frame, text="Who will be picking up the student? *").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.who_will_be_picking_up_the_student', default="Who will be picking up the student? *")).pack(anchor='w', pady=(5, 0))
     fields['pickup_person'] = ttk.Entry(main_frame, width=50)
     fields['pickup_person'].pack(fill=tk.X, pady=(0, 10))
 
     # Reason
-    ttk.Label(main_frame, text="Reason for emergency pickup: *").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.reason_for_emergency_pickup', default="Reason for emergency pickup: *")).pack(anchor='w', pady=(5, 0))
     fields['reason'] = scrolledtext.ScrolledText(main_frame, width=50, height=4)
     fields['reason'].pack(fill=tk.X, pady=(0, 10))
 
     # Time Needed
-    ttk.Label(main_frame, text="Time needed (HH:MM AM/PM): *").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.time_needed_hh_mm_am_pm', default="Time needed (HH:MM AM/PM): *")).pack(anchor='w', pady=(5, 0))
     fields['time_needed'] = ttk.Entry(main_frame, width=50)
     fields['time_needed'].pack(fill=tk.X, pady=(0, 10))
     # Set default to current time
     fields['time_needed'].insert(0, datetime.datetime.now().strftime('%I:%M %p'))
 
     # Contact Phone
-    ttk.Label(main_frame, text="Contact Phone Number: *").pack(anchor='w', pady=(5, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.transport.labels.contact_phone_number', default="Contact Phone Number: *")).pack(anchor='w', pady=(5, 0))
     fields['contact_phone'] = ttk.Entry(main_frame, width=50)
     fields['contact_phone'].pack(fill=tk.X, pady=(0, 10))
 
     def submit_request():
         # Validate required fields
         if not fields['pickup_person'].get():
-            messagebox.showwarning("Validation Error", "Please enter who will pick up the student.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_enter_who_will_pick_up_the_student', default="Please enter who will pick up the student."))
             return
 
         if not fields['reason'].get('1.0', tk.END).strip():
-            messagebox.showwarning("Validation Error", "Please provide a reason for the emergency pickup.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_provide_a_reason_for_the_emergency_pickup', default="Please provide a reason for the emergency pickup."))
             return
 
         if not fields['time_needed'].get():
-            messagebox.showwarning("Validation Error", "Please enter the time needed.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_enter_the_time_needed', default="Please enter the time needed."))
             return
 
         if not fields['contact_phone'].get():
-            messagebox.showwarning("Validation Error", "Please enter a contact phone number.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.transport.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.transport.dialogs.please_enter_a_contact_phone_number', default="Please enter a contact phone number."))
             return
 
         try:
@@ -975,18 +977,18 @@ def emergency_pickup_request(self, student_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Emergency pickup request submitted!\n\n"
+            messagebox.showinfo(_t('gui.academics.parent_portal.transport.dialogs.success', default="Success"), _t('gui.academics.parent_portal.transport.dialogs.emergency_pickup_request_submitted_the_university_administration', default="Emergency pickup request submitted!\n\n"
                                           "The university administration has been notified and will assist your student.\n"
-                                          "You will be contacted shortly.")
+                                          "You will be contacted shortly."))
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to submit request: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.transport.dialogs.error', default="Error"), f"Failed to submit request: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Submit Request", command=submit_request).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.submit_request', default="Submit Request"), command=submit_request).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.transport.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.emergency_pickup_request = emergency_pickup_request

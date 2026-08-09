@@ -31,7 +31,7 @@ class ExportManager:
     def export_data_dialog(self):
         """Show export data dialog"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Export Data")
+        dialog.title(_t('gui.shell.document_manager.exports.windows.export_data', default="Export Data"))
         dialog.geometry("600x450")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -39,7 +39,7 @@ class ExportManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Export Data", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.exports.labels.export_data', default="Export Data"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         export_options = [
             ("All Documents", "documents"),
@@ -48,14 +48,14 @@ class ExportManager:
             ("System Report", "system_report")
         ]
 
-        self.gui.export_selection = tk.StringVar(value="documents")
+        self.gui.export_selection = tk.StringVar(value=_t('gui.shell.document_manager.exports.values.documents', default="documents"))
 
         for text, value in export_options:
             ttk.Radiobutton(main_frame, text=text, variable=self.gui.export_selection, value=value).pack(anchor='w', pady=2)
 
         # Format selection
-        ttk.Label(main_frame, text="Export Format:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
-        self.gui.export_format = tk.StringVar(value="csv")
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.exports.labels.export_format', default="Export Format:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(15, 5))
+        self.gui.export_format = tk.StringVar(value=_t('gui.shell.document_manager.exports.values.csv', default="csv"))
 
         formats = [("CSV", "csv"), ("Excel", "xlsx"), ("JSON", "json")]
         for text, value in formats:
@@ -65,13 +65,13 @@ class ExportManager:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(20, 0))
 
-        ttk.Button(button_frame, text="Export", command=lambda: self.perform_export(dialog)).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.exports.buttons.export', default="Export"), command=lambda: self.perform_export(dialog)).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.exports.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def perform_export(self, dialog):
         """Perform the actual export"""
         file_path = filedialog.asksaveasfilename(
-            title="Save Export File",
+            title=_t('gui.shell.document_manager.exports.dialogs.save_export_file', default="Save Export File"),
             defaultextension=f".{self.gui.export_format.get()}",
             filetypes=[(f"{self.gui.export_format.get().upper()} files", f"*.{self.gui.export_format.get()}")]
         )
@@ -114,11 +114,11 @@ class ExportManager:
                     with open(file_path, 'w', encoding='utf-8') as jsonfile:
                         json.dump(json_data, jsonfile, indent=2, default=str)
 
-                messagebox.showinfo("Success", f"Data exported successfully to {file_path}")
+                messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.success', default="Success"), f"Data exported successfully to {file_path}")
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Export Error", f"Failed to export data: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export data: {str(e)}")
 
     def export_activity_log(self):
         """Export activity log to CSV"""
@@ -126,7 +126,7 @@ class ExportManager:
             file_path = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
-                title="Export Activity Log"
+                title=_t('gui.shell.document_manager.exports.dialogs.export_activity_log', default="Export Activity Log")
             )
 
             if not file_path:
@@ -148,11 +148,11 @@ class ExportManager:
                                'Entity ID', 'Details'])
                 writer.writerows(activities)
 
-            messagebox.showinfo("Export Successful",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_successful', default="Export Successful"),
                               f"Activity log exported to:\n{file_path}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export activity log: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export activity log: {e}")
 
     def export_all_documents(self):
         """Export all document records to CSV"""
@@ -191,10 +191,10 @@ class ExportManager:
                                'Uploaded By', 'Filename', 'Size (bytes)', 'Version'])
                 writer.writerows(documents)
 
-            messagebox.showinfo("Success", f"All documents exported to:\n{filename}\nTotal: {len(documents)} records")
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.success', default="Success"), f"All documents exported to:\n{filename}\nTotal: {len(documents)} records")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export documents: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.error', default="Error"), f"Failed to export documents: {e}")
 
     def export_document_history(self):
         """Export complete document history"""
@@ -228,7 +228,7 @@ class ExportManager:
 
                     writer.writerows(results)
 
-            messagebox.showinfo("Export Complete",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_complete', default="Export Complete"),
                               f"Document history exported successfully:\n{file_path}\n\n"
                               f"Total records: {len(results)}")
 
@@ -236,7 +236,7 @@ class ExportManager:
                           details=f'Exported {len(results)} document records')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export document history: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export document history: {e}")
 
     def export_workflow_data(self):
         """Export workflow data"""
@@ -267,13 +267,13 @@ class ExportManager:
 
                 writer.writerows(sample_workflows)
 
-            messagebox.showinfo("Export Complete",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_complete', default="Export Complete"),
                               f"Workflow data exported successfully:\n{file_path}")
 
             self.gui.log_event('export', 'workflow_data', details='Exported workflow data')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export workflow data: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export workflow data: {e}")
 
     def export_student_list(self):
         """Export list of all students"""
@@ -313,7 +313,7 @@ class ExportManager:
 
                     writer.writerows(results)
 
-            messagebox.showinfo("Export Complete",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_complete', default="Export Complete"),
                               f"Student list exported successfully:\n{file_path}\n\n"
                               f"Total students: {len(results)}")
 
@@ -321,7 +321,7 @@ class ExportManager:
                           details=f'Exported {len(results)} students')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export student list: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export student list: {e}")
 
     def export_student_documents(self):
         """Export documents for selected students"""
@@ -330,8 +330,8 @@ class ExportManager:
 
         # Ask for student IDs
         from tkinter import simpledialog
-        student_ids = simpledialog.askstring("Export Student Documents",
-                                             "Enter student IDs (comma-separated):")
+        student_ids = simpledialog.askstring(_t('gui.shell.document_manager.exports.dialogs.export_student_documents', default="Export Student Documents"),
+                                             _t('gui.shell.document_manager.exports.dialogs.enter_student_ids_comma_separated', default="Enter student IDs (comma-separated):"))
         if not student_ids:
             return
 
@@ -366,7 +366,7 @@ class ExportManager:
 
                     writer.writerows(results)
 
-            messagebox.showinfo("Export Complete",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_complete', default="Export Complete"),
                               f"Student documents exported successfully:\n{file_path}\n\n"
                               f"Total records: {len(results)}")
 
@@ -374,7 +374,7 @@ class ExportManager:
                           details=f'Exported documents for {len(ids)} students')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export student documents: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export student documents: {e}")
 
     def export_db_schema(self):
         """Export database schema"""
@@ -408,13 +408,13 @@ class ExportManager:
                         if table_sql[0]:
                             f.write(f"{table_sql[0]};\n\n")
 
-            messagebox.showinfo("Export Complete",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_complete', default="Export Complete"),
                               f"Database schema exported successfully:\n{file_path}")
 
             self.gui.log_event('export', 'db_schema', details='Exported database schema')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export schema: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export schema: {e}")
 
     def export_student_data(self):
         """Export all student data"""
@@ -428,16 +428,16 @@ class ExportManager:
 
         # Create compliance report window
         report_window = tk.Toplevel(self.root)
-        report_window.title("Compliance Report Export")
+        report_window.title(_t('gui.shell.document_manager.exports.windows.compliance_report_export', default="Compliance Report Export"))
         report_window.geometry("600x500")
         report_window.transient(self.root)
         report_window.grab_set()
 
-        ttk.Label(report_window, text="Compliance Report Configuration",
+        ttk.Label(report_window, text=_t('gui.shell.document_manager.exports.labels.compliance_report_configuration', default="Compliance Report Configuration"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Options frame
-        options_frame = ttk.LabelFrame(report_window, text="Report Options", padding=15)
+        options_frame = ttk.LabelFrame(report_window, text=_t('gui.shell.document_manager.exports.labels.report_options', default="Report Options"), padding=15)
         options_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         include_pending_var = tk.BooleanVar(value=True)
@@ -445,18 +445,18 @@ class ExportManager:
         include_missing_var = tk.BooleanVar(value=True)
         include_compliant_var = tk.BooleanVar(value=False)
 
-        ttk.Checkbutton(options_frame, text="Include Students with Pending Documents",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.exports.buttons.include_students_with_pending_documents', default="Include Students with Pending Documents"),
                        variable=include_pending_var).pack(anchor='w', pady=5)
-        ttk.Checkbutton(options_frame, text="Include Students with Expired Documents",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.exports.buttons.include_students_with_expired_documents', default="Include Students with Expired Documents"),
                        variable=include_expired_var).pack(anchor='w', pady=5)
-        ttk.Checkbutton(options_frame, text="Include Students with Missing Required Documents",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.exports.buttons.include_students_with_missing_required_documents', default="Include Students with Missing Required Documents"),
                        variable=include_missing_var).pack(anchor='w', pady=5)
-        ttk.Checkbutton(options_frame, text="Include Fully Compliant Students",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.exports.buttons.include_fully_compliant_students', default="Include Fully Compliant Students"),
                        variable=include_compliant_var).pack(anchor='w', pady=5)
 
         ttk.Separator(options_frame, orient='horizontal').pack(fill='x', pady=10)
 
-        ttk.Label(options_frame, text="Export Format:").pack(anchor='w', pady=5)
+        ttk.Label(options_frame, text=_t('gui.shell.document_manager.exports.labels.export_format', default="Export Format:")).pack(anchor='w', pady=5)
         format_combo = ttk.Combobox(options_frame, width=30, state='readonly')
         format_combo['values'] = ['CSV', 'PDF', 'Excel']
         format_combo.current(0)
@@ -466,31 +466,49 @@ class ExportManager:
             """Generate and export compliance report"""
             file_format = format_combo.get().lower()
 
+            extension = {'csv': 'csv', 'pdf': 'pdf', 'excel': 'xlsx'}[file_format]
             file_path = filedialog.asksaveasfilename(
-                defaultextension=f".{file_format}",
-                filetypes=[(f"{file_format.upper()} Files", f"*.{file_format}")],
-                initialfile=f"compliance_report.{file_format}"
+                defaultextension=f".{extension}",
+                filetypes=[(f"{file_format.upper()} Files", f"*.{extension}")],
+                initialfile=f"compliance_report.{extension}"
             )
 
             if not file_path:
                 return
 
             try:
+                options = (include_pending_var.get(), include_expired_var.get(),
+                           include_missing_var.get(), include_compliant_var.get())
+                rows = self.get_compliance_data(*options)
                 if file_format == 'csv':
-                    self.export_compliance_data(
-                        file_path,
-                        include_pending_var.get(),
-                        include_expired_var.get(),
-                        include_missing_var.get(),
-                        include_compliant_var.get()
-                    )
-
-                    messagebox.showinfo("Export Complete",
-                                      f"Compliance report exported successfully:\n{file_path}")
+                    self.export_compliance_data(file_path, *options)
+                elif file_format == 'excel':
+                    from openpyxl import Workbook
+                    workbook = Workbook()
+                    sheet = workbook.active
+                    sheet.title = "Compliance"
+                    sheet.append(['Student ID', 'Compliance Status', 'Pending Docs',
+                                  'Expired Docs', 'Missing Required', 'Total Documents'])
+                    for row in rows:
+                        sheet.append(list(row))
+                    workbook.save(file_path)
                 else:
-                    messagebox.showinfo("Format Not Implemented",
-                                      f"{file_format.upper()} export will be implemented.\n\n"
-                                      "Currently only CSV export is supported.")
+                    from reportlab.lib.pagesizes import landscape, A4
+                    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+                    from reportlab.lib import colors
+                    data = [['Student ID', 'Status', 'Pending', 'Expired', 'Missing', 'Total']]
+                    data.extend([list(row) for row in rows])
+                    table = Table(data, repeatRows=1)
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2d3748')),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+                    ]))
+                    document = SimpleDocTemplate(file_path, pagesize=landscape(A4))
+                    document.build([table])
+
+                messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_complete', default="Export Complete"),
+                                    f"Compliance report exported successfully:\n{file_path}")
 
                 self.gui.log_event('export', 'compliance_report',
                               details=f'Exported compliance report to {file_format.upper()}')
@@ -498,66 +516,60 @@ class ExportManager:
                 report_window.destroy()
 
             except Exception as e:
-                messagebox.showerror("Export Error", f"Failed to export report: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export report: {e}")
 
-        ttk.Button(report_window, text="Generate & Export",
+        ttk.Button(report_window, text=_t('gui.shell.document_manager.exports.buttons.generate_export', default="Generate & Export"),
                   command=generate_report).pack(pady=20)
-        ttk.Button(report_window, text="Cancel",
+        ttk.Button(report_window, text=_t('gui.shell.document_manager.exports.buttons.cancel', default="Cancel"),
                   command=report_window.destroy).pack()
 
     def export_compliance_data(self, file_path, include_pending, include_expired,
                                include_missing, include_compliant):
         """Export compliance data to CSV"""
         try:
-            with open(file_path, 'w', newline='') as f:
+            rows = self.get_compliance_data(
+                include_pending, include_expired, include_missing, include_compliant
+            )
+            with open(file_path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(['Student ID', 'Compliance Status', 'Pending Docs',
                                'Expired Docs', 'Missing Required', 'Total Documents'])
-
-                with get_connection() as conn:
-                    cursor = conn.cursor()
-
-                    # Get all students (simulated - in reality would join with students table)
-                    cursor.execute("""
-                        SELECT DISTINCT student_id FROM documents
-                        ORDER BY student_id
-                    """)
-                    students = cursor.fetchall()
-
-                    for (student_id,) in students:
-                        # Count various document statuses
-                        cursor.execute("""
-                            SELECT
-                                COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending,
-                                COUNT(CASE WHEN DATE(expiry_date) < DATE('now') THEN 1 END) as expired,
-                                COUNT(*) as total
-                            FROM documents
-                            WHERE student_id = ?
-                        """, (student_id,))
-
-                        pending, expired, total = cursor.fetchone()
-                        missing = 0  # Would calculate based on required document types
-
-                        # Determine compliance status
-                        if pending == 0 and expired == 0 and missing == 0:
-                            status = "Compliant"
-                            if not include_compliant:
-                                continue
-                        else:
-                            status = "Non-Compliant"
-
-                        # Apply filters
-                        if not include_pending and pending > 0:
-                            continue
-                        if not include_expired and expired > 0:
-                            continue
-                        if not include_missing and missing > 0:
-                            continue
-
-                        writer.writerow([student_id, status, pending, expired, missing, total])
-
+                writer.writerows(rows)
         except Exception as e:
             raise Exception(f"Failed to export compliance data: {e}")
+
+    def get_compliance_data(self, include_pending, include_expired,
+                            include_missing, include_compliant):
+        """Return compliance rows using the canonical document schema."""
+        with get_connection() as conn:
+            required = conn.execute(
+                "SELECT COUNT(*) FROM document_types WHERE COALESCE(is_required, 0) = 1"
+            ).fetchone()[0]
+            students = conn.execute("SELECT student_id FROM students ORDER BY student_id").fetchall()
+            output = []
+            for (student_id,) in students:
+                pending, expired, total, required_present = conn.execute("""
+                    SELECT
+                        SUM(CASE WHEN LOWER(COALESCE(verification_status, 'pending')) = 'pending' THEN 1 ELSE 0 END),
+                        SUM(CASE WHEN expiry_date IS NOT NULL AND DATE(expiry_date) < DATE('now') THEN 1 ELSE 0 END),
+                        COUNT(*),
+                        COUNT(DISTINCT CASE WHEN COALESCE(dt.is_required, 0) = 1 THEN dt.type_id END)
+                    FROM documents d
+                    LEFT JOIN document_types dt ON dt.type_id = CAST(d.document_type AS INTEGER)
+                    WHERE d.source_type = 'student' AND CAST(d.owner_id AS TEXT) = CAST(? AS TEXT)
+                """, (student_id,)).fetchone()
+                pending, expired = pending or 0, expired or 0
+                missing = max(0, required - (required_present or 0))
+                compliant = not (pending or expired or missing)
+                if compliant and not include_compliant:
+                    continue
+                if not compliant and not any((include_pending and pending,
+                                              include_expired and expired,
+                                              include_missing and missing)):
+                    continue
+                output.append((student_id, "Compliant" if compliant else "Non-Compliant",
+                               pending, expired, missing, total or 0))
+            return output
 
     def export_custom_report(self):
         """Export custom report with user-defined fields"""
@@ -566,16 +578,16 @@ class ExportManager:
 
         # Create custom report builder
         builder_window = tk.Toplevel(self.root)
-        builder_window.title("Custom Report Builder")
+        builder_window.title(_t('gui.shell.document_manager.exports.windows.custom_report_builder', default="Custom Report Builder"))
         builder_window.geometry("700x650")
         builder_window.transient(self.root)
         builder_window.grab_set()
 
-        ttk.Label(builder_window, text="Custom Report Builder",
+        ttk.Label(builder_window, text=_t('gui.shell.document_manager.exports.labels.custom_report_builder', default="Custom Report Builder"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Fields selection
-        fields_frame = ttk.LabelFrame(builder_window, text="Select Fields to Include", padding=15)
+        fields_frame = ttk.LabelFrame(builder_window, text=_t('gui.shell.document_manager.exports.labels.select_fields_to_include', default="Select Fields to Include"), padding=15)
         fields_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         field_vars = {}
@@ -598,15 +610,15 @@ class ExportManager:
             ttk.Checkbutton(fields_frame, text=label, variable=var).pack(anchor='w', pady=2)
 
         # Filters
-        filters_frame = ttk.LabelFrame(builder_window, text="Filters (Optional)", padding=15)
+        filters_frame = ttk.LabelFrame(builder_window, text=_t('gui.shell.document_manager.exports.labels.filters_optional', default="Filters (Optional)"), padding=15)
         filters_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Label(filters_frame, text="Date Range:").grid(row=0, column=0, sticky='w')
+        ttk.Label(filters_frame, text=_t('gui.shell.document_manager.exports.labels.date_range', default="Date Range:")).grid(row=0, column=0, sticky='w')
         date_from = ttk.Entry(filters_frame, width=15)
         date_from.insert(0, "YYYY-MM-DD")
         date_from.grid(row=0, column=1, padx=5)
 
-        ttk.Label(filters_frame, text="to").grid(row=0, column=2)
+        ttk.Label(filters_frame, text=_t('gui.shell.document_manager.exports.labels.to', default="to")).grid(row=0, column=2)
         date_to = ttk.Entry(filters_frame, width=15)
         date_to.insert(0, "YYYY-MM-DD")
         date_to.grid(row=0, column=3, padx=5)
@@ -616,7 +628,7 @@ class ExportManager:
             selected_fields = [field for field, var in field_vars.items() if var.get()]
 
             if not selected_fields:
-                messagebox.showwarning("No Fields", "Please select at least one field")
+                messagebox.showwarning(_t('gui.shell.document_manager.exports.dialogs.no_fields', default="No Fields"), _t('gui.shell.document_manager.exports.dialogs.please_select_at_least_one_field', default="Please select at least one field"))
                 return
 
             file_path = filedialog.asksaveasfilename(
@@ -631,7 +643,7 @@ class ExportManager:
             try:
                 self.export_custom_dataset(file_path, selected_fields)
 
-                messagebox.showinfo("Export Complete",
+                messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_complete', default="Export Complete"),
                                   f"Custom report exported successfully:\n{file_path}\n\n"
                                   f"Fields included: {len(selected_fields)}")
 
@@ -641,11 +653,11 @@ class ExportManager:
                 builder_window.destroy()
 
             except Exception as e:
-                messagebox.showerror("Export Error", f"Failed to export report: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export report: {e}")
 
-        ttk.Button(builder_window, text="Export Report",
+        ttk.Button(builder_window, text=_t('gui.shell.document_manager.exports.buttons.export_report', default="Export Report"),
                   command=export_report).pack(pady=15)
-        ttk.Button(builder_window, text="Cancel",
+        ttk.Button(builder_window, text=_t('gui.shell.document_manager.exports.buttons.cancel', default="Cancel"),
                   command=builder_window.destroy).pack()
 
     def export_custom_dataset(self, file_path, fields):
@@ -711,7 +723,7 @@ class ExportManager:
 
                     writer.writerows(results)
 
-            messagebox.showinfo("Export Complete",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_complete', default="Export Complete"),
                               f"Student summary exported successfully:\n{file_path}\n\n"
                               f"Total students: {len(results)}")
 
@@ -719,7 +731,7 @@ class ExportManager:
                           details=f'Exported {len(results)} student summaries')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export students: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export students: {e}")
 
     def export_to_csv(self):
         """Export current view/data to CSV"""
@@ -760,7 +772,7 @@ class ExportManager:
 
                     writer.writerows([tuple(r) for r in results])
 
-            messagebox.showinfo("Export Successful",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_successful', default="Export Successful"),
                               f"Data exported to CSV successfully!\n\n"
                               f"{file_path}\n\n"
                               f"Total records: {len(results)}")
@@ -768,7 +780,7 @@ class ExportManager:
             self.gui.log_event('export', 'csv', details=f'Exported {len(results)} records to CSV')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export to CSV: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export to CSV: {e}")
 
     def export_to_excel(self):
         """Export current view/data to Excel"""
@@ -792,12 +804,12 @@ class ExportManager:
                 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
                 from openpyxl.utils import get_column_letter
             except ImportError:
-                messagebox.showerror("Missing Library",
-                                   "The 'openpyxl' library is required for Excel export.\n\n"
+                messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.missing_library', default="Missing Library"),
+                                   _t('gui.shell.document_manager.exports.dialogs.the_openpyxl_library_is_required_for_excel_export_install_it_wit', default="The 'openpyxl' library is required for Excel export.\n\n"
                                    "Install it with:\n"
                                    "pip install openpyxl\n\n"
-                                   "Would you like to use CSV export instead?")
-                if messagebox.askyesno("Use CSV Instead?", "Export to CSV format instead?"):
+                                   "Would you like to use CSV export instead?"))
+                if messagebox.askyesno(_t('gui.shell.document_manager.exports.dialogs.use_csv_instead', default="Use CSV Instead?"), _t('gui.shell.document_manager.exports.dialogs.export_to_csv_format_instead', default="Export to CSV format instead?")):
                     self.export_to_csv()
                 return
 
@@ -977,7 +989,7 @@ class ExportManager:
             # Save workbook
             wb.save(file_path)
 
-            messagebox.showinfo("Export Successful",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_successful', default="Export Successful"),
                               f"Data exported to Excel successfully!\n\n"
                               f"{file_path}\n\n"
                               f"Sheets included:\n"
@@ -988,7 +1000,7 @@ class ExportManager:
             self.gui.log_event('export', 'excel', details=f'Exported {len(documents)} records to Excel')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export to Excel: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export to Excel: {e}")
 
     def export_to_pdf(self):
         """Export current view/data to PDF"""
@@ -1015,12 +1027,12 @@ class ExportManager:
                 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
                 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
             except ImportError:
-                messagebox.showerror("Missing Library",
-                                   "The 'reportlab' library is required for PDF export.\n\n"
+                messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.missing_library', default="Missing Library"),
+                                   _t('gui.shell.document_manager.exports.dialogs.the_reportlab_library_is_required_for_pdf_export_install_it_with', default="The 'reportlab' library is required for PDF export.\n\n"
                                    "Install it with:\n"
                                    "pip install reportlab\n\n"
-                                   "Would you like to use CSV export instead?")
-                if messagebox.askyesno("Use CSV Instead?", "Export to CSV format instead?"):
+                                   "Would you like to use CSV export instead?"))
+                if messagebox.askyesno(_t('gui.shell.document_manager.exports.dialogs.use_csv_instead', default="Use CSV Instead?"), _t('gui.shell.document_manager.exports.dialogs.export_to_csv_format_instead', default="Export to CSV format instead?")):
                     self.export_to_csv()
                 return
 
@@ -1204,7 +1216,7 @@ class ExportManager:
             # Build PDF
             doc.build(elements)
 
-            messagebox.showinfo("Export Successful",
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_successful', default="Export Successful"),
                               f"PDF report generated successfully!\n\n"
                               f"{file_path}\n\n"
                               f"Contents:\n"
@@ -1215,20 +1227,20 @@ class ExportManager:
             self.gui.log_event('export', 'pdf', details=f'Exported PDF report with {len(documents)} recent documents')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export to PDF: {e}\n\n{str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export to PDF: {e}\n\n{str(e)}")
 
     def export_expiry_report(self, tree):
         """Export expiry alerts to CSV"""
         try:
             items = tree.get_children()
             if not items:
-                messagebox.showwarning("No Data", "No expiry alerts to export")
+                messagebox.showwarning(_t('gui.shell.document_manager.exports.dialogs.no_data', default="No Data"), _t('gui.shell.document_manager.exports.dialogs.no_expiry_alerts_to_export', default="No expiry alerts to export"))
                 return
 
             file_path = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
-                title="Export Expiry Report"
+                title=_t('gui.shell.document_manager.exports.dialogs.export_expiry_report', default="Export Expiry Report")
             )
 
             if not file_path:
@@ -1243,7 +1255,7 @@ class ExportManager:
                     values = tree.item(item, 'values')
                     writer.writerow(values)
 
-            messagebox.showinfo("Export Successful", f"Expiry report exported to:\n{file_path}")
+            messagebox.showinfo(_t('gui.shell.document_manager.exports.dialogs.export_successful', default="Export Successful"), f"Expiry report exported to:\n{file_path}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export expiry report: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.exports.dialogs.export_error', default="Export Error"), f"Failed to export expiry report: {e}")

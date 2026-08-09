@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -96,56 +102,56 @@ class QRAttendanceWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="QR Code Attendance System", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.qr_windows.labels.qr_code_attendance_system', default="QR Code Attendance System"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         info_label = ttk.Label(self.window, text=f"Module: {self.module_code} | Date: {self.date}")
         info_label.pack(pady=(0, 10))
 
         # QR Generation frame
-        gen_frame = ttk.LabelFrame(self.window, text="Generate QR Code", padding=10)
+        gen_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.qr_windows.labels.generate_qr_code', default="Generate QR Code"), padding=10)
         gen_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         # Time inputs
         time_frame = ttk.Frame(gen_frame)
         time_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(time_frame, text="Start Time:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(time_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.start_time', default="Start Time:")).grid(row=0, column=0, sticky=tk.W)
         self.start_time_var = tk.StringVar(value="09:00")
         ttk.Entry(time_frame, textvariable=self.start_time_var, width=10).grid(row=0, column=1, padx=(5, 20))
 
-        ttk.Label(time_frame, text="End Time:").grid(row=0, column=2, sticky=tk.W)
+        ttk.Label(time_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.end_time', default="End Time:")).grid(row=0, column=2, sticky=tk.W)
         self.end_time_var = tk.StringVar(value="10:00")
         ttk.Entry(time_frame, textvariable=self.end_time_var, width=10).grid(row=0, column=3, padx=(5, 0))
 
-        ttk.Label(gen_frame, text="Location (optional):").pack(anchor=tk.W)
+        ttk.Label(gen_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.location_optional', default="Location (optional):")).pack(anchor=tk.W)
         self.location_var = tk.StringVar()
         ttk.Entry(gen_frame, textvariable=self.location_var, width=40).pack(fill=tk.X, pady=(5, 10))
 
         # Auto-fill location from timetable
         self.auto_fill_location()
 
-        ttk.Button(gen_frame, text="Generate QR Code",
+        ttk.Button(gen_frame, text=_t('gui.academics.attendance_tracker.qr_windows.buttons.generate_qr_code', default="Generate QR Code"),
                   command=self.generate_qr, style='Primary.TButton').pack()
 
         # QR Display frame
-        qr_frame = ttk.LabelFrame(self.window, text="QR Code", padding=10)
+        qr_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.qr_windows.labels.qr_code', default="QR Code"), padding=10)
         qr_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        self.qr_label = ttk.Label(qr_frame, text="No QR code generated yet")
+        self.qr_label = ttk.Label(qr_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.no_qr_code_generated_yet', default="No QR code generated yet"))
         self.qr_label.pack(expand=True)
 
         # Check-in frame
-        checkin_frame = ttk.LabelFrame(self.window, text="Manual Check-in", padding=10)
+        checkin_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.qr_windows.labels.manual_check_in', default="Manual Check-in"), padding=10)
         checkin_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         checkin_controls = ttk.Frame(checkin_frame)
         checkin_controls.pack(fill=tk.X)
 
-        ttk.Label(checkin_controls, text="Student ID:").pack(side=tk.LEFT)
+        ttk.Label(checkin_controls, text=_t('gui.academics.attendance_tracker.qr_windows.labels.student_id', default="Student ID:")).pack(side=tk.LEFT)
         self.student_id_var = tk.StringVar()
         ttk.Entry(checkin_controls, textvariable=self.student_id_var, width=15).pack(side=tk.LEFT, padx=(5, 10))
-        ttk.Button(checkin_controls, text="Check In",
+        ttk.Button(checkin_controls, text=_t('gui.academics.attendance_tracker.qr_windows.buttons.check_in', default="Check In"),
                   command=self.manual_checkin, style='Success.TButton').pack(side=tk.LEFT)
 
         # Close button
@@ -163,7 +169,7 @@ class QRAttendanceWindow:
             if MAIN_DB_AVAILABLE:
                 conn = get_db_connection()
             else:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
 
             cursor = conn.cursor()
 
@@ -227,7 +233,7 @@ class QRAttendanceWindow:
                     logger.exception("qr_windows.py:227 %s", 'except Exception as e')
                     self.qr_label.config(text=f"QR code generated but cannot display: {e}")
             else:
-                messagebox.showerror(_("common.error"), "Failed to generate QR code")
+                messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.qr_windows.dialogs.failed_to_generate_qr_code', default="Failed to generate QR code"))
 
         except Exception as e:
             logger.exception("qr_windows.py:232 %s", 'except Exception as e')
@@ -237,11 +243,11 @@ class QRAttendanceWindow:
         """Manual check-in for testing"""
         student_id = self.student_id_var.get()
         if not student_id:
-            messagebox.showwarning(_("common.warning"), "Please enter a student ID")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.qr_windows.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
             return
 
         # Simulate QR check-in
-        messagebox.showinfo("Check-in", f"Student {student_id} checked in successfully!")
+        messagebox.showinfo(_t('gui.academics.attendance_tracker.qr_windows.dialogs.check_in', default="Check-in"), f"Student {student_id} checked in successfully!")
         self.callback()
 
 class QRGeneratorWindow:
@@ -258,42 +264,42 @@ class QRGeneratorWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="📱 QR Code Generator", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.qr_windows.labels.qr_code_generator', default="📱 QR Code Generator"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Session details
-        details_frame = ttk.LabelFrame(self.window, text="Session Details", padding=10)
+        details_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.qr_windows.labels.session_details', default="Session Details"), padding=10)
         details_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(details_frame, text="Module Code:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(details_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.module_code', default="Module Code:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.module_var = tk.StringVar()
         self.module_var.trace('w', lambda *args: self.on_module_change())
         ttk.Entry(details_frame, textvariable=self.module_var, width=30).grid(row=0, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(details_frame, text="Date:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(details_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.date', default="Date:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.date_var = tk.StringVar(value=datetime.date.today().isoformat())
         ttk.Entry(details_frame, textvariable=self.date_var, width=30).grid(row=1, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(details_frame, text="Start Time:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(details_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.start_time', default="Start Time:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.start_time_var = tk.StringVar(value="09:00")
         ttk.Entry(details_frame, textvariable=self.start_time_var, width=30).grid(row=2, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(details_frame, text="End Time:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(details_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.end_time', default="End Time:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.end_time_var = tk.StringVar(value="10:00")
         ttk.Entry(details_frame, textvariable=self.end_time_var, width=30).grid(row=3, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(details_frame, text="Location:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(details_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.location', default="Location:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.location_var = tk.StringVar()
         ttk.Entry(details_frame, textvariable=self.location_var, width=30).grid(row=4, column=1, padx=(10, 0), pady=5)
 
         # Generate button
-        ttk.Button(details_frame, text="Generate QR Code", command=self.generate_qr, style='Primary.TButton').grid(row=5, column=0, columnspan=2, pady=10)
+        ttk.Button(details_frame, text=_t('gui.academics.attendance_tracker.qr_windows.buttons.generate_qr_code', default="Generate QR Code"), command=self.generate_qr, style='Primary.TButton').grid(row=5, column=0, columnspan=2, pady=10)
 
         # QR display
-        qr_frame = ttk.LabelFrame(self.window, text="Generated QR Code", padding=10)
+        qr_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.qr_windows.labels.generated_qr_code', default="Generated QR Code"), padding=10)
         qr_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        self.qr_label = ttk.Label(qr_frame, text="No QR code generated yet")
+        self.qr_label = ttk.Label(qr_frame, text=_t('gui.academics.attendance_tracker.qr_windows.labels.no_qr_code_generated_yet', default="No QR code generated yet"))
         self.qr_label.pack(expand=True)
 
         # Session info
@@ -317,7 +323,7 @@ class QRGeneratorWindow:
             if MAIN_DB_AVAILABLE:
                 conn = get_db_connection()
             else:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
 
             cursor = conn.cursor()
 
@@ -364,7 +370,7 @@ class QRGeneratorWindow:
             location = self.location_var.get()
 
             if not all([module_code, date, start_time, end_time]):
-                messagebox.showwarning(_("common.warning"), "Please fill in all required fields")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.qr_windows.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
                 return
 
             session_id, qr_filename = self.qr_system.generate_session_qr(
@@ -398,7 +404,7 @@ class QRGeneratorWindow:
                     logger.exception("qr_windows.py:395 %s", 'except Exception as e')
                     messagebox.showerror(_("common.error"), f"QR code generated but cannot display: {e}")
             else:
-                messagebox.showerror(_("common.error"), "Failed to generate QR code")
+                messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.qr_windows.dialogs.failed_to_generate_qr_code', default="Failed to generate QR code"))
 
         except Exception as e:
             logger.exception("qr_windows.py:400 %s", 'except Exception as e')

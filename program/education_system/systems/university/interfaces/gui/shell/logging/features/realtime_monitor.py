@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import threading
@@ -18,7 +20,7 @@ class RealtimeMonitorMixin:
         monitor_window.title(_t("log_management.dialogs.realtime_monitor"))
         monitor_window.geometry("800x600")
 
-        ttk.Label(monitor_window, text="Real-time Activity Monitor",
+        ttk.Label(monitor_window, text=_t('gui.shell.logging.features.realtime_monitor.labels.real_time_activity_monitor', default="Real-time Activity Monitor"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Control frame
@@ -26,14 +28,14 @@ class RealtimeMonitorMixin:
         control_frame.pack(fill=tk.X, padx=10, pady=5)
 
         # Status labels
-        self.monitor_status_label = ttk.Label(control_frame, text="Status: Stopped")
+        self.monitor_status_label = ttk.Label(control_frame, text=_t('gui.shell.logging.features.realtime_monitor.labels.status_stopped', default="Status: Stopped"))
         self.monitor_status_label.pack(side=tk.LEFT)
 
-        self.monitor_count_label = ttk.Label(control_frame, text="Events: 0")
+        self.monitor_count_label = ttk.Label(control_frame, text=_t('gui.shell.logging.features.realtime_monitor.labels.events_0', default="Events: 0"))
         self.monitor_count_label.pack(side=tk.RIGHT)
 
         # Log display
-        log_frame = ttk.LabelFrame(monitor_window, text="Live Activity Feed")
+        log_frame = ttk.LabelFrame(monitor_window, text=_t('gui.shell.logging.features.realtime_monitor.labels.live_activity_feed', default="Live Activity Feed"))
         log_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         self.monitor_text = scrolledtext.ScrolledText(log_frame, wrap=tk.WORD,
@@ -50,11 +52,11 @@ class RealtimeMonitorMixin:
 
         def start_monitoring():
             if not self.log_manager:
-                messagebox.showerror("Error", "Log manager not available")
+                messagebox.showerror(_t('gui.shell.logging.features.realtime_monitor.dialogs.error', default="Error"), _t('gui.shell.logging.features.realtime_monitor.dialogs.log_manager_not_available', default="Log manager not available"))
                 return
 
             self.monitor_running = True
-            self.monitor_status_label.config(text="Status: Running")
+            self.monitor_status_label.config(text=_t('gui.shell.logging.features.realtime_monitor.text.status_running', default="Status: Running"))
             start_btn.config(state=tk.DISABLED)
             stop_btn.config(state=tk.NORMAL)
 
@@ -95,22 +97,22 @@ class RealtimeMonitorMixin:
 
         def stop_monitoring():
             self.monitor_running = False
-            self.monitor_status_label.config(text="Status: Stopped")
+            self.monitor_status_label.config(text=_t('gui.shell.logging.features.realtime_monitor.text.status_stopped', default="Status: Stopped"))
             start_btn.config(state=tk.NORMAL)
             stop_btn.config(state=tk.DISABLED)
 
         def clear_monitor():
             self.monitor_text.delete("1.0", tk.END)
             self.monitor_event_count = 0
-            self.monitor_count_label.config(text="Events: 0")
+            self.monitor_count_label.config(text=_t('gui.shell.logging.features.realtime_monitor.text.events_0', default="Events: 0"))
 
-        start_btn = ttk.Button(button_frame, text="▶️ Start", command=start_monitoring)
+        start_btn = ttk.Button(button_frame, text=_t('gui.shell.logging.features.realtime_monitor.buttons.start', default="▶️ Start"), command=start_monitoring)
         start_btn.pack(side=tk.LEFT, padx=(0, 5))
 
-        stop_btn = ttk.Button(button_frame, text="⏹️ Stop", command=stop_monitoring, state=tk.DISABLED)
+        stop_btn = ttk.Button(button_frame, text=_t('gui.shell.logging.features.realtime_monitor.buttons.stop', default="⏹️ Stop"), command=stop_monitoring, state=tk.DISABLED)
         stop_btn.pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Button(button_frame, text="🗑️ Clear", command=clear_monitor).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.features.realtime_monitor.buttons.clear', default="🗑️ Clear"), command=clear_monitor).pack(side=tk.LEFT)
 
         # Auto-start if real-time monitoring is enabled
         if self.log_manager and self.log_manager.monitor.running:

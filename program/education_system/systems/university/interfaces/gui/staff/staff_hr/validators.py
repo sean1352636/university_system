@@ -4,6 +4,8 @@ GUI Input Validators - Common validation functions for Staff HR GUI modules.
 Provides consistent input validation and error display for Tkinter-based GUIs.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import re
 from datetime import datetime
 from typing import Optional, List, Tuple, Any
@@ -320,7 +322,7 @@ def show_validation_error(error: ValidationError, parent=None) -> None:
         error: The ValidationError to display
         parent: Parent window for the messagebox
     """
-    messagebox.showerror("Validation Error", str(error), parent=parent)
+    messagebox.showerror(_t('gui.staff.staff_hr.validators.dialogs.validation_error', default="Validation Error"), str(error), parent=parent)
 
 
 def validate_form(validations: List[tuple], parent=None) -> bool:

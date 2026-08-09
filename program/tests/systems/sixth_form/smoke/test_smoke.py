@@ -42,5 +42,5 @@ def test_protected_endpoint_requires_auth():
     app = Flask(__name__)
     for bp in _blueprints():
         app.register_blueprint(bp)
-    resp = app.test_client().get("/api/sixthform/academic-year/")
+    resp = app.test_client().get("/api/academic-year/")
     assert resp.status_code in (401, 403), resp.status_code

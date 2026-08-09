@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -68,7 +70,7 @@ class PeerSupportWellnessDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Peer Support & Wellness")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.support.peer_support.windows.peer_support_wellness', default="Peer Support & Wellness"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -79,7 +81,7 @@ class PeerSupportWellnessDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="🤝 Peer Support & Wellness Hub",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.peer_support_wellness_hub', default="🤝 Peer Support & Wellness Hub"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Info banner
@@ -122,7 +124,7 @@ class PeerSupportWellnessDialog:
                 'manage': self.manage_peer_support_system
             }
 
-            ttk.Button(card, text="Open",
+            ttk.Button(card, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.open', default="Open"),
                       command=command_map[key]).pack(padx=10, pady=5)
 
         for i in range(4):
@@ -131,7 +133,7 @@ class PeerSupportWellnessDialog:
             buttons_frame.columnconfigure(i, weight=1)
 
         # Confidentiality notice
-        notice_frame = ttk.LabelFrame(main_frame, text="⚠️ Confidentiality & Privacy")
+        notice_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.confidentiality_privacy', default="⚠️ Confidentiality & Privacy"))
         notice_frame.pack(fill='x', pady=(10, 10))
 
         notice_text = ("All peer support activities are confidential. If you're experiencing a mental health "
@@ -139,7 +141,7 @@ class PeerSupportWellnessDialog:
         ttk.Label(notice_frame, text=notice_text, wraplength=1000,
                  foreground='red').pack(padx=10, pady=8)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def browse_support_groups(self):
         dialog = BrowseSupportGroupsDialog(self.dialog, self.auth)
@@ -179,7 +181,7 @@ class AnonymousPeerMatchingDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Anonymous Peer Matching")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.support.peer_support.windows.anonymous_peer_matching', default="Anonymous Peer Matching"))
         self.dialog.geometry("900x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -190,11 +192,11 @@ class AnonymousPeerMatchingDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🤝 Anonymous Peer Support Matching",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.anonymous_peer_support_matching', default="🤝 Anonymous Peer Support Matching"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Info banner
-        info_frame = ttk.LabelFrame(main_frame, text="How It Works")
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.how_it_works', default="How It Works"))
         info_frame.pack(fill='x', pady=(0, 15))
 
         info_text = ("Get matched with peers facing similar challenges. All matches are anonymous "
@@ -202,14 +204,14 @@ class AnonymousPeerMatchingDialog:
         ttk.Label(info_frame, text=info_text, wraplength=850).pack(padx=10, pady=10)
 
         # Matching preferences
-        pref_frame = ttk.LabelFrame(main_frame, text="Matching Preferences")
+        pref_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.matching_preferences', default="Matching Preferences"))
         pref_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         pref_content = ttk.Frame(pref_frame)
         pref_content.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Issue/interest
-        ttk.Label(pref_content, text="What would you like support with?").grid(
+        ttk.Label(pref_content, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.what_would_you_like_support_with', default="What would you like support with?")).grid(
             row=0, column=0, columnspan=2, sticky='w', pady=(0, 5))
 
         issues = ['Stress & Anxiety', 'Academic Pressure', 'Loneliness/Social Connection',
@@ -223,19 +225,19 @@ class AnonymousPeerMatchingDialog:
                 row=i+1, column=0, sticky='w', padx=(20, 0))
 
         # Match type
-        ttk.Label(pref_content, text="\nPreferred Match Type:",
+        ttk.Label(pref_content, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.preferred_match_type', default="\nPreferred Match Type:"),
                  font=('Arial', 10, 'bold')).grid(row=len(issues)+1, column=0, sticky='w', pady=(10, 5))
 
-        self.match_type_var = tk.StringVar(value="One-on-one")
-        ttk.Radiobutton(pref_content, text="One-on-one peer matching",
+        self.match_type_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.support.peer_support.values.one_on_one', default="One-on-one"))
+        ttk.Radiobutton(pref_content, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.one_on_one_peer_matching', default="One-on-one peer matching"),
                        variable=self.match_type_var, value="One-on-one").grid(
                            row=len(issues)+2, column=0, sticky='w', padx=(20, 0))
-        ttk.Radiobutton(pref_content, text="Small group (3-4 peers)",
+        ttk.Radiobutton(pref_content, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.small_group_3_4_peers', default="Small group (3-4 peers)"),
                        variable=self.match_type_var, value="Group").grid(
                            row=len(issues)+3, column=0, sticky='w', padx=(20, 0))
 
         # Privacy notice
-        privacy_frame = ttk.LabelFrame(main_frame, text="🔒 Privacy & Security")
+        privacy_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.privacy_security', default="🔒 Privacy & Security"))
         privacy_frame.pack(fill='x', pady=(0, 15))
 
         privacy_text = ("• Your identity remains anonymous\n"
@@ -245,7 +247,7 @@ class AnonymousPeerMatchingDialog:
         ttk.Label(privacy_frame, text=privacy_text, justify='left').pack(padx=10, pady=10)
 
         # My matches
-        matches_frame = ttk.LabelFrame(main_frame, text="My Current Matches")
+        matches_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.my_current_matches', default="My Current Matches"))
         matches_frame.pack(fill='x', pady=(0, 15))
 
         match_text = """Active Matches: 2
@@ -267,13 +269,13 @@ Match #2: Anonymous Friend (matched 1 week ago)
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Find New Match",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.find_new_match', default="Find New Match"),
                   command=self.find_match).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View My Matches",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.view_my_matches', default="View My Matches"),
                   command=self.view_matches).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Messaging",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.messaging', default="Messaging"),
                   command=self.open_messaging).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.close', default="Close"),
                   command=self.dialog.destroy).pack(side='right')
 
     def _ensure_peer_tables(self, cursor):
@@ -305,8 +307,8 @@ Match #2: Anonymous Friend (matched 1 week ago)
 
     def find_match(self):
         """Create a peer match based on user's selected support areas."""
-        if not messagebox.askyesno("Find Match",
-                                   "Start searching for a peer match based on your preferences?"):
+        if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.find_match', default="Find Match"),
+                                   _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.start_searching_for_a_peer_match_based_on_your_preferences', default="Start searching for a peer match based on your preferences?")):
             return
 
         conn = None
@@ -349,7 +351,7 @@ Match #2: Anonymous Friend (matched 1 week ago)
                       f"{other_topic}; {topic}", match_id))
                 conn.commit()
                 messagebox.showinfo(
-                    "Match Found!",
+                    _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.match_found', default="Match Found!"),
                     f"You have been matched with peer '{other_anon}'!\n\n"
                     f"Match ID: {match_id}\n"
                     f"Your anonymous ID: {anon_id}\n\n"
@@ -363,13 +365,13 @@ Match #2: Anonymous Friend (matched 1 week ago)
                 ''', (user_id, anon_id, topic, match_type, now))
                 conn.commit()
                 messagebox.showinfo(
-                    "Request Submitted",
+                    _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.request_submitted', default="Request Submitted"),
                     f"Your match request has been submitted.\n\n"
                     f"Your anonymous ID: {anon_id}\n"
                     "You'll be matched when a compatible peer is found.")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to find match: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to find match: {e}")
         finally:
             if conn:
                 conn.close()
@@ -396,12 +398,12 @@ Match #2: Anonymous Friend (matched 1 week ago)
             conn = None
 
             win = tk.Toplevel(self.dialog)
-            win.title("My Peer Matches")
+            win.title(_t('gui.pastoral.student_union_gui.support.peer_support.windows.my_peer_matches', default="My Peer Matches"))
             win.geometry("700x400")
             win.transient(self.dialog)
             win.grab_set()
 
-            ttk.Label(win, text="My Peer Matches",
+            ttk.Label(win, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.my_peer_matches', default="My Peer Matches"),
                       font=('Arial', 12, 'bold')).pack(pady=(10, 5))
 
             columns = ('Match ID', 'Topic', 'Status', 'Date', 'Peer')
@@ -416,12 +418,12 @@ Match #2: Anonymous Friend (matched 1 week ago)
                 tree.insert('', 'end', values=(m[0], m[1] or "", m[2], m[3] or "", peer_display))
 
             if not matches:
-                ttk.Label(win, text="No matches found. Use 'Find New Match' to get started.").pack(pady=10)
+                ttk.Label(win, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.no_matches_found_use_find_new_match_to_get_started', default="No matches found. Use 'Find New Match' to get started.")).pack(pady=10)
 
-            ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
+            ttk.Button(win, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.close', default="Close"), command=win.destroy).pack(pady=10)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load matches: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to load matches: {e}")
         finally:
             if conn:
                 conn.close()
@@ -450,7 +452,7 @@ Match #2: Anonymous Friend (matched 1 week ago)
             conn = None
 
             if not active_matches:
-                messagebox.showinfo("Messaging", "No active matches to message. Find a match first.")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.messaging', default="Messaging"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.no_active_matches_to_message_find_a_match_first', default="No active matches to message. Find a match first."))
                 return
 
             # If multiple matches, let user pick one
@@ -462,7 +464,7 @@ Match #2: Anonymous Friend (matched 1 week ago)
             if len(active_matches) > 1:
                 choices = [f"Match #{m[0]} - {m[1] or 'General'} (peer: {m[3]})" for m in active_matches]
                 choice = simpledialog.askstring(
-                    "Select Match",
+                    _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.select_match', default="Select Match"),
                     "Enter the match number to message:\n\n" +
                     "\n".join(choices),
                     parent=self.dialog)
@@ -475,14 +477,14 @@ Match #2: Anonymous Friend (matched 1 week ago)
                             match_id, topic, my_anon, peer_anon = m
                             break
                 except ValueError:
-                    messagebox.showwarning("Invalid", "Please enter a valid match number.")
+                    messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.invalid', default="Invalid"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.please_enter_a_valid_match_number', default="Please enter a valid match number."))
                     return
 
             # Open messaging window
             self._open_message_window(match_id, my_anon, peer_anon, topic)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to open messaging: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to open messaging: {e}")
         finally:
             if conn:
                 conn.close()
@@ -557,12 +559,12 @@ Match #2: Anonymous Friend (matched 1 week ago)
                 entry_var.set("")
                 load_messages()
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to send message: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to send message: {e}")
 
-        ttk.Button(input_frame, text="Send", command=send_message).pack(side='right')
+        ttk.Button(input_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.send', default="Send"), command=send_message).pack(side='right')
         entry.bind('<Return>', lambda e: send_message())
 
-        ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
+        ttk.Button(win, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.close', default="Close"), command=win.destroy).pack(pady=(0, 10))
 
 
 
@@ -574,7 +576,7 @@ class ManagePeerSupportDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Manage Peer Support System")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.support.peer_support.windows.manage_peer_support_system', default="Manage Peer Support System"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -585,7 +587,7 @@ class ManagePeerSupportDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="⚙️ Manage Peer Support System",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.manage_peer_support_system', default="⚙️ Manage Peer Support System"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Tabs for different management areas
@@ -594,26 +596,26 @@ class ManagePeerSupportDialog:
 
         # Group moderation tab
         moderation_frame = ttk.Frame(notebook)
-        notebook.add(moderation_frame, text="Group Moderation")
+        notebook.add(moderation_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.tabs.group_moderation', default="Group Moderation"))
         self.create_moderation_tab(moderation_frame)
 
         # Pending requests tab
         requests_frame = ttk.Frame(notebook)
-        notebook.add(requests_frame, text="Join Requests")
+        notebook.add(requests_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.tabs.join_requests', default="Join Requests"))
         self.create_requests_tab(requests_frame)
 
         # Reports tab
         reports_frame = ttk.Frame(notebook)
-        notebook.add(reports_frame, text="Reports & Analytics")
+        notebook.add(reports_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.tabs.reports_analytics', default="Reports & Analytics"))
         self.create_reports_tab(reports_frame)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def create_moderation_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Groups You Moderate",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.groups_you_moderate', default="Groups You Moderate"),
                  font=('Arial', 11, 'bold')).pack(pady=(0, 10))
 
         columns = ('ID', 'Group', 'Members', 'Status', 'Created')
@@ -667,7 +669,7 @@ class ManagePeerSupportDialog:
         def approve_group():
             sel = self.mod_tree.selection()
             if not sel:
-                messagebox.showwarning("Warning", "Select a group first.")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.select_a_group_first', default="Select a group first."))
                 return
             gid = self.mod_tree.item(sel[0])['values'][0]
             try:
@@ -678,14 +680,14 @@ class ManagePeerSupportDialog:
                 c.close()
                 self.mod_tree.item(sel[0], values=(*self.mod_tree.item(sel[0])['values'][:3], 'active',
                                                     self.mod_tree.item(sel[0])['values'][4]))
-                messagebox.showinfo("Success", "Group approved.")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.group_approved', default="Group approved."))
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to approve: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to approve: {e}")
 
         def flag_group():
             sel = self.mod_tree.selection()
             if not sel:
-                messagebox.showwarning("Warning", "Select a group first.")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.select_a_group_first', default="Select a group first."))
                 return
             gid = self.mod_tree.item(sel[0])['values'][0]
             try:
@@ -696,17 +698,17 @@ class ManagePeerSupportDialog:
                 c.close()
                 self.mod_tree.item(sel[0], values=(*self.mod_tree.item(sel[0])['values'][:3], 'flagged',
                                                     self.mod_tree.item(sel[0])['values'][4]))
-                messagebox.showinfo("Flagged", "Group has been flagged for review.")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.flagged', default="Flagged"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.group_has_been_flagged_for_review', default="Group has been flagged for review."))
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to flag: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to flag: {e}")
 
         def dismiss_group():
             sel = self.mod_tree.selection()
             if not sel:
-                messagebox.showwarning("Warning", "Select a group first.")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.select_a_group_first', default="Select a group first."))
                 return
             gid = self.mod_tree.item(sel[0])['values'][0]
-            if not messagebox.askyesno("Confirm", "Dismiss (deactivate) this group?"):
+            if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.confirm', default="Confirm"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.dismiss_deactivate_this_group', default="Dismiss (deactivate) this group?")):
                 return
             try:
                 c = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -715,13 +717,13 @@ class ManagePeerSupportDialog:
                 c.commit()
                 c.close()
                 self.mod_tree.delete(sel[0])
-                messagebox.showinfo("Dismissed", "Group has been deactivated.")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.dismissed', default="Dismissed"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.group_has_been_deactivated', default="Group has been deactivated."))
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to dismiss: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to dismiss: {e}")
 
-        ttk.Button(btn_frame, text="Approve", command=approve_group).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Flag", command=flag_group).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Dismiss", command=dismiss_group).pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.approve', default="Approve"), command=approve_group).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.flag', default="Flag"), command=flag_group).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.dismiss', default="Dismiss"), command=dismiss_group).pack(side='left')
 
     def _ensure_support_requests_table(self, cursor):
         """Create support_requests table if it doesn't exist."""
@@ -744,7 +746,7 @@ class ManagePeerSupportDialog:
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Pending Support Requests",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.labels.pending_support_requests', default="Pending Support Requests"),
                  font=('Arial', 11, 'bold')).pack(pady=(0, 10))
 
         columns = ('ID', 'Student', 'Group', 'Requested', 'Reason')
@@ -766,9 +768,9 @@ class ManagePeerSupportDialog:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(btn_frame, text="Approve", command=self.approve_request).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Deny", command=self.deny_request).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Refresh", command=self._load_requests).pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.approve', default="Approve"), command=self.approve_request).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.deny', default="Deny"), command=self.deny_request).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.refresh', default="Refresh"), command=self._load_requests).pack(side='left')
 
     def _load_requests(self):
         """Load pending support requests from the database."""
@@ -796,7 +798,7 @@ class ManagePeerSupportDialog:
             conn.close()
             conn = None
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load requests: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to load requests: {e}")
         finally:
             if conn:
                 conn.close()
@@ -813,9 +815,9 @@ class ManagePeerSupportDialog:
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(btn_frame, text="Refresh", command=self._generate_report).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Save as TXT", command=self._save_report_txt).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Email to Admin", command=self._email_report_to_admin).pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.refresh', default="Refresh"), command=self._generate_report).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.save_as_txt', default="Save as TXT"), command=self._save_report_txt).pack(side='left', padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.support.peer_support.buttons.email_to_admin', default="Email to Admin"), command=self._email_report_to_admin).pack(side='left')
 
     def _generate_report(self):
         """Generate real statistics from the database."""
@@ -952,9 +954,9 @@ End of Report
             self.report_text.config(state='disabled')
             with open(filepath, 'w') as f:
                 f.write(content)
-            messagebox.showinfo("Saved", f"Report saved to:\n{filepath}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.saved', default="Saved"), f"Report saved to:\n{filepath}")
         except OSError as e:
-            messagebox.showerror("Error", f"Failed to save report: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to save report: {e}")
 
     def _email_report_to_admin(self):
         """Email the current report content to the admin."""
@@ -970,15 +972,15 @@ End of Report
                 "Peer Support System Analytics Report",
                 content
             )
-            messagebox.showinfo("Sent", "Report emailed to admin successfully.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.sent', default="Sent"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.report_emailed_to_admin_successfully', default="Report emailed to admin successfully."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to email report: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to email report: {e}")
 
     def approve_request(self):
         """Approve the selected support request in the database."""
         sel = self.req_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Please select a request to approve.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.please_select_a_request_to_approve', default="Please select a request to approve."))
             return
 
         request_id = self.req_tree.item(sel[0])['values'][0]
@@ -997,9 +999,9 @@ End of Report
             conn = None
 
             self.req_tree.delete(sel[0])
-            messagebox.showinfo("Approved", f"Request #{request_id} has been approved.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.approved', default="Approved"), f"Request #{request_id} has been approved.")
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to approve request: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to approve request: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1008,10 +1010,10 @@ End of Report
         """Deny the selected support request in the database."""
         sel = self.req_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Please select a request to deny.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.please_select_a_request_to_deny', default="Please select a request to deny."))
             return
 
-        if not messagebox.askyesno("Deny Request", "Are you sure you want to deny this request?"):
+        if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.deny_request', default="Deny Request"), _t('gui.pastoral.student_union_gui.support.peer_support.dialogs.are_you_sure_you_want_to_deny_this_request', default="Are you sure you want to deny this request?")):
             return
 
         request_id = self.req_tree.item(sel[0])['values'][0]
@@ -1030,9 +1032,9 @@ End of Report
             conn = None
 
             self.req_tree.delete(sel[0])
-            messagebox.showinfo("Denied", f"Request #{request_id} has been denied.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.denied', default="Denied"), f"Request #{request_id} has been denied.")
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to deny request: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.support.peer_support.dialogs.error', default="Error"), f"Failed to deny request: {e}")
         finally:
             if conn:
                 conn.close()

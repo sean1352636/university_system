@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -1009,8 +1011,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -1368,17 +1370,17 @@ class AdvancedSearchGUI:
 
         # Right-click context menu for bulk actions on selected rows
         self.results_context_menu = tk.Menu(self.results_tree, tearoff=0)
-        self.results_context_menu.add_command(label="Select All",
+        self.results_context_menu.add_command(label=_t('gui.shell.advanced_search.base.menus.select_all', default="Select All"),
                                               command=self.select_all_results)
         self.results_context_menu.add_separator()
-        self.results_context_menu.add_command(label="Copy IDs",
+        self.results_context_menu.add_command(label=_t('gui.shell.advanced_search.base.menus.copy_ids', default="Copy IDs"),
                                               command=lambda: self.copy_selected_results_column(0))
-        self.results_context_menu.add_command(label="Copy Names",
+        self.results_context_menu.add_command(label=_t('gui.shell.advanced_search.base.menus.copy_names', default="Copy Names"),
                                               command=lambda: self.copy_selected_results_column(1))
-        self.results_context_menu.add_command(label="Copy Emails",
+        self.results_context_menu.add_command(label=_t('gui.shell.advanced_search.base.menus.copy_emails', default="Copy Emails"),
                                               command=lambda: self.copy_selected_results_column(2))
         self.results_context_menu.add_separator()
-        self.results_context_menu.add_command(label="Export Selected to CSV…",
+        self.results_context_menu.add_command(label=_t('gui.shell.advanced_search.base.menus.export_selected_to_csv', default="Export Selected to CSV…"),
                                               command=self.export_selected_results_csv)
         self.results_tree.bind('<Button-3>', self._show_results_context_menu)
         self.results_tree.bind('<Control-a>', lambda e: (self.select_all_results(), "break")[1])
@@ -1539,7 +1541,7 @@ class AdvancedSearchGUI:
         """Copy a single column from the selected result rows to the clipboard."""
         selection = self.results_tree.selection()
         if not selection:
-            messagebox.showinfo("Copy", "No rows selected.")
+            messagebox.showinfo(_t('gui.shell.advanced_search.base.dialogs.copy', default="Copy"), _t('gui.shell.advanced_search.base.dialogs.no_rows_selected', default="No rows selected."))
             return
         values = []
         for iid in selection:
@@ -1547,7 +1549,7 @@ class AdvancedSearchGUI:
             if column_index < len(row) and row[column_index] not in ("", None):
                 values.append(str(row[column_index]))
         if not values:
-            messagebox.showinfo("Copy", "No values found in the selected rows for that column.")
+            messagebox.showinfo(_t('gui.shell.advanced_search.base.dialogs.copy', default="Copy"), _t('gui.shell.advanced_search.base.dialogs.no_values_found_in_the_selected_rows_for_that_column', default="No values found in the selected rows for that column."))
             return
         try:
             self.master.clipboard_clear()
@@ -1555,18 +1557,18 @@ class AdvancedSearchGUI:
             self.master.update()
             self.log_output(f"Copied {len(values)} value(s) to clipboard.")
         except Exception as e:
-            messagebox.showerror("Copy failed", str(e))
+            messagebox.showerror(_t('gui.shell.advanced_search.base.dialogs.copy_failed', default="Copy failed"), str(e))
 
     def export_selected_results_csv(self):
         """Export the currently selected result rows to a CSV file."""
         selection = self.results_tree.selection()
         if not selection:
-            messagebox.showinfo("Export Selected", "No rows selected.")
+            messagebox.showinfo(_t('gui.shell.advanced_search.base.dialogs.export_selected', default="Export Selected"), _t('gui.shell.advanced_search.base.dialogs.no_rows_selected', default="No rows selected."))
             return
         path = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv")],
-            title="Export selected rows",
+            title=_t('gui.shell.advanced_search.base.dialogs.export_selected_rows', default="Export selected rows"),
         )
         if not path:
             return
@@ -1578,6 +1580,6 @@ class AdvancedSearchGUI:
                 for iid in selection:
                     writer.writerow(self.results_tree.item(iid)['values'])
             self.log_output(f"Exported {len(selection)} selected row(s) to {path}")
-            messagebox.showinfo("Export Selected", f"Exported {len(selection)} row(s).")
+            messagebox.showinfo(_t('gui.shell.advanced_search.base.dialogs.export_selected', default="Export Selected"), f"Exported {len(selection)} row(s).")
         except Exception as e:
-            messagebox.showerror("Export failed", str(e))
+            messagebox.showerror(_t('gui.shell.advanced_search.base.dialogs.export_failed', default="Export failed"), str(e))

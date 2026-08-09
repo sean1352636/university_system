@@ -898,9 +898,9 @@ def view_staff(self):
         if 'hrprofile' in item.get('tags', ()):
             messagebox.showinfo(
                 _t("common.info", default="Info"),
-                "This staff member has an HR profile but no login account, so "
+                _t('gui.shell.main.staff.staff_crud.dialogs.this_staff_member_has_an_hr_profile_but_no_login_account_so_they', default="This staff member has an HR profile but no login account, so "
                 "they can't be edited here. Manage them under Staff HR "
-                "→ Directory.")
+                "→ Directory."))
             return
         user_id = item['values'][0]
         self.update_staff_dialog(user_id)
@@ -916,9 +916,9 @@ def view_staff(self):
         if 'hrprofile' in item.get('tags', ()):
             messagebox.showinfo(
                 _t("common.info", default="Info"),
-                "This staff member has an HR profile but no login account, so "
+                _t('gui.shell.main.staff.staff_crud.dialogs.this_staff_member_has_an_hr_profile_but_no_login_account_so_ther', default="This staff member has an HR profile but no login account, so "
                 "there's nothing to delete here. Manage them under Staff HR "
-                "→ Directory.")
+                "→ Directory."))
             return
         user_id = item['values'][0]
         username = item['values'][1]
@@ -1116,7 +1116,7 @@ def search_staff_dialog(self):
 
     ttk.Label(search_frame, text=_t("staff.search_by_label")).grid(row=0, column=0, sticky=tk.W, pady=5)
 
-    search_by_var = tk.StringVar(value="username")
+    search_by_var = tk.StringVar(value=_t('gui.shell.main.staff.staff_crud.values.username', default="username"))
     search_options = [
         (_t("staff.search_options.username"), "username"),
         (_t("staff.search_options.email"), "email"),

@@ -2,6 +2,8 @@
 Security monitoring and management tab for the Activity Logger GUI.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.activity_logger._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     json,
@@ -218,45 +220,45 @@ RECENT SECURITY EVENTS
         """Block a suspicious IP address"""
         ip_address = self.ip_entry.get().strip()
         if not ip_address:
-            messagebox.showwarning("Block IP", "Please enter an IP address.")
+            messagebox.showwarning(_t('gui.shell.activity_logger.tabs.security.dialogs.block_ip', default="Block IP"), _t('gui.shell.activity_logger.tabs.security.dialogs.please_enter_an_ip_address', default="Please enter an IP address."))
             return
 
         try:
             if hasattr(self.main_app.logger, 'security_monitor'):
                 self.main_app.logger.security_monitor.add_suspicious_ip(ip_address)
-                messagebox.showinfo("IP Blocked", f"IP address {ip_address} has been added to the suspicious list.")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.security.dialogs.ip_blocked', default="IP Blocked"), f"IP address {ip_address} has been added to the suspicious list.")
                 self.ip_entry.delete(0, tk.END)
                 self.refresh_security_data()
             else:
-                messagebox.showwarning("Block IP", "Security monitoring not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.tabs.security.dialogs.block_ip', default="Block IP"), _t('gui.shell.activity_logger.tabs.security.dialogs.security_monitoring_not_available', default="Security monitoring not available."))
 
         except Exception as e:
-            messagebox.showerror("Block IP Error", f"Failed to block IP: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.security.dialogs.block_ip_error', default="Block IP Error"), f"Failed to block IP: {str(e)}")
 
     def reset_user_attempts(self):
         """Reset failed login attempts for a user"""
         username = self.user_entry.get().strip()
         if not username:
-            messagebox.showwarning("Reset Attempts", "Please enter a username.")
+            messagebox.showwarning(_t('gui.shell.activity_logger.tabs.security.dialogs.reset_attempts', default="Reset Attempts"), _t('gui.shell.activity_logger.tabs.security.dialogs.please_enter_a_username', default="Please enter a username."))
             return
 
         try:
             if hasattr(self.main_app.logger, 'security_monitor'):
                 # This would need to be implemented in the security monitor
                 # For now, just show a message
-                messagebox.showinfo("Reset Attempts", f"Failed login attempts for {username} have been reset.")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.security.dialogs.reset_attempts', default="Reset Attempts"), f"Failed login attempts for {username} have been reset.")
                 self.user_entry.delete(0, tk.END)
             else:
-                messagebox.showwarning("Reset Attempts", "Security monitoring not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.tabs.security.dialogs.reset_attempts', default="Reset Attempts"), _t('gui.shell.activity_logger.tabs.security.dialogs.security_monitoring_not_available', default="Security monitoring not available."))
 
         except Exception as e:
-            messagebox.showerror("Reset Error", f"Failed to reset user attempts: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.security.dialogs.reset_error', default="Reset Error"), f"Failed to reset user attempts: {str(e)}")
 
     def generate_security_report(self):
         """Generate a security report"""
         try:
             if not LOGGER_AVAILABLE or not hasattr(self.main_app, 'logger') or not self.main_app.logger:
-                messagebox.showwarning("Security Report", "Logger not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.tabs.security.dialogs.security_report', default="Security Report"), _t('gui.shell.activity_logger.tabs.security.dialogs.logger_not_available', default="Logger not available."))
                 return
 
             if hasattr(self.main_app.logger, 'generate_report'):
@@ -264,7 +266,7 @@ RECENT SECURITY EVENTS
 
                 # Save report
                 file_path = filedialog.asksaveasfilename(
-                    title="Save Security Report",
+                    title=_t('gui.shell.activity_logger.tabs.security.dialogs.save_security_report', default="Save Security Report"),
                     defaultextension=".json",
                     filetypes=[("JSON files", "*.json"), ("Text files", "*.txt")]
                 )
@@ -276,18 +278,18 @@ RECENT SECURITY EVENTS
                         else:
                             json.dump(report, f, indent=2, default=str)
 
-                    messagebox.showinfo("Security Report", f"Security report saved to: {file_path}")
+                    messagebox.showinfo(_t('gui.shell.activity_logger.tabs.security.dialogs.security_report', default="Security Report"), f"Security report saved to: {file_path}")
             else:
-                messagebox.showwarning("Security Report", "Report generation not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.tabs.security.dialogs.security_report', default="Security Report"), _t('gui.shell.activity_logger.tabs.security.dialogs.report_generation_not_available', default="Report generation not available."))
 
         except Exception as e:
-            messagebox.showerror("Report Error", f"Failed to generate security report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.security.dialogs.report_error', default="Report Error"), f"Failed to generate security report: {str(e)}")
 
     def run_anomaly_detection(self):
         """Run anomaly detection"""
         try:
             if not LOGGER_AVAILABLE or not hasattr(self.main_app, 'logger') or not self.main_app.logger:
-                messagebox.showwarning("Anomaly Detection", "Logger not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.tabs.security.dialogs.anomaly_detection', default="Anomaly Detection"), _t('gui.shell.activity_logger.tabs.security.dialogs.logger_not_available', default="Logger not available."))
                 return
 
             if hasattr(self.main_app.logger, 'detect_anomalies'):
@@ -327,12 +329,12 @@ RECENT SECURITY EVENTS
                     text_widget.configure(state='disabled')
 
                 else:
-                    messagebox.showinfo("Anomaly Detection", "No anomalies detected.")
+                    messagebox.showinfo(_t('gui.shell.activity_logger.tabs.security.dialogs.anomaly_detection', default="Anomaly Detection"), _t('gui.shell.activity_logger.tabs.security.dialogs.no_anomalies_detected', default="No anomalies detected."))
 
                 self.refresh_security_data()
 
             else:
-                messagebox.showwarning("Anomaly Detection", "Anomaly detection not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.tabs.security.dialogs.anomaly_detection', default="Anomaly Detection"), _t('gui.shell.activity_logger.tabs.security.dialogs.anomaly_detection_not_available', default="Anomaly detection not available."))
 
         except Exception as e:
-            messagebox.showerror("Anomaly Detection Error", f"Failed to run anomaly detection: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.security.dialogs.anomaly_detection_error', default="Anomaly Detection Error"), f"Failed to run anomaly detection: {str(e)}")

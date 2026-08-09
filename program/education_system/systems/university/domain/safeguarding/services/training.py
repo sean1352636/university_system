@@ -6,7 +6,9 @@ import os
 import re
 import secrets
 import shutil
-import sqlite3
+from education_system.systems.university.infrastructure.database.db import (
+    sqlite3 as _db_errors,
+)
 import sys
 import tkinter as tk
 import webbrowser
@@ -50,7 +52,7 @@ def record_training(
             (username, full_name, module, completed, expires),
         )
         conn.commit()
-    except sqlite3.IntegrityError:
+    except _db_errors.IntegrityError:
         pass  # duplicate completion record — already on file
     conn.close()
     audit_log(

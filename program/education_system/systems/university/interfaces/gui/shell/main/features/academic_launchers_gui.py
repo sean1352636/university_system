@@ -176,9 +176,9 @@ from education_system.systems.university.interfaces.gui.shell.main.imports.gui_i
 )
 
 # Import paths
-from education_system.systems.university.infrastructure import paths
-PROJECT_ROOT = paths.PROJECT_ROOT
-DB_PATH = paths.DEFAULT_DB_PATH
+from education_system import paths
+PROJECT_ROOT = paths.UNIVERSITY_PROJECT_ROOT
+DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Alias for translation function
 from education_system.systems.university.infrastructure.i18n import get_text as _t
@@ -724,12 +724,12 @@ def open_absence_tracker_gui(self):
             if user.get("role"):
                 cmd += ["--role", str(user["role"])]
         else:
-            messagebox.showerror("Absence Tracker", "Please log in first.")
+            messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.absence_tracker', default="Absence Tracker"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_first', default="Please log in first."))
             return
         subprocess.Popen(cmd, close_fds=True)
     except Exception as e:
         try:
-            messagebox.showerror("Absence Tracker", f"Failed to open Absence Tracker: {e}")
+            messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.absence_tracker', default="Absence Tracker"), f"Failed to open Absence Tracker: {e}")
         except Exception as ex:
             logger.error(f"Failed to show absence tracker error dialog: {ex}")
 def show_office_hours_gui(self):
@@ -737,11 +737,11 @@ def show_office_hours_gui(self):
     notebook when a workspace is available, falling back to a
     Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     if not self.auth.current_user:
-        messagebox.showerror("Error", "Please log in to access Office Hours.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_office_hours', default="Please log in to access Office Hours."))
         return
 
     if not OFFICE_HOURS_GUI_AVAILABLE:
-        messagebox.showerror("Office Hours", "Office Hours GUI is not available.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.office_hours', default="Office Hours"), _t('gui.shell.main.features.academic_launchers.dialogs.office_hours_gui_is_not_available', default="Office Hours GUI is not available."))
         return
 
     title = "Office Hours"
@@ -760,7 +760,7 @@ def show_office_hours_gui(self):
             win.destroy()
         except Exception:
             pass
-        messagebox.showerror("Office Hours", f"Failed to open Office Hours: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.office_hours', default="Office Hours"), f"Failed to open Office Hours: {e}")
 
 def show_graduation_system_gui(self):
     """Launch the Degree Audit & Graduation System inside the main GUI's
@@ -768,13 +768,13 @@ def show_graduation_system_gui(self):
     Toplevel otherwise. The Degree Audit GUI surfaces the graduation
     audit, graduation checklist, and approval workflow."""
     if not self.auth.current_user:
-        messagebox.showerror("Error", "Please log in to access the Graduation System.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_the_graduation_system', default="Please log in to access the Graduation System."))
         return
 
     if not DEGREE_AUDIT_GUI_AVAILABLE:
         messagebox.showerror(
-            "Graduation System",
-            "Degree Audit / Graduation System GUI is not available.",
+            _t('gui.shell.main.features.academic_launchers.dialogs.graduation_system', default="Graduation System"),
+            _t('gui.shell.main.features.academic_launchers.dialogs.degree_audit_graduation_system_gui_is_not_available', default="Degree Audit / Graduation System GUI is not available."),
         )
         return
 
@@ -783,7 +783,7 @@ def show_graduation_system_gui(self):
     try:
         DegreeAuditGUI(self.root, auth=self.auth)
     except Exception as e:
-        messagebox.showerror("Graduation System", f"Failed to open Graduation System: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.graduation_system', default="Graduation System"), f"Failed to open Graduation System: {e}")
 
 
 def show_graduation_ceremony_gui(self):
@@ -791,26 +791,26 @@ def show_graduation_ceremony_gui(self):
     gown orders, seat plan, stage script). Opens as a standalone full-size
     window rather than an embedded workspace tab."""
     if not self.auth.current_user:
-        messagebox.showerror("Error", "Please log in to access the Graduation Ceremony tools.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_the_graduation_ceremony_tools', default="Please log in to access the Graduation Ceremony tools."))
         return
 
     if not GRADUATION_CEREMONY_GUI_AVAILABLE:
         messagebox.showerror(
-            "Graduation Ceremony",
-            "Graduation Ceremony GUI is not available.",
+            _t('gui.shell.main.features.academic_launchers.dialogs.graduation_ceremony', default="Graduation Ceremony"),
+            _t('gui.shell.main.features.academic_launchers.dialogs.graduation_ceremony_gui_is_not_available', default="Graduation Ceremony GUI is not available."),
         )
         return
 
     try:
         GraduationCeremonyGUI(self.root, auth=self.auth)
     except Exception as e:
-        messagebox.showerror("Graduation Ceremony", f"Failed to open Graduation Ceremony: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.graduation_ceremony', default="Graduation Ceremony"), f"Failed to open Graduation Ceremony: {e}")
 
 
 def show_student_grades_gui(self):
     """Launch the Student Grades & GPA GUI"""
     if not self.auth.current_user:
-        messagebox.showerror("Error", "Please log in to access your grades.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_your_grades', default="Please log in to access your grades."))
         return
 
     try:
@@ -818,12 +818,12 @@ def show_student_grades_gui(self):
             STUDENT_GRADES_GUI_AVAILABLE, StudentGradesPortal
         )
         if not STUDENT_GRADES_GUI_AVAILABLE or StudentGradesPortal is None:
-            messagebox.showerror("Grades", "Student Grades GUI is not available.")
+            messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.grades', default="Grades"), _t('gui.shell.main.features.academic_launchers.dialogs.student_grades_gui_is_not_available', default="Student Grades GUI is not available."))
             return
 
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
-        window.title("My Grades & GPA")
+        window.title(_t('gui.shell.main.features.academic_launchers.windows.my_grades_gpa', default="My Grades & GPA"))
         window.geometry("1200x800")
         try:
             window.transient(self.root)
@@ -832,13 +832,13 @@ def show_student_grades_gui(self):
         StudentGradesPortal(window, auth_instance=self.auth)
         print("Student Grades GUI opened")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Student Grades: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), f"Failed to open Student Grades: {e}")
         logger.error(f"Student Grades GUI error: {e}")
 
 def show_student_outcomes_gui(self):
     """Launch the Learning Outcomes Tracker GUI"""
     if not self.auth.current_user:
-        messagebox.showerror("Error", "Please log in to access Learning Outcomes.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_learning_outcomes', default="Please log in to access Learning Outcomes."))
         return
 
     try:
@@ -846,12 +846,12 @@ def show_student_outcomes_gui(self):
             STUDENT_OUTCOMES_GUI_AVAILABLE, StudentOutcomesGUI
         )
         if not STUDENT_OUTCOMES_GUI_AVAILABLE or StudentOutcomesGUI is None:
-            messagebox.showerror("Learning Outcomes", "Learning Outcomes GUI is not available.")
+            messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.learning_outcomes', default="Learning Outcomes"), _t('gui.shell.main.features.academic_launchers.dialogs.learning_outcomes_gui_is_not_available', default="Learning Outcomes GUI is not available."))
             return
 
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
-        window.title("Learning Outcomes")
+        window.title(_t('gui.shell.main.features.academic_launchers.windows.learning_outcomes', default="Learning Outcomes"))
         window.geometry("1200x800")
         try:
             window.transient(self.root)
@@ -860,7 +860,7 @@ def show_student_outcomes_gui(self):
         StudentOutcomesGUI(window, auth_instance=self.auth)
         print("Learning Outcomes GUI opened")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Learning Outcomes: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), f"Failed to open Learning Outcomes: {e}")
         logger.error(f"Learning Outcomes GUI error: {e}")
 
 def show_student_timetable_gui(self):
@@ -868,7 +868,7 @@ def show_student_timetable_gui(self):
     notebook when a workspace is available, falling back to a
     Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     if not self.auth.current_user:
-        messagebox.showerror("Error", "Please log in to access your timetable.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_your_timetable', default="Please log in to access your timetable."))
         return
 
     try:
@@ -876,12 +876,12 @@ def show_student_timetable_gui(self):
             STUDENT_TIMETABLE_GUI_AVAILABLE, StudentTimetableGUI
         )
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Timetable: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), f"Failed to open Timetable: {e}")
         logger.error(f"Student Timetable GUI error: {e}")
         return
 
     if not STUDENT_TIMETABLE_GUI_AVAILABLE or StudentTimetableGUI is None:
-        messagebox.showerror("Timetable", "Student Timetable GUI is not available.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.timetable', default="Timetable"), _t('gui.shell.main.features.academic_launchers.dialogs.student_timetable_gui_is_not_available', default="Student Timetable GUI is not available."))
         return
 
     title = "My Timetable"
@@ -905,7 +905,7 @@ def show_student_timetable_gui(self):
             StudentTimetableGUI(window, auth_instance=self.auth)
         print("Student Timetable GUI opened")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Timetable: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), f"Failed to open Timetable: {e}")
         logger.error(f"Student Timetable GUI error: {e}")
 
 def show_student_registration_gui(self):
@@ -918,7 +918,7 @@ def show_student_registration_gui(self):
     routing the host frame through ``open_in_workspace``.
     """
     if not self.auth.current_user:
-        messagebox.showerror("Error", "Please log in to access Module Registration.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_module_registration', default="Please log in to access Module Registration."))
         return
 
     try:
@@ -926,7 +926,7 @@ def show_student_registration_gui(self):
             STUDENT_REGISTRATION_GUI_AVAILABLE, StudentRegistrationPortal
         )
         if not STUDENT_REGISTRATION_GUI_AVAILABLE or StudentRegistrationPortal is None:
-            messagebox.showerror("Registration", "Module Registration GUI is not available.")
+            messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.registration', default="Registration"), _t('gui.shell.main.features.academic_launchers.dialogs.module_registration_gui_is_not_available', default="Module Registration GUI is not available."))
             return
 
         title = "Module Registration"
@@ -949,7 +949,7 @@ def show_student_registration_gui(self):
         StudentRegistrationPortal(window, auth_instance=self.auth)
         print("Module Registration GUI opened")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Module Registration: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), f"Failed to open Module Registration: {e}")
         logger.error(f"Student Registration GUI error: {e}")
 
 def show_student_dashboard_gui(self):
@@ -959,7 +959,7 @@ def show_student_dashboard_gui(self):
     already accepts a parent frame and builds a canvas+scrollbar
     layout into it."""
     if not self.auth.current_user:
-        messagebox.showerror("Error", "Please log in to access the Student Dashboard.")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_the_student_dashboard', default="Please log in to access the Student Dashboard."))
         return
 
     try:
@@ -967,7 +967,7 @@ def show_student_dashboard_gui(self):
             STUDENT_DASHBOARD_GUI_AVAILABLE, StudentDashboardPortal
         )
         if not STUDENT_DASHBOARD_GUI_AVAILABLE or StudentDashboardPortal is None:
-            messagebox.showerror("Dashboard", "Student Dashboard GUI is not available.")
+            messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.dashboard', default="Dashboard"), _t('gui.shell.main.features.academic_launchers.dialogs.student_dashboard_gui_is_not_available', default="Student Dashboard GUI is not available."))
             return
 
         title = "Student Dashboard"
@@ -991,7 +991,7 @@ def show_student_dashboard_gui(self):
         StudentDashboardPortal(window, auth_instance=self.auth, main_gui=self)
         print("Student Dashboard GUI opened")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Student Dashboard: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), f"Failed to open Student Dashboard: {e}")
         logger.error(f"Student Dashboard GUI error: {e}")
 
 def show_virtual_classroom_gui(self):
@@ -1038,7 +1038,7 @@ def show_lms_gui(self):
         from education_system.platform.features.lms.lms_gui import LMSFrame
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
-        window.title("Learning Management System")
+        window.title(_t('gui.shell.main.features.academic_launchers.windows.learning_management_system', default="Learning Management System"))
         window.geometry("1100x700")
         try:
             window.transient(self.root)
@@ -1049,7 +1049,7 @@ def show_lms_gui(self):
         frame.pack(fill="both", expand=True)
         print("LMS GUI opened successfully")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open LMS: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), f"Failed to open LMS: {e}")
         print(f"LMS GUI error: {e}")
 
 def show_document_manager(self):
@@ -1204,7 +1204,7 @@ def show_enhanced_reporting_dashboard(self):
 def show_student_analytics_gui(self):
     """Launch the Student Analytics GUI"""
     if not self.auth.current_user:
-        messagebox.showerror(_t("extras_gui.errors.error"), "Please log in to access Student Analytics.")
+        messagebox.showerror(_t("extras_gui.errors.error"), _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_student_analytics', default="Please log in to access Student Analytics."))
         return
 
     try:
@@ -1212,12 +1212,12 @@ def show_student_analytics_gui(self):
             STUDENT_ANALYTICS_GUI_AVAILABLE, GUIStudentAnalytics
         )
         if not STUDENT_ANALYTICS_GUI_AVAILABLE or GUIStudentAnalytics is None:
-            messagebox.showerror("Student Analytics", "Student Analytics GUI is not available.")
+            messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.student_analytics', default="Student Analytics"), _t('gui.shell.main.features.academic_launchers.dialogs.student_analytics_gui_is_not_available', default="Student Analytics GUI is not available."))
             return
 
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
-        window.title("Student Analytics")
+        window.title(_t('gui.shell.main.features.academic_launchers.windows.student_analytics', default="Student Analytics"))
         window.geometry("1400x900")
         try:
             window.transient(self.root)
@@ -1226,7 +1226,7 @@ def show_student_analytics_gui(self):
         GUIStudentAnalytics(root=window, auth_manager=self.auth)
         print("Student Analytics GUI opened")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Student Analytics: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), f"Failed to open Student Analytics: {e}")
         logger.error(f"Student Analytics GUI error: {e}")
 def show_predictive_analytics_gui(self):
     """Launch the Predictive Analytics GUI"""
@@ -1344,7 +1344,7 @@ def show_exam_portal(self):
         from education_system.systems.university.interfaces.gui.academics.exam_management import ExamPortalGUI
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
-        window.title("Exam Management")
+        window.title(_t('gui.shell.main.features.academic_launchers.windows.exam_management', default="Exam Management"))
         # Match Finance Management's sizing — WM clips to the work area
         # which reads as "fills the screen" on a typical desktop.
         window.geometry("1400x900")
@@ -1355,7 +1355,7 @@ def show_exam_portal(self):
             pass
         ExamPortalGUI(parent=window, auth=self.auth)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Exam Management: {e}")
+        messagebox.showerror(_t('gui.shell.main.features.academic_launchers.dialogs.error', default="Error"), f"Failed to open Exam Management: {e}")
 
 def show_hesa_export_gui(self):
     """Launch HESA Data Export inside the main GUI's content notebook
@@ -1497,7 +1497,7 @@ def show_mitigating_circumstances_gui(self):
     same pattern as Clearing & Adjustment / HESA Export."""
     if not self.auth or not self.auth.current_user:
         messagebox.showerror(_t("common.error"),
-                             "Please log in to access Mitigating Circumstances.")
+                             _t('gui.shell.main.features.academic_launchers.dialogs.please_log_in_to_access_mitigating_circumstances', default="Please log in to access Mitigating Circumstances."))
         return
 
     user = self.auth.current_user
@@ -1511,7 +1511,7 @@ def show_mitigating_circumstances_gui(self):
     )
     if not allowed:
         messagebox.showerror(_t("common.error"),
-                             "You do not have permission to access Mitigating Circumstances.")
+                             _t('gui.shell.main.features.academic_launchers.dialogs.you_do_not_have_permission_to_access_mitigating_circumstances', default="You do not have permission to access Mitigating Circumstances."))
         return
 
     try:

@@ -20,15 +20,19 @@ The following limitations should be considered when deploying this system:
 
 ---
 
-### Multi-System Education Platform (March 2026) - CURRENT
-- [x] **Unified Launcher** (`run.py`): Single entry point for University, College, Secondary School, Primary School, and Nursery / Early Years systems with CLI & GUI system selection and runtime switching
-- [x] **Shared Authentication** (`education_system/shared/auth/`): Unified auth across all 5 systems with bcrypt hashing, MFA, sessions, and central auth.db
+### Multi-System Education Platform (August 2026) — CURRENT (v9.7.x)
+- [x] **Canonical ADR 0018 layout** (`program/`): Shared capabilities live under `education_system/platform/`, the five systems live under `education_system/systems/`, tests live under `program/tests/`, and runtime state lives under `program/var/`
+- [x] **Unified Launcher** (`program/run.py`): Single entry point for University, Sixth Form College, Secondary School, Primary School, and Nursery / Early Years systems with CLI & GUI system selection and runtime switching
+- [x] **Shared Authentication** (`education_system/platform/identity/auth/`): Unified auth across all 5 systems with bcrypt hashing, MFA, sessions, WebAuthn, SSO and cross-system identity
 - [x] **Cross-System CLI Switching** (v7.5.0): All 5 CLI systems support switching to any other system without re-authenticating
-- [x] **Unified REST API** (v7.25.0-v7.31.0): All 5 systems served from `shared/api/unified_server.py` -- university (104 route files), college, secondary (52 route files), primary (48 route files), nursery with web dashboard, superadmin portal, CSRF protection, and CSP compliance
-- [x] **Sixth Form College System**: 930+ files, 110 domain modules, 74 tests -- apprenticeships, T-levels, UCAS, functional skills, safeguarding, Prevent duty, GDPR, quality assurance, bursary, funding, and more
-- [x] **Secondary School System**: 290+ files, 50 domain modules -- Years 7-11, KS3/KS4, GCSE grades 9-1, pastoral care, behaviour/detentions/exclusions, form groups, seating plans, parents' evening
-- [x] **Primary School System**: 280+ files, 46 domain modules -- Reception-Year 6, EYFS/KS1/KS2, phonics, reading records, SATs, safeguarding, SEND, pastoral care
-- [x] **Nursery / Early Years System**: Ages 0-5, EYFS framework -- key persons, development tracking, observations, safeguarding, and parent communication
+- [x] **Unified REST API**: All 5 systems are served from `education_system/platform/delivery/api/unified_server.py`, with university APIs and web delivery under `platform/delivery/api/university/`
+- [x] **GraphQL API alongside REST**: Strawberry schema, authenticated queries, role-gated mutations, depth/rate controls and `/api/v1/graphql` production mounting ship in the default API installation
+- [x] **Progressive Web App foundation**: University mobile web assets include a manifest, service worker, offline-capable application shell and responsive styling
+- [x] **University System**: 4,539 Python modules across application, domain, infrastructure, CLI, GUI and cross-domain service layers
+- [x] **Sixth Form College System**: 553 Python modules covering apprenticeships, T-levels, UCAS, functional skills, safeguarding, Prevent duty, GDPR, quality assurance, bursary and funding
+- [x] **Secondary School System**: 433 Python modules covering Years 7-11, KS3/KS4, GCSE assessment, pastoral care, behaviour and parent engagement
+- [x] **Primary School System**: 420 Python modules covering Reception-Year 6, EYFS/KS1/KS2, phonics, reading, SATs, safeguarding and SEND
+- [x] **Nursery / Early Years System**: 388 Python modules covering ages 0-5, EYFS development, key persons, observations, safeguarding and parent communication
 
 ### Version 5.47.0 (February 25, 2026) -- COMPLETED
 - [x] **Web Portal** (v5.47.0): Full SPA at `/portal` with JWT auth, dashboard, CRUD for all major entities
@@ -76,19 +80,22 @@ The following limitations should be considered when deploying this system:
 - [x] **Staff HR Management System** - 15 specialized managers
 - [x] 23 new database tables, 14 CLI menus + 14 GUI interfaces
 
-### Next Up
+### Remaining Tasks
 - [x] ~~REST API for Secondary School and Primary School systems~~ (completed v7.25.0-v7.31.0)
 - [x] ~~Integration with external LMS systems~~ (shipped: Canvas, Moodle, Google Classroom, Microsoft Teams via the `integrations` extra)
 - [x] ~~Real-time collaboration features (notifications, chat, presence via WebSockets)~~ (shipped: Socket.IO server via the `realtime` extra)
-- [ ] Mobile application (React Native)
-- [ ] Complete i18n support for all remaining GUI modules
+- [x] ~~Mobile application (React Native)~~ (Expo client with secure authentication and AI assistant API integration)
+- [x] ~~Complete i18n support for all remaining GUI modules~~ (all recognized
+  GUI text sinks use the shared translation service; an audit/codemod prevents
+  hardcoded widget, window, menu and dialog text from returning)
 
 ### Future Considerations
-- [ ] Microservices architecture
-- [ ] GraphQL API alongside REST
-- [ ] Multi-tenancy support for hosting multiple institutions
-- [ ] Cloud-native deployment (Kubernetes, Docker Swarm)
-- [ ] Localization (l10n) -- expanding translation coverage beyond 10 languages
-- [ ] Blockchain for credential verification and academic records
-- [ ] Advanced AI features (chatbot improvements, automated grading)
-- [ ] Mobile-first responsive web design
+- [x] ~~Microservices architecture~~ (service-oriented strangler runtime with an independently deployable read-only credential verifier and versioned contract)
+- [x] ~~GraphQL API alongside REST~~ (implemented with Strawberry as a default dependency, authenticated endpoint and role-gated mutations)
+- [x] ~~Production-ready multi-tenancy for hosting multiple institutions~~ (database-per-tenant isolation, strict middleware, conflict rejection, provisioning and cross-database tests)
+- [x] ~~Cloud-native orchestration~~ (Kubernetes/Kustomize and Swarm definitions, probes, secrets, persistent storage, security contexts and operations runbook)
+- [ ] Localization (l10n) — expand translation coverage beyond 10 languages
+- [x] ~~Tamper-evident credential verification~~ (canonical signed payloads, mandatory persistent signing key, issuance, public/authenticated verification, tamper detection, revocation ledger, GUI, CLI and API integration)
+- [x] ~~Extend tamper-evident credential support to authoritative academic records and external verification networks~~ (source-record hashes/resolvers, network receipts and failure-safe publication)
+- [x] ~~Advanced AI features (chatbot improvements, automated grading)~~ (authenticated grounded-assistant and review-first grading APIs over the existing engines)
+- [x] ~~Mobile-first responsive web design~~ (single-column small-screen layouts, accessible touch targets, safe areas, and overflow-safe navigation/tables)

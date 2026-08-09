@@ -25,11 +25,17 @@ All routes return JSON. Errors use conventional status codes
 
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 from functools import wraps
 
 from flask import Flask, g, jsonify, request
+
+from education_system.platform.delivery.api.security_headers import (
+    is_development,
+    register_security_headers,
+)
 
 from education_system.systems.sixth_form import SYSTEM_NAME
 from education_system.systems.sixth_form.interfaces.api import tokens
@@ -77,9 +83,18 @@ def staff_key_required(fn):
     def wrapper(*args, **kwargs):
         expected = os.environ.get("EDU_SIXTHFORM_API_KEY")
         if not expected:
-            logger.warning("EDU_SIXTHFORM_API_KEY unset — staff endpoint open in dev mode")
-            return fn(*args, **kwargs)
-        if request.headers.get("X-API-Key") != expected:
+            # Fail closed: an unset key must never mean "no auth". The old
+            # dev convenience served every staff endpoint unauthenticated in
+            # any environment that forgot the variable.
+            if is_development():
+                logger.warning(
+                    "EDU_SIXTHFORM_API_KEY unset — staff endpoint open in development only"
+                )
+                return fn(*args, **kwargs)
+            logger.error("EDU_SIXTHFORM_API_KEY unset in production — refusing staff request")
+            return jsonify({"error": "Staff API not configured"}), 503
+        provided = request.headers.get("X-API-Key", "")
+        if not hmac.compare_digest(provided, expected):
             return jsonify({"error": "Invalid or missing API key"}), 401
         return fn(*args, **kwargs)
     return wrapper
@@ -89,6 +104,10 @@ def staff_key_required(fn):
 
 def create_app() -> Flask:
     app = Flask(__name__)
+
+    # Shared platform header floor (CSP, HSTS, nosniff, Permissions-Policy)
+    # and the production debug guard — same policy as the unified server.
+    register_security_headers(app)
 
     @app.get(f"{API_PREFIX}/health")
     def health():
@@ -199,7 +218,13 @@ def main() -> None:
     app = create_app()
     port = int(os.environ.get("EDU_SIXTHFORM_API_PORT", "5005"))
     host = os.environ.get("EDU_SIXTHFORM_API_HOST", "127.0.0.1")
-    app.run(host=host, port=port, debug=os.environ.get("FLASK_DEBUG") == "1")
+    debug = os.environ.get("FLASK_DEBUG") == "1"
+    if debug and not is_development():
+        raise RuntimeError(
+            "FLASK_DEBUG=1 is refused because APP_ENV is production. The "
+            "debugger exposes stack traces and a remote console."
+        )
+    app.run(host=host, port=port, debug=debug)
 
 
 if __name__ == "__main__":

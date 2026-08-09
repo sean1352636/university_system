@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
@@ -51,7 +53,7 @@ def show_children(self):
 
     if is_admin:
         self.update_status("All Students (Admin)")
-        title = ttk.Label(self.content_frame, text="All Students (Admin Access)", style='Title.TLabel', font=('Arial', 20, 'bold'))
+        title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.children.labels.all_students_admin_access', default="All Students (Admin Access)"), style='Title.TLabel', font=('Arial', 20, 'bold'))
         title.pack(pady=20)
 
         # Admin info banner
@@ -64,7 +66,7 @@ def show_children(self):
         admin_info.pack(pady=(0, 10))
     else:
         self.update_status("My Students")
-        title = ttk.Label(self.content_frame, text="Authorized Students", style='Title.TLabel', font=('Arial', 20, 'bold'))
+        title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.children.labels.authorized_students', default="Authorized Students"), style='Title.TLabel', font=('Arial', 20, 'bold'))
         title.pack(pady=20)
 
     # Add browse all students button for all users
@@ -72,12 +74,12 @@ def show_children(self):
     browse_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
     ttk.Button(
         browse_frame,
-        text="Browse All University Students",
+        text=_t('gui.academics.parent_portal.children.buttons.browse_all_university_students', default="Browse All University Students"),
         command=self.show_all_students
     ).pack(side=tk.LEFT)
 
     if not self.children:
-        no_children_label = ttk.Label(self.content_frame, text="No students linked to your guardian account.\n\nAs an authorized family member, you can view academic information\nfor students who have granted you access.")
+        no_children_label = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.children.labels.no_students_linked_to_your_guardian_account_as_an_authorized_fam', default="No students linked to your guardian account.\n\nAs an authorized family member, you can view academic information\nfor students who have granted you access."))
         no_children_label.pack(pady=50)
         return
 
@@ -111,8 +113,8 @@ def show_children(self):
                 self._students_page += 1
                 self.show_children()
 
-        ttk.Button(page_frame, text="◀ Previous", command=prev_page).pack(side=tk.LEFT, padx=5)
-        ttk.Button(page_frame, text="Next ▶", command=next_page).pack(side=tk.LEFT, padx=5)
+        ttk.Button(page_frame, text=_t('gui.academics.parent_portal.children.buttons.previous', default="◀ Previous"), command=prev_page).pack(side=tk.LEFT, padx=5)
+        ttk.Button(page_frame, text=_t('gui.academics.parent_portal.children.buttons.next', default="Next ▶"), command=next_page).pack(side=tk.LEFT, padx=5)
 
     # Create scrollable frame
     canvas = tk.Canvas(children_container)
@@ -184,7 +186,7 @@ def show_all_students(self):
     self.clear_content()
     self.update_status("All University Students")
 
-    title = ttk.Label(self.content_frame, text="University Student Directory",
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.children.labels.university_student_directory', default="University Student Directory"),
                      style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
@@ -192,7 +194,7 @@ def show_all_students(self):
     search_frame = ttk.Frame(self.content_frame)
     search_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-    ttk.Label(search_frame, text="Search:", font=('Arial', 10)).pack(side=tk.LEFT)
+    ttk.Label(search_frame, text=_t('gui.academics.parent_portal.children.labels.search', default="Search:"), font=('Arial', 10)).pack(side=tk.LEFT)
     search_var = tk.StringVar()
     search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
     search_entry.pack(side=tk.LEFT, padx=5)
@@ -276,33 +278,33 @@ def show_all_students(self):
 
     search_var.trace('w', on_search)
 
-    ttk.Button(search_frame, text="Search", command=lambda: load_students(search_var.get())).pack(side=tk.LEFT, padx=5)
-    ttk.Button(search_frame, text="Show All", command=lambda: load_students("")).pack(side=tk.LEFT, padx=5)
+    ttk.Button(search_frame, text=_t('gui.academics.parent_portal.children.buttons.search', default="Search"), command=lambda: load_students(search_var.get())).pack(side=tk.LEFT, padx=5)
+    ttk.Button(search_frame, text=_t('gui.academics.parent_portal.children.buttons.show_all', default="Show All"), command=lambda: load_students("")).pack(side=tk.LEFT, padx=5)
 
     # Link student button
     def link_selected_student():
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Required", "Please select a student to link.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.children.dialogs.selection_required', default="Selection Required"), _t('gui.academics.parent_portal.children.dialogs.please_select_a_student_to_link', default="Please select a student to link."))
             return
 
         item = tree.item(selection[0])
         student_id = item['values'][0]
         student_name = f"{item['values'][1]} {item['values'][2]}"
 
-        if messagebox.askyesno("Link Student",
+        if messagebox.askyesno(_t('gui.academics.parent_portal.children.dialogs.link_student', default="Link Student"),
                                f"Link student {student_name} (ID: {student_id}) to a family account?"):
             self.show_quick_link_dialog(student_id, student_name)
 
     # Only show link button for admins
     if self.is_admin():
-        ttk.Button(search_frame, text="Link Selected to Family",
+        ttk.Button(search_frame, text=_t('gui.academics.parent_portal.children.buttons.link_selected_to_family', default="Link Selected to Family"),
                   command=link_selected_student).pack(side=tk.RIGHT, padx=5)
 
     # Back button
     btn_frame = ttk.Frame(self.content_frame)
     btn_frame.pack(fill=tk.X, padx=20, pady=10)
-    ttk.Button(btn_frame, text="← Back to My Students", command=self.show_children).pack(side=tk.LEFT)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.children.buttons.back_to_my_students', default="← Back to My Students"), command=self.show_children).pack(side=tk.LEFT)
 
     # Load all students initially
     load_students()
@@ -311,7 +313,7 @@ ParentPortalGUI.show_all_students = show_all_students
 def show_quick_link_dialog(self, student_id, student_name):
     """Quick dialog to link a student to a family account"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Link Student to Family Account")
+    dialog.title(_t('gui.academics.parent_portal.children.windows.link_student_to_family_account', default="Link Student to Family Account"))
     dialog.geometry("400x300")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -322,12 +324,12 @@ def show_quick_link_dialog(self, student_id, student_name):
     form_frame = ttk.Frame(dialog, padding=20)
     form_frame.pack(fill=tk.X)
 
-    ttk.Label(form_frame, text="Family Account ID:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.children.labels.family_account_id', default="Family Account ID:")).grid(row=0, column=0, sticky='w', pady=5)
     parent_id_entry = ttk.Entry(form_frame, width=30)
     parent_id_entry.grid(row=0, column=1, pady=5)
 
-    ttk.Label(form_frame, text="Relationship:").grid(row=1, column=0, sticky='w', pady=5)
-    relationship_var = tk.StringVar(value="Parent")
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.children.labels.relationship', default="Relationship:")).grid(row=1, column=0, sticky='w', pady=5)
+    relationship_var = tk.StringVar(value=_t('gui.academics.parent_portal.children.values.parent', default="Parent"))
     relationship_combo = ttk.Combobox(form_frame, textvariable=relationship_var,
                                       values=["Parent", "Guardian", "Spouse", "Other Family"],
                                       state='readonly', width=27)
@@ -336,7 +338,7 @@ def show_quick_link_dialog(self, student_id, student_name):
     def do_link():
         parent_id = parent_id_entry.get().strip()
         if not parent_id:
-            messagebox.showwarning("Required", "Please enter a Family Account ID.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.children.dialogs.required', default="Required"), _t('gui.academics.parent_portal.children.dialogs.please_enter_a_family_account_id', default="Please enter a Family Account ID."))
             return
 
         try:
@@ -346,7 +348,7 @@ def show_quick_link_dialog(self, student_id, student_name):
             # Verify family account exists
             cursor.execute('SELECT parent_id FROM parent_accounts WHERE parent_id = ?', (parent_id,))
             if not cursor.fetchone():
-                messagebox.showerror("Error", "Family account not found.")
+                messagebox.showerror(_t('gui.academics.parent_portal.children.dialogs.error', default="Error"), _t('gui.academics.parent_portal.children.dialogs.family_account_not_found', default="Family account not found."))
                 conn.close()
                 return
 
@@ -356,7 +358,7 @@ def show_quick_link_dialog(self, student_id, student_name):
                 WHERE parent_id = ? AND student_id = ?
             ''', (parent_id, student_id))
             if cursor.fetchone():
-                messagebox.showwarning("Already Linked", "This student is already linked to this family account.")
+                messagebox.showwarning(_t('gui.academics.parent_portal.children.dialogs.already_linked', default="Already Linked"), _t('gui.academics.parent_portal.children.dialogs.this_student_is_already_linked_to_this_family_account', default="This student is already linked to this family account."))
                 conn.close()
                 return
 
@@ -369,16 +371,16 @@ def show_quick_link_dialog(self, student_id, student_name):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Student {student_name} linked to family account {parent_id}.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.children.dialogs.success', default="Success"), f"Student {student_name} linked to family account {parent_id}.")
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to link: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.children.dialogs.error', default="Error"), f"Failed to link: {str(e)}")
 
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(pady=20)
-    ttk.Button(btn_frame, text="Link", command=do_link).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.children.buttons.link', default="Link"), command=do_link).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.children.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.show_quick_link_dialog = show_quick_link_dialog
 
 def _load_all_students_from_db(self):
@@ -408,7 +410,7 @@ class DataExportDialog:
         self.result = None
 
         dialog = tk.Toplevel(parent)
-        dialog.title("Export Student Data")
+        dialog.title(_t('gui.academics.parent_portal.children.windows.export_student_data', default="Export Student Data"))
         dialog.geometry("500x450")
         dialog.transient(parent)
         dialog.grab_set()
@@ -416,11 +418,11 @@ class DataExportDialog:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Export Student Data",
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.children.labels.export_student_data', default="Export Student Data"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Child selection
-        ttk.Label(main_frame, text="Select Student:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.children.labels.select_student', default="Select Student:")).pack(anchor='w')
         child_var = tk.StringVar()
         child_combo = ttk.Combobox(main_frame, textvariable=child_var, width=45, state="readonly")
         child_combo['values'] = [f"{c[1]} {c[3]} (ID: {c[0]})" for c in children]
@@ -429,7 +431,7 @@ class DataExportDialog:
         child_combo.pack(fill=tk.X, pady=(0, 10))
 
         # Data types
-        ttk.Label(main_frame, text="Select data to export:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(5, 0))
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.children.labels.select_data_to_export', default="Select data to export:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(5, 0))
         data_type_options = [
             ("Grades", "grades"),
             ("Attendance", "attendance"),
@@ -445,22 +447,22 @@ class DataExportDialog:
             ttk.Checkbutton(main_frame, text=label, variable=var).pack(anchor='w', padx=10)
 
         # Format selection
-        ttk.Label(main_frame, text="Export Format:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 0))
-        format_var = tk.StringVar(value="csv")
+        ttk.Label(main_frame, text=_t('gui.academics.parent_portal.children.labels.export_format', default="Export Format:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 0))
+        format_var = tk.StringVar(value=_t('gui.academics.parent_portal.children.values.csv', default="csv"))
         fmt_frame = ttk.Frame(main_frame)
         fmt_frame.pack(anchor='w', padx=10)
-        ttk.Radiobutton(fmt_frame, text="CSV", variable=format_var, value="csv").pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(fmt_frame, text="PDF", variable=format_var, value="pdf").pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(fmt_frame, text="JSON", variable=format_var, value="json").pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(fmt_frame, text=_t('gui.academics.parent_portal.children.buttons.csv', default="CSV"), variable=format_var, value="csv").pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(fmt_frame, text=_t('gui.academics.parent_portal.children.buttons.pdf', default="PDF"), variable=format_var, value="pdf").pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(fmt_frame, text=_t('gui.academics.parent_portal.children.buttons.json', default="JSON"), variable=format_var, value="json").pack(side=tk.LEFT, padx=5)
 
         def submit():
             idx = child_combo.current()
             if idx < 0:
-                messagebox.showwarning("No Student", "Please select a student.")
+                messagebox.showwarning(_t('gui.academics.parent_portal.children.dialogs.no_student', default="No Student"), _t('gui.academics.parent_portal.children.dialogs.please_select_a_student', default="Please select a student."))
                 return
             selected_types = [k for k, v in data_vars.items() if v.get()]
             if not selected_types:
-                messagebox.showwarning("No Data", "Please select at least one data type.")
+                messagebox.showwarning(_t('gui.academics.parent_portal.children.dialogs.no_data', default="No Data"), _t('gui.academics.parent_portal.children.dialogs.please_select_at_least_one_data_type', default="Please select at least one data type."))
                 return
             self.result = {
                 'child_id': children[idx][0],
@@ -471,8 +473,8 @@ class DataExportDialog:
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text="Export", command=submit).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.children.buttons.export', default="Export"), command=submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.children.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         dialog.wait_window()
 
@@ -480,7 +482,7 @@ class DataExportDialog:
 def export_child_data(self):
     """Export all data for a child"""
     if not self.children:
-        messagebox.showinfo("No Students", "No students linked to your guardian account.")
+        messagebox.showinfo(_t('gui.academics.parent_portal.children.dialogs.no_students', default="No Students"), _t('gui.academics.parent_portal.children.dialogs.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account."))
         return
 
     dialog = DataExportDialog(self.root, self.children)
@@ -488,7 +490,7 @@ def export_child_data(self):
         child_id, data_types, format_type = dialog.result['child_id'], dialog.result['data_types'], dialog.result['format']
 
         # In real implementation, would generate actual export file
-        messagebox.showinfo("Export Complete",
+        messagebox.showinfo(_t('gui.academics.parent_portal.children.dialogs.export_complete', default="Export Complete"),
                           f"Data exported successfully in {format_type.upper()} format.\n"
                           f"Data types: {', '.join(data_types)}")
 ParentPortalGUI.export_child_data = export_child_data

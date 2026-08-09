@@ -1,0 +1,4 @@
+{
+  "subject": "Chart: $chart_title",
+  "body": "Dear Administrator,\n\nPlease find attached the requested chart: $chart_title\n\nChart Details:\n- Generated: $generated_at\n- Format: PNG (High Resolution - 200 DPI)\n- File: $filename\n\nThis chart was automatically generated from the University Management System.\n\nBest regards,\nUniversity System\n"
+}

@@ -1,7 +1,7 @@
 # Education Management System - Makefile
 # Development commands for the university system
 
-.PHONY: help install install-dev clean test test-all test-cov test-shared test-university test-security test-gui test-auth test-coverage test-coverage-report lint format run seed portal docker load-test perf-test load-test-ui
+.PHONY: lock supply-chain-check audit verify-install sbom supply-chain security-gate help install install-dev clean test test-all test-cov test-shared test-university test-security test-gui test-auth test-coverage test-coverage-report coverage-university coverage-university-core architecture-check lint format run seed portal docker load-test perf-test mutation-test load-test-ui
 
 .DEFAULT_GOAL := help
 
@@ -12,6 +12,8 @@ PIP := $(PYTHON) -m pip
 PYTEST := $(PYTHON) -m pytest
 
 SRC := program/education_system
+UNIVERSITY_SRC := $(SRC)/systems/university
+COVERAGE_UNIVERSITY_MIN ?= 0.8
 # Tests live in one tree at the repo root. (pyproject testpaths mirrors this.)
 TESTS := program/tests
 
@@ -56,10 +58,10 @@ seed: ## Seed databases with demo data
 # Testing
 # ==========================================
 
-test: ## Run all tests
+test: ## Run the default fast, non-GUI test suite
 	$(PYTEST) $(TESTS) -v -m "not slow and not gui" --timeout=60
 
-test-all: ## Run all tests including slow
+test-all: ## Run every test, including slow and GUI tests
 	$(PYTEST) $(TESTS) -v --timeout=120
 
 test-cov: ## Run tests with coverage
@@ -68,14 +70,14 @@ test-cov: ## Run tests with coverage
 test-shared: ## Run shared module tests
 	$(PYTEST) program/tests/platform/ -v --timeout=60
 
-test-university: ## Run university tests
-	$(PYTEST) program/tests/systems/university/ -v --timeout=60
+test-university: ## Run the default fast, non-GUI university suite
+	$(PYTEST) program/tests/systems/university/ -v -m "not slow and not gui" --timeout=60
 
-test-security: ## Run security tests
-	$(PYTEST) -m security -v --timeout=60
+test-security: ## Run university security and authentication tests (including legacy unmarked files)
+	$(PYTEST) program/tests/systems/university/infrastructure/security program/tests/systems/university/infrastructure/auth -n 0 -v --timeout=60
 
-test-gui: ## Run GUI tests (mocked tkinter)
-	$(PYTEST) -m gui -v --timeout=60
+test-gui: ## Run all GUI tests serially (use xvfb-run on headless Linux)
+	$(PYTEST) $(TESTS) -m gui -n 0 -v --timeout=120
 
 test-auth: ## Run shared auth infrastructure tests
 	$(PYTEST) program/tests/platform/identity/auth/ -v --timeout=60
@@ -95,6 +97,31 @@ coverage-shared: ## Enforce the higher coverage bar on shared/core code (fail un
 		--cov=$(SRC)/platform --cov=$(SRC)/systems/university/infrastructure \
 		--cov-report=term-missing --cov-fail-under=70 -m "not slow and not gui" --timeout=60
 
+coverage-university: ## Measure the whole university tree and block coverage regressions
+	$(PYTEST) program/tests/systems/university/ \
+		-m "not slow and not gui" --timeout=60 \
+		--cov=$(UNIVERSITY_SRC) --cov-branch \
+		--cov-report=xml:coverage-university.xml \
+		--cov-fail-under=$(COVERAGE_UNIVERSITY_MIN)
+
+coverage-university-core: ## Enforce coverage for modernised university core (fail under 60%)
+	$(PYTEST) \
+		program/tests/systems/university/domain/admissions/test_admissions_lifecycle.py \
+		program/tests/systems/university/domain/learners/test_student_lifecycle.py \
+		program/tests/systems/university/domain/assessment/test_assessment_boards.py \
+		program/tests/systems/university/domain/academics/test_programme_governance.py \
+		program/tests/systems/university/domain/academics/research/test_pgr_service.py \
+		program/tests/systems/university/services/test_in_process_events.py \
+		program/tests/systems/university/services/test_operations.py \
+		--cov=$(SRC)/systems/university/domain/admissions/services/admissions_lifecycle.py \
+		--cov=$(SRC)/systems/university/domain/learners/student_lifecycle.py \
+		--cov=$(SRC)/systems/university/domain/assessment/boards \
+		--cov=$(SRC)/systems/university/domain/academics/programme_governance \
+		--cov=$(SRC)/systems/university/domain/academics/research/pgr \
+		--cov=$(SRC)/systems/university/services/events \
+		--cov=$(SRC)/systems/university/services/operations.py \
+		--cov-report=term-missing --cov-fail-under=60 --timeout=60 -n 0
+
 # ==========================================
 # Code Quality
 # ==========================================
@@ -111,8 +138,42 @@ format: ## Format code
 type-check: ## Type check
 	$(PYTHON) -m mypy $(SRC)/ --ignore-missing-imports
 
+architecture-check: ## Enforce boundaries and size limits for modernised core
+	$(PYTHON) program/tools/university/check_architecture.py
+
 security-scan: ## Run bandit security scan
 	$(PYTHON) -m bandit -r $(SRC)/ -c pyproject.toml -lll
+
+# ==========================================
+# Supply chain
+# ==========================================
+
+lock: ## Regenerate the hash-pinned requirements.lock from requirements.txt
+	$(PIP) install --quiet pip-tools
+	$(PYTHON) -m piptools compile --generate-hashes --allow-unsafe --strip-extras \
+		--output-file=requirements.lock requirements.txt
+	@echo "requirements.lock regenerated — commit it with the requirements.txt change."
+
+supply-chain-check: ## Offline checks: declarative build, pinned runtime, hashed lock
+	$(PYTHON) program/tools/supply_chain_check.py
+
+audit: ## Scan pinned dependencies for known vulnerabilities (blocking)
+	$(PIP) install --quiet pip-audit
+	$(PYTHON) -m pip_audit --requirement requirements.lock --strict --progress-spinner off
+
+verify-install: ## Prove the lock installs with hash verification into a throwaway venv
+	rm -rf .verify-venv
+	$(PYTHON) -m venv .verify-venv
+	.verify-venv/bin/pip install --require-hashes --no-deps -r requirements.lock
+	rm -rf .verify-venv
+	@echo "requirements.lock installs cleanly under --require-hashes."
+
+sbom: ## Emit a CycloneDX SBOM for the current environment
+	$(PIP) install --quiet cyclonedx-bom
+	$(PYTHON) -m cyclonedx_py environment -o sbom.json
+	@echo "Wrote sbom.json"
+
+supply-chain: supply-chain-check audit verify-install ## Full supply-chain gate
 
 check: lint test ## Run lint + tests
 
@@ -148,7 +209,7 @@ docker-logs: ## View docker logs
 # CI Simulation
 # ==========================================
 
-ci: clean lint test-cov security-scan ## Simulate full CI pipeline
+ci: clean lint test-cov security-scan supply-chain-check ## Simulate full CI pipeline
 	@echo "CI pipeline passed!"
 
 # ==========================================
@@ -163,3 +224,6 @@ load-test-ui: ## Open Locust web UI for interactive load testing — server must
 
 perf-test: ## Run standalone SQLite benchmark (no server required)
 	$(PYTHON) program/tests/platform/performance/benchmark_db.py
+
+mutation-test: ## Run focused mutation testing against the email boundary
+	mutmut run --paths-to-mutate program/education_system/systems/university/infrastructure/email/smtp.py --tests-dir program/tests/systems/university/infrastructure/email

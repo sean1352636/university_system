@@ -14,6 +14,8 @@ launched from buttons added to the customers tab in ``core/tabs.py``.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -93,29 +95,29 @@ def manage_meal_plan_dialog(self):
             restaurant_bus,
         )
     except Exception as exc:
-        messagebox.showerror("Meal plan",
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.meal_plan', default="Meal plan"),
                              f"restaurant_bus unavailable: {exc}")
         return
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Meal plan management")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.windows.meal_plan_management', default="Meal plan management"))
     dialog.geometry("560x460")
     dialog.transient(self.root)
     dialog.grab_set()
 
     main = ttk.Frame(dialog, padding=16)
     main.pack(fill="both", expand=True)
-    ttk.Label(main, text="Meal plan management",
+    ttk.Label(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.meal_plan_management', default="Meal plan management"),
               font=("TkDefaultFont", 12, "bold")).pack(anchor="w")
     ttk.Label(main, text=(
-        "Top-ups credit the student's finance ledger via "
+        _t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.top_ups_credit_the_student_s_finance_ledger_via_restaurant_bus_t', default="Top-ups credit the student's finance ledger via "
         "restaurant_bus.top_up_meal_plan. Balance is derived from "
-        "meal-plan rows in student_finance_transactions."
+        "meal-plan rows in student_finance_transactions.")
     ), wraplength=520, foreground="#555").pack(anchor="w", pady=(2, 10))
 
-    pick = ttk.LabelFrame(main, text="Student", padding=10)
+    pick = ttk.LabelFrame(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.student', default="Student"), padding=10)
     pick.pack(fill="x")
-    ttk.Label(pick, text="Select student:").grid(row=0, column=0,
+    ttk.Label(pick, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.select_student', default="Select student:")).grid(row=0, column=0,
                                                   sticky="w")
     student_var = tk.StringVar()
     students = _load_students()
@@ -125,10 +127,10 @@ def manage_meal_plan_dialog(self):
     student_box.grid(row=0, column=1, padx=8, pady=4, sticky="ew")
     pick.columnconfigure(1, weight=1)
 
-    info = ttk.LabelFrame(main, text="Current state", padding=10)
+    info = ttk.LabelFrame(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.current_state', default="Current state"), padding=10)
     info.pack(fill="x", pady=(10, 0))
     balance_var = tk.StringVar(value="—")
-    ttk.Label(info, text="Meal-plan balance:").grid(row=0, column=0,
+    ttk.Label(info, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.meal_plan_balance', default="Meal-plan balance:")).grid(row=0, column=0,
                                                     sticky="w")
     ttk.Label(info, textvariable=balance_var,
               font=("TkDefaultFont", 11, "bold"),
@@ -157,9 +159,9 @@ def manage_meal_plan_dialog(self):
 
     student_box.bind("<<ComboboxSelected>>", refresh_balance)
 
-    topup = ttk.LabelFrame(main, text="Top up", padding=10)
+    topup = ttk.LabelFrame(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.top_up', default="Top up"), padding=10)
     topup.pack(fill="x", pady=(10, 0))
-    ttk.Label(topup, text="Amount (£):").grid(row=0, column=0,
+    ttk.Label(topup, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.amount', default="Amount (£):")).grid(row=0, column=0,
                                               sticky="w")
     amount_var = tk.StringVar()
     ttk.Entry(topup, textvariable=amount_var, width=14
@@ -168,17 +170,17 @@ def manage_meal_plan_dialog(self):
     def do_topup():
         sid = _picked_id()
         if not sid:
-            messagebox.showwarning("Meal plan",
-                                   "Pick a student first.")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.meal_plan', default="Meal plan"),
+                                   _t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.pick_a_student_first', default="Pick a student first."))
             return
         try:
             amount = float(amount_var.get())
         except ValueError:
-            messagebox.showerror("Meal plan", "Amount must be a number.")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.meal_plan', default="Meal plan"), _t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.amount_must_be_a_number', default="Amount must be a number."))
             return
         if amount <= 0:
-            messagebox.showerror("Meal plan",
-                                 "Amount must be positive.")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.meal_plan', default="Meal plan"),
+                                 _t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.amount_must_be_positive', default="Amount must be positive."))
             return
         username = None
         if getattr(self, "auth", None) and self.auth.current_user:
@@ -190,23 +192,23 @@ def manage_meal_plan_dialog(self):
             refresh_balance()
             amount_var.set("")
             messagebox.showinfo(
-                "Meal plan",
+                _t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.meal_plan', default="Meal plan"),
                 f"Top-up of £{amount:,.2f} recorded "
                 f"(finance tx {tx})."
             )
         else:
             messagebox.showerror(
-                "Meal plan",
-                "Top-up failed (check finance ledger / logs).")
+                _t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.meal_plan', default="Meal plan"),
+                _t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.top_up_failed_check_finance_ledger_logs', default="Top-up failed (check finance ledger / logs)."))
 
-    ttk.Button(topup, text="Apply top-up",
+    ttk.Button(topup, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.buttons.apply_top_up', default="Apply top-up"),
                command=do_topup).grid(row=0, column=2, padx=10)
 
     # SU discount preview
-    disc = ttk.LabelFrame(main, text="SU member discount preview",
+    disc = ttk.LabelFrame(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.su_member_discount_preview', default="SU member discount preview"),
                           padding=10)
     disc.pack(fill="x", pady=(10, 0))
-    ttk.Label(disc, text="Sample order amount (£):"
+    ttk.Label(disc, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.sample_order_amount', default="Sample order amount (£):")
               ).grid(row=0, column=0, sticky="w")
     sample_var = tk.StringVar(value="20.00")
     ttk.Entry(disc, textvariable=sample_var, width=10
@@ -238,10 +240,10 @@ def manage_meal_plan_dialog(self):
         except Exception as exc:
             preview_var.set(f"(error: {exc})")
 
-    ttk.Button(disc, text="Preview",
+    ttk.Button(disc, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.buttons.preview', default="Preview"),
                command=preview_disc).grid(row=0, column=3, padx=4)
 
-    ttk.Button(main, text="Close",
+    ttk.Button(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.buttons.close', default="Close"),
                command=dialog.destroy).pack(pady=12)
 
 
@@ -257,29 +259,29 @@ def manage_staff_subsidy_dialog(self):
             restaurant_bus,
         )
     except Exception as exc:
-        messagebox.showerror("Staff subsidy",
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.dialogs.staff_subsidy', default="Staff subsidy"),
                              f"restaurant_bus unavailable: {exc}")
         return
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Staff subsidy preview")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.windows.staff_subsidy_preview', default="Staff subsidy preview"))
     dialog.geometry("520x320")
     dialog.transient(self.root)
     dialog.grab_set()
 
     main = ttk.Frame(dialog, padding=16)
     main.pack(fill="both", expand=True)
-    ttk.Label(main, text="Staff subsidy preview",
+    ttk.Label(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.staff_subsidy_preview', default="Staff subsidy preview"),
               font=("TkDefaultFont", 12, "bold")).pack(anchor="w")
     ttk.Label(main, text=(
-        "Calculates the subsidised price for active staff via "
+        _t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.calculates_the_subsidised_price_for_active_staff_via_restaurant', default="Calculates the subsidised price for active staff via "
         "restaurant_bus.apply_staff_subsidy. Read-only — actual "
-        "discount is applied at point of sale."
+        "discount is applied at point of sale.")
     ), wraplength=480, foreground="#555").pack(anchor="w", pady=(2, 10))
 
-    pick = ttk.LabelFrame(main, text="Staff member", padding=10)
+    pick = ttk.LabelFrame(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.staff_member', default="Staff member"), padding=10)
     pick.pack(fill="x")
-    ttk.Label(pick, text="Select staff:").grid(row=0, column=0,
+    ttk.Label(pick, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.select_staff', default="Select staff:")).grid(row=0, column=0,
                                                sticky="w")
     staff_var = tk.StringVar()
     staff_rows = _load_staff()
@@ -289,9 +291,9 @@ def manage_staff_subsidy_dialog(self):
     staff_box.grid(row=0, column=1, padx=8, pady=4, sticky="ew")
     pick.columnconfigure(1, weight=1)
 
-    calc = ttk.LabelFrame(main, text="Calculate", padding=10)
+    calc = ttk.LabelFrame(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.calculate', default="Calculate"), padding=10)
     calc.pack(fill="x", pady=(10, 0))
-    ttk.Label(calc, text="Order amount (£):"
+    ttk.Label(calc, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.labels.order_amount', default="Order amount (£):")
               ).grid(row=0, column=0, sticky="w")
     amount_var = tk.StringVar(value="20.00")
     ttk.Entry(calc, textvariable=amount_var, width=10
@@ -328,10 +330,10 @@ def manage_staff_subsidy_dialog(self):
         except Exception as exc:
             out_var.set(f"(error: {exc})")
 
-    ttk.Button(calc, text="Preview",
+    ttk.Button(calc, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.buttons.preview', default="Preview"),
                command=calc_preview).grid(row=0, column=3, padx=6)
 
-    ttk.Button(main, text="Close",
+    ttk.Button(main, text=_t('gui.operations.commerce.restaurant_management_gui.customers.meal_plan.buttons.close', default="Close"),
                command=dialog.destroy).pack(pady=12)
 
 

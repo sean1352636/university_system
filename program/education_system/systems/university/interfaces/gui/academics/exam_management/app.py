@@ -1,5 +1,7 @@
 """Main application class for the Exam Scheduling System."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
@@ -153,17 +155,17 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
             open_grade_gui, open_module_gui, open_course_gui,
         )
         open_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Open", menu=open_menu)
+        menubar.add_cascade(label=_t('gui.academics.exam_management.app.menus.open', default="Open"), menu=open_menu)
         open_menu.add_command(
-            label="Grade Tracking",
+            label=_t('gui.academics.exam_management.app.menus.grade_tracking', default="Grade Tracking"),
             command=lambda: open_grade_gui(self.root, getattr(self, "auth", None)),
         )
         open_menu.add_command(
-            label="Module Scheduling",
+            label=_t('gui.academics.exam_management.app.menus.module_scheduling', default="Module Scheduling"),
             command=lambda: open_module_gui(self.root, getattr(self, "auth", None)),
         )
         open_menu.add_command(
-            label="Course Management",
+            label=_t('gui.academics.exam_management.app.menus.course_management', default="Course Management"),
             command=lambda: open_course_gui(self.root, getattr(self, "auth", None)),
         )
 
@@ -174,24 +176,24 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
         )
         from tkinter import simpledialog as _simpledialog
         tools_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
+        menubar.add_cascade(label=_t('gui.academics.exam_management.app.menus.tools', default="Tools"), menu=tools_menu)
         tools_menu.add_command(
-            label="Conflicts with module schedule…",
+            label=_t('gui.academics.exam_management.app.menus.conflicts_with_module_schedule', default="Conflicts with module schedule…"),
             command=lambda: (
                 lambda mc=_simpledialog.askstring("Module conflicts", "Module code:"):
                     show_conflicts_dialog(self.root, module_code=mc) if mc else None
             )(),
         )
         tools_menu.add_command(
-            label="Instructor workload…",
+            label=_t('gui.academics.exam_management.app.menus.instructor_workload', default="Instructor workload…"),
             command=lambda: show_instructor_workload_dialog(self.root),
         )
         tools_menu.add_command(
-            label="At-risk students (unified)…",
+            label=_t('gui.academics.exam_management.app.menus.at_risk_students_unified', default="At-risk students (unified)…"),
             command=lambda: show_at_risk_dialog(self.root),
         )
         tools_menu.add_command(
-            label="Module timeline…",
+            label=_t('gui.academics.exam_management.app.menus.module_timeline', default="Module timeline…"),
             command=lambda: (
                 lambda mc=_simpledialog.askstring("Module timeline", "Module code:"):
                     show_module_timeline_dialog(self.root, mc) if mc else None

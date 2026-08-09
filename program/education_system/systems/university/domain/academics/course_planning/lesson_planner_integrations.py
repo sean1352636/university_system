@@ -69,8 +69,8 @@ class PlannerIntegrations:
     @staticmethod
     def _resolve_db_path():
         try:
-            from education_system.systems.university.infrastructure import paths
-            return str(paths.DEFAULT_DB_PATH)
+            from education_system import paths
+            return str(paths.UNIVERSITY_DEFAULT_DB_PATH)
         except Exception:
             logger.debug("Could not resolve DEFAULT_DB_PATH", exc_info=True)
             return None

@@ -77,7 +77,7 @@ def show_screenings(self, movie):
     filter_frame.pack(fill="x", pady=5)
 
     tk.Label(filter_frame, text=_t("cinema.common.filter_by_date"), bg="#ffffff", fg="#333333").pack(side="left")
-    date_var = tk.StringVar(value="all")
+    date_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.booking.movie_browser.values.all', default="all"))
     dates = ["all"] + [(datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
     date_combo = ttk.Combobox(filter_frame, textvariable=date_var, values=dates, width=15)
     date_combo.pack(side="left", padx=10)

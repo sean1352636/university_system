@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -425,25 +427,25 @@ from education_system.systems.university.interfaces.gui.pastoral.helpdesk.base i
 def create_my_tickets_tab(self):
     """Create my tickets tab"""
     tickets_frame = ttk.Frame(self.notebook)
-    self.notebook.add(tickets_frame, text="My Tickets")
+    self.notebook.add(tickets_frame, text=_t('gui.pastoral.helpdesk.tickets_my.tabs.my_tickets', default="My Tickets"))
 
     # Toolbar
     toolbar = ttk.Frame(tickets_frame)
     toolbar.pack(fill='x', padx=10, pady=5)
 
-    ttk.Button(toolbar, text="Refresh", command=self.refresh_my_tickets).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="New Ticket", command=self.show_create_ticket,
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.tickets_my.buttons.refresh', default="Refresh"), command=self.refresh_my_tickets).pack(side='left', padx=5)
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.tickets_my.buttons.new_ticket', default="New Ticket"), command=self.show_create_ticket,
               style='Primary.TButton').pack(side='left', padx=5)
 
     # Filter frame
-    filter_frame = ttk.LabelFrame(tickets_frame, text="Filters")
+    filter_frame = ttk.LabelFrame(tickets_frame, text=_t('gui.pastoral.helpdesk.tickets_my.labels.filters', default="Filters"))
     filter_frame.pack(fill='x', padx=10, pady=5)
 
     filter_grid = ttk.Frame(filter_frame)
     filter_grid.pack(fill='x', padx=5, pady=5)
 
-    ttk.Label(filter_grid, text="Status:").grid(row=0, column=0, padx=5)
-    self.my_tickets_status_var = tk.StringVar(value="all")
+    ttk.Label(filter_grid, text=_t('gui.pastoral.helpdesk.tickets_my.labels.status', default="Status:")).grid(row=0, column=0, padx=5)
+    self.my_tickets_status_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.tickets_my.values.all', default="all"))
     status_combo = ttk.Combobox(filter_grid, textvariable=self.my_tickets_status_var,
                                values=["all", "open", "in progress", "resolved", "closed"],
                                state="readonly")
@@ -509,10 +511,10 @@ HelpdeskGUI.create_my_tickets_list = create_my_tickets_list
 def create_my_tickets_context_menu(self):
     """Create context menu for my tickets"""
     self.my_tickets_context_menu = tk.Menu(self.root, tearoff=0)
-    self.my_tickets_context_menu.add_command(label="View Details", command=self.view_selected_ticket)
-    self.my_tickets_context_menu.add_command(label="Reply", command=self.reply_to_selected_ticket)
+    self.my_tickets_context_menu.add_command(label=_t('gui.pastoral.helpdesk.tickets_my.menus.view_details', default="View Details"), command=self.view_selected_ticket)
+    self.my_tickets_context_menu.add_command(label=_t('gui.pastoral.helpdesk.tickets_my.menus.reply', default="Reply"), command=self.reply_to_selected_ticket)
     self.my_tickets_context_menu.add_separator()
-    self.my_tickets_context_menu.add_command(label="Refresh", command=self.refresh_my_tickets)
+    self.my_tickets_context_menu.add_command(label=_t('gui.pastoral.helpdesk.tickets_my.menus.refresh', default="Refresh"), command=self.refresh_my_tickets)
 
     self.my_tickets_tree.bind('<Button-3>', self.show_my_tickets_context_menu)
 
@@ -564,7 +566,7 @@ def refresh_my_tickets(self):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load tickets: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_my.dialogs.error', default="Error"), f"Failed to load tickets: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.refresh_my_tickets = refresh_my_tickets
@@ -608,7 +610,7 @@ def get_my_tickets(self):
         return [dict(ticket) for ticket in tickets]
 
     except Exception as e:
-        messagebox.showerror("Error", f"Database error: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_my.dialogs.error', default="Error"), f"Database error: {str(e)}")
         return []
 
 # Attach method to HelpdeskGUI class
@@ -625,7 +627,7 @@ def view_selected_ticket(self):
     """View selected ticket details"""
     selection = self.my_tickets_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a ticket")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.tickets_my.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.tickets_my.dialogs.please_select_a_ticket', default="Please select a ticket"))
         return
 
     item = self.my_tickets_tree.item(selection[0])
@@ -640,7 +642,7 @@ def reply_to_selected_ticket(self):
     """Reply to selected ticket"""
     selection = self.my_tickets_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a ticket")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.tickets_my.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.tickets_my.dialogs.please_select_a_ticket', default="Please select a ticket"))
         return
 
     item = self.my_tickets_tree.item(selection[0])

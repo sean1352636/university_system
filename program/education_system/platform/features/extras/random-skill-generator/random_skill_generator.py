@@ -10,9 +10,16 @@ import sqlite3
 import os
 import random
 from datetime import datetime, timedelta
+from pathlib import Path
 
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills.db")
+# Runtime state lives under program/var (ADR 0018), never inside the package.
+# random-skill-generator -> extras -> features -> platform -> education_system -> program
+_PROGRAM_ROOT = Path(__file__).resolve().parents[5]
+DB_PATH = str(
+    Path(os.environ.get("EDU_SKILLS_DB") or (_PROGRAM_ROOT / "var" / "data" / "platform" / "extras" / "skills.db"))
+)
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 SKILLS_DATA = [
     # (name, category, difficulty 1-5, resources)

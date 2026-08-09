@@ -1,5 +1,7 @@
 """Late fees management mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 
@@ -82,7 +84,7 @@ class LateFeesMixin:
         amount_entry.grid(row=1, column=1, pady=5)
 
         tk.Label(form_frame, text=_("finance_gui.labels.calculation_method")).grid(row=2, column=0, sticky='w', pady=5)
-        method_var = tk.StringVar(value="fixed")
+        method_var = tk.StringVar(value=_t('gui.finance.finance.layout.late_fees.values.fixed', default="fixed"))
         method_combo = ttk.Combobox(form_frame, textvariable=method_var,
                                     values=['fixed', 'percentage', 'daily'],
                                     state='readonly', width=27)

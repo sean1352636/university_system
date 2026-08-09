@@ -21,22 +21,7 @@ from unittest.mock import patch
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 
-# Try to import hypothesis for property-based testing
-try:
-    from hypothesis import given, strategies as st, settings, Phase, HealthCheck
-    HYPOTHESIS_AVAILABLE = True
-except ImportError:
-    HYPOTHESIS_AVAILABLE = False
-    # Create dummy decorator and strategies if hypothesis not available
-    def given(*args, **kwargs):
-        return lambda f: f
-    settings = lambda **kwargs: lambda f: f
-
-    class _DummyStrategies:
-        """Stub so `st.text(...)` etc. don't raise NameError at class-body time."""
-        def __getattr__(self, _):
-            return lambda *a, **kw: None
-    st = _DummyStrategies()
+from hypothesis import given, strategies as st, settings, Phase, HealthCheck
 
 @contextmanager
 def measure_time():
@@ -408,7 +393,6 @@ class TestIndexPerformance:
         # Index should provide some improvement
         assert time_with_index <= time_without_index
 
-@pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
 @pytest.mark.slow
 class TestPropertyBasedTesting:
     """Property-based testing with hypothesis"""

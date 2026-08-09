@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # dialogs/database_info.py
 # Dialog for displaying database information.
 
@@ -12,7 +14,7 @@ class DatabaseInfoDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Database Information")
+        self.dialog.title(_t('gui.pastoral.health.medical_accommodation.dialogs.database_info.windows.database_information', default="Database Information"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
 
@@ -27,7 +29,7 @@ class DatabaseInfoDialog:
         self.info_text = ScrolledText(main_frame, width=60, height=20)
         self.info_text.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.database_info.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)
 
     def load_info(self):
         """Load database information"""
@@ -36,8 +38,8 @@ class DatabaseInfoDialog:
             return
 
         try:
-            from education_system.systems.university.infrastructure import paths
-            db_path = str(paths.DEFAULT_DB_PATH)
+            from education_system import paths
+            db_path = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
             info_text = "DATABASE INFORMATION\n"
             info_text += "=" * 50 + "\n\n"

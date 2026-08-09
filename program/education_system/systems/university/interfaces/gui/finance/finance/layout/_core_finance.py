@@ -1,5 +1,7 @@
 """Core finance tab mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import messagebox
 
@@ -26,7 +28,7 @@ class CoreFinanceMixin:
 
         tk.Button(toolbar, text=_("finance_gui.buttons.process_payment"), command=self._process_payment,
                  bg=self.colors['success'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
-        tk.Button(toolbar, text="View All Refunds", command=self._view_all_refunds,
+        tk.Button(toolbar, text=_t('gui.finance.finance.layout.core_finance.buttons.view_all_refunds', default="View All Refunds"), command=self._view_all_refunds,
                  bg=self.colors['info'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
         tk.Button(toolbar, text=_("finance_gui.buttons.create_invoice"), command=self._create_invoice,
                  bg=self.colors['secondary'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)

@@ -3026,10 +3026,20 @@ class CalendarTab:
         default = (f"calendar_{year.name.replace('/', '-')}.ps"
                     if year else "calendar.ps")
         path = filedialog.asksaveasfilename(
+            parent=self.frame,
             defaultextension=".ps",
             initialfile=default,
             filetypes=[("PostScript", "*.ps"), ("All files", "*.*")])
         if not path:
+            return
+        # The file dialog pumps the parent's event loop, so the window
+        # (and with it the canvas) can be closed while it is open. Tk
+        # would then raise a bare "invalid command name .!canvas".
+        try:
+            alive = bool(self.cal_canvas.winfo_exists())
+        except tk.TclError:
+            alive = False
+        if not alive:
             return
         try:
             self.cal_canvas.postscript(file=path, colormode="color")

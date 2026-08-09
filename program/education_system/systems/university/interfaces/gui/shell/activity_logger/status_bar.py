@@ -2,6 +2,8 @@
 Status bar widget for the Activity Logger GUI.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.activity_logger._imports import tk, ttk, _t
 
 
@@ -14,8 +16,8 @@ class StatusBar(ttk.Frame):
         self._controller = controller
 
         # Status variables
-        self.status_text = tk.StringVar(value="Ready")
-        self.logger_status = tk.StringVar(value="Disconnected")
+        self.status_text = tk.StringVar(value=_t('gui.shell.activity_logger.status_bar.values.ready', default="Ready"))
+        self.logger_status = tk.StringVar(value=_t('gui.shell.activity_logger.status_bar.values.disconnected', default="Disconnected"))
         self.queue_size = tk.StringVar(value="0")
         self.total_logs = tk.StringVar(value="0")
 

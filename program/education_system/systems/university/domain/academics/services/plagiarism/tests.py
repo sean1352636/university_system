@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
 
@@ -375,7 +375,7 @@ def test_plagiarism_checker():
     print("=============================")
 
     # Check if database exists
-    if not os.path.exists(str(DEFAULT_DB_PATH)):
+    if not os.path.exists(str(UNIVERSITY_DEFAULT_DB_PATH)):
         print("Error: Database file str(DEFAULT_DB_PATH) not found.")
         print("Please initialize the main system first.")
         return False

@@ -14,7 +14,8 @@ from pathlib import Path
 
 import bcrypt
 
-from education_system.platform.kernel.database.paths import SYSTEM_DB_PATHS, AUTH_DB
+from education_system.paths import SYSTEM_DB_PATHS
+from education_system.paths import PLATFORM_AUTH_DB_FILE
 from education_system.platform.kernel.database.sql_safety import validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def _default_db_paths():
 
 
 def _auth_db_path():
-    return AUTH_DB
+    return PLATFORM_AUTH_DB_FILE
 
 
 def _connect(path):
@@ -297,6 +298,7 @@ class AdminService:
         metrics = self._current_aggregate_metrics()
         try:
             path = self._metrics_db_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
             conn = sqlite3.connect(str(path))
         except Exception as e:
             logger.warning("Could not open metrics DB: %s", e)
@@ -705,6 +707,41 @@ class AdminService:
             conn.commit()
         except Exception as exc:
             raise ValueError(f"Failed to reset password: {exc}")
+        finally:
+            conn.close()
+
+    def get_locked_accounts(self):
+        """Return accounts whose failed-login lockout is currently active.
+
+        The GUI uses this detail view for its sign-in alert; ``get_alerts``
+        deliberately keeps using the cheaper aggregate count.
+        """
+        conn = _connect(self._auth_db)
+        if not conn:
+            return []
+        try:
+            if not _table_exists(conn, "users"):
+                return []
+            cols = _get_columns(conn, "users")
+            if "locked_until" not in cols:
+                return []
+
+            optional = [
+                name for name in ("display_name", "email", "failed_login_attempts")
+                if name in cols
+            ]
+            selected = ["id", "username", "locked_until", *optional]
+            now_iso = datetime.utcnow().isoformat()
+            rows = conn.execute(
+                f"SELECT {', '.join(selected)} FROM users "
+                "WHERE locked_until IS NOT NULL AND locked_until > ? "
+                "ORDER BY locked_until DESC, username",
+                (now_iso,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+        except Exception as exc:
+            logger.warning("Error listing locked accounts: %s", exc)
+            return []
         finally:
             conn.close()
 

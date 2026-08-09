@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -428,41 +430,41 @@ def create_all_tickets_tab(self):
         return
 
     all_tickets_frame = ttk.Frame(self.notebook)
-    self.notebook.add(all_tickets_frame, text="All Tickets")
+    self.notebook.add(all_tickets_frame, text=_t('gui.pastoral.helpdesk.tickets_all.tabs.all_tickets', default="All Tickets"))
 
     # Toolbar
     toolbar = ttk.Frame(all_tickets_frame)
     toolbar.pack(fill='x', padx=10, pady=5)
 
-    ttk.Button(toolbar, text="Refresh", command=self.refresh_all_tickets).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="Bulk Actions", command=self.show_bulk_actions).pack(side='left', padx=5)
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.refresh', default="Refresh"), command=self.refresh_all_tickets).pack(side='left', padx=5)
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.bulk_actions', default="Bulk Actions"), command=self.show_bulk_actions).pack(side='left', padx=5)
 
     # Filters
-    filter_frame = ttk.LabelFrame(all_tickets_frame, text="Filters")
+    filter_frame = ttk.LabelFrame(all_tickets_frame, text=_t('gui.pastoral.helpdesk.tickets_all.labels.filters', default="Filters"))
     filter_frame.pack(fill='x', padx=10, pady=5)
 
     filter_grid = ttk.Frame(filter_frame)
     filter_grid.pack(fill='x', padx=5, pady=5)
 
     # Status filter
-    ttk.Label(filter_grid, text="Status:").grid(row=0, column=0, padx=5)
-    self.all_tickets_status_var = tk.StringVar(value="all")
+    ttk.Label(filter_grid, text=_t('gui.pastoral.helpdesk.tickets_all.labels.status', default="Status:")).grid(row=0, column=0, padx=5)
+    self.all_tickets_status_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.tickets_all.values.all', default="all"))
     status_combo = ttk.Combobox(filter_grid, textvariable=self.all_tickets_status_var,
                                values=["all", "open", "in progress", "waiting for customer", "resolved", "closed"],
                                state="readonly")
     status_combo.grid(row=0, column=1, padx=5)
 
     # Priority filter
-    ttk.Label(filter_grid, text="Priority:").grid(row=0, column=2, padx=5)
-    self.all_tickets_priority_var = tk.StringVar(value="all")
+    ttk.Label(filter_grid, text=_t('gui.pastoral.helpdesk.tickets_all.labels.priority', default="Priority:")).grid(row=0, column=2, padx=5)
+    self.all_tickets_priority_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.tickets_all.values.all', default="all"))
     priority_combo = ttk.Combobox(filter_grid, textvariable=self.all_tickets_priority_var,
                                  values=["all", "low", "medium", "high"],
                                  state="readonly")
     priority_combo.grid(row=0, column=3, padx=5)
 
     # Assignment filter
-    ttk.Label(filter_grid, text="Assignment:").grid(row=0, column=4, padx=5)
-    self.all_tickets_assignment_var = tk.StringVar(value="all")
+    ttk.Label(filter_grid, text=_t('gui.pastoral.helpdesk.tickets_all.labels.assignment', default="Assignment:")).grid(row=0, column=4, padx=5)
+    self.all_tickets_assignment_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.tickets_all.values.all', default="all"))
     assignment_combo = ttk.Combobox(filter_grid, textvariable=self.all_tickets_assignment_var,
                                    values=["all", "assigned", "unassigned"],
                                    state="readonly")
@@ -473,7 +475,7 @@ def create_all_tickets_tab(self):
         combo.bind('<<ComboboxSelected>>', lambda e: self.refresh_all_tickets())
 
     # Apply filters button
-    ttk.Button(filter_grid, text="Apply Filters",
+    ttk.Button(filter_grid, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.apply_filters', default="Apply Filters"),
               command=self.refresh_all_tickets).grid(row=0, column=6, padx=10)
 
     # Tickets list
@@ -539,14 +541,14 @@ HelpdeskGUI.create_all_tickets_list = create_all_tickets_list
 def create_all_tickets_context_menu(self):
     """Create context menu for all tickets"""
     self.all_tickets_context_menu = tk.Menu(self.root, tearoff=0)
-    self.all_tickets_context_menu.add_command(label="View Details", command=self.view_selected_all_ticket)
-    self.all_tickets_context_menu.add_command(label="Assign", command=self.assign_selected_ticket)
-    self.all_tickets_context_menu.add_command(label="Change Status", command=self.change_status_selected_ticket)
+    self.all_tickets_context_menu.add_command(label=_t('gui.pastoral.helpdesk.tickets_all.menus.view_details', default="View Details"), command=self.view_selected_all_ticket)
+    self.all_tickets_context_menu.add_command(label=_t('gui.pastoral.helpdesk.tickets_all.menus.assign', default="Assign"), command=self.assign_selected_ticket)
+    self.all_tickets_context_menu.add_command(label=_t('gui.pastoral.helpdesk.tickets_all.menus.change_status', default="Change Status"), command=self.change_status_selected_ticket)
     self.all_tickets_context_menu.add_separator()
-    self.all_tickets_context_menu.add_command(label="Select All", command=self.select_all_tickets)
-    self.all_tickets_context_menu.add_command(label="Deselect All", command=self.deselect_all_tickets)
+    self.all_tickets_context_menu.add_command(label=_t('gui.pastoral.helpdesk.tickets_all.menus.select_all', default="Select All"), command=self.select_all_tickets)
+    self.all_tickets_context_menu.add_command(label=_t('gui.pastoral.helpdesk.tickets_all.menus.deselect_all', default="Deselect All"), command=self.deselect_all_tickets)
     self.all_tickets_context_menu.add_separator()
-    self.all_tickets_context_menu.add_command(label="Refresh", command=self.refresh_all_tickets)
+    self.all_tickets_context_menu.add_command(label=_t('gui.pastoral.helpdesk.tickets_all.menus.refresh', default="Refresh"), command=self.refresh_all_tickets)
 
     self.all_tickets_tree.bind('<Button-3>', self.show_all_tickets_context_menu)
 
@@ -658,7 +660,7 @@ def refresh_all_tickets(self):
             ))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load tickets: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), f"Failed to load tickets: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.refresh_all_tickets = refresh_all_tickets
@@ -717,7 +719,7 @@ def get_all_tickets(self):
         return [dict(ticket) for ticket in tickets]
 
     except Exception as e:
-        messagebox.showerror("Error", f"Database error: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), f"Database error: {str(e)}")
         return []
 
 # Attach method to HelpdeskGUI class
@@ -738,7 +740,7 @@ def view_selected_all_ticket(self):
     """View selected ticket from all tickets"""
     selection = self.all_tickets_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a ticket")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.tickets_all.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.please_select_a_ticket', default="Please select a ticket"))
         return
 
     item = self.all_tickets_tree.item(selection[0])
@@ -753,7 +755,7 @@ def assign_selected_ticket(self):
     """Assign selected ticket"""
     selection = self.all_tickets_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a ticket")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.tickets_all.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.please_select_a_ticket', default="Please select a ticket"))
         return
 
     item = self.all_tickets_tree.item(selection[0])
@@ -768,7 +770,7 @@ def change_status_selected_ticket(self):
     """Change status of selected ticket"""
     selection = self.all_tickets_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a ticket")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.tickets_all.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.please_select_a_ticket', default="Please select a ticket"))
         return
 
     item = self.all_tickets_tree.item(selection[0])
@@ -782,11 +784,11 @@ HelpdeskGUI.change_status_selected_ticket = change_status_selected_ticket
 def show_bulk_actions(self):
     """Show bulk actions dialog"""
     if not self.selected_tickets:
-        messagebox.showwarning("Warning", "Please select some tickets first")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.tickets_all.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.please_select_some_tickets_first', default="Please select some tickets first"))
         return
 
     bulk_window = tk.Toplevel(self.root)
-    bulk_window.title("Bulk Actions")
+    bulk_window.title(_t('gui.pastoral.helpdesk.tickets_all.windows.bulk_actions', default="Bulk Actions"))
     bulk_window.geometry("400x300")
     bulk_window.transient(self.root)
     bulk_window.grab_set()
@@ -796,14 +798,14 @@ def show_bulk_actions(self):
              style='Heading.TLabel').pack(pady=10)
 
     # Actions frame
-    actions_frame = ttk.LabelFrame(bulk_window, text="Available Actions")
+    actions_frame = ttk.LabelFrame(bulk_window, text=_t('gui.pastoral.helpdesk.tickets_all.labels.available_actions', default="Available Actions"))
     actions_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     # Bulk assign
     assign_frame = ttk.Frame(actions_frame)
     assign_frame.pack(fill='x', padx=5, pady=5)
 
-    ttk.Label(assign_frame, text="Assign to:").pack(side='left')
+    ttk.Label(assign_frame, text=_t('gui.pastoral.helpdesk.tickets_all.labels.assign_to', default="Assign to:")).pack(side='left')
 
     staff_list = self.get_available_staff()
     assign_var = tk.StringVar()
@@ -811,25 +813,25 @@ def show_bulk_actions(self):
     assign_combo['values'] = ["Unassigned"] + [f"{s['username']} ({s['role']})" for s in staff_list]
     assign_combo.pack(side='left', padx=5)
 
-    ttk.Button(assign_frame, text="Assign",
+    ttk.Button(assign_frame, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.assign', default="Assign"),
               command=lambda: self.bulk_assign_tickets(assign_var.get(), staff_list, bulk_window)).pack(side='left', padx=5)
 
     # Bulk status change
     status_frame = ttk.Frame(actions_frame)
     status_frame.pack(fill='x', padx=5, pady=5)
 
-    ttk.Label(status_frame, text="Change status to:").pack(side='left')
+    ttk.Label(status_frame, text=_t('gui.pastoral.helpdesk.tickets_all.labels.change_status_to', default="Change status to:")).pack(side='left')
 
     status_var = tk.StringVar()
     status_combo = ttk.Combobox(status_frame, textvariable=status_var, state="readonly")
     status_combo['values'] = ["open", "in progress", "waiting for customer", "resolved", "closed"]
     status_combo.pack(side='left', padx=5)
 
-    ttk.Button(status_frame, text="Change Status",
+    ttk.Button(status_frame, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.change_status', default="Change Status"),
               command=lambda: self.bulk_change_status(status_var.get(), bulk_window)).pack(side='left', padx=5)
 
     # Close button
-    ttk.Button(bulk_window, text="Close", command=bulk_window.destroy).pack(pady=10)
+    ttk.Button(bulk_window, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.close', default="Close"), command=bulk_window.destroy).pack(pady=10)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.show_bulk_actions = show_bulk_actions
@@ -837,7 +839,7 @@ HelpdeskGUI.show_bulk_actions = show_bulk_actions
 def bulk_assign_tickets(self, assign_text, staff_list, window):
     """Bulk assign tickets"""
     if not assign_text:
-        messagebox.showerror("Error", "Please select an assignee")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.please_select_an_assignee', default="Please select an assignee"))
         return
 
     assignee_id = None
@@ -866,12 +868,12 @@ def bulk_assign_tickets(self, assign_text, staff_list, window):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"{len(self.selected_tickets)} tickets assigned successfully!")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.tickets_all.dialogs.success', default="Success"), f"{len(self.selected_tickets)} tickets assigned successfully!")
         window.destroy()
         self.refresh_all_tickets()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to assign tickets: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), f"Failed to assign tickets: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.bulk_assign_tickets = bulk_assign_tickets
@@ -879,7 +881,7 @@ HelpdeskGUI.bulk_assign_tickets = bulk_assign_tickets
 def bulk_change_status(self, new_status, window):
     """Bulk change ticket status"""
     if not new_status:
-        messagebox.showerror("Error", "Please select a status")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.please_select_a_status', default="Please select a status"))
         return
 
     try:
@@ -900,12 +902,12 @@ def bulk_change_status(self, new_status, window):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"{len(self.selected_tickets)} tickets updated successfully!")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.tickets_all.dialogs.success', default="Success"), f"{len(self.selected_tickets)} tickets updated successfully!")
         window.destroy()
         self.refresh_all_tickets()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to update tickets: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), f"Failed to update tickets: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.bulk_change_status = bulk_change_status
@@ -913,24 +915,24 @@ HelpdeskGUI.bulk_change_status = bulk_change_status
 def bulk_status_change_gui(self):
     """Bulk change status of multiple selected tickets"""
     if not self.has_permission('manage_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to change ticket status.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.you_don_t_have_permission_to_change_ticket_status', default="You don't have permission to change ticket status."))
         return
 
     # Get selected tickets from all tickets view
     if not hasattr(self, 'all_tickets_tree'):
-        messagebox.showerror("Error", "Please navigate to All Tickets tab first")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.please_navigate_to_all_tickets_tab_first', default="Please navigate to All Tickets tab first"))
         return
 
     selection = self.all_tickets_tree.selection()
     if not selection:
-        messagebox.showerror("Error", "Please select one or more tickets")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.please_select_one_or_more_tickets', default="Please select one or more tickets"))
         return
 
     ticket_ids = [self.all_tickets_tree.item(item)['values'][0] for item in selection]
 
     # Create bulk status change dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Bulk Status Change")
+    dialog.title(_t('gui.pastoral.helpdesk.tickets_all.windows.bulk_status_change', default="Bulk Status Change"))
     dialog.geometry("400x300")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -944,10 +946,10 @@ def bulk_status_change_gui(self):
     ttk.Label(main_frame, text=f"Ticket IDs: {', '.join(map(str, ticket_ids))}").pack(pady=(0, 10))
 
     # Status selection
-    status_frame = ttk.LabelFrame(main_frame, text="Select New Status", padding="10")
+    status_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.tickets_all.labels.select_new_status', default="Select New Status"), padding="10")
     status_frame.pack(fill='x', pady=(0, 10))
 
-    status_var = tk.StringVar(value='open')
+    status_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.tickets_all.values.open', default='open'))
     statuses = ['open', 'in progress', 'waiting for customer', 'resolved', 'closed']
 
     for status in statuses:
@@ -979,15 +981,15 @@ def bulk_status_change_gui(self):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"{len(ticket_ids)} tickets updated to {new_status.upper()}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.tickets_all.dialogs.success', default="Success"), f"{len(ticket_ids)} tickets updated to {new_status.upper()}")
             dialog.destroy()
             self.refresh_all_tickets()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update tickets: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), f"Failed to update tickets: {str(e)}")
 
-    ttk.Button(button_frame, text="Update All", command=perform_bulk_update).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.update_all', default="Update All"), command=perform_bulk_update).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.bulk_status_change_gui = bulk_status_change_gui
@@ -1005,23 +1007,23 @@ HelpdeskGUI.show_all_tickets = show_all_tickets
 def view_all_tickets_enhanced_gui(self):
     """Enhanced view of all tickets with advanced filtering"""
     if not self.auth.has_permission('view_all_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to view all tickets.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.tickets_all.dialogs.you_don_t_have_permission_to_view_all_tickets', default="You don't have permission to view all tickets."))
         return
 
     window = tk.Toplevel(self.root)
-    window.title("All Tickets - Enhanced View")
+    window.title(_t('gui.pastoral.helpdesk.tickets_all.windows.all_tickets_enhanced_view', default="All Tickets - Enhanced View"))
     window.geometry("1200x700")
 
     main_frame = ttk.Frame(window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     # Filter frame
-    filter_frame = ttk.LabelFrame(main_frame, text="Filters", padding="10")
+    filter_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.tickets_all.labels.filters', default="Filters"), padding="10")
     filter_frame.pack(fill=tk.X, pady=5)
 
-    ttk.Label(filter_frame, text="Filter:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(filter_frame, text=_t('gui.pastoral.helpdesk.tickets_all.labels.filter', default="Filter:")).pack(side=tk.LEFT, padx=5)
 
-    filter_var = tk.StringVar(value="all")
+    filter_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.tickets_all.values.all', default="all"))
     filters = [
         ("All tickets", "all"),
         ("Unassigned", "unassigned"),
@@ -1038,15 +1040,15 @@ def view_all_tickets_enhanced_gui(self):
     columns = ('id', 'subject', 'category', 'status', 'priority', 'submitter', 'assignee', 'created', 'due')
     tree = ttk.Treeview(main_frame, columns=columns, show='headings', height=20)
 
-    tree.heading('id', text='ID')
-    tree.heading('subject', text='Subject')
-    tree.heading('category', text='Category')
-    tree.heading('status', text='Status')
-    tree.heading('priority', text='Priority')
-    tree.heading('submitter', text='Submitter')
-    tree.heading('assignee', text='Assignee')
-    tree.heading('created', text='Created')
-    tree.heading('due', text='Due Date')
+    tree.heading('id', text=_t('gui.pastoral.helpdesk.tickets_all.headings.id', default='ID'))
+    tree.heading('subject', text=_t('gui.pastoral.helpdesk.tickets_all.headings.subject', default='Subject'))
+    tree.heading('category', text=_t('gui.pastoral.helpdesk.tickets_all.headings.category', default='Category'))
+    tree.heading('status', text=_t('gui.pastoral.helpdesk.tickets_all.headings.status', default='Status'))
+    tree.heading('priority', text=_t('gui.pastoral.helpdesk.tickets_all.headings.priority', default='Priority'))
+    tree.heading('submitter', text=_t('gui.pastoral.helpdesk.tickets_all.headings.submitter', default='Submitter'))
+    tree.heading('assignee', text=_t('gui.pastoral.helpdesk.tickets_all.headings.assignee', default='Assignee'))
+    tree.heading('created', text=_t('gui.pastoral.helpdesk.tickets_all.headings.created', default='Created'))
+    tree.heading('due', text=_t('gui.pastoral.helpdesk.tickets_all.headings.due_date', default='Due Date'))
 
     tree.column('id', width=50)
     tree.column('subject', width=250)
@@ -1136,11 +1138,11 @@ def view_all_tickets_enhanced_gui(self):
                 ))
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load tickets: {e}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.tickets_all.dialogs.error', default="Error"), f"Failed to load tickets: {e}")
 
-    ttk.Button(filter_frame, text="Apply Filter", command=load_tickets).pack(side=tk.LEFT, padx=5)
-    ttk.Button(main_frame, text="View Details", command=lambda: self.view_ticket_from_tree(tree)).pack(pady=5)
-    ttk.Button(main_frame, text="Close", command=window.destroy).pack(pady=5)
+    ttk.Button(filter_frame, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.apply_filter', default="Apply Filter"), command=load_tickets).pack(side=tk.LEFT, padx=5)
+    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.view_details', default="View Details"), command=lambda: self.view_ticket_from_tree(tree)).pack(pady=5)
+    ttk.Button(main_frame, text=_t('gui.pastoral.helpdesk.tickets_all.buttons.close', default="Close"), command=window.destroy).pack(pady=5)
 
     tree.bind('<Double-1>', lambda e: self.view_ticket_from_tree(tree))
 

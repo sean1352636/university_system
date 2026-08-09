@@ -9,6 +9,8 @@ OS default application.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import os
 import subprocess
@@ -37,7 +39,7 @@ def open_externally(file_path: str, parent=None) -> None:
         else:
             subprocess.Popen(['xdg-open', file_path])
     except Exception as e:
-        messagebox.showerror("Open Failed",
+        messagebox.showerror(_t('gui.academics.assignment_system.file_viewer.dialogs.open_failed', default="Open Failed"),
                              f"Could not open file externally:\n{e}",
                              parent=parent)
 
@@ -69,8 +71,8 @@ def resolve_submission_path(stored_path: str) -> str | None:
         return None
     suffix = p[idx + len('submissions/'):]
     try:
-        from education_system.systems.university.infrastructure import paths
-        submissions_dir = str(paths.SUBMISSIONS_DIR)
+        from education_system import paths
+        submissions_dir = str(paths.UNIVERSITY_SUBMISSIONS_DIR)
     except Exception:
         return None
 
@@ -112,7 +114,7 @@ def preview_file(parent, file_path: str, title: str = "Submitted File") -> None:
     resolved = resolve_submission_path(file_path)
     if not resolved:
         messagebox.showerror(
-            "File Not Found",
+            _t('gui.academics.assignment_system.file_viewer.dialogs.file_not_found', default="File Not Found"),
             f"The submitted file is no longer on disk:\n{file_path}",
             parent=parent,
         )
@@ -122,7 +124,7 @@ def preview_file(parent, file_path: str, title: str = "Submitted File") -> None:
     text, err = _extract_text(file_path)
     if text is None:
         if messagebox.askyesno(
-                "Preview Unavailable",
+                _t('gui.academics.assignment_system.file_viewer.dialogs.preview_unavailable', default="Preview Unavailable"),
                 f"'{os.path.basename(file_path)}' cannot be previewed in-app"
                 + (f"\n({err})" if err else '')
                 + "\n\nOpen it with your system's default application?",
@@ -178,7 +180,7 @@ def _show_text_window(parent, title: str, file_path: str, text: str) -> None:
                   foreground='#666').pack(side='left', padx=(8, 0))
     except OSError:
         pass
-    ttk.Button(header, text='Open Externally',
+    ttk.Button(header, text=_t('gui.academics.assignment_system.file_viewer.buttons.open_externally', default='Open Externally'),
                command=lambda: open_externally(file_path, parent=win)
                ).pack(side='right')
 
@@ -196,4 +198,4 @@ def _show_text_window(parent, title: str, file_path: str, text: str) -> None:
 
     footer = ttk.Frame(win, padding=(10, 0, 10, 10))
     footer.pack(fill='x')
-    ttk.Button(footer, text='Close', command=win.destroy).pack(side='right')
+    ttk.Button(footer, text=_t('gui.academics.assignment_system.file_viewer.buttons.close', default='Close'), command=win.destroy).pack(side='right')

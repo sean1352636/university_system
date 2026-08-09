@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import messagebox
 import threading
@@ -19,6 +21,8 @@ class VoiceMixin:
     def toggle_voice_mode(self):
         """Toggle voice recording mode"""
         if not self.chatbot.voice_interface.enabled:
+            if hasattr(self, 'set_backend_status'):
+                self.set_backend_status(getattr(self, '_backend_state', 'online'))
             messagebox.showwarning(
                 _t("chatbot.voice_unavailable", default="Voice Unavailable"),
                 _t("chatbot.voice_unavailable_msg", default="Voice interface is not available. Please check your microphone setup.")
@@ -29,8 +33,8 @@ class VoiceMixin:
             return
 
         # Change button state
-        self.voice_button.config(state='disabled', text="\U0001f3a4 Recording...")
-        self.status_label.config(text="Listening...")
+        self.voice_button.config(state='disabled', text=_t('gui.shell.ai.features.voice.text.recording', default="Recording"))
+        self.set_activity_status('listening')
 
         # Record voice in thread
         duration = float(getattr(self, 'voice_duration_var', tk.StringVar(value="5")).get())
@@ -48,14 +52,14 @@ class VoiceMixin:
             else:
                 self.root.after(0, self._handle_voice_error, "No speech detected")
 
-        except Exception as e:
-            self.root.after(0, self._handle_voice_error, str(e))
+        except Exception:
+            self.root.after(0, self._handle_voice_error, None)
 
     def _handle_voice_result(self, text):
         """Handle successful voice recognition"""
         # Reset voice button
-        self.voice_button.config(state='normal', text="\U0001f3a4 Voice")
-        self.status_label.config(text="Voice recognized")
+        self.voice_button.config(state='normal', text=_t('gui.shell.ai.features.voice.text.voice', default="Voice input"))
+        self.status_label.config(text=_t('gui.shell.ai.features.voice.text.voice_recognized', default="Voice recognized"))
 
         # Add recognized text to input and send
         self.message_entry.delete("1.0", tk.END)
@@ -65,22 +69,22 @@ class VoiceMixin:
     def _handle_voice_error(self, error):
         """Handle voice recognition error"""
         # Reset voice button
-        self.voice_button.config(state='normal', text="\U0001f3a4 Voice")
-        self.status_label.config(text="Ready")
+        self.voice_button.config(state='normal', text=_t('gui.shell.ai.features.voice.text.voice', default="Voice input"))
+        self.set_activity_status('ready')
 
         # Show error
         messagebox.showerror(
             _t("chatbot.voice_error", default="Voice Error"),
-            _t("chatbot.voice_recognition_failed", default="Voice recognition failed: {error}").format(error=error)
+            _t("chatbot.voice_recognition_failed", default="Voice recognition failed. Please try again.")
         )
 
     def test_voice(self):
         """Test voice interface"""
         if not self.chatbot.voice_interface.enabled:
-            self.voice_status_label.config(text="Voice interface not available", foreground='red')
+            self.voice_status_label.config(text=_t('gui.shell.ai.features.voice.text.voice_interface_not_available', default="Voice interface not available"), foreground='red')
             return
 
-        self.voice_status_label.config(text="Testing microphone...", foreground='blue')
+        self.voice_status_label.config(text=_t('gui.shell.ai.features.voice.text.testing_microphone', default="Testing microphone..."), foreground='blue')
 
         # Run test in thread
         threading.Thread(target=self._run_voice_test, daemon=True).start()

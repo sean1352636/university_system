@@ -1,4 +1,6 @@
 """Refund processing dialog."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -14,7 +16,7 @@ class RefundDialog:
         self.refund_method = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Refund Parking Payment")
+        self.dialog.title(_t('gui.operations.campus.mobility.parking_management.dialogs.refund_dialog.windows.refund_parking_payment', default="Refund Parking Payment"))
         self.dialog.geometry("550x450")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -36,7 +38,7 @@ class RefundDialog:
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Payment details
-        details_frame = ttk.LabelFrame(main_frame, text="Payment Details", padding="10")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.refund_dialog.labels.payment_details', default="Payment Details"), padding="10")
         details_frame.pack(fill=tk.X, pady=(0, 15))
 
         details = [
@@ -55,7 +57,7 @@ class RefundDialog:
                 row=i, column=1, sticky=tk.W, pady=2)
 
         # Refund method selection
-        method_frame = ttk.LabelFrame(main_frame, text="Select Refund Method", padding="10")
+        method_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.refund_dialog.labels.select_refund_method', default="Select Refund Method"), padding="10")
         method_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
 
         # Get student balance if refunding to student account
@@ -84,21 +86,21 @@ class RefundDialog:
         btn_container = ttk.Frame(method_frame)
         btn_container.pack(fill=tk.BOTH, expand=True)
 
-        tk.Button(btn_container, text="💵 Refund as Cash",
+        tk.Button(btn_container, text=_t('gui.operations.campus.mobility.parking_management.dialogs.refund_dialog.buttons.refund_as_cash', default="💵 Refund as Cash"),
                  command=lambda: self.select_refund_method('cash'),
                  font=('Arial', 11, 'bold'), bg='#27ae60', fg='white',
                  activebackground='#229954', activeforeground='white',
                  relief='raised', padx=20, pady=12, cursor='hand2',
                  borderwidth=3).pack(pady=8, fill=tk.X)
 
-        tk.Button(btn_container, text="💳 Refund to Card",
+        tk.Button(btn_container, text=_t('gui.operations.campus.mobility.parking_management.dialogs.refund_dialog.buttons.refund_to_card', default="💳 Refund to Card"),
                  command=lambda: self.select_refund_method('card'),
                  font=('Arial', 11, 'bold'), bg='#3498db', fg='white',
                  activebackground='#2980b9', activeforeground='white',
                  relief='raised', padx=20, pady=12, cursor='hand2',
                  borderwidth=3).pack(pady=8, fill=tk.X)
 
-        tk.Button(btn_container, text="🏦 Refund to Student Account",
+        tk.Button(btn_container, text=_t('gui.operations.campus.mobility.parking_management.dialogs.refund_dialog.buttons.refund_to_student_account', default="🏦 Refund to Student Account"),
                  command=lambda: self.select_refund_method('student_account'),
                  font=('Arial', 11, 'bold'), bg='#9b59b6', fg='white',
                  activebackground='#8e44ad', activeforeground='white',
@@ -106,13 +108,13 @@ class RefundDialog:
                  borderwidth=3).pack(pady=8, fill=tk.X)
 
         # Cancel button
-        ttk.Button(main_frame, text="Cancel", command=self.dialog.destroy).pack(pady=(10, 0))
+        ttk.Button(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.refund_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(pady=(10, 0))
 
     def select_refund_method(self, method):
         """Process refund with selected method"""
         self.refund_method = method
 
-        if not messagebox.askyesno("Confirm Refund",
+        if not messagebox.askyesno(_t('gui.operations.campus.mobility.parking_management.dialogs.refund_dialog.dialogs.confirm_refund', default="Confirm Refund"),
                                    f"Process refund of £{float(self.payment_data[2]):.2f} via {method.replace('_', ' ').title()}?"):
             return
 

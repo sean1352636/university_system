@@ -55,8 +55,8 @@ except ImportError:
         return logging.getLogger(name or __name__)
 
     def get_log_file(name):
-        from education_system.systems.university.infrastructure import paths
-        return str(paths.LOG_DIR / name)
+        from education_system import paths
+        return str(paths.UNIVERSITY_LOG_DIR / name)
 
 try:
     from education_system.systems.university.domain.finance.core.financial_core import (
@@ -151,6 +151,11 @@ except ImportError:
     ]
 
     globals().update({name: _make_stub(name) for name in _missing_functions})
+
+# The compatibility facade resolves every operation independently. Import it
+# last so an unavailable legacy ``financial_core`` symbol cannot replace a
+# whole group of working operations with print-only stubs.
+from education_system.systems.university.domain.finance.facade import *  # noqa: F403,E402
 
 # Configure logging
 log_path = get_log_file("app.log")

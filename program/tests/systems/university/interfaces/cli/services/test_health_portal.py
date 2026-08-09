@@ -98,7 +98,7 @@ class TestDisplayBasicHealthMenu:
 class TestViewHealthRecords:
     """Test view_health_records function"""
 
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.get_connection')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.records.get_connection')
     @patch('builtins.print')
     def test_view_health_records_callable(self, mock_print, mock_conn, mock_auth):
         """Test that view_health_records can be called"""
@@ -108,7 +108,7 @@ class TestViewHealthRecords:
         result = health_portal.view_health_records(mock_auth)
         assert result is None
 
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.get_connection')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.records.get_connection')
     @patch('builtins.print')
     def test_view_health_records_uses_auth_username(self, mock_print, mock_conn, mock_auth):
         """Test function uses auth.get_username()"""
@@ -147,7 +147,7 @@ class TestScheduleAppointment:
 class TestViewMedicalHistory:
     """Test view_medical_history function"""
 
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.get_connection')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.records.get_connection')
     @patch('builtins.print')
     def test_view_medical_history_callable(self, mock_print, mock_conn, mock_auth):
         """Test that view_medical_history can be called"""
@@ -170,7 +170,7 @@ class TestManageEmergencyContacts:
     """Test manage_emergency_contacts function"""
 
     @patch('builtins.input', return_value='')
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.get_connection')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.records.get_connection')
     @patch('builtins.print')
     def test_manage_emergency_contacts_callable(self, mock_print, mock_conn, mock_input, mock_auth):
         """Test that manage_emergency_contacts can be called"""
@@ -209,7 +209,7 @@ class TestGenerateHealthReports:
 class TestViewVaccinationRecords:
     """Test view_vaccination_records function"""
 
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.get_connection')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.records.get_connection')
     @patch('builtins.print')
     def test_view_vaccination_records_callable(self, mock_print, mock_conn, mock_auth):
         """Test that view_vaccination_records can be called"""
@@ -259,7 +259,7 @@ class TestFunctionSignatures:
     """Test that functions accept auth as first argument"""
 
     @patch('builtins.input', return_value='0')
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.get_connection')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.records.get_connection')
     @patch('builtins.print')
     def test_functions_accept_auth_arg(self, mock_print, mock_conn, mock_input, mock_auth):
         """Test functions accept auth as positional arg"""
@@ -290,7 +290,7 @@ class TestIntegration:
     """Integration tests for the health portal CLI"""
 
     @patch('builtins.input', return_value='0')
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.get_connection')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.records.get_connection')
     @patch('builtins.print')
     def test_complete_workflow(self, mock_print, mock_conn, mock_input, mock_auth):
         """Test a complete health portal workflow"""

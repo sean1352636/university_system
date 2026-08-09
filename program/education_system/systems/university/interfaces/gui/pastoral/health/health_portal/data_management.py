@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import csv
 import json
@@ -5,7 +7,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 
 class DataManagementMixin:
@@ -13,18 +15,18 @@ class DataManagementMixin:
 
     def create_data_management(self):
         """Create data management interface"""
-        title = ttk.Label(self.content_frame, text="Data Management", style='Title.TLabel')
+        title = ttk.Label(self.content_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.data_management', default="Data Management"), style='Title.TLabel')
         title.grid(row=0, column=0, pady=10)
 
         notebook = ttk.Notebook(self.content_frame)
         notebook.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
 
         export_tab = ttk.Frame(notebook)
-        notebook.add(export_tab, text="Data Export")
+        notebook.add(export_tab, text=_t('gui.pastoral.health.health_portal.data_management.tabs.data_export', default="Data Export"))
         self.create_data_export_form(export_tab)
 
         backup_tab = ttk.Frame(notebook)
-        notebook.add(backup_tab, text="Database Backup")
+        notebook.add(backup_tab, text=_t('gui.pastoral.health.health_portal.data_management.tabs.database_backup', default="Database Backup"))
         self.create_database_backup_form(backup_tab)
 
         self.content_frame.columnconfigure(0, weight=1)
@@ -35,33 +37,33 @@ class DataManagementMixin:
         main_frame = ttk.Frame(parent, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        options_frame = ttk.LabelFrame(main_frame, text="Export Options", padding="10")
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.export_options', default="Export Options"), padding="10")
         options_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-        ttk.Label(options_frame, text="Data Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.export_data_type = tk.StringVar(value="health_records")
+        ttk.Label(options_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.data_type', default="Data Type:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.export_data_type = tk.StringVar(value=_t('gui.pastoral.health.health_portal.data_management.values.health_records', default="health_records"))
         data_type_combo = ttk.Combobox(options_frame, textvariable=self.export_data_type,
                                       values=['health_records', 'vaccination_records', 'health_appointments',
                                              'students', 'all_data'], state='readonly')
         data_type_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=(5, 0))
 
-        ttk.Label(options_frame, text="Format:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.export_format = tk.StringVar(value="CSV")
+        ttk.Label(options_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.format', default="Format:")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.export_format = tk.StringVar(value=_t('gui.pastoral.health.health_portal.data_management.values.csv', default="CSV"))
         format_combo = ttk.Combobox(options_frame, textvariable=self.export_format,
                                    values=['CSV', 'JSON'], state='readonly')
         format_combo.grid(row=1, column=1, sticky=tk.W, pady=5, padx=(5, 0))
 
-        ttk.Label(options_frame, text="Date From (optional):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(options_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.date_from_optional', default="Date From (optional):")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.export_date_from = tk.StringVar()
         ttk.Entry(options_frame, textvariable=self.export_date_from, width=15).grid(row=2, column=1, sticky=tk.W, pady=5, padx=(5, 0))
 
-        ttk.Label(options_frame, text="Date To (optional):").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(options_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.date_to_optional', default="Date To (optional):")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.export_date_to = tk.StringVar()
         ttk.Entry(options_frame, textvariable=self.export_date_to, width=15).grid(row=3, column=1, sticky=tk.W, pady=5, padx=(5, 0))
 
-        ttk.Button(options_frame, text="Export Data", command=self.export_data).grid(row=4, column=0, columnspan=2, pady=15)
+        ttk.Button(options_frame, text=_t('gui.pastoral.health.health_portal.data_management.buttons.export_data', default="Export Data"), command=self.export_data).grid(row=4, column=0, columnspan=2, pady=15)
 
-        log_frame = ttk.LabelFrame(main_frame, text="Export Log", padding="10")
+        log_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.export_log', default="Export Log"), padding="10")
         log_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         self.export_log_text = scrolledtext.ScrolledText(log_frame, width=70, height=15)
@@ -88,7 +90,7 @@ class DataManagementMixin:
                 initialfile=default_filename,
                 defaultextension=extension,
                 filetypes=[("CSV files", "*.csv"), ("JSON files", "*.json"), ("All files", "*.*")],
-                title="Save Export File"
+                title=_t('gui.pastoral.health.health_portal.data_management.dialogs.save_export_file', default="Save Export File")
             )
 
             if not filename:
@@ -190,40 +192,40 @@ class DataManagementMixin:
             self.export_log_text.see(tk.END)
 
             self.log_audit_event('export_data', 'data_export', filename, f"Type: {data_type}, Format: {export_format}")
-            messagebox.showinfo("Success", f"Data exported successfully to {filename}")
+            messagebox.showinfo(_t('gui.pastoral.health.health_portal.data_management.dialogs.success', default="Success"), f"Data exported successfully to {filename}")
 
         except Exception as e:
             error_msg = f"Export failed: {str(e)}\n\n"
             self.export_log_text.insert(tk.END, error_msg)
             self.export_log_text.see(tk.END)
-            messagebox.showerror("Error", f"Failed to export data: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.data_management.dialogs.error', default="Error"), f"Failed to export data: {str(e)}")
 
     def create_database_backup_form(self, parent):
         """Create database backup form"""
         main_frame = ttk.Frame(parent, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        options_frame = ttk.LabelFrame(main_frame, text="Backup Options", padding="10")
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.backup_options', default="Backup Options"), padding="10")
         options_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-        ttk.Label(options_frame, text="Backup Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.backup_type = tk.StringVar(value="Full Backup")
+        ttk.Label(options_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.backup_type', default="Backup Type:")).grid(row=0, column=0, sticky=tk.W, pady=5)
+        self.backup_type = tk.StringVar(value=_t('gui.pastoral.health.health_portal.data_management.values.full_backup', default="Full Backup"))
         backup_type_combo = ttk.Combobox(options_frame, textvariable=self.backup_type,
                                         values=['Full Backup', 'Data Only', 'Schema Only'], state='readonly')
         backup_type_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=(5, 0))
 
-        ttk.Label(options_frame, text="Backup Location:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.backup_location = tk.StringVar(value=str(paths.BACKUP_HEALTH_DIR / ""))
+        ttk.Label(options_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.backup_location', default="Backup Location:")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.backup_location = tk.StringVar(value=str(paths.UNIVERSITY_BACKUP_HEALTH_DIR / ""))
 
         location_frame = ttk.Frame(options_frame)
         location_frame.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5, padx=(5, 0))
 
         ttk.Entry(location_frame, textvariable=self.backup_location, width=40).pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Button(location_frame, text="Browse", command=self.browse_backup_location).pack(side=tk.RIGHT, padx=(5, 0))
+        ttk.Button(location_frame, text=_t('gui.pastoral.health.health_portal.data_management.buttons.browse', default="Browse"), command=self.browse_backup_location).pack(side=tk.RIGHT, padx=(5, 0))
 
-        ttk.Button(options_frame, text="Create Backup", command=self.create_backup).grid(row=2, column=0, columnspan=2, pady=15)
+        ttk.Button(options_frame, text=_t('gui.pastoral.health.health_portal.data_management.buttons.create_backup', default="Create Backup"), command=self.create_backup).grid(row=2, column=0, columnspan=2, pady=15)
 
-        log_frame = ttk.LabelFrame(main_frame, text="Backup Log", padding="10")
+        log_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.health_portal.data_management.labels.backup_log', default="Backup Log"), padding="10")
         log_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         self.backup_log_text = scrolledtext.ScrolledText(log_frame, width=70, height=15)
@@ -259,7 +261,7 @@ class DataManagementMixin:
             self.backup_log_text.see(tk.END)
             self.root.update()
 
-            source_db = str(paths.DEFAULT_DB_PATH)
+            source_db = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
             if os.path.exists(source_db):
                 import shutil
                 backup_db_path = os.path.join(backup_dir, f"student_records_backup_{timestamp}.db")
@@ -280,7 +282,7 @@ class DataManagementMixin:
                 self.backup_log_text.see(tk.END)
 
                 self.log_audit_event('create_backup', 'database_backup', backup_path)
-                messagebox.showinfo("Success", f"Database backup created successfully!\n\n"
+                messagebox.showinfo(_t('gui.pastoral.health.health_portal.data_management.dialogs.success', default="Success"), f"Database backup created successfully!\n\n"
                                   f"SQL dump: {backup_path}\n"
                                   f"Database copy: {backup_db_path}")
 
@@ -291,4 +293,4 @@ class DataManagementMixin:
             error_msg = f"Backup failed: {str(e)}\n\n"
             self.backup_log_text.insert(tk.END, error_msg)
             self.backup_log_text.see(tk.END)
-            messagebox.showerror("Error", f"Failed to create backup: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.data_management.dialogs.error', default="Error"), f"Failed to create backup: {str(e)}")

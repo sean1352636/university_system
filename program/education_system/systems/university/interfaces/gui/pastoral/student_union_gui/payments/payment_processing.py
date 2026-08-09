@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -60,24 +62,24 @@ def show_club_payments_content(self):
     """Open Club Payment Management window directly in Student Union GUI"""
     # Check if GUI was properly initialized
     if not self.initialized or not self.current_user:
-        messagebox.showerror("Error", "Authentication required. Please log in.")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.authentication_required_please_log_in', default="Authentication required. Please log in."))
         return
     try:
         # Create new window for Club Payments
         payments_window = tk.Toplevel(self.root)
-        payments_window.title("Club Payment Management")
+        payments_window.title(_t('gui.pastoral.student_union_gui.payments.payment_processing.windows.club_payment_management', default="Club Payment Management"))
         payments_window.geometry("1200x800")
         payments_window.transient(self.root)
         # Main content frame
         main_frame = ttk.Frame(payments_window)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         # Title
-        title_label = ttk.Label(main_frame, text="Club Payment Management",
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.club_payment_management', default="Club Payment Management"),
                                 font=('Arial', 18, 'bold'))
         title_label.pack(pady=10)
         # Info label
         info_label = ttk.Label(main_frame,
-                               text="Manage payments for student clubs and organizations",
+                               text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.manage_payments_for_student_clubs_and_organizations', default="Manage payments for student clubs and organizations"),
                                font=('Arial', 10))
         info_label.pack(pady=5)
         # Create notebook for different sections
@@ -85,31 +87,31 @@ def show_club_payments_content(self):
         notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=10)
         # Payment Overview Tab
         overview_frame = ttk.Frame(notebook)
-        notebook.add(overview_frame, text="Payment Overview")
+        notebook.add(overview_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.tabs.payment_overview', default="Payment Overview"))
         self._create_payment_overview_tab(overview_frame)
         # Record Payment Tab
         record_frame = ttk.Frame(notebook)
-        notebook.add(record_frame, text="Record Payment")
+        notebook.add(record_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.tabs.record_payment', default="Record Payment"))
         self._create_record_payment_tab(record_frame)
         # Payment History Tab
         history_frame = ttk.Frame(notebook)
-        notebook.add(history_frame, text="Payment History")
+        notebook.add(history_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.tabs.payment_history', default="Payment History"))
         self._create_payment_history_tab(history_frame)
         # Reports Tab
         reports_frame = ttk.Frame(notebook)
-        notebook.add(reports_frame, text="Reports")
+        notebook.add(reports_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.tabs.reports', default="Reports"))
         self._create_payment_reports_tab(reports_frame)
         # Refunds Tab
         refunds_frame = ttk.Frame(notebook)
-        notebook.add(refunds_frame, text="Refunds")
+        notebook.add(refunds_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.tabs.refunds', default="Refunds"))
         self._create_refunds_tab(refunds_frame, payments_window)
         # Close button
         close_frame = ttk.Frame(payments_window)
         close_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(close_frame, text="Close",
+        ttk.Button(close_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.close', default="Close"),
                    command=payments_window.destroy).pack()
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Could not open Club Payments: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), f"Could not open Club Payments: {e}")
 
 
 def _create_payment_overview_tab(self, parent):
@@ -117,9 +119,9 @@ def _create_payment_overview_tab(self, parent):
     # Header
     header_frame = ttk.Frame(parent)
     header_frame.pack(fill=tk.X, padx=10, pady=10)
-    ttk.Label(header_frame, text="Payment Summary", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+    ttk.Label(header_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_summary', default="Payment Summary"), font=('Arial', 12, 'bold')).pack(anchor=tk.W)
     # Stats frame
-    stats_frame = ttk.LabelFrame(parent, text="Payment Statistics (Last 30 Days)")
+    stats_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_statistics_last_30_days', default="Payment Statistics (Last 30 Days)"))
     stats_frame.pack(fill=tk.X, padx=10, pady=10)
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -135,19 +137,19 @@ def _create_payment_overview_tab(self, parent):
         # Display stats in grid
         stats_grid = ttk.Frame(stats_frame)
         stats_grid.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(stats_grid, text="Total Payments:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(stats_grid, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.total_payments', default="Total Payments:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         ttk.Label(stats_grid, text=str(count or 0)).grid(row=0, column=1, sticky=tk.W, padx=5)
-        ttk.Label(stats_grid, text="Total Amount:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(stats_grid, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.total_amount', default="Total Amount:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         ttk.Label(stats_grid, text=f"£{total or 0:.2f}").grid(row=1, column=1, sticky=tk.W, padx=5)
-        ttk.Label(stats_grid, text="Average Payment:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(stats_grid, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.average_payment', default="Average Payment:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         ttk.Label(stats_grid, text=f"£{avg or 0:.2f}").grid(row=2, column=1, sticky=tk.W, padx=5)
-        ttk.Label(stats_grid, text="Clubs with Payments:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(stats_grid, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.clubs_with_payments', default="Clubs with Payments:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
         ttk.Label(stats_grid, text=str(clubs_count or 0)).grid(row=3, column=1, sticky=tk.W, padx=5)
         conn.close()
     except (sqlite3.Error, tk.TclError) as e:
         ttk.Label(stats_frame, text=f"Error loading statistics: {e}").pack(padx=10, pady=10)
     # Recent payments frame
-    recent_frame = ttk.LabelFrame(parent, text="Recent Payments")
+    recent_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.recent_payments', default="Recent Payments"))
     recent_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
     # Create treeview for recent payments
     columns = ('Date', 'Club', 'Type', 'Amount', 'Status')
@@ -190,12 +192,12 @@ def _create_record_payment_tab(self, parent):
     # Header
     header_frame = ttk.Frame(parent)
     header_frame.pack(fill=tk.X, padx=10, pady=10)
-    ttk.Label(header_frame, text="Record New Payment", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+    ttk.Label(header_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.record_new_payment', default="Record New Payment"), font=('Arial', 12, 'bold')).pack(anchor=tk.W)
     # Form frame
-    form_frame = ttk.LabelFrame(parent, text="Payment Details")
+    form_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_details', default="Payment Details"))
     form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
     # Club Selection
-    ttk.Label(form_frame, text="Club:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.club', default="Club:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
     club_var = tk.StringVar()
     club_combo = ttk.Combobox(form_frame, textvariable=club_var, width=28, state='readonly')
     # Load clubs with IDs
@@ -211,33 +213,33 @@ def _create_record_payment_tab(self, parent):
         pass
     club_combo.grid(row=0, column=1, padx=10, pady=5)
     # Amount
-    ttk.Label(form_frame, text="Amount (£):").grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.amount', default="Amount (£):")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=5)
     amount_var = tk.StringVar()
     ttk.Entry(form_frame, textvariable=amount_var, width=30).grid(row=1, column=1, padx=10, pady=5)
     # Payment Type
-    ttk.Label(form_frame, text="Payment Type:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_type', default="Payment Type:")).grid(row=2, column=0, sticky=tk.W, padx=10, pady=5)
     payment_type_var = tk.StringVar()
     payment_type_combo = ttk.Combobox(form_frame, textvariable=payment_type_var, width=28, state='readonly')
     payment_type_combo['values'] = ('membership_fee', 'event_fee', 'donation', 'merchandise', 'other')
     payment_type_combo.current(0)
     payment_type_combo.grid(row=2, column=1, padx=10, pady=5)
     # Payment Method
-    ttk.Label(form_frame, text="Payment Method:").grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_method', default="Payment Method:")).grid(row=3, column=0, sticky=tk.W, padx=10, pady=5)
     payment_method_var = tk.StringVar()
     payment_method_combo = ttk.Combobox(form_frame, textvariable=payment_method_var, width=28, state='readonly')
     payment_method_combo['values'] = ('cash', 'card', 'bank_transfer', 'online')
     payment_method_combo.current(0)
     payment_method_combo.grid(row=3, column=1, padx=10, pady=5)
     # Student ID (optional)
-    ttk.Label(form_frame, text="Student ID (optional):").grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.student_id_optional', default="Student ID (optional):")).grid(row=4, column=0, sticky=tk.W, padx=10, pady=5)
     student_id_var = tk.StringVar()
     ttk.Entry(form_frame, textvariable=student_id_var, width=30).grid(row=4, column=1, padx=10, pady=5)
     # Description
-    ttk.Label(form_frame, text="Description:").grid(row=5, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.description', default="Description:")).grid(row=5, column=0, sticky=tk.W, padx=10, pady=5)
     description_var = tk.StringVar()
     ttk.Entry(form_frame, textvariable=description_var, width=30).grid(row=5, column=1, padx=10, pady=5)
     # Notes
-    ttk.Label(form_frame, text="Notes:").grid(row=6, column=0, sticky=tk.W, padx=10, pady=5)
+    ttk.Label(form_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.notes', default="Notes:")).grid(row=6, column=0, sticky=tk.W, padx=10, pady=5)
     notes_text = tk.Text(form_frame, width=30, height=3)
     notes_text.grid(row=6, column=1, padx=10, pady=5)
     # Button frame
@@ -247,18 +249,18 @@ def _create_record_payment_tab(self, parent):
         """Record the payment to payments table with source_type='club'"""
         try:
             if not club_var.get():
-                messagebox.showerror("Error", "Please select a club")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.please_select_a_club', default="Please select a club"))
                 return
             if not amount_var.get():
-                messagebox.showerror("Error", "Please enter an amount")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.please_enter_an_amount', default="Please enter an amount"))
                 return
             try:
                 amount = float(amount_var.get().strip())
                 if amount <= 0:
-                    messagebox.showerror("Error", "Amount must be greater than 0")
+                    messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.amount_must_be_greater_than_0', default="Amount must be greater than 0"))
                     return
             except ValueError:
-                messagebox.showerror("Error", "Invalid amount")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.invalid_amount', default="Invalid amount"))
                 return
             # Extract club_id from combo selection
             club_id = int(club_var.get().split(' - ')[0])
@@ -298,7 +300,7 @@ def _create_record_payment_tab(self, parent):
                 except Exception as _e:
                     import logging
                     logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
-            messagebox.showinfo("Success", f"Payment of £{amount:.2f} recorded successfully!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.success', default="Success"), f"Payment of £{amount:.2f} recorded successfully!")
             # Clear form
             club_combo.set('')
             amount_var.set('')
@@ -308,9 +310,9 @@ def _create_record_payment_tab(self, parent):
             description_var.set('')
             notes_text.delete('1.0', tk.END)
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to record payment: {e}")
-    ttk.Button(button_frame, text="Record Payment", command=record_payment).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Clear Form",
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), f"Failed to record payment: {e}")
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.record_payment', default="Record Payment"), command=record_payment).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.clear_form', default="Clear Form"),
               command=lambda: [club_combo.set(''), amount_var.set(''),
                               payment_type_combo.current(0), payment_method_combo.current(0),
                               student_id_var.set(''), description_var.set(''),
@@ -322,14 +324,14 @@ def _create_payment_history_tab(self, parent):
     # Header
     header_frame = ttk.Frame(parent)
     header_frame.pack(fill=tk.X, padx=10, pady=10)
-    ttk.Label(header_frame, text="Payment History", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+    ttk.Label(header_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_history', default="Payment History"), font=('Arial', 12, 'bold')).pack(anchor=tk.W)
     # Filter frame
-    filter_frame = ttk.LabelFrame(parent, text="Filters")
+    filter_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.filters', default="Filters"))
     filter_frame.pack(fill=tk.X, padx=10, pady=10)
     filter_grid = ttk.Frame(filter_frame)
     filter_grid.pack(fill=tk.X, padx=10, pady=10)
     # Club filter
-    ttk.Label(filter_grid, text="Club:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+    ttk.Label(filter_grid, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.club', default="Club:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
     filter_club_var = tk.StringVar()
     filter_club_combo = ttk.Combobox(filter_grid, textvariable=filter_club_var, width=20, state='readonly')
     filter_club_combo['values'] = ['All']
@@ -345,14 +347,14 @@ def _create_payment_history_tab(self, parent):
     filter_club_combo.set('All')
     filter_club_combo.grid(row=0, column=1, padx=5, pady=5)
     # Payment Type filter
-    ttk.Label(filter_grid, text="Payment Type:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+    ttk.Label(filter_grid, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_type', default="Payment Type:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
     filter_type_var = tk.StringVar()
     filter_type_combo = ttk.Combobox(filter_grid, textvariable=filter_type_var, width=18, state='readonly')
     filter_type_combo['values'] = ('All', 'membership_fee', 'event_fee', 'donation', 'merchandise', 'other')
     filter_type_combo.set('All')
     filter_type_combo.grid(row=0, column=3, padx=5, pady=5)
     # Payment history treeview
-    history_frame = ttk.LabelFrame(parent, text="Payment Records")
+    history_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_records', default="Payment Records"))
     history_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
     columns = ('ID', 'Date', 'Club', 'Amount', 'Type', 'Method', 'Description', 'Status')
     tree = ttk.Treeview(history_frame, columns=columns, show='headings', height=15)
@@ -403,12 +405,12 @@ def _create_payment_history_tab(self, parent):
                 tree.insert('', tk.END, values=row)
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Error loading payment history: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), f"Error loading payment history: {e}")
     # Load button
     button_frame = ttk.Frame(filter_frame)
     button_frame.pack(fill=tk.X, padx=10, pady=5)
-    ttk.Button(button_frame, text="Apply Filters", command=load_payment_history).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Clear Filters",
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.apply_filters', default="Apply Filters"), command=load_payment_history).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.clear_filters', default="Clear Filters"),
               command=lambda: [filter_club_var.set('All'), filter_type_var.set('All'), load_payment_history()]).pack(side=tk.LEFT, padx=5)
     # Load initial data
     load_payment_history()
@@ -419,21 +421,21 @@ def _create_payment_reports_tab(self, parent):
     # Header
     header_frame = ttk.Frame(parent)
     header_frame.pack(fill=tk.X, padx=10, pady=10)
-    ttk.Label(header_frame, text="Payment Reports & Analytics", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+    ttk.Label(header_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_reports_analytics', default="Payment Reports & Analytics"), font=('Arial', 12, 'bold')).pack(anchor=tk.W)
     # Report options frame
-    options_frame = ttk.LabelFrame(parent, text="Report Options")
+    options_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.report_options', default="Report Options"))
     options_frame.pack(fill=tk.X, padx=10, pady=10)
     options_grid = ttk.Frame(options_frame)
     options_grid.pack(fill=tk.X, padx=10, pady=10)
     # Report type
-    ttk.Label(options_grid, text="Report Type:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+    ttk.Label(options_grid, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.report_type', default="Report Type:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
     report_type_var = tk.StringVar()
     report_type_combo = ttk.Combobox(options_grid, textvariable=report_type_var, width=25, state='readonly')
     report_type_combo['values'] = ('By Club', 'By Payment Type', 'By Payment Method', 'Monthly Summary')
     report_type_combo.set('By Club')
     report_type_combo.grid(row=0, column=1, padx=5, pady=5)
     # Results frame
-    results_frame = ttk.LabelFrame(parent, text="Report Results")
+    results_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.report_results', default="Report Results"))
     results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
     results_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD, height=20)
     results_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -513,10 +515,10 @@ def _create_payment_reports_tab(self, parent):
         import csv
         report_type = report_type_var.get()
         if not report_type:
-            messagebox.showwarning("Warning", "Please select a report type first")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.please_select_a_report_type_first', default="Please select a report type first"))
             return
         file_path = filedialog.asksaveasfilename(
-            title="Export Report to CSV",
+            title=_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.export_report_to_csv', default="Export Report to CSV"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
             initialfile=f"payment_report_{report_type.lower().replace(' ', '_')}"
@@ -576,14 +578,14 @@ def _create_payment_reports_tab(self, parent):
                     for month, count, total in cursor.fetchall():
                         writer.writerow([month or 'N/A', count, f"{total or 0:.2f}"])
             conn.close()
-            messagebox.showinfo("Success", f"Report exported successfully to:\n{file_path}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.success', default="Success"), f"Report exported successfully to:\n{file_path}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export CSV: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), f"Failed to export CSV: {e}")
     # Button frame
     button_frame = ttk.Frame(options_frame)
     button_frame.pack(fill=tk.X, padx=10, pady=5)
-    ttk.Button(button_frame, text="Generate Report", command=generate_report).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Export to CSV", command=export_to_csv).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.generate_report', default="Generate Report"), command=generate_report).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.export_to_csv', default="Export to CSV"), command=export_to_csv).pack(side=tk.LEFT, padx=5)
 
 
 def _create_refunds_tab(self, parent, payments_window):
@@ -591,32 +593,32 @@ def _create_refunds_tab(self, parent, payments_window):
     # Header
     header_frame = ttk.Frame(parent)
     header_frame.pack(fill=tk.X, padx=10, pady=10)
-    ttk.Label(header_frame, text="Payment Refunds", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
+    ttk.Label(header_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.payment_refunds', default="Payment Refunds"), font=('Arial', 12, 'bold')).pack(anchor=tk.W)
 
     # Search/Filter frame
-    search_frame = ttk.LabelFrame(parent, text="Search Payments", padding="10")
+    search_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.search_payments', default="Search Payments"), padding="10")
     search_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-    ttk.Label(search_frame, text="Student ID or Club Name:").grid(row=0, column=0, sticky=tk.W, padx=5)
+    ttk.Label(search_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.student_id_or_club_name', default="Student ID or Club Name:")).grid(row=0, column=0, sticky=tk.W, padx=5)
     search_var = tk.StringVar()
     search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
     search_entry.grid(row=0, column=1, padx=5)
 
     # Payments list frame
-    list_frame = ttk.LabelFrame(parent, text="All Student Union Payments", padding="5")
+    list_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.all_student_union_payments', default="All Student Union Payments"), padding="5")
     list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
     columns = ('payment_id', 'date', 'student_id', 'club', 'type', 'amount', 'method', 'status')
     payments_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
 
-    payments_tree.heading('payment_id', text='ID')
-    payments_tree.heading('date', text='Date')
-    payments_tree.heading('student_id', text='Student ID')
-    payments_tree.heading('club', text='Club')
-    payments_tree.heading('type', text='Type')
-    payments_tree.heading('amount', text='Amount (GBP)')
-    payments_tree.heading('method', text='Payment Method')
-    payments_tree.heading('status', text='Status')
+    payments_tree.heading('payment_id', text=_t('gui.pastoral.student_union_gui.payments.payment_processing.headings.id', default='ID'))
+    payments_tree.heading('date', text=_t('gui.pastoral.student_union_gui.payments.payment_processing.headings.date', default='Date'))
+    payments_tree.heading('student_id', text=_t('gui.pastoral.student_union_gui.payments.payment_processing.headings.student_id', default='Student ID'))
+    payments_tree.heading('club', text=_t('gui.pastoral.student_union_gui.payments.payment_processing.headings.club', default='Club'))
+    payments_tree.heading('type', text=_t('gui.pastoral.student_union_gui.payments.payment_processing.headings.type', default='Type'))
+    payments_tree.heading('amount', text=_t('gui.pastoral.student_union_gui.payments.payment_processing.headings.amount_gbp', default='Amount (GBP)'))
+    payments_tree.heading('method', text=_t('gui.pastoral.student_union_gui.payments.payment_processing.headings.payment_method', default='Payment Method'))
+    payments_tree.heading('status', text=_t('gui.pastoral.student_union_gui.payments.payment_processing.headings.status', default='Status'))
 
     payments_tree.column('payment_id', width=50)
     payments_tree.column('date', width=100)
@@ -694,19 +696,19 @@ def _create_refunds_tab(self, parent, payments_window):
 
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load payments: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), f"Failed to load payments: {e}")
 
     def view_payment_details():
         """View detailed payment information"""
         selection = payments_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a payment to view details")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.please_select_a_payment_to_view_details', default="Please select a payment to view details"))
             return
 
         try:
             values = payments_tree.item(selection[0])['values']
             if len(values) < 8:
-                messagebox.showerror("Data Error", "Payment record is incomplete")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.data_error', default="Data Error"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.payment_record_is_incomplete', default="Payment record is incomplete"))
                 return
 
             details = f"""PAYMENT DETAILS
@@ -720,9 +722,9 @@ Amount: GBP {values[5]}
 Payment Method: {values[6]}
 Status: {values[7]}
 """
-            messagebox.showinfo("Payment Details", details)
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.payment_details', default="Payment Details"), details)
         except Exception as e:
-            messagebox.showerror("Error", f"Error viewing payment details: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), f"Error viewing payment details: {e}")
 
     def export_payments_csv():
         """Export payments to CSV file"""
@@ -746,21 +748,21 @@ Status: {values[7]}
                         values = payments_tree.item(item)['values']
                         writer.writerow(values)
 
-                messagebox.showinfo("Export Successful", f"Payments exported to:\n{filepath}")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.export_successful', default="Export Successful"), f"Payments exported to:\n{filepath}")
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export payments: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.export_error', default="Export Error"), f"Failed to export payments: {e}")
 
     def process_refund():
         """Process a refund with cash/card/student account options"""
         selection = payments_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a payment to refund")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.please_select_a_payment_to_refund', default="Please select a payment to refund"))
             return
 
         try:
             values = payments_tree.item(selection[0])['values']
             if len(values) < 8:
-                messagebox.showerror("Data Error", "Payment record is incomplete")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.data_error', default="Data Error"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.payment_record_is_incomplete', default="Payment record is incomplete"))
                 return
 
             payment_id = values[0]
@@ -772,15 +774,15 @@ Status: {values[7]}
             payment_method = values[6]
             status = values[7]
         except (IndexError, ValueError) as e:
-            messagebox.showerror("Error", f"Error reading payment data: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.error', default="Error"), f"Error reading payment data: {e}")
             return
 
         if status == 'refunded':
-            messagebox.showinfo("Already Refunded", "This payment has already been refunded")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.already_refunded', default="Already Refunded"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.this_payment_has_already_been_refunded', default="This payment has already been refunded"))
             return
 
         # Confirm refund
-        if not messagebox.askyesno("Confirm Refund",
+        if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.confirm_refund', default="Confirm Refund"),
                                    f"Refund GBP {amount:.2f} to {student_id}?\n\n"
                                    f"Payment ID: {payment_id}\n"
                                    f"Club: {club_name}\n"
@@ -840,27 +842,27 @@ Status: {values[7]}
                     processed_by=processed_by,
                 )
 
-                messagebox.showinfo("Refund Processed",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.refund_processed', default="Refund Processed"),
                                   f"Refund of GBP {amount:.2f} processed successfully\n\n"
                                   f"Method: {refund_method}\n"
                                   f"Refund Reference: {refund_ref}")
 
                 refresh_payments_list()
             except Exception as e:
-                messagebox.showerror("Refund Error", f"Failed to process refund: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.refund_error', default="Refund Error"), f"Failed to process refund: {e}")
         else:
-            messagebox.showerror("Refund Failed", "Failed to process student account refund")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.refund_failed', default="Refund Failed"), _t('gui.pastoral.student_union_gui.payments.payment_processing.dialogs.failed_to_process_student_account_refund', default="Failed to process student account refund"))
 
     # Button frame
     button_frame = ttk.Frame(parent)
     button_frame.pack(fill=tk.X, padx=10)
 
-    ttk.Button(button_frame, text="Search", command=refresh_payments_list).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Show All",
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.search', default="Search"), command=refresh_payments_list).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.show_all', default="Show All"),
               command=lambda: [search_var.set(''), refresh_payments_list()]).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Process Refund", command=process_refund).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="View Details", command=view_payment_details).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Export to CSV", command=export_payments_csv).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.process_refund', default="Process Refund"), command=process_refund).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.view_details', default="View Details"), command=view_payment_details).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.export_to_csv', default="Export to CSV"), command=export_payments_csv).pack(side=tk.LEFT, padx=5)
 
     # Initial load
     refresh_payments_list()
@@ -869,7 +871,7 @@ Status: {values[7]}
 def show_refund_method_dialog(amount: float, student_id: str, parent_window) -> Optional[str]:
     """Show refund method selection dialog"""
     dialog = tk.Toplevel(parent_window)
-    dialog.title("Select Refund Method")
+    dialog.title(_t('gui.pastoral.student_union_gui.payments.payment_processing.windows.select_refund_method', default="Select Refund Method"))
     dialog.geometry("450x400")
     dialog.transient(parent_window)
     dialog.grab_set()
@@ -877,7 +879,7 @@ def show_refund_method_dialog(amount: float, student_id: str, parent_window) -> 
     result = {'method': None}
 
     # Refund info frame
-    info_frame = ttk.LabelFrame(dialog, text="Refund Details", padding="10")
+    info_frame = ttk.LabelFrame(dialog, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.refund_details', default="Refund Details"), padding="10")
     info_frame.pack(fill=tk.X, padx=10, pady=10)
 
     ttk.Label(info_frame, text=f"Student ID: {student_id}").pack(anchor=tk.W)
@@ -893,7 +895,7 @@ def show_refund_method_dialog(amount: float, student_id: str, parent_window) -> 
                  foreground='green').pack(anchor=tk.W)
 
     # Refund method selection
-    method_frame = ttk.LabelFrame(dialog, text="Select Refund Method", padding="10")
+    method_frame = ttk.LabelFrame(dialog, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.labels.select_refund_method', default="Select Refund Method"), padding="10")
     method_frame.pack(fill=tk.X, padx=10, pady=10)
 
     def select_method(method):
@@ -901,19 +903,19 @@ def show_refund_method_dialog(amount: float, student_id: str, parent_window) -> 
         dialog.destroy()
 
     # Cash button
-    ttk.Button(method_frame, text="Cash", width=30,
+    ttk.Button(method_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.cash', default="Cash"), width=30,
               command=lambda: select_method('Cash')).pack(pady=5)
 
     # Card button
-    ttk.Button(method_frame, text="Card (Original Payment Method)", width=30,
+    ttk.Button(method_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.card_original_payment_method', default="Card (Original Payment Method)"), width=30,
               command=lambda: select_method('Card')).pack(pady=5)
 
     # Student Account button
-    ttk.Button(method_frame, text="Student Finance Account", width=30,
+    ttk.Button(method_frame, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.student_finance_account', default="Student Finance Account"), width=30,
               command=lambda: select_method('Student Account')).pack(pady=5)
 
     # Cancel button
-    ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.pastoral.student_union_gui.payments.payment_processing.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(pady=10)
 
     dialog.wait_window()
     return result['method']

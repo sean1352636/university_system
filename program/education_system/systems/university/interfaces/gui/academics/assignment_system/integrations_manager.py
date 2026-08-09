@@ -7,6 +7,8 @@ than re-fetching, so the cross-domain dependency lives in one place.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -39,7 +41,7 @@ class IntegrationsManager:
     def show_module_resources(self, module_code: str, student_id=None):
         """Open a dialog listing reading-list items for ``module_code``."""
         if not module_code:
-            messagebox.showinfo("Resources", "No module selected.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.integrations_manager.dialogs.resources', default="Resources"), _t('gui.academics.assignment_system.integrations_manager.dialogs.no_module_selected', default="No module selected."))
             return
 
         data = fetch_module_resources(module_code, student_id=student_id)
@@ -79,7 +81,7 @@ class IntegrationsManager:
         if not data["items"]:
             ttk.Label(
                 items_tab,
-                text="No reading-list items linked to this module yet.",
+                text=_t('gui.academics.assignment_system.integrations_manager.labels.no_reading_list_items_linked_to_this_module_yet', default="No reading-list items linked to this module yet."),
                 foreground="#7f8c8d",
             ).pack(pady=20)
 
@@ -118,7 +120,7 @@ class IntegrationsManager:
                 foreground="#7f8c8d",
             ).pack(pady=20)
 
-        ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
+        ttk.Button(win, text=_t('gui.academics.assignment_system.integrations_manager.buttons.close', default="Close"), command=win.destroy).pack(pady=(0, 10))
 
     # ------------------------------------------------------------------
     # Attendance
@@ -128,8 +130,8 @@ class IntegrationsManager:
         """Open a dialog with the student's attendance for the module."""
         if not student_id or not module_code:
             messagebox.showinfo(
-                "Attendance",
-                "Need both a student and a module to look up attendance.",
+                _t('gui.academics.assignment_system.integrations_manager.dialogs.attendance', default="Attendance"),
+                _t('gui.academics.assignment_system.integrations_manager.dialogs.need_both_a_student_and_a_module_to_look_up_attendance', default="Need both a student and a module to look up attendance."),
             )
             return
 
@@ -147,7 +149,7 @@ class IntegrationsManager:
         if not summary:
             ttk.Label(
                 win,
-                text="No attendance records found for this student/module.",
+                text=_t('gui.academics.assignment_system.integrations_manager.labels.no_attendance_records_found_for_this_student_module', default="No attendance records found for this student/module."),
                 foreground="#7f8c8d",
             ).pack(padx=15, pady=10)
         else:
@@ -174,7 +176,7 @@ class IntegrationsManager:
                     justify="left",
                 ).pack(anchor="w", padx=15, pady=(0, 8))
 
-        ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
+        ttk.Button(win, text=_t('gui.academics.assignment_system.integrations_manager.buttons.close', default="Close"), command=win.destroy).pack(pady=(0, 10))
 
     def attendance_warning(self, student_id, module_code: str) -> str | None:
         """Convenience pass-through for managers that just want the string."""
@@ -188,38 +190,38 @@ class IntegrationsManager:
         """Parent-only dashboard: pick a child, list their assignments."""
         user = self.auth.current_user if self.auth else None
         if not user:
-            messagebox.showerror("Parent View", "You must be logged in.")
+            messagebox.showerror(_t('gui.academics.assignment_system.integrations_manager.dialogs.parent_view', default="Parent View"), _t('gui.academics.assignment_system.integrations_manager.dialogs.you_must_be_logged_in', default="You must be logged in."))
             return
         role = (user.get("role") or "").lower()
         if role != "parent":
             messagebox.showinfo(
-                "Parent View",
-                "This dashboard is only available for parent accounts.",
+                _t('gui.academics.assignment_system.integrations_manager.dialogs.parent_view', default="Parent View"),
+                _t('gui.academics.assignment_system.integrations_manager.dialogs.this_dashboard_is_only_available_for_parent_accounts', default="This dashboard is only available for parent accounts."),
             )
             return
 
         children = fetch_parent_children(user.get("id"))
         win = tk.Toplevel(self.root)
-        win.title("My Children — Assignments")
+        win.title(_t('gui.academics.assignment_system.integrations_manager.windows.my_children_assignments', default="My Children — Assignments"))
         win.geometry("760x520")
 
         ttk.Label(
             win,
-            text="Children's Assignments",
+            text=_t('gui.academics.assignment_system.integrations_manager.labels.children_s_assignments', default="Children's Assignments"),
             font=("Helvetica", 13, "bold"),
         ).pack(anchor="w", padx=15, pady=(15, 5))
 
         if not children:
             ttk.Label(
                 win,
-                text="No children registered to this parent account.",
+                text=_t('gui.academics.assignment_system.integrations_manager.labels.no_children_registered_to_this_parent_account', default="No children registered to this parent account."),
                 foreground="#7f8c8d",
             ).pack(padx=15, pady=20)
             return
 
         top = ttk.Frame(win)
         top.pack(fill="x", padx=15, pady=5)
-        ttk.Label(top, text="Child:").pack(side="left")
+        ttk.Label(top, text=_t('gui.academics.assignment_system.integrations_manager.labels.child', default="Child:")).pack(side="left")
         child_map = {
             f"{c['first_name']} {c['last_name']} ({c['student_id']})": c
             for c in children
@@ -312,15 +314,15 @@ class IntegrationsManager:
     def show_integrations_activity(self):
         """Open a window showing recent rows produced by each integration."""
         win = tk.Toplevel(self.root)
-        win.title("Cross-Domain Activity — Assignments")
+        win.title(_t('gui.academics.assignment_system.integrations_manager.windows.cross_domain_activity_assignments', default="Cross-Domain Activity — Assignments"))
         win.geometry("960x560")
 
         ttk.Label(
             win,
             text=(
-                "Recent rows produced by the assignment GUI in other "
+                _t('gui.academics.assignment_system.integrations_manager.labels.recent_rows_produced_by_the_assignment_gui_in_other_subsystems_e', default="Recent rows produced by the assignment GUI in other "
                 "subsystems. Empty tabs = the trigger action hasn't fired "
-                "yet (e.g. no late submission, no dispute filed)."
+                "yet (e.g. no late submission, no dispute filed).")
             ),
             wraplength=920, justify="left",
         ).pack(anchor="w", padx=15, pady=(15, 5))
@@ -352,8 +354,8 @@ class IntegrationsManager:
 
         btn_bar = ttk.Frame(win)
         btn_bar.pack(fill="x", padx=10, pady=(0, 10))
-        ttk.Button(btn_bar, text="Refresh", command=reload).pack(side="left")
-        ttk.Button(btn_bar, text="Close", command=win.destroy).pack(side="right")
+        ttk.Button(btn_bar, text=_t('gui.academics.assignment_system.integrations_manager.buttons.refresh', default="Refresh"), command=reload).pack(side="left")
+        ttk.Button(btn_bar, text=_t('gui.academics.assignment_system.integrations_manager.buttons.close', default="Close"), command=win.destroy).pack(side="right")
         reload()
 
     @staticmethod

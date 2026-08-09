@@ -13,12 +13,32 @@ from education_system.launcher.systems import (
 
 logger = logging.getLogger(__name__)
 
+# Roles a launch may run as. The first seven are the school-shaped
+# systems' vocabulary; the last three belong to apprenticeships, where
+# the employer and the independent end-point assessor are parties in
+# their own right rather than variations on staff.
+LAUNCHABLE_ROLES = {
+    "admin", "staff", "instructor", "teacher", "student", "parent", "alumni",
+    "apprentice", "employer", "end_point_assessor",
+}
+
 
 def dispatch_gui(user_info, system, role, shared_auth):
     """Run the GUI dispatch loop, handling system switches and superadmin."""
     mode = "gui"
 
+    def authenticated():
+        user = getattr(shared_auth, "current_user", None) if shared_auth else None
+        if not isinstance(user, dict) or not user.get("username"):
+            return False
+        if not isinstance(user_info, dict) or user_info.get("username") != user.get("username"):
+            return False
+        return str(role or "").lower() in LAUNCHABLE_ROLES or is_superadmin(user_info)
+
     while True:
+        if not authenticated():
+            logger.warning("Refusing GUI launch without a live authenticated session")
+            break
         if system == "__superadmin__":
             try:
                 from education_system.platform.delivery.gui.superadmin_dashboard import SuperAdminDashboard
@@ -132,7 +152,17 @@ def dispatch_cli(user_info, system, role, shared_auth):
     """Run the CLI dispatch loop, handling system switches and superadmin."""
     mode = "cli"
 
+    def authenticated():
+        user = getattr(shared_auth, "current_user", None) if shared_auth else None
+        return (isinstance(user, dict) and isinstance(user_info, dict)
+                and user.get("username") == user_info.get("username")
+                and (str(role or "").lower() in LAUNCHABLE_ROLES
+                     or is_superadmin(user_info)))
+
     while True:
+        if not authenticated():
+            logger.warning("Refusing CLI launch without a live authenticated session")
+            break
         if system == "__superadmin__":
             try:
                 from education_system.platform.delivery.cli.superadmin_cli import run as superadmin_cli_run

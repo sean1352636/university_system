@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch, MagicMock, call
 from io import StringIO
 
 from education_system.systems.university.domain.pastoral.health.records import data_purge
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.health.storage import get_connection
 
 @pytest.fixture
 def mock_auth():
@@ -377,14 +377,23 @@ class TestViewRetentionPolicies:
 class TestCustomDataPurge:
     """Tests for custom_data_purge function."""
 
-    @patch('builtins.input', side_effect=['CUSTOM_PURGE', 'admin', 'CONFIRM_DELETE'])
+    @patch('builtins.input', side_effect=[
+        'CUSTOM_PURGE', 'admin', 'CONFIRM_DELETE', '2021-01-01', '', ''
+    ])
     @patch('builtins.print')
-    def test_custom_data_purge_confirmed(self, mock_print, mock_input, mock_auth):
+    @patch(
+        'education_system.systems.university.domain.pastoral.health.records.data_purge.purge_health_records',
+        return_value={'deleted': 2, 'archive_path': '/tmp/health-archive.json'},
+    )
+    def test_custom_data_purge_confirmed(self, mock_purge, mock_print, mock_input, mock_auth):
         """Test custom data purge with all confirmations."""
         data_purge.custom_data_purge(mock_auth)
 
         # Should print confirmation messages
         assert mock_print.called
+        mock_purge.assert_called_once_with(
+            '2021-01-01', record_type=None, student_id=None
+        )
 
     @patch('builtins.input', side_effect=['wrong'])
     @patch('builtins.print')

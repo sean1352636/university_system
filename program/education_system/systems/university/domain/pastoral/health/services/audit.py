@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from education_system.systems.university.infrastructure.database.db import sqlite3
+from education_system.systems.university.infrastructure.health.storage import sqlite3
 import time
 from datetime import datetime, timedelta
 
 from education_system.systems.university.domain.pastoral.health.services.health_context import audit_logger
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.health.storage import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text
 
 def log_audit_event(user_id, action, resource_type, resource_id, details=None, conn=None, max_retries=5):

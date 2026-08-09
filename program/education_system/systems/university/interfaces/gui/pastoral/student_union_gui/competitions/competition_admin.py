@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class CreateCompetitionDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create New Competition")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.competitions.competition_admin.windows.create_new_competition', default="Create New Competition"))
         self.dialog.geometry("700x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -75,15 +77,15 @@ class CreateCompetitionDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Create New Competition", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.create_new_competition', default="Create New Competition"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Competition Name
-        ttk.Label(main_frame, text="Competition Name:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.competition_name', default="Competition Name:")).pack(anchor='w', pady=(0, 5))
         self.name_entry = ttk.Entry(main_frame, width=60)
         self.name_entry.pack(fill='x', pady=(0, 10))
 
         # Competition Type
-        ttk.Label(main_frame, text="Competition Type:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.competition_type', default="Competition Type:")).pack(anchor='w', pady=(0, 5))
         self.type_var = tk.StringVar()
         type_combo = ttk.Combobox(main_frame, textvariable=self.type_var, width=57)
         type_combo['values'] = ('Sports', 'Academic', 'Creative', 'Community Service', 'Cultural', 'Technology', 'Other')
@@ -91,7 +93,7 @@ class CreateCompetitionDialog:
         type_combo.current(0)
 
         # Description
-        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.description', default="Description:")).pack(anchor='w', pady=(0, 5))
         self.description_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
         self.description_text.pack(fill='x', pady=(0, 10))
 
@@ -100,37 +102,37 @@ class CreateCompetitionDialog:
         dates_frame.pack(fill='x', pady=(0, 10))
 
         # Start Date
-        ttk.Label(dates_frame, text="Start Date:").grid(row=0, column=0, sticky='w', padx=(0, 10))
+        ttk.Label(dates_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.start_date', default="Start Date:")).grid(row=0, column=0, sticky='w', padx=(0, 10))
         self.start_date_entry = ttk.Entry(dates_frame, width=15)
         self.start_date_entry.grid(row=0, column=1, padx=(0, 20))
         self.start_date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
         # End Date
-        ttk.Label(dates_frame, text="End Date:").grid(row=0, column=2, sticky='w', padx=(0, 10))
+        ttk.Label(dates_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.end_date', default="End Date:")).grid(row=0, column=2, sticky='w', padx=(0, 10))
         self.end_date_entry = ttk.Entry(dates_frame, width=15)
         self.end_date_entry.grid(row=0, column=3)
         self.end_date_entry.insert(0, (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'))
 
         # Registration Deadline
-        ttk.Label(dates_frame, text="Registration Deadline:").grid(row=1, column=0, sticky='w', padx=(0, 10), pady=(10, 0))
+        ttk.Label(dates_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.registration_deadline', default="Registration Deadline:")).grid(row=1, column=0, sticky='w', padx=(0, 10), pady=(10, 0))
         self.reg_deadline_entry = ttk.Entry(dates_frame, width=15)
         self.reg_deadline_entry.grid(row=1, column=1, pady=(10, 0))
         self.reg_deadline_entry.insert(0, (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d'))
 
         # Max Participants
-        ttk.Label(dates_frame, text="Max Participants per Club:").grid(row=1, column=2, sticky='w', padx=(0, 10), pady=(10, 0))
+        ttk.Label(dates_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.max_participants_per_club', default="Max Participants per Club:")).grid(row=1, column=2, sticky='w', padx=(0, 10), pady=(10, 0))
         self.max_participants_entry = ttk.Entry(dates_frame, width=15)
         self.max_participants_entry.grid(row=1, column=3, pady=(10, 0))
         self.max_participants_entry.insert(0, "10")
 
         # Prizes
-        ttk.Label(main_frame, text="Prizes:").pack(anchor='w', pady=(10, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.prizes', default="Prizes:")).pack(anchor='w', pady=(10, 5))
         self.prizes_entry = ttk.Entry(main_frame, width=60)
         self.prizes_entry.pack(fill='x', pady=(0, 10))
         self.prizes_entry.insert(0, "1st: Trophy + £500, 2nd: £300, 3rd: £100")
 
         # Rules
-        ttk.Label(main_frame, text="Rules & Criteria:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.rules_criteria', default="Rules & Criteria:")).pack(anchor='w', pady=(0, 5))
         self.rules_text = scrolledtext.ScrolledText(main_frame, height=5, wrap=tk.WORD)
         self.rules_text.pack(fill='x', pady=(0, 15))
 
@@ -138,8 +140,8 @@ class CreateCompetitionDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Create Competition", command=self.create_competition).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.buttons.create_competition', default="Create Competition"), command=self.create_competition).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def create_competition(self):
         name = self.name_entry.get().strip()
@@ -153,7 +155,7 @@ class CreateCompetitionDialog:
         rules = self.rules_text.get(1.0, tk.END).strip()
 
         if not all([name, comp_type, description, start_date, end_date, reg_deadline]):
-            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields."))
             return
 
         try:
@@ -171,10 +173,10 @@ class CreateCompetitionDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Competition '{name}' created successfully!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.success', default="Success"), f"Competition '{name}' created successfully!")
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to create competition: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.error', default="Error"), f"Failed to create competition: {str(e)}")
 
 
 
@@ -186,7 +188,7 @@ class UpdateCompetitionScoresDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Update Competition Scores")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.competitions.competition_admin.windows.update_competition_scores', default="Update Competition Scores"))
         self.dialog.geometry("800x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -198,10 +200,10 @@ class UpdateCompetitionScoresDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Update Competition Scores", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.update_competition_scores', default="Update Competition Scores"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Competition Selection
-        comp_frame = ttk.LabelFrame(main_frame, text="Select Competition")
+        comp_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.select_competition', default="Select Competition"))
         comp_frame.pack(fill='x', pady=(0, 10))
 
         self.comp_var = tk.StringVar()
@@ -210,7 +212,7 @@ class UpdateCompetitionScoresDialog:
         self.comp_combo.bind('<<ComboboxSelected>>', self.on_competition_selected)
 
         # Participants List
-        list_frame = ttk.LabelFrame(main_frame, text="Participating Clubs")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.participating_clubs', default="Participating Clubs"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Club ID', 'Club Name', 'Current Score', 'Rank')
@@ -227,26 +229,26 @@ class UpdateCompetitionScoresDialog:
         scrollbar.pack(side='right', fill='y', pady=10)
 
         # Score Update Frame
-        score_frame = ttk.LabelFrame(main_frame, text="Update Score")
+        score_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.update_score', default="Update Score"))
         score_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(score_frame, text="New Score:").pack(side='left', padx=10)
+        ttk.Label(score_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.new_score', default="New Score:")).pack(side='left', padx=10)
         self.score_entry = ttk.Entry(score_frame, width=15)
         self.score_entry.pack(side='left', padx=10)
 
-        ttk.Label(score_frame, text="Rank:").pack(side='left', padx=(20, 10))
+        ttk.Label(score_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.labels.rank', default="Rank:")).pack(side='left', padx=(20, 10))
         self.rank_entry = ttk.Entry(score_frame, width=10)
         self.rank_entry.pack(side='left', padx=10)
 
-        ttk.Button(score_frame, text="Update Selected", command=self.update_score).pack(side='left', padx=10)
+        ttk.Button(score_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.buttons.update_selected', default="Update Selected"), command=self.update_score).pack(side='left', padx=10)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Auto-Calculate Ranks", command=self.auto_calculate_ranks).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Refresh", command=self.on_competition_selected).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.buttons.auto_calculate_ranks', default="Auto-Calculate Ranks"), command=self.auto_calculate_ranks).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.buttons.refresh', default="Refresh"), command=self.on_competition_selected).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_admin.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_competitions(self):
         try:
@@ -271,7 +273,7 @@ class UpdateCompetitionScoresDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load competitions: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.error', default="Error"), f"Failed to load competitions: {str(e)}")
 
     def on_competition_selected(self, event=None):
         if not self.comp_combo.current() >= 0:
@@ -309,12 +311,12 @@ class UpdateCompetitionScoresDialog:
             finally:
                 conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load participants: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.error', default="Error"), f"Failed to load participants: {str(e)}")
 
     def update_score(self):
         selection = self.participants_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a club first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.please_select_a_club_first', default="Please select a club first."))
             return
 
         item = self.participants_tree.item(selection[0])
@@ -324,7 +326,7 @@ class UpdateCompetitionScoresDialog:
         new_rank = self.rank_entry.get().strip()
 
         if not new_score:
-            messagebox.showwarning("Warning", "Please enter a score.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.please_enter_a_score', default="Please enter a score."))
             return
 
         try:
@@ -349,14 +351,14 @@ class UpdateCompetitionScoresDialog:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", "Score updated successfully!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.score_updated_successfully', default="Score updated successfully!"))
             self.on_competition_selected()
             self.score_entry.delete(0, tk.END)
             self.rank_entry.delete(0, tk.END)
         except ValueError:
-            messagebox.showerror("Error", "Invalid score or rank value.")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.invalid_score_or_rank_value', default="Invalid score or rank value."))
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to update score: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.error', default="Error"), f"Failed to update score: {str(e)}")
 
     def auto_calculate_ranks(self):
         if not self.comp_combo.current() >= 0:
@@ -393,10 +395,10 @@ class UpdateCompetitionScoresDialog:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Ranks calculated and assigned for {len(clubs)} clubs!")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.success', default="Success"), f"Ranks calculated and assigned for {len(clubs)} clubs!")
             self.on_competition_selected()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to calculate ranks: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.error', default="Error"), f"Failed to calculate ranks: {str(e)}")
 
 
 
@@ -405,15 +407,15 @@ def create_new_competition(self):
     try:
         # Check admin permission
         if not self.auth_manager or not self.auth_manager.current_user:
-            messagebox.showwarning("Warning", "Please log in first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.please_log_in_first', default="Please log in first."))
             return
         if not self.auth_manager.has_permission('manage_all_clubs'):
-            messagebox.showerror("Permission Denied", "Only administrators can create competitions.")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.only_administrators_can_create_competitions', default="Only administrators can create competitions."))
             return
         dialog = CreateCompetitionDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def update_competition_scores(self):
@@ -421,14 +423,14 @@ def update_competition_scores(self):
     try:
         # Check admin permission
         if not self.auth_manager or not self.auth_manager.current_user:
-            messagebox.showwarning("Warning", "Please log in first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.please_log_in_first', default="Please log in first."))
             return
         if not self.auth_manager.has_permission('manage_all_clubs'):
-            messagebox.showerror("Permission Denied", "Only administrators can update scores.")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.only_administrators_can_update_scores', default="Only administrators can update scores."))
             return
         dialog = UpdateCompetitionScoresDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_admin.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

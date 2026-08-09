@@ -15,7 +15,7 @@ import logging
 from typing import Any
 
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ def _all_conflicts() -> list[dict[str, Any]]:
             def __init__(self, db_path: str) -> None:
                 self.db_path = db_path
 
-        return _DetectorHost(str(DEFAULT_DB_PATH)).detect_all_conflicts() or []
+        return _DetectorHost(str(UNIVERSITY_DEFAULT_DB_PATH)).detect_all_conflicts() or []
     except Exception as exc:
         logger.debug("live conflict detection failed (%s); reading table",
                      exc)

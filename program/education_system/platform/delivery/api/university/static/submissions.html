@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Submissions and feedback · University portal</title>
+  <link rel="stylesheet" href="/static/css/journey.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header"><a class="brand" href="/portal">University portal</a><span>Student record</span></header>
+  <main id="main" tabindex="-1">
+    <nav aria-label="Student tasks"><ul class="task-nav"><li><a href="/portal/student/timetable">Timetable</a></li>
+      <li><a aria-current="page" href="/portal/student/submissions">Submissions</a></li><li><a href="/portal/student/fees">Fees</a></li>
+      <li><a href="/portal/student/support">Support</a></li><li><a href="/portal/student/graduation">Graduation</a></li></ul></nav>
+    <div id="page-message" class="message" role="alert" aria-live="assertive" tabindex="-1" hidden></div>
+    <section aria-labelledby="page-heading"><h1 id="page-heading">Submit work and receive feedback</h1>
+      <form data-success-message="Your submission has been received and a receipt is available.">
+        <label for="assignment">Assignment</label><select id="assignment" name="assignment" required>
+          <option value="">Choose an assignment</option><option value="example">No open assignments</option></select>
+        <label for="submission-file">Submission file</label>
+        <input id="submission-file" name="submission_file" type="file" required aria-describedby="file-help">
+        <p id="file-help" class="hint">Accepted formats and maximum size are shown for the selected assignment.</p>
+        <label for="submission-note">Note to marker (optional)</label><textarea id="submission-note" name="note" rows="4"></textarea>
+        <button type="submit">Submit work</button>
+      </form>
+      <h2>Released feedback</h2><div id="feedback-list" aria-live="polite">No feedback has been released.</div>
+    </section>
+  </main><script src="/static/js/student_pages.js"></script>
+</body></html>

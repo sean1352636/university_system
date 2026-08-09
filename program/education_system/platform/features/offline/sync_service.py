@@ -11,6 +11,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from education_system.paths import PLATFORM_DB_FILES_DIR
+
 logger = logging.getLogger(__name__)
 
 _SCHEMA = """
@@ -55,10 +57,8 @@ CREATE TABLE IF NOT EXISTS sync_state (
 
 
 def _get_db_path():
-    shared_root = Path(__file__).resolve().parent.parent
-    db_dir = shared_root / "data" / "db_files"
-    db_dir.mkdir(parents=True, exist_ok=True)
-    return str(db_dir / "offline_sync.db")
+    PLATFORM_DB_FILES_DIR.mkdir(parents=True, exist_ok=True)
+    return str(PLATFORM_DB_FILES_DIR / "offline_sync.db")
 
 
 class OfflineSyncService:

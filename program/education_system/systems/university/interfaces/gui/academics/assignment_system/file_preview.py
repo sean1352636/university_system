@@ -1,5 +1,7 @@
 """File preview and calendar functionality"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
@@ -13,7 +15,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from collections import deque
 
 
@@ -44,16 +46,16 @@ class FilePreviewManager:
         header_frame = ttk.Frame(self.gui.layout.content_area)
         header_frame.pack(fill='x', pady=(0, 20))
 
-        title = ttk.Label(header_frame, text="Assignment Calendar", style='Title.TLabel')
+        title = ttk.Label(header_frame, text=_t('gui.academics.assignment_system.file_preview.labels.assignment_calendar', default="Assignment Calendar"), style='Title.TLabel')
         title.pack(side='left')
 
         # Button to launch full academic calendar
-        ttk.Button(header_frame, text="📅 Open Full Academic Calendar",
+        ttk.Button(header_frame, text=_t('gui.academics.assignment_system.file_preview.buttons.open_full_academic_calendar', default="📅 Open Full Academic Calendar"),
                   command=self.launch_academic_calendar,
                   style='Accent.TButton').pack(side='right')
 
         # Calendar frame
-        calendar_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Upcoming Assignments", padding=10)
+        calendar_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.file_preview.labels.upcoming_assignments', default="Upcoming Assignments"), padding=10)
         calendar_frame.pack(fill='both', expand=True)
 
         # Calendar tree view
@@ -123,7 +125,7 @@ class FilePreviewManager:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load calendar: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.file_preview.dialogs.error', default="Error"), f"Failed to load calendar: {e}")
 
 
     def prev_month(self):
@@ -373,7 +375,7 @@ class FilePreviewManager:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load files: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.file_preview.dialogs.error', default="Error"), f"Failed to load files: {e}")
 
 
     def on_preview_file_select(self, event):
@@ -402,13 +404,13 @@ class FilePreviewManager:
             result = cursor.fetchone()
 
             if not result:
-                ttk.Label(self.preview_content_frame, text="File not found").pack()
+                ttk.Label(self.preview_content_frame, text=_t('gui.academics.assignment_system.file_preview.labels.file_not_found', default="File not found")).pack()
                 return
 
             file_path, file_name = result
 
             if not os.path.exists(file_path):
-                ttk.Label(self.preview_content_frame, text="File not found on disk").pack()
+                ttk.Label(self.preview_content_frame, text=_t('gui.academics.assignment_system.file_preview.labels.file_not_found_on_disk', default="File not found on disk")).pack()
                 return
 
             # File info
@@ -435,9 +437,9 @@ class FilePreviewManager:
             action_frame = ttk.Frame(self.preview_content_frame)
             action_frame.pack(fill='x', pady=(10, 0))
 
-            ttk.Button(action_frame, text="Download File",
+            ttk.Button(action_frame, text=_t('gui.academics.assignment_system.file_preview.buttons.download_file', default="Download File"),
                       command=lambda: self.download_preview_file(file_path, file_name)).pack(side='left', padx=(0, 10))
-            ttk.Button(action_frame, text="Open in External App",
+            ttk.Button(action_frame, text=_t('gui.academics.assignment_system.file_preview.buttons.open_in_external_app', default="Open in External App"),
                       command=lambda: self.open_external(file_path)).pack(side='left')
 
             conn.close()
@@ -449,7 +451,7 @@ class FilePreviewManager:
     def show_text_preview(self, file_path):
         """Show text file preview"""
         try:
-            preview_frame = ttk.LabelFrame(self.preview_content_frame, text="Text Preview", padding=5)
+            preview_frame = ttk.LabelFrame(self.preview_content_frame, text=_t('gui.academics.assignment_system.file_preview.labels.text_preview', default="Text Preview"), padding=5)
             preview_frame.pack(fill='both', expand=True)
 
             text_widget = scrolledtext.ScrolledText(preview_frame, wrap=tk.WORD, state='disabled')
@@ -469,11 +471,11 @@ class FilePreviewManager:
 
     def show_pdf_preview(self, file_path):
         """Show PDF preview (basic info)"""
-        preview_frame = ttk.LabelFrame(self.preview_content_frame, text="PDF Preview", padding=5)
+        preview_frame = ttk.LabelFrame(self.preview_content_frame, text=_t('gui.academics.assignment_system.file_preview.labels.pdf_preview', default="PDF Preview"), padding=5)
         preview_frame.pack(fill='both', expand=True)
 
-        ttk.Label(preview_frame, text="PDF File Detected").pack(pady=20)
-        ttk.Label(preview_frame, text="Use 'Open in External App' to view content").pack()
+        ttk.Label(preview_frame, text=_t('gui.academics.assignment_system.file_preview.labels.pdf_file_detected', default="PDF File Detected")).pack(pady=20)
+        ttk.Label(preview_frame, text=_t('gui.academics.assignment_system.file_preview.labels.use_open_in_external_app_to_view_content', default="Use 'Open in External App' to view content")).pack()
 
         # Try to get basic PDF info
         try:
@@ -488,7 +490,7 @@ class FilePreviewManager:
         try:
             from PIL import Image, ImageTk
 
-            preview_frame = ttk.LabelFrame(self.preview_content_frame, text="Image Preview", padding=5)
+            preview_frame = ttk.LabelFrame(self.preview_content_frame, text=_t('gui.academics.assignment_system.file_preview.labels.image_preview', default="Image Preview"), padding=5)
             preview_frame.pack(fill='both', expand=True)
 
             # Load and resize image
@@ -515,12 +517,12 @@ class FilePreviewManager:
 
     def show_generic_preview(self, file_path, file_ext):
         """Show generic file preview"""
-        preview_frame = ttk.LabelFrame(self.preview_content_frame, text="File Info", padding=5)
+        preview_frame = ttk.LabelFrame(self.preview_content_frame, text=_t('gui.academics.assignment_system.file_preview.labels.file_info', default="File Info"), padding=5)
         preview_frame.pack(fill='both', expand=True)
 
         ttk.Label(preview_frame, text=f"File Type: {file_ext.upper()} file").pack(pady=20)
-        ttk.Label(preview_frame, text="Preview not available for this file type").pack()
-        ttk.Label(preview_frame, text="Use download or external app to view").pack()
+        ttk.Label(preview_frame, text=_t('gui.academics.assignment_system.file_preview.labels.preview_not_available_for_this_file_type', default="Preview not available for this file type")).pack()
+        ttk.Label(preview_frame, text=_t('gui.academics.assignment_system.file_preview.labels.use_download_or_external_app_to_view', default="Use download or external app to view")).pack()
 
 
     def download_preview_file(self, file_path, file_name):
@@ -534,10 +536,10 @@ class FilePreviewManager:
 
             if save_path:
                 shutil.copy2(file_path, save_path)
-                messagebox.showinfo("Success", f"File saved to: {save_path}")
+                messagebox.showinfo(_t('gui.academics.assignment_system.file_preview.dialogs.success', default="Success"), f"File saved to: {save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to download file: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.file_preview.dialogs.error', default="Error"), f"Failed to download file: {e}")
 
 
     def open_external(self, file_path):
@@ -574,10 +576,10 @@ class FilePreviewManager:
                     # For non-PDF files, use xdg-open
                     subprocess.Popen(['xdg-open', file_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-                messagebox.showinfo("Success", "Opening file in external application...")
+                messagebox.showinfo(_t('gui.academics.assignment_system.file_preview.dialogs.success', default="Success"), _t('gui.academics.assignment_system.file_preview.dialogs.opening_file_in_external_application', default="Opening file in external application..."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open file: {e}\n\nPlease install a PDF viewer (evince, okular, etc.) or open the file manually.")
+            messagebox.showerror(_t('gui.academics.assignment_system.file_preview.dialogs.error', default="Error"), f"Failed to open file: {e}\n\nPlease install a PDF viewer (evince, okular, etc.) or open the file manually.")
 
     # SYSTEM UTILITIES (missing from GUI)
 
@@ -588,30 +590,30 @@ class FilePreviewManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="File Preview System", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.file_preview.labels.file_preview_system', default="File Preview System"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Filter frame
-        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.file_preview.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(filter_frame, text="File Type:").grid(row=0, column=0, sticky='w', padx=5)
-        self.preview_file_type_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.file_preview.labels.file_type', default="File Type:")).grid(row=0, column=0, sticky='w', padx=5)
+        self.preview_file_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.file_preview.values.all', default="All"))
         file_type_combo = ttk.Combobox(filter_frame, textvariable=self.preview_file_type_var,
                                       values=["All", ".pdf", ".docx", ".txt", ".jpg", ".png"], width=10)
         file_type_combo.grid(row=0, column=1, padx=5)
 
-        ttk.Label(filter_frame, text="Assignment:").grid(row=0, column=2, sticky='w', padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.file_preview.labels.assignment', default="Assignment:")).grid(row=0, column=2, sticky='w', padx=5)
         self.preview_assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(filter_frame, textvariable=self.preview_assignment_var, width=25)
         assignment_combo.grid(row=0, column=3, padx=5)
         self.load_assignments_for_preview(assignment_combo)
 
-        ttk.Button(filter_frame, text="Apply Filters",
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.file_preview.buttons.apply_filters', default="Apply Filters"),
                   command=self.load_preview_files).grid(row=0, column=4, padx=10)
 
         # Files list
-        files_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Submission Files", padding=5)
+        files_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.file_preview.labels.submission_files', default="Submission Files"), padding=5)
         files_frame.pack(fill='x', pady=(0, 10))
 
         columns = ('ID', 'File Name', 'Student', 'Assignment', 'Type', 'Size')
@@ -628,7 +630,7 @@ class FilePreviewManager:
         self.preview_files_tree.bind('<<TreeviewSelect>>', self.on_preview_file_select)
 
         # File preview
-        self.preview_content_frame = ttk.LabelFrame(self.gui.layout.content_area, text="File Preview", padding=10)
+        self.preview_content_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.file_preview.labels.file_preview', default="File Preview"), padding=10)
         self.preview_content_frame.pack(fill='both', expand=True)
 
         # Load initial file list
@@ -647,11 +649,11 @@ class FilePreviewManager:
             from education_system.systems.university.interfaces.gui.academics.academic_calendar.main_gui import CalendarGUI
             # Launch in a Toplevel so "Return to Main Menu" just closes it
             calendar_window = tk.Toplevel(self.root)
-            calendar_window.title("Academic Calendar")
+            calendar_window.title(_t('gui.academics.assignment_system.file_preview.windows.academic_calendar', default="Academic Calendar"))
             calendar_window.geometry("1400x900")
             CalendarGUI(auth_manager=self.auth, parent_window=calendar_window)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to launch Academic Calendar: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.file_preview.dialogs.error', default="Error"), f"Failed to launch Academic Calendar: {e}")
 
     def view_assignment_calendar(self, *args, **kwargs):
         """Display the assignment calendar UI."""
@@ -696,14 +698,14 @@ class FilePreviewManager:
             button_frame = ttk.Frame(dialog)
             button_frame.pack(fill='x', padx=10, pady=(0, 10))
 
-            ttk.Button(button_frame, text="Download",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.file_preview.buttons.download', default="Download"),
                       command=lambda: self.download_preview_file(file_path, file_name)).pack(side='left', padx=(0, 10))
-            ttk.Button(button_frame, text="Open in External App",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.file_preview.buttons.open_in_external_app', default="Open in External App"),
                       command=lambda: self.open_external(file_path)).pack(side='left')
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.file_preview.buttons.close', default="Close"), command=dialog.destroy).pack(side='right')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to preview file: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.file_preview.dialogs.error', default="Error"), f"Failed to preview file: {e}")
 
 
     def show_text_preview_in_dialog(self, file_path, parent):
@@ -724,9 +726,9 @@ class FilePreviewManager:
 
     def show_pdf_preview_in_dialog(self, file_path, parent):
         """Show PDF preview in dialog"""
-        ttk.Label(parent, text="PDF Preview", font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
+        ttk.Label(parent, text=_t('gui.academics.assignment_system.file_preview.labels.pdf_preview', default="PDF Preview"), font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
         ttk.Label(parent, text=f"PDF file: {os.path.basename(file_path)}").pack()
-        ttk.Label(parent, text="Click 'Open in External App' to view full PDF").pack(pady=20)
+        ttk.Label(parent, text=_t('gui.academics.assignment_system.file_preview.labels.click_open_in_external_app_to_view_full_pdf', default="Click 'Open in External App' to view full PDF")).pack(pady=20)
 
 
     def show_image_preview_in_dialog(self, file_path, parent):
@@ -766,6 +768,6 @@ class FilePreviewManager:
         try:
             callback()
         except Exception as e:
-            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.file_preview.dialogs.error', default="Error"), f"Error launching {feature_name}: {str(e)}")
 
 

@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class SharedResourcesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Shared Academic Resources")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.academic.resources.windows.shared_academic_resources', default="Shared Academic Resources"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -76,28 +78,28 @@ class SharedResourcesDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📂 Shared Academic Resources",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.shared_academic_resources', default="📂 Shared Academic Resources"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Top button
         top_btn_frame = ttk.Frame(main_frame)
         top_btn_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Button(top_btn_frame, text="📤 Upload Resource",
+        ttk.Button(top_btn_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.buttons.upload_resource', default="📤 Upload Resource"),
                   command=self.upload_resource).pack(side='left')
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Course:").pack(side='left', padx=(0, 5))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.course', default="Course:")).pack(side='left', padx=(0, 5))
         self.course_var = tk.StringVar()
         course_combo = ttk.Combobox(filter_frame, textvariable=self.course_var, width=25, state='readonly')
         course_combo['values'] = ('All Courses', 'CS101', 'MATH201', 'BIO150', 'CHEM101', 'PHYS200')
         course_combo.current(0)
         course_combo.pack(side='left', padx=(0, 15))
 
-        ttk.Label(filter_frame, text="Type:").pack(side='left', padx=(0, 5))
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.type', default="Type:")).pack(side='left', padx=(0, 5))
         self.type_var = tk.StringVar()
         type_combo = ttk.Combobox(filter_frame, textvariable=self.type_var, width=20, state='readonly')
         type_combo['values'] = ('All Types', 'Notes', 'Textbooks', 'Practice Problems',
@@ -105,10 +107,10 @@ class SharedResourcesDialog:
         type_combo.current(0)
         type_combo.pack(side='left', padx=(0, 15))
 
-        ttk.Button(filter_frame, text="Filter", command=self.load_resources).pack(side='left')
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.buttons.filter', default="Filter"), command=self.load_resources).pack(side='left')
 
         # Resources list
-        list_frame = ttk.LabelFrame(main_frame, text="Available Resources")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.available_resources', default="Available Resources"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Resource Name', 'Course', 'Type', 'Uploaded By', 'Date', 'Rating', 'Downloads')
@@ -133,10 +135,10 @@ class SharedResourcesDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Download", command=self.download_resource).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Preview", command=self.preview_resource).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Rate Resource", command=self.rate_resource).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.buttons.download', default="Download"), command=self.download_resource).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.buttons.preview', default="Preview"), command=self.preview_resource).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.buttons.rate_resource', default="Rate Resource"), command=self.rate_resource).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_resources(self):
         for item in self.resources_tree.get_children():
@@ -157,31 +159,31 @@ class SharedResourcesDialog:
             self.resources_tree.insert('', 'end', values=resource)
 
     def upload_resource(self):
-        messagebox.showinfo("Upload Resource",
-                           "Upload a new academic resource:\n\n"
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.resources.dialogs.upload_resource', default="Upload Resource"),
+                           _t('gui.pastoral.student_union_gui.academic.resources.dialogs.upload_a_new_academic_resource_select_file_to_upload_choose_cour', default="Upload a new academic resource:\n\n"
                            "• Select file to upload\n"
                            "• Choose course\n"
                            "• Select resource type\n"
                            "• Add description\n\n"
-                           "Help your peers succeed!")
+                           "Help your peers succeed!"))
 
     def download_resource(self):
         selection = self.resources_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a resource.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.resources.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.resources.dialogs.please_select_a_resource', default="Please select a resource."))
             return
 
         item = self.resources_tree.item(selection[0])
         resource_name = item['values'][0]
 
-        messagebox.showinfo("Download",
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.resources.dialogs.download', default="Download"),
                            f"Downloading '{resource_name}'...\n\n"
                            "Resource will be saved to your downloads folder.")
 
     def preview_resource(self):
         selection = self.resources_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a resource to preview.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.academic.resources.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.academic.resources.dialogs.please_select_a_resource_to_preview', default="Please select a resource to preview."))
             return
 
         item = self.resources_tree.item(selection[0])
@@ -191,7 +193,7 @@ class SharedResourcesDialog:
         self.dialog.wait_window(dialog.dialog)
 
     def rate_resource(self):
-        messagebox.showinfo("Rate Resource", "Rate this resource:\n\n⭐⭐⭐⭐⭐\n\nYour feedback helps others!")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.resources.dialogs.rate_resource', default="Rate Resource"), _t('gui.pastoral.student_union_gui.academic.resources.dialogs.rate_this_resource_your_feedback_helps_others', default="Rate this resource:\n\n⭐⭐⭐⭐⭐\n\nYour feedback helps others!"))
 
 
 
@@ -219,32 +221,32 @@ class ResourcePreviewDialog:
         header_frame = ttk.Frame(main_frame)
         header_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(header_frame, text="Resource Preview", font=('Arial', 14, 'bold')).pack(side='left')
+        ttk.Label(header_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.resource_preview', default="Resource Preview"), font=('Arial', 14, 'bold')).pack(side='left')
 
         # Resource info
-        info_frame = ttk.LabelFrame(main_frame, text="Resource Information")
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.resource_information', default="Resource Information"))
         info_frame.pack(fill='x', pady=(0, 15))
 
         info_grid = ttk.Frame(info_frame)
         info_grid.pack(padx=15, pady=10, fill='x')
 
-        ttk.Label(info_grid, text="Name:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.name', default="Name:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
         ttk.Label(info_grid, text=self.resource_name).grid(row=0, column=1, sticky='w', padx=10, pady=5)
 
-        ttk.Label(info_grid, text="Type:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
-        ttk.Label(info_grid, text="Study Notes").grid(row=1, column=1, sticky='w', padx=10, pady=5)
+        ttk.Label(info_grid, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.type', default="Type:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.study_notes', default="Study Notes")).grid(row=1, column=1, sticky='w', padx=10, pady=5)
 
-        ttk.Label(info_grid, text="Course:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
-        ttk.Label(info_grid, text="CS101").grid(row=2, column=1, sticky='w', padx=10, pady=5)
+        ttk.Label(info_grid, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.course', default="Course:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.cs101', default="CS101")).grid(row=2, column=1, sticky='w', padx=10, pady=5)
 
-        ttk.Label(info_grid, text="Uploaded by:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=5)
-        ttk.Label(info_grid, text="Sarah J.").grid(row=3, column=1, sticky='w', padx=10, pady=5)
+        ttk.Label(info_grid, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.uploaded_by', default="Uploaded by:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.sarah_j', default="Sarah J.")).grid(row=3, column=1, sticky='w', padx=10, pady=5)
 
-        ttk.Label(info_grid, text="Rating:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=5)
-        ttk.Label(info_grid, text="⭐⭐⭐⭐⭐ 4.8/5 (142 downloads)").grid(row=4, column=1, sticky='w', padx=10, pady=5)
+        ttk.Label(info_grid, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.rating', default="Rating:"), font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(info_grid, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.value_4_8_5_142_downloads', default="⭐⭐⭐⭐⭐ 4.8/5 (142 downloads)")).grid(row=4, column=1, sticky='w', padx=10, pady=5)
 
         # Preview content
-        preview_frame = ttk.LabelFrame(main_frame, text="Content Preview")
+        preview_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.labels.content_preview', default="Content Preview"))
         preview_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         # Scrolled text for preview
@@ -359,14 +361,14 @@ END OF PREVIEW - Full notes available after download
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Download Full Resource",
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.buttons.download_full_resource', default="Download Full Resource"),
                   command=self.download_resource).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Rate Resource",
-                  command=lambda: messagebox.showinfo("Rate", "⭐⭐⭐⭐⭐\n\nYour rating has been recorded!")).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.buttons.rate_resource', default="Rate Resource"),
+                  command=lambda: messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.resources.dialogs.rate', default="Rate"), _t('gui.pastoral.student_union_gui.academic.resources.dialogs.your_rating_has_been_recorded', default="⭐⭐⭐⭐⭐\n\nYour rating has been recorded!"))).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.academic.resources.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def download_resource(self):
-        messagebox.showinfo("Download", f"Downloading '{self.resource_name}'...\n\nFull resource will be saved to your downloads folder.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.academic.resources.dialogs.download', default="Download"), f"Downloading '{self.resource_name}'...\n\nFull resource will be saved to your downloads folder.")
 
 
 

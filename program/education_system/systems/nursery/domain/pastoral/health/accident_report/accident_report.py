@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from education_system.systems.nursery.infrastructure import paths
+from education_system import paths
 from education_system.systems.nursery.infrastructure.database import connect, init_db
 
 logger = logging.getLogger(__name__)
@@ -454,8 +454,8 @@ def export_csv(path: str | Path | None = None) -> dict[str, object]:
     """Write all accident / incident records to CSV; return path + row count."""
     rows = list_records()
     if path is None:
-        paths.ensure_directories()
-        path = paths.DATA_DIR / (
+        paths.ensure_nursery_directories()
+        path = paths.NURSERY_DATA_DIR / (
             f"accident_report_{_dt.date.today().isoformat()}.csv")
     path = Path(path)
     headers = [

@@ -4,6 +4,8 @@ Provides the StorageUsageDialog class for displaying storage usage information,
 managing storage quotas, cleaning old backups, and removing duplicate backup files.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 import os
@@ -21,7 +23,7 @@ class StorageUsageDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Storage Usage")
+        self.dialog.title(_t('gui.shell.database.dialogs.storage.windows.storage_usage', default="Storage Usage"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
 
@@ -31,25 +33,25 @@ class StorageUsageDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Usage summary
-        summary_frame = ttk.LabelFrame(self.dialog, text="Storage Summary", padding=10)
+        summary_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.storage.labels.storage_summary', default="Storage Summary"), padding=10)
         summary_frame.pack(fill="x", padx=10, pady=5)
 
         self.usage_text = scrolledtext.ScrolledText(summary_frame, height=8, wrap=tk.WORD)
         self.usage_text.pack(fill="both", expand=True)
 
         # Actions
-        actions_frame = ttk.LabelFrame(self.dialog, text="Storage Actions", padding=10)
+        actions_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.storage.labels.storage_actions', default="Storage Actions"), padding=10)
         actions_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(actions_frame, text="Clean Old Backups",
+        ttk.Button(actions_frame, text=_t('gui.shell.database.dialogs.storage.buttons.clean_old_backups', default="Clean Old Backups"),
                   command=self.clean_old_backups).pack(side="left", padx=5)
-        ttk.Button(actions_frame, text="Remove Duplicates",
+        ttk.Button(actions_frame, text=_t('gui.shell.database.dialogs.storage.buttons.remove_duplicates', default="Remove Duplicates"),
                   command=self.remove_duplicates).pack(side="left", padx=5)
-        ttk.Button(actions_frame, text="Adjust Quota",
+        ttk.Button(actions_frame, text=_t('gui.shell.database.dialogs.storage.buttons.adjust_quota', default="Adjust Quota"),
                   command=self.adjust_quota).pack(side="left", padx=5)
 
         # Close button
-        ttk.Button(self.dialog, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(self.dialog, text=_t('gui.shell.database.dialogs.storage.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)
 
     def load_usage_data(self):
         """Load and display storage usage data"""
@@ -215,16 +217,16 @@ class StorageUsageDialog:
 
     def clean_old_backups(self):
         """Clean old backups using enhanced cleanup with retention policies"""
-        if messagebox.askyesno("Clean Old Backups", "Remove old backups based on retention policy?"):
+        if messagebox.askyesno(_t('gui.shell.database.dialogs.storage.dialogs.clean_old_backups', default="Clean Old Backups"), _t('gui.shell.database.dialogs.storage.dialogs.remove_old_backups_based_on_retention_policy', default="Remove old backups based on retention policy?")):
             removed = StorageUsageDialog.cleanup_old_backups_enhanced()
-            messagebox.showinfo("Cleanup Complete", f"Removed {removed} old backups")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.storage.dialogs.cleanup_complete', default="Cleanup Complete"), f"Removed {removed} old backups")
             self.load_usage_data()
 
     def remove_duplicates(self):
         """Remove duplicate backups"""
-        if messagebox.askyesno("Remove Duplicates", "Remove duplicate backup files?"):
+        if messagebox.askyesno(_t('gui.shell.database.dialogs.storage.dialogs.remove_duplicates', default="Remove Duplicates"), _t('gui.shell.database.dialogs.storage.dialogs.remove_duplicate_backup_files', default="Remove duplicate backup files?")):
             removed = deduplicate_backups()
-            messagebox.showinfo("Deduplication Complete", f"Removed {removed} duplicate backups")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.storage.dialogs.deduplication_complete', default="Deduplication Complete"), f"Removed {removed} duplicate backups")
             self.load_usage_data()
 
     def adjust_quota(self):
@@ -236,5 +238,5 @@ class StorageUsageDialog:
         if new_quota:
             config["storage_quota_gb"] = new_quota
             save_config()
-            messagebox.showinfo("Quota Updated", f"Storage quota set to {new_quota} GB")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.storage.dialogs.quota_updated', default="Quota Updated"), f"Storage quota set to {new_quota} GB")
             self.load_usage_data()

@@ -334,6 +334,7 @@ def is_atas_required_for_module(module_code: str) -> bool:
 def upsert_visa_record(record: VisaRecord) -> int:
     """Create or update the visa profile for a student. Returns row id."""
     init_db()
+    updated_existing = False
     with get_connection() as conn:
         cur = conn.execute(
             "SELECT id FROM visa_records WHERE student_id = ?", (record.student_id,)
@@ -357,35 +358,35 @@ def upsert_visa_record(record: VisaRecord) -> int:
                     record.status, record.notes, _now(), row_id,
                 ),
             )
-            _audit(
-                "visa_record_updated",
-                student_id=record.student_id,
-                resource_id=str(row_id),
-                details={"visa_type": record.visa_type, "status": record.status},
+            result_id = row_id
+            updated_existing = True
+        else:
+            cur = conn.execute(
+                """INSERT INTO visa_records (
+                    student_id, nationality, passport_number, passport_expiry,
+                    visa_type, visa_number, visa_start_date, visa_expiry_date,
+                    brp_number, brp_expiry_date, sponsor_licence_ref,
+                    atas_required, status, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    record.student_id, record.nationality, record.passport_number,
+                    record.passport_expiry, record.visa_type, record.visa_number,
+                    record.visa_start_date, record.visa_expiry_date, record.brp_number,
+                    record.brp_expiry_date, record.sponsor_licence_ref,
+                    1 if record.atas_required else 0, record.status, record.notes,
+                ),
             )
-            return row_id
-        cur = conn.execute(
-            """INSERT INTO visa_records (
-                student_id, nationality, passport_number, passport_expiry,
-                visa_type, visa_number, visa_start_date, visa_expiry_date,
-                brp_number, brp_expiry_date, sponsor_licence_ref,
-                atas_required, status, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                record.student_id, record.nationality, record.passport_number,
-                record.passport_expiry, record.visa_type, record.visa_number,
-                record.visa_start_date, record.visa_expiry_date, record.brp_number,
-                record.brp_expiry_date, record.sponsor_licence_ref,
-                1 if record.atas_required else 0, record.status, record.notes,
-            ),
-        )
-        new_id = cur.lastrowid
+            result_id = cur.lastrowid
+
+    # Audit only after the visa connection has committed and released its
+    # SQLite write lock. The immutable log uses a separate write connection.
     _audit(
-        "visa_record_created",
+        "visa_record_updated" if updated_existing else "visa_record_created",
         student_id=record.student_id,
+        resource_id=str(result_id),
         details={"visa_type": record.visa_type, "status": record.status},
     )
-    return new_id
+    return result_id
 
 
 def get_visa_record(student_id: str) -> Optional[dict]:

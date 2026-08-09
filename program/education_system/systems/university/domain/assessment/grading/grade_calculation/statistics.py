@@ -1,5 +1,7 @@
 import os
 import numpy as np
+
+from education_system.paths import UNIVERSITY_ANALYTICS_PLOTS_DIR as _ANALYTICS_PLOTS_DIR
 try:
     import matplotlib
     import matplotlib.pyplot as plt
@@ -163,7 +165,7 @@ def calculate_assessment_statistics():
 
         if visualize == 'y':
             # Create a directory for the plots if it doesn't exist
-            plots_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'data', 'analytics', 'plots')
+            plots_dir = str(_ANALYTICS_PLOTS_DIR)
             plots_dir = os.path.normpath(plots_dir)
             if not os.path.exists(plots_dir):
                 os.makedirs(plots_dir)

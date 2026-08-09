@@ -12,7 +12,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from collections import deque
 from education_system.systems.university.infrastructure.sql_safety import (
     safe_alter_table_add_column,

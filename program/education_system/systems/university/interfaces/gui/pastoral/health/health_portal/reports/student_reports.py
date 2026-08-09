@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import html
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
@@ -12,34 +14,34 @@ class StudentReportsMixin:
         content_frame = ttk.Frame(self.content_area)
         content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        title_label = ttk.Label(content_frame, text="Health Reports Generator",
+        title_label = ttk.Label(content_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.labels.health_reports_generator', default="Health Reports Generator"),
                                font=('Arial', 16, 'bold'))
         title_label.pack(pady=(0, 20))
 
-        report_frame = ttk.LabelFrame(content_frame, text="Select Report Type", padding=15)
+        report_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.labels.select_report_type', default="Select Report Type"), padding=15)
         report_frame.pack(fill=tk.X, pady=(0, 20))
 
-        self.report_type = tk.StringVar(value="immunization")
+        self.report_type = tk.StringVar(value=_t('gui.pastoral.health.health_portal.reports.student_reports.values.immunization', default="immunization"))
 
-        ttk.Radiobutton(report_frame, text="Immunization Status Report",
+        ttk.Radiobutton(report_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.buttons.immunization_status_report', default="Immunization Status Report"),
                        variable=self.report_type, value="immunization").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(report_frame, text="Health Summary Report",
+        ttk.Radiobutton(report_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.buttons.health_summary_report', default="Health Summary Report"),
                        variable=self.report_type, value="health_summary").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(report_frame, text="Appointment History Report",
+        ttk.Radiobutton(report_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.buttons.appointment_history_report', default="Appointment History Report"),
                        variable=self.report_type, value="appointment_history").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(report_frame, text="Medical History Report",
+        ttk.Radiobutton(report_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.buttons.medical_history_report', default="Medical History Report"),
                        variable=self.report_type, value="medical_history").pack(anchor=tk.W, pady=2)
 
         button_frame = ttk.Frame(content_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Generate Report",
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.buttons.generate_report', default="Generate Report"),
                   command=self.generate_selected_report).pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Button(button_frame, text="Send to Admin",
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.buttons.send_to_admin', default="Send to Admin"),
                   command=self.send_report_to_admin).pack(side=tk.LEFT, padx=(0, 10))
 
-        report_display_frame = ttk.LabelFrame(content_frame, text="Generated Report", padding=15)
+        report_display_frame = ttk.LabelFrame(content_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.labels.generated_report', default="Generated Report"), padding=15)
         report_display_frame.pack(fill=tk.BOTH, expand=True, pady=(20, 0))
 
         self.report_text = scrolledtext.ScrolledText(report_display_frame, wrap=tk.WORD, height=15)
@@ -51,7 +53,7 @@ class StudentReportsMixin:
         has_permission = self.auth.check_permission('view_health_records')
 
         if not (is_admin or has_permission):
-            messagebox.showerror("Access Denied", "You don't have permission to generate health reports.")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.access_denied', default="Access Denied"), _t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.you_don_t_have_permission_to_generate_health_reports', default="You don't have permission to generate health reports."))
             return
 
         report_type = self.report_type.get()
@@ -73,7 +75,7 @@ class StudentReportsMixin:
             self.log_audit_event('generate_report', 'health_report', report_type)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
     def show_report_window(self, report_content, report_type):
         """Show report in a new window with save and email buttons"""
@@ -102,7 +104,7 @@ class StudentReportsMixin:
                     initialfile=default_filename,
                     defaultextension=".txt",
                     filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                    title="Save Report As"
+                    title=_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.save_report_as', default="Save Report As")
                 )
 
                 if filename:
@@ -110,10 +112,10 @@ class StudentReportsMixin:
                         f.write(report_content)
 
                     self.log_audit_event('save_report', 'health_report', filename)
-                    messagebox.showinfo("Success", f"Report saved to: {filename}")
+                    messagebox.showinfo(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.success', default="Success"), f"Report saved to: {filename}")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.error', default="Error"), f"Failed to save report: {str(e)}")
 
         def email_report_to_admin():
             """Email report to admin"""
@@ -128,11 +130,11 @@ class StudentReportsMixin:
                 conn.close()
 
                 if not admin_emails:
-                    messagebox.showwarning("No Admin Emails", "No admin email addresses found in the system.")
+                    messagebox.showwarning(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.no_admin_emails', default="No Admin Emails"), _t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.no_admin_email_addresses_found_in_the_system', default="No admin email addresses found in the system."))
                     return
 
                 result = messagebox.askyesno(
-                    "Email Report",
+                    _t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.email_report', default="Email Report"),
                     f"Send this report to {len(admin_emails)} admin(s)?\n\n"
                     f"Recipients: {', '.join(admin_emails[:3])}"
                     f"{'...' if len(admin_emails) > 3 else ''}"
@@ -140,14 +142,14 @@ class StudentReportsMixin:
 
                 if result:
                     self.log_audit_event('email_report', 'health_report', f"to_{len(admin_emails)}_admins")
-                    messagebox.showinfo("Success", "Report sent to administrators.")
+                    messagebox.showinfo(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.success', default="Success"), _t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.report_sent_to_administrators', default="Report sent to administrators."))
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to email report: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.error', default="Error"), f"Failed to email report: {str(e)}")
 
-        ttk.Button(button_frame, text="Save as TXT", command=save_report_as_txt).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(button_frame, text="Email to Admin", command=email_report_to_admin).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.buttons.save_as_txt', default="Save as TXT"), command=save_report_as_txt).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.buttons.email_to_admin', default="Email to Admin"), command=email_report_to_admin).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.health_portal.reports.student_reports.buttons.close', default="Close"), command=report_window.destroy).pack(side=tk.RIGHT)
 
     def generate_immunization_report(self):
         """Generate immunization status report"""
@@ -470,7 +472,7 @@ class StudentReportsMixin:
             report_text = self.report_text.get("1.0", tk.END).strip()
 
             if not report_text or report_text == "":
-                messagebox.showwarning("No Report", "Please generate a report first before sending to admin.")
+                messagebox.showwarning(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.no_report', default="No Report"), _t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.please_generate_a_report_first_before_sending_to_admin', default="Please generate a report first before sending to admin."))
                 return
 
             conn = self.get_connection()
@@ -480,7 +482,7 @@ class StudentReportsMixin:
             conn.close()
 
             if not admin_emails:
-                messagebox.showerror("Error", "No admin email addresses found in the system.")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.no_admin_email_addresses_found_in_the_system', default="No admin email addresses found in the system."))
                 return
 
             report_type_map = {
@@ -539,16 +541,16 @@ This report was automatically generated and sent from the Health Portal system.
                     print(f"Failed to send to {admin_email}: {e}")
 
             if success_count > 0:
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.success', default="Success"),
                     f"Report sent successfully to {success_count} admin(s).\n\n"
                     f"Recipients: {', '.join(admin_emails[:3])}"
                     + (f" and {len(admin_emails) - 3} more" if len(admin_emails) > 3 else ""))
                 self.log_audit_event('send_report_to_admin', 'health_report', f"{report_type_name} sent to admins")
             else:
-                messagebox.showerror("Error", "Failed to send report to any admin.")
+                messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.error', default="Error"), _t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.failed_to_send_report_to_any_admin', default="Failed to send report to any admin."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send report to admin: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.student_reports.dialogs.error', default="Error"), f"Failed to send report to admin: {str(e)}")
             print(f"Error in send_report_to_admin: {e}")
             import traceback
             traceback.print_exc()

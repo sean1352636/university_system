@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.data_backup import backup_before_operation
 from education_system.systems.university.infrastructure.security.password_generator import generate_temp_password
 import datetime
@@ -11,7 +11,7 @@ class AccountsMixin:
         """Set up permission system for parent users"""
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -88,7 +88,7 @@ class AccountsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -118,7 +118,7 @@ class AccountsMixin:
             ):
                 return {'success': False, 'message': 'Failed to create user account'}
 
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -172,7 +172,7 @@ class AccountsMixin:
         email = ""
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -235,7 +235,7 @@ class AccountsMixin:
 
         email_conn = None
         try:
-            email_conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            email_conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             email_conn.execute("PRAGMA busy_timeout = 30000")
             email_cursor = email_conn.cursor()
 
@@ -281,7 +281,7 @@ class AccountsMixin:
         """Get the parent_id linked to a user account"""
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -316,7 +316,7 @@ class AccountsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -419,7 +419,7 @@ class AccountsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -463,7 +463,7 @@ class AccountsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -587,7 +587,7 @@ class AccountsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -711,7 +711,7 @@ class AccountsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -729,7 +729,7 @@ class AccountsMixin:
                 import shutil
                 from pathlib import Path
                 from PIL import Image, UnidentifiedImageError
-                from education_system.systems.university.infrastructure import paths
+                from education_system import paths
 
                 MAX_PHOTO_BYTES = 5 * 1024 * 1024  # 5 MB
 
@@ -752,7 +752,7 @@ class AccountsMixin:
                     return
 
                 # Copy the validated image into the managed uploads directory.
-                dest_dir = paths.UPLOADS_DIR / "parent_photos"
+                dest_dir = paths.UNIVERSITY_UPLOADS_DIR / "parent_photos"
                 dest_dir.mkdir(parents=True, exist_ok=True)
                 suffix = source.suffix.lower() or ".img"
                 timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
@@ -791,7 +791,7 @@ class AccountsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 

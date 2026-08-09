@@ -11,6 +11,8 @@ Links are stored reciprocally-aware: when you cross-list A↔B, both directions
 are written so each course shows the relationship.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     ExtFormDialog, tk, ttk, messagebox, _, logger,
 )
@@ -34,7 +36,7 @@ class CrosslistingTabMixin:
             sel = ttk.LabelFrame(frame, text=_("course_management.labels.select_course",
                                                default="Select Course"), padding=10)
             sel.pack(fill=tk.X, padx=5, pady=5)
-            ttk.Label(sel, text="Course:").pack(side=tk.LEFT, padx=5)
+            ttk.Label(sel, text=_t('gui.academics.course_management_gui.core.crosslisting_tab.labels.course', default="Course:")).pack(side=tk.LEFT, padx=5)
             self._xl_course_combo = ttk.Combobox(sel, width=50, state="readonly")
             self._xl_course_combo.pack(side=tk.LEFT, padx=5)
             self._xl_course_combo.bind("<<ComboboxSelected>>", self._reload_crosslistings)
@@ -44,7 +46,7 @@ class CrosslistingTabMixin:
             bar = ttk.Frame(frame)
             bar.pack(fill=tk.X, padx=5, pady=5)
             if self._ext_can_edit():
-                ttk.Button(bar, text="Add Link",
+                ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.crosslisting_tab.buttons.add_link', default="Add Link"),
                            command=self._add_crosslisting).pack(side=tk.LEFT, padx=5)
                 ttk.Button(bar, text=_("common.delete", default="Remove"),
                            command=self._delete_crosslisting).pack(side=tk.LEFT, padx=5)
@@ -108,7 +110,7 @@ class CrosslistingTabMixin:
         code = self._current_xl_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.crosslisting_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
         labels, course_map = self._ext_course_choices()
         labels = [l for l in labels
@@ -118,7 +120,7 @@ class CrosslistingTabMixin:
             related = self._ext_code_from_label(values.get("related"), course_map)
             if not related:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Select a related course.")
+                                     _t('gui.academics.course_management_gui.core.crosslisting_tab.dialogs.select_a_related_course', default="Select a related course."))
                 return False
             rtype = values.get("relation_type")
             notes = values.get("notes", "")
@@ -161,7 +163,7 @@ class CrosslistingTabMixin:
         vals = self._ext_selected_values(self._xl_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a link to remove.")
+                                   _t('gui.academics.course_management_gui.core.crosslisting_tab.dialogs.select_a_link_to_remove', default="Select a link to remove."))
             return
         code = self._current_xl_course()
         link_id, related, rtype = vals[0], vals[1], vals[2]

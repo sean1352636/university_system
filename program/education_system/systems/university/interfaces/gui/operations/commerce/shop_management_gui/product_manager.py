@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -78,20 +80,20 @@ logger = logging.getLogger(__name__)
 def create_product_context_menu(self):
     """Create context menu for product tree"""
     self.product_context_menu = tk.Menu(self.root, tearoff=0)
-    self.product_context_menu.add_command(label="Add to Cart", command=self.add_selected_to_cart)
-    self.product_context_menu.add_command(label="View Details", command=self.view_product_details)
+    self.product_context_menu.add_command(label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.add_to_cart', default="Add to Cart"), command=self.add_selected_to_cart)
+    self.product_context_menu.add_command(label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.view_details', default="View Details"), command=self.view_product_details)
 
     if self.current_user.get('role') in ['admin', 'staff', 'shop_manager']:
         self.product_context_menu.add_separator()
-        self.product_context_menu.add_command(label="Edit Product", command=self.edit_selected_product)
-        self.product_context_menu.add_command(label="Update Stock", command=self.update_selected_stock)
+        self.product_context_menu.add_command(label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.edit_product', default="Edit Product"), command=self.edit_selected_product)
+        self.product_context_menu.add_command(label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.update_stock', default="Update Stock"), command=self.update_selected_stock)
 
     # Cross-module jump: if the selected product looks like a book,
     # offer "Check availability in Library". The handler reads the
     # selected row's Name column and forwards it as book_title context.
     self.product_context_menu.add_separator()
     self.product_context_menu.add_command(
-        label="📚 Check availability in Library",
+        label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.check_availability_in_library', default="📚 Check availability in Library"),
         command=lambda: _shop_jump_to_library(self),
     )
 
@@ -131,8 +133,8 @@ def show_manage_products(self):
 
     # Check permissions
     if self.current_user.get('role') not in ['admin', 'staff', 'shop_manager']:
-        ttk.Label(self.content_frame, text="Access Denied", style='Error.TLabel').grid(row=0, column=0)
-        ttk.Label(self.content_frame, text="You don't have permission to manage products").grid(row=1, column=0)
+        ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.access_denied', default="Access Denied"), style='Error.TLabel').grid(row=0, column=0)
+        ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.you_don_t_have_permission_to_manage_products', default="You don't have permission to manage products")).grid(row=1, column=0)
         return
 
     # Title and actions
@@ -140,22 +142,22 @@ def show_manage_products(self):
     title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
     title_frame.columnconfigure(1, weight=1)
 
-    ttk.Label(title_frame, text="Product Management", style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(title_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.product_management', default="Product Management"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
 
     action_frame = ttk.Frame(title_frame)
     action_frame.grid(row=0, column=1, sticky=tk.E)
 
-    ttk.Button(action_frame, text="Quick Add", command=self.show_quick_add_product_dialog,
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.quick_add', default="Quick Add"), command=self.show_quick_add_product_dialog,
               style='Success.TButton').grid(row=0, column=0, padx=5)
-    ttk.Button(action_frame, text="Add Product", command=self.show_add_product_dialog,
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.add_product', default="Add Product"), command=self.show_add_product_dialog,
               style='Success.TButton').grid(row=0, column=1, padx=5)
-    ttk.Button(action_frame, text="Import Products", command=self.import_products).grid(row=0, column=2, padx=5)
-    ttk.Button(action_frame, text="Export Products", command=self.export_products).grid(row=0, column=3, padx=5)
-    ttk.Button(action_frame, text="Backup DB", command=self.backup_shop_database).grid(row=0, column=4, padx=5)
-    ttk.Button(action_frame, text="Cleanup Discounts", command=self.cleanup_expired_discounts).grid(row=0, column=5, padx=5)
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.import_products', default="Import Products"), command=self.import_products).grid(row=0, column=2, padx=5)
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.export_products', default="Export Products"), command=self.export_products).grid(row=0, column=3, padx=5)
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.backup_db', default="Backup DB"), command=self.backup_shop_database).grid(row=0, column=4, padx=5)
+    ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.cleanup_discounts', default="Cleanup Discounts"), command=self.cleanup_expired_discounts).grid(row=0, column=5, padx=5)
 
     # Products table with management features
-    products_frame = ttk.LabelFrame(self.content_frame, text="Products", padding="10")
+    products_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.products', default="Products"), padding="10")
     products_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     products_frame.columnconfigure(0, weight=1)
     products_frame.rowconfigure(0, weight=1)
@@ -193,12 +195,12 @@ def show_manage_products(self):
     mgmt_action_frame = ttk.Frame(self.content_frame)
     mgmt_action_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
 
-    ttk.Button(mgmt_action_frame, text="Edit Product", command=self.edit_selected_product).grid(row=0, column=0, padx=5)
-    ttk.Button(mgmt_action_frame, text="Toggle Status", command=self.toggle_product_status,
+    ttk.Button(mgmt_action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.edit_product', default="Edit Product"), command=self.edit_selected_product).grid(row=0, column=0, padx=5)
+    ttk.Button(mgmt_action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.toggle_status', default="Toggle Status"), command=self.toggle_product_status,
               style='Warning.TButton').grid(row=0, column=1, padx=5)
-    ttk.Button(mgmt_action_frame, text="Delete Product", command=self.delete_selected_product,
+    ttk.Button(mgmt_action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.delete_product', default="Delete Product"), command=self.delete_selected_product,
               style='Danger.TButton').grid(row=0, column=2, padx=5)
-    ttk.Button(mgmt_action_frame, text="Bulk Price Update", command=self.bulk_price_update).grid(row=0, column=3, padx=5)
+    ttk.Button(mgmt_action_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.bulk_price_update', default="Bulk Price Update"), command=self.bulk_price_update).grid(row=0, column=3, padx=5)
 
     # Load products for management
     self.load_products_for_management()
@@ -208,13 +210,13 @@ def show_manage_products(self):
 def create_mgmt_context_menu(self):
     """Create context menu for product management"""
     self.mgmt_context_menu = tk.Menu(self.root, tearoff=0)
-    self.mgmt_context_menu.add_command(label="Edit Product", command=self.edit_selected_product)
-    self.mgmt_context_menu.add_command(label="Toggle Status", command=self.toggle_product_status)
+    self.mgmt_context_menu.add_command(label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.edit_product', default="Edit Product"), command=self.edit_selected_product)
+    self.mgmt_context_menu.add_command(label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.toggle_status', default="Toggle Status"), command=self.toggle_product_status)
     self.mgmt_context_menu.add_separator()
-    self.mgmt_context_menu.add_command(label="Update Stock", command=self.update_selected_stock)
-    self.mgmt_context_menu.add_command(label="View Sales", command=self.view_product_sales)
+    self.mgmt_context_menu.add_command(label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.update_stock', default="Update Stock"), command=self.update_selected_stock)
+    self.mgmt_context_menu.add_command(label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.view_sales', default="View Sales"), command=self.view_product_sales)
     self.mgmt_context_menu.add_separator()
-    self.mgmt_context_menu.add_command(label="Delete Product", command=self.delete_selected_product)
+    self.mgmt_context_menu.add_command(label=_t('gui.operations.commerce.shop_management_gui.product_manager.menus.delete_product', default="Delete Product"), command=self.delete_selected_product)
 
     # Bind right-click
     self.mgmt_products_tree.bind('<Button-3>', self.show_mgmt_context_menu)
@@ -270,14 +272,14 @@ def load_products_for_management(self):
             conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load products: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.error', default="Error"), f"Failed to load products: {e}")
 
 
 def show_add_product_dialog(self):
     """Show dialog for adding new product"""
     # Create add product window
     add_window = tk.Toplevel(self.root)
-    add_window.title("Add New Product")
+    add_window.title(_t('gui.operations.commerce.shop_management_gui.product_manager.windows.add_new_product', default="Add New Product"))
     add_window.geometry("500x600")
     add_window.resizable(False, False)
 
@@ -289,32 +291,32 @@ def show_add_product_dialog(self):
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
     # Form fields
-    ttk.Label(main_frame, text="Product Name*:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.product_name', default="Product Name*:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     name_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=name_var, width=40).grid(row=0, column=1, pady=5, padx=(10, 0))
 
-    ttk.Label(main_frame, text="Description:").grid(row=1, column=0, sticky=(tk.W, tk.N), pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.description', default="Description:")).grid(row=1, column=0, sticky=(tk.W, tk.N), pady=5)
     desc_text = tk.Text(main_frame, height=4, width=40)
     desc_text.grid(row=1, column=1, pady=5, padx=(10, 0))
 
-    ttk.Label(main_frame, text="Price (£)*:").grid(row=2, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.price', default="Price (£)*:")).grid(row=2, column=0, sticky=tk.W, pady=5)
     price_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=price_var, width=40).grid(row=2, column=1, pady=5, padx=(10, 0))
 
-    ttk.Label(main_frame, text="Category*:").grid(row=3, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.category', default="Category*:")).grid(row=3, column=0, sticky=tk.W, pady=5)
     category_var = tk.StringVar()
     category_entry = ttk.Entry(main_frame, textvariable=category_var, width=40)
     category_entry.grid(row=3, column=1, pady=5, padx=(10, 0))
 
-    ttk.Label(main_frame, text="Initial Stock*:").grid(row=4, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.initial_stock', default="Initial Stock*:")).grid(row=4, column=0, sticky=tk.W, pady=5)
     stock_var = tk.StringVar(value="10")
     ttk.Entry(main_frame, textvariable=stock_var, width=40).grid(row=4, column=1, pady=5, padx=(10, 0))
 
-    ttk.Label(main_frame, text="Restock Threshold:").grid(row=5, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.restock_threshold', default="Restock Threshold:")).grid(row=5, column=0, sticky=tk.W, pady=5)
     threshold_var = tk.StringVar(value="5")
     ttk.Entry(main_frame, textvariable=threshold_var, width=40).grid(row=5, column=1, pady=5, padx=(10, 0))
 
-    ttk.Label(main_frame, text="Tax Rate (%):").grid(row=6, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.tax_rate', default="Tax Rate (%):")).grid(row=6, column=0, sticky=tk.W, pady=5)
     tax_var = tk.StringVar(value="20")
     ttk.Entry(main_frame, textvariable=tax_var, width=40).grid(row=6, column=1, pady=5, padx=(10, 0))
 
@@ -327,7 +329,7 @@ def show_add_product_dialog(self):
             # Validate inputs
             if not all([name_var.get().strip(), price_var.get().strip(),
                        category_var.get().strip(), stock_var.get().strip()]):
-                messagebox.showerror("Error", "Please fill in all required fields (*)")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields (*)"))
                 return
 
             # Create product
@@ -344,16 +346,16 @@ def show_add_product_dialog(self):
             self.create_product(product_data)
             add_window.destroy()
             self.load_products_for_management()
-            messagebox.showinfo("Success", "Product added successfully!")
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.success', default="Success"), _t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.product_added_successfully', default="Product added successfully!"))
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid numeric values")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.please_enter_valid_numeric_values', default="Please enter valid numeric values"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add product: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.error', default="Error"), f"Failed to add product: {e}")
 
-    ttk.Button(button_frame, text="Save Product", command=save_product,
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.save_product', default="Save Product"), command=save_product,
               style='Success.TButton').grid(row=0, column=0, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=add_window.destroy).grid(row=0, column=1, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.cancel', default="Cancel"), command=add_window.destroy).grid(row=0, column=1, padx=5)
 
 
 def create_product(self, product_data):
@@ -421,7 +423,7 @@ def show_quick_add_product_dialog(self):
     """Show quick add product dialog with minimal inputs"""
     # Create quick add window
     quick_window = tk.Toplevel(self.root)
-    quick_window.title("Quick Add Product")
+    quick_window.title(_t('gui.operations.commerce.shop_management_gui.product_manager.windows.quick_add_product', default="Quick Add Product"))
     quick_window.geometry("400x350")
     quick_window.resizable(False, False)
 
@@ -433,35 +435,35 @@ def show_quick_add_product_dialog(self):
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
     # Title
-    ttk.Label(main_frame, text="Quick Add Product", style='Heading.TLabel').grid(
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.quick_add_product', default="Quick Add Product"), style='Heading.TLabel').grid(
         row=0, column=0, columnspan=2, pady=(0, 15))
 
     # Info label
     info_label = ttk.Label(main_frame,
-        text="Streamlined product entry with auto-filled defaults",
+        text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.streamlined_product_entry_with_auto_filled_defaults', default="Streamlined product entry with auto-filled defaults"),
         foreground='gray', font=('Arial', 9, 'italic'))
     info_label.grid(row=1, column=0, columnspan=2, pady=(0, 15))
 
     # Form fields - minimal inputs
-    ttk.Label(main_frame, text="Product Name*:").grid(row=2, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.product_name', default="Product Name*:")).grid(row=2, column=0, sticky=tk.W, pady=5)
     name_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=name_var, width=30).grid(row=2, column=1, pady=5, padx=(10, 0))
 
-    ttk.Label(main_frame, text="Price (£)*:").grid(row=3, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.price', default="Price (£)*:")).grid(row=3, column=0, sticky=tk.W, pady=5)
     price_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=price_var, width=30).grid(row=3, column=1, pady=5, padx=(10, 0))
 
-    ttk.Label(main_frame, text="Category:").grid(row=4, column=0, sticky=tk.W, pady=5)
-    category_var = tk.StringVar(value="General")
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.category_variant_2', default="Category:")).grid(row=4, column=0, sticky=tk.W, pady=5)
+    category_var = tk.StringVar(value=_t('gui.operations.commerce.shop_management_gui.product_manager.values.general', default="General"))
     ttk.Entry(main_frame, textvariable=category_var, width=30).grid(row=4, column=1, pady=5, padx=(10, 0))
 
-    ttk.Label(main_frame, text="Initial Stock:").grid(row=5, column=0, sticky=tk.W, pady=5)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.initial_stock_variant_2', default="Initial Stock:")).grid(row=5, column=0, sticky=tk.W, pady=5)
     stock_var = tk.StringVar(value="10")
     ttk.Entry(main_frame, textvariable=stock_var, width=30).grid(row=5, column=1, pady=5, padx=(10, 0))
 
     # Defaults info
     defaults_label = ttk.Label(main_frame,
-        text="Auto-defaults: Description='Quick-added', Tax=20%, Threshold=auto",
+        text=_t('gui.operations.commerce.shop_management_gui.product_manager.labels.auto_defaults_description_quick_added_tax_20_threshold_auto', default="Auto-defaults: Description='Quick-added', Tax=20%, Threshold=auto"),
         foreground='gray', font=('Arial', 8))
     defaults_label.grid(row=6, column=0, columnspan=2, pady=(15, 5))
 
@@ -473,17 +475,17 @@ def show_quick_add_product_dialog(self):
         try:
             # Validate minimal required inputs
             if not name_var.get().strip() or not price_var.get().strip():
-                messagebox.showerror("Error", "Please fill in Product Name and Price")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.please_fill_in_product_name_and_price', default="Please fill in Product Name and Price"))
                 return
 
             price = float(price_var.get())
             stock = int(stock_var.get())
 
             if price < 0:
-                messagebox.showerror("Error", "Price must be >= 0")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.price_must_be_0', default="Price must be >= 0"))
                 return
             if stock < 0:
-                messagebox.showerror("Error", "Stock must be >= 0")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.stock_must_be_0', default="Stock must be >= 0"))
                 return
 
             # Create product with auto-defaults
@@ -500,16 +502,16 @@ def show_quick_add_product_dialog(self):
             self.create_product(product_data)
             quick_window.destroy()
             self.load_products_for_management()
-            messagebox.showinfo("Success", f"Product '{product_data['name']}' added quickly!")
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.success', default="Success"), f"Product '{product_data['name']}' added quickly!")
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid numbers for Price and Stock")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.please_enter_valid_numbers_for_price_and_stock', default="Please enter valid numbers for Price and Stock"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to quick add product: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.error', default="Error"), f"Failed to quick add product: {e}")
 
-    ttk.Button(button_frame, text="Quick Save", command=quick_save_product,
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.quick_save', default="Quick Save"), command=quick_save_product,
               style='Success.TButton').grid(row=0, column=0, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=quick_window.destroy).grid(row=0, column=1, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.product_manager.buttons.cancel', default="Cancel"), command=quick_window.destroy).grid(row=0, column=1, padx=5)
 
 
 def update_product(self, product_id, updated_data):
@@ -593,7 +595,7 @@ def update_product_stock(self, product_id, new_stock):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"Stock updated successfully for {product_id}")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.product_manager.dialogs.success', default="Success"), f"Stock updated successfully for {product_id}")
 
     except Exception as e:
         if 'conn' in locals():

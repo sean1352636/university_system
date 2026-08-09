@@ -11,11 +11,11 @@ import os
 import secrets
 from typing import Any, Optional
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_CONFIG_PATH = str(paths.CONFIG_DIR / "api_server_config.json")
+_DEFAULT_CONFIG_PATH = str(paths.UNIVERSITY_CONFIG_DIR / "api_server_config.json")
 
 _DEFAULTS = {
     "host": "localhost",

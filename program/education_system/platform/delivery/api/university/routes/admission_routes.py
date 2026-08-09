@@ -13,6 +13,9 @@ from education_system.systems.university.infrastructure.exceptions import Valida
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from education_system.systems.university.domain.admissions.services import (
+    admissions_lifecycle,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -175,23 +178,45 @@ def update_application(application_id: int):
     if not data:
         raise ValidationError("No fields provided for update")
 
+    # Status is a governed lifecycle decision, not a freely editable field.
+    # Apply it through the state machine before updating administrative fields.
+    requested_status = data.pop("status", None)
+    if requested_status is not None:
+        try:
+            admissions_lifecycle.transition(
+                application_id,
+                str(requested_status),
+                reason=str(data.pop("transition_reason", "")),
+                actor_id=str(g.current_user.get("sub") or ""),
+            )
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+
     set_clauses = []
     values = []
-    allowed = ["status", "decision", "decision_date", "enrollment_confirmed", "application_fee_paid"]
+    allowed = [
+        "decision",
+        "decision_date",
+        "enrollment_confirmed",
+        "application_fee_paid",
+    ]
     for field in allowed:
         if field in data:
             set_clauses.append(field + " = ?")
             values.append(data[field])
 
-    if not set_clauses:
+    if not set_clauses and requested_status is None:
         raise ValidationError("No valid fields to update")
 
-    values.append(application_id)
-    with transaction() as conn:
-        conn.execute(
-            "UPDATE admission_applications SET " + ", ".join(set_clauses) + " WHERE application_id = ?",
-            values,
-        )
+    if set_clauses:
+        values.append(application_id)
+        with transaction() as conn:
+            conn.execute(
+                "UPDATE admission_applications SET "
+                + ", ".join(set_clauses)
+                + " WHERE application_id = ?",
+                values,
+            )
 
     with get_connection() as conn:
         row = conn.execute(
@@ -200,3 +225,208 @@ def update_application(application_id: int):
 
     log_activity("update", "admission_application", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
+
+
+@admission_bp.route("/applications/<int:application_id>", methods=["GET"])
+@token_required
+def get_application_lifecycle(application_id: int):
+    """Return the authoritative application, checklist and status history."""
+    try:
+        application = admissions_lifecycle.get_application(application_id)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+    log_activity(
+        "view",
+        "admission_application_lifecycle",
+        user=g.current_user.get("sub"),
+    )
+    return jsonify(application)
+
+
+@admission_bp.route(
+    "/applications/<int:application_id>/choices", methods=["POST"]
+)
+@token_required
+@admin_required
+def add_application_choice(application_id: int):
+    data = request.get_json(silent=True) or {}
+    if not data.get("programme_code"):
+        raise ValidationError("Missing required field: programme_code")
+    try:
+        choice_id = admissions_lifecycle.add_choice(
+            application_id,
+            str(data["programme_code"]),
+            programme_name=str(data.get("programme_name", "")),
+            entry_year=str(data.get("entry_year", "")),
+            rank=int(data.get("rank", 1)),
+        )
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(str(exc)) from exc
+    return jsonify({"choice_id": choice_id}), 201
+
+
+@admission_bp.route(
+    "/applications/<int:application_id>/choices/<int:choice_id>/accept",
+    methods=["POST"],
+)
+@token_required
+def accept_application_choice(application_id: int, choice_id: int):
+    try:
+        admissions_lifecycle.accept_choice(application_id, choice_id)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+    return jsonify(admissions_lifecycle.get_application(application_id))
+
+
+@admission_bp.route(
+    "/applications/<int:application_id>/requirements", methods=["POST"]
+)
+@token_required
+@admin_required
+def add_application_requirement(application_id: int):
+    data = request.get_json(silent=True) or {}
+    for field in ("requirement_type", "description"):
+        if not data.get(field):
+            raise ValidationError(f"Missing required field: {field}")
+    try:
+        requirement_id = admissions_lifecycle.add_requirement(
+            application_id,
+            str(data["requirement_type"]),
+            str(data["description"]),
+            due_date=str(data.get("due_date", "")),
+            required=bool(data.get("required", True)),
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+    return jsonify({"requirement_id": requirement_id}), 201
+
+
+@admission_bp.route(
+    "/applications/<int:application_id>/requirements/<int:requirement_id>/verify",
+    methods=["POST"],
+)
+@token_required
+@admin_required
+def verify_application_requirement(application_id: int, requirement_id: int):
+    data = request.get_json(silent=True) or {}
+    try:
+        # Loading the application also prevents verifying a requirement through
+        # a misleading application URL.
+        application = admissions_lifecycle.get_application(application_id)
+        if requirement_id not in {
+            item["requirement_id"] for item in application["requirements"]
+        }:
+            raise ValueError("Requirement does not belong to this application")
+        admissions_lifecycle.verify_requirement(
+            requirement_id,
+            verified_by=str(g.current_user.get("sub") or ""),
+            document_id=data.get("document_id"),
+            notes=str(data.get("notes", "")),
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+    return jsonify(admissions_lifecycle.get_application(application_id))
+
+
+@admission_bp.route(
+    "/applications/<int:application_id>/conditions", methods=["POST"]
+)
+@token_required
+@admin_required
+def add_application_condition(application_id: int):
+    data = request.get_json(silent=True) or {}
+    for field in ("condition_type", "description"):
+        if not data.get(field):
+            raise ValidationError(f"Missing required field: {field}")
+    try:
+        condition_id = admissions_lifecycle.add_condition(
+            application_id,
+            str(data["condition_type"]),
+            str(data["description"]),
+            amount=data.get("amount"),
+            currency=str(data.get("currency", "")),
+            sponsor_name=str(data.get("sponsor_name", "")),
+            due_date=str(data.get("due_date", "")),
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+    return jsonify({"condition_id": condition_id}), 201
+
+
+@admission_bp.route(
+    "/applications/<int:application_id>/conditions/<int:condition_id>/satisfy",
+    methods=["POST"],
+)
+@token_required
+@admin_required
+def satisfy_application_condition(application_id: int, condition_id: int):
+    data = request.get_json(silent=True) or {}
+    try:
+        application = admissions_lifecycle.get_application(application_id)
+        if condition_id not in {
+            item["condition_id"] for item in application["conditions"]
+        }:
+            raise ValueError("Condition does not belong to this application")
+        admissions_lifecycle.satisfy_condition(
+            condition_id,
+            evidence_reference=str(data.get("evidence_reference", "")),
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+    return jsonify(admissions_lifecycle.get_application(application_id))
+
+
+@admission_bp.route(
+    "/applications/<int:application_id>/transition", methods=["POST"]
+)
+@token_required
+@admin_required
+def transition_application(application_id: int):
+    data = request.get_json(silent=True) or {}
+    if not data.get("to_status"):
+        raise ValidationError("Missing required field: to_status")
+    try:
+        application = admissions_lifecycle.transition(
+            application_id,
+            str(data["to_status"]),
+            reason=str(data.get("reason", "")),
+            actor_id=str(g.current_user.get("sub") or ""),
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+    return jsonify(application)
+
+
+@admission_bp.route(
+    "/applications/<int:application_id>/readiness", methods=["GET"]
+)
+@token_required
+def application_readiness(application_id: int):
+    try:
+        issues = admissions_lifecycle.readiness_issues(application_id)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+    return jsonify({"ready": not issues, "issues": issues})
+
+
+@admission_bp.route(
+    "/applications/<int:application_id>/enrol", methods=["POST"]
+)
+@token_required
+@admin_required
+def enrol_application(application_id: int):
+    """Perform the guarded applicant-to-student conversion."""
+    try:
+        student_id = admissions_lifecycle.convert_to_student(
+            application_id,
+            actor_id=str(g.current_user.get("sub") or ""),
+        )
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+    log_activity(
+        "convert",
+        "admission_application",
+        user=g.current_user.get("sub"),
+        details={"application_id": application_id, "student_id": student_id},
+    )
+    return jsonify({"application_id": application_id, "student_id": student_id}), 201

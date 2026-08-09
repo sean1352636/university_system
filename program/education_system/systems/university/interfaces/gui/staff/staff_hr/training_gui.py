@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -338,17 +340,17 @@ class TrainingGUI:
         btn_frame = ttk.Frame(header_frame)
         btn_frame.pack(side=tk.RIGHT)
         ttk.Button(btn_frame, text=_t("staff_hr.training.manage.btn_add_course", default="Add Course"), command=self._add_course).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="View Details", command=self._view_manage_course).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.training.buttons.view_details', default="View Details"), command=self._view_manage_course).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("staff_hr.training.manage.btn_edit", default="Edit Selected"), command=self._edit_course).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete", command=self._delete_course).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.training.buttons.delete', default="Delete"), command=self._delete_course).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("staff_hr.training.manage.btn_deactivate", default="Deactivate"), command=self._deactivate_course).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_manage_courses).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.training.buttons.refresh', default="Refresh"), command=self._load_manage_courses).pack(side=tk.LEFT, padx=5)
 
         # Filter
         filter_frame = ttk.Frame(tab)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Show:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.training.labels.show', default="Show:")).pack(side=tk.LEFT, padx=5)
         self.manage_filter = ttk.Combobox(filter_frame,
             values=['All', 'Active Only', 'Inactive Only'], width=14, state='readonly')
         self.manage_filter.set('All')
@@ -959,7 +961,7 @@ class TrainingGUI:
         """View full details of selected course."""
         selection = self.manage_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a course to view")
+            messagebox.showwarning(_t('gui.staff.staff_hr.training.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.training.dialogs.please_select_a_course_to_view', default="Please select a course to view"))
             return
 
         item = self.manage_tree.item(selection[0])
@@ -979,7 +981,7 @@ class TrainingGUI:
                 enrollment_stats = {r[0]: r[1] for r in cursor.fetchall()}
 
             if not row:
-                messagebox.showerror("Error", "Course not found")
+                messagebox.showerror(_t('gui.staff.staff_hr.training.dialogs.error', default="Error"), _t('gui.staff.staff_hr.training.dialogs.course_not_found', default="Course not found"))
                 return
 
             dialog = tk.Toplevel(self.root)
@@ -993,7 +995,7 @@ class TrainingGUI:
             ttk.Label(main_frame, text=row[1], font=('Arial', 16, 'bold')).pack(anchor=tk.W, pady=(0, 15))
 
             # Details grid
-            details_frame = ttk.LabelFrame(main_frame, text="Course Information", padding=10)
+            details_frame = ttk.LabelFrame(main_frame, text=_t('gui.staff.staff_hr.training.labels.course_information', default="Course Information"), padding=10)
             details_frame.pack(fill=tk.X, pady=5)
 
             fields = [
@@ -1014,7 +1016,7 @@ class TrainingGUI:
                     row=i // 2, column=(i % 2) * 2 + 1, sticky='w', padx=5, pady=3)
 
             # Description
-            desc_frame = ttk.LabelFrame(main_frame, text="Description", padding=10)
+            desc_frame = ttk.LabelFrame(main_frame, text=_t('gui.staff.staff_hr.training.labels.description', default="Description"), padding=10)
             desc_frame.pack(fill=tk.X, pady=5)
             desc_text = scrolledtext.ScrolledText(desc_frame, height=4, state='normal')
             desc_text.insert("1.0", row[2] or "No description provided")
@@ -1022,7 +1024,7 @@ class TrainingGUI:
             desc_text.pack(fill=tk.X)
 
             # Enrollment statistics
-            stats_frame = ttk.LabelFrame(main_frame, text="Enrollment Statistics", padding=10)
+            stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.staff.staff_hr.training.labels.enrollment_statistics', default="Enrollment Statistics"), padding=10)
             stats_frame.pack(fill=tk.X, pady=5)
 
             total = sum(enrollment_stats.values())
@@ -1032,16 +1034,16 @@ class TrainingGUI:
                 stats_text += "  |  " + "  |  ".join(parts)
             ttk.Label(stats_frame, text=stats_text).pack(anchor='w')
 
-            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=15)
+            ttk.Button(main_frame, text=_t('gui.staff.staff_hr.training.buttons.close', default="Close"), command=dialog.destroy).pack(pady=15)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load course details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.training.dialogs.error', default="Error"), f"Failed to load course details: {e}")
 
     def _edit_course(self):
         """Edit selected course."""
         selection = self.manage_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a course to edit")
+            messagebox.showwarning(_t('gui.staff.staff_hr.training.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.training.dialogs.please_select_a_course_to_edit', default="Please select a course to edit"))
             return
 
         item = self.manage_tree.item(selection[0])
@@ -1054,7 +1056,7 @@ class TrainingGUI:
                 row = cursor.fetchone()
 
             if not row:
-                messagebox.showerror("Error", "Course not found")
+                messagebox.showerror(_t('gui.staff.staff_hr.training.dialogs.error', default="Error"), _t('gui.staff.staff_hr.training.dialogs.course_not_found', default="Course not found"))
                 return
 
             dialog = tk.Toplevel(self.root)
@@ -1066,14 +1068,14 @@ class TrainingGUI:
             main_frame = ttk.Frame(dialog, padding=20)
             main_frame.pack(fill=tk.BOTH, expand=True)
 
-            ttk.Label(main_frame, text="Edit Training Course", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+            ttk.Label(main_frame, text=_t('gui.staff.staff_hr.training.labels.edit_training_course', default="Edit Training Course"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             fields = {}
 
             # Name
             r = ttk.Frame(main_frame)
             r.pack(fill=tk.X, pady=5)
-            ttk.Label(r, text="Course Name:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+            ttk.Label(r, text=_t('gui.staff.staff_hr.training.labels.course_name', default="Course Name:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
             fields['name'] = ttk.Entry(r, width=30)
             fields['name'].insert(0, row[1] or '')
             fields['name'].pack(side=tk.LEFT)
@@ -1081,7 +1083,7 @@ class TrainingGUI:
             # Category
             r = ttk.Frame(main_frame)
             r.pack(fill=tk.X, pady=5)
-            ttk.Label(r, text="Category:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+            ttk.Label(r, text=_t('gui.staff.staff_hr.training.labels.category', default="Category:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
             fields['category'] = ttk.Combobox(r, values=[
                 'Compliance', 'Safety', 'IT', 'Development', 'Other'
             ], width=27, state='readonly')
@@ -1091,7 +1093,7 @@ class TrainingGUI:
             # Provider
             r = ttk.Frame(main_frame)
             r.pack(fill=tk.X, pady=5)
-            ttk.Label(r, text="Provider:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+            ttk.Label(r, text=_t('gui.staff.staff_hr.training.labels.provider', default="Provider:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
             fields['provider'] = ttk.Entry(r, width=30)
             fields['provider'].insert(0, row[4] or '')
             fields['provider'].pack(side=tk.LEFT)
@@ -1099,7 +1101,7 @@ class TrainingGUI:
             # Duration
             r = ttk.Frame(main_frame)
             r.pack(fill=tk.X, pady=5)
-            ttk.Label(r, text="Duration (hours):", width=15, anchor=tk.W).pack(side=tk.LEFT)
+            ttk.Label(r, text=_t('gui.staff.staff_hr.training.labels.duration_hours', default="Duration (hours):"), width=15, anchor=tk.W).pack(side=tk.LEFT)
             fields['duration'] = ttk.Entry(r, width=10)
             fields['duration'].insert(0, str(row[5]) if row[5] else '')
             fields['duration'].pack(side=tk.LEFT)
@@ -1107,7 +1109,7 @@ class TrainingGUI:
             # Passing score
             r = ttk.Frame(main_frame)
             r.pack(fill=tk.X, pady=5)
-            ttk.Label(r, text="Passing Score %:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+            ttk.Label(r, text=_t('gui.staff.staff_hr.training.labels.passing_score', default="Passing Score %:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
             fields['passing_score'] = ttk.Entry(r, width=10)
             fields['passing_score'].insert(0, str(row[6]) if row[6] else '70')
             fields['passing_score'].pack(side=tk.LEFT)
@@ -1115,23 +1117,23 @@ class TrainingGUI:
             # Recertification months
             r = ttk.Frame(main_frame)
             r.pack(fill=tk.X, pady=5)
-            ttk.Label(r, text="Recert. (months):", width=15, anchor=tk.W).pack(side=tk.LEFT)
+            ttk.Label(r, text=_t('gui.staff.staff_hr.training.labels.recert_months', default="Recert. (months):"), width=15, anchor=tk.W).pack(side=tk.LEFT)
             fields['recert'] = ttk.Entry(r, width=10)
             fields['recert'].insert(0, str(row[8]) if row[8] else '')
             fields['recert'].pack(side=tk.LEFT)
 
             # Mandatory
             fields['mandatory'] = tk.BooleanVar(value=bool(row[7]))
-            ttk.Checkbutton(main_frame, text="Mandatory for all staff",
+            ttk.Checkbutton(main_frame, text=_t('gui.staff.staff_hr.training.buttons.mandatory_for_all_staff', default="Mandatory for all staff"),
                             variable=fields['mandatory']).pack(anchor=tk.W, pady=5)
 
             # Active
             fields['active'] = tk.BooleanVar(value=bool(row[9]))
-            ttk.Checkbutton(main_frame, text="Active",
+            ttk.Checkbutton(main_frame, text=_t('gui.staff.staff_hr.training.buttons.active', default="Active"),
                             variable=fields['active']).pack(anchor=tk.W, pady=5)
 
             # Description
-            ttk.Label(main_frame, text="Description:", anchor=tk.W).pack(fill=tk.X, pady=(10, 5))
+            ttk.Label(main_frame, text=_t('gui.staff.staff_hr.training.labels.description_variant_2', default="Description:"), anchor=tk.W).pack(fill=tk.X, pady=(10, 5))
             desc_text = scrolledtext.ScrolledText(main_frame, height=4, width=40)
             desc_text.insert("1.0", row[2] or '')
             desc_text.pack(fill=tk.X)
@@ -1142,7 +1144,7 @@ class TrainingGUI:
             def save():
                 name = fields['name'].get().strip()
                 if not name:
-                    error_label.config(text="Course name is required")
+                    error_label.config(text=_t('gui.staff.staff_hr.training.text.course_name_is_required', default="Course name is required"))
                     return
 
                 try:
@@ -1165,29 +1167,29 @@ class TrainingGUI:
 
                     log_activity('update', 'training_course', details={
                         'course_id': course_id, 'name': name})
-                    messagebox.showinfo("Success", "Course updated successfully")
+                    messagebox.showinfo(_t('gui.staff.staff_hr.training.dialogs.success', default="Success"), _t('gui.staff.staff_hr.training.dialogs.course_updated_successfully', default="Course updated successfully"))
                     dialog.destroy()
                     self._load_catalog()
                     self._load_manage_courses()
 
                 except ValueError:
-                    error_label.config(text="Duration and Passing Score must be numbers")
+                    error_label.config(text=_t('gui.staff.staff_hr.training.text.duration_and_passing_score_must_be_numbers', default="Duration and Passing Score must be numbers"))
                 except Exception as e:
                     error_label.config(text=f"Error: {e}")
 
             btn_frame = ttk.Frame(main_frame)
             btn_frame.pack(pady=15)
-            ttk.Button(btn_frame, text="Save Changes", command=save).pack(side=tk.LEFT, padx=10)
-            ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+            ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.training.buttons.save_changes', default="Save Changes"), command=save).pack(side=tk.LEFT, padx=10)
+            ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.training.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load course: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.training.dialogs.error', default="Error"), f"Failed to load course: {e}")
 
     def _delete_course(self):
         """Delete selected course permanently."""
         selection = self.manage_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a course to delete")
+            messagebox.showwarning(_t('gui.staff.staff_hr.training.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.training.dialogs.please_select_a_course_to_delete', default="Please select a course to delete"))
             return
 
         item = self.manage_tree.item(selection[0])
@@ -1204,13 +1206,13 @@ class TrainingGUI:
                 enrollment_count = cursor.fetchone()[0]
 
             if enrollment_count > 0:
-                if not messagebox.askyesno("Warning",
+                if not messagebox.askyesno(_t('gui.staff.staff_hr.training.dialogs.warning', default="Warning"),
                     f"'{course_name}' has {enrollment_count} enrollment(s).\n"
                     "Deleting will also remove all enrollment records.\n\n"
                     "Are you sure you want to proceed?"):
                     return
             else:
-                if not messagebox.askyesno("Confirm",
+                if not messagebox.askyesno(_t('gui.staff.staff_hr.training.dialogs.confirm', default="Confirm"),
                     f"Permanently delete course '{course_name}'?"):
                     return
 
@@ -1224,12 +1226,12 @@ class TrainingGUI:
 
             log_activity('delete', 'training_course', details={
                 'course_id': course_id, 'name': course_name})
-            messagebox.showinfo("Success", f"Course '{course_name}' deleted")
+            messagebox.showinfo(_t('gui.staff.staff_hr.training.dialogs.success', default="Success"), f"Course '{course_name}' deleted")
             self._load_catalog()
             self._load_manage_courses()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete course: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.training.dialogs.error', default="Error"), f"Failed to delete course: {e}")
 
     def _deactivate_course(self):
         """Deactivate selected course."""
@@ -1303,7 +1305,7 @@ class TrainingGUI:
                     self.manage_tree.insert('', 'end', values=values, tags=(tag,))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load courses: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.training.dialogs.error', default="Error"), f"Failed to load courses: {e}")
 
     def _export_certifications(self):
         """Export certifications to CSV."""

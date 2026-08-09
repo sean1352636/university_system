@@ -36,7 +36,7 @@ def show_assignments(gui_instance):
     """Show housing assignments interface"""
     gui_instance.clear_content()
 
-    ttk.Label(gui_instance.content_frame, text="Housing Assignments",
+    ttk.Label(gui_instance.content_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.labels.housing_assignments', default="Housing Assignments"),
              font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
     # Filter and list frame
@@ -44,16 +44,16 @@ def show_assignments(gui_instance):
     main_frame.pack(fill='both', expand=True)
 
     # Filter frame
-    filter_frame = ttk.LabelFrame(main_frame, text="Filter Assignments", padding="10")
+    filter_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.labels.filter_assignments', default="Filter Assignments"), padding="10")
     filter_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(filter_frame, text="Status:").grid(row=0, column=0, sticky='w')
+    ttk.Label(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.labels.status', default="Status:")).grid(row=0, column=0, sticky='w')
     gui_instance.assign_status_filter = ttk.Combobox(filter_frame,
                                            values=['All', 'Active', 'Pending', 'Terminated', 'Expired'])
     gui_instance.assign_status_filter.set('All')
     gui_instance.assign_status_filter.grid(row=0, column=1, padx=10)
 
-    ttk.Button(filter_frame, text="Apply Filter",
+    ttk.Button(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.buttons.apply_filter', default="Apply Filter"),
               command=lambda: refresh_assignments_list(gui_instance)).grid(row=0, column=2, padx=10)
 
     # Assignments list
@@ -79,9 +79,9 @@ def show_assignments(gui_instance):
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill='x', pady=20)
 
-    ttk.Button(buttons_frame, text="Refresh", command=lambda: refresh_assignments_list(gui_instance)).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="View Details", command=lambda: view_assignment_details(gui_instance)).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Update Status", command=lambda: update_assignment_status(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.buttons.refresh', default="Refresh"), command=lambda: refresh_assignments_list(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.buttons.view_details', default="View Details"), command=lambda: view_assignment_details(gui_instance)).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.buttons.update_status', default="Update Status"), command=lambda: update_assignment_status(gui_instance)).pack(side='left', padx=5)
 
     # Load assignments
     refresh_assignments_list(gui_instance)
@@ -130,14 +130,14 @@ def refresh_assignments_list(gui_instance):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load assignments: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.error', default="Error"), f"Failed to load assignments: {str(e)}")
 
 
 def view_assignment_details(gui_instance):
     """View assignment details"""
     selected = gui_instance.assignments_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select an assignment to view")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.please_select_an_assignment_to_view', default="Please select an assignment to view"))
         return
 
     assignment_id = gui_instance.assignments_tree.item(selected[0])['values'][0]
@@ -147,7 +147,7 @@ def view_assignment_details(gui_instance):
 def show_assignment_details_dialog(gui_instance, assignment_id):
     """Show assignment details dialog"""
     details_window = tk.Toplevel(gui_instance.root)
-    details_window.title("Assignment Details")
+    details_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.windows.assignment_details', default="Assignment Details"))
     details_window.geometry("600x500")
     details_window.transient(gui_instance.root)
     details_window.grab_set()
@@ -171,7 +171,7 @@ def show_assignment_details_dialog(gui_instance, assignment_id):
         conn.close()
 
         if not assign_data:
-            messagebox.showerror("Error", "Assignment not found")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.assignment_not_found', default="Assignment not found"))
             details_window.destroy()
             return
 
@@ -212,11 +212,11 @@ Assignment Date: {assign_data[17]}
         text_widget.config(state='disabled')
 
         # Close button
-        ttk.Button(details_window, text="Close",
+        ttk.Button(details_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.buttons.close', default="Close"),
                   command=details_window.destroy).pack(pady=10)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load assignment details: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.error', default="Error"), f"Failed to load assignment details: {str(e)}")
         details_window.destroy()
 
 
@@ -224,7 +224,7 @@ def update_assignment_status(gui_instance):
     """Update assignment status"""
     selected = gui_instance.assignments_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select an assignment to update")
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.please_select_an_assignment_to_update', default="Please select an assignment to update"))
         return
 
     assignment_id = gui_instance.assignments_tree.item(selected[0])['values'][0]
@@ -232,7 +232,7 @@ def update_assignment_status(gui_instance):
 
     # Status update dialog
     status_window = tk.Toplevel(gui_instance.root)
-    status_window.title("Update Assignment Status")
+    status_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.windows.update_assignment_status', default="Update Assignment Status"))
     status_window.geometry("400x300")
     status_window.transient(gui_instance.root)
     status_window.grab_set()
@@ -240,7 +240,7 @@ def update_assignment_status(gui_instance):
     ttk.Label(status_window, text=f"Current Status: {current_status}",
              font=('Arial', 12, 'bold')).pack(pady=20)
 
-    ttk.Label(status_window, text="New Status:").pack(pady=10)
+    ttk.Label(status_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.labels.new_status', default="New Status:")).pack(pady=10)
 
     status_var = tk.StringVar()
     statuses = ['Active', 'Terminated', 'Expired']
@@ -253,7 +253,7 @@ def update_assignment_status(gui_instance):
     date_frame = ttk.Frame(status_window)
     date_frame.pack(pady=20)
 
-    ttk.Label(date_frame, text="Move-out Date (if terminated/expired):").pack()
+    ttk.Label(date_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.labels.move_out_date_if_terminated_expired', default="Move-out Date (if terminated/expired):")).pack()
     date_entry = ttk.Entry(date_frame, width=20)
     date_entry.pack(pady=5)
     date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
@@ -261,7 +261,7 @@ def update_assignment_status(gui_instance):
     def update_status():
         new_status = status_var.get()
         if not new_status:
-            messagebox.showerror("Error", "Please select a status")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.please_select_a_status', default="Please select a status"))
             return
 
         move_out_date = date_entry.get().strip() if new_status in ['Terminated', 'Expired'] else None
@@ -270,7 +270,7 @@ def update_assignment_status(gui_instance):
             if move_out_date:
                 datetime.strptime(move_out_date, '%Y-%m-%d')
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid date (YYYY-MM-DD)")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.please_enter_valid_date_yyyy_mm_dd', default="Please enter valid date (YYYY-MM-DD)"))
             return
 
         try:
@@ -310,19 +310,19 @@ def update_assignment_status(gui_instance):
                     }
                 )
 
-            messagebox.showinfo("Success", f"Assignment status updated to {new_status}")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.success', default="Success"), f"Assignment status updated to {new_status}")
             refresh_assignments_list(gui_instance)
             status_window.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update status: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.dialogs.error', default="Error"), f"Failed to update status: {str(e)}")
 
     # Buttons
     buttons_frame = ttk.Frame(status_window)
     buttons_frame.pack(pady=10)
 
-    ttk.Button(buttons_frame, text="Update", command=update_status).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Cancel", command=status_window.destroy).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.buttons.update', default="Update"), command=update_status).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.assignment_manager.buttons.cancel', default="Cancel"), command=status_window.destroy).pack(side='left', padx=5)
 
 
 def load_active_assignments(gui_instance):

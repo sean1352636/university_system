@@ -1,5 +1,7 @@
 """Barber Shop GUI - Analytics & reporting feature methods."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, messagebox, filedialog, logging, json,
     datetime, timedelta,
@@ -15,7 +17,7 @@ class AnalyticsMixin:
     def show_dashboard(self):
         """Show analytics dashboard."""
         dash_window = tk.Toplevel(self.parent)
-        dash_window.title("Analytics Dashboard")
+        dash_window.title(_t('gui.operations.commerce.barber.features.analytics.windows.analytics_dashboard', default="Analytics Dashboard"))
         dash_window.geometry("900x600")
         dash_window.transient(self.parent)
 
@@ -45,7 +47,7 @@ class AnalyticsMixin:
             logger.error(f"Error loading dashboard: {e}")
 
         # Charts section (text-based)
-        charts_frame = ttk.LabelFrame(dash_window, text="Recent Trends", padding="10")
+        charts_frame = ttk.LabelFrame(dash_window, text=_t('gui.operations.commerce.barber.features.analytics.labels.recent_trends', default="Recent Trends"), padding="10")
         charts_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         self.dashboard_text = tk.Text(charts_frame, wrap=tk.WORD, height=20)
@@ -130,13 +132,13 @@ class AnalyticsMixin:
         """Export report to PDF (currently exports as text file)."""
         report_content = self.analytics_text.get('1.0', tk.END).strip()
         if not report_content:
-            messagebox.showwarning("Warning", "No report to export. Generate a report first.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.analytics.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.analytics.dialogs.no_report_to_export_generate_a_report_first', default="No report to export. Generate a report first."))
             return
 
         file_path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf"), ("Text files", "*.txt"), ("All files", "*.*")],
-            title="Export Report"
+            title=_t('gui.operations.commerce.barber.features.analytics.dialogs.export_report', default="Export Report")
         )
         if not file_path:
             return
@@ -170,7 +172,7 @@ class AnalyticsMixin:
                         story.append(Spacer(1, 0.1*inch))
 
                 doc.build(story)
-                messagebox.showinfo("Success", f"Report exported to:\n{file_path}")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.analytics.dialogs.success', default="Success"), f"Report exported to:\n{file_path}")
 
             except ImportError:
                 # Fallback to text export if reportlab not available
@@ -183,46 +185,46 @@ class AnalyticsMixin:
                     f.write("=" * 50 + "\n\n")
                     f.write(report_content)
 
-            messagebox.showinfo("Success", f"Report exported to {file_path}")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.analytics.dialogs.success', default="Success"), f"Report exported to {file_path}")
             log_activity('export', 'barber_report', details={'file': file_path})
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.analytics.dialogs.error', default="Error"), str(e))
 
     def schedule_automated_reports(self):
         """Schedule automated reports."""
         sched_window = tk.Toplevel(self.parent)
-        sched_window.title("Schedule Reports")
+        sched_window.title(_t('gui.operations.commerce.barber.features.analytics.windows.schedule_reports', default="Schedule Reports"))
         sched_window.geometry("450x400")
         sched_window.transient(self.parent)
         sched_window.grab_set()
 
-        ttk.Label(sched_window, text="Schedule Automated Reports",
+        ttk.Label(sched_window, text=_t('gui.operations.commerce.barber.features.analytics.labels.schedule_automated_reports', default="Schedule Automated Reports"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(sched_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Report Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.analytics.labels.report_type', default="Report Type:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         type_combo = ttk.Combobox(frame, values=['daily_sales', 'weekly_summary', 'monthly_performance', 'customer_retention'], width=20)
         type_combo.set('daily_sales')
         type_combo.grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Frequency:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.analytics.labels.frequency', default="Frequency:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         freq_combo = ttk.Combobox(frame, values=['daily', 'weekly', 'monthly'], width=15)
         freq_combo.set('daily')
         freq_combo.grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Time:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.analytics.labels.time', default="Time:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         time_combo = ttk.Combobox(frame, values=['06:00', '08:00', '10:00', '12:00', '18:00', '20:00'], width=10)
         time_combo.set('08:00')
         time_combo.grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Send to Email:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.analytics.labels.send_to_email', default="Send to Email:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         email_var = tk.StringVar(value=self.current_user.get('email', ''))
         ttk.Entry(frame, textvariable=email_var, width=30).grid(row=3, column=1, pady=5)
 
         # Existing schedules
-        ttk.Label(frame, text="Existing Schedules:").grid(row=4, column=0, sticky=tk.W, pady=(20, 5))
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.analytics.labels.existing_schedules', default="Existing Schedules:")).grid(row=4, column=0, sticky=tk.W, pady=(20, 5))
 
         listbox = tk.Listbox(frame, height=6, width=40)
         listbox.grid(row=5, column=0, columnspan=2, pady=5)
@@ -253,18 +255,18 @@ class AnalyticsMixin:
                     created_by=self.current_user.get('username', 'System'),
                     params=params_str
                 )
-                messagebox.showinfo("Success", "Report schedule created!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.analytics.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.analytics.dialogs.report_schedule_created', default="Report schedule created!"))
                 sched_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.analytics.dialogs.error', default="Error"), str(e))
                 logger.error(f"Error creating schedule: {e}")
 
-        ttk.Button(sched_window, text="Save Schedule", command=save_schedule).pack(pady=10)
+        ttk.Button(sched_window, text=_t('gui.operations.commerce.barber.features.analytics.buttons.save_schedule', default="Save Schedule"), command=save_schedule).pack(pady=10)
 
     def view_audit_log(self):
         """View audit log."""
         audit_window = tk.Toplevel(self.parent)
-        audit_window.title("Audit Log")
+        audit_window.title(_t('gui.operations.commerce.barber.features.analytics.windows.audit_log', default="Audit Log"))
         audit_window.geometry("900x500")
         audit_window.transient(self.parent)
 
@@ -272,15 +274,15 @@ class AnalyticsMixin:
         filter_frame = ttk.Frame(audit_window, padding="10")
         filter_frame.pack(fill=tk.X)
 
-        ttk.Label(filter_frame, text="From:").pack(side=tk.LEFT)
+        ttk.Label(filter_frame, text=_t('gui.operations.commerce.barber.features.analytics.labels.from', default="From:")).pack(side=tk.LEFT)
         from_var = tk.StringVar(value=(datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'))
         ttk.Entry(filter_frame, textvariable=from_var, width=12).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="To:").pack(side=tk.LEFT, padx=(10, 0))
+        ttk.Label(filter_frame, text=_t('gui.operations.commerce.barber.features.analytics.labels.to', default="To:")).pack(side=tk.LEFT, padx=(10, 0))
         to_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(filter_frame, textvariable=to_var, width=12).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(filter_frame, text="Action:").pack(side=tk.LEFT, padx=(10, 0))
+        ttk.Label(filter_frame, text=_t('gui.operations.commerce.barber.features.analytics.labels.action', default="Action:")).pack(side=tk.LEFT, padx=(10, 0))
         action_combo = ttk.Combobox(filter_frame, values=['All', 'create', 'update', 'delete', 'payment', 'refund'], width=12)
         action_combo.set('All')
         action_combo.pack(side=tk.LEFT, padx=5)
@@ -288,12 +290,12 @@ class AnalyticsMixin:
         columns = ('timestamp', 'user', 'action', 'entity', 'entity_id', 'details')
         tree = ttk.Treeview(audit_window, columns=columns, show='headings', height=18)
 
-        tree.heading('timestamp', text='Timestamp')
-        tree.heading('user', text='User')
-        tree.heading('action', text='Action')
-        tree.heading('entity', text='Entity')
-        tree.heading('entity_id', text='Entity ID')
-        tree.heading('details', text='Details')
+        tree.heading('timestamp', text=_t('gui.operations.commerce.barber.features.analytics.headings.timestamp', default='Timestamp'))
+        tree.heading('user', text=_t('gui.operations.commerce.barber.features.analytics.headings.user', default='User'))
+        tree.heading('action', text=_t('gui.operations.commerce.barber.features.analytics.headings.action', default='Action'))
+        tree.heading('entity', text=_t('gui.operations.commerce.barber.features.analytics.headings.entity', default='Entity'))
+        tree.heading('entity_id', text=_t('gui.operations.commerce.barber.features.analytics.headings.entity_id', default='Entity ID'))
+        tree.heading('details', text=_t('gui.operations.commerce.barber.features.analytics.headings.details', default='Details'))
 
         tree.column('timestamp', width=150)
         tree.column('user', width=100)
@@ -333,7 +335,7 @@ class AnalyticsMixin:
                     ))
             except Exception as e:
                 logger.error(f"Error loading audit log: {e}")
-                messagebox.showerror("Error", f"Failed to load audit log: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.analytics.dialogs.error', default="Error"), f"Failed to load audit log: {e}")
 
-        ttk.Button(filter_frame, text="Search", command=load_log).pack(side=tk.LEFT, padx=20)
+        ttk.Button(filter_frame, text=_t('gui.operations.commerce.barber.features.analytics.buttons.search', default="Search"), command=load_log).pack(side=tk.LEFT, padx=20)
         load_log()

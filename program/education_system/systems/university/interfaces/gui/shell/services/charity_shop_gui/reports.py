@@ -1,5 +1,7 @@
 """Charity Shop - Reports mixin for CharityShopApp."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui._imports import (
     tk, ttk, messagebox, filedialog,
     datetime, sqlite3,
@@ -28,7 +30,7 @@ class ReportsMixin:
     def show_reports_window(self):
         """Show the reports window with all report options"""
         report_window = tk.Toplevel(self.root)
-        report_window.title("Charity Shop Reports")
+        report_window.title(_t('gui.shell.services.charity_shop_gui.reports.windows.charity_shop_reports', default="Charity Shop Reports"))
         report_window.geometry("800x650")
         report_window.minsize(700, 550)
 
@@ -42,7 +44,7 @@ class ReportsMixin:
 
         ttk.Label(
             header_frame,
-            text="Charity Shop Reports",
+            text=_t('gui.shell.services.charity_shop_gui.reports.labels.charity_shop_reports', default="Charity Shop Reports"),
             font=('Helvetica', 16, 'bold')
         ).pack(side=tk.LEFT)
 
@@ -50,9 +52,9 @@ class ReportsMixin:
         controls_frame = ttk.Frame(report_window)
         controls_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(controls_frame, text="Select Report:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(controls_frame, text=_t('gui.shell.services.charity_shop_gui.reports.labels.select_report', default="Select Report:")).pack(side=tk.LEFT, padx=5)
 
-        self.report_type_var = tk.StringVar(value='daily')
+        self.report_type_var = tk.StringVar(value=_t('gui.shell.services.charity_shop_gui.reports.values.daily', default='daily'))
         report_combo = ttk.Combobox(
             controls_frame,
             textvariable=self.report_type_var,
@@ -64,7 +66,7 @@ class ReportsMixin:
 
         ttk.Button(
             controls_frame,
-            text="Generate Report",
+            text=_t('gui.shell.services.charity_shop_gui.reports.buttons.generate_report', default="Generate Report"),
             command=lambda: self.generate_report(self.report_type_var.get())
         ).pack(side=tk.LEFT, padx=5)
 
@@ -74,19 +76,19 @@ class ReportsMixin:
 
         ttk.Button(
             actions_frame,
-            text="Save as TXT",
+            text=_t('gui.shell.services.charity_shop_gui.reports.buttons.save_as_txt', default="Save as TXT"),
             command=self.save_report_as_txt
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             actions_frame,
-            text="Open in New Window",
+            text=_t('gui.shell.services.charity_shop_gui.reports.buttons.open_in_new_window', default="Open in New Window"),
             command=self.open_report_in_window
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             actions_frame,
-            text="Email to Admin",
+            text=_t('gui.shell.services.charity_shop_gui.reports.buttons.email_to_admin', default="Email to Admin"),
             command=self.email_report_to_admin
         ).pack(side=tk.LEFT, padx=5)
 
@@ -339,13 +341,13 @@ class ReportsMixin:
         except Exception as e:
             error_msg = f"Error generating report: {e}"
             logger.error(error_msg)
-            messagebox.showerror("Error", error_msg)
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.reports.dialogs.error', default="Error"), error_msg)
             return ""
 
     def save_report_as_txt(self):
         """Save the current report as a TXT file"""
         if not hasattr(self, 'report_content') or not self.report_content:
-            messagebox.showwarning("Warning", "No report to save. Please generate a report first.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.reports.dialogs.warning', default="Warning"), _t('gui.shell.services.charity_shop_gui.reports.dialogs.no_report_to_save_please_generate_a_report_first', default="No report to save. Please generate a report first."))
             return
 
         # Generate default filename
@@ -358,7 +360,7 @@ class ReportsMixin:
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
             initialfile=default_filename,
-            title="Save Report As"
+            title=_t('gui.shell.services.charity_shop_gui.reports.dialogs.save_report_as', default="Save Report As")
         )
 
         if not file_path:
@@ -367,14 +369,14 @@ class ReportsMixin:
         try:
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(self.report_content)
-            messagebox.showinfo("Success", f"Report saved to:\n{file_path}")
+            messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.reports.dialogs.success', default="Success"), f"Report saved to:\n{file_path}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save report: {e}")
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.reports.dialogs.error', default="Error"), f"Failed to save report: {e}")
 
     def open_report_in_window(self):
         """Open the current report in a separate window"""
         if not hasattr(self, 'report_content') or not self.report_content:
-            messagebox.showwarning("Warning", "No report to display. Please generate a report first.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.reports.dialogs.warning', default="Warning"), _t('gui.shell.services.charity_shop_gui.reports.dialogs.no_report_to_display_please_generate_a_report_first', default="No report to display. Please generate a report first."))
             return
 
         # Create new window
@@ -424,43 +426,43 @@ class ReportsMixin:
 
         ttk.Button(
             button_frame,
-            text="Save as TXT",
+            text=_t('gui.shell.services.charity_shop_gui.reports.buttons.save_as_txt', default="Save as TXT"),
             command=self.save_report_as_txt
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             button_frame,
-            text="Email to Admin",
+            text=_t('gui.shell.services.charity_shop_gui.reports.buttons.email_to_admin', default="Email to Admin"),
             command=self.email_report_to_admin
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             button_frame,
-            text="Close",
+            text=_t('gui.shell.services.charity_shop_gui.reports.buttons.close', default="Close"),
             command=new_window.destroy
         ).pack(side=tk.RIGHT, padx=5)
 
     def email_report_to_admin(self):
         """Email the current report to admin"""
         if not EMAIL_SERVICE_AVAILABLE:
-            messagebox.showerror("Error", "Email service is not available.")
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.reports.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.reports.dialogs.email_service_is_not_available', default="Email service is not available."))
             return
 
         if not hasattr(self, 'report_content') or not self.report_content:
-            messagebox.showwarning("Warning", "No report to email. Please generate a report first.")
+            messagebox.showwarning(_t('gui.shell.services.charity_shop_gui.reports.dialogs.warning', default="Warning"), _t('gui.shell.services.charity_shop_gui.reports.dialogs.no_report_to_email_please_generate_a_report_first', default="No report to email. Please generate a report first."))
             return
 
         # Get admin email from database
         admin_email = self._get_admin_email()
         if not admin_email:
-            messagebox.showerror("Error", "Could not find admin email address in database.")
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.reports.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.reports.dialogs.could_not_find_admin_email_address_in_database', default="Could not find admin email address in database."))
             return
 
         report_type = self.report_type_var.get() if hasattr(self, 'report_type_var') else 'Report'
 
         # Confirm before sending
         if not messagebox.askyesno(
-            "Confirm Email",
+            _t('gui.shell.services.charity_shop_gui.reports.dialogs.confirm_email', default="Confirm Email"),
             f"Send '{report_type.title()}' report to:\n{admin_email}?"
         ):
             return
@@ -491,11 +493,11 @@ This report was automatically generated by the University Charity Shop System.
         try:
             result = send_email(admin_email, subject, body)
             if result:
-                messagebox.showinfo("Success", f"Report sent to {admin_email}")
+                messagebox.showinfo(_t('gui.shell.services.charity_shop_gui.reports.dialogs.success', default="Success"), f"Report sent to {admin_email}")
             else:
-                messagebox.showerror("Error", "Failed to send email. Please try again.")
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.reports.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.reports.dialogs.failed_to_send_email_please_try_again', default="Failed to send email. Please try again."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send email: {e}")
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.reports.dialogs.error', default="Error"), f"Failed to send email: {e}")
 
     def _get_admin_email(self):
         """Get admin email address from database"""

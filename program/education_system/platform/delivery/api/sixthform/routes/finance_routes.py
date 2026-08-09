@@ -21,7 +21,7 @@ from flask import Blueprint, g, jsonify, request
 
 logger = logging.getLogger(__name__)
 
-finance_bp = Blueprint("sf_finance", __name__, url_prefix="/api/sixthform/finance")
+finance_bp = Blueprint("sf_finance", __name__, url_prefix="/api/finance")
 
 
 def _token_required(view):

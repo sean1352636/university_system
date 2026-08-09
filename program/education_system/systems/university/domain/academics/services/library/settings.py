@@ -9,7 +9,7 @@ from education_system.systems.university.infrastructure.database.db import (
     sqlite3,
     get_connection as get_db_conn,
 )
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.i18n import get_text
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 from datetime import datetime
@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 # Configure logging
 logger = configure_logging(name=__name__)
 
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Global auth object for backwards compatibility
 auth = None

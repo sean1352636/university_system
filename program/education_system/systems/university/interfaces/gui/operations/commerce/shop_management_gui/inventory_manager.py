@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -82,12 +84,12 @@ def bulk_restock(self):
         low_stock_items = self.get_low_stock_items()
 
         if not low_stock_items:
-            messagebox.showinfo("Info", "No items need restocking at this time.")
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.info', default="Info"), _t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.no_items_need_restocking_at_this_time', default="No items need restocking at this time."))
             return
 
         # Create bulk restock window
         restock_window = tk.Toplevel(self.root)
-        restock_window.title("Bulk Restock")
+        restock_window.title(_t('gui.operations.commerce.shop_management_gui.inventory_manager.windows.bulk_restock', default="Bulk Restock"))
         restock_window.geometry("600x500")
         restock_window.resizable(True, True)
 
@@ -101,11 +103,11 @@ def bulk_restock(self):
         main_frame.rowconfigure(1, weight=1)
 
         # Title
-        ttk.Label(main_frame, text="Bulk Restock Low Stock Items",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.labels.bulk_restock_low_stock_items', default="Bulk Restock Low Stock Items"),
                  style='Title.TLabel').grid(row=0, column=0, pady=(0, 10))
 
         # Items list
-        items_frame = ttk.LabelFrame(main_frame, text="Items to Restock", padding="10")
+        items_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.labels.items_to_restock', default="Items to Restock"), padding="10")
         items_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         items_frame.columnconfigure(0, weight=1)
         items_frame.rowconfigure(0, weight=1)
@@ -164,7 +166,7 @@ def bulk_restock(self):
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Restocked {updated_count} products successfully!")
+                messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.success', default="Success"), f"Restocked {updated_count} products successfully!")
                 restock_window.destroy()
 
                 # Refresh inventory view if it's currently shown
@@ -172,14 +174,14 @@ def bulk_restock(self):
                     self.load_inventory_data()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to restock items: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.error', default="Error"), f"Failed to restock items: {e}")
 
-        ttk.Button(button_frame, text="Execute Restock", command=execute_restock,
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.buttons.execute_restock', default="Execute Restock"), command=execute_restock,
                   style='Success.TButton').grid(row=0, column=0, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=restock_window.destroy).grid(row=0, column=1, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.buttons.cancel', default="Cancel"), command=restock_window.destroy).grid(row=0, column=1, padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to prepare bulk restock: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.error', default="Error"), f"Failed to prepare bulk restock: {e}")
 
 
 def set_restock_threshold(self):
@@ -189,7 +191,7 @@ def set_restock_threshold(self):
 
     selection = self.inventory_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a product")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.please_select_a_product', default="Please select a product"))
         return
 
     item = self.inventory_tree.item(selection[0])
@@ -199,7 +201,7 @@ def set_restock_threshold(self):
     current_threshold = values[4]
 
     # Ask for new threshold
-    new_threshold = simpledialog.askinteger("Set Restock Threshold",
+    new_threshold = simpledialog.askinteger(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.set_restock_threshold', default="Set Restock Threshold"),
                                            f"Enter new restock threshold for {product_name}:",
                                            initialvalue=current_threshold, minvalue=0, maxvalue=1000)
 
@@ -222,7 +224,7 @@ def set_restock_threshold(self):
             self.update_status(f"Updated restock threshold for {product_id}: {new_threshold}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update threshold: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.error', default="Error"), f"Failed to update threshold: {e}")
 
 
 def restock_selected_item(self):
@@ -232,7 +234,7 @@ def restock_selected_item(self):
 
     selection = self.inventory_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a product")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.please_select_a_product', default="Please select a product"))
         return
 
     item = self.inventory_tree.item(selection[0])
@@ -246,7 +248,7 @@ def restock_selected_item(self):
     suggested = max(threshold * 2 - current_stock, threshold)
 
     # Ask for restock amount
-    restock_amount = simpledialog.askinteger("Restock Item",
+    restock_amount = simpledialog.askinteger(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.restock_item', default="Restock Item"),
                                            f"Enter amount to add to {product_name} stock:\n"
                                            f"Current stock: {current_stock}\n"
                                            f"Suggested amount: {suggested}",
@@ -273,7 +275,7 @@ def restock_selected_item(self):
             self.update_status(f"Restocked {product_id}: +{restock_amount} (new total: {new_stock})")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to restock item: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.error', default="Error"), f"Failed to restock item: {e}")
 
 
 def update_selected_stock(self):
@@ -290,7 +292,7 @@ def update_selected_stock(self):
 
     selection = self.mgmt_products_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a product")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.please_select_a_product', default="Please select a product"))
         return
 
     item = self.mgmt_products_tree.item(selection[0])
@@ -298,7 +300,7 @@ def update_selected_stock(self):
     product_id = values[0]
     current_stock = int(values[4])
 
-    new_stock = simpledialog.askinteger("Update Stock",
+    new_stock = simpledialog.askinteger(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.update_stock', default="Update Stock"),
                                        f"Enter new stock level for {values[1]}:",
                                        initialvalue=current_stock, minvalue=0, maxvalue=10000)
 
@@ -308,7 +310,7 @@ def update_selected_stock(self):
             self.load_products_for_management()
             self.update_status(f"Stock updated for {product_id}: {new_stock}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update stock: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.error', default="Error"), f"Failed to update stock: {e}")
 
 
 def show_manage_inventory(self):
@@ -318,7 +320,7 @@ def show_manage_inventory(self):
 
     # Check permissions
     if self.current_user.get('role') not in ['admin', 'staff', 'shop_manager']:
-        ttk.Label(self.content_frame, text="Access Denied", style='Error.TLabel').grid(row=0, column=0)
+        ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.labels.access_denied', default="Access Denied"), style='Error.TLabel').grid(row=0, column=0)
         return
 
     # Title and quick actions
@@ -326,18 +328,18 @@ def show_manage_inventory(self):
     title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
     title_frame.columnconfigure(1, weight=1)
 
-    ttk.Label(title_frame, text="Inventory Management", style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(title_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.labels.inventory_management', default="Inventory Management"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
 
     quick_frame = ttk.Frame(title_frame)
     quick_frame.grid(row=0, column=1, sticky=tk.E)
 
-    ttk.Button(quick_frame, text="Bulk Restock", command=self.bulk_restock,
+    ttk.Button(quick_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.buttons.bulk_restock', default="Bulk Restock"), command=self.bulk_restock,
               style='Success.TButton').grid(row=0, column=0, padx=5)
-    ttk.Button(quick_frame, text="Low Stock Report", command=self.show_low_stock_report,
+    ttk.Button(quick_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.buttons.low_stock_report', default="Low Stock Report"), command=self.show_low_stock_report,
               style='Warning.TButton').grid(row=0, column=1, padx=5)
 
     # Inventory table
-    inventory_frame = ttk.LabelFrame(self.content_frame, text="Inventory Status", padding="10")
+    inventory_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.labels.inventory_status', default="Inventory Status"), padding="10")
     inventory_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     inventory_frame.columnconfigure(0, weight=1)
     inventory_frame.rowconfigure(0, weight=1)
@@ -374,9 +376,9 @@ def show_manage_inventory(self):
     inv_action_frame = ttk.Frame(self.content_frame)
     inv_action_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
 
-    ttk.Button(inv_action_frame, text="Update Stock", command=self.update_selected_stock).grid(row=0, column=0, padx=5)
-    ttk.Button(inv_action_frame, text="Set Threshold", command=self.set_restock_threshold).grid(row=0, column=1, padx=5)
-    ttk.Button(inv_action_frame, text="Restock Item", command=self.restock_selected_item,
+    ttk.Button(inv_action_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.buttons.update_stock', default="Update Stock"), command=self.update_selected_stock).grid(row=0, column=0, padx=5)
+    ttk.Button(inv_action_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.buttons.set_threshold', default="Set Threshold"), command=self.set_restock_threshold).grid(row=0, column=1, padx=5)
+    ttk.Button(inv_action_frame, text=_t('gui.operations.commerce.shop_management_gui.inventory_manager.buttons.restock_item', default="Restock Item"), command=self.restock_selected_item,
               style='Success.TButton').grid(row=0, column=2, padx=5)
 
     self.update_status("Inventory management loaded")
@@ -436,6 +438,6 @@ def load_inventory_data(self):
             conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load inventory: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.inventory_manager.dialogs.error', default="Error"), f"Failed to load inventory: {e}")
 
 

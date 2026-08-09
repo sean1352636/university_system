@@ -25,7 +25,7 @@ def show_waitlist_page(self):
     filter_frame.pack(fill="x", pady=10)
 
     tk.Label(filter_frame, text=_t("cinema.labels.filter_by_status"), bg="#ffffff", fg="#333333").pack(side="left")
-    status_var = tk.StringVar(value="waiting")
+    status_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.community.waitlist.values.waiting', default="waiting"))
     status_combo = ttk.Combobox(filter_frame, textvariable=status_var, width=15,
                                 values=["all", "waiting", "notified", "fulfilled", "expired"])
     status_combo.pack(side="left", padx=10)
@@ -104,7 +104,7 @@ def notify_waitlist_customer(self):
     """Mark waitlist entry as notified."""
     selected = self.waitlist_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a waitlist entry")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.waitlist.dialogs.please_select_a_waitlist_entry', default="Please select a waitlist entry"))
         return
 
     entry_id = self.waitlist_tree.item(selected[0])['values'][0]
@@ -125,7 +125,7 @@ def mark_waitlist_fulfilled(self):
     """Mark waitlist entry as fulfilled."""
     selected = self.waitlist_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a waitlist entry")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.waitlist.dialogs.please_select_a_waitlist_entry', default="Please select a waitlist entry"))
         return
 
     entry_id = self.waitlist_tree.item(selected[0])['values'][0]
@@ -144,12 +144,12 @@ def remove_waitlist_entry(self):
     """Remove waitlist entry."""
     selected = self.waitlist_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a waitlist entry")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.community.waitlist.dialogs.please_select_a_waitlist_entry', default="Please select a waitlist entry"))
         return
 
     entry_id = self.waitlist_tree.item(selected[0])['values'][0]
 
-    if not messagebox.askyesno(_t("cinema.common.confirm"), "Remove this waitlist entry?"):
+    if not messagebox.askyesno(_t("cinema.common.confirm"), _t('gui.operations.commerce.cinema.cinema_gui.community.waitlist.dialogs.remove_this_waitlist_entry', default="Remove this waitlist entry?")):
         return
 
     conn = sqlite3.connect(DB_FILE)

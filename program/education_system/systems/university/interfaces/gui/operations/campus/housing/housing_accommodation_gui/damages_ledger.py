@@ -13,6 +13,8 @@ deduction).
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import sqlite3
 import tkinter as tk
@@ -29,14 +31,14 @@ def show_damages_ledger(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Damages Ledger (per room)",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.damages_ledger.labels.damages_ledger_per_room', default="Damages Ledger (per room)"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
 
     # ── Filter bar ──
     bar = ttk.Frame(parent)
     bar.pack(fill="x", padx=8, pady=4)
-    ttk.Label(bar, text="Building:").pack(side="left", padx=(0, 4))
+    ttk.Label(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.damages_ledger.labels.building', default="Building:")).pack(side="left", padx=(0, 4))
     bvar = tk.StringVar()
     bcombo = ttk.Combobox(bar, textvariable=bvar, state="readonly", width=30)
     buildings = _load_buildings()
@@ -44,11 +46,11 @@ def show_damages_ledger(gui_instance) -> None:
     bcombo.current(0)
     bcombo.pack(side="left", padx=(0, 12))
 
-    ttk.Label(bar, text="Min total £:").pack(side="left", padx=(0, 4))
+    ttk.Label(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.damages_ledger.labels.min_total', default="Min total £:")).pack(side="left", padx=(0, 4))
     min_var = tk.StringVar()
     ttk.Entry(bar, textvariable=min_var, width=10).pack(side="left",
                                                           padx=(0, 12))
-    ttk.Button(bar, text="Apply",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.damages_ledger.buttons.apply', default="Apply"),
                command=lambda: reload_rooms()).pack(side="left")
 
     # ── Room roll-up table ──
@@ -73,7 +75,7 @@ def show_damages_ledger(gui_instance) -> None:
               foreground="#666").pack(anchor="w", padx=8)
 
     # ── Drill-down ──
-    drill_label = ttk.Label(parent, text="Select a room to see its history.",
+    drill_label = ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.damages_ledger.labels.select_a_room_to_see_its_history', default="Select a room to see its history."),
                              foreground="#666")
     drill_label.pack(anchor="w", padx=8, pady=(8, 2))
 
@@ -108,8 +110,8 @@ def show_damages_ledger(gui_instance) -> None:
             min_amt = float(min_var.get().strip()) if min_var.get().strip() \
                 else 0.0
         except ValueError:
-            messagebox.showwarning("Damages ledger",
-                                    "Min total must be numeric.",
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.damages_ledger.dialogs.damages_ledger', default="Damages ledger"),
+                                    _t('gui.operations.campus.housing.housing_accommodation_gui.damages_ledger.dialogs.min_total_must_be_numeric', default="Min total must be numeric."),
                                     parent=gui_instance.root)
             return
 
@@ -141,7 +143,7 @@ def show_damages_ledger(gui_instance) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Damages ledger query failed")
-            messagebox.showerror("Damages ledger",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.damages_ledger.dialogs.damages_ledger', default="Damages ledger"),
                                   f"Query failed:\n\n{e}",
                                   parent=gui_instance.root)
             return
@@ -182,7 +184,7 @@ def show_damages_ledger(gui_instance) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Drill-down failed")
-            messagebox.showerror("Damages ledger",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.damages_ledger.dialogs.damages_ledger', default="Damages ledger"),
                                   f"Drill-down failed:\n\n{e}",
                                   parent=gui_instance.root)
             return

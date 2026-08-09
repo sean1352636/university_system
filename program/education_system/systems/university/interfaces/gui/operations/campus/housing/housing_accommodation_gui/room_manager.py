@@ -29,7 +29,7 @@ def show_general_room_management(gui_instance):
     """Show room management interface"""
     gui_instance.clear_content()
 
-    ttk.Label(gui_instance.content_frame, text="Room Management",
+    ttk.Label(gui_instance.content_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_management', default="Room Management"),
              font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
     # Create notebook
@@ -38,12 +38,12 @@ def show_general_room_management(gui_instance):
 
     # Add rooms tab
     add_rooms_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(add_rooms_frame, text="Add Rooms to Building")
+    notebook.add(add_rooms_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.tabs.add_rooms_to_building', default="Add Rooms to Building"))
     create_rooms_interface(gui_instance, add_rooms_frame)
 
     # View rooms tab
     view_rooms_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(view_rooms_frame, text="View All Rooms")
+    notebook.add(view_rooms_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.tabs.view_all_rooms', default="View All Rooms"))
     create_rooms_list_view(gui_instance, view_rooms_frame)
 
 
@@ -103,7 +103,7 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load rooms: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to load rooms: {str(e)}")
 
     load_rooms()
 
@@ -114,7 +114,7 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
     def edit_selected_room():
         selected = rooms_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a room to edit")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.please_select_a_room_to_edit', default="Please select a room to edit"))
             return
 
         room_id = rooms_tree.item(selected[0])['tags'][0]
@@ -122,12 +122,12 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
 
         # Create edit dialog
         edit_window = tk.Toplevel(rooms_window)
-        edit_window.title("Edit Room")
+        edit_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.windows.edit_room', default="Edit Room"))
         edit_window.geometry("500x600")
         edit_window.transient(rooms_window)
         edit_window.grab_set()
 
-        ttk.Label(edit_window, text="Edit Room Details", font=("Arial", 14, "bold")).pack(pady=10)
+        ttk.Label(edit_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.edit_room_details', default="Edit Room Details"), font=("Arial", 14, "bold")).pack(pady=10)
 
         # Form frame
         form_frame = ttk.Frame(edit_window, padding="20")
@@ -146,52 +146,52 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
             conn.close()
 
             if not current_room:
-                messagebox.showerror("Error", "Room not found")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.room_not_found', default="Room not found"))
                 edit_window.destroy()
                 return
 
             # Room Number
-            ttk.Label(form_frame, text="Room Number:").grid(row=0, column=0, sticky="w", pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_number', default="Room Number:")).grid(row=0, column=0, sticky="w", pady=5)
             room_number_var = tk.StringVar(value=current_room[0])
             ttk.Entry(form_frame, textvariable=room_number_var, width=30).grid(row=0, column=1, pady=5)
 
             # Floor Number
-            ttk.Label(form_frame, text="Floor Number:").grid(row=1, column=0, sticky="w", pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.floor_number', default="Floor Number:")).grid(row=1, column=0, sticky="w", pady=5)
             floor_var = tk.IntVar(value=current_room[1])
             ttk.Spinbox(form_frame, from_=0, to=50, textvariable=floor_var, width=28).grid(row=1, column=1, pady=5)
 
             # Room Type
-            ttk.Label(form_frame, text="Room Type:").grid(row=2, column=0, sticky="w", pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_type', default="Room Type:")).grid(row=2, column=0, sticky="w", pady=5)
             room_type_var = tk.StringVar(value=current_room[2])
             room_type_combo = ttk.Combobox(form_frame, textvariable=room_type_var, width=28,
                                           values=["single", "double", "triple", "suite", "studio"])
             room_type_combo.grid(row=2, column=1, pady=5)
 
             # Max Occupants
-            ttk.Label(form_frame, text="Max Occupants:").grid(row=3, column=0, sticky="w", pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.max_occupants', default="Max Occupants:")).grid(row=3, column=0, sticky="w", pady=5)
             max_occ_var = tk.IntVar(value=current_room[3])
             ttk.Spinbox(form_frame, from_=1, to=10, textvariable=max_occ_var, width=28).grid(row=3, column=1, pady=5)
 
             # Current Occupants (read-only)
-            ttk.Label(form_frame, text="Current Occupants:").grid(row=4, column=0, sticky="w", pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.current_occupants', default="Current Occupants:")).grid(row=4, column=0, sticky="w", pady=5)
             current_occ_label = ttk.Label(form_frame, text=str(current_room[4]))
             current_occ_label.grid(row=4, column=1, sticky="w", pady=5)
 
             # Status
-            ttk.Label(form_frame, text="Status:").grid(row=5, column=0, sticky="w", pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.status', default="Status:")).grid(row=5, column=0, sticky="w", pady=5)
             status_var = tk.StringVar(value=current_room[5])
             status_combo = ttk.Combobox(form_frame, textvariable=status_var, width=28,
                                        values=["available", "occupied", "maintenance", "reserved"])
             status_combo.grid(row=5, column=1, pady=5)
 
             # Monthly Rent
-            ttk.Label(form_frame, text="Monthly Rent (£):").grid(row=6, column=0, sticky="w", pady=5)
+            ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.monthly_rent', default="Monthly Rent (£):")).grid(row=6, column=0, sticky="w", pady=5)
             rent_var = tk.DoubleVar(value=current_room[6])
             ttk.Entry(form_frame, textvariable=rent_var, width=30).grid(row=6, column=1, pady=5)
 
             # Accessible
             accessible_var = tk.BooleanVar(value=bool(current_room[7]))
-            ttk.Checkbutton(form_frame, text="Wheelchair Accessible",
+            ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.wheelchair_accessible', default="Wheelchair Accessible"),
                           variable=accessible_var).grid(row=7, column=0, columnspan=2, pady=15)
 
             def save_changes():
@@ -219,26 +219,26 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
                         f"£{rent_var.get():.2f}", "Yes" if accessible_var.get() else "No"
                     ))
 
-                    messagebox.showinfo("Success", "Room updated successfully")
+                    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.room_updated_successfully', default="Room updated successfully"))
                     edit_window.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to update room: {str(e)}")
+                    messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to update room: {str(e)}")
 
             # Buttons
             button_frame = ttk.Frame(edit_window)
             button_frame.pack(pady=10)
-            ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="Cancel", command=edit_window.destroy).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.cancel', default="Cancel"), command=edit_window.destroy).pack(side=tk.LEFT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load room data: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to load room data: {str(e)}")
             edit_window.destroy()
 
     def delete_selected_room():
         selected = rooms_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a room to delete")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.please_select_a_room_to_delete', default="Please select a room to delete"))
             return
 
         room_data = rooms_tree.item(selected[0])['values']
@@ -246,10 +246,10 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
         current_occ = room_data[4]
 
         if current_occ > 0:
-            messagebox.showerror("Error", f"Cannot delete room {room_number} - currently occupied")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Cannot delete room {room_number} - currently occupied")
             return
 
-        result = messagebox.askyesno("Confirm Delete", f"Delete room {room_number}?")
+        result = messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.confirm_delete', default="Confirm Delete"), f"Delete room {room_number}?")
         if result:
             try:
                 room_id = rooms_tree.item(selected[0])['tags'][0]
@@ -267,69 +267,69 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
                 conn.close()
 
                 rooms_tree.delete(selected[0])
-                messagebox.showinfo("Success", f"Room {room_number} deleted successfully")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.success', default="Success"), f"Room {room_number} deleted successfully")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete room: {str(e)}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to delete room: {str(e)}")
 
     def add_new_room():
         """Add a new room to the building"""
         add_window = tk.Toplevel(rooms_window)
-        add_window.title("Add New Room")
+        add_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.windows.add_new_room', default="Add New Room"))
         add_window.geometry("500x600")
         add_window.transient(rooms_window)
         add_window.grab_set()
 
-        ttk.Label(add_window, text="Add New Room", font=("Arial", 14, "bold")).pack(pady=10)
+        ttk.Label(add_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.add_new_room', default="Add New Room"), font=("Arial", 14, "bold")).pack(pady=10)
 
         # Form frame
         form_frame = ttk.Frame(add_window, padding="20")
         form_frame.pack(fill=tk.BOTH, expand=True)
 
         # Room Number
-        ttk.Label(form_frame, text="Room Number:").grid(row=0, column=0, sticky="w", pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_number', default="Room Number:")).grid(row=0, column=0, sticky="w", pady=5)
         room_number_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=room_number_var, width=30).grid(row=0, column=1, pady=5)
 
         # Floor Number
-        ttk.Label(form_frame, text="Floor Number:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.floor_number', default="Floor Number:")).grid(row=1, column=0, sticky="w", pady=5)
         floor_var = tk.IntVar(value=1)
         ttk.Spinbox(form_frame, from_=0, to=50, textvariable=floor_var, width=28).grid(row=1, column=1, pady=5)
 
         # Room Type
-        ttk.Label(form_frame, text="Room Type:").grid(row=2, column=0, sticky="w", pady=5)
-        room_type_var = tk.StringVar(value="single")
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_type', default="Room Type:")).grid(row=2, column=0, sticky="w", pady=5)
+        room_type_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.values.single', default="single"))
         room_type_combo = ttk.Combobox(form_frame, textvariable=room_type_var, width=28,
                                       values=["single", "double", "triple", "suite", "studio"],
                                       state='readonly')
         room_type_combo.grid(row=2, column=1, pady=5)
 
         # Max Occupants
-        ttk.Label(form_frame, text="Max Occupants:").grid(row=3, column=0, sticky="w", pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.max_occupants', default="Max Occupants:")).grid(row=3, column=0, sticky="w", pady=5)
         max_occ_var = tk.IntVar(value=1)
         ttk.Spinbox(form_frame, from_=1, to=10, textvariable=max_occ_var, width=28).grid(row=3, column=1, pady=5)
 
         # Status
-        ttk.Label(form_frame, text="Status:").grid(row=4, column=0, sticky="w", pady=5)
-        status_var = tk.StringVar(value="available")
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.status', default="Status:")).grid(row=4, column=0, sticky="w", pady=5)
+        status_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.values.available', default="available"))
         status_combo = ttk.Combobox(form_frame, textvariable=status_var, width=28,
                                    values=["available", "occupied", "maintenance", "reserved"],
                                    state='readonly')
         status_combo.grid(row=4, column=1, pady=5)
 
         # Monthly Rent
-        ttk.Label(form_frame, text="Monthly Rent (£):").grid(row=5, column=0, sticky="w", pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.monthly_rent', default="Monthly Rent (£):")).grid(row=5, column=0, sticky="w", pady=5)
         rent_var = tk.DoubleVar(value=500.00)
         ttk.Entry(form_frame, textvariable=rent_var, width=30).grid(row=5, column=1, pady=5)
 
         # Accessible
         accessible_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(form_frame, text="Wheelchair Accessible",
+        ttk.Checkbutton(form_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.wheelchair_accessible', default="Wheelchair Accessible"),
                       variable=accessible_var).grid(row=6, column=0, columnspan=2, pady=15)
 
         def save_new_room():
             if not room_number_var.get().strip():
-                messagebox.showwarning("Room Number Required", "Please enter a room number", parent=add_window)
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.room_number_required', default="Room Number Required"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.please_enter_a_room_number', default="Please enter a room number"), parent=add_window)
                 return
 
             try:
@@ -371,33 +371,33 @@ def show_building_rooms_management(gui_instance, building_id, building_name):
                     f"£{rent_var.get():.2f}", accessible
                 ), tags=(room_id,))
 
-                messagebox.showinfo("Success", f"Room {room_number_var.get()} added successfully", parent=add_window)
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.success', default="Success"), f"Room {room_number_var.get()} added successfully", parent=add_window)
                 add_window.destroy()
 
             except sqlite3.IntegrityError as e:
-                messagebox.showerror("Error", f"Room number already exists in this building: {str(e)}", parent=add_window)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Room number already exists in this building: {str(e)}", parent=add_window)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to add room: {str(e)}", parent=add_window)
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to add room: {str(e)}", parent=add_window)
 
         # Buttons
         button_frame = ttk.Frame(add_window)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="Add Room", command=save_new_room).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=add_window.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.add_room', default="Add Room"), command=save_new_room).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.cancel', default="Cancel"), command=add_window.destroy).pack(side=tk.LEFT, padx=5)
 
-    ttk.Button(buttons_frame, text="Add Room", command=add_new_room).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Edit Room", command=edit_selected_room).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Delete Room", command=delete_selected_room).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Close", command=rooms_window.destroy).pack(side='right', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.add_room', default="Add Room"), command=add_new_room).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.edit_room', default="Edit Room"), command=edit_selected_room).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.delete_room', default="Delete Room"), command=delete_selected_room).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.close', default="Close"), command=rooms_window.destroy).pack(side='right', padx=5)
 
 
 def create_rooms_interface(gui_instance, parent):
     """Create interface for adding rooms to a building"""
     # Building selection
-    building_frame = ttk.LabelFrame(parent, text="Select Building", padding="10")
+    building_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.select_building', default="Select Building"), padding="10")
     building_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(building_frame, text="Building:").grid(row=0, column=0, sticky='w')
+    ttk.Label(building_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.building', default="Building:")).grid(row=0, column=0, sticky='w')
     gui_instance.rooms_building_combo = ttk.Combobox(building_frame, width=40)
     gui_instance.rooms_building_combo.grid(row=0, column=1, padx=10)
 
@@ -416,40 +416,40 @@ def create_rooms_interface(gui_instance, parent):
         print(f"Error loading buildings: {str(e)}")
 
     # Room details frame
-    room_frame = ttk.LabelFrame(parent, text="Room Details", padding="10")
+    room_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_details', default="Room Details"), padding="10")
     room_frame.pack(fill='both', expand=True)
 
     # Floor and room count
-    ttk.Label(room_frame, text="Floor Number:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.floor_number', default="Floor Number:")).grid(row=0, column=0, sticky='w', pady=5)
     gui_instance.floor_entry = ttk.Entry(room_frame, width=10)
     gui_instance.floor_entry.grid(row=0, column=1, padx=10, sticky='w')
 
-    ttk.Label(room_frame, text="Room Number:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_number', default="Room Number:")).grid(row=1, column=0, sticky='w', pady=5)
     gui_instance.room_number_entry = ttk.Entry(room_frame, width=10)
     gui_instance.room_number_entry.grid(row=1, column=1, padx=10, sticky='w')
 
-    ttk.Label(room_frame, text="Room Type:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_type', default="Room Type:")).grid(row=2, column=0, sticky='w', pady=5)
     gui_instance.room_type_combo = ttk.Combobox(room_frame, width=20,
                                        values=["Single", "Double", "Triple", "Suite", "Studio", "Apartment"])
     gui_instance.room_type_combo.grid(row=2, column=1, padx=10, sticky='w')
 
-    ttk.Label(room_frame, text="Max Occupants:").grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.max_occupants', default="Max Occupants:")).grid(row=3, column=0, sticky='w', pady=5)
     gui_instance.max_occupants_entry = ttk.Entry(room_frame, width=10)
     gui_instance.max_occupants_entry.grid(row=3, column=1, padx=10, sticky='w')
 
-    ttk.Label(room_frame, text="Monthly Rent:").grid(row=4, column=0, sticky='w', pady=5)
+    ttk.Label(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.monthly_rent_variant_2', default="Monthly Rent:")).grid(row=4, column=0, sticky='w', pady=5)
     gui_instance.rent_entry = ttk.Entry(room_frame, width=15)
     gui_instance.rent_entry.grid(row=4, column=1, padx=10, sticky='w')
 
     # Accessible checkbox
     gui_instance.is_accessible_var = tk.BooleanVar()
-    ttk.Checkbutton(room_frame, text="Accessible Room", variable=gui_instance.is_accessible_var).grid(
+    ttk.Checkbutton(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.accessible_room', default="Accessible Room"), variable=gui_instance.is_accessible_var).grid(
         row=5, column=0, columnspan=2, sticky='w', pady=10)
 
     # Add room button
-    ttk.Button(room_frame, text="Add Room", command=lambda: add_single_room(gui_instance)).grid(
+    ttk.Button(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.add_room', default="Add Room"), command=lambda: add_single_room(gui_instance)).grid(
         row=6, column=0, pady=20)
-    ttk.Button(room_frame, text="Batch Create Rooms",
+    ttk.Button(room_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.batch_create_rooms', default="Batch Create Rooms"),
               command=lambda: show_batch_room_creation(gui_instance)).grid(row=6, column=1, pady=20, padx=10)
 
 
@@ -464,7 +464,7 @@ def add_single_room(gui_instance):
         rent = gui_instance.rent_entry.get().strip()
 
         if not all([building_name, floor, room_number, room_type, max_occupants, rent]):
-            messagebox.showerror("Error", "Please fill in all fields")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.please_fill_in_all_fields', default="Please fill in all fields"))
             return
 
         try:
@@ -476,7 +476,7 @@ def add_single_room(gui_instance):
                 raise ValueError("Values must be positive")
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid numeric values")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.please_enter_valid_numeric_values', default="Please enter valid numeric values"))
             return
 
         # Get building ID
@@ -486,7 +486,7 @@ def add_single_room(gui_instance):
         result = cursor.fetchone()
 
         if not result:
-            messagebox.showerror("Error", "Selected building not found")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.selected_building_not_found', default="Selected building not found"))
             conn.close()
             return
 
@@ -496,7 +496,7 @@ def add_single_room(gui_instance):
         cursor.execute('SELECT room_id FROM housing_rooms WHERE building_id = ? AND room_number = ?',
                       (building_id, room_number))
         if cursor.fetchone():
-            messagebox.showerror("Error", f"Room {room_number} already exists in {building_name}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Room {room_number} already exists in {building_name}")
             conn.close()
             return
 
@@ -525,7 +525,7 @@ def add_single_room(gui_instance):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"Room {room_number} added successfully!")
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.success', default="Success"), f"Room {room_number} added successfully!")
 
         # Clear form
         gui_instance.floor_entry.delete(0, tk.END)
@@ -536,27 +536,27 @@ def add_single_room(gui_instance):
         gui_instance.is_accessible_var.set(False)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to add room: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to add room: {str(e)}")
 
 
 def create_rooms_list_view(gui_instance, parent):
     """Create a view of all rooms with filtering"""
     # Filter frame
-    filter_frame = ttk.LabelFrame(parent, text="Filter Rooms", padding="10")
+    filter_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.filter_rooms', default="Filter Rooms"), padding="10")
     filter_frame.pack(fill='x', pady=(0, 20))
 
-    ttk.Label(filter_frame, text="Building:").grid(row=0, column=0, sticky='w')
+    ttk.Label(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.building', default="Building:")).grid(row=0, column=0, sticky='w')
     gui_instance.rooms_filter_building = ttk.Combobox(filter_frame, values=['All'])
     gui_instance.rooms_filter_building.set('All')
     gui_instance.rooms_filter_building.grid(row=0, column=1, padx=10)
 
-    ttk.Label(filter_frame, text="Status:").grid(row=0, column=2, sticky='w', padx=(20, 0))
+    ttk.Label(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.status', default="Status:")).grid(row=0, column=2, sticky='w', padx=(20, 0))
     gui_instance.rooms_filter_status = ttk.Combobox(filter_frame,
                                           values=['All', 'Available', 'Occupied', 'Maintenance', 'Reserved'])
     gui_instance.rooms_filter_status.set('All')
     gui_instance.rooms_filter_status.grid(row=0, column=3, padx=10)
 
-    ttk.Button(filter_frame, text="Apply Filter",
+    ttk.Button(filter_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.apply_filter', default="Apply Filter"),
               command=lambda: refresh_rooms_list(gui_instance)).grid(row=0, column=4, padx=10)
 
     # Load building options
@@ -646,22 +646,22 @@ def refresh_rooms_list(gui_instance):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load rooms: {str(e)}")
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to load rooms: {str(e)}")
 
 
 def show_batch_room_creation(gui_instance):
     """Show interface for batch room creation"""
     batch_window = tk.Toplevel(gui_instance.root)
-    batch_window.title("Batch Room Creation")
+    batch_window.title(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.windows.batch_room_creation', default="Batch Room Creation"))
     batch_window.geometry("600x500")
     batch_window.transient(gui_instance.root)
     batch_window.grab_set()
 
     # Building selection
-    building_frame = ttk.LabelFrame(batch_window, text="Select Building", padding="10")
+    building_frame = ttk.LabelFrame(batch_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.select_building', default="Select Building"), padding="10")
     building_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Label(building_frame, text="Building:").grid(row=0, column=0, sticky='w')
+    ttk.Label(building_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.building', default="Building:")).grid(row=0, column=0, sticky='w')
     batch_building_combo = ttk.Combobox(building_frame, width=40)
     batch_building_combo.grid(row=0, column=1, padx=10)
 
@@ -680,27 +680,27 @@ def show_batch_room_creation(gui_instance):
         print(f"Error loading buildings: {str(e)}")
 
     # Batch creation settings
-    settings_frame = ttk.LabelFrame(batch_window, text="Batch Settings", padding="10")
+    settings_frame = ttk.LabelFrame(batch_window, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.batch_settings', default="Batch Settings"), padding="10")
     settings_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Label(settings_frame, text="Number of Floors:").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(settings_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.number_of_floors', default="Number of Floors:")).grid(row=0, column=0, sticky='w', pady=5)
     floors_entry = ttk.Entry(settings_frame, width=10)
     floors_entry.grid(row=0, column=1, padx=10, sticky='w')
 
-    ttk.Label(settings_frame, text="Rooms per Floor:").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(settings_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.rooms_per_floor', default="Rooms per Floor:")).grid(row=1, column=0, sticky='w', pady=5)
     rooms_per_floor_entry = ttk.Entry(settings_frame, width=10)
     rooms_per_floor_entry.grid(row=1, column=1, padx=10, sticky='w')
 
-    ttk.Label(settings_frame, text="Room Type:").grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(settings_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.room_type', default="Room Type:")).grid(row=2, column=0, sticky='w', pady=5)
     batch_room_type = ttk.Combobox(settings_frame, width=20,
                                   values=["Single", "Double", "Triple", "Suite", "Studio", "Apartment"])
     batch_room_type.grid(row=2, column=1, padx=10, sticky='w')
 
-    ttk.Label(settings_frame, text="Max Occupants:").grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(settings_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.max_occupants', default="Max Occupants:")).grid(row=3, column=0, sticky='w', pady=5)
     batch_max_occ = ttk.Entry(settings_frame, width=10)
     batch_max_occ.grid(row=3, column=1, padx=10, sticky='w')
 
-    ttk.Label(settings_frame, text="Monthly Rent:").grid(row=4, column=0, sticky='w', pady=5)
+    ttk.Label(settings_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.labels.monthly_rent_variant_2', default="Monthly Rent:")).grid(row=4, column=0, sticky='w', pady=5)
     batch_rent = ttk.Entry(settings_frame, width=15)
     batch_rent.grid(row=4, column=1, padx=10, sticky='w')
 
@@ -715,7 +715,7 @@ def show_batch_room_creation(gui_instance):
             monthly_rent = float(batch_rent.get())
 
             if not all([building_name, room_type]) or floors <= 0 or rooms_per_floor <= 0:
-                messagebox.showerror("Error", "Please fill in all fields with valid values")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.please_fill_in_all_fields_with_valid_values', default="Please fill in all fields with valid values"))
                 return
 
             # Get building ID
@@ -725,7 +725,7 @@ def show_batch_room_creation(gui_instance):
             result = cursor.fetchone()
 
             if not result:
-                messagebox.showerror("Error", "Selected building not found")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.selected_building_not_found', default="Selected building not found"))
                 conn.close()
                 return
 
@@ -767,17 +767,17 @@ def show_batch_room_creation(gui_instance):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"{rooms_created} rooms created successfully!")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.success', default="Success"), f"{rooms_created} rooms created successfully!")
             batch_window.destroy()
 
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid numeric values")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.please_enter_valid_numeric_values', default="Please enter valid numeric values"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create rooms: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.dialogs.error', default="Error"), f"Failed to create rooms: {str(e)}")
 
     # Buttons
     buttons_frame = ttk.Frame(batch_window)
     buttons_frame.pack(fill='x', padx=10, pady=20)
 
-    ttk.Button(buttons_frame, text="Create Rooms", command=create_batch_rooms).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Cancel", command=batch_window.destroy).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.create_rooms', default="Create Rooms"), command=create_batch_rooms).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.room_manager.buttons.cancel', default="Cancel"), command=batch_window.destroy).pack(side='left', padx=5)

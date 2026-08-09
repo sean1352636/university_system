@@ -1,5 +1,7 @@
 """Rubric management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -12,7 +14,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from collections import deque
 
@@ -280,18 +282,18 @@ class RubricManager:
             button_frame.pack(fill='x', pady=5)
 
             ttk.Button(button_frame, text=_("assignment_gui.buttons.add_criterion"),
-                      command=lambda: messagebox.showinfo(_("common.info"), "Add Criterion - To be implemented")).pack(side='left', padx=2)
+                      command=lambda: messagebox.showinfo(_("common.info"), _t('gui.academics.assignment_system.rubric_manager.dialogs.add_criterion_to_be_implemented', default="Add Criterion - To be implemented"))).pack(side='left', padx=2)
             ttk.Button(button_frame, text=_("assignment_gui.buttons.edit_selected"),
-                      command=lambda: messagebox.showinfo(_("common.info"), "Edit - To be implemented")).pack(side='left', padx=2)
+                      command=lambda: messagebox.showinfo(_("common.info"), _t('gui.academics.assignment_system.rubric_manager.dialogs.edit_to_be_implemented', default="Edit - To be implemented"))).pack(side='left', padx=2)
             ttk.Button(button_frame, text=_("assignment_gui.buttons.delete_selected"),
-                      command=lambda: messagebox.showinfo(_("common.info"), "Delete - To be implemented")).pack(side='left', padx=2)
+                      command=lambda: messagebox.showinfo(_("common.info"), _t('gui.academics.assignment_system.rubric_manager.dialogs.delete_to_be_implemented', default="Delete - To be implemented"))).pack(side='left', padx=2)
 
             # Bottom buttons
             bottom_frame = ttk.Frame(dialog)
             bottom_frame.pack(pady=10)
 
             ttk.Button(bottom_frame, text=_("assignment_gui.buttons.save_rubric"),
-                      command=lambda: messagebox.showinfo(_("common.info"), "Rubric saved")).pack(side='left', padx=5)
+                      command=lambda: messagebox.showinfo(_("common.info"), _t('gui.academics.assignment_system.rubric_manager.dialogs.rubric_saved', default="Rubric saved"))).pack(side='left', padx=5)
             ttk.Button(bottom_frame, text=_("assignment_gui.buttons.close"), command=dialog.destroy).pack(side='left', padx=5)
 
         except Exception as e:

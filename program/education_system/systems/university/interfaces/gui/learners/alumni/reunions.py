@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -42,8 +44,8 @@ from education_system.systems.university.interfaces.gui.learners.alumni._service
 class ReunionsMixin:
         def _cancel_reunion(self):
             """Cancel a reunion"""
-            if messagebox.askyesno("Confirm Cancellation",
-                                  "Are you sure you want to cancel this reunion? This action cannot be undone."):
+            if messagebox.askyesno(_t('gui.learners.alumni.reunions.dialogs.confirm_cancellation', default="Confirm Cancellation"),
+                                  _t('gui.learners.alumni.reunions.dialogs.are_you_sure_you_want_to_cancel_this_reunion_this_action_cannot', default="Are you sure you want to cancel this reunion? This action cannot be undone.")):
                 reunion_selection = self.selected_reunion.get()
                 if not reunion_selection:
                     return
@@ -66,7 +68,7 @@ class ReunionsMixin:
                         """, (reunion_id,))
                         conn.commit()
 
-                    messagebox.showinfo("Success", "Reunion cancelled successfully!")
+                    messagebox.showinfo(_t('gui.learners.alumni.reunions.dialogs.success', default="Success"), _t('gui.learners.alumni.reunions.dialogs.reunion_cancelled_successfully', default="Reunion cancelled successfully!"))
                     self.manage_existing_reunion()  # Reload
 
                     # Log activity
@@ -75,20 +77,20 @@ class ReunionsMixin:
                                details={'action': 'cancelled'})
 
                 except sqlite3.Error as e:
-                    messagebox.showerror("Database Error", f"Failed to cancel reunion: {str(e)}")
+                    messagebox.showerror(_t('gui.learners.alumni.reunions.dialogs.database_error', default="Database Error"), f"Failed to cancel reunion: {str(e)}")
 
         def _load_reunion_for_edit(self):
             """Load selected reunion data into edit form"""
             reunion_selection = self.selected_reunion.get()
             if not reunion_selection or reunion_selection == "No reunions available to manage":
-                messagebox.showwarning("No Selection", "Please select a reunion to manage.")
+                messagebox.showwarning(_t('gui.learners.alumni.reunions.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.reunions.dialogs.please_select_a_reunion_to_manage', default="Please select a reunion to manage."))
                 return
 
             # Extract reunion_id
             import re
             match = re.search(r'ID:\s*(\d+)', reunion_selection)
             if not match:
-                messagebox.showerror("Error", "Invalid reunion selection.")
+                messagebox.showerror(_t('gui.learners.alumni.reunions.dialogs.error', default="Error"), _t('gui.learners.alumni.reunions.dialogs.invalid_reunion_selection', default="Invalid reunion selection."))
                 return
 
             reunion_id = int(match.group(1))
@@ -119,10 +121,10 @@ class ReunionsMixin:
 
                         self.update_status(f"Loaded reunion for Class of {reunion[0]}")
                     else:
-                        messagebox.showerror("Error", "Reunion not found.")
+                        messagebox.showerror(_t('gui.learners.alumni.reunions.dialogs.error', default="Error"), _t('gui.learners.alumni.reunions.dialogs.reunion_not_found', default="Reunion not found."))
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load reunion: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.reunions.dialogs.database_error', default="Database Error"), f"Failed to load reunion: {str(e)}")
 
         def _save_reunion_changes(self):
             """Save changes to reunion"""
@@ -140,7 +142,7 @@ class ReunionsMixin:
 
             # Validation
             if not self.edit_reunion_vars['graduation_year'].get():
-                messagebox.showerror("Validation Error", "Graduation year is required!")
+                messagebox.showerror(_t('gui.learners.alumni.reunions.dialogs.validation_error', default="Validation Error"), _t('gui.learners.alumni.reunions.dialogs.graduation_year_is_required', default="Graduation year is required!"))
                 return
 
             try:
@@ -165,7 +167,7 @@ class ReunionsMixin:
                     ))
                     conn.commit()
 
-                messagebox.showinfo("Success", "Reunion updated successfully!")
+                messagebox.showinfo(_t('gui.learners.alumni.reunions.dialogs.success', default="Success"), _t('gui.learners.alumni.reunions.dialogs.reunion_updated_successfully', default="Reunion updated successfully!"))
                 self.update_status("Reunion changes saved")
 
                 # Log activity
@@ -174,11 +176,11 @@ class ReunionsMixin:
                            details={'graduation_year': self.edit_reunion_vars['graduation_year'].get()})
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to save changes: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.reunions.dialogs.database_error', default="Database Error"), f"Failed to save changes: {str(e)}")
 
         def create_reunion_form(self, parent):
             """Create reunion planning form"""
-            ttk.Label(parent, text="Plan a Class Reunion",
+            ttk.Label(parent, text=_t('gui.learners.alumni.reunions.labels.plan_a_class_reunion', default="Plan a Class Reunion"),
                      font=('Arial', 14, 'bold')).pack(pady=(10, 20))
 
             form_frame = ttk.Frame(parent)
@@ -203,12 +205,12 @@ class ReunionsMixin:
                 ttk.Entry(field_frame, textvariable=self.reunion_vars[var_name]).pack(side=tk.LEFT, fill=tk.X, expand=True)
 
             # Description
-            ttk.Label(form_frame, text="Reunion Description:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(form_frame, text=_t('gui.learners.alumni.reunions.labels.reunion_description', default="Reunion Description:")).pack(anchor='w', pady=(10, 5))
             self.reunion_description = ScrolledText(form_frame, height=6, wrap=tk.WORD)
             self.reunion_description.pack(fill=tk.X)
 
             # Submit button
-            ttk.Button(form_frame, text="Submit Reunion Plan",
+            ttk.Button(form_frame, text=_t('gui.learners.alumni.reunions.buttons.submit_reunion_plan', default="Submit Reunion Plan"),
                       command=self.submit_reunion_plan).pack(pady=20)
 
         def manage_existing_reunion(self):
@@ -216,14 +218,14 @@ class ReunionsMixin:
             self.clear_content()
             self.update_status("Manage Reunion")
 
-            ttk.Label(self.content_frame, text="Manage Existing Reunion",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.reunions.labels.manage_existing_reunion', default="Manage Existing Reunion"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Reunion selection
-            select_frame = ttk.LabelFrame(self.content_frame, text="Select Reunion to Manage", padding=10)
+            select_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.reunions.labels.select_reunion_to_manage', default="Select Reunion to Manage"), padding=10)
             select_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
-            ttk.Label(select_frame, text="Select Reunion:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(select_frame, text=_t('gui.learners.alumni.reunions.labels.select_reunion', default="Select Reunion:")).pack(side=tk.LEFT, padx=(0, 10))
             self.selected_reunion = tk.StringVar()
 
             # Load reunions from database
@@ -251,11 +253,11 @@ class ReunionsMixin:
             if reunion_options and reunion_options[0] != "No reunions available to manage":
                 reunion_combo.set(reunion_options[0])
 
-            ttk.Button(select_frame, text="Load Reunion",
+            ttk.Button(select_frame, text=_t('gui.learners.alumni.reunions.buttons.load_reunion', default="Load Reunion"),
                       command=self._load_reunion_for_edit).pack(side=tk.LEFT)
 
             # Edit form (initially hidden)
-            self.reunion_edit_frame = ttk.LabelFrame(self.content_frame, text="Reunion Details", padding=10)
+            self.reunion_edit_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.reunions.labels.reunion_details', default="Reunion Details"), padding=10)
             self.reunion_edit_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             # Form fields
@@ -283,14 +285,14 @@ class ReunionsMixin:
             status_frame = ttk.Frame(self.reunion_edit_frame)
             status_frame.pack(fill=tk.X, pady=5)
 
-            ttk.Label(status_frame, text="Status*", width=20).pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(status_frame, text=_t('gui.learners.alumni.reunions.labels.status', default="Status*"), width=20).pack(side=tk.LEFT, padx=(0, 10))
             self.edit_reunion_vars['status'] = tk.StringVar()
             status_combo = ttk.Combobox(status_frame, textvariable=self.edit_reunion_vars['status'],
                                        values=["planning", "registration_open", "registration_closed", "completed", "cancelled"])
             status_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
             # Description
-            ttk.Label(self.reunion_edit_frame, text="Description:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(self.reunion_edit_frame, text=_t('gui.learners.alumni.reunions.labels.description', default="Description:")).pack(anchor='w', pady=(10, 5))
             self.edit_reunion_description = ScrolledText(self.reunion_edit_frame, height=6, wrap=tk.WORD)
             self.edit_reunion_description.pack(fill=tk.X)
 
@@ -298,9 +300,9 @@ class ReunionsMixin:
             button_frame = ttk.Frame(self.reunion_edit_frame)
             button_frame.pack(fill=tk.X, pady=(20, 0))
 
-            ttk.Button(button_frame, text="Save Changes",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.reunions.buttons.save_changes', default="Save Changes"),
                       command=self._save_reunion_changes).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Cancel Reunion",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.reunions.buttons.cancel_reunion', default="Cancel Reunion"),
                       command=self._cancel_reunion).pack(side=tk.LEFT)
 
         def show_class_reunions(self):
@@ -308,7 +310,7 @@ class ReunionsMixin:
             self.clear_content()
             self.update_status("Class Reunions")
 
-            ttk.Label(self.content_frame, text="Class Reunion Management",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.reunions.labels.class_reunion_management', default="Class Reunion Management"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Tabs for different reunion views
@@ -317,7 +319,7 @@ class ReunionsMixin:
 
             # Upcoming reunions tab
             upcoming_frame = ttk.Frame(notebook)
-            notebook.add(upcoming_frame, text="Upcoming Reunions")
+            notebook.add(upcoming_frame, text=_t('gui.learners.alumni.reunions.tabs.upcoming_reunions', default="Upcoming Reunions"))
 
             upcoming_text = ScrolledText(upcoming_frame, wrap=tk.WORD)
             upcoming_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -373,7 +375,7 @@ class ReunionsMixin:
 
             # Plan reunion tab
             plan_frame = ttk.Frame(notebook)
-            notebook.add(plan_frame, text="Plan a Reunion")
+            notebook.add(plan_frame, text=_t('gui.learners.alumni.reunions.tabs.plan_a_reunion', default="Plan a Reunion"))
 
             self.create_reunion_form(plan_frame)
 
@@ -382,9 +384,9 @@ class ReunionsMixin:
             required_fields = ['graduation_year', 'reunion_date', 'location']
             for field in required_fields:
                 if not self.reunion_vars[field].get().strip():
-                    messagebox.showerror("Validation Error", f"{field.replace('_', ' ').title()} is required!")
+                    messagebox.showerror(_t('gui.learners.alumni.reunions.dialogs.validation_error', default="Validation Error"), f"{field.replace('_', ' ').title()} is required!")
                     return
 
-            messagebox.showinfo("Reunion Planned", "Class reunion plan submitted successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.reunions.dialogs.reunion_planned', default="Reunion Planned"), _t('gui.learners.alumni.reunions.dialogs.class_reunion_plan_submitted_successfully', default="Class reunion plan submitted successfully!"))
             self.update_status("Reunion planning form submitted")
 

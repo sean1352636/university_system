@@ -20,7 +20,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from education_system.systems.nursery.infrastructure import paths
+from education_system import paths
 from education_system.systems.nursery.infrastructure.database import connect, init_db
 
 logger = logging.getLogger(__name__)
@@ -269,8 +269,8 @@ def export_csv(date_from: str, date_to: str, *, room: str | None = None,
     """Write the per-child breakdown to CSV; return path + row count."""
     rep = report(date_from, date_to, room=room)
     if path is None:
-        paths.ensure_directories()
-        path = paths.DATA_DIR / (
+        paths.ensure_nursery_directories()
+        path = paths.NURSERY_DATA_DIR / (
             f"attendance_report_{rep['date_from']}_to_{rep['date_to']}.csv")
     path = Path(path)
     headers = ["pupil_id", "name", "room", "present", "late", "absent",

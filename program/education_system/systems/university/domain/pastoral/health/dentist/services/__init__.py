@@ -1,27 +1,27 @@
-"""Dentist/Dental Clinic Core Services Module"""
+"""Dental-clinic service API."""
 
-from education_system.systems.university.domain.pastoral.health.dentist.services.dentist_core import (
-    PatientManager,
-    AppointmentManager,
-    TreatmentManager,
-    PrescriptionManager,
-    TransactionManager,
-    ReportManager,
-    init_dentist_db,
-    TREATMENT_TYPES,
+from .dentist_core import (
+    APPOINTMENT_SLOTS,
     DENTIST_STAFF,
-    APPOINTMENT_SLOTS
+    TREATMENT_TYPES,
+    AppointmentManager,
+    PatientManager,
+    PrescriptionManager,
+    ReportManager,
+    TransactionManager,
+    TreatmentManager,
+    init_dentist_db,
 )
 
 __all__ = [
-    'PatientManager',
-    'AppointmentManager',
-    'TreatmentManager',
-    'PrescriptionManager',
-    'TransactionManager',
-    'ReportManager',
-    'init_dentist_db',
-    'TREATMENT_TYPES',
-    'DENTIST_STAFF',
-    'APPOINTMENT_SLOTS'
+    "AppointmentManager",
+    "PatientManager",
+    "PrescriptionManager",
+    "ReportManager",
+    "TransactionManager",
+    "TreatmentManager",
+    "init_dentist_db",
+    "APPOINTMENT_SLOTS",
+    "DENTIST_STAFF",
+    "TREATMENT_TYPES",
 ]

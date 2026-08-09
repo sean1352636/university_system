@@ -20,7 +20,7 @@ from string import Template
 
 from education_system.systems.university.infrastructure.email.config import config
 from education_system.systems.university.infrastructure.logs import handle_exception, log_event
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # i18n support
 try:
@@ -51,8 +51,8 @@ def _load_mapping():
     if _MAPPING_CACHE is not None:
         return _MAPPING_CACHE
 
-    templates_dir = paths.EMAIL_TEMPLATES_DIR
-    mapping_file = paths.EMAIL_TEMPLATE_MAPPING_FILE
+    templates_dir = paths.UNIVERSITY_EMAIL_TEMPLATES_DIR
+    mapping_file = paths.UNIVERSITY_EMAIL_TEMPLATE_MAPPING_FILE
 
     if mapping_file.exists():
         try:
@@ -81,7 +81,7 @@ def initialize_analytics_templates():
 def ensure_templates_directory():
     """Ensure the email templates directory exists"""
     # Use the centralized EMAIL_TEMPLATES_DIR from paths
-    templates_dir = paths.EMAIL_TEMPLATES_DIR
+    templates_dir = paths.UNIVERSITY_EMAIL_TEMPLATES_DIR
 
     if not templates_dir.exists():
         templates_dir.mkdir(parents=True, exist_ok=True)

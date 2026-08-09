@@ -2,7 +2,7 @@
 import json
 import threading
 
-from education_system.systems.university.infrastructure import paths as _paths
+from education_system import paths as _paths
 from education_system.systems.university.interfaces.gui.shell.database.shared_imports import (
     BACKUP_DIR, logger,
 )
@@ -17,13 +17,13 @@ def _backup_config_path():
     config dir so the file ends up next to other persisted config and
     matches the path used by ``infrastructure/database/data_backup/config.py``.
     """
-    _paths.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    return _paths.CONFIG_DIR / "backup_config.json"
+    _paths.UNIVERSITY_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    return _paths.UNIVERSITY_CONFIG_DIR / "backup_config.json"
 
 
 def _gui_config_path():
-    _paths.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    return _paths.CONFIG_DIR / "gui_config.json"
+    _paths.UNIVERSITY_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    return _paths.UNIVERSITY_CONFIG_DIR / "gui_config.json"
 
 # Initialize basic config if not available
 config = {
@@ -54,7 +54,7 @@ config = {
     "remote_host": "",
     "remote_username": "",
     "remote_password": "",
-    "remote_path": "/backups",
+    "remote_path": _paths.UNIVERSITY_REMOTE_BACKUP_PATH,
     # Backup types
     "backup_type": "full",  # full, incremental, differential
     "enable_incremental": False,

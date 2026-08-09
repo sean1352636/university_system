@@ -29,7 +29,7 @@ class InstructorPortalGUI:
             install_destroy_race_filter(self.root)
         except Exception:
             pass
-        self.root.title("Instructor Portal")
+        self.root.title(_t('gui.shell.main.instructor_portal.windows.instructor_portal', default="Instructor Portal"))
         self.root.geometry("1300x800")
         self.root.minsize(1100, 700)
 
@@ -73,11 +73,11 @@ class InstructorPortalGUI:
                  font=('Arial', 15, 'bold'), bg='#2c3e50', fg='white'
                  ).pack(side='left', padx=20, pady=10)
 
-        tk.Button(header, text="Shutdown", bg='#c0392b', fg='white',
+        tk.Button(header, text=_t('gui.shell.main.instructor_portal.buttons.shutdown', default="Shutdown"), bg='#c0392b', fg='white',
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
                   command=self._shutdown).pack(side='right', padx=10, pady=10)
 
-        tk.Button(header, text="Return to Login", bg='#e67e22', fg='white',
+        tk.Button(header, text=_t('gui.shell.main.instructor_portal.buttons.return_to_login', default="Return to Login"), bg='#e67e22', fg='white',
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
                   command=self._return_to_login).pack(side='right', padx=10, pady=10)
 
@@ -220,7 +220,7 @@ class InstructorPortalGUI:
             GradeTrackingApp(tk.Toplevel(self.root), self.auth)
         except Exception as e:
             logger.error(f"Error opening grade tracking: {e}")
-            messagebox.showerror("Error", f"Failed to open Grade Tracking: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Grade Tracking: {e}")
 
     def _open_assignments_portal(self):
         try:
@@ -230,7 +230,7 @@ class InstructorPortalGUI:
             display_assignment_menu_gui(self.auth)
         except Exception as e:
             logger.error(f"Error opening assignments: {e}")
-            messagebox.showerror("Error", f"Failed to open Assignments: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Assignments: {e}")
 
     def _open_auto_grading_portal(self):
         try:
@@ -240,7 +240,7 @@ class InstructorPortalGUI:
             AutoGradingStaffPortal(self.root, self.auth)
         except Exception as e:
             logger.error(f"Error opening AI auto-grading portal: {e}")
-            messagebox.showerror("Error", f"Failed to open AI Auto-Grading: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open AI Auto-Grading: {e}")
 
     def _open_course_management_portal(self):
         try:
@@ -250,7 +250,7 @@ class InstructorPortalGUI:
             CourseManagementGUI(tk.Toplevel(self.root), auth_system=self.auth)
         except Exception as e:
             logger.error(f"Error opening course management: {e}")
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"),
                                  f"Failed to open Course Management: {e}")
 
     def _open_course_catalog(self):
@@ -261,7 +261,7 @@ class InstructorPortalGUI:
             CourseCatalogGUI(self.root, auth=self.auth)
         except Exception as e:
             logger.error(f"Error opening course catalog: {e}")
-            messagebox.showerror("Error", f"Failed to open Course Catalog: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Course Catalog: {e}")
 
     def _open_ta_management(self):
         try:
@@ -276,7 +276,7 @@ class InstructorPortalGUI:
             gui.show_ta_management()
         except Exception as e:
             logger.error(f"Error opening TA management: {e}")
-            messagebox.showerror("Error", f"Failed to open TA Management: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open TA Management: {e}")
 
     def _open_library_portal(self):
         try:
@@ -286,7 +286,7 @@ class InstructorPortalGUI:
             LibraryGUI(tk.Toplevel(self.root), self.auth)
         except Exception as e:
             logger.error(f"Error opening library: {e}")
-            messagebox.showerror("Error", f"Failed to open Library: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Library: {e}")
 
     def _open_calendar_portal(self):
         try:
@@ -296,7 +296,7 @@ class InstructorPortalGUI:
             CalendarGUI(auth_manager=self.auth, parent_window=tk.Toplevel(self.root))
         except Exception as e:
             logger.error(f"Error opening calendar: {e}")
-            messagebox.showerror("Error", f"Failed to open Academic Calendar: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Academic Calendar: {e}")
 
     def _open_health_portal(self):
         try:
@@ -306,7 +306,7 @@ class InstructorPortalGUI:
             HealthPortalGUI(tk.Toplevel(self.root), auth_system=self.auth)
         except Exception as e:
             logger.error(f"Error opening health portal: {e}")
-            messagebox.showerror("Error", f"Failed to open Health Portal: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Health Portal: {e}")
 
     def _open_student_union_portal(self):
         try:
@@ -316,14 +316,14 @@ class InstructorPortalGUI:
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
         except Exception as e:
             logger.error(f"Error opening student union: {e}")
-            messagebox.showerror("Error", f"Failed to open Student Union: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Student Union: {e}")
 
     def _open_campus_events_portal(self):
         try:
             self.show_campus_events_gui()
         except Exception as e:
             logger.error(f"Error opening campus events: {e}")
-            messagebox.showerror("Error", f"Failed to open Campus Events: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Campus Events: {e}")
 
     def _open_clubs_portal(self):
         try:
@@ -333,7 +333,7 @@ class InstructorPortalGUI:
             StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
         except Exception as e:
             logger.error(f"Error opening clubs: {e}")
-            messagebox.showerror("Error", f"Failed to open Clubs & Societies: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Clubs & Societies: {e}")
 
     def _open_student_jobs_portal(self):
         try:
@@ -343,7 +343,7 @@ class InstructorPortalGUI:
             StudentJobsGUI(parent=self.root, auth=self.auth)
         except Exception as e:
             logger.error(f"Error opening student jobs: {e}")
-            messagebox.showerror("Error", f"Failed to open Student Jobs: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Student Jobs: {e}")
 
     def _open_cafe_portal(self):
         try:
@@ -353,7 +353,7 @@ class InstructorPortalGUI:
             CafeSystemGUI(self.root, auth=self.auth).show_cafe_system()
         except Exception as e:
             logger.error(f"Error opening cafe: {e}")
-            messagebox.showerror("Error", f"Failed to open Cafe: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Cafe: {e}")
 
     def _open_bar_portal(self):
         try:
@@ -363,7 +363,7 @@ class InstructorPortalGUI:
             BarGUI(self.root, self.auth).show_bar()
         except Exception as e:
             logger.error(f"Error opening bar: {e}")
-            messagebox.showerror("Error", f"Failed to open Bar: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Bar: {e}")
 
     def _open_takeaway_portal(self):
         try:
@@ -373,7 +373,7 @@ class InstructorPortalGUI:
             TakeawayGUI(self.root, auth=self.auth).open_takeaway_gui()
         except Exception as e:
             logger.error(f"Error opening takeaway: {e}")
-            messagebox.showerror("Error", f"Failed to open Takeaway: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Takeaway: {e}")
 
     def _open_cinema_portal(self):
         try:
@@ -383,7 +383,7 @@ class InstructorPortalGUI:
             CinemaApp(tk.Toplevel(self.root))
         except Exception as e:
             logger.error(f"Error opening cinema: {e}")
-            messagebox.showerror("Error", f"Failed to open Cinema: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Cinema: {e}")
 
     def _open_barber_portal(self):
         try:
@@ -393,7 +393,7 @@ class InstructorPortalGUI:
             BarberGUI(tk.Toplevel(self.root), auth=self.auth)
         except Exception as e:
             logger.error(f"Error opening barber: {e}")
-            messagebox.showerror("Error", f"Failed to open Barber: {e}")
+            messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open Barber: {e}")
 
     def _launch(self, method_name):
         """Return a callback that calls the named method on the UnifiedManagementGUI.
@@ -408,10 +408,10 @@ class InstructorPortalGUI:
                 if fn:
                     fn()
                 else:
-                    messagebox.showinfo("Coming Soon", f"{method_name} is not yet available.")
+                    messagebox.showinfo(_t('gui.shell.main.instructor_portal.dialogs.coming_soon', default="Coming Soon"), f"{method_name} is not yet available.")
             except Exception as e:
                 logger.error(f"Error launching {method_name}: {e}")
-                messagebox.showerror("Error", f"Failed to open: {e}")
+                messagebox.showerror(_t('gui.shell.main.instructor_portal.dialogs.error', default="Error"), f"Failed to open: {e}")
         return callback
 
     def _get_backend_gui(self):
@@ -485,7 +485,7 @@ class InstructorPortalGUI:
         ttk.Label(self.content_frame, text=f"Welcome, {username}!",
                   font=('Arial', 14, 'bold')).pack(pady=20)
         ttk.Label(self.content_frame,
-                  text="Use the sidebar to navigate to your teaching modules.",
+                  text=_t('gui.shell.main.instructor_portal.labels.use_the_sidebar_to_navigate_to_your_teaching_modules', default="Use the sidebar to navigate to your teaching modules."),
                   font=('Arial', 11)).pack()
 
         # Attempt to show basic instructor info
@@ -499,7 +499,7 @@ class InstructorPortalGUI:
                 user_id = self.auth.current_user.get('user_id') or self.auth.current_user.get('id', '')
 
                 # Courses taught
-                info_frame = ttk.LabelFrame(self.content_frame, text="Quick Overview", padding=10)
+                info_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.shell.main.instructor_portal.labels.quick_overview', default="Quick Overview"), padding=10)
                 info_frame.pack(fill='x', padx=20, pady=10)
 
                 try:
@@ -508,7 +508,7 @@ class InstructorPortalGUI:
                         (f"%{username}%",))
                     courses = cursor.fetchall()
                     if courses:
-                        ttk.Label(info_frame, text="My Courses:",
+                        ttk.Label(info_frame, text=_t('gui.shell.main.instructor_portal.labels.my_courses', default="My Courses:"),
                                   font=('Arial', 11, 'bold')).pack(anchor='w')
                         for row in courses:
                             ttk.Label(info_frame, text=f"  - {row[0]}").pack(anchor='w')
@@ -523,7 +523,7 @@ class InstructorPortalGUI:
                         (f"%{username}%",))
                     assignments = cursor.fetchall()
                     if assignments:
-                        ttk.Label(info_frame, text="\nUpcoming Assignments:",
+                        ttk.Label(info_frame, text=_t('gui.shell.main.instructor_portal.labels.upcoming_assignments', default="\nUpcoming Assignments:"),
                                   font=('Arial', 11, 'bold')).pack(anchor='w')
                         for row in assignments:
                             ttk.Label(info_frame, text=f"  - {row[0]} (due {row[1]})").pack(anchor='w')
@@ -550,7 +550,7 @@ class InstructorPortalGUI:
                         (f"%{username}%",))
                     hours = cursor.fetchall()
                     if hours:
-                        ttk.Label(info_frame, text="\nOffice Hours:",
+                        ttk.Label(info_frame, text=_t('gui.shell.main.instructor_portal.labels.office_hours', default="\nOffice Hours:"),
                                   font=('Arial', 11, 'bold')).pack(anchor='w')
                         for row in hours:
                             ttk.Label(info_frame, text=f"  - {row[0]}: {row[1]} - {row[2]}").pack(anchor='w')

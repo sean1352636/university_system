@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class CompetitionsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Active Competitions")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.competitions.competition_views.windows.active_competitions', default="Active Competitions"))
         self.dialog.geometry("1000x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -78,24 +80,24 @@ class CompetitionsDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        title_label = ttk.Label(main_frame, text="Active Competitions", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.labels.active_competitions', default="Active Competitions"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Filter by Type:").pack(side='left', padx=(0, 10))
-        self.type_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.labels.filter_by_type', default="Filter by Type:")).pack(side='left', padx=(0, 10))
+        self.type_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.competitions.competition_views.values.all', default="All"))
         type_combo = ttk.Combobox(filter_frame, textvariable=self.type_var, width=20)
         type_combo['values'] = ('All', 'Sports', 'Academic', 'Creative', 'Community Service', 'Other')
         type_combo.pack(side='left', padx=(0, 10))
         type_combo.bind('<<ComboboxSelected>>', lambda e: self.load_data())
 
-        ttk.Button(filter_frame, text="Register for Competition", command=self.register_competition).pack(side='right')
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.register_for_competition', default="Register for Competition"), command=self.register_competition).pack(side='right')
 
         # Competitions list
-        list_frame = ttk.LabelFrame(main_frame, text="Available Competitions")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.labels.available_competitions', default="Available Competitions"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('ID', 'Name', 'Type', 'Start Date', 'End Date', 'Registration Deadline', 'Participants', 'Status')
@@ -115,7 +117,7 @@ class CompetitionsDialog:
         scrollbar.pack(side='right', fill='y')
 
         # Details frame
-        details_frame = ttk.LabelFrame(main_frame, text="Competition Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.labels.competition_details', default="Competition Details"))
         details_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=8, wrap=tk.WORD)
@@ -127,8 +129,8 @@ class CompetitionsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="View Results", command=self.view_results).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.view_results', default="View Results"), command=self.view_results).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         """Load competitions"""
@@ -164,7 +166,7 @@ class CompetitionsDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load competitions: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_views.dialogs.error', default="Error"), f"Failed to load competitions: {str(e)}")
 
     def show_details(self, event):
         """Show competition details"""
@@ -198,13 +200,13 @@ class CompetitionsDialog:
                 self.details_text.delete(1.0, tk.END)
                 self.details_text.insert(1.0, details_text)
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load details: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_views.dialogs.error', default="Error"), f"Failed to load details: {str(e)}")
 
     def register_competition(self):
         """Register for a competition"""
         selection = self.competitions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a competition first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.competitions.competition_views.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.competitions.competition_views.dialogs.please_select_a_competition_first', default="Please select a competition first."))
             return
 
         item = self.competitions_tree.item(selection[0])
@@ -220,7 +222,7 @@ class CompetitionsDialog:
         """View competition results"""
         selection = self.competitions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a competition first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.competitions.competition_views.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.competitions.competition_views.dialogs.please_select_a_competition_first', default="Please select a competition first."))
             return
 
         item = self.competitions_tree.item(selection[0])
@@ -240,7 +242,7 @@ class CompetitionHistoryDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("My Competition History")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.competitions.competition_views.windows.my_competition_history', default="My Competition History"))
         self.dialog.geometry("900x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -254,11 +256,11 @@ class CompetitionHistoryDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        title_label = ttk.Label(main_frame, text="My Competition History", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.labels.my_competition_history', default="My Competition History"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # History list
-        list_frame = ttk.LabelFrame(main_frame, text="Past Competitions")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.labels.past_competitions', default="Past Competitions"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Competition', 'Type', 'Club', 'Date', 'Rank', 'Score', 'Status')
@@ -278,7 +280,7 @@ class CompetitionHistoryDialog:
         scrollbar.pack(side='right', fill='y')
 
         # Stats frame
-        stats_frame = ttk.LabelFrame(main_frame, text="Statistics")
+        stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.labels.statistics', default="Statistics"))
         stats_frame.pack(fill='x', pady=(0, 10))
 
         self.stats_label = ttk.Label(stats_frame, text="", justify='left')
@@ -288,7 +290,7 @@ class CompetitionHistoryDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         """Load competition history"""
@@ -336,7 +338,7 @@ class CompetitionHistoryDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load history: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_views.dialogs.error', default="Error"), f"Failed to load history: {str(e)}")
 
 
 
@@ -344,27 +346,27 @@ class CompetitionHistoryDialog:
 def create_competitions_tab(self):
     """Create competitions tab"""
     competitions_frame = ttk.Frame(self.notebook)
-    self.notebook.add(competitions_frame, text="Competitions")
+    self.notebook.add(competitions_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.tabs.competitions', default="Competitions"))
     # Left panel
-    left_panel = ttk.LabelFrame(competitions_frame, text="Competition Actions")
+    left_panel = ttk.LabelFrame(competitions_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.labels.competition_actions', default="Competition Actions"))
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
-    ttk.Button(left_panel, text="View Competitions",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.view_competitions', default="View Competitions"),
               command=self.view_active_competitions).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Register Club",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.register_club', default="Register Club"),
               command=self.register_club_for_competition_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="View Results",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.view_results', default="View Results"),
               command=self.view_competition_results).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="My Competition History",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.my_competition_history', default="My Competition History"),
               command=self.view_my_competition_history).pack(fill='x', pady=2)
     # Admin actions separator
     ttk.Separator(left_panel, orient='horizontal').pack(fill='x', pady=10)
     # Admin buttons (will be visible if user has admin permissions)
-    ttk.Button(left_panel, text="Create New Competition (Admin)",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.create_new_competition_admin', default="Create New Competition (Admin)"),
               command=self.create_new_competition).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Update Competition Scores (Admin)",
+    ttk.Button(left_panel, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.buttons.update_competition_scores_admin', default="Update Competition Scores (Admin)"),
               command=self.update_competition_scores).pack(fill='x', pady=2)
     # Right panel
-    right_panel = ttk.LabelFrame(competitions_frame, text="Competition Information")
+    right_panel = ttk.LabelFrame(competitions_frame, text=_t('gui.pastoral.student_union_gui.competitions.competition_views.labels.competition_information', default="Competition Information"))
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
     self.competitions_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
                                                       height=30, width=80)
@@ -377,7 +379,7 @@ def view_active_competitions(self):
         dialog = CompetitionsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_views.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def view_my_competition_history(self):
@@ -386,6 +388,6 @@ def view_my_competition_history(self):
         dialog = CompetitionHistoryDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.competitions.competition_views.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

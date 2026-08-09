@@ -216,9 +216,9 @@ def test_api_blueprint_routes():
     app = flask.Flask(__name__)
     app.register_blueprint(advanced_search_bp)
     rules = {r.rule for r in app.url_map.iter_rules()}
-    assert "/api/sixthform/advanced-search/saved" in rules
-    assert "/api/sixthform/advanced-search/run" in rules
-    assert "/api/sixthform/advanced-search/cohorts" in rules
+    assert "/api/advanced-search/saved" in rules
+    assert "/api/advanced-search/run" in rules
+    assert "/api/advanced-search/cohorts" in rules
 
 
 # ── 41. Index status / incremental ────────────────────────────────

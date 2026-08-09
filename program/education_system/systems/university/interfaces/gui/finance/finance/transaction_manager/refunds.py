@@ -1,5 +1,7 @@
 """Refund processing GUI"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.finance.finance.transaction_manager._imports import (
     tk, ttk, messagebox, _, datetime, get_connection, get_auth,
 )
@@ -203,7 +205,7 @@ class RefundsMixin:
 
         ttk.Label(refund_frame, text=_("finance_gui.transaction_manager.refund_type_label"),
                  font=('Arial', 12)).pack(anchor='w')
-        refund_type_var = tk.StringVar(value="partial")
+        refund_type_var = tk.StringVar(value=_t('gui.finance.finance.transaction_manager.refunds.values.partial', default="partial"))
         refund_type_combo = ttk.Combobox(
             refund_frame, textvariable=refund_type_var,
             values=["full", "partial", "withdrawal", "overpayment"],
@@ -235,7 +237,7 @@ class RefundsMixin:
                 else:
                     messagebox.showinfo(
                         _("finance_gui.messages.info") if False else "Select payment",
-                        "Select a payment from the history to use its amount as the full refund.",
+                        _t('gui.finance.finance.transaction_manager.refunds.dialogs.select_a_payment_from_the_history_to_use_its_amount_as_the_full', default="Select a payment from the history to use its amount as the full refund."),
                     )
 
         refund_type_combo.bind('<<ComboboxSelected>>', _on_refund_type_change)
@@ -252,7 +254,7 @@ class RefundsMixin:
 
         ttk.Label(refund_frame, text=_("finance_gui.transaction_manager.refund_method_label"),
                  font=('Arial', 12)).pack(anchor='w')
-        refund_method_var = tk.StringVar(value="bank_transfer")
+        refund_method_var = tk.StringVar(value=_t('gui.finance.finance.transaction_manager.refunds.values.bank_transfer', default="bank_transfer"))
         ttk.Combobox(
             refund_frame, textvariable=refund_method_var,
             values=["bank_transfer", "original_payment_method", "check", "cash"],
@@ -261,7 +263,7 @@ class RefundsMixin:
 
         # ----- Existing refunds + status update -----
         manage_frame = ttk.LabelFrame(
-            scrollable_frame, text="Existing Refunds — Update Status", padding=15,
+            scrollable_frame, text=_t('gui.finance.finance.transaction_manager.refunds.labels.existing_refunds_update_status', default="Existing Refunds — Update Status"), padding=15,
         )
         manage_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
@@ -308,8 +310,8 @@ class RefundsMixin:
         status_row = ttk.Frame(manage_frame)
         status_row.pack(fill='x', pady=8)
 
-        ttk.Label(status_row, text="New status:", font=('Arial', 11)).pack(side='left', padx=5)
-        new_status_var = tk.StringVar(value="approved")
+        ttk.Label(status_row, text=_t('gui.finance.finance.transaction_manager.refunds.labels.new_status', default="New status:"), font=('Arial', 11)).pack(side='left', padx=5)
+        new_status_var = tk.StringVar(value=_t('gui.finance.finance.transaction_manager.refunds.values.approved', default="approved"))
         ttk.Combobox(
             status_row, textvariable=new_status_var, values=REFUND_STATUSES,
             state='readonly', width=15,
@@ -320,7 +322,7 @@ class RefundsMixin:
             if not selection:
                 messagebox.showwarning(
                     _("finance_gui.messages.warning"),
-                    "Select a refund row to update its status.",
+                    _t('gui.finance.finance.transaction_manager.refunds.dialogs.select_a_refund_row_to_update_its_status', default="Select a refund row to update its status."),
                 )
                 return
             row = refunds_tree.item(selection[0])['values']
@@ -394,9 +396,9 @@ class RefundsMixin:
                 messagebox.showerror(_("finance_gui.messages.error"),
                                     f"Failed to update status: {e}")
 
-        ttk.Button(status_row, text="Update Status",
+        ttk.Button(status_row, text=_t('gui.finance.finance.transaction_manager.refunds.buttons.update_status', default="Update Status"),
                   command=update_refund_status).pack(side='left', padx=10)
-        ttk.Button(status_row, text="Refresh",
+        ttk.Button(status_row, text=_t('gui.finance.finance.transaction_manager.refunds.buttons.refresh', default="Refresh"),
                   command=lambda: load_existing_refunds(_selected_student_id())
                   ).pack(side='left', padx=5)
 
@@ -425,7 +427,7 @@ class RefundsMixin:
                 student_id = _selected_student_id()
                 if not student_id:
                     messagebox.showerror(_("finance_gui.messages.error"),
-                                        "Please select a student.")
+                                        _t('gui.finance.finance.transaction_manager.refunds.dialogs.please_select_a_student', default="Please select a student."))
                     _release()
                     return
 
@@ -433,7 +435,7 @@ class RefundsMixin:
                 if not amount_str:
                     messagebox.showwarning(
                         _("finance_gui.messages.warning"),
-                        "Please enter a refund amount.",
+                        _t('gui.finance.finance.transaction_manager.refunds.dialogs.please_enter_a_refund_amount', default="Please enter a refund amount."),
                     )
                     _release()
                     return
@@ -449,7 +451,7 @@ class RefundsMixin:
                 if refund_amount <= 0:
                     messagebox.showerror(
                         _("finance_gui.messages.error"),
-                        "Refund amount must be greater than zero.",
+                        _t('gui.finance.finance.transaction_manager.refunds.dialogs.refund_amount_must_be_greater_than_zero', default="Refund amount must be greater than zero."),
                     )
                     _release()
                     return

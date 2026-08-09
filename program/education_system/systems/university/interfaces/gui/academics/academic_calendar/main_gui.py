@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
 import tkinter.font as tkFont
@@ -141,10 +143,9 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
         # Threading for long operations
         self.task_queue = queue.Queue()
         self._task_after_id = None
-        # Authoritative stop signal for the after() poll loop. Using a plain
-        # flag (rather than after_cancel) avoids Tkinter deleting the callback
-        # command out from under an already-queued timer, which surfaces as a
-        # Tcl "invalid command name ...process_tasks" background error.
+        # The stop flag protects a callback already in progress; the stored
+        # after id is cancelled before teardown so Tcl cannot later invoke a
+        # Python command that was deleted with the window.
         self._closing = False
 
         # Initialize GUI
@@ -433,6 +434,9 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
 
         # Start task processor
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
+        # Some launchers destroy their Toplevel directly instead of invoking
+        # WM_DELETE_WINDOW, so cover that shutdown path as well.
+        self.root.bind("<Destroy>", self._on_root_destroy, add="+")
         self._start_task_processor()
 
     def _configure_styles(self):
@@ -782,7 +786,7 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
             gui_logger.error(f"Traceback: {traceback.format_exc()}")
             # Show error to user
             messagebox.showerror(
-                "Calendar Initialization Error",
+                _t('gui.academics.academic_calendar.main.dialogs.calendar_initialization_error', default="Calendar Initialization Error"),
                 f"Failed to initialize calendar manager:\n\n{str(e)}\n\nCheck logs for details."
             )
             # Keep calendar_manager as None so the GUI can show appropriate message
@@ -822,10 +826,22 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
         return self.auth_manager.check_permission(required_permission)
 
     def _stop_task_processor(self):
-        """Signal the after() poll loop to stop. Uses a flag rather than
-        after_cancel to avoid a Tcl 'invalid command name' race on teardown."""
+        """Stop and unregister the Tk task-poll callback before teardown."""
         self._closing = True
+        after_id = self._task_after_id
         self._task_after_id = None
+        if after_id is not None:
+            try:
+                self.root.after_cancel(after_id)
+            except (tk.TclError, RuntimeError):
+                # The callback may already be executing or the interpreter may
+                # be part-way through destruction; the stop flag handles both.
+                pass
+
+    def _on_root_destroy(self, event):
+        """Handle teardown initiated by an owning dashboard or parent window."""
+        if event.widget is self.root:
+            self._stop_task_processor()
 
     def _on_close(self):
         """Stop the task poll loop and destroy the window."""
@@ -1100,5 +1116,4 @@ def integrate_with_main_system():
         messagebox.showwarning(_("academic_calendar.messages.auth_unavailable"),
                              _("academic_calendar.messages.limited_mode"))
         return run_gui_calendar()
-
 

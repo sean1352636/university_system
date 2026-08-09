@@ -12,7 +12,6 @@ import io
 import json
 import logging
 import os
-from education_system.systems.university.infrastructure.database.db import sqlite3
 import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -24,6 +23,10 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from education_system.systems.university.infrastructure.database.db import get_connection, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.activity_logger import log_export
 from education_system.systems.university.infrastructure.i18n import get_text, _
+from education_system.systems.university.services.boundary_errors import (
+    ExportBoundaryError,
+)
+from education_system.systems.university.services.operations import OperationalIssue
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +41,12 @@ class ExportFormat(Enum):
 class ExportResult:
     """Result of an export operation."""
     success: bool
-    format: ExportFormat
+    format: Optional[ExportFormat]
     file_path: Optional[str] = None
     file_size: int = 0
     record_count: int = 0
     error: Optional[str] = None
+    issue: Optional[OperationalIssue] = None
     content: Optional[bytes] = None  # For in-memory exports
 
 @dataclass
@@ -66,7 +70,7 @@ class DataExporter(ABC):
     @abstractmethod
     def export(self, data: Any) -> bytes:
         """Export data to bytes."""
-        pass
+        raise NotImplementedError
 
 class JSONExporter(DataExporter):
     """Export data as JSON."""
@@ -122,9 +126,14 @@ class CSVExporter(DataExporter):
         writer = csv.DictWriter(output, fieldnames=keys, extrasaction='ignore')
         writer.writeheader()
 
+        # Escape spreadsheet formula triggers: exported personal data (names,
+        # comments, addresses) must not execute as a formula when the subject
+        # opens the CSV.
+        from education_system.platform.kernel.core.csv_safety import sanitize_cell
+
         for record in data:
             if isinstance(record, dict):
-                writer.writerow(record)
+                writer.writerow({k: sanitize_cell(v) for k, v in record.items()})
 
         return output.getvalue()
 
@@ -244,8 +253,8 @@ class DataExportService:
         if export_dir:
             self.export_dir = Path(export_dir)
         else:
-            from education_system.systems.university.infrastructure import paths
-            self.export_dir = Path(paths.DB_EXPORTS_DIR)
+            from education_system import paths
+            self.export_dir = Path(paths.UNIVERSITY_DB_EXPORTS_DIR)
 
         self.export_dir.mkdir(parents=True, exist_ok=True)
 
@@ -282,6 +291,12 @@ class DataExportService:
             row = cursor.fetchone()
             if row:
                 data.profile = dict(row) if hasattr(row, 'keys') else {'id': row[0]}
+            else:
+                raise ExportBoundaryError(
+                    f"Student {student_id!r} does not exist",
+                    code="EXPORT_SUBJECT_NOT_FOUND",
+                    details={"student_id": student_id},
+                )
 
             # Get user account info (sanitized)
             if data.profile.get('user_id'):
@@ -294,66 +309,53 @@ class DataExportService:
                 if row:
                     data.profile['user'] = dict(row) if hasattr(row, 'keys') else {}
 
-            # Get enrollments (enrollments table in some deployments, student_modules in others)
-            try:
-                cursor = conn.execute('''
-                    SELECT e.*, c.name as course_name, c.code as course_code
-                    FROM enrollments e
-                    LEFT JOIN courses c ON e.course_id = c.id
-                    WHERE e.student_id = ?
-                ''', (student_id,))
-                data.enrollments = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
-            except sqlite3.OperationalError:
-                try:
-                    cursor = conn.execute('''
-                        SELECT * FROM student_modules WHERE student_id = ?
-                    ''', (student_id,))
-                    data.enrollments = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
-                except sqlite3.OperationalError:
-                    pass
+            # Canonical programme registrations and module enrolments.
+            cursor = conn.execute('''
+                SELECT pr.registration_id, pr.student_id, pr.programme_code,
+                       pr.academic_year, pr.occurrence_code, pr.mode_of_study,
+                       pr.status, pr.effective_from, pr.effective_to,
+                       me.module_enrolment_id, me.module_code,
+                       me.teaching_period, me.attempt_number,
+                       me.status AS module_status
+                  FROM programme_registrations pr
+                  LEFT JOIN module_enrolments me
+                    ON me.registration_id = pr.registration_id
+                 WHERE pr.student_id = ?
+                 ORDER BY pr.effective_from, me.module_code
+            ''', (student_id,))
+            data.enrollments = [dict(row) for row in cursor.fetchall()]
 
             # Get grades
-            try:
-                cursor = conn.execute('''
-                    SELECT * FROM grades WHERE student_id = ?
-                ''', (student_id,))
-                data.grades = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
-            except sqlite3.OperationalError:
-                pass  # Table might not exist
+            cursor = conn.execute(
+                "SELECT * FROM grades WHERE student_id = ?", (student_id,)
+            )
+            data.grades = [dict(row) for row in cursor.fetchall()]
 
-            # Get financial records (if exists)
-            try:
-                cursor = conn.execute('''
-                    SELECT * FROM financial_transactions WHERE student_id = ?
-                ''', (student_id,))
-                data.financial_records = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
-            except sqlite3.OperationalError:
-                pass
+            cursor = conn.execute('''
+                SELECT 'charge' AS record_type, charge_id AS record_id,
+                       currency, amount_minor, status, created_at,
+                       charge_type AS description
+                  FROM student_charges WHERE student_id = ?
+                UNION ALL
+                SELECT 'payment', payment_id, currency, amount_minor, status,
+                       created_at, provider || ':' || provider_reference
+                  FROM student_payments WHERE student_id = ?
+                ORDER BY created_at
+            ''', (student_id, student_id))
+            data.financial_records = [dict(row) for row in cursor.fetchall()]
 
-            # Get attendance records (from enhanced attendance tracker)
-            try:
-                cursor = conn.execute('''
-                    SELECT id, student_id, module_code, date, status, notes,
-                           recorded_by, recorded_at, check_in_method,
-                           location_data, session_id, makeup_for_date,
-                           verification_status
-                    FROM attendance_records
-                    WHERE student_id = ?
-                    ORDER BY date DESC, recorded_at DESC
-                ''', (student_id,))
-                data.attendance = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
-            except sqlite3.OperationalError:
-                pass  # attendance_records table may not exist in this deployment
-
-            # Fallback / supplement: legacy `attendance` table used by some installs
-            if not data.attendance:
-                try:
-                    cursor = conn.execute('''
-                        SELECT * FROM attendance WHERE student_id = ? ORDER BY date DESC
-                    ''', (student_id,))
-                    data.attendance = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
-                except sqlite3.OperationalError:
-                    pass
+            cursor = conn.execute('''
+                SELECT ae.attendance_event_id, ae.student_id, me.module_code,
+                       ae.session_id, ae.occurred_at, ae.status, ae.source,
+                       ae.recorded_by, ae.recorded_at, ae.reason,
+                       ae.supersedes_event_id
+                  FROM attendance_events ae
+                  JOIN module_enrolments me
+                    ON me.module_enrolment_id = ae.module_enrolment_id
+                 WHERE ae.student_id = ?
+                 ORDER BY ae.occurred_at DESC, ae.recorded_at DESC
+            ''', (student_id,))
+            data.attendance = [dict(row) for row in cursor.fetchall()]
 
             # Build a small summary (counts by status + attendance rate)
             if data.attendance:
@@ -401,12 +403,21 @@ class DataExportService:
         Returns:
             ExportResult with file path or content
         """
-        if isinstance(format, str):
-            format = ExportFormat(format.lower())
-
-        logger.info(f"Exporting data for student {student_id} as {format.value}")
-
         try:
+            if isinstance(format, str):
+                try:
+                    format = ExportFormat(format.lower())
+                except ValueError as exc:
+                    raise ExportBoundaryError(
+                        f"Unsupported export format: {format}",
+                        code="UNSUPPORTED_EXPORT_FORMAT",
+                        details={"format": format},
+                    ) from exc
+
+            logger.info(
+                "Exporting data for student %s as %s", student_id, format.value
+            )
+
             # Collect data
             data = self.collect_student_data(student_id)
             data_dict = self._to_dict(data)
@@ -456,10 +467,14 @@ class DataExportService:
 
         except Exception as e:
             logger.error(f"Export failed for student {student_id}: {e}")
+            issue = OperationalIssue.from_exception(
+                e, component="student_data_export", retryable=False
+            )
             return ExportResult(
                 success=False,
-                format=format,
-                error=str(e),
+                format=format if isinstance(format, ExportFormat) else None,
+                error=issue.message,
+                issue=issue,
             )
 
     def _create_zip_export(self, data: Dict[str, Any]) -> bytes:

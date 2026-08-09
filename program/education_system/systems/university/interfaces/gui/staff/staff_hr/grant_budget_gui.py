@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -39,7 +41,7 @@ class GrantBudgetGUI:
         self.grant_map = {}
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Grant Budget Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), _t('gui.staff.staff_hr.grant_budget.dialogs.login_required_to_access_grant_budget_management', default="Login required to access Grant Budget Management"))
             return
 
         if parent_notebook:
@@ -54,21 +56,21 @@ class GrantBudgetGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Grant Budgets")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.grant_budget.tabs.grant_budgets', default="Grant Budgets"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Grant Budget Management")
+        self.window.title(_t('gui.staff.staff_hr.grant_budget.windows.grant_budget_management', default="Grant Budget Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.grant_budget.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -134,45 +136,45 @@ class GrantBudgetGUI:
     def _create_budget_overview_tab(self):
         """Create budget overview tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Budget Overview")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.grant_budget.tabs.budget_overview', default="Budget Overview"))
 
         # Header with grant selector
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Budget Overview", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.budget_overview', default="Budget Overview"), style='Header.TLabel').pack(side=tk.LEFT)
 
         selector_frame = ttk.Frame(header_frame)
         selector_frame.pack(side=tk.RIGHT)
-        ttk.Label(selector_frame, text="Grant:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.grant', default="Grant:")).pack(side=tk.LEFT, padx=5)
         self.overview_grant_combo = ttk.Combobox(selector_frame, width=35, state='readonly')
         self.overview_grant_combo.pack(side=tk.LEFT, padx=5)
         self.overview_grant_combo.bind('<<ComboboxSelected>>', lambda e: self._load_budget_overview())
-        ttk.Button(selector_frame, text="Refresh", command=self._refresh_budget_overview).pack(side=tk.LEFT, padx=5)
-        ttk.Button(selector_frame, text="Add Allocation",
+        ttk.Button(selector_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.refresh', default="Refresh"), command=self._refresh_budget_overview).pack(side=tk.LEFT, padx=5)
+        ttk.Button(selector_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.add_allocation', default="Add Allocation"),
                    command=self._add_allocation_dialog).pack(side=tk.LEFT, padx=5)
 
         self._populate_grant_combo(self.overview_grant_combo)
 
         # Summary cards frame
-        self.summary_frame = ttk.LabelFrame(tab, text="Summary", padding=10)
+        self.summary_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.grant_budget.labels.summary', default="Summary"), padding=10)
         self.summary_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         cards_frame = ttk.Frame(self.summary_frame)
         cards_frame.pack(fill=tk.X)
 
-        self.summary_allocated_label = ttk.Label(cards_frame, text="Allocated: £0.00",
+        self.summary_allocated_label = ttk.Label(cards_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.allocated_0_00', default="Allocated: £0.00"),
                                                   font=('Arial', 11, 'bold'))
         self.summary_allocated_label.pack(side=tk.LEFT, padx=20)
 
-        self.summary_spent_label = ttk.Label(cards_frame, text="Spent: £0.00",
+        self.summary_spent_label = ttk.Label(cards_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.spent_0_00', default="Spent: £0.00"),
                                               font=('Arial', 11, 'bold'))
         self.summary_spent_label.pack(side=tk.LEFT, padx=20)
 
-        self.summary_committed_label = ttk.Label(cards_frame, text="Committed: £0.00",
+        self.summary_committed_label = ttk.Label(cards_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.committed_0_00', default="Committed: £0.00"),
                                                    font=('Arial', 11, 'bold'))
         self.summary_committed_label.pack(side=tk.LEFT, padx=20)
 
-        self.summary_remaining_label = ttk.Label(cards_frame, text="Remaining: £0.00",
+        self.summary_remaining_label = ttk.Label(cards_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.remaining_0_00', default="Remaining: £0.00"),
                                                    font=('Arial', 11, 'bold'))
         self.summary_remaining_label.pack(side=tk.LEFT, padx=20)
 
@@ -213,10 +215,10 @@ class GrantBudgetGUI:
             self.overview_tree.delete(item)
 
         # Reset summary labels
-        self.summary_allocated_label.config(text="Allocated: £0.00")
-        self.summary_spent_label.config(text="Spent: £0.00")
-        self.summary_committed_label.config(text="Committed: £0.00")
-        self.summary_remaining_label.config(text="Remaining: £0.00")
+        self.summary_allocated_label.config(text=_t('gui.staff.staff_hr.grant_budget.text.allocated_0_00', default="Allocated: £0.00"))
+        self.summary_spent_label.config(text=_t('gui.staff.staff_hr.grant_budget.text.spent_0_00', default="Spent: £0.00"))
+        self.summary_committed_label.config(text=_t('gui.staff.staff_hr.grant_budget.text.committed_0_00', default="Committed: £0.00"))
+        self.summary_remaining_label.config(text=_t('gui.staff.staff_hr.grant_budget.text.remaining_0_00', default="Remaining: £0.00"))
 
         grant_id = self._get_selected_grant_id(self.overview_grant_combo)
         if not grant_id:
@@ -271,11 +273,11 @@ class GrantBudgetGUI:
         """Open dialog to add a new budget allocation."""
         grant_id = self._get_selected_grant_id(self.overview_grant_combo)
         if not grant_id:
-            messagebox.showinfo("Info", "Please select a grant first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.info', default="Info"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_a_grant_first', default="Please select a grant first."))
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Allocation")
+        dialog.title(_t('gui.staff.staff_hr.grant_budget.windows.add_allocation', default="Add Allocation"))
         dialog.geometry("450x300")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -284,7 +286,7 @@ class GrantBudgetGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Category selector
-        ttk.Label(frame, text="Category:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.category', default="Category:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         category_combo = ttk.Combobox(frame, width=30, state='readonly')
         category_combo.grid(row=0, column=1, padx=10, pady=8)
 
@@ -304,12 +306,12 @@ class GrantBudgetGUI:
             category_combo.current(0)
 
         # Allocated amount
-        ttk.Label(frame, text="Allocated Amount:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.allocated_amount', default="Allocated Amount:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         amount_entry = ttk.Entry(frame, width=20)
         amount_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Notes
-        ttk.Label(frame, text="Notes:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.notes', default="Notes:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         notes_entry = ttk.Entry(frame, width=35)
         notes_entry.grid(row=2, column=1, padx=10, pady=8)
 
@@ -322,7 +324,7 @@ class GrantBudgetGUI:
 
             selected_category_id = category_map.get(category_label)
             if not selected_category_id:
-                messagebox.showerror("Error", "Please select a valid category.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_a_valid_category', default="Please select a valid category."), parent=dialog)
                 return
 
             try:
@@ -340,19 +342,19 @@ class GrantBudgetGUI:
                     allocated_amount=amount,
                     notes=notes
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"),
                                     f"Allocation created. ID: {allocation_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_budget_overview()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Add", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.add', default="Add"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         amount_entry.focus_set()
 
@@ -361,22 +363,22 @@ class GrantBudgetGUI:
     def _create_expenses_tab(self):
         """Create expenses tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Expenses")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.grant_budget.tabs.expenses', default="Expenses"))
 
         # Header with filters
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Expenses", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.expenses', default="Expenses"), style='Header.TLabel').pack(side=tk.LEFT)
 
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(filter_frame, text="Grant:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.grant', default="Grant:")).pack(side=tk.LEFT, padx=5)
         self.expenses_grant_combo = ttk.Combobox(filter_frame, width=25, state='readonly')
         self.expenses_grant_combo.pack(side=tk.LEFT, padx=5)
         self.expenses_grant_combo.bind('<<ComboboxSelected>>', lambda e: self._load_expenses())
 
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.expenses_status_combo = ttk.Combobox(
             filter_frame, values=['All', 'submitted', 'approved', 'rejected'],
             width=12, state='readonly')
@@ -384,8 +386,8 @@ class GrantBudgetGUI:
         self.expenses_status_combo.pack(side=tk.LEFT, padx=5)
         self.expenses_status_combo.bind('<<ComboboxSelected>>', lambda e: self._load_expenses())
 
-        ttk.Button(filter_frame, text="Refresh", command=self._refresh_expenses).pack(side=tk.LEFT, padx=5)
-        ttk.Button(filter_frame, text="Submit Expense",
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.refresh', default="Refresh"), command=self._refresh_expenses).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.submit_expense', default="Submit Expense"),
                    command=self._submit_expense_dialog).pack(side=tk.LEFT, padx=5)
 
         self._populate_grant_combo(self.expenses_grant_combo, include_all=True)
@@ -483,11 +485,11 @@ class GrantBudgetGUI:
         try:
             expense = GrantBudgetManager.get_expense(expense_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load expense details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), f"Could not load expense details: {e}")
             return
 
         if not expense:
-            messagebox.showerror("Error", "Expense not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), _t('gui.staff.staff_hr.grant_budget.dialogs.expense_not_found', default="Expense not found"))
             return
 
         dialog = tk.Toplevel(self.root)
@@ -498,7 +500,7 @@ class GrantBudgetGUI:
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        details_frame = ttk.LabelFrame(frame, text="Expense Details", padding=15)
+        details_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.expense_details', default="Expense Details"), padding=15)
         details_frame.pack(fill=tk.X, pady=(0, 10))
 
         category_name = self._expense_category_cache.get(
@@ -530,12 +532,12 @@ class GrantBudgetGUI:
         # Close button
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def _submit_expense_dialog(self):
         """Open dialog to submit a new expense."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Submit Expense")
+        dialog.title(_t('gui.staff.staff_hr.grant_budget.windows.submit_expense', default="Submit Expense"))
         dialog.geometry("550x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -544,7 +546,7 @@ class GrantBudgetGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Grant selector
-        ttk.Label(frame, text="Grant:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.grant', default="Grant:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         grant_combo = ttk.Combobox(frame, width=35, state='readonly')
         grant_combo.grid(row=0, column=1, padx=10, pady=8)
 
@@ -554,7 +556,7 @@ class GrantBudgetGUI:
             grant_combo.current(0)
 
         # Category selector
-        ttk.Label(frame, text="Category:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.category', default="Category:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         category_combo = ttk.Combobox(frame, width=30, state='readonly')
         category_combo.grid(row=1, column=1, padx=10, pady=8)
 
@@ -575,38 +577,38 @@ class GrantBudgetGUI:
             category_combo.current(0)
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.description', default="Description:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         desc_entry = ttk.Entry(frame, width=35)
         desc_entry.grid(row=2, column=1, padx=10, pady=8)
 
         # Amount
-        ttk.Label(frame, text="Amount:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.amount', default="Amount:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         amount_entry = ttk.Entry(frame, width=20)
         amount_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Date
-        ttk.Label(frame, text="Date (YYYY-MM-DD):").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         date_entry = ttk.Entry(frame, width=15)
         date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         date_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
         # Vendor
-        ttk.Label(frame, text="Vendor:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.vendor', default="Vendor:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         vendor_entry = ttk.Entry(frame, width=35)
         vendor_entry.grid(row=5, column=1, padx=10, pady=8)
 
         # Receipt path
-        ttk.Label(frame, text="Receipt Path:").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.receipt_path', default="Receipt Path:")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         receipt_entry = ttk.Entry(frame, width=35)
         receipt_entry.grid(row=6, column=1, padx=10, pady=8)
 
         # Invoice number
-        ttk.Label(frame, text="Invoice #:").grid(row=7, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.invoice', default="Invoice #:")).grid(row=7, column=0, sticky='e', padx=10, pady=8)
         invoice_entry = ttk.Entry(frame, width=25)
         invoice_entry.grid(row=7, column=1, padx=10, pady=8, sticky='w')
 
         # Notes
-        ttk.Label(frame, text="Notes:").grid(row=8, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.notes', default="Notes:")).grid(row=8, column=0, sticky='e', padx=10, pady=8)
         notes_entry = ttk.Entry(frame, width=35)
         notes_entry.grid(row=8, column=1, padx=10, pady=8)
 
@@ -620,7 +622,7 @@ class GrantBudgetGUI:
 
             selected_grant_id = self.grant_map.get(grant_label)
             if not selected_grant_id:
-                messagebox.showerror("Error", "Please select a valid grant.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_a_valid_grant', default="Please select a valid grant."), parent=dialog)
                 return
 
             # Validate category
@@ -632,7 +634,7 @@ class GrantBudgetGUI:
 
             selected_category_id = category_map.get(category_label)
             if not selected_category_id:
-                messagebox.showerror("Error", "Please select a valid category.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_a_valid_category', default="Please select a valid category."), parent=dialog)
                 return
 
             # Find matching allocation for this grant + category
@@ -647,9 +649,9 @@ class GrantBudgetGUI:
                 pass
 
             if not allocation_id:
-                messagebox.showerror("Error",
-                                     "No allocation found for this grant and category. "
-                                     "Please create an allocation first.",
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"),
+                                     _t('gui.staff.staff_hr.grant_budget.dialogs.no_allocation_found_for_this_grant_and_category_please_create_an', default="No allocation found for this grant and category. "
+                                     "Please create an allocation first."),
                                      parent=dialog)
                 return
 
@@ -681,19 +683,19 @@ class GrantBudgetGUI:
                     submitted_by=self._get_user_id(),
                     notes=notes
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"),
                                     f"Expense submitted. ID: {expense_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_expenses()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=9, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Submit", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.submit', default="Submit"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         desc_entry.focus_set()
 
@@ -702,21 +704,21 @@ class GrantBudgetGUI:
     def _create_alerts_tab(self):
         """Create alerts tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Alerts")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.grant_budget.tabs.alerts', default="Alerts"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Funding Alerts", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.funding_alerts', default="Funding Alerts"), style='Header.TLabel').pack(side=tk.LEFT)
 
         btn_frame = ttk.Frame(header_frame)
         btn_frame.pack(side=tk.RIGHT)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_alerts).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Mark Read",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.refresh', default="Refresh"), command=self._load_alerts).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.mark_read', default="Mark Read"),
                    command=self._mark_alert_read).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Resolve",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.resolve', default="Resolve"),
                    command=self._resolve_alert).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Check Thresholds",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.check_thresholds', default="Check Thresholds"),
                    command=self._check_thresholds).pack(side=tk.LEFT, padx=5)
 
         # Alerts treeview
@@ -771,7 +773,7 @@ class GrantBudgetGUI:
         """Mark the selected alert as read."""
         selection = self.alerts_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an alert first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.info', default="Info"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_an_alert_first', default="Please select an alert first."))
             return
 
         item = self.alerts_tree.item(selection[0])
@@ -779,22 +781,22 @@ class GrantBudgetGUI:
 
         try:
             GrantBudgetManager.mark_alert_read(alert_id)
-            messagebox.showinfo("Success", "Alert marked as read.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.alert_marked_as_read', default="Alert marked as read."))
             self._load_alerts()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e))
 
     def _resolve_alert(self):
         """Resolve the selected alert."""
         selection = self.alerts_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an alert first.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.info', default="Info"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_an_alert_first', default="Please select an alert first."))
             return
 
         item = self.alerts_tree.item(selection[0])
         alert_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm", "Resolve this alert?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.grant_budget.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.grant_budget.dialogs.resolve_this_alert', default="Resolve this alert?")):
             return
 
         try:
@@ -802,16 +804,16 @@ class GrantBudgetGUI:
                 alert_id=alert_id,
                 resolved_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", "Alert resolved.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.alert_resolved', default="Alert resolved."))
             self._load_alerts()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e))
 
     def _check_thresholds(self):
         """Check threshold alerts for all loaded grants."""
         grant_ids = list(self.grant_map.values())
         if not grant_ids:
-            messagebox.showinfo("Info", "No grants available to check.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.info', default="Info"), _t('gui.staff.staff_hr.grant_budget.dialogs.no_grants_available_to_check', default="No grants available to check."))
             return
 
         total_alerts = 0
@@ -822,7 +824,7 @@ class GrantBudgetGUI:
             except Exception:
                 pass
 
-        messagebox.showinfo("Threshold Check",
+        messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.threshold_check', default="Threshold Check"),
                             f"Check complete. {total_alerts} new alert(s) created.")
         self._load_alerts()
 
@@ -831,21 +833,21 @@ class GrantBudgetGUI:
     def _create_transfers_tab(self):
         """Create transfers tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Transfers")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.grant_budget.tabs.transfers', default="Transfers"))
 
         # Header with grant filter
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Budget Transfers", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.budget_transfers', default="Budget Transfers"), style='Header.TLabel').pack(side=tk.LEFT)
 
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
-        ttk.Label(filter_frame, text="Grant:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.grant', default="Grant:")).pack(side=tk.LEFT, padx=5)
         self.transfers_grant_combo = ttk.Combobox(filter_frame, width=25, state='readonly')
         self.transfers_grant_combo.pack(side=tk.LEFT, padx=5)
         self.transfers_grant_combo.bind('<<ComboboxSelected>>', lambda e: self._load_transfers())
-        ttk.Button(filter_frame, text="Refresh", command=self._refresh_transfers).pack(side=tk.LEFT, padx=5)
-        ttk.Button(filter_frame, text="Request Transfer",
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.refresh', default="Refresh"), command=self._refresh_transfers).pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.request_transfer', default="Request Transfer"),
                    command=self._request_transfer_dialog).pack(side=tk.LEFT, padx=5)
 
         self._populate_grant_combo(self.transfers_grant_combo, include_all=True)
@@ -928,7 +930,7 @@ class GrantBudgetGUI:
     def _request_transfer_dialog(self):
         """Open dialog to request a budget transfer."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Request Transfer")
+        dialog.title(_t('gui.staff.staff_hr.grant_budget.windows.request_transfer', default="Request Transfer"))
         dialog.geometry("500x400")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -937,7 +939,7 @@ class GrantBudgetGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Grant selector
-        ttk.Label(frame, text="Grant:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.grant', default="Grant:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         grant_combo = ttk.Combobox(frame, width=35, state='readonly')
         grant_combo.grid(row=0, column=1, padx=10, pady=8)
 
@@ -947,12 +949,12 @@ class GrantBudgetGUI:
             grant_combo.current(0)
 
         # From Allocation
-        ttk.Label(frame, text="From Allocation:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.from_allocation', default="From Allocation:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         from_combo = ttk.Combobox(frame, width=35, state='readonly')
         from_combo.grid(row=1, column=1, padx=10, pady=8)
 
         # To Allocation
-        ttk.Label(frame, text="To Allocation:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.to_allocation', default="To Allocation:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         to_combo = ttk.Combobox(frame, width=35, state='readonly')
         to_combo.grid(row=2, column=1, padx=10, pady=8)
 
@@ -994,12 +996,12 @@ class GrantBudgetGUI:
         load_allocations()
 
         # Amount
-        ttk.Label(frame, text="Amount:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.amount', default="Amount:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         amount_entry = ttk.Entry(frame, width=20)
         amount_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Reason
-        ttk.Label(frame, text="Reason:").grid(row=4, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.reason', default="Reason:")).grid(row=4, column=0, sticky='ne', padx=10, pady=8)
         reason_entry = ttk.Entry(frame, width=35)
         reason_entry.grid(row=4, column=1, padx=10, pady=8)
 
@@ -1013,7 +1015,7 @@ class GrantBudgetGUI:
 
             selected_grant_id = self.grant_map.get(grant_label)
             if not selected_grant_id:
-                messagebox.showerror("Error", "Please select a valid grant.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_a_valid_grant', default="Please select a valid grant."), parent=dialog)
                 return
 
             # Validate from allocation
@@ -1025,7 +1027,7 @@ class GrantBudgetGUI:
 
             from_allocation_id = dialog_allocation_map.get(from_label)
             if not from_allocation_id:
-                messagebox.showerror("Error", "Please select a valid source allocation.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_a_valid_source_allocation', default="Please select a valid source allocation."), parent=dialog)
                 return
 
             # Validate to allocation
@@ -1037,12 +1039,12 @@ class GrantBudgetGUI:
 
             to_allocation_id = dialog_allocation_map.get(to_label)
             if not to_allocation_id:
-                messagebox.showerror("Error", "Please select a valid destination allocation.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_a_valid_destination_allocation', default="Please select a valid destination allocation."), parent=dialog)
                 return
 
             if from_allocation_id == to_allocation_id:
-                messagebox.showerror("Error",
-                                     "Source and destination allocations must be different.",
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"),
+                                     _t('gui.staff.staff_hr.grant_budget.dialogs.source_and_destination_allocations_must_be_different', default="Source and destination allocations must be different."),
                                      parent=dialog)
                 return
 
@@ -1063,19 +1065,19 @@ class GrantBudgetGUI:
                     reason=reason,
                     requested_by=self._get_user_id()
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"),
                                     f"Transfer requested. ID: {transfer_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_transfers()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=5, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Request", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.request', default="Request"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         amount_entry.focus_set()
 
@@ -1084,7 +1086,7 @@ class GrantBudgetGUI:
     def _create_admin_tab(self):
         """Create admin tab for budget administration (admin only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Admin")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.grant_budget.tabs.admin', default="Admin"))
 
         # Scrollable content
         canvas = tk.Canvas(tab)
@@ -1099,16 +1101,16 @@ class GrantBudgetGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Expense Approval Section ----
-        expense_frame = ttk.LabelFrame(scroll_frame, text="Expense Approval Queue", padding=15)
+        expense_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.expense_approval_queue', default="Expense Approval Queue"), padding=15)
         expense_frame.pack(fill=tk.X, padx=10, pady=10)
 
         expense_btn_frame = ttk.Frame(expense_frame)
         expense_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(expense_btn_frame, text="Refresh",
+        ttk.Button(expense_btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.refresh', default="Refresh"),
                    command=self._load_admin_expenses).pack(side=tk.LEFT, padx=5)
-        ttk.Button(expense_btn_frame, text="Approve",
+        ttk.Button(expense_btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.approve', default="Approve"),
                    command=self._approve_expense).pack(side=tk.LEFT, padx=5)
-        ttk.Button(expense_btn_frame, text="Reject",
+        ttk.Button(expense_btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.reject', default="Reject"),
                    command=self._reject_expense).pack(side=tk.LEFT, padx=5)
 
         # Expenses treeview
@@ -1132,14 +1134,14 @@ class GrantBudgetGUI:
         y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Category Management Section ----
-        category_frame = ttk.LabelFrame(scroll_frame, text="Category Management", padding=15)
+        category_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.category_management', default="Category Management"), padding=15)
         category_frame.pack(fill=tk.X, padx=10, pady=10)
 
         cat_btn_frame = ttk.Frame(category_frame)
         cat_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(cat_btn_frame, text="Refresh",
+        ttk.Button(cat_btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.refresh', default="Refresh"),
                    command=self._load_admin_categories).pack(side=tk.LEFT, padx=5)
-        ttk.Button(cat_btn_frame, text="Add Category",
+        ttk.Button(cat_btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.add_category', default="Add Category"),
                    command=self._add_category_dialog).pack(side=tk.LEFT, padx=5)
 
         # Categories treeview
@@ -1162,16 +1164,16 @@ class GrantBudgetGUI:
         y_scroll_cat.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Transfer Approval Section ----
-        transfer_frame = ttk.LabelFrame(scroll_frame, text="Transfer Approval", padding=15)
+        transfer_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.grant_budget.labels.transfer_approval', default="Transfer Approval"), padding=15)
         transfer_frame.pack(fill=tk.X, padx=10, pady=10)
 
         transfer_btn_frame = ttk.Frame(transfer_frame)
         transfer_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(transfer_btn_frame, text="Refresh",
+        ttk.Button(transfer_btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.refresh', default="Refresh"),
                    command=self._load_admin_transfers).pack(side=tk.LEFT, padx=5)
-        ttk.Button(transfer_btn_frame, text="Approve",
+        ttk.Button(transfer_btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.approve', default="Approve"),
                    command=self._approve_transfer).pack(side=tk.LEFT, padx=5)
-        ttk.Button(transfer_btn_frame, text="Reject",
+        ttk.Button(transfer_btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.reject', default="Reject"),
                    command=self._reject_transfer).pack(side=tk.LEFT, padx=5)
 
         # Pending transfers treeview
@@ -1224,13 +1226,13 @@ class GrantBudgetGUI:
         """Approve the selected expense."""
         selection = self.admin_expenses_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an expense to approve.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.info', default="Info"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_an_expense_to_approve', default="Please select an expense to approve."))
             return
 
         item = self.admin_expenses_tree.item(selection[0])
         expense_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm", f"Approve expense #{expense_id}?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.grant_budget.dialogs.confirm', default="Confirm"), f"Approve expense #{expense_id}?"):
             return
 
         try:
@@ -1238,22 +1240,22 @@ class GrantBudgetGUI:
                 expense_id=expense_id,
                 approved_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", "Expense approved.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.expense_approved', default="Expense approved."))
             self._load_admin_expenses()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e))
 
     def _reject_expense(self):
         """Reject the selected expense."""
         selection = self.admin_expenses_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an expense to reject.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.info', default="Info"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_an_expense_to_reject', default="Please select an expense to reject."))
             return
 
         item = self.admin_expenses_tree.item(selection[0])
         expense_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm", f"Reject expense #{expense_id}?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.grant_budget.dialogs.confirm', default="Confirm"), f"Reject expense #{expense_id}?"):
             return
 
         try:
@@ -1261,10 +1263,10 @@ class GrantBudgetGUI:
                 expense_id=expense_id,
                 approved_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", "Expense rejected.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.expense_rejected', default="Expense rejected."))
             self._load_admin_expenses()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e))
 
     def _load_admin_categories(self):
         """Load all categories into the admin categories treeview."""
@@ -1288,7 +1290,7 @@ class GrantBudgetGUI:
     def _add_category_dialog(self):
         """Open dialog to add a new budget category."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Category")
+        dialog.title(_t('gui.staff.staff_hr.grant_budget.windows.add_category', default="Add Category"))
         dialog.geometry("450x280")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -1297,17 +1299,17 @@ class GrantBudgetGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Name
-        ttk.Label(frame, text="Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.name', default="Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         name_entry = ttk.Entry(frame, width=30)
         name_entry.grid(row=0, column=1, padx=10, pady=8)
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.description', default="Description:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         desc_entry = ttk.Entry(frame, width=35)
         desc_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Sort order
-        ttk.Label(frame, text="Sort Order:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.grant_budget.labels.sort_order', default="Sort Order:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         sort_entry = ttk.Entry(frame, width=10)
         sort_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
@@ -1325,8 +1327,8 @@ class GrantBudgetGUI:
                 try:
                     sort_order = int(sort_str)
                 except ValueError:
-                    messagebox.showerror("Validation Error",
-                                         "Sort Order must be an integer.", parent=dialog)
+                    messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.validation_error', default="Validation Error"),
+                                         _t('gui.staff.staff_hr.grant_budget.dialogs.sort_order_must_be_an_integer', default="Sort Order must be an integer."), parent=dialog)
                     return
 
             try:
@@ -1335,19 +1337,19 @@ class GrantBudgetGUI:
                     description=description,
                     sort_order=sort_order
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"),
                                     f"Category created. ID: {category_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_admin_categories()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Add", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.add', default="Add"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.grant_budget.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         name_entry.focus_set()
 
@@ -1383,13 +1385,13 @@ class GrantBudgetGUI:
         """Approve the selected transfer."""
         selection = self.admin_transfers_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a transfer to approve.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.info', default="Info"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_a_transfer_to_approve', default="Please select a transfer to approve."))
             return
 
         item = self.admin_transfers_tree.item(selection[0])
         transfer_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm", f"Approve transfer #{transfer_id}?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.grant_budget.dialogs.confirm', default="Confirm"), f"Approve transfer #{transfer_id}?"):
             return
 
         try:
@@ -1397,22 +1399,22 @@ class GrantBudgetGUI:
                 transfer_id=transfer_id,
                 approved_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", "Transfer approved.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.transfer_approved', default="Transfer approved."))
             self._load_admin_transfers()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e))
 
     def _reject_transfer(self):
         """Reject the selected transfer."""
         selection = self.admin_transfers_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a transfer to reject.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.info', default="Info"), _t('gui.staff.staff_hr.grant_budget.dialogs.please_select_a_transfer_to_reject', default="Please select a transfer to reject."))
             return
 
         item = self.admin_transfers_tree.item(selection[0])
         transfer_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm", f"Reject transfer #{transfer_id}?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.grant_budget.dialogs.confirm', default="Confirm"), f"Reject transfer #{transfer_id}?"):
             return
 
         try:
@@ -1420,7 +1422,7 @@ class GrantBudgetGUI:
                 transfer_id=transfer_id,
                 approved_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", "Transfer rejected.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.grant_budget.dialogs.success', default="Success"), _t('gui.staff.staff_hr.grant_budget.dialogs.transfer_rejected', default="Transfer rejected."))
             self._load_admin_transfers()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.grant_budget.dialogs.error', default="Error"), str(e))

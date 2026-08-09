@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class TrackCampaignExpensesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Track Campaign Expenses")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_campaigns.windows.track_campaign_expenses', default="Track Campaign Expenses"))
         self.dialog.geometry("1100x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -75,40 +77,40 @@ class TrackCampaignExpensesDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="💰 Campaign Expense Tracking",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.campaign_expense_tracking', default="💰 Campaign Expense Tracking"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Election selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(select_frame, text="Select Election:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.select_election', default="Select Election:")).pack(side='left', padx=(0, 10))
         election_combo = ttk.Combobox(select_frame, width=40, state='readonly')
         election_combo['values'] = ('Student Union President 2025', 'VP Academic Affairs 2025', 'Treasurer 2025')
         election_combo.pack(side='left', fill='x', expand=True)
         election_combo.current(0)
 
         # Budget overview
-        budget_frame = ttk.LabelFrame(main_frame, text="Budget Overview")
+        budget_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.budget_overview', default="Budget Overview"))
         budget_frame.pack(fill='x', pady=(0, 15))
 
         budget_info = ttk.Frame(budget_frame)
         budget_info.pack(fill='x', padx=15, pady=10)
 
-        ttk.Label(budget_info, text="Maximum Budget:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(budget_info, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.maximum_budget', default="Maximum Budget:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=3)
         ttk.Label(budget_info, text="£500.00").grid(row=0, column=1, sticky='w', padx=10)
 
-        ttk.Label(budget_info, text="Total Spent:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
+        ttk.Label(budget_info, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.total_spent', default="Total Spent:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=3)
         ttk.Label(budget_info, text="£387.50", foreground='blue').grid(row=1, column=1, sticky='w', padx=10)
 
-        ttk.Label(budget_info, text="Remaining:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
+        ttk.Label(budget_info, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.remaining', default="Remaining:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=3)
         ttk.Label(budget_info, text="£112.50", foreground='green').grid(row=2, column=1, sticky='w', padx=10)
 
-        ttk.Label(budget_info, text="Budget Utilization:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
+        ttk.Label(budget_info, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.budget_utilization', default="Budget Utilization:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=3)
         ttk.Label(budget_info, text="77.5%").grid(row=3, column=1, sticky='w', padx=10)
 
         # Expenses list
-        list_frame = ttk.LabelFrame(main_frame, text="Expense Records")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.expense_records', default="Expense Records"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Candidate', 'Category', 'Description', 'Amount', 'Date', 'Receipt', 'Status')
@@ -143,7 +145,7 @@ class TrackCampaignExpensesDialog:
             tree.insert('', 'end', values=expense)
 
         # Category breakdown
-        category_frame = ttk.LabelFrame(main_frame, text="Spending by Category")
+        category_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.spending_by_category', default="Spending by Category"))
         category_frame.pack(fill='x', pady=(0, 15))
 
         category_text = """Marketing: £150.00 (38.7%)
@@ -157,24 +159,24 @@ Events: £50.00 (12.9%)
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Add Expense", command=self.add_expense).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Receipt", command=self.view_receipt).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Generate Report", command=self.generate_report).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Export to CSV", command=self.export_csv).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.add_expense', default="Add Expense"), command=self.add_expense).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.view_receipt', default="View Receipt"), command=self.view_receipt).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.generate_report', default="Generate Report"), command=self.generate_report).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.export_to_csv', default="Export to CSV"), command=self.export_csv).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def add_expense(self):
         dialog = CampaignExpenseSubmissionDialog(self.dialog, self.auth)
         self.dialog.wait_window(dialog.dialog)
 
     def view_receipt(self):
-        messagebox.showinfo("View Receipt", "Receipt viewer would display the scanned receipt image.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.view_receipt', default="View Receipt"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.receipt_viewer_would_display_the_scanned_receipt_image', default="Receipt viewer would display the scanned receipt image."))
 
     def generate_report(self):
-        messagebox.showinfo("Report Generated", "Campaign finance report generated:\n\nreports/campaign_expenses_2025.pdf\n\nIncludes all expenses, receipts, and compliance verification.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.report_generated', default="Report Generated"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.campaign_finance_report_generated_reports_campaign_expenses_2025', default="Campaign finance report generated:\n\nreports/campaign_expenses_2025.pdf\n\nIncludes all expenses, receipts, and compliance verification."))
 
     def export_csv(self):
-        messagebox.showinfo("Exported", "Expense data exported to:\nreports/campaign_expenses_2025.csv")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.exported', default="Exported"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.expense_data_exported_to_reports_campaign_expenses_2025_csv', default="Expense data exported to:\nreports/campaign_expenses_2025.csv"))
 
 
 
@@ -186,7 +188,7 @@ class ViewCandidateProfilesDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Candidate Profiles")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_campaigns.windows.candidate_profiles', default="Candidate Profiles"))
         self.dialog.geometry("1000x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -197,11 +199,11 @@ class ViewCandidateProfilesDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="👤 Candidate Profiles",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.candidate_profiles', default="👤 Candidate Profiles"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Candidates list
-        list_frame = ttk.LabelFrame(main_frame, text="Candidates")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.candidates', default="Candidates"))
         list_frame.pack(fill='x', pady=(0, 15))
 
         columns = ('Name', 'Position', 'Year', 'Course', 'Experience', 'Endorsements')
@@ -230,7 +232,7 @@ class ViewCandidateProfilesDialog:
         tree.bind('<Double-1>', self.show_profile_details)
 
         # Profile details area
-        details_frame = ttk.LabelFrame(main_frame, text="Profile Details (Double-click candidate to view)")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.profile_details_double_click_candidate_to_view', default="Profile Details (Double-click candidate to view)"))
         details_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         # Use notebook for organized profile
@@ -239,7 +241,7 @@ class ViewCandidateProfilesDialog:
 
         # Bio tab
         bio_frame = ttk.Frame(notebook)
-        notebook.add(bio_frame, text="Biography")
+        notebook.add(bio_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.tabs.biography', default="Biography"))
 
         self.bio_text = scrolledtext.ScrolledText(bio_frame, height=8, wrap=tk.WORD)
         self.bio_text.pack(fill='both', expand=True, padx=10, pady=10)
@@ -248,7 +250,7 @@ class ViewCandidateProfilesDialog:
 
         # Platform tab
         platform_frame = ttk.Frame(notebook)
-        notebook.add(platform_frame, text="Platform & Policies")
+        notebook.add(platform_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.tabs.platform_policies', default="Platform & Policies"))
 
         self.platform_text = scrolledtext.ScrolledText(platform_frame, height=8, wrap=tk.WORD)
         self.platform_text.pack(fill='both', expand=True, padx=10, pady=10)
@@ -257,7 +259,7 @@ class ViewCandidateProfilesDialog:
 
         # Experience tab
         experience_frame = ttk.Frame(notebook)
-        notebook.add(experience_frame, text="Experience & Qualifications")
+        notebook.add(experience_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.tabs.experience_qualifications', default="Experience & Qualifications"))
 
         self.experience_text = scrolledtext.ScrolledText(experience_frame, height=8, wrap=tk.WORD)
         self.experience_text.pack(fill='both', expand=True, padx=10, pady=10)
@@ -266,7 +268,7 @@ class ViewCandidateProfilesDialog:
 
         # Endorsements tab
         endorsements_frame = ttk.Frame(notebook)
-        notebook.add(endorsements_frame, text="Endorsements")
+        notebook.add(endorsements_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.tabs.endorsements', default="Endorsements"))
 
         self.endorsements_text = scrolledtext.ScrolledText(endorsements_frame, height=8, wrap=tk.WORD)
         self.endorsements_text.pack(fill='both', expand=True, padx=10, pady=10)
@@ -277,10 +279,10 @@ class ViewCandidateProfilesDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Compare Candidates", command=self.compare_candidates).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="View Campaign Materials", command=self.view_materials).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Endorse Candidate", command=self.endorse).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.compare_candidates', default="Compare Candidates"), command=self.compare_candidates).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.view_campaign_materials', default="View Campaign Materials"), command=self.view_materials).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.endorse_candidate', default="Endorse Candidate"), command=self.endorse).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
         # Store tree reference
         self.tree = tree
@@ -460,25 +462,25 @@ class ViewCandidateProfilesDialog:
         """Side-by-side candidate comparison"""
         # Create comparison window
         compare_window = tk.Toplevel(self.dialog)
-        compare_window.title("Side-by-Side Candidate Comparison")
+        compare_window.title(_t('gui.pastoral.student_union_gui.elections.election_campaigns.windows.side_by_side_candidate_comparison', default="Side-by-Side Candidate Comparison"))
         compare_window.geometry("1200x700")
         compare_window.transient(self.dialog)
 
         main_frame = ttk.Frame(compare_window)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Compare Candidates Side-by-Side",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.compare_candidates_side_by_side', default="Compare Candidates Side-by-Side"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Candidate selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(select_frame, text="Select candidates to compare:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.select_candidates_to_compare', default="Select candidates to compare:")).pack(side='left', padx=(0, 10))
 
         candidate_names = [c[0] for c in self.candidates]
 
-        ttk.Label(select_frame, text="Candidate 1:").pack(side='left', padx=(20, 5))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.candidate_1', default="Candidate 1:")).pack(side='left', padx=(20, 5))
         candidate1_var = tk.StringVar()
         candidate1_combo = ttk.Combobox(select_frame, textvariable=candidate1_var,
                                        values=candidate_names, state='readonly', width=20)
@@ -486,7 +488,7 @@ class ViewCandidateProfilesDialog:
         if candidate_names:
             candidate1_combo.current(0)
 
-        ttk.Label(select_frame, text="Candidate 2:").pack(side='left', padx=(0, 5))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.candidate_2', default="Candidate 2:")).pack(side='left', padx=(0, 5))
         candidate2_var = tk.StringVar()
         candidate2_combo = ttk.Combobox(select_frame, textvariable=candidate2_var,
                                        values=candidate_names, state='readonly', width=20)
@@ -565,7 +567,7 @@ class ViewCandidateProfilesDialog:
 
             platform_header = ttk.Frame(scrollable_frame)
             platform_header.pack(fill='x', padx=10, pady=(0, 10))
-            ttk.Label(platform_header, text="PLATFORM & POLICIES",
+            ttk.Label(platform_header, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.platform_policies', default="PLATFORM & POLICIES"),
                      font=('Arial', 12, 'bold')).pack()
 
             platform_frame = ttk.Frame(scrollable_frame)
@@ -591,16 +593,16 @@ class ViewCandidateProfilesDialog:
         update_comparison()
 
         # Update button
-        ttk.Button(select_frame, text="Update Comparison",
+        ttk.Button(select_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.update_comparison', default="Update Comparison"),
                   command=update_comparison).pack(side='left', padx=(20, 0))
 
-        ttk.Button(main_frame, text="Close", command=compare_window.destroy).pack(pady=(10, 0))
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.close', default="Close"), command=compare_window.destroy).pack(pady=(10, 0))
 
     def view_materials(self):
         """View campaign materials"""
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a candidate first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.please_select_a_candidate_first', default="Please select a candidate first."))
             return
 
         item = self.tree.item(selection[0])
@@ -624,7 +626,7 @@ class ViewCandidateProfilesDialog:
 
         # Manifesto tab
         manifesto_frame = ttk.Frame(notebook)
-        notebook.add(manifesto_frame, text="Manifesto")
+        notebook.add(manifesto_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.tabs.manifesto', default="Manifesto"))
 
         profiles = self._get_candidate_profiles()
         candidate_profile = profiles.get(candidate_name, {})
@@ -648,12 +650,12 @@ class ViewCandidateProfilesDialog:
 
         # Media tab - with upload and DB-backed file list
         media_frame = ttk.Frame(notebook)
-        notebook.add(media_frame, text="Media & Posters")
+        notebook.add(media_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.tabs.media_posters', default="Media & Posters"))
 
         media_content = ttk.Frame(media_frame)
         media_content.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(media_content, text="Campaign Media Files:",
+        ttk.Label(media_content, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.campaign_media_files', default="Campaign Media Files:"),
                  font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
         # Media treeview
@@ -701,7 +703,7 @@ class ViewCandidateProfilesDialog:
         def upload_media():
             from tkinter import filedialog
             filepath = filedialog.askopenfilename(
-                title="Select Campaign Media",
+                title=_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.select_campaign_media', default="Select Campaign Media"),
                 filetypes=[("Images", "*.png *.jpg *.jpeg *.gif"),
                           ("PDF", "*.pdf"), ("Videos", "*.mp4 *.avi"),
                           ("All files", "*.*")]
@@ -713,7 +715,7 @@ class ViewCandidateProfilesDialog:
             ext = os.path.splitext(filename)[1].lower()
             file_type = 'Image' if ext in ('.png','.jpg','.jpeg','.gif') else 'PDF' if ext == '.pdf' else 'Video' if ext in ('.mp4','.avi') else 'Other'
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            uploads_dir = os.path.join(str(paths.DATA_DIR), 'uploads', 'campaign_media')
+            uploads_dir = os.path.join(str(paths.UNIVERSITY_DATA_DIR), 'uploads', 'campaign_media')
             os.makedirs(uploads_dir, exist_ok=True)
             dest = os.path.join(uploads_dir, f"{candidate_name.replace(' ','_')}_{filename}")
             try:
@@ -730,25 +732,25 @@ class ViewCandidateProfilesDialog:
                 conn.commit()
                 conn.close()
                 media_tree.insert('', 0, values=(filename, file_type, now))
-                messagebox.showinfo("Uploaded", f"'{filename}' uploaded successfully.",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.uploaded', default="Uploaded"), f"'{filename}' uploaded successfully.",
                                    parent=materials_window)
             except Exception as e:
-                messagebox.showerror("Error", f"Upload failed: {e}", parent=materials_window)
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.error', default="Error"), f"Upload failed: {e}", parent=materials_window)
 
-        ttk.Button(media_btn_frame, text="Upload Media File",
+        ttk.Button(media_btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.upload_media_file', default="Upload Media File"),
                   command=upload_media).pack(side='left', padx=(0, 10))
-        ttk.Button(media_btn_frame, text="Delete Selected",
+        ttk.Button(media_btn_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.delete_selected', default="Delete Selected"),
                   command=lambda: self._delete_media(media_tree, candidate_name, materials_window)
                   ).pack(side='left')
 
         # Social media tab
         social_frame = ttk.Frame(notebook)
-        notebook.add(social_frame, text="Social Media")
+        notebook.add(social_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.tabs.social_media', default="Social Media"))
 
         social_content = ttk.Frame(social_frame)
         social_content.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(social_content, text="Social Media Presence:", font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
+        ttk.Label(social_content, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.social_media_presence', default="Social Media Presence:"), font=('Arial', 11, 'bold')).pack(anchor='w', pady=(0, 10))
 
         social_links = [
             ("Twitter/X", f"@{candidate_name.replace(' ', '').lower()}_vote"),
@@ -763,18 +765,18 @@ class ViewCandidateProfilesDialog:
             ttk.Label(link_frame, text=f"{platform}:", font=('Arial', 10, 'bold'), width=15).pack(side='left')
             ttk.Label(link_frame, text=handle, foreground='blue').pack(side='left')
 
-        ttk.Button(main_frame, text="Close", command=materials_window.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.close', default="Close"), command=materials_window.destroy).pack()
 
     def _delete_media(self, media_tree, candidate_name, parent_window):
         """Delete selected media file from DB."""
         selection = media_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a file to delete.",
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.please_select_a_file_to_delete', default="Please select a file to delete."),
                                  parent=parent_window)
             return
         values = media_tree.item(selection[0], 'values')
         file_name = values[0]
-        if not messagebox.askyesno("Confirm", f"Delete '{file_name}'?", parent=parent_window):
+        if not messagebox.askyesno(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.confirm', default="Confirm"), f"Delete '{file_name}'?", parent=parent_window):
             return
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -785,7 +787,7 @@ class ViewCandidateProfilesDialog:
             conn.close()
             media_tree.delete(selection[0])
         except Exception as e:
-            messagebox.showerror("Error", f"Delete failed: {e}", parent=parent_window)
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.error', default="Error"), f"Delete failed: {e}", parent=parent_window)
 
     def _refresh_endorsement_count(self, candidate_name):
         """Update endorsement count in the candidates treeview."""
@@ -810,7 +812,7 @@ class ViewCandidateProfilesDialog:
         """Endorse a candidate"""
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a candidate to endorse.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.please_select_a_candidate_to_endorse', default="Please select a candidate to endorse."))
             return
 
         item = self.tree.item(selection[0])
@@ -829,20 +831,20 @@ class ViewCandidateProfilesDialog:
         ttk.Label(main_frame, text=f"Endorse {candidate_name}",
                  font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
-        ttk.Label(main_frame, text="Your endorsement helps build trust and credibility.",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.your_endorsement_helps_build_trust_and_credibility', default="Your endorsement helps build trust and credibility."),
                  font=('Arial', 10)).pack(pady=(0, 15))
 
         # Public/Private option
-        ttk.Label(main_frame, text="Endorsement Visibility:").pack(anchor='w', pady=(5, 0))
-        visibility_var = tk.StringVar(value='public')
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.endorsement_visibility', default="Endorsement Visibility:")).pack(anchor='w', pady=(5, 0))
+        visibility_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.elections.election_campaigns.values.public', default='public'))
 
-        ttk.Radiobutton(main_frame, text="Public (Your name will appear on candidate's profile)",
+        ttk.Radiobutton(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.public_your_name_will_appear_on_candidate_s_profile', default="Public (Your name will appear on candidate's profile)"),
                        variable=visibility_var, value='public').pack(anchor='w', padx=20)
-        ttk.Radiobutton(main_frame, text="Private (Anonymous support)",
+        ttk.Radiobutton(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.private_anonymous_support', default="Private (Anonymous support)"),
                        variable=visibility_var, value='private').pack(anchor='w', padx=20, pady=(0, 10))
 
         # Optional message
-        ttk.Label(main_frame, text="Optional Endorsement Message:").pack(anchor='w', pady=(5, 0))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.optional_endorsement_message', default="Optional Endorsement Message:")).pack(anchor='w', pady=(5, 0))
         message_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
         message_text.pack(fill='both', expand=True, pady=(0, 15))
 
@@ -875,7 +877,7 @@ class ViewCandidateProfilesDialog:
                 ''', (candidate_name, username))
                 if cursor.fetchone():
                     conn.close()
-                    messagebox.showinfo("Already Endorsed",
+                    messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.already_endorsed', default="Already Endorsed"),
                                        f"You have already endorsed {candidate_name}.",
                                        parent=endorse_window)
                     return
@@ -905,7 +907,7 @@ class ViewCandidateProfilesDialog:
                     self.endorsements_text.config(state='disabled')
 
                 visibility_text = "publicly" if visibility == 'public' else "privately"
-                messagebox.showinfo("Endorsement Recorded",
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.endorsement_recorded', default="Endorsement Recorded"),
                                    f"Your {visibility_text} endorsement of {candidate_name} has been recorded!\n\n" +
                                    ("Your name will appear on their profile page." if visibility == 'public'
                                     else "Your support is recorded anonymously."))
@@ -913,14 +915,14 @@ class ViewCandidateProfilesDialog:
                 endorse_window.destroy()
 
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to record endorsement: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.error', default="Error"), f"Failed to record endorsement: {e}")
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Submit Endorsement", command=submit_endorsement).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=endorse_window.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.submit_endorsement', default="Submit Endorsement"), command=submit_endorsement).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.cancel', default="Cancel"), command=endorse_window.destroy).pack(side='left')
 
 
 
@@ -932,7 +934,7 @@ class CampaignExpenseSubmissionDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Submit Campaign Expense")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.elections.election_campaigns.windows.submit_campaign_expense', default="Submit Campaign Expense"))
         self.dialog.geometry("650x650")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -943,13 +945,13 @@ class CampaignExpenseSubmissionDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Submit Campaign Expense", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.submit_campaign_expense', default="Submit Campaign Expense"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
-        ttk.Label(main_frame, text="Required: Category, Description, Amount, Receipt",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.required_category_description_amount_receipt', default="Required: Category, Description, Amount, Receipt"),
                  font=('Arial', 10, 'italic')).pack(pady=(0, 15))
 
         # Category
-        ttk.Label(main_frame, text="Expense Category:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.expense_category', default="Expense Category:")).pack(anchor='w', pady=(0, 5))
         self.category_var = tk.StringVar()
         category_combo = ttk.Combobox(main_frame, textvariable=self.category_var, width=47)
         category_combo['values'] = ('Promotional Materials', 'Event Costs', 'Digital Marketing',
@@ -958,43 +960,43 @@ class CampaignExpenseSubmissionDialog:
         category_combo.current(0)
 
         # Description
-        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.description', default="Description:")).pack(anchor='w', pady=(0, 5))
         self.description_entry = ttk.Entry(main_frame, width=50)
         self.description_entry.pack(fill='x', pady=(0, 10))
         self.description_entry.insert(0, "Campaign posters and flyers")
 
         # Amount
-        ttk.Label(main_frame, text="Amount (£):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.amount', default="Amount (£):")).pack(anchor='w', pady=(0, 5))
         self.amount_entry = ttk.Entry(main_frame, width=50)
         self.amount_entry.pack(fill='x', pady=(0, 10))
 
         # Date
-        ttk.Label(main_frame, text="Date of Expense (YYYY-MM-DD):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.date_of_expense_yyyy_mm_dd', default="Date of Expense (YYYY-MM-DD):")).pack(anchor='w', pady=(0, 5))
         self.date_entry = ttk.Entry(main_frame, width=50)
         self.date_entry.pack(fill='x', pady=(0, 10))
         self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
         # Vendor
-        ttk.Label(main_frame, text="Vendor/Supplier:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.vendor_supplier', default="Vendor/Supplier:")).pack(anchor='w', pady=(0, 5))
         self.vendor_entry = ttk.Entry(main_frame, width=50)
         self.vendor_entry.pack(fill='x', pady=(0, 10))
 
         # Receipt upload simulation
-        receipt_frame = ttk.LabelFrame(main_frame, text="Receipt")
+        receipt_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.receipt', default="Receipt"))
         receipt_frame.pack(fill='x', pady=(0, 10))
 
         receipt_inner = ttk.Frame(receipt_frame)
         receipt_inner.pack(padx=15, pady=15, fill='x')
 
-        ttk.Label(receipt_inner, text="Receipt Number/Reference:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(receipt_inner, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.receipt_number_reference', default="Receipt Number/Reference:")).pack(anchor='w', pady=(0, 5))
         self.receipt_num_entry = ttk.Entry(receipt_inner, width=30)
         self.receipt_num_entry.pack(anchor='w', pady=(0, 10))
 
-        ttk.Button(receipt_inner, text="📎 Attach Receipt File",
-                  command=lambda: messagebox.showinfo("Info", "File upload dialog would open here")).pack(anchor='w')
+        ttk.Button(receipt_inner, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.attach_receipt_file', default="📎 Attach Receipt File"),
+                  command=lambda: messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.info', default="Info"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.file_upload_dialog_would_open_here', default="File upload dialog would open here"))).pack(anchor='w')
 
         # Notes
-        ttk.Label(main_frame, text="Additional Notes:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.labels.additional_notes', default="Additional Notes:")).pack(anchor='w', pady=(0, 5))
         self.notes_text = scrolledtext.ScrolledText(main_frame, height=5, wrap=tk.WORD)
         self.notes_text.pack(fill='both', expand=True, pady=(0, 15))
 
@@ -1004,15 +1006,15 @@ class CampaignExpenseSubmissionDialog:
 
         self.compliance_var = tk.BooleanVar()
         ttk.Checkbutton(compliance_frame,
-                       text="I certify this expense complies with campaign finance regulations",
+                       text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.i_certify_this_expense_complies_with_campaign_finance_regulation', default="I certify this expense complies with campaign finance regulations"),
                        variable=self.compliance_var).pack(anchor='w')
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Submit Expense", command=self.submit_expense).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.submit_expense', default="Submit Expense"), command=self.submit_expense).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.elections.election_campaigns.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def submit_expense(self):
         category = self.category_var.get()
@@ -1025,11 +1027,11 @@ class CampaignExpenseSubmissionDialog:
         compliance = self.compliance_var.get()
 
         if not all([category, description, amount, date, vendor]):
-            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields."))
             return
 
         if not compliance:
-            messagebox.showwarning("Warning", "You must certify compliance with campaign finance regulations.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.you_must_certify_compliance_with_campaign_finance_regulations', default="You must certify compliance with campaign finance regulations."))
             return
 
         try:
@@ -1037,7 +1039,7 @@ class CampaignExpenseSubmissionDialog:
             if amount_float <= 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showwarning("Warning", "Please enter a valid amount.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount."))
             return
 
         try:
@@ -1075,10 +1077,10 @@ class CampaignExpenseSubmissionDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Expense submitted successfully!\n\nAmount: £{amount_float:.2f}\nCategory: {category}\n\nYour expense will be reviewed for compliance.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.success', default="Success"), f"Expense submitted successfully!\n\nAmount: £{amount_float:.2f}\nCategory: {category}\n\nYour expense will be reviewed for compliance.")
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to submit expense: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.elections.election_campaigns.dialogs.error', default="Error"), f"Failed to submit expense: {str(e)}")
 
 
 

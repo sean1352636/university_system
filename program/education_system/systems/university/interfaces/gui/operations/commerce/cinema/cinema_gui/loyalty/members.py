@@ -131,7 +131,7 @@ def show_members_page(self):
 def show_add_member_form(self):
     """Show form to add a new member."""
     form_window = tk.Toplevel(self.root)
-    form_window.title("Add New Member")
+    form_window.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.windows.add_new_member', default="Add New Member"))
     form_window.geometry("450x400")
     form_window.configure(bg="#ecf0f1")
     form_window.transient(self.root)
@@ -206,7 +206,7 @@ def show_add_member_form(self):
 def show_member_lookup(self):
     """Quick member lookup dialog."""
     lookup_window = tk.Toplevel(self.root)
-    lookup_window.title("Member Lookup")
+    lookup_window.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.windows.member_lookup', default="Member Lookup"))
     lookup_window.geometry("500x400")
     lookup_window.configure(bg="#ecf0f1")
     lookup_window.transient(self.root)
@@ -275,7 +275,7 @@ def view_member_details(self):
     """View detailed member information."""
     selected = self.member_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a member")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.dialogs.please_select_a_member', default="Please select a member"))
         return
 
     member_id = self.member_tree.item(selected[0])['values'][0]
@@ -345,22 +345,22 @@ def edit_selected_member(self):
     """Edit selected member."""
     selected = self.member_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a member")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.dialogs.please_select_a_member', default="Please select a member"))
         return
-    messagebox.showinfo(_t("cinema.common.info"), "Edit member details in the database directly for now")
+    messagebox.showinfo(_t("cinema.common.info"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.dialogs.edit_member_details_in_the_database_directly_for_now', default="Edit member details in the database directly for now"))
 
 def add_member_points(self):
     """Add points to selected member."""
     selected = self.member_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a member")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.dialogs.please_select_a_member', default="Please select a member"))
         return
 
     member_id = self.member_tree.item(selected[0])['values'][0]
     member_name = self.member_tree.item(selected[0])['values'][1]
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Add Points")
+    dialog.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.windows.add_points', default="Add Points"))
     dialog.geometry("300x150")
     dialog.configure(bg="#ecf0f1")
     dialog.transient(self.root)
@@ -377,7 +377,7 @@ def add_member_points(self):
         try:
             points = int(points_entry.get())
         except (ValueError, TypeError):
-            messagebox.showwarning(_t("cinema.common.warning"), "Invalid points value")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.dialogs.invalid_points_value', default="Invalid points value"))
             return
 
         conn = sqlite3.connect(DB_FILE)
@@ -410,12 +410,12 @@ def deactivate_member(self):
     """Deactivate selected member."""
     selected = self.member_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select a member")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.dialogs.please_select_a_member', default="Please select a member"))
         return
 
     member_id = self.member_tree.item(selected[0])['values'][0]
 
-    if not messagebox.askyesno(_t("cinema.common.confirm"), "Deactivate this member?"):
+    if not messagebox.askyesno(_t("cinema.common.confirm"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.members.dialogs.deactivate_this_member', default="Deactivate this member?")):
         return
 
     conn = sqlite3.connect(DB_FILE)

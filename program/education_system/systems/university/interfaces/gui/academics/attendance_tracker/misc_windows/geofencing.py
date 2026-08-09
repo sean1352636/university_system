@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -90,57 +96,57 @@ class GeofencingWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="📍 Geofencing Setup", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.geofencing_setup', default="📍 Geofencing Setup"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Create geofenced session
-        session_frame = ttk.LabelFrame(self.window, text="Create Geofenced Session", padding=10)
+        session_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.create_geofenced_session', default="Create Geofenced Session"), padding=10)
         session_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(session_frame, text="Module Code:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(session_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.module_code', default="Module Code:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.module_var = tk.StringVar()
         self.module_var.trace('w', lambda *args: self.on_module_change())
         ttk.Entry(session_frame, textvariable=self.module_var, width=30).grid(row=0, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(session_frame, text="Date:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(session_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.date', default="Date:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.date_var = tk.StringVar(value=datetime.date.today().isoformat())
         ttk.Entry(session_frame, textvariable=self.date_var, width=30).grid(row=1, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(session_frame, text="Location Name:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(session_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.location_name', default="Location Name:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.location_var = tk.StringVar()
         ttk.Entry(session_frame, textvariable=self.location_var, width=30).grid(row=2, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(session_frame, text="Latitude:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(session_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.latitude', default="Latitude:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.latitude_var = tk.StringVar()
         ttk.Entry(session_frame, textvariable=self.latitude_var, width=30).grid(row=3, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(session_frame, text="Longitude:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(session_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.longitude', default="Longitude:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.longitude_var = tk.StringVar()
         ttk.Entry(session_frame, textvariable=self.longitude_var, width=30).grid(row=4, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(session_frame, text="Radius (meters):").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(session_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.radius_meters', default="Radius (meters):")).grid(row=5, column=0, sticky=tk.W, pady=5)
         self.radius_var = tk.StringVar(value="50")
         ttk.Entry(session_frame, textvariable=self.radius_var, width=30).grid(row=5, column=1, padx=(10, 0), pady=5)
 
-        ttk.Button(session_frame, text="Create Geofenced Session", command=self.create_session, style='Success.TButton').grid(row=6, column=0, columnspan=2, pady=10)
+        ttk.Button(session_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.buttons.create_geofenced_session', default="Create Geofenced Session"), command=self.create_session, style='Success.TButton').grid(row=6, column=0, columnspan=2, pady=10)
 
         # Test location
-        test_frame = ttk.LabelFrame(self.window, text="Test Location Check", padding=10)
+        test_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.test_location_check', default="Test Location Check"), padding=10)
         test_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(test_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(test_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.test_student_var = tk.StringVar()
         ttk.Entry(test_frame, textvariable=self.test_student_var, width=30).grid(row=0, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(test_frame, text="Test Latitude:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(test_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.test_latitude', default="Test Latitude:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.test_lat_var = tk.StringVar()
         ttk.Entry(test_frame, textvariable=self.test_lat_var, width=30).grid(row=1, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(test_frame, text="Test Longitude:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(test_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.labels.test_longitude', default="Test Longitude:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.test_lon_var = tk.StringVar()
         ttk.Entry(test_frame, textvariable=self.test_lon_var, width=30).grid(row=2, column=1, padx=(10, 0), pady=5)
 
-        ttk.Button(test_frame, text="Test Location", command=self.test_location, style='Primary.TButton').grid(row=3, column=0, columnspan=2, pady=10)
+        ttk.Button(test_frame, text=_t('gui.academics.attendance_tracker.misc_windows.geofencing.buttons.test_location', default="Test Location"), command=self.test_location, style='Primary.TButton').grid(row=3, column=0, columnspan=2, pady=10)
 
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
@@ -161,7 +167,7 @@ class GeofencingWindow:
                 conn = get_conn()
             except ImportError:
                 logger.exception("misc_windows.py:164 %s", 'except ImportError')
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
 
             cursor = conn.cursor()
 
@@ -212,11 +218,11 @@ class GeofencingWindow:
             if session_id:
                 messagebox.showinfo(_("common.success"), f"Geofenced session created!\nSession ID: {session_id}")
             else:
-                messagebox.showerror(_("common.error"), "Failed to create geofenced session")
+                messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.misc_windows.geofencing.dialogs.failed_to_create_geofenced_session', default="Failed to create geofenced session"))
 
         except ValueError:
             logger.exception("misc_windows.py:217 %s", 'except ValueError')
-            messagebox.showerror(_("common.error"), "Please enter valid latitude, longitude, and radius values")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.misc_windows.geofencing.dialogs.please_enter_valid_latitude_longitude_and_radius_values', default="Please enter valid latitude, longitude, and radius values"))
         except Exception as e:
             logger.exception("misc_windows.py:219 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Session creation failed: {e}")
@@ -231,13 +237,13 @@ class GeofencingWindow:
             success, message = self.geo_system.check_location_attendance(student_id, latitude, longitude)
 
             if success:
-                messagebox.showinfo("Location Test", f"✅ {message}")
+                messagebox.showinfo(_t('gui.academics.attendance_tracker.misc_windows.geofencing.dialogs.location_test', default="Location Test"), f"✅ {message}")
             else:
-                messagebox.showwarning("Location Test", f"❌ {message}")
+                messagebox.showwarning(_t('gui.academics.attendance_tracker.misc_windows.geofencing.dialogs.location_test', default="Location Test"), f"❌ {message}")
 
         except ValueError:
             logger.exception("misc_windows.py:236 %s", 'except ValueError')
-            messagebox.showerror(_("common.error"), "Please enter valid student ID, latitude, and longitude")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.misc_windows.geofencing.dialogs.please_enter_valid_student_id_latitude_and_longitude', default="Please enter valid student ID, latitude, and longitude"))
         except Exception as e:
             logger.exception("misc_windows.py:238 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Location test failed: {e}")

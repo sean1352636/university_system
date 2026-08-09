@@ -1,5 +1,7 @@
 """Maintenance methods mixin for the enhanced reporting GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox,
     ScrolledText,
@@ -35,13 +37,13 @@ class MaintenanceMixin:
                     self.stop_progress(),
                     self.update_status("Old reports cleaned"),
                     self.refresh_reports(),
-                    messagebox.showinfo("Success", "Old reports cleaned successfully!")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.old_reports_cleaned_successfully', default="Old reports cleaned successfully!"))
                 ])
 
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status(f"Cleanup failed: {_e}", "error"),
-                    messagebox.showerror("Error", f"Failed to clean old reports: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.error', default="Error"), f"Failed to clean old reports: {str(_e)}")
                 ])
 
         threading.Thread(target=clean_task, daemon=True).start()
@@ -59,14 +61,14 @@ class MaintenanceMixin:
                 self.root.after(0, lambda: [
                     self.stop_progress(),
                     self.update_status("Cache cleared"),
-                    messagebox.showinfo("Success", "Cache cleared successfully!")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.cache_cleared_successfully', default="Cache cleared successfully!"))
                 ])
 
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
                     self.update_status(f"Cache clear failed: {str(_e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to clear cache: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.error', default="Error"), f"Failed to clear cache: {str(_e)}")
                 ])
 
         threading.Thread(target=cache_task, daemon=True).start()
@@ -93,14 +95,14 @@ class MaintenanceMixin:
                 self.root.after(0, lambda: [
                     self.stop_progress(),
                     self.update_status("Database optimized"),
-                    messagebox.showinfo("Success", "Database optimized successfully!")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.database_optimized_successfully', default="Database optimized successfully!"))
                 ])
 
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
                     self.update_status(f"Optimization failed: {str(_e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to optimize database: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.error', default="Error"), f"Failed to optimize database: {str(_e)}")
                 ])
 
         threading.Thread(target=optimize_task, daemon=True).start()
@@ -119,14 +121,14 @@ class MaintenanceMixin:
                     self.stop_progress(),
                     self.update_status("All maintenance completed"),
                     self.refresh_data(),
-                    messagebox.showinfo("Success", "All maintenance tasks completed successfully!")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.all_maintenance_tasks_completed_successfully', default="All maintenance tasks completed successfully!"))
                 ])
 
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.stop_progress(),
                     self.update_status(f"Maintenance failed: {str(_e)}", "error"),
-                    messagebox.showerror("Error", f"Failed to run maintenance: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.error', default="Error"), f"Failed to run maintenance: {str(_e)}")
                 ])
 
         threading.Thread(target=maintenance_task, daemon=True).start()
@@ -134,7 +136,7 @@ class MaintenanceMixin:
     def _show_performance_monitor_basic(self):
         """Show performance monitoring window"""
         perf_window = tk.Toplevel(self.root)
-        perf_window.title("Performance Monitor")
+        perf_window.title(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.windows.performance_monitor', default="Performance Monitor"))
         perf_window.geometry("600x500")
 
         perf_text = ScrolledText(perf_window, wrap=tk.WORD)
@@ -226,15 +228,15 @@ class MaintenanceMixin:
     def export_system_logs(self):
         """Export system logs"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable",
-                                 "Log export requires the enhanced system.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.feature_unavailable', default="Feature Unavailable"),
+                                 _t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.log_export_requires_the_enhanced_system', default="Log export requires the enhanced system."))
             return
 
         try:
             log_file = get_log_file('app.log')
 
             if not os.path.exists(log_file):
-                messagebox.showwarning("No Logs", "No log file found")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.no_logs', default="No Logs"), _t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.no_log_file_found', default="No log file found"))
                 return
 
             file_path = filedialog.asksaveasfilename(
@@ -247,35 +249,35 @@ class MaintenanceMixin:
                 # Copy log file
                 import shutil
                 shutil.copy2(log_file, file_path)
-                messagebox.showinfo("Success", f"System logs exported to {file_path}")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.success', default="Success"), f"System logs exported to {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export logs: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.error', default="Error"), f"Failed to export logs: {str(e)}")
 
     def start_api_server(self):
         """Start the REST API server"""
         if not ENHANCED_AVAILABLE:
-            messagebox.showwarning("Feature Unavailable",
-                                 "API server requires the enhanced system.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.feature_unavailable', default="Feature Unavailable"),
+                                 _t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.api_server_requires_the_enhanced_system', default="API server requires the enhanced system."))
             return
 
         # API server dialog
         api_dialog = tk.Toplevel(self.root)
-        api_dialog.title("Start API Server")
+        api_dialog.title(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.windows.start_api_server', default="Start API Server"))
         api_dialog.geometry("400x300")
         api_dialog.transient(self.root)
 
-        ttk.Label(api_dialog, text="API Server Configuration", style='Subtitle.TLabel').pack(pady=10)
+        ttk.Label(api_dialog, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.labels.api_server_configuration', default="API Server Configuration"), style='Subtitle.TLabel').pack(pady=10)
 
         # Host and port settings
         config_frame = ttk.Frame(api_dialog)
         config_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(config_frame, text="Host:").pack(anchor=tk.W)
-        host_var = tk.StringVar(value="localhost")
+        ttk.Label(config_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.labels.host', default="Host:")).pack(anchor=tk.W)
+        host_var = tk.StringVar(value=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.values.localhost', default="localhost"))
         ttk.Entry(config_frame, textvariable=host_var).pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(config_frame, text="Port:").pack(anchor=tk.W)
+        ttk.Label(config_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.labels.port', default="Port:")).pack(anchor=tk.W)
         port_var = tk.StringVar(value="5000")
         ttk.Entry(config_frame, textvariable=port_var).pack(fill=tk.X, pady=(0, 10))
 
@@ -304,30 +306,30 @@ class MaintenanceMixin:
             host = host_var.get()
             port = int(port_var.get())
 
-            messagebox.showinfo("API Server",
+            messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.api_server', default="API Server"),
                               f"API server would start on http://{host}:{port}\n\n(This would run in background thread)")
             api_dialog.destroy()
 
-        ttk.Button(button_frame, text="Start Server", command=start_server,
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.buttons.start_server', default="Start Server"), command=start_server,
                   style='Success.TButton').pack(side=tk.RIGHT, padx=(5, 0))
-        ttk.Button(button_frame, text="Cancel", command=api_dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.buttons.cancel', default="Cancel"), command=api_dialog.destroy).pack(side=tk.RIGHT)
 
     def show_performance_monitor(self):
         """Show system performance monitoring dashboard"""
         try:
             perf_window = tk.Toplevel(self.root)
-            perf_window.title("Performance Monitor")
+            perf_window.title(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.windows.performance_monitor', default="Performance Monitor"))
             perf_window.geometry("600x500")
             perf_window.transient(self.root)
 
             # Header
             header_frame = ttk.Frame(perf_window)
             header_frame.pack(fill=tk.X, padx=20, pady=10)
-            ttk.Label(header_frame, text="Performance Monitor",
+            ttk.Label(header_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.labels.performance_monitor', default="Performance Monitor"),
                      font=('Arial', 14, 'bold')).pack(anchor=tk.W)
 
             # Performance metrics
-            metrics_frame = ttk.LabelFrame(perf_window, text="System Metrics", padding="10")
+            metrics_frame = ttk.LabelFrame(perf_window, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.labels.system_metrics', default="System Metrics"), padding="10")
             metrics_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
             metrics_text = ScrolledText(metrics_frame, wrap=tk.WORD, height=20)
@@ -404,11 +406,11 @@ class MaintenanceMixin:
                 metrics_text.delete(1.0, tk.END)
                 load_metrics()
 
-            ttk.Button(button_frame, text="Refresh", command=refresh_metrics).pack(side=tk.LEFT)
-            ttk.Button(button_frame, text="Close", command=perf_window.destroy).pack(side=tk.RIGHT)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.buttons.refresh', default="Refresh"), command=refresh_metrics).pack(side=tk.LEFT)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.buttons.close', default="Close"), command=perf_window.destroy).pack(side=tk.RIGHT)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show performance monitor: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.error', default="Error"), f"Failed to show performance monitor: {str(e)}")
 
     def export_logs_menu(self):
         """Export logs to file"""
@@ -416,37 +418,37 @@ class MaintenanceMixin:
             log_file = self.get_log_file()
 
             if not log_file or not os.path.exists(log_file):
-                messagebox.showinfo("No Logs", "No log file found")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.no_logs', default="No Logs"), _t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.no_log_file_found', default="No log file found"))
                 return
 
             save_path = filedialog.asksaveasfilename(
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                title="Export Logs"
+                title=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.export_logs', default="Export Logs")
             )
 
             if save_path:
                 import shutil
                 shutil.copy2(log_file, save_path)
-                messagebox.showinfo("Success", f"Logs exported to:\n{save_path}")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.success', default="Success"), f"Logs exported to:\n{save_path}")
                 self.update_status("Logs exported successfully", "success")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export logs: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.error', default="Error"), f"Failed to export logs: {str(e)}")
 
     def run_maintenance_menu(self):
         """Show system maintenance menu"""
         try:
             maint_window = tk.Toplevel(self.root)
-            maint_window.title("System Maintenance")
+            maint_window.title(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.windows.system_maintenance', default="System Maintenance"))
             maint_window.geometry("600x500")
             maint_window.transient(self.root)
 
-            ttk.Label(maint_window, text="System Maintenance",
+            ttk.Label(maint_window, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.labels.system_maintenance', default="System Maintenance"),
                      font=('Arial', 14, 'bold')).pack(pady=10)
 
             # Maintenance options
-            options_frame = ttk.LabelFrame(maint_window, text="Maintenance Tasks", padding="10")
+            options_frame = ttk.LabelFrame(maint_window, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.labels.maintenance_tasks', default="Maintenance Tasks"), padding="10")
             options_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
             tasks = [
@@ -462,20 +464,20 @@ class MaintenanceMixin:
 
                 ttk.Label(task_frame, text=f"* {task_name}:", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
                 ttk.Label(task_frame, text=f"  {description}", foreground='gray').pack(anchor=tk.W)
-                ttk.Button(task_frame, text="Run", command=task_func).pack(anchor=tk.E)
+                ttk.Button(task_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.buttons.run', default="Run"), command=task_func).pack(anchor=tk.E)
                 ttk.Separator(options_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=5)
 
-            ttk.Button(maint_window, text="Close", command=maint_window.destroy).pack(pady=10)
+            ttk.Button(maint_window, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.buttons.close', default="Close"), command=maint_window.destroy).pack(pady=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show maintenance menu: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.error', default="Error"), f"Failed to show maintenance menu: {str(e)}")
 
     def display_enhanced_reporting_menu(self):
         """Display main enhanced reporting menu (compatibility wrapper)"""
         try:
             # Show GUI help/welcome dialog
             help_window = tk.Toplevel(self.root)
-            help_window.title("Enhanced Reporting System - Help")
+            help_window.title(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.windows.enhanced_reporting_system_help', default="Enhanced Reporting System - Help"))
             help_window.geometry("700x600")
             help_window.transient(self.root)
 
@@ -483,9 +485,9 @@ class MaintenanceMixin:
             header_frame = ttk.Frame(help_window)
             header_frame.pack(fill=tk.X, padx=20, pady=10)
 
-            ttk.Label(header_frame, text="Enhanced Reporting System",
+            ttk.Label(header_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.labels.enhanced_reporting_system', default="Enhanced Reporting System"),
                      font=('Arial', 16, 'bold')).pack(anchor=tk.W)
-            ttk.Label(header_frame, text="Welcome to the GUI Interface",
+            ttk.Label(header_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.labels.welcome_to_the_gui_interface', default="Welcome to the GUI Interface"),
                      font=('Arial', 10)).pack(anchor=tk.W)
 
             # Create tabbed interface for help sections
@@ -494,7 +496,7 @@ class MaintenanceMixin:
 
             # Getting Started Tab
             start_frame = ttk.Frame(help_notebook)
-            help_notebook.add(start_frame, text="Getting Started")
+            help_notebook.add(start_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.tabs.getting_started', default="Getting Started"))
 
             start_text = ScrolledText(start_frame, wrap=tk.WORD, height=20)
             start_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -570,7 +572,7 @@ Need Help?
 
             # Features Tab
             features_frame = ttk.Frame(help_notebook)
-            help_notebook.add(features_frame, text="Features")
+            help_notebook.add(features_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.tabs.features', default="Features"))
 
             features_text = ScrolledText(features_frame, wrap=tk.WORD, height=20)
             features_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -622,7 +624,7 @@ SYSTEM MANAGEMENT
 
             # Keyboard Shortcuts Tab
             shortcuts_frame = ttk.Frame(help_notebook)
-            help_notebook.add(shortcuts_frame, text="Shortcuts")
+            help_notebook.add(shortcuts_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.tabs.shortcuts', default="Shortcuts"))
 
             shortcuts_text = ScrolledText(shortcuts_frame, wrap=tk.WORD, height=20)
             shortcuts_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -681,11 +683,11 @@ Troubleshooting:
             button_frame = ttk.Frame(help_window)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="Close", command=help_window.destroy,
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.buttons.close', default="Close"), command=help_window.destroy,
                       style='TButton').pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="View Documentation Online",
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.buttons.view_documentation_online', default="View Documentation Online"),
                       command=lambda: webbrowser.open("https://github.com")).pack(side=tk.LEFT, padx=5)
 
         except Exception as e:
             logging.error(f"Error showing enhanced reporting menu: {str(e)}")
-            messagebox.showerror("Error", f"Failed to show help: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.maintenance_mixin.dialogs.error', default="Error"), f"Failed to show help: {str(e)}")

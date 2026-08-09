@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -270,12 +272,12 @@ class ModuleSchedulingGUI:
             ]
 
             dlg = tk.Toplevel(self.root)
-            dlg.title("Module risks")
+            dlg.title(_t('gui.academics.module_scheduling.main.windows.module_risks', default="Module risks"))
             dlg.transient(self.root)
             dlg.resizable(False, False)
             ttk.Label(dlg,
-                      text="Select a module (leave blank to view all "
-                           "module risks):").pack(padx=15, pady=(15, 5))
+                      text=_t('gui.academics.module_scheduling.main.labels.select_a_module_leave_blank_to_view_all_module_risks', default="Select a module (leave blank to view all "
+                           "module risks):")).pack(padx=15, pady=(15, 5))
             selected = tk.StringVar()
             cb = ttk.Combobox(dlg, textvariable=selected, values=options,
                               state="readonly", width=50)
@@ -296,8 +298,8 @@ class ModuleSchedulingGUI:
 
             btns = ttk.Frame(dlg)
             btns.pack(pady=(5, 15))
-            ttk.Button(btns, text="OK", command=_ok).pack(side=tk.LEFT, padx=5)
-            ttk.Button(btns, text="Cancel",
+            ttk.Button(btns, text=_t('gui.academics.module_scheduling.main.buttons.ok', default="OK"), command=_ok).pack(side=tk.LEFT, padx=5)
+            ttk.Button(btns, text=_t('gui.academics.module_scheduling.main.buttons.cancel', default="Cancel"),
                        command=_cancel).pack(side=tk.LEFT, padx=5)
             dlg.grab_set()
             self.root.wait_window(dlg)
@@ -308,7 +310,7 @@ class ModuleSchedulingGUI:
             ref = f"module:{mc}" if mc else "module:"
             show_risks_for(self.root, ref,
                            title=f"Risks for {mc or 'all modules'}")
-        risks_button = ttk.Button(toolbar_frame, text="Risks",
+        risks_button = ttk.Button(toolbar_frame, text=_t('gui.academics.module_scheduling.main.buttons.risks', default="Risks"),
                                   command=_show_module_risks,
                                   style='Action.TButton')
         risks_button.pack(side=tk.LEFT, padx=5)
@@ -446,17 +448,17 @@ class ModuleSchedulingGUI:
             open_exam_gui, open_grade_gui, open_course_gui,
         )
         open_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Open", menu=open_menu)
+        menubar.add_cascade(label=_t('gui.academics.module_scheduling.main.menus.open', default="Open"), menu=open_menu)
         open_menu.add_command(
-            label="Exam Scheduler",
+            label=_t('gui.academics.module_scheduling.main.menus.exam_scheduler', default="Exam Scheduler"),
             command=lambda: open_exam_gui(self.root, getattr(self, "auth", None)),
         )
         open_menu.add_command(
-            label="Grade Tracking",
+            label=_t('gui.academics.module_scheduling.main.menus.grade_tracking', default="Grade Tracking"),
             command=lambda: open_grade_gui(self.root, getattr(self, "auth", None)),
         )
         open_menu.add_command(
-            label="Course Management",
+            label=_t('gui.academics.module_scheduling.main.menus.course_management', default="Course Management"),
             command=lambda: open_course_gui(self.root, getattr(self, "auth", None)),
         )
 
@@ -467,17 +469,17 @@ class ModuleSchedulingGUI:
         )
         from tkinter import simpledialog as _simpledialog
         cross_menu = tk.Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Cross-Domain", menu=cross_menu)
+        menubar.add_cascade(label=_t('gui.academics.module_scheduling.main.menus.cross_domain', default="Cross-Domain"), menu=cross_menu)
         cross_menu.add_command(
-            label="Instructor workload…",
+            label=_t('gui.academics.module_scheduling.main.menus.instructor_workload', default="Instructor workload…"),
             command=lambda: show_instructor_workload_dialog(self.root),
         )
         cross_menu.add_command(
-            label="At-risk students (unified)…",
+            label=_t('gui.academics.module_scheduling.main.menus.at_risk_students_unified', default="At-risk students (unified)…"),
             command=lambda: show_at_risk_dialog(self.root),
         )
         cross_menu.add_command(
-            label="Module timeline…",
+            label=_t('gui.academics.module_scheduling.main.menus.module_timeline', default="Module timeline…"),
             command=lambda: (
                 lambda mc=_simpledialog.askstring("Module timeline", "Module code:"):
                     show_module_timeline_dialog(self.root, mc) if mc else None
@@ -567,20 +569,20 @@ class ModuleSchedulingGUI:
             self.update_status("Data refreshed successfully")
         except Exception as e:
             self.update_status(f"Error refreshing data: {str(e)}")
-            messagebox.showerror("Error", f"Failed to refresh data: {str(e)}", parent=self.root)
+            messagebox.showerror(_t('gui.academics.module_scheduling.main.dialogs.error', default="Error"), f"Failed to refresh data: {str(e)}", parent=self.root)
 
     def return_to_main_menu(self):
         """Return to the main menu/GUI by closing this child window"""
-        if messagebox.askyesno("Return to Main Menu", "Do you want to close this window and return to the main menu?", parent=self.root):
+        if messagebox.askyesno(_t('gui.academics.module_scheduling.main.dialogs.return_to_main_menu', default="Return to Main Menu"), _t('gui.academics.module_scheduling.main.dialogs.do_you_want_to_close_this_window_and_return_to_the_main_menu', default="Do you want to close this window and return to the main menu?"), parent=self.root):
             try:
                 self.root.destroy()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to return to main menu: {str(e)}", parent=self.root)
+                messagebox.showerror(_t('gui.academics.module_scheduling.main.dialogs.error', default="Error"), f"Failed to return to main menu: {str(e)}", parent=self.root)
 
     def show_help(self):
         """Show user guide"""
         help_window = tk.Toplevel(self.root)
-        help_window.title("User Guide")
+        help_window.title(_t('gui.academics.module_scheduling.main.windows.user_guide', default="User Guide"))
         help_window.geometry("700x500")
 
         help_text = scrolledtext.ScrolledText(help_window, font=('Arial', 10))
@@ -688,7 +690,7 @@ Version: 2.0
 Developer: Academic Systems Team
         """
 
-        messagebox.showinfo("About", about_text, parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.main.dialogs.about', default="About"), about_text, parent=self.root)
 
     def show_language_selector(self):
         """Show language selection dialog"""
@@ -827,14 +829,17 @@ def setup_application():
     """Setup application for first-time use"""
     try:
         # Create necessary directories under the project's data tree
-        from education_system.systems.university.infrastructure.paths import (
-            REPORTS_DIR, BACKUP_DIR, ANALYTICS_DIR, TEMPLATES_DIR,
+        from education_system.paths import (
+            UNIVERSITY_REPORTS_DIR,
+            UNIVERSITY_BACKUP_DIR,
+            UNIVERSITY_ANALYTICS_DIR,
+            UNIVERSITY_TEMPLATES_DIR,
         )
         directories = [
-            REPORTS_DIR / 'timetable_reports',
-            BACKUP_DIR,
-            ANALYTICS_DIR,
-            TEMPLATES_DIR / 'scheduling',
+            UNIVERSITY_REPORTS_DIR / 'timetable_reports',
+            UNIVERSITY_BACKUP_DIR,
+            UNIVERSITY_ANALYTICS_DIR,
+            UNIVERSITY_TEMPLATES_DIR / 'ui' / 'scheduling',
         ]
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
@@ -863,4 +868,3 @@ def run_gui_with_database(db_path=None):
         import os
         os.environ['MODULE_SCHEDULING_DB_PATH'] = db_path
     launch_module_scheduling_gui()
-

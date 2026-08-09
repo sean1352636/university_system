@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -924,7 +926,7 @@ def show_condition_builder(self):
     field_frame.pack(fill=tk.X, pady=(0, 10))
 
     ttk.Label(field_frame, text=f"{_t('advanced_search.conditional.field')}:").pack(side=tk.LEFT)
-    field_var = tk.StringVar(value="age")
+    field_var = tk.StringVar(value=_t('gui.shell.advanced_search.search_conditional.values.age', default="age"))
     field_combo = ttk.Combobox(field_frame, textvariable=field_var, width=15,
                               values=["age", "course", "gender", "first_name", "last_name", "email"])
     field_combo.pack(side=tk.LEFT, padx=(10, 20))
@@ -944,9 +946,9 @@ def show_condition_builder(self):
     logic_frame.pack(fill=tk.X, pady=(0, 10))
 
     ttk.Label(logic_frame, text=f"{_t('advanced_search.conditional.logic_operator')}:").pack(side=tk.LEFT)
-    logic_var = tk.StringVar(value="AND")
-    ttk.Radiobutton(logic_frame, text="AND", variable=logic_var, value="AND").pack(side=tk.LEFT, padx=(10, 5))
-    ttk.Radiobutton(logic_frame, text="OR", variable=logic_var, value="OR").pack(side=tk.LEFT)
+    logic_var = tk.StringVar(value=_t('gui.shell.advanced_search.search_conditional.values.and', default="AND"))
+    ttk.Radiobutton(logic_frame, text=_t('gui.shell.advanced_search.search_conditional.buttons.and', default="AND"), variable=logic_var, value="AND").pack(side=tk.LEFT, padx=(10, 5))
+    ttk.Radiobutton(logic_frame, text=_t('gui.shell.advanced_search.search_conditional.buttons.or', default="OR"), variable=logic_var, value="OR").pack(side=tk.LEFT)
 
     def add_condition():
         field = field_var.get()
@@ -1120,7 +1122,7 @@ def show_conditional_search(self):
     builder_frame.pack(fill=tk.X)
 
     ttk.Label(builder_frame, text=f"{_t('advanced_search.conditional.field')}:").grid(row=0, column=0, sticky='w')
-    field_var = tk.StringVar(value="age")
+    field_var = tk.StringVar(value=_t('gui.shell.advanced_search.search_conditional.values.age', default="age"))
     field_combo = ttk.Combobox(builder_frame, textvariable=field_var,
                               values=["age", "course", "gender", "registration_datetime"],
                               state='readonly', width=12)
@@ -1164,9 +1166,9 @@ def show_conditional_search(self):
     logic_frame.pack(fill=tk.X, pady=(0, 20))
 
     ttk.Label(logic_frame, text=f"{_t('advanced_search.conditional.combine_with')}:").pack(side=tk.LEFT)
-    logic_var = tk.StringVar(value="AND")
-    ttk.Radiobutton(logic_frame, text="AND", variable=logic_var, value="AND").pack(side=tk.LEFT, padx=(10, 5))
-    ttk.Radiobutton(logic_frame, text="OR", variable=logic_var, value="OR").pack(side=tk.LEFT, padx=(5, 0))
+    logic_var = tk.StringVar(value=_t('gui.shell.advanced_search.search_conditional.values.and', default="AND"))
+    ttk.Radiobutton(logic_frame, text=_t('gui.shell.advanced_search.search_conditional.buttons.and', default="AND"), variable=logic_var, value="AND").pack(side=tk.LEFT, padx=(10, 5))
+    ttk.Radiobutton(logic_frame, text=_t('gui.shell.advanced_search.search_conditional.buttons.or', default="OR"), variable=logic_var, value="OR").pack(side=tk.LEFT, padx=(5, 0))
 
     def execute_conditional_search():
         conditions = [self.conditions_listbox.get(i) for i in range(self.conditions_listbox.size())]

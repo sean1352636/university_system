@@ -6,6 +6,8 @@ is set automatically by the attendance GUI's ``_sync_to_absence_db`` helper
 when a recorded Absent matches an entry in the ``exams`` table.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from contextlib import closing
 import json
 import logging
@@ -31,18 +33,18 @@ class DeferredExamTabMixin:
 
     def create_deferred_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="Deferred Exam Requests")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.tabs.deferred_tab.tabs.deferred_exam_requests', default="Deferred Exam Requests"))
 
         header = ttk.Frame(tab)
         header.pack(fill=tk.X, pady=(0, 8))
-        ttk.Label(header, text="Absence requests on exam dates",
+        ttk.Label(header, text=_t('gui.academics.exam_management.tabs.deferred_tab.labels.absence_requests_on_exam_dates', default="Absence requests on exam dates"),
                   style="Header.TLabel").pack(side=tk.LEFT)
-        ttk.Button(header, text="Refresh",
+        ttk.Button(header, text=_t('gui.academics.exam_management.tabs.deferred_tab.buttons.refresh', default="Refresh"),
                    command=self.refresh_deferred_list).pack(side=tk.RIGHT, padx=4)
-        ttk.Button(header, text="Approve (schedule resit…)",
+        ttk.Button(header, text=_t('gui.academics.exam_management.tabs.deferred_tab.buttons.approve_schedule_resit', default="Approve (schedule resit…)"),
                    command=lambda: self._decide_deferred("approved")).pack(
                        side=tk.RIGHT, padx=4)
-        ttk.Button(header, text="Reject",
+        ttk.Button(header, text=_t('gui.academics.exam_management.tabs.deferred_tab.buttons.reject', default="Reject"),
                    command=lambda: self._decide_deferred("rejected")).pack(
                        side=tk.RIGHT, padx=4)
 
@@ -86,7 +88,7 @@ class DeferredExamTabMixin:
                        ORDER BY r.status = 'pending' DESC, r.date DESC,
                                 r.id DESC""").fetchall()
         except Exception as exc:
-            messagebox.showerror("Deferred Exams",
+            messagebox.showerror(_t('gui.academics.exam_management.tabs.deferred_tab.dialogs.deferred_exams', default="Deferred Exams"),
                                  f"Failed to load: {exc}", parent=self.root)
             return
         for (rid, name, sid, mod, dt, exam_id, status, reason) in rows:
@@ -98,8 +100,8 @@ class DeferredExamTabMixin:
     def _decide_deferred(self, decision: str):
         sel = self.deferred_tree.selection()
         if not sel:
-            messagebox.showinfo("Deferred Exams",
-                                "Select a request first.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.exam_management.tabs.deferred_tab.dialogs.deferred_exams', default="Deferred Exams"),
+                                _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.select_a_request_first', default="Select a request first."), parent=self.root)
             return
         rid = int(self.deferred_tree.item(sel[0])["values"][0])
         if not HAS_DB:
@@ -120,7 +122,7 @@ class DeferredExamTabMixin:
                     (decision, rid))
                 conn.commit()
         except Exception as exc:
-            messagebox.showerror("Deferred Exams",
+            messagebox.showerror(_t('gui.academics.exam_management.tabs.deferred_tab.dialogs.deferred_exams', default="Deferred Exams"),
                                  f"Update failed: {exc}", parent=self.root)
             return
         self.refresh_deferred_list()
@@ -150,7 +152,7 @@ class DeferredExamTabMixin:
                 student_id, module_code, _miss_date, exam_id = req
                 if not exam_id:
                     messagebox.showwarning(
-                        "Resit",
+                        _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.resit', default="Resit"),
                         f"Request #{request_id} has no linked exam — "
                         "schedule the resit manually.",
                         parent=self.root)
@@ -163,7 +165,7 @@ class DeferredExamTabMixin:
                        FROM exams WHERE id = ?""", (exam_id,)).fetchone()
                 if not original:
                     messagebox.showerror(
-                        "Resit",
+                        _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.resit', default="Resit"),
                         f"Original exam {exam_id} not found.",
                         parent=self.root)
                     return False
@@ -190,13 +192,13 @@ class DeferredExamTabMixin:
                     ids = self._parse_ids(raw_ids)
                     if str(student_id) in ids:
                         messagebox.showinfo(
-                            "Resit",
+                            _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.resit', default="Resit"),
                             f"Student {student_id} is already on the resit "
                             f"for exam {exam_id} (scheduled {resit_date}).",
                             parent=self.root)
                         return True
                     choice = messagebox.askyesnocancel(
-                        "Resit already scheduled",
+                        _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.resit_already_scheduled', default="Resit already scheduled"),
                         f"A resit for this exam is already scheduled on "
                         f"{resit_date} ({current_n or 0} student(s)).\n\n"
                         "Yes  → add this student to that sitting\n"
@@ -225,7 +227,7 @@ class DeferredExamTabMixin:
                         if acc_bullets:
                             msg += "\n\nAccommodations applied:\n  • " + \
                                 "\n  • ".join(acc_bullets)
-                        messagebox.showinfo("Resit", msg, parent=self.root)
+                        messagebox.showinfo(_t('gui.academics.exam_management.tabs.deferred_tab.dialogs.resit', default="Resit"), msg, parent=self.root)
                         self._refresh_exams_views()
                         return True
                     # No → fall through to schedule a separate sitting
@@ -278,12 +280,12 @@ class DeferredExamTabMixin:
                 if acc_bullets:
                     msg += "\n\nAccommodations applied:\n  • " + \
                         "\n  • ".join(acc_bullets)
-                messagebox.showinfo("Resit", msg, parent=self.root)
+                messagebox.showinfo(_t('gui.academics.exam_management.tabs.deferred_tab.dialogs.resit', default="Resit"), msg, parent=self.root)
                 self._refresh_exams_views()
                 return True
         except Exception as exc:
             logger.exception("resit auto-create failed rid=%s", request_id)
-            messagebox.showerror("Resit", f"Auto-create failed: {exc}",
+            messagebox.showerror(_t('gui.academics.exam_management.tabs.deferred_tab.dialogs.resit', default="Resit"), f"Auto-create failed: {exc}",
                                  parent=self.root)
             return False
 
@@ -296,7 +298,7 @@ class DeferredExamTabMixin:
         suggested = default_date
         while True:
             entered = simpledialog.askstring(
-                "Schedule resit", prompt,
+                _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.schedule_resit', default="Schedule resit"), prompt,
                 initialvalue=suggested, parent=self.root)
             if entered is None:
                 return None
@@ -305,7 +307,7 @@ class DeferredExamTabMixin:
                 datetime.strptime(entered, "%Y-%m-%d")
             except ValueError:
                 messagebox.showerror(
-                    "Resit", f"Invalid date '{entered}'. "
+                    _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.resit', default="Resit"), f"Invalid date '{entered}'. "
                              "Use YYYY-MM-DD.", parent=self.root)
                 suggested = entered or default_date
                 continue
@@ -316,7 +318,7 @@ class DeferredExamTabMixin:
                 return entered
 
             choice = messagebox.askyesnocancel(
-                "Resit conflict",
+                _t('gui.academics.exam_management.tabs.deferred_tab.dialogs.resit_conflict', default="Resit conflict"),
                 "The chosen slot conflicts with:\n\n  • "
                 + "\n  • ".join(warnings)
                 + "\n\nYes → schedule anyway\n"

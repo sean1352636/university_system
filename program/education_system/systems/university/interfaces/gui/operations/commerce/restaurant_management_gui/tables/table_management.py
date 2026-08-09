@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -72,7 +74,7 @@ def view_tables_gui(self):
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.database_connection_failed', default="Database connection failed"))
             return
 
         cursor = conn.cursor()
@@ -92,53 +94,53 @@ def view_tables_gui(self):
             ))
 
         conn.close()
-        messagebox.showinfo("Success", f"Loaded {len(tables)} tables")
+        messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.success', default="Success"), f"Loaded {len(tables)} tables")
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to load tables: {str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.error', default="Error"), f"Failed to load tables: {str(e)}")
 
 def add_table_dialog(self):
     """Show dialog to add new table"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Add Restaurant Table")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.windows.add_restaurant_table', default="Add Restaurant Table"))
     dialog.geometry("500x400")
     dialog.transient(self.root)
     dialog.grab_set()
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Add New Table", font=('Arial', 12, 'bold')).pack(pady=10)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.add_new_table', default="Add New Table"), font=('Arial', 12, 'bold')).pack(pady=10)
     # Form
     form_frame = ttk.Frame(main_frame)
     form_frame.pack(fill='both', expand=True, pady=10)
     fields = {}
     row = 0
-    ttk.Label(form_frame, text="Table ID:*").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.table_id', default="Table ID:*")).grid(row=row, column=0, sticky='w', pady=5)
     fields['table_id'] = ttk.Entry(form_frame, width=30)
     fields['table_id'].grid(row=row, column=1, pady=5, padx=10)
     row += 1
-    ttk.Label(form_frame, text="Capacity:*").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.capacity', default="Capacity:*")).grid(row=row, column=0, sticky='w', pady=5)
     fields['capacity'] = ttk.Spinbox(form_frame, from_=1, to=20, width=28)
     fields['capacity'].grid(row=row, column=1, pady=5, padx=10)
     fields['capacity'].set(4)
     row += 1
-    ttk.Label(form_frame, text="Location:").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.location', default="Location:")).grid(row=row, column=0, sticky='w', pady=5)
     fields['location'] = ttk.Combobox(form_frame, values=['Indoor', 'Outdoor', 'Patio', 'VIP Area', 'Bar'], width=28)
     fields['location'].grid(row=row, column=1, pady=5, padx=10)
     fields['location'].current(0)
     row += 1
-    ttk.Label(form_frame, text="Table Type:").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.table_type', default="Table Type:")).grid(row=row, column=0, sticky='w', pady=5)
     fields['table_type'] = ttk.Combobox(form_frame, values=['Standard', 'Booth', 'High Top', 'Counter'], width=28)
     fields['table_type'].grid(row=row, column=1, pady=5, padx=10)
     fields['table_type'].current(0)
     row += 1
-    ttk.Label(form_frame, text="Status:").grid(row=row, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.status', default="Status:")).grid(row=row, column=0, sticky='w', pady=5)
     fields['status'] = ttk.Combobox(form_frame, values=['Available', 'Occupied', 'Reserved', 'Maintenance'], width=28)
     fields['status'].grid(row=row, column=1, pady=5, padx=10)
     fields['status'].current(0)
     def save_table():
         table_id = fields['table_id'].get().strip()
         if not table_id:
-            messagebox.showerror("Error", "Table ID is required")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.table_id_is_required', default="Table ID is required"))
             return
         try:
             conn = get_db_connection()
@@ -155,26 +157,26 @@ def add_table_dialog(self):
             ))
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", f"Table {table_id} added successfully")
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.success', default="Success"), f"Table {table_id} added successfully")
             self.view_tables_gui()
             dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to add table: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.error', default="Error"), f"Failed to add table: {e}")
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(pady=10)
-    ttk.Button(buttons_frame, text="Save", command=save_table).pack(side='left', padx=5)
-    ttk.Button(buttons_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.buttons.save', default="Save"), command=save_table).pack(side='left', padx=5)
+    ttk.Button(buttons_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
 def manage_reservations_dialog(self):
     """Show reservations management dialog"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Reservations Management")
+    dialog.title(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.windows.reservations_management', default="Reservations Management"))
     dialog.geometry("900x700")
     dialog.transient(self.root)
     dialog.grab_set()
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill='both', expand=True)
-    ttk.Label(main_frame, text="Reservations Management", font=('Arial', 14, 'bold')).pack(pady=10)
+    ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.reservations_management', default="Reservations Management"), font=('Arial', 14, 'bold')).pack(pady=10)
     # Create reservations table if it doesn't exist
     try:
         conn = get_db_connection()
@@ -198,7 +200,7 @@ def manage_reservations_dialog(self):
             conn.commit()
             conn.close()
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Failed to initialize reservations table: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.database_error', default="Database Error"), f"Failed to initialize reservations table: {e}")
         dialog.destroy()
         return
     # Button frame
@@ -206,7 +208,7 @@ def manage_reservations_dialog(self):
     btn_frame.pack(fill='x', pady=10)
     def new_reservation():
         res_dialog = tk.Toplevel(dialog)
-        res_dialog.title("New Reservation")
+        res_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.windows.new_reservation', default="New Reservation"))
         res_dialog.geometry("500x600")
         res_dialog.transient(dialog)
         res_dialog.grab_set()
@@ -214,7 +216,7 @@ def manage_reservations_dialog(self):
         form_frame.pack(fill='both', expand=True)
         fields = {}
         row = 0
-        ttk.Label(form_frame, text="Customer:").grid(row=row, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.customer', default="Customer:")).grid(row=row, column=0, sticky='w', pady=5)
         fields['customer'] = ttk.Combobox(form_frame, width=35)
         fields['customer'].grid(row=row, column=1, pady=5, padx=10)
         # Load customers
@@ -229,7 +231,7 @@ def manage_reservations_dialog(self):
         except sqlite3.Error:
             pass
         row += 1
-        ttk.Label(form_frame, text="Table:").grid(row=row, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.table', default="Table:")).grid(row=row, column=0, sticky='w', pady=5)
         fields['table'] = ttk.Combobox(form_frame, width=35)
         fields['table'].grid(row=row, column=1, pady=5, padx=10)
         # Load tables
@@ -244,22 +246,22 @@ def manage_reservations_dialog(self):
         except sqlite3.Error:
             pass
         row += 1
-        ttk.Label(form_frame, text="Date (YYYY-MM-DD):*").grid(row=row, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):*")).grid(row=row, column=0, sticky='w', pady=5)
         fields['date'] = ttk.Entry(form_frame, width=35)
         fields['date'].grid(row=row, column=1, pady=5, padx=10)
         fields['date'].insert(0, datetime.now().strftime('%Y-%m-%d'))
         row += 1
-        ttk.Label(form_frame, text="Time (HH:MM):*").grid(row=row, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.time_hh_mm', default="Time (HH:MM):*")).grid(row=row, column=0, sticky='w', pady=5)
         fields['time'] = ttk.Entry(form_frame, width=35)
         fields['time'].grid(row=row, column=1, pady=5, padx=10)
         fields['time'].insert(0, "18:00")
         row += 1
-        ttk.Label(form_frame, text="Party Size:*").grid(row=row, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.party_size', default="Party Size:*")).grid(row=row, column=0, sticky='w', pady=5)
         fields['party_size'] = ttk.Spinbox(form_frame, from_=1, to=20, width=33)
         fields['party_size'].grid(row=row, column=1, pady=5, padx=10)
         fields['party_size'].set(2)
         row += 1
-        ttk.Label(form_frame, text="Notes:").grid(row=row, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.notes', default="Notes:")).grid(row=row, column=0, sticky='nw', pady=5)
         fields['notes'] = tk.Text(form_frame, height=5, width=35)
         fields['notes'].grid(row=row, column=1, pady=5, padx=10)
         def save_reservation():
@@ -279,17 +281,17 @@ def manage_reservations_dialog(self):
                           int(fields['party_size'].get()), fields['notes'].get('1.0', tk.END).strip(), 'Confirmed'))
                     conn.commit()
                     conn.close()
-                    messagebox.showinfo("Success", "Reservation created successfully!")
+                    messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.success', default="Success"), _t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.reservation_created_successfully', default="Reservation created successfully!"))
                     res_dialog.destroy()
                     load_reservations()
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to create reservation: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.error', default="Error"), f"Failed to create reservation: {e}")
         button_frame = ttk.Frame(form_frame)
         button_frame.grid(row=row+1, column=0, columnspan=2, pady=20)
-        ttk.Button(button_frame, text="Save", command=save_reservation).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=res_dialog.destroy).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="New Reservation", command=new_reservation).pack(side='left', padx=5)
-    ttk.Button(btn_frame, text="Refresh", command=lambda: load_reservations()).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.buttons.save', default="Save"), command=save_reservation).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.buttons.cancel', default="Cancel"), command=res_dialog.destroy).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.buttons.new_reservation', default="New Reservation"), command=new_reservation).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.buttons.refresh', default="Refresh"), command=lambda: load_reservations()).pack(side='left', padx=5)
     # Reservations treeview
     tree_frame = ttk.Frame(main_frame)
     tree_frame.pack(fill='both', expand=True, pady=10)
@@ -322,16 +324,16 @@ def manage_reservations_dialog(self):
                 for res in reservations:
                     reservations_tree.insert('', 'end', values=res)
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load reservations: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.error', default="Error"), f"Failed to load reservations: {e}")
     load_reservations()
-    ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
 def optimize_table_structure(self):
     """Optimize table arrangement based on utilization data"""
     try:
         conn = get_db_connection()
         if not conn:
-            messagebox.showerror("Error", "Database connection failed")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.database_connection_failed', default="Database connection failed"))
             return
         cursor = conn.cursor()
         # Get table utilization data
@@ -358,12 +360,12 @@ def optimize_table_structure(self):
         conn.close()
         # Display optimization analysis
         opt_dialog = tk.Toplevel(self.root)
-        opt_dialog.title("Table Structure Optimization")
+        opt_dialog.title(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.windows.table_structure_optimization', default="Table Structure Optimization"))
         opt_dialog.geometry("900x700")
         opt_dialog.transient(self.root)
         main_frame = ttk.Frame(opt_dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
-        ttk.Label(main_frame, text="Table Structure Optimization Analysis",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.labels.table_structure_optimization_analysis', default="Table Structure Optimization Analysis"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
         # Create scrolled text for report
         report_text = ScrolledText(main_frame, height=35, width=100)
@@ -439,8 +441,8 @@ def optimize_table_structure(self):
         report += "5. Review reservation patterns for better planning\n"
         report_text.insert(1.0, report)
         report_text.config(state='disabled')
-        ttk.Button(main_frame, text="Close",
+        ttk.Button(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.buttons.close', default="Close"),
                   command=opt_dialog.destroy).pack(pady=10)
     except (sqlite3.Error, tk.TclError) as e:
-        messagebox.showerror("Error", f"Failed to analyze table structure:\n{str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.tables.table_management.dialogs.error', default="Error"), f"Failed to analyze table structure:\n{str(e)}")
 

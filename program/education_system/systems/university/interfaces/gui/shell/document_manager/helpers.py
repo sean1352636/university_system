@@ -141,7 +141,7 @@ class HelperManager:
                 search_frame = ttk.Frame(main_frame)
                 search_frame.pack(fill='x', pady=(0, 10))
 
-                ttk.Label(search_frame, text="Search:").pack(side='left', padx=(0, 5))
+                ttk.Label(search_frame, text=_t('gui.shell.document_manager.helpers.labels.search', default="Search:")).pack(side='left', padx=(0, 5))
                 search_var = tk.StringVar()
                 search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
                 search_entry.pack(side='left', padx=(0, 5))
@@ -206,13 +206,13 @@ class HelperManager:
 
                     dialog.destroy()
                 else:
-                    messagebox.showwarning("Warning", "Please select a student")
+                    messagebox.showwarning(_t('gui.shell.document_manager.helpers.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.helpers.dialogs.please_select_a_student', default="Please select a student"))
 
             def on_cancel():
                 dialog.destroy()
 
-            ttk.Button(button_frame, text="Select", command=on_select).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.helpers.buttons.select', default="Select"), command=on_select).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.helpers.buttons.cancel', default="Cancel"), command=on_cancel).pack(side='left', padx=5)
 
             # Double-click to select
             student_listbox.bind('<Double-Button-1>', lambda e: on_select())
@@ -221,7 +221,7 @@ class HelperManager:
             return result['selected']
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show student selection: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.helpers.dialogs.error', default="Error"), f"Failed to show student selection: {e}")
             return None
 
     def select_document_type(self, title="Select Document Type", show_details=True):
@@ -289,7 +289,7 @@ class HelperManager:
 
             # Details frame
             if show_details:
-                details_frame = ttk.LabelFrame(main_frame, text="Document Type Details", padding=10)
+                details_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.helpers.labels.document_type_details', default="Document Type Details"), padding=10)
                 details_frame.pack(fill='x', pady=(10, 0))
 
                 details_text = tk.Text(details_frame, height=6, wrap=tk.WORD, font=('Arial', 9))
@@ -325,13 +325,13 @@ class HelperManager:
                     result['selected'] = doc_type_data[index]
                     dialog.destroy()
                 else:
-                    messagebox.showwarning("Warning", "Please select a document type")
+                    messagebox.showwarning(_t('gui.shell.document_manager.helpers.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.helpers.dialogs.please_select_a_document_type', default="Please select a document type"))
 
             def on_cancel():
                 dialog.destroy()
 
-            ttk.Button(button_frame, text="Select", command=on_select).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.helpers.buttons.select', default="Select"), command=on_select).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.helpers.buttons.cancel', default="Cancel"), command=on_cancel).pack(side='left', padx=5)
 
             # Double-click to select
             doctype_listbox.bind('<Double-Button-1>', lambda e: on_select())
@@ -340,7 +340,7 @@ class HelperManager:
             return result['selected']
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show document type selection: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.helpers.dialogs.error', default="Error"), f"Failed to show document type selection: {e}")
             return None
 
     def get_file_upload_details(self, initial_path=None):
@@ -358,7 +358,7 @@ class HelperManager:
         try:
             # Open file dialog
             file_path = filedialog.askopenfilename(
-                title="Select Document File",
+                title=_t('gui.shell.document_manager.helpers.dialogs.select_document_file', default="Select Document File"),
                 initialdir=initial_path,
                 filetypes=[
                     ("All Supported", "*.pdf *.jpg *.jpeg *.png *.doc *.docx *.txt"),
@@ -375,7 +375,7 @@ class HelperManager:
 
             # Get file details
             if not os.path.exists(file_path):
-                messagebox.showerror("Error", "Selected file does not exist")
+                messagebox.showerror(_t('gui.shell.document_manager.helpers.dialogs.error', default="Error"), _t('gui.shell.document_manager.helpers.dialogs.selected_file_does_not_exist', default="Selected file does not exist"))
                 return None
 
             file_name = os.path.basename(file_path)
@@ -396,7 +396,7 @@ class HelperManager:
             }
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to get file details: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.helpers.dialogs.error', default="Error"), f"Failed to get file details: {e}")
             return None
 
     def get_expiry_date(self, doc_type_info=None, allow_manual=True):
@@ -425,7 +425,7 @@ class HelperManager:
 
             # Show dialog to get expiry date
             dialog = tk.Toplevel(self.root)
-            dialog.title("Set Expiry Date")
+            dialog.title(_t('gui.shell.document_manager.helpers.windows.set_expiry_date', default="Set Expiry Date"))
             dialog.geometry("450x300")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -437,7 +437,7 @@ class HelperManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Set Document Expiry Date",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.helpers.labels.set_document_expiry_date', default="Set Document Expiry Date"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Options frame
@@ -445,29 +445,29 @@ class HelperManager:
             options_frame.pack(fill='both', expand=True)
 
             # Radio buttons for selection method
-            selection_method = tk.StringVar(value='calculated')
+            selection_method = tk.StringVar(value=_t('gui.shell.document_manager.helpers.values.calculated', default='calculated'))
 
-            ttk.Radiobutton(options_frame, text="Calculate from today",
+            ttk.Radiobutton(options_frame, text=_t('gui.shell.document_manager.helpers.buttons.calculate_from_today', default="Calculate from today"),
                            variable=selection_method, value='calculated').pack(anchor='w', pady=5)
 
             # Days frame
             days_frame = ttk.Frame(options_frame)
             days_frame.pack(fill='x', padx=(20, 0), pady=5)
 
-            ttk.Label(days_frame, text="Days from today:").pack(side='left')
+            ttk.Label(days_frame, text=_t('gui.shell.document_manager.helpers.labels.days_from_today', default="Days from today:")).pack(side='left')
             days_var = tk.StringVar(value=str(default_days))
             days_entry = ttk.Entry(days_frame, textvariable=days_var, width=10)
             days_entry.pack(side='left', padx=5)
 
             if allow_manual:
-                ttk.Radiobutton(options_frame, text="Enter specific date",
+                ttk.Radiobutton(options_frame, text=_t('gui.shell.document_manager.helpers.buttons.enter_specific_date', default="Enter specific date"),
                                variable=selection_method, value='manual').pack(anchor='w', pady=5)
 
                 # Manual date frame
                 manual_frame = ttk.Frame(options_frame)
                 manual_frame.pack(fill='x', padx=(20, 0), pady=5)
 
-                ttk.Label(manual_frame, text="Date (YYYY-MM-DD):").pack(side='left')
+                ttk.Label(manual_frame, text=_t('gui.shell.document_manager.helpers.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).pack(side='left')
                 date_var = tk.StringVar()
                 date_entry = ttk.Entry(manual_frame, textvariable=date_var, width=15)
                 date_entry.pack(side='left', padx=5)
@@ -476,11 +476,11 @@ class HelperManager:
                 default_date = (datetime.now() + timedelta(days=default_days)).strftime('%Y-%m-%d')
                 date_var.set(default_date)
 
-            ttk.Radiobutton(options_frame, text="No expiry date",
+            ttk.Radiobutton(options_frame, text=_t('gui.shell.document_manager.helpers.buttons.no_expiry_date', default="No expiry date"),
                            variable=selection_method, value='none').pack(anchor='w', pady=5)
 
             # Preview
-            preview_frame = ttk.LabelFrame(main_frame, text="Preview", padding=10)
+            preview_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.helpers.labels.preview', default="Preview"), padding=10)
             preview_frame.pack(fill='x', pady=(20, 10))
 
             preview_label = ttk.Label(preview_frame, text="", font=('Arial', 10, 'bold'))
@@ -494,16 +494,16 @@ class HelperManager:
                         expiry = datetime.now() + timedelta(days=days)
                         preview_label.config(text=f"Expiry Date: {expiry.strftime('%Y-%m-%d')}")
                     except (ValueError, TypeError):
-                        preview_label.config(text="Invalid number of days")
+                        preview_label.config(text=_t('gui.shell.document_manager.helpers.text.invalid_number_of_days', default="Invalid number of days"))
                 elif method == 'manual' and allow_manual:
                     date_text = date_var.get()
                     try:
                         datetime.strptime(date_text, '%Y-%m-%d')
                         preview_label.config(text=f"Expiry Date: {date_text}")
                     except ValueError:
-                        preview_label.config(text="Invalid date format")
+                        preview_label.config(text=_t('gui.shell.document_manager.helpers.text.invalid_date_format', default="Invalid date format"))
                 else:
-                    preview_label.config(text="No expiry date")
+                    preview_label.config(text=_t('gui.shell.document_manager.helpers.text.no_expiry_date', default="No expiry date"))
 
             selection_method.trace('w', update_preview)
             days_var.trace('w', update_preview)
@@ -525,7 +525,7 @@ class HelperManager:
                         result['date'] = expiry.strftime('%Y-%m-%d')
                         dialog.destroy()
                     except Exception:
-                        messagebox.showerror("Error", "Invalid number of days")
+                        messagebox.showerror(_t('gui.shell.document_manager.helpers.dialogs.error', default="Error"), _t('gui.shell.document_manager.helpers.dialogs.invalid_number_of_days', default="Invalid number of days"))
                 elif method == 'manual' and allow_manual:
                     date_text = date_var.get()
                     try:
@@ -533,7 +533,7 @@ class HelperManager:
                         result['date'] = date_text
                         dialog.destroy()
                     except Exception:
-                        messagebox.showerror("Error", "Invalid date format (use YYYY-MM-DD)")
+                        messagebox.showerror(_t('gui.shell.document_manager.helpers.dialogs.error', default="Error"), _t('gui.shell.document_manager.helpers.dialogs.invalid_date_format_use_yyyy_mm_dd', default="Invalid date format (use YYYY-MM-DD)"))
                 else:
                     result['date'] = None
                     dialog.destroy()
@@ -542,14 +542,14 @@ class HelperManager:
                 result['date'] = None
                 dialog.destroy()
 
-            ttk.Button(button_frame, text="Confirm", command=on_confirm).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.helpers.buttons.confirm', default="Confirm"), command=on_confirm).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.helpers.buttons.cancel', default="Cancel"), command=on_cancel).pack(side='left', padx=5)
 
             dialog.wait_window()
             return result['date']
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to get expiry date: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.helpers.dialogs.error', default="Error"), f"Failed to get expiry date: {e}")
             return None
 
     def select_tags(self, existing_tags=None, allow_create=True):
@@ -565,7 +565,7 @@ class HelperManager:
         """
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Select Tags")
+            dialog.title(_t('gui.shell.document_manager.helpers.windows.select_tags', default="Select Tags"))
             dialog.geometry("600x500")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -577,7 +577,7 @@ class HelperManager:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            ttk.Label(main_frame, text="Select or Create Tags",
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.helpers.labels.select_or_create_tags', default="Select or Create Tags"),
                      font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
             # Load existing tags from database
@@ -599,7 +599,7 @@ class HelperManager:
             all_tags.sort()
 
             # Available tags frame
-            available_frame = ttk.LabelFrame(main_frame, text="Available Tags", padding=10)
+            available_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.helpers.labels.available_tags', default="Available Tags"), padding=10)
             available_frame.pack(fill='both', expand=True, pady=(0, 10))
 
             # Listbox for available tags
@@ -618,10 +618,10 @@ class HelperManager:
 
             # New tag frame
             if allow_create:
-                new_tag_frame = ttk.LabelFrame(main_frame, text="Create New Tag", padding=10)
+                new_tag_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.helpers.labels.create_new_tag', default="Create New Tag"), padding=10)
                 new_tag_frame.pack(fill='x', pady=(0, 10))
 
-                ttk.Label(new_tag_frame, text="Tag Name:").pack(side='left', padx=(0, 5))
+                ttk.Label(new_tag_frame, text=_t('gui.shell.document_manager.helpers.labels.tag_name', default="Tag Name:")).pack(side='left', padx=(0, 5))
                 new_tag_var = tk.StringVar()
                 new_tag_entry = ttk.Entry(new_tag_frame, textvariable=new_tag_var, width=30)
                 new_tag_entry.pack(side='left', padx=(0, 5))
@@ -634,17 +634,17 @@ class HelperManager:
                             available_list.selection_set(tk.END)
                             new_tag_var.set('')
                         else:
-                            messagebox.showinfo("Info", "Tag already exists")
+                            messagebox.showinfo(_t('gui.shell.document_manager.helpers.dialogs.info', default="Info"), _t('gui.shell.document_manager.helpers.dialogs.tag_already_exists', default="Tag already exists"))
                     else:
-                        messagebox.showwarning("Warning", "Please enter a tag name")
+                        messagebox.showwarning(_t('gui.shell.document_manager.helpers.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.helpers.dialogs.please_enter_a_tag_name', default="Please enter a tag name"))
 
-                ttk.Button(new_tag_frame, text="Add", command=add_new_tag).pack(side='left')
+                ttk.Button(new_tag_frame, text=_t('gui.shell.document_manager.helpers.buttons.add', default="Add"), command=add_new_tag).pack(side='left')
 
             # Selected tags display
-            selected_frame = ttk.LabelFrame(main_frame, text="Selected Tags", padding=10)
+            selected_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.helpers.labels.selected_tags', default="Selected Tags"), padding=10)
             selected_frame.pack(fill='x')
 
-            selected_label = ttk.Label(selected_frame, text="None selected",
+            selected_label = ttk.Label(selected_frame, text=_t('gui.shell.document_manager.helpers.labels.none_selected', default="None selected"),
                                       font=('Arial', 9), foreground='gray')
             selected_label.pack()
 
@@ -654,7 +654,7 @@ class HelperManager:
                     selected_tags = [available_list.get(i) for i in selection]
                     selected_label.config(text=', '.join(selected_tags), foreground='black')
                 else:
-                    selected_label.config(text="None selected", foreground='gray')
+                    selected_label.config(text=_t('gui.shell.document_manager.helpers.text.none_selected', default="None selected"), foreground='gray')
 
             available_list.bind('<<ListboxSelect>>', update_selected_display)
 
@@ -674,20 +674,20 @@ class HelperManager:
                 result['tags'] = None
                 dialog.destroy()
 
-            ttk.Button(button_frame, text="Confirm", command=on_confirm).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.helpers.buttons.confirm', default="Confirm"), command=on_confirm).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.helpers.buttons.cancel', default="Cancel"), command=on_cancel).pack(side='left', padx=5)
 
             dialog.wait_window()
             return result['tags']
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show tag selection: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.helpers.dialogs.error', default="Error"), f"Failed to show tag selection: {e}")
             return None
 
     def show_user_guide(self):
         """Show comprehensive user guide"""
         guide_window = tk.Toplevel(self.root)
-        guide_window.title("User Guide - Document Management System")
+        guide_window.title(_t('gui.shell.document_manager.helpers.windows.user_guide_document_management_system', default="User Guide - Document Management System"))
         guide_window.geometry("800x600")
         guide_window.transient(self.root)
 
@@ -700,7 +700,7 @@ class HelperManager:
 
         # Getting Started Tab
         getting_started_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(getting_started_frame, text="Getting Started")
+        notebook.add(getting_started_frame, text=_t('gui.shell.document_manager.helpers.tabs.getting_started', default="Getting Started"))
 
         getting_started_text = """GETTING STARTED WITH DOCUMENT MANAGEMENT SYSTEM
 
@@ -736,7 +736,7 @@ class HelperManager:
 
         # Document Management Tab
         doc_mgmt_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(doc_mgmt_frame, text="Document Management")
+        notebook.add(doc_mgmt_frame, text=_t('gui.shell.document_manager.helpers.tabs.document_management', default="Document Management"))
 
         doc_mgmt_text = """DOCUMENT MANAGEMENT
 
@@ -780,7 +780,7 @@ class HelperManager:
 
         # Workflows Tab
         workflows_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(workflows_frame, text="Workflows")
+        notebook.add(workflows_frame, text=_t('gui.shell.document_manager.helpers.tabs.workflows', default="Workflows"))
 
         workflows_text = """WORKFLOW MANAGEMENT
 
@@ -822,7 +822,7 @@ class HelperManager:
 
         # Reports Tab
         reports_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(reports_frame, text="Reports")
+        notebook.add(reports_frame, text=_t('gui.shell.document_manager.helpers.tabs.reports', default="Reports"))
 
         reports_text = """REPORTING SYSTEM
 
@@ -864,7 +864,7 @@ class HelperManager:
 
         # Troubleshooting Tab
         troubleshooting_frame = ttk.Frame(notebook, padding=15)
-        notebook.add(troubleshooting_frame, text="Troubleshooting")
+        notebook.add(troubleshooting_frame, text=_t('gui.shell.document_manager.helpers.tabs.troubleshooting', default="Troubleshooting"))
 
         troubleshooting_text = """TROUBLESHOOTING & FAQ
 
@@ -913,12 +913,12 @@ class HelperManager:
         troubleshooting_widget.pack(fill='both', expand=True)
 
         # Close button
-        ttk.Button(main_frame, text="Close Guide", command=guide_window.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.shell.document_manager.helpers.buttons.close_guide', default="Close Guide"), command=guide_window.destroy).pack()
 
     def show_about(self):
         """Show about dialog"""
-        messagebox.showinfo("About",
-            "Enhanced Document Management System v2.0\n\n"
+        messagebox.showinfo(_t('gui.shell.document_manager.helpers.dialogs.about', default="About"),
+            _t('gui.shell.document_manager.helpers.dialogs.enhanced_document_management_system_v2_0_a_comprehensive_documen', default="Enhanced Document Management System v2.0\n\n"
             "A comprehensive document management solution for educational institutions.\n\n"
             "Features:\n"
             "• Document upload and management\n"
@@ -926,4 +926,4 @@ class HelperManager:
             "• Compliance monitoring\n"
             "• Reporting and analytics\n"
             "• User management\n"
-            "• Automated workflows")
+            "• Automated workflows"))

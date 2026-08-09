@@ -4,6 +4,8 @@ Roommate Finder GUI Interface
 Full-featured GUI for roommate matching, profile management, and messaging.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -29,7 +31,7 @@ class RoommateFinderGUI:
             self.root = container.winfo_toplevel()
         else:
             self.root = tk.Toplevel(parent)
-            self.root.title("Roommate Finder")
+            self.root.title(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.windows.roommate_finder', default="Roommate Finder"))
             self.root.geometry("1200x800")
             self._embed_parent = self.root
             self._is_embedded = False
@@ -53,7 +55,7 @@ class RoommateFinderGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        title = ttk.Label(main_frame, text="Roommate Finder",
+        title = ttk.Label(main_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.roommate_finder', default="Roommate Finder"),
                          font=('Arial', 18, 'bold'))
         title.pack(pady=10)
 
@@ -71,7 +73,7 @@ class RoommateFinderGUI:
     def create_profile_tab(self):
         """Create Profile Management tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="My Profile")
+        self.notebook.add(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.tabs.my_profile', default="My Profile"))
 
         # Scrollable frame
         canvas = tk.Canvas(tab)
@@ -87,43 +89,43 @@ class RoommateFinderGUI:
         canvas.configure(yscrollcommand=scrollbar.set)
 
         # Profile fields
-        profile_frame = ttk.LabelFrame(scrollable_frame, text="Profile Information", padding="10")
+        profile_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.profile_information', default="Profile Information"), padding="10")
         profile_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Basic Information
         row = 0
-        ttk.Label(profile_frame, text="Display Name:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.display_name', default="Display Name:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         self.display_name_var = tk.StringVar()
         ttk.Entry(profile_frame, textvariable=self.display_name_var, width=40).grid(row=row, column=1, pady=5, sticky=tk.W)
 
         row += 1
-        ttk.Label(profile_frame, text="Bio:").grid(row=row, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.bio', default="Bio:")).grid(row=row, column=0, sticky=tk.NW, pady=5)
         self.bio_text = tk.Text(profile_frame, width=40, height=4)
         self.bio_text.grid(row=row, column=1, pady=5, sticky=tk.W)
 
         # Budget
         row += 1
-        ttk.Label(profile_frame, text="Budget ($/month):").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.budget_month', default="Budget ($/month):")).grid(row=row, column=0, sticky=tk.W, pady=5)
         budget_frame = ttk.Frame(profile_frame)
         budget_frame.grid(row=row, column=1, sticky=tk.W, pady=5)
 
-        ttk.Label(budget_frame, text="Min:").pack(side=tk.LEFT)
+        ttk.Label(budget_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.min', default="Min:")).pack(side=tk.LEFT)
         self.budget_min_var = tk.StringVar()
         ttk.Entry(budget_frame, textvariable=self.budget_min_var, width=10).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(budget_frame, text="Max:").pack(side=tk.LEFT, padx=(10, 0))
+        ttk.Label(budget_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.max', default="Max:")).pack(side=tk.LEFT, padx=(10, 0))
         self.budget_max_var = tk.StringVar()
         ttk.Entry(budget_frame, textvariable=self.budget_max_var, width=10).pack(side=tk.LEFT, padx=5)
 
         # Move-in date
         row += 1
-        ttk.Label(profile_frame, text="Move-in Date (YYYY-MM-DD):").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.move_in_date_yyyy_mm_dd', default="Move-in Date (YYYY-MM-DD):")).grid(row=row, column=0, sticky=tk.W, pady=5)
         self.move_in_var = tk.StringVar()
         ttk.Entry(profile_frame, textvariable=self.move_in_var, width=20).grid(row=row, column=1, pady=5, sticky=tk.W)
 
         # Gender preference
         row += 1
-        ttk.Label(profile_frame, text="Gender Preference:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.gender_preference', default="Gender Preference:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         self.gender_pref_var = tk.StringVar()
         gender_combo = ttk.Combobox(profile_frame, textvariable=self.gender_pref_var,
                                     values=['No preference', 'Male', 'Female', 'Non-binary'],
@@ -133,19 +135,19 @@ class RoommateFinderGUI:
 
         # Age
         row += 1
-        ttk.Label(profile_frame, text="Age:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.age', default="Age:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         self.age_var = tk.StringVar()
         ttk.Entry(profile_frame, textvariable=self.age_var, width=10).grid(row=row, column=1, pady=5, sticky=tk.W)
 
         # Major
         row += 1
-        ttk.Label(profile_frame, text="Major:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.major', default="Major:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         self.major_var = tk.StringVar()
         ttk.Entry(profile_frame, textvariable=self.major_var, width=40).grid(row=row, column=1, pady=5, sticky=tk.W)
 
         # Year of Study
         row += 1
-        ttk.Label(profile_frame, text="Year of Study:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.year_of_study', default="Year of Study:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         self.year_var = tk.StringVar()
         year_combo = ttk.Combobox(profile_frame, textvariable=self.year_var,
                                   values=['Freshman', 'Sophomore', 'Junior', 'Senior', 'Graduate'],
@@ -154,7 +156,7 @@ class RoommateFinderGUI:
 
         # Smoking preference
         row += 1
-        ttk.Label(profile_frame, text="Smoking Preference:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.smoking_preference', default="Smoking Preference:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         self.smoking_var = tk.StringVar()
         smoking_combo = ttk.Combobox(profile_frame, textvariable=self.smoking_var,
                                      values=['No', 'Yes', 'Occasionally'],
@@ -164,7 +166,7 @@ class RoommateFinderGUI:
 
         # Pet preference
         row += 1
-        ttk.Label(profile_frame, text="Pet Preference:").grid(row=row, column=0, sticky=tk.W, pady=5)
+        ttk.Label(profile_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.pet_preference', default="Pet Preference:")).grid(row=row, column=0, sticky=tk.W, pady=5)
         self.pet_var = tk.StringVar()
         pet_combo = ttk.Combobox(profile_frame, textvariable=self.pet_var,
                                 values=['No pets', 'Cats only', 'Dogs only', 'Any pets welcome'],
@@ -176,8 +178,8 @@ class RoommateFinderGUI:
         button_frame = ttk.Frame(scrollable_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Save Profile", command=self.save_profile).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.load_profile).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.save_profile', default="Save Profile"), command=self.save_profile).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.refresh', default="Refresh"), command=self.load_profile).pack(side=tk.LEFT, padx=5)
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -185,10 +187,10 @@ class RoommateFinderGUI:
     def create_questionnaire_tab(self):
         """Create Compatibility Questionnaire tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Questionnaire")
+        self.notebook.add(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.tabs.questionnaire', default="Questionnaire"))
 
         # Instructions
-        ttk.Label(tab, text="Complete this questionnaire to find compatible roommates",
+        ttk.Label(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.complete_this_questionnaire_to_find_compatible_roommates', default="Complete this questionnaire to find compatible roommates"),
                  font=('Arial', 12, 'bold')).pack(pady=10)
 
         # Scrollable frame for questions
@@ -208,8 +210,8 @@ class RoommateFinderGUI:
         button_frame = ttk.Frame(tab)
         button_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(button_frame, text="Load Questionnaire", command=self.load_questionnaire).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Submit Answers", command=self.submit_questionnaire).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.load_questionnaire', default="Load Questionnaire"), command=self.load_questionnaire).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.submit_answers', default="Submit Answers"), command=self.submit_questionnaire).pack(side=tk.LEFT, padx=5)
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -217,17 +219,17 @@ class RoommateFinderGUI:
     def create_matches_tab(self):
         """Create Roommate Matches tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Matches")
+        self.notebook.add(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.tabs.matches', default="Matches"))
 
         # Top buttons
         button_frame = ttk.Frame(tab)
         button_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(button_frame, text="Find New Matches", command=self.find_matches).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh Matches", command=self.load_matches).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.find_new_matches', default="Find New Matches"), command=self.find_matches).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.refresh_matches', default="Refresh Matches"), command=self.load_matches).pack(side=tk.LEFT, padx=5)
 
         # Matches list frame
-        list_frame = ttk.LabelFrame(tab, text="Your Matches", padding="10")
+        list_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.your_matches', default="Your Matches"), padding="10")
         list_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         # Treeview for matches
@@ -246,7 +248,7 @@ class RoommateFinderGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Match details frame
-        details_frame = ttk.LabelFrame(tab, text="Match Details", padding="10")
+        details_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.match_details', default="Match Details"), padding="10")
         details_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.match_details_text = scrolledtext.ScrolledText(details_frame, wrap=tk.WORD, height=10)
@@ -259,29 +261,29 @@ class RoommateFinderGUI:
         action_frame = ttk.Frame(tab)
         action_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(action_frame, text="Mark Interested", command=lambda: self.update_match_status('Interested')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Mark Connected", command=lambda: self.update_match_status('Connected')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Decline", command=lambda: self.update_match_status('Declined')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Send Message", command=self.open_message_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.mark_interested', default="Mark Interested"), command=lambda: self.update_match_status('Interested')).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.mark_connected', default="Mark Connected"), command=lambda: self.update_match_status('Connected')).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.decline', default="Decline"), command=lambda: self.update_match_status('Declined')).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.send_message', default="Send Message"), command=self.open_message_dialog).pack(side=tk.LEFT, padx=5)
 
     def create_messages_tab(self):
         """Create Messages tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Messages")
+        self.notebook.add(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.tabs.messages', default="Messages"))
 
         # Match selection
         select_frame = ttk.Frame(tab)
         select_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(select_frame, text="Select Match:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(select_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.select_match', default="Select Match:")).pack(side=tk.LEFT, padx=5)
         self.message_match_combo = ttk.Combobox(select_frame, width=50, state='readonly')
         self.message_match_combo.pack(side=tk.LEFT, padx=5)
         self.message_match_combo.bind('<<ComboboxSelected>>', self.load_messages)
 
-        ttk.Button(select_frame, text="Refresh", command=self.refresh_message_matches).pack(side=tk.LEFT, padx=5)
+        ttk.Button(select_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.refresh', default="Refresh"), command=self.refresh_message_matches).pack(side=tk.LEFT, padx=5)
 
         # Messages display
-        msg_frame = ttk.LabelFrame(tab, text="Conversation", padding="10")
+        msg_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.conversation', default="Conversation"), padding="10")
         msg_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.messages_text = scrolledtext.ScrolledText(msg_frame, wrap=tk.WORD, height=20)
@@ -292,29 +294,29 @@ class RoommateFinderGUI:
         input_frame = ttk.Frame(tab)
         input_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(input_frame, text="New Message:").pack(anchor=tk.W)
+        ttk.Label(input_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.new_message', default="New Message:")).pack(anchor=tk.W)
         self.message_input = tk.Text(input_frame, height=3, wrap=tk.WORD)
         self.message_input.pack(fill=tk.X, pady=5)
 
-        ttk.Button(input_frame, text="Send Message", command=self.send_message).pack(anchor=tk.E)
+        ttk.Button(input_frame, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.send_message', default="Send Message"), command=self.send_message).pack(anchor=tk.E)
 
     def create_stats_tab(self):
         """Create Statistics tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Statistics")
+        self.notebook.add(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.tabs.statistics', default="Statistics"))
 
-        ttk.Label(tab, text="Roommate Finder Statistics",
+        ttk.Label(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.roommate_finder_statistics', default="Roommate Finder Statistics"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Stats display
-        stats_frame = ttk.LabelFrame(tab, text="Your Activity", padding="10")
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.your_activity', default="Your Activity"), padding="10")
         stats_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.stats_text = scrolledtext.ScrolledText(stats_frame, wrap=tk.WORD, height=25)
         self.stats_text.pack(fill=tk.BOTH, expand=True)
 
         # Refresh button
-        ttk.Button(tab, text="Refresh Statistics", command=self.load_statistics).pack(pady=10)
+        ttk.Button(tab, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.refresh_statistics', default="Refresh Statistics"), command=self.load_statistics).pack(pady=10)
 
     # ======================== Helper Methods ========================
 
@@ -322,7 +324,7 @@ class RoommateFinderGUI:
         """Load current user's profile"""
         user = self.auth.get_current_user()
         if not user:
-            messagebox.showerror("Error", "User not logged in")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.user_not_logged_in', default="User not logged in"))
             return
 
         student_id = user['username']
@@ -349,14 +351,14 @@ class RoommateFinderGUI:
         """Save or update profile"""
         user = self.auth.get_current_user()
         if not user:
-            messagebox.showerror("Error", "User not logged in")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.user_not_logged_in', default="User not logged in"))
             return
 
         student_id = user['username']
         display_name = self.display_name_var.get().strip()
 
         if not display_name:
-            messagebox.showerror("Error", "Display name is required")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.display_name_is_required', default="Display name is required"))
             return
 
         # Validate budget values
@@ -365,24 +367,24 @@ class RoommateFinderGUI:
             budget_max = int(self.budget_max_var.get()) if self.budget_max_var.get() else 0
 
             if budget_min < 0 or budget_max < 0:
-                messagebox.showerror("Error", "Budget values cannot be negative")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.budget_values_cannot_be_negative', default="Budget values cannot be negative"))
                 return
 
             if budget_max > 0 and budget_min > budget_max:
-                messagebox.showerror("Error", "Minimum budget cannot exceed maximum budget")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.minimum_budget_cannot_exceed_maximum_budget', default="Minimum budget cannot exceed maximum budget"))
                 return
         except ValueError:
-            messagebox.showerror("Error", "Budget values must be valid numbers")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.budget_values_must_be_valid_numbers', default="Budget values must be valid numbers"))
             return
 
         # Validate age
         try:
             age = int(self.age_var.get()) if self.age_var.get() else None
             if age is not None and (age < 16 or age > 100):
-                messagebox.showerror("Error", "Age must be between 16 and 100")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.age_must_be_between_16_and_100', default="Age must be between 16 and 100"))
                 return
         except ValueError:
-            messagebox.showerror("Error", "Age must be a valid number")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.age_must_be_a_valid_number', default="Age must be a valid number"))
             return
 
         try:
@@ -404,7 +406,7 @@ class RoommateFinderGUI:
                     smoking_preference=self.smoking_var.get(),
                     pet_preference=self.pet_var.get()
                 )
-                messagebox.showinfo("Success", "Profile updated successfully!")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.profile_updated_successfully', default="Profile updated successfully!"))
             else:
                 # Create new profile
                 profile_id = self.service.create_profile(
@@ -421,21 +423,21 @@ class RoommateFinderGUI:
                     smoking_preference=self.smoking_var.get(),
                     pet_preference=self.pet_var.get()
                 )
-                messagebox.showinfo("Success", f"Profile created successfully! ID: {profile_id}")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.success', default="Success"), f"Profile created successfully! ID: {profile_id}")
 
             self.load_profile()
         except sqlite3.IntegrityError as e:
             if "UNIQUE constraint failed" in str(e):
-                messagebox.showerror("Error", "A profile already exists for this user")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.a_profile_already_exists_for_this_user', default="A profile already exists for this user"))
             else:
-                messagebox.showerror("Error", f"Database integrity error: {e}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Database integrity error: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save profile: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to save profile: {e}")
 
     def load_questionnaire(self):
         """Load compatibility questionnaire"""
         if not self.current_profile:
-            messagebox.showwarning("Warning", "Please create a profile first")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_create_a_profile_first', default="Please create a profile first"))
             return
 
         # Clear existing widgets
@@ -445,7 +447,7 @@ class RoommateFinderGUI:
 
         questions = self.service.get_questions()
         if not questions:
-            messagebox.showinfo("Info", "No questionnaire available")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.info', default="Info"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.no_questionnaire_available', default="No questionnaire available"))
             return
 
         current_category = None
@@ -497,23 +499,23 @@ class RoommateFinderGUI:
 
             row += 1
 
-        messagebox.showinfo("Success", f"Loaded {len(questions)} questions")
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.success', default="Success"), f"Loaded {len(questions)} questions")
 
     def submit_questionnaire(self):
         """Submit questionnaire responses"""
         if not self.current_profile:
-            messagebox.showwarning("Warning", "Please create a profile first")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_create_a_profile_first', default="Please create a profile first"))
             return
 
         if not self.question_widgets:
-            messagebox.showwarning("Warning", "Please load the questionnaire first")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_load_the_questionnaire_first', default="Please load the questionnaire first"))
             return
 
         responses = []
         for widget_data in self.question_widgets:
             response_value = widget_data['response_var'].get()
             if not response_value:
-                messagebox.showwarning("Warning", "Please answer all questions")
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_answer_all_questions', default="Please answer all questions"))
                 return
 
             responses.append({
@@ -524,26 +526,26 @@ class RoommateFinderGUI:
 
         try:
             self.service.submit_questionnaire(self.current_profile['profile_id'], responses)
-            messagebox.showinfo("Success", "Questionnaire submitted successfully!\nYou can now find matches.")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.questionnaire_submitted_successfully_you_can_now_find_matches', default="Questionnaire submitted successfully!\nYou can now find matches."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to submit questionnaire: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to submit questionnaire: {e}")
 
     def find_matches(self):
         """Find new roommate matches"""
         if not self.current_profile:
-            messagebox.showwarning("Warning", "Please create a profile first")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_create_a_profile_first', default="Please create a profile first"))
             return
 
         # Ask for minimum score
         dialog = tk.Toplevel(self.root)
-        dialog.title("Find Matches")
+        dialog.title(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.windows.find_matches', default="Find Matches"))
         dialog.geometry("300x150")
 
-        ttk.Label(dialog, text="Minimum Compatibility Score (0-100):").pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.minimum_compatibility_score_0_100', default="Minimum Compatibility Score (0-100):")).pack(pady=10)
         score_var = tk.StringVar(value="50")
         ttk.Entry(dialog, textvariable=score_var, width=10).pack(pady=5)
 
-        ttk.Label(dialog, text="Maximum Results:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.maximum_results', default="Maximum Results:")).pack(pady=5)
         limit_var = tk.StringVar(value="20")
         ttk.Entry(dialog, textvariable=limit_var, width=10).pack(pady=5)
 
@@ -553,12 +555,12 @@ class RoommateFinderGUI:
                 limit = int(limit_var.get())
                 matches = self.service.find_matches(self.current_profile['profile_id'], min_score, limit)
                 dialog.destroy()
-                messagebox.showinfo("Success", f"Found {len(matches)} matches!")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.success', default="Success"), f"Found {len(matches)} matches!")
                 self.load_matches()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to find matches: {e}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to find matches: {e}")
 
-        ttk.Button(dialog, text="Search", command=search).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.search', default="Search"), command=search).pack(pady=10)
 
     def load_matches(self):
         """Load all matches"""
@@ -596,7 +598,7 @@ class RoommateFinderGUI:
 
             self.refresh_message_matches()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load matches: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to load matches: {e}")
 
     def on_match_selected(self, event):
         """Handle match selection"""
@@ -648,29 +650,29 @@ class RoommateFinderGUI:
                 self.match_details_text.insert('1.0', details)
                 self.match_details_text.config(state=tk.DISABLED)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load match details: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to load match details: {e}")
 
     def update_match_status(self, status: str):
         """Update match status"""
         selected = self.matches_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a match first")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_select_a_match_first', default="Please select a match first"))
             return
 
         match_id = int(self.matches_tree.item(selected[0])['values'][0])
 
         try:
             self.service.update_match_status(match_id, status)
-            messagebox.showinfo("Success", f"Match status updated to: {status}")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.success', default="Success"), f"Match status updated to: {status}")
             self.load_matches()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update status: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to update status: {e}")
 
     def open_message_dialog(self):
         """Open message dialog for selected match"""
         selected = self.matches_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a match first")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_select_a_match_first', default="Please select a match first"))
             return
 
         match_id = int(self.matches_tree.item(selected[0])['values'][0])
@@ -679,24 +681,24 @@ class RoommateFinderGUI:
         dialog.title(f"Send Message - Match #{match_id}")
         dialog.geometry("400x300")
 
-        ttk.Label(dialog, text="Your Message:").pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.labels.your_message', default="Your Message:")).pack(pady=10)
         message_text = tk.Text(dialog, height=10, wrap=tk.WORD)
         message_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         def send():
             text = message_text.get('1.0', tk.END).strip()
             if not text:
-                messagebox.showwarning("Warning", "Message cannot be empty")
+                messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.message_cannot_be_empty', default="Message cannot be empty"))
                 return
 
             try:
                 self.service.send_message(match_id, self.current_profile['profile_id'], text)
-                messagebox.showinfo("Success", "Message sent!")
+                messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.message_sent', default="Message sent!"))
                 dialog.destroy()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to send message: {e}")
+                messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to send message: {e}")
 
-        ttk.Button(dialog, text="Send", command=send).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.buttons.send', default="Send"), command=send).pack(pady=10)
 
     def refresh_message_matches(self):
         """Refresh message match combo box"""
@@ -740,37 +742,37 @@ class RoommateFinderGUI:
 
             self.messages_text.config(state=tk.DISABLED)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load messages: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to load messages: {e}")
 
     def send_message(self):
         """Send a message"""
         if not self.current_profile:
-            messagebox.showwarning("Warning", "Please create a profile first")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_create_a_profile_first', default="Please create a profile first"))
             return
 
         selected = self.message_match_combo.get()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a match first")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_select_a_match_first', default="Please select a match first"))
             return
 
         message_text = self.message_input.get('1.0', tk.END).strip()
         if not message_text:
-            messagebox.showwarning("Warning", "Message cannot be empty")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.message_cannot_be_empty', default="Message cannot be empty"))
             return
 
         try:
             match_id = int(selected.split(':')[0])
             self.service.send_message(match_id, self.current_profile['profile_id'], message_text)
-            messagebox.showinfo("Success", "Message sent!")
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.success', default="Success"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.message_sent', default="Message sent!"))
             self.message_input.delete('1.0', tk.END)
             self.load_messages()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send message: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to send message: {e}")
 
     def load_statistics(self):
         """Load profile statistics"""
         if not self.current_profile:
-            messagebox.showwarning("Warning", "Please create a profile first")
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.warning', default="Warning"), _t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.please_create_a_profile_first', default="Please create a profile first"))
             return
 
         try:
@@ -804,7 +806,7 @@ class RoommateFinderGUI:
 
             self.stats_text.insert('1.0', text)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load statistics: {e}")
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.roommate_finder.dialogs.error', default="Error"), f"Failed to load statistics: {e}")
 
 def main():
     """Main entry point for GUI"""

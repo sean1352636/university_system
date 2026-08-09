@@ -1,5 +1,7 @@
 """Bulk operations on assignments - archive, delete, date changes, export, reminders"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import os
@@ -15,7 +17,7 @@ class BulkOperationsMixin:
         """Download all submissions for selected assignment as ZIP"""
         selection = self.manage_assignments_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.please_select_an_assignment', default="Please select an assignment"))
             return
 
         item = self.manage_assignments_tree.item(selection[0])
@@ -50,7 +52,7 @@ class BulkOperationsMixin:
                 conn.close()
 
             if not submissions:
-                messagebox.showinfo("No Submissions", "No submissions with files found for this assignment")
+                messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.no_submissions', default="No Submissions"), _t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.no_submissions_with_files_found_for_this_assignment', default="No submissions with files found for this assignment"))
                 return
 
             # Create ZIP file
@@ -62,20 +64,20 @@ class BulkOperationsMixin:
                         filename = f"{lname}_{fname}_{student_id}_{os.path.basename(file_path)}"
                         zipf.write(file_path, filename)
 
-            messagebox.showinfo("Success", f"Downloaded {len(submissions)} submissions to:\n{save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.success', default="Success"), f"Downloaded {len(submissions)} submissions to:\n{save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to download submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to download submissions: {e}")
 
 
     def bulk_archive_assignments(self):
         """Archive multiple selected assignments"""
         selections = self.manage_assignments_tree.selection()
         if not selections:
-            messagebox.showwarning("Warning", "Please select assignments to archive")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.please_select_assignments_to_archive', default="Please select assignments to archive"))
             return
 
-        if not messagebox.askyesno("Confirm", f"Archive {len(selections)} assignment(s)?"):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.confirm', default="Confirm"), f"Archive {len(selections)} assignment(s)?"):
             return
 
         try:
@@ -99,21 +101,21 @@ class BulkOperationsMixin:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Archived {len(selections)} assignment(s)")
+            messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.success', default="Success"), f"Archived {len(selections)} assignment(s)")
             self.load_managed_assignments()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to archive assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to archive assignments: {e}")
 
 
     def bulk_delete_assignments(self):
         """Delete multiple selected assignments"""
         selections = self.manage_assignments_tree.selection()
         if not selections:
-            messagebox.showwarning("Warning", "Please select assignments to delete")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.please_select_assignments_to_delete', default="Please select assignments to delete"))
             return
 
-        if not messagebox.askyesno("Confirm Delete",
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.confirm_delete', default="Confirm Delete"),
                                    f"Permanently delete {len(selections)} assignment(s)?\n\nThis will also delete all submissions!"):
             return
 
@@ -144,23 +146,23 @@ class BulkOperationsMixin:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Deleted {len(selections)} assignment(s)")
+            messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.success', default="Success"), f"Deleted {len(selections)} assignment(s)")
             self.load_managed_assignments()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to delete assignments: {e}")
 
 
     def bulk_change_due_dates(self):
         """Change due dates for multiple selected assignments"""
         selections = self.manage_assignments_tree.selection()
         if not selections:
-            messagebox.showwarning("Warning", "Please select assignments to change due dates")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.please_select_assignments_to_change_due_dates', default="Please select assignments to change due dates"))
             return
 
         # Create dialog for date change
         dialog = tk.Toplevel(self.root)
-        dialog.title("Change Due Dates")
+        dialog.title(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.windows.change_due_dates', default="Change Due Dates"))
         dialog.geometry("400x300")
         dialog.transient(self.root)
 
@@ -168,32 +170,32 @@ class BulkOperationsMixin:
                  font=('TkDefaultFont', 11, 'bold')).pack(pady=10)
 
         # Method selection
-        method_frame = ttk.LabelFrame(dialog, text="Change Method", padding=10)
+        method_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.labels.change_method', default="Change Method"), padding=10)
         method_frame.pack(fill='x', padx=10, pady=10)
 
-        method_var = tk.StringVar(value="extend")
-        ttk.Radiobutton(method_frame, text="Extend by days", variable=method_var,
+        method_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.values.extend', default="extend"))
+        ttk.Radiobutton(method_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.buttons.extend_by_days', default="Extend by days"), variable=method_var,
                        value="extend").pack(anchor='w')
-        ttk.Radiobutton(method_frame, text="Set specific date", variable=method_var,
+        ttk.Radiobutton(method_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.buttons.set_specific_date', default="Set specific date"), variable=method_var,
                        value="specific").pack(anchor='w')
 
         # Days to extend
         extend_frame = ttk.Frame(method_frame)
         extend_frame.pack(fill='x', pady=5)
-        ttk.Label(extend_frame, text="Days to extend:").pack(side='left')
+        ttk.Label(extend_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.labels.days_to_extend', default="Days to extend:")).pack(side='left')
         days_var = tk.StringVar(value="7")
         ttk.Entry(extend_frame, textvariable=days_var, width=10).pack(side='left', padx=(10, 0))
 
         # Specific date
         specific_frame = ttk.Frame(method_frame)
         specific_frame.pack(fill='x', pady=5)
-        ttk.Label(specific_frame, text="New date (YYYY-MM-DD):").pack(side='left')
+        ttk.Label(specific_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.labels.new_date_yyyy_mm_dd', default="New date (YYYY-MM-DD):")).pack(side='left')
         date_var = tk.StringVar()
         ttk.Entry(specific_frame, textvariable=date_var, width=15).pack(side='left', padx=(10, 0))
 
         # Option to email students
         notify_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(dialog, text="Email students about due date change",
+        ttk.Checkbutton(dialog, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.buttons.email_students_about_due_date_change', default="Email students about due date change"),
                        variable=notify_var).pack(anchor='w', padx=10, pady=(5, 0))
 
         def apply_changes():
@@ -237,7 +239,7 @@ class BulkOperationsMixin:
                 conn.close()
 
                 dialog.destroy()
-                messagebox.showinfo("Success", "Due dates updated successfully")
+                messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.success', default="Success"), _t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.due_dates_updated_successfully', default="Due dates updated successfully"))
                 self.load_managed_assignments()
 
                 # Email students about the change
@@ -245,17 +247,17 @@ class BulkOperationsMixin:
                     self._email_due_date_change(updated_assignments)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to change due dates: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to change due dates: {e}")
 
-        ttk.Button(dialog, text="Apply Changes", command=apply_changes).pack(pady=10)
-        ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack()
+        ttk.Button(dialog, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.buttons.apply_changes', default="Apply Changes"), command=apply_changes).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack()
 
 
     def bulk_export_assignments(self):
         """Export data for multiple selected assignments"""
         selections = self.manage_assignments_tree.selection()
         if not selections:
-            messagebox.showwarning("Warning", "Please select assignments to export")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.please_select_assignments_to_export', default="Please select assignments to export"))
             return
 
         try:
@@ -299,17 +301,17 @@ class BulkOperationsMixin:
                                'Submission Date', 'Status', 'Grade', 'Late'])
                 writer.writerows(all_data)
 
-            messagebox.showinfo("Success", f"Exported {len(all_data)} records to:\n{save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.success', default="Success"), f"Exported {len(all_data)} records to:\n{save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to export assignments: {e}")
 
 
     def bulk_send_reminders(self):
         """Send reminders for multiple selected assignments"""
         selections = self.manage_assignments_tree.selection()
         if not selections:
-            messagebox.showwarning("Warning", "Please select assignments to send reminders")
+            messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.please_select_assignments_to_send_reminders', default="Please select assignments to send reminders"))
             return
 
         # Gather assignment info
@@ -324,7 +326,7 @@ class BulkOperationsMixin:
 
         # Create reminder dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Send Assignment Reminders")
+        dialog.title(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.windows.send_assignment_reminders', default="Send Assignment Reminders"))
         dialog.geometry("600x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -333,31 +335,31 @@ class BulkOperationsMixin:
                  font=('TkDefaultFont', 12, 'bold')).pack(anchor='w', padx=10, pady=(10, 5))
 
         # Assignment list
-        list_frame = ttk.LabelFrame(dialog, text="Selected Assignments", padding=5)
+        list_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.labels.selected_assignments', default="Selected Assignments"), padding=5)
         list_frame.pack(fill='x', padx=10, pady=(0, 10))
         for a in assignments_info:
             ttk.Label(list_frame,
                      text=f"  {a['title']} ({a['module']}) - Due: {a['due_date']}").pack(anchor='w')
 
         # Recipient type
-        recipient_frame = ttk.LabelFrame(dialog, text="Recipients", padding=10)
+        recipient_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.labels.recipients', default="Recipients"), padding=10)
         recipient_frame.pack(fill='x', padx=10, pady=(0, 10))
 
-        recipient_var = tk.StringVar(value="not_submitted")
-        ttk.Radiobutton(recipient_frame, text="Students who haven't submitted",
+        recipient_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.values.not_submitted', default="not_submitted"))
+        ttk.Radiobutton(recipient_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.buttons.students_who_haven_t_submitted', default="Students who haven't submitted"),
                        variable=recipient_var, value="not_submitted").pack(anchor='w')
-        ttk.Radiobutton(recipient_frame, text="All enrolled students",
+        ttk.Radiobutton(recipient_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.buttons.all_enrolled_students', default="All enrolled students"),
                        variable=recipient_var, value="enrolled").pack(anchor='w')
 
         # Message
-        message_frame = ttk.LabelFrame(dialog, text="Email Message", padding=10)
+        message_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.labels.email_message', default="Email Message"), padding=10)
         message_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
 
-        ttk.Label(message_frame, text="Subject:").pack(anchor='w')
-        subject_var = tk.StringVar(value="Assignment Reminder")
+        ttk.Label(message_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.labels.subject', default="Subject:")).pack(anchor='w')
+        subject_var = tk.StringVar(value=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.values.assignment_reminder', default="Assignment Reminder"))
         ttk.Entry(message_frame, textvariable=subject_var).pack(fill='x', pady=(0, 5))
 
-        ttk.Label(message_frame, text="Message body ({assignment_title} and {due_date} will be replaced):").pack(anchor='w')
+        ttk.Label(message_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.labels.message_body_assignment_title_and_due_date_will_be_replaced', default="Message body ({assignment_title} and {due_date} will be replaced):")).pack(anchor='w')
         from tkinter import scrolledtext as st
         body_text = st.ScrolledText(message_frame, height=8, wrap=tk.WORD)
         body_text.pack(fill='both', expand=True)
@@ -425,7 +427,7 @@ class BulkOperationsMixin:
 
                 conn.close()
                 dialog.destroy()
-                messagebox.showinfo("Reminders Sent",
+                messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.reminders_sent', default="Reminders Sent"),
                                    f"Sent {total_sent} reminder emails across {len(assignments_info)} assignment(s).")
 
             except ImportError:
@@ -436,9 +438,9 @@ class BulkOperationsMixin:
         # Buttons
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(fill='x', padx=10, pady=10)
-        ttk.Button(btn_frame, text="Send Reminders", command=send_reminders,
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.buttons.send_reminders', default="Send Reminders"), command=send_reminders,
                   style='Accent.TButton').pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.assignment_manager.bulk_operations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
 
     def _email_due_date_change(self, updated_assignments):
@@ -485,7 +487,7 @@ class BulkOperationsMixin:
             conn.close()
 
             if total_sent > 0:
-                messagebox.showinfo("Emails Sent",
+                messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.bulk_operations.dialogs.emails_sent', default="Emails Sent"),
                                    f"Notified {total_sent} students about due date changes.")
 
         except ImportError:

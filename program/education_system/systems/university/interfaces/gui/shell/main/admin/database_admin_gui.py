@@ -198,7 +198,7 @@ def fix_duplicates(self):
                 f"Removed {total} duplicate record(s):\n{detail}")
         else:
             messagebox.showinfo(_t("database_admin_gui.titles.database_maintenance"),
-                "No duplicate records were found.")
+                _t('gui.shell.main.admin.database_admin.dialogs.no_duplicate_records_were_found', default="No duplicate records were found."))
 
         self.log_activity(
             f"{_t('database_admin_gui.activity.duplicate_fix')} ({total} removed)",
@@ -450,34 +450,34 @@ def show_db_performance(self):
 def wipe_database(self):
     """Wipe all data from the database, preserving only default accounts and module definitions"""
     if not self.auth.current_user:
-        messagebox.showerror("Error", "You must be logged in to perform database operations.")
+        messagebox.showerror(_t('gui.shell.main.admin.database_admin.dialogs.error', default="Error"), _t('gui.shell.main.admin.database_admin.dialogs.you_must_be_logged_in_to_perform_database_operations', default="You must be logged in to perform database operations."))
         return
 
     user_role = self.auth.current_user.get('role', '')
     if user_role != 'admin':
-        messagebox.showerror("Error", "Only administrators can wipe the database.")
+        messagebox.showerror(_t('gui.shell.main.admin.database_admin.dialogs.error', default="Error"), _t('gui.shell.main.admin.database_admin.dialogs.only_administrators_can_wipe_the_database', default="Only administrators can wipe the database."))
         return
 
     try:
         # First confirmation
         result = messagebox.askyesno(
-            "Confirm Database Wipe",
-            "WARNING: This will permanently delete ALL data from the database.\n\n"
+            _t('gui.shell.main.admin.database_admin.dialogs.confirm_database_wipe', default="Confirm Database Wipe"),
+            _t('gui.shell.main.admin.database_admin.dialogs.warning_this_will_permanently_delete_all_data_from_the_database', default="WARNING: This will permanently delete ALL data from the database.\n\n"
             "Only the 3 default accounts (admin, staff, student) and module definitions "
             "will be preserved.\n\n"
-            "This action CANNOT be undone. Are you sure you want to continue?"
+            "This action CANNOT be undone. Are you sure you want to continue?")
         )
         if not result:
             return
 
         # Second confirmation - require typing "WIPE"
         confirmation = simpledialog.askstring(
-            "Final Confirmation",
-            'Type "WIPE" to confirm database wipe:',
+            _t('gui.shell.main.admin.database_admin.dialogs.final_confirmation', default="Final Confirmation"),
+            _t('gui.shell.main.admin.database_admin.dialogs.type_wipe_to_confirm_database_wipe', default='Type "WIPE" to confirm database wipe:'),
             parent=self.root
         )
         if confirmation != "WIPE":
-            messagebox.showinfo("Cancelled", "Database wipe cancelled.")
+            messagebox.showinfo(_t('gui.shell.main.admin.database_admin.dialogs.cancelled', default="Cancelled"), _t('gui.shell.main.admin.database_admin.dialogs.database_wipe_cancelled', default="Database wipe cancelled."))
             return
 
         from education_system.systems.university.infrastructure.auth.core import UserAuth
@@ -532,16 +532,16 @@ def wipe_database(self):
         self.log_activity("Database wiped and reset to defaults", "warning", "database_maintenance")
 
         messagebox.showinfo(
-            "Database Wiped",
-            "Database has been wiped successfully.\n\n"
+            _t('gui.shell.main.admin.database_admin.dialogs.database_wiped', default="Database Wiped"),
+            _t('gui.shell.main.admin.database_admin.dialogs.database_has_been_wiped_successfully_default_accounts_and_module', default="Database has been wiped successfully.\n\n"
             "Default accounts and module definitions have been restored.\n"
-            "The system will now restart."
+            "The system will now restart.")
         )
 
         self.restart_gui()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to wipe database: {e}")
+        messagebox.showerror(_t('gui.shell.main.admin.database_admin.dialogs.error', default="Error"), f"Failed to wipe database: {e}")
 
 def show_active_connections(self):
     """Show active database connections"""

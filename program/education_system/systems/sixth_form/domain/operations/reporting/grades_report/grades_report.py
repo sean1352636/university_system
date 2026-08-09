@@ -37,7 +37,7 @@ from typing import Any
 from education_system.systems.sixth_form.domain.assessment.exam_results import exam_results
 from education_system.systems.sixth_form.domain.assessment.gradebook import gradebook
 from education_system.systems.sixth_form.domain.assessment.mock_exams import mock_exams
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.predicted_grades import predicted_grades
 from education_system.systems.sixth_form.domain.assessment.exam_results import exam_results as _exam
 from education_system.systems.sixth_form.domain.assessment.gradebook import gradebook as _gb

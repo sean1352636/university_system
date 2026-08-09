@@ -1,3 +1,1 @@
-"""Event management for student affairs."""
-
-__all__ = ['event_management']
+"""Student-union event package."""

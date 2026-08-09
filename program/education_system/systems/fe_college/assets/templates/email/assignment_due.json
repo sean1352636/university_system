@@ -1,0 +1,8 @@
+{
+  "subject": "Due {{due_date}}: {{assignment_title}}",
+  "body": "Hi {{first_name}},\n\nA reminder that {{assignment_title}} for {{course_title}} is due on {{due_date}}.\n\n{{assignment_brief}}\n\nHand in through the learner portal. If you are going to struggle with the deadline, ask {{tutor_name}} before it passes rather than after — an extension agreed in advance is straightforward.\n\n{{tutor_name}}\n{{college_name}}",
+  "from_name": "{{tutor_name}}",
+  "from_address": "noreply@fecollege.ac.uk",
+  "category": "Assessment",
+  "priority": "Normal"
+}

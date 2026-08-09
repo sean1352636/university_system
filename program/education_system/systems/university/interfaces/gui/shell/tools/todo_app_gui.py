@@ -425,7 +425,7 @@ class TodoApp:
 
         # Status Filter
         tk.Label(filter_bar, text=_t("todo.filters.status"), bg="#f0f0f0", font=("Helvetica", 10)).pack(side="left")
-        self.status_var = tk.StringVar(value="All")
+        self.status_var = tk.StringVar(value=_t('gui.shell.tools.todo_app.values.all', default="All"))
         status_menu = ttk.Combobox(filter_bar, textvariable=self.status_var, width=10,
                                    values=[_t("todo.filters.all"), _t("todo.filters.active"), _t("todo.filters.completed")], state="readonly")
         status_menu.pack(side="left", padx=(5, 15))
@@ -433,7 +433,7 @@ class TodoApp:
 
         # Priority Filter
         tk.Label(filter_bar, text=_t("todo.filters.priority"), bg="#f0f0f0", font=("Helvetica", 10)).pack(side="left")
-        self.priority_filter_var = tk.StringVar(value="All")
+        self.priority_filter_var = tk.StringVar(value=_t('gui.shell.tools.todo_app.values.all', default="All"))
         priority_menu = ttk.Combobox(filter_bar, textvariable=self.priority_filter_var, width=10,
                                      values=[_t("todo.filters.all"), _t("todo.priority.high"), _t("todo.priority.medium"), _t("todo.priority.low"), _t("todo.priority.none")], state="readonly")
         priority_menu.pack(side="left", padx=(5, 15))
@@ -441,7 +441,7 @@ class TodoApp:
 
         # Category Filter
         tk.Label(filter_bar, text=_t("todo.filters.category"), bg="#f0f0f0", font=("Helvetica", 10)).pack(side="left")
-        self.category_filter_var = tk.StringVar(value="All")
+        self.category_filter_var = tk.StringVar(value=_t('gui.shell.tools.todo_app.values.all', default="All"))
         self.category_menu = ttk.Combobox(filter_bar, textvariable=self.category_filter_var, width=12,
                                           values=[_t("todo.filters.all")] + self.categories, state="readonly")
         self.category_menu.pack(side="left", padx=(5, 15))

@@ -9,6 +9,8 @@ instead of adding more raw ``FROM assignment_submissions`` queries
 here.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import messagebox
 
@@ -118,7 +120,7 @@ class PerformanceMixin:
             total_grades = sum(count for _, count in distribution)
 
             if total_grades == 0:
-                messagebox.showinfo("Grade Distribution", "No grades recorded yet.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.grade_distribution', default="Grade Distribution"), _t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.no_grades_recorded_yet', default="No grades recorded yet."))
                 return
 
             dist_lines = [
@@ -137,7 +139,7 @@ class PerformanceMixin:
             self._display_report("Grade Distribution Analysis", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to show grade distribution: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.database_error', default="Database Error"), f"Failed to show grade distribution: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
@@ -210,7 +212,7 @@ class PerformanceMixin:
             modules = cursor.fetchall()
 
             if not modules:
-                messagebox.showinfo("Module Performance", "No module data available.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.module_performance', default="Module Performance"), _t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.no_module_data_available', default="No module data available."))
                 return
 
             normalized_modules = [
@@ -235,7 +237,7 @@ class PerformanceMixin:
             self._display_report("Module Performance Analysis", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to analyze module performance: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.database_error', default="Database Error"), f"Failed to analyze module performance: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
@@ -280,7 +282,7 @@ class PerformanceMixin:
             courses = cursor.fetchall()
 
             if not courses:
-                messagebox.showinfo("Course Comparison", "No course data available.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.course_comparison', default="Course Comparison"), _t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.no_course_data_available', default="No course data available."))
                 return
 
             normalized_courses = [
@@ -299,7 +301,7 @@ class PerformanceMixin:
             self._display_report("Course Performance Comparison", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to compare course performance: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.database_error', default="Database Error"), f"Failed to compare course performance: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
@@ -341,7 +343,7 @@ class PerformanceMixin:
             trends = cursor.fetchall()
 
             if not trends:
-                messagebox.showinfo("Performance Trends", "Insufficient data for trend analysis.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.performance_trends', default="Performance Trends"), _t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.insufficient_data_for_trend_analysis', default="Insufficient data for trend analysis."))
                 return
 
             normalized_trends = [
@@ -360,7 +362,7 @@ class PerformanceMixin:
             self._display_report("Performance Trend Analysis", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to analyze trends: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.database_error', default="Database Error"), f"Failed to analyze trends: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
@@ -470,7 +472,7 @@ class PerformanceMixin:
             self._display_report("Performance Dashboard", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate dashboard: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.performance.dialogs.database_error', default="Database Error"), f"Failed to generate dashboard: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):

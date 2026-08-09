@@ -5,6 +5,8 @@ The evaluation modules are standalone Tk apps that own their own
 ``main_gui._launch_new_feature_module``) rather than embedding them.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import importlib.util
 import logging
 import os
@@ -54,7 +56,7 @@ def launch_evaluation_module(parent, auth, module_dotted: str, label: str) -> No
         logger.error("could not locate %s on disk", module_dotted)
         try:
             from tkinter import messagebox
-            messagebox.showerror("Launch failed",
+            messagebox.showerror(_t('gui.shell.main.dashboard.evaluation_launchers.dialogs.launch_failed', default="Launch failed"),
                                  f"Could not locate {label} on disk.",
                                  parent=parent)
         except Exception:
@@ -84,7 +86,7 @@ def launch_evaluation_module(parent, auth, module_dotted: str, label: str) -> No
         logger.exception("Popen failed for %s", label)
         try:
             from tkinter import messagebox
-            messagebox.showerror("Launch failed",
+            messagebox.showerror(_t('gui.shell.main.dashboard.evaluation_launchers.dialogs.launch_failed', default="Launch failed"),
                                  f"Could not launch {label}:\n{e}",
                                  parent=parent)
         except Exception:

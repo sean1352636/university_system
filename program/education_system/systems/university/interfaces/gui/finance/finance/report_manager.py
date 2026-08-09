@@ -1,5 +1,7 @@
 """Financial reports and analytics"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
@@ -51,8 +53,8 @@ except ImportError:
 
     def get_log_file(name):
         """Fallback log file path resolution."""
-        from education_system.systems.university.infrastructure import paths
-        return str(paths.LOG_DIR / name)
+        from education_system import paths
+        return str(paths.UNIVERSITY_LOG_DIR / name)
 
 # Import finance functions from common_imports module (explicit imports)
 from education_system.systems.university.interfaces.gui.finance.finance.common_imports import (
@@ -128,7 +130,7 @@ class ReportManager:
         main_frame.pack(fill='both', expand=True)
 
         # Report buttons
-        reports_frame = ttk.LabelFrame(main_frame, text="Financial Reports", padding=15)
+        reports_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance.report_manager.labels.financial_reports', default="Financial Reports"), padding=15)
         reports_frame.pack(fill='x', pady=(0, 20))
 
         report_buttons = [
@@ -153,7 +155,7 @@ class ReportManager:
             ttk.Button(reports_frame, text=text, command=command, width=25).grid(row=i//3, column=i%3, padx=10, pady=5)
 
         # Report display area
-        display_frame = ttk.LabelFrame(main_frame, text="Report Output", padding=15)
+        display_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance.report_manager.labels.report_output', default="Report Output"), padding=15)
         display_frame.pack(fill='both', expand=True)
 
         self.report_text = ScrolledText(display_frame, height=20, width=80, font=('Courier', 10))
@@ -163,9 +165,9 @@ class ReportManager:
         export_frame = ttk.Frame(display_frame)
         export_frame.pack(fill='x', pady=10)
 
-        ttk.Button(export_frame, text="📄 Export to CSV", command=self.export_report_csv).pack(side='left', padx=5)
-        ttk.Button(export_frame, text="📊 Export to Excel", command=self.export_report_excel).pack(side='left', padx=5)
-        ttk.Button(export_frame, text="🗑️ Clear Report", command=self.clear_report).pack(side='left', padx=5)
+        ttk.Button(export_frame, text=_t('gui.finance.finance.report_manager.buttons.export_to_csv', default="📄 Export to CSV"), command=self.export_report_csv).pack(side='left', padx=5)
+        ttk.Button(export_frame, text=_t('gui.finance.finance.report_manager.buttons.export_to_excel', default="📊 Export to Excel"), command=self.export_report_excel).pack(side='left', padx=5)
+        ttk.Button(export_frame, text=_t('gui.finance.finance.report_manager.buttons.clear_report', default="🗑️ Clear Report"), command=self.clear_report).pack(side='left', padx=5)
 
 
     def create_report_card(self, parent, title, description, command, row, col):
@@ -182,7 +184,7 @@ class ReportManager:
                              bg=self.gui.layout.colors['light'], wraplength=200)
         desc_label.pack(pady=5)
 
-        generate_btn = tk.Button(card_frame, text="Generate Report", command=command,
+        generate_btn = tk.Button(card_frame, text=_t('gui.finance.finance.report_manager.buttons.generate_report', default="Generate Report"), command=command,
                                bg=self.gui.layout.colors['secondary'], fg='white', font=('Arial', 9, 'bold'))
         generate_btn.pack(pady=10)
 
@@ -203,9 +205,9 @@ class ReportManager:
             self.update_status("Advanced Reporting GUI launched")
             self.log_activity("Advanced Reporting GUI opened")
         except ImportError:
-            messagebox.showerror("Error", "Advanced reporting module not found. Make sure finance_reporting_gui.py is in the same directory.")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), _t('gui.finance.finance.report_manager.dialogs.advanced_reporting_module_not_found_make_sure_finance_reporting', default="Advanced reporting module not found. Make sure finance_reporting_gui.py is in the same directory."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to launch reporting GUI: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to launch reporting GUI: {e}")
             self.update_status("Error launching reporting GUI")
 
 
@@ -231,7 +233,7 @@ class ReportManager:
 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate revenue report: {str(_e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate revenue report: {str(_e)}"))
 
         threading.Thread(target=generate_thread, daemon=True).start()
 
@@ -254,7 +256,7 @@ class ReportManager:
 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate student summary: {str(_e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate student summary: {str(_e)}"))
 
         threading.Thread(target=generate_thread, daemon=True).start()
 
@@ -277,7 +279,7 @@ class ReportManager:
 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate overdue report: {str(_e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate overdue report: {str(_e)}"))
 
         threading.Thread(target=generate_thread, daemon=True).start()
 
@@ -305,7 +307,7 @@ class ReportManager:
 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate collection report: {str(_e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate collection report: {str(_e)}"))
 
         threading.Thread(target=generate_thread, daemon=True).start()
 
@@ -328,7 +330,7 @@ class ReportManager:
 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate aid report: {str(_e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate aid report: {str(_e)}"))
 
         threading.Thread(target=generate_thread, daemon=True).start()
 
@@ -351,7 +353,7 @@ class ReportManager:
 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate budget analysis: {str(_e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate budget analysis: {str(_e)}"))
 
         threading.Thread(target=generate_thread, daemon=True).start()
 
@@ -374,7 +376,7 @@ class ReportManager:
 
             except Exception as e:
                 sys.stdout = old_stdout
-                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate forecast report: {str(_e)}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.report_error', default="Report Error"), f"Failed to generate forecast report: {str(_e)}"))
 
         threading.Thread(target=generate_thread, daemon=True).start()
 
@@ -473,7 +475,7 @@ class ReportManager:
                 print(f"Debug: Could not switch to forecasting tab: {e}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate revenue forecast: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate revenue forecast: {e}")
             self.update_status("Revenue forecast generation failed")
 
 
@@ -499,7 +501,7 @@ class ReportManager:
                 self.report_text.insert('1.0', content)
             except Exception:
                 # Last resort - show in message box
-                messagebox.showinfo("Revenue Forecast", "Forecast generated - check console output")
+                messagebox.showinfo(_t('gui.finance.finance.report_manager.dialogs.revenue_forecast', default="Revenue Forecast"), _t('gui.finance.finance.report_manager.dialogs.forecast_generated_check_console_output', default="Forecast generated - check console output"))
 
 
     def gui_export_forecast_report(self):
@@ -508,16 +510,16 @@ class ReportManager:
             filename = filedialog.asksaveasfilename(
                 defaultextension=".pdf",
                 filetypes=[("PDF files", "*.pdf"), ("Excel files", "*.xlsx"), ("All files", "*.*")],
-                title="Export Forecast Report"
+                title=_t('gui.finance.finance.report_manager.dialogs.export_forecast_report', default="Export Forecast Report")
             )
 
             if filename:
                 export_forecast_report(filename)
-                messagebox.showinfo("Success", f"Forecast report exported to {filename}")
+                messagebox.showinfo(_t('gui.finance.finance.report_manager.dialogs.success', default="Success"), f"Forecast report exported to {filename}")
                 self.update_status(f"Forecast report exported to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export forecast report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to export forecast report: {e}")
 
 
     def gui_generate_audit_report(self):
@@ -537,23 +539,23 @@ class ReportManager:
             self.update_status("Audit report generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate audit report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate audit report: {e}")
 
 
     def gui_revenue_summary_report(self):
         """Generate revenue summary report"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Revenue Summary Report")
+        dialog.title(_t('gui.finance.finance.report_manager.windows.revenue_summary_report', default="Revenue Summary Report"))
         dialog.geometry("400x300")
         dialog.transient(self.root)
         dialog.grab_set()
 
         # Date range inputs
-        ttk.Label(dialog, text="Start Date (YYYY-MM-DD):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.finance.finance.report_manager.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).pack(pady=5)
         start_date_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
         ttk.Entry(dialog, textvariable=start_date_var).pack(pady=5)
 
-        ttk.Label(dialog, text="End Date (YYYY-MM-DD):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.finance.finance.report_manager.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).pack(pady=5)
         end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(dialog, textvariable=end_date_var).pack(pady=5)
 
@@ -617,15 +619,15 @@ class ReportManager:
                     self.update_status(f"Revenue summary report generated for {start_date} to {end_date}")
 
                 else:
-                    messagebox.showinfo("No Data", "No payments found for the specified date range.")
+                    messagebox.showinfo(_t('gui.finance.finance.report_manager.dialogs.no_data', default="No Data"), _t('gui.finance.finance.report_manager.dialogs.no_payments_found_for_the_specified_date_range', default="No payments found for the specified date range."))
 
                 conn.close()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to generate report: {e}")
+                messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
-        ttk.Button(dialog, text="Generate Report", command=generate_report).pack(pady=20)
-        ttk.Button(dialog, text="Cancel", command=dialog.destroy).pack(pady=5)
+        ttk.Button(dialog, text=_t('gui.finance.finance.report_manager.buttons.generate_report', default="Generate Report"), command=generate_report).pack(pady=20)
+        ttk.Button(dialog, text=_t('gui.finance.finance.report_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(pady=5)
 
 
     def gui_outstanding_fees_report(self):
@@ -688,7 +690,7 @@ class ReportManager:
             self.update_status("Outstanding fees report generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate outstanding fees report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate outstanding fees report: {e}")
 
 
     def gui_payment_collection_report(self):
@@ -746,7 +748,7 @@ class ReportManager:
             self.update_status("Payment collection report generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate payment collection report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate payment collection report: {e}")
 
 
     def gui_student_account_summary(self):
@@ -818,7 +820,7 @@ class ReportManager:
             self.update_status("Student account summary generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate student account summary: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate student account summary: {e}")
 
 
     def gui_fee_type_analysis(self):
@@ -877,7 +879,7 @@ class ReportManager:
             self.update_status("Fee type analysis report generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate fee type analysis: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate fee type analysis: {e}")
 
 
     def gui_payment_method_analysis(self):
@@ -937,7 +939,7 @@ class ReportManager:
             self.update_status("Payment method analysis generated")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate payment method analysis: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate payment method analysis: {e}")
 
 
     def clear_report(self):
@@ -950,7 +952,7 @@ class ReportManager:
         """Export current report to CSV"""
         content = self.report_text.get("1.0", tk.END).strip()
         if not content:
-            messagebox.showerror("Error", "No report to export")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), _t('gui.finance.finance.report_manager.dialogs.no_report_to_export', default="No report to export"))
             return
 
         filename = filedialog.asksaveasfilename(
@@ -964,9 +966,9 @@ class ReportManager:
                 # Simple CSV export - in a real implementation, you'd parse the report properly
                 with open(filename, 'w', newline='', encoding='utf-8') as f:
                     f.write(content)
-                messagebox.showinfo("Success", f"Report exported to {filename}")
+                messagebox.showinfo(_t('gui.finance.finance.report_manager.dialogs.success', default="Success"), f"Report exported to {filename}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export report: {e}")
+                messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to export report: {e}")
 
 
     def export_report_excel(self):
@@ -974,7 +976,7 @@ class ReportManager:
         try:
             # Get current report content
             if not hasattr(self, 'current_report_data') or not self.current_report_data:
-                messagebox.showerror("Error", "No report data to export. Please generate a report first.")
+                messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), _t('gui.finance.finance.report_manager.dialogs.no_report_data_to_export_please_generate_a_report_first', default="No report data to export. Please generate a report first."))
                 return
 
             from tkinter import filedialog
@@ -982,7 +984,7 @@ class ReportManager:
 
             # Ask user where to save
             filename = filedialog.asksaveasfilename(
-                title="Export to Excel",
+                title=_t('gui.finance.finance.report_manager.dialogs.export_to_excel', default="Export to Excel"),
                 defaultextension=".xlsx",
                 initialfile=f"finance_report_{datetime.now().strftime('%Y%m%d')}.xlsx",
                 filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
@@ -1019,7 +1021,7 @@ class ReportManager:
 
                 # Save workbook
                 wb.save(filename)
-                messagebox.showinfo("Success", f"Report exported to Excel:\n{filename}")
+                messagebox.showinfo(_t('gui.finance.finance.report_manager.dialogs.success', default="Success"), f"Report exported to Excel:\n{filename}")
 
             except ImportError:
                 # Fallback to CSV if openpyxl not available
@@ -1032,10 +1034,10 @@ class ReportManager:
                     writer.writerow([])
                     for key, value in self.current_report_data.items():
                         writer.writerow([key, value])
-                messagebox.showinfo("Success", f"Exported to CSV (openpyxl not available):\n{filename}")
+                messagebox.showinfo(_t('gui.finance.finance.report_manager.dialogs.success', default="Success"), f"Exported to CSV (openpyxl not available):\n{filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to export report: {e}")
 
 
     def show_text_window(self, title, content):
@@ -1049,30 +1051,30 @@ class ReportManager:
         text_widget.pack(fill='both', expand=True, padx=10, pady=10)
         text_widget.insert('1.0', content)
 
-        ttk.Button(window, text="Close", command=window.destroy).pack(pady=10)
+        ttk.Button(window, text=_t('gui.finance.finance.report_manager.buttons.close', default="Close"), command=window.destroy).pack(pady=10)
 
     # Add these stubs for other missing functions
 
     def gui_generate_aid_reports(self):
         """GUI wrapper for generate_aid_reports"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Generate Aid Reports")
+        dialog.title(_t('gui.finance.finance.report_manager.windows.generate_aid_reports', default="Generate Aid Reports"))
         dialog.geometry("400x300")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        report_frame = ttk.LabelFrame(dialog, text="Select Report Type", padding=20)
+        report_frame = ttk.LabelFrame(dialog, text=_t('gui.finance.finance.report_manager.labels.select_report_type', default="Select Report Type"), padding=20)
         report_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        report_type_var = tk.StringVar(value="distribution")
+        report_type_var = tk.StringVar(value=_t('gui.finance.finance.report_manager.values.distribution', default="distribution"))
 
-        ttk.Radiobutton(report_frame, text="Aid Distribution Summary",
+        ttk.Radiobutton(report_frame, text=_t('gui.finance.finance.report_manager.buttons.aid_distribution_summary', default="Aid Distribution Summary"),
                        variable=report_type_var, value="distribution").pack(anchor='w', pady=5)
-        ttk.Radiobutton(report_frame, text="Aid by Academic Year",
+        ttk.Radiobutton(report_frame, text=_t('gui.finance.finance.report_manager.buttons.aid_by_academic_year', default="Aid by Academic Year"),
                        variable=report_type_var, value="academic_year").pack(anchor='w', pady=5)
-        ttk.Radiobutton(report_frame, text="Loan Repayment Status",
+        ttk.Radiobutton(report_frame, text=_t('gui.finance.finance.report_manager.buttons.loan_repayment_status', default="Loan Repayment Status"),
                        variable=report_type_var, value="loan_repayment").pack(anchor='w', pady=5)
-        ttk.Radiobutton(report_frame, text="Aid Effectiveness Analysis",
+        ttk.Radiobutton(report_frame, text=_t('gui.finance.finance.report_manager.buttons.aid_effectiveness_analysis', default="Aid Effectiveness Analysis"),
                        variable=report_type_var, value="effectiveness").pack(anchor='w', pady=5)
 
         def generate_report():
@@ -1102,58 +1104,58 @@ class ReportManager:
                 self.update_status(f"Aid report ({report_type}) generated")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to generate aid report: {e}")
+                messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate aid report: {e}")
 
-        ttk.Button(report_frame, text="Generate Report", command=generate_report).pack(pady=20)
+        ttk.Button(report_frame, text=_t('gui.finance.finance.report_manager.buttons.generate_report', default="Generate Report"), command=generate_report).pack(pady=20)
 
     def gui_aging_analysis_report(self):
         """Wrapper to call compliance manager's aging analysis report"""
         if hasattr(self.gui, 'collections'):
             self.gui.collections.gui_aging_analysis_report()
         else:
-            messagebox.showwarning("Not Available", "Compliance manager not initialized")
+            messagebox.showwarning(_t('gui.finance.finance.report_manager.dialogs.not_available', default="Not Available"), _t('gui.finance.finance.report_manager.dialogs.compliance_manager_not_initialized', default="Compliance manager not initialized"))
 
     def gui_collection_case_status_report(self):
         """Wrapper to call compliance manager's collection case status report"""
         if hasattr(self.gui, 'collections'):
             self.gui.collections.gui_collection_case_status_report()
         else:
-            messagebox.showwarning("Not Available", "Compliance manager not initialized")
+            messagebox.showwarning(_t('gui.finance.finance.report_manager.dialogs.not_available', default="Not Available"), _t('gui.finance.finance.report_manager.dialogs.compliance_manager_not_initialized', default="Compliance manager not initialized"))
 
     def gui_recovery_rate_analysis(self):
         """Wrapper to call compliance manager's recovery rate analysis"""
         if hasattr(self.gui, 'collections'):
             self.gui.collections.gui_recovery_rate_analysis()
         else:
-            messagebox.showwarning("Not Available", "Compliance manager not initialized")
+            messagebox.showwarning(_t('gui.finance.finance.report_manager.dialogs.not_available', default="Not Available"), _t('gui.finance.finance.report_manager.dialogs.compliance_manager_not_initialized', default="Compliance manager not initialized"))
 
     def gui_agency_performance_report(self):
         """Wrapper to call compliance manager's agency performance report"""
         if hasattr(self.gui, 'collections'):
             self.gui.collections.gui_agency_performance_report()
         else:
-            messagebox.showwarning("Not Available", "Compliance manager not initialized")
+            messagebox.showwarning(_t('gui.finance.finance.report_manager.dialogs.not_available', default="Not Available"), _t('gui.finance.finance.report_manager.dialogs.compliance_manager_not_initialized', default="Compliance manager not initialized"))
 
     def gui_variance_analysis_report(self):
         """Wrapper to call budget manager's variance analysis report"""
         if hasattr(self.gui, 'budgets'):
             self.gui.budgets.gui_variance_analysis_report()
         else:
-            messagebox.showwarning("Not Available", "Budget manager not initialized")
+            messagebox.showwarning(_t('gui.finance.finance.report_manager.dialogs.not_available', default="Not Available"), _t('gui.finance.finance.report_manager.dialogs.budget_manager_not_initialized', default="Budget manager not initialized"))
 
     def gui_budget_performance_trends(self):
         """Wrapper to call budget manager's budget performance trends"""
         if hasattr(self.gui, 'budgets'):
             self.gui.budgets.gui_budget_performance_trends()
         else:
-            messagebox.showwarning("Not Available", "Budget manager not initialized")
+            messagebox.showwarning(_t('gui.finance.finance.report_manager.dialogs.not_available', default="Not Available"), _t('gui.finance.finance.report_manager.dialogs.budget_manager_not_initialized', default="Budget manager not initialized"))
 
     def gui_category_performance_report(self):
         """Wrapper to call budget manager's category performance report"""
         if hasattr(self.gui, 'budgets'):
             self.gui.budgets.gui_category_performance_report()
         else:
-            messagebox.showwarning("Not Available", "Budget manager not initialized")
+            messagebox.showwarning(_t('gui.finance.finance.report_manager.dialogs.not_available', default="Not Available"), _t('gui.finance.finance.report_manager.dialogs.budget_manager_not_initialized', default="Budget manager not initialized"))
 
     def gui_monthly_revenue_trend_report(self):
         """Generate monthly revenue trend report"""
@@ -1177,7 +1179,7 @@ class ReportManager:
             conn.close()
 
             if not results:
-                messagebox.showinfo("No Data", "No revenue data found for the past 12 months")
+                messagebox.showinfo(_t('gui.finance.finance.report_manager.dialogs.no_data', default="No Data"), _t('gui.finance.finance.report_manager.dialogs.no_revenue_data_found_for_the_past_12_months', default="No revenue data found for the past 12 months"))
                 return
 
             # Format output
@@ -1198,5 +1200,5 @@ class ReportManager:
             self.show_text_window("Monthly Revenue Trend Report", output)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate monthly revenue report: {e}")
+            messagebox.showerror(_t('gui.finance.finance.report_manager.dialogs.error', default="Error"), f"Failed to generate monthly revenue report: {e}")
 

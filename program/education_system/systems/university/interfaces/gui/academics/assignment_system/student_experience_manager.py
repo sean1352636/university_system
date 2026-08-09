@@ -1,5 +1,7 @@
 """Student experience management for assignments - drafts, receipts, progress, accessibility, timers"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
@@ -99,17 +101,17 @@ class StudentExperienceManager:
         self.gui.layout.clear_content_area()
         container = self.gui.layout.content_area
 
-        header = ttk.Label(container, text="Draft Manager", font=('Helvetica', 16, 'bold'))
+        header = ttk.Label(container, text=_t('gui.academics.assignment_system.student_experience_manager.labels.draft_manager', default="Draft Manager"), font=('Helvetica', 16, 'bold'))
         header.pack(pady=(10, 5))
 
-        ttk.Label(container, text="View, restore, and manage your assignment drafts").pack(pady=(0, 10))
+        ttk.Label(container, text=_t('gui.academics.assignment_system.student_experience_manager.labels.view_restore_and_manage_your_assignment_drafts', default="View, restore, and manage your assignment drafts")).pack(pady=(0, 10))
 
         # Controls frame
         ctrl_frame = ttk.Frame(container)
         ctrl_frame.pack(fill=tk.X, padx=20, pady=5)
 
-        ttk.Button(ctrl_frame, text="Refresh", command=self._load_drafts_list).pack(side=tk.LEFT, padx=5)
-        ttk.Button(ctrl_frame, text="Delete Selected", command=self._delete_selected_draft).pack(
+        ttk.Button(ctrl_frame, text=_t('gui.academics.assignment_system.student_experience_manager.buttons.refresh', default="Refresh"), command=self._load_drafts_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(ctrl_frame, text=_t('gui.academics.assignment_system.student_experience_manager.buttons.delete_selected', default="Delete Selected"), command=self._delete_selected_draft).pack(
             side=tk.LEFT, padx=5
         )
 
@@ -120,11 +122,11 @@ class StudentExperienceManager:
         columns = ('id', 'assignment_id', 'version', 'file_path', 'created_at')
         self._draft_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=12)
 
-        self._draft_tree.heading('id', text='Draft ID')
-        self._draft_tree.heading('assignment_id', text='Assignment')
-        self._draft_tree.heading('version', text='Version')
-        self._draft_tree.heading('file_path', text='File')
-        self._draft_tree.heading('created_at', text='Saved At')
+        self._draft_tree.heading('id', text=_t('gui.academics.assignment_system.student_experience_manager.headings.draft_id', default='Draft ID'))
+        self._draft_tree.heading('assignment_id', text=_t('gui.academics.assignment_system.student_experience_manager.headings.assignment', default='Assignment'))
+        self._draft_tree.heading('version', text=_t('gui.academics.assignment_system.student_experience_manager.headings.version', default='Version'))
+        self._draft_tree.heading('file_path', text=_t('gui.academics.assignment_system.student_experience_manager.headings.file', default='File'))
+        self._draft_tree.heading('created_at', text=_t('gui.academics.assignment_system.student_experience_manager.headings.saved_at', default='Saved At'))
 
         self._draft_tree.column('id', width=60, anchor=tk.CENTER)
         self._draft_tree.column('assignment_id', width=100, anchor=tk.CENTER)
@@ -139,7 +141,7 @@ class StudentExperienceManager:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Content preview
-        preview_label = ttk.Label(container, text="Draft Content Preview:", font=('Helvetica', 11, 'bold'))
+        preview_label = ttk.Label(container, text=_t('gui.academics.assignment_system.student_experience_manager.labels.draft_content_preview', default="Draft Content Preview:"), font=('Helvetica', 11, 'bold'))
         preview_label.pack(anchor=tk.W, padx=20, pady=(5, 0))
 
         self._draft_preview = scrolledtext.ScrolledText(container, height=8, wrap=tk.WORD, state=tk.DISABLED)
@@ -150,7 +152,7 @@ class StudentExperienceManager:
         # Restore button
         btn_frame = ttk.Frame(container)
         btn_frame.pack(fill=tk.X, padx=20, pady=5)
-        ttk.Button(btn_frame, text="Restore Selected Version", command=self._restore_selected_draft).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.student_experience_manager.buttons.restore_selected_version', default="Restore Selected Version"), command=self._restore_selected_draft).pack(
             side=tk.LEFT, padx=5
         )
 
@@ -181,7 +183,7 @@ class StudentExperienceManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load drafts: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), f"Failed to load drafts: {e}")
 
     def _on_draft_select(self, event):
         """Show content preview when a draft is selected"""
@@ -211,11 +213,11 @@ class StudentExperienceManager:
         """Delete the selected draft"""
         selection = self._draft_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a draft to delete.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.please_select_a_draft_to_delete', default="Please select a draft to delete."))
             return
 
         draft_id = self._draft_tree.item(selection[0], 'values')[0]
-        if not messagebox.askyesno("Confirm", "Delete this draft version? This cannot be undone."):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.student_experience_manager.dialogs.confirm', default="Confirm"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.delete_this_draft_version_this_cannot_be_undone', default="Delete this draft version? This cannot be undone.")):
             return
 
         try:
@@ -227,15 +229,15 @@ class StudentExperienceManager:
             finally:
                 conn.close()
             self._load_drafts_list()
-            messagebox.showinfo("Deleted", "Draft version deleted.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.deleted', default="Deleted"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.draft_version_deleted', default="Draft version deleted."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete draft: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), f"Failed to delete draft: {e}")
 
     def _restore_selected_draft(self):
         """Restore the selected draft version"""
         selection = self._draft_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a draft version to restore.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.please_select_a_draft_version_to_restore', default="Please select a draft version to restore."))
             return
 
         values = self._draft_tree.item(selection[0], 'values')
@@ -249,7 +251,7 @@ class StudentExperienceManager:
         """Save a draft with version tracking. Increments version for same assignment."""
         student_id = self._get_student_id()
         if not student_id:
-            messagebox.showerror("Error", "Unable to identify current student.")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.unable_to_identify_current_student', default="Unable to identify current student."))
             return None
 
         try:
@@ -277,10 +279,10 @@ class StudentExperienceManager:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Draft Saved", f"Draft saved (version {next_version}).")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.draft_saved', default="Draft Saved"), f"Draft saved (version {next_version}).")
             return draft_id
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save draft: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), f"Failed to save draft: {e}")
             return None
 
     def restore_draft(self, draft_id, version):
@@ -298,17 +300,17 @@ class StudentExperienceManager:
                 conn.close()
 
             if not row:
-                messagebox.showerror("Error", "Draft not found.")
+                messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.draft_not_found', default="Draft not found."))
                 return None
 
             assignment_id, content, file_path = row
             messagebox.showinfo(
-                "Restored",
+                _t('gui.academics.assignment_system.student_experience_manager.dialogs.restored', default="Restored"),
                 f"Draft version {version} for assignment {assignment_id} has been restored.",
             )
             return {"assignment_id": assignment_id, "content": content, "file_path": file_path}
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to restore draft: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), f"Failed to restore draft: {e}")
             return None
 
     # ─── Submission Receipts ─────────────────────────────────────────────
@@ -333,14 +335,14 @@ class StudentExperienceManager:
                 # Generate a receipt if one doesn't exist yet
                 row = self._generate_receipt(submission_id)
                 if not row:
-                    messagebox.showerror("Error", "No receipt found for this submission.")
+                    messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.no_receipt_found_for_this_submission', default="No receipt found for this submission."))
                     return
 
             receipt_id, sub_id, student_id, title, submitted_at, receipt_hash, email_sent, conf_code = row
 
             # Receipt dialog
             win = tk.Toplevel(self.root)
-            win.title("Submission Receipt")
+            win.title(_t('gui.academics.assignment_system.student_experience_manager.windows.submission_receipt', default="Submission Receipt"))
             win.geometry("500x420")
             win.resizable(False, False)
             win.transient(self.root)
@@ -349,9 +351,9 @@ class StudentExperienceManager:
             main_frame = ttk.Frame(win, padding=20)
             main_frame.pack(fill=tk.BOTH, expand=True)
 
-            ttk.Label(main_frame, text="Submission Receipt", font=('Helvetica', 16, 'bold')).pack(pady=(0, 15))
+            ttk.Label(main_frame, text=_t('gui.academics.assignment_system.student_experience_manager.labels.submission_receipt', default="Submission Receipt"), font=('Helvetica', 16, 'bold')).pack(pady=(0, 15))
 
-            details_frame = ttk.LabelFrame(main_frame, text="Confirmation Details", padding=10)
+            details_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.assignment_system.student_experience_manager.labels.confirmation_details', default="Confirmation Details"), padding=10)
             details_frame.pack(fill=tk.X, pady=5)
 
             fields = [
@@ -374,14 +376,14 @@ class StudentExperienceManager:
 
             ttk.Button(
                 btn_frame,
-                text="Send Email Receipt",
+                text=_t('gui.academics.assignment_system.student_experience_manager.buttons.send_email_receipt', default="Send Email Receipt"),
                 command=lambda: self.send_receipt_email(sub_id),
             ).pack(side=tk.LEFT, padx=5)
 
-            ttk.Button(btn_frame, text="Close", command=win.destroy).pack(side=tk.RIGHT, padx=5)
+            ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.student_experience_manager.buttons.close', default="Close"), command=win.destroy).pack(side=tk.RIGHT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show receipt: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), f"Failed to show receipt: {e}")
 
     def _generate_receipt(self, submission_id):
         """Generate a new submission receipt and return the row tuple"""
@@ -450,7 +452,7 @@ class StudentExperienceManager:
                 )
                 row = cursor.fetchone()
                 if not row:
-                    messagebox.showerror("Error", "No receipt found for this submission.")
+                    messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.no_receipt_found_for_this_submission', default="No receipt found for this submission."))
                     return
 
                 student_id, title, submitted_at, conf_code = row
@@ -497,14 +499,14 @@ class StudentExperienceManager:
                 conn.close()
 
             if email_sent:
-                messagebox.showinfo("Email Sent", f"Receipt emailed to {email}.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.email_sent', default="Email Sent"), f"Receipt emailed to {email}.")
             else:
                 messagebox.showinfo(
-                    "Receipt Recorded",
-                    "Email receipt has been recorded. Email delivery may be pending if email service is unavailable.",
+                    _t('gui.academics.assignment_system.student_experience_manager.dialogs.receipt_recorded', default="Receipt Recorded"),
+                    _t('gui.academics.assignment_system.student_experience_manager.dialogs.email_receipt_has_been_recorded_email_delivery_may_be_pending_if', default="Email receipt has been recorded. Email delivery may be pending if email service is unavailable."),
                 )
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send receipt email: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), f"Failed to send receipt email: {e}")
 
     # ─── Progress Tracking ───────────────────────────────────────────────
 
@@ -515,7 +517,7 @@ class StudentExperienceManager:
         student_id = self._get_student_id()
 
         win = tk.Toplevel(self.root)
-        win.title("Accessibility Settings")
+        win.title(_t('gui.academics.assignment_system.student_experience_manager.windows.accessibility_settings', default="Accessibility Settings"))
         win.geometry("480x500")
         win.resizable(False, False)
         win.transient(self.root)
@@ -524,7 +526,7 @@ class StudentExperienceManager:
         main_frame = ttk.Frame(win, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Accessibility Preferences", font=('Helvetica', 16, 'bold')).pack(
+        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.student_experience_manager.labels.accessibility_preferences', default="Accessibility Preferences"), font=('Helvetica', 16, 'bold')).pack(
             pady=(0, 15)
         )
 
@@ -534,34 +536,34 @@ class StudentExperienceManager:
         # Extended time
         extended_var = tk.BooleanVar(value=bool(settings.get('extended_time', 0)))
         ext_check = ttk.Checkbutton(
-            main_frame, text="Extended time for assessments (1.5x)", variable=extended_var
+            main_frame, text=_t('gui.academics.assignment_system.student_experience_manager.buttons.extended_time_for_assessments_1_5x', default="Extended time for assessments (1.5x)"), variable=extended_var
         )
         ext_check.pack(anchor=tk.W, pady=5)
 
         # High contrast
         contrast_var = tk.BooleanVar(value=bool(settings.get('high_contrast', 0)))
         contrast_check = ttk.Checkbutton(
-            main_frame, text="High contrast mode", variable=contrast_var
+            main_frame, text=_t('gui.academics.assignment_system.student_experience_manager.buttons.high_contrast_mode', default="High contrast mode"), variable=contrast_var
         )
         contrast_check.pack(anchor=tk.W, pady=5)
 
         # Screen reader support
         reader_var = tk.BooleanVar(value=bool(settings.get('screen_reader', 0)))
         reader_check = ttk.Checkbutton(
-            main_frame, text="Screen reader optimised labels", variable=reader_var
+            main_frame, text=_t('gui.academics.assignment_system.student_experience_manager.buttons.screen_reader_optimised_labels', default="Screen reader optimised labels"), variable=reader_var
         )
         reader_check.pack(anchor=tk.W, pady=5)
 
         # Font size
         font_frame = ttk.Frame(main_frame)
         font_frame.pack(fill=tk.X, pady=10)
-        ttk.Label(font_frame, text="Font size:").pack(side=tk.LEFT)
+        ttk.Label(font_frame, text=_t('gui.academics.assignment_system.student_experience_manager.labels.font_size', default="Font size:")).pack(side=tk.LEFT)
         font_var = tk.IntVar(value=settings.get('font_size', 12))
         font_spin = ttk.Spinbox(font_frame, from_=8, to=32, width=5, textvariable=font_var)
         font_spin.pack(side=tk.LEFT, padx=10)
 
         # Extra settings (JSON)
-        ttk.Label(main_frame, text="Additional settings (JSON):", font=('Helvetica', 10, 'bold')).pack(
+        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.student_experience_manager.labels.additional_settings_json', default="Additional settings (JSON):"), font=('Helvetica', 10, 'bold')).pack(
             anchor=tk.W, pady=(10, 2)
         )
         extra_text = scrolledtext.ScrolledText(main_frame, height=5, wrap=tk.WORD)
@@ -574,7 +576,7 @@ class StudentExperienceManager:
             try:
                 json.loads(extra_raw)
             except json.JSONDecodeError:
-                messagebox.showerror("Error", "Additional settings must be valid JSON.")
+                messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.additional_settings_must_be_valid_json', default="Additional settings must be valid JSON."))
                 return
 
             self._save_accessibility_settings(
@@ -585,13 +587,13 @@ class StudentExperienceManager:
                 font_size=font_var.get(),
                 extra_settings_json=extra_raw,
             )
-            messagebox.showinfo("Saved", "Accessibility settings saved.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.saved', default="Saved"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.accessibility_settings_saved', default="Accessibility settings saved."))
             win.destroy()
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Save", command=save_settings).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=win.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.student_experience_manager.buttons.save', default="Save"), command=save_settings).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.student_experience_manager.buttons.cancel', default="Cancel"), command=win.destroy).pack(side=tk.RIGHT, padx=5)
 
     def _load_accessibility_settings(self, student_id):
         """Load accessibility settings for a student"""
@@ -685,7 +687,7 @@ class StudentExperienceManager:
             self._save_accessibility_settings(
                 student_id, high_contrast=1, screen_reader=1, font_size=14
             )
-            messagebox.showinfo("Accessibility", "Accessibility mode enabled: high contrast, larger fonts, screen reader labels.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.accessibility', default="Accessibility"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.accessibility_mode_enabled_high_contrast_larger_fonts_screen_rea', default="Accessibility mode enabled: high contrast, larger fonts, screen reader labels."))
         else:
             # Revert to defaults
             try:
@@ -702,7 +704,7 @@ class StudentExperienceManager:
             self._save_accessibility_settings(
                 student_id, high_contrast=0, screen_reader=0, font_size=12
             )
-            messagebox.showinfo("Accessibility", "Accessibility mode disabled: default styles restored.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.accessibility', default="Accessibility"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.accessibility_mode_disabled_default_styles_restored', default="Accessibility mode disabled: default styles restored."))
 
     # ─── Mobile-Friendly Submission ──────────────────────────────────────
 
@@ -712,21 +714,21 @@ class StudentExperienceManager:
         container = self.gui.layout.content_area
 
         # Use a single column layout with larger touch targets for mobile friendliness
-        header = ttk.Label(container, text="Submit Assignment", font=('Helvetica', 18, 'bold'))
+        header = ttk.Label(container, text=_t('gui.academics.assignment_system.student_experience_manager.labels.submit_assignment', default="Submit Assignment"), font=('Helvetica', 18, 'bold'))
         header.pack(pady=(15, 10))
 
         form_frame = ttk.Frame(container)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=30, pady=10)
 
         # Assignment selector
-        ttk.Label(form_frame, text="Assignment:", font=('Helvetica', 12)).pack(anchor=tk.W, pady=(5, 2))
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.student_experience_manager.labels.assignment', default="Assignment:"), font=('Helvetica', 12)).pack(anchor=tk.W, pady=(5, 2))
         self._mobile_assign_var = tk.StringVar()
         assign_combo = ttk.Combobox(form_frame, textvariable=self._mobile_assign_var, state='readonly')
         assign_combo.pack(fill=tk.X, pady=(0, 10), ipady=4)
         self._load_mobile_assignments(assign_combo, assignment_id)
 
         # Content area
-        ttk.Label(form_frame, text="Your Work:", font=('Helvetica', 12)).pack(anchor=tk.W, pady=(5, 2))
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.student_experience_manager.labels.your_work', default="Your Work:"), font=('Helvetica', 12)).pack(anchor=tk.W, pady=(5, 2))
         self._mobile_content = scrolledtext.ScrolledText(form_frame, height=10, wrap=tk.WORD, font=('Helvetica', 12))
         self._mobile_content.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
@@ -736,14 +738,14 @@ class StudentExperienceManager:
 
         save_btn = ttk.Button(
             btn_frame,
-            text="Save Draft",
+            text=_t('gui.academics.assignment_system.student_experience_manager.buttons.save_draft', default="Save Draft"),
             command=self._mobile_save_draft,
         )
         save_btn.pack(fill=tk.X, pady=3, ipady=8)
 
         submit_btn = ttk.Button(
             btn_frame,
-            text="Submit",
+            text=_t('gui.academics.assignment_system.student_experience_manager.buttons.submit', default="Submit"),
             command=self._mobile_submit,
         )
         submit_btn.pack(fill=tk.X, pady=3, ipady=8)
@@ -782,12 +784,12 @@ class StudentExperienceManager:
         """Save draft from mobile form"""
         label = self._mobile_assign_var.get()
         if not label or label not in getattr(self, '_mobile_assign_map', {}):
-            messagebox.showinfo("Info", "Please select an assignment.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.please_select_an_assignment', default="Please select an assignment."))
             return
         assignment_id = self._mobile_assign_map[label]
         content = self._mobile_content.get('1.0', tk.END).strip()
         if not content:
-            messagebox.showinfo("Info", "Please enter some content before saving.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.please_enter_some_content_before_saving', default="Please enter some content before saving."))
             return
         self.save_draft(assignment_id, content)
 
@@ -795,20 +797,20 @@ class StudentExperienceManager:
         """Submit from mobile form"""
         label = self._mobile_assign_var.get()
         if not label or label not in getattr(self, '_mobile_assign_map', {}):
-            messagebox.showinfo("Info", "Please select an assignment.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.please_select_an_assignment', default="Please select an assignment."))
             return
         assignment_id = self._mobile_assign_map[label]
         content = self._mobile_content.get('1.0', tk.END).strip()
         if not content:
-            messagebox.showinfo("Info", "Please enter some content before submitting.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.please_enter_some_content_before_submitting', default="Please enter some content before submitting."))
             return
 
-        if not messagebox.askyesno("Confirm Submission", "Are you sure you want to submit? This cannot be undone."):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.student_experience_manager.dialogs.confirm_submission', default="Confirm Submission"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.are_you_sure_you_want_to_submit_this_cannot_be_undone', default="Are you sure you want to submit? This cannot be undone.")):
             return
 
         student_id = self._get_student_id()
         if not student_id:
-            messagebox.showerror("Error", "Unable to identify current student.")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.unable_to_identify_current_student', default="Unable to identify current student."))
             return
 
         try:
@@ -827,10 +829,10 @@ class StudentExperienceManager:
 
             # Generate receipt
             self._generate_receipt(submission_id)
-            messagebox.showinfo("Submitted", "Your assignment has been submitted successfully.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.student_experience_manager.dialogs.submitted', default="Submitted"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.your_assignment_has_been_submitted_successfully', default="Your assignment has been submitted successfully."))
             self.show_submission_receipt(submission_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Submission failed: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), f"Submission failed: {e}")
 
     # ─── Countdown Timer ─────────────────────────────────────────────────
 
@@ -839,7 +841,7 @@ class StudentExperienceManager:
         # Get assessment duration
         duration_minutes = self._get_assessment_duration(assessment_id)
         if duration_minutes is None:
-            messagebox.showerror("Error", "Could not determine assessment duration.")
+            messagebox.showerror(_t('gui.academics.assignment_system.student_experience_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.could_not_determine_assessment_duration', default="Could not determine assessment duration."))
             return
 
         # Check for extended time
@@ -854,7 +856,7 @@ class StudentExperienceManager:
 
         # Timer window
         self._timer_win = tk.Toplevel(self.root)
-        self._timer_win.title("Assessment Timer")
+        self._timer_win.title(_t('gui.academics.assignment_system.student_experience_manager.windows.assessment_timer', default="Assessment Timer"))
         self._timer_win.geometry("350x200")
         self._timer_win.resizable(False, False)
         self._timer_win.attributes('-topmost', True)
@@ -863,7 +865,7 @@ class StudentExperienceManager:
         frame = ttk.Frame(self._timer_win, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Time Remaining", font=('Helvetica', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(frame, text=_t('gui.academics.assignment_system.student_experience_manager.labels.time_remaining', default="Time Remaining"), font=('Helvetica', 14, 'bold')).pack(pady=(0, 10))
 
         self._timer_label = ttk.Label(frame, text="", font=('Helvetica', 36, 'bold'))
         self._timer_label.pack(pady=10)
@@ -904,10 +906,10 @@ class StudentExperienceManager:
 
         if self._timer_seconds <= 0:
             self._timer_label.configure(text="00:00:00", foreground='red')
-            self._timer_status.configure(text="Time is up!")
+            self._timer_status.configure(text=_t('gui.academics.assignment_system.student_experience_manager.text.time_is_up', default="Time is up!"))
             self._timer_progress['value'] = 100
             self._timer_running = False
-            messagebox.showwarning("Time Up", "Your assessment time has expired.", parent=self._timer_win)
+            messagebox.showwarning(_t('gui.academics.assignment_system.student_experience_manager.dialogs.time_up', default="Time Up"), _t('gui.academics.assignment_system.student_experience_manager.dialogs.your_assessment_time_has_expired', default="Your assessment time has expired."), parent=self._timer_win)
             return
 
         hours = self._timer_seconds // 3600
@@ -926,13 +928,13 @@ class StudentExperienceManager:
         remaining_min = self._timer_seconds / 60
         if remaining_min <= 1:
             self._timer_label.configure(foreground='red')
-            self._timer_status.configure(text="Less than 1 minute remaining!", foreground='red')
+            self._timer_status.configure(text=_t('gui.academics.assignment_system.student_experience_manager.text.less_than_1_minute_remaining', default="Less than 1 minute remaining!"), foreground='red')
         elif remaining_min <= 5:
             self._timer_label.configure(foreground='#cc6600')
-            self._timer_status.configure(text="Less than 5 minutes remaining", foreground='#cc6600')
+            self._timer_status.configure(text=_t('gui.academics.assignment_system.student_experience_manager.text.less_than_5_minutes_remaining', default="Less than 5 minutes remaining"), foreground='#cc6600')
         elif remaining_min <= 10:
             self._timer_label.configure(foreground='#996600')
-            self._timer_status.configure(text="Less than 10 minutes remaining", foreground='#996600')
+            self._timer_status.configure(text=_t('gui.academics.assignment_system.student_experience_manager.text.less_than_10_minutes_remaining', default="Less than 10 minutes remaining"), foreground='#996600')
         else:
             self._timer_label.configure(foreground='')
             self._timer_status.configure(text="", foreground='')
@@ -943,8 +945,8 @@ class StudentExperienceManager:
                 self._timer_warnings_shown.add(threshold)
                 if threshold == 1:
                     messagebox.showwarning(
-                        "1 Minute Warning",
-                        "You have less than 1 minute remaining!",
+                        _t('gui.academics.assignment_system.student_experience_manager.dialogs.value_1_minute_warning', default="1 Minute Warning"),
+                        _t('gui.academics.assignment_system.student_experience_manager.dialogs.you_have_less_than_1_minute_remaining', default="You have less than 1 minute remaining!"),
                         parent=self._timer_win,
                     )
                 else:
@@ -961,8 +963,8 @@ class StudentExperienceManager:
         """Handle timer window close"""
         if self._timer_running:
             if not messagebox.askyesno(
-                "Close Timer",
-                "The timer is still running. Are you sure you want to close it?",
+                _t('gui.academics.assignment_system.student_experience_manager.dialogs.close_timer', default="Close Timer"),
+                _t('gui.academics.assignment_system.student_experience_manager.dialogs.the_timer_is_still_running_are_you_sure_you_want_to_close_it', default="The timer is still running. Are you sure you want to close it?"),
                 parent=self._timer_win,
             ):
                 return

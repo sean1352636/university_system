@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from ._common import askstring, datetime, messagebox, scrolledtext, tk, ttk
 
 class PollComposerDialog:
@@ -8,7 +10,7 @@ class PollComposerDialog:
         self.room_id = room_id
         self.on_created = on_created
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("New Poll")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.windows.new_poll', default="New Poll"))
         self.dialog.geometry("420x420")
         self.dialog.transient(parent)
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
@@ -20,25 +22,25 @@ class PollComposerDialog:
         frame.pack(fill=tk.BOTH, expand=True)
         frame.columnconfigure(1, weight=1)
 
-        ttk.Label(frame, text="Question:").grid(row=0, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.labels.question', default="Question:")).grid(row=0, column=0, sticky=tk.W, pady=4)
         self.question_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.question_var).grid(
             row=0, column=1, sticky=tk.EW, pady=4)
 
-        ttk.Label(frame, text="Options:").grid(row=1, column=0, sticky=tk.NW, pady=4)
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.labels.options', default="Options:")).grid(row=1, column=0, sticky=tk.NW, pady=4)
         self.options_frame = ttk.Frame(frame)
         self.options_frame.grid(row=1, column=1, sticky=tk.EW, pady=4)
         for _ in range(2):
             self._add_option_row()
-        ttk.Button(frame, text="+ Add option",
+        ttk.Button(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.add_option', default="+ Add option"),
                    command=self._add_option_row).grid(row=2, column=1, sticky=tk.W)
 
         self.multi_var = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="Allow multiple choices",
+        ttk.Checkbutton(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.allow_multiple_choices', default="Allow multiple choices"),
                         variable=self.multi_var).grid(row=3, column=1,
                                                       sticky=tk.W, pady=8)
 
-        ttk.Label(frame, text="Closes at (YYYY-MM-DD HH:MM:SS, optional):").grid(
+        ttk.Label(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.labels.closes_at_yyyy_mm_dd_hh_mm_ss_optional', default="Closes at (YYYY-MM-DD HH:MM:SS, optional):")).grid(
             row=4, column=0, columnspan=2, sticky=tk.W, pady=(8, 2))
         self.closes_var = tk.StringVar()
         ttk.Entry(frame, textvariable=self.closes_var).grid(
@@ -46,8 +48,8 @@ class PollComposerDialog:
 
         btns = ttk.Frame(frame)
         btns.grid(row=6, column=0, columnspan=2, pady=12)
-        ttk.Button(btns, text="Create", command=self._create).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btns, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.create', default="Create"), command=self._create).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _add_option_row(self):
         var = tk.StringVar()
@@ -58,14 +60,14 @@ class PollComposerDialog:
         question = self.question_var.get().strip()
         options = [v.get().strip() for v in self._option_vars if v.get().strip()]
         if not question or len(options) < 2:
-            messagebox.showwarning("Missing", "Need a question and at least two options.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.missing', default="Missing"), _t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.need_a_question_and_at_least_two_options', default="Need a question and at least two options."))
             return
         closes_at = self.closes_var.get().strip() or None
         if closes_at:
             try:
                 datetime.strptime(closes_at, '%Y-%m-%d %H:%M:%S')
             except ValueError:
-                messagebox.showwarning("Bad date", "Use format YYYY-MM-DD HH:MM:SS.")
+                messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.bad_date', default="Bad date"), _t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.use_format_yyyy_mm_dd_hh_mm_ss', default="Use format YYYY-MM-DD HH:MM:SS."))
                 return
         try:
             ok = self.dashboard.create_chat_poll(
@@ -77,9 +79,9 @@ class PollComposerDialog:
                 if self.on_created:
                     self.on_created()
             else:
-                messagebox.showerror("Error", "Could not create poll.")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.could_not_create_poll', default="Could not create poll."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), str(e))
 
 
 class QueueDialog:
@@ -94,7 +96,7 @@ class QueueDialog:
         self._closed = False
         self._job = None
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Queue")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.windows.queue', default="Queue"))
         self.dialog.geometry("400x340")
         self.dialog.transient(parent)
         self.dialog.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -117,10 +119,10 @@ class QueueDialog:
         btns = ttk.Frame(frame)
         btns.pack(fill=tk.X, pady=(8, 0))
         if self.is_admin:
-            ttk.Button(btns, text="Call Next",
+            ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.call_next', default="Call Next"),
                        command=self._call_next).pack(side=tk.LEFT)
-        ttk.Button(btns, text="Refresh", command=self._refresh).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btns, text="Close", command=self._on_close).pack(side=tk.RIGHT)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.refresh', default="Refresh"), command=self._refresh).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.close', default="Close"), command=self._on_close).pack(side=tk.RIGHT)
 
     def _refresh(self):
         for it in self.tree.get_children():
@@ -142,15 +144,15 @@ class QueueDialog:
             called = self.dashboard.call_next_in_queue(self.room_id)
             if called:
                 messagebox.showinfo(
-                    "Called",
+                    _t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.called', default="Called"),
                     f"Calling {called['full_name']} (@{called['username']}).",
                     parent=self.dialog,
                 )
                 self._refresh()
             else:
-                messagebox.showinfo("Empty", "Queue is empty.", parent=self.dialog)
+                messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.empty', default="Empty"), _t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.queue_is_empty', default="Queue is empty."), parent=self.dialog)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), str(e), parent=self.dialog)
 
     def _tick(self):
         if self._closed:
@@ -174,7 +176,7 @@ class ReportsDialog:
     def __init__(self, parent, dashboard):
         self.dashboard = dashboard
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Chat Reports")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.windows.chat_reports', default="Chat Reports"))
         self.dialog.geometry("820x440")
         self.dialog.transient(parent)
         self._build()
@@ -185,14 +187,14 @@ class ReportsDialog:
         frame.pack(fill=tk.BOTH, expand=True)
         head = ttk.Frame(frame)
         head.pack(fill=tk.X, pady=(0, 5))
-        ttk.Label(head, text="Status:").pack(side=tk.LEFT)
-        self.status_var = tk.StringVar(value="open")
+        ttk.Label(head, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.labels.status', default="Status:")).pack(side=tk.LEFT)
+        self.status_var = tk.StringVar(value=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.values.open', default="open"))
         ttk.Combobox(head, textvariable=self.status_var,
                      values=("open", "resolved", "all"),
                      state="readonly", width=12).pack(side=tk.LEFT, padx=5)
-        ttk.Button(head, text="Refresh", command=self._refresh).pack(side=tk.LEFT)
-        ttk.Button(head, text="Resolve…", command=self._resolve).pack(side=tk.LEFT, padx=5)
-        ttk.Button(head, text="Open case file…",
+        ttk.Button(head, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.refresh', default="Refresh"), command=self._refresh).pack(side=tk.LEFT)
+        ttk.Button(head, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.resolve', default="Resolve…"), command=self._resolve).pack(side=tk.LEFT, padx=5)
+        ttk.Button(head, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.open_case_file', default="Open case file…"),
                    command=self._open_case_file).pack(side=tk.LEFT, padx=5)
         cols = ("Created", "Status", "Reporter", "Target", "Room", "Case", "Reason", "Excerpt")
         self.tree = ttk.Treeview(frame, columns=cols, show="headings")
@@ -207,7 +209,7 @@ class ReportsDialog:
         self.tree.column("Reason", width=140)
         self.tree.column("Excerpt", width=200)
         self.tree.pack(fill=tk.BOTH, expand=True)
-        ttk.Button(frame, text="Close", command=self.dialog.destroy).pack(pady=(8, 0))
+        ttk.Button(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=(8, 0))
 
     def _refresh(self):
         for it in self.tree.get_children():
@@ -215,7 +217,7 @@ class ReportsDialog:
         try:
             reports = self.dashboard.list_chat_reports(status=self.status_var.get()) or []
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), str(e), parent=self.dialog)
             return
         for r in reports:
             target = (f"@{r.get('target_user')}" if r.get('target_user')
@@ -253,18 +255,18 @@ class ReportsDialog:
     def _open_case_file(self):
         case_id = self._selected_case_id()
         if not case_id:
-            messagebox.showinfo("Case file",
-                                "Selected report has no linked safeguarding case.",
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.case_file', default="Case file"),
+                                _t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.selected_report_has_no_linked_safeguarding_case', default="Selected report has no linked safeguarding case."),
                                 parent=self.dialog)
             return
         try:
             case = self.dashboard.get_safeguarding_submission(case_id)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), str(e), parent=self.dialog)
             return
         if not case:
-            messagebox.showerror("Case file",
-                                 "Case not found, or you lack permission.",
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.case_file', default="Case file"),
+                                 _t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.case_not_found_or_you_lack_permission', default="Case not found, or you lack permission."),
                                  parent=self.dialog)
             return
         dlg = tk.Toplevel(self.dialog)
@@ -290,12 +292,12 @@ class ReportsDialog:
                            f"{case.get('reviewed_at') or ''}: "
                            f"{case.get('review_note') or ''}").pack(anchor=tk.W)
         body.config(state=tk.DISABLED)
-        ttk.Button(f, text="Close", command=dlg.destroy).pack(pady=(8, 0))
+        ttk.Button(f, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.close', default="Close"), command=dlg.destroy).pack(pady=(8, 0))
 
     def _resolve(self):
         sel = self.tree.selection()
         if not sel:
-            messagebox.showwarning("Select", "Select a report first.", parent=self.dialog)
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.select', default="Select"), _t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.select_a_report_first', default="Select a report first."), parent=self.dialog)
             return
         report_id = int(self.tree.item(sel[0])['tags'][0])
         note = askstring("Resolve report",
@@ -306,10 +308,10 @@ class ReportsDialog:
             if ok:
                 self._refresh()
             else:
-                messagebox.showerror("Error", "Could not resolve (permission?).",
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.could_not_resolve_permission', default="Could not resolve (permission?)."),
                                      parent=self.dialog)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), str(e), parent=self.dialog)
 
 
 class AuditLogDialog:
@@ -330,11 +332,11 @@ class AuditLogDialog:
         frame.pack(fill=tk.BOTH, expand=True)
         head = ttk.Frame(frame)
         head.pack(fill=tk.X, pady=(0, 5))
-        ttk.Label(head, text="Action filter:").pack(side=tk.LEFT)
+        ttk.Label(head, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.labels.action_filter', default="Action filter:")).pack(side=tk.LEFT)
         self.action_var = tk.StringVar()
         ttk.Entry(head, textvariable=self.action_var).pack(
             side=tk.LEFT, fill=tk.X, expand=True, padx=5)
-        ttk.Button(head, text="Apply", command=self._refresh).pack(side=tk.LEFT)
+        ttk.Button(head, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.apply', default="Apply"), command=self._refresh).pack(side=tk.LEFT)
         cols = ("When", "User", "Action", "Details")
         self.tree = ttk.Treeview(frame, columns=cols, show="headings")
         for c in cols:
@@ -344,7 +346,7 @@ class AuditLogDialog:
         self.tree.column("Action", width=160)
         self.tree.column("Details", width=340)
         self.tree.pack(fill=tk.BOTH, expand=True)
-        ttk.Button(frame, text="Close", command=self.dialog.destroy).pack(pady=(8, 0))
+        ttk.Button(frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=(8, 0))
 
     def _refresh(self):
         for it in self.tree.get_children():
@@ -355,7 +357,7 @@ class AuditLogDialog:
                 action_type=(self.action_var.get().strip() or None),
             ) or []
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), str(e), parent=self.dialog)
             return
         for e in entries:
             self.tree.insert('', tk.END, values=(
@@ -372,7 +374,7 @@ class BlocksDialog:
     def __init__(self, parent, dashboard):
         self.dashboard = dashboard
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Blocked users")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.windows.blocked_users', default="Blocked users"))
         self.dialog.geometry("440x320")
         self.dialog.transient(parent)
         self._build()
@@ -388,10 +390,10 @@ class BlocksDialog:
         self.tree.pack(fill=tk.BOTH, expand=True)
         btns = ttk.Frame(frame)
         btns.pack(fill=tk.X, pady=(8, 0))
-        ttk.Button(btns, text="Block by username…",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.block_by_username', default="Block by username…"),
                    command=self._block).pack(side=tk.LEFT)
-        ttk.Button(btns, text="Unblock", command=self._unblock).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btns, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.unblock', default="Unblock"), command=self._unblock).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_tools.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def _refresh(self):
         for it in self.tree.get_children():
@@ -419,7 +421,7 @@ class BlocksDialog:
         except Exception:
             users = []
         if not users:
-            messagebox.showerror("Error", f"No user found for '{username}'.",
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), f"No user found for '{username}'.",
                                  parent=self.dialog)
             return
         try:
@@ -427,7 +429,7 @@ class BlocksDialog:
             if ok:
                 self._refresh()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), str(e), parent=self.dialog)
 
     def _unblock(self):
         sel = self.tree.selection()
@@ -439,5 +441,5 @@ class BlocksDialog:
             if ok:
                 self._refresh()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_tools.dialogs.error', default="Error"), str(e), parent=self.dialog)
 

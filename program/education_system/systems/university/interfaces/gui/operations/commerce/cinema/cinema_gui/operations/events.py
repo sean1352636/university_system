@@ -42,7 +42,7 @@ def show_events_page(self):
 
 def create_event(self):
     form = tk.Toplevel(self.root)
-    form.title("Create Event")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.events.windows.create_event', default="Create Event"))
     form.geometry("450x450")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -65,7 +65,7 @@ def create_event(self):
     entries['type'].insert(0, "premiere")
     def save():
         if not entries['name'].get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Name required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.events.dialogs.name_required', default="Name required"))
             return
         try:
             price = float(entries['price'].get() or 25)
@@ -81,7 +81,7 @@ def create_event(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Event created!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.events.dialogs.event_created', default="Event created!"))
         form.destroy()
         self.show_events_page()
     ttk.Button(frame, text=_t("cinema.btn.create"), style="Success.TButton", command=save).grid(row=len(fields)+1, column=0, columnspan=2, pady=20)

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # dialogs/settings.py
 # Dialog for application settings.
 
@@ -9,7 +11,7 @@ class SettingsDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Settings")
+        self.dialog.title(_t('gui.pastoral.health.medical_accommodation.dialogs.settings.windows.settings', default="Settings"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
 
@@ -28,31 +30,31 @@ class SettingsDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # Notification settings
-        notification_frame = ttk.LabelFrame(main_frame, text="Notifications")
+        notification_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.settings.labels.notifications', default="Notifications"))
         notification_frame.pack(fill=tk.X, pady=10)
 
         self.expiry_days_var = tk.StringVar(value="7")
-        ttk.Label(notification_frame, text="Expiry notification days:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(notification_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.settings.labels.expiry_notification_days', default="Expiry notification days:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         ttk.Entry(notification_frame, textvariable=self.expiry_days_var, width=10).grid(row=0, column=1, padx=5, pady=5)
 
         # Display settings
-        display_frame = ttk.LabelFrame(main_frame, text="Display")
+        display_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.settings.labels.display', default="Display"))
         display_frame.pack(fill=tk.X, pady=10)
 
         self.auto_refresh_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(display_frame, text="Auto-refresh data", variable=self.auto_refresh_var).pack(anchor='w', padx=5, pady=5)
+        ttk.Checkbutton(display_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.settings.buttons.auto_refresh_data', default="Auto-refresh data"), variable=self.auto_refresh_var).pack(anchor='w', padx=5, pady=5)
 
         self.show_tooltips_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(display_frame, text="Show tooltips", variable=self.show_tooltips_var).pack(anchor='w', padx=5, pady=5)
+        ttk.Checkbutton(display_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.settings.buttons.show_tooltips', default="Show tooltips"), variable=self.show_tooltips_var).pack(anchor='w', padx=5, pady=5)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save_settings).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.settings.buttons.save', default="Save"), command=self.save_settings).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.settings.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def save_settings(self):
         """Save settings"""
-        messagebox.showinfo("Settings", "Settings saved successfully")
+        messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.dialogs.settings.dialogs.settings', default="Settings"), _t('gui.pastoral.health.medical_accommodation.dialogs.settings.dialogs.settings_saved_successfully', default="Settings saved successfully"))
         self.dialog.destroy()

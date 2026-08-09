@@ -2,6 +2,8 @@
 Real-time log viewer tab for the Activity Logger GUI.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.interfaces.gui.shell.activity_logger._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
@@ -20,7 +22,7 @@ class LogViewerTab(ttk.Frame):
         self.main_app = main_app
         self.auto_refresh = tk.BooleanVar(value=True)
         self.max_display_logs = 1000
-        self.filter_level = tk.StringVar(value="ALL")
+        self.filter_level = tk.StringVar(value=_t('gui.shell.activity_logger.tabs.log_viewer.values.all', default="ALL"))
         self.filter_user = tk.StringVar()
         self.filter_action = tk.StringVar()
         self.filter_module = tk.StringVar()
@@ -87,13 +89,13 @@ class LogViewerTab(ttk.Frame):
         self.log_tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=20)
 
         # Configure columns
-        self.log_tree.heading('timestamp', text='Timestamp')
-        self.log_tree.heading('level', text='Level')
-        self.log_tree.heading('user', text='User')
-        self.log_tree.heading('action', text='Action')
-        self.log_tree.heading('module', text='Module')
-        self.log_tree.heading('status', text='Status')
-        self.log_tree.heading('details', text='Details')
+        self.log_tree.heading('timestamp', text=_t('gui.shell.activity_logger.tabs.log_viewer.headings.timestamp', default='Timestamp'))
+        self.log_tree.heading('level', text=_t('gui.shell.activity_logger.tabs.log_viewer.headings.level', default='Level'))
+        self.log_tree.heading('user', text=_t('gui.shell.activity_logger.tabs.log_viewer.headings.user', default='User'))
+        self.log_tree.heading('action', text=_t('gui.shell.activity_logger.tabs.log_viewer.headings.action', default='Action'))
+        self.log_tree.heading('module', text=_t('gui.shell.activity_logger.tabs.log_viewer.headings.module', default='Module'))
+        self.log_tree.heading('status', text=_t('gui.shell.activity_logger.tabs.log_viewer.headings.status', default='Status'))
+        self.log_tree.heading('details', text=_t('gui.shell.activity_logger.tabs.log_viewer.headings.details', default='Details'))
 
         # Configure column widths
         self.log_tree.column('timestamp', width=150, minwidth=120)
@@ -248,7 +250,7 @@ class LogViewerTab(ttk.Frame):
         """Export displayed logs"""
         try:
             file_path = filedialog.asksaveasfilename(
-                title="Export Logs",
+                title=_t('gui.shell.activity_logger.tabs.log_viewer.dialogs.export_logs', default="Export Logs"),
                 defaultextension=".json",
                 filetypes=[
                     ("JSON files", "*.json"),
@@ -269,12 +271,12 @@ class LogViewerTab(ttk.Frame):
                         format=file_path.split('.')[-1].lower(),
                         output_file=file_path
                     )
-                    messagebox.showinfo("Export Complete", f"Logs exported to: {exported_file}")
+                    messagebox.showinfo(_t('gui.shell.activity_logger.tabs.log_viewer.dialogs.export_complete', default="Export Complete"), f"Logs exported to: {exported_file}")
                 else:
-                    messagebox.showwarning("Export Unavailable", "Export functionality requires database logging to be enabled.")
+                    messagebox.showwarning(_t('gui.shell.activity_logger.tabs.log_viewer.dialogs.export_unavailable', default="Export Unavailable"), _t('gui.shell.activity_logger.tabs.log_viewer.dialogs.export_functionality_requires_database_logging_to_be_enabled', default="Export functionality requires database logging to be enabled."))
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export logs: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.log_viewer.dialogs.export_error', default="Export Error"), f"Failed to export logs: {str(e)}")
 
     def show_log_details(self, event):
         """Show detailed log information"""

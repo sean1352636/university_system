@@ -1,6 +1,6 @@
 # Auto-generated main entry
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import logging
 from datetime import datetime
 from education_system.systems.university.interfaces.gui.shell.main._tk_callback_filter import install_clean_close as _install_clean_close
@@ -90,6 +90,13 @@ def init_gui(session_user=None):
         if hasattr(auth, 'last_activity'):
             from datetime import datetime
             auth.last_activity = datetime.now()
+
+    current_user = getattr(auth, 'current_user', None)
+    role = str((current_user or {}).get('role', '')).lower()
+    if not current_user or role not in {
+            'admin', 'staff', 'instructor', 'teacher', 'student', 'parent',
+            'alumni'}:
+        raise PermissionError("An authenticated, recognised user is required")
 
     # Route each role to its dedicated portal; admin gets the full
     # UnifiedManagementGUI.
@@ -198,6 +205,12 @@ class UnifiedManagementGUI:
             # Always show main interface (login handled by universal login)
             self.show_main_interface()
 
+            # University admins should see lockouts as soon as their GUI is
+            # ready, without having to discover them in user management.
+            current_role = (getattr(self.auth, "current_user", None) or {}).get("role")
+            if current_role == "admin":
+                self.root.after(350, self._show_locked_account_alert)
+
         except Exception as e:
             print(f"Error initializing GUI: {e}")
             self.create_fallback_interface()
@@ -244,6 +257,78 @@ class UnifiedManagementGUI:
             self.root.after(300, self.show_email_manager)
         except Exception as exc:
             logger.debug("Could not auto-open email manager: %s", exc)
+
+    def _show_locked_account_alert(self):
+        """Prompt an admin to unlock users with a generated temp password."""
+        try:
+            from education_system.platform.delivery.portals.admin.admin_service import (
+                AdminService,
+            )
+            accounts = AdminService().get_locked_accounts()
+        except Exception as exc:
+            logger.debug("Could not check locked accounts: %s", exc)
+            return
+
+        for account in accounts:
+            username = account.get("username", "")
+            attempts = account.get("failed_login_attempts")
+            detail = f" after {attempts} failed login attempts" if attempts is not None else ""
+            if not messagebox.askyesno(
+                "User Account Locked",
+                f"User '{username}' has been locked out{detail}.\n\n"
+                "Set a secure temporary password and unlock the account now?",
+                parent=self.root,
+            ):
+                continue
+            try:
+                result = self.auth.reset_password(username)
+                if not isinstance(result, dict) or not result.get("temp_password"):
+                    raise RuntimeError("The password reset did not return a temporary password.")
+            except Exception as exc:
+                messagebox.showerror("Temporary Password Failed", str(exc), parent=self.root)
+                continue
+            self._show_temporary_password(result)
+
+    def _show_temporary_password(self, result):
+        """Show the temporary password in a selectable, copyable dialog."""
+        dlg = tk.Toplevel(self.root)
+        dlg.title("Temporary Password Created")
+        dlg.geometry("500x255")
+        dlg.resizable(False, False)
+        dlg.transient(self.root)
+        dlg.grab_set()
+
+        username = result.get("username", "user")
+        ttk.Label(dlg, text=f"'{username}' is unlocked.", font=("Arial", 14, "bold")).pack(
+            pady=(20, 6)
+        )
+        ttk.Label(
+            dlg, text="Temporary password (must be changed at next login):"
+        ).pack(pady=(0, 8))
+        password = result["temp_password"]
+        password_var = tk.StringVar(value=password)
+        ttk.Entry(
+            dlg, textvariable=password_var, font=("Consolas", 12),
+            justify=tk.CENTER, state="readonly", width=34,
+        ).pack(ipady=5)
+        email_status = (
+            "A copy was also emailed to the user."
+            if result.get("email_sent")
+            else "Email was not sent; give this password to the user securely."
+        )
+        ttk.Label(dlg, text=email_status).pack(pady=9)
+
+        buttons = ttk.Frame(dlg)
+        buttons.pack()
+
+        def _copy():
+            self.root.clipboard_clear()
+            self.root.clipboard_append(password)
+            self.root.update_idletasks()
+
+        ttk.Button(buttons, text="Copy Password", command=_copy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(buttons, text="Done", command=dlg.destroy).pack(side=tk.LEFT, padx=5)
+        dlg.wait_window()
 
 from education_system.systems.university.interfaces.gui.shell.main.core.gui_setup import (
     create_fallback_interface,
@@ -607,14 +692,14 @@ def show_security_questions(self):
             # Fallback: open in a new Toplevel window
             win = tk.Toplevel(self.root)
             _install_clean_close(win)
-            win.title("Security Questions")
+            win.title(_t('gui.shell.main.main.windows.security_questions', default="Security Questions"))
             win.geometry("500x520")
             frame = SecurityQuestionsFrame(win, auth=self.auth)
             frame.pack(fill="both", expand=True)
     except Exception as e:
         logger.error("Failed to show security questions: %s", e, exc_info=True)
         from tkinter import messagebox
-        messagebox.showerror("Error", f"Could not open Security Questions: {e}")
+        messagebox.showerror(_t('gui.shell.main.main.dialogs.error', default="Error"), f"Could not open Security Questions: {e}")
 
 
 UnifiedManagementGUI.show_security_questions = show_security_questions
@@ -968,7 +1053,7 @@ def show_information_rights_gui(self):
         logger.exception("show_information_rights_gui failed")
         try:
             from tkinter import messagebox
-            messagebox.showerror("Information Rights",
+            messagebox.showerror(_t('gui.shell.main.main.dialogs.information_rights', default="Information Rights"),
                                   f"Could not open Information Rights: {e}",
                                   parent=self.root)
         except Exception:
@@ -993,7 +1078,7 @@ def show_fitness_to_practise_gui(self):
         logger.exception("show_fitness_to_practise_gui failed")
         try:
             from tkinter import messagebox
-            messagebox.showerror("Fitness to Practise",
+            messagebox.showerror(_t('gui.shell.main.main.dialogs.fitness_to_practise', default="Fitness to Practise"),
                                   f"Could not open FtP: {e}",
                                   parent=self.root)
         except Exception:
@@ -1128,7 +1213,7 @@ def _launch_new_feature_module(self, module_dotted: str, label: str) -> None:
         try:
             from tkinter import messagebox
             messagebox.showerror(
-                "Launch failed",
+                _t('gui.shell.main.main.dialogs.launch_failed', default="Launch failed"),
                 f"Could not locate {label} on disk.\n"
                 f"Module: {module_dotted}",
                 parent=self.root)
@@ -1185,7 +1270,7 @@ def _launch_new_feature_module(self, module_dotted: str, label: str) -> None:
         try:
             from tkinter import messagebox
             messagebox.showerror(
-                "Launch failed",
+                _t('gui.shell.main.main.dialogs.launch_failed', default="Launch failed"),
                 f"Could not launch {label}:\n{e}",
                 parent=self.root)
         except Exception:
@@ -1311,7 +1396,7 @@ def show_new_feature_course_evaluation_system(self):
         CourseEvaluationApp,
     )
     top = tk.Toplevel(self.root if hasattr(self, "root") else None)
-    top.title("Course Evaluation")
+    top.title(_t('gui.shell.main.main.windows.course_evaluation', default="Course Evaluation"))
     w, h = 1400, 900
     sw, sh = top.winfo_screenwidth(), top.winfo_screenheight()
     top.geometry(f"{w}x{h}+{(sw - w)//2}+{(sh - h)//2}")
@@ -1365,13 +1450,13 @@ def show_new_feature_safeguarding_system(self):
         )
     except Exception as e:
         from tkinter import messagebox
-        messagebox.showerror("Safeguarding",
+        messagebox.showerror(_t('gui.shell.main.main.dialogs.safeguarding', default="Safeguarding"),
                              f"Could not load Safeguarding module: {e}")
         return
 
     parent = getattr(self, 'root', None) or self
     win = tk.Toplevel(parent)
-    win.title("Safeguarding")
+    win.title(_t('gui.shell.main.main.windows.safeguarding', default="Safeguarding"))
     win.geometry("1400x900")
     win.minsize(1200, 800)
     try:
@@ -1384,7 +1469,7 @@ def show_new_feature_safeguarding_system(self):
         SafeguardingApp(host=host)
     except Exception as e:
         from tkinter import messagebox
-        messagebox.showerror("Safeguarding",
+        messagebox.showerror(_t('gui.shell.main.main.dialogs.safeguarding', default="Safeguarding"),
                              f"Could not start Safeguarding: {e}")
         try:
             win.destroy()
@@ -1519,13 +1604,13 @@ def show_new_feature_first_aid_portal(self):
         )
     except Exception as e:
         from tkinter import messagebox
-        messagebox.showerror("First Aid Portal",
+        messagebox.showerror(_t('gui.shell.main.main.dialogs.first_aid_portal', default="First Aid Portal"),
                              f"Could not load First Aid Portal module: {e}")
         return
 
     parent = getattr(self, 'root', None) or self
     win = tk.Toplevel(parent)
-    win.title("University First Aid Portal")
+    win.title(_t('gui.shell.main.main.windows.university_first_aid_portal', default="University First Aid Portal"))
     w, h = 1400, 900
     sw, sh = win.winfo_screenwidth(), win.winfo_screenheight()
     win.geometry(f"{w}x{h}+{(sw - w)//2}+{(sh - h)//2}")
@@ -1540,7 +1625,7 @@ def show_new_feature_first_aid_portal(self):
         FirstAidPortal(host)
     except Exception as e:
         from tkinter import messagebox
-        messagebox.showerror("First Aid Portal",
+        messagebox.showerror(_t('gui.shell.main.main.dialogs.first_aid_portal', default="First Aid Portal"),
                              f"Could not start First Aid Portal: {e}")
         try:
             win.destroy()

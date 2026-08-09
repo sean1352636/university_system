@@ -1,5 +1,7 @@
 """Barber Shop GUI - Refunds feature methods."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, messagebox, filedialog, logging, csv, json,
     datetime, timedelta,
@@ -107,7 +109,7 @@ class RefundsMixin:
         except Exception as e:
             error_msg = f"Failed to load refunds list: {str(e)}"
             logger.error(f"Error refreshing refunds list: {e}", exc_info=True)
-            messagebox.showerror("Database Error", error_msg)
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.refunds.dialogs.database_error', default="Database Error"), error_msg)
 
     def process_barber_refund(self):
         """Process a refund for a barber shop transaction"""
@@ -117,7 +119,7 @@ class RefundsMixin:
         selection = self.refunds_tree.selection()
         if not selection:
             logger.warning("No transaction selected for refund")
-            messagebox.showwarning("No Selection", "Please select a transaction to refund.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.refunds.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.barber.features.refunds.dialogs.please_select_a_transaction_to_refund', default="Please select a transaction to refund."))
             return
 
         try:
@@ -132,7 +134,7 @@ class RefundsMixin:
             # Check if already refunded
             if status == 'refunded':
                 logger.warning(f"Transaction {transaction_id} already refunded")
-                messagebox.showwarning("Already Refunded", "This transaction has already been refunded.")
+                messagebox.showwarning(_t('gui.operations.commerce.barber.features.refunds.dialogs.already_refunded', default="Already Refunded"), _t('gui.operations.commerce.barber.features.refunds.dialogs.this_transaction_has_already_been_refunded', default="This transaction has already been refunded."))
                 return
 
             # Parse amount
@@ -141,11 +143,11 @@ class RefundsMixin:
                 logger.debug(f"Parsed refund amount: \u00a3{amount:.2f}")
             except Exception as parse_err:
                 logger.error(f"Error parsing amount '{amount_str}': {parse_err}")
-                messagebox.showerror("Invalid Amount", f"Cannot parse amount '{amount_str}'. Please contact support.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.refunds.dialogs.invalid_amount', default="Invalid Amount"), f"Cannot parse amount '{amount_str}'. Please contact support.")
                 return
 
             # Confirm refund
-            if not messagebox.askyesno("Confirm Refund", f"Refund \u00a3{amount:.2f} for Transaction #{transaction_id}?"):
+            if not messagebox.askyesno(_t('gui.operations.commerce.barber.features.refunds.dialogs.confirm_refund', default="Confirm Refund"), f"Refund \u00a3{amount:.2f} for Transaction #{transaction_id}?"):
                 logger.info(f"Refund cancelled by user for transaction {transaction_id}")
                 return
 
@@ -157,7 +159,7 @@ class RefundsMixin:
                 result = cursor.fetchone()
                 if not result:
                     logger.error(f"Transaction {transaction_id} not found in database")
-                    messagebox.showerror("Transaction Not Found", f"Transaction #{transaction_id} could not be found in the database.")
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.refunds.dialogs.transaction_not_found', default="Transaction Not Found"), f"Transaction #{transaction_id} could not be found in the database.")
                     return
                 customer_id = result[0]
                 logger.info(f"Found customer ID: {customer_id}")
@@ -168,7 +170,7 @@ class RefundsMixin:
         except Exception as e:
             error_msg = f"Failed to process refund: {str(e)}"
             logger.error(f"Error processing barber refund: {e}", exc_info=True)
-            messagebox.showerror("Refund Error", error_msg)
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.refunds.dialogs.refund_error', default="Refund Error"), error_msg)
 
     def show_barber_refund_method_dialog(self, transaction_id, amount, customer_id):
         """Show dialog to select refund method"""
@@ -321,12 +323,12 @@ class RefundsMixin:
                 logger.warning(f"Failed to refresh refunds list: {refresh_err}")
 
             logger.info(f"Refund completed successfully: {refund_ref}")
-            messagebox.showinfo("Success", f"Refund processed successfully!\n\nReference: {refund_ref}\nAmount: \u00a3{amount:.2f}\nMethod: {refund_method.title()}")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.refunds.dialogs.success', default="Success"), f"Refund processed successfully!\n\nReference: {refund_ref}\nAmount: \u00a3{amount:.2f}\nMethod: {refund_method.title()}")
 
         except Exception as e:
             error_msg = f"Failed to complete refund: {str(e)}"
             logger.error(f"Error completing barber refund for transaction {transaction_id}: {e}", exc_info=True)
-            messagebox.showerror("Refund Failed", error_msg)
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.refunds.dialogs.refund_failed', default="Refund Failed"), error_msg)
 
     def add_barber_refund_to_student_account(self, transaction_id, amount, customer_id):
         """Add refund amount to student finance account"""
@@ -548,7 +550,7 @@ class RefundsMixin:
         selection = self.refunds_tree.selection()
         if not selection:
             logger.warning("No transaction selected")
-            messagebox.showwarning("No Selection", "Please select a transaction to view.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.refunds.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.barber.features.refunds.dialogs.please_select_a_transaction_to_view', default="Please select a transaction to view."))
             return
 
         try:
@@ -589,7 +591,7 @@ class RefundsMixin:
 
                 if not trans:
                     logger.error(f"Transaction {transaction_id} not found in database")
-                    messagebox.showerror("Not Found", f"Transaction #{transaction_id} could not be found.")
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.refunds.dialogs.not_found', default="Not Found"), f"Transaction #{transaction_id} could not be found.")
                     return
 
                 logger.debug("Transaction data retrieved successfully")
@@ -692,7 +694,7 @@ Financial Details:
         except Exception as e:
             error_msg = f"Failed to load transaction details: {str(e)}"
             logger.error(f"Error viewing transaction details for {transaction_id if 'transaction_id' in locals() else 'unknown'}: {e}", exc_info=True)
-            messagebox.showerror("View Details Error", error_msg)
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.refunds.dialogs.view_details_error', default="View Details Error"), error_msg)
 
     def export_refunds_to_csv(self):
         """Export refunds data to CSV file"""
@@ -771,9 +773,9 @@ Financial Details:
                         continue
 
             logger.info(f"Successfully exported {rows_written} transactions to {file_path}")
-            messagebox.showinfo("Export Successful", f"Refunds exported successfully!\n\nFile: {file_path}\nRecords: {rows_written}")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.refunds.dialogs.export_successful', default="Export Successful"), f"Refunds exported successfully!\n\nFile: {file_path}\nRecords: {rows_written}")
 
         except Exception as e:
             error_msg = f"Failed to export refunds: {str(e)}"
             logger.error(f"Error exporting refunds to CSV: {e}", exc_info=True)
-            messagebox.showerror("Export Error", error_msg)
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.refunds.dialogs.export_error', default="Export Error"), error_msg)

@@ -7,7 +7,12 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import admin_required, token_required
+from education_system.platform.delivery.api.university.auth import (
+    admin_required,
+    current_subject_id,
+    is_staff,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import validate_message_create, validate_newsletter_create
 from education_system.systems.university.infrastructure.exceptions import ValidationError
@@ -72,8 +77,17 @@ def get_message(message_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Message {message_id} not found")
+    # Object-level scope: staff may read any message, but everyone else may
+    # read only messages they sent or received. Without this any authenticated
+    # user could read any other user's private message by id.
+    msg = _row_to_dict(row)
+    if not is_staff():
+        me = current_subject_id()
+        parties = {str(msg.get("sender_id")), str(msg.get("recipient_id"))}
+        if me is None or me not in parties:
+            return jsonify({"error": "Forbidden", "status": 403}), 403
     log_activity("view", "message", user=g.current_user.get("sub"))
-    return jsonify(_row_to_dict(row))
+    return jsonify(msg)
 
 
 @communication_bp.route("/messages", methods=["POST"])

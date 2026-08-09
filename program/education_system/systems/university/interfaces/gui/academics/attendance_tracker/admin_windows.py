@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -36,7 +38,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -95,22 +101,22 @@ class ApiManagementWindow:
         self.create_widgets()
 
     def create_widgets(self):
-        title_label = ttk.Label(self.window, text="🔌 API Management", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.admin_windows.labels.api_management', default="🔌 API Management"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Server controls
-        server_frame = ttk.LabelFrame(self.window, text="API Server Controls", padding=10)
+        server_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.admin_windows.labels.api_server_controls', default="API Server Controls"), padding=10)
         server_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         # Server settings
         settings_grid = ttk.Frame(server_frame)
         settings_grid.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(settings_grid, text="Host:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_grid, text=_t('gui.academics.attendance_tracker.admin_windows.labels.host', default="Host:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.host_var = tk.StringVar(value="127.0.0.1")
         ttk.Entry(settings_grid, textvariable=self.host_var, width=20).grid(row=0, column=1, padx=(10, 0), pady=5)
 
-        ttk.Label(settings_grid, text="Port:").grid(row=0, column=2, sticky=tk.W, padx=(20, 0), pady=5)
+        ttk.Label(settings_grid, text=_t('gui.academics.attendance_tracker.admin_windows.labels.port', default="Port:")).grid(row=0, column=2, sticky=tk.W, padx=(20, 0), pady=5)
         self.port_var = tk.StringVar(value="5000")
         ttk.Entry(settings_grid, textvariable=self.port_var, width=10).grid(row=0, column=3, padx=(10, 0), pady=5)
 
@@ -118,26 +124,26 @@ class ApiManagementWindow:
         button_frame = ttk.Frame(server_frame)
         button_frame.pack(fill=tk.X)
 
-        self.start_button = ttk.Button(button_frame, text="▶ Start Server", command=self.start_server, style='Success.TButton')
+        self.start_button = ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.start_server', default="▶ Start Server"), command=self.start_server, style='Success.TButton')
         self.start_button.pack(side=tk.LEFT, padx=(0, 5))
 
-        self.stop_button = ttk.Button(button_frame, text="⏹ Stop Server", command=self.stop_server, state='disabled', style='Danger.TButton')
+        self.stop_button = ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.stop_server', default="⏹ Stop Server"), command=self.stop_server, state='disabled', style='Danger.TButton')
         self.stop_button.pack(side=tk.LEFT)
 
-        self.status_label = ttk.Label(button_frame, text="● Server Stopped", foreground='red')
+        self.status_label = ttk.Label(button_frame, text=_t('gui.academics.attendance_tracker.admin_windows.labels.server_stopped', default="● Server Stopped"), foreground='red')
         self.status_label.pack(side=tk.LEFT, padx=(20, 0))
 
         # API Documentation
-        doc_frame = ttk.LabelFrame(self.window, text="API Endpoints", padding=10)
+        doc_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.admin_windows.labels.api_endpoints', default="API Endpoints"), padding=10)
         doc_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Create treeview for endpoints
         columns = ('Method', 'Endpoint', 'Description')
         self.endpoints_tree = ttk.Treeview(doc_frame, columns=columns, show='headings', height=8)
 
-        self.endpoints_tree.heading('Method', text='Method')
-        self.endpoints_tree.heading('Endpoint', text='Endpoint')
-        self.endpoints_tree.heading('Description', text='Description')
+        self.endpoints_tree.heading('Method', text=_t('gui.academics.attendance_tracker.admin_windows.headings.method', default='Method'))
+        self.endpoints_tree.heading('Endpoint', text=_t('gui.academics.attendance_tracker.admin_windows.headings.endpoint', default='Endpoint'))
+        self.endpoints_tree.heading('Description', text=_t('gui.academics.attendance_tracker.admin_windows.headings.description', default='Description'))
 
         self.endpoints_tree.column('Method', width=80, anchor='center')
         self.endpoints_tree.column('Endpoint', width=250)
@@ -162,7 +168,7 @@ class ApiManagementWindow:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Example usage
-        example_frame = ttk.LabelFrame(self.window, text="Example Usage", padding=10)
+        example_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.admin_windows.labels.example_usage', default="Example Usage"), padding=10)
         example_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         example_text = scrolledtext.ScrolledText(example_frame, height=6, width=70, wrap=tk.WORD)
@@ -186,7 +192,7 @@ class ApiManagementWindow:
         """Start the API server in a background thread"""
         try:
             if not ORIGINAL_FUNCTIONS_AVAILABLE:
-                messagebox.showerror(_("common.error"), "API system not available. Original attendance_tracker module not found.")
+                messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.admin_windows.dialogs.api_system_not_available_original_attendance_tracker_module_not', default="API system not available. Original attendance_tracker module not found."))
                 return
 
             from education_system.systems.university.domain.academics.services.attendance.attendance_tracker import AttendanceAPI
@@ -212,11 +218,11 @@ class ApiManagementWindow:
             self.stop_button.config(state='normal')
             self.status_label.config(text=f"● Server Running on {host}:{port}", foreground='green')
 
-            messagebox.showinfo("Server Started", f"API server started at http://{host}:{port}")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.admin_windows.dialogs.server_started', default="Server Started"), f"API server started at http://{host}:{port}")
 
         except ValueError:
             logger.exception("admin_windows.py:216 %s", 'except ValueError')
-            messagebox.showerror(_("common.error"), "Invalid port number")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.admin_windows.dialogs.invalid_port_number', default="Invalid port number"))
         except Exception as e:
             logger.exception("admin_windows.py:218 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to start server: {e}")
@@ -226,11 +232,11 @@ class ApiManagementWindow:
         try:
             # Note: Flask doesn't have a clean shutdown method when run directly
             # In production, you'd use a WSGI server like gunicorn
-            messagebox.showinfo("Stop Server", "API server will stop when the application closes.\n\nFor production use, consider using a proper WSGI server.")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.admin_windows.dialogs.stop_server', default="Stop Server"), _t('gui.academics.attendance_tracker.admin_windows.dialogs.api_server_will_stop_when_the_application_closes_for_production', default="API server will stop when the application closes.\n\nFor production use, consider using a proper WSGI server."))
 
             self.start_button.config(state='normal')
             self.stop_button.config(state='disabled')
-            self.status_label.config(text="● Server Stopped", foreground='red')
+            self.status_label.config(text=_t('gui.academics.attendance_tracker.admin_windows.text.server_stopped', default="● Server Stopped"), foreground='red')
 
         except Exception as e:
             logger.exception("admin_windows.py:232 %s", 'except Exception as e')
@@ -239,7 +245,7 @@ class ApiManagementWindow:
     def close_window(self):
         """Close the window"""
         if self.stop_button['state'] == 'normal':
-            response = messagebox.askyesno("Confirm Close", "API server is running. Close anyway?")
+            response = messagebox.askyesno(_t('gui.academics.attendance_tracker.admin_windows.dialogs.confirm_close', default="Confirm Close"), _t('gui.academics.attendance_tracker.admin_windows.dialogs.api_server_is_running_close_anyway', default="API server is running. Close anyway?"))
             if not response:
                 return
 
@@ -276,14 +282,14 @@ class AuditLogsWindow:
     def create_widgets(self):
         title_frame = ttk.Frame(self.window)
         title_frame.pack(fill='x', padx=15, pady=15)
-        ttk.Label(title_frame, text="📋 System Audit Logs", font=('Arial', 16, 'bold')).pack(side='left')
+        ttk.Label(title_frame, text=_t('gui.academics.attendance_tracker.admin_windows.labels.system_audit_logs', default="📋 System Audit Logs"), font=('Arial', 16, 'bold')).pack(side='left')
 
         # Filters
-        filters_frame = ttk.LabelFrame(self.window, text="Filters", padding=15)
+        filters_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.admin_windows.labels.filters', default="Filters"), padding=15)
         filters_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-        self.date_range_var = tk.StringVar(value="Last 7 Days")
-        ttk.Label(filters_frame, text="Date Range:").grid(row=0, column=0, sticky='w')
+        self.date_range_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.admin_windows.values.last_7_days', default="Last 7 Days"))
+        ttk.Label(filters_frame, text=_t('gui.academics.attendance_tracker.admin_windows.labels.date_range', default="Date Range:")).grid(row=0, column=0, sticky='w')
         self.date_combo = ttk.Combobox(
             filters_frame,
             textvariable=self.date_range_var,
@@ -293,17 +299,17 @@ class AuditLogsWindow:
         )
         self.date_combo.grid(row=0, column=1, padx=(5, 20))
 
-        self.level_var = tk.StringVar(value="All Levels")
-        ttk.Label(filters_frame, text="Level:").grid(row=0, column=2, sticky='w')
+        self.level_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.admin_windows.values.all_levels', default="All Levels"))
+        ttk.Label(filters_frame, text=_t('gui.academics.attendance_tracker.admin_windows.labels.level', default="Level:")).grid(row=0, column=2, sticky='w')
         self.level_combo = ttk.Combobox(filters_frame, textvariable=self.level_var, width=16, state='readonly')
         self.level_combo.grid(row=0, column=3, padx=(5, 20))
 
-        self.source_var = tk.StringVar(value="All Sources")
-        ttk.Label(filters_frame, text="Source:").grid(row=0, column=4, sticky='w')
+        self.source_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.admin_windows.values.all_sources', default="All Sources"))
+        ttk.Label(filters_frame, text=_t('gui.academics.attendance_tracker.admin_windows.labels.source', default="Source:")).grid(row=0, column=4, sticky='w')
         self.source_combo = ttk.Combobox(filters_frame, textvariable=self.source_var, width=18, state='readonly')
         self.source_combo.grid(row=0, column=5, padx=(5, 0))
 
-        ttk.Label(filters_frame, text="Search:").grid(row=1, column=0, sticky='w', pady=(12, 0))
+        ttk.Label(filters_frame, text=_t('gui.academics.attendance_tracker.admin_windows.labels.search', default="Search:")).grid(row=1, column=0, sticky='w', pady=(12, 0))
         self.search_var = tk.StringVar()
         ttk.Entry(filters_frame, textvariable=self.search_var, width=38).grid(
             row=1, column=1, columnspan=3, sticky='ew', padx=(5, 20), pady=(12, 0)
@@ -312,12 +318,12 @@ class AuditLogsWindow:
         button_frame = ttk.Frame(filters_frame)
         button_frame.grid(row=1, column=4, columnspan=2, sticky='e', pady=(12, 0))
 
-        ttk.Button(button_frame, text="Apply Filters", command=self.apply_filters).pack(side='left')
-        ttk.Button(button_frame, text="Reset", command=self.reset_filters).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.apply_filters', default="Apply Filters"), command=self.apply_filters).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.reset', default="Reset"), command=self.reset_filters).pack(side='left', padx=5)
         ttk.Button(button_frame, text=_("common.refresh"), command=self.refresh_logs).pack(side='left')
 
         # Logs table
-        table_frame = ttk.LabelFrame(self.window, text="Log Entries", padding=15)
+        table_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.admin_windows.labels.log_entries', default="Log Entries"), padding=15)
         table_frame.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
         columns = ('Timestamp', 'Level', 'Category', 'User', 'Action', 'Source', 'Details')
@@ -340,9 +346,9 @@ class AuditLogsWindow:
         action_bar = ttk.Frame(self.window)
         action_bar.pack(fill='x', padx=15, pady=(0, 10))
 
-        ttk.Button(action_bar, text="View Details", command=self.view_log_details).pack(side='left')
-        ttk.Button(action_bar, text="Export...", command=self.export_logs).pack(side='left', padx=5)
-        ttk.Button(action_bar, text="Archive / Clear", command=self.clear_logs).pack(side='left', padx=5)
+        ttk.Button(action_bar, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.view_details', default="View Details"), command=self.view_log_details).pack(side='left')
+        ttk.Button(action_bar, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.export', default="Export..."), command=self.export_logs).pack(side='left', padx=5)
+        ttk.Button(action_bar, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.archive_clear', default="Archive / Clear"), command=self.clear_logs).pack(side='left', padx=5)
         ttk.Button(action_bar, text=_("common.close"), command=self.window.destroy).pack(side='right')
 
         self.status_var = tk.StringVar(value="")
@@ -494,7 +500,7 @@ class AuditLogsWindow:
 
     def _load_file_logs(self):
         logs = []
-        log_dir = Path(LOG_DIR)
+        log_dir = Path(UNIVERSITY_LOG_DIR)
         for filename in self.LOG_FILES:
             file_path = log_dir / filename
             if not file_path.exists():
@@ -578,8 +584,8 @@ class AuditLogsWindow:
 
         if self.date_range_var.get() == "Custom Range":
             custom = simpledialog.askstring(
-                "Custom Date Range",
-                "Enter custom range as YYYY-MM-DD,YYYY-MM-DD",
+                _t('gui.academics.attendance_tracker.admin_windows.dialogs.custom_date_range', default="Custom Date Range"),
+                _t('gui.academics.attendance_tracker.admin_windows.dialogs.enter_custom_range_as_yyyy_mm_dd_yyyy_mm_dd', default="Enter custom range as YYYY-MM-DD,YYYY-MM-DD"),
                 parent=self.window
             )
             if custom:
@@ -591,7 +597,7 @@ class AuditLogsWindow:
                     range_end = end_dt
                 except Exception:
                     logger.exception("admin_windows.py:583 %s", 'except Exception')
-                    messagebox.showerror("Invalid Range", "Could not parse the supplied date range.")
+                    messagebox.showerror(_t('gui.academics.attendance_tracker.admin_windows.dialogs.invalid_range', default="Invalid Range"), _t('gui.academics.attendance_tracker.admin_windows.dialogs.could_not_parse_the_supplied_date_range', default="Could not parse the supplied date range."))
                     threshold = None
                     range_end = None
             else:
@@ -667,11 +673,11 @@ class AuditLogsWindow:
     # -------------------------------------------------------------- actions ---
     def export_logs(self):
         if not self.filtered_logs:
-            messagebox.showinfo("No Data", "There are no log entries to export.")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.admin_windows.dialogs.no_data', default="No Data"), _t('gui.academics.attendance_tracker.admin_windows.dialogs.there_are_no_log_entries_to_export', default="There are no log entries to export."))
             return
 
         filename = filedialog.asksaveasfilename(
-            title="Export Logs",
+            title=_t('gui.academics.attendance_tracker.admin_windows.dialogs.export_logs', default="Export Logs"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
@@ -692,10 +698,10 @@ class AuditLogsWindow:
                         log['source'],
                         log['details'],
                     ])
-            messagebox.showinfo("Export Complete", f"Exported {len(self.filtered_logs)} log entries to {filename}")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.admin_windows.dialogs.export_complete', default="Export Complete"), f"Exported {len(self.filtered_logs)} log entries to {filename}")
         except Exception as exc:
             logger.exception("admin_windows.py:686 %s", 'except Exception as exc')
-            messagebox.showerror("Export Failed", f"Unable to export logs:\n{exc}")
+            messagebox.showerror(_t('gui.academics.attendance_tracker.admin_windows.dialogs.export_failed', default="Export Failed"), f"Unable to export logs:\n{exc}")
 
     def view_log_details(self, event=None):
         selection = self.logs_tree.selection()
@@ -706,11 +712,11 @@ class AuditLogsWindow:
         values = item['values']
 
         details_window = tk.Toplevel(self.window)
-        details_window.title("Log Entry Details")
+        details_window.title(_t('gui.academics.attendance_tracker.admin_windows.windows.log_entry_details', default="Log Entry Details"))
         details_window.geometry("640x520")
         details_window.transient(self.window)
 
-        details_frame = ttk.LabelFrame(details_window, text="Log Details", padding=15)
+        details_frame = ttk.LabelFrame(details_window, text=_t('gui.academics.attendance_tracker.admin_windows.labels.log_details', default="Log Details"), padding=15)
         details_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
         details_text = scrolledtext.ScrolledText(details_frame, wrap='word', height=22)
@@ -738,9 +744,9 @@ Details
 
     def clear_logs(self):
         messagebox.showinfo(
-            "Archive Logs",
-            "Automated log archival is not yet connected to the database.\n"
-            "Consider exporting the entries you need before removing old data."
+            _t('gui.academics.attendance_tracker.admin_windows.dialogs.archive_logs', default="Archive Logs"),
+            _t('gui.academics.attendance_tracker.admin_windows.dialogs.automated_log_archival_is_not_yet_connected_to_the_database_cons', default="Automated log archival is not yet connected to the database.\n"
+            "Consider exporting the entries you need before removing old data.")
         )
 
     def _set_status(self, message):
@@ -771,34 +777,34 @@ class DiagnosticsWindow:
     def create_widgets(self):
         title_frame = ttk.Frame(self.window)
         title_frame.pack(fill='x', padx=15, pady=15)
-        ttk.Label(title_frame, text="🔧 Attendance System Diagnostics",
+        ttk.Label(title_frame, text=_t('gui.academics.attendance_tracker.admin_windows.labels.attendance_system_diagnostics', default="🔧 Attendance System Diagnostics"),
                  font=('Arial', 16, 'bold')).pack(side='left')
 
-        ttk.Button(title_frame, text="Re-run Checks", command=self.refresh_metrics).pack(side='right')
+        ttk.Button(title_frame, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.re_run_checks', default="Re-run Checks"), command=self.refresh_metrics).pack(side='right')
 
         notebook = ttk.Notebook(self.window)
         notebook.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
         summary_frame = ttk.Frame(notebook)
-        notebook.add(summary_frame, text="System Summary")
+        notebook.add(summary_frame, text=_t('gui.academics.attendance_tracker.admin_windows.tabs.system_summary', default="System Summary"))
         self._build_summary_tab(summary_frame)
 
         data_frame = ttk.Frame(notebook)
-        notebook.add(data_frame, text="Database & Data")
+        notebook.add(data_frame, text=_t('gui.academics.attendance_tracker.admin_windows.tabs.database_data', default="Database & Data"))
         self._build_data_tab(data_frame)
 
         services_frame = ttk.Frame(notebook)
-        notebook.add(services_frame, text="Services & Integrations")
+        notebook.add(services_frame, text=_t('gui.academics.attendance_tracker.admin_windows.tabs.services_integrations', default="Services & Integrations"))
         self._build_services_tab(services_frame)
 
         logs_frame = ttk.Frame(notebook)
-        notebook.add(logs_frame, text="Recent Activity")
+        notebook.add(logs_frame, text=_t('gui.academics.attendance_tracker.admin_windows.tabs.recent_activity', default="Recent Activity"))
         self._build_logs_tab(logs_frame)
 
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy).pack(pady=(0, 10))
 
     def _build_summary_tab(self, parent):
-        overview = ttk.LabelFrame(parent, text="Health Overview", padding=15)
+        overview = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.admin_windows.labels.health_overview', default="Health Overview"), padding=15)
         overview.pack(fill='x', padx=10, pady=10)
 
         summary_items = [
@@ -816,7 +822,7 @@ class DiagnosticsWindow:
             self.summary_labels[key] = value
             overview.grid_columnconfigure(idx, weight=1)
 
-        stats_frame = ttk.LabelFrame(parent, text="Attendance Data Snapshot", padding=15)
+        stats_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.admin_windows.labels.attendance_data_snapshot', default="Attendance Data Snapshot"), padding=15)
         stats_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
 
         stats_columns = ('Metric', 'Value')
@@ -830,7 +836,7 @@ class DiagnosticsWindow:
         self._populate_summary()
 
     def _build_data_tab(self, parent):
-        status_frame = ttk.LabelFrame(parent, text="Table Overview", padding=15)
+        status_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.admin_windows.labels.table_overview', default="Table Overview"), padding=15)
         status_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         columns = ('Table', 'Exists', 'Row Count', 'Notes')
@@ -845,14 +851,14 @@ class DiagnosticsWindow:
 
         actions = ttk.Frame(parent)
         actions.pack(fill='x', padx=10, pady=(0, 10))
-        ttk.Button(actions, text="Run Integrity Check", command=self._run_integrity_check).pack(side='left')
-        ttk.Button(actions, text="Open Maintenance Tools",
+        ttk.Button(actions, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.run_integrity_check', default="Run Integrity Check"), command=self._run_integrity_check).pack(side='left')
+        ttk.Button(actions, text=_t('gui.academics.attendance_tracker.admin_windows.buttons.open_maintenance_tools', default="Open Maintenance Tools"),
                    command=lambda: DatabaseMaintenanceWindow(self.parent)).pack(side='left', padx=5)
 
         self._populate_data_tab()
 
     def _build_services_tab(self, parent):
-        frame = ttk.LabelFrame(parent, text="Integration Status", padding=15)
+        frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.admin_windows.labels.integration_status', default="Integration Status"), padding=15)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         columns = ('Service', 'Status', 'Notes')
@@ -868,7 +874,7 @@ class DiagnosticsWindow:
         self._populate_services_tab()
 
     def _build_logs_tab(self, parent):
-        frame = ttk.LabelFrame(parent, text="Recent Log Activity", padding=15)
+        frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.admin_windows.labels.recent_log_activity', default="Recent Log Activity"), padding=15)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         self.log_text = scrolledtext.ScrolledText(frame, wrap='word', height=18)
@@ -1122,8 +1128,8 @@ class DiagnosticsWindow:
             self.log_text.insert('1.0', "\n\n".join(lines))
 
         # Append tail of log file for manual inspection
-        from education_system.systems.university.infrastructure.paths import LOG_DIR
-        activity_log = LOG_DIR / "app.log"
+        from education_system.paths import UNIVERSITY_LOG_DIR
+        activity_log = UNIVERSITY_LOG_DIR / "app.log"
         if activity_log.exists():
             self.log_text.insert(tk.END, "\n\n--- activity.log (latest entries) ---\n")
             try:
@@ -1143,11 +1149,11 @@ class DiagnosticsWindow:
         self._populate_data_tab()
         self._populate_services_tab()
         self._populate_logs_tab()
-        messagebox.showinfo("Diagnostics", "System diagnostics have been refreshed.")
+        messagebox.showinfo(_t('gui.academics.attendance_tracker.admin_windows.dialogs.diagnostics', default="Diagnostics"), _t('gui.academics.attendance_tracker.admin_windows.dialogs.system_diagnostics_have_been_refreshed', default="System diagnostics have been refreshed."))
 
     def _run_integrity_check(self):
         if not MAIN_DB_AVAILABLE:
-            messagebox.showwarning("Unavailable", "Database helper not available in this environment.")
+            messagebox.showwarning(_t('gui.academics.attendance_tracker.admin_windows.dialogs.unavailable', default="Unavailable"), _t('gui.academics.attendance_tracker.admin_windows.dialogs.database_helper_not_available_in_this_environment', default="Database helper not available in this environment."))
             return
         try:
             conn = get_db_connection()
@@ -1156,10 +1162,10 @@ class DiagnosticsWindow:
             result = cursor.fetchone()
             conn.close()
             message = result[0] if result else "No response"
-            messagebox.showinfo("Integrity Check", f"Database integrity check returned: {message}")
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.admin_windows.dialogs.integrity_check', default="Integrity Check"), f"Database integrity check returned: {message}")
         except Exception as exc:
             logger.exception("admin_windows.py:1143 %s", 'except Exception as exc')
-            messagebox.showerror("Integrity Check Failed", str(exc))
+            messagebox.showerror(_t('gui.academics.attendance_tracker.admin_windows.dialogs.integrity_check_failed', default="Integrity Check Failed"), str(exc))
 
 
 

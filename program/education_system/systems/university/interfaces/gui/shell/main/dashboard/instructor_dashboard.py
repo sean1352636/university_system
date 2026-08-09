@@ -1,5 +1,7 @@
 """Instructor role-based dashboard tab."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -83,23 +85,23 @@ def create_instructor_dashboard(parent_frame, auth, service):
         logger.error(f"Error loading announcements panel: {e}")
 
     # Quick Actions button bar
-    actions_frame = ttk.LabelFrame(scrollable, text="Quick Actions", padding="5")
+    actions_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.quick_actions', default="Quick Actions"), padding="5")
     actions_frame.pack(fill=tk.X, padx=15, pady=5)
     actions_row = ttk.Frame(actions_frame)
     actions_row.pack(fill=tk.X)
 
     root = parent_frame.winfo_toplevel()
-    ttk.Button(actions_row, text="Class Roster",
+    ttk.Button(actions_row, text=_t('gui.shell.main.dashboard.instructor_dashboard.buttons.class_roster', default="Class Roster"),
                command=lambda: _launch_roster(root, auth)).pack(side=tk.LEFT, padx=3)
-    ttk.Button(actions_row, text="Bulk Grade Import",
+    ttk.Button(actions_row, text=_t('gui.shell.main.dashboard.instructor_dashboard.buttons.bulk_grade_import', default="Bulk Grade Import"),
                command=lambda: _launch_bulk_grade(root, auth)).pack(side=tk.LEFT, padx=3)
-    ttk.Button(actions_row, text="Course Messaging",
+    ttk.Button(actions_row, text=_t('gui.shell.main.dashboard.instructor_dashboard.buttons.course_messaging', default="Course Messaging"),
                command=lambda: _launch_messaging(root, auth)).pack(side=tk.LEFT, padx=3)
-    ttk.Button(actions_row, text="Attendance-Grade",
+    ttk.Button(actions_row, text=_t('gui.shell.main.dashboard.instructor_dashboard.buttons.attendance_grade', default="Attendance-Grade"),
                command=lambda: _launch_attendance_grade(root, auth)).pack(side=tk.LEFT, padx=3)
-    ttk.Button(actions_row, text="Course Health",
+    ttk.Button(actions_row, text=_t('gui.shell.main.dashboard.instructor_dashboard.buttons.course_health', default="Course Health"),
                command=lambda: _launch_course_health(root, auth)).pack(side=tk.LEFT, padx=3)
-    ttk.Button(actions_row, text="Semester Analytics",
+    ttk.Button(actions_row, text=_t('gui.shell.main.dashboard.instructor_dashboard.buttons.semester_analytics', default="Semester Analytics"),
                command=lambda: _launch_semester_analytics(root, auth)).pack(side=tk.LEFT, padx=3)
 
     from education_system.systems.university.interfaces.gui.shell.main.dashboard.evaluation_launchers import (
@@ -112,7 +114,7 @@ def create_instructor_dashboard(parent_frame, auth, service):
         ).pack(side=tk.LEFT, padx=3)
 
     # Summary Cards
-    summary_frame = ttk.LabelFrame(scrollable, text="Overview", padding="10")
+    summary_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.overview', default="Overview"), padding="10")
     summary_frame.pack(fill=tk.X, padx=15, pady=5)
 
     cards_frame = ttk.Frame(summary_frame)
@@ -126,16 +128,16 @@ def create_instructor_dashboard(parent_frame, auth, service):
     _create_stat_card(cards_frame, "TAs", str(len(data['ta_assignments'])), 0, 3)
 
     # Courses Taught
-    courses_frame = ttk.LabelFrame(scrollable, text="Courses Taught", padding="10")
+    courses_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.courses_taught', default="Courses Taught"), padding="10")
     courses_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['courses_taught']:
         cols = ('code', 'name', 'credits')
         tree = ttk.Treeview(courses_frame, columns=cols, show='headings',
                             height=min(5, len(data['courses_taught'])))
-        tree.heading('code', text='Code')
-        tree.heading('name', text='Course Name')
-        tree.heading('credits', text='Credits')
+        tree.heading('code', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.code', default='Code'))
+        tree.heading('name', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.course_name', default='Course Name'))
+        tree.heading('credits', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.credits', default='Credits'))
         tree.column('code', width=120)
         tree.column('name', width=300)
         tree.column('credits', width=80)
@@ -147,20 +149,20 @@ def create_instructor_dashboard(parent_frame, auth, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(courses_frame, text="No courses assigned.").pack(anchor="w")
+        ttk.Label(courses_frame, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.no_courses_assigned', default="No courses assigned.")).pack(anchor="w")
 
     # Office Hours
-    oh_frame = ttk.LabelFrame(scrollable, text="My Office Hours", padding="10")
+    oh_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.my_office_hours', default="My Office Hours"), padding="10")
     oh_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['office_hours']:
         cols = ('day', 'time', 'location', 'capacity')
         tree = ttk.Treeview(oh_frame, columns=cols, show='headings',
                             height=min(4, len(data['office_hours'])))
-        tree.heading('day', text='Day')
-        tree.heading('time', text='Time')
-        tree.heading('location', text='Location')
-        tree.heading('capacity', text='Capacity')
+        tree.heading('day', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.day', default='Day'))
+        tree.heading('time', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.time', default='Time'))
+        tree.heading('location', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.location', default='Location'))
+        tree.heading('capacity', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.capacity', default='Capacity'))
         tree.column('day', width=100)
         tree.column('time', width=150)
         tree.column('location', width=150)
@@ -174,21 +176,21 @@ def create_instructor_dashboard(parent_frame, auth, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(oh_frame, text="No office hours configured.").pack(anchor="w")
+        ttk.Label(oh_frame, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.no_office_hours_configured', default="No office hours configured.")).pack(anchor="w")
 
     # Upcoming Bookings
-    bookings_frame = ttk.LabelFrame(scrollable, text="Upcoming Bookings", padding="10")
+    bookings_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.upcoming_bookings', default="Upcoming Bookings"), padding="10")
     bookings_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['upcoming_bookings']:
         cols = ('student', 'date', 'day', 'time', 'notes')
         tree = ttk.Treeview(bookings_frame, columns=cols, show='headings',
                             height=min(5, len(data['upcoming_bookings'])))
-        tree.heading('student', text='Student')
-        tree.heading('date', text='Date')
-        tree.heading('day', text='Day')
-        tree.heading('time', text='Time')
-        tree.heading('notes', text='Notes')
+        tree.heading('student', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.student', default='Student'))
+        tree.heading('date', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.date', default='Date'))
+        tree.heading('day', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.day', default='Day'))
+        tree.heading('time', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.time', default='Time'))
+        tree.heading('notes', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.notes', default='Notes'))
         tree.column('student', width=120)
         tree.column('date', width=100)
         tree.column('day', width=80)
@@ -204,20 +206,20 @@ def create_instructor_dashboard(parent_frame, auth, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(bookings_frame, text="No upcoming bookings.").pack(anchor="w")
+        ttk.Label(bookings_frame, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.no_upcoming_bookings', default="No upcoming bookings.")).pack(anchor="w")
 
     # TA Assignments
     if data['ta_assignments']:
-        ta_frame = ttk.LabelFrame(scrollable, text="Teaching Assistants", padding="10")
+        ta_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.teaching_assistants', default="Teaching Assistants"), padding="10")
         ta_frame.pack(fill=tk.X, padx=15, pady=5)
 
         cols = ('student', 'module', 'role', 'hours')
         tree = ttk.Treeview(ta_frame, columns=cols, show='headings',
                             height=min(4, len(data['ta_assignments'])))
-        tree.heading('student', text='Student ID')
-        tree.heading('module', text='Module')
-        tree.heading('role', text='Role')
-        tree.heading('hours', text='Hours/Week')
+        tree.heading('student', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.student_id', default='Student ID'))
+        tree.heading('module', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.module', default='Module'))
+        tree.heading('role', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.role', default='Role'))
+        tree.heading('hours', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.hours_week', default='Hours/Week'))
         tree.column('student', width=120)
         tree.column('module', width=150)
         tree.column('role', width=100)
@@ -232,7 +234,7 @@ def create_instructor_dashboard(parent_frame, auth, service):
         tree.pack(fill=tk.X)
 
     # --- Feature 21: At-Risk Students ---
-    risk_frame = ttk.LabelFrame(scrollable, text="At-Risk Students", padding="10")
+    risk_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.at_risk_students', default="At-Risk Students"), padding="10")
     risk_frame.pack(fill=tk.X, padx=15, pady=5)
 
     at_risk = data.get('at_risk_students', [])
@@ -240,11 +242,11 @@ def create_instructor_dashboard(parent_frame, auth, service):
         cols = ('student_id', 'name', 'module', 'risk_score', 'risk_level')
         tree = ttk.Treeview(risk_frame, columns=cols, show='headings',
                             height=min(6, len(at_risk)))
-        tree.heading('student_id', text='Student ID')
-        tree.heading('name', text='Name')
-        tree.heading('module', text='Module')
-        tree.heading('risk_score', text='Risk Score')
-        tree.heading('risk_level', text='Risk Level')
+        tree.heading('student_id', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.student_id', default='Student ID'))
+        tree.heading('name', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.name', default='Name'))
+        tree.heading('module', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.module', default='Module'))
+        tree.heading('risk_score', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.risk_score', default='Risk Score'))
+        tree.heading('risk_level', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.risk_level', default='Risk Level'))
         tree.column('student_id', width=100)
         tree.column('name', width=200)
         tree.column('module', width=120)
@@ -265,10 +267,10 @@ def create_instructor_dashboard(parent_frame, auth, service):
             ), tags=(tag,))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(risk_frame, text="No at-risk students detected.").pack(anchor="w")
+        ttk.Label(risk_frame, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.no_at_risk_students_detected', default="No at-risk students detected.")).pack(anchor="w")
 
     # --- Feature 22: Grading Backlog ---
-    backlog_frame = ttk.LabelFrame(scrollable, text="Grading Backlog", padding="10")
+    backlog_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.grading_backlog', default="Grading Backlog"), padding="10")
     backlog_frame.pack(fill=tk.X, padx=15, pady=5)
 
     backlog = data.get('grading_backlog', [])
@@ -276,10 +278,10 @@ def create_instructor_dashboard(parent_frame, auth, service):
         cols = ('assignment', 'module', 'ungraded', 'due_date')
         tree = ttk.Treeview(backlog_frame, columns=cols, show='headings',
                             height=min(6, len(backlog)))
-        tree.heading('assignment', text='Assignment')
-        tree.heading('module', text='Module')
-        tree.heading('ungraded', text='Ungraded')
-        tree.heading('due_date', text='Due Date')
+        tree.heading('assignment', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.assignment', default='Assignment'))
+        tree.heading('module', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.module', default='Module'))
+        tree.heading('ungraded', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.ungraded', default='Ungraded'))
+        tree.heading('due_date', text=_t('gui.shell.main.dashboard.instructor_dashboard.headings.due_date', default='Due Date'))
         tree.column('assignment', width=250)
         tree.column('module', width=120)
         tree.column('ungraded', width=80)
@@ -293,10 +295,10 @@ def create_instructor_dashboard(parent_frame, auth, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(backlog_frame, text="No ungraded submissions.").pack(anchor="w")
+        ttk.Label(backlog_frame, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.no_ungraded_submissions', default="No ungraded submissions.")).pack(anchor="w")
 
     # --- Feature 23: Announcements ---
-    ann_frame = ttk.LabelFrame(scrollable, text="Recent Announcements", padding="10")
+    ann_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.recent_announcements', default="Recent Announcements"), padding="10")
     ann_frame.pack(fill=tk.X, padx=15, pady=5)
 
     announcements = data.get('announcements', [])
@@ -311,25 +313,25 @@ def create_instructor_dashboard(parent_frame, auth, service):
             ttk.Label(a_row, text=ann.get('created_at', ''),
                       font=('Arial', 8)).pack(side=tk.RIGHT)
     else:
-        ttk.Label(ann_frame, text="No recent announcements.").pack(anchor="w")
+        ttk.Label(ann_frame, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.no_recent_announcements', default="No recent announcements.")).pack(anchor="w")
 
     def _create_announcement():
         """Open a simple dialog to create an announcement."""
         dialog = tk.Toplevel(parent_frame.winfo_toplevel())
-        dialog.title("Create Announcement")
+        dialog.title(_t('gui.shell.main.dashboard.instructor_dashboard.windows.create_announcement', default="Create Announcement"))
         dialog.geometry("500x350")
         dialog.transient(parent_frame.winfo_toplevel())
 
-        ttk.Label(dialog, text="Title:").pack(anchor="w", padx=10, pady=(10, 2))
+        ttk.Label(dialog, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.title', default="Title:")).pack(anchor="w", padx=10, pady=(10, 2))
         title_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=title_var, width=60).pack(padx=10)
 
-        ttk.Label(dialog, text="Content:").pack(anchor="w", padx=10, pady=(5, 2))
+        ttk.Label(dialog, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.content', default="Content:")).pack(anchor="w", padx=10, pady=(5, 2))
         content_text = tk.Text(dialog, height=8, wrap=tk.WORD)
         content_text.pack(fill=tk.X, padx=10)
 
-        ttk.Label(dialog, text="Priority:").pack(anchor="w", padx=10, pady=(5, 2))
-        prio_var = tk.StringVar(value="normal")
+        ttk.Label(dialog, text=_t('gui.shell.main.dashboard.instructor_dashboard.labels.priority', default="Priority:")).pack(anchor="w", padx=10, pady=(5, 2))
+        prio_var = tk.StringVar(value=_t('gui.shell.main.dashboard.instructor_dashboard.values.normal', default="normal"))
         ttk.Combobox(dialog, textvariable=prio_var, state='readonly',
                       values=['low', 'normal', 'high', 'urgent'], width=15).pack(anchor="w", padx=10)
 
@@ -337,7 +339,7 @@ def create_instructor_dashboard(parent_frame, auth, service):
             title = title_var.get().strip()
             content = content_text.get("1.0", tk.END).strip()
             if not title or not content:
-                messagebox.showwarning("Missing Fields", "Title and content are required.",
+                messagebox.showwarning(_t('gui.shell.main.dashboard.instructor_dashboard.dialogs.missing_fields', default="Missing Fields"), _t('gui.shell.main.dashboard.instructor_dashboard.dialogs.title_and_content_are_required', default="Title and content are required."),
                                        parent=dialog)
                 return
             try:
@@ -360,14 +362,14 @@ def create_instructor_dashboard(parent_frame, auth, service):
                         "VALUES (?, ?, ?, ?, 'students', 1, ?, ?, ?)",
                         (title, content, is_urgent, creator_id, today, now, now)
                     )
-                messagebox.showinfo("Created", "Announcement created.", parent=dialog)
+                messagebox.showinfo(_t('gui.shell.main.dashboard.instructor_dashboard.dialogs.created', default="Created"), _t('gui.shell.main.dashboard.instructor_dashboard.dialogs.announcement_created', default="Announcement created."), parent=dialog)
                 dialog.destroy()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed: {e}", parent=dialog)
+                messagebox.showerror(_t('gui.shell.main.dashboard.instructor_dashboard.dialogs.error', default="Error"), f"Failed: {e}", parent=dialog)
 
-        ttk.Button(dialog, text="Save", command=_save).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.shell.main.dashboard.instructor_dashboard.buttons.save', default="Save"), command=_save).pack(pady=10)
 
-    ttk.Button(ann_frame, text="Create Announcement",
+    ttk.Button(ann_frame, text=_t('gui.shell.main.dashboard.instructor_dashboard.buttons.create_announcement', default="Create Announcement"),
                command=_create_announcement).pack(anchor="w", pady=(5, 0))
 
 

@@ -286,12 +286,12 @@ def add_photo(item_id: int):
 
     import os
     import hashlib
-    from education_system.systems.university.infrastructure import paths
+    from education_system import paths
 
     photo_data = photo.read()
     photo_hash = hashlib.sha256(photo_data).hexdigest()
 
-    upload_dir = os.path.join(paths.UPLOAD_DIR, "lost_found")
+    upload_dir = os.path.join(paths.UNIVERSITY_UPLOAD_DIR, "lost_found")
     os.makedirs(upload_dir, exist_ok=True)
     # Sanitize: item_id is an int from URL, item_type validated above
     safe_id = int(item_id)

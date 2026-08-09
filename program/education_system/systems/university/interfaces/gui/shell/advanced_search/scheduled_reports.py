@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -887,7 +889,7 @@ def show_scheduled_reports_manager(self):
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(frame, text="Scheduled Reports Manager", style='Title.TLabel').pack(pady=(0, 20))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.scheduled_reports.labels.scheduled_reports_manager', default="Scheduled Reports Manager"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Reports management notebook
     notebook = ttk.Notebook(frame)
@@ -895,7 +897,7 @@ def show_scheduled_reports_manager(self):
 
     # Current reports tab
     current_reports_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(current_reports_frame, text="Scheduled Reports")
+    notebook.add(current_reports_frame, text=_t('gui.shell.advanced_search.scheduled_reports.tabs.scheduled_reports', default="Scheduled Reports"))
 
     # Reports tree
     report_columns = ('ID', 'Name', 'Type', 'Schedule', 'Next Run', 'Status', 'Recipients')
@@ -918,60 +920,60 @@ def show_scheduled_reports_manager(self):
     report_actions = ttk.Frame(current_reports_frame)
     report_actions.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(report_actions, text="Run Now",
+    ttk.Button(report_actions, text=_t('gui.shell.advanced_search.scheduled_reports.buttons.run_now', default="Run Now"),
               command=self.run_selected_report).pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(report_actions, text="Modify",
+    ttk.Button(report_actions, text=_t('gui.shell.advanced_search.scheduled_reports.buttons.modify', default="Modify"),
               command=self.modify_selected_report).pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(report_actions, text="Delete",
+    ttk.Button(report_actions, text=_t('gui.shell.advanced_search.scheduled_reports.buttons.delete', default="Delete"),
               command=self.delete_selected_report).pack(side=tk.LEFT)
 
     # Create report tab
     create_report_frame = ttk.Frame(notebook, padding="10")
-    notebook.add(create_report_frame, text="Create Report")
+    notebook.add(create_report_frame, text=_t('gui.shell.advanced_search.scheduled_reports.tabs.create_report', default="Create Report"))
 
-    ttk.Label(create_report_frame, text="Create New Scheduled Report", style='Header.TLabel').pack(pady=(0, 20))
+    ttk.Label(create_report_frame, text=_t('gui.shell.advanced_search.scheduled_reports.labels.create_new_scheduled_report', default="Create New Scheduled Report"), style='Header.TLabel').pack(pady=(0, 20))
 
     # Report creation form
-    create_form = ttk.LabelFrame(create_report_frame, text="Report Configuration", padding="10")
+    create_form = ttk.LabelFrame(create_report_frame, text=_t('gui.shell.advanced_search.scheduled_reports.labels.report_configuration', default="Report Configuration"), padding="10")
     create_form.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
 
     # Basic info
     basic_frame = ttk.Frame(create_form)
     basic_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(basic_frame, text="Report Name:").pack(anchor='w')
+    ttk.Label(basic_frame, text=_t('gui.shell.advanced_search.scheduled_reports.labels.report_name', default="Report Name:")).pack(anchor='w')
     report_name_var = tk.StringVar()
     ttk.Entry(basic_frame, textvariable=report_name_var, width=40).pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(basic_frame, text="Report Type:").pack(anchor='w')
-    report_type_var = tk.StringVar(value="demographics")
+    ttk.Label(basic_frame, text=_t('gui.shell.advanced_search.scheduled_reports.labels.report_type', default="Report Type:")).pack(anchor='w')
+    report_type_var = tk.StringVar(value=_t('gui.shell.advanced_search.scheduled_reports.values.demographics', default="demographics"))
     report_type_combo = ttk.Combobox(basic_frame, textvariable=report_type_var,
                                    values=["demographics", "performance", "enrollment", "custom_sql"])
     report_type_combo.pack(anchor='w', pady=(0, 10))
 
     # Schedule configuration
-    schedule_frame = ttk.LabelFrame(create_form, text="Schedule Configuration", padding="10")
+    schedule_frame = ttk.LabelFrame(create_form, text=_t('gui.shell.advanced_search.scheduled_reports.labels.schedule_configuration', default="Schedule Configuration"), padding="10")
     schedule_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(schedule_frame, text="Frequency:").pack(anchor='w')
-    frequency_var = tk.StringVar(value="weekly")
+    ttk.Label(schedule_frame, text=_t('gui.shell.advanced_search.scheduled_reports.labels.frequency', default="Frequency:")).pack(anchor='w')
+    frequency_var = tk.StringVar(value=_t('gui.shell.advanced_search.scheduled_reports.values.weekly', default="weekly"))
 
     frequencies = [("Daily", "daily"), ("Weekly", "weekly"), ("Monthly", "monthly"), ("Quarterly", "quarterly")]
     for text, value in frequencies:
         ttk.Radiobutton(schedule_frame, text=text, variable=frequency_var, value=value).pack(anchor='w')
 
     # Recipients
-    recipients_frame = ttk.LabelFrame(create_form, text="Recipients", padding="10")
+    recipients_frame = ttk.LabelFrame(create_form, text=_t('gui.shell.advanced_search.scheduled_reports.labels.recipients', default="Recipients"), padding="10")
     recipients_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(recipients_frame, text="Email Recipients (comma-separated):").pack(anchor='w')
+    ttk.Label(recipients_frame, text=_t('gui.shell.advanced_search.scheduled_reports.labels.email_recipients_comma_separated', default="Email Recipients (comma-separated):")).pack(anchor='w')
     recipients_var = tk.StringVar()
     ttk.Entry(recipients_frame, textvariable=recipients_var, width=50).pack(fill=tk.X)
 
     def create_scheduled_report():
         name = report_name_var.get().strip()
         if not name:
-            messagebox.showwarning("_t('advanced_search.missing_name')", "Please enter a report name.")
+            messagebox.showwarning(_t('gui.shell.advanced_search.scheduled_reports.dialogs.t_advanced_search_missing_name', default="_t('advanced_search.missing_name')"), _t('gui.shell.advanced_search.scheduled_reports.dialogs.please_enter_a_report_name', default="Please enter a report name."))
             return
 
         report_type = report_type_var.get()
@@ -986,7 +988,7 @@ def show_scheduled_reports_manager(self):
         report_name_var.set("")
         recipients_var.set("")
 
-    ttk.Button(create_form, text="Create Scheduled Report", command=create_scheduled_report).pack(pady=10)
+    ttk.Button(create_form, text=_t('gui.shell.advanced_search.scheduled_reports.buttons.create_scheduled_report', default="Create Scheduled Report"), command=create_scheduled_report).pack(pady=10)
 
     ttk.Button(frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack()
 AdvancedSearchGUI.show_scheduled_reports_manager = show_scheduled_reports_manager
@@ -1013,7 +1015,7 @@ def run_selected_report(self):
     """Run selected scheduled report immediately"""
     selection = self.reports_tree.selection()
     if not selection:
-        messagebox.showwarning("_t('advanced_search.no_selection')", "Please select a report to run.")
+        messagebox.showwarning(_t('gui.shell.advanced_search.scheduled_reports.dialogs.t_advanced_search_no_selection', default="_t('advanced_search.no_selection')"), _t('gui.shell.advanced_search.scheduled_reports.dialogs.please_select_a_report_to_run', default="Please select a report to run."))
         return
 
     item = self.reports_tree.item(selection[0])
@@ -1040,7 +1042,7 @@ def modify_selected_report(self):
     """Modify selected scheduled report"""
     selection = self.reports_tree.selection()
     if not selection:
-        messagebox.showwarning("_t('advanced_search.no_selection')", "Please select a report to modify.")
+        messagebox.showwarning(_t('gui.shell.advanced_search.scheduled_reports.dialogs.t_advanced_search_no_selection', default="_t('advanced_search.no_selection')"), _t('gui.shell.advanced_search.scheduled_reports.dialogs.please_select_a_report_to_modify', default="Please select a report to modify."))
         return
 
     item = self.reports_tree.item(selection[0])
@@ -1053,13 +1055,13 @@ def delete_selected_report(self):
     """Delete selected scheduled report"""
     selection = self.reports_tree.selection()
     if not selection:
-        messagebox.showwarning("_t('advanced_search.no_selection')", "Please select a report to delete.")
+        messagebox.showwarning(_t('gui.shell.advanced_search.scheduled_reports.dialogs.t_advanced_search_no_selection', default="_t('advanced_search.no_selection')"), _t('gui.shell.advanced_search.scheduled_reports.dialogs.please_select_a_report_to_delete', default="Please select a report to delete."))
         return
 
     item = self.reports_tree.item(selection[0])
     report_name = item['values'][1]
 
-    if messagebox.askyesno("Confirm Delete", f"Delete scheduled report '{report_name}'?"):
+    if messagebox.askyesno(_t('gui.shell.advanced_search.scheduled_reports.dialogs.confirm_delete', default="Confirm Delete"), f"Delete scheduled report '{report_name}'?"):
         self.reports_tree.delete(selection[0])
         messagebox.showinfo(_t("advanced_search.scheduled_reports.report_deleted_title"), _t("advanced_search.scheduled_reports.report_deleted_msg", name=report_name))
 AdvancedSearchGUI.delete_selected_report = delete_selected_report

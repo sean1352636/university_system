@@ -2,6 +2,8 @@
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import threading
@@ -28,7 +30,7 @@ class _LifecycleMixin:
         self.parent_notebook = parent_notebook
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Course Planning")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.error', default="Error"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.login_required_to_access_course_planning', default="Login required to access Course Planning"))
             return
 
         self.user_role = self.current_user.get('role', 'student').lower()
@@ -49,14 +51,14 @@ class _LifecycleMixin:
                         first_student = conn.execute("SELECT student_id FROM students LIMIT 1").fetchone()
                         if first_student:
                             self.student_id = first_student['student_id']
-                            messagebox.showwarning("No Student Selected",
+                            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.no_student_selected', default="No Student Selected"),
                                                   f"Using first available student: {self.student_id}\n\n"
                                                   "You can switch students using the 'Switch Student' button.")
                         else:
-                            messagebox.showerror("Error", "No students found in database")
+                            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.error', default="Error"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.no_students_found_in_database', default="No students found in database"))
                             return
                 except Exception:
-                    messagebox.showerror("Error", "Failed to load student data")
+                    messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.error', default="Error"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.failed_to_load_student_data', default="Failed to load student data"))
                     return
 
             self.viewing_as_admin = True
@@ -127,11 +129,11 @@ class _LifecycleMixin:
         if self.parent_notebook:
             # Embedded mode - add to parent notebook
             self.window = ttk.Frame(self.parent_notebook)
-            self.parent_notebook.add(self.window, text="Course Planning")
+            self.parent_notebook.add(self.window, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.tabs.course_planning', default="Course Planning"))
         else:
             # Standalone mode - create new window
             self.window = tk.Toplevel(self.root)
-            self.window.title("Course Planning Assistant")
+            self.window.title(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.windows.course_planning_assistant', default="Course Planning Assistant"))
             self.window.geometry("1400x900")
             self.window.minsize(1200, 800)
 
@@ -150,7 +152,7 @@ class _LifecycleMixin:
             header_frame = ttk.Frame(self.window)
             header_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Label(header_frame, text="Course Planning Assistant",
+            ttk.Label(header_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.labels.course_planning_assistant', default="Course Planning Assistant"),
                      style='Header.TLabel').pack(side=tk.LEFT)
 
             # Show logged-in user and which student is being viewed
@@ -173,7 +175,7 @@ class _LifecycleMixin:
             ttk.Label(header_frame, text=user_info, style='Subheader.TLabel').pack(side=tk.RIGHT)
 
         # Status bar (create early so methods can update it)
-        self.status_bar = ttk.Label(self.window, text="Ready - Course Planning Assistant v1.0",
+        self.status_bar = ttk.Label(self.window, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.labels.ready_course_planning_assistant_v1_0', default="Ready - Course Planning Assistant v1.0"),
                                      relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
@@ -181,8 +183,8 @@ class _LifecycleMixin:
         if not self.parent_notebook:
             bottom_frame = ttk.Frame(self.window)
             bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-            ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
-            ttk.Button(bottom_frame, text="Switch to CLI", command=self._switch_to_cli).pack(side=tk.LEFT, padx=5)
+            ttk.Button(bottom_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+            ttk.Button(bottom_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.buttons.switch_to_cli', default="Switch to CLI"), command=self._switch_to_cli).pack(side=tk.LEFT, padx=5)
 
         # Main notebook with tabs
         self.notebook = ttk.Notebook(self.window)
@@ -244,21 +246,21 @@ class _LifecycleMixin:
             curr = CurriculumSpecificationService()
         except Exception as e:
             from tkinter import messagebox
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.error', default="Error"),
                                  f"Curriculum Specification unavailable: {e}")
             return
 
         programmes = curr.list_programmes()
         if not programmes:
             from tkinter import messagebox
-            messagebox.showinfo("No data",
-                                "No programme specifications have been defined yet.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.no_data', default="No data"),
+                                _t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.no_programme_specifications_have_been_defined_yet', default="No programme specifications have been defined yet."))
             return
 
         choices = "\n".join(f"  [{p['id']}] {p['code']} v{p['version']} — {p['title']}"
                             for p in programmes)
         prog_id = simpledialog.askinteger(
-            "Programme",
+            _t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.programme', default="Programme"),
             f"Select a programme ID:\n\n{choices}",
             parent=self.window if self.window else self.root,
         )
@@ -316,22 +318,22 @@ class _LifecycleMixin:
             cli_thread.start()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to launch CLI: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.error', default="Error"), f"Failed to launch CLI: {e}")
 
     def _select_student_for_planning(self):
         """Show dialog for admin to select a student."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Select Student for Course Planning")
+        dialog.title(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.windows.select_student_for_course_planning', default="Select Student for Course Planning"))
         dialog.geometry("600x500")
         dialog.transient(self.root)
         dialog.grab_set()
 
         selected_student_id = None
 
-        ttk.Label(dialog, text="Select Student for Course Planning",
+        ttk.Label(dialog, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.labels.select_student_for_course_planning', default="Select Student for Course Planning"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
-        ttk.Label(dialog, text="Search by Student ID or Name:",
+        ttk.Label(dialog, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.labels.search_by_student_id_or_name', default="Search by Student ID or Name:"),
                  font=('Arial', 11)).pack(pady=5)
 
         # Search frame
@@ -383,13 +385,13 @@ class _LifecycleMixin:
                     students_listbox.insert(tk.END, display)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load students: {e}")
+                messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.error', default="Error"), f"Failed to load students: {e}")
 
         # Search button
-        ttk.Button(search_frame, text="Search",
+        ttk.Button(search_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.buttons.search', default="Search"),
                   command=lambda: load_students(search_var.get())).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(search_frame, text="Show All",
+        ttk.Button(search_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.buttons.show_all', default="Show All"),
                   command=lambda: load_students()).pack(side=tk.LEFT, padx=5)
 
         # Buttons
@@ -400,16 +402,16 @@ class _LifecycleMixin:
             nonlocal selected_student_id
             selection = students_listbox.curselection()
             if not selection:
-                messagebox.showwarning("Warning", "Please select a student")
+                messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.please_select_a_student', default="Please select a student"))
                 return
 
             selected_text = students_listbox.get(selection[0])
             selected_student_id = selected_text.split(' - ')[0]
             dialog.destroy()
 
-        ttk.Button(button_frame, text="Select Student",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.buttons.select_student', default="Select Student"),
                   command=select_student).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.buttons.cancel', default="Cancel"),
                   command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Double-click to select
@@ -437,7 +439,7 @@ class _LifecycleMixin:
             # Update header to show new student
             if hasattr(self, 'window'):
                 # Recreate the window to update all student-specific info
-                messagebox.showinfo("Student Changed",
+                messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.lifecycle.dialogs.student_changed', default="Student Changed"),
                                    f"Now viewing plans for student: {new_student_id}\n\n"
                                    "The view has been refreshed.")
 

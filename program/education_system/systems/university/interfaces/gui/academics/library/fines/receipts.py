@@ -2,6 +2,8 @@
 Library Fines Management - Receipt generation and display.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.scrolledtext import ScrolledText
@@ -17,7 +19,7 @@ except ImportError:
 def generate_fine_receipt_gui(self, loan_id, amount, payment_method, payment_date):
     """Generate and display fine receipt"""
     receipt_window = tk.Toplevel(self.master)
-    receipt_window.title("Fine Payment Receipt")
+    receipt_window.title(_t('gui.academics.library.fines.receipts.windows.fine_payment_receipt', default="Fine Payment Receipt"))
     receipt_window.geometry("500x600")
 
     try:
@@ -92,7 +94,7 @@ For questions, please contact the library front desk.
             button_frame = ttk.Frame(receipt_window)
             button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Button(button_frame, text="Save Receipt", command=print_receipt).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.library.fines.receipts.buttons.save_receipt', default="Save Receipt"), command=print_receipt).pack(side=tk.LEFT, padx=5)
             ttk.Button(button_frame, text=_("common.close"), command=receipt_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     except (OSError, IOError, tk.TclError, ValueError, TypeError) as e:

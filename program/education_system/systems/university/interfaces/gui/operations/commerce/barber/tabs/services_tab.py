@@ -1,5 +1,7 @@
 """Barber Shop GUI - Services tab creation."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, _t,
 )
@@ -20,7 +22,7 @@ class ServicesTabMixin:
         columns = ('id', 'name', 'type', 'duration', 'price')
         self.services_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
 
-        self.services_tree.heading('id', text='ID')
+        self.services_tree.heading('id', text=_t('gui.operations.commerce.barber.tabs.services_tab.headings.id', default='ID'))
         self.services_tree.heading('name', text=_t("barber.labels.service_name"))
         self.services_tree.heading('type', text=_t("barber.labels.type"))
         self.services_tree.heading('duration', text=_t("barber.labels.duration"))

@@ -1,9 +1,15 @@
 """
 Audit Logging Helper Functions
 
-Provides utility functions for safely logging security events to the
-immutable audit log. These helpers handle exceptions gracefully to ensure
-that audit logging failures never break application functionality.
+Provides utility functions for logging security events to the immutable
+audit log.
+
+Audit failures are never silently suppressed. Every failed write raises an
+operational alert via ``alert_security_failure`` (structured critical log +
+audit-of-the-failure + metric). Callers on a mutation path pass
+``required=True`` so the failure propagates as :class:`AuditWriteError` and
+the surrounding transaction can roll back — the mutation and its audit record
+succeed together or not at all.
 
 Usage:
     from education_system.systems.university.infrastructure.security.audit_helpers import (
@@ -33,6 +39,15 @@ from typing import Any, Dict, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 
+class AuditWriteError(RuntimeError):
+    """Raised when a required audit record could not be written.
+
+    Callers on a mutation path let this propagate so the surrounding
+    transaction rolls back: the change and its audit record commit together
+    or not at all.
+    """
+
+
 def safe_log_security_event(
     action: str,
     user_id: Optional[str] = None,
@@ -42,39 +57,37 @@ def safe_log_security_event(
     ip_address: Optional[str] = None,
     user_agent: Optional[str] = None,
     session_id: Optional[str] = None,
+    *,
+    required: bool = False,
 ) -> bool:
     """
-    Safely log a security event to the immutable audit log.
+    Log a security event to the immutable audit log.
 
-    This wrapper function catches all exceptions to ensure that audit logging
-    failures never break application functionality. The actual logging is
-    still attempted, but failures are logged and suppressed.
-
-    This is the recommended way to add audit logging to existing code paths
-    where you don't want logging failures to affect user operations.
+    Failures are **never silently suppressed**. Every failed write raises an
+    operational alert (structured critical log + audit-of-the-failure +
+    metric) via ``alert_security_failure`` so a degraded audit sink is visible
+    rather than lost among log noise.
 
     Args:
         action: The audit action (use AuditAction constants)
         user_id: Identifier of the user performing the action
-        resource_type: Type of resource being accessed (e.g., 'session', 'student', 'grade')
+        resource_type: Type of resource being accessed (e.g. 'session', 'grade')
         resource_id: Identifier of the specific resource
         details: Additional details as a dictionary
         ip_address: Client IP address
         user_agent: Client user agent string
         session_id: Session identifier
+        required: When True (the correct choice on any mutation path), a write
+            failure raises :class:`AuditWriteError` so the caller's transaction
+            can roll back. When False, the failure is still alerted but the
+            function returns False instead of raising — use only for telemetry
+            that must not, itself, be able to abort an operation.
 
     Returns:
-        True if logging succeeded, False if it failed
+        True if logging succeeded, False if it failed and ``required`` is False.
 
-    Example:
-        >>> from education_system.systems.university.infrastructure.security.immutable_audit_log import AuditAction
-        >>> safe_log_security_event(
-        ...     action=AuditAction.LOGIN_SUCCESS,
-        ...     user_id='admin',
-        ...     resource_type='session',
-        ...     details={'username': 'admin', 'role': 'admin'}
-        ... )
-        True
+    Raises:
+        AuditWriteError: if the write fails and ``required`` is True.
     """
     try:
         from education_system.systems.university.infrastructure.security.immutable_audit_log import (
@@ -93,13 +106,43 @@ def safe_log_security_event(
         )
         return True
 
-    except ImportError as e:
-        logger.warning(f"Immutable audit log not available: {e}")
-        return False
     except Exception as e:
-        # Log the failure but don't raise - audit logging should never break app
-        logger.error(f"Failed to log security event ({action}): {e}")
+        # Never swallow: a failed audit write is itself a security-control
+        # failure and must surface on the alerting path, not just a log line.
+        _alert_audit_failure(action, resource_type, resource_id, user_id, e)
+        if required:
+            raise AuditWriteError(
+                f"Required audit record for {action!r} could not be written"
+            ) from e
         return False
+
+
+def _alert_audit_failure(
+    action: str,
+    resource_type: Optional[str],
+    resource_id: Optional[str],
+    user_id: Optional[str],
+    exc: BaseException,
+) -> None:
+    """Route an audit-write failure to the platform alerting path."""
+    try:
+        from education_system.platform.governance.security.fail_closed import (
+            alert_security_failure,
+        )
+
+        alert_security_failure(
+            "audit.write",
+            f"audit write failed for action={action} "
+            f"resource={resource_type}:{resource_id}",
+            user_id=user_id,
+            severity="high",
+            exc=exc,
+        )
+    except Exception:  # noqa: BLE001 — the floor below always records it
+        logger.critical(
+            "AUDIT WRITE FAILED and alerting is unavailable (action=%s): %s",
+            action, exc, exc_info=True,
+        )
 
 
 def get_gui_context() -> Tuple[Optional[str], Optional[str]]:

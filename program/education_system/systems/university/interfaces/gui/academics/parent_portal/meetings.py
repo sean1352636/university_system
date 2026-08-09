@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -48,22 +50,22 @@ def show_meeting_interface(self):
     self.clear_content()
     self.update_status("Schedule Meeting")
 
-    title = ttk.Label(self.content_frame, text="Schedule Meeting", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.meetings.labels.schedule_meeting', default="Schedule Meeting"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Meeting request form
-    form_frame = ttk.LabelFrame(self.content_frame, text="Meeting Request", padding=20)
+    form_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.meetings.labels.meeting_request', default="Meeting Request"), padding=20)
     form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     # Meeting with
-    ttk.Label(form_frame, text="Meeting With:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.meeting_with', default="Meeting With:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
     meeting_with_var = tk.StringVar()
     meeting_combo = ttk.Combobox(form_frame, textvariable=meeting_with_var, width=40)
     meeting_combo['values'] = ["Select...", "Instructor", "Department Head", "Academic Advisor", "Accessibility Services", "University Health Services"]
     meeting_combo.grid(row=0, column=1, pady=5, sticky='ew')
 
     # Regarding child
-    ttk.Label(form_frame, text="Regarding Child:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.regarding_child', default="Regarding Child:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(form_frame, textvariable=child_var, width=40)
     if self.children:
@@ -71,27 +73,27 @@ def show_meeting_interface(self):
     child_combo.grid(row=1, column=1, pady=5, sticky='ew')
 
     # Preferred date
-    ttk.Label(form_frame, text="Preferred Date:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.preferred_date', default="Preferred Date:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
     date_entry = ttk.Entry(form_frame, width=40)
     date_entry.insert(0, "YYYY-MM-DD")
     date_entry.grid(row=2, column=1, pady=5, sticky='ew')
 
     # Preferred time
-    ttk.Label(form_frame, text="Preferred Time:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.preferred_time', default="Preferred Time:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=5)
     time_var = tk.StringVar()
     time_combo = ttk.Combobox(form_frame, textvariable=time_var, width=40)
     time_combo['values'] = ["Morning (8:00-12:00)", "Afternoon (12:00-16:00)", "Evening (16:00-18:00)"]
     time_combo.grid(row=3, column=1, pady=5, sticky='ew')
 
     # Meeting type
-    ttk.Label(form_frame, text="Meeting Type:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.meeting_type', default="Meeting Type:"), font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=5)
     type_var = tk.StringVar()
     type_combo = ttk.Combobox(form_frame, textvariable=type_var, width=40)
     type_combo['values'] = ["In-Person", "Video Call", "Phone Call"]
     type_combo.grid(row=4, column=1, pady=5, sticky='ew')
 
     # Purpose
-    ttk.Label(form_frame, text="Purpose:", font=('Arial', 10, 'bold')).grid(row=5, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.purpose', default="Purpose:"), font=('Arial', 10, 'bold')).grid(row=5, column=0, sticky='nw', pady=5)
     purpose_text = scrolledtext.ScrolledText(form_frame, height=8, width=40, wrap=tk.WORD)
     purpose_text.grid(row=5, column=1, pady=5, sticky='ew')
 
@@ -110,7 +112,7 @@ def show_meeting_interface(self):
         purpose = purpose_text.get('1.0', tk.END).strip()
 
         if not all([meeting_with, child, date, time, meeting_type, purpose]) or meeting_with == "Select...":
-            messagebox.showwarning("Incomplete Form", "Please fill in all fields.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.meetings.dialogs.incomplete_form', default="Incomplete Form"), _t('gui.academics.parent_portal.meetings.dialogs.please_fill_in_all_fields', default="Please fill in all fields."))
             return
 
         try:
@@ -132,17 +134,17 @@ def show_meeting_interface(self):
                 conn.commit()
 
             conn.close()
-            messagebox.showinfo("Success", "Meeting request submitted successfully!\n\n"
-                                          "You will receive confirmation once the meeting is scheduled.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.meetings.dialogs.success', default="Success"), _t('gui.academics.parent_portal.meetings.dialogs.meeting_request_submitted_successfully_you_will_receive_confirma', default="Meeting request submitted successfully!\n\n"
+                                          "You will receive confirmation once the meeting is scheduled."))
             self.show_dashboard()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to submit meeting request: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.meetings.dialogs.error', default="Error"), f"Failed to submit meeting request: {str(e)}")
 
-    ttk.Button(btn_frame, text="Submit Request", command=submit_meeting_request).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=self.show_dashboard).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.meetings.buttons.submit_request', default="Submit Request"), command=submit_meeting_request).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.meetings.buttons.cancel', default="Cancel"), command=self.show_dashboard).pack(side=tk.LEFT, padx=5)
 
     # Show existing meetings
-    existing_frame = ttk.LabelFrame(self.content_frame, text="Upcoming Meetings", padding=15)
+    existing_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.meetings.labels.upcoming_meetings', default="Upcoming Meetings"), padding=15)
     existing_frame.pack(fill=tk.X, padx=20, pady=10)
 
     try:
@@ -170,9 +172,9 @@ def show_meeting_interface(self):
                     meeting_info = f"{meeting[0]} at {meeting[1]} - {meeting[2]} ({meeting[3]}) - Status: {meeting[4]}"
                     ttk.Label(existing_frame, text=meeting_info).pack(anchor='w', pady=2)
             else:
-                ttk.Label(existing_frame, text="No upcoming meetings scheduled").pack()
+                ttk.Label(existing_frame, text=_t('gui.academics.parent_portal.meetings.labels.no_upcoming_meetings_scheduled', default="No upcoming meetings scheduled")).pack()
         else:
-            ttk.Label(existing_frame, text="No meetings scheduled").pack()
+            ttk.Label(existing_frame, text=_t('gui.academics.parent_portal.meetings.labels.no_meetings_scheduled', default="No meetings scheduled")).pack()
 
         conn.close()
 
@@ -185,15 +187,15 @@ def show_report_issue_interface(self):
     self.clear_content()
     self.update_status("Report Issue")
 
-    title = ttk.Label(self.content_frame, text="Report Issue", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.meetings.labels.report_issue', default="Report Issue"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Issue report form
-    form_frame = ttk.LabelFrame(self.content_frame, text="Report an Issue to University Administration", padding=20)
+    form_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.meetings.labels.report_an_issue_to_university_administration', default="Report an Issue to University Administration"), padding=20)
     form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     # Category
-    ttk.Label(form_frame, text="Category:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.category', default="Category:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
     category_var = tk.StringVar()
     category_combo = ttk.Combobox(form_frame, textvariable=category_var, width=40, state='readonly')
     category_combo['values'] = ["Academic concern", "Behavioral concern", "Facility issue",
@@ -201,12 +203,12 @@ def show_report_issue_interface(self):
     category_combo.grid(row=0, column=1, pady=5, sticky='ew')
 
     # Subject
-    ttk.Label(form_frame, text="Subject:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.subject', default="Subject:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
     subject_entry = ttk.Entry(form_frame, width=40)
     subject_entry.grid(row=1, column=1, pady=5, sticky='ew')
 
     # Priority
-    ttk.Label(form_frame, text="Priority:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.priority', default="Priority:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
     priority_var = tk.StringVar()
     priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, width=40, state='readonly')
     priority_combo['values'] = ["Low", "Medium", "High"]
@@ -214,7 +216,7 @@ def show_report_issue_interface(self):
     priority_combo.grid(row=2, column=1, pady=5, sticky='ew')
 
     # Description
-    ttk.Label(form_frame, text="Description:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.meetings.labels.description', default="Description:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='nw', pady=5)
     description_text = scrolledtext.ScrolledText(form_frame, height=10, width=40, wrap=tk.WORD)
     description_text.grid(row=3, column=1, pady=5, sticky='ew')
 
@@ -231,19 +233,19 @@ def show_report_issue_interface(self):
         description = description_text.get('1.0', tk.END).strip()
 
         if not category:
-            messagebox.showwarning("Validation Error", "Please select a category.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.meetings.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.meetings.dialogs.please_select_a_category', default="Please select a category."))
             return
 
         if not subject:
-            messagebox.showwarning("Validation Error", "Please enter a subject.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.meetings.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.meetings.dialogs.please_enter_a_subject', default="Please enter a subject."))
             return
 
         if not description:
-            messagebox.showwarning("Validation Error", "Please enter a detailed description.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.meetings.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.meetings.dialogs.please_enter_a_detailed_description', default="Please enter a detailed description."))
             return
 
         if not self.parent_id:
-            messagebox.showerror("Error", "Parent ID not found. Please log in again.")
+            messagebox.showerror(_t('gui.academics.parent_portal.meetings.dialogs.error', default="Error"), _t('gui.academics.parent_portal.meetings.dialogs.parent_id_not_found_please_log_in_again', default="Parent ID not found. Please log in again."))
             return
 
         try:
@@ -303,10 +305,8 @@ def show_report_issue_interface(self):
                         'description': description
                     })
 
-                    # Fallback if template not found
                     if not email_subject or not email_body:
-                        email_subject = f"[Parent Issue #{issue_id}] {category}: {subject}"
-                        email_body = f"New Parent Issue Report\n\nTracking ID: #{issue_id}\nSubmitted by: {parent_name} (Parent ID: {self.parent_id})\nCategory: {category}\nPriority: {priority.upper()}\nSubject: {subject}\n\nDescription:\n{description}\n\n---\nPlease respond to this issue within 24-48 hours."
+                        raise RuntimeError("parent_issue_report template is empty")
 
                     send_email(admin_email, email_subject, email_body)
                 except Exception as email_error:
@@ -314,20 +314,20 @@ def show_report_issue_interface(self):
 
             conn.close()
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.parent_portal.meetings.dialogs.success', default="Success"),
                 f"Issue reported successfully!\n\nTracking ID: #{issue_id}\n\n"
                 "University administration has been notified and will respond within 24-48 hours.")
             self.update_status("Issue reported successfully")
             self.show_communication_menu()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to submit issue: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.meetings.dialogs.error', default="Error"), f"Failed to submit issue: {str(e)}")
 
-    ttk.Button(btn_frame, text="Submit Issue", command=submit_issue).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Cancel", command=self.show_communication_menu).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.meetings.buttons.submit_issue', default="Submit Issue"), command=submit_issue).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.meetings.buttons.cancel', default="Cancel"), command=self.show_communication_menu).pack(side=tk.LEFT, padx=5)
 
     # Show recent issues
-    recent_frame = ttk.LabelFrame(self.content_frame, text="Your Recent Issues", padding=15)
+    recent_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.meetings.labels.your_recent_issues', default="Your Recent Issues"), padding=15)
     recent_frame.pack(fill=tk.X, padx=20, pady=10)
 
     try:
@@ -368,9 +368,9 @@ def show_report_issue_interface(self):
 
                 tree.pack(fill=tk.X, pady=5)
             else:
-                ttk.Label(recent_frame, text="No issues reported yet").pack()
+                ttk.Label(recent_frame, text=_t('gui.academics.parent_portal.meetings.labels.no_issues_reported_yet', default="No issues reported yet")).pack()
         else:
-            ttk.Label(recent_frame, text="No issues reported yet").pack()
+            ttk.Label(recent_frame, text=_t('gui.academics.parent_portal.meetings.labels.no_issues_reported_yet', default="No issues reported yet")).pack()
 
         conn.close()
 

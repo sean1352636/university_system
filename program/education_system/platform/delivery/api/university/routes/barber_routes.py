@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import staff_required, token_required
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -161,6 +161,7 @@ def list_appointments():
 
 @barber_bp.route("/appointments/<int:appointment_id>", methods=["GET"])
 @token_required
+@staff_required
 def get_appointment(appointment_id: int):
     with get_connection() as conn:
         row = conn.execute(
@@ -284,6 +285,7 @@ def create_staff():
 
 @barber_bp.route("/services/<int:service_id>", methods=["PUT"])
 @token_required
+@staff_required
 def update_service(service_id: int):
     data = request.get_json(silent=True) or {}
     set_parts: list[str] = []
@@ -325,6 +327,7 @@ def update_service(service_id: int):
 
 @barber_bp.route("/appointments/<int:appointment_id>/status", methods=["PUT"])
 @token_required
+@staff_required
 def update_appointment_status(appointment_id: int):
     data = request.get_json(silent=True) or {}
     status = data.get("status")
@@ -498,6 +501,7 @@ def list_customers():
 
 @barber_bp.route("/customers/<customer_id>", methods=["GET"])
 @token_required
+@staff_required
 def get_customer(customer_id: str):
     with get_connection() as conn:
         row = conn.execute(

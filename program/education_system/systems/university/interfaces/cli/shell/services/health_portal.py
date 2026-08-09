@@ -1,9 +1,8 @@
 """
-Health Portal CLI - imports from the full implementation.
+Compatibility imports for the extracted Health Portal CLI.
 
 This module provides access to the full Health Portal CLI implementation
-located in the domain module. It re-exports functions for
-backwards compatibility.
+It re-exports the interface package for older shell callers.
 """
 from typing import Any
 import logging
@@ -12,9 +11,9 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 
 logger = logging.getLogger(__name__)
 
-# Try to import the full implementation
+# Import the extracted interface implementation.
 try:
-    from education_system.systems.university.domain.pastoral.health.services.health_portal import (
+    from education_system.systems.university.interfaces.cli.pastoral.health_portal import (
         display_health_portal_menu as _real_display_menu,
         display_basic_health_menu as _real_display_basic_menu,
         view_health_records as _real_view_records,

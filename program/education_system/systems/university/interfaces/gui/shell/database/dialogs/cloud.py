@@ -5,6 +5,8 @@ and DownloadDialog for downloading cloud-stored backups back to the local
 file system, both with progress tracking and threaded operations.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import os
@@ -22,7 +24,7 @@ class UploadDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Upload to Cloud")
+        self.dialog.title(_t('gui.shell.database.dialogs.cloud.windows.upload_to_cloud', default="Upload to Cloud"))
         self.dialog.geometry("500x300")
         self.dialog.transient(parent)
 
@@ -32,7 +34,7 @@ class UploadDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Backup selection
-        select_frame = ttk.LabelFrame(self.dialog, text="Select Backup to Upload", padding=10)
+        select_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.cloud.labels.select_backup_to_upload', default="Select Backup to Upload"), padding=10)
         select_frame.pack(fill="x", padx=10, pady=5)
 
         self.backup_var = tk.StringVar()
@@ -41,18 +43,18 @@ class UploadDialog:
         self.backup_combo.pack(fill="x", pady=5)
 
         # Upload options
-        options_frame = ttk.LabelFrame(self.dialog, text="Upload Options", padding=10)
+        options_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.cloud.labels.upload_options', default="Upload Options"), padding=10)
         options_frame.pack(fill="x", padx=10, pady=5)
 
         self.overwrite_var = tk.BooleanVar()
-        ttk.Checkbutton(options_frame, text="Overwrite if exists", variable=self.overwrite_var).pack(anchor="w")
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.database.dialogs.cloud.buttons.overwrite_if_exists', default="Overwrite if exists"), variable=self.overwrite_var).pack(anchor="w")
 
         self.delete_local_var = tk.BooleanVar()
-        ttk.Checkbutton(options_frame, text="Delete local file after upload",
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.database.dialogs.cloud.buttons.delete_local_file_after_upload', default="Delete local file after upload"),
                        variable=self.delete_local_var).pack(anchor="w")
 
         # Progress
-        progress_frame = ttk.LabelFrame(self.dialog, text="Upload Progress", padding=10)
+        progress_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.cloud.labels.upload_progress', default="Upload Progress"), padding=10)
         progress_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         self.progress_var = tk.DoubleVar()
@@ -60,16 +62,16 @@ class UploadDialog:
                                           mode="determinate", length=400)
         self.progress_bar.pack(pady=5)
 
-        self.status_label = ttk.Label(progress_frame, text="Ready to upload")
+        self.status_label = ttk.Label(progress_frame, text=_t('gui.shell.database.dialogs.cloud.labels.ready_to_upload', default="Ready to upload"))
         self.status_label.pack(pady=5)
 
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        self.upload_button = ttk.Button(button_frame, text="Upload", command=self.upload)
+        self.upload_button = ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.cloud.buttons.upload', default="Upload"), command=self.upload)
         self.upload_button.pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.cloud.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side="right")
 
     def load_backups(self):
         """Load available backups"""
@@ -87,7 +89,7 @@ class UploadDialog:
             if backup_names:
                 self.backup_combo.current(0)
             else:
-                self.status_label.config(text="No local backups available for upload")
+                self.status_label.config(text=_t('gui.shell.database.dialogs.cloud.text.no_local_backups_available_for_upload', default="No local backups available for upload"))
 
         except Exception as e:
             self.status_label.config(text=f"Error loading backups: {e}")
@@ -95,7 +97,7 @@ class UploadDialog:
     def upload(self):
         """Upload selected backup"""
         if not self.backup_combo.get():
-            messagebox.showwarning("No Selection", "Please select a backup to upload")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.cloud.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.cloud.dialogs.please_select_a_backup_to_upload', default="Please select a backup to upload"))
             return
 
         try:
@@ -106,7 +108,7 @@ class UploadDialog:
 
             # Start upload in separate thread
             self.upload_button.config(state="disabled")
-            self.status_label.config(text="Starting upload...")
+            self.status_label.config(text=_t('gui.shell.database.dialogs.cloud.text.starting_upload', default="Starting upload..."))
             self.progress_var.set(0)
 
             def upload_worker():
@@ -133,21 +135,21 @@ class UploadDialog:
                                 break
                         metadata_manager.save_metadata()
 
-                        self.status_label.config(text="Upload completed successfully!")
+                        self.status_label.config(text=_t('gui.shell.database.dialogs.cloud.text.upload_completed_successfully', default="Upload completed successfully!"))
 
                         if self.delete_local_var.get():
                             os.remove(backup['path'])
-                            self.status_label.config(text="Upload completed, local file deleted")
+                            self.status_label.config(text=_t('gui.shell.database.dialogs.cloud.text.upload_completed_local_file_deleted', default="Upload completed, local file deleted"))
 
-                        messagebox.showinfo("Success", "Backup uploaded successfully!")
+                        messagebox.showinfo(_t('gui.shell.database.dialogs.cloud.dialogs.success', default="Success"), _t('gui.shell.database.dialogs.cloud.dialogs.backup_uploaded_successfully', default="Backup uploaded successfully!"))
                         self.dialog.destroy()
                     else:
-                        self.status_label.config(text="Upload failed")
-                        messagebox.showerror("Error", "Upload failed")
+                        self.status_label.config(text=_t('gui.shell.database.dialogs.cloud.text.upload_failed', default="Upload failed"))
+                        messagebox.showerror(_t('gui.shell.database.dialogs.cloud.dialogs.error', default="Error"), _t('gui.shell.database.dialogs.cloud.dialogs.upload_failed', default="Upload failed"))
 
                 except Exception as e:
                     self.status_label.config(text=f"Upload error: {e}")
-                    messagebox.showerror("Error", f"Upload failed: {e}")
+                    messagebox.showerror(_t('gui.shell.database.dialogs.cloud.dialogs.error', default="Error"), f"Upload failed: {e}")
                 finally:
                     self.upload_button.config(state="normal")
                     self.progress_var.set(0)
@@ -158,7 +160,7 @@ class UploadDialog:
             upload_thread.start()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to start upload: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.cloud.dialogs.error', default="Error"), f"Failed to start upload: {e}")
             self.upload_button.config(state="normal")
 
 class DownloadDialog:
@@ -166,14 +168,14 @@ class DownloadDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Download from Cloud")
+        self.dialog.title(_t('gui.shell.database.dialogs.cloud.windows.download_from_cloud', default="Download from Cloud"))
         self.dialog.geometry("620x420")
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
         self.download_dir = tk.StringVar(value=config.get("backup_directory", "backups"))
         self.progress_var = tk.DoubleVar()
-        self.status_text = tk.StringVar(value="Select a backup to download")
+        self.status_text = tk.StringVar(value=_t('gui.shell.database.dialogs.cloud.values.select_a_backup_to_download', default="Select a backup to download"))
         self.cloud_backups = []
 
         self.create_widgets()
@@ -181,15 +183,15 @@ class DownloadDialog:
 
     def create_widgets(self):
         """Create dialog widgets"""
-        list_frame = ttk.LabelFrame(self.dialog, text="Available Cloud Backups", padding=10)
+        list_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.cloud.labels.available_cloud_backups', default="Available Cloud Backups"), padding=10)
         list_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         columns = ("date", "type", "size", "file")
         self.tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=8)
-        self.tree.heading("date", text="Date")
-        self.tree.heading("type", text="Type")
-        self.tree.heading("size", text="Size")
-        self.tree.heading("file", text="File")
+        self.tree.heading("date", text=_t('gui.shell.database.dialogs.cloud.headings.date', default="Date"))
+        self.tree.heading("type", text=_t('gui.shell.database.dialogs.cloud.headings.type', default="Type"))
+        self.tree.heading("size", text=_t('gui.shell.database.dialogs.cloud.headings.size', default="Size"))
+        self.tree.heading("file", text=_t('gui.shell.database.dialogs.cloud.headings.file', default="File"))
 
         self.tree.column("date", width=150)
         self.tree.column("type", width=100)
@@ -204,14 +206,14 @@ class DownloadDialog:
         controls_frame = ttk.Frame(self.dialog)
         controls_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Button(controls_frame, text="Refresh", command=self.load_backups).pack(side="left")
+        ttk.Button(controls_frame, text=_t('gui.shell.database.dialogs.cloud.buttons.refresh', default="Refresh"), command=self.load_backups).pack(side="left")
 
-        ttk.Label(controls_frame, text="Download to:").pack(side="left", padx=(20, 5))
+        ttk.Label(controls_frame, text=_t('gui.shell.database.dialogs.cloud.labels.download_to', default="Download to:")).pack(side="left", padx=(20, 5))
         destination_entry = ttk.Entry(controls_frame, textvariable=self.download_dir, width=40)
         destination_entry.pack(side="left", padx=5)
-        ttk.Button(controls_frame, text="Browse", command=self.select_destination).pack(side="left")
+        ttk.Button(controls_frame, text=_t('gui.shell.database.dialogs.cloud.buttons.browse', default="Browse"), command=self.select_destination).pack(side="left")
 
-        progress_frame = ttk.LabelFrame(self.dialog, text="Download Status", padding=10)
+        progress_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.cloud.labels.download_status', default="Download Status"), padding=10)
         progress_frame.pack(fill="x", padx=10, pady=5)
         ttk.Progressbar(progress_frame, variable=self.progress_var, maximum=100, mode="determinate").pack(fill="x", pady=5)
         self.status_label = ttk.Label(progress_frame, textvariable=self.status_text)
@@ -220,9 +222,9 @@ class DownloadDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        self.download_button = ttk.Button(button_frame, text="Download", command=self.download)
+        self.download_button = ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.cloud.buttons.download', default="Download"), command=self.download)
         self.download_button.pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.cloud.buttons.close', default="Close"), command=self.dialog.destroy).pack(side="right")
 
     def load_backups(self):
         """Load list of backups marked as uploaded to the cloud"""
@@ -261,16 +263,16 @@ class DownloadDialog:
     def download(self):
         """Download the selected backup from cloud storage"""
         if not config.get("cloud_enabled", False):
-            messagebox.showwarning("Cloud Storage", "Cloud storage is not enabled.")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.cloud.dialogs.cloud_storage', default="Cloud Storage"), _t('gui.shell.database.dialogs.cloud.dialogs.cloud_storage_is_not_enabled', default="Cloud storage is not enabled."))
             return
 
         if config.get("cloud_provider") != "aws":
-            messagebox.showwarning("Cloud Storage", "Only AWS S3 provider is supported for downloads in this demo.")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.cloud.dialogs.cloud_storage', default="Cloud Storage"), _t('gui.shell.database.dialogs.cloud.dialogs.only_aws_s3_provider_is_supported_for_downloads_in_this_demo', default="Only AWS S3 provider is supported for downloads in this demo."))
             return
 
         selection = self.tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a cloud backup to download.")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.cloud.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.cloud.dialogs.please_select_a_cloud_backup_to_download', default="Please select a cloud backup to download."))
             return
 
         index = self.tree.index(selection[0])
@@ -278,7 +280,7 @@ class DownloadDialog:
 
         destination_dir = self.download_dir.get().strip()
         if not destination_dir:
-            messagebox.showwarning("Destination", "Please choose a destination directory.")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.cloud.dialogs.destination', default="Destination"), _t('gui.shell.database.dialogs.cloud.dialogs.please_choose_a_destination_directory', default="Please choose a destination directory."))
             return
 
         os.makedirs(destination_dir, exist_ok=True)
@@ -286,7 +288,7 @@ class DownloadDialog:
 
         if os.path.exists(destination_path):
             if not messagebox.askyesno(
-                "Overwrite File",
+                _t('gui.shell.database.dialogs.cloud.dialogs.overwrite_file', default="Overwrite File"),
                 f"'{backup['filename']}' already exists in the destination.\nOverwrite?",
                 parent=self.dialog
             ):
@@ -294,7 +296,7 @@ class DownloadDialog:
 
         bucket = config.get("aws_bucket", "").strip()
         if not bucket:
-            messagebox.showwarning("Cloud Storage", "AWS bucket is not configured.")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.cloud.dialogs.cloud_storage', default="Cloud Storage"), _t('gui.shell.database.dialogs.cloud.dialogs.aws_bucket_is_not_configured', default="AWS bucket is not configured."))
             return
 
         key = backup.get("cloud_key") or f"backups/{backup['filename']}"
@@ -310,9 +312,9 @@ class DownloadDialog:
         def finish(success, message):
             self.download_button.config(state="normal")
             if success:
-                messagebox.showinfo("Download Complete", message, parent=self.dialog)
+                messagebox.showinfo(_t('gui.shell.database.dialogs.cloud.dialogs.download_complete', default="Download Complete"), message, parent=self.dialog)
             else:
-                messagebox.showerror("Download Failed", message, parent=self.dialog)
+                messagebox.showerror(_t('gui.shell.database.dialogs.cloud.dialogs.download_failed', default="Download Failed"), message, parent=self.dialog)
             self.progress_var.set(0)
 
         def worker():

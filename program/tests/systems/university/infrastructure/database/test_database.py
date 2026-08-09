@@ -547,9 +547,9 @@ class TestBackwardCompatibility:
     def test_main_dir_equals_data_dir(self):
         """Test MAIN_DIR equals DATA_DIR for backward compatibility"""
         from education_system.systems.university.infrastructure.utils.database import MAIN_DIR
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
 
-        assert MAIN_DIR == str(paths.DATA_DIR)
+        assert MAIN_DIR == str(paths.UNIVERSITY_DATA_DIR)
 
     def test_db_path_equals_default(self):
         """Test DB_PATH equals DEFAULT_DB_PATH"""

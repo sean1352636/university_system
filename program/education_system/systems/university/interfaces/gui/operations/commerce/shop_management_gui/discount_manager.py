@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -82,20 +84,20 @@ def show_manage_discounts(self):
         widget.destroy()
 
     # Title
-    title_label = ttk.Label(self.content_frame, text="Manage Discounts", style='Heading.TLabel')
+    title_label = ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.manage_discounts', default="Manage Discounts"), style='Heading.TLabel')
     title_label.grid(row=0, column=0, sticky=tk.W, pady=(0, 20))
 
     # Button frame
     button_frame = ttk.Frame(self.content_frame)
     button_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-    ttk.Button(button_frame, text="Add New Discount", command=self.create_new_discount).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(button_frame, text="Edit Selected", command=self.edit_selected_discount).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Toggle Status", command=self.toggle_discount_status).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Refresh", command=self.load_discounts).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.buttons.add_new_discount', default="Add New Discount"), command=self.create_new_discount).pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.buttons.edit_selected', default="Edit Selected"), command=self.edit_selected_discount).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.buttons.toggle_status', default="Toggle Status"), command=self.toggle_discount_status).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.buttons.refresh', default="Refresh"), command=self.load_discounts).pack(side=tk.LEFT, padx=5)
 
     # Discounts frame
-    discounts_frame = ttk.LabelFrame(self.content_frame, text="Current Discounts", padding="10")
+    discounts_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.current_discounts', default="Current Discounts"), padding="10")
     discounts_frame.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
 
     # Create Treeview for discounts
@@ -105,13 +107,13 @@ def show_manage_discounts(self):
     self.discounts_tree = ttk.Treeview(tree_frame,
                                      columns=('Type', 'Value', 'Status', 'Start Date', 'End Date', 'Description'),
                                      show='tree headings')
-    self.discounts_tree.heading('#0', text='Discount ID')
-    self.discounts_tree.heading('Type', text='Type')
-    self.discounts_tree.heading('Value', text='Value')
-    self.discounts_tree.heading('Status', text='Status')
-    self.discounts_tree.heading('Start Date', text='Start Date')
-    self.discounts_tree.heading('End Date', text='End Date')
-    self.discounts_tree.heading('Description', text='Description')
+    self.discounts_tree.heading('#0', text=_t('gui.operations.commerce.shop_management_gui.discount_manager.headings.discount_id', default='Discount ID'))
+    self.discounts_tree.heading('Type', text=_t('gui.operations.commerce.shop_management_gui.discount_manager.headings.type', default='Type'))
+    self.discounts_tree.heading('Value', text=_t('gui.operations.commerce.shop_management_gui.discount_manager.headings.value', default='Value'))
+    self.discounts_tree.heading('Status', text=_t('gui.operations.commerce.shop_management_gui.discount_manager.headings.status', default='Status'))
+    self.discounts_tree.heading('Start Date', text=_t('gui.operations.commerce.shop_management_gui.discount_manager.headings.start_date', default='Start Date'))
+    self.discounts_tree.heading('End Date', text=_t('gui.operations.commerce.shop_management_gui.discount_manager.headings.end_date', default='End Date'))
+    self.discounts_tree.heading('Description', text=_t('gui.operations.commerce.shop_management_gui.discount_manager.headings.description', default='Description'))
 
     self.discounts_tree.column('#0', width=100)
     self.discounts_tree.column('Type', width=80)
@@ -147,7 +149,7 @@ def load_discounts(self):
         self.discounts_tree.delete(item)
 
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
@@ -174,7 +176,7 @@ def load_discounts(self):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load discounts: {str(e)}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.error', default="Error"), f"Failed to load discounts: {str(e)}")
 
 
 def create_new_discount(self):
@@ -188,7 +190,7 @@ def edit_selected_discount(self):
     """Edit the selected discount"""
     selection = self.discounts_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a discount to edit.")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.please_select_a_discount_to_edit', default="Please select a discount to edit."))
         return
 
     discount_id = self.discounts_tree.item(selection[0])['text']
@@ -219,7 +221,7 @@ def cleanup_expired_discounts(self):
             expired_discounts = cursor.fetchall()
 
             if not expired_discounts:
-                messagebox.showinfo("Cleanup Complete", "No expired discounts found.")
+                messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.cleanup_complete', default="Cleanup Complete"), _t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.no_expired_discounts_found', default="No expired discounts found."))
                 conn.close()
                 return
 
@@ -239,7 +241,7 @@ def cleanup_expired_discounts(self):
             if len(expired_discounts) > 5:
                 discount_list += f"\n... and {len(expired_discounts) - 5} more"
 
-            messagebox.showinfo("Cleanup Complete",
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.cleanup_complete', default="Cleanup Complete"),
                 f"Deactivated {count} expired discount(s):\n\n{discount_list}")
 
             # Refresh discounts view if visible
@@ -247,7 +249,7 @@ def cleanup_expired_discounts(self):
                 self.load_discounts()
 
     except Exception as e:
-        messagebox.showerror("Cleanup Failed", f"Failed to cleanup expired discounts: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.cleanup_failed', default="Cleanup Failed"), f"Failed to cleanup expired discounts: {e}")
 
 
 class DiscountEditDialog:
@@ -271,63 +273,63 @@ class DiscountEditDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Discount name
-        ttk.Label(main_frame, text="Discount Name:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.discount_name', default="Discount Name:")).pack(anchor=tk.W)
         self.name_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.name_var, width=50).pack(fill=tk.X, pady=(0, 10))
 
         # Description
-        ttk.Label(main_frame, text="Description:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.description', default="Description:")).pack(anchor=tk.W)
         self.description_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.description_var, width=50).pack(fill=tk.X, pady=(0, 10))
 
         # Discount type
-        ttk.Label(main_frame, text="Discount Type:").pack(anchor=tk.W)
-        self.type_var = tk.StringVar(value="percentage")
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.discount_type', default="Discount Type:")).pack(anchor=tk.W)
+        self.type_var = tk.StringVar(value=_t('gui.operations.commerce.shop_management_gui.discount_manager.values.percentage', default="percentage"))
         type_frame = ttk.Frame(main_frame)
         type_frame.pack(fill=tk.X, pady=(0, 10))
-        ttk.Radiobutton(type_frame, text="Percentage (%)", variable=self.type_var, value="percentage").pack(side=tk.LEFT)
-        ttk.Radiobutton(type_frame, text="Fixed Amount (£)", variable=self.type_var, value="fixed").pack(side=tk.LEFT, padx=(20, 0))
+        ttk.Radiobutton(type_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.buttons.percentage', default="Percentage (%)"), variable=self.type_var, value="percentage").pack(side=tk.LEFT)
+        ttk.Radiobutton(type_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.buttons.fixed_amount', default="Fixed Amount (£)"), variable=self.type_var, value="fixed").pack(side=tk.LEFT, padx=(20, 0))
 
         # Discount value
-        ttk.Label(main_frame, text="Discount Value:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.discount_value', default="Discount Value:")).pack(anchor=tk.W)
         self.value_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.value_var, width=20).pack(anchor=tk.W, pady=(0, 10))
 
         # Start date
-        ttk.Label(main_frame, text="Start Date (YYYY-MM-DD, optional):").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.start_date_yyyy_mm_dd_optional', default="Start Date (YYYY-MM-DD, optional):")).pack(anchor=tk.W)
         self.start_date_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.start_date_var, width=20).pack(anchor=tk.W, pady=(0, 10))
 
         # End date
-        ttk.Label(main_frame, text="End Date (YYYY-MM-DD, optional):").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.end_date_yyyy_mm_dd_optional', default="End Date (YYYY-MM-DD, optional):")).pack(anchor=tk.W)
         self.end_date_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.end_date_var, width=20).pack(anchor=tk.W, pady=(0, 10))
 
         # Minimum purchase amount
-        ttk.Label(main_frame, text="Minimum Purchase Amount (£):").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.minimum_purchase_amount', default="Minimum Purchase Amount (£):")).pack(anchor=tk.W)
         self.min_purchase_var = tk.StringVar(value="0")
         ttk.Entry(main_frame, textvariable=self.min_purchase_var, width=20).pack(anchor=tk.W, pady=(0, 10))
 
         # Applicable products
-        ttk.Label(main_frame, text="Applicable Products (comma-separated IDs, leave empty for all):").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.labels.applicable_products_comma_separated_ids_leave_empty_for_all', default="Applicable Products (comma-separated IDs, leave empty for all):")).pack(anchor=tk.W)
         self.products_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.products_var, width=50).pack(fill=tk.X, pady=(0, 10))
 
         # Active status
         self.active_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(main_frame, text="Active", variable=self.active_var).pack(anchor=tk.W, pady=(0, 20))
+        ttk.Checkbutton(main_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.buttons.active', default="Active"), variable=self.active_var).pack(anchor=tk.W, pady=(0, 20))
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X)
 
-        ttk.Button(button_frame, text="Save", command=self.save_discount).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.buttons.save', default="Save"), command=self.save_discount).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.discount_manager.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT)
 
     def load_discount_data(self):
         """Load existing discount data"""
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
@@ -348,7 +350,7 @@ class DiscountEditDialog:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load discount: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.error', default="Error"), f"Failed to load discount: {str(e)}")
 
     def save_discount(self):
         """Save the discount"""
@@ -360,26 +362,26 @@ class DiscountEditDialog:
         products = self.products_var.get().strip()
 
         if not name:
-            messagebox.showerror("Validation Error", "Discount name is required.")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.validation_error', default="Validation Error"), _t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.discount_name_is_required', default="Discount name is required."))
             return
 
         try:
             discount_value = float(self.value_var.get())
             min_purchase = float(self.min_purchase_var.get())
         except ValueError:
-            messagebox.showerror("Validation Error", "Discount value and minimum purchase must be valid numbers.")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.validation_error', default="Validation Error"), _t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.discount_value_and_minimum_purchase_must_be_valid_numbers', default="Discount value and minimum purchase must be valid numbers."))
             return
 
         if discount_type == 'percentage' and (discount_value < 0 or discount_value > 100):
-            messagebox.showerror("Validation Error", "Percentage discount must be between 0 and 100.")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.validation_error', default="Validation Error"), _t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.percentage_discount_must_be_between_0_and_100', default="Percentage discount must be between 0 and 100."))
             return
 
         if discount_value < 0:
-            messagebox.showerror("Validation Error", "Discount value cannot be negative.")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.validation_error', default="Validation Error"), _t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.discount_value_cannot_be_negative', default="Discount value cannot be negative."))
             return
 
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
             if self.discount_id:
@@ -420,12 +422,12 @@ class DiscountEditDialog:
             conn.close()
 
             action = "updated" if self.discount_id else "created"
-            messagebox.showinfo("Success", f"Discount {action} successfully.")
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.success', default="Success"), f"Discount {action} successfully.")
             self.result = True
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save discount: {str(e)}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.discount_manager.dialogs.error', default="Error"), f"Failed to save discount: {str(e)}")
 
 
 # Export important classes and functions for external use

@@ -2,6 +2,11 @@ import csv
 import json
 import datetime
 from typing import Dict, List
+from pathlib import Path
+import shutil
+import re
+import threading
+import time
 
 import requests
 
@@ -9,6 +14,89 @@ from education_system.systems.university.infrastructure.logging.log_config impor
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
 logger = configure_logging(name=__name__)
+
+
+def export_rows_to_database(config, columns, rows):
+    """Write rows through a configured SQLite, PostgreSQL or MySQL adapter."""
+    db_type = str(config.get('type', '')).lower()
+    table = config.get('table', 'students')
+    if not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', table):
+        raise ValueError("Invalid destination table name")
+    safe_columns = [column for column in columns
+                    if re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', column)]
+    if len(safe_columns) != len(columns):
+        raise ValueError("Invalid destination column name")
+    if db_type == 'sqlite':
+        import sqlite3
+        connection = sqlite3.connect(config['path'])
+        placeholder = '?'
+    elif db_type == 'postgresql':
+        import psycopg2
+        connection = psycopg2.connect(host=config['host'], port=config.get('port', 5432),
+                                      dbname=config['database'], user=config['username'],
+                                      password=config['password'])
+        placeholder = '%s'
+    elif db_type == 'mysql':
+        import mysql.connector
+        connection = mysql.connector.connect(host=config['host'], port=config.get('port', 3306),
+                                             database=config['database'], user=config['username'],
+                                             password=config['password'])
+        placeholder = '%s'
+    else:
+        raise ValueError(f"Unsupported external database type: {db_type}")
+    try:
+        cursor = connection.cursor()
+        definitions = ', '.join(f'{column} TEXT' for column in safe_columns)
+        cursor.execute(f"CREATE TABLE IF NOT EXISTS {table} ({definitions})")
+        values_sql = ', '.join(placeholder for _ in safe_columns)
+        cursor.executemany(
+            f"INSERT INTO {table} ({', '.join(safe_columns)}) VALUES ({values_sql})",
+            rows,
+        )
+        connection.commit()
+        return len(rows)
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def poll_file_share(config, destination):
+    """Fetch matching local or SFTP files into a controlled inbox."""
+    destination = Path(destination)
+    destination.mkdir(parents=True, exist_ok=True)
+    pattern = config.get('pattern', '*.csv')
+    downloaded = []
+    if config.get('type', 'local') == 'local':
+        source = Path(config['path'])
+        if not source.is_dir():
+            raise FileNotFoundError(source)
+        for item in source.glob(pattern):
+            if item.is_file():
+                target = destination / item.name
+                shutil.copy2(item, target)
+                downloaded.append(str(target))
+        return downloaded
+    if config.get('type') == 'sftp':
+        import fnmatch
+        import paramiko
+        transport = paramiko.Transport((config['host'], int(config.get('port', 22))))
+        try:
+            transport.connect(username=config['username'], password=config.get('password'),
+                              pkey=config.get('pkey'))
+            client = paramiko.SFTPClient.from_transport(transport)
+            remote = config.get('remote_path', '.')
+            for name in client.listdir(remote):
+                if fnmatch.fnmatch(name, pattern):
+                    target = destination / Path(name).name
+                    client.get(f"{remote.rstrip('/')}/{name}", str(target))
+                    downloaded.append(str(target))
+            client.close()
+        finally:
+            transport.close()
+        return downloaded
+    raise ValueError("File share type must be local or sftp")
 
 
 class ExternalMixin:
@@ -127,18 +215,53 @@ class ExternalMixin:
     def setup_file_share_monitoring(self):
         """Set up file share monitoring"""
         print(_t("batch_ops.external.file_share_title"))
-        print(_t("batch_ops.external.ftp_setup_title"))
-        host = input(_t("batch_ops.external.prompt_ftp_host"))
-        username = input(_t("batch_ops.external.prompt_ftp_username"))
-        remote_path = input(_t("batch_ops.external.prompt_ftp_path"))
-        print(_t("batch_ops.external.monitoring_setup_success", host=host, path=remote_path))
-        print(_t("batch_ops.external.monitoring_interval"))
+        share_type = input("Share type (local/sftp): ").strip().lower() or 'local'
+        pattern = input("File pattern [*.csv]: ").strip() or '*.csv'
+        interval = max(5, int(input("Polling interval in seconds [300]: ").strip() or '300'))
+        if share_type == 'local':
+            config = {'type': 'local', 'path': input("Directory path: ").strip(),
+                      'pattern': pattern}
+        elif share_type == 'sftp':
+            config = {
+                'type': 'sftp', 'host': input("SFTP host: ").strip(),
+                'port': int(input("Port [22]: ").strip() or '22'),
+                'username': input("Username: ").strip(),
+                'password': input("Password: "),
+                'remote_path': input("Remote path: ").strip() or '.',
+                'pattern': pattern,
+            }
+        else:
+            print("Unsupported share type.")
+            return []
+        from education_system import paths
+        config_path = Path(paths.UNIVERSITY_DATA_DIR) / 'batch_file_share.json'
+        config_path.write_text(json.dumps(config, indent=2), encoding='utf-8')
+        inbox = Path(paths.UNIVERSITY_DATA_DIR) / 'batch_import_inbox'
+        files = poll_file_share(config, inbox)
+        if files:
+            # The existing automated importer performs validation, creates a
+            # database backup, and archives successful files under processed/.
+            self.automated_import_job(str(inbox))
+        stop_event = getattr(self, '_file_share_monitor_stop', None)
+        if stop_event is not None:
+            stop_event.set()
+        self._file_share_monitor_stop = threading.Event()
 
-        # This would implement file share monitoring
-        # - Connect to FTP/SFTP servers
-        # - Monitor for new files
-        # - Automatically download and process
-        # - Move processed files to archive
+        def monitor():
+            while not self._file_share_monitor_stop.wait(interval):
+                try:
+                    fetched = poll_file_share(config, inbox)
+                    if fetched:
+                        self.automated_import_job(str(inbox))
+                except Exception as exc:
+                    logger.error("File-share monitor failed: %s", exc)
+
+        self._file_share_monitor_thread = threading.Thread(
+            target=monitor, name='batch-file-share-monitor', daemon=True
+        )
+        self._file_share_monitor_thread.start()
+        print(f"Monitoring configured; fetched {len(files)} matching file(s).")
+        return files
 
     def export_to_external_system(self):
         """Export data to external systems"""
@@ -181,18 +304,15 @@ class ExternalMixin:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM students")
             students = cursor.fetchall()
+            columns = [description[0] for description in cursor.description]
         finally:
             conn.close()
 
         print(_t("batch_ops.external.exporting_records", count=len(students)))
 
-        # This would implement the actual export logic
-        # based on the configured database type
-        print(_t("batch_ops.external.export_config_title"))
-        format_type = input(_t("batch_ops.external.prompt_export_format"))
-        output_path = input(_t("batch_ops.external.prompt_output_path"))
-        print(_t("batch_ops.external.export_config_saved"))
-        print(_t("batch_ops.external.export_config_summary", format=format_type, output=output_path))
+        count = export_rows_to_database(config, columns, students)
+        print(f"Exported {count} record(s) to the configured {config.get('type')} database.")
+        return count
 
     def export_via_rest_api(self):
         """Export data via REST API"""

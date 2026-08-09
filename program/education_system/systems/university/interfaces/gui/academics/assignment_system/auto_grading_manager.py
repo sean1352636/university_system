@@ -1,5 +1,7 @@
 """Auto-grading management for MCQ, fill-in-the-blank, and coding questions"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
@@ -38,7 +40,7 @@ class AutoGradingManager:
 
         title = ttk.Label(
             self.gui.layout.content_area,
-            text="Auto-Grading Dashboard",
+            text=_t('gui.academics.assignment_system.auto_grading_manager.labels.auto_grading_dashboard', default="Auto-Grading Dashboard"),
             style='Title.TLabel',
         )
         title.pack(anchor='w', pady=(0, 20))
@@ -48,25 +50,25 @@ class AutoGradingManager:
         btn_frame.pack(fill='x', pady=(0, 15))
 
         ttk.Button(
-            btn_frame, text="Manage Question Banks",
+            btn_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.manage_question_banks', default="Manage Question Banks"),
             command=self.manage_question_banks,
         ).pack(side='left', padx=(0, 10))
         ttk.Button(
-            btn_frame, text="Create Question",
+            btn_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.create_question', default="Create Question"),
             command=self.create_question,
         ).pack(side='left', padx=(0, 10))
         ttk.Button(
-            btn_frame, text="Run Auto-Grading",
+            btn_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.run_auto_grading', default="Run Auto-Grading"),
             command=self.run_auto_grading,
         ).pack(side='left', padx=(0, 10))
         ttk.Button(
-            btn_frame, text="Question Bank Stats",
+            btn_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.question_bank_stats', default="Question Bank Stats"),
             command=self.show_question_bank_stats,
         ).pack(side='left')
 
         # --- Pending submissions ---
         pending_frame = ttk.LabelFrame(
-            self.gui.layout.content_area, text="Pending Submissions", padding=10,
+            self.gui.layout.content_area, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.pending_submissions', default="Pending Submissions"), padding=10,
         )
         pending_frame.pack(fill='both', expand=True, pady=(0, 15))
 
@@ -89,11 +91,11 @@ class AutoGradingManager:
         grade_btn_frame = ttk.Frame(self.gui.layout.content_area)
         grade_btn_frame.pack(fill='x', pady=(0, 10))
         ttk.Button(
-            grade_btn_frame, text="Auto-Grade Selected",
+            grade_btn_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.auto_grade_selected', default="Auto-Grade Selected"),
             command=self._grade_selected_submission,
         ).pack(side='left')
         ttk.Button(
-            grade_btn_frame, text="Refresh",
+            grade_btn_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.refresh', default="Refresh"),
             command=self._load_pending_submissions,
         ).pack(side='left', padx=(10, 0))
 
@@ -121,13 +123,13 @@ class AutoGradingManager:
                 )
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load pending submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to load pending submissions: {e}")
 
     def _grade_selected_submission(self):
         """Grade the submission selected in the pending tree"""
         selection = self.pending_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a submission to grade.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.please_select_a_submission_to_grade', default="Please select a submission to grade."))
             return
 
         item = self.pending_tree.item(selection[0])
@@ -144,7 +146,7 @@ class AutoGradingManager:
             row = cursor.fetchone()
             conn.close()
             if not row:
-                messagebox.showerror("Error", "Submission not found.")
+                messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.submission_not_found', default="Submission not found."))
                 return
 
             qtype = row[0]
@@ -155,12 +157,12 @@ class AutoGradingManager:
             elif qtype == 'coding':
                 self.auto_grade_coding(submission_id)
             else:
-                messagebox.showinfo("Info", f"Unknown question type: {qtype}")
+                messagebox.showinfo(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.info', default="Info"), f"Unknown question type: {qtype}")
 
             self._load_pending_submissions()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Grading failed: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Grading failed: {e}")
 
     # ------------------------------------------------------------------ #
     #  Question Bank Management
@@ -175,30 +177,30 @@ class AutoGradingManager:
 
         title = ttk.Label(
             self.gui.layout.content_area,
-            text="Question Banks",
+            text=_t('gui.academics.assignment_system.auto_grading_manager.labels.question_banks', default="Question Banks"),
             style='Title.TLabel',
         )
         title.pack(anchor='w', pady=(0, 20))
 
         # --- Create / Edit form ---
         form_frame = ttk.LabelFrame(
-            self.gui.layout.content_area, text="Create / Edit Question Bank", padding=15,
+            self.gui.layout.content_area, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.create_edit_question_bank', default="Create / Edit Question Bank"), padding=15,
         )
         form_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(form_frame, text="Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.name', default="Name:")).grid(row=0, column=0, sticky='w', pady=5)
         self.bank_name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.bank_name_var, width=40).grid(
             row=0, column=1, sticky='w', pady=5, padx=(10, 0),
         )
 
-        ttk.Label(form_frame, text="Module Code:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.module_code', default="Module Code:")).grid(row=1, column=0, sticky='w', pady=5)
         self.bank_module_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.bank_module_var, width=20).grid(
             row=1, column=1, sticky='w', pady=5, padx=(10, 0),
         )
 
-        ttk.Label(form_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw', pady=5)
         self.bank_desc_text = scrolledtext.ScrolledText(form_frame, height=3, width=50)
         self.bank_desc_text.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
 
@@ -206,17 +208,17 @@ class AutoGradingManager:
 
         btn_row = ttk.Frame(form_frame)
         btn_row.grid(row=3, column=0, columnspan=2, sticky='e', pady=(10, 0))
-        ttk.Button(btn_row, text="Save Bank", command=self._save_question_bank).pack(
+        ttk.Button(btn_row, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.save_bank', default="Save Bank"), command=self._save_question_bank).pack(
             side='left', padx=(0, 10),
         )
-        ttk.Button(btn_row, text="Clear", command=self._clear_bank_form).pack(side='left')
+        ttk.Button(btn_row, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.clear', default="Clear"), command=self._clear_bank_form).pack(side='left')
 
         # Hidden var to track editing
         self._editing_bank_id = None
 
         # --- Existing banks list ---
         list_frame = ttk.LabelFrame(
-            self.gui.layout.content_area, text="Existing Question Banks", padding=10,
+            self.gui.layout.content_area, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.existing_question_banks', default="Existing Question Banks"), padding=10,
         )
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
@@ -242,13 +244,13 @@ class AutoGradingManager:
         action_frame = ttk.Frame(self.gui.layout.content_area)
         action_frame.pack(fill='x')
         ttk.Button(
-            action_frame, text="Edit Selected", command=self._edit_selected_bank,
+            action_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.edit_selected', default="Edit Selected"), command=self._edit_selected_bank,
         ).pack(side='left', padx=(0, 10))
         ttk.Button(
-            action_frame, text="Delete Selected", command=self._delete_selected_bank,
+            action_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.delete_selected', default="Delete Selected"), command=self._delete_selected_bank,
         ).pack(side='left', padx=(0, 10))
         ttk.Button(
-            action_frame, text="Back to Dashboard", command=self.show_auto_grading,
+            action_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.back_to_dashboard', default="Back to Dashboard"), command=self.show_auto_grading,
         ).pack(side='right')
 
         self._load_question_banks()
@@ -268,7 +270,7 @@ class AutoGradingManager:
                 self.bank_tree.insert('', 'end', values=row)
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load question banks: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to load question banks: {e}")
 
     def _save_question_bank(self):
         """Save (create or update) a question bank"""
@@ -277,7 +279,7 @@ class AutoGradingManager:
         description = self.bank_desc_text.get('1.0', 'end').strip()
 
         if not name:
-            messagebox.showwarning("Warning", "Bank name is required.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.bank_name_is_required', default="Bank name is required."))
             return
 
         try:
@@ -302,18 +304,18 @@ class AutoGradingManager:
 
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", msg)
+            messagebox.showinfo(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.success', default="Success"), msg)
             self._clear_bank_form()
             self._load_question_banks()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save question bank: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to save question bank: {e}")
 
     def _edit_selected_bank(self):
         """Populate form with selected bank for editing"""
         selection = self.bank_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a question bank to edit.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.please_select_a_question_bank_to_edit', default="Please select a question bank to edit."))
             return
 
         values = self.bank_tree.item(selection[0])['values']
@@ -327,14 +329,14 @@ class AutoGradingManager:
         """Delete the selected question bank"""
         selection = self.bank_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a question bank to delete.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.please_select_a_question_bank_to_delete', default="Please select a question bank to delete."))
             return
 
         bank_id = self.bank_tree.item(selection[0])['values'][0]
         bank_name = self.bank_tree.item(selection[0])['values'][1]
 
         if not messagebox.askyesno(
-            "Confirm Delete",
+            _t('gui.academics.assignment_system.auto_grading_manager.dialogs.confirm_delete', default="Confirm Delete"),
             f"Delete question bank '{bank_name}' and all its questions?",
         ):
             return
@@ -346,10 +348,10 @@ class AutoGradingManager:
             cursor.execute('DELETE FROM question_banks WHERE id = ?', (bank_id,))
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", "Question bank deleted.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.question_bank_deleted', default="Question bank deleted."))
             self._load_question_banks()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete question bank: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to delete question bank: {e}")
 
     def _clear_bank_form(self):
         """Reset the bank form fields"""
@@ -371,7 +373,7 @@ class AutoGradingManager:
 
         title = ttk.Label(
             self.gui.layout.content_area,
-            text="Create Question",
+            text=_t('gui.academics.assignment_system.auto_grading_manager.labels.create_question', default="Create Question"),
             style='Title.TLabel',
         )
         title.pack(anchor='w', pady=(0, 20))
@@ -392,10 +394,10 @@ class AutoGradingManager:
         v_scroll.pack(side='right', fill='y')
 
         # --- Basic info ---
-        basic_frame = ttk.LabelFrame(form_container, text="Basic Information", padding=15)
+        basic_frame = ttk.LabelFrame(form_container, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.basic_information', default="Basic Information"), padding=15)
         basic_frame.pack(fill='x', pady=(0, 15), padx=5)
 
-        ttk.Label(basic_frame, text="Question Bank:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.question_bank', default="Question Bank:")).grid(row=0, column=0, sticky='w', pady=5)
         self.q_bank_var = tk.StringVar()
         self.q_bank_combo = ttk.Combobox(
             basic_frame, textvariable=self.q_bank_var, width=35, state='readonly',
@@ -403,8 +405,8 @@ class AutoGradingManager:
         self.q_bank_combo.grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
         self._populate_bank_combo()
 
-        ttk.Label(basic_frame, text="Question Type:").grid(row=1, column=0, sticky='w', pady=5)
-        self.q_type_var = tk.StringVar(value='mcq')
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.question_type', default="Question Type:")).grid(row=1, column=0, sticky='w', pady=5)
+        self.q_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.auto_grading_manager.values.mcq', default='mcq'))
         type_combo = ttk.Combobox(
             basic_frame, textvariable=self.q_type_var,
             values=['mcq', 'fill_blank', 'coding'],
@@ -413,27 +415,27 @@ class AutoGradingManager:
         type_combo.grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
         type_combo.bind('<<ComboboxSelected>>', lambda e: self._toggle_question_fields())
 
-        ttk.Label(basic_frame, text="Topic:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.topic', default="Topic:")).grid(row=2, column=0, sticky='w', pady=5)
         self.q_topic_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=self.q_topic_var, width=30).grid(
             row=2, column=1, sticky='w', pady=5, padx=(10, 0),
         )
 
-        ttk.Label(basic_frame, text="Difficulty:").grid(row=3, column=0, sticky='w', pady=5)
-        self.q_difficulty_var = tk.StringVar(value='medium')
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.difficulty', default="Difficulty:")).grid(row=3, column=0, sticky='w', pady=5)
+        self.q_difficulty_var = tk.StringVar(value=_t('gui.academics.assignment_system.auto_grading_manager.values.medium', default='medium'))
         ttk.Combobox(
             basic_frame, textvariable=self.q_difficulty_var,
             values=['easy', 'medium', 'hard'],
             width=15, state='readonly',
         ).grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
 
-        ttk.Label(basic_frame, text="Points:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.points', default="Points:")).grid(row=4, column=0, sticky='w', pady=5)
         self.q_points_var = tk.StringVar(value='10')
         ttk.Entry(basic_frame, textvariable=self.q_points_var, width=10).grid(
             row=4, column=1, sticky='w', pady=5, padx=(10, 0),
         )
 
-        ttk.Label(basic_frame, text="Time Limit (sec):").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.time_limit_sec', default="Time Limit (sec):")).grid(row=5, column=0, sticky='w', pady=5)
         self.q_time_limit_var = tk.StringVar(value='60')
         ttk.Entry(basic_frame, textvariable=self.q_time_limit_var, width=10).grid(
             row=5, column=1, sticky='w', pady=5, padx=(10, 0),
@@ -442,13 +444,13 @@ class AutoGradingManager:
         basic_frame.grid_columnconfigure(1, weight=1)
 
         # --- Question text ---
-        text_frame = ttk.LabelFrame(form_container, text="Question Text", padding=10)
+        text_frame = ttk.LabelFrame(form_container, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.question_text', default="Question Text"), padding=10)
         text_frame.pack(fill='x', pady=(0, 15), padx=5)
         self.q_text_widget = scrolledtext.ScrolledText(text_frame, height=4, width=70)
         self.q_text_widget.pack(fill='x')
 
         # --- MCQ options ---
-        self.mcq_frame = ttk.LabelFrame(form_container, text="MCQ Options", padding=10)
+        self.mcq_frame = ttk.LabelFrame(form_container, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.mcq_options', default="MCQ Options"), padding=10)
         self.mcq_frame.pack(fill='x', pady=(0, 15), padx=5)
 
         self.mcq_option_vars = []
@@ -463,10 +465,10 @@ class AutoGradingManager:
             )
             self.mcq_option_vars.append(var)
 
-        ttk.Label(self.mcq_frame, text="Correct Answer (A/B/C/D):").grid(
+        ttk.Label(self.mcq_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.correct_answer_a_b_c_d', default="Correct Answer (A/B/C/D):")).grid(
             row=4, column=0, sticky='w', pady=5,
         )
-        self.mcq_correct_var = tk.StringVar(value='A')
+        self.mcq_correct_var = tk.StringVar(value=_t('gui.academics.assignment_system.auto_grading_manager.values.a', default='A'))
         ttk.Combobox(
             self.mcq_frame, textvariable=self.mcq_correct_var,
             values=['A', 'B', 'C', 'D'], width=5, state='readonly',
@@ -476,15 +478,15 @@ class AutoGradingManager:
 
         # --- Fill-in-the-blank options ---
         self.fill_frame = ttk.LabelFrame(
-            form_container, text="Fill-in-the-Blank Options", padding=10,
+            form_container, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.fill_in_the_blank_options', default="Fill-in-the-Blank Options"), padding=10,
         )
         self.fill_frame.pack(fill='x', pady=(0, 15), padx=5)
 
-        ttk.Label(self.fill_frame, text="Acceptable Answers (one per line):").pack(anchor='w')
+        ttk.Label(self.fill_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.acceptable_answers_one_per_line', default="Acceptable Answers (one per line):")).pack(anchor='w')
         self.fill_answers_text = scrolledtext.ScrolledText(self.fill_frame, height=4, width=50)
         self.fill_answers_text.pack(fill='x', pady=(5, 5))
 
-        ttk.Label(self.fill_frame, text="Fuzzy Match Tolerance (0-100):").pack(anchor='w')
+        ttk.Label(self.fill_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.fuzzy_match_tolerance_0_100', default="Fuzzy Match Tolerance (0-100):")).pack(anchor='w')
         self.fill_tolerance_var = tk.StringVar(value='80')
         ttk.Entry(self.fill_frame, textvariable=self.fill_tolerance_var, width=10).pack(
             anchor='w', pady=(0, 5),
@@ -492,13 +494,13 @@ class AutoGradingManager:
 
         # --- Coding question options ---
         self.coding_frame = ttk.LabelFrame(
-            form_container, text="Coding Question - Test Cases", padding=10,
+            form_container, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.coding_question_test_cases', default="Coding Question - Test Cases"), padding=10,
         )
         self.coding_frame.pack(fill='x', pady=(0, 15), padx=5)
 
         ttk.Label(
             self.coding_frame,
-            text="Test cases (JSON array of {\"input\": ..., \"expected_output\": ...}):",
+            text=_t('gui.academics.assignment_system.auto_grading_manager.labels.test_cases_json_array_of_input_expected_output', default="Test cases (JSON array of {\"input\": ..., \"expected_output\": ...}):"),
         ).pack(anchor='w')
         self.coding_tests_text = scrolledtext.ScrolledText(self.coding_frame, height=6, width=70)
         self.coding_tests_text.pack(fill='x', pady=(5, 0))
@@ -513,10 +515,10 @@ class AutoGradingManager:
         btn_frame = ttk.Frame(form_container)
         btn_frame.pack(fill='x', pady=(10, 20), padx=5)
         ttk.Button(
-            btn_frame, text="Save Question", command=self._save_question,
+            btn_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.save_question', default="Save Question"), command=self._save_question,
         ).pack(side='left', padx=(0, 10))
         ttk.Button(
-            btn_frame, text="Back to Dashboard", command=self.show_auto_grading,
+            btn_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.back_to_dashboard', default="Back to Dashboard"), command=self.show_auto_grading,
         ).pack(side='right')
 
     def _populate_bank_combo(self):
@@ -553,7 +555,7 @@ class AutoGradingManager:
         """Persist the question to the database"""
         bank_key = self.q_bank_var.get()
         if not bank_key or bank_key not in self._bank_map:
-            messagebox.showwarning("Warning", "Please select a question bank.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.please_select_a_question_bank', default="Please select a question bank."))
             return
 
         bank_id = self._bank_map[bank_key]
@@ -561,13 +563,13 @@ class AutoGradingManager:
         question_text = self.q_text_widget.get('1.0', 'end').strip()
 
         if not question_text:
-            messagebox.showwarning("Warning", "Question text is required.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.question_text_is_required', default="Question text is required."))
             return
 
         try:
             points = int(self.q_points_var.get())
         except ValueError:
-            messagebox.showwarning("Warning", "Points must be a number.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.points_must_be_a_number', default="Points must be a number."))
             return
 
         try:
@@ -584,7 +586,7 @@ class AutoGradingManager:
         if qtype == 'mcq':
             options = {chr(65 + i): v.get().strip() for i, v in enumerate(self.mcq_option_vars)}
             if not all(options.values()):
-                messagebox.showwarning("Warning", "All MCQ options are required.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.all_mcq_options_are_required', default="All MCQ options are required."))
                 return
             options_json = json.dumps(options)
             correct_answer = self.mcq_correct_var.get()
@@ -593,7 +595,7 @@ class AutoGradingManager:
             raw = self.fill_answers_text.get('1.0', 'end').strip()
             answers = [a.strip() for a in raw.splitlines() if a.strip()]
             if not answers:
-                messagebox.showwarning("Warning", "At least one acceptable answer is required.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.at_least_one_acceptable_answer_is_required', default="At least one acceptable answer is required."))
                 return
             tolerance = self.fill_tolerance_var.get().strip()
             correct_answer = json.dumps({
@@ -609,7 +611,7 @@ class AutoGradingManager:
                     raise ValueError("Must be a JSON array")
                 test_cases_json = json.dumps(test_cases)
             except (json.JSONDecodeError, ValueError) as exc:
-                messagebox.showerror("Error", f"Invalid test cases JSON: {exc}")
+                messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Invalid test cases JSON: {exc}")
                 return
 
         try:
@@ -629,9 +631,9 @@ class AutoGradingManager:
             ))
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", "Question saved successfully.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.question_saved_successfully', default="Question saved successfully."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save question: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to save question: {e}")
 
     # ------------------------------------------------------------------ #
     #  Auto-Grading: MCQ
@@ -653,7 +655,7 @@ class AutoGradingManager:
 
             if not row:
                 conn.close()
-                messagebox.showwarning("Warning", "MCQ submission not found.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.mcq_submission_not_found', default="MCQ submission not found."))
                 return
 
             sa_id, student_answer, correct_answer, points = row
@@ -674,11 +676,11 @@ class AutoGradingManager:
 
             result = "Correct" if is_correct else "Incorrect"
             messagebox.showinfo(
-                "Graded", f"Submission {sa_id}: {result} ({points_earned}/{points} points)",
+                _t('gui.academics.assignment_system.auto_grading_manager.dialogs.graded', default="Graded"), f"Submission {sa_id}: {result} ({points_earned}/{points} points)",
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to grade MCQ: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to grade MCQ: {e}")
 
     # ------------------------------------------------------------------ #
     #  Auto-Grading: Fill-in-the-Blank
@@ -700,7 +702,7 @@ class AutoGradingManager:
 
             if not row:
                 conn.close()
-                messagebox.showwarning("Warning", "Fill-in-the-blank submission not found.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.fill_in_the_blank_submission_not_found', default="Fill-in-the-blank submission not found."))
                 return
 
             sa_id, student_answer, correct_json, points = row
@@ -730,11 +732,11 @@ class AutoGradingManager:
 
             result = "Correct" if is_correct else "Incorrect"
             messagebox.showinfo(
-                "Graded", f"Submission {sa_id}: {result} ({points_earned}/{points} points)",
+                _t('gui.academics.assignment_system.auto_grading_manager.dialogs.graded', default="Graded"), f"Submission {sa_id}: {result} ({points_earned}/{points} points)",
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to grade fill-in-the-blank: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to grade fill-in-the-blank: {e}")
 
     @staticmethod
     def _similarity_ratio(a, b):
@@ -783,7 +785,7 @@ class AutoGradingManager:
 
             if not row:
                 conn.close()
-                messagebox.showwarning("Warning", "Coding submission not found.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.coding_submission_not_found', default="Coding submission not found."))
                 return
 
             sa_id, student_code, test_cases_json, total_points = row
@@ -791,7 +793,7 @@ class AutoGradingManager:
 
             if not test_cases:
                 conn.close()
-                messagebox.showinfo("Info", "No test cases defined for this question.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.no_test_cases_defined_for_this_question', default="No test cases defined for this question."))
                 return
 
             passed = 0
@@ -826,13 +828,13 @@ class AutoGradingManager:
 
             detail = "\n".join(results)
             messagebox.showinfo(
-                "Graded",
+                _t('gui.academics.assignment_system.auto_grading_manager.dialogs.graded', default="Graded"),
                 f"Submission {sa_id}: {passed}/{len(test_cases)} tests passed\n"
                 f"Points: {points_earned}/{total_points}\n\n{detail}",
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to grade coding submission: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to grade coding submission: {e}")
 
     @staticmethod
     def _run_code_sandbox(code, stdin_input):
@@ -896,11 +898,11 @@ class AutoGradingManager:
             pending = cursor.fetchall()
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to fetch pending submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to fetch pending submissions: {e}")
             return
 
         if not pending:
-            messagebox.showinfo("Info", "No pending submissions to grade.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.no_pending_submissions_to_grade', default="No pending submissions to grade."))
             return
 
         graded = 0
@@ -929,7 +931,7 @@ class AutoGradingManager:
             print(f"Warning: exam attendance write-back failed: {wb_err}")
 
         messagebox.showinfo(
-            "Batch Grading Complete",
+            _t('gui.academics.assignment_system.auto_grading_manager.dialogs.batch_grading_complete', default="Batch Grading Complete"),
             f"Graded: {graded}\nErrors: {errors}\nTotal pending: {len(pending)}",
         )
 
@@ -1018,7 +1020,7 @@ class AutoGradingManager:
 
         title = ttk.Label(
             self.gui.layout.content_area,
-            text="Question Bank Statistics",
+            text=_t('gui.academics.assignment_system.auto_grading_manager.labels.question_bank_statistics', default="Question Bank Statistics"),
             style='Title.TLabel',
         )
         title.pack(anchor='w', pady=(0, 20))
@@ -1027,7 +1029,7 @@ class AutoGradingManager:
         sel_frame = ttk.Frame(self.gui.layout.content_area)
         sel_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(sel_frame, text="Question Bank:").pack(side='left')
+        ttk.Label(sel_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.question_bank', default="Question Bank:")).pack(side='left')
         self.stats_bank_var = tk.StringVar()
         self.stats_bank_combo = ttk.Combobox(
             sel_frame, textvariable=self.stats_bank_var, width=35, state='readonly',
@@ -1045,11 +1047,11 @@ class AutoGradingManager:
         except Exception:
             self._stats_bank_map = {}
 
-        ttk.Button(sel_frame, text="Load Stats", command=self._load_stats).pack(side='left')
+        ttk.Button(sel_frame, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.load_stats', default="Load Stats"), command=self._load_stats).pack(side='left')
 
         # --- Stats tree ---
         stats_frame = ttk.LabelFrame(
-            self.gui.layout.content_area, text="Per-Question Statistics", padding=10,
+            self.gui.layout.content_area, text=_t('gui.academics.assignment_system.auto_grading_manager.labels.per_question_statistics', default="Per-Question Statistics"), padding=10,
         )
         stats_frame.pack(fill='both', expand=True, pady=(0, 15))
 
@@ -1078,7 +1080,7 @@ class AutoGradingManager:
         scroll.pack(side='right', fill='y')
 
         # --- Summary ---
-        self.stats_summary_var = tk.StringVar(value="Select a bank and click Load Stats.")
+        self.stats_summary_var = tk.StringVar(value=_t('gui.academics.assignment_system.auto_grading_manager.values.select_a_bank_and_click_load_stats', default="Select a bank and click Load Stats."))
         ttk.Label(
             self.gui.layout.content_area,
             textvariable=self.stats_summary_var,
@@ -1086,7 +1088,7 @@ class AutoGradingManager:
 
         # Back button
         ttk.Button(
-            self.gui.layout.content_area, text="Back to Dashboard",
+            self.gui.layout.content_area, text=_t('gui.academics.assignment_system.auto_grading_manager.buttons.back_to_dashboard', default="Back to Dashboard"),
             command=self.show_auto_grading,
         ).pack(anchor='w')
 
@@ -1094,7 +1096,7 @@ class AutoGradingManager:
         """Populate the stats tree for the selected question bank"""
         bank_key = self.stats_bank_var.get()
         if not bank_key or bank_key not in self._stats_bank_map:
-            messagebox.showwarning("Warning", "Please select a question bank.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.auto_grading_manager.dialogs.please_select_a_question_bank', default="Please select a question bank."))
             return
 
         bank_id = self._stats_bank_map[bank_key]
@@ -1158,4 +1160,4 @@ class AutoGradingManager:
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load statistics: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.auto_grading_manager.dialogs.error', default="Error"), f"Failed to load statistics: {e}")

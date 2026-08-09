@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
@@ -49,28 +51,28 @@ def show_all_parent_accounts(self):
     # Verify admin access
     current_user = self.get_current_user()
     if not current_user or current_user.get('role') != 'admin':
-        messagebox.showerror("Access Denied", "Only administrators can view all parent accounts.")
+        messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.access_denied', default="Access Denied"), _t('gui.academics.parent_portal.admin.dialogs.only_administrators_can_view_all_parent_accounts', default="Only administrators can view all parent accounts."))
         return
 
     self.clear_content()
     self.update_status("Viewing All Parent Accounts")
 
     # Title
-    title = ttk.Label(self.content_frame, text="All Parent Accounts",
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.admin.labels.all_parent_accounts', default="All Parent Accounts"),
                      style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Search/Filter frame
-    filter_frame = ttk.LabelFrame(self.content_frame, text="Search & Filter", padding=10)
+    filter_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.admin.labels.search_filter', default="Search & Filter"), padding=10)
     filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-    ttk.Label(filter_frame, text="Search:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(filter_frame, text=_t('gui.academics.parent_portal.admin.labels.search', default="Search:")).pack(side=tk.LEFT, padx=5)
     search_var = tk.StringVar()
     search_entry = ttk.Entry(filter_frame, textvariable=search_var, width=30)
     search_entry.pack(side=tk.LEFT, padx=5)
 
-    ttk.Label(filter_frame, text="Filter by Status:").pack(side=tk.LEFT, padx=(20, 5))
-    status_var = tk.StringVar(value="All")
+    ttk.Label(filter_frame, text=_t('gui.academics.parent_portal.admin.labels.filter_by_status', default="Filter by Status:")).pack(side=tk.LEFT, padx=(20, 5))
+    status_var = tk.StringVar(value=_t('gui.academics.parent_portal.admin.values.all', default="All"))
     status_combo = ttk.Combobox(filter_frame, textvariable=status_var,
                                values=["All", "Active", "Inactive"], state="readonly", width=15)
     status_combo.pack(side=tk.LEFT, padx=5)
@@ -80,11 +82,11 @@ def show_all_parent_accounts(self):
     main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     # Summary frame
-    summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding=10)
+    summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.admin.labels.summary', default="Summary"), padding=10)
     summary_frame.pack(fill=tk.X, pady=(0, 10))
 
     # Parent accounts table
-    accounts_frame = ttk.LabelFrame(main_frame, text="Parent Accounts", padding=10)
+    accounts_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.admin.labels.parent_accounts', default="Parent Accounts"), padding=10)
     accounts_frame.pack(fill=tk.BOTH, expand=True)
 
     def load_parent_accounts(search_text="", status_filter="All"):
@@ -157,13 +159,13 @@ def show_all_parent_accounts(self):
                     columns = ("Parent ID", "Name", "Email", "Phone", "Children", "Created", "Status")
                     tree = ttk.Treeview(accounts_frame, columns=columns, show="headings", height=20)
 
-                    tree.heading("Parent ID", text="Parent ID")
-                    tree.heading("Name", text="Name")
-                    tree.heading("Email", text="Email")
-                    tree.heading("Phone", text="Phone")
-                    tree.heading("Children", text="Children")
-                    tree.heading("Created", text="Created Date")
-                    tree.heading("Status", text="Status")
+                    tree.heading("Parent ID", text=_t('gui.academics.parent_portal.admin.headings.parent_id', default="Parent ID"))
+                    tree.heading("Name", text=_t('gui.academics.parent_portal.admin.headings.name', default="Name"))
+                    tree.heading("Email", text=_t('gui.academics.parent_portal.admin.headings.email', default="Email"))
+                    tree.heading("Phone", text=_t('gui.academics.parent_portal.admin.headings.phone', default="Phone"))
+                    tree.heading("Children", text=_t('gui.academics.parent_portal.admin.headings.children', default="Children"))
+                    tree.heading("Created", text=_t('gui.academics.parent_portal.admin.headings.created_date', default="Created Date"))
+                    tree.heading("Status", text=_t('gui.academics.parent_portal.admin.headings.status', default="Status"))
 
                     tree.column("Parent ID", width=100)
                     tree.column("Name", width=200)
@@ -204,14 +206,14 @@ def show_all_parent_accounts(self):
                             parent_id = item['values'][0]
                             self.view_parent_account_details(parent_id)
                         else:
-                            messagebox.showwarning("No Selection", "Please select a parent account to view.")
+                            messagebox.showwarning(_t('gui.academics.parent_portal.admin.dialogs.no_selection', default="No Selection"), _t('gui.academics.parent_portal.admin.dialogs.please_select_a_parent_account_to_view', default="Please select a parent account to view."))
 
                     def export_to_csv():
                         from tkinter import filedialog
                         filename = filedialog.asksaveasfilename(
                             defaultextension=".csv",
                             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                            title="Export Parent Accounts"
+                            title=_t('gui.academics.parent_portal.admin.dialogs.export_parent_accounts', default="Export Parent Accounts")
                         )
                         if filename:
                             import csv
@@ -220,19 +222,19 @@ def show_all_parent_accounts(self):
                                 writer.writerow(["Parent ID", "First Name", "Last Name", "Email", "Phone", "Address", "Children", "Registration Date", "Status"])
                                 for acc in accounts:
                                     writer.writerow([acc[0], acc[1], acc[2], acc[3], acc[4], acc[5], acc[7], acc[6], "Active"])
-                            messagebox.showinfo("Export Complete", f"Parent accounts exported to:\n{filename}")
+                            messagebox.showinfo(_t('gui.academics.parent_portal.admin.dialogs.export_complete', default="Export Complete"), f"Parent accounts exported to:\n{filename}")
 
-                    ttk.Button(btn_frame, text="View Details", command=view_parent_details).pack(side=tk.LEFT, padx=5)
-                    ttk.Button(btn_frame, text="Export to CSV", command=export_to_csv).pack(side=tk.LEFT, padx=5)
-                    ttk.Button(btn_frame, text="Refresh", command=lambda: load_parent_accounts(search_var.get(), status_var.get())).pack(side=tk.LEFT, padx=5)
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.admin.buttons.view_details', default="View Details"), command=view_parent_details).pack(side=tk.LEFT, padx=5)
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.admin.buttons.export_to_csv', default="Export to CSV"), command=export_to_csv).pack(side=tk.LEFT, padx=5)
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.admin.buttons.refresh', default="Refresh"), command=lambda: load_parent_accounts(search_var.get(), status_var.get())).pack(side=tk.LEFT, padx=5)
 
                 else:
-                    ttk.Label(accounts_frame, text="No parent accounts found matching the criteria.",
+                    ttk.Label(accounts_frame, text=_t('gui.academics.parent_portal.admin.labels.no_parent_accounts_found_matching_the_criteria', default="No parent accounts found matching the criteria."),
                              font=('Arial', 11)).pack(pady=50)
             else:
-                ttk.Label(summary_frame, text="Parent accounts table not found in database.",
+                ttk.Label(summary_frame, text=_t('gui.academics.parent_portal.admin.labels.parent_accounts_table_not_found_in_database', default="Parent accounts table not found in database."),
                          font=('Arial', 10)).pack(pady=10)
-                ttk.Label(accounts_frame, text="Parent accounts system not configured.",
+                ttk.Label(accounts_frame, text=_t('gui.academics.parent_portal.admin.labels.parent_accounts_system_not_configured', default="Parent accounts system not configured."),
                          font=('Arial', 11)).pack(pady=50)
 
             conn.close()
@@ -245,8 +247,8 @@ def show_all_parent_accounts(self):
     search_entry.bind('<Return>', lambda e: load_parent_accounts(search_var.get(), status_var.get()))
     status_combo.bind('<<ComboboxSelected>>', lambda e: load_parent_accounts(search_var.get(), status_var.get()))
 
-    ttk.Button(filter_frame, text="Search", command=lambda: load_parent_accounts(search_var.get(), status_var.get())).pack(side=tk.LEFT, padx=5)
-    ttk.Button(filter_frame, text="Clear", command=lambda: [search_var.set(""), status_var.set("All"), load_parent_accounts()]).pack(side=tk.LEFT, padx=5)
+    ttk.Button(filter_frame, text=_t('gui.academics.parent_portal.admin.buttons.search', default="Search"), command=lambda: load_parent_accounts(search_var.get(), status_var.get())).pack(side=tk.LEFT, padx=5)
+    ttk.Button(filter_frame, text=_t('gui.academics.parent_portal.admin.buttons.clear', default="Clear"), command=lambda: [search_var.set(""), status_var.set("All"), load_parent_accounts()]).pack(side=tk.LEFT, padx=5)
 
     # Load initial data
     load_parent_accounts()
@@ -283,7 +285,7 @@ def view_parent_account_details(self, parent_id):
                      font=('Arial', 10), foreground='gray').pack(anchor='w')
 
             # Account information
-            info_frame = ttk.LabelFrame(dialog, text="Account Information", padding=20)
+            info_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.parent_portal.admin.labels.account_information', default="Account Information"), padding=20)
             info_frame.pack(fill=tk.X, padx=20, pady=10)
 
             ttk.Label(info_frame, text=f"Email: {parent[3] or 'N/A'}",
@@ -294,11 +296,11 @@ def view_parent_account_details(self, parent_id):
                      font=('Arial', 10)).pack(anchor='w', pady=3)
             ttk.Label(info_frame, text=f"Registration Date: {parent[6] or 'N/A'}",
                      font=('Arial', 10)).pack(anchor='w', pady=3)
-            ttk.Label(info_frame, text="Status: Active",
+            ttk.Label(info_frame, text=_t('gui.academics.parent_portal.admin.labels.status_active', default="Status: Active"),
                      font=('Arial', 10), foreground='green').pack(anchor='w', pady=3)
 
             # Linked children
-            children_frame = ttk.LabelFrame(dialog, text="Linked Children", padding=20)
+            children_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.parent_portal.admin.labels.linked_children', default="Linked Children"), padding=20)
             children_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
             cursor.execute("""
@@ -320,11 +322,11 @@ def view_parent_account_details(self, parent_id):
                     ttk.Label(child_card, text=f"  Year: {child[3] or 'N/A'} | Program: {child[4] or 'N/A'}",
                              font=('Arial', 9)).pack(anchor='w', padx=20)
             else:
-                ttk.Label(children_frame, text="No students linked to this account.",
+                ttk.Label(children_frame, text=_t('gui.academics.parent_portal.admin.labels.no_students_linked_to_this_account', default="No students linked to this account."),
                          font=('Arial', 10)).pack(pady=20)
 
         else:
-            ttk.Label(dialog, text="Parent account not found.",
+            ttk.Label(dialog, text=_t('gui.academics.parent_portal.admin.labels.parent_account_not_found', default="Parent account not found."),
                      font=('Arial', 11)).pack(pady=50)
 
         conn.close()
@@ -334,7 +336,7 @@ def view_parent_account_details(self, parent_id):
                  font=('Arial', 10)).pack(pady=50)
 
     # Close button
-    ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+    ttk.Button(dialog, text=_t('gui.academics.parent_portal.admin.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 ParentPortalGUI.view_parent_account_details = view_parent_account_details
 
 def show_create_parent_account_interface(self):
@@ -342,51 +344,51 @@ def show_create_parent_account_interface(self):
     # Check admin role dynamically
     current_user = self.get_current_user()
     if not current_user or current_user.get('role') != 'admin':
-        messagebox.showerror("Access Denied", "Only administrators can create parent accounts.")
+        messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.access_denied', default="Access Denied"), _t('gui.academics.parent_portal.admin.dialogs.only_administrators_can_create_parent_accounts', default="Only administrators can create parent accounts."))
         return
 
     self.clear_content()
     self.update_status("Create Parent Account")
 
-    title = ttk.Label(self.content_frame, text="Create New Parent Account",
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.admin.labels.create_new_parent_account', default="Create New Parent Account"),
                      style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Form frame
-    form_frame = ttk.LabelFrame(self.content_frame, text="Parent Information", padding=20)
+    form_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.admin.labels.parent_information', default="Parent Information"), padding=20)
     form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     # First Name
-    ttk.Label(form_frame, text="First Name:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.admin.labels.first_name', default="First Name:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
     first_name_entry = ttk.Entry(form_frame, width=40)
     first_name_entry.grid(row=0, column=1, pady=5, sticky='ew')
 
     # Last Name
-    ttk.Label(form_frame, text="Last Name:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.admin.labels.last_name', default="Last Name:"), font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', pady=5)
     last_name_entry = ttk.Entry(form_frame, width=40)
     last_name_entry.grid(row=1, column=1, pady=5, sticky='ew')
 
     # Email
-    ttk.Label(form_frame, text="Email:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.admin.labels.email', default="Email:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
     email_entry = ttk.Entry(form_frame, width=40)
     email_entry.grid(row=2, column=1, pady=5, sticky='ew')
 
     # Phone
-    ttk.Label(form_frame, text="Phone:", font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.admin.labels.phone', default="Phone:"), font=('Arial', 10, 'bold')).grid(row=3, column=0, sticky='w', pady=5)
     phone_entry = ttk.Entry(form_frame, width=40)
     phone_entry.grid(row=3, column=1, pady=5, sticky='ew')
 
     # Address
-    ttk.Label(form_frame, text="Address:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='nw', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.admin.labels.address', default="Address:"), font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='nw', pady=5)
     address_text = scrolledtext.ScrolledText(form_frame, width=40, height=4)
     address_text.grid(row=4, column=1, pady=5, sticky='ew')
 
     form_frame.columnconfigure(1, weight=1)
 
     # Result display
-    result_frame = ttk.LabelFrame(self.content_frame, text="Created Account Details", padding=20)
+    result_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.admin.labels.created_account_details', default="Created Account Details"), padding=20)
     result_frame.pack(fill=tk.X, padx=20, pady=10)
-    result_label = ttk.Label(result_frame, text="Account details will appear here after creation",
+    result_label = ttk.Label(result_frame, text=_t('gui.academics.parent_portal.admin.labels.account_details_will_appear_here_after_creation', default="Account details will appear here after creation"),
                             font=('Arial', 10, 'italic'))
     result_label.pack()
 
@@ -403,11 +405,11 @@ def show_create_parent_account_interface(self):
 
         # Validation
         if not first_name or not last_name:
-            messagebox.showwarning("Validation Error", "First name and last name are required.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.admin.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.admin.dialogs.first_name_and_last_name_are_required', default="First name and last name are required."))
             return
 
         if not email or '@' not in email:
-            messagebox.showwarning("Validation Error", "Please enter a valid email address.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.admin.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.admin.dialogs.please_enter_a_valid_email_address', default="Please enter a valid email address."))
             return
 
         try:
@@ -420,7 +422,7 @@ def show_create_parent_account_interface(self):
             # Check if email already exists
             cursor.execute('SELECT email FROM parent_accounts WHERE email = ?', (email,))
             if cursor.fetchone():
-                messagebox.showerror("Error", "This email is already registered.")
+                messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), _t('gui.academics.parent_portal.admin.dialogs.this_email_is_already_registered', default="This email is already registered."))
                 conn.close()
                 return
 
@@ -444,7 +446,7 @@ def show_create_parent_account_interface(self):
 
             # Create user account using central authentication (SECURE)
             if not self.auth:
-                messagebox.showerror("Error", "Authentication system not available.")
+                messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), _t('gui.academics.parent_portal.admin.dialogs.authentication_system_not_available', default="Authentication system not available."))
                 return
 
             success = self.auth.create_user(
@@ -458,7 +460,7 @@ def show_create_parent_account_interface(self):
             )
 
             if not success:
-                messagebox.showerror("Error", "Failed to create user account.")
+                messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), _t('gui.academics.parent_portal.admin.dialogs.failed_to_create_user_account', default="Failed to create user account."))
                 # Rollback parent account creation
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 try:
@@ -477,7 +479,7 @@ def show_create_parent_account_interface(self):
                 user_result = cursor.fetchone()
 
                 if not user_result:
-                    messagebox.showerror("Error", "User created but ID not found.")
+                    messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), _t('gui.academics.parent_portal.admin.dialogs.user_created_but_id_not_found', default="User created but ID not found."))
             finally:
                 conn.close()
                 return
@@ -510,7 +512,7 @@ def show_create_parent_account_interface(self):
 
             result_label.config(text=result_text, font=('Arial', 10), foreground='green')
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.parent_portal.admin.dialogs.success', default="Success"),
                 f"Parent account created successfully!\n\n"
                 f"Username: {username}\n"
                 f"Password: {password}\n\n"
@@ -519,10 +521,10 @@ def show_create_parent_account_interface(self):
             self.update_status("Parent account created successfully")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create parent account: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), f"Failed to create parent account: {str(e)}")
 
-    ttk.Button(btn_frame, text="Create Account", command=create_account).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Back to Admin Panel", command=self.show_admin_menu).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.admin.buttons.create_account', default="Create Account"), command=create_account).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.admin.buttons.back_to_admin_panel', default="Back to Admin Panel"), command=self.show_admin_menu).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.show_create_parent_account_interface = show_create_parent_account_interface
 
 def show_link_student_interface(self):
@@ -530,26 +532,26 @@ def show_link_student_interface(self):
     # Check admin role dynamically
     current_user = self.get_current_user()
     if not current_user or current_user.get('role') != 'admin':
-        messagebox.showerror("Access Denied", "Only administrators can link students to parents.")
+        messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.access_denied', default="Access Denied"), _t('gui.academics.parent_portal.admin.dialogs.only_administrators_can_link_students_to_parents', default="Only administrators can link students to parents."))
         return
 
     self.clear_content()
     self.update_status("Link Student to Family Account")
 
-    title = ttk.Label(self.content_frame, text="Link Student to Family Account",
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.admin.labels.link_student_to_family_account', default="Link Student to Family Account"),
                      style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Form frame
-    form_frame = ttk.LabelFrame(self.content_frame, text="Link Information", padding=20)
+    form_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.admin.labels.link_information', default="Link Information"), padding=20)
     form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     # Family Account ID
-    ttk.Label(form_frame, text="Family Account ID:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.admin.labels.family_account_id', default="Family Account ID:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
     parent_id_entry = ttk.Entry(form_frame, width=40)
     parent_id_entry.grid(row=0, column=1, pady=5, sticky='ew')
 
-    ttk.Button(form_frame, text="Search Account",
+    ttk.Button(form_frame, text=_t('gui.academics.parent_portal.admin.buttons.search_account', default="Search Account"),
               command=lambda: search_parent(parent_id_entry.get())).grid(row=0, column=2, padx=5)
 
     # Parent info display
@@ -557,11 +559,11 @@ def show_link_student_interface(self):
     parent_info_label.grid(row=1, column=0, columnspan=3, sticky='w', pady=5)
 
     # Student ID
-    ttk.Label(form_frame, text="Student ID:", font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.admin.labels.student_id', default="Student ID:"), font=('Arial', 10, 'bold')).grid(row=2, column=0, sticky='w', pady=5)
     student_id_entry = ttk.Entry(form_frame, width=40)
     student_id_entry.grid(row=2, column=1, pady=5, sticky='ew')
 
-    ttk.Button(form_frame, text="Search Student",
+    ttk.Button(form_frame, text=_t('gui.academics.parent_portal.admin.buttons.search_student', default="Search Student"),
               command=lambda: search_student(student_id_entry.get())).grid(row=2, column=2, padx=5)
 
     # Student info display
@@ -569,7 +571,7 @@ def show_link_student_interface(self):
     student_info_label.grid(row=3, column=0, columnspan=3, sticky='w', pady=5)
 
     # Relationship
-    ttk.Label(form_frame, text="Relationship:", font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.parent_portal.admin.labels.relationship', default="Relationship:"), font=('Arial', 10, 'bold')).grid(row=4, column=0, sticky='w', pady=5)
     relationship_var = tk.StringVar()
     relationship_combo = ttk.Combobox(form_frame, textvariable=relationship_var, width=37, state='readonly')
     relationship_combo['values'] = ["Parent", "Guardian", "Spouse", "Sibling", "Other Family"]
@@ -580,7 +582,7 @@ def show_link_student_interface(self):
 
     def search_parent(parent_id):
         if not parent_id:
-            messagebox.showwarning("Validation Error", "Please enter a parent ID.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.admin.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.admin.dialogs.please_enter_a_parent_id', default="Please enter a parent ID."))
             return
 
         try:
@@ -602,14 +604,14 @@ def show_link_student_interface(self):
                     foreground='green'
                 )
             else:
-                parent_info_label.config(text="Parent not found!", foreground='red')
+                parent_info_label.config(text=_t('gui.academics.parent_portal.admin.text.parent_not_found', default="Parent not found!"), foreground='red')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to search parent: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), f"Failed to search parent: {str(e)}")
 
     def search_student(student_id):
         if not student_id:
-            messagebox.showwarning("Validation Error", "Please enter a student ID.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.admin.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.admin.dialogs.please_enter_a_student_id', default="Please enter a student ID."))
             return
 
         try:
@@ -631,10 +633,10 @@ def show_link_student_interface(self):
                     foreground='green'
                 )
             else:
-                student_info_label.config(text="Student not found!", foreground='red')
+                student_info_label.config(text=_t('gui.academics.parent_portal.admin.text.student_not_found', default="Student not found!"), foreground='red')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to search student: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), f"Failed to search student: {str(e)}")
 
     # Buttons
     btn_frame = ttk.Frame(self.content_frame)
@@ -646,7 +648,7 @@ def show_link_student_interface(self):
         relationship = relationship_var.get()
 
         if not parent_id or not student_id:
-            messagebox.showwarning("Validation Error", "Please enter both parent ID and student ID.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.admin.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.admin.dialogs.please_enter_both_parent_id_and_student_id', default="Please enter both parent ID and student ID."))
             return
 
         try:
@@ -656,14 +658,14 @@ def show_link_student_interface(self):
             # Verify parent exists
             cursor.execute('SELECT parent_id FROM parent_accounts WHERE parent_id = ?', (parent_id,))
             if not cursor.fetchone():
-                messagebox.showerror("Error", "Parent ID not found.")
+                messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), _t('gui.academics.parent_portal.admin.dialogs.parent_id_not_found', default="Parent ID not found."))
                 conn.close()
                 return
 
             # Verify student exists
             cursor.execute('SELECT student_id FROM students WHERE student_id = ?', (student_id,))
             if not cursor.fetchone():
-                messagebox.showerror("Error", "Student ID not found.")
+                messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), _t('gui.academics.parent_portal.admin.dialogs.student_id_not_found', default="Student ID not found."))
                 conn.close()
                 return
 
@@ -674,7 +676,7 @@ def show_link_student_interface(self):
             ''', (parent_id, student_id))
 
             if cursor.fetchone():
-                messagebox.showwarning("Duplicate", "This parent is already linked to this student.")
+                messagebox.showwarning(_t('gui.academics.parent_portal.admin.dialogs.duplicate', default="Duplicate"), _t('gui.academics.parent_portal.admin.dialogs.this_parent_is_already_linked_to_this_student', default="This parent is already linked to this student."))
                 conn.close()
                 return
 
@@ -687,7 +689,7 @@ def show_link_student_interface(self):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.parent_portal.admin.dialogs.success', default="Success"),
                 f"Student {student_id} successfully linked to parent {parent_id}\n"
                 f"Relationship: {relationship}")
 
@@ -700,17 +702,17 @@ def show_link_student_interface(self):
             student_info_label.config(text="")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to link accounts: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), f"Failed to link accounts: {str(e)}")
 
-    ttk.Button(btn_frame, text="Link Accounts", command=link_accounts).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Back to Admin Panel", command=self.show_admin_menu).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.admin.buttons.link_accounts', default="Link Accounts"), command=link_accounts).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.admin.buttons.back_to_admin_panel', default="Back to Admin Panel"), command=self.show_admin_menu).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.show_link_student_interface = show_link_student_interface
 
 def show_view_parent_dashboard_interface(self):
     """Show interface to view any parent's dashboard (admin only)"""
     current_user = self.get_current_user()
     if not current_user or current_user.get('role') != 'admin':
-        messagebox.showerror("Access Denied", "Only administrators can view parent dashboards.")
+        messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.access_denied', default="Access Denied"), _t('gui.academics.parent_portal.admin.dialogs.only_administrators_can_view_parent_dashboards', default="Only administrators can view parent dashboards."))
         return
 
     self.clear_content()
@@ -718,17 +720,17 @@ def show_view_parent_dashboard_interface(self):
 
     title = ttk.Label(
         self.content_frame,
-        text="View Parent Dashboard",
+        text=_t('gui.academics.parent_portal.admin.labels.view_parent_dashboard', default="View Parent Dashboard"),
         style='Title.TLabel',
         font=('Arial', 20, 'bold')
     )
     title.pack(pady=20)
 
     # Search frame
-    search_frame = ttk.LabelFrame(self.content_frame, text="Search for Parent", padding=20)
+    search_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.admin.labels.search_for_parent', default="Search for Parent"), padding=20)
     search_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(search_frame, text="Parent ID or Email:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(search_frame, text=_t('gui.academics.parent_portal.admin.labels.parent_id_or_email', default="Parent ID or Email:"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', pady=5)
     search_entry = ttk.Entry(search_frame, width=40, font=('Arial', 10))
     search_entry.grid(row=0, column=1, padx=10, pady=5)
 
@@ -738,7 +740,7 @@ def show_view_parent_dashboard_interface(self):
     def search_parent():
         search_value = search_entry.get().strip()
         if not search_value:
-            messagebox.showwarning("Input Required", "Please enter a parent ID or email")
+            messagebox.showwarning(_t('gui.academics.parent_portal.admin.dialogs.input_required', default="Input Required"), _t('gui.academics.parent_portal.admin.dialogs.please_enter_a_parent_id_or_email', default="Please enter a parent ID or email"))
             return
 
         try:
@@ -781,25 +783,25 @@ def show_view_parent_dashboard_interface(self):
 
                 search_frame.view_btn = ttk.Button(
                     search_frame,
-                    text="View This Parent's Dashboard",
+                    text=_t('gui.academics.parent_portal.admin.buttons.view_this_parent_s_dashboard', default="View This Parent's Dashboard"),
                     command=view_dashboard
                 )
                 search_frame.view_btn.grid(row=2, column=0, columnspan=2, pady=10)
             else:
-                parent_info_label.config(text="Parent not found!", foreground='red')
+                parent_info_label.config(text=_t('gui.academics.parent_portal.admin.text.parent_not_found', default="Parent not found!"), foreground='red')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Database error: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), f"Database error: {str(e)}")
 
-    ttk.Button(search_frame, text="Search", command=search_parent).grid(row=0, column=2, padx=5)
-    ttk.Button(self.content_frame, text="Back to Admin Panel", command=self.show_admin_menu).pack(pady=20)
+    ttk.Button(search_frame, text=_t('gui.academics.parent_portal.admin.buttons.search', default="Search"), command=search_parent).grid(row=0, column=2, padx=5)
+    ttk.Button(self.content_frame, text=_t('gui.academics.parent_portal.admin.buttons.back_to_admin_panel', default="Back to Admin Panel"), command=self.show_admin_menu).pack(pady=20)
 ParentPortalGUI.show_view_parent_dashboard_interface = show_view_parent_dashboard_interface
 
 def show_parent_reports_interface(self):
     """Show parent account reports interface (admin only)"""
     current_user = self.get_current_user()
     if not current_user or current_user.get('role') != 'admin':
-        messagebox.showerror("Access Denied", "Only administrators can view reports.")
+        messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.access_denied', default="Access Denied"), _t('gui.academics.parent_portal.admin.dialogs.only_administrators_can_view_reports', default="Only administrators can view reports."))
         return
 
     self.clear_content()
@@ -807,7 +809,7 @@ def show_parent_reports_interface(self):
 
     title = ttk.Label(
         self.content_frame,
-        text="Parent Account Reports",
+        text=_t('gui.academics.parent_portal.admin.labels.parent_account_reports', default="Parent Account Reports"),
         style='Title.TLabel',
         font=('Arial', 20, 'bold')
     )
@@ -818,7 +820,7 @@ def show_parent_reports_interface(self):
     reports_frame.pack(fill=tk.BOTH, expand=True, padx=20)
 
     # Statistics
-    stats_frame = ttk.LabelFrame(reports_frame, text="System Statistics", padding=15)
+    stats_frame = ttk.LabelFrame(reports_frame, text=_t('gui.academics.parent_portal.admin.labels.system_statistics', default="System Statistics"), padding=15)
     stats_frame.pack(fill=tk.X, pady=10)
 
     try:
@@ -850,22 +852,22 @@ def show_parent_reports_interface(self):
         ttk.Label(stats_frame, text=f"Error loading statistics: {str(e)}", foreground='red').pack()
 
     # Report options
-    report_options_frame = ttk.LabelFrame(reports_frame, text="Generate Reports", padding=15)
+    report_options_frame = ttk.LabelFrame(reports_frame, text=_t('gui.academics.parent_portal.admin.labels.generate_reports', default="Generate Reports"), padding=15)
     report_options_frame.pack(fill=tk.X, pady=10)
 
     ttk.Button(
         report_options_frame,
-        text="Export All Parent Accounts (CSV)",
+        text=_t('gui.academics.parent_portal.admin.buttons.export_all_parent_accounts_csv', default="Export All Parent Accounts (CSV)"),
         command=self.export_parent_accounts_csv
     ).pack(fill=tk.X, pady=5)
 
     ttk.Button(
         report_options_frame,
-        text="View Parent Activity Log",
+        text=_t('gui.academics.parent_portal.admin.buttons.view_parent_activity_log', default="View Parent Activity Log"),
         command=self.view_parent_activity_log_interface
     ).pack(fill=tk.X, pady=5)
 
-    ttk.Button(self.content_frame, text="Back to Admin Panel", command=self.show_admin_menu).pack(pady=20)
+    ttk.Button(self.content_frame, text=_t('gui.academics.parent_portal.admin.buttons.back_to_admin_panel', default="Back to Admin Panel"), command=self.show_admin_menu).pack(pady=20)
 ParentPortalGUI.show_parent_reports_interface = show_parent_reports_interface
 
 def export_parent_accounts_csv(self):
@@ -908,7 +910,7 @@ def export_parent_accounts_csv(self):
             parent_data = cursor.fetchall()
 
             if not parent_data:
-                messagebox.showinfo("No Data", "No parent accounts found to export.")
+                messagebox.showinfo(_t('gui.academics.parent_portal.admin.dialogs.no_data', default="No Data"), _t('gui.academics.parent_portal.admin.dialogs.no_parent_accounts_found_to_export', default="No parent accounts found to export."))
         finally:
             conn.close()
             return
@@ -957,13 +959,13 @@ def export_parent_accounts_csv(self):
             )
 
         messagebox.showinfo(
-            "Export Successful",
+            _t('gui.academics.parent_portal.admin.dialogs.export_successful', default="Export Successful"),
             f"Successfully exported {len(parent_data)} parent account(s) to:\n{file_path}"
         )
         self.update_status(f"Exported {len(parent_data)} parent accounts to CSV")
 
     except Exception as e:
-        messagebox.showerror("Export Error", f"Failed to export parent accounts:\n{str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.export_error', default="Export Error"), f"Failed to export parent accounts:\n{str(e)}")
         print(f"Error exporting parent accounts: {e}")
 ParentPortalGUI.export_parent_accounts_csv = export_parent_accounts_csv
 
@@ -972,7 +974,7 @@ def view_parent_activity_log_interface(self):
     try:
         # Create new window for activity log
         log_window = tk.Toplevel(self.root)
-        log_window.title("Parent Activity Log")
+        log_window.title(_t('gui.academics.parent_portal.admin.windows.parent_activity_log', default="Parent Activity Log"))
         log_window.geometry("1000x600")
 
         # Title
@@ -981,24 +983,24 @@ def view_parent_activity_log_interface(self):
 
         title_label = ttk.Label(
             title_frame,
-            text="Parent Activity Log",
+            text=_t('gui.academics.parent_portal.admin.labels.parent_activity_log', default="Parent Activity Log"),
             font=('Arial', 18, 'bold')
         )
         title_label.pack(side=tk.LEFT)
 
         # Filter controls
-        filter_frame = ttk.LabelFrame(log_window, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(log_window, text=_t('gui.academics.parent_portal.admin.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill=tk.X, padx=20, pady=10)
 
         # Parent ID filter
-        ttk.Label(filter_frame, text="Parent ID:").grid(row=0, column=0, padx=5, pady=5, sticky='w')
+        ttk.Label(filter_frame, text=_t('gui.academics.parent_portal.admin.labels.parent_id', default="Parent ID:")).grid(row=0, column=0, padx=5, pady=5, sticky='w')
         parent_id_var = tk.StringVar()
         parent_id_entry = ttk.Entry(filter_frame, textvariable=parent_id_var, width=20)
         parent_id_entry.grid(row=0, column=1, padx=5, pady=5)
 
         # Action filter
-        ttk.Label(filter_frame, text="Action:").grid(row=0, column=2, padx=5, pady=5, sticky='w')
-        action_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.academics.parent_portal.admin.labels.action', default="Action:")).grid(row=0, column=2, padx=5, pady=5, sticky='w')
+        action_var = tk.StringVar(value=_t('gui.academics.parent_portal.admin.values.all', default="All"))
         action_combo = ttk.Combobox(
             filter_frame,
             textvariable=action_var,
@@ -1009,7 +1011,7 @@ def view_parent_activity_log_interface(self):
         action_combo.grid(row=0, column=3, padx=5, pady=5)
 
         # Date range
-        ttk.Label(filter_frame, text="Days Back:").grid(row=0, column=4, padx=5, pady=5, sticky='w')
+        ttk.Label(filter_frame, text=_t('gui.academics.parent_portal.admin.labels.days_back', default="Days Back:")).grid(row=0, column=4, padx=5, pady=5, sticky='w')
         days_var = tk.StringVar(value="7")
         days_combo = ttk.Combobox(
             filter_frame,
@@ -1101,7 +1103,7 @@ def view_parent_activity_log_interface(self):
                 status_label.config(text=f"Showing {len(activities)} activities")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load activity log:\n{str(e)}")
+                messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), f"Failed to load activity log:\n{str(e)}")
                 print(f"Error loading activity log: {e}")
 
         # Buttons
@@ -1110,19 +1112,19 @@ def view_parent_activity_log_interface(self):
 
         ttk.Button(
             button_frame,
-            text="Apply Filters",
+            text=_t('gui.academics.parent_portal.admin.buttons.apply_filters', default="Apply Filters"),
             command=load_activity_data
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             button_frame,
-            text="Export to CSV",
+            text=_t('gui.academics.parent_portal.admin.buttons.export_to_csv', default="Export to CSV"),
             command=lambda: self.export_activity_log_csv(tree)
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             button_frame,
-            text="Refresh",
+            text=_t('gui.academics.parent_portal.admin.buttons.refresh', default="Refresh"),
             command=load_activity_data
         ).pack(side=tk.LEFT, padx=5)
 
@@ -1132,7 +1134,7 @@ def view_parent_activity_log_interface(self):
 
         ttk.Button(
             button_frame,
-            text="Close",
+            text=_t('gui.academics.parent_portal.admin.buttons.close', default="Close"),
             command=log_window.destroy
         ).pack(side=tk.RIGHT, padx=5)
 
@@ -1151,7 +1153,7 @@ def view_parent_activity_log_interface(self):
             )
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open activity log viewer:\n{str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.error', default="Error"), f"Failed to open activity log viewer:\n{str(e)}")
         print(f"Error opening activity log viewer: {e}")
 ParentPortalGUI.view_parent_activity_log_interface = view_parent_activity_log_interface
 
@@ -1171,7 +1173,7 @@ def export_activity_log_csv(self, tree):
         items = tree.get_children()
 
         if not items:
-            messagebox.showinfo("No Data", "No activity log data to export.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.admin.dialogs.no_data', default="No Data"), _t('gui.academics.parent_portal.admin.dialogs.no_activity_log_data_to_export', default="No activity log data to export."))
             return
 
         # Write to CSV
@@ -1187,10 +1189,10 @@ def export_activity_log_csv(self, tree):
                 csv_writer.writerow(values)
 
         messagebox.showinfo(
-            "Export Successful",
+            _t('gui.academics.parent_portal.admin.dialogs.export_successful', default="Export Successful"),
             f"Successfully exported {len(items)} activity log entries to:\n{file_path}"
         )
 
     except Exception as e:
-        messagebox.showerror("Export Error", f"Failed to export activity log:\n{str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.admin.dialogs.export_error', default="Export Error"), f"Failed to export activity log:\n{str(e)}")
 ParentPortalGUI.export_activity_log_csv = export_activity_log_csv

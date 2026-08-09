@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.interfaces.gui.operations.campus.mobility.trip_management_gui._imports import (
     tk, ttk, messagebox, scrolledtext,
@@ -82,8 +84,8 @@ class TripManagementGUI:
             self.show_main_interface()
         else:
             messagebox.showerror(
-                "Authentication Required",
-                "Please log in through the main University System GUI before accessing Trip Management."
+                _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.authentication_required', default="Authentication Required"),
+                _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_log_in_through_the_main_university_system_gui_before_acce', default="Please log in through the main University System GUI before accessing Trip Management.")
             )
             self.root.destroy()
 
@@ -128,15 +130,15 @@ class TripManagementGUI:
                 show_risks_for,
             )
             tid = simpledialog.askstring(
-                "Trip risks",
-                "Trip ID (numeric):", parent=self.root,
+                _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.trip_risks', default="Trip risks"),
+                _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.trip_id_numeric', default="Trip ID (numeric):"), parent=self.root,
             )
             if not tid:
                 return
             show_risks_for(self.root, f"trip:{tid.strip()}",
                            title=f"Risks for trip {tid}")
         trip_menu.add_separator()
-        trip_menu.add_command(label="View trip risks",
+        trip_menu.add_command(label=_t('gui.operations.campus.mobility.trip_management_gui.main.menus.view_trip_risks', default="View trip risks"),
                               command=_show_trip_risks)
 
         if self.auth.check_permission('cancel_trip_registration'):
@@ -246,7 +248,7 @@ class TripManagementGUI:
         search_frame = ttk.Frame(toolbar)
         search_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(search_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
         self.search_var = tk.StringVar()
         self.search_var.trace('w', self.filter_trips)
         ttk.Entry(search_frame, textvariable=self.search_var, width=20).pack(side=tk.LEFT)
@@ -255,13 +257,13 @@ class TripManagementGUI:
         self.trips_tree = ttk.Treeview(trips_frame, columns=('name', 'destination', 'start_date', 'participants', 'cost', 'status'), show='tree headings')
 
         # Configure columns
-        self.trips_tree.heading('#0', text='ID')
-        self.trips_tree.heading('name', text='Trip Name')
-        self.trips_tree.heading('destination', text='Destination')
-        self.trips_tree.heading('start_date', text='Start Date')
-        self.trips_tree.heading('participants', text='Participants')
-        self.trips_tree.heading('cost', text='Cost')
-        self.trips_tree.heading('status', text='Status')
+        self.trips_tree.heading('#0', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.id', default='ID'))
+        self.trips_tree.heading('name', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.trip_name', default='Trip Name'))
+        self.trips_tree.heading('destination', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.destination', default='Destination'))
+        self.trips_tree.heading('start_date', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.start_date', default='Start Date'))
+        self.trips_tree.heading('participants', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.participants', default='Participants'))
+        self.trips_tree.heading('cost', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.cost', default='Cost'))
+        self.trips_tree.heading('status', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.status', default='Status'))
 
         self.trips_tree.column('#0', width=50)
         self.trips_tree.column('name', width=200)
@@ -293,26 +295,26 @@ class TripManagementGUI:
     def add_registration_tab(self):
         """Add the trip registration tab"""
         reg_frame = ttk.Frame(self.notebook)
-        self.notebook.add(reg_frame, text="Register for Trip")
+        self.notebook.add(reg_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.tabs.register_for_trip', default="Register for Trip"))
 
         # Available trips for registration
-        ttk.Label(reg_frame, text="Available Trips for Registration",
+        ttk.Label(reg_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.available_trips_for_registration', default="Available Trips for Registration"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Registration treeview
         self.reg_tree = ttk.Treeview(reg_frame, columns=('name', 'destination', 'start_date', 'cost', 'spaces'), show='tree headings')
 
-        self.reg_tree.heading('#0', text='ID')
-        self.reg_tree.heading('name', text='Trip Name')
-        self.reg_tree.heading('destination', text='Destination')
-        self.reg_tree.heading('start_date', text='Start Date')
-        self.reg_tree.heading('cost', text='Cost')
-        self.reg_tree.heading('spaces', text='Spaces Left')
+        self.reg_tree.heading('#0', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.id', default='ID'))
+        self.reg_tree.heading('name', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.trip_name', default='Trip Name'))
+        self.reg_tree.heading('destination', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.destination', default='Destination'))
+        self.reg_tree.heading('start_date', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.start_date', default='Start Date'))
+        self.reg_tree.heading('cost', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.cost', default='Cost'))
+        self.reg_tree.heading('spaces', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.spaces_left', default='Spaces Left'))
 
         self.reg_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         # Registration button
-        ttk.Button(reg_frame, text="Register for Selected Trip",
+        ttk.Button(reg_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.register_for_selected_trip', default="Register for Selected Trip"),
                   command=self.register_for_trip).pack(pady=10)
 
         self.load_available_trips()
@@ -320,111 +322,111 @@ class TripManagementGUI:
     def add_my_trips_tab(self):
         """Add the my trips tab"""
         my_trips_frame = ttk.Frame(self.notebook)
-        self.notebook.add(my_trips_frame, text="My Trips")
+        self.notebook.add(my_trips_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.tabs.my_trips', default="My Trips"))
 
-        ttk.Label(my_trips_frame, text="My Trip Registrations",
+        ttk.Label(my_trips_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.my_trip_registrations', default="My Trip Registrations"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # My trips treeview
         self.my_trips_tree = ttk.Treeview(my_trips_frame, columns=('name', 'destination', 'start_date', 'cost', 'payment', 'status'), show='tree headings')
 
-        self.my_trips_tree.heading('#0', text='ID')
-        self.my_trips_tree.heading('name', text='Trip Name')
-        self.my_trips_tree.heading('destination', text='Destination')
-        self.my_trips_tree.heading('start_date', text='Start Date')
-        self.my_trips_tree.heading('cost', text='Cost')
-        self.my_trips_tree.heading('payment', text='Payment')
-        self.my_trips_tree.heading('status', text='Status')
+        self.my_trips_tree.heading('#0', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.id', default='ID'))
+        self.my_trips_tree.heading('name', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.trip_name', default='Trip Name'))
+        self.my_trips_tree.heading('destination', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.destination', default='Destination'))
+        self.my_trips_tree.heading('start_date', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.start_date', default='Start Date'))
+        self.my_trips_tree.heading('cost', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.cost', default='Cost'))
+        self.my_trips_tree.heading('payment', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.payment', default='Payment'))
+        self.my_trips_tree.heading('status', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.status', default='Status'))
 
         self.my_trips_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         # Cancel registration button
-        ttk.Button(my_trips_frame, text="Cancel Selected Registration",
+        ttk.Button(my_trips_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.cancel_selected_registration', default="Cancel Selected Registration"),
                   command=self.cancel_registration).pack(pady=10)
 
         self.load_my_trips()
 
     def add_admin_tab(self):
         admin_frame = ttk.Frame(self.notebook)
-        self.notebook.add(admin_frame, text="Administration")
+        self.notebook.add(admin_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.tabs.administration', default="Administration"))
 
         # store notebook so menu actions can select subtabs later
         self.admin_notebook = ttk.Notebook(admin_frame)
         self.admin_notebook.pack(fill=tk.BOTH, expand=True)
 
         participants_frame = ttk.Frame(self.admin_notebook)
-        self.admin_notebook.add(participants_frame, text="Manage Participants")
+        self.admin_notebook.add(participants_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.tabs.manage_participants', default="Manage Participants"))
         self.setup_participants_management(participants_frame)
 
         staff_frame = ttk.Frame(self.admin_notebook)
-        self.admin_notebook.add(staff_frame, text="Assign Staff")
+        self.admin_notebook.add(staff_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.tabs.assign_staff', default="Assign Staff"))
         self.setup_staff_assignment(staff_frame)
 
         expenses_frame = ttk.Frame(self.admin_notebook)
-        self.admin_notebook.add(expenses_frame, text="Manage Expenses")
+        self.admin_notebook.add(expenses_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.tabs.manage_expenses', default="Manage Expenses"))
         self.setup_expenses_management(expenses_frame)
 
         trip_mgmt_frame = ttk.Frame(self.admin_notebook)
-        self.admin_notebook.add(trip_mgmt_frame, text="Trip Management")
+        self.admin_notebook.add(trip_mgmt_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.tabs.trip_management', default="Trip Management"))
         self.setup_trip_management(trip_mgmt_frame)
 
     def add_reports_tab(self):
         """Add the reports tab"""
         reports_frame = ttk.Frame(self.notebook)
-        self.notebook.add(reports_frame, text="Reports")
+        self.notebook.add(reports_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.tabs.reports', default="Reports"))
 
-        ttk.Label(reports_frame, text="Trip Reports",
+        ttk.Label(reports_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.trip_reports', default="Trip Reports"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Report buttons
         reports_buttons_frame = ttk.Frame(reports_frame)
         reports_buttons_frame.pack(pady=20)
 
-        ttk.Button(reports_buttons_frame, text="Trip Summary Report",
+        ttk.Button(reports_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.trip_summary_report', default="Trip Summary Report"),
                   command=self.generate_trip_summary_report).pack(pady=5, fill=tk.X)
 
-        ttk.Button(reports_buttons_frame, text="Participant List Report",
+        ttk.Button(reports_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.participant_list_report', default="Participant List Report"),
                   command=self.generate_participant_report).pack(pady=5, fill=tk.X)
 
         if self.auth.check_permission('view_financial_reports'):
-            ttk.Button(reports_buttons_frame, text="Financial Report",
+            ttk.Button(reports_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.financial_report', default="Financial Report"),
                       command=self.generate_financial_report).pack(pady=5, fill=tk.X)
 
         # Report output area
-        ttk.Label(reports_frame, text="Report Generation Log").pack(anchor=tk.W, pady=(20, 5))
+        ttk.Label(reports_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.report_generation_log', default="Report Generation Log")).pack(anchor=tk.W, pady=(20, 5))
         self.report_log = scrolledtext.ScrolledText(reports_frame, height=15, width=80)
         self.report_log.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     def add_calendar_tab(self):
         """Add the calendar integration tab"""
         calendar_frame = ttk.Frame(self.notebook)
-        self.notebook.add(calendar_frame, text="Calendar")
+        self.notebook.add(calendar_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.tabs.calendar', default="Calendar"))
 
-        ttk.Label(calendar_frame, text="Calendar Integration",
+        ttk.Label(calendar_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.calendar_integration', default="Calendar Integration"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Calendar buttons
         cal_buttons_frame = ttk.Frame(calendar_frame)
         cal_buttons_frame.pack(pady=20)
 
-        ttk.Button(cal_buttons_frame, text="View Trips with Calendar Events",
+        ttk.Button(cal_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.view_trips_with_calendar_events', default="View Trips with Calendar Events"),
                   command=self.show_trips_with_calendar).pack(pady=5, fill=tk.X)
 
-        ttk.Button(cal_buttons_frame, text="View Trip Events in Calendar",
+        ttk.Button(cal_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.view_trip_events_in_calendar', default="View Trip Events in Calendar"),
                   command=self.view_trip_events_in_calendar).pack(pady=5, fill=tk.X)
 
         if self.auth.check_permission('manage_schedules'):
-            ttk.Button(cal_buttons_frame, text="Create Calendar Event for Trip",
+            ttk.Button(cal_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.create_calendar_event_for_trip', default="Create Calendar Event for Trip"),
                       command=self.create_trip_calendar_event).pack(pady=5, fill=tk.X)
 
         # Calendar view area
         self.calendar_tree = ttk.Treeview(calendar_frame, columns=('trip', 'event', 'start_date', 'status'), show='tree headings')
 
-        self.calendar_tree.heading('#0', text='ID')
-        self.calendar_tree.heading('trip', text='Trip Name')
-        self.calendar_tree.heading('event', text='Calendar Event')
-        self.calendar_tree.heading('start_date', text='Start Date')
-        self.calendar_tree.heading('status', text='Status')
+        self.calendar_tree.heading('#0', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.id', default='ID'))
+        self.calendar_tree.heading('trip', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.trip_name', default='Trip Name'))
+        self.calendar_tree.heading('event', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.calendar_event', default='Calendar Event'))
+        self.calendar_tree.heading('start_date', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.start_date', default='Start Date'))
+        self.calendar_tree.heading('status', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.status', default='Status'))
 
         self.calendar_tree.pack(fill=tk.BOTH, expand=True, pady=(20, 0))
 
@@ -472,7 +474,7 @@ class TripManagementGUI:
             if self.auth and self.auth.check_permission('manage_trips'):
                 self.add_admin_tab()
             else:
-                messagebox.showerror("Permission Denied", "You don't have access to Administration.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.permission_denied', default="Permission Denied"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.you_don_t_have_access_to_administration', default="You don't have access to Administration."))
                 return
         # select Admin
         for i in range(self.notebook.index('end')):
@@ -490,7 +492,7 @@ class TripManagementGUI:
         """Cancel selected registration - enhanced version"""
         selection = self.my_trips_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a registration to cancel.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_registration_to_cancel', default="Please select a registration to cancel."))
             return
 
         trip_id = self.my_trips_tree.item(selection[0])['text']
@@ -504,7 +506,7 @@ class TripManagementGUI:
         """View itinerary for selected trip"""
         selection = self.trips_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a trip to view itinerary.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_trip_to_view_itinerary', default="Please select a trip to view itinerary."))
             return
 
         trip_id = self.trips_tree.item(selection[0])['text']
@@ -514,7 +516,7 @@ class TripManagementGUI:
         """Add itinerary to selected trip"""
         selection = self.trips_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a trip to add itinerary.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_trip_to_add_itinerary', default="Please select a trip to add itinerary."))
             return
 
         trip_id = self.trips_tree.item(selection[0])['text']
@@ -546,9 +548,9 @@ class TripManagementGUI:
             if selection:
                 self.cancel_trip_registration()
             else:
-                messagebox.showinfo("No Selection", "Please select a registration from the My Trips tab first.")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_registration_from_the_my_trips_tab_first', default="Please select a registration from the My Trips tab first."))
         else:
-            messagebox.showinfo("Tab Not Available", "Please go to the My Trips tab and select a registration to cancel.")
+            messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.tab_not_available', default="Tab Not Available"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_go_to_the_my_trips_tab_and_select_a_registration_to_cance', default="Please go to the My Trips tab and select a registration to cancel."))
 
     def refresh_trips(self):
         """Refresh the trips display"""
@@ -704,7 +706,7 @@ class TripManagementGUI:
     def show_create_trip(self):
         """Show create trip dialog"""
         if not self.auth.check_permission('create_trips'):
-            messagebox.showerror("Permission Denied", "You don't have permission to create trips.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.permission_denied', default="Permission Denied"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.you_don_t_have_permission_to_create_trips', default="You don't have permission to create trips."))
             return
 
         CreateTripDialog(self.root, self.auth, self.refresh_trips)
@@ -713,7 +715,7 @@ class TripManagementGUI:
         """Register for selected trip"""
         selection = self.reg_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a trip to register for.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_trip_to_register_for', default="Please select a trip to register for."))
             return
 
         trip_id = self.reg_tree.item(selection[0])['text']
@@ -723,7 +725,7 @@ class TripManagementGUI:
         """Cancel selected registration"""
         selection = self.my_trips_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a registration to cancel.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_registration_to_cancel', default="Please select a registration to cancel."))
             return
 
         trip_id = self.my_trips_tree.item(selection[0])['text']
@@ -815,23 +817,23 @@ class TripManagementGUI:
         trip_select_frame = ttk.Frame(parent)
         trip_select_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(trip_select_frame, text="Select Trip:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(trip_select_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.select_trip', default="Select Trip:")).pack(side=tk.LEFT, padx=(0, 5))
         self.participant_trip_var = tk.StringVar()
         self.participant_trip_combo = ttk.Combobox(trip_select_frame, textvariable=self.participant_trip_var)
         self.participant_trip_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
-        ttk.Button(trip_select_frame, text="Load Participants",
+        ttk.Button(trip_select_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.load_participants', default="Load Participants"),
                   command=self.load_trip_participants).pack(side=tk.LEFT)
 
         # Participants list
         self.participants_tree = ttk.Treeview(parent, columns=('name', 'email', 'registration', 'payment', 'status'), show='tree headings')
 
-        self.participants_tree.heading('#0', text='ID')
-        self.participants_tree.heading('name', text='Name')
-        self.participants_tree.heading('email', text='Email')
-        self.participants_tree.heading('registration', text='Registration Date')
-        self.participants_tree.heading('payment', text='Payment Status')
-        self.participants_tree.heading('status', text='Status')
+        self.participants_tree.heading('#0', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.id', default='ID'))
+        self.participants_tree.heading('name', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.name', default='Name'))
+        self.participants_tree.heading('email', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.email', default='Email'))
+        self.participants_tree.heading('registration', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.registration_date', default='Registration Date'))
+        self.participants_tree.heading('payment', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.payment_status', default='Payment Status'))
+        self.participants_tree.heading('status', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.status', default='Status'))
 
         self.participants_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
@@ -839,11 +841,11 @@ class TripManagementGUI:
         buttons_frame = ttk.Frame(parent)
         buttons_frame.pack(fill=tk.X)
 
-        ttk.Button(buttons_frame, text="Update Payment",
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.update_payment', default="Update Payment"),
                   command=self.update_payment_status).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Update Status",
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.update_status', default="Update Status"),
                   command=self.update_participant_status).pack(side=tk.LEFT, padx=5)
-        ttk.Button(buttons_frame, text="Remove Participant",
+        ttk.Button(buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.remove_participant', default="Remove Participant"),
                   command=self.remove_participant).pack(side=tk.LEFT, padx=5)
 
         # Load trips for selection
@@ -851,13 +853,13 @@ class TripManagementGUI:
 
     def setup_staff_assignment(self, parent):
         """Setup staff assignment interface"""
-        ttk.Label(parent, text="Staff Assignment", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(parent, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.staff_assignment', default="Staff Assignment"), font=('Arial', 12, 'bold')).pack(pady=10)
 
         # Trip selection for staff assignment
         staff_trip_frame = ttk.Frame(parent)
         staff_trip_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(staff_trip_frame, text="Select Trip:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(staff_trip_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.select_trip', default="Select Trip:")).pack(side=tk.LEFT, padx=(0, 5))
         self.staff_trip_var = tk.StringVar()
         self.staff_trip_combo = ttk.Combobox(
             staff_trip_frame,
@@ -870,10 +872,10 @@ class TripManagementGUI:
         # Staff assignment tree
         self.staff_tree = ttk.Treeview(parent, columns=('staff_name', 'role', 'assigned_date'), show='tree headings')
 
-        self.staff_tree.heading('#0', text='ID')
-        self.staff_tree.heading('staff_name', text='Staff Name')
-        self.staff_tree.heading('role', text='Role')
-        self.staff_tree.heading('assigned_date', text='Assigned Date')
+        self.staff_tree.heading('#0', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.id', default='ID'))
+        self.staff_tree.heading('staff_name', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.staff_name', default='Staff Name'))
+        self.staff_tree.heading('role', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.role', default='Role'))
+        self.staff_tree.heading('assigned_date', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.assigned_date', default='Assigned Date'))
 
         self.staff_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
@@ -881,38 +883,38 @@ class TripManagementGUI:
         staff_buttons_frame = ttk.Frame(parent)
         staff_buttons_frame.pack(fill=tk.X)
 
-        ttk.Button(staff_buttons_frame, text="Assign Staff",
+        ttk.Button(staff_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.assign_staff', default="Assign Staff"),
                   command=self.assign_staff).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(staff_buttons_frame, text="Remove Staff",
+        ttk.Button(staff_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.remove_staff', default="Remove Staff"),
                   command=self.remove_staff).pack(side=tk.LEFT)
 
         self.load_staff_trip_options()
 
     def setup_expenses_management(self, parent):
         """Setup expenses management interface"""
-        ttk.Label(parent, text="Expense Management", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(parent, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.expense_management', default="Expense Management"), font=('Arial', 12, 'bold')).pack(pady=10)
 
         # Trip selection for expenses
         expense_trip_frame = ttk.Frame(parent)
         expense_trip_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(expense_trip_frame, text="Select Trip:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(expense_trip_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.select_trip', default="Select Trip:")).pack(side=tk.LEFT, padx=(0, 5))
         self.expense_trip_var = tk.StringVar()
         self.expense_trip_combo = ttk.Combobox(expense_trip_frame, textvariable=self.expense_trip_var)
         self.expense_trip_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
-        ttk.Button(expense_trip_frame, text="Load Expenses",
+        ttk.Button(expense_trip_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.load_expenses', default="Load Expenses"),
                   command=self.load_trip_expenses).pack(side=tk.LEFT)
 
         # Expenses tree
         self.expenses_tree = ttk.Treeview(parent, columns=('category', 'description', 'amount', 'date', 'recorded_by'), show='tree headings')
 
-        self.expenses_tree.heading('#0', text='ID')
-        self.expenses_tree.heading('category', text='Category')
-        self.expenses_tree.heading('description', text='Description')
-        self.expenses_tree.heading('amount', text='Amount')
-        self.expenses_tree.heading('date', text='Date')
-        self.expenses_tree.heading('recorded_by', text='Recorded By')
+        self.expenses_tree.heading('#0', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.id', default='ID'))
+        self.expenses_tree.heading('category', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.category', default='Category'))
+        self.expenses_tree.heading('description', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.description', default='Description'))
+        self.expenses_tree.heading('amount', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.amount', default='Amount'))
+        self.expenses_tree.heading('date', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.date', default='Date'))
+        self.expenses_tree.heading('recorded_by', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.recorded_by', default='Recorded By'))
 
         self.expenses_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
@@ -920,30 +922,30 @@ class TripManagementGUI:
         expense_buttons_frame = ttk.Frame(parent)
         expense_buttons_frame.pack(fill=tk.X)
 
-        ttk.Button(expense_buttons_frame, text="Add Expense",
+        ttk.Button(expense_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.add_expense', default="Add Expense"),
                   command=self.add_expense).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(expense_buttons_frame, text="Edit Expense",
+        ttk.Button(expense_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.edit_expense', default="Edit Expense"),
                   command=self.edit_expense).pack(side=tk.LEFT, padx=5)
-        ttk.Button(expense_buttons_frame, text="Delete Expense",
+        ttk.Button(expense_buttons_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.delete_expense', default="Delete Expense"),
                   command=self.delete_expense).pack(side=tk.LEFT, padx=5)
 
     def setup_trip_management(self, parent):
         """Setup trip management interface"""
-        ttk.Label(parent, text="Trip Management", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(parent, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.trip_management', default="Trip Management"), font=('Arial', 12, 'bold')).pack(pady=10)
 
         # Trip actions
         actions_frame = ttk.Frame(parent)
         actions_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(actions_frame, text="Update Trip",
+        ttk.Button(actions_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.update_trip', default="Update Trip"),
                   command=self.update_trip).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(actions_frame, text="Delete Trip",
+        ttk.Button(actions_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.delete_trip', default="Delete Trip"),
                   command=self.delete_trip).pack(side=tk.LEFT, padx=5)
-        ttk.Button(actions_frame, text="Manage Itinerary",
+        ttk.Button(actions_frame, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.manage_itinerary', default="Manage Itinerary"),
                   command=self.manage_itinerary).pack(side=tk.LEFT, padx=5)
 
         # Trip status summary
-        summary_frame = ttk.LabelFrame(parent, text="Trip Summary", padding=10)
+        summary_frame = ttk.LabelFrame(parent, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.trip_summary', default="Trip Summary"), padding=10)
         summary_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         self.trip_summary_text = scrolledtext.ScrolledText(summary_frame, height=15)
@@ -954,20 +956,20 @@ class TripManagementGUI:
     def create_trips_context_menu(self):
         """Create context menu for trips treeview - enhanced"""
         self.trips_context_menu = tk.Menu(self.root, tearoff=0)
-        self.trips_context_menu.add_command(label="View Details", command=self.view_selected_trip_details)
-        self.trips_context_menu.add_command(label="View Itinerary", command=self.view_trip_itinerary)
+        self.trips_context_menu.add_command(label=_t('gui.operations.campus.mobility.trip_management_gui.main.menus.view_details', default="View Details"), command=self.view_selected_trip_details)
+        self.trips_context_menu.add_command(label=_t('gui.operations.campus.mobility.trip_management_gui.main.menus.view_itinerary', default="View Itinerary"), command=self.view_trip_itinerary)
 
         if self.auth.check_permission('register_for_trips'):
-            self.trips_context_menu.add_command(label="Register for Trip", command=self.register_for_selected_trip)
+            self.trips_context_menu.add_command(label=_t('gui.operations.campus.mobility.trip_management_gui.main.menus.register_for_trip', default="Register for Trip"), command=self.register_for_selected_trip)
 
         if self.auth.check_permission('manage_trips') or self.auth.check_permission('create_trips'):
             self.trips_context_menu.add_separator()
-            self.trips_context_menu.add_command(label="Add/Edit Itinerary", command=self.add_trip_itinerary)
-            self.trips_context_menu.add_command(label="Edit Trip", command=self.edit_selected_trip)
+            self.trips_context_menu.add_command(label=_t('gui.operations.campus.mobility.trip_management_gui.main.menus.add_edit_itinerary', default="Add/Edit Itinerary"), command=self.add_trip_itinerary)
+            self.trips_context_menu.add_command(label=_t('gui.operations.campus.mobility.trip_management_gui.main.menus.edit_trip', default="Edit Trip"), command=self.edit_selected_trip)
 
         if self.auth.check_permission('manage_trips'):
-            self.trips_context_menu.add_command(label="Assign Staff", command=self.assign_trip_staff)
-            self.trips_context_menu.add_command(label="Delete Trip", command=self.delete_selected_trip)
+            self.trips_context_menu.add_command(label=_t('gui.operations.campus.mobility.trip_management_gui.main.menus.assign_staff', default="Assign Staff"), command=self.assign_trip_staff)
+            self.trips_context_menu.add_command(label=_t('gui.operations.campus.mobility.trip_management_gui.main.menus.delete_trip', default="Delete Trip"), command=self.delete_selected_trip)
 
         self.trips_tree.bind("<Button-3>", self.show_trips_context_menu)
 
@@ -1005,17 +1007,17 @@ class TripManagementGUI:
             trip_id = self.trips_tree.item(selection[0])['text']
             trip_name = self.trips_tree.item(selection[0])['values'][0]
 
-            if messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete trip '{trip_name}'?"):
+            if messagebox.askyesno(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.confirm_deletion', default="Confirm Deletion"), f"Are you sure you want to delete trip '{trip_name}'?"):
                 def delete_trip_operation(conn):
                     cursor = conn.cursor()
                     cursor.execute('DELETE FROM trips WHERE id = ?', (trip_id,))
                     return True
 
                 if self.safe_db_operation(delete_trip_operation):
-                    messagebox.showinfo("Success", "Trip deleted successfully")
+                    messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.trip_deleted_successfully', default="Trip deleted successfully"))
                     self.refresh_trips()
                 else:
-                    messagebox.showerror("Error", "Failed to delete trip")
+                    messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.failed_to_delete_trip', default="Failed to delete trip"))
 
     def load_trips_for_management(self):
         """Load trips for management dropdowns"""
@@ -1213,7 +1215,7 @@ class TripManagementGUI:
     def generate_trip_summary_report(self):
         """Generate trip summary report"""
         if not self.auth.check_permission('view_trip_reports'):
-            messagebox.showerror("Permission Denied", "You don't have permission to generate reports.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.permission_denied', default="Permission Denied"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.you_don_t_have_permission_to_generate_reports', default="You don't have permission to generate reports."))
             return
 
         ReportGeneratorDialog(self.root, self.auth, 'TRIP_SUMMARY', self.report_log)
@@ -1221,7 +1223,7 @@ class TripManagementGUI:
     def generate_participant_report(self):
         """Generate participant report"""
         if not self.auth.check_permission('view_trip_reports'):
-            messagebox.showerror("Permission Denied", "You don't have permission to generate reports.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.permission_denied', default="Permission Denied"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.you_don_t_have_permission_to_generate_reports', default="You don't have permission to generate reports."))
             return
 
         ReportGeneratorDialog(self.root, self.auth, 'PARTICIPANT_LIST', self.report_log)
@@ -1229,7 +1231,7 @@ class TripManagementGUI:
     def generate_financial_report(self):
         """Generate financial report"""
         if not self.auth.check_permission('view_financial_reports'):
-            messagebox.showerror("Permission Denied", "You don't have permission to view financial reports.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.permission_denied', default="Permission Denied"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.you_don_t_have_permission_to_view_financial_reports', default="You don't have permission to view financial reports."))
             return
 
         ReportGeneratorDialog(self.root, self.auth, 'FINANCIAL_REPORT', self.report_log)
@@ -1238,7 +1240,7 @@ class TripManagementGUI:
         """Update payment status for selected participant"""
         selection = self.participants_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a participant.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_participant', default="Please select a participant."))
             return
 
         participant_id = self.participants_tree.item(selection[0])['text']
@@ -1248,7 +1250,7 @@ class TripManagementGUI:
         """Update status for selected participant"""
         selection = self.participants_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a participant.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_participant', default="Please select a participant."))
             return
 
         participant_id = self.participants_tree.item(selection[0])['text']
@@ -1258,35 +1260,35 @@ class TripManagementGUI:
         """Remove selected participant"""
         selection = self.participants_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a participant.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_participant', default="Please select a participant."))
             return
 
         participant_id = self.participants_tree.item(selection[0])['text']
         participant_name = self.participants_tree.item(selection[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Removal", f"Are you sure you want to remove '{participant_name}' from this trip?"):
+        if messagebox.askyesno(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.confirm_removal', default="Confirm Removal"), f"Are you sure you want to remove '{participant_name}' from this trip?"):
             def remove_participant_operation(conn):
                 cursor = conn.cursor()
                 cursor.execute('DELETE FROM trip_participants WHERE id = ?', (participant_id,))
                 return True
 
             if self.safe_db_operation(remove_participant_operation):
-                messagebox.showinfo("Success", "Participant removed successfully")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.participant_removed_successfully', default="Participant removed successfully"))
                 self.load_trip_participants()
             else:
-                messagebox.showerror("Error", "Failed to remove participant")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.failed_to_remove_participant', default="Failed to remove participant"))
 
     def assign_staff(self):
         """Assign staff to trip"""
         trip_selection = self.staff_trip_var.get()
         if not trip_selection:
-            messagebox.showwarning("No Trip Selected", "Please select a trip first.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_trip_selected', default="No Trip Selected"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_trip_first', default="Please select a trip first."))
             return
 
         try:
             trip_id = int(trip_selection.split(' - ')[0].strip())
         except (ValueError, IndexError):
-            messagebox.showerror("Invalid Selection", "Could not determine the selected trip.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.invalid_selection', default="Invalid Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.could_not_determine_the_selected_trip', default="Could not determine the selected trip."))
             return
 
         AssignStaffDialog(self.root, self.auth, trip_id, self.load_trip_staff)
@@ -1295,23 +1297,23 @@ class TripManagementGUI:
         """Remove staff from trip"""
         selection = self.staff_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a staff member.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_staff_member', default="Please select a staff member."))
             return
 
         staff_assignment_id = self.staff_tree.item(selection[0])['text']
         staff_name = self.staff_tree.item(selection[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Removal", f"Are you sure you want to remove '{staff_name}' from this trip?"):
+        if messagebox.askyesno(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.confirm_removal', default="Confirm Removal"), f"Are you sure you want to remove '{staff_name}' from this trip?"):
             def remove_staff_operation(conn):
                 cursor = conn.cursor()
                 cursor.execute('DELETE FROM trip_staff WHERE id = ?', (staff_assignment_id,))
                 return True
 
             if self.safe_db_operation(remove_staff_operation):
-                messagebox.showinfo("Success", "Staff member removed successfully")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.staff_member_removed_successfully', default="Staff member removed successfully"))
                 self.load_trip_staff()
             else:
-                messagebox.showerror("Error", "Failed to remove staff member")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.failed_to_remove_staff_member', default="Failed to remove staff member"))
 
     def load_trip_staff(self):
         """Load staff for selected trip"""
@@ -1405,7 +1407,7 @@ class TripManagementGUI:
         """Add new expense"""
         trip_selection = self.expense_trip_var.get()
         if not trip_selection:
-            messagebox.showwarning("No Trip Selected", "Please select a trip first.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_trip_selected', default="No Trip Selected"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_a_trip_first', default="Please select a trip first."))
             return
 
         trip_id = trip_selection.split(' - ')[0]
@@ -1415,7 +1417,7 @@ class TripManagementGUI:
         """Edit selected expense"""
         selection = self.expenses_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an expense.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_an_expense', default="Please select an expense."))
             return
 
         expense_id = self.expenses_tree.item(selection[0])['text']
@@ -1425,23 +1427,23 @@ class TripManagementGUI:
         """Delete selected expense"""
         selection = self.expenses_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an expense.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.please_select_an_expense', default="Please select an expense."))
             return
 
         expense_id = self.expenses_tree.item(selection[0])['text']
         expense_desc = self.expenses_tree.item(selection[0])['values'][1]
 
-        if messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete expense '{expense_desc}'?"):
+        if messagebox.askyesno(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.confirm_deletion', default="Confirm Deletion"), f"Are you sure you want to delete expense '{expense_desc}'?"):
             def delete_expense_operation(conn):
                 cursor = conn.cursor()
                 cursor.execute('DELETE FROM trip_expenses WHERE id = ?', (expense_id,))
                 return True
 
             if self.safe_db_operation(delete_expense_operation):
-                messagebox.showinfo("Success", "Expense deleted successfully")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.expense_deleted_successfully', default="Expense deleted successfully"))
                 self.load_trip_expenses()
             else:
-                messagebox.showerror("Error", "Failed to delete expense")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.failed_to_delete_expense', default="Failed to delete expense"))
 
     def update_trip(self):
         """Update trip information"""
@@ -1466,18 +1468,18 @@ class TripManagementGUI:
 
         trip_name = self.safe_db_operation(get_trip_info_operation)
 
-        if trip_name and messagebox.askyesno("Confirm Deletion", f"Are you sure you want to delete trip '{trip_name}'?"):
+        if trip_name and messagebox.askyesno(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.confirm_deletion', default="Confirm Deletion"), f"Are you sure you want to delete trip '{trip_name}'?"):
             def delete_trip_operation(conn):
                 cursor = conn.cursor()
                 cursor.execute('DELETE FROM trips WHERE id = ?', (trip_id,))
                 return True
 
             if self.safe_db_operation(delete_trip_operation):
-                messagebox.showinfo("Success", "Trip deleted successfully")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.trip_deleted_successfully', default="Trip deleted successfully"))
                 self.refresh_trips()
                 self.load_trip_summary()
             else:
-                messagebox.showerror("Error", "Failed to delete trip")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.failed_to_delete_trip', default="Failed to delete trip"))
 
     def manage_itinerary(self):
         """Manage trip itinerary"""
@@ -1490,7 +1492,7 @@ class TripManagementGUI:
     def show_trips_with_calendar(self):
         """Show trips with calendar integration"""
         if not self.calendar_manager:
-            messagebox.showerror("Calendar Unavailable", "Calendar integration is not available.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.calendar_unavailable', default="Calendar Unavailable"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.calendar_integration_is_not_available', default="Calendar integration is not available."))
             return
 
         # Clear existing items
@@ -1524,8 +1526,8 @@ class TripManagementGUI:
     def view_trip_events_in_calendar(self):
         """View trip events in the calendar (calendar-centric view)"""
         if not CALENDAR_AVAILABLE or not self.calendar_manager:
-            messagebox.showwarning("Calendar Not Available",
-                                 "Calendar system is not available.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.calendar_not_available', default="Calendar Not Available"),
+                                 _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.calendar_system_is_not_available', default="Calendar system is not available."))
             return
 
         try:
@@ -1538,17 +1540,17 @@ class TripManagementGUI:
             )
 
             if not events:
-                messagebox.showinfo("No Events", "No trip events found in calendar for the next year.")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_events', default="No Events"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.no_trip_events_found_in_calendar_for_the_next_year', default="No trip events found in calendar for the next year."))
                 return
 
             # Create dialog to display events
             dialog = tk.Toplevel(self.root)
-            dialog.title("Trip Events in Calendar")
+            dialog.title(_t('gui.operations.campus.mobility.trip_management_gui.main.windows.trip_events_in_calendar', default="Trip Events in Calendar"))
             dialog.geometry("900x600")
             dialog.transient(self.root)
 
             # Title
-            ttk.Label(dialog, text="Trip Events in Calendar",
+            ttk.Label(dialog, text=_t('gui.operations.campus.mobility.trip_management_gui.main.labels.trip_events_in_calendar', default="Trip Events in Calendar"),
                      font=('Arial', 14, 'bold')).pack(pady=10)
 
             ttk.Label(dialog, text=f"Showing trip events for next 365 days ({len(events)} events found)",
@@ -1561,10 +1563,10 @@ class TripManagementGUI:
             columns = ('event_name', 'start_date', 'end_date', 'description')
             tree = ttk.Treeview(frame, columns=columns, show='headings', height=20)
 
-            tree.heading('event_name', text='Event Name')
-            tree.heading('start_date', text='Start Date')
-            tree.heading('end_date', text='End Date')
-            tree.heading('description', text='Description')
+            tree.heading('event_name', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.event_name', default='Event Name'))
+            tree.heading('start_date', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.start_date', default='Start Date'))
+            tree.heading('end_date', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.end_date', default='End Date'))
+            tree.heading('description', text=_t('gui.operations.campus.mobility.trip_management_gui.main.headings.description', default='Description'))
 
             tree.column('event_name', width=250)
             tree.column('start_date', width=120)
@@ -1591,7 +1593,7 @@ class TripManagementGUI:
                 ))
 
             # Close button
-            ttk.Button(dialog, text="Close", command=dialog.destroy).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.operations.campus.mobility.trip_management_gui.main.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
 
             # Log activity
             log_read('trip_calendar_events', f"Viewed {len(events)} trip events in calendar")
@@ -1599,12 +1601,12 @@ class TripManagementGUI:
 
         except Exception as e:
             logging.error(f"Error viewing trip events in calendar: {e}")
-            messagebox.showerror("Error", f"Failed to view trip events: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.error', default="Error"), f"Failed to view trip events: {str(e)}")
 
     def create_trip_calendar_event(self):
         """Create calendar event for trip"""
         if not self.calendar_manager:
-            messagebox.showerror("Calendar Unavailable", "Calendar integration is not available.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.calendar_unavailable', default="Calendar Unavailable"), _t('gui.operations.campus.mobility.trip_management_gui.main.dialogs.calendar_integration_is_not_available', default="Calendar integration is not available."))
             return
 
         CreateCalendarEventDialog(self.root, self.auth, self.calendar_manager, self.show_trips_with_calendar)

@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
 import datetime
 
@@ -21,7 +21,7 @@ class NotificationsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -130,7 +130,7 @@ class NotificationsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -228,7 +228,7 @@ class NotificationsMixin:
         """Get count of unread notifications for dashboard"""
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 
@@ -262,7 +262,7 @@ class NotificationsMixin:
 
         conn = None
         try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+            conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
             conn.execute("PRAGMA busy_timeout = 30000")
             cursor = conn.cursor()
 

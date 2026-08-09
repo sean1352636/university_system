@@ -10,6 +10,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -34,7 +36,7 @@ class IPGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access IP Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), _t('gui.staff.staff_hr.ip.dialogs.login_required_to_access_ip_management', default="Login required to access IP Management"))
             return
 
         if parent_notebook:
@@ -47,18 +49,18 @@ class IPGUI:
 
     def create_as_tab(self, notebook: ttk.Notebook):
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="IP")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.ip.tabs.ip', default="IP"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
-        self.window.title("Intellectual Property Management")
+        self.window.title(_t('gui.staff.staff_hr.ip.windows.intellectual_property_management', default="Intellectual Property Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.ip.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.ip.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         self._build_interface(self.window)
 
@@ -81,16 +83,16 @@ class IPGUI:
     def _create_my_ip_tab(self):
         """Create the My IP disclosures and patents tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My IP")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.ip.tabs.my_ip', default="My IP"))
 
         # Header with filter
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Disclosures & Patents", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.ip.labels.my_disclosures_patents', default="My Disclosures & Patents"), style='Header.TLabel').pack(side=tk.LEFT)
 
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.ip.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.ip_status_filter = ttk.Combobox(
             filter_frame,
             values=['All', 'Draft', 'Submitted', 'Approved', 'Rejected'],
@@ -99,7 +101,7 @@ class IPGUI:
         self.ip_status_filter.set('All')
         self.ip_status_filter.pack(side=tk.LEFT, padx=5)
         self.ip_status_filter.bind('<<ComboboxSelected>>', lambda e: self._load_my_disclosures())
-        ttk.Button(filter_frame, text="Refresh", command=self._load_my_disclosures).pack(side=tk.LEFT, padx=10)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.ip.buttons.refresh', default="Refresh"), command=self._load_my_disclosures).pack(side=tk.LEFT, padx=10)
 
         # Disclosures treeview
         tree_frame = ttk.Frame(tab)
@@ -162,7 +164,7 @@ class IPGUI:
                     created
                 ), tags=(d_status,))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load disclosures: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), f"Failed to load disclosures: {e}")
 
     def _view_disclosure_details(self, event):
         """View disclosure details in a popup dialog."""
@@ -176,11 +178,11 @@ class IPGUI:
         try:
             disclosure = IPManager.get_disclosure(disclosure_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load disclosure details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), f"Could not load disclosure details: {e}")
             return
 
         if not disclosure:
-            messagebox.showerror("Error", "Disclosure not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), _t('gui.staff.staff_hr.ip.dialogs.disclosure_not_found', default="Disclosure not found"))
             return
 
         dialog = tk.Toplevel(self.root)
@@ -201,7 +203,7 @@ class IPGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Disclosure details
-        details_frame = ttk.LabelFrame(scroll_frame, text="Disclosure Details", padding=15)
+        details_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.ip.labels.disclosure_details', default="Disclosure Details"), padding=15)
         details_frame.pack(fill=tk.X, padx=10, pady=10)
 
         fields = [
@@ -230,7 +232,7 @@ class IPGUI:
         # Description
         description = disclosure.get('description', '')
         if description:
-            desc_frame = ttk.LabelFrame(scroll_frame, text="Description", padding=10)
+            desc_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.ip.labels.description', default="Description"), padding=10)
             desc_frame.pack(fill=tk.X, padx=10, pady=5)
             ttk.Label(desc_frame, text=description, wraplength=600).pack(anchor='w')
 
@@ -240,7 +242,7 @@ class IPGUI:
         except Exception:
             inventors = []
 
-        inventors_frame = ttk.LabelFrame(scroll_frame, text="Inventors", padding=10)
+        inventors_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.ip.labels.inventors', default="Inventors"), padding=10)
         inventors_frame.pack(fill=tk.X, padx=10, pady=5)
 
         if inventors:
@@ -260,19 +262,19 @@ class IPGUI:
                 ))
             inv_tree.pack(fill=tk.X)
         else:
-            ttk.Label(inventors_frame, text="No inventors recorded.").pack(anchor='w')
+            ttk.Label(inventors_frame, text=_t('gui.staff.staff_hr.ip.labels.no_inventors_recorded', default="No inventors recorded.")).pack(anchor='w')
 
         # Close button
         btn_frame = ttk.Frame(scroll_frame)
         btn_frame.pack(fill=tk.X, padx=10, pady=15)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # ==================== TAB 2: NEW DISCLOSURE ====================
 
     def _create_new_disclosure_tab(self):
         """Create the new IP disclosure tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="New Disclosure")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.ip.tabs.new_disclosure', default="New Disclosure"))
 
         # Scrollable area
         canvas = tk.Canvas(tab)
@@ -289,58 +291,58 @@ class IPGUI:
         # Header
         header_frame = ttk.Frame(scroll_frame)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="New IP Disclosure", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.ip.labels.new_ip_disclosure', default="New IP Disclosure"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Disclosure details form
-        form_frame = ttk.LabelFrame(scroll_frame, text="Disclosure Details", padding=15)
+        form_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.ip.labels.disclosure_details', default="Disclosure Details"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 0: Title
-        ttk.Label(form_frame, text="Title:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.ip.labels.title', default="Title:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.disc_title_entry = ttk.Entry(form_frame, width=50)
         self.disc_title_entry.grid(row=0, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Row 1: Type
-        ttk.Label(form_frame, text="Type:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.ip.labels.type', default="Type:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.disc_type_combo = ttk.Combobox(form_frame, width=25, state='readonly',
             values=['invention', 'software', 'design', 'creative_work'])
         self.disc_type_combo.set('invention')
         self.disc_type_combo.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
         # Row 2: Description
-        ttk.Label(form_frame, text="Description:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.ip.labels.description_variant_2', default="Description:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         self.disc_description_text = tk.Text(form_frame, width=60, height=6)
         self.disc_description_text.grid(row=2, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Row 3: Development Stage
-        ttk.Label(form_frame, text="Development Stage:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.ip.labels.development_stage', default="Development Stage:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         self.disc_stage_combo = ttk.Combobox(form_frame, width=25, state='readonly',
             values=['concept', 'prototype', 'developed', 'commercial'])
         self.disc_stage_combo.set('concept')
         self.disc_stage_combo.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Row 4: Funding Source
-        ttk.Label(form_frame, text="Funding Source:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.ip.labels.funding_source', default="Funding Source:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         self.disc_funding_entry = ttk.Entry(form_frame, width=50)
         self.disc_funding_entry.grid(row=4, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Co-Inventors section
-        coinv_frame = ttk.LabelFrame(scroll_frame, text="Co-Inventors", padding=15)
+        coinv_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.ip.labels.co_inventors', default="Co-Inventors"), padding=15)
         coinv_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Co-inventor input row
         input_row = ttk.Frame(coinv_frame)
         input_row.pack(fill=tk.X, pady=5)
 
-        ttk.Label(input_row, text="User ID:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(input_row, text=_t('gui.staff.staff_hr.ip.labels.user_id', default="User ID:")).pack(side=tk.LEFT, padx=5)
         self.coinv_user_entry = ttk.Entry(input_row, width=20)
         self.coinv_user_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(input_row, text="Contribution %:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(input_row, text=_t('gui.staff.staff_hr.ip.labels.contribution', default="Contribution %:")).pack(side=tk.LEFT, padx=5)
         self.coinv_pct_entry = ttk.Entry(input_row, width=8)
         self.coinv_pct_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(input_row, text="Add", command=self._add_coinventor).pack(side=tk.LEFT, padx=10)
+        ttk.Button(input_row, text=_t('gui.staff.staff_hr.ip.buttons.add', default="Add"), command=self._add_coinventor).pack(side=tk.LEFT, padx=10)
 
         # Co-inventors treeview
         coinv_tree_frame = ttk.Frame(coinv_frame)
@@ -348,22 +350,22 @@ class IPGUI:
 
         coinv_cols = ('User ID', 'Contribution %')
         self.coinv_tree = ttk.Treeview(coinv_tree_frame, columns=coinv_cols, show='headings', height=4)
-        self.coinv_tree.heading('User ID', text='User ID')
-        self.coinv_tree.heading('Contribution %', text='Contribution %')
+        self.coinv_tree.heading('User ID', text=_t('gui.staff.staff_hr.ip.headings.user_id', default='User ID'))
+        self.coinv_tree.heading('Contribution %', text=_t('gui.staff.staff_hr.ip.headings.contribution', default='Contribution %'))
         self.coinv_tree.column('User ID', width=250)
         self.coinv_tree.column('Contribution %', width=150)
         self.coinv_tree.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         coinv_btn_frame = ttk.Frame(coinv_frame)
         coinv_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(coinv_btn_frame, text="Remove Selected",
+        ttk.Button(coinv_btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.remove_selected', default="Remove Selected"),
                    command=self._remove_coinventor).pack(side=tk.LEFT, padx=5)
 
         # Submit buttons
         submit_frame = ttk.Frame(scroll_frame)
         submit_frame.pack(fill=tk.X, padx=10, pady=15)
-        ttk.Button(submit_frame, text="Save Draft", command=self._save_disclosure_draft).pack(side=tk.LEFT, padx=5)
-        ttk.Button(submit_frame, text="Submit", command=self._submit_disclosure).pack(side=tk.LEFT, padx=5)
+        ttk.Button(submit_frame, text=_t('gui.staff.staff_hr.ip.buttons.save_draft', default="Save Draft"), command=self._save_disclosure_draft).pack(side=tk.LEFT, padx=5)
+        ttk.Button(submit_frame, text=_t('gui.staff.staff_hr.ip.buttons.submit', default="Submit"), command=self._submit_disclosure).pack(side=tk.LEFT, padx=5)
 
     def _add_coinventor(self):
         """Add a co-inventor to the treeview."""
@@ -371,27 +373,27 @@ class IPGUI:
         pct_str = self.coinv_pct_entry.get().strip()
 
         if not user_id:
-            messagebox.showerror("Validation Error", "User ID is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.ip.dialogs.user_id_is_required', default="User ID is required."))
             return
 
         if not pct_str:
-            messagebox.showerror("Validation Error", "Contribution percentage is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.ip.dialogs.contribution_percentage_is_required', default="Contribution percentage is required."))
             return
 
         try:
             pct = float(pct_str)
             if pct < 0 or pct > 100:
-                messagebox.showerror("Validation Error", "Contribution percentage must be between 0 and 100.")
+                messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.ip.dialogs.contribution_percentage_must_be_between_0_and_100', default="Contribution percentage must be between 0 and 100."))
                 return
         except ValueError:
-            messagebox.showerror("Validation Error", "Contribution percentage must be a valid number.")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.ip.dialogs.contribution_percentage_must_be_a_valid_number', default="Contribution percentage must be a valid number."))
             return
 
         # Check for duplicate user IDs
         for child in self.coinv_tree.get_children():
             values = self.coinv_tree.item(child)['values']
             if str(values[0]) == user_id:
-                messagebox.showerror("Validation Error", f"User '{user_id}' is already added as a co-inventor.")
+                messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"), f"User '{user_id}' is already added as a co-inventor.")
                 return
 
         self.coinv_tree.insert('', tk.END, values=(user_id, f"{pct}%"))
@@ -404,7 +406,7 @@ class IPGUI:
         """Remove the selected co-inventor from the treeview."""
         selection = self.coinv_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a co-inventor to remove")
+            messagebox.showinfo(_t('gui.staff.staff_hr.ip.dialogs.info', default="Info"), _t('gui.staff.staff_hr.ip.dialogs.please_select_a_co_inventor_to_remove', default="Please select a co-inventor to remove"))
             return
 
         self.coinv_tree.delete(selection[0])
@@ -482,11 +484,11 @@ class IPGUI:
                     contribution_percentage=pct,
                 )
 
-            messagebox.showinfo("Success", f"Draft saved successfully. Disclosure ID: {disclosure_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.ip.dialogs.success', default="Success"), f"Draft saved successfully. Disclosure ID: {disclosure_id}")
             self._clear_disclosure_form()
             self._load_my_disclosures()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), str(e))
 
     def _submit_disclosure(self):
         """Save and submit the disclosure for review."""
@@ -494,9 +496,9 @@ class IPGUI:
         if not data:
             return
 
-        if not messagebox.askyesno("Confirm",
-                "Are you sure you want to submit this disclosure for review?\n\n"
-                "Once submitted, the disclosure cannot be edited."):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.ip.dialogs.confirm', default="Confirm"),
+                _t('gui.staff.staff_hr.ip.dialogs.are_you_sure_you_want_to_submit_this_disclosure_for_review_once', default="Are you sure you want to submit this disclosure for review?\n\n"
+                "Once submitted, the disclosure cannot be edited.")):
             return
 
         try:
@@ -520,13 +522,13 @@ class IPGUI:
                 )
 
             IPManager.submit_disclosure(disclosure_id)
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.staff.staff_hr.ip.dialogs.success', default="Success"),
                 f"Disclosure submitted successfully. Disclosure ID: {disclosure_id}\n\n"
                 "Your disclosure will be reviewed.")
             self._clear_disclosure_form()
             self._load_my_disclosures()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), str(e))
 
     def _clear_disclosure_form(self):
         """Clear the disclosure form fields."""
@@ -545,13 +547,13 @@ class IPGUI:
     def _create_patents_tab(self):
         """Create the patent tracking tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Patents")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.ip.tabs.patents', default="Patents"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Patent Tracking", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_patents).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.ip.labels.patent_tracking', default="Patent Tracking"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.ip.buttons.refresh', default="Refresh"), command=self._load_patents).pack(side=tk.RIGHT, padx=5)
 
         # Patents treeview
         tree_frame = ttk.Frame(tab)
@@ -585,7 +587,7 @@ class IPGUI:
         if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
             btn_frame = ttk.Frame(tab)
             btn_frame.pack(fill=tk.X, padx=10, pady=5)
-            ttk.Button(btn_frame, text="Update Status",
+            ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.update_status', default="Update Status"),
                        command=self._update_patent_status).pack(side=tk.LEFT, padx=5)
 
         self._load_patents()
@@ -611,7 +613,7 @@ class IPGUI:
                     display_status
                 ), tags=(p_status,))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load patents: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), f"Failed to load patents: {e}")
 
     def _view_patent_details(self, event):
         """View patent details in a popup dialog."""
@@ -625,11 +627,11 @@ class IPGUI:
         try:
             patent = IPManager.get_patent(patent_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load patent details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), f"Could not load patent details: {e}")
             return
 
         if not patent:
-            messagebox.showerror("Error", "Patent not found")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), _t('gui.staff.staff_hr.ip.dialogs.patent_not_found', default="Patent not found"))
             return
 
         dialog = tk.Toplevel(self.root)
@@ -650,7 +652,7 @@ class IPGUI:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Patent details
-        details_frame = ttk.LabelFrame(scroll_frame, text="Patent Details", padding=15)
+        details_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.ip.labels.patent_details', default="Patent Details"), padding=15)
         details_frame.pack(fill=tk.X, padx=10, pady=10)
 
         fields = [
@@ -675,18 +677,18 @@ class IPGUI:
                 row=i, column=1, sticky='nw', padx=(5, 10), pady=4)
 
         # Cost tracking
-        cost_frame = ttk.LabelFrame(scroll_frame, text="Cost Tracking", padding=15)
+        cost_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.ip.labels.cost_tracking', default="Cost Tracking"), padding=15)
         cost_frame.pack(fill=tk.X, padx=10, pady=5)
 
         cost_to_date = patent.get('cost_to_date', 0) or 0
-        ttk.Label(cost_frame, text="Cost to Date:", font=('Arial', 10, 'bold')).grid(
+        ttk.Label(cost_frame, text=_t('gui.staff.staff_hr.ip.labels.cost_to_date', default="Cost to Date:"), font=('Arial', 10, 'bold')).grid(
             row=0, column=0, sticky='e', padx=(10, 5), pady=4)
         ttk.Label(cost_frame, text=f"£{float(cost_to_date):,.2f}").grid(
             row=0, column=1, sticky='w', padx=(5, 10), pady=4)
 
         notes = patent.get('notes', '')
         if notes:
-            ttk.Label(cost_frame, text="Notes:", font=('Arial', 10, 'bold')).grid(
+            ttk.Label(cost_frame, text=_t('gui.staff.staff_hr.ip.labels.notes', default="Notes:"), font=('Arial', 10, 'bold')).grid(
                 row=1, column=0, sticky='ne', padx=(10, 5), pady=4)
             ttk.Label(cost_frame, text=notes, wraplength=400).grid(
                 row=1, column=1, sticky='nw', padx=(5, 10), pady=4)
@@ -698,7 +700,7 @@ class IPGUI:
             inventors = []
 
         if inventors:
-            inv_frame = ttk.LabelFrame(scroll_frame, text="Inventors", padding=10)
+            inv_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.ip.labels.inventors', default="Inventors"), padding=10)
             inv_frame.pack(fill=tk.X, padx=10, pady=5)
 
             inv_cols = ('Inventor ID', 'User ID', 'Contribution %', 'Primary')
@@ -720,13 +722,13 @@ class IPGUI:
         # Close button
         btn_frame = ttk.Frame(scroll_frame)
         btn_frame.pack(fill=tk.X, padx=10, pady=15)
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def _update_patent_status(self):
         """Update the status of the selected patent (admin only)."""
         selection = self.patents_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a patent to update")
+            messagebox.showinfo(_t('gui.staff.staff_hr.ip.dialogs.info', default="Info"), _t('gui.staff.staff_hr.ip.dialogs.please_select_a_patent_to_update', default="Please select a patent to update"))
             return
 
         item = self.patents_tree.item(selection[0])
@@ -745,7 +747,7 @@ class IPGUI:
         ttk.Label(frame, text=f"Current Status: {current_status}",
                   font=('Arial', 10, 'bold')).pack(pady=(0, 10))
 
-        ttk.Label(frame, text="New Status:").pack(anchor='w', padx=10)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.new_status', default="New Status:")).pack(anchor='w', padx=10)
         status_combo = ttk.Combobox(frame, width=20, state='readonly',
             values=['pending', 'filed', 'published', 'granted'])
         status_combo.pack(padx=10, pady=5, anchor='w')
@@ -753,42 +755,42 @@ class IPGUI:
         def save():
             new_status = status_combo.get().strip()
             if not new_status:
-                messagebox.showerror("Validation Error", "Please select a new status.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.ip.dialogs.please_select_a_new_status', default="Please select a new status."), parent=dialog)
                 return
 
             try:
                 IPManager.update_patent(patent_id, status=new_status)
-                messagebox.showinfo("Success", f"Patent #{patent_id} status updated to '{new_status}'.",
+                messagebox.showinfo(_t('gui.staff.staff_hr.ip.dialogs.success', default="Success"), f"Patent #{patent_id} status updated to '{new_status}'.",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_patents()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), str(e), parent=dialog)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill=tk.X, pady=15)
-        ttk.Button(btn_frame, text="Update", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.update', default="Update"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     # ==================== TAB 4: LICENSES ====================
 
     def _create_licenses_tab(self):
         """Create the license management tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Licenses")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.ip.tabs.licenses', default="Licenses"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="License Management", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.ip.labels.license_management', default="License Management"), style='Header.TLabel').pack(side=tk.LEFT)
 
         btn_container = ttk.Frame(header_frame)
         btn_container.pack(side=tk.RIGHT)
-        ttk.Button(btn_container, text="Record Revenue",
+        ttk.Button(btn_container, text=_t('gui.staff.staff_hr.ip.buttons.record_revenue', default="Record Revenue"),
                    command=self._record_revenue_dialog).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(btn_container, text="Add License",
+        ttk.Button(btn_container, text=_t('gui.staff.staff_hr.ip.buttons.add_license', default="Add License"),
                    command=self._add_license_dialog).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(btn_container, text="Refresh",
+        ttk.Button(btn_container, text=_t('gui.staff.staff_hr.ip.buttons.refresh', default="Refresh"),
                    command=self._load_licenses).pack(side=tk.RIGHT, padx=5)
 
         # Licenses treeview
@@ -839,7 +841,7 @@ class IPGUI:
                     display_status
                 ), tags=(lic_status,))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load licenses: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), f"Failed to load licenses: {e}")
 
     def _get_patent_options(self):
         """Get patent choices for selector comboboxes. Returns (display_values, id_map)."""
@@ -873,7 +875,7 @@ class IPGUI:
     def _add_license_dialog(self):
         """Open the Add License dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add License Agreement")
+        dialog.title(_t('gui.staff.staff_hr.ip.windows.add_license_agreement', default="Add License Agreement"))
         dialog.geometry("500x520")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -894,7 +896,7 @@ class IPGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Patent selector
-        ttk.Label(frame, text="Patent:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.patent', default="Patent:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         patent_display_values, patent_id_map = self._get_patent_options()
         patent_combo = ttk.Combobox(frame, width=35, state='readonly', values=patent_display_values)
         patent_combo.grid(row=0, column=1, padx=10, pady=8)
@@ -902,37 +904,37 @@ class IPGUI:
             patent_combo.set(patent_display_values[0])
 
         # Licensee Name
-        ttk.Label(frame, text="Licensee Name:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.licensee_name', default="Licensee Name:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         licensee_entry = ttk.Entry(frame, width=35)
         licensee_entry.grid(row=1, column=1, padx=10, pady=8)
 
         # Type
-        ttk.Label(frame, text="License Type:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.license_type', default="License Type:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         type_combo = ttk.Combobox(frame, width=20, state='readonly',
             values=['exclusive', 'non_exclusive'])
         type_combo.set('non_exclusive')
         type_combo.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Royalty Rate
-        ttk.Label(frame, text="Royalty Rate (%):").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.royalty_rate', default="Royalty Rate (%):")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         royalty_entry = ttk.Entry(frame, width=15)
         royalty_entry.insert(0, "0")
         royalty_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Territory
-        ttk.Label(frame, text="Territory:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.territory', default="Territory:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         territory_entry = ttk.Entry(frame, width=35)
         territory_entry.insert(0, "worldwide")
         territory_entry.grid(row=4, column=1, padx=10, pady=8)
 
         # Start Date
-        ttk.Label(frame, text="Start Date:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.start_date', default="Start Date:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         start_entry = ttk.Entry(frame, width=15)
         start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         start_entry.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Annual Fee
-        ttk.Label(frame, text="Annual Fee ($):").grid(row=6, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.annual_fee', default="Annual Fee ($):")).grid(row=6, column=0, sticky='e', padx=10, pady=8)
         fee_entry = ttk.Entry(frame, width=15)
         fee_entry.insert(0, "0.00")
         fee_entry.grid(row=6, column=1, padx=10, pady=8, sticky='w')
@@ -962,12 +964,12 @@ class IPGUI:
             try:
                 royalty_rate = float(royalty_str)
                 if royalty_rate < 0 or royalty_rate > 100:
-                    messagebox.showerror("Validation Error",
-                                         "Royalty rate must be between 0 and 100.", parent=dialog)
+                    messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"),
+                                         _t('gui.staff.staff_hr.ip.dialogs.royalty_rate_must_be_between_0_and_100', default="Royalty rate must be between 0 and 100."), parent=dialog)
                     return
             except ValueError:
-                messagebox.showerror("Validation Error",
-                                     "Royalty rate must be a valid number.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"),
+                                     _t('gui.staff.staff_hr.ip.dialogs.royalty_rate_must_be_a_valid_number', default="Royalty rate must be a valid number."), parent=dialog)
                 return
 
             # Annual fee
@@ -995,26 +997,26 @@ class IPGUI:
                     territory=territory,
                     annual_fee=annual_fee,
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.ip.dialogs.success', default="Success"),
                                     f"License agreement created. License ID: {license_id}",
                                     parent=dialog)
                 dialog.destroy()
                 self._load_licenses()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=7, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         licensee_entry.focus_set()
 
     def _record_revenue_dialog(self):
         """Open the Record Revenue dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Record License Revenue")
+        dialog.title(_t('gui.staff.staff_hr.ip.windows.record_license_revenue', default="Record License Revenue"))
         dialog.geometry("500x420")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -1023,7 +1025,7 @@ class IPGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # License selector
-        ttk.Label(frame, text="License:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.license', default="License:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         license_display_values, license_id_map = self._get_license_options()
         license_combo = ttk.Combobox(frame, width=40, state='readonly', values=license_display_values)
         license_combo.grid(row=0, column=1, padx=10, pady=8)
@@ -1031,34 +1033,34 @@ class IPGUI:
             license_combo.set(license_display_values[0])
 
         # Period
-        ttk.Label(frame, text="Period:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.period', default="Period:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         period_entry = ttk.Entry(frame, width=20)
         period_entry.insert(0, datetime.now().strftime('%Y-Q1'))
         period_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
-        ttk.Label(frame, text="(e.g. 2026-Q1, 2026-H1, 2026)",
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.e_g_2026_q1_2026_h1_2026', default="(e.g. 2026-Q1, 2026-H1, 2026)"),
                   font=('Arial', 8)).grid(row=2, column=1, padx=10, sticky='w')
 
         # Total Revenue
-        ttk.Label(frame, text="Total Revenue ($):").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.ip.labels.total_revenue', default="Total Revenue ($):")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         revenue_entry = ttk.Entry(frame, width=15)
         revenue_entry.insert(0, "0.00")
         revenue_entry.grid(row=3, column=1, padx=10, pady=8, sticky='w')
 
         # Revenue splits
-        splits_frame = ttk.LabelFrame(frame, text="Revenue Splits ($)", padding=10)
+        splits_frame = ttk.LabelFrame(frame, text=_t('gui.staff.staff_hr.ip.labels.revenue_splits', default="Revenue Splits ($)"), padding=10)
         splits_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky='ew')
 
-        ttk.Label(splits_frame, text="University Share:").grid(row=0, column=0, sticky='e', padx=10, pady=5)
+        ttk.Label(splits_frame, text=_t('gui.staff.staff_hr.ip.labels.university_share', default="University Share:")).grid(row=0, column=0, sticky='e', padx=10, pady=5)
         uni_share_entry = ttk.Entry(splits_frame, width=15)
         uni_share_entry.insert(0, "0.00")
         uni_share_entry.grid(row=0, column=1, padx=10, pady=5, sticky='w')
 
-        ttk.Label(splits_frame, text="Inventor Share:").grid(row=1, column=0, sticky='e', padx=10, pady=5)
+        ttk.Label(splits_frame, text=_t('gui.staff.staff_hr.ip.labels.inventor_share', default="Inventor Share:")).grid(row=1, column=0, sticky='e', padx=10, pady=5)
         inv_share_entry = ttk.Entry(splits_frame, width=15)
         inv_share_entry.insert(0, "0.00")
         inv_share_entry.grid(row=1, column=1, padx=10, pady=5, sticky='w')
 
-        ttk.Label(splits_frame, text="Department Share:").grid(row=2, column=0, sticky='e', padx=10, pady=5)
+        ttk.Label(splits_frame, text=_t('gui.staff.staff_hr.ip.labels.department_share', default="Department Share:")).grid(row=2, column=0, sticky='e', padx=10, pady=5)
         dept_share_entry = ttk.Entry(splits_frame, width=15)
         dept_share_entry.insert(0, "0.00")
         dept_share_entry.grid(row=2, column=1, padx=10, pady=5, sticky='w')
@@ -1067,7 +1069,7 @@ class IPGUI:
             # Validate license selection
             license_selection = license_combo.get()
             if not license_selection or license_selection not in license_id_map:
-                messagebox.showerror("Validation Error", "Please select a license.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.ip.dialogs.please_select_a_license', default="Please select a license."), parent=dialog)
                 return
 
             license_id = license_id_map[license_selection]
@@ -1075,7 +1077,7 @@ class IPGUI:
             # Period
             period = period_entry.get().strip()
             if not period:
-                messagebox.showerror("Validation Error", "Period is required.", parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.ip.dialogs.period_is_required', default="Period is required."), parent=dialog)
                 return
 
             # Total revenue
@@ -1113,34 +1115,34 @@ class IPGUI:
                     inventor_share=inv_share,
                     department_share=dept_share,
                 )
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.staff.staff_hr.ip.dialogs.success', default="Success"),
                                     f"Revenue recorded successfully. Revenue ID: {revenue_id}",
                                     parent=dialog)
                 dialog.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dialog)
+                messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), str(e), parent=dialog)
 
         # Buttons
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=5, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Record", command=save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.record', default="Record"), command=save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.ip.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     # ==================== TAB 5: REPORTS (ADMIN) ====================
 
     def _create_reports_tab(self):
         """Create the IP portfolio reports tab (admin only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Reports")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.ip.tabs.reports', default="Reports"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="IP Portfolio Reports", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_portfolio_stats).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.ip.labels.ip_portfolio_reports', default="IP Portfolio Reports"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.ip.buttons.refresh', default="Refresh"), command=self._load_portfolio_stats).pack(side=tk.RIGHT)
 
         # Portfolio summary statistics
-        stats_frame = ttk.LabelFrame(tab, text="Portfolio Summary", padding=15)
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.ip.labels.portfolio_summary', default="Portfolio Summary"), padding=15)
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.portfolio_stats = {}
@@ -1155,13 +1157,13 @@ class IPGUI:
             ttk.Label(frame, text=label).pack()
 
         # Disclosures by status breakdown
-        disc_frame = ttk.LabelFrame(tab, text="Disclosures by Status", padding=10)
+        disc_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.ip.labels.disclosures_by_status', default="Disclosures by Status"), padding=10)
         disc_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         disc_cols = ('Status', 'Count')
         self.disc_status_tree = ttk.Treeview(disc_frame, columns=disc_cols, show='headings', height=5)
-        self.disc_status_tree.heading('Status', text='Status')
-        self.disc_status_tree.heading('Count', text='Count')
+        self.disc_status_tree.heading('Status', text=_t('gui.staff.staff_hr.ip.headings.status', default='Status'))
+        self.disc_status_tree.heading('Count', text=_t('gui.staff.staff_hr.ip.headings.count', default='Count'))
         self.disc_status_tree.column('Status', width=250)
         self.disc_status_tree.column('Count', width=150)
         self.disc_status_tree.pack(fill=tk.BOTH, expand=True)
@@ -1172,13 +1174,13 @@ class IPGUI:
         self.disc_status_tree.tag_configure('rejected', background='#f8d7da')
 
         # Patents by status breakdown
-        pat_frame = ttk.LabelFrame(tab, text="Patents by Status", padding=10)
+        pat_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.ip.labels.patents_by_status', default="Patents by Status"), padding=10)
         pat_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         pat_cols = ('Status', 'Count')
         self.pat_status_tree = ttk.Treeview(pat_frame, columns=pat_cols, show='headings', height=5)
-        self.pat_status_tree.heading('Status', text='Status')
-        self.pat_status_tree.heading('Count', text='Count')
+        self.pat_status_tree.heading('Status', text=_t('gui.staff.staff_hr.ip.headings.status', default='Status'))
+        self.pat_status_tree.heading('Count', text=_t('gui.staff.staff_hr.ip.headings.count', default='Count'))
         self.pat_status_tree.column('Status', width=250)
         self.pat_status_tree.column('Count', width=150)
         self.pat_status_tree.pack(fill=tk.BOTH, expand=True)
@@ -1195,7 +1197,7 @@ class IPGUI:
         try:
             summary = IPManager.get_portfolio_summary()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load portfolio statistics: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.ip.dialogs.error', default="Error"), f"Failed to load portfolio statistics: {e}")
             return
 
         # Total disclosures

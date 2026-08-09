@@ -11,15 +11,17 @@ Layout is fixed: Mon–Fri columns, configurable hour range. The granularity
 constant ``SLOT_MINUTES`` controls snapping.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)
 
 _DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
@@ -70,7 +72,7 @@ class DragDropTimetableDialog:
         self.gui = gui
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Drag-and-Drop Timetable")
+        self.dialog.title(_t('gui.academics.module_scheduling.drag_grid_dialog.windows.drag_and_drop_timetable', default="Drag-and-Drop Timetable"))
         self.dialog.geometry("1100x720")
         self.dialog.transient(parent)
 
@@ -80,7 +82,7 @@ class DragDropTimetableDialog:
         self.semester_var = tk.StringVar(
             value="Fall" if now.month >= 8 else ("Spring" if now.month <= 5 else "Summer"))
         self.year_var = tk.StringVar(value=str(now.year))
-        self.status_var = tk.StringVar(value="published")
+        self.status_var = tk.StringVar(value=_t('gui.academics.module_scheduling.drag_grid_dialog.values.published', default="published"))
 
         # Per-block bookkeeping; key is the canvas item id of the block rect.
         self._blocks: dict[int, dict] = {}
@@ -92,7 +94,7 @@ class DragDropTimetableDialog:
     def _build_ui(self):
         bar = ttk.Frame(self.dialog, padding=8)
         bar.pack(fill=tk.X)
-        ttk.Label(bar, text="Term:").pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.academics.module_scheduling.drag_grid_dialog.labels.term', default="Term:")).pack(side=tk.LEFT)
         ttk.Combobox(bar, textvariable=self.semester_var,
                      values=["Fall", "Spring", "Summer", "Winter"],
                      width=10, state="readonly"
@@ -102,16 +104,16 @@ class DragDropTimetableDialog:
                      values=[str(y) for y in range(now.year - 2, now.year + 4)],
                      width=8, state="readonly"
                      ).pack(side=tk.LEFT, padx=(0, 12))
-        ttk.Label(bar, text="Status:").pack(side=tk.LEFT)
+        ttk.Label(bar, text=_t('gui.academics.module_scheduling.drag_grid_dialog.labels.status', default="Status:")).pack(side=tk.LEFT)
         ttk.Combobox(bar, textvariable=self.status_var,
                      values=["published", "draft", "archived", "(all)"],
                      width=10, state="readonly"
                      ).pack(side=tk.LEFT, padx=(4, 12))
-        ttk.Button(bar, text="Reload",
+        ttk.Button(bar, text=_t('gui.academics.module_scheduling.drag_grid_dialog.buttons.reload', default="Reload"),
                    command=self._render).pack(side=tk.LEFT)
         self.status_text = tk.StringVar(
-            value="Click a block and drag to a new slot. "
-                  "Hold Esc-mid-drag to cancel.")
+            value=_t('gui.academics.module_scheduling.drag_grid_dialog.values.click_a_block_and_drag_to_a_new_slot_hold_esc_mid_drag_to_cancel', default="Click a block and drag to a new slot. "
+                  "Hold Esc-mid-drag to cancel."))
         ttk.Label(bar, textvariable=self.status_text,
                   foreground="#444").pack(side=tk.LEFT, padx=20)
 
@@ -129,7 +131,7 @@ class DragDropTimetableDialog:
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
 
-        ttk.Button(self.dialog, text="Close",
+        ttk.Button(self.dialog, text=_t('gui.academics.module_scheduling.drag_grid_dialog.buttons.close', default="Close"),
                    command=self.dialog.destroy).pack(pady=8)
 
     # ----- Geometry helpers -----
@@ -165,7 +167,7 @@ class DragDropTimetableDialog:
         try:
             rows = self._load_rows()
         except sqlite3.Error as e:
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.academics.module_scheduling.drag_grid_dialog.dialogs.error', default="Error"),
                                  f"Failed to load schedule rows: {e}",
                                  parent=self.dialog)
             return
@@ -365,7 +367,7 @@ class DragDropTimetableDialog:
         # Confirm the move so a fat-finger drag doesn't silently reschedule
         # a class.
         if not messagebox.askyesno(
-                "Confirm move",
+                _t('gui.academics.module_scheduling.drag_grid_dialog.dialogs.confirm_move', default="Confirm move"),
                 f"Move {info['module_code']} from "
                 f"{info['day']} {info['start']}-{info['end']} to "
                 f"{new_day} {new_start}-{new_end}?",
@@ -393,14 +395,14 @@ class DragDropTimetableDialog:
         except Exception as e:
             ok = False
             logger.exception("Drag-drop update failed")
-            messagebox.showerror("Error", f"Update failed: {e}",
+            messagebox.showerror(_t('gui.academics.module_scheduling.drag_grid_dialog.dialogs.error', default="Error"), f"Update failed: {e}",
                                  parent=self.dialog)
 
         if not ok:
             messagebox.showwarning(
-                "Move rejected",
-                "Move was rejected (likely a room/instructor conflict). "
-                "Snapping back.",
+                _t('gui.academics.module_scheduling.drag_grid_dialog.dialogs.move_rejected', default="Move rejected"),
+                _t('gui.academics.module_scheduling.drag_grid_dialog.dialogs.move_was_rejected_likely_a_room_instructor_conflict_snapping_bac', default="Move was rejected (likely a room/instructor conflict). "
+                "Snapping back."),
                 parent=self.dialog,
             )
             self._snap_back(ds)

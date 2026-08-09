@@ -6,6 +6,8 @@ Selecting an outcome on the left shows (and lets you edit) its mappings on
 the right — the basis for accreditation / curriculum-coverage reporting.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     ExtFormDialog, tk, ttk, messagebox, _, logger,
 )
@@ -30,7 +32,7 @@ class OutcomesTabMixin:
             sel = ttk.LabelFrame(frame, text=_("course_management.labels.select_course",
                                                default="Select Course"), padding=10)
             sel.pack(fill=tk.X, padx=5, pady=5)
-            ttk.Label(sel, text="Course:").pack(side=tk.LEFT, padx=5)
+            ttk.Label(sel, text=_t('gui.academics.course_management_gui.core.outcomes_tab.labels.course', default="Course:")).pack(side=tk.LEFT, padx=5)
             self._clo_course_combo = ttk.Combobox(sel, width=50, state="readonly")
             self._clo_course_combo.pack(side=tk.LEFT, padx=5)
             self._clo_course_combo.bind("<<ComboboxSelected>>", self._reload_outcomes)
@@ -67,7 +69,7 @@ class OutcomesTabMixin:
     # ------------------------------------------------------------------
 
     def _build_outcomes_pane(self, parent):
-        pane = ttk.LabelFrame(parent, text="Course Learning Outcomes", padding=8)
+        pane = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.core.outcomes_tab.labels.course_learning_outcomes', default="Course Learning Outcomes"), padding=8)
         bar = ttk.Frame(pane)
         bar.pack(fill=tk.X, pady=3)
         if self._ext_can_edit():
@@ -127,14 +129,14 @@ class OutcomesTabMixin:
         code = self._current_clo_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.outcomes_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
 
         def submit(values):
             desc = (values.get("description") or "").strip()
             if not desc:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Description is required.")
+                                     _t('gui.academics.course_management_gui.core.outcomes_tab.dialogs.description_is_required', default="Description is required."))
                 return False
             try:
                 with self._ext_db(write=True) as conn:
@@ -160,7 +162,7 @@ class OutcomesTabMixin:
         vals = self._ext_selected_values(self._clo_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select an outcome first.")
+                                   _t('gui.academics.course_management_gui.core.outcomes_tab.dialogs.select_an_outcome_first', default="Select an outcome first."))
             return None
         return vals
 
@@ -177,7 +179,7 @@ class OutcomesTabMixin:
             desc = (values.get("description") or "").strip()
             if not desc:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Description is required.")
+                                     _t('gui.academics.course_management_gui.core.outcomes_tab.dialogs.description_is_required', default="Description is required."))
                 return False
             try:
                 with self._ext_db(write=True) as conn:
@@ -223,12 +225,12 @@ class OutcomesTabMixin:
     # ------------------------------------------------------------------
 
     def _build_mappings_pane(self, parent):
-        pane = ttk.LabelFrame(parent, text="Mapped standards (for selected outcome)",
+        pane = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.core.outcomes_tab.labels.mapped_standards_for_selected_outcome', default="Mapped standards (for selected outcome)"),
                               padding=8)
         bar = ttk.Frame(pane)
         bar.pack(fill=tk.X, pady=3)
         if self._ext_can_edit():
-            ttk.Button(bar, text="Add Mapping",
+            ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.outcomes_tab.buttons.add_mapping', default="Add Mapping"),
                        command=self._add_mapping).pack(side=tk.LEFT, padx=5)
             ttk.Button(bar, text=_("common.delete", default="Remove"),
                        command=self._delete_mapping).pack(side=tk.LEFT, padx=5)
@@ -275,7 +277,7 @@ class OutcomesTabMixin:
         outcome_id = self._current_outcome_id()
         if not outcome_id:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a learning outcome first.")
+                                   _t('gui.academics.course_management_gui.core.outcomes_tab.dialogs.select_a_learning_outcome_first', default="Select a learning outcome first."))
             return
 
         def submit(values):
@@ -283,7 +285,7 @@ class OutcomesTabMixin:
             sdesc = (values.get("standard_description") or "").strip()
             if not scode and not sdesc:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Provide a standard code or description.")
+                                     _t('gui.academics.course_management_gui.core.outcomes_tab.dialogs.provide_a_standard_code_or_description', default="Provide a standard code or description."))
                 return False
             try:
                 with self._ext_db(write=True) as conn:
@@ -317,7 +319,7 @@ class OutcomesTabMixin:
         vals = self._ext_selected_values(self._mapping_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a mapping to remove.")
+                                   _t('gui.academics.course_management_gui.core.outcomes_tab.dialogs.select_a_mapping_to_remove', default="Select a mapping to remove."))
             return
         if not messagebox.askyesno(_("common.confirm", default="Confirm"),
                                    f"Remove mapping to '{vals[2] or vals[3]}'?"):

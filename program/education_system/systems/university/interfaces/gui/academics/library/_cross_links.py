@@ -46,6 +46,8 @@ opens.
 """
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 
@@ -86,8 +88,8 @@ def send_overdue_notice(user_id, book_title=None, days_overdue=None,
         logger.exception("Email helpers not available")
         from tkinter import messagebox
         messagebox.showerror(
-            "Email unavailable",
-            "Email service / user lookup helpers aren't available.",
+            _t('gui.academics.library.cross_links.dialogs.email_unavailable', default="Email unavailable"),
+            _t('gui.academics.library.cross_links.dialogs.email_service_user_lookup_helpers_aren_t_available', default="Email service / user lookup helpers aren't available."),
             parent=parent)
         return
 
@@ -95,7 +97,7 @@ def send_overdue_notice(user_id, book_title=None, days_overdue=None,
     if not email:
         from tkinter import messagebox
         messagebox.showwarning(
-            "No email",
+            _t('gui.academics.library.cross_links.dialogs.no_email', default="No email"),
             f"Could not find an email address for user {user_id}.",
             parent=parent)
         return
@@ -134,18 +136,18 @@ def send_overdue_notice(user_id, book_title=None, days_overdue=None,
     form = ttk.Frame(win, padding=10)
     form.pack(fill="both", expand=True)
 
-    ttk.Label(form, text="To:").grid(row=0, column=0, sticky="w")
+    ttk.Label(form, text=_t('gui.academics.library.cross_links.labels.to', default="To:")).grid(row=0, column=0, sticky="w")
     to_var = tk.StringVar(value=email)
     ttk.Entry(form, textvariable=to_var, width=60).grid(
         row=0, column=1, sticky="ew", padx=(8, 0))
-    ttk.Label(form, text="Subject:").grid(row=1, column=0, sticky="w",
+    ttk.Label(form, text=_t('gui.academics.library.cross_links.labels.subject', default="Subject:")).grid(row=1, column=0, sticky="w",
                                           pady=(6, 0))
     subj_var = tk.StringVar(value=subject)
     ttk.Entry(form, textvariable=subj_var, width=60).grid(
         row=1, column=1, sticky="ew", padx=(8, 0), pady=(6, 0))
     form.columnconfigure(1, weight=1)
 
-    ttk.Label(form, text="Message:").grid(row=2, column=0, columnspan=2,
+    ttk.Label(form, text=_t('gui.academics.library.cross_links.labels.message', default="Message:")).grid(row=2, column=0, columnspan=2,
                                            sticky="w", pady=(8, 2))
     body_text = ScrolledText(form, wrap="word", height=18)
     body_text.grid(row=3, column=0, columnspan=2, sticky="nsew")
@@ -160,30 +162,30 @@ def send_overdue_notice(user_id, book_title=None, days_overdue=None,
         subj = subj_var.get().strip()
         msg = body_text.get("1.0", "end-1c")
         if not recip or "@" not in recip:
-            messagebox.showwarning("Invalid recipient",
-                                   "Enter a valid email address.",
+            messagebox.showwarning(_t('gui.academics.library.cross_links.dialogs.invalid_recipient', default="Invalid recipient"),
+                                   _t('gui.academics.library.cross_links.dialogs.enter_a_valid_email_address', default="Enter a valid email address."),
                                    parent=win)
             return
         try:
             ok = send_email_as_system(recip, subj, msg, system_name="Library")
         except Exception as exc:
             logger.exception("send_email_as_system failed")
-            messagebox.showerror("Send failed",
+            messagebox.showerror(_t('gui.academics.library.cross_links.dialogs.send_failed', default="Send failed"),
                                  f"Could not send email:\n{exc}",
                                  parent=win)
             return
         if ok:
-            messagebox.showinfo("Sent", f"Overdue notice sent to {recip}.",
+            messagebox.showinfo(_t('gui.academics.library.cross_links.dialogs.sent', default="Sent"), f"Overdue notice sent to {recip}.",
                                 parent=win)
             win.destroy()
         else:
             messagebox.showerror(
-                "Send failed",
-                "Email service rejected the message. Check the email "
-                "configuration / app log.", parent=win)
+                _t('gui.academics.library.cross_links.dialogs.send_failed', default="Send failed"),
+                _t('gui.academics.library.cross_links.dialogs.email_service_rejected_the_message_check_the_email_configuration', default="Email service rejected the message. Check the email "
+                "configuration / app log."), parent=win)
 
-    ttk.Button(bar, text="📤 Send", command=_do_send).pack(side="left")
-    ttk.Button(bar, text="Cancel", command=win.destroy).pack(side="right")
+    ttk.Button(bar, text=_t('gui.academics.library.cross_links.buttons.send', default="📤 Send"), command=_do_send).pack(side="left")
+    ttk.Button(bar, text=_t('gui.academics.library.cross_links.buttons.cancel', default="Cancel"), command=win.destroy).pack(side="right")
 
 
 def open_disciplinary_case_for_loan(user_id, *, loan_id=None, book_title=None,
@@ -217,9 +219,9 @@ def open_disciplinary_case_for_loan(user_id, *, loan_id=None, book_title=None,
     except Exception:
         logger.exception("cases_bus unavailable; cannot escalate")
         messagebox.showerror(
-            "Disciplinary unavailable",
-            "The cases bus could not be loaded; the case was not "
-            "raised.", parent=parent)
+            _t('gui.academics.library.cross_links.dialogs.disciplinary_unavailable', default="Disciplinary unavailable"),
+            _t('gui.academics.library.cross_links.dialogs.the_cases_bus_could_not_be_loaded_the_case_was_not_raised', default="The cases bus could not be loaded; the case was not "
+            "raised."), parent=parent)
         return
 
     # Build a sensible default description from whatever the row gave us.
@@ -258,21 +260,21 @@ def open_disciplinary_case_for_loan(user_id, *, loan_id=None, book_title=None,
                                                 columnspan=2, sticky="w",
                                                 pady=(0, 8))
 
-    ttk.Label(form, text="Severity:").grid(row=1, column=0, sticky="w")
-    sev_var = tk.StringVar(value="Minor")
+    ttk.Label(form, text=_t('gui.academics.library.cross_links.labels.severity', default="Severity:")).grid(row=1, column=0, sticky="w")
+    sev_var = tk.StringVar(value=_t('gui.academics.library.cross_links.values.minor', default="Minor"))
     ttk.Combobox(form, textvariable=sev_var,
                  values=["Minor", "Moderate", "Major"],
                  state="readonly", width=15).grid(
         row=1, column=1, sticky="w", padx=(8, 0))
 
-    ttk.Label(form, text="Offense type:").grid(row=2, column=0, sticky="w",
+    ttk.Label(form, text=_t('gui.academics.library.cross_links.labels.offense_type', default="Offense type:")).grid(row=2, column=0, sticky="w",
                                                 pady=(6, 0))
-    off_var = tk.StringVar(value="Library — overdue / unpaid fine")
+    off_var = tk.StringVar(value=_t('gui.academics.library.cross_links.values.library_overdue_unpaid_fine', default="Library — overdue / unpaid fine"))
     ttk.Entry(form, textvariable=off_var, width=50).grid(
         row=2, column=1, sticky="ew", padx=(8, 0), pady=(6, 0))
     form.columnconfigure(1, weight=1)
 
-    ttk.Label(form, text="Description:").grid(row=3, column=0,
+    ttk.Label(form, text=_t('gui.academics.library.cross_links.labels.description', default="Description:")).grid(row=3, column=0,
                                                 sticky="nw", pady=(6, 0))
     from tkinter.scrolledtext import ScrolledText
     desc_text = ScrolledText(form, wrap="word", height=10)
@@ -286,7 +288,7 @@ def open_disciplinary_case_for_loan(user_id, *, loan_id=None, book_title=None,
 
     def _do_open():
         if not messagebox.askyesno(
-            "Confirm",
+            _t('gui.academics.library.cross_links.dialogs.confirm', default="Confirm"),
             f"Open a disciplinary case for student {user_id}?\n\n"
             "This will write to disciplinary_records and the case "
             "will appear in the Disciplinary Portal.",
@@ -302,26 +304,26 @@ def open_disciplinary_case_for_loan(user_id, *, loan_id=None, book_title=None,
             )
         except Exception as exc:
             logger.exception("open_case failed")
-            messagebox.showerror("Failed",
+            messagebox.showerror(_t('gui.academics.library.cross_links.dialogs.failed', default="Failed"),
                                  f"Could not raise the case:\n{exc}",
                                  parent=win)
             return
         if not new_id:
             messagebox.showerror(
-                "Failed",
-                "The cases bus returned no record id. The case may "
-                "not have been created — check the application log.",
+                _t('gui.academics.library.cross_links.dialogs.failed', default="Failed"),
+                _t('gui.academics.library.cross_links.dialogs.the_cases_bus_returned_no_record_id_the_case_may_not_have_been_c', default="The cases bus returned no record id. The case may "
+                "not have been created — check the application log."),
                 parent=win)
             return
         messagebox.showinfo(
-            "Case opened",
+            _t('gui.academics.library.cross_links.dialogs.case_opened', default="Case opened"),
             f"Disciplinary record #{new_id} opened for student "
             f"{user_id}.", parent=win)
         win.destroy()
 
-    ttk.Button(bar, text="🚨 Open case",
+    ttk.Button(bar, text=_t('gui.academics.library.cross_links.buttons.open_case', default="🚨 Open case"),
                command=_do_open).pack(side="left")
-    ttk.Button(bar, text="Cancel", command=win.destroy).pack(side="right")
+    ttk.Button(bar, text=_t('gui.academics.library.cross_links.buttons.cancel', default="Cancel"), command=win.destroy).pack(side="right")
 
 
 def show_loyalty_snapshot(user_id, parent=None):
@@ -344,8 +346,8 @@ def show_loyalty_snapshot(user_id, parent=None):
     except Exception:
         logger.exception("loyalty_bus unavailable")
         messagebox.showerror(
-            "Loyalty unavailable",
-            "The loyalty bus could not be loaded.", parent=parent)
+            _t('gui.academics.library.cross_links.dialogs.loyalty_unavailable', default="Loyalty unavailable"),
+            _t('gui.academics.library.cross_links.dialogs.the_loyalty_bus_could_not_be_loaded', default="The loyalty bus could not be loaded."), parent=parent)
         return
 
     try:
@@ -403,7 +405,7 @@ def show_loyalty_snapshot(user_id, parent=None):
         tree.insert("", "end", values=(
             "—", "(no ledger entries yet)", 0, "", "", ""))
 
-    ttk.Button(win, text="Close",
+    ttk.Button(win, text=_t('gui.academics.library.cross_links.buttons.close', default="Close"),
                command=win.destroy).pack(pady=(0, 10))
 
 
@@ -425,8 +427,8 @@ def show_careers_snapshot(user_id, parent=None):
     except Exception:
         logger.exception("careers_bus unavailable")
         messagebox.showerror(
-            "Careers unavailable",
-            "The careers bus could not be loaded.", parent=parent)
+            _t('gui.academics.library.cross_links.dialogs.careers_unavailable', default="Careers unavailable"),
+            _t('gui.academics.library.cross_links.dialogs.the_careers_bus_could_not_be_loaded', default="The careers bus could not be loaded."), parent=parent)
         return
 
     try:
@@ -490,7 +492,7 @@ def show_careers_snapshot(user_id, parent=None):
         tree.insert("", "end", values=(
             "—", "(no engagements logged)", "", "", "", "", "", ""))
 
-    ttk.Button(win, text="Close",
+    ttk.Button(win, text=_t('gui.academics.library.cross_links.buttons.close', default="Close"),
                command=win.destroy).pack(pady=(0, 10))
 
 
@@ -500,12 +502,10 @@ def show_reading_lists_with_book(book_id, parent=None):
     import sqlite3
     import tkinter as tk
     from tkinter import ttk, messagebox
-    from education_system.systems.university.infrastructure.paths import (
-        DEFAULT_DB_PATH,
-    )
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
         rows = conn.execute(
             "SELECT rl.list_id, rl.name, rl.creator_id, rl.category, "
             "       rl.created_date, rli.notes "
@@ -518,7 +518,7 @@ def show_reading_lists_with_book(book_id, parent=None):
     except Exception as exc:
         logger.exception("reading-list reverse lookup failed")
         messagebox.showerror(
-            "Lookup failed",
+            _t('gui.academics.library.cross_links.dialogs.lookup_failed', default="Lookup failed"),
             f"Could not query reading lists:\n{exc}",
             parent=parent)
         return
@@ -570,7 +570,7 @@ def show_reading_lists_with_book(book_id, parent=None):
         tree.insert("", "end", values=(
             "—", "(no reading lists contain this book)", "", "", "", ""))
 
-    ttk.Button(win, text="Close",
+    ttk.Button(win, text=_t('gui.academics.library.cross_links.buttons.close', default="Close"),
                command=win.destroy).pack(pady=(0, 10))
 
 

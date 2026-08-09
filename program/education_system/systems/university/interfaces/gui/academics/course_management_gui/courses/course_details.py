@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -283,7 +285,7 @@ def view_course_details(self, cursor, course_id):
     course = cursor.fetchone()
 
     if not course:
-        messagebox.showerror(_("common.error"), "Course not found")
+        messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.courses.course_details.dialogs.course_not_found', default="Course not found"))
         return
 
     # Create details window
@@ -298,7 +300,7 @@ def view_course_details(self, cursor, course_id):
 
     # Basic Info Tab
     basic_frame = ttk.Frame(notebook)
-    notebook.add(basic_frame, text="Basic Info")
+    notebook.add(basic_frame, text=_t('gui.academics.course_management_gui.courses.course_details.tabs.basic_info', default="Basic Info"))
 
     basic_text = ScrolledText(basic_frame, wrap=tk.WORD)
     basic_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -307,7 +309,7 @@ def view_course_details(self, cursor, course_id):
 
     # Prerequisites Tab
     prereq_frame = ttk.Frame(notebook)
-    notebook.add(prereq_frame, text="Prerequisites")
+    notebook.add(prereq_frame, text=_t('gui.academics.course_management_gui.courses.course_details.tabs.prerequisites', default="Prerequisites"))
 
     prereq_text = ScrolledText(prereq_frame, wrap=tk.WORD)
     prereq_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -334,7 +336,7 @@ def view_course_details(self, cursor, course_id):
 
     # Schedule Tab
     schedule_frame = ttk.Frame(notebook)
-    notebook.add(schedule_frame, text="Schedule")
+    notebook.add(schedule_frame, text=_t('gui.academics.course_management_gui.courses.course_details.tabs.schedule', default="Schedule"))
 
     schedule_text = ScrolledText(schedule_frame, wrap=tk.WORD)
     schedule_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -368,4 +370,4 @@ def view_course_details(self, cursor, course_id):
     schedule_text.config(state=tk.DISABLED)
 
     # Close button
-    ttk.Button(details_window, text="Close", command=details_window.destroy).pack(pady=10)
+    ttk.Button(details_window, text=_t('gui.academics.course_management_gui.courses.course_details.buttons.close', default="Close"), command=details_window.destroy).pack(pady=10)

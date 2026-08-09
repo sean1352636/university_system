@@ -1,6 +1,8 @@
 """Helper dialog classes extracted from gui.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import os
 import secrets
 import shutil
@@ -52,7 +54,7 @@ class RecordEditor:
                 OptionMenu(self.win, v, *opts).grid(row=i, column=1, sticky="ew", padx=6)
             else:
                 Entry(self.win, textvariable=v).grid(row=i, column=1, sticky="ew", padx=6)
-        Button(self.win, text="Save", command=self._save,
+        Button(self.win, text=_t('gui.pastoral.equality_diversity.dialogs.buttons.save', default="Save"), command=self._save,
                bg="#27ae60", fg="white", relief="flat",
                padx=10).grid(row=len(editable), column=0, columnspan=2, pady=8)
 
@@ -99,7 +101,7 @@ class MergeDialog:
         finally:
             conn.close()
         old = dict(zip(cols, row))
-        Label(self.win, text="Pick which value wins for each field",
+        Label(self.win, text=_t('gui.pastoral.equality_diversity.dialogs.labels.pick_which_value_wins_for_each_field', default="Pick which value wins for each field"),
               bg=parent.theme["panel"], fg=parent.theme["accent"],
               font=("Helvetica", 11, "bold")
               ).grid(row=0, column=0, columnspan=3, sticky="w", padx=8, pady=6)
@@ -109,7 +111,7 @@ class MergeDialog:
             new_v = new_vars.get(k, StringVar()).get()
             Label(self.win, text=k, bg=parent.theme["panel"],
                   fg=parent.theme["text"]).grid(row=i, column=0, sticky="w", padx=8)
-            v = StringVar(value="new")
+            v = StringVar(value=_t('gui.pastoral.equality_diversity.dialogs.values.new', default="new"))
             self.choice[k] = v
             OptionMenu(self.win, v, "old", "new").grid(row=i, column=1, padx=6)
             Label(self.win, text=f"old={old_v!r} | new={new_v!r}",
@@ -117,7 +119,7 @@ class MergeDialog:
                   ).grid(row=i, column=2, sticky="w")
         self.old = old
         self.new_vars = new_vars
-        Button(self.win, text="Merge", command=self._apply,
+        Button(self.win, text=_t('gui.pastoral.equality_diversity.dialogs.buttons.merge', default="Merge"), command=self._apply,
                bg="#27ae60", fg="white", relief="flat", padx=10
                ).grid(row=len(DEMOGRAPHIC_FIELDS) + 1, column=0,
                       columnspan=3, pady=8)
@@ -141,7 +143,7 @@ class MergeDialog:
         integrations.audit(self.parent.principal.username, "merge", "person",
                            self.existing_id, winners)
         self.win.destroy()
-        messagebox.showinfo("Merge", "Merged successfully.")
+        messagebox.showinfo(_t('gui.pastoral.equality_diversity.dialogs.dialogs.merge', default="Merge"), _t('gui.pastoral.equality_diversity.dialogs.dialogs.merged_successfully', default="Merged successfully."))
 
 
 
@@ -170,7 +172,7 @@ class IncidentDetail:
         nb.pack(fill="both", expand=True, padx=8, pady=8)
 
         det = Frame(nb, bg=parent.theme["panel"])
-        nb.add(det, text="Details")
+        nb.add(det, text=_t('gui.pastoral.equality_diversity.dialogs.tabs.details', default="Details"))
         for i, k in enumerate(["date_reported", "category", "department",
                                "severity", "sla_deadline", "status",
                                "reported_by", "respondent", "witnesses",
@@ -181,7 +183,7 @@ class IncidentDetail:
             Label(det, text=str(data.get(k) or ""),
                   bg=parent.theme["panel"], fg=parent.theme["text"]
                   ).grid(row=i, column=1, sticky="w")
-        Label(det, text="description", bg=parent.theme["panel"],
+        Label(det, text=_t('gui.pastoral.equality_diversity.dialogs.labels.description', default="description"), bg=parent.theme["panel"],
               fg=parent.theme["muted"]).grid(row=99, column=0,
                                              sticky="nw", padx=6, pady=4)
         Label(det, text=data.get("description") or "", wraplength=560,
@@ -190,17 +192,17 @@ class IncidentDetail:
 
         # attachments (feature 11)
         att = Frame(nb, bg=parent.theme["panel"])
-        nb.add(att, text="Attachments")
+        nb.add(att, text=_t('gui.pastoral.equality_diversity.dialogs.tabs.attachments', default="Attachments"))
         self._build_attachments(att)
 
         # notes (feature 13)
         notes = Frame(nb, bg=parent.theme["panel"])
-        nb.add(notes, text="Investigation notes")
+        nb.add(notes, text=_t('gui.pastoral.equality_diversity.dialogs.tabs.investigation_notes', default="Investigation notes"))
         self._build_notes(notes)
 
         # outcome (feature 17)
         out = Frame(nb, bg=parent.theme["panel"])
-        nb.add(out, text="Outcome")
+        nb.add(out, text=_t('gui.pastoral.equality_diversity.dialogs.tabs.outcome', default="Outcome"))
         self._build_outcome(out, data)
 
     def _build_attachments(self, root):
@@ -252,7 +254,7 @@ class IncidentDetail:
                                "incident", self.iid, {"name": name})
             refresh()
 
-        Button(root, text="Upload…", command=upload,
+        Button(root, text=_t('gui.pastoral.equality_diversity.dialogs.buttons.upload', default="Upload…"), command=upload,
                bg="#27ae60", fg="white", relief="flat", padx=10
                ).pack(pady=4)
 
@@ -299,23 +301,23 @@ class IncidentDetail:
             entry.delete("1.0", END)
             refresh()
 
-        Button(root, text="Add note", command=add,
+        Button(root, text=_t('gui.pastoral.equality_diversity.dialogs.buttons.add_note', default="Add note"), command=add,
                bg=self.parent.theme["accent"],
                fg=self.parent.theme["header_fg"], relief="flat",
                padx=10).pack(pady=4)
 
     def _build_outcome(self, root, data):
-        Label(root, text="Resolution category",
+        Label(root, text=_t('gui.pastoral.equality_diversity.dialogs.labels.resolution_category', default="Resolution category"),
               bg=self.parent.theme["panel"],
               fg=self.parent.theme["text"]).pack(anchor="w", padx=6, pady=(6, 2))
         res_var = StringVar(value=data.get("resolution_category") or "")
         Entry(root, textvariable=res_var).pack(fill="x", padx=6)
-        Label(root, text="Outcome", bg=self.parent.theme["panel"],
+        Label(root, text=_t('gui.pastoral.equality_diversity.dialogs.labels.outcome', default="Outcome"), bg=self.parent.theme["panel"],
               fg=self.parent.theme["text"]).pack(anchor="w", padx=6, pady=(6, 2))
         out_txt = Text(root, height=4)
         out_txt.pack(fill="x", padx=6)
         out_txt.insert("1.0", data.get("outcome") or "")
-        Label(root, text="Lessons learned", bg=self.parent.theme["panel"],
+        Label(root, text=_t('gui.pastoral.equality_diversity.dialogs.labels.lessons_learned', default="Lessons learned"), bg=self.parent.theme["panel"],
               fg=self.parent.theme["text"]).pack(anchor="w", padx=6, pady=(6, 2))
         lessons_txt = Text(root, height=4)
         lessons_txt.pack(fill="x", padx=6)
@@ -336,9 +338,9 @@ class IncidentDetail:
                 conn.close()
             integrations.audit(self.parent.principal.username, "outcome",
                                "incident", self.iid)
-            messagebox.showinfo("Saved", "Outcome recorded.")
+            messagebox.showinfo(_t('gui.pastoral.equality_diversity.dialogs.dialogs.saved', default="Saved"), _t('gui.pastoral.equality_diversity.dialogs.dialogs.outcome_recorded', default="Outcome recorded."))
 
-        Button(root, text="Save outcome", command=save,
+        Button(root, text=_t('gui.pastoral.equality_diversity.dialogs.buttons.save_outcome', default="Save outcome"), command=save,
                bg="#27ae60", fg="white", relief="flat",
                padx=10).pack(pady=8)
 
@@ -352,12 +354,12 @@ class ScheduleEditor:
         self.parent = parent
         self.on_save = on_save
         self.win = Toplevel(parent.root)
-        self.win.title("New schedule")
+        self.win.title(_t('gui.pastoral.equality_diversity.dialogs.windows.new_schedule', default="New schedule"))
         self.win.configure(bg=parent.theme["panel"])
         self.name = StringVar()
-        self.cadence = StringVar(value="monthly")
-        self.field = StringVar(value="gender")
-        self.fmt = StringVar(value="pdf")
+        self.cadence = StringVar(value=_t('gui.pastoral.equality_diversity.dialogs.values.monthly', default="monthly"))
+        self.field = StringVar(value=_t('gui.pastoral.equality_diversity.dialogs.values.gender', default="gender"))
+        self.fmt = StringVar(value=_t('gui.pastoral.equality_diversity.dialogs.values.pdf', default="pdf"))
         self.out = StringVar(value=os.path.expanduser("~"))
         fields = [
             ("Name", self.name, None),
@@ -376,7 +378,7 @@ class ScheduleEditor:
             else:
                 Entry(self.win, textvariable=v, width=36
                       ).grid(row=i, column=1, sticky="ew", padx=6)
-        Button(self.win, text="Create", command=self._save,
+        Button(self.win, text=_t('gui.pastoral.equality_diversity.dialogs.buttons.create', default="Create"), command=self._save,
                bg="#27ae60", fg="white", relief="flat",
                padx=12).grid(row=len(fields), column=0, columnspan=2, pady=8)
 
@@ -388,7 +390,7 @@ class ScheduleEditor:
                 self.out.get().strip(),
                 self.parent.principal.username)
         except ValueError as e:
-            messagebox.showerror("Schedule", str(e))
+            messagebox.showerror(_t('gui.pastoral.equality_diversity.dialogs.dialogs.schedule', default="Schedule"), str(e))
             return
         self.win.destroy()
         self.on_save()

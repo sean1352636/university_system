@@ -1,5 +1,7 @@
 """Financial aid management: applications, disbursements, aid types, and loans."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import sys
 import io
 import tkinter as tk
@@ -153,7 +155,7 @@ class FinancialAidMixin:
         form_frame.pack(fill='x')
 
         ttk.Label(form_frame, text=_("finance_gui.settings.aid_type_label_form")).grid(row=0, column=0, sticky='w', pady=5)
-        aid_type_var = tk.StringVar(value="Grant")
+        aid_type_var = tk.StringVar(value=_t('gui.finance.finance.settings.financial_aid.values.grant', default="Grant"))
         aid_type_combo = ttk.Combobox(form_frame, textvariable=aid_type_var,
                                       values=['Grant', 'Scholarship', 'Loan', 'Emergency Aid', 'Bursary'],
                                       width=28, state='readonly')
@@ -165,7 +167,7 @@ class FinancialAidMixin:
         amount_entry.grid(row=1, column=1, pady=5, padx=5)
 
         ttk.Label(form_frame, text=_("finance_gui.settings.payment_method_label_form")).grid(row=2, column=0, sticky='w', pady=5)
-        method_var = tk.StringVar(value="Bank Transfer")
+        method_var = tk.StringVar(value=_t('gui.finance.finance.settings.financial_aid.values.bank_transfer', default="Bank Transfer"))
         method_combo = ttk.Combobox(form_frame, textvariable=method_var,
                                     values=['Bank Transfer', 'Cheque', 'Fee Reduction', 'Direct Credit'],
                                     width=28, state='readonly')
@@ -486,7 +488,7 @@ class FinancialAidMixin:
 
         # Payment method
         ttk.Label(form_frame, text=_("finance_gui.settings.payment_method_label_form")).pack(anchor='w', pady=5)
-        method_var = tk.StringVar(value="bank_transfer")
+        method_var = tk.StringVar(value=_t('gui.finance.finance.settings.financial_aid.values.bank_transfer_variant_2', default="bank_transfer"))
         method_combo = ttk.Combobox(form_frame, textvariable=method_var,
                                    values=["bank_transfer", "direct_debit", "check", "online"])
         method_combo.pack(anchor='w', fill='x', pady=5)

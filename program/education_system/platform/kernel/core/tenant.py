@@ -91,15 +91,18 @@ _DEFAULT_PATH_RESOLVERS: dict[str, str] = {
     "auth": None,
 }
 
-# Base directory for tenant-specific databases
+# Base directory for tenant-specific databases.
+#
+# This was derived by walking up from ``__file__`` to a ``shared/`` directory
+# that has not existed since the ADR 0018 move; it resolved to
+# ``education_system/platform/shared/data/tenants``, i.e. it would have written
+# tenant databases inside the importable package. Runtime state belongs under
+# ``program/var`` (ADR 0018), alongside the tenant registry itself
+# (``PLATFORM_DB_FILES_DIR/tenants.db``).
 import os as _os
-_SHARED_ROOT = _os.path.dirname(
-    _os.path.dirname(_os.path.abspath(__file__))  # …/shared/
-)
-_TENANTS_BASE = _os.path.join(
-    _os.path.dirname(_SHARED_ROOT),  # …/education_system/
-    "shared", "data", "tenants",
-)
+from education_system.paths import VAR_DIR as _VAR_DIR
+
+_TENANTS_BASE = str(_VAR_DIR / "data" / "tenants")
 
 
 def tenant_db_path(system_key: str) -> str:
@@ -109,7 +112,7 @@ def tenant_db_path(system_key: str) -> str:
     -----------------
     When a tenant is active the path is::
 
-        <education_system>/shared/data/tenants/<tenant_slug>/<system_key>.db
+        program/var/data/tenants/<tenant_slug>/<system_key>.db
 
     Single-tenant (default) mode
     ----------------------------
@@ -129,15 +132,15 @@ def _get_default_db_path(system_key: str) -> str:
     """Return the default (single-tenant) database path for *system_key*."""
     try:
         if system_key == "university":
-            from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-            return str(DEFAULT_DB_PATH)
+            from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+            return str(UNIVERSITY_DEFAULT_DB_PATH)
         if system_key == "auth":
             from education_system.platform.identity.auth.db import AUTH_DB_FILE
             return str(AUTH_DB_FILE)
     except ImportError:
         pass
 
-    # Generic fallback: shared/data/db_files/<system_key>.db
-    return _os.path.join(
-        _SHARED_ROOT, "data", "db_files", f"{system_key}.db"
-    )
+    # Generic fallback: var/data/platform/db_files/<system_key>.db
+    from education_system.paths import PLATFORM_DB_FILES_DIR
+
+    return _os.path.join(str(PLATFORM_DB_FILES_DIR), f"{system_key}.db")

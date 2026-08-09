@@ -10,6 +10,8 @@ registrar-level rules prerequisites cannot express:
 A course is chosen at the top; both lists below refresh for that course.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     ExtFormDialog, tk, ttk, messagebox, _, logger,
 )
@@ -34,7 +36,7 @@ class RequisitesTabMixin:
             sel = ttk.LabelFrame(frame, text=_("course_management.labels.select_course",
                                                default="Select Course"), padding=10)
             sel.pack(fill=tk.X, padx=5, pady=5)
-            ttk.Label(sel, text="Course:").pack(side=tk.LEFT, padx=5)
+            ttk.Label(sel, text=_t('gui.academics.course_management_gui.core.requisites_tab.labels.course', default="Course:")).pack(side=tk.LEFT, padx=5)
             self._req_course_combo = ttk.Combobox(sel, width=50, state="readonly")
             self._req_course_combo.pack(side=tk.LEFT, padx=5)
             self._req_course_combo.bind("<<ComboboxSelected>>", self._reload_requisites)
@@ -75,12 +77,12 @@ class RequisitesTabMixin:
     # ------------------------------------------------------------------
 
     def _build_coreq_pane(self, parent):
-        pane = ttk.LabelFrame(parent, text="Co-requisites (taken concurrently)",
+        pane = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.core.requisites_tab.labels.co_requisites_taken_concurrently', default="Co-requisites (taken concurrently)"),
                               padding=8)
         bar = ttk.Frame(pane)
         bar.pack(fill=tk.X, pady=3)
         if self._ext_can_edit():
-            ttk.Button(bar, text="Add Co-requisite",
+            ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.requisites_tab.buttons.add_co_requisite', default="Add Co-requisite"),
                        command=self._add_coreq).pack(side=tk.LEFT, padx=5)
             ttk.Button(bar, text=_("common.delete", default="Remove"),
                        command=self._delete_coreq).pack(side=tk.LEFT, padx=5)
@@ -118,7 +120,7 @@ class RequisitesTabMixin:
         code = self._current_req_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.requisites_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
         labels, course_map = self._ext_course_choices()
         # A course cannot be its own co-requisite.
@@ -129,7 +131,7 @@ class RequisitesTabMixin:
             coreq = self._ext_code_from_label(values.get("corequisite"), course_map)
             if not coreq:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Select a co-requisite course.")
+                                     _t('gui.academics.course_management_gui.core.requisites_tab.dialogs.select_a_co_requisite_course', default="Select a co-requisite course."))
                 return False
             try:
                 with self._ext_db(write=True) as conn:
@@ -160,7 +162,7 @@ class RequisitesTabMixin:
         vals = self._ext_selected_values(self._coreq_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a co-requisite to remove.")
+                                   _t('gui.academics.course_management_gui.core.requisites_tab.dialogs.select_a_co_requisite_to_remove', default="Select a co-requisite to remove."))
             return
         if not messagebox.askyesno(_("common.confirm", default="Confirm"),
                                    f"Remove co-requisite '{vals[1]}'?"):
@@ -179,12 +181,12 @@ class RequisitesTabMixin:
     # ------------------------------------------------------------------
 
     def _build_restriction_pane(self, parent):
-        pane = ttk.LabelFrame(parent, text="Enrolment restrictions & reserved seats",
+        pane = ttk.LabelFrame(parent, text=_t('gui.academics.course_management_gui.core.requisites_tab.labels.enrolment_restrictions_reserved_seats', default="Enrolment restrictions & reserved seats"),
                               padding=8)
         bar = ttk.Frame(pane)
         bar.pack(fill=tk.X, pady=3)
         if self._ext_can_edit():
-            ttk.Button(bar, text="Add Restriction",
+            ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.requisites_tab.buttons.add_restriction', default="Add Restriction"),
                        command=self._add_restriction).pack(side=tk.LEFT, padx=5)
             ttk.Button(bar, text=_("common.edit", default="Edit"),
                        command=self._edit_restriction).pack(side=tk.LEFT, padx=5)
@@ -241,11 +243,11 @@ class RequisitesTabMixin:
             seats = int(values.get("reserved_seats") or 0)
         except (TypeError, ValueError):
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Reserved seats must be a whole number.")
+                                 _t('gui.academics.course_management_gui.core.requisites_tab.dialogs.reserved_seats_must_be_a_whole_number', default="Reserved seats must be a whole number."))
             return None
         if seats < 0:
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Reserved seats cannot be negative.")
+                                 _t('gui.academics.course_management_gui.core.requisites_tab.dialogs.reserved_seats_cannot_be_negative', default="Reserved seats cannot be negative."))
             return None
         return seats
 
@@ -255,7 +257,7 @@ class RequisitesTabMixin:
         code = self._current_req_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.requisites_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
 
         def submit(values):
@@ -287,7 +289,7 @@ class RequisitesTabMixin:
         vals = self._ext_selected_values(self._restrict_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a restriction first.")
+                                   _t('gui.academics.course_management_gui.core.requisites_tab.dialogs.select_a_restriction_first', default="Select a restriction first."))
             return None
         return vals
 

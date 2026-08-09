@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.simpledialog import Dialog
@@ -14,7 +16,7 @@ class CreateCalendarEventDialog(Dialog):
 
     def body(self, master):
         """Create the dialog body"""
-        ttk.Label(master, text="Select trip to create calendar event:").pack(anchor=tk.W, pady=(0, 10))
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.calendar_dialogs.labels.select_trip_to_create_calendar_event', default="Select trip to create calendar event:")).pack(anchor=tk.W, pady=(0, 10))
 
         # Trip selection
         self.trip_listbox = tk.Listbox(master, width=60, height=12)
@@ -53,12 +55,12 @@ class CreateCalendarEventDialog(Dialog):
         """Validate trip selection"""
         selection = self.trip_listbox.curselection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a trip.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.calendar_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.calendar_dialogs.dialogs.please_select_a_trip', default="Please select a trip."))
             return False
 
         selected_text = self.trip_listbox.get(selection[0])
         if "No trips available" in selected_text:
-            messagebox.showwarning("No Trips", "No trips available for calendar event creation.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.calendar_dialogs.dialogs.no_trips', default="No Trips"), _t('gui.operations.campus.mobility.trip_management_gui.calendar_dialogs.dialogs.no_trips_available_for_calendar_event_creation', default="No trips available for calendar event creation."))
             return False
 
         return True
@@ -78,11 +80,11 @@ class CreateCalendarEventDialog(Dialog):
             result = self.calendar_manager.create_trip_event(trip_id)
 
             if result['success']:
-                messagebox.showinfo("Success", f"\u2713 Calendar event created successfully!\nEvent ID: {result['event_id']}")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.calendar_dialogs.dialogs.success', default="Success"), f"\u2713 Calendar event created successfully!\nEvent ID: {result['event_id']}")
                 if self.refresh_callback:
                     self.refresh_callback()
             else:
-                messagebox.showerror("Error", f"\u2717 Failed to create calendar event: {result['message']}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.calendar_dialogs.dialogs.error', default="Error"), f"\u2717 Failed to create calendar event: {result['message']}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error creating calendar event: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.calendar_dialogs.dialogs.error', default="Error"), f"Error creating calendar event: {e}")

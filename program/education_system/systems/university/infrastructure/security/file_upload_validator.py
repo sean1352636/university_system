@@ -291,8 +291,11 @@ class FileUploadValidator:
                 return True, None, mime_type
 
         except Exception as e:
+            # Fail closed: if we cannot confirm the content type matches the
+            # extension, we must not declare the file valid — that is exactly
+            # how a disguised payload gets through.
             logger.error(f"Error validating MIME type: {e}")
-            return True, None, None  # Don't fail validation on error
+            return False, "Could not verify file content type", None
 
     def validate_image(self, file_path: str) -> Tuple[bool, Optional[str], List[str]]:
         """
@@ -337,7 +340,16 @@ class FileUploadValidator:
             Tuple of (is_clean, virus_name)
         """
         if not self._virus_scanner:
-            return True, None  # Scanner not available, skip check
+            # In production an unconfigured scanner must not silently mean
+            # "no scanning" — reject rather than admit unscanned content.
+            # Development skips the check so uploads work without ClamAV.
+            import os as _os
+
+            app_env = _os.getenv("APP_ENV", "production").strip().lower()
+            if app_env in ("development", "dev", "local", "test", "testing"):
+                return True, None
+            logger.error("Virus scanner unavailable in production — rejecting upload")
+            return False, "Virus scanning is unavailable"
 
         try:
             result = self._virus_scanner.scan_file(file_path)
@@ -352,8 +364,11 @@ class FileUploadValidator:
                 return False, virus_name
 
         except Exception as e:
+            # Fail closed: a scanner error is not evidence the file is clean.
+            # Declaring it clean here means a scanner outage silently disables
+            # malware detection for every upload.
             logger.error(f"Error scanning file for viruses: {e}")
-            return True, None  # Don't fail validation on scanner error
+            return False, "Virus scan could not be completed"
 
     def _check_archive_bomb(self, file_path: str) -> tuple[bool, str]:
         """Check if an archive file might be a zip bomb.
@@ -399,8 +414,10 @@ class FileUploadValidator:
                 except (tarfile.TarError, EOFError):
                     pass  # Not a tar file or corrupted
         except Exception as e:
+            # Fail closed: an error inspecting the archive is not proof it is
+            # safe. A decompression bomb often *is* what breaks the inspector.
             logger.warning("Archive bomb check failed for %s: %s", file_path, e)
-            return True, ""  # Allow on check failure (other validations still apply)
+            return False, "Archive could not be inspected"
 
         return True, ""
 

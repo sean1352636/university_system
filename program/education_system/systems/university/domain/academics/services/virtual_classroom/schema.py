@@ -175,7 +175,7 @@ def create_virtual_classroom_tables(conn):
 
 if __name__ == "__main__":
     from education_system.systems.university.infrastructure.database.db import sqlite3
-    from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
-    with sqlite3.connect(DEFAULT_DB_PATH) as conn:
+    with sqlite3.connect(UNIVERSITY_DEFAULT_DB_PATH) as conn:
         create_virtual_classroom_tables(conn)

@@ -232,10 +232,8 @@ class InformationRightsService:
 
     def __init__(self, db_path: Optional[str] = None) -> None:
         if db_path is None:
-            from education_system.systems.university.infrastructure.paths import (  # noqa: E501
-                DEFAULT_DB_PATH,
-            )
-            db_path = DEFAULT_DB_PATH
+            from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+            db_path = UNIVERSITY_DEFAULT_DB_PATH
         self.db_path = db_path
         os.makedirs(os.path.dirname(os.path.abspath(db_path)) or ".",
                     exist_ok=True)

@@ -172,7 +172,7 @@ class TimetableManagementGUI:
         ttk.Button(student_frame,
                    text=_t("scheduling.check_student_conflicts"),
                    command=self.check_student_conflicts).pack(fill=tk.X, pady=2)
-        ttk.Button(student_frame, text="Open Student Timetable Viewer…",
+        ttk.Button(student_frame, text=_t('gui.academics.timetable_management.buttons.open_student_timetable_viewer', default="Open Student Timetable Viewer…"),
                    command=self._show_student_timetable_dialog).pack(fill=tk.X, pady=2)
 
         # Instructor timetable section
@@ -195,7 +195,7 @@ class TimetableManagementGUI:
         export_frame = ttk.LabelFrame(
             left, text=_t("scheduling.export_options"), padding=10)
         export_frame.pack(fill=tk.X, pady=5)
-        self.export_format_var = tk.StringVar(value="PDF")
+        self.export_format_var = tk.StringVar(value=_t('gui.academics.timetable_management.values.pdf', default="PDF"))
         for fmt in ("PDF", "CSV", "Excel", "iCal"):
             ttk.Radiobutton(export_frame, text=fmt,
                             variable=self.export_format_var,
@@ -236,7 +236,7 @@ class TimetableManagementGUI:
     def generate_student_timetable(self):
         student_id = self.student_id_var.get().strip()
         if not student_id:
-            messagebox.showwarning("Warning", "Please enter a student ID.",
+            messagebox.showwarning(_t('gui.academics.timetable_management.dialogs.warning', default="Warning"), _t('gui.academics.timetable_management.dialogs.please_enter_a_student_id', default="Please enter a student ID."),
                                    parent=self.root)
             return
         try:
@@ -248,7 +248,7 @@ class TimetableManagementGUI:
                 student = cursor.fetchone()
             if not student:
                 messagebox.showerror(
-                    "Error", f"Student ID {student_id} does not exist.",
+                    _t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Student ID {student_id} does not exist.",
                     parent=self.root)
                 return
             student_name = f"{student[0]} {student[1]}"
@@ -275,13 +275,13 @@ class TimetableManagementGUI:
             self.last_timetable_id = student_id
         except Exception as e:
             messagebox.showerror(
-                "Error", f"Failed to generate student timetable: {e}",
+                _t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Failed to generate student timetable: {e}",
                 parent=self.root)
 
     def generate_instructor_timetable(self):
         instructor_id_str = self.instructor_id_var.get().strip()
         if not instructor_id_str:
-            messagebox.showwarning("Warning", "Please enter an instructor ID.",
+            messagebox.showwarning(_t('gui.academics.timetable_management.dialogs.warning', default="Warning"), _t('gui.academics.timetable_management.dialogs.please_enter_an_instructor_id', default="Please enter an instructor ID."),
                                    parent=self.root)
             return
         try:
@@ -294,7 +294,7 @@ class TimetableManagementGUI:
                 instructor = cursor.fetchone()
             if not instructor:
                 messagebox.showerror(
-                    "Error", f"Instructor ID {instructor_id} does not exist.",
+                    _t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Instructor ID {instructor_id} does not exist.",
                     parent=self.root)
                 return
             instructor_name = f"{instructor[0]} {instructor[1]}"
@@ -316,17 +316,17 @@ class TimetableManagementGUI:
             self.last_timetable_id = instructor_id
         except ValueError:
             messagebox.showerror(
-                "Error", "Invalid instructor ID. Please enter a number.",
+                _t('gui.academics.timetable_management.dialogs.error', default="Error"), _t('gui.academics.timetable_management.dialogs.invalid_instructor_id_please_enter_a_number', default="Invalid instructor ID. Please enter a number."),
                 parent=self.root)
         except Exception as e:
             messagebox.showerror(
-                "Error", f"Failed to generate instructor timetable: {e}",
+                _t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Failed to generate instructor timetable: {e}",
                 parent=self.root)
 
     def email_student_timetable(self):
         student_id = self.student_id_var.get().strip()
         if not student_id:
-            messagebox.showwarning("Warning", "Please enter a student ID.",
+            messagebox.showwarning(_t('gui.academics.timetable_management.dialogs.warning', default="Warning"), _t('gui.academics.timetable_management.dialogs.please_enter_a_student_id', default="Please enter a student ID."),
                                    parent=self.root)
             return
         try:
@@ -337,20 +337,20 @@ class TimetableManagementGUI:
                     "WHERE student_id = ?", (student_id,))
                 student = cursor.fetchone()
             if not student:
-                messagebox.showerror("Error", f"Student ID {student_id} not found.",
+                messagebox.showerror(_t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Student ID {student_id} not found.",
                                      parent=self.root)
                 return
             first_name, last_name, email = student
             student_name = f"{first_name} {last_name}"
             if not email:
                 messagebox.showerror(
-                    "Error", f"No email address found for student {student_name}.",
+                    _t('gui.academics.timetable_management.dialogs.error', default="Error"), f"No email address found for student {student_name}.",
                     parent=self.root)
                 return
             schedule_data = get_student_schedule_data(student_id)
             if not schedule_data:
                 messagebox.showinfo(
-                    "Info", f"No schedule found for student {student_id}.",
+                    _t('gui.academics.timetable_management.dialogs.info', default="Info"), f"No schedule found for student {student_id}.",
                     parent=self.root)
                 return
             body = self._format_timetable_email(schedule_data, student_name, "student")
@@ -359,21 +359,21 @@ class TimetableManagementGUI:
             )
             success = send_email(email, f"Your Timetable - {student_name}", body)
             if success:
-                messagebox.showinfo("Success", f"Timetable emailed to {email}",
+                messagebox.showinfo(_t('gui.academics.timetable_management.dialogs.success', default="Success"), f"Timetable emailed to {email}",
                                     parent=self.root)
                 self.update_activity_log(
                     f"Emailed timetable to student {student_id} ({email})")
             else:
-                messagebox.showerror("Error", "Failed to send timetable email.",
+                messagebox.showerror(_t('gui.academics.timetable_management.dialogs.error', default="Error"), _t('gui.academics.timetable_management.dialogs.failed_to_send_timetable_email', default="Failed to send timetable email."),
                                      parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to email timetable: {e}",
+            messagebox.showerror(_t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Failed to email timetable: {e}",
                                  parent=self.root)
 
     def email_instructor_timetable(self):
         instructor_id_str = self.instructor_id_var.get().strip()
         if not instructor_id_str:
-            messagebox.showwarning("Warning", "Please enter an instructor ID.",
+            messagebox.showwarning(_t('gui.academics.timetable_management.dialogs.warning', default="Warning"), _t('gui.academics.timetable_management.dialogs.please_enter_an_instructor_id', default="Please enter an instructor ID."),
                                    parent=self.root)
             return
         try:
@@ -385,7 +385,7 @@ class TimetableManagementGUI:
                     (instructor_id,))
                 instructor = cursor.fetchone()
             if not instructor:
-                messagebox.showerror("Error",
+                messagebox.showerror(_t('gui.academics.timetable_management.dialogs.error', default="Error"),
                                      f"Instructor ID {instructor_id} not found.",
                                      parent=self.root)
                 return
@@ -393,14 +393,14 @@ class TimetableManagementGUI:
             instructor_name = f"{first_name} {last_name}"
             if not email:
                 messagebox.showerror(
-                    "Error",
+                    _t('gui.academics.timetable_management.dialogs.error', default="Error"),
                     f"No email address found for instructor {instructor_name}.",
                     parent=self.root)
                 return
             schedule_data = get_instructor_schedule_data(instructor_id)
             if not schedule_data:
                 messagebox.showinfo(
-                    "Info", f"No schedule found for instructor {instructor_id}.",
+                    _t('gui.academics.timetable_management.dialogs.info', default="Info"), f"No schedule found for instructor {instructor_id}.",
                     parent=self.root)
                 return
             body = self._format_timetable_email(
@@ -411,19 +411,19 @@ class TimetableManagementGUI:
             success = send_email(
                 email, f"Your Teaching Schedule - {instructor_name}", body)
             if success:
-                messagebox.showinfo("Success", f"Timetable emailed to {email}",
+                messagebox.showinfo(_t('gui.academics.timetable_management.dialogs.success', default="Success"), f"Timetable emailed to {email}",
                                     parent=self.root)
                 self.update_activity_log(
                     f"Emailed timetable to instructor {instructor_id} ({email})")
             else:
-                messagebox.showerror("Error", "Failed to send timetable email.",
+                messagebox.showerror(_t('gui.academics.timetable_management.dialogs.error', default="Error"), _t('gui.academics.timetable_management.dialogs.failed_to_send_timetable_email', default="Failed to send timetable email."),
                                      parent=self.root)
         except ValueError:
-            messagebox.showerror("Error",
-                                 "Invalid instructor ID. Please enter a number.",
+            messagebox.showerror(_t('gui.academics.timetable_management.dialogs.error', default="Error"),
+                                 _t('gui.academics.timetable_management.dialogs.invalid_instructor_id_please_enter_a_number', default="Invalid instructor ID. Please enter a number."),
                                  parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to email timetable: {e}",
+            messagebox.showerror(_t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Failed to email timetable: {e}",
                                  parent=self.root)
 
     def _format_timetable_email(self, schedule_data, name, recipient_type):
@@ -490,7 +490,7 @@ class TimetableManagementGUI:
 
         grid_frame = tk.Frame(self.timetable_frame)
         grid_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        tk.Label(grid_frame, text="Time", font=("Arial", 10, "bold"),
+        tk.Label(grid_frame, text=_t('gui.academics.timetable_management.labels.time', default="Time"), font=("Arial", 10, "bold"),
                  relief=tk.SOLID, borderwidth=2, bg="#4a90e2", fg="white",
                  width=10, height=2).grid(row=0, column=0, padx=1, pady=1,
                                           sticky="nsew")
@@ -535,7 +535,7 @@ class TimetableManagementGUI:
     def check_student_conflicts(self):
         student_id = self.student_id_var.get().strip()
         if not student_id:
-            messagebox.showwarning("Warning", "Please enter a student ID.",
+            messagebox.showwarning(_t('gui.academics.timetable_management.dialogs.warning', default="Warning"), _t('gui.academics.timetable_management.dialogs.please_enter_a_student_id', default="Please enter a student ID."),
                                    parent=self.root)
             return
         try:
@@ -578,15 +578,15 @@ class TimetableManagementGUI:
                              font=("Arial", 10)).pack(anchor="w")
             self.update_activity_log(f"Checked conflicts for student {student_id}")
         except Exception as e:
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.academics.timetable_management.dialogs.error', default="Error"),
                                  f"Failed to check student conflicts: {e}",
                                  parent=self.root)
 
     def export_last_timetable(self):
         if not self.last_timetable_data:
             messagebox.showwarning(
-                "Warning",
-                "No timetable to export. Please generate a timetable first.",
+                _t('gui.academics.timetable_management.dialogs.warning', default="Warning"),
+                _t('gui.academics.timetable_management.dialogs.no_timetable_to_export_please_generate_a_timetable_first', default="No timetable to export. Please generate a timetable first."),
                 parent=self.root)
             return
         fmt = self.export_format_var.get()
@@ -605,7 +605,7 @@ class TimetableManagementGUI:
             elif fmt == "Excel":
                 _exports._export_timetable_to_excel(self, self.last_timetable_data)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export timetable: {e}",
+            messagebox.showerror(_t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Failed to export timetable: {e}",
                                  parent=self.root)
 
     def _show_student_timetable_dialog(self):
@@ -616,5 +616,5 @@ class TimetableManagementGUI:
             StudentTimetableDialog(self.root, self.scheduler)
         except Exception as e:
             messagebox.showerror(
-                "Error", f"Failed to open student timetable viewer: {e}",
+                _t('gui.academics.timetable_management.dialogs.error', default="Error"), f"Failed to open student timetable viewer: {e}",
                 parent=self.root)

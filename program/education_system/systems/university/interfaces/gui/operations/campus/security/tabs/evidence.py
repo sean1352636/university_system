@@ -68,7 +68,7 @@ class EvidenceMixin:
         """Edit selected evidence"""
         selected = self.evidence_tree.selection()
         if not selected:
-            messagebox.showwarning(_t("police_station.msg_titles.warning"), "Please select evidence to edit.")
+            messagebox.showwarning(_t("police_station.msg_titles.warning"), _t('gui.operations.campus.security.tabs.evidence.dialogs.please_select_evidence_to_edit', default="Please select evidence to edit."))
             return
 
         item = self.evidence_tree.item(selected[0])
@@ -81,20 +81,20 @@ class EvidenceMixin:
                     evidence.update(dialog.result)
                     if self._db_save_evidence(evidence):
                         self.refresh_evidence()
-                        messagebox.showinfo(_t("police_station.msg_titles.success"), "Evidence updated!")
+                        messagebox.showinfo(_t("police_station.msg_titles.success"), _t('gui.operations.campus.security.tabs.evidence.dialogs.evidence_updated', default="Evidence updated!"))
                 break
 
     def delete_evidence(self):
         """Delete selected evidence"""
         selected = self.evidence_tree.selection()
         if not selected:
-            messagebox.showwarning(_t("police_station.msg_titles.warning"), "Please select evidence to delete.")
+            messagebox.showwarning(_t("police_station.msg_titles.warning"), _t('gui.operations.campus.security.tabs.evidence.dialogs.please_select_evidence_to_delete', default="Please select evidence to delete."))
             return
 
-        if messagebox.askyesno(_t("police_station.buttons.confirm"), "Are you sure you want to delete this evidence?"):
+        if messagebox.askyesno(_t("police_station.buttons.confirm"), _t('gui.operations.campus.security.tabs.evidence.dialogs.are_you_sure_you_want_to_delete_this_evidence', default="Are you sure you want to delete this evidence?")):
             item = self.evidence_tree.item(selected[0])
             evidence_id = item["values"][0]
             if self._db_delete_evidence(evidence_id):
                 self.data["evidence"] = [e for e in self.data["evidence"] if e["id"] != evidence_id]
                 self.refresh_evidence()
-                messagebox.showinfo(_t("police_station.msg_titles.success"), "Evidence deleted!")
+                messagebox.showinfo(_t("police_station.msg_titles.success"), _t('gui.operations.campus.security.tabs.evidence.dialogs.evidence_deleted', default="Evidence deleted!"))

@@ -1,4 +1,6 @@
 """Entry points and backward compatibility for the backup GUI system."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import sys
 import tkinter as tk
@@ -23,7 +25,7 @@ def start_backup_gui():
 
     # Handle window closing
     def on_closing():
-        if messagebox.askokcancel("Quit", "Do you want to quit the backup system?"):
+        if messagebox.askokcancel(_t('gui.shell.database.entry_points.dialogs.quit', default="Quit"), _t('gui.shell.database.entry_points.dialogs.do_you_want_to_quit_the_backup_system', default="Do you want to quit the backup system?")):
             stop_scheduler()
             root.destroy()
 

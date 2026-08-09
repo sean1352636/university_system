@@ -10,15 +10,17 @@ Only published rows are shown — drafts/archived stay off the student-facing
 view, matching the timetable-export behaviour.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)
 
 _DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
@@ -38,7 +40,7 @@ class StudentTimetableDialog:
         self._students = []  # list of (student_id, label)
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Student Timetable")
+        self.dialog.title(_t('gui.academics.module_scheduling.student_timetable_dialog.windows.student_timetable', default="Student Timetable"))
         self.dialog.geometry("1100x650")
         self.dialog.transient(parent)
 
@@ -48,12 +50,12 @@ class StudentTimetableDialog:
     def _build_ui(self):
         top = ttk.Frame(self.dialog, padding=10)
         top.pack(fill=tk.X)
-        ttk.Label(top, text="Student Timetable",
+        ttk.Label(top, text=_t('gui.academics.module_scheduling.student_timetable_dialog.labels.student_timetable', default="Student Timetable"),
                   font=("Arial", 13, "bold")).pack(side=tk.LEFT)
 
         picker = ttk.Frame(self.dialog, padding=(10, 0))
         picker.pack(fill=tk.X)
-        ttk.Label(picker, text="Student:").pack(side=tk.LEFT)
+        ttk.Label(picker, text=_t('gui.academics.module_scheduling.student_timetable_dialog.labels.student', default="Student:")).pack(side=tk.LEFT)
         self.student_var = tk.StringVar()
         self.student_combo = ttk.Combobox(picker, textvariable=self.student_var,
                                           width=50, state="readonly")
@@ -61,20 +63,20 @@ class StudentTimetableDialog:
         self.student_combo.bind("<<ComboboxSelected>>",
                                 lambda _e: self._render())
 
-        ttk.Label(picker, text="Term filter:").pack(side=tk.LEFT)
+        ttk.Label(picker, text=_t('gui.academics.module_scheduling.student_timetable_dialog.labels.term_filter', default="Term filter:")).pack(side=tk.LEFT)
         now = datetime.now()
-        self.semester_var = tk.StringVar(value="(all)")
+        self.semester_var = tk.StringVar(value=_t('gui.academics.module_scheduling.student_timetable_dialog.values.all', default="(all)"))
         ttk.Combobox(picker, textvariable=self.semester_var,
                      values=["(all)", "Fall", "Spring", "Summer", "Winter"],
                      width=10, state="readonly"
                      ).pack(side=tk.LEFT, padx=(4, 4))
-        self.year_var = tk.StringVar(value="(all)")
+        self.year_var = tk.StringVar(value=_t('gui.academics.module_scheduling.student_timetable_dialog.values.all', default="(all)"))
         ttk.Combobox(picker, textvariable=self.year_var,
                      values=["(all)"] + [str(y) for y in
                                          range(now.year - 2, now.year + 4)],
                      width=8, state="readonly"
                      ).pack(side=tk.LEFT, padx=(0, 8))
-        ttk.Button(picker, text="Apply",
+        ttk.Button(picker, text=_t('gui.academics.module_scheduling.student_timetable_dialog.buttons.apply', default="Apply"),
                    command=self._render).pack(side=tk.LEFT)
 
         # Conflicts banner
@@ -102,7 +104,7 @@ class StudentTimetableDialog:
         self.status_var = tk.StringVar(value="")
         ttk.Label(self.dialog, textvariable=self.status_var,
                   anchor=tk.W, padding=(10, 4)).pack(fill=tk.X)
-        ttk.Button(self.dialog, text="Close",
+        ttk.Button(self.dialog, text=_t('gui.academics.module_scheduling.student_timetable_dialog.buttons.close', default="Close"),
                    command=self.dialog.destroy).pack(pady=8)
 
     def _load_students(self):
@@ -117,7 +119,7 @@ class StudentTimetableDialog:
                 )
                 rows = cur.fetchall()
         except sqlite3.Error as e:
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.academics.module_scheduling.student_timetable_dialog.dialogs.error', default="Error"),
                                  f"Failed to load students: {e}",
                                  parent=self.dialog)
             return
@@ -173,7 +175,7 @@ class StudentTimetableDialog:
                 cur.execute(sql, params)
                 sessions = cur.fetchall()
         except sqlite3.Error as e:
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.academics.module_scheduling.student_timetable_dialog.dialogs.error', default="Error"),
                                  f"Failed to load timetable: {e}",
                                  parent=self.dialog)
             return

@@ -46,6 +46,22 @@ def safe_auth_check(auth_obj: Any) -> bool:
     return True
 
 
+def require_authenticated_user(auth_obj: Any, allowed_roles=None) -> dict | None:
+    """Return the live user or None; never treats a missing session as valid."""
+    if not auth_obj or not getattr(auth_obj, 'current_user', None):
+        return None
+    try:
+        if hasattr(auth_obj, 'check_session') and not auth_obj.check_session():
+            return None
+    except Exception:
+        return None
+    user = auth_obj.current_user
+    role = str(user.get('role', '')).lower() if isinstance(user, dict) else ''
+    if allowed_roles is not None and role not in {str(r).lower() for r in allowed_roles}:
+        return None
+    return user
+
+
 def suppress_duplicate_messages():
     """Suppress duplicate log messages using context manager."""
     @contextlib.contextmanager
@@ -65,6 +81,7 @@ def cleanup_connections():
 
 __all__ = [
     'safe_auth_check',
+    'require_authenticated_user',
     'suppress_duplicate_messages',
     'cleanup_connections',
 ]

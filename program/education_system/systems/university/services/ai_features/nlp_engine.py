@@ -46,9 +46,9 @@ def _get_vader():
 
         # Resolve VADER from (and download it into) the bundled repo data dir,
         # matching the plagiarism module, so nothing lands in ~/nltk_data.
-        from education_system.systems.university.infrastructure.paths import NLTK_DATA_DIR
+        from education_system.paths import UNIVERSITY_NLTK_DATA_DIR
 
-        custom_nltk_path = str(NLTK_DATA_DIR)
+        custom_nltk_path = str(UNIVERSITY_NLTK_DATA_DIR)
         if custom_nltk_path not in nltk.data.path:
             nltk.data.path.insert(0, custom_nltk_path)
 

@@ -1,6 +1,8 @@
 """Tkinter GUI for Curriculum Specification (programme specs, module
 descriptors, learning outcomes, assessment strategy, change control)."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -11,7 +13,7 @@ logger = logging.getLogger(__name__)
 class CurriculumSpecificationGUI:
     def __init__(self, parent=None):
         self.root = tk.Toplevel(parent) if parent else tk.Tk()
-        self.root.title("Curriculum Specification — Programme Specs & Module Descriptors")
+        self.root.title(_t('gui.academics.curriculum_specification.curriculum_specification.windows.curriculum_specification_programme_specs_module_descriptors', default="Curriculum Specification — Programme Specs & Module Descriptors"))
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
 
@@ -55,7 +57,7 @@ class CurriculumSpecificationGUI:
     # ----------------------------------------------------------- Programmes
     def _build_programmes_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Programmes")
+        notebook.add(tab, text=_t('gui.academics.curriculum_specification.curriculum_specification.tabs.programmes', default="Programmes"))
 
         cols = ("id", "code", "version", "title", "award", "level", "credits", "status")
         self.prog_tree = ttk.Treeview(tab, columns=cols, show="headings", height=18)
@@ -68,12 +70,12 @@ class CurriculumSpecificationGUI:
 
         btn = ttk.Frame(tab)
         btn.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn, text="Add", command=self._add_programme).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="Edit Aims", command=self._edit_programme_aims).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="Summary", command=self._programme_summary).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="Approve", command=self._approve_programme).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="New Version", command=self._new_programme_version).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="Refresh", command=self._refresh_programmes).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.add', default="Add"), command=self._add_programme).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.edit_aims', default="Edit Aims"), command=self._edit_programme_aims).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.summary', default="Summary"), command=self._programme_summary).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.approve', default="Approve"), command=self._approve_programme).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.new_version', default="New Version"), command=self._new_programme_version).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.refresh', default="Refresh"), command=self._refresh_programmes).pack(side=tk.RIGHT, padx=2)
         self._refresh_programmes()
 
     def _refresh_programmes(self):
@@ -94,13 +96,13 @@ class CurriculumSpecificationGUI:
     def _selected_prog_id(self):
         sel = self.prog_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a programme first.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.selection', default="Selection"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.select_a_programme_first', default="Select a programme first."), parent=self.root)
             return None
         return int(self.prog_tree.item(sel[0], "values")[0])
 
     def _add_programme(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Add Programme")
+        dlg.title(_t('gui.academics.curriculum_specification.curriculum_specification.windows.add_programme', default="Add Programme"))
         dlg.geometry("520x520")
         dlg.transient(self.root)
         dlg.grab_set()
@@ -117,14 +119,14 @@ class CurriculumSpecificationGUI:
             ttk.Entry(dlg, textvariable=v).pack(fill=tk.X, padx=10)
             vars_[key] = v
 
-        ttk.Label(dlg, text="Educational Aims:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.educational_aims', default="Educational Aims:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         aims_text = tk.Text(dlg, height=6)
         aims_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
 
         def save():
             data = {k: v.get().strip() or None for k, v in vars_.items()}
             if not data["code"] or not data["title"]:
-                messagebox.showwarning("Validation", "Code and title required.", parent=dlg)
+                messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.validation', default="Validation"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.code_and_title_required', default="Code and title required."), parent=dlg)
                 return
             try:
                 if data.get("credits"):
@@ -134,11 +136,11 @@ class CurriculumSpecificationGUI:
                 self.service.create_programme(**data)
                 dlg.destroy()
                 self._refresh_programmes()
-                messagebox.showinfo("Success", "Programme created.", parent=self.root)
+                messagebox.showinfo(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.success', default="Success"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.programme_created', default="Programme created."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.save', default="Save"), command=save).pack(pady=10)
 
     def _edit_programme_aims(self):
         pid = self._selected_prog_id()
@@ -152,17 +154,17 @@ class CurriculumSpecificationGUI:
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Educational Aims:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.educational_aims', default="Educational Aims:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         aims = tk.Text(dlg, height=6)
         aims.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
         aims.insert("1.0", prog.get("educational_aims") or "")
 
-        ttk.Label(dlg, text="Pedagogic Approach:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.pedagogic_approach', default="Pedagogic Approach:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         ped = tk.Text(dlg, height=4)
         ped.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
         ped.insert("1.0", prog.get("pedagogic_approach") or "")
 
-        ttk.Label(dlg, text="Entry Requirements:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.entry_requirements', default="Entry Requirements:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         ent = tk.Text(dlg, height=4)
         ent.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
         ent.insert("1.0", prog.get("entry_requirements") or "")
@@ -176,11 +178,11 @@ class CurriculumSpecificationGUI:
                     entry_requirements=ent.get("1.0", tk.END).strip() or None,
                 )
                 dlg.destroy()
-                messagebox.showinfo("Success", "Programme updated.", parent=self.root)
+                messagebox.showinfo(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.success', default="Success"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.programme_updated', default="Programme updated."), parent=self.root)
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.save', default="Save"), command=save).pack(pady=10)
 
     def _programme_summary(self):
         pid = self._selected_prog_id()
@@ -189,10 +191,10 @@ class CurriculumSpecificationGUI:
         try:
             s = self.service.programme_summary(pid)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=self.root)
             return
         if not s:
-            messagebox.showinfo("Programme Summary", "Not found.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.programme_summary', default="Programme Summary"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.not_found', default="Not found."), parent=self.root)
             return
         p = s["programme"]
         msg = (f"{p['code']} v{p['version']} — {p['title']}\n"
@@ -202,7 +204,7 @@ class CurriculumSpecificationGUI:
                f"Total credits: {s['total_credits']}\n"
                f"Programme LOs: {s['programme_los']}\n"
                f"Pending changes: {s['pending_changes']}")
-        messagebox.showinfo("Programme Summary", msg, parent=self.root)
+        messagebox.showinfo(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.programme_summary', default="Programme Summary"), msg, parent=self.root)
 
     def _approve_programme(self):
         pid = self._selected_prog_id()
@@ -211,20 +213,20 @@ class CurriculumSpecificationGUI:
         try:
             self.service.approve_programme(pid, self._user())
             self._refresh_programmes()
-            messagebox.showinfo("Success", "Programme approved.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.success', default="Success"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.programme_approved', default="Programme approved."), parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _new_programme_version(self):
         pid = self._selected_prog_id()
         if not pid:
             return
         dlg = tk.Toplevel(self.root)
-        dlg.title("New Programme Version")
+        dlg.title(_t('gui.academics.curriculum_specification.curriculum_specification.windows.new_programme_version', default="New Programme Version"))
         dlg.geometry("320x140")
         dlg.transient(self.root)
         dlg.grab_set()
-        ttk.Label(dlg, text="New version (e.g. 2.0):").pack(padx=10, pady=10, anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.new_version_e_g_2_0', default="New version (e.g. 2.0):")).pack(padx=10, pady=10, anchor=tk.W)
         ver = tk.StringVar()
         ttk.Entry(dlg, textvariable=ver).pack(fill=tk.X, padx=10)
 
@@ -236,21 +238,21 @@ class CurriculumSpecificationGUI:
                 dlg.destroy()
                 self._refresh_programmes()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Create", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.create', default="Create"), command=save).pack(pady=10)
 
     # ------------------------------------------------------- Module Descriptors
     def _build_modules_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Module Descriptors")
+        notebook.add(tab, text=_t('gui.academics.curriculum_specification.curriculum_specification.tabs.module_descriptors', default="Module Descriptors"))
 
         filt = ttk.Frame(tab)
         filt.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(filt, text="Programme ID:").pack(side=tk.LEFT)
+        ttk.Label(filt, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.programme_id', default="Programme ID:")).pack(side=tk.LEFT)
         self.mod_filter_pid = tk.StringVar()
         ttk.Entry(filt, textvariable=self.mod_filter_pid, width=8).pack(side=tk.LEFT, padx=5)
-        ttk.Button(filt, text="Apply", command=self._refresh_modules).pack(side=tk.LEFT)
+        ttk.Button(filt, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.apply', default="Apply"), command=self._refresh_modules).pack(side=tk.LEFT)
 
         cols = ("id", "code", "version", "title", "credits", "level", "core", "leader")
         self.mod_tree = ttk.Treeview(tab, columns=cols, show="headings", height=18)
@@ -263,11 +265,11 @@ class CurriculumSpecificationGUI:
 
         btn = ttk.Frame(tab)
         btn.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn, text="Add", command=self._add_module).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="Edit", command=self._edit_module).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="Validate Assessment", command=self._validate_module).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="Examiner Findings", command=self._show_examiner_findings).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btn, text="Refresh", command=self._refresh_modules).pack(side=tk.RIGHT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.add', default="Add"), command=self._add_module).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.edit', default="Edit"), command=self._edit_module).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.validate_assessment', default="Validate Assessment"), command=self._validate_module).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.examiner_findings', default="Examiner Findings"), command=self._show_examiner_findings).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.refresh', default="Refresh"), command=self._refresh_modules).pack(side=tk.RIGHT, padx=2)
         self._refresh_modules()
 
     def _refresh_modules(self):
@@ -289,7 +291,7 @@ class CurriculumSpecificationGUI:
 
     def _add_module(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Add Module Descriptor")
+        dlg.title(_t('gui.academics.curriculum_specification.curriculum_specification.windows.add_module_descriptor', default="Add Module Descriptor"))
         dlg.geometry("520x560")
         dlg.transient(self.root)
         dlg.grab_set()
@@ -311,20 +313,20 @@ class CurriculumSpecificationGUI:
             vars_[key] = v
 
         is_core = tk.BooleanVar(value=True)
-        ttk.Checkbutton(dlg, text="Core module", variable=is_core).pack(padx=10, pady=4, anchor=tk.W)
+        ttk.Checkbutton(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.core_module', default="Core module"), variable=is_core).pack(padx=10, pady=4, anchor=tk.W)
 
-        ttk.Label(dlg, text="Aims:").pack(padx=10, pady=(6, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.aims', default="Aims:")).pack(padx=10, pady=(6, 0), anchor=tk.W)
         aims_text = tk.Text(dlg, height=5)
         aims_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
 
-        ttk.Label(dlg, text="Indicative content:").pack(padx=10, pady=(6, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.indicative_content', default="Indicative content:")).pack(padx=10, pady=(6, 0), anchor=tk.W)
         content_text = tk.Text(dlg, height=4)
         content_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
 
         def save():
             data = {k: v.get().strip() or None for k, v in vars_.items()}
             if not data["module_code"] or not data["title"]:
-                messagebox.showwarning("Validation", "Code and title required.", parent=dlg)
+                messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.validation', default="Validation"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.code_and_title_required', default="Code and title required."), parent=dlg)
                 return
             try:
                 if data.get("programme_id"):
@@ -339,9 +341,9 @@ class CurriculumSpecificationGUI:
                 dlg.destroy()
                 self._refresh_modules()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.save', default="Save"), command=save).pack(pady=10)
 
     def _edit_module(self):
         mid = self._selected_module_id()
@@ -349,7 +351,7 @@ class CurriculumSpecificationGUI:
             return
         md = self.service.get_module_descriptor(mid)
         if not md:
-            messagebox.showinfo("Edit", "Descriptor not found.", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.edit', default="Edit"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.descriptor_not_found', default="Descriptor not found."), parent=self.root)
             return
 
         dlg = tk.Toplevel(self.root)
@@ -368,7 +370,7 @@ class CurriculumSpecificationGUI:
             vars_[key] = v
 
         is_core = tk.BooleanVar(value=bool(md.get("is_core")))
-        ttk.Checkbutton(dlg, text="Core module", variable=is_core).pack(padx=10, pady=6, anchor=tk.W)
+        ttk.Checkbutton(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.core_module', default="Core module"), variable=is_core).pack(padx=10, pady=6, anchor=tk.W)
 
         def save():
             try:
@@ -384,14 +386,14 @@ class CurriculumSpecificationGUI:
                 dlg.destroy()
                 self._refresh_modules()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.save', default="Save"), command=save).pack(pady=10)
 
     def _selected_module_id(self):
         sel = self.mod_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a module descriptor first.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.selection', default="Selection"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.select_a_module_descriptor_first', default="Select a module descriptor first."), parent=self.root)
             return None
         return int(self.mod_tree.item(sel[0], "values")[0])
 
@@ -402,7 +404,7 @@ class CurriculumSpecificationGUI:
         v = self.service.validate_assessment_strategy(mid)
         msg = f"Total weighting: {v['total']:.2f}%\nValid: {v['valid']}\n\n"
         msg += "\n".join(f"• {i}" for i in v["issues"]) or "No issues found."
-        messagebox.showinfo("Assessment Strategy", msg, parent=self.root)
+        messagebox.showinfo(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.assessment_strategy', default="Assessment Strategy"), msg, parent=self.root)
 
     def _show_examiner_findings(self):
         mid = self._selected_module_id()
@@ -437,21 +439,21 @@ class CurriculumSpecificationGUI:
     # ----------------------------------------------------- Learning Outcomes
     def _build_outcomes_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Learning Outcomes")
+        notebook.add(tab, text=_t('gui.academics.curriculum_specification.curriculum_specification.tabs.learning_outcomes', default="Learning Outcomes"))
 
         top = ttk.Frame(tab)
         top.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(top, text="Parent type:").pack(side=tk.LEFT)
-        self.lo_parent_type = tk.StringVar(value="programme")
+        ttk.Label(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.parent_type', default="Parent type:")).pack(side=tk.LEFT)
+        self.lo_parent_type = tk.StringVar(value=_t('gui.academics.curriculum_specification.curriculum_specification.values.programme', default="programme"))
         ttk.Combobox(top, textvariable=self.lo_parent_type,
                      values=["programme", "module"], state="readonly",
                      width=12).pack(side=tk.LEFT, padx=5)
-        ttk.Label(top, text="Parent ID:").pack(side=tk.LEFT)
+        ttk.Label(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.parent_id', default="Parent ID:")).pack(side=tk.LEFT)
         self.lo_parent_id = tk.StringVar()
         ttk.Entry(top, textvariable=self.lo_parent_id, width=8).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Load", command=self._refresh_outcomes).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Add", command=self._add_outcome).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Delete", command=self._delete_outcome).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.load', default="Load"), command=self._refresh_outcomes).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.add', default="Add"), command=self._add_outcome).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.delete', default="Delete"), command=self._delete_outcome).pack(side=tk.LEFT, padx=5)
 
         cols = ("id", "code", "domain", "bloom", "description")
         self.lo_tree = ttk.Treeview(tab, columns=cols, show="headings", height=18)
@@ -474,42 +476,42 @@ class CurriculumSpecificationGUI:
                     lo.get("bloom_level") or "", lo["description"],
                 ))
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _add_outcome(self):
         if not self.lo_parent_id.get().strip():
-            messagebox.showwarning("Validation", "Set parent ID first.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.validation', default="Validation"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.set_parent_id_first', default="Set parent ID first."), parent=self.root)
             return
         dlg = tk.Toplevel(self.root)
-        dlg.title("Add Learning Outcome")
+        dlg.title(_t('gui.academics.curriculum_specification.curriculum_specification.windows.add_learning_outcome', default="Add Learning Outcome"))
         dlg.geometry("480x400")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Code (e.g. LO1):").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.code_e_g_lo1', default="Code (e.g. LO1):")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         code = tk.StringVar()
         ttk.Entry(dlg, textvariable=code).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Domain:").pack(padx=10, pady=(8, 0), anchor=tk.W)
-        domain = tk.StringVar(value="knowledge")
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.domain', default="Domain:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
+        domain = tk.StringVar(value=_t('gui.academics.curriculum_specification.curriculum_specification.values.knowledge', default="knowledge"))
         ttk.Combobox(dlg, textvariable=domain,
                      values=["knowledge", "skills", "professional", "transferable"],
                      state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Bloom level:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.bloom_level', default="Bloom level:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         bloom = tk.StringVar()
         ttk.Combobox(dlg, textvariable=bloom,
                      values=["remember", "understand", "apply", "analyze", "evaluate", "create"],
                      state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Description:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.description', default="Description:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         desc = tk.Text(dlg, height=8)
         desc.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
 
         def save():
             d = desc.get("1.0", tk.END).strip()
             if not d:
-                messagebox.showwarning("Validation", "Description required.", parent=dlg)
+                messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.validation', default="Validation"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.description_required', default="Description required."), parent=dlg)
                 return
             try:
                 self.service.add_learning_outcome(
@@ -521,32 +523,32 @@ class CurriculumSpecificationGUI:
                 dlg.destroy()
                 self._refresh_outcomes()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.save', default="Save"), command=save).pack(pady=10)
 
     def _delete_outcome(self):
         sel = self.lo_tree.selection()
         if not sel:
             return
         lo_id = int(self.lo_tree.item(sel[0], "values")[0])
-        if messagebox.askyesno("Confirm", "Delete this learning outcome?", parent=self.root):
+        if messagebox.askyesno(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.confirm', default="Confirm"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.delete_this_learning_outcome', default="Delete this learning outcome?"), parent=self.root):
             self.service.delete_learning_outcome(lo_id)
             self._refresh_outcomes()
 
     # --------------------------------------------------------- Assessment
     def _build_assessment_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Assessment Strategy")
+        notebook.add(tab, text=_t('gui.academics.curriculum_specification.curriculum_specification.tabs.assessment_strategy', default="Assessment Strategy"))
 
         top = ttk.Frame(tab)
         top.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(top, text="Module Descriptor ID:").pack(side=tk.LEFT)
+        ttk.Label(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.module_descriptor_id', default="Module Descriptor ID:")).pack(side=tk.LEFT)
         self.asm_module_id = tk.StringVar()
         ttk.Entry(top, textvariable=self.asm_module_id, width=8).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Load", command=self._refresh_assessment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Add Component", command=self._add_assessment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Delete", command=self._delete_assessment).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.load', default="Load"), command=self._refresh_assessment).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.add_component', default="Add Component"), command=self._add_assessment).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.delete', default="Delete"), command=self._delete_assessment).pack(side=tk.LEFT, padx=5)
 
         cols = ("id", "name", "type", "weighting", "los", "feedback")
         self.asm_tree = ttk.Treeview(tab, columns=cols, show="headings", height=18)
@@ -557,7 +559,7 @@ class CurriculumSpecificationGUI:
             self.asm_tree.column(c, width=widths[c], anchor=tk.W)
         self.asm_tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        self.asm_status = ttk.Label(tab, text="Total weighting: 0%")
+        self.asm_status = ttk.Label(tab, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.total_weighting_0', default="Total weighting: 0%"))
         self.asm_status.pack(padx=5, pady=5, anchor=tk.W)
 
     def _refresh_assessment(self):
@@ -581,48 +583,48 @@ class CurriculumSpecificationGUI:
                 foreground=colour,
             )
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _add_assessment(self):
         if not self.asm_module_id.get().strip():
-            messagebox.showwarning("Validation", "Set module ID first.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.validation', default="Validation"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.set_module_id_first', default="Set module ID first."), parent=self.root)
             return
         dlg = tk.Toplevel(self.root)
-        dlg.title("Add Assessment Component")
+        dlg.title(_t('gui.academics.curriculum_specification.curriculum_specification.windows.add_assessment_component', default="Add Assessment Component"))
         dlg.geometry("460x440")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Name:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.name', default="Name:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         name = tk.StringVar()
         ttk.Entry(dlg, textvariable=name).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Type:").pack(padx=10, pady=(8, 0), anchor=tk.W)
-        a_type = tk.StringVar(value="coursework")
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.type', default="Type:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
+        a_type = tk.StringVar(value=_t('gui.academics.curriculum_specification.curriculum_specification.values.coursework', default="coursework"))
         ttk.Combobox(dlg, textvariable=a_type,
                      values=["exam", "coursework", "presentation", "practical",
                              "dissertation", "portfolio", "lab_report", "other"],
                      state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Weighting (%):").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.weighting', default="Weighting (%):")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         weight = tk.StringVar()
         ttk.Entry(dlg, textvariable=weight).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="LOs assessed (e.g. LO1,LO2):").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.los_assessed_e_g_lo1_lo2', default="LOs assessed (e.g. LO1,LO2):")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         los = tk.StringVar()
         ttk.Entry(dlg, textvariable=los).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Feedback method:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.feedback_method', default="Feedback method:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         fb = tk.StringVar()
         ttk.Entry(dlg, textvariable=fb).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Notes:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.notes', default="Notes:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         notes = tk.Text(dlg, height=4)
         notes.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
 
         def save():
             if not name.get().strip():
-                messagebox.showwarning("Validation", "Name required.", parent=dlg)
+                messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.validation', default="Validation"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.name_required', default="Name required."), parent=dlg)
                 return
             try:
                 mid = int(self.asm_module_id.get().strip())
@@ -637,35 +639,35 @@ class CurriculumSpecificationGUI:
                 dlg.destroy()
                 self._refresh_assessment()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Save", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.save', default="Save"), command=save).pack(pady=10)
 
     def _delete_assessment(self):
         sel = self.asm_tree.selection()
         if not sel:
             return
         cid = int(self.asm_tree.item(sel[0], "values")[0])
-        if messagebox.askyesno("Confirm", "Delete this component?", parent=self.root):
+        if messagebox.askyesno(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.confirm', default="Confirm"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.delete_this_component', default="Delete this component?"), parent=self.root):
             self.service.delete_assessment_component(cid)
             self._refresh_assessment()
 
     # ------------------------------------------------------ Change Control
     def _build_changes_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Change Control")
+        notebook.add(tab, text=_t('gui.academics.curriculum_specification.curriculum_specification.tabs.change_control', default="Change Control"))
 
         top = ttk.Frame(tab)
         top.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(top, text="Status filter:").pack(side=tk.LEFT)
+        ttk.Label(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.status_filter', default="Status filter:")).pack(side=tk.LEFT)
         self.chg_status = tk.StringVar(value="")
         ttk.Combobox(top, textvariable=self.chg_status,
                      values=["", "proposed", "approved", "rejected"],
                      state="readonly", width=12).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Refresh", command=self._refresh_changes).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Propose Change", command=self._propose_change).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Approve", command=self._approve_change).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Reject", command=self._reject_change).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.refresh', default="Refresh"), command=self._refresh_changes).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.propose_change', default="Propose Change"), command=self._propose_change).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.approve', default="Approve"), command=self._approve_change).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.reject', default="Reject"), command=self._reject_change).pack(side=tk.LEFT, padx=5)
 
         cols = ("id", "parent", "type", "from_v", "to_v", "status", "summary", "proposed_at")
         self.chg_tree = ttk.Treeview(tab, columns=cols, show="headings", height=18)
@@ -696,48 +698,48 @@ class CurriculumSpecificationGUI:
 
     def _propose_change(self):
         dlg = tk.Toplevel(self.root)
-        dlg.title("Propose Change")
+        dlg.title(_t('gui.academics.curriculum_specification.curriculum_specification.windows.propose_change', default="Propose Change"))
         dlg.geometry("520x580")
         dlg.transient(self.root)
         dlg.grab_set()
 
-        ttk.Label(dlg, text="Parent type:").pack(padx=10, pady=(10, 0), anchor=tk.W)
-        ptype = tk.StringVar(value="programme")
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.parent_type', default="Parent type:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ptype = tk.StringVar(value=_t('gui.academics.curriculum_specification.curriculum_specification.values.programme', default="programme"))
         ttk.Combobox(dlg, textvariable=ptype, values=["programme", "module"],
                      state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Parent ID:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.parent_id', default="Parent ID:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         pid = tk.StringVar()
         ttk.Entry(dlg, textvariable=pid).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Change type:").pack(padx=10, pady=(8, 0), anchor=tk.W)
-        ctype = tk.StringVar(value="minor")
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.change_type', default="Change type:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ctype = tk.StringVar(value=_t('gui.academics.curriculum_specification.curriculum_specification.values.minor', default="minor"))
         ttk.Combobox(dlg, textvariable=ctype, values=["minor", "major", "cosmetic"],
                      state="readonly").pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="From version:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.from_version', default="From version:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         from_v = tk.StringVar()
         ttk.Entry(dlg, textvariable=from_v).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="To version:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.to_version', default="To version:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         to_v = tk.StringVar()
         ttk.Entry(dlg, textvariable=to_v).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Summary:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.summary', default="Summary:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         summary = tk.StringVar()
         ttk.Entry(dlg, textvariable=summary).pack(fill=tk.X, padx=10)
 
-        ttk.Label(dlg, text="Rationale:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.rationale', default="Rationale:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         rationale = tk.Text(dlg, height=4)
         rationale.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
 
-        ttk.Label(dlg, text="Impact:").pack(padx=10, pady=(8, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.impact', default="Impact:")).pack(padx=10, pady=(8, 0), anchor=tk.W)
         impact = tk.Text(dlg, height=4)
         impact.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
 
         def save():
             if not pid.get().strip() or not summary.get().strip():
-                messagebox.showwarning("Validation", "Parent ID and summary required.", parent=dlg)
+                messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.validation', default="Validation"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.parent_id_and_summary_required', default="Parent ID and summary required."), parent=dlg)
                 return
             try:
                 self.service.propose_change(
@@ -752,14 +754,14 @@ class CurriculumSpecificationGUI:
                 dlg.destroy()
                 self._refresh_changes()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Submit", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.submit', default="Submit"), command=save).pack(pady=10)
 
     def _selected_change_id(self):
         sel = self.chg_tree.selection()
         if not sel:
-            messagebox.showwarning("Selection", "Select a change first.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.selection', default="Selection"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.select_a_change_first', default="Select a change first."), parent=self.root)
             return None
         return int(self.chg_tree.item(sel[0], "values")[0])
 
@@ -771,18 +773,18 @@ class CurriculumSpecificationGUI:
             self.service.approve_change(cid, self._user())
             self._refresh_changes()
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _reject_change(self):
         cid = self._selected_change_id()
         if not cid:
             return
         dlg = tk.Toplevel(self.root)
-        dlg.title("Reject Change")
+        dlg.title(_t('gui.academics.curriculum_specification.curriculum_specification.windows.reject_change', default="Reject Change"))
         dlg.geometry("400x180")
         dlg.transient(self.root)
         dlg.grab_set()
-        ttk.Label(dlg, text="Reason:").pack(padx=10, pady=(10, 0), anchor=tk.W)
+        ttk.Label(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.reason', default="Reason:")).pack(padx=10, pady=(10, 0), anchor=tk.W)
         reason = tk.StringVar()
         ttk.Entry(dlg, textvariable=reason).pack(fill=tk.X, padx=10)
 
@@ -792,22 +794,22 @@ class CurriculumSpecificationGUI:
                 dlg.destroy()
                 self._refresh_changes()
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg)
+                messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=dlg)
 
-        ttk.Button(dlg, text="Reject", command=save).pack(pady=10)
+        ttk.Button(dlg, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.reject', default="Reject"), command=save).pack(pady=10)
 
     # -------------------------------------------------------- Handbook
     def _build_handbook_tab(self, notebook):
         tab = ttk.Frame(notebook)
-        notebook.add(tab, text="Course Handbook")
+        notebook.add(tab, text=_t('gui.academics.curriculum_specification.curriculum_specification.tabs.course_handbook', default="Course Handbook"))
 
         top = ttk.Frame(tab)
         top.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(top, text="Programme ID:").pack(side=tk.LEFT)
+        ttk.Label(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.labels.programme_id', default="Programme ID:")).pack(side=tk.LEFT)
         self.hb_pid = tk.StringVar()
         ttk.Entry(top, textvariable=self.hb_pid, width=8).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Generate", command=self._generate_handbook).pack(side=tk.LEFT, padx=5)
-        ttk.Button(top, text="Export to file…", command=self._export_handbook).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.generate', default="Generate"), command=self._generate_handbook).pack(side=tk.LEFT, padx=5)
+        ttk.Button(top, text=_t('gui.academics.curriculum_specification.curriculum_specification.buttons.export_to_file', default="Export to file…"), command=self._export_handbook).pack(side=tk.LEFT, padx=5)
 
         self.hb_text = tk.Text(tab, wrap=tk.WORD)
         self.hb_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -820,13 +822,13 @@ class CurriculumSpecificationGUI:
             self.hb_text.delete("1.0", tk.END)
             self.hb_text.insert("1.0", text)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=self.root)
 
     def _export_handbook(self):
         from tkinter import filedialog
         text = self.hb_text.get("1.0", tk.END).strip()
         if not text:
-            messagebox.showwarning("Empty", "Generate a handbook first.", parent=self.root)
+            messagebox.showwarning(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.empty', default="Empty"), _t('gui.academics.curriculum_specification.curriculum_specification.dialogs.generate_a_handbook_first', default="Generate a handbook first."), parent=self.root)
             return
         path = filedialog.asksaveasfilename(
             defaultextension=".txt",
@@ -838,9 +840,9 @@ class CurriculumSpecificationGUI:
         try:
             with open(path, "w", encoding="utf-8") as f:
                 f.write(text)
-            messagebox.showinfo("Success", f"Handbook saved to {path}", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.success', default="Success"), f"Handbook saved to {path}", parent=self.root)
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.root)
+            messagebox.showerror(_t('gui.academics.curriculum_specification.curriculum_specification.dialogs.error', default="Error"), str(e), parent=self.root)
 
 
 def main():

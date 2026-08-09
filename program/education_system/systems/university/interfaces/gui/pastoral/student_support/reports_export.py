@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import tkinter.font as tkFont
@@ -10,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import i18n for language support
 from education_system.systems.university.infrastructure.i18n import (
@@ -43,8 +45,8 @@ except ImportError:
     render_template = lambda *args, **kwargs: (None, None)
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this module when targeting the
@@ -158,7 +160,7 @@ class ReportsExportMixin:
     def show_export_dialog(self):
         """Show data export dialog with advanced filters"""
         export_dialog = tk.Toplevel(self.root)
-        export_dialog.title("📤 Export Data")
+        export_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.export_data_variant_2', default="📤 Export Data"))
         export_dialog.geometry("1200x800")
         export_dialog.transient(self.root)
         export_dialog.grab_set()
@@ -176,11 +178,11 @@ class ReportsExportMixin:
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        ttk.Label(scrollable_frame, text="📤 Export Data", style='Heading.TLabel').pack(pady=(0, 20))
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_support.reports_export.labels.export_data_variant_2', default="📤 Export Data"), style='Heading.TLabel').pack(pady=(0, 20))
 
         # Export type
-        ttk.Label(scrollable_frame, text="Export Type:").pack(anchor="w")
-        export_type_var = tk.StringVar(value="tickets")
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_support.reports_export.labels.export_type', default="Export Type:")).pack(anchor="w")
+        export_type_var = tk.StringVar(value=_t('gui.pastoral.student_support.reports_export.values.tickets', default="tickets"))
 
         export_options = [
             ("🎫 Tickets", "tickets"),
@@ -193,20 +195,20 @@ class ReportsExportMixin:
                            value=value).pack(anchor="w", pady=2)
 
         # Filters Section
-        filters_frame = ttk.LabelFrame(scrollable_frame, text="Filters (Optional)", padding="10")
+        filters_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.student_support.reports_export.labels.filters_optional', default="Filters (Optional)"), padding="10")
         filters_frame.pack(fill="x", pady=(20, 10))
 
         # Date Range Filters
-        ttk.Label(filters_frame, text="Date From (YYYY-MM-DD):").pack(anchor="w")
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.date_from_yyyy_mm_dd', default="Date From (YYYY-MM-DD):")).pack(anchor="w")
         date_from_var = tk.StringVar()
         ttk.Entry(filters_frame, textvariable=date_from_var, width=40).pack(fill="x", pady=(5, 10))
 
-        ttk.Label(filters_frame, text="Date To (YYYY-MM-DD):").pack(anchor="w")
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.date_to_yyyy_mm_dd', default="Date To (YYYY-MM-DD):")).pack(anchor="w")
         date_to_var = tk.StringVar()
         ttk.Entry(filters_frame, textvariable=date_to_var, width=40).pack(fill="x", pady=(5, 10))
 
         # Status Filter (for tickets)
-        ttk.Label(filters_frame, text="Status (for tickets):").pack(anchor="w")
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.status_for_tickets', default="Status (for tickets):")).pack(anchor="w")
         status_var = tk.StringVar()
         status_combo = ttk.Combobox(filters_frame, textvariable=status_var,
                                     values=['All'] + TICKET_STATUSES, state="readonly", width=37)
@@ -214,7 +216,7 @@ class ReportsExportMixin:
         status_combo.pack(fill="x", pady=(5, 10))
 
         # Category Filter (for tickets)
-        ttk.Label(filters_frame, text="Category (for tickets):").pack(anchor="w")
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.category_for_tickets', default="Category (for tickets):")).pack(anchor="w")
         category_var = tk.StringVar()
         category_combo = ttk.Combobox(filters_frame, textvariable=category_var,
                                       values=['All'] + SUPPORT_CATEGORIES, state="readonly", width=37)
@@ -222,7 +224,7 @@ class ReportsExportMixin:
         category_combo.pack(fill="x", pady=(5, 10))
 
         # Priority Filter (for tickets)
-        ttk.Label(filters_frame, text="Priority (for tickets):").pack(anchor="w")
+        ttk.Label(filters_frame, text=_t('gui.pastoral.student_support.reports_export.labels.priority_for_tickets', default="Priority (for tickets):")).pack(anchor="w")
         priority_var = tk.StringVar()
         priority_combo = ttk.Combobox(filters_frame, textvariable=priority_var,
                                       values=['All'] + TICKET_PRIORITIES, state="readonly", width=37)
@@ -230,15 +232,15 @@ class ReportsExportMixin:
         priority_combo.pack(fill="x", pady=(5, 10))
 
         # Format
-        ttk.Label(scrollable_frame, text="Format:").pack(anchor="w", pady=(10, 5))
-        format_var = tk.StringVar(value="csv")
+        ttk.Label(scrollable_frame, text=_t('gui.pastoral.student_support.reports_export.labels.format_variant_2', default="Format:")).pack(anchor="w", pady=(10, 5))
+        format_var = tk.StringVar(value=_t('gui.pastoral.student_support.reports_export.values.csv', default="csv"))
 
         format_frame = ttk.Frame(scrollable_frame)
         format_frame.pack(anchor="w")
 
-        ttk.Radiobutton(format_frame, text="CSV", variable=format_var,
+        ttk.Radiobutton(format_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.csv', default="CSV"), variable=format_var,
                        value="csv").pack(side="left", padx=(0, 10))
-        ttk.Radiobutton(format_frame, text="JSON", variable=format_var,
+        ttk.Radiobutton(format_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.json', default="JSON"), variable=format_var,
                        value="json").pack(side="left")
 
         # Buttons
@@ -275,9 +277,9 @@ class ReportsExportMixin:
             export_dialog.destroy()
             self.perform_export(export_type, format_type, filters)
 
-        ttk.Button(btn_frame, text="📤 Export", command=start_export,
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.export_variant_2', default="📤 Export"), command=start_export,
                   style='Primary.TButton').pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=export_dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel_variant_2', default="❌ Cancel"), command=export_dialog.destroy).pack(side="left")
 
         # Pack canvas and scrollbar
         canvas.grid(row=0, column=0, sticky="nsew")
@@ -288,7 +290,7 @@ class ReportsExportMixin:
         try:
             # Get filename
             filename = filedialog.asksaveasfilename(
-                title="Save Export",
+                title=_t('gui.pastoral.student_support.reports_export.dialogs.save_export', default="Save Export"),
                 defaultextension=f".{format_type}",
                 filetypes=[(f"{format_type.upper()} files", f"*.{format_type}"), ("All files", "*.*")]
             )
@@ -305,11 +307,11 @@ class ReportsExportMixin:
                 f.write(exported_data)
 
             filter_info = f" with {len(filters)} filter(s)" if filters else ""
-            messagebox.showinfo("Export Complete", f"Data exported to {filename}{filter_info}")
+            messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.export_complete', default="Export Complete"), f"Data exported to {filename}{filter_info}")
             self.update_status("Export completed")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export data: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.export_error', default="Export Error"), f"Failed to export data: {e}")
             self.update_status("Export failed")
 
     def refresh_data(self):
@@ -349,11 +351,11 @@ class ReportsExportMixin:
     def show_export_data_dialog(self):
         """Show enhanced data export dialog"""
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            messagebox.showerror("Error", "Staff access required")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.staff_access_required', default="Staff access required"))
             return
 
         export_dialog = tk.Toplevel(self.root)
-        export_dialog.title("Export Data")
+        export_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.export_data', default="Export Data"))
         export_dialog.geometry("1300x800")
         export_dialog.transient(self.root)
         export_dialog.grab_set()
@@ -361,11 +363,11 @@ class ReportsExportMixin:
         form_frame = ttk.Frame(export_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
 
-        ttk.Label(form_frame, text="Export Data", style='Title.TLabel').pack(pady=(0, 20))
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.export_data', default="Export Data"), style='Title.TLabel').pack(pady=(0, 20))
 
         # Export type
-        ttk.Label(form_frame, text="Export Type:").pack(anchor="w")
-        export_type_var = tk.StringVar(value="tickets")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.export_type', default="Export Type:")).pack(anchor="w")
+        export_type_var = tk.StringVar(value=_t('gui.pastoral.student_support.reports_export.values.tickets', default="tickets"))
 
         export_options = [
             ("Tickets", "tickets"),
@@ -380,27 +382,27 @@ class ReportsExportMixin:
                            value=value).pack(anchor="w", pady=2)
 
         # Date range
-        date_frame = ttk.LabelFrame(form_frame, text="Date Range (Optional)", padding="10")
+        date_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.date_range_optional', default="Date Range (Optional)"), padding="10")
         date_frame.pack(fill="x", pady=(10, 0))
 
-        ttk.Label(date_frame, text="From:").grid(row=0, column=0, sticky="w")
+        ttk.Label(date_frame, text=_t('gui.pastoral.student_support.reports_export.labels.from', default="From:")).grid(row=0, column=0, sticky="w")
         from_date = ttk.Entry(date_frame, width=12)
         from_date.grid(row=0, column=1, padx=(5, 10))
         from_date.insert(0, (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
 
-        ttk.Label(date_frame, text="To:").grid(row=0, column=2, sticky="w")
+        ttk.Label(date_frame, text=_t('gui.pastoral.student_support.reports_export.labels.to', default="To:")).grid(row=0, column=2, sticky="w")
         to_date = ttk.Entry(date_frame, width=12)
         to_date.grid(row=0, column=3, padx=(5, 0))
         to_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
         # Format
-        format_frame = ttk.LabelFrame(form_frame, text="Format", padding="10")
+        format_frame = ttk.LabelFrame(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.format', default="Format"), padding="10")
         format_frame.pack(fill="x", pady=(10, 0))
 
-        format_var = tk.StringVar(value="csv")
-        ttk.Radiobutton(format_frame, text="CSV", variable=format_var, value="csv").pack(side="left")
-        ttk.Radiobutton(format_frame, text="JSON", variable=format_var, value="json").pack(side="left", padx=(10, 0))
-        ttk.Radiobutton(format_frame, text="Excel", variable=format_var, value="xlsx").pack(side="left", padx=(10, 0))
+        format_var = tk.StringVar(value=_t('gui.pastoral.student_support.reports_export.values.csv', default="csv"))
+        ttk.Radiobutton(format_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.csv', default="CSV"), variable=format_var, value="csv").pack(side="left")
+        ttk.Radiobutton(format_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.json', default="JSON"), variable=format_var, value="json").pack(side="left", padx=(10, 0))
+        ttk.Radiobutton(format_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.excel', default="Excel"), variable=format_var, value="xlsx").pack(side="left", padx=(10, 0))
 
         def start_export():
             export_type = export_type_var.get()
@@ -420,29 +422,29 @@ class ReportsExportMixin:
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x", pady=(20, 0))
 
-        ttk.Button(btn_frame, text="Export", command=start_export).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=export_dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.export', default="Export"), command=start_export).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel', default="Cancel"), command=export_dialog.destroy).pack(side="left")
 
     def show_user_management(self):
         """Show user management interface (admin only)"""
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
-            messagebox.showerror("Error", "Admin access required")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.admin_access_required', default="Admin access required"))
             return
 
         self.clear_content()
 
         user_mgmt_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(user_mgmt_frame, text="User Management")
+        self.notebook.add(user_mgmt_frame, text=_t('gui.pastoral.student_support.reports_export.tabs.user_management', default="User Management"))
 
         # Configure frame to expand
         user_mgmt_frame.rowconfigure(0, weight=1)
         user_mgmt_frame.columnconfigure(0, weight=1)
 
-        ttk.Label(user_mgmt_frame, text="User Management",
+        ttk.Label(user_mgmt_frame, text=_t('gui.pastoral.student_support.reports_export.labels.user_management', default="User Management"),
                  style='Title.TLabel').pack(pady=(0, 20))
 
         # User list
-        users_frame = ttk.LabelFrame(user_mgmt_frame, text="System Users", padding="10")
+        users_frame = ttk.LabelFrame(user_mgmt_frame, text=_t('gui.pastoral.student_support.reports_export.labels.system_users', default="System Users"), padding="10")
         users_frame.pack(fill="both", expand=True)
 
         # Create treeview for users
@@ -475,20 +477,20 @@ class ReportsExportMixin:
         actions_frame = ttk.Frame(users_frame)
         actions_frame.pack(fill="x")
 
-        ttk.Button(actions_frame, text="Reset Password",
+        ttk.Button(actions_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.reset_password', default="Reset Password"),
                   command=lambda: self.reset_user_password(user_tree)).pack(side="left", padx=(0, 5))
-        ttk.Button(actions_frame, text="Change Role",
+        ttk.Button(actions_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.change_role', default="Change Role"),
                   command=lambda: self.change_user_role(user_tree)).pack(side="left", padx=(0, 5))
-        ttk.Button(actions_frame, text="Deactivate User",
+        ttk.Button(actions_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.deactivate_user', default="Deactivate User"),
                   command=lambda: self.deactivate_user(user_tree)).pack(side="left", padx=(0, 5))
-        ttk.Button(actions_frame, text="Activate User",
+        ttk.Button(actions_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.activate_user', default="Activate User"),
                   command=lambda: self.activate_user(user_tree)).pack(side="left")
 
     def reset_user_password(self, user_tree):
         """Reset user password"""
         selection = user_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a user")
+            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.reports_export.dialogs.please_select_a_user', default="Please select a user"))
             return
 
         user_data = user_tree.item(selection[0])['values']
@@ -498,13 +500,13 @@ class ReportsExportMixin:
 
         if self.auth and self.auth.current_user:
             if 'manage_users' not in permissions and self.auth.current_user['username'] != admin_username:
-                messagebox.showerror("Permission Denied", "You do not have permission to reset passwords.")
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.student_support.reports_export.dialogs.you_do_not_have_permission_to_reset_passwords', default="You do not have permission to reset passwords."))
                 return
         else:
-            messagebox.showerror("Error", "Authentication required to reset passwords.")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.authentication_required_to_reset_passwords', default="Authentication required to reset passwords."))
             return
 
-        if messagebox.askyesno("Confirm", f"Reset password for user '{username}'?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_support.reports_export.dialogs.confirm', default="Confirm"), f"Reset password for user '{username}'?"):
             try:
                 if not hasattr(self.auth, '_generate_temp_password') or not hasattr(self.auth, '_hash_password'):
                     raise RuntimeError("Authentication system does not support password resets.")
@@ -522,7 +524,7 @@ class ReportsExportMixin:
                 row = cursor.fetchone()
                 if not row:
                     conn.close()
-                    messagebox.showerror("Error", f"User account for '{username}' not found.")
+                    messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"User account for '{username}' not found.")
                     return
 
                 account_id = row[0]
@@ -545,17 +547,17 @@ class ReportsExportMixin:
                     )
 
                 messagebox.showinfo(
-                    "Success",
+                    _t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"),
                     f"Password reset for {username}.\nTemporary password: {temp_password}\nThe user will be prompted to change it on next login."
                 )
             except Exception as e:
-                messagebox.showerror("Error", f"Could not reset password: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Could not reset password: {e}")
 
     def change_user_role(self, user_tree):
         """Change user role"""
         selection = user_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a user")
+            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.reports_export.dialogs.please_select_a_user', default="Please select a user"))
             return
 
         user_data = user_tree.item(selection[0])['values']
@@ -591,7 +593,7 @@ class ReportsExportMixin:
                     success = self.auth.update_user(user_id, role=new_role)
 
                     if not success:
-                        messagebox.showerror("Error", "Failed to update role via auth system")
+                        messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.failed_to_update_role_via_auth_system', default="Failed to update role via auth system"))
                         return
                 else:
                     # Fallback to direct DB access
@@ -610,23 +612,23 @@ class ReportsExportMixin:
                         'new_role': new_role
                     })
 
-                messagebox.showinfo("Success", f"Role changed to {new_role}")
+                messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"Role changed to {new_role}")
                 role_dialog.destroy()
                 self.show_user_management()  # Refresh
             except Exception as e:
-                messagebox.showerror("Error", f"Could not change role: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Could not change role: {e}")
 
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x", pady=(20, 0))
 
-        ttk.Button(btn_frame, text="Save", command=save_role).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="Cancel", command=role_dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.save', default="Save"), command=save_role).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel', default="Cancel"), command=role_dialog.destroy).pack(side="left")
 
     def deactivate_user(self, user_tree):
         """Deactivate or reactivate a user account"""
         selection = user_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a user")
+            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.reports_export.dialogs.please_select_a_user', default="Please select a user"))
             return
 
         user_data = user_tree.item(selection[0])['values']
@@ -636,14 +638,14 @@ class ReportsExportMixin:
 
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
-            messagebox.showerror("Error", "Admin access required to deactivate users")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.admin_access_required_to_deactivate_users', default="Admin access required to deactivate users"))
             return
 
         # Toggle status
         new_status = 'Inactive' if current_status == 'Active' else 'Active'
         action = 'deactivate' if new_status == 'Inactive' else 'reactivate'
 
-        if messagebox.askyesno("Confirm", f"Are you sure you want to {action} user '{username}'?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_support.reports_export.dialogs.confirm', default="Confirm"), f"Are you sure you want to {action} user '{username}'?"):
             try:
                 # Update user status in database
                 from education_system.systems.university.infrastructure.database.db import get_connection
@@ -680,17 +682,17 @@ class ReportsExportMixin:
                         'new_status': new_status
                     })
 
-                messagebox.showinfo("Success", f"User '{username}' has been {action}d")
+                messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"User '{username}' has been {action}d")
                 self.show_user_management()  # Refresh the user list
 
             except Exception as e:
-                messagebox.showerror("Error", f"Could not {action} user: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Could not {action} user: {e}")
 
     def activate_user(self, user_tree):
         """Activate a user account"""
         selection = user_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a user")
+            messagebox.showwarning(_t('gui.pastoral.student_support.reports_export.dialogs.warning', default="Warning"), _t('gui.pastoral.student_support.reports_export.dialogs.please_select_a_user', default="Please select a user"))
             return
 
         user_data = user_tree.item(selection[0])['values']
@@ -700,15 +702,15 @@ class ReportsExportMixin:
 
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
-            messagebox.showerror("Error", "Admin access required to activate users")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.admin_access_required_to_activate_users', default="Admin access required to activate users"))
             return
 
         # Check if already active
         if current_status == 'Active':
-            messagebox.showinfo("Info", f"User '{username}' is already active")
+            messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.info', default="Info"), f"User '{username}' is already active")
             return
 
-        if messagebox.askyesno("Confirm", f"Are you sure you want to activate user '{username}'?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_support.reports_export.dialogs.confirm', default="Confirm"), f"Are you sure you want to activate user '{username}'?"):
             try:
                 # Update user status in database
                 from education_system.systems.university.infrastructure.database.db import get_connection
@@ -741,17 +743,17 @@ class ReportsExportMixin:
                         'new_status': 'Active'
                     })
 
-                messagebox.showinfo("Success", f"User '{username}' has been activated")
+                messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"User '{username}' has been activated")
                 self.show_user_management()  # Refresh the user list
 
             except Exception as e:
-                messagebox.showerror("Error", f"Could not activate user: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Could not activate user: {e}")
 
     def perform_enhanced_export(self, export_type, filters, format_type):
         """Perform enhanced data export"""
         try:
             filename = filedialog.asksaveasfilename(
-                title="Save Export",
+                title=_t('gui.pastoral.student_support.reports_export.dialogs.save_export', default="Save Export"),
                 defaultextension=f".{format_type}",
                 filetypes=[(f"{format_type.upper()} files", f"*.{format_type}"), ("All files", "*.*")]
             )
@@ -767,17 +769,17 @@ class ReportsExportMixin:
             with open(filename, 'w') as f:
                 f.write(exported_data)
 
-            messagebox.showinfo("Export Complete", f"Data exported to {filename}")
+            messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.export_complete', default="Export Complete"), f"Data exported to {filename}")
             self.update_status("Export completed")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export data: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.export_error', default="Export Error"), f"Failed to export data: {e}")
             self.update_status("Export failed")
 
     def show_help(self):
         """Show help dialog"""
         help_dialog = tk.Toplevel(self.root)
-        help_dialog.title("📖 User Guide")
+        help_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.user_guide', default="📖 User Guide"))
         help_dialog.geometry("1400x850")
         help_dialog.transient(self.root)
 
@@ -833,7 +835,7 @@ For additional help, contact the support team.
         text_widget.config(state='disabled')
 
         # Close button
-        ttk.Button(help_dialog, text="❌ Close", command=help_dialog.destroy).pack(pady=10)
+        ttk.Button(help_dialog, text=_t('gui.pastoral.student_support.reports_export.buttons.close', default="❌ Close"), command=help_dialog.destroy).pack(pady=10)
 
     def show_about(self):
         """Show about dialog"""
@@ -853,14 +855,14 @@ Features:
 © 2024 Student Support System
         """
 
-        messagebox.showinfo("About", about_text)
+        messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.about', default="About"), about_text)
 
     def show_reports(self):
         """Show reports interface (staff only)"""
         self.clear_content()
 
         reports_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(reports_frame, text="📊 Reports")
+        self.notebook.add(reports_frame, text=_t('gui.pastoral.student_support.reports_export.tabs.reports', default="📊 Reports"))
 
         # Configure frame to expand
         reports_frame.rowconfigure(0, weight=1)
@@ -868,12 +870,12 @@ Features:
 
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(reports_frame, text="❌ Staff access required",
+            ttk.Label(reports_frame, text=_t('gui.pastoral.student_support.reports_export.labels.staff_access_required', default="❌ Staff access required"),
                      style='Title.TLabel').pack(pady=20)
             return
 
         # Reports interface
-        ttk.Label(reports_frame, text="📊 Support Reports",
+        ttk.Label(reports_frame, text=_t('gui.pastoral.student_support.reports_export.labels.support_reports', default="📊 Support Reports"),
                  style='Title.TLabel').pack(pady=(0, 20))
 
         # Report types
@@ -906,7 +908,7 @@ Features:
         """Generate a report"""
         # Show date range dialog
         date_dialog = tk.Toplevel(self.root)
-        date_dialog.title("📅 Report Date Range")
+        date_dialog.title(_t('gui.pastoral.student_support.reports_export.windows.report_date_range', default="📅 Report Date Range"))
         date_dialog.geometry("900x550")
         date_dialog.transient(self.root)
         date_dialog.grab_set()
@@ -915,16 +917,16 @@ Features:
         form_frame = ttk.Frame(date_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
 
-        ttk.Label(form_frame, text="Select Report Date Range", style='Heading.TLabel').pack(pady=(0, 20))
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.select_report_date_range', default="Select Report Date Range"), style='Heading.TLabel').pack(pady=(0, 20))
 
         # Start date
-        ttk.Label(form_frame, text="Start Date (YYYY-MM-DD):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).pack(anchor="w")
         start_date_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
         start_entry = ttk.Entry(form_frame, textvariable=start_date_var, width=20)
         start_entry.pack(fill="x", pady=(5, 10))
 
         # End date
-        ttk.Label(form_frame, text="End Date (YYYY-MM-DD):").pack(anchor="w")
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.reports_export.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).pack(anchor="w")
         end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         end_entry = ttk.Entry(form_frame, textvariable=end_date_var, width=20)
         end_entry.pack(fill="x", pady=(5, 20))
@@ -939,8 +941,8 @@ Features:
             date_dialog.destroy()
             self.run_report_generation(report_type, start_date, end_date)
 
-        ttk.Button(btn_frame, text="📊 Generate Report", command=generate).pack(side="left", padx=(0, 10))
-        ttk.Button(btn_frame, text="❌ Cancel", command=date_dialog.destroy).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.generate_report', default="📊 Generate Report"), command=generate).pack(side="left", padx=(0, 10))
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel_variant_2', default="❌ Cancel"), command=date_dialog.destroy).pack(side="left")
 
     def run_report_generation(self, report_type, start_date, end_date):
         """Run report generation in background"""
@@ -955,7 +957,7 @@ Features:
                 self.root.after(0, lambda: self.show_report_window(report_type, report_data, date_range))
 
             except Exception as e:
-                self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate report: {_e}"))
+                self.root.after(0, lambda _e=e: messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.report_error', default="Report Error"), f"Failed to generate report: {_e}"))
                 self.root.after(0, lambda: self.update_status("Report generation failed"))
 
         # Run in background thread
@@ -982,11 +984,11 @@ Features:
         btn_container = ttk.Frame(toolbar_frame)
         btn_container.pack(side="right")
 
-        ttk.Button(btn_container, text="💾 Save as TXT",
+        ttk.Button(btn_container, text=_t('gui.pastoral.student_support.reports_export.buttons.save_as_txt', default="💾 Save as TXT"),
                   command=lambda: self.save_report_as_txt(report_type, report_data, date_range)).pack(side="left", padx=2)
-        ttk.Button(btn_container, text="📧 Email to Admin",
+        ttk.Button(btn_container, text=_t('gui.pastoral.student_support.reports_export.buttons.email_to_admin', default="📧 Email to Admin"),
                   command=lambda: self.send_report_to_admin(report_type, report_data)).pack(side="left", padx=2)
-        ttk.Button(btn_container, text="❌ Close",
+        ttk.Button(btn_container, text=_t('gui.pastoral.student_support.reports_export.buttons.close', default="❌ Close"),
                   command=report_window.destroy).pack(side="left", padx=2)
 
         # Text display area
@@ -1043,7 +1045,7 @@ Features:
 
         # Display metrics in a grid
         if metrics:
-            metrics_frame = ttk.LabelFrame(parent, text="📈 Key Metrics", padding="15")
+            metrics_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.reports_export.labels.key_metrics', default="📈 Key Metrics"), padding="15")
             metrics_frame.pack(fill="x", pady=(0, 20))
 
             metrics_grid = ttk.Frame(metrics_frame)
@@ -1072,13 +1074,13 @@ Features:
 
     def create_report_export_options(self, parent, report_type, report_data):
         """Create report export options"""
-        ttk.Label(parent, text="📤 Export Options", style='Heading.TLabel').pack(pady=(0, 20))
+        ttk.Label(parent, text=_t('gui.pastoral.student_support.reports_export.labels.export_options', default="📤 Export Options"), style='Heading.TLabel').pack(pady=(0, 20))
 
         # Export format selection
-        format_frame = ttk.LabelFrame(parent, text="Format", padding="10")
+        format_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_support.reports_export.labels.format', default="Format"), padding="10")
         format_frame.pack(fill="x", pady=(0, 10))
 
-        self.export_format_var = tk.StringVar(value="JSON")
+        self.export_format_var = tk.StringVar(value=_t('gui.pastoral.student_support.reports_export.values.json', default="JSON"))
 
         for fmt in ["JSON", "CSV", "TXT"]:
             ttk.Radiobutton(format_frame, text=fmt, variable=self.export_format_var,
@@ -1089,11 +1091,11 @@ Features:
         btn_frame.pack(fill="x", pady=20)
 
         # Export to file button
-        ttk.Button(btn_frame, text="💾 Export Report",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.export_report', default="💾 Export Report"),
                   command=lambda: self.export_report_data(report_type, report_data)).pack(side="left", padx=(0, 10))
 
         # Send to admin button
-        ttk.Button(btn_frame, text="📧 Send to Admin",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.send_to_admin', default="📧 Send to Admin"),
                   command=lambda: self.send_report_to_admin(report_type, report_data)).pack(side="left")
 
     def export_report_data(self, report_type, report_data):
@@ -1102,7 +1104,7 @@ Features:
 
         # File dialog
         filename = filedialog.asksaveasfilename(
-            title="Save Report",
+            title=_t('gui.pastoral.student_support.reports_export.dialogs.save_report', default="Save Report"),
             defaultextension=f".{format_type}",
             filetypes=[(f"{format_type.upper()} files", f"*.{format_type}"), ("All files", "*.*")]
         )
@@ -1125,10 +1127,10 @@ Features:
                     f.write("=" * 50 + "\n")
                     f.write(json.dumps(report_data, indent=2, default=str))
 
-            messagebox.showinfo("Export Complete", f"Report exported to {filename}")
+            messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.export_complete', default="Export Complete"), f"Report exported to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export report: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.export_error', default="Export Error"), f"Failed to export report: {e}")
 
     def send_report_to_admin(self, report_type, report_data):
         """Send report to admin via email"""
@@ -1176,7 +1178,7 @@ Features:
                 return
 
             # Confirm sending
-            if not messagebox.askyesno("Send Report",
+            if not messagebox.askyesno(_t('gui.pastoral.student_support.reports_export.dialogs.send_report', default="Send Report"),
                                        f"Send {report_type.replace('_', ' ').title()} Report to admin ({admin_username})?\n\nEmail: {admin_email}"):
                 return
 
@@ -1192,31 +1194,31 @@ Features:
             )
 
             if success:
-                messagebox.showinfo("Success", f"Report sent to {admin_email}")
+                messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"Report sent to {admin_email}")
                 if ACTIVITY_LOGGER_AVAILABLE:
                     log_activity('send', 'report_email', details={
                         'report_type': report_type,
                         'recipient': admin_email
                     })
             else:
-                messagebox.showerror("Error", "Failed to send email. Please check email configuration.")
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.failed_to_send_email_please_check_email_configuration', default="Failed to send email. Please check email configuration."))
 
         except ImportError as e:
-            messagebox.showerror("Error", f"Email service not available: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Email service not available: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send report: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Failed to send report: {e}")
             import traceback
             traceback.print_exc()
 
     def _show_admin_email_dialog(self, report_type, report_data):
         """Show dialog to manually enter admin email"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Enter Admin Email")
+        dialog.title(_t('gui.pastoral.student_support.reports_export.windows.enter_admin_email', default="Enter Admin Email"))
         dialog.geometry("400x200")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="No admin email found in database.\nPlease enter admin email:",
+        ttk.Label(dialog, text=_t('gui.pastoral.student_support.reports_export.labels.no_admin_email_found_in_database_please_enter_admin_email', default="No admin email found in database.\nPlease enter admin email:"),
                  font=('Segoe UI', 10)).pack(pady=20)
 
         email_var = tk.StringVar()
@@ -1227,7 +1229,7 @@ Features:
         def send():
             email = email_var.get().strip()
             if not email or '@' not in email:
-                messagebox.showerror("Error", "Please enter a valid email address")
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.please_enter_a_valid_email_address', default="Please enter a valid email address"))
                 return
 
             dialog.destroy()
@@ -1245,17 +1247,17 @@ Features:
                 )
 
                 if success:
-                    messagebox.showinfo("Success", f"Report sent to {email}")
+                    messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"Report sent to {email}")
                 else:
-                    messagebox.showerror("Error", "Failed to send email")
+                    messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), _t('gui.pastoral.student_support.reports_export.dialogs.failed_to_send_email', default="Failed to send email"))
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to send: {e}")
+                messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Failed to send: {e}")
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(pady=20)
-        ttk.Button(btn_frame, text="Send", command=send).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.send', default="Send"), command=send).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.reports_export.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side="left", padx=5)
 
     def _format_report_for_email(self, report_type, report_data):
         """Format report data for email body using template system"""
@@ -1412,7 +1414,7 @@ Features:
     def save_report_as_txt(self, report_type, report_data, date_range):
         """Save report as TXT file"""
         filename = filedialog.asksaveasfilename(
-            title="Save Report as TXT",
+            title=_t('gui.pastoral.student_support.reports_export.dialogs.save_report_as_txt', default="Save Report as TXT"),
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
             initialfile=f"{report_type}_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
@@ -1427,7 +1429,7 @@ Features:
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(report_text)
 
-            messagebox.showinfo("Success", f"Report saved to:\n{filename}")
+            messagebox.showinfo(_t('gui.pastoral.student_support.reports_export.dialogs.success', default="Success"), f"Report saved to:\n{filename}")
 
             if ACTIVITY_LOGGER_AVAILABLE:
                 log_activity('export', 'report', details={
@@ -1437,5 +1439,5 @@ Features:
                 })
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save report: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.reports_export.dialogs.error', default="Error"), f"Failed to save report: {e}")
 

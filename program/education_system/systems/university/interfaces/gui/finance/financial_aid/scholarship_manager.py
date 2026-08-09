@@ -5,6 +5,8 @@ This module provides admin interfaces for managing scholarships,
 reviewing applications, and awarding scholarships to students.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from typing import Any, Dict
 
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -882,7 +884,7 @@ class ScholarshipManagerGUI:
             title_text = f"{title_text} — {student_id}"
         ttk.Label(title_frame, text=title_text, style='Title.TLabel').pack(side='left')
         if student_id:
-            ttk.Button(title_frame, text="Show all awards",
+            ttk.Button(title_frame, text=_t('gui.finance.financial_aid.scholarship_manager.buttons.show_all_awards', default="Show all awards"),
                        command=lambda: self.show_awards()).pack(side='right', padx=(0, 6))
         ttk.Button(title_frame, text=_t("financial_aid.scholarship_manager.buttons.back"), command=self.show_main_interface).pack(side='right')
 
@@ -1008,7 +1010,7 @@ class ScholarshipManagerGUI:
             text=f"Sessions logged: {total}    Present: {present}    Pct: {pct_text}",
         ).pack(anchor="w", padx=12, pady=2)
 
-        ttk.Label(win, text="Most recent (up to 25):",
+        ttk.Label(win, text=_t('gui.finance.financial_aid.scholarship_manager.labels.most_recent_up_to_25', default="Most recent (up to 25):"),
                   font=("Arial", 10, "bold")).pack(anchor="w", padx=12, pady=(10, 2))
         body = ttk.Frame(win)
         body.pack(fill="both", expand=True, padx=12, pady=4)
@@ -1023,4 +1025,4 @@ class ScholarshipManagerGUI:
         vsb = ttk.Scrollbar(body, orient="vertical", command=tv.yview)
         tv.configure(yscrollcommand=vsb.set)
         vsb.pack(side="right", fill="y")
-        ttk.Button(win, text="Close", command=win.destroy).pack(pady=8)
+        ttk.Button(win, text=_t('gui.finance.financial_aid.scholarship_manager.buttons.close', default="Close"), command=win.destroy).pack(pady=8)

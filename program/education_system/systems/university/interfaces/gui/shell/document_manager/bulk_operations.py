@@ -39,7 +39,7 @@ class BulkOperationsManager:
     def bulk_status_update(self):
         """Enhanced bulk status update with GUI"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Bulk Status Update")
+        dialog.title(_t('gui.shell.document_manager.bulk_operations.windows.bulk_status_update', default="Bulk Status Update"))
         dialog.geometry("850x700")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -47,35 +47,35 @@ class BulkOperationsManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Bulk Status Update", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.bulk_status_update', default="Bulk Status Update"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Selection criteria
-        criteria_frame = ttk.LabelFrame(main_frame, text="Selection Criteria", padding=10)
+        criteria_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.selection_criteria', default="Selection Criteria"), padding=10)
         criteria_frame.pack(fill='x', pady=(0, 15))
 
-        criteria_var = tk.StringVar(value="type")
-        ttk.Radiobutton(criteria_frame, text="By Document Type", variable=criteria_var, value="type").pack(anchor='w')
-        ttk.Radiobutton(criteria_frame, text="By Current Status", variable=criteria_var, value="status").pack(anchor='w')
-        ttk.Radiobutton(criteria_frame, text="By Date Range", variable=criteria_var, value="date").pack(anchor='w')
+        criteria_var = tk.StringVar(value=_t('gui.shell.document_manager.bulk_operations.values.type', default="type"))
+        ttk.Radiobutton(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.by_document_type', default="By Document Type"), variable=criteria_var, value="type").pack(anchor='w')
+        ttk.Radiobutton(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.by_current_status', default="By Current Status"), variable=criteria_var, value="status").pack(anchor='w')
+        ttk.Radiobutton(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.by_date_range', default="By Date Range"), variable=criteria_var, value="date").pack(anchor='w')
 
         # Filter input
-        filter_frame = ttk.LabelFrame(main_frame, text="Filter Value", padding=10)
+        filter_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.filter_value', default="Filter Value"), padding=10)
         filter_frame.pack(fill='x', pady=(0, 15))
 
         filter_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=filter_var, width=40).pack(fill='x')
 
         # New status selection
-        status_frame = ttk.LabelFrame(main_frame, text="New Status", padding=10)
+        status_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.new_status', default="New Status"), padding=10)
         status_frame.pack(fill='x', pady=(0, 15))
 
-        new_status_var = tk.StringVar(value="Verified")
+        new_status_var = tk.StringVar(value=_t('gui.shell.document_manager.bulk_operations.values.verified', default="Verified"))
         status_options = ["Verified", "Rejected", "Pending", "Expired"]
         status_combo = ttk.Combobox(status_frame, textvariable=new_status_var, values=status_options)
         status_combo.pack(fill='x')
 
         # Notes
-        ttk.Label(main_frame, text="Notes:").pack(anchor='w')
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.notes', default="Notes:")).pack(anchor='w')
         notes_text = tk.Text(main_frame, height=3, width=40)
         notes_text.pack(fill='x', pady=5)
 
@@ -86,7 +86,7 @@ class BulkOperationsManager:
             notes = notes_text.get('1.0', 'end-1c')
 
             if not filter_value:
-                messagebox.showerror("Error", "Please enter filter value")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_enter_filter_value', default="Please enter filter value"))
                 return
 
             try:
@@ -114,19 +114,19 @@ class BulkOperationsManager:
                         WHERE DATE(upload_date) BETWEEN ? AND ? AND is_current_version = 1
                         ''', (date_parts[0], date_parts[1]))
                     else:
-                        messagebox.showerror("Error", "Date format should be: YYYY-MM-DD to YYYY-MM-DD")
+                        messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), _t('gui.shell.document_manager.bulk_operations.dialogs.date_format_should_be_yyyy_mm_dd_to_yyyy_mm_dd', default="Date format should be: YYYY-MM-DD to YYYY-MM-DD"))
                         conn.close()
                         return
 
                 doc_ids = [row[0] for row in cursor.fetchall()]
 
                 if not doc_ids:
-                    messagebox.showinfo("Info", "No documents found matching criteria")
+                    messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.info', default="Info"), _t('gui.shell.document_manager.bulk_operations.dialogs.no_documents_found_matching_criteria', default="No documents found matching criteria"))
                     conn.close()
                     return
 
                 # Confirm update
-                confirm = messagebox.askyesno("Confirm", f"Update {len(doc_ids)} documents to status '{new_status}'?")
+                confirm = messagebox.askyesno(_t('gui.shell.document_manager.bulk_operations.dialogs.confirm', default="Confirm"), f"Update {len(doc_ids)} documents to status '{new_status}'?")
                 if not confirm:
                     conn.close()
                     return
@@ -144,24 +144,24 @@ class BulkOperationsManager:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Successfully updated {len(doc_ids)} documents")
+                messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.success', default="Success"), f"Successfully updated {len(doc_ids)} documents")
                 dialog.destroy()
                 self.gui.refresh_documents()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Bulk update failed: {str(e)}")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), f"Bulk update failed: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(15, 0))
 
-        ttk.Button(button_frame, text="Update", command=perform_bulk_update).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.update', default="Update"), command=perform_bulk_update).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
     def bulk_operations_dialog(self):
         """Show bulk operations dialog"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Bulk Operations")
+        dialog.title(_t('gui.shell.document_manager.bulk_operations.windows.bulk_operations', default="Bulk Operations"))
         dialog.geometry("700x550")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -174,10 +174,10 @@ class BulkOperationsManager:
         main_frame.pack(fill='both', expand=True)
 
         # Title
-        ttk.Label(main_frame, text="Bulk Operations", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.bulk_operations', default="Bulk Operations"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Operations frame
-        operations_frame = ttk.LabelFrame(main_frame, text="Available Operations", padding=15)
+        operations_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.available_operations', default="Available Operations"), padding=15)
         operations_frame.pack(fill='both', expand=True)
 
         # Bulk operations list
@@ -198,12 +198,12 @@ class BulkOperationsManager:
             ttk.Label(op_frame, text=description, font=('Arial', 9), foreground='gray').pack(side='left', padx=10)
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=20)
+        ttk.Button(main_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.close', default="Close"), command=dialog.destroy).pack(pady=20)
 
     def bulk_export_dialog(self):
         """Bulk export dialog for exporting multiple datasets"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Bulk Export Data")
+        dialog.title(_t('gui.shell.document_manager.bulk_operations.windows.bulk_export_data', default="Bulk Export Data"))
         dialog.geometry("600x500")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -211,10 +211,10 @@ class BulkOperationsManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Bulk Export Data", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.bulk_export_data', default="Bulk Export Data"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Export options
-        options_frame = ttk.LabelFrame(main_frame, text="Select Data to Export", padding=15)
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.select_data_to_export', default="Select Data to Export"), padding=15)
         options_frame.pack(fill='x', pady=(0, 15))
 
         export_students = tk.BooleanVar(value=True)
@@ -222,23 +222,23 @@ class BulkOperationsManager:
         export_workflows = tk.BooleanVar(value=False)
         export_compliance = tk.BooleanVar(value=False)
 
-        ttk.Checkbutton(options_frame, text="Students Data", variable=export_students).pack(anchor='w')
-        ttk.Checkbutton(options_frame, text="Documents Data", variable=export_documents).pack(anchor='w')
-        ttk.Checkbutton(options_frame, text="Workflow Data", variable=export_workflows).pack(anchor='w')
-        ttk.Checkbutton(options_frame, text="Compliance Report", variable=export_compliance).pack(anchor='w')
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.students_data', default="Students Data"), variable=export_students).pack(anchor='w')
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.documents_data', default="Documents Data"), variable=export_documents).pack(anchor='w')
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.workflow_data', default="Workflow Data"), variable=export_workflows).pack(anchor='w')
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.compliance_report', default="Compliance Report"), variable=export_compliance).pack(anchor='w')
 
         # Format selection
-        format_frame = ttk.LabelFrame(main_frame, text="Export Format", padding=15)
+        format_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.export_format', default="Export Format"), padding=15)
         format_frame.pack(fill='x', pady=(0, 15))
 
-        export_format = tk.StringVar(value="csv")
-        ttk.Radiobutton(format_frame, text="CSV", variable=export_format, value="csv").pack(anchor='w')
-        ttk.Radiobutton(format_frame, text="Excel (XLSX)", variable=export_format, value="xlsx").pack(anchor='w')
-        ttk.Radiobutton(format_frame, text="JSON", variable=export_format, value="json").pack(anchor='w')
+        export_format = tk.StringVar(value=_t('gui.shell.document_manager.bulk_operations.values.csv', default="csv"))
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.csv', default="CSV"), variable=export_format, value="csv").pack(anchor='w')
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.excel_xlsx', default="Excel (XLSX)"), variable=export_format, value="xlsx").pack(anchor='w')
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.json', default="JSON"), variable=export_format, value="json").pack(anchor='w')
 
         def perform_export():
             # Ask for directory
-            export_dir = filedialog.askdirectory(title="Select Export Directory")
+            export_dir = filedialog.askdirectory(title=_t('gui.shell.document_manager.bulk_operations.dialogs.select_export_directory', default="Select Export Directory"))
             if not export_dir:
                 return
 
@@ -297,7 +297,7 @@ class BulkOperationsManager:
 
                 conn.close()
 
-                messagebox.showinfo("Export Successful",
+                messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.export_successful', default="Export Successful"),
                                   f"Exported {len(exported_files)} file(s) to:\n{export_dir}")
                 dialog.destroy()
 
@@ -305,13 +305,13 @@ class BulkOperationsManager:
                               details=f'Exported {len(exported_files)} files')
 
             except Exception as e:
-                messagebox.showerror("Export Error", f"Failed to export data: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.export_error', default="Export Error"), f"Failed to export data: {e}")
 
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=20)
 
-        ttk.Button(button_frame, text="Export", command=perform_export).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.export', default="Export"), command=perform_export).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
     def _export_data(self, filepath, columns, data, fmt):
         """Helper method to export data in various formats"""
@@ -344,7 +344,7 @@ class BulkOperationsManager:
     def bulk_import_dialog(self):
         """Show bulk import dialog for importing multiple documents"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Bulk Document Import")
+        dialog.title(_t('gui.shell.document_manager.bulk_operations.windows.bulk_document_import', default="Bulk Document Import"))
         dialog.geometry("950x700")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -352,10 +352,10 @@ class BulkOperationsManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Bulk Document Import", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.bulk_document_import', default="Bulk Document Import"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         # File selection
-        files_frame = ttk.LabelFrame(main_frame, text="Select Files", padding=10)
+        files_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.select_files', default="Select Files"), padding=10)
         files_frame.pack(fill='both', expand=True, pady=10)
 
         files_list = tk.Listbox(files_frame, height=10)
@@ -366,7 +366,7 @@ class BulkOperationsManager:
         def browse_files():
             from tkinter import filedialog
             files = filedialog.askopenfilenames(
-                title="Select Documents to Import",
+                title=_t('gui.shell.document_manager.bulk_operations.dialogs.select_documents_to_import', default="Select Documents to Import"),
                 filetypes=[
                     ("All files", "*.*"),
                     ("PDF files", "*.pdf"),
@@ -381,13 +381,13 @@ class BulkOperationsManager:
                 for file in files:
                     files_list.insert(tk.END, os.path.basename(file))
 
-        ttk.Button(files_frame, text="Browse Files", command=browse_files).pack(pady=5)
+        ttk.Button(files_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.browse_files', default="Browse Files"), command=browse_files).pack(pady=5)
 
         # Import settings
-        settings_frame = ttk.LabelFrame(main_frame, text="Import Settings", padding=10)
+        settings_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.import_settings', default="Import Settings"), padding=10)
         settings_frame.pack(fill='x', pady=10)
 
-        ttk.Label(settings_frame, text="Document Type:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(settings_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.document_type', default="Document Type:")).grid(row=0, column=0, sticky='w', pady=5)
         doc_type_var = tk.StringVar()
         doc_type_combo = ttk.Combobox(settings_frame, textvariable=doc_type_var, state='readonly', width=30)
         doc_type_combo.grid(row=0, column=1, pady=5, padx=10)
@@ -406,18 +406,18 @@ class BulkOperationsManager:
             doc_type_combo['values'] = ['General Document', 'ID Card', 'Transcript', 'Certificate']
             doc_type_combo.current(0)
 
-        ttk.Label(settings_frame, text="Student ID:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(settings_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.student_id', default="Student ID:")).grid(row=1, column=0, sticky='w', pady=5)
         student_id_var = tk.StringVar()
         ttk.Entry(settings_frame, textvariable=student_id_var, width=30).grid(row=1, column=1, pady=5, padx=10)
 
         # Import button
         def perform_import():
             if not selected_files:
-                messagebox.showerror("Error", "Please select files to import")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_select_files_to_import', default="Please select files to import"))
                 return
 
             if not student_id_var.get():
-                messagebox.showerror("Error", "Please enter student ID")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_enter_student_id', default="Please enter student ID"))
                 return
 
             try:
@@ -433,20 +433,20 @@ class BulkOperationsManager:
                         failed += 1
                         print(f"Failed to import {file_path}: {e}")
 
-                messagebox.showinfo("Import Complete",
+                messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.import_complete', default="Import Complete"),
                                   f"Import completed!\n\n"
                                   f"Imported: {imported}\n"
                                   f"Failed: {failed}")
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Import failed: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), f"Import failed: {e}")
 
         buttons_frame = ttk.Frame(main_frame)
         buttons_frame.pack(pady=10)
 
-        ttk.Button(buttons_frame, text="Import", command=perform_import).pack(side='left', padx=5)
-        ttk.Button(buttons_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.import', default="Import"), command=perform_import).pack(side='left', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
     def bulk_tag_assignment(self):
         """Assign tags to multiple documents"""
@@ -454,12 +454,12 @@ class BulkOperationsManager:
             # Get selected documents from main tree
             selected = self.gui.docs_tree.selection()
             if not selected:
-                messagebox.showwarning("Warning", "Please select documents to tag")
+                messagebox.showwarning(_t('gui.shell.document_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_select_documents_to_tag', default="Please select documents to tag"))
                 return
 
             # Create dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Bulk Tag Assignment")
+            dialog.title(_t('gui.shell.document_manager.bulk_operations.windows.bulk_tag_assignment', default="Bulk Tag Assignment"))
             dialog.geometry("600x450")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -470,14 +470,14 @@ class BulkOperationsManager:
             ttk.Label(main_frame, text=f"Assign tags to {len(selected)} document(s)",
                      font=('Arial', 12, 'bold')).pack(pady=(0, 20))
 
-            ttk.Label(main_frame, text="Tags (comma-separated):").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.tags_comma_separated', default="Tags (comma-separated):")).pack(anchor='w')
             tags_entry = tk.Entry(main_frame, width=40)
             tags_entry.pack(fill='x', pady=10)
 
             def apply_tags():
                 tags = tags_entry.get().strip()
                 if not tags:
-                    messagebox.showwarning("Warning", "Please enter at least one tag")
+                    messagebox.showwarning(_t('gui.shell.document_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_enter_at_least_one_tag', default="Please enter at least one tag"))
                     return
 
                 try:
@@ -495,35 +495,35 @@ class BulkOperationsManager:
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo("Success", f"Tags applied to {len(selected)} documents")
+                    messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.success', default="Success"), f"Tags applied to {len(selected)} documents")
                     dialog.destroy()
                     self.gui.load_documents()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to apply tags: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to apply tags: {e}")
 
-            ttk.Button(main_frame, text="Apply Tags", command=apply_tags).pack(pady=20)
-            ttk.Button(main_frame, text="Cancel", command=dialog.destroy).pack()
+            ttk.Button(main_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.apply_tags', default="Apply Tags"), command=apply_tags).pack(pady=20)
+            ttk.Button(main_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open bulk tag dialog: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to open bulk tag dialog: {e}")
 
     def bulk_document_download(self):
         """Download multiple documents"""
         try:
             selected = self.gui.docs_tree.selection()
             if not selected:
-                messagebox.showwarning("Warning", "Please select documents to download")
+                messagebox.showwarning(_t('gui.shell.document_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_select_documents_to_download', default="Please select documents to download"))
                 return
 
             # Ask for download directory
-            download_dir = filedialog.askdirectory(title="Select Download Directory")
+            download_dir = filedialog.askdirectory(title=_t('gui.shell.document_manager.bulk_operations.dialogs.select_download_directory', default="Select Download Directory"))
             if not download_dir:
                 return
 
             # Progress dialog
             progress_dialog = tk.Toplevel(self.root)
-            progress_dialog.title("Downloading Documents")
+            progress_dialog.title(_t('gui.shell.document_manager.bulk_operations.windows.downloading_documents', default="Downloading Documents"))
             progress_dialog.geometry("600x300")
             progress_dialog.transient(self.root)
 
@@ -536,7 +536,7 @@ class BulkOperationsManager:
             progress = ttk.Progressbar(main_frame, length=500, mode='determinate')
             progress.pack(pady=10)
 
-            status_label = ttk.Label(main_frame, text="Preparing...")
+            status_label = ttk.Label(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.preparing', default="Preparing..."))
             status_label.pack(pady=10)
 
             # Download documents
@@ -563,7 +563,11 @@ class BulkOperationsManager:
                         import os
 
                         if file_path and os.path.exists(file_path):
-                            dest_path = os.path.join(download_dir, filename)
+                            # Contain the destination: a stored filename with
+                            # path separators (or "..") must not let the copy
+                            # escape the chosen download directory.
+                            safe_name = os.path.basename(str(filename)) or "download"
+                            dest_path = os.path.join(download_dir, safe_name)
                             shutil.copy2(file_path, dest_path)
                             success_count += 1
                         else:
@@ -581,23 +585,23 @@ class BulkOperationsManager:
             conn.close()
             progress_dialog.destroy()
 
-            messagebox.showinfo("Download Complete",
+            messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.download_complete', default="Download Complete"),
                               f"Successfully downloaded: {success_count}\nFailed: {fail_count}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to download documents: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to download documents: {e}")
 
     def bulk_expiry_update(self):
         """Update expiry dates for multiple documents"""
         try:
             selected = self.gui.docs_tree.selection()
             if not selected:
-                messagebox.showwarning("Warning", "Please select documents to update")
+                messagebox.showwarning(_t('gui.shell.document_manager.bulk_operations.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_select_documents_to_update', default="Please select documents to update"))
                 return
 
             # Create dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Bulk Expiry Update")
+            dialog.title(_t('gui.shell.document_manager.bulk_operations.windows.bulk_expiry_update', default="Bulk Expiry Update"))
             dialog.geometry("600x450")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -609,22 +613,22 @@ class BulkOperationsManager:
                      font=('Arial', 12, 'bold')).pack(pady=(0, 20))
 
             # Date selection
-            ttk.Label(main_frame, text="New Expiry Date:", font=('Arial', 10, 'bold')).pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.new_expiry_date', default="New Expiry Date:"), font=('Arial', 10, 'bold')).pack(anchor='w')
 
             date_frame = ttk.Frame(main_frame)
             date_frame.pack(fill='x', pady=10)
 
-            ttk.Label(date_frame, text="Year:").grid(row=0, column=0, padx=5)
+            ttk.Label(date_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.year', default="Year:")).grid(row=0, column=0, padx=5)
             year_var = tk.StringVar(value="2025")
             year_entry = ttk.Spinbox(date_frame, from_=2024, to=2030, textvariable=year_var, width=10)
             year_entry.grid(row=0, column=1, padx=5)
 
-            ttk.Label(date_frame, text="Month:").grid(row=0, column=2, padx=5)
+            ttk.Label(date_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.month', default="Month:")).grid(row=0, column=2, padx=5)
             month_var = tk.StringVar(value="12")
             month_entry = ttk.Spinbox(date_frame, from_=1, to=12, textvariable=month_var, width=10)
             month_entry.grid(row=0, column=3, padx=5)
 
-            ttk.Label(date_frame, text="Day:").grid(row=0, column=4, padx=5)
+            ttk.Label(date_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.day', default="Day:")).grid(row=0, column=4, padx=5)
             day_var = tk.StringVar(value="31")
             day_entry = ttk.Spinbox(date_frame, from_=1, to=31, textvariable=day_var, width=10)
             day_entry.grid(row=0, column=5, padx=5)
@@ -650,18 +654,18 @@ class BulkOperationsManager:
                     conn.commit()
                     conn.close()
 
-                    messagebox.showinfo("Success", f"Expiry date updated for {len(selected)} documents")
+                    messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.success', default="Success"), f"Expiry date updated for {len(selected)} documents")
                     dialog.destroy()
                     self.gui.load_documents_data()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to update expiry dates: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to update expiry dates: {e}")
 
-            ttk.Button(main_frame, text="Apply Update", command=apply_expiry_update).pack(pady=20)
-            ttk.Button(main_frame, text="Cancel", command=dialog.destroy).pack()
+            ttk.Button(main_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.apply_update', default="Apply Update"), command=apply_expiry_update).pack(pady=20)
+            ttk.Button(main_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.cancel', default="Cancel"), command=dialog.destroy).pack()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open expiry update dialog: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.error', default="Error"), f"Failed to open expiry update dialog: {e}")
 
     def bulk_import_documents(self):
         """Bulk import documents from a directory"""
@@ -670,17 +674,17 @@ class BulkOperationsManager:
 
         # Create bulk import window
         import_window = tk.Toplevel(self.root)
-        import_window.title("Bulk Import Documents")
+        import_window.title(_t('gui.shell.document_manager.bulk_operations.windows.bulk_import_documents', default="Bulk Import Documents"))
         import_window.geometry("900x700")
         import_window.transient(self.root)
         import_window.grab_set()
 
         # Title
-        ttk.Label(import_window, text="Bulk Document Import",
+        ttk.Label(import_window, text=_t('gui.shell.document_manager.bulk_operations.labels.bulk_document_import', default="Bulk Document Import"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Instructions
-        instructions_frame = ttk.LabelFrame(import_window, text="Instructions", padding=10)
+        instructions_frame = ttk.LabelFrame(import_window, text=_t('gui.shell.document_manager.bulk_operations.labels.instructions', default="Instructions"), padding=10)
         instructions_frame.pack(fill='x', padx=10, pady=5)
 
         instructions = """1. Select a directory containing documents to import
@@ -692,30 +696,30 @@ class BulkOperationsManager:
         ttk.Label(instructions_frame, text=instructions, justify='left').pack(anchor='w')
 
         # Configuration frame
-        config_frame = ttk.LabelFrame(import_window, text="Import Configuration", padding=10)
+        config_frame = ttk.LabelFrame(import_window, text=_t('gui.shell.document_manager.bulk_operations.labels.import_configuration', default="Import Configuration"), padding=10)
         config_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Label(config_frame, text="Import Directory:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(config_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.import_directory', default="Import Directory:")).grid(row=0, column=0, sticky='w', pady=5)
         directory_var = tk.StringVar()
         directory_entry = ttk.Entry(config_frame, textvariable=directory_var, width=50, state='readonly')
         directory_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
         def browse_directory():
-            directory = filedialog.askdirectory(title="Select Import Directory")
+            directory = filedialog.askdirectory(title=_t('gui.shell.document_manager.bulk_operations.dialogs.select_import_directory', default="Select Import Directory"))
             if directory:
                 directory_var.set(directory)
                 scan_directory()
 
-        ttk.Button(config_frame, text="Browse...", command=browse_directory).grid(row=0, column=2, padx=5)
+        ttk.Button(config_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.browse', default="Browse..."), command=browse_directory).grid(row=0, column=2, padx=5)
 
-        ttk.Label(config_frame, text="Default Document Type:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(config_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.default_document_type', default="Default Document Type:")).grid(row=1, column=0, sticky='w', pady=5)
         default_type_combo = ttk.Combobox(config_frame, width=48, state='readonly')
         default_type_combo['values'] = ['Auto-detect from filename', 'Transcript', 'ID Card',
                                         'Health Form', 'Enrollment Form', 'Financial Document']
         default_type_combo.current(0)
         default_type_combo.grid(row=1, column=1, sticky='ew', pady=5)
 
-        ttk.Label(config_frame, text="Default Status:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(config_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.default_status', default="Default Status:")).grid(row=2, column=0, sticky='w', pady=5)
         default_status_combo = ttk.Combobox(config_frame, width=48, state='readonly')
         default_status_combo['values'] = ['Pending', 'Approved']
         default_status_combo.current(0)
@@ -724,16 +728,16 @@ class BulkOperationsManager:
         config_frame.columnconfigure(1, weight=1)
 
         # Files preview frame
-        preview_frame = ttk.LabelFrame(import_window, text="Files to Import", padding=10)
+        preview_frame = ttk.LabelFrame(import_window, text=_t('gui.shell.document_manager.bulk_operations.labels.files_to_import', default="Files to Import"), padding=10)
         preview_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         files_tree = ttk.Treeview(preview_frame,
                                  columns=('File', 'Student ID', 'Document Type', 'Size'),
                                  show='headings', height=15)
-        files_tree.heading('File', text='File Name')
-        files_tree.heading('Student ID', text='Detected Student ID')
-        files_tree.heading('Document Type', text='Detected Type')
-        files_tree.heading('Size', text='File Size')
+        files_tree.heading('File', text=_t('gui.shell.document_manager.bulk_operations.headings.file_name', default='File Name'))
+        files_tree.heading('Student ID', text=_t('gui.shell.document_manager.bulk_operations.headings.detected_student_id', default='Detected Student ID'))
+        files_tree.heading('Document Type', text=_t('gui.shell.document_manager.bulk_operations.headings.detected_type', default='Detected Type'))
+        files_tree.heading('Size', text=_t('gui.shell.document_manager.bulk_operations.headings.file_size', default='File Size'))
 
         files_tree.column('File', width=300)
         files_tree.column('Student ID', width=120)
@@ -747,7 +751,7 @@ class BulkOperationsManager:
         scrollbar.pack(side='right', fill='y')
 
         # Status label
-        status_label = ttk.Label(import_window, text="No directory selected", font=("Arial", 9))
+        status_label = ttk.Label(import_window, text=_t('gui.shell.document_manager.bulk_operations.labels.no_directory_selected', default="No directory selected"), font=("Arial", 9))
         status_label.pack(pady=5)
 
         def scan_directory():
@@ -779,33 +783,33 @@ class BulkOperationsManager:
                 status_label.config(text=f"Found {len(files)} documents to import")
 
             except Exception as e:
-                messagebox.showerror("Scan Error", f"Failed to scan directory: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.scan_error', default="Scan Error"), f"Failed to scan directory: {e}")
 
         def start_import():
             """Start the bulk import process"""
             directory = directory_var.get()
             if not directory:
-                messagebox.showwarning("No Directory", "Please select a directory first")
+                messagebox.showwarning(_t('gui.shell.document_manager.bulk_operations.dialogs.no_directory', default="No Directory"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_select_a_directory_first', default="Please select a directory first"))
                 return
 
             items = files_tree.get_children()
             if not items:
-                messagebox.showwarning("No Files", "No files found to import")
+                messagebox.showwarning(_t('gui.shell.document_manager.bulk_operations.dialogs.no_files', default="No Files"), _t('gui.shell.document_manager.bulk_operations.dialogs.no_files_found_to_import', default="No files found to import"))
                 return
 
-            if not messagebox.askyesno("Confirm Import",
+            if not messagebox.askyesno(_t('gui.shell.document_manager.bulk_operations.dialogs.confirm_import', default="Confirm Import"),
                                       f"Import {len(items)} documents?\n\n"
                                       "This operation cannot be undone."):
                 return
 
             # Progress dialog
             progress_window = tk.Toplevel(import_window)
-            progress_window.title("Importing...")
+            progress_window.title(_t('gui.shell.document_manager.bulk_operations.windows.importing', default="Importing..."))
             progress_window.geometry("400x150")
             progress_window.transient(import_window)
             progress_window.grab_set()
 
-            ttk.Label(progress_window, text="Importing documents...",
+            ttk.Label(progress_window, text=_t('gui.shell.document_manager.bulk_operations.labels.importing_documents', default="Importing documents..."),
                      font=("Arial", 11)).pack(pady=10)
 
             progress_var = tk.DoubleVar()
@@ -849,7 +853,7 @@ class BulkOperationsManager:
 
                 progress_window.destroy()
 
-                messagebox.showinfo("Import Complete",
+                messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.import_complete', default="Import Complete"),
                                   f"Bulk import completed!\n\n"
                                   f"Successfully imported: {imported_count}\n"
                                   f"Failed: {failed_count}")
@@ -862,17 +866,17 @@ class BulkOperationsManager:
 
             except Exception as e:
                 progress_window.destroy()
-                messagebox.showerror("Import Error", f"Bulk import failed: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.import_error', default="Import Error"), f"Bulk import failed: {e}")
 
         # Button frame
         button_frame = ttk.Frame(import_window)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Start Import",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.start_import', default="Start Import"),
                   command=start_import).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Refresh",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.refresh', default="Refresh"),
                   command=scan_directory).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.cancel', default="Cancel"),
                   command=import_window.destroy).pack(side='right', padx=5)
 
     def bulk_update_from_search(self):
@@ -882,13 +886,13 @@ class BulkOperationsManager:
 
         # Create bulk update window
         update_window = tk.Toplevel(self.root)
-        update_window.title("Bulk Update from Search")
+        update_window.title(_t('gui.shell.document_manager.bulk_operations.windows.bulk_update_from_search', default="Bulk Update from Search"))
         update_window.geometry("1000x750")
         update_window.transient(self.root)
         update_window.grab_set()
 
         # Title
-        ttk.Label(update_window, text="Bulk Update from Search Results",
+        ttk.Label(update_window, text=_t('gui.shell.document_manager.bulk_operations.labels.bulk_update_from_search_results', default="Bulk Update from Search Results"),
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Create notebook
@@ -897,23 +901,23 @@ class BulkOperationsManager:
 
         # Tab 1: Search & Select
         search_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(search_frame, text="Search & Select")
+        notebook.add(search_frame, text=_t('gui.shell.document_manager.bulk_operations.tabs.search_select', default="Search & Select"))
 
         # Search criteria
-        criteria_frame = ttk.LabelFrame(search_frame, text="Search Criteria", padding=10)
+        criteria_frame = ttk.LabelFrame(search_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.search_criteria', default="Search Criteria"), padding=10)
         criteria_frame.pack(fill='x', pady=(0, 5))
 
-        ttk.Label(criteria_frame, text="Student ID:").grid(row=0, column=0, sticky='w', padx=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky='w', padx=5)
         student_search = ttk.Entry(criteria_frame, width=20)
         student_search.grid(row=0, column=1, padx=5)
 
-        ttk.Label(criteria_frame, text="Document Type:").grid(row=0, column=2, sticky='w', padx=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.document_type', default="Document Type:")).grid(row=0, column=2, sticky='w', padx=5)
         type_search = ttk.Combobox(criteria_frame, width=18, state='readonly')
         type_search['values'] = ['All', 'Transcript', 'ID Card', 'Health Form', 'Financial']
         type_search.current(0)
         type_search.grid(row=0, column=3, padx=5)
 
-        ttk.Label(criteria_frame, text="Current Status:").grid(row=0, column=4, sticky='w', padx=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.current_status', default="Current Status:")).grid(row=0, column=4, sticky='w', padx=5)
         status_search = ttk.Combobox(criteria_frame, width=18, state='readonly')
         status_search['values'] = ['All', 'Pending', 'Approved', 'Rejected']
         status_search.current(0)
@@ -927,10 +931,10 @@ class BulkOperationsManager:
                                    columns=('Select', 'ID', 'Student', 'Type', 'Status'),
                                    show='headings', height=15)
         results_tree.heading('Select', text='\u2611')
-        results_tree.heading('ID', text='Doc ID')
-        results_tree.heading('Student', text='Student ID')
-        results_tree.heading('Type', text='Document Type')
-        results_tree.heading('Status', text='Current Status')
+        results_tree.heading('ID', text=_t('gui.shell.document_manager.bulk_operations.headings.doc_id', default='Doc ID'))
+        results_tree.heading('Student', text=_t('gui.shell.document_manager.bulk_operations.headings.student_id', default='Student ID'))
+        results_tree.heading('Type', text=_t('gui.shell.document_manager.bulk_operations.headings.document_type', default='Document Type'))
+        results_tree.heading('Status', text=_t('gui.shell.document_manager.bulk_operations.headings.current_status', default='Current Status'))
 
         results_tree.column('Select', width=40)
         results_tree.column('ID', width=80)
@@ -992,33 +996,33 @@ class BulkOperationsManager:
             for row in results:
                 results_tree.insert('', 'end', values=('\u2610',) + row)
 
-        ttk.Button(criteria_frame, text="Search",
+        ttk.Button(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.search', default="Search"),
                   command=search_documents).grid(row=0, column=6, padx=5)
 
         # Tab 2: Update Actions
         update_frame = ttk.Frame(notebook, padding=10)
-        notebook.add(update_frame, text="Update Actions")
+        notebook.add(update_frame, text=_t('gui.shell.document_manager.bulk_operations.tabs.update_actions', default="Update Actions"))
 
-        ttk.Label(update_frame, text="Select Update Action",
+        ttk.Label(update_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.select_update_action', default="Select Update Action"),
                  font=("Arial", 12, "bold")).pack(pady=10)
 
-        action_frame = ttk.LabelFrame(update_frame, text="Bulk Update Options", padding=15)
+        action_frame = ttk.LabelFrame(update_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.bulk_update_options', default="Bulk Update Options"), padding=15)
         action_frame.pack(fill='both', expand=True, pady=5)
 
         # Status update
-        ttk.Label(action_frame, text="Update Status To:").grid(row=0, column=0, sticky='w', pady=10)
+        ttk.Label(action_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.update_status_to', default="Update Status To:")).grid(row=0, column=0, sticky='w', pady=10)
         new_status_combo = ttk.Combobox(action_frame, width=30, state='readonly')
         new_status_combo['values'] = ['Pending', 'Approved', 'Rejected', 'Under Review', 'Archived']
         new_status_combo.grid(row=0, column=1, sticky='ew', pady=10, padx=5)
 
         # Expiry date update
-        ttk.Label(action_frame, text="Set Expiry Date:").grid(row=1, column=0, sticky='w', pady=10)
+        ttk.Label(action_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.set_expiry_date', default="Set Expiry Date:")).grid(row=1, column=0, sticky='w', pady=10)
         expiry_entry = ttk.Entry(action_frame, width=32)
         expiry_entry.insert(0, "YYYY-MM-DD")
         expiry_entry.grid(row=1, column=1, sticky='ew', pady=10, padx=5)
 
         # Tags update
-        ttk.Label(action_frame, text="Add Tags:").grid(row=2, column=0, sticky='w', pady=10)
+        ttk.Label(action_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.add_tags', default="Add Tags:")).grid(row=2, column=0, sticky='w', pady=10)
         tags_entry = ttk.Entry(action_frame, width=32)
         tags_entry.grid(row=2, column=1, sticky='ew', pady=10, padx=5)
 
@@ -1027,7 +1031,7 @@ class BulkOperationsManager:
         def apply_bulk_update():
             """Apply bulk update to selected items"""
             if not selected_items:
-                messagebox.showwarning("No Selection", "Please select documents to update")
+                messagebox.showwarning(_t('gui.shell.document_manager.bulk_operations.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_select_documents_to_update', default="Please select documents to update"))
                 return
 
             new_status = new_status_combo.get()
@@ -1035,10 +1039,10 @@ class BulkOperationsManager:
             new_tags = tags_entry.get()
 
             if not new_status and new_expiry == "YYYY-MM-DD" and not new_tags:
-                messagebox.showwarning("No Changes", "Please specify at least one update action")
+                messagebox.showwarning(_t('gui.shell.document_manager.bulk_operations.dialogs.no_changes', default="No Changes"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_specify_at_least_one_update_action', default="Please specify at least one update action"))
                 return
 
-            if not messagebox.askyesno("Confirm Bulk Update",
+            if not messagebox.askyesno(_t('gui.shell.document_manager.bulk_operations.dialogs.confirm_bulk_update', default="Confirm Bulk Update"),
                                       f"Update {len(selected_items)} documents?\n\n"
                                       "This operation cannot be undone."):
                 return
@@ -1074,7 +1078,7 @@ class BulkOperationsManager:
                             cursor.execute(query, params)
                             updated_count += 1
 
-                messagebox.showinfo("Bulk Update Complete",
+                messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.bulk_update_complete', default="Bulk Update Complete"),
                                   f"Successfully updated {updated_count} documents!")
 
                 # Log activity
@@ -1085,13 +1089,13 @@ class BulkOperationsManager:
                 search_documents()
 
             except Exception as e:
-                messagebox.showerror("Update Error", f"Bulk update failed: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.update_error', default="Update Error"), f"Bulk update failed: {e}")
 
-        ttk.Button(update_frame, text="Apply Bulk Update",
+        ttk.Button(update_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.apply_bulk_update', default="Apply Bulk Update"),
                   command=apply_bulk_update).pack(pady=20)
 
         # Close button
-        ttk.Button(update_window, text="Close",
+        ttk.Button(update_window, text=_t('gui.shell.document_manager.bulk_operations.buttons.close', default="Close"),
                   command=update_window.destroy).pack(pady=10)
 
     def bulk_status_change(self):
@@ -1106,32 +1110,32 @@ class BulkOperationsManager:
 
         # Create delete window
         delete_window = tk.Toplevel(self.root)
-        delete_window.title("Bulk Delete Documents")
+        delete_window.title(_t('gui.shell.document_manager.bulk_operations.windows.bulk_delete_documents', default="Bulk Delete Documents"))
         delete_window.geometry("900x600")
         delete_window.transient(self.root)
         delete_window.grab_set()
 
-        ttk.Label(delete_window, text="\u26a0\ufe0f Bulk Delete Documents",
+        ttk.Label(delete_window, text=_t('gui.shell.document_manager.bulk_operations.labels.bulk_delete_documents', default="\u26a0\ufe0f Bulk Delete Documents"),
                  font=("Arial", 14, "bold"), foreground="red").pack(pady=10)
 
         # Warning
-        warning_frame = ttk.LabelFrame(delete_window, text="\u26a0\ufe0f WARNING", padding=10)
+        warning_frame = ttk.LabelFrame(delete_window, text=_t('gui.shell.document_manager.bulk_operations.labels.warning', default="\u26a0\ufe0f WARNING"), padding=10)
         warning_frame.pack(fill='x', padx=10, pady=5)
-        ttk.Label(warning_frame, text="This operation is PERMANENT and cannot be undone!\n"
-                 "Deleted documents cannot be recovered.",
+        ttk.Label(warning_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.this_operation_is_permanent_and_cannot_be_undone_deleted_documen', default="This operation is PERMANENT and cannot be undone!\n"
+                 "Deleted documents cannot be recovered."),
                  foreground="red", font=("Arial", 10, "bold")).pack()
 
         # Search criteria
-        criteria_frame = ttk.LabelFrame(delete_window, text="Select Documents to Delete", padding=10)
+        criteria_frame = ttk.LabelFrame(delete_window, text=_t('gui.shell.document_manager.bulk_operations.labels.select_documents_to_delete', default="Select Documents to Delete"), padding=10)
         criteria_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Label(criteria_frame, text="Status:").grid(row=0, column=0, sticky='w', padx=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.status', default="Status:")).grid(row=0, column=0, sticky='w', padx=5)
         status_combo = ttk.Combobox(criteria_frame, width=20, state='readonly')
         status_combo['values'] = ['All', 'Pending', 'Rejected', 'Expired', 'Archived']
         status_combo.current(0)
         status_combo.grid(row=0, column=1, padx=5)
 
-        ttk.Label(criteria_frame, text="Older than (days):").grid(row=0, column=2, sticky='w', padx=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.labels.older_than_days', default="Older than (days):")).grid(row=0, column=2, sticky='w', padx=5)
         days_entry = ttk.Entry(criteria_frame, width=10)
         days_entry.insert(0, "90")
         days_entry.grid(row=0, column=3, padx=5)
@@ -1144,11 +1148,11 @@ class BulkOperationsManager:
                            columns=('Select', 'ID', 'Student', 'Type', 'Status', 'Upload Date'),
                            show='headings', height=15)
         tree.heading('Select', text='\u2611')
-        tree.heading('ID', text='Doc ID')
-        tree.heading('Student', text='Student ID')
-        tree.heading('Type', text='Type')
-        tree.heading('Status', text='Status')
-        tree.heading('Upload Date', text='Upload Date')
+        tree.heading('ID', text=_t('gui.shell.document_manager.bulk_operations.headings.doc_id', default='Doc ID'))
+        tree.heading('Student', text=_t('gui.shell.document_manager.bulk_operations.headings.student_id', default='Student ID'))
+        tree.heading('Type', text=_t('gui.shell.document_manager.bulk_operations.headings.type', default='Type'))
+        tree.heading('Status', text=_t('gui.shell.document_manager.bulk_operations.headings.status', default='Status'))
+        tree.heading('Upload Date', text=_t('gui.shell.document_manager.bulk_operations.headings.upload_date', default='Upload Date'))
 
         tree.column('Select', width=40)
         tree.column('ID', width=80)
@@ -1208,10 +1212,10 @@ class BulkOperationsManager:
 
         def delete_selected():
             if not selected_items:
-                messagebox.showwarning("No Selection", "Please select documents to delete")
+                messagebox.showwarning(_t('gui.shell.document_manager.bulk_operations.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.bulk_operations.dialogs.please_select_documents_to_delete', default="Please select documents to delete"))
                 return
 
-            if not messagebox.askyesno("\u26a0\ufe0f CONFIRM DELETE",
+            if not messagebox.askyesno(_t('gui.shell.document_manager.bulk_operations.dialogs.confirm_delete', default="\u26a0\ufe0f CONFIRM DELETE"),
                                       f"Are you ABSOLUTELY SURE you want to DELETE {len(selected_items)} documents?\n\n"
                                       "This action is PERMANENT and CANNOT be undone!\n\n"
                                       "Type 'DELETE' in the next dialog to confirm.",
@@ -1220,19 +1224,19 @@ class BulkOperationsManager:
 
             # Extra confirmation
             confirm_dialog = tk.Toplevel(delete_window)
-            confirm_dialog.title("Confirm Deletion")
+            confirm_dialog.title(_t('gui.shell.document_manager.bulk_operations.windows.confirm_deletion', default="Confirm Deletion"))
             confirm_dialog.geometry("400x150")
             confirm_dialog.transient(delete_window)
             confirm_dialog.grab_set()
 
-            ttk.Label(confirm_dialog, text="Type 'DELETE' to confirm:",
+            ttk.Label(confirm_dialog, text=_t('gui.shell.document_manager.bulk_operations.labels.type_delete_to_confirm', default="Type 'DELETE' to confirm:"),
                      font=("Arial", 11, "bold")).pack(pady=10)
             confirm_entry = ttk.Entry(confirm_dialog, width=30)
             confirm_entry.pack(pady=5)
 
             def execute_delete():
                 if confirm_entry.get() != 'DELETE':
-                    messagebox.showerror("Confirmation Failed", "You must type 'DELETE' exactly")
+                    messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.confirmation_failed', default="Confirmation Failed"), _t('gui.shell.document_manager.bulk_operations.dialogs.you_must_type_delete_exactly', default="You must type 'DELETE' exactly"))
                     return
 
                 try:
@@ -1246,7 +1250,7 @@ class BulkOperationsManager:
                             cursor.execute("DELETE FROM documents WHERE id = ?", (doc_id,))
                         deleted_count += 1
 
-                    messagebox.showinfo("Deletion Complete",
+                    messagebox.showinfo(_t('gui.shell.document_manager.bulk_operations.dialogs.deletion_complete', default="Deletion Complete"),
                                       f"Successfully deleted {deleted_count} documents")
 
                     self.gui.log_event('bulk_delete', 'documents',
@@ -1256,24 +1260,24 @@ class BulkOperationsManager:
                     delete_window.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Delete Error", f"Failed to delete documents: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.bulk_operations.dialogs.delete_error', default="Delete Error"), f"Failed to delete documents: {e}")
 
-            ttk.Button(confirm_dialog, text="Execute Delete",
+            ttk.Button(confirm_dialog, text=_t('gui.shell.document_manager.bulk_operations.buttons.execute_delete', default="Execute Delete"),
                       command=execute_delete).pack(pady=10)
 
-        ttk.Button(criteria_frame, text="Search", command=search_documents).grid(row=0, column=4, padx=5)
+        ttk.Button(criteria_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.search', default="Search"), command=search_documents).grid(row=0, column=4, padx=5)
 
         # Button frame
         button_frame = ttk.Frame(delete_window)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Delete Selected",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.delete_selected', default="Delete Selected"),
                   command=delete_selected, style='Danger.TButton').pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Select All",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.select_all', default="Select All"),
                   command=lambda: [selected_items.add(item) or tree.item(item, values=('\u2611',) + tree.item(item, 'values')[1:])
                                   for item in tree.get_children()]).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Deselect All",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.deselect_all', default="Deselect All"),
                   command=lambda: [selected_items.clear() or tree.item(item, values=('\u2610',) + tree.item(item, 'values')[1:])
                                   for item in tree.get_children()]).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.bulk_operations.buttons.cancel', default="Cancel"),
                   command=delete_window.destroy).pack(side='right', padx=5)

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 
 # Columns this module needs on parent_notifications. The table may have
@@ -137,7 +143,7 @@ class ParentNotificationWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="👨‍👩‍👧 Parent Notification System", font=('Arial', 16, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.parent_notification_system', default="👨‍👩‍👧 Parent Notification System"), font=('Arial', 16, 'bold'))
         title_label.pack(pady=10)
 
         # Notebook for different functions
@@ -146,22 +152,22 @@ class ParentNotificationWindow:
 
         # Parent Contacts tab
         contacts_frame = ttk.Frame(notebook)
-        notebook.add(contacts_frame, text="📋 Parent Contacts")
+        notebook.add(contacts_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.tabs.parent_contacts', default="📋 Parent Contacts"))
         self.create_contacts_tab(contacts_frame)
 
         # Send Notifications tab
         notifications_frame = ttk.Frame(notebook)
-        notebook.add(notifications_frame, text="📧 Send Notifications")
+        notebook.add(notifications_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.tabs.send_notifications', default="📧 Send Notifications"))
         self.create_notifications_tab(notifications_frame)
 
         # Notification History tab
         history_frame = ttk.Frame(notebook)
-        notebook.add(history_frame, text="📜 Notification History")
+        notebook.add(history_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.tabs.notification_history', default="📜 Notification History"))
         self.create_history_tab(history_frame)
 
         # Settings tab
         settings_frame = ttk.Frame(notebook)
-        notebook.add(settings_frame, text="⚙️ Settings")
+        notebook.add(settings_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.tabs.settings', default="⚙️ Settings"))
         self.create_notification_settings_tab(settings_frame)
 
         # Close button
@@ -172,14 +178,14 @@ class ParentNotificationWindow:
         search_frame = ttk.Frame(parent)
         search_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
+        ttk.Label(search_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.search', default="Search:")).pack(side=tk.LEFT)
         self.contact_search_var = tk.StringVar()
         self.contact_search_var.trace('w', lambda *args: self.filter_contacts())
         ttk.Entry(search_frame, textvariable=self.contact_search_var, width=30).pack(side=tk.LEFT, padx=(5, 10))
 
-        ttk.Button(search_frame, text="Add Parent Contact", command=self.add_parent_contact, style='Success.TButton').pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Edit Selected", command=self.edit_parent_contact, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Delete Selected", command=self.delete_parent_contact, style='Danger.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.add_parent_contact', default="Add Parent Contact"), command=self.add_parent_contact, style='Success.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.edit_selected', default="Edit Selected"), command=self.edit_parent_contact, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.delete_selected', default="Delete Selected"), command=self.delete_parent_contact, style='Danger.TButton').pack(side=tk.LEFT, padx=5)
 
         # Contacts treeview
         contacts_columns = ("Student ID", "Student Name", "Parent Name", "Relationship", "Email", "Phone", "Preferred Contact")
@@ -200,58 +206,58 @@ class ParentNotificationWindow:
 
     def create_notifications_tab(self, parent):
         # Notification type frame
-        type_frame = ttk.LabelFrame(parent, text="Notification Type", padding=15)
+        type_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.notification_type', default="Notification Type"), padding=15)
         type_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        self.notification_type_var = tk.StringVar(value="absence")
-        ttk.Radiobutton(type_frame, text="Absence Alert", variable=self.notification_type_var, value="absence").pack(anchor=tk.W)
-        ttk.Radiobutton(type_frame, text="Low Attendance Warning", variable=self.notification_type_var, value="low_attendance").pack(anchor=tk.W)
-        ttk.Radiobutton(type_frame, text="Perfect Attendance Praise", variable=self.notification_type_var, value="perfect").pack(anchor=tk.W)
-        ttk.Radiobutton(type_frame, text="Custom Message", variable=self.notification_type_var, value="custom").pack(anchor=tk.W)
+        self.notification_type_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.notifications_windows.values.absence', default="absence"))
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.absence_alert', default="Absence Alert"), variable=self.notification_type_var, value="absence").pack(anchor=tk.W)
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.low_attendance_warning', default="Low Attendance Warning"), variable=self.notification_type_var, value="low_attendance").pack(anchor=tk.W)
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.perfect_attendance_praise', default="Perfect Attendance Praise"), variable=self.notification_type_var, value="perfect").pack(anchor=tk.W)
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.custom_message', default="Custom Message"), variable=self.notification_type_var, value="custom").pack(anchor=tk.W)
 
 
         # Quick action buttons
-        quick_actions_frame = ttk.LabelFrame(parent, text="Quick Actions", padding=15)
+        quick_actions_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.quick_actions', default="Quick Actions"), padding=15)
         quick_actions_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Button(quick_actions_frame, text="🔍 Check Low Attendance (<90%)",
+        ttk.Button(quick_actions_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.check_low_attendance_90', default="🔍 Check Low Attendance (<90%)"),
                   command=self.check_low_attendance_now, style='Warning.TButton').pack(side=tk.LEFT, padx=5)
-        ttk.Button(quick_actions_frame, text="📊 View Attendance Report",
+        ttk.Button(quick_actions_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.view_attendance_report', default="📊 View Attendance Report"),
                   command=self.view_attendance_report, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
 
         # Recipients frame
-        recipients_frame = ttk.LabelFrame(parent, text="Recipients", padding=15)
+        recipients_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.recipients', default="Recipients"), padding=15)
         recipients_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(recipients_frame, text="Select Students:").pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(recipients_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.select_students', default="Select Students:")).pack(anchor=tk.W, pady=(0, 5))
 
         recipients_controls = ttk.Frame(recipients_frame)
         recipients_controls.pack(fill=tk.X, pady=(0, 5))
 
-        self.recipient_mode_var = tk.StringVar(value="individual")
-        ttk.Radiobutton(recipients_controls, text="Individual Student", variable=self.recipient_mode_var, value="individual",
+        self.recipient_mode_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.notifications_windows.values.individual', default="individual"))
+        ttk.Radiobutton(recipients_controls, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.individual_student', default="Individual Student"), variable=self.recipient_mode_var, value="individual",
                        command=self.update_recipient_mode).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Radiobutton(recipients_controls, text="All At-Risk Students", variable=self.recipient_mode_var, value="at_risk",
+        ttk.Radiobutton(recipients_controls, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.all_at_risk_students', default="All At-Risk Students"), variable=self.recipient_mode_var, value="at_risk",
                        command=self.update_recipient_mode).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Radiobutton(recipients_controls, text="Module Students", variable=self.recipient_mode_var, value="module",
+        ttk.Radiobutton(recipients_controls, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.module_students', default="Module Students"), variable=self.recipient_mode_var, value="module",
                        command=self.update_recipient_mode).pack(side=tk.LEFT)
 
         self.recipient_input_frame = ttk.Frame(recipients_frame)
         self.recipient_input_frame.pack(fill=tk.X, pady=(5, 0))
 
-        ttk.Label(self.recipient_input_frame, text="Student ID:").pack(side=tk.LEFT)
+        ttk.Label(self.recipient_input_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.student_id', default="Student ID:")).pack(side=tk.LEFT)
         self.student_id_notify_var = tk.StringVar()
         ttk.Entry(self.recipient_input_frame, textvariable=self.student_id_notify_var, width=20).pack(side=tk.LEFT, padx=(5, 0))
 
         # Message frame
-        message_frame = ttk.LabelFrame(parent, text="Message", padding=15)
+        message_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.message', default="Message"), padding=15)
         message_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        ttk.Label(message_frame, text="Subject:").pack(anchor=tk.W)
-        self.message_subject_var = tk.StringVar(value="Student Attendance Alert")
+        ttk.Label(message_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.subject', default="Subject:")).pack(anchor=tk.W)
+        self.message_subject_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.notifications_windows.values.student_attendance_alert', default="Student Attendance Alert"))
         ttk.Entry(message_frame, textvariable=self.message_subject_var).pack(fill=tk.X, pady=(5, 10))
 
-        ttk.Label(message_frame, text="Message Body:").pack(anchor=tk.W)
+        ttk.Label(message_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.message_body', default="Message Body:")).pack(anchor=tk.W)
         self.message_body_text = tk.Text(message_frame, wrap=tk.WORD, height=8)
         self.message_body_text.pack(fill=tk.BOTH, expand=True, pady=(5, 10))
         self.message_body_text.insert(tk.END, "Dear Parent/Guardian,\n\nThis is to inform you about your child's attendance.\n\nBest regards,\nAttendance Office")
@@ -263,23 +269,23 @@ class ParentNotificationWindow:
         self.send_email_var = tk.BooleanVar(value=True)
         self.send_sms_var = tk.BooleanVar(value=False)
 
-        ttk.Checkbutton(send_controls, text="Send Email", variable=self.send_email_var).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Checkbutton(send_controls, text="Send SMS", variable=self.send_sms_var).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(send_controls, text="Send Notifications", command=self.send_notifications, style='Success.TButton').pack(side=tk.RIGHT)
+        ttk.Checkbutton(send_controls, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.send_email', default="Send Email"), variable=self.send_email_var).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Checkbutton(send_controls, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.send_sms', default="Send SMS"), variable=self.send_sms_var).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(send_controls, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.send_notifications', default="Send Notifications"), command=self.send_notifications, style='Success.TButton').pack(side=tk.RIGHT)
 
     def create_history_tab(self, parent):
         # Filter frame
         filter_frame = ttk.Frame(parent)
         filter_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(filter_frame, text="Date Range:").pack(side=tk.LEFT)
+        ttk.Label(filter_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.date_range', default="Date Range:")).pack(side=tk.LEFT)
         self.history_start_var = tk.StringVar(value=(datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d"))
         ttk.Entry(filter_frame, textvariable=self.history_start_var, width=12).pack(side=tk.LEFT, padx=(5, 5))
-        ttk.Label(filter_frame, text="to").pack(side=tk.LEFT)
+        ttk.Label(filter_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.to', default="to")).pack(side=tk.LEFT)
         self.history_end_var = tk.StringVar(value=datetime.datetime.now().strftime("%Y-%m-%d"))
         ttk.Entry(filter_frame, textvariable=self.history_end_var, width=12).pack(side=tk.LEFT, padx=(5, 10))
-        ttk.Button(filter_frame, text="Load History", command=self.load_notification_history, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
-        ttk.Button(filter_frame, text="Export to CSV", command=self.export_notification_history, style='Success.TButton').pack(side=tk.LEFT)
+        ttk.Button(filter_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.load_history', default="Load History"), command=self.load_notification_history, style='Primary.TButton').pack(side=tk.LEFT, padx=5)
+        ttk.Button(filter_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.export_to_csv', default="Export to CSV"), command=self.export_notification_history, style='Success.TButton').pack(side=tk.LEFT)
 
         # History treeview
         history_columns = ("Date", "Time", "Student", "Parent", "Type", "Method", "Status", "Subject")
@@ -303,35 +309,35 @@ class ParentNotificationWindow:
 
     def create_notification_settings_tab(self, parent):
         # Auto-notification settings
-        auto_frame = ttk.LabelFrame(parent, text="Automatic Notifications", padding=15)
+        auto_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.automatic_notifications', default="Automatic Notifications"), padding=15)
         auto_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.auto_absence_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(auto_frame, text="Auto-notify parents on absence", variable=self.auto_absence_var).pack(anchor=tk.W)
+        ttk.Checkbutton(auto_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.auto_notify_parents_on_absence', default="Auto-notify parents on absence"), variable=self.auto_absence_var).pack(anchor=tk.W)
 
         self.auto_low_attendance_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(auto_frame, text="Auto-notify when attendance falls below threshold", variable=self.auto_low_attendance_var).pack(anchor=tk.W)
+        ttk.Checkbutton(auto_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.auto_notify_when_attendance_falls_below_threshold', default="Auto-notify when attendance falls below threshold"), variable=self.auto_low_attendance_var).pack(anchor=tk.W)
 
-        ttk.Label(auto_frame, text="Low attendance threshold (%):").pack(anchor=tk.W, pady=(10, 0))
+        ttk.Label(auto_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.low_attendance_threshold', default="Low attendance threshold (%):")).pack(anchor=tk.W, pady=(10, 0))
         self.low_attendance_threshold_var = tk.StringVar(value="75")
         ttk.Entry(auto_frame, textvariable=self.low_attendance_threshold_var, width=10).pack(anchor=tk.W, pady=(5, 10))
 
         # Template settings
-        template_frame = ttk.LabelFrame(parent, text="Message Templates", padding=15)
+        template_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.message_templates', default="Message Templates"), padding=15)
         template_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-        ttk.Label(template_frame, text="Absence Template:").pack(anchor=tk.W)
+        ttk.Label(template_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.absence_template', default="Absence Template:")).pack(anchor=tk.W)
         self.absence_template_text = tk.Text(template_frame, wrap=tk.WORD, height=4)
         self.absence_template_text.pack(fill=tk.X, pady=(5, 10))
         self.absence_template_text.insert(tk.END, "Dear {parent_name},\n\nYour child {student_name} was absent from {module_name} on {date}.\n\nPlease contact us if you have any questions.")
 
-        ttk.Label(template_frame, text="Low Attendance Template:").pack(anchor=tk.W)
+        ttk.Label(template_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.low_attendance_template', default="Low Attendance Template:")).pack(anchor=tk.W)
         self.low_attendance_template_text = tk.Text(template_frame, wrap=tk.WORD, height=4)
         self.low_attendance_template_text.pack(fill=tk.X, pady=(5, 10))
         self.low_attendance_template_text.insert(tk.END, "Dear {parent_name},\n\nWe would like to inform you that {student_name}'s attendance rate is currently {attendance_rate}%.\n\nWe encourage regular attendance for academic success.")
 
         # Save button
-        ttk.Button(template_frame, text="Save Settings", command=self.save_notification_settings, style='Success.TButton').pack(pady=(10, 0))
+        ttk.Button(template_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.save_settings', default="Save Settings"), command=self.save_notification_settings, style='Success.TButton').pack(pady=(10, 0))
 
     def load_parent_contacts(self):
         # Clear existing items
@@ -339,7 +345,7 @@ class ParentNotificationWindow:
             self.contacts_tree.delete(item)
 
         try:
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
                 # Try to get parent contacts from database
@@ -367,7 +373,7 @@ class ParentNotificationWindow:
         except sqlite3.OperationalError:
             # Table doesn't exist, create it
             try:
-                with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                     cursor = conn.cursor()
                     cursor.execute("""
                         CREATE TABLE IF NOT EXISTS parent_contacts (
@@ -410,7 +416,7 @@ class ParentNotificationWindow:
     def edit_parent_contact(self):
         selected = self.contacts_tree.selection()
         if not selected:
-            messagebox.showwarning(_("common.warning"), "Please select a parent contact to edit")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.please_select_a_parent_contact_to_edit', default="Please select a parent contact to edit"))
             return
 
         contact_data = self.contacts_tree.item(selected[0])['values']
@@ -419,20 +425,20 @@ class ParentNotificationWindow:
     def delete_parent_contact(self):
         selected = self.contacts_tree.selection()
         if not selected:
-            messagebox.showwarning(_("common.warning"), "Please select a parent contact to delete")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.please_select_a_parent_contact_to_delete', default="Please select a parent contact to delete"))
             return
 
         contact_data = self.contacts_tree.item(selected[0])['values']
         student_id = contact_data[0]
         parent_name = contact_data[2]
 
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete parent contact for {parent_name} ({student_id})?"):
+        if messagebox.askyesno(_t('gui.academics.attendance_tracker.notifications_windows.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete parent contact for {parent_name} ({student_id})?"):
             try:
-                with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                     cursor = conn.cursor()
                     cursor.execute("DELETE FROM parent_contacts WHERE student_id = ? AND parent_name = ?", (student_id, parent_name))
                     conn.commit()
-                messagebox.showinfo(_("common.success"), "Parent contact deleted successfully")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.parent_contact_deleted_successfully', default="Parent contact deleted successfully"))
                 self.load_parent_contacts()
             except Exception as e:
                 logger.exception("notifications_windows.py:393 %s", 'except Exception as e')
@@ -446,19 +452,19 @@ class ParentNotificationWindow:
         mode = self.recipient_mode_var.get()
 
         if mode == "individual":
-            ttk.Label(self.recipient_input_frame, text="Student ID:").pack(side=tk.LEFT)
+            ttk.Label(self.recipient_input_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.student_id', default="Student ID:")).pack(side=tk.LEFT)
             self.student_id_notify_var = tk.StringVar()
             ttk.Entry(self.recipient_input_frame, textvariable=self.student_id_notify_var, width=20).pack(side=tk.LEFT, padx=(5, 0))
         elif mode == "module":
-            ttk.Label(self.recipient_input_frame, text="Module Code:").pack(side=tk.LEFT)
+            ttk.Label(self.recipient_input_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.module_code', default="Module Code:")).pack(side=tk.LEFT)
             self.module_notify_var = tk.StringVar()
             ttk.Entry(self.recipient_input_frame, textvariable=self.module_notify_var, width=20).pack(side=tk.LEFT, padx=(5, 0))
         else:  # at_risk
             ttk.Label(
                 self.recipient_input_frame,
-                text="Notifies students at high/medium risk in the latest "
+                text=_t('gui.academics.attendance_tracker.notifications_windows.labels.notifies_students_at_high_medium_risk_in_the_latest_risk_feed_fa', default="Notifies students at high/medium risk in the latest "
                      "Risk Feed (falls back to attendance < 75% if the "
-                     "feed is empty).").pack(side=tk.LEFT)
+                     "feed is empty).")).pack(side=tk.LEFT)
 
     def send_notifications(self):
         notification_type = self.notification_type_var.get()
@@ -467,14 +473,14 @@ class ParentNotificationWindow:
         body = self.message_body_text.get("1.0", tk.END).strip()
 
         if not subject or not body:
-            messagebox.showwarning(_("common.warning"), "Please provide both subject and message body")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.please_provide_both_subject_and_message_body', default="Please provide both subject and message body"))
             return
 
         send_email = self.send_email_var.get()
         send_sms = self.send_sms_var.get()
 
         if not send_email and not send_sms:
-            messagebox.showwarning(_("common.warning"), "Please select at least one notification method (Email or SMS)")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.please_select_at_least_one_notification_method_email_or_sms', default="Please select at least one notification method (Email or SMS)"))
             return
 
         try:
@@ -484,16 +490,16 @@ class ParentNotificationWindow:
             if recipient_mode == "individual":
                 student_id = self.student_id_notify_var.get() if hasattr(self, 'student_id_notify_var') else ""
                 if not student_id:
-                    messagebox.showwarning(_("common.warning"), "Please enter a student ID")
+                    messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
                     return
                 recipients = [student_id]
             elif recipient_mode == "module":
                 module_code = self.module_notify_var.get() if hasattr(self, 'module_notify_var') else ""
                 if not module_code:
-                    messagebox.showwarning(_("common.warning"), "Please enter a module code")
+                    messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.please_enter_a_module_code', default="Please enter a module code"))
                     return
                 # Get all students in module
-                with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                     cursor = conn.cursor()
                     cursor.execute("SELECT DISTINCT student_id FROM enrollments WHERE module_code = ?", (module_code,))
                     recipients = [row[0] for row in cursor.fetchall()]
@@ -503,7 +509,7 @@ class ParentNotificationWindow:
                 # blended model is currently flagging. Fall back to the
                 # raw-attendance heuristic when the feed is empty.
                 recipients = []
-                with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                     cursor = conn.cursor()
                     try:
                         cursor.execute("""
@@ -533,7 +539,7 @@ class ParentNotificationWindow:
                         recipients = [row[0] for row in cursor.fetchall()]
 
             if not recipients:
-                messagebox.showinfo("No Recipients", "No recipients found matching the criteria")
+                messagebox.showinfo(_t('gui.academics.attendance_tracker.notifications_windows.dialogs.no_recipients', default="No Recipients"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.no_recipients_found_matching_the_criteria', default="No recipients found matching the criteria"))
                 return
 
             # Send notifications
@@ -543,7 +549,7 @@ class ParentNotificationWindow:
             for student_id in recipients:
                 try:
                     # Get parent contact info
-                    with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                    with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                         cursor = conn.cursor()
                         cursor.execute("""
                             SELECT parent_name, email, phone, preferred_contact
@@ -574,7 +580,7 @@ class ParentNotificationWindow:
                     failed_count += 1
                     print(f"Failed to send notification to student {student_id}: {e}")
 
-            messagebox.showinfo("Notifications Sent",
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.notifications_windows.dialogs.notifications_sent', default="Notifications Sent"),
                               f"Successfully sent {sent_count} notifications\n"
                               f"Failed: {failed_count}\n"
                               f"Recipients: {len(recipients)}")
@@ -589,7 +595,7 @@ class ParentNotificationWindow:
     def log_notification(self, student_id, parent_name, method, subject, status):
         """Log notification to database"""
         try:
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 _ensure_parent_notifications_columns(conn)
                 cursor = conn.cursor()
 
@@ -606,26 +612,26 @@ class ParentNotificationWindow:
     def check_low_attendance_now(self):
         """Check for students with low attendance and send notifications"""
         if not ATTENDANCE_NOTIFICATIONS_AVAILABLE:
-            messagebox.showerror(_("common.error"), "Attendance notification service not available")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.attendance_notification_service_not_available', default="Attendance notification service not available"))
             return
 
         # Ask for confirmation
         if not messagebox.askyesno(_("common.confirm"),
-                                   "This will check all students' attendance and send notifications "
+                                   _t('gui.academics.attendance_tracker.notifications_windows.dialogs.this_will_check_all_students_attendance_and_send_notifications_t', default="This will check all students' attendance and send notifications "
                                    "to those below 90%.\n\n"
-                                   "Send notifications to both students and parents?"):
+                                   "Send notifications to both students and parents?")):
             return
 
         try:
             # Show progress
             progress_window = tk.Toplevel(self.window)
-            progress_window.title("Checking Attendance")
+            progress_window.title(_t('gui.academics.attendance_tracker.notifications_windows.windows.checking_attendance', default="Checking Attendance"))
             progress_window.geometry("400x150")
             progress_window.transient(self.window)
 
-            ttk.Label(progress_window, text="Checking student attendance...",
+            ttk.Label(progress_window, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.checking_student_attendance', default="Checking student attendance..."),
                      font=('Arial', 12)).pack(pady=20)
-            progress_label = ttk.Label(progress_window, text="Please wait...")
+            progress_label = ttk.Label(progress_window, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.please_wait', default="Please wait..."))
             progress_label.pack(pady=10)
 
             progress_window.update()
@@ -641,7 +647,7 @@ class ParentNotificationWindow:
             progress_window.destroy()
 
             # Show results
-            messagebox.showinfo("Notifications Sent",
+            messagebox.showinfo(_t('gui.academics.attendance_tracker.notifications_windows.dialogs.notifications_sent', default="Notifications Sent"),
                               f"Attendance Check Complete!\n\n"
                               f"Students Checked: {results['students_checked']}\n"
                               f"Students Notified: {results['students_notified']}\n"
@@ -661,7 +667,7 @@ class ParentNotificationWindow:
     def view_attendance_report(self):
         """Display attendance statistics and at-risk students"""
         if not ATTENDANCE_NOTIFICATIONS_AVAILABLE:
-            messagebox.showerror(_("common.error"), "Attendance notification service not available")
+            messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.attendance_notification_service_not_available', default="Attendance notification service not available"))
             return
 
         try:
@@ -670,12 +676,12 @@ class ParentNotificationWindow:
 
             # Create report window
             report_window = tk.Toplevel(self.window)
-            report_window.title("Attendance Report - At-Risk Students")
+            report_window.title(_t('gui.academics.attendance_tracker.notifications_windows.windows.attendance_report_at_risk_students', default="Attendance Report - At-Risk Students"))
             report_window.geometry("900x600")
             report_window.transient(self.window)
 
             # Title
-            ttk.Label(report_window, text="Students with Attendance Below 90%",
+            ttk.Label(report_window, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.students_with_attendance_below_90', default="Students with Attendance Below 90%"),
                      font=('Arial', 14, 'bold')).pack(pady=10)
 
             # Report treeview
@@ -731,7 +737,7 @@ class ParentNotificationWindow:
             start_date = self.history_start_var.get()
             end_date = self.history_end_var.get()
 
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 _ensure_parent_notifications_columns(conn)
                 cursor = conn.cursor()
                 cursor.execute("""
@@ -779,7 +785,7 @@ class ParentNotificationWindow:
             start_date = self.history_start_var.get()
             end_date = self.history_end_var.get()
 
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 df = pd.read_sql_query("""
                     SELECT * FROM parent_notifications
                     WHERE DATE(sent_at) BETWEEN ? AND ?
@@ -813,12 +819,12 @@ Status: {notification_data[6]}
 Subject: {notification_data[7]}
 """
 
-        messagebox.showinfo("Notification Details", details)
+        messagebox.showinfo(_t('gui.academics.attendance_tracker.notifications_windows.dialogs.notification_details', default="Notification Details"), details)
 
     def save_notification_settings(self):
         try:
             # Save settings to database
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
                 cursor.execute("""
@@ -845,7 +851,7 @@ Subject: {notification_data[7]}
 
                 conn.commit()
 
-            messagebox.showinfo(_("common.success"), "Notification settings saved successfully")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.notification_settings_saved_successfully', default="Notification settings saved successfully"))
 
         except Exception as e:
             logger.exception("notifications_windows.py:786 %s", 'except Exception as e')
@@ -882,35 +888,35 @@ class ParentContactDialog:
         form_frame.pack(fill=tk.BOTH, expand=True)
 
         # Student ID
-        ttk.Label(form_frame, text="Student ID:*").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.student_id_variant_2', default="Student ID:*")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_id_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.student_id_var, width=30).grid(row=0, column=1, pady=5, sticky=tk.EW)
 
         # Parent Name
-        ttk.Label(form_frame, text="Parent/Guardian Name:*").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.parent_guardian_name', default="Parent/Guardian Name:*")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.parent_name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.parent_name_var, width=30).grid(row=1, column=1, pady=5, sticky=tk.EW)
 
         # Relationship
-        ttk.Label(form_frame, text="Relationship:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.relationship_var = tk.StringVar(value="Parent")
+        ttk.Label(form_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.relationship', default="Relationship:")).grid(row=2, column=0, sticky=tk.W, pady=5)
+        self.relationship_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.notifications_windows.values.parent', default="Parent"))
         relationship_combo = ttk.Combobox(form_frame, textvariable=self.relationship_var, width=28,
                                          values=["Mother", "Father", "Parent", "Guardian", "Grandparent", "Other"])
         relationship_combo.grid(row=2, column=1, pady=5, sticky=tk.EW)
 
         # Email
-        ttk.Label(form_frame, text="Email:*").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.email', default="Email:*")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.email_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.email_var, width=30).grid(row=3, column=1, pady=5, sticky=tk.EW)
 
         # Phone
-        ttk.Label(form_frame, text="Phone:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.phone', default="Phone:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.phone_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.phone_var, width=30).grid(row=4, column=1, pady=5, sticky=tk.EW)
 
         # Preferred Contact Method
-        ttk.Label(form_frame, text="Preferred Contact:*").grid(row=5, column=0, sticky=tk.W, pady=5)
-        self.preferred_var = tk.StringVar(value="email")
+        ttk.Label(form_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.preferred_contact', default="Preferred Contact:*")).grid(row=5, column=0, sticky=tk.W, pady=5)
+        self.preferred_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.notifications_windows.values.email', default="email"))
         preferred_combo = ttk.Combobox(form_frame, textvariable=self.preferred_var, width=28,
                                       values=["email", "sms", "both"])
         preferred_combo.grid(row=5, column=1, pady=5, sticky=tk.EW)
@@ -936,11 +942,11 @@ class ParentContactDialog:
     def save(self):
         # Validate required fields
         if not self.student_id_var.get() or not self.parent_name_var.get() or not self.email_var.get():
-            messagebox.showwarning(_("common.warning"), "Please fill in all required fields (marked with *)")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.please_fill_in_all_required_fields_marked_with', default="Please fill in all required fields (marked with *)"))
             return
 
         try:
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
                 if self.mode == 'add':
@@ -1050,7 +1056,7 @@ class NotificationSettingsWindow:
         title_frame = ttk.Frame(self.window)
         title_frame.pack(fill=tk.X, padx=15, pady=15)
 
-        ttk.Label(title_frame, text="🔔 Notification Settings",
+        ttk.Label(title_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.notification_settings', default="🔔 Notification Settings"),
                  font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
 
         # Create notebook for different settings categories
@@ -1059,35 +1065,35 @@ class NotificationSettingsWindow:
 
         # General tab
         general_frame = ttk.Frame(notebook)
-        notebook.add(general_frame, text="General")
+        notebook.add(general_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.tabs.general', default="General"))
         self.create_general_settings_tab(general_frame)
 
         # Recipients tab
         recipients_frame = ttk.Frame(notebook)
-        notebook.add(recipients_frame, text="Recipients")
+        notebook.add(recipients_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.tabs.recipients', default="Recipients"))
         self.create_recipients_tab(recipients_frame)
 
         # Alerts tab
         alerts_frame = ttk.Frame(notebook)
-        notebook.add(alerts_frame, text="Alerts")
+        notebook.add(alerts_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.tabs.alerts', default="Alerts"))
         self.create_alerts_tab(alerts_frame)
 
         # Schedule tab
         schedule_frame = ttk.Frame(notebook)
-        notebook.add(schedule_frame, text="Schedule")
+        notebook.add(schedule_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.tabs.schedule', default="Schedule"))
         self.create_schedule_tab(schedule_frame)
 
         # Action buttons
         button_frame = ttk.Frame(self.window)
         button_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        ttk.Button(button_frame, text="💾 Save Settings",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.save_settings_variant_2', default="💾 Save Settings"),
                   command=self.save_settings, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Button(button_frame, text="🔄 Reset to Defaults",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.reset_to_defaults', default="🔄 Reset to Defaults"),
                   command=self.reset_to_defaults).pack(side=tk.LEFT, padx=(0, 5))
 
-        ttk.Button(button_frame, text="📧 Test Notification",
+        ttk.Button(button_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.test_notification', default="📧 Test Notification"),
                   command=self.test_notification).pack(side=tk.LEFT)
 
         ttk.Button(button_frame, text=_("common.close"),
@@ -1095,29 +1101,29 @@ class NotificationSettingsWindow:
 
     def create_general_settings_tab(self, parent):
         """General notification settings"""
-        frame = ttk.LabelFrame(parent, text="Notification Channels", padding=15)
+        frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.notification_channels', default="Notification Channels"), padding=15)
         frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.email_enabled_var = tk.BooleanVar(value=self.settings['email_enabled'])
         self.sms_enabled_var = tk.BooleanVar(value=self.settings['sms_enabled'])
         self.push_enabled_var = tk.BooleanVar(value=self.settings['push_enabled'])
 
-        ttk.Checkbutton(frame, text="📧 Email Notifications",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.email_notifications', default="📧 Email Notifications"),
                        variable=self.email_enabled_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Checkbutton(frame, text="📱 SMS Notifications",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.sms_notifications', default="📱 SMS Notifications"),
                        variable=self.sms_enabled_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Checkbutton(frame, text="🔔 Push Notifications",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.push_notifications', default="🔔 Push Notifications"),
                        variable=self.push_enabled_var).pack(anchor=tk.W, pady=5)
 
         # Frequency settings
-        freq_frame = ttk.LabelFrame(parent, text="Notification Frequency", padding=15)
+        freq_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.notification_frequency', default="Notification Frequency"), padding=15)
         freq_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.email_frequency_var = tk.StringVar(value=self.settings['email_frequency'])
 
-        ttk.Label(freq_frame, text="Email Frequency:").pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(freq_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.email_frequency', default="Email Frequency:")).pack(anchor=tk.W, pady=(0, 5))
 
         freq_options = ['immediate', 'hourly', 'daily', 'weekly']
         for option in freq_options:
@@ -1127,59 +1133,59 @@ class NotificationSettingsWindow:
 
     def create_recipients_tab(self, parent):
         """Configure who receives notifications"""
-        frame = ttk.LabelFrame(parent, text="Notification Recipients", padding=15)
+        frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.notification_recipients', default="Notification Recipients"), padding=15)
         frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.notify_students_var = tk.BooleanVar(value=self.settings['notify_students'])
         self.notify_parents_var = tk.BooleanVar(value=self.settings['notify_parents'])
         self.notify_instructors_var = tk.BooleanVar(value=self.settings['notify_instructors'])
 
-        ttk.Checkbutton(frame, text="👨‍🎓 Notify Students",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.notify_students', default="👨‍🎓 Notify Students"),
                        variable=self.notify_students_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Checkbutton(frame, text="👨‍👩‍👧 Notify Parents/Guardians",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.notify_parents_guardians', default="👨‍👩‍👧 Notify Parents/Guardians"),
                        variable=self.notify_parents_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Checkbutton(frame, text="👨‍🏫 Notify Instructors",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.notify_instructors', default="👨‍🏫 Notify Instructors"),
                        variable=self.notify_instructors_var).pack(anchor=tk.W, pady=5)
 
         # Report settings
-        report_frame = ttk.LabelFrame(parent, text="Automated Reports", padding=15)
+        report_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.automated_reports', default="Automated Reports"), padding=15)
         report_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.daily_summary_var = tk.BooleanVar(value=self.settings['daily_summary'])
         self.weekly_report_var = tk.BooleanVar(value=self.settings['weekly_report'])
         self.monthly_report_var = tk.BooleanVar(value=self.settings['monthly_report'])
 
-        ttk.Checkbutton(report_frame, text="📊 Daily Summary",
+        ttk.Checkbutton(report_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.daily_summary', default="📊 Daily Summary"),
                        variable=self.daily_summary_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Checkbutton(report_frame, text="📈 Weekly Report",
+        ttk.Checkbutton(report_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.weekly_report', default="📈 Weekly Report"),
                        variable=self.weekly_report_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Checkbutton(report_frame, text="📉 Monthly Report",
+        ttk.Checkbutton(report_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.monthly_report', default="📉 Monthly Report"),
                        variable=self.monthly_report_var).pack(anchor=tk.W, pady=5)
 
     def create_alerts_tab(self, parent):
         """Configure alert triggers"""
-        frame = ttk.LabelFrame(parent, text="Alert Triggers", padding=15)
+        frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.alert_triggers', default="Alert Triggers"), padding=15)
         frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.alert_on_absence_var = tk.BooleanVar(value=self.settings['alert_on_absence'])
         self.alert_on_late_var = tk.BooleanVar(value=self.settings['alert_on_late'])
 
-        ttk.Checkbutton(frame, text="⚠️ Alert on Absence",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.alert_on_absence', default="⚠️ Alert on Absence"),
                        variable=self.alert_on_absence_var).pack(anchor=tk.W, pady=5)
 
-        ttk.Checkbutton(frame, text="⏰ Alert on Late Arrival",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.alert_on_late_arrival', default="⏰ Alert on Late Arrival"),
                        variable=self.alert_on_late_var).pack(anchor=tk.W, pady=5)
 
         # Threshold settings
-        threshold_frame = ttk.LabelFrame(parent, text="Alert Thresholds", padding=15)
+        threshold_frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.alert_thresholds', default="Alert Thresholds"), padding=15)
         threshold_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Low attendance threshold
-        ttk.Label(threshold_frame, text="Low Attendance Alert Threshold (%):").pack(anchor=tk.W, pady=(0, 5))
+        ttk.Label(threshold_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.low_attendance_alert_threshold', default="Low Attendance Alert Threshold (%):")).pack(anchor=tk.W, pady=(0, 5))
         self.low_attendance_threshold_var = tk.IntVar(value=self.settings['low_attendance_threshold'])
         threshold_scale = ttk.Scale(threshold_frame, from_=0, to=100,
                                    variable=self.low_attendance_threshold_var,
@@ -1194,7 +1200,7 @@ class NotificationSettingsWindow:
             text=f"{int(float(v))}%"))
 
         # Consecutive absences
-        ttk.Label(threshold_frame, text="Alert after N consecutive absences:").pack(anchor=tk.W, pady=(10, 5))
+        ttk.Label(threshold_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.alert_after_n_consecutive_absences', default="Alert after N consecutive absences:")).pack(anchor=tk.W, pady=(10, 5))
         self.alert_threshold_absences_var = tk.IntVar(value=self.settings['alert_threshold_absences'])
         ttk.Spinbox(threshold_frame, from_=1, to=10,
                    textvariable=self.alert_threshold_absences_var,
@@ -1202,29 +1208,29 @@ class NotificationSettingsWindow:
 
     def create_schedule_tab(self, parent):
         """Configure notification schedule"""
-        frame = ttk.LabelFrame(parent, text="Quiet Hours", padding=15)
+        frame = ttk.LabelFrame(parent, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.quiet_hours', default="Quiet Hours"), padding=15)
         frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.quiet_hours_enabled_var = tk.BooleanVar(value=self.settings['quiet_hours_enabled'])
 
-        ttk.Checkbutton(frame, text="🌙 Enable Quiet Hours (No notifications during this time)",
+        ttk.Checkbutton(frame, text=_t('gui.academics.attendance_tracker.notifications_windows.buttons.enable_quiet_hours_no_notifications_during_this_time', default="🌙 Enable Quiet Hours (No notifications during this time)"),
                        variable=self.quiet_hours_enabled_var).pack(anchor=tk.W, pady=5)
 
         # Time settings
         time_frame = ttk.Frame(frame)
         time_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(time_frame, text="Start Time:").grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
+        ttk.Label(time_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.start_time', default="Start Time:")).grid(row=0, column=0, sticky=tk.W, padx=(0, 10))
         self.quiet_hours_start_var = tk.StringVar(value=self.settings['quiet_hours_start'])
         ttk.Entry(time_frame, textvariable=self.quiet_hours_start_var,
                  width=10).grid(row=0, column=1, sticky=tk.W)
-        ttk.Label(time_frame, text="(HH:MM format)").grid(row=0, column=2, sticky=tk.W, padx=(5, 0))
+        ttk.Label(time_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.hh_mm_format', default="(HH:MM format)")).grid(row=0, column=2, sticky=tk.W, padx=(5, 0))
 
-        ttk.Label(time_frame, text="End Time:").grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(5, 0))
+        ttk.Label(time_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.end_time', default="End Time:")).grid(row=1, column=0, sticky=tk.W, padx=(0, 10), pady=(5, 0))
         self.quiet_hours_end_var = tk.StringVar(value=self.settings['quiet_hours_end'])
         ttk.Entry(time_frame, textvariable=self.quiet_hours_end_var,
                  width=10).grid(row=1, column=1, sticky=tk.W, pady=(5, 0))
-        ttk.Label(time_frame, text="(HH:MM format)").grid(row=1, column=2, sticky=tk.W, padx=(5, 0), pady=(5, 0))
+        ttk.Label(time_frame, text=_t('gui.academics.attendance_tracker.notifications_windows.labels.hh_mm_format', default="(HH:MM format)")).grid(row=1, column=2, sticky=tk.W, padx=(5, 0), pady=(5, 0))
 
     def save_settings(self):
         """Save notification settings to database"""
@@ -1272,7 +1278,7 @@ class NotificationSettingsWindow:
                 conn.commit()
                 conn.close()
 
-            messagebox.showinfo(_("common.success"), "Notification settings saved successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.notification_settings_saved_successfully_variant_2', default="Notification settings saved successfully!"))
 
             # Log activity
             try:
@@ -1289,8 +1295,8 @@ class NotificationSettingsWindow:
 
     def reset_to_defaults(self):
         """Reset settings to default values"""
-        if messagebox.askyesno("Confirm Reset",
-                              "Are you sure you want to reset all notification settings to defaults?"):
+        if messagebox.askyesno(_t('gui.academics.attendance_tracker.notifications_windows.dialogs.confirm_reset', default="Confirm Reset"),
+                              _t('gui.academics.attendance_tracker.notifications_windows.dialogs.are_you_sure_you_want_to_reset_all_notification_settings_to_defa', default="Are you sure you want to reset all notification settings to defaults?")):
             # Reset all variables to defaults
             self.email_enabled_var.set(True)
             self.sms_enabled_var.set(False)
@@ -1310,7 +1316,7 @@ class NotificationSettingsWindow:
             self.quiet_hours_start_var.set('22:00')
             self.quiet_hours_end_var.set('08:00')
 
-            messagebox.showinfo(_("common.success"), "Settings reset to defaults!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.attendance_tracker.notifications_windows.dialogs.settings_reset_to_defaults', default="Settings reset to defaults!"))
 
     def test_notification(self):
         """Send a test notification"""
@@ -1319,8 +1325,8 @@ class NotificationSettingsWindow:
             from education_system.systems.university.infrastructure.email.template_utils import render_template
 
             # Get test email
-            test_email = simpledialog.askstring("Test Email",
-                                              "Enter email address for test notification:",
+            test_email = simpledialog.askstring(_t('gui.academics.attendance_tracker.notifications_windows.dialogs.test_email', default="Test Email"),
+                                              _t('gui.academics.attendance_tracker.notifications_windows.dialogs.enter_email_address_for_test_notification', default="Enter email address for test notification:"),
                                               parent=self.window)
 
             if not test_email:
@@ -1358,8 +1364,8 @@ This is an automated test message from the University Attendance System.
             if success:
                 messagebox.showinfo(_("common.success"), f"Test notification sent to {test_email}!")
             else:
-                messagebox.showwarning("Failed",
-                                     "Failed to send test notification. Please check email configuration.")
+                messagebox.showwarning(_t('gui.academics.attendance_tracker.notifications_windows.dialogs.failed', default="Failed"),
+                                     _t('gui.academics.attendance_tracker.notifications_windows.dialogs.failed_to_send_test_notification_please_check_email_configuratio', default="Failed to send test notification. Please check email configuration."))
 
         except Exception as e:
             logger.exception("notifications_windows.py:1297 %s", 'except Exception as e')

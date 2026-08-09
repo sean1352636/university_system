@@ -39,8 +39,8 @@ logger = logging.getLogger(__name__)
 
 def _housing_data_dir() -> Path:
     try:
-        from education_system.systems.university.infrastructure import paths
-        base = Path(getattr(paths, 'DATA_DIR', '.')) / 'housing'
+        from education_system import paths
+        base = Path(getattr(paths, "UNIVERSITY_DATA_DIR", '.')) / 'housing'
     except Exception:
         base = Path('education_system/post_18/university_system/data/housing')
     base.mkdir(parents=True, exist_ok=True)

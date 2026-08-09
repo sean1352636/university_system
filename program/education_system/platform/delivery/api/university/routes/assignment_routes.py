@@ -7,7 +7,11 @@ from datetime import datetime
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    deny_unless_owner_or_staff,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import (
     validate_assignment_create,
@@ -111,6 +115,7 @@ def create_assignment():
 
 @assignment_bp.route("/<int:assignment_id>", methods=["PUT"])
 @token_required
+@staff_required
 def update_assignment(assignment_id: int):
     _get_assignment_or_404(assignment_id)
     data = request.get_json(silent=True) or {}
@@ -147,6 +152,7 @@ def update_assignment(assignment_id: int):
 
 @assignment_bp.route("/<int:assignment_id>/submissions", methods=["GET"])
 @token_required
+@staff_required
 def list_submissions(assignment_id: int):
     _get_assignment_or_404(assignment_id)
 
@@ -166,6 +172,10 @@ def create_submission(assignment_id: int):
     _get_assignment_or_404(assignment_id)
     data = request.get_json(silent=True) or {}
     validate_submission_create(data)
+    # A student may only submit as themselves; staff may submit on behalf.
+    denial = deny_unless_owner_or_staff(data.get("student_id"))
+    if denial:
+        return denial
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with transaction() as conn:

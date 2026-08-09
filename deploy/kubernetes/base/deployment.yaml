@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: education-api
+  namespace: education-system
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {app: education-api}
+  template:
+    metadata:
+      labels: {app: education-api}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: api
+          image: education-system:latest
+          imagePullPolicy: IfNotPresent
+          command: [gunicorn]
+          args: ["--bind=0.0.0.0:5000", "--workers=2", "--threads=4", "education_system.platform.delivery.api.unified_server:create_unified_app()"]
+          envFrom:
+            - configMapRef: {name: education-config}
+            - secretRef: {name: education-secrets}
+          ports:
+            - {name: http, containerPort: 5000}
+          readinessProbe:
+            httpGet: {path: /api/v1/health/ready, port: http}
+            initialDelaySeconds: 10
+          livenessProbe:
+            httpGet: {path: /api/v1/health/live, port: http}
+            initialDelaySeconds: 20
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: data, mountPath: /app/program/var}
+      volumes:
+        - name: data
+          persistentVolumeClaim: {claimName: education-data}

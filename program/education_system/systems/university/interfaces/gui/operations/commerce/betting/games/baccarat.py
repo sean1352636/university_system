@@ -14,6 +14,8 @@ Payouts:
   Tie     8 : 1   (Player/Banker bets push on a tie)
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -131,13 +133,13 @@ BET_TYPES = {
 class BaccaratGame:
     def __init__(self, root):
         self.root = root
-        root.title("Baccarat \u2014 Punto Banco")
+        root.title(_t('gui.operations.commerce.betting.games.baccarat.windows.baccarat_punto_banco', default="Baccarat \u2014 Punto Banco"))
         root.configure(bg=FELT)
         root.resizable(False, False)
 
         self.chips = wallet.get_credits()
         self.bet_amount = 25
-        self.bet_type = tk.StringVar(value="player")
+        self.bet_type = tk.StringVar(value=_t('gui.operations.commerce.betting.games.baccarat.values.player', default="player"))
         self.deck = make_shoe()
         self.busy = False
 
@@ -151,7 +153,7 @@ class BaccaratGame:
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=14)
         f.pack()
 
-        tk.Label(f, text="BANKER", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.baccarat.labels.banker', default="BANKER"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 12, "bold")).pack()
         self.banker_total_lbl = tk.Label(f, text="", bg=FELT, fg="white",
                                          font=("Helvetica", 12, "bold"))
@@ -173,7 +175,7 @@ class BaccaratGame:
         self.player_total_lbl = tk.Label(f, text="", bg=FELT, fg="white",
                                          font=("Helvetica", 12, "bold"))
         self.player_total_lbl.pack()
-        tk.Label(f, text="PLAYER", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.baccarat.labels.player', default="PLAYER"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 12, "bold")).pack()
 
         # bet-type selector
@@ -196,7 +198,7 @@ class BaccaratGame:
         tk.Button(amt, text="\u2212", command=lambda: self.change_bet(-MIN_BET),
                   width=3, font=("Helvetica", 12, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(amt, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(amt, text=_t('gui.operations.commerce.betting.games.baccarat.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(amt, textvariable=self.bet_var, width=6,
@@ -213,7 +215,7 @@ class BaccaratGame:
         # action buttons
         act = tk.Frame(f, bg=FELT, pady=10)
         act.pack()
-        self.deal_btn = tk.Button(act, text="Deal", command=self.deal,
+        self.deal_btn = tk.Button(act, text=_t('gui.operations.commerce.betting.games.baccarat.buttons.deal', default="Deal"), command=self.deal,
                                   font=("Helvetica", 13, "bold"), width=14,
                                   bg="#1b7a4b", fg="white", activebackground=GOLD,
                                   bd=0, pady=6, cursor="hand2")

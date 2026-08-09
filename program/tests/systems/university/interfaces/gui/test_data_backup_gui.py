@@ -6,11 +6,17 @@ Note: These are mostly structural tests since full GUI testing requires a displa
 """
 
 import pytest
+
 pytestmark = pytest.mark.gui
 
 import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
+
+from education_system.systems.university.interfaces.gui.shell.database import backup_gui
+
+GUI_FILE = Path(backup_gui.__file__).resolve()
+GUI_DIR = GUI_FILE.parent
 
 
 class TestBackupGUIModule:
@@ -18,19 +24,20 @@ class TestBackupGUIModule:
 
     def test_backup_gui_file_exists(self):
         """Test that backup GUI file exists."""
-        gui_file = Path(__file__).resolve().parents[3] / "modules" / "shared" / "gui" / "database" / "backup_gui.py"
+        gui_file = GUI_FILE
         assert gui_file.exists()
 
     def test_backup_gui_module_imports(self):
         """Test that backup GUI module can be imported."""
         try:
             from education_system.systems.university.interfaces.gui.shell.database import backup_gui
+
             assert backup_gui is not None
         except ImportError as e:
-            pytest.skip(f"Backup GUI module not available: {e}")
+            pytest.fail(f"Maintained backup GUI failed to import: {e}")
         except Exception as e:
             # May fail if tkinter not available
-            pytest.skip(f"Could not initialize backup GUI: {e}")
+            pytest.fail(f"Maintained backup GUI failed to initialize: {e}")
 
     def test_backup_gui_has_classes_or_functions(self):
         """Test that backup GUI module has expected components."""
@@ -40,33 +47,37 @@ class TestBackupGUIModule:
             # Module should have some classes or functions
             module_contents = dir(backup_gui)
             # Filter out private/magic methods
-            public_items = [item for item in module_contents if not item.startswith('_')]
+            public_items = [item for item in module_contents if not item.startswith("_")]
 
             assert len(public_items) > 0
 
         except ImportError:
-            pytest.skip("Backup GUI module not available")
+            pytest.fail("Maintained backup GUI module is unavailable")
         except Exception as e:
-            pytest.skip(f"Could not inspect backup GUI: {e}")
+            pytest.fail(f"Could not inspect maintained backup GUI: {e}")
 
 
 class TestBackupGUIIntegration:
     """Test backup GUI integration with backup module."""
 
-    @patch('tkinter.Tk')
+    @patch("tkinter.Tk")
     def test_backup_gui_can_be_instantiated(self, mock_tk):
         """Test that backup GUI can be instantiated with mocked Tk."""
         try:
             from education_system.systems.university.interfaces.gui.shell.database import backup_gui
 
             # Try to find GUI class
-            gui_classes = [item for item in dir(backup_gui) if 'GUI' in item or 'Window' in item or 'App' in item]
+            gui_classes = [
+                item
+                for item in dir(backup_gui)
+                if "GUI" in item or "Window" in item or "App" in item
+            ]
 
             # If GUI classes found, test we can get them
             if gui_classes:
                 for cls_name in gui_classes:
                     cls = getattr(backup_gui, cls_name)
-                    if callable(cls) and hasattr(cls, '__init__'):
+                    if callable(cls) and hasattr(cls, "__init__"):
                         # Class exists and is callable
                         assert True
                         break
@@ -75,9 +86,9 @@ class TestBackupGUIIntegration:
                 assert True
 
         except ImportError:
-            pytest.skip("Backup GUI module not available")
+            pytest.fail("Maintained backup GUI module is unavailable")
         except Exception as e:
-            pytest.skip(f"Could not test backup GUI instantiation: {e}")
+            pytest.fail(f"Could not test maintained backup GUI: {e}")
 
 
 class TestBackupGUIFunctionality:
@@ -89,28 +100,28 @@ class TestBackupGUIFunctionality:
             from education_system.systems.university.interfaces.gui.shell.database import backup_gui
 
             # Read the file to check imports
-            gui_file = Path(__file__).resolve().parents[3] / "modules" / "shared" / "gui" / "database" / "backup_gui.py"
+            gui_file = GUI_DIR / "backup_gui_shared.py"
             content = gui_file.read_text()
 
             # Check for backup module import
-            assert 'data_backup' in content or 'backup' in content.lower()
+            assert "data_backup" in content or "backup" in content.lower()
 
         except ImportError:
-            pytest.skip("Backup GUI module not available")
+            pytest.fail("Maintained backup GUI module is unavailable")
         except Exception as e:
-            pytest.skip(f"Could not test backup GUI imports: {e}")
+            pytest.fail(f"Could not inspect maintained backup GUI imports: {e}")
 
     def test_backup_gui_uses_tkinter(self):
         """Test that backup GUI uses tkinter."""
         try:
-            gui_file = Path(__file__).resolve().parents[3] / "modules" / "shared" / "gui" / "database" / "backup_gui.py"
+            gui_file = GUI_DIR / "backup_gui_shared.py"
             content = gui_file.read_text()
 
             # Check for tkinter imports
-            assert 'tkinter' in content.lower() or 'tk' in content
+            assert "tkinter" in content.lower() or "tk" in content
 
         except Exception as e:
-            pytest.skip(f"Could not test tkinter usage: {e}")
+            pytest.fail(f"Could not verify maintained backup GUI Tk usage: {e}")
 
 
 class TestBackupGUIDirectory:
@@ -118,18 +129,18 @@ class TestBackupGUIDirectory:
 
     def test_gui_directory_exists(self):
         """Test that GUI directory exists."""
-        gui_dir = Path(__file__).resolve().parents[3] / "modules" / "shared" / "gui" / "database"
+        gui_dir = GUI_DIR
         assert gui_dir.exists()
         assert gui_dir.is_dir()
 
     def test_gui_init_file_exists(self):
         """Test that GUI __init__.py exists."""
-        init_file = Path(__file__).resolve().parents[3] / "modules" / "shared" / "gui" / "database" / "__init__.py"
+        init_file = GUI_DIR / "__init__.py"
         assert init_file.exists()
 
     def test_submodule_structure_exists(self):
         """Test that the split submodule structure exists."""
-        base = Path(__file__).resolve().parents[3] / "modules" / "shared" / "gui" / "database"
+        base = GUI_DIR
         expected_files = [
             "backup_gui.py",
             "config.py",

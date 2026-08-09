@@ -1,5 +1,7 @@
 """Meal plan tracking"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -15,10 +17,10 @@ class MealPlanMixin:
     def create_meal_plan_tab(self, notebook):
         """Create meal plan tracking tab"""
         tab = ttk.Frame(notebook, padding="10")
-        notebook.add(tab, text="Meal Plan")
+        notebook.add(tab, text=_t('gui.finance.finance.budget_manager.meal_plan.tabs.meal_plan', default="Meal Plan"))
 
         # Status frame
-        status_frame = ttk.LabelFrame(tab, text="Current Meal Plan Status", padding="10")
+        status_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.current_meal_plan_status', default="Current Meal Plan Status"), padding="10")
         status_frame.pack(fill=tk.X, pady=(0, 10))
 
         self.meal_plan_labels = {}
@@ -26,46 +28,46 @@ class MealPlanMixin:
         for i, label in enumerate(labels):
             ttk.Label(status_frame, text=f"{label}:", font=('Arial', 10, 'bold')).grid(
                 row=i//2, column=(i%2)*2, sticky=tk.W, padx=10, pady=5)
-            self.meal_plan_labels[label] = ttk.Label(status_frame, text="N/A")
+            self.meal_plan_labels[label] = ttk.Label(status_frame, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.n_a', default="N/A"))
             self.meal_plan_labels[label].grid(row=i//2, column=(i%2)*2+1, sticky=tk.W, padx=10, pady=5)
 
-        ttk.Button(status_frame, text="Refresh Status",
+        ttk.Button(status_frame, text=_t('gui.finance.finance.budget_manager.meal_plan.buttons.refresh_status', default="Refresh Status"),
                   command=self.load_meal_plan_status).grid(
             row=(len(labels)//2)+1, column=0, columnspan=4, pady=10)
 
         # Log transaction frame
-        log_frame = ttk.LabelFrame(tab, text="Log Meal Transaction", padding="10")
+        log_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.log_meal_transaction', default="Log Meal Transaction"), padding="10")
         log_frame.pack(fill=tk.X, pady=(0, 10))
 
         fields = ttk.Frame(log_frame)
         fields.pack(fill=tk.X)
 
-        ttk.Label(fields, text="Location:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.location', default="Location:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.meal_location_entry = ttk.Entry(fields, width=25)
         self.meal_location_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(fields, text="Meal Type:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.meal_type', default="Meal Type:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.meal_type_combo = ttk.Combobox(fields,
             values=['breakfast', 'lunch', 'dinner', 'snack'],
             state='readonly', width=15)
         self.meal_type_combo.current(1)
         self.meal_type_combo.grid(row=0, column=3, padx=5, pady=5)
 
-        ttk.Label(fields, text="Meals Used:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.meals_used', default="Meals Used:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.meal_swipes_entry = ttk.Entry(fields, width=10)
         self.meal_swipes_entry.insert(0, "1")
         self.meal_swipes_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Label(fields, text="Dollars Used:").grid(row=1, column=2, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.dollars_used', default="Dollars Used:")).grid(row=1, column=2, sticky=tk.W, padx=5, pady=5)
         self.meal_dollars_entry = ttk.Entry(fields, width=10)
         self.meal_dollars_entry.insert(0, "0.00")
         self.meal_dollars_entry.grid(row=1, column=3, padx=5, pady=5)
 
-        ttk.Button(fields, text="Log Transaction",
+        ttk.Button(fields, text=_t('gui.finance.finance.budget_manager.meal_plan.buttons.log_transaction', default="Log Transaction"),
                   command=self.log_meal_transaction).grid(row=2, column=0, columnspan=4, pady=10)
 
         # Transaction history
-        history_frame = ttk.LabelFrame(tab, text="Recent Meal Transactions", padding="10")
+        history_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.meal_plan.labels.recent_meal_transactions', default="Recent Meal Transactions"), padding="10")
         history_frame.pack(fill=tk.BOTH, expand=True)
 
         self.meal_history_tree = ttk.Treeview(history_frame,
@@ -99,7 +101,7 @@ class MealPlanMixin:
                 ''', (student_id,)).fetchone()
 
             if not tracking:
-                messagebox.showerror("Error", "No active meal plan found.")
+                messagebox.showerror(_t('gui.finance.finance.budget_manager.meal_plan.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.meal_plan.dialogs.no_active_meal_plan_found', default="No active meal plan found."))
                 return
 
             location = self.meal_location_entry.get().strip()
@@ -108,7 +110,7 @@ class MealPlanMixin:
             dollars_used = float(self.meal_dollars_entry.get().strip())
 
             if not location:
-                messagebox.showerror("Error", "Location is required.")
+                messagebox.showerror(_t('gui.finance.finance.budget_manager.meal_plan.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.meal_plan.dialogs.location_is_required', default="Location is required."))
                 return
 
             from education_system.systems.university.domain.finance.budget.services.budget_service import MealPlanManager
@@ -123,7 +125,7 @@ class MealPlanMixin:
                 dollars_used=dollars_used
             )
 
-            messagebox.showinfo("Success", "Meal transaction logged!")
+            messagebox.showinfo(_t('gui.finance.finance.budget_manager.meal_plan.dialogs.success', default="Success"), _t('gui.finance.finance.budget_manager.meal_plan.dialogs.meal_transaction_logged', default="Meal transaction logged!"))
             self.meal_location_entry.delete(0, tk.END)
             self.meal_swipes_entry.delete(0, tk.END)
             self.meal_swipes_entry.insert(0, "1")
@@ -132,9 +134,9 @@ class MealPlanMixin:
             self.load_meal_plan_status()
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid values.")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.meal_plan.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.meal_plan.dialogs.invalid_values', default="Invalid values."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to log meal transaction: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.meal_plan.dialogs.error', default="Error"), f"Failed to log meal transaction: {e}")
 
     def load_meal_plan_status(self):
         """Load meal plan status"""

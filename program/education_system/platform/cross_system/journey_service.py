@@ -3,7 +3,7 @@
 Queries every education-system database (nursery, primary, secondary,
 sixth-form college, university) to build a unified view of a student's
 educational journey. Database locations come from the canonical
-``education_system.platform.kernel.database.paths`` registry so this service stays in
+``education_system.paths`` registry so this service stays in
 step with the rest of the platform.
 """
 
@@ -14,11 +14,11 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 try:
-    from education_system.platform.kernel.database.paths import (
+    from education_system.paths import (
         SYSTEM_DB_PATHS as _DEFAULT_DB_PATHS,
         SYSTEM_ORDER as _SYSTEM_ORDER,
         SYSTEM_LABELS as _SYSTEM_LABELS,
-        AUTH_DB as _AUTH_DB,
+        PLATFORM_AUTH_DB as _AUTH_DB,
     )
 except Exception:  # pragma: no cover - fallback if registry is unavailable
     _DEFAULT_DB_PATHS = {}
@@ -28,11 +28,18 @@ except Exception:  # pragma: no cover - fallback if registry is unavailable
 
 # Candidate student tables, in preference order.
 # The learner table is named differently per system: most use ``students``,
-# primary/nursery use ``pupils``. A system has exactly one of these.
-_STUDENT_TABLES = ("students", "pupils")
+# primary/nursery use ``pupils``, apprenticeships uses ``apprentices``.
+# A system has exactly one of these, and the probe below takes the first
+# that exists. Without the third name an apprenticeships database resolves
+# to no table at all and silently contributes zero to every headcount.
+_STUDENT_TABLES = ("students", "pupils", "apprentices")
 
-# The cross-system identity registry (auth.db student_journey) tracks these
-# stages, in order. Nursery is not part of the statutory journey schema.
+# The stages of the *linear* journey, in order, used for the stage-to-stage
+# conversion funnel below. Deliberately shorter than the set of systems the
+# registry tracks: nursery is outside the statutory journey schema, and
+# fe_college / apprenticeships are post-16 alternatives that run beside
+# sixth form rather than after it — chaining them into this funnel would
+# report a conversion rate between two systems nobody progresses between.
 _JOURNEY_PIPELINE = ["primary", "secondary", "sixth_form", "university"]
 
 # Per-stage slot columns on student_journey; a stage is "reached" if either

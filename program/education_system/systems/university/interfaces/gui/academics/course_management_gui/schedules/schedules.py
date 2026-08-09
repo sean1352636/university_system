@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -9,11 +11,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -131,52 +133,52 @@ def create_course_schedule_gui(self):
     Opens a dialog to input schedule details using the module_schedule table.
     """
     dialog = tk.Toplevel(self.root)
-    dialog.title("Create Course Schedule")
+    dialog.title(_t('gui.academics.course_management_gui.schedules.schedules.windows.create_course_schedule', default="Create Course Schedule"))
     dialog.geometry("700x750")
     dialog.transient(self.root)
 
     main_frame = ttk.Frame(dialog, padding="15")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Create Course Schedule",
+    ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.create_course_schedule', default="Create Course Schedule"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
     # Course selection
-    course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding="10")
+    course_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.select_course', default="Select Course"), padding="10")
     course_frame.pack(fill=tk.X, pady=5)
 
-    ttk.Label(course_frame, text="Course/Module:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.course_module', default="Course/Module:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     course_var = tk.StringVar()
     course_combo = ttk.Combobox(course_frame, textvariable=course_var, state='readonly', width=50)
     course_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
 
     # Schedule details
-    schedule_frame = ttk.LabelFrame(main_frame, text="Schedule Details", padding="10")
+    schedule_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.schedule_details', default="Schedule Details"), padding="10")
     schedule_frame.pack(fill=tk.X, pady=5)
 
     # Day of week dropdown
-    ttk.Label(schedule_frame, text="Day of Week:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.day_of_week', default="Day of Week:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     day_var = tk.StringVar()
     day_combo = ttk.Combobox(schedule_frame, textvariable=day_var,
                             values=DAYS_OF_WEEK, state='readonly', width=28)
     day_combo.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
 
     # Start time dropdown
-    ttk.Label(schedule_frame, text="Start Time:").grid(row=1, column=0, sticky=tk.W, pady=5)
+    ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.start_time', default="Start Time:")).grid(row=1, column=0, sticky=tk.W, pady=5)
     start_time_var = tk.StringVar()
     start_time_combo = ttk.Combobox(schedule_frame, textvariable=start_time_var,
                                    values=TIME_SLOTS, state='readonly', width=28)
     start_time_combo.grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
 
     # End time dropdown
-    ttk.Label(schedule_frame, text="End Time:").grid(row=2, column=0, sticky=tk.W, pady=5)
+    ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.end_time', default="End Time:")).grid(row=2, column=0, sticky=tk.W, pady=5)
     end_time_var = tk.StringVar()
     end_time_combo = ttk.Combobox(schedule_frame, textvariable=end_time_var,
                                  values=TIME_SLOTS, state='readonly', width=28)
     end_time_combo.grid(row=2, column=1, sticky=tk.W, pady=5, padx=5)
 
     # Session type dropdown
-    ttk.Label(schedule_frame, text="Session Type:").grid(row=3, column=0, sticky=tk.W, pady=5)
+    ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.session_type', default="Session Type:")).grid(row=3, column=0, sticky=tk.W, pady=5)
     session_type_var = tk.StringVar()
     session_type_combo = ttk.Combobox(schedule_frame, textvariable=session_type_var,
                                      values=SESSION_TYPES, state='readonly', width=28)
@@ -184,16 +186,16 @@ def create_course_schedule_gui(self):
     session_type_combo.current(0)  # Default to Lecture
 
     # Room selection - DROPDOWN with database
-    ttk.Label(schedule_frame, text="Room:").grid(row=4, column=0, sticky=tk.W, pady=5)
+    ttk.Label(schedule_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.room', default="Room:")).grid(row=4, column=0, sticky=tk.W, pady=5)
     room_var = tk.StringVar()
     room_combo = ttk.Combobox(schedule_frame, textvariable=room_var, state='readonly', width=28)
     room_combo.grid(row=4, column=1, sticky=tk.W, pady=5, padx=5)
 
     # Instructor selection
-    instructor_frame = ttk.LabelFrame(main_frame, text="Instructor", padding="10")
+    instructor_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.instructor', default="Instructor"), padding="10")
     instructor_frame.pack(fill=tk.X, pady=5)
 
-    ttk.Label(instructor_frame, text="Instructor:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(instructor_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.instructor_variant_2', default="Instructor:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     instructor_var = tk.StringVar()
     instructor_combo = ttk.Combobox(instructor_frame, textvariable=instructor_var,
                                    state='readonly', width=50)
@@ -247,27 +249,27 @@ def create_course_schedule_gui(self):
     def save_schedule():
         # Validation
         if not course_var.get():
-            messagebox.showwarning("Incomplete", "Please select a course/module")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.incomplete', default="Incomplete"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_a_course_module', default="Please select a course/module"))
             return
 
         if not day_var.get():
-            messagebox.showwarning("Incomplete", "Please select a day of week")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.incomplete', default="Incomplete"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_a_day_of_week', default="Please select a day of week"))
             return
 
         if not start_time_var.get() or not end_time_var.get():
-            messagebox.showwarning("Incomplete", "Please select start and end times")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.incomplete', default="Incomplete"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_start_and_end_times', default="Please select start and end times"))
             return
 
         if not room_var.get():
-            messagebox.showwarning("Incomplete", "Please select a room")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.incomplete', default="Incomplete"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_a_room', default="Please select a room"))
             return
 
         if not instructor_var.get():
-            messagebox.showwarning("Incomplete", "Please select an instructor")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.incomplete', default="Incomplete"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_an_instructor', default="Please select an instructor"))
             return
 
         if not session_type_var.get():
-            messagebox.showwarning("Incomplete", "Please select a session type")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.incomplete', default="Incomplete"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_a_session_type', default="Please select a session type"))
             return
 
         try:
@@ -319,7 +321,7 @@ def create_course_schedule_gui(self):
                      end_time_var.get(), end_time_var.get()))
 
                 if cursor.fetchone():
-                    messagebox.showerror("Schedule Conflict",
+                    messagebox.showerror(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.schedule_conflict', default="Schedule Conflict"),
                                        f"Schedule conflict detected for {module_code} on {day_var.get()}")
                     return
 
@@ -354,8 +356,8 @@ def create_course_schedule_gui(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Button(button_frame, text="Create Schedule", command=save_schedule).pack(side=tk.RIGHT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.create_schedule', default="Create Schedule"), command=save_schedule).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # Initial load
     load_data()
@@ -367,14 +369,14 @@ def view_course_schedules_gui(self):
     Displays timetable in grid format matching Module Scheduling GUI.
     """
     dialog = tk.Toplevel(self.root)
-    dialog.title("View Course Schedules - Timetable View")
+    dialog.title(_t('gui.academics.course_management_gui.schedules.schedules.windows.view_course_schedules_timetable_view', default="View Course Schedules - Timetable View"))
     dialog.geometry("1400x900")
     dialog.transient(self.root)
 
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Course Schedules - Timetable View",
+    ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.course_schedules_timetable_view', default="Course Schedules - Timetable View"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
     # Create notebook for list and grid views
@@ -385,19 +387,19 @@ def view_course_schedules_gui(self):
     # TAB 1: LIST VIEW
     # ==========================
     list_tab = ttk.Frame(notebook)
-    notebook.add(list_tab, text="📋 List View")
+    notebook.add(list_tab, text=_t('gui.academics.course_management_gui.schedules.schedules.tabs.list_view', default="📋 List View"))
 
     # Filter frame
     filter_frame = ttk.Frame(list_tab)
     filter_frame.pack(fill=tk.X, pady=5, padx=10)
 
-    ttk.Label(filter_frame, text="Filter by Course:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(filter_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.filter_by_course', default="Filter by Course:")).pack(side=tk.LEFT, padx=5)
     course_filter_var = tk.StringVar()
     course_filter_combo = ttk.Combobox(filter_frame, textvariable=course_filter_var,
                                       state='readonly', width=40)
     course_filter_combo.pack(side=tk.LEFT, padx=5)
 
-    ttk.Button(filter_frame, text="🔄 Refresh",
+    ttk.Button(filter_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.refresh_variant_2', default="🔄 Refresh"),
               command=lambda: load_list_view()).pack(side=tk.LEFT, padx=5)
 
     # Treeview for schedules
@@ -407,14 +409,14 @@ def view_course_schedules_gui(self):
     columns = ('ID', 'Course', 'Day', 'Time', 'Room', 'Instructor', 'Type', 'Semester')
     tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=20)
 
-    tree.heading('ID', text='ID')
-    tree.heading('Course', text='Course Code')
-    tree.heading('Day', text='Day')
-    tree.heading('Time', text='Time')
-    tree.heading('Room', text='Room')
-    tree.heading('Instructor', text='Instructor')
-    tree.heading('Type', text='Session Type')
-    tree.heading('Semester', text='Semester')
+    tree.heading('ID', text=_t('gui.academics.course_management_gui.schedules.schedules.headings.id', default='ID'))
+    tree.heading('Course', text=_t('gui.academics.course_management_gui.schedules.schedules.headings.course_code', default='Course Code'))
+    tree.heading('Day', text=_t('gui.academics.course_management_gui.schedules.schedules.headings.day', default='Day'))
+    tree.heading('Time', text=_t('gui.academics.course_management_gui.schedules.schedules.headings.time', default='Time'))
+    tree.heading('Room', text=_t('gui.academics.course_management_gui.schedules.schedules.headings.room', default='Room'))
+    tree.heading('Instructor', text=_t('gui.academics.course_management_gui.schedules.schedules.headings.instructor', default='Instructor'))
+    tree.heading('Type', text=_t('gui.academics.course_management_gui.schedules.schedules.headings.session_type', default='Session Type'))
+    tree.heading('Semester', text=_t('gui.academics.course_management_gui.schedules.schedules.headings.semester', default='Semester'))
 
     tree.column('ID', width=50)
     tree.column('Course', width=120)
@@ -434,28 +436,28 @@ def view_course_schedules_gui(self):
     list_button_frame = ttk.Frame(list_tab)
     list_button_frame.pack(fill=tk.X, pady=5, padx=10)
 
-    ttk.Button(list_button_frame, text="❌ Delete Selected",
+    ttk.Button(list_button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.delete_selected', default="❌ Delete Selected"),
               command=lambda: delete_selected_schedule()).pack(side=tk.LEFT, padx=5)
-    ttk.Button(list_button_frame, text="✏️ Edit Selected",
+    ttk.Button(list_button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.edit_selected_variant_2', default="✏️ Edit Selected"),
               command=lambda: edit_selected_schedule()).pack(side=tk.LEFT, padx=5)
 
     # ==========================
     # TAB 2: TIMETABLE GRID VIEW
     # ==========================
     grid_tab = ttk.Frame(notebook)
-    notebook.add(grid_tab, text="📅 Timetable Grid")
+    notebook.add(grid_tab, text=_t('gui.academics.course_management_gui.schedules.schedules.tabs.timetable_grid', default="📅 Timetable Grid"))
 
     # Filter for grid view
     grid_filter_frame = ttk.Frame(grid_tab)
     grid_filter_frame.pack(fill=tk.X, pady=5, padx=10)
 
-    ttk.Label(grid_filter_frame, text="Show schedule for:").pack(side=tk.LEFT, padx=5)
-    grid_filter_var = tk.StringVar(value="All Courses")
+    ttk.Label(grid_filter_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.show_schedule_for', default="Show schedule for:")).pack(side=tk.LEFT, padx=5)
+    grid_filter_var = tk.StringVar(value=_t('gui.academics.course_management_gui.schedules.schedules.values.all_courses', default="All Courses"))
     grid_filter_combo = ttk.Combobox(grid_filter_frame, textvariable=grid_filter_var,
                                     state='readonly', width=40)
     grid_filter_combo.pack(side=tk.LEFT, padx=5)
 
-    ttk.Button(grid_filter_frame, text="🔄 Refresh Grid",
+    ttk.Button(grid_filter_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.refresh_grid', default="🔄 Refresh Grid"),
               command=lambda: load_timetable_grid()).pack(side=tk.LEFT, padx=5)
 
     # Scrollable grid container
@@ -574,7 +576,7 @@ def view_course_schedules_gui(self):
                 ))
 
             if not schedules:
-                messagebox.showinfo(_("common.no_results"), "No course schedules found")
+                messagebox.showinfo(_("common.no_results"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.no_course_schedules_found', default="No course schedules found"))
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to load schedules: {e}")
@@ -584,14 +586,14 @@ def view_course_schedules_gui(self):
         """Delete selected schedule from list"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a schedule to delete")
+            messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_a_schedule_to_delete', default="Please select a schedule to delete"))
             return
 
         item = tree.item(selection[0])
         schedule_id = item['values'][0]
         course_code = item['values'][1]
 
-        if not messagebox.askyesno("Confirm Delete",
+        if not messagebox.askyesno(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.confirm_delete', default="Confirm Delete"),
                                   f"Delete schedule for {course_code}?\n\nThis action cannot be undone."):
             return
 
@@ -604,7 +606,7 @@ def view_course_schedules_gui(self):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo(_("common.success"), "Schedule deleted successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.schedule_deleted_successfully', default="Schedule deleted successfully!"))
             self.update_status(f"Deleted schedule {schedule_id}")
             load_list_view()
             load_timetable_grid()
@@ -616,7 +618,7 @@ def view_course_schedules_gui(self):
         """Edit selected schedule"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a schedule to edit")
+            messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_a_schedule_to_edit', default="Please select a schedule to edit"))
             return
 
         item = tree.item(selection[0])
@@ -712,7 +714,7 @@ def view_course_schedules_gui(self):
                     grid_data[day][closest_slot].append(session_info)
 
             # Create grid header - Time column
-            time_header = tk.Label(grid_frame, text="Time", font=('Arial', 10, 'bold'),
+            time_header = tk.Label(grid_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.time', default="Time"), font=('Arial', 10, 'bold'),
                                   relief=tk.SOLID, borderwidth=2, bg='#4a90e2', fg='white',
                                   width=10, height=2)
             time_header.grid(row=0, column=0, padx=1, pady=1, sticky="nsew")
@@ -780,7 +782,7 @@ def view_course_schedules_gui(self):
                             more_label.pack(anchor='w', pady=2)
 
             if not schedule_data:
-                no_data_label = tk.Label(grid_frame, text="No course schedules found",
+                no_data_label = tk.Label(grid_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.no_course_schedules_found', default="No course schedules found"),
                                         font=('Arial', 12), fg='gray')
                 no_data_label.grid(row=1, column=1, columnspan=5, pady=50)
 
@@ -798,7 +800,7 @@ def view_course_schedules_gui(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     # Initial load
     load_courses()
@@ -813,14 +815,14 @@ def update_schedule_gui(self):
     """
     # First, show schedule selection dialog
     select_dialog = tk.Toplevel(self.root)
-    select_dialog.title("Select Schedule to Update")
+    select_dialog.title(_t('gui.academics.course_management_gui.schedules.schedules.windows.select_schedule_to_update', default="Select Schedule to Update"))
     select_dialog.geometry("600x400")
     select_dialog.transient(self.root)
 
     main_frame = ttk.Frame(select_dialog, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Select Schedule to Update",
+    ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.select_schedule_to_update', default="Select Schedule to Update"),
              font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
     # Listbox for schedules
@@ -863,7 +865,7 @@ def update_schedule_gui(self):
     def open_edit_dialog():
         selection = schedule_listbox.curselection()
         if not selection:
-            messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a schedule to update")
+            messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_a_schedule_to_update', default="Please select a schedule to update"))
             return
 
         selected_text = schedule_listbox.get(selection[0])
@@ -881,8 +883,8 @@ def update_schedule_gui(self):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Button(button_frame, text="Edit Selected", command=open_edit_dialog).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=select_dialog.destroy).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.edit_selected', default="Edit Selected"), command=open_edit_dialog).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.cancel', default="Cancel"), command=select_dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     load_schedules()
 
@@ -892,20 +894,20 @@ def show_update_schedule_by_id(self, schedule_id):
     # For now, open the general update dialog
     # Can be enhanced later to pre-populate with schedule data
     self.show_update_schedule()
-    messagebox.showinfo("Edit Schedule", f"Please select schedule ID: {schedule_id} from the list")
+    messagebox.showinfo(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.edit_schedule', default="Edit Schedule"), f"Please select schedule ID: {schedule_id} from the list")
 
 
 def _show_schedule_edit_dialog(self, schedule_id):
     """Helper method to show the schedule edit dialog"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Update Course Schedule")
+    dialog.title(_t('gui.academics.course_management_gui.schedules.schedules.windows.update_course_schedule', default="Update Course Schedule"))
     dialog.geometry("600x500")
     dialog.transient(self.root)
 
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Update Course Schedule",
+    ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.update_course_schedule', default="Update Course Schedule"),
              font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
     # Load current schedule data
@@ -921,7 +923,7 @@ def _show_schedule_edit_dialog(self, schedule_id):
         conn.close()
 
         if not current:
-            messagebox.showerror(_("common.error"), "Schedule not found")
+            messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.schedule_not_found', default="Schedule not found"))
             dialog.destroy()
             return
 
@@ -937,7 +939,7 @@ def _show_schedule_edit_dialog(self, schedule_id):
     row = 0
 
     # Semester
-    ttk.Label(form_frame, text="Semester:").grid(row=row, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.semester', default="Semester:")).grid(row=row, column=0, sticky=tk.W, pady=5)
     semester_var = tk.StringVar(value=current[1])
     semester_combo = ttk.Combobox(form_frame, textvariable=semester_var,
                                  values=["Fall", "Spring", "Summer", "Winter"],
@@ -946,35 +948,35 @@ def _show_schedule_edit_dialog(self, schedule_id):
     row += 1
 
     # Year
-    ttk.Label(form_frame, text="Year:").grid(row=row, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.year', default="Year:")).grid(row=row, column=0, sticky=tk.W, pady=5)
     year_var = tk.StringVar(value=str(current[2]))
     year_entry = ttk.Entry(form_frame, textvariable=year_var, width=27)
     year_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
     row += 1
 
     # Start time
-    ttk.Label(form_frame, text="Start Time (HH:MM):").grid(row=row, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.start_time_hh_mm', default="Start Time (HH:MM):")).grid(row=row, column=0, sticky=tk.W, pady=5)
     start_time_var = tk.StringVar(value=current[3] or '')
     start_time_entry = ttk.Entry(form_frame, textvariable=start_time_var, width=27)
     start_time_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
     row += 1
 
     # End time
-    ttk.Label(form_frame, text="End Time (HH:MM):").grid(row=row, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.end_time_hh_mm', default="End Time (HH:MM):")).grid(row=row, column=0, sticky=tk.W, pady=5)
     end_time_var = tk.StringVar(value=current[4] or '')
     end_time_entry = ttk.Entry(form_frame, textvariable=end_time_var, width=27)
     end_time_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
     row += 1
 
     # Days
-    ttk.Label(form_frame, text="Days of Week:").grid(row=row, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.days_of_week', default="Days of Week:")).grid(row=row, column=0, sticky=tk.W, pady=5)
     days_var = tk.StringVar(value=current[5] or '')
     days_entry = ttk.Entry(form_frame, textvariable=days_var, width=27)
     days_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
     row += 1
 
     # Classroom
-    ttk.Label(form_frame, text="Classroom:").grid(row=row, column=0, sticky=tk.W, pady=5)
+    ttk.Label(form_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.classroom', default="Classroom:")).grid(row=row, column=0, sticky=tk.W, pady=5)
     classroom_var = tk.StringVar(value=current[6] or '')
     classroom_entry = ttk.Entry(form_frame, textvariable=classroom_var, width=27)
     classroom_entry.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
@@ -983,21 +985,21 @@ def _show_schedule_edit_dialog(self, schedule_id):
     def save_changes():
         # Validate inputs
         if start_time_var.get() and not self.validate_time_format(start_time_var.get()):
-            messagebox.showerror("Invalid Format", "Start time must be in HH:MM format")
+            messagebox.showerror(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.invalid_format', default="Invalid Format"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.start_time_must_be_in_hh_mm_format', default="Start time must be in HH:MM format"))
             return
 
         if end_time_var.get() and not self.validate_time_format(end_time_var.get()):
-            messagebox.showerror("Invalid Format", "End time must be in HH:MM format")
+            messagebox.showerror(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.invalid_format', default="Invalid Format"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.end_time_must_be_in_hh_mm_format', default="End time must be in HH:MM format"))
             return
 
         if days_var.get() and not self.validate_days_of_week(days_var.get()):
-            messagebox.showerror("Invalid Format", "Days must be full day names separated by commas")
+            messagebox.showerror(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.invalid_format', default="Invalid Format"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.days_must_be_full_day_names_separated_by_commas', default="Days must be full day names separated by commas"))
             return
 
         try:
             year = int(year_var.get())
         except ValueError:
-            messagebox.showerror("Invalid Year", "Please enter a valid year")
+            messagebox.showerror(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.invalid_year', default="Invalid Year"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_enter_a_valid_year', default="Please enter a valid year"))
             return
 
         try:
@@ -1017,7 +1019,7 @@ def _show_schedule_edit_dialog(self, schedule_id):
             conn.commit()
             conn.close()
 
-            messagebox.showinfo(_("common.success"), "Schedule updated successfully!")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.schedule_updated_successfully', default="Schedule updated successfully!"))
             self.update_status("Course schedule updated")
             dialog.destroy()
 
@@ -1028,8 +1030,8 @@ def _show_schedule_edit_dialog(self, schedule_id):
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X, pady=10)
 
-    ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.RIGHT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side=tk.RIGHT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
 
 class CreateScheduleDialog:
@@ -1041,7 +1043,7 @@ class CreateScheduleDialog:
         self.parent = parent
         self.auth = auth
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create Course Schedule")
+        self.dialog.title(_t('gui.academics.course_management_gui.schedules.schedules.windows.create_course_schedule', default="Create Course Schedule"))
         self.dialog.geometry("560x580")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -1067,23 +1069,23 @@ class CreateScheduleDialog:
         frm = ttk.Frame(self.dialog); frm.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Course
-        course_frame = ttk.LabelFrame(frm, text="Course", padding=10); course_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(course_frame, text="Course:").grid(row=0, column=0, sticky=tk.W)
+        course_frame = ttk.LabelFrame(frm, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.course', default="Course"), padding=10); course_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(course_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.course_variant_2', default="Course:")).grid(row=0, column=0, sticky=tk.W)
         self.course_combo = ttk.Combobox(course_frame, width=50, state='readonly')
         self.course_combo.grid(row=0, column=1, sticky=tk.W, padx=6)
         self._load_courses()
 
         # Term
-        term_frame = ttk.LabelFrame(frm, text="Term", padding=10); term_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(term_frame, text="Semester:").grid(row=0, column=0, sticky=tk.W)
-        self.semester_var = tk.StringVar(value="Fall")
+        term_frame = ttk.LabelFrame(frm, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.term', default="Term"), padding=10); term_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(term_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.semester', default="Semester:")).grid(row=0, column=0, sticky=tk.W)
+        self.semester_var = tk.StringVar(value=_t('gui.academics.course_management_gui.schedules.schedules.values.fall', default="Fall"))
         sem_combo = ttk.Combobox(term_frame, textvariable=self.semester_var,
                      values=["Fall", "Spring", "Summer", "Winter"],
                      state='readonly', width=12)
         sem_combo.grid(row=0, column=1, sticky=tk.W, padx=6)
         sem_combo.bind('<<ComboboxSelected>>', self._refresh_availability)
 
-        ttk.Label(term_frame, text="Year:").grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(term_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.year', default="Year:")).grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
         current_year = datetime.now().year
         self.year_var = tk.StringVar(value=str(current_year))
         year_combo = ttk.Combobox(term_frame, textvariable=self.year_var,
@@ -1093,16 +1095,16 @@ class CreateScheduleDialog:
         year_combo.bind('<<ComboboxSelected>>', self._refresh_availability)
 
         # Meeting details
-        mtg = ttk.LabelFrame(frm, text="Meeting Details", padding=10); mtg.pack(fill=tk.X, pady=5)
+        mtg = ttk.LabelFrame(frm, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.meeting_details', default="Meeting Details"), padding=10); mtg.pack(fill=tk.X, pady=5)
 
-        ttk.Label(mtg, text="Start Time:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.start_time', default="Start Time:")).grid(row=0, column=0, sticky=tk.W)
         self.start_var = tk.StringVar(value="09:00")
         start_combo = ttk.Combobox(mtg, textvariable=self.start_var, values=self.TIME_SLOTS,
                      state='readonly', width=10)
         start_combo.grid(row=0, column=1, sticky=tk.W, padx=6)
         start_combo.bind('<<ComboboxSelected>>', self._refresh_availability)
 
-        ttk.Label(mtg, text="End Time:").grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.end_time', default="End Time:")).grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
         self.end_var = tk.StringVar(value="10:00")
         end_combo = ttk.Combobox(mtg, textvariable=self.end_var, values=self.TIME_SLOTS,
                      state='readonly', width=10)
@@ -1110,7 +1112,7 @@ class CreateScheduleDialog:
         end_combo.bind('<<ComboboxSelected>>', self._refresh_availability)
 
         # Days — checkbuttons
-        ttk.Label(mtg, text="Days:").grid(row=2, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.days', default="Days:")).grid(row=2, column=0, sticky=tk.W, pady=(6, 0))
         days_frame = ttk.Frame(mtg)
         days_frame.grid(row=2, column=1, sticky=tk.W, padx=6, pady=(6, 0))
         self._day_vars = []
@@ -1121,13 +1123,13 @@ class CreateScheduleDialog:
             self._day_vars.append(var)
 
         # Classroom — availability-filtered
-        ttk.Label(mtg, text="Classroom:").grid(row=3, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.classroom', default="Classroom:")).grid(row=3, column=0, sticky=tk.W, pady=(6, 0))
         self.room_var = tk.StringVar()
         self.room_combo = ttk.Combobox(mtg, textvariable=self.room_var, width=45, state='readonly')
         self.room_combo.grid(row=3, column=1, sticky=tk.W, padx=6, pady=(6, 0))
 
         # Instructor — availability-filtered
-        ttk.Label(mtg, text="Instructor:").grid(row=4, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.instructor_variant_2', default="Instructor:")).grid(row=4, column=0, sticky=tk.W, pady=(6, 0))
         self.instructor_combo = ttk.Combobox(mtg, width=45, state='readonly')
         self.instructor_combo.grid(row=4, column=1, sticky=tk.W, padx=6, pady=(6, 0))
 
@@ -1137,8 +1139,8 @@ class CreateScheduleDialog:
 
         # Buttons
         btns = ttk.Frame(frm); btns.pack(fill=tk.X, pady=12)
-        ttk.Button(btns, text="Create", command=self._create).pack(side=tk.RIGHT, padx=6)
-        ttk.Button(btns, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.create', default="Create"), command=self._create).pack(side=tk.RIGHT, padx=6)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def _load_courses(self):
         self._course_id = {}
@@ -1228,7 +1230,7 @@ class CreateScheduleDialog:
     def _create(self):
         course_key = self.course_combo.get().strip()
         if course_key not in self._course_id:
-            messagebox.showwarning(_("common.validation"), "Please select a course."); return
+            messagebox.showwarning(_("common.validation"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_a_course', default="Please select a course.")); return
 
         semester = self.semester_var.get().strip()
         year = int(self.year_var.get())
@@ -1244,7 +1246,7 @@ class CreateScheduleDialog:
         end_time = self.end_var.get() or None
 
         if start_time and end_time and end_time <= start_time:
-            messagebox.showwarning(_("common.validation"), "End time must be after start time."); return
+            messagebox.showwarning(_("common.validation"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.end_time_must_be_after_start_time', default="End time must be after start time.")); return
 
         conn = None
         try:
@@ -1256,7 +1258,7 @@ class CreateScheduleDialog:
             cur.execute("SELECT id FROM course_schedule WHERE course_id = ? AND semester = ? AND year = ?",
                         (course_id, semester, year))
             if cur.fetchone():
-                messagebox.showerror("Duplicate", f"A schedule already exists for this course in {semester} {year}.")
+                messagebox.showerror(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.duplicate', default="Duplicate"), f"A schedule already exists for this course in {semester} {year}.")
                 return
 
             cur.execute("""
@@ -1275,7 +1277,7 @@ class CreateScheduleDialog:
             except Exception:
                 pass  # Email is best-effort
 
-            messagebox.showinfo(_("common.success"), "Schedule created successfully.")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.schedule_created_successfully', default="Schedule created successfully."))
             self.dialog.destroy()
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to create schedule: {e}")
@@ -1288,7 +1290,7 @@ class ViewSchedulesDialog:
     def __init__(self, parent, auth):
         self.parent = parent; self.auth = auth
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("View Course Schedules")
+        self.dialog.title(_t('gui.academics.course_management_gui.schedules.schedules.windows.view_course_schedules', default="View Course Schedules"))
         self.dialog.geometry("900x520")
         self.dialog.transient(parent); self.dialog.grab_set()
         self._ui(); self._load()
@@ -1309,8 +1311,8 @@ class ViewSchedulesDialog:
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True); y.pack(side=tk.RIGHT, fill=tk.Y)
 
         btns = ttk.Frame(self.dialog); btns.pack(fill=tk.X, padx=10, pady=8)
-        ttk.Button(btns, text="Refresh", command=self._load).pack(side=tk.LEFT)
-        ttk.Button(btns, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.refresh', default="Refresh"), command=self._load).pack(side=tk.LEFT)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def _load(self):
         from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -1364,7 +1366,7 @@ class UpdateScheduleDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Update Course Schedule")
+        self.dialog.title(_t('gui.academics.course_management_gui.schedules.schedules.windows.update_course_schedule', default="Update Course Schedule"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -1386,9 +1388,9 @@ class UpdateScheduleDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Update Selected", command=self.update_schedule).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.load_schedules).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.update_selected', default="Update Selected"), command=self.update_schedule).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.refresh', default="Refresh"), command=self.load_schedules).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         self.load_schedules()
 
@@ -1420,7 +1422,7 @@ class UpdateScheduleDialog:
     def update_schedule(self):
         selection = self.schedule_tree.selection()
         if not selection:
-            messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a schedule to update.")
+            messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.please_select_a_schedule_to_update_variant_2', default="Please select a schedule to update."))
             return
 
         schedule_data = self.schedule_tree.item(selection[0])['values']
@@ -1442,7 +1444,7 @@ class UpdateScheduleFormDialog:
         self.auth = auth
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Update Schedule Details")
+        self.dialog.title(_t('gui.academics.course_management_gui.schedules.schedules.windows.update_schedule_details', default="Update Schedule Details"))
         self.dialog.geometry("560x550")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -1489,13 +1491,13 @@ class UpdateScheduleFormDialog:
         frm.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Course info (read-only)
-        info_frame = ttk.LabelFrame(frm, text="Course", padding=10)
+        info_frame = ttk.LabelFrame(frm, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.course', default="Course"), padding=10)
         info_frame.pack(fill=tk.X, pady=5)
         ttk.Label(info_frame, text=f"{self.course_label}  —  {self.current_data[2]} {self.current_data[3]}",
                   font=('Arial', 10, 'bold')).pack(anchor=tk.W)
 
         # Meeting details
-        mtg = ttk.LabelFrame(frm, text="Meeting Details", padding=10)
+        mtg = ttk.LabelFrame(frm, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.meeting_details', default="Meeting Details"), padding=10)
         mtg.pack(fill=tk.X, pady=5)
 
         cur_start = self.current_data[4] or ""
@@ -1505,7 +1507,7 @@ class UpdateScheduleFormDialog:
         self._orig_instructor_id = self.current_data[8]
 
         # Start time
-        ttk.Label(mtg, text="Start Time:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.start_time', default="Start Time:")).grid(row=0, column=0, sticky=tk.W)
         self.start_var = tk.StringVar(value=cur_start if cur_start in self.TIME_SLOTS else "09:00")
         start_combo = ttk.Combobox(mtg, textvariable=self.start_var, values=self.TIME_SLOTS,
                                    state='readonly', width=10)
@@ -1513,7 +1515,7 @@ class UpdateScheduleFormDialog:
         start_combo.bind('<<ComboboxSelected>>', self._refresh_availability)
 
         # End time
-        ttk.Label(mtg, text="End Time:").grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.end_time', default="End Time:")).grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
         self.end_var = tk.StringVar(value=cur_end if cur_end in self.TIME_SLOTS else "10:00")
         end_combo = ttk.Combobox(mtg, textvariable=self.end_var, values=self.TIME_SLOTS,
                                  state='readonly', width=10)
@@ -1521,7 +1523,7 @@ class UpdateScheduleFormDialog:
         end_combo.bind('<<ComboboxSelected>>', self._refresh_availability)
 
         # Days — checkbuttons pre-set from current
-        ttk.Label(mtg, text="Days:").grid(row=2, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.days', default="Days:")).grid(row=2, column=0, sticky=tk.W, pady=(6, 0))
         days_frame = ttk.Frame(mtg)
         days_frame.grid(row=2, column=1, sticky=tk.W, padx=6, pady=(6, 0))
         self._day_vars = []
@@ -1532,13 +1534,13 @@ class UpdateScheduleFormDialog:
             self._day_vars.append(var)
 
         # Classroom — availability-filtered
-        ttk.Label(mtg, text="Classroom:").grid(row=3, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.classroom', default="Classroom:")).grid(row=3, column=0, sticky=tk.W, pady=(6, 0))
         self.room_var = tk.StringVar()
         self.room_combo = ttk.Combobox(mtg, textvariable=self.room_var, width=45, state='readonly')
         self.room_combo.grid(row=3, column=1, sticky=tk.W, padx=6, pady=(6, 0))
 
         # Instructor — availability-filtered
-        ttk.Label(mtg, text="Instructor:").grid(row=4, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(mtg, text=_t('gui.academics.course_management_gui.schedules.schedules.labels.instructor_variant_2', default="Instructor:")).grid(row=4, column=0, sticky=tk.W, pady=(6, 0))
         self.instructor_combo = ttk.Combobox(mtg, width=45, state='readonly')
         self.instructor_combo.grid(row=4, column=1, sticky=tk.W, padx=6, pady=(6, 0))
 
@@ -1558,8 +1560,8 @@ class UpdateScheduleFormDialog:
         # Buttons
         btns = ttk.Frame(frm)
         btns.pack(fill=tk.X, pady=12)
-        ttk.Button(btns, text="Update", command=self.update_schedule).pack(side=tk.RIGHT, padx=6)
-        ttk.Button(btns, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.update', default="Update"), command=self.update_schedule).pack(side=tk.RIGHT, padx=6)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.schedules.schedules.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def _load_rooms(self, semester, year, start, end, days):
         self._room_map = {}
@@ -1638,7 +1640,7 @@ class UpdateScheduleFormDialog:
         new_instructor_id = self._instr_id.get(instr_key, self._orig_instructor_id)
 
         if new_start and new_end and new_end <= new_start:
-            messagebox.showwarning(_("common.validation"), "End time must be after start time.")
+            messagebox.showwarning(_("common.validation"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.end_time_must_be_after_start_time', default="End time must be after start time."))
             return
 
         # Get original values for comparison
@@ -1650,7 +1652,7 @@ class UpdateScheduleFormDialog:
 
         if (new_start == orig_start and new_end == orig_end and new_days == orig_days
                 and new_classroom == orig_room and new_instructor_id == orig_instr):
-            messagebox.showinfo("No Changes", "No changes were made to the schedule.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.schedules.schedules.dialogs.no_changes', default="No Changes"), _t('gui.academics.course_management_gui.schedules.schedules.dialogs.no_changes_were_made_to_the_schedule', default="No changes were made to the schedule."))
             return
 
         # Build change summary

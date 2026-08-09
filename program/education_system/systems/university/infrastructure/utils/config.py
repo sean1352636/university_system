@@ -8,7 +8,7 @@ import smtplib
 import jsonschema
 
 from education_system.systems.university.infrastructure.logs import handle_exception, log_event
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text
 
 
@@ -47,7 +47,7 @@ DEFAULT_CONFIG = {
     "email_signature": "\n\nRegards,\nTees University",
     "send_delay": 1.0,   # Delay between emails in seconds
     "max_threads": 1,    # Maximum number of concurrent email sending threads
-    "templates_dir": str(paths.EMAIL_TEMPLATES_DIR),
+    "templates_dir": str(paths.UNIVERSITY_EMAIL_TEMPLATES_DIR),
     "database_only_mode": True  # NEW: Store emails in database instead of sending
 }
 
@@ -57,7 +57,7 @@ config = DEFAULT_CONFIG.copy()
 
 
 def _config_path():
-    return paths.EMAIL_CONFIG_PATH
+    return paths.UNIVERSITY_EMAIL_CONFIG_PATH
 
 
 
@@ -336,20 +336,8 @@ def test_email_configuration(test_recipient=None):
         subject, body = render_template('email_system_test', template_vars)
     except Exception as e:
         log_event('error', f"Failed to render email template: {e}")
-        # Fallback to hardcoded message if template fails
-        subject = "Test Email from Student Records System"
-        body = f"""This is a test email sent from the Student Records System.
-
-Configuration:
-- Mode: {template_vars['mode']}
-- SMTP Server: {template_vars['smtp_server']}
-- SMTP Port: {template_vars['smtp_port']}
-- Sender: {template_vars['sender_email']}
-- TLS Enabled: {template_vars['tls_enabled']}
-- Authentication: {template_vars['authentication_enabled']}
-
-{template_vars['mode_message']}
-{config['email_signature']}"""
+        print("Email test template could not be loaded; no test email was sent.")
+        return False
 
     print(f"Processing test email to {test_recipient}...")
     result = send_email(test_recipient, subject, body)

@@ -15,13 +15,13 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any
 
-from education_system.systems.secondary.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
 # Re-exported so existing references to ``pupils.DB_PATH`` keep working.
 # Tests that need an isolated DB still rebind this module attribute.
-DB_PATH = paths.PUPILS_DB
+DB_PATH = paths.SECONDARY_PUPILS_DB
 
 ID_PREFIX = "Y"
 ID_DIGITS = 7

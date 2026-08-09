@@ -12,13 +12,13 @@ from pathlib import Path
 
 
 def _auth_db_path():
-    from education_system.platform.paths import AUTH_DB_FILE
-    return AUTH_DB_FILE
+    from education_system.paths import PLATFORM_AUTH_DB_FILE
+    return PLATFORM_AUTH_DB_FILE
 
 
 def _documents_dir():
-    from education_system.platform.paths import DOCUMENTS_DIR
-    return DOCUMENTS_DIR
+    from education_system.paths import PLATFORM_DOCUMENTS_DIR
+    return PLATFORM_DOCUMENTS_DIR
 
 
 _CREATE_TABLE_SQL = """

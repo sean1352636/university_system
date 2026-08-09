@@ -15,7 +15,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime, date
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 logger = logging.getLogger("absence_tracker")
 if not logger.handlers:
@@ -30,7 +30,7 @@ class Database:
     """Read/write absence data against the main university database."""
 
     def __init__(self, path=None):
-        self.path = path or str(DEFAULT_DB_PATH)
+        self.path = path or str(UNIVERSITY_DEFAULT_DB_PATH)
         self.conn = sqlite3.connect(self.path)
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.cur = self.conn.cursor()

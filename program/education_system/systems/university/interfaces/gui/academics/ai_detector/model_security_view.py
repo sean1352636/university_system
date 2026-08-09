@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import io
 import json
 import os
@@ -77,64 +79,64 @@ def create_model_management_view(self, parent):
     model_card = ttk.Frame(model_frame, style='Card.TFrame')
     model_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(model_card, text="Model & System Management", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(model_card, text=_t('gui.academics.ai_detector.model_security_view.labels.model_system_management', default="Model & System Management"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Model Training Section
-    training_frame = ttk.LabelFrame(model_card, text="Model Training", padding=15)
+    training_frame = ttk.LabelFrame(model_card, text=_t('gui.academics.ai_detector.model_security_view.labels.model_training', default="Model Training"), padding=15)
     training_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     training_row = ttk.Frame(training_frame)
     training_row.pack(fill='x')
-    ttk.Button(training_row, text="Retrain Detection Model",
+    ttk.Button(training_row, text=_t('gui.academics.ai_detector.model_security_view.buttons.retrain_detection_model', default="Retrain Detection Model"),
               command=self.retrain_detection_model).pack(side='left', padx=(0, 10))
-    ttk.Button(training_row, text="View Training Progress",
+    ttk.Button(training_row, text=_t('gui.academics.ai_detector.model_security_view.buttons.view_training_progress', default="View Training Progress"),
               command=self._view_training_progress).pack(side='left')
 
-    self.training_status_var = tk.StringVar(value="No training in progress")
+    self.training_status_var = tk.StringVar(value=_t('gui.academics.ai_detector.model_security_view.values.no_training_in_progress', default="No training in progress"))
     ttk.Label(training_frame, textvariable=self.training_status_var,
              foreground=self.colors['text_secondary']).pack(anchor='w', pady=(10, 0))
 
     # Model Versions Section
-    versions_frame = ttk.LabelFrame(model_card, text="Model Versions", padding=15)
+    versions_frame = ttk.LabelFrame(model_card, text=_t('gui.academics.ai_detector.model_security_view.labels.model_versions', default="Model Versions"), padding=15)
     versions_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     versions_row = ttk.Frame(versions_frame)
     versions_row.pack(fill='x', pady=(0, 10))
-    ttk.Label(versions_row, text="Current Version:").pack(side='left')
-    self.current_version_var = tk.StringVar(value="v1.0.0")
+    ttk.Label(versions_row, text=_t('gui.academics.ai_detector.model_security_view.labels.current_version', default="Current Version:")).pack(side='left')
+    self.current_version_var = tk.StringVar(value=_t('gui.academics.ai_detector.model_security_view.values.v1_0_0', default="v1.0.0"))
     ttk.Label(versions_row, textvariable=self.current_version_var,
              font=('Segoe UI', 10, 'bold')).pack(side='left', padx=(5, 0))
 
     version_buttons = ttk.Frame(versions_frame)
     version_buttons.pack(fill='x')
-    ttk.Button(version_buttons, text="Rollback to Previous",
+    ttk.Button(version_buttons, text=_t('gui.academics.ai_detector.model_security_view.buttons.rollback_to_previous', default="Rollback to Previous"),
               command=self.rollback_model_version).pack(side='left', padx=(0, 10))
-    ttk.Button(version_buttons, text="Compare Versions",
+    ttk.Button(version_buttons, text=_t('gui.academics.ai_detector.model_security_view.buttons.compare_versions', default="Compare Versions"),
               command=self.compare_model_versions).pack(side='left')
 
     # Export/Import Section
-    export_frame = ttk.LabelFrame(model_card, text="Model Export/Import", padding=15)
+    export_frame = ttk.LabelFrame(model_card, text=_t('gui.academics.ai_detector.model_security_view.labels.model_export_import', default="Model Export/Import"), padding=15)
     export_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     export_buttons = ttk.Frame(export_frame)
     export_buttons.pack(fill='x')
-    ttk.Button(export_buttons, text="Export Model Weights",
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.model_security_view.buttons.export_model_weights', default="Export Model Weights"),
               command=self.export_model_weights).pack(side='left', padx=(0, 10))
-    ttk.Button(export_buttons, text="Import Model Weights",
+    ttk.Button(export_buttons, text=_t('gui.academics.ai_detector.model_security_view.buttons.import_model_weights', default="Import Model Weights"),
               command=self.import_model_weights).pack(side='left')
 
     # Cache Management Section
-    cache_frame = ttk.LabelFrame(model_card, text="Cache Management", padding=15)
+    cache_frame = ttk.LabelFrame(model_card, text=_t('gui.academics.ai_detector.model_security_view.labels.cache_management', default="Cache Management"), padding=15)
     cache_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    self.cache_size_var = tk.StringVar(value="Cache size: calculating...")
+    self.cache_size_var = tk.StringVar(value=_t('gui.academics.ai_detector.model_security_view.values.cache_size_calculating', default="Cache size: calculating..."))
     ttk.Label(cache_frame, textvariable=self.cache_size_var).pack(anchor='w')
 
     cache_buttons = ttk.Frame(cache_frame)
     cache_buttons.pack(fill='x', pady=(10, 0))
-    ttk.Button(cache_buttons, text="Clear Analysis Cache",
+    ttk.Button(cache_buttons, text=_t('gui.academics.ai_detector.model_security_view.buttons.clear_analysis_cache', default="Clear Analysis Cache"),
               command=self.clear_analysis_cache).pack(side='left', padx=(0, 10))
-    ttk.Button(cache_buttons, text="Refresh Cache Info",
+    ttk.Button(cache_buttons, text=_t('gui.academics.ai_detector.model_security_view.buttons.refresh_cache_info', default="Refresh Cache Info"),
               command=self._refresh_cache_info).pack(side='left')
 
     # Load initial info
@@ -156,7 +158,7 @@ def _load_model_version(self):
 
 def _view_training_progress(self):
     """View model training progress"""
-    messagebox.showinfo("Training Status", self.training_status_var.get())
+    messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.training_status', default="Training Status"), self.training_status_var.get())
 
 
 def _refresh_cache_info(self):
@@ -172,9 +174,9 @@ def _refresh_cache_info(self):
 
 def retrain_detection_model(self):
     """Trigger model retraining with new data"""
-    if not messagebox.askyesno("Confirm",
-                               "Retraining the model may take several minutes.\n\n"
-                               "Do you want to continue?"):
+    if not messagebox.askyesno(_t('gui.academics.ai_detector.model_security_view.dialogs.confirm', default="Confirm"),
+                               _t('gui.academics.ai_detector.model_security_view.dialogs.retraining_the_model_may_take_several_minutes_do_you_want_to_con', default="Retraining the model may take several minutes.\n\n"
+                               "Do you want to continue?")):
         return
 
     try:
@@ -196,9 +198,9 @@ def retrain_detection_model(self):
         thread = threading.Thread(target=train, daemon=True)
         thread.start()
 
-        messagebox.showinfo("Info", "Model retraining started in background")
+        messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.info', default="Info"), _t('gui.academics.ai_detector.model_security_view.dialogs.model_retraining_started_in_background', default="Model retraining started in background"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to start training: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to start training: {str(e)}")
 
 
 def rollback_model_version(self):
@@ -225,17 +227,17 @@ def rollback_model_version(self):
         conn.close()
 
         if not versions:
-            messagebox.showinfo("Info", "No previous versions available for rollback")
+            messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.info', default="Info"), _t('gui.academics.ai_detector.model_security_view.dialogs.no_previous_versions_available_for_rollback', default="No previous versions available for rollback"))
             return
 
         # Let user select version
         version_strs = [f"{v[0]} ({v[1]})" for v in versions]
 
         rollback_window = tk.Toplevel(self.root)
-        rollback_window.title("Rollback Model Version")
+        rollback_window.title(_t('gui.academics.ai_detector.model_security_view.windows.rollback_model_version', default="Rollback Model Version"))
         rollback_window.geometry("400x200")
 
-        ttk.Label(rollback_window, text="Select version to rollback to:").pack(pady=10)
+        ttk.Label(rollback_window, text=_t('gui.academics.ai_detector.model_security_view.labels.select_version_to_rollback_to', default="Select version to rollback to:")).pack(pady=10)
 
         version_var = tk.StringVar()
         version_combo = ttk.Combobox(rollback_window, textvariable=version_var,
@@ -245,27 +247,27 @@ def rollback_model_version(self):
         def do_rollback():
             if version_var.get():
                 self.current_version_var.set(versions[version_strs.index(version_var.get())][0])
-                messagebox.showinfo("Success", f"Rolled back to {version_var.get()}")
+                messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.success', default="Success"), f"Rolled back to {version_var.get()}")
                 rollback_window.destroy()
                 self.update_status("Model version rolled back")
 
-        ttk.Button(rollback_window, text="Rollback", command=do_rollback).pack(pady=10)
+        ttk.Button(rollback_window, text=_t('gui.academics.ai_detector.model_security_view.buttons.rollback', default="Rollback"), command=do_rollback).pack(pady=10)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to rollback: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to rollback: {str(e)}")
 
 
 def compare_model_versions(self):
     """A/B test between model versions"""
     # Create comparison window
     compare_window = tk.Toplevel(self.root)
-    compare_window.title("Compare Model Versions")
+    compare_window.title(_t('gui.academics.ai_detector.model_security_view.windows.compare_model_versions', default="Compare Model Versions"))
     compare_window.geometry("600x400")
 
-    ttk.Label(compare_window, text="Model Version Comparison",
+    ttk.Label(compare_window, text=_t('gui.academics.ai_detector.model_security_view.labels.model_version_comparison', default="Model Version Comparison"),
              font=('Segoe UI', 12, 'bold')).pack(pady=15)
 
     # Test text input
-    input_frame = ttk.LabelFrame(compare_window, text="Test Text", padding=10)
+    input_frame = ttk.LabelFrame(compare_window, text=_t('gui.academics.ai_detector.model_security_view.labels.test_text', default="Test Text"), padding=10)
     input_frame.pack(fill='x', padx=20, pady=10)
 
     test_text = scrolledtext.ScrolledText(input_frame, height=5, wrap=tk.WORD)
@@ -273,7 +275,7 @@ def compare_model_versions(self):
     test_text.insert('1.0', "Enter test text here to compare model performance...")
 
     # Results frame
-    results_frame = ttk.LabelFrame(compare_window, text="Comparison Results", padding=10)
+    results_frame = ttk.LabelFrame(compare_window, text=_t('gui.academics.ai_detector.model_security_view.labels.comparison_results', default="Comparison Results"), padding=10)
     results_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
     results_text = scrolledtext.ScrolledText(results_frame, height=8, wrap=tk.WORD)
@@ -295,7 +297,7 @@ def compare_model_versions(self):
         results_text.insert(tk.END, f"  AI Score: {random.uniform(30, 70):.1f}%\n")
         results_text.insert(tk.END, f"  Confidence: {random.uniform(0.7, 0.95):.2f}\n")
 
-    ttk.Button(compare_window, text="Run Comparison", command=run_comparison).pack(pady=10)
+    ttk.Button(compare_window, text=_t('gui.academics.ai_detector.model_security_view.buttons.run_comparison', default="Run Comparison"), command=run_comparison).pack(pady=10)
     self.update_status("Model comparison window opened")
 
 
@@ -320,10 +322,10 @@ def export_model_weights(self):
             with open(file_path, 'wb') as f:
                 pickle.dump(weights, f)  # nosemgrep: python.lang.security.deserialization.avoid-pickle
 
-        messagebox.showinfo("Success", f"Model weights exported to:\n{file_path}")
+        messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.success', default="Success"), f"Model weights exported to:\n{file_path}")
         self.update_status("Model weights exported")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export weights: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to export weights: {str(e)}")
 
 
 def import_model_weights(self):
@@ -336,9 +338,9 @@ def import_model_weights(self):
         if not file_path:
             return
 
-        if not messagebox.askyesno("Confirm",
-                                   "Importing new weights will replace the current model.\n\n"
-                                   "Do you want to continue?"):
+        if not messagebox.askyesno(_t('gui.academics.ai_detector.model_security_view.dialogs.confirm', default="Confirm"),
+                                   _t('gui.academics.ai_detector.model_security_view.dialogs.importing_new_weights_will_replace_the_current_model_do_you_want', default="Importing new weights will replace the current model.\n\n"
+                                   "Do you want to continue?")):
             return
 
         if hasattr(self.detector, 'import_weights'):
@@ -349,17 +351,17 @@ def import_model_weights(self):
             if 'version' in weights:
                 self.current_version_var.set(weights['version'])
 
-        messagebox.showinfo("Success", "Model weights imported successfully")
+        messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.success', default="Success"), _t('gui.academics.ai_detector.model_security_view.dialogs.model_weights_imported_successfully', default="Model weights imported successfully"))
         self.update_status("Model weights imported")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to import weights: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to import weights: {str(e)}")
 
 
 def clear_analysis_cache(self):
     """Clear cached analysis results to free memory"""
-    if not messagebox.askyesno("Confirm",
-                               "This will clear all cached analysis results.\n\n"
-                               "Do you want to continue?"):
+    if not messagebox.askyesno(_t('gui.academics.ai_detector.model_security_view.dialogs.confirm', default="Confirm"),
+                               _t('gui.academics.ai_detector.model_security_view.dialogs.this_will_clear_all_cached_analysis_results_do_you_want_to_conti', default="This will clear all cached analysis results.\n\n"
+                               "Do you want to continue?")):
         return
 
     try:
@@ -370,10 +372,10 @@ def clear_analysis_cache(self):
         self.analysis_results = {}
 
         self._refresh_cache_info()
-        messagebox.showinfo("Success", "Analysis cache cleared")
+        messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.success', default="Success"), _t('gui.academics.ai_detector.model_security_view.dialogs.analysis_cache_cleared', default="Analysis cache cleared"))
         self.update_status("Analysis cache cleared")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to clear cache: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to clear cache: {str(e)}")
 
 
 def create_security_audit_view(self, parent):
@@ -385,31 +387,31 @@ def create_security_audit_view(self, parent):
     security_card = ttk.Frame(security_frame, style='Card.TFrame')
     security_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(security_card, text="Security & Audit", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(security_card, text=_t('gui.academics.ai_detector.model_security_view.labels.security_audit', default="Security & Audit"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Activity Log Section
-    activity_frame = ttk.LabelFrame(security_card, text="User Activity Log", padding=15)
+    activity_frame = ttk.LabelFrame(security_card, text=_t('gui.academics.ai_detector.model_security_view.labels.user_activity_log', default="User Activity Log"), padding=15)
     activity_frame.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
     activity_controls = ttk.Frame(activity_frame)
     activity_controls.pack(fill='x', pady=(0, 10))
 
-    ttk.Label(activity_controls, text="User:").pack(side='left')
-    self.audit_user_var = tk.StringVar(value="All Users")
+    ttk.Label(activity_controls, text=_t('gui.academics.ai_detector.model_security_view.labels.user', default="User:")).pack(side='left')
+    self.audit_user_var = tk.StringVar(value=_t('gui.academics.ai_detector.model_security_view.values.all_users', default="All Users"))
     ttk.Combobox(activity_controls, textvariable=self.audit_user_var,
                 values=["All Users"], width=20, state='readonly').pack(side='left', padx=(5, 10))
-    ttk.Button(activity_controls, text="View Activity Log",
+    ttk.Button(activity_controls, text=_t('gui.academics.ai_detector.model_security_view.buttons.view_activity_log', default="View Activity Log"),
               command=self.view_user_activity_log).pack(side='left', padx=(0, 10))
-    ttk.Button(activity_controls, text="Export Log",
+    ttk.Button(activity_controls, text=_t('gui.academics.ai_detector.model_security_view.buttons.export_log', default="Export Log"),
               command=self._export_activity_log).pack(side='left')
 
     # Activity log treeview
     columns = ('timestamp', 'user', 'action', 'details')
     self.activity_tree = ttk.Treeview(activity_frame, columns=columns, show='headings', height=8)
-    self.activity_tree.heading('timestamp', text='Timestamp')
-    self.activity_tree.heading('user', text='User')
-    self.activity_tree.heading('action', text='Action')
-    self.activity_tree.heading('details', text='Details')
+    self.activity_tree.heading('timestamp', text=_t('gui.academics.ai_detector.model_security_view.headings.timestamp', default='Timestamp'))
+    self.activity_tree.heading('user', text=_t('gui.academics.ai_detector.model_security_view.headings.user', default='User'))
+    self.activity_tree.heading('action', text=_t('gui.academics.ai_detector.model_security_view.headings.action', default='Action'))
+    self.activity_tree.heading('details', text=_t('gui.academics.ai_detector.model_security_view.headings.details', default='Details'))
 
     self.activity_tree.column('timestamp', width=150)
     self.activity_tree.column('user', width=100)
@@ -422,32 +424,32 @@ def create_security_audit_view(self, parent):
     activity_scroll.pack(side='right', fill='y')
 
     # Chain of Custody Section
-    custody_frame = ttk.LabelFrame(security_card, text="Chain of Custody", padding=15)
+    custody_frame = ttk.LabelFrame(security_card, text=_t('gui.academics.ai_detector.model_security_view.labels.chain_of_custody', default="Chain of Custody"), padding=15)
     custody_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     custody_row = ttk.Frame(custody_frame)
     custody_row.pack(fill='x')
-    ttk.Label(custody_row, text="Submission ID:").pack(side='left')
+    ttk.Label(custody_row, text=_t('gui.academics.ai_detector.model_security_view.labels.submission_id', default="Submission ID:")).pack(side='left')
     self.custody_submission_var = tk.StringVar()
     ttk.Entry(custody_row, textvariable=self.custody_submission_var, width=20).pack(side='left', padx=(5, 10))
-    ttk.Button(custody_row, text="Export Chain of Custody",
+    ttk.Button(custody_row, text=_t('gui.academics.ai_detector.model_security_view.buttons.export_chain_of_custody', default="Export Chain of Custody"),
               command=self.export_chain_of_custody).pack(side='left')
 
     # Data Privacy Section
-    privacy_frame = ttk.LabelFrame(security_card, text="Data Privacy", padding=15)
+    privacy_frame = ttk.LabelFrame(security_card, text=_t('gui.academics.ai_detector.model_security_view.labels.data_privacy', default="Data Privacy"), padding=15)
     privacy_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     privacy_row1 = ttk.Frame(privacy_frame)
     privacy_row1.pack(fill='x', pady=2)
-    ttk.Label(privacy_row1, text="Student ID:").pack(side='left')
+    ttk.Label(privacy_row1, text=_t('gui.academics.ai_detector.model_security_view.labels.student_id', default="Student ID:")).pack(side='left')
     self.privacy_student_var = tk.StringVar()
     ttk.Entry(privacy_row1, textvariable=self.privacy_student_var, width=20).pack(side='left', padx=(5, 10))
 
     privacy_buttons = ttk.Frame(privacy_frame)
     privacy_buttons.pack(fill='x', pady=(10, 0))
-    ttk.Button(privacy_buttons, text="Anonymize Student Data",
+    ttk.Button(privacy_buttons, text=_t('gui.academics.ai_detector.model_security_view.buttons.anonymize_student_data', default="Anonymize Student Data"),
               command=self.anonymize_student_data).pack(side='left', padx=(0, 10))
-    ttk.Button(privacy_buttons, text="Generate GDPR Export",
+    ttk.Button(privacy_buttons, text=_t('gui.academics.ai_detector.model_security_view.buttons.generate_gdpr_export', default="Generate GDPR Export"),
               command=self.generate_gdpr_data_export).pack(side='left')
 
 
@@ -469,9 +471,9 @@ def _export_activity_log(self):
                 values = self.activity_tree.item(item)['values']
                 f.write(",".join(str(v) for v in values) + "\n")
 
-        messagebox.showinfo("Success", f"Activity log exported to:\n{file_path}")
+        messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.success', default="Success"), f"Activity log exported to:\n{file_path}")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export log: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to export log: {str(e)}")
 
 
 def view_user_activity_log(self):
@@ -528,14 +530,14 @@ def view_user_activity_log(self):
 
         self.update_status(f"Loaded {len(logs)} activity log entries")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load activity log: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to load activity log: {str(e)}")
 
 
 def export_chain_of_custody(self):
     """Export complete chain of custody for legal proceedings"""
     submission_id = self.custody_submission_var.get().strip()
     if not submission_id:
-        messagebox.showwarning("Warning", "Please enter a submission ID")
+        messagebox.showwarning(_t('gui.academics.ai_detector.model_security_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.model_security_view.dialogs.please_enter_a_submission_id', default="Please enter a submission ID"))
         return
 
     try:
@@ -592,20 +594,20 @@ def export_chain_of_custody(self):
         if file_path:
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(report)
-            messagebox.showinfo("Success", f"Chain of custody exported to:\n{file_path}")
+            messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.success', default="Success"), f"Chain of custody exported to:\n{file_path}")
             self.update_status("Chain of custody exported")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export chain of custody: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to export chain of custody: {str(e)}")
 
 
 def anonymize_student_data(self):
     """Anonymize student data for research/sharing"""
     student_id = self.privacy_student_var.get().strip()
     if not student_id:
-        messagebox.showwarning("Warning", "Please enter a student ID")
+        messagebox.showwarning(_t('gui.academics.ai_detector.model_security_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.model_security_view.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
         return
 
-    if not messagebox.askyesno("Confirm Anonymization",
+    if not messagebox.askyesno(_t('gui.academics.ai_detector.model_security_view.dialogs.confirm_anonymization', default="Confirm Anonymization"),
                                f"This will permanently anonymize all data for student {student_id}.\n\n"
                                "This action cannot be undone. Continue?"):
         return
@@ -643,17 +645,17 @@ def anonymize_student_data(self):
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"Student data anonymized.\nNew ID: {anon_id}")
+        messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.success', default="Success"), f"Student data anonymized.\nNew ID: {anon_id}")
         self.update_status(f"Student {student_id} anonymized")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to anonymize data: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to anonymize data: {str(e)}")
 
 
 def generate_gdpr_data_export(self):
     """Generate GDPR-compliant data export for a student"""
     student_id = self.privacy_student_var.get().strip()
     if not student_id:
-        messagebox.showwarning("Warning", "Please enter a student ID")
+        messagebox.showwarning(_t('gui.academics.ai_detector.model_security_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.model_security_view.dialogs.please_enter_a_student_id', default="Please enter a student ID"))
         return
 
     try:
@@ -699,9 +701,9 @@ def generate_gdpr_data_export(self):
         if file_path:
             with open(file_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, default=str)
-            messagebox.showinfo("Success", f"GDPR data export saved to:\n{file_path}")
+            messagebox.showinfo(_t('gui.academics.ai_detector.model_security_view.dialogs.success', default="Success"), f"GDPR data export saved to:\n{file_path}")
             self.update_status("GDPR data export generated")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate GDPR export: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.model_security_view.dialogs.error', default="Error"), f"Failed to generate GDPR export: {str(e)}")
 
 

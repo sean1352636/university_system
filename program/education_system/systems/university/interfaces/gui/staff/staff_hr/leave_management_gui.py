@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -34,7 +36,7 @@ class LeaveManagementGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Leave Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), _t('gui.staff.staff_hr.leave_management.dialogs.login_required_to_access_leave_management', default="Login required to access Leave Management"))
             return
 
         if parent_notebook:
@@ -45,23 +47,23 @@ class LeaveManagementGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Leave Management")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.leave_management.tabs.leave_management', default="Leave Management"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Leave Management System")
+        self.window.title(_t('gui.staff.staff_hr.leave_management.windows.leave_management_system', default="Leave Management System"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         # Bottom frame with close button
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Status bar
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.leave_management.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -86,31 +88,31 @@ class LeaveManagementGUI:
     def _create_requests_tab(self):
         """Create the leave requests tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Requests")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.leave_management.tabs.my_requests', default="My Requests"))
 
         # Header frame
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(header_frame, text="Leave Requests", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.leave_management.labels.leave_requests', default="Leave Requests"), style='Header.TLabel').pack(side=tk.LEFT)
 
         btn_frame = ttk.Frame(header_frame)
         btn_frame.pack(side=tk.RIGHT)
-        ttk.Button(btn_frame, text="New Request", command=self._show_request_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_requests).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Export", command=self._export_requests).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.new_request', default="New Request"), command=self._show_request_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.refresh', default="Refresh"), command=self._load_requests).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.export', default="Export"), command=self._export_requests).pack(side=tk.LEFT, padx=5)
 
         # Filter frame
-        filter_frame = ttk.LabelFrame(tab, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.leave_management.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.leave_management.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.status_filter = ttk.Combobox(filter_frame, values=['All', 'Pending', 'Approved', 'Rejected', 'Cancelled'], width=12)
         self.status_filter.set('All')
         self.status_filter.pack(side=tk.LEFT, padx=5)
         self.status_filter.bind('<<ComboboxSelected>>', lambda e: self._load_requests())
 
-        ttk.Label(filter_frame, text="Year:").pack(side=tk.LEFT, padx=15)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.leave_management.labels.year', default="Year:")).pack(side=tk.LEFT, padx=15)
         current_year = datetime.now().year
         self.year_filter = ttk.Combobox(filter_frame, values=[str(y) for y in range(current_year - 2, current_year + 2)], width=8)
         self.year_filter.set(str(current_year))
@@ -156,8 +158,8 @@ class LeaveManagementGUI:
 
         # Context menu
         self.request_menu = tk.Menu(self.requests_tree, tearoff=0)
-        self.request_menu.add_command(label="View Details", command=self._view_request_details)
-        self.request_menu.add_command(label="Cancel Request", command=self._cancel_request)
+        self.request_menu.add_command(label=_t('gui.staff.staff_hr.leave_management.menus.view_details', default="View Details"), command=self._view_request_details)
+        self.request_menu.add_command(label=_t('gui.staff.staff_hr.leave_management.menus.cancel_request', default="Cancel Request"), command=self._cancel_request)
         self.requests_tree.bind('<Button-3>', self._show_request_menu)
 
         # Load data
@@ -166,18 +168,18 @@ class LeaveManagementGUI:
     def _create_balances_tab(self):
         """Create the leave balances tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Balances")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.leave_management.tabs.my_balances', default="My Balances"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Leave Balances", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_balances).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.leave_management.labels.leave_balances', default="Leave Balances"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.refresh', default="Refresh"), command=self._load_balances).pack(side=tk.RIGHT, padx=5)
 
         # Year selector
         year_frame = ttk.Frame(tab)
         year_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Label(year_frame, text="Year:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(year_frame, text=_t('gui.staff.staff_hr.leave_management.labels.year', default="Year:")).pack(side=tk.LEFT, padx=5)
         current_year = datetime.now().year
         self.balance_year = ttk.Combobox(year_frame, values=[str(y) for y in range(current_year - 2, current_year + 2)], width=8)
         self.balance_year.set(str(current_year))
@@ -198,14 +200,14 @@ class LeaveManagementGUI:
         self.balances_tree.pack(fill=tk.BOTH, expand=True)
 
         # Summary frame
-        summary_frame = ttk.LabelFrame(tab, text="Summary", padding=10)
+        summary_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.leave_management.labels.summary', default="Summary"), padding=10)
         summary_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        self.total_allocated_label = ttk.Label(summary_frame, text="Total Allocated: 0 days")
+        self.total_allocated_label = ttk.Label(summary_frame, text=_t('gui.staff.staff_hr.leave_management.labels.total_allocated_0_days', default="Total Allocated: 0 days"))
         self.total_allocated_label.pack(side=tk.LEFT, padx=20)
-        self.total_used_label = ttk.Label(summary_frame, text="Total Used: 0 days")
+        self.total_used_label = ttk.Label(summary_frame, text=_t('gui.staff.staff_hr.leave_management.labels.total_used_0_days', default="Total Used: 0 days"))
         self.total_used_label.pack(side=tk.LEFT, padx=20)
-        self.total_remaining_label = ttk.Label(summary_frame, text="Total Remaining: 0 days")
+        self.total_remaining_label = ttk.Label(summary_frame, text=_t('gui.staff.staff_hr.leave_management.labels.total_remaining_0_days', default="Total Remaining: 0 days"))
         self.total_remaining_label.pack(side=tk.LEFT, padx=20)
 
         self._load_balances()
@@ -213,18 +215,18 @@ class LeaveManagementGUI:
     def _create_approvals_tab(self):
         """Create the approvals tab (admin/staff only)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Pending Approvals")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.leave_management.tabs.pending_approvals', default="Pending Approvals"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Pending Leave Requests", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.leave_management.labels.pending_leave_requests', default="Pending Leave Requests"), style='Header.TLabel').pack(side=tk.LEFT)
 
         btn_frame = ttk.Frame(header_frame)
         btn_frame.pack(side=tk.RIGHT)
-        ttk.Button(btn_frame, text="Approve Selected", command=self._approve_selected).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Reject Selected", command=self._reject_selected).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_pending_approvals).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.approve_selected', default="Approve Selected"), command=self._approve_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.reject_selected', default="Reject Selected"), command=self._reject_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.refresh', default="Refresh"), command=self._load_pending_approvals).pack(side=tk.LEFT, padx=5)
 
         # Treeview
         tree_frame = ttk.Frame(tab)
@@ -255,12 +257,12 @@ class LeaveManagementGUI:
     def _create_calendar_tab(self):
         """Create the leave calendar tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Leave Calendar")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.leave_management.tabs.leave_calendar', default="Leave Calendar"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Team Leave Calendar", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.leave_management.labels.team_leave_calendar', default="Team Leave Calendar"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Month/Year selector
         nav_frame = ttk.Frame(header_frame)
@@ -319,7 +321,7 @@ class LeaveManagementGUI:
             self._update_status(f"Loaded {len(self.requests_tree.get_children())} requests")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load requests: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to load requests: {e}")
 
     def _load_balances(self):
         """Load leave balances for current user."""
@@ -369,7 +371,7 @@ class LeaveManagementGUI:
             self.total_remaining_label.config(text=f"Total Remaining: {total_remaining:.1f} days")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load balances: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to load balances: {e}")
 
     def _load_pending_approvals(self):
         """Load pending leave requests for approval."""
@@ -397,12 +399,12 @@ class LeaveManagementGUI:
             self._update_status(f"Found {len(self.approvals_tree.get_children())} pending requests")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load pending approvals: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to load pending approvals: {e}")
 
     def _show_request_dialog(self):
         """Show dialog to submit a new leave request."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("New Leave Request")
+        dialog.title(_t('gui.staff.staff_hr.leave_management.windows.new_leave_request', default="New Leave Request"))
         dialog.geometry("450x500")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -410,12 +412,12 @@ class LeaveManagementGUI:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Submit Leave Request", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.staff.staff_hr.leave_management.labels.submit_leave_request', default="Submit Leave Request"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Leave type
         type_frame = ttk.Frame(main_frame)
         type_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(type_frame, text="Leave Type:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(type_frame, text=_t('gui.staff.staff_hr.leave_management.labels.leave_type', default="Leave Type:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
 
         leave_types = self._get_leave_types()
         type_var = tk.StringVar()
@@ -425,25 +427,25 @@ class LeaveManagementGUI:
         # Start date
         start_frame = ttk.Frame(main_frame)
         start_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(start_frame, text="Start Date:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(start_frame, text=_t('gui.staff.staff_hr.leave_management.labels.start_date', default="Start Date:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         start_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
         start_entry = ttk.Entry(start_frame, textvariable=start_var, width=27)
         start_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Label(start_frame, text="(YYYY-MM-DD)", font=('Arial', 8)).pack(side=tk.LEFT)
+        ttk.Label(start_frame, text=_t('gui.staff.staff_hr.leave_management.labels.yyyy_mm_dd', default="(YYYY-MM-DD)"), font=('Arial', 8)).pack(side=tk.LEFT)
 
         # End date
         end_frame = ttk.Frame(main_frame)
         end_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(end_frame, text="End Date:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(end_frame, text=_t('gui.staff.staff_hr.leave_management.labels.end_date', default="End Date:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         end_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
         end_entry = ttk.Entry(end_frame, textvariable=end_var, width=27)
         end_entry.pack(side=tk.LEFT, padx=5)
-        ttk.Label(end_frame, text="(YYYY-MM-DD)", font=('Arial', 8)).pack(side=tk.LEFT)
+        ttk.Label(end_frame, text=_t('gui.staff.staff_hr.leave_management.labels.yyyy_mm_dd', default="(YYYY-MM-DD)"), font=('Arial', 8)).pack(side=tk.LEFT)
 
         # Days calculation
         days_frame = ttk.Frame(main_frame)
         days_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(days_frame, text="Total Days:", width=15, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(days_frame, text=_t('gui.staff.staff_hr.leave_management.labels.total_days', default="Total Days:"), width=15, anchor=tk.W).pack(side=tk.LEFT)
         days_label = ttk.Label(days_frame, text="0", font=('Arial', 10, 'bold'))
         days_label.pack(side=tk.LEFT, padx=5)
 
@@ -454,13 +456,13 @@ class LeaveManagementGUI:
                 days = (end - start).days + 1
                 days_label.config(text=str(max(0, days)))
             except ValueError:
-                days_label.config(text="Invalid dates")
+                days_label.config(text=_t('gui.staff.staff_hr.leave_management.text.invalid_dates', default="Invalid dates"))
 
         start_var.trace_add('write', update_days)
         end_var.trace_add('write', update_days)
 
         # Reason
-        ttk.Label(main_frame, text="Reason:", anchor=tk.W).pack(fill=tk.X, pady=(15, 5))
+        ttk.Label(main_frame, text=_t('gui.staff.staff_hr.leave_management.labels.reason', default="Reason:"), anchor=tk.W).pack(fill=tk.X, pady=(15, 5))
         reason_text = scrolledtext.ScrolledText(main_frame, height=6, width=40)
         reason_text.pack(fill=tk.X, pady=5)
 
@@ -470,18 +472,18 @@ class LeaveManagementGUI:
 
         def submit_request():
             if not type_var.get():
-                error_label.config(text="Please select a leave type")
+                error_label.config(text=_t('gui.staff.staff_hr.leave_management.text.please_select_a_leave_type', default="Please select a leave type"))
                 return
 
             try:
                 start_date = datetime.strptime(start_var.get(), "%Y-%m-%d")
                 end_date = datetime.strptime(end_var.get(), "%Y-%m-%d")
             except ValueError:
-                error_label.config(text="Invalid date format. Use YYYY-MM-DD")
+                error_label.config(text=_t('gui.staff.staff_hr.leave_management.text.invalid_date_format_use_yyyy_mm_dd', default="Invalid date format. Use YYYY-MM-DD"))
                 return
 
             if end_date < start_date:
-                error_label.config(text="End date must be after start date")
+                error_label.config(text=_t('gui.staff.staff_hr.leave_management.text.end_date_must_be_after_start_date', default="End date must be after start date"))
                 return
 
             total_days = (end_date - start_date).days + 1
@@ -501,7 +503,7 @@ class LeaveManagementGUI:
                 log_activity('create', 'leave_request', user_id=user_id,
                              details={'leave_type': type_var.get(), 'days': total_days})
 
-                messagebox.showinfo("Success", "Leave request submitted successfully!")
+                messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), _t('gui.staff.staff_hr.leave_management.dialogs.leave_request_submitted_successfully', default="Leave request submitted successfully!"))
                 dialog.destroy()
                 self._load_requests()
 
@@ -511,8 +513,8 @@ class LeaveManagementGUI:
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=20)
-        ttk.Button(btn_frame, text="Submit Request", command=submit_request).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.submit_request', default="Submit Request"), command=submit_request).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
         update_days()
 
@@ -563,16 +565,16 @@ Approved By: {row[9] or 'N/A'}
 Approved Date: {row[10] or 'N/A'}
 Rejection Reason: {row[11] or 'N/A'}
                 """
-                messagebox.showinfo("Leave Request Details", details.strip())
+                messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.leave_request_details', default="Leave Request Details"), details.strip())
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to load details: {e}")
 
     def _cancel_request(self):
         """Cancel selected leave request."""
         selection = self.requests_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a request to cancel")
+            messagebox.showwarning(_t('gui.staff.staff_hr.leave_management.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.leave_management.dialogs.please_select_a_request_to_cancel', default="Please select a request to cancel"))
             return
 
         item = self.requests_tree.item(selection[0])
@@ -580,10 +582,10 @@ Rejection Reason: {row[11] or 'N/A'}
         status = item['values'][5].lower()
 
         if status != 'pending':
-            messagebox.showwarning("Warning", "Only pending requests can be cancelled")
+            messagebox.showwarning(_t('gui.staff.staff_hr.leave_management.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.leave_management.dialogs.only_pending_requests_can_be_cancelled', default="Only pending requests can be cancelled"))
             return
 
-        if not messagebox.askyesno("Confirm", "Are you sure you want to cancel this request?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.leave_management.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.leave_management.dialogs.are_you_sure_you_want_to_cancel_this_request', default="Are you sure you want to cancel this request?")):
             return
 
         try:
@@ -594,11 +596,11 @@ Rejection Reason: {row[11] or 'N/A'}
                 ''', (datetime.now().isoformat(), request_id))
 
             log_activity('update', 'leave_request', details={'action': 'cancelled', 'request_id': request_id})
-            messagebox.showinfo("Success", "Request cancelled successfully")
+            messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), _t('gui.staff.staff_hr.leave_management.dialogs.request_cancelled_successfully', default="Request cancelled successfully"))
             self._load_requests()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to cancel request: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to cancel request: {e}")
 
     def _show_request_menu(self, event):
         """Show context menu for requests."""
@@ -611,10 +613,10 @@ Rejection Reason: {row[11] or 'N/A'}
         """Approve selected leave requests."""
         selection = self.approvals_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select requests to approve")
+            messagebox.showwarning(_t('gui.staff.staff_hr.leave_management.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.leave_management.dialogs.please_select_requests_to_approve', default="Please select requests to approve"))
             return
 
-        if not messagebox.askyesno("Confirm", f"Approve {len(selection)} selected request(s)?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.leave_management.dialogs.confirm', default="Confirm"), f"Approve {len(selection)} selected request(s)?"):
             return
 
         approved_by = self.current_user.get('username') or self.current_user.get('id')
@@ -655,7 +657,7 @@ Rejection Reason: {row[11] or 'N/A'}
                     log_activity('update', 'leave_request',
                                  details={'action': 'approved', 'approved_by': approved_by, 'request_id': request_id})
 
-            messagebox.showinfo("Success", f"Approved {len(selection)} request(s)")
+            messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), f"Approved {len(selection)} request(s)")
             self._load_pending_approvals()
 
             # Bus broadcast (#8). Best-effort; never raises.
@@ -674,30 +676,30 @@ Rejection Reason: {row[11] or 'N/A'}
                 pass
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to approve requests: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to approve requests: {e}")
 
     def _reject_selected(self):
         """Reject selected leave requests."""
         selection = self.approvals_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select requests to reject")
+            messagebox.showwarning(_t('gui.staff.staff_hr.leave_management.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.leave_management.dialogs.please_select_requests_to_reject', default="Please select requests to reject"))
             return
 
         # Ask for rejection reason
         dialog = tk.Toplevel(self.root)
-        dialog.title("Rejection Reason")
+        dialog.title(_t('gui.staff.staff_hr.leave_management.windows.rejection_reason', default="Rejection Reason"))
         dialog.geometry("400x200")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Please provide a reason for rejection:", padding=10).pack()
+        ttk.Label(dialog, text=_t('gui.staff.staff_hr.leave_management.labels.please_provide_a_reason_for_rejection', default="Please provide a reason for rejection:"), padding=10).pack()
         reason_text = scrolledtext.ScrolledText(dialog, height=5, width=40)
         reason_text.pack(padx=10, pady=5)
 
         def reject():
             reason = reason_text.get('1.0', tk.END).strip()
             if not reason:
-                messagebox.showwarning("Warning", "Please provide a rejection reason")
+                messagebox.showwarning(_t('gui.staff.staff_hr.leave_management.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.leave_management.dialogs.please_provide_a_rejection_reason', default="Please provide a rejection reason"))
                 return
 
             rejected_by = self.current_user.get('username') or self.current_user.get('id')
@@ -717,17 +719,17 @@ Rejection Reason: {row[11] or 'N/A'}
                         log_activity('update', 'leave_request',
                                      details={'action': 'rejected', 'rejected_by': rejected_by, 'request_id': request_id})
 
-                messagebox.showinfo("Success", f"Rejected {len(selection)} request(s)")
+                messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), f"Rejected {len(selection)} request(s)")
                 dialog.destroy()
                 self._load_pending_approvals()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to reject requests: {e}")
+                messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to reject requests: {e}")
 
         btn_frame = ttk.Frame(dialog)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Reject", command=reject).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.reject', default="Reject"), command=reject).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _update_leave_balance(self, conn, user_id, request_id, days):
         """Update leave balance when request is approved."""
@@ -791,7 +793,7 @@ Rejection Reason: {row[11] or 'N/A'}
                 return
 
             dialog = tk.Toplevel(self.root)
-            dialog.title("Review Leave Request")
+            dialog.title(_t('gui.staff.staff_hr.leave_management.windows.review_leave_request', default="Review Leave Request"))
             dialog.geometry("500x400")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -799,7 +801,7 @@ Rejection Reason: {row[11] or 'N/A'}
             main_frame = ttk.Frame(dialog, padding=20)
             main_frame.pack(fill=tk.BOTH, expand=True)
 
-            ttk.Label(main_frame, text="Leave Request Details", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+            ttk.Label(main_frame, text=_t('gui.staff.staff_hr.leave_management.labels.leave_request_details', default="Leave Request Details"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
             details_frame = ttk.Frame(main_frame)
             details_frame.pack(fill=tk.X)
@@ -833,12 +835,12 @@ Rejection Reason: {row[11] or 'N/A'}
                 dialog.destroy()
                 self._reject_selected()
 
-            ttk.Button(btn_frame, text="Approve", command=approve, width=15).pack(side=tk.LEFT, padx=10)
-            ttk.Button(btn_frame, text="Reject", command=reject, width=15).pack(side=tk.LEFT, padx=10)
-            ttk.Button(btn_frame, text="Close", command=dialog.destroy, width=15).pack(side=tk.LEFT, padx=10)
+            ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.approve', default="Approve"), command=approve, width=15).pack(side=tk.LEFT, padx=10)
+            ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.reject', default="Reject"), command=reject, width=15).pack(side=tk.LEFT, padx=10)
+            ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.leave_management.buttons.close', default="Close"), command=dialog.destroy, width=15).pack(side=tk.LEFT, padx=10)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load request details: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to load request details: {e}")
 
     def _export_requests(self):
         """Export leave requests to CSV."""
@@ -861,10 +863,10 @@ Rejection Reason: {row[11] or 'N/A'}
                     item = self.requests_tree.item(item_id)
                     writer.writerow(item['values'])
 
-            messagebox.showinfo("Success", f"Exported to {filename}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.leave_management.dialogs.success', default="Success"), f"Exported to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to export: {e}")
 
     def _render_calendar(self):
         """Render the leave calendar."""
@@ -977,5 +979,5 @@ def launch_leave_management_gui(root, auth):
     try:
         return LeaveManagementGUI(root, auth)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to launch Leave Management: {e}")
+        messagebox.showerror(_t('gui.staff.staff_hr.leave_management.dialogs.error', default="Error"), f"Failed to launch Leave Management: {e}")
         return None

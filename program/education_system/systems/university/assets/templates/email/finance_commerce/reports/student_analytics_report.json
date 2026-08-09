@@ -1,0 +1,1 @@
+{"subject":"Analytics Report: $title","body":"Analytics Report: $title\n================================================================================\n\n$summary_text\n\n================================================================================\nGenerated: $generated_at\nThis is an automated report from the University Management System.\n"}

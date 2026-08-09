@@ -1,0 +1,1 @@
+{"subject":"Package Arrived - $tracking","body":"Dear $name,\n\nYou have a package waiting for collection at the University Mail Room.\n\nTracking Number: $tracking\nLocation: University Mail Room, Main Campus\n\nPlease bring your student ID when collecting your package.\nPackages not collected within 7 days may incur storage fees.\n\nThank you,\nUniversity Mail Services\n"}

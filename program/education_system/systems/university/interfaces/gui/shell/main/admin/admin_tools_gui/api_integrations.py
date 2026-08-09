@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from ._common import (
     API_SERVER_CONFIG_FILE,
     EMAIL_CONFIG_FILE,
@@ -106,7 +108,7 @@ def show_api_documentation(self):
 
         url_frame = ttk.Frame(test_frame)
         url_frame.pack(fill=tk.X, pady=5)
-        method_var = tk.StringVar(value='GET')
+        method_var = tk.StringVar(value=_t('gui.shell.main.admin.admin_tools_gui.api_integrations.values.get', default='GET'))
         ttk.Combobox(url_frame, textvariable=method_var,
                      values=['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
                      width=8, state='readonly').pack(side=tk.LEFT, padx=5)

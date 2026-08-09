@@ -17,14 +17,23 @@ import json
 class ErrorLogger:
     """Centralized error logging class for the University Management System"""
 
-    def __init__(self, log_directory: str = "logs", log_filename: str = "error_log.txt"):
+    def __init__(self, log_directory: Optional[str] = None, log_filename: str = "error_log.txt"):
         """
         Initialize the ErrorLogger
 
         Args:
-            log_directory: Directory to store log files
+            log_directory: Directory to store log files. Defaults to the
+                runtime log tree under ``program/var`` (ADR 0018). The old
+                default was the bare relative string ``"logs"``, which
+                resolved against the current working directory and so
+                scattered log files wherever the app happened to be started
+                from — including inside the importable package tree.
             log_filename: Name of the error log file
         """
+        if log_directory is None:
+            from education_system.paths import UNIVERSITY_LOG_DIR
+
+            log_directory = str(UNIVERSITY_LOG_DIR)
         self.log_directory = Path(log_directory)
         self.log_filename = log_filename
         self.log_file_path = self.log_directory / self.log_filename

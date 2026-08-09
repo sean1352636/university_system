@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # approval.py
 # Approval workflow mixin and ApprovalDialog for AccommodationGUI.
 
@@ -34,8 +36,8 @@ class ApprovalMixin:
         status = selected['values'][6]
 
         if status != 'pending':
-            messagebox.showwarning("Invalid Status",
-                "Only pending accommodations can be approved or rejected")
+            messagebox.showwarning(_t('gui.pastoral.health.medical_accommodation.approval.dialogs.invalid_status', default="Invalid Status"),
+                _t('gui.pastoral.health.medical_accommodation.approval.dialogs.only_pending_accommodations_can_be_approved_or_rejected', default="Only pending accommodations can be approved or rejected"))
             return
 
         # Ask for reason
@@ -80,11 +82,11 @@ class ApprovalMixin:
 
             cli_notify_student(student_id, f'Accommodation {action.title()}d', message)
 
-            messagebox.showinfo("Success", f"Accommodation {action}d successfully")
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.approval.dialogs.success', default="Success"), f"Accommodation {action}d successfully")
             self.refresh_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to {action} accommodation: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.approval.dialogs.error', default="Error"), f"Failed to {action} accommodation: {str(e)}")
 
     def approve_accommodation_dialog(self):
         """Show approval management dialog"""
@@ -98,7 +100,7 @@ class ApprovalDialog:
         self.gui_parent = gui_parent
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Approval Management")
+        self.dialog.title(_t('gui.pastoral.health.medical_accommodation.approval.windows.approval_management', default="Approval Management"))
         self.dialog.geometry("800x600")
         self.dialog.transient(parent)
 
@@ -110,7 +112,7 @@ class ApprovalDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Pending Accommodations", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.approval.labels.pending_accommodations', default="Pending Accommodations"), font=('Arial', 12, 'bold')).pack(pady=10)
 
         # Approval tree
         tree_frame = ttk.Frame(main_frame)
@@ -144,11 +146,11 @@ class ApprovalDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Approve", command=self.approve_selected).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Reject", command=self.reject_selected).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Request Info", command=self.request_info).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.load_pending_approvals).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.approval.buttons.approve', default="Approve"), command=self.approve_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.approval.buttons.reject', default="Reject"), command=self.reject_selected).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.approval.buttons.request_info', default="Request Info"), command=self.request_info).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.approval.buttons.refresh', default="Refresh"), command=self.load_pending_approvals).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.approval.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_pending_approvals(self):
         """Load pending approvals"""
@@ -188,13 +190,13 @@ class ApprovalDialog:
                     ))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load pending approvals: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.approval.dialogs.error', default="Error"), f"Failed to load pending approvals: {str(e)}")
 
     def get_selected_approval(self):
         """Get selected approval"""
         selection = self.approval_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an accommodation to process")
+            messagebox.showwarning(_t('gui.pastoral.health.medical_accommodation.approval.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.health.medical_accommodation.approval.dialogs.please_select_an_accommodation_to_process', default="Please select an accommodation to process"))
             return None
         return self.approval_tree.item(selection[0])
 
@@ -222,7 +224,7 @@ class ApprovalDialog:
 
         # Get reason/comments
         reason = simpledialog.askstring(f"{action.replace('_', ' ').title()}",
-            "Enter reason or comments (optional):", initialvalue="")
+            _t('gui.pastoral.health.medical_accommodation.approval.dialogs.enter_reason_or_comments_optional', default="Enter reason or comments (optional):"), initialvalue="")
 
         try:
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -284,9 +286,9 @@ class ApprovalDialog:
                 subject = f"Accommodation {action.replace('_', ' ').title()}"
                 cli_notify_student(student_id, subject, message)
 
-            messagebox.showinfo("Success", f"Accommodation {action}d successfully")
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.approval.dialogs.success', default="Success"), f"Accommodation {action}d successfully")
             self.load_pending_approvals()
             self.gui_parent.refresh_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to {action} accommodation: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.approval.dialogs.error', default="Error"), f"Failed to {action} accommodation: {str(e)}")

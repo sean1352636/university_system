@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from ._common import datetime, messagebox, scrolledtext, tk, ttk
 from education_system.systems.university.infrastructure.email.announcements import (
     get_announcement_by_id,
@@ -9,7 +11,7 @@ class AnnouncementDetailsDialog:
         self.dashboard = dashboard
         self.announcement_id = announcement_id
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Announcement Details")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.announcements.windows.announcement_details', default="Announcement Details"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -27,14 +29,14 @@ class AnnouncementDetailsDialog:
         self.title_label.pack(anchor=tk.W, pady=(0, 10))
 
         # Details frame
-        details_frame = ttk.LabelFrame(main_frame, text="Announcement Details", padding=10)
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.announcement_details', default="Announcement Details"), padding=10)
         details_frame.pack(fill=tk.X, pady=(0, 10))
 
         self.details_text = tk.Text(details_frame, height=3, wrap=tk.WORD, state=tk.DISABLED)
         self.details_text.pack(fill=tk.X)
 
         # Content
-        content_frame = ttk.LabelFrame(main_frame, text="Content", padding=10)
+        content_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.content', default="Content"), padding=10)
         content_frame.pack(fill=tk.BOTH, expand=True)
 
         self.content_text = scrolledtext.ScrolledText(content_frame, wrap=tk.WORD, state=tk.DISABLED)
@@ -44,7 +46,7 @@ class AnnouncementDetailsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_announcement(self):
         try:
@@ -69,14 +71,14 @@ class AnnouncementDetailsDialog:
                 # Mark as viewed
                 mark_announcement_viewed(self.dashboard, self.announcement_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Error loading announcement: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.error', default="Error"), f"Error loading announcement: {e}")
 
 
 class CreateAnnouncementDialog:
     def __init__(self, parent, dashboard):
         self.dashboard = dashboard
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create Announcement")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.announcements.windows.create_announcement', default="Create Announcement"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -89,37 +91,37 @@ class CreateAnnouncementDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        ttk.Label(main_frame, text="Title:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.title', default="Title:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.title_entry = ttk.Entry(main_frame, width=60)
         self.title_entry.grid(row=0, column=1, columnspan=2, sticky=tk.EW, pady=5)
 
         # Target audience
-        ttk.Label(main_frame, text="Target Audience:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.audience_var = tk.StringVar(value="all")
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.target_audience', default="Target Audience:")).grid(row=1, column=0, sticky=tk.W, pady=5)
+        self.audience_var = tk.StringVar(value=_t('gui.shell.email.email_gui.chat_dialogs.announcements.values.all', default="all"))
         audience_frame = ttk.Frame(main_frame)
         audience_frame.grid(row=1, column=1, sticky=tk.W, pady=5)
 
-        ttk.Radiobutton(audience_frame, text="All Users", variable=self.audience_var, value="all").pack(side=tk.LEFT)
-        ttk.Radiobutton(audience_frame, text="Students", variable=self.audience_var, value="students").pack(side=tk.LEFT, padx=10)
-        ttk.Radiobutton(audience_frame, text="Staff", variable=self.audience_var, value="staff").pack(side=tk.LEFT)
-        ttk.Radiobutton(audience_frame, text="Instructors", variable=self.audience_var, value="instructors").pack(side=tk.LEFT, padx=10)
+        ttk.Radiobutton(audience_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.all_users', default="All Users"), variable=self.audience_var, value="all").pack(side=tk.LEFT)
+        ttk.Radiobutton(audience_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.students', default="Students"), variable=self.audience_var, value="students").pack(side=tk.LEFT, padx=10)
+        ttk.Radiobutton(audience_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.staff', default="Staff"), variable=self.audience_var, value="staff").pack(side=tk.LEFT)
+        ttk.Radiobutton(audience_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.instructors', default="Instructors"), variable=self.audience_var, value="instructors").pack(side=tk.LEFT, padx=10)
 
         # Urgent checkbox
         self.urgent_var = tk.BooleanVar()
-        ttk.Checkbutton(main_frame, text="Mark as urgent", variable=self.urgent_var).grid(row=2, column=1, sticky=tk.W, pady=5)
+        ttk.Checkbutton(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.mark_as_urgent', default="Mark as urgent"), variable=self.urgent_var).grid(row=2, column=1, sticky=tk.W, pady=5)
 
         # Content
-        ttk.Label(main_frame, text="Content:").grid(row=3, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.content_variant_2', default="Content:")).grid(row=3, column=0, sticky=tk.NW, pady=5)
         self.content_text = scrolledtext.ScrolledText(main_frame, width=60, height=15)
         self.content_text.grid(row=3, column=1, columnspan=2, sticky=tk.NSEW, pady=5)
 
         # Date options
-        ttk.Label(main_frame, text="Start Date:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.start_date', default="Start Date:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.start_date_entry = ttk.Entry(main_frame, width=20)
         self.start_date_entry.grid(row=4, column=1, sticky=tk.W, pady=5)
         self.start_date_entry.insert(0, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-        ttk.Label(main_frame, text="End Date (optional):").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.end_date_optional', default="End Date (optional):")).grid(row=5, column=0, sticky=tk.W, pady=5)
         self.end_date_entry = ttk.Entry(main_frame, width=20)
         self.end_date_entry.grid(row=5, column=1, sticky=tk.W, pady=5)
 
@@ -127,8 +129,8 @@ class CreateAnnouncementDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=6, column=0, columnspan=3, pady=20)
 
-        ttk.Button(button_frame, text="Create", command=self.create_announcement).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.create', default="Create"), command=self.create_announcement).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         # Configure grid weights
         main_frame.columnconfigure(1, weight=1)
@@ -143,11 +145,11 @@ class CreateAnnouncementDialog:
         end_date = self.end_date_entry.get().strip() or None
 
         if not title or not content:
-            messagebox.showwarning("Missing Information", "Title and content are required")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.missing_information', default="Missing Information"), _t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.title_and_content_are_required', default="Title and content are required"))
             return
 
         if not self.dashboard:
-            messagebox.showerror("Error", "Dashboard not initialized")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.dashboard_not_initialized', default="Dashboard not initialized"))
             return
 
         try:
@@ -160,15 +162,15 @@ class CreateAnnouncementDialog:
                 end_date=end_date,
             )
             if result:
-                messagebox.showinfo("Success", "Announcement created successfully!")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.announcement_created_successfully', default="Announcement created successfully!"))
                 self.dialog.destroy()
             else:
                 messagebox.showerror(
-                    "Error",
-                    "Failed to create announcement (check permissions and date format YYYY-MM-DD HH:MM:SS)",
+                    _t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.error', default="Error"),
+                    _t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.failed_to_create_announcement_check_permissions_and_date_format', default="Failed to create announcement (check permissions and date format YYYY-MM-DD HH:MM:SS)"),
                 )
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create announcement: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.error', default="Error"), f"Failed to create announcement: {e}")
 
 
 class EditAnnouncementDialog:
@@ -177,7 +179,7 @@ class EditAnnouncementDialog:
         self.announcement_id = announcement_id
         self.refresh_callback = refresh_callback
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Edit Announcement")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.announcements.windows.edit_announcement', default="Edit Announcement"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
@@ -205,27 +207,27 @@ class EditAnnouncementDialog:
                 self.is_urgent = row[2]
                 self.create_widgets()
             else:
-                messagebox.showerror("Error", "Announcement not found")
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.announcement_not_found', default="Announcement not found"))
                 self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load announcement: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.error', default="Error"), f"Failed to load announcement: {e}")
             self.dialog.destroy()
 
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Edit Announcement", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.edit_announcement', default="Edit Announcement"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Title
-        ttk.Label(main_frame, text="Title:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.title', default="Title:")).pack(anchor=tk.W)
         self.title_entry = ttk.Entry(main_frame, width=50)
         self.title_entry.insert(0, self.title)
         self.title_entry.pack(fill=tk.X, pady=(0, 10))
 
         # Message
-        ttk.Label(main_frame, text="Message:").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.message', default="Message:")).pack(anchor=tk.W)
         self.message_text = scrolledtext.ScrolledText(main_frame, height=10, wrap=tk.WORD)
         self.message_text.insert(1.0, self.content)
         self.message_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
@@ -234,22 +236,22 @@ class EditAnnouncementDialog:
         priority_frame = ttk.Frame(main_frame)
         priority_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(priority_frame, text="Priority:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(priority_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.labels.priority', default="Priority:")).pack(side=tk.LEFT, padx=(0, 5))
 
         # Map is_urgent to priority string
         initial_priority = "high" if self.is_urgent else "normal"
         self.priority_var = tk.StringVar(value=initial_priority)
 
-        ttk.Radiobutton(priority_frame, text="Low", variable=self.priority_var, value="low").pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(priority_frame, text="Normal", variable=self.priority_var, value="normal").pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(priority_frame, text="High", variable=self.priority_var, value="high").pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(priority_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.low', default="Low"), variable=self.priority_var, value="low").pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(priority_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.normal', default="Normal"), variable=self.priority_var, value="normal").pack(side=tk.LEFT, padx=5)
+        ttk.Radiobutton(priority_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.high', default="High"), variable=self.priority_var, value="high").pack(side=tk.LEFT, padx=5)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(10, 0))
 
-        ttk.Button(button_frame, text="Save", command=self.save_announcement).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.save', default="Save"), command=self.save_announcement).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.announcements.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT)
 
     def save_announcement(self):
         title = self.title_entry.get().strip()
@@ -257,7 +259,7 @@ class EditAnnouncementDialog:
         priority = self.priority_var.get()
 
         if not title or not message:
-            messagebox.showwarning("Missing Information", "Please provide both title and message")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.missing_information', default="Missing Information"), _t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.please_provide_both_title_and_message', default="Please provide both title and message"))
             return
 
         try:
@@ -282,7 +284,7 @@ class EditAnnouncementDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Announcement updated successfully!")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.announcement_updated_successfully', default="Announcement updated successfully!"))
             self.dialog.destroy()
 
             # Refresh the announcements list
@@ -290,5 +292,5 @@ class EditAnnouncementDialog:
                 self.refresh_callback()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update announcement: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.announcements.dialogs.error', default="Error"), f"Failed to update announcement: {e}")
 

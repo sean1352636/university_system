@@ -3,7 +3,7 @@
 import json
 import os
 
-from education_system.systems.university.infrastructure.paths import DATA_DIR
+from education_system.paths import UNIVERSITY_DATA_DIR
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 
 logger = configure_logging(name=__name__)
@@ -13,7 +13,7 @@ class BackupMetadata:
     """Class to handle backup metadata and tracking"""
 
     def __init__(self):
-        self.metadata_file = str(DATA_DIR / "backup_metadata.json")
+        self.metadata_file = str(UNIVERSITY_DATA_DIR / "backup_metadata.json")
         self.metadata = self.load_metadata()
 
     def load_metadata(self):

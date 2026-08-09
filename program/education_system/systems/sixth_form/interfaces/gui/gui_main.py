@@ -15,6 +15,7 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox, ttk
 from typing import Callable
+from education_system.platform.delivery.gui import window_sizing
 from education_system.systems.sixth_form import SYSTEM_NAME
 
 logger = logging.getLogger(__name__)
@@ -201,8 +202,7 @@ class SixthFormMainGUI:
         self.auth = auth
         self.root = tk.Tk()
         self.root.title(SYSTEM_NAME)
-        self.root.geometry("1400x900")
-        self.root.minsize(1200, 800)
+        window_sizing.fit(self.root, "1400x900", (1200, 800))
 
         self.style = ttk.Style()
         try:
@@ -561,10 +561,12 @@ class SixthFormMainGUI:
         lower.grid(row=3, column=0, sticky="nsew")
         lower.columnconfigure(0, weight=1, uniform="lower")
         lower.columnconfigure(1, weight=1, uniform="lower")
+        lower.columnconfigure(2, weight=1, uniform="lower")
         root.rowconfigure(3, weight=1)
 
         self._build_recent_students_panel(lower)
         self._build_recent_behaviour_panel(lower)
+        self._build_calendar_panel(lower)
 
         self.status_var.set("Ready")
 
@@ -693,7 +695,7 @@ class SixthFormMainGUI:
 
     def _build_recent_behaviour_panel(self, parent: ttk.Frame) -> None:
         panel = ttk.LabelFrame(parent, text="Recent behaviour entries", padding=8)
-        panel.grid(row=0, column=1, sticky="nsew", padx=(6, 0))
+        panel.grid(row=0, column=1, sticky="nsew", padx=6)
 
         try:
             from education_system.systems.sixth_form.domain.pastoral.behaviour import (
@@ -732,6 +734,64 @@ class SixthFormMainGUI:
         ttk.Button(panel, text="Open Behaviour Log →",
                    command=self.open_behaviour).pack(
             anchor="e", pady=(6, 0))
+
+    def _build_calendar_panel(self, parent: ttk.Frame) -> None:
+        """Today and this week from the events calendar, with the
+        next few upcoming entries."""
+        panel = ttk.LabelFrame(parent, text="Calendar", padding=8)
+        panel.grid(row=0, column=2, sticky="nsew", padx=(6, 0))
+
+        try:
+            from education_system.systems.sixth_form.domain.academics.calendar import (
+                calendar as cal_data,
+            )
+            summ = cal_data.summary()
+            today = datetime.now().strftime("%Y-%m-%d")
+            upcoming = [
+                e for e in cal_data.list_events(
+                    status="Scheduled", date_from=today, limit=30)
+                if e.status == "Scheduled"
+            ][:6]
+        except Exception:
+            logger.debug("Calendar summary unavailable", exc_info=True)
+            ttk.Label(panel, text="Calendar unavailable.",
+                      foreground="#777").pack(anchor="w")
+            return
+
+        counts = ttk.Frame(panel)
+        counts.pack(fill="x", pady=(0, 6))
+        for i, (label, value) in enumerate((
+                ("Today", summ.today_count),
+                ("This week", summ.this_week_count),
+                ("Next 14d", summ.upcoming))):
+            box = ttk.Frame(counts)
+            box.grid(row=0, column=i, sticky="w", padx=(0, 14))
+            ttk.Label(box, text=str(value),
+                      font=("", 16, "bold")).pack(anchor="w")
+            ttk.Label(box, text=label, foreground="#666",
+                      font=("", 9)).pack(anchor="w")
+
+        if not upcoming:
+            ttk.Label(panel, text="Nothing scheduled ahead.",
+                      foreground="#777").pack(anchor="w")
+        else:
+            cols = ("date", "time", "title")
+            tree = ttk.Treeview(panel, columns=cols, show="headings",
+                                height=6)
+            tree.heading("date", text="Date")
+            tree.heading("time", text="Time")
+            tree.heading("title", text="Event")
+            tree.column("date", width=90, anchor="w")
+            tree.column("time", width=80, anchor="w")
+            tree.column("title", width=180, anchor="w")
+            for e in upcoming:
+                tree.insert("", "end", values=(
+                    e.start_date, e.time_label, e.title))
+            tree.pack(fill="both", expand=True)
+
+        ttk.Button(panel, text="Open calendar",
+                   command=self.open_calendar).pack(
+            anchor="w", pady=(6, 0))
 
     def _handler(self, name: str, label: str) -> Callable[[], None]:
         method = getattr(self, name, None)

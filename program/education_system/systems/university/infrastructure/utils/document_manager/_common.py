@@ -16,7 +16,7 @@ from education_system.systems.university.infrastructure.i18n import get_text as 
 from education_system.systems.university.infrastructure.database.db import sqlite3, DatabaseManager, get_connection
 
 # Local imports - Paths
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # SQL safety
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608

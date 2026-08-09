@@ -29,11 +29,11 @@ import sqlite3
 from dataclasses import dataclass, field
 from datetime import date as _date
 from typing import Any
-from education_system.systems.primary.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.PROGRESS_DB
+DB_PATH = paths.PRIMARY_PROGRESS_DB
 
 # Traffic-light 1..4 scale: 1=Outstanding, 2=Good,
 # 3=Requires Improvement, 4=Inadequate. Used for overall progress,
@@ -198,7 +198,7 @@ class ReviewView:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_primary_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

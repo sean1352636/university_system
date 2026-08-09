@@ -7,15 +7,70 @@ by external services via registered webhook URLs.
 
 import hashlib
 import hmac
+import ipaddress
 import json
 import logging
+import os
+import socket
 import sqlite3
 import threading
 import time
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlsplit
+
+from education_system.paths import PLATFORM_DB_FILES_DIR
 
 logger = logging.getLogger(__name__)
+
+
+class WebhookURLError(ValueError):
+    """Raised when a webhook destination URL is not permitted."""
+
+
+def _dev_env() -> bool:
+    return os.getenv("APP_ENV", "production").strip().lower() in (
+        "development", "dev", "local", "test", "testing",
+    )
+
+
+def validate_webhook_url(url: str) -> str:
+    """Validate an outbound webhook destination against SSRF abuse.
+
+    Enforces an https scheme (http permitted only in development), and refuses
+    any URL whose host resolves to a loopback, private, link-local, multicast
+    or reserved address — the ranges an attacker would target to reach the
+    cloud metadata endpoint or internal services. Resolution happens here and
+    again immediately before each delivery to blunt DNS-rebinding.
+    """
+    if not url or not isinstance(url, str):
+        raise WebhookURLError("A webhook URL is required")
+    parts = urlsplit(url.strip())
+    scheme = parts.scheme.lower()
+    allowed_schemes = {"https", "http"} if _dev_env() else {"https"}
+    if scheme not in allowed_schemes:
+        raise WebhookURLError(
+            f"Webhook URL scheme {scheme!r} not allowed; use https"
+        )
+    host = parts.hostname
+    if not host:
+        raise WebhookURLError("Webhook URL has no host")
+    try:
+        infos = socket.getaddrinfo(host, parts.port or (443 if scheme == "https" else 80),
+                                   proto=socket.IPPROTO_TCP)
+    except OSError as exc:
+        raise WebhookURLError(f"Webhook host could not be resolved: {exc}") from exc
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if (ip.is_private or ip.is_loopback or ip.is_link_local
+                or ip.is_multicast or ip.is_reserved or ip.is_unspecified):
+            if _dev_env() and (ip.is_loopback or ip.is_private):
+                # Local dev targets (localhost) are allowed only in dev.
+                continue
+            raise WebhookURLError(
+                f"Webhook host {host!r} resolves to a non-routable address ({ip})"
+            )
+    return url.strip()
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS webhook_subscriptions (
@@ -52,10 +107,8 @@ _RETRY_DELAYS = [60, 300, 900]  # 1min, 5min, 15min
 
 
 def _get_db_path():
-    shared_root = Path(__file__).resolve().parent.parent
-    db_dir = shared_root / "data" / "db_files"
-    db_dir.mkdir(parents=True, exist_ok=True)
-    return str(db_dir / "webhooks.db")
+    PLATFORM_DB_FILES_DIR.mkdir(parents=True, exist_ok=True)
+    return str(PLATFORM_DB_FILES_DIR / "webhooks.db")
 
 
 class WebhookService:
@@ -83,6 +136,12 @@ class WebhookService:
                   system_key: str = "all", secret: str | None = None,
                   description: str | None = None, created_by: int | None = None) -> int:
         """Register a webhook subscription. Returns the subscription ID."""
+        # Reject SSRF targets at registration time (and again at delivery).
+        url = validate_webhook_url(url)
+        # A subscription with no secret would receive unsigned deliveries the
+        # receiver cannot authenticate; require one.
+        if not secret:
+            raise WebhookURLError("A signing secret is required for webhook subscriptions")
         conn = self._conn()
         try:
             cursor = conn.execute(
@@ -127,7 +186,15 @@ class WebhookService:
                 f"SELECT * FROM webhook_subscriptions WHERE {where} ORDER BY created_at DESC",
                 params,
             ).fetchall()
-            return [dict(r) for r in rows]
+            # Never return the signing secret in a listing — it is write-only
+            # from the API's perspective once set.
+            result = []
+            for r in rows:
+                d = dict(r)
+                if d.get("secret"):
+                    d["secret"] = "***"
+                result.append(d)
+            return result
         finally:
             conn.close()
 
@@ -204,23 +271,30 @@ class WebhookService:
         import urllib.error
 
         payload = delivery["payload"]
+        data = payload.encode() if isinstance(payload, str) else json.dumps(payload).encode()
+        timestamp = str(int(time.time()))
         headers = {
             "Content-Type": "application/json",
             "X-Webhook-Event": delivery["event_type"],
             "X-Webhook-Delivery-Id": str(delivery["id"]),
+            "X-Webhook-Timestamp": timestamp,
         }
 
-        # Sign payload if secret configured
+        # Sign the timestamp AND body so a captured request cannot be replayed
+        # indefinitely: the receiver rejects a stale timestamp, and the
+        # timestamp is bound into the MAC so it cannot be rewritten.
         if delivery.get("secret"):
             signature = hmac.new(
                 delivery["secret"].encode(),
-                payload.encode() if isinstance(payload, str) else json.dumps(payload).encode(),
+                timestamp.encode() + b"." + data,
                 hashlib.sha256,
             ).hexdigest()
             headers["X-Webhook-Signature"] = f"sha256={signature}"
 
         try:
-            data = payload.encode() if isinstance(payload, str) else json.dumps(payload).encode()
+            # Re-validate immediately before connecting: the DNS answer may
+            # have changed since subscription (rebinding).
+            validate_webhook_url(delivery["url"])
             req = urllib.request.Request(
                 delivery["url"], data=data, headers=headers, method="POST"
             )

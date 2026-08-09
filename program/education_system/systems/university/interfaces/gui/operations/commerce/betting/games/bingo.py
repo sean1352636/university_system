@@ -9,6 +9,8 @@ itself. Complete any LINE (row, column, or diagonal) to win -- the fewer balls
 it takes, the bigger the payout. The centre square is a free space.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -61,7 +63,7 @@ def has_line(daub):
 class Bingo:
     def __init__(self, root):
         self.root = root
-        root.title("Bingo \u2014 75 ball")
+        root.title(_t('gui.operations.commerce.betting.games.bingo.windows.bingo_75_ball', default="Bingo \u2014 75 ball"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -84,7 +86,7 @@ class Bingo:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=12)
         f.pack()
-        tk.Label(f, text="B I N G O", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.bingo.labels.b_i_n_g_o', default="B I N G O"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 22, "bold")).pack()
 
         top = tk.Frame(f, bg=FELT)
@@ -107,11 +109,11 @@ class Bingo:
                                 highlightthickness=0)
         self.canvas.pack(pady=8)
 
-        self.msg = tk.Label(f, text="Buy a card and press Play!", bg=FELT,
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.bingo.labels.buy_a_card_and_press_play', default="Buy a card and press Play!"), bg=FELT,
                             fg="white", font=("Helvetica", 12, "bold"))
         self.msg.pack()
-        tk.Label(f, text="Line in \u226424 calls = 6x  \u2022  \u226432 = 2x  "
-                 "\u2022  \u226442 = 1x  \u2022  slower = no win", bg=FELT,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.bingo.labels.line_in_24_calls_6x_32_2x_42_1x_slower_no_win', default="Line in \u226424 calls = 6x  \u2022  \u226432 = 2x  "
+                 "\u2022  \u226442 = 1x  \u2022  slower = no win"), bg=FELT,
                  fg="#9fb3c8", font=("Helvetica", 9)).pack(pady=2)
 
         bar = tk.Frame(f, bg=FELT, pady=6)
@@ -122,7 +124,7 @@ class Bingo:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.bingo.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -138,12 +140,12 @@ class Bingo:
 
         btns = tk.Frame(f, bg=FELT, pady=6)
         btns.pack()
-        self.play_btn = tk.Button(btns, text="PLAY", command=self.play, width=12,
+        self.play_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.bingo.buttons.play', default="PLAY"), command=self.play, width=12,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
         self.play_btn.pack(side="left", padx=6)
-        self.new_btn = tk.Button(btns, text="New Card", command=self.new_card,
+        self.new_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.bingo.buttons.new_card', default="New Card"), command=self.new_card,
                                  width=12, font=("Helvetica", 14, "bold"),
                                  bg="#3a5a8a", fg="white", activebackground=GOLD,
                                  bd=0, pady=8, cursor="hand2")
@@ -208,13 +210,13 @@ class Bingo:
         self.recent_lbl.config(text="")
         self.render()
         self.refresh()
-        self.msg.config(text="New card ready. Press Play!", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.bingo.text.new_card_ready_press_play', default="New card ready. Press Play!"), fg="white")
 
     def play(self):
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.bingo.text.not_enough_credits', default="Not enough credits."))
             return
         # fresh card if the previous round already finished
         if self.calls > 0:
@@ -224,7 +226,7 @@ class Bingo:
         self.busy = True
         self.play_btn.config(state="disabled")
         self.new_btn.config(state="disabled")
-        self.msg.config(text="Calling numbers...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.bingo.text.calling_numbers', default="Calling numbers..."), fg="white")
         self.refresh()
         self._recent = []
         self._call()
@@ -263,10 +265,10 @@ class Bingo:
                 self.msg.config(text=f"Line in {self.calls} calls \u2014 too "
                                      f"slow, no payout.", fg="white")
         else:
-            self.msg.config(text="No line in time. Better luck next card.",
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.bingo.text.no_line_in_time_better_luck_next_card', default="No line in time. Better luck next card."),
                             fg="white")
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.bingo.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

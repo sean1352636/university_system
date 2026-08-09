@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.simpledialog import Dialog
@@ -16,24 +18,24 @@ class AddExpenseDialog(Dialog):
     def body(self, master):
         """Create the dialog body"""
         # Category selection
-        ttk.Label(master, text="Category:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.labels.category', default="Category:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.category_var = tk.StringVar()
         categories = ['Transportation', 'Accommodation', 'Food', 'Activities', 'Equipment', 'Insurance', 'Miscellaneous']
         self.category_combo = ttk.Combobox(master, textvariable=self.category_var, values=categories, state="readonly")
         self.category_combo.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W+tk.E)
 
         # Description
-        ttk.Label(master, text="Description:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.labels.description', default="Description:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.description_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.description_var, width=40).grid(row=1, column=1, padx=5, pady=5)
 
         # Amount
-        ttk.Label(master, text="Amount (\u00a3):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.labels.amount', default="Amount (\u00a3):")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.amount_var = tk.StringVar()
         ttk.Entry(master, textvariable=self.amount_var, width=40).grid(row=2, column=1, padx=5, pady=5)
 
         # Date
-        ttk.Label(master, text="Date (YYYY-MM-DD):").grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=3, column=0, sticky=tk.W, padx=5, pady=5)
         self.date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(master, textvariable=self.date_var, width=40).grid(row=3, column=1, padx=5, pady=5)
 
@@ -42,26 +44,26 @@ class AddExpenseDialog(Dialog):
     def validate(self):
         """Validate expense data"""
         if not self.category_var.get():
-            messagebox.showerror("Validation Error", "Please select a category.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.please_select_a_category', default="Please select a category."))
             return False
 
         if not self.description_var.get().strip():
-            messagebox.showerror("Validation Error", "Description is required.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.description_is_required', default="Description is required."))
             return False
 
         try:
             amount = float(self.amount_var.get())
             if amount < 0:
-                messagebox.showerror("Validation Error", "Amount cannot be negative.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.amount_cannot_be_negative', default="Amount cannot be negative."))
                 return False
         except ValueError:
-            messagebox.showerror("Validation Error", "Please enter a valid amount.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount."))
             return False
 
         try:
             datetime.strptime(self.date_var.get(), '%Y-%m-%d')
         except ValueError:
-            messagebox.showerror("Validation Error", "Please enter a valid date (YYYY-MM-DD).")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.please_enter_a_valid_date_yyyy_mm_dd', default="Please enter a valid date (YYYY-MM-DD)."))
             return False
 
         return True
@@ -85,11 +87,11 @@ class AddExpenseDialog(Dialog):
 
 
         if safe_db_operation(add_expense_operation):
-            messagebox.showinfo("Success", "Expense added successfully!")
+            messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.expense_added_successfully', default="Expense added successfully!"))
             if self.refresh_callback:
                 self.refresh_callback()
         else:
-            messagebox.showerror("Error", "Failed to add expense.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.failed_to_add_expense', default="Failed to add expense."))
 
 
 class EditExpenseDialog(Dialog):
@@ -115,23 +117,23 @@ class EditExpenseDialog(Dialog):
     def body(self, master):
         """Create the dialog body"""
         if not self.expense_data:
-            ttk.Label(master, text="Expense not found.").pack(pady=20)
+            ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.labels.expense_not_found', default="Expense not found.")).pack(pady=20)
             return None
 
         expense = self.expense_data
 
         # Description
-        ttk.Label(master, text="Description:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.labels.description', default="Description:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.description_var = tk.StringVar(value=expense[3])
         ttk.Entry(master, textvariable=self.description_var, width=40).grid(row=0, column=1, padx=5, pady=5)
 
         # Amount
-        ttk.Label(master, text="Amount (\u00a3):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.labels.amount', default="Amount (\u00a3):")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.amount_var = tk.StringVar(value=str(expense[4]))
         ttk.Entry(master, textvariable=self.amount_var, width=40).grid(row=1, column=1, padx=5, pady=5)
 
         # Date
-        ttk.Label(master, text="Date (YYYY-MM-DD):").grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
         self.date_var = tk.StringVar(value=expense[5])
         ttk.Entry(master, textvariable=self.date_var, width=40).grid(row=2, column=1, padx=5, pady=5)
 
@@ -140,22 +142,22 @@ class EditExpenseDialog(Dialog):
     def validate(self):
         """Validate expense data"""
         if not self.description_var.get().strip():
-            messagebox.showerror("Validation Error", "Description is required.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.description_is_required', default="Description is required."))
             return False
 
         try:
             amount = float(self.amount_var.get())
             if amount < 0:
-                messagebox.showerror("Validation Error", "Amount cannot be negative.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.amount_cannot_be_negative', default="Amount cannot be negative."))
                 return False
         except ValueError:
-            messagebox.showerror("Validation Error", "Please enter a valid amount.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount."))
             return False
 
         try:
             datetime.strptime(self.date_var.get(), '%Y-%m-%d')
         except ValueError:
-            messagebox.showerror("Validation Error", "Please enter a valid date (YYYY-MM-DD).")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.please_enter_a_valid_date_yyyy_mm_dd', default="Please enter a valid date (YYYY-MM-DD)."))
             return False
 
         return True
@@ -177,8 +179,8 @@ class EditExpenseDialog(Dialog):
 
 
         if safe_db_operation(update_expense_operation):
-            messagebox.showinfo("Success", "Expense updated successfully!")
+            messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.expense_updated_successfully', default="Expense updated successfully!"))
             if self.refresh_callback:
                 self.refresh_callback()
         else:
-            messagebox.showerror("Error", "Failed to update expense.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.expense_dialogs.dialogs.failed_to_update_expense', default="Failed to update expense."))

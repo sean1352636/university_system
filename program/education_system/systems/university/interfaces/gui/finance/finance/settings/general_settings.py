@@ -1,5 +1,7 @@
 """General settings tab and persistence."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -107,7 +109,7 @@ class GeneralSettingsMixin:
         base_frame.pack(fill='x', padx=10, pady=10)
 
         tk.Label(base_frame, text=_("finance_gui.settings.base_currency_label")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
-        self.base_currency_var = tk.StringVar(value="GBP")
+        self.base_currency_var = tk.StringVar(value=_t('gui.finance.finance.settings.general_settings.values.gbp', default="GBP"))
         currency_combo = ttk.Combobox(base_frame, textvariable=self.base_currency_var,
                                      values=['GBP', 'USD', 'EUR', 'CAD', 'AUD'])
         currency_combo.grid(row=0, column=1, padx=5, pady=5)

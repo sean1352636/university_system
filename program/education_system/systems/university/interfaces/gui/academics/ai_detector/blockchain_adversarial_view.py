@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
 import threading
@@ -42,29 +44,29 @@ from education_system.systems.university.infrastructure.i18n import get_text, _
 def create_adversarial_detection_tab(self):
     """Create adversarial detection tab"""
     adversarial_frame = ttk.Frame(self.notebook)
-    self.notebook.add(adversarial_frame, text="🛡️ Anti-Evasion")
+    self.notebook.add(adversarial_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.tabs.anti_evasion', default="🛡️ Anti-Evasion"))
 
     # Adversarial detection card
     adversarial_card = ttk.Frame(adversarial_frame, style='Card.TFrame')
     adversarial_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(adversarial_card, text="Adversarial & Evasion Detection", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(adversarial_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.adversarial_evasion_detection', default="Adversarial & Evasion Detection"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Detection methods
-    methods_frame = ttk.LabelFrame(adversarial_card, text="Detection Methods", padding=15)
+    methods_frame = ttk.LabelFrame(adversarial_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.detection_methods', default="Detection Methods"), padding=15)
     methods_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     self.detect_invisible_chars_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(methods_frame, text="Invisible Characters", variable=self.detect_invisible_chars_var).pack(anchor='w')
+    ttk.Checkbutton(methods_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.invisible_characters', default="Invisible Characters"), variable=self.detect_invisible_chars_var).pack(anchor='w')
 
     self.detect_char_substitution_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(methods_frame, text="Character Substitution", variable=self.detect_char_substitution_var).pack(anchor='w')
+    ttk.Checkbutton(methods_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.character_substitution', default="Character Substitution"), variable=self.detect_char_substitution_var).pack(anchor='w')
 
     self.detect_spacing_anomalies_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(methods_frame, text="Spacing Anomalies", variable=self.detect_spacing_anomalies_var).pack(anchor='w')
+    ttk.Checkbutton(methods_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.spacing_anomalies', default="Spacing Anomalies"), variable=self.detect_spacing_anomalies_var).pack(anchor='w')
 
     # Test button
-    ttk.Button(adversarial_card, text="Test Evasion Detection",
+    ttk.Button(adversarial_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.test_evasion_detection', default="Test Evasion Detection"),
               command=self.test_adversarial_detection).pack(pady=15)
 
 
@@ -78,37 +80,37 @@ def create_adversarial_detection_view(self, parent):
     adversarial_card = ttk.Frame(adversarial_frame, style='Card.TFrame')
     adversarial_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(adversarial_card, text="Adversarial & Evasion Detection", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(adversarial_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.adversarial_evasion_detection', default="Adversarial & Evasion Detection"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Detection methods
-    methods_frame = ttk.LabelFrame(adversarial_card, text="Detection Methods", padding=15)
+    methods_frame = ttk.LabelFrame(adversarial_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.detection_methods', default="Detection Methods"), padding=15)
     methods_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     self.detect_invisible_chars_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(methods_frame, text="Invisible Characters", variable=self.detect_invisible_chars_var).pack(anchor='w')
+    ttk.Checkbutton(methods_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.invisible_characters', default="Invisible Characters"), variable=self.detect_invisible_chars_var).pack(anchor='w')
 
     self.detect_char_substitution_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(methods_frame, text="Character Substitution", variable=self.detect_char_substitution_var).pack(anchor='w')
+    ttk.Checkbutton(methods_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.character_substitution', default="Character Substitution"), variable=self.detect_char_substitution_var).pack(anchor='w')
 
     self.detect_spacing_anomalies_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(methods_frame, text="Spacing Anomalies", variable=self.detect_spacing_anomalies_var).pack(anchor='w')
+    ttk.Checkbutton(methods_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.spacing_anomalies', default="Spacing Anomalies"), variable=self.detect_spacing_anomalies_var).pack(anchor='w')
 
     # Test button
-    ttk.Button(adversarial_card, text="Test Evasion Detection",
+    ttk.Button(adversarial_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.test_evasion_detection', default="Test Evasion Detection"),
               command=self.test_adversarial_detection).pack(pady=15)
 
 
 def test_adversarial_detection(self):
     """Test adversarial detection capabilities"""
     test_window = tk.Toplevel(self.root)
-    test_window.title("Adversarial Detection Test")
+    test_window.title(_t('gui.academics.ai_detector.blockchain_adversarial_view.windows.adversarial_detection_test', default="Adversarial Detection Test"))
     test_window.geometry("700x500")
     test_window.configure(bg=self.colors['bg_primary'])
 
-    ttk.Label(test_window, text="Adversarial Detection Test", style='Title.TLabel').pack(pady=20)
+    ttk.Label(test_window, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.adversarial_detection_test', default="Adversarial Detection Test"), style='Title.TLabel').pack(pady=20)
 
     # Test input
-    test_frame = ttk.LabelFrame(test_window, text="Test Text", padding=15)
+    test_frame = ttk.LabelFrame(test_window, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.test_text', default="Test Text"), padding=15)
     test_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
 
     test_text = scrolledtext.ScrolledText(
@@ -129,21 +131,21 @@ def test_adversarial_detection(self):
                     result = self.detector.adversarial_detector.detect_evasion_attempts(text)
                     self.show_adversarial_results(result)
                 else:
-                    messagebox.showwarning("Warning", "Adversarial detection not available")
+                    messagebox.showwarning(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.adversarial_detection_not_available', default="Adversarial detection not available"))
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to run test: {str(e)}")
+                messagebox.showerror(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.error', default="Error"), f"Failed to run test: {str(e)}")
 
-    ttk.Button(test_window, text="Run Detection Test", command=run_test).pack(pady=10)
+    ttk.Button(test_window, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.run_detection_test', default="Run Detection Test"), command=run_test).pack(pady=10)
 
 
 def show_adversarial_results(self, result):
     """Show adversarial detection results"""
     results_window = tk.Toplevel(self.root)
-    results_window.title("Adversarial Detection Results")
+    results_window.title(_t('gui.academics.ai_detector.blockchain_adversarial_view.windows.adversarial_detection_results', default="Adversarial Detection Results"))
     results_window.geometry("600x400")
     results_window.configure(bg=self.colors['bg_primary'])
 
-    ttk.Label(results_window, text="Evasion Detection Results", style='Title.TLabel').pack(pady=20)
+    ttk.Label(results_window, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.evasion_detection_results', default="Evasion Detection Results"), style='Title.TLabel').pack(pady=20)
 
     # Results display
     results_frame = ttk.Frame(results_window, style='Card.TFrame')
@@ -160,7 +162,7 @@ def show_adversarial_results(self, result):
                  font=('Segoe UI', 12)).pack(anchor='w', padx=15, pady=5)
 
         if evidence:
-            ttk.Label(results_frame, text="Evidence Found:",
+            ttk.Label(results_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.evidence_found', default="Evidence Found:"),
                      font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=15, pady=(10, 5))
             for key, value in evidence.items():
                 ttk.Label(results_frame, text=f"  {key}: {value}").pack(anchor='w', padx=25, pady=2)
@@ -169,33 +171,33 @@ def show_adversarial_results(self, result):
 def create_blockchain_audit_tab(self):
     """Create blockchain audit trail tab"""
     blockchain_frame = ttk.Frame(self.notebook)
-    self.notebook.add(blockchain_frame, text="🔗 Blockchain")
+    self.notebook.add(blockchain_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.tabs.blockchain', default="🔗 Blockchain"))
 
     # Blockchain card
     blockchain_card = ttk.Frame(blockchain_frame, style='Card.TFrame')
     blockchain_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(blockchain_card, text="Blockchain Audit Trail", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(blockchain_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.blockchain_audit_trail', default="Blockchain Audit Trail"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Blockchain info
-    info_frame = ttk.LabelFrame(blockchain_card, text="Chain Information", padding=15)
+    info_frame = ttk.LabelFrame(blockchain_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.chain_information', default="Chain Information"), padding=15)
     info_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    self.chain_length_label = ttk.Label(info_frame, text="Chain Length: 0")
+    self.chain_length_label = ttk.Label(info_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.chain_length_0', default="Chain Length: 0"))
     self.chain_length_label.pack(anchor='w')
 
-    self.pending_transactions_label = ttk.Label(info_frame, text="Pending Transactions: 0")
+    self.pending_transactions_label = ttk.Label(info_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.pending_transactions_0', default="Pending Transactions: 0"))
     self.pending_transactions_label.pack(anchor='w')
 
     # Controls
     controls_frame = ttk.Frame(blockchain_card)
     controls_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(controls_frame, text="Mine Pending Block",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.mine_pending_block', default="Mine Pending Block"),
               command=self.mine_blockchain_block).pack(side='left', padx=(0, 10))
-    ttk.Button(controls_frame, text="Verify Chain Integrity",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.verify_chain_integrity', default="Verify Chain Integrity"),
               command=self.verify_blockchain_integrity).pack(side='left', padx=(0, 10))
-    ttk.Button(controls_frame, text="View Chain History",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.view_chain_history', default="View Chain History"),
               command=self.view_blockchain_history).pack(side='left')
 
 
@@ -209,27 +211,27 @@ def create_blockchain_audit_view(self, parent):
     blockchain_card = ttk.Frame(blockchain_frame, style='Card.TFrame')
     blockchain_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(blockchain_card, text="Blockchain Audit Trail", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(blockchain_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.blockchain_audit_trail', default="Blockchain Audit Trail"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Blockchain info
-    info_frame = ttk.LabelFrame(blockchain_card, text="Chain Information", padding=15)
+    info_frame = ttk.LabelFrame(blockchain_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.chain_information', default="Chain Information"), padding=15)
     info_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    self.chain_length_label = ttk.Label(info_frame, text="Chain Length: 0")
+    self.chain_length_label = ttk.Label(info_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.chain_length_0', default="Chain Length: 0"))
     self.chain_length_label.pack(anchor='w')
 
-    self.pending_transactions_label = ttk.Label(info_frame, text="Pending Transactions: 0")
+    self.pending_transactions_label = ttk.Label(info_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.pending_transactions_0', default="Pending Transactions: 0"))
     self.pending_transactions_label.pack(anchor='w')
 
     # Controls
     controls_frame = ttk.Frame(blockchain_card)
     controls_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(controls_frame, text="Mine Pending Block",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.mine_pending_block', default="Mine Pending Block"),
               command=self.mine_blockchain_block).pack(side='left', padx=(0, 10))
-    ttk.Button(controls_frame, text="Verify Chain Integrity",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.verify_chain_integrity', default="Verify Chain Integrity"),
               command=self.verify_blockchain_integrity).pack(side='left', padx=(0, 10))
-    ttk.Button(controls_frame, text="View Chain History",
+    ttk.Button(controls_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.view_chain_history', default="View Chain History"),
               command=self.view_blockchain_history).pack(side='left')
 
 
@@ -243,19 +245,19 @@ def mine_blockchain_block(self):
             if hasattr(blockchain, 'pending_transactions') and blockchain.pending_transactions:
                 # Show mining progress dialog
                 progress_window = tk.Toplevel(self.root)
-                progress_window.title("Mining Block")
+                progress_window.title(_t('gui.academics.ai_detector.blockchain_adversarial_view.windows.mining_block', default="Mining Block"))
                 progress_window.geometry("400x200")
                 progress_window.transient(self.root)
                 progress_window.grab_set()
 
-                ttk.Label(progress_window, text="Mining blockchain block...", style='Title.TLabel').pack(pady=20)
+                ttk.Label(progress_window, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.mining_blockchain_block', default="Mining blockchain block..."), style='Title.TLabel').pack(pady=20)
 
                 progress_var = tk.DoubleVar()
                 progress_bar = ttk.Progressbar(progress_window, variable=progress_var,
                                              mode='determinate', length=300)
                 progress_bar.pack(pady=10)
 
-                status_label = ttk.Label(progress_window, text="Initializing mining process...")
+                status_label = ttk.Label(progress_window, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.initializing_mining_process', default="Initializing mining process..."))
                 status_label.pack(pady=10)
 
                 def mine_with_progress():
@@ -263,15 +265,15 @@ def mine_blockchain_block(self):
                         # Simulate mining process with progress updates
                         for i in range(101):
                             if i == 0:
-                                status_label.config(text="Validating transactions...")
+                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.validating_transactions', default="Validating transactions..."))
                             elif i == 25:
-                                status_label.config(text="Calculating proof of work...")
+                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.calculating_proof_of_work', default="Calculating proof of work..."))
                             elif i == 50:
-                                status_label.config(text="Computing hash...")
+                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.computing_hash', default="Computing hash..."))
                             elif i == 75:
-                                status_label.config(text="Finalizing block...")
+                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.finalizing_block', default="Finalizing block..."))
                             elif i == 100:
-                                status_label.config(text="Block mined successfully!")
+                                status_label.config(text=_t('gui.academics.ai_detector.blockchain_adversarial_view.text.block_mined_successfully', default="Block mined successfully!"))
 
                             progress_var.set(i)
                             progress_window.update()
@@ -303,14 +305,14 @@ def mine_blockchain_block(self):
 
                         # Update displays and show success
                         self.update_blockchain_display()
-                        messagebox.showinfo("Mining Success",
-                                          "Block mined successfully!\n"
+                        messagebox.showinfo(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.mining_success', default="Mining Success"),
+                                          _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.block_mined_successfully_new_block_added_to_the_chain_pending_tr', default="Block mined successfully!\n"
                                           "New block added to the chain.\n"
-                                          "Pending transactions processed.")
+                                          "Pending transactions processed."))
 
                     except Exception as e:
                         progress_window.destroy()
-                        messagebox.showerror("Mining Error", f"Failed to mine block: {str(e)}")
+                        messagebox.showerror(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.mining_error', default="Mining Error"), f"Failed to mine block: {str(e)}")
 
                 # Start mining in a separate thread to prevent GUI freezing
                 import threading
@@ -318,8 +320,8 @@ def mine_blockchain_block(self):
 
             else:
                 # No pending transactions - offer to create a sample transaction
-                result = messagebox.askyesno("No Pending Transactions",
-                                           "No pending transactions found. Would you like to create a sample transaction for mining?")
+                result = messagebox.askyesno(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.no_pending_transactions', default="No Pending Transactions"),
+                                           _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.no_pending_transactions_found_would_you_like_to_create_a_sample', default="No pending transactions found. Would you like to create a sample transaction for mining?"))
                 if result:
                     # Create a sample transaction
                     sample_transaction = {
@@ -337,9 +339,9 @@ def mine_blockchain_block(self):
                         blockchain.pending_transactions = []
 
                     blockchain.pending_transactions.append(sample_transaction)
-                    messagebox.showinfo("Transaction Created", "Sample transaction added. You can now mine the block.")
+                    messagebox.showinfo(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.transaction_created', default="Transaction Created"), _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.sample_transaction_added_you_can_now_mine_the_block', default="Sample transaction added. You can now mine the block."))
                 else:
-                    messagebox.showinfo("Info", "No transactions to mine")
+                    messagebox.showinfo(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.info', default="Info"), _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.no_transactions_to_mine', default="No transactions to mine"))
         else:
             # Blockchain not available - show information about it
             info_msg = ("Blockchain audit system is not currently available.\n\n"
@@ -347,10 +349,10 @@ def mine_blockchain_block(self):
                        "• Blockchain audit module to be enabled\n"
                        "• Proper initialization of the blockchain system\n"
                        "• Active transaction monitoring")
-            messagebox.showinfo("Blockchain Unavailable", info_msg)
+            messagebox.showinfo(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.blockchain_unavailable', default="Blockchain Unavailable"), info_msg)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to mine block: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.error', default="Error"), f"Failed to mine block: {str(e)}")
 
 
 def verify_blockchain_integrity(self):
@@ -361,7 +363,7 @@ def verify_blockchain_integrity(self):
 
             # Create verification window
             verify_window = tk.Toplevel(self.root)
-            verify_window.title("Blockchain Integrity Verification")
+            verify_window.title(_t('gui.academics.ai_detector.blockchain_adversarial_view.windows.blockchain_integrity_verification', default="Blockchain Integrity Verification"))
             verify_window.geometry("600x500")
             verify_window.transient(self.root)
             verify_window.grab_set()
@@ -369,10 +371,10 @@ def verify_blockchain_integrity(self):
             # Title
             title_frame = ttk.Frame(verify_window)
             title_frame.pack(fill='x', padx=20, pady=20)
-            ttk.Label(title_frame, text="🔐 Blockchain Integrity Verification", style='Title.TLabel').pack()
+            ttk.Label(title_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.blockchain_integrity_verification', default="🔐 Blockchain Integrity Verification"), style='Title.TLabel').pack()
 
             # Results frame
-            results_frame = ttk.LabelFrame(verify_window, text="Verification Results", padding="15")
+            results_frame = ttk.LabelFrame(verify_window, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.verification_results', default="Verification Results"), padding="15")
             results_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
 
             # Progress bar
@@ -507,9 +509,9 @@ def verify_blockchain_integrity(self):
             button_frame = ttk.Frame(verify_window)
             button_frame.pack(fill='x', padx=20, pady=(0, 20))
 
-            ttk.Button(button_frame, text="Start Verification",
+            ttk.Button(button_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.start_verification', default="Start Verification"),
                       command=lambda: threading.Thread(target=run_verification, daemon=True).start()).pack(side='left', padx=(0, 10))
-            ttk.Button(button_frame, text="Close", command=verify_window.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.close', default="Close"), command=verify_window.destroy).pack(side='right')
 
             # Show initial message
             results_text.insert(tk.END, "Click 'Start Verification' to begin blockchain integrity check.\n\n")
@@ -526,10 +528,10 @@ def verify_blockchain_integrity(self):
                        "• Enable the blockchain audit module\n"
                        "• Initialize the blockchain system\n"
                        "• Mine at least one block")
-            messagebox.showinfo("Blockchain Unavailable", info_msg)
+            messagebox.showinfo(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.blockchain_unavailable', default="Blockchain Unavailable"), info_msg)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to verify blockchain: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.error', default="Error"), f"Failed to verify blockchain: {str(e)}")
 
 
 def view_blockchain_history(self):
@@ -537,11 +539,11 @@ def view_blockchain_history(self):
     try:
         if hasattr(self.detector, 'blockchain_audit'):
             history_window = tk.Toplevel(self.root)
-            history_window.title("Blockchain History")
+            history_window.title(_t('gui.academics.ai_detector.blockchain_adversarial_view.windows.blockchain_history', default="Blockchain History"))
             history_window.geometry("800x600")
             history_window.configure(bg=self.colors['bg_primary'])
 
-            ttk.Label(history_window, text="Blockchain History", style='Title.TLabel').pack(pady=20)
+            ttk.Label(history_window, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.blockchain_history', default="Blockchain History"), style='Title.TLabel').pack(pady=20)
 
             # Create treeview for blocks
             columns = ('Block', 'Hash', 'Transactions', 'Timestamp')
@@ -562,9 +564,9 @@ def view_blockchain_history(self):
 
             tree.pack(fill='both', expand=True, padx=20, pady=20)
         else:
-            messagebox.showwarning("Warning", "Blockchain audit not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.blockchain_audit_not_available', default="Blockchain audit not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to view history: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.error', default="Error"), f"Failed to view history: {str(e)}")
 
 
 def update_blockchain_display(self):
@@ -583,29 +585,29 @@ def update_blockchain_display(self):
 def create_benchmarking_tab(self):
     """Create institutional benchmarking tab"""
     benchmark_frame = ttk.Frame(self.notebook)
-    self.notebook.add(benchmark_frame, text="📊 Benchmarking")
+    self.notebook.add(benchmark_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.tabs.benchmarking', default="📊 Benchmarking"))
 
     # Benchmarking card
     benchmark_card = ttk.Frame(benchmark_frame, style='Card.TFrame')
     benchmark_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(benchmark_card, text="Institutional Benchmarking", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(benchmark_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.institutional_benchmarking', default="Institutional Benchmarking"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Institution input
     input_frame = ttk.Frame(benchmark_card)
     input_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Label(input_frame, text="Institution ID:").pack(side='left')
+    ttk.Label(input_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.institution_id', default="Institution ID:")).pack(side='left')
     self.benchmark_institution_var = tk.StringVar()
     ttk.Entry(input_frame, textvariable=self.benchmark_institution_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Label(input_frame, text="Period:").pack(side='left')
-    self.benchmark_period_var = tk.StringVar(value="1_month")
+    ttk.Label(input_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.period', default="Period:")).pack(side='left')
+    self.benchmark_period_var = tk.StringVar(value=_t('gui.academics.ai_detector.blockchain_adversarial_view.values.value_1_month', default="1_month"))
     period_combo = ttk.Combobox(input_frame, textvariable=self.benchmark_period_var,
                                values=["1_month", "3_months", "1_year"], width=15)
     period_combo.pack(side='left', padx=(5, 15))
 
-    ttk.Button(input_frame, text="Generate Report",
+    ttk.Button(input_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.generate_report', default="Generate Report"),
               command=self.generate_benchmark_report).pack(side='right')
 
     # Results display
@@ -623,23 +625,23 @@ def create_benchmarking_view(self, parent):
     benchmark_card = ttk.Frame(benchmark_frame, style='Card.TFrame')
     benchmark_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(benchmark_card, text="Institutional Benchmarking", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(benchmark_card, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.institutional_benchmarking', default="Institutional Benchmarking"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Institution input
     input_frame = ttk.Frame(benchmark_card)
     input_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Label(input_frame, text="Institution ID:").pack(side='left')
+    ttk.Label(input_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.institution_id', default="Institution ID:")).pack(side='left')
     self.benchmark_institution_var = tk.StringVar()
     ttk.Entry(input_frame, textvariable=self.benchmark_institution_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Label(input_frame, text="Period:").pack(side='left')
-    self.benchmark_period_var = tk.StringVar(value="1_month")
+    ttk.Label(input_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.period', default="Period:")).pack(side='left')
+    self.benchmark_period_var = tk.StringVar(value=_t('gui.academics.ai_detector.blockchain_adversarial_view.values.value_1_month', default="1_month"))
     period_combo = ttk.Combobox(input_frame, textvariable=self.benchmark_period_var,
                                values=["1_month", "3_months", "1_year"], width=15)
     period_combo.pack(side='left', padx=(5, 15))
 
-    ttk.Button(input_frame, text="Generate Report",
+    ttk.Button(input_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.buttons.generate_report', default="Generate Report"),
               command=self.generate_benchmark_report).pack(side='right')
 
     # Results display
@@ -653,7 +655,7 @@ def generate_benchmark_report(self):
     period = self.benchmark_period_var.get()
 
     if not institution_id:
-        messagebox.showwarning("Warning", "Please enter an Institution ID")
+        messagebox.showwarning(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.please_enter_an_institution_id', default="Please enter an Institution ID"))
         return
 
     try:
@@ -661,9 +663,9 @@ def generate_benchmark_report(self):
             report = self.detector.institution_benchmarking.generate_benchmark_report(institution_id, period)
             self.display_benchmark_report(report)
         else:
-            messagebox.showwarning("Warning", "Benchmarking not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.benchmarking_not_available', default="Benchmarking not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate benchmark report: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.blockchain_adversarial_view.dialogs.error', default="Error"), f"Failed to generate benchmark report: {str(e)}")
 
 
 def display_benchmark_report(self, report):
@@ -678,7 +680,7 @@ def display_benchmark_report(self, report):
         return
 
     # Institution metrics
-    metrics_frame = ttk.LabelFrame(self.benchmark_results_frame, text="Institution Metrics", padding=10)
+    metrics_frame = ttk.LabelFrame(self.benchmark_results_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.institution_metrics', default="Institution Metrics"), padding=10)
     metrics_frame.pack(fill='x', padx=10, pady=5)
 
     institution_metrics = report.get('institution_metrics', {})
@@ -686,7 +688,7 @@ def display_benchmark_report(self, report):
         ttk.Label(metrics_frame, text=f"{key.replace('_', ' ').title()}: {value}").pack(anchor='w')
 
     # Benchmarks
-    benchmark_frame = ttk.LabelFrame(self.benchmark_results_frame, text="Global Benchmarks", padding=10)
+    benchmark_frame = ttk.LabelFrame(self.benchmark_results_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.global_benchmarks', default="Global Benchmarks"), padding=10)
     benchmark_frame.pack(fill='x', padx=10, pady=5)
 
     benchmarks = report.get('benchmarks', {})
@@ -696,7 +698,7 @@ def display_benchmark_report(self, report):
     # Performance indicators
     performance = report.get('performance_indicators', {})
     if performance:
-        perf_frame = ttk.LabelFrame(self.benchmark_results_frame, text="Performance Indicators", padding=10)
+        perf_frame = ttk.LabelFrame(self.benchmark_results_frame, text=_t('gui.academics.ai_detector.blockchain_adversarial_view.labels.performance_indicators', default="Performance Indicators"), padding=10)
         perf_frame.pack(fill='x', padx=10, pady=5)
 
         for key, value in performance.items():

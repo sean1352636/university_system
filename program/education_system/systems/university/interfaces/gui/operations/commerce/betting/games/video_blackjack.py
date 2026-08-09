@@ -8,6 +8,8 @@ Hit or Stand (and Double on your first two cards). Dealer draws to 17. Blackjack
 pays 3:2, other wins pay even money. Dealer stands on all 17s.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -49,7 +51,7 @@ def is_blackjack(cards):
 class VideoBlackjack:
     def __init__(self, root):
         self.root = root
-        root.title("Video Blackjack")
+        root.title(_t('gui.operations.commerce.betting.games.video_blackjack.windows.video_blackjack', default="Video Blackjack"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -64,9 +66,9 @@ class VideoBlackjack:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=12)
         f.pack()
-        tk.Label(f, text="VIDEO BLACKJACK", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.video_blackjack.labels.video_blackjack', default="VIDEO BLACKJACK"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 18, "bold")).pack()
-        tk.Label(f, text="Dealer", bg=FELT, fg="white",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.video_blackjack.labels.dealer', default="Dealer"), bg=FELT, fg="white",
                  font=("Helvetica", 12, "bold")).pack()
         self.dealer_total = tk.Label(f, text="", bg=FELT, fg=GOLD,
                                      font=("Helvetica", 12, "bold"))
@@ -74,14 +76,14 @@ class VideoBlackjack:
         self.dealer_row = self._card_row(f)
         mid = tk.Frame(f, bg="#074420", padx=10, pady=6)
         mid.pack(fill="x", pady=8)
-        self.msg = tk.Label(mid, text="Place a bet and deal.", bg="#074420",
+        self.msg = tk.Label(mid, text=_t('gui.operations.commerce.betting.games.video_blackjack.labels.place_a_bet_and_deal', default="Place a bet and deal."), bg="#074420",
                             fg=GOLD, font=("Helvetica", 13, "bold"))
         self.msg.pack()
         self.player_row = self._card_row(f)
         self.player_total = tk.Label(f, text="", bg=FELT, fg=GOLD,
                                      font=("Helvetica", 12, "bold"))
         self.player_total.pack()
-        tk.Label(f, text="You", bg=FELT, fg="white",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.video_blackjack.labels.you', default="You"), bg=FELT, fg="white",
                  font=("Helvetica", 12, "bold")).pack()
 
         bar = tk.Frame(f, bg=FELT, pady=8)
@@ -92,7 +94,7 @@ class VideoBlackjack:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.video_blackjack.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -108,21 +110,21 @@ class VideoBlackjack:
 
         btns = tk.Frame(f, bg=FELT, pady=6)
         btns.pack()
-        self.deal_btn = tk.Button(btns, text="DEAL", command=self.deal, width=9,
+        self.deal_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.video_blackjack.buttons.deal', default="DEAL"), command=self.deal, width=9,
                                   font=("Helvetica", 13, "bold"), bg="#1b7a4b",
                                   fg="white", bd=0, pady=6, cursor="hand2")
         self.deal_btn.pack(side="left", padx=4)
-        self.hit_btn = tk.Button(btns, text="HIT", command=self.hit, width=8,
+        self.hit_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.video_blackjack.buttons.hit', default="HIT"), command=self.hit, width=8,
                                  font=("Helvetica", 13, "bold"), bg="#3a5a8a",
                                  fg="white", bd=0, pady=6, cursor="hand2",
                                  state="disabled")
         self.hit_btn.pack(side="left", padx=4)
-        self.stand_btn = tk.Button(btns, text="STAND", command=self.stand, width=8,
+        self.stand_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.video_blackjack.buttons.stand', default="STAND"), command=self.stand, width=8,
                                    font=("Helvetica", 13, "bold"), bg="#9b2226",
                                    fg="white", bd=0, pady=6, cursor="hand2",
                                    state="disabled")
         self.stand_btn.pack(side="left", padx=4)
-        self.double_btn = tk.Button(btns, text="DOUBLE", command=self.double,
+        self.double_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.video_blackjack.buttons.double', default="DOUBLE"), command=self.double,
                                     width=8, font=("Helvetica", 13, "bold"),
                                     bg="#7b2cbf", fg="white", bd=0, pady=6,
                                     cursor="hand2", state="disabled")
@@ -207,7 +209,7 @@ class VideoBlackjack:
 
     def deal(self):
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.video_blackjack.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.doubled = False
@@ -221,7 +223,7 @@ class VideoBlackjack:
             self.finish()
             return
         self.render(hide_hole=True)
-        self.msg.config(text="Hit, Stand, or Double?", fg=GOLD)
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.video_blackjack.text.hit_stand_or_double', default="Hit, Stand, or Double?"), fg=GOLD)
         can_double = self.credits >= self.bet
         self._btns(False, True, True, can_double)
 

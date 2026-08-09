@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -24,7 +26,7 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 # Import main database connection
 try:
@@ -106,7 +108,7 @@ def create_absence_tracker_tab(self):
     role-view selector so admins can preview Staff / Student dashboards.
     """
     tab = ttk.Frame(self.notebook)
-    self.notebook.add(tab, text="Absence Tracker")
+    self.notebook.add(tab, text=_t('gui.academics.attendance_tracker.attendance_tab.tabs.absence_tracker', default="Absence Tracker"))
     self._absence_tab_frame = tab
     self._absence_tab_built = False
     self._absence_tab_user_sig = None
@@ -137,7 +139,7 @@ def _maybe_build_absence_tab(self):
         for w in tab.winfo_children():
             w.destroy()
         ttk.Label(tab,
-                  text="Please sign in to view the Absence Tracker.",
+                  text=_t('gui.academics.attendance_tracker.attendance_tab.labels.please_sign_in_to_view_the_absence_tracker', default="Please sign in to view the Absence Tracker."),
                   padding=20).pack(expand=True)
         self._absence_tab_built = False
         self._absence_tab_user_sig = None
@@ -155,7 +157,7 @@ def _build_absence_tab_contents(self, tab, role_override=None):
     resolved = self._resolve_absence_user()
     if not resolved:
         ttk.Label(tab,
-                  text="Could not resolve your user record.",
+                  text=_t('gui.academics.attendance_tracker.attendance_tab.labels.could_not_resolve_your_user_record', default="Could not resolve your user record."),
                   padding=20).pack(expand=True)
         self._absence_tab_built = False
         return
@@ -170,7 +172,7 @@ def _build_absence_tab_contents(self, tab, role_override=None):
     # Role-switcher bar (only meaningful for admins)
     bar = ttk.Frame(tab)
     bar.pack(fill="x", padx=8, pady=(6, 4))
-    ttk.Label(bar, text="View as role:").pack(side="left")
+    ttk.Label(bar, text=_t('gui.academics.attendance_tracker.attendance_tab.labels.view_as_role', default="View as role:")).pack(side="left")
     role_var = tk.StringVar(value=effective_role)
     state = "readonly" if len(role_options) > 1 else "disabled"
     cb = ttk.Combobox(bar, textvariable=role_var, values=role_options,
@@ -178,7 +180,7 @@ def _build_absence_tab_contents(self, tab, role_override=None):
     cb.pack(side="left", padx=6)
     if len(role_options) == 1:
         ttk.Label(bar,
-                  text="(your role — admins can switch views)",
+                  text=_t('gui.academics.attendance_tracker.attendance_tab.labels.your_role_admins_can_switch_views', default="(your role — admins can switch views)"),
                   foreground="#555555").pack(side="left", padx=4)
 
     def _on_role_change(_event=None):
@@ -223,9 +225,9 @@ def open_today_dashboard(self):
             open_today_window(self.root)
         except Exception:
             logger.exception("Today dashboard failed to open")
-            messagebox.showerror("Today",
-                                 "Could not open the Today dashboard "
-                                 "(see log).")
+            messagebox.showerror(_t('gui.academics.attendance_tracker.attendance_tab.dialogs.today', default="Today"),
+                                 _t('gui.academics.attendance_tracker.attendance_tab.dialogs.could_not_open_the_today_dashboard_see_log', default="Could not open the Today dashboard "
+                                 "(see log)."))
 
 def refresh_attendance_data(self):
         """Refresh attendance data for current module"""
@@ -441,7 +443,7 @@ def create_attendance_tab(self):
                   command=self.refresh_attendance_data, style='Success.TButton').pack(fill=tk.X, pady=2)
         ttk.Button(actions_frame, text=_("attendance.buttons.generate_report"),
                   command=self.generate_quick_report, style='Warning.TButton').pack(fill=tk.X, pady=2)
-        ttk.Button(actions_frame, text="Today (cross-system)",
+        ttk.Button(actions_frame, text=_t('gui.academics.attendance_tracker.attendance_tab.buttons.today_cross_system', default="Today (cross-system)"),
                   command=self.open_today_dashboard,
                   style='Primary.TButton').pack(fill=tk.X, pady=2)
 
@@ -494,7 +496,7 @@ def geo_attendance(self):
 
         # Location settings
         ttk.Label(config_frame, text=_("attendance.geofencing.classroom_location")).grid(row=0, column=0, sticky='w', padx=(0, 10))
-        location_var = tk.StringVar(value="University Building A, Room 101")
+        location_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.attendance_tab.values.university_building_a_room_101', default="University Building A, Room 101"))
         ttk.Entry(config_frame, textvariable=location_var, width=40).grid(row=0, column=1, sticky='ew')
 
         ttk.Label(config_frame, text=_("attendance.geofencing.gps_coordinates")).grid(row=1, column=0, sticky='w', padx=(0, 10), pady=(10, 0))
@@ -522,7 +524,7 @@ def geo_attendance(self):
 
         # Load actual attendance data from database
         try:
-            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+            with sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
                 # `attendance_records.recorded_at` is the canonical
                 # check-in timestamp column — there is no `check_in_time`.

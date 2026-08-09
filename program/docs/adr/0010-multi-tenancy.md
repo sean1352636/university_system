@@ -1,7 +1,7 @@
 # 0010 — Database-per-Tenant Multi-Tenancy Strategy
 
 **Date:** 2026-03-26
-**Status:** Proposed
+**Status:** Accepted
 
 ---
 

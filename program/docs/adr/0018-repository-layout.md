@@ -95,7 +95,7 @@ tests/                         # single tree, mirrors the package
 
 docs/                          # renamed to match systems/ exactly
 tools/                         # was university_system/scripts/ — repo-wide
-var/                           # gitignored: data/, logs/, backups/, .benchmarks/
+program/var/                   # gitignored: data/, logs/, backups/, secrets/
 ```
 
 `post_16/` and `post_18/` disappear. The system keys already converged on `secondary` and

@@ -10,6 +10,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -34,7 +36,7 @@ class CoverGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Cover Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), _t('gui.staff.staff_hr.cover.dialogs.login_required_to_access_cover_management', default="Login required to access Cover Management"))
             return
 
         if parent_notebook:
@@ -47,18 +49,18 @@ class CoverGUI:
 
     def create_as_tab(self, notebook: ttk.Notebook):
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Cover")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.cover.tabs.cover', default="Cover"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
-        self.window.title("Substitute/Cover Arrangements")
+        self.window.title(_t('gui.staff.staff_hr.cover.windows.substitute_cover_arrangements', default="Substitute/Cover Arrangements"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.cover.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.cover.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         self._build_interface(self.window)
 
@@ -83,17 +85,17 @@ class CoverGUI:
     def _create_my_requests_tab(self):
         """Create the My Cover Requests tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Requests")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.cover.tabs.my_requests', default="My Requests"))
 
         # --- Top section: Create Request form ---
-        form_frame = ttk.LabelFrame(tab, text="Create Cover Request", padding=10)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.cover.labels.create_cover_request', default="Create Cover Request"), padding=10)
         form_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
 
         # Row 1: Type, Course Code, Course Name
         row1 = ttk.Frame(form_frame)
         row1.pack(fill=tk.X, pady=3)
 
-        ttk.Label(row1, text="Type:", width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text=_t('gui.staff.staff_hr.cover.labels.type', default="Type:"), width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
         self.req_type_combo = ttk.Combobox(
             row1, values=['teaching', 'lab', 'tutorial', 'supervision'],
             width=14, state='readonly'
@@ -101,11 +103,11 @@ class CoverGUI:
         self.req_type_combo.set('teaching')
         self.req_type_combo.pack(side=tk.LEFT, padx=(0, 15))
 
-        ttk.Label(row1, text="Course Code:", width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text=_t('gui.staff.staff_hr.cover.labels.course_code', default="Course Code:"), width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
         self.req_course_code = ttk.Entry(row1, width=14)
         self.req_course_code.pack(side=tk.LEFT, padx=(0, 15))
 
-        ttk.Label(row1, text="Course Name:", width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row1, text=_t('gui.staff.staff_hr.cover.labels.course_name', default="Course Name:"), width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
         self.req_course_name = ttk.Entry(row1, width=20)
         self.req_course_name.pack(side=tk.LEFT)
 
@@ -113,22 +115,22 @@ class CoverGUI:
         row2 = ttk.Frame(form_frame)
         row2.pack(fill=tk.X, pady=3)
 
-        ttk.Label(row2, text="Date:", width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text=_t('gui.staff.staff_hr.cover.labels.date', default="Date:"), width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
         self.req_date = ttk.Entry(row2, width=14)
         self.req_date.insert(0, datetime.now().strftime("%Y-%m-%d"))
         self.req_date.pack(side=tk.LEFT, padx=(0, 15))
 
-        ttk.Label(row2, text="Start Time:", width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text=_t('gui.staff.staff_hr.cover.labels.start_time', default="Start Time:"), width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
         self.req_start_time = ttk.Entry(row2, width=14)
         self.req_start_time.insert(0, "09:00")
         self.req_start_time.pack(side=tk.LEFT, padx=(0, 15))
 
-        ttk.Label(row2, text="End Time:", width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text=_t('gui.staff.staff_hr.cover.labels.end_time', default="End Time:"), width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
         self.req_end_time = ttk.Entry(row2, width=14)
         self.req_end_time.insert(0, "10:00")
         self.req_end_time.pack(side=tk.LEFT, padx=(0, 15))
 
-        ttk.Label(row2, text="Location:", width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(row2, text=_t('gui.staff.staff_hr.cover.labels.location', default="Location:"), width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5))
         self.req_location = ttk.Entry(row2, width=20)
         self.req_location.pack(side=tk.LEFT)
 
@@ -136,13 +138,13 @@ class CoverGUI:
         row3 = ttk.Frame(form_frame)
         row3.pack(fill=tk.X, pady=3)
 
-        ttk.Label(row3, text="Reason:", width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5), anchor=tk.N)
+        ttk.Label(row3, text=_t('gui.staff.staff_hr.cover.labels.reason', default="Reason:"), width=12, anchor=tk.W).pack(side=tk.LEFT, padx=(0, 5), anchor=tk.N)
         self.req_reason = tk.Text(row3, height=3, width=50)
         self.req_reason.pack(side=tk.LEFT, padx=(0, 15))
 
         urgency_frame = ttk.Frame(row3)
         urgency_frame.pack(side=tk.LEFT, anchor=tk.N)
-        ttk.Label(urgency_frame, text="Urgency:", width=12, anchor=tk.W).pack(anchor=tk.W)
+        ttk.Label(urgency_frame, text=_t('gui.staff.staff_hr.cover.labels.urgency', default="Urgency:"), width=12, anchor=tk.W).pack(anchor=tk.W)
         self.req_urgency_combo = ttk.Combobox(
             urgency_frame, values=['low', 'normal', 'high', 'urgent'],
             width=12, state='readonly'
@@ -153,14 +155,14 @@ class CoverGUI:
         # Row 4: Submit button
         row4 = ttk.Frame(form_frame)
         row4.pack(fill=tk.X, pady=(5, 0))
-        ttk.Button(row4, text="Create Request", command=self._create_request).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(row4, text=_t('gui.staff.staff_hr.cover.buttons.create_request', default="Create Request"), command=self._create_request).pack(side=tk.RIGHT, padx=5)
 
         # --- Bottom section: Requests Treeview ---
         tree_header = ttk.Frame(tab)
         tree_header.pack(fill=tk.X, padx=10, pady=(10, 0))
-        ttk.Label(tree_header, text="My Cover Requests", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(tree_header, text="Refresh", command=self._load_my_requests).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(tree_header, text="Cancel Selected", command=self._cancel_selected_request).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(tree_header, text=_t('gui.staff.staff_hr.cover.labels.my_cover_requests', default="My Cover Requests"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(tree_header, text=_t('gui.staff.staff_hr.cover.buttons.refresh', default="Refresh"), command=self._load_my_requests).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(tree_header, text=_t('gui.staff.staff_hr.cover.buttons.cancel_selected', default="Cancel Selected"), command=self._cancel_selected_request).pack(side=tk.RIGHT, padx=5)
 
         tree_frame = ttk.Frame(tab)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(5, 10))
@@ -227,14 +229,14 @@ class CoverGUI:
                 urgency=urgency,
             )
 
-            messagebox.showinfo("Success", f"Cover request #{request_id} created successfully.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.cover.dialogs.success', default="Success"), f"Cover request #{request_id} created successfully.")
             self._clear_request_form()
             self._load_my_requests()
 
         except ValidationError as e:
             show_validation_error(e)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create request: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to create request: {e}")
 
     def _clear_request_form(self):
         """Reset the create-request form to defaults."""
@@ -276,13 +278,13 @@ class CoverGUI:
             self._update_status(f"Loaded {len(requests)} request(s)")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load requests: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to load requests: {e}")
 
     def _cancel_selected_request(self):
         """Cancel the selected cover request."""
         selection = self.my_requests_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a request to cancel.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.please_select_a_request_to_cancel', default="Please select a request to cancel."))
             return
 
         item = self.my_requests_tree.item(selection[0])
@@ -290,18 +292,18 @@ class CoverGUI:
         status = item['values'][6].lower() if len(item['values']) > 6 else ''
 
         if status not in ('open',):
-            messagebox.showwarning("Warning", "Only open requests can be cancelled.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.only_open_requests_can_be_cancelled', default="Only open requests can be cancelled."))
             return
 
-        if not messagebox.askyesno("Confirm", f"Cancel cover request #{request_id}?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.cover.dialogs.confirm', default="Confirm"), f"Cancel cover request #{request_id}?"):
             return
 
         try:
             CoverManager.cancel_request(int(request_id))
-            messagebox.showinfo("Success", "Request cancelled successfully.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.cover.dialogs.success', default="Success"), _t('gui.staff.staff_hr.cover.dialogs.request_cancelled_successfully', default="Request cancelled successfully."))
             self._load_my_requests()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to cancel request: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to cancel request: {e}")
 
     # ================================================================
     # Tab 2 - Find Cover (volunteer for open requests)
@@ -310,14 +312,14 @@ class CoverGUI:
     def _create_find_cover_tab(self):
         """Create the Find Cover tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Find Cover")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.cover.tabs.find_cover', default="Find Cover"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Open Cover Requests", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_open_requests).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text="Volunteer", command=self._volunteer_for_cover).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.cover.labels.open_cover_requests', default="Open Cover Requests"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.cover.buttons.refresh', default="Refresh"), command=self._load_open_requests).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.cover.buttons.volunteer', default="Volunteer"), command=self._volunteer_for_cover).pack(side=tk.RIGHT, padx=5)
 
         # Treeview
         tree_frame = ttk.Frame(tab)
@@ -378,13 +380,13 @@ class CoverGUI:
             self._update_status(f"Found {len(requests)} open request(s)")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load open requests: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to load open requests: {e}")
 
     def _volunteer_for_cover(self):
         """Volunteer for the selected open cover request."""
         selection = self.open_requests_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a request to volunteer for.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.please_select_a_request_to_volunteer_for', default="Please select a request to volunteer for."))
             return
 
         item = self.open_requests_tree.item(selection[0])
@@ -393,12 +395,12 @@ class CoverGUI:
 
         # Prevent self-volunteering
         if str(requester) == str(self._get_user_id()):
-            messagebox.showwarning("Warning", "You cannot volunteer for your own request.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.you_cannot_volunteer_for_your_own_request', default="You cannot volunteer for your own request."))
             return
 
         # Optional message dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Volunteer Message")
+        dialog.title(_t('gui.staff.staff_hr.cover.windows.volunteer_message', default="Volunteer Message"))
         dialog.geometry("400x200")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -412,7 +414,7 @@ class CoverGUI:
             font=('Arial', 11, 'bold')
         ).pack(pady=(0, 10))
 
-        ttk.Label(main_frame, text="Message (optional):").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.staff.staff_hr.cover.labels.message_optional', default="Message (optional):")).pack(anchor=tk.W)
         message_text = tk.Text(main_frame, height=4, width=45)
         message_text.pack(fill=tk.X, pady=5)
 
@@ -424,16 +426,16 @@ class CoverGUI:
                     volunteer_id=self._get_user_id(),
                     message=msg,
                 )
-                messagebox.showinfo("Success", f"You have volunteered for request #{request_id}.")
+                messagebox.showinfo(_t('gui.staff.staff_hr.cover.dialogs.success', default="Success"), f"You have volunteered for request #{request_id}.")
                 dialog.destroy()
                 self._load_open_requests()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to volunteer: {e}")
+                messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to volunteer: {e}")
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Submit", command=submit_volunteer).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.cover.buttons.submit', default="Submit"), command=submit_volunteer).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.cover.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     # ================================================================
     # Tab 3 - My Assignments
@@ -442,13 +444,13 @@ class CoverGUI:
     def _create_my_assignments_tab(self):
         """Create the My Assignments tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Assignments")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.cover.tabs.my_assignments', default="My Assignments"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Cover Assignments", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_my_assignments).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.cover.labels.my_cover_assignments', default="My Cover Assignments"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.cover.buttons.refresh', default="Refresh"), command=self._load_my_assignments).pack(side=tk.RIGHT, padx=5)
 
         # Treeview
         tree_frame = ttk.Frame(tab)
@@ -478,9 +480,9 @@ class CoverGUI:
         # Action buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        ttk.Button(btn_frame, text="Accept", command=self._accept_assignment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Decline", command=self._decline_assignment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Complete", command=self._complete_assignment).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.cover.buttons.accept', default="Accept"), command=self._accept_assignment).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.cover.buttons.decline', default="Decline"), command=self._decline_assignment).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.cover.buttons.complete', default="Complete"), command=self._complete_assignment).pack(side=tk.LEFT, padx=5)
 
         self._load_my_assignments()
 
@@ -523,13 +525,13 @@ class CoverGUI:
             self._update_status(f"Loaded {len(rows)} assignment(s)")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignments: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to load assignments: {e}")
 
     def _get_selected_assignment_id(self):
         """Return the assignment_id from the selected treeview row, or None."""
         selection = self.assignments_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an assignment.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.please_select_an_assignment', default="Please select an assignment."))
             return None
         item = self.assignments_tree.item(selection[0])
         return item['values'][0]
@@ -540,15 +542,15 @@ class CoverGUI:
         if assignment_id is None:
             return
 
-        if not messagebox.askyesno("Confirm", f"Accept assignment #{assignment_id}?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.cover.dialogs.confirm', default="Confirm"), f"Accept assignment #{assignment_id}?"):
             return
 
         try:
             CoverManager.accept_assignment(int(assignment_id))
-            messagebox.showinfo("Success", "Assignment accepted.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.cover.dialogs.success', default="Success"), _t('gui.staff.staff_hr.cover.dialogs.assignment_accepted', default="Assignment accepted."))
             self._load_my_assignments()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to accept assignment: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to accept assignment: {e}")
 
     def _decline_assignment(self):
         """Decline the selected cover assignment."""
@@ -556,15 +558,15 @@ class CoverGUI:
         if assignment_id is None:
             return
 
-        if not messagebox.askyesno("Confirm", f"Decline assignment #{assignment_id}? This will reopen the request."):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.cover.dialogs.confirm', default="Confirm"), f"Decline assignment #{assignment_id}? This will reopen the request."):
             return
 
         try:
             CoverManager.decline_assignment(int(assignment_id))
-            messagebox.showinfo("Success", "Assignment declined. The request has been reopened.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.cover.dialogs.success', default="Success"), _t('gui.staff.staff_hr.cover.dialogs.assignment_declined_the_request_has_been_reopened', default="Assignment declined. The request has been reopened."))
             self._load_my_assignments()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to decline assignment: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to decline assignment: {e}")
 
     def _complete_assignment(self):
         """Complete the selected cover assignment with optional feedback."""
@@ -579,16 +581,16 @@ class CoverGUI:
         completed = item['values'][6]
 
         if str(completed) == 'Yes':
-            messagebox.showwarning("Warning", "This assignment is already completed.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.this_assignment_is_already_completed', default="This assignment is already completed."))
             return
 
         if str(accepted) != 'Yes':
-            messagebox.showwarning("Warning", "Please accept the assignment before completing it.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.please_accept_the_assignment_before_completing_it', default="Please accept the assignment before completing it."))
             return
 
         # Feedback dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Complete Assignment")
+        dialog.title(_t('gui.staff.staff_hr.cover.windows.complete_assignment', default="Complete Assignment"))
         dialog.geometry("420x280")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -602,13 +604,13 @@ class CoverGUI:
             font=('Arial', 11, 'bold')
         ).pack(pady=(0, 10))
 
-        ttk.Label(main_frame, text="Feedback (optional):").pack(anchor=tk.W)
+        ttk.Label(main_frame, text=_t('gui.staff.staff_hr.cover.labels.feedback_optional', default="Feedback (optional):")).pack(anchor=tk.W)
         feedback_text = tk.Text(main_frame, height=5, width=45)
         feedback_text.pack(fill=tk.X, pady=5)
 
         rating_frame = ttk.Frame(main_frame)
         rating_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(rating_frame, text="Rating (1-5, optional):").pack(side=tk.LEFT)
+        ttk.Label(rating_frame, text=_t('gui.staff.staff_hr.cover.labels.rating_1_5_optional', default="Rating (1-5, optional):")).pack(side=tk.LEFT)
         rating_entry = ttk.Entry(rating_frame, width=5)
         rating_entry.pack(side=tk.LEFT, padx=10)
 
@@ -621,10 +623,10 @@ class CoverGUI:
                 try:
                     rating = int(rating_str)
                     if rating < 1 or rating > 5:
-                        messagebox.showwarning("Warning", "Rating must be between 1 and 5.")
+                        messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.rating_must_be_between_1_and_5', default="Rating must be between 1 and 5."))
                         return
                 except ValueError:
-                    messagebox.showwarning("Warning", "Rating must be a number between 1 and 5.")
+                    messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.rating_must_be_a_number_between_1_and_5', default="Rating must be a number between 1 and 5."))
                     return
 
             try:
@@ -633,16 +635,16 @@ class CoverGUI:
                     feedback=feedback,
                     rating=rating,
                 )
-                messagebox.showinfo("Success", "Assignment marked as completed.")
+                messagebox.showinfo(_t('gui.staff.staff_hr.cover.dialogs.success', default="Success"), _t('gui.staff.staff_hr.cover.dialogs.assignment_marked_as_completed', default="Assignment marked as completed."))
                 dialog.destroy()
                 self._load_my_assignments()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to complete assignment: {e}")
+                messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to complete assignment: {e}")
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Complete", command=submit_completion).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.cover.buttons.complete', default="Complete"), command=submit_completion).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.cover.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     # ================================================================
     # Tab 4 - Cover Pool (admin only)
@@ -651,20 +653,20 @@ class CoverGUI:
     def _create_cover_pool_tab(self):
         """Create the Cover Pool administration tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Cover Pool")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.cover.tabs.cover_pool', default="Cover Pool"))
 
         # --- Top section: Staff qualifications viewer ---
-        qual_frame = ttk.LabelFrame(tab, text="Staff Qualifications", padding=10)
+        qual_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.cover.labels.staff_qualifications', default="Staff Qualifications"), padding=10)
         qual_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 5))
 
         # Search bar
         search_row = ttk.Frame(qual_frame)
         search_row.pack(fill=tk.X, pady=(0, 5))
-        ttk.Label(search_row, text="User ID:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(search_row, text=_t('gui.staff.staff_hr.cover.labels.user_id', default="User ID:")).pack(side=tk.LEFT, padx=(0, 5))
         self.pool_user_id_entry = ttk.Entry(search_row, width=20)
         self.pool_user_id_entry.pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(
-            search_row, text="View Qualifications",
+            search_row, text=_t('gui.staff.staff_hr.cover.buttons.view_qualifications', default="View Qualifications"),
             command=self._view_staff_qualifications
         ).pack(side=tk.LEFT, padx=5)
 
@@ -672,7 +674,7 @@ class CoverGUI:
         qual_tree_frame = ttk.Frame(qual_frame)
         qual_tree_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 5))
 
-        ttk.Label(qual_tree_frame, text="Qualifications:", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
+        ttk.Label(qual_tree_frame, text=_t('gui.staff.staff_hr.cover.labels.qualifications', default="Qualifications:"), font=('Arial', 10, 'bold')).pack(anchor=tk.W)
 
         qual_inner = ttk.Frame(qual_tree_frame)
         qual_inner.pack(fill=tk.BOTH, expand=True)
@@ -697,7 +699,7 @@ class CoverGUI:
         skills_tree_frame = ttk.Frame(qual_frame)
         skills_tree_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
 
-        ttk.Label(skills_tree_frame, text="Skills:", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
+        ttk.Label(skills_tree_frame, text=_t('gui.staff.staff_hr.cover.labels.skills', default="Skills:"), font=('Arial', 10, 'bold')).pack(anchor=tk.W)
 
         skills_inner = ttk.Frame(skills_tree_frame)
         skills_inner.pack(fill=tk.BOTH, expand=True)
@@ -719,27 +721,27 @@ class CoverGUI:
         s_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # --- Bottom section: Manual assignment ---
-        assign_frame = ttk.LabelFrame(tab, text="Manual Assignment", padding=10)
+        assign_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.cover.labels.manual_assignment', default="Manual Assignment"), padding=10)
         assign_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
 
         assign_row = ttk.Frame(assign_frame)
         assign_row.pack(fill=tk.X)
 
-        ttk.Label(assign_row, text="Request ID:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(assign_row, text=_t('gui.staff.staff_hr.cover.labels.request_id', default="Request ID:")).pack(side=tk.LEFT, padx=(0, 5))
         self.assign_request_id_entry = ttk.Entry(assign_row, width=10)
         self.assign_request_id_entry.pack(side=tk.LEFT, padx=(0, 15))
 
-        ttk.Label(assign_row, text="Assignee ID:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(assign_row, text=_t('gui.staff.staff_hr.cover.labels.assignee_id', default="Assignee ID:")).pack(side=tk.LEFT, padx=(0, 5))
         self.assign_assignee_id_entry = ttk.Entry(assign_row, width=20)
         self.assign_assignee_id_entry.pack(side=tk.LEFT, padx=(0, 15))
 
-        ttk.Button(assign_row, text="Assign", command=self._manual_assign).pack(side=tk.LEFT, padx=5)
+        ttk.Button(assign_row, text=_t('gui.staff.staff_hr.cover.buttons.assign', default="Assign"), command=self._manual_assign).pack(side=tk.LEFT, padx=5)
 
     def _view_staff_qualifications(self):
         """Load qualifications and skills for the entered user ID."""
         user_id = self.pool_user_id_entry.get().strip()
         if not user_id:
-            messagebox.showwarning("Warning", "Please enter a User ID.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.please_enter_a_user_id', default="Please enter a User ID."))
             return
 
         # Clear existing
@@ -772,7 +774,7 @@ class CoverGUI:
             )
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load qualifications: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to load qualifications: {e}")
 
     def _manual_assign(self):
         """Manually assign a cover request to a staff member."""
@@ -780,20 +782,20 @@ class CoverGUI:
         assignee_id = self.assign_assignee_id_entry.get().strip()
 
         if not request_id_str:
-            messagebox.showwarning("Warning", "Please enter a Request ID.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.please_enter_a_request_id', default="Please enter a Request ID."))
             return
         if not assignee_id:
-            messagebox.showwarning("Warning", "Please enter an Assignee ID.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.please_enter_an_assignee_id', default="Please enter an Assignee ID."))
             return
 
         try:
             request_id = int(request_id_str)
         except ValueError:
-            messagebox.showwarning("Warning", "Request ID must be a number.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.cover.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.cover.dialogs.request_id_must_be_a_number', default="Request ID must be a number."))
             return
 
         if not messagebox.askyesno(
-            "Confirm",
+            _t('gui.staff.staff_hr.cover.dialogs.confirm', default="Confirm"),
             f"Assign request #{request_id} to user '{assignee_id}'?"
         ):
             return
@@ -806,13 +808,13 @@ class CoverGUI:
                 assigned_by=assigned_by,
             )
             messagebox.showinfo(
-                "Success",
+                _t('gui.staff.staff_hr.cover.dialogs.success', default="Success"),
                 f"Assignment #{assignment_id} created. Request #{request_id} assigned to {assignee_id}."
             )
             self.assign_request_id_entry.delete(0, tk.END)
             self.assign_assignee_id_entry.delete(0, tk.END)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to assign cover: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to assign cover: {e}")
 
     # ================================================================
     # Tab 5 - Reports (admin only)
@@ -821,35 +823,35 @@ class CoverGUI:
     def _create_reports_tab(self):
         """Create the Reports tab with statistics overview."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Reports")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.cover.tabs.reports', default="Reports"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Cover Statistics", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_reports).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.cover.labels.cover_statistics', default="Cover Statistics"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.cover.buttons.refresh', default="Refresh"), command=self._load_reports).pack(side=tk.RIGHT, padx=5)
 
         # Summary statistics
-        self.stats_frame = ttk.LabelFrame(tab, text="Overview", padding=15)
+        self.stats_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.cover.labels.overview', default="Overview"), padding=15)
         self.stats_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         stats_row = ttk.Frame(self.stats_frame)
         stats_row.pack(fill=tk.X)
 
-        self.stat_total_label = ttk.Label(stats_row, text="Total Requests: 0", font=('Arial', 11))
+        self.stat_total_label = ttk.Label(stats_row, text=_t('gui.staff.staff_hr.cover.labels.total_requests_0', default="Total Requests: 0"), font=('Arial', 11))
         self.stat_total_label.pack(side=tk.LEFT, padx=20)
 
-        self.stat_open_label = ttk.Label(stats_row, text="Open: 0", font=('Arial', 11))
+        self.stat_open_label = ttk.Label(stats_row, text=_t('gui.staff.staff_hr.cover.labels.open_0', default="Open: 0"), font=('Arial', 11))
         self.stat_open_label.pack(side=tk.LEFT, padx=20)
 
-        self.stat_assigned_label = ttk.Label(stats_row, text="Assigned: 0", font=('Arial', 11))
+        self.stat_assigned_label = ttk.Label(stats_row, text=_t('gui.staff.staff_hr.cover.labels.assigned_0', default="Assigned: 0"), font=('Arial', 11))
         self.stat_assigned_label.pack(side=tk.LEFT, padx=20)
 
-        self.stat_completed_label = ttk.Label(stats_row, text="Completed: 0", font=('Arial', 11))
+        self.stat_completed_label = ttk.Label(stats_row, text=_t('gui.staff.staff_hr.cover.labels.completed_0', default="Completed: 0"), font=('Arial', 11))
         self.stat_completed_label.pack(side=tk.LEFT, padx=20)
 
         # By urgency breakdown
-        urgency_frame = ttk.LabelFrame(tab, text="Requests by Urgency", padding=10)
+        urgency_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.cover.labels.requests_by_urgency', default="Requests by Urgency"), padding=10)
         urgency_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         urgency_tree_frame = ttk.Frame(urgency_frame)
@@ -900,7 +902,7 @@ class CoverGUI:
             self._update_status("Reports refreshed")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load statistics: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to load statistics: {e}")
 
     # ================================================================
     # Helpers
@@ -917,5 +919,5 @@ def launch_cover_gui(root, auth):
     try:
         return CoverGUI(root, auth)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to launch Cover Management: {e}")
+        messagebox.showerror(_t('gui.staff.staff_hr.cover.dialogs.error', default="Error"), f"Failed to launch Cover Management: {e}")
         return None

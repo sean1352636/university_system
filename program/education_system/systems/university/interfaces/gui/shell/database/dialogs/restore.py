@@ -1,4 +1,6 @@
 """Restore and table selection dialogs for the data backup GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import os
@@ -29,7 +31,7 @@ class RestoreDialog:
         self.refresh_callback = refresh_callback
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Restore from Backup")
+        self.dialog.title(_t('gui.shell.database.dialogs.restore.windows.restore_from_backup', default="Restore from Backup"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
 
@@ -39,7 +41,7 @@ class RestoreDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Backup selection
-        select_frame = ttk.LabelFrame(self.dialog, text="Select Backup", padding=10)
+        select_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.restore.labels.select_backup', default="Select Backup"), padding=10)
         select_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         columns = ("Date", "Type", "Size", "File")
@@ -56,26 +58,26 @@ class RestoreDialog:
         scrollbar.pack(side="right", fill="y")
 
         # Restore options
-        options_frame = ttk.LabelFrame(self.dialog, text="Restore Options", padding=10)
+        options_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.restore.labels.restore_options', default="Restore Options"), padding=10)
         options_frame.pack(fill="x", padx=10, pady=5)
 
-        self.restore_type_var = tk.StringVar(value="full")
+        self.restore_type_var = tk.StringVar(value=_t('gui.shell.database.dialogs.restore.values.full', default="full"))
 
-        ttk.Radiobutton(options_frame, text="Full Restore", variable=self.restore_type_var,
+        ttk.Radiobutton(options_frame, text=_t('gui.shell.database.dialogs.restore.buttons.full_restore', default="Full Restore"), variable=self.restore_type_var,
                        value="full").pack(anchor="w")
-        ttk.Radiobutton(options_frame, text="Partial Restore (Select Tables)",
+        ttk.Radiobutton(options_frame, text=_t('gui.shell.database.dialogs.restore.buttons.partial_restore_select_tables', default="Partial Restore (Select Tables)"),
                        variable=self.restore_type_var, value="partial",
                        command=self.show_table_selection).pack(anchor="w")
 
         # Table selection (hidden initially)
-        self.table_frame = ttk.LabelFrame(self.dialog, text="Select Tables to Restore", padding=10)
+        self.table_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.restore.labels.select_tables_to_restore', default="Select Tables to Restore"), padding=10)
 
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Restore", command=self.restore).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.restore.buttons.restore', default="Restore"), command=self.restore).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.restore.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side="right")
 
     def load_backups(self):
         """Load available backups"""
@@ -92,14 +94,14 @@ class RestoreDialog:
                 ))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load backups: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.restore.dialogs.error', default="Error"), f"Failed to load backups: {e}")
 
     def show_table_selection(self):
         """Show table selection frame"""
         # Get tables from selected backup
         selection = self.backup_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a backup first")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.restore.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.restore.dialogs.please_select_a_backup_first', default="Please select a backup first"))
             self.restore_type_var.set("full")
             return
 
@@ -134,13 +136,13 @@ class RestoreDialog:
             self.dialog.geometry("600x700")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load tables: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.restore.dialogs.error', default="Error"), f"Failed to load tables: {e}")
 
     def restore(self):
         """Perform restore operation"""
         selection = self.backup_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a backup to restore")
+            messagebox.showwarning(_t('gui.shell.database.dialogs.restore.dialogs.no_selection', default="No Selection"), _t('gui.shell.database.dialogs.restore.dialogs.please_select_a_backup_to_restore', default="Please select a backup to restore"))
             return
 
         item = selection[0]
@@ -148,7 +150,7 @@ class RestoreDialog:
         backup = self.backups[index]
 
         # Confirm restore
-        if not messagebox.askyesno("Confirm Restore",
+        if not messagebox.askyesno(_t('gui.shell.database.dialogs.restore.dialogs.confirm_restore', default="Confirm Restore"),
                                   f"Are you sure you want to restore from '{backup['filename']}'?\n\n"
                                   "This will overwrite the current database!"):
             return
@@ -159,22 +161,22 @@ class RestoreDialog:
                 if hasattr(self, 'table_vars'):
                     target_tables = [table for table, var in self.table_vars.items() if var.get()]
                     if not target_tables:
-                        messagebox.showwarning("No Tables", "Please select at least one table to restore")
+                        messagebox.showwarning(_t('gui.shell.database.dialogs.restore.dialogs.no_tables', default="No Tables"), _t('gui.shell.database.dialogs.restore.dialogs.please_select_at_least_one_table_to_restore', default="Please select at least one table to restore"))
                         return
 
             # Perform restore
             success = restore_from_backup(backup['path'], target_tables=target_tables)
 
             if success:
-                messagebox.showinfo("Success", "Database restored successfully!")
+                messagebox.showinfo(_t('gui.shell.database.dialogs.restore.dialogs.success', default="Success"), _t('gui.shell.database.dialogs.restore.dialogs.database_restored_successfully', default="Database restored successfully!"))
                 if self.refresh_callback:
                     self.refresh_callback()
                 self.dialog.destroy()
             else:
-                messagebox.showerror("Error", "Restore operation failed!")
+                messagebox.showerror(_t('gui.shell.database.dialogs.restore.dialogs.error', default="Error"), _t('gui.shell.database.dialogs.restore.dialogs.restore_operation_failed', default="Restore operation failed!"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Restore failed: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.restore.dialogs.error', default="Error"), f"Restore failed: {e}")
 
 # Additional dialog classes would continue here...
 # For brevity, I'll include key ones and indicate where others would be implemented
@@ -186,13 +188,13 @@ class TableSelectionDialog:
         self.selected_tables = []
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Select Tables")
+        self.dialog.title(_t('gui.shell.database.dialogs.restore.windows.select_tables', default="Select Tables"))
         self.dialog.geometry("300x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
         # Table selection
-        frame = ttk.LabelFrame(self.dialog, text="Available Tables", padding=10)
+        frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.restore.labels.available_tables', default="Available Tables"), padding=10)
         frame.pack(fill="both", expand=True, padx=10, pady=5)
 
         self.table_vars = {}
@@ -205,10 +207,10 @@ class TableSelectionDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Select All", command=self.select_all).pack(side="left")
-        ttk.Button(button_frame, text="Clear All", command=self.clear_all).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="OK", command=self.ok).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.restore.buttons.select_all', default="Select All"), command=self.select_all).pack(side="left")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.restore.buttons.clear_all', default="Clear All"), command=self.clear_all).pack(side="left", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.restore.buttons.ok', default="OK"), command=self.ok).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.restore.buttons.cancel', default="Cancel"), command=self.cancel).pack(side="right")
 
         parent.wait_window(self.dialog)
 

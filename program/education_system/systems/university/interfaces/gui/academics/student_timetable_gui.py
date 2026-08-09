@@ -575,7 +575,7 @@ class StudentTimetableGUI:
                     try:
                         from tkinter import messagebox
                         messagebox.showwarning(
-                            "Move blocked",
+                            _t('gui.academics.student_timetable.dialogs.move_blocked', default="Move blocked"),
                             result.get("reason") or "Schedule move was rejected.",
                         )
                     except Exception:

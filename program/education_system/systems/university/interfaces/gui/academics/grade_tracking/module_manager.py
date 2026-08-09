@@ -11,6 +11,8 @@ only *read* module rows should use ``services/course_management``
 queries directly rather than duplicating SELECTs here.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -23,12 +25,12 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.interfaces.gui.academics.grade_tracking.utils import ensure_column_exists
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Mirror grade_manager's immutable-audit pattern so module mutations
 # leave the same trail FERPA expects for grade mutations.
@@ -212,7 +214,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -331,7 +333,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -379,15 +381,15 @@ class ModuleManager:
         control_frame = ttk.Frame(self.content_frame)
         control_frame.pack(fill='x', padx=10, pady=5)
 
-        ttk.Button(control_frame, text="Add Module",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.add_module', default="Add Module"),
                   command=self.add_module_dialog).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Edit Module",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.edit_module', default="Edit Module"),
                   command=self.edit_module_dialog).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Delete Module",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.delete_module', default="Delete Module"),
                   command=self.delete_module).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Module Enrollments",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.module_enrollments', default="Module Enrollments"),
                   command=self.manage_module_enrollments).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Refresh",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.refresh', default="Refresh"),
                   command=self.refresh_modules).pack(side='left', padx=5)
 
         # Module list
@@ -555,9 +557,9 @@ class ModuleManager:
             self._display_report("Module Grade Report", sections, footer)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate module grade report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to generate module grade report: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate module grade report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), f"Failed to generate module grade report: {e}")
         finally:
             if conn:
                 conn.close()
@@ -679,9 +681,9 @@ class ModuleManager:
             self._display_report("Module Outcome Report", sections, footer)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate module outcome report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to generate module outcome report: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate module outcome report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), f"Failed to generate module outcome report: {e}")
         finally:
             if conn:
                 conn.close()
@@ -689,7 +691,7 @@ class ModuleManager:
     def add_module_dialog(self):
         """Open dialog to add a new module"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add New Module")
+        dialog.title(_t('gui.academics.grade_tracking.module_manager.windows.add_new_module', default="Add New Module"))
         dialog.geometry("600x550")
         dialog.transient(self.root)
 
@@ -698,48 +700,48 @@ class ModuleManager:
         form_frame.pack(fill='both', expand=True)
 
         # Module Code (required, primary key)
-        ttk.Label(form_frame, text="Module Code*:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_code', default="Module Code*:")).grid(row=0, column=0, sticky='w', pady=5)
         code_entry = ttk.Entry(form_frame, width=40)
         code_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
         # Module Name (required)
-        ttk.Label(form_frame, text="Module Name*:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_name', default="Module Name*:")).grid(row=1, column=0, sticky='w', pady=5)
         name_entry = ttk.Entry(form_frame, width=40)
         name_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
         # Module Type
-        ttk.Label(form_frame, text="Module Type:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_type', default="Module Type:")).grid(row=2, column=0, sticky='w', pady=5)
         type_combo = ttk.Combobox(form_frame, width=38, values=[
             'Core', 'Elective', 'Optional', 'Lab', 'Project', 'Seminar'
         ])
         type_combo.grid(row=2, column=1, sticky='ew', pady=5)
 
         # Credits
-        ttk.Label(form_frame, text="Credits:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.credits', default="Credits:")).grid(row=3, column=0, sticky='w', pady=5)
         credits_spinbox = ttk.Spinbox(form_frame, from_=1, to=20, width=38)
         credits_spinbox.set(1)
         credits_spinbox.grid(row=3, column=1, sticky='ew', pady=5)
 
         # Course
-        ttk.Label(form_frame, text="Course/Program:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.course_program', default="Course/Program:")).grid(row=4, column=0, sticky='w', pady=5)
         course_entry = ttk.Entry(form_frame, width=40)
         course_entry.grid(row=4, column=1, sticky='ew', pady=5)
 
         # Semester
-        ttk.Label(form_frame, text="Semester:").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.semester', default="Semester:")).grid(row=5, column=0, sticky='w', pady=5)
         semester_combo = ttk.Combobox(form_frame, width=38, values=[
             'Fall', 'Spring', 'Summer', 'Winter', 'Year-long'
         ])
         semester_combo.grid(row=5, column=1, sticky='ew', pady=5)
 
         # Year
-        ttk.Label(form_frame, text="Academic Year:").grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.academic_year', default="Academic Year:")).grid(row=6, column=0, sticky='w', pady=5)
         year_spinbox = ttk.Spinbox(form_frame, from_=2020, to=2030, width=38)
         year_spinbox.set(datetime.now().year)
         year_spinbox.grid(row=6, column=1, sticky='ew', pady=5)
 
         # Description (text area)
-        ttk.Label(form_frame, text="Description:").grid(row=7, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.description', default="Description:")).grid(row=7, column=0, sticky='nw', pady=5)
         desc_text = scrolledtext.ScrolledText(form_frame, width=40, height=8)
         desc_text.grid(row=7, column=1, sticky='ew', pady=5)
 
@@ -757,12 +759,12 @@ class ModuleManager:
             module_name = name_entry.get().strip()
 
             if not module_code:
-                messagebox.showerror("Validation Error", "Module Code is required", parent=dialog)
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.module_manager.dialogs.module_code_is_required', default="Module Code is required"), parent=dialog)
                 code_entry.focus()
                 return
 
             if not module_name:
-                messagebox.showerror("Validation Error", "Module Name is required", parent=dialog)
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.module_manager.dialogs.module_name_is_required', default="Module Name is required"), parent=dialog)
                 name_entry.focus()
                 return
 
@@ -782,7 +784,7 @@ class ModuleManager:
                 # Check if module code already exists
                 cursor.execute('SELECT module_code FROM modules WHERE module_code = ?', (module_code,))
                 if cursor.fetchone():
-                    messagebox.showerror("Duplicate Error",
+                    messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.duplicate_error', default="Duplicate Error"),
                                        f"Module code '{module_code}' already exists",
                                        parent=dialog)
                     return
@@ -816,7 +818,7 @@ class ModuleManager:
                         },
                     )
 
-                messagebox.showinfo("Success", f"Module '{module_code}' created successfully",
+                messagebox.showinfo(_t('gui.academics.grade_tracking.module_manager.dialogs.success', default="Success"), f"Module '{module_code}' created successfully",
                                   parent=dialog)
 
                 # Refresh the module list
@@ -826,19 +828,19 @@ class ModuleManager:
             except sqlite3.Error as e:
                 if conn:
                     conn.rollback()
-                messagebox.showerror("Database Error", f"Failed to create module: {e}",
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to create module: {e}",
                                    parent=dialog)
             except Exception as e:
                 if conn:
                     conn.rollback()
-                messagebox.showerror("Error", f"Failed to create module: {e}",
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), f"Failed to create module: {e}",
                                    parent=dialog)
             finally:
                 if conn:
                     conn.close()
 
-        ttk.Button(btn_frame, text="Save", command=save_module).pack(side='right', padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.save', default="Save"), command=save_module).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
         # Set grab and focus
         safe_grab_set(dialog)
@@ -849,7 +851,7 @@ class ModuleManager:
         # Check if a module is selected
         selected = self.module_tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a module to edit")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.module_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.module_manager.dialogs.please_select_a_module_to_edit', default="Please select a module to edit"))
             return
 
         # Get the module code from selected row
@@ -870,14 +872,14 @@ class ModuleManager:
 
             module_data = cursor.fetchone()
             if not module_data:
-                messagebox.showerror("Error", "Module not found in database")
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.module_manager.dialogs.module_not_found_in_database', default="Module not found in database"))
                 return
 
             # Unpack module data
             mod_code, mod_name, mod_type, mod_credits, mod_desc, mod_course, mod_semester, mod_year = module_data
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to load module: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to load module: {e}")
             return
         finally:
             if conn:
@@ -894,18 +896,18 @@ class ModuleManager:
         form_frame.pack(fill='both', expand=True)
 
         # Module Code (read-only - primary key)
-        ttk.Label(form_frame, text="Module Code:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_code_variant_2', default="Module Code:")).grid(row=0, column=0, sticky='w', pady=5)
         code_label = ttk.Label(form_frame, text=mod_code, font=('TkDefaultFont', 10, 'bold'))
         code_label.grid(row=0, column=1, sticky='w', pady=5)
 
         # Module Name (required)
-        ttk.Label(form_frame, text="Module Name*:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_name', default="Module Name*:")).grid(row=1, column=0, sticky='w', pady=5)
         name_entry = ttk.Entry(form_frame, width=40)
         name_entry.insert(0, mod_name or '')
         name_entry.grid(row=1, column=1, sticky='ew', pady=5)
 
         # Module Type
-        ttk.Label(form_frame, text="Module Type:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.module_type', default="Module Type:")).grid(row=2, column=0, sticky='w', pady=5)
         type_combo = ttk.Combobox(form_frame, width=38, values=[
             'Core', 'Elective', 'Optional', 'Lab', 'Project', 'Seminar'
         ])
@@ -914,20 +916,20 @@ class ModuleManager:
         type_combo.grid(row=2, column=1, sticky='ew', pady=5)
 
         # Credits
-        ttk.Label(form_frame, text="Credits:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.credits', default="Credits:")).grid(row=3, column=0, sticky='w', pady=5)
         credits_spinbox = ttk.Spinbox(form_frame, from_=1, to=20, width=38)
         credits_spinbox.set(mod_credits or 1)
         credits_spinbox.grid(row=3, column=1, sticky='ew', pady=5)
 
         # Course
-        ttk.Label(form_frame, text="Course/Program:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.course_program', default="Course/Program:")).grid(row=4, column=0, sticky='w', pady=5)
         course_entry = ttk.Entry(form_frame, width=40)
         if mod_course:
             course_entry.insert(0, mod_course)
         course_entry.grid(row=4, column=1, sticky='ew', pady=5)
 
         # Semester
-        ttk.Label(form_frame, text="Semester:").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.semester', default="Semester:")).grid(row=5, column=0, sticky='w', pady=5)
         semester_combo = ttk.Combobox(form_frame, width=38, values=[
             'Fall', 'Spring', 'Summer', 'Winter', 'Year-long'
         ])
@@ -936,13 +938,13 @@ class ModuleManager:
         semester_combo.grid(row=5, column=1, sticky='ew', pady=5)
 
         # Year
-        ttk.Label(form_frame, text="Academic Year:").grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.academic_year', default="Academic Year:")).grid(row=6, column=0, sticky='w', pady=5)
         year_spinbox = ttk.Spinbox(form_frame, from_=2020, to=2030, width=38)
         year_spinbox.set(mod_year or datetime.now().year)
         year_spinbox.grid(row=6, column=1, sticky='ew', pady=5)
 
         # Description (text area)
-        ttk.Label(form_frame, text="Description:").grid(row=7, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.description', default="Description:")).grid(row=7, column=0, sticky='nw', pady=5)
         desc_text = scrolledtext.ScrolledText(form_frame, width=40, height=8)
         if mod_desc:
             desc_text.insert('1.0', mod_desc)
@@ -961,7 +963,7 @@ class ModuleManager:
             module_name = name_entry.get().strip()
 
             if not module_name:
-                messagebox.showerror("Validation Error", "Module Name is required", parent=dialog)
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.validation_error', default="Validation Error"), _t('gui.academics.grade_tracking.module_manager.dialogs.module_name_is_required', default="Module Name is required"), parent=dialog)
                 name_entry.focus()
                 return
 
@@ -1008,7 +1010,7 @@ class ModuleManager:
                         },
                     )
 
-                messagebox.showinfo("Success", f"Module '{module_code}' updated successfully",
+                messagebox.showinfo(_t('gui.academics.grade_tracking.module_manager.dialogs.success', default="Success"), f"Module '{module_code}' updated successfully",
                                   parent=dialog)
 
                 # Refresh the module list
@@ -1018,19 +1020,19 @@ class ModuleManager:
             except sqlite3.Error as e:
                 if conn:
                     conn.rollback()
-                messagebox.showerror("Database Error", f"Failed to update module: {e}",
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to update module: {e}",
                                    parent=dialog)
             except Exception as e:
                 if conn:
                     conn.rollback()
-                messagebox.showerror("Error", f"Failed to update module: {e}",
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), f"Failed to update module: {e}",
                                    parent=dialog)
             finally:
                 if conn:
                     conn.close()
 
-        ttk.Button(btn_frame, text="Update", command=update_module).pack(side='right', padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.update', default="Update"), command=update_module).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
         # Set grab and focus
         safe_grab_set(dialog)
@@ -1041,7 +1043,7 @@ class ModuleManager:
         # Check if a module is selected
         selected = self.module_tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a module to delete")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.module_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.module_manager.dialogs.please_select_a_module_to_delete', default="Please select a module to delete"))
             return
 
         # Get the module code from selected row
@@ -1089,7 +1091,7 @@ class ModuleManager:
             if dependencies:
                 dep_msg = ", ".join(dependencies)
                 confirm = messagebox.askyesno(
-                    "Dependencies Found",
+                    _t('gui.academics.grade_tracking.module_manager.dialogs.dependencies_found', default="Dependencies Found"),
                     f"Module '{module_code} - {module_name}' has:\n\n{dep_msg}\n\n"
                     "Deleting this module will also remove all related records.\n\n"
                     "Are you sure you want to continue?",
@@ -1100,7 +1102,7 @@ class ModuleManager:
             else:
                 # No dependencies, just confirm deletion
                 confirm = messagebox.askyesno(
-                    "Confirm Deletion",
+                    _t('gui.academics.grade_tracking.module_manager.dialogs.confirm_deletion', default="Confirm Deletion"),
                     f"Are you sure you want to delete module:\n\n'{module_code} - {module_name}'?\n\n"
                     "This action cannot be undone.",
                     icon='warning'
@@ -1129,7 +1131,7 @@ class ModuleManager:
                     details={'module_code': module_code, 'cascade': True},
                 )
 
-            messagebox.showinfo("Success", f"Module '{module_code}' deleted successfully")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.module_manager.dialogs.success', default="Success"), f"Module '{module_code}' deleted successfully")
 
             # Refresh the module list
             self.refresh_modules()
@@ -1137,11 +1139,11 @@ class ModuleManager:
         except sqlite3.Error as e:
             if conn:
                 conn.rollback()
-            messagebox.showerror("Database Error", f"Failed to delete module: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to delete module: {e}")
         except Exception as e:
             if conn:
                 conn.rollback()
-            messagebox.showerror("Error", f"Failed to delete module: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), f"Failed to delete module: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1151,7 +1153,7 @@ class ModuleManager:
         # Check if a module is selected
         selected = self.module_tree.selection()
         if not selected:
-            messagebox.showwarning("No Selection", "Please select a module to manage enrollments")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.module_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.module_manager.dialogs.please_select_a_module_to_manage_enrollments', default="Please select a module to manage enrollments"))
             return
 
         # Get the module code from selected row
@@ -1180,10 +1182,10 @@ class ModuleManager:
 
         # Tab 1: Enrolled Students
         enrolled_frame = ttk.Frame(notebook, padding="10")
-        notebook.add(enrolled_frame, text="Enrolled Students")
+        notebook.add(enrolled_frame, text=_t('gui.academics.grade_tracking.module_manager.tabs.enrolled_students', default="Enrolled Students"))
 
         # Enrolled students list
-        ttk.Label(enrolled_frame, text="Currently Enrolled Students:",
+        ttk.Label(enrolled_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.currently_enrolled_students', default="Currently Enrolled Students:"),
                  font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', pady=5)
 
         enrolled_list_frame = ttk.Frame(enrolled_frame)
@@ -1215,7 +1217,7 @@ class ModuleManager:
             """Remove a student from the module"""
             selected_student = enrolled_tree.selection()
             if not selected_student:
-                messagebox.showwarning("No Selection", "Please select a student to unenroll",
+                messagebox.showwarning(_t('gui.academics.grade_tracking.module_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.module_manager.dialogs.please_select_a_student_to_unenroll', default="Please select a student to unenroll"),
                                      parent=dialog)
                 return
 
@@ -1224,7 +1226,7 @@ class ModuleManager:
             student_name = student_item['values'][1]
 
             confirm = messagebox.askyesno(
-                "Confirm Unenrollment",
+                _t('gui.academics.grade_tracking.module_manager.dialogs.confirm_unenrollment', default="Confirm Unenrollment"),
                 f"Are you sure you want to unenroll:\n\n{student_id} - {student_name}\n\n"
                 f"from module {module_code}?",
                 parent=dialog
@@ -1244,7 +1246,7 @@ class ModuleManager:
                 ''', (student_id, module_code))
 
                 conn.commit()
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.academics.grade_tracking.module_manager.dialogs.success', default="Success"),
                                   f"Student {student_id} unenrolled successfully",
                                   parent=dialog)
 
@@ -1255,7 +1257,7 @@ class ModuleManager:
             except sqlite3.Error as e:
                 if conn:
                     conn.rollback()
-                messagebox.showerror("Database Error",
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"),
                                    f"Failed to unenroll student: {e}",
                                    parent=dialog)
             finally:
@@ -1285,32 +1287,32 @@ class ModuleManager:
                     enrolled_tree.insert('', 'end', values=tuple(row))
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error",
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"),
                                    f"Failed to load enrolled students: {e}",
                                    parent=dialog)
             finally:
                 if conn:
                     conn.close()
 
-        ttk.Button(enrolled_btn_frame, text="Unenroll Selected Student",
+        ttk.Button(enrolled_btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.unenroll_selected_student', default="Unenroll Selected Student"),
                   command=unenroll_student).pack(side='left', padx=5)
-        ttk.Button(enrolled_btn_frame, text="Refresh",
+        ttk.Button(enrolled_btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.refresh', default="Refresh"),
                   command=load_enrolled_students).pack(side='left', padx=5)
 
         # Tab 2: Available Students
         available_frame = ttk.Frame(notebook, padding="10")
-        notebook.add(available_frame, text="Enroll New Students")
+        notebook.add(available_frame, text=_t('gui.academics.grade_tracking.module_manager.tabs.enroll_new_students', default="Enroll New Students"))
 
         # Search frame
         search_frame = ttk.Frame(available_frame)
         search_frame.pack(fill='x', pady=5)
 
-        ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
+        ttk.Label(search_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.search', default="Search:")).pack(side='left', padx=5)
         search_entry = ttk.Entry(search_frame, width=30)
         search_entry.pack(side='left', padx=5)
 
         # Available students list
-        ttk.Label(available_frame, text="Available Students (not enrolled):",
+        ttk.Label(available_frame, text=_t('gui.academics.grade_tracking.module_manager.labels.available_students_not_enrolled', default="Available Students (not enrolled):"),
                  font=('TkDefaultFont', 10, 'bold')).pack(anchor='w', pady=5)
 
         available_list_frame = ttk.Frame(available_frame)
@@ -1372,7 +1374,7 @@ class ModuleManager:
                     available_tree.insert('', 'end', values=tuple(row))
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error",
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"),
                                    f"Failed to load available students: {e}",
                                    parent=dialog)
             finally:
@@ -1388,8 +1390,8 @@ class ModuleManager:
             """Enroll a student in the module"""
             selected_student = available_tree.selection()
             if not selected_student:
-                messagebox.showwarning("No Selection",
-                                     "Please select a student to enroll",
+                messagebox.showwarning(_t('gui.academics.grade_tracking.module_manager.dialogs.no_selection', default="No Selection"),
+                                     _t('gui.academics.grade_tracking.module_manager.dialogs.please_select_a_student_to_enroll', default="Please select a student to enroll"),
                                      parent=dialog)
                 return
 
@@ -1398,7 +1400,7 @@ class ModuleManager:
             student_name = student_item['values'][1]
 
             confirm = messagebox.askyesno(
-                "Confirm Enrollment",
+                _t('gui.academics.grade_tracking.module_manager.dialogs.confirm_enrollment', default="Confirm Enrollment"),
                 f"Enroll student:\n\n{student_id} - {student_name}\n\n"
                 f"in module {module_code} - {module_name}?",
                 parent=dialog
@@ -1415,7 +1417,7 @@ class ModuleManager:
                 )
                 if has_active_hold(student_id):
                     override = messagebox.askyesno(
-                        "Finance hold active",
+                        _t('gui.academics.grade_tracking.module_manager.dialogs.finance_hold_active', default="Finance hold active"),
                         f"Student {student_id} has an active finance hold.\n\n"
                         "Enrol anyway as an administrative override?",
                         parent=dialog,
@@ -1436,7 +1438,7 @@ class ModuleManager:
                 ''', (student_id, module_code))
 
                 conn.commit()
-                messagebox.showinfo("Success",
+                messagebox.showinfo(_t('gui.academics.grade_tracking.module_manager.dialogs.success', default="Success"),
                                   f"Student {student_id} enrolled successfully",
                                   parent=dialog)
 
@@ -1447,13 +1449,13 @@ class ModuleManager:
             except sqlite3.IntegrityError:
                 if conn:
                     conn.rollback()
-                messagebox.showerror("Error",
-                                   "Student is already enrolled in this module",
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"),
+                                   _t('gui.academics.grade_tracking.module_manager.dialogs.student_is_already_enrolled_in_this_module', default="Student is already enrolled in this module"),
                                    parent=dialog)
             except sqlite3.Error as e:
                 if conn:
                     conn.rollback()
-                messagebox.showerror("Database Error",
+                messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"),
                                    f"Failed to enroll student: {e}",
                                    parent=dialog)
             finally:
@@ -1464,20 +1466,20 @@ class ModuleManager:
         available_btn_frame = ttk.Frame(available_frame)
         available_btn_frame.pack(fill='x', pady=5)
 
-        ttk.Button(search_frame, text="Search", command=search_students).pack(side='left', padx=5)
-        ttk.Button(search_frame, text="Clear",
+        ttk.Button(search_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.search', default="Search"), command=search_students).pack(side='left', padx=5)
+        ttk.Button(search_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.clear', default="Clear"),
                   command=lambda: (search_entry.delete(0, 'end'), load_available_students())).pack(side='left', padx=5)
 
-        ttk.Button(available_btn_frame, text="Enroll Selected Student",
+        ttk.Button(available_btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.enroll_selected_student', default="Enroll Selected Student"),
                   command=enroll_student).pack(side='left', padx=5)
-        ttk.Button(available_btn_frame, text="Refresh",
+        ttk.Button(available_btn_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.refresh', default="Refresh"),
                   command=lambda: load_available_students()).pack(side='left', padx=5)
 
         # Bottom buttons
         bottom_frame = ttk.Frame(dialog, padding="10")
         bottom_frame.pack(fill='x', side='bottom')
 
-        ttk.Button(bottom_frame, text="Close", command=dialog.destroy).pack(side='right')
+        ttk.Button(bottom_frame, text=_t('gui.academics.grade_tracking.module_manager.buttons.close', default="Close"), command=dialog.destroy).pack(side='right')
 
         # Initial load
         load_enrolled_students()
@@ -1520,9 +1522,9 @@ class ModuleManager:
                 ))
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to load modules: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.database_error', default="Database Error"), f"Failed to load modules: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load modules: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.module_manager.dialogs.error', default="Error"), f"Failed to load modules: {e}")
         finally:
             if conn:
                 conn.close()

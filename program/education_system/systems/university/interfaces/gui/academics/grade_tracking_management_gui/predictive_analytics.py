@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from tkinter import messagebox, simpledialog
 import threading
 
@@ -219,31 +221,31 @@ class PredictiveAnalyticsMixin:
     def export_dropout_risk_list_gui(self, high_risk_students=None):
         """Export dropout risk list to file"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to export dropout risk list.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_export_dropout_risk_list', default="You must be logged in to export dropout risk list."))
             return
 
         try:
             if PREDICTIVE_ANALYTICS_AVAILABLE:
                 if high_risk_students:
                     export_dropout_risk_list(high_risk_students)
-                    messagebox.showinfo("Success", "Dropout risk list exported successfully")
+                    messagebox.showinfo(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.success', default="Success"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.dropout_risk_list_exported_successfully', default="Dropout risk list exported successfully"))
                 else:
-                    messagebox.showinfo("Info", "Please identify high dropout risk students first.")
+                    messagebox.showinfo(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.info', default="Info"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.please_identify_high_dropout_risk_students_first', default="Please identify high dropout risk students first."))
             else:
-                messagebox.showerror("Error", "Export dropout risk list not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.export_dropout_risk_list_not_available', default="Export dropout risk list not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export dropout risk list: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to export dropout risk list: {str(e)}")
             print(f"Export dropout risk list error: {e}")
 
     def build_at_risk_prediction_model_gui(self):
         """Build ML model to predict at-risk students"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to build prediction models.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_build_prediction_models', default="You must be logged in to build prediction models."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('use_ml_models')):
-            messagebox.showerror("Error", "You don't have permission to build ML models.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_build_ml_models', default="You don't have permission to build ML models."))
             return
 
         try:
@@ -262,20 +264,20 @@ class PredictiveAnalyticsMixin:
                 thread = threading.Thread(target=build_model, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Build at-risk prediction model not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.build_at_risk_prediction_model_not_available', default="Build at-risk prediction model not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to build prediction model: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to build prediction model: {str(e)}")
             print(f"Build prediction model error: {e}")
 
     def analyze_dropout_risk_factors_gui(self):
         """Analyze common dropout risk factors"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to analyze dropout risk factors.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_analyze_dropout_risk_factors', default="You must be logged in to analyze dropout risk factors."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('view_risk_analysis')):
-            messagebox.showerror("Error", "You don't have permission to analyze dropout risk factors.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_analyze_dropout_risk_factors', default="You don't have permission to analyze dropout risk factors."))
             return
 
         try:
@@ -294,20 +296,20 @@ class PredictiveAnalyticsMixin:
                 thread = threading.Thread(target=analyze, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Analyze dropout risk factors not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.analyze_dropout_risk_factors_not_available', default="Analyze dropout risk factors not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to analyze dropout risk factors: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to analyze dropout risk factors: {str(e)}")
             print(f"Analyze dropout risk factors error: {e}")
 
     def build_dropout_prediction_model_gui(self):
         """Build predictive model for dropout risk"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to build dropout prediction model.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_build_dropout_prediction_model', default="You must be logged in to build dropout prediction model."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('use_ml_models')):
-            messagebox.showerror("Error", "You don't have permission to build ML models.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_build_ml_models', default="You don't have permission to build ML models."))
             return
 
         try:
@@ -326,20 +328,20 @@ class PredictiveAnalyticsMixin:
                 thread = threading.Thread(target=build_model, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Build dropout prediction model not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.build_dropout_prediction_model_not_available', default="Build dropout prediction model not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to build dropout prediction model: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to build dropout prediction model: {str(e)}")
             print(f"Build dropout prediction model error: {e}")
 
     def generate_dropout_interventions_gui(self):
         """Generate dropout prevention interventions"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to generate interventions.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_generate_interventions', default="You must be logged in to generate interventions."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('generate_interventions')):
-            messagebox.showerror("Error", "You don't have permission to generate interventions.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_generate_interventions', default="You don't have permission to generate interventions."))
             return
 
         try:
@@ -358,20 +360,20 @@ class PredictiveAnalyticsMixin:
                 thread = threading.Thread(target=generate, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Generate dropout interventions not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.generate_dropout_interventions_not_available', default="Generate dropout interventions not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate interventions: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to generate interventions: {str(e)}")
             print(f"Generate interventions error: {e}")
 
     def generate_dropout_intervention_plan_gui(self, student_id=None):
         """Generate individual dropout intervention plan"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to generate intervention plans.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_generate_intervention_plans', default="You must be logged in to generate intervention plans."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('generate_interventions')):
-            messagebox.showerror("Error", "You don't have permission to generate intervention plans.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_generate_intervention_plans', default="You don't have permission to generate intervention plans."))
             return
 
         try:
@@ -381,8 +383,8 @@ class PredictiveAnalyticsMixin:
                 # If no student_id provided, prompt for one
                 if not student_id:
                     student_id = simpledialog.askstring(
-                        "Student ID",
-                        "Enter Student ID:",
+                        _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.student_id', default="Student ID"),
+                        _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.enter_student_id', default="Enter Student ID:"),
                         parent=self.root
                     )
 
@@ -415,20 +417,20 @@ class PredictiveAnalyticsMixin:
                 thread = threading.Thread(target=generate_plan, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Generate dropout intervention plan not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.generate_dropout_intervention_plan_not_available', default="Generate dropout intervention plan not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate intervention plan: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to generate intervention plan: {str(e)}")
             print(f"Generate intervention plan error: {e}")
 
     def identify_high_dropout_risk_gui(self):
         """Identify students at high risk of dropping out"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to identify high dropout risk students.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_identify_high_dropout_risk_students', default="You must be logged in to identify high dropout risk students."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('view_risk_analysis')):
-            messagebox.showerror("Error", "You don't have permission to identify high dropout risk students.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_identify_high_dropout_risk_students', default="You don't have permission to identify high dropout risk students."))
             return
 
         try:
@@ -447,15 +449,15 @@ class PredictiveAnalyticsMixin:
                 thread = threading.Thread(target=identify, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Identify high dropout risk not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.identify_high_dropout_risk_not_available', default="Identify high dropout risk not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to identify high dropout risk students: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to identify high dropout risk students: {str(e)}")
             print(f"Identify high dropout risk error: {e}")
 
     def calculate_dropout_risk_score_gui(self, student_id=None):
         """Calculate dropout risk score for a student"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to calculate dropout risk score.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_calculate_dropout_risk_score', default="You must be logged in to calculate dropout risk score."))
             return
 
         try:
@@ -465,8 +467,8 @@ class PredictiveAnalyticsMixin:
                 # If no student_id provided, prompt for one
                 if not student_id:
                     student_id = simpledialog.askstring(
-                        "Student ID",
-                        "Enter Student ID:",
+                        _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.student_id', default="Student ID"),
+                        _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.enter_student_id', default="Enter Student ID:"),
                         parent=self.root
                     )
 
@@ -486,20 +488,20 @@ class PredictiveAnalyticsMixin:
                 thread = threading.Thread(target=calculate, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Calculate dropout risk score not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.calculate_dropout_risk_score_not_available', default="Calculate dropout risk score not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to calculate dropout risk score: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to calculate dropout risk score: {str(e)}")
             print(f"Calculate dropout risk score error: {e}")
 
     def generate_risk_report_gui(self):
         """Generate comprehensive risk assessment report"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to generate risk reports.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_generate_risk_reports', default="You must be logged in to generate risk reports."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('view_reports')):
-            messagebox.showerror("Error", "You don't have permission to generate risk reports.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_generate_risk_reports', default="You don't have permission to generate risk reports."))
             return
 
         try:
@@ -507,15 +509,15 @@ class PredictiveAnalyticsMixin:
                 thread = threading.Thread(target=generate_risk_report, daemon=True)
                 thread.start()
             else:
-                messagebox.showerror("Error", "Generate risk report not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.generate_risk_report_not_available', default="Generate risk report not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate risk report: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to generate risk report: {str(e)}")
             print(f"Generate risk report error: {e}")
 
     def collect_comprehensive_risk_data_gui(self):
         """Collect comprehensive risk assessment data"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to collect risk data.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_collect_risk_data', default="You must be logged in to collect risk data."))
             return None
 
         try:
@@ -528,22 +530,22 @@ class PredictiveAnalyticsMixin:
                 conn.close()
                 return risk_data
             else:
-                messagebox.showerror("Error", "Collect risk data not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.collect_risk_data_not_available', default="Collect risk data not available."))
                 return None
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to collect risk data: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to collect risk data: {str(e)}")
             print(f"Collect risk data error: {e}")
             return None
 
     def generate_comprehensive_risk_report_gui(self, risk_data=None):
         """Generate comprehensive risk assessment report"""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to generate comprehensive risk reports.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_must_be_logged_in_to_generate_comprehensive_risk_reports', default="You must be logged in to generate comprehensive risk reports."))
             return
 
         if not (self.auth.check_permission('manage_grades') or
                 self.auth.check_permission('view_reports')):
-            messagebox.showerror("Error", "You don't have permission to generate comprehensive risk reports.")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.you_don_t_have_permission_to_generate_comprehensive_risk_reports', default="You don't have permission to generate comprehensive risk reports."))
             return
 
         try:
@@ -558,7 +560,7 @@ class PredictiveAnalyticsMixin:
                     thread = threading.Thread(target=generate, daemon=True)
                     thread.start()
             else:
-                messagebox.showerror("Error", "Generate comprehensive risk report not available.")
+                messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), _t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.generate_comprehensive_risk_report_not_available', default="Generate comprehensive risk report not available."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate comprehensive risk report: {str(e)}")
+            messagebox.showerror(_t('gui.academics.grade_tracking_management_gui.predictive_analytics.dialogs.error', default="Error"), f"Failed to generate comprehensive risk report: {str(e)}")
             print(f"Generate comprehensive risk report error: {e}")

@@ -1,5 +1,7 @@
 """Notification configuration, templates, email/SMS setup, and system info."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import sys
 import io
 import os
@@ -116,7 +118,7 @@ class NotificationsMixin:
 
         # SMTP Server
         ttk.Label(form_frame, text=_("finance_gui.settings.smtp_server_label")).pack(anchor='w', pady=5)
-        smtp_var = tk.StringVar(value="smtp.gmail.com")
+        smtp_var = tk.StringVar(value=_t('gui.finance.finance.settings.notifications.values.smtp_gmail_com', default="smtp.gmail.com"))
         ttk.Entry(form_frame, textvariable=smtp_var).pack(anchor='w', fill='x', pady=5)
 
         # Port
@@ -170,7 +172,7 @@ class NotificationsMixin:
 
         # Service provider
         ttk.Label(form_frame, text=_("finance_gui.settings.sms_provider_label")).pack(anchor='w', pady=5)
-        provider_var = tk.StringVar(value="twilio")
+        provider_var = tk.StringVar(value=_t('gui.finance.finance.settings.notifications.values.twilio', default="twilio"))
         provider_combo = ttk.Combobox(form_frame, textvariable=provider_var,
                                      values=["twilio", "aws_sns"], state='readonly')
         provider_combo.pack(anchor='w', fill='x', pady=5)
@@ -430,7 +432,7 @@ class NotificationsMixin:
         currency_frame.pack(fill='x', pady=10)
 
         ttk.Label(currency_frame, text=_("finance_gui.settings.base_currency_label")).pack(anchor='w')
-        base_currency_var = tk.StringVar(value='GBP')
+        base_currency_var = tk.StringVar(value=_t('gui.finance.finance.settings.notifications.values.gbp', default='GBP'))
         ttk.Combobox(currency_frame, textvariable=base_currency_var,
                     values=SUPPORTED_CURRENCIES, state='readonly').pack(anchor='w', pady=5)
 
@@ -446,7 +448,7 @@ class NotificationsMixin:
         email_frame.pack(fill='x', pady=10)
 
         ttk.Label(email_frame, text=_("finance_gui.settings.smtp_server_label")).pack(anchor='w')
-        smtp_var = tk.StringVar(value='smtp.gmail.com')
+        smtp_var = tk.StringVar(value=_t('gui.finance.finance.settings.notifications.values.smtp_gmail_com', default='smtp.gmail.com'))
         ttk.Entry(email_frame, textvariable=smtp_var, width=30).pack(anchor='w', pady=5)
 
         ttk.Label(email_frame, text=_("finance_gui.settings.from_email_label")).pack(anchor='w')

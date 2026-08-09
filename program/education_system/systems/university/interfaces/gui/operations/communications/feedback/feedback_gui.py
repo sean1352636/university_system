@@ -8,6 +8,8 @@ Provides graphical interface for:
 - Viewing impact metrics
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -27,8 +29,8 @@ class FeedbackGUI:
             try:
                 from tkinter import messagebox
                 messagebox.showerror(
-                    "Login required",
-                    "You must be logged in via the main GUI to use Feedback.",
+                    _t('gui.operations.communications.feedback.feedback.dialogs.login_required_variant_2', default="Login required"),
+                    _t('gui.operations.communications.feedback.feedback.dialogs.you_must_be_logged_in_via_the_main_gui_to_use_feedback', default="You must be logged in via the main GUI to use Feedback."),
                 )
             except Exception:
                 pass
@@ -39,7 +41,7 @@ class FeedbackGUI:
         # have no ``wm_title``; Tk/Toplevel do.
         if parent is None:
             self.root = tk.Tk()
-            self.root.title("Feedback & Suggestion Box")
+            self.root.title(_t('gui.operations.communications.feedback.feedback.windows.feedback_suggestion_box', default="Feedback & Suggestion Box"))
             self.root.geometry("1200x800")
             self.is_standalone = True
         elif not hasattr(parent, "wm_title"):
@@ -47,7 +49,7 @@ class FeedbackGUI:
             self.is_standalone = False
         else:
             self.root = tk.Toplevel(parent)
-            self.root.title("Feedback & Suggestion Box")
+            self.root.title(_t('gui.operations.communications.feedback.feedback.windows.feedback_suggestion_box', default="Feedback & Suggestion Box"))
             self.root.geometry("1200x800")
             self.is_standalone = False
 
@@ -84,7 +86,7 @@ class FeedbackGUI:
 
         title_label = ttk.Label(
             header_frame,
-            text="Feedback & Suggestion Box",
+            text=_t('gui.operations.communications.feedback.feedback.labels.feedback_suggestion_box', default="Feedback & Suggestion Box"),
             font=("Arial", 18, "bold")
         )
         title_label.pack(side=tk.LEFT)
@@ -117,16 +119,16 @@ class FeedbackGUI:
     def _create_browse_tab(self):
         """Create browse suggestions tab"""
         browse_frame = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(browse_frame, text="Browse Suggestions")
+        self.notebook.add(browse_frame, text=_t('gui.operations.communications.feedback.feedback.tabs.browse_suggestions', default="Browse Suggestions"))
 
         # Filter controls
-        filter_frame = ttk.LabelFrame(browse_frame, text="Filters", padding="5")
+        filter_frame = ttk.LabelFrame(browse_frame, text=_t('gui.operations.communications.feedback.feedback.labels.filters', default="Filters"), padding="5")
         filter_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
         # Category filter
-        ttk.Label(filter_frame, text="Category:").grid(row=0, column=0, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.operations.communications.feedback.feedback.labels.category_variant_2', default="Category:")).grid(row=0, column=0, padx=5)
         categories = ["All"] + [cat['name'] for cat in self.service.get_categories()]
-        self.category_var = tk.StringVar(value="All")
+        self.category_var = tk.StringVar(value=_t('gui.operations.communications.feedback.feedback.values.all', default="All"))
         category_combo = ttk.Combobox(
             filter_frame,
             textvariable=self.category_var,
@@ -138,9 +140,9 @@ class FeedbackGUI:
         category_combo.bind('<<ComboboxSelected>>', lambda e: self._apply_filters())
 
         # Status filter
-        ttk.Label(filter_frame, text="Status:").grid(row=0, column=2, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.operations.communications.feedback.feedback.labels.status', default="Status:")).grid(row=0, column=2, padx=5)
         statuses = ["All", "Submitted", "Under Review", "Planned", "In Progress", "Implemented", "Declined"]
-        self.status_var = tk.StringVar(value="All")
+        self.status_var = tk.StringVar(value=_t('gui.operations.communications.feedback.feedback.values.all', default="All"))
         status_combo = ttk.Combobox(
             filter_frame,
             textvariable=self.status_var,
@@ -152,9 +154,9 @@ class FeedbackGUI:
         status_combo.bind('<<ComboboxSelected>>', lambda e: self._apply_filters())
 
         # Sort options
-        ttk.Label(filter_frame, text="Sort by:").grid(row=0, column=4, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.operations.communications.feedback.feedback.labels.sort_by', default="Sort by:")).grid(row=0, column=4, padx=5)
         sorts = ["Most Votes", "Most Recent", "Recently Updated"]
-        self.sort_var = tk.StringVar(value="Most Votes")
+        self.sort_var = tk.StringVar(value=_t('gui.operations.communications.feedback.feedback.values.most_votes', default="Most Votes"))
         sort_combo = ttk.Combobox(
             filter_frame,
             textvariable=self.sort_var,
@@ -166,13 +168,13 @@ class FeedbackGUI:
         sort_combo.bind('<<ComboboxSelected>>', lambda e: self._apply_filters())
 
         # Search
-        ttk.Label(filter_frame, text="Search:").grid(row=0, column=6, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.operations.communications.feedback.feedback.labels.search', default="Search:")).grid(row=0, column=6, padx=5)
         self.search_var = tk.StringVar()
         search_entry = ttk.Entry(filter_frame, textvariable=self.search_var, width=20)
         search_entry.grid(row=0, column=7, padx=5)
         ttk.Button(
             filter_frame,
-            text="Search",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.search', default="Search"),
             command=self._search_submissions
         ).grid(row=0, column=8, padx=5)
 
@@ -188,12 +190,12 @@ class FeedbackGUI:
 
         # Define column headings
         self.browse_tree.heading("#0", text="")
-        self.browse_tree.heading("ID", text="ID")
-        self.browse_tree.heading("Title", text="Title")
-        self.browse_tree.heading("Category", text="Category")
-        self.browse_tree.heading("Status", text="Status")
-        self.browse_tree.heading("Votes", text="Votes")
-        self.browse_tree.heading("Date", text="Date")
+        self.browse_tree.heading("ID", text=_t('gui.operations.communications.feedback.feedback.headings.id', default="ID"))
+        self.browse_tree.heading("Title", text=_t('gui.operations.communications.feedback.feedback.headings.title', default="Title"))
+        self.browse_tree.heading("Category", text=_t('gui.operations.communications.feedback.feedback.headings.category', default="Category"))
+        self.browse_tree.heading("Status", text=_t('gui.operations.communications.feedback.feedback.headings.status', default="Status"))
+        self.browse_tree.heading("Votes", text=_t('gui.operations.communications.feedback.feedback.headings.votes', default="Votes"))
+        self.browse_tree.heading("Date", text=_t('gui.operations.communications.feedback.feedback.headings.date', default="Date"))
 
         # Define column widths
         self.browse_tree.column("#0", width=30)
@@ -223,38 +225,38 @@ class FeedbackGUI:
 
         ttk.Button(
             btn_frame,
-            text="View Details",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.view_details', default="View Details"),
             command=lambda: self._view_selected_submission(self.browse_tree)
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             btn_frame,
-            text="Upvote",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.upvote', default="Upvote"),
             command=lambda: self._upvote_selected(self.browse_tree)
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             btn_frame,
-            text="Refresh",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.refresh', default="Refresh"),
             command=self._load_data
         ).pack(side=tk.LEFT, padx=5)
 
     def _create_trending_tab(self):
         """Create trending suggestions tab"""
         trending_frame = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(trending_frame, text="Trending")
+        self.notebook.add(trending_frame, text=_t('gui.operations.communications.feedback.feedback.tabs.trending', default="Trending"))
 
         # Header
         header = ttk.Label(
             trending_frame,
-            text="Trending Suggestions",
+            text=_t('gui.operations.communications.feedback.feedback.labels.trending_suggestions', default="Trending Suggestions"),
             font=("Arial", 14, "bold")
         )
         header.grid(row=0, column=0, pady=(0, 10))
 
         desc = ttk.Label(
             trending_frame,
-            text="Most popular suggestions with recent activity",
+            text=_t('gui.operations.communications.feedback.feedback.labels.most_popular_suggestions_with_recent_activity', default="Most popular suggestions with recent activity"),
             font=("Arial", 10)
         )
         desc.grid(row=1, column=0, pady=(0, 10))
@@ -269,12 +271,12 @@ class FeedbackGUI:
         self.trending_tree = ttk.Treeview(list_frame, columns=columns, show="tree headings", height=15)
 
         self.trending_tree.heading("#0", text="")
-        self.trending_tree.heading("ID", text="ID")
-        self.trending_tree.heading("Title", text="Title")
-        self.trending_tree.heading("Category", text="Category")
-        self.trending_tree.heading("Votes", text="Votes")
-        self.trending_tree.heading("Status", text="Status")
-        self.trending_tree.heading("Responses", text="Responses")
+        self.trending_tree.heading("ID", text=_t('gui.operations.communications.feedback.feedback.headings.id', default="ID"))
+        self.trending_tree.heading("Title", text=_t('gui.operations.communications.feedback.feedback.headings.title', default="Title"))
+        self.trending_tree.heading("Category", text=_t('gui.operations.communications.feedback.feedback.headings.category', default="Category"))
+        self.trending_tree.heading("Votes", text=_t('gui.operations.communications.feedback.feedback.headings.votes', default="Votes"))
+        self.trending_tree.heading("Status", text=_t('gui.operations.communications.feedback.feedback.headings.status', default="Status"))
+        self.trending_tree.heading("Responses", text=_t('gui.operations.communications.feedback.feedback.headings.responses', default="Responses"))
 
         self.trending_tree.column("#0", width=30)
         self.trending_tree.column("ID", width=50)
@@ -301,56 +303,56 @@ class FeedbackGUI:
 
         ttk.Button(
             btn_frame,
-            text="View Details",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.view_details', default="View Details"),
             command=lambda: self._view_selected_submission(self.trending_tree)
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             btn_frame,
-            text="Upvote",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.upvote', default="Upvote"),
             command=lambda: self._upvote_selected(self.trending_tree)
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             btn_frame,
-            text="Refresh",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.refresh', default="Refresh"),
             command=self._load_trending
         ).pack(side=tk.LEFT, padx=5)
 
     def _create_submit_tab(self):
         """Create submission form tab"""
         submit_frame = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(submit_frame, text="Submit New")
+        self.notebook.add(submit_frame, text=_t('gui.operations.communications.feedback.feedback.tabs.submit_new', default="Submit New"))
 
         # Check login
         if not self.current_user:
             ttk.Label(
                 submit_frame,
-                text="You must be logged in to submit feedback or suggestions.",
+                text=_t('gui.operations.communications.feedback.feedback.labels.you_must_be_logged_in_to_submit_feedback_or_suggestions', default="You must be logged in to submit feedback or suggestions."),
                 font=("Arial", 12)
             ).pack(pady=50)
             return
 
         # Type selection
-        type_frame = ttk.LabelFrame(submit_frame, text="Type", padding="10")
+        type_frame = ttk.LabelFrame(submit_frame, text=_t('gui.operations.communications.feedback.feedback.labels.type', default="Type"), padding="10")
         type_frame.pack(fill=tk.X, pady=(0, 10))
 
-        self.submit_type_var = tk.StringVar(value="suggestion")
+        self.submit_type_var = tk.StringVar(value=_t('gui.operations.communications.feedback.feedback.values.suggestion', default="suggestion"))
         ttk.Radiobutton(
             type_frame,
-            text="Suggestion (Public, votable)",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.suggestion_public_votable', default="Suggestion (Public, votable)"),
             variable=self.submit_type_var,
             value="suggestion"
         ).pack(anchor=tk.W)
         ttk.Radiobutton(
             type_frame,
-            text="Feedback (Private, direct to admin)",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.feedback_private_direct_to_admin', default="Feedback (Private, direct to admin)"),
             variable=self.submit_type_var,
             value="feedback"
         ).pack(anchor=tk.W)
 
         # Category
-        category_frame = ttk.LabelFrame(submit_frame, text="Category", padding="10")
+        category_frame = ttk.LabelFrame(submit_frame, text=_t('gui.operations.communications.feedback.feedback.labels.category', default="Category"), padding="10")
         category_frame.pack(fill=tk.X, pady=(0, 10))
 
         categories = [cat['name'] for cat in self.service.get_categories()]
@@ -365,7 +367,7 @@ class FeedbackGUI:
         category_combo.pack(fill=tk.X)
 
         # Title
-        title_frame = ttk.LabelFrame(submit_frame, text="Title", padding="10")
+        title_frame = ttk.LabelFrame(submit_frame, text=_t('gui.operations.communications.feedback.feedback.labels.title', default="Title"), padding="10")
         title_frame.pack(fill=tk.X, pady=(0, 10))
 
         self.submit_title_var = tk.StringVar()
@@ -373,7 +375,7 @@ class FeedbackGUI:
         title_entry.pack(fill=tk.X)
 
         # Description
-        desc_frame = ttk.LabelFrame(submit_frame, text="Description", padding="10")
+        desc_frame = ttk.LabelFrame(submit_frame, text=_t('gui.operations.communications.feedback.feedback.labels.description', default="Description"), padding="10")
         desc_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         self.submit_desc_text = scrolledtext.ScrolledText(desc_frame, height=10, wrap=tk.WORD)
@@ -386,14 +388,14 @@ class FeedbackGUI:
         self.submit_anonymous_var = tk.BooleanVar(value=False)
         ttk.Checkbutton(
             options_frame,
-            text="Submit anonymously",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.submit_anonymously', default="Submit anonymously"),
             variable=self.submit_anonymous_var
         ).pack(anchor=tk.W)
 
         # Submit button
         ttk.Button(
             submit_frame,
-            text="Submit",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.submit', default="Submit"),
             command=self._submit_new,
             style="Accent.TButton"
         ).pack(pady=10)
@@ -401,12 +403,12 @@ class FeedbackGUI:
     def _create_my_submissions_tab(self):
         """Create my submissions tab"""
         my_frame = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(my_frame, text="My Submissions")
+        self.notebook.add(my_frame, text=_t('gui.operations.communications.feedback.feedback.tabs.my_submissions', default="My Submissions"))
 
         if not self.current_user:
             ttk.Label(
                 my_frame,
-                text="You must be logged in to view your submissions.",
+                text=_t('gui.operations.communications.feedback.feedback.labels.you_must_be_logged_in_to_view_your_submissions', default="You must be logged in to view your submissions."),
                 font=("Arial", 12)
             ).pack(pady=50)
             return
@@ -414,7 +416,7 @@ class FeedbackGUI:
         # Header
         header = ttk.Label(
             my_frame,
-            text="My Submissions",
+            text=_t('gui.operations.communications.feedback.feedback.labels.my_submissions', default="My Submissions"),
             font=("Arial", 14, "bold")
         )
         header.grid(row=0, column=0, pady=(0, 10))
@@ -429,13 +431,13 @@ class FeedbackGUI:
         self.my_tree = ttk.Treeview(list_frame, columns=columns, show="tree headings", height=15)
 
         self.my_tree.heading("#0", text="")
-        self.my_tree.heading("ID", text="ID")
-        self.my_tree.heading("Type", text="Type")
-        self.my_tree.heading("Title", text="Title")
-        self.my_tree.heading("Category", text="Category")
-        self.my_tree.heading("Status", text="Status")
-        self.my_tree.heading("Votes", text="Votes")
-        self.my_tree.heading("Date", text="Date")
+        self.my_tree.heading("ID", text=_t('gui.operations.communications.feedback.feedback.headings.id', default="ID"))
+        self.my_tree.heading("Type", text=_t('gui.operations.communications.feedback.feedback.headings.type', default="Type"))
+        self.my_tree.heading("Title", text=_t('gui.operations.communications.feedback.feedback.headings.title', default="Title"))
+        self.my_tree.heading("Category", text=_t('gui.operations.communications.feedback.feedback.headings.category', default="Category"))
+        self.my_tree.heading("Status", text=_t('gui.operations.communications.feedback.feedback.headings.status', default="Status"))
+        self.my_tree.heading("Votes", text=_t('gui.operations.communications.feedback.feedback.headings.votes', default="Votes"))
+        self.my_tree.heading("Date", text=_t('gui.operations.communications.feedback.feedback.headings.date', default="Date"))
 
         self.my_tree.column("#0", width=30)
         self.my_tree.column("ID", width=50)
@@ -463,32 +465,32 @@ class FeedbackGUI:
 
         ttk.Button(
             btn_frame,
-            text="View Details",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.view_details', default="View Details"),
             command=lambda: self._view_selected_submission(self.my_tree)
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             btn_frame,
-            text="Refresh",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.refresh', default="Refresh"),
             command=self._load_my_submissions
         ).pack(side=tk.LEFT, padx=5)
 
     def _create_implemented_tab(self):
         """Create implemented suggestions tab"""
         impl_frame = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(impl_frame, text="Implemented")
+        self.notebook.add(impl_frame, text=_t('gui.operations.communications.feedback.feedback.tabs.implemented', default="Implemented"))
 
         # Header
         header = ttk.Label(
             impl_frame,
-            text="Implemented Suggestions",
+            text=_t('gui.operations.communications.feedback.feedback.labels.implemented_suggestions', default="Implemented Suggestions"),
             font=("Arial", 14, "bold")
         )
         header.grid(row=0, column=0, pady=(0, 10))
 
         desc = ttk.Label(
             impl_frame,
-            text="See what ideas have been brought to life!",
+            text=_t('gui.operations.communications.feedback.feedback.labels.see_what_ideas_have_been_brought_to_life', default="See what ideas have been brought to life!"),
             font=("Arial", 10)
         )
         desc.grid(row=1, column=0, pady=(0, 10))
@@ -503,13 +505,13 @@ class FeedbackGUI:
         self.impl_tree = ttk.Treeview(list_frame, columns=columns, show="tree headings", height=15)
 
         self.impl_tree.heading("#0", text="")
-        self.impl_tree.heading("ID", text="ID")
-        self.impl_tree.heading("Title", text="Title")
-        self.impl_tree.heading("Category", text="Category")
-        self.impl_tree.heading("Votes", text="Votes")
-        self.impl_tree.heading("Impl Date", text="Implemented")
-        self.impl_tree.heading("Users", text="Users Affected")
-        self.impl_tree.heading("Impact", text="Impact")
+        self.impl_tree.heading("ID", text=_t('gui.operations.communications.feedback.feedback.headings.id', default="ID"))
+        self.impl_tree.heading("Title", text=_t('gui.operations.communications.feedback.feedback.headings.title', default="Title"))
+        self.impl_tree.heading("Category", text=_t('gui.operations.communications.feedback.feedback.headings.category', default="Category"))
+        self.impl_tree.heading("Votes", text=_t('gui.operations.communications.feedback.feedback.headings.votes', default="Votes"))
+        self.impl_tree.heading("Impl Date", text=_t('gui.operations.communications.feedback.feedback.headings.implemented', default="Implemented"))
+        self.impl_tree.heading("Users", text=_t('gui.operations.communications.feedback.feedback.headings.users_affected', default="Users Affected"))
+        self.impl_tree.heading("Impact", text=_t('gui.operations.communications.feedback.feedback.headings.impact', default="Impact"))
 
         self.impl_tree.column("#0", width=30)
         self.impl_tree.column("ID", width=50)
@@ -537,25 +539,25 @@ class FeedbackGUI:
 
         ttk.Button(
             btn_frame,
-            text="View Details",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.view_details', default="View Details"),
             command=lambda: self._view_selected_submission(self.impl_tree)
         ).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(
             btn_frame,
-            text="Refresh",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.refresh', default="Refresh"),
             command=self._load_implemented
         ).pack(side=tk.LEFT, padx=5)
 
     def _create_stats_tab(self):
         """Create statistics tab"""
         stats_frame = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(stats_frame, text="Statistics")
+        self.notebook.add(stats_frame, text=_t('gui.operations.communications.feedback.feedback.tabs.statistics', default="Statistics"))
 
         # Header
         header = ttk.Label(
             stats_frame,
-            text="Feedback System Statistics",
+            text=_t('gui.operations.communications.feedback.feedback.labels.feedback_system_statistics', default="Feedback System Statistics"),
             font=("Arial", 14, "bold")
         )
         header.pack(pady=(0, 20))
@@ -567,54 +569,54 @@ class FeedbackGUI:
         # Refresh button
         ttk.Button(
             stats_frame,
-            text="Refresh Statistics",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.refresh_statistics', default="Refresh Statistics"),
             command=self._load_statistics
         ).pack(pady=10)
 
     def _create_admin_tab(self):
         """Create admin management tab"""
         admin_frame = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(admin_frame, text="Admin")
+        self.notebook.add(admin_frame, text=_t('gui.operations.communications.feedback.feedback.tabs.admin', default="Admin"))
 
         # Header
         header = ttk.Label(
             admin_frame,
-            text="Administrative Functions",
+            text=_t('gui.operations.communications.feedback.feedback.labels.administrative_functions', default="Administrative Functions"),
             font=("Arial", 14, "bold")
         )
         header.grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
         # Response section
-        response_frame = ttk.LabelFrame(admin_frame, text="Respond to Submission", padding="10")
+        response_frame = ttk.LabelFrame(admin_frame, text=_t('gui.operations.communications.feedback.feedback.labels.respond_to_submission', default="Respond to Submission"), padding="10")
         response_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 5))
 
-        ttk.Label(response_frame, text="Submission ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(response_frame, text=_t('gui.operations.communications.feedback.feedback.labels.submission_id', default="Submission ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.admin_response_id_var = tk.StringVar()
         ttk.Entry(response_frame, textvariable=self.admin_response_id_var, width=15).grid(
             row=0, column=1, sticky=tk.W, pady=5
         )
 
-        ttk.Label(response_frame, text="Response:").grid(row=1, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(response_frame, text=_t('gui.operations.communications.feedback.feedback.labels.response', default="Response:")).grid(row=1, column=0, sticky=tk.NW, pady=5)
         self.admin_response_text = scrolledtext.ScrolledText(response_frame, height=8, width=50)
         self.admin_response_text.grid(row=1, column=1, pady=5)
 
         ttk.Button(
             response_frame,
-            text="Submit Response",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.submit_response', default="Submit Response"),
             command=self._admin_add_response
         ).grid(row=2, column=1, pady=5)
 
         # Status update section
-        status_frame = ttk.LabelFrame(admin_frame, text="Update Status", padding="10")
+        status_frame = ttk.LabelFrame(admin_frame, text=_t('gui.operations.communications.feedback.feedback.labels.update_status', default="Update Status"), padding="10")
         status_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(5, 0))
 
-        ttk.Label(status_frame, text="Submission ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(status_frame, text=_t('gui.operations.communications.feedback.feedback.labels.submission_id', default="Submission ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.admin_status_id_var = tk.StringVar()
         ttk.Entry(status_frame, textvariable=self.admin_status_id_var, width=15).grid(
             row=0, column=1, sticky=tk.W, pady=5
         )
 
-        ttk.Label(status_frame, text="New Status:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(status_frame, text=_t('gui.operations.communications.feedback.feedback.labels.new_status', default="New Status:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         statuses = ["Submitted", "Under Review", "Planned", "In Progress", "Implemented", "Declined"]
         self.admin_status_var = tk.StringVar(value=statuses[0])
         ttk.Combobox(
@@ -625,13 +627,13 @@ class FeedbackGUI:
             width=20
         ).grid(row=1, column=1, sticky=tk.W, pady=5)
 
-        ttk.Label(status_frame, text="Notes:").grid(row=2, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(status_frame, text=_t('gui.operations.communications.feedback.feedback.labels.notes', default="Notes:")).grid(row=2, column=0, sticky=tk.NW, pady=5)
         self.admin_status_notes = scrolledtext.ScrolledText(status_frame, height=5, width=50)
         self.admin_status_notes.grid(row=2, column=1, pady=5)
 
         ttk.Button(
             status_frame,
-            text="Update Status",
+            text=_t('gui.operations.communications.feedback.feedback.buttons.update_status', default="Update Status"),
             command=self._admin_update_status
         ).grid(row=3, column=1, pady=5)
 
@@ -820,7 +822,7 @@ SUBMISSIONS BY STATUS
         search_term = self.search_var.get().strip()
 
         if not search_term:
-            messagebox.showwarning("Search", "Please enter a search term.")
+            messagebox.showwarning(_t('gui.operations.communications.feedback.feedback.dialogs.search', default="Search"), _t('gui.operations.communications.feedback.feedback.dialogs.please_enter_a_search_term', default="Please enter a search term."))
             return
 
         # Clear tree
@@ -831,7 +833,7 @@ SUBMISSIONS BY STATUS
         results = self.service.search_submissions(search_term, limit=100)
 
         if not results:
-            messagebox.showinfo("Search", f"No results found for '{search_term}'.")
+            messagebox.showinfo(_t('gui.operations.communications.feedback.feedback.dialogs.search', default="Search"), f"No results found for '{search_term}'.")
             return
 
         # Populate
@@ -855,7 +857,7 @@ SUBMISSIONS BY STATUS
     def _submit_new(self):
         """Submit new feedback/suggestion"""
         if not self.current_user:
-            messagebox.showerror("Error", "You must be logged in to submit.")
+            messagebox.showerror(_t('gui.operations.communications.feedback.feedback.dialogs.error', default="Error"), _t('gui.operations.communications.feedback.feedback.dialogs.you_must_be_logged_in_to_submit', default="You must be logged in to submit."))
             return
 
         submission_type = self.submit_type_var.get()
@@ -865,11 +867,11 @@ SUBMISSIONS BY STATUS
         is_anonymous = self.submit_anonymous_var.get()
 
         if not title:
-            messagebox.showwarning("Validation", "Please enter a title.")
+            messagebox.showwarning(_t('gui.operations.communications.feedback.feedback.dialogs.validation', default="Validation"), _t('gui.operations.communications.feedback.feedback.dialogs.please_enter_a_title', default="Please enter a title."))
             return
 
         if not description:
-            messagebox.showwarning("Validation", "Please enter a description.")
+            messagebox.showwarning(_t('gui.operations.communications.feedback.feedback.dialogs.validation', default="Validation"), _t('gui.operations.communications.feedback.feedback.dialogs.please_enter_a_description', default="Please enter a description."))
             return
 
         try:
@@ -884,7 +886,7 @@ SUBMISSIONS BY STATUS
             )
 
             messagebox.showinfo(
-                "Success",
+                _t('gui.operations.communications.feedback.feedback.dialogs.success', default="Success"),
                 f"{submission_type.title()} submitted successfully!\nID: {submission_id}"
             )
 
@@ -897,13 +899,13 @@ SUBMISSIONS BY STATUS
             self._load_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to submit: {e}")
+            messagebox.showerror(_t('gui.operations.communications.feedback.feedback.dialogs.error', default="Error"), f"Failed to submit: {e}")
 
     def _view_selected_submission(self, tree):
         """View details of selected submission"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Selection", "Please select a submission to view.")
+            messagebox.showwarning(_t('gui.operations.communications.feedback.feedback.dialogs.selection', default="Selection"), _t('gui.operations.communications.feedback.feedback.dialogs.please_select_a_submission_to_view', default="Please select a submission to view."))
             return
 
         item = tree.item(selection[0])
@@ -916,7 +918,7 @@ SUBMISSIONS BY STATUS
         details = self.service.get_submission_details(submission_id)
 
         if not details:
-            messagebox.showerror("Error", "Submission not found.")
+            messagebox.showerror(_t('gui.operations.communications.feedback.feedback.dialogs.error', default="Error"), _t('gui.operations.communications.feedback.feedback.dialogs.submission_not_found', default="Submission not found."))
             return
 
         # Create dialog
@@ -949,7 +951,7 @@ SUBMISSIONS BY STATUS
         ttk.Label(info_frame, text=date_text, font=("Arial", 9)).pack()
 
         # Description
-        desc_frame = ttk.LabelFrame(main_frame, text="Description", padding="10")
+        desc_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.communications.feedback.feedback.labels.description', default="Description"), padding="10")
         desc_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         desc_text = scrolledtext.ScrolledText(desc_frame, height=10, wrap=tk.WORD)
@@ -959,7 +961,7 @@ SUBMISSIONS BY STATUS
 
         # Responses
         if details.get('responses'):
-            resp_frame = ttk.LabelFrame(main_frame, text="Responses", padding="10")
+            resp_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.communications.feedback.feedback.labels.responses', default="Responses"), padding="10")
             resp_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
             resp_text = scrolledtext.ScrolledText(resp_frame, height=8, wrap=tk.WORD)
@@ -981,27 +983,27 @@ SUBMISSIONS BY STATUS
             if has_voted:
                 ttk.Button(
                     btn_frame,
-                    text="Remove Vote",
+                    text=_t('gui.operations.communications.feedback.feedback.buttons.remove_vote', default="Remove Vote"),
                     command=lambda: self._remove_vote_and_close(submission_id, dialog)
                 ).pack(side=tk.LEFT, padx=5)
             else:
                 ttk.Button(
                     btn_frame,
-                    text="Upvote",
+                    text=_t('gui.operations.communications.feedback.feedback.buttons.upvote', default="Upvote"),
                     command=lambda: self._upvote_and_close(submission_id, dialog)
                 ).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.communications.feedback.feedback.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def _upvote_selected(self, tree):
         """Upvote selected submission"""
         if not self.current_user:
-            messagebox.showwarning("Login Required", "You must be logged in to vote.")
+            messagebox.showwarning(_t('gui.operations.communications.feedback.feedback.dialogs.login_required', default="Login Required"), _t('gui.operations.communications.feedback.feedback.dialogs.you_must_be_logged_in_to_vote', default="You must be logged in to vote."))
             return
 
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Selection", "Please select a submission to upvote.")
+            messagebox.showwarning(_t('gui.operations.communications.feedback.feedback.dialogs.selection', default="Selection"), _t('gui.operations.communications.feedback.feedback.dialogs.please_select_a_submission_to_upvote', default="Please select a submission to upvote."))
             return
 
         item = tree.item(selection[0])
@@ -1014,15 +1016,15 @@ SUBMISSIONS BY STATUS
         user_id = self.current_user.get('user_id')
 
         if self.service.has_user_voted(submission_id, user_id):
-            messagebox.showinfo("Already Voted", "You have already voted for this submission.")
+            messagebox.showinfo(_t('gui.operations.communications.feedback.feedback.dialogs.already_voted', default="Already Voted"), _t('gui.operations.communications.feedback.feedback.dialogs.you_have_already_voted_for_this_submission', default="You have already voted for this submission."))
             return
 
         if self.service.upvote_submission(submission_id, user_id):
-            messagebox.showinfo("Success", "Vote added!")
+            messagebox.showinfo(_t('gui.operations.communications.feedback.feedback.dialogs.success', default="Success"), _t('gui.operations.communications.feedback.feedback.dialogs.vote_added', default="Vote added!"))
             self.my_votes.append(submission_id)
             self._load_data()
         else:
-            messagebox.showerror("Error", "Failed to add vote.")
+            messagebox.showerror(_t('gui.operations.communications.feedback.feedback.dialogs.error', default="Error"), _t('gui.operations.communications.feedback.feedback.dialogs.failed_to_add_vote', default="Failed to add vote."))
 
     def _upvote_and_close(self, submission_id: int, dialog):
         """Upvote and close dialog"""
@@ -1034,12 +1036,12 @@ SUBMISSIONS BY STATUS
         user_id = self.current_user.get('user_id')
 
         if self.service.remove_vote(submission_id, user_id):
-            messagebox.showinfo("Success", "Vote removed.")
+            messagebox.showinfo(_t('gui.operations.communications.feedback.feedback.dialogs.success', default="Success"), _t('gui.operations.communications.feedback.feedback.dialogs.vote_removed', default="Vote removed."))
             if submission_id in self.my_votes:
                 self.my_votes.remove(submission_id)
             self._load_data()
         else:
-            messagebox.showerror("Error", "Failed to remove vote.")
+            messagebox.showerror(_t('gui.operations.communications.feedback.feedback.dialogs.error', default="Error"), _t('gui.operations.communications.feedback.feedback.dialogs.failed_to_remove_vote', default="Failed to remove vote."))
 
         dialog.destroy()
 
@@ -1049,11 +1051,11 @@ SUBMISSIONS BY STATUS
         response_text = self.admin_response_text.get('1.0', tk.END).strip()
 
         if not submission_id or not submission_id.isdigit():
-            messagebox.showwarning("Validation", "Please enter a valid submission ID.")
+            messagebox.showwarning(_t('gui.operations.communications.feedback.feedback.dialogs.validation', default="Validation"), _t('gui.operations.communications.feedback.feedback.dialogs.please_enter_a_valid_submission_id', default="Please enter a valid submission ID."))
             return
 
         if not response_text:
-            messagebox.showwarning("Validation", "Please enter a response.")
+            messagebox.showwarning(_t('gui.operations.communications.feedback.feedback.dialogs.validation', default="Validation"), _t('gui.operations.communications.feedback.feedback.dialogs.please_enter_a_response', default="Please enter a response."))
             return
 
         try:
@@ -1064,7 +1066,7 @@ SUBMISSIONS BY STATUS
                 int(submission_id), responder_id, responder_name, response_text
             )
 
-            messagebox.showinfo("Success", f"Response added! (ID: {response_id})")
+            messagebox.showinfo(_t('gui.operations.communications.feedback.feedback.dialogs.success', default="Success"), f"Response added! (ID: {response_id})")
 
             # Clear form
             self.admin_response_id_var.set("")
@@ -1074,7 +1076,7 @@ SUBMISSIONS BY STATUS
             self._load_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add response: {e}")
+            messagebox.showerror(_t('gui.operations.communications.feedback.feedback.dialogs.error', default="Error"), f"Failed to add response: {e}")
 
     def _admin_update_status(self):
         """Admin: Update status"""
@@ -1083,7 +1085,7 @@ SUBMISSIONS BY STATUS
         notes = self.admin_status_notes.get('1.0', tk.END).strip()
 
         if not submission_id or not submission_id.isdigit():
-            messagebox.showwarning("Validation", "Please enter a valid submission ID.")
+            messagebox.showwarning(_t('gui.operations.communications.feedback.feedback.dialogs.validation', default="Validation"), _t('gui.operations.communications.feedback.feedback.dialogs.please_enter_a_valid_submission_id', default="Please enter a valid submission ID."))
             return
 
         try:
@@ -1094,7 +1096,7 @@ SUBMISSIONS BY STATUS
             )
 
             if success:
-                messagebox.showinfo("Success", "Status updated!")
+                messagebox.showinfo(_t('gui.operations.communications.feedback.feedback.dialogs.success', default="Success"), _t('gui.operations.communications.feedback.feedback.dialogs.status_updated', default="Status updated!"))
 
                 # Clear form
                 self.admin_status_id_var.set("")
@@ -1103,10 +1105,10 @@ SUBMISSIONS BY STATUS
                 # Reload data
                 self._load_data()
             else:
-                messagebox.showerror("Error", "Failed to update status.")
+                messagebox.showerror(_t('gui.operations.communications.feedback.feedback.dialogs.error', default="Error"), _t('gui.operations.communications.feedback.feedback.dialogs.failed_to_update_status', default="Failed to update status."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update status: {e}")
+            messagebox.showerror(_t('gui.operations.communications.feedback.feedback.dialogs.error', default="Error"), f"Failed to update status: {e}")
 
     def _is_admin(self) -> bool:
         """Check if current user is admin"""

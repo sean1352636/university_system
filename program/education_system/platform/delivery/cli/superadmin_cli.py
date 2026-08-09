@@ -10,13 +10,15 @@ and password policy.
 import getpass
 from datetime import datetime
 
-SYSTEM_KEYS = ["nursery", "primary", "secondary", "sixth_form", "university"]
+SYSTEM_KEYS = ["nursery", "primary", "secondary", "sixth_form", "university",
+               "apprenticeships"]
 SYSTEM_LABELS = {
     "university": "University",
     "sixth_form":    "Sixth Form College",
     "secondary":     "Secondary School",
     "primary":    "Primary School",
     "nursery":    "Nursery",
+    "apprenticeships": "Apprenticeships",
 }
 
 
@@ -95,6 +97,63 @@ def _get_journey():
         except Exception as e:
             print(f"  [!] JourneyService unavailable: {e}")
     return _journey_svc
+
+
+def _security_training(user_info):
+    """Launch simulations and review click-only campaign results."""
+    from education_system.platform.governance.security.training_simulation import (
+        SimulationError, default_simulation,
+    )
+
+    try:
+        service = default_simulation()
+    except SimulationError as exc:
+        print(f"\n  [!] {exc}")
+        _pause()
+        return
+
+    while True:
+        _header("ICT Security Training Simulations")
+        print("\n  1) Launch campaign\n  2) View delivery and click report\n  0) Back")
+        choice = input("\n  Select: ").strip()
+        if choice == "0":
+            return
+        if choice == "1":
+            try:
+                target_id = int(input("  Target user ID: ").strip())
+                system = input(f"  System ({', '.join(SYSTEM_KEYS)}): ").strip()
+                training_date = input("  Training date (YYYY-MM-DD): ").strip()
+                training_time = input("  Training time (24-hour HH:MM) [09:00]: ").strip()
+                course = input("  Course name [ICT Security Awareness Training]: ").strip()
+                location = input("  Location [Online]: ").strip()
+                if system not in SYSTEM_KEYS:
+                    raise SimulationError("Invalid system")
+                if not _confirm("Send the test to the user, admins and superadmins?"):
+                    continue
+                result = service.launch(
+                    target_id, system, training_date,
+                    int(user_info.get("user_id") or user_info.get("id")),
+                    course or "ICT Security Awareness Training", location or "Online",
+                    training_time or "09:00",
+                )
+                print(f"\n  Campaign: {result['campaign_id']}")
+                print(f"  Emails stored in database: {result['sent']}  Failed: {result['failed']}")
+                print(f"  Calendar event: {result['calendar_event_id']}")
+            except (SimulationError, TypeError, ValueError) as exc:
+                print(f"\n  [!] {exc}")
+            _pause()
+        elif choice == "2":
+            rows = service.campaign_report()
+            print("\n  Date        Course                       Stored  Clicked  Failed")
+            print("  " + "-" * 65)
+            for row in rows:
+                print(f"  {row['training_date']:<10}  {row['course_name'][:28]:<28}  "
+                      f"{row['sent'] or 0:>4}  {row['clicked'] or 0:>7}  {row['failed'] or 0:>6}")
+            if not rows:
+                print("  No campaigns found.")
+            _pause()
+        else:
+            print("\n  Invalid choice.")
 
 
 # ---------------------------------------------------------------------------
@@ -638,16 +697,18 @@ def _student_analytics():
 def _misconduct():
     _header("Academic Misconduct Overview")
 
-    # Query misconduct tables directly across systems
+    # Query misconduct tables directly across systems.
+    #
+    # This used to hand-build a single ``post_18/university_system/...`` path
+    # that has not existed since the ADR 0018 move, so every system reported
+    # "Database not found" and the overview always showed zeros. The canonical
+    # registry covers all five systems.
     import sqlite3
     from pathlib import Path
 
-    shared_dir = Path(__file__).resolve().parent.parent
-    edu_root = shared_dir.parent
+    from education_system.paths import SYSTEM_DB_PATHS
 
-    db_paths = {
-        "university": edu_root / "post_18" / "university_system" / "data" / "db_files" / "student_records.db",
-    }
+    db_paths = {k: Path(v) for k, v in SYSTEM_DB_PATHS.items()}
 
     misconduct_tables = [
         "academic_misconduct", "misconduct_cases", "behaviour_incidents",
@@ -1546,7 +1607,7 @@ def run(user_info, auth):
    5) Misconduct Overview       12) Batch Operations
    6) Notifications             13) Active Sessions
    7) Student Search            14) Quick Launch
-  15) Password Policy
+  15) Password Policy          16) ICT Security Training
 
    G) Switch to GUI Dashboard
    0) Logout                    Q) Shutdown
@@ -1586,6 +1647,8 @@ def run(user_info, auth):
                 return result
         elif choice == "15":
             _password_policy(auth)
+        elif choice == "16":
+            _security_training(user_info)
         elif choice.lower() == "g":
             from education_system import switch as _switch
             print("\n  Switching to GUI dashboard...\n")

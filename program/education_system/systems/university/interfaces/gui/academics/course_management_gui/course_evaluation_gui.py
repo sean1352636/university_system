@@ -5,6 +5,8 @@ Full-featured GUI for managing course evaluations, templates, responses,
 and viewing results analytics.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -36,7 +38,7 @@ class CourseEvaluationGUI:
         # The student-facing form (with Submit Response) lives in the
         # main GUI's Course Evaluation app; this dialog is now strictly
         # the admin surface — Templates, Evaluations and Results.
-        self.root.title("Evaluation Admin")
+        self.root.title(_t('gui.academics.course_management_gui.course_evaluation.windows.evaluation_admin', default="Evaluation Admin"))
         self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
         self.root.configure(bg='#f0f0f0')
@@ -72,8 +74,8 @@ class CourseEvaluationGUI:
         DB row aren't overwritten by what's on disk.
         """
         import json
-        from education_system.systems.university.infrastructure import paths
-        templates_dir = paths.COURSE_EVALUATION_TEMPLATES_DIR
+        from education_system import paths
+        templates_dir = paths.UNIVERSITY_COURSE_EVALUATION_TEMPLATES_DIR
         if not templates_dir.is_dir():
             return
 
@@ -127,13 +129,13 @@ class CourseEvaluationGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        title = ttk.Label(main_frame, text="Evaluation Admin",
+        title = ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.course_evaluation.labels.evaluation_admin', default="Evaluation Admin"),
                          font=('Arial', 16, 'bold'))
         title.pack(pady=10)
         ttk.Label(main_frame,
-                  text="Templates, evaluations and results. The student "
+                  text=_t('gui.academics.course_management_gui.course_evaluation.labels.templates_evaluations_and_results_the_student_submit_response_fo', default="Templates, evaluations and results. The student "
                        "Submit Response form lives in the main GUI's "
-                       "Course Evaluation app (8.117.89).",
+                       "Course Evaluation app (8.117.89)."),
                   foreground="#666").pack()
 
         # Notebook for tabs
@@ -167,9 +169,9 @@ class CourseEvaluationGUI:
                   command=self.add_questions).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_("common.refresh"),
                   command=self.load_templates).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Survey Designer…",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_evaluation.buttons.survey_designer', default="Survey Designer…"),
                   command=self.open_survey_designer).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Operations…",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_evaluation.buttons.operations', default="Operations…"),
                   command=self.open_operations).pack(side=tk.LEFT, padx=5)
 
         # Templates list
@@ -292,7 +294,7 @@ class CourseEvaluationGUI:
                   command=self.calculate_results).pack(side=tk.LEFT, padx=5)
         ttk.Button(select_frame, text=_("course_evaluation.buttons.export_report"),
                   command=self.export_results).pack(side=tk.LEFT, padx=5)
-        ttk.Button(select_frame, text="Email Report to Admin",
+        ttk.Button(select_frame, text=_t('gui.academics.course_management_gui.course_evaluation.buttons.email_report_to_admin', default="Email Report to Admin"),
                   command=self.email_results_to_admin).pack(side=tk.LEFT, padx=5)
 
         # Results display
@@ -312,7 +314,7 @@ class CourseEvaluationGUI:
                 launch_operations_gui,
             )
         except ImportError as e:
-            messagebox.showerror("Operations", f"Operations unavailable: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation.dialogs.operations', default="Operations"), f"Operations unavailable: {e}")
             return
         launch_operations_gui(self.root, self.auth)
 
@@ -323,7 +325,7 @@ class CourseEvaluationGUI:
                 launch_survey_designer,
             )
         except ImportError as e:
-            messagebox.showerror("Survey Designer", f"Designer unavailable: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_evaluation.dialogs.survey_designer', default="Survey Designer"), f"Designer unavailable: {e}")
             return
         launch_survey_designer(self.root, self.auth)
 
@@ -439,8 +441,8 @@ class CourseEvaluationGUI:
         # "Templates directory not found: …/modules/templates/course_evaluation".
         # Use the canonical constant from ``paths`` instead of building
         # a relative path by hand.
-        from education_system.systems.university.infrastructure import paths
-        templates_dir = str(paths.COURSE_EVALUATION_TEMPLATES_DIR)
+        from education_system import paths
+        templates_dir = str(paths.UNIVERSITY_COURSE_EVALUATION_TEMPLATES_DIR)
 
         # Check if templates directory exists
         if not os.path.exists(templates_dir):
@@ -647,7 +649,7 @@ class CourseEvaluationGUI:
 
         fields = {}
 
-        ttk.Label(dialog, text="Course:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(dialog, text=_t('gui.academics.course_management_gui.course_evaluation.labels.course', default="Course:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         fields['module'] = ttk.Combobox(dialog, width=45, state='readonly')
         fields['module'].grid(row=0, column=1, padx=5, pady=5)
 
@@ -873,7 +875,7 @@ class CourseEvaluationGUI:
                         self.question_widgets[q_id] = var
 
                     elif q_type == 'Yes/No':
-                        var = tk.StringVar(value="Yes")
+                        var = tk.StringVar(value=_t('gui.academics.course_management_gui.course_evaluation.values.yes', default="Yes"))
                         frame = ttk.Frame(self.questions_frame)
                         frame.grid(row=row_num, column=1, padx=5, pady=10)
                         ttk.Radiobutton(frame, text=_("common.yes"), value="Yes",
@@ -1079,7 +1081,7 @@ class CourseEvaluationGUI:
             report_content = self.results_text.get('1.0', tk.END).strip()
             if not report_content:
                 messagebox.showwarning(_("common.warning"),
-                                       "No results to email. Please calculate results first.")
+                                       _t('gui.academics.course_management_gui.course_evaluation.dialogs.no_results_to_email_please_calculate_results_first', default="No results to email. Please calculate results first."))
                 return
 
             selection = self.results_eval_combo.get()
@@ -1096,7 +1098,7 @@ class CourseEvaluationGUI:
 
             if not admin_emails:
                 messagebox.showerror(_("common.error"),
-                                     "No admin email addresses found in the database.")
+                                     _t('gui.academics.course_management_gui.course_evaluation.dialogs.no_admin_email_addresses_found_in_the_database', default="No admin email addresses found in the database."))
                 return
 
             from education_system.systems.university.infrastructure.email.email_service import send_email
@@ -1125,10 +1127,10 @@ class CourseEvaluationGUI:
                 messagebox.showinfo(_("common.success"),
                                     f"Report emailed to {success} admin(s):\n" + "\n".join(admin_emails))
             elif success:
-                messagebox.showwarning("Partial Success",
+                messagebox.showwarning(_t('gui.academics.course_management_gui.course_evaluation.dialogs.partial_success', default="Partial Success"),
                                        f"Sent to {success}, failed for:\n" + "\n".join(failed))
             else:
-                messagebox.showerror(_("common.error"), "Failed to send report to any admin address.")
+                messagebox.showerror(_("common.error"), _t('gui.academics.course_management_gui.course_evaluation.dialogs.failed_to_send_report_to_any_admin_address', default="Failed to send report to any admin address."))
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to email results: {e}")

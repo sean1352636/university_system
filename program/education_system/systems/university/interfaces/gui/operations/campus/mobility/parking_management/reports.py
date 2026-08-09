@@ -1,4 +1,6 @@
 """Reports and analytics mixin for ParkingManagementGUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import html
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -122,7 +124,7 @@ class ReportsMixin:
             self.show_text_dialog("Parking Permit Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating permit report: {e}")
-            messagebox.showerror("Error", f"Failed to generate permit report: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.error', default="Error"), f"Failed to generate permit report: {e}")
 
     def generate_violation_report(self):
         """Generate violation report"""
@@ -236,7 +238,7 @@ class ReportsMixin:
             self.show_text_dialog("Parking Violation Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating violation report: {e}")
-            messagebox.showerror("Error", f"Failed to generate violation report: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.error', default="Error"), f"Failed to generate violation report: {e}")
 
     def show_analytics(self):
         """Show analytics dashboard"""
@@ -356,7 +358,7 @@ class ReportsMixin:
             self.show_text_dialog("Parking Analytics Dashboard", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating analytics dashboard: {e}")
-            messagebox.showerror("Error", f"Failed to generate analytics: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.error', default="Error"), f"Failed to generate analytics: {e}")
 
     def generate_occupancy_report(self):
         """Generate parking lot occupancy report"""
@@ -407,7 +409,7 @@ class ReportsMixin:
 
             self.show_text_dialog("Parking Lot Occupancy Report", report_output)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate occupancy report: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.error', default="Error"), f"Failed to generate occupancy report: {e}")
 
     def generate_compliance_report(self):
         """Generate compliance and audit report"""
@@ -533,7 +535,7 @@ class ReportsMixin:
             self.show_text_dialog("Compliance & Audit Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating compliance report: {e}")
-            messagebox.showerror("Error", f"Failed to generate compliance report: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.error', default="Error"), f"Failed to generate compliance report: {e}")
 
     def generate_revenue_report(self):
         """Generate revenue report"""
@@ -664,7 +666,7 @@ class ReportsMixin:
             self.show_text_dialog("Parking Revenue Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating revenue report: {e}")
-            messagebox.showerror("Error", f"Failed to generate revenue report: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.error', default="Error"), f"Failed to generate revenue report: {e}")
 
     def generate_user_activity_report(self):
         """Generate user activity report"""
@@ -802,7 +804,7 @@ class ReportsMixin:
             self.show_text_dialog("User Activity Report", "\n".join(output))
         except Exception as e:
             logging.error(f"Error generating user activity report: {e}")
-            messagebox.showerror("Error", f"Failed to generate user activity report: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.error', default="Error"), f"Failed to generate user activity report: {e}")
 
     def show_text_dialog(self, title, content):
         """Show a dialog with text content"""
@@ -825,21 +827,21 @@ class ReportsMixin:
         button_frame.pack(fill=tk.X, padx=10, pady=5)
 
         # Export as TXT button
-        ttk.Button(button_frame, text="Export as TXT",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.reports.buttons.export_as_txt', default="Export as TXT"),
                   command=lambda: self.export_report_as_txt(title, content)).pack(side=tk.LEFT, padx=5)
 
         # Send to Admin button
-        ttk.Button(button_frame, text="Send Report to Admin",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.reports.buttons.send_report_to_admin', default="Send Report to Admin"),
                   command=lambda: self.send_report_to_admin(title, content)).pack(side=tk.LEFT, padx=5)
 
         # Close button
-        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.reports.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def export_report_as_txt(self, title, content):
         """Export report content as a text file"""
         try:
             filename = filedialog.asksaveasfilename(
-                title="Save Report",
+                title=_t('gui.operations.campus.mobility.parking_management.reports.dialogs.save_report', default="Save Report"),
                 defaultextension=".txt",
                 initialfile=f"{title.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
@@ -852,11 +854,11 @@ class ReportsMixin:
                     f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
                     f.write(content)
 
-                messagebox.showinfo("Success", f"Report exported successfully to:\n{filename}")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.success', default="Success"), f"Report exported successfully to:\n{filename}")
                 logging.info(f"Report '{title}' exported to {filename}")
         except Exception as e:
             logging.error(f"Failed to export report: {e}")
-            messagebox.showerror("Error", f"Failed to export report: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.error', default="Error"), f"Failed to export report: {e}")
 
     def send_report_to_admin(self, title, content):
         """Send report to admin via email"""
@@ -878,9 +880,9 @@ class ReportsMixin:
             conn.close()
 
             if not admin or not admin[0]:
-                messagebox.showwarning("No Admin Email",
-                    "No admin email address found in the system.\n"
-                    "Please contact your system administrator.")
+                messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.no_admin_email', default="No Admin Email"),
+                    _t('gui.operations.campus.mobility.parking_management.reports.dialogs.no_admin_email_address_found_in_the_system_please_contact_your_s', default="No admin email address found in the system.\n"
+                    "Please contact your system administrator."))
                 return
 
             admin_email = admin[0]
@@ -932,13 +934,13 @@ Parking Management System
                     body=email_body
                 )
 
-                messagebox.showinfo("Report Sent",
+                messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.report_sent', default="Report Sent"),
                     f"Report successfully sent to {admin_name}'s inbox.\n\n"
                     f"The admin can view this report in their email inbox within the system.")
                 logging.info(f"Report '{title}' sent to admin inbox: {admin_email}")
 
             except Exception as email_error:
-                messagebox.showwarning("Email Failed",
+                messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.email_failed', default="Email Failed"),
                     f"Could not send report to admin inbox.\n\n"
                     f"Error: {str(email_error)}\n\n"
                     f"Please use 'Export as TXT' to save the report\n"
@@ -947,4 +949,4 @@ Parking Management System
 
         except Exception as e:
             logging.error(f"Failed to send report to admin: {e}")
-            messagebox.showerror("Error", f"Failed to send report to admin: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.reports.dialogs.error', default="Error"), f"Failed to send report to admin: {e}")

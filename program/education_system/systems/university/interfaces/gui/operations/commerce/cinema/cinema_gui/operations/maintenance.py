@@ -45,7 +45,7 @@ def show_maintenance_page(self):
 
 def schedule_maint(self):
     form = tk.Toplevel(self.root)
-    form.title("Schedule Maintenance")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.maintenance.windows.schedule_maintenance', default="Schedule Maintenance"))
     form.geometry("400x350")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -68,7 +68,7 @@ def schedule_maint(self):
         try:
             screen = int(entries['screen'].get())
         except (ValueError, TypeError):
-            messagebox.showwarning(_t("cinema.common.warning"), "Invalid screen")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.maintenance.dialogs.invalid_screen', default="Invalid screen"))
             return
         conn = sqlite3.connect(DB_FILE)
         try:
@@ -78,7 +78,7 @@ def schedule_maint(self):
             conn.commit()
         finally:
             conn.close()
-        messagebox.showinfo(_t("cinema.common.success"), "Scheduled!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.maintenance.dialogs.scheduled', default="Scheduled!"))
         form.destroy()
         self.show_maintenance_page()
     ttk.Button(frame, text=_t("cinema.btn.schedule"), style="Success.TButton", command=save).grid(row=len(fields)+1, column=0, columnspan=2, pady=20)
@@ -86,7 +86,7 @@ def schedule_maint(self):
 def complete_maint(self):
     selected = self.maint_tree.selection()
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Select a record")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.maintenance.dialogs.select_a_record', default="Select a record"))
         return
     maint_id = self.maint_tree.item(selected[0])['values'][0]
     conn = sqlite3.connect(DB_FILE)

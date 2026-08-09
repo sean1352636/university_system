@@ -3,6 +3,8 @@ Main GUI module for Housing Accommodation Management System.
 This module provides the main HousingGUI class that orchestrates all manager modules.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -17,7 +19,7 @@ from education_system.systems.university.infrastructure.shared_context import ge
 from education_system.systems.university.infrastructure.utils.activity_logger import (
     log_activity, log_create, log_read, log_update, log_delete
 )
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import immutable audit logging for compliance
 try:
@@ -248,7 +250,7 @@ class HousingGUI:
                       command=self.show_maintenance).pack(pady=2)
             ttk.Button(parent, text=_t("housing.menu_payments"), width=20,
                       command=self.show_payments).pack(pady=2)
-            ttk.Button(parent, text="Deposits", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.deposits', default="Deposits"), width=20,
                       command=self.show_deposits).pack(pady=2)
             ttk.Button(parent, text=_t("housing.menu_inventory"), width=20,
                       command=self.show_inventory).pack(pady=2)
@@ -257,41 +259,41 @@ class HousingGUI:
             ttk.Button(parent, text=_t("housing.menu_reports"), width=20,
                       command=self.show_reports).pack(pady=2)
             # Previously built but unexposed admin tools
-            ttk.Button(parent, text="Refunds", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.refunds', default="Refunds"), width=20,
                       command=self.show_refunds).pack(pady=2)
-            ttk.Button(parent, text="Outstanding Balances", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.outstanding_balances', default="Outstanding Balances"), width=20,
                       command=self.show_outstanding_balances).pack(pady=2)
-            ttk.Button(parent, text="TDP Compliance", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.tdp_compliance', default="TDP Compliance"), width=20,
                       command=self.show_tdp_compliance).pack(pady=2)
-            ttk.Button(parent, text="Deposit Interest", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.deposit_interest', default="Deposit Interest"), width=20,
                       command=self.show_deposit_interest).pack(pady=2)
-            ttk.Button(parent, text="Scheduled Reports", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.scheduled_reports', default="Scheduled Reports"), width=20,
                       command=self.show_scheduled_reports).pack(pady=2)
-            ttk.Button(parent, text="Vacancy Board", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.vacancy_board', default="Vacancy Board"), width=20,
                       command=self.show_vacancy_board).pack(pady=2)
-            ttk.Button(parent, text="Waitlist", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.waitlist', default="Waitlist"), width=20,
                       command=self.show_waitlist).pack(pady=2)
-            ttk.Button(parent, text="Move-Out Workflow", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.move_out_workflow', default="Move-Out Workflow"), width=20,
                       command=self.show_moveout_workflow).pack(pady=2)
-            ttk.Button(parent, text="Bulk Operations", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.bulk_operations', default="Bulk Operations"), width=20,
                       command=self.show_bulk_operations).pack(pady=2)
-            ttk.Button(parent, text="Resident Broadcasts", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.resident_broadcasts', default="Resident Broadcasts"), width=20,
                       command=self.show_broadcasts).pack(pady=2)
-            ttk.Button(parent, text="Resident Search", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.resident_search', default="Resident Search"), width=20,
                       command=self.show_resident_search).pack(pady=2)
-            ttk.Button(parent, text="Keys & Access Cards", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.keys_access_cards', default="Keys & Access Cards"), width=20,
                       command=self.show_keys).pack(pady=2)
-            ttk.Button(parent, text="Contracts / Leases", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.contracts_leases', default="Contracts / Leases"), width=20,
                       command=self.show_contracts).pack(pady=2)
-            ttk.Button(parent, text="Move-in/out Checklists", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.move_in_out_checklists', default="Move-in/out Checklists"), width=20,
                       command=self.show_checklists).pack(pady=2)
-            ttk.Button(parent, text="Guest Passes", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.guest_passes', default="Guest Passes"), width=20,
                       command=self.show_guests).pack(pady=2)
-            ttk.Button(parent, text="Damages Ledger", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.damages_ledger', default="Damages Ledger"), width=20,
                       command=self.show_damages_ledger).pack(pady=2)
-            ttk.Button(parent, text="Activity Log", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.activity_log', default="Activity Log"), width=20,
                       command=self.show_audit_log).pack(pady=2)
-            ttk.Button(parent, text="Roommate Finder", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.roommate_finder', default="Roommate Finder"), width=20,
                       command=self.show_staff_roommate_finder).pack(pady=2)
 
         elif self.auth.check_permission('view_accommodations'):
@@ -319,9 +321,9 @@ class HousingGUI:
                       command=self.show_student_assignment).pack(pady=2)
             ttk.Button(parent, text=_t("housing.menu_maintenance"), width=20,
                       command=self.show_student_maintenance).pack(pady=2)
-            ttk.Button(parent, text="Find a Roommate", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.find_a_roommate', default="Find a Roommate"), width=20,
                       command=self.show_find_roommate).pack(pady=2)
-            ttk.Button(parent, text="My Deposit Deductions", width=20,
+            ttk.Button(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.my_deposit_deductions', default="My Deposit Deductions"), width=20,
                       command=self.show_student_deductions).pack(pady=2)
         else:
             ttk.Label(parent, text=_t("housing.no_permissions"),
@@ -400,7 +402,7 @@ class HousingGUI:
             mgr = finance_integration.HousingFinanceManager(host, auth=self.auth)
             mgr.show_outstanding_balances()
         except Exception as e:
-            messagebox.showerror("Error",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.error', default="Error"),
                                  f"Failed to open outstanding balances: {e}",
                                  parent=self.root)
 
@@ -413,7 +415,7 @@ class HousingGUI:
         try:
             moveout_manager.show_moveout_workflow(self)
         except Exception as e:
-            messagebox.showerror("Move-out",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.move_out', default="Move-out"),
                                  f"Could not open the move-out workflow:\n\n{e}",
                                  parent=self.root)
 
@@ -422,7 +424,7 @@ class HousingGUI:
         try:
             waitlist_manager.show_waitlist(self)
         except Exception as e:
-            messagebox.showerror("Waitlist",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.waitlist', default="Waitlist"),
                                  f"Could not open the waitlist:\n\n{e}",
                                  parent=self.root)
 
@@ -431,7 +433,7 @@ class HousingGUI:
         try:
             vacancy_board.show_vacancy_board(self)
         except Exception as e:
-            messagebox.showerror("Vacancy board",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.vacancy_board', default="Vacancy board"),
                                  f"Could not open the vacancy board:\n\n{e}",
                                  parent=self.root)
 
@@ -440,7 +442,7 @@ class HousingGUI:
         try:
             bulk_operations.show_bulk_operations(self)
         except Exception as e:
-            messagebox.showerror("Bulk operations",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.bulk_operations', default="Bulk operations"),
                                  f"Could not open bulk operations:\n\n{e}",
                                  parent=self.root)
 
@@ -449,7 +451,7 @@ class HousingGUI:
         try:
             broadcasts.show_broadcasts(self)
         except Exception as e:
-            messagebox.showerror("Broadcasts",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.broadcasts', default="Broadcasts"),
                                  f"Could not open broadcasts:\n\n{e}",
                                  parent=self.root)
 
@@ -458,7 +460,7 @@ class HousingGUI:
         try:
             resident_search.show_resident_search(self)
         except Exception as e:
-            messagebox.showerror("Resident search",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.resident_search', default="Resident search"),
                                  f"Could not open resident search:\n\n{e}",
                                  parent=self.root)
 
@@ -466,7 +468,7 @@ class HousingGUI:
         try:
             keys_manager.show_keys(self)
         except Exception as e:
-            messagebox.showerror("Keys",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.keys', default="Keys"),
                                  f"Could not open keys screen:\n\n{e}",
                                  parent=self.root)
 
@@ -474,7 +476,7 @@ class HousingGUI:
         try:
             contracts_manager.show_contracts(self)
         except Exception as e:
-            messagebox.showerror("Contracts",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.contracts', default="Contracts"),
                                  f"Could not open contracts:\n\n{e}",
                                  parent=self.root)
 
@@ -482,7 +484,7 @@ class HousingGUI:
         try:
             checklists_manager.show_checklists(self)
         except Exception as e:
-            messagebox.showerror("Checklists",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.checklists', default="Checklists"),
                                  f"Could not open checklists:\n\n{e}",
                                  parent=self.root)
 
@@ -490,7 +492,7 @@ class HousingGUI:
         try:
             guests_manager.show_guests(self)
         except Exception as e:
-            messagebox.showerror("Guests",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.guests', default="Guests"),
                                  f"Could not open guest passes:\n\n{e}",
                                  parent=self.root)
 
@@ -498,7 +500,7 @@ class HousingGUI:
         try:
             damages_ledger.show_damages_ledger(self)
         except Exception as e:
-            messagebox.showerror("Damages ledger",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.damages_ledger', default="Damages ledger"),
                                  f"Could not open damages ledger:\n\n{e}",
                                  parent=self.root)
 
@@ -506,7 +508,7 @@ class HousingGUI:
         try:
             audit_log_viewer.show_audit_log(self)
         except Exception as e:
-            messagebox.showerror("Activity log",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.activity_log', default="Activity log"),
                                  f"Could not open activity log:\n\n{e}",
                                  parent=self.root)
 
@@ -514,7 +516,7 @@ class HousingGUI:
         try:
             staff_roommate_finder.show_staff_roommate_finder(self)
         except Exception as e:
-            messagebox.showerror("Roommate finder",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.main.dialogs.roommate_finder', default="Roommate finder"),
                                  f"Could not open roommate finder:\n\n{e}",
                                  parent=self.root)
 
@@ -534,20 +536,20 @@ class HousingGUI:
         self.clear_content()
         bar = ttk.Frame(self.content_frame, padding=6)
         bar.pack(fill="x")
-        ttk.Label(bar, text="Deposit Interest",
+        ttk.Label(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.deposit_interest', default="Deposit Interest"),
                   font=("Arial", 12, "bold")).pack(side="left")
-        ttk.Button(bar, text="Accrue now",
+        ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.accrue_now', default="Accrue now"),
                    command=lambda: self._show_captured_output(
                        "Deposit Interest — Accrual",
                        interest.accrue_deposit_interest)
                    ).pack(side="right", padx=4)
-        ttk.Button(bar, text="View accruals",
+        ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.view_accruals', default="View accruals"),
                    command=lambda: self._show_captured_output(
                        "Deposit Interest — Accruals",
                        interest.view_interest_accruals)
                    ).pack(side="right", padx=4)
         ttk.Label(self.content_frame,
-                  text="Choose an action above.",
+                  text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.choose_an_action_above', default="Choose an action above."),
                   foreground="#555").pack(anchor="w", padx=8, pady=8)
 
     def _show_captured_output(self, title: str, fn) -> None:
@@ -612,7 +614,7 @@ class HousingGUI:
         username = self.auth.current_user.get('username', '') if self.auth and self.auth.current_user else ''
         if not username:
             ttk.Label(self.content_frame,
-                      text="No student logged in.",
+                      text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.no_student_logged_in', default="No student logged in."),
                       foreground='red').pack(pady=20)
             return
 
@@ -629,7 +631,7 @@ class HousingGUI:
         inner.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
         canvas.bind('<Configure>', lambda e: canvas.itemconfig(canvas_window, width=e.width))
 
-        ttk.Label(inner, text="My Housing",
+        ttk.Label(inner, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.my_housing', default="My Housing"),
                   font=('Arial', 18, 'bold')).pack(pady=(15, 10), padx=15, anchor='w')
 
         conn = get_connection()
@@ -646,7 +648,7 @@ class HousingGUI:
         self._render_student_quick_actions(inner)
 
     def _render_student_assignment_card(self, parent, conn, student_id):
-        card = ttk.LabelFrame(parent, text="Current Assignment", padding=12)
+        card = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.current_assignment', default="Current Assignment"), padding=12)
         card.pack(fill=tk.X, padx=15, pady=8)
 
         row = conn.execute(
@@ -665,7 +667,7 @@ class HousingGUI:
         ).fetchone()
 
         if row is None:
-            ttk.Label(card, text="You have no current housing assignment.",
+            ttk.Label(card, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.you_have_no_current_housing_assignment', default="You have no current housing assignment."),
                       foreground='#888').pack(anchor='w')
             return
 
@@ -695,7 +697,7 @@ class HousingGUI:
                 row=i // 2, column=(i % 2) * 2 + 1, sticky='w', padx=(0, 20), pady=2)
 
     def _render_student_application_card(self, parent, conn, student_id):
-        card = ttk.LabelFrame(parent, text="Application Status", padding=12)
+        card = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.application_status', default="Application Status"), padding=12)
         card.pack(fill=tk.X, padx=15, pady=8)
 
         row = conn.execute(
@@ -709,9 +711,9 @@ class HousingGUI:
         ).fetchone()
 
         if row is None:
-            ttk.Label(card, text="You have no housing application on file.",
+            ttk.Label(card, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.you_have_no_housing_application_on_file', default="You have no housing application on file."),
                       foreground='#888').pack(anchor='w')
-            ttk.Button(card, text="Apply for Housing",
+            ttk.Button(card, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.apply_for_housing', default="Apply for Housing"),
                        command=self.show_student_application).pack(anchor='w', pady=(8, 0))
             return
 
@@ -741,13 +743,13 @@ class HousingGUI:
                 row=2 + i // 2, column=(i % 2) * 2 + 1, sticky='w', padx=(0, 20), pady=2)
 
         if row['notes']:
-            ttk.Label(card, text="Notes:", font=('Arial', 10, 'bold')).grid(
+            ttk.Label(card, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.notes', default="Notes:"), font=('Arial', 10, 'bold')).grid(
                 row=10, column=0, sticky='nw', pady=(6, 0))
             ttk.Label(card, text=row['notes'], wraplength=500).grid(
                 row=10, column=1, columnspan=3, sticky='w', pady=(6, 0))
 
     def _render_student_maintenance_card(self, parent, conn, student_id):
-        card = ttk.LabelFrame(parent, text="Maintenance Requests", padding=12)
+        card = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.maintenance_requests', default="Maintenance Requests"), padding=12)
         card.pack(fill=tk.X, padx=15, pady=8)
 
         rows = conn.execute(
@@ -761,18 +763,18 @@ class HousingGUI:
         ).fetchall()
 
         if not rows:
-            ttk.Label(card, text="No maintenance requests submitted.",
+            ttk.Label(card, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.no_maintenance_requests_submitted', default="No maintenance requests submitted."),
                       foreground='#888').pack(anchor='w')
-            ttk.Button(card, text="Submit a Request",
+            ttk.Button(card, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.submit_a_request', default="Submit a Request"),
                        command=self.show_student_maintenance).pack(anchor='w', pady=(8, 0))
             return
 
         cols = ('date', 'issue', 'priority', 'status')
         tree = ttk.Treeview(card, columns=cols, show='headings', height=min(len(rows), 6))
-        tree.heading('date', text='Submitted')
-        tree.heading('issue', text='Issue')
-        tree.heading('priority', text='Priority')
-        tree.heading('status', text='Status')
+        tree.heading('date', text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.headings.submitted', default='Submitted'))
+        tree.heading('issue', text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.headings.issue', default='Issue'))
+        tree.heading('priority', text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.headings.priority', default='Priority'))
+        tree.heading('status', text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.headings.status', default='Status'))
         tree.column('date', width=140)
         tree.column('issue', width=200)
         tree.column('priority', width=90, anchor='center')
@@ -783,21 +785,21 @@ class HousingGUI:
                 r['priority'] or '', r['status'] or '',
             ))
         tree.pack(fill=tk.X, pady=(0, 6))
-        ttk.Button(card, text="Submit a New Request",
+        ttk.Button(card, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.submit_a_new_request', default="Submit a New Request"),
                    command=self.show_student_maintenance).pack(anchor='w')
 
     def _render_student_quick_actions(self, parent):
-        card = ttk.LabelFrame(parent, text="Quick Actions", padding=12)
+        card = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.labels.quick_actions', default="Quick Actions"), padding=12)
         card.pack(fill=tk.X, padx=15, pady=(8, 15))
         row = ttk.Frame(card)
         row.pack(fill=tk.X)
-        ttk.Button(row, text="Apply / Update Application",
+        ttk.Button(row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.apply_update_application', default="Apply / Update Application"),
                    command=self.show_student_application).pack(side=tk.LEFT, padx=4)
-        ttk.Button(row, text="View Assignment",
+        ttk.Button(row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.view_assignment', default="View Assignment"),
                    command=self.show_student_assignment).pack(side=tk.LEFT, padx=4)
-        ttk.Button(row, text="Maintenance",
+        ttk.Button(row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.maintenance', default="Maintenance"),
                    command=self.show_student_maintenance).pack(side=tk.LEFT, padx=4)
-        ttk.Button(row, text="Find a Roommate",
+        ttk.Button(row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.main.buttons.find_a_roommate', default="Find a Roommate"),
                    command=self.show_find_roommate).pack(side=tk.LEFT, padx=4)
 
     def show_student_application(self):
@@ -845,7 +847,16 @@ def display_housing_accommodation_menu_gui(auth_instance=None):
 # ========== Main Entry Point ==========
 
 if __name__ == "__main__":
-    # Create a basic auth instance for testing
+    import os as _os
+
+    # This direct-run harness fabricates an admin with all permissions. That is
+    # only ever acceptable for local development; refuse to run it otherwise so
+    # it can never be used as a real entry point.
+    if _os.getenv("APP_ENV", "production").strip().lower() not in (
+        "development", "dev", "local", "test", "testing"
+    ):
+        raise SystemExit("This developer harness runs only with APP_ENV=development")
+
     class TestAuth:
         def __init__(self):
             self.current_user = {
@@ -855,7 +866,7 @@ if __name__ == "__main__":
             }
 
         def check_permission(self, permission):
-            # For testing, grant all permissions
+            # Dev harness only (guarded above): grant all permissions.
             return True
 
     test_auth = TestAuth()

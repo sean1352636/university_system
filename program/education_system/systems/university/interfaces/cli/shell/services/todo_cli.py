@@ -9,8 +9,8 @@ from pathlib import Path
 from datetime import datetime, date
 
 try:
-    from education_system.systems.university.infrastructure.paths import DATA_DIR
-    TODO_FILE = DATA_DIR / "todo_tasks.json"
+    from education_system.paths import UNIVERSITY_DATA_DIR
+    TODO_FILE = UNIVERSITY_DATA_DIR / "todo_tasks.json"
 except ImportError:
     TODO_FILE = Path.home() / ".todo_tasks.json"
 

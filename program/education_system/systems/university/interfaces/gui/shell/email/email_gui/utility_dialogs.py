@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from tkinter.simpledialog import askstring, askinteger
@@ -58,7 +60,7 @@ except ImportError:
 class SystemHealthDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("System Health")
+        self.dialog.title(_t('gui.shell.email.email_gui.utility_dialogs.windows.system_health', default="System Health"))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -71,7 +73,7 @@ class SystemHealthDialog:
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="System Health Status", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.system_health_status', default="System Health Status"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         self.health_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, state=tk.DISABLED)
         self.health_text.pack(fill=tk.BOTH, expand=True)
@@ -79,8 +81,8 @@ class SystemHealthDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Refresh", command=self.load_health_info).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.refresh', default="Refresh"), command=self.load_health_info).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_health_info(self):
         """Load system health information"""
@@ -122,7 +124,7 @@ class SystemHealthDialog:
 class DatabaseCleanupDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Database Cleanup")
+        self.dialog.title(_t('gui.shell.email.email_gui.utility_dialogs.windows.database_cleanup', default="Database Cleanup"))
         self.dialog.geometry("400x250")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -134,42 +136,42 @@ class DatabaseCleanupDialog:
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Database Cleanup Options", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.database_cleanup_options', default="Database Cleanup Options"), font=('Arial', 12, 'bold')).pack(pady=10)
 
         # Cleanup options
         options_frame = ttk.Frame(main_frame)
         options_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(options_frame, text="Clean Old Emails (30+ days)",
+        ttk.Button(options_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.clean_old_emails_30_days', default="Clean Old Emails (30+ days)"),
                   command=lambda: self.cleanup_emails(30)).pack(fill=tk.X, pady=2)
 
-        ttk.Button(options_frame, text="Clean Old Emails (90+ days)",
+        ttk.Button(options_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.clean_old_emails_90_days', default="Clean Old Emails (90+ days)"),
                   command=lambda: self.cleanup_emails(90)).pack(fill=tk.X, pady=2)
 
-        ttk.Button(options_frame, text="Cleanup Deleted Messages",
+        ttk.Button(options_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.cleanup_deleted_messages', default="Cleanup Deleted Messages"),
                   command=self.cleanup_messages).pack(fill=tk.X, pady=2)
 
-        ttk.Button(options_frame, text="Optimize Database",
+        ttk.Button(options_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.optimize_database', default="Optimize Database"),
                   command=self.optimize_db).pack(fill=tk.X, pady=2)
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=20)
+        ttk.Button(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=20)
 
     def cleanup_emails(self, days):
         """Clean up old emails"""
-        if messagebox.askyesno("Confirm", f"Delete emails older than {days} days?"):
+        if messagebox.askyesno(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.confirm', default="Confirm"), f"Delete emails older than {days} days?"):
             try:
                 if clear_stored_emails is not None:
                     count = clear_stored_emails(older_than_days=days)
-                    messagebox.showinfo("Success", f"Deleted {count} old emails")
+                    messagebox.showinfo(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.success', default="Success"), f"Deleted {count} old emails")
                 else:
-                    messagebox.showerror("Error", "Cleanup function not available")
+                    messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.utility_dialogs.dialogs.cleanup_function_not_available', default="Cleanup function not available"))
             except Exception as e:
-                messagebox.showerror("Error", f"Error during cleanup: {e}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"), f"Error during cleanup: {e}")
 
     def cleanup_messages(self):
         """Clean up deleted messages"""
-        if messagebox.askyesno("Confirm", "Clean up messages deleted by both parties?"):
+        if messagebox.askyesno(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.confirm', default="Confirm"), _t('gui.shell.email.email_gui.utility_dialogs.dialogs.clean_up_messages_deleted_by_both_parties', default="Clean up messages deleted by both parties?")):
             try:
                 from education_system.systems.university.infrastructure.database.db import get_db_connection
                 conn = get_db_connection()
@@ -187,27 +189,27 @@ class DatabaseCleanupDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Cleaned up {deleted} messages")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.success', default="Success"), f"Cleaned up {deleted} messages")
             except Exception as e:
-                messagebox.showerror("Error", f"Error during cleanup: {e}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"), f"Error during cleanup: {e}")
 
     def optimize_db(self):
         """Optimize database"""
         try:
             if optimize_database is not None:
                 optimize_database()
-                messagebox.showinfo("Success", "Database optimized successfully")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.utility_dialogs.dialogs.database_optimized_successfully', default="Database optimized successfully"))
             else:
-                messagebox.showinfo("Info", "Database optimization not available")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.info', default="Info"), _t('gui.shell.email.email_gui.utility_dialogs.dialogs.database_optimization_not_available', default="Database optimization not available"))
         except Exception as e:
-            messagebox.showerror("Error", f"Error optimizing database: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"), f"Error optimizing database: {e}")
 
 
 class AdvancedSearchDialog:
     def __init__(self, parent, dashboard):
         self.dashboard = dashboard
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Advanced Search")
+        self.dialog.title(_t('gui.shell.email.email_gui.utility_dialogs.windows.advanced_search', default="Advanced Search"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -220,39 +222,39 @@ class AdvancedSearchDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Search criteria
-        criteria_frame = ttk.LabelFrame(main_frame, text="Search Criteria", padding=10)
+        criteria_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.search_criteria', default="Search Criteria"), padding=10)
         criteria_frame.pack(fill=tk.X, pady=(0, 10))
 
         # Search in
-        ttk.Label(criteria_frame, text="Search in:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.search_in', default="Search in:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.search_in = ttk.Combobox(criteria_frame, values=["Messages", "Stored Emails", "Both"])
         self.search_in.grid(row=0, column=1, sticky=tk.W, pady=5)
         self.search_in.set("Messages")
 
         # Keywords
-        ttk.Label(criteria_frame, text="Keywords:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.keywords', default="Keywords:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.keywords = ttk.Entry(criteria_frame, width=40)
         self.keywords.grid(row=1, column=1, sticky=tk.W, pady=5)
 
         # From/To
-        ttk.Label(criteria_frame, text="From/To:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.from_to', default="From/To:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.sender_recipient = ttk.Entry(criteria_frame, width=40)
         self.sender_recipient.grid(row=2, column=1, sticky=tk.W, pady=5)
 
         # Date range
-        ttk.Label(criteria_frame, text="Date from:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.date_from', default="Date from:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.date_from = ttk.Entry(criteria_frame, width=15)
         self.date_from.grid(row=3, column=1, sticky=tk.W, pady=5)
 
-        ttk.Label(criteria_frame, text="Date to:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.date_to', default="Date to:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.date_to = ttk.Entry(criteria_frame, width=15)
         self.date_to.grid(row=4, column=1, sticky=tk.W, pady=5)
 
         # Search button
-        ttk.Button(criteria_frame, text="Search", command=self.perform_search).grid(row=5, column=0, columnspan=2, pady=10)
+        ttk.Button(criteria_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.search', default="Search"), command=self.perform_search).grid(row=5, column=0, columnspan=2, pady=10)
 
         # Results
-        results_frame = ttk.LabelFrame(main_frame, text="Search Results", padding=10)
+        results_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.search_results', default="Search Results"), padding=10)
         results_frame.pack(fill=tk.BOTH, expand=True)
 
         columns = ("Type", "From/To", "Subject", "Date")
@@ -268,7 +270,7 @@ class AdvancedSearchDialog:
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)
 
     def perform_search(self):
         keywords = self.keywords.get().strip()
@@ -282,7 +284,7 @@ class AdvancedSearchDialog:
             self.results_tree.delete(item)
 
         if not keywords and not sender_recipient:
-            messagebox.showwarning("Warning", "Please enter search keywords or sender/recipient")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.warning', default="Warning"), _t('gui.shell.email.email_gui.utility_dialogs.dialogs.please_enter_search_keywords_or_sender_recipient', default="Please enter search keywords or sender/recipient"))
             return
 
         try:
@@ -367,18 +369,18 @@ class AdvancedSearchDialog:
                 self.results_tree.insert('', tk.END, values=result)
 
             if results:
-                messagebox.showinfo("Search Complete", f"Found {len(results)} results")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.search_complete', default="Search Complete"), f"Found {len(results)} results")
             else:
-                messagebox.showinfo("Search Complete", "No results found")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.search_complete', default="Search Complete"), _t('gui.shell.email.email_gui.utility_dialogs.dialogs.no_results_found', default="No results found"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Search failed: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"), f"Search failed: {e}")
 
 
 class EmailReportsDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Email Reports")
+        self.dialog.title(_t('gui.shell.email.email_gui.utility_dialogs.windows.email_reports', default="Email Reports"))
         self.dialog.geometry("700x500")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -391,20 +393,20 @@ class EmailReportsDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Filter options
-        filter_frame = ttk.LabelFrame(main_frame, text="Report Filters", padding=10)
+        filter_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.report_filters', default="Report Filters"), padding=10)
         filter_frame.pack(fill=tk.X, pady=(0, 10))
 
         # Date range
-        ttk.Label(filter_frame, text="From Date:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(filter_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.from_date', default="From Date:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.start_date = ttk.Entry(filter_frame, width=15)
         self.start_date.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
 
-        ttk.Label(filter_frame, text="To Date:").grid(row=0, column=2, sticky=tk.W, pady=5)
+        ttk.Label(filter_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.to_date', default="To Date:")).grid(row=0, column=2, sticky=tk.W, pady=5)
         self.end_date = ttk.Entry(filter_frame, width=15)
         self.end_date.grid(row=0, column=3, sticky=tk.W, pady=5, padx=5)
 
         # Report type
-        ttk.Label(filter_frame, text="Report Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(filter_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.report_type', default="Report Type:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.report_type = ttk.Combobox(filter_frame, values=[
             "Email Statistics", "Stored Emails", "Email Log", "Messages",
             "Template Usage", "User Activity", "Failed Emails"
@@ -413,10 +415,10 @@ class EmailReportsDialog:
         self.report_type.set("Email Statistics")
 
         # Generate button
-        ttk.Button(filter_frame, text="Generate Report", command=self.generate_report).grid(row=2, column=0, columnspan=4, pady=10)
+        ttk.Button(filter_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.generate_report', default="Generate Report"), command=self.generate_report).grid(row=2, column=0, columnspan=4, pady=10)
 
         # Report display
-        report_frame = ttk.LabelFrame(main_frame, text="Report Results", padding=10)
+        report_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.report_results', default="Report Results"), padding=10)
         report_frame.pack(fill=tk.BOTH, expand=True)
 
         self.report_text = scrolledtext.ScrolledText(report_frame, wrap=tk.WORD)
@@ -426,8 +428,8 @@ class EmailReportsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Export CSV", command=self.export_csv).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.export_csv', default="Export CSV"), command=self.export_csv).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def generate_report(self):
         try:
@@ -645,7 +647,7 @@ class EmailReportsDialog:
             self.report_text.insert(1.0, report_content)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate report: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"), f"Failed to generate report: {e}")
 
     def export_csv(self):
         try:
@@ -657,16 +659,16 @@ class EmailReportsDialog:
                 content = self.report_text.get(1.0, tk.END)
                 with open(filename, 'w') as f:
                     f.write(content)
-                messagebox.showinfo("Success", f"Report exported to {filename}")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.success', default="Success"), f"Report exported to {filename}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export report: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"), f"Failed to export report: {e}")
 
 
 class NotificationPreferencesDialog:
     def __init__(self, parent, dashboard):
         self.dashboard = dashboard
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Notification Preferences")
+        self.dialog.title(_t('gui.shell.email.email_gui.utility_dialogs.windows.notification_preferences', default="Notification Preferences"))
         self.dialog.geometry("400x350")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -680,30 +682,30 @@ class NotificationPreferencesDialog:
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Notification Preferences", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.notification_preferences', default="Notification Preferences"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Preference checkboxes
         self.email_var = tk.BooleanVar()
-        ttk.Checkbutton(main_frame, text="Email Notifications", variable=self.email_var).pack(anchor=tk.W, pady=5)
+        ttk.Checkbutton(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.email_notifications', default="Email Notifications"), variable=self.email_var).pack(anchor=tk.W, pady=5)
 
         self.message_var = tk.BooleanVar()
-        ttk.Checkbutton(main_frame, text="Message Notifications", variable=self.message_var).pack(anchor=tk.W, pady=5)
+        ttk.Checkbutton(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.message_notifications', default="Message Notifications"), variable=self.message_var).pack(anchor=tk.W, pady=5)
 
         self.announcement_var = tk.BooleanVar()
-        ttk.Checkbutton(main_frame, text="Announcement Notifications", variable=self.announcement_var).pack(anchor=tk.W, pady=5)
+        ttk.Checkbutton(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.announcement_notifications', default="Announcement Notifications"), variable=self.announcement_var).pack(anchor=tk.W, pady=5)
 
         self.chat_var = tk.BooleanVar()
-        ttk.Checkbutton(main_frame, text="Chat Notifications", variable=self.chat_var).pack(anchor=tk.W, pady=5)
+        ttk.Checkbutton(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.chat_notifications', default="Chat Notifications"), variable=self.chat_var).pack(anchor=tk.W, pady=5)
 
         self.digest_var = tk.BooleanVar()
-        ttk.Checkbutton(main_frame, text="Daily Digest", variable=self.digest_var).pack(anchor=tk.W, pady=5)
+        ttk.Checkbutton(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.daily_digest', default="Daily Digest"), variable=self.digest_var).pack(anchor=tk.W, pady=5)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save_preferences).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.save', default="Save"), command=self.save_preferences).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def load_preferences(self):
         try:
@@ -728,25 +730,25 @@ class NotificationPreferencesDialog:
         }
         try:
             if not self.dashboard:
-                messagebox.showerror("Error", "No dashboard available to save preferences.")
+                messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.utility_dialogs.dialogs.no_dashboard_available_to_save_preferences', default="No dashboard available to save preferences."))
                 return
             ok = self.dashboard.update_notification_preferences(preferences)
             if not ok:
                 messagebox.showerror(
-                    "Error",
-                    "Could not save preferences. You may need to be logged in.",
+                    _t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"),
+                    _t('gui.shell.email.email_gui.utility_dialogs.dialogs.could_not_save_preferences_you_may_need_to_be_logged_in', default="Could not save preferences. You may need to be logged in."),
                 )
                 return
-            messagebox.showinfo("Success", "Preferences saved successfully!")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.utility_dialogs.dialogs.preferences_saved_successfully', default="Preferences saved successfully!"))
             self.dialog.destroy()
         except Exception as e:
-            messagebox.showerror("Error", f"Error saving preferences: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.error', default="Error"), f"Error saving preferences: {e}")
 
 
 class ExportDataDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Export Data")
+        self.dialog.title(_t('gui.shell.email.email_gui.utility_dialogs.windows.export_data', default="Export Data"))
         self.dialog.geometry("450x400")
         self.dialog.transient(parent)
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
@@ -757,42 +759,42 @@ class ExportDataDialog:
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Export Email Data", font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.export_email_data', default="Export Email Data"), font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
         # Export options
-        options_frame = ttk.LabelFrame(main_frame, text="Select Data to Export", padding=10)
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.select_data_to_export', default="Select Data to Export"), padding=10)
         options_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         self.export_emails_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Emails", variable=self.export_emails_var).pack(anchor=tk.W, pady=2)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.emails', default="Emails"), variable=self.export_emails_var).pack(anchor=tk.W, pady=2)
 
         self.export_templates_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Templates", variable=self.export_templates_var).pack(anchor=tk.W, pady=2)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.templates', default="Templates"), variable=self.export_templates_var).pack(anchor=tk.W, pady=2)
 
         self.export_scheduled_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Scheduled Emails", variable=self.export_scheduled_var).pack(anchor=tk.W, pady=2)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.scheduled_emails', default="Scheduled Emails"), variable=self.export_scheduled_var).pack(anchor=tk.W, pady=2)
 
         self.export_announcements_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(options_frame, text="Announcements", variable=self.export_announcements_var).pack(anchor=tk.W, pady=2)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.announcements', default="Announcements"), variable=self.export_announcements_var).pack(anchor=tk.W, pady=2)
 
         self.export_chatrooms_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(options_frame, text="Chat Rooms", variable=self.export_chatrooms_var).pack(anchor=tk.W, pady=2)
+        ttk.Checkbutton(options_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.chat_rooms', default="Chat Rooms"), variable=self.export_chatrooms_var).pack(anchor=tk.W, pady=2)
 
         # Format selection
-        format_frame = ttk.LabelFrame(main_frame, text="Export Format", padding=10)
+        format_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.export_format', default="Export Format"), padding=10)
         format_frame.pack(fill=tk.X, pady=(0, 10))
 
-        self.format_var = tk.StringVar(value="csv")
-        ttk.Radiobutton(format_frame, text="CSV", variable=self.format_var, value="csv").pack(anchor=tk.W)
-        ttk.Radiobutton(format_frame, text="JSON", variable=self.format_var, value="json").pack(anchor=tk.W)
-        ttk.Radiobutton(format_frame, text="HTML Report", variable=self.format_var, value="html").pack(anchor=tk.W)
+        self.format_var = tk.StringVar(value=_t('gui.shell.email.email_gui.utility_dialogs.values.csv', default="csv"))
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.csv', default="CSV"), variable=self.format_var, value="csv").pack(anchor=tk.W)
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.json', default="JSON"), variable=self.format_var, value="json").pack(anchor=tk.W)
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.html_report', default="HTML Report"), variable=self.format_var, value="html").pack(anchor=tk.W)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(10, 0))
 
-        ttk.Button(button_frame, text="Export", command=self.export_data).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.export', default="Export"), command=self.export_data).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT)
 
     def export_data(self):
         # Check if at least one option is selected
@@ -803,7 +805,7 @@ class ExportDataDialog:
             self.export_announcements_var.get(),
             self.export_chatrooms_var.get()
         ]):
-            messagebox.showwarning("No Selection", "Please select at least one data type to export")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.shell.email.email_gui.utility_dialogs.dialogs.please_select_at_least_one_data_type_to_export', default="Please select at least one data type to export"))
             return
 
         format_type = self.format_var.get()
@@ -816,7 +818,7 @@ class ExportDataDialog:
         }
 
         file_path = filedialog.asksaveasfilename(
-            title="Save Export",
+            title=_t('gui.shell.email.email_gui.utility_dialogs.dialogs.save_export', default="Save Export"),
             defaultextension=f".{format_type}",
             filetypes=file_types.get(format_type, [("All files", "*.*")])
         )
@@ -1139,19 +1141,19 @@ class ExportDataDialog:
             for data_type, rows in export_data.items():
                 summary += f"  - {data_type.replace('_', ' ').title()}: {len(rows)} records\n"
 
-            messagebox.showinfo("Export Complete", summary)
+            messagebox.showinfo(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.export_complete', default="Export Complete"), summary)
             self.dialog.destroy()
 
         except Exception as e:
             import traceback
             traceback.print_exc()
-            messagebox.showerror("Export Error", f"Failed to export data: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.utility_dialogs.dialogs.export_error', default="Export Error"), f"Failed to export data: {e}")
 
 
 class HelpDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Help")
+        self.dialog.title(_t('gui.shell.email.email_gui.utility_dialogs.windows.help', default="Help"))
         self.dialog.geometry("600x400")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -1160,7 +1162,7 @@ class HelpDialog:
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="University Communication System - Help", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.university_communication_system_help', default="University Communication System - Help"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         help_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD)
         help_text.pack(fill=tk.BOTH, expand=True)
@@ -1207,13 +1209,13 @@ For additional help, contact your system administrator.
         help_text.insert(1.0, help_content)
         help_text.config(state=tk.DISABLED)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)
 
 
 class AboutDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("About")
+        self.dialog.title(_t('gui.shell.email.email_gui.utility_dialogs.windows.about', default="About"))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
@@ -1222,9 +1224,9 @@ class AboutDialog:
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="University Communication System", font=('Arial', 16, 'bold')).pack(pady=10)
-        ttk.Label(main_frame, text="Email Manager GUI", font=('Arial', 12)).pack()
-        ttk.Label(main_frame, text="Version 1.0", font=('Arial', 10)).pack(pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.university_communication_system', default="University Communication System"), font=('Arial', 16, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.email_manager_gui', default="Email Manager GUI"), font=('Arial', 12)).pack()
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.version_1_0', default="Version 1.0"), font=('Arial', 10)).pack(pady=5)
 
         desc_text = """
 A comprehensive communication platform for universities
@@ -1242,8 +1244,8 @@ Features:
         """
 
         ttk.Label(main_frame, text=desc_text, justify=tk.CENTER).pack(pady=10)
-        ttk.Label(main_frame, text="© 2024 University Communication System", font=('Arial', 9)).pack(pady=5)
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=20)
+        ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.value_2024_university_communication_system', default="© 2024 University Communication System"), font=('Arial', 9)).pack(pady=5)
+        ttk.Button(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=20)
 
 
 class ProgressDialog:
@@ -1259,7 +1261,7 @@ class ProgressDialog:
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.label = ttk.Label(main_frame, text="Please wait...")
+        self.label = ttk.Label(main_frame, text=_t('gui.shell.email.email_gui.utility_dialogs.labels.please_wait', default="Please wait..."))
         self.label.pack(pady=5)
 
         self.progress = ttk.Progressbar(main_frame, mode='indeterminate')

@@ -9,7 +9,7 @@ import logging
 import os
 from typing import Dict, Optional
 from abc import ABC, abstractmethod
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text, _
 from education_system.systems.university.infrastructure.validation.validators import Validators
 
@@ -303,7 +303,7 @@ class EmailToSMSProvider(SMSProvider):
         except ImportError:
             pass
         try:
-            config_path = os.path.join(paths.CONFIG_DIR, 'email_config.json')
+            config_path = os.path.join(paths.UNIVERSITY_CONFIG_DIR, 'email_config.json')
             if os.path.exists(config_path):
                 with open(config_path, 'r') as f:
                     return json.load(f)
@@ -349,7 +349,7 @@ class MockSMSProvider(SMSProvider):
 
     def __init__(self, log_file: str = None):
         """Initialize mock provider"""
-        self.log_file = log_file or str(paths.TEMP_DIR / 'sms_otp_log.txt')
+        self.log_file = log_file or str(paths.UNIVERSITY_TEMP_DIR / 'sms_otp_log.txt')
 
     def send_otp(self, phone_number: str, code: str) -> Dict:
         """Mock send - logs to file instead of sending SMS"""
@@ -472,7 +472,7 @@ class SMSService:
 # Configuration loader
 def load_sms_config() -> Dict:
     """Load SMS provider configuration from file or environment"""
-    config_file = paths.CONFIG_DIR / 'sms_config.json'
+    config_file = paths.UNIVERSITY_CONFIG_DIR / 'sms_config.json'
 
     # Try to load from config file
     if os.path.exists(config_file):
@@ -502,7 +502,7 @@ def load_sms_config() -> Dict:
         email_config = load_email_config()
     except ImportError:
         try:
-            email_cfg_path = os.path.join(paths.CONFIG_DIR, 'email_config.json')
+            email_cfg_path = os.path.join(paths.UNIVERSITY_CONFIG_DIR, 'email_config.json')
             if os.path.exists(email_cfg_path):
                 with open(email_cfg_path, 'r') as f:
                     email_config = json.load(f)

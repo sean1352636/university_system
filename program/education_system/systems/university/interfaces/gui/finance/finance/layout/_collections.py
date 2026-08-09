@@ -1,5 +1,7 @@
 """Collections management mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime
@@ -117,13 +119,13 @@ class CollectionsMixin:
             try:
                 selected = student_combo.get()
                 if not selected:
-                    messagebox.showwarning(_("finance_gui.messages.warning"), "Please select a student.")
+                    messagebox.showwarning(_("finance_gui.messages.warning"), _t('gui.finance.finance.layout.collections.dialogs.please_select_a_student', default="Please select a student."))
                     return
                 student_id = student_id_map.get(selected, selected)
 
                 debt_str = debt_entry.get().strip()
                 if not debt_str:
-                    messagebox.showwarning(_("finance_gui.messages.warning"), "Please enter a debt amount.")
+                    messagebox.showwarning(_("finance_gui.messages.warning"), _t('gui.finance.finance.layout.collections.dialogs.please_enter_a_debt_amount', default="Please enter a debt amount."))
                     return
                 total_debt = float(debt_str)
                 notes = notes_entry.get()
@@ -145,7 +147,7 @@ class CollectionsMixin:
                 dialog.destroy()
                 self._refresh_collections()
             except ValueError:
-                messagebox.showerror(_("finance_gui.messages.error"), "Please enter a valid number for the debt amount.")
+                messagebox.showerror(_("finance_gui.messages.error"), _t('gui.finance.finance.layout.collections.dialogs.please_enter_a_valid_number_for_the_debt_amount', default="Please enter a valid number for the debt amount."))
             except Exception as e:
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.collections_tab.failed_create_case", error=str(e)))
 
@@ -246,7 +248,7 @@ class CollectionsMixin:
         type_frame = ttk.LabelFrame(scrollable_frame, text=_("finance_gui.collections.notice_type"), padding=10)
         type_frame.pack(fill='x', padx=10, pady=5)
 
-        notice_type_var = tk.StringVar(value="first_notice")
+        notice_type_var = tk.StringVar(value=_t('gui.finance.finance.layout.collections.values.first_notice', default="first_notice"))
         notice_types = [
             ("first_notice", _("finance_gui.collections_tab.notice_types.first_notice")),
             ("second_notice", _("finance_gui.collections_tab.notice_types.second_notice")),
@@ -380,7 +382,7 @@ class CollectionsMixin:
         resolve_dialog.grab_set()
 
         # Case info
-        info_frame = ttk.LabelFrame(resolve_dialog, text="Case Details", padding=10)
+        info_frame = ttk.LabelFrame(resolve_dialog, text=_t('gui.finance.finance.layout.collections.labels.case_details', default="Case Details"), padding=10)
         info_frame.pack(fill='x', padx=15, pady=(10, 5))
 
         ttk.Label(info_frame, text=f"Case: {case_id} | Student: {student_id}").pack(anchor='w')
@@ -400,18 +402,18 @@ class CollectionsMixin:
 
         # Email notification checkbox
         send_email_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(resolve_dialog, text="Email resolution notice to student",
+        ttk.Checkbutton(resolve_dialog, text=_t('gui.finance.finance.layout.collections.buttons.email_resolution_notice_to_student', default="Email resolution notice to student"),
                        variable=send_email_var).pack(padx=15, anchor='w', pady=5)
 
         def do_resolve():
             amount_str = amount_entry.get().strip()
             if not amount_str:
-                messagebox.showwarning(_("finance_gui.messages.warning"), "Please enter an amount.")
+                messagebox.showwarning(_("finance_gui.messages.warning"), _t('gui.finance.finance.layout.collections.dialogs.please_enter_an_amount', default="Please enter an amount."))
                 return
             try:
                 amount_collected = float(amount_str)
             except ValueError:
-                messagebox.showerror(_("finance_gui.messages.error"), "Please enter a valid number.")
+                messagebox.showerror(_("finance_gui.messages.error"), _t('gui.finance.finance.layout.collections.dialogs.please_enter_a_valid_number', default="Please enter a valid number."))
                 return
 
             try:
@@ -454,7 +456,7 @@ class CollectionsMixin:
 
         btn_frame = ttk.Frame(resolve_dialog)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Resolve & Save", command=do_resolve).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.finance.finance.layout.collections.buttons.resolve_save', default="Resolve & Save"), command=do_resolve).pack(side='left', padx=5)
         ttk.Button(btn_frame, text=_("finance_gui.common_buttons.cancel"), command=resolve_dialog.destroy).pack(side='left', padx=5)
 
         amount_entry.bind('<Return>', lambda e: do_resolve())

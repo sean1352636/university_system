@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -189,14 +191,14 @@ Example logging code for Flask:
     def toggle_api_gui(self):
         """GUI version of API toggle"""
         if not self.log_manager:
-            messagebox.showerror("Error", "Log manager not available")
+            messagebox.showerror(_t('gui.shell.logging.features.api_management.dialogs.error', default="Error"), _t('gui.shell.logging.features.api_management.dialogs.log_manager_not_available', default="Log manager not available"))
             return
 
         current_status = self.log_manager.config.get('api_enabled', False)
         new_status = not current_status
 
         action = "enable" if new_status else "disable"
-        if messagebox.askyesno("Confirm", f"Are you sure you want to {action} the API?"):
+        if messagebox.askyesno(_t('gui.shell.logging.features.api_management.dialogs.confirm', default="Confirm"), f"Are you sure you want to {action} the API?"):
             self.log_manager.config.set('api_enabled', new_status)
 
             status_text = "enabled" if new_status else "disabled"
@@ -205,17 +207,17 @@ Example logging code for Flask:
             if new_status:
                 message += "\n\nNote: API has been removed from the system"
 
-            messagebox.showinfo("API Status", message)
+            messagebox.showinfo(_t('gui.shell.logging.features.api_management.dialogs.api_status', default="API Status"), message)
 
     def generate_api_key_gui(self):
         """GUI version of API key generation"""
         if not self.log_manager:
-            messagebox.showerror("Error", "Log manager not available")
+            messagebox.showerror(_t('gui.shell.logging.features.api_management.dialogs.error', default="Error"), _t('gui.shell.logging.features.api_management.dialogs.log_manager_not_available', default="Log manager not available"))
             return
 
-        if messagebox.askyesno("Generate API Key",
-                              "Generate a new API key?\n"
-                              "This will invalidate the current key."):
+        if messagebox.askyesno(_t('gui.shell.logging.features.api_management.dialogs.generate_api_key', default="Generate API Key"),
+                              _t('gui.shell.logging.features.api_management.dialogs.generate_a_new_api_key_this_will_invalidate_the_current_key', default="Generate a new API key?\n"
+                              "This will invalidate the current key.")):
 
             import secrets
             new_key = secrets.token_urlsafe(32)
@@ -244,9 +246,9 @@ Example logging code for Flask:
             def copy_key():
                 key_window.clipboard_clear()
                 key_window.clipboard_append(new_key)
-                messagebox.showinfo("Copied", "API key copied to clipboard")
+                messagebox.showinfo(_t('gui.shell.logging.features.api_management.dialogs.copied', default="Copied"), _t('gui.shell.logging.features.api_management.dialogs.api_key_copied_to_clipboard', default="API key copied to clipboard"))
 
-            ttk.Button(key_frame, text="Copy", command=copy_key).pack(side=tk.RIGHT, padx=(5, 0))
+            ttk.Button(key_frame, text=_t('gui.shell.logging.features.api_management.buttons.copy', default="Copy"), command=copy_key).pack(side=tk.RIGHT, padx=(5, 0))
 
             ttk.Button(key_window, text=_t("log_management.buttons.close"), command=key_window.destroy).pack(pady=10)
 
@@ -265,7 +267,7 @@ Example logging code for Flask:
 
         # Overview tab
         overview_frame = ttk.Frame(docs_notebook)
-        docs_notebook.add(overview_frame, text="Overview")
+        docs_notebook.add(overview_frame, text=_t('gui.shell.logging.features.api_management.tabs.overview', default="Overview"))
 
         overview_text = scrolledtext.ScrolledText(overview_frame, wrap=tk.WORD, font=("Courier", 10))
         overview_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -282,7 +284,7 @@ Log management is available through the GUI and CLI interfaces only.
 
         # Endpoints tab
         endpoints_frame = ttk.Frame(docs_notebook)
-        docs_notebook.add(endpoints_frame, text="Endpoints")
+        docs_notebook.add(endpoints_frame, text=_t('gui.shell.logging.features.api_management.tabs.endpoints', default="Endpoints"))
 
         endpoints_text = scrolledtext.ScrolledText(endpoints_frame, wrap=tk.WORD, font=("Courier", 9))
         endpoints_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -351,7 +353,7 @@ GET /api/health
 
         # Examples tab
         examples_frame = ttk.Frame(docs_notebook)
-        docs_notebook.add(examples_frame, text="Examples")
+        docs_notebook.add(examples_frame, text=_t('gui.shell.logging.features.api_management.tabs.examples', default="Examples"))
 
         examples_text = scrolledtext.ScrolledText(examples_frame, wrap=tk.WORD, font=("Courier", 9))
         examples_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -378,7 +380,7 @@ Log management is available through the GUI and CLI interfaces only.
                  font=("Arial", 14, "bold")).pack(pady=10)
 
         # Tasks display
-        tasks_frame = ttk.LabelFrame(tasks_window, text="Current Scheduled Tasks")
+        tasks_frame = ttk.LabelFrame(tasks_window, text=_t('gui.shell.logging.features.api_management.labels.current_scheduled_tasks', default="Current Scheduled Tasks"))
         tasks_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         tasks_text = scrolledtext.ScrolledText(tasks_frame, wrap=tk.WORD, height=15)

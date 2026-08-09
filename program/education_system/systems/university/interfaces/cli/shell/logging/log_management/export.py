@@ -4,7 +4,7 @@ import os
 import json
 from datetime import datetime, timedelta
 
-from education_system.systems.university.infrastructure.paths import LOG_DIR
+from education_system.paths import UNIVERSITY_LOG_DIR
 
 
 def enhanced_export_menu(log_manager, auth):
@@ -65,7 +65,7 @@ def export_with_filters(log_manager, auth):
         return
 
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    export_dir = LOG_DIR / "exports"
+    export_dir = UNIVERSITY_LOG_DIR / "exports"
     export_dir.mkdir(parents=True, exist_ok=True)
     export_dir = str(export_dir)
 

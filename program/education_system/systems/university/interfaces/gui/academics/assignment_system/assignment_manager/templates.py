@@ -1,5 +1,7 @@
 """Assignment draft and template save/load operations"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import json
@@ -33,7 +35,7 @@ class TemplatesMixin:
         try:
             # Validate basic fields
             if not self.title_var.get().strip():
-                messagebox.showerror("Error", "Please enter a title before saving draft")
+                messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.error', default="Error"), _t('gui.academics.assignment_system.assignment_manager.templates.dialogs.please_enter_a_title_before_saving_draft', default="Please enter a title before saving draft"))
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -82,10 +84,10 @@ class TemplatesMixin:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Draft saved successfully as:\n{draft_name}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.success', default="Success"), f"Draft saved successfully as:\n{draft_name}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save draft: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.error', default="Error"), f"Failed to save draft: {e}")
 
 
     def load_assignment_template(self):
@@ -110,16 +112,16 @@ class TemplatesMixin:
             conn.close()
 
             if not templates:
-                messagebox.showinfo("No Templates", "No saved templates or drafts found")
+                messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.no_templates', default="No Templates"), _t('gui.academics.assignment_system.assignment_manager.templates.dialogs.no_saved_templates_or_drafts_found', default="No saved templates or drafts found"))
                 return
 
             # Create selection dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Load Template/Draft")
+            dialog.title(_t('gui.academics.assignment_system.assignment_manager.templates.windows.load_template_draft', default="Load Template/Draft"))
             dialog.geometry("600x400")
             dialog.transient(self.root)
 
-            ttk.Label(dialog, text="Select a template or draft to load:",
+            ttk.Label(dialog, text=_t('gui.academics.assignment_system.assignment_manager.templates.labels.select_a_template_or_draft_to_load', default="Select a template or draft to load:"),
                      font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
 
             # Templates listbox
@@ -142,7 +144,7 @@ class TemplatesMixin:
             def load_selected():
                 selection = listbox.curselection()
                 if not selection:
-                    messagebox.showwarning("No Selection", "Please select a template")
+                    messagebox.showwarning(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.assignment_manager.templates.dialogs.please_select_a_template', default="Please select a template"))
                     return
 
                 selected_name = listbox.get(selection[0])
@@ -180,32 +182,32 @@ class TemplatesMixin:
                         self.visibility_var.set(data.get('visibility', 'draft'))
 
                     dialog.destroy()
-                    messagebox.showinfo("Success", "Template loaded successfully")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.success', default="Success"), _t('gui.academics.assignment_system.assignment_manager.templates.dialogs.template_loaded_successfully', default="Template loaded successfully"))
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load template: {e}")
+                    messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.error', default="Error"), f"Failed to load template: {e}")
 
             # Buttons
             button_frame = ttk.Frame(dialog)
             button_frame.pack(pady=10)
 
-            ttk.Button(button_frame, text="Load", command=load_selected).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assignment_manager.templates.buttons.load', default="Load"), command=load_selected).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.assignment_manager.templates.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load templates: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.error', default="Error"), f"Failed to load templates: {e}")
 
 
     def save_assignment_template(self):
         """Save current form as a reusable template"""
         try:
             if not self.title_var.get().strip():
-                messagebox.showerror("Error", "Please enter a title before saving template")
+                messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.error', default="Error"), _t('gui.academics.assignment_system.assignment_manager.templates.dialogs.please_enter_a_title_before_saving_template', default="Please enter a title before saving template"))
                 return
 
             # Ask for template name
-            template_name = simpledialog.askstring("Template Name",
-                                                   "Enter a name for this template:",
+            template_name = simpledialog.askstring(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.template_name', default="Template Name"),
+                                                   _t('gui.academics.assignment_system.assignment_manager.templates.dialogs.enter_a_name_for_this_template', default="Enter a name for this template:"),
                                                    initialvalue=f"Template - {self.title_var.get()[:30]}")
             if not template_name:
                 return
@@ -247,7 +249,7 @@ class TemplatesMixin:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Template '{template_name}' saved successfully")
+            messagebox.showinfo(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.success', default="Success"), f"Template '{template_name}' saved successfully")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save template: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment_manager.templates.dialogs.error', default="Error"), f"Failed to save template: {e}")

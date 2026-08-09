@@ -2,6 +2,8 @@
 Library Fines Management - Refund workflow (search, details, processing, email).
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -40,7 +42,7 @@ def refund_fine_dialog(self):
 
     # Create refund dialog with user search
     refund_main_dialog = tk.Toplevel()
-    refund_main_dialog.title("Refund Library Fines")
+    refund_main_dialog.title(_t('gui.academics.library.fines.refunds.windows.refund_library_fines', default="Refund Library Fines"))
     refund_main_dialog.geometry("1000x750")
     refund_main_dialog.transient(self.master)
     refund_main_dialog.grab_set()
@@ -50,25 +52,25 @@ def refund_fine_dialog(self):
     # Header
     header_frame = ttk.Frame(refund_main_dialog)
     header_frame.pack(fill=tk.X, padx=10, pady=10)
-    ttk.Label(header_frame, text="Library Fine Refund System",
+    ttk.Label(header_frame, text=_t('gui.academics.library.fines.refunds.labels.library_fine_refund_system', default="Library Fine Refund System"),
      font=('Arial', 16, 'bold')).pack()
-    ttk.Label(header_frame, text="Search for users with paid fines and process refunds",
+    ttk.Label(header_frame, text=_t('gui.academics.library.fines.refunds.labels.search_for_users_with_paid_fines_and_process_refunds', default="Search for users with paid fines and process refunds"),
      font=('Arial', 10)).pack()
 
     # User search section
-    search_frame = ttk.LabelFrame(refund_main_dialog, text="Search for User", padding=10)
+    search_frame = ttk.LabelFrame(refund_main_dialog, text=_t('gui.academics.library.fines.refunds.labels.search_for_user', default="Search for User"), padding=10)
     search_frame.pack(fill=tk.X, padx=10, pady=10)
 
     search_row = ttk.Frame(search_frame)
     search_row.pack(fill=tk.X)
 
-    ttk.Label(search_row, text="Student ID or Name:", font=('Arial', 10)).pack(side=tk.LEFT, padx=5)
+    ttk.Label(search_row, text=_t('gui.academics.library.fines.refunds.labels.student_id_or_name', default="Student ID or Name:"), font=('Arial', 10)).pack(side=tk.LEFT, padx=5)
     search_var = tk.StringVar()
     search_entry = ttk.Entry(search_row, textvariable=search_var, width=30)
     search_entry.pack(side=tk.LEFT, padx=5)
 
     # Users list with paid fines
-    users_frame = ttk.LabelFrame(refund_main_dialog, text="Users with Paid Fines", padding=10)
+    users_frame = ttk.LabelFrame(refund_main_dialog, text=_t('gui.academics.library.fines.refunds.labels.users_with_paid_fines', default="Users with Paid Fines"), padding=10)
     users_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     columns = ('User ID', 'Name', 'Email', 'Total Paid', 'Total Refunded', 'Available', 'Payments')
@@ -93,14 +95,14 @@ def refund_fine_dialog(self):
 
         if not ORIGINAL_LIBRARY_AVAILABLE:
             print("ERROR: Library module not available")
-            messagebox.showerror(_("common.error"), "Library database module is not available.\nPlease ensure all dependencies are installed.", parent=refund_main_dialog)
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.refunds.dialogs.library_database_module_is_not_available_please_ensure_all_depen', default="Library database module is not available.\nPlease ensure all dependencies are installed."), parent=refund_main_dialog)
             return
 
         try:
             conn = get_db_connection()
             if not conn:
                 print("ERROR: Could not get database connection")
-                messagebox.showerror(_("common.error"), "Database connection failed", parent=refund_main_dialog)
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.refunds.dialogs.database_connection_failed', default="Database connection failed"), parent=refund_main_dialog)
                 return
 
             cursor = conn.cursor()
@@ -149,7 +151,7 @@ def refund_fine_dialog(self):
 
             if not users:
                 print("WARNING: No users with paid fines found!")
-                messagebox.showinfo("No Data", "No users with paid fines found in the database.", parent=refund_main_dialog)
+                messagebox.showinfo(_t('gui.academics.library.fines.refunds.dialogs.no_data', default="No Data"), _t('gui.academics.library.fines.refunds.dialogs.no_users_with_paid_fines_found_in_the_database', default="No users with paid fines found in the database."), parent=refund_main_dialog)
                 return
 
             for user_id, first_name, last_name, email, total_paid, total_refunded, payment_count in users:
@@ -177,21 +179,21 @@ def refund_fine_dialog(self):
     def show_user_refund_details():
         selection = users_tree.selection()
         if not selection:
-            messagebox.showwarning(_("common.warning"), "Please select a user first", parent=refund_main_dialog)
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.refunds.dialogs.please_select_a_user_first', default="Please select a user first"), parent=refund_main_dialog)
             return
 
         user_id = users_tree.item(selection[0])['values'][0]
         refund_main_dialog.destroy()
         self._show_user_refund_details(user_id)
 
-    ttk.Button(search_row, text="Search", command=search_users).pack(side=tk.LEFT, padx=5)
-    ttk.Button(search_row, text="Show All", command=lambda: load_users_with_paid_fines("")).pack(side=tk.LEFT, padx=5)
+    ttk.Button(search_row, text=_t('gui.academics.library.fines.refunds.buttons.search', default="Search"), command=search_users).pack(side=tk.LEFT, padx=5)
+    ttk.Button(search_row, text=_t('gui.academics.library.fines.refunds.buttons.show_all', default="Show All"), command=lambda: load_users_with_paid_fines("")).pack(side=tk.LEFT, padx=5)
 
     # Buttons
     btn_frame = ttk.Frame(refund_main_dialog)
     btn_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(btn_frame, text="View Refund Details", command=show_user_refund_details,
+    ttk.Button(btn_frame, text=_t('gui.academics.library.fines.refunds.buttons.view_refund_details', default="View Refund Details"), command=show_user_refund_details,
       style='Accent.TButton').pack(side=tk.LEFT, padx=5)
     ttk.Button(btn_frame, text=_("common.close"), command=refund_main_dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
@@ -213,7 +215,7 @@ def _show_user_refund_details(self, user_id):
             conn = get_db_connection()
             if not conn:
                 print("ERROR: Database connection failed")
-                messagebox.showerror(_("common.error"), "Database connection unavailable")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.refunds.dialogs.database_connection_unavailable', default="Database connection unavailable"))
                 return
 
             cursor = conn.cursor()
@@ -250,12 +252,12 @@ def _show_user_refund_details(self, user_id):
 
             if not paid_fines:
                 print("WARNING: No refundable payments found for this user")
-                messagebox.showinfo("No Paid Fines", "This user has no paid fines available to refund")
+                messagebox.showinfo(_t('gui.academics.library.fines.refunds.dialogs.no_paid_fines', default="No Paid Fines"), _t('gui.academics.library.fines.refunds.dialogs.this_user_has_no_paid_fines_available_to_refund', default="This user has no paid fines available to refund"))
                 return
 
             # Create refund dialog
             refund_dialog = tk.Toplevel()
-            refund_dialog.title("Refund Library Fine")
+            refund_dialog.title(_t('gui.academics.library.fines.refunds.windows.refund_library_fine', default="Refund Library Fine"))
             refund_dialog.geometry("900x700")
             refund_dialog.transient(self.master)
             refund_dialog.grab_set()
@@ -263,13 +265,13 @@ def _show_user_refund_details(self, user_id):
             # Header
             header_frame = ttk.Frame(refund_dialog)
             header_frame.pack(fill=tk.X, padx=10, pady=10)
-            ttk.Label(header_frame, text="Refund Library Fine",
+            ttk.Label(header_frame, text=_t('gui.academics.library.fines.refunds.labels.refund_library_fine', default="Refund Library Fine"),
                      font=('Arial', 14, 'bold')).pack()
             ttk.Label(header_frame, text=f"User: {user_name} (ID: {user_id})",
                      font=('Arial', 11)).pack()
 
             # Paid fines selection
-            selection_frame = ttk.LabelFrame(refund_dialog, text="Select Paid Fine to Refund", padding=10)
+            selection_frame = ttk.LabelFrame(refund_dialog, text=_t('gui.academics.library.fines.refunds.labels.select_paid_fine_to_refund', default="Select Paid Fine to Refund"), padding=10)
             selection_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             columns = ('Payment ID', 'Loan ID', 'Book Title', 'Paid Amount', 'Refunded', 'Available', 'Method', 'Date')
@@ -303,21 +305,21 @@ def _show_user_refund_details(self, user_id):
             print("Tree populated and packed successfully")
 
             # Refund details frame
-            details_frame = ttk.LabelFrame(refund_dialog, text="Refund Details", padding=10)
+            details_frame = ttk.LabelFrame(refund_dialog, text=_t('gui.academics.library.fines.refunds.labels.refund_details', default="Refund Details"), padding=10)
             details_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Label(details_frame, text="Refund Amount (\u00a3):").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(details_frame, text=_t('gui.academics.library.fines.refunds.labels.refund_amount', default="Refund Amount (\u00a3):")).grid(row=0, column=0, sticky='w', pady=5)
             refund_amount_var = tk.StringVar()
             ttk.Entry(details_frame, textvariable=refund_amount_var, width=15).grid(row=0, column=1, sticky='w', pady=5)
 
-            ttk.Label(details_frame, text="Refund Method:").grid(row=1, column=0, sticky='w', pady=5)
-            refund_method_var = tk.StringVar(value="Cash")
+            ttk.Label(details_frame, text=_t('gui.academics.library.fines.refunds.labels.refund_method', default="Refund Method:")).grid(row=1, column=0, sticky='w', pady=5)
+            refund_method_var = tk.StringVar(value=_t('gui.academics.library.fines.refunds.values.cash', default="Cash"))
             method_options = ["Cash", "Card", "Student Finance Account"]
             method_combo = ttk.Combobox(details_frame, textvariable=refund_method_var,
                                        values=method_options, state='readonly', width=22)
             method_combo.grid(row=1, column=1, sticky='w', pady=5)
 
-            ttk.Label(details_frame, text="Refund Reason:").grid(row=2, column=0, sticky='w', pady=5)
+            ttk.Label(details_frame, text=_t('gui.academics.library.fines.refunds.labels.refund_reason', default="Refund Reason:")).grid(row=2, column=0, sticky='w', pady=5)
             reason_text = tk.Text(details_frame, height=3, width=35)
             reason_text.grid(row=2, column=1, pady=5)
 
@@ -331,7 +333,7 @@ def _show_user_refund_details(self, user_id):
             def process_refund():
                 selected = fines_tree.selection()
                 if not selected:
-                    messagebox.showwarning(_("common.warning"), "Please select a paid fine to refund", parent=refund_dialog)
+                    messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.refunds.dialogs.please_select_a_paid_fine_to_refund', default="Please select a paid fine to refund"), parent=refund_dialog)
                     return
 
                 refund_amount_str = refund_amount_var.get().strip()
@@ -339,16 +341,16 @@ def _show_user_refund_details(self, user_id):
                 refund_reason = reason_text.get("1.0", tk.END).strip()
 
                 if not refund_amount_str or not refund_reason:
-                    messagebox.showwarning(_("common.warning"), "Please fill in all fields", parent=refund_dialog)
+                    messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.refunds.dialogs.please_fill_in_all_fields', default="Please fill in all fields"), parent=refund_dialog)
                     return
 
                 try:
                     refund_amount = float(refund_amount_str)
                     if refund_amount <= 0:
-                        messagebox.showwarning(_("common.warning"), "Refund amount must be greater than 0", parent=refund_dialog)
+                        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.refunds.dialogs.refund_amount_must_be_greater_than_0', default="Refund amount must be greater than 0"), parent=refund_dialog)
                         return
                 except ValueError:
-                    messagebox.showwarning(_("common.warning"), "Please enter a valid amount", parent=refund_dialog)
+                    messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.refunds.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount"), parent=refund_dialog)
                     return
 
                 # Process the refund
@@ -385,13 +387,13 @@ def _show_user_refund_details(self, user_id):
                     refund_dialog.destroy()
                     self.load_user_fines()
                 else:
-                    messagebox.showerror(_("common.error"), "Failed to process refund", parent=refund_dialog)
+                    messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.refunds.dialogs.failed_to_process_refund', default="Failed to process refund"), parent=refund_dialog)
 
             # Buttons
             btn_frame = ttk.Frame(refund_dialog)
             btn_frame.pack(fill=tk.X, padx=10, pady=10)
 
-            ttk.Button(btn_frame, text="Process Refund", command=process_refund).pack(side=tk.LEFT, padx=5)
+            ttk.Button(btn_frame, text=_t('gui.academics.library.fines.refunds.buttons.process_refund', default="Process Refund"), command=process_refund).pack(side=tk.LEFT, padx=5)
             ttk.Button(btn_frame, text=_("common.cancel"), command=refund_dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         else:

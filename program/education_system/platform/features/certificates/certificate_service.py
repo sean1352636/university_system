@@ -18,9 +18,11 @@ from datetime import datetime
 from pathlib import Path
 from string import Template
 
+from education_system.paths import PLATFORM_DOCUMENT_TEMPLATES_DIR
+
 logger = logging.getLogger(__name__)
 
-_TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
+_TEMPLATE_DIR = PLATFORM_DOCUMENT_TEMPLATES_DIR
 
 CERTIFICATE_TYPES = ("completion", "achievement", "attendance", "merit", "distinction")
 
@@ -123,6 +125,24 @@ class CertificateService:
         certificate_number = f"CERT-{uuid.uuid4().hex[:12].upper()}"
         conn = self._conn()
         try:
+            if _table_exists(conn, "ratified_student_awards"):
+                award = conn.execute(
+                    """SELECT award_id, award_name, classification, programme_code,
+                              ratified_at
+                         FROM ratified_student_awards
+                        WHERE student_id = ? AND status = 'ratified'
+                          AND release_authorised = 1
+                        ORDER BY ratified_at DESC LIMIT 1""",
+                    (student_id,),
+                ).fetchone()
+                if award is None:
+                    raise PermissionError(
+                        "A certificate cannot be issued until an assessment "
+                        "board has ratified and released the award"
+                    )
+                course_name = award["award_name"]
+                grade = award["classification"]
+                award_date = str(award["ratified_at"])[:10]
             if not _table_exists(conn, "certificates"):
                 conn.execute("""CREATE TABLE IF NOT EXISTS certificates (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,

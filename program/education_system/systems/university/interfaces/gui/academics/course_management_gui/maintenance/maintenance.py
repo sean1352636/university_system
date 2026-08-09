@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # gui_course_management.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, Toplevel
@@ -10,11 +12,11 @@ import os
 from pathlib import Path
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this GUI. Many database calls within this
@@ -137,7 +139,7 @@ class MaintenanceDialog:
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("System Maintenance")
+        self.dialog.title(_t('gui.academics.course_management_gui.maintenance.maintenance.windows.system_maintenance', default="System Maintenance"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -149,32 +151,32 @@ class MaintenanceDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="System Maintenance", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.maintenance.maintenance.labels.system_maintenance', default="System Maintenance"), font=("Arial", 12, "bold")).pack(pady=10)
 
         # Maintenance options
-        options_frame = ttk.LabelFrame(main_frame, text="Maintenance Tasks", padding=10)
+        options_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.maintenance.maintenance.labels.maintenance_tasks', default="Maintenance Tasks"), padding=10)
         options_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(options_frame, text="Database Integrity Check",
+        ttk.Button(options_frame, text=_t('gui.academics.course_management_gui.maintenance.maintenance.buttons.database_integrity_check', default="Database Integrity Check"),
                   command=self.integrity_check).pack(fill=tk.X, pady=2)
-        ttk.Button(options_frame, text="Clean Orphaned Records",
+        ttk.Button(options_frame, text=_t('gui.academics.course_management_gui.maintenance.maintenance.buttons.clean_orphaned_records', default="Clean Orphaned Records"),
                   command=self.clean_orphaned).pack(fill=tk.X, pady=2)
-        ttk.Button(options_frame, text="Recalculate Enrollment Numbers",
+        ttk.Button(options_frame, text=_t('gui.academics.course_management_gui.maintenance.maintenance.buttons.recalculate_enrollment_numbers', default="Recalculate Enrollment Numbers"),
                   command=self.recalculate_enrollment).pack(fill=tk.X, pady=2)
-        ttk.Button(options_frame, text="Database Statistics",
+        ttk.Button(options_frame, text=_t('gui.academics.course_management_gui.maintenance.maintenance.buttons.database_statistics', default="Database Statistics"),
                   command=self.show_db_stats).pack(fill=tk.X, pady=2)
-        ttk.Button(options_frame, text="Optimize Database",
+        ttk.Button(options_frame, text=_t('gui.academics.course_management_gui.maintenance.maintenance.buttons.optimize_database', default="Optimize Database"),
                   command=self.optimize_db).pack(fill=tk.X, pady=2)
 
         # Results display
-        results_frame = ttk.LabelFrame(main_frame, text="Results", padding=10)
+        results_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.maintenance.maintenance.labels.results', default="Results"), padding=10)
         results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.results_text = ScrolledText(results_frame, wrap=tk.WORD, height=15)
         self.results_text.pack(fill=tk.BOTH, expand=True)
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.academics.course_management_gui.maintenance.maintenance.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)
 
     def integrity_check(self):
         try:
@@ -298,7 +300,7 @@ class MaintenanceDialog:
                 for course_id, code, current, max_val in invalid_enrollments:
                     results += f"  - {code}: {current}/{max_val}\n"
 
-                if messagebox.askyesno("Reset Enrollments", "Reset invalid enrollments to 0?"):
+                if messagebox.askyesno(_t('gui.academics.course_management_gui.maintenance.maintenance.dialogs.reset_enrollments', default="Reset Enrollments"), _t('gui.academics.course_management_gui.maintenance.maintenance.dialogs.reset_invalid_enrollments_to_0', default="Reset invalid enrollments to 0?")):
                     cursor.execute("""
                     UPDATE courses
                     SET current_enrollment = 0

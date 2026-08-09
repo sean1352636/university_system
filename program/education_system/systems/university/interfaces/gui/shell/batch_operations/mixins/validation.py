@@ -1,5 +1,7 @@
 """Data validation and cleaning mixin."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import re
 
 from education_system.systems.university.interfaces.gui.shell.batch_operations.constants import (
@@ -618,7 +620,7 @@ class ValidationMixin:
             header_frame = tk.Frame(result_dialog, bg='#4CAF50')
             header_frame.pack(fill=tk.X, pady=(0, 10))
 
-            tk.Label(header_frame, text="Data Validation and Cleaning Results",
+            tk.Label(header_frame, text=_t('gui.shell.batch_operations.mixins.validation.labels.data_validation_and_cleaning_results', default="Data Validation and Cleaning Results"),
                     font=('Arial', 14, 'bold'), bg='#4CAF50', fg='white').pack(pady=15)
 
             # Create notebook for different views
@@ -627,7 +629,7 @@ class ValidationMixin:
 
             # Summary tab
             summary_frame = ttk.Frame(notebook)
-            notebook.add(summary_frame, text="Summary")
+            notebook.add(summary_frame, text=_t('gui.shell.batch_operations.mixins.validation.tabs.summary', default="Summary"))
 
             summary_text = tk.Text(summary_frame, wrap=tk.WORD, font=('Courier', 9))
             summary_scroll = ttk.Scrollbar(summary_frame, orient=tk.VERTICAL, command=summary_text.yview)
@@ -674,7 +676,7 @@ Report saved to: {report_filename}
 
             # Detailed issues tab
             issues_frame = ttk.Frame(notebook)
-            notebook.add(issues_frame, text="Detailed Issues")
+            notebook.add(issues_frame, text=_t('gui.shell.batch_operations.mixins.validation.tabs.detailed_issues', default="Detailed Issues"))
 
             issues_tree = ttk.Treeview(issues_frame, columns=("Type", "Severity", "Description", "Action"), show="tree headings")
             issues_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -703,7 +705,7 @@ Report saved to: {report_filename}
 
         except Exception as e:
             print(f"Error showing results dialog: {e}")
-            messagebox.showinfo("Validation Complete",
+            messagebox.showinfo(_t('gui.shell.batch_operations.mixins.validation.dialogs.validation_complete', default="Validation Complete"),
                               f"Data validation completed successfully!\n"
                               f"Report saved to: {report_filename}\n"
                               f"Total issues found: {report_data['summary']['total_issues_found']}")

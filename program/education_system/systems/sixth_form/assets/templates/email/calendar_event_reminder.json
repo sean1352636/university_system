@@ -1,0 +1,11 @@
+{
+  "template_id": "calendar_event_reminder",
+  "description": "Sent ahead of a calendar event to its audience — lead time varies by event type (a week for trips, days for exams and parents' evenings). Triggered by the calendar reminder sweep.",
+  "channel": "Email",
+  "category": "Calendar",
+  "priority": "Normal",
+  "from_name": "Sixth Form Calendar",
+  "from_address": "calendar@sixthform.ac.uk",
+  "subject": "Reminder: {{event_title}} — {{event_date}}",
+  "body": "Hi {{first_name}},\n\nA reminder of an upcoming event:\n\n  Event:     {{event_title}}\n  When:      {{event_date}}, {{event_time}}\n  Where:     {{event_location}}\n  Organiser: {{event_organiser}}\n\n{{rsvp_line}}\n\nIf you can no longer attend, please let the organiser know so your place can go to someone else.\n\n{{system_name}}"
+}

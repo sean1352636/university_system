@@ -2,6 +2,8 @@
 Library Fines Management - Fine lookup and display UI.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from education_system.systems.university.infrastructure.i18n import get_text as _
@@ -36,17 +38,17 @@ def show_fine_management(self):
     main_frame = ttk.Frame(dialog)
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    title_label = ttk.Label(main_frame, text="Fine Management System", style='Title.TLabel')
+    title_label = ttk.Label(main_frame, text=_t('gui.academics.library.fines.display.labels.fine_management_system', default="Fine Management System"), style='Title.TLabel')
     title_label.pack(pady=(0, 10))
 
     # Search frame
-    search_frame = ttk.LabelFrame(main_frame, text="Find User")
+    search_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.fines.display.labels.find_user', default="Find User"))
     search_frame.pack(fill=tk.X, pady=(0, 10))
 
     search_inner = ttk.Frame(search_frame)
     search_inner.pack(fill=tk.X, padx=5, pady=5)
 
-    ttk.Label(search_inner, text="User ID:").pack(side=tk.LEFT)
+    ttk.Label(search_inner, text=_t('gui.academics.library.fines.display.labels.user_id', default="User ID:")).pack(side=tk.LEFT)
     self.fine_user_var = tk.StringVar()
     ttk.Entry(search_inner, textvariable=self.fine_user_var, width=20).pack(side=tk.LEFT, padx=5)
     ttk.Button(search_inner, text=_("common.search"), command=self.load_user_fines).pack(side=tk.LEFT, padx=5)
@@ -59,7 +61,7 @@ def show_fine_management(self):
     self.user_info_text.pack(fill=tk.X, padx=5, pady=5)
 
     # Fines table
-    fines_frame = ttk.LabelFrame(main_frame, text="Outstanding Fines")
+    fines_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.fines.display.labels.outstanding_fines', default="Outstanding Fines"))
     fines_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     columns = ('Loan ID', 'Book ID', 'Title', 'Days Overdue', 'Fine Amount')
@@ -76,21 +78,21 @@ def show_fine_management(self):
     fines_scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
 
     # Payment frame
-    payment_frame = ttk.LabelFrame(main_frame, text="Process Payment")
+    payment_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.fines.display.labels.process_payment', default="Process Payment"))
     payment_frame.pack(fill=tk.X)
 
     payment_inner = ttk.Frame(payment_frame)
     payment_inner.pack(fill=tk.X, padx=5, pady=5)
 
-    ttk.Label(payment_inner, text="Payment Amount: £").pack(side=tk.LEFT)
+    ttk.Label(payment_inner, text=_t('gui.academics.library.fines.display.labels.payment_amount', default="Payment Amount: £")).pack(side=tk.LEFT)
     self.payment_amount_var = tk.StringVar()
     ttk.Entry(payment_inner, textvariable=self.payment_amount_var, width=10).pack(side=tk.LEFT, padx=5)
-    ttk.Button(payment_inner, text="Process Payment", command=self.process_fine_payment).pack(side=tk.LEFT, padx=5)
+    ttk.Button(payment_inner, text=_t('gui.academics.library.fines.display.buttons.process_payment', default="Process Payment"), command=self.process_fine_payment).pack(side=tk.LEFT, padx=5)
     if FINANCE_ACCOUNT_AVAILABLE:
-        ttk.Button(payment_inner, text="\U0001f4b0 Pay from Finance Account", command=self.pay_fine_from_finance_account).pack(side=tk.LEFT, padx=5)
-    ttk.Button(payment_inner, text="\U0001f4b3 Pay via Finance System", command=self.pay_fine_via_finance).pack(side=tk.LEFT, padx=5)
-    ttk.Button(payment_inner, text="Waive All Fines", command=self.waive_all_fines).pack(side=tk.LEFT, padx=5)
-    ttk.Button(payment_inner, text="\U0001f504 Refund Fine", command=self.refund_fine_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(payment_inner, text=_t('gui.academics.library.fines.display.buttons.pay_from_finance_account', default="\U0001f4b0 Pay from Finance Account"), command=self.pay_fine_from_finance_account).pack(side=tk.LEFT, padx=5)
+    ttk.Button(payment_inner, text=_t('gui.academics.library.fines.display.buttons.pay_via_finance_system', default="\U0001f4b3 Pay via Finance System"), command=self.pay_fine_via_finance).pack(side=tk.LEFT, padx=5)
+    ttk.Button(payment_inner, text=_t('gui.academics.library.fines.display.buttons.waive_all_fines', default="Waive All Fines"), command=self.waive_all_fines).pack(side=tk.LEFT, padx=5)
+    ttk.Button(payment_inner, text=_t('gui.academics.library.fines.display.buttons.refund_fine', default="\U0001f504 Refund Fine"), command=self.refund_fine_dialog).pack(side=tk.LEFT, padx=5)
 
     ttk.Button(main_frame, text=_("common.close"), command=dialog.destroy).pack(pady=10)
 
@@ -100,7 +102,7 @@ def load_user_fines(self):
     user_id = self.fine_user_var.get().strip()
 
     if not user_id:
-        messagebox.showwarning(_("common.warning"), "Please enter a User ID")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.display.dialogs.please_enter_a_user_id', default="Please enter a User ID"))
         return
 
     # Clear existing data

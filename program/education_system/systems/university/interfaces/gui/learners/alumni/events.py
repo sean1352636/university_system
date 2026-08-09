@@ -1,10 +1,12 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -48,12 +50,12 @@ class EventsMixin:
 
             selection = self.my_registrations_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a registration to cancel.")
+                messagebox.showwarning(_t('gui.learners.alumni.events.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.events.dialogs.please_select_a_registration_to_cancel', default="Please select a registration to cancel."))
                 return
 
-            if messagebox.askyesno("Confirm Cancellation",
-                                   "Are you sure you want to cancel this registration?"):
-                messagebox.showinfo("Success", "Registration cancelled successfully!")
+            if messagebox.askyesno(_t('gui.learners.alumni.events.dialogs.confirm_cancellation', default="Confirm Cancellation"),
+                                   _t('gui.learners.alumni.events.dialogs.are_you_sure_you_want_to_cancel_this_registration', default="Are you sure you want to cancel this registration?")):
+                messagebox.showinfo(_t('gui.learners.alumni.events.dialogs.success', default="Success"), _t('gui.learners.alumni.events.dialogs.registration_cancelled_successfully', default="Registration cancelled successfully!"))
                 self.view_my_event_registrations()  # Refresh
 
         def _get_event_options(self):
@@ -141,7 +143,7 @@ class EventsMixin:
                     self.update_status(f"Found {len(results)} event(s)")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Search failed: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.events.dialogs.database_error', default="Database Error"), f"Search failed: {str(e)}")
 
         def _view_search_event_details(self):
             """View details for selected event from search results"""
@@ -150,7 +152,7 @@ class EventsMixin:
 
             selection = self.event_search_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select an event to view details.")
+                messagebox.showwarning(_t('gui.learners.alumni.events.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.events.dialogs.please_select_an_event_to_view_details', default="Please select an event to view details."))
                 return
 
             item = self.event_search_tree.item(selection[0])
@@ -179,10 +181,10 @@ class EventsMixin:
     """
             ttk.Label(details_frame, text=info_text, justify=tk.LEFT).pack(pady=(0, 20))
 
-            ttk.Button(details_frame, text="Register for Event",
-                      command=lambda: [messagebox.showinfo("Success", "Registration initiated!"),
+            ttk.Button(details_frame, text=_t('gui.learners.alumni.events.buttons.register_for_event', default="Register for Event"),
+                      command=lambda: [messagebox.showinfo(_t('gui.learners.alumni.events.dialogs.success', default="Success"), _t('gui.learners.alumni.events.dialogs.registration_initiated', default="Registration initiated!")),
                                       details_window.destroy()]).pack(pady=10)
-            ttk.Button(details_frame, text="Close",
+            ttk.Button(details_frame, text=_t('gui.learners.alumni.events.buttons.close', default="Close"),
                       command=details_window.destroy).pack()
 
         def clear_event_form(self):
@@ -240,21 +242,21 @@ class EventsMixin:
                     self.update_status("No alumni events found")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load events: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.events.dialogs.database_error', default="Database Error"), f"Failed to load events: {str(e)}")
 
         def process_manual_checkin(self):
             """Process manual check-in"""
             if not self.selected_event.get():
-                messagebox.showwarning("No Event Selected", "Please select an event first.")
+                messagebox.showwarning(_t('gui.learners.alumni.events.dialogs.no_event_selected', default="No Event Selected"), _t('gui.learners.alumni.events.dialogs.please_select_an_event_first', default="Please select an event first."))
                 return
 
             alumni_id = self.checkin_alumni_id.get().strip()
             if not alumni_id:
-                messagebox.showwarning("No Alumni ID", "Please enter an Alumni ID.")
+                messagebox.showwarning(_t('gui.learners.alumni.events.dialogs.no_alumni_id', default="No Alumni ID"), _t('gui.learners.alumni.events.dialogs.please_enter_an_alumni_id', default="Please enter an Alumni ID."))
                 return
 
             # Simulate check-in process
-            messagebox.showinfo("Check-in Successful", f"Alumni {alumni_id} checked in successfully!")
+            messagebox.showinfo(_t('gui.learners.alumni.events.dialogs.check_in_successful', default="Check-in Successful"), f"Alumni {alumni_id} checked in successfully!")
 
             # Add to attendance list
             current_time = datetime.now().strftime("%I:%M %p")
@@ -269,15 +271,15 @@ class EventsMixin:
             """Process QR code check-in"""
             qr_data = self.qr_code_data.get().strip()
             if not qr_data:
-                messagebox.showwarning("No QR Data", "Please enter or scan QR code data.")
+                messagebox.showwarning(_t('gui.learners.alumni.events.dialogs.no_qr_data', default="No QR Data"), _t('gui.learners.alumni.events.dialogs.please_enter_or_scan_qr_code_data', default="Please enter or scan QR code data."))
                 return
 
             # Simulate QR processing
             if qr_data.startswith("EVENT_CHECKIN:"):
-                messagebox.showinfo("QR Check-in Successful", "QR code processed successfully!")
+                messagebox.showinfo(_t('gui.learners.alumni.events.dialogs.qr_check_in_successful', default="QR Check-in Successful"), _t('gui.learners.alumni.events.dialogs.qr_code_processed_successfully', default="QR code processed successfully!"))
                 self.qr_code_data.set("")
             else:
-                messagebox.showerror("Invalid QR Code", "Invalid QR code format.")
+                messagebox.showerror(_t('gui.learners.alumni.events.dialogs.invalid_qr_code', default="Invalid QR Code"), _t('gui.learners.alumni.events.dialogs.invalid_qr_code_format', default="Invalid QR code format."))
 
         def _resolve_current_alumni(self):
             """Return (user_id, student_id, email, name) for the current user,
@@ -312,14 +314,14 @@ class EventsMixin:
             """Modal dialog to choose a payment method for a paid event.
             Returns the chosen method, or None if cancelled."""
             win = tk.Toplevel(self.root)
-            win.title("Event Payment")
+            win.title(_t('gui.learners.alumni.events.windows.event_payment', default="Event Payment"))
             win.geometry("440x330")
             win.grab_set()
             ttk.Label(win, text=f"Payment for: {title}",
                       font=('Arial', 12, 'bold')).pack(pady=(15, 5))
             ttk.Label(win, text=f"Fee: £{fee:.2f}").pack(pady=(0, 10))
 
-            method = tk.StringVar(value="Card")
+            method = tk.StringVar(value=_t('gui.learners.alumni.events.values.card', default="Card"))
             for m in ("Cash", "Card", "Finance Account"):
                 ttk.Radiobutton(win, text=m, variable=method, value=m).pack(anchor='w', padx=50)
 
@@ -347,8 +349,8 @@ class EventsMixin:
                 win.destroy()
             btns = ttk.Frame(win)
             btns.pack(pady=15)
-            ttk.Button(btns, text="Confirm Payment", command=confirm).pack(side=tk.LEFT, padx=8)
-            ttk.Button(btns, text="Cancel", command=win.destroy).pack(side=tk.LEFT)
+            ttk.Button(btns, text=_t('gui.learners.alumni.events.buttons.confirm_payment', default="Confirm Payment"), command=confirm).pack(side=tk.LEFT, padx=8)
+            ttk.Button(btns, text=_t('gui.learners.alumni.events.buttons.cancel', default="Cancel"), command=win.destroy).pack(side=tk.LEFT)
             win.wait_window()
             return result['method']
 
@@ -382,14 +384,14 @@ class EventsMixin:
             payment method if the event has a fee, then email a confirmation."""
             selection = self.events_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select an event to register for.")
+                messagebox.showwarning(_t('gui.learners.alumni.events.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.events.dialogs.please_select_an_event_to_register_for', default="Please select an event to register for."))
                 return
 
             iid = selection[0]
             info = getattr(self, '_event_rows', {}).get(iid)
             if not info:
-                messagebox.showwarning("Unavailable",
-                                       "Please refresh the events list and try again.")
+                messagebox.showwarning(_t('gui.learners.alumni.events.dialogs.unavailable', default="Unavailable"),
+                                       _t('gui.learners.alumni.events.dialogs.please_refresh_the_events_list_and_try_again', default="Please refresh the events list and try again."))
                 return
             event_id = info['event_id']
             title = info['title']
@@ -404,7 +406,7 @@ class EventsMixin:
                         "SELECT 1 FROM unified_event_registrations "
                         "WHERE event_id = ? AND user_id = ?",
                         (event_id, uid)).fetchone():
-                        messagebox.showinfo("Already Registered",
+                        messagebox.showinfo(_t('gui.learners.alumni.events.dialogs.already_registered', default="Already Registered"),
                                             f"You are already registered for {title}.")
                         return
             except sqlite3.Error:
@@ -422,9 +424,9 @@ class EventsMixin:
                 if payment_method == "Finance Account":
                     if not student_id:
                         messagebox.showerror(
-                            "No Finance Account",
-                            "No finance account is linked to your record, so the fee "
-                            "cannot be paid from a finance account.")
+                            _t('gui.learners.alumni.events.dialogs.no_finance_account', default="No Finance Account"),
+                            _t('gui.learners.alumni.events.dialogs.no_finance_account_is_linked_to_your_record_so_the_fee_cannot_be', default="No finance account is linked to your record, so the fee "
+                            "cannot be paid from a finance account."))
                         return
                     try:
                         with db_get_connection() as conn:
@@ -432,15 +434,15 @@ class EventsMixin:
                                 "SELECT balance FROM student_finance_accounts WHERE student_id = ?",
                                 (student_id,)).fetchone()
                     except sqlite3.Error as e:
-                        messagebox.showerror("Database Error", f"Finance lookup failed: {e}")
+                        messagebox.showerror(_t('gui.learners.alumni.events.dialogs.database_error', default="Database Error"), f"Finance lookup failed: {e}")
                         return
                     if bal is None:
-                        messagebox.showerror("No Finance Account",
+                        messagebox.showerror(_t('gui.learners.alumni.events.dialogs.no_finance_account', default="No Finance Account"),
                                              f"No finance account exists for {student_id}.")
                         return
                     if float(bal[0] or 0) < fee:
                         messagebox.showerror(
-                            "Insufficient Funds",
+                            _t('gui.learners.alumni.events.dialogs.insufficient_funds', default="Insufficient Funds"),
                             f"Balance (£{float(bal[0] or 0):.2f}) is less than the "
                             f"fee (£{fee:.2f}).")
                         return
@@ -452,16 +454,16 @@ class EventsMixin:
                             reference_id=f"EVENT-{event_id}-{uid}",
                             processed_by=uid)
                         if tx is None:
-                            messagebox.showerror("Payment Failed",
-                                                 "Could not debit the finance account.")
+                            messagebox.showerror(_t('gui.learners.alumni.events.dialogs.payment_failed', default="Payment Failed"),
+                                                 _t('gui.learners.alumni.events.dialogs.could_not_debit_the_finance_account', default="Could not debit the finance account."))
                             return
                     except Exception as e:
-                        messagebox.showerror("Payment Failed", f"Charge failed: {e}")
+                        messagebox.showerror(_t('gui.learners.alumni.events.dialogs.payment_failed', default="Payment Failed"), f"Charge failed: {e}")
                         return
                 payment_status = 'paid'
                 paid_amount = fee
             else:
-                if not messagebox.askyesno("Confirm Registration", f"Register for {title}?"):
+                if not messagebox.askyesno(_t('gui.learners.alumni.events.dialogs.confirm_registration', default="Confirm Registration"), f"Register for {title}?"):
                     return
 
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -478,7 +480,7 @@ class EventsMixin:
                     )
                     conn.commit()
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Registration failed: {e}")
+                messagebox.showerror(_t('gui.learners.alumni.events.dialogs.database_error', default="Database Error"), f"Registration failed: {e}")
                 return
 
             # Book a paid event fee as revenue in the central finance system.
@@ -508,7 +510,7 @@ class EventsMixin:
                 msg += f"\nPaid £{fee:.2f} via {payment_method}."
             msg += ("\nA confirmation email has been sent."
                     if emailed else "\n(Confirmation email could not be sent.)")
-            messagebox.showinfo("Registration Successful", msg)
+            messagebox.showinfo(_t('gui.learners.alumni.events.dialogs.registration_successful', default="Registration Successful"), msg)
             self.update_status("Event registration completed")
             self.load_events_data()
 
@@ -517,23 +519,23 @@ class EventsMixin:
             self.clear_content()
             self.update_status("Search Events")
 
-            ttk.Label(self.content_frame, text="Search Events",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.events.labels.search_events', default="Search Events"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Search criteria frame
-            search_frame = ttk.LabelFrame(self.content_frame, text="Search Criteria", padding=10)
+            search_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.events.labels.search_criteria', default="Search Criteria"), padding=10)
             search_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
             # Row 1: Keyword search
             keyword_frame = ttk.Frame(search_frame)
             keyword_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(keyword_frame, text="Keyword:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(keyword_frame, text=_t('gui.learners.alumni.events.labels.keyword', default="Keyword:")).pack(side=tk.LEFT, padx=(0, 10))
             self.event_search_keyword = tk.StringVar()
             ttk.Entry(keyword_frame, textvariable=self.event_search_keyword,
                      width=30).pack(side=tk.LEFT, padx=(0, 20))
 
-            ttk.Label(keyword_frame, text="Event Type:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(keyword_frame, text=_t('gui.learners.alumni.events.labels.event_type_variant_2', default="Event Type:")).pack(side=tk.LEFT, padx=(0, 10))
             self.event_search_type = tk.StringVar()
             type_combo = ttk.Combobox(keyword_frame, textvariable=self.event_search_type,
                                      values=["All", "In-Person", "Virtual", "Hybrid", "Networking",
@@ -545,7 +547,7 @@ class EventsMixin:
             date_frame = ttk.Frame(search_frame)
             date_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(date_frame, text="Date Range:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(date_frame, text=_t('gui.learners.alumni.events.labels.date_range', default="Date Range:")).pack(side=tk.LEFT, padx=(0, 10))
             self.event_date_range = tk.StringVar()
             date_combo = ttk.Combobox(date_frame, textvariable=self.event_date_range,
                                      values=["All Time", "Next 7 Days", "Next 30 Days", "Next 3 Months",
@@ -553,7 +555,7 @@ class EventsMixin:
             date_combo.pack(side=tk.LEFT, padx=(0, 20))
             date_combo.set("Next 30 Days")
 
-            ttk.Label(date_frame, text="Location:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(date_frame, text=_t('gui.learners.alumni.events.labels.location', default="Location:")).pack(side=tk.LEFT, padx=(0, 10))
             self.event_search_location = tk.StringVar()
             ttk.Entry(date_frame, textvariable=self.event_search_location,
                      width=20).pack(side=tk.LEFT)
@@ -563,19 +565,19 @@ class EventsMixin:
             filter_frame.pack(fill=tk.X, pady=(0, 10))
 
             self.event_free_only = tk.BooleanVar()
-            ttk.Checkbutton(filter_frame, text="Free Events Only",
+            ttk.Checkbutton(filter_frame, text=_t('gui.learners.alumni.events.buttons.free_events_only', default="Free Events Only"),
                            variable=self.event_free_only).pack(side=tk.LEFT, padx=(0, 20))
 
             self.event_has_capacity = tk.BooleanVar()
-            ttk.Checkbutton(filter_frame, text="Has Available Capacity",
+            ttk.Checkbutton(filter_frame, text=_t('gui.learners.alumni.events.buttons.has_available_capacity', default="Has Available Capacity"),
                            variable=self.event_has_capacity).pack(side=tk.LEFT)
 
             # Search button
-            ttk.Button(search_frame, text="Search Events",
+            ttk.Button(search_frame, text=_t('gui.learners.alumni.events.buttons.search_events', default="Search Events"),
                       command=self._perform_event_search).pack(pady=(10, 0))
 
             # Results table
-            results_frame = ttk.LabelFrame(self.content_frame, text="Search Results", padding=10)
+            results_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.events.labels.search_results', default="Search Results"), padding=10)
             results_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             columns = ('Event Name', 'Date', 'Location', 'Type', 'Fee', 'Capacity', 'Status')
@@ -596,9 +598,9 @@ class EventsMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="View Details",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.view_details', default="View Details"),
                       command=self._view_search_event_details).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Register for Event",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.register_for_event', default="Register for Event"),
                       command=self.register_for_selected_event).pack(side=tk.LEFT)
 
         def show_create_event(self):
@@ -606,7 +608,7 @@ class EventsMixin:
             self.clear_content()
             self.update_status("Create Event")
 
-            ttk.Label(self.content_frame, text="Create Alumni Event",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.events.labels.create_alumni_event', default="Create Alumni Event"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Create scrollable form
@@ -626,7 +628,7 @@ class EventsMixin:
             self.event_vars = {}
 
             # Basic details
-            basic_frame = ttk.LabelFrame(scrollable_frame, text="Event Details", padding=10)
+            basic_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.events.labels.event_details', default="Event Details"), padding=10)
             basic_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             basic_fields = [
@@ -651,53 +653,53 @@ class EventsMixin:
             basic_frame.columnconfigure(1, weight=1)
 
             # Event type
-            type_frame = ttk.LabelFrame(scrollable_frame, text="Event Type", padding=10)
+            type_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.events.labels.event_type', default="Event Type"), padding=10)
             type_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
-            self.event_vars['event_type'] = tk.StringVar(value="in-person")
-            ttk.Radiobutton(type_frame, text="In-Person", variable=self.event_vars['event_type'],
+            self.event_vars['event_type'] = tk.StringVar(value=_t('gui.learners.alumni.events.values.in_person', default="in-person"))
+            ttk.Radiobutton(type_frame, text=_t('gui.learners.alumni.events.buttons.in_person', default="In-Person"), variable=self.event_vars['event_type'],
                            value="in-person").pack(anchor='w')
-            ttk.Radiobutton(type_frame, text="Virtual", variable=self.event_vars['event_type'],
+            ttk.Radiobutton(type_frame, text=_t('gui.learners.alumni.events.buttons.virtual', default="Virtual"), variable=self.event_vars['event_type'],
                            value="virtual").pack(anchor='w')
-            ttk.Radiobutton(type_frame, text="Hybrid", variable=self.event_vars['event_type'],
+            ttk.Radiobutton(type_frame, text=_t('gui.learners.alumni.events.buttons.hybrid', default="Hybrid"), variable=self.event_vars['event_type'],
                            value="hybrid").pack(anchor='w')
 
             # Registration settings
-            reg_frame = ttk.LabelFrame(scrollable_frame, text="Registration Settings", padding=10)
+            reg_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.events.labels.registration_settings', default="Registration Settings"), padding=10)
             reg_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             self.event_vars['registration_required'] = tk.BooleanVar(value=True)
-            ttk.Checkbutton(reg_frame, text="Registration Required",
+            ttk.Checkbutton(reg_frame, text=_t('gui.learners.alumni.events.buttons.registration_required', default="Registration Required"),
                            variable=self.event_vars['registration_required']).pack(anchor='w')
 
             reg_fields_frame = ttk.Frame(reg_frame)
             reg_fields_frame.pack(fill=tk.X, pady=10)
 
-            ttk.Label(reg_fields_frame, text="Max Attendees (0 = unlimited):").pack(anchor='w')
+            ttk.Label(reg_fields_frame, text=_t('gui.learners.alumni.events.labels.max_attendees_0_unlimited', default="Max Attendees (0 = unlimited):")).pack(anchor='w')
             self.event_vars['max_attendees'] = tk.StringVar(value="0")
             ttk.Entry(reg_fields_frame, textvariable=self.event_vars['max_attendees']).pack(fill=tk.X, pady=(5, 10))
 
-            ttk.Label(reg_fields_frame, text="Registration Deadline:").pack(anchor='w')
+            ttk.Label(reg_fields_frame, text=_t('gui.learners.alumni.events.labels.registration_deadline', default="Registration Deadline:")).pack(anchor='w')
             self.event_vars['reg_deadline'] = tk.StringVar()
             ttk.Entry(reg_fields_frame, textvariable=self.event_vars['reg_deadline']).pack(fill=tk.X, pady=(5, 0))
 
             # Payment settings
-            payment_frame = ttk.LabelFrame(scrollable_frame, text="Payment Settings", padding=10)
+            payment_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.events.labels.payment_settings', default="Payment Settings"), padding=10)
             payment_frame.pack(fill=tk.X, pady=(0, 10), padx=20)
 
             self.event_vars['payment_required'] = tk.BooleanVar()
-            ttk.Checkbutton(payment_frame, text="Payment Required",
+            ttk.Checkbutton(payment_frame, text=_t('gui.learners.alumni.events.buttons.payment_required', default="Payment Required"),
                            variable=self.event_vars['payment_required']).pack(anchor='w')
 
             fee_frame = ttk.Frame(payment_frame)
             fee_frame.pack(fill=tk.X, pady=10)
 
-            ttk.Label(fee_frame, text="Event Fee ($):").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(fee_frame, text=_t('gui.learners.alumni.events.labels.event_fee', default="Event Fee ($):")).pack(side=tk.LEFT, padx=(0, 10))
             self.event_vars['event_fee'] = tk.StringVar(value="0.00")
             ttk.Entry(fee_frame, textvariable=self.event_vars['event_fee'], width=10).pack(side=tk.LEFT)
 
             # Description
-            desc_frame = ttk.LabelFrame(scrollable_frame, text="Event Description", padding=10)
+            desc_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.learners.alumni.events.labels.event_description', default="Event Description"), padding=10)
             desc_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10), padx=20)
 
             self.event_description = ScrolledText(desc_frame, height=6, wrap=tk.WORD)
@@ -707,9 +709,9 @@ class EventsMixin:
             button_frame = ttk.Frame(scrollable_frame)
             button_frame.pack(fill=tk.X, pady=20, padx=20)
 
-            ttk.Button(button_frame, text="Create Event",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.create_event', default="Create Event"),
                       command=self.submit_event).pack(side=tk.RIGHT, padx=(10, 0))
-            ttk.Button(button_frame, text="Clear Form",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.clear_form', default="Clear Form"),
                       command=self.clear_event_form).pack(side=tk.RIGHT)
 
             # Pack canvas and scrollbar
@@ -721,11 +723,11 @@ class EventsMixin:
             self.clear_content()
             self.update_status("Event Check-in System")
 
-            ttk.Label(self.content_frame, text="Event Check-in System",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.events.labels.event_check_in_system', default="Event Check-in System"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Today's events
-            events_frame = ttk.LabelFrame(self.content_frame, text="Today's Events", padding=10)
+            events_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.events.labels.today_s_events', default="Today's Events"), padding=10)
             events_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
             sample_today_events = [
@@ -740,31 +742,31 @@ class EventsMixin:
                                value=event).pack(anchor='w', pady=2)
 
             # Check-in methods
-            checkin_frame = ttk.LabelFrame(self.content_frame, text="Check-in Method", padding=10)
+            checkin_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.events.labels.check_in_method', default="Check-in Method"), padding=10)
             checkin_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
             # Manual check-in
             manual_frame = ttk.Frame(checkin_frame)
             manual_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(manual_frame, text="Alumni ID:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(manual_frame, text=_t('gui.learners.alumni.events.labels.alumni_id', default="Alumni ID:")).pack(side=tk.LEFT, padx=(0, 10))
             self.checkin_alumni_id = tk.StringVar()
             ttk.Entry(manual_frame, textvariable=self.checkin_alumni_id, width=15).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(manual_frame, text="Check In",
+            ttk.Button(manual_frame, text=_t('gui.learners.alumni.events.buttons.check_in', default="Check In"),
                       command=self.process_manual_checkin).pack(side=tk.LEFT)
 
             # QR code check-in (simulated)
             qr_frame = ttk.Frame(checkin_frame)
             qr_frame.pack(fill=tk.X)
 
-            ttk.Label(qr_frame, text="QR Code:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(qr_frame, text=_t('gui.learners.alumni.events.labels.qr_code', default="QR Code:")).pack(side=tk.LEFT, padx=(0, 10))
             self.qr_code_data = tk.StringVar()
             ttk.Entry(qr_frame, textvariable=self.qr_code_data, width=25).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(qr_frame, text="Scan QR",
+            ttk.Button(qr_frame, text=_t('gui.learners.alumni.events.buttons.scan_qr', default="Scan QR"),
                       command=self.process_qr_checkin).pack(side=tk.LEFT)
 
             # Attendance list
-            attendance_frame = ttk.LabelFrame(self.content_frame, text="Current Attendance", padding=10)
+            attendance_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.learners.alumni.events.labels.current_attendance', default="Current Attendance"), padding=10)
             attendance_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
 
             self.attendance_text = ScrolledText(attendance_frame, height=10, wrap=tk.WORD)
@@ -788,21 +790,21 @@ class EventsMixin:
             self.clear_content()
             self.update_status("View Events")
 
-            ttk.Label(self.content_frame, text="Alumni Events",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.events.labels.alumni_events', default="Alumni Events"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Filter options
             filter_frame = ttk.Frame(self.content_frame)
             filter_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
 
-            ttk.Label(filter_frame, text="Filter:").pack(side=tk.LEFT, padx=(0, 10))
+            ttk.Label(filter_frame, text=_t('gui.learners.alumni.events.labels.filter', default="Filter:")).pack(side=tk.LEFT, padx=(0, 10))
             filter_var = tk.StringVar()
             filter_combo = ttk.Combobox(filter_frame, textvariable=filter_var,
                                        values=["All Events", "Upcoming Events", "Past Events", "My Registrations"])
             filter_combo.pack(side=tk.LEFT, padx=(0, 10))
             filter_combo.set("Upcoming Events")
 
-            ttk.Button(filter_frame, text="Apply Filter",
+            ttk.Button(filter_frame, text=_t('gui.learners.alumni.events.buttons.apply_filter', default="Apply Filter"),
                       command=lambda: self.filter_events(filter_var.get())).pack(side=tk.LEFT)
 
             # Events table
@@ -830,11 +832,11 @@ class EventsMixin:
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="View Details",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.view_details', default="View Details"),
                       command=self.view_event_details).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Register for Event",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.register_for_event', default="Register for Event"),
                       command=self.register_for_selected_event).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.refresh', default="Refresh"),
                       command=self.load_events_data).pack(side=tk.LEFT)
 
         def _add_event_to_academic_calendar(self, event_id, name, date_, description,
@@ -871,7 +873,7 @@ class EventsMixin:
             required_fields = ['event_name', 'event_date', 'event_time', 'location']
             for field in required_fields:
                 if not self.event_vars[field].get().strip():
-                    messagebox.showerror("Validation Error", f"{field.replace('_', ' ').title()} is required!")
+                    messagebox.showerror(_t('gui.learners.alumni.events.dialogs.validation_error', default="Validation Error"), f"{field.replace('_', ' ').title()} is required!")
                     return
 
             name = self.event_vars['event_name'].get().strip()
@@ -920,7 +922,7 @@ class EventsMixin:
                     event_id = cur.lastrowid
                     conn.commit()
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to create event: {e}")
+                messagebox.showerror(_t('gui.learners.alumni.events.dialogs.database_error', default="Database Error"), f"Failed to create event: {e}")
                 return
 
             added = self._add_event_to_academic_calendar(
@@ -928,7 +930,7 @@ class EventsMixin:
             msg = f"Event '{name}' created."
             msg += ("\nAdded to the academic calendar."
                     if added else "\n(Could not add to academic calendar.)")
-            messagebox.showinfo("Success", msg)
+            messagebox.showinfo(_t('gui.learners.alumni.events.dialogs.success', default="Success"), msg)
             self.update_status("New event created")
             self.clear_event_form()
 
@@ -936,7 +938,7 @@ class EventsMixin:
             """View details for selected event"""
             selection = self.events_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select an event to view details.")
+                messagebox.showwarning(_t('gui.learners.alumni.events.dialogs.no_selection', default="No Selection"), _t('gui.learners.alumni.events.dialogs.please_select_an_event_to_view_details', default="Please select an event to view details."))
                 return
 
             item = self.events_tree.item(selection[0])
@@ -985,7 +987,7 @@ class EventsMixin:
             self.clear_content()
             self.update_status("My Event Registrations")
 
-            ttk.Label(self.content_frame, text="My Event Registrations",
+            ttk.Label(self.content_frame, text=_t('gui.learners.alumni.events.labels.my_event_registrations', default="My Event Registrations"),
                      font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Create registrations table
@@ -1030,16 +1032,16 @@ class EventsMixin:
                     self.update_status(f"Loaded {len(registrations)} registration(s)")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to load registrations: {str(e)}")
+                messagebox.showerror(_t('gui.learners.alumni.events.dialogs.database_error', default="Database Error"), f"Failed to load registrations: {str(e)}")
 
             # Action buttons
             button_frame = ttk.Frame(self.content_frame)
             button_frame.pack(fill=tk.X, padx=20)
 
-            ttk.Button(button_frame, text="View Event Details",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.view_event_details', default="View Event Details"),
                       command=self.view_event_details).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Cancel Registration",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.cancel_registration', default="Cancel Registration"),
                       command=self._cancel_registration).pack(side=tk.LEFT, padx=(0, 10))
-            ttk.Button(button_frame, text="Refresh",
+            ttk.Button(button_frame, text=_t('gui.learners.alumni.events.buttons.refresh', default="Refresh"),
                       command=self.view_my_event_registrations).pack(side=tk.LEFT)
 

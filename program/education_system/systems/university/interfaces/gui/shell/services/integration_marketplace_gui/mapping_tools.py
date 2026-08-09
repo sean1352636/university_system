@@ -21,28 +21,28 @@ class MappingToolsMixin:
         """Automatically suggest field mappings based on names"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Auto-Detect Field Mappings")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.mapping_tools.windows.auto_detect_field_mappings', default="Auto-Detect Field Mappings"))
             dialog.geometry("700x600")
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Auto-Detect Field Mappings",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.auto_detect_field_mappings', default="Auto-Detect Field Mappings"),
                      style='Title.TLabel').pack(pady=10)
 
             # Input frame
-            input_frame = ttk.LabelFrame(dialog, text="Input Fields", padding=10)
+            input_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.input_fields', default="Input Fields"), padding=10)
             input_frame.pack(fill='x', padx=10, pady=5)
 
-            ttk.Label(input_frame, text="Source Fields (comma-separated):").pack(anchor='w')
-            source_var = tk.StringVar(value="student_id, first_name, last_name, email, phone")
+            ttk.Label(input_frame, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.source_fields_comma_separated', default="Source Fields (comma-separated):")).pack(anchor='w')
+            source_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.values.student_id_first_name_last_name_email_phone', default="student_id, first_name, last_name, email, phone"))
             ttk.Entry(input_frame, textvariable=source_var, width=70).pack(fill='x', pady=5)
 
-            ttk.Label(input_frame, text="Target Fields (comma-separated):").pack(anchor='w')
-            target_var = tk.StringVar(value="id, firstName, lastName, emailAddress, phoneNumber")
+            ttk.Label(input_frame, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.target_fields_comma_separated', default="Target Fields (comma-separated):")).pack(anchor='w')
+            target_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.values.id_firstname_lastname_emailaddress_phonenumber', default="id, firstName, lastName, emailAddress, phoneNumber"))
             ttk.Entry(input_frame, textvariable=target_var, width=70).pack(fill='x', pady=5)
 
             # Results frame
-            results_frame = ttk.LabelFrame(dialog, text="Suggested Mappings", padding=10)
+            results_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.suggested_mappings', default="Suggested Mappings"), padding=10)
             results_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
             columns = ('source', 'target', 'confidence', 'match_type')
@@ -112,9 +112,9 @@ class MappingToolsMixin:
                     ))
 
                 if not suggestions:
-                    messagebox.showinfo("Auto-Detect", "No matching field mappings detected")
+                    messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.mapping_tools.dialogs.auto_detect', default="Auto-Detect"), _t('gui.shell.services.integration_marketplace_gui.mapping_tools.dialogs.no_matching_field_mappings_detected', default="No matching field mappings detected"))
 
-            ttk.Button(dialog, text="Detect Mappings", command=detect_mappings).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.buttons.detect_mappings', default="Detect Mappings"), command=detect_mappings).pack(pady=10)
             ttk.Button(dialog, text=_t("common.close"), command=dialog.destroy).pack(pady=5)
 
         except Exception as e:
@@ -126,7 +126,7 @@ class MappingToolsMixin:
         try:
             selected = self.mappings_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select a mapping to preview transformation")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.mapping_tools.dialogs.please_select_a_mapping_to_preview_transformation', default="Please select a mapping to preview transformation"))
                 return
 
             mapping_id = self.mappings_tree.item(selected[0])['values'][0]
@@ -141,7 +141,7 @@ class MappingToolsMixin:
                 mapping = cursor.fetchone()
 
             if not mapping:
-                messagebox.showerror(_t("common.error"), "Mapping not found")
+                messagebox.showerror(_t("common.error"), _t('gui.shell.services.integration_marketplace_gui.mapping_tools.dialogs.mapping_not_found', default="Mapping not found"))
                 return
 
             dialog = tk.Toplevel(self.root)
@@ -150,18 +150,18 @@ class MappingToolsMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Preview Transformation",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.preview_transformation', default="Preview Transformation"),
                      style='Title.TLabel').pack(pady=10)
 
             ttk.Label(dialog, text=f"Source Field: {mapping[1]}").pack(anchor='w', padx=10)
             ttk.Label(dialog, text=f"Target Field: {mapping[2]}").pack(anchor='w', padx=10)
             ttk.Label(dialog, text=f"Rule: {mapping[0] or 'Direct copy'}").pack(anchor='w', padx=10, pady=5)
 
-            ttk.Label(dialog, text="Sample Input Value:").pack(anchor='w', padx=10, pady=5)
-            input_var = tk.StringVar(value="  John Doe  ")
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.sample_input_value', default="Sample Input Value:")).pack(anchor='w', padx=10, pady=5)
+            input_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.values.john_doe', default="  John Doe  "))
             ttk.Entry(dialog, textvariable=input_var, width=40).pack(padx=10)
 
-            result_frame = ttk.LabelFrame(dialog, text="Transformation Result", padding=10)
+            result_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.transformation_result', default="Transformation Result"), padding=10)
             result_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
             result_label = ttk.Label(result_frame, text="", font=('Arial', 12))
@@ -200,12 +200,12 @@ class MappingToolsMixin:
         """Clone an existing mapping configuration"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Duplicate Mapping Set")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.mapping_tools.windows.duplicate_mapping_set', default="Duplicate Mapping Set"))
             dialog.geometry("500x300")
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Duplicate Mapping Set",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.duplicate_mapping_set', default="Duplicate Mapping Set"),
                      style='Title.TLabel').pack(pady=10)
 
             # Get installed integrations
@@ -219,14 +219,14 @@ class MappingToolsMixin:
                 ''')
                 integrations = cursor.fetchall()
 
-            ttk.Label(dialog, text="Source Integration:").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.source_integration', default="Source Integration:")).pack(anchor='w', padx=10, pady=5)
             source_var = tk.StringVar()
             source_combo = ttk.Combobox(dialog, textvariable=source_var,
                                        values=[f"{i[0]}: {i[1]}" for i in integrations],
                                        width=40, state='readonly')
             source_combo.pack(padx=10, pady=5)
 
-            ttk.Label(dialog, text="Target Integration:").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.target_integration', default="Target Integration:")).pack(anchor='w', padx=10, pady=5)
             target_var = tk.StringVar()
             target_combo = ttk.Combobox(dialog, textvariable=target_var,
                                        values=[f"{i[0]}: {i[1]}" for i in integrations],
@@ -235,14 +235,14 @@ class MappingToolsMixin:
 
             def duplicate():
                 if not source_var.get() or not target_var.get():
-                    messagebox.showwarning(_t("common.warning"), "Please select both source and target integrations")
+                    messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.mapping_tools.dialogs.please_select_both_source_and_target_integrations', default="Please select both source and target integrations"))
                     return
 
                 source_id = int(source_var.get().split(':')[0])
                 target_id = int(target_var.get().split(':')[0])
 
                 if source_id == target_id:
-                    messagebox.showwarning(_t("common.warning"), "Source and target must be different")
+                    messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.mapping_tools.dialogs.source_and_target_must_be_different', default="Source and target must be different"))
                     return
 
                 with get_connection() as conn:
@@ -255,7 +255,7 @@ class MappingToolsMixin:
                     mappings = cursor.fetchall()
 
                 if not mappings:
-                    messagebox.showinfo(_t("common.info"), "No mappings found in source integration")
+                    messagebox.showinfo(_t("common.info"), _t('gui.shell.services.integration_marketplace_gui.mapping_tools.dialogs.no_mappings_found_in_source_integration', default="No mappings found in source integration"))
                     return
 
                 copied_count = 0
@@ -276,7 +276,7 @@ class MappingToolsMixin:
                 dialog.destroy()
                 self.load_mappings()
 
-            ttk.Button(dialog, text="Duplicate Mappings", command=duplicate).pack(pady=20)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.buttons.duplicate_mappings', default="Duplicate Mappings"), command=duplicate).pack(pady=20)
 
         except Exception as e:
             logger.error(f"Error duplicating mapping set: {e}")
@@ -287,7 +287,7 @@ class MappingToolsMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to import mappings to")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.mapping_tools.dialogs.please_select_an_integration_to_import_mappings_to', default="Please select an integration to import mappings to"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
@@ -325,7 +325,7 @@ class MappingToolsMixin:
                 ]
             }
 
-            ttk.Label(dialog, text="Select Template:").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.select_template', default="Select Template:")).pack(anchor='w', padx=10, pady=5)
             template_var = tk.StringVar()
             template_combo = ttk.Combobox(dialog, textvariable=template_var,
                                          values=list(templates.keys()),
@@ -333,7 +333,7 @@ class MappingToolsMixin:
             template_combo.pack(padx=10, pady=5)
 
             # Preview frame
-            preview_frame = ttk.LabelFrame(dialog, text="Template Preview", padding=10)
+            preview_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.labels.template_preview', default="Template Preview"), padding=10)
             preview_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
             preview_text = scrolledtext.ScrolledText(preview_frame, height=10)
@@ -354,7 +354,7 @@ class MappingToolsMixin:
             def import_template():
                 template_name = template_var.get()
                 if not template_name:
-                    messagebox.showwarning(_t("common.warning"), "Please select a template")
+                    messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.mapping_tools.dialogs.please_select_a_template', default="Please select a template"))
                     return
 
                 mappings = templates[template_name]
@@ -377,7 +377,7 @@ class MappingToolsMixin:
                 dialog.destroy()
                 self.load_mappings()
 
-            ttk.Button(dialog, text="Import Template", command=import_template).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.mapping_tools.buttons.import_template', default="Import Template"), command=import_template).pack(pady=10)
 
         except Exception as e:
             logger.error(f"Error importing mapping template: {e}")

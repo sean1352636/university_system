@@ -50,8 +50,24 @@ class PersistentRateLimiter:
             conn.commit()
             return False
         except Exception as exc:
-            logger.debug("Rate limiter DB error (non-fatal): %s", exc)
-            return False
+            # Fail closed: a rate-limiter DB error must not silently disable
+            # brute-force protection. Treat the key as limited (deny) and
+            # alert, rather than admitting unlimited login/MFA/reset attempts.
+            logger.error("Rate limiter DB error — failing closed (limited): %s", exc)
+            try:
+                from education_system.platform.governance.security.fail_closed import (
+                    alert_security_failure,
+                )
+
+                alert_security_failure(
+                    "rate_limiter.store",
+                    f"rate limit store unavailable for key={key!r}; failing closed",
+                    severity="high",
+                    exc=exc,
+                )
+            except Exception:  # noqa: BLE001 — the log line above is the floor
+                pass
+            return True
         finally:
             conn.close()
 

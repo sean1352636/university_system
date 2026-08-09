@@ -419,28 +419,32 @@ _LAZY_EXCEPTIONS_EXPORTS = {
     'ValidationError',
 }
 
+# Path constants now live in the single ``education_system.paths`` module, one
+# system-prefixed name each. This maps the unprefixed spellings this package has
+# always re-exported onto their consolidated names, so
+# ``from ...university.infrastructure import DATA_DIR`` keeps resolving.
 _LAZY_PATHS_EXPORTS = {
-    'ASSETS_DIR',
-    'BACKUP_METADATA_FILE',
-    'BASE_DIR',
-    'CONFIG_DIR',
-    'DATA_DIR',
-    'DB_BACKUPS_DIR',
-    'DB_DIR',
-    'DB_EXPORTS_DIR',
-    'DB_FILES_DIR',
-    'DEFAULT_DB_PATH',
-    'EMAIL_CONFIG_FILE',
-    'EMAIL_TEMPLATES_DIR',
-    'FINANCE_TEMPLATES_DIR',
-    'LOCALES_DIR',
-    'LOG_DIR',
-    'REPORTS_DIR',
-    'SCRIPTS_DIR',
-    'TEMP_DIR',
-    'TEMPLATES_DIR',
-    'UNIVERSITY_SYSTEM_DIR',
-    'UPLOADS_DIR',
+    'ASSETS_DIR': 'UNIVERSITY_ASSETS_DIR',
+    'BACKUP_METADATA_FILE': 'UNIVERSITY_BACKUP_METADATA_FILE',
+    'BASE_DIR': 'UNIVERSITY_BASE_DIR',
+    'CONFIG_DIR': 'UNIVERSITY_CONFIG_DIR',
+    'DATA_DIR': 'UNIVERSITY_DATA_DIR',
+    'DB_BACKUPS_DIR': 'UNIVERSITY_DB_BACKUPS_DIR',
+    'DB_DIR': 'UNIVERSITY_DB_DIR',
+    'DB_EXPORTS_DIR': 'UNIVERSITY_DB_EXPORTS_DIR',
+    'DB_FILES_DIR': 'UNIVERSITY_DB_FILES_DIR',
+    'DEFAULT_DB_PATH': 'UNIVERSITY_DEFAULT_DB_PATH',
+    'EMAIL_CONFIG_FILE': 'UNIVERSITY_EMAIL_CONFIG_FILE',
+    'EMAIL_TEMPLATES_DIR': 'UNIVERSITY_EMAIL_TEMPLATES_DIR',
+    'FINANCE_TEMPLATES_DIR': 'UNIVERSITY_FINANCE_TEMPLATES_DIR',
+    'LOCALES_DIR': 'UNIVERSITY_LOCALES_DIR',
+    'LOG_DIR': 'UNIVERSITY_LOG_DIR',
+    'REPORTS_DIR': 'UNIVERSITY_REPORTS_DIR',
+    'SCRIPTS_DIR': 'UNIVERSITY_SCRIPTS_DIR',
+    'TEMP_DIR': 'UNIVERSITY_TEMP_DIR',
+    'TEMPLATES_DIR': 'UNIVERSITY_TEMPLATES_DIR',
+    'UNIVERSITY_SYSTEM_DIR': 'UNIVERSITY_SYSTEM_DIR',
+    'UPLOADS_DIR': 'UNIVERSITY_UPLOADS_DIR',
 }
 
 _LAZY_ERROR_LOGGER_EXPORTS = {
@@ -452,7 +456,6 @@ _LAZY_ERROR_LOGGER_EXPORTS = {
 
 _ABSORBED = (
     (_LAZY_EXCEPTIONS_EXPORTS, "exceptions"),
-    (_LAZY_PATHS_EXPORTS, "paths"),
     (_LAZY_ERROR_LOGGER_EXPORTS, "error_logger"),
 )
 
@@ -460,6 +463,10 @@ _infrastructure_getattr = __getattr__
 
 
 def __getattr__(name):  # noqa: F811  (extends the loader defined above)
+    if name in _LAZY_PATHS_EXPORTS:
+        import importlib
+        paths = importlib.import_module("education_system.paths")
+        return getattr(paths, _LAZY_PATHS_EXPORTS[name])
     for exports, module_name in _ABSORBED:
         if name in exports:
             import importlib
@@ -471,5 +478,5 @@ def __getattr__(name):  # noqa: F811  (extends the loader defined above)
 
 
 __all__ = list(__all__) + sorted(
-    _LAZY_EXCEPTIONS_EXPORTS | _LAZY_PATHS_EXPORTS | _LAZY_ERROR_LOGGER_EXPORTS
+    _LAZY_EXCEPTIONS_EXPORTS | set(_LAZY_PATHS_EXPORTS) | _LAZY_ERROR_LOGGER_EXPORTS
 )

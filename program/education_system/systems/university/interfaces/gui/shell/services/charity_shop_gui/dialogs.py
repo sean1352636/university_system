@@ -1,5 +1,7 @@
 """Charity Shop - Dialog windows (ItemDialog, SellDialog, CheckoutDialog)."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.services.charity_shop_gui._imports import (
     tk, ttk, messagebox,
     FINANCE_INTEGRATION_AVAILABLE,
@@ -82,13 +84,13 @@ class ItemDialog(tk.Toplevel):
         self.condition_combo.set("Good")
 
         # Sold Status
-        ttk.Label(main_frame, text="Status:").grid(row=5, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.status', default="Status:")).grid(row=5, column=0, sticky="w", pady=5)
         self.sold_var = tk.BooleanVar(value=False)
-        self.sold_check = ttk.Checkbutton(main_frame, text="Mark as Sold", variable=self.sold_var)
+        self.sold_check = ttk.Checkbutton(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.buttons.mark_as_sold', default="Mark as Sold"), variable=self.sold_var)
         self.sold_check.grid(row=5, column=1, pady=5, padx=(10, 0), sticky="w")
 
         # Sold Quantity
-        ttk.Label(main_frame, text="Qty Sold:").grid(row=6, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.qty_sold', default="Qty Sold:")).grid(row=6, column=0, sticky="w", pady=5)
         self.sold_qty_var = tk.StringVar(value="0")
         self.sold_qty_spinbox = ttk.Spinbox(main_frame, textvariable=self.sold_qty_var,
                                              from_=0, to=9999, width=33)
@@ -98,8 +100,8 @@ class ItemDialog(tk.Toplevel):
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=7, column=0, columnspan=2, pady=30)
 
-        ttk.Button(button_frame, text="Save", command=self.save, width=12).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel, width=12).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.buttons.save', default="Save"), command=self.save, width=12).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.buttons.cancel', default="Cancel"), command=self.cancel, width=12).pack(side=tk.LEFT, padx=5)
 
         self.name_entry.focus_set()
 
@@ -118,7 +120,7 @@ class ItemDialog(tk.Toplevel):
         """Validate input fields."""
         name = self.name_var.get().strip()
         if not name:
-            messagebox.showerror("Validation Error", "Please enter an item name.", parent=self)
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.shell.services.charity_shop_gui.dialogs.dialogs.please_enter_an_item_name', default="Please enter an item name."), parent=self)
             return False
 
         try:
@@ -126,7 +128,7 @@ class ItemDialog(tk.Toplevel):
             if price < 0:
                 raise ValueError("Price must be positive")
         except ValueError:
-            messagebox.showerror("Validation Error", "Please enter a valid price.", parent=self)
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.shell.services.charity_shop_gui.dialogs.dialogs.please_enter_a_valid_price', default="Please enter a valid price."), parent=self)
             return False
 
         try:
@@ -134,7 +136,7 @@ class ItemDialog(tk.Toplevel):
             if quantity < 0:
                 raise ValueError("Quantity must be positive")
         except ValueError:
-            messagebox.showerror("Validation Error", "Please enter a valid quantity.", parent=self)
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.shell.services.charity_shop_gui.dialogs.dialogs.please_enter_a_valid_quantity_variant_2', default="Please enter a valid quantity."), parent=self)
             return False
 
         try:
@@ -142,7 +144,7 @@ class ItemDialog(tk.Toplevel):
             if sold_qty < 0:
                 raise ValueError("Sold quantity must be positive")
         except ValueError:
-            messagebox.showerror("Validation Error", "Please enter a valid sold quantity.", parent=self)
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.validation_error', default="Validation Error"), _t('gui.shell.services.charity_shop_gui.dialogs.dialogs.please_enter_a_valid_sold_quantity', default="Please enter a valid sold quantity."), parent=self)
             return False
 
         return True
@@ -174,7 +176,7 @@ class SellDialog(tk.Toplevel):
 
     def __init__(self, parent, item_name: str, max_quantity: int, unit_price: float, current_user: dict = None):
         super().__init__(parent)
-        self.title("Sell Item")
+        self.title(_t('gui.shell.services.charity_shop_gui.dialogs.windows.sell_item', default="Sell Item"))
         self.result = None
         self.max_quantity = max_quantity
         self.unit_price = unit_price
@@ -204,13 +206,13 @@ class SellDialog(tk.Toplevel):
         ttk.Label(main_frame, text=f"Price: \u00a3{self.unit_price:.2f} each | Available: {self.max_quantity}").pack(pady=(0, 15))
 
         # Quantity selection
-        qty_frame = ttk.LabelFrame(main_frame, text="Quantity", padding="10")
+        qty_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.quantity', default="Quantity"), padding="10")
         qty_frame.pack(fill=tk.X, pady=5)
 
         qty_inner = ttk.Frame(qty_frame)
         qty_inner.pack()
 
-        ttk.Label(qty_inner, text="Quantity to sell:").pack(side=tk.LEFT)
+        ttk.Label(qty_inner, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.quantity_to_sell', default="Quantity to sell:")).pack(side=tk.LEFT)
         self.qty_var = tk.StringVar(value="1")
         self.qty_spinbox = ttk.Spinbox(qty_inner, textvariable=self.qty_var,
                                         from_=1, to=self.max_quantity, width=10,
@@ -223,7 +225,7 @@ class SellDialog(tk.Toplevel):
         self.total_label.pack(pady=5)
 
         # Customer info - display current logged-in user (read-only)
-        customer_frame = ttk.LabelFrame(main_frame, text="Customer (Logged-in User)", padding="10")
+        customer_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.customer_logged_in_user', default="Customer (Logged-in User)"), padding="10")
         customer_frame.pack(fill=tk.X, pady=10)
 
         # Get current user details
@@ -255,10 +257,10 @@ class SellDialog(tk.Toplevel):
             self.after(100, self._load_balance)
 
         # Payment method
-        payment_frame = ttk.LabelFrame(main_frame, text="Payment Method", padding="10")
+        payment_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.payment_method', default="Payment Method"), padding="10")
         payment_frame.pack(fill=tk.X, pady=10)
 
-        self.payment_var = tk.StringVar(value="Cash")
+        self.payment_var = tk.StringVar(value=_t('gui.shell.services.charity_shop_gui.dialogs.values.cash', default="Cash"))
         for method in self.PAYMENT_METHODS:
             ttk.Radiobutton(payment_frame, text=method, variable=self.payment_var, value=method).pack(anchor=tk.W)
 
@@ -266,9 +268,9 @@ class SellDialog(tk.Toplevel):
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=15)
 
-        ttk.Button(button_frame, text="Complete Sale", command=self.sell, width=15).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Sell All", command=self.sell_all, width=10).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel, width=10).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.buttons.complete_sale', default="Complete Sale"), command=self.sell, width=15).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.buttons.sell_all', default="Sell All"), command=self.sell_all, width=10).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.buttons.cancel', default="Cancel"), command=self.cancel, width=10).pack(side=tk.LEFT, padx=5)
 
     def update_total(self):
         """Update the total price display."""
@@ -289,33 +291,33 @@ class SellDialog(tk.Toplevel):
             color = "green" if balance >= self.unit_price else "red"
             self.balance_label.config(text=f"Finance Balance: \u00a3{balance:.2f}", foreground=color)
         else:
-            self.balance_label.config(text="No finance account", foreground="orange")
+            self.balance_label.config(text=_t('gui.shell.services.charity_shop_gui.dialogs.text.no_finance_account', default="No finance account"), foreground="orange")
 
     def validate_sale(self) -> bool:
         """Validate the sale before processing."""
         try:
             qty = int(self.qty_var.get())
             if qty < 1 or qty > self.max_quantity:
-                messagebox.showerror("Error", f"Quantity must be between 1 and {self.max_quantity}", parent=self)
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.error', default="Error"), f"Quantity must be between 1 and {self.max_quantity}", parent=self)
                 return False
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid quantity", parent=self)
+            messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.dialogs.dialogs.please_enter_a_valid_quantity', default="Please enter a valid quantity"), parent=self)
             return False
 
         # If paying with Finance Account, verify user has balance
         if self.payment_var.get() == "Finance Account":
             if not self.user_id:
-                messagebox.showerror("Error", "You must be logged in to use Finance Account payment", parent=self)
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.dialogs.dialogs.you_must_be_logged_in_to_use_finance_account_payment', default="You must be logged in to use Finance Account payment"), parent=self)
                 return False
 
             if FINANCE_INTEGRATION_AVAILABLE:
                 balance = get_student_finance_account_balance(self.user_id)
                 total = qty * self.unit_price
                 if balance is None:
-                    messagebox.showerror("Error", "You do not have a finance account", parent=self)
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.dialogs.dialogs.you_do_not_have_a_finance_account', default="You do not have a finance account"), parent=self)
                     return False
                 if balance < total:
-                    messagebox.showerror("Error", f"Insufficient balance. Current: \u00a3{balance:.2f}, Required: \u00a3{total:.2f}", parent=self)
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.error', default="Error"), f"Insufficient balance. Current: \u00a3{balance:.2f}, Required: \u00a3{total:.2f}", parent=self)
                     return False
 
         return True
@@ -356,7 +358,7 @@ class CheckoutDialog(tk.Toplevel):
 
     def __init__(self, parent, basket: list, total: float, current_user: dict = None):
         super().__init__(parent)
-        self.title("Checkout")
+        self.title(_t('gui.shell.services.charity_shop_gui.dialogs.windows.checkout', default="Checkout"))
         self.result = None
         self.basket = basket
         self.total = total
@@ -401,18 +403,18 @@ class CheckoutDialog(tk.Toplevel):
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Header
-        ttk.Label(main_frame, text="Checkout", font=("Helvetica", 16, "bold")).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.checkout', default="Checkout"), font=("Helvetica", 16, "bold")).pack(pady=(0, 20))
 
         # Order summary
-        summary_frame = ttk.LabelFrame(main_frame, text="Order Summary", padding="15")
+        summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.order_summary', default="Order Summary"), padding="15")
         summary_frame.pack(fill=tk.X, pady=(0, 15))
 
         # Items header
         header_frame = ttk.Frame(summary_frame)
         header_frame.pack(fill=tk.X, pady=(0, 5))
-        ttk.Label(header_frame, text="Item", font=("Helvetica", 10, "bold"), width=25).pack(side=tk.LEFT)
-        ttk.Label(header_frame, text="Qty", font=("Helvetica", 10, "bold"), width=6).pack(side=tk.LEFT)
-        ttk.Label(header_frame, text="Subtotal", font=("Helvetica", 10, "bold"), width=10).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.item', default="Item"), font=("Helvetica", 10, "bold"), width=25).pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.qty', default="Qty"), font=("Helvetica", 10, "bold"), width=6).pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.subtotal', default="Subtotal"), font=("Helvetica", 10, "bold"), width=10).pack(side=tk.RIGHT)
 
         ttk.Separator(summary_frame, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=5)
 
@@ -433,11 +435,11 @@ class CheckoutDialog(tk.Toplevel):
         # Total
         total_frame = ttk.Frame(summary_frame)
         total_frame.pack(fill=tk.X, pady=5)
-        ttk.Label(total_frame, text="TOTAL:", font=("Helvetica", 14, "bold")).pack(side=tk.LEFT)
+        ttk.Label(total_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.total', default="TOTAL:"), font=("Helvetica", 14, "bold")).pack(side=tk.LEFT)
         ttk.Label(total_frame, text=f"\u00a3{self.total:.2f}", font=("Helvetica", 16, "bold"), foreground="green").pack(side=tk.RIGHT)
 
         # Customer info - display current logged-in user (read-only)
-        customer_frame = ttk.LabelFrame(main_frame, text="Customer (Logged-in User)", padding="15")
+        customer_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.customer_logged_in_user', default="Customer (Logged-in User)"), padding="15")
         customer_frame.pack(fill=tk.X, pady=15)
 
         # Get current user details
@@ -469,10 +471,10 @@ class CheckoutDialog(tk.Toplevel):
             self.after(100, self._load_balance)
 
         # Payment method
-        payment_frame = ttk.LabelFrame(main_frame, text="Payment Method", padding="15")
+        payment_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.labels.payment_method', default="Payment Method"), padding="15")
         payment_frame.pack(fill=tk.X, pady=15)
 
-        self.payment_var = tk.StringVar(value="Cash")
+        self.payment_var = tk.StringVar(value=_t('gui.shell.services.charity_shop_gui.dialogs.values.cash', default="Cash"))
         for method in self.PAYMENT_METHODS:
             rb = ttk.Radiobutton(payment_frame, text=method, variable=self.payment_var, value=method)
             rb.pack(anchor=tk.W, pady=2)
@@ -481,8 +483,8 @@ class CheckoutDialog(tk.Toplevel):
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="Complete Purchase", command=self.complete_purchase, width=18).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel, width=12).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.buttons.complete_purchase', default="Complete Purchase"), command=self.complete_purchase, width=18).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.services.charity_shop_gui.dialogs.buttons.cancel', default="Cancel"), command=self.cancel, width=12).pack(side=tk.LEFT, padx=5)
 
     def _load_balance(self):
         """Load the current user's finance account balance."""
@@ -494,22 +496,22 @@ class CheckoutDialog(tk.Toplevel):
             color = "green" if balance >= self.total else "red"
             self.balance_label.config(text=f"Finance Balance: \u00a3{balance:.2f}", foreground=color)
         else:
-            self.balance_label.config(text="No finance account", foreground="orange")
+            self.balance_label.config(text=_t('gui.shell.services.charity_shop_gui.dialogs.text.no_finance_account', default="No finance account"), foreground="orange")
 
     def validate_checkout(self) -> bool:
         """Validate checkout before processing."""
         if self.payment_var.get() == "Finance Account":
             if not self.user_id:
-                messagebox.showerror("Error", "You must be logged in to use Finance Account payment", parent=self)
+                messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.dialogs.dialogs.you_must_be_logged_in_to_use_finance_account_payment', default="You must be logged in to use Finance Account payment"), parent=self)
                 return False
 
             if FINANCE_INTEGRATION_AVAILABLE:
                 balance = get_student_finance_account_balance(self.user_id)
                 if balance is None:
-                    messagebox.showerror("Error", "You do not have a finance account", parent=self)
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.error', default="Error"), _t('gui.shell.services.charity_shop_gui.dialogs.dialogs.you_do_not_have_a_finance_account', default="You do not have a finance account"), parent=self)
                     return False
                 if balance < self.total:
-                    messagebox.showerror("Error", f"Insufficient balance. Current: \u00a3{balance:.2f}, Required: \u00a3{self.total:.2f}", parent=self)
+                    messagebox.showerror(_t('gui.shell.services.charity_shop_gui.dialogs.dialogs.error', default="Error"), f"Insufficient balance. Current: \u00a3{balance:.2f}, Required: \u00a3{self.total:.2f}", parent=self)
                     return False
 
         return True

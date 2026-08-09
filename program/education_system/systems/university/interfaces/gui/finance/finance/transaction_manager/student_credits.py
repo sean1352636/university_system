@@ -1,5 +1,7 @@
 """Student credit management GUI"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.finance.finance.transaction_manager._imports import (
     tk, ttk, messagebox, _, sys, io, datetime, get_connection,
     add_student_credit, apply_credit_to_fees, view_credit_history,
@@ -264,7 +266,7 @@ class StudentCreditsMixin:
 
         # Credit source
         ttk.Label(add_frame, text=_("finance_gui.transaction_manager.credit_source_label"), font=('Arial', 12)).pack(anchor='w', pady=(15, 5))
-        source_var = tk.StringVar(value="adjustment")
+        source_var = tk.StringVar(value=_t('gui.finance.finance.transaction_manager.student_credits.values.adjustment', default="adjustment"))
         source_combo = ttk.Combobox(add_frame, textvariable=source_var,
                                    values=["overpayment", "refund", "scholarship", "adjustment", "goodwill", "other"],
                                    state='readonly', font=('Arial', 12))

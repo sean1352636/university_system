@@ -1,9 +1,11 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from education_system.systems.university.infrastructure.email.template_utils import render_template
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from tkinter.scrolledtext import ScrolledText
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection as db_get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 from pathlib import Path
 import threading
@@ -58,12 +60,12 @@ class NotificationsMixin:
         def _show_email_fallback_dialog(self, to_email, subject, message):
             """Show email dialog as fallback when email system unavailable"""
             dialog = tk.Toplevel(self.root)
-            dialog.title("Email Notification")
+            dialog.title(_t('gui.learners.alumni.notifications.windows.email_notification', default="Email Notification"))
             dialog.geometry("500x400")
             dialog.configure(bg='white')
             dialog.grab_set()
 
-            tk.Label(dialog, text="Email Notification", font=('Arial', 14, 'bold'),
+            tk.Label(dialog, text=_t('gui.learners.alumni.notifications.labels.email_notification', default="Email Notification"), font=('Arial', 14, 'bold'),
                     bg='white', fg='#2c3e50').pack(pady=10)
 
             info_frame = tk.Frame(dialog, bg='white')
@@ -74,7 +76,7 @@ class NotificationsMixin:
             tk.Label(info_frame, text=f"Subject: {subject}", font=('Arial', 11),
                     bg='white', fg='#34495e').pack(anchor='w')
 
-            tk.Label(dialog, text="Message:", font=('Arial', 11, 'bold'),
+            tk.Label(dialog, text=_t('gui.learners.alumni.notifications.labels.message', default="Message:"), font=('Arial', 11, 'bold'),
                     bg='white', fg='#2c3e50').pack(anchor='w', padx=20, pady=(10, 5))
 
             message_text = tk.Text(dialog, height=10, wrap='word', font=('Arial', 10))
@@ -82,7 +84,7 @@ class NotificationsMixin:
             message_text.insert('1.0', message)
             message_text.config(state='disabled')
 
-            tk.Button(dialog, text="Close", command=dialog.destroy,
+            tk.Button(dialog, text=_t('gui.learners.alumni.notifications.buttons.close', default="Close"), command=dialog.destroy,
                      bg='#6c757d', fg='white', font=('Arial', 10),
                      padx=20, pady=5, relief='flat').pack(pady=10)
 

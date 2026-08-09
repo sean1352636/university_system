@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.interfaces.gui.pastoral.internship_management._imports import tk, ttk, messagebox, scrolledtext, get_connection
 
@@ -131,7 +133,7 @@ class EligibilityMixin:
             main_frame.pack(fill='both', expand=True)
 
             # Title
-            title_label = tk.Label(main_frame, text="Eligibility Assessment",
+            title_label = tk.Label(main_frame, text=_t('gui.pastoral.internship_management.eligibility.labels.eligibility_assessment', default="Eligibility Assessment"),
                                   font=('Arial', 14, 'bold'))
             title_label.pack(pady=10)
 
@@ -192,16 +194,16 @@ Course Requirements:
             button_frame.pack(pady=20)
 
             if eligible:
-                tk.Button(button_frame, text="✅ Proceed with Application",
+                tk.Button(button_frame, text=_t('gui.pastoral.internship_management.eligibility.buttons.proceed_with_application', default="✅ Proceed with Application"),
                          command=lambda: [dialog.destroy(), self.show_application_form()],
                          bg='green', fg='white', font=('Arial', 10, 'bold')).pack(side='left', padx=5)
 
-            tk.Button(button_frame, text="View Full Grade Report",
+            tk.Button(button_frame, text=_t('gui.pastoral.internship_management.eligibility.buttons.view_full_grade_report', default="View Full Grade Report"),
                      command=lambda: self.open_grade_report(student_id)).pack(side='left', padx=5)
-            tk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='left', padx=5)
+            tk.Button(button_frame, text=_t('gui.pastoral.internship_management.eligibility.buttons.close', default="Close"), command=dialog.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not check eligibility: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.eligibility.dialogs.error', default="Error"), f"Could not check eligibility: {e}")
 
     def show_my_eligibility(self):
         """Show eligibility check dialog for current student - allows selecting an internship"""
@@ -214,7 +216,7 @@ Course Requirements:
             result = cursor.fetchone()
 
             if not result or not result[0]:
-                messagebox.showerror("Error", "Could not find your student record.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.eligibility.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.eligibility.dialogs.could_not_find_your_student_record', default="Could not find your student record."))
                 conn.close()
                 return
 
@@ -231,12 +233,12 @@ Course Requirements:
             conn.close()
 
             if not internships:
-                messagebox.showinfo("No Internships", "There are no active internships available.")
+                messagebox.showinfo(_t('gui.pastoral.internship_management.eligibility.dialogs.no_internships', default="No Internships"), _t('gui.pastoral.internship_management.eligibility.dialogs.there_are_no_active_internships_available', default="There are no active internships available."))
                 return
 
             # Create selection dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Check My Eligibility")
+            dialog.title(_t('gui.pastoral.internship_management.eligibility.windows.check_my_eligibility', default="Check My Eligibility"))
             dialog.geometry("500x300")
             dialog.transient(self.root)
             dialog.grab_set()
@@ -244,10 +246,10 @@ Course Requirements:
             main_frame = tk.Frame(dialog, padx=20, pady=20)
             main_frame.pack(fill='both', expand=True)
 
-            tk.Label(main_frame, text="Select an Internship to Check Eligibility",
+            tk.Label(main_frame, text=_t('gui.pastoral.internship_management.eligibility.labels.select_an_internship_to_check_eligibility', default="Select an Internship to Check Eligibility"),
                     font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
-            tk.Label(main_frame, text="Internship:",
+            tk.Label(main_frame, text=_t('gui.pastoral.internship_management.eligibility.labels.internship', default="Internship:"),
                     font=('Arial', 11)).pack(anchor='w')
 
             internship_var = tk.StringVar()
@@ -274,7 +276,7 @@ Course Requirements:
             def check_eligibility():
                 selected = internship_var.get()
                 if not selected:
-                    messagebox.showwarning("Selection Required", "Please select an internship.")
+                    messagebox.showwarning(_t('gui.pastoral.internship_management.eligibility.dialogs.selection_required', default="Selection Required"), _t('gui.pastoral.internship_management.eligibility.dialogs.please_select_an_internship', default="Please select an internship."))
                     return
 
                 intern_info = internship_map[selected]
@@ -284,18 +286,18 @@ Course Requirements:
             btn_frame = tk.Frame(main_frame)
             btn_frame.pack(pady=20)
 
-            tk.Button(btn_frame, text="Check Eligibility",
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.eligibility.buttons.check_eligibility', default="Check Eligibility"),
                      command=check_eligibility,
                      bg='#9b59b6', fg='white', font=('Arial', 11, 'bold'),
                      padx=20, pady=8).pack(side='left', padx=5)
 
-            tk.Button(btn_frame, text="Cancel",
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.eligibility.buttons.cancel', default="Cancel"),
                      command=dialog.destroy,
                      bg='#6c757d', fg='white', font=('Arial', 11),
                      padx=20, pady=8).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open eligibility check: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.eligibility.dialogs.error', default="Error"), f"Could not open eligibility check: {e}")
 
     def open_grade_report(self, student_id):
         """Open the grade management GUI for detailed grade view"""
@@ -303,7 +305,7 @@ Course Requirements:
             from education_system.systems.university.interfaces.gui.academics.grade_tracking_management_gui import GradeTrackingManagementGUI as GradeManagementGUI
 
             grade_window = tk.Toplevel(self.root)
-            grade_window.title("Student Grade Report")
+            grade_window.title(_t('gui.pastoral.internship_management.eligibility.windows.student_grade_report', default="Student Grade Report"))
             grade_window.geometry("1000x700")
 
             grade_gui = GradeManagementGUI(grade_window, auth=self.auth)
@@ -312,19 +314,19 @@ Course Requirements:
             if hasattr(grade_gui, 'filter_student_grades'):
                 grade_gui.filter_student_grades(student_id)
 
-            messagebox.showinfo("Grade Report", f"Grade report opened for student ID: {student_id}")
+            messagebox.showinfo(_t('gui.pastoral.internship_management.eligibility.dialogs.grade_report', default="Grade Report"), f"Grade report opened for student ID: {student_id}")
 
         except ImportError:
-            messagebox.showerror("Error", "Grade management system is not available")
+            messagebox.showerror(_t('gui.pastoral.internship_management.eligibility.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.eligibility.dialogs.grade_management_system_is_not_available', default="Grade management system is not available"))
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open grade system: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.eligibility.dialogs.error', default="Error"), f"Could not open grade system: {e}")
 
     def check_eligibility_before_application(self, internship_id):
         """Check eligibility before allowing application"""
         try:
             # Get current student ID
             if not self.auth or not self.auth.current_user:
-                messagebox.showerror("Error", "Please log in to apply for internships")
+                messagebox.showerror(_t('gui.pastoral.internship_management.eligibility.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.eligibility.dialogs.please_log_in_to_apply_for_internships', default="Please log in to apply for internships"))
                 return False
 
             # Get student ID from auth
@@ -338,7 +340,7 @@ Course Requirements:
 
             student_result = cursor.fetchone()
             if not student_result:
-                messagebox.showerror("Error", "Student record not found")
+                messagebox.showerror(_t('gui.pastoral.internship_management.eligibility.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.eligibility.dialogs.student_record_not_found', default="Student record not found"))
                 conn.close()
                 return False
 
@@ -353,7 +355,7 @@ Course Requirements:
             conn.close()
 
             if not internship_result:
-                messagebox.showerror("Error", "Internship not found")
+                messagebox.showerror(_t('gui.pastoral.internship_management.eligibility.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.eligibility.dialogs.internship_not_found', default="Internship not found"))
                 return False
 
             internship_title, requirements = internship_result
@@ -364,5 +366,5 @@ Course Requirements:
             return True
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not check eligibility: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.eligibility.dialogs.error', default="Error"), f"Could not check eligibility: {e}")
             return False

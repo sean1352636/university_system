@@ -106,7 +106,7 @@ def show_accessible_page(self):
 
 def configure_accessible_seats(self):
     form = tk.Toplevel(self.root)
-    form.title("Configure Accessible Seats")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.special_features.accessibility.windows.configure_accessible_seats', default="Configure Accessible Seats"))
     form.geometry("400x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -121,7 +121,7 @@ def configure_accessible_seats(self):
     tk.Label(frame, text=_t("cinema.accessibility.config_types"), font=("Helvetica", 10),
             bg="#ffffff", fg="#7f8c8d").pack(anchor="w", pady=(0, 10))
 
-    tk.Label(frame, text="Wheelchair Seats (comma-separated):", bg="#ffffff", fg="#333333").pack(anchor="w")
+    tk.Label(frame, text=_t('gui.operations.commerce.cinema.cinema_gui.special_features.accessibility.labels.wheelchair_seats_comma_separated', default="Wheelchair Seats (comma-separated):"), bg="#ffffff", fg="#333333").pack(anchor="w")
     wheel_e = ttk.Entry(frame, width=35)
     wheel_e.insert(0, "A1, A2, A11, A12, H1, H2, H11, H12")
     wheel_e.pack(pady=5)
@@ -241,7 +241,7 @@ def view_accessible_bookings(self):
         conn.close()
 
     view_win = tk.Toplevel(self.root)
-    view_win.title("Accessible Seat Bookings")
+    view_win.title(_t('gui.operations.commerce.cinema.cinema_gui.special_features.accessibility.windows.accessible_seat_bookings', default="Accessible Seat Bookings"))
     view_win.geometry("500x400")
     view_win.configure(bg="#ecf0f1")
 

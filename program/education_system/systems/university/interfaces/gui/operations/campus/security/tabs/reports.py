@@ -289,8 +289,8 @@ class ReportsMixin:
 
         if not admin_emails:
             messagebox.showwarning(_t("police_station.msg_titles.no_recipients"),
-                "No admin email addresses found in the system.\n\n"
-                "Please add email addresses to officers or ensure admin users have emails configured.")
+                _t('gui.operations.campus.security.tabs.reports.dialogs.no_admin_email_addresses_found_in_the_system_please_add_email_ad', default="No admin email addresses found in the system.\n\n"
+                "Please add email addresses to officers or ensure admin users have emails configured."))
             return False
 
         # Use email template
@@ -331,5 +331,5 @@ Campus Public Safety - University Police Department
             messagebox.showinfo(_t("police_station.msg_titles.report_sent"), msg)
             return True
         else:
-            messagebox.showerror(_t("police_station.msg_titles.send_failed"), "Could not send report to any recipients.")
+            messagebox.showerror(_t("police_station.msg_titles.send_failed"), _t('gui.operations.campus.security.tabs.reports.dialogs.could_not_send_report_to_any_recipients', default="Could not send report to any recipients."))
             return False

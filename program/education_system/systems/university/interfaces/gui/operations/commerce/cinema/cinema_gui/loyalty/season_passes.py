@@ -51,7 +51,7 @@ def show_season_passes_page(self):
 
 def sell_pass(self):
     form = tk.Toplevel(self.root)
-    form.title("Sell Season Pass")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.season_passes.windows.sell_season_pass', default="Sell Season Pass"))
     form.geometry("400x300")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -66,11 +66,11 @@ def sell_pass(self):
     email_e = ttk.Entry(frame, width=25)
     email_e.grid(row=2, column=1, pady=5)
     tk.Label(frame, text=_t("cinema.labels.type"), bg="#ffffff", fg="#333333").grid(row=3, column=0, sticky="w", pady=5)
-    type_var = tk.StringVar(value="monthly")
+    type_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.loyalty.season_passes.values.monthly', default="monthly"))
     ttk.Combobox(frame, textvariable=type_var, width=22, values=list(SEASON_PASSES.keys())).grid(row=3, column=1, pady=5)
     def sell():
         if not name_e.get().strip() or not email_e.get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Name and email required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.loyalty.season_passes.dialogs.name_and_email_required', default="Name and email required"))
             return
         code = 'SP' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
         start = datetime.now().strftime("%Y-%m-%d")
@@ -90,7 +90,7 @@ def sell_pass(self):
 
 def verify_pass(self):
     dialog = tk.Toplevel(self.root)
-    dialog.title("Verify Pass")
+    dialog.title(_t('gui.operations.commerce.cinema.cinema_gui.loyalty.season_passes.windows.verify_pass', default="Verify Pass"))
     dialog.geometry("350x250")
     dialog.configure(bg="#ecf0f1")
     dialog.transient(self.root)

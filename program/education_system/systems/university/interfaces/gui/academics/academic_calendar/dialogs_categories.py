@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -194,7 +196,7 @@ class AssignTagDialog:
             pass
 
         if not self.event_map:
-            messagebox.showwarning(_("common.warning"), "No events found. Create an event first.")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.academic_calendar.dialogs_categories.dialogs.no_events_found_create_an_event_first', default="No events found. Create an event first."))
             return
 
         self.dialog = tk.Toplevel(parent)
@@ -206,27 +208,27 @@ class AssignTagDialog:
         frm = ttk.Frame(self.dialog, padding=15)
         frm.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frm, text="Event:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frm, text=_t('gui.academics.academic_calendar.dialogs_categories.labels.event', default="Event:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.event_combo = ttk.Combobox(frm, values=list(self.event_map.keys()), width=45, state='readonly')
         self.event_combo.grid(row=0, column=1, pady=5, padx=5)
         if self.event_map:
             self.event_combo.current(0)
 
-        ttk.Label(frm, text="Tags (comma-separated):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frm, text=_t('gui.academics.academic_calendar.dialogs_categories.labels.tags_comma_separated', default="Tags (comma-separated):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.tags_var = tk.StringVar()
         ttk.Entry(frm, textvariable=self.tags_var, width=47).grid(row=1, column=1, pady=5, padx=5)
 
-        ttk.Button(frm, text="Assign Tags", command=self._assign).grid(row=2, column=1, sticky=tk.E, pady=15)
+        ttk.Button(frm, text=_t('gui.academics.academic_calendar.dialogs_categories.buttons.assign_tags', default="Assign Tags"), command=self._assign).grid(row=2, column=1, sticky=tk.E, pady=15)
 
     def _assign(self):
         selected = self.event_combo.get()
         if selected not in self.event_map:
-            messagebox.showwarning(_("common.warning"), "Please select an event.")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.academic_calendar.dialogs_categories.dialogs.please_select_an_event', default="Please select an event."))
             return
 
         tags_text = self.tags_var.get().strip()
         if not tags_text:
-            messagebox.showwarning(_("common.warning"), "Please enter at least one tag.")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.academic_calendar.dialogs_categories.dialogs.please_enter_at_least_one_tag', default="Please enter at least one tag."))
             return
 
         event_id = self.event_map[selected]

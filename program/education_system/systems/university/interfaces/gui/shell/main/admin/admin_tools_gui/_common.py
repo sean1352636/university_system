@@ -10,11 +10,22 @@ import csv
 from datetime import datetime, timedelta
 from education_system.systems.university.interfaces.gui.shell.main._tk_callback_filter import install_clean_close as _install_clean_close
 
-from education_system.systems.university.infrastructure.paths import (
-    PROJECT_ROOT, DATA_DIR, CONFIG_DIR, DB_DIR, LOG_DIR, EMAIL_CONFIG_FILE,
-    SAVED_REPORTS_FILE, API_SERVER_CONFIG_FILE, LICENSES_FILE, DR_CONFIG_FILE,
-    SCHEDULED_REPORTS_FILE, EMAIL_TEMPLATE_MAPPING_FILE,
-    UPLOAD_DIR, BACKUP_DIR, EMAIL_TEMPLATES_DIR,
+from education_system.paths import (
+    UNIVERSITY_PROJECT_ROOT,
+    UNIVERSITY_DATA_DIR,
+    UNIVERSITY_CONFIG_DIR,
+    UNIVERSITY_DB_DIR,
+    UNIVERSITY_LOG_DIR,
+    UNIVERSITY_EMAIL_CONFIG_FILE,
+    UNIVERSITY_SAVED_REPORTS_FILE,
+    UNIVERSITY_API_SERVER_CONFIG_FILE,
+    UNIVERSITY_LICENSES_FILE,
+    UNIVERSITY_DR_CONFIG_FILE,
+    UNIVERSITY_SCHEDULED_REPORTS_FILE,
+    UNIVERSITY_EMAIL_TEMPLATE_MAPPING_FILE,
+    UNIVERSITY_UPLOAD_DIR,
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_EMAIL_TEMPLATES_DIR,
 )
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 

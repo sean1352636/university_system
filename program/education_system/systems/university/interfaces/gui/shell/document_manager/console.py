@@ -1,5 +1,7 @@
 """Console-based DocumentManager class and entry-point functions"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
@@ -219,7 +221,7 @@ class DocumentManager:
 
                 # Create report window
                 report_window = tk.Toplevel(self.root)
-                report_window.title("Status Report")
+                report_window.title(_t('gui.shell.document_manager.console.windows.status_report', default="Status Report"))
                 report_window.geometry("950x700")
 
                 # Report frame
@@ -231,13 +233,13 @@ class DocumentManager:
                 ttk.Label(report_frame, text=title_text, font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
                 # Summary
-                summary_frame = ttk.LabelFrame(report_frame, text="Summary", padding=10)
+                summary_frame = ttk.LabelFrame(report_frame, text=_t('gui.shell.document_manager.console.labels.summary', default="Summary"), padding=10)
                 summary_frame.pack(fill='x', pady=(0, 15))
 
                 ttk.Label(summary_frame, text=f"Total Documents: {total_docs}").pack(anchor='w')
 
                 # Status breakdown
-                breakdown_frame = ttk.LabelFrame(report_frame, text="Status Breakdown", padding=10)
+                breakdown_frame = ttk.LabelFrame(report_frame, text=_t('gui.shell.document_manager.console.labels.status_breakdown', default="Status Breakdown"), padding=10)
                 breakdown_frame.pack(fill='both', expand=True, pady=(0, 15))
 
                 # Create scrollable frame for status data
@@ -254,9 +256,9 @@ class DocumentManager:
                 canvas.configure(yscrollcommand=scrollbar.set)
 
                 # Headers
-                ttk.Label(scrollable_frame, text="Status", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=10, pady=5)
-                ttk.Label(scrollable_frame, text="Count", font=('Arial', 10, 'bold')).grid(row=0, column=1, sticky='w', padx=10, pady=5)
-                ttk.Label(scrollable_frame, text="Percentage", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=10, pady=5)
+                ttk.Label(scrollable_frame, text=_t('gui.shell.document_manager.console.labels.status', default="Status"), font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=10, pady=5)
+                ttk.Label(scrollable_frame, text=_t('gui.shell.document_manager.console.labels.count', default="Count"), font=('Arial', 10, 'bold')).grid(row=0, column=1, sticky='w', padx=10, pady=5)
+                ttk.Label(scrollable_frame, text=_t('gui.shell.document_manager.console.labels.percentage', default="Percentage"), font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=10, pady=5)
 
                 # Status data
                 for i, (status, count) in enumerate(status_data, 1):
@@ -269,24 +271,24 @@ class DocumentManager:
                 scrollbar.pack(side="right", fill="y")
 
                 # Close button
-                ttk.Button(report_frame, text="Close", command=report_window.destroy).pack(pady=10)
+                ttk.Button(report_frame, text=_t('gui.shell.document_manager.console.buttons.close', default="Close"), command=report_window.destroy).pack(pady=10)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to generate status report: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.console.dialogs.error', default="Error"), f"Failed to generate status report: {e}")
 
         def export_search_results(self):
             """Export search results to CSV"""
             try:
                 # Check if we have search results to export
                 if not hasattr(self, 'search_results') or not self.search_results:
-                    messagebox.showwarning("No Data", "No search results to export. Please perform a search first.")
+                    messagebox.showwarning(_t('gui.shell.document_manager.console.dialogs.no_data', default="No Data"), _t('gui.shell.document_manager.console.dialogs.no_search_results_to_export_please_perform_a_search_first', default="No search results to export. Please perform a search first."))
                     return
 
                 # Ask user for file location
                 file_path = filedialog.asksaveasfilename(
                     defaultextension=".csv",
                     filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                    title="Save Search Results"
+                    title=_t('gui.shell.document_manager.console.dialogs.save_search_results', default="Save Search Results")
                 )
 
                 if file_path:
@@ -302,21 +304,21 @@ class DocumentManager:
                         for result in self.search_results:
                             writer.writerow(result)
 
-                    messagebox.showinfo("Success", f"Search results exported to {file_path}")
+                    messagebox.showinfo(_t('gui.shell.document_manager.console.dialogs.success', default="Success"), f"Search results exported to {file_path}")
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to export search results: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.console.dialogs.error', default="Error"), f"Failed to export search results: {e}")
 
         def batch_ocr_processing_gui(self):
             """GUI for batch OCR processing"""
             dialog = tk.Toplevel(self.root)
-            dialog.title("Batch OCR Processing")
+            dialog.title(_t('gui.shell.document_manager.console.windows.batch_ocr_processing', default="Batch OCR Processing"))
             dialog.geometry("850x600")
 
             main_frame = ttk.Frame(dialog, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Batch OCR Processing", font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.console.labels.batch_ocr_processing', default="Batch OCR Processing"), font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Instructions
             instructions = """
@@ -332,23 +334,23 @@ class DocumentManager:
             ttk.Label(main_frame, text=instructions, justify='left').pack(pady=(0, 20), anchor='w')
 
             # Document selection frame
-            selection_frame = ttk.LabelFrame(main_frame, text="Document Selection", padding=10)
+            selection_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.console.labels.document_selection', default="Document Selection"), padding=10)
             selection_frame.pack(fill='x', pady=(0, 15))
 
             # Search criteria for documents without OCR
-            ttk.Label(selection_frame, text="Find documents without OCR results:").pack(anchor='w', pady=(0, 5))
+            ttk.Label(selection_frame, text=_t('gui.shell.document_manager.console.labels.find_documents_without_ocr_results', default="Find documents without OCR results:")).pack(anchor='w', pady=(0, 5))
 
             criteria_frame = ttk.Frame(selection_frame)
             criteria_frame.pack(fill='x', pady=5)
 
-            ttk.Label(criteria_frame, text="File type:").pack(side='left')
-            file_type_var = tk.StringVar(value="PDF")
+            ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.console.labels.file_type', default="File type:")).pack(side='left')
+            file_type_var = tk.StringVar(value=_t('gui.shell.document_manager.console.values.pdf', default="PDF"))
             file_type_combo = ttk.Combobox(criteria_frame, textvariable=file_type_var,
                                           values=["PDF", "PNG", "JPG", "JPEG", "All"], width=10)
             file_type_combo.pack(side='left', padx=(5, 20))
 
             # Results listbox
-            results_frame = ttk.LabelFrame(main_frame, text="Documents for OCR Processing", padding=10)
+            results_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.console.labels.documents_for_ocr_processing', default="Documents for OCR Processing"), padding=10)
             results_frame.pack(fill='both', expand=True, pady=(0, 15))
 
             listbox_frame = ttk.Frame(results_frame)
@@ -405,18 +407,18 @@ class DocumentManager:
                         listbox.insert(tk.END, display_text)
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to find documents: {e}")
+                    messagebox.showerror(_t('gui.shell.document_manager.console.dialogs.error', default="Error"), f"Failed to find documents: {e}")
 
             def start_processing():
                 selected_indices = listbox.curselection()
                 if not selected_indices:
-                    messagebox.showwarning("No Selection", "Please select documents to process.")
+                    messagebox.showwarning(_t('gui.shell.document_manager.console.dialogs.no_selection', default="No Selection"), _t('gui.shell.document_manager.console.dialogs.please_select_documents_to_process', default="Please select documents to process."))
                     return
 
                 selected_docs = [listbox.get(i) for i in selected_indices]
 
                 # Confirm processing
-                if not messagebox.askyesno("Confirm OCR Processing",
+                if not messagebox.askyesno(_t('gui.shell.document_manager.console.dialogs.confirm_ocr_processing', default="Confirm OCR Processing"),
                                           f"Process {len(selected_docs)} document(s) with OCR?\n\n"
                                           f"This may take several minutes depending on document size.\n\n"
                                           f"Documents will be:\n"
@@ -427,19 +429,19 @@ class DocumentManager:
 
                 # Create progress dialog
                 progress_dialog = tk.Toplevel(dialog)
-                progress_dialog.title("OCR Processing")
+                progress_dialog.title(_t('gui.shell.document_manager.console.windows.ocr_processing', default="OCR Processing"))
                 progress_dialog.geometry("600x300")
                 progress_dialog.transient(dialog)
                 progress_dialog.grab_set()
 
-                ttk.Label(progress_dialog, text="Processing Documents...",
+                ttk.Label(progress_dialog, text=_t('gui.shell.document_manager.console.labels.processing_documents', default="Processing Documents..."),
                          font=('TkDefaultFont', 12, 'bold')).pack(pady=10)
 
                 progress_var = tk.DoubleVar()
                 progress_bar = ttk.Progressbar(progress_dialog, variable=progress_var, maximum=100)
                 progress_bar.pack(fill='x', padx=20, pady=10)
 
-                status_label = ttk.Label(progress_dialog, text="Initializing...")
+                status_label = ttk.Label(progress_dialog, text=_t('gui.shell.document_manager.console.labels.initializing', default="Initializing..."))
                 status_label.pack(pady=5)
 
                 results_text = tk.Text(progress_dialog, height=5, width=45)
@@ -474,7 +476,7 @@ class DocumentManager:
                             results_text.see('end')
 
                         progress_var.set(100)
-                        status_label.config(text="Processing Complete!")
+                        status_label.config(text=_t('gui.shell.document_manager.console.text.processing_complete', default="Processing Complete!"))
 
                         summary = f"\n{'='*40}\nProcessing Summary:\n"
                         summary += f"Total: {len(selected_docs)}\n"
@@ -482,19 +484,19 @@ class DocumentManager:
                         summary += f"Errors: {error_count}\n"
                         results_text.insert('end', summary)
 
-                        ttk.Button(progress_dialog, text="Close",
+                        ttk.Button(progress_dialog, text=_t('gui.shell.document_manager.console.buttons.close', default="Close"),
                                   command=progress_dialog.destroy).pack(pady=10)
 
                     except Exception as e:
-                        messagebox.showerror("Processing Error", f"OCR processing failed: {e}",
+                        messagebox.showerror(_t('gui.shell.document_manager.console.dialogs.processing_error', default="Processing Error"), f"OCR processing failed: {e}",
                                            parent=progress_dialog)
 
                 # Start processing in the main thread (for simplicity)
                 progress_dialog.after(100, process_documents)
 
-            ttk.Button(button_frame, text="Find Documents", command=find_documents).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Start OCR Processing", command=start_processing).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.console.buttons.find_documents', default="Find Documents"), command=find_documents).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.console.buttons.start_ocr_processing', default="Start OCR Processing"), command=start_processing).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.console.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         def return_to_main_menu(self):
             """Return to the main menu"""
@@ -510,24 +512,24 @@ class DocumentManager:
         def bulk_tag_assignment(self):
             """Assign tags to multiple documents"""
             dialog = tk.Toplevel(self.root)
-            dialog.title("Bulk Tag Assignment")
+            dialog.title(_t('gui.shell.document_manager.console.windows.bulk_tag_assignment', default="Bulk Tag Assignment"))
             dialog.geometry("850x600")
 
             main_frame = ttk.Frame(dialog, padding=20)
             main_frame.pack(fill='both', expand=True)
 
-            ttk.Label(main_frame, text="Bulk Tag Assignment", font=('Arial', 16, 'bold')).pack(pady=(0, 20))
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.console.labels.bulk_tag_assignment', default="Bulk Tag Assignment"), font=('Arial', 16, 'bold')).pack(pady=(0, 20))
 
             # Instructions
-            ttk.Label(main_frame, text="Select documents and assign tags in bulk.").pack(pady=(0, 10))
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.console.labels.select_documents_and_assign_tags_in_bulk', default="Select documents and assign tags in bulk.")).pack(pady=(0, 10))
 
             # Tag entry
-            ttk.Label(main_frame, text="Enter tags (comma-separated):").pack(anchor='w')
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.console.labels.enter_tags_comma_separated', default="Enter tags (comma-separated):")).pack(anchor='w')
             tag_entry = ttk.Entry(main_frame, width=50)
             tag_entry.pack(pady=5, fill='x')
 
             # Document selection
-            ttk.Label(main_frame, text="Select documents:").pack(anchor='w', pady=(10, 5))
+            ttk.Label(main_frame, text=_t('gui.shell.document_manager.console.labels.select_documents', default="Select documents:")).pack(anchor='w', pady=(10, 5))
             listbox = tk.Listbox(main_frame, selectmode='multiple', height=10)
             listbox.pack(fill='both', expand=True, pady=5)
 
@@ -550,7 +552,7 @@ class DocumentManager:
                     doc_id, first_name, last_name, doc_type = doc
                     listbox.insert(tk.END, f"{doc_id}: {last_name}, {first_name} - {doc_type}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load documents: {e}")
+                messagebox.showerror(_t('gui.shell.document_manager.console.dialogs.error', default="Error"), f"Failed to load documents: {e}")
 
             # Buttons
             button_frame = ttk.Frame(main_frame)
@@ -561,18 +563,18 @@ class DocumentManager:
                 selected_indices = listbox.curselection()
 
                 if not tags:
-                    messagebox.showwarning("Warning", "Please enter at least one tag")
+                    messagebox.showwarning(_t('gui.shell.document_manager.console.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.console.dialogs.please_enter_at_least_one_tag', default="Please enter at least one tag"))
                     return
 
                 if not selected_indices:
-                    messagebox.showwarning("Warning", "Please select at least one document")
+                    messagebox.showwarning(_t('gui.shell.document_manager.console.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.console.dialogs.please_select_at_least_one_document', default="Please select at least one document"))
                     return
 
-                messagebox.showinfo("Success", f"Tags assigned to {len(selected_indices)} documents")
+                messagebox.showinfo(_t('gui.shell.document_manager.console.dialogs.success', default="Success"), f"Tags assigned to {len(selected_indices)} documents")
                 dialog.destroy()
 
-            ttk.Button(button_frame, text="Apply Tags", command=apply_tags).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.console.buttons.apply_tags', default="Apply Tags"), command=apply_tags).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.document_manager.console.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
 
 # Enhanced main function with GUI support

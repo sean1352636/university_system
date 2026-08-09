@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -126,9 +128,9 @@ def optimize_database(self):
                 cursor.execute('VACUUM')
                 cursor.execute('ANALYZE')
                 conn.close()
-                messagebox.showinfo(_("common.success"), "Database optimized successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.maintenance.dialogs.database_optimized_successfully', default="Database optimized successfully!"))
         else:
-            messagebox.showinfo(_("common.demo"), "Database optimization completed!")
+            messagebox.showinfo(_("common.demo"), _t('gui.academics.library.maintenance.dialogs.database_optimization_completed', default="Database optimization completed!"))
     except (sqlite3.Error, DatabaseError, tk.TclError) as e:
         messagebox.showerror(_("common.error"), f"Error optimizing database: {str(e)}")
 
@@ -144,11 +146,11 @@ def check_database_integrity(self):
                 conn.close()
 
                 if result == 'ok':
-                    messagebox.showinfo(_("common.success"), "Database integrity check passed!")
+                    messagebox.showinfo(_("common.success"), _t('gui.academics.library.maintenance.dialogs.database_integrity_check_passed', default="Database integrity check passed!"))
                 else:
                     messagebox.showwarning(_("common.warning"), f"Database integrity issues: {result}")
         else:
-            messagebox.showinfo(_("common.demo"), "Database integrity check passed!")
+            messagebox.showinfo(_("common.demo"), _t('gui.academics.library.maintenance.dialogs.database_integrity_check_passed', default="Database integrity check passed!"))
     except (sqlite3.Error, DatabaseError, tk.TclError) as e:
         messagebox.showerror(_("common.error"), f"Error checking database: {str(e)}")
 
@@ -167,15 +169,15 @@ def audit_log_dialog(self):
     filter_frame = ttk.Frame(dialog)
     filter_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Label(filter_frame, text="User ID:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(filter_frame, text=_t('gui.academics.library.maintenance.labels.user_id', default="User ID:")).pack(side=tk.LEFT, padx=5)
     user_filter_var = tk.StringVar()
     ttk.Entry(filter_frame, textvariable=user_filter_var, width=15).pack(side=tk.LEFT, padx=5)
 
-    ttk.Label(filter_frame, text="Action:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(filter_frame, text=_t('gui.academics.library.maintenance.labels.action', default="Action:")).pack(side=tk.LEFT, padx=5)
     action_filter_var = tk.StringVar()
     ttk.Entry(filter_frame, textvariable=action_filter_var, width=20).pack(side=tk.LEFT, padx=5)
 
-    ttk.Button(filter_frame, text="Filter", command=lambda: self.load_audit_log(audit_tree, user_filter_var.get(), action_filter_var.get())).pack(side=tk.LEFT, padx=5)
+    ttk.Button(filter_frame, text=_t('gui.academics.library.maintenance.buttons.filter', default="Filter"), command=lambda: self.load_audit_log(audit_tree, user_filter_var.get(), action_filter_var.get())).pack(side=tk.LEFT, padx=5)
     ttk.Button(filter_frame, text=_("common.clear"), command=lambda: self.load_audit_log(audit_tree)).pack(side=tk.LEFT, padx=5)
 
     # Audit log table
@@ -217,7 +219,7 @@ def audit_log_dialog(self):
                 ctx["timestamp"] = str(timestamp)
             menu = tk.Menu(audit_tree, tearoff=0)
             menu.add_command(
-                label="🔍 Open in System Audit Log Viewer",
+                label=_t('gui.academics.library.maintenance.menus.open_in_system_audit_log_viewer', default="🔍 Open in System Audit Log Viewer"),
                 command=lambda c=ctx: _open_in_system_audit_viewer(c, dialog),
             )
             try:
@@ -234,14 +236,14 @@ def audit_log_dialog(self):
             )
             _jump("audit_viewer", context)
             messagebox.showinfo(
-                "Opening…",
-                "System Audit Log Viewer is opening — switch to it to "
-                "see the full audit log.",
+                _t('gui.academics.library.maintenance.dialogs.opening', default="Opening…"),
+                _t('gui.academics.library.maintenance.dialogs.system_audit_log_viewer_is_opening_switch_to_it_to_see_the_full', default="System Audit Log Viewer is opening — switch to it to "
+                "see the full audit log."),
                 parent=parent_win)
         except Exception as exc:
             logger.exception("audit viewer jump failed")
             messagebox.showerror(
-                "Open failed",
+                _t('gui.academics.library.maintenance.dialogs.open_failed', default="Open failed"),
                 f"Could not open System Audit Log Viewer:\n{exc}",
                 parent=parent_win)
 
@@ -341,11 +343,11 @@ def library_maintenance_gui(self):
     main_frame = ttk.Frame(dialog)
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    title_label = ttk.Label(main_frame, text="Library Maintenance Tasks", style='Title.TLabel')
+    title_label = ttk.Label(main_frame, text=_t('gui.academics.library.maintenance.labels.library_maintenance_tasks', default="Library Maintenance Tasks"), style='Title.TLabel')
     title_label.pack(pady=(0, 20))
 
     # Maintenance tasks
-    tasks_frame = ttk.LabelFrame(main_frame, text="Available Tasks")
+    tasks_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.maintenance.labels.available_tasks', default="Available Tasks"))
     tasks_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     tasks = [
@@ -362,10 +364,10 @@ def library_maintenance_gui(self):
         task_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(task_frame, text=f"{i+1}. {task_name}").pack(side=tk.LEFT)
-        ttk.Button(task_frame, text="Run", command=task_func).pack(side=tk.RIGHT)
+        ttk.Button(task_frame, text=_t('gui.academics.library.maintenance.buttons.run', default="Run"), command=task_func).pack(side=tk.RIGHT)
 
     # Results area
-    results_frame = ttk.LabelFrame(main_frame, text="Task Results")
+    results_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.library.maintenance.labels.task_results', default="Task Results"))
     results_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
 
     self.maintenance_results = ScrolledText(results_frame, height=8, wrap=tk.WORD)
@@ -510,7 +512,7 @@ def archive_old_records(self):
             return
 
         # Confirm with user
-        if not messagebox.askyesno("Confirm Archive",
+        if not messagebox.askyesno(_t('gui.academics.library.maintenance.dialogs.confirm_archive', default="Confirm Archive"),
                 f"Found {archivable_count} returned loan(s) older than 90 days.\n\n"
                 "Move these to the archive table?\n"
                 "This helps maintain performance for active queries."):
@@ -617,7 +619,7 @@ def quick_system_health_check(self):
     main_frame = ttk.Frame(dialog)
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    title_label = ttk.Label(main_frame, text="System Health Check", style='Title.TLabel')
+    title_label = ttk.Label(main_frame, text=_t('gui.academics.library.maintenance.labels.system_health_check', default="System Health Check"), style='Title.TLabel')
     title_label.pack(pady=(0, 10))
 
     # Results area
@@ -663,13 +665,15 @@ def quick_system_health_check(self):
             health_status.append(("Database Connection", "✅ Demo Mode"))
 
         # File system checks — resolve via centralized path constants
-        from education_system.systems.university.infrastructure.paths import (
-            BACKUP_DIR, QR_CODES_DIR, PROJECT_ROOT,
+        from education_system.paths import (
+            UNIVERSITY_BACKUP_DIR,
+            UNIVERSITY_QR_CODES_DIR,
+            UNIVERSITY_PROJECT_ROOT,
         )
         dir_paths = {
-            'backups': str(BACKUP_DIR),
-            'qr_codes': str(QR_CODES_DIR),
-            'digital_library': str(PROJECT_ROOT / 'digital_library'),
+            'backups': str(UNIVERSITY_BACKUP_DIR),
+            'qr_codes': str(UNIVERSITY_QR_CODES_DIR),
+            'digital_library': str(UNIVERSITY_PROJECT_ROOT / 'digital_library'),
         }
 
         for directory, dir_path in dir_paths.items():
@@ -711,14 +715,14 @@ def quick_system_health_check(self):
 def system_health_check_gui(self):
     """System health check interface"""
     health_window = tk.Toplevel(self.master)
-    health_window.title("System Health Check")
+    health_window.title(_t('gui.academics.library.maintenance.windows.system_health_check', default="System Health Check"))
     health_window.geometry("700x600")
 
-    ttk.Label(health_window, text="System Health Check",
+    ttk.Label(health_window, text=_t('gui.academics.library.maintenance.labels.system_health_check', default="System Health Check"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Results display
-    results_frame = ttk.LabelFrame(health_window, text="Health Check Results", padding=10)
+    results_frame = ttk.LabelFrame(health_window, text=_t('gui.academics.library.maintenance.labels.health_check_results', default="Health Check Results"), padding=10)
     results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     results_text = ScrolledText(results_frame, height=30, width=80, font=('Courier', 10))
@@ -797,8 +801,8 @@ DATABASE CONNECTION:
             report += f"Overdue books: {overdue_count:,}\n"
 
             # Check database file size
-            from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-            db_size = os.path.getsize(DEFAULT_DB_PATH) / (1024 * 1024)  # MB
+            from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+            db_size = os.path.getsize(UNIVERSITY_DEFAULT_DB_PATH) / (1024 * 1024)  # MB
             report += f"\nDATABASE SIZE: {db_size:.2f} MB\n"
 
             report += "\n" + "="* 60 + "\n"
@@ -813,8 +817,8 @@ DATABASE CONNECTION:
         results_text.insert('1.0', report)
 
     def repair_database():
-        if messagebox.askyesno("Confirm Repair",
-            "This will attempt to repair database issues.\nContinue?"):
+        if messagebox.askyesno(_t('gui.academics.library.maintenance.dialogs.confirm_repair', default="Confirm Repair"),
+            _t('gui.academics.library.maintenance.dialogs.this_will_attempt_to_repair_database_issues_continue', default="This will attempt to repair database issues.\nContinue?")):
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
@@ -837,7 +841,7 @@ DATABASE CONNECTION:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo(_("common.success"), "Database repaired successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.maintenance.dialogs.database_repaired_successfully', default="Database repaired successfully!"))
                 run_health_check()  # Re-run check
 
             except (sqlite3.Error, DatabaseError, tk.TclError) as e:
@@ -847,8 +851,8 @@ DATABASE CONNECTION:
     button_frame = ttk.Frame(health_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Run Health Check", command=run_health_check).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Repair Database", command=repair_database).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.maintenance.buttons.run_health_check', default="Run Health Check"), command=run_health_check).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.maintenance.buttons.repair_database', default="Repair Database"), command=repair_database).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=health_window.destroy).pack(side=tk.RIGHT, padx=5)
 
     # Auto-run on open
@@ -857,27 +861,27 @@ DATABASE CONNECTION:
 def view_audit_log_gui(self):
     """View audit log interface"""
     audit_window = tk.Toplevel(self.master)
-    audit_window.title("Audit Log Viewer")
+    audit_window.title(_t('gui.academics.library.maintenance.windows.audit_log_viewer', default="Audit Log Viewer"))
     audit_window.geometry("1000x700")
 
-    ttk.Label(audit_window, text="Audit Log Viewer",
+    ttk.Label(audit_window, text=_t('gui.academics.library.maintenance.labels.audit_log_viewer', default="Audit Log Viewer"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Filter frame
-    filter_frame = ttk.LabelFrame(audit_window, text="Filters", padding=10)
+    filter_frame = ttk.LabelFrame(audit_window, text=_t('gui.academics.library.maintenance.labels.filters', default="Filters"), padding=10)
     filter_frame.pack(fill=tk.X, padx=10, pady=10)
 
     user_filter = tk.StringVar()
     action_filter = tk.StringVar()
     entity_filter = tk.StringVar()
 
-    ttk.Label(filter_frame, text="User ID:").grid(row=0, column=0, padx=5, pady=5)
+    ttk.Label(filter_frame, text=_t('gui.academics.library.maintenance.labels.user_id', default="User ID:")).grid(row=0, column=0, padx=5, pady=5)
     ttk.Entry(filter_frame, textvariable=user_filter, width=20).grid(row=0, column=1, padx=5, pady=5)
 
-    ttk.Label(filter_frame, text="Action:").grid(row=0, column=2, padx=5, pady=5)
+    ttk.Label(filter_frame, text=_t('gui.academics.library.maintenance.labels.action', default="Action:")).grid(row=0, column=2, padx=5, pady=5)
     ttk.Entry(filter_frame, textvariable=action_filter, width=20).grid(row=0, column=3, padx=5, pady=5)
 
-    ttk.Label(filter_frame, text="Entity:").grid(row=0, column=4, padx=5, pady=5)
+    ttk.Label(filter_frame, text=_t('gui.academics.library.maintenance.labels.entity', default="Entity:")).grid(row=0, column=4, padx=5, pady=5)
     ttk.Entry(filter_frame, textvariable=entity_filter, width=20).grid(row=0, column=5, padx=5, pady=5)
 
     # Audit log table
@@ -939,8 +943,8 @@ def view_audit_log_gui(self):
     button_frame = ttk.Frame(audit_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Load Log", command=load_audit_log).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Clear Filters",
+    ttk.Button(button_frame, text=_t('gui.academics.library.maintenance.buttons.load_log', default="Load Log"), command=load_audit_log).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.maintenance.buttons.clear_filters', default="Clear Filters"),
               command=lambda: [user_filter.set(''), action_filter.set(''), entity_filter.set('')]).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=audit_window.destroy).pack(side=tk.RIGHT, padx=5)
 
@@ -950,14 +954,14 @@ def view_audit_log_gui(self):
 def database_optimization_gui(self):
     """Database optimization and maintenance"""
     opt_window = tk.Toplevel(self.master)
-    opt_window.title("Database Optimization")
+    opt_window.title(_t('gui.academics.library.maintenance.windows.database_optimization', default="Database Optimization"))
     opt_window.geometry("600x500")
 
-    ttk.Label(opt_window, text="Database Optimization",
+    ttk.Label(opt_window, text=_t('gui.academics.library.maintenance.labels.database_optimization', default="Database Optimization"),
              font=('Arial', 14, 'bold')).pack(pady=10)
 
     # Results display
-    results_frame = ttk.LabelFrame(opt_window, text="Optimization Results", padding=10)
+    results_frame = ttk.LabelFrame(opt_window, text=_t('gui.academics.library.maintenance.labels.optimization_results', default="Optimization Results"), padding=10)
     results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     results_text = ScrolledText(results_frame, height=20, width=70, font=('Courier', 9))
@@ -1019,14 +1023,14 @@ def database_optimization_gui(self):
     button_frame = ttk.Frame(opt_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Run Optimization", command=run_optimization).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.maintenance.buttons.run_optimization', default="Run Optimization"), command=run_optimization).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=opt_window.destroy).pack(side=tk.RIGHT, padx=5)
 
 def clear_cache_gui(self):
     """Clear temporary files and cache"""
     confirm = messagebox.askyesno(
-        "Confirm Clear Cache",
-        "This will clear temporary files and cached data.\n\nContinue?"
+        _t('gui.academics.library.maintenance.dialogs.confirm_clear_cache', default="Confirm Clear Cache"),
+        _t('gui.academics.library.maintenance.dialogs.this_will_clear_temporary_files_and_cached_data_continue', default="This will clear temporary files and cached data.\n\nContinue?")
     )
 
     if not confirm:
@@ -1070,14 +1074,14 @@ def clear_cache_gui(self):
 def manage_library_events_gui(self):
     """Manage library events (create, view, edit, delete)"""
     events_window = tk.Toplevel(self.master)
-    events_window.title("Library Events Management")
+    events_window.title(_t('gui.academics.library.maintenance.windows.library_events_management', default="Library Events Management"))
     events_window.geometry("900x600")
 
-    ttk.Label(events_window, text="Library Events Management",
+    ttk.Label(events_window, text=_t('gui.academics.library.maintenance.labels.library_events_management', default="Library Events Management"),
              font=('Arial', 14, 'bold')).pack(pady=10)
 
     # Events list
-    list_frame = ttk.LabelFrame(events_window, text="Upcoming Events", padding=10)
+    list_frame = ttk.LabelFrame(events_window, text=_t('gui.academics.library.maintenance.labels.upcoming_events', default="Upcoming Events"), padding=10)
     list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     columns = ('ID', 'Event Name', 'Date', 'Time', 'Location', 'Capacity', 'Registered')
@@ -1135,37 +1139,37 @@ def manage_library_events_gui(self):
 
     def add_event():
         add_window = tk.Toplevel(events_window)
-        add_window.title("Add New Event")
+        add_window.title(_t('gui.academics.library.maintenance.windows.add_new_event', default="Add New Event"))
         add_window.geometry("500x600")
 
-        ttk.Label(add_window, text="Create New Event", font=('Arial', 12, 'bold')).pack(pady=10)
+        ttk.Label(add_window, text=_t('gui.academics.library.maintenance.labels.create_new_event', default="Create New Event"), font=('Arial', 12, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(add_window)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-        ttk.Label(form_frame, text="Event Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.maintenance.labels.event_name', default="Event Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         name_entry = ttk.Entry(form_frame, width=40)
         name_entry.grid(row=0, column=1, pady=5)
 
-        ttk.Label(form_frame, text="Date (YYYY-MM-DD):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.maintenance.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         date_entry = ttk.Entry(form_frame, width=40)
         date_entry.grid(row=1, column=1, pady=5)
         date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-        ttk.Label(form_frame, text="Time (HH:MM):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.maintenance.labels.time_hh_mm', default="Time (HH:MM):")).grid(row=2, column=0, sticky=tk.W, pady=5)
         time_entry = ttk.Entry(form_frame, width=40)
         time_entry.grid(row=2, column=1, pady=5)
 
-        ttk.Label(form_frame, text="Location:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.maintenance.labels.location', default="Location:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         location_entry = ttk.Entry(form_frame, width=40)
         location_entry.grid(row=3, column=1, pady=5)
 
-        ttk.Label(form_frame, text="Max Capacity:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.maintenance.labels.max_capacity', default="Max Capacity:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         capacity_spinbox = ttk.Spinbox(form_frame, from_=5, to=500, width=38)
         capacity_spinbox.set(50)
         capacity_spinbox.grid(row=4, column=1, pady=5)
 
-        ttk.Label(form_frame, text="Description:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.library.maintenance.labels.description', default="Description:")).grid(row=5, column=0, sticky=tk.W, pady=5)
         desc_text = tk.Text(form_frame, height=8, width=40)
         desc_text.grid(row=5, column=1, pady=5)
 
@@ -1179,7 +1183,7 @@ def manage_library_events_gui(self):
                 description = desc_text.get('1.0', tk.END).strip()
 
                 if not event_name or not event_date or not event_time:
-                    messagebox.showwarning(_("common.warning"), "Please fill in all required fields")
+                    messagebox.showwarning(_("common.warning"), _t('gui.academics.library.maintenance.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
                     return
 
                 conn = get_db_connection()
@@ -1196,25 +1200,25 @@ def manage_library_events_gui(self):
                 conn.close()
 
                 log_audit_event(get_current_user_id(), f"Created event: {event_name}", "library_events")
-                messagebox.showinfo(_("common.success"), "Event created successfully!")
+                messagebox.showinfo(_("common.success"), _t('gui.academics.library.maintenance.dialogs.event_created_successfully', default="Event created successfully!"))
                 add_window.destroy()
                 load_events()
 
             except (sqlite3.Error, DatabaseError, tk.TclError) as e:
                 messagebox.showerror(_("common.error"), f"Failed to create event: {str(e)}")
 
-        ttk.Button(form_frame, text="Create Event", command=save_event).grid(row=6, column=0, columnspan=2, pady=20)
+        ttk.Button(form_frame, text=_t('gui.academics.library.maintenance.buttons.create_event', default="Create Event"), command=save_event).grid(row=6, column=0, columnspan=2, pady=20)
 
     def delete_event():
         selected = events_tree.selection()
         if not selected:
-            messagebox.showwarning(_("common.warning"), "Please select an event to delete")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.maintenance.dialogs.please_select_an_event_to_delete', default="Please select an event to delete"))
             return
 
         event_id = events_tree.item(selected[0])['values'][0]
         event_name = events_tree.item(selected[0])['values'][1]
 
-        confirm = messagebox.askyesno("Confirm Delete", f"Delete event '{event_name}'?")
+        confirm = messagebox.askyesno(_t('gui.academics.library.maintenance.dialogs.confirm_delete', default="Confirm Delete"), f"Delete event '{event_name}'?")
         if not confirm:
             return
 
@@ -1226,7 +1230,7 @@ def manage_library_events_gui(self):
             conn.close()
 
             log_audit_event(get_current_user_id(), f"Deleted event: {event_name}", "library_events")
-            messagebox.showinfo(_("common.success"), "Event deleted successfully")
+            messagebox.showinfo(_("common.success"), _t('gui.academics.library.maintenance.dialogs.event_deleted_successfully', default="Event deleted successfully"))
             load_events()
 
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
@@ -1236,8 +1240,8 @@ def manage_library_events_gui(self):
     button_frame = ttk.Frame(events_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Add Event", command=add_event).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Delete Event", command=delete_event).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.maintenance.buttons.add_event', default="Add Event"), command=add_event).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.maintenance.buttons.delete_event', default="Delete Event"), command=delete_event).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.refresh"), command=load_events).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.close"), command=events_window.destroy).pack(side=tk.RIGHT, padx=5)
 

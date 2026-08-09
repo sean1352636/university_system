@@ -4,6 +4,8 @@ Provides a Treeview-based interface for instructors to create, edit, and
 delete their office hours, as well as view bookings made by students.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -40,7 +42,7 @@ class InstructorManager:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # ---- Office Hours list ---- #
-        list_frame = ttk.LabelFrame(main_frame, text="My Office Hours", padding="5")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.office_hours.instructor_manager.labels.my_office_hours', default="My Office Hours"), padding="5")
         list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         columns = ('id', 'day', 'start', 'end', 'location', 'capacity', 'active')
@@ -63,22 +65,22 @@ class InstructorManager:
         # ---- Buttons ---- #
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill=tk.X, pady=(0, 10))
-        ttk.Button(btn_frame, text="Create", command=self._create_hours).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.instructor_manager.buttons.create', default="Create"), command=self._create_hours).pack(
             side=tk.LEFT, padx=5,
         )
-        ttk.Button(btn_frame, text="Edit", command=self._edit_hours).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.instructor_manager.buttons.edit', default="Edit"), command=self._edit_hours).pack(
             side=tk.LEFT, padx=5,
         )
-        ttk.Button(btn_frame, text="Delete", command=self._delete_hours).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.instructor_manager.buttons.delete', default="Delete"), command=self._delete_hours).pack(
             side=tk.LEFT, padx=5,
         )
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_hours).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.instructor_manager.buttons.refresh', default="Refresh"), command=self._refresh_hours).pack(
             side=tk.LEFT, padx=5,
         )
 
         # ---- Bookings section ---- #
         bookings_frame = ttk.LabelFrame(
-            main_frame, text="Bookings for My Hours", padding="5",
+            main_frame, text=_t('gui.academics.office_hours.instructor_manager.labels.bookings_for_my_hours', default="Bookings for My Hours"), padding="5",
         )
         bookings_frame.pack(fill=tk.BOTH, expand=True)
 
@@ -101,7 +103,7 @@ class InstructorManager:
         booking_btn_frame = ttk.Frame(bookings_frame)
         booking_btn_frame.pack(fill=tk.X, pady=5)
         ttk.Button(
-            booking_btn_frame, text="Refresh Bookings",
+            booking_btn_frame, text=_t('gui.academics.office_hours.instructor_manager.buttons.refresh_bookings', default="Refresh Bookings"),
             command=self._refresh_bookings,
         ).pack(pady=5)
 
@@ -140,7 +142,7 @@ class InstructorManager:
                 ))
         except Exception as e:
             logger.error("Error refreshing office hours: %s", e)
-            messagebox.showerror("Error", f"Failed to load office hours:\n{e}")
+            messagebox.showerror(_t('gui.academics.office_hours.instructor_manager.dialogs.error', default="Error"), f"Failed to load office hours:\n{e}")
 
     def _refresh_bookings(self):
         """Reload bookings for the instructor's office hours."""
@@ -166,7 +168,7 @@ class InstructorManager:
                 ))
         except Exception as e:
             logger.error("Error refreshing bookings: %s", e)
-            messagebox.showerror("Error", f"Failed to load bookings:\n{e}")
+            messagebox.showerror(_t('gui.academics.office_hours.instructor_manager.dialogs.error', default="Error"), f"Failed to load bookings:\n{e}")
 
     # ------------------------------------------------------------------ #
     #  Create dialog
@@ -190,8 +192,8 @@ class InstructorManager:
 
         if not buildings:
             messagebox.showwarning(
-                "No Buildings",
-                "No active buildings found. Cannot create office hours.",
+                _t('gui.academics.office_hours.instructor_manager.dialogs.no_buildings', default="No Buildings"),
+                _t('gui.academics.office_hours.instructor_manager.dialogs.no_active_buildings_found_cannot_create_office_hours', default="No active buildings found. Cannot create office hours."),
             )
             return
 
@@ -201,7 +203,7 @@ class InstructorManager:
         ]
 
         dialog = tk.Toplevel(self.parent)
-        dialog.title("Create Office Hours")
+        dialog.title(_t('gui.academics.office_hours.instructor_manager.windows.create_office_hours', default="Create Office Hours"))
         dialog.geometry("400x350")
         dialog.transient(self.parent)
         dialog.grab_set()
@@ -210,7 +212,7 @@ class InstructorManager:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Day of week
-        ttk.Label(frame, text="Day of Week:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.day_of_week', default="Day of Week:")).grid(
             row=0, column=0, sticky=tk.W, pady=5,
         )
         day_var = tk.StringVar(value=DAYS_OF_WEEK[0])
@@ -221,7 +223,7 @@ class InstructorManager:
         day_combo.grid(row=0, column=1, sticky=tk.W, pady=5)
 
         # Start time
-        ttk.Label(frame, text="Start Time:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.start_time', default="Start Time:")).grid(
             row=1, column=0, sticky=tk.W, pady=5,
         )
         start_var = tk.StringVar(value=TIME_SLOTS[0])
@@ -231,7 +233,7 @@ class InstructorManager:
         ).grid(row=1, column=1, sticky=tk.W, pady=5)
 
         # End time
-        ttk.Label(frame, text="End Time:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.end_time', default="End Time:")).grid(
             row=2, column=0, sticky=tk.W, pady=5,
         )
         end_var = tk.StringVar(value=TIME_SLOTS[2])
@@ -241,7 +243,7 @@ class InstructorManager:
         ).grid(row=2, column=1, sticky=tk.W, pady=5)
 
         # Location
-        ttk.Label(frame, text="Location:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.location', default="Location:")).grid(
             row=3, column=0, sticky=tk.W, pady=5,
         )
         location_var = tk.StringVar()
@@ -251,7 +253,7 @@ class InstructorManager:
         ).grid(row=3, column=1, sticky=tk.W, pady=5)
 
         # Capacity
-        ttk.Label(frame, text="Capacity:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.capacity', default="Capacity:")).grid(
             row=4, column=0, sticky=tk.W, pady=5,
         )
         capacity_var = tk.StringVar(value='5')
@@ -260,7 +262,7 @@ class InstructorManager:
         )
 
         # Notes
-        ttk.Label(frame, text="Notes (optional):").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.notes_optional', default="Notes (optional):")).grid(
             row=5, column=0, sticky=tk.W, pady=5,
         )
         notes_var = tk.StringVar()
@@ -278,8 +280,8 @@ class InstructorManager:
 
             if not start or not end or not location:
                 messagebox.showwarning(
-                    "Missing Fields",
-                    "Start time, end time, and location are required.",
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.missing_fields', default="Missing Fields"),
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.start_time_end_time_and_location_are_required', default="Start time, end time, and location are required."),
                     parent=dialog,
                 )
                 return
@@ -288,8 +290,8 @@ class InstructorManager:
                 capacity = int(cap_str) if cap_str else 5
             except ValueError:
                 messagebox.showwarning(
-                    "Invalid Capacity",
-                    "Capacity must be a whole number.",
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.invalid_capacity', default="Invalid Capacity"),
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.capacity_must_be_a_whole_number', default="Capacity must be a whole number."),
                     parent=dialog,
                 )
                 return
@@ -306,27 +308,27 @@ class InstructorManager:
                     notes=notes,
                 )
                 messagebox.showinfo(
-                    "Success",
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.success', default="Success"),
                     f"Office hours created (ID: {oh_id}).",
                     parent=dialog,
                 )
                 dialog.destroy()
                 self._refresh_hours()
             except ValueError as e:
-                messagebox.showwarning("Validation Error", str(e), parent=dialog)
+                messagebox.showwarning(_t('gui.academics.office_hours.instructor_manager.dialogs.validation_error', default="Validation Error"), str(e), parent=dialog)
             except Exception as e:
                 logger.error("Error creating office hours: %s", e)
                 messagebox.showerror(
-                    "Error", f"Failed to create office hours:\n{e}",
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.error', default="Error"), f"Failed to create office hours:\n{e}",
                     parent=dialog,
                 )
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=6, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Save", command=_on_save).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.instructor_manager.buttons.save', default="Save"), command=_on_save).pack(
             side=tk.LEFT, padx=10,
         )
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.instructor_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(
             side=tk.LEFT, padx=10,
         )
 
@@ -339,8 +341,8 @@ class InstructorManager:
         selected = self.hours_tree.selection()
         if not selected:
             messagebox.showwarning(
-                "No Selection",
-                "Please select an office hours entry to edit.",
+                _t('gui.academics.office_hours.instructor_manager.dialogs.no_selection', default="No Selection"),
+                _t('gui.academics.office_hours.instructor_manager.dialogs.please_select_an_office_hours_entry_to_edit', default="Please select an office hours entry to edit."),
             )
             return
 
@@ -351,11 +353,11 @@ class InstructorManager:
         try:
             current = self.service.get_office_hours(oh_id)
             if not current:
-                messagebox.showerror("Error", "Office hours record not found.")
+                messagebox.showerror(_t('gui.academics.office_hours.instructor_manager.dialogs.error', default="Error"), _t('gui.academics.office_hours.instructor_manager.dialogs.office_hours_record_not_found', default="Office hours record not found."))
                 return
         except Exception as e:
             logger.error("Error fetching office hours %s: %s", oh_id, e)
-            messagebox.showerror("Error", f"Failed to load office hours:\n{e}")
+            messagebox.showerror(_t('gui.academics.office_hours.instructor_manager.dialogs.error', default="Error"), f"Failed to load office hours:\n{e}")
             return
 
         # Fetch buildings for location dropdown
@@ -374,8 +376,8 @@ class InstructorManager:
 
         if not buildings:
             messagebox.showwarning(
-                "No Buildings",
-                "No active buildings found. Cannot edit office hours.",
+                _t('gui.academics.office_hours.instructor_manager.dialogs.no_buildings', default="No Buildings"),
+                _t('gui.academics.office_hours.instructor_manager.dialogs.no_active_buildings_found_cannot_edit_office_hours', default="No active buildings found. Cannot edit office hours."),
             )
             return
 
@@ -394,7 +396,7 @@ class InstructorManager:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Day of week
-        ttk.Label(frame, text="Day of Week:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.day_of_week', default="Day of Week:")).grid(
             row=0, column=0, sticky=tk.W, pady=5,
         )
         day_var = tk.StringVar(value=current.get('day_of_week', ''))
@@ -405,7 +407,7 @@ class InstructorManager:
         day_combo.grid(row=0, column=1, sticky=tk.W, pady=5)
 
         # Start time
-        ttk.Label(frame, text="Start Time:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.start_time', default="Start Time:")).grid(
             row=1, column=0, sticky=tk.W, pady=5,
         )
         start_var = tk.StringVar(value=current.get('start_time', ''))
@@ -415,7 +417,7 @@ class InstructorManager:
         ).grid(row=1, column=1, sticky=tk.W, pady=5)
 
         # End time
-        ttk.Label(frame, text="End Time:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.end_time', default="End Time:")).grid(
             row=2, column=0, sticky=tk.W, pady=5,
         )
         end_var = tk.StringVar(value=current.get('end_time', ''))
@@ -425,7 +427,7 @@ class InstructorManager:
         ).grid(row=2, column=1, sticky=tk.W, pady=5)
 
         # Location
-        ttk.Label(frame, text="Location:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.location', default="Location:")).grid(
             row=3, column=0, sticky=tk.W, pady=5,
         )
         location_var = tk.StringVar(value=current.get('location', ''))
@@ -435,7 +437,7 @@ class InstructorManager:
         ).grid(row=3, column=1, sticky=tk.W, pady=5)
 
         # Capacity
-        ttk.Label(frame, text="Capacity:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.capacity', default="Capacity:")).grid(
             row=4, column=0, sticky=tk.W, pady=5,
         )
         capacity_var = tk.StringVar(value=str(current.get('capacity', 5)))
@@ -444,7 +446,7 @@ class InstructorManager:
         )
 
         # Notes
-        ttk.Label(frame, text="Notes:").grid(
+        ttk.Label(frame, text=_t('gui.academics.office_hours.instructor_manager.labels.notes', default="Notes:")).grid(
             row=5, column=0, sticky=tk.W, pady=5,
         )
         notes_var = tk.StringVar(value=current.get('notes', '') or '')
@@ -479,8 +481,8 @@ class InstructorManager:
                         updates['capacity'] = cap_int
                 except ValueError:
                     messagebox.showwarning(
-                        "Invalid Capacity",
-                        "Capacity must be a whole number.",
+                        _t('gui.academics.office_hours.instructor_manager.dialogs.invalid_capacity', default="Invalid Capacity"),
+                        _t('gui.academics.office_hours.instructor_manager.dialogs.capacity_must_be_a_whole_number', default="Capacity must be a whole number."),
                         parent=dialog,
                     )
                     return
@@ -491,8 +493,8 @@ class InstructorManager:
 
             if not updates:
                 messagebox.showinfo(
-                    "No Changes",
-                    "No changes were made.",
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.no_changes', default="No Changes"),
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.no_changes_were_made', default="No changes were made."),
                     parent=dialog,
                 )
                 dialog.destroy()
@@ -502,33 +504,33 @@ class InstructorManager:
                 success = self.service.update_office_hours(oh_id, **updates)
                 if success:
                     messagebox.showinfo(
-                        "Success",
-                        "Office hours updated successfully.",
+                        _t('gui.academics.office_hours.instructor_manager.dialogs.success', default="Success"),
+                        _t('gui.academics.office_hours.instructor_manager.dialogs.office_hours_updated_successfully', default="Office hours updated successfully."),
                         parent=dialog,
                     )
                     dialog.destroy()
                     self._refresh_hours()
                 else:
                     messagebox.showwarning(
-                        "Not Updated",
-                        "Office hours could not be updated.",
+                        _t('gui.academics.office_hours.instructor_manager.dialogs.not_updated', default="Not Updated"),
+                        _t('gui.academics.office_hours.instructor_manager.dialogs.office_hours_could_not_be_updated', default="Office hours could not be updated."),
                         parent=dialog,
                     )
             except ValueError as e:
-                messagebox.showwarning("Validation Error", str(e), parent=dialog)
+                messagebox.showwarning(_t('gui.academics.office_hours.instructor_manager.dialogs.validation_error', default="Validation Error"), str(e), parent=dialog)
             except Exception as e:
                 logger.error("Error updating office hours %s: %s", oh_id, e)
                 messagebox.showerror(
-                    "Error", f"Failed to update office hours:\n{e}",
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.error', default="Error"), f"Failed to update office hours:\n{e}",
                     parent=dialog,
                 )
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=6, column=0, columnspan=2, pady=15)
-        ttk.Button(btn_frame, text="Save", command=_on_save).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.instructor_manager.buttons.save', default="Save"), command=_on_save).pack(
             side=tk.LEFT, padx=10,
         )
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.office_hours.instructor_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(
             side=tk.LEFT, padx=10,
         )
 
@@ -541,8 +543,8 @@ class InstructorManager:
         selected = self.hours_tree.selection()
         if not selected:
             messagebox.showwarning(
-                "No Selection",
-                "Please select an office hours entry to delete.",
+                _t('gui.academics.office_hours.instructor_manager.dialogs.no_selection', default="No Selection"),
+                _t('gui.academics.office_hours.instructor_manager.dialogs.please_select_an_office_hours_entry_to_delete', default="Please select an office hours entry to delete."),
             )
             return
 
@@ -553,7 +555,7 @@ class InstructorManager:
         end = values[3]
 
         confirm = messagebox.askyesno(
-            "Confirm Delete",
+            _t('gui.academics.office_hours.instructor_manager.dialogs.confirm_delete', default="Confirm Delete"),
             f"Are you sure you want to delete office hours {oh_id}\n"
             f"({day} {start}-{end})?",
         )
@@ -563,15 +565,15 @@ class InstructorManager:
         try:
             success = self.service.delete_office_hours(oh_id)
             if success:
-                messagebox.showinfo("Success", "Office hours deleted.")
+                messagebox.showinfo(_t('gui.academics.office_hours.instructor_manager.dialogs.success', default="Success"), _t('gui.academics.office_hours.instructor_manager.dialogs.office_hours_deleted', default="Office hours deleted."))
                 self._refresh_hours()
             else:
                 messagebox.showwarning(
-                    "Not Deleted",
-                    "Office hours not found or already inactive.",
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.not_deleted', default="Not Deleted"),
+                    _t('gui.academics.office_hours.instructor_manager.dialogs.office_hours_not_found_or_already_inactive', default="Office hours not found or already inactive."),
                 )
         except Exception as e:
             logger.error("Error deleting office hours %s: %s", oh_id, e)
             messagebox.showerror(
-                "Error", f"Failed to delete office hours:\n{e}",
+                _t('gui.academics.office_hours.instructor_manager.dialogs.error', default="Error"), f"Failed to delete office hours:\n{e}",
             )

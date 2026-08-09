@@ -1,4 +1,6 @@
 """Permits tab mixin for ParkingManagementGUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -82,7 +84,7 @@ class PermitsMixin:
 
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh permits: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.permits.dialogs.error', default="Error"), f"Failed to refresh permits: {e}")
 
     def filter_permits(self, event=None):
         """Filter permits based on search term"""
@@ -114,13 +116,13 @@ class PermitsMixin:
                 self.refresh_permits()
                 self.update_status("Permit created successfully")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create permit: {e}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.permits.dialogs.error', default="Error"), f"Failed to create permit: {e}")
 
     def edit_selected_permit(self):
         """Edit the selected permit"""
         selected = self.permits_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a permit to edit")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.permits.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.tabs.permits.dialogs.please_select_a_permit_to_edit', default="Please select a permit to edit"))
             return
 
         # Get permit data and show edit dialog
@@ -143,18 +145,18 @@ class PermitsMixin:
                     self.refresh_permits()
                     self.update_status("Permit updated successfully")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to edit permit: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.permits.dialogs.error', default="Error"), f"Failed to edit permit: {e}")
 
     def delete_selected_permit(self):
         """Delete the selected permit"""
         selected = self.permits_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a permit to delete")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.permits.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.tabs.permits.dialogs.please_select_a_permit_to_delete', default="Please select a permit to delete"))
             return
 
         permit_id = self.permits_tree.item(selected[0])['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete permit {permit_id}?"):
+        if messagebox.askyesno(_t('gui.operations.campus.mobility.parking_management.tabs.permits.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete permit {permit_id}?"):
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
@@ -165,7 +167,7 @@ class PermitsMixin:
                 self.refresh_permits()
                 self.update_status("Permit deleted successfully")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete permit: {e}")
+                messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.permits.dialogs.error', default="Error"), f"Failed to delete permit: {e}")
 
     def create_permit_from_data(self, data):
         """Create a permit from dialog data"""

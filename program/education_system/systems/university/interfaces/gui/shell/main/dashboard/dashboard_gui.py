@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # Auto-generated module
 import json
 import tkinter as tk
@@ -9,7 +11,7 @@ from education_system.systems.university.interfaces.gui.shell.main._tk_callback_
 
 # Import database connection
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.infrastructure import paths as _paths
+from education_system import paths as _paths
 
 # Module-level auth handle for standalone launchers; None means no session is
 # attached (the standalone analytics window then runs without an auth context).
@@ -61,7 +63,7 @@ class _Tooltip:
 
 # --- Pinned-actions storage (#6) --------------------------------------
 def _pins_path():
-    return _paths.CONFIG_DIR / "overview_pins.json"
+    return _paths.UNIVERSITY_CONFIG_DIR / "overview_pins.json"
 
 
 def _load_pins(username):
@@ -74,7 +76,7 @@ def _load_pins(username):
 
 def _save_pins(username, pin_keys):
     try:
-        _paths.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        _paths.UNIVERSITY_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
         try:
             with open(_pins_path(), 'r') as f:
                 data = json.load(f)
@@ -216,10 +218,10 @@ def show_integrated_dashboard(self):
     # "Close extra tabs". Packed first, so side=RIGHT lands "Close extra tabs"
     # to its right.
     if user_role == 'admin':
-        ttk.Button(button_box, text="Branding & Customization",
+        ttk.Button(button_box, text=_t('gui.shell.main.dashboard.dashboard.buttons.branding_customization', default="Branding & Customization"),
                    command=_open_branding).pack(side=tk.LEFT, padx=(0, 5))
 
-    ttk.Button(button_box, text="Close extra tabs",
+    ttk.Button(button_box, text=_t('gui.shell.main.dashboard.dashboard.buttons.close_extra_tabs', default="Close extra tabs"),
                command=_close_extra_tabs).pack(side=tk.LEFT)
 
     def _fit_branding_text(_event=None):
@@ -268,15 +270,15 @@ def show_integrated_dashboard(self):
         if role == 'student':
             from education_system.systems.university.interfaces.gui.shell.main.dashboard.student_dashboard import create_student_dashboard
             create_student_dashboard(my_dash_frame, self.auth, dash_service)
-            notebook.add(my_dash_frame, text="My Dashboard")
+            notebook.add(my_dash_frame, text=_t('gui.shell.main.dashboard.dashboard.tabs.my_dashboard', default="My Dashboard"))
         elif role in ('instructor', 'staff'):
             from education_system.systems.university.interfaces.gui.shell.main.dashboard.instructor_dashboard import create_instructor_dashboard
             create_instructor_dashboard(my_dash_frame, self.auth, dash_service)
-            notebook.add(my_dash_frame, text="My Dashboard")
+            notebook.add(my_dash_frame, text=_t('gui.shell.main.dashboard.dashboard.tabs.my_dashboard', default="My Dashboard"))
         elif role == 'admin':
             from education_system.systems.university.interfaces.gui.shell.main.dashboard.admin_dashboard import create_admin_dashboard
             create_admin_dashboard(my_dash_frame, self.auth, dash_service)
-            notebook.add(my_dash_frame, text="My Dashboard")
+            notebook.add(my_dash_frame, text=_t('gui.shell.main.dashboard.dashboard.tabs.my_dashboard', default="My Dashboard"))
     except Exception as e:
         logging.warning(f"Could not load role-specific dashboard: {e}")
 
@@ -308,13 +310,13 @@ def show_integrated_dashboard(self):
 
             # Login Analytics tab (Feature 13)
             login_analytics_frame = ttk.Frame(notebook)
-            notebook.add(login_analytics_frame, text="Login Analytics")
+            notebook.add(login_analytics_frame, text=_t('gui.shell.main.dashboard.dashboard.tabs.login_analytics', default="Login Analytics"))
             from education_system.systems.university.interfaces.gui.shell.main.dashboard.login_analytics_dashboard import create_login_analytics_tab
             create_login_analytics_tab(login_analytics_frame, _admin_svc)
 
             # Operational Dashboards tab (Feature 14)
             operations_frame = ttk.Frame(notebook)
-            notebook.add(operations_frame, text="Operations")
+            notebook.add(operations_frame, text=_t('gui.shell.main.dashboard.dashboard.tabs.operations', default="Operations"))
             from education_system.systems.university.interfaces.gui.shell.main.dashboard.operations_dashboard import create_operations_tab
             create_operations_tab(operations_frame, _admin_svc)
 
@@ -326,7 +328,7 @@ def show_integrated_dashboard(self):
             # wait times, slow queries, per-table drill-down) — not
             # general health, which is what the regular "Health" tab
             # already covers.
-            notebook.add(sys_health_frame, text="DB Performance")
+            notebook.add(sys_health_frame, text=_t('gui.shell.main.dashboard.dashboard.tabs.db_performance', default="DB Performance"))
             from education_system.systems.university.interfaces.gui.shell.main.dashboard.system_health_dashboard import create_system_health_tab
             create_system_health_tab(sys_health_frame, _admin_svc)
         except Exception as e:
@@ -412,7 +414,7 @@ def create_overview_tab(self, parent):
               font=('Consolas', 11)).pack(side=tk.LEFT, padx=10)
     db_dot = tk.Label(right, text="●", font=('Arial', 14), foreground="gray")
     db_dot.pack(side=tk.LEFT)
-    db_label = ttk.Label(right, text="DB: checking…")
+    db_label = ttk.Label(right, text=_t('gui.shell.main.dashboard.dashboard.labels.db_checking', default="DB: checking…"))
     db_label.pack(side=tk.LEFT, padx=4)
 
     def _tick():
@@ -427,7 +429,7 @@ def create_overview_tab(self, parent):
                 with get_connection() as conn:
                     conn.execute("SELECT 1").fetchone()
                 db_dot.config(foreground="#2ca02c")
-                db_label.config(text="DB: connected")
+                db_label.config(text=_t('gui.shell.main.dashboard.dashboard.text.db_connected', default="DB: connected"))
             except Exception as e:
                 db_dot.config(foreground="#d62728")
                 db_label.config(text=f"DB: {type(e).__name__}")
@@ -462,7 +464,7 @@ def create_overview_tab(self, parent):
         except Exception as e:
             messagebox.showerror(_("common.error"), str(e))
 
-    ttk.Button(search_row, text="Go",
+    ttk.Button(search_row, text=_t('gui.shell.main.dashboard.dashboard.buttons.go', default="Go"),
                command=_do_search).pack(side=tk.LEFT)
     search_entry.bind("<Return>", _do_search)
 
@@ -569,7 +571,7 @@ def create_overview_tab(self, parent):
 
     if not visible:
         ttk.Label(qa_frame,
-                  text="No quick actions available for your role.",
+                  text=_t('gui.shell.main.dashboard.dashboard.labels.no_quick_actions_available_for_your_role', default="No quick actions available for your role."),
                   foreground="#777").pack(anchor='w')
     else:
         cols = 3
@@ -600,15 +602,15 @@ def create_overview_tab(self, parent):
 
     # ---------------------- RECENT ACTIVITY (#5) ----------------------
     ra_frame = ttk.LabelFrame(overview_container,
-                              text="Recent activity", padding="10")
+                              text=_t('gui.shell.main.dashboard.dashboard.labels.recent_activity', default="Recent activity"), padding="10")
     ra_frame.pack(fill=tk.X, pady=(0, 10))
 
     ra_cols = ('timestamp', 'username', 'action')
     ra_tree = ttk.Treeview(ra_frame, columns=ra_cols, show='headings',
                            height=5)
-    ra_tree.heading('timestamp', text='Time')
-    ra_tree.heading('username', text='User')
-    ra_tree.heading('action', text='Action')
+    ra_tree.heading('timestamp', text=_t('gui.shell.main.dashboard.dashboard.headings.time', default='Time'))
+    ra_tree.heading('username', text=_t('gui.shell.main.dashboard.dashboard.headings.user', default='User'))
+    ra_tree.heading('action', text=_t('gui.shell.main.dashboard.dashboard.headings.action', default='Action'))
     ra_tree.column('timestamp', width=160)
     ra_tree.column('username', width=120)
     ra_tree.column('action', width=300)
@@ -637,7 +639,7 @@ def create_overview_tab(self, parent):
                 nb.select(tab_id)
                 return
 
-    see_all = ttk.Label(ra_frame, text="See all activity →",
+    see_all = ttk.Label(ra_frame, text=_t('gui.shell.main.dashboard.dashboard.labels.see_all_activity', default="See all activity →"),
                         foreground="#1a73e8", cursor="hand2")
     see_all.pack(anchor='e', pady=(5, 0))
     see_all.bind("<Button-1>", lambda _e: _see_all_activity())
@@ -750,7 +752,7 @@ def create_stats_tab(self, parent):
         except Exception as e:
             asof_var.set(f"load error: {e}")
 
-    ttk.Button(header, text="Refresh",
+    ttk.Button(header, text=_t('gui.shell.main.dashboard.dashboard.buttons.refresh', default="Refresh"),
                command=_refresh_stats).pack(side=tk.RIGHT)
     _refresh_stats()
 
@@ -766,8 +768,8 @@ def create_activity_tab(self, parent):
     controls = ttk.Frame(activity_container)
     controls.pack(fill=tk.X, pady=(0, 5))
 
-    filter_var = tk.StringVar(value="All")
-    ttk.Label(controls, text="Filter:").pack(side=tk.LEFT, padx=(0, 5))
+    filter_var = tk.StringVar(value=_t('gui.shell.main.dashboard.dashboard.values.all', default="All"))
+    ttk.Label(controls, text=_t('gui.shell.main.dashboard.dashboard.labels.filter', default="Filter:")).pack(side=tk.LEFT, padx=(0, 5))
     filter_combo = ttk.Combobox(controls, textvariable=filter_var, state='readonly',
                                  values=['All', 'login', 'logout', 'create', 'update', 'delete', 'view', 'export'],
                                  width=12)
@@ -783,10 +785,10 @@ def create_activity_tab(self, parent):
                         yscrollcommand=tree_scroll.set)
     tree_scroll.config(command=tree.yview)
 
-    tree.heading('timestamp', text='Timestamp')
-    tree.heading('username', text='User')
-    tree.heading('action', text='Action')
-    tree.heading('details', text='Details')
+    tree.heading('timestamp', text=_t('gui.shell.main.dashboard.dashboard.headings.timestamp', default='Timestamp'))
+    tree.heading('username', text=_t('gui.shell.main.dashboard.dashboard.headings.user', default='User'))
+    tree.heading('action', text=_t('gui.shell.main.dashboard.dashboard.headings.action', default='Action'))
+    tree.heading('details', text=_t('gui.shell.main.dashboard.dashboard.headings.details', default='Details'))
     tree.column('timestamp', width=160)
     tree.column('username', width=100)
     tree.column('action', width=150)
@@ -822,7 +824,7 @@ def create_activity_tab(self, parent):
 
     filter_combo.bind('<<ComboboxSelected>>', lambda e: load_activity(filter_var.get()))
 
-    ttk.Button(controls, text="Refresh", command=lambda: load_activity(filter_var.get())).pack(side=tk.RIGHT)
+    ttk.Button(controls, text=_t('gui.shell.main.dashboard.dashboard.buttons.refresh', default="Refresh"), command=lambda: load_activity(filter_var.get())).pack(side=tk.RIGHT)
 
     load_activity()
 
@@ -849,7 +851,7 @@ def create_health_tab(self, parent):
     ttk.Label(health_container, text=_("dashboard.health.title"),
               font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
-    metrics_frame = ttk.LabelFrame(health_container, text="System Metrics", padding="10")
+    metrics_frame = ttk.LabelFrame(health_container, text=_t('gui.shell.main.dashboard.dashboard.labels.system_metrics', default="System Metrics"), padding="10")
     metrics_frame.pack(fill=tk.X, pady=(0, 10))
 
     info_labels = {}
@@ -870,7 +872,7 @@ def create_health_tab(self, parent):
     _add_metric(metrics_frame, "Application Uptime", 7)
 
     # Connection Pool section
-    pool_frame = ttk.LabelFrame(health_container, text="Connection Pool", padding="10")
+    pool_frame = ttk.LabelFrame(health_container, text=_t('gui.shell.main.dashboard.dashboard.labels.connection_pool', default="Connection Pool"), padding="10")
     pool_frame.pack(fill=tk.X, pady=(0, 10))
 
     pool_labels = {}
@@ -888,7 +890,7 @@ def create_health_tab(self, parent):
     _add_pool_metric(pool_frame, "Connection Errors", 4)
 
     # Error counts section
-    errors_frame = ttk.LabelFrame(health_container, text="Recent Errors", padding="10")
+    errors_frame = ttk.LabelFrame(health_container, text=_t('gui.shell.main.dashboard.dashboard.labels.recent_errors', default="Recent Errors"), padding="10")
     errors_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     error_text = tk.Text(errors_frame, wrap=tk.WORD, height=6)
@@ -898,7 +900,7 @@ def create_health_tab(self, parent):
     # Quick self-test section — the four boolean checks the Health
     # Portal stub used to render. Each runs in a daemon thread so a
     # slow check doesn't block the tab from appearing.
-    selftest_frame = ttk.LabelFrame(health_container, text="Quick self-test", padding="10")
+    selftest_frame = ttk.LabelFrame(health_container, text=_t('gui.shell.main.dashboard.dashboard.labels.quick_self_test', default="Quick self-test"), padding="10")
     selftest_frame.pack(fill=tk.X, pady=(0, 10))
     selftest_vars = {}
 
@@ -936,7 +938,7 @@ def create_health_tab(self, parent):
     for i, (label, _fn) in enumerate(selftest_checks):
         ttk.Label(selftest_frame, text=label, width=25,
                   anchor='w').grid(row=i, column=0, padx=5, pady=3, sticky='w')
-        var = tk.StringVar(value="Checking…")
+        var = tk.StringVar(value=_t('gui.shell.main.dashboard.dashboard.values.checking', default="Checking…"))
         ttk.Label(selftest_frame, textvariable=var,
                   anchor='w').grid(row=i, column=1, padx=5, pady=3, sticky='w')
         selftest_vars[label] = var
@@ -956,8 +958,8 @@ def create_health_tab(self, parent):
 
     def refresh_health():
         try:
-            from education_system.systems.university.infrastructure import paths
-            db_path = str(paths.DEFAULT_DB_PATH)
+            from education_system import paths
+            db_path = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
             # Database size
             try:
@@ -968,7 +970,7 @@ def create_health_tab(self, parent):
                     size_str = f"{db_size / 1024:.1f} KB"
                 info_labels["Database Size"].config(text=size_str)
             except Exception:
-                info_labels["Database Size"].config(text="Unknown")
+                info_labels["Database Size"].config(text=_t('gui.shell.main.dashboard.dashboard.text.unknown', default="Unknown"))
 
             with get_connection() as conn:
                 # Table count
@@ -985,7 +987,7 @@ def create_health_tab(self, parent):
                     total = row['total'] if row and row['total'] else 0
                     info_labels["Total Rows (est.)"].config(text=f"{total:,}")
                 except Exception:
-                    info_labels["Total Rows (est.)"].config(text="N/A")
+                    info_labels["Total Rows (est.)"].config(text=_t('gui.shell.main.dashboard.dashboard.text.n_a', default="N/A"))
 
                 # Active users (24h)
                 try:
@@ -995,7 +997,7 @@ def create_health_tab(self, parent):
                     ).fetchone()
                     info_labels["Active Users (24h)"].config(text=str(row['cnt'] if row else 0))
                 except Exception:
-                    info_labels["Active Users (24h)"].config(text="N/A")
+                    info_labels["Active Users (24h)"].config(text=_t('gui.shell.main.dashboard.dashboard.text.n_a', default="N/A"))
 
                 # Login attempts (24h)
                 try:
@@ -1005,7 +1007,7 @@ def create_health_tab(self, parent):
                     ).fetchone()
                     info_labels["Login Attempts (24h)"].config(text=str(row['cnt'] if row else 0))
                 except Exception:
-                    info_labels["Login Attempts (24h)"].config(text="N/A")
+                    info_labels["Login Attempts (24h)"].config(text=_t('gui.shell.main.dashboard.dashboard.text.n_a', default="N/A"))
 
                 # Failed logins (24h)
                 try:
@@ -1015,7 +1017,7 @@ def create_health_tab(self, parent):
                     ).fetchone()
                     info_labels["Failed Logins (24h)"].config(text=str(row['cnt'] if row else 0))
                 except Exception:
-                    info_labels["Failed Logins (24h)"].config(text="N/A")
+                    info_labels["Failed Logins (24h)"].config(text=_t('gui.shell.main.dashboard.dashboard.text.n_a', default="N/A"))
 
                 # Activity log count
                 row = conn.execute("SELECT COUNT(*) as cnt FROM activity_log").fetchone()
@@ -1032,26 +1034,26 @@ def create_health_tab(self, parent):
                 from education_system.systems.university.infrastructure.database.pool_metrics import get_pool_metrics
                 metrics = get_pool_metrics()
                 if metrics:
-                    pool_labels["Pool Status"].config(text="Active")
+                    pool_labels["Pool Status"].config(text=_t('gui.shell.main.dashboard.dashboard.text.active', default="Active"))
                     pool_labels["Total Connections"].config(text=str(metrics.total_connections))
                     pool_labels["Active Connections"].config(text=str(metrics.active_connections))
                     pool_labels["Idle Connections"].config(text=str(metrics.idle_connections))
                     pool_labels["Connection Errors"].config(text=str(metrics.connection_errors))
                 else:
-                    pool_labels["Pool Status"].config(text="Active (no collector)")
-                    pool_labels["Total Connections"].config(text="N/A")
-                    pool_labels["Active Connections"].config(text="N/A")
-                    pool_labels["Idle Connections"].config(text="N/A")
-                    pool_labels["Connection Errors"].config(text="N/A")
+                    pool_labels["Pool Status"].config(text=_t('gui.shell.main.dashboard.dashboard.text.active_no_collector', default="Active (no collector)"))
+                    pool_labels["Total Connections"].config(text=_t('gui.shell.main.dashboard.dashboard.text.n_a', default="N/A"))
+                    pool_labels["Active Connections"].config(text=_t('gui.shell.main.dashboard.dashboard.text.n_a', default="N/A"))
+                    pool_labels["Idle Connections"].config(text=_t('gui.shell.main.dashboard.dashboard.text.n_a', default="N/A"))
+                    pool_labels["Connection Errors"].config(text=_t('gui.shell.main.dashboard.dashboard.text.n_a', default="N/A"))
             except Exception:
-                pool_labels["Pool Status"].config(text="Active (metrics unavailable)")
+                pool_labels["Pool Status"].config(text=_t('gui.shell.main.dashboard.dashboard.text.active_metrics_unavailable', default="Active (metrics unavailable)"))
                 for k in ["Total Connections", "Active Connections", "Idle Connections", "Connection Errors"]:
-                    pool_labels[k].config(text="N/A")
+                    pool_labels[k].config(text=_t('gui.shell.main.dashboard.dashboard.text.n_a', default="N/A"))
 
             # Recent errors from log file
             try:
-                from education_system.systems.university.infrastructure import paths as _paths
-                log_file = os.path.join(str(_paths.LOG_DIR), 'app.log')
+                from education_system import paths as _paths
+                log_file = os.path.join(str(_paths.UNIVERSITY_LOG_DIR), 'app.log')
                 error_lines = []
                 if os.path.exists(log_file):
                     with open(log_file, 'r') as f:
@@ -1078,7 +1080,7 @@ def create_health_tab(self, parent):
         except Exception as e:
             logging.warning(f"Health tab refresh error: {e}")
 
-    ttk.Button(health_container, text="Refresh", command=refresh_health).pack(anchor='e', pady=(5, 0))
+    ttk.Button(health_container, text=_t('gui.shell.main.dashboard.dashboard.buttons.refresh', default="Refresh"), command=refresh_health).pack(anchor='e', pady=(5, 0))
     refresh_health()
 def show_analytics(self):
     """Launch the standalone Student Analytics GUI from student_analytics_gui.py"""
@@ -1132,7 +1134,7 @@ def show_chatbot(self):
         else:
             messagebox.showerror(
                 _("common.error"),
-                "Chatbot GUI is not available. Please ensure the chatbot module is installed."
+                _t('gui.shell.main.dashboard.dashboard.dialogs.chatbot_gui_is_not_available_please_ensure_the_chatbot_module_is', default="Chatbot GUI is not available. Please ensure the chatbot module is installed.")
             )
 
         print(_("dashboard.messages.chatbot_launched"))

@@ -60,7 +60,12 @@ def encrypted_connect(
         try:
             if use_encryption:
                 conn = _sqlcipher.connect(db_path, timeout=30)
-                conn.execute(f"PRAGMA key = '{key}'")
+                # PRAGMA does not accept bound parameters, so the key is placed
+                # in a SQL string literal — escape embedded single quotes by
+                # doubling them so a key value can never break out of the
+                # literal and inject trailing SQL.
+                _escaped_key = str(key).replace("'", "''")
+                conn.execute(f"PRAGMA key = '{_escaped_key}'")  # nosec B608 - value escaped for literal
                 # Verify the key works
                 conn.execute("SELECT count(*) FROM sqlite_master")
                 logger.debug("Encrypted connection opened: %s", db_path)

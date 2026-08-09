@@ -1,0 +1,11 @@
+{
+  "template_id": "assignment_missing_work",
+  "description": "Escalating chaser for coursework that passed its deadline and never arrived. Level 1 goes to the student, level 2 copies the tutor, level 3 contacts home. The wording is deliberately factual rather than punitive, because the usual cause is a student in difficulty rather than a student refusing.",
+  "channel": "Email",
+  "category": "Academic",
+  "priority": "High",
+  "from_name": "Sixth Form Assignments",
+  "from_address": "assignments@sixthform.ac.uk",
+  "subject": "Coursework not received: {{title}} ({{subject_name}}) — {{full_name}}",
+  "body": "Regarding {{full_name}} ({{student_id}}).\n\nThe following coursework passed its deadline and has not been received:\n\n  Assignment: {{title}}\n  Subject:    {{subject_name}}\n  Teacher:    {{teacher}}\n  Was due:    {{due_date}}\n\nThis is contact stage {{level}} of 3 ({{level_name}}).\n\nWhat happens next\n-----------------\n  - If the work has been submitted another way, reply and we will correct the record.\n  - If there is a reason it is late — illness, a clash, difficulty with the task — tell {{teacher}}. An extension agreed in advance is straightforward; work that simply never arrives is not.\n  - If nothing is received, this will continue to escalate, and a missing piece of coursework can affect a predicted grade.\n\nWe would rather sort this out than keep sending these. Please get in touch with {{teacher}}.\n\n{{system_name}}"
+}

@@ -2,6 +2,8 @@
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import threading
@@ -22,7 +24,7 @@ class _ToolsMixin:
     def _create_tools_tab(self):
         """Add the tools tab frame (content built lazily on first view)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Tools")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.tabs.tools', default="Tools"))
         self._register_lazy_tab(tab, self._populate_tools_tab)
 
     def _populate_tools_tab(self, tab):
@@ -43,7 +45,7 @@ class _ToolsMixin:
     def _create_gpa_calculator(self, parent_notebook):
         """Create GPA calculator and projector tool."""
         tab = ttk.Frame(parent_notebook)
-        parent_notebook.add(tab, text="GPA Calculator")
+        parent_notebook.add(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.tabs.gpa_calculator', default="GPA Calculator"))
 
         # Create canvas with scrollbar for the entire tab
         canvas = tk.Canvas(tab, highlightthickness=0)
@@ -72,62 +74,62 @@ class _ToolsMixin:
         header_frame = ttk.Frame(scrollable_frame)
         header_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(header_frame, text="GPA Calculator & Projector",
+        ttk.Label(header_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.gpa_calculator_projector', default="GPA Calculator & Projector"),
                  font=('Arial', 14, 'bold')).pack(anchor=tk.W)
-        ttk.Label(header_frame, text="Calculate current GPA and project future GPA based on planned courses",
+        ttk.Label(header_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.calculate_current_gpa_and_project_future_gpa_based_on_planned_co', default="Calculate current GPA and project future GPA based on planned courses"),
                  font=('Arial', 10)).pack(anchor=tk.W)
 
         # Current GPA section
-        current_frame = ttk.LabelFrame(scrollable_frame, text="Current GPA", padding=15)
+        current_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.current_gpa', default="Current GPA"), padding=15)
         current_frame.pack(fill=tk.X, padx=20, pady=10)
 
         stats_frame = ttk.Frame(current_frame)
         stats_frame.pack(fill=tk.X)
 
-        self.gpa_current_label = ttk.Label(stats_frame, text="Current GPA: --",
+        self.gpa_current_label = ttk.Label(stats_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.current_gpa_variant_2', default="Current GPA: --"),
                                            font=('Arial', 18, 'bold'))
         self.gpa_current_label.pack(side=tk.LEFT, padx=20)
 
-        self.gpa_credits_label = ttk.Label(stats_frame, text="Total Credits: --",
+        self.gpa_credits_label = ttk.Label(stats_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.total_credits', default="Total Credits: --"),
                                            font=('Arial', 12))
         self.gpa_credits_label.pack(side=tk.LEFT, padx=20)
 
-        ttk.Button(current_frame, text="Calculate Current GPA",
+        ttk.Button(current_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.buttons.calculate_current_gpa', default="Calculate Current GPA"),
                   command=self._calculate_current_gpa).pack(pady=10)
 
         # GPA Projection section
-        projection_frame = ttk.LabelFrame(scrollable_frame, text="GPA Projection", padding=15)
+        projection_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.gpa_projection', default="GPA Projection"), padding=15)
         projection_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(projection_frame, text="Project your GPA based on planned courses:",
+        ttk.Label(projection_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.project_your_gpa_based_on_planned_courses', default="Project your GPA based on planned courses:"),
                  font=('Arial', 11)).pack(anchor=tk.W, pady=5)
 
         # Select plan
         plan_select_frame = ttk.Frame(projection_frame)
         plan_select_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(plan_select_frame, text="Select Plan:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(plan_select_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.select_plan', default="Select Plan:")).pack(side=tk.LEFT, padx=5)
         self.gpa_plan_combo = ttk.Combobox(plan_select_frame, state='readonly', width=40)
         self.gpa_plan_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(plan_select_frame, text="Load Plans",
+        ttk.Button(plan_select_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.buttons.load_plans', default="Load Plans"),
                   command=self._load_plans_for_gpa).pack(side=tk.LEFT, padx=5)
 
         # Projected grade input and button
         grade_frame = ttk.Frame(projection_frame)
         grade_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(grade_frame, text="Expected Grade Average:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(grade_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.expected_grade_average', default="Expected Grade Average:")).pack(side=tk.LEFT, padx=5)
         self.gpa_expected_grade = ttk.Combobox(grade_frame, values=['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'F'],
                                                state='readonly', width=10)
         self.gpa_expected_grade.set('B')
         self.gpa_expected_grade.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(grade_frame, text="Project GPA",
+        ttk.Button(grade_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.buttons.project_gpa', default="Project GPA"),
                   command=self._project_gpa).pack(side=tk.LEFT, padx=15)
 
         # Results
-        results_label_frame = ttk.LabelFrame(projection_frame, text="Projection Results", padding=10)
+        results_label_frame = ttk.LabelFrame(projection_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.projection_results', default="Projection Results"), padding=10)
         results_label_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
 
         self.gpa_projection_text = scrolledtext.ScrolledText(results_label_frame, wrap=tk.WORD,
@@ -137,22 +139,22 @@ class _ToolsMixin:
     def _create_progress_tracker(self, parent_notebook):
         """Create progress tracker tool."""
         tab = ttk.Frame(parent_notebook)
-        parent_notebook.add(tab, text="Progress Tracker")
+        parent_notebook.add(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.tabs.progress_tracker', default="Progress Tracker"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(header_frame, text="Degree Progress Tracker",
+        ttk.Label(header_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.degree_progress_tracker', default="Degree Progress Tracker"),
                  font=('Arial', 14, 'bold')).pack(anchor=tk.W)
-        ttk.Label(header_frame, text="Track completed courses vs remaining requirements",
+        ttk.Label(header_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.track_completed_courses_vs_remaining_requirements', default="Track completed courses vs remaining requirements"),
                  font=('Arial', 10)).pack(anchor=tk.W)
 
         # Program selection
         program_frame = ttk.Frame(tab)
         program_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(program_frame, text="Program:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(program_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.program', default="Program:")).pack(side=tk.LEFT, padx=5)
         self.progress_program_var = tk.StringVar()
         self.progress_program_entry = ttk.Combobox(program_frame, textvariable=self.progress_program_var,
                                                     width=30, state='readonly')
@@ -191,28 +193,28 @@ class _ToolsMixin:
 
         self.progress_program_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(program_frame, text="Analyze Progress",
+        ttk.Button(program_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.buttons.analyze_progress', default="Analyze Progress"),
                   command=self._analyze_progress).pack(side=tk.LEFT, padx=5)
 
         # Progress display
-        display_frame = ttk.LabelFrame(tab, text="Progress Overview", padding=15)
+        display_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.progress_overview', default="Progress Overview"), padding=15)
         display_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Stats cards
         stats_container = ttk.Frame(display_frame)
         stats_container.pack(fill=tk.X, pady=10)
 
-        self.progress_completed_label = ttk.Label(stats_container, text="Completed: --",
+        self.progress_completed_label = ttk.Label(stats_container, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.completed', default="Completed: --"),
                                                   font=('Arial', 12, 'bold'),
                                                   foreground='green')
         self.progress_completed_label.pack(side=tk.LEFT, padx=20)
 
-        self.progress_remaining_label = ttk.Label(stats_container, text="Remaining: --",
+        self.progress_remaining_label = ttk.Label(stats_container, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.remaining', default="Remaining: --"),
                                                   font=('Arial', 12, 'bold'),
                                                   foreground='orange')
         self.progress_remaining_label.pack(side=tk.LEFT, padx=20)
 
-        self.progress_percent_label = ttk.Label(stats_container, text="Progress: --",
+        self.progress_percent_label = ttk.Label(stats_container, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.progress', default="Progress: --"),
                                                 font=('Arial', 12, 'bold'),
                                                 foreground='blue')
         self.progress_percent_label.pack(side=tk.LEFT, padx=20)
@@ -225,15 +227,15 @@ class _ToolsMixin:
     def _create_plan_comparison(self, parent_notebook):
         """Create plan comparison tool."""
         tab = ttk.Frame(parent_notebook)
-        parent_notebook.add(tab, text="Plan Comparison")
+        parent_notebook.add(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.tabs.plan_comparison', default="Plan Comparison"))
 
         # Header
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(header_frame, text="Plan Comparison Tool",
+        ttk.Label(header_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.plan_comparison_tool', default="Plan Comparison Tool"),
                  font=('Arial', 14, 'bold')).pack(anchor=tk.W)
-        ttk.Label(header_frame, text="Compare two course plans side-by-side",
+        ttk.Label(header_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.compare_two_course_plans_side_by_side', default="Compare two course plans side-by-side"),
                  font=('Arial', 10)).pack(anchor=tk.W)
 
         # Plan selection
@@ -241,14 +243,14 @@ class _ToolsMixin:
         selection_frame.pack(fill=tk.X, padx=20, pady=10)
 
         # Plan 1
-        plan1_frame = ttk.LabelFrame(selection_frame, text="Plan 1", padding=10)
+        plan1_frame = ttk.LabelFrame(selection_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.plan_1', default="Plan 1"), padding=10)
         plan1_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
         self.compare_plan1_combo = ttk.Combobox(plan1_frame, state='readonly', width=30)
         self.compare_plan1_combo.pack(fill=tk.X, pady=5)
 
         # Plan 2
-        plan2_frame = ttk.LabelFrame(selection_frame, text="Plan 2", padding=10)
+        plan2_frame = ttk.LabelFrame(selection_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.plan_2', default="Plan 2"), padding=10)
         plan2_frame.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
         self.compare_plan2_combo = ttk.Combobox(plan2_frame, state='readonly', width=30)
@@ -258,13 +260,13 @@ class _ToolsMixin:
         button_frame = ttk.Frame(tab)
         button_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Button(button_frame, text="Load Plans",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.buttons.load_plans', default="Load Plans"),
                   command=self._load_plans_for_comparison).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Compare Plans",
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.buttons.compare_plans', default="Compare Plans"),
                   command=self._compare_plans).pack(side=tk.LEFT, padx=5)
 
         # Comparison results
-        results_frame = ttk.LabelFrame(tab, text="Comparison Results", padding=15)
+        results_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.labels.comparison_results', default="Comparison Results"), padding=15)
         results_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         self.comparison_text = scrolledtext.ScrolledText(results_frame, wrap=tk.WORD,
@@ -281,7 +283,7 @@ class _ToolsMixin:
                 gpa, total_credits, details = calculate_student_gpa(cursor, self.student_id)
 
             if gpa is None or not details:
-                messagebox.showinfo("Info", "No graded modules found.")
+                messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.info', default="Info"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.no_graded_modules_found', default="No graded modules found."))
                 return
 
             total_points = gpa * total_credits
@@ -312,7 +314,7 @@ class _ToolsMixin:
                         details={'gpa': gpa, 'credits': total_credits})
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to calculate GPA: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.error', default="Error"), f"Failed to calculate GPA: {e}")
 
     def _load_plans_for_gpa(self):
         """Load student's plans into GPA calculator dropdown."""
@@ -320,7 +322,7 @@ class _ToolsMixin:
             plans = self._student_plans()
 
             if not plans:
-                messagebox.showinfo("Info", "No plans found.")
+                messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.info', default="Info"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.no_plans_found', default="No plans found."))
                 return
 
             plan_names = [f"{p['plan_name']} (ID: {p['plan_id']})" for p in plans]
@@ -330,12 +332,12 @@ class _ToolsMixin:
                 self.gpa_plan_combo.set(plan_names[0])
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load plans: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.error', default="Error"), f"Failed to load plans: {e}")
 
     def _project_gpa(self):
         """Project GPA based on planned courses."""
         if not self.gpa_plan_combo.get():
-            messagebox.showwarning("Warning", "Please select a plan first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.please_select_a_plan_first', default="Please select a plan first."))
             return
 
         try:
@@ -386,7 +388,7 @@ class _ToolsMixin:
             # Get planned courses
             plan_data = self.planning_service.get_semester_plan(plan_id)
             if not plan_data:
-                messagebox.showerror("Error", "Failed to load plan data.")
+                messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.error', default="Error"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.failed_to_load_plan_data', default="Failed to load plan data."))
                 return
 
             # Calculate projected GPA
@@ -437,14 +439,14 @@ class _ToolsMixin:
             self.gpa_projection_text.insert(tk.END, "="*60 + "\n")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to project GPA: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.error', default="Error"), f"Failed to project GPA: {e}")
 
     def _analyze_progress(self):
         """Analyze degree completion progress."""
         raw_value = self.progress_program_entry.get().strip()
 
         if not raw_value:
-            messagebox.showwarning("Warning", "Please select a program.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.please_select_a_program', default="Please select a program."))
             return
 
         # Extract code from "CS - Computer Science" format
@@ -488,7 +490,7 @@ class _ToolsMixin:
                 """, (self.student_id, self.student_id)).fetchall()
 
             if not program_courses:
-                messagebox.showinfo("Info", f"No course requirements found for program: {program_code}")
+                messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.info', default="Info"), f"No course requirements found for program: {program_code}")
                 return
 
             # Track completed vs remaining
@@ -547,7 +549,7 @@ class _ToolsMixin:
                         details={'program': program_code, 'progress': progress_percent})
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to analyze progress: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.error', default="Error"), f"Failed to analyze progress: {e}")
 
     def _load_plans_for_comparison(self):
         """Load student's plans into comparison dropdowns."""
@@ -555,7 +557,7 @@ class _ToolsMixin:
             plans = self._student_plans()
 
             if not plans:
-                messagebox.showinfo("Info", "No plans found.")
+                messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.info', default="Info"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.no_plans_found', default="No plans found."))
                 return
 
             plan_names = [f"{p['plan_name']} (ID: {p['plan_id']})" for p in plans]
@@ -569,12 +571,12 @@ class _ToolsMixin:
                 self.compare_plan1_combo.set(plan_names[0])
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load plans: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.error', default="Error"), f"Failed to load plans: {e}")
 
     def _compare_plans(self):
         """Compare two plans side-by-side."""
         if not self.compare_plan1_combo.get() or not self.compare_plan2_combo.get():
-            messagebox.showwarning("Warning", "Please select two plans to compare.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.please_select_two_plans_to_compare', default="Please select two plans to compare."))
             return
 
         try:
@@ -586,7 +588,7 @@ class _ToolsMixin:
             plan2_id = int(plan2_text.split('ID: ')[1].rstrip(')'))
 
             if plan1_id == plan2_id:
-                messagebox.showwarning("Warning", "Please select two different plans.")
+                messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.please_select_two_different_plans', default="Please select two different plans."))
                 return
 
             # Get plan data
@@ -594,7 +596,7 @@ class _ToolsMixin:
             plan2_data = self.planning_service.get_semester_plan(plan2_id)
 
             if not plan1_data or not plan2_data:
-                messagebox.showerror("Error", "Failed to load plan data.")
+                messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.error', default="Error"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.failed_to_load_plan_data', default="Failed to load plan data."))
                 return
 
             plan1 = plan1_data['plan']
@@ -683,5 +685,5 @@ class _ToolsMixin:
                         details={'plan1_id': plan1_id, 'plan2_id': plan2_id})
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to compare plans: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.tools.dialogs.error', default="Error"), f"Failed to compare plans: {e}")
 

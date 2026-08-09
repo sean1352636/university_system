@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.module_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.module_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -355,48 +357,48 @@ class ModuleDialog:
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Module Code
-        ttk.Label(form_frame, text="Module Code:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.labels.module_code', default="Module Code:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.module_code_var = tk.StringVar(value=data[0] if data else "")
         ttk.Entry(form_frame, textvariable=self.module_code_var, width=30).grid(row=0, column=1, pady=5)
 
         # Module Name
-        ttk.Label(form_frame, text="Module Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.labels.module_name', default="Module Name:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.module_name_var = tk.StringVar(value=data[1] if data else "")
         ttk.Entry(form_frame, textvariable=self.module_name_var, width=30).grid(row=1, column=1, pady=5)
 
         # Module Type
-        ttk.Label(form_frame, text="Module Type:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.labels.module_type', default="Module Type:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.module_type_var = tk.StringVar(value=data[2] if data else "")
         type_combo = ttk.Combobox(form_frame, textvariable=self.module_type_var, width=27)
         type_combo['values'] = ("Core", "Elective", "General", "Laboratory", "Seminar")
         type_combo.grid(row=2, column=1, pady=5)
 
         # Credits
-        ttk.Label(form_frame, text="Credits:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.labels.credits', default="Credits:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.credits_var = tk.StringVar(value=str(data[3]) if data else "3")
         ttk.Spinbox(form_frame, textvariable=self.credits_var, from_=1, to=12, width=28).grid(row=3, column=1, pady=5)
 
         # Description
-        ttk.Label(form_frame, text="Description:").grid(row=4, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.labels.description', default="Description:")).grid(row=4, column=0, sticky=tk.NW, pady=5)
         self.description_text = tk.Text(form_frame, height=4, width=30)
         self.description_text.grid(row=4, column=1, pady=5)
         if data and len(data) > 4:
             self.description_text.insert(1.0, data[4])
 
         # Prerequisites
-        ttk.Label(form_frame, text="Prerequisites:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.labels.prerequisites', default="Prerequisites:")).grid(row=5, column=0, sticky=tk.W, pady=5)
         self.prerequisites_var = tk.StringVar(value=data[5] if data and len(data) > 5 else "")
         ttk.Entry(form_frame, textvariable=self.prerequisites_var, width=30).grid(row=5, column=1, pady=5)
 
         # Semester
-        ttk.Label(form_frame, text="Semester:").grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.labels.semester', default="Semester:")).grid(row=6, column=0, sticky=tk.W, pady=5)
         self.semester_var = tk.StringVar(value=data[6] if data and len(data) > 6 else "")
         semester_combo = ttk.Combobox(form_frame, textvariable=self.semester_var, width=27)
         semester_combo['values'] = ("Fall", "Spring", "Summer", "Winter")
         semester_combo.grid(row=6, column=1, pady=5)
 
         # Academic Year
-        ttk.Label(form_frame, text="Academic Year:").grid(row=7, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.labels.academic_year', default="Academic Year:")).grid(row=7, column=0, sticky=tk.W, pady=5)
         self.year_var = tk.StringVar(value=data[7] if data and len(data) > 7 else str(datetime.now().year))
         ttk.Entry(form_frame, textvariable=self.year_var, width=30).grid(row=7, column=1, pady=5)
 
@@ -404,19 +406,19 @@ class ModuleDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save_module).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.buttons.save', default="Save"), command=self.save_module).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.module_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def save_module(self):
         if not all([self.module_code_var.get(), self.module_name_var.get(),
                    self.module_type_var.get(), self.credits_var.get()]):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.module_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.module_dialog.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         try:
             credits = int(self.credits_var.get())
         except ValueError:
-            messagebox.showerror("Error", "Credits must be a number")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.module_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.module_dialog.dialogs.credits_must_be_a_number', default="Credits must be a number"))
             return
 
         self.result = (

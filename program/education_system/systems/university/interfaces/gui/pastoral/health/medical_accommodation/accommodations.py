@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # accommodations.py
 # Accommodation CRUD mixin for AccommodationGUI.
 
@@ -24,14 +26,14 @@ class AccommodationCRUDMixin:
     def add_accommodation_dialog(self):
         """Show dialog to add new accommodation"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
         dialog = AccommodationDialog(self.root, "Add Accommodation")
         if dialog.result:
             try:
                 if not validate_student_id(dialog.result['student_id']):
-                    messagebox.showerror("Error", "Student ID not found in the system")
+                    messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.student_id_not_found_in_the_system', default="Student ID not found in the system"))
                     return
 
                 if check_conflict(
@@ -41,8 +43,8 @@ class AccommodationCRUDMixin:
                     dialog.result['end_date']
                 ):
                     if not messagebox.askyesno(
-                        "Conflict",
-                        "This accommodation overlaps with an existing record. Continue anyway?"
+                        _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.conflict', default="Conflict"),
+                        _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.this_accommodation_overlaps_with_an_existing_record_continue_any', default="This accommodation overlaps with an existing record. Continue anyway?")
                     ):
                         return
 
@@ -71,7 +73,7 @@ class AccommodationCRUDMixin:
 
                     aid = cursor.lastrowid
                     conn.commit()
-                    messagebox.showinfo("Success", f"Accommodation added successfully with ID: {aid}")
+                    messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.success', default="Success"), f"Accommodation added successfully with ID: {aid}")
 
                 log_action('add_accommodation', aid, f"Added accommodation for student {dialog.result['student_id']}")
 
@@ -84,7 +86,7 @@ class AccommodationCRUDMixin:
                 self.refresh_data()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to add accommodation: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.error', default="Error"), f"Failed to add accommodation: {str(e)}")
 
     def update_accommodation_dialog(self):
         """Show dialog to update selected accommodation"""
@@ -102,7 +104,7 @@ class AccommodationCRUDMixin:
                 current_data = cursor.fetchone()
 
             if not current_data:
-                messagebox.showerror("Error", "Accommodation not found")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.accommodation_not_found', default="Accommodation not found"))
                 return
 
             dialog = AccommodationDialog(self.root, "Update Accommodation", current_data)
@@ -116,8 +118,8 @@ class AccommodationCRUDMixin:
                                     dialog.result['start_date'],
                                     dialog.result['end_date'],
                                     excluded_id=accommodation_id):
-                        if not messagebox.askyesno("Conflict",
-                            "This update creates a conflict with an existing accommodation. Continue anyway?"):
+                        if not messagebox.askyesno(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.conflict', default="Conflict"),
+                            _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.this_update_creates_a_conflict_with_an_existing_accommodation_co', default="This update creates a conflict with an existing accommodation. Continue anyway?")):
                             return
 
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -146,11 +148,11 @@ class AccommodationCRUDMixin:
                 cli_notify_student(dialog.result['student_id'], 'Accommodation Updated',
                              f"Your {dialog.result['accommodation_type']} accommodation has been updated.")
 
-                messagebox.showinfo("Success", "Accommodation updated successfully")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.success', default="Success"), _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.accommodation_updated_successfully', default="Accommodation updated successfully"))
                 self.refresh_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update accommodation: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.error', default="Error"), f"Failed to update accommodation: {str(e)}")
 
     def remove_accommodation_dialog(self):
         """Show dialog to remove selected accommodation"""
@@ -162,16 +164,16 @@ class AccommodationCRUDMixin:
         student_id = selected['values'][1]
         acc_type = selected['values'][3]
 
-        if not messagebox.askyesno("Confirm Removal",
+        if not messagebox.askyesno(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.confirm_removal', default="Confirm Removal"),
             f"Are you sure you want to remove accommodation ID {accommodation_id} "
             f"({acc_type} for student {student_id})?"):
             return
 
-        reason = simpledialog.askstring("Removal Reason",
-            "Please enter a reason for removal (optional):", initialvalue="")
+        reason = simpledialog.askstring(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.removal_reason', default="Removal Reason"),
+            _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.please_enter_a_reason_for_removal_optional', default="Please enter a reason for removal (optional):"), initialvalue="")
 
-        removal_type = messagebox.askyesnocancel("Removal Type",
-            "Yes = Mark as expired, No = Permanently delete, Cancel = Cancel operation")
+        removal_type = messagebox.askyesnocancel(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.removal_type', default="Removal Type"),
+            _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.yes_mark_as_expired_no_permanently_delete_cancel_cancel_operatio', default="Yes = Mark as expired, No = Permanently delete, Cancel = Cancel operation"))
 
         if removal_type is None:
             return
@@ -216,11 +218,11 @@ class AccommodationCRUDMixin:
             cli_notify_student(student_id, 'Accommodation Removed',
                          f"Your {acc_type} accommodation has been removed. Reason: {reason}")
 
-            messagebox.showinfo("Success", action_msg)
+            messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.success', default="Success"), action_msg)
             self.refresh_data()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to remove accommodation: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.error', default="Error"), f"Failed to remove accommodation: {str(e)}")
 
     def view_accommodation_details(self):
         """Show detailed view of selected accommodation"""
@@ -245,7 +247,7 @@ class AccommodationCRUDMixin:
                 accommodation = cursor.fetchone()
 
                 if not accommodation:
-                    messagebox.showerror("Error", "Accommodation not found")
+                    messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.accommodation_not_found', default="Accommodation not found"))
                     return
 
                 accommodation = dict(accommodation)
@@ -264,4 +266,4 @@ class AccommodationCRUDMixin:
             DetailsDialog(self.root, accommodation, documents)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load accommodation details: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.accommodations.dialogs.error', default="Error"), f"Failed to load accommodation details: {str(e)}")

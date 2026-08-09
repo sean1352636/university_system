@@ -9,6 +9,8 @@ buttons for Red/Black/Odd/Even/Low/High (1:1) and the Dozens (2:1). Stack as
 many chips as you like, then Spin. Zero loses all outside/dozen bets.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -64,7 +66,7 @@ def settle(number, bets):
 class Roulette:
     def __init__(self, root):
         self.root = root
-        root.title("Electronic Roulette")
+        root.title(_t('gui.operations.commerce.betting.games.electronic_roulette.windows.electronic_roulette', default="Electronic Roulette"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -77,7 +79,7 @@ class Roulette:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=16, pady=12)
         f.pack()
-        tk.Label(f, text="ELECTRONIC ROULETTE", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.electronic_roulette.labels.electronic_roulette', default="ELECTRONIC ROULETTE"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 18, "bold")).pack()
 
         self.result_lbl = tk.Label(f, text="\u2014", bg="#062a14", fg=GOLD,
@@ -111,7 +113,7 @@ class Roulette:
                       command=lambda d=d: self.place(("dozen", d))).pack(
                 side="left", padx=3)
 
-        self.slip_lbl = tk.Label(f, text="No bets.", bg=FELT, fg="#bfe3cf",
+        self.slip_lbl = tk.Label(f, text=_t('gui.operations.commerce.betting.games.electronic_roulette.labels.no_bets', default="No bets."), bg=FELT, fg="#bfe3cf",
                                  font=("Helvetica", 10), wraplength=600,
                                  justify="left")
         self.slip_lbl.pack(pady=4)
@@ -121,7 +123,7 @@ class Roulette:
         self.cr_lbl = tk.Label(bar, text="", bg=FELT, fg="white",
                                font=("Helvetica", 13, "bold"))
         self.cr_lbl.pack(side="left", padx=8)
-        tk.Label(bar, text="Chip:", bg=FELT, fg="white",
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.electronic_roulette.labels.chip', default="Chip:"), bg=FELT, fg="white",
                  font=("Helvetica", 11)).pack(side="left")
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
@@ -140,11 +142,11 @@ class Roulette:
 
         btns = tk.Frame(f, bg=FELT, pady=6)
         btns.pack()
-        self.spin_btn = tk.Button(btns, text="SPIN", command=self.spin, width=12,
+        self.spin_btn = tk.Button(btns, text=_t('gui.operations.commerce.betting.games.electronic_roulette.buttons.spin', default="SPIN"), command=self.spin, width=12,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", bd=0, pady=6, cursor="hand2")
         self.spin_btn.pack(side="left", padx=6)
-        tk.Button(btns, text="Clear", command=self.clear, width=10,
+        tk.Button(btns, text=_t('gui.operations.commerce.betting.games.electronic_roulette.buttons.clear', default="Clear"), command=self.clear, width=10,
                   font=("Helvetica", 14, "bold"), bg="#555", fg="white", bd=0,
                   pady=6, cursor="hand2").pack(side="left", padx=6)
 
@@ -195,7 +197,7 @@ class Roulette:
         if self.busy:
             return
         if self.credits < self.stake:
-            self.slip_lbl.config(text="Not enough credits for that chip.")
+            self.slip_lbl.config(text=_t('gui.operations.commerce.betting.games.electronic_roulette.text.not_enough_credits_for_that_chip', default="Not enough credits for that chip."))
             return
         self.credits -= self.stake
         self.bets[key] = self.bets.get(key, 0) + self.stake
@@ -238,13 +240,13 @@ class Roulette:
                 names.append(f"{label}:{amt}")
             self.slip_lbl.config(text=f"Bets ({total}):  " + "  ".join(names))
         else:
-            self.slip_lbl.config(text="No bets.")
+            self.slip_lbl.config(text=_t('gui.operations.commerce.betting.games.electronic_roulette.text.no_bets', default="No bets."))
 
     def spin(self):
         if self.busy:
             return
         if not self.bets:
-            self.slip_lbl.config(text="Place a bet first.")
+            self.slip_lbl.config(text=_t('gui.operations.commerce.betting.games.electronic_roulette.text.place_a_bet_first', default="Place a bet first."))
             return
         self.busy = True
         self.spin_btn.config(state="disabled")

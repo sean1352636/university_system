@@ -16,12 +16,12 @@ import logging
 import sqlite3
 from dataclasses import dataclass
 from typing import Any
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.gradebook.gradebook import LETTER_GRADES
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.PREDICTED_GRADES_DB
+DB_PATH = paths.SIXTH_FORM_PREDICTED_GRADES_DB
 
 CONFIDENCE_LEVELS: tuple[str, ...] = ("High", "Medium", "Low")
 DEFAULT_CONFIDENCE: str = "Medium"
@@ -71,7 +71,7 @@ class PredictionView:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

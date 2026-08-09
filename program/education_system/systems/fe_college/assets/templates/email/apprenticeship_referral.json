@@ -1,0 +1,8 @@
+{
+  "subject": "Apprenticeship referral — {{first_name}} {{last_name}}",
+  "body": "Dear {{provider_name}},\n\n{{first_name}} {{last_name}} (ULN {{uln}}) is currently on {{course_title}} with us and is moving onto an apprenticeship with {{employer_name}}.\n\nWhat we hold for them:\n\n  Prior attainment: {{prior_attainment}}\n  Units achieved:   {{units_achieved}}\n  Support in place: {{support_needs}}\n\nThe full handover, including anything requiring consent, transfers through the platform rather than by email. This message is the covering note.\n\n{{sender_name}}\n{{college_name}}",
+  "from_name": "{{college_name}}",
+  "from_address": "progression@fecollege.ac.uk",
+  "category": "Employer",
+  "priority": "Normal"
+}

@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -110,10 +112,10 @@ def add_sidebar_separator(self):
 def switch_to_cli(self):
     """Switch to Student Union CLI mode"""
     if not CLI_AVAILABLE:
-        messagebox.showerror("Error", "CLI mode is not available")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.core.navigation.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.core.navigation.dialogs.cli_mode_is_not_available', default="CLI mode is not available"))
         return
-    response = messagebox.askyesno("Switch to CLI",
-                                 "Switch to Student Union command-line interface?\nThe GUI will close.")
+    response = messagebox.askyesno(_t('gui.pastoral.student_union_gui.core.navigation.dialogs.switch_to_cli', default="Switch to CLI"),
+                                 _t('gui.pastoral.student_union_gui.core.navigation.dialogs.switch_to_student_union_command_line_interface_the_gui_will_clos', default="Switch to Student Union command-line interface?\nThe GUI will close."))
     if response:
         self.root.destroy()
         # Launch Student Union CLI mode
@@ -127,7 +129,7 @@ def switch_to_cli(self):
             display_student_union_menu()
         except ImportError as e:
             print(f"Error: Cannot import Student Union CLI system - {e}")
-            messagebox.showerror("Error", f"Cannot import Student Union CLI system: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.core.navigation.dialogs.error', default="Error"), f"Cannot import Student Union CLI system: {e}")
 
 
 def return_to_homescreen(self):
@@ -155,145 +157,145 @@ def setup_main_menu(self):
     is_student = self.is_student()
     # Tools menu
     tools_menu = tk.Menu(self.menu_bar, tearoff=0)
-    self.menu_bar.add_cascade(label="Tools", menu=tools_menu)
+    self.menu_bar.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.tools', default="Tools"), menu=tools_menu)
     if CLI_AVAILABLE:
-        tools_menu.add_command(label="Switch to CLI", command=self.switch_to_cli)
+        tools_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.switch_to_cli', default="Switch to CLI"), command=self.switch_to_cli)
     if is_admin or is_staff:
-        tools_menu.add_command(label="Database Info", command=self.show_database_info)
+        tools_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.database_info', default="Database Info"), command=self.show_database_info)
     # Integrations menu
     integrations_menu = tk.Menu(self.menu_bar, tearoff=0)
-    self.menu_bar.add_cascade(label="🔗 Integrations", menu=integrations_menu)
+    self.menu_bar.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.integrations', default="🔗 Integrations"), menu=integrations_menu)
     # Club Payments
-    integrations_menu.add_command(label="💰 Club Payments",
+    integrations_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.club_payments', default="💰 Club Payments"),
                                  command=lambda: self.show_club_payments_content())
     # Shop submenu
-    integrations_menu.add_command(label="👕 Club Merchandise",
+    integrations_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.club_merchandise', default="👕 Club Merchandise"),
                                  command=lambda: self.open_shop_for_club_merchandise())
-    integrations_menu.add_command(label="🛒 University Shop",
+    integrations_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.university_shop', default="🛒 University Shop"),
                                  command=lambda: self.open_shop_gui_direct())
     # Restaurant
-    integrations_menu.add_command(label="🍽️ University Restaurant",
+    integrations_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.university_restaurant', default="🍽️ University Restaurant"),
                                  command=lambda: self.open_restaurant_for_club_booking("General"))
     # Calendar and Trips
     integrations_menu.add_separator()
-    integrations_menu.add_command(label="📅 Student Union Calendar",
+    integrations_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.student_union_calendar', default="📅 Student Union Calendar"),
                                  command=lambda: self.open_calendar_with_club_events())
-    integrations_menu.add_command(label="🧳 Trip Management",
+    integrations_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.trip_management', default="🧳 Trip Management"),
                                  command=lambda: self.open_trip_management_dialog())
     # New Features menu
     features_menu = tk.Menu(self.menu_bar, tearoff=0)
-    self.menu_bar.add_cascade(label="🆕 New Features", menu=features_menu)
-    features_menu.add_command(label="🏛️ Student Council", command=self.open_student_council_dialog)
-    features_menu.add_command(label="🗳️ Elections & Voting", command=self.open_elections_dialog)
-    features_menu.add_command(label="🌱 Green Initiatives", command=self.open_green_initiatives_dialog)
-    features_menu.add_command(label="🤝 Volunteer Opportunities", command=self.open_volunteer_opportunities_dialog)
-    features_menu.add_command(label="📋 Community Service Hours", command=self.open_community_service_hours_dialog)
+    self.menu_bar.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.new_features', default="🆕 New Features"), menu=features_menu)
+    features_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.student_council', default="🏛️ Student Council"), command=self.open_student_council_dialog)
+    features_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.elections_voting', default="🗳️ Elections & Voting"), command=self.open_elections_dialog)
+    features_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.green_initiatives', default="🌱 Green Initiatives"), command=self.open_green_initiatives_dialog)
+    features_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.volunteer_opportunities', default="🤝 Volunteer Opportunities"), command=self.open_volunteer_opportunities_dialog)
+    features_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.community_service_hours', default="📋 Community Service Hours"), command=self.open_community_service_hours_dialog)
     # Admin/Staff only features
     if is_admin or is_staff:
         features_menu.add_separator()
-        features_menu.add_command(label="📊 Advanced Analytics", command=self.open_advanced_analytics_dialog)
-        features_menu.add_command(label="📡 Live Streaming", command=self.open_live_streaming_dialog)
-        features_menu.add_command(label="🎓 Academic Conferences", command=self.open_academic_conferences_dialog)
+        features_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.advanced_analytics', default="📊 Advanced Analytics"), command=self.open_advanced_analytics_dialog)
+        features_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.live_streaming', default="📡 Live Streaming"), command=self.open_live_streaming_dialog)
+        features_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.academic_conferences', default="🎓 Academic Conferences"), command=self.open_academic_conferences_dialog)
     # Admin only features
     if is_admin:
         features_menu.add_separator()
-        features_menu.add_command(label="⚙️ Setup Election (Admin)", command=self.open_setup_election_dialog)
+        features_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.setup_election_admin', default="⚙️ Setup Election (Admin)"), command=self.open_setup_election_dialog)
     # Advanced Elections submenu
     advanced_elections_submenu = tk.Menu(features_menu, tearoff=0)
-    features_menu.add_cascade(label="🗳️ Advanced Elections", menu=advanced_elections_submenu)
-    advanced_elections_submenu.add_command(label="👤 View Candidate Profiles", command=self.open_candidate_profiles_dialog)
-    advanced_elections_submenu.add_command(label="♿ Election Accessibility", command=self.open_election_accessibility_dialog)
-    advanced_elections_submenu.add_command(label="🥇 Ranked Choice Voting", command=self.open_ranked_choice_voting_dialog)
+    features_menu.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.advanced_elections', default="🗳️ Advanced Elections"), menu=advanced_elections_submenu)
+    advanced_elections_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.view_candidate_profiles', default="👤 View Candidate Profiles"), command=self.open_candidate_profiles_dialog)
+    advanced_elections_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.election_accessibility', default="♿ Election Accessibility"), command=self.open_election_accessibility_dialog)
+    advanced_elections_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.ranked_choice_voting', default="🥇 Ranked Choice Voting"), command=self.open_ranked_choice_voting_dialog)
     # Admin/Staff only election features
     if is_admin or is_staff:
         advanced_elections_submenu.add_separator()
-        advanced_elections_submenu.add_command(label="💰 Track Campaign Expenses", command=self.open_campaign_expenses_dialog)
-        advanced_elections_submenu.add_command(label="⚖️ Monitor Campaign Compliance", command=self.open_campaign_compliance_dialog)
-        advanced_elections_submenu.add_command(label="🔒 Election Security Audit", command=self.open_election_security_dialog)
-        advanced_elections_submenu.add_command(label="✅ Vote Integrity Check", command=self.open_vote_integrity_dialog)
+        advanced_elections_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.track_campaign_expenses', default="💰 Track Campaign Expenses"), command=self.open_campaign_expenses_dialog)
+        advanced_elections_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.monitor_campaign_compliance', default="⚖️ Monitor Campaign Compliance"), command=self.open_campaign_compliance_dialog)
+        advanced_elections_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.election_security_audit', default="🔒 Election Security Audit"), command=self.open_election_security_dialog)
+        advanced_elections_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.vote_integrity_check', default="✅ Vote Integrity Check"), command=self.open_vote_integrity_dialog)
     # Admin only voting configuration
     if is_admin:
         advanced_elections_submenu.add_separator()
-        advanced_elections_submenu.add_command(label="🔧 Manage Enhanced Voting", command=self.open_manage_enhanced_voting_dialog)
-        advanced_elections_submenu.add_command(label="⚙️ Configure Voting Methods", command=self.open_configure_voting_methods_dialog)
+        advanced_elections_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.manage_enhanced_voting', default="🔧 Manage Enhanced Voting"), command=self.open_manage_enhanced_voting_dialog)
+        advanced_elections_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.configure_voting_methods', default="⚙️ Configure Voting Methods"), command=self.open_configure_voting_methods_dialog)
     # Additional Features menu
     additional_menu = tk.Menu(self.menu_bar, tearoff=0)
-    self.menu_bar.add_cascade(label="🎯 More Features", menu=additional_menu)
+    self.menu_bar.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.more_features', default="🎯 More Features"), menu=additional_menu)
     # Competitions submenu
     competitions_submenu = tk.Menu(additional_menu, tearoff=0)
-    additional_menu.add_cascade(label="🏆 Competitions", menu=competitions_submenu)
-    competitions_submenu.add_command(label="Inter-Club Competitions", command=self.open_interclub_competitions_dialog)
+    additional_menu.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.competitions', default="🏆 Competitions"), menu=competitions_submenu)
+    competitions_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.inter_club_competitions', default="Inter-Club Competitions"), command=self.open_interclub_competitions_dialog)
     # Community submenu
     community_submenu = tk.Menu(additional_menu, tearoff=0)
-    additional_menu.add_cascade(label="🤝 Community", menu=community_submenu)
-    community_submenu.add_command(label="Community Engagement", command=self.open_community_engagement_dialog)
+    additional_menu.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.community', default="🤝 Community"), menu=community_submenu)
+    community_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.community_engagement', default="Community Engagement"), command=self.open_community_engagement_dialog)
     # Admin/Staff only community analytics
     if is_admin or is_staff:
-        community_submenu.add_command(label="Engagement Trends", command=self.open_engagement_trends_dialog)
-        community_submenu.add_command(label="Retention Insights", command=self.open_retention_insights_dialog)
+        community_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.engagement_trends', default="Engagement Trends"), command=self.open_engagement_trends_dialog)
+        community_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.retention_insights', default="Retention Insights"), command=self.open_retention_insights_dialog)
     # Events submenu
     events_submenu = tk.Menu(additional_menu, tearoff=0)
-    additional_menu.add_cascade(label="📅 Advanced Events", menu=events_submenu)
-    events_submenu.add_command(label="Event Ticketing System", command=self.open_event_ticketing_dialog)
-    events_submenu.add_command(label="Recurring Events", command=self.open_recurring_events_dialog)
-    events_submenu.add_command(label="Event Attendance", command=self.open_event_attendance_dialog)
+    additional_menu.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.advanced_events', default="📅 Advanced Events"), menu=events_submenu)
+    events_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.event_ticketing_system', default="Event Ticketing System"), command=self.open_event_ticketing_dialog)
+    events_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.recurring_events', default="Recurring Events"), command=self.open_recurring_events_dialog)
+    events_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.event_attendance', default="Event Attendance"), command=self.open_event_attendance_dialog)
     events_submenu.add_separator()
-    events_submenu.add_command(label="💻 Virtual Events", command=self.open_virtual_events_dialog)
-    events_submenu.add_command(label="🎓 Knowledge Sharing Sessions", command=self.open_knowledge_sharing_dialog)
+    events_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.virtual_events', default="💻 Virtual Events"), command=self.open_virtual_events_dialog)
+    events_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.knowledge_sharing_sessions', default="🎓 Knowledge Sharing Sessions"), command=self.open_knowledge_sharing_dialog)
     # Admin/Staff only event features
     if is_admin or is_staff:
         events_submenu.add_separator()
-        events_submenu.add_command(label="Event Financial Tracking", command=self.open_event_financial_tracking_dialog)
+        events_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.event_financial_tracking', default="Event Financial Tracking"), command=self.open_event_financial_tracking_dialog)
     # Facilities submenu (Part 3C)
     facilities_submenu = tk.Menu(additional_menu, tearoff=0)
-    additional_menu.add_cascade(label="🏢 Facilities", menu=facilities_submenu)
+    additional_menu.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.facilities', default="🏢 Facilities"), menu=facilities_submenu)
     # Admin only facility approvals
     if is_admin:
-        facilities_submenu.add_command(label="✅ Approve Bookings (Admin)", command=self.open_approve_facility_bookings_dialog)
+        facilities_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.approve_bookings_admin', default="✅ Approve Bookings (Admin)"), command=self.open_approve_facility_bookings_dialog)
     # Equipment Management submenu (Part 3C)
     equipment_submenu = tk.Menu(additional_menu, tearoff=0)
-    additional_menu.add_cascade(label="📦 Equipment Management", menu=equipment_submenu)
+    additional_menu.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.equipment_management', default="📦 Equipment Management"), menu=equipment_submenu)
     # Student functions - available to all
-    equipment_submenu.add_command(label="📋 Browse Available Equipment", command=self.open_browse_available_equipment_dialog)
-    equipment_submenu.add_command(label="🔍 Search Equipment", command=self.open_search_equipment_dialog)
-    equipment_submenu.add_command(label="ℹ️ View Equipment Details", command=self.open_view_equipment_details_dialog)
-    equipment_submenu.add_command(label="📤 Check Out Equipment", command=self.open_checkout_equipment_dialog)
-    equipment_submenu.add_command(label="📥 Return Equipment", command=self.open_return_equipment_dialog)
-    equipment_submenu.add_command(label="📜 My Equipment Checkouts", command=self.open_my_equipment_checkouts_dialog)
+    equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.browse_available_equipment', default="📋 Browse Available Equipment"), command=self.open_browse_available_equipment_dialog)
+    equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.search_equipment', default="🔍 Search Equipment"), command=self.open_search_equipment_dialog)
+    equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.view_equipment_details', default="ℹ️ View Equipment Details"), command=self.open_view_equipment_details_dialog)
+    equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.check_out_equipment', default="📤 Check Out Equipment"), command=self.open_checkout_equipment_dialog)
+    equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.return_equipment', default="📥 Return Equipment"), command=self.open_return_equipment_dialog)
+    equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.my_equipment_checkouts', default="📜 My Equipment Checkouts"), command=self.open_my_equipment_checkouts_dialog)
     # Admin only equipment management
     if is_admin:
         equipment_submenu.add_separator()
-        equipment_submenu.add_command(label="🏠 Equipment System Hub", command=self.open_manage_equipment_system_dialog)
-        equipment_submenu.add_command(label="➕ Add New Equipment (Admin)", command=self.open_add_new_equipment_dialog)
-        equipment_submenu.add_command(label="🔧 Update Equipment Status (Admin)", command=self.open_update_equipment_status_dialog)
-        equipment_submenu.add_command(label="🛠️ Maintenance Tracking (Admin)", command=self.open_equipment_maintenance_tracking_dialog)
-        equipment_submenu.add_command(label="📊 Generate Reports (Admin)", command=self.open_generate_equipment_reports_dialog)
+        equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.equipment_system_hub', default="🏠 Equipment System Hub"), command=self.open_manage_equipment_system_dialog)
+        equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.add_new_equipment_admin', default="➕ Add New Equipment (Admin)"), command=self.open_add_new_equipment_dialog)
+        equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.update_equipment_status_admin', default="🔧 Update Equipment Status (Admin)"), command=self.open_update_equipment_status_dialog)
+        equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.maintenance_tracking_admin', default="🛠️ Maintenance Tracking (Admin)"), command=self.open_equipment_maintenance_tracking_dialog)
+        equipment_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.generate_reports_admin', default="📊 Generate Reports (Admin)"), command=self.open_generate_equipment_reports_dialog)
     # Peer Support & Wellness submenu
     peer_support_submenu = tk.Menu(additional_menu, tearoff=0)
-    additional_menu.add_cascade(label="🤝 Peer Support & Wellness", menu=peer_support_submenu)
-    peer_support_submenu.add_command(label="🏠 Peer Support Hub", command=self.open_peer_support_wellness_dialog)
+    additional_menu.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.peer_support_wellness', default="🤝 Peer Support & Wellness"), menu=peer_support_submenu)
+    peer_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.peer_support_hub', default="🏠 Peer Support Hub"), command=self.open_peer_support_wellness_dialog)
     peer_support_submenu.add_separator()
-    peer_support_submenu.add_command(label="📋 Browse Support Groups", command=lambda: self.open_peer_support_wellness_dialog())
-    peer_support_submenu.add_command(label="👥 My Support Groups", command=lambda: self.open_peer_support_wellness_dialog())
-    peer_support_submenu.add_command(label="➕ Create Support Group", command=lambda: self.open_peer_support_wellness_dialog())
-    peer_support_submenu.add_command(label="🤝 Anonymous Peer Matching", command=lambda: self.open_peer_support_wellness_dialog())
+    peer_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.browse_support_groups', default="📋 Browse Support Groups"), command=lambda: self.open_peer_support_wellness_dialog())
+    peer_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.my_support_groups', default="👥 My Support Groups"), command=lambda: self.open_peer_support_wellness_dialog())
+    peer_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.create_support_group', default="➕ Create Support Group"), command=lambda: self.open_peer_support_wellness_dialog())
+    peer_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.anonymous_peer_matching', default="🤝 Anonymous Peer Matching"), command=lambda: self.open_peer_support_wellness_dialog())
     peer_support_submenu.add_separator()
-    peer_support_submenu.add_command(label="📚 Wellness Resources", command=lambda: self.open_peer_support_wellness_dialog())
-    peer_support_submenu.add_command(label="🆘 Crisis Resources", command=lambda: self.open_peer_support_wellness_dialog())
+    peer_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.wellness_resources', default="📚 Wellness Resources"), command=lambda: self.open_peer_support_wellness_dialog())
+    peer_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.crisis_resources', default="🆘 Crisis Resources"), command=lambda: self.open_peer_support_wellness_dialog())
     # Academic Support submenu
     academic_support_submenu = tk.Menu(additional_menu, tearoff=0)
-    additional_menu.add_cascade(label="🎓 Academic Support", menu=academic_support_submenu)
-    academic_support_submenu.add_command(label="🏠 Academic Support Hub", command=self.open_academic_support_dialog)
+    additional_menu.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.academic_support', default="🎓 Academic Support"), menu=academic_support_submenu)
+    academic_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.academic_support_hub', default="🏠 Academic Support Hub"), command=self.open_academic_support_dialog)
     academic_support_submenu.add_separator()
-    academic_support_submenu.add_command(label="📚 Study Groups", command=lambda: self.open_academic_support_dialog())
-    academic_support_submenu.add_command(label="👨‍🏫 Peer Tutoring", command=lambda: self.open_academic_support_dialog())
-    academic_support_submenu.add_command(label="📂 Shared Resources", command=lambda: self.open_academic_support_dialog())
-    academic_support_submenu.add_command(label="📝 Exam Prep Groups", command=lambda: self.open_academic_support_dialog())
-    academic_support_submenu.add_command(label="🎯 Academic Workshops", command=lambda: self.open_academic_support_dialog())
+    academic_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.study_groups', default="📚 Study Groups"), command=lambda: self.open_academic_support_dialog())
+    academic_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.peer_tutoring', default="👨‍🏫 Peer Tutoring"), command=lambda: self.open_academic_support_dialog())
+    academic_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.shared_resources', default="📂 Shared Resources"), command=lambda: self.open_academic_support_dialog())
+    academic_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.exam_prep_groups', default="📝 Exam Prep Groups"), command=lambda: self.open_academic_support_dialog())
+    academic_support_submenu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.academic_workshops', default="🎯 Academic Workshops"), command=lambda: self.open_academic_support_dialog())
     # Help menu
     help_menu = tk.Menu(self.menu_bar, tearoff=0)
-    self.menu_bar.add_cascade(label="Help", menu=help_menu)
-    help_menu.add_command(label="About", command=self.show_about)
+    self.menu_bar.add_cascade(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.help', default="Help"), menu=help_menu)
+    help_menu.add_command(label=_t('gui.pastoral.student_union_gui.core.navigation.menus.about', default="About"), command=self.show_about)
     self.create_main_menu_button()
 # =========================================================================
 # CLUB PAYMENT MANAGEMENT METHODS
@@ -309,7 +311,7 @@ def create_main_menu_button(self):
         pass
     self.main_menu_button = ttk.Button(
         self.root,
-        text="🏠 Return to Main Menu",
+        text=_t('gui.pastoral.student_union_gui.core.navigation.buttons.return_to_main_menu', default="🏠 Return to Main Menu"),
         command=self.return_to_main_menu,
     )
     self.main_menu_button.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
@@ -349,4 +351,4 @@ def open_student_council_dialog(self):
         win = tk.Toplevel(self.root)
         StudentCouncilSystem(win)
     except Exception as e:
-        messagebox.showerror("Student Council", f"Failed to open Student Council: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.core.navigation.dialogs.student_council', default="Student Council"), f"Failed to open Student Council: {e}")

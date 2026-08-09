@@ -23,7 +23,7 @@ class DocumentWorkflowDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -54,19 +54,19 @@ class DocumentWorkflowDialog:
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
-        ttk.Label(filter_frame, text="Filter by status:").pack(side=tk.LEFT)
+        ttk.Label(filter_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.workflow.labels.filter_by_status', default="Filter by status:")).pack(side=tk.LEFT)
 
-        self.status_filter_var = tk.StringVar(value="All")
+        self.status_filter_var = tk.StringVar(value=_t('gui.academics.plagiarism_main_gui.dialogs.workflow.values.all', default="All"))
         status_combo = ttk.Combobox(filter_frame, textvariable=self.status_filter_var,
                                    values=["All", "Submitted", "Under Review", "Checked", "Flagged", "Approved"],
                                    state='readonly')
         status_combo.pack(side=tk.LEFT, padx=GuiConfig.PADDING_SMALL)
         status_combo.bind('<<ComboboxSelected>>', lambda e: self.filter_documents())
 
-        ttk.Button(filter_frame, text="Refresh", command=self.load_workflow_documents).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_MEDIUM, 0))
+        ttk.Button(filter_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.workflow.buttons.refresh', default="Refresh"), command=self.load_workflow_documents).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_MEDIUM, 0))
 
         # Documents tree
-        docs_frame = ttk.LabelFrame(main_frame, text="Documents", padding=GuiConfig.PADDING_SMALL)
+        docs_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.workflow.labels.documents', default="Documents"), padding=GuiConfig.PADDING_SMALL)
         docs_frame.pack(fill=tk.BOTH, expand=True, pady=(0, GuiConfig.PADDING_MEDIUM))
 
         columns = ('Title', 'Author', 'Status', 'Last Check', 'Priority', 'Actions')
@@ -99,7 +99,7 @@ class DocumentWorkflowDialog:
         ttk.Button(actions_frame, text=_t("plagiarism.add_comment"), command=self.add_comment).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.workflow.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def load_workflow_documents(self):
         """Load documents for workflow management"""
@@ -149,7 +149,7 @@ class DocumentWorkflowDialog:
                     logger.error(f"Error loading document {doc['id']}: {e}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load documents: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.error', default="Error"), f"Failed to load documents: {e}")
 
     def filter_documents(self):
         """Filter documents by status"""
@@ -161,13 +161,13 @@ class DocumentWorkflowDialog:
             self.load_workflow_documents()
         else:
             # Placeholder - would filter by actual status
-            messagebox.showinfo("Filter", f"Filtering by status: {filter_status}")
+            messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.filter', default="Filter"), f"Filtering by status: {filter_status}")
 
     def get_selected_document(self):
         """Get the selected document ID"""
         selection = self.docs_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a document.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.no_selection', default="No Selection"), _t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.please_select_a_document', default="Please select a document."))
             return None
 
         item = selection[0]
@@ -178,30 +178,30 @@ class DocumentWorkflowDialog:
         doc_id = self.get_selected_document()
         if doc_id:
             # This would update document status in database
-            messagebox.showinfo("Action", f"Document {doc_id} marked for review.")
+            messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.action', default="Action"), f"Document {doc_id} marked for review.")
             self.load_workflow_documents()
 
     def approve_document(self):
         """Approve document"""
         doc_id = self.get_selected_document()
         if doc_id:
-            if messagebox.askyesno("Confirm", "Approve this document?"):
-                messagebox.showinfo("Action", f"Document {doc_id} approved.")
+            if messagebox.askyesno(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.confirm', default="Confirm"), _t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.approve_this_document', default="Approve this document?")):
+                messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.action', default="Action"), f"Document {doc_id} approved.")
                 self.load_workflow_documents()
 
     def flag_document(self):
         """Flag document for attention"""
         doc_id = self.get_selected_document()
         if doc_id:
-            reason = simpledialog.askstring("Flag Document", "Reason for flagging:")
+            reason = simpledialog.askstring(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.flag_document', default="Flag Document"), _t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.reason_for_flagging', default="Reason for flagging:"))
             if reason:
-                messagebox.showinfo("Action", f"Document {doc_id} flagged: {reason}")
+                messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.action', default="Action"), f"Document {doc_id} flagged: {reason}")
                 self.load_workflow_documents()
 
     def add_comment(self):
         """Add comment to document"""
         doc_id = self.get_selected_document()
         if doc_id:
-            comment = simpledialog.askstring("Add Comment", "Enter comment:")
+            comment = simpledialog.askstring(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.add_comment', default="Add Comment"), _t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.enter_comment', default="Enter comment:"))
             if comment:
-                messagebox.showinfo("Action", f"Comment added to document {doc_id}")
+                messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.workflow.dialogs.action', default="Action"), f"Comment added to document {doc_id}")

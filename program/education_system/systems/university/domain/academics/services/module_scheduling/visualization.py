@@ -1,4 +1,4 @@
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.domain.academics.services.module_scheduling.constants import DAYS_OF_WEEK, TIME_SLOTS
 from datetime import datetime
 import os
@@ -114,7 +114,7 @@ class VisualizationMixin:
         # Save the plot
         if not output_path:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_path = paths.ANALYTICS_DIR / f"{entity_type}_{entity_id}_visual_timetable_{timestamp}.png"
+            output_path = paths.UNIVERSITY_ANALYTICS_DIR / f"{entity_type}_{entity_id}_visual_timetable_{timestamp}.png"
 
         # Ensure directory exists
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -173,12 +173,12 @@ class VisualizationMixin:
             plt.tight_layout()
 
             # Save the charts
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            chart_path = os.path.join(str(paths.ANALYTICS_DIR), f"utilization_charts_{timestamp}.png")
+            chart_path = os.path.join(str(paths.UNIVERSITY_ANALYTICS_DIR), f"utilization_charts_{timestamp}.png")
 
             # Ensure directory exists (already created via paths._ensure)
-            os.makedirs(str(paths.ANALYTICS_DIR), exist_ok=True)
+            os.makedirs(str(paths.UNIVERSITY_ANALYTICS_DIR), exist_ok=True)
 
             plt.savefig(chart_path, dpi=300, bbox_inches='tight')
             plt.close()

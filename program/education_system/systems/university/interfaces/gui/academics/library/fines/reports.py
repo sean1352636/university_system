@@ -2,6 +2,8 @@
 Library Fines Management - Reporting and CSV export.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
@@ -21,7 +23,7 @@ def generate_fine_statistics_report(self):
         if ORIGINAL_LIBRARY_AVAILABLE:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror(_("common.error"), "Database connection unavailable")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.reports.dialogs.database_connection_unavailable', default="Database connection unavailable"))
                 return
 
             cursor = conn.cursor()
@@ -68,14 +70,14 @@ def generate_fine_statistics_report(self):
 
             # Create report window
             report_window = tk.Toplevel()
-            report_window.title("Library Fine Statistics Report")
+            report_window.title(_t('gui.academics.library.fines.reports.windows.library_fine_statistics_report', default="Library Fine Statistics Report"))
             report_window.geometry("700x600")
 
             # Header
             header_frame = ttk.Frame(report_window, relief='raised', borderwidth=2)
             header_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Label(header_frame, text="Library Fine Statistics Report",
+            ttk.Label(header_frame, text=_t('gui.academics.library.fines.reports.labels.library_fine_statistics_report', default="Library Fine Statistics Report"),
                      font=('Arial', 14, 'bold')).pack(pady=10)
             ttk.Label(header_frame, text=f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
                      font=('Arial', 9)).pack(pady=5)
@@ -137,13 +139,13 @@ TOP 10 USERS WITH OUTSTANDING FINES
             button_frame = ttk.Frame(report_window)
             button_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Button(button_frame, text="Export to File",
+            ttk.Button(button_frame, text=_t('gui.academics.library.fines.reports.buttons.export_to_file', default="Export to File"),
                       command=lambda: self._save_text_report(report_content, "fine_statistics")).pack(side='left', padx=5)
             ttk.Button(button_frame, text=_("common.close"),
                       command=report_window.destroy).pack(side='right', padx=5)
 
         else:
-            messagebox.showinfo(_("common.demo"), "Demo: Fine statistics report")
+            messagebox.showinfo(_("common.demo"), _t('gui.academics.library.fines.reports.dialogs.demo_fine_statistics_report', default="Demo: Fine statistics report"))
 
     except tk.TclError as e:
         messagebox.showerror(_("common.error"), f"Failed to generate statistics: {str(e)}")
@@ -155,7 +157,7 @@ def export_fines_to_csv(self):
         if ORIGINAL_LIBRARY_AVAILABLE:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror(_("common.error"), "Database connection unavailable")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.reports.dialogs.database_connection_unavailable', default="Database connection unavailable"))
                 return
 
             cursor = conn.cursor()
@@ -175,7 +177,7 @@ def export_fines_to_csv(self):
             conn.close()
 
             if not fines_data:
-                messagebox.showinfo("No Data", "No outstanding fines to export")
+                messagebox.showinfo(_t('gui.academics.library.fines.reports.dialogs.no_data', default="No Data"), _t('gui.academics.library.fines.reports.dialogs.no_outstanding_fines_to_export', default="No outstanding fines to export"))
                 return
 
             # Ask for save location
@@ -215,7 +217,7 @@ def export_fines_to_csv(self):
                 f"Records: {len(fines_data)}")
 
         else:
-            messagebox.showinfo(_("common.demo"), "Demo: Export fines to CSV")
+            messagebox.showinfo(_("common.demo"), _t('gui.academics.library.fines.reports.dialogs.demo_export_fines_to_csv', default="Demo: Export fines to CSV"))
 
     except (OSError, IOError, tk.TclError) as e:
         messagebox.showerror(_("common.error"), f"Failed to export fines: {str(e)}")

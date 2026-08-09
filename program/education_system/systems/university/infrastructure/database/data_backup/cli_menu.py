@@ -4,6 +4,7 @@ import datetime
 import os
 
 from education_system.systems.university.infrastructure.i18n import get_text as _t, init_i18n
+from education_system.paths import UNIVERSITY_REMOTE_BACKUP_PATH
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging, get_log_file
 from education_system.systems.university.infrastructure.database.data_backup.config import (
     config,
@@ -85,7 +86,7 @@ def configure_remote_storage():
         config["remote_host"] = input(_t("data_backup.enter_hostname") + ": ")
         config["remote_username"] = input(_t("data_backup.enter_username") + ": ")
         config["remote_password"] = input(_t("data_backup.enter_password") + ": ")
-        config["remote_path"] = input(_t("data_backup.enter_remote_path") + ": ") or "/backups"
+        config["remote_path"] = input(_t("data_backup.enter_remote_path") + ": ") or UNIVERSITY_REMOTE_BACKUP_PATH
 
 
 def configure_email_notifications():

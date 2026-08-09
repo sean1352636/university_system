@@ -1,5 +1,7 @@
 """Documents mixin for the Legal Services GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.governance.legal._imports import (
     tk, ttk, messagebox, scrolledtext, filedialog, simpledialog, traceback,
     os, datetime,
@@ -39,7 +41,7 @@ class DocumentsMixin:
         columns = ('id', 'name', 'type', 'version', 'created_by', 'created_at')
         self.docs_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=10)
 
-        self.docs_tree.heading('id', text='ID')
+        self.docs_tree.heading('id', text=_t('gui.governance.legal.documents.headings.id', default='ID'))
         self.docs_tree.heading('name', text=_t("legal.labels.document_name", default="Document Name"))
         self.docs_tree.heading('type', text=_t("legal.labels.document_type", default="Type"))
         self.docs_tree.heading('version', text=_t("legal.labels.version", default="Version"))
@@ -88,7 +90,7 @@ class DocumentsMixin:
             case_number = case_selection.split(' - ')[0]
             case = CaseManager.get_case_by_number(case_number)
             if not case:
-                messagebox.showerror(_t("common.error", default="Error"), "Case not found")
+                messagebox.showerror(_t("common.error", default="Error"), _t('gui.governance.legal.documents.dialogs.case_not_found', default="Case not found"))
                 return
 
             # Document type dialog
@@ -121,7 +123,7 @@ class DocumentsMixin:
                 notes = notes_text.get('1.0', tk.END).strip()
 
                 if not doc_name:
-                    messagebox.showwarning(_t("common.warning", default="Warning"), "Please enter a document name")
+                    messagebox.showwarning(_t("common.warning", default="Warning"), _t('gui.governance.legal.documents.dialogs.please_enter_a_document_name', default="Please enter a document name"))
                     return
 
                 # Generate document content based on type
@@ -144,7 +146,7 @@ class DocumentsMixin:
                     dialog.destroy()
                     self.load_case_documents(None)
                 else:
-                    messagebox.showerror(_t("common.error", default="Error"), "Failed to generate document")
+                    messagebox.showerror(_t("common.error", default="Error"), _t('gui.governance.legal.documents.dialogs.failed_to_generate_document', default="Failed to generate document"))
 
             ttk.Button(dialog, text=_t("legal.btn.generate_document", default="Generate"), command=generate).pack(pady=20)
 
@@ -236,7 +238,7 @@ Prepared by: University Legal Aid Center
             case_number = case_selection.split(' - ')[0]
             case = CaseManager.get_case_by_number(case_number)
             if not case:
-                messagebox.showerror(_t("common.error", default="Error"), "Case not found")
+                messagebox.showerror(_t("common.error", default="Error"), _t('gui.governance.legal.documents.dialogs.case_not_found', default="Case not found"))
                 return
 
             # File selection
@@ -281,7 +283,7 @@ Prepared by: University Legal Aid Center
                 )
                 self.load_case_documents(None)
             else:
-                messagebox.showerror(_t("common.error", default="Error"), "Failed to upload document")
+                messagebox.showerror(_t("common.error", default="Error"), _t('gui.governance.legal.documents.dialogs.failed_to_upload_document', default="Failed to upload document"))
 
         except Exception as e:
             messagebox.showerror(_t("common.error", default="Error"), str(e))

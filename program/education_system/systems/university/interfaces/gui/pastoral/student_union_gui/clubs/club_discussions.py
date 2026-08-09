@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class ClubDiscussionsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Club Discussions")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.clubs.club_discussions.windows.club_discussions', default="Club Discussions"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -78,23 +80,23 @@ class ClubDiscussionsDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        title_label = ttk.Label(main_frame, text="Club Discussions", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.labels.club_discussions', default="Club Discussions"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Club selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(select_frame, text="Select Club:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.labels.select_club', default="Select Club:")).pack(side='left', padx=(0, 10))
         self.club_var = tk.StringVar()
         self.club_combo = ttk.Combobox(select_frame, textvariable=self.club_var, width=40)
         self.club_combo.pack(side='left', fill='x', expand=True, padx=(0, 10))
         self.club_combo.bind('<<ComboboxSelected>>', self.on_club_selected)
 
-        ttk.Button(select_frame, text="New Discussion", command=self.new_discussion).pack(side='right')
+        ttk.Button(select_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.new_discussion', default="New Discussion"), command=self.new_discussion).pack(side='right')
 
         # Discussions list
-        list_frame = ttk.LabelFrame(main_frame, text="Discussion Topics")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.labels.discussion_topics', default="Discussion Topics"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('ID', 'Title', 'Author', 'Date', 'Type', 'Pinned')
@@ -116,7 +118,7 @@ class ClubDiscussionsDialog:
         self.discussions_tree.bind('<Double-1>', self.view_discussion)
 
         # Content preview
-        preview_frame = ttk.LabelFrame(main_frame, text="Preview")
+        preview_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.labels.preview', default="Preview"))
         preview_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         self.preview_text = scrolledtext.ScrolledText(preview_frame, height=8, wrap=tk.WORD)
@@ -126,9 +128,9 @@ class ClubDiscussionsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="View Full Discussion", command=self.view_discussion).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Delete Selected", command=self.delete_discussion).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.view_full_discussion', default="View Full Discussion"), command=self.view_discussion).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.delete_selected', default="Delete Selected"), command=self.delete_discussion).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         """Load clubs"""
@@ -166,7 +168,7 @@ class ClubDiscussionsDialog:
                 self.club_combo.current(0)
                 self.on_club_selected(None)
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load clubs: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.error', default="Error"), f"Failed to load clubs: {str(e)}")
 
     def on_club_selected(self, event):
         """Load discussions when club is selected"""
@@ -202,20 +204,20 @@ class ClubDiscussionsDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load discussions: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.error', default="Error"), f"Failed to load discussions: {str(e)}")
 
     def new_discussion(self):
         """Create new discussion"""
         selected = self.club_var.get()
         if not selected or selected not in self.club_data:
-            messagebox.showwarning("Warning", "Please select a club first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.please_select_a_club_first', default="Please select a club first."))
             return
 
         club_id = self.club_data[selected]
 
         # Create dialog for new discussion
         dialog = tk.Toplevel(self.dialog)
-        dialog.title("New Discussion")
+        dialog.title(_t('gui.pastoral.student_union_gui.clubs.club_discussions.windows.new_discussion', default="New Discussion"))
         dialog.geometry("600x500")
         dialog.transient(self.dialog)
         dialog.grab_set()
@@ -223,26 +225,26 @@ class ClubDiscussionsDialog:
         frame = ttk.Frame(dialog)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Title:").pack(anchor='w')
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.labels.title', default="Title:")).pack(anchor='w')
         title_entry = ttk.Entry(frame, width=70)
         title_entry.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(frame, text="Content:").pack(anchor='w')
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.labels.content', default="Content:")).pack(anchor='w')
         content_text = scrolledtext.ScrolledText(frame, height=15, wrap=tk.WORD)
         content_text.pack(fill='both', expand=True, pady=(0, 10))
 
         is_announcement_var = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="Mark as Announcement", variable=is_announcement_var).pack(anchor='w', pady=(0, 5))
+        ttk.Checkbutton(frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.mark_as_announcement', default="Mark as Announcement"), variable=is_announcement_var).pack(anchor='w', pady=(0, 5))
 
         is_pinned_var = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="Pin to Top", variable=is_pinned_var).pack(anchor='w', pady=(0, 10))
+        ttk.Checkbutton(frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.pin_to_top', default="Pin to Top"), variable=is_pinned_var).pack(anchor='w', pady=(0, 10))
 
         def save_discussion():
             title = title_entry.get().strip()
             content = content_text.get(1.0, tk.END).strip()
 
             if not title or not content:
-                messagebox.showwarning("Warning", "Please provide both title and content.")
+                messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.please_provide_both_title_and_content', default="Please provide both title and content."))
                 return
 
             try:
@@ -262,23 +264,23 @@ class ClubDiscussionsDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Discussion created successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.discussion_created_successfully', default="Discussion created successfully!"))
                 dialog.destroy()
                 self.on_club_selected(None)
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to create discussion: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.error', default="Error"), f"Failed to create discussion: {str(e)}")
 
         button_frame = ttk.Frame(frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Post", command=save_discussion).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.post', default="Post"), command=save_discussion).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left')
 
     def view_discussion(self, event=None):
         """View full discussion"""
         selection = self.discussions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a discussion to view.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.please_select_a_discussion_to_view', default="Please select a discussion to view."))
             return
 
         item = self.discussions_tree.item(selection[0])
@@ -291,13 +293,13 @@ class ClubDiscussionsDialog:
         """Delete selected discussion"""
         selection = self.discussions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a discussion to delete.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.please_select_a_discussion_to_delete', default="Please select a discussion to delete."))
             return
 
         item = self.discussions_tree.item(selection[0])
         discussion_id = item['values'][0]
 
-        if messagebox.askyesno("Confirm", "Are you sure you want to delete this discussion?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.confirm', default="Confirm"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.are_you_sure_you_want_to_delete_this_discussion', default="Are you sure you want to delete this discussion?")):
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
@@ -307,10 +309,10 @@ class ClubDiscussionsDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Discussion deleted successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.discussion_deleted_successfully', default="Discussion deleted successfully!"))
                 self.on_club_selected(None)
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to delete discussion: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.error', default="Error"), f"Failed to delete discussion: {str(e)}")
 
 
 
@@ -322,7 +324,7 @@ class ClubMediaDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Club Media Gallery")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.clubs.club_discussions.windows.club_media_gallery', default="Club Media Gallery"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -336,23 +338,23 @@ class ClubMediaDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Title
-        title_label = ttk.Label(main_frame, text="Club Media Gallery", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.labels.club_media_gallery', default="Club Media Gallery"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
 
         # Club selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(select_frame, text="Select Club:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.labels.select_club', default="Select Club:")).pack(side='left', padx=(0, 10))
         self.club_var = tk.StringVar()
         self.club_combo = ttk.Combobox(select_frame, textvariable=self.club_var, width=40)
         self.club_combo.pack(side='left', fill='x', expand=True, padx=(0, 10))
         self.club_combo.bind('<<ComboboxSelected>>', self.on_club_selected)
 
-        ttk.Button(select_frame, text="Upload Media", command=self.upload_media).pack(side='right')
+        ttk.Button(select_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.upload_media', default="Upload Media"), command=self.upload_media).pack(side='right')
 
         # Media list
-        list_frame = ttk.LabelFrame(main_frame, text="Media Files")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.labels.media_files', default="Media Files"))
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('ID', 'File Name', 'Type', 'Uploader', 'Upload Date', 'Event', 'Caption')
@@ -375,9 +377,9 @@ class ClubMediaDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="View/Download", command=self.view_media).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Delete Selected", command=self.delete_media).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.view_download', default="View/Download"), command=self.view_media).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.delete_selected', default="Delete Selected"), command=self.delete_media).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.clubs.club_discussions.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def load_data(self):
         """Load clubs"""
@@ -415,7 +417,7 @@ class ClubMediaDialog:
                 self.club_combo.current(0)
                 self.on_club_selected(None)
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load clubs: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.error', default="Error"), f"Failed to load clubs: {str(e)}")
 
     def on_club_selected(self, event):
         """Load media when club is selected"""
@@ -453,38 +455,38 @@ class ClubMediaDialog:
 
             conn.close()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to load media: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.error', default="Error"), f"Failed to load media: {str(e)}")
 
     def upload_media(self):
         """Upload new media"""
         selected = self.club_var.get()
         if not selected or selected not in self.club_data:
-            messagebox.showwarning("Warning", "Please select a club first.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.please_select_a_club_first', default="Please select a club first."))
             return
 
         # Would open file dialog to select media file
-        messagebox.showinfo("Upload Media", "This would open a file browser to select photos, videos, or documents to upload.\n\nSupported formats:\n- Images: JPG, PNG, GIF\n- Videos: MP4, AVI\n- Documents: PDF, DOC, DOCX")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.upload_media', default="Upload Media"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.this_would_open_a_file_browser_to_select_photos_videos_or_docume', default="This would open a file browser to select photos, videos, or documents to upload.\n\nSupported formats:\n- Images: JPG, PNG, GIF\n- Videos: MP4, AVI\n- Documents: PDF, DOC, DOCX"))
 
     def view_media(self):
         """View or download media"""
         selection = self.media_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select media to view.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.please_select_media_to_view', default="Please select media to view."))
             return
 
-        messagebox.showinfo("View Media", "This would open the selected media file in the appropriate application or allow downloading it.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.view_media', default="View Media"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.this_would_open_the_selected_media_file_in_the_appropriate_appli', default="This would open the selected media file in the appropriate application or allow downloading it."))
 
     def delete_media(self):
         """Delete selected media"""
         selection = self.media_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select media to delete.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.please_select_media_to_delete', default="Please select media to delete."))
             return
 
         item = self.media_tree.item(selection[0])
         media_id = item['values'][0]
 
-        if messagebox.askyesno("Confirm", "Are you sure you want to delete this media file?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.confirm', default="Confirm"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.are_you_sure_you_want_to_delete_this_media_file', default="Are you sure you want to delete this media file?")):
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
@@ -494,10 +496,10 @@ class ClubMediaDialog:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Media deleted successfully!")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.media_deleted_successfully', default="Media deleted successfully!"))
                 self.on_club_selected(None)
             except sqlite3.Error as e:
-                messagebox.showerror("Error", f"Failed to delete media: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.error', default="Error"), f"Failed to delete media: {str(e)}")
 
 
 
@@ -507,7 +509,7 @@ def manage_club_discussions(self):
         dialog = ClubDiscussionsDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 
 def manage_club_media(self):
@@ -516,6 +518,6 @@ def manage_club_media(self):
         dialog = ClubMediaDialog(self.root, self.auth_manager)
         self.root.wait_window(dialog.dialog)
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Error", f"Failed to open dialog: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.clubs.club_discussions.dialogs.error', default="Error"), f"Failed to open dialog: {str(e)}")
 
 

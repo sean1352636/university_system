@@ -5,6 +5,8 @@ Comprehensive GUI for university mail room providing package receiving,
 tracking, PO box rentals, and forwarding services with email and finance integration.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from datetime import datetime, timedelta
@@ -240,7 +242,7 @@ class MailPostGUI:
         columns = ('id', 'tracking', 'recipient', 'type', 'status', 'received')
         self.packages_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=15)
 
-        self.packages_tree.heading('id', text='ID')
+        self.packages_tree.heading('id', text=_t('gui.operations.communications.mail.mail_post.headings.id', default='ID'))
         self.packages_tree.heading('tracking', text=_t("mail.labels.tracking", default="Tracking"))
         self.packages_tree.heading('recipient', text=_t("mail.labels.recipient", default="Recipient"))
         self.packages_tree.heading('type', text=_t("mail.labels.type", default="Type"))
@@ -396,7 +398,7 @@ class MailPostGUI:
             columns = ('box_id', 'number', 'size', 'fee', 'status')
             self.boxes_tree = ttk.Treeview(avail_frame, columns=columns, show='headings', height=10)
 
-            self.boxes_tree.heading('box_id', text='ID')
+            self.boxes_tree.heading('box_id', text=_t('gui.operations.communications.mail.mail_post.headings.id', default='ID'))
             self.boxes_tree.heading('number', text=_t("mail.labels.box_number", default="Box Number"))
             self.boxes_tree.heading('size', text=_t("mail.labels.size", default="Size"))
             self.boxes_tree.heading('fee', text=_t("mail.labels.monthly_fee", default="Monthly Fee"))
@@ -654,21 +656,9 @@ class MailPostGUI:
             logger.info(f"Arrival notification skipped - invalid email: {email}")
             return
 
-        body = f"""
-Dear {name},
-
-You have a package waiting for collection at the University Mail Room.
-
-Tracking Number: {tracking}
-Location: University Mail Room, Main Campus
-
-Please bring your student ID when collecting your package.
-Packages not collected within 7 days may incur storage fees.
-
-Thank you,
-University Mail Services
-"""
-        send_email(email, f"Package Arrived - {tracking}", body)
+        from education_system.systems.university.infrastructure.email.template_utils import render_template
+        subject, body = render_template("operations/mail/package_arrival", {"name": name, "tracking": tracking})
+        send_email(email, subject, body)
         logger.info(f"Arrival notification sent to {email}")
 
     def send_rental_receipt(self, box_number: str, fee: float, months: int, payment_method: str, email: str, name: str):
@@ -677,30 +667,9 @@ University Mail Services
             logger.info(f"Rental receipt skipped - invalid email: {email}")
             return
 
-        body = f"""
-Dear {name},
-
-Thank you for renting a PO Box at University Mail Services.
-
-{'='*50}
-                    PO BOX RENTAL RECEIPT
-{'='*50}
-
-Box Number:       {box_number}
-Rental Period:    {months} month(s)
-Payment Method:   {payment_method}
-Total Fee:        £{fee:.2f}
-
-Date:             {datetime.now().strftime('%Y-%m-%d %H:%M')}
-
-{'='*50}
-
-Your PO Box is now active. Please use Box {box_number} when receiving mail.
-
-Thank you,
-University Mail Services
-"""
-        send_email(email, f"PO Box Rental Confirmation - {box_number}", body)
+        from education_system.systems.university.infrastructure.email.template_utils import render_template
+        subject, body = render_template("operations/mail/po_box_rental_receipt", {"name": name, "box_number": box_number, "months": months, "payment_method": payment_method, "fee": f"{fee:.2f}", "date": datetime.now().strftime("%Y-%m-%d %H:%M")})
+        send_email(email, subject, body)
         logger.info(f"Rental receipt sent to {email}")
 
     def send_forwarding_receipt(self, forward_address: str, forward_type: str, fee: float, payment_method: str, email: str, name: str):
@@ -709,30 +678,9 @@ University Mail Services
             logger.info(f"Forwarding receipt skipped - invalid email: {email}")
             return
 
-        body = f"""
-Dear {name},
-
-Thank you for setting up mail forwarding at University Mail Services.
-
-{'='*50}
-                    MAIL FORWARDING RECEIPT
-{'='*50}
-
-Forward To:       {forward_address}
-Type:             {forward_type.title()}
-Payment Method:   {payment_method}
-Setup Fee:        £{fee:.2f}
-
-Date:             {datetime.now().strftime('%Y-%m-%d %H:%M')}
-
-{'='*50}
-
-Your mail forwarding is now active.
-
-Thank you,
-University Mail Services
-"""
-        send_email(email, "Mail Forwarding Confirmation", body)
+        from education_system.systems.university.infrastructure.email.template_utils import render_template
+        subject, body = render_template("operations/mail/forwarding_receipt", {"name": name, "forward_address": forward_address, "forward_type": forward_type.title(), "payment_method": payment_method, "fee": f"{fee:.2f}", "date": datetime.now().strftime("%Y-%m-%d %H:%M")})
+        send_email(email, subject, body)
         logger.info(f"Forwarding receipt sent to {email}")
 
     def calculate_fees(self):
@@ -917,7 +865,7 @@ Payment Status: {pkg.get('payment_status', 'N/A').upper()}
 
         # Payment method
         ttk.Label(dialog, text=_t("mail.labels.payment_method", default="Payment Method") + ":", font=('Arial', 10, 'bold')).pack(pady=(10, 5))
-        payment_method_var = tk.StringVar(value="Cash")
+        payment_method_var = tk.StringVar(value=_t('gui.operations.communications.mail.mail_post.values.cash', default="Cash"))
         methods_frame = ttk.Frame(dialog)
         methods_frame.pack(pady=5)
 
@@ -1073,7 +1021,7 @@ Payment Status: {pkg.get('payment_status', 'N/A').upper()}
 
         # Payment method
         ttk.Label(dialog, text=_t("mail.labels.payment_method", default="Payment Method") + ":", font=('Arial', 10, 'bold')).pack(pady=(10, 5))
-        payment_method_var = tk.StringVar(value="Cash")
+        payment_method_var = tk.StringVar(value=_t('gui.operations.communications.mail.mail_post.values.cash', default="Cash"))
         methods_frame = ttk.Frame(dialog)
         methods_frame.pack(pady=5)
 
@@ -1243,8 +1191,8 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}
     def generate_monthly_summary(self):
         """Generate a monthly revenue summary report."""
         try:
-            year = simpledialog.askinteger(_t("mail.btn.monthly_summary", default="Monthly Summary"), "Year (Cancel for current):")
-            month = simpledialog.askinteger(_t("mail.btn.monthly_summary", default="Monthly Summary"), "Month 1-12 (Cancel for current):")
+            year = simpledialog.askinteger(_t("mail.btn.monthly_summary", default="Monthly Summary"), _t('gui.operations.communications.mail.mail_post.dialogs.year_cancel_for_current', default="Year (Cancel for current):"))
+            month = simpledialog.askinteger(_t("mail.btn.monthly_summary", default="Monthly Summary"), _t('gui.operations.communications.mail.mail_post.dialogs.month_1_12_cancel_for_current', default="Month 1-12 (Cancel for current):"))
 
             report_data = ReportManager.get_monthly_summary(year, month)
             if not report_data:
@@ -1304,37 +1252,37 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}
         frm = ttk.Frame(dialog, padding=12)
         frm.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frm, text="User ID:").grid(row=0, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frm, text=_t('gui.operations.communications.mail.mail_post.labels.user_id', default="User ID:")).grid(row=0, column=0, sticky=tk.W, pady=4)
         user_entry = ttk.Entry(frm, width=24)
         user_entry.grid(row=0, column=1, pady=4)
 
-        ttk.Label(frm, text="Transaction Type:").grid(row=1, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frm, text=_t('gui.operations.communications.mail.mail_post.labels.transaction_type', default="Transaction Type:")).grid(row=1, column=0, sticky=tk.W, pady=4)
         type_combo = ttk.Combobox(frm, values=["storage_fee", "po_box_rental", "forwarding", "collection"], state="readonly", width=22)
         type_combo.set("storage_fee")
         type_combo.grid(row=1, column=1, pady=4)
 
-        ttk.Label(frm, text="Amount:").grid(row=2, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frm, text=_t('gui.operations.communications.mail.mail_post.labels.amount', default="Amount:")).grid(row=2, column=0, sticky=tk.W, pady=4)
         amount_entry = ttk.Entry(frm, width=24)
         amount_entry.grid(row=2, column=1, pady=4)
 
-        ttk.Label(frm, text="Payment Method:").grid(row=3, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frm, text=_t('gui.operations.communications.mail.mail_post.labels.payment_method', default="Payment Method:")).grid(row=3, column=0, sticky=tk.W, pady=4)
         method_combo = ttk.Combobox(frm, values=["card", "cash", "transfer"], state="readonly", width=22)
         method_combo.set("card")
         method_combo.grid(row=3, column=1, pady=4)
 
-        ttk.Label(frm, text="Package ID (optional):").grid(row=4, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frm, text=_t('gui.operations.communications.mail.mail_post.labels.package_id_optional', default="Package ID (optional):")).grid(row=4, column=0, sticky=tk.W, pady=4)
         pkg_entry = ttk.Entry(frm, width=24)
         pkg_entry.grid(row=4, column=1, pady=4)
 
         def _submit():
             user_id = user_entry.get().strip()
             if not user_id:
-                messagebox.showwarning(_t("common.warning", default="Warning"), "User ID is required", parent=dialog)
+                messagebox.showwarning(_t("common.warning", default="Warning"), _t('gui.operations.communications.mail.mail_post.dialogs.user_id_is_required', default="User ID is required"), parent=dialog)
                 return
             try:
                 amount = float(amount_entry.get().strip())
             except ValueError:
-                messagebox.showwarning(_t("common.warning", default="Warning"), "Amount must be a number", parent=dialog)
+                messagebox.showwarning(_t("common.warning", default="Warning"), _t('gui.operations.communications.mail.mail_post.dialogs.amount_must_be_a_number', default="Amount must be a number"), parent=dialog)
                 return
             pkg_raw = pkg_entry.get().strip()
             package_id = int(pkg_raw) if pkg_raw else None
@@ -1355,7 +1303,7 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}
                 dialog.destroy()
                 self.load_packages()
             else:
-                messagebox.showerror(_t("common.error", default="Error"), "Failed to record payment", parent=dialog)
+                messagebox.showerror(_t("common.error", default="Error"), _t('gui.operations.communications.mail.mail_post.dialogs.failed_to_record_payment', default="Failed to record payment"), parent=dialog)
 
         btns = ttk.Frame(frm)
         btns.grid(row=5, column=0, columnspan=2, pady=12)

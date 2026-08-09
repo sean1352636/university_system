@@ -3,15 +3,16 @@
 Each resolver connects directly to the appropriate system database via
 sqlite3 (no service-layer imports), keeping the GraphQL layer self-contained.
 
-Supported system keys
----------------------
-- ``university``  — university_system  (student_records.db)
+Supported system keys are ``nursery``, ``primary``, ``secondary``,
+``sixth_form`` and ``university``. Runtime databases are resolved through the
+canonical ``program/var/data`` layout and may be overridden explicitly for an
+isolated deployment or test.
 """
 
 from __future__ import annotations
 
-import os
 import sqlite3
+from pathlib import Path
 from typing import List, Optional
 
 from .types import (
@@ -27,16 +28,19 @@ from .types import (
 # DB helpers
 # ---------------------------------------------------------------------------
 
-_BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
+from education_system.paths import PROGRAM_ROOT
 
-_DB_PATHS: dict[str, str] = {
-    "university": os.path.normpath(
-        os.path.join(_BASE, "post_18", "university_system", "data", "db_files", "student_records.db")
-    ),
+
+_DB_PATHS: dict[str, Path] = {
+    "nursery": PROGRAM_ROOT / "var" / "data" / "nursery" / "nursery.db",
+    "primary": PROGRAM_ROOT / "var" / "data" / "primary" / "primary.db",
+    "secondary": PROGRAM_ROOT / "var" / "data" / "secondary" / "secondary.db",
+    "sixth_form": PROGRAM_ROOT / "var" / "data" / "sixth_form" / "sixthform.db",
+    "university": PROGRAM_ROOT / "var" / "data" / "university" / "db_files" / "student_records.db",
 }
 
 
-def _get_db_path(system: str) -> str:
+def _get_db_path(system: str) -> Path:
     """Return the absolute path to the database for *system*.
 
     Raises ValueError for unknown system keys.
@@ -46,14 +50,31 @@ def _get_db_path(system: str) -> str:
         raise ValueError(
             f"Unknown system '{system}'. Valid keys: {', '.join(_DB_PATHS)}"
         )
-    return _DB_PATHS[key]
+    path = _DB_PATHS[key]
+    if not path.is_file():
+        raise FileNotFoundError(f"Database for system '{key}' does not exist: {path}")
+    return path
+
+
+def configure_database_path(system: str, path: str | Path) -> None:
+    """Override a system database path, primarily for isolated deployments/tests."""
+    key = system.lower().strip()
+    if key not in _DB_PATHS:
+        raise ValueError(f"Unknown system '{system}'")
+    _DB_PATHS[key] = Path(path).resolve()
 
 
 def _get_connection(system: str) -> sqlite3.Connection:
     """Open a sqlite3 connection for *system* with Row factory set."""
-    conn = sqlite3.connect(_get_db_path(system))
+    conn = sqlite3.connect(str(_get_db_path(system)))
     conn.row_factory = sqlite3.Row
     return conn
+
+
+def _table_exists(conn: sqlite3.Connection, table: str) -> bool:
+    return conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (table,)
+    ).fetchone() is not None
 
 
 # ---------------------------------------------------------------------------
@@ -80,7 +101,15 @@ def _row_to_student(row: sqlite3.Row, system: str) -> StudentType:
         phone=d.get("phone"),
         date_of_birth=d.get("date_of_birth") or d.get("dob"),
         enrollment_date=d.get("enrollment_date") or d.get("registration_datetime") or d.get("admission_date"),
-        major=d.get("major") or d.get("course") or d.get("year_group") or d.get("class_name"),
+        major=(
+            d.get("major")
+            or d.get("course")
+            or d.get("program")
+            or d.get("year_group")
+            or d.get("class_name")
+            or d.get("form_group")
+            or d.get("room")
+        ),
         status=d.get("status"),
         gpa=None,  # not stored directly in any system DB
         system_key=system,
@@ -98,8 +127,8 @@ def resolve_students(
     try:
         c = conn.cursor()
         key = system.lower()
-        table = "pupils" if key == "primary" else "students"
-        id_col = "pupil_id" if key == "primary" else "student_id"
+        table = "pupils" if key in {"nursery", "primary", "secondary"} else "students"
+        id_col = "pupil_id" if table == "pupils" else "student_id"
 
         if search:
             pattern = f"%{search}%"
@@ -129,8 +158,8 @@ def resolve_student(system: str, student_id: str) -> Optional[StudentType]:
     try:
         c = conn.cursor()
         key = system.lower()
-        table = "pupils" if key == "primary" else "students"
-        id_col = "pupil_id" if key == "primary" else "student_id"
+        table = "pupils" if key in {"nursery", "primary", "secondary"} else "students"
+        id_col = "pupil_id" if table == "pupils" else "student_id"
         row = c.execute(
             f"SELECT * FROM {table} WHERE {id_col} = ?", (student_id,)
         ).fetchone()
@@ -180,8 +209,10 @@ def resolve_courses(
     try:
         c = conn.cursor()
         key = system.lower()
-        # secondary + primary use "subjects" table; university + college use "courses"
-        table = "subjects" if key in ("secondary", "primary") else "courses"
+        # School systems use subjects; post-16/university systems use courses.
+        table = "subjects" if key in ("nursery", "secondary", "primary") else "courses"
+        if not _table_exists(conn, table):
+            return []
         name_col = "title"  # all tables use "title" for display name except university
 
         if key == "university":
@@ -214,7 +245,9 @@ def resolve_course(system: str, course_id: str) -> Optional[CourseType]:
     try:
         c = conn.cursor()
         key = system.lower()
-        table = "subjects" if key in ("secondary", "primary") else "courses"
+        table = "subjects" if key in ("nursery", "secondary", "primary") else "courses"
+        if not _table_exists(conn, table):
+            return None
         row = c.execute(
             f"SELECT * FROM {table} WHERE id = ?", (course_id,)
         ).fetchone()
@@ -280,7 +313,7 @@ def resolve_grades(
         c = conn.cursor()
         key = system.lower()
 
-        # Determine the grades table and student column
+        # Determine the grades table and student column.
         if key == "university":
             table = "grades"
             sid_col = "student_id"
@@ -291,9 +324,12 @@ def resolve_grades(
             table = "grades"
             sid_col = "student_id"
         else:
-            # primary — uses assessments table
+            # nursery/primary — use assessments when the feature is available
             table = "assessments"
             sid_col = "pupil_id"
+
+        if not _table_exists(conn, table):
+            return []
 
         if student_id:
             rows = c.execute(
@@ -342,9 +378,9 @@ def resolve_attendance(
         c = conn.cursor()
         key = system.lower()
 
-        if key in ("secondary", "primary"):
+        if key in ("nursery", "secondary", "primary", "sixth_form"):
             table = "attendance_records"
-            sid_col = "pupil_id" if key == "primary" else "student_id"
+            sid_col = "pupil_id" if key in {"nursery", "primary", "secondary"} else "student_id"
         else:
             # university + college both use "attendance"
             table = "attendance"
@@ -404,7 +440,7 @@ def resolve_enrollments(
         c = conn.cursor()
         key = system.lower()
 
-        if key == "primary":
+        if key in {"nursery", "primary"}:
             table = "lms_student_enrollment"
             sid_col = "student_id"
             cid_col = "lms_course_id"
@@ -417,6 +453,9 @@ def resolve_enrollments(
             table = "enrollments"
             sid_col = "student_id"
             cid_col = "course_id"
+
+        if not _table_exists(conn, table):
+            return []
 
         params: list = []
         wheres: list[str] = []
@@ -482,6 +521,9 @@ def resolve_timetable(
         else:
             table = "timetable_slots"
             cid_col = "course_id" if key == "sixth_form" else "subject_id"
+
+        if not _table_exists(conn, table):
+            return []
 
         if course_id:
             rows = c.execute(

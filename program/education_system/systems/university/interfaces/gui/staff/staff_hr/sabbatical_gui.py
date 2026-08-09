@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -35,7 +37,7 @@ class SabbaticalGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Sabbatical Management")
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), _t('gui.staff.staff_hr.sabbatical.dialogs.login_required_to_access_sabbatical_management', default="Login required to access Sabbatical Management"))
             return
 
         if parent_notebook:
@@ -50,21 +52,21 @@ class SabbaticalGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Sabbatical")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.sabbatical.tabs.sabbatical', default="Sabbatical"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Sabbatical / Study Leave")
+        self.window.title(_t('gui.staff.staff_hr.sabbatical.windows.sabbatical_study_leave', default="Sabbatical / Study Leave"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.sabbatical.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -91,23 +93,23 @@ class SabbaticalGUI:
     def _create_applications_tab(self):
         """Create my applications tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Applications")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.sabbatical.tabs.my_applications', default="My Applications"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Sabbatical Applications", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.my_sabbatical_applications', default="My Sabbatical Applications"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Filter
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.app_status_filter = ttk.Combobox(filter_frame,
             values=['All', 'Draft', 'Pending', 'Approved', 'Active', 'Completed', 'Rejected'],
             width=12, state='readonly')
         self.app_status_filter.set('All')
         self.app_status_filter.pack(side=tk.LEFT, padx=5)
         self.app_status_filter.bind('<<ComboboxSelected>>', lambda e: self._load_applications())
-        ttk.Button(filter_frame, text="Refresh", command=self._load_applications).pack(side=tk.LEFT, padx=10)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.refresh', default="Refresh"), command=self._load_applications).pack(side=tk.LEFT, padx=10)
 
         # Applications list
         tree_frame = ttk.Frame(tab)
@@ -168,14 +170,14 @@ class SabbaticalGUI:
                     display_status
                 ), tags=(app_status,))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load applications: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), f"Failed to load applications: {e}")
 
     # ==================== TAB 2: APPLY ====================
 
     def _create_apply_tab(self):
         """Create apply for sabbatical tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Apply")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.sabbatical.tabs.apply', default="Apply"))
 
         # Scrollable canvas for long form
         canvas = tk.Canvas(tab)
@@ -191,10 +193,10 @@ class SabbaticalGUI:
 
         header_frame = ttk.Frame(scroll_frame)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Apply for Sabbatical", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.apply_for_sabbatical', default="Apply for Sabbatical"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Eligibility status frame
-        elig_frame = ttk.LabelFrame(scroll_frame, text="Eligibility Status", padding=15)
+        elig_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.eligibility_status', default="Eligibility Status"), padding=15)
         elig_frame.pack(fill=tk.X, padx=10, pady=10)
 
         elig_info_frame = ttk.Frame(elig_frame)
@@ -209,68 +211,68 @@ class SabbaticalGUI:
             self.elig_labels[key] = ttk.Label(row_frame, text="--")
             self.elig_labels[key].pack(side=tk.LEFT, padx=10)
 
-        ttk.Button(elig_frame, text="Check Eligibility", command=self._check_eligibility).pack(pady=10)
+        ttk.Button(elig_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.check_eligibility', default="Check Eligibility"), command=self._check_eligibility).pack(pady=10)
 
         self._check_eligibility()
 
         # Application form
-        form_frame = ttk.LabelFrame(scroll_frame, text="Application Details", padding=15)
+        form_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.application_details', default="Application Details"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 0: Type
-        ttk.Label(form_frame, text="Type:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.type', default="Type:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.type_combo = ttk.Combobox(form_frame, width=25, state='readonly',
             values=['research', 'teaching_development', 'industry', 'study'])
         self.type_combo.set('research')
         self.type_combo.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
         # Row 1: Title
-        ttk.Label(form_frame, text="Title:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.title', default="Title:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.title_entry = ttk.Entry(form_frame, width=50)
         self.title_entry.grid(row=1, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Row 2: Research Proposal
-        ttk.Label(form_frame, text="Research Proposal:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.research_proposal', default="Research Proposal:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         self.proposal_text = scrolledtext.ScrolledText(form_frame, width=60, height=8)
         self.proposal_text.grid(row=2, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Row 3: Host Institution
-        ttk.Label(form_frame, text="Host Institution:").grid(row=3, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.host_institution', default="Host Institution:")).grid(row=3, column=0, sticky='e', padx=10, pady=8)
         self.institution_entry = ttk.Entry(form_frame, width=50)
         self.institution_entry.grid(row=3, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Row 4: Start Date and End Date
-        ttk.Label(form_frame, text="Start Date:").grid(row=4, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.start_date', default="Start Date:")).grid(row=4, column=0, sticky='e', padx=10, pady=8)
         self.start_date_entry = ttk.Entry(form_frame, width=15)
         self.start_date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         self.start_date_entry.grid(row=4, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="End Date:").grid(row=4, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.end_date', default="End Date:")).grid(row=4, column=2, sticky='e', padx=10, pady=8)
         self.end_date_entry = ttk.Entry(form_frame, width=15)
         self.end_date_entry.grid(row=4, column=3, padx=10, pady=8, sticky='w')
 
         # Row 5: Pay Percentage
-        ttk.Label(form_frame, text="Pay Percentage:").grid(row=5, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.pay_percentage', default="Pay Percentage:")).grid(row=5, column=0, sticky='e', padx=10, pady=8)
         self.pay_combo = ttk.Combobox(form_frame, width=10, state='readonly',
             values=['100', '80', '60', '50', '0'])
         self.pay_combo.set('100')
         self.pay_combo.grid(row=5, column=1, padx=10, pady=8, sticky='w')
 
         # Row 6: Cover Arrangements
-        ttk.Label(form_frame, text="Cover Arrangements:").grid(row=6, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.cover_arrangements', default="Cover Arrangements:")).grid(row=6, column=0, sticky='ne', padx=10, pady=8)
         self.cover_text = scrolledtext.ScrolledText(form_frame, width=60, height=4)
         self.cover_text.grid(row=6, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Row 7: Funding Details
-        ttk.Label(form_frame, text="Funding Details:").grid(row=7, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.funding_details', default="Funding Details:")).grid(row=7, column=0, sticky='e', padx=10, pady=8)
         self.funding_entry = ttk.Entry(form_frame, width=50)
         self.funding_entry.grid(row=7, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Buttons
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=8, column=0, columnspan=4, pady=15)
-        ttk.Button(btn_frame, text="Save Draft", command=self._save_draft).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Submit", command=self._submit_application).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.save_draft', default="Save Draft"), command=self._save_draft).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.submit', default="Submit"), command=self._submit_application).pack(side=tk.LEFT, padx=10)
 
     def _check_eligibility(self):
         """Check and display eligibility status."""
@@ -286,7 +288,7 @@ class SabbaticalGUI:
             is_eligible = eligibility.get('is_eligible', False)
             reason = eligibility.get('reason', '')
             if is_eligible:
-                self.elig_labels['status'].config(text="Eligible", foreground='green')
+                self.elig_labels['status'].config(text=_t('gui.staff.staff_hr.sabbatical.text.eligible', default="Eligible"), foreground='green')
             else:
                 self.elig_labels['status'].config(text=f"Not Eligible - {reason}", foreground='red')
         except Exception as e:
@@ -355,11 +357,11 @@ class SabbaticalGUI:
                 cover_arrangements=data['cover_arrangements'],
                 funding_details=data['funding_details'],
             )
-            messagebox.showinfo("Success", f"Draft saved successfully. Application ID: {app_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"), f"Draft saved successfully. Application ID: {app_id}")
             self._clear_apply_form()
             self._load_applications()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), str(e))
 
     def _submit_application(self):
         """Submit application for approval."""
@@ -367,9 +369,9 @@ class SabbaticalGUI:
         if not data:
             return
 
-        if not messagebox.askyesno("Confirm",
-                "Are you sure you want to submit this application for approval?\n\n"
-                "Once submitted, the application cannot be edited."):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.sabbatical.dialogs.confirm', default="Confirm"),
+                _t('gui.staff.staff_hr.sabbatical.dialogs.are_you_sure_you_want_to_submit_this_application_for_approval_on', default="Are you sure you want to submit this application for approval?\n\n"
+                "Once submitted, the application cannot be edited.")):
             return
 
         try:
@@ -387,13 +389,13 @@ class SabbaticalGUI:
             )
 
             SabbaticalManager.submit_application(app_id, self._get_user_id())
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"),
                 f"Application submitted successfully. Application ID: {app_id}\n\n"
                 "Your application will be reviewed through the approval workflow.")
             self._clear_apply_form()
             self._load_applications()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), str(e))
 
     def _clear_apply_form(self):
         """Clear the application form fields."""
@@ -413,27 +415,27 @@ class SabbaticalGUI:
     def _create_progress_tab(self):
         """Create progress reports tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Progress Reports")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.sabbatical.tabs.progress_reports', default="Progress Reports"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Progress Reports", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.progress_reports', default="Progress Reports"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Application selector
-        selector_frame = ttk.LabelFrame(tab, text="Select Sabbatical", padding=10)
+        selector_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.sabbatical.labels.select_sabbatical', default="Select Sabbatical"), padding=10)
         selector_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(selector_frame, text="Application:").pack(side=tk.LEFT, padx=10)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.application', default="Application:")).pack(side=tk.LEFT, padx=10)
         self.progress_app_combo = ttk.Combobox(selector_frame, width=50, state='readonly')
         self.progress_app_combo.pack(side=tk.LEFT, padx=10)
         self.progress_app_combo.bind('<<ComboboxSelected>>', lambda e: self._load_progress_reports())
-        ttk.Button(selector_frame, text="Refresh", command=self._refresh_progress_tab).pack(side=tk.RIGHT, padx=10)
+        ttk.Button(selector_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.refresh', default="Refresh"), command=self._refresh_progress_tab).pack(side=tk.RIGHT, padx=10)
 
         self._progress_app_map = {}
         self._load_progress_applications()
 
         # Existing reports
-        reports_frame = ttk.LabelFrame(tab, text="Existing Reports", padding=10)
+        reports_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.sabbatical.labels.existing_reports', default="Existing Reports"), padding=10)
         reports_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         y_scroll = ttk.Scrollbar(reports_frame, orient=tk.VERTICAL)
@@ -451,13 +453,13 @@ class SabbaticalGUI:
         y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Submit report form
-        form_frame = ttk.LabelFrame(tab, text="Submit New Report", padding=10)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.sabbatical.labels.submit_new_report', default="Submit New Report"), padding=10)
         form_frame.pack(fill=tk.X, padx=10, pady=5)
 
         # Report type
         type_row = ttk.Frame(form_frame)
         type_row.pack(fill=tk.X, pady=5)
-        ttk.Label(type_row, text="Report Type:").pack(side=tk.LEFT, padx=10)
+        ttk.Label(type_row, text=_t('gui.staff.staff_hr.sabbatical.labels.report_type', default="Report Type:")).pack(side=tk.LEFT, padx=10)
         self.report_type_combo = ttk.Combobox(type_row, width=15, state='readonly',
             values=['interim', 'final'])
         self.report_type_combo.set('interim')
@@ -466,28 +468,28 @@ class SabbaticalGUI:
         # Content
         content_row = ttk.Frame(form_frame)
         content_row.pack(fill=tk.X, pady=5)
-        ttk.Label(content_row, text="Content:").pack(anchor='nw', padx=10)
+        ttk.Label(content_row, text=_t('gui.staff.staff_hr.sabbatical.labels.content', default="Content:")).pack(anchor='nw', padx=10)
         self.report_content_text = scrolledtext.ScrolledText(content_row, width=60, height=6)
         self.report_content_text.pack(padx=10, fill=tk.X)
 
         # Achievements
         ach_row = ttk.Frame(form_frame)
         ach_row.pack(fill=tk.X, pady=5)
-        ttk.Label(ach_row, text="Achievements:").pack(anchor='nw', padx=10)
+        ttk.Label(ach_row, text=_t('gui.staff.staff_hr.sabbatical.labels.achievements', default="Achievements:")).pack(anchor='nw', padx=10)
         self.report_achievements_text = scrolledtext.ScrolledText(ach_row, width=60, height=4)
         self.report_achievements_text.pack(padx=10, fill=tk.X)
 
         # Challenges
         ch_row = ttk.Frame(form_frame)
         ch_row.pack(fill=tk.X, pady=5)
-        ttk.Label(ch_row, text="Challenges:").pack(anchor='nw', padx=10)
+        ttk.Label(ch_row, text=_t('gui.staff.staff_hr.sabbatical.labels.challenges', default="Challenges:")).pack(anchor='nw', padx=10)
         self.report_challenges_text = scrolledtext.ScrolledText(ch_row, width=60, height=4)
         self.report_challenges_text.pack(padx=10, fill=tk.X)
 
         # Submit button
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill=tk.X, pady=10)
-        ttk.Button(btn_frame, text="Submit Report", command=self._submit_progress_report).pack(padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.submit_report', default="Submit Report"), command=self._submit_progress_report).pack(padx=10)
 
     def _load_progress_applications(self):
         """Load active/approved sabbaticals into the progress application selector."""
@@ -534,7 +536,7 @@ class SabbaticalGUI:
                     r.get('review_comments', '') or ''
                 ))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load progress reports: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), f"Failed to load progress reports: {e}")
 
     def _refresh_progress_tab(self):
         """Refresh the progress tab data."""
@@ -545,12 +547,12 @@ class SabbaticalGUI:
         """Submit a progress report."""
         app_id = self._get_selected_progress_app_id()
         if not app_id:
-            messagebox.showinfo("Info", "Please select a sabbatical application")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.info', default="Info"), _t('gui.staff.staff_hr.sabbatical.dialogs.please_select_a_sabbatical_application', default="Please select a sabbatical application"))
             return
 
         content = self.report_content_text.get("1.0", "end-1c").strip()
         if not content:
-            messagebox.showerror("Validation Error", "Report content is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.sabbatical.dialogs.report_content_is_required', default="Report content is required."))
             return
 
         report_type = self.report_type_combo.get()
@@ -565,7 +567,7 @@ class SabbaticalGUI:
                 achievements=achievements,
                 challenges=challenges,
             )
-            messagebox.showinfo("Success", f"Progress report submitted. Report ID: {report_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"), f"Progress report submitted. Report ID: {report_id}")
 
             # Clear form
             self.report_content_text.delete("1.0", tk.END)
@@ -574,19 +576,19 @@ class SabbaticalGUI:
             self.report_type_combo.set('interim')
             self._load_progress_reports()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 4: APPROVALS (ADMIN) ====================
 
     def _create_approvals_tab(self):
         """Create sabbatical approvals tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Approvals")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.sabbatical.tabs.approvals', default="Approvals"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Sabbatical Approvals", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_sabbatical_approvals).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.sabbatical_approvals', default="Sabbatical Approvals"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.refresh', default="Refresh"), command=self._load_sabbatical_approvals).pack(side=tk.RIGHT)
 
         # Pending approvals list
         tree_frame = ttk.Frame(tab)
@@ -611,8 +613,8 @@ class SabbaticalGUI:
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(btn_frame, text="Approve Selected", command=self._approve_sabbatical).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Reject Selected", command=self._reject_sabbatical).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.approve_selected', default="Approve Selected"), command=self._approve_sabbatical).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.reject_selected', default="Reject Selected"), command=self._reject_sabbatical).pack(side=tk.LEFT, padx=5)
 
         self._load_sabbatical_approvals()
 
@@ -640,13 +642,13 @@ class SabbaticalGUI:
                     a.get('status', '').title()
                 ))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load approvals: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), f"Failed to load approvals: {e}")
 
     def _approve_sabbatical(self):
         """Approve selected sabbatical application."""
         selection = self.sabbatical_approvals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an approval to approve")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.info', default="Info"), _t('gui.staff.staff_hr.sabbatical.dialogs.please_select_an_approval_to_approve', default="Please select an approval to approve"))
             return
 
         item = self.sabbatical_approvals_tree.item(selection[0])
@@ -656,16 +658,16 @@ class SabbaticalGUI:
 
         try:
             SabbaticalManager.approve_application(approval_id, self._get_user_id(), comments or '')
-            messagebox.showinfo("Success", "Sabbatical application approved at this level")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"), _t('gui.staff.staff_hr.sabbatical.dialogs.sabbatical_application_approved_at_this_level', default="Sabbatical application approved at this level"))
             self._load_sabbatical_approvals()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), str(e))
 
     def _reject_sabbatical(self):
         """Reject selected sabbatical application."""
         selection = self.sabbatical_approvals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an approval to reject")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.info', default="Info"), _t('gui.staff.staff_hr.sabbatical.dialogs.please_select_an_approval_to_reject', default="Please select an approval to reject"))
             return
 
         item = self.sabbatical_approvals_tree.item(selection[0])
@@ -673,32 +675,32 @@ class SabbaticalGUI:
 
         comments = tk.simpledialog.askstring("Reason", "Enter rejection reason:", parent=self.root)
         if not comments:
-            messagebox.showerror("Error", "Rejection reason is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), _t('gui.staff.staff_hr.sabbatical.dialogs.rejection_reason_is_required', default="Rejection reason is required"))
             return
 
         try:
             SabbaticalManager.reject_application(approval_id, self._get_user_id(), comments)
-            messagebox.showinfo("Success", "Sabbatical application rejected")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"), _t('gui.staff.staff_hr.sabbatical.dialogs.sabbatical_application_rejected', default="Sabbatical application rejected"))
             self._load_sabbatical_approvals()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 5: RETURN PLANNING ====================
 
     def _create_return_tab(self):
         """Create return planning tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Return Planning")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.sabbatical.tabs.return_planning', default="Return Planning"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Return Planning", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.return_planning', default="Return Planning"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Application selector
-        selector_frame = ttk.LabelFrame(tab, text="Select Sabbatical", padding=10)
+        selector_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.sabbatical.labels.select_sabbatical', default="Select Sabbatical"), padding=10)
         selector_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(selector_frame, text="Application:").pack(side=tk.LEFT, padx=10)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.application', default="Application:")).pack(side=tk.LEFT, padx=10)
         self.return_app_combo = ttk.Combobox(selector_frame, width=50, state='readonly')
         self.return_app_combo.pack(side=tk.LEFT, padx=10)
         self.return_app_combo.bind('<<ComboboxSelected>>', lambda e: self._load_return_plan())
@@ -707,42 +709,42 @@ class SabbaticalGUI:
         self._load_return_applications()
 
         # Existing plan display
-        self.existing_plan_frame = ttk.LabelFrame(tab, text="Current Return Plan", padding=10)
+        self.existing_plan_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.sabbatical.labels.current_return_plan', default="Current Return Plan"), padding=10)
         self.existing_plan_frame.pack(fill=tk.X, padx=10, pady=5)
-        self.existing_plan_label = ttk.Label(self.existing_plan_frame, text="No return plan found for this application.")
+        self.existing_plan_label = ttk.Label(self.existing_plan_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.no_return_plan_found_for_this_application', default="No return plan found for this application."))
         self.existing_plan_label.pack(padx=10, pady=5, anchor='w')
 
         # Return plan form
-        form_frame = ttk.LabelFrame(tab, text="Return Plan Details", padding=15)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.sabbatical.labels.return_plan_details', default="Return Plan Details"), padding=15)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         # Return Date
-        ttk.Label(form_frame, text="Return Date:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.return_date', default="Return Date:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.return_date_entry = ttk.Entry(form_frame, width=15)
         self.return_date_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
         # Transition Period
-        ttk.Label(form_frame, text="Transition Period (weeks):").grid(row=0, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.transition_period_weeks', default="Transition Period (weeks):")).grid(row=0, column=2, sticky='e', padx=10, pady=8)
         self.transition_spinbox = ttk.Spinbox(form_frame, from_=1, to=26, width=5)
         self.transition_spinbox.set(4)
         self.transition_spinbox.grid(row=0, column=3, padx=10, pady=8, sticky='w')
 
         # Research Outputs
-        ttk.Label(form_frame, text="Research Outputs:").grid(row=1, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.research_outputs', default="Research Outputs:")).grid(row=1, column=0, sticky='ne', padx=10, pady=8)
         self.research_outputs_text = scrolledtext.ScrolledText(form_frame, width=60, height=5)
         self.research_outputs_text.grid(row=1, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Knowledge Sharing Plan
-        ttk.Label(form_frame, text="Knowledge Sharing Plan:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.knowledge_sharing_plan', default="Knowledge Sharing Plan:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         self.knowledge_plan_text = scrolledtext.ScrolledText(form_frame, width=60, height=5)
         self.knowledge_plan_text.grid(row=2, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Buttons
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=3, column=0, columnspan=4, pady=15)
-        ttk.Button(btn_frame, text="Create/Update Plan",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.create_update_plan', default="Create/Update Plan"),
                    command=self._save_return_plan).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Complete Return",
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.complete_return', default="Complete Return"),
                    command=self._complete_return).pack(side=tk.LEFT, padx=10)
 
     def _load_return_applications(self):
@@ -778,7 +780,7 @@ class SabbaticalGUI:
         """Load existing return plan for selected application."""
         app = self._get_selected_return_app()
         if not app:
-            self.existing_plan_label.config(text="No application selected.")
+            self.existing_plan_label.config(text=_t('gui.staff.staff_hr.sabbatical.text.no_application_selected', default="No application selected."))
             return
 
         app_id = app['application_id']
@@ -813,7 +815,7 @@ class SabbaticalGUI:
                 # Store plan_id for updates
                 self._current_plan_id = plan.get('plan_id')
             else:
-                self.existing_plan_label.config(text="No return plan found for this application.")
+                self.existing_plan_label.config(text=_t('gui.staff.staff_hr.sabbatical.text.no_return_plan_found_for_this_application', default="No return plan found for this application."))
                 self._current_plan_id = None
         except Exception as e:
             self.existing_plan_label.config(text=f"Error loading plan: {e}")
@@ -823,7 +825,7 @@ class SabbaticalGUI:
         """Create or update a return plan."""
         app = self._get_selected_return_app()
         if not app:
-            messagebox.showinfo("Info", "Please select a sabbatical application")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.info', default="Info"), _t('gui.staff.staff_hr.sabbatical.dialogs.please_select_a_sabbatical_application', default="Please select a sabbatical application"))
             return
 
         try:
@@ -835,7 +837,7 @@ class SabbaticalGUI:
         try:
             transition_weeks = int(self.transition_spinbox.get())
         except (ValueError, TypeError):
-            messagebox.showerror("Validation Error", "Transition period must be a valid number of weeks.")
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.sabbatical.dialogs.transition_period_must_be_a_valid_number_of_weeks', default="Transition period must be a valid number of weeks."))
             return
 
         research_outputs = self.research_outputs_text.get("1.0", "end-1c").strip() or None
@@ -856,7 +858,7 @@ class SabbaticalGUI:
                     research_outputs=research_outputs,
                     knowledge_sharing_plan=knowledge_plan,
                 )
-                messagebox.showinfo("Success", f"Return plan updated. Plan ID: {plan_id}")
+                messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"), f"Return plan updated. Plan ID: {plan_id}")
             else:
                 # Create new plan
                 plan_id = SabbaticalManager.create_return_plan(
@@ -866,46 +868,46 @@ class SabbaticalGUI:
                     research_outputs=research_outputs,
                     knowledge_sharing_plan=knowledge_plan,
                 )
-                messagebox.showinfo("Success", f"Return plan created. Plan ID: {plan_id}")
+                messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"), f"Return plan created. Plan ID: {plan_id}")
 
             self._load_return_plan()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), str(e))
 
     def _complete_return(self):
         """Complete the return from sabbatical."""
         app = self._get_selected_return_app()
         if not app:
-            messagebox.showinfo("Info", "Please select a sabbatical application")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.info', default="Info"), _t('gui.staff.staff_hr.sabbatical.dialogs.please_select_a_sabbatical_application', default="Please select a sabbatical application"))
             return
 
-        if not messagebox.askyesno("Confirm",
-                "Are you sure you want to mark this sabbatical return as complete?\n\n"
-                "This will update the application status to 'completed' and reset eligibility."):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.sabbatical.dialogs.confirm', default="Confirm"),
+                _t('gui.staff.staff_hr.sabbatical.dialogs.are_you_sure_you_want_to_mark_this_sabbatical_return_as_complete', default="Are you sure you want to mark this sabbatical return as complete?\n\n"
+                "This will update the application status to 'completed' and reset eligibility.")):
             return
 
         try:
             SabbaticalManager.complete_return(app['application_id'], app.get('user_id', self._get_user_id()))
-            messagebox.showinfo("Success", "Sabbatical return completed successfully.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.sabbatical.dialogs.success', default="Success"), _t('gui.staff.staff_hr.sabbatical.dialogs.sabbatical_return_completed_successfully', default="Sabbatical return completed successfully."))
             self._load_return_applications()
             self._load_applications()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 6: REPORTS (ADMIN) ====================
 
     def _create_reports_tab(self):
         """Create sabbatical reports tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Reports")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.sabbatical.tabs.reports', default="Reports"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Sabbatical Reports", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_sabbatical_stats).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.sabbatical.labels.sabbatical_reports', default="Sabbatical Reports"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.sabbatical.buttons.refresh', default="Refresh"), command=self._load_sabbatical_stats).pack(side=tk.RIGHT)
 
         # Statistics
-        stats_frame = ttk.LabelFrame(tab, text="Overview", padding=15)
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.sabbatical.labels.overview', default="Overview"), padding=15)
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.sabbatical_stats = {}
@@ -918,7 +920,7 @@ class SabbaticalGUI:
             ttk.Label(frame, text=label).pack()
 
         # Eligibility list
-        elig_frame = ttk.LabelFrame(tab, text="Staff Eligibility", padding=10)
+        elig_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.sabbatical.labels.staff_eligibility', default="Staff Eligibility"), padding=10)
         elig_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         y_scroll = ttk.Scrollbar(elig_frame, orient=tk.VERTICAL)
@@ -990,7 +992,7 @@ class SabbaticalGUI:
                     ), tags=(tag,))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load sabbatical statistics: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.sabbatical.dialogs.error', default="Error"), f"Failed to load sabbatical statistics: {e}")
 
 
 # Add simpledialog import for the approval dialogs

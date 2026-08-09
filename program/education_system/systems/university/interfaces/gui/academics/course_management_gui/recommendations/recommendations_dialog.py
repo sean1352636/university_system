@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
 )
@@ -22,7 +24,7 @@ class RecommendationsDialog(
         self.result = None
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Course Recommendations")
+        self.dialog.title(_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.windows.course_recommendations', default="Course Recommendations"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -34,29 +36,29 @@ class RecommendationsDialog(
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="Course Recommendations", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.labels.course_recommendations', default="Course Recommendations"), font=("Arial", 12, "bold")).pack(pady=10)
 
         # Recommendation types
-        types_frame = ttk.LabelFrame(main_frame, text="Recommendation Type", padding=10)
+        types_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.labels.recommendation_type', default="Recommendation Type"), padding=10)
         types_frame.pack(fill=tk.X, pady=5)
 
-        self.rec_type = tk.StringVar(value="popular")
+        self.rec_type = tk.StringVar(value=_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.values.popular', default="popular"))
 
-        ttk.Radiobutton(types_frame, text="Most Popular Courses", variable=self.rec_type,
+        ttk.Radiobutton(types_frame, text=_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.buttons.most_popular_courses', default="Most Popular Courses"), variable=self.rec_type,
                        value="popular").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(types_frame, text="Courses with Available Spots", variable=self.rec_type,
+        ttk.Radiobutton(types_frame, text=_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.buttons.courses_with_available_spots', default="Courses with Available Spots"), variable=self.rec_type,
                        value="available").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(types_frame, text="Under-enrolled Courses", variable=self.rec_type,
+        ttk.Radiobutton(types_frame, text=_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.buttons.under_enrolled_courses', default="Under-enrolled Courses"), variable=self.rec_type,
                        value="under_enrolled").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(types_frame, text="New Courses", variable=self.rec_type,
+        ttk.Radiobutton(types_frame, text=_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.buttons.new_courses', default="New Courses"), variable=self.rec_type,
                        value="new").pack(anchor=tk.W, pady=2)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Generate Recommendations", command=self.generate_recommendations).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.buttons.generate_recommendations', default="Generate Recommendations"), command=self.generate_recommendations).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.recommendations_dialog.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def generate_recommendations(self):
         try:

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -33,7 +35,11 @@ except Exception:  # pragma: no cover
 init_i18n()
 
 # Import path constants
-from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
+from education_system.paths import (
+    UNIVERSITY_BACKUP_DIR,
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_LOG_DIR,
+)
 
 # Import authentication system
 from education_system.systems.university.infrastructure.auth import UserAuth
@@ -184,7 +190,7 @@ class ManualAttendanceWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="Manual Attendance Entry", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.manual_attendance_entry', default="Manual Attendance Entry"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         info_label = ttk.Label(self.window, text=f"Module: {self.module_code} | Date: {self.date}")
@@ -198,10 +204,10 @@ class ManualAttendanceWindow:
         headers_frame = ttk.Frame(students_frame)
         headers_frame.pack(fill=tk.X, pady=(0, 5))
 
-        ttk.Label(headers_frame, text="Student ID", width=15).pack(side=tk.LEFT)
-        ttk.Label(headers_frame, text="Name", width=25).pack(side=tk.LEFT)
-        ttk.Label(headers_frame, text="Status", width=15).pack(side=tk.LEFT)
-        ttk.Label(headers_frame, text="Notes", width=20).pack(side=tk.LEFT)
+        ttk.Label(headers_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.student_id', default="Student ID"), width=15).pack(side=tk.LEFT)
+        ttk.Label(headers_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.name', default="Name"), width=25).pack(side=tk.LEFT)
+        ttk.Label(headers_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.status', default="Status"), width=15).pack(side=tk.LEFT)
+        ttk.Label(headers_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.notes', default="Notes"), width=20).pack(side=tk.LEFT)
 
         # Scrollable frame for students
         canvas = tk.Canvas(students_frame)
@@ -225,9 +231,9 @@ class ManualAttendanceWindow:
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(buttons_frame, text="Save Attendance",
+        ttk.Button(buttons_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.buttons.save_attendance', default="Save Attendance"),
                   command=self.save_attendance, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Mark All Present",
+        ttk.Button(buttons_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.buttons.mark_all_present', default="Mark All Present"),
                   command=self.mark_all_present, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"),
                   command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
@@ -270,7 +276,7 @@ class ManualAttendanceWindow:
         ttk.Label(row_frame, text=name, width=25).pack(side=tk.LEFT)
 
         # Status
-        status_var = tk.StringVar(value="Present")
+        status_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.attendance_windows.values.present', default="Present"))
         status_combo = ttk.Combobox(row_frame, textvariable=status_var,
                                    values=["Present", "Late", "Absent", "Excused"],
                                    state="readonly", width=12)
@@ -318,9 +324,9 @@ class ManualAttendanceWindow:
                     self.callback()  # Refresh parent data
                     self.window.destroy()
                 else:
-                    messagebox.showerror(_("common.error"), "Failed to record attendance")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.attendance_windows.dialogs.failed_to_record_attendance', default="Failed to record attendance"))
             else:
-                messagebox.showinfo("Demo", "Attendance would be recorded here")
+                messagebox.showinfo(_t('gui.academics.attendance_tracker.attendance_windows.dialogs.demo', default="Demo"), _t('gui.academics.attendance_tracker.attendance_windows.dialogs.attendance_would_be_recorded_here', default="Attendance would be recorded here"))
                 self.callback()
                 self.window.destroy()
 
@@ -347,41 +353,41 @@ class BatchAttendanceWindow:
 
     def create_widgets(self):
         # Title
-        title_label = ttk.Label(self.window, text="Batch Attendance Entry", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.batch_attendance_entry', default="Batch Attendance Entry"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         info_label = ttk.Label(self.window, text=f"Module: {self.module_code} | Date: {self.date}")
         info_label.pack(pady=(0, 10))
 
         # Batch action frame
-        batch_frame = ttk.LabelFrame(self.window, text="Batch Actions", padding=10)
+        batch_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.batch_actions', default="Batch Actions"), padding=10)
         batch_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         # Status selector
         status_selector_frame = ttk.Frame(batch_frame)
         status_selector_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(status_selector_frame, text="Mark Selected As:").pack(side=tk.LEFT, padx=(0, 10))
-        self.batch_status_var = tk.StringVar(value="Present")
+        ttk.Label(status_selector_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.mark_selected_as', default="Mark Selected As:")).pack(side=tk.LEFT, padx=(0, 10))
+        self.batch_status_var = tk.StringVar(value=_t('gui.academics.attendance_tracker.attendance_windows.values.present', default="Present"))
         status_combo = ttk.Combobox(status_selector_frame, textvariable=self.batch_status_var,
                                    values=["Present", "Late", "Absent", "Excused"],
                                    state="readonly", width=15)
         status_combo.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Button(status_selector_frame, text="Apply to Selected",
+        ttk.Button(status_selector_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.buttons.apply_to_selected', default="Apply to Selected"),
                   command=self.apply_batch_status, style='Primary.TButton').pack(side=tk.LEFT)
 
         # Selection buttons
         selection_frame = ttk.Frame(batch_frame)
         selection_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(selection_frame, text="Select All",
+        ttk.Button(selection_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.buttons.select_all', default="Select All"),
                   command=self.select_all).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(selection_frame, text="Deselect All",
+        ttk.Button(selection_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.buttons.deselect_all', default="Deselect All"),
                   command=self.deselect_all).pack(side=tk.LEFT)
 
         # Students frame with scrollbar
-        students_frame = ttk.LabelFrame(self.window, text="Students", padding=10)
+        students_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.students', default="Students"), padding=10)
         students_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         # Treeview for students
@@ -389,9 +395,9 @@ class BatchAttendanceWindow:
         self.students_tree = ttk.Treeview(students_frame, columns=columns, show="headings", height=15)
 
         self.students_tree.heading("Select", text="✓")
-        self.students_tree.heading("ID", text="Student ID")
-        self.students_tree.heading("Name", text="Name")
-        self.students_tree.heading("Status", text="Current Status")
+        self.students_tree.heading("ID", text=_t('gui.academics.attendance_tracker.attendance_windows.headings.student_id', default="Student ID"))
+        self.students_tree.heading("Name", text=_t('gui.academics.attendance_tracker.attendance_windows.headings.name', default="Name"))
+        self.students_tree.heading("Status", text=_t('gui.academics.attendance_tracker.attendance_windows.headings.current_status', default="Current Status"))
 
         self.students_tree.column("Select", width=40)
         self.students_tree.column("ID", width=120)
@@ -415,7 +421,7 @@ class BatchAttendanceWindow:
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(buttons_frame, text="Save All Attendance",
+        ttk.Button(buttons_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.buttons.save_all_attendance', default="Save All Attendance"),
                   command=self.save_attendance, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"),
                   command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
@@ -505,7 +511,7 @@ class BatchAttendanceWindow:
     def apply_batch_status(self):
         """Apply selected status to selected students"""
         if not self.selected_students:
-            messagebox.showwarning(_("common.warning"), "No students selected")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.attendance_windows.dialogs.no_students_selected', default="No students selected"))
             return
 
         status = self.batch_status_var.get()
@@ -534,7 +540,7 @@ class BatchAttendanceWindow:
                     attendance_data.append((student_id, current_status, "Batch entry"))
 
             if not attendance_data:
-                messagebox.showwarning(_("common.warning"), "No attendance records to save")
+                messagebox.showwarning(_("common.warning"), _t('gui.academics.attendance_tracker.attendance_windows.dialogs.no_attendance_records_to_save', default="No attendance records to save"))
                 return
 
             if ORIGINAL_FUNCTIONS_AVAILABLE:
@@ -552,9 +558,9 @@ class BatchAttendanceWindow:
                     self.callback()  # Refresh parent data
                     self.window.destroy()
                 else:
-                    messagebox.showerror(_("common.error"), "Failed to record attendance")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.attendance_tracker.attendance_windows.dialogs.failed_to_record_attendance', default="Failed to record attendance"))
             else:
-                messagebox.showinfo("Demo", f"Attendance would be recorded for {len(attendance_data)} students")
+                messagebox.showinfo(_t('gui.academics.attendance_tracker.attendance_windows.dialogs.demo', default="Demo"), f"Attendance would be recorded for {len(attendance_data)} students")
                 self.callback()
                 self.window.destroy()
 
@@ -584,11 +590,11 @@ class EditAttendanceWindow:
 
     def create_widgets(self, name, current_status, notes):
         # Title
-        title_label = ttk.Label(self.window, text="Edit Attendance Record", font=('Arial', 14, 'bold'))
+        title_label = ttk.Label(self.window, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.edit_attendance_record', default="Edit Attendance Record"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
 
         # Student info
-        info_frame = ttk.LabelFrame(self.window, text="Student Information", padding=10)
+        info_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.student_information', default="Student Information"), padding=10)
         info_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
         ttk.Label(info_frame, text=f"Student ID: {self.student_id}").pack(anchor=tk.W)
@@ -597,17 +603,17 @@ class EditAttendanceWindow:
         ttk.Label(info_frame, text=f"Date: {self.date}").pack(anchor=tk.W)
 
         # Attendance details
-        details_frame = ttk.LabelFrame(self.window, text="Attendance Details", padding=10)
+        details_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.attendance_details', default="Attendance Details"), padding=10)
         details_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
 
-        ttk.Label(details_frame, text="Status:").pack(anchor=tk.W)
+        ttk.Label(details_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.status_variant_2', default="Status:")).pack(anchor=tk.W)
         self.status_var = tk.StringVar(value=current_status)
         status_combo = ttk.Combobox(details_frame, textvariable=self.status_var,
                                    values=["Present", "Late", "Absent", "Excused"],
                                    state="readonly")
         status_combo.pack(fill=tk.X, pady=(5, 10))
 
-        ttk.Label(details_frame, text="Notes:").pack(anchor=tk.W)
+        ttk.Label(details_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.notes_variant_2', default="Notes:")).pack(anchor=tk.W)
         self.notes_var = tk.StringVar(value=notes or "")
         notes_entry = ttk.Entry(details_frame, textvariable=self.notes_var)
         notes_entry.pack(fill=tk.X, pady=(5, 0))
@@ -616,7 +622,7 @@ class EditAttendanceWindow:
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(buttons_frame, text="Save Changes",
+        ttk.Button(buttons_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.buttons.save_changes', default="Save Changes"),
                   command=self.save_changes, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"),
                   command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
@@ -650,7 +656,7 @@ class EditAttendanceWindow:
                     msg += "\nPending absence request created (no reason given)."
                 messagebox.showinfo(_("common.success"), msg)
             else:
-                messagebox.showinfo("Demo", "Attendance record would be updated here")
+                messagebox.showinfo(_t('gui.academics.attendance_tracker.attendance_windows.dialogs.demo', default="Demo"), _t('gui.academics.attendance_tracker.attendance_windows.dialogs.attendance_record_would_be_updated_here', default="Attendance record would be updated here"))
 
             self.callback()  # Refresh parent data
             self.window.destroy()
@@ -691,22 +697,22 @@ class AddEditStudentWindow:
         title_label.pack(pady=10)
 
         # Form frame
-        form_frame = ttk.LabelFrame(self.window, text="Student Information", padding=20)
+        form_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.student_information', default="Student Information"), padding=20)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Student ID
-        ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.student_id_variant_2', default="Student ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_id_var = tk.StringVar()
         self.student_id_entry = ttk.Entry(form_frame, textvariable=self.student_id_var, width=30)
         self.student_id_entry.grid(row=0, column=1, pady=5, padx=5)
 
         # Name
-        ttk.Label(form_frame, text="Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.name_variant_2', default="Name:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.name_var, width=30).grid(row=1, column=1, pady=5, padx=5)
 
         # Email
-        ttk.Label(form_frame, text="Email:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.attendance_tracker.attendance_windows.labels.email', default="Email:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         self.email_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.email_var, width=30).grid(row=2, column=1, pady=5, padx=5)
 

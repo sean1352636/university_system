@@ -1,5 +1,7 @@
 """Barber Shop GUI - Staff management feature methods."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, messagebox, filedialog, logging,
     datetime, timedelta,
@@ -49,7 +51,7 @@ class StaffMixin:
         """Set staff schedule."""
         selected = self.staff_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a staff member.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.staff.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.staff.dialogs.please_select_a_staff_member', default="Please select a staff member."))
             return
 
         item = self.staff_tree.item(selected[0])
@@ -75,7 +77,7 @@ class StaffMixin:
             ttk.Label(frame, text=day).grid(row=i, column=0, sticky=tk.W, pady=2)
 
             working_var = tk.BooleanVar(value=True if i < 5 else False)
-            ttk.Checkbutton(frame, text="Working", variable=working_var).grid(row=i, column=1, padx=5)
+            ttk.Checkbutton(frame, text=_t('gui.operations.commerce.barber.features.staff.buttons.working', default="Working"), variable=working_var).grid(row=i, column=1, padx=5)
 
             start_combo = ttk.Combobox(frame, values=self._get_time_slots(), width=8)
             start_combo.set('09:00')
@@ -100,29 +102,29 @@ class StaffMixin:
 
                 from education_system.systems.university.domain.operations.commerce.barber.services.barber_core import StaffScheduleManager
                 StaffScheduleManager.set_schedule(staff_id, schedule)
-                messagebox.showinfo("Success", "Schedule saved!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.staff.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.staff.dialogs.schedule_saved', default="Schedule saved!"))
                 sched_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.staff.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(sched_window, text="Save Schedule", command=save_schedule).pack(pady=10)
+        ttk.Button(sched_window, text=_t('gui.operations.commerce.barber.features.staff.buttons.save_schedule', default="Save Schedule"), command=save_schedule).pack(pady=10)
 
     def view_staff_performance(self):
         """View staff performance."""
         perf_window = tk.Toplevel(self.parent)
-        perf_window.title("Staff Performance")
+        perf_window.title(_t('gui.operations.commerce.barber.features.staff.windows.staff_performance', default="Staff Performance"))
         perf_window.geometry("700x450")
         perf_window.transient(self.parent)
 
         columns = ('name', 'appointments', 'revenue', 'avg_rating', 'no_shows', 'retention')
         tree = ttk.Treeview(perf_window, columns=columns, show='headings', height=15)
 
-        tree.heading('name', text='Staff')
-        tree.heading('appointments', text='Appointments')
-        tree.heading('revenue', text='Revenue')
-        tree.heading('avg_rating', text='Avg Rating')
-        tree.heading('no_shows', text='No-Shows')
-        tree.heading('retention', text='Retention %')
+        tree.heading('name', text=_t('gui.operations.commerce.barber.features.staff.headings.staff', default='Staff'))
+        tree.heading('appointments', text=_t('gui.operations.commerce.barber.features.staff.headings.appointments', default='Appointments'))
+        tree.heading('revenue', text=_t('gui.operations.commerce.barber.features.staff.headings.revenue', default='Revenue'))
+        tree.heading('avg_rating', text=_t('gui.operations.commerce.barber.features.staff.headings.avg_rating', default='Avg Rating'))
+        tree.heading('no_shows', text=_t('gui.operations.commerce.barber.features.staff.headings.no_shows', default='No-Shows'))
+        tree.heading('retention', text=_t('gui.operations.commerce.barber.features.staff.headings.retention', default='Retention %'))
 
         for col in columns:
             tree.column(col, width=100)
@@ -149,14 +151,14 @@ class StaffMixin:
         """Assign staff to appointment."""
         selected = self.appointments_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select an appointment.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.staff.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.staff.dialogs.please_select_an_appointment', default="Please select an appointment."))
             return
 
         item = self.appointments_tree.item(selected[0])
         appt_number = item['values'][0]
 
         assign_window = tk.Toplevel(self.parent)
-        assign_window.title("Assign Staff")
+        assign_window.title(_t('gui.operations.commerce.barber.features.staff.windows.assign_staff', default="Assign Staff"))
         assign_window.geometry("350x200")
         assign_window.transient(self.parent)
         assign_window.grab_set()
@@ -167,13 +169,13 @@ class StaffMixin:
         frame = ttk.Frame(assign_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Select Staff:").pack(anchor=tk.W)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.staff.labels.select_staff', default="Select Staff:")).pack(anchor=tk.W)
         staff_combo = ttk.Combobox(frame, values=self.appt_staff_combo['values'], width=25)
         staff_combo.pack(fill=tk.X, pady=10)
 
         def assign():
             if not staff_combo.get() or staff_combo.get() == 'Any':
-                messagebox.showerror("Error", "Please select a staff member.")
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.staff.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.staff.dialogs.please_select_a_staff_member', default="Please select a staff member."))
                 return
             try:
                 staff_id = int(staff_combo.get().split(':')[0])
@@ -181,19 +183,19 @@ class StaffMixin:
                 appt = AppointmentManager.get_appointment_by_number(appt_number)
                 if appt:
                     AppointmentManager.assign_staff(appt['appointment_id'], staff_id)
-                    messagebox.showinfo("Success", "Staff assigned!")
+                    messagebox.showinfo(_t('gui.operations.commerce.barber.features.staff.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.staff.dialogs.staff_assigned', default="Staff assigned!"))
                     assign_window.destroy()
                     self._load_appointments()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.staff.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(assign_window, text="Assign", command=assign).pack(pady=10)
+        ttk.Button(assign_window, text=_t('gui.operations.commerce.barber.features.staff.buttons.assign', default="Assign"), command=assign).pack(pady=10)
 
     def set_staff_commission(self):
         """Set staff commission."""
         selected = self.staff_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a staff member.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.staff.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.staff.dialogs.please_select_a_staff_member', default="Please select a staff member."))
             return
 
         item = self.staff_tree.item(selected[0])
@@ -212,16 +214,16 @@ class StaffMixin:
         frame = ttk.Frame(comm_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Commission Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.staff.labels.commission_type', default="Commission Type:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         type_combo = ttk.Combobox(frame, values=['percentage', 'flat_rate'], width=15)
         type_combo.set('percentage')
         type_combo.grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Rate (% or £):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.staff.labels.rate_or', default="Rate (% or £):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         rate_var = tk.StringVar(value="20")
         ttk.Entry(frame, textvariable=rate_var, width=10).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="For Service (optional):").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.staff.labels.for_service_optional', default="For Service (optional):")).grid(row=2, column=0, sticky=tk.W, pady=5)
         service_combo = ttk.Combobox(frame, values=['All Services'] + list(self.appt_service_combo['values']), width=25)
         service_combo.set('All Services')
         service_combo.grid(row=2, column=1, pady=5)
@@ -239,12 +241,12 @@ class StaffMixin:
                     rate=float(rate_var.get()),
                     service_id=service_id
                 )
-                messagebox.showinfo("Success", "Commission saved!")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.staff.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.staff.dialogs.commission_saved', default="Commission saved!"))
                 comm_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.staff.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(comm_window, text="Save", command=save_commission).pack(pady=10)
+        ttk.Button(comm_window, text=_t('gui.operations.commerce.barber.features.staff.buttons.save', default="Save"), command=save_commission).pack(pady=10)
 
     def view_staff_calendar(self):
         """View staff calendar."""
@@ -278,15 +280,15 @@ class StaffMixin:
             week_var.set(date.strftime('%Y-%m-%d'))
             load_calendar()
 
-        ttk.Button(nav_frame, text="< Prev", command=prev_week).pack(side=tk.LEFT)
+        ttk.Button(nav_frame, text=_t('gui.operations.commerce.barber.features.staff.buttons.prev', default="< Prev"), command=prev_week).pack(side=tk.LEFT)
         ttk.Label(nav_frame, textvariable=week_var, font=('Helvetica', 12, 'bold')).pack(side=tk.LEFT, padx=20)
-        ttk.Button(nav_frame, text="Next >", command=next_week).pack(side=tk.LEFT)
+        ttk.Button(nav_frame, text=_t('gui.operations.commerce.barber.features.staff.buttons.next', default="Next >"), command=next_week).pack(side=tk.LEFT)
 
         # Calendar display
         columns = ('time', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun')
         tree = ttk.Treeview(cal_window, columns=columns, show='headings', height=18)
 
-        tree.heading('time', text='Time')
+        tree.heading('time', text=_t('gui.operations.commerce.barber.features.staff.headings.time', default='Time'))
         for i, day in enumerate(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']):
             tree.heading(columns[i + 1], text=day)
             tree.column(columns[i + 1], width=90)
@@ -329,7 +331,7 @@ class StaffMixin:
         """Toggle staff availability."""
         selected = self.staff_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a staff member.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.staff.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.staff.dialogs.please_select_a_staff_member', default="Please select a staff member."))
             return
 
         item = self.staff_tree.item(selected[0])
@@ -338,22 +340,22 @@ class StaffMixin:
         current_status = item['values'][4]
 
         new_status = 'Inactive' if current_status == 'Active' else 'Active'
-        if not messagebox.askyesno("Confirm", f"Set {staff_name} to {new_status}?"):
+        if not messagebox.askyesno(_t('gui.operations.commerce.barber.features.staff.dialogs.confirm', default="Confirm"), f"Set {staff_name} to {new_status}?"):
             return
 
         try:
             from education_system.systems.university.domain.operations.commerce.barber.services.barber_core import StaffManager
             StaffManager.set_availability(staff_id, new_status == 'Active')
-            messagebox.showinfo("Success", f"{staff_name} is now {new_status}.")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.staff.dialogs.success', default="Success"), f"{staff_name} is now {new_status}.")
             self._load_staff()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.staff.dialogs.error', default="Error"), str(e))
 
     def add_staff_photo(self):
         """Add staff photo."""
         selected = self.staff_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a staff member.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.staff.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.staff.dialogs.please_select_a_staff_member', default="Please select a staff member."))
             return
 
         item = self.staff_tree.item(selected[0])
@@ -361,7 +363,7 @@ class StaffMixin:
 
         file_path = filedialog.askopenfilename(
             filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif")],
-            title="Select Staff Photo"
+            title=_t('gui.operations.commerce.barber.features.staff.dialogs.select_staff_photo', default="Select Staff Photo")
         )
         if not file_path:
             return
@@ -369,15 +371,15 @@ class StaffMixin:
         try:
             from education_system.systems.university.domain.operations.commerce.barber.services.barber_core import StaffManager
             StaffManager.add_photo(staff_id, file_path)
-            messagebox.showinfo("Success", "Photo added!")
+            messagebox.showinfo(_t('gui.operations.commerce.barber.features.staff.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.staff.dialogs.photo_added', default="Photo added!"))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.barber.features.staff.dialogs.error', default="Error"), str(e))
 
     def send_staff_notification(self):
         """Send staff notification."""
         selected = self.staff_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select a staff member.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.staff.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.staff.dialogs.please_select_a_staff_member', default="Please select a staff member."))
             return
 
         item = self.staff_tree.item(selected[0])
@@ -396,11 +398,11 @@ class StaffMixin:
         frame = ttk.Frame(notif_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Subject:").pack(anchor=tk.W)
-        subject_var = tk.StringVar(value="Schedule Update")
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.staff.labels.subject', default="Subject:")).pack(anchor=tk.W)
+        subject_var = tk.StringVar(value=_t('gui.operations.commerce.barber.features.staff.values.schedule_update', default="Schedule Update"))
         ttk.Entry(frame, textvariable=subject_var, width=40).pack(fill=tk.X, pady=5)
 
-        ttk.Label(frame, text="Message:").pack(anchor=tk.W)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.staff.labels.message', default="Message:")).pack(anchor=tk.W)
         msg_text = tk.Text(frame, height=6, width=40)
         msg_text.pack(fill=tk.BOTH, expand=True, pady=5)
 
@@ -415,11 +417,11 @@ class StaffMixin:
                         subject_var.get(),
                         msg_text.get('1.0', tk.END).strip()
                     )
-                    messagebox.showinfo("Success", "Notification sent!")
+                    messagebox.showinfo(_t('gui.operations.commerce.barber.features.staff.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.staff.dialogs.notification_sent', default="Notification sent!"))
                     notif_window.destroy()
                 else:
-                    messagebox.showerror("Error", "Staff has no email or email service unavailable.")
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.staff.dialogs.error', default="Error"), _t('gui.operations.commerce.barber.features.staff.dialogs.staff_has_no_email_or_email_service_unavailable', default="Staff has no email or email service unavailable."))
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.staff.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(notif_window, text="Send", command=send).pack(pady=10)
+        ttk.Button(notif_window, text=_t('gui.operations.commerce.barber.features.staff.buttons.send', default="Send"), command=send).pack(pady=10)

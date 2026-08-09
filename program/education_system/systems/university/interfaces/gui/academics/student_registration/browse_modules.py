@@ -5,6 +5,8 @@ Provides the registration dashboard and the available-modules browser
 with search, filtering, and module detail views.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -20,7 +22,7 @@ class BrowseModulesMixin:
     def show_registration_dashboard(self, parent):
         """Display stat cards and quick-action buttons on the dashboard tab."""
         header = ttk.Label(
-            parent, text="Registration Dashboard",
+            parent, text=_t('gui.academics.student_registration.browse_modules.labels.registration_dashboard', default="Registration Dashboard"),
             font=('Arial', 16, 'bold'),
         )
         header.pack(pady=(15, 10))
@@ -73,16 +75,16 @@ class BrowseModulesMixin:
             stats_frame.columnconfigure(idx, weight=1)
 
         # --- Quick actions --------------------------------------------- #
-        actions_frame = ttk.LabelFrame(parent, text="Quick Actions")
+        actions_frame = ttk.LabelFrame(parent, text=_t('gui.academics.student_registration.browse_modules.labels.quick_actions', default="Quick Actions"))
         actions_frame.pack(fill='x', padx=20, pady=15)
 
         ttk.Button(
-            actions_frame, text="Browse Modules",
+            actions_frame, text=_t('gui.academics.student_registration.browse_modules.buttons.browse_modules', default="Browse Modules"),
             command=lambda: self.notebook.select(1),
         ).pack(side='left', padx=15, pady=10)
 
         ttk.Button(
-            actions_frame, text="My Enrollment",
+            actions_frame, text=_t('gui.academics.student_registration.browse_modules.buttons.my_enrollment', default="My Enrollment"),
             command=lambda: self.notebook.select(2),
         ).pack(side='left', padx=15, pady=10)
 
@@ -95,7 +97,7 @@ class BrowseModulesMixin:
         search_frame = ttk.Frame(parent)
         search_frame.pack(fill='x', padx=10, pady=(10, 5))
 
-        ttk.Label(search_frame, text="Search:").pack(side='left', padx=(0, 5))
+        ttk.Label(search_frame, text=_t('gui.academics.student_registration.browse_modules.labels.search', default="Search:")).pack(side='left', padx=(0, 5))
         self.module_search_var = tk.StringVar()
         search_entry = ttk.Entry(
             search_frame, textvariable=self.module_search_var, width=30,
@@ -103,12 +105,12 @@ class BrowseModulesMixin:
         search_entry.pack(side='left', padx=(0, 5))
 
         ttk.Button(
-            search_frame, text="Search",
+            search_frame, text=_t('gui.academics.student_registration.browse_modules.buttons.search', default="Search"),
             command=self._refresh_available_modules,
         ).pack(side='left', padx=(0, 10))
 
-        ttk.Label(search_frame, text="Department:").pack(side='left', padx=(10, 5))
-        self.dept_filter_var = tk.StringVar(value="All")
+        ttk.Label(search_frame, text=_t('gui.academics.student_registration.browse_modules.labels.department', default="Department:")).pack(side='left', padx=(10, 5))
+        self.dept_filter_var = tk.StringVar(value=_t('gui.academics.student_registration.browse_modules.values.all', default="All"))
         self.dept_combo = ttk.Combobox(
             search_frame, textvariable=self.dept_filter_var,
             state='readonly', width=20,
@@ -142,12 +144,12 @@ class BrowseModulesMixin:
         btn_frame.pack(fill='x', padx=10, pady=(5, 10))
 
         ttk.Button(
-            btn_frame, text="Enroll in Selected Module",
+            btn_frame, text=_t('gui.academics.student_registration.browse_modules.buttons.enroll_in_selected_module', default="Enroll in Selected Module"),
             command=self._enroll_selected_module,
         ).pack(side='left', padx=5)
 
         ttk.Button(
-            btn_frame, text="View Details",
+            btn_frame, text=_t('gui.academics.student_registration.browse_modules.buttons.view_details', default="View Details"),
             command=self._view_selected_module,
         ).pack(side='left', padx=5)
 
@@ -208,13 +210,13 @@ class BrowseModulesMixin:
             conn.close()
         except Exception as exc:
             logger.error("Refresh modules error: %s", exc)
-            messagebox.showerror("Error", f"Failed to load modules: {exc}")
+            messagebox.showerror(_t('gui.academics.student_registration.browse_modules.dialogs.error', default="Error"), f"Failed to load modules: {exc}")
 
     def _enroll_selected_module(self):
         """Enroll in the module currently selected in the treeview."""
         sel = self.modules_tree.selection()
         if not sel:
-            messagebox.showwarning("No Selection", "Please select a module to enroll in.")
+            messagebox.showwarning(_t('gui.academics.student_registration.browse_modules.dialogs.no_selection', default="No Selection"), _t('gui.academics.student_registration.browse_modules.dialogs.please_select_a_module_to_enroll_in', default="Please select a module to enroll in."))
             return
         module_code = self.modules_tree.item(sel[0], 'values')[0]
         self.enroll_in_module(module_code)
@@ -223,7 +225,7 @@ class BrowseModulesMixin:
         """Open a details dialog for the selected module."""
         sel = self.modules_tree.selection()
         if not sel:
-            messagebox.showwarning("No Selection", "Please select a module to view.")
+            messagebox.showwarning(_t('gui.academics.student_registration.browse_modules.dialogs.no_selection', default="No Selection"), _t('gui.academics.student_registration.browse_modules.dialogs.please_select_a_module_to_view', default="Please select a module to view."))
             return
         module_code = self.modules_tree.item(sel[0], 'values')[0]
         self.show_module_details(module_code)
@@ -249,11 +251,11 @@ class BrowseModulesMixin:
             conn.close()
         except Exception as exc:
             logger.error("Module details error: %s", exc)
-            messagebox.showerror("Error", f"Failed to load details: {exc}")
+            messagebox.showerror(_t('gui.academics.student_registration.browse_modules.dialogs.error', default="Error"), f"Failed to load details: {exc}")
             return
 
         if not row:
-            messagebox.showwarning("Not Found", f"Module {module_code} not found.")
+            messagebox.showwarning(_t('gui.academics.student_registration.browse_modules.dialogs.not_found', default="Not Found"), f"Module {module_code} not found.")
             return
 
         code, name, credits_val, department, description = row
@@ -283,14 +285,14 @@ class BrowseModulesMixin:
             ttk.Label(row_frame, text=value_text, font=('Arial', 10)).pack(side='left')
 
         if description:
-            ttk.Label(dlg, text="Description:", font=('Arial', 10, 'bold')).pack(anchor='w', padx=20, pady=(10, 2))
+            ttk.Label(dlg, text=_t('gui.academics.student_registration.browse_modules.labels.description', default="Description:"), font=('Arial', 10, 'bold')).pack(anchor='w', padx=20, pady=(10, 2))
             desc_label = ttk.Label(dlg, text=description, wraplength=400, justify='left')
             desc_label.pack(anchor='w', padx=20)
 
         btn_frame = ttk.Frame(dlg)
         btn_frame.pack(pady=15)
         ttk.Button(
-            btn_frame, text="Enroll",
+            btn_frame, text=_t('gui.academics.student_registration.browse_modules.buttons.enroll', default="Enroll"),
             command=lambda: (self.enroll_in_module(code), dlg.destroy()),
         ).pack(side='left', padx=10)
-        ttk.Button(btn_frame, text="Close", command=dlg.destroy).pack(side='left', padx=10)
+        ttk.Button(btn_frame, text=_t('gui.academics.student_registration.browse_modules.buttons.close', default="Close"), command=dlg.destroy).pack(side='left', padx=10)

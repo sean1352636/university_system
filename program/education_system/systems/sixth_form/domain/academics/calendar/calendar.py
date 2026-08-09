@@ -15,16 +15,16 @@ import datetime as _dt
 import logging
 import re
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.academics.calendar import (
     calendar as data,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.CALENDAR_DB
+DB_PATH = paths.SIXTH_FORM_CALENDAR_DB
 
 
 EVENT_TYPES: tuple[str, ...] = (
@@ -64,6 +64,16 @@ STATUSES: tuple[str, ...] = (
 )
 DEFAULT_STATUS: str = "Scheduled"
 
+# Who may *see* an event, as opposed to ``audience``, which says who it
+# is *for*. A Year 13 parents' evening is for parents and visible to
+# everyone; a safeguarding panel is for staff and visible to nobody
+# outside it. Conflating the two puts the second one on the portal.
+INTERNAL: str = "Internal"
+PUBLIC: str = "Public"
+CONFIDENTIAL: str = "Confidential"
+VISIBILITIES: tuple[str, ...] = (INTERNAL, PUBLIC, CONFIDENTIAL)
+DEFAULT_VISIBILITY: str = INTERNAL
+
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _TIME_RE = re.compile(r"^\d{2}:\d{2}(:\d{2})?$")
 
@@ -87,6 +97,11 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     rsvp_required INTEGER NOT NULL DEFAULT 0,
     cost          REAL,
     notes         TEXT,
+    department    TEXT,
+    visibility    TEXT NOT NULL DEFAULT 'Internal',
+    created_by    TEXT,
+    updated_by    TEXT,
+    deleted_at    TEXT,
     created_at    TEXT DEFAULT (datetime('now')),
     updated_at    TEXT DEFAULT (datetime('now'))
 );
@@ -96,7 +111,44 @@ CREATE INDEX IF NOT EXISTS idx_cal_end      ON calendar_events(end_date);
 CREATE INDEX IF NOT EXISTS idx_cal_type     ON calendar_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_cal_audience ON calendar_events(audience);
 CREATE INDEX IF NOT EXISTS idx_cal_status   ON calendar_events(status);
+
+-- Indexes over the columns added by _MIGRATIONS live there, not here:
+-- against an existing install the CREATE TABLE above is a no-op, so
+-- those columns do not exist yet at this point.
+
+-- Namespaced deliberately. Every sixth-form module shares one SQLite
+-- file, and `academic_year` already owns the bare `schema_version`
+-- table there; a second module reading MAX(version) from it would see
+-- the other's numbering and quietly skip its own migrations.
+CREATE TABLE IF NOT EXISTS calendar_schema_version (
+    version    INTEGER PRIMARY KEY,
+    applied_at TEXT DEFAULT (datetime('now'))
+);
 """
+
+
+# Columns added after the original table shipped. `CREATE TABLE IF NOT
+# EXISTS` is a no-op against a database that already has the table, so
+# an existing install needs these applied by hand.
+#
+# Statements are listed individually rather than as one script: on a
+# fresh database _SCHEMA has already created these columns, so each
+# ALTER fails as a duplicate, and a single executescript would abandon
+# the rest of the batch — taking the index statements with it.
+_MIGRATIONS: tuple[tuple[int, tuple[str, ...]], ...] = (
+    (1, (
+        "ALTER TABLE calendar_events ADD COLUMN department TEXT",
+        "ALTER TABLE calendar_events ADD COLUMN visibility TEXT "
+        "NOT NULL DEFAULT 'Internal'",
+        "ALTER TABLE calendar_events ADD COLUMN created_by TEXT",
+        "ALTER TABLE calendar_events ADD COLUMN updated_by TEXT",
+        "ALTER TABLE calendar_events ADD COLUMN deleted_at TEXT",
+        "CREATE INDEX IF NOT EXISTS idx_cal_dept "
+        "ON calendar_events(department)",
+        "CREATE INDEX IF NOT EXISTS idx_cal_deleted "
+        "ON calendar_events(deleted_at)",
+    )),
+)
 
 
 @dataclass
@@ -120,6 +172,17 @@ class Event:
     notes: str | None
     created_at: str
     updated_at: str
+    # Added after the original table shipped; defaulted so that older
+    # callers constructing an Event positionally still work.
+    department: str | None = None
+    visibility: str = DEFAULT_VISIBILITY
+    created_by: str | None = None
+    updated_by: str | None = None
+    deleted_at: str | None = None
+
+    @property
+    def is_deleted(self) -> bool:
+        return bool(self.deleted_at)
 
     @property
     def is_multiday(self) -> bool:
@@ -155,12 +218,14 @@ class Summary:
     upcoming: int          # status=Scheduled, start_date in [today, today+window]
     today_count: int
     this_week_count: int
+    archived: int = 0
+    by_department: dict[str, int] = field(default_factory=dict)
 
 
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     return conn
@@ -169,15 +234,54 @@ def _connect() -> sqlite3.Connection:
 _DB_READY: bool = False
 
 
+def _apply_migrations(conn: sqlite3.Connection) -> None:
+    """Bring an existing calendar table up to the current column set."""
+    try:
+        row = conn.execute(
+            "SELECT MAX(version) AS v FROM calendar_schema_version"
+        ).fetchone()
+        current = int(row["v"]) if row and row["v"] is not None else 0
+    except sqlite3.OperationalError:
+        current = 0
+    for ver, statements in _MIGRATIONS:
+        if ver <= current:
+            continue
+        for sql in statements:
+            try:
+                conn.execute(sql)
+            except sqlite3.OperationalError as e:
+                # A fresh database already has these columns from
+                # _SCHEMA, and a half-applied migration should not
+                # wedge startup.
+                if "duplicate column name" not in str(e).lower():
+                    raise
+                logger.debug("Calendar migration v%d, statement already "
+                             "applied (%s)", ver, e)
+        conn.execute(
+            "INSERT OR REPLACE INTO calendar_schema_version"
+            "(version, applied_at) VALUES (?, datetime('now'))", (ver,))
+        conn.commit()
+        logger.info("Applied calendar migration v%d", ver)
+
+
 def init_db() -> None:
     global _DB_READY
     if _DB_READY:
         return
     with _connect() as conn:
         conn.executescript(_SCHEMA)
+        _apply_migrations(conn)
     logger.debug("Calendar schema ready at %s", DB_PATH)
 
     _DB_READY = True
+
+
+def _safe(r: sqlite3.Row, key: str, default=None):
+    """Read a column that may predate the caller's database."""
+    try:
+        return r[key]
+    except (IndexError, KeyError):
+        return default
 
 
 def _row(r: sqlite3.Row) -> Event:
@@ -192,6 +296,11 @@ def _row(r: sqlite3.Row) -> Event:
         rsvp_required=bool(r["rsvp_required"]),
         cost=r["cost"], notes=r["notes"],
         created_at=r["created_at"], updated_at=r["updated_at"],
+        department=_safe(r, "department"),
+        visibility=_safe(r, "visibility") or DEFAULT_VISIBILITY,
+        created_by=_safe(r, "created_by"),
+        updated_by=_safe(r, "updated_by"),
+        deleted_at=_safe(r, "deleted_at"),
     )
 
 
@@ -264,6 +373,13 @@ def _validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
             f"Status must be one of: {', '.join(STATUSES)}")
     out["status"] = status
 
+    visibility = (payload.get("visibility")
+                  or DEFAULT_VISIBILITY).strip()
+    if visibility not in VISIBILITIES:
+        raise ValidationError(
+            f"Visibility must be one of: {', '.join(VISIBILITIES)}")
+    out["visibility"] = visibility
+
     out["start_date"] = _validate_date(payload.get("start_date"),
                                           "Start date")
     out["end_date"] = (_validate_date(payload.get("end_date"),
@@ -291,6 +407,7 @@ def _validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
     out["location"]    = (payload.get("location") or "").strip() or None
     out["organiser"]   = (payload.get("organiser") or "").strip() or None
     out["notes"]       = (payload.get("notes") or "").strip() or None
+    out["department"]  = (payload.get("department") or "").strip() or None
 
     cap = payload.get("capacity")
     if cap in (None, ""):
@@ -322,24 +439,29 @@ def _validate_payload(payload: dict[str, Any]) -> dict[str, Any]:
 
 # ── CRUD ──────────────────────────────────────────────────────────
 
-def create_event(payload: dict[str, Any]) -> Event:
+def create_event(payload: dict[str, Any], *,
+                 actor: str | None = None) -> Event:
     init_db()
     p = _validate_payload(payload)
+    who = (actor or payload.get("created_by") or "").strip() or None
     with _connect() as conn:
         cur = conn.execute(
             """INSERT INTO calendar_events
                    (title, event_type, description, start_date,
                     end_date, start_time, end_time, all_day,
                     location, organiser, audience, status, capacity,
-                    rsvp_required, cost, notes, created_at, updated_at)
+                    rsvp_required, cost, notes, department,
+                    visibility, created_by, updated_by,
+                    created_at, updated_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                       datetime('now'), datetime('now'))""",
+                       ?, ?, ?, ?, datetime('now'), datetime('now'))""",
             (p["title"], p["event_type"], p["description"],
              p["start_date"], p["end_date"], p["start_time"],
              p["end_time"], 1 if p["all_day"] else 0,
              p["location"], p["organiser"], p["audience"],
              p["status"], p["capacity"],
-             1 if p["rsvp_required"] else 0, p["cost"], p["notes"]),
+             1 if p["rsvp_required"] else 0, p["cost"], p["notes"],
+             p["department"], p["visibility"], who, who),
         )
         conn.commit()
         new_id = cur.lastrowid
@@ -368,19 +490,32 @@ def list_events(
     location_like: str | None = None,
     organiser_like: str | None = None,
     title_like: str | None = None,
+    text_like: str | None = None,
+    department: str | None = None,
+    visibility: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
     overlapping: bool = True,
     upcoming_only: bool = False,
+    include_deleted: bool = False,
+    limit: int | None = None,
 ) -> list[Event]:
     """Return events filtered by the supplied criteria.
 
     ``date_from`` / ``date_to`` use overlap semantics by default
     (event's [start, end] overlaps [from, to]). Pass
     ``overlapping=False`` to filter strictly on ``start_date``.
+
+    ``title_like`` matches the title alone; ``text_like`` searches the
+    title, description and notes together, which is what somebody
+    hunting for "the trip Michael organised" actually wants.
+
+    Archived events are excluded unless ``include_deleted`` is set.
     """
     init_db()
     clauses, args = [], []
+    if not include_deleted:
+        clauses.append("deleted_at IS NULL")
     if event_type:
         if event_type not in EVENT_TYPES:
             raise ValidationError(
@@ -408,6 +543,20 @@ def list_events(
     if title_like:
         clauses.append("title LIKE ?")
         args.append(f"%{title_like.strip()}%")
+    if text_like:
+        needle = f"%{text_like.strip()}%"
+        clauses.append("(title LIKE ? OR COALESCE(description, '') LIKE ? "
+                       "OR COALESCE(notes, '') LIKE ?)")
+        args.extend([needle, needle, needle])
+    if department:
+        clauses.append("department = ?")
+        args.append(department.strip())
+    if visibility:
+        if visibility not in VISIBILITIES:
+            raise ValidationError(
+                f"Visibility must be one of: {', '.join(VISIBILITIES)}")
+        clauses.append("visibility = ?")
+        args.append(visibility)
     if upcoming_only:
         today = _dt.date.today().isoformat()
         clauses.append("end_date >= ?")
@@ -440,18 +589,23 @@ def list_events(
            "ORDER BY start_date ASC, "
            "CASE WHEN start_time IS NULL THEN 1 ELSE 0 END, "
            "start_time ASC, event_id ASC")
+    if limit is not None:
+        sql += " LIMIT ?"
+        args.append(max(1, int(limit)))
     with _connect() as conn:
         return [_row(r) for r in conn.execute(sql, args).fetchall()]
 
 
-def events_on(date_iso: str) -> list[Event]:
+def events_on(date_iso: str, *,
+              include_deleted: bool = False) -> list[Event]:
     """Return events that cover the given calendar date."""
     init_db()
     s = _validate_date(date_iso, "Date")
+    archived = "" if include_deleted else "AND deleted_at IS NULL "
     with _connect() as conn:
         rows = conn.execute(
             "SELECT * FROM calendar_events "
-            "WHERE start_date <= ? AND end_date >= ? "
+            f"WHERE start_date <= ? AND end_date >= ? {archived}"
             "ORDER BY CASE WHEN start_time IS NULL THEN 1 ELSE 0 END, "
             "start_time ASC, event_id ASC",
             (s, s)).fetchall()
@@ -469,12 +623,15 @@ def events_in_week(any_date_iso: str) -> list[Event]:
                         overlapping=True)
 
 
-def update_event(event_id: int, payload: dict[str, Any]) -> Event:
+def update_event(event_id: int, payload: dict[str, Any], *,
+                 actor: str | None = None) -> Event:
     init_db()
     existing = get_event(event_id)
     if existing is None:
         raise ValidationError(f"No event #{event_id}")
     merged = {
+        "department":    payload.get("department", existing.department),
+        "visibility":    payload.get("visibility", existing.visibility),
         "title":         payload.get("title", existing.title),
         "event_type":    payload.get("event_type", existing.event_type),
         "description":   payload.get("description", existing.description),
@@ -494,6 +651,8 @@ def update_event(event_id: int, payload: dict[str, Any]) -> Event:
         "notes":         payload.get("notes", existing.notes),
     }
     p = _validate_payload(merged)
+    who = ((actor or payload.get("updated_by") or "").strip()
+           or existing.updated_by)
     with _connect() as conn:
         conn.execute(
             """UPDATE calendar_events SET
@@ -502,14 +661,16 @@ def update_event(event_id: int, payload: dict[str, Any]) -> Event:
                    end_time = ?, all_day = ?, location = ?,
                    organiser = ?, audience = ?, status = ?,
                    capacity = ?, rsvp_required = ?, cost = ?,
-                   notes = ?, updated_at = datetime('now')
+                   notes = ?, department = ?, visibility = ?,
+                   updated_by = ?, updated_at = datetime('now')
                WHERE event_id = ?""",
             (p["title"], p["event_type"], p["description"],
              p["start_date"], p["end_date"], p["start_time"],
              p["end_time"], 1 if p["all_day"] else 0, p["location"],
              p["organiser"], p["audience"], p["status"],
              p["capacity"], 1 if p["rsvp_required"] else 0,
-             p["cost"], p["notes"], event_id),
+             p["cost"], p["notes"], p["department"], p["visibility"],
+             who, event_id),
         )
         conn.commit()
     out = get_event(event_id)
@@ -518,22 +679,66 @@ def update_event(event_id: int, payload: dict[str, Any]) -> Event:
     return out
 
 
-def set_status(event_id: int, status: str) -> Event:
+def set_status(event_id: int, status: str, *,
+               actor: str | None = None) -> Event:
     if status not in STATUSES:
         raise ValidationError(
             f"Status must be one of: {', '.join(STATUSES)}")
-    return update_event(event_id, {"status": status})
+    return update_event(event_id, {"status": status}, actor=actor)
 
 
-def cancel_event(event_id: int) -> Event:
-    return set_status(event_id, "Cancelled")
+def cancel_event(event_id: int, *, actor: str | None = None) -> Event:
+    return set_status(event_id, "Cancelled", actor=actor)
 
 
-def complete_event(event_id: int) -> Event:
-    return set_status(event_id, "Completed")
+def complete_event(event_id: int, *, actor: str | None = None) -> Event:
+    return set_status(event_id, "Completed", actor=actor)
 
 
-def delete_event(event_id: int) -> bool:
+# ── Removal ───────────────────────────────────────────────────────
+#
+# Deleting is a soft delete. A cancelled trip that vanishes from the
+# database takes its bookings, its costs and the reason it was called
+# off with it, and the first question anybody asks about a cancelled
+# trip is why. `purge_event` is the real thing, for GDPR erasure and
+# for clearing test data.
+
+def delete_event(event_id: int, *, actor: str | None = None) -> bool:
+    """Archive an event. Reversible with :func:`restore_event`."""
+    init_db()
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE calendar_events SET deleted_at = datetime('now'), "
+            "updated_by = COALESCE(?, updated_by), "
+            "updated_at = datetime('now') "
+            "WHERE event_id = ? AND deleted_at IS NULL",
+            (actor, event_id))
+        conn.commit()
+        if cur.rowcount:
+            logger.info("Archived event #%d", event_id)
+            return True
+        return False
+
+
+def restore_event(event_id: int, *, actor: str | None = None) -> bool:
+    """Bring an archived event back."""
+    init_db()
+    with _connect() as conn:
+        cur = conn.execute(
+            "UPDATE calendar_events SET deleted_at = NULL, "
+            "updated_by = COALESCE(?, updated_by), "
+            "updated_at = datetime('now') "
+            "WHERE event_id = ? AND deleted_at IS NOT NULL",
+            (actor, event_id))
+        conn.commit()
+        if cur.rowcount:
+            logger.info("Restored event #%d", event_id)
+            return True
+        return False
+
+
+def purge_event(event_id: int) -> bool:
+    """Delete an event for good. There is no undo."""
     init_db()
     with _connect() as conn:
         cur = conn.execute(
@@ -541,7 +746,7 @@ def delete_event(event_id: int) -> bool:
             (event_id,))
         conn.commit()
         if cur.rowcount:
-            logger.info("Deleted event #%d", event_id)
+            logger.info("Purged event #%d", event_id)
             return True
         return False
 
@@ -561,10 +766,13 @@ def summary(*, upcoming_window_days: int = 14) -> Summary:
     by_type = {t: 0 for t in EVENT_TYPES}
     by_aud  = {a: 0 for a in AUDIENCES}
     by_stat = {s: 0 for s in STATUSES}
+    by_dept: dict[str, int] = {}
     upcoming = 0
     today_count = 0
     week_count = 0
     for e in rows:
+        if e.department:
+            by_dept[e.department] = by_dept.get(e.department, 0) + 1
         by_type[e.event_type] = by_type.get(e.event_type, 0) + 1
         by_aud[e.audience]    = by_aud.get(e.audience, 0) + 1
         by_stat[e.status]     = by_stat.get(e.status, 0) + 1
@@ -577,6 +785,11 @@ def summary(*, upcoming_window_days: int = 14) -> Summary:
                 and e.start_date <= sunday.isoformat()):
             week_count += 1
 
+    with _connect() as conn:
+        archived = conn.execute(
+            "SELECT COUNT(*) FROM calendar_events "
+            "WHERE deleted_at IS NOT NULL").fetchone()[0]
+
     return Summary(
         total=len(rows),
         by_type=by_type,
@@ -585,4 +798,6 @@ def summary(*, upcoming_window_days: int = 14) -> Summary:
         upcoming=upcoming,
         today_count=today_count,
         this_week_count=week_count,
+        archived=int(archived or 0),
+        by_department=by_dept,
     )

@@ -413,7 +413,7 @@ Registration Date: {student[10]}"""
                     except Exception:
                         pass
                 messagebox.showinfo(
-                    "Student deactivated",
+                    _t('gui.learners.students.student_crud_gui.delete.dialogs.student_deactivated', default="Student deactivated"),
                     f"Student {student_id} has been marked Withdrawn "
                     "and their login disabled. Their academic records "
                     "(grades, modules, attendance, etc.) are preserved "
@@ -434,10 +434,10 @@ Registration Date: {student[10]}"""
             except Exception as e:
                 logger.exception("Deactivate failed for %s", student_id)
                 messagebox.showerror(
-                    "Deactivation failed", str(e))
+                    _t('gui.learners.students.student_crud_gui.delete.dialogs.deactivation_failed', default="Deactivation failed"), str(e))
                 try:
                     status_label.config(
-                        text="Deactivation failed.",
+                        text=_t('gui.learners.students.student_crud_gui.delete.text.deactivation_failed', default="Deactivation failed."),
                         foreground="red")
                 except tk.TclError:
                     pass
@@ -456,12 +456,12 @@ Registration Date: {student[10]}"""
         button_frame.pack(fill=tk.X, pady=(20, 0))
 
         ttk.Button(button_frame,
-                    text="Deactivate (recommended)",
+                    text=_t('gui.learners.students.student_crud_gui.delete.buttons.deactivate_recommended', default="Deactivate (recommended)"),
                     command=perform_deactivation,
                     style="Accent.TButton").pack(side=tk.LEFT,
                                                     padx=(0, 10))
         ttk.Button(button_frame,
-                    text="Delete permanently",
+                    text=_t('gui.learners.students.student_crud_gui.delete.buttons.delete_permanently', default="Delete permanently"),
                     command=perform_deletion).pack(
             side=tk.LEFT, padx=(0, 10))
         ttk.Button(button_frame, text=_t("common.cancel"),

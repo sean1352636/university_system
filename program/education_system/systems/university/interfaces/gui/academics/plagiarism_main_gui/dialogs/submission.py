@@ -34,7 +34,7 @@ class DocumentSubmissionDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Submit Document")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.submission.windows.submit_document', default="Submit Document"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -67,7 +67,7 @@ class DocumentSubmissionDialog:
         title_entry.grid(row=0, column=1, sticky=tk.W + tk.E, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Module selection
-        ttk.Label(form_frame, text="Module:").grid(row=1, column=0, sticky=tk.W, pady=GuiConfig.PADDING_SMALL)
+        ttk.Label(form_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.submission.labels.module', default="Module:")).grid(row=1, column=0, sticky=tk.W, pady=GuiConfig.PADDING_SMALL)
         self.module_var = tk.StringVar()
         module_combo = ttk.Combobox(form_frame, textvariable=self.module_var, width=47)
         module_combo.grid(row=1, column=1, sticky=tk.W + tk.E, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
@@ -76,7 +76,7 @@ class DocumentSubmissionDialog:
         self.load_modules(module_combo)
 
         # File selection
-        ttk.Label(form_frame, text="File:").grid(row=2, column=0, sticky=tk.W, pady=GuiConfig.PADDING_SMALL)
+        ttk.Label(form_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.submission.labels.file', default="File:")).grid(row=2, column=0, sticky=tk.W, pady=GuiConfig.PADDING_SMALL)
         file_frame = ttk.Frame(form_frame)
         file_frame.grid(row=2, column=1, sticky=tk.W + tk.E, pady=GuiConfig.PADDING_SMALL, padx=(GuiConfig.PADDING_SMALL, 0))
 
@@ -84,7 +84,7 @@ class DocumentSubmissionDialog:
         file_entry = ttk.Entry(file_frame, textvariable=self.file_var, state='readonly', width=40)
         file_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        browse_btn = ttk.Button(file_frame, text="Browse...", command=self.browse_file)
+        browse_btn = ttk.Button(file_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.submission.buttons.browse', default="Browse..."), command=self.browse_file)
         browse_btn.pack(side=tk.RIGHT, padx=(GuiConfig.PADDING_SMALL, 0))
 
         # Configure grid weights
@@ -106,10 +106,10 @@ class DocumentSubmissionDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(GuiConfig.PADDING_MEDIUM, 0))
 
-        cancel_btn = ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy)
+        cancel_btn = ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.submission.buttons.cancel', default="Cancel"), command=self.dialog.destroy)
         cancel_btn.pack(side=tk.RIGHT)
 
-        submit_btn = ttk.Button(button_frame, text="Submit", command=self.submit_document)
+        submit_btn = ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.submission.buttons.submit', default="Submit"), command=self.submit_document)
         submit_btn.pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
 
     def load_modules(self, combo):
@@ -145,7 +145,7 @@ class DocumentSubmissionDialog:
             logger.error(f"Error loading modules from database: {e}")
             combo['values'] = ['Error loading modules']
             combo.set('Error loading modules')
-            messagebox.showerror("Database Error", f"Failed to load modules: {str(e)}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.database_error', default="Database Error"), f"Failed to load modules: {str(e)}")
 
     def browse_file(self):
         """Browse for file"""
@@ -157,7 +157,7 @@ class DocumentSubmissionDialog:
         ]
 
         filename = filedialog.askopenfilename(
-            title="Select Document",
+            title=_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.select_document', default="Select Document"),
             filetypes=file_types,
             parent=self.dialog
         )
@@ -204,17 +204,17 @@ class DocumentSubmissionDialog:
     def show_my_documents(self):
         """Placeholder for CLI 'view_my_documents' --- filters Documents to current user (future)."""
         if not getattr(self, 'checker', None) or not getattr(self, 'auth', None):
-            messagebox.showerror("Error", "System not initialized")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.error', default="Error"), _t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.system_not_initialized', default="System not initialized"))
             return
         try:
             if hasattr(self, 'notebook') and hasattr(self, 'documents_tab'):
                 self.notebook.select(self.documents_tab)
             messagebox.showinfo(
-                "My Documents (Placeholder)",
-                "This will filter the Documents tab to show only your submissions."
+                _t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.my_documents_placeholder', default="My Documents (Placeholder)"),
+                _t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.this_will_filter_the_documents_tab_to_show_only_your_submissions', default="This will filter the Documents tab to show only your submissions.")
             )
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open My Documents: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.error', default="Error"), f"Failed to open My Documents: {e}")
 
     def show_view_results(self):
         """Placeholder to focus the Results tab (CLI 'view_results')."""
@@ -222,14 +222,14 @@ class DocumentSubmissionDialog:
             if hasattr(self, 'notebook') and hasattr(self, 'results_tab'):
                 self.notebook.select(self.results_tab)
             else:
-                messagebox.showwarning("Results", "Results tab not available yet.")
+                messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.results', default="Results"), _t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.results_tab_not_available_yet', default="Results tab not available yet."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open Results: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.error', default="Error"), f"Failed to open Results: {e}")
 
     def show_delete_document_dialog_placeholder(self):
         """Placeholder for CLI 'delete_document_interactive' - redirects to main implementation."""
         if not getattr(self, 'checker', None):
-            messagebox.showerror("Error", "System not initialized")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.error', default="Error"), _t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.system_not_initialized', default="System not initialized"))
             return
         # Call the main implementation
         self.show_delete_document_dialog()
@@ -237,7 +237,7 @@ class DocumentSubmissionDialog:
     def show_repository_integrity_dialog(self):
         """Placeholder for CLI 'check_repository_integrity'."""
         if not getattr(self, 'checker', None):
-            messagebox.showerror("Error", "System not initialized")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.error', default="Error"), _t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.system_not_initialized', default="System not initialized"))
             return
         # Call the main implementation
         self.check_repository_integrity_gui()
@@ -247,11 +247,11 @@ class DocumentSubmissionDialog:
         # Validate inputs
         title = self.title_var.get().strip()
         if not title:
-            messagebox.showerror("Error", "Please enter a document title")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.error', default="Error"), _t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.please_enter_a_document_title', default="Please enter a document title"))
             return
 
         if not self.file_path:
-            messagebox.showerror("Error", "Please select a file")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.error', default="Error"), _t('gui.academics.plagiarism_main_gui.dialogs.submission.dialogs.please_select_a_file', default="Please select a file"))
             return
 
         module_text = self.module_var.get()

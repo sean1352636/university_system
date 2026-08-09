@@ -1,0 +1,2 @@
+class AuthenticationServiceError(RuntimeError):
+    pass

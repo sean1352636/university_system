@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, ScrolledText, sqlite3, _, DEFAULT_DB_PATH,
 )
@@ -9,7 +11,7 @@ class RecommendCoursesDialog:
         self.auth = auth
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Course Recommendations")
+        self.dialog.title(_t('gui.academics.course_management_gui.recommendations.recommend_dialog.windows.course_recommendations', default="Course Recommendations"))
         self.dialog.geometry("700x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -22,25 +24,25 @@ class RecommendCoursesDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Recommendation type selection
-        type_frame = ttk.LabelFrame(main_frame, text="Recommendation Type", padding=10)
+        type_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.labels.recommendation_type', default="Recommendation Type"), padding=10)
         type_frame.pack(fill=tk.X, pady=5)
 
-        self.rec_type = tk.StringVar(value="popular")
+        self.rec_type = tk.StringVar(value=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.values.popular', default="popular"))
 
-        ttk.Radiobutton(type_frame, text="Most Popular Courses", variable=self.rec_type,
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.buttons.most_popular_courses', default="Most Popular Courses"), variable=self.rec_type,
                        value="popular").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(type_frame, text="Courses with Available Spots", variable=self.rec_type,
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.buttons.courses_with_available_spots', default="Courses with Available Spots"), variable=self.rec_type,
                        value="available").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(type_frame, text="Under-enrolled Courses", variable=self.rec_type,
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.buttons.under_enrolled_courses', default="Under-enrolled Courses"), variable=self.rec_type,
                        value="under_enrolled").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(type_frame, text="Prerequisites for Course", variable=self.rec_type,
+        ttk.Radiobutton(type_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.buttons.prerequisites_for_course', default="Prerequisites for Course"), variable=self.rec_type,
                        value="prerequisites").pack(anchor=tk.W, pady=2)
 
         # Course selection for prerequisites (conditional)
-        self.prereq_frame = ttk.LabelFrame(main_frame, text="Select Course for Prerequisites", padding=10)
+        self.prereq_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.labels.select_course_for_prerequisites', default="Select Course for Prerequisites"), padding=10)
         self.prereq_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(self.prereq_frame, text="Course:").pack(side=tk.LEFT)
+        ttk.Label(self.prereq_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.labels.course', default="Course:")).pack(side=tk.LEFT)
         self.prereq_course_combo = ttk.Combobox(self.prereq_frame, width=50)
         self.prereq_course_combo.pack(side=tk.LEFT, padx=5)
 
@@ -48,11 +50,11 @@ class RecommendCoursesDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10, side=tk.BOTTOM)
 
-        ttk.Button(button_frame, text="Generate Recommendations", command=self.generate_recommendations).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.buttons.generate_recommendations', default="Generate Recommendations"), command=self.generate_recommendations).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Results display
-        results_frame = ttk.LabelFrame(main_frame, text="Recommendations", padding=10)
+        results_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.recommend_dialog.labels.recommendations', default="Recommendations"), padding=10)
         results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.results_text = ScrolledText(results_frame, wrap=tk.WORD)
@@ -180,7 +182,7 @@ class RecommendCoursesDialog:
             elif rec_type == "prerequisites":
                 selected_text = self.prereq_course_combo.get()
                 if selected_text not in self.course_id_map:
-                    messagebox.showwarning("No Course Selected", "Please select a course to view prerequisites.")
+                    messagebox.showwarning(_t('gui.academics.course_management_gui.recommendations.recommend_dialog.dialogs.no_course_selected', default="No Course Selected"), _t('gui.academics.course_management_gui.recommendations.recommend_dialog.dialogs.please_select_a_course_to_view_prerequisites', default="Please select a course to view prerequisites."))
                     return
 
                 course_id = self.course_id_map[selected_text]

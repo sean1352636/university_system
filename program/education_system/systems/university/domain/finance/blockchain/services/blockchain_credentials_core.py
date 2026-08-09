@@ -17,6 +17,11 @@ import logging
 # Core infrastructure
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
 from education_system.systems.university.infrastructure.activity_logger import log_activity
+from .credential_service import (
+    issue_credential,
+    revoke_credential,
+    verify_credential,
+)
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -81,27 +86,17 @@ def create_blockchain_credential():
         blockchain_address = input("Enter blockchain address (optional): ").strip()
         ipfs_hash = input("Enter IPFS hash (optional): ").strip()
 
-        # Generate blockchain hash
-        hash_data = f"{student_id}{credential_type}{credential_name}{issue_date}"
-        blockchain_hash = generate_blockchain_hash(hash_data)
-
-        metadata = {
-            'issuer': 'University System',
-            'issued_date': issue_date,
-            'credential_type': credential_type
-        }
-
-        with transaction() as conn:
-            cursor = conn.execute('''
-                INSERT INTO blockchain_credentials (
-                    student_id, credential_type, credential_name, issue_date,
-                    blockchain_hash, blockchain_address, ipfs_hash, metadata
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (student_id, credential_type, credential_name, issue_date,
-                  blockchain_hash, blockchain_address or None, ipfs_hash or None,
-                  json.dumps(metadata)))
-
-            credential_id = cursor.lastrowid
+        credential = issue_credential(
+            student_id=student_id,
+            credential_type=credential_type,
+            credential_name=credential_name,
+            issue_date=issue_date,
+            issuer="University System",
+            blockchain_address=blockchain_address or None,
+            ipfs_hash=ipfs_hash or None,
+        )
+        credential_id = credential["credential_id"]
+        blockchain_hash = credential["blockchain_hash"]
 
         log_activity('create', 'blockchain_credential', credential_id=credential_id,
                     details={'student_id': student_id, 'type': credential_type})
@@ -171,24 +166,17 @@ def verify_blockchain_credential():
             print("❌ Credential ID is required")
             return
 
-        conn = get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute('''
-            SELECT credential_id, student_id, credential_type, credential_name,
-                   blockchain_hash, is_revoked
-            FROM blockchain_credentials
-            WHERE credential_id = ?
-        ''', (credential_id,))
-
-        credential = cursor.fetchone()
-
-        if not credential:
+        result = verify_credential(credential_id=int(credential_id))
+        if result.get("reason") == "not_found":
             print(f"❌ Credential ID {credential_id} not found")
-            conn.close()
             return
-
-        cred_id, stud_id, ctype, cname, bhash, revoked = credential
+        credential = result["credential"]
+        cred_id = credential["credential_id"]
+        stud_id = credential["student_id"]
+        ctype = credential["credential_type"]
+        cname = credential["credential_name"]
+        bhash = credential["blockchain_hash"]
+        revoked = credential["is_revoked"]
 
         print(f"\n{'='*60}")
         print(f"Credential ID: {cred_id}")
@@ -199,24 +187,20 @@ def verify_blockchain_credential():
         print(f"Status: {'❌ REVOKED' if revoked else '✅ VALID'}")
         print(f"{'='*60}")
 
-        if not revoked:
-            # Record verification
+        if result["valid"]:
             verifier_name = input("\nEnter your name: ").strip()
             verifier_email = input("Enter your email: ").strip()
-
-            with transaction() as conn:
-                conn.execute('''
-                    INSERT INTO credential_verifications (
-                        credential_id, verifier_name, verifier_email, verification_method
-                    ) VALUES (?, ?, ?, ?)
-                ''', (credential_id, verifier_name, verifier_email, 'cli'))
+            verify_credential(
+                credential_id=int(credential_id),
+                verifier_name=verifier_name,
+                verifier_email=verifier_email,
+                verification_method="cli",
+            )
 
             print("\n✅ Credential verified and logged successfully!")
             log_activity('verify', 'blockchain_credential', credential_id=credential_id)
         else:
-            print("\n⚠️ This credential has been revoked and is no longer valid")
-
-        conn.close()
+            print(f"\n⚠️ Credential verification failed: {result['reason']}")
 
     except Exception as e:
         print(f"❌ Error verifying credential: {e}")
@@ -245,19 +229,7 @@ def revoke_blockchain_credential():
             print("❌ Revocation cancelled")
             return
 
-        with transaction() as conn:
-            # Update credential
-            conn.execute('''
-                UPDATE blockchain_credentials
-                SET is_revoked = 1
-                WHERE credential_id = ?
-            ''', (credential_id,))
-
-            # Record revocation
-            conn.execute('''
-                INSERT INTO revoked_credentials (credential_id, reason)
-                VALUES (?, ?)
-            ''', (credential_id, reason))
+        revoke_credential(int(credential_id), reason=reason)
 
         log_activity('revoke', 'blockchain_credential', credential_id=credential_id,
                     details={'reason': reason})

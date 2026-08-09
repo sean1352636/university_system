@@ -7,6 +7,8 @@ Wired to the same RecruitmentManager used by the recruitment CLI menu.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -28,7 +30,7 @@ class RecruitmentGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Recruitment")
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), _t('gui.staff.staff_hr.recruitment.dialogs.login_required_to_access_recruitment', default="Login required to access Recruitment"))
             return
 
         self.user_id = self.current_user.get('id') or self.current_user.get('username')
@@ -43,15 +45,15 @@ class RecruitmentGUI:
     # ------------------------------------------------------------------
     def create_as_tab(self, notebook: ttk.Notebook):
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Recruitment")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.recruitment.tabs.recruitment', default="Recruitment"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
-        self.window.title("Recruitment Management")
+        self.window.title(_t('gui.staff.staff_hr.recruitment.windows.recruitment_management', default="Recruitment Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
-        ttk.Button(self.window, text="Close", command=self.window.destroy).pack(
+        ttk.Button(self.window, text=_t('gui.staff.staff_hr.recruitment.buttons.close', default="Close"), command=self.window.destroy).pack(
             side=tk.BOTTOM, anchor=tk.E, padx=10, pady=5)
         self._build_interface(self.window)
 
@@ -71,22 +73,22 @@ class RecruitmentGUI:
     # ------------------------------------------------------------------
     def _create_postings_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Job Postings")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.recruitment.tabs.job_postings', default="Job Postings"))
 
         header = ttk.Frame(tab)
         header.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header, text="Job Postings", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header, text=_t('gui.staff.staff_hr.recruitment.labels.job_postings', default="Job Postings"), style='Header.TLabel').pack(side=tk.LEFT)
 
         btns = ttk.Frame(header)
         btns.pack(side=tk.RIGHT)
-        ttk.Button(btns, text="New Posting", command=self._new_posting).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btns, text="Publish", command=self._publish_posting).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btns, text="Close Posting", command=self._close_posting).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btns, text="Refresh", command=self._load_postings).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.new_posting', default="New Posting"), command=self._new_posting).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.publish', default="Publish"), command=self._publish_posting).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.close_posting', default="Close Posting"), command=self._close_posting).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.refresh', default="Refresh"), command=self._load_postings).pack(side=tk.LEFT, padx=3)
 
         filt = ttk.Frame(tab)
         filt.pack(fill=tk.X, padx=10)
-        ttk.Label(filt, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filt, text=_t('gui.staff.staff_hr.recruitment.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.posting_status = ttk.Combobox(
             filt, values=['All', 'draft', 'open', 'closed', 'on_hold'], width=12, state='readonly')
         self.posting_status.set('All')
@@ -105,7 +107,7 @@ class RecruitmentGUI:
             postings = RecruitmentManager.get_staff_recruitment_postings(
                 status=None if status == 'All' else status)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load postings: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), f"Could not load postings: {e}")
             return
         self.postings_tree.delete(*self.postings_tree.get_children())
         for p in postings:
@@ -118,7 +120,7 @@ class RecruitmentGUI:
     def _selected_posting_id(self):
         sel = self.postings_tree.selection()
         if not sel:
-            messagebox.showwarning("No selection", "Select a posting first.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.recruitment.dialogs.no_selection', default="No selection"), _t('gui.staff.staff_hr.recruitment.dialogs.select_a_posting_first', default="Select a posting first."))
             return None
         return self.postings_tree.item(sel[0])['values'][0]
 
@@ -136,7 +138,7 @@ class RecruitmentGUI:
             return
         d = dlg.result
         if not d.get('job_title') or not d.get('department'):
-            messagebox.showwarning("Missing data", "Title and Department are required.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.recruitment.dialogs.missing_data', default="Missing data"), _t('gui.staff.staff_hr.recruitment.dialogs.title_and_department_are_required', default="Title and Department are required."))
             return
         try:
             pid = RecruitmentManager.create_posting(
@@ -146,10 +148,10 @@ class RecruitmentGUI:
                 location=d.get('location'), salary_range=d.get('salary_range'),
                 description=d.get('description'), requirements=d.get('requirements'),
                 posted_by_name=self.current_user.get('username'))
-            messagebox.showinfo("Created", f"Job posting created (ID {pid}).")
+            messagebox.showinfo(_t('gui.staff.staff_hr.recruitment.dialogs.created', default="Created"), f"Job posting created (ID {pid}).")
             self._load_postings()
         except Exception as e:
-            messagebox.showerror("Error", f"Could not create posting: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), f"Could not create posting: {e}")
 
     def _publish_posting(self):
         pid = self._selected_posting_id()
@@ -157,10 +159,10 @@ class RecruitmentGUI:
             return
         try:
             RecruitmentManager.publish_posting(int(pid))
-            messagebox.showinfo("Published", "Posting published.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.recruitment.dialogs.published', default="Published"), _t('gui.staff.staff_hr.recruitment.dialogs.posting_published', default="Posting published."))
             self._load_postings()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), str(e))
 
     def _close_posting(self):
         pid = self._selected_posting_id()
@@ -168,33 +170,33 @@ class RecruitmentGUI:
             return
         try:
             RecruitmentManager.update_posting_status(int(pid), 'closed')
-            messagebox.showinfo("Closed", "Posting closed.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.recruitment.dialogs.closed', default="Closed"), _t('gui.staff.staff_hr.recruitment.dialogs.posting_closed', default="Posting closed."))
             self._load_postings()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------------
     # Applications
     # ------------------------------------------------------------------
     def _create_applications_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Applications")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.recruitment.tabs.applications', default="Applications"))
 
         header = ttk.Frame(tab)
         header.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header, text="Applications", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header, text=_t('gui.staff.staff_hr.recruitment.labels.applications', default="Applications"), style='Header.TLabel').pack(side=tk.LEFT)
 
         btns = ttk.Frame(header)
         btns.pack(side=tk.RIGHT)
-        ttk.Button(btns, text="New Application", command=self._new_application).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btns, text="Shortlist", command=self._shortlist).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btns, text="Reject", command=self._reject_application).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btns, text="Schedule Interview", command=self._schedule_interview).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btns, text="Refresh", command=self._load_applications).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.new_application', default="New Application"), command=self._new_application).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.shortlist', default="Shortlist"), command=self._shortlist).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.reject', default="Reject"), command=self._reject_application).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.schedule_interview', default="Schedule Interview"), command=self._schedule_interview).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.refresh', default="Refresh"), command=self._load_applications).pack(side=tk.LEFT, padx=3)
 
         filt = ttk.Frame(tab)
         filt.pack(fill=tk.X, padx=10)
-        ttk.Label(filt, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filt, text=_t('gui.staff.staff_hr.recruitment.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.app_status = ttk.Combobox(filt, values=[
             'All', 'received', 'shortlisted', 'interview_scheduled', 'offered', 'hired', 'rejected'],
             width=18, state='readonly')
@@ -211,7 +213,7 @@ class RecruitmentGUI:
             apps = RecruitmentManager.get_applications(
                 status=None if status == 'All' else status)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load applications: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), f"Could not load applications: {e}")
             return
         self.apps_tree.delete(*self.apps_tree.get_children())
         for a in apps:
@@ -223,7 +225,7 @@ class RecruitmentGUI:
     def _selected_application_id(self):
         sel = self.apps_tree.selection()
         if not sel:
-            messagebox.showwarning("No selection", "Select an application first.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.recruitment.dialogs.no_selection', default="No selection"), _t('gui.staff.staff_hr.recruitment.dialogs.select_an_application_first', default="Select an application first."))
             return None
         return self.apps_tree.item(sel[0])['values'][0]
 
@@ -243,10 +245,10 @@ class RecruitmentGUI:
                 applicant_name=d['applicant_name'],
                 applicant_email=d['applicant_email'],
                 applicant_phone=d.get('applicant_phone'))
-            messagebox.showinfo("Submitted", f"Application submitted (ID {aid}).")
+            messagebox.showinfo(_t('gui.staff.staff_hr.recruitment.dialogs.submitted', default="Submitted"), f"Application submitted (ID {aid}).")
             self._load_applications()
         except Exception as e:
-            messagebox.showerror("Error", f"Could not submit application: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), f"Could not submit application: {e}")
 
     def _shortlist(self):
         aid = self._selected_application_id()
@@ -254,10 +256,10 @@ class RecruitmentGUI:
             return
         try:
             RecruitmentManager.shortlist_application(int(aid), self.user_id)
-            messagebox.showinfo("Shortlisted", "Applicant shortlisted.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.recruitment.dialogs.shortlisted', default="Shortlisted"), _t('gui.staff.staff_hr.recruitment.dialogs.applicant_shortlisted', default="Applicant shortlisted."))
             self._load_applications()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), str(e))
 
     def _reject_application(self):
         aid = self._selected_application_id()
@@ -269,10 +271,10 @@ class RecruitmentGUI:
             return
         try:
             RecruitmentManager.reject_application(int(aid), dlg.result.get('reason') or 'Not selected')
-            messagebox.showinfo("Rejected", "Application rejected.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.recruitment.dialogs.rejected', default="Rejected"), _t('gui.staff.staff_hr.recruitment.dialogs.application_rejected', default="Application rejected."))
             self._load_applications()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), str(e))
 
     def _schedule_interview(self):
         aid = self._selected_application_id()
@@ -295,26 +297,26 @@ class RecruitmentGUI:
                 interview_time=d['interview_time'],
                 interview_type=d.get('interview_type') or 'in-person',
                 location=d.get('location'), interviewers=d.get('interviewers'))
-            messagebox.showinfo("Scheduled", f"Interview scheduled (ID {iid}).")
+            messagebox.showinfo(_t('gui.staff.staff_hr.recruitment.dialogs.scheduled', default="Scheduled"), f"Interview scheduled (ID {iid}).")
             self._load_applications()
             self._load_interviews()
         except Exception as e:
-            messagebox.showerror("Error", f"Could not schedule interview: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), f"Could not schedule interview: {e}")
 
     # ------------------------------------------------------------------
     # Interviews
     # ------------------------------------------------------------------
     def _create_interviews_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Interviews")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.recruitment.tabs.interviews', default="Interviews"))
 
         header = ttk.Frame(tab)
         header.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header, text="Interviews", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header, text=_t('gui.staff.staff_hr.recruitment.labels.interviews', default="Interviews"), style='Header.TLabel').pack(side=tk.LEFT)
         btns = ttk.Frame(header)
         btns.pack(side=tk.RIGHT)
-        ttk.Button(btns, text="Record Feedback", command=self._record_feedback).pack(side=tk.LEFT, padx=3)
-        ttk.Button(btns, text="Refresh", command=self._load_interviews).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.record_feedback', default="Record Feedback"), command=self._record_feedback).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.refresh', default="Refresh"), command=self._load_interviews).pack(side=tk.LEFT, padx=3)
 
         cols = ('ID', 'Applicant', 'Position', 'Date', 'Time', 'Type', 'Status')
         self.interviews_tree = self._make_tree(tab, cols)
@@ -323,7 +325,7 @@ class RecruitmentGUI:
         try:
             interviews = RecruitmentManager.get_interviews()
         except Exception as e:
-            messagebox.showerror("Error", f"Could not load interviews: {e}")
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), f"Could not load interviews: {e}")
             return
         self.interviews_tree.delete(*self.interviews_tree.get_children())
         for i in interviews:
@@ -336,7 +338,7 @@ class RecruitmentGUI:
     def _record_feedback(self):
         sel = self.interviews_tree.selection()
         if not sel:
-            messagebox.showwarning("No selection", "Select an interview first.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.recruitment.dialogs.no_selection', default="No selection"), _t('gui.staff.staff_hr.recruitment.dialogs.select_an_interview_first', default="Select an interview first."))
             return
         iid = self.interviews_tree.item(sel[0])['values'][0]
         dlg = _FormDialog(self.window or self.root, "Interview Feedback", [
@@ -352,10 +354,10 @@ class RecruitmentGUI:
             RecruitmentManager.record_interview_feedback(
                 int(iid), recommendation=d.get('recommendation'),
                 overall_score=score, feedback=d.get('feedback'))
-            messagebox.showinfo("Saved", "Feedback recorded.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.recruitment.dialogs.saved', default="Saved"), _t('gui.staff.staff_hr.recruitment.dialogs.feedback_recorded', default="Feedback recorded."))
             self._load_interviews()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.recruitment.dialogs.error', default="Error"), str(e))
 
     # ------------------------------------------------------------------
     # Shared helpers
@@ -416,8 +418,8 @@ class _FormDialog:
 
         btns = ttk.Frame(body)
         btns.grid(row=len(fields), column=0, columnspan=2, pady=(10, 0))
-        ttk.Button(btns, text="OK", command=self._ok).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btns, text="Cancel", command=self._cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.ok', default="OK"), command=self._ok).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text=_t('gui.staff.staff_hr.recruitment.buttons.cancel', default="Cancel"), command=self._cancel).pack(side=tk.LEFT, padx=5)
 
         try:
             self.top.grab_set()

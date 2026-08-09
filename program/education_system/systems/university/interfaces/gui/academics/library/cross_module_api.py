@@ -10,6 +10,8 @@ DB error so callers can render a "no data" panel instead of crashing.
 """
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import sqlite3
 import tkinter as tk
@@ -18,9 +20,7 @@ from datetime import datetime, date
 from tkinter import ttk
 from typing import List
 
-from education_system.systems.university.infrastructure.paths import (
-    DEFAULT_DB_PATH,
-)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +42,9 @@ class LibrarySummary:
 
 def _conn():
     try:
-        return sqlite3.connect(str(DEFAULT_DB_PATH))
+        return sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
     except Exception:
-        logger.exception("Could not open %s", DEFAULT_DB_PATH)
+        logger.exception("Could not open %s", UNIVERSITY_DEFAULT_DB_PATH)
         return None
 
 
@@ -180,7 +180,7 @@ class LibrarySummaryFrame(ttk.LabelFrame):
                       foreground="#555").pack()
 
         # Recent loans table
-        ttk.Label(self, text="Recent activity",
+        ttk.Label(self, text=_t('gui.academics.library.cross_module_api.labels.recent_activity', default="Recent activity"),
                   font=("Arial", 9, "bold")).pack(anchor="w", pady=(8, 2))
         cols = ("book_id", "title", "status", "due", "returned")
         self._tree = ttk.Treeview(self, columns=cols, show="headings",
@@ -193,10 +193,10 @@ class LibrarySummaryFrame(ttk.LabelFrame):
         # Action bar
         bar = ttk.Frame(self)
         bar.pack(fill="x", pady=(6, 0))
-        ttk.Button(bar, text="🔄 Refresh",
+        ttk.Button(bar, text=_t('gui.academics.library.cross_module_api.buttons.refresh', default="🔄 Refresh"),
                    command=self.refresh).pack(side="left")
         if callable(self.on_open_library):
-            ttk.Button(bar, text="📚 Open Library →",
+            ttk.Button(bar, text=_t('gui.academics.library.cross_module_api.buttons.open_library', default="📚 Open Library →"),
                        command=self._open_library).pack(side="right")
 
     def _open_library(self):
@@ -320,7 +320,7 @@ class ReadingListPanel(ttk.LabelFrame):
         body.rowconfigure(0, weight=1)
 
         # Left: list of reading lists
-        left = ttk.LabelFrame(body, text="Lists", padding=4)
+        left = ttk.LabelFrame(body, text=_t('gui.academics.library.cross_module_api.labels.lists', default="Lists"), padding=4)
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
         self._lists_tree = ttk.Treeview(
             left, columns=("name", "category", "items"),
@@ -332,7 +332,7 @@ class ReadingListPanel(ttk.LabelFrame):
         self._lists_tree.bind("<<TreeviewSelect>>", self._on_select_list)
 
         # Right: items in the selected list
-        right = ttk.LabelFrame(body, text="Items", padding=4)
+        right = ttk.LabelFrame(body, text=_t('gui.academics.library.cross_module_api.labels.items', default="Items"), padding=4)
         right.grid(row=0, column=1, sticky="nsew")
         self._items_tree = ttk.Treeview(
             right, columns=("book_id", "title", "author", "notes"),
@@ -345,7 +345,7 @@ class ReadingListPanel(ttk.LabelFrame):
 
         bar = ttk.Frame(self)
         bar.pack(fill="x", pady=(6, 0))
-        ttk.Button(bar, text="🔄 Refresh",
+        ttk.Button(bar, text=_t('gui.academics.library.cross_module_api.buttons.refresh', default="🔄 Refresh"),
                    command=self.refresh).pack(side="left")
 
     def _on_select_list(self, _evt=None):

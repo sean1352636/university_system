@@ -16,12 +16,12 @@ from datetime import datetime
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 def init_library_fine_payments_table():
     """Create library_fine_payments table"""
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         print("Creating library_fine_payments table...")
@@ -78,7 +78,7 @@ def init_library_fine_payments_table():
 def migrate_existing_payments():
     """Migrate existing payment data from book_loans notes"""
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         print("\nMigrating existing paid fines...")
@@ -167,7 +167,7 @@ def migrate_existing_payments():
 def verify_setup():
     """Verify the setup is working"""
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         print("\n" + "="*60)

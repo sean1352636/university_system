@@ -13,6 +13,8 @@ A single Toplevel with four tabs:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -30,7 +32,7 @@ _ENGAGEMENT_METHODS = ("Attendance ≥80%", "Tutor 1:1", "Submitted assessment",
 class VisaComplianceGUI:
     def __init__(self, parent=None, student_id: str | None = None):
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title("Tier-4 / Student-Route Sponsorship")
+        self.window.title(_t('gui.governance.compliance.international_compliance.visa_compliance.windows.tier_4_student_route_sponsorship', default="Tier-4 / Student-Route Sponsorship"))
         self.window.geometry("1200x780")
         self.window.minsize(1000, 700)
 
@@ -54,14 +56,14 @@ class VisaComplianceGUI:
     def _build_ui(self):
         top = ttk.Frame(self.window, padding=10)
         top.pack(fill=tk.X)
-        ttk.Label(top, text="Student ID:").pack(side=tk.LEFT)
+        ttk.Label(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.student_id', default="Student ID:")).pack(side=tk.LEFT)
         ttk.Entry(top, textvariable=self.current_student_id, width=20).pack(side=tk.LEFT, padx=6)
-        ttk.Button(top, text="Load", command=self._load_student).pack(side=tk.LEFT)
-        ttk.Button(top, text="Save / Update Visa Record",
+        ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.load', default="Load"), command=self._load_student).pack(side=tk.LEFT)
+        ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.save_update_visa_record', default="Save / Update Visa Record"),
                    command=self._save_visa_record).pack(side=tk.LEFT, padx=12)
-        ttk.Button(top, text="Issue Status Letter",
+        ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.issue_status_letter', default="Issue Status Letter"),
                    command=self._open_status_letter).pack(side=tk.LEFT)
-        ttk.Button(top, text="Close", command=self.window.destroy).pack(side=tk.RIGHT)
+        ttk.Button(top, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT)
 
         nb = ttk.Notebook(self.window)
         nb.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
@@ -72,7 +74,7 @@ class VisaComplianceGUI:
 
     def _build_visa_tab(self, nb):
         frame = ttk.Frame(nb, padding=10)
-        nb.add(frame, text="Visa Record")
+        nb.add(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.tabs.visa_record', default="Visa Record"))
 
         self.visa_fields: dict[str, tk.Variable] = {}
         rows = [
@@ -92,40 +94,40 @@ class VisaComplianceGUI:
             ttk.Entry(frame, textvariable=v, width=36).grid(row=r, column=1, sticky=tk.W, padx=6)
             self.visa_fields[key] = v
 
-        ttk.Label(frame, text="Visa type").grid(row=0, column=2, sticky=tk.W, padx=(40, 0))
-        self.visa_fields["visa_type"] = tk.StringVar(value="student_route")
+        ttk.Label(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.visa_type', default="Visa type")).grid(row=0, column=2, sticky=tk.W, padx=(40, 0))
+        self.visa_fields["visa_type"] = tk.StringVar(value=_t('gui.governance.compliance.international_compliance.visa_compliance.values.student_route', default="student_route"))
         ttk.Combobox(frame, textvariable=self.visa_fields["visa_type"], values=_VISA_TYPES,
                      state="readonly", width=24).grid(row=0, column=3, sticky=tk.W)
 
-        ttk.Label(frame, text="Status").grid(row=1, column=2, sticky=tk.W, padx=(40, 0))
-        self.visa_fields["status"] = tk.StringVar(value="pending")
+        ttk.Label(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.status', default="Status")).grid(row=1, column=2, sticky=tk.W, padx=(40, 0))
+        self.visa_fields["status"] = tk.StringVar(value=_t('gui.governance.compliance.international_compliance.visa_compliance.values.pending', default="pending"))
         ttk.Combobox(frame, textvariable=self.visa_fields["status"], values=vs.VISA_STATUSES,
                      state="readonly", width=24).grid(row=1, column=3, sticky=tk.W)
 
         self.visa_fields["atas_required"] = tk.BooleanVar(value=False)
-        ttk.Checkbutton(frame, text="ATAS clearance required",
+        ttk.Checkbutton(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.atas_clearance_required', default="ATAS clearance required"),
                         variable=self.visa_fields["atas_required"]).grid(row=2, column=2, columnspan=2, sticky=tk.W, padx=(40, 0))
 
-        ttk.Label(frame, text="Notes").grid(row=3, column=2, sticky=tk.NW, padx=(40, 0))
+        ttk.Label(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.notes', default="Notes")).grid(row=3, column=2, sticky=tk.NW, padx=(40, 0))
         self.notes_text = tk.Text(frame, width=40, height=6)
         self.notes_text.grid(row=3, column=3, rowspan=4, sticky=tk.W)
 
         # Right-to-study quick log
-        rts = ttk.LabelFrame(frame, text="Right-to-Study check", padding=8)
+        rts = ttk.LabelFrame(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.right_to_study_check', default="Right-to-Study check"), padding=8)
         rts.grid(row=len(rows), column=0, columnspan=4, sticky=(tk.W, tk.E), pady=(14, 4))
         self.rts_method = tk.StringVar(value=_RTS_METHODS[0])
         self.rts_docs = tk.StringVar()
-        ttk.Label(rts, text="Method").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(rts, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.method', default="Method")).grid(row=0, column=0, sticky=tk.W)
         ttk.Combobox(rts, textvariable=self.rts_method, values=_RTS_METHODS,
                      state="readonly", width=24).grid(row=0, column=1, sticky=tk.W, padx=4)
-        ttk.Label(rts, text="Documents seen").grid(row=0, column=2, sticky=tk.W, padx=(12, 0))
+        ttk.Label(rts, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.documents_seen', default="Documents seen")).grid(row=0, column=2, sticky=tk.W, padx=(12, 0))
         ttk.Entry(rts, textvariable=self.rts_docs, width=42).grid(row=0, column=3, sticky=tk.W, padx=4)
-        ttk.Button(rts, text="Record check", command=self._record_rts).grid(row=0, column=4, padx=8)
-        self.rts_status_label = ttk.Label(rts, text="(none on file)")
+        ttk.Button(rts, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.record_check', default="Record check"), command=self._record_rts).grid(row=0, column=4, padx=8)
+        self.rts_status_label = ttk.Label(rts, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.none_on_file', default="(none on file)"))
         self.rts_status_label.grid(row=1, column=0, columnspan=5, sticky=tk.W, pady=(6, 0))
 
         # CAS issuance
-        cas = ttk.LabelFrame(frame, text="Issue CAS", padding=8)
+        cas = ttk.LabelFrame(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.issue_cas', default="Issue CAS"), padding=8)
         cas.grid(row=len(rows) + 1, column=0, columnspan=4, sticky=(tk.W, tk.E), pady=(8, 4))
         self.cas_fields = {
             "programme": tk.StringVar(),
@@ -143,7 +145,7 @@ class VisaComplianceGUI:
         ]):
             ttk.Label(cas, text=label).grid(row=0, column=c * 2, sticky=tk.W, padx=(4, 0))
             ttk.Entry(cas, textvariable=self.cas_fields[key], width=18).grid(row=0, column=c * 2 + 1, padx=2)
-        ttk.Button(cas, text="Issue CAS", command=self._issue_cas).grid(row=0, column=10, padx=8)
+        ttk.Button(cas, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.issue_cas', default="Issue CAS"), command=self._issue_cas).grid(row=0, column=10, padx=8)
 
         self.cas_list = ttk.Treeview(cas, columns=("cas", "issued", "programme", "fee", "status"),
                                      show="headings", height=4)
@@ -156,38 +158,38 @@ class VisaComplianceGUI:
 
     def _build_engagement_tab(self, nb):
         frame = ttk.Frame(nb, padding=10)
-        nb.add(frame, text="Engagement")
+        nb.add(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.tabs.engagement', default="Engagement"))
 
         form = ttk.Frame(frame)
         form.pack(fill=tk.X)
-        self.eng_term = tk.StringVar(value="Term 1")
+        self.eng_term = tk.StringVar(value=_t('gui.governance.compliance.international_compliance.visa_compliance.values.term_1', default="Term 1"))
         self.eng_method = tk.StringVar(value=_ENGAGEMENT_METHODS[0])
-        self.eng_outcome = tk.StringVar(value="engaged")
+        self.eng_outcome = tk.StringVar(value=_t('gui.governance.compliance.international_compliance.visa_compliance.values.engaged', default="engaged"))
         self.eng_evidence = tk.StringVar()
-        ttk.Label(form, text="Term").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(form, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.term', default="Term")).grid(row=0, column=0, sticky=tk.W)
         ttk.Combobox(form, textvariable=self.eng_term,
                      values=("Term 1", "Term 2", "Term 3", "Summer"),
                      state="readonly", width=12).grid(row=0, column=1, padx=4)
-        ttk.Label(form, text="Method").grid(row=0, column=2, sticky=tk.W, padx=(12, 0))
+        ttk.Label(form, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.method', default="Method")).grid(row=0, column=2, sticky=tk.W, padx=(12, 0))
         ttk.Combobox(form, textvariable=self.eng_method, values=_ENGAGEMENT_METHODS,
                      state="readonly", width=22).grid(row=0, column=3, padx=4)
-        ttk.Label(form, text="Outcome").grid(row=0, column=4, sticky=tk.W, padx=(12, 0))
+        ttk.Label(form, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.outcome', default="Outcome")).grid(row=0, column=4, sticky=tk.W, padx=(12, 0))
         ttk.Combobox(form, textvariable=self.eng_outcome,
                      values=("engaged", "partial", "missed"),
                      state="readonly", width=12).grid(row=0, column=5, padx=4)
-        ttk.Label(form, text="Evidence").grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
+        ttk.Label(form, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.evidence', default="Evidence")).grid(row=1, column=0, sticky=tk.W, pady=(6, 0))
         ttk.Entry(form, textvariable=self.eng_evidence, width=70).grid(
             row=1, column=1, columnspan=4, sticky=(tk.W, tk.E), pady=(6, 0))
-        ttk.Button(form, text="Log check", command=self._log_engagement).grid(
+        ttk.Button(form, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.log_check', default="Log check"), command=self._log_engagement).grid(
             row=1, column=5, padx=4, pady=(6, 0))
-        ttk.Button(form, text="Pull from attendance",
+        ttk.Button(form, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.pull_from_attendance', default="Pull from attendance"),
                    command=self._pull_engagement_from_attendance).grid(
             row=2, column=0, columnspan=2, sticky=tk.W, pady=(8, 0))
         self.engagement_pull_status = ttk.Label(form, text="", foreground="#555555")
         self.engagement_pull_status.grid(row=2, column=2, columnspan=4, sticky=tk.W,
                                           pady=(8, 0), padx=(8, 0))
 
-        ttk.Label(frame, text="History (most recent first — rows from attendance show source pipeline in Method)",
+        ttk.Label(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.history_most_recent_first_rows_from_attendance_show_source_pipel', default="History (most recent first — rows from attendance show source pipeline in Method)"),
                   font=("Arial", 11, "bold")).pack(anchor=tk.W, pady=(14, 4))
         self.engagement_tree = ttk.Treeview(
             frame, columns=("date", "term", "method", "outcome", "evidence"),
@@ -203,15 +205,15 @@ class VisaComplianceGUI:
         risk_label_row = ttk.Frame(frame)
         risk_label_row.pack(fill=tk.X, pady=(14, 4))
         ttk.Label(risk_label_row,
-                  text="At-risk international students (attendance < threshold, from the attendance pipeline)",
+                  text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.at_risk_international_students_attendance_threshold_from_the_att', default="At-risk international students (attendance < threshold, from the attendance pipeline)"),
                   font=("Arial", 11, "bold")).pack(side=tk.LEFT)
         self.atrisk_threshold = tk.DoubleVar(value=80.0)
-        ttk.Label(risk_label_row, text="  Threshold %:").pack(side=tk.LEFT, padx=(12, 2))
+        ttk.Label(risk_label_row, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.threshold', default="  Threshold %:")).pack(side=tk.LEFT, padx=(12, 2))
         ttk.Spinbox(risk_label_row, from_=50, to=100, increment=5,
                     textvariable=self.atrisk_threshold, width=6).pack(side=tk.LEFT)
-        ttk.Button(risk_label_row, text="Refresh",
+        ttk.Button(risk_label_row, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.refresh', default="Refresh"),
                    command=self._refresh_at_risk).pack(side=tk.LEFT, padx=6)
-        ttk.Button(risk_label_row, text="Load selected into form",
+        ttk.Button(risk_label_row, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.load_selected_into_form', default="Load selected into form"),
                    command=self._load_selected_at_risk).pack(side=tk.LEFT)
 
         self.atrisk_tree = ttk.Treeview(
@@ -227,20 +229,20 @@ class VisaComplianceGUI:
 
     def _build_changes_tab(self, nb):
         frame = ttk.Frame(nb, padding=10)
-        nb.add(frame, text="Changes (UKVI)")
+        nb.add(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.tabs.changes_ukvi', default="Changes (UKVI)"))
 
-        form = ttk.LabelFrame(frame, text="Raise a Change of Circumstance", padding=8)
+        form = ttk.LabelFrame(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.raise_a_change_of_circumstance', default="Raise a Change of Circumstance"), padding=8)
         form.pack(fill=tk.X)
         self.coc_type = tk.StringVar(value=vs.COC_TYPES[0])
         self.coc_details = tk.StringVar()
-        ttk.Label(form, text="Type").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(form, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.type', default="Type")).grid(row=0, column=0, sticky=tk.W)
         ttk.Combobox(form, textvariable=self.coc_type, values=vs.COC_TYPES,
                      state="readonly", width=22).grid(row=0, column=1, padx=4)
-        ttk.Label(form, text="Details").grid(row=0, column=2, sticky=tk.W, padx=(12, 0))
+        ttk.Label(form, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.details', default="Details")).grid(row=0, column=2, sticky=tk.W, padx=(12, 0))
         ttk.Entry(form, textvariable=self.coc_details, width=70).grid(row=0, column=3, padx=4)
-        ttk.Button(form, text="Log change", command=self._log_coc).grid(row=0, column=4, padx=6)
+        ttk.Button(form, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.log_change', default="Log change"), command=self._log_coc).grid(row=0, column=4, padx=6)
 
-        ttk.Label(frame, text="Pending UKVI reports (overdue rows highlighted)",
+        ttk.Label(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.pending_ukvi_reports_overdue_rows_highlighted', default="Pending UKVI reports (overdue rows highlighted)"),
                   font=("Arial", 11, "bold")).pack(anchor=tk.W, pady=(14, 4))
         self.coc_tree = ttk.Treeview(
             frame, columns=("id", "student", "type", "occurred", "due", "details"),
@@ -257,25 +259,25 @@ class VisaComplianceGUI:
         action = ttk.Frame(frame)
         action.pack(fill=tk.X, pady=(8, 0))
         self.coc_ref = tk.StringVar()
-        ttk.Label(action, text="UKVI report ref:").pack(side=tk.LEFT)
+        ttk.Label(action, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.ukvi_report_ref', default="UKVI report ref:")).pack(side=tk.LEFT)
         ttk.Entry(action, textvariable=self.coc_ref, width=22).pack(side=tk.LEFT, padx=4)
-        ttk.Button(action, text="Mark selected as reported",
+        ttk.Button(action, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.mark_selected_as_reported', default="Mark selected as reported"),
                    command=self._mark_coc_reported).pack(side=tk.LEFT)
-        ttk.Button(action, text="Refresh",
+        ttk.Button(action, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.refresh', default="Refresh"),
                    command=self._refresh_pending_coc).pack(side=tk.RIGHT)
 
     def _build_alerts_tab(self, nb):
         frame = ttk.Frame(nb, padding=10)
-        nb.add(frame, text="Expiry alerts")
+        nb.add(frame, text=_t('gui.governance.compliance.international_compliance.visa_compliance.tabs.expiry_alerts', default="Expiry alerts"))
 
         ctrl = ttk.Frame(frame)
         ctrl.pack(fill=tk.X)
         self.alert_threshold = tk.IntVar(value=90)
-        ttk.Label(ctrl, text="Threshold (days):").pack(side=tk.LEFT)
+        ttk.Label(ctrl, text=_t('gui.governance.compliance.international_compliance.visa_compliance.labels.threshold_days', default="Threshold (days):")).pack(side=tk.LEFT)
         ttk.Spinbox(ctrl, from_=7, to=365, increment=7,
                     textvariable=self.alert_threshold, width=6).pack(side=tk.LEFT, padx=4)
-        ttk.Button(ctrl, text="Refresh", command=self._refresh_expiry_alerts).pack(side=tk.LEFT, padx=6)
-        ttk.Button(ctrl, text="Send alert emails now",
+        ttk.Button(ctrl, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.refresh', default="Refresh"), command=self._refresh_expiry_alerts).pack(side=tk.LEFT, padx=6)
+        ttk.Button(ctrl, text=_t('gui.governance.compliance.international_compliance.visa_compliance.buttons.send_alert_emails_now', default="Send alert emails now"),
                    command=self._send_alert_emails).pack(side=tk.LEFT)
 
         self.alerts_tree = ttk.Treeview(
@@ -335,7 +337,7 @@ class VisaComplianceGUI:
     def _save_visa_record(self):
         sid = self._sid()
         if not sid:
-            messagebox.showwarning("Missing", "Enter a student ID first.")
+            messagebox.showwarning(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.missing', default="Missing"), _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.enter_a_student_id_first', default="Enter a student ID first."))
             return
         rec = vs.VisaRecord(
             student_id=sid,
@@ -355,10 +357,10 @@ class VisaComplianceGUI:
         )
         try:
             vs.upsert_visa_record(rec)
-            messagebox.showinfo("Saved", f"Visa record saved for {sid}.")
+            messagebox.showinfo(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.saved', default="Saved"), f"Visa record saved for {sid}.")
         except Exception as exc:
             logger.exception("save visa")
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), str(exc))
 
     def _record_rts(self):
         sid = self._sid()
@@ -373,7 +375,7 @@ class VisaComplianceGUI:
             )
             self._load_student()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), str(exc))
 
     def _open_status_letter(self):
         """Open the Status Letters GUI pre-filled for the loaded student.
@@ -383,7 +385,7 @@ class VisaComplianceGUI:
         sid = self._sid()
         if not sid:
             messagebox.showwarning(
-                "Status Letter", "Load a student first."
+                _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.status_letter', default="Status Letter"), _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.load_a_student_first', default="Load a student first.")
             )
             return
         try:
@@ -397,7 +399,7 @@ class VisaComplianceGUI:
             )
         except Exception as exc:
             logger.error("Failed to open Status Letters GUI: %s", exc)
-            messagebox.showerror("Error", f"Could not open Status Letters: {exc}")
+            messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), f"Could not open Status Letters: {exc}")
 
     def _issue_cas(self):
         sid = self._sid()
@@ -419,10 +421,10 @@ class VisaComplianceGUI:
             if email:
                 vs.notify_cas_issued(sid, email, cas, first_name=first)
             self._load_student()
-            messagebox.showinfo("Issued", f"CAS {cas['cas_number']} issued.")
+            messagebox.showinfo(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.issued', default="Issued"), f"CAS {cas['cas_number']} issued.")
         except Exception as exc:
             logger.exception("issue cas")
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), str(exc))
 
     def _pull_engagement_from_attendance(self):
         sid = self._sid()
@@ -430,7 +432,7 @@ class VisaComplianceGUI:
             n = vs.import_attendance_engagement_events(student_id=sid or None)
         except Exception as exc:
             logger.exception("import attendance")
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), str(exc))
             return
         scope = f"for {sid}" if sid else "across all students"
         self.engagement_pull_status.config(
@@ -456,7 +458,7 @@ class VisaComplianceGUI:
     def _load_selected_at_risk(self):
         sel = self.atrisk_tree.selection()
         if not sel:
-            messagebox.showinfo("Pick one", "Select a row first.")
+            messagebox.showinfo(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.pick_one', default="Pick one"), _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.select_a_row_first', default="Select a row first."))
             return
         sid = self.atrisk_tree.item(sel[0])["values"][0]
         self.current_student_id.set(str(sid))
@@ -478,7 +480,7 @@ class VisaComplianceGUI:
             self._load_student()
             self._refresh_pending_coc()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), str(exc))
 
     def _log_coc(self):
         sid = self._sid()
@@ -499,23 +501,23 @@ class VisaComplianceGUI:
             self.coc_details.set("")
             self._refresh_pending_coc()
         except Exception as exc:
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), str(exc))
 
     def _mark_coc_reported(self):
         sel = self.coc_tree.selection()
         if not sel:
-            messagebox.showinfo("Pick one", "Select a row first.")
+            messagebox.showinfo(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.pick_one', default="Pick one"), _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.select_a_row_first', default="Select a row first."))
             return
         ref = self.coc_ref.get().strip()
         if not ref:
-            messagebox.showwarning("Missing ref", "Enter the UKVI report reference first.")
+            messagebox.showwarning(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.missing_ref', default="Missing ref"), _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.enter_the_ukvi_report_reference_first', default="Enter the UKVI report reference first."))
             return
         coc_id = int(self.coc_tree.item(sel[0])["values"][0])
         if vs.mark_coc_reported(coc_id, ref):
             self.coc_ref.set("")
             self._refresh_pending_coc()
         else:
-            messagebox.showerror("Error", "No matching pending CoC row.")
+            messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), _t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.no_matching_pending_coc_row', default="No matching pending CoC row."))
 
     def _refresh_pending_coc(self):
         from datetime import date
@@ -541,10 +543,10 @@ class VisaComplianceGUI:
     def _send_alert_emails(self):
         try:
             n = vs.run_visa_expiry_alerts(threshold_days=int(self.alert_threshold.get() or 90))
-            messagebox.showinfo("Alerts sent", f"Sent {n} visa-expiry email(s).")
+            messagebox.showinfo(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.alerts_sent', default="Alerts sent"), f"Sent {n} visa-expiry email(s).")
         except Exception as exc:
             logger.exception("send alerts")
-            messagebox.showerror("Error", str(exc))
+            messagebox.showerror(_t('gui.governance.compliance.international_compliance.visa_compliance.dialogs.error', default="Error"), str(exc))
 
     # ------------------------------------------------------------------
     # Lookups

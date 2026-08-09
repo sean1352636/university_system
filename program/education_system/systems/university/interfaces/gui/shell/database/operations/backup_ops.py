@@ -1,4 +1,6 @@
 """Core backup operations and utility functions."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import json
 import shutil
@@ -11,11 +13,8 @@ from education_system.systems.university.interfaces.gui.shell.database.shared_im
     DEFAULT_DB_PATH, BACKUP_DIR, BACKUP_TEMPLATES_DIR, logger,
     get_db_connection,
 )
-# Use the database-specific backup subdirectory for db backups
-try:
-    from education_system.systems.university.infrastructure.paths import BACKUP_DATABASE_DIR
-except ImportError:
-    BACKUP_DATABASE_DIR = BACKUP_DIR / "database"
+# Use the database-specific backup subdirectory for db backups.
+from education_system.paths import UNIVERSITY_BACKUP_DATABASE_DIR, UNIVERSITY_REMOTE_BACKUP_PATH
 from education_system.systems.university.interfaces.gui.shell.database.config import (
     config, save_config, _backup_context_lock,
     _last_incremental_context, _last_differential_context,
@@ -79,7 +78,13 @@ def decompress_file(compressed_path, output_path=None):
             if output_path is None:
                 output_path = os.path.splitext(compressed_path)[0]
             with zipfile.ZipFile(compressed_path, 'r') as zipf:
-                zipf.extractall(os.path.dirname(output_path))
+                # Never use extractall: a crafted archive can write
+                # ../../etc/... or follow a symlink out of the target ("zip
+                # slip"). safe_extract validates every member stays under the
+                # destination and bounds size/count before writing.
+                from education_system.platform.kernel.core.safe_paths import safe_extract
+
+                safe_extract(zipf, os.path.dirname(output_path) or ".")
                 extracted_files = zipf.namelist()
                 if extracted_files:
                     extracted_path = os.path.join(os.path.dirname(output_path), extracted_files[0])
@@ -181,9 +186,9 @@ def verify_backup_integrity(backup_path, expected_hash=None):
 def ensure_backup_directory():
     """Ensure the backup directory exists using centralized BACKUP_DATABASE_DIR"""
     try:
-        BACKUP_DATABASE_DIR.mkdir(parents=True, exist_ok=True)
-        config["backup_directory"] = str(BACKUP_DATABASE_DIR)
-        return BACKUP_DATABASE_DIR
+        UNIVERSITY_BACKUP_DATABASE_DIR.mkdir(parents=True, exist_ok=True)
+        config["backup_directory"] = str(UNIVERSITY_BACKUP_DATABASE_DIR)
+        return UNIVERSITY_BACKUP_DATABASE_DIR
     except Exception as e:
         logger.error(f"Error creating backup directory: {e}")
         return None
@@ -1334,7 +1339,7 @@ def create_enhanced_backup(manual=False, operation_name=None, backup_type="full"
         db_path = DEFAULT_DB_PATH
         if not os.path.exists(str(db_path)):
             logger.warning(f"Database file not found at {db_path}. Nothing to backup.")
-            messagebox.showerror("Backup Error", f"Database file not found at:\n{db_path}\n\nPlease ensure the database exists before creating a backup.")
+            messagebox.showerror(_t('gui.shell.database.operations.backup_ops.dialogs.backup_error', default="Backup Error"), f"Database file not found at:\n{db_path}\n\nPlease ensure the database exists before creating a backup.")
             return None
 
         logger.info(f"Creating backup from database: {db_path}")
@@ -1388,7 +1393,7 @@ def create_enhanced_backup(manual=False, operation_name=None, backup_type="full"
                     config.get("remote_host", ""),
                     config.get("remote_username", ""),
                     config.get("remote_password", ""),
-                    config.get("remote_path", "/backups")
+                    config.get("remote_path", UNIVERSITY_REMOTE_BACKUP_PATH)
                 )
             elif config.get("remote_type") == "sftp":
                 upload_success = upload_to_sftp(
@@ -1396,7 +1401,7 @@ def create_enhanced_backup(manual=False, operation_name=None, backup_type="full"
                     config.get("remote_host", ""),
                     config.get("remote_username", ""),
                     config.get("remote_password", ""),
-                    config.get("remote_path", "/backups")
+                    config.get("remote_path", UNIVERSITY_REMOTE_BACKUP_PATH)
                 )
 
         import education_system.systems.university.interfaces.gui.shell.database.config as cfg

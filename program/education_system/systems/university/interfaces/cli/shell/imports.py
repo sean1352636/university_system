@@ -46,12 +46,12 @@ except ImportError:
     colors = None
 
 # Import centralized paths and defaults
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure import defaults
 
 # Database file path - use centralized path configuration
-DB_PATH = str(paths.DEFAULT_DB_PATH)
-LOG_DIR = str(paths.LOG_DIR)
+DB_PATH = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
+LOG_DIR = str(paths.UNIVERSITY_LOG_DIR)
 
 # Configure logging
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging

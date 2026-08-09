@@ -49,9 +49,13 @@ except Exception:  # pragma: no cover
 # Resolve the templates directory relative to the project layout. Fall back
 # to a sensible default if the import-time path arithmetic ever drifts.
 def _default_template_dir() -> Path:
+    try:
+        from education_system.paths import UNIVERSITY_EMAIL_TEMPLATES_DIR
+        return UNIVERSITY_EMAIL_TEMPLATES_DIR / "academics" / "student_support" / "attendance"
+    except ImportError:
+        pass
     here = Path(__file__).resolve()
-    # absence_tracking/ -> .../university_system/modules/domain/...
-    # Walk up to .../university_system/ then into templates/email/attendance/.
+    # Legacy fallback for standalone use outside the application package.
     for parent in here.parents:
         if parent.name == "university_system":
             return parent / "templates" / "email" / "attendance"

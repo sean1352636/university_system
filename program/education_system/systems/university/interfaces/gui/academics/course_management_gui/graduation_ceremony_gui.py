@@ -14,6 +14,8 @@ Window matches the project convention: 1400x900, minsize 1200x800.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import os
 import tkinter as tk
 from datetime import datetime
@@ -59,7 +61,7 @@ class GraduationCeremonyGUI:
             self._owned_window = False
         else:
             self.window = tk.Toplevel(parent) if parent is not None else tk.Tk()
-            self.window.title("Graduation Ceremony Management")
+            self.window.title(_t('gui.academics.course_management_gui.graduation_ceremony.windows.graduation_ceremony_management', default="Graduation Ceremony Management"))
             self.window.geometry("1400x900")
             self.window.minsize(1200, 800)
             self._owned_window = True
@@ -77,19 +79,19 @@ class GraduationCeremonyGUI:
         top_bar = ttk.Frame(outer)
         top_bar.pack(fill=tk.X, pady=(0, 8))
 
-        ttk.Button(top_bar, text="✖ Close", command=self._close).pack(
+        ttk.Button(top_bar, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.close', default="✖ Close"), command=self._close).pack(
             side=tk.RIGHT, anchor="ne")
 
         ttk.Label(
-            top_bar, text="🎓 Graduation Ceremony Management",
+            top_bar, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.graduation_ceremony_management', default="🎓 Graduation Ceremony Management"),
             font=("Arial", 16, "bold"),
         ).pack(side=tk.LEFT, anchor="w")
 
         # Ceremony picker (shared across all tabs).
-        picker = ttk.LabelFrame(outer, text="Active ceremony", padding=8)
+        picker = ttk.LabelFrame(outer, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.active_ceremony', default="Active ceremony"), padding=8)
         picker.pack(fill=tk.X, pady=(0, 8))
 
-        ttk.Label(picker, text="Ceremony:").pack(side=tk.LEFT)
+        ttk.Label(picker, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.ceremony', default="Ceremony:")).pack(side=tk.LEFT)
         self.ceremony_combo = ttk.Combobox(picker, width=70, state="readonly")
         self.ceremony_combo.pack(side=tk.LEFT, padx=8)
         self.ceremony_combo.bind("<<ComboboxSelected>>", self._on_ceremony_selected)
@@ -97,7 +99,7 @@ class GraduationCeremonyGUI:
         self.capacity_label = ttk.Label(picker, text="", foreground="#444")
         self.capacity_label.pack(side=tk.LEFT, padx=20)
 
-        ttk.Button(picker, text="🔄 Refresh", command=self._reload_ceremonies).pack(side=tk.RIGHT)
+        ttk.Button(picker, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.refresh', default="🔄 Refresh"), command=self._reload_ceremonies).pack(side=tk.RIGHT)
 
         self.notebook = ttk.Notebook(outer)
         self.notebook.pack(fill=tk.BOTH, expand=True)
@@ -215,7 +217,7 @@ class GraduationCeremonyGUI:
         order their gown, and look up their assigned seat. All actions are
         scoped to the student's own ID — no access to other graduands."""
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="⭐ My Graduation")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.tabs.my_graduation', default="⭐ My Graduation"))
 
         sid = self._current_student_id()
         header = ttk.Frame(tab)
@@ -231,52 +233,52 @@ class GraduationCeremonyGUI:
         self._stu_sid = sid
 
         # --- My RSVP -------------------------------------------------------
-        rsvp = ttk.LabelFrame(tab, text="My RSVP", padding=10)
+        rsvp = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.my_rsvp', default="My RSVP"), padding=10)
         rsvp.pack(fill=tk.X, pady=(0, 8))
 
-        ttk.Label(rsvp, text="Attending?").grid(row=0, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(rsvp, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.attending', default="Attending?")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
         self._stu_status = ttk.Combobox(
             rsvp, width=14, state="readonly",
             values=["going", "not_going", "interested", "pending"])
         self._stu_status.set("going")
         self._stu_status.grid(row=0, column=1, sticky="w", padx=6)
 
-        ttk.Label(rsvp, text="Guests:").grid(row=0, column=2, sticky="e", padx=6)
+        ttk.Label(rsvp, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.guests', default="Guests:")).grid(row=0, column=2, sticky="e", padx=6)
         self._stu_guests = ttk.Spinbox(rsvp, from_=0, to=10, width=5)
         self._stu_guests.set(0)
         self._stu_guests.grid(row=0, column=3, sticky="w", padx=6)
 
-        ttk.Label(rsvp, text="Accessibility needs:").grid(row=1, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(rsvp, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.accessibility_needs', default="Accessibility needs:")).grid(row=1, column=0, sticky="e", padx=6, pady=4)
         self._stu_access = ttk.Entry(rsvp, width=44)
         self._stu_access.grid(row=1, column=1, columnspan=3, sticky="we", padx=6)
 
-        ttk.Label(rsvp, text="Name pronunciation:").grid(row=2, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(rsvp, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.name_pronunciation', default="Name pronunciation:")).grid(row=2, column=0, sticky="e", padx=6, pady=4)
         self._stu_pron = ttk.Entry(rsvp, width=44)
         self._stu_pron.grid(row=2, column=1, columnspan=3, sticky="we", padx=6)
 
-        ttk.Button(rsvp, text="💾 Save my RSVP",
+        ttk.Button(rsvp, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.save_my_rsvp', default="💾 Save my RSVP"),
                    command=self._on_student_save_rsvp).grid(
                        row=3, column=0, columnspan=2, sticky="w", padx=6, pady=(8, 0))
 
         # --- My gown order -------------------------------------------------
-        gown = ttk.LabelFrame(tab, text="My Gown Order", padding=10)
+        gown = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.my_gown_order', default="My Gown Order"), padding=10)
         gown.pack(fill=tk.X, pady=(0, 8))
 
-        ttk.Label(gown, text="Gown size:").grid(row=0, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(gown, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.gown_size', default="Gown size:")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
         self._stu_gown_size = ttk.Combobox(gown, width=8, state="readonly",
                                             values=GownOrderManager.GOWN_SIZES)
         self._stu_gown_size.grid(row=0, column=1, sticky="w", padx=6)
 
-        ttk.Label(gown, text="Hat size:").grid(row=0, column=2, sticky="e", padx=6)
+        ttk.Label(gown, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.hat_size', default="Hat size:")).grid(row=0, column=2, sticky="e", padx=6)
         self._stu_hat_size = ttk.Combobox(gown, width=6, state="readonly",
                                           values=GownOrderManager.HAT_SIZES)
         self._stu_hat_size.grid(row=0, column=3, sticky="w", padx=6)
 
-        ttk.Label(gown, text="Hood subject:").grid(row=1, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(gown, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.hood_subject', default="Hood subject:")).grid(row=1, column=0, sticky="e", padx=6, pady=4)
         self._stu_hood = ttk.Entry(gown, width=28)
         self._stu_hood.grid(row=1, column=1, columnspan=3, sticky="we", padx=6)
 
-        ttk.Label(gown, text="Pay by:").grid(row=2, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(gown, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.pay_by', default="Pay by:")).grid(row=2, column=0, sticky="e", padx=6, pady=4)
         self._stu_pay_method = ttk.Combobox(
             gown, width=22, state="readonly",
             values=["Cash", "Card", "Student Finance Account"])
@@ -290,19 +292,19 @@ class GraduationCeremonyGUI:
             w.bind("<<ComboboxSelected>>", lambda _e: self._update_student_gown_cost())
         self._stu_hood.bind("<KeyRelease>", lambda _e: self._update_student_gown_cost())
 
-        ttk.Button(gown, text="💾 Save order (no payment)",
+        ttk.Button(gown, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.save_order_no_payment', default="💾 Save order (no payment)"),
                    command=self._on_student_save_gown).grid(
                        row=3, column=0, columnspan=2, sticky="w", padx=6, pady=(8, 0))
-        ttk.Button(gown, text="💳 Pay & confirm order",
+        ttk.Button(gown, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.pay_confirm_order', default="💳 Pay & confirm order"),
                    command=self._on_student_pay_gown).grid(
                        row=3, column=2, columnspan=2, sticky="w", padx=6, pady=(8, 0))
 
         # --- My seat -------------------------------------------------------
-        seat = ttk.LabelFrame(tab, text="My Seat", padding=10)
+        seat = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.my_seat', default="My Seat"), padding=10)
         seat.pack(fill=tk.X)
         self._stu_seat_label = ttk.Label(seat, text="—", font=("Arial", 11))
         self._stu_seat_label.pack(side=tk.LEFT, padx=6)
-        ttk.Button(seat, text="🔄 Refresh",
+        ttk.Button(seat, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.refresh', default="🔄 Refresh"),
                    command=self._reload_student_tab).pack(side=tk.RIGHT)
 
         # Disable the action widgets when there is no linked student.
@@ -364,15 +366,15 @@ class GraduationCeremonyGUI:
                       f"Seat {seat['seat_number']}"
                       + ("  (accessibility)" if seat.get('is_accessibility') else "")))
         else:
-            self._stu_seat_label.config(text="Not assigned yet.")
+            self._stu_seat_label.config(text=_t('gui.academics.course_management_gui.graduation_ceremony.text.not_assigned_yet', default="Not assigned yet."))
 
     def _on_student_save_rsvp(self):
         sid = self._stu_sid
         if not sid:
-            messagebox.showwarning("Not available", "No student record is linked to your account.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.not_available', default="Not available"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.no_student_record_is_linked_to_your_account', default="No student record is linked to your account."))
             return
         if self.current_ceremony_id is None:
-            messagebox.showwarning("Ceremony", "Select a ceremony at the top first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony', default="Ceremony"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_a_ceremony_at_the_top_first', default="Select a ceremony at the top first."))
             return
         if not self._eligibility_ok(sid, self._stu_status.get()):
             return
@@ -387,22 +389,22 @@ class GraduationCeremonyGUI:
             )
             self._reload_rsvp_table()
             self._update_capacity_label()
-            messagebox.showinfo("RSVP", "Your RSVP has been saved.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.rsvp', default="RSVP"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.your_rsvp_has_been_saved', default="Your RSVP has been saved."))
         except ValueError as ve:
-            messagebox.showwarning("RSVP", str(ve))
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.rsvp', default="RSVP"), str(ve))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _on_student_save_gown(self):
         sid = self._stu_sid
         if not sid:
-            messagebox.showwarning("Not available", "No student record is linked to your account.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.not_available', default="Not available"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.no_student_record_is_linked_to_your_account', default="No student record is linked to your account."))
             return
         if self.current_ceremony_id is None:
-            messagebox.showwarning("Ceremony", "Select a ceremony at the top first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony', default="Ceremony"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_a_ceremony_at_the_top_first', default="Select a ceremony at the top first."))
             return
         if not self._stu_gown_size.get():
-            messagebox.showwarning("Gown", "Choose a gown size.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.gown', default="Gown"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.choose_a_gown_size', default="Choose a gown size."))
             return
         try:
             GownOrderManager.create_order(
@@ -414,9 +416,9 @@ class GraduationCeremonyGUI:
             )
             self._reload_gown_table()
             self._update_student_gown_cost()
-            messagebox.showinfo("Gown order", "Your gown order has been saved.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.gown_order', default="Gown order"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.your_gown_order_has_been_saved', default="Your gown order has been saved."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     # Display label -> service key for the payment-method selector.
     _PAY_METHOD_KEYS = {
@@ -444,17 +446,17 @@ class GraduationCeremonyGUI:
     def _on_student_pay_gown(self):
         sid = self._stu_sid
         if not sid:
-            messagebox.showwarning("Not available", "No student record is linked to your account.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.not_available', default="Not available"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.no_student_record_is_linked_to_your_account', default="No student record is linked to your account."))
             return
         if self.current_ceremony_id is None:
-            messagebox.showwarning("Ceremony", "Select a ceremony at the top first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony', default="Ceremony"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_a_ceremony_at_the_top_first', default="Select a ceremony at the top first."))
             return
         if not self._stu_gown_size.get():
-            messagebox.showwarning("Gown", "Choose a gown size.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.gown', default="Gown"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.choose_a_gown_size', default="Choose a gown size."))
             return
         method = self._PAY_METHOD_KEYS.get(self._stu_pay_method.get())
         if not method:
-            messagebox.showwarning("Payment", "Choose a payment method.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.payment', default="Payment"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.choose_a_payment_method', default="Choose a payment method."))
             return
         try:
             order_id = GownOrderManager.create_order(
@@ -470,10 +472,10 @@ class GraduationCeremonyGUI:
                 processed_by=sid,
             )
         except ValueError as ve:
-            messagebox.showwarning("Payment", str(ve))
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.payment', default="Payment"), str(ve))
             return
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
             return
         self._reload_gown_table()
         self._reload_student_tab()
@@ -483,15 +485,15 @@ class GraduationCeremonyGUI:
         if result.get('balance_remaining') is not None:
             msg += (f"\nFinance account balance remaining: "
                     f"£{result['balance_remaining']:.2f}")
-        messagebox.showinfo("Gown order paid", msg)
+        messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.gown_order_paid', default="Gown order paid"), msg)
 
     # =============================================================== Tab 1
     def _build_ceremonies_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="1. Ceremonies")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.tabs.value_1_ceremonies', default="1. Ceremonies"))
 
         # Form
-        form = ttk.LabelFrame(tab, text="Schedule / edit a ceremony", padding=10)
+        form = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.schedule_edit_a_ceremony', default="Schedule / edit a ceremony"), padding=10)
         form.pack(fill=tk.X)
 
         # Plain text fields keep the generic entry dict.
@@ -509,7 +511,7 @@ class GraduationCeremonyGUI:
         # Row 0: Name | Venue (linked to the buildings table)
         _text_field("Name", 0, 0, "Summer Graduation")
 
-        ttk.Label(form, text="Venue:").grid(row=0, column=2, sticky="e", padx=6, pady=4)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.venue', default="Venue:")).grid(row=0, column=2, sticky="e", padx=6, pady=4)
         venue_box = ttk.Frame(form)
         venue_box.grid(row=0, column=3, sticky="w", padx=6, pady=4)
         self._cer_venue = ttk.Combobox(venue_box, width=26, state="readonly")
@@ -518,7 +520,7 @@ class GraduationCeremonyGUI:
                    command=self._reload_venues).pack(side=tk.LEFT, padx=(4, 0))
 
         # Row 1: Date picker | Time steppers
-        ttk.Label(form, text="Date:").grid(row=1, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.date', default="Date:")).grid(row=1, column=0, sticky="e", padx=6, pady=4)
         today = datetime.now()
         if _HAS_TKCALENDAR:
             self._cer_date = DateEntry(
@@ -530,7 +532,7 @@ class GraduationCeremonyGUI:
             self._cer_date.insert(0, today.strftime("%Y-%m-%d"))
         self._cer_date.grid(row=1, column=1, sticky="w", padx=6, pady=4)
 
-        ttk.Label(form, text="Time:").grid(row=1, column=2, sticky="e", padx=6, pady=4)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.time', default="Time:")).grid(row=1, column=2, sticky="e", padx=6, pady=4)
         time_box = ttk.Frame(form)
         time_box.grid(row=1, column=3, sticky="w", padx=6, pady=4)
         self._cer_hour = ttk.Spinbox(time_box, from_=0, to=23, width=4,
@@ -551,7 +553,7 @@ class GraduationCeremonyGUI:
         _text_field("Cohort filter (e.g. BSc CS 2025/26)", 3, 0, "", width=60)
 
         # Row 4: RSVP deadline picker (optional)
-        ttk.Label(form, text="RSVP deadline:").grid(row=4, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.rsvp_deadline', default="RSVP deadline:")).grid(row=4, column=0, sticky="e", padx=6, pady=4)
         deadline_box = ttk.Frame(form)
         deadline_box.grid(row=4, column=1, sticky="w", padx=6, pady=4)
         if _HAS_TKCALENDAR:
@@ -562,24 +564,24 @@ class GraduationCeremonyGUI:
         else:
             self._cer_deadline = ttk.Entry(deadline_box, width=20)
         self._cer_deadline.pack(side=tk.LEFT)
-        ttk.Button(deadline_box, text="✖ Clear", command=self._clear_deadline).pack(
+        ttk.Button(deadline_box, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.clear', default="✖ Clear"), command=self._clear_deadline).pack(
             side=tk.LEFT, padx=(4, 0))
-        ttk.Label(deadline_box, text="(leave blank for none)",
+        ttk.Label(deadline_box, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.leave_blank_for_none', default="(leave blank for none)"),
                   foreground="#888").pack(side=tk.LEFT, padx=(6, 0))
 
         self._reload_venues()
 
         btn_row = ttk.Frame(form)
         btn_row.grid(row=5, column=0, columnspan=4, pady=(8, 0), sticky="w")
-        ttk.Button(btn_row, text="➕ Create",  command=self._on_create_ceremony).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btn_row, text="💾 Update selected", command=self._on_update_ceremony).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btn_row, text="🗑️ Cancel selected",
+        ttk.Button(btn_row, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.create', default="➕ Create"),  command=self._on_create_ceremony).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_row, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.update_selected', default="💾 Update selected"), command=self._on_update_ceremony).pack(side=tk.LEFT, padx=4)
+        ttk.Button(btn_row, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.cancel_selected', default="🗑️ Cancel selected"),
                    command=lambda: self._set_ceremony_status('cancelled')).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btn_row, text="✅ Mark completed",
+        ttk.Button(btn_row, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.mark_completed', default="✅ Mark completed"),
                    command=lambda: self._set_ceremony_status('completed')).pack(side=tk.LEFT, padx=4)
 
         # Table
-        table_frame = ttk.LabelFrame(tab, text="All ceremonies", padding=6)
+        table_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.all_ceremonies', default="All ceremonies"), padding=6)
         table_frame.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
 
         cols = ("id", "name", "date", "time", "venue", "capacity", "cohort", "status")
@@ -728,7 +730,7 @@ class GraduationCeremonyGUI:
         try:
             p = self._form_ceremony_payload()
         except ValueError as ve:
-            messagebox.showwarning("Check the form", str(ve))
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.check_the_form', default="Check the form"), str(ve))
             return
         missing = [name for name, key in (
             ("Name", "ceremony_name"),
@@ -738,33 +740,33 @@ class GraduationCeremonyGUI:
         ) if not p.get(key)]
         if missing:
             messagebox.showwarning(
-                "Check the form",
+                _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.check_the_form', default="Check the form"),
                 "These fields are required:\n  • " + "\n  • ".join(missing),
             )
             return
         try:
             CeremonyManager.create_ceremony(**p)
             self._reload_ceremonies()
-            messagebox.showinfo("Created", "Ceremony scheduled.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.created', default="Created"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony_scheduled', default="Ceremony scheduled."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _on_update_ceremony(self):
         if self.current_ceremony_id is None:
-            messagebox.showwarning("Select", "Select a ceremony first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select', default="Select"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_a_ceremony_first', default="Select a ceremony first."))
             return
         try:
             p = self._form_ceremony_payload()
             CeremonyManager.update_ceremony(self.current_ceremony_id, **p)
             self._reload_ceremonies()
-            messagebox.showinfo("Updated", "Ceremony updated.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.updated', default="Updated"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony_updated', default="Ceremony updated."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _set_ceremony_status(self, status: str):
         if self.current_ceremony_id is None:
             return
-        if not messagebox.askyesno("Confirm", f"Set ceremony status to '{status}'?"):
+        if not messagebox.askyesno(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.confirm', default="Confirm"), f"Set ceremony status to '{status}'?"):
             return
 
         if status == 'completed':
@@ -775,13 +777,13 @@ class GraduationCeremonyGUI:
             try:
                 sent, total = CeremonyManager.complete_ceremony(self.current_ceremony_id)
                 messagebox.showinfo(
-                    "Ceremony completed",
+                    _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony_completed', default="Ceremony completed"),
                     f"Ceremony marked completed.\n\n"
                     f"Congratulations emails sent to {sent} of {total} graduand(s).")
             except Exception:
                 messagebox.showwarning(
-                    "Ceremony completed",
-                    "Ceremony marked completed, but graduand emails could not be sent.")
+                    _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony_completed', default="Ceremony completed"),
+                    _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony_marked_completed_but_graduand_emails_could_not_be_sent', default="Ceremony marked completed, but graduand emails could not be sent."))
         else:
             CeremonyManager.update_ceremony(self.current_ceremony_id, status=status)
 
@@ -790,39 +792,39 @@ class GraduationCeremonyGUI:
     # =============================================================== Tab 2
     def _build_rsvp_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="2. RSVPs")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.tabs.value_2_rsvps', default="2. RSVPs"))
 
-        form = ttk.LabelFrame(tab, text="Record / update an RSVP", padding=10)
+        form = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.record_update_an_rsvp', default="Record / update an RSVP"), padding=10)
         form.pack(fill=tk.X)
 
-        ttk.Label(form, text="Student ID:").grid(row=0, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
         self.rsvp_sid = ttk.Entry(form, width=18)
         self.rsvp_sid.grid(row=0, column=1, sticky="w", padx=6)
 
-        ttk.Label(form, text="Status:").grid(row=0, column=2, sticky="e", padx=6)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.status', default="Status:")).grid(row=0, column=2, sticky="e", padx=6)
         self.rsvp_status = ttk.Combobox(form, width=14, state="readonly",
                                         values=["going", "not_going", "interested", "pending"])
         self.rsvp_status.set("going")
         self.rsvp_status.grid(row=0, column=3, sticky="w", padx=6)
 
-        ttk.Label(form, text="Guests:").grid(row=0, column=4, sticky="e", padx=6)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.guests', default="Guests:")).grid(row=0, column=4, sticky="e", padx=6)
         self.rsvp_guests = ttk.Spinbox(form, from_=0, to=10, width=5)
         self.rsvp_guests.set(0)
         self.rsvp_guests.grid(row=0, column=5, sticky="w", padx=6)
 
-        ttk.Label(form, text="Accessibility notes:").grid(row=1, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.accessibility_notes', default="Accessibility notes:")).grid(row=1, column=0, sticky="e", padx=6, pady=4)
         self.rsvp_access = ttk.Entry(form, width=50)
         self.rsvp_access.grid(row=1, column=1, columnspan=3, sticky="we", padx=6)
 
-        ttk.Label(form, text="Name pronunciation:").grid(row=1, column=4, sticky="e", padx=6)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.name_pronunciation', default="Name pronunciation:")).grid(row=1, column=4, sticky="e", padx=6)
         self.rsvp_pron = ttk.Entry(form, width=22)
         self.rsvp_pron.grid(row=1, column=5, sticky="we", padx=6)
 
-        ttk.Button(form, text="💾 Record RSVP",
+        ttk.Button(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.record_rsvp', default="💾 Record RSVP"),
                    command=self._on_record_rsvp).grid(row=2, column=0, columnspan=2, sticky="w", padx=6, pady=(8, 0))
 
         # Table
-        table = ttk.LabelFrame(tab, text="RSVPs", padding=6)
+        table = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.rsvps', default="RSVPs"), padding=6)
         table.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
 
         cols = ("sid", "name", "course", "status", "guests", "access", "pron", "recorded")
@@ -862,12 +864,12 @@ class GraduationCeremonyGUI:
             return True
         if report.get("error"):
             return messagebox.askyesno(
-                "Eligibility unverified",
+                _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.eligibility_unverified', default="Eligibility unverified"),
                 f"Could not verify graduation eligibility for {student_id}.\n\n"
                 f"{' '.join(report.get('reasons', []))}\n\nAdd them anyway?")
         reasons = "\n".join(f"  • {r}" for r in report.get("reasons", []))
         messagebox.showwarning(
-            "Not eligible for graduation",
+            _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.not_eligible_for_graduation', default="Not eligible for graduation"),
             f"{report.get('student_name', student_id)} cannot be added as a "
             f"graduand — they are not eligible to graduate:\n\n{reasons}\n\n"
             "Run a graduation audit in Degree Audit first.")
@@ -875,11 +877,11 @@ class GraduationCeremonyGUI:
 
     def _on_record_rsvp(self):
         if self.current_ceremony_id is None:
-            messagebox.showwarning("Ceremony", "Select a ceremony first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony', default="Ceremony"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_a_ceremony_first', default="Select a ceremony first."))
             return
         sid = self.rsvp_sid.get().strip()
         if not sid:
-            messagebox.showwarning("Student", "Enter a student ID.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.student', default="Student"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.enter_a_student_id', default="Enter a student ID."))
             return
         if not self._eligibility_ok(sid, self.rsvp_status.get()):
             return
@@ -894,11 +896,11 @@ class GraduationCeremonyGUI:
             )
             self._reload_rsvp_table()
             self._update_capacity_label()
-            messagebox.showinfo("RSVP", "RSVP recorded.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.rsvp', default="RSVP"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.rsvp_recorded', default="RSVP recorded."))
         except ValueError as ve:
-            messagebox.showwarning("RSVP", str(ve))
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.rsvp', default="RSVP"), str(ve))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _reload_rsvp_table(self):
         for iid in self.rsvp_tree.get_children():
@@ -917,56 +919,56 @@ class GraduationCeremonyGUI:
     # =============================================================== Tab 3
     def _build_gown_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="3. Gown Orders")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.tabs.value_3_gown_orders', default="3. Gown Orders"))
 
-        form = ttk.LabelFrame(tab, text="Place / update a gown order", padding=10)
+        form = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.place_update_a_gown_order', default="Place / update a gown order"), padding=10)
         form.pack(fill=tk.X)
 
-        ttk.Label(form, text="Student ID:").grid(row=0, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
         self.gown_sid = ttk.Entry(form, width=18)
         self.gown_sid.grid(row=0, column=1, sticky="w", padx=6)
 
-        ttk.Label(form, text="Gown size:").grid(row=0, column=2, sticky="e", padx=6)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.gown_size', default="Gown size:")).grid(row=0, column=2, sticky="e", padx=6)
         self.gown_size = ttk.Combobox(form, width=8, state="readonly",
                                       values=GownOrderManager.GOWN_SIZES)
         self.gown_size.grid(row=0, column=3, sticky="w", padx=6)
 
-        ttk.Label(form, text="Hat size:").grid(row=0, column=4, sticky="e", padx=6)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.hat_size', default="Hat size:")).grid(row=0, column=4, sticky="e", padx=6)
         self.hat_size = ttk.Combobox(form, width=6, state="readonly",
                                      values=GownOrderManager.HAT_SIZES)
         self.hat_size.grid(row=0, column=5, sticky="w", padx=6)
 
-        ttk.Label(form, text="Hood subject:").grid(row=1, column=0, sticky="e", padx=6)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.hood_subject', default="Hood subject:")).grid(row=1, column=0, sticky="e", padx=6)
         self.hood_subject = ttk.Entry(form, width=24)
         self.hood_subject.grid(row=1, column=1, sticky="w", padx=6)
 
-        ttk.Label(form, text="Supplier:").grid(row=1, column=2, sticky="e", padx=6)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.supplier', default="Supplier:")).grid(row=1, column=2, sticky="e", padx=6)
         self.gown_supplier = ttk.Entry(form, width=22)
         self.gown_supplier.grid(row=1, column=3, sticky="w", padx=6)
 
-        ttk.Label(form, text="Collection slot:").grid(row=1, column=4, sticky="e", padx=6)
+        ttk.Label(form, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.collection_slot', default="Collection slot:")).grid(row=1, column=4, sticky="e", padx=6)
         self.gown_slot = ttk.Entry(form, width=22)
         self.gown_slot.grid(row=1, column=5, sticky="w", padx=6)
 
         actions = ttk.Frame(form)
         actions.grid(row=2, column=0, columnspan=6, sticky="w", padx=6, pady=(8, 0))
-        ttk.Button(actions, text="💾 Save order", command=self._on_save_gown).pack(side=tk.LEFT, padx=4)
+        ttk.Button(actions, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.save_order', default="💾 Save order"), command=self._on_save_gown).pack(side=tk.LEFT, padx=4)
         for st in ('arrived', 'collected', 'returned', 'cancelled'):
             ttk.Button(actions, text=f"Mark {st}",
                        command=lambda s=st: self._on_set_gown_status(s)).pack(side=tk.LEFT, padx=4)
 
         pay = ttk.Frame(form)
         pay.grid(row=3, column=0, columnspan=6, sticky="w", padx=6, pady=(6, 0))
-        ttk.Label(pay, text="Take payment by:").pack(side=tk.LEFT, padx=(0, 4))
+        ttk.Label(pay, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.take_payment_by', default="Take payment by:")).pack(side=tk.LEFT, padx=(0, 4))
         self.gown_pay_method = ttk.Combobox(
             pay, width=22, state="readonly",
             values=["Cash", "Card", "Student Finance Account"])
         self.gown_pay_method.set("Card")
         self.gown_pay_method.pack(side=tk.LEFT, padx=4)
-        ttk.Button(pay, text="💳 Take payment for selected order",
+        ttk.Button(pay, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.take_payment_for_selected_order', default="💳 Take payment for selected order"),
                    command=self._on_take_gown_payment).pack(side=tk.LEFT, padx=8)
 
-        table = ttk.LabelFrame(tab, text="Gown orders for this ceremony", padding=6)
+        table = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.gown_orders_for_this_ceremony', default="Gown orders for this ceremony"), padding=6)
         table.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
 
         cols = ("oid", "sid", "name", "gown", "hat", "hood", "supplier", "slot",
@@ -998,11 +1000,11 @@ class GraduationCeremonyGUI:
 
     def _on_save_gown(self):
         if self.current_ceremony_id is None:
-            messagebox.showwarning("Ceremony", "Select a ceremony first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony', default="Ceremony"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_a_ceremony_first', default="Select a ceremony first."))
             return
         sid = self.gown_sid.get().strip()
         if not sid:
-            messagebox.showwarning("Student", "Enter a student ID.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.student', default="Student"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.enter_a_student_id', default="Enter a student ID."))
             return
         try:
             GownOrderManager.create_order(
@@ -1015,29 +1017,29 @@ class GraduationCeremonyGUI:
                 collection_slot=self.gown_slot.get().strip(),
             )
             self._reload_gown_table()
-            messagebox.showinfo("Saved", "Gown order saved.")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.saved', default="Saved"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.gown_order_saved', default="Gown order saved."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _on_set_gown_status(self, status: str):
         oid = getattr(self, '_selected_gown_order_id', None)
         if not oid:
-            messagebox.showwarning("Select", "Select an order in the table first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select', default="Select"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_an_order_in_the_table_first', default="Select an order in the table first."))
             return
         try:
             GownOrderManager.update_status(oid, status)
             self._reload_gown_table()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _on_take_gown_payment(self):
         oid = getattr(self, '_selected_gown_order_id', None)
         if not oid:
-            messagebox.showwarning("Select", "Select an order in the table first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select', default="Select"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_an_order_in_the_table_first', default="Select an order in the table first."))
             return
         method = self._PAY_METHOD_KEYS.get(self.gown_pay_method.get())
         if not method:
-            messagebox.showwarning("Payment", "Choose a payment method.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.payment', default="Payment"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.choose_a_payment_method', default="Choose a payment method."))
             return
         processed_by = (self.auth.current_user.get('username')
                         if self.auth and getattr(self.auth, 'current_user', None)
@@ -1046,10 +1048,10 @@ class GraduationCeremonyGUI:
             result = GownOrderManager.process_payment(
                 order_id=oid, payment_method=method, processed_by=processed_by)
         except ValueError as ve:
-            messagebox.showwarning("Payment", str(ve))
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.payment', default="Payment"), str(ve))
             return
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
             return
         self._reload_gown_table()
         msg = (f"Payment of £{result['amount']:.2f} recorded "
@@ -1058,7 +1060,7 @@ class GraduationCeremonyGUI:
         if result.get('balance_remaining') is not None:
             msg += (f"\nFinance account balance remaining: "
                     f"£{result['balance_remaining']:.2f}")
-        messagebox.showinfo("Payment recorded", msg)
+        messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.payment_recorded', default="Payment recorded"), msg)
 
     def _reload_gown_table(self):
         for iid in self.gown_tree.get_children():
@@ -1081,29 +1083,29 @@ class GraduationCeremonyGUI:
     # =============================================================== Tab 4
     def _build_seat_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="4. Seat Plan")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.tabs.value_4_seat_plan', default="4. Seat Plan"))
 
-        controls = ttk.LabelFrame(tab, text="Generator", padding=10)
+        controls = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.generator', default="Generator"), padding=10)
         controls.pack(fill=tk.X)
 
-        ttk.Label(controls, text="Seats per row:").pack(side=tk.LEFT, padx=4)
+        ttk.Label(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.seats_per_row', default="Seats per row:")).pack(side=tk.LEFT, padx=4)
         self.seats_per_row = ttk.Spinbox(controls, from_=4, to=30, width=5)
         self.seats_per_row.set(12)
         self.seats_per_row.pack(side=tk.LEFT, padx=4)
 
-        ttk.Label(controls, text="Accessibility rows:").pack(side=tk.LEFT, padx=8)
+        ttk.Label(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.accessibility_rows', default="Accessibility rows:")).pack(side=tk.LEFT, padx=8)
         self.access_rows = ttk.Spinbox(controls, from_=0, to=10, width=5)
         self.access_rows.set(1)
         self.access_rows.pack(side=tk.LEFT, padx=4)
 
-        ttk.Button(controls, text="⚙️ Auto-assign seats",
+        ttk.Button(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.auto_assign_seats', default="⚙️ Auto-assign seats"),
                    command=self._on_auto_assign).pack(side=tk.LEFT, padx=12)
-        ttk.Button(controls, text="🧹 Clear seat plan",
+        ttk.Button(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.clear_seat_plan', default="🧹 Clear seat plan"),
                    command=self._on_clear_seats).pack(side=tk.LEFT, padx=4)
-        ttk.Button(controls, text="⬇️ Export CSV",
+        ttk.Button(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.export_csv', default="⬇️ Export CSV"),
                    command=self._on_export_seats).pack(side=tk.LEFT, padx=4)
 
-        table = ttk.LabelFrame(tab, text="Seat plan", padding=6)
+        table = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.seat_plan', default="Seat plan"), padding=6)
         table.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
 
         cols = ("section", "row", "seat", "sid", "name", "course", "access", "notes")
@@ -1118,7 +1120,7 @@ class GraduationCeremonyGUI:
 
     def _on_auto_assign(self):
         if self.current_ceremony_id is None:
-            messagebox.showwarning("Ceremony", "Select a ceremony first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony', default="Ceremony"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_a_ceremony_first', default="Select a ceremony first."))
             return
         try:
             spr = int(self.seats_per_row.get() or 12)
@@ -1128,14 +1130,14 @@ class GraduationCeremonyGUI:
             )
             self._reload_seat_table()
             self._refresh_script_preview()
-            messagebox.showinfo("Seat plan", f"Assigned {count} seat(s).")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.seat_plan', default="Seat plan"), f"Assigned {count} seat(s).")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _on_clear_seats(self):
         if self.current_ceremony_id is None:
             return
-        if not messagebox.askyesno("Confirm", "Wipe the seat plan for this ceremony?"):
+        if not messagebox.askyesno(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.confirm', default="Confirm"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.wipe_the_seat_plan_for_this_ceremony', default="Wipe the seat plan for this ceremony?")):
             return
         SeatPlanManager.clear_assignments(self.current_ceremony_id)
         self._reload_seat_table()
@@ -1146,7 +1148,7 @@ class GraduationCeremonyGUI:
             return
         path = filedialog.asksaveasfilename(
             parent=self.window,
-            title="Save seat plan CSV",
+            title=_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.save_seat_plan_csv', default="Save seat plan CSV"),
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv"), ("All", "*.*")],
             initialfile=f"seat_plan_ceremony_{self.current_ceremony_id}.csv",
@@ -1156,9 +1158,9 @@ class GraduationCeremonyGUI:
         try:
             with open(path, "w", encoding="utf-8") as f:
                 f.write(SeatPlanManager.export_csv(self.current_ceremony_id))
-            messagebox.showinfo("Saved", f"Seat plan exported:\n{path}")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.saved', default="Saved"), f"Seat plan exported:\n{path}")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _reload_seat_table(self):
         for iid in self.seat_tree.get_children():
@@ -1177,19 +1179,19 @@ class GraduationCeremonyGUI:
     # =============================================================== Tab 5
     def _build_script_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="5. Stage Script")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.tabs.value_5_stage_script', default="5. Stage Script"))
 
         controls = ttk.Frame(tab)
         controls.pack(fill=tk.X)
         self.include_pron = tk.BooleanVar(value=True)
-        ttk.Checkbutton(controls, text="Include pronunciation lines",
+        ttk.Checkbutton(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.include_pronunciation_lines', default="Include pronunciation lines"),
                         variable=self.include_pron,
                         command=self._refresh_script_preview).pack(side=tk.LEFT)
-        ttk.Button(controls, text="🔄 Refresh preview",
+        ttk.Button(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.refresh_preview', default="🔄 Refresh preview"),
                    command=self._refresh_script_preview).pack(side=tk.LEFT, padx=12)
-        ttk.Button(controls, text="⬇️ Export script (.txt)",
+        ttk.Button(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.export_script_txt', default="⬇️ Export script (.txt)"),
                    command=self._on_export_script).pack(side=tk.LEFT, padx=4)
-        ttk.Button(controls, text="⬇️ Export pronunciation list (CSV)",
+        ttk.Button(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.export_pronunciation_list_csv', default="⬇️ Export pronunciation list (CSV)"),
                    command=self._on_export_pron).pack(side=tk.LEFT, padx=4)
 
         self.script_text = tk.Text(tab, wrap="none", height=30,
@@ -1228,9 +1230,9 @@ class GraduationCeremonyGUI:
                     self.current_ceremony_id,
                     include_pronunciation=bool(self.include_pron.get()),
                 ))
-            messagebox.showinfo("Saved", f"Script exported:\n{path}")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.saved', default="Saved"), f"Script exported:\n{path}")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _on_export_pron(self):
         if self.current_ceremony_id is None:
@@ -1247,39 +1249,39 @@ class GraduationCeremonyGUI:
                 f.write(StageScriptManager.export_name_pronunciation_csv(
                     self.current_ceremony_id,
                 ))
-            messagebox.showinfo("Saved", f"Pronunciation list exported:\n{path}")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.saved', default="Saved"), f"Pronunciation list exported:\n{path}")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
 
     # =============================================================== Tab 6
     def _build_records_tab(self):
         tab = ttk.Frame(self.notebook, padding=10)
-        self.notebook.add(tab, text="6. Records & Artefacts")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.tabs.value_6_records_artefacts', default="6. Records & Artefacts"))
 
         # Quick jump to the full Alumni Management system — graduands moved
         # across by the conferral package show up there.
         topbar = ttk.Frame(tab)
         topbar.pack(fill=tk.X, pady=(0, 8))
-        ttk.Button(topbar, text="🎓 Open Alumni System",
+        ttk.Button(topbar, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.open_alumni_system', default="🎓 Open Alumni System"),
                    command=self._open_alumni_system).pack(side=tk.RIGHT)
 
         # Conferral package — one-click for the four steps.
         package = ttk.LabelFrame(
-            tab, text="Conferral package (parchment + diploma + freeze + alumni)",
+            tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.conferral_package_parchment_diploma_freeze_alumni', default="Conferral package (parchment + diploma + freeze + alumni)"),
             padding=10,
         )
         package.pack(fill=tk.X)
 
-        ttk.Label(package, text="Student ID:").grid(row=0, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
         self.rec_sid = ttk.Entry(package, width=14)
         self.rec_sid.grid(row=0, column=1, sticky="w", padx=6)
 
-        ttk.Label(package, text="Course / award:").grid(row=0, column=2, sticky="e", padx=6)
+        ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.course_award', default="Course / award:")).grid(row=0, column=2, sticky="e", padx=6)
         self.rec_course = ttk.Entry(package, width=28)
         self.rec_course.grid(row=0, column=3, sticky="w", padx=6)
 
-        ttk.Label(package, text="Classification:").grid(row=0, column=4, sticky="e", padx=6)
+        ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.classification', default="Classification:")).grid(row=0, column=4, sticky="e", padx=6)
         self.rec_class = ttk.Combobox(package, width=18, state="readonly", values=[
             'First Class Honours', 'Upper Second Class (2:1)',
             'Lower Second Class (2:2)', 'Third Class', 'Pass',
@@ -1288,21 +1290,21 @@ class GraduationCeremonyGUI:
         self.rec_class.set('Upper Second Class (2:1)')
         self.rec_class.grid(row=0, column=5, sticky="w", padx=6)
 
-        ttk.Label(package, text="Academic year:").grid(row=1, column=0, sticky="e", padx=6)
+        ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.academic_year', default="Academic year:")).grid(row=1, column=0, sticky="e", padx=6)
         self.rec_year = ttk.Entry(package, width=14)
         self.rec_year.grid(row=1, column=1, sticky="w", padx=6)
 
-        ttk.Label(package, text="Grad. year:").grid(row=1, column=2, sticky="e", padx=6)
+        ttk.Label(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.grad_year', default="Grad. year:")).grid(row=1, column=2, sticky="e", padx=6)
         self.rec_grad_year = ttk.Entry(package, width=8)
         self.rec_grad_year.insert(0, str(datetime.now().year))
         self.rec_grad_year.grid(row=1, column=3, sticky="w", padx=6)
 
-        ttk.Button(package, text="🎁 Issue full conferral package",
+        ttk.Button(package, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.issue_full_conferral_package', default="🎁 Issue full conferral package"),
                    command=self._on_issue_package).grid(
                        row=1, column=4, columnspan=2, sticky="w", padx=6, pady=(4, 0))
 
         # Print queue table.
-        pq = ttk.LabelFrame(tab, text="Parchment print queue", padding=6)
+        pq = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.parchment_print_queue', default="Parchment print queue"), padding=6)
         pq.pack(fill=tk.BOTH, expand=True, pady=(8, 0))
 
         controls = ttk.Frame(pq)
@@ -1313,7 +1315,7 @@ class GraduationCeremonyGUI:
                               ('Mark failed', 'failed')]:
             ttk.Button(controls, text=label,
                        command=lambda s=status: self._on_set_print_status(s)).pack(side=tk.LEFT, padx=4)
-        ttk.Button(controls, text="↻ Reload",
+        ttk.Button(controls, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.reload', default="↻ Reload"),
                    command=self._reload_print_queue).pack(side=tk.RIGHT)
 
         cols = ("qid", "sid", "name", "cert_no", "status",
@@ -1328,32 +1330,32 @@ class GraduationCeremonyGUI:
         self.print_tree.configure(yscrollcommand=scr.set)
 
         # Employer transcript token issuer.
-        token = ttk.LabelFrame(tab, text="Issue employer transcript link", padding=10)
+        token = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.issue_employer_transcript_link', default="Issue employer transcript link"), padding=10)
         token.pack(fill=tk.X, pady=(8, 0))
 
-        ttk.Label(token, text="Student ID:").grid(row=0, column=0, sticky="e", padx=6, pady=4)
+        ttk.Label(token, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky="e", padx=6, pady=4)
         self.tok_sid = ttk.Entry(token, width=14)
         self.tok_sid.grid(row=0, column=1, sticky="w", padx=6)
 
-        ttk.Label(token, text="Employer name:").grid(row=0, column=2, sticky="e", padx=6)
+        ttk.Label(token, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.employer_name', default="Employer name:")).grid(row=0, column=2, sticky="e", padx=6)
         self.tok_emp_name = ttk.Entry(token, width=24)
         self.tok_emp_name.grid(row=0, column=3, sticky="w", padx=6)
 
-        ttk.Label(token, text="Employer email:").grid(row=0, column=4, sticky="e", padx=6)
+        ttk.Label(token, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.employer_email', default="Employer email:")).grid(row=0, column=4, sticky="e", padx=6)
         self.tok_emp_email = ttk.Entry(token, width=28)
         self.tok_emp_email.grid(row=0, column=5, sticky="w", padx=6)
 
-        ttk.Label(token, text="Purpose:").grid(row=1, column=0, sticky="e", padx=6)
+        ttk.Label(token, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.purpose', default="Purpose:")).grid(row=1, column=0, sticky="e", padx=6)
         self.tok_purpose = ttk.Entry(token, width=40)
         self.tok_purpose.insert(0, "Employment verification")
         self.tok_purpose.grid(row=1, column=1, columnspan=3, sticky="we", padx=6)
 
-        ttk.Label(token, text="TTL (days):").grid(row=1, column=4, sticky="e", padx=6)
+        ttk.Label(token, text=_t('gui.academics.course_management_gui.graduation_ceremony.labels.ttl_days', default="TTL (days):")).grid(row=1, column=4, sticky="e", padx=6)
         self.tok_ttl = ttk.Spinbox(token, from_=1, to=365, width=6)
         self.tok_ttl.set(30)
         self.tok_ttl.grid(row=1, column=5, sticky="w", padx=6)
 
-        ttk.Button(token, text="🔗 Issue transcript token",
+        ttk.Button(token, text=_t('gui.academics.course_management_gui.graduation_ceremony.buttons.issue_transcript_token', default="🔗 Issue transcript token"),
                    command=self._on_issue_token).grid(
                        row=2, column=0, columnspan=3, sticky="w", padx=6, pady=(6, 0))
 
@@ -1376,14 +1378,14 @@ class GraduationCeremonyGUI:
     def _on_set_print_status(self, status: str):
         sel = self.print_tree.selection()
         if not sel:
-            messagebox.showwarning("Select", "Select a print-queue row first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select', default="Select"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_a_print_queue_row_first', default="Select a print-queue row first."))
             return
         qid = int(self.print_tree.item(sel[0])['values'][0])
         try:
             PrintQueueManager.set_status(qid, status)
             self._reload_print_queue()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
 
     def _open_alumni_system(self):
         """Launch the Alumni Management GUI in a new window."""
@@ -1394,23 +1396,23 @@ class GraduationCeremonyGUI:
             AlumniGUIApp(tk.Toplevel(self.window), auth=self.auth)
         except Exception as e:
             messagebox.showerror(
-                "Alumni System",
+                _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.alumni_system', default="Alumni System"),
                 f"Could not open the Alumni Management system:\n{e}")
 
     def _on_issue_package(self):
         if self.current_ceremony_id is None:
-            messagebox.showwarning("Ceremony", "Select a ceremony first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.ceremony', default="Ceremony"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.select_a_ceremony_first', default="Select a ceremony first."))
             return
         sid = self.rec_sid.get().strip()
         if not sid:
-            messagebox.showwarning("Student", "Enter a student ID.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.student', default="Student"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.enter_a_student_id', default="Enter a student ID."))
             return
         course = self.rec_course.get().strip()
         classification = self.rec_class.get().strip()
         try:
             grad_year = int(self.rec_grad_year.get().strip() or datetime.now().year)
         except ValueError:
-            messagebox.showwarning("Year", "Graduation year must be a number.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.year', default="Year"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.graduation_year_must_be_a_number', default="Graduation year must be a number."))
             return
         try:
             result = issue_conferral_package(
@@ -1424,7 +1426,7 @@ class GraduationCeremonyGUI:
                            if self.auth and getattr(self.auth, 'current_user', None) else 'system'),
             )
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
             return
         self._reload_print_queue()
         lines = []
@@ -1443,18 +1445,18 @@ class GraduationCeremonyGUI:
             lines.append("")
             lines.append("Errors:")
             lines.extend(f"  • {e}" for e in result['errors'])
-        messagebox.showinfo("Conferral package", "\n".join(lines) or "Done.")
+        messagebox.showinfo(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.conferral_package', default="Conferral package"), "\n".join(lines) or "Done.")
 
     def _on_issue_token(self):
         sid = self.tok_sid.get().strip()
         emp_email = self.tok_emp_email.get().strip()
         if not sid or not emp_email:
-            messagebox.showwarning("Token", "Student ID and employer email are required.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.token', default="Token"), _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.student_id_and_employer_email_are_required', default="Student ID and employer email are required."))
             return
         freeze = TranscriptFreezeManager.get_latest_for_student(sid)
         if not freeze:
             messagebox.showwarning(
-                "No frozen transcript",
+                _t('gui.academics.course_management_gui.graduation_ceremony.dialogs.no_frozen_transcript', default="No frozen transcript"),
                 f"No transcript freeze on file for {sid}. "
                 "Issue the conferral package first."
             )
@@ -1474,7 +1476,7 @@ class GraduationCeremonyGUI:
                 ttl_days=ttl,
             )
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.course_management_gui.graduation_ceremony.dialogs.error', default="Error"), str(e))
             return
         self.tok_result.config(
             text=f"Token issued — expires {res['expires_at']}. URL: {res['verification_url']}"

@@ -4,11 +4,11 @@ the Grade Tracking GUI and Assignment GUI systems.
 """
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 
 class AssessmentAssignmentService:

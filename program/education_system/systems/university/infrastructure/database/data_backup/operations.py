@@ -7,7 +7,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import DatabaseManager, get_connection, sqlite3
 from education_system.systems.university.infrastructure.sql_safety import (
     validate_table_name as _sql_validate_table_name,
@@ -187,10 +187,10 @@ def create_schema_only_backup(backup_path: str) -> bool:
 def has_database_changed() -> bool:
     """Check if database has changed since last backup"""
     try:
-        if not os.path.exists(str(DEFAULT_DB_PATH)):
+        if not os.path.exists(str(UNIVERSITY_DEFAULT_DB_PATH)):
             return False
 
-        current_hash = calculate_file_hash(str(DEFAULT_DB_PATH))
+        current_hash = calculate_file_hash(str(UNIVERSITY_DEFAULT_DB_PATH))
 
         # Check if we have a previous hash stored
         last_backup = metadata_manager.get_backups(limit=1)
@@ -224,7 +224,7 @@ def create_incremental_backup(backup_path: str) -> bool:
             if hasattr(conn, 'execute'):
                 db_path = conn.execute("PRAGMA database_list").fetchone()[2]
             else:
-                db_path = str(DEFAULT_DB_PATH)
+                db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
 
         shutil.copy2(db_path, backup_path)
         return True
@@ -286,13 +286,13 @@ def create_enhanced_backup(manual=False, operation_name=None, backup_type="full"
         backup_path = backup_dir / filename
 
         # Check if source database exists
-        if not os.path.exists(str(DEFAULT_DB_PATH)):
+        if not os.path.exists(str(UNIVERSITY_DEFAULT_DB_PATH)):
             logger.warning("Database file not found. Nothing to backup.")
             return None
 
         # Progress tracking
         if config.get("show_progress", True):
-            db_size = os.path.getsize(str(DEFAULT_DB_PATH))
+            db_size = os.path.getsize(str(UNIVERSITY_DEFAULT_DB_PATH))
             progress = ProgressTracker(db_size)
 
         # Create backup based on type
@@ -309,7 +309,7 @@ def create_enhanced_backup(manual=False, operation_name=None, backup_type="full"
                 if hasattr(conn, 'execute'):
                     db_path = conn.execute("PRAGMA database_list").fetchone()[2]
                 else:
-                    db_path = str(DEFAULT_DB_PATH)
+                    db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
 
             shutil.copy2(db_path, backup_path)
             success = True
@@ -481,7 +481,7 @@ def restore_from_backup(backup_path, target_tables=None, point_in_time=None):
             success = restore_partial_tables(restore_file, target_tables)
         else:
             # Full restore
-            shutil.copy2(restore_file, str(DEFAULT_DB_PATH))
+            shutil.copy2(restore_file, str(UNIVERSITY_DEFAULT_DB_PATH))
             success = True
 
         # Clean up temporary files

@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -28,7 +30,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -60,7 +62,7 @@ except (ImportError, ModuleNotFoundError):
 def show_admin_content(self):
     """Display admin panel in main content area"""
     if not (self.is_admin() or self.is_staff()):
-        messagebox.showerror("Access Denied", "Admin or staff access required")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.access_denied', default="Access Denied"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.admin_or_staff_access_required', default="Admin or staff access required"))
         return
     self.clear_content()
     admin_frame = ttk.Frame(self.content_frame)
@@ -71,22 +73,22 @@ def show_admin_content(self):
 
 def _render_admin_tab(self, parent_frame):
     """Render admin content in the provided parent frame"""
-    ttk.Label(parent_frame, text="System Administration",
+    ttk.Label(parent_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.labels.system_administration', default="System Administration"),
              font=('Arial', 14, 'bold')).pack(pady=10)
     # Admin sections
     admin_notebook = ttk.Notebook(parent_frame)
     admin_notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
     # User Management
     users_frame = ttk.Frame(admin_notebook)
-    admin_notebook.add(users_frame, text="Users")
+    admin_notebook.add(users_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.tabs.users', default="Users"))
     self.setup_users_management(users_frame)
     # Club Management
     club_admin_frame = ttk.Frame(admin_notebook)
-    admin_notebook.add(club_admin_frame, text="Club Admin")
+    admin_notebook.add(club_admin_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.tabs.club_admin', default="Club Admin"))
     self.setup_club_administration(club_admin_frame)
     # System Info
     system_frame = ttk.Frame(admin_notebook)
-    admin_notebook.add(system_frame, text="System")
+    admin_notebook.add(system_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.tabs.system', default="System"))
     self.setup_system_info(system_frame)
 
 
@@ -94,7 +96,7 @@ def show_admin_tab(self):
     """Legacy method for backwards compatibility - creates tab in notebook if exists"""
     if hasattr(self, 'notebook') and self.notebook:
         admin_frame = ttk.Frame(self.notebook)
-        self.notebook.add(admin_frame, text="Administration")
+        self.notebook.add(admin_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.tabs.administration', default="Administration"))
         self._render_admin_tab(admin_frame)
     else:
         # Fall back to content display
@@ -104,7 +106,7 @@ def show_admin_tab(self):
 def setup_users_management(self, parent):
     """Setup user management interface"""
     # Users list
-    users_list_frame = ttk.LabelFrame(parent, text="Registered Users")
+    users_list_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.labels.registered_users', default="Registered Users"))
     users_list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # Users treeview
@@ -130,11 +132,11 @@ def setup_users_management(self, parent):
     user_buttons_frame = ttk.Frame(parent)
     user_buttons_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(user_buttons_frame, text="Refresh Users",
+    ttk.Button(user_buttons_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.buttons.refresh_users', default="Refresh Users"),
               command=self.refresh_users_list).pack(side=tk.LEFT, padx=5)
-    ttk.Button(user_buttons_frame, text="Change Role",
+    ttk.Button(user_buttons_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.buttons.change_role', default="Change Role"),
               command=self.change_user_role).pack(side=tk.LEFT, padx=5)
-    ttk.Button(user_buttons_frame, text="Delete User",
+    ttk.Button(user_buttons_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.buttons.delete_user', default="Delete User"),
               command=self.delete_user).pack(side=tk.LEFT, padx=5)
 
     # Load users initially
@@ -144,18 +146,18 @@ def setup_users_management(self, parent):
 def setup_club_administration(self, parent):
     """Setup club administration interface"""
     # Club approval section
-    approval_frame = ttk.LabelFrame(parent, text="Club Management")
+    approval_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.labels.club_management', default="Club Management"))
     approval_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # Admin club actions
     admin_buttons_frame = ttk.Frame(approval_frame)
     admin_buttons_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(admin_buttons_frame, text="View All Clubs",
+    ttk.Button(admin_buttons_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.buttons.view_all_clubs', default="View All Clubs"),
               command=self.view_all_clubs_admin).pack(side=tk.LEFT, padx=5)
-    ttk.Button(admin_buttons_frame, text="Club Statistics",
+    ttk.Button(admin_buttons_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.buttons.club_statistics', default="Club Statistics"),
               command=self.show_club_statistics).pack(side=tk.LEFT, padx=5)
-    ttk.Button(admin_buttons_frame, text="Export Data",
+    ttk.Button(admin_buttons_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.buttons.export_data', default="Export Data"),
               command=self.export_club_data).pack(side=tk.LEFT, padx=5)
 
     # Club statistics display
@@ -168,7 +170,7 @@ def setup_club_administration(self, parent):
 
 def setup_system_info(self, parent):
     """Setup system information interface"""
-    info_frame = ttk.LabelFrame(parent, text="System Information")
+    info_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.labels.system_information', default="System Information"))
     info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     self.system_info_text = scrolledtext.ScrolledText(info_frame, height=20)
@@ -178,11 +180,11 @@ def setup_system_info(self, parent):
     system_buttons_frame = ttk.Frame(parent)
     system_buttons_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(system_buttons_frame, text="Refresh Info",
+    ttk.Button(system_buttons_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.buttons.refresh_info', default="Refresh Info"),
               command=self.refresh_system_info).pack(side=tk.LEFT, padx=5)
-    ttk.Button(system_buttons_frame, text="Backup Database",
+    ttk.Button(system_buttons_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.buttons.backup_database', default="Backup Database"),
               command=self.backup_database).pack(side=tk.LEFT, padx=5)
-    ttk.Button(system_buttons_frame, text="Check Integrity",
+    ttk.Button(system_buttons_frame, text=_t('gui.pastoral.student_union_gui.admin.admin_panel.buttons.check_integrity', default="Check Integrity"),
               command=self.check_database_integrity).pack(side=tk.LEFT, padx=5)
 
     # Load initial system info
@@ -215,30 +217,30 @@ def refresh_users_list(self):
         self.update_status(f"Loaded {len(users)} users")
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Failed to load users: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.database_error', default="Database Error"), f"Failed to load users: {e}")
 
 
 def change_user_role(self):
     """Change a user's role (admin only)"""
     selection = self.users_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a user to modify")
+        messagebox.showwarning(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.please_select_a_user_to_modify', default="Please select a user to modify"))
         return
     item = self.users_tree.item(selection[0])
     user_id = item['values'][0]
     username = item['values'][1]
     current_role = item['values'][3]
-    new_role = simpledialog.askstring("Change Role",
+    new_role = simpledialog.askstring(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.change_role', default="Change Role"),
                                      f"Change role for {username} (current: {current_role})\nOptions: student, staff, admin")
     if new_role and new_role in ['student', 'staff', 'admin']:
         # Use central authentication system for role changes
         if not self.auth_manager:
-            messagebox.showerror("Error", "Authentication system not available")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.authentication_system_not_available', default="Authentication system not available"))
             return
         try:
             success = self.auth_manager.update_user(user_id, role=new_role)
             if success:
-                messagebox.showinfo("Success", f"Role changed to {new_role}")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.success', default="Success"), f"Role changed to {new_role}")
                 self.refresh_users_list()
                 # Log activity
                 try:
@@ -248,36 +250,36 @@ def change_user_role(self):
                 except (ImportError, sqlite3.Error, OSError) as log_error:
                     print(f"Activity logging failed: {log_error}")
             else:
-                messagebox.showerror("Error", "Failed to change role")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.failed_to_change_role', default="Failed to change role"))
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Failed to change role: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.error', default="Error"), f"Failed to change role: {e}")
     elif new_role:
-        messagebox.showerror("Error", "Invalid role. Use: student, staff, or admin")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.invalid_role_use_student_staff_or_admin', default="Invalid role. Use: student, staff, or admin"))
 
 
 def delete_user(self):
     """Delete a user (admin only)"""
     selection = self.users_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a user to delete")
+        messagebox.showwarning(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.please_select_a_user_to_delete', default="Please select a user to delete"))
         return
     item = self.users_tree.item(selection[0])
     user_id = item['values'][0]
     username = item['values'][1]
     if user_id == self.current_user['id']:
-        messagebox.showerror("Error", "You cannot delete your own account")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.you_cannot_delete_your_own_account', default="You cannot delete your own account"))
         return
-    response = messagebox.askyesno("Confirm Delete",
+    response = messagebox.askyesno(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.confirm_delete', default="Confirm Delete"),
                                  f"Are you sure you want to delete user '{username}'?\nThis action cannot be undone.")
     if response:
         # Use central authentication system for user deletion
         if not self.auth_manager:
-            messagebox.showerror("Error", "Authentication system not available")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.authentication_system_not_available', default="Authentication system not available"))
             return
         try:
             success = self.auth_manager.delete_user(user_id)
             if success:
-                messagebox.showinfo("Success", f"User '{username}' deleted")
+                messagebox.showinfo(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.success', default="Success"), f"User '{username}' deleted")
                 self.refresh_users_list()
                 # Log activity
                 try:
@@ -287,15 +289,15 @@ def delete_user(self):
                 except (ImportError, sqlite3.Error, OSError) as log_error:
                     print(f"Activity logging failed: {log_error}")
             else:
-                messagebox.showerror("Error", "Failed to delete user")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.failed_to_delete_user', default="Failed to delete user"))
         except (tk.TclError, AttributeError) as e:
-            messagebox.showerror("Error", f"Failed to delete user: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.error', default="Error"), f"Failed to delete user: {e}")
 
 
 def view_all_clubs_admin(self):
     """View all clubs with admin details"""
     clubs_window = tk.Toplevel(self.root)
-    clubs_window.title("All Clubs - Admin View")
+    clubs_window.title(_t('gui.pastoral.student_union_gui.admin.admin_panel.windows.all_clubs_admin_view', default="All Clubs - Admin View"))
     clubs_window.geometry("1000x600")
     clubs_window.transient(self.root)
 
@@ -340,7 +342,7 @@ def view_all_clubs_admin(self):
         conn.close()
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Failed to load clubs: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.database_error', default="Database Error"), f"Failed to load clubs: {e}")
 
 
 def show_club_statistics(self):
@@ -419,7 +421,7 @@ def export_club_data(self):
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("Text files", "*.txt")],
-            title="Export Club Data"
+            title=_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.export_club_data', default="Export Club Data")
         )
 
         if not filename:
@@ -459,10 +461,10 @@ def export_club_data(self):
 
         finally:
             conn.close()
-        messagebox.showinfo("Success", f"Club data exported to {filename}")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.success', default="Success"), f"Club data exported to {filename}")
 
     except sqlite3.Error as e:
-        messagebox.showerror("Export Error", f"Failed to export data: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.export_error', default="Export Error"), f"Failed to export data: {e}")
 
 
 def refresh_system_info(self):
@@ -549,7 +551,7 @@ def backup_database(self):
         backup_filename = filedialog.asksaveasfilename(
             defaultextension=".db",
             filetypes=[("Database files", "*.db"), ("All files", "*.*")],
-            title="Save Database Backup",
+            title=_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.save_database_backup', default="Save Database Backup"),
             initialfile=f"student_union_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
         )
 
@@ -560,10 +562,10 @@ def backup_database(self):
         import shutil
         shutil.copy2(self.db_path, backup_filename)
 
-        messagebox.showinfo("Success", f"Database backed up to {backup_filename}")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.success', default="Success"), f"Database backed up to {backup_filename}")
 
     except (tk.TclError, AttributeError) as e:
-        messagebox.showerror("Backup Error", f"Failed to backup database: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.backup_error', default="Backup Error"), f"Failed to backup database: {e}")
 
 
 def check_database_integrity(self):
@@ -577,13 +579,13 @@ def check_database_integrity(self):
         result = cursor.fetchone()
 
         if result[0] == 'ok':
-            messagebox.showinfo("Integrity Check", "Database integrity check passed - no issues found")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.integrity_check', default="Integrity Check"), _t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.database_integrity_check_passed_no_issues_found', default="Database integrity check passed - no issues found"))
         else:
-            messagebox.showwarning("Integrity Check", f"Database issues found: {result[0]}")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.integrity_check', default="Integrity Check"), f"Database issues found: {result[0]}")
 
         conn.close()
 
     except sqlite3.Error as e:
-        messagebox.showerror("Integrity Check Error", f"Failed to check integrity: {e}")
+        messagebox.showerror(_t('gui.pastoral.student_union_gui.admin.admin_panel.dialogs.integrity_check_error', default="Integrity Check Error"), f"Failed to check integrity: {e}")
 
 

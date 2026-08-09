@@ -1,5 +1,7 @@
 """Fees management mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -97,7 +99,7 @@ class FeesMixin:
         amount_entry.grid(row=2, column=1, pady=5)
 
         tk.Label(form_frame, text=_("finance_gui.labels.currency") + ":").grid(row=3, column=0, sticky='w', pady=5)
-        currency_var = tk.StringVar(value="GBP")
+        currency_var = tk.StringVar(value=_t('gui.finance.finance.layout.fees.values.gbp', default="GBP"))
         currency_combo = ttk.Combobox(form_frame, textvariable=currency_var,
                                      values=['GBP', 'USD', 'EUR', 'CAD', 'AUD'],
                                      state='readonly', width=27)
@@ -176,7 +178,7 @@ class FeesMixin:
         payment_dialog.transient(self.root)
         payment_dialog.grab_set()
 
-        ttk.Label(payment_dialog, text="Record Fee Payment",
+        ttk.Label(payment_dialog, text=_t('gui.finance.finance.layout.fees.labels.record_fee_payment', default="Record Fee Payment"),
                  font=('Arial', 14, 'bold')).pack(pady=(10, 5))
 
         form_frame = ttk.Frame(payment_dialog, padding=10)
@@ -260,7 +262,7 @@ class FeesMixin:
                     fee_combo.current(0)
                     on_fee_selected()
                 else:
-                    amount_due_label.config(text="No outstanding fees for this student.")
+                    amount_due_label.config(text=_t('gui.finance.finance.layout.fees.text.no_outstanding_fees_for_this_student', default="No outstanding fees for this student."))
             except Exception as e:
                 print(f"Error loading fees: {e}")
 
@@ -285,7 +287,7 @@ class FeesMixin:
         # --- Row 4: Payment method ---
         ttk.Label(form_frame, text=_("finance_gui.labels.payment_method") + ":").grid(
             row=4, column=0, sticky='w', pady=5, padx=5)
-        method_var = tk.StringVar(value="card")
+        method_var = tk.StringVar(value=_t('gui.finance.finance.layout.fees.values.card', default="card"))
         method_combo = ttk.Combobox(form_frame, textvariable=method_var,
                                      values=["card", "cash", "bank_transfer", "cheque", "online"],
                                      state='readonly', width=20)
@@ -319,16 +321,16 @@ class FeesMixin:
             selected_fee = fee_var.get()
 
             if not selected_student:
-                messagebox.showwarning(_("finance_gui.messages.warning"), "Please select a student.")
+                messagebox.showwarning(_("finance_gui.messages.warning"), _t('gui.finance.finance.layout.fees.dialogs.please_select_a_student', default="Please select a student."))
                 return
             if not selected_fee:
-                messagebox.showwarning(_("finance_gui.messages.warning"), "Please select a fee.")
+                messagebox.showwarning(_("finance_gui.messages.warning"), _t('gui.finance.finance.layout.fees.dialogs.please_select_a_fee', default="Please select a fee."))
                 return
 
             student_id = student_id_map.get(selected_student)
             data = fee_data_map.get(selected_fee)
             if not data:
-                messagebox.showerror(_("finance_gui.messages.error"), "Invalid fee selection.")
+                messagebox.showerror(_("finance_gui.messages.error"), _t('gui.finance.finance.layout.fees.dialogs.invalid_fee_selection', default="Invalid fee selection."))
                 return
 
             fee_id = data['fee_id']

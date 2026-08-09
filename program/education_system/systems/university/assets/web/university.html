@@ -219,6 +219,7 @@
             </div>
             <div style="text-align:right;">
                 <div id="user-info" style="font-size:0.9rem; opacity:0.9;"></div>
+                <a id="login-btn" href="login.html" style="display:inline-block; margin-top:0.5rem; padding:0.5rem 1.1rem; background:white; color:#1e3a8a; border:1px solid white; border-radius:6px; text-decoration:none; font-weight:700;">Login</a>
                 <button id="logout-btn" style="margin-top:0.5rem; padding:0.4rem 1rem; background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); border-radius:6px; cursor:pointer; font-weight:600; display:none;">Sign out</button>
             </div>
         </div>
@@ -554,7 +555,7 @@
                 <a class="access-btn" href="login.html">🔐 Login</a>
                 <a class="access-btn" href="students.html">🎓 Student Records</a>
                 <a class="access-btn" href="email.html">📧 Email Manager</a>
-                <a class="access-btn" href="http://localhost:5000/api/university/" target="_blank">⚡ REST API (localhost:5000)</a>
+                <a class="access-btn" id="rest-api-link" href="#" target="_blank">⚡ REST API</a>
             </div>
         </section>
 
@@ -563,8 +564,8 @@
             <div style="background:white; padding:1.25rem; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
                 <p>The University System mirrors the desktop GUI's full navigation panel — 24 categories
                 covering authentication, academics, finance, campus life, commerce, transportation,
-                analytics, administration, and cross-system tooling. Buttons here are placeholders;
-                only the Student Management entries are wired to a working CRUD page.</p>
+                analytics, administration, and cross-system tooling. Each feature button opens a
+                searchable module page; Student Management also provides full browser CRUD.</p>
             </div>
         </section>
     </main>
@@ -575,14 +576,13 @@
 
     <script src="auth_client.js"></script>
     <script>
-    // Auth gate
+    // The welcome page is public. If a session exists, enrich it with the
+    // user's dashboard and sign-out controls without forcing a redirect.
     (function() {
+        const apiLink = document.getElementById('rest-api-link');
+        if (apiLink) apiLink.href = `${AuthClient.API_BASE}/api/v1/`;
         const session = AuthClient.getSession();
-        if (!session) {
-            window.location.href = 'login.html';
-            return;
-        }
-        // Non-admin roles get routed straight to their dashboard.
+        if (!session) return;
         const DASHBOARDS = {
             superadmin: 'dashboard_superadmin.html',
             admin:      'dashboard_admin.html',
@@ -592,11 +592,6 @@
             student:    'dashboard_student.html',
             parent:     'dashboard_student.html',
         };
-        const nonAdmin = ['student', 'parent', 'staff', 'teacher', 'instructor'];
-        if (nonAdmin.includes(session.role)) {
-            window.location.href = DASHBOARDS[session.role];
-            return;
-        }
         document.getElementById('user-info').innerHTML =
             `Signed in as <strong>${session.name || session.username}</strong> (${session.role})`;
         const logoutBtn = document.getElementById('logout-btn');
@@ -639,6 +634,13 @@
                 }
                 d.style.display = anyMatch ? '' : 'none';
                 d.open = anyMatch;
+            });
+        });
+        document.querySelectorAll('.button-list button').forEach(button => {
+            button.addEventListener('click', () => {
+                const category = button.closest('details')?.querySelector('summary')?.textContent.trim() || '';
+                const query = new URLSearchParams({feature: button.textContent.trim(), category});
+                window.location.href = `feature.html?${query}`;
             });
         });
     })();

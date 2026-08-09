@@ -9,6 +9,8 @@ explicitly — the move-out workflow also auto-revokes via
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import sqlite3
 import tkinter as tk
@@ -31,26 +33,26 @@ def show_keys(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Keys & Access Cards",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.labels.keys_access_cards', default="Keys & Access Cards"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
     ttk.Label(parent,
-              text=("Cards linked to housing assignments. Active rows "
+              text=(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.labels.cards_linked_to_housing_assignments_active_rows_are_issued_revok', default="Cards linked to housing assignments. Active rows "
                     "are issued; revoked rows are kept for audit. "
                     "Issuing here writes to the Facility Management "
-                    "`access_cards` table — no parallel store."),
+                    "`access_cards` table — no parallel store.")),
               wraplength=820, foreground="#555").pack(anchor="w", padx=8,
                                                         pady=(0, 6))
 
     # ── Filter bar ──
     bar = ttk.Frame(parent)
     bar.pack(fill="x", padx=8, pady=4)
-    status_var = tk.StringVar(value="active")
-    ttk.Label(bar, text="Status:").pack(side="left")
+    status_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.values.active', default="active"))
+    ttk.Label(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.labels.status', default="Status:")).pack(side="left")
     ttk.Combobox(bar, textvariable=status_var, state="readonly", width=12,
                  values=["active", "revoked", "(all)"]).pack(side="left",
                                                               padx=4)
-    ttk.Label(bar, text="Building:").pack(side="left", padx=(12, 4))
+    ttk.Label(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.labels.building', default="Building:")).pack(side="left", padx=(12, 4))
     building_var = tk.StringVar()
     bcombo = ttk.Combobox(bar, textvariable=building_var,
                            state="readonly", width=28)
@@ -58,7 +60,7 @@ def show_keys(gui_instance) -> None:
     bcombo['values'] = ["(any)"] + [b[1] for b in bar_buildings]
     bcombo.current(0)
     bcombo.pack(side="left")
-    ttk.Button(bar, text="Apply",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.buttons.apply', default="Apply"),
                command=lambda: reload()).pack(side="left", padx=8)
 
     # ── Table ──
@@ -111,7 +113,7 @@ def show_keys(gui_instance) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Keys list failed")
-            messagebox.showerror("Keys", f"Could not load cards:\n\n{e}",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.keys', default="Keys"), f"Could not load cards:\n\n{e}",
                                   parent=gui_instance.root)
             return
 
@@ -137,9 +139,9 @@ def show_keys(gui_instance) -> None:
     # ── Action bar ──
     act = ttk.Frame(parent)
     act.pack(fill="x", padx=8, pady=(0, 6))
-    ttk.Button(act, text="Issue for assignment…",
+    ttk.Button(act, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.buttons.issue_for_assignment', default="Issue for assignment…"),
                command=lambda: _issue(gui_instance, reload)).pack(side="left")
-    ttk.Button(act, text="Revoke selected",
+    ttk.Button(act, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.buttons.revoke_selected', default="Revoke selected"),
                command=lambda: _revoke_selected(tree, gui_instance, reload)).pack(
         side="left", padx=4)
 
@@ -200,18 +202,18 @@ def _list_assignments() -> list[tuple[str, str]]:
 def _issue(gui_instance, on_done):
     asgs = _list_assignments()
     if not asgs:
-        messagebox.showinfo("Issue card",
-                            "No active or pending assignments.",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.issue_card', default="Issue card"),
+                            _t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.no_active_or_pending_assignments', default="No active or pending assignments."),
                             parent=gui_instance.root)
         return
     dlg = tk.Toplevel(gui_instance.root)
-    dlg.title("Issue access card")
+    dlg.title(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.windows.issue_access_card', default="Issue access card"))
     dlg.geometry("560x180")
     dlg.transient(gui_instance.root)
     body = ttk.Frame(dlg, padding=10)
     body.pack(fill="both", expand=True)
 
-    ttk.Label(body, text="Assignment:").grid(row=0, column=0, sticky="e")
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.labels.assignment', default="Assignment:")).grid(row=0, column=0, sticky="e")
     pick_var = tk.StringVar()
     combo = ttk.Combobox(body, textvariable=pick_var, state="readonly",
                           width=64)
@@ -219,7 +221,7 @@ def _issue(gui_instance, on_done):
     combo.current(0)
     combo.grid(row=0, column=1, sticky="w", pady=2)
 
-    ttk.Label(body, text="Expiry (YYYY-MM-DD, optional):").grid(row=1,
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.labels.expiry_yyyy_mm_dd_optional', default="Expiry (YYYY-MM-DD, optional):")).grid(row=1,
                                                                   column=0,
                                                                   sticky="e")
     exp_var = tk.StringVar()
@@ -237,28 +239,28 @@ def _issue(gui_instance, on_done):
         cnum = extras.issue_card(asg_id, issued_by=who,
                                   expiry_date=exp_var.get().strip() or None)
         if not cnum:
-            messagebox.showerror("Issue card",
-                                  "Failed to issue card (see logs).",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.issue_card', default="Issue card"),
+                                  _t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.failed_to_issue_card_see_logs', default="Failed to issue card (see logs)."),
                                   parent=dlg)
             return
         log_activity(f"Access card {cnum} issued for {asg_id}")
         dlg.destroy()
         on_done()
-        messagebox.showinfo("Issue card",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.issue_card', default="Issue card"),
                              f"Card {cnum} issued.",
                              parent=gui_instance.root)
 
     bar = ttk.Frame(body)
     bar.grid(row=2, column=0, columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(bar, text="Cancel", command=dlg.destroy).pack(side="right",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side="right",
                                                               padx=4)
-    ttk.Button(bar, text="Issue", command=go).pack(side="right")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.buttons.issue', default="Issue"), command=go).pack(side="right")
 
 
 def _revoke_selected(tree, gui_instance, on_done):
     sel = tree.focus()
     if not sel:
-        messagebox.showinfo("Revoke", "Select a card first.",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.revoke', default="Revoke"), _t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.select_a_card_first', default="Select a card first."),
                             parent=gui_instance.root)
         return
     # tree iid is card_number, but extras.revoke_cards keys on assignment_id.
@@ -268,18 +270,18 @@ def _revoke_selected(tree, gui_instance, on_done):
     except Exception:
         asg = None
     if not asg:
-        messagebox.showwarning("Revoke",
-                                "Card is not linked to an assignment "
-                                "(no assignment id in notes).",
+        messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.revoke', default="Revoke"),
+                                _t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.card_is_not_linked_to_an_assignment_no_assignment_id_in_notes', default="Card is not linked to an assignment "
+                                "(no assignment id in notes)."),
                                 parent=gui_instance.root)
         return
-    reason = simpledialog.askstring("Revoke card",
-                                     "Reason (e.g. lost, replaced):",
+    reason = simpledialog.askstring(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.revoke_card', default="Revoke card"),
+                                     _t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.reason_e_g_lost_replaced', default="Reason (e.g. lost, replaced):"),
                                      parent=gui_instance.root)
     if reason is None:
         return
     n = extras.revoke_cards(asg, reason=reason or "Manual")
     log_activity(f"Revoked {n} card(s) for {asg} (reason={reason!r})")
     on_done()
-    messagebox.showinfo("Revoke", f"Revoked {n} card(s).",
+    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.keys_manager.dialogs.revoke', default="Revoke"), f"Revoked {n} card(s).",
                          parent=gui_instance.root)

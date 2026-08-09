@@ -1,5 +1,7 @@
 """Personal budget dashboard and operations"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.scrolledtext import ScrolledText
@@ -14,7 +16,7 @@ class PersonalBudgetMixin:
     def create_personal_budget_dashboard(self, notebook):
         """Create personal budget dashboard tab"""
         tab = ttk.Frame(notebook, padding="10")
-        notebook.add(tab, text="Dashboard")
+        notebook.add(tab, text=_t('gui.finance.finance.budget_manager.personal.tabs.dashboard', default="Dashboard"))
 
         # Get current user
         current_user = self.gui.auth.get_current_user() if self.gui.auth else None
@@ -25,7 +27,7 @@ class PersonalBudgetMixin:
         cards_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
         # Left column - Current Budget Summary
-        left_frame = ttk.LabelFrame(cards_frame, text="Current Budget Summary", padding="15")
+        left_frame = ttk.LabelFrame(cards_frame, text=_t('gui.finance.finance.budget_manager.personal.labels.current_budget_summary', default="Current Budget Summary"), padding="15")
         left_frame.grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
 
         self.dashboard_labels = {}
@@ -33,11 +35,11 @@ class PersonalBudgetMixin:
         for i, label in enumerate(labels):
             ttk.Label(left_frame, text=f"{label}:", font=('Arial', 10, 'bold')).grid(
                 row=i, column=0, sticky=tk.W, padx=5, pady=5)
-            self.dashboard_labels[label] = ttk.Label(left_frame, text="N/A")
+            self.dashboard_labels[label] = ttk.Label(left_frame, text=_t('gui.finance.finance.budget_manager.personal.labels.n_a', default="N/A"))
             self.dashboard_labels[label].grid(row=i, column=1, sticky=tk.W, padx=5, pady=5)
 
         # Right column - Quick Stats
-        right_frame = ttk.LabelFrame(cards_frame, text="This Month Summary", padding="15")
+        right_frame = ttk.LabelFrame(cards_frame, text=_t('gui.finance.finance.budget_manager.personal.labels.this_month_summary', default="This Month Summary"), padding="15")
         right_frame.grid(row=0, column=1, sticky='nsew', padx=5, pady=5)
 
         self.stats_labels = {}
@@ -50,21 +52,21 @@ class PersonalBudgetMixin:
             self.stats_labels[stat].pack(side='left', padx=10)
 
         # Recent expenses
-        expenses_frame = ttk.LabelFrame(tab, text="Recent Expenses (Last 7 Days)", padding="10")
+        expenses_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.personal.labels.recent_expenses_last_7_days', default="Recent Expenses (Last 7 Days)"), padding="10")
         expenses_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
         self.recent_expenses_tree = ttk.Treeview(expenses_frame,
             columns=('Date', 'Description', 'Amount'), show='headings', height=8)
-        self.recent_expenses_tree.heading('Date', text='Date')
-        self.recent_expenses_tree.heading('Description', text='Description')
-        self.recent_expenses_tree.heading('Amount', text='Amount')
+        self.recent_expenses_tree.heading('Date', text=_t('gui.finance.finance.budget_manager.personal.headings.date', default='Date'))
+        self.recent_expenses_tree.heading('Description', text=_t('gui.finance.finance.budget_manager.personal.headings.description', default='Description'))
+        self.recent_expenses_tree.heading('Amount', text=_t('gui.finance.finance.budget_manager.personal.headings.amount', default='Amount'))
         self.recent_expenses_tree.column('Date', width=100)
         self.recent_expenses_tree.column('Description', width=300)
         self.recent_expenses_tree.column('Amount', width=100)
         self.recent_expenses_tree.pack(fill=tk.BOTH, expand=True)
 
         # Refresh button
-        ttk.Button(tab, text="Refresh Dashboard", command=self.refresh_dashboard).pack(pady=10)
+        ttk.Button(tab, text=_t('gui.finance.finance.budget_manager.personal.buttons.refresh_dashboard', default="Refresh Dashboard"), command=self.refresh_dashboard).pack(pady=10)
 
         cards_frame.columnconfigure(0, weight=1)
         cards_frame.columnconfigure(1, weight=1)
@@ -72,35 +74,35 @@ class PersonalBudgetMixin:
     def create_my_budgets_tab(self, notebook):
         """Create my budgets management tab"""
         tab = ttk.Frame(notebook, padding="10")
-        notebook.add(tab, text="My Budgets")
+        notebook.add(tab, text=_t('gui.finance.finance.budget_manager.personal.tabs.my_budgets', default="My Budgets"))
 
         # Create budget frame
-        create_frame = ttk.LabelFrame(tab, text="Create New Budget", padding="10")
+        create_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.personal.labels.create_new_budget', default="Create New Budget"), padding="10")
         create_frame.pack(fill=tk.X, pady=(0, 10))
 
         fields_frame = ttk.Frame(create_frame)
         fields_frame.pack(fill=tk.X)
 
-        ttk.Label(fields_frame, text="Budget Name:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.finance.finance.budget_manager.personal.labels.budget_name', default="Budget Name:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.my_budget_name_entry = ttk.Entry(fields_frame, width=30)
         self.my_budget_name_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(fields_frame, text="Type:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.finance.finance.budget_manager.personal.labels.type', default="Type:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.my_budget_type_combo = ttk.Combobox(fields_frame,
             values=['monthly', 'weekly', 'semester', 'annual', 'custom'],
             state='readonly', width=15)
         self.my_budget_type_combo.current(0)
         self.my_budget_type_combo.grid(row=0, column=3, padx=5, pady=5)
 
-        ttk.Label(fields_frame, text="Total Budget (\u00a3):").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields_frame, text=_t('gui.finance.finance.budget_manager.personal.labels.total_budget', default="Total Budget (\u00a3):")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.my_budget_amount_entry = ttk.Entry(fields_frame, width=30)
         self.my_budget_amount_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Button(fields_frame, text="Create Budget",
+        ttk.Button(fields_frame, text=_t('gui.finance.finance.budget_manager.personal.buttons.create_budget', default="Create Budget"),
                   command=self.create_personal_budget).grid(row=1, column=3, padx=5, pady=5)
 
         # Budget list
-        list_frame = ttk.LabelFrame(tab, text="My Budgets", padding="10")
+        list_frame = ttk.LabelFrame(tab, text=_t('gui.finance.finance.budget_manager.personal.labels.my_budgets', default="My Budgets"), padding="10")
         list_frame.pack(fill=tk.BOTH, expand=True)
 
         self.my_budgets_tree = ttk.Treeview(list_frame,
@@ -121,8 +123,8 @@ class PersonalBudgetMixin:
         # Buttons
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(btn_frame, text="View Details", command=self.view_budget_details).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self.refresh_my_budgets).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.personal.buttons.view_details', default="View Details"), command=self.view_budget_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.finance.finance.budget_manager.personal.buttons.refresh', default="Refresh"), command=self.refresh_my_budgets).pack(side=tk.LEFT, padx=5)
 
         # Initial load
         self.root.after(100, self.refresh_my_budgets)
@@ -160,7 +162,7 @@ class PersonalBudgetMixin:
             amount = float(self.my_budget_amount_entry.get().strip())
 
             if not name or amount <= 0:
-                messagebox.showerror("Error", "Please enter valid budget name and amount.")
+                messagebox.showerror(_t('gui.finance.finance.budget_manager.personal.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.personal.dialogs.please_enter_valid_budget_name_and_amount', default="Please enter valid budget name and amount."))
                 return
 
             # Get current user
@@ -192,21 +194,21 @@ class PersonalBudgetMixin:
                 total_budget=amount
             )
 
-            messagebox.showinfo("Success", f"Budget '{name}' created successfully!")
+            messagebox.showinfo(_t('gui.finance.finance.budget_manager.personal.dialogs.success', default="Success"), f"Budget '{name}' created successfully!")
             self.my_budget_name_entry.delete(0, tk.END)
             self.my_budget_amount_entry.delete(0, tk.END)
             self.refresh_my_budgets()
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid amount. Please enter a number.")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.personal.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.personal.dialogs.invalid_amount_please_enter_a_number', default="Invalid amount. Please enter a number."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create budget: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.personal.dialogs.error', default="Error"), f"Failed to create budget: {e}")
 
     def view_budget_details(self):
         """View details of selected budget"""
         selection = self.my_budgets_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a budget to view.")
+            messagebox.showwarning(_t('gui.finance.finance.budget_manager.personal.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.personal.dialogs.please_select_a_budget_to_view', default="Please select a budget to view."))
             return
 
         try:
@@ -247,10 +249,10 @@ Time Analysis:
             text.insert(tk.END, output)
             text.config(state=tk.DISABLED)
 
-            ttk.Button(window, text="Close", command=window.destroy).pack(pady=5)
+            ttk.Button(window, text=_t('gui.finance.finance.budget_manager.personal.buttons.close', default="Close"), command=window.destroy).pack(pady=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load budget details: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.personal.dialogs.error', default="Error"), f"Failed to load budget details: {e}")
 
     def refresh_dashboard(self):
         """Refresh dashboard data"""

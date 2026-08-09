@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -82,7 +84,7 @@ def show_refunds(self):
 
     # Check permissions
     if self.current_user.get('role') not in ['admin', 'staff', 'shop_manager']:
-        ttk.Label(self.content_frame, text="Access Denied", style='Error.TLabel').grid(row=0, column=0)
+        ttk.Label(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.labels.access_denied', default="Access Denied"), style='Error.TLabel').grid(row=0, column=0)
         return
 
     # Title
@@ -90,22 +92,22 @@ def show_refunds(self):
     title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
     title_frame.columnconfigure(1, weight=1)
 
-    ttk.Label(title_frame, text="Shop Transaction Refunds", style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(title_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.labels.shop_transaction_refunds', default="Shop Transaction Refunds"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
 
     # Search frame
-    search_frame = ttk.LabelFrame(self.content_frame, text="Search Transactions", padding="10")
+    search_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.labels.search_transactions', default="Search Transactions"), padding="10")
     search_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
-    ttk.Label(search_frame, text="Search by Transaction ID, Customer:").grid(row=0, column=0, padx=5)
+    ttk.Label(search_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.labels.search_by_transaction_id_customer', default="Search by Transaction ID, Customer:")).grid(row=0, column=0, padx=5)
     self.refunds_search_var = tk.StringVar()
     search_entry = ttk.Entry(search_frame, textvariable=self.refunds_search_var, width=30)
     search_entry.grid(row=0, column=1, padx=5)
 
-    ttk.Button(search_frame, text="Search", command=self.refresh_refunds_list).grid(row=0, column=2, padx=2)
-    ttk.Button(search_frame, text="Show All", command=lambda: [self.refunds_search_var.set(''), self.refresh_refunds_list()]).grid(row=0, column=3, padx=2)
+    ttk.Button(search_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.search', default="Search"), command=self.refresh_refunds_list).grid(row=0, column=2, padx=2)
+    ttk.Button(search_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.show_all', default="Show All"), command=lambda: [self.refunds_search_var.set(''), self.refresh_refunds_list()]).grid(row=0, column=3, padx=2)
 
     # Transactions table
-    trans_frame = ttk.LabelFrame(self.content_frame, text="Transactions", padding="10")
+    trans_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.labels.transactions', default="Transactions"), padding="10")
     trans_frame.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     trans_frame.columnconfigure(0, weight=1)
     trans_frame.rowconfigure(0, weight=1)
@@ -114,12 +116,12 @@ def show_refunds(self):
     columns = ('transaction_id', 'date', 'customer', 'amount', 'payment_method', 'status')
     self.refunds_tree = ttk.Treeview(trans_frame, columns=columns, show='headings', height=15)
 
-    self.refunds_tree.heading('transaction_id', text='Transaction ID')
-    self.refunds_tree.heading('date', text='Date')
-    self.refunds_tree.heading('customer', text='Customer')
-    self.refunds_tree.heading('amount', text='Amount')
-    self.refunds_tree.heading('payment_method', text='Payment Method')
-    self.refunds_tree.heading('status', text='Status')
+    self.refunds_tree.heading('transaction_id', text=_t('gui.operations.commerce.shop_management_gui.refund_manager.headings.transaction_id', default='Transaction ID'))
+    self.refunds_tree.heading('date', text=_t('gui.operations.commerce.shop_management_gui.refund_manager.headings.date', default='Date'))
+    self.refunds_tree.heading('customer', text=_t('gui.operations.commerce.shop_management_gui.refund_manager.headings.customer', default='Customer'))
+    self.refunds_tree.heading('amount', text=_t('gui.operations.commerce.shop_management_gui.refund_manager.headings.amount', default='Amount'))
+    self.refunds_tree.heading('payment_method', text=_t('gui.operations.commerce.shop_management_gui.refund_manager.headings.payment_method', default='Payment Method'))
+    self.refunds_tree.heading('status', text=_t('gui.operations.commerce.shop_management_gui.refund_manager.headings.status', default='Status'))
 
     self.refunds_tree.column('transaction_id', width=150)
     self.refunds_tree.column('date', width=150)
@@ -139,10 +141,10 @@ def show_refunds(self):
     button_frame = ttk.Frame(self.content_frame)
     button_frame.grid(row=3, column=0, pady=10, sticky='ew')
 
-    ttk.Button(button_frame, text="Process Refund", command=self.process_shop_refund).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="View Details", command=self.view_refund_transaction_details).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Export to CSV", command=self.export_refunds_to_csv).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Refresh", command=self.refresh_refunds_list).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.process_refund', default="Process Refund"), command=self.process_shop_refund).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.view_details', default="View Details"), command=self.view_refund_transaction_details).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.export_to_csv', default="Export to CSV"), command=self.export_refunds_to_csv).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.refresh', default="Refresh"), command=self.refresh_refunds_list).pack(side=tk.LEFT, padx=5)
 
     # Initial load
     self.refresh_refunds_list()
@@ -212,21 +214,21 @@ def refresh_refunds_list(self):
         conn.close()
 
     except Exception as e:
-        messagebox.showerror("Database Error", f"Error loading transactions: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.database_error', default="Database Error"), f"Error loading transactions: {e}")
 
 
 def process_shop_refund(self):
     """Process a refund for selected shop transaction"""
     selection = self.refunds_tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a transaction to refund.")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.no_selection', default="No Selection"), _t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.please_select_a_transaction_to_refund', default="Please select a transaction to refund."))
         return
 
     item = self.refunds_tree.item(selection[0])
     values = item['values']
 
     if len(values) < 6:
-        messagebox.showerror("Error", "Invalid transaction data.")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.invalid_transaction_data', default="Invalid transaction data."))
         return
 
     transaction_id = values[0]
@@ -234,18 +236,18 @@ def process_shop_refund(self):
     try:
         amount = float(amount_str)
     except ValueError:
-        messagebox.showerror("Error", "Invalid amount format.")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.invalid_amount_format', default="Invalid amount format."))
         return
 
     status = values[5]
 
     # Check if already refunded
     if status == 'REFUNDED':
-        messagebox.showinfo("Already Refunded", "This transaction has already been refunded.")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.already_refunded', default="Already Refunded"), _t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.this_transaction_has_already_been_refunded', default="This transaction has already been refunded."))
         return
 
     # Confirm refund
-    if not messagebox.askyesno("Confirm Refund", f"Process refund of £{amount:.2f} for transaction {transaction_id}?"):
+    if not messagebox.askyesno(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.confirm_refund', default="Confirm Refund"), f"Process refund of £{amount:.2f} for transaction {transaction_id}?"):
         return
 
     # Get transaction details to find student_id or user identifier
@@ -265,7 +267,7 @@ def process_shop_refund(self):
             trans_data = cursor.fetchone()
 
             if not trans_data:
-                messagebox.showerror("Error", "Transaction not found in database.")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.transaction_not_found_in_database', default="Transaction not found in database."))
                 return
 
             user_id = trans_data['user_id']
@@ -281,7 +283,7 @@ def process_shop_refund(self):
                     user_has_finance_account = True
 
     except Exception as e:
-        messagebox.showerror("Database Error", f"Error fetching transaction details: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.database_error', default="Database Error"), f"Error fetching transaction details: {e}")
         return
 
     # Show refund method dialog
@@ -334,8 +336,8 @@ def process_shop_refund(self):
             success = self.add_shop_refund_to_student_account(student_id, amount, refund_ref)
             if not success:
                 if hasattr(self.root, 'winfo_exists') and self.root.winfo_exists():
-                    messagebox.showwarning("Partial Success",
-                                         "Refund recorded but failed to credit student account. Please credit manually.")
+                    messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.partial_success', default="Partial Success"),
+                                         _t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.refund_recorded_but_failed_to_credit_student_account_please_cred', default="Refund recorded but failed to credit student account. Please credit manually."))
 
         # Send refund receipt email
         self.send_shop_refund_receipt(transaction_id, student_id or user_id, amount, refund_method, refund_ref)
@@ -345,7 +347,7 @@ def process_shop_refund(self):
 
         # Show success message only if window still exists
         if hasattr(self.root, 'winfo_exists') and self.root.winfo_exists():
-            messagebox.showinfo("Refund Processed",
+            messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.refund_processed', default="Refund Processed"),
                               f"Refund of £{amount:.2f} processed successfully.\nRefund Reference: {refund_ref}")
 
             # Refresh the list
@@ -355,13 +357,13 @@ def process_shop_refund(self):
         logger.error(f"Error processing refund: {e}")
         # Only show error dialog if window still exists
         if hasattr(self.root, 'winfo_exists') and self.root.winfo_exists():
-            messagebox.showerror("Database Error", f"Error processing refund: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.database_error', default="Database Error"), f"Error processing refund: {e}")
 
 
 def show_shop_refund_method_dialog(self, amount, transaction_id, student_id, user_has_finance_account=False):
     """Show dialog to select refund method"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Select Refund Method")
+    dialog.title(_t('gui.operations.commerce.shop_management_gui.refund_manager.windows.select_refund_method', default="Select Refund Method"))
     dialog.geometry("400x400")
     dialog.transient(self.root)
     dialog.update_idletasks()
@@ -378,7 +380,7 @@ def show_shop_refund_method_dialog(self, amount, transaction_id, student_id, use
             current_balance = get_student_finance_account_balance(student_id)
             if current_balance is not None:
                 new_balance = current_balance + amount
-                balance_frame = ttk.LabelFrame(dialog, text="Finance Account", padding=10)
+                balance_frame = ttk.LabelFrame(dialog, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.labels.finance_account', default="Finance Account"), padding=10)
                 balance_frame.pack(pady=10, padx=20, fill=tk.X)
 
                 ttk.Label(balance_frame, text=f"Current Balance: £{current_balance:.2f}").pack(anchor='w')
@@ -386,12 +388,12 @@ def show_shop_refund_method_dialog(self, amount, transaction_id, student_id, use
                         font=('Arial', 10, 'bold'), foreground='green').pack(anchor='w')
 
                 # Show helpful note
-                ttk.Label(balance_frame, text="(Available for all users with finance accounts)",
+                ttk.Label(balance_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.labels.available_for_all_users_with_finance_accounts', default="(Available for all users with finance accounts)"),
                         font=('Arial', 8), foreground='gray').pack(anchor='w', pady=(5,0))
         except Exception as e:
             logger.error(f"Error getting balance: {e}")
 
-    ttk.Label(dialog, text="Select refund method:", font=('Arial', 10)).pack(pady=10)
+    ttk.Label(dialog, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.labels.select_refund_method', default="Select refund method:"), font=('Arial', 10)).pack(pady=10)
 
     button_frame = ttk.Frame(dialog)
     button_frame.pack(pady=20)
@@ -406,21 +408,21 @@ def show_shop_refund_method_dialog(self, amount, transaction_id, student_id, use
 
     def select_student_account():
         if not student_id:
-            messagebox.showerror("Error", "No user account identifier found for this transaction.")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.error', default="Error"), _t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.no_user_account_identifier_found_for_this_transaction', default="No user account identifier found for this transaction."))
             return
         result['method'] = 'Student Account'
         dialog.destroy()
 
-    ttk.Button(button_frame, text="Cash Refund", command=select_cash, width=25).pack(pady=5)
-    ttk.Button(button_frame, text="Card Refund", command=select_card, width=25).pack(pady=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.cash_refund', default="Cash Refund"), command=select_cash, width=25).pack(pady=5)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.card_refund', default="Card Refund"), command=select_card, width=25).pack(pady=5)
 
     # Show Student Account option if user has a finance account
     if student_id and (FINANCE_ACCOUNT_AVAILABLE or user_has_finance_account):
-        ttk.Button(button_frame, text="Refund to Finance Account",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.refund_to_finance_account', default="Refund to Finance Account"),
                   command=select_student_account, width=25,
                   style='Accent.TButton').pack(pady=5)
 
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy, width=25).pack(pady=10)
+    ttk.Button(button_frame, text=_t('gui.operations.commerce.shop_management_gui.refund_manager.buttons.cancel', default="Cancel"), command=dialog.destroy, width=25).pack(pady=10)
 
     dialog.wait_window()
     return result['method']
@@ -517,10 +519,10 @@ def export_refunds_to_csv(self):
                 values = self.refunds_tree.item(item)['values']
                 writer.writerow(values)
 
-        messagebox.showinfo("Export Successful", f"Data exported to:\n{filename}")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.export_successful', default="Export Successful"), f"Data exported to:\n{filename}")
 
     except Exception as e:
-        messagebox.showerror("Export Error", f"Error exporting data: {e}")
+        messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.refund_manager.dialogs.export_error', default="Export Error"), f"Error exporting data: {e}")
 
 # Backward compatibility functions
 

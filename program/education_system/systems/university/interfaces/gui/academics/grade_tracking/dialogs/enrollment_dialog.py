@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -341,7 +343,7 @@ class ModuleEnrollmentDialog:
         self.cursor = cursor
         self.conn = conn
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Manage Module Enrollments")
+        self.dialog.title(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.windows.manage_module_enrollments', default="Manage Module Enrollments"))
         self.dialog.geometry("800x600")
         safe_grab_set(self.dialog)
 
@@ -349,18 +351,18 @@ class ModuleEnrollmentDialog:
 
     def setup_dialog(self):
         # Title
-        ttk.Label(self.dialog, text="Manage Module Enrollments",
+        ttk.Label(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.labels.manage_module_enrollments', default="Manage Module Enrollments"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Control frame
         control_frame = ttk.Frame(self.dialog)
         control_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Button(control_frame, text="Enroll Student",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.buttons.enroll_student', default="Enroll Student"),
                   command=self.enroll_student_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Remove Enrollment",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.buttons.remove_enrollment', default="Remove Enrollment"),
                   command=self.remove_enrollment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Refresh",
+        ttk.Button(control_frame, text=_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.buttons.refresh', default="Refresh"),
                   command=self.refresh_enrollments).pack(side=tk.LEFT, padx=5)
 
         # Enrollments list
@@ -384,19 +386,19 @@ class ModuleEnrollmentDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Close", command=self.close_dialog).pack()
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.buttons.close', default="Close"), command=self.close_dialog).pack()
 
         self.refresh_enrollments()
 
     def enroll_student_dialog(self):
         """Open dialog to enroll a student in a module"""
         enroll_dialog = tk.Toplevel(self.dialog)
-        enroll_dialog.title("Enroll Student")
+        enroll_dialog.title(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.windows.enroll_student', default="Enroll Student"))
         enroll_dialog.geometry("400x200")
         safe_grab_set(enroll_dialog)
 
         # Student selection
-        ttk.Label(enroll_dialog, text="Student:").grid(row=0, column=0, padx=10, pady=10)
+        ttk.Label(enroll_dialog, text=_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.labels.student', default="Student:")).grid(row=0, column=0, padx=10, pady=10)
         student_var = tk.StringVar()
         student_combo = ttk.Combobox(enroll_dialog, textvariable=student_var, width=30)
 
@@ -407,7 +409,7 @@ class ModuleEnrollmentDialog:
         student_combo.grid(row=0, column=1, padx=10, pady=10)
 
         # Module selection
-        ttk.Label(enroll_dialog, text="Module:").grid(row=1, column=0, padx=10, pady=10)
+        ttk.Label(enroll_dialog, text=_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.labels.module', default="Module:")).grid(row=1, column=0, padx=10, pady=10)
         module_var = tk.StringVar()
         module_combo = ttk.Combobox(enroll_dialog, textvariable=module_var, width=30)
 
@@ -419,11 +421,19 @@ class ModuleEnrollmentDialog:
 
         def do_enroll():
             if not student_var.get() or not module_var.get():
-                messagebox.showerror("Error", "Please select both student and module")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.please_select_both_student_and_module', default="Please select both student and module"))
                 return
 
             student_id = student_var.get().split(' - ')[0]
             module_code = module_var.get().split(' - ')[0]
+
+            # Fail-closed: only an admin, or staff who own the module, may
+            # change its enrolment.
+            from education_system.systems.university.interfaces.gui.academics.grade_tracking.grades.authz import (
+                require_module_change,
+            )
+            if not require_module_change(cursor=self.cursor, module_code=module_code):
+                return
 
             try:
                 self.cursor.execute('''
@@ -432,23 +442,23 @@ class ModuleEnrollmentDialog:
                 ''', (student_id, module_code, datetime.now().strftime('%Y-%m-%d'), 'Enrolled'))
 
                 self.conn.commit()
-                messagebox.showinfo("Success", "Student enrolled successfully")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.student_enrolled_successfully', default="Student enrolled successfully"))
                 self.refresh_enrollments()
                 enroll_dialog.destroy()
 
             except sqlite3.IntegrityError:
-                messagebox.showerror("Error", "Student is already enrolled in this module")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.student_is_already_enrolled_in_this_module', default="Student is already enrolled in this module"))
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to enroll student: {e}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.error', default="Error"), f"Failed to enroll student: {e}")
 
-        ttk.Button(enroll_dialog, text="Enroll", command=do_enroll).grid(row=2, column=0, pady=20)
-        ttk.Button(enroll_dialog, text="Cancel", command=enroll_dialog.destroy).grid(row=2, column=1, pady=20)
+        ttk.Button(enroll_dialog, text=_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.buttons.enroll', default="Enroll"), command=do_enroll).grid(row=2, column=0, pady=20)
+        ttk.Button(enroll_dialog, text=_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.buttons.cancel', default="Cancel"), command=enroll_dialog.destroy).grid(row=2, column=1, pady=20)
 
     def remove_enrollment(self):
         """Remove selected enrollment"""
         selection = self.enrollment_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an enrollment to remove")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.please_select_an_enrollment_to_remove', default="Please select an enrollment to remove"))
             return
 
         item = selection[0]
@@ -456,7 +466,13 @@ class ModuleEnrollmentDialog:
         student_id = values[0]
         module_code = values[2]
 
-        if messagebox.askyesno("Confirm", f"Remove enrollment of {student_id} from {module_code}?"):
+        from education_system.systems.university.interfaces.gui.academics.grade_tracking.grades.authz import (
+            require_module_change,
+        )
+        if not require_module_change(cursor=self.cursor, module_code=module_code):
+            return
+
+        if messagebox.askyesno(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.confirm', default="Confirm"), f"Remove enrollment of {student_id} from {module_code}?"):
             try:
                 self.cursor.execute('''
                 DELETE FROM student_modules
@@ -464,11 +480,11 @@ class ModuleEnrollmentDialog:
                 ''', (student_id, module_code))
 
                 self.conn.commit()
-                messagebox.showinfo("Success", "Enrollment removed successfully")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.enrollment_removed_successfully', default="Enrollment removed successfully"))
                 self.refresh_enrollments()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to remove enrollment: {e}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.error', default="Error"), f"Failed to remove enrollment: {e}")
 
     def refresh_enrollments(self):
         """Refresh the enrollments display"""
@@ -491,7 +507,7 @@ class ModuleEnrollmentDialog:
                 self.enrollment_tree.insert('', 'end', values=enrollment)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load enrollments: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.enrollment_dialog.dialogs.error', default="Error"), f"Failed to load enrollments: {e}")
 
     def close_dialog(self):
         self.result = True

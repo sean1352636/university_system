@@ -672,13 +672,21 @@ def manage_support_groups_admin(cursor, conn):
                     content_moderation_queue(cursor, conn)
 
                 elif safety_choice == '2':
+                    metrics = facilitator_performance_metrics(cursor)
                     print("Facilitator performance metrics:")
-                    print("- Active facilitators: 12")
-                    print("- Groups needing facilitator support: 2")
-                    print("- Training completion rate: 89%")
-
+                    for metric in metrics:
+                        print(f"- {metric['facilitator_id'] or 'Unassigned'}: "
+                              f"{metric['groups']} group(s), {metric['members']} member(s)")
+                elif safety_choice == '3':
+                    feedback = support_group_feedback_summary(cursor, conn)
+                    print(f"Feedback responses: {feedback['responses']}")
+                    print(f"Average rating: {feedback['average_rating'] or 'N/A'}")
+                elif safety_choice == '4':
+                    compliance = support_group_compliance_report(cursor, conn)
+                    for row in compliance:
+                        print(f"- {row['group_name']}: {row['status']} ({', '.join(row['issues']) or 'no issues'})")
                 else:
-                    print("Feature would be implemented with full content monitoring system.")
+                    print("Invalid review type.")
 
             elif choice == '3':
                 # Assign facilitator training
@@ -813,6 +821,68 @@ def manage_support_groups_admin(cursor, conn):
         print(f"Database error: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
+
+
+def _ensure_support_monitoring_tables(cursor, conn):
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS support_group_feedback (
+            feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            group_id INTEGER NOT NULL,
+            rating INTEGER CHECK(rating BETWEEN 1 AND 5),
+            comments TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(group_id) REFERENCES peer_support_groups(group_id)
+        )
+    ''')
+    conn.commit()
+
+
+def facilitator_performance_metrics(cursor):
+    """Return live group/member workload by facilitator."""
+    rows = cursor.execute('''
+        SELECT facilitator_id, COUNT(*) AS groups,
+               SUM(COALESCE(current_members, 0)) AS members
+        FROM peer_support_groups WHERE status='active'
+        GROUP BY facilitator_id ORDER BY groups DESC
+    ''').fetchall()
+    return [{"facilitator_id": row[0], "groups": row[1], "members": row[2] or 0}
+            for row in rows]
+
+
+def support_group_feedback_summary(cursor, conn):
+    """Summarise recorded member feedback."""
+    _ensure_support_monitoring_tables(cursor, conn)
+    row = cursor.execute(
+        "SELECT COUNT(*), ROUND(AVG(rating), 2) FROM support_group_feedback"
+    ).fetchone()
+    return {"responses": row[0], "average_rating": row[1]}
+
+
+def support_group_compliance_report(cursor, conn):
+    """Check assignment, capacity and moderation state for every group."""
+    ensure_content_moderation_table(cursor, conn)
+    groups = cursor.execute('''
+        SELECT group_id, group_name, facilitator_id, current_members, max_members,
+               meeting_schedule FROM peer_support_groups WHERE status='active'
+    ''').fetchall()
+    report = []
+    for group_id, name, facilitator, members, maximum, schedule in groups:
+        issues = []
+        if not facilitator:
+            issues.append("no facilitator")
+        if not schedule:
+            issues.append("no meeting schedule")
+        if maximum is not None and (members or 0) > maximum:
+            issues.append("over capacity")
+        pending = cursor.execute('''
+            SELECT COUNT(*) FROM content_moderation_reports
+            WHERE content_type='support_group' AND content_id=? AND status='pending'
+        ''', (str(group_id),)).fetchone()[0]
+        if pending:
+            issues.append(f"{pending} pending moderation report(s)")
+        report.append({"group_id": group_id, "group_name": name,
+                       "status": "Review" if issues else "Compliant", "issues": issues})
+    return report
 
 def generate_support_reports(cursor):
     """Generate peer support system reports"""

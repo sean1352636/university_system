@@ -1,10 +1,13 @@
 """Reporting and transcript methods for AnalyticsManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
 import csv
 import json
+import logging
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -25,6 +28,18 @@ try:
     from reportlab.lib.units import inch
 except ImportError:
     SimpleDocTemplate = None
+
+logger = logging.getLogger(__name__)
+
+def _safe_spreadsheet_value(value):
+    """Prevent spreadsheet applications from evaluating exported formulas.
+
+    Thin wrapper over the shared sanitizer so every exporter shares one
+    implementation. Kept for the existing call sites in this module.
+    """
+    from education_system.platform.kernel.core.csv_safety import sanitize_cell
+
+    return sanitize_cell('' if value is None else str(value))
 
 
 class ReportsMixin:
@@ -130,7 +145,7 @@ class ReportsMixin:
                     conn.close()
 
                 if not admin_email:
-                    messagebox.showwarning("No Admin", "No administrator email found in the database.\nPlease ensure an admin user exists with a valid email address.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_admin', default="No Admin"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_administrator_email_found_in_the_database_please_ensure_an_ad', default="No administrator email found in the database.\nPlease ensure an admin user exists with a valid email address."))
                     return
 
                 # Try to use email service
@@ -145,21 +160,21 @@ class ReportsMixin:
                     )
 
                     if success:
-                        messagebox.showinfo("Success", f"Report emailed to administrator at {admin_email}")
+                        messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.success', default="Success"), f"Report emailed to administrator at {admin_email}")
                     else:
-                        messagebox.showerror("Error", "Failed to send email. Please check email service configuration.")
+                        messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.failed_to_send_email_please_check_email_service_configuration', default="Failed to send email. Please check email service configuration."))
                 except ImportError as ie:
-                    messagebox.showerror("Error", f"Email service import error: {ie}")
+                    messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Email service import error: {ie}")
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to send email: {e}")
+                    messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Failed to send email: {e}")
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Failed to retrieve admin email: {e}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to retrieve admin email: {e}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to email report: {e}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Failed to email report: {e}")
 
-        ttk.Button(button_frame, text="Email to Admin", command=email_to_admin).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.reports.buttons.email_to_admin', default="Email to Admin"), command=email_to_admin).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.reports.buttons.close', default="Close"), command=report_window.destroy).pack(side='right', padx=5)
 
 
     def export_risk_results(self, tree):
@@ -168,14 +183,15 @@ class ReportsMixin:
             filename = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx")],
-                title="Export Risk Results"
+                title=_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.export_risk_results', default="Export Risk Results")
             )
 
             if filename:
                 # Get data from treeview
                 data = []
                 for item in tree.get_children():
-                    data.append(tree.item(item, 'values'))
+                    data.append(tuple(_safe_spreadsheet_value(v)
+                                      for v in tree.item(item, 'values')))
 
                 if filename.endswith('.xlsx'):
                     # Export to Excel (if available)
@@ -185,7 +201,7 @@ class ReportsMixin:
                                         'Risk Level', 'Factors', 'GPA', 'Failed Assessments'])
                         df.to_excel(filename, index=False)
                     except ImportError:
-                        messagebox.showerror("Error", "pandas library required for Excel export")
+                        messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.pandas_library_required_for_excel_export', default="pandas library required for Excel export"))
                         return
                 else:
                     # Export to CSV
@@ -195,15 +211,16 @@ class ReportsMixin:
                                        'Risk Level', 'Factors', 'GPA', 'Failed Assessments'])
                         writer.writerows(data)
 
-                messagebox.showinfo("Success", f"Risk results exported to {filename}")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.success', default="Success"), f"Risk results exported to {filename}")
 
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to export results: {e}")
+        except Exception:
+            logger.exception("Risk-results export failed")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), "The report could not be exported.")
 
     def show_grade_trends_chart(self):
         """Show grade trends in a visual chart"""
         if plt is None:
-            messagebox.showinfo("Feature Unavailable", "Matplotlib is required for chart visualization.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.feature_unavailable', default="Feature Unavailable"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.matplotlib_is_required_for_chart_visualization', default="Matplotlib is required for chart visualization."))
             return
 
         conn = None
@@ -234,7 +251,7 @@ class ReportsMixin:
 
             data = cursor.fetchall()
             if not data:
-                messagebox.showinfo("Grade Trends", "No data available for trend chart.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.grade_trends', default="Grade Trends"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_data_available_for_trend_chart', default="No data available for trend chart."))
                 return
 
             dates = [row[0] for row in data]
@@ -242,7 +259,7 @@ class ReportsMixin:
 
             # Create chart window
             chart_window = tk.Toplevel(self.root)
-            chart_window.title("Grade Trends Chart")
+            chart_window.title(_t('gui.academics.grade_tracking.analytics_manager.reports.windows.grade_trends_chart', default="Grade Trends Chart"))
             chart_window.geometry("900x600")
 
             fig, ax = plt.subplots(figsize=(11, 6))
@@ -269,7 +286,7 @@ class ReportsMixin:
             ttk.Label(stats_frame, text=stats_text, font=('Arial', 10, 'bold')).pack()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to show trends: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to show trends: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
@@ -289,16 +306,16 @@ class ReportsMixin:
             students = cursor.fetchall()
 
             if not students:
-                messagebox.showinfo("No Students", "No students found.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_students', default="No Students"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_students_found', default="No students found."))
                 return
 
             # Selection dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Select Student for Progress Charts")
+            dialog.title(_t('gui.academics.grade_tracking.analytics_manager.reports.windows.select_student_for_progress_charts', default="Select Student for Progress Charts"))
             dialog.geometry("400x500")
             safe_grab_set(dialog)
 
-            ttk.Label(dialog, text="Select a student:", font=('Arial', 12, 'bold')).pack(pady=10)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.reports.labels.select_a_student', default="Select a student:"), font=('Arial', 12, 'bold')).pack(pady=10)
 
             list_frame = ttk.Frame(dialog)
             list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -316,7 +333,7 @@ class ReportsMixin:
             def show_charts():
                 selection = listbox.curselection()
                 if not selection:
-                    messagebox.showwarning("No Selection", "Please select a student.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.please_select_a_student', default="Please select a student."))
                     return
 
                 student_id = students[selection[0]][0]
@@ -324,10 +341,10 @@ class ReportsMixin:
                 dialog.destroy()
                 self._show_student_progress_charts(student_id, student_name)
 
-            ttk.Button(dialog, text="Show Progress Charts", command=show_charts).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.reports.buttons.show_progress_charts', default="Show Progress Charts"), command=show_charts).pack(pady=10)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to load students: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to load students: {e}")
         finally:
             if conn:
                 conn.close()
@@ -335,9 +352,9 @@ class ReportsMixin:
     def _show_student_progress_charts(self, student_id, student_name):
         """Display progress charts for a specific student"""
         if plt is None:
-            messagebox.showinfo("Feature Unavailable",
-                              "Matplotlib is required for chart visualization.\n"
-                              "Install it with: pip install matplotlib")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.feature_unavailable', default="Feature Unavailable"),
+                              _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.matplotlib_is_required_for_chart_visualization_install_it_with_p', default="Matplotlib is required for chart visualization.\n"
+                              "Install it with: pip install matplotlib"))
             return
 
         conn = None
@@ -396,7 +413,7 @@ class ReportsMixin:
             data = cursor.fetchall()
 
             if not data:
-                messagebox.showinfo("No Data", f"No grades found for {student_name}")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_data', default="No Data"), f"No grades found for {student_name}")
                 return
 
             dates = [row[0] for row in data]
@@ -455,9 +472,9 @@ class ReportsMixin:
             ttk.Label(stats_frame, text=stats_text, font=('Arial', 10, 'bold')).pack()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate charts: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to generate charts: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create charts: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Failed to create charts: {e}")
         finally:
             if conn:
                 conn.close()
@@ -474,16 +491,16 @@ class ReportsMixin:
             students = cursor.fetchall()
 
             if not students:
-                messagebox.showinfo("No Students", "No students found.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_students', default="No Students"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_students_found', default="No students found."))
                 return
 
             # Selection dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Select Student for Transcript")
+            dialog.title(_t('gui.academics.grade_tracking.analytics_manager.reports.windows.select_student_for_transcript', default="Select Student for Transcript"))
             dialog.geometry("400x500")
             safe_grab_set(dialog)
 
-            ttk.Label(dialog, text="Select a student:", font=('Arial', 12, 'bold')).pack(pady=10)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.reports.labels.select_a_student', default="Select a student:"), font=('Arial', 12, 'bold')).pack(pady=10)
 
             list_frame = ttk.Frame(dialog)
             list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -499,19 +516,19 @@ class ReportsMixin:
                 listbox.insert(tk.END, f"{student_id} - {name}")
 
             # Export format selection
-            format_frame = ttk.LabelFrame(dialog, text="Export Format", padding=10)
+            format_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.reports.labels.export_format', default="Export Format"), padding=10)
             format_frame.pack(fill='x', padx=10, pady=10)
 
-            format_var = tk.StringVar(value="display")
-            ttk.Radiobutton(format_frame, text="Display in Window", variable=format_var, value="display").pack(anchor='w')
-            ttk.Radiobutton(format_frame, text="Save as Text (.txt)", variable=format_var, value="txt").pack(anchor='w')
-            ttk.Radiobutton(format_frame, text="Save as PDF (.pdf)", variable=format_var, value="pdf").pack(anchor='w')
-            ttk.Radiobutton(format_frame, text="Save as JSON (.json)", variable=format_var, value="json").pack(anchor='w')
+            format_var = tk.StringVar(value=_t('gui.academics.grade_tracking.analytics_manager.reports.values.display', default="display"))
+            ttk.Radiobutton(format_frame, text=_t('gui.academics.grade_tracking.analytics_manager.reports.buttons.display_in_window', default="Display in Window"), variable=format_var, value="display").pack(anchor='w')
+            ttk.Radiobutton(format_frame, text=_t('gui.academics.grade_tracking.analytics_manager.reports.buttons.save_as_text_txt', default="Save as Text (.txt)"), variable=format_var, value="txt").pack(anchor='w')
+            ttk.Radiobutton(format_frame, text=_t('gui.academics.grade_tracking.analytics_manager.reports.buttons.save_as_pdf_pdf', default="Save as PDF (.pdf)"), variable=format_var, value="pdf").pack(anchor='w')
+            ttk.Radiobutton(format_frame, text=_t('gui.academics.grade_tracking.analytics_manager.reports.buttons.save_as_json_json', default="Save as JSON (.json)"), variable=format_var, value="json").pack(anchor='w')
 
             def generate_transcript():
                 selection = listbox.curselection()
                 if not selection:
-                    messagebox.showwarning("No Selection", "Please select a student.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.please_select_a_student', default="Please select a student."))
                     return
 
                 student_id = students[selection[0]][0]
@@ -519,10 +536,10 @@ class ReportsMixin:
                 dialog.destroy()
                 self._generate_transcript_for_student(student_id, export_format)
 
-            ttk.Button(dialog, text="Generate", command=generate_transcript).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.reports.buttons.generate', default="Generate"), command=generate_transcript).pack(pady=10)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to load students: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to load students: {e}")
         finally:
             if conn:
                 conn.close()
@@ -543,7 +560,7 @@ class ReportsMixin:
             student_info = cursor.fetchone()
 
             if not student_info:
-                messagebox.showerror("Error", f"Student {student_id} not found")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Student {student_id} not found")
                 return
 
             # Get grades from both sources with type information
@@ -653,9 +670,9 @@ class ReportsMixin:
                                    "This is an unofficial transcript for internal use only.")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate transcript: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to generate transcript: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate transcript: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Failed to generate transcript: {e}")
         finally:
             if conn:
                 conn.close()
@@ -663,7 +680,7 @@ class ReportsMixin:
     def _export_transcript_txt(self, student_id, full_name, course, enrollment_date, grades, gpa):
         """Export transcript as text file"""
         filename = filedialog.asksaveasfilename(
-            title="Save Transcript as Text",
+            title=_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.save_transcript_as_text', default="Save Transcript as Text"),
             defaultextension=".txt",
             initialfile=f"transcript_{student_id}.txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
@@ -704,18 +721,18 @@ class ReportsMixin:
                 f.write("This is an unofficial transcript for internal use only.\n")
                 f.write("Generated on: " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
 
-            messagebox.showinfo("Success", f"Transcript saved to {filename}")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.success', default="Success"), f"Transcript saved to {filename}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save transcript: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Failed to save transcript: {e}")
 
     def _export_transcript_pdf(self, student_id, full_name, course, enrollment_date, grades, gpa):
         """Export transcript as PDF file"""
         if SimpleDocTemplate is None:
-            messagebox.showerror("Error", "PDF export requires reportlab library. Please install it with: pip install reportlab")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.pdf_export_requires_reportlab_library_please_install_it_with_pip', default="PDF export requires reportlab library. Please install it with: pip install reportlab"))
             return
 
         filename = filedialog.asksaveasfilename(
-            title="Save Transcript as PDF",
+            title=_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.save_transcript_as_pdf', default="Save Transcript as PDF"),
             defaultextension=".pdf",
             initialfile=f"transcript_{student_id}.pdf",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
@@ -787,14 +804,14 @@ class ReportsMixin:
             story.append(Paragraph(footer_text, styles['Italic']))
 
             doc.build(story)
-            messagebox.showinfo("Success", f"Transcript saved to {filename}")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.success', default="Success"), f"Transcript saved to {filename}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save PDF: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Failed to save PDF: {e}")
 
     def _export_transcript_json(self, student_id, full_name, course, enrollment_date, grades, gpa):
         """Export transcript as JSON file"""
         filename = filedialog.asksaveasfilename(
-            title="Save Transcript as JSON",
+            title=_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.save_transcript_as_json', default="Save Transcript as JSON"),
             defaultextension=".json",
             initialfile=f"transcript_{student_id}.json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
@@ -836,9 +853,9 @@ class ReportsMixin:
             with open(filename, 'w') as f:
                 json.dump(transcript_data, f, indent=2)
 
-            messagebox.showinfo("Success", f"Transcript saved to {filename}")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.success', default="Success"), f"Transcript saved to {filename}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save JSON: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Failed to save JSON: {e}")
 
     def generate_student_progress_report(self):
         """Generate comprehensive student progress report with statistics and insights"""
@@ -1028,9 +1045,9 @@ class ReportsMixin:
             self._display_report("Student Progress Report", sections, footer)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate student progress report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to generate student progress report: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate student progress report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.error', default="Error"), f"Failed to generate student progress report: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1058,7 +1075,7 @@ class ReportsMixin:
             profiles = cursor.fetchall()
 
             if not profiles:
-                messagebox.showinfo("Competency Profiles", "No data available for competency analysis.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.competency_profiles', default="Competency Profiles"), _t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.no_data_available_for_competency_analysis', default="No data available for competency analysis."))
                 return
 
             # Group by student
@@ -1080,7 +1097,7 @@ class ReportsMixin:
             self._display_report("Student Competency Profiles", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate competency profiles: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to generate competency profiles: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1132,7 +1149,7 @@ class ReportsMixin:
             self._display_report("Module Outcome Report", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate outcome report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to generate outcome report: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1175,7 +1192,7 @@ class ReportsMixin:
             self._display_report("Assessment Analysis Report", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate assessment analysis: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to generate assessment analysis: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1222,7 +1239,7 @@ class ReportsMixin:
             self._display_report("Institution Summary Report", sections)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate summary: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to generate summary: {e}")
         finally:
             if conn:
                 conn.close()
@@ -1310,7 +1327,7 @@ class ReportsMixin:
                                "Immediate action required for critical and high-risk students.")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate risk report: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.reports.dialogs.database_error', default="Database Error"), f"Failed to generate risk report: {e}")
         finally:
             if conn:
                 conn.close()

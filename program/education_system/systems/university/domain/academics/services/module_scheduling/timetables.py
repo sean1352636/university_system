@@ -247,8 +247,8 @@ class TimetablesMixin:
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib import colors
         from reportlab.lib.units import inch
-        from education_system.systems.university.infrastructure import paths
-        reports_dir = str(paths.REPORTS_DIR / 'timetable_reports')
+        from education_system import paths
+        reports_dir = str(paths.UNIVERSITY_REPORTS_DIR / 'timetable_reports')
 
         # Ensure directory exists
         os.makedirs(reports_dir, exist_ok=True)
@@ -488,8 +488,8 @@ class TimetablesMixin:
     def _export_to_csv(self, user_id, user_name, timetable_data, user_type='student'):
         """Export timetable to CSV format"""
         # Create reports directory if it doesn't exist
-        from education_system.systems.university.infrastructure import paths
-        reports_dir = str(paths.REPORTS_DIR / 'timetable_reports')
+        from education_system import paths
+        reports_dir = str(paths.UNIVERSITY_REPORTS_DIR / 'timetable_reports')
 
         # Create CSV filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -530,8 +530,8 @@ class TimetablesMixin:
     def _export_to_txt(self, user_id, user_name, timetable_data, user_type='student'):
         """Export timetable to TXT format"""
         # Create reports directory if it doesn't exist
-        from education_system.systems.university.infrastructure import paths
-        reports_dir = str(paths.REPORTS_DIR / 'timetable_reports')
+        from education_system import paths
+        reports_dir = str(paths.UNIVERSITY_REPORTS_DIR / 'timetable_reports')
 
         # Create TXT filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -574,8 +574,8 @@ class TimetablesMixin:
         """Export timetable to Excel format"""
         # Create reports directory if it doesn't exist
         import pandas as pd
-        from education_system.systems.university.infrastructure import paths
-        reports_dir = str(paths.REPORTS_DIR / 'timetable_reports')
+        from education_system import paths
+        reports_dir = str(paths.UNIVERSITY_REPORTS_DIR / 'timetable_reports')
 
         # Create Excel filename
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

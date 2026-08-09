@@ -23,10 +23,8 @@ logger = logging.getLogger("absence_tracker.today")
 
 
 def _db_path() -> str:
-    from education_system.systems.university.infrastructure.paths import (
-        DEFAULT_DB_PATH,
-    )
-    return DEFAULT_DB_PATH
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+    return UNIVERSITY_DEFAULT_DB_PATH
 
 
 def _classes_today(conn, today: str) -> list[tuple]:

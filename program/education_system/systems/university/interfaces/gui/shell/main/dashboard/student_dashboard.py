@@ -1,5 +1,7 @@
 """Student role-based dashboard tab."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 import logging
@@ -67,7 +69,7 @@ def _launch_finance(parent, auth):
     import tkinter as tk
     from education_system.systems.university.interfaces.gui.finance.finance.finance_gui import FinanceGUI
     window = tk.Toplevel(parent)
-    window.title("Finance")
+    window.title(_t('gui.shell.main.dashboard.student_dashboard.windows.finance', default="Finance"))
     window.geometry("1280x800")
     window.minsize(1024, 640)
     FinanceGUI(window, auth=auth)
@@ -192,7 +194,7 @@ def _launch_feature(root, auth, feature_name):
     }
 
     if feature_name not in feature_map:
-        messagebox.showerror("Error", f"Unknown feature: {feature_name}")
+        messagebox.showerror(_t('gui.shell.main.dashboard.student_dashboard.dialogs.error', default="Error"), f"Unknown feature: {feature_name}")
         return
 
     title, module_path, class_name, auth_style, creates_window = feature_map[feature_name]
@@ -217,7 +219,7 @@ def _launch_feature(root, auth, feature_name):
         else:
             gui_class(target)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open {title}: {e}")
+        messagebox.showerror(_t('gui.shell.main.dashboard.student_dashboard.dialogs.error', default="Error"), f"Failed to open {title}: {e}")
 
 
 def create_student_dashboard(parent_frame, auth, service):
@@ -260,7 +262,7 @@ def create_student_dashboard(parent_frame, auth, service):
         logger.error(f"Error loading announcements panel: {e}")
 
     # Quick Actions button bar (4-column grid so buttons are never clipped)
-    actions_frame = ttk.LabelFrame(scrollable, text="Quick Actions", padding="5")
+    actions_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.student_dashboard.labels.quick_actions', default="Quick Actions"), padding="5")
     actions_frame.pack(fill=tk.X, padx=15, pady=5)
 
     root = parent_frame.winfo_toplevel()
@@ -311,7 +313,7 @@ def create_student_dashboard(parent_frame, auth, service):
         )
 
     # GPA Card
-    gpa_frame = ttk.LabelFrame(scrollable, text="Academic Summary", padding="10")
+    gpa_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.student_dashboard.labels.academic_summary', default="Academic Summary"), padding="10")
     gpa_frame.pack(fill=tk.X, padx=15, pady=5)
 
     gpa_text = f"{data['gpa']:.2f}" if data['gpa'] is not None else "N/A"
@@ -321,15 +323,15 @@ def create_student_dashboard(parent_frame, auth, service):
     ttk.Label(gpa_frame, text=f"Enrolled Modules: {len(data['enrolled_courses'])}").pack(anchor="w")
 
     # Enrolled Modules
-    courses_frame = ttk.LabelFrame(scrollable, text="Enrolled Modules", padding="10")
+    courses_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.student_dashboard.labels.enrolled_modules', default="Enrolled Modules"), padding="10")
     courses_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['enrolled_courses']:
         cols = ('code', 'name', 'type')
         tree = ttk.Treeview(courses_frame, columns=cols, show='headings', height=min(8, len(data['enrolled_courses'])))
-        tree.heading('code', text='Code')
-        tree.heading('name', text='Module Name')
-        tree.heading('type', text='Type')
+        tree.heading('code', text=_t('gui.shell.main.dashboard.student_dashboard.headings.code', default='Code'))
+        tree.heading('name', text=_t('gui.shell.main.dashboard.student_dashboard.headings.module_name', default='Module Name'))
+        tree.heading('type', text=_t('gui.shell.main.dashboard.student_dashboard.headings.type', default='Type'))
         tree.column('code', width=120)
         tree.column('name', width=300)
         tree.column('type', width=100)
@@ -341,19 +343,19 @@ def create_student_dashboard(parent_frame, auth, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(courses_frame, text="No modules enrolled.").pack(anchor="w")
+        ttk.Label(courses_frame, text=_t('gui.shell.main.dashboard.student_dashboard.labels.no_modules_enrolled', default="No modules enrolled.")).pack(anchor="w")
 
     # Upcoming Assignments
-    assign_frame = ttk.LabelFrame(scrollable, text="Upcoming Assignments", padding="10")
+    assign_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.student_dashboard.labels.upcoming_assignments', default="Upcoming Assignments"), padding="10")
     assign_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['upcoming_assignments']:
         cols = ('title', 'module', 'due_date')
         tree = ttk.Treeview(assign_frame, columns=cols, show='headings',
                             height=min(5, len(data['upcoming_assignments'])))
-        tree.heading('title', text='Title')
-        tree.heading('module', text='Module')
-        tree.heading('due_date', text='Due Date')
+        tree.heading('title', text=_t('gui.shell.main.dashboard.student_dashboard.headings.title', default='Title'))
+        tree.heading('module', text=_t('gui.shell.main.dashboard.student_dashboard.headings.module', default='Module'))
+        tree.heading('due_date', text=_t('gui.shell.main.dashboard.student_dashboard.headings.due_date', default='Due Date'))
         tree.column('title', width=250)
         tree.column('module', width=120)
         tree.column('due_date', width=120)
@@ -365,21 +367,21 @@ def create_student_dashboard(parent_frame, auth, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(assign_frame, text="No upcoming assignments.").pack(anchor="w")
+        ttk.Label(assign_frame, text=_t('gui.shell.main.dashboard.student_dashboard.labels.no_upcoming_assignments', default="No upcoming assignments.")).pack(anchor="w")
 
     # Office Hour Bookings
-    oh_frame = ttk.LabelFrame(scrollable, text="Office Hour Bookings", padding="10")
+    oh_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.student_dashboard.labels.office_hour_bookings', default="Office Hour Bookings"), padding="10")
     oh_frame.pack(fill=tk.X, padx=15, pady=5)
 
     if data['office_hour_bookings']:
         cols = ('instructor', 'day', 'time', 'location', 'date')
         tree = ttk.Treeview(oh_frame, columns=cols, show='headings',
                             height=min(4, len(data['office_hour_bookings'])))
-        tree.heading('instructor', text='Instructor')
-        tree.heading('day', text='Day')
-        tree.heading('time', text='Time')
-        tree.heading('location', text='Location')
-        tree.heading('date', text='Booking Date')
+        tree.heading('instructor', text=_t('gui.shell.main.dashboard.student_dashboard.headings.instructor', default='Instructor'))
+        tree.heading('day', text=_t('gui.shell.main.dashboard.student_dashboard.headings.day', default='Day'))
+        tree.heading('time', text=_t('gui.shell.main.dashboard.student_dashboard.headings.time', default='Time'))
+        tree.heading('location', text=_t('gui.shell.main.dashboard.student_dashboard.headings.location', default='Location'))
+        tree.heading('date', text=_t('gui.shell.main.dashboard.student_dashboard.headings.booking_date', default='Booking Date'))
         tree.column('instructor', width=120)
         tree.column('day', width=80)
         tree.column('time', width=120)
@@ -395,19 +397,19 @@ def create_student_dashboard(parent_frame, auth, service):
             ))
         tree.pack(fill=tk.X)
     else:
-        ttk.Label(oh_frame, text="No upcoming office hour bookings.").pack(anchor="w")
+        ttk.Label(oh_frame, text=_t('gui.shell.main.dashboard.student_dashboard.labels.no_upcoming_office_hour_bookings', default="No upcoming office hour bookings.")).pack(anchor="w")
 
     # TA Assignments
     if data['ta_assignments']:
-        ta_frame = ttk.LabelFrame(scrollable, text="My TA Assignments", padding="10")
+        ta_frame = ttk.LabelFrame(scrollable, text=_t('gui.shell.main.dashboard.student_dashboard.labels.my_ta_assignments', default="My TA Assignments"), padding="10")
         ta_frame.pack(fill=tk.X, padx=15, pady=5)
 
         cols = ('module', 'role', 'hours')
         tree = ttk.Treeview(ta_frame, columns=cols, show='headings',
                             height=min(3, len(data['ta_assignments'])))
-        tree.heading('module', text='Module')
-        tree.heading('role', text='Role')
-        tree.heading('hours', text='Hours/Week')
+        tree.heading('module', text=_t('gui.shell.main.dashboard.student_dashboard.headings.module', default='Module'))
+        tree.heading('role', text=_t('gui.shell.main.dashboard.student_dashboard.headings.role', default='Role'))
+        tree.heading('hours', text=_t('gui.shell.main.dashboard.student_dashboard.headings.hours_week', default='Hours/Week'))
         tree.column('module', width=150)
         tree.column('role', width=100)
         tree.column('hours', width=100)

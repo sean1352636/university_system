@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # utils.py
 # Utility functions, helpers, and constants for the medical accommodation GUI.
 
@@ -181,7 +183,7 @@ def gui_error_handler(func):
                 logging.error(f"GUI Error in {func.__name__}: {e}")
             # Show error dialog if tkinter is available
             try:
-                messagebox.showerror("Error", f"An error occurred: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.utils.dialogs.error', default="Error"), f"An error occurred: {str(e)}")
             except Exception:
                 print(f"Error: {e}")
     return wrapper

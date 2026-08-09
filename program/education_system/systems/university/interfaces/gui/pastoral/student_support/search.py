@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import tkinter.font as tkFont
@@ -10,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import i18n for language support
 from education_system.systems.university.infrastructure.i18n import (
@@ -43,8 +45,8 @@ except ImportError:
     render_template = lambda *args, **kwargs: (None, None)
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this module when targeting the
@@ -160,24 +162,24 @@ class SearchMixin:
         self.clear_content()
 
         search_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(search_frame, text="🔍 Advanced Search")
+        self.notebook.add(search_frame, text=_t('gui.pastoral.student_support.search.tabs.advanced_search', default="🔍 Advanced Search"))
 
         # Configure frame to expand
         search_frame.rowconfigure(0, weight=1)
         search_frame.columnconfigure(0, weight=1)
 
         # Search form
-        form_frame = ttk.LabelFrame(search_frame, text="Search Parameters", padding="10")
+        form_frame = ttk.LabelFrame(search_frame, text=_t('gui.pastoral.student_support.search.labels.search_parameters', default="Search Parameters"), padding="10")
         form_frame.pack(fill="x", pady=(0, 10))
 
         # Search query
-        ttk.Label(form_frame, text="Search Query:").grid(row=0, column=0, sticky="w", pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.search.labels.search_query', default="Search Query:")).grid(row=0, column=0, sticky="w", pady=5)
         self.search_query = ttk.Entry(form_frame, width=50)
         self.search_query.grid(row=0, column=1, sticky="ew", padx=(10, 0), pady=5)
         self.search_query.bind('<Return>', lambda e: self.perform_search())
 
         # Search type
-        ttk.Label(form_frame, text="Search In:").grid(row=1, column=0, sticky="w", pady=5)
+        ttk.Label(form_frame, text=_t('gui.pastoral.student_support.search.labels.search_in', default="Search In:")).grid(row=1, column=0, sticky="w", pady=5)
         self.search_type = ttk.Combobox(form_frame, values=[
             "Everything", "Tickets", "FAQs", "Resources", "Knowledge Base"
         ], state="readonly")
@@ -188,13 +190,13 @@ class SearchMixin:
         search_btn_frame = ttk.Frame(form_frame)
         search_btn_frame.grid(row=2, column=0, columnspan=2, pady=10)
 
-        ttk.Button(search_btn_frame, text="🔍 Search",
+        ttk.Button(search_btn_frame, text=_t('gui.pastoral.student_support.search.buttons.search_variant_2', default="🔍 Search"),
                   command=self.perform_search, style='Primary.TButton').pack()
 
         form_frame.columnconfigure(1, weight=1)
 
         # Results area
-        self.search_results_frame = ttk.LabelFrame(search_frame, text="Search Results", padding="10")
+        self.search_results_frame = ttk.LabelFrame(search_frame, text=_t('gui.pastoral.student_support.search.labels.search_results', default="Search Results"), padding="10")
         self.search_results_frame.pack(fill="both", expand=True)
 
         # Results notebook
@@ -205,11 +207,11 @@ class SearchMixin:
         """Perform advanced search"""
         query = self.search_query.get().strip()
         if not query:
-            messagebox.showwarning("Search", "Please enter a search query")
+            messagebox.showwarning(_t('gui.pastoral.student_support.search.dialogs.search', default="Search"), _t('gui.pastoral.student_support.search.dialogs.please_enter_a_search_query', default="Please enter a search query"))
             return
 
         if not self.support:
-            messagebox.showerror("Error", "Support system not initialized")
+            messagebox.showerror(_t('gui.pastoral.student_support.search.dialogs.error', default="Error"), _t('gui.pastoral.student_support.search.dialogs.support_system_not_initialized', default="Support system not initialized"))
             return
 
         # Clear previous results
@@ -232,7 +234,7 @@ class SearchMixin:
             self.display_search_results(results)
             self.update_status(f"Search completed for '{query}'")
         except Exception as e:
-            messagebox.showerror("Search Error", f"Search failed: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.search.dialogs.search_error', default="Search Error"), f"Search failed: {e}")
             self.update_status("Search failed")
 
     def display_search_results(self, results):
@@ -275,11 +277,11 @@ class SearchMixin:
         if total_results == 0:
             # No results found
             no_results_frame = ttk.Frame(self.results_notebook, padding="20")
-            self.results_notebook.add(no_results_frame, text="No Results")
+            self.results_notebook.add(no_results_frame, text=_t('gui.pastoral.student_support.search.tabs.no_results', default="No Results"))
 
-            ttk.Label(no_results_frame, text="🔍 No results found",
+            ttk.Label(no_results_frame, text=_t('gui.pastoral.student_support.search.labels.no_results_found', default="🔍 No results found"),
                      style='Title.TLabel').pack(pady=20)
-            ttk.Label(no_results_frame, text="Try different keywords or check spelling").pack()
+            ttk.Label(no_results_frame, text=_t('gui.pastoral.student_support.search.labels.try_different_keywords_or_check_spelling', default="Try different keywords or check spelling")).pack()
 
         self.search_results_frame.config(text=f"Search Results ({total_results} found)")
 
@@ -293,12 +295,12 @@ class SearchMixin:
         tree = ttk.Treeview(tickets_frame, columns=columns, show='headings', height=15)
 
         # Configure columns
-        tree.heading('ID', text='ID')
-        tree.heading('Title', text='Title')
-        tree.heading('Status', text='Status')
-        tree.heading('Priority', text='Priority')
-        tree.heading('Category', text='Category')
-        tree.heading('Created', text='Created')
+        tree.heading('ID', text=_t('gui.pastoral.student_support.search.headings.id', default='ID'))
+        tree.heading('Title', text=_t('gui.pastoral.student_support.search.headings.title', default='Title'))
+        tree.heading('Status', text=_t('gui.pastoral.student_support.search.headings.status', default='Status'))
+        tree.heading('Priority', text=_t('gui.pastoral.student_support.search.headings.priority', default='Priority'))
+        tree.heading('Category', text=_t('gui.pastoral.student_support.search.headings.category', default='Category'))
+        tree.heading('Created', text=_t('gui.pastoral.student_support.search.headings.created', default='Created'))
 
         tree.column('ID', width=80)
         tree.column('Title', width=300)
@@ -381,7 +383,7 @@ class SearchMixin:
             ttk.Label(faq_frame, text=answer_preview, wraplength=600).pack(anchor="w", pady=(5, 0))
 
             # View full answer button
-            ttk.Button(faq_frame, text="View Full Answer",
+            ttk.Button(faq_frame, text=_t('gui.pastoral.student_support.search.buttons.view_full_answer', default="View Full Answer"),
                       command=lambda f=faq: self.show_faq_detail(f)).pack(anchor="w", pady=(5, 0))
 
         canvas.grid(row=0, column=0, sticky="nsew")
@@ -430,7 +432,7 @@ class SearchMixin:
             btn_frame = ttk.Frame(resource_frame)
             btn_frame.pack(anchor="w", pady=(5, 0))
 
-            ttk.Button(btn_frame, text="View Resource",
+            ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.search.buttons.view_resource', default="View Resource"),
                       command=lambda r=resource: self.open_resource(r)).pack(side="left")
 
         canvas.grid(row=0, column=0, sticky="nsew")
@@ -481,7 +483,7 @@ class SearchMixin:
                 ttk.Label(article_frame, text=content_preview, wraplength=600).pack(anchor="w", pady=(5, 0))
 
             # View full article button
-            ttk.Button(article_frame, text="View Full Article",
+            ttk.Button(article_frame, text=_t('gui.pastoral.student_support.search.buttons.view_full_article', default="View Full Article"),
                       command=lambda a=article: self.show_article_detail(a)).pack(anchor="w", pady=(5, 0))
 
         canvas.grid(row=0, column=0, sticky="nsew")
@@ -490,9 +492,9 @@ class SearchMixin:
     def create_suggestions_tab(self, suggestions):
         """Create suggestions tab"""
         suggestions_frame = ttk.Frame(self.results_notebook, padding="10")
-        self.results_notebook.add(suggestions_frame, text="💡 Suggestions")
+        self.results_notebook.add(suggestions_frame, text=_t('gui.pastoral.student_support.search.tabs.suggestions', default="💡 Suggestions"))
 
-        ttk.Label(suggestions_frame, text="💡 Search Suggestions",
+        ttk.Label(suggestions_frame, text=_t('gui.pastoral.student_support.search.labels.search_suggestions', default="💡 Search Suggestions"),
                  style='Heading.TLabel').pack(anchor="w", pady=(0, 10))
 
         for suggestion in suggestions:
@@ -500,7 +502,7 @@ class SearchMixin:
             suggestion_frame.pack(fill="x", pady=2)
 
             ttk.Label(suggestion_frame, text=f"💭 {suggestion}").pack(side="left")
-            ttk.Button(suggestion_frame, text="Search",
+            ttk.Button(suggestion_frame, text=_t('gui.pastoral.student_support.search.buttons.search', default="Search"),
                       command=lambda s=suggestion: self.search_suggestion(s)).pack(side="right")
 
     def search_suggestion(self, suggestion):

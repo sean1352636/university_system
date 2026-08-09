@@ -1,0 +1,5 @@
+{
+  "subject": "ICT security training invitation",
+  "body": "You have been invited to ICT security training.\n\nCourse: $course_name\nDate: $training_date\nTime: $training_time\nLocation: $training_location\n\nThe course has been added to your calendar.\n\nEducation System ICT",
+  "html_body": "<!doctype html><html><body style='font-family:Arial,sans-serif;background:#f4f6f8;padding:24px'><main style='max-width:600px;margin:auto;background:white;border-radius:8px;padding:32px'><h1 style='font-size:22px;color:#243447'>ICT security training invitation</h1><p>You have been invited to the following training course:</p><table style='border-collapse:collapse;margin:20px 0'><tr><th style='text-align:left;padding:6px 16px 6px 0'>Course</th><td>$course_name</td></tr><tr><th style='text-align:left;padding:6px 16px 6px 0'>Date</th><td>$training_date</td></tr><tr><th style='text-align:left;padding:6px 16px 6px 0'>Time</th><td>$training_time</td></tr><tr><th style='text-align:left;padding:6px 16px 6px 0'>Location</th><td>$training_location</td></tr></table><p>The course has been added to your calendar.</p></main></body></html>"
+}

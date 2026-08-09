@@ -8,10 +8,10 @@ combining functionality from various database.py files across the system.
 from __future__ import annotations
 
 # Common database path constants (re-exported for convenience)
-from education_system.systems.university.infrastructure.paths import (
-    DEFAULT_DB_PATH,
-    DB_DIR,
-    EXPORTS_DIR,
+from education_system.paths import (
+    UNIVERSITY_DEFAULT_DB_PATH,
+    UNIVERSITY_DB_DIR,
+    UNIVERSITY_EXPORTS_DIR,
 )
 
 # Core database functionality

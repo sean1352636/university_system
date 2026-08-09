@@ -32,7 +32,7 @@ sys.path.insert(0, str(project_root.parent))
 # Use standard imports instead of dynamic code execution
 # This avoids security risks from exec_module() which could execute arbitrary code
 try:
-    from education_system.systems.university.infrastructure import paths
+    from education_system import paths
     from education_system.systems.university.infrastructure.i18n import get_text as _t, init_i18n
     init_i18n()
     I18N_AVAILABLE = True
@@ -128,7 +128,7 @@ def reset_user_password(username, new_password, db_path=None):
         bool: True if successful, False otherwise
     """
     if db_path is None:
-        db_path = paths.DEFAULT_DB_PATH
+        db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
 
     try:
         conn = sqlite3.connect(db_path)
@@ -203,7 +203,7 @@ def reset_default_passwords(db_path=None):
     }
 
     if db_path is None:
-        db_path = paths.DEFAULT_DB_PATH
+        db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
 
     print(f"🔄 {_t('reset_password.resetting_defaults')}\n")
 
@@ -273,7 +273,7 @@ Examples:
 
     args = parser.parse_args()
 
-    db_path = args.db_path if args.db_path else paths.DEFAULT_DB_PATH
+    db_path = args.db_path if args.db_path else paths.UNIVERSITY_DEFAULT_DB_PATH
 
     # List users
     if args.list_users:

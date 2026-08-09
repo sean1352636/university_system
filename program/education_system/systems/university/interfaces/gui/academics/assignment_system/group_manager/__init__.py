@@ -1,5 +1,7 @@
 """Group assignment management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
@@ -47,7 +49,7 @@ class GroupManager(AssignmentCreationMixin, ConfigurationMixin,
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load modules: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.dialogs.error', default="Error"), f"Failed to load modules: {e}")
 
     def load_assignments_for_group_filter(self, combo):
         """Load assignments that have groups"""

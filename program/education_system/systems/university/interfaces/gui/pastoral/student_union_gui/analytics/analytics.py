@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -29,7 +31,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -66,7 +68,7 @@ class AdvancedAnalyticsDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Advanced Analytics")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.analytics.analytics.windows.advanced_analytics', default="Advanced Analytics"))
         self.dialog.geometry("1100x750")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -77,7 +79,7 @@ class AdvancedAnalyticsDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(main_frame, text="📊 Advanced Analytics Dashboard",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.labels.advanced_analytics_dashboard', default="📊 Advanced Analytics Dashboard"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Notebook for different analytics
@@ -86,31 +88,31 @@ class AdvancedAnalyticsDialog:
 
         # Engagement trends tab
         engagement_frame = ttk.Frame(notebook)
-        notebook.add(engagement_frame, text="Engagement Trends")
+        notebook.add(engagement_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.tabs.engagement_trends', default="Engagement Trends"))
         self.create_engagement_tab(engagement_frame)
 
         # Event predictions tab
         predictions_frame = ttk.Frame(notebook)
-        notebook.add(predictions_frame, text="Event Predictions")
+        notebook.add(predictions_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.tabs.event_predictions', default="Event Predictions"))
         self.create_predictions_tab(predictions_frame)
 
         # Retention tab
         retention_frame = ttk.Frame(notebook)
-        notebook.add(retention_frame, text="Member Retention")
+        notebook.add(retention_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.tabs.member_retention', default="Member Retention"))
         self.create_retention_tab(retention_frame)
 
         # Recommendations tab
         recommendations_frame = ttk.Frame(notebook)
-        notebook.add(recommendations_frame, text="Recommendations")
+        notebook.add(recommendations_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.tabs.recommendations', default="Recommendations"))
         self.create_recommendations_tab(recommendations_frame)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def create_engagement_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Engagement Trend Analysis",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.labels.engagement_trend_analysis', default="Engagement Trend Analysis"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 9))
@@ -163,14 +165,14 @@ RECOMMENDATIONS:
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
-        ttk.Button(btn_frame, text="Save as TXT", command=lambda: self._save_as_txt(content, "engagement_trends.txt")).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Email to Admin", command=lambda: self._email_to_admin(content, "Engagement Trends")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.save_as_txt', default="Save as TXT"), command=lambda: self._save_as_txt(content, "engagement_trends.txt")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.email_to_admin', default="Email to Admin"), command=lambda: self._email_to_admin(content, "Engagement Trends")).pack(side='left', padx=5)
 
     def create_predictions_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Event Popularity Predictions",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.labels.event_popularity_predictions', default="Event Popularity Predictions"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 9))
@@ -223,14 +225,14 @@ OPTIMIZATION SUGGESTIONS:
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
-        ttk.Button(btn_frame, text="Save as TXT", command=lambda: self._save_as_txt(content, "event_predictions.txt")).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Email to Admin", command=lambda: self._email_to_admin(content, "Event Predictions")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.save_as_txt', default="Save as TXT"), command=lambda: self._save_as_txt(content, "event_predictions.txt")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.email_to_admin', default="Email to Admin"), command=lambda: self._email_to_admin(content, "Event Predictions")).pack(side='left', padx=5)
 
     def create_retention_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Member Retention Insights",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.labels.member_retention_insights', default="Member Retention Insights"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 9))
@@ -292,14 +294,14 @@ CLUBS NEEDING ATTENTION:
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
-        ttk.Button(btn_frame, text="Save as TXT", command=lambda: self._save_as_txt(content, "member_retention.txt")).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Email to Admin", command=lambda: self._email_to_admin(content, "Member Retention")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.save_as_txt', default="Save as TXT"), command=lambda: self._save_as_txt(content, "member_retention.txt")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.email_to_admin', default="Email to Admin"), command=lambda: self._email_to_admin(content, "Member Retention")).pack(side='left', padx=5)
 
     def create_recommendations_tab(self, parent):
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=10, pady=10)
 
-        ttk.Label(frame, text="Personalized Recommendations",
+        ttk.Label(frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.labels.personalized_recommendations', default="Personalized Recommendations"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         text = scrolledtext.ScrolledText(frame, wrap=tk.WORD, font=('Courier', 9))
@@ -361,8 +363,8 @@ TRENDING IN YOUR NETWORK:
 
         btn_frame = ttk.Frame(frame)
         btn_frame.pack(fill='x', pady=(10, 0))
-        ttk.Button(btn_frame, text="Save as TXT", command=lambda: self._save_as_txt(content, "recommendations.txt")).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Email to Admin", command=lambda: self._email_to_admin(content, "Recommendations")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.save_as_txt', default="Save as TXT"), command=lambda: self._save_as_txt(content, "recommendations.txt")).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.email_to_admin', default="Email to Admin"), command=lambda: self._email_to_admin(content, "Recommendations")).pack(side='left', padx=5)
 
     def _save_as_txt(self, content, default_name):
         from tkinter import filedialog
@@ -374,7 +376,7 @@ TRENDING IN YOUR NETWORK:
         if filename:
             with open(filename, 'w', encoding='utf-8') as f:
                 f.write(content)
-            messagebox.showinfo("Success", f"Saved to {filename}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.analytics.analytics.dialogs.success', default="Success"), f"Saved to {filename}")
 
     def _email_to_admin(self, content, report_title):
         try:
@@ -382,12 +384,12 @@ TRENDING IN YOUR NETWORK:
                 cursor = conn.execute("SELECT email FROM users WHERE role = 'admin' AND email IS NOT NULL AND email != '' LIMIT 1")
                 row = cursor.fetchone()
             if not row or not row[0]:
-                messagebox.showerror("Error", "No admin email found")
+                messagebox.showerror(_t('gui.pastoral.student_union_gui.analytics.analytics.dialogs.error', default="Error"), _t('gui.pastoral.student_union_gui.analytics.analytics.dialogs.no_admin_email_found', default="No admin email found"))
                 return
             send_email(row[0], f"Analytics Report: {report_title}", content)
-            messagebox.showinfo("Success", f"Report emailed to {row[0]}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.analytics.analytics.dialogs.success', default="Success"), f"Report emailed to {row[0]}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.analytics.analytics.dialogs.error', default="Error"), f"Failed to send: {e}")
 
 
 # ============================================================================
@@ -404,7 +406,7 @@ class EngagementTrendAnalysisDialog:
 
         if not embedded:
             self.dialog = tk.Toplevel(parent)
-            self.dialog.title("Engagement Trend Analysis")
+            self.dialog.title(_t('gui.pastoral.student_union_gui.analytics.analytics.windows.engagement_trend_analysis', default="Engagement Trend Analysis"))
             self.dialog.geometry("1000x700")
             self.dialog.transient(parent)
             self.dialog.grab_set()
@@ -419,7 +421,7 @@ class EngagementTrendAnalysisDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         if not hasattr(self, 'dialog'):
-            ttk.Label(main_frame, text="Engagement Trend Analysis", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.labels.engagement_trend_analysis', default="Engagement Trend Analysis"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 9))
         text.pack(fill='both', expand=True)
@@ -487,7 +489,7 @@ class MemberRetentionInsightsDialog:
 
         if not embedded:
             self.dialog = tk.Toplevel(parent)
-            self.dialog.title("Member Retention Insights")
+            self.dialog.title(_t('gui.pastoral.student_union_gui.analytics.analytics.windows.member_retention_insights', default="Member Retention Insights"))
             self.dialog.geometry("1000x700")
             self.dialog.transient(parent)
             self.dialog.grab_set()
@@ -502,7 +504,7 @@ class MemberRetentionInsightsDialog:
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         if not hasattr(self, 'dialog'):
-            ttk.Label(main_frame, text="Member Retention Insights", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
+            ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.labels.member_retention_insights', default="Member Retention Insights"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, font=('Courier', 9))
         text.pack(fill='both', expand=True)
@@ -608,7 +610,7 @@ class LearningAnalyticsDashboardDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Learning Analytics Dashboard")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.analytics.analytics.windows.learning_analytics_dashboard', default="Learning Analytics Dashboard"))
         self.dialog.geometry("1100x800")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -619,7 +621,7 @@ class LearningAnalyticsDashboardDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="📊 Learning Analytics Dashboard",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.labels.learning_analytics_dashboard', default="📊 Learning Analytics Dashboard"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Create notebook
@@ -628,30 +630,30 @@ class LearningAnalyticsDashboardDialog:
 
         # Learning Outcomes tab
         outcomes_frame = ttk.Frame(notebook)
-        notebook.add(outcomes_frame, text="Learning Outcomes")
+        notebook.add(outcomes_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.tabs.learning_outcomes', default="Learning Outcomes"))
         self.create_outcomes_tab(outcomes_frame)
 
         # Skill Development tab
         skills_frame = ttk.Frame(notebook)
-        notebook.add(skills_frame, text="Skill Development")
+        notebook.add(skills_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.tabs.skill_development', default="Skill Development"))
         self.create_skills_tab(skills_frame)
 
         # Knowledge Acquisition tab
         knowledge_frame = ttk.Frame(notebook)
-        notebook.add(knowledge_frame, text="Knowledge Acquisition")
+        notebook.add(knowledge_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.tabs.knowledge_acquisition', default="Knowledge Acquisition"))
         self.create_knowledge_tab(knowledge_frame)
 
         # Competency Tracking tab
         competency_frame = ttk.Frame(notebook)
-        notebook.add(competency_frame, text="Competency Tracking")
+        notebook.add(competency_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.tabs.competency_tracking', default="Competency Tracking"))
         self.create_competency_tab(competency_frame)
 
         # Learning Paths tab
         paths_frame = ttk.Frame(notebook)
-        notebook.add(paths_frame, text="Learning Paths")
+        notebook.add(paths_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.tabs.learning_paths', default="Learning Paths"))
         self.create_paths_tab(paths_frame)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack()
+        ttk.Button(main_frame, text=_t('gui.pastoral.student_union_gui.analytics.analytics.buttons.close', default="Close"), command=self.dialog.destroy).pack()
 
     def create_outcomes_tab(self, parent):
         frame = ttk.Frame(parent)

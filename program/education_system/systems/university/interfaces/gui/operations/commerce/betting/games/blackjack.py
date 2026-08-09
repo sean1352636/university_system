@@ -11,6 +11,8 @@ Rules implemented:
 Run:  python blackjack.py
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -95,7 +97,7 @@ def is_soft(cards):
 class BlackjackGame:
     def __init__(self, root):
         self.root = root
-        self.root.title("Blackjack")
+        self.root.title(_t('gui.operations.commerce.betting.games.blackjack.windows.blackjack', default="Blackjack"))
         self.root.configure(bg=FELT)
         self.root.resizable(False, False)
 
@@ -144,7 +146,7 @@ class BlackjackGame:
         # Betting controls
         bet_bar = tk.Frame(self.root, bg=FELT_DARK)
         bet_bar.pack(fill="x")
-        tk.Label(bet_bar, text="Bet:", fg="white", bg=FELT_DARK,
+        tk.Label(bet_bar, text=_t('gui.operations.commerce.betting.games.blackjack.labels.bet', default="Bet:"), fg="white", bg=FELT_DARK,
                  font=self.f_small).pack(side="left", padx=(14, 6), pady=8)
         self.chip_buttons = []
         for amount in (5, 25, 100):
@@ -154,11 +156,11 @@ class BlackjackGame:
                           activebackground="#3d6ba5", font=self.f_small)
             b.pack(side="left", padx=3, pady=6)
             self.chip_buttons.append(b)
-        self.btn_clear = tk.Button(bet_bar, text="Clear", width=5,
+        self.btn_clear = tk.Button(bet_bar, text=_t('gui.operations.commerce.betting.games.blackjack.buttons.clear', default="Clear"), width=5,
                                    command=self._clear_bet, bg="#7f4a2e",
                                    fg="white", font=self.f_small)
         self.btn_clear.pack(side="left", padx=3)
-        tk.Label(bet_bar, text="Set bet:", fg="white", bg=FELT_DARK,
+        tk.Label(bet_bar, text=_t('gui.operations.commerce.betting.games.blackjack.labels.set_bet', default="Set bet:"), fg="white", bg=FELT_DARK,
                  font=self.f_small).pack(side="left", padx=(14, 6), pady=8)
         self.bet_var = tk.StringVar(value=str(self.bet))
         self.bet_entry = tk.Entry(bet_bar, textvariable=self.bet_var, width=6,
@@ -170,19 +172,19 @@ class BlackjackGame:
         # Action controls
         action_bar = tk.Frame(self.root, bg=FELT_DARK)
         action_bar.pack(fill="x", pady=(0, 4))
-        self.btn_deal = tk.Button(action_bar, text="Deal", width=9,
+        self.btn_deal = tk.Button(action_bar, text=_t('gui.operations.commerce.betting.games.blackjack.buttons.deal', default="Deal"), width=9,
                                   command=self.deal, bg=GOLD, fg=BLACK,
                                   font=self.f_med, relief="raised", bd=3)
         self.btn_deal.pack(side="left", padx=6, pady=8)
-        self.btn_hit = tk.Button(action_bar, text="Hit", width=9,
+        self.btn_hit = tk.Button(action_bar, text=_t('gui.operations.commerce.betting.games.blackjack.buttons.hit', default="Hit"), width=9,
                                  command=self.hit, font=self.f_med,
                                  bg="#27ae60", fg="white")
         self.btn_hit.pack(side="left", padx=6)
-        self.btn_stand = tk.Button(action_bar, text="Stand", width=9,
+        self.btn_stand = tk.Button(action_bar, text=_t('gui.operations.commerce.betting.games.blackjack.buttons.stand', default="Stand"), width=9,
                                    command=self.stand, font=self.f_med,
                                    bg="#c0392b", fg="white")
         self.btn_stand.pack(side="left", padx=6)
-        self.btn_double = tk.Button(action_bar, text="Double", width=9,
+        self.btn_double = tk.Button(action_bar, text=_t('gui.operations.commerce.betting.games.blackjack.buttons.double', default="Double"), width=9,
                                     command=self.double_down, font=self.f_med,
                                     bg="#8e44ad", fg="white")
         self.btn_double.pack(side="left", padx=6)

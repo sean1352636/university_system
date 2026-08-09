@@ -17,16 +17,20 @@ import os
 import logging
 from copy import deepcopy
 
-from flask import Flask, jsonify, redirect
+from flask import Flask, g, jsonify, redirect
 from flask_cors import CORS
 
+from education_system.platform.delivery.api.security_headers import (
+    is_development,
+    register_security_headers,
+)
 from education_system.platform.kernel.core.structured_logging import setup_structured_logging
 
-# Initialise structured logging as early as possible so every record
-# (including blueprint registration warnings) uses the JSON formatter.
+# Initialise logging early. Interactive launchers set compact text/warnings;
+# deployments can opt into JSON/INFO through environment variables.
 setup_structured_logging(
     log_level=os.getenv("LOG_LEVEL", "INFO"),
-    log_format=os.getenv("LOG_FORMAT", "json"),
+    log_format=os.getenv("LOG_FORMAT", "text"),
     system="unified",
 )
 
@@ -36,30 +40,14 @@ API_VERSION = "v1"
 
 
 def _init_security(app: Flask) -> None:
-    """Apply security headers and cookie flags."""
-    @app.after_request
-    def add_security_headers(response):
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        if not getattr(response, "_custom_csp", False):
-            response.headers["Content-Security-Policy"] = (
-                "default-src 'self'; script-src 'self'; "
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-                "img-src 'self' data: https:; "
-                "font-src 'self' data: https://fonts.gstatic.com; "
-                "connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
-            )
-        app_env = os.getenv("APP_ENV", "production").lower()
-        if app_env not in ("development", "dev", "local", "test"):
-            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        return response
+    """Apply the shared header policy, cookie flags and production debug guard.
 
-    app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
-    app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")
-    if os.getenv("APP_ENV", "production").lower() not in ("development", "dev", "local", "test"):
-        app.config.setdefault("SESSION_COOKIE_SECURE", True)
+    The header set lives in delivery/api/security_headers.py so every app in
+    the platform gets the same floor; this app used to carry its own copy,
+    which had drifted (no Permissions-Policy, no cross-origin isolation, and a
+    CSP that allowed Google Fonts on JSON responses).
+    """
+    register_security_headers(app)
 
 
 def _reprefix(url_prefix: str, system: str) -> str:
@@ -111,6 +99,7 @@ def create_unified_app() -> Flask:
     _app_env = os.getenv("APP_ENV", "production").lower()
     _is_dev = _app_env in ("development", "dev", "local", "test")
     _api_secret = os.getenv("API_SECRET_KEY")
+    _dev_defaults: list[str] = []
     if not _api_secret:
         if not _is_dev:
             raise RuntimeError(
@@ -119,10 +108,7 @@ def create_unified_app() -> Flask:
                 "Set a persistent API_SECRET_KEY via env/secret manager."
             )
         _api_secret = os.urandom(32).hex()
-        logger.warning(
-            "API_SECRET_KEY not set — using an ephemeral random key (dev only). "
-            "Sessions will not survive a restart. Set API_SECRET_KEY before deploying."
-        )
+        _dev_defaults.append("ephemeral session key")
     app.config["SECRET_KEY"] = _api_secret
     app.config["JSON_SORT_KEYS"] = False
     # Request size limit (default 16 MB)
@@ -141,10 +127,7 @@ def create_unified_app() -> Flask:
             "http://localhost:5000", "http://127.0.0.1:5000",
             "http://localhost:3000", "http://127.0.0.1:3000",
         ]
-        logger.warning(
-            "API_CORS_ORIGINS not set — defaulting to localhost origins in dev mode. "
-            "Set API_CORS_ORIGINS for any non-dev deployment."
-        )
+        _dev_defaults.append("localhost-only CORS")
         CORS(app, origins=dev_origins)
     else:
         raise RuntimeError(
@@ -153,51 +136,33 @@ def create_unified_app() -> Flask:
             "list of trusted origins (e.g. 'https://app.example.com')."
         )
 
+    if _dev_defaults:
+        logger.warning(
+            "Development defaults active: %s. Configure API_SECRET_KEY and "
+            "API_CORS_ORIGINS before deployment.",
+            ", ".join(_dev_defaults),
+        )
+
+    # Relax the CSP for WebSocket connections when Socket.IO is attached.
+    # Flask runs after_request hooks in reverse registration order, so this
+    # must be registered *before* _init_security's header hook to see the
+    # default policy that hook applies.
+    @app.after_request
+    def _allow_ws_csp(response):
+        if "socketio" not in app.extensions:
+            return response
+        csp = response.headers.get("Content-Security-Policy", "")
+        if "connect-src" in csp and "ws:" not in csp:
+            response.headers["Content-Security-Policy"] = csp.replace(
+                "connect-src 'self'",
+                "connect-src 'self' ws: wss:",
+            )
+        return response
+
     _init_security(app)
 
-    # CSRF protection for all mutating requests.
-    #
-    # Mutating JSON requests must present either a same-origin Origin or
-    # Referer header. Non-browser API clients (curl, SDKs) can either send
-    # an explicit Origin matching the server host, or authenticate with a
-    # Bearer token — bearer-token requests are exempt because the token
-    # itself is not an ambient credential (no CSRF surface).
-    @app.before_request
-    def csrf_check():
-        from flask import request
-        from urllib.parse import urlparse
-        if request.method not in ("POST", "PUT", "DELETE", "PATCH"):
-            return
-
-        # Bearer-token auth carries no ambient credential — CSRF doesn't apply.
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer "):
-            return
-
-        content_type = request.content_type or ""
-        is_json = "application/json" in content_type
-
-        if is_json:
-            origin = request.headers.get("Origin")
-            referer = request.headers.get("Referer")
-            if not origin and not referer:
-                return jsonify({
-                    "error": "Missing Origin/Referer — request blocked",
-                }), 403
-            server_host = request.host  # includes port
-            if origin:
-                parsed = urlparse(origin)
-                origin_host = parsed.netloc or parsed.path
-                if origin_host != server_host:
-                    return jsonify({"error": "Origin mismatch — request blocked"}), 403
-            elif referer:
-                parsed = urlparse(referer)
-                if parsed.netloc != server_host:
-                    return jsonify({"error": "Referer mismatch — request blocked"}), 403
-            return
-
-        if not request.headers.get("X-Requested-With"):
-            return jsonify({"error": "Missing CSRF header"}), 403
+    from education_system.platform.governance.security.csrf import register_csrf_middleware
+    register_csrf_middleware(app)
 
     # ── Shared auth ─────────────────────────────────────────────────────
     from education_system.platform.delivery.api.auth import auth_bp, init_auth
@@ -341,6 +306,13 @@ def create_unified_app() -> Flask:
     from education_system.platform.delivery.api.web.routes import web_bp
     app.register_blueprint(web_bp)
 
+    # These HTML-only routes must not disappear when domain API registration
+    # is blocked by a pending university database migration.
+    from education_system.platform.delivery.api.university.routes.web_routes import (
+        web_bp as university_web_bp,
+    )
+    app.register_blueprint(university_web_bp, name="university_web")
+
     # ── PWA support ──────────────────────────────────────────────────────
     from education_system.platform.delivery.api.web.pwa import pwa_bp
     app.register_blueprint(pwa_bp)
@@ -359,9 +331,12 @@ def create_unified_app() -> Flask:
             make_graphql_view,
             make_graphiql_view,
         )
+        from education_system.platform.delivery.api.auth import token_required as graphql_token_required
+        graphql_view = graphql_token_required(make_graphql_view())
         app.add_url_rule(
             f"/api/{API_VERSION}/graphql",
-            view_func=make_graphql_view(),
+            view_func=graphql_view,
+            methods=["POST"],
         )
         app_env = os.getenv("APP_ENV", "production").lower()
         if app_env in ("development", "dev", "local", "test"):
@@ -377,17 +352,19 @@ def create_unified_app() -> Flask:
             "GraphQL endpoint mounted at /api/%s/graphql", API_VERSION
         )
     except Exception as e:
-        logger.warning("Failed to load GraphQL API (non-fatal): %s", e)
+        if os.getenv("APP_ENV", "production").lower() == "production":
+            raise RuntimeError("GraphQL API failed to initialize") from e
+        logger.warning("Failed to load GraphQL API in development mode: %s", e)
 
     # ── University system ───────────────────────────────────────────────
     try:
-        from education_system.systems.university.infrastructure.paths import ensure_directories as uni_ensure
-        from education_system.systems.university.infrastructure.database.database_utils import (
-            init_db as uni_init_db,
+        from education_system.paths import ensure_university_directories as uni_ensure
+        from education_system.systems.university.infrastructure.database.schema_version import (
+            require_supported_schema as require_university_schema,
         )
 
         uni_ensure()
-        uni_init_db()
+        require_university_schema()
 
         # Import all university blueprints and register them under /api/v1/university/
         from education_system.platform.delivery.api.university.routes import (
@@ -404,7 +381,8 @@ def create_unified_app() -> Flask:
             campus_bp, evaluation_bp, communication_bp, counseling_bp,
             emergency_bp, virtual_classroom_bp, equipment_bp, election_bp,
             document_bp, credential_bp, office_hours_bp, ta_bp, mfa_bp,
-            account_bp, docs_bp, web_bp as uni_web_bp,
+            account_bp, docs_bp, operations_bp, student_lifecycle_bp,
+            institutional_bp,
         )
 
         _uni_bps = [
@@ -421,6 +399,8 @@ def create_unified_app() -> Flask:
             evaluation_bp, communication_bp, counseling_bp, emergency_bp,
             virtual_classroom_bp, equipment_bp, election_bp, document_bp,
             credential_bp, office_hours_bp, ta_bp, mfa_bp, account_bp,
+            operations_bp, student_lifecycle_bp,
+            institutional_bp,
         ]
 
         for bp in _uni_bps:
@@ -430,6 +410,11 @@ def create_unified_app() -> Flask:
 
         logger.info("Registered university routes under /api/%s/university/", API_VERSION)
     except Exception as e:
+        from education_system.systems.university.infrastructure.database.schema_version import (
+            UnsupportedSchemaError,
+        )
+        if isinstance(e, UnsupportedSchemaError):
+            raise
         logger.error("Failed to load university system: %s", e)
 
     # ── Sixth-form (college) routes under /api/v1/sixthform/ ─────────
@@ -438,13 +423,13 @@ def create_unified_app() -> Flask:
             academic_year_bp, students_bp, academics_bp, assessment_bp,
             finance_bp, governance_bp, pastoral_bp, progression_bp,
             reports_bp, staff_comms_bp, student_services_bp,
-            advanced_search_bp,
+            advanced_search_bp, calendar_bp,
         )
         for bp in (
             academic_year_bp, students_bp, academics_bp, assessment_bp,
             finance_bp, governance_bp, pastoral_bp, progression_bp,
             reports_bp, staff_comms_bp, student_services_bp,
-            advanced_search_bp,
+            advanced_search_bp, calendar_bp,
         ):
             new_prefix = _reprefix(bp.url_prefix, "sixthform")
             new_name = f"sixthform_{bp.name}"
@@ -543,7 +528,24 @@ def create_unified_app() -> Flask:
 
     @app.errorhandler(500)
     def server_error(e):
-        return jsonify({"error": "Internal server error"}), 500
+        # Return only a generic message plus a correlation id; the full
+        # exception (with traceback) goes to the protected server log keyed by
+        # the same id, so support can join the two without the client ever
+        # seeing a stack trace, SQL, path or token.
+        cid = getattr(g, "request_id", None)
+        logger.error("Unhandled 500 (request_id=%s): %s", cid, e, exc_info=True)
+        return jsonify({"error": "Internal server error", "correlation_id": cid}), 500
+
+    @app.errorhandler(Exception)
+    def unhandled_exception(e):
+        # HTTP exceptions (404/413/429/…) keep their own status and handlers.
+        from werkzeug.exceptions import HTTPException
+
+        if isinstance(e, HTTPException):
+            return e
+        cid = getattr(g, "request_id", None)
+        logger.error("Uncaught exception (request_id=%s): %s", cid, e, exc_info=True)
+        return jsonify({"error": "Internal server error", "correlation_id": cid}), 500
 
     # Payload validation errors
     from education_system.platform.delivery.api.request_validator import PayloadValidationError
@@ -568,17 +570,6 @@ def create_unified_app() -> Flask:
     except Exception as _ws_exc:
         logger.warning("WebSocket init failed (non-fatal): %s", _ws_exc)
 
-    # Update CSP to allow WebSocket connections
-    @app.after_request
-    def _allow_ws_csp(response):
-        csp = response.headers.get("Content-Security-Policy", "")
-        if "connect-src" in csp and "ws:" not in csp:
-            response.headers["Content-Security-Policy"] = csp.replace(
-                "connect-src 'self'",
-                "connect-src 'self' ws: wss:",
-            )
-        return response
-
     logger.info("Unified API server created (version=%s)", API_VERSION)
     return app
 
@@ -589,22 +580,26 @@ def run_unified_api(host: str | None = None, port: int | None = None):
     port = port or int(os.getenv("API_PORT", "5000"))
     app = create_unified_app()
     debug = os.getenv("API_DEBUG", "false").lower() == "true"
-    print(f"\n  Education System — Unified API ({API_VERSION})")
-    print(f"  Running on http://{host}:{port}")
-    print(f"  Web UI:     http://{host}:{port}/web/login")
-    print(f"  Auth:       POST http://{host}:{port}/api/{API_VERSION}/auth/login")
-    print(f"  Docs:       http://{host}:{port}/api/{API_VERSION}/docs")
-    print(f"  College:    http://{host}:{port}/api/{API_VERSION}/college/...")
-    print(f"  School:     http://{host}:{port}/api/{API_VERSION}/school/...")
-    print(f"  Primary:    http://{host}:{port}/api/{API_VERSION}/primary/...")
-    print(f"  University: http://{host}:{port}/api/{API_VERSION}/university/...")
-    print(f"  Health:     http://{host}:{port}/api/{API_VERSION}/health")
-    print(f"  GraphQL:    http://{host}:{port}/api/{API_VERSION}/graphql")
-    print("  Press Ctrl+C to stop.\n")
+    if debug and not is_development():
+        # The Werkzeug debugger renders tracebacks and offers an interactive
+        # console to anyone who can reach the port. It is never a production
+        # option, so an API_DEBUG=true there is a startup failure, not a
+        # warning that a hurried operator would scroll past.
+        raise RuntimeError(
+            "API_DEBUG=true is refused because APP_ENV is production. The "
+            "debugger exposes stack traces and a remote console."
+        )
+    print(f"\n  Education System API · {API_VERSION}")
+    print(f"  Server   http://{host}:{port}")
+    print(f"  Home     http://{host}:{port}/portal/")
+    print(f"  Login    http://{host}:{port}/web/login")
+    print(f"  Docs     http://{host}:{port}/api/{API_VERSION}/docs")
+    print(f"  Health   http://{host}:{port}/api/{API_VERSION}/health")
     # Use socketio.run() when Socket.IO is available for proper async transport
     _socketio = app.extensions.get("socketio") if hasattr(app, "extensions") else None
     if _socketio is not None:
-        print("  WebSockets: enabled (Socket.IO)")
+        print("  Socket.IO enabled · Press Ctrl+C to stop.\n")
         _socketio.run(app, host=host, port=port, debug=debug, use_reloader=debug)
     else:
+        print("  Press Ctrl+C to stop.\n")
         app.run(host=host, port=port, debug=debug)

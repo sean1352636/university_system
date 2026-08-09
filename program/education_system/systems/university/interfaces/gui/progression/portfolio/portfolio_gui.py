@@ -5,6 +5,8 @@ Professional Tkinter-based GUI for managing student portfolios,
 achievements, badges, skills, endorsements, and resumes.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from typing import Optional
@@ -44,7 +46,7 @@ class PortfolioGUI:
             self.root = tk.Toplevel(parent)
 
         if hasattr(self.root, "wm_title"):
-            self.root.title("Achievement & Portfolio System")
+            self.root.title(_t('gui.progression.portfolio.portfolio.windows.achievement_portfolio_system', default="Achievement & Portfolio System"))
             self.root.geometry("1200x800")
 
         self.student_id = None
@@ -82,7 +84,7 @@ class PortfolioGUI:
 
     def create_header(self, parent):
         """Create header with student info and stats."""
-        header_frame = ttk.LabelFrame(parent, text="Portfolio Dashboard", padding="10")
+        header_frame = ttk.LabelFrame(parent, text=_t('gui.progression.portfolio.portfolio.labels.portfolio_dashboard', default="Portfolio Dashboard"), padding="10")
         header_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
 
         # Student info
@@ -93,28 +95,28 @@ class PortfolioGUI:
         stats_frame = ttk.Frame(header_frame)
         stats_frame.grid(row=1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
 
-        self.completeness_label = ttk.Label(stats_frame, text="Completeness: 0%")
+        self.completeness_label = ttk.Label(stats_frame, text=_t('gui.progression.portfolio.portfolio.labels.completeness_0', default="Completeness: 0%"))
         self.completeness_label.grid(row=0, column=0, padx=(0, 20))
 
-        self.items_label = ttk.Label(stats_frame, text="Items: 0")
+        self.items_label = ttk.Label(stats_frame, text=_t('gui.progression.portfolio.portfolio.labels.items_0', default="Items: 0"))
         self.items_label.grid(row=0, column=1, padx=(0, 20))
 
-        self.skills_label = ttk.Label(stats_frame, text="Skills: 0")
+        self.skills_label = ttk.Label(stats_frame, text=_t('gui.progression.portfolio.portfolio.labels.skills_0', default="Skills: 0"))
         self.skills_label.grid(row=0, column=2, padx=(0, 20))
 
-        self.badges_label = ttk.Label(stats_frame, text="Badges: 0")
+        self.badges_label = ttk.Label(stats_frame, text=_t('gui.progression.portfolio.portfolio.labels.badges_0', default="Badges: 0"))
         self.badges_label.grid(row=0, column=3, padx=(0, 20))
 
-        self.views_label = ttk.Label(stats_frame, text="Views: 0")
+        self.views_label = ttk.Label(stats_frame, text=_t('gui.progression.portfolio.portfolio.labels.views_0', default="Views: 0"))
         self.views_label.grid(row=0, column=4)
 
     def create_overview_tab(self):
         """Create overview/statistics tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Overview")
+        self.notebook.add(tab, text=_t('gui.progression.portfolio.portfolio.tabs.overview', default="Overview"))
 
         # Main stats
-        stats_frame = ttk.LabelFrame(tab, text="Portfolio Statistics", padding="10")
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.progression.portfolio.portfolio.labels.portfolio_statistics', default="Portfolio Statistics"), padding="10")
         stats_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=10, pady=10)
 
         tab.columnconfigure(0, weight=1)
@@ -131,13 +133,13 @@ class PortfolioGUI:
         btn_frame = ttk.Frame(tab)
         btn_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), padx=10, pady=10)
 
-        ttk.Button(btn_frame, text="Refresh Stats", command=self.refresh_stats).grid(row=0, column=0, padx=5)
-        ttk.Button(btn_frame, text="Share Portfolio", command=self.share_portfolio).grid(row=0, column=1, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.refresh_stats', default="Refresh Stats"), command=self.refresh_stats).grid(row=0, column=0, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.share_portfolio', default="Share Portfolio"), command=self.share_portfolio).grid(row=0, column=1, padx=5)
 
     def create_portfolio_tab(self):
         """Create portfolio items management tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Portfolio Items")
+        self.notebook.add(tab, text=_t('gui.progression.portfolio.portfolio.tabs.portfolio_items', default="Portfolio Items"))
 
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(1, weight=1)
@@ -146,7 +148,7 @@ class PortfolioGUI:
         controls_frame = ttk.Frame(tab)
         controls_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=10, pady=10)
 
-        ttk.Label(controls_frame, text="Filter:").grid(row=0, column=0)
+        ttk.Label(controls_frame, text=_t('gui.progression.portfolio.portfolio.labels.filter', default="Filter:")).grid(row=0, column=0)
         self.category_filter = ttk.Combobox(controls_frame, values=[
             "All", "Projects", "Research", "Leadership", "Work Experience",
             "Awards", "Certifications", "Publications", "Presentations"
@@ -155,9 +157,9 @@ class PortfolioGUI:
         self.category_filter.grid(row=0, column=1, padx=5)
         self.category_filter.bind("<<ComboboxSelected>>", lambda e: self.load_portfolio_items())
 
-        ttk.Button(controls_frame, text="Add Item", command=self.add_portfolio_item).grid(row=0, column=2, padx=5)
-        ttk.Button(controls_frame, text="Edit Item", command=self.edit_portfolio_item).grid(row=0, column=3, padx=5)
-        ttk.Button(controls_frame, text="Delete Item", command=self.delete_portfolio_item).grid(row=0, column=4, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.add_item', default="Add Item"), command=self.add_portfolio_item).grid(row=0, column=2, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.edit_item', default="Edit Item"), command=self.edit_portfolio_item).grid(row=0, column=3, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.delete_item', default="Delete Item"), command=self.delete_portfolio_item).grid(row=0, column=4, padx=5)
 
         # Items list with scrollbar
         list_frame = ttk.Frame(tab)
@@ -173,11 +175,11 @@ class PortfolioGUI:
         self.items_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         scrollbar.config(command=self.items_tree.yview)
 
-        self.items_tree.heading("Category", text="Category")
-        self.items_tree.heading("Title", text="Title")
-        self.items_tree.heading("Organization", text="Organization")
-        self.items_tree.heading("Date", text="Date")
-        self.items_tree.heading("Featured", text="Featured")
+        self.items_tree.heading("Category", text=_t('gui.progression.portfolio.portfolio.headings.category', default="Category"))
+        self.items_tree.heading("Title", text=_t('gui.progression.portfolio.portfolio.headings.title', default="Title"))
+        self.items_tree.heading("Organization", text=_t('gui.progression.portfolio.portfolio.headings.organization', default="Organization"))
+        self.items_tree.heading("Date", text=_t('gui.progression.portfolio.portfolio.headings.date', default="Date"))
+        self.items_tree.heading("Featured", text=_t('gui.progression.portfolio.portfolio.headings.featured', default="Featured"))
 
         self.items_tree.column("Category", width=120)
         self.items_tree.column("Title", width=250)
@@ -190,7 +192,7 @@ class PortfolioGUI:
     def create_skills_tab(self):
         """Create skills management tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Skills")
+        self.notebook.add(tab, text=_t('gui.progression.portfolio.portfolio.tabs.skills', default="Skills"))
 
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(1, weight=1)
@@ -199,10 +201,10 @@ class PortfolioGUI:
         controls_frame = ttk.Frame(tab)
         controls_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=10, pady=10)
 
-        ttk.Button(controls_frame, text="Add Skill", command=self.add_skill).grid(row=0, column=0, padx=5)
-        ttk.Button(controls_frame, text="Update Skill", command=self.update_skill).grid(row=0, column=1, padx=5)
-        ttk.Button(controls_frame, text="Remove Skill", command=self.remove_skill).grid(row=0, column=2, padx=5)
-        ttk.Button(controls_frame, text="Toggle Featured", command=self.toggle_featured_skill).grid(row=0, column=3, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.add_skill', default="Add Skill"), command=self.add_skill).grid(row=0, column=0, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.update_skill', default="Update Skill"), command=self.update_skill).grid(row=0, column=1, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.remove_skill', default="Remove Skill"), command=self.remove_skill).grid(row=0, column=2, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.toggle_featured', default="Toggle Featured"), command=self.toggle_featured_skill).grid(row=0, column=3, padx=5)
 
         # Skills list
         list_frame = ttk.Frame(tab)
@@ -218,11 +220,11 @@ class PortfolioGUI:
         self.skills_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         scrollbar.config(command=self.skills_tree.yview)
 
-        self.skills_tree.heading("Skill", text="Skill")
-        self.skills_tree.heading("Category", text="Category")
-        self.skills_tree.heading("Proficiency", text="Proficiency")
-        self.skills_tree.heading("Endorsements", text="Endorsements")
-        self.skills_tree.heading("Featured", text="Featured")
+        self.skills_tree.heading("Skill", text=_t('gui.progression.portfolio.portfolio.headings.skill', default="Skill"))
+        self.skills_tree.heading("Category", text=_t('gui.progression.portfolio.portfolio.headings.category', default="Category"))
+        self.skills_tree.heading("Proficiency", text=_t('gui.progression.portfolio.portfolio.headings.proficiency', default="Proficiency"))
+        self.skills_tree.heading("Endorsements", text=_t('gui.progression.portfolio.portfolio.headings.endorsements', default="Endorsements"))
+        self.skills_tree.heading("Featured", text=_t('gui.progression.portfolio.portfolio.headings.featured', default="Featured"))
 
         self.skills_tree.column("Skill", width=250)
         self.skills_tree.column("Category", width=150)
@@ -233,7 +235,7 @@ class PortfolioGUI:
     def create_badges_tab(self):
         """Create badges showcase tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Badges")
+        self.notebook.add(tab, text=_t('gui.progression.portfolio.portfolio.tabs.badges', default="Badges"))
 
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(0, weight=1)
@@ -252,11 +254,11 @@ class PortfolioGUI:
         self.badges_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         scrollbar.config(command=self.badges_tree.yview)
 
-        self.badges_tree.heading("Badge", text="Badge Name")
-        self.badges_tree.heading("Type", text="Type")
-        self.badges_tree.heading("Issuer", text="Issuer")
-        self.badges_tree.heading("Date", text="Issue Date")
-        self.badges_tree.heading("Status", text="Status")
+        self.badges_tree.heading("Badge", text=_t('gui.progression.portfolio.portfolio.headings.badge_name', default="Badge Name"))
+        self.badges_tree.heading("Type", text=_t('gui.progression.portfolio.portfolio.headings.type', default="Type"))
+        self.badges_tree.heading("Issuer", text=_t('gui.progression.portfolio.portfolio.headings.issuer', default="Issuer"))
+        self.badges_tree.heading("Date", text=_t('gui.progression.portfolio.portfolio.headings.issue_date', default="Issue Date"))
+        self.badges_tree.heading("Status", text=_t('gui.progression.portfolio.portfolio.headings.status', default="Status"))
 
         self.badges_tree.column("Badge", width=250)
         self.badges_tree.column("Type", width=150)
@@ -269,7 +271,7 @@ class PortfolioGUI:
     def create_endorsements_tab(self):
         """Create endorsements management tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Endorsements")
+        self.notebook.add(tab, text=_t('gui.progression.portfolio.portfolio.tabs.endorsements', default="Endorsements"))
 
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(1, weight=1)
@@ -278,8 +280,8 @@ class PortfolioGUI:
         controls_frame = ttk.Frame(tab)
         controls_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=10, pady=10)
 
-        ttk.Button(controls_frame, text="Request Endorsement", command=self.request_endorsement).grid(row=0, column=0, padx=5)
-        ttk.Button(controls_frame, text="View Details", command=self.view_endorsement_details).grid(row=0, column=1, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.request_endorsement', default="Request Endorsement"), command=self.request_endorsement).grid(row=0, column=0, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.view_details', default="View Details"), command=self.view_endorsement_details).grid(row=0, column=1, padx=5)
 
         # Endorsements list
         list_frame = ttk.Frame(tab)
@@ -295,10 +297,10 @@ class PortfolioGUI:
         self.endorsements_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         scrollbar.config(command=self.endorsements_tree.yview)
 
-        self.endorsements_tree.heading("Skill", text="Skill")
-        self.endorsements_tree.heading("Endorser", text="Endorsed By")
-        self.endorsements_tree.heading("Role", text="Role")
-        self.endorsements_tree.heading("Date", text="Date")
+        self.endorsements_tree.heading("Skill", text=_t('gui.progression.portfolio.portfolio.headings.skill', default="Skill"))
+        self.endorsements_tree.heading("Endorser", text=_t('gui.progression.portfolio.portfolio.headings.endorsed_by', default="Endorsed By"))
+        self.endorsements_tree.heading("Role", text=_t('gui.progression.portfolio.portfolio.headings.role', default="Role"))
+        self.endorsements_tree.heading("Date", text=_t('gui.progression.portfolio.portfolio.headings.date', default="Date"))
 
         self.endorsements_tree.column("Skill", width=250)
         self.endorsements_tree.column("Endorser", width=200)
@@ -308,7 +310,7 @@ class PortfolioGUI:
     def create_resume_tab(self):
         """Create resume builder tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Resumes")
+        self.notebook.add(tab, text=_t('gui.progression.portfolio.portfolio.tabs.resumes', default="Resumes"))
 
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(1, weight=1)
@@ -317,8 +319,8 @@ class PortfolioGUI:
         controls_frame = ttk.Frame(tab)
         controls_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=10, pady=10)
 
-        ttk.Button(controls_frame, text="Generate Resume", command=self.generate_resume).grid(row=0, column=0, padx=5)
-        ttk.Button(controls_frame, text="View Resume", command=self.view_resume).grid(row=0, column=1, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.generate_resume', default="Generate Resume"), command=self.generate_resume).grid(row=0, column=0, padx=5)
+        ttk.Button(controls_frame, text=_t('gui.progression.portfolio.portfolio.buttons.view_resume', default="View Resume"), command=self.view_resume).grid(row=0, column=1, padx=5)
 
         # Resumes list
         list_frame = ttk.Frame(tab)
@@ -334,9 +336,9 @@ class PortfolioGUI:
         self.resumes_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         scrollbar.config(command=self.resumes_tree.yview)
 
-        self.resumes_tree.heading("Name", text="Resume Name")
-        self.resumes_tree.heading("Generated", text="Generated")
-        self.resumes_tree.heading("Format", text="Format")
+        self.resumes_tree.heading("Name", text=_t('gui.progression.portfolio.portfolio.headings.resume_name', default="Resume Name"))
+        self.resumes_tree.heading("Generated", text=_t('gui.progression.portfolio.portfolio.headings.generated', default="Generated"))
+        self.resumes_tree.heading("Format", text=_t('gui.progression.portfolio.portfolio.headings.format', default="Format"))
 
         self.resumes_tree.column("Name", width=400)
         self.resumes_tree.column("Generated", width=200)
@@ -345,7 +347,7 @@ class PortfolioGUI:
     def create_settings_tab(self):
         """Create public profile settings tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Settings")
+        self.notebook.add(tab, text=_t('gui.progression.portfolio.portfolio.tabs.settings', default="Settings"))
         tab.columnconfigure(0, weight=1)
         tab.rowconfigure(0, weight=1)
 
@@ -377,70 +379,70 @@ class PortfolioGUI:
             canvas.bind_all(seq, lambda e, c=canvas: _on_mousewheel(e) if str(c.winfo_containing(e.x_root, e.y_root)).startswith(str(c)) else None)
 
         # Profile settings
-        settings_frame = ttk.LabelFrame(scroll_inner, text="Public Profile Settings", padding="10")
+        settings_frame = ttk.LabelFrame(scroll_inner, text=_t('gui.progression.portfolio.portfolio.labels.public_profile_settings', default="Public Profile Settings"), padding="10")
         settings_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N), padx=10, pady=10)
         scroll_inner.columnconfigure(0, weight=1)
 
         # Portfolio info
-        ttk.Label(settings_frame, text="Portfolio Title:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_frame, text=_t('gui.progression.portfolio.portfolio.labels.portfolio_title', default="Portfolio Title:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.title_entry = ttk.Entry(settings_frame, width=50)
         self.title_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
 
-        ttk.Label(settings_frame, text="Headline:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_frame, text=_t('gui.progression.portfolio.portfolio.labels.headline', default="Headline:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.headline_entry = ttk.Entry(settings_frame, width=50)
         self.headline_entry.grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
 
-        ttk.Label(settings_frame, text="Bio:").grid(row=2, column=0, sticky=(tk.W, tk.N), pady=5)
+        ttk.Label(settings_frame, text=_t('gui.progression.portfolio.portfolio.labels.bio', default="Bio:")).grid(row=2, column=0, sticky=(tk.W, tk.N), pady=5)
         self.bio_text = scrolledtext.ScrolledText(settings_frame, width=50, height=5)
         self.bio_text.grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
 
         # Links
-        ttk.Label(settings_frame, text="LinkedIn URL:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_frame, text=_t('gui.progression.portfolio.portfolio.labels.linkedin_url', default="LinkedIn URL:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         self.linkedin_entry = ttk.Entry(settings_frame, width=50)
         self.linkedin_entry.grid(row=3, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
 
-        ttk.Label(settings_frame, text="GitHub URL:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_frame, text=_t('gui.progression.portfolio.portfolio.labels.github_url', default="GitHub URL:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         self.github_entry = ttk.Entry(settings_frame, width=50)
         self.github_entry.grid(row=4, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
 
-        ttk.Label(settings_frame, text="Website:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_frame, text=_t('gui.progression.portfolio.portfolio.labels.website', default="Website:")).grid(row=5, column=0, sticky=tk.W, pady=5)
         self.website_entry = ttk.Entry(settings_frame, width=50)
         self.website_entry.grid(row=5, column=1, sticky=(tk.W, tk.E), pady=5, padx=(10, 0))
 
         # Visibility
-        ttk.Label(settings_frame, text="Visibility:").grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(settings_frame, text=_t('gui.progression.portfolio.portfolio.labels.visibility', default="Visibility:")).grid(row=6, column=0, sticky=tk.W, pady=5)
         self.visibility_combo = ttk.Combobox(settings_frame, values=["Public", "Unlisted", "Private"],
                                              state="readonly", width=20)
         self.visibility_combo.grid(row=6, column=1, sticky=tk.W, pady=5, padx=(10, 0))
 
         # Privacy checkboxes
-        privacy_frame = ttk.LabelFrame(settings_frame, text="Privacy Options", padding="5")
+        privacy_frame = ttk.LabelFrame(settings_frame, text=_t('gui.progression.portfolio.portfolio.labels.privacy_options', default="Privacy Options"), padding="5")
         privacy_frame.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=10)
 
         self.show_contact_var = tk.BooleanVar()
-        ttk.Checkbutton(privacy_frame, text="Show Contact Information", variable=self.show_contact_var).grid(row=0, column=0, sticky=tk.W)
+        ttk.Checkbutton(privacy_frame, text=_t('gui.progression.portfolio.portfolio.buttons.show_contact_information', default="Show Contact Information"), variable=self.show_contact_var).grid(row=0, column=0, sticky=tk.W)
 
         self.show_gpa_var = tk.BooleanVar()
-        ttk.Checkbutton(privacy_frame, text="Show GPA", variable=self.show_gpa_var).grid(row=1, column=0, sticky=tk.W)
+        ttk.Checkbutton(privacy_frame, text=_t('gui.progression.portfolio.portfolio.buttons.show_gpa', default="Show GPA"), variable=self.show_gpa_var).grid(row=1, column=0, sticky=tk.W)
 
         self.show_projects_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(privacy_frame, text="Show Projects", variable=self.show_projects_var).grid(row=2, column=0, sticky=tk.W)
+        ttk.Checkbutton(privacy_frame, text=_t('gui.progression.portfolio.portfolio.buttons.show_projects', default="Show Projects"), variable=self.show_projects_var).grid(row=2, column=0, sticky=tk.W)
 
         self.show_skills_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(privacy_frame, text="Show Skills", variable=self.show_skills_var).grid(row=3, column=0, sticky=tk.W)
+        ttk.Checkbutton(privacy_frame, text=_t('gui.progression.portfolio.portfolio.buttons.show_skills', default="Show Skills"), variable=self.show_skills_var).grid(row=3, column=0, sticky=tk.W)
 
         self.show_endorsements_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(privacy_frame, text="Show Endorsements", variable=self.show_endorsements_var).grid(row=4, column=0, sticky=tk.W)
+        ttk.Checkbutton(privacy_frame, text=_t('gui.progression.portfolio.portfolio.buttons.show_endorsements', default="Show Endorsements"), variable=self.show_endorsements_var).grid(row=4, column=0, sticky=tk.W)
 
         # Save button
-        ttk.Button(settings_frame, text="Save Settings", command=self.save_settings).grid(row=8, column=0, columnspan=2, pady=10)
+        ttk.Button(settings_frame, text=_t('gui.progression.portfolio.portfolio.buttons.save_settings', default="Save Settings"), command=self.save_settings).grid(row=8, column=0, columnspan=2, pady=10)
 
         settings_frame.columnconfigure(1, weight=1)
 
     def load_data(self):
         """Load student data and portfolio."""
         if not self.auth.current_user:
-            messagebox.showerror("Error", "Please log in first")
+            messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.please_log_in_first', default="Please log in first"))
             self.root.destroy()
             return
 
@@ -449,7 +451,7 @@ class PortfolioGUI:
         self.student_id = user.get('user_id') or user.get('id') or user.get('username')
 
         if not self.student_id:
-            messagebox.showerror("Error", "Could not determine user ID. Please log in again.")
+            messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.could_not_determine_user_id_please_log_in_again', default="Could not determine user ID. Please log in again."))
             self.root.destroy()
             return
 
@@ -461,8 +463,8 @@ class PortfolioGUI:
 
         if not self.portfolio:
             # Create portfolio if it doesn't exist
-            result = messagebox.askyesno("Create Portfolio",
-                                        "You don't have a portfolio yet. Would you like to create one?")
+            result = messagebox.askyesno(_t('gui.progression.portfolio.portfolio.dialogs.create_portfolio', default="Create Portfolio"),
+                                        _t('gui.progression.portfolio.portfolio.dialogs.you_don_t_have_a_portfolio_yet_would_you_like_to_create_one', default="You don't have a portfolio yet. Would you like to create one?"))
             if result:
                 self.create_portfolio_wizard()
             else:
@@ -645,32 +647,32 @@ class PortfolioGUI:
     def create_portfolio_wizard(self):
         """Wizard to create initial portfolio."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create Portfolio")
+        dialog.title(_t('gui.progression.portfolio.portfolio.windows.create_portfolio', default="Create Portfolio"))
         dialog.geometry("500x400")
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Create Your Portfolio", font=("Arial", 14, "bold")).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.progression.portfolio.portfolio.labels.create_your_portfolio', default="Create Your Portfolio"), font=("Arial", 14, "bold")).pack(pady=10)
 
         frame = ttk.Frame(dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Title:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.title', default="Title:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         title_entry = ttk.Entry(frame, width=40)
         title_entry.grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Headline:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.headline', default="Headline:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         headline_entry = ttk.Entry(frame, width=40)
         headline_entry.grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Bio:").grid(row=2, column=0, sticky=(tk.W, tk.N), pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.bio', default="Bio:")).grid(row=2, column=0, sticky=(tk.W, tk.N), pady=5)
         bio_text = scrolledtext.ScrolledText(frame, width=40, height=5)
         bio_text.grid(row=2, column=1, pady=5)
 
         def create():
             title = title_entry.get().strip()
             if not title:
-                messagebox.showerror("Error", "Title is required")
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.title_is_required', default="Title is required"))
                 return
 
             success, message, portfolio_id = self.service.create_portfolio(
@@ -681,22 +683,22 @@ class PortfolioGUI:
             )
 
             if success:
-                messagebox.showinfo("Success", message)
+                messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.success', default="Success"), message)
                 dialog.destroy()
                 self.portfolio = self.service.get_portfolio(self.student_id)
                 self.refresh_all()
             else:
-                messagebox.showerror("Error", message)
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=3, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Create", command=create).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.create', default="Create"), command=create).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def add_portfolio_item(self):
         """Dialog to add portfolio item."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Portfolio Item")
+        dialog.title(_t('gui.progression.portfolio.portfolio.windows.add_portfolio_item', default="Add Portfolio Item"))
         dialog.geometry("600x500")
         dialog.transient(self.root)
 
@@ -704,7 +706,7 @@ class PortfolioGUI:
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Category
-        ttk.Label(frame, text="Category:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.category', default="Category:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         category_combo = ttk.Combobox(frame, values=[
             "Project", "Research", "Leadership", "Work Experience",
             "Award", "Certification", "Publication", "Presentation"
@@ -712,38 +714,38 @@ class PortfolioGUI:
         category_combo.grid(row=0, column=1, sticky=tk.W, pady=5)
 
         # Title
-        ttk.Label(frame, text="Title:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.title', default="Title:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         title_entry = ttk.Entry(frame, width=40)
         title_entry.grid(row=1, column=1, pady=5)
 
         # Description
-        ttk.Label(frame, text="Description:").grid(row=2, column=0, sticky=(tk.W, tk.N), pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.description', default="Description:")).grid(row=2, column=0, sticky=(tk.W, tk.N), pady=5)
         desc_text = scrolledtext.ScrolledText(frame, width=40, height=4)
         desc_text.grid(row=2, column=1, pady=5)
 
         # Organization
-        ttk.Label(frame, text="Organization:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.organization', default="Organization:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         org_entry = ttk.Entry(frame, width=40)
         org_entry.grid(row=3, column=1, pady=5)
 
         # Role
-        ttk.Label(frame, text="Role:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.role', default="Role:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         role_entry = ttk.Entry(frame, width=40)
         role_entry.grid(row=4, column=1, pady=5)
 
         # Featured
         featured_var = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="Feature this item", variable=featured_var).grid(row=5, column=1, sticky=tk.W, pady=5)
+        ttk.Checkbutton(frame, text=_t('gui.progression.portfolio.portfolio.buttons.feature_this_item', default="Feature this item"), variable=featured_var).grid(row=5, column=1, sticky=tk.W, pady=5)
 
         def add():
             category = category_combo.get()
             if not category:
-                messagebox.showerror("Error", "Please select a category")
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.please_select_a_category', default="Please select a category"))
                 return
 
             title = title_entry.get().strip()
             if not title:
-                messagebox.showerror("Error", "Title is required")
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.title_is_required', default="Title is required"))
                 return
 
             category_map = {
@@ -764,46 +766,46 @@ class PortfolioGUI:
             )
 
             if success:
-                messagebox.showinfo("Success", message)
+                messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.success', default="Success"), message)
                 dialog.destroy()
                 self.portfolio = self.service.get_portfolio(self.student_id)
                 self.load_portfolio_items()
                 self.refresh_stats()
             else:
-                messagebox.showerror("Error", message)
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=6, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Add", command=add).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.add', default="Add"), command=add).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def edit_portfolio_item(self):
         """Edit selected portfolio item."""
         selection = self.items_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an item to edit")
+            messagebox.showwarning(_t('gui.progression.portfolio.portfolio.dialogs.warning', default="Warning"), _t('gui.progression.portfolio.portfolio.dialogs.please_select_an_item_to_edit', default="Please select an item to edit"))
             return
 
-        messagebox.showinfo("Info", "Edit functionality would open a detailed edit dialog")
+        messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.info', default="Info"), _t('gui.progression.portfolio.portfolio.dialogs.edit_functionality_would_open_a_detailed_edit_dialog', default="Edit functionality would open a detailed edit dialog"))
 
     def delete_portfolio_item(self):
         """Delete selected portfolio item."""
         selection = self.items_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an item to delete")
+            messagebox.showwarning(_t('gui.progression.portfolio.portfolio.dialogs.warning', default="Warning"), _t('gui.progression.portfolio.portfolio.dialogs.please_select_an_item_to_delete', default="Please select an item to delete"))
             return
 
-        if messagebox.askyesno("Confirm", "Are you sure you want to delete this item?"):
+        if messagebox.askyesno(_t('gui.progression.portfolio.portfolio.dialogs.confirm', default="Confirm"), _t('gui.progression.portfolio.portfolio.dialogs.are_you_sure_you_want_to_delete_this_item', default="Are you sure you want to delete this item?")):
             item_id = self.items_tree.item(selection[0])['tags'][0]
             success, message = self.service.delete_portfolio_item(item_id)
 
             if success:
-                messagebox.showinfo("Success", message)
+                messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.success', default="Success"), message)
                 self.portfolio = self.service.get_portfolio(self.student_id)
                 self.load_portfolio_items()
                 self.refresh_stats()
             else:
-                messagebox.showerror("Error", message)
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message)
 
     def view_item_details(self):
         """View details of selected item."""
@@ -811,41 +813,41 @@ class PortfolioGUI:
         if not selection:
             return
 
-        messagebox.showinfo("Info", "Item details would be displayed here")
+        messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.info', default="Info"), _t('gui.progression.portfolio.portfolio.dialogs.item_details_would_be_displayed_here', default="Item details would be displayed here"))
 
     def add_skill(self):
         """Dialog to add skill."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Skill")
+        dialog.title(_t('gui.progression.portfolio.portfolio.windows.add_skill', default="Add Skill"))
         dialog.geometry("400x350")
         dialog.transient(self.root)
 
         frame = ttk.Frame(dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Skill Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.skill_name', default="Skill Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         skill_entry = ttk.Entry(frame, width=30)
         skill_entry.grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Category:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.category', default="Category:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         category_combo = ttk.Combobox(frame, values=[
             "Technical", "Soft Skill", "Language", "Tool", "Domain"
         ], state="readonly", width=28)
         category_combo.grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Proficiency:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.proficiency', default="Proficiency:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         prof_combo = ttk.Combobox(frame, values=[
             "Beginner", "Intermediate", "Advanced", "Expert"
         ], state="readonly", width=28)
         prof_combo.grid(row=2, column=1, pady=5)
 
         featured_var = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="Feature this skill", variable=featured_var).grid(row=3, column=1, sticky=tk.W, pady=5)
+        ttk.Checkbutton(frame, text=_t('gui.progression.portfolio.portfolio.buttons.feature_this_skill', default="Feature this skill"), variable=featured_var).grid(row=3, column=1, sticky=tk.W, pady=5)
 
         def add():
             skill_name = skill_entry.get().strip()
             if not skill_name:
-                messagebox.showerror("Error", "Skill name is required")
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.skill_name_is_required', default="Skill name is required"))
                 return
 
             cat_map = {
@@ -869,50 +871,50 @@ class PortfolioGUI:
             )
 
             if success:
-                messagebox.showinfo("Success", message)
+                messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.success', default="Success"), message)
                 dialog.destroy()
                 self.load_skills()
                 self.refresh_stats()
             else:
-                messagebox.showerror("Error", message)
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Add", command=add).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.add', default="Add"), command=add).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def update_skill(self):
         """Update selected skill."""
         selection = self.skills_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a skill to update")
+            messagebox.showwarning(_t('gui.progression.portfolio.portfolio.dialogs.warning', default="Warning"), _t('gui.progression.portfolio.portfolio.dialogs.please_select_a_skill_to_update', default="Please select a skill to update"))
             return
 
-        messagebox.showinfo("Info", "Skill update dialog would open here")
+        messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.info', default="Info"), _t('gui.progression.portfolio.portfolio.dialogs.skill_update_dialog_would_open_here', default="Skill update dialog would open here"))
 
     def remove_skill(self):
         """Remove selected skill."""
         selection = self.skills_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a skill to remove")
+            messagebox.showwarning(_t('gui.progression.portfolio.portfolio.dialogs.warning', default="Warning"), _t('gui.progression.portfolio.portfolio.dialogs.please_select_a_skill_to_remove', default="Please select a skill to remove"))
             return
 
-        if messagebox.askyesno("Confirm", "Are you sure you want to remove this skill?"):
+        if messagebox.askyesno(_t('gui.progression.portfolio.portfolio.dialogs.confirm', default="Confirm"), _t('gui.progression.portfolio.portfolio.dialogs.are_you_sure_you_want_to_remove_this_skill', default="Are you sure you want to remove this skill?")):
             skill_id = self.skills_tree.item(selection[0])['tags'][0]
             success, message = self.service.remove_skill(skill_id)
 
             if success:
-                messagebox.showinfo("Success", message)
+                messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.success', default="Success"), message)
                 self.load_skills()
                 self.refresh_stats()
             else:
-                messagebox.showerror("Error", message)
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message)
 
     def toggle_featured_skill(self):
         """Toggle featured status of skill."""
         selection = self.skills_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a skill")
+            messagebox.showwarning(_t('gui.progression.portfolio.portfolio.dialogs.warning', default="Warning"), _t('gui.progression.portfolio.portfolio.dialogs.please_select_a_skill', default="Please select a skill"))
             return
 
         skill_id = self.skills_tree.item(selection[0])['tags'][0]
@@ -924,7 +926,7 @@ class PortfolioGUI:
         if success:
             self.load_skills()
         else:
-            messagebox.showerror("Error", message)
+            messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message)
 
     def view_badge_details(self):
         """View details of selected badge."""
@@ -932,20 +934,20 @@ class PortfolioGUI:
         if not selection:
             return
 
-        messagebox.showinfo("Info", "Badge details would be displayed here")
+        messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.info', default="Info"), _t('gui.progression.portfolio.portfolio.dialogs.badge_details_would_be_displayed_here', default="Badge details would be displayed here"))
 
     def request_endorsement(self):
         """Request skill endorsement from another user."""
         skills = self.service.get_student_skills(self.student_id)
         if not skills:
             messagebox.showwarning(
-                "No Skills",
-                "Add at least one skill on the Skills tab before requesting an endorsement.",
+                _t('gui.progression.portfolio.portfolio.dialogs.no_skills', default="No Skills"),
+                _t('gui.progression.portfolio.portfolio.dialogs.add_at_least_one_skill_on_the_skills_tab_before_requesting_an_en', default="Add at least one skill on the Skills tab before requesting an endorsement."),
             )
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Request Endorsement")
+        dialog.title(_t('gui.progression.portfolio.portfolio.windows.request_endorsement', default="Request Endorsement"))
         dialog.geometry("500x380")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -953,7 +955,7 @@ class PortfolioGUI:
         frame = ttk.Frame(dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Skill:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.skill', default="Skill:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         skill_combo = ttk.Combobox(
             frame,
             values=[f"{s['skill_name']} ({(s.get('proficiency_level') or '').title()})" for s in skills],
@@ -963,11 +965,11 @@ class PortfolioGUI:
         skill_combo.grid(row=0, column=1, pady=5, sticky=tk.W)
         skill_combo.current(0)
 
-        ttk.Label(frame, text="Endorser username:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.endorser_username', default="Endorser username:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         endorser_entry = ttk.Entry(frame, width=42)
         endorser_entry.grid(row=1, column=1, pady=5, sticky=tk.W)
 
-        ttk.Label(frame, text="Endorser role:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.endorser_role', default="Endorser role:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         role_combo = ttk.Combobox(
             frame,
             values=["Faculty", "Peer", "Employer", "Mentor"],
@@ -977,18 +979,18 @@ class PortfolioGUI:
         role_combo.set("Faculty")
         role_combo.grid(row=2, column=1, pady=5, sticky=tk.W)
 
-        ttk.Label(frame, text="Message (optional):").grid(row=3, column=0, sticky=(tk.W, tk.N), pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.message_optional', default="Message (optional):")).grid(row=3, column=0, sticky=(tk.W, tk.N), pady=5)
         message_text = scrolledtext.ScrolledText(frame, width=42, height=6)
         message_text.grid(row=3, column=1, pady=5, sticky=tk.W)
 
         def submit():
             idx = skill_combo.current()
             if idx < 0:
-                messagebox.showerror("Error", "Please select a skill", parent=dialog)
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.please_select_a_skill', default="Please select a skill"), parent=dialog)
                 return
             endorser = endorser_entry.get().strip()
             if not endorser:
-                messagebox.showerror("Error", "Endorser username is required", parent=dialog)
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.endorser_username_is_required', default="Endorser username is required"), parent=dialog)
                 return
 
             skill = skills[idx]
@@ -1001,7 +1003,7 @@ class PortfolioGUI:
                 message=note,
             )
             if not success:
-                messagebox.showerror("Error", message, parent=dialog)
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message, parent=dialog)
                 return
 
             # Best-effort: notify the endorser through the email service.
@@ -1023,20 +1025,20 @@ class PortfolioGUI:
             except Exception:
                 pass
 
-            messagebox.showinfo("Sent", message, parent=dialog)
+            messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.sent', default="Sent"), message, parent=dialog)
             dialog.destroy()
             self.load_endorsements()
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Send Request", command=submit).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.send_request', default="Send Request"), command=submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def view_endorsement_details(self):
         """View endorsement details."""
         selection = self.endorsements_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an endorsement")
+            messagebox.showwarning(_t('gui.progression.portfolio.portfolio.dialogs.warning', default="Warning"), _t('gui.progression.portfolio.portfolio.dialogs.please_select_an_endorsement', default="Please select an endorsement"))
             return
 
         item = self.endorsements_tree.item(selection[0])
@@ -1047,23 +1049,23 @@ class PortfolioGUI:
             f"Role: {role}\n"
             f"Date: {date}"
         )
-        messagebox.showinfo("Endorsement Details", details)
+        messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.endorsement_details', default="Endorsement Details"), details)
 
     def generate_resume(self):
         """Generate new resume."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Generate Resume")
+        dialog.title(_t('gui.progression.portfolio.portfolio.windows.generate_resume', default="Generate Resume"))
         dialog.geometry("400x250")
         dialog.transient(self.root)
 
         frame = ttk.Frame(dialog, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Resume Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.resume_name', default="Resume Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         name_entry = ttk.Entry(frame, width=30)
         name_entry.grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Template:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.template', default="Template:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         template_combo = ttk.Combobox(frame, values=[
             "Traditional", "Modern", "Creative", "Technical", "Academic"
         ], state="readonly", width=28)
@@ -1073,7 +1075,7 @@ class PortfolioGUI:
         def generate():
             name = name_entry.get().strip()
             if not name:
-                messagebox.showerror("Error", "Resume name is required")
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.resume_name_is_required', default="Resume name is required"))
                 return
 
             template_map = {
@@ -1089,25 +1091,25 @@ class PortfolioGUI:
             )
 
             if success:
-                messagebox.showinfo("Success", message)
+                messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.success', default="Success"), message)
                 dialog.destroy()
                 self.load_resumes()
             else:
-                messagebox.showerror("Error", message)
+                messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message)
 
         btn_frame = ttk.Frame(frame)
         btn_frame.grid(row=2, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text="Generate", command=generate).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.generate', default="Generate"), command=generate).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.progression.portfolio.portfolio.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def view_resume(self):
         """View selected resume."""
         selection = self.resumes_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a resume to view")
+            messagebox.showwarning(_t('gui.progression.portfolio.portfolio.dialogs.warning', default="Warning"), _t('gui.progression.portfolio.portfolio.dialogs.please_select_a_resume_to_view', default="Please select a resume to view"))
             return
 
-        messagebox.showinfo("Info", "Resume preview would be displayed here")
+        messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.info', default="Info"), _t('gui.progression.portfolio.portfolio.dialogs.resume_preview_would_be_displayed_here', default="Resume preview would be displayed here"))
 
     def save_settings(self):
         """Save portfolio and profile settings."""
@@ -1127,7 +1129,7 @@ class PortfolioGUI:
         success, message = self.service.update_portfolio(self.portfolio['portfolio_id'], **updates)
 
         if not success:
-            messagebox.showerror("Error", message)
+            messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message)
             return
 
         # Update public profile
@@ -1144,11 +1146,11 @@ class PortfolioGUI:
         success, message = self.service.update_public_profile(self.student_id, **profile_updates)
 
         if success:
-            messagebox.showinfo("Success", "Settings saved successfully")
+            messagebox.showinfo(_t('gui.progression.portfolio.portfolio.dialogs.success', default="Success"), _t('gui.progression.portfolio.portfolio.dialogs.settings_saved_successfully', default="Settings saved successfully"))
             self.portfolio = self.service.get_portfolio(self.student_id)
             self.refresh_stats()
         else:
-            messagebox.showerror("Error", message)
+            messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), message)
 
     def share_portfolio(self):
         """Display portfolio sharing URL."""
@@ -1156,25 +1158,25 @@ class PortfolioGUI:
 
         if url:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Share Portfolio")
+            dialog.title(_t('gui.progression.portfolio.portfolio.windows.share_portfolio', default="Share Portfolio"))
             dialog.geometry("500x200")
             dialog.transient(self.root)
 
             frame = ttk.Frame(dialog, padding="20")
             frame.pack(fill=tk.BOTH, expand=True)
 
-            ttk.Label(frame, text="Your Portfolio URL:", font=("Arial", 12, "bold")).pack(pady=10)
+            ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.your_portfolio_url', default="Your Portfolio URL:"), font=("Arial", 12, "bold")).pack(pady=10)
 
             url_entry = ttk.Entry(frame, width=60)
             url_entry.insert(0, url)
             url_entry.config(state='readonly')
             url_entry.pack(pady=10)
 
-            ttk.Label(frame, text="Share this URL with employers, recruiters, and networks").pack(pady=10)
+            ttk.Label(frame, text=_t('gui.progression.portfolio.portfolio.labels.share_this_url_with_employers_recruiters_and_networks', default="Share this URL with employers, recruiters, and networks")).pack(pady=10)
 
-            ttk.Button(frame, text="Close", command=dialog.destroy).pack(pady=10)
+            ttk.Button(frame, text=_t('gui.progression.portfolio.portfolio.buttons.close', default="Close"), command=dialog.destroy).pack(pady=10)
         else:
-            messagebox.showerror("Error", "Portfolio URL not found")
+            messagebox.showerror(_t('gui.progression.portfolio.portfolio.dialogs.error', default="Error"), _t('gui.progression.portfolio.portfolio.dialogs.portfolio_url_not_found', default="Portfolio URL not found"))
 
     def run(self):
         """Run the GUI."""

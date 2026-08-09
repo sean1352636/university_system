@@ -32,13 +32,19 @@ except ImportError:
 
 # Import centralized paths
 try:
-    from education_system.systems.university.infrastructure.paths import (
-        BACKUP_DIR, BACKUP_DATABASE_DIR, LOG_DIR, BACKUP_TEMPLATES_DIR, USER_BACKUP_TEMPLATES_DIR, DATA_DIR, DEFAULT_DB_PATH as DB_PATH, PROJECT_ROOT
+    from education_system.paths import (
+        UNIVERSITY_BACKUP_DIR,
+        UNIVERSITY_BACKUP_DATABASE_DIR,
+        UNIVERSITY_LOG_DIR,
+        UNIVERSITY_BACKUP_TEMPLATES_DIR,
+        UNIVERSITY_USER_BACKUP_TEMPLATES_DIR,
+        UNIVERSITY_DATA_DIR,
+        UNIVERSITY_DEFAULT_DB_PATH as DB_PATH,
+        UNIVERSITY_PROJECT_ROOT,
     )
 except ImportError as exc:
     raise ImportError(
-        "Unable to load centralized path constants from "
-        "education_system.systems.university.infrastructure.paths"
+        "Unable to load centralized path constants from education_system.paths"
     ) from exc
 
 try:

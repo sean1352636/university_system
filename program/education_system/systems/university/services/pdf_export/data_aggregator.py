@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text, _
 from education_system.systems.university.infrastructure.sql_safety import validate_table_name
 
@@ -85,7 +85,7 @@ class DataAggregator:
         Args:
             db_path: Optional path to database file. Uses default if not provided.
         """
-        self.db_path = db_path or str(paths.DEFAULT_DB_PATH)
+        self.db_path = db_path or str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
     def get_all_tables(self) -> List[str]:
         """Get list of all tables in the database.

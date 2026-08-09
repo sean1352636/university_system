@@ -12,7 +12,7 @@ class TextbookStoreGUI:
 
     def __init__(self, parent=None):
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title("Textbook & Course Materials")
+        self.window.title(_t('gui.operations.commerce.textbooks.textbook.windows.textbook_course_materials', default="Textbook & Course Materials"))
         self.window.geometry("1100x700")
 
         try:
@@ -108,17 +108,17 @@ class TextbookStoreGUI:
 
     def _build_browse_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Browse Textbooks")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.textbooks.textbook.tabs.browse_textbooks', default="Browse Textbooks"))
 
         # Search bar
         search_frame = ttk.Frame(tab)
         search_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=2)
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.textbooks.textbook.labels.search', default="Search:")).pack(side=tk.LEFT, padx=2)
         self.search_entry = ttk.Entry(search_frame, width=30)
         self.search_entry.pack(side=tk.LEFT, padx=2)
-        ttk.Button(search_frame, text="Search", command=self._search_textbooks).pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text=_t('gui.operations.commerce.textbooks.textbook.buttons.search', default="Search"), command=self._search_textbooks).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(search_frame, text="Module:").pack(side=tk.LEFT, padx=(15, 2))
+        ttk.Label(search_frame, text=_t('gui.operations.commerce.textbooks.textbook.labels.module', default="Module:")).pack(side=tk.LEFT, padx=(15, 2))
         self.module_filter = ttk.Combobox(search_frame, values=["All"], state="readonly", width=10)
         self.module_filter.set("All")
         self.module_filter.pack(side=tk.LEFT, padx=2)
@@ -133,14 +133,14 @@ class TextbookStoreGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
-        ttk.Button(btn_frame, text="View Details", command=self._view_textbook_details).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Find Used Copies", command=self._find_used_copies).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.textbooks.textbook.buttons.view_details', default="View Details"), command=self._view_textbook_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.textbooks.textbook.buttons.find_used_copies', default="Find Used Copies"), command=self._find_used_copies).pack(side=tk.LEFT, padx=5)
 
     def _build_my_courses_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Course Books")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.textbooks.textbook.tabs.my_course_books', default="My Course Books"))
 
-        ttk.Label(tab, text="Required & recommended books for your enrolled modules",
+        ttk.Label(tab, text=_t('gui.operations.commerce.textbooks.textbook.labels.required_recommended_books_for_your_enrolled_modules', default="Required & recommended books for your enrolled modules"),
                   font=("", 10)).pack(anchor=tk.W, padx=10, pady=5)
 
         cols = ("module", "isbn", "title", "author", "required", "price", "used_available")
@@ -150,13 +150,13 @@ class TextbookStoreGUI:
             self.course_tree.column(c, width=w, minwidth=30)
         self.course_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        ttk.Button(tab, text="Refresh", command=self._load_my_course_books).pack(pady=5)
+        ttk.Button(tab, text=_t('gui.operations.commerce.textbooks.textbook.buttons.refresh', default="Refresh"), command=self._load_my_course_books).pack(pady=5)
 
     def _build_exchange_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Used Book Exchange")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.textbooks.textbook.tabs.used_book_exchange', default="Used Book Exchange"))
 
-        ttk.Label(tab, text="Available used textbooks from other students",
+        ttk.Label(tab, text=_t('gui.operations.commerce.textbooks.textbook.labels.available_used_textbooks_from_other_students', default="Available used textbooks from other students"),
                   font=("", 10)).pack(anchor=tk.W, padx=10, pady=5)
 
         cols = ("listing_id", "title", "condition", "price", "seller", "listed_date", "status")
@@ -168,49 +168,49 @@ class TextbookStoreGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(btn_frame, text="Buy Selected", command=self._buy_used).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Refresh", command=self._load_exchange).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.textbooks.textbook.buttons.buy_selected', default="Buy Selected"), command=self._buy_used).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.operations.commerce.textbooks.textbook.buttons.refresh', default="Refresh"), command=self._load_exchange).pack(side=tk.LEFT, padx=5)
 
     def _build_sell_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Sell a Book")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.textbooks.textbook.tabs.sell_a_book', default="Sell a Book"))
 
-        form = ttk.LabelFrame(tab, text="List a Textbook for Sale", padding=15)
+        form = ttk.LabelFrame(tab, text=_t('gui.operations.commerce.textbooks.textbook.labels.list_a_textbook_for_sale', default="List a Textbook for Sale"), padding=15)
         form.pack(fill=tk.X, padx=10, pady=10)
 
         row = 0
-        ttk.Label(form, text="Select Textbook:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.commerce.textbooks.textbook.labels.select_textbook', default="Select Textbook:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.sell_book_combo = ttk.Combobox(form, state="readonly", width=50)
         self.sell_book_combo.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Or enter ISBN:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.commerce.textbooks.textbook.labels.or_enter_isbn', default="Or enter ISBN:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.sell_isbn = ttk.Entry(form, width=20)
         self.sell_isbn.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Condition:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.commerce.textbooks.textbook.labels.condition', default="Condition:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.sell_condition = ttk.Combobox(form, values=["like_new", "good", "fair", "poor"], state="readonly", width=15)
         self.sell_condition.set("good")
         self.sell_condition.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Asking Price (\u00a3):").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form, text=_t('gui.operations.commerce.textbooks.textbook.labels.asking_price', default="Asking Price (\u00a3):")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.sell_price = ttk.Entry(form, width=10)
         self.sell_price.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Label(form, text="Notes:").grid(row=row, column=0, sticky=tk.NW, pady=3)
+        ttk.Label(form, text=_t('gui.operations.commerce.textbooks.textbook.labels.notes', default="Notes:")).grid(row=row, column=0, sticky=tk.NW, pady=3)
         self.sell_notes = tk.Text(form, width=40, height=3)
         self.sell_notes.grid(row=row, column=1, sticky=tk.W, pady=3, padx=5)
 
         row += 1
-        ttk.Button(form, text="List for Sale", command=self._list_for_sale).grid(
+        ttk.Button(form, text=_t('gui.operations.commerce.textbooks.textbook.buttons.list_for_sale', default="List for Sale"), command=self._list_for_sale).grid(
             row=row, column=1, sticky=tk.W, pady=10, padx=5)
 
     def _build_orders_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Orders")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.textbooks.textbook.tabs.my_orders', default="My Orders"))
 
         cols = ("order_id", "title", "price", "status", "date", "role")
         self.orders_tree = ttk.Treeview(tab, columns=cols, show="headings", height=16)
@@ -218,7 +218,7 @@ class TextbookStoreGUI:
             self.orders_tree.heading(c, text=c.title())
             self.orders_tree.column(c, width=w, minwidth=30)
         self.orders_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        ttk.Button(tab, text="Refresh", command=self._load_orders).pack(pady=5)
+        ttk.Button(tab, text=_t('gui.operations.commerce.textbooks.textbook.buttons.refresh', default="Refresh"), command=self._load_orders).pack(pady=5)
 
     def _load_data(self):
         self._search_textbooks()
@@ -346,7 +346,7 @@ class TextbookStoreGUI:
     def _view_textbook_details(self):
         sel = self.browse_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a textbook first.")
+            messagebox.showwarning(_t('gui.operations.commerce.textbooks.textbook.dialogs.warning', default="Warning"), _t('gui.operations.commerce.textbooks.textbook.dialogs.select_a_textbook_first', default="Select a textbook first."))
             return
         vals = self.browse_tree.item(sel[0])['values']
         try:
@@ -366,14 +366,14 @@ class TextbookStoreGUI:
                         f"Price: \u00a3{row['price']:.2f}\n\n"
                         f"{row['description']}"
                     )
-                    messagebox.showinfo("Textbook Details", info)
+                    messagebox.showinfo(_t('gui.operations.commerce.textbooks.textbook.dialogs.textbook_details', default="Textbook Details"), info)
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.commerce.textbooks.textbook.dialogs.error', default="Error"), str(e))
 
     def _find_used_copies(self):
         sel = self.browse_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a textbook first.")
+            messagebox.showwarning(_t('gui.operations.commerce.textbooks.textbook.dialogs.warning', default="Warning"), _t('gui.operations.commerce.textbooks.textbook.dialogs.select_a_textbook_first', default="Select a textbook first."))
             return
         vals = self.browse_tree.item(sel[0])['values']
         textbook_id = vals[0]
@@ -398,50 +398,50 @@ class TextbookStoreGUI:
                         r["listed_date"], r["status"]
                     ))
                 if not rows:
-                    messagebox.showinfo("Info", "No used copies available for this textbook.")
+                    messagebox.showinfo(_t('gui.operations.commerce.textbooks.textbook.dialogs.info', default="Info"), _t('gui.operations.commerce.textbooks.textbook.dialogs.no_used_copies_available_for_this_textbook', default="No used copies available for this textbook."))
         except Exception as e:
             logger.debug(f"Find used: {e}")
 
     def _buy_used(self):
         sel = self.exchange_tree.selection()
         if not sel:
-            messagebox.showwarning("Warning", "Select a listing to buy.")
+            messagebox.showwarning(_t('gui.operations.commerce.textbooks.textbook.dialogs.warning', default="Warning"), _t('gui.operations.commerce.textbooks.textbook.dialogs.select_a_listing_to_buy', default="Select a listing to buy."))
             return
         vals = self.exchange_tree.item(sel[0])['values']
         listing_id = vals[0]
         price = vals[3]
-        if messagebox.askyesno("Confirm Purchase", f"Buy '{vals[1]}' for {price}?"):
+        if messagebox.askyesno(_t('gui.operations.commerce.textbooks.textbook.dialogs.confirm_purchase', default="Confirm Purchase"), f"Buy '{vals[1]}' for {price}?"):
             try:
                 from education_system.systems.university.infrastructure.database.db import get_connection
                 user_id = self._get_user_id()
                 with get_connection() as conn:
                     listing = conn.execute("SELECT * FROM textbook_listings WHERE listing_id = ?", (listing_id,)).fetchone()
                     if not listing or listing['status'] != 'available':
-                        messagebox.showerror("Error", "Listing no longer available.")
+                        messagebox.showerror(_t('gui.operations.commerce.textbooks.textbook.dialogs.error', default="Error"), _t('gui.operations.commerce.textbooks.textbook.dialogs.listing_no_longer_available', default="Listing no longer available."))
                         return
                     if listing['seller_id'] == user_id:
-                        messagebox.showerror("Error", "You cannot buy your own listing.")
+                        messagebox.showerror(_t('gui.operations.commerce.textbooks.textbook.dialogs.error', default="Error"), _t('gui.operations.commerce.textbooks.textbook.dialogs.you_cannot_buy_your_own_listing', default="You cannot buy your own listing."))
                         return
                     conn.execute("INSERT INTO textbook_orders (listing_id, buyer_id, seller_id, price, status) VALUES (?, ?, ?, ?, 'pending')",
                         (listing_id, user_id, listing['seller_id'], listing['price']))
                     conn.execute("UPDATE textbook_listings SET status='sold' WHERE listing_id=?", (listing_id,))
                     conn.commit()
-                messagebox.showinfo("Success", "Order placed! Contact the seller to arrange pickup.")
+                messagebox.showinfo(_t('gui.operations.commerce.textbooks.textbook.dialogs.success', default="Success"), _t('gui.operations.commerce.textbooks.textbook.dialogs.order_placed_contact_the_seller_to_arrange_pickup', default="Order placed! Contact the seller to arrange pickup."))
                 self._load_exchange()
                 self._load_orders()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed: {e}")
+                messagebox.showerror(_t('gui.operations.commerce.textbooks.textbook.dialogs.error', default="Error"), f"Failed: {e}")
 
     def _list_for_sale(self):
         book_val = self.sell_book_combo.get()
         price_str = self.sell_price.get().strip()
         if not price_str:
-            messagebox.showwarning("Warning", "Enter an asking price.")
+            messagebox.showwarning(_t('gui.operations.commerce.textbooks.textbook.dialogs.warning', default="Warning"), _t('gui.operations.commerce.textbooks.textbook.dialogs.enter_an_asking_price', default="Enter an asking price."))
             return
         try:
             price = float(price_str)
         except ValueError:
-            messagebox.showerror("Error", "Invalid price.")
+            messagebox.showerror(_t('gui.operations.commerce.textbooks.textbook.dialogs.error', default="Error"), _t('gui.operations.commerce.textbooks.textbook.dialogs.invalid_price', default="Invalid price."))
             return
 
         textbook_id = None
@@ -458,14 +458,14 @@ class TextbookStoreGUI:
                     if row:
                         textbook_id = row['textbook_id']
                     else:
-                        messagebox.showerror("Error", "ISBN not found in the textbook catalog.")
+                        messagebox.showerror(_t('gui.operations.commerce.textbooks.textbook.dialogs.error', default="Error"), _t('gui.operations.commerce.textbooks.textbook.dialogs.isbn_not_found_in_the_textbook_catalog', default="ISBN not found in the textbook catalog."))
                         return
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.textbooks.textbook.dialogs.error', default="Error"), str(e))
                 return
 
         if not textbook_id:
-            messagebox.showwarning("Warning", "Select a textbook or enter an ISBN.")
+            messagebox.showwarning(_t('gui.operations.commerce.textbooks.textbook.dialogs.warning', default="Warning"), _t('gui.operations.commerce.textbooks.textbook.dialogs.select_a_textbook_or_enter_an_isbn', default="Select a textbook or enter an ISBN."))
             return
 
         try:
@@ -478,12 +478,12 @@ class TextbookStoreGUI:
                     (textbook_id, user_id, self.sell_condition.get(), price,
                      self.sell_notes.get("1.0", tk.END).strip()))
                 conn.commit()
-            messagebox.showinfo("Success", "Textbook listed for sale!")
+            messagebox.showinfo(_t('gui.operations.commerce.textbooks.textbook.dialogs.success', default="Success"), _t('gui.operations.commerce.textbooks.textbook.dialogs.textbook_listed_for_sale', default="Textbook listed for sale!"))
             self.sell_price.delete(0, tk.END)
             self.sell_notes.delete("1.0", tk.END)
             self._load_exchange()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.textbooks.textbook.dialogs.error', default="Error"), f"Failed: {e}")
 
 
 def launch_textbook_gui(parent=None):

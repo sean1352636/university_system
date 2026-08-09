@@ -314,7 +314,7 @@ def show_edit_user(self):
         messagebox.showerror(_t("user_management_gui.errors.error_title"), _t("user_management_gui.errors.could_not_retrieve_user_data"))
         return
 
-    username = user_values[0]
+    username = user_values[1]
 
     # Create edit dialog
     dialog = tk.Toplevel(self.root)
@@ -568,7 +568,7 @@ def reset_user_password(self):
             status_label.config(text=_t("user_management_gui.errors.password_cannot_be_empty"))
             return
 
-        if len(new_password) < 6:
+        if len(new_password) < 12:
             status_label.config(text=_t("user_management_gui.errors.password_too_short"))
             return
 
@@ -577,38 +577,16 @@ def reset_user_password(self):
             return
 
         try:
-            import hashlib
-            import secrets
-
-            conn = get_db_connection()
-            cursor = conn.cursor()
-
-            # Get user ID
-            cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
-            user_record = cursor.fetchone()
-
-            if not user_record:
+            result = self.auth.reset_password(
+                username,
+                self.auth.current_user.get('user_id') or self.auth.current_user.get('id'),
+                temporary_password=new_password,
+            )
+            succeeded = result[0] if isinstance(result, tuple) else bool(result)
+            if not succeeded:
                 status_label.config(text=_t("user_management_gui.errors.user_not_found"))
                 return
-
-            user_id = user_record[0]
-
-            # Generate new password hash
-            salt = secrets.token_hex(16)
-            key = hashlib.pbkdf2_hmac('sha256', new_password.encode(), salt.encode(), 100000, dklen=64)
-            password_hash = key.hex()
-
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-            # Update password
-            cursor.execute('''
-                UPDATE user_accounts
-                SET password_hash = ?, salt = ?, updated_at = ?
-                WHERE user_id = ?
-            ''', (password_hash, salt, timestamp, user_id))
-
-            conn.commit()
-            conn.close()
+            user_id = result.get("user_id") if isinstance(result, dict) else user_values[0]
 
             # Immutable audit log for password reset
             if IMMUTABLE_AUDIT_AVAILABLE:
@@ -622,7 +600,12 @@ def reset_user_password(self):
                     details={'target_username': username, 'reset_by': 'admin'}
                 )
 
-            messagebox.showinfo(_t("user_management_gui.messages.success_title"), _t("user_management_gui.reset_password.success_message", username=username))
+            messagebox.showinfo(
+                _t("user_management_gui.messages.success_title"),
+                _t("user_management_gui.reset_password.success_message", username=username)
+                + "\n\nThe account has been unlocked. The user must change this "
+                  "temporary password at next login.",
+            )
             dialog.destroy()
 
         except Exception as e:

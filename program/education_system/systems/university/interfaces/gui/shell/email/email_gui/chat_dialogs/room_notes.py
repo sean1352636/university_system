@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from ._common import messagebox, scrolledtext, tk, ttk
 
 class RoomNotesDialog:
@@ -49,18 +51,18 @@ class RoomNotesDialog:
             self.conflict_frame, anchor=tk.W,
             background="#ffe4e1", foreground="#7a0000",
             font=("TkDefaultFont", 9, "bold"),
-            text=" ⚠ Someone else saved while you were editing. "
-                 "Choose how to resolve.",
+            text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.labels.someone_else_saved_while_you_were_editing_choose_how_to_resolve', default=" ⚠ Someone else saved while you were editing. "
+                 "Choose how to resolve."),
         )
         self.conflict_label.pack(side=tk.LEFT, fill=tk.X, expand=True,
                                  ipady=4)
-        ttk.Button(self.conflict_frame, text="Diff & merge…",
+        ttk.Button(self.conflict_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.buttons.diff_merge', default="Diff & merge…"),
                    command=self._resolve_diff_merge
                    ).pack(side=tk.LEFT, padx=4)
-        ttk.Button(self.conflict_frame, text="Reload remote (discard mine)",
+        ttk.Button(self.conflict_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.buttons.reload_remote_discard_mine', default="Reload remote (discard mine)"),
                    command=self._resolve_reload_remote
                    ).pack(side=tk.LEFT, padx=4)
-        ttk.Button(self.conflict_frame, text="Keep mine (overwrite)",
+        ttk.Button(self.conflict_frame, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.buttons.keep_mine_overwrite', default="Keep mine (overwrite)"),
                    command=self._resolve_keep_mine
                    ).pack(side=tk.LEFT, padx=4)
 
@@ -70,10 +72,10 @@ class RoomNotesDialog:
 
         btns = ttk.Frame(self.dialog)
         btns.pack(fill=tk.X, padx=10, pady=(0, 10))
-        self.save_button = ttk.Button(btns, text="Save now",
+        self.save_button = ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.buttons.save_now', default="Save now"),
                                       command=self._save_now)
         self.save_button.pack(side=tk.RIGHT)
-        ttk.Button(btns, text="Close",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.buttons.close', default="Close"),
                    command=self._on_close).pack(side=tk.RIGHT, padx=5)
 
         self._conflict_active = False
@@ -83,7 +85,7 @@ class RoomNotesDialog:
         try:
             data = self.dashboard.get_room_notes(self.room_id) or {}
         except Exception as e:
-            messagebox.showerror("Error", str(e), parent=self.dialog)
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_notes.dialogs.error', default="Error"), str(e), parent=self.dialog)
             data = {}
         self._apply_remote(data, keep_cursor=False)
 
@@ -114,7 +116,7 @@ class RoomNotesDialog:
                 text=f"Last updated: {ts}  by @{who or '—'}"
             )
         else:
-            self.meta_label.config(text="No saved version yet")
+            self.meta_label.config(text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.text.no_saved_version_yet', default="No saved version yet"))
 
     def _set_status(self, text, colour="#666"):
         self.status_label.config(text=text, foreground=colour)
@@ -245,12 +247,12 @@ class RoomNotesDialog:
                     self.room_id, merged, expected_version=None,
                 )
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=self.dialog)
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_dialogs.room_notes.dialogs.error', default="Error"), str(e), parent=self.dialog)
                 return False
             if not ok or ok == 'version_conflict':
                 messagebox.showerror(
-                    "Save failed",
-                    "The save was rejected. The room may have changed again.",
+                    _t('gui.shell.email.email_gui.chat_dialogs.room_notes.dialogs.save_failed', default="Save failed"),
+                    _t('gui.shell.email.email_gui.chat_dialogs.room_notes.dialogs.the_save_was_rejected_the_room_may_have_changed_again', default="The save was rejected. The room may have changed again."),
                     parent=self.dialog,
                 )
                 return False
@@ -314,8 +316,8 @@ class RoomNotesDialog:
     def _on_close(self):
         if self._dirty:
             choice = messagebox.askyesnocancel(
-                "Unsaved changes",
-                "Save your changes before closing?",
+                _t('gui.shell.email.email_gui.chat_dialogs.room_notes.dialogs.unsaved_changes', default="Unsaved changes"),
+                _t('gui.shell.email.email_gui.chat_dialogs.room_notes.dialogs.save_your_changes_before_closing', default="Save your changes before closing?"),
                 parent=self.dialog,
             )
             if choice is None:
@@ -346,7 +348,7 @@ class NotesDiffDialog:
     def __init__(self, parent, mine_content, remote_content, on_save):
         self.on_save = on_save
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Merge notes — diff")
+        self.dialog.title(_t('gui.shell.email.email_gui.chat_dialogs.room_notes.windows.merge_notes_diff', default="Merge notes — diff"))
         self.dialog.geometry("1100x620")
         self.dialog.transient(parent)
         self.dialog.after(100,
@@ -359,8 +361,8 @@ class NotesDiffDialog:
         frame.pack(fill=tk.BOTH, expand=True)
         head = ttk.Frame(frame)
         head.pack(fill=tk.X, pady=(0, 4))
-        ttk.Label(head, text=" Edit the left pane to produce the merged version. "
-                              "Click a remote line to copy it across.",
+        ttk.Label(head, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.labels.edit_the_left_pane_to_produce_the_merged_version_click_a_remote', default=" Edit the left pane to produce the merged version. "
+                              "Click a remote line to copy it across."),
                   foreground="#444").pack(side=tk.LEFT)
 
         paned = ttk.PanedWindow(frame, orient=tk.HORIZONTAL)
@@ -371,13 +373,13 @@ class NotesDiffDialog:
         paned.add(left, weight=1)
         paned.add(right, weight=1)
 
-        ttk.Label(left, text="Mine (editable)",
+        ttk.Label(left, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.labels.mine_editable', default="Mine (editable)"),
                   font=("TkDefaultFont", 10, "bold"),
                   foreground="#1a5fb4").pack(anchor=tk.W)
         self.mine = scrolledtext.ScrolledText(left, wrap=tk.WORD)
         self.mine.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(right, text="Remote (read-only)",
+        ttk.Label(right, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.labels.remote_read_only', default="Remote (read-only)"),
                   font=("TkDefaultFont", 10, "bold"),
                   foreground="#7a4f00").pack(anchor=tk.W)
         self.remote = scrolledtext.ScrolledText(right, wrap=tk.WORD,
@@ -392,9 +394,9 @@ class NotesDiffDialog:
 
         btns = ttk.Frame(frame)
         btns.pack(fill=tk.X, pady=(8, 0))
-        ttk.Button(btns, text="Save merged",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.buttons.save_merged', default="Save merged"),
                    command=self._on_save).pack(side=tk.RIGHT)
-        ttk.Button(btns, text="Cancel",
+        ttk.Button(btns, text=_t('gui.shell.email.email_gui.chat_dialogs.room_notes.buttons.cancel', default="Cancel"),
                    command=self.dialog.destroy
                    ).pack(side=tk.RIGHT, padx=5)
 

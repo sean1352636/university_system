@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List
 from collections import defaultdict, deque
 from functools import wraps
-from threading import Lock
+from threading import RLock
 import statistics
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,10 @@ class MetricsCollector:
     """
 
     def __init__(self):
-        self._lock = Lock()
+        # get_all_metrics() aggregates via get_error_rate(), which also takes
+        # the lock; use a re-entrant lock to avoid self-deadlock during a
+        # snapshot.
+        self._lock = RLock()
 
         # Counter metrics
         self._counters: Dict[str, int] = defaultdict(int)

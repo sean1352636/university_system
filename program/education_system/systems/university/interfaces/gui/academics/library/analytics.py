@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -118,11 +120,11 @@ from education_system.systems.university.interfaces.gui.academics.library.base i
 def show_advanced_analytics_gui(self):
     """Show advanced analytics dashboard"""
     analytics_window = tk.Toplevel(self.master)
-    analytics_window.title("Library Analytics Dashboard")
+    analytics_window.title(_t('gui.academics.library.analytics.windows.library_analytics_dashboard', default="Library Analytics Dashboard"))
     analytics_window.geometry("1200x800")
 
     # Title
-    ttk.Label(analytics_window, text="Library Analytics Dashboard",
+    ttk.Label(analytics_window, text=_t('gui.academics.library.analytics.labels.library_analytics_dashboard', default="Library Analytics Dashboard"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Notebook for different analytics
@@ -131,26 +133,26 @@ def show_advanced_analytics_gui(self):
 
     # Tab 1: Collection Overview
     overview_tab = ttk.Frame(notebook)
-    notebook.add(overview_tab, text="Collection Overview")
+    notebook.add(overview_tab, text=_t('gui.academics.library.analytics.tabs.collection_overview', default="Collection Overview"))
     self._create_collection_overview(overview_tab)
 
     # Tab 2: Circulation Stats
     circulation_tab = ttk.Frame(notebook)
-    notebook.add(circulation_tab, text="Circulation")
+    notebook.add(circulation_tab, text=_t('gui.academics.library.analytics.tabs.circulation', default="Circulation"))
     self._create_circulation_stats(circulation_tab)
 
     # Tab 3: User Activity
     activity_tab = ttk.Frame(notebook)
-    notebook.add(activity_tab, text="User Activity")
+    notebook.add(activity_tab, text=_t('gui.academics.library.analytics.tabs.user_activity', default="User Activity"))
     self._create_user_activity(activity_tab)
 
     # Tab 4: Category Analysis
     category_tab = ttk.Frame(notebook)
-    notebook.add(category_tab, text="Categories")
+    notebook.add(category_tab, text=_t('gui.academics.library.analytics.tabs.categories', default="Categories"))
     self._create_category_analysis(category_tab)
 
     # Export button
-    ttk.Button(analytics_window, text="Export Full Report",
+    ttk.Button(analytics_window, text=_t('gui.academics.library.analytics.buttons.export_full_report', default="Export Full Report"),
               command=self.export_analytics_report).pack(pady=10)
 
 def _create_collection_overview(self, parent):
@@ -161,7 +163,7 @@ def _create_collection_overview(self, parent):
     # Add refresh button at top
     btn_frame = ttk.Frame(parent)
     btn_frame.pack(fill=tk.X, padx=20, pady=10)
-    ttk.Button(btn_frame, text="🔄 Refresh Overview",
+    ttk.Button(btn_frame, text=_t('gui.academics.library.analytics.buttons.refresh_overview', default="🔄 Refresh Overview"),
                command=self._refresh_collection_overview).pack(side=tk.RIGHT)
 
     # Create content frame that can be refreshed
@@ -240,7 +242,7 @@ def _load_collection_overview_data(self):
         LIMIT 10
         ''')
 
-        recent_frame = ttk.LabelFrame(parent, text="Recently Added Books", padding=10)
+        recent_frame = ttk.LabelFrame(parent, text=_t('gui.academics.library.analytics.labels.recently_added_books', default="Recently Added Books"), padding=10)
         recent_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         recent_tree = ttk.Treeview(recent_frame, columns=('Title', 'Author', 'Date'),
@@ -332,15 +334,15 @@ def _create_user_activity(self, parent):
         LIMIT 20
         ''')
 
-        activity_frame = ttk.LabelFrame(parent, text="Most Active Users", padding=10)
+        activity_frame = ttk.LabelFrame(parent, text=_t('gui.academics.library.analytics.labels.most_active_users', default="Most Active Users"), padding=10)
         activity_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         tree = ttk.Treeview(activity_frame, columns=('User ID', 'Loan Count'),
                            show='headings', height=15)
         tree.pack(fill=tk.BOTH, expand=True)
 
-        tree.heading('User ID', text='User ID')
-        tree.heading('Loan Count', text='Total Loans')
+        tree.heading('User ID', text=_t('gui.academics.library.analytics.headings.user_id', default='User ID'))
+        tree.heading('Loan Count', text=_t('gui.academics.library.analytics.headings.total_loans', default='Total Loans'))
         tree.column('User ID', width=300)
         tree.column('Loan Count', width=150)
 
@@ -367,7 +369,7 @@ def _create_category_analysis(self, parent):
         ORDER BY book_count DESC
         ''')
 
-        category_frame = ttk.LabelFrame(parent, text="Books by Category", padding=10)
+        category_frame = ttk.LabelFrame(parent, text=_t('gui.academics.library.analytics.labels.books_by_category', default="Books by Category"), padding=10)
         category_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         tree = ttk.Treeview(category_frame, columns=('Category', 'Total', 'Available'),
@@ -427,7 +429,7 @@ def export_analytics_report(self):
         messagebox.showinfo(_("common.success"), f"Analytics report exported to:\n{file_path}")
 
     except ImportError:
-        messagebox.showerror(_("common.error"), "pandas and openpyxl are required for export.")
+        messagebox.showerror(_("common.error"), _t('gui.academics.library.analytics.dialogs.pandas_and_openpyxl_are_required_for_export', default="pandas and openpyxl are required for export."))
     except (OSError, IOError, tk.TclError) as e:
         messagebox.showerror(_("common.error"), f"Export failed: {str(e)}")
 

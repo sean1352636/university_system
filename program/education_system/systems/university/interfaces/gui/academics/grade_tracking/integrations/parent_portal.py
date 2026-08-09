@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def fetch_child_grades(student_id: str | int) -> list[dict]:
     """
     out: list[dict] = []
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         conn.row_factory = sqlite3.Row
         try:

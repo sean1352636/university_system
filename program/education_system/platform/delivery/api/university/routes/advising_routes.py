@@ -6,7 +6,10 @@ import logging
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    deny_unless_owner_or_staff,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.platform.delivery.api.university.validators import validate_advising_appointment_create
 from education_system.systems.university.infrastructure.exceptions import ValidationError
@@ -74,6 +77,9 @@ def get_appointment(appointment_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Advising appointment {appointment_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
     log_activity("view", "advising_appointment", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -117,11 +123,14 @@ def create_appointment():
 def update_appointment(appointment_id: int):
     with get_connection() as conn:
         existing = conn.execute(
-            "SELECT 1 FROM advising_appointments WHERE appointment_id = ?",
+            "SELECT student_id FROM advising_appointments WHERE appointment_id = ?",
             (appointment_id,),
         ).fetchone()
     if not existing:
         raise ValidationError(f"Advising appointment {appointment_id} not found")
+    denial = deny_unless_owner_or_staff(existing[0])
+    if denial:
+        return denial
 
     data = request.get_json(silent=True) or {}
     if not data:

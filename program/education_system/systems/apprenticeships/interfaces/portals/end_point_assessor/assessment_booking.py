@@ -1,0 +1,1 @@
+"""Assessment Booking module."""

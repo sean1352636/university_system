@@ -1,5 +1,7 @@
 """System maintenance and backup"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -12,7 +14,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.sql_safety import validate_table_name
 from collections import deque
 
@@ -58,36 +60,36 @@ class MaintenanceManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="System Maintenance", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.maintenance.labels.system_maintenance', default="System Maintenance"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Maintenance options
-        maintenance_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Maintenance Options", padding=20)
+        maintenance_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.maintenance.labels.maintenance_options', default="Maintenance Options"), padding=20)
         maintenance_frame.pack(fill='x', pady=(0, 20))
 
         # Database maintenance
-        db_frame = ttk.LabelFrame(maintenance_frame, text="Database Maintenance", padding=10)
+        db_frame = ttk.LabelFrame(maintenance_frame, text=_t('gui.academics.assignment_system.maintenance.labels.database_maintenance', default="Database Maintenance"), padding=10)
         db_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Button(db_frame, text="Optimize Database", command=self.optimize_database).pack(side='left', padx=(0, 10))
-        ttk.Button(db_frame, text="Check Database Integrity", command=self.check_db_integrity).pack(side='left', padx=(0, 10))
-        ttk.Button(db_frame, text="View Database Stats", command=self.show_db_stats).pack(side='left')
+        ttk.Button(db_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.optimize_database', default="Optimize Database"), command=self.optimize_database).pack(side='left', padx=(0, 10))
+        ttk.Button(db_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.check_database_integrity', default="Check Database Integrity"), command=self.check_db_integrity).pack(side='left', padx=(0, 10))
+        ttk.Button(db_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.view_database_stats', default="View Database Stats"), command=self.show_db_stats).pack(side='left')
 
         # File maintenance
-        file_frame = ttk.LabelFrame(maintenance_frame, text="File System Maintenance", padding=10)
+        file_frame = ttk.LabelFrame(maintenance_frame, text=_t('gui.academics.assignment_system.maintenance.labels.file_system_maintenance', default="File System Maintenance"), padding=10)
         file_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Button(file_frame, text="Clean Temporary Files", command=self.clean_temp_files).pack(side='left', padx=(0, 10))
-        ttk.Button(file_frame, text="Verify File Integrity", command=self.verify_file_integrity).pack(side='left', padx=(0, 10))
-        ttk.Button(file_frame, text="Archive Old Files", command=self.archive_old_files).pack(side='left')
+        ttk.Button(file_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.clean_temporary_files', default="Clean Temporary Files"), command=self.clean_temp_files).pack(side='left', padx=(0, 10))
+        ttk.Button(file_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.verify_file_integrity', default="Verify File Integrity"), command=self.verify_file_integrity).pack(side='left', padx=(0, 10))
+        ttk.Button(file_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.archive_old_files', default="Archive Old Files"), command=self.archive_old_files).pack(side='left')
 
         # System monitoring
-        monitor_frame = ttk.LabelFrame(maintenance_frame, text="System Monitoring", padding=10)
+        monitor_frame = ttk.LabelFrame(maintenance_frame, text=_t('gui.academics.assignment_system.maintenance.labels.system_monitoring', default="System Monitoring"), padding=10)
         monitor_frame.pack(fill='x')
 
-        ttk.Button(monitor_frame, text="View System Logs", command=self.view_system_logs).pack(side='left', padx=(0, 10))
-        ttk.Button(monitor_frame, text="Check Disk Usage", command=self.check_disk_usage).pack(side='left', padx=(0, 10))
-        ttk.Button(monitor_frame, text="Generate Health Report", command=self.generate_health_report).pack(side='left')
+        ttk.Button(monitor_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.view_system_logs', default="View System Logs"), command=self.view_system_logs).pack(side='left', padx=(0, 10))
+        ttk.Button(monitor_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.check_disk_usage', default="Check Disk Usage"), command=self.check_disk_usage).pack(side='left', padx=(0, 10))
+        ttk.Button(monitor_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.generate_health_report', default="Generate Health Report"), command=self.generate_health_report).pack(side='left')
 
         # Status display
         self.maintenance_status_frame = ttk.Frame(self.gui.layout.content_area)
@@ -233,7 +235,7 @@ class MaintenanceManager:
             # Use proper path from shared constants with fallback
             submission_dir = getattr(self.assignment_system, 'submission_dir', None)
             if submission_dir is None:
-                base_dir = paths.SUBMISSIONS_DIR
+                base_dir = paths.UNIVERSITY_SUBMISSIONS_DIR
             else:
                 base_dir = Path(submission_dir).resolve()
 
@@ -294,20 +296,20 @@ class MaintenanceManager:
     def view_system_logs(self):
         """View system logs"""
         log_window = tk.Toplevel(self.root)
-        log_window.title("System Logs")
+        log_window.title(_t('gui.academics.assignment_system.maintenance.windows.system_logs', default="System Logs"))
         log_window.geometry("800x600")
 
         controls_frame = ttk.Frame(log_window, padding=10)
         controls_frame.pack(fill='x')
 
-        ttk.Label(controls_frame, text="Select log file:").pack(side='left')
+        ttk.Label(controls_frame, text=_t('gui.academics.assignment_system.maintenance.labels.select_log_file', default="Select log file:")).pack(side='left')
 
         self.log_file_var = tk.StringVar()
         log_combo = ttk.Combobox(controls_frame, textvariable=self.log_file_var, width=40, state='readonly')
         log_combo.pack(side='left', padx=(10, 0))
 
-        ttk.Button(controls_frame, text="Refresh", command=lambda: self._populate_log_files(log_combo)).pack(side='left', padx=10)
-        ttk.Button(controls_frame, text="Open", command=lambda: self._load_log_contents(log_text)).pack(side='left')
+        ttk.Button(controls_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.refresh', default="Refresh"), command=lambda: self._populate_log_files(log_combo)).pack(side='left', padx=10)
+        ttk.Button(controls_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.open', default="Open"), command=lambda: self._load_log_contents(log_text)).pack(side='left')
 
         log_text = scrolledtext.ScrolledText(log_window, wrap=tk.WORD)
         log_text.pack(fill='both', expand=True, padx=10, pady=(0, 10))
@@ -319,7 +321,7 @@ class MaintenanceManager:
 
 
     def _populate_log_files(self, combo):
-        log_dir = Path(paths.LOG_DIR)
+        log_dir = Path(paths.UNIVERSITY_LOG_DIR)
         if not log_dir.exists():
             combo['values'] = []
             self.log_file_var.set('')
@@ -332,7 +334,7 @@ class MaintenanceManager:
 
 
     def _load_log_contents(self, text_widget):
-        log_dir = Path(paths.LOG_DIR)
+        log_dir = Path(paths.UNIVERSITY_LOG_DIR)
         log_name = self.log_file_var.get()
         text_widget.config(state='normal')
         text_widget.delete('1.0', tk.END)
@@ -430,7 +432,7 @@ class MaintenanceManager:
                 health_items.append("\n✓ File System: OK")
 
                 # Check submission directories
-                submission_dir = paths.SUBMISSIONS_DIR
+                submission_dir = paths.UNIVERSITY_SUBMISSIONS_DIR
                 if submission_dir.exists():
                     health_details.append(f"  - Submission Directory: {submission_dir}")
                     try:
@@ -495,11 +497,11 @@ class MaintenanceManager:
                         body=email_body
                     )
 
-                    messagebox.showinfo("Success", f"Health report generated and emailed to admin ({admin_email})")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.maintenance.dialogs.success', default="Success"), f"Health report generated and emailed to admin ({admin_email})")
                 else:
-                    messagebox.showwarning("Warning", "Health report generated but no admin email found")
+                    messagebox.showwarning(_t('gui.academics.assignment_system.maintenance.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.maintenance.dialogs.health_report_generated_but_no_admin_email_found', default="Health report generated but no admin email found"))
             except Exception as email_error:
-                messagebox.showwarning("Warning", f"Health report generated but email failed: {email_error}")
+                messagebox.showwarning(_t('gui.academics.assignment_system.maintenance.dialogs.warning', default="Warning"), f"Health report generated but email failed: {email_error}")
 
         except Exception as e:
             self.show_maintenance_status(f"Failed to generate health report: {e}", "error")
@@ -511,7 +513,7 @@ class MaintenanceManager:
         for widget in self.maintenance_status_frame.winfo_children():
             widget.destroy()
 
-        status_frame = ttk.LabelFrame(self.maintenance_status_frame, text="Status", padding=10)
+        status_frame = ttk.LabelFrame(self.maintenance_status_frame, text=_t('gui.academics.assignment_system.maintenance.labels.status', default="Status"), padding=10)
         status_frame.pack(fill='both', expand=True)
 
         if msg_type == "success":
@@ -532,17 +534,17 @@ class MaintenanceManager:
 
         # Create progress window
         cleanup_window = tk.Toplevel(self.root)
-        cleanup_window.title("Data Cleanup")
+        cleanup_window.title(_t('gui.academics.assignment_system.maintenance.windows.data_cleanup', default="Data Cleanup"))
         cleanup_window.geometry("400x300")
         cleanup_window.transient(self.root)
 
-        ttk.Label(cleanup_window, text="Data Cleanup Progress", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(cleanup_window, text=_t('gui.academics.assignment_system.maintenance.labels.data_cleanup_progress', default="Data Cleanup Progress"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         progress_var = tk.DoubleVar()
         progress_bar = ttk.Progressbar(cleanup_window, variable=progress_var, maximum=100)
         progress_bar.pack(fill='x', padx=20, pady=10)
 
-        status_label = ttk.Label(cleanup_window, text="Starting cleanup...")
+        status_label = ttk.Label(cleanup_window, text=_t('gui.academics.assignment_system.maintenance.labels.starting_cleanup', default="Starting cleanup..."))
         status_label.pack(pady=10)
 
         results_text = scrolledtext.ScrolledText(cleanup_window, height=8, width=50)
@@ -634,7 +636,7 @@ class MaintenanceManager:
                 # Use proper path from shared constants with fallback
                 submission_dir = getattr(self.assignment_system, 'submission_dir', None)
                 if submission_dir is None:
-                    temp_dir = str(paths.DATA_DIR / 'temp' / 'assignments')
+                    temp_dir = str(paths.UNIVERSITY_DATA_DIR / 'temp' / 'assignments')
                 else:
                     temp_dir = os.path.join(submission_dir, 'temp')
 
@@ -672,7 +674,7 @@ class MaintenanceManager:
         cleanup_thread = threading.Thread(target=run_cleanup, daemon=True)
         cleanup_thread.start()
 
-        ttk.Button(cleanup_window, text="Close", command=cleanup_window.destroy).pack(pady=10)
+        ttk.Button(cleanup_window, text=_t('gui.academics.assignment_system.maintenance.buttons.close', default="Close"), command=cleanup_window.destroy).pack(pady=10)
 
     # MESSAGING SYSTEM METHODS
 
@@ -680,29 +682,29 @@ class MaintenanceManager:
         """Show system backup and recovery interface"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="System Backup & Recovery", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.maintenance.labels.system_backup_recovery', default="System Backup & Recovery"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Backup section
-        backup_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Create Backup", padding=20)
+        backup_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.maintenance.labels.create_backup', default="Create Backup"), padding=20)
         backup_frame.pack(fill='x', pady=(0, 10))
 
         backup_options = ttk.Frame(backup_frame)
         backup_options.pack(fill='x')
 
-        self.backup_type_var = tk.StringVar(value="full")
-        ttk.Radiobutton(backup_options, text="Full Backup (Database + Files)",
+        self.backup_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.maintenance.values.full', default="full"))
+        ttk.Radiobutton(backup_options, text=_t('gui.academics.assignment_system.maintenance.buttons.full_backup_database_files', default="Full Backup (Database + Files)"),
                        variable=self.backup_type_var, value="full").pack(anchor='w')
-        ttk.Radiobutton(backup_options, text="Database Only",
+        ttk.Radiobutton(backup_options, text=_t('gui.academics.assignment_system.maintenance.buttons.database_only', default="Database Only"),
                        variable=self.backup_type_var, value="database").pack(anchor='w')
-        ttk.Radiobutton(backup_options, text="Files Only",
+        ttk.Radiobutton(backup_options, text=_t('gui.academics.assignment_system.maintenance.buttons.files_only', default="Files Only"),
                        variable=self.backup_type_var, value="files").pack(anchor='w')
 
-        ttk.Button(backup_frame, text="Create Backup Now",
+        ttk.Button(backup_frame, text=_t('gui.academics.assignment_system.maintenance.buttons.create_backup_now', default="Create Backup Now"),
                   command=self.create_system_backup).pack(pady=10)
 
         # Backup history section
-        history_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Backup History", padding=10)
+        history_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.maintenance.labels.backup_history', default="Backup History"), padding=10)
         history_frame.pack(fill='both', expand=True)
 
         # Backup history tree
@@ -715,7 +717,7 @@ class MaintenanceManager:
 
         backup_tree.pack(fill='both', expand=True)
 
-        ttk.Label(history_frame, text="No backup history recorded yet. Create a backup to populate this list.").pack(pady=10)
+        ttk.Label(history_frame, text=_t('gui.academics.assignment_system.maintenance.labels.no_backup_history_recorded_yet_create_a_backup_to_populate_this', default="No backup history recorded yet. Create a backup to populate this list.")).pack(pady=10)
 
 
     def create_system_backup(self):
@@ -724,7 +726,7 @@ class MaintenanceManager:
 
         # Create progress dialog
         progress_window = tk.Toplevel(self.root)
-        progress_window.title("Creating Backup")
+        progress_window.title(_t('gui.academics.assignment_system.maintenance.windows.creating_backup', default="Creating Backup"))
         progress_window.geometry("500x200")
         progress_window.transient(self.root)
 
@@ -734,12 +736,12 @@ class MaintenanceManager:
         progress_bar = ttk.Progressbar(progress_window, variable=progress_var, maximum=100)
         progress_bar.pack(fill='x', padx=20, pady=10)
 
-        status_label = ttk.Label(progress_window, text="Initializing...")
+        status_label = ttk.Label(progress_window, text=_t('gui.academics.assignment_system.maintenance.labels.initializing', default="Initializing..."))
         status_label.pack(pady=5)
 
         # Use canonical backup directories for organised storage
-        db_backup_dir = str(paths.BACKUP_DATABASE_DIR)
-        files_backup_dir = str(paths.BACKUP_FILES_DIR)
+        db_backup_dir = str(paths.UNIVERSITY_BACKUP_DATABASE_DIR)
+        files_backup_dir = str(paths.UNIVERSITY_BACKUP_FILES_DIR)
         os.makedirs(db_backup_dir, exist_ok=True)
         os.makedirs(files_backup_dir, exist_ok=True)
 
@@ -750,12 +752,12 @@ class MaintenanceManager:
         def perform_backup():
             try:
                 progress_var.set(10)
-                status_label.config(text="Preparing backup...")
+                status_label.config(text=_t('gui.academics.assignment_system.maintenance.text.preparing_backup', default="Preparing backup..."))
                 progress_window.update()
 
                 if backup_type in ['full', 'database']:
                     progress_var.set(30)
-                    status_label.config(text="Backing up database...")
+                    status_label.config(text=_t('gui.academics.assignment_system.maintenance.text.backing_up_database', default="Backing up database..."))
                     progress_window.update()
 
                     # Create database backup
@@ -764,12 +766,12 @@ class MaintenanceManager:
                     shutil.copy2(str(DEFAULT_DB_PATH), backup_file)
 
                     progress_var.set(60)
-                    status_label.config(text="Database backup created...")
+                    status_label.config(text=_t('gui.academics.assignment_system.maintenance.text.database_backup_created', default="Database backup created..."))
                     progress_window.update()
 
                 if backup_type in ['full', 'files']:
                     progress_var.set(70)
-                    status_label.config(text="Backing up files...")
+                    status_label.config(text=_t('gui.academics.assignment_system.maintenance.text.backing_up_files', default="Backing up files..."))
                     progress_window.update()
 
                     # Create files backup (submission files, etc.)
@@ -790,18 +792,18 @@ class MaintenanceManager:
                                 zipf.write(file_path, arcname)
 
                     progress_var.set(90)
-                    status_label.config(text="Files backup created...")
+                    status_label.config(text=_t('gui.academics.assignment_system.maintenance.text.files_backup_created', default="Files backup created..."))
                     progress_window.update()
 
                 progress_var.set(100)
-                status_label.config(text="Backup completed successfully!")
+                status_label.config(text=_t('gui.academics.assignment_system.maintenance.text.backup_completed_successfully', default="Backup completed successfully!"))
                 progress_window.update()
 
                 # Show success message with backup location
-                backup_location = str(paths.BACKUP_DIR)
+                backup_location = str(paths.UNIVERSITY_BACKUP_DIR)
                 self.root.after(1000, lambda: [
                     progress_window.destroy(),
-                    messagebox.showinfo("Backup Complete",
+                    messagebox.showinfo(_t('gui.academics.assignment_system.maintenance.dialogs.backup_complete', default="Backup Complete"),
                                       f"{backup_type.title()} backup created successfully!\n"
                                       f"Location: {backup_location}\n"
                                       f"Timestamp: {timestamp}")
@@ -810,11 +812,11 @@ class MaintenanceManager:
             except Exception as e:
                 err_msg = str(e)
                 progress_var.set(0)
-                status_label.config(text="Backup failed!")
+                status_label.config(text=_t('gui.academics.assignment_system.maintenance.text.backup_failed', default="Backup failed!"))
                 progress_window.update()
                 self.root.after(1000, lambda: [
                     progress_window.destroy(),
-                    messagebox.showerror("Backup Error", f"Failed to create backup: {err_msg}")
+                    messagebox.showerror(_t('gui.academics.assignment_system.maintenance.dialogs.backup_error', default="Backup Error"), f"Failed to create backup: {err_msg}")
                 ])
 
         # Start backup in background

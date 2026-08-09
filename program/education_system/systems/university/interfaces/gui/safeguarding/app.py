@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import base64
 import hashlib
 import json
@@ -59,7 +61,7 @@ class SafeguardingApp(
         """
         if host is None:
             super().__init__()
-            self.title("University Portal — Safeguarding System")
+            self.title(_t('gui.safeguarding.app.windows.university_portal_safeguarding_system', default="University Portal — Safeguarding System"))
             self.geometry("1000x680")
             self.configure(bg="#f4f6fa")
             self._host = self
@@ -144,14 +146,14 @@ class SafeguardingApp(
         self._clear()
         frame = tk.Frame(self.container, bg="#f4f6fa")
         frame.place(relx=0.5, rely=0.5, anchor="center")
-        ttk.Label(frame, text="🔒 Authentication Required", style="Header.TLabel").pack(pady=(0, 8))
+        ttk.Label(frame, text=_t('gui.safeguarding.app.labels.authentication_required', default="🔒 Authentication Required"), style="Header.TLabel").pack(pady=(0, 8))
         ttk.Label(
             frame,
-            text="Please launch this portal from the main\nUniversity System after signing in.",
+            text=_t('gui.safeguarding.app.labels.please_launch_this_portal_from_the_main_university_system_after', default="Please launch this portal from the main\nUniversity System after signing in."),
             style="Sub.TLabel",
             justify="center",
         ).pack(pady=(0, 14))
-        ttk.Button(frame, text="Close", command=self.destroy).pack()
+        ttk.Button(frame, text=_t('gui.safeguarding.app.buttons.close', default="Close"), command=self.destroy).pack()
 
     def _build_topbar(self, title):
         bar = tk.Frame(self.container, bg="#1f3a5f", height=55)
@@ -184,7 +186,7 @@ class SafeguardingApp(
         if self.user and _is_staff_role(self.user.get("role")):
             tk.Button(
                 bar,
-                text="Tools",
+                text=_t('gui.safeguarding.app.buttons.tools', default="Tools"),
                 bg="#1f3a5f",
                 fg="white",
                 relief="flat",

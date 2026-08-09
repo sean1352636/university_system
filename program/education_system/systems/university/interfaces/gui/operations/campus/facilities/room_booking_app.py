@@ -14,6 +14,8 @@ Logging: routed through the shared rotating `app.log` via
 """
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import os
 import pathlib
@@ -105,14 +107,14 @@ class _Frame(tk.Frame):
     def _build(self):
         hdr = tk.Frame(self, bg="#2c3e50", height=44)
         hdr.pack(fill="x"); hdr.pack_propagate(False)
-        tk.Label(hdr, text="Room Booking", font=("Helvetica", 14, "bold"),
+        tk.Label(hdr, text=_t('gui.operations.campus.facilities.room_booking_app.labels.room_booking', default="Room Booking"), font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=8)
         role = (self._user or {}).get('role') or ('—' if self._user else 'not signed in')
         tk.Label(hdr, text=f"Signed in: {self._user_display}  ({role})",
                  font=("Helvetica", 9), bg="#2c3e50",
                  fg="#bdc3c7").pack(side="right", padx=20, pady=14)
 
-        form = tk.LabelFrame(self, text="Book / Find / Manage", bg="#ecf0f1", padx=8, pady=4)
+        form = tk.LabelFrame(self, text=_t('gui.operations.campus.facilities.room_booking_app.labels.book_find_manage', default="Book / Find / Manage"), bg="#ecf0f1", padx=8, pady=4)
         form.pack(fill="x", padx=10, pady=6)
         labels = ["Room ID", "Start (YYYY-MM-DD HH:MM)", "End (YYYY-MM-DD HH:MM)",
                   "Booked by", "Purpose", "Equipment (CSV)"]
@@ -126,10 +128,10 @@ class _Frame(tk.Frame):
             tk.Entry(form, textvariable=self._vars[l], width=22).grid(
                 row=i // 3, column=(i % 3) * 2 + 1, padx=4, pady=2)
         btns = tk.Frame(form, bg="#ecf0f1"); btns.grid(row=2, column=0, columnspan=6, pady=4)
-        tk.Button(btns, text="Book", command=self._book).pack(side="left", padx=4)
-        tk.Button(btns, text="Find Available", command=self._find).pack(side="left", padx=4)
-        tk.Button(btns, text="Cancel Selected", command=self._cancel).pack(side="left", padx=4)
-        tk.Button(btns, text="Refresh", command=self._refresh).pack(side="left", padx=4)
+        tk.Button(btns, text=_t('gui.operations.campus.facilities.room_booking_app.buttons.book', default="Book"), command=self._book).pack(side="left", padx=4)
+        tk.Button(btns, text=_t('gui.operations.campus.facilities.room_booking_app.buttons.find_available', default="Find Available"), command=self._find).pack(side="left", padx=4)
+        tk.Button(btns, text=_t('gui.operations.campus.facilities.room_booking_app.buttons.cancel_selected', default="Cancel Selected"), command=self._cancel).pack(side="left", padx=4)
+        tk.Button(btns, text=_t('gui.operations.campus.facilities.room_booking_app.buttons.refresh', default="Refresh"), command=self._refresh).pack(side="left", padx=4)
 
         cols = ("id", "room", "start", "end", "by", "purpose", "status")
         self._tree = ttk.Treeview(self, columns=cols, show="headings", height=14)
@@ -150,9 +152,9 @@ class _Frame(tk.Frame):
             )
             logger.info("Room booked room_id=%s start=%s end=%s by=%s purpose=%r logged_by=%s",
                         room_id, start, end, booked_by, purpose, self._user_display)
-            messagebox.showinfo("OK", "Booked."); self._refresh()
+            messagebox.showinfo(_t('gui.operations.campus.facilities.room_booking_app.dialogs.ok', default="OK"), _t('gui.operations.campus.facilities.room_booking_app.dialogs.booked', default="Booked.")); self._refresh()
         except (RoomBookingError, ValueError) as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.campus.facilities.room_booking_app.dialogs.error', default="Error"), str(e))
 
     def _find(self):
         try:
@@ -163,13 +165,13 @@ class _Frame(tk.Frame):
                 equipment_csv=v["Equipment (CSV)"].get().strip(),
             )
         except (RoomBookingError, ValueError) as e:
-            messagebox.showerror("Error", str(e)); return
+            messagebox.showerror(_t('gui.operations.campus.facilities.room_booking_app.dialogs.error', default="Error"), str(e)); return
         ids = ", ".join(str(r.get("room_id")) for r in rooms) or "(none)"
-        messagebox.showinfo("Available rooms", f"{len(rooms)} room(s): {ids}")
+        messagebox.showinfo(_t('gui.operations.campus.facilities.room_booking_app.dialogs.available_rooms', default="Available rooms"), f"{len(rooms)} room(s): {ids}")
 
     def _cancel(self):
         sel = self._tree.focus()
-        if not sel: messagebox.showwarning("Select", "Select a booking first."); return
+        if not sel: messagebox.showwarning(_t('gui.operations.campus.facilities.room_booking_app.dialogs.select', default="Select"), _t('gui.operations.campus.facilities.room_booking_app.dialogs.select_a_booking_first', default="Select a booking first.")); return
         bid = int(self._tree.item(sel, "values")[0])
         try:
             self._svc.cancel_booking(bid)
@@ -177,7 +179,7 @@ class _Frame(tk.Frame):
                         bid, self._user_display)
             self._refresh()
         except RoomBookingError as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.campus.facilities.room_booking_app.dialogs.error', default="Error"), str(e))
 
     def _refresh(self):
         for r in self._tree.get_children(): self._tree.delete(r)
@@ -190,7 +192,7 @@ class _Frame(tk.Frame):
                     b.get("booking_status") or b.get("status", "-"),
                 ))
         except RoomBookingError as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.operations.campus.facilities.room_booking_app.dialogs.error', default="Error"), str(e))
 
 
 def main() -> None:
@@ -200,7 +202,7 @@ def main() -> None:
                 _user_display_name(user),
                 (user or {}).get('role') or 'none')
     root = tk.Tk()
-    root.title("Room Booking"); root.geometry("980x620")
+    root.title(_t('gui.operations.campus.facilities.room_booking_app.windows.room_booking', default="Room Booking")); root.geometry("980x620")
     _Frame(root, user=user).pack(fill="both", expand=True)
     root.mainloop()
 

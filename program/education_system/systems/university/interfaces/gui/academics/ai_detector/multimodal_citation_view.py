@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
 import threading
@@ -42,28 +44,28 @@ from education_system.systems.university.infrastructure.i18n import get_text, _
 def create_multi_modal_analysis_tab(self):
     """Create multi-modal analysis tab"""
     multimodal_frame = ttk.Frame(self.notebook)
-    self.notebook.add(multimodal_frame, text="🖼️ Multi-Modal")
+    self.notebook.add(multimodal_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.tabs.multi_modal', default="🖼️ Multi-Modal"))
 
     # Multi-modal card
     multimodal_card = ttk.Frame(multimodal_frame, style='Card.TFrame')
     multimodal_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(multimodal_card, text="Multi-Modal Analysis", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(multimodal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.multi_modal_analysis', default="Multi-Modal Analysis"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Analysis types
-    types_frame = ttk.LabelFrame(multimodal_card, text="Analysis Types", padding=15)
+    types_frame = ttk.LabelFrame(multimodal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.analysis_types', default="Analysis Types"), padding=15)
     types_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(types_frame, text="📝 Text + Image Consistency",
+    ttk.Button(types_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.text_image_consistency', default="📝 Text + Image Consistency"),
               command=self.analyze_text_image_consistency).pack(fill='x', pady=(0, 5))
-    ttk.Button(types_frame, text="💻 Code Submission Analysis",
+    ttk.Button(types_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.code_submission_analysis', default="💻 Code Submission Analysis"),
               command=self.analyze_code_submission).pack(fill='x')
 
     # Image upload
     upload_frame = ttk.Frame(multimodal_card)
     upload_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(upload_frame, text="📤 Upload Images",
+    ttk.Button(upload_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.upload_images_variant_2', default="📤 Upload Images"),
               command=self.upload_images_for_analysis).pack()
 
 
@@ -77,32 +79,32 @@ def create_multi_modal_analysis_view(self, parent):
     multimodal_card = ttk.Frame(multimodal_frame, style='Card.TFrame')
     multimodal_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(multimodal_card, text="Multi-Modal Analysis", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(multimodal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.multi_modal_analysis', default="Multi-Modal Analysis"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Image upload section
-    image_frame = ttk.LabelFrame(multimodal_card, text="Image Analysis", padding=15)
+    image_frame = ttk.LabelFrame(multimodal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.image_analysis', default="Image Analysis"), padding=15)
     image_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(image_frame, text="📁 Upload Images",
+    ttk.Button(image_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.upload_images', default="📁 Upload Images"),
               command=self.upload_images_for_analysis).pack(side='left', padx=(0, 10))
-    ttk.Button(image_frame, text="📝 Analyze Image-Text Consistency",
+    ttk.Button(image_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.analyze_image_text_consistency', default="📝 Analyze Image-Text Consistency"),
               command=self.analyze_image_text_consistency).pack(side='left')
 
     # Code analysis section
-    code_frame = ttk.LabelFrame(multimodal_card, text="Code Analysis", padding=15)
+    code_frame = ttk.LabelFrame(multimodal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.code_analysis', default="Code Analysis"), padding=15)
     code_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Label(code_frame, text="Programming Language:").pack(side='left')
-    self.code_language_var = tk.StringVar(value="python")
+    ttk.Label(code_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.programming_language', default="Programming Language:")).pack(side='left')
+    self.code_language_var = tk.StringVar(value=_t('gui.academics.ai_detector.multimodal_citation_view.values.python', default="python"))
     language_combo = ttk.Combobox(code_frame, textvariable=self.code_language_var,
                                  values=["python", "java", "javascript", "cpp", "c"], width=15)
     language_combo.pack(side='left', padx=(5, 15))
 
-    ttk.Button(code_frame, text="💻 Analyze Code",
+    ttk.Button(code_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.analyze_code', default="💻 Analyze Code"),
               command=self.analyze_code_submission).pack(side='right')
 
     # Code input area
-    ttk.Label(multimodal_card, text="Code to Analyze:", style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=(10, 5))
+    ttk.Label(multimodal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.code_to_analyze', default="Code to Analyze:"), style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=(10, 5))
 
     self.code_input = scrolledtext.ScrolledText(
         multimodal_card, wrap=tk.WORD, height=15,
@@ -114,7 +116,7 @@ def create_multi_modal_analysis_view(self, parent):
 def upload_images_for_analysis(self):
     """Upload images for multi-modal analysis"""
     file_paths = filedialog.askopenfilenames(
-        title="Select images for analysis",
+        title=_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.select_images_for_analysis', default="Select images for analysis"),
         filetypes=[("Image files", "*.png *.jpg *.jpeg *.gif *.bmp"), ("All files", "*.*")]
     )
 
@@ -125,20 +127,20 @@ def upload_images_for_analysis(self):
                 with open(file_path, 'rb') as f:
                     self.uploaded_images.append(f.read())
 
-            messagebox.showinfo("Success", f"Uploaded {len(file_paths)} images for analysis")
+            messagebox.showinfo(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.success', default="Success"), f"Uploaded {len(file_paths)} images for analysis")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to upload images: {str(e)}")
+            messagebox.showerror(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.error', default="Error"), f"Failed to upload images: {str(e)}")
 
 
 def analyze_image_text_consistency(self):
     """Analyze consistency between uploaded images and text"""
     if not hasattr(self, 'uploaded_images') or not self.uploaded_images:
-        messagebox.showwarning("Warning", "Please upload images first")
+        messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.please_upload_images_first', default="Please upload images first"))
         return
 
     text = self.text_input.get('1.0', tk.END).strip()
     if not text:
-        messagebox.showwarning("Warning", "Please enter text for comparison")
+        messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.please_enter_text_for_comparison', default="Please enter text for comparison"))
         return
 
     try:
@@ -146,9 +148,9 @@ def analyze_image_text_consistency(self):
             result = self.detector.multimodal_analyzer.analyze_image_text_consistency(text, self.uploaded_images)
             self.show_multimodal_results(result)
         else:
-            messagebox.showwarning("Warning", "Multi-modal analysis not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.multi_modal_analysis_not_available', default="Multi-modal analysis not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to analyze image-text consistency: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.error', default="Error"), f"Failed to analyze image-text consistency: {str(e)}")
 
 
 def analyze_code_submission(self):
@@ -157,7 +159,7 @@ def analyze_code_submission(self):
     language = self.code_language_var.get()
 
     if not code:
-        messagebox.showwarning("Warning", "Please enter code to analyze")
+        messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.please_enter_code_to_analyze', default="Please enter code to analyze"))
         return
 
     try:
@@ -165,19 +167,19 @@ def analyze_code_submission(self):
             result = self.detector.multimodal_analyzer.analyze_code_submission(code, language)
             self.show_code_analysis_results(result)
         else:
-            messagebox.showwarning("Warning", "Code analysis not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.code_analysis_not_available', default="Code analysis not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to analyze code: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.error', default="Error"), f"Failed to analyze code: {str(e)}")
 
 
 def show_multimodal_results(self, result):
     """Show multi-modal analysis results"""
     results_window = tk.Toplevel(self.root)
-    results_window.title("Multi-Modal Analysis Results")
+    results_window.title(_t('gui.academics.ai_detector.multimodal_citation_view.windows.multi_modal_analysis_results', default="Multi-Modal Analysis Results"))
     results_window.geometry("700x500")
     results_window.configure(bg=self.colors['bg_primary'])
 
-    ttk.Label(results_window, text="Image-Text Consistency Analysis", style='Title.TLabel').pack(pady=20)
+    ttk.Label(results_window, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.image_text_consistency_analysis', default="Image-Text Consistency Analysis"), style='Title.TLabel').pack(pady=20)
 
     # Results display
     if hasattr(result, '__dict__'):
@@ -191,7 +193,7 @@ def show_multimodal_results(self, result):
                  font=('Segoe UI', 12)).pack(anchor='w', padx=15, pady=5)
 
         if evidence:
-            ttk.Label(results_frame, text="Analysis Details:",
+            ttk.Label(results_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.analysis_details', default="Analysis Details:"),
                      font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=15, pady=(10, 5))
             for key, value in evidence.items():
                 ttk.Label(results_frame, text=f"  {key}: {value}").pack(anchor='w', padx=25, pady=2)
@@ -200,11 +202,11 @@ def show_multimodal_results(self, result):
 def show_code_analysis_results(self, result):
     """Show code analysis results"""
     results_window = tk.Toplevel(self.root)
-    results_window.title("Code Analysis Results")
+    results_window.title(_t('gui.academics.ai_detector.multimodal_citation_view.windows.code_analysis_results', default="Code Analysis Results"))
     results_window.geometry("700x500")
     results_window.configure(bg=self.colors['bg_primary'])
 
-    ttk.Label(results_window, text="Code Analysis Results", style='Title.TLabel').pack(pady=20)
+    ttk.Label(results_window, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.code_analysis_results', default="Code Analysis Results"), style='Title.TLabel').pack(pady=20)
 
     # Results display
     if hasattr(result, '__dict__'):
@@ -218,7 +220,7 @@ def show_code_analysis_results(self, result):
                  font=('Segoe UI', 12)).pack(anchor='w', padx=15, pady=5)
 
         if evidence:
-            ttk.Label(results_frame, text="Patterns Found:",
+            ttk.Label(results_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.patterns_found', default="Patterns Found:"),
                      font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=15, pady=(10, 5))
 
             patterns_found = evidence.get('patterns_found', [])
@@ -229,16 +231,16 @@ def show_code_analysis_results(self, result):
 def create_citation_verification_tab(self):
     """Create citation verification tab"""
     citation_frame = ttk.Frame(self.notebook)
-    self.notebook.add(citation_frame, text="📚 Citations")
+    self.notebook.add(citation_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.tabs.citations', default="📚 Citations"))
 
     # Citation verification card
     citation_card = ttk.Frame(citation_frame, style='Card.TFrame')
     citation_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(citation_card, text="Citation Verification", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(citation_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.citation_verification', default="Citation Verification"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Text input for citation checking
-    input_frame = ttk.LabelFrame(citation_card, text="Enter Text with Citations", padding=15)
+    input_frame = ttk.LabelFrame(citation_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.enter_text_with_citations', default="Enter Text with Citations"), padding=15)
     input_frame.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
     import scrolledtext
@@ -246,7 +248,7 @@ def create_citation_verification_tab(self):
     self.citation_text.pack(fill='both', expand=True)
 
     # Verify button
-    ttk.Button(citation_card, text="Verify Citations",
+    ttk.Button(citation_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.verify_citations', default="Verify Citations"),
               command=self.verify_citations).pack(pady=15)
 
     # Results
@@ -264,10 +266,10 @@ def create_citation_verification_view(self, parent):
     citation_card = ttk.Frame(citation_frame, style='Card.TFrame')
     citation_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(citation_card, text="Citation Verification", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(citation_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.citation_verification', default="Citation Verification"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Text input for citation verification
-    ttk.Label(citation_card, text="Text with Citations:", style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=(10, 5))
+    ttk.Label(citation_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.text_with_citations', default="Text with Citations:"), style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=(10, 5))
 
     self.citation_text = scrolledtext.ScrolledText(
         citation_card, wrap=tk.WORD, height=12,
@@ -288,13 +290,13 @@ def create_citation_verification_view(self, parent):
     options_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     self.verify_dois_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(options_frame, text="Verify DOIs", variable=self.verify_dois_var).pack(side='left')
+    ttk.Checkbutton(options_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.verify_dois', default="Verify DOIs"), variable=self.verify_dois_var).pack(side='left')
 
     self.check_dates_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(options_frame, text="Check Publication Dates", variable=self.check_dates_var).pack(side='left', padx=(15, 0))
+    ttk.Checkbutton(options_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.check_publication_dates', default="Check Publication Dates"), variable=self.check_dates_var).pack(side='left', padx=(15, 0))
 
     # Verify button
-    ttk.Button(citation_card, text="🔍 Verify Citations",
+    ttk.Button(citation_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.verify_citations_variant_2', default="🔍 Verify Citations"),
               command=self.verify_citations, style='Accent.TButton').pack(pady=(0, 15))
 
 
@@ -302,7 +304,7 @@ def verify_citations(self):
     """Verify citations in text"""
     text = self.citation_text.get('1.0', tk.END).strip()
     if not text:
-        messagebox.showwarning("Warning", "Please enter text with citations")
+        messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.please_enter_text_with_citations', default="Please enter text with citations"))
         return
 
     try:
@@ -310,19 +312,19 @@ def verify_citations(self):
             result = self.detector.citation_verifier.verify_citations(text)
             self.show_citation_results(result)
         else:
-            messagebox.showwarning("Warning", "Citation verification not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.citation_verification_not_available', default="Citation verification not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to verify citations: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.error', default="Error"), f"Failed to verify citations: {str(e)}")
 
 
 def show_citation_results(self, result):
     """Show citation verification results"""
     results_window = tk.Toplevel(self.root)
-    results_window.title("Citation Verification Results")
+    results_window.title(_t('gui.academics.ai_detector.multimodal_citation_view.windows.citation_verification_results', default="Citation Verification Results"))
     results_window.geometry("800x600")
     results_window.configure(bg=self.colors['bg_primary'])
 
-    ttk.Label(results_window, text="Citation Verification Results", style='Title.TLabel').pack(pady=20)
+    ttk.Label(results_window, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.citation_verification_results', default="Citation Verification Results"), style='Title.TLabel').pack(pady=20)
 
     # Create scrollable frame
     canvas = tk.Canvas(results_window, bg=self.colors['bg_primary'])
@@ -351,7 +353,7 @@ def show_citation_results(self, result):
 
         # Citation details
         if evidence and 'citation_details' in evidence:
-            details_frame = ttk.LabelFrame(scrollable_frame, text="Citation Details", padding=15)
+            details_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.citation_details', default="Citation Details"), padding=15)
             details_frame.pack(fill='x', padx=20, pady=10)
 
             for i, citation_detail in enumerate(evidence['citation_details'], 1):
@@ -379,21 +381,21 @@ def show_citation_results(self, result):
 def create_temporal_analysis_tab(self):
     """Create temporal analysis tab"""
     temporal_frame = ttk.Frame(self.notebook)
-    self.notebook.add(temporal_frame, text="⏱️ Temporal")
+    self.notebook.add(temporal_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.tabs.temporal', default="⏱️ Temporal"))
 
     # Temporal analysis card
     temporal_card = ttk.Frame(temporal_frame, style='Card.TFrame')
     temporal_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(temporal_card, text="Temporal Analysis", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(temporal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.temporal_analysis', default="Temporal Analysis"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Analysis options
-    options_frame = ttk.LabelFrame(temporal_card, text="Analysis Options", padding=15)
+    options_frame = ttk.LabelFrame(temporal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.analysis_options', default="Analysis Options"), padding=15)
     options_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(options_frame, text="📅 Submission Patterns",
+    ttk.Button(options_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.submission_patterns', default="📅 Submission Patterns"),
               command=self.show_submission_patterns).pack(fill='x', pady=(0, 5))
-    ttk.Button(options_frame, text="⚡ Writing Speed Analysis",
+    ttk.Button(options_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.writing_speed_analysis', default="⚡ Writing Speed Analysis"),
               command=self.analyze_writing_speed).pack(fill='x')
 
 
@@ -407,36 +409,36 @@ def create_temporal_analysis_view(self, parent):
     temporal_card = ttk.Frame(temporal_frame, style='Card.TFrame')
     temporal_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(temporal_card, text="Temporal Analysis", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(temporal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.temporal_analysis', default="Temporal Analysis"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Writing speed analysis
-    speed_frame = ttk.LabelFrame(temporal_card, text="Writing Speed Analysis", padding=15)
+    speed_frame = ttk.LabelFrame(temporal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.writing_speed_analysis', default="Writing Speed Analysis"), padding=15)
     speed_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     # Input fields
     input_frame = ttk.Frame(speed_frame)
     input_frame.pack(fill='x')
 
-    ttk.Label(input_frame, text="Time taken (minutes):").pack(side='left')
+    ttk.Label(input_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.time_taken_minutes', default="Time taken (minutes):")).pack(side='left')
     self.time_taken_var = tk.StringVar()
     ttk.Entry(input_frame, textvariable=self.time_taken_var, width=10).pack(side='left', padx=(5, 15))
 
-    ttk.Label(input_frame, text="Word count:").pack(side='left')
+    ttk.Label(input_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.word_count', default="Word count:")).pack(side='left')
     self.word_count_display = ttk.Label(input_frame, text="0")
     self.word_count_display.pack(side='left', padx=(5, 15))
 
-    ttk.Button(input_frame, text="📊 Analyze Writing Speed",
+    ttk.Button(input_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.analyze_writing_speed', default="📊 Analyze Writing Speed"),
               command=self.analyze_writing_speed).pack(side='right')
 
     # Student submission patterns
-    patterns_frame = ttk.LabelFrame(temporal_card, text="Submission Patterns", padding=15)
+    patterns_frame = ttk.LabelFrame(temporal_card, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.submission_patterns', default="Submission Patterns"), padding=15)
     patterns_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Label(patterns_frame, text="Student ID:").pack(side='left')
+    ttk.Label(patterns_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.student_id', default="Student ID:")).pack(side='left')
     self.temporal_student_var = tk.StringVar()
     ttk.Entry(patterns_frame, textvariable=self.temporal_student_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Button(patterns_frame, text="📈 Analyze Patterns",
+    ttk.Button(patterns_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.buttons.analyze_patterns', default="📈 Analyze Patterns"),
               command=self.analyze_submission_patterns).pack(side='right')
 
     # Results display
@@ -449,7 +451,7 @@ def analyze_writing_speed(self):
     try:
         time_taken_str = self.time_taken_var.get()
         if not time_taken_str:
-            messagebox.showwarning("Warning", "Please enter time taken")
+            messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.please_enter_time_taken', default="Please enter time taken"))
             return
 
         time_taken_minutes = float(time_taken_str)
@@ -457,25 +459,25 @@ def analyze_writing_speed(self):
 
         text = self.text_input.get('1.0', tk.END).strip()
         if not text:
-            messagebox.showwarning("Warning", "Please enter text in the main analysis tab")
+            messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.please_enter_text_in_the_main_analysis_tab', default="Please enter text in the main analysis tab"))
             return
 
         if hasattr(self.detector, 'temporal_analyzer'):
             result = self.detector.temporal_analyzer.analyze_writing_speed(text, time_taken_seconds)
             self.show_temporal_results(result)
         else:
-            messagebox.showwarning("Warning", "Temporal analysis not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.temporal_analysis_not_available', default="Temporal analysis not available"))
     except ValueError:
-        messagebox.showerror("Error", "Please enter a valid number for time taken")
+        messagebox.showerror(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.error', default="Error"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.please_enter_a_valid_number_for_time_taken', default="Please enter a valid number for time taken"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to analyze writing speed: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.error', default="Error"), f"Failed to analyze writing speed: {str(e)}")
 
 
 def analyze_submission_patterns(self):
     """Analyze student submission patterns"""
     student_id = self.temporal_student_var.get()
     if not student_id:
-        messagebox.showwarning("Warning", "Please enter a Student ID")
+        messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.please_enter_a_student_id', default="Please enter a Student ID"))
         return
 
     try:
@@ -483,9 +485,9 @@ def analyze_submission_patterns(self):
             patterns = self.detector.temporal_analyzer.analyze_submission_patterns(student_id)
             self.show_submission_patterns(patterns)
         else:
-            messagebox.showwarning("Warning", "Temporal analysis not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.multimodal_citation_view.dialogs.temporal_analysis_not_available', default="Temporal analysis not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to analyze patterns: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.multimodal_citation_view.dialogs.error', default="Error"), f"Failed to analyze patterns: {str(e)}")
 
 
 def show_temporal_results(self, result):
@@ -502,7 +504,7 @@ def show_temporal_results(self, result):
         evidence = result.evidence
         risk_level = result.risk_level.value if hasattr(result.risk_level, 'value') else str(result.risk_level)
 
-        ttk.Label(results_frame, text="Writing Speed Analysis Results",
+        ttk.Label(results_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.writing_speed_analysis_results', default="Writing Speed Analysis Results"),
                  font=('Segoe UI', 12, 'bold')).pack(anchor='w', padx=15, pady=(15, 5))
 
         ttk.Label(results_frame, text=f"Anomaly Score: {score:.1%}").pack(anchor='w', padx=15, pady=2)
@@ -528,14 +530,14 @@ def show_submission_patterns(self, patterns):
     patterns_frame = ttk.Frame(self.temporal_results_frame, style='Card.TFrame')
     patterns_frame.pack(fill='x', pady=10)
 
-    ttk.Label(patterns_frame, text="Submission Patterns Analysis",
+    ttk.Label(patterns_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.submission_patterns_analysis', default="Submission Patterns Analysis"),
              font=('Segoe UI', 12, 'bold')).pack(anchor='w', padx=15, pady=(15, 5))
 
     if 'error' in patterns:
         ttk.Label(patterns_frame, text=f"Error: {patterns['error']}",
                  foreground=self.colors['danger']).pack(anchor='w', padx=15, pady=5)
     elif 'insufficient_data' in patterns:
-        ttk.Label(patterns_frame, text="Insufficient data for pattern analysis",
+        ttk.Label(patterns_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.insufficient_data_for_pattern_analysis', default="Insufficient data for pattern analysis"),
                  style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=5)
     else:
         # Display pattern metrics
@@ -551,10 +553,10 @@ def show_submission_patterns(self, patterns):
 
         # Warnings for suspicious patterns
         if suspicious_ratio > 0.3:
-            ttk.Label(patterns_frame, text="Warning: High frequency of late-night submissions",
+            ttk.Label(patterns_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.warning_high_frequency_of_late_night_submissions', default="Warning: High frequency of late-night submissions"),
                      foreground=self.colors['warning']).pack(anchor='w', padx=15, pady=5)
         if regular_intervals > 3:
-            ttk.Label(patterns_frame, text="Warning: Unusually regular submission intervals",
+            ttk.Label(patterns_frame, text=_t('gui.academics.ai_detector.multimodal_citation_view.labels.warning_unusually_regular_submission_intervals', default="Warning: Unusually regular submission intervals"),
                      foreground=self.colors['warning']).pack(anchor='w', padx=15, pady=5)
 
 

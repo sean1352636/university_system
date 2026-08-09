@@ -1,4 +1,6 @@
 """Violation recording/editing dialog."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -26,39 +28,39 @@ class ViolationDialog:
         main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # Vehicle Lookup Section
-        lookup_frame = ttk.LabelFrame(main_frame, text="Vehicle Lookup", padding="5")
+        lookup_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.vehicle_lookup', default="Vehicle Lookup"), padding="5")
         lookup_frame.grid(row=0, column=0, columnspan=3, sticky="ew", pady=(0, 10))
 
-        ttk.Label(lookup_frame, text="License Plate:").grid(row=0, column=0, sticky="w", padx=5)
+        ttk.Label(lookup_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.license_plate', default="License Plate:")).grid(row=0, column=0, sticky="w", padx=5)
         self.plate_var = tk.StringVar()
         self.plate_entry = ttk.Entry(lookup_frame, textvariable=self.plate_var, width=20)
         self.plate_entry.grid(row=0, column=1, padx=5)
 
-        ttk.Button(lookup_frame, text="Lookup Vehicle",
+        ttk.Button(lookup_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.buttons.lookup_vehicle', default="Lookup Vehicle"),
                   command=self.lookup_vehicle).grid(row=0, column=2, padx=5)
 
         # Vehicle & Owner Info Display (read-only)
-        info_frame = ttk.LabelFrame(main_frame, text="Vehicle & Owner Information", padding="5")
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.vehicle_owner_information', default="Vehicle & Owner Information"), padding="5")
         info_frame.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(0, 10))
 
-        ttk.Label(info_frame, text="Vehicle:").grid(row=0, column=0, sticky="w", pady=2)
-        self.vehicle_info_var = tk.StringVar(value="Not found")
+        ttk.Label(info_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.vehicle', default="Vehicle:")).grid(row=0, column=0, sticky="w", pady=2)
+        self.vehicle_info_var = tk.StringVar(value=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.values.not_found', default="Not found"))
         ttk.Entry(info_frame, textvariable=self.vehicle_info_var, state="readonly", width=40).grid(row=0, column=1, sticky="ew", pady=2, padx=(5, 0))
 
-        ttk.Label(info_frame, text="Owner:").grid(row=1, column=0, sticky="w", pady=2)
-        self.owner_info_var = tk.StringVar(value="Not found")
+        ttk.Label(info_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.owner', default="Owner:")).grid(row=1, column=0, sticky="w", pady=2)
+        self.owner_info_var = tk.StringVar(value=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.values.not_found', default="Not found"))
         ttk.Entry(info_frame, textvariable=self.owner_info_var, state="readonly", width=40).grid(row=1, column=1, sticky="ew", pady=2, padx=(5, 0))
 
-        ttk.Label(info_frame, text="Email:").grid(row=2, column=0, sticky="w", pady=2)
-        self.email_var = tk.StringVar(value="Not found")
+        ttk.Label(info_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.email', default="Email:")).grid(row=2, column=0, sticky="w", pady=2)
+        self.email_var = tk.StringVar(value=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.values.not_found', default="Not found"))
         ttk.Entry(info_frame, textvariable=self.email_var, state="readonly", width=40).grid(row=2, column=1, sticky="ew", pady=2, padx=(5, 0))
 
         info_frame.columnconfigure(1, weight=1)
 
         # Violation info
-        ttk.Label(main_frame, text="Violation Details", font=('Arial', 10, 'bold')).grid(row=2, column=0, columnspan=2, sticky="w", pady=(10, 5))
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.violation_details', default="Violation Details"), font=('Arial', 10, 'bold')).grid(row=2, column=0, columnspan=2, sticky="w", pady=(10, 5))
 
-        ttk.Label(main_frame, text="Violation Type:").grid(row=3, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.violation_type', default="Violation Type:")).grid(row=3, column=0, sticky="w", pady=5)
         self.type_var = tk.StringVar()
         violation_types = ["No Permit", "Expired Permit", "Wrong Zone", "Improper Parking",
                           "Blocking Access", "Fire Lane", "Handicap Zone", "Other"]
@@ -66,34 +68,34 @@ class ViolationDialog:
                                  values=violation_types, state="readonly")
         type_combo.grid(row=3, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Location:").grid(row=4, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.location', default="Location:")).grid(row=4, column=0, sticky="w", pady=5)
         self.location_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.location_var).grid(row=4, column=1, sticky="ew", pady=5)
 
-        ttk.Label(main_frame, text="Fine Amount:").grid(row=5, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.fine_amount', default="Fine Amount:")).grid(row=5, column=0, sticky="w", pady=5)
         self.fine_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.fine_var).grid(row=5, column=1, sticky="ew", pady=5)
 
         # Payment status (for editing)
         if self.violation_data:
-            ttk.Label(main_frame, text="Payment Status:").grid(row=6, column=0, sticky="w", pady=5)
+            ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.payment_status', default="Payment Status:")).grid(row=6, column=0, sticky="w", pady=5)
             self.status_var = tk.StringVar()
             status_combo = ttk.Combobox(main_frame, textvariable=self.status_var,
                                        values=["Paid", "Unpaid", "Appealed", "Waived"], state="readonly")
             status_combo.grid(row=6, column=1, sticky="ew", pady=5)
 
         # Send Email Notification checkbox
-        ttk.Label(main_frame, text="Notification:").grid(row=7, column=0, sticky="w", pady=5)
+        ttk.Label(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.labels.notification', default="Notification:")).grid(row=7, column=0, sticky="w", pady=5)
         self.send_email_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(main_frame, text="Send violation email to owner",
+        ttk.Checkbutton(main_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.buttons.send_violation_email_to_owner', default="Send violation email to owner"),
                        variable=self.send_email_var).grid(row=7, column=1, sticky="w", pady=5)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=8, column=0, columnspan=2, pady=20)
 
-        ttk.Button(button_frame, text="Save", command=self.save).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.buttons.save', default="Save"), command=self.save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.buttons.cancel', default="Cancel"), command=self.cancel).pack(side=tk.LEFT, padx=5)
 
         main_frame.columnconfigure(1, weight=1)
 
@@ -109,7 +111,7 @@ class ViolationDialog:
         license_plate = self.plate_var.get().strip().upper()
 
         if not license_plate:
-            messagebox.showwarning("Warning", "Please enter a license plate")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.warning', default="Warning"), _t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.please_enter_a_license_plate', default="Please enter a license plate"))
             return
 
         try:
@@ -169,7 +171,7 @@ class ViolationDialog:
                         self.owner_info_var.set(owner_name)
                         self.email_var.set(email)
 
-                        messagebox.showinfo("Success",
+                        messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.success', default="Success"),
                             f"Vehicle found!\n\n"
                             f"Vehicle: {vehicle_desc}\n"
                             f"Owner: {owner_name}\n"
@@ -177,13 +179,13 @@ class ViolationDialog:
                     else:
                         self.owner_info_var.set("Owner not found in database")
                         self.email_var.set("No email")
-                        messagebox.showwarning("Partial Match",
+                        messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.partial_match', default="Partial Match"),
                             f"Vehicle found: {vehicle_desc}\n"
                             f"But owner ID {owner_id} not found in students or users database")
                 else:
                     self.owner_info_var.set("No owner linked")
                     self.email_var.set("No email")
-                    messagebox.showinfo("Vehicle Found",
+                    messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.vehicle_found', default="Vehicle Found"),
                         f"Vehicle found: {vehicle_desc}\n"
                         f"No owner is linked to this vehicle")
             else:
@@ -192,13 +194,13 @@ class ViolationDialog:
                 self.email_var.set("Not found")
                 self.vehicle_id = None
                 self.student_id = None
-                messagebox.showwarning("Not Found",
+                messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.not_found', default="Not Found"),
                     f"No vehicle found with license plate: {license_plate}")
 
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to lookup vehicle: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.error', default="Error"), f"Failed to lookup vehicle: {e}")
             logging.error(f"Vehicle lookup error in violation dialog: {e}")
 
     def set_default_fine(self, event=None):
@@ -230,7 +232,7 @@ class ViolationDialog:
         # Validate required fields
         if not all([self.plate_var.get(), self.type_var.get(),
                    self.location_var.get(), self.fine_var.get()]):
-            messagebox.showerror("Error", "Please fill in all required fields")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields"))
             return
 
         try:
@@ -238,7 +240,7 @@ class ViolationDialog:
             if fine_amount < 0:
                 raise ValueError("Fine amount cannot be negative")
         except ValueError:
-            messagebox.showerror("Error", "Please enter a valid fine amount")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.dialogs.please_enter_a_valid_fine_amount', default="Please enter a valid fine amount"))
             return
 
         self.result = {
@@ -246,7 +248,7 @@ class ViolationDialog:
             'violation_type': self.type_var.get(),
             'location': self.location_var.get(),
             'fine_amount': fine_amount,
-            'payment_status': getattr(self, 'status_var', tk.StringVar(value='Unpaid')).get(),
+            'payment_status': getattr(self, 'status_var', tk.StringVar(value=_t('gui.operations.campus.mobility.parking_management.dialogs.violation_dialog.values.unpaid', default='Unpaid'))).get(),
             'vehicle_id': self.vehicle_id,
             'student_id': self.student_id,
             'send_email': self.send_email_var.get(),

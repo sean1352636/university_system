@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -68,7 +70,7 @@ def show_dashboard(self):
         welcome_label.pack(pady=(0, 10))
 
     # User info card
-    user_frame = ttk.LabelFrame(self.content_frame, text="Your Account", padding=15)
+    user_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.dashboard.labels.your_account', default="Your Account"), padding=15)
     user_frame.pack(fill=tk.X, padx=20, pady=10)
 
     if current_user:
@@ -103,7 +105,7 @@ def show_dashboard(self):
     left_column = ttk.Frame(activity_frame)
     left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
 
-    alerts_label = ttk.Label(left_column, text="Recent Alerts", style='Heading.TLabel')
+    alerts_label = ttk.Label(left_column, text=_t('gui.academics.parent_portal.dashboard.labels.recent_alerts', default="Recent Alerts"), style='Heading.TLabel')
     alerts_label.pack(anchor='w')
 
     alerts_text = scrolledtext.ScrolledText(left_column, height=15, width=40)
@@ -113,7 +115,7 @@ def show_dashboard(self):
     right_column = ttk.Frame(activity_frame)
     right_column.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
 
-    children_label = ttk.Label(right_column, text="My Students", style='Heading.TLabel')
+    children_label = ttk.Label(right_column, text=_t('gui.academics.parent_portal.dashboard.labels.my_students', default="My Students"), style='Heading.TLabel')
     children_label.pack(anchor='w')
 
     children_frame = ttk.Frame(right_column)
@@ -173,7 +175,7 @@ def load_dashboard_data(self, alerts_text, children_frame):
                     child_card = self.create_child_card(children_frame, child)
                     child_card.pack(fill=tk.X, pady=5)
             else:
-                no_children_label = ttk.Label(children_frame, text="No students linked to your account")
+                no_children_label = ttk.Label(children_frame, text=_t('gui.academics.parent_portal.dashboard.labels.no_students_linked_to_your_account', default="No students linked to your account"))
                 no_children_label.pack()
 
             alerts_text.delete(1.0, tk.END)
@@ -203,11 +205,11 @@ def create_child_card(self, parent, child):
     btn_frame = ttk.Frame(card)
     btn_frame.pack(fill=tk.X, pady=5)
 
-    view_grades_btn = ttk.Button(btn_frame, text="Grades",
+    view_grades_btn = ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.dashboard.buttons.grades', default="Grades"),
                                command=lambda c=child: self.view_child_grades(c))
     view_grades_btn.pack(side=tk.LEFT, padx=2)
 
-    view_attendance_btn = ttk.Button(btn_frame, text="Attendance",
+    view_attendance_btn = ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.dashboard.buttons.attendance', default="Attendance"),
                                    command=lambda c=child: self.view_child_attendance(c))
     view_attendance_btn.pack(side=tk.LEFT, padx=2)
 
@@ -219,7 +221,7 @@ def show_quick_actions(self):
     self.clear_content()
     self.update_status("Quick Actions")
 
-    title = ttk.Label(self.content_frame, text="Quick Actions", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.dashboard.labels.quick_actions', default="Quick Actions"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     actions_frame = ttk.Frame(self.content_frame)
@@ -253,10 +255,10 @@ ParentPortalGUI.show_quick_actions = show_quick_actions
 def view_todays_alerts(self):
     """View today's alerts from email system and notifications"""
     alerts_window = tk.Toplevel(self.root)
-    alerts_window.title("Today's Alerts")
+    alerts_window.title(_t('gui.academics.parent_portal.dashboard.windows.today_s_alerts', default="Today's Alerts"))
     alerts_window.geometry("700x500")
 
-    title = ttk.Label(alerts_window, text="Today's Alerts", font=('Arial', 16, 'bold'))
+    title = ttk.Label(alerts_window, text=_t('gui.academics.parent_portal.dashboard.labels.today_s_alerts', default="Today's Alerts"), font=('Arial', 16, 'bold'))
     title.pack(pady=10)
 
     # Get current user info
@@ -269,12 +271,12 @@ def view_todays_alerts(self):
 
     # Emails tab
     emails_frame = ttk.Frame(notebook)
-    notebook.add(emails_frame, text="Emails")
+    notebook.add(emails_frame, text=_t('gui.academics.parent_portal.dashboard.tabs.emails', default="Emails"))
 
     emails_tree = ttk.Treeview(emails_frame, columns=("Time", "Subject", "Status"), show='headings', height=10)
-    emails_tree.heading("Time", text="Time")
-    emails_tree.heading("Subject", text="Subject")
-    emails_tree.heading("Status", text="Status")
+    emails_tree.heading("Time", text=_t('gui.academics.parent_portal.dashboard.headings.time', default="Time"))
+    emails_tree.heading("Subject", text=_t('gui.academics.parent_portal.dashboard.headings.subject', default="Subject"))
+    emails_tree.heading("Status", text=_t('gui.academics.parent_portal.dashboard.headings.status', default="Status"))
     emails_tree.column("Time", width=120)
     emails_tree.column("Subject", width=350)
     emails_tree.column("Status", width=80)
@@ -286,13 +288,13 @@ def view_todays_alerts(self):
 
     # Notifications tab
     notif_frame = ttk.Frame(notebook)
-    notebook.add(notif_frame, text="Notifications")
+    notebook.add(notif_frame, text=_t('gui.academics.parent_portal.dashboard.tabs.notifications', default="Notifications"))
 
     notif_tree = ttk.Treeview(notif_frame, columns=("Time", "Type", "Content", "Read"), show='headings', height=10)
-    notif_tree.heading("Time", text="Time")
-    notif_tree.heading("Type", text="Type")
-    notif_tree.heading("Content", text="Content")
-    notif_tree.heading("Read", text="Read")
+    notif_tree.heading("Time", text=_t('gui.academics.parent_portal.dashboard.headings.time', default="Time"))
+    notif_tree.heading("Type", text=_t('gui.academics.parent_portal.dashboard.headings.type', default="Type"))
+    notif_tree.heading("Content", text=_t('gui.academics.parent_portal.dashboard.headings.content', default="Content"))
+    notif_tree.heading("Read", text=_t('gui.academics.parent_portal.dashboard.headings.read', default="Read"))
     notif_tree.column("Time", width=120)
     notif_tree.column("Type", width=100)
     notif_tree.column("Content", width=300)
@@ -305,7 +307,7 @@ def view_todays_alerts(self):
 
     # Emergency alerts tab
     emergency_frame = ttk.Frame(notebook)
-    notebook.add(emergency_frame, text="Emergency Alerts")
+    notebook.add(emergency_frame, text=_t('gui.academics.parent_portal.dashboard.tabs.emergency_alerts', default="Emergency Alerts"))
 
     emergency_text = scrolledtext.ScrolledText(emergency_frame, height=12)
     emergency_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
@@ -401,17 +403,17 @@ def view_todays_alerts(self):
         alerts_window.destroy()
         self.view_todays_alerts()
 
-    ttk.Button(btn_frame, text="Refresh", command=refresh_alerts).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Close", command=alerts_window.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.dashboard.buttons.refresh', default="Refresh"), command=refresh_alerts).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.dashboard.buttons.close', default="Close"), command=alerts_window.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.view_todays_alerts = view_todays_alerts
 
 def view_urgent_messages(self):
     """View urgent messages from email system and parent messages"""
     messages_window = tk.Toplevel(self.root)
-    messages_window.title("Urgent Messages")
+    messages_window.title(_t('gui.academics.parent_portal.dashboard.windows.urgent_messages', default="Urgent Messages"))
     messages_window.geometry("750x550")
 
-    title = ttk.Label(messages_window, text="Urgent Messages", font=('Arial', 16, 'bold'))
+    title = ttk.Label(messages_window, text=_t('gui.academics.parent_portal.dashboard.labels.urgent_messages', default="Urgent Messages"), font=('Arial', 16, 'bold'))
     title.pack(pady=10)
 
     # Create notebook for message types
@@ -420,17 +422,17 @@ def view_urgent_messages(self):
 
     # Parent messages tab (from teachers/staff)
     parent_msg_frame = ttk.Frame(notebook)
-    notebook.add(parent_msg_frame, text="Instructor Messages")
+    notebook.add(parent_msg_frame, text=_t('gui.academics.parent_portal.dashboard.tabs.instructor_messages', default="Instructor Messages"))
 
     msg_tree = ttk.Treeview(parent_msg_frame,
         columns=("Date", "From", "Student", "Message", "Read"),
         show='headings', height=12)
 
-    msg_tree.heading("Date", text="Date")
-    msg_tree.heading("From", text="From")
-    msg_tree.heading("Student", text="Student")
-    msg_tree.heading("Message", text="Message")
-    msg_tree.heading("Read", text="Read")
+    msg_tree.heading("Date", text=_t('gui.academics.parent_portal.dashboard.headings.date', default="Date"))
+    msg_tree.heading("From", text=_t('gui.academics.parent_portal.dashboard.headings.from', default="From"))
+    msg_tree.heading("Student", text=_t('gui.academics.parent_portal.dashboard.headings.student', default="Student"))
+    msg_tree.heading("Message", text=_t('gui.academics.parent_portal.dashboard.headings.message', default="Message"))
+    msg_tree.heading("Read", text=_t('gui.academics.parent_portal.dashboard.headings.read', default="Read"))
 
     msg_tree.column("Date", width=100)
     msg_tree.column("From", width=120)
@@ -445,15 +447,15 @@ def view_urgent_messages(self):
 
     # High priority emails tab
     email_frame = ttk.Frame(notebook)
-    notebook.add(email_frame, text="Important Emails")
+    notebook.add(email_frame, text=_t('gui.academics.parent_portal.dashboard.tabs.important_emails', default="Important Emails"))
 
     email_tree = ttk.Treeview(email_frame,
         columns=("Date", "Subject", "Related To"),
         show='headings', height=12)
 
-    email_tree.heading("Date", text="Date")
-    email_tree.heading("Subject", text="Subject")
-    email_tree.heading("Related To", text="Related To")
+    email_tree.heading("Date", text=_t('gui.academics.parent_portal.dashboard.headings.date', default="Date"))
+    email_tree.heading("Subject", text=_t('gui.academics.parent_portal.dashboard.headings.subject', default="Subject"))
+    email_tree.heading("Related To", text=_t('gui.academics.parent_portal.dashboard.headings.related_to', default="Related To"))
 
     email_tree.column("Date", width=120)
     email_tree.column("Subject", width=350)
@@ -465,7 +467,7 @@ def view_urgent_messages(self):
     email_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Message details frame
-    details_frame = ttk.LabelFrame(messages_window, text="Message Details", padding=10)
+    details_frame = ttk.LabelFrame(messages_window, text=_t('gui.academics.parent_portal.dashboard.labels.message_details', default="Message Details"), padding=10)
     details_frame.pack(fill=tk.X, padx=10, pady=5)
 
     details_text = scrolledtext.ScrolledText(details_frame, height=6)
@@ -639,12 +641,12 @@ def view_urgent_messages(self):
             cursor.execute("UPDATE parent_messages SET is_read = 1 WHERE parent_id = ?", (self.parent_id,))
             conn.commit()
             conn.close()
-            messagebox.showinfo("Success", "All messages marked as read.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.dashboard.dialogs.success', default="Success"), _t('gui.academics.parent_portal.dashboard.dialogs.all_messages_marked_as_read', default="All messages marked as read."))
             refresh()
         except Exception as e:
-            messagebox.showerror("Error", f"Error: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.dashboard.dialogs.error', default="Error"), f"Error: {e}")
 
-    ttk.Button(btn_frame, text="Mark All Read", command=mark_all_read).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Refresh", command=refresh).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="Close", command=messages_window.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.dashboard.buttons.mark_all_read', default="Mark All Read"), command=mark_all_read).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.dashboard.buttons.refresh', default="Refresh"), command=refresh).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.dashboard.buttons.close', default="Close"), command=messages_window.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.view_urgent_messages = view_urgent_messages

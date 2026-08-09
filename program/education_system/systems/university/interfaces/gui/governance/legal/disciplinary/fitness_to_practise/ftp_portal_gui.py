@@ -8,6 +8,8 @@ in-process via ``UnifiedManagementGUI.show_fitness_to_practise_gui``).
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import logging
 import sqlite3
@@ -60,7 +62,7 @@ class FitnessToPractisePortal:
         # Window sizing follows the project convention
         # (memory: feedback_window_sizing — 1400x900 + minsize(1200,800);
         #  no zoomed/fullscreen).
-        self.root.title("Fitness to Practise Portal")
+        self.root.title(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.windows.fitness_to_practise_portal', default="Fitness to Practise Portal"))
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
 
@@ -90,7 +92,7 @@ class FitnessToPractisePortal:
     def _build_ui(self):
         header = ttk.Frame(self.root, padding=10)
         header.pack(side=tk.TOP, fill=tk.X)
-        ttk.Label(header, text="⚖  Fitness to Practise",
+        ttk.Label(header, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.fitness_to_practise', default="⚖  Fitness to Practise"),
                   font=('Helvetica', 16, 'bold')).pack(side=tk.LEFT)
         self.stats_var = tk.StringVar(value="")
         ttk.Label(header, textvariable=self.stats_var,
@@ -106,10 +108,10 @@ class FitnessToPractisePortal:
         self.concerns_tab = ttk.Frame(nb)
         self.events_tab = ttk.Frame(nb)
         self.outcomes_tab = ttk.Frame(nb)
-        nb.add(self.cases_tab, text="Cases")
-        nb.add(self.concerns_tab, text="Concerns")
-        nb.add(self.events_tab, text="Events")
-        nb.add(self.outcomes_tab, text="Outcomes")
+        nb.add(self.cases_tab, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.tabs.cases', default="Cases"))
+        nb.add(self.concerns_tab, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.tabs.concerns', default="Concerns"))
+        nb.add(self.events_tab, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.tabs.events', default="Events"))
+        nb.add(self.outcomes_tab, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.tabs.outcomes', default="Outcomes"))
 
         self._build_cases_tab(self.cases_tab)
         self._build_concerns_tab(self.concerns_tab)
@@ -123,7 +125,7 @@ class FitnessToPractisePortal:
     def _build_open_in_bar(self, parent) -> None:
         bar = ttk.Frame(parent, padding=(10, 0, 10, 4))
         bar.pack(fill=tk.X)
-        ttk.Label(bar, text="Open in:",
+        ttk.Label(bar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.open_in', default="Open in:"),
                   font=('Helvetica', 9, 'bold')).pack(side=tk.LEFT,
                                                        padx=(0, 6))
         for label, method in self._OPEN_IN_TARGETS:
@@ -137,7 +139,7 @@ class FitnessToPractisePortal:
 
         ttk.Separator(bar, orient="vertical").pack(side=tk.LEFT,
                                                     padx=8, fill=tk.Y)
-        ttk.Label(bar, text="Selected case:",
+        ttk.Label(bar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.selected_case', default="Selected case:"),
                   font=('Helvetica', 9, 'italic')).pack(side=tk.LEFT,
                                                         padx=(0, 4))
         for label, method in (
@@ -157,15 +159,15 @@ class FitnessToPractisePortal:
                                  context: dict | None) -> None:
         if not self.app:
             messagebox.showinfo(
-                "Not available",
-                "Cross-module navigation requires the main GUI; open "
-                "this dashboard from the main menu rather than standalone.",
+                _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.not_available', default="Not available"),
+                _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.cross_module_navigation_requires_the_main_gui_open_this_dashboar', default="Cross-module navigation requires the main GUI; open "
+                "this dashboard from the main menu rather than standalone."),
                 parent=self.root,
             )
             return
         fn = getattr(self.app, method_name, None)
         if fn is None:
-            messagebox.showwarning("Not available",
+            messagebox.showwarning(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.not_available', default="Not available"),
                                     f"{label} is not registered on this build.",
                                     parent=self.root)
             return
@@ -177,7 +179,7 @@ class FitnessToPractisePortal:
             fn()
         except Exception as exc:
             logger.exception("Open-in %s failed", method_name)
-            messagebox.showerror("Failed to open",
+            messagebox.showerror(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.failed_to_open', default="Failed to open"),
                                   f"Could not open {label}: {exc}",
                                   parent=self.root)
 
@@ -200,7 +202,7 @@ class FitnessToPractisePortal:
     def _require_case_for(self, action: str) -> dict | None:
         case = self._selected_case()
         if not case:
-            messagebox.showinfo("Pick a case",
+            messagebox.showinfo(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.pick_a_case', default="Pick a case"),
                                  f"Select a case in the Cases tab first to {action}.",
                                  parent=self.root)
         return case
@@ -230,8 +232,8 @@ class FitnessToPractisePortal:
             return None
         if not case.get("source_record_id"):
             messagebox.showinfo(
-                "No source",
-                "This FtP case wasn't referred from a disciplinary record.",
+                _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.no_source', default="No source"),
+                _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.this_ftp_case_wasn_t_referred_from_a_disciplinary_record', default="This FtP case wasn't referred from a disciplinary record."),
                 parent=self.root)
             return None
         payload = {
@@ -339,7 +341,7 @@ class FitnessToPractisePortal:
         toolbar = ttk.Frame(parent, padding=(8, 8))
         toolbar.pack(side=tk.TOP, fill=tk.X)
 
-        ttk.Label(toolbar, text="Stage:").pack(side=tk.LEFT)
+        ttk.Label(toolbar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.stage', default="Stage:")).pack(side=tk.LEFT)
         self.filter_stage = ttk.Combobox(
             toolbar, values=('All', *STAGES), state='readonly', width=20)
         self.filter_stage.set('All')
@@ -347,7 +349,7 @@ class FitnessToPractisePortal:
         self.filter_stage.bind('<<ComboboxSelected>>',
                                lambda *_: self._refresh_cases())
 
-        ttk.Label(toolbar, text="Regulator:").pack(side=tk.LEFT)
+        ttk.Label(toolbar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.regulator', default="Regulator:")).pack(side=tk.LEFT)
         self.filter_regulator = ttk.Combobox(
             toolbar, values=('All', *REGULATORS), state='readonly', width=10)
         self.filter_regulator.set('All')
@@ -355,16 +357,16 @@ class FitnessToPractisePortal:
         self.filter_regulator.bind('<<ComboboxSelected>>',
                                    lambda *_: self._refresh_cases())
 
-        ttk.Label(toolbar, text="Search:").pack(side=tk.LEFT)
+        ttk.Label(toolbar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.search', default="Search:")).pack(side=tk.LEFT)
         self.search_var = tk.StringVar()
         ttk.Entry(toolbar, textvariable=self.search_var, width=24).pack(
             side=tk.LEFT, padx=(2, 4))
-        ttk.Button(toolbar, text="Go",
+        ttk.Button(toolbar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.go', default="Go"),
                    command=self._refresh_cases).pack(side=tk.LEFT)
 
-        ttk.Button(toolbar, text="New Case",
+        ttk.Button(toolbar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.new_case', default="New Case"),
                    command=self._open_new_case_dialog).pack(side=tk.RIGHT)
-        ttk.Button(toolbar, text="Export CSV",
+        ttk.Button(toolbar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.export_csv', default="Export CSV"),
                    command=self._export_cases_csv).pack(
             side=tk.RIGHT, padx=(0, 6))
 
@@ -391,12 +393,12 @@ class FitnessToPractisePortal:
 
         action_bar = ttk.Frame(parent, padding=(8, 0, 8, 8))
         action_bar.pack(side=tk.BOTTOM, fill=tk.X)
-        ttk.Button(action_bar, text="Change Stage",
+        ttk.Button(action_bar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.change_stage', default="Change Stage"),
                    command=self._open_stage_dialog).pack(side=tk.LEFT)
-        ttk.Button(action_bar, text="Close Case",
+        ttk.Button(action_bar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.close_case', default="Close Case"),
                    command=lambda: self._quick_stage('Closed')).pack(
             side=tk.LEFT, padx=6)
-        ttk.Button(action_bar, text="Delete",
+        ttk.Button(action_bar, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.delete', default="Delete"),
                    command=self._delete_selected_case).pack(side=tk.LEFT)
 
     # ---- Concerns tab ----
@@ -404,7 +406,7 @@ class FitnessToPractisePortal:
         top = ttk.Frame(parent, padding=8)
         top.pack(side=tk.TOP, fill=tk.X)
         self.concerns_case_label = ttk.Label(
-            top, text="(select a case in the Cases tab)",
+            top, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.select_a_case_in_the_cases_tab', default="(select a case in the Cases tab)"),
             font=('Helvetica', 10, 'italic'))
         self.concerns_case_label.pack(side=tk.LEFT)
 
@@ -416,17 +418,17 @@ class FitnessToPractisePortal:
             self.concerns_tree.column(c, width=w, anchor=tk.W)
         self.concerns_tree.pack(fill=tk.BOTH, expand=True, padx=8)
 
-        form = ttk.LabelFrame(parent, text="Add Concern", padding=8)
+        form = ttk.LabelFrame(parent, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.add_concern', default="Add Concern"), padding=8)
         form.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=8)
-        ttk.Label(form, text="Category:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.category', default="Category:")).grid(row=0, column=0, sticky=tk.W)
         self.concern_cat = ttk.Combobox(form, values=CONCERN_CATEGORIES,
                                         state='readonly', width=30)
         self.concern_cat.grid(row=0, column=1, sticky=tk.W, padx=4)
-        ttk.Label(form, text="Description:").grid(row=1, column=0,
+        ttk.Label(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.description', default="Description:")).grid(row=1, column=0,
                                                   sticky=tk.NW, pady=4)
         self.concern_desc = tk.Text(form, height=3, width=80)
         self.concern_desc.grid(row=1, column=1, sticky=tk.W, padx=4)
-        ttk.Button(form, text="Add", command=self._add_concern).grid(
+        ttk.Button(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.add', default="Add"), command=self._add_concern).grid(
             row=2, column=1, sticky=tk.E, pady=4)
 
     # ---- Events tab ----
@@ -434,7 +436,7 @@ class FitnessToPractisePortal:
         top = ttk.Frame(parent, padding=8)
         top.pack(side=tk.TOP, fill=tk.X)
         self.events_case_label = ttk.Label(
-            top, text="(select a case in the Cases tab)",
+            top, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.select_a_case_in_the_cases_tab', default="(select a case in the Cases tab)"),
             font=('Helvetica', 10, 'italic'))
         self.events_case_label.pack(side=tk.LEFT)
 
@@ -446,16 +448,16 @@ class FitnessToPractisePortal:
             self.events_tree.column(c, width=w, anchor=tk.W)
         self.events_tree.pack(fill=tk.BOTH, expand=True, padx=8)
 
-        form = ttk.LabelFrame(parent, text="Add Event", padding=8)
+        form = ttk.LabelFrame(parent, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.add_event', default="Add Event"), padding=8)
         form.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=8)
-        ttk.Label(form, text="Type:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.type', default="Type:")).grid(row=0, column=0, sticky=tk.W)
         self.event_type = ttk.Entry(form, width=40)
         self.event_type.grid(row=0, column=1, sticky=tk.W, padx=4)
-        ttk.Label(form, text="Notes:").grid(row=1, column=0,
+        ttk.Label(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.notes', default="Notes:")).grid(row=1, column=0,
                                             sticky=tk.NW, pady=4)
         self.event_notes = tk.Text(form, height=3, width=80)
         self.event_notes.grid(row=1, column=1, sticky=tk.W, padx=4)
-        ttk.Button(form, text="Add", command=self._add_event).grid(
+        ttk.Button(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.add', default="Add"), command=self._add_event).grid(
             row=2, column=1, sticky=tk.E, pady=4)
 
     # ---- Outcomes tab ----
@@ -463,7 +465,7 @@ class FitnessToPractisePortal:
         top = ttk.Frame(parent, padding=8)
         top.pack(side=tk.TOP, fill=tk.X)
         self.outcomes_case_label = ttk.Label(
-            top, text="(select a case in the Cases tab)",
+            top, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.select_a_case_in_the_cases_tab', default="(select a case in the Cases tab)"),
             font=('Helvetica', 10, 'italic'))
         self.outcomes_case_label.pack(side=tk.LEFT)
 
@@ -476,25 +478,25 @@ class FitnessToPractisePortal:
             self.outcomes_tree.column(c, width=w, anchor=tk.W)
         self.outcomes_tree.pack(fill=tk.BOTH, expand=True, padx=8)
 
-        form = ttk.LabelFrame(parent, text="Record Outcome", padding=8)
+        form = ttk.LabelFrame(parent, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.record_outcome', default="Record Outcome"), padding=8)
         form.pack(side=tk.BOTTOM, fill=tk.X, padx=8, pady=8)
-        ttk.Label(form, text="Outcome:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.outcome', default="Outcome:")).grid(row=0, column=0, sticky=tk.W)
         self.outcome_var = ttk.Combobox(form, values=OUTCOMES,
                                         state='readonly', width=35)
         self.outcome_var.grid(row=0, column=1, sticky=tk.W, padx=4)
-        ttk.Label(form, text="Sanction:").grid(row=0, column=2, sticky=tk.W)
+        ttk.Label(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.sanction', default="Sanction:")).grid(row=0, column=2, sticky=tk.W)
         self.sanction_var = ttk.Entry(form, width=25)
         self.sanction_var.grid(row=0, column=3, sticky=tk.W, padx=4)
-        ttk.Label(form, text="Review date (YYYY-MM-DD):").grid(
+        ttk.Label(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.review_date_yyyy_mm_dd', default="Review date (YYYY-MM-DD):")).grid(
             row=1, column=0, sticky=tk.W, pady=4)
         self.review_var = ttk.Entry(form, width=20)
         self.review_var.grid(row=1, column=1, sticky=tk.W, padx=4)
-        ttk.Label(form, text="Conditions:").grid(row=2, column=0,
+        ttk.Label(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.conditions', default="Conditions:")).grid(row=2, column=0,
                                                  sticky=tk.NW, pady=4)
         self.conditions_text = tk.Text(form, height=3, width=80)
         self.conditions_text.grid(row=2, column=1, columnspan=3,
                                   sticky=tk.W, padx=4)
-        ttk.Button(form, text="Record",
+        ttk.Button(form, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.record', default="Record"),
                    command=self._add_outcome).grid(
             row=3, column=3, sticky=tk.E, pady=4)
 
@@ -559,14 +561,14 @@ class FitnessToPractisePortal:
 
     def _require_case(self):
         if not self.selected_case_id:
-            messagebox.showinfo("FtP", "Select a case in the Cases tab first.")
+            messagebox.showinfo(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"), _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.select_a_case_in_the_cases_tab_first', default="Select a case in the Cases tab first."))
             return False
         return True
 
     # ---- New case dialog ----
     def _open_new_case_dialog(self):
         d = tk.Toplevel(self.root)
-        d.title("New FtP Case")
+        d.title(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.windows.new_ftp_case', default="New FtP Case"))
         d.transient(self.root)
         d.grab_set()
         d.geometry("560x520")
@@ -615,7 +617,7 @@ class FitnessToPractisePortal:
         fields['source_record_id'] = ttk.Entry(d, width=30)
         add("Source disciplinary id (optional):",
             fields['source_record_id'], 10)
-        ttk.Label(d, text="Summary:").grid(
+        ttk.Label(d, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.summary', default="Summary:")).grid(
             row=11, column=0, sticky=tk.NW, padx=8, pady=4)
         summary = tk.Text(d, height=5, width=40)
         summary.grid(row=11, column=1, sticky=tk.W, padx=8, pady=4)
@@ -623,14 +625,14 @@ class FitnessToPractisePortal:
         def save():
             sid = fields['student_id'].get().strip()
             if not sid:
-                messagebox.showerror("FtP", "Student ID is required.")
+                messagebox.showerror(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"), _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.student_id_is_required', default="Student ID is required."))
                 return
             try:
                 src = fields['source_record_id'].get().strip()
                 src_id = int(src) if src else None
             except ValueError:
-                messagebox.showerror("FtP",
-                                     "Source record id must be numeric.")
+                messagebox.showerror(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"),
+                                     _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.source_record_id_must_be_numeric', default="Source record id must be numeric."))
                 return
             data = {k: w.get().strip() if hasattr(w, 'get') else None
                     for k, w in fields.items()}
@@ -639,13 +641,13 @@ class FitnessToPractisePortal:
             try:
                 case_id = self.db.create_case(data)
             except sqlite3.Error as e:
-                messagebox.showerror("FtP", f"Could not create case:\n{e}")
+                messagebox.showerror(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"), f"Could not create case:\n{e}")
                 return
-            messagebox.showinfo("FtP", f"Case #{case_id} opened.")
+            messagebox.showinfo(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"), f"Case #{case_id} opened.")
             d.destroy()
             self._refresh_cases()
 
-        ttk.Button(d, text="Save", command=save).grid(
+        ttk.Button(d, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.save', default="Save"), command=save).grid(
             row=12, column=1, sticky=tk.E, padx=8, pady=10)
 
     # ---- Stage change ----
@@ -653,14 +655,14 @@ class FitnessToPractisePortal:
         if not self._require_case():
             return
         d = tk.Toplevel(self.root)
-        d.title("Change Stage")
+        d.title(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.windows.change_stage', default="Change Stage"))
         d.transient(self.root)
         d.grab_set()
-        ttk.Label(d, text="New stage:").grid(row=0, column=0,
+        ttk.Label(d, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.new_stage', default="New stage:")).grid(row=0, column=0,
                                              padx=8, pady=8, sticky=tk.W)
         cb = ttk.Combobox(d, values=STAGES, state='readonly', width=28)
         cb.grid(row=0, column=1, padx=8, pady=8)
-        ttk.Label(d, text="Notes:").grid(row=1, column=0,
+        ttk.Label(d, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.labels.notes', default="Notes:")).grid(row=1, column=0,
                                          padx=8, pady=4, sticky=tk.NW)
         notes = tk.Text(d, height=4, width=40)
         notes.grid(row=1, column=1, padx=8, pady=4)
@@ -675,14 +677,14 @@ class FitnessToPractisePortal:
             self._refresh_cases()
             self._reload_events()
 
-        ttk.Button(d, text="Apply", command=apply).grid(
+        ttk.Button(d, text=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.buttons.apply', default="Apply"), command=apply).grid(
             row=2, column=1, sticky=tk.E, padx=8, pady=10)
 
     def _quick_stage(self, stage):
         if not self._require_case():
             return
         if not messagebox.askyesno(
-                "FtP", f"Set case #{self.selected_case_id} to '{stage}'?"):
+                _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"), f"Set case #{self.selected_case_id} to '{stage}'?"):
             return
         self.db.update_stage(self.selected_case_id, stage)
         self._refresh_cases()
@@ -692,7 +694,7 @@ class FitnessToPractisePortal:
         if not self._require_case():
             return
         if not messagebox.askyesno(
-                "FtP",
+                _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"),
                 f"Delete case #{self.selected_case_id} and all its "
                 "concerns/events/outcomes? This cannot be undone."):
             return
@@ -710,7 +712,7 @@ class FitnessToPractisePortal:
         cat = self.concern_cat.get()
         desc = self.concern_desc.get('1.0', tk.END).strip()
         if not cat or not desc:
-            messagebox.showerror("FtP", "Category and description required.")
+            messagebox.showerror(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"), _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.category_and_description_required', default="Category and description required."))
             return
         self.db.add_concern(self.selected_case_id, cat, desc)
         self.concern_desc.delete('1.0', tk.END)
@@ -723,7 +725,7 @@ class FitnessToPractisePortal:
         et = self.event_type.get().strip()
         notes = self.event_notes.get('1.0', tk.END).strip()
         if not et:
-            messagebox.showerror("FtP", "Event type required.")
+            messagebox.showerror(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"), _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.event_type_required', default="Event type required."))
             return
         self.db.add_event(self.selected_case_id, et, notes)
         self.event_type.delete(0, tk.END)
@@ -735,7 +737,7 @@ class FitnessToPractisePortal:
             return
         outcome = self.outcome_var.get()
         if not outcome:
-            messagebox.showerror("FtP", "Select an outcome.")
+            messagebox.showerror(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"), _t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.select_an_outcome', default="Select an outcome."))
             return
         self.db.add_outcome(
             self.selected_case_id,
@@ -752,7 +754,7 @@ class FitnessToPractisePortal:
     # ---- Export ----
     def _export_cases_csv(self):
         path = filedialog.asksaveasfilename(
-            title="Export FtP cases",
+            title=_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.export_ftp_cases', default="Export FtP cases"),
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv")],
             initialfile=f"ftp_cases_{datetime.now():%Y%m%d}.csv")
@@ -767,4 +769,4 @@ class FitnessToPractisePortal:
             w.writerow(('case_id', 'student_id', 'name', 'programme',
                         'regulator', 'stage', 'risk', 'officer', 'opened'))
             w.writerows(rows)
-        messagebox.showinfo("FtP", f"Exported {len(rows)} rows.")
+        messagebox.showinfo(_t('gui.governance.legal.disciplinary.fitness_to_practise.ftp_portal.dialogs.ftp', default="FtP"), f"Exported {len(rows)} rows.")

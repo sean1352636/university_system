@@ -1,5 +1,7 @@
 """Main Assignment GUI - coordinates all manager classes"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH
@@ -272,7 +274,7 @@ class AssignmentGUI:
             from education_system.platform.governance.academic_misconduct.academic_misconduct_gui import AcademicMisconductPanel
             import tkinter as _tk
             window = _tk.Toplevel(self.root)
-            window.title("Academic Misconduct")
+            window.title(_t('gui.academics.assignment_system.assignment.windows.academic_misconduct', default="Academic Misconduct"))
             window.geometry("1200x800")
             AcademicMisconductPanel(window, system_key='university')
         except Exception as e:
@@ -316,7 +318,7 @@ class AssignmentGUI:
 
         descriptors = [d for d in curr.list_module_descriptors() if d["module_code"] == module_code]
         if not descriptors:
-            messagebox.showinfo("Not found",
+            messagebox.showinfo(_t('gui.academics.assignment_system.assignment.dialogs.not_found', default="Not found"),
                                 f"No curriculum-spec descriptor for {module_code}.",
                                 parent=self.root)
             return
@@ -439,7 +441,7 @@ class AssignmentGUI:
             open_mc_gui_for_student(self.root, student_id=student_id)
         except Exception as exc:
             from tkinter import messagebox
-            messagebox.showerror("Error", f"Failed to open MC GUI: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.assignment.dialogs.error', default="Error"), f"Failed to open MC GUI: {exc}")
 
     def show_send_messages(self):
         return self.messaging.show_send_messages()
@@ -766,7 +768,7 @@ class AssignmentGUI:
         from education_system.systems.university.interfaces.gui.academics._cross_dialogs import (
             show_module_timeline_dialog,
         )
-        code = simpledialog.askstring("Module timeline", "Module code:")
+        code = simpledialog.askstring(_t('gui.academics.assignment_system.assignment.dialogs.module_timeline', default="Module timeline"), _t('gui.academics.assignment_system.assignment.dialogs.module_code', default="Module code:"))
         if code:
             show_module_timeline_dialog(self.root, code)
 
@@ -776,14 +778,14 @@ class AssignmentGUI:
         """Initialize submission directories"""
         try:
             from pathlib import Path
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
 
             # Create main directories
             directories = [
-                paths.DATA_DIR / 'assignments',
-                paths.SUBMISSIONS_DIR,
-                paths.DATA_DIR / 'backups' / 'assignments',
-                paths.DATA_DIR / 'temp' / 'assignments',
+                paths.UNIVERSITY_DATA_DIR / 'assignments',
+                paths.UNIVERSITY_SUBMISSIONS_DIR,
+                paths.UNIVERSITY_DATA_DIR / 'backups' / 'assignments',
+                paths.UNIVERSITY_DATA_DIR / 'temp' / 'assignments',
             ]
 
             for directory in directories:

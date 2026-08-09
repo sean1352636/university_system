@@ -6,7 +6,6 @@ import os
 import re
 import secrets
 import shutil
-import sqlite3
 import sys
 import tkinter as tk
 import webbrowser
@@ -22,9 +21,12 @@ from education_system.systems.university.domain.safeguarding.config import (
 
 
 def _connect():
-    from education_system.systems.university.infrastructure.database.db import get_connection
+    from education_system.platform.kernel.adapters import ClassifiedStorage
+    from education_system.systems.university.infrastructure.database.db import (
+        get_connection,
+    )
 
-    return get_connection()
+    return get_connection(ClassifiedStorage().database_path("safeguarding"))
 
 
 _EXTRA_COLUMNS = [
@@ -89,6 +91,18 @@ def init_db():
     """Create the safeguarding_submissions table and migrate new columns."""
     conn = _connect()
     cur = conn.cursor()
+    # This database has its own migration lifecycle; retained here only for
+    # direct-script compatibility until the legacy launcher is removed.
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS university_event_outbox (
+            event_id TEXT PRIMARY KEY, event_name TEXT NOT NULL,
+            event_version INTEGER NOT NULL, aggregate_id TEXT NOT NULL,
+            correlation_id TEXT NOT NULL, causation_id TEXT,
+            idempotency_key TEXT NOT NULL UNIQUE, payload_json TEXT NOT NULL,
+            available_at TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
+            delivered_at TEXT, dead_lettered_at TEXT, last_error TEXT
+        )
+    """)
     cur.execute("""
         CREATE TABLE IF NOT EXISTS safeguarding_submissions (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -246,7 +260,7 @@ def init_db():
 
 def _remove_legacy_db():
     """Delete the old per-module safeguarding.db (and WAL/SHM siblings)
-    — data now lives in the central student_records.db."""
+    after a separately approved migration into classified storage."""
     for suffix in ("", "-wal", "-shm", "-journal"):
         path = _LEGACY_DB_FILE + suffix
         if os.path.exists(path):

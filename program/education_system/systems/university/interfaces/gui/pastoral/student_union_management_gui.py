@@ -26,12 +26,15 @@ except ImportError:
 
 # Import shared constants
 try:
-    from education_system.systems.university.infrastructure.paths import PROJECT_ROOT, DEFAULT_DB_PATH
+    from education_system.paths import (
+        UNIVERSITY_PROJECT_ROOT as PROJECT_ROOT,
+        UNIVERSITY_DEFAULT_DB_PATH as DEFAULT_DB_PATH,
+    )
 except ImportError:
     # Fallback: import from paths module
-    from education_system.systems.university.infrastructure import paths
-    PROJECT_ROOT = paths.PROJECT_ROOT
-    DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+    from education_system import paths
+    PROJECT_ROOT = paths.UNIVERSITY_PROJECT_ROOT
+    DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.i18n import get_text, _

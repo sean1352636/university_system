@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.shared_context import get_auth
 import csv
 import json
@@ -118,7 +118,7 @@ def revenue_summary_report():
 
 def generate_budget_variance_report():
     """Generate a basic budget variance report comparing planned vs actual spending."""
-    conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+    conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH))
     cursor = conn.cursor()
 
     # This assumes a 'budgets' table and 'expenses' table exist

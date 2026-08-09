@@ -338,7 +338,7 @@ def export_individual_student_data(self, student_id, first_name, last_name):
 
         ttk.Label(main_frame, text=_t("student_export.dialog.select_format")).pack(anchor=tk.W, pady=(0, 10))
 
-        format_var = tk.StringVar(value="csv")
+        format_var = tk.StringVar(value=_t('gui.learners.students.student_export.values.csv_variant_2', default="csv"))
         formats = [
             (_t("student_export.formats.csv"), "csv"),
             (_t("student_export.formats.excel"), "xlsx"),
@@ -680,7 +680,7 @@ def export_data_dialog(self):
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     ttk.Label(main_frame, text=_t("student_export.dialog.export_format")).grid(row=0, column=0, sticky=tk.W, pady=10)
-    format_var = tk.StringVar(value="CSV")
+    format_var = tk.StringVar(value=_t('gui.learners.students.student_export.values.csv', default="CSV"))
 
     formats = [(_t("student_export.formats.csv_short"), "CSV"), (_t("student_export.formats.excel_short"), "Excel"), (_t("student_export.formats.pdf_short"), "PDF"), (_t("student_export.formats.text_short"), "Text")]
     for i, (text, value) in enumerate(formats):

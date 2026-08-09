@@ -13,6 +13,8 @@ Wires eight features onto ``ModuleSchedulingGUI``:
 """
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import math
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -239,11 +241,11 @@ def show_back_to_back_report(self):
     travel = core.find_travel_violations(assigns, rooms_by_id, options)
 
     win = tk.Toplevel(self.root)
-    win.title("Back-to-Back & Travel-Time Report")
+    win.title(_t('gui.academics.module_scheduling.auto_scheduler.windows.back_to_back_travel_time_report', default="Back-to-Back & Travel-Time Report"))
     win.geometry("760x520")
     win.transient(self.root)
 
-    ttk.Label(win, text="Back-to-back sessions (tight/zero transition)",
+    ttk.Label(win, text=_t('gui.academics.module_scheduling.auto_scheduler.labels.back_to_back_sessions_tight_zero_transition', default="Back-to-back sessions (tight/zero transition)"),
               font=("Arial", 11, "bold")).pack(anchor="w", padx=10, pady=(10, 2))
     cols = ("Instructor", "Day", "Gap (min)", "Same building", "First", "Second")
     t1 = ttk.Treeview(win, columns=cols, show="headings", height=8)
@@ -258,7 +260,7 @@ def show_back_to_back_report(self):
     if not b2b:
         t1.insert("", tk.END, values=("—", "None found", "", "", "", ""))
 
-    ttk.Label(win, text="Travel-time violations (different buildings, gap too short)",
+    ttk.Label(win, text=_t('gui.academics.module_scheduling.auto_scheduler.labels.travel_time_violations_different_buildings_gap_too_short', default="Travel-time violations (different buildings, gap too short)"),
               font=("Arial", 11, "bold")).pack(anchor="w", padx=10, pady=(12, 2))
     cols2 = ("Instructor", "Day", "Gap", "Required", "From", "To")
     t2 = ttk.Treeview(win, columns=cols2, show="headings", height=6)
@@ -273,7 +275,7 @@ def show_back_to_back_report(self):
     if not travel:
         t2.insert("", tk.END, values=("—", "None found", "", "", "", ""))
 
-    ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
+    ttk.Button(win, text=_t('gui.academics.module_scheduling.auto_scheduler.buttons.close', default="Close"), command=win.destroy).pack(pady=10)
 
 
 ModuleSchedulingGUI.show_back_to_back_report = show_back_to_back_report
@@ -287,18 +289,18 @@ def show_auto_scheduler_dialog(self):
     run the solver, preview the proposed timetable and its impact, then commit
     (sandbox draft or live) or discard."""
     dialog = tk.Toplevel(self.root)
-    dialog.title("Auto-Scheduler — What-If Simulation")
+    dialog.title(_t('gui.academics.module_scheduling.auto_scheduler.windows.auto_scheduler_what_if_simulation', default="Auto-Scheduler — What-If Simulation"))
     dialog.geometry("1040x760")
     dialog.transient(self.root)
 
     self._auto_last_result = None
 
     # ---- Controls (top) ----------------------------------------------------
-    ctrl = ttk.LabelFrame(dialog, text="1. Optimization goal & constraints", padding=10)
+    ctrl = ttk.LabelFrame(dialog, text=_t('gui.academics.module_scheduling.auto_scheduler.labels.value_1_optimization_goal_constraints', default="1. Optimization goal & constraints"), padding=10)
     ctrl.pack(fill=tk.X, padx=10, pady=(10, 4))
 
-    goal_var = tk.StringVar(value="balanced")
-    ttk.Label(ctrl, text="Goal:").grid(row=0, column=0, sticky="w", padx=4, pady=3)
+    goal_var = tk.StringVar(value=_t('gui.academics.module_scheduling.auto_scheduler.values.balanced', default="balanced"))
+    ttk.Label(ctrl, text=_t('gui.academics.module_scheduling.auto_scheduler.labels.goal', default="Goal:")).grid(row=0, column=0, sticky="w", padx=4, pady=3)
     goal_labels = {
         "balanced": "Balanced",
         "room_utilization": "Room utilization",
@@ -328,12 +330,12 @@ def show_auto_scheduler_dialog(self):
     _add_spin(ctrl, "Travel time (min):", travel_var, 0, 120, 5, 2)
     _add_spin(ctrl, "Min transition (min):", transition_var, 0, 60, 5, 3)
     _add_spin(ctrl, "Forecast growth (%):", growth_var, 0, 200, 5, 4)
-    ttk.Checkbutton(ctrl, text="Only unscheduled modules",
+    ttk.Checkbutton(ctrl, text=_t('gui.academics.module_scheduling.auto_scheduler.buttons.only_unscheduled_modules', default="Only unscheduled modules"),
                     variable=only_unsched_var).grid(row=0, column=4, columnspan=2,
                                                      sticky="w", padx=4)
 
     # ---- Weights (tunable) -------------------------------------------------
-    wframe = ttk.LabelFrame(dialog, text="2. Soft-constraint weights (tunable)", padding=10)
+    wframe = ttk.LabelFrame(dialog, text=_t('gui.academics.module_scheduling.auto_scheduler.labels.value_2_soft_constraint_weights_tunable', default="2. Soft-constraint weights (tunable)"), padding=10)
     wframe.pack(fill=tk.X, padx=10, pady=4)
     weight_vars = {
         "gap_per_hour": tk.DoubleVar(),
@@ -363,7 +365,7 @@ def show_auto_scheduler_dialog(self):
     _load_goal_weights()
 
     # ---- Summary + results -------------------------------------------------
-    summary_var = tk.StringVar(value="Run a simulation to preview a proposed timetable.")
+    summary_var = tk.StringVar(value=_t('gui.academics.module_scheduling.auto_scheduler.values.run_a_simulation_to_preview_a_proposed_timetable', default="Run a simulation to preview a proposed timetable."))
     ttk.Label(dialog, textvariable=summary_var, font=("Arial", 10),
               justify="left", wraplength=1000).pack(anchor="w", padx=12, pady=(6, 2))
 
@@ -371,7 +373,7 @@ def show_auto_scheduler_dialog(self):
     nb.pack(fill=tk.BOTH, expand=True, padx=10, pady=4)
 
     prop_frame = ttk.Frame(nb)
-    nb.add(prop_frame, text="Proposed placements")
+    nb.add(prop_frame, text=_t('gui.academics.module_scheduling.auto_scheduler.tabs.proposed_placements', default="Proposed placements"))
     prop_cols = ("Module", "Type", "Day", "Start", "End", "Room", "Instructor",
                  "Headcount", "Capacity")
     prop_tree = ttk.Treeview(prop_frame, columns=prop_cols, show="headings")
@@ -384,7 +386,7 @@ def show_auto_scheduler_dialog(self):
     psb.pack(side=tk.RIGHT, fill=tk.Y)
 
     issues_frame = ttk.Frame(nb)
-    nb.add(issues_frame, text="Unplaced / conflicts")
+    nb.add(issues_frame, text=_t('gui.academics.module_scheduling.auto_scheduler.tabs.unplaced_conflicts', default="Unplaced / conflicts"))
     issues_txt = tk.Text(issues_frame, wrap="word")
     issues_txt.pack(fill=tk.BOTH, expand=True)
 
@@ -485,18 +487,18 @@ def show_auto_scheduler_dialog(self):
     btns = ttk.Frame(dialog)
     btns.pack(fill=tk.X, padx=10, pady=(4, 10))
 
-    ttk.Button(btns, text="▶ Run simulation", command=run_simulation).pack(side=tk.LEFT, padx=4)
+    ttk.Button(btns, text=_t('gui.academics.module_scheduling.auto_scheduler.buttons.run_simulation', default="▶ Run simulation"), command=run_simulation).pack(side=tk.LEFT, padx=4)
 
     def _commit(status):
         result = getattr(self, "_auto_last_result", None)
         if not result or not result.assignments:
-            messagebox.showwarning("Nothing to commit",
-                                   "Run a simulation with at least one placement first.",
+            messagebox.showwarning(_t('gui.academics.module_scheduling.auto_scheduler.dialogs.nothing_to_commit', default="Nothing to commit"),
+                                   _t('gui.academics.module_scheduling.auto_scheduler.dialogs.run_a_simulation_with_at_least_one_placement_first', default="Run a simulation with at least one placement first."),
                                    parent=dialog)
             return
         label = "sandbox draft" if status == "draft" else "the live timetable"
         if not messagebox.askyesno(
-                "Confirm commit",
+                _t('gui.academics.module_scheduling.auto_scheduler.dialogs.confirm_commit', default="Confirm commit"),
                 f"Write {len(result.assignments)} proposed session(s) to {label}?",
                 parent=dialog):
             return
@@ -506,19 +508,19 @@ def show_auto_scheduler_dialog(self):
         except Exception:
             pass
         messagebox.showinfo(
-            "Commit complete",
+            _t('gui.academics.module_scheduling.auto_scheduler.dialogs.commit_complete', default="Commit complete"),
             f"Committed {committed} session(s) as {status}."
             + (f" {failed} could not be written (conflicts)." if failed else ""),
             parent=dialog)
 
-    ttk.Button(btns, text="Commit as Draft (sandbox)",
+    ttk.Button(btns, text=_t('gui.academics.module_scheduling.auto_scheduler.buttons.commit_as_draft_sandbox', default="Commit as Draft (sandbox)"),
                command=lambda: _commit("draft")).pack(side=tk.LEFT, padx=4)
-    ttk.Button(btns, text="Commit as Published (live)",
+    ttk.Button(btns, text=_t('gui.academics.module_scheduling.auto_scheduler.buttons.commit_as_published_live', default="Commit as Published (live)"),
                command=lambda: _commit("published")).pack(side=tk.LEFT, padx=4)
 
     def _clear_sandbox():
-        if not messagebox.askyesno("Clear sandbox",
-                                   "Delete all draft (sandbox) schedule rows?",
+        if not messagebox.askyesno(_t('gui.academics.module_scheduling.auto_scheduler.dialogs.clear_sandbox', default="Clear sandbox"),
+                                   _t('gui.academics.module_scheduling.auto_scheduler.dialogs.delete_all_draft_sandbox_schedule_rows', default="Delete all draft (sandbox) schedule rows?"),
                                    parent=dialog):
             return
         removed = self.clear_sandbox_drafts()
@@ -526,12 +528,12 @@ def show_auto_scheduler_dialog(self):
             self.refresh_all_data()
         except Exception:
             pass
-        messagebox.showinfo("Sandbox cleared", f"Removed {removed} draft row(s).",
+        messagebox.showinfo(_t('gui.academics.module_scheduling.auto_scheduler.dialogs.sandbox_cleared', default="Sandbox cleared"), f"Removed {removed} draft row(s).",
                             parent=dialog)
 
-    ttk.Button(btns, text="Clear sandbox drafts",
+    ttk.Button(btns, text=_t('gui.academics.module_scheduling.auto_scheduler.buttons.clear_sandbox_drafts', default="Clear sandbox drafts"),
                command=_clear_sandbox).pack(side=tk.LEFT, padx=4)
-    ttk.Button(btns, text="Discard & Close",
+    ttk.Button(btns, text=_t('gui.academics.module_scheduling.auto_scheduler.buttons.discard_close', default="Discard & Close"),
                command=dialog.destroy).pack(side=tk.RIGHT, padx=4)
 
 

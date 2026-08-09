@@ -1,4 +1,6 @@
 """Payments & Refunds tab mixin for ParkingManagementGUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -19,10 +21,10 @@ class PaymentsMixin:
         toolbar = ttk.Frame(self.payments_frame)
         toolbar.pack(fill=tk.X, padx=5, pady=5)
 
-        ttk.Button(toolbar, text="Refund Payment", command=self.refund_selected_payment).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="View Details", command=self.view_payment_details).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text=_t('gui.operations.campus.mobility.parking_management.tabs.payments.buttons.refund_payment', default="Refund Payment"), command=self.refund_selected_payment).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text=_t('gui.operations.campus.mobility.parking_management.tabs.payments.buttons.view_details', default="View Details"), command=self.view_payment_details).pack(side=tk.LEFT, padx=2)
         ttk.Button(toolbar, text=_t("common.refresh"), command=self.refresh_payments).pack(side=tk.LEFT, padx=2)
-        ttk.Button(toolbar, text="Export to CSV", command=self.export_payments_csv).pack(side=tk.LEFT, padx=2)
+        ttk.Button(toolbar, text=_t('gui.operations.campus.mobility.parking_management.tabs.payments.buttons.export_to_csv', default="Export to CSV"), command=self.export_payments_csv).pack(side=tk.LEFT, padx=2)
 
         # Search frame
         search_frame = ttk.Frame(self.payments_frame)
@@ -100,7 +102,7 @@ class PaymentsMixin:
 
         except Exception as e:
             logging.error(f"Error refreshing payments: {e}")
-            messagebox.showerror("Error", f"Failed to load payments: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.error', default="Error"), f"Failed to load payments: {str(e)}")
 
     def filter_payments(self, event=None):
         """Filter payments by search term"""
@@ -121,14 +123,14 @@ class PaymentsMixin:
         """Refund selected payment"""
         selection = self.payments_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a payment to refund.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.please_select_a_payment_to_refund', default="Please select a payment to refund."))
             return
 
         values = self.payments_tree.item(selection[0])['values']
 
         # Check if already refunded
         if values[6] == 'Refunded':
-            messagebox.showwarning("Already Refunded", "This payment has already been refunded.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.already_refunded', default="Already Refunded"), _t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.this_payment_has_already_been_refunded', default="This payment has already been refunded."))
             return
 
         # Get full payment data
@@ -148,7 +150,7 @@ class PaymentsMixin:
         """View payment details"""
         selection = self.payments_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a payment to view.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.please_select_a_payment_to_view', default="Please select a payment to view."))
             return
 
         values = self.payments_tree.item(selection[0])['values']
@@ -179,7 +181,7 @@ Student ID: {payment[6] or 'N/A'}
 Processed By: {payment[7] or 'N/A'}
 Notes: {payment[8] or 'None'}
 """
-            messagebox.showinfo("Payment Details", details)
+            messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.payment_details', default="Payment Details"), details)
 
     def export_payments_csv(self):
         """Export payments to CSV"""
@@ -213,11 +215,11 @@ Notes: {payment[8] or 'None'}
                                "Date", "Student ID", "Processed By"])
                 writer.writerows(payments)
 
-            messagebox.showinfo("Export Successful", f"Payments exported to:\n{filename}")
+            messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.export_successful', default="Export Successful"), f"Payments exported to:\n{filename}")
 
         except Exception as e:
             logging.error(f"Error exporting payments: {e}")
-            messagebox.showerror("Export Error", f"Failed to export payments: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.export_error', default="Export Error"), f"Failed to export payments: {str(e)}")
 
     def process_payment(self, violation_data):
         """Show payment dialog and process payment"""
@@ -303,12 +305,12 @@ Notes: {payment[8] or 'None'}
             # Refresh violations list
             self.refresh_violations()
 
-            messagebox.showinfo("Payment Successful",
+            messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.payment_successful', default="Payment Successful"),
                               f"Payment processed successfully!\nReference: {payment_ref}")
 
         except Exception as e:
             logging.error(f"Error processing payment: {e}")
-            messagebox.showerror("Payment Error", f"Failed to process payment: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.payment_error', default="Payment Error"), f"Failed to process payment: {str(e)}")
 
     def send_payment_confirmation_email(self, violation_id, amount, payment_method, payment_ref, student_id, violation_data):
         """Send payment confirmation email"""
@@ -476,12 +478,12 @@ University Parking Management
             if hasattr(self, 'refresh_payments'):
                 self.refresh_payments()
 
-            messagebox.showinfo("Refund Successful",
+            messagebox.showinfo(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.refund_successful', default="Refund Successful"),
                               f"Refund processed successfully!\nReference: {refund_ref}")
 
         except Exception as e:
             logging.error(f"Error processing refund: {e}")
-            messagebox.showerror("Refund Error", f"Failed to process refund: {str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.payments.dialogs.refund_error', default="Refund Error"), f"Failed to process refund: {str(e)}")
 
     def send_refund_confirmation_email(self, violation_id, amount, refund_method, refund_ref, student_id, payment_data):
         """Send refund confirmation email"""

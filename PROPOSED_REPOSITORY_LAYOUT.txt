@@ -1,0 +1,396 @@
+PROPOSED REPOSITORY LAYOUT CHANGES
+==================================
+
+Purpose
+-------
+This document records the recommended repository-layout improvements. These
+changes should be made incrementally. They do not require a single wholesale
+rewrite.
+
+
+1. MOVE THE REPOSITORY OUT OF THE HOME-DIRECTORY ROOT
+-----------------------------------------------------
+
+Current repository location:
+
+    /home/seancatchpole989/
+
+Recommended location:
+
+    /home/seancatchpole989/projects/education-system/
+
+Target layout:
+
+    /home/seancatchpole989/
+    |-- .bashrc
+    |-- .cache/
+    |-- .claude/
+    |-- .codex/
+    |-- .config/
+    |-- .ssh/
+    `-- projects/
+        `-- education-system/          Git repository starts here
+            |-- .git/
+            |-- .github/
+            |-- deploy/
+            |-- docker/
+            |-- docs/
+            |-- tools/
+            |-- tests/
+            |-- src/
+            |-- var/
+            |-- .env.example
+            |-- .gitignore
+            |-- CHANGELOG.md
+            |-- LICENSE
+            |-- Makefile
+            |-- pyproject.toml
+            |-- README.md
+            `-- requirements.lock
+
+Reason:
+
+    The repository currently shares its root with personal shell, cache and
+    application files. Moving it removes those files from repository searches
+    and allows the home-directory-specific entries to be removed from
+    .gitignore.
+
+
+2. ADOPT A CONVENTIONAL TOP-LEVEL PROJECT LAYOUT
+------------------------------------------------
+
+Recommended tree:
+
+    education-system/
+    |-- .github/
+    |   |-- codeql/
+    |   `-- workflows/
+    |-- deploy/
+    |   |-- kubernetes/
+    |   |   |-- base/
+    |   |   `-- secret.example.yaml
+    |   `-- docker-stack.yml
+    |-- docker/
+    |   |-- Dockerfile
+    |   |-- docker-compose.yml
+    |   |-- docker-compose.monitoring.yml
+    |   |-- nginx.conf
+    |   |-- prometheus.yml
+    |   `-- promtail.yml
+    |-- docs/
+    |   |-- adr/
+    |   |-- api/
+    |   |-- operations/
+    |   |-- platform/
+    |   |-- reference/
+    |   `-- systems/
+    |       |-- apprenticeships/
+    |       |-- fe_college/
+    |       |-- nursery/
+    |       |-- primary/
+    |       |-- secondary/
+    |       |-- sixth_form/
+    |       `-- university/
+    |-- src/
+    |   `-- education_system/
+    |       |-- __init__.py
+    |       |-- __main__.py
+    |       |-- paths.py
+    |       |-- launcher/
+    |       |-- migrations/
+    |       |-- platform/
+    |       `-- systems/
+    |-- tests/
+    |   |-- launcher/
+    |   |-- migrations/
+    |   |-- platform/
+    |   |-- security/
+    |   |-- systems/
+    |   `-- tools/
+    |-- tools/
+    |   |-- college_and_apprenticeships/
+    |   |-- docs/
+    |   |-- university/
+    |   |-- supply_chain_check.py
+    |   `-- validate_deployment.py
+    |-- var/                          Ignored runtime state
+    |   |-- backups/
+    |   |-- data/
+    |   |-- logs/
+    |   |-- secrets/
+    |   |-- temp/
+    |   `-- uploads/
+    |-- .env.example
+    |-- .gitignore
+    |-- CHANGELOG.md
+    |-- CODE_OF_CONDUCT.md
+    |-- CONTRIBUTING.md
+    |-- LICENSE
+    |-- Makefile
+    |-- pyproject.toml
+    |-- README.md
+    |-- requirements.lock
+    `-- SECURITY.md
+
+Directory mapping:
+
+    program/education_system/  ->  src/education_system/
+    program/tests/             ->  tests/
+    program/docs/              ->  docs/
+    program/tools/             ->  tools/
+    program/var/               ->  var/
+    program/run.py             ->  src/education_system/__main__.py
+    root run.py                ->  remove after a compatibility period
+
+
+3. CONSOLIDATE THE APPLICATION ENTRY POINT
+------------------------------------------
+
+Replace the two run.py implementations with a package-native launcher:
+
+    src/education_system/
+    |-- __init__.py
+    |-- __main__.py                    Supports: python -m education_system
+    `-- launcher/
+        |-- __init__.py
+        |-- main.py                    main() and argument parsing
+        |-- auth.py
+        |-- dispatch.py
+        |-- menus.py
+        |-- roles.py
+        |-- system_switch.py
+        `-- systems.py
+
+The installed console entry point should target:
+
+    education-system = "education_system.launcher.main:main"
+
+The root run.py may temporarily remain as a deprecated compatibility shim that
+imports education_system.launcher.main.main.
+
+
+4. CLARIFY PLATFORM OWNERSHIP
+-----------------------------
+
+The platform should contain capabilities and delivery machinery shared by
+multiple systems:
+
+    src/education_system/platform/
+    |-- assets/
+    |   |-- static/
+    |   `-- templates/
+    |-- cross_system/
+    |   `-- adapters/
+    |-- delivery/
+    |   |-- api/
+    |   |   |-- app.py
+    |   |   |-- registration.py
+    |   |   |-- middleware/
+    |   |   |   |-- authentication.py
+    |   |   |   |-- rate_limiting.py
+    |   |   |   `-- tenancy.py
+    |   |   |-- graphql/
+    |   |   `-- websocket/
+    |   |-- cli/
+    |   |-- gui/
+    |   `-- web/
+    |-- features/
+    |-- governance/
+    |-- identity/
+    |-- integrations/
+    |-- kernel/
+    |-- services/
+    `-- testing/
+
+Move system-specific routes back to their owning systems:
+
+    platform/delivery/api/university/routes/
+        -> systems/university/interfaces/api/routes/
+
+    platform/delivery/api/sixthform/routes/
+        -> systems/sixth_form/interfaces/api/routes/
+
+The shared API platform remains responsible for hosting, middleware, router
+registration and common protocol support.
+
+
+5. USE A CANONICAL PER-SYSTEM BASELINE
+--------------------------------------
+
+Recommended structure for each mature education system:
+
+    src/education_system/systems/<system>/
+    |-- __init__.py
+    |-- manifest.py                    Key, display name and capabilities
+    |-- bootstrap.py                   Dependency wiring
+    |-- application/
+    |   |-- commands/
+    |   |-- queries/
+    |   `-- services/
+    |-- domain/
+    |   |-- academics/
+    |   |-- admissions/
+    |   |-- assessment/
+    |   |-- finance/
+    |   |-- governance/
+    |   |-- learners/
+    |   |-- operations/
+    |   |-- pastoral/
+    |   |-- progression/
+    |   |-- safeguarding/
+    |   `-- staff/
+    |-- infrastructure/
+    |   |-- database/
+    |   |-- repositories/
+    |   |-- messaging/
+    |   `-- external_services/
+    |-- interfaces/
+    |   |-- api/
+    |   |   |-- routes/
+    |   |   `-- schemas/
+    |   |-- cli/
+    |   |-- gui/
+    |   `-- web/
+    |-- integrations/
+    |-- assets/
+    `-- tests_support/                 Optional fixtures and test helpers
+
+This is a baseline, not a demand for empty placeholder directories. Systems
+should only contain layers they actually use.
+
+
+6. DECOMPOSE THE UNIVERSITY SYSTEM BY BUSINESS DOMAIN
+-----------------------------------------------------
+
+The University system is much larger than its peers. Give each major business
+domain locally navigable application, domain, infrastructure and interface
+layers:
+
+    systems/university/
+    |-- bootstrap.py
+    |-- application/
+    |-- infrastructure/
+    |-- integrations/
+    |-- plugins/
+    |-- domains/
+    |   |-- academics/
+    |   |   |-- application/
+    |   |   |-- domain/
+    |   |   |-- infrastructure/
+    |   |   `-- interfaces/
+    |   |-- admissions/
+    |   |-- assessment/
+    |   |-- finance/
+    |   |-- learners/
+    |   |-- operations/
+    |   |-- pastoral/
+    |   |-- progression/
+    |   |-- safeguarding/
+    |   `-- staff/
+    `-- shell/
+        |-- api/                       Combines domain API routers
+        |-- cli/                       Top-level navigation
+        |-- gui/                       Main window and navigation
+        `-- web/
+
+Example Finance domain:
+
+    domains/finance/
+    |-- application/
+    |   |-- commands/
+    |   |-- queries/
+    |   `-- services/
+    |-- domain/
+    |   |-- models.py
+    |   |-- policies.py
+    |   |-- repositories.py           Repository protocols
+    |   `-- events.py
+    |-- infrastructure/
+    |   |-- database/
+    |   |-- repositories/
+    |   `-- payment_providers/
+    `-- interfaces/
+        |-- api/
+        |-- cli/
+        |-- gui/
+        `-- web/
+
+Perform this reorganisation one domain at a time. Do not attempt one enormous
+University rename commit.
+
+
+7. ORGANISE TESTS BY SCOPE AND OWNER
+------------------------------------
+
+Recommended test tree:
+
+    tests/
+    |-- unit/
+    |   |-- platform/
+    |   `-- systems/
+    |       |-- apprenticeships/
+    |       |-- nursery/
+    |       |-- primary/
+    |       |-- secondary/
+    |       |-- sixth_form/
+    |       `-- university/
+    |           |-- academics/
+    |           |-- admissions/
+    |           |-- finance/
+    |           `-- pastoral/
+    |-- integration/
+    |   |-- migrations/
+    |   |-- platform/
+    |   `-- systems/
+    |-- contract/
+    |   |-- api/
+    |   |-- plugins/
+    |   `-- system_boundaries/
+    |-- end_to_end/
+    |   |-- browser/
+    |   |-- cli/
+    |   `-- gui/
+    |-- security/
+    |-- performance/
+    |-- fixtures/
+    `-- conftest.py
+
+This separates unit, integration, contract and end-to-end scope while keeping
+tests associated with the system or platform component that owns them.
+
+
+8. SIMPLIFY DEPENDENCY FILES
+----------------------------
+
+Recommended files:
+
+    education-system/
+    |-- pyproject.toml                 Direct dependencies and optional extras
+    |-- requirements.lock              Resolved production environment
+    `-- requirements-dev.lock          Resolved development environment
+
+Generation flow:
+
+    pyproject.toml
+        |-- production resolution -> requirements.lock
+        `-- development resolution -> requirements-dev.lock
+
+This should replace the ambiguous combination of requirements.txt,
+requirements.lock and requirements-dev.txt once the build and CI workflows
+have been updated.
+
+
+RECOMMENDED IMPLEMENTATION ORDER
+--------------------------------
+
+    1. Move the repository to ~/projects/education-system/.
+    2. Move docs, tools, tests and var out of program/.
+    3. Move program/education_system to src/education_system.
+    4. Consolidate the launcher and retire duplicate run.py behaviour.
+    5. Move system-specific API routes back into their owning systems.
+    6. Reorganise the University system one business domain at a time.
+    7. Simplify and document the dependency-lock workflow.
+
+Steps 1-4 provide the largest immediate clarity improvement. Steps 5-7 should
+be handled as gradual architectural migrations with tests passing after every
+stage.

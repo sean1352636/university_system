@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.finance.finance_reporting.archive_backup._imports import (
     tk, ttk, messagebox, scrolledtext, ScrolledText, datetime, timedelta, _,
 )
@@ -12,11 +14,11 @@ def show_archive_management_dialog(self):
     main_frame = ttk.Frame(archive_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Data Archive Management",
+    ttk.Label(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.labels.data_archive_management', default="Data Archive Management"),
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Archive statistics
-    stats_frame = ttk.LabelFrame(main_frame, text="Archive Statistics", padding="10")
+    stats_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.labels.archive_statistics', default="Archive Statistics"), padding="10")
     stats_frame.pack(fill=tk.X, pady=(0, 10))
 
     try:
@@ -55,7 +57,7 @@ def show_archive_management_dialog(self):
                  foreground="red").pack(anchor=tk.W)
 
     # Archive operations
-    operations_frame = ttk.LabelFrame(main_frame, text="Archive Operations", padding="10")
+    operations_frame = ttk.LabelFrame(main_frame, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.labels.archive_operations', default="Archive Operations"), padding="10")
     operations_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     operations_text = ScrolledText(operations_frame, height=15, wrap=tk.WORD)
@@ -112,13 +114,13 @@ def show_archive_management_dialog(self):
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(buttons_frame, text="Create Archive Tables",
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.buttons.create_archive_tables', default="Create Archive Tables"),
                command=lambda: self.create_archive_tables(archive_window)).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Run Archive Process",
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.buttons.run_archive_process', default="Run Archive Process"),
                command=lambda: self.run_archive_process(archive_window)).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Create Backup",
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.buttons.create_backup', default="Create Backup"),
                command=lambda: self.create_database_backup(archive_window)).pack(side=tk.LEFT, padx=5)
-    ttk.Button(buttons_frame, text="Close", command=archive_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(buttons_frame, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.buttons.close', default="Close"), command=archive_window.destroy).pack(side=tk.RIGHT)
 
 def create_archive_tables(self, parent_window):
     """Create archive tables for historical data storage"""
@@ -126,14 +128,14 @@ def create_archive_tables(self, parent_window):
         from education_system.systems.university.infrastructure.database.db import get_connection
 
         # Confirm action
-        if not messagebox.askyesno("Confirm",
-            "This will create archive tables for historical financial data.\n\n"
+        if not messagebox.askyesno(_t('gui.finance.finance_reporting.archive_backup.archive_management.dialogs.confirm', default="Confirm"),
+            _t('gui.finance.finance_reporting.archive_backup.archive_management.dialogs.this_will_create_archive_tables_for_historical_financial_data_ar', default="This will create archive tables for historical financial data.\n\n"
             "Archive tables will be created for:\n"
             "• Transactions (older than 2 years)\n"
             "• Student payments (older than 2 years)\n"
             "• Financial aid records (older than 5 years)\n"
             "• Budget records (older than 3 years)\n\n"
-            "Continue?", parent=parent_window):
+            "Continue?"), parent=parent_window):
             return
 
         # Create progress dialog
@@ -143,7 +145,7 @@ def create_archive_tables(self, parent_window):
         progress_window.transient(parent_window)
         progress_window.grab_set()
 
-        ttk.Label(progress_window, text="Creating Archive Tables...",
+        ttk.Label(progress_window, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.labels.creating_archive_tables', default="Creating Archive Tables..."),
                  font=('Arial', 12, 'bold')).pack(pady=20)
 
         progress_text = scrolledtext.ScrolledText(progress_window, height=10, wrap=tk.WORD)
@@ -256,7 +258,7 @@ def create_archive_tables(self, parent_window):
         log_progress("Status: Ready for archiving operations")
 
         # Add close button
-        ttk.Button(progress_window, text="Close",
+        ttk.Button(progress_window, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.buttons.close', default="Close"),
                   command=progress_window.destroy).pack(pady=10)
 
         # Log activity
@@ -268,7 +270,7 @@ def create_archive_tables(self, parent_window):
             pass
 
     except Exception as e:
-        messagebox.showerror("Error",
+        messagebox.showerror(_t('gui.finance.finance_reporting.archive_backup.archive_management.dialogs.error', default="Error"),
             f"Failed to create archive tables:\n{e}",
             parent=parent_window)
         import traceback
@@ -280,8 +282,8 @@ def run_archive_process(self, parent_window):
         from education_system.systems.university.infrastructure.database.db import get_connection
 
         # Confirm action
-        if not messagebox.askyesno("Confirm Archive Process",
-            "This will move old financial data to archive tables.\n\n"
+        if not messagebox.askyesno(_t('gui.finance.finance_reporting.archive_backup.archive_management.dialogs.confirm_archive_process', default="Confirm Archive Process"),
+            _t('gui.finance.finance_reporting.archive_backup.archive_management.dialogs.this_will_move_old_financial_data_to_archive_tables_data_selecti', default="This will move old financial data to archive tables.\n\n"
             "Data Selection Criteria:\n"
             "• Transactions older than 2 years\n"
             "• Payments older than 2 years\n"
@@ -289,7 +291,7 @@ def run_archive_process(self, parent_window):
             "• Budget records from completed fiscal years (3+ years old)\n\n"
             "Active data will be moved to archive tables and removed from main tables.\n"
             "This operation can take several minutes.\n\n"
-            "Continue?", parent=parent_window):
+            "Continue?"), parent=parent_window):
             return
 
         # Create progress dialog
@@ -299,7 +301,7 @@ def run_archive_process(self, parent_window):
         progress_window.transient(parent_window)
         progress_window.grab_set()
 
-        ttk.Label(progress_window, text="Archiving Financial Data...",
+        ttk.Label(progress_window, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.labels.archiving_financial_data', default="Archiving Financial Data..."),
                  font=('Arial', 12, 'bold')).pack(pady=20)
 
         progress_text = scrolledtext.ScrolledText(progress_window, height=15, wrap=tk.WORD)
@@ -446,7 +448,7 @@ def run_archive_process(self, parent_window):
         log_progress("\nThe database has been optimized and old data moved to archive tables.")
 
         # Add close button
-        ttk.Button(progress_window, text="Close",
+        ttk.Button(progress_window, text=_t('gui.finance.finance_reporting.archive_backup.archive_management.buttons.close', default="Close"),
                   command=progress_window.destroy).pack(pady=10)
 
         # Log activity
@@ -458,7 +460,7 @@ def run_archive_process(self, parent_window):
             pass
 
     except Exception as e:
-        messagebox.showerror("Error",
+        messagebox.showerror(_t('gui.finance.finance_reporting.archive_backup.archive_management.dialogs.error', default="Error"),
             f"Failed to run archive process:\n{e}",
             parent=parent_window)
         import traceback

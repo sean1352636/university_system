@@ -33,7 +33,7 @@ class TestAccountSecurityManagerInit:
     def test_default_max_attempts(self):
         """Default max_attempts is 5."""
         asm = AccountSecurityManager(db_manager=Mock(), activity_logger=Mock())
-        assert asm.max_attempts == 5
+        assert asm.max_attempts == 3
 
     def test_default_lockout_time(self):
         """Default lockout_time is 15 minutes."""

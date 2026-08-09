@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
@@ -131,8 +133,8 @@ except ImportError as e:
     def get_connection():
         from education_system.systems.university.infrastructure.database.db import sqlite3
         # Use centralized path system
-        from education_system.systems.university.infrastructure import paths
-        return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        from education_system import paths
+        return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
 
     def init_enhanced_database():
         """
@@ -868,8 +870,8 @@ def get_connection():
         try:
             # Compute the path to the central student_records.db relative to this file.
             from education_system.systems.university.infrastructure.database.db import sqlite3
-            from education_system.systems.university.infrastructure import paths
-            return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+            from education_system import paths
+            return sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         except Exception as e:
             print_error(f"Database connection error: {e}")
             return None
@@ -911,7 +913,7 @@ def view_academic_history_detailed(self, student_id):
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Student info header
-        info_frame = ttk.LabelFrame(main_frame, text="Student Information", padding="10")
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.advanced_search.student_details.labels.student_information', default="Student Information"), padding="10")
         info_frame.pack(fill=tk.X, pady=(0, 20))
 
         info_text = f"""
@@ -924,7 +926,7 @@ Course: {student[9]}
         ttk.Label(info_frame, text=info_text, font=('Arial', 10)).pack(anchor='w')
 
         # Academic history table
-        history_frame = ttk.LabelFrame(main_frame, text="Module History", padding="10")
+        history_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.advanced_search.student_details.labels.module_history', default="Module History"), padding="10")
         history_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
 
         # Create treeview for history
@@ -957,7 +959,7 @@ Course: {student[9]}
             completed_count = sum(1 for m in modules if m[3] is not None)
             completion_rate = (completed_count / len(modules)) * 100
 
-            summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding="10")
+            summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.advanced_search.student_details.labels.summary', default="Summary"), padding="10")
             summary_frame.pack(fill=tk.X)
 
             summary_text = f"""
@@ -993,25 +995,25 @@ def show_detailed_student_view(self, student_data):
 
     # Basic Info Tab
     basic_frame = ttk.Frame(notebook, padding="20")
-    notebook.add(basic_frame, text="Basic Information")
+    notebook.add(basic_frame, text=_t('gui.shell.advanced_search.student_details.tabs.basic_information', default="Basic Information"))
 
     self.create_basic_info_tab(basic_frame, student_data)
 
     # Academic History Tab
     academic_frame = ttk.Frame(notebook, padding="20")
-    notebook.add(academic_frame, text="Academic History")
+    notebook.add(academic_frame, text=_t('gui.shell.advanced_search.student_details.tabs.academic_history', default="Academic History"))
 
     self.create_academic_history_tab(academic_frame, student_data[0])
 
     # Analytics Tab
     analytics_frame = ttk.Frame(notebook, padding="20")
-    notebook.add(analytics_frame, text="Performance Analytics")
+    notebook.add(analytics_frame, text=_t('gui.shell.advanced_search.student_details.tabs.performance_analytics', default="Performance Analytics"))
 
     self.create_performance_analytics_tab(analytics_frame, student_data[0])
 
     # Actions Tab
     actions_frame = ttk.Frame(notebook, padding="20")
-    notebook.add(actions_frame, text="Actions")
+    notebook.add(actions_frame, text=_t('gui.shell.advanced_search.student_details.tabs.actions', default="Actions"))
 
     self.create_student_actions_tab(actions_frame, student_data)
 AdvancedSearchGUI.show_detailed_student_view = show_detailed_student_view
@@ -1032,7 +1034,7 @@ Course: {student_data[9]}
 Registration: {student_data[10]}
     """
 
-    ttk.Label(parent, text="Personal Information", style='Header.TLabel').pack(anchor='w', pady=(0, 20))
+    ttk.Label(parent, text=_t('gui.shell.advanced_search.student_details.labels.personal_information', default="Personal Information"), style='Header.TLabel').pack(anchor='w', pady=(0, 20))
 
     info_label = tk.Label(parent, text=info_text, justify=tk.LEFT, font=('Arial', 11), bg='white')
     info_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -1040,7 +1042,7 @@ AdvancedSearchGUI.create_basic_info_tab = create_basic_info_tab
 
 def create_academic_history_tab(self, parent, student_id):
     """Create academic history tab"""
-    ttk.Label(parent, text="Academic History", style='Header.TLabel').pack(anchor='w', pady=(0, 20))
+    ttk.Label(parent, text=_t('gui.shell.advanced_search.student_details.labels.academic_history', default="Academic History"), style='Header.TLabel').pack(anchor='w', pady=(0, 20))
 
     # Load and display academic history
     try:
@@ -1083,7 +1085,7 @@ def create_academic_history_tab(self, parent, student_id):
                     module_type, code, name, grade_display, enrolled_display, completed_display
                 ))
         else:
-            ttk.Label(parent, text="No academic history found.").pack()
+            ttk.Label(parent, text=_t('gui.shell.advanced_search.student_details.labels.no_academic_history_found', default="No academic history found.")).pack()
 
     except Exception as e:
         ttk.Label(parent, text=f"Error loading academic history: {str(e)}").pack()
@@ -1091,7 +1093,7 @@ AdvancedSearchGUI.create_academic_history_tab = create_academic_history_tab
 
 def create_performance_analytics_tab(self, parent, student_id):
     """Create performance analytics tab"""
-    ttk.Label(parent, text="Performance Analytics", style='Header.TLabel').pack(anchor='w', pady=(0, 20))
+    ttk.Label(parent, text=_t('gui.shell.advanced_search.student_details.labels.performance_analytics', default="Performance Analytics"), style='Header.TLabel').pack(anchor='w', pady=(0, 20))
 
     try:
         conn = get_connection()
@@ -1141,7 +1143,7 @@ ACADEMIC STATUS
                                      font=('Courier', 11), bg='white')
             analytics_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         else:
-            ttk.Label(parent, text="No performance data available.").pack()
+            ttk.Label(parent, text=_t('gui.shell.advanced_search.student_details.labels.no_performance_data_available', default="No performance data available.")).pack()
 
     except Exception as e:
         ttk.Label(parent, text=f"Error loading performance data: {str(e)}").pack()
@@ -1149,7 +1151,7 @@ AdvancedSearchGUI.create_performance_analytics_tab = create_performance_analytic
 
 def create_student_actions_tab(self, parent, student_data):
     """Create student actions tab"""
-    ttk.Label(parent, text="Available Actions", style='Header.TLabel').pack(anchor='w', pady=(0, 20))
+    ttk.Label(parent, text=_t('gui.shell.advanced_search.student_details.labels.available_actions', default="Available Actions"), style='Header.TLabel').pack(anchor='w', pady=(0, 20))
 
     actions = [
         ("📧 Send Email", lambda: self.simulate_send_email(student_data)),
@@ -1215,17 +1217,17 @@ def mark_single_student_followup(self, student_data):
     student_name = f"{student_data[3]} {student_data[5]}"
     ttk.Label(frame, text=f"Mark {student_name} for Follow-up", style='Title.TLabel').pack(pady=(0, 20))
 
-    ttk.Label(frame, text="Follow-up Reason:").pack(anchor='w')
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.student_details.labels.follow_up_reason', default="Follow-up Reason:")).pack(anchor='w')
     reason_var = tk.StringVar()
     ttk.Entry(frame, textvariable=reason_var, width=40).pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(frame, text="Priority:").pack(anchor='w')
-    priority_var = tk.StringVar(value="medium")
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.student_details.labels.priority', default="Priority:")).pack(anchor='w')
+    priority_var = tk.StringVar(value=_t('gui.shell.advanced_search.student_details.values.medium', default="medium"))
 
     for priority in ["high", "medium", "low"]:
         ttk.Radiobutton(frame, text=priority.title(), variable=priority_var, value=priority).pack(anchor='w')
 
-    ttk.Label(frame, text="Notes:").pack(anchor='w', pady=(10, 0))
+    ttk.Label(frame, text=_t('gui.shell.advanced_search.student_details.labels.notes', default="Notes:")).pack(anchor='w', pady=(10, 0))
     notes_text = tk.Text(frame, height=4, wrap=tk.WORD)
     notes_text.pack(fill=tk.X, pady=(0, 20))
 
@@ -1256,7 +1258,7 @@ def mark_single_student_followup(self, student_data):
         with open(filename, 'w') as f:
             json.dump(followup_data, f, indent=2)
 
-        messagebox.showinfo("Follow-up Marked",
+        messagebox.showinfo(_t('gui.shell.advanced_search.student_details.dialogs.follow_up_marked', default="Follow-up Marked"),
                           f"✅ {student_name} marked for follow-up\n"
                           f"Priority: {priority}\n"
                           f"Saved to: {filename}")
@@ -1266,7 +1268,7 @@ def mark_single_student_followup(self, student_data):
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="📌 Mark", command=save_followup).pack(side=tk.LEFT)
+    ttk.Button(button_frame, text=_t('gui.shell.advanced_search.student_details.buttons.mark', default="📌 Mark"), command=save_followup).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.mark_single_student_followup = mark_single_student_followup
 

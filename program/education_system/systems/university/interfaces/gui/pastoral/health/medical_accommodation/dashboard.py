@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # dashboard.py
 # Dashboard, statistics, and reporting mixin for AccommodationGUI.
 
@@ -69,7 +71,7 @@ class DashboardMixin:
                 self.generate_dashboard_text()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh dashboard: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), f"Failed to refresh dashboard: {str(e)}")
 
     def generate_dashboard_text(self):
         """Generate dashboard statistics text"""
@@ -139,7 +141,7 @@ class DashboardMixin:
     def generate_statistics(self):
         """Generate statistics report"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
         StatisticsDialog(self.root)
@@ -147,11 +149,11 @@ class DashboardMixin:
     def check_expiry(self):
         """Check expiry notifications"""
         if not CLI_AVAILABLE:
-            messagebox.showerror("Error", "CLI module not available")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.cli_module_not_available', default="CLI module not available"))
             return
 
-        days = simpledialog.askinteger("Expiry Check",
-            "Check for accommodations expiring in how many days?",
+        days = simpledialog.askinteger(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.expiry_check', default="Expiry Check"),
+            _t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.check_for_accommodations_expiring_in_how_many_days', default="Check for accommodations expiring in how many days?"),
             initialvalue=7, minvalue=1, maxvalue=365)
 
         if days:
@@ -168,7 +170,7 @@ class DashboardMixin:
                 ExpiryResultDialog(self.root, result, days)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Expiry check failed: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), f"Expiry check failed: {str(e)}")
 
     def view_students_by_accommodation_type(self):
         """View students grouped by accommodation type"""
@@ -186,22 +188,22 @@ class DashboardMixin:
             type_summary = cursor.fetchall()
 
             if not type_summary:
-                messagebox.showinfo("No Data", "No active accommodations found")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.no_data', default="No Data"), _t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.no_active_accommodations_found', default="No active accommodations found"))
                 conn.close()
                 return
 
             view_window = tk.Toplevel(self.root)
-            view_window.title("Students by Accommodation Type")
+            view_window.title(_t('gui.pastoral.health.medical_accommodation.dashboard.windows.students_by_accommodation_type', default="Students by Accommodation Type"))
             view_window.geometry("900x700")
 
             main_frame = ttk.Frame(view_window, padding="10")
             main_frame.pack(fill=tk.BOTH, expand=True)
 
-            title_label = ttk.Label(main_frame, text="Students Grouped by Accommodation Type",
+            title_label = ttk.Label(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dashboard.labels.students_grouped_by_accommodation_type', default="Students Grouped by Accommodation Type"),
                                    font=('Arial', 14, 'bold'))
             title_label.pack(pady=(0, 10))
 
-            summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding="10")
+            summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dashboard.labels.summary', default="Summary"), padding="10")
             summary_frame.pack(fill=tk.X, pady=5)
 
             total_students = sum(count for _, count in type_summary)
@@ -267,7 +269,7 @@ class DashboardMixin:
                         status
                     ))
 
-                details_frame = ttk.LabelFrame(tab_frame, text="Description", padding="5")
+                details_frame = ttk.LabelFrame(tab_frame, text=_t('gui.pastoral.health.medical_accommodation.dashboard.labels.description', default="Description"), padding="5")
                 details_frame.pack(fill=tk.X, padx=5, pady=5)
 
                 details_text = ScrolledText(details_frame, height=4, wrap=tk.WORD)
@@ -287,7 +289,7 @@ class DashboardMixin:
 
                 tree.bind('<<TreeviewSelect>>', on_select)
 
-            ttk.Button(main_frame, text="Close", command=view_window.destroy).pack(pady=5)
+            ttk.Button(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dashboard.buttons.close', default="Close"), command=view_window.destroy).pack(pady=5)
 
             conn.close()
 
@@ -295,7 +297,7 @@ class DashboardMixin:
                 log_action('view_by_type', None, 'Viewed students grouped by accommodation type')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate view: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), f"Failed to generate view: {str(e)}")
             import traceback
             traceback.print_exc()
 
@@ -308,7 +310,7 @@ class StatisticsDialog:
     def __init__(self, parent):
         self.parent = parent
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Statistics Report")
+        self.dialog.title(_t('gui.pastoral.health.medical_accommodation.dashboard.windows.statistics_report', default="Statistics Report"))
         self.dialog.geometry("700x600")
         self.dialog.transient(parent)
 
@@ -326,10 +328,10 @@ class StatisticsDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Refresh", command=self.generate_statistics).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Save as TXT", command=self.save_as_txt).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Email to Admin", command=self.email_to_admin).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dashboard.buttons.refresh', default="Refresh"), command=self.generate_statistics).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dashboard.buttons.save_as_txt', default="Save as TXT"), command=self.save_as_txt).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dashboard.buttons.email_to_admin', default="Email to Admin"), command=self.email_to_admin).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.health.medical_accommodation.dashboard.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
     def generate_statistics(self):
         """Generate statistics directly (avoids calling CLI function which uses input())"""
@@ -445,7 +447,7 @@ class StatisticsDialog:
     def save_as_txt(self):
         """Save statistics report as TXT file"""
         file_path = filedialog.asksaveasfilename(
-            title="Save Statistics Report",
+            title=_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.save_statistics_report', default="Save Statistics Report"),
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
             defaultextension=".txt"
         )
@@ -454,9 +456,9 @@ class StatisticsDialog:
             try:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(self.stats_text.get(1.0, tk.END))
-                messagebox.showinfo("Success", f"Report saved to {file_path}")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.success', default="Success"), f"Report saved to {file_path}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), f"Failed to save report: {str(e)}")
 
     def email_to_admin(self):
         """Email the statistics report to admin"""
@@ -466,7 +468,7 @@ class StatisticsDialog:
             )
 
             if not EMAIL_SERVICE_AVAILABLE:
-                messagebox.showerror("Error", "Email service is not available")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.email_service_is_not_available', default="Email service is not available"))
                 return
 
             from education_system.systems.university.interfaces.gui.pastoral.health.medical_accommodation._common import send_email
@@ -489,8 +491,8 @@ class StatisticsDialog:
             if not admin_email:
                 # Ask for email address
                 admin_email = simpledialog.askstring(
-                    "Admin Email",
-                    "Enter the admin email address:",
+                    _t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.admin_email', default="Admin Email"),
+                    _t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.enter_the_admin_email_address', default="Enter the admin email address:"),
                     parent=self.dialog
                 )
 
@@ -499,17 +501,17 @@ class StatisticsDialog:
 
             report_text = self.stats_text.get(1.0, tk.END).strip()
             if not report_text:
-                messagebox.showerror("Error", "No report to send. Generate statistics first.")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), _t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.no_report_to_send_generate_statistics_first', default="No report to send. Generate statistics first."))
                 return
 
             try:
                 send_email(admin_email, "Accommodation Statistics Report", report_text)
-                messagebox.showinfo("Success", f"Report emailed to {admin_email}")
+                messagebox.showinfo(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.success', default="Success"), f"Report emailed to {admin_email}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to send email: {str(e)}")
+                messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), f"Failed to send email: {str(e)}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to email report: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.medical_accommodation.dashboard.dialogs.error', default="Error"), f"Failed to email report: {str(e)}")
 
 
 class ExpiryResultDialog:
@@ -529,4 +531,4 @@ class ExpiryResultDialog:
         result_text_widget.insert(tk.END, result_text)
         result_text_widget.config(state=tk.DISABLED)
 
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dashboard.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)

@@ -1,0 +1,11 @@
+{
+  "template_id": "calendar_event_cancelled",
+  "description": "Tells an event's audience the event is off, with the reason where one was given. Triggered when a scheduled event is cancelled.",
+  "channel": "Email",
+  "category": "Calendar",
+  "priority": "High",
+  "from_name": "Sixth Form Calendar",
+  "from_address": "calendar@sixthform.ac.uk",
+  "subject": "Cancelled: {{event_title}} ({{event_date}})",
+  "body": "Hi {{first_name}},\n\nThe following event has been cancelled:\n\n  Event: {{event_title}}\n  Was:   {{event_date}}, {{event_time}}\n  Where: {{event_location}}\n\n{{reason_line}}\n\nAny bookings are cancelled with it; if the event is rearranged a new invitation will follow. Please pass this on to anyone you know who was planning to attend.\n\n{{system_name}}"
+}

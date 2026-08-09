@@ -1,0 +1,1 @@
+"""Vaccination health domain."""

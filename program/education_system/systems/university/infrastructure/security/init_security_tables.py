@@ -9,14 +9,14 @@ import sys
 import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text, _
 
 def init_security_tables(db_path=None):
     """Initialize all security-related database tables"""
     if db_path is None:
-        db_path = str(DEFAULT_DB_PATH)
+        db_path = str(UNIVERSITY_DEFAULT_DB_PATH)
 
     conn = get_connection(db_path=db_path, row_factory=False)
     cursor = conn.cursor()

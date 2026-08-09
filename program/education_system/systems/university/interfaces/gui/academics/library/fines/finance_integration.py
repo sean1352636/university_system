@@ -2,6 +2,8 @@
 Library Fines Management - Finance system integration (top-up, finance payment, GUI launch).
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -59,7 +61,7 @@ def _show_topup_dialog(self, user_id, shortfall, fine_amount, total_fines, conn)
     amount_frame = ttk.Frame(dialog)
     amount_frame.pack(fill=tk.X, padx=20, pady=5)
 
-    ttk.Label(amount_frame, text="Top-up Amount: \u00a3").pack(side=tk.LEFT)
+    ttk.Label(amount_frame, text=_t('gui.academics.library.fines.finance_integration.labels.top_up_amount', default="Top-up Amount: \u00a3")).pack(side=tk.LEFT)
     topup_var = tk.StringVar(value=str(round(shortfall, 2)))
     topup_entry = ttk.Entry(amount_frame, textvariable=topup_var, width=15)
     topup_entry.pack(side=tk.LEFT, padx=5)
@@ -67,7 +69,7 @@ def _show_topup_dialog(self, user_id, shortfall, fine_amount, total_fines, conn)
     # Quick amount buttons
     quick_frame = ttk.Frame(dialog)
     quick_frame.pack(fill=tk.X, padx=20, pady=5)
-    ttk.Label(quick_frame, text="Quick amounts:").pack(side=tk.LEFT)
+    ttk.Label(quick_frame, text=_t('gui.academics.library.fines.finance_integration.labels.quick_amounts', default="Quick amounts:")).pack(side=tk.LEFT)
     for amt in [5, 10, 20, 50]:
         ttk.Button(quick_frame, text=f"\u00a3{amt}",
                    command=lambda a=amt: topup_var.set(str(a))).pack(side=tk.LEFT, padx=2)
@@ -96,7 +98,7 @@ def _show_topup_dialog(self, user_id, shortfall, fine_amount, total_fines, conn)
             )
 
             if not topup_result['success']:
-                messagebox.showerror("Top-up Failed", topup_result.get('message', 'Unknown error'))
+                messagebox.showerror(_t('gui.academics.library.fines.finance_integration.dialogs.top_up_failed', default="Top-up Failed"), topup_result.get('message', 'Unknown error'))
                 return
 
             # Now process the fine payment
@@ -114,7 +116,7 @@ def _show_topup_dialog(self, user_id, shortfall, fine_amount, total_fines, conn)
             )
 
             if not payment_result['success']:
-                messagebox.showerror("Payment Failed",
+                messagebox.showerror(_t('gui.academics.library.fines.finance_integration.dialogs.payment_failed', default="Payment Failed"),
                     f"Top-up succeeded but payment failed: {payment_result.get('message', 'Unknown error')}")
                 return
 
@@ -163,7 +165,7 @@ def _show_topup_dialog(self, user_id, shortfall, fine_amount, total_fines, conn)
             self.load_user_fines()
 
         except ValueError:
-            messagebox.showwarning(_("common.warning"), "Please enter a valid amount")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.finance_integration.dialogs.please_enter_a_valid_amount', default="Please enter a valid amount"))
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to process: {str(e)}")
 
@@ -171,7 +173,7 @@ def _show_topup_dialog(self, user_id, shortfall, fine_amount, total_fines, conn)
     btn_frame = ttk.Frame(dialog)
     btn_frame.pack(fill=tk.X, padx=20, pady=20)
 
-    ttk.Button(btn_frame, text="Top Up & Pay Fine", command=process_topup_and_pay).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.library.fines.finance_integration.buttons.top_up_pay_fine', default="Top Up & Pay Fine"), command=process_topup_and_pay).pack(side=tk.LEFT, padx=5)
     ttk.Button(btn_frame, text=_("common.cancel"), command=lambda: [conn.close(), dialog.destroy()]).pack(side=tk.LEFT, padx=5)
 
 
@@ -181,20 +183,20 @@ def pay_fine_via_finance(self):
     payment_amount = self.payment_amount_var.get().strip()
 
     if not user_id:
-        messagebox.showwarning(_("common.warning"), "Please search for a user first")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.finance_integration.dialogs.please_search_for_a_user_first', default="Please search for a user first"))
         return
 
     if not payment_amount:
-        messagebox.showwarning(_("common.warning"), "Please enter a payment amount")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.finance_integration.dialogs.please_enter_a_payment_amount', default="Please enter a payment amount"))
         return
 
     try:
         amount = float(payment_amount)
         if amount <= 0:
-            messagebox.showwarning(_("common.warning"), "Payment amount must be greater than 0")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.finance_integration.dialogs.payment_amount_must_be_greater_than_0', default="Payment amount must be greater than 0"))
             return
     except ValueError:
-        messagebox.showwarning(_("common.warning"), "Please enter a valid payment amount")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.fines.finance_integration.dialogs.please_enter_a_valid_payment_amount', default="Please enter a valid payment amount"))
         return
 
     # Get user details for the finance transaction
@@ -208,7 +210,7 @@ def pay_fine_via_finance(self):
                 conn.close()
 
                 if not user_info:
-                    messagebox.showerror(_("common.error"), "Student not found in system")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.library.fines.finance_integration.dialogs.student_not_found_in_system', default="Student not found in system"))
                     return
 
                 first_name, last_name, email = user_info
@@ -242,8 +244,8 @@ def pay_fine_via_finance(self):
             self.load_user_fines()
         else:
             messagebox.showerror(_("common.error"),
-                "Failed to process payment through finance system.\n"
-                "Please try again or contact the finance office.")
+                _t('gui.academics.library.fines.finance_integration.dialogs.failed_to_process_payment_through_finance_system_please_try_agai', default="Failed to process payment through finance system.\n"
+                "Please try again or contact the finance office."))
 
     except tk.TclError as e:
         messagebox.showerror(_("common.error"), f"Failed to process finance payment: {e}")

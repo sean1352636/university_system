@@ -65,11 +65,11 @@ import sqlite3
 import unicodedata
 from dataclasses import dataclass, field
 from typing import Any, Callable
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.ADVANCED_SEARCH_DB
+DB_PATH = paths.SIXTH_FORM_ADVANCED_SEARCH_DB
 
 DEFAULT_LIMIT_PER_SCOPE: int = 50
 MAX_HISTORY_ROWS: int = 50
@@ -377,7 +377,7 @@ class Cohort:                 # item 12 — a named, reusable student set
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     return conn

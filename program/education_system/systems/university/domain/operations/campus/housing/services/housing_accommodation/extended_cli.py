@@ -1485,8 +1485,8 @@ def cli_audit_log() -> None:
 
 def _resolve_log_dir() -> Path | None:
     try:
-        from education_system.systems.university.infrastructure import paths
-        ld = getattr(paths, 'LOG_DIR', None)
+        from education_system import paths
+        ld = getattr(paths, "UNIVERSITY_LOG_DIR", None)
         if ld:
             return Path(ld)
     except Exception:

@@ -1,5 +1,7 @@
 """Comparative Semester Analytics GUI (Feature 29)."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk
@@ -20,7 +22,7 @@ class SemesterAnalyticsGUI:
             self.instructor_id = auth.current_user.get('username', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Semester Analytics")
+        self.window.title(_t('gui.academics.semester_analytics.semester_analytics.windows.semester_analytics', default="Semester Analytics"))
         self.window.geometry("1100x800")
         self.window.transient(parent)
 
@@ -30,14 +32,14 @@ class SemesterAnalyticsGUI:
     def _setup_ui(self):
         """Build the semester analytics UI."""
         ttk.Label(
-            self.window, text="Comparative Semester Analytics",
+            self.window, text=_t('gui.academics.semester_analytics.semester_analytics.labels.comparative_semester_analytics', default="Comparative Semester Analytics"),
             font=('Arial', 16, 'bold')
         ).pack(pady=(10, 5))
 
         # Refresh
         top_frame = ttk.Frame(self.window)
         top_frame.pack(fill=tk.X, padx=15, pady=5)
-        ttk.Button(top_frame, text="Refresh", command=self._load_data).pack(side=tk.RIGHT)
+        ttk.Button(top_frame, text=_t('gui.academics.semester_analytics.semester_analytics.buttons.refresh', default="Refresh"), command=self._load_data).pack(side=tk.RIGHT)
 
         # Side-by-side comparison
         self.comparison_frame = ttk.Frame(self.window)
@@ -46,15 +48,15 @@ class SemesterAnalyticsGUI:
         self.comparison_frame.columnconfigure(1, weight=1)
 
         # Metrics table
-        metrics_frame = ttk.LabelFrame(self.window, text="Metrics Comparison", padding="10")
+        metrics_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.semester_analytics.semester_analytics.labels.metrics_comparison', default="Metrics Comparison"), padding="10")
         metrics_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
         cols = ('metric', 'current', 'previous', 'change')
         self.tree = ttk.Treeview(metrics_frame, columns=cols, show='headings', height=6)
-        self.tree.heading('metric', text='Metric')
-        self.tree.heading('current', text='Current Semester')
-        self.tree.heading('previous', text='Previous Semester')
-        self.tree.heading('change', text='Change')
+        self.tree.heading('metric', text=_t('gui.academics.semester_analytics.semester_analytics.headings.metric', default='Metric'))
+        self.tree.heading('current', text=_t('gui.academics.semester_analytics.semester_analytics.headings.current_semester', default='Current Semester'))
+        self.tree.heading('previous', text=_t('gui.academics.semester_analytics.semester_analytics.headings.previous_semester', default='Previous Semester'))
+        self.tree.heading('change', text=_t('gui.academics.semester_analytics.semester_analytics.headings.change', default='Change'))
         self.tree.column('metric', width=200)
         self.tree.column('current', width=200)
         self.tree.column('previous', width=200)
@@ -66,7 +68,7 @@ class SemesterAnalyticsGUI:
 
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        self.status_var = tk.StringVar(value="Loading...")
+        self.status_var = tk.StringVar(value=_t('gui.academics.semester_analytics.semester_analytics.values.loading', default="Loading..."))
         ttk.Label(self.window, textvariable=self.status_var).pack(anchor="w", padx=15, pady=5)
 
     def _load_data(self):

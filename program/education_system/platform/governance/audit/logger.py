@@ -16,7 +16,11 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Runtime state lives under var/, not inside the package (ADR 0018).
-from education_system.platform.paths import AUDIT_DB_FILE, DB_FILES_DIR as _AUDIT_DB_DIR
+from education_system.platform.governance.security.fail_closed import (
+    SecurityControlError,
+    alert_security_failure,
+)
+from education_system.paths import PLATFORM_AUDIT_DB_FILE, PLATFORM_DB_FILES_DIR as _AUDIT_DB_DIR
 
 
 class AuditAction(str, Enum):
@@ -90,7 +94,7 @@ class AuditLogger:
 
     def __init__(self, system_key: str, db_path: str | None = None):
         self.system_key = system_key
-        self._db_path = db_path or str(AUDIT_DB_FILE)
+        self._db_path = db_path or str(PLATFORM_AUDIT_DB_FILE)
         self._ensure_db()
 
     def _connect(self) -> sqlite3.Connection:
@@ -120,7 +124,13 @@ class AuditLogger:
         ip_address: str | None = None,
         user_agent: str | None = None,
     ) -> int:
-        """Record an audit entry. Returns the entry ID."""
+        """Record an audit entry. Returns the entry ID.
+
+        Raises:
+            SecurityControlError: if the entry could not be written. Audit is a
+                security control; a caller that cannot record what it did must
+                not proceed as though it had.
+        """
         if isinstance(action, AuditAction):
             action = action.value
         if isinstance(details, dict):
@@ -139,8 +149,22 @@ class AuditLogger:
             conn.commit()
             return cursor.lastrowid
         except Exception as e:
-            logger.error("Failed to write audit log: %s", e)
-            return -1
+            # An audit write that fails is a control failure, not a warning to
+            # be dropped on the floor: the caller had every reason to believe
+            # the action was recorded, and nothing else in the system will
+            # notice the gap. Alert, then deny by raising — the caller decides
+            # whether its operation can proceed unaudited, and for the security
+            # actions this logger records the answer is no.
+            #
+            # The old `return -1` was worse than silent: it looked like a
+            # successful call to any caller that did not compare against -1.
+            alert_security_failure(
+                "audit.write",
+                f"Could not record audit entry {action!r}: {e}",
+                user_id=user_id,
+                exc=e,
+            )
+            raise SecurityControlError("audit.write", str(e), cause=e) from e
         finally:
             conn.close()
 

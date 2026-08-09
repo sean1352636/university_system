@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -48,18 +50,18 @@ def show_fees_interface(self):
     self.clear_content()
     self.update_status("Fees & Payments")
 
-    title = ttk.Label(self.content_frame, text="Fees & Payments", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.financial.labels.fees_payments', default="Fees & Payments"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.financial.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.financial.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -68,7 +70,7 @@ def show_fees_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Fees display frame
-    fees_frame = ttk.LabelFrame(self.content_frame, text="Fee Information", padding=15)
+    fees_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.financial.labels.fee_information', default="Fee Information"), padding=15)
     fees_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_fees():
@@ -77,7 +79,7 @@ def show_fees_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(fees_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(fees_frame, text=_t('gui.academics.parent_portal.financial.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -113,7 +115,7 @@ def show_fees_interface(self):
 
                 if fees or account:
                     # Account balance summary
-                    summary_frame = ttk.LabelFrame(fees_frame, text="Account Summary", padding=10)
+                    summary_frame = ttk.LabelFrame(fees_frame, text=_t('gui.academics.parent_portal.financial.labels.account_summary', default="Account Summary"), padding=10)
                     summary_frame.pack(fill=tk.X, pady=(0, 10))
 
                     if account:
@@ -127,7 +129,7 @@ def show_fees_interface(self):
                         ttk.Label(summary_frame, text=f"Total Fees Due: {fees[0][2] if fees else 'GBP'} {total_due:.2f}",
                                  font=('Arial', 11), foreground='red').pack(anchor='w')
                     else:
-                        ttk.Label(summary_frame, text="No outstanding fees",
+                        ttk.Label(summary_frame, text=_t('gui.academics.parent_portal.financial.labels.no_outstanding_fees', default="No outstanding fees"),
                                  font=('Arial', 11), foreground='green').pack(anchor='w')
 
                     if fees:
@@ -135,12 +137,12 @@ def show_fees_interface(self):
                         columns = ("Fee Type", "Amount", "Currency", "Due Date", "Status", "Description")
                         tree = ttk.Treeview(fees_frame, columns=columns, show="headings", height=10)
 
-                        tree.heading("Fee Type", text="Fee Type")
-                        tree.heading("Amount", text="Amount")
-                        tree.heading("Currency", text="Currency")
-                        tree.heading("Due Date", text="Due Date")
-                        tree.heading("Status", text="Status")
-                        tree.heading("Description", text="Description")
+                        tree.heading("Fee Type", text=_t('gui.academics.parent_portal.financial.headings.fee_type', default="Fee Type"))
+                        tree.heading("Amount", text=_t('gui.academics.parent_portal.financial.headings.amount', default="Amount"))
+                        tree.heading("Currency", text=_t('gui.academics.parent_portal.financial.headings.currency', default="Currency"))
+                        tree.heading("Due Date", text=_t('gui.academics.parent_portal.financial.headings.due_date', default="Due Date"))
+                        tree.heading("Status", text=_t('gui.academics.parent_portal.financial.headings.status', default="Status"))
+                        tree.heading("Description", text=_t('gui.academics.parent_portal.financial.headings.description', default="Description"))
 
                         tree.column("Fee Type", width=150)
                         tree.column("Amount", width=80)
@@ -166,14 +168,14 @@ def show_fees_interface(self):
                     # Payment button
                     btn_frame = ttk.Frame(fees_frame)
                     btn_frame.pack(pady=10)
-                    ttk.Button(btn_frame, text="Make Payment",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.financial.buttons.make_payment', default="Make Payment"),
                               command=lambda: self.make_payment(student_id)).pack(side=tk.LEFT, padx=5)
-                    ttk.Button(btn_frame, text="Payment History",
+                    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.financial.buttons.payment_history', default="Payment History"),
                               command=lambda: self.view_payment_history(student_id)).pack(side=tk.LEFT, padx=5)
                 else:
-                    ttk.Label(fees_frame, text="No fees or account found for this student", font=('Arial', 11)).pack(pady=50)
+                    ttk.Label(fees_frame, text=_t('gui.academics.parent_portal.financial.labels.no_fees_or_account_found_for_this_student', default="No fees or account found for this student"), font=('Arial', 11)).pack(pady=50)
             else:
-                ttk.Label(fees_frame, text="Fees system not configured",
+                ttk.Label(fees_frame, text=_t('gui.academics.parent_portal.financial.labels.fees_system_not_configured', default="Fees system not configured"),
                          font=('Arial', 11)).pack(pady=20)
 
             conn.close()
@@ -182,7 +184,7 @@ def show_fees_interface(self):
             ttk.Label(fees_frame, text=f"Error loading fees: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Fees", command=load_fees).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.financial.buttons.load_fees', default="Load Fees"), command=load_fees).pack(side=tk.LEFT, padx=5)
     load_fees()
 ParentPortalGUI.show_fees_interface = show_fees_interface
 
@@ -199,7 +201,7 @@ def make_payment(self, student_id):
         """)
 
         if not cursor.fetchone():
-            messagebox.showwarning("Not Available", "Fee system not configured.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.financial.dialogs.not_available', default="Not Available"), _t('gui.academics.parent_portal.financial.dialogs.fee_system_not_configured', default="Fee system not configured."))
             conn.close()
             return
 
@@ -214,16 +216,16 @@ def make_payment(self, student_id):
         conn.close()
 
         if not unpaid_fees:
-            messagebox.showinfo("No Fees Due", "There are no outstanding fees for this student.")
+            messagebox.showinfo(_t('gui.academics.parent_portal.financial.dialogs.no_fees_due', default="No Fees Due"), _t('gui.academics.parent_portal.financial.dialogs.there_are_no_outstanding_fees_for_this_student', default="There are no outstanding fees for this student."))
             return
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load fee information: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.financial.dialogs.error', default="Error"), f"Failed to load fee information: {str(e)}")
         return
 
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Make Payment")
+    dialog.title(_t('gui.academics.parent_portal.financial.windows.make_payment', default="Make Payment"))
     dialog.geometry("600x550")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -232,7 +234,7 @@ def make_payment(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Make Payment",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.financial.labels.make_payment', default="Make Payment"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     # Ensure payments table exists
@@ -261,12 +263,12 @@ def make_payment(self, student_id):
 
         conn.close()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to initialize database: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.financial.dialogs.error', default="Error"), f"Failed to initialize database: {str(e)}")
         dialog.destroy()
         return
 
     # Display unpaid fees
-    fees_frame = ttk.LabelFrame(main_frame, text="Outstanding Fees", padding=10)
+    fees_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.parent_portal.financial.labels.outstanding_fees', default="Outstanding Fees"), padding=10)
     fees_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
     columns = ("Fee Type", "Amount", "Currency", "Status")
@@ -291,14 +293,14 @@ def make_payment(self, student_id):
              font=('Arial', 12, 'bold')).pack(pady=10)
 
     # Payment method selection
-    ttk.Label(main_frame, text="Payment Method:").pack(anchor='w', pady=(10, 0))
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.financial.labels.payment_method', default="Payment Method:")).pack(anchor='w', pady=(10, 0))
     payment_method = ttk.Combobox(main_frame, width=50, state="readonly")
     payment_method['values'] = ['Credit Card', 'Debit Card', 'Check', 'Cash', 'Bank Transfer']
     payment_method.pack(fill=tk.X, pady=(0, 10))
 
     def process_payment():
         if not payment_method.get():
-            messagebox.showwarning("Validation Error", "Please select a payment method.")
+            messagebox.showwarning(_t('gui.academics.parent_portal.financial.dialogs.validation_error', default="Validation Error"), _t('gui.academics.parent_portal.financial.dialogs.please_select_a_payment_method', default="Please select a payment method."))
             return
 
         try:
@@ -345,28 +347,28 @@ def make_payment(self, student_id):
                 import logging
                 logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.parent_portal.financial.dialogs.success', default="Success"),
                                f"Payment of {currency} {total_amount:.2f} processed successfully!\n\n"
                                f"Confirmation Number: {confirmation}\n\n"
                                "Thank you for your payment.")
             dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to process payment: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.financial.dialogs.error', default="Error"), f"Failed to process payment: {str(e)}")
 
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(pady=20)
 
-    ttk.Button(button_frame, text="Process Payment", command=process_payment).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.financial.buttons.process_payment', default="Process Payment"), command=process_payment).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.parent_portal.financial.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.make_payment = make_payment
 
 def view_payment_history(self, student_id):
     """View payment history"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Payment History")
+    dialog.title(_t('gui.academics.parent_portal.financial.windows.payment_history', default="Payment History"))
     dialog.geometry("800x600")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -375,7 +377,7 @@ def view_payment_history(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Payment History",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.financial.labels.payment_history', default="Payment History"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     try:
@@ -388,9 +390,9 @@ def view_payment_history(self, student_id):
         """)
 
         if not cursor.fetchone():
-            ttk.Label(main_frame, text="No payment history available.",
+            ttk.Label(main_frame, text=_t('gui.academics.parent_portal.financial.labels.no_payment_history_available', default="No payment history available."),
                      font=('Arial', 11)).pack(pady=50)
-            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack()
+            ttk.Button(main_frame, text=_t('gui.academics.parent_portal.financial.buttons.close', default="Close"), command=dialog.destroy).pack()
             conn.close()
             return
 
@@ -406,22 +408,22 @@ def view_payment_history(self, student_id):
         conn.close()
 
         if not payments:
-            ttk.Label(main_frame, text="No payments found for this student.",
+            ttk.Label(main_frame, text=_t('gui.academics.parent_portal.financial.labels.no_payments_found_for_this_student', default="No payments found for this student."),
                      font=('Arial', 11)).pack(pady=50)
-            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack()
+            ttk.Button(main_frame, text=_t('gui.academics.parent_portal.financial.buttons.close', default="Close"), command=dialog.destroy).pack()
             return
 
         # Display payment history
         columns = ("Description", "Amount", "Currency", "Method", "Date", "Reference", "Status")
         tree = ttk.Treeview(main_frame, columns=columns, show="headings", height=15)
 
-        tree.heading("Description", text="Description")
-        tree.heading("Amount", text="Amount")
-        tree.heading("Currency", text="Currency")
-        tree.heading("Method", text="Method")
-        tree.heading("Date", text="Date")
-        tree.heading("Reference", text="Reference")
-        tree.heading("Status", text="Status")
+        tree.heading("Description", text=_t('gui.academics.parent_portal.financial.headings.description', default="Description"))
+        tree.heading("Amount", text=_t('gui.academics.parent_portal.financial.headings.amount', default="Amount"))
+        tree.heading("Currency", text=_t('gui.academics.parent_portal.financial.headings.currency', default="Currency"))
+        tree.heading("Method", text=_t('gui.academics.parent_portal.financial.headings.method', default="Method"))
+        tree.heading("Date", text=_t('gui.academics.parent_portal.financial.headings.date', default="Date"))
+        tree.heading("Reference", text=_t('gui.academics.parent_portal.financial.headings.reference', default="Reference"))
+        tree.heading("Status", text=_t('gui.academics.parent_portal.financial.headings.status', default="Status"))
 
         tree.column("Description", width=150)
         tree.column("Amount", width=80)
@@ -456,9 +458,9 @@ def view_payment_history(self, student_id):
         ttk.Label(summary_frame, text=f"Total Paid: {currency} {total_paid:.2f}",
                  font=('Arial', 12, 'bold')).pack(side=tk.LEFT)
 
-        ttk.Button(summary_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(summary_frame, text=_t('gui.academics.parent_portal.financial.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load payment history: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.financial.dialogs.error', default="Error"), f"Failed to load payment history: {str(e)}")
         dialog.destroy()
 ParentPortalGUI.view_payment_history = view_payment_history

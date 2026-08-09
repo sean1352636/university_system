@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 
 
@@ -125,7 +125,7 @@ def backup_database(auth):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         backup_filename = f"student_records_backup_{timestamp}.db"
 
-        db_path = paths.DEFAULT_DB_PATH
+        db_path = paths.UNIVERSITY_DEFAULT_DB_PATH
         shutil.copy2(db_path, backup_filename)
         print(f"Database backed up to {backup_filename}")
 

@@ -16,7 +16,7 @@ import logging
 import re
 from typing import Any, Callable
 
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.academics.library import (
     library as _lib,
 )
@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 ValidationError = _lib.ValidationError
 
-_ISBN_DB = paths.DATA_DIR / "library" / "isbn_catalogue.json"
+_ISBN_DB = paths.SIXTH_FORM_DATA_DIR / "library" / "isbn_catalogue.json"
 
 
 def _normalise_isbn(isbn: str) -> str:

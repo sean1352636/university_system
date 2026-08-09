@@ -1,0 +1,658 @@
+"""Inbound absence reporting for the Sixth Form System.
+
+Sibling to :mod:`attendance`. Every mark in this package so far is
+written by a member of staff. But the first person who knows a learner
+is absent is almost never a member of staff — it is the learner, or
+whoever rang at half past eight to say so.
+
+Two routes in, and the difference between them matters:
+
+* **A report** (:func:`report_absence`) — somebody tells the college.
+  A parent rings, a learner emails, the portal takes a message. It is a
+  *claim*, not a mark: it lands in a queue, somebody reads it, and it
+  becomes a coded absence when a human decides what code it deserves.
+* **A self-certification** (:func:`self_certify`) — the learner declares
+  their own absence, which is appropriate at sixteen-plus and is how
+  most colleges handle a day of illness. It codes the mark immediately,
+  because making an adult wait for permission to have had a cold is
+  theatre. What stops it being a blank cheque is a **cap**: past a few
+  days a term, further self-certification is refused and a conversation
+  is required instead.
+
+The queue is the point of the first route. An absence somebody phoned in
+and nobody actioned looks identical, in the register, to one nobody
+explained — and the whole reason for taking the call was to tell those
+two apart.
+"""
+
+from __future__ import annotations
+
+import datetime as _dt
+import logging
+import sqlite3
+from dataclasses import dataclass
+from typing import Any
+
+from education_system.systems.sixth_form.domain.academics.attendance import (
+    attendance as core,
+    attendance_calendar as calendar,
+    attendance_codes as codes,
+    attendance_register as reg,
+    attendance_thresholds as thresholds,
+    attendance_weeks as weeks,
+)
+from education_system.systems.sixth_form.domain.academics.timetable import (
+    timetable as tt,
+)
+from education_system import paths
+
+logger = logging.getLogger(__name__)
+
+DB_PATH = paths.SIXTH_FORM_ATTENDANCE_DB
+
+ValidationError = core.ValidationError
+
+
+# ── Vocabularies ────────────────────────────────────────────────────
+
+# How the report reached us. Worth keeping: a college whose reports all
+# arrive by phone at 08:25 has a different problem from one whose portal
+# nobody uses.
+PHONE: str = "Phone"
+PORTAL: str = "Portal"
+EMAIL: str = "Email"
+SMS: str = "SMS"
+IN_PERSON: str = "In person"
+CHANNELS: tuple[str, ...] = (PHONE, PORTAL, EMAIL, SMS, IN_PERSON)
+
+# Who made the claim.
+PARENT: str = "Parent"
+STUDENT: str = "Student"
+STAFF: str = "Staff"
+OTHER: str = "Other"
+REPORTERS: tuple[str, ...] = (PARENT, STUDENT, STAFF, OTHER)
+
+# Where a report has got to.
+PENDING: str = "Pending"
+ACCEPTED: str = "Accepted"
+REJECTED: str = "Rejected"
+SUPERSEDED: str = "Superseded"
+STATES: tuple[str, ...] = (PENDING, ACCEPTED, REJECTED, SUPERSEDED)
+
+# The code a self-certified illness earns. `I` — authorised, and the
+# learner said so themselves.
+SELF_CERT_CODE: str = "I"
+# What a report becomes if staff accept it without choosing a code.
+DEFAULT_ACCEPT_CODE: str = "C"
+
+SELF_CERT_SOURCE: str = "self-service"
+
+# How far ahead somebody may report an absence. A parent ringing on
+# Friday about next Wednesday's hospital appointment is normal.
+MAX_FUTURE_DAYS: int = 60
+
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS attendance_absence_reports (
+    report_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id   TEXT NOT NULL,
+    date_from    TEXT NOT NULL,
+    date_to      TEXT NOT NULL,
+    channel      TEXT NOT NULL DEFAULT 'Phone',
+    reported_by  TEXT NOT NULL DEFAULT 'Parent',
+    reporter_name TEXT,
+    reason_id    INTEGER,
+    reason_text  TEXT,
+    message      TEXT,
+    state        TEXT NOT NULL DEFAULT 'Pending',
+    self_certified INTEGER NOT NULL DEFAULT 0,
+    code         TEXT,
+    decided_by   TEXT,
+    decided_at   TEXT,
+    decision_note TEXT,
+    marks_written INTEGER NOT NULL DEFAULT 0,
+    received_at  TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (student_id) REFERENCES students(student_id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_att_absrep_state
+    ON attendance_absence_reports(state);
+CREATE INDEX IF NOT EXISTS idx_att_absrep_student
+    ON attendance_absence_reports(student_id, date_from);
+CREATE INDEX IF NOT EXISTS idx_att_absrep_dates
+    ON attendance_absence_reports(date_from, date_to);
+"""
+
+
+# ── Shapes ──────────────────────────────────────────────────────────
+
+@dataclass
+class AbsenceReport:
+    """One claim that a learner is or will be absent."""
+
+    report_id: int
+    student_id: str
+    date_from: str
+    date_to: str
+    channel: str
+    reported_by: str
+    reporter_name: str | None
+    reason_id: int | None
+    reason_text: str | None
+    message: str | None
+    state: str
+    self_certified: bool
+    code: str | None
+    decided_by: str | None
+    decided_at: str | None
+    decision_note: str | None
+    marks_written: int
+    received_at: str | None
+    student_name: str | None = None
+
+    @property
+    def is_pending(self) -> bool:
+        return self.state == PENDING
+
+    @property
+    def days(self) -> int:
+        return (_dt.date.fromisoformat(self.date_to)
+                - _dt.date.fromisoformat(self.date_from)).days + 1
+
+    @property
+    def span(self) -> str:
+        return (self.date_from if self.date_from == self.date_to
+                else f"{self.date_from} → {self.date_to}")
+
+    @property
+    def label(self) -> str:
+        who = self.student_name or self.student_id
+        return (f"{who} · {self.span} · {self.reason_text or 'no reason given'}"
+                f" ({self.reported_by} by {self.channel.lower()})")
+
+
+@dataclass
+class SelfCertStatus:
+    """How much self-certification a learner has left."""
+
+    student_id: str
+    used_days: int
+    cap: int
+    window_from: str
+    window_to: str
+
+    @property
+    def remaining(self) -> int:
+        return max(0, self.cap - self.used_days)
+
+    @property
+    def exhausted(self) -> bool:
+        return self.remaining <= 0
+
+    @property
+    def label(self) -> str:
+        return (f"{self.used_days}/{self.cap} self-certified day(s) used "
+                f"since {self.window_from}")
+
+
+@dataclass
+class ApplyResult:
+    """What accepting a report did to the register."""
+
+    report_id: int
+    marks_written: int
+    dates: list[str]
+    skipped: list[str]
+
+
+# ── DB plumbing ─────────────────────────────────────────────────────
+
+def _connect() -> sqlite3.Connection:
+    paths.ensure_sixth_form_directories()
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys=ON")
+    return conn
+
+
+_DB_READY: bool = False
+
+
+def init_db() -> None:
+    global _DB_READY
+    if _DB_READY:
+        return
+    reg.init_db()
+    thresholds.init_db()
+    with _connect() as conn:
+        conn.executescript(_SCHEMA)
+        conn.commit()
+    logger.debug("Absence-report schema ready at %s", DB_PATH)
+    _DB_READY = True
+
+
+def _row(r: sqlite3.Row) -> AbsenceReport:
+    return AbsenceReport(
+        report_id=r["report_id"], student_id=r["student_id"],
+        date_from=r["date_from"], date_to=r["date_to"],
+        channel=r["channel"], reported_by=r["reported_by"],
+        reporter_name=r["reporter_name"], reason_id=r["reason_id"],
+        reason_text=r["reason_text"], message=r["message"], state=r["state"],
+        self_certified=bool(r["self_certified"]), code=r["code"],
+        decided_by=r["decided_by"], decided_at=r["decided_at"],
+        decision_note=r["decision_note"], marks_written=r["marks_written"],
+        received_at=r["received_at"])
+
+
+# ── Validation ──────────────────────────────────────────────────────
+
+def validate_channel(value: Any) -> str:
+    s = (value or "").strip() if isinstance(value, str) else ""
+    if not s:
+        return PHONE
+    for channel in CHANNELS:
+        if s.lower() == channel.lower():
+            return channel
+    raise ValidationError(f"Channel must be one of: {', '.join(CHANNELS)}")
+
+
+def validate_reporter(value: Any) -> str:
+    s = (value or "").strip() if isinstance(value, str) else ""
+    if not s:
+        return PARENT
+    for reporter in REPORTERS:
+        if s.lower() == reporter.lower():
+            return reporter
+    raise ValidationError(f"Reporter must be one of: {', '.join(REPORTERS)}")
+
+
+def _require_student(student_id: str) -> Any:
+    from education_system.systems.sixth_form.domain.learners.students import (
+        students as _students,
+    )
+    student = _students.get_student((student_id or "").strip())
+    if student is None:
+        raise ValidationError(f"No student with id {student_id}")
+    return student
+
+
+def _validate_span(date_from: str, date_to: str | None) -> tuple[str, str]:
+    date_from = core._validate_date(date_from)
+    date_to = core._validate_date(date_to or date_from)
+    if date_to < date_from:
+        raise ValidationError("An absence cannot end before it starts")
+    span = (_dt.date.fromisoformat(date_to)
+            - _dt.date.fromisoformat(date_from)).days
+    if span > 90:
+        raise ValidationError(
+            "Report at most a term at a time — a longer absence needs a "
+            "plan, not a phone call")
+    ahead = (_dt.date.fromisoformat(date_from) - _dt.date.today()).days
+    if ahead > MAX_FUTURE_DAYS:
+        raise ValidationError(
+            f"That is {ahead} days ahead; absences can be reported up to "
+            f"{MAX_FUTURE_DAYS} days in advance")
+    return date_from, date_to
+
+
+# ── Reporting an absence ────────────────────────────────────────────
+
+def report_absence(
+    student_id: str,
+    date_from: str,
+    *,
+    date_to: str | None = None,
+    channel: str = PHONE,
+    reported_by: str = PARENT,
+    reporter_name: str | None = None,
+    reason_id: int | None = None,
+    reason_text: str | None = None,
+    message: str | None = None,
+) -> AbsenceReport:
+    """Take a report. Writes no mark — that is a decision, made later.
+
+    Deliberately permissive about what it accepts: the person on the
+    phone is not filling in a form, and refusing a call because the
+    reason does not match a dropdown is how a college ends up with a
+    register full of unexplained absence and a message pad full of
+    explanations.
+    """
+    init_db()
+    student = _require_student(student_id)
+    date_from, date_to = _validate_span(date_from, date_to)
+    channel = validate_channel(channel)
+    reported_by = validate_reporter(reported_by)
+    if reason_id is not None:
+        reason_id = codes.validate_reason_id(reason_id)
+        if not reason_text:
+            reason = codes.get_reason(reason_id)
+            reason_text = reason.name if reason else None
+
+    with _connect() as conn:
+        cur = conn.execute(
+            """INSERT INTO attendance_absence_reports
+                   (student_id, date_from, date_to, channel, reported_by,
+                    reporter_name, reason_id, reason_text, message, state)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (student.student_id, date_from, date_to, channel, reported_by,
+             (reporter_name or "").strip() or None, reason_id,
+             (reason_text or "").strip() or None,
+             (message or "").strip() or None, PENDING))
+        conn.commit()
+        report_id = int(cur.lastrowid or 0)
+    logger.info("Absence reported: %s %s → %s via %s", student.student_id,
+                date_from, date_to, channel)
+    out = get_report(report_id)
+    assert out is not None
+    return out
+
+
+# ── Self-certification ──────────────────────────────────────────────
+
+def _term_window(date: str) -> tuple[str, str]:
+    """The term a date falls in, or a rolling quarter if none is set up."""
+    term = calendar.term_for(date)
+    if term is not None:
+        return term.start_date, term.end_date
+    anchor = _dt.date.fromisoformat(date)
+    return ((anchor - _dt.timedelta(days=90)).isoformat(),
+            (anchor + _dt.timedelta(days=90)).isoformat())
+
+
+def self_cert_status(student_id: str, *,
+                     on: str | None = None) -> SelfCertStatus:
+    """How many self-certified days a learner has used this term."""
+    init_db()
+    student = _require_student(student_id)
+    on = core._validate_date(on or _dt.date.today().isoformat())
+    window_from, window_to = _term_window(on)
+    cap = int(thresholds.value_of(thresholds.SELF_CERT_CAP, default=3.0) or 3)
+
+    used = 0
+    for report in list_reports(student_id=student.student_id,
+                               date_from=window_from, date_to=window_to,
+                               state=ACCEPTED):
+        if report.self_certified:
+            used += report.days
+    return SelfCertStatus(student_id=student.student_id, used_days=used,
+                          cap=cap, window_from=window_from,
+                          window_to=window_to)
+
+
+def self_certify(
+    student_id: str,
+    date_from: str,
+    *,
+    date_to: str | None = None,
+    reason_text: str | None = None,
+    reason_id: int | None = None,
+    message: str | None = None,
+    channel: str = PORTAL,
+) -> AbsenceReport:
+    """A learner declares their own absence, and it is coded at once.
+
+    Refused once the term's cap is used up — not as a punishment, but
+    because a learner who has been ill four times this term needs a
+    conversation rather than a fifth form.
+    """
+    init_db()
+    student = _require_student(student_id)
+    date_from, date_to = _validate_span(date_from, date_to)
+    status = self_cert_status(student.student_id, on=date_from)
+    days = (_dt.date.fromisoformat(date_to)
+            - _dt.date.fromisoformat(date_from)).days + 1
+    if status.remaining < days:
+        raise ValidationError(
+            f"{student.student_id} has {status.remaining} self-certified "
+            f"day(s) left this term ({status.label}) — this needs "
+            "authorising by staff instead")
+
+    report = report_absence(
+        student.student_id, date_from, date_to=date_to, channel=channel,
+        reported_by=STUDENT, reporter_name=student.full_name,
+        reason_id=reason_id, reason_text=reason_text or "Self-certified",
+        message=message)
+    with _connect() as conn:
+        conn.execute(
+            "UPDATE attendance_absence_reports SET self_certified = 1 "
+            "WHERE report_id = ?", (report.report_id,))
+        conn.commit()
+    accept(report.report_id, code=SELF_CERT_CODE,
+           decided_by=student.student_id,
+           note="Self-certified by the learner",
+           data_source=SELF_CERT_SOURCE)
+    out = get_report(report.report_id)
+    assert out is not None
+    return out
+
+
+# ── Deciding a report ───────────────────────────────────────────────
+
+def accept(
+    report_id: int,
+    *,
+    code: str = DEFAULT_ACCEPT_CODE,
+    decided_by: str | None = None,
+    note: str | None = None,
+    reason_id: int | None = None,
+    data_source: str = "manual",
+) -> ApplyResult:
+    """Turn a report into marks.
+
+    Codes every timetabled lesson across the reported span. Lessons on
+    closed days are skipped, submitted registers are skipped, and the
+    count of what actually landed comes back — a report that wrote
+    nothing because the whole week was half term should say so rather
+    than reading as actioned.
+    """
+    init_db()
+    report = get_report(report_id)
+    if report is None:
+        raise ValidationError(f"No absence report with id {report_id}")
+    if report.state == ACCEPTED:
+        raise ValidationError(f"Report #{report_id} has already been accepted")
+    code = codes.validate_code(code)
+    if reason_id is None:
+        reason_id = report.reason_id
+
+    written = 0
+    used: list[str] = []
+    skipped: list[str] = []
+    cursor = _dt.date.fromisoformat(report.date_from)
+    end = _dt.date.fromisoformat(report.date_to)
+    while cursor <= end:
+        date = cursor.isoformat()
+        cursor += _dt.timedelta(days=1)
+        if not calendar.is_open(date):
+            skipped.append(date)
+            continue
+        weekday = _dt.date.fromisoformat(date).weekday() + 1
+        slots = [s for s in tt.list_slots(student_id=report.student_id)
+                 if s.day == weekday]
+        slots = weeks.filter_slots(slots, date)
+        if not slots:
+            skipped.append(date)
+            continue
+        marked_here = 0
+        for slot in slots:
+            if reg.is_locked(slot.slot_id, date):
+                continue
+            try:
+                marked_here += core.save_register(
+                    slot.slot_id, date,
+                    {report.student_id: {
+                        "code": code, "reason_id": reason_id,
+                        "notes": report.reason_text,
+                        "data_source": data_source}},
+                    actor=decided_by,
+                    reason=f"Absence reported by {report.reported_by.lower()}"
+                           f" on {report.received_at or 'an earlier date'}",
+                    allow_retro=True)
+            except ValidationError as e:
+                logger.debug("Absence report skipped slot #%d on %s: %s",
+                             slot.slot_id, date, e)
+        written += marked_here
+        (used if marked_here else skipped).append(date)
+
+    with _connect() as conn:
+        conn.execute(
+            """UPDATE attendance_absence_reports
+                  SET state = ?, code = ?, reason_id = ?, decided_by = ?,
+                      decided_at = datetime('now'), decision_note = ?,
+                      marks_written = ?
+                WHERE report_id = ?""",
+            (ACCEPTED, code, reason_id, (decided_by or "").strip() or None,
+             (note or "").strip() or None, written, report_id))
+        conn.commit()
+    logger.info("Absence report #%d accepted as %s: %d mark(s)", report_id,
+                code, written)
+    return ApplyResult(report_id=report_id, marks_written=written,
+                       dates=used, skipped=skipped)
+
+
+def reject(report_id: int, *, reason: str,
+           decided_by: str | None = None) -> AbsenceReport:
+    """Decline a report — the explanation was not accepted.
+
+    The report stays. "We were told and did not accept it" is a
+    materially different record from "nobody told us", and only one of
+    them is defensible at a panel.
+    """
+    init_db()
+    report = get_report(report_id)
+    if report is None:
+        raise ValidationError(f"No absence report with id {report_id}")
+    note = (reason or "").strip()
+    if not note:
+        raise ValidationError("A reason is required to reject a report")
+    with _connect() as conn:
+        conn.execute(
+            """UPDATE attendance_absence_reports
+                  SET state = ?, decided_by = ?, decided_at = datetime('now'),
+                      decision_note = ?
+                WHERE report_id = ?""",
+            (REJECTED, (decided_by or "").strip() or None, note, report_id))
+        conn.commit()
+    out = get_report(report_id)
+    assert out is not None
+    return out
+
+
+# ── Reads ───────────────────────────────────────────────────────────
+
+def get_report(report_id: int) -> AbsenceReport | None:
+    init_db()
+    with _connect() as conn:
+        r = conn.execute(
+            "SELECT * FROM attendance_absence_reports WHERE report_id = ?",
+            (report_id,)).fetchone()
+    return _row(r) if r else None
+
+
+def list_reports(
+    *,
+    student_id: str | None = None,
+    state: str | None = None,
+    channel: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    self_certified: bool | None = None,
+    limit: int = 200,
+) -> list[AbsenceReport]:
+    init_db()
+    clauses: list[str] = []
+    args: list[Any] = []
+    if student_id:
+        clauses.append("student_id = ?")
+        args.append(student_id.strip())
+    if state:
+        if state not in STATES:
+            raise ValidationError(f"State must be one of: {', '.join(STATES)}")
+        clauses.append("state = ?")
+        args.append(state)
+    if channel:
+        clauses.append("channel = ?")
+        args.append(validate_channel(channel))
+    if date_from:
+        clauses.append("date_to >= ?")
+        args.append(core._validate_date(date_from))
+    if date_to:
+        clauses.append("date_from <= ?")
+        args.append(core._validate_date(date_to))
+    if self_certified is not None:
+        clauses.append("self_certified = ?")
+        args.append(1 if self_certified else 0)
+    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    args.append(max(1, int(limit)))
+    with _connect() as conn:
+        rows = conn.execute(
+            f"SELECT * FROM attendance_absence_reports {where} "
+            "ORDER BY date_from DESC, report_id DESC LIMIT ?", args).fetchall()
+    return [_row(r) for r in rows]
+
+
+def queue(*, with_names: bool = True) -> list[AbsenceReport]:
+    """Reports waiting on a decision, oldest absence first.
+
+    The list somebody works through after the phones quieten down. Its
+    length is the honest measure of how far behind the office is.
+    """
+    out = list_reports(state=PENDING)
+    out.sort(key=lambda r: (r.date_from, r.report_id))
+    if with_names and out:
+        from education_system.systems.sixth_form.domain.learners.students import (
+            students as _students,
+        )
+        index = {s.student_id: s.full_name for s in _students.list_students()}
+        for report in out:
+            report.student_name = index.get(report.student_id)
+    return out
+
+
+def queue_count() -> int:
+    init_db()
+    with _connect() as conn:
+        r = conn.execute(
+            "SELECT COUNT(*) AS n FROM attendance_absence_reports "
+            "WHERE state = ?", (PENDING,)).fetchone()
+    return int(r["n"])
+
+
+def reports_for(student_id: str, *, date: str) -> list[AbsenceReport]:
+    """Any report covering one learner on one date.
+
+    Called when somebody is looking at an unexplained absence and
+    wondering whether anyone rang about it.
+    """
+    date = core._validate_date(date)
+    return [r for r in list_reports(student_id=student_id)
+            if r.date_from <= date <= r.date_to]
+
+
+def explained(student_id: str, date: str) -> bool:
+    """Whether anybody has offered an explanation for this absence."""
+    return any(r.state in (PENDING, ACCEPTED)
+               for r in reports_for(student_id, date=date))
+
+
+def channel_breakdown(*, date_from: str | None = None,
+                      date_to: str | None = None) -> dict[str, int]:
+    """How reports are arriving — the case for or against the portal."""
+    out: dict[str, int] = {}
+    for report in list_reports(date_from=date_from, date_to=date_to,
+                               limit=5000):
+        out[report.channel] = out.get(report.channel, 0) + 1
+    return out
+
+
+def self_certification_report(*, date_from: str | None = None,
+                              date_to: str | None = None
+                              ) -> list[SelfCertStatus]:
+    """Who is at or near their self-certification cap."""
+    init_db()
+    seen: dict[str, SelfCertStatus] = {}
+    for report in list_reports(state=ACCEPTED, self_certified=True,
+                               date_from=date_from, date_to=date_to,
+                               limit=5000):
+        if report.student_id not in seen:
+            seen[report.student_id] = self_cert_status(report.student_id)
+    return sorted(seen.values(), key=lambda s: -s.used_days)

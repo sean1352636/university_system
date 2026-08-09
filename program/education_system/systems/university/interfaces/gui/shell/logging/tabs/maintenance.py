@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import os
@@ -6,7 +8,7 @@ from datetime import datetime, timedelta
 
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import LOG_DIR
+from education_system.paths import UNIVERSITY_LOG_DIR
 from education_system.systems.university.interfaces.gui.shell.logging.helpers import _t
 from education_system.systems.university.infrastructure.logging.log_management.security import LogSecurity
 
@@ -75,7 +77,7 @@ class MaintenanceMixin:
     def show_database_info(self):
         """Show database information"""
         if not self.log_manager:
-            messagebox.showerror("Error", "Log manager not available")
+            messagebox.showerror(_t('gui.shell.logging.tabs.maintenance.dialogs.error', default="Error"), _t('gui.shell.logging.tabs.maintenance.dialogs.log_manager_not_available', default="Log manager not available"))
             return
 
         try:
@@ -318,7 +320,7 @@ Success rate: {((checked_count - corrupted_count) / max(checked_count, 1)) * 100
 
     def view_archives(self):
         """View archived log files"""
-        archive_dir = str(LOG_DIR / "archives")
+        archive_dir = str(UNIVERSITY_LOG_DIR / "archives")
 
         if not os.path.exists(archive_dir):
             messagebox.showinfo(_t("log_management.messages.info"), _t("log_management.maintenance.no_archive_dir"))
@@ -335,10 +337,10 @@ Success rate: {((checked_count - corrupted_count) / max(checked_count, 1)) * 100
         archive_window.title(_t("log_management.dialogs.archive_files"))
         archive_window.geometry("600x400")
 
-        ttk.Label(archive_window, text="Archive Files", font=("Arial", 14, "bold")).pack(pady=10)
+        ttk.Label(archive_window, text=_t('gui.shell.logging.tabs.maintenance.labels.archive_files', default="Archive Files"), font=("Arial", 14, "bold")).pack(pady=10)
 
         # Archive list
-        archive_frame = ttk.LabelFrame(archive_window, text="Available Archives")
+        archive_frame = ttk.LabelFrame(archive_window, text=_t('gui.shell.logging.tabs.maintenance.labels.available_archives', default="Available Archives"))
         archive_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         columns = ("Filename", "Size", "Modified")
@@ -373,7 +375,7 @@ Success rate: {((checked_count - corrupted_count) / max(checked_count, 1)) * 100
             else:  # Linux
                 subprocess.Popen(["xdg-open", archive_dir])
 
-        ttk.Button(button_frame, text="Open Archive Folder", command=open_archive_location).pack(side=tk.LEFT)
+        ttk.Button(button_frame, text=_t('gui.shell.logging.tabs.maintenance.buttons.open_archive_folder', default="Open Archive Folder"), command=open_archive_location).pack(side=tk.LEFT)
 
     def rebuild_indexes_gui(self):
         """GUI version of rebuild indexes"""

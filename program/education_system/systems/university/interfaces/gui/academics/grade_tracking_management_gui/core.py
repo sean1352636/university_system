@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
@@ -135,7 +137,7 @@ class GradeTrackingManagementGUI(
             ok = open_mc_gui_for_student(self.root, student_id=student_id)
             if not ok:
                 messagebox.showerror(_("common.error"),
-                                     "Mitigating Circumstances GUI is not available.")
+                                     _t('gui.academics.grade_tracking_management_gui.core.dialogs.mitigating_circumstances_gui_is_not_available', default="Mitigating Circumstances GUI is not available."))
         except Exception as exc:
             messagebox.showerror(_("common.error"), str(exc))
 
@@ -187,7 +189,7 @@ class GradeTrackingManagementGUI(
         descriptors = [d for d in curr.list_module_descriptors()
                        if d["module_code"] == module_code]
         if not descriptors:
-            messagebox.showinfo("Not found",
+            messagebox.showinfo(_t('gui.academics.grade_tracking_management_gui.core.dialogs.not_found', default="Not found"),
                                 f"No curriculum-spec descriptor for {module_code}.",
                                 parent=self.root)
             return

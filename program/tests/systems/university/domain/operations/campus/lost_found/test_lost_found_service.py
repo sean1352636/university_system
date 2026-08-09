@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import pytest
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.database import db as db_module
 from education_system.systems.university.infrastructure.database.schemas.core_schemas import (
     init_grade_system_db,
@@ -48,7 +48,7 @@ def service(tmp_path, monkeypatch):
     db_path = str(tmp_path / "lost_found_test.db")
     monkeypatch.setattr(db_module, "DEFAULT_DB_PATH", db_path)
     # Keep photo writes inside the sandbox.
-    monkeypatch.setattr(paths, "UPLOAD_DIR", str(tmp_path / "uploads"))
+    monkeypatch.setattr(paths, "UNIVERSITY_UPLOAD_DIR", str(tmp_path / "uploads"))
 
     # Create the students table (and its siblings) the service FK-references.
     init_grade_system_db()

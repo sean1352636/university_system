@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 from education_system.systems.university.domain.pastoral.health.services.audit import log_audit_event
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.health.storage import get_connection
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 from education_system.systems.university.infrastructure.i18n import get_text
 

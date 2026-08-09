@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -436,13 +438,13 @@ def show_ticket_details(self, ticket_id):
     # Load ticket data
     ticket_data = self.get_ticket_details(ticket_id)
     if not ticket_data:
-        messagebox.showerror("Error", "Ticket not found")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_view.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.ticket_view.dialogs.ticket_not_found', default="Ticket not found"))
         details_window.destroy()
         return
 
     # Details tab
     details_frame = ttk.Frame(notebook)
-    notebook.add(details_frame, text="Details")
+    notebook.add(details_frame, text=_t('gui.pastoral.helpdesk.ticket_view.tabs.details', default="Details"))
 
     # Create scrollable frame for details
     canvas = tk.Canvas(details_frame)
@@ -458,7 +460,7 @@ def show_ticket_details(self, ticket_id):
     canvas.configure(yscrollcommand=scrollbar.set)
 
     # Ticket information
-    info_frame = ttk.LabelFrame(scrollable_frame, text="Ticket Information")
+    info_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.ticket_information', default="Ticket Information"))
     info_frame.pack(fill='x', padx=10, pady=5)
 
     # Display ticket fields
@@ -481,7 +483,7 @@ def show_ticket_details(self, ticket_id):
         ttk.Label(info_frame, text=str(value) if value else 'N/A').grid(row=i, column=1, sticky='w', padx=20, pady=2)
 
     # Message frame
-    message_frame = ttk.LabelFrame(scrollable_frame, text="Original Message")
+    message_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.original_message', default="Original Message"))
     message_frame.pack(fill='x', padx=10, pady=5)
 
     message_text = scrolledtext.ScrolledText(message_frame, height=5, wrap='word', state='disabled')
@@ -492,7 +494,7 @@ def show_ticket_details(self, ticket_id):
 
     # Resolution frame (if resolved)
     if ticket_data.get('resolution'):
-        resolution_frame = ttk.LabelFrame(scrollable_frame, text="Resolution")
+        resolution_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.resolution', default="Resolution"))
         resolution_frame.pack(fill='x', padx=10, pady=5)
 
         resolution_text = scrolledtext.ScrolledText(resolution_frame, height=3, wrap='word', state='disabled')
@@ -506,14 +508,14 @@ def show_ticket_details(self, ticket_id):
 
     # Replies tab
     replies_frame = ttk.Frame(notebook)
-    notebook.add(replies_frame, text="Conversation")
+    notebook.add(replies_frame, text=_t('gui.pastoral.helpdesk.ticket_view.tabs.conversation', default="Conversation"))
 
     self.create_replies_view(replies_frame, ticket_id)
 
     # Actions tab (if user has permissions)
     if self.has_permission('reply_to_own_ticket') or self.has_permission('manage_tickets'):
         actions_frame = ttk.Frame(notebook)
-        notebook.add(actions_frame, text="Actions")
+        notebook.add(actions_frame, text=_t('gui.pastoral.helpdesk.ticket_view.tabs.actions', default="Actions"))
 
         self.create_ticket_actions_view(actions_frame, ticket_id, ticket_data)
 
@@ -542,7 +544,7 @@ def get_ticket_details(self, ticket_id):
         return dict(ticket) if ticket else None
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load ticket: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_view.dialogs.error', default="Error"), f"Failed to load ticket: {str(e)}")
         return None
 
 # Attach method to HelpdeskGUI class
@@ -554,8 +556,8 @@ def create_replies_view(self, parent, ticket_id):
     toolbar = ttk.Frame(parent)
     toolbar.pack(fill='x', padx=5, pady=5)
 
-    ttk.Button(toolbar, text="Add Reply", command=lambda: self.show_reply_dialog(ticket_id)).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="Refresh", command=lambda: self.refresh_replies_view(parent, ticket_id)).pack(side='left', padx=5)
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.add_reply', default="Add Reply"), command=lambda: self.show_reply_dialog(ticket_id)).pack(side='left', padx=5)
+    ttk.Button(toolbar, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.refresh', default="Refresh"), command=lambda: self.refresh_replies_view(parent, ticket_id)).pack(side='left', padx=5)
 
     # Replies list
     self.replies_frame = ttk.Frame(parent)
@@ -603,7 +605,7 @@ def load_ticket_replies(self, ticket_id):
 
             # Internal note indicator
             if reply.get('is_internal') and self.has_permission('manage_tickets'):
-                internal_label = ttk.Label(reply_frame, text="(Internal Note)", style='Warning.TLabel')
+                internal_label = ttk.Label(reply_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.internal_note', default="(Internal Note)"), style='Warning.TLabel')
                 internal_label.pack()
 
         canvas.pack(side="left", fill="both", expand=True)
@@ -652,21 +654,21 @@ HelpdeskGUI.refresh_replies_view = refresh_replies_view
 
 def create_ticket_actions_view(self, parent, ticket_id, ticket_data):
     """Create ticket actions view"""
-    actions_frame = ttk.LabelFrame(parent, text="Available Actions")
+    actions_frame = ttk.LabelFrame(parent, text=_t('gui.pastoral.helpdesk.ticket_view.labels.available_actions', default="Available Actions"))
     actions_frame.pack(fill='x', padx=10, pady=10)
 
     # Reply action
     if self.has_permission('reply_to_own_ticket') or self.has_permission('manage_tickets'):
-        ttk.Button(actions_frame, text="Add Reply",
+        ttk.Button(actions_frame, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.add_reply', default="Add Reply"),
                   command=lambda: self.show_reply_dialog(ticket_id)).pack(pady=5)
 
     # Admin actions
     if self.has_permission('manage_tickets'):
-        ttk.Button(actions_frame, text="Change Status",
+        ttk.Button(actions_frame, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.change_status', default="Change Status"),
                   command=lambda: self.show_status_dialog(ticket_id)).pack(pady=5)
-        ttk.Button(actions_frame, text="Assign Ticket",
+        ttk.Button(actions_frame, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.assign_ticket', default="Assign Ticket"),
                   command=lambda: self.show_assign_dialog(ticket_id)).pack(pady=5)
-        ttk.Button(actions_frame, text="Add Internal Note",
+        ttk.Button(actions_frame, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.add_internal_note', default="Add Internal Note"),
                   command=lambda: self.show_internal_note_dialog(ticket_id)).pack(pady=5)
 
 # Attach method to HelpdeskGUI class
@@ -691,7 +693,7 @@ def view_ticket_detail_enhanced_gui(self, ticket_id):
         conn.close()
 
         if not ticket:
-            messagebox.showerror("Not Found", "Ticket not found.")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_view.dialogs.not_found', default="Not Found"), _t('gui.pastoral.helpdesk.ticket_view.dialogs.ticket_not_found_variant_2', default="Ticket not found."))
             return
 
         # Create detail window
@@ -713,7 +715,7 @@ def view_ticket_detail_enhanced_gui(self, ticket_id):
         main_canvas.configure(yscrollcommand=scrollbar.set)
 
         # Ticket header
-        header_frame = ttk.LabelFrame(scrollable_frame, text="Ticket Information", padding="10")
+        header_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.ticket_information', default="Ticket Information"), padding="10")
         header_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(header_frame, text=f"Ticket ID: #{ticket['ticket_id']}", font=('Arial', 12, 'bold')).pack(anchor=tk.W)
@@ -730,7 +732,7 @@ def view_ticket_detail_enhanced_gui(self, ticket_id):
             ttk.Label(header_frame, text=f"Due Date: {ticket['due_date']}").pack(anchor=tk.W)
 
         # Message
-        msg_frame = ttk.LabelFrame(scrollable_frame, text="Message", padding="10")
+        msg_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.message', default="Message"), padding="10")
         msg_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         msg_text = scrolledtext.ScrolledText(msg_frame, wrap=tk.WORD, height=5)
@@ -759,20 +761,20 @@ def view_ticket_detail_enhanced_gui(self, ticket_id):
         action_frame.pack(fill=tk.X, padx=10, pady=10)
 
         if self.auth.has_permission('reply_to_any_ticket') or ticket['user_id'] == self.auth.current_user['id']:
-            ttk.Button(action_frame, text="Reply", command=lambda: self.reply_to_ticket_enhanced_gui(ticket_id, False)).pack(side=tk.LEFT, padx=5)
+            ttk.Button(action_frame, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.reply', default="Reply"), command=lambda: self.reply_to_ticket_enhanced_gui(ticket_id, False)).pack(side=tk.LEFT, padx=5)
 
         if self.auth.has_permission('manage_tickets'):
-            ttk.Button(action_frame, text="Internal Note", command=lambda: self.reply_to_ticket_enhanced_gui(ticket_id, True)).pack(side=tk.LEFT, padx=5)
-            ttk.Button(action_frame, text="Add Time Entry", command=lambda: self.add_time_entry_gui(ticket_id)).pack(side=tk.LEFT, padx=5)
-            ttk.Button(action_frame, text="Link Ticket", command=lambda: self.link_tickets_gui(ticket_id)).pack(side=tk.LEFT, padx=5)
+            ttk.Button(action_frame, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.internal_note', default="Internal Note"), command=lambda: self.reply_to_ticket_enhanced_gui(ticket_id, True)).pack(side=tk.LEFT, padx=5)
+            ttk.Button(action_frame, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.add_time_entry', default="Add Time Entry"), command=lambda: self.add_time_entry_gui(ticket_id)).pack(side=tk.LEFT, padx=5)
+            ttk.Button(action_frame, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.link_ticket', default="Link Ticket"), command=lambda: self.link_tickets_gui(ticket_id)).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(action_frame, text="Close", command=detail_window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.pastoral.helpdesk.ticket_view.buttons.close', default="Close"), command=detail_window.destroy).pack(side=tk.RIGHT, padx=5)
 
         main_canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
     except sqlite3.Error as e:
-        messagebox.showerror("Error", f"Failed to load ticket details: {e}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.ticket_view.dialogs.error', default="Error"), f"Failed to load ticket details: {e}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.view_ticket_detail_enhanced_gui = view_ticket_detail_enhanced_gui
@@ -781,7 +783,7 @@ def view_ticket_from_tree(self, tree):
     """View ticket details from treeview selection"""
     selection = tree.selection()
     if not selection:
-        messagebox.showwarning("No Selection", "Please select a ticket to view.")
+        messagebox.showwarning(_t('gui.pastoral.helpdesk.ticket_view.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.helpdesk.ticket_view.dialogs.please_select_a_ticket_to_view', default="Please select a ticket to view."))
         return
 
     item = tree.item(selection[0])
@@ -811,7 +813,7 @@ def display_ticket_replies_gui(self, ticket_id, parent_frame):
         if not replies:
             return
 
-        replies_frame = ttk.LabelFrame(parent_frame, text="Conversation History", padding="10")
+        replies_frame = ttk.LabelFrame(parent_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.conversation_history', default="Conversation History"), padding="10")
         replies_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         for reply in replies:
@@ -863,7 +865,7 @@ def display_time_tracking_gui(self, ticket_id, parent_frame):
         if not time_entries:
             return
 
-        time_frame = ttk.LabelFrame(parent_frame, text="Time Tracking", padding="10")
+        time_frame = ttk.LabelFrame(parent_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.time_tracking', default="Time Tracking"), padding="10")
         time_frame.pack(fill=tk.X, padx=10, pady=5)
 
         total_time = 0
@@ -914,7 +916,7 @@ def display_escalation_history_gui(self, ticket_id, parent_frame):
         if not escalations:
             return
 
-        esc_frame = ttk.LabelFrame(parent_frame, text="Escalation History", padding="10")
+        esc_frame = ttk.LabelFrame(parent_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.escalation_history', default="Escalation History"), padding="10")
         esc_frame.pack(fill=tk.X, padx=10, pady=5)
 
         for esc in escalations:
@@ -954,7 +956,7 @@ def display_audit_trail_gui(self, ticket_id, parent_frame):
         if not audit_entries:
             return
 
-        audit_frame = ttk.LabelFrame(parent_frame, text="Recent Activity (Audit Trail)", padding="10")
+        audit_frame = ttk.LabelFrame(parent_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.recent_activity_audit_trail', default="Recent Activity (Audit Trail)"), padding="10")
         audit_frame.pack(fill=tk.X, padx=10, pady=5)
 
         for entry in audit_entries:
@@ -1004,7 +1006,7 @@ def display_linked_tickets_gui(self, ticket_id, parent_frame):
         if not links:
             return
 
-        links_frame = ttk.LabelFrame(parent_frame, text="Linked Tickets", padding="10")
+        links_frame = ttk.LabelFrame(parent_frame, text=_t('gui.pastoral.helpdesk.ticket_view.labels.linked_tickets', default="Linked Tickets"), padding="10")
         links_frame.pack(fill=tk.X, padx=10, pady=5)
 
         for link in links:

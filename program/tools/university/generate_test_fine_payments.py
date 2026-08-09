@@ -14,12 +14,12 @@ from datetime import datetime, timedelta
 # Add project root to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 def generate_test_payments():
     """Generate test fine payment data"""
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         print("="*60)
@@ -143,7 +143,7 @@ def generate_test_payments():
 def show_summary():
     """Show summary of test data"""
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         print("\n" + "="*60)
@@ -202,7 +202,7 @@ def main():
 
     # Check if table exists
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='library_fine_payments'")
         if not cursor.fetchone():
@@ -217,7 +217,7 @@ def main():
 
     # Check if data already exists
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) FROM library_fine_payments')
         count = cursor.fetchone()[0]

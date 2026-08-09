@@ -1,5 +1,7 @@
 """Group management interface - filters, table, CRUD, communication, export"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import csv
@@ -17,26 +19,26 @@ class ManagementMixin:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Manage Groups", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.group_manager.management.labels.manage_groups', default="Manage Groups"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Filter frame
-        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.group_manager.management.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Assignment:").grid(row=0, column=0, sticky='w', padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.group_manager.management.labels.assignment', default="Assignment:")).grid(row=0, column=0, sticky='w', padx=5)
         self.group_assignment_filter_var = tk.StringVar()
         assignment_combo = ttk.Combobox(filter_frame, textvariable=self.group_assignment_filter_var, width=30)
         assignment_combo.grid(row=0, column=1, padx=5)
         self.load_assignments_for_group_filter(assignment_combo)
 
-        ttk.Label(filter_frame, text="Status:").grid(row=0, column=2, sticky='w', padx=5)
-        self.group_status_filter_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.group_manager.management.labels.status', default="Status:")).grid(row=0, column=2, sticky='w', padx=5)
+        self.group_status_filter_var = tk.StringVar(value=_t('gui.academics.assignment_system.group_manager.management.values.all', default="All"))
         status_combo = ttk.Combobox(filter_frame, textvariable=self.group_status_filter_var,
                                     values=["All", "Complete", "Incomplete", "Empty"], width=15)
         status_combo.grid(row=0, column=3, padx=5)
 
-        ttk.Button(filter_frame, text="Apply Filters",
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.apply_filters', default="Apply Filters"),
                   command=self.load_filtered_groups).grid(row=0, column=4, padx=10)
 
         # Groups table
@@ -70,38 +72,38 @@ class ManagementMixin:
         action_frame = ttk.Frame(self.gui.layout.content_area)
         action_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Label(action_frame, text="Group Actions:", font=('TkDefaultFont', 9, 'bold')).pack(side='left', padx=(0, 10))
+        ttk.Label(action_frame, text=_t('gui.academics.assignment_system.group_manager.management.labels.group_actions', default="Group Actions:"), font=('TkDefaultFont', 9, 'bold')).pack(side='left', padx=(0, 10))
 
-        ttk.Button(action_frame, text="View Members",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.view_members', default="View Members"),
                   command=self.view_group_members).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Edit Group",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.edit_group', default="Edit Group"),
                   command=self.edit_group_details).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Add Members",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.add_members', default="Add Members"),
                   command=self.add_members_to_group).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Remove Members",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.remove_members', default="Remove Members"),
                   command=self.remove_members_from_group).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Merge Groups",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.merge_groups', default="Merge Groups"),
                   command=self.merge_selected_groups).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Split Group",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.split_group', default="Split Group"),
                   command=self.split_selected_group).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame, text="Delete Group",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.delete_group', default="Delete Group"),
                   command=self.delete_selected_group).pack(side='left', padx=(0, 5))
 
         # Second row of actions
         action_frame2 = ttk.Frame(self.gui.layout.content_area)
         action_frame2.pack(fill='x', pady=(5, 0))
 
-        ttk.Label(action_frame2, text="Communication:", font=('TkDefaultFont', 9, 'bold')).pack(side='left', padx=(0, 10))
+        ttk.Label(action_frame2, text=_t('gui.academics.assignment_system.group_manager.management.labels.communication', default="Communication:"), font=('TkDefaultFont', 9, 'bold')).pack(side='left', padx=(0, 10))
 
-        ttk.Button(action_frame2, text="Send Message to Group",
+        ttk.Button(action_frame2, text=_t('gui.academics.assignment_system.group_manager.management.buttons.send_message_to_group', default="Send Message to Group"),
                   command=self.send_message_to_group).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame2, text="View Submission",
+        ttk.Button(action_frame2, text=_t('gui.academics.assignment_system.group_manager.management.buttons.view_submission', default="View Submission"),
                   command=self.view_group_submission).pack(side='left', padx=(0, 5))
-        ttk.Button(action_frame2, text="Export Group List",
+        ttk.Button(action_frame2, text=_t('gui.academics.assignment_system.group_manager.management.buttons.export_group_list', default="Export Group List"),
                   command=self.export_group_list).pack(side='left', padx=(0, 5))
 
         # Group details frame
-        self.group_details_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Group Details", padding=10)
+        self.group_details_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.group_manager.management.labels.group_details', default="Group Details"), padding=10)
         self.group_details_frame.pack(fill='x', pady=(10, 0))
 
         # Load groups
@@ -170,7 +172,7 @@ class ManagementMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load groups: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to load groups: {e}")
 
 
     def on_group_select(self, event):
@@ -201,7 +203,7 @@ class ManagementMixin:
 
             group_info = cursor.fetchone()
             if not group_info:
-                ttk.Label(self.group_details_frame, text="Group not found").pack()
+                ttk.Label(self.group_details_frame, text=_t('gui.academics.assignment_system.group_manager.management.labels.group_not_found', default="Group not found")).pack()
                 conn.close()
                 return
 
@@ -241,7 +243,7 @@ class ManagementMixin:
         """View members of selected group in detail"""
         selection = self.manage_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group")
+            messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.group_manager.management.dialogs.please_select_a_group', default="Please select a group"))
             return
 
         item = self.manage_groups_tree.item(selection[0])
@@ -288,16 +290,16 @@ class ManagementMixin:
                 members_tree.insert('', 'end', values=member)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load members: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to load members: {e}")
 
-        ttk.Button(members_window, text="Close", command=members_window.destroy).pack(pady=10)
+        ttk.Button(members_window, text=_t('gui.academics.assignment_system.group_manager.management.buttons.close', default="Close"), command=members_window.destroy).pack(pady=10)
 
 
     def edit_group_details(self):
         """Edit selected group details"""
         selection = self.manage_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group to edit")
+            messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.group_manager.management.dialogs.please_select_a_group_to_edit', default="Please select a group to edit"))
             return
 
         item = self.manage_groups_tree.item(selection[0])
@@ -316,7 +318,7 @@ class ManagementMixin:
 
             if not group_info:
                 conn.close()
-                messagebox.showerror("Error", "Group not found")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.management.dialogs.group_not_found', default="Group not found"))
                 return
 
             gid, current_name, assignment_id, created_at = group_info
@@ -340,11 +342,11 @@ class ManagementMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Edit Group Details",
+            ttk.Label(dialog, text=_t('gui.academics.assignment_system.group_manager.management.labels.edit_group_details', default="Edit Group Details"),
                      font=('TkDefaultFont', 12, 'bold')).pack(anchor='w', padx=10, pady=(10, 5))
             ttk.Label(dialog, text=f"Assignment: {assignment_title}").pack(anchor='w', padx=10)
 
-            name_frame = ttk.LabelFrame(dialog, text="Group Name", padding=10)
+            name_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.group_manager.management.labels.group_name', default="Group Name"), padding=10)
             name_frame.pack(fill='x', padx=10, pady=10)
 
             name_var = tk.StringVar(value=current_name)
@@ -360,13 +362,13 @@ class ManagementMixin:
                 members_list.insert(tk.END, f"{sid} - {display_name} ({email or 'no email'})")
 
             notify_var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(dialog, text="Email group members about changes",
+            ttk.Checkbutton(dialog, text=_t('gui.academics.assignment_system.group_manager.management.buttons.email_group_members_about_changes', default="Email group members about changes"),
                            variable=notify_var).pack(anchor='w', padx=10)
 
             def save_changes():
                 new_name = name_var.get().strip()
                 if not new_name:
-                    messagebox.showerror("Error", "Group name cannot be empty", parent=dialog)
+                    messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.management.dialogs.group_name_cannot_be_empty', default="Group name cannot be empty"), parent=dialog)
                     return
 
                 old_name = current_name
@@ -384,7 +386,7 @@ class ManagementMixin:
 
                     dialog.destroy()
                     self.load_filtered_groups()
-                    messagebox.showinfo("Success", f"Group updated to '{new_name}'")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.success', default="Success"), f"Group updated to '{new_name}'")
 
                     if notify_var.get() and members and new_name != old_name:
                         self._email_group_edit_notification(
@@ -392,16 +394,16 @@ class ManagementMixin:
                         )
 
                 except Exception as exc:
-                    messagebox.showerror("Error", f"Failed to update group: {exc}", parent=dialog)
+                    messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to update group: {exc}", parent=dialog)
 
             btn_frame = ttk.Frame(dialog)
             btn_frame.pack(fill='x', padx=10, pady=10)
-            ttk.Button(btn_frame, text="Save Changes", command=save_changes,
+            ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.save_changes', default="Save Changes"), command=save_changes,
                       style='Accent.TButton').pack(side='left')
-            ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+            ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load group for editing: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to load group for editing: {exc}")
 
 
     def _email_group_edit_notification(self, members, old_name, new_name, assignment_title):
@@ -434,7 +436,7 @@ class ManagementMixin:
                     pass
 
             if sent > 0:
-                messagebox.showinfo("Emails Sent", f"Notified {sent} group member(s) about the changes.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.emails_sent', default="Emails Sent"), f"Notified {sent} group member(s) about the changes.")
 
         except Exception as e:
             print(f"Group edit notification email failed: {e}")
@@ -444,7 +446,7 @@ class ManagementMixin:
         """Add members to selected group"""
         selection = self.manage_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group")
+            messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.group_manager.management.dialogs.please_select_a_group', default="Please select a group"))
             return
 
         item = self.manage_groups_tree.item(selection[0])
@@ -462,7 +464,7 @@ class ManagementMixin:
             group_row = cursor.fetchone()
             if not group_row:
                 conn.close()
-                messagebox.showerror("Error", "Selected group not found.")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.management.dialogs.selected_group_not_found', default="Selected group not found."))
                 return
 
             assignment_id, group_name = group_row
@@ -471,7 +473,7 @@ class ManagementMixin:
             assignment_row = cursor.fetchone()
             if not assignment_row:
                 conn.close()
-                messagebox.showerror("Error", "Assignment not found.")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.management.dialogs.assignment_not_found', default="Assignment not found."))
                 return
 
             module_code = assignment_row[0]
@@ -497,7 +499,7 @@ class ManagementMixin:
             available_students = [c for c in all_candidates if c[0] not in existing_ids]
 
             if not available_students:
-                messagebox.showinfo("Add Members", "No available students to add to this group.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.add_members', default="Add Members"), _t('gui.academics.assignment_system.group_manager.management.dialogs.no_available_students_to_add_to_this_group', default="No available students to add to this group."))
                 return
 
             dialog = tk.Toplevel(self.root)
@@ -546,25 +548,25 @@ class ManagementMixin:
                     dialog.destroy()
                     self.load_filtered_groups()
                     self.show_group_details(group_id)
-                    messagebox.showinfo("Members Added", f"Added {len(indices)} member(s) to '{group_name}'.")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.members_added', default="Members Added"), f"Added {len(indices)} member(s) to '{group_name}'.")
                 except Exception as exc:
                     status_var.set(f"Failed to add members: {exc}")
 
             button_frame = ttk.Frame(dialog)
             button_frame.pack(fill='x', padx=10, pady=(0, 10))
-            ttk.Button(button_frame, text="Add Selected", command=add_selected_members,
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.add_selected', default="Add Selected"), command=add_selected_members,
                       style='Accent.TButton').pack(side='left')
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load available members: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to load available members: {exc}")
 
 
     def remove_members_from_group(self):
         """Remove members from selected group"""
         selection = self.manage_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group")
+            messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.group_manager.management.dialogs.please_select_a_group', default="Please select a group"))
             return
 
         item = self.manage_groups_tree.item(selection[0])
@@ -585,7 +587,7 @@ class ManagementMixin:
             conn.close()
 
             if not members:
-                messagebox.showinfo("Remove Members", "This group has no members.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.remove_members', default="Remove Members"), _t('gui.academics.assignment_system.group_manager.management.dialogs.this_group_has_no_members', default="This group has no members."))
                 return
 
             dialog = tk.Toplevel(self.root)
@@ -629,26 +631,26 @@ class ManagementMixin:
                     dialog.destroy()
                     self.load_filtered_groups()
                     self.show_group_details(group_id)
-                    messagebox.showinfo("Members Removed", f"Removed {len(indices)} member(s) from '{group_name}'.")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.members_removed', default="Members Removed"), f"Removed {len(indices)} member(s) from '{group_name}'.")
                 except Exception as exc:
                     status_var.set(f"Failed to remove members: {exc}")
 
             button_frame = ttk.Frame(dialog)
             button_frame.pack(fill='x', padx=10, pady=(0, 10))
-            ttk.Button(button_frame, text="Remove Selected", command=remove_selected,
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.remove_selected', default="Remove Selected"), command=remove_selected,
                       style='Accent.TButton').pack(side='left')
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load group members: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to load group members: {exc}")
 
 
     def merge_selected_groups(self):
         """Merge multiple selected groups"""
         selections = self.manage_groups_tree.selection()
         if len(selections) < 2:
-            messagebox.showwarning("Warning", "Please select at least 2 groups to merge.\n\n"
-                                   "Hold Ctrl and click to select multiple groups.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.group_manager.management.dialogs.please_select_at_least_2_groups_to_merge_hold_ctrl_and_click_to', default="Please select at least 2 groups to merge.\n\n"
+                                   "Hold Ctrl and click to select multiple groups."))
             return
 
         group_ids = [self.manage_groups_tree.item(item)['values'][0] for item in selections]
@@ -666,13 +668,13 @@ class ManagementMixin:
 
             if len(group_data) != len(group_ids):
                 conn.close()
-                messagebox.showerror("Error", "One or more selected groups no longer exist.")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.management.dialogs.one_or_more_selected_groups_no_longer_exist', default="One or more selected groups no longer exist."))
                 return
 
             assignment_ids = {row[1] for row in group_data}
             if len(assignment_ids) != 1:
                 conn.close()
-                messagebox.showwarning("Cannot Merge", "Selected groups belong to different assignments.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.cannot_merge', default="Cannot Merge"), _t('gui.academics.assignment_system.group_manager.management.dialogs.selected_groups_belong_to_different_assignments', default="Selected groups belong to different assignments."))
                 return
 
             target_group_id = group_data[0][0]
@@ -680,7 +682,7 @@ class ManagementMixin:
             other_groups = [row[0] for row in group_data[1:]]
 
             if not messagebox.askyesno(
-                    "Confirm Merge",
+                    _t('gui.academics.assignment_system.group_manager.management.dialogs.confirm_merge', default="Confirm Merge"),
                     f"Merge {len(group_ids)} groups into '{target_group_name}'?\n\n"
                     "All members will be moved into the first selected group."):
                 conn.close()
@@ -700,17 +702,17 @@ class ManagementMixin:
 
             self.load_filtered_groups()
             self.show_group_details(target_group_id)
-            messagebox.showinfo("Groups Merged", f"Groups merged into '{target_group_name}'.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.groups_merged', default="Groups Merged"), f"Groups merged into '{target_group_name}'.")
 
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to merge groups: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to merge groups: {exc}")
 
 
     def split_selected_group(self):
         """Split selected group into multiple groups"""
         selection = self.manage_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group to split")
+            messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.group_manager.management.dialogs.please_select_a_group_to_split', default="Please select a group to split"))
             return
 
         item = self.manage_groups_tree.item(selection[0])
@@ -728,7 +730,7 @@ class ManagementMixin:
 
             if not group_info:
                 conn.close()
-                messagebox.showerror("Error", "Group not found.")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.management.dialogs.group_not_found_variant_2', default="Group not found."))
                 return
 
             assignment_id, group_name = group_info
@@ -743,7 +745,7 @@ class ManagementMixin:
             conn.close()
 
             if len(members) < 2:
-                messagebox.showinfo("Split Group", "At least two members are required to split a group.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.split_group', default="Split Group"), _t('gui.academics.assignment_system.group_manager.management.dialogs.at_least_two_members_are_required_to_split_a_group', default="At least two members are required to split a group."))
                 return
 
             dialog = tk.Toplevel(self.root)
@@ -756,7 +758,7 @@ class ManagementMixin:
                      wraplength=440, justify='left').pack(anchor='w', padx=10, pady=(10, 10))
 
             new_name_var = tk.StringVar(value=f"{group_name} - Split")
-            ttk.Label(dialog, text="New Group Name:").pack(anchor='w', padx=10)
+            ttk.Label(dialog, text=_t('gui.academics.assignment_system.group_manager.management.labels.new_group_name', default="New Group Name:")).pack(anchor='w', padx=10)
             ttk.Entry(dialog, textvariable=new_name_var).pack(fill='x', padx=10, pady=(0, 10))
 
             listbox = tk.Listbox(dialog, selectmode=tk.MULTIPLE, exportselection=False, height=12)
@@ -767,7 +769,7 @@ class ManagementMixin:
                 listbox.insert(tk.END, f"{first_name} {last_name} ({email or 'no email'})")
                 member_map[index] = member_id
 
-            status_var = tk.StringVar(value="Select members to move into the new group.")
+            status_var = tk.StringVar(value=_t('gui.academics.assignment_system.group_manager.management.values.select_members_to_move_into_the_new_group', default="Select members to move into the new group."))
             ttk.Label(dialog, textvariable=status_var, style='Info.TLabel').pack(anchor='w', padx=10)
 
             def perform_split():
@@ -808,33 +810,33 @@ class ManagementMixin:
                     dialog.destroy()
                     self.load_filtered_groups()
                     self.show_group_details(group_id)
-                    messagebox.showinfo("Group Split",
+                    messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.group_split', default="Group Split"),
                                         f"Created '{new_group_name}' with {len(indices)} member(s).")
                 except Exception as exc:
                     status_var.set(f"Failed to split group: {exc}")
 
             button_frame = ttk.Frame(dialog)
             button_frame.pack(fill='x', padx=10, pady=(0, 10))
-            ttk.Button(button_frame, text="Create New Group", command=perform_split,
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.create_new_group', default="Create New Group"), command=perform_split,
                       style='Accent.TButton').pack(side='left')
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to split group: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to split group: {exc}")
 
 
     def delete_selected_group(self):
         """Delete selected group"""
         selection = self.manage_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group to delete")
+            messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.group_manager.management.dialogs.please_select_a_group_to_delete', default="Please select a group to delete"))
             return
 
         item = self.manage_groups_tree.item(selection[0])
         group_id = item['values'][0]
         group_name = item['values'][1]
 
-        if not messagebox.askyesno("Confirm Delete",
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.group_manager.management.dialogs.confirm_delete', default="Confirm Delete"),
                                    f"Delete group '{group_name}'?\n\nThis will remove all members from the group."):
             return
 
@@ -849,17 +851,17 @@ class ManagementMixin:
                 conn.close()
 
             self.load_filtered_groups()
-            messagebox.showinfo("Success", f"Group '{group_name}' deleted")
+            messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.success', default="Success"), f"Group '{group_name}' deleted")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete group: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to delete group: {e}")
 
 
     def send_message_to_group(self):
         """Send message to all group members"""
         selection = self.manage_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group")
+            messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.group_manager.management.dialogs.please_select_a_group', default="Please select a group"))
             return
 
         item = self.manage_groups_tree.item(selection[0])
@@ -890,12 +892,12 @@ class ManagementMixin:
             conn.close()
 
             if not members:
-                messagebox.showinfo("Send Message", "Group has no members to message.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.send_message', default="Send Message"), _t('gui.academics.assignment_system.group_manager.management.dialogs.group_has_no_members_to_message', default="Group has no members to message."))
                 return
 
             sender_id = self.auth.current_user.get('id') if self.auth and self.auth.current_user else None
             if not sender_id:
-                messagebox.showerror("Error", "You must be logged in to send messages.")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.management.dialogs.you_must_be_logged_in_to_send_messages', default="You must be logged in to send messages."))
                 return
 
             self.gui.db._ensure_messages_table()
@@ -912,11 +914,11 @@ class ManagementMixin:
             ttk.Label(dialog, text="\n".join(f"• {fn} {ln}" for _, fn, ln, _ in members),
                      justify='left').pack(anchor='w', padx=10)
 
-            ttk.Label(dialog, text="Subject:").pack(anchor='w', padx=10, pady=(15, 5))
+            ttk.Label(dialog, text=_t('gui.academics.assignment_system.group_manager.management.labels.subject', default="Subject:")).pack(anchor='w', padx=10, pady=(15, 5))
             subject_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=subject_var).pack(fill='x', padx=10)
 
-            ttk.Label(dialog, text="Message:").pack(anchor='w', padx=10, pady=(10, 5))
+            ttk.Label(dialog, text=_t('gui.academics.assignment_system.group_manager.management.labels.message', default="Message:")).pack(anchor='w', padx=10, pady=(10, 5))
             body_text = scrolledtext.ScrolledText(dialog, height=8, wrap=tk.WORD)
             body_text.pack(fill='both', expand=True, padx=10)
 
@@ -976,24 +978,24 @@ class ManagementMixin:
                     result_msg = f"Message sent to {len(recipient_user_ids)} member(s) in {group_name}."
                     if emails_sent > 0:
                         result_msg += f"\n{emails_sent} email(s) also sent."
-                    messagebox.showinfo("Message Sent", result_msg)
+                    messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.message_sent', default="Message Sent"), result_msg)
                 except Exception as exc:
                     status_var.set(f"Failed to send message: {exc}")
 
             button_frame = ttk.Frame(dialog)
             button_frame.pack(fill='x', padx=10, pady=10)
-            ttk.Button(button_frame, text="Send Message", command=send, style='Accent.TButton').pack(side='left')
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.send_message', default="Send Message"), command=send, style='Accent.TButton').pack(side='left')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to prepare message: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to prepare message: {exc}")
 
 
     def view_group_submission(self):
         """View submission for selected group"""
         selection = self.manage_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a group")
+            messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.management.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.group_manager.management.dialogs.please_select_a_group', default="Please select a group"))
             return
 
         group_item = self.manage_groups_tree.item(selection[0])
@@ -1010,7 +1012,7 @@ class ManagementMixin:
             group_row = cursor.fetchone()
             if not group_row:
                 conn.close()
-                messagebox.showerror("Error", "Group not found.")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.management.dialogs.group_not_found_variant_2', default="Group not found."))
                 return
             assignment_id, group_name = group_row
 
@@ -1023,7 +1025,7 @@ class ManagementMixin:
 
             if not student_ids:
                 conn.close()
-                messagebox.showinfo("No Submission", "This group has no members.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.no_submission', default="No Submission"), _t('gui.academics.assignment_system.group_manager.management.dialogs.this_group_has_no_members', default="This group has no members."))
                 return
 
             placeholders = ','.join('?' for _ in student_ids)
@@ -1042,7 +1044,7 @@ class ManagementMixin:
             conn.close()
 
             if not submission:
-                messagebox.showinfo("No Submission", "No submissions found for members of this group.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.no_submission', default="No Submission"), _t('gui.academics.assignment_system.group_manager.management.dialogs.no_submissions_found_for_members_of_this_group', default="No submissions found for members of this group."))
                 return
 
             sub_id, file_name, file_path, submitted_at, status, grade, feedback, submitter_id = submission
@@ -1065,7 +1067,7 @@ class ManagementMixin:
                      justify='left', font=('TkDefaultFont', 10)).pack(anchor='w', padx=10, pady=10)
 
             if feedback:
-                feedback_frame = ttk.LabelFrame(window, text="Feedback", padding=10)
+                feedback_frame = ttk.LabelFrame(window, text=_t('gui.academics.assignment_system.group_manager.management.labels.feedback', default="Feedback"), padding=10)
                 feedback_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
                 feedback_text = scrolledtext.ScrolledText(feedback_frame, height=6, wrap=tk.WORD)
                 feedback_text.pack(fill='both', expand=True)
@@ -1075,10 +1077,10 @@ class ManagementMixin:
             action_frame = ttk.Frame(window)
             action_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Button(action_frame, text="Close", command=window.destroy).pack(side='right')
+            ttk.Button(action_frame, text=_t('gui.academics.assignment_system.group_manager.management.buttons.close', default="Close"), command=window.destroy).pack(side='right')
 
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load group submission: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to load group submission: {exc}")
 
 
     def export_group_list(self):
@@ -1117,7 +1119,7 @@ class ManagementMixin:
                 writer.writerow(['Group ID', 'Group Name', 'Assignment', 'Members'])
                 writer.writerows(groups)
 
-            messagebox.showinfo("Success", f"Exported {len(groups)} groups to:\n{save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.management.dialogs.success', default="Success"), f"Exported {len(groups)} groups to:\n{save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export groups: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.management.dialogs.error', default="Error"), f"Failed to export groups: {e}")

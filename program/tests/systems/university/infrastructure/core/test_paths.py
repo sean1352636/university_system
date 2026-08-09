@@ -1,66 +1,69 @@
-"""Tests for university_system.core.paths."""
+"""Tests for the university section of ``education_system.paths``."""
 from pathlib import Path
 from unittest.mock import patch
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 
 class TestStructuralPaths:
     def test_project_root_is_path(self):
-        assert isinstance(paths.PROJECT_ROOT, Path)
-        assert paths.PROJECT_ROOT.is_absolute()
+        assert isinstance(paths.UNIVERSITY_PROJECT_ROOT, Path)
+        assert paths.UNIVERSITY_PROJECT_ROOT.is_absolute()
 
     def test_aliases_consistent(self):
-        assert paths.BASE_DIR == paths.PROJECT_ROOT
-        assert paths.UNIVERSITY_SYSTEM_DIR == paths.PROJECT_ROOT
-        assert paths.REPO_ROOT == paths.PROJECT_ROOT
+        assert paths.UNIVERSITY_BASE_DIR == paths.UNIVERSITY_PROJECT_ROOT
+        assert paths.UNIVERSITY_SYSTEM_DIR == paths.UNIVERSITY_PROJECT_ROOT
+        # REPO_ROOT is the program/ directory, not the university package.
+        assert paths.REPO_ROOT == paths.PROGRAM_ROOT
 
-    def test_data_under_project_root(self):
-        assert paths.DATA_DIR.parent == paths.PROJECT_ROOT
-        assert paths.DB_DIR.parent == paths.DATA_DIR
-        assert paths.CONFIG_DIR.parent == paths.DATA_DIR
+    def test_data_under_var(self):
+        # Runtime state lives under program/var (ADR 0018), not in the package.
+        assert paths.UNIVERSITY_DATA_DIR.parent == paths.VAR_DIR / "data"
+        assert paths.UNIVERSITY_DB_DIR.parent == paths.UNIVERSITY_DATA_DIR
+        assert paths.UNIVERSITY_CONFIG_DIR.parent == paths.UNIVERSITY_DATA_DIR
 
     def test_db_path_under_db_dir(self):
-        assert paths.DEFAULT_DB_PATH.parent == paths.DB_DIR
-        assert paths.DEFAULT_DB_PATH.name == "student_records.db"
+        assert paths.UNIVERSITY_DEFAULT_DB_PATH.parent == paths.UNIVERSITY_DB_DIR
+        assert paths.UNIVERSITY_DEFAULT_DB_PATH.name == "student_records.db"
 
-    def test_log_dir_under_project_root(self):
-        assert paths.LOG_DIR.parent == paths.PROJECT_ROOT
+    def test_log_dir_under_var(self):
+        assert paths.UNIVERSITY_LOG_DIR.parent == paths.VAR_DIR / "logs"
 
     def test_backup_subdirs_under_backup(self):
-        for sub in (paths.BACKUP_DATABASE_DIR, paths.BACKUP_FILES_DIR,
-                    paths.BACKUP_FINANCE_DIR, paths.BACKUP_LIBRARY_DIR):
-            assert sub.parent == paths.BACKUP_DIR
+        for sub in (paths.UNIVERSITY_BACKUP_DATABASE_DIR, paths.UNIVERSITY_BACKUP_FILES_DIR,
+                    paths.UNIVERSITY_BACKUP_FINANCE_DIR, paths.UNIVERSITY_BACKUP_LIBRARY_DIR):
+            assert sub.parent == paths.UNIVERSITY_BACKUP_DIR
 
     def test_exports_subdirs_under_exports(self):
-        for sub in (paths.EXPORTS_PDF_DIR, paths.EXPORTS_TICKETS_DIR,
-                    paths.EXPORTS_REPORTS_DIR):
-            assert sub.parent == paths.EXPORTS_DIR
+        for sub in (paths.UNIVERSITY_EXPORTS_PDF_DIR, paths.UNIVERSITY_EXPORTS_TICKETS_DIR,
+                    paths.UNIVERSITY_EXPORTS_REPORTS_DIR):
+            assert sub.parent == paths.UNIVERSITY_EXPORTS_DIR
 
     def test_db_backups_alias(self):
-        assert paths.DB_BACKUPS_DIR == paths.BACKUP_DATABASE_DIR
+        assert paths.UNIVERSITY_DB_BACKUPS_DIR == paths.UNIVERSITY_BACKUP_DATABASE_DIR
 
     def test_uploads_alias(self):
-        assert paths.UPLOADS_DIR == paths.UPLOAD_DIR
+        assert paths.UNIVERSITY_UPLOADS_DIR == paths.UNIVERSITY_UPLOAD_DIR
 
 
 class TestEnsureDirectories:
     def test_calls_ensure_for_each_dir(self):
         with patch.object(paths, "_ensure") as mock_ensure:
-            paths.ensure_directories()
+            paths.ensure_university_directories()
         # Sanity: many directories ensured
         assert mock_ensure.call_count > 20
         # Spot-check a few representative dirs are covered
         called = {call.args[0] for call in mock_ensure.call_args_list}
-        assert paths.DATA_DIR in called
-        assert paths.LOG_DIR in called
-        assert paths.CONFIG_DIR in called
+        assert paths.UNIVERSITY_DATA_DIR in called
+        assert paths.UNIVERSITY_LOG_DIR in called
+        assert paths.UNIVERSITY_CONFIG_DIR in called
 
 
 class TestExports:
     def test_all_lists_main_constants(self):
-        for key in ("PROJECT_ROOT", "DATA_DIR", "LOG_DIR", "CONFIG_DIR",
-                    "DEFAULT_DB_PATH", "ensure_directories"):
+        for key in ("UNIVERSITY_PROJECT_ROOT", "UNIVERSITY_DATA_DIR",
+                    "UNIVERSITY_LOG_DIR", "UNIVERSITY_CONFIG_DIR",
+                    "UNIVERSITY_DEFAULT_DB_PATH", "ensure_university_directories"):
             assert key in paths.__all__
 
 

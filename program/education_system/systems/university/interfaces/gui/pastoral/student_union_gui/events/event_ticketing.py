@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -27,7 +29,7 @@ from education_system.systems.university.infrastructure.i18n import (
 from education_system.systems.university.infrastructure.utils.gui_language_selector import show_gui_language_selector
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Import finance integration for student finance account payments
 try:
@@ -64,7 +66,7 @@ class EventTicketingDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Event Ticketing System")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_ticketing.windows.event_ticketing_system', default="Event Ticketing System"))
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -75,21 +77,21 @@ class EventTicketingDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="🎫 Event Ticketing System",
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.event_ticketing_system', default="🎫 Event Ticketing System"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Event selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(select_frame, text="Event:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.event', default="Event:")).pack(side='left', padx=(0, 10))
         event_combo = ttk.Combobox(select_frame, width=40, state='readonly')
         event_combo['values'] = ('Annual Gala 2025', 'Spring Festival', 'Tech Conference')
         event_combo.pack(side='left', fill='x', expand=True)
         event_combo.current(0)
 
         # Ticket types
-        types_frame = ttk.LabelFrame(main_frame, text="Ticket Types")
+        types_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.ticket_types', default="Ticket Types"))
         types_frame.pack(fill='x', pady=(0, 15))
 
         columns = ('Type', 'Price', 'Available', 'Sold', 'Revenue')
@@ -112,7 +114,7 @@ class EventTicketingDialog:
             tree.insert('', 'end', values=ticket)
 
         # Sales summary
-        summary_frame = ttk.LabelFrame(main_frame, text="Sales Summary")
+        summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.sales_summary', default="Sales Summary"))
         summary_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         summary_text = scrolledtext.ScrolledText(summary_frame, height=12, wrap=tk.WORD, font=('Courier', 10))
@@ -149,10 +151,10 @@ PROJECTED FINAL SALES: 420 tickets (44% capacity)
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Create Ticket Type", command=self.create_ticket_type).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Process Refund", command=self.process_refund).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Manage Waitlist", command=self.manage_waitlist).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.create_ticket_type', default="Create Ticket Type"), command=self.create_ticket_type).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.process_refund', default="Process Refund"), command=self.process_refund).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.manage_waitlist', default="Manage Waitlist"), command=self.manage_waitlist).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def create_ticket_type(self):
         dialog = CreateTicketTypeDialog(self.dialog, self.auth)
@@ -176,7 +178,7 @@ class CreateTicketTypeDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Create Ticket Type")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_ticketing.windows.create_ticket_type', default="Create Ticket Type"))
         self.dialog.geometry("550x550")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -187,10 +189,10 @@ class CreateTicketTypeDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Create New Ticket Type", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.create_new_ticket_type', default="Create New Ticket Type"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Event selection
-        ttk.Label(main_frame, text="Event:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.event', default="Event:")).pack(anchor='w', pady=(0, 5))
         self.event_var = tk.StringVar()
         event_combo = ttk.Combobox(main_frame, textvariable=self.event_var, width=47)
         event_combo['values'] = ('Annual Gala 2025', 'Spring Festival', 'Tech Conference', 'Charity Ball')
@@ -198,19 +200,19 @@ class CreateTicketTypeDialog:
         event_combo.current(0)
 
         # Ticket type name
-        ttk.Label(main_frame, text="Ticket Type Name:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.ticket_type_name', default="Ticket Type Name:")).pack(anchor='w', pady=(0, 5))
         self.name_entry = ttk.Entry(main_frame, width=50)
         self.name_entry.pack(fill='x', pady=(0, 10))
         self.name_entry.insert(0, "General Admission")
 
         # Price
-        ttk.Label(main_frame, text="Price (£):").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.price', default="Price (£):")).pack(anchor='w', pady=(0, 5))
         self.price_entry = ttk.Entry(main_frame, width=50)
         self.price_entry.pack(fill='x', pady=(0, 10))
         self.price_entry.insert(0, "10.00")
 
         # Quantity
-        ttk.Label(main_frame, text="Total Quantity Available:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.total_quantity_available', default="Total Quantity Available:")).pack(anchor='w', pady=(0, 5))
         self.quantity_entry = ttk.Entry(main_frame, width=50)
         self.quantity_entry.pack(fill='x', pady=(0, 10))
         self.quantity_entry.insert(0, "100")
@@ -219,18 +221,18 @@ class CreateTicketTypeDialog:
         dates_frame = ttk.Frame(main_frame)
         dates_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(dates_frame, text="Sale Start:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(dates_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.sale_start', default="Sale Start:")).grid(row=0, column=0, sticky='w', pady=(0, 5))
         self.start_entry = ttk.Entry(dates_frame, width=20)
         self.start_entry.grid(row=0, column=1, sticky='w', padx=(5, 10))
         self.start_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
 
-        ttk.Label(dates_frame, text="Sale End:").grid(row=0, column=2, sticky='w', pady=(0, 5))
+        ttk.Label(dates_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.sale_end', default="Sale End:")).grid(row=0, column=2, sticky='w', pady=(0, 5))
         self.end_entry = ttk.Entry(dates_frame, width=20)
         self.end_entry.grid(row=0, column=3, sticky='w', padx=(5, 0))
         self.end_entry.insert(0, (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'))
 
         # Description
-        ttk.Label(main_frame, text="Description:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.description', default="Description:")).pack(anchor='w', pady=(0, 5))
         self.description_text = scrolledtext.ScrolledText(main_frame, height=6, wrap=tk.WORD)
         self.description_text.pack(fill='both', expand=True, pady=(0, 15))
         self.description_text.insert(1.0, "Standard entry to the event...")
@@ -239,8 +241,8 @@ class CreateTicketTypeDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Create", command=self.create_type).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.create', default="Create"), command=self.create_type).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def create_type(self):
         event = self.event_var.get()
@@ -252,7 +254,7 @@ class CreateTicketTypeDialog:
         description = self.description_text.get(1.0, tk.END).strip()
 
         if not all([event, name, price, quantity, start_date, end_date]):
-            messagebox.showwarning("Warning", "Please fill in all required fields.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.please_fill_in_all_required_fields', default="Please fill in all required fields."))
             return
 
         try:
@@ -261,7 +263,7 @@ class CreateTicketTypeDialog:
             if price_float < 0 or quantity_int <= 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showwarning("Warning", "Please enter valid price and quantity values.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.please_enter_valid_price_and_quantity_values', default="Please enter valid price and quantity values."))
             return
 
         try:
@@ -299,10 +301,10 @@ class CreateTicketTypeDialog:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Ticket type '{name}' created successfully!\n\nPrice: £{price_float:.2f}\nQuantity: {quantity_int}")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.success', default="Success"), f"Ticket type '{name}' created successfully!\n\nPrice: £{price_float:.2f}\nQuantity: {quantity_int}")
             self.dialog.destroy()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to create ticket type: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.error', default="Error"), f"Failed to create ticket type: {str(e)}")
 
 
 
@@ -314,7 +316,7 @@ class ProcessRefundDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Process Refund")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_ticketing.windows.process_refund', default="Process Refund"))
         self.dialog.geometry("650x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -325,27 +327,27 @@ class ProcessRefundDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(main_frame, text="Process Ticket Refund", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.process_ticket_refund', default="Process Ticket Refund"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Ticket/Order search
-        search_frame = ttk.LabelFrame(main_frame, text="Find Ticket/Order")
+        search_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.find_ticket_order', default="Find Ticket/Order"))
         search_frame.pack(fill='x', pady=(0, 15))
 
         form = ttk.Frame(search_frame)
         form.pack(padx=15, pady=15, fill='x')
 
-        ttk.Label(form, text="Ticket/Order ID:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.ticket_order_id', default="Ticket/Order ID:")).grid(row=0, column=0, sticky='w', pady=(0, 5))
         self.ticket_id_entry = ttk.Entry(form, width=25)
         self.ticket_id_entry.grid(row=0, column=1, sticky='w', pady=(0, 5), padx=(5, 10))
 
-        ttk.Button(form, text="Search", command=self.search_ticket).grid(row=0, column=2, pady=(0, 5))
+        ttk.Button(form, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.search', default="Search"), command=self.search_ticket).grid(row=0, column=2, pady=(0, 5))
 
-        ttk.Label(form, text="Customer Email:").grid(row=1, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(form, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.customer_email', default="Customer Email:")).grid(row=1, column=0, sticky='w', pady=(0, 5))
         self.email_entry = ttk.Entry(form, width=25)
         self.email_entry.grid(row=1, column=1, sticky='w', pady=(0, 5), padx=(5, 10))
 
         # Ticket details
-        details_frame = ttk.LabelFrame(main_frame, text="Ticket Details")
+        details_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.ticket_details', default="Ticket Details"))
         details_frame.pack(fill='x', pady=(0, 15))
 
         self.details_text = scrolledtext.ScrolledText(details_frame, height=8, wrap=tk.WORD)
@@ -354,24 +356,24 @@ class ProcessRefundDialog:
         self.details_text.config(state='disabled')
 
         # Refund options
-        refund_frame = ttk.LabelFrame(main_frame, text="Refund Options")
+        refund_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.refund_options', default="Refund Options"))
         refund_frame.pack(fill='x', pady=(0, 15))
 
         options = ttk.Frame(refund_frame)
         options.pack(padx=15, pady=15, fill='x')
 
-        ttk.Label(options, text="Refund Amount:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(options, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.refund_amount', default="Refund Amount:")).grid(row=0, column=0, sticky='w', pady=(0, 5))
         self.refund_amount_entry = ttk.Entry(options, width=15)
         self.refund_amount_entry.grid(row=0, column=1, sticky='w', pady=(0, 5), padx=(5, 10))
         self.refund_amount_entry.insert(0, "0.00")
 
-        ttk.Label(options, text="Refund Method:").grid(row=1, column=0, sticky='w', pady=(0, 5))
-        self.method_var = tk.StringVar(value="Original Payment Method")
+        ttk.Label(options, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.refund_method', default="Refund Method:")).grid(row=1, column=0, sticky='w', pady=(0, 5))
+        self.method_var = tk.StringVar(value=_t('gui.pastoral.student_union_gui.events.event_ticketing.values.original_payment_method', default="Original Payment Method"))
         method_combo = ttk.Combobox(options, textvariable=self.method_var, width=23, state='readonly')
         method_combo['values'] = ('Original Payment Method', 'Bank Transfer', 'Store Credit', 'Cash')
         method_combo.grid(row=1, column=1, sticky='w', pady=(0, 5), padx=(5, 10))
 
-        ttk.Label(options, text="Reason:").grid(row=2, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(options, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.reason', default="Reason:")).grid(row=2, column=0, sticky='w', pady=(0, 5))
         self.reason_var = tk.StringVar()
         reason_combo = ttk.Combobox(options, textvariable=self.reason_var, width=23)
         reason_combo['values'] = ('Event Cancelled', 'Customer Request', 'Duplicate Purchase',
@@ -380,7 +382,7 @@ class ProcessRefundDialog:
         reason_combo.current(0)
 
         # Notes
-        ttk.Label(main_frame, text="Notes:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.notes', default="Notes:")).pack(anchor='w', pady=(0, 5))
         self.notes_text = scrolledtext.ScrolledText(main_frame, height=4, wrap=tk.WORD)
         self.notes_text.pack(fill='x', pady=(0, 15))
 
@@ -388,15 +390,15 @@ class ProcessRefundDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Process Refund", command=self.process_refund).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side='left')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.process_refund', default="Process Refund"), command=self.process_refund).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side='left')
 
     def search_ticket(self):
         ticket_id = self.ticket_id_entry.get().strip()
         email = self.email_entry.get().strip()
 
         if not ticket_id and not email:
-            messagebox.showwarning("Warning", "Please enter a Ticket ID or Email to search.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.please_enter_a_ticket_id_or_email_to_search', default="Please enter a Ticket ID or Email to search."))
             return
 
         # Simulate search result
@@ -427,7 +429,7 @@ This ticket is eligible for a full refund.
         notes = self.notes_text.get(1.0, tk.END).strip()
 
         if not all([refund_amount, method, reason]):
-            messagebox.showwarning("Warning", "Please fill in all refund details.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.please_fill_in_all_refund_details', default="Please fill in all refund details."))
             return
 
         try:
@@ -435,11 +437,11 @@ This ticket is eligible for a full refund.
             if amount_float <= 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showwarning("Warning", "Please enter a valid refund amount.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.please_enter_a_valid_refund_amount', default="Please enter a valid refund amount."))
             return
 
         # In a real system, this would process the refund in the database
-        messagebox.showinfo("Success", f"Refund Processed!\n\nAmount: £{amount_float:.2f}\nMethod: {method}\n\nThe customer will be notified via email.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.success', default="Success"), f"Refund Processed!\n\nAmount: £{amount_float:.2f}\nMethod: {method}\n\nThe customer will be notified via email.")
         self.dialog.destroy()
 
 
@@ -452,7 +454,7 @@ class ManageWaitlistDialog:
         self.auth = auth_manager
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Manage Waitlist")
+        self.dialog.title(_t('gui.pastoral.student_union_gui.events.event_ticketing.windows.manage_waitlist', default="Manage Waitlist"))
         self.dialog.geometry("800x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -463,26 +465,26 @@ class ManageWaitlistDialog:
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=15, pady=15)
 
-        ttk.Label(main_frame, text="Event Waitlist Management", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.event_waitlist_management', default="Event Waitlist Management"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         # Event and ticket type selection
         select_frame = ttk.Frame(main_frame)
         select_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(select_frame, text="Event:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.event', default="Event:")).pack(side='left', padx=(0, 10))
         event_combo = ttk.Combobox(select_frame, width=25, state='readonly')
         event_combo['values'] = ('Annual Gala 2025', 'Spring Festival', 'Tech Conference')
         event_combo.pack(side='left', padx=(0, 20))
         event_combo.current(0)
 
-        ttk.Label(select_frame, text="Ticket Type:").pack(side='left', padx=(0, 10))
+        ttk.Label(select_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.ticket_type', default="Ticket Type:")).pack(side='left', padx=(0, 10))
         ticket_combo = ttk.Combobox(select_frame, width=20, state='readonly')
         ticket_combo['values'] = ('General Admission', 'VIP', 'Student')
         ticket_combo.pack(side='left')
         ticket_combo.current(0)
 
         # Waitlist
-        list_frame = ttk.LabelFrame(main_frame, text="Waitlist (15 people)")
+        list_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.labels.waitlist_15_people', default="Waitlist (15 people)"))
         list_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         columns = ('Position', 'Name', 'Email', 'Added', 'Status')
@@ -517,27 +519,27 @@ class ManageWaitlistDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x')
 
-        ttk.Button(button_frame, text="Notify Next Person", command=self.notify_next).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Remove from Waitlist", command=self.remove_from_waitlist).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Notify All", command=self.notify_all).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side='right')
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.notify_next_person', default="Notify Next Person"), command=self.notify_next).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.remove_from_waitlist', default="Remove from Waitlist"), command=self.remove_from_waitlist).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.notify_all', default="Notify All"), command=self.notify_all).pack(side='left', padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_union_gui.events.event_ticketing.buttons.close', default="Close"), command=self.dialog.destroy).pack(side='right')
 
     def notify_next(self):
-        messagebox.showinfo("Success", "Email sent to Alice Johnson notifying them that tickets are available!\n\nThey have 24 hours to purchase.")
+        messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.email_sent_to_alice_johnson_notifying_them_that_tickets_are_avai', default="Email sent to Alice Johnson notifying them that tickets are available!\n\nThey have 24 hours to purchase."))
 
     def remove_from_waitlist(self):
         selection = self.waitlist_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a person to remove.")
+            messagebox.showwarning(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.warning', default="Warning"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.please_select_a_person_to_remove', default="Please select a person to remove."))
             return
 
-        if messagebox.askyesno("Confirm", "Remove selected person from waitlist?"):
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.confirm', default="Confirm"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.remove_selected_person_from_waitlist', default="Remove selected person from waitlist?")):
             self.waitlist_tree.delete(selection[0])
-            messagebox.showinfo("Success", "Person removed from waitlist.")
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.person_removed_from_waitlist', default="Person removed from waitlist."))
 
     def notify_all(self):
-        if messagebox.askyesno("Confirm", "Send notification emails to all 15 people on the waitlist?"):
-            messagebox.showinfo("Success", "Notification emails sent to all waitlist members!")
+        if messagebox.askyesno(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.confirm', default="Confirm"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.send_notification_emails_to_all_15_people_on_the_waitlist', default="Send notification emails to all 15 people on the waitlist?")):
+            messagebox.showinfo(_t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.success', default="Success"), _t('gui.pastoral.student_union_gui.events.event_ticketing.dialogs.notification_emails_sent_to_all_waitlist_members', default="Notification emails sent to all waitlist members!"))
 
 
 

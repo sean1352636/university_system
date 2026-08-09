@@ -4,6 +4,8 @@ Provides authentication checks, database init, data-loading utilities,
 and form-clearing helpers used across all tabs.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, messagebox, logging, datetime,
     _t, log_activity,
@@ -25,8 +27,8 @@ class HelpersMixin:
         if not self.auth:
             messagebox.showerror(
                 _t("barber.window_title"),
-                "You must be logged in to access the Barber Shop module.\n\n"
-                "Please log in through the main GUI first."
+                _t('gui.operations.commerce.barber.helpers.dialogs.you_must_be_logged_in_to_access_the_barber_shop_module_please_lo', default="You must be logged in to access the Barber Shop module.\n\n"
+                "Please log in through the main GUI first.")
             )
             if self.parent:
                 self.parent.destroy()
@@ -36,8 +38,8 @@ class HelpersMixin:
         if _DummyAuth is not None and isinstance(self.auth, _DummyAuth):
             messagebox.showerror(
                 _t("barber.window_title"),
-                "You must be logged in to access the Barber Shop module.\n\n"
-                "Please launch this module from the main GUI after logging in."
+                _t('gui.operations.commerce.barber.helpers.dialogs.you_must_be_logged_in_to_access_the_barber_shop_module_please_la', default="You must be logged in to access the Barber Shop module.\n\n"
+                "Please launch this module from the main GUI after logging in.")
             )
             if self.parent:
                 self.parent.destroy()
@@ -46,8 +48,8 @@ class HelpersMixin:
         if not hasattr(self.auth, 'current_user') or not self.auth.current_user:
             messagebox.showerror(
                 _t("barber.window_title"),
-                "You are not currently logged in.\n\n"
-                "Please log in through the main GUI to access this module."
+                _t('gui.operations.commerce.barber.helpers.dialogs.you_are_not_currently_logged_in_please_log_in_through_the_main_g', default="You are not currently logged in.\n\n"
+                "Please log in through the main GUI to access this module.")
             )
             if self.parent:
                 self.parent.destroy()

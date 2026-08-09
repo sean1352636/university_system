@@ -1,5 +1,7 @@
 """Competency-based assessment methods for AnalyticsManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 import tkinter.scrolledtext as scrolledtext
@@ -87,25 +89,25 @@ class CompetencyMixin:
             self.update_status(f"Loaded {len(rows)} competency assessment records")
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load competency assessments: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load competency assessments: {exc}")
 
 
     def add_competency_dialog(self):
         """Display dialog for creating a new competency."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Competency")
+        dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.add_competency', default="Add Competency"))
         dialog.geometry("480x360")
         safe_grab_set(dialog)
 
-        ttk.Label(dialog, text="Competency Name:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.competency_name', default="Competency Name:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
         name_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=name_var, width=40).grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Category:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.category', default="Category:")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
         category_var = tk.StringVar()
         ttk.Entry(dialog, textvariable=category_var, width=40).grid(row=1, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Description:").grid(row=2, column=0, sticky=tk.NW, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.description', default="Description:")).grid(row=2, column=0, sticky=tk.NW, padx=10, pady=8)
         desc_text = scrolledtext.ScrolledText(dialog, width=35, height=8)
         desc_text.grid(row=2, column=1, padx=10, pady=8)
 
@@ -118,7 +120,7 @@ class CompetencyMixin:
             description = desc_text.get('1.0', tk.END).strip()
 
             if not name:
-                messagebox.showwarning("Validation", "Competency name is required.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.competency_name_is_required', default="Competency name is required."))
                 return
 
             try:
@@ -134,23 +136,23 @@ class CompetencyMixin:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Competency '{name}' added successfully.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.success', default="Success"), f"Competency '{name}' added successfully.")
                 dialog.destroy()
                 self.refresh_competencies()
                 self.populate_filter_combos()
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to add competency: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to add competency: {exc}")
 
-        ttk.Button(button_frame, text="Save", command=save_competency).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.save', default="Save"), command=save_competency).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
 
     def edit_competency_dialog(self):
         """Edit the selected competency."""
         tree = getattr(self, 'competency_tree', None)
         if not tree or not tree.selection():
-            messagebox.showwarning("No Selection", "Please select a competency to edit.")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.please_select_a_competency_to_edit', default="Please select a competency to edit."))
             return
 
         selected_item = tree.selection()[0]
@@ -172,29 +174,29 @@ class CompetencyMixin:
             conn.close()
 
             if not competency:
-                messagebox.showerror("Error", "Selected competency no longer exists.")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.selected_competency_no_longer_exists', default="Selected competency no longer exists."))
                 return
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load competency: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load competency: {exc}")
             return
 
         name_val, desc_val, category_val = competency
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Competency")
+        dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.edit_competency', default="Edit Competency"))
         dialog.geometry("480x360")
         safe_grab_set(dialog)
 
-        ttk.Label(dialog, text="Competency Name:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.competency_name', default="Competency Name:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
         name_var = tk.StringVar(value=name_val or "")
         ttk.Entry(dialog, textvariable=name_var, width=40).grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Category:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.category', default="Category:")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
         category_var = tk.StringVar(value=category_val or "")
         ttk.Entry(dialog, textvariable=category_var, width=40).grid(row=1, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Description:").grid(row=2, column=0, sticky=tk.NW, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.description', default="Description:")).grid(row=2, column=0, sticky=tk.NW, padx=10, pady=8)
         desc_text = scrolledtext.ScrolledText(dialog, width=35, height=8)
         desc_text.grid(row=2, column=1, padx=10, pady=8)
         desc_text.insert('1.0', desc_val or "")
@@ -208,7 +210,7 @@ class CompetencyMixin:
             new_description = desc_text.get('1.0', tk.END).strip()
 
             if not new_name:
-                messagebox.showwarning("Validation", "Competency name is required.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.competency_name_is_required', default="Competency name is required."))
                 return
 
             try:
@@ -225,30 +227,30 @@ class CompetencyMixin:
                 conn_edit.commit()
                 conn_edit.close()
 
-                messagebox.showinfo("Success", "Competency updated successfully.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.competency_updated_successfully', default="Competency updated successfully."))
                 dialog.destroy()
                 self.refresh_competencies()
                 self.populate_filter_combos()
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to update competency: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to update competency: {exc}")
 
-        ttk.Button(button_frame, text="Save Changes", command=update_competency).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.save_changes', default="Save Changes"), command=update_competency).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
 
     def delete_competency(self):
         """Delete the selected competency and related records."""
         tree = getattr(self, 'competency_tree', None)
         if not tree or not tree.selection():
-            messagebox.showwarning("No Selection", "Please select a competency to delete.")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.please_select_a_competency_to_delete', default="Please select a competency to delete."))
             return
 
         selected_item = tree.selection()[0]
         comp_id, comp_name = tree.item(selected_item, 'values')[:2]
 
         confirm = messagebox.askyesno(
-            "Confirm Delete",
+            _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.confirm_delete', default="Confirm Delete"),
             f"Delete competency '{comp_name}'?\n\n"
             "All related levels, mappings, and student records will also be removed."
         )
@@ -267,19 +269,19 @@ class CompetencyMixin:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Competency '{comp_name}' deleted.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.success', default="Success"), f"Competency '{comp_name}' deleted.")
             self.refresh_competencies()
             self.populate_filter_combos()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to delete competency: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to delete competency: {exc}")
 
 
     def manage_competency_levels(self):
         """Open management dialog for competency levels."""
         tree = getattr(self, 'competency_tree', None)
         if not tree or not tree.selection():
-            messagebox.showwarning("No Selection", "Select a competency to manage levels.")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.select_a_competency_to_manage_levels', default="Select a competency to manage levels."))
             return
 
         selected_item = tree.selection()[0]
@@ -329,23 +331,23 @@ class CompetencyMixin:
                     )
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to load levels: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load levels: {exc}")
 
         def add_level():
             dialog = tk.Toplevel(level_window)
-            dialog.title("Add Level")
+            dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.add_level', default="Add Level"))
             dialog.geometry("360x260")
             safe_grab_set(dialog)
 
-            ttk.Label(dialog, text="Level Name:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.level_name', default="Level Name:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
             level_name_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=level_name_var, width=30).grid(row=0, column=1, padx=10, pady=8)
 
-            ttk.Label(dialog, text="Value (numeric order):").grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.value_numeric_order', default="Value (numeric order):")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
             level_value_var = tk.StringVar(value="1")
             ttk.Entry(dialog, textvariable=level_value_var, width=10).grid(row=1, column=1, padx=10, pady=8, sticky=tk.W)
 
-            ttk.Label(dialog, text="Description:").grid(row=2, column=0, sticky=tk.NW, padx=10, pady=8)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.description', default="Description:")).grid(row=2, column=0, sticky=tk.NW, padx=10, pady=8)
             desc_box = scrolledtext.ScrolledText(dialog, width=28, height=5)
             desc_box.grid(row=2, column=1, padx=10, pady=8)
 
@@ -354,12 +356,12 @@ class CompetencyMixin:
                 try:
                     value = int(level_value_var.get().strip())
                 except ValueError:
-                    messagebox.showwarning("Validation", "Level value must be an integer.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.level_value_must_be_an_integer', default="Level value must be an integer."))
                     return
                 description = desc_box.get('1.0', tk.END).strip()
 
                 if not name:
-                    messagebox.showwarning("Validation", "Level name is required.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.level_name_is_required', default="Level name is required."))
                     return
 
                 try:
@@ -380,32 +382,32 @@ class CompetencyMixin:
                     self.refresh_competencies()
 
                 except sqlite3.Error as exc:
-                    messagebox.showerror("Database Error", f"Failed to add level: {exc}")
+                    messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to add level: {exc}")
 
-            ttk.Button(dialog, text="Save", command=save_level).grid(row=3, column=0, columnspan=2, pady=12)
+            ttk.Button(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.save', default="Save"), command=save_level).grid(row=3, column=0, columnspan=2, pady=12)
 
         def edit_level():
             selection = level_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Select a level to edit.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.select_a_level_to_edit', default="Select a level to edit."))
                 return
 
             level_id, level_name, level_value, description = level_tree.item(selection[0], 'values')
 
             dialog = tk.Toplevel(level_window)
-            dialog.title("Edit Level")
+            dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.edit_level', default="Edit Level"))
             dialog.geometry("360x260")
             safe_grab_set(dialog)
 
-            ttk.Label(dialog, text="Level Name:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.level_name', default="Level Name:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
             level_name_var = tk.StringVar(value=level_name)
             ttk.Entry(dialog, textvariable=level_name_var, width=30).grid(row=0, column=1, padx=10, pady=8)
 
-            ttk.Label(dialog, text="Value (numeric order):").grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.value_numeric_order', default="Value (numeric order):")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
             level_value_var = tk.StringVar(value=str(level_value))
             ttk.Entry(dialog, textvariable=level_value_var, width=10).grid(row=1, column=1, padx=10, pady=8, sticky=tk.W)
 
-            ttk.Label(dialog, text="Description:").grid(row=2, column=0, sticky=tk.NW, padx=10, pady=8)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.description', default="Description:")).grid(row=2, column=0, sticky=tk.NW, padx=10, pady=8)
             desc_box = scrolledtext.ScrolledText(dialog, width=28, height=5)
             desc_box.grid(row=2, column=1, padx=10, pady=8)
             desc_box.insert('1.0', description or "")
@@ -415,12 +417,12 @@ class CompetencyMixin:
                 try:
                     value = int(level_value_var.get().strip())
                 except ValueError:
-                    messagebox.showwarning("Validation", "Level value must be an integer.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.level_value_must_be_an_integer', default="Level value must be an integer."))
                     return
                 desc_val = desc_box.get('1.0', tk.END).strip()
 
                 if not name:
-                    messagebox.showwarning("Validation", "Level name is required.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.level_name_is_required', default="Level name is required."))
                     return
 
                 try:
@@ -442,20 +444,20 @@ class CompetencyMixin:
                     self.refresh_competencies()
 
                 except sqlite3.Error as exc:
-                    messagebox.showerror("Database Error", f"Failed to update level: {exc}")
+                    messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to update level: {exc}")
 
-            ttk.Button(dialog, text="Save Changes", command=save_changes).grid(row=3, column=0, columnspan=2, pady=12)
+            ttk.Button(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.save_changes', default="Save Changes"), command=save_changes).grid(row=3, column=0, columnspan=2, pady=12)
 
         def delete_level():
             selection = level_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Select a level to delete.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.select_a_level_to_delete', default="Select a level to delete."))
                 return
 
             level_id, level_name = level_tree.item(selection[0], 'values')[:2]
 
             confirm_delete = messagebox.askyesno(
-                "Confirm Delete",
+                _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.confirm_delete', default="Confirm Delete"),
                 f"Delete level '{level_name}'?\n\n"
                 "Student competency records referencing this level will also be removed."
             )
@@ -475,11 +477,11 @@ class CompetencyMixin:
                 self._refresh_student_competencies()
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to delete level: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to delete level: {exc}")
 
-        ttk.Button(btn_frame, text="Add Level", command=add_level).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Edit Level", command=edit_level).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Delete Level", command=delete_level).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.add_level', default="Add Level"), command=add_level).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.edit_level', default="Edit Level"), command=edit_level).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.delete_level', default="Delete Level"), command=delete_level).pack(side=tk.LEFT, padx=5)
 
         refresh_levels()
 
@@ -525,13 +527,13 @@ class CompetencyMixin:
             self.populate_filter_combos()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load competencies: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load competencies: {exc}")
 
 
     def map_assessment_competency_dialog(self):
         """Map an assessment to a competency."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Map Assessment to Competency")
+        dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.map_assessment_to_competency', default="Map Assessment to Competency"))
         dialog.geometry("520x260")
         safe_grab_set(dialog)
 
@@ -539,15 +541,15 @@ class CompetencyMixin:
         competency_var = tk.StringVar()
         weight_var = tk.StringVar(value="1.0")
 
-        ttk.Label(dialog, text="Assessment:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.assessment', default="Assessment:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=10)
         assessment_combo = ttk.Combobox(dialog, textvariable=assessment_var, width=45, state='readonly')
         assessment_combo.grid(row=0, column=1, padx=10, pady=10)
 
-        ttk.Label(dialog, text="Competency:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.competency', default="Competency:")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=10)
         competency_combo = ttk.Combobox(dialog, textvariable=competency_var, width=45, state='readonly')
         competency_combo.grid(row=1, column=1, padx=10, pady=10)
 
-        ttk.Label(dialog, text="Weight:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.weight', default="Weight:")).grid(row=2, column=0, sticky=tk.W, padx=10, pady=10)
         ttk.Entry(dialog, textvariable=weight_var, width=10).grid(row=2, column=1, padx=10, pady=10, sticky=tk.W)
 
         try:
@@ -581,7 +583,7 @@ class CompetencyMixin:
             conn.close()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load data: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load data: {exc}")
             dialog.destroy()
             return
 
@@ -590,13 +592,13 @@ class CompetencyMixin:
             competency_key = competency_var.get()
 
             if assessment_key not in assessment_options or competency_key not in competency_options:
-                messagebox.showwarning("Validation", "Please select both assessment and competency.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.please_select_both_assessment_and_competency', default="Please select both assessment and competency."))
                 return
 
             try:
                 weight = float(weight_var.get())
             except ValueError:
-                messagebox.showwarning("Validation", "Weight must be a numeric value.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.weight_must_be_a_numeric_value', default="Weight must be a numeric value."))
                 return
 
             assessment_id = assessment_options[assessment_key]
@@ -617,8 +619,8 @@ class CompetencyMixin:
 
                 if existing:
                     if messagebox.askyesno(
-                        "Mapping Exists",
-                        "Mapping already exists. Update weight instead?"
+                        _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.mapping_exists', default="Mapping Exists"),
+                        _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.mapping_already_exists_update_weight_instead', default="Mapping already exists. Update weight instead?")
                     ):
                         cursor_map.execute(
                             '''
@@ -645,28 +647,28 @@ class CompetencyMixin:
                 conn_map.commit()
                 conn_map.close()
 
-                messagebox.showinfo("Success", action_message)
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.success', default="Success"), action_message)
                 dialog.destroy()
                 self.refresh_competency_mappings()
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to save mapping: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to save mapping: {exc}")
 
-        ttk.Button(dialog, text="Save Mapping", command=save_mapping).grid(row=3, column=0, columnspan=2, pady=15)
+        ttk.Button(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.save_mapping', default="Save Mapping"), command=save_mapping).grid(row=3, column=0, columnspan=2, pady=15)
 
 
     def edit_competency_mapping(self):
         """Edit the selected assessment competency mapping."""
         tree = getattr(self, 'mapping_tree', None)
         if not tree or not tree.selection():
-            messagebox.showwarning("No Selection", "Select a mapping to edit.")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.select_a_mapping_to_edit', default="Select a mapping to edit."))
             return
 
         selected_item = tree.selection()[0]
         mapping_id, assessment_display, competency_display, weight_value, module_code = tree.item(selected_item, 'values')
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Mapping")
+        dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.edit_mapping', default="Edit Mapping"))
         dialog.geometry("520x260")
         safe_grab_set(dialog)
 
@@ -674,15 +676,15 @@ class CompetencyMixin:
         competency_var = tk.StringVar(value=competency_display)
         weight_var = tk.StringVar(value=str(weight_value))
 
-        ttk.Label(dialog, text="Assessment:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.assessment', default="Assessment:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=10)
         assessment_combo = ttk.Combobox(dialog, textvariable=assessment_var, width=45, state='readonly')
         assessment_combo.grid(row=0, column=1, padx=10, pady=10)
 
-        ttk.Label(dialog, text="Competency:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.competency', default="Competency:")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=10)
         competency_combo = ttk.Combobox(dialog, textvariable=competency_var, width=45, state='readonly')
         competency_combo.grid(row=1, column=1, padx=10, pady=10)
 
-        ttk.Label(dialog, text="Weight:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.weight', default="Weight:")).grid(row=2, column=0, sticky=tk.W, padx=10, pady=10)
         ttk.Entry(dialog, textvariable=weight_var, width=10).grid(row=2, column=1, padx=10, pady=10, sticky=tk.W)
 
         try:
@@ -716,7 +718,7 @@ class CompetencyMixin:
             conn.close()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load mapping data: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load mapping data: {exc}")
             dialog.destroy()
             return
 
@@ -725,13 +727,13 @@ class CompetencyMixin:
             competency_key = competency_var.get()
 
             if assessment_key not in assessment_options or competency_key not in competency_options:
-                messagebox.showwarning("Validation", "Please select both assessment and competency.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.please_select_both_assessment_and_competency', default="Please select both assessment and competency."))
                 return
 
             try:
                 weight = float(weight_var.get())
             except ValueError:
-                messagebox.showwarning("Validation", "Weight must be numeric.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.weight_must_be_numeric', default="Weight must be numeric."))
                 return
 
             assessment_id = assessment_options[assessment_key]
@@ -752,8 +754,8 @@ class CompetencyMixin:
                 duplicate = cursor_edit.fetchone()
                 if duplicate:
                     messagebox.showwarning(
-                        "Duplicate Mapping",
-                        "Another mapping already links this assessment and competency."
+                        _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.duplicate_mapping', default="Duplicate Mapping"),
+                        _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.another_mapping_already_links_this_assessment_and_competency', default="Another mapping already links this assessment and competency.")
                     )
                     conn_edit.close()
                     return
@@ -770,25 +772,25 @@ class CompetencyMixin:
                 conn_edit.commit()
                 conn_edit.close()
 
-                messagebox.showinfo("Success", "Mapping updated successfully.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.mapping_updated_successfully', default="Mapping updated successfully."))
                 dialog.destroy()
                 self.refresh_competency_mappings()
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to update mapping: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to update mapping: {exc}")
 
-        ttk.Button(dialog, text="Save Changes", command=save_changes).grid(row=3, column=0, columnspan=2, pady=15)
+        ttk.Button(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.save_changes', default="Save Changes"), command=save_changes).grid(row=3, column=0, columnspan=2, pady=15)
 
 
     def remove_competency_mapping(self):
         """Delete the selected competency mapping."""
         tree = getattr(self, 'mapping_tree', None)
         if not tree or not tree.selection():
-            messagebox.showwarning("No Selection", "Select a mapping to remove.")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.select_a_mapping_to_remove', default="Select a mapping to remove."))
             return
 
         mapping_id = tree.item(tree.selection()[0], 'values')[0]
-        if not messagebox.askyesno("Confirm Delete", "Remove selected mapping?"):
+        if not messagebox.askyesno(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.remove_selected_mapping', default="Remove selected mapping?")):
             return
 
         try:
@@ -798,11 +800,11 @@ class CompetencyMixin:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", "Mapping removed.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.mapping_removed', default="Mapping removed."))
             self.refresh_competency_mappings()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to remove mapping: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to remove mapping: {exc}")
 
 
     def refresh_competency_mappings(self):
@@ -850,13 +852,13 @@ class CompetencyMixin:
             self.update_status(f"Loaded {len(rows)} competency mappings")
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load mappings: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load mappings: {exc}")
 
 
     def record_student_competency_dialog(self):
         """Record a competency achievement for a student."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Record Student Competency")
+        dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.record_student_competency', default="Record Student Competency"))
         dialog.geometry("560x420")
         safe_grab_set(dialog)
 
@@ -865,22 +867,22 @@ class CompetencyMixin:
         level_var = tk.StringVar()
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
 
-        ttk.Label(dialog, text="Student:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.student', default="Student:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
         student_combo = ttk.Combobox(dialog, textvariable=student_var, width=40, state='readonly')
         student_combo.grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Competency:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.competency', default="Competency:")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
         competency_combo = ttk.Combobox(dialog, textvariable=competency_var, width=40, state='readonly')
         competency_combo.grid(row=1, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Level:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.level', default="Level:")).grid(row=2, column=0, sticky=tk.W, padx=10, pady=8)
         level_combo = ttk.Combobox(dialog, textvariable=level_var, width=40, state='readonly')
         level_combo.grid(row=2, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Assessment Date (YYYY-MM-DD):").grid(row=3, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.assessment_date_yyyy_mm_dd', default="Assessment Date (YYYY-MM-DD):")).grid(row=3, column=0, sticky=tk.W, padx=10, pady=8)
         ttk.Entry(dialog, textvariable=date_var, width=20).grid(row=3, column=1, padx=10, pady=8, sticky=tk.W)
 
-        ttk.Label(dialog, text="Evidence / Notes:").grid(row=4, column=0, sticky=tk.NW, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.evidence_notes', default="Evidence / Notes:")).grid(row=4, column=0, sticky=tk.NW, padx=10, pady=8)
         evidence_text = scrolledtext.ScrolledText(dialog, width=38, height=8)
         evidence_text.grid(row=4, column=1, padx=10, pady=8)
 
@@ -917,7 +919,7 @@ class CompetencyMixin:
             conn.close()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load students or competencies: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load students or competencies: {exc}")
             dialog.destroy()
             return
 
@@ -959,7 +961,7 @@ class CompetencyMixin:
                     level_var.set("No defined levels")
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to load competency levels: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load competency levels: {exc}")
 
         competency_combo.bind('<<ComboboxSelected>>', load_levels_for_competency)
 
@@ -980,7 +982,7 @@ class CompetencyMixin:
             competency_id = competency_options.get(competency_key)
 
             if not student_id or not competency_id:
-                messagebox.showwarning("Validation", "Student and competency are required.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.student_and_competency_are_required', default="Student and competency are required."))
                 return
 
             level_id = None
@@ -989,8 +991,8 @@ class CompetencyMixin:
 
             if level_id is None:
                 messagebox.showwarning(
-                    "Validation",
-                    "The selected competency has no levels defined. Please add competency levels first."
+                    _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"),
+                    _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.the_selected_competency_has_no_levels_defined_please_add_compete', default="The selected competency has no levels defined. Please add competency levels first.")
                 )
                 return
 
@@ -1000,7 +1002,7 @@ class CompetencyMixin:
             try:
                 datetime.strptime(assessment_date, '%Y-%m-%d')
             except ValueError:
-                messagebox.showwarning("Validation", "Assessment date must be in YYYY-MM-DD format.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.assessment_date_must_be_in_yyyy_mm_dd_format', default="Assessment date must be in YYYY-MM-DD format."))
                 return
 
             try:
@@ -1016,24 +1018,24 @@ class CompetencyMixin:
                 conn_save.commit()
                 conn_save.close()
 
-                messagebox.showinfo("Success", "Competency record saved.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.competency_record_saved', default="Competency record saved."))
                 dialog.destroy()
                 self._refresh_student_competencies()
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to save competency record: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to save competency record: {exc}")
 
         button_frame = ttk.Frame(dialog)
         button_frame.grid(row=5, column=0, columnspan=2, pady=12)
-        ttk.Button(button_frame, text="Save Record", command=save_record).pack(side=tk.LEFT, padx=8)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=8)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.save_record', default="Save Record"), command=save_record).pack(side=tk.LEFT, padx=8)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=8)
 
 
     def edit_student_competency(self):
         """Edit a previously recorded student competency."""
         tree = getattr(self, 'student_comp_tree', None)
         if not tree or not tree.selection():
-            messagebox.showwarning("No Selection", "Select a student competency record to edit.")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.select_a_student_competency_record_to_edit', default="Select a student competency record to edit."))
             return
 
         record_id = tree.item(tree.selection()[0], 'values')[0]
@@ -1053,17 +1055,17 @@ class CompetencyMixin:
             conn.close()
 
             if not record:
-                messagebox.showerror("Error", "Selected competency record no longer exists.")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.selected_competency_record_no_longer_exists', default="Selected competency record no longer exists."))
                 return
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load competency record: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load competency record: {exc}")
             return
 
         student_id, competency_id, level_id, assessment_date, evidence = record
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Student Competency")
+        dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.edit_student_competency', default="Edit Student Competency"))
         dialog.geometry("560x420")
         safe_grab_set(dialog)
 
@@ -1072,22 +1074,22 @@ class CompetencyMixin:
         level_var = tk.StringVar()
         date_var = tk.StringVar(value=assessment_date or datetime.now().strftime('%Y-%m-%d'))
 
-        ttk.Label(dialog, text="Student:").grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.student', default="Student:")).grid(row=0, column=0, sticky=tk.W, padx=10, pady=8)
         student_combo = ttk.Combobox(dialog, textvariable=student_var, width=40, state='readonly')
         student_combo.grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Competency:").grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.competency', default="Competency:")).grid(row=1, column=0, sticky=tk.W, padx=10, pady=8)
         competency_combo = ttk.Combobox(dialog, textvariable=competency_var, width=40, state='readonly')
         competency_combo.grid(row=1, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Level:").grid(row=2, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.level', default="Level:")).grid(row=2, column=0, sticky=tk.W, padx=10, pady=8)
         level_combo = ttk.Combobox(dialog, textvariable=level_var, width=40, state='readonly')
         level_combo.grid(row=2, column=1, padx=10, pady=8)
 
-        ttk.Label(dialog, text="Assessment Date (YYYY-MM-DD):").grid(row=3, column=0, sticky=tk.W, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.assessment_date_yyyy_mm_dd', default="Assessment Date (YYYY-MM-DD):")).grid(row=3, column=0, sticky=tk.W, padx=10, pady=8)
         ttk.Entry(dialog, textvariable=date_var, width=20).grid(row=3, column=1, padx=10, pady=8, sticky=tk.W)
 
-        ttk.Label(dialog, text="Evidence / Notes:").grid(row=4, column=0, sticky=tk.NW, padx=10, pady=8)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.evidence_notes', default="Evidence / Notes:")).grid(row=4, column=0, sticky=tk.NW, padx=10, pady=8)
         evidence_text = scrolledtext.ScrolledText(dialog, width=38, height=8)
         evidence_text.grid(row=4, column=1, padx=10, pady=8)
         evidence_text.insert('1.0', evidence or "")
@@ -1129,7 +1131,7 @@ class CompetencyMixin:
             conn.close()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load supporting data: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load supporting data: {exc}")
             dialog.destroy()
             return
 
@@ -1179,7 +1181,7 @@ class CompetencyMixin:
                     level_var.set(level_combo['values'][0] if level_combo['values'] else '')
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to load competency levels: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load competency levels: {exc}")
 
         competency_combo.bind('<<ComboboxSelected>>', load_levels)
         load_levels()
@@ -1195,7 +1197,7 @@ class CompetencyMixin:
             competency_id_val = competency_options.get(competency_key)
 
             if not student_id_val or not competency_id_val:
-                messagebox.showwarning("Validation", "Student and competency are required.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.student_and_competency_are_required', default="Student and competency are required."))
                 return
 
             level_id_val = None
@@ -1204,8 +1206,8 @@ class CompetencyMixin:
 
             if level_id_val is None:
                 messagebox.showwarning(
-                    "Validation",
-                    "The selected competency has no levels defined. Please add competency levels first."
+                    _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"),
+                    _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.the_selected_competency_has_no_levels_defined_please_add_compete', default="The selected competency has no levels defined. Please add competency levels first.")
                 )
                 return
 
@@ -1215,7 +1217,7 @@ class CompetencyMixin:
             try:
                 datetime.strptime(assessment_date_val, '%Y-%m-%d')
             except ValueError:
-                messagebox.showwarning("Validation", "Assessment date must be in YYYY-MM-DD format.")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.assessment_date_must_be_in_yyyy_mm_dd_format', default="Assessment date must be in YYYY-MM-DD format."))
                 return
 
             try:
@@ -1232,17 +1234,17 @@ class CompetencyMixin:
                 conn_save.commit()
                 conn_save.close()
 
-                messagebox.showinfo("Success", "Competency record updated.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.success', default="Success"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.competency_record_updated', default="Competency record updated."))
                 dialog.destroy()
                 self._refresh_student_competencies()
 
             except sqlite3.Error as exc:
-                messagebox.showerror("Database Error", f"Failed to update record: {exc}")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to update record: {exc}")
 
         button_frame = ttk.Frame(dialog)
         button_frame.grid(row=5, column=0, columnspan=2, pady=12)
-        ttk.Button(button_frame, text="Save Changes", command=save_changes).pack(side=tk.LEFT, padx=8)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=8)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.save_changes', default="Save Changes"), command=save_changes).pack(side=tk.LEFT, padx=8)
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=8)
 
 
     def view_student_competency_profile(self):
@@ -1259,7 +1261,7 @@ class CompetencyMixin:
                 student_id = selected.split(' - ')[0].strip()
 
         if not student_id:
-            messagebox.showwarning("No Student", "Select a student record or choose a student from the filter.")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_student', default="No Student"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.select_a_student_record_or_choose_a_student_from_the_filter', default="Select a student record or choose a student from the filter."))
             return
 
         try:
@@ -1277,7 +1279,7 @@ class CompetencyMixin:
             student = cursor.fetchone()
             if not student:
                 conn.close()
-                messagebox.showerror("Error", "Student not found.")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.student_not_found', default="Student not found."))
                 return
 
             first_name, middle_name, last_name, course = student
@@ -1303,11 +1305,11 @@ class CompetencyMixin:
             conn.close()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load student profile: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load student profile: {exc}")
             return
 
         if not records:
-            messagebox.showinfo("No Records", "No competency assessments recorded for this student.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_records', default="No Records"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_competency_assessments_recorded_for_this_student', default="No competency assessments recorded for this student."))
             return
 
         profile_window = tk.Toplevel(self.root)
@@ -1354,26 +1356,26 @@ class CompetencyMixin:
     def generate_competency_report_dialog(self):
         """Generate tailored competency reports into the preview pane."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Generate Competency Report")
+        dialog.title(_t('gui.academics.grade_tracking.analytics_manager.competency.windows.generate_competency_report', default="Generate Competency Report"))
         dialog.geometry("500x320")
         safe_grab_set(dialog)
 
-        report_type_var = tk.StringVar(value="all")
+        report_type_var = tk.StringVar(value=_t('gui.academics.grade_tracking.analytics_manager.competency.values.all', default="all"))
 
-        ttk.Label(dialog, text="Report Type:").pack(anchor=tk.W, padx=10, pady=5)
-        ttk.Radiobutton(dialog, text="All Competency Activity", variable=report_type_var, value="all").pack(anchor=tk.W, padx=20)
-        ttk.Radiobutton(dialog, text="By Student", variable=report_type_var, value="student").pack(anchor=tk.W, padx=20)
-        ttk.Radiobutton(dialog, text="By Competency", variable=report_type_var, value="competency").pack(anchor=tk.W, padx=20)
+        ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.report_type', default="Report Type:")).pack(anchor=tk.W, padx=10, pady=5)
+        ttk.Radiobutton(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.all_competency_activity', default="All Competency Activity"), variable=report_type_var, value="all").pack(anchor=tk.W, padx=20)
+        ttk.Radiobutton(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.by_student', default="By Student"), variable=report_type_var, value="student").pack(anchor=tk.W, padx=20)
+        ttk.Radiobutton(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.by_competency', default="By Competency"), variable=report_type_var, value="competency").pack(anchor=tk.W, padx=20)
 
         selector_frame = ttk.Frame(dialog)
         selector_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Label(selector_frame, text="Student:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(selector_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.student', default="Student:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         student_var = tk.StringVar()
         student_combo = ttk.Combobox(selector_frame, textvariable=student_var, width=35, state='readonly')
         student_combo.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(selector_frame, text="Competency:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(selector_frame, text=_t('gui.academics.grade_tracking.analytics_manager.competency.labels.competency', default="Competency:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         competency_var = tk.StringVar()
         competency_combo = ttk.Combobox(selector_frame, textvariable=competency_var, width=35, state='readonly')
         competency_combo.grid(row=1, column=1, padx=5, pady=5)
@@ -1407,7 +1409,7 @@ class CompetencyMixin:
             conn.close()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to load report options: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to load report options: {exc}")
             dialog.destroy()
             return
 
@@ -1423,7 +1425,7 @@ class CompetencyMixin:
                 student_key = student_var.get()
                 student_id = student_options.get(student_key)
                 if not student_id:
-                    messagebox.showwarning("Validation", "Select a student for the report.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.select_a_student_for_the_report', default="Select a student for the report."))
                     return
                 success = self._generate_student_competency_report(student_id)
                 if success:
@@ -1434,14 +1436,14 @@ class CompetencyMixin:
                 competency_key = competency_var.get()
                 competency_id = competency_options.get(competency_key)
                 if not competency_id:
-                    messagebox.showwarning("Validation", "Select a competency for the report.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.validation', default="Validation"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.select_a_competency_for_the_report', default="Select a competency for the report."))
                     return
                 success = self._generate_competency_focus_report(competency_id)
                 if success:
                     dialog.destroy()
 
-        ttk.Button(dialog, text="Generate Report", command=run_report).pack(pady=10)
-        ttk.Button(dialog, text="Close", command=dialog.destroy).pack()
+        ttk.Button(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.generate_report', default="Generate Report"), command=run_report).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.competency.buttons.close', default="Close"), command=dialog.destroy).pack()
 
 
     def _generate_student_competency_report(self, student_id):
@@ -1461,7 +1463,7 @@ class CompetencyMixin:
             student = cursor.fetchone()
             if not student:
                 conn.close()
-                messagebox.showerror("Error", "Student not found.")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.student_not_found', default="Student not found."))
                 return False
 
             first_name, middle_name, last_name, course = student
@@ -1488,11 +1490,11 @@ class CompetencyMixin:
             conn.close()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to build report: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to build report: {exc}")
             return False
 
         if not rows:
-            messagebox.showinfo("No Records", "No competency assessments recorded for this student.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_records', default="No Records"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_competency_assessments_recorded_for_this_student', default="No competency assessments recorded for this student."))
             return False
 
         total_records = len(rows)
@@ -1564,7 +1566,7 @@ class CompetencyMixin:
             competency = cursor.fetchone()
             if not competency:
                 conn.close()
-                messagebox.showerror("Error", "Competency not found.")
+                messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.competency_not_found', default="Competency not found."))
                 return False
 
             name, description, category = competency
@@ -1592,11 +1594,11 @@ class CompetencyMixin:
             conn.close()
 
         except sqlite3.Error as exc:
-            messagebox.showerror("Database Error", f"Failed to build report: {exc}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.database_error', default="Database Error"), f"Failed to build report: {exc}")
             return False
 
         if not rows:
-            messagebox.showinfo("No Records", "No student assessments recorded for this competency.")
+            messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_records', default="No Records"), _t('gui.academics.grade_tracking.analytics_manager.competency.dialogs.no_student_assessments_recorded_for_this_competency', default="No student assessments recorded for this competency."))
             return False
 
         total_students = len({row[0] for row in rows})

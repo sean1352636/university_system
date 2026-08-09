@@ -1,0 +1,343 @@
+"""The standards catalogue: programmes, their KSBs and their duties."""
+
+from __future__ import annotations
+
+import logging
+from collections.abc import Callable
+from functools import partial
+
+from education_system.systems.apprenticeships import config
+from education_system.systems.apprenticeships.domain.programmes.models import Programme
+from education_system.systems.apprenticeships.interfaces.cli import prompts
+from education_system.systems.apprenticeships.services import programme_service
+from education_system.systems.apprenticeships.services.access import Actor
+
+logger = logging.getLogger(__name__)
+
+
+def menu(actor: Actor) -> None:
+    entries: list[tuple[str, Callable[[], None]]] = [
+        ("List standards", partial(_list, actor)),
+        ("View a standard", partial(_view, actor)),
+        ("Knowledge, skills and behaviours", partial(_ksb_menu, actor)),
+        ("Occupational duties", partial(_duty_menu, actor)),
+    ]
+    if actor.can("programme.manage"):
+        entries += [
+            ("Add a standard", partial(_create, actor)),
+            ("Edit a standard", partial(_edit, actor)),
+            ("Activate a standard", partial(_activate, actor)),
+            ("Withdraw a standard", partial(_withdraw, actor)),
+        ]
+    if actor.is_admin:
+        entries.append(("Delete a standard", partial(_delete, actor)))
+    prompts.run_menu("Programmes and KSBs", entries)
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Standards
+# ═════════════════════════════════════════════════════════════════════
+
+def _list(actor: Actor) -> None:
+    status = prompts.choose("Status filter", config.PROGRAMME_STATUSES, allow_blank=True)
+    level = prompts.choose("Level filter", config.PROGRAMME_LEVELS,
+                           render=lambda v: config.LEVEL_LABELS[v], allow_blank=True)
+    search = prompts.ask("Reference or title contains")
+    programmes = programme_service.list_programmes(
+        actor, status=status, level=level, search=search or None
+    )
+    prompts.title("Apprenticeship standards")
+    _table(programmes)
+    prompts.pause()
+
+
+def _view(actor: Actor) -> None:
+    programme = pick(actor)
+    breakdown = programme_service.ksb_breakdown(actor, programme.programme_id)
+    prompts.title(f"{programme.reference} {programme.title}")
+    prompts.details([
+        ("Level", programme.level_label),
+        ("Pathway", programme.pathway),
+        ("Duration", f"{programme.duration_months} months"),
+        ("Funding band", f"{programme.funding_band} "
+                         f"(max {prompts.money(programme.band_maximum)})"),
+        ("Sector", programme.sector),
+        ("Status", programme.status),
+        ("Degree apprenticeship", programme.is_degree_apprenticeship),
+        ("EPA methods", "; ".join(programme.epa_methods) or prompts.EMPTY),
+        ("Knowledge", breakdown["Knowledge"]),
+        ("Skills", breakdown["Skill"]),
+        ("Behaviours", breakdown["Behaviour"]),
+        ("Description", programme.description),
+    ])
+
+    prompts.note("\nOccupational duties:")
+    _duty_table(programme_service.list_duties(actor, programme.programme_id))
+    prompts.note("\nKnowledge, skills and behaviours:")
+    _ksb_table(programme_service.list_ksbs(actor, programme.programme_id))
+    prompts.pause()
+
+
+def _create(actor: Actor) -> None:
+    prompts.title("Add a standard")
+    payload = {
+        "reference": prompts.ask("Reference (e.g. ST0119)", required=True),
+        "title": prompts.ask("Title", required=True),
+        "level": prompts.choose_value(
+            "Level", tuple(str(v) for v in config.PROGRAMME_LEVELS), default="3"
+        ),
+        "funding_band": prompts.ask_int("Funding band (1-15)", required=True),
+        "duration_months": prompts.ask_int("Duration in months", default=12, required=True),
+        "sector": prompts.ask("Sector"),
+        "description": prompts.ask("Description"),
+        "epa_methods": _pick_methods(),
+    }
+    created = programme_service.create_programme(actor, payload)
+    prompts.ok(f"Added {created.reference} {created.title} as a draft.")
+    prompts.note("Add its KSBs, then activate it before enrolling anyone.")
+    prompts.pause()
+
+
+def _edit(actor: Actor) -> None:
+    programme = pick(actor)
+    prompts.title(f"Edit {programme.reference}")
+    payload = {
+        "reference": prompts.ask("Reference", default=programme.reference, required=True),
+        "title": prompts.ask("Title", default=programme.title, required=True),
+        "level": prompts.choose_value(
+            "Level", tuple(str(v) for v in config.PROGRAMME_LEVELS), default=str(programme.level)
+        ),
+        "funding_band": prompts.ask_int("Funding band", default=programme.funding_band),
+        "duration_months": prompts.ask_int("Duration in months",
+                                           default=programme.duration_months),
+        "sector": prompts.ask("Sector", default=programme.sector or ""),
+        "description": prompts.ask("Description", default=programme.description or ""),
+    }
+    if prompts.ask_yes_no("Change the EPA methods?"):
+        payload["epa_methods"] = _pick_methods(current=programme.epa_methods)
+
+    updated = programme_service.update_programme(actor, programme.programme_id, payload)
+    prompts.ok(f"Updated {updated.reference} {updated.title}.")
+    prompts.pause()
+
+
+def _activate(actor: Actor) -> None:
+    programme = pick(actor, status="Draft")
+    updated = programme_service.activate_programme(actor, programme.programme_id)
+    prompts.ok(f"{updated.reference} is active — apprentices may now be enrolled on it.")
+    prompts.pause()
+
+
+def _withdraw(actor: Actor) -> None:
+    programme = pick(actor, status="Active")
+    reason = prompts.ask("Reason for withdrawing it", required=True)
+    updated = programme_service.withdraw_programme(actor, programme.programme_id, reason=reason)
+    prompts.ok(f"{updated.reference} is closed to new enrolments.")
+    prompts.pause()
+
+
+def _delete(actor: Actor) -> None:
+    programme = pick(actor, heading="Standard to delete")
+    prompts.note("Deleting erases the standard along with its KSBs and duties.")
+    if not prompts.ask_yes_no(f"Really delete {programme.reference}?"):
+        raise prompts.Abort
+    reason = prompts.ask("Reason for deletion", required=True)
+
+    programme_service.delete_programme(actor, programme.programme_id, reason=reason)
+    prompts.ok(f"Deleted {programme.reference} {programme.title}.")
+    prompts.pause()
+
+
+# ═════════════════════════════════════════════════════════════════════
+# KSBs
+# ═════════════════════════════════════════════════════════════════════
+
+def _ksb_menu(actor: Actor) -> None:
+    entries: list[tuple[str, Callable[[], None]]] = [
+        ("List a standard's KSBs", partial(_list_ksbs, actor)),
+    ]
+    if actor.can("programme.manage"):
+        entries += [
+            ("Add a KSB", partial(_add_ksb, actor)),
+            ("Edit a KSB", partial(_edit_ksb, actor)),
+            ("Delete a KSB", partial(_delete_ksb, actor)),
+        ]
+    prompts.run_menu("Knowledge, skills and behaviours", entries)
+
+
+def _list_ksbs(actor: Actor) -> None:
+    programme = pick(actor)
+    ksb_type = prompts.choose("Type filter", config.KSB_TYPES, allow_blank=True)
+    prompts.title(f"KSBs — {programme.reference} {programme.title}")
+    _ksb_table(programme_service.list_ksbs(actor, programme.programme_id, ksb_type=ksb_type))
+    prompts.pause()
+
+
+def _add_ksb(actor: Actor) -> None:
+    programme = pick(actor)
+    payload = {
+        "code": prompts.ask("Code (K1, S12, B3 …)", required=True),
+        "description": prompts.ask("Statement", required=True),
+        "duty_ref": prompts.ask("Duty reference (optional)"),
+    }
+    created = programme_service.add_ksb(actor, programme.programme_id, payload)
+    prompts.ok(f"Added {created.code} ({created.ksb_type}) to {programme.reference}.")
+    prompts.pause()
+
+
+def _edit_ksb(actor: Actor) -> None:
+    programme, ksb = _pick_ksb(actor)
+    payload = {
+        "code": prompts.ask("Code", default=ksb.code, required=True),
+        "description": prompts.ask("Statement", default=ksb.description, required=True),
+        "duty_ref": prompts.ask("Duty reference", default=ksb.duty_ref or ""),
+    }
+    updated = programme_service.update_ksb(actor, ksb.ksb_id, payload)
+    prompts.ok(f"Updated {updated.code} on {programme.reference}.")
+    prompts.pause()
+
+
+def _delete_ksb(actor: Actor) -> None:
+    _, ksb = _pick_ksb(actor)
+    prompts.note("Evidence mapped to it survives — it simply covers one thing fewer.")
+    if not prompts.ask_yes_no(f"Delete {ksb.code}?"):
+        raise prompts.Abort
+    reason = prompts.ask("Reason (optional)")
+
+    programme_service.delete_ksb(actor, ksb.ksb_id, reason=reason or None)
+    prompts.ok(f"Deleted {ksb.code}.")
+    prompts.pause()
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Occupational duties
+# ═════════════════════════════════════════════════════════════════════
+
+def _duty_menu(actor: Actor) -> None:
+    entries: list[tuple[str, Callable[[], None]]] = [
+        ("List a standard's duties", partial(_list_duties, actor)),
+    ]
+    if actor.can("programme.manage"):
+        entries += [
+            ("Add a duty", partial(_add_duty, actor)),
+            ("Edit a duty", partial(_edit_duty, actor)),
+            ("Delete a duty", partial(_delete_duty, actor)),
+        ]
+    prompts.run_menu("Occupational duties", entries)
+
+
+def _list_duties(actor: Actor) -> None:
+    programme = pick(actor)
+    prompts.title(f"Duties — {programme.reference} {programme.title}")
+    _duty_table(programme_service.list_duties(actor, programme.programme_id))
+    prompts.pause()
+
+
+def _add_duty(actor: Actor) -> None:
+    programme = pick(actor)
+    payload = {
+        "code": prompts.ask("Duty code (e.g. D1)", required=True),
+        "description": prompts.ask("Duty", required=True),
+    }
+    created = programme_service.add_duty(actor, programme.programme_id, payload)
+    prompts.ok(f"Added {created.code} to {programme.reference}.")
+    prompts.pause()
+
+
+def _edit_duty(actor: Actor) -> None:
+    _, duty = _pick_duty(actor)
+    payload = {
+        "code": prompts.ask("Duty code", default=duty.code, required=True),
+        "description": prompts.ask("Duty", default=duty.description, required=True),
+    }
+    programme_service.update_duty(actor, duty.duty_id, payload)
+    prompts.ok(f"Updated duty {payload['code']}.")
+    prompts.pause()
+
+
+def _delete_duty(actor: Actor) -> None:
+    _, duty = _pick_duty(actor)
+    prompts.note("KSBs referencing it keep the reference text — it is a label, not a key.")
+    if not prompts.ask_yes_no(f"Delete duty {duty.code}?"):
+        raise prompts.Abort
+
+    programme_service.delete_duty(actor, duty.duty_id)
+    prompts.ok(f"Deleted duty {duty.code}.")
+    prompts.pause()
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Pickers and tables
+# ═════════════════════════════════════════════════════════════════════
+
+def pick(actor: Actor, *, heading: str = "Standard", **filters: object) -> Programme:
+    """Choose one standard from the catalogue."""
+    return prompts.choose(
+        heading,
+        programme_service.list_programmes(actor, **filters),
+        render=lambda p: f"{p.reference} {p.title} — Level {p.level}, {p.status}",
+    )
+
+
+def _pick_ksb(actor: Actor):
+    programme = pick(actor)
+    ksbs = programme_service.list_ksbs(actor, programme.programme_id)
+    ksb = prompts.choose(
+        "KSB", ksbs, render=lambda k: f"{k.code} ({k.ksb_type}) — {k.description[:60]}"
+    )
+    return programme, ksb
+
+
+def _pick_duty(actor: Actor):
+    programme = pick(actor)
+    duties = programme_service.list_duties(actor, programme.programme_id)
+    duty = prompts.choose(
+        "Duty", duties, render=lambda d: f"{d.code} — {d.description[:60]}"
+    )
+    return programme, duty
+
+
+def _pick_methods(current: list[str] | None = None) -> list[str]:
+    """Collect the EPA plan one method at a time.
+
+    A standard is assessed by two or three methods, so the list is built
+    by repeated selection rather than by asking for a comma-separated
+    string nobody can be sure they typed correctly.
+    """
+    chosen: list[str] = list(current or [])
+    while True:
+        prompts.note(f"EPA methods so far: {', '.join(chosen) or prompts.EMPTY}")
+        method = prompts.choose("Add an EPA method", config.EPA_METHODS, allow_blank=True)
+        if method is None:
+            return chosen
+        if method not in chosen:
+            chosen.append(method)
+
+
+def _table(programmes: list[Programme]) -> None:
+    prompts.table(
+        (("Reference", 10), ("Title", 34), ("Lvl", -4), ("Months", -7),
+         ("Band", -5), ("Status", 10), ("EPA methods", 30)),
+        programmes,
+        lambda p: (p.reference, p.title, p.level, p.duration_months, p.funding_band,
+                   p.status, ", ".join(p.epa_methods)),
+        noun="standard",
+    )
+
+
+def _ksb_table(ksbs: list) -> None:
+    prompts.table(
+        (("Code", 6), ("Type", 11), ("Duty", 6), ("Statement", 60)),
+        ksbs,
+        lambda k: (k.code, k.ksb_type, k.duty_ref, k.description),
+        noun="KSB",
+    )
+
+
+def _duty_table(duties: list) -> None:
+    prompts.table(
+        (("Code", 8), ("Duty", 72)),
+        duties,
+        lambda d: (d.code, d.description),
+        noun="duty",
+    )

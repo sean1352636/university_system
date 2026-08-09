@@ -26,7 +26,7 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.infrastructure import log_store
 from education_system.systems.sixth_form.domain.learners.alumni import (
     alumni as data,
@@ -71,7 +71,7 @@ def _log_action(action: str, *, actor: str | None = None,
         # Logging must never crash the calling path.
         pass
 
-DB_PATH = paths.ALUMNI_DB
+DB_PATH = paths.SIXTH_FORM_ALUMNI_DB
 
 
 DESTINATION_TYPES: tuple[str, ...] = (
@@ -834,7 +834,7 @@ class Summary:
 # ── DB plumbing ────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")

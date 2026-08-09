@@ -4,6 +4,8 @@ Allows students to view their documents, request official documents,
 upload personal files, and track document request statuses.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -25,14 +27,14 @@ class DocumentCenterGUI:
         )
 
         self.window = tk.Toplevel(parent)
-        self.window.title("My Documents")
+        self.window.title(_t('gui.pastoral.document_center.document_center.windows.my_documents', default="My Documents"))
         self.window.geometry("900x600")
         self.window.minsize(700, 450)
 
         if not self.student_id:
             messagebox.showerror(
-                "Error",
-                "You must be logged in to access the Document Center.",
+                _t('gui.pastoral.document_center.document_center.dialogs.error', default="Error"),
+                _t('gui.pastoral.document_center.document_center.dialogs.you_must_be_logged_in_to_access_the_document_center', default="You must be logged in to access the Document Center."),
                 parent=self.window,
             )
             self.window.destroy()
@@ -92,7 +94,7 @@ class DocumentCenterGUI:
         # Header
         ttk.Label(
             self.window,
-            text="My Documents",
+            text=_t('gui.pastoral.document_center.document_center.labels.my_documents', default="My Documents"),
             font=("Helvetica", 16, "bold"),
         ).pack(anchor="w", padx=15, pady=(15, 5))
 
@@ -110,10 +112,10 @@ class DocumentCenterGUI:
         )
         scrollbar.config(command=self.doc_tree.yview)
 
-        self.doc_tree.heading("title", text="Title")
-        self.doc_tree.heading("file_type", text="Type")
-        self.doc_tree.heading("module_code", text="Module")
-        self.doc_tree.heading("submission_date", text="Submitted")
+        self.doc_tree.heading("title", text=_t('gui.pastoral.document_center.document_center.headings.title', default="Title"))
+        self.doc_tree.heading("file_type", text=_t('gui.pastoral.document_center.document_center.headings.type', default="Type"))
+        self.doc_tree.heading("module_code", text=_t('gui.pastoral.document_center.document_center.headings.module', default="Module"))
+        self.doc_tree.heading("submission_date", text=_t('gui.pastoral.document_center.document_center.headings.submitted', default="Submitted"))
 
         self.doc_tree.column("title", width=300)
         self.doc_tree.column("file_type", width=140, anchor="center")
@@ -130,18 +132,18 @@ class DocumentCenterGUI:
         btn_frame = ttk.Frame(self.window)
         btn_frame.pack(fill=tk.X, padx=15, pady=5)
 
-        ttk.Button(btn_frame, text="Request Document", command=self._open_request_dialog).pack(
+        ttk.Button(btn_frame, text=_t('gui.pastoral.document_center.document_center.buttons.request_document', default="Request Document"), command=self._open_request_dialog).pack(
             side=tk.LEFT, padx=(0, 5)
         )
-        ttk.Button(btn_frame, text="View Content", command=self._view_selected_document).pack(
+        ttk.Button(btn_frame, text=_t('gui.pastoral.document_center.document_center.buttons.view_content', default="View Content"), command=self._view_selected_document).pack(
             side=tk.LEFT, padx=(0, 5)
         )
-        ttk.Button(btn_frame, text="Refresh", command=self._refresh_all).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.document_center.document_center.buttons.refresh', default="Refresh"), command=self._refresh_all).pack(side=tk.LEFT)
 
         # Document Requests section --------------------------------------
         ttk.Label(
             self.window,
-            text="Document Requests",
+            text=_t('gui.pastoral.document_center.document_center.labels.document_requests', default="Document Requests"),
             font=("Helvetica", 12, "bold"),
         ).pack(anchor="w", padx=15, pady=(10, 2))
 
@@ -159,9 +161,9 @@ class DocumentCenterGUI:
         )
         req_scrollbar.config(command=self.req_tree.yview)
 
-        self.req_tree.heading("document_type", text="Document Type")
-        self.req_tree.heading("status", text="Status")
-        self.req_tree.heading("requested_at", text="Requested")
+        self.req_tree.heading("document_type", text=_t('gui.pastoral.document_center.document_center.headings.document_type', default="Document Type"))
+        self.req_tree.heading("status", text=_t('gui.pastoral.document_center.document_center.headings.status', default="Status"))
+        self.req_tree.heading("requested_at", text=_t('gui.pastoral.document_center.document_center.headings.requested', default="Requested"))
 
         self.req_tree.column("document_type", width=250)
         self.req_tree.column("status", width=120, anchor="center")
@@ -268,13 +270,13 @@ class DocumentCenterGUI:
     def _open_request_dialog(self):
         """Open a dialog to request an official document."""
         dialog = tk.Toplevel(self.window)
-        dialog.title("Request Document")
+        dialog.title(_t('gui.pastoral.document_center.document_center.windows.request_document', default="Request Document"))
         dialog.geometry("400x200")
         dialog.transient(self.window)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Document Type:").pack(anchor="w", padx=15, pady=(15, 5))
-        type_var = tk.StringVar(value="Enrollment Confirmation")
+        ttk.Label(dialog, text=_t('gui.pastoral.document_center.document_center.labels.document_type', default="Document Type:")).pack(anchor="w", padx=15, pady=(15, 5))
+        type_var = tk.StringVar(value=_t('gui.pastoral.document_center.document_center.values.enrollment_confirmation', default="Enrollment Confirmation"))
         ttk.Combobox(
             dialog,
             textvariable=type_var,
@@ -308,7 +310,7 @@ class DocumentCenterGUI:
                     details=f"Requested document: {doc_type}",
                 )
                 messagebox.showinfo(
-                    "Success",
+                    _t('gui.pastoral.document_center.document_center.dialogs.success', default="Success"),
                     f"Your request for '{doc_type}' has been submitted.",
                     parent=dialog,
                 )
@@ -317,10 +319,10 @@ class DocumentCenterGUI:
             except Exception as exc:
                 logger.error("Failed to request document: %s", exc)
                 messagebox.showerror(
-                    "Error", f"Could not submit request: {exc}", parent=dialog
+                    _t('gui.pastoral.document_center.document_center.dialogs.error', default="Error"), f"Could not submit request: {exc}", parent=dialog
                 )
 
-        ttk.Button(dialog, text="Submit Request", command=_submit).pack(pady=20)
+        ttk.Button(dialog, text=_t('gui.pastoral.document_center.document_center.buttons.submit_request', default="Submit Request"), command=_submit).pack(pady=20)
 
     # ------------------------------------------------------------------
     # View Document
@@ -331,7 +333,7 @@ class DocumentCenterGUI:
         selection = self.doc_tree.selection()
         if not selection:
             messagebox.showinfo(
-                "Info", "Please select a document to view.", parent=self.window
+                _t('gui.pastoral.document_center.document_center.dialogs.info', default="Info"), _t('gui.pastoral.document_center.document_center.dialogs.please_select_a_document_to_view', default="Please select a document to view."), parent=self.window
             )
             return
 
@@ -341,7 +343,7 @@ class DocumentCenterGUI:
 
         if not content:
             messagebox.showinfo(
-                "Info", "No content available for this document.", parent=self.window
+                _t('gui.pastoral.document_center.document_center.dialogs.info', default="Info"), _t('gui.pastoral.document_center.document_center.dialogs.no_content_available_for_this_document', default="No content available for this document."), parent=self.window
             )
             return
 
@@ -356,4 +358,4 @@ class DocumentCenterGUI:
         text_widget.insert("1.0", content)
         text_widget.config(state=tk.DISABLED)
 
-        ttk.Button(viewer, text="Close", command=viewer.destroy).pack(pady=(0, 10))
+        ttk.Button(viewer, text=_t('gui.pastoral.document_center.document_center.buttons.close', default="Close"), command=viewer.destroy).pack(pady=(0, 10))

@@ -9,6 +9,8 @@ so the board reflects the latest state after move-outs / new bookings.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import sqlite3
 import tkinter as tk
@@ -29,14 +31,14 @@ def show_vacancy_board(gui_instance) -> None:
     # ── Header ──
     header = ttk.Frame(parent)
     header.pack(fill="x", padx=8, pady=(8, 4))
-    ttk.Label(header, text="Vacancy Board — Available Rooms",
+    ttk.Label(header, text=_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.labels.vacancy_board_available_rooms', default="Vacancy Board — Available Rooms"),
               font=("Arial", 14, "bold")).pack(side="left")
 
     # ── Filters ──
-    filters = ttk.LabelFrame(parent, text="Filters", padding=6)
+    filters = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.labels.filters', default="Filters"), padding=6)
     filters.pack(fill="x", padx=8, pady=4)
 
-    ttk.Label(filters, text="Building:").grid(row=0, column=0, sticky="e",
+    ttk.Label(filters, text=_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.labels.building', default="Building:")).grid(row=0, column=0, sticky="e",
                                                 padx=4, pady=2)
     building_var = tk.StringVar()
     building_combo = ttk.Combobox(filters, textvariable=building_var,
@@ -46,7 +48,7 @@ def show_vacancy_board(gui_instance) -> None:
     building_combo['values'] = ["(any)"] + [b[1] for b in buildings]
     building_combo.current(0)
 
-    ttk.Label(filters, text="Room type:").grid(row=0, column=2, sticky="e",
+    ttk.Label(filters, text=_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.labels.room_type', default="Room type:")).grid(row=0, column=2, sticky="e",
                                                   padx=4)
     type_var = tk.StringVar()
     type_combo = ttk.Combobox(filters, textvariable=type_var,
@@ -55,14 +57,14 @@ def show_vacancy_board(gui_instance) -> None:
     type_combo.grid(row=0, column=3, sticky="w", padx=4)
     type_combo.current(0)
 
-    ttk.Label(filters, text="Max rent (£):").grid(row=0, column=4,
+    ttk.Label(filters, text=_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.labels.max_rent', default="Max rent (£):")).grid(row=0, column=4,
                                                      sticky="e", padx=4)
     rent_var = tk.StringVar()
     ttk.Entry(filters, textvariable=rent_var, width=10).grid(
         row=0, column=5, sticky="w", padx=4)
 
     access_var = tk.BooleanVar(value=False)
-    ttk.Checkbutton(filters, text="Accessible only",
+    ttk.Checkbutton(filters, text=_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.buttons.accessible_only', default="Accessible only"),
                     variable=access_var).grid(row=0, column=6, padx=8)
 
     # ── Table ──
@@ -125,8 +127,8 @@ def show_vacancy_board(gui_instance) -> None:
         try:
             max_rent = float(rent_var.get().strip()) if rent_var.get().strip() else None
         except ValueError:
-            messagebox.showwarning("Vacancy board",
-                                    "Max rent must be numeric.",
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.dialogs.vacancy_board', default="Vacancy board"),
+                                    _t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.dialogs.max_rent_must_be_numeric', default="Max rent must be numeric."),
                                     parent=gui_instance.root)
             return
         accessible_only = access_var.get()
@@ -161,7 +163,7 @@ def show_vacancy_board(gui_instance) -> None:
                 conn.close()
         except sqlite3.Error as e:
             logger.exception("Vacancy board query failed")
-            messagebox.showerror("Vacancy board",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.dialogs.vacancy_board', default="Vacancy board"),
                                   f"Could not query rooms:\n\n{e}",
                                   parent=gui_instance.root)
             return
@@ -182,9 +184,9 @@ def show_vacancy_board(gui_instance) -> None:
                      "max_rent=%s, accessible=%s)",
                      len(rows), b_id, rt, max_rent, accessible_only)
 
-    ttk.Button(filters, text="Apply",
+    ttk.Button(filters, text=_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.buttons.apply', default="Apply"),
                command=reload).grid(row=0, column=7, padx=8)
-    ttk.Button(header, text="Refresh", command=reload).pack(side="right")
+    ttk.Button(header, text=_t('gui.operations.campus.housing.housing_accommodation_gui.vacancy_board.buttons.refresh', default="Refresh"), command=reload).pack(side="right")
 
     reload()
 

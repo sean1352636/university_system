@@ -17,8 +17,8 @@ class LogConfig:
     """Configuration management for the log system"""
 
     def __init__(self):
-        from education_system.systems.university.infrastructure import paths
-        self.config_file = str(paths.LOG_DIR / "log_config.json")
+        from education_system import paths
+        self.config_file = str(paths.UNIVERSITY_LOG_DIR / "log_config.json")
         self.default_config = {
             "retention_days": 90,
             "auto_archive_days": 30,
@@ -33,7 +33,9 @@ class LogConfig:
             "enable_encryption": True,
             "api_enabled": False,
             "api_secret_key": os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32)),
-            "webhook_secret": "webhook-secret-key-change-this",
+            # No hardcoded default: an empty secret disables the inbound
+            # log webhook (the route returns 500 until one is configured).
+            "webhook_secret": os.environ.get('LOG_WEBHOOK_SECRET', ''),
             "max_search_results": 1000,
             "enable_analytics": True,
             "chart_export_format": "png"

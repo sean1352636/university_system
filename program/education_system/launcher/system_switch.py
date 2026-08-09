@@ -31,6 +31,8 @@ SYSTEM_LABELS: dict[str, str] = {
     "secondary":     "Secondary School",
     "primary":    "Primary School",
     "nursery":    "Nursery",
+    "apprenticeships": "Apprenticeships",
+    "fe_college": "FE College",
 }
 
 

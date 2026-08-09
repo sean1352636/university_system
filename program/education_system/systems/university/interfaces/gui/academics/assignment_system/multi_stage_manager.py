@@ -1,5 +1,7 @@
 """Multi-stage assignment and external tool submission management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
@@ -103,13 +105,13 @@ class MultiStageManager:
         header_frame = ttk.Frame(content)
         header_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
 
-        ttk.Label(header_frame, text="Multi-Stage Assignments", font=("Segoe UI", 16, "bold")).pack(
+        ttk.Label(header_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.multi_stage_assignments', default="Multi-Stage Assignments"), font=("Segoe UI", 16, "bold")).pack(
             side=tk.LEFT
         )
 
         if self._check_permission('manage_assignments'):
             ttk.Button(
-                header_frame, text="+ Create Multi-Stage", command=self.create_multi_stage_assignment
+                header_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.create_multi_stage', default="+ Create Multi-Stage"), command=self.create_multi_stage_assignment
             ).pack(side=tk.RIGHT, padx=5)
 
         # Treeview
@@ -119,12 +121,12 @@ class MultiStageManager:
         columns = ("id", "title", "stages", "total_weight", "next_deadline", "status")
         tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=18)
 
-        tree.heading("id", text="ID")
-        tree.heading("title", text="Assignment Title")
-        tree.heading("stages", text="Stages")
-        tree.heading("total_weight", text="Total Weight %")
-        tree.heading("next_deadline", text="Next Deadline")
-        tree.heading("status", text="Status")
+        tree.heading("id", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.id', default="ID"))
+        tree.heading("title", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.assignment_title', default="Assignment Title"))
+        tree.heading("stages", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.stages', default="Stages"))
+        tree.heading("total_weight", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.total_weight', default="Total Weight %"))
+        tree.heading("next_deadline", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.next_deadline', default="Next Deadline"))
+        tree.heading("status", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.status', default="Status"))
 
         tree.column("id", width=50, anchor=tk.CENTER)
         tree.column("title", width=250)
@@ -169,7 +171,7 @@ class MultiStageManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), f"Failed to load assignments: {e}")
 
         # Double-click to view progress
         def on_select(event):
@@ -185,13 +187,13 @@ class MultiStageManager:
         btn_frame = ttk.Frame(content)
         btn_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="View Progress", command=lambda: on_select(None) if tree.selection() else None).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.view_progress', default="View Progress"), command=lambda: on_select(None) if tree.selection() else None).pack(
             side=tk.LEFT, padx=5
         )
-        ttk.Button(btn_frame, text="External Submissions", command=self.show_external_submissions).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.external_submissions', default="External Submissions"), command=self.show_external_submissions).pack(
             side=tk.LEFT, padx=5
         )
-        ttk.Button(btn_frame, text="Refresh", command=self.show_multi_stage_assignments).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.refresh', default="Refresh"), command=self.show_multi_stage_assignments).pack(
             side=tk.RIGHT, padx=5
         )
 
@@ -202,13 +204,13 @@ class MultiStageManager:
     def create_multi_stage_assignment(self):
         """Form to create an assignment with multiple stages"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to create assignments.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.you_do_not_have_permission_to_create_assignments', default="You do not have permission to create assignments."))
             return
 
         self.gui.layout.clear_content_area()
         content = self.gui.layout.content_area
 
-        ttk.Label(content, text="Create Multi-Stage Assignment", font=("Segoe UI", 16, "bold")).pack(
+        ttk.Label(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.create_multi_stage_assignment', default="Create Multi-Stage Assignment"), font=("Segoe UI", 16, "bold")).pack(
             padx=10, pady=(10, 5), anchor=tk.W
         )
 
@@ -225,7 +227,7 @@ class MultiStageManager:
         form_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Assignment selection
-        ttk.Label(form_frame, text="Assignment ID:", font=("Segoe UI", 10, "bold")).grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.assignment_id', default="Assignment ID:"), font=("Segoe UI", 10, "bold")).grid(
             row=0, column=0, sticky=tk.W, padx=5, pady=5
         )
         assignment_id_var = tk.StringVar()
@@ -250,7 +252,7 @@ class MultiStageManager:
         ttk.Separator(form_frame, orient=tk.HORIZONTAL).grid(
             row=1, column=0, columnspan=4, sticky=tk.EW, pady=10
         )
-        ttk.Label(form_frame, text="Stages", font=("Segoe UI", 12, "bold")).grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.stages', default="Stages"), font=("Segoe UI", 12, "bold")).grid(
             row=2, column=0, sticky=tk.W, padx=5, pady=5
         )
 
@@ -268,7 +270,7 @@ class MultiStageManager:
             row_frame.pack(fill=tk.X, padx=5, pady=5)
 
             # Stage name
-            ttk.Label(row_frame, text="Name:").grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
+            ttk.Label(row_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.name', default="Name:")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=3)
             name_var = tk.StringVar()
             default_names = {1: "Outline", 2: "Draft", 3: "Final"}
             name_var.set(default_names.get(stage_num, f"Stage {stage_num}"))
@@ -276,19 +278,19 @@ class MultiStageManager:
             name_entry.grid(row=0, column=1, padx=5, pady=3)
 
             # Description
-            ttk.Label(row_frame, text="Description:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=3)
+            ttk.Label(row_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.description', default="Description:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=3)
             desc_var = tk.StringVar()
             desc_entry = ttk.Entry(row_frame, textvariable=desc_var, width=40)
             desc_entry.grid(row=0, column=3, padx=5, pady=3)
 
             # Weight
-            ttk.Label(row_frame, text="Weight %:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=3)
+            ttk.Label(row_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.weight', default="Weight %:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=3)
             weight_var = tk.StringVar(value="0")
             weight_entry = ttk.Entry(row_frame, textvariable=weight_var, width=10)
             weight_entry.grid(row=1, column=1, sticky=tk.W, padx=5, pady=3)
 
             # Deadline
-            ttk.Label(row_frame, text="Deadline (YYYY-MM-DD HH:MM):").grid(
+            ttk.Label(row_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.deadline_yyyy_mm_dd_hh_mm', default="Deadline (YYYY-MM-DD HH:MM):")).grid(
                 row=1, column=2, sticky=tk.W, padx=5, pady=3
             )
             deadline_var = tk.StringVar()
@@ -299,7 +301,7 @@ class MultiStageManager:
 
             # Feedback required
             feedback_var = tk.BooleanVar(value=True)
-            ttk.Checkbutton(row_frame, text="Feedback required before next stage", variable=feedback_var).grid(
+            ttk.Checkbutton(row_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.feedback_required_before_next_stage', default="Feedback required before next stage"), variable=feedback_var).grid(
                 row=2, column=0, columnspan=3, sticky=tk.W, padx=5, pady=3
             )
 
@@ -311,7 +313,7 @@ class MultiStageManager:
                 for i, w in enumerate(stage_widgets):
                     w['frame'].configure(text=f"Stage {i + 1}")
 
-            ttk.Button(row_frame, text="Remove", command=remove_this).grid(
+            ttk.Button(row_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.remove', default="Remove"), command=remove_this).grid(
                 row=2, column=3, sticky=tk.E, padx=5, pady=3
             )
 
@@ -332,7 +334,7 @@ class MultiStageManager:
         stage_btn_frame = ttk.Frame(form_frame)
         stage_btn_frame.grid(row=4, column=0, columnspan=4, sticky=tk.W, padx=5, pady=5)
 
-        ttk.Button(stage_btn_frame, text="+ Add Stage", command=lambda: add_stage_row()).pack(side=tk.LEFT, padx=5)
+        ttk.Button(stage_btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.add_stage', default="+ Add Stage"), command=lambda: add_stage_row()).pack(side=tk.LEFT, padx=5)
 
         # Save button
         ttk.Separator(form_frame, orient=tk.HORIZONTAL).grid(
@@ -343,7 +345,7 @@ class MultiStageManager:
             # Validate assignment selection
             selected = assignment_id_var.get().strip()
             if not selected:
-                messagebox.showwarning("Validation", "Please select an assignment.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.please_select_an_assignment', default="Please select an assignment."))
                 return
 
             aid = self._assignment_map.get(selected)
@@ -352,13 +354,13 @@ class MultiStageManager:
                 try:
                     aid = int(selected.split(" - ")[0])
                 except (ValueError, IndexError):
-                    messagebox.showwarning("Validation", "Invalid assignment selection.")
+                    messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.invalid_assignment_selection', default="Invalid assignment selection."))
                     return
 
             # Collect live stage widgets
             live_stages = [w for w in stage_widgets if w['frame'].winfo_exists()]
             if not live_stages:
-                messagebox.showwarning("Validation", "Add at least one stage.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.add_at_least_one_stage', default="Add at least one stage."))
                 return
 
             # Validate weights
@@ -367,18 +369,18 @@ class MultiStageManager:
             for i, w in enumerate(live_stages):
                 name = w['name'].get().strip()
                 if not name:
-                    messagebox.showwarning("Validation", f"Stage {i + 1} needs a name.")
+                    messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), f"Stage {i + 1} needs a name.")
                     return
 
                 try:
                     weight = float(w['weight'].get())
                 except ValueError:
-                    messagebox.showwarning("Validation", f"Stage {i + 1} has an invalid weight.")
+                    messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), f"Stage {i + 1} has an invalid weight.")
                     return
 
                 deadline = w['deadline'].get().strip()
                 if not deadline:
-                    messagebox.showwarning("Validation", f"Stage {i + 1} needs a deadline.")
+                    messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), f"Stage {i + 1} needs a deadline.")
                     return
 
                 # Basic deadline format check
@@ -386,7 +388,7 @@ class MultiStageManager:
                     datetime.strptime(deadline, "%Y-%m-%d %H:%M")
                 except ValueError:
                     messagebox.showwarning(
-                        "Validation",
+                        _t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"),
                         f"Stage {i + 1} deadline must be in YYYY-MM-DD HH:MM format."
                     )
                     return
@@ -403,7 +405,7 @@ class MultiStageManager:
 
             if total_weight > 0 and abs(total_weight - 100) > 0.01:
                 if not messagebox.askyesno(
-                    "Weight Warning",
+                    _t('gui.academics.assignment_system.multi_stage_manager.dialogs.weight_warning', default="Weight Warning"),
                     f"Stage weights sum to {total_weight:.1f}%, not 100%. Continue anyway?"
                 ):
                     return
@@ -424,17 +426,17 @@ class MultiStageManager:
                             sd['weight'], sd['deadline'], sd['feedback_required']
                         ))
                     conn.commit()
-                    messagebox.showinfo("Success", f"Created {len(stage_data)} stages for assignment.")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.success', default="Success"), f"Created {len(stage_data)} stages for assignment.")
                     self.show_multi_stage_assignments()
                 finally:
                     conn.close()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save stages: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), f"Failed to save stages: {e}")
 
         btn_row = ttk.Frame(form_frame)
         btn_row.grid(row=6, column=0, columnspan=4, sticky=tk.E, padx=5, pady=10)
-        ttk.Button(btn_row, text="Save", command=save_assignment).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(btn_row, text="Cancel", command=self.show_multi_stage_assignments).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.save', default="Save"), command=save_assignment).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_row, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.cancel', default="Cancel"), command=self.show_multi_stage_assignments).pack(side=tk.RIGHT, padx=5)
 
     # ──────────────────────────────────────────────────────────────────
     # Stage progress view
@@ -454,7 +456,7 @@ class MultiStageManager:
             font=("Segoe UI", 16, "bold")
         ).pack(side=tk.LEFT)
 
-        ttk.Button(header_frame, text="Back", command=self.show_multi_stage_assignments).pack(
+        ttk.Button(header_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.back', default="Back"), command=self.show_multi_stage_assignments).pack(
             side=tk.RIGHT, padx=5
         )
 
@@ -472,11 +474,11 @@ class MultiStageManager:
                 stages = cursor.fetchall()
 
                 if not stages:
-                    ttk.Label(content, text="No stages defined for this assignment.").pack(padx=10, pady=20)
+                    ttk.Label(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.no_stages_defined_for_this_assignment', default="No stages defined for this assignment.")).pack(padx=10, pady=20)
                     return
 
                 # Stage summary
-                summary_frame = ttk.LabelFrame(content, text="Stages Overview")
+                summary_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.stages_overview', default="Stages Overview"))
                 summary_frame.pack(fill=tk.X, padx=10, pady=5)
 
                 for stage in stages:
@@ -496,8 +498,8 @@ class MultiStageManager:
                 columns = ["student_id", "student_name"] + [f"stage_{s[1]}" for s in stages]
                 tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=15)
 
-                tree.heading("student_id", text="Student ID")
-                tree.heading("student_name", text="Student")
+                tree.heading("student_id", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.student_id', default="Student ID"))
+                tree.heading("student_name", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.student', default="Student"))
                 tree.column("student_id", width=100, anchor=tk.CENTER)
                 tree.column("student_name", width=150)
 
@@ -583,7 +585,7 @@ class MultiStageManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load stage progress: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), f"Failed to load stage progress: {e}")
 
         # Action buttons
         action_frame = ttk.Frame(content)
@@ -606,7 +608,7 @@ class MultiStageManager:
         """Student form to submit work for a specific stage"""
         student_id = self._get_student_id()
         if not student_id:
-            messagebox.showwarning("Auth Required", "Cannot determine your student ID.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.auth_required', default="Auth Required"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.cannot_determine_your_student_id', default="Cannot determine your student ID."))
             return
 
         self.gui.layout.clear_content_area()
@@ -625,7 +627,7 @@ class MultiStageManager:
                 stage = cursor.fetchone()
 
                 if not stage:
-                    messagebox.showerror("Error", "Stage not found.")
+                    messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.stage_not_found', default="Stage not found."))
                     self.show_stage_progress(assignment_id)
                     return
 
@@ -649,7 +651,7 @@ class MultiStageManager:
 
                         if not prev_sub:
                             messagebox.showwarning(
-                                "Stage Locked",
+                                _t('gui.academics.assignment_system.multi_stage_manager.dialogs.stage_locked', default="Stage Locked"),
                                 f"You must complete Stage {stage_number - 1} before submitting Stage {stage_number}."
                             )
                             self.show_stage_progress(assignment_id)
@@ -664,7 +666,7 @@ class MultiStageManager:
                             prev_stage_info = cursor.fetchone()
                             if prev_stage_info and prev_stage_info[0]:
                                 messagebox.showwarning(
-                                    "Stage Locked",
+                                    _t('gui.academics.assignment_system.multi_stage_manager.dialogs.stage_locked', default="Stage Locked"),
                                     f"Stage {stage_number - 1} must be reviewed/approved before you can submit Stage {stage_number}."
                                 )
                                 self.show_stage_progress(assignment_id)
@@ -682,7 +684,7 @@ class MultiStageManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load stage: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), f"Failed to load stage: {e}")
             return
 
         # Header
@@ -692,7 +694,7 @@ class MultiStageManager:
             font=("Segoe UI", 16, "bold")
         ).pack(padx=10, pady=(10, 5), anchor=tk.W)
 
-        info_frame = ttk.LabelFrame(content, text="Stage Information")
+        info_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.stage_information', default="Stage Information"))
         info_frame.pack(fill=tk.X, padx=10, pady=5)
 
         if description:
@@ -703,7 +705,7 @@ class MultiStageManager:
 
         # Show existing feedback if present
         if existing and existing[4]:
-            fb_frame = ttk.LabelFrame(content, text="Instructor Feedback on Previous Submission")
+            fb_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.instructor_feedback_on_previous_submission', default="Instructor Feedback on Previous Submission"))
             fb_frame.pack(fill=tk.X, padx=10, pady=5)
             ttk.Label(
                 fb_frame, text=existing[4], wraplength=600,
@@ -711,10 +713,10 @@ class MultiStageManager:
             ).pack(padx=5, pady=5, anchor=tk.W)
 
         # Submission form
-        form_frame = ttk.LabelFrame(content, text="Your Submission")
+        form_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.your_submission', default="Your Submission"))
         form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        ttk.Label(form_frame, text="Content:").pack(anchor=tk.W, padx=5, pady=(5, 0))
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.content', default="Content:")).pack(anchor=tk.W, padx=5, pady=(5, 0))
         content_text = scrolledtext.ScrolledText(form_frame, height=12, width=80, wrap=tk.WORD)
         content_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
@@ -722,7 +724,7 @@ class MultiStageManager:
         if existing and existing[1]:
             content_text.insert("1.0", existing[1])
 
-        ttk.Label(form_frame, text="File Path (optional):").pack(anchor=tk.W, padx=5, pady=(5, 0))
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.file_path_optional', default="File Path (optional):")).pack(anchor=tk.W, padx=5, pady=(5, 0))
         file_var = tk.StringVar(value=existing[2] if existing and existing[2] else "")
         ttk.Entry(form_frame, textvariable=file_var, width=60).pack(anchor=tk.W, padx=5, pady=3)
 
@@ -742,7 +744,7 @@ class MultiStageManager:
             file_path = file_var.get().strip()
 
             if not text_content and not file_path:
-                messagebox.showwarning("Validation", "Please provide content or a file path.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.please_provide_content_or_a_file_path', default="Please provide content or a file path."))
                 return
 
             try:
@@ -765,21 +767,21 @@ class MultiStageManager:
                         ''', (stage_id, student_id, text_content, file_path or None, status, now))
 
                     conn.commit()
-                    messagebox.showinfo("Success", f"Stage {stage_number} {status} successfully.")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.success', default="Success"), f"Stage {stage_number} {status} successfully.")
                     self.show_stage_progress(assignment_id)
                 finally:
                     conn.close()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to submit: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), f"Failed to submit: {e}")
 
-        ttk.Button(btn_frame, text="Save Draft", command=lambda: do_submit('draft')).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.save_draft', default="Save Draft"), command=lambda: do_submit('draft')).pack(
             side=tk.LEFT, padx=5
         )
-        ttk.Button(btn_frame, text="Submit", command=lambda: do_submit('submitted')).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.submit', default="Submit"), command=lambda: do_submit('submitted')).pack(
             side=tk.LEFT, padx=5
         )
         ttk.Button(
-            btn_frame, text="Cancel",
+            btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.cancel', default="Cancel"),
             command=lambda: self.show_stage_progress(assignment_id)
         ).pack(side=tk.RIGHT, padx=5)
 
@@ -790,7 +792,7 @@ class MultiStageManager:
     def review_stage(self, assignment_id, student_id, stage_number):
         """Instructor review form for a student's stage submission"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to review submissions.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.you_do_not_have_permission_to_review_submissions', default="You do not have permission to review submissions."))
             return
 
         self.gui.layout.clear_content_area()
@@ -810,7 +812,7 @@ class MultiStageManager:
                 stage = cursor.fetchone()
 
                 if not stage:
-                    messagebox.showerror("Error", "Stage not found.")
+                    messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.stage_not_found', default="Stage not found."))
                     self.show_stage_progress(assignment_id)
                     return
 
@@ -834,7 +836,7 @@ class MultiStageManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load review data: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), f"Failed to load review data: {e}")
             return
 
         # Header
@@ -853,11 +855,11 @@ class MultiStageManager:
 
         if not submission:
             ttk.Label(
-                content, text="No submission found for this stage.",
+                content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.no_submission_found_for_this_stage', default="No submission found for this stage."),
                 font=("Segoe UI", 11, "italic"), foreground="gray"
             ).pack(padx=10, pady=20)
             ttk.Button(
-                content, text="Back",
+                content, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.back', default="Back"),
                 command=lambda: self.show_stage_progress(assignment_id)
             ).pack(padx=10, pady=5)
             return
@@ -865,7 +867,7 @@ class MultiStageManager:
         sub_id, sub_content, sub_file, sub_status, sub_feedback, sub_date = submission
 
         # Submission details
-        info_frame = ttk.LabelFrame(content, text="Submission Details")
+        info_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.submission_details', default="Submission Details"))
         info_frame.pack(fill=tk.X, padx=10, pady=5)
 
         ttk.Label(info_frame, text=f"Status: {sub_status} | Submitted: {sub_date}").pack(
@@ -875,7 +877,7 @@ class MultiStageManager:
             ttk.Label(info_frame, text=f"File: {sub_file}").pack(anchor=tk.W, padx=5, pady=3)
 
         # Show content
-        content_frame = ttk.LabelFrame(content, text="Submission Content")
+        content_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.submission_content', default="Submission Content"))
         content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         content_display = scrolledtext.ScrolledText(
@@ -887,7 +889,7 @@ class MultiStageManager:
         content_display.configure(state=tk.DISABLED)
 
         # Feedback entry
-        feedback_frame = ttk.LabelFrame(content, text="Feedback")
+        feedback_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.feedback', default="Feedback"))
         feedback_frame.pack(fill=tk.X, padx=10, pady=5)
 
         feedback_text = scrolledtext.ScrolledText(feedback_frame, height=5, width=80, wrap=tk.WORD)
@@ -902,7 +904,7 @@ class MultiStageManager:
         def do_review(new_status):
             feedback = feedback_text.get("1.0", tk.END).strip()
             if new_status == 'approved' and not feedback:
-                if not messagebox.askyesno("No Feedback", "Approve without feedback?"):
+                if not messagebox.askyesno(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.no_feedback', default="No Feedback"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.approve_without_feedback', default="Approve without feedback?")):
                     return
 
             try:
@@ -916,21 +918,21 @@ class MultiStageManager:
                         WHERE id = ?
                     ''', (new_status, feedback or None, now, sub_id))
                     conn.commit()
-                    messagebox.showinfo("Success", f"Submission marked as {new_status}.")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.success', default="Success"), f"Submission marked as {new_status}.")
                     self.show_stage_progress(assignment_id)
                 finally:
                     conn.close()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save review: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), f"Failed to save review: {e}")
 
-        ttk.Button(btn_frame, text="Approve", command=lambda: do_review('approved')).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.approve', default="Approve"), command=lambda: do_review('approved')).pack(
             side=tk.LEFT, padx=5
         )
-        ttk.Button(btn_frame, text="Request Revision", command=lambda: do_review('reviewed')).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.request_revision', default="Request Revision"), command=lambda: do_review('reviewed')).pack(
             side=tk.LEFT, padx=5
         )
         ttk.Button(
-            btn_frame, text="Back",
+            btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.back', default="Back"),
             command=lambda: self.show_stage_progress(assignment_id)
         ).pack(side=tk.RIGHT, padx=5)
 
@@ -947,11 +949,11 @@ class MultiStageManager:
         header_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
 
         ttk.Label(
-            header_frame, text="External Tool Submissions",
+            header_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.external_tool_submissions', default="External Tool Submissions"),
             font=("Segoe UI", 16, "bold")
         ).pack(side=tk.LEFT)
 
-        ttk.Button(header_frame, text="Back", command=self.show_multi_stage_assignments).pack(
+        ttk.Button(header_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.back', default="Back"), command=self.show_multi_stage_assignments).pack(
             side=tk.RIGHT, padx=5
         )
 
@@ -962,13 +964,13 @@ class MultiStageManager:
         columns = ("id", "assignment", "student", "link_type", "url", "validated", "submitted_at")
         tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=16)
 
-        tree.heading("id", text="ID")
-        tree.heading("assignment", text="Assignment")
-        tree.heading("student", text="Student")
-        tree.heading("link_type", text="Type")
-        tree.heading("url", text="URL")
-        tree.heading("validated", text="Validated")
-        tree.heading("submitted_at", text="Submitted")
+        tree.heading("id", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.id', default="ID"))
+        tree.heading("assignment", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.assignment', default="Assignment"))
+        tree.heading("student", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.student', default="Student"))
+        tree.heading("link_type", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.type', default="Type"))
+        tree.heading("url", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.url', default="URL"))
+        tree.heading("validated", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.validated', default="Validated"))
+        tree.heading("submitted_at", text=_t('gui.academics.assignment_system.multi_stage_manager.headings.submitted', default="Submitted"))
 
         tree.column("id", width=40, anchor=tk.CENTER)
         tree.column("assignment", width=160)
@@ -1028,7 +1030,7 @@ class MultiStageManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load external submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), f"Failed to load external submissions: {e}")
 
         # Action buttons
         btn_frame = ttk.Frame(content)
@@ -1048,17 +1050,17 @@ class MultiStageManager:
                 assignments = []
 
             if not assignments:
-                messagebox.showinfo("Info", "No active assignments available.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.no_active_assignments_available', default="No active assignments available."))
                 return
 
             # Quick selection dialog
             win = tk.Toplevel(self.root)
-            win.title("Select Assignment")
+            win.title(_t('gui.academics.assignment_system.multi_stage_manager.windows.select_assignment', default="Select Assignment"))
             win.geometry("400x300")
             win.transient(self.root)
             win.grab_set()
 
-            ttk.Label(win, text="Select assignment:", font=("Segoe UI", 10, "bold")).pack(
+            ttk.Label(win, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.select_assignment', default="Select assignment:"), font=("Segoe UI", 10, "bold")).pack(
                 padx=10, pady=10
             )
             listbox = tk.Listbox(win, height=10)
@@ -1073,18 +1075,18 @@ class MultiStageManager:
                     win.destroy()
                     self.submit_external_link(aid)
                 else:
-                    messagebox.showwarning("Selection", "Please select an assignment.", parent=win)
+                    messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.selection', default="Selection"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.please_select_an_assignment', default="Please select an assignment."), parent=win)
 
-            ttk.Button(win, text="OK", command=on_ok).pack(pady=10)
+            ttk.Button(win, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.ok', default="OK"), command=on_ok).pack(pady=10)
 
-        ttk.Button(btn_frame, text="Submit External Link", command=prompt_submit).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.submit_external_link', default="Submit External Link"), command=prompt_submit).pack(
             side=tk.LEFT, padx=5
         )
 
         def validate_selected():
             sel = tree.selection()
             if not sel:
-                messagebox.showinfo("Info", "Select a submission to validate.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.select_a_submission_to_validate', default="Select a submission to validate."))
                 return
             item = tree.item(sel[0])
             url = item['values'][4]
@@ -1106,10 +1108,10 @@ class MultiStageManager:
                 pass
             self.show_external_submissions()
 
-        ttk.Button(btn_frame, text="Validate Selected", command=validate_selected).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.validate_selected', default="Validate Selected"), command=validate_selected).pack(
             side=tk.LEFT, padx=5
         )
-        ttk.Button(btn_frame, text="Refresh", command=self.show_external_submissions).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.refresh', default="Refresh"), command=self.show_external_submissions).pack(
             side=tk.RIGHT, padx=5
         )
 
@@ -1121,7 +1123,7 @@ class MultiStageManager:
         """Student form to submit an external URL for an assignment"""
         student_id = self._get_student_id()
         if not student_id:
-            messagebox.showwarning("Auth Required", "Cannot determine your student ID.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.auth_required', default="Auth Required"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.cannot_determine_your_student_id', default="Cannot determine your student ID."))
             return
 
         self.gui.layout.clear_content_area()
@@ -1133,14 +1135,14 @@ class MultiStageManager:
             font=("Segoe UI", 16, "bold")
         ).pack(padx=10, pady=(10, 5), anchor=tk.W)
 
-        form_frame = ttk.LabelFrame(content, text="External Submission")
+        form_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.external_submission', default="External Submission"))
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Link type
-        ttk.Label(form_frame, text="Link Type:", font=("Segoe UI", 10, "bold")).grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.link_type', default="Link Type:"), font=("Segoe UI", 10, "bold")).grid(
             row=0, column=0, sticky=tk.W, padx=10, pady=8
         )
-        link_type_var = tk.StringVar(value="github")
+        link_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.multi_stage_manager.values.github', default="github"))
         type_combo = ttk.Combobox(
             form_frame, textvariable=link_type_var, state="readonly", width=20,
             values=["github", "google_docs", "figma", "other"]
@@ -1164,7 +1166,7 @@ class MultiStageManager:
         type_combo.bind("<<ComboboxSelected>>", update_hint)
 
         # URL entry
-        ttk.Label(form_frame, text="URL:", font=("Segoe UI", 10, "bold")).grid(
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.labels.url', default="URL:"), font=("Segoe UI", 10, "bold")).grid(
             row=1, column=0, sticky=tk.W, padx=10, pady=8
         )
         url_var = tk.StringVar()
@@ -1178,15 +1180,15 @@ class MultiStageManager:
         def do_validate():
             url = url_var.get().strip()
             if not url:
-                messagebox.showwarning("Validation", "Please enter a URL.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.please_enter_a_url', default="Please enter a URL."))
                 return
             is_valid = self.validate_external_link(url)
             if is_valid:
-                validation_label.configure(text="Link is accessible.", foreground="green")
+                validation_label.configure(text=_t('gui.academics.assignment_system.multi_stage_manager.text.link_is_accessible', default="Link is accessible."), foreground="green")
             else:
-                validation_label.configure(text="Link could not be validated.", foreground="red")
+                validation_label.configure(text=_t('gui.academics.assignment_system.multi_stage_manager.text.link_could_not_be_validated', default="Link could not be validated."), foreground="red")
 
-        ttk.Button(form_frame, text="Validate", command=do_validate).grid(
+        ttk.Button(form_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.validate', default="Validate"), command=do_validate).grid(
             row=2, column=0, sticky=tk.W, padx=10, pady=3
         )
 
@@ -1199,7 +1201,7 @@ class MultiStageManager:
             link_type = link_type_var.get()
 
             if not url:
-                messagebox.showwarning("Validation", "Please enter a URL.")
+                messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.please_enter_a_url', default="Please enter a URL."))
                 return
 
             # Basic URL format check
@@ -1209,7 +1211,7 @@ class MultiStageManager:
                 r'(?:/[^\s]*)?$'
             )
             if not url_pattern.match(url):
-                messagebox.showwarning("Validation", "Please enter a valid URL starting with http:// or https://")
+                messagebox.showwarning(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.multi_stage_manager.dialogs.please_enter_a_valid_url_starting_with_http_or_https', default="Please enter a valid URL starting with http:// or https://"))
                 return
 
             # Type-specific URL validation
@@ -1221,7 +1223,7 @@ class MultiStageManager:
             if link_type in type_patterns:
                 if not re.match(type_patterns[link_type], url):
                     if not messagebox.askyesno(
-                        "URL Mismatch",
+                        _t('gui.academics.assignment_system.multi_stage_manager.dialogs.url_mismatch', default="URL Mismatch"),
                         f"The URL does not appear to be a {link_type.replace('_', ' ')} link. Submit anyway?"
                     ):
                         return
@@ -1245,15 +1247,15 @@ class MultiStageManager:
                     conn.commit()
 
                     valid_msg = " (validated)" if is_valid else " (not validated - link may be inaccessible)"
-                    messagebox.showinfo("Success", f"External link submitted{valid_msg}.")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.success', default="Success"), f"External link submitted{valid_msg}.")
                     self.show_external_submissions()
                 finally:
                     conn.close()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to submit external link: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.multi_stage_manager.dialogs.error', default="Error"), f"Failed to submit external link: {e}")
 
-        ttk.Button(btn_frame, text="Submit", command=do_submit).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.show_external_submissions).pack(
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.submit', default="Submit"), command=do_submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.multi_stage_manager.buttons.cancel', default="Cancel"), command=self.show_external_submissions).pack(
             side=tk.RIGHT, padx=5
         )
 

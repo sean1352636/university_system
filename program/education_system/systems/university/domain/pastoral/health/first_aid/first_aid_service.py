@@ -82,7 +82,7 @@ class IncidentDB:
 
     def __init__(self):
         try:
-            from education_system.systems.university.infrastructure.database.db import get_connection
+            from education_system.systems.university.infrastructure.health.storage import get_connection
             self._connect = get_connection
         except Exception:
             logger.exception("Could not import central get_connection")

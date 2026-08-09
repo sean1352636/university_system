@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from tkinter.font import Font
@@ -425,7 +427,7 @@ from education_system.systems.university.interfaces.gui.pastoral.helpdesk.base i
 def create_analytics_tab(self):
     """Create analytics tab"""
     analytics_frame = ttk.Frame(self.notebook)
-    self.notebook.add(analytics_frame, text="Analytics")
+    self.notebook.add(analytics_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.tabs.analytics', default="Analytics"))
 
     # Create scrollable frame
     canvas = tk.Canvas(analytics_frame)
@@ -441,21 +443,21 @@ def create_analytics_tab(self):
     canvas.configure(yscrollcommand=scrollbar.set)
 
     # Title
-    ttk.Label(scrollable_frame, text="Analytics Dashboard",
+    ttk.Label(scrollable_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.analytics_dashboard', default="Analytics Dashboard"),
          style='Title.TLabel').pack(pady=10)
 
     # Time period selector
     period_frame = ttk.Frame(scrollable_frame)
     period_frame.pack(fill='x', padx=10, pady=5)
 
-    ttk.Label(period_frame, text="Time Period:").pack(side='left')
-    self.analytics_period_var = tk.StringVar(value="30d")
+    ttk.Label(period_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.time_period_variant_2', default="Time Period:")).pack(side='left')
+    self.analytics_period_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.analytics_reports.values.value_30d', default="30d"))
     period_combo = ttk.Combobox(period_frame, textvariable=self.analytics_period_var,
                            values=["7d", "30d", "90d", "1y"], state="readonly", width=10)
     period_combo.pack(side='left', padx=5)
     period_combo.bind('<<ComboboxSelected>>', lambda e: self.refresh_analytics())
 
-    ttk.Button(period_frame, text="Refresh", command=self.refresh_analytics).pack(side='left', padx=5)
+    ttk.Button(period_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.refresh', default="Refresh"), command=self.refresh_analytics).pack(side='left', padx=5)
 
     # Analytics content frame
     self.analytics_content_frame = ttk.Frame(scrollable_frame)
@@ -509,14 +511,14 @@ def refresh_analytics(self):
 
         # Category breakdown
         if analytics_data.get('categories'):
-            category_frame = ttk.LabelFrame(self.analytics_content_frame, text="Tickets by Category")
+            category_frame = ttk.LabelFrame(self.analytics_content_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.tickets_by_category', default="Tickets by Category"))
             category_frame.pack(fill='x', pady=5)
 
             category_tree = ttk.Treeview(category_frame, columns=('Category', 'Count', 'Percentage'),
                                        show='headings', height=6)
-            category_tree.heading('Category', text='Category')
-            category_tree.heading('Count', text='Count')
-            category_tree.heading('Percentage', text='Percentage')
+            category_tree.heading('Category', text=_t('gui.pastoral.helpdesk.analytics_reports.headings.category', default='Category'))
+            category_tree.heading('Count', text=_t('gui.pastoral.helpdesk.analytics_reports.headings.count', default='Count'))
+            category_tree.heading('Percentage', text=_t('gui.pastoral.helpdesk.analytics_reports.headings.percentage', default='Percentage'))
 
             for category, count in analytics_data['categories'].items():
                 percentage = (count / analytics_data.get('total_tickets', 1)) * 100
@@ -526,15 +528,15 @@ def refresh_analytics(self):
 
         # Staff performance
         if analytics_data.get('staff_performance'):
-            staff_frame = ttk.LabelFrame(self.analytics_content_frame, text="Staff Performance")
+            staff_frame = ttk.LabelFrame(self.analytics_content_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.staff_performance', default="Staff Performance"))
             staff_frame.pack(fill='x', pady=5)
 
             staff_tree = ttk.Treeview(staff_frame, columns=('Staff', 'Assigned', 'Resolved', 'Rate'),
                                     show='headings', height=6)
-            staff_tree.heading('Staff', text='Staff')
-            staff_tree.heading('Assigned', text='Assigned')
-            staff_tree.heading('Resolved', text='Resolved')
-            staff_tree.heading('Rate', text='Resolution Rate')
+            staff_tree.heading('Staff', text=_t('gui.pastoral.helpdesk.analytics_reports.headings.staff', default='Staff'))
+            staff_tree.heading('Assigned', text=_t('gui.pastoral.helpdesk.analytics_reports.headings.assigned', default='Assigned'))
+            staff_tree.heading('Resolved', text=_t('gui.pastoral.helpdesk.analytics_reports.headings.resolved', default='Resolved'))
+            staff_tree.heading('Rate', text=_t('gui.pastoral.helpdesk.analytics_reports.headings.resolution_rate', default='Resolution Rate'))
 
             for staff_data in analytics_data['staff_performance']:
                 rate = (staff_data['resolved'] / staff_data['assigned'] * 100) if staff_data['assigned'] > 0 else 0
@@ -641,7 +643,7 @@ HelpdeskGUI.get_analytics_data = get_analytics_data
 def show_analytics_dashboard(self):
     """Show analytics dashboard in a new window"""
     analytics_window = tk.Toplevel(self.root)
-    analytics_window.title("Analytics Dashboard")
+    analytics_window.title(_t('gui.pastoral.helpdesk.analytics_reports.windows.analytics_dashboard', default="Analytics Dashboard"))
     analytics_window.geometry("1000x700")
     analytics_window.transient(self.root)
 
@@ -658,14 +660,14 @@ def show_analytics_dashboard(self):
     canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
 
-    ttk.Label(scrollable_frame, text="Analytics Dashboard", style='Title.TLabel').pack(pady=10)
+    ttk.Label(scrollable_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.analytics_dashboard', default="Analytics Dashboard"), style='Title.TLabel').pack(pady=10)
 
     # Time period selector
     period_frame = ttk.Frame(scrollable_frame)
     period_frame.pack(fill='x', padx=10, pady=5)
 
-    ttk.Label(period_frame, text="Time Period:").pack(side='left')
-    period_var = tk.StringVar(value="30d")
+    ttk.Label(period_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.time_period_variant_2', default="Time Period:")).pack(side='left')
+    period_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.analytics_reports.values.value_30d', default="30d"))
     period_combo = ttk.Combobox(period_frame, textvariable=period_var,
                                values=["7d", "30d", "90d", "1y"], state="readonly", width=10)
     period_combo.pack(side='left', padx=5)
@@ -673,7 +675,7 @@ def show_analytics_dashboard(self):
     def refresh_analytics():
         self.load_analytics_data(scrollable_frame, period_var.get())
 
-    ttk.Button(period_frame, text="Refresh", command=refresh_analytics).pack(side='left', padx=5)
+    ttk.Button(period_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.refresh', default="Refresh"), command=refresh_analytics).pack(side='left', padx=5)
 
     # Initial load
     self.load_analytics_data(scrollable_frame, "30d")
@@ -776,10 +778,10 @@ HelpdeskGUI.show_reports = show_reports
 def create_reports_tab(self, parent):
     """Create reports tab"""
     reports_frame = ttk.Frame(parent)
-    parent.add(reports_frame, text="Reports")
+    parent.add(reports_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.tabs.reports', default="Reports"))
 
     # Report generation options
-    options_frame = ttk.LabelFrame(reports_frame, text="Report Generation")
+    options_frame = ttk.LabelFrame(reports_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.report_generation', default="Report Generation"))
     options_frame.pack(fill='x', padx=10, pady=10)
 
     # Report types
@@ -790,22 +792,22 @@ def create_reports_tab(self, parent):
     for i in range(3):
         report_grid.grid_columnconfigure(i, weight=1)
 
-    ttk.Button(report_grid, text="Executive Summary",
+    ttk.Button(report_grid, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.executive_summary', default="Executive Summary"),
               command=lambda: self.generate_report('executive')).grid(row=0, column=0, padx=5, pady=5, sticky='ew')
-    ttk.Button(report_grid, text="Staff Performance",
+    ttk.Button(report_grid, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.staff_performance', default="Staff Performance"),
               command=lambda: self.generate_report('staff')).grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-    ttk.Button(report_grid, text="SLA Compliance",
+    ttk.Button(report_grid, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.sla_compliance', default="SLA Compliance"),
               command=lambda: self.generate_report('sla')).grid(row=0, column=2, padx=5, pady=5, sticky='ew')
 
-    ttk.Button(report_grid, text="Customer Satisfaction",
+    ttk.Button(report_grid, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.customer_satisfaction', default="Customer Satisfaction"),
               command=lambda: self.generate_report('satisfaction')).grid(row=1, column=0, padx=5, pady=5, sticky='ew')
-    ttk.Button(report_grid, text="Trend Analysis",
+    ttk.Button(report_grid, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.trend_analysis', default="Trend Analysis"),
               command=lambda: self.generate_report('trends')).grid(row=1, column=1, padx=5, pady=5, sticky='ew')
-    ttk.Button(report_grid, text="Custom Report",
+    ttk.Button(report_grid, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.custom_report', default="Custom Report"),
               command=lambda: self.generate_report('custom')).grid(row=1, column=2, padx=5, pady=5, sticky='ew')
 
     # Export options
-    export_frame = ttk.LabelFrame(reports_frame, text="Data Export")
+    export_frame = ttk.LabelFrame(reports_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.data_export', default="Data Export"))
     export_frame.pack(fill='x', padx=10, pady=10)
 
     export_grid = ttk.Frame(export_frame)
@@ -815,11 +817,11 @@ def create_reports_tab(self, parent):
     for i in range(3):
         export_grid.grid_columnconfigure(i, weight=1)
 
-    ttk.Button(export_grid, text="Export Tickets (CSV)",
+    ttk.Button(export_grid, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.export_tickets_csv', default="Export Tickets (CSV)"),
               command=self.export_tickets_csv).grid(row=0, column=0, padx=5, pady=5, sticky='ew')
-    ttk.Button(export_grid, text="Export Users (CSV)",
+    ttk.Button(export_grid, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.export_users_csv', default="Export Users (CSV)"),
               command=self.export_users_csv).grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-    ttk.Button(export_grid, text="Export Analytics (JSON)",
+    ttk.Button(export_grid, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.export_analytics_json', default="Export Analytics (JSON)"),
               command=self.export_analytics_json).grid(row=0, column=2, padx=5, pady=5, sticky='ew')
 
 # Attach method to HelpdeskGUI class
@@ -870,26 +872,26 @@ def generate_report(self, report_type):
             filename = filedialog.asksaveasfilename(
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                title="Save Report",
+                title=_t('gui.pastoral.helpdesk.analytics_reports.dialogs.save_report', default="Save Report"),
                 initialfile=f"{report_type}_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
             )
             if filename:
                 try:
                     with open(filename, 'w') as f:
                         f.write(report_content)
-                    messagebox.showinfo("Success", f"Report exported to:\n{filename}")
+                    messagebox.showinfo(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.success', default="Success"), f"Report exported to:\n{filename}")
                 except Exception as e:
-                    messagebox.showerror("Error", f"Export failed: {str(e)}")
+                    messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Export failed: {str(e)}")
 
         def send_to_admin():
             self._send_report_to_admin(report_name, report_content)
 
-        ttk.Button(btn_frame, text="Export to TXT", command=export_to_txt).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Send to Admin via Email", command=send_to_admin).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.export_to_txt', default="Export to TXT"), command=export_to_txt).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.send_to_admin_via_email', default="Send to Admin via Email"), command=send_to_admin).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.close', default="Close"), command=report_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Report generation failed: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Report generation failed: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.generate_report = generate_report
@@ -1053,7 +1055,7 @@ def _send_report_to_admin(self, report_name, report_content):
         conn.close()
 
         if not admin_emails:
-            messagebox.showwarning("Warning", "No admin email addresses found in the system.")
+            messagebox.showwarning(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.warning', default="Warning"), _t('gui.pastoral.helpdesk.analytics_reports.dialogs.no_admin_email_addresses_found_in_the_system', default="No admin email addresses found in the system."))
             return
 
         # Try to send email
@@ -1090,15 +1092,15 @@ University Helpdesk System
             for admin_email in admin_emails:
                 send_email(admin_email, subject, body)
 
-            messagebox.showinfo("Success", f"Report sent to {len(admin_emails)} admin(s):\n" + "\n".join(admin_emails))
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.success', default="Success"), f"Report sent to {len(admin_emails)} admin(s):\n" + "\n".join(admin_emails))
 
         except ImportError:
-            messagebox.showerror("Error", "Email service not available. Please configure SMTP settings.")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.analytics_reports.dialogs.email_service_not_available_please_configure_smtp_settings', default="Email service not available. Please configure SMTP settings."))
         except Exception as email_err:
-            messagebox.showerror("Error", f"Failed to send email: {str(email_err)}")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Failed to send email: {str(email_err)}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to send report: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Failed to send report: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI._send_report_to_admin = _send_report_to_admin
@@ -1106,16 +1108,16 @@ HelpdeskGUI._send_report_to_admin = _send_report_to_admin
 def generate_enhanced_ticket_report_gui(self):
     """Show report generation dialog"""
     if not self.current_user:
-        messagebox.showerror("Error", "You must be logged in to generate reports.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.analytics_reports.dialogs.you_must_be_logged_in_to_generate_reports', default="You must be logged in to generate reports."))
         return
 
     if not self.has_permission('view_all_tickets'):
-        messagebox.showerror("Permission Denied", "You don't have permission to generate reports.")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.permission_denied', default="Permission Denied"), _t('gui.pastoral.helpdesk.analytics_reports.dialogs.you_don_t_have_permission_to_generate_reports', default="You don't have permission to generate reports."))
         return
 
     # Create report selection dialog
     dialog = tk.Toplevel(self.root)
-    dialog.title("Generate Reports")
+    dialog.title(_t('gui.pastoral.helpdesk.analytics_reports.windows.generate_reports', default="Generate Reports"))
     dialog.geometry("600x500")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1123,14 +1125,14 @@ def generate_enhanced_ticket_report_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Enhanced Ticket Report Generator",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.enhanced_ticket_report_generator', default="Enhanced Ticket Report Generator"),
              font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 20))
 
     # Report type selection
-    report_frame = ttk.LabelFrame(main_frame, text="Select Report Type", padding="10")
+    report_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.select_report_type', default="Select Report Type"), padding="10")
     report_frame.pack(fill='both', expand=True, pady=(0, 10))
 
-    report_type = tk.StringVar(value='executive')
+    report_type = tk.StringVar(value=_t('gui.pastoral.helpdesk.analytics_reports.values.executive', default='executive'))
 
     reports = [
         ('executive', 'Executive Summary Report', 'High-level metrics and KPIs'),
@@ -1149,10 +1151,10 @@ def generate_enhanced_ticket_report_gui(self):
         ttk.Label(frame, text=f"  ({desc})", foreground='gray').pack(side='left')
 
     # Period selection
-    period_frame = ttk.LabelFrame(main_frame, text="Time Period", padding="10")
+    period_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.time_period', default="Time Period"), padding="10")
     period_frame.pack(fill='x', pady=(0, 10))
 
-    period_var = tk.StringVar(value='30d')
+    period_var = tk.StringVar(value=_t('gui.pastoral.helpdesk.analytics_reports.values.value_30d', default='30d'))
     periods = [('7d', '7 Days'), ('30d', '30 Days'), ('90d', '90 Days'), ('1y', '1 Year')]
 
     period_buttons = ttk.Frame(period_frame)
@@ -1182,12 +1184,12 @@ def generate_enhanced_ticket_report_gui(self):
         elif rtype == 'custom':
             self.generate_custom_date_report_gui()
         else:
-            messagebox.showinfo("Info", f"Report type '{rtype}' will be generated")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.info', default="Info"), f"Report type '{rtype}' will be generated")
 
         dialog.destroy()
 
-    ttk.Button(button_frame, text="Generate Report", command=generate_report).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.generate_report', default="Generate Report"), command=generate_report).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.generate_enhanced_ticket_report_gui = generate_enhanced_ticket_report_gui
@@ -1256,7 +1258,7 @@ def generate_executive_summary_gui(self, period='30d'):
             resolution_rate = (metrics[1] / metrics[0] * 100)
 
             # Key Metrics Section
-            metrics_frame = ttk.LabelFrame(scrollable_frame, text="📊 Key Metrics", padding="10")
+            metrics_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.key_metrics', default="📊 Key Metrics"), padding="10")
             metrics_frame.pack(fill='x', pady=5)
 
             metrics_text = f"""Total Tickets: {metrics[0]}
@@ -1286,7 +1288,7 @@ High Priority: {metrics[3]}"""
 
             categories = cursor.fetchall()
 
-            cat_frame = ttk.LabelFrame(scrollable_frame, text="📋 Top Categories", padding="10")
+            cat_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.top_categories', default="📋 Top Categories"), padding="10")
             cat_frame.pack(fill='x', pady=5)
 
             cat_text = ""
@@ -1313,7 +1315,7 @@ High Priority: {metrics[3]}"""
 
             staff_stats = cursor.fetchall()
 
-            staff_frame = ttk.LabelFrame(scrollable_frame, text="👥 Staff Workload", padding="10")
+            staff_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.staff_workload', default="👥 Staff Workload"), padding="10")
             staff_frame.pack(fill='x', pady=5)
 
             staff_text = ""
@@ -1333,11 +1335,11 @@ High Priority: {metrics[3]}"""
         def export_report():
             self.save_report_to_file_gui("executive_summary", period, report_text)
 
-        ttk.Button(export_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
-        ttk.Button(export_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+        ttk.Button(export_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.export_to_file', default="Export to File"), command=export_report).pack(side='right', padx=5)
+        ttk.Button(export_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.close', default="Close"), command=report_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.generate_executive_summary_gui = generate_executive_summary_gui
@@ -1423,11 +1425,11 @@ def generate_staff_performance_report_gui(self, period='30d'):
         def export_report():
             self.save_report_to_file_gui("staff_performance", period, report_text)
 
-        ttk.Button(button_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.export_to_file', default="Export to File"), command=export_report).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.close', default="Close"), command=report_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.generate_staff_performance_report_gui = generate_staff_performance_report_gui
@@ -1500,11 +1502,11 @@ def generate_department_report_gui(self, period='30d'):
         def export_report():
             self.save_report_to_file_gui("department_performance", period, report_text)
 
-        ttk.Button(button_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.export_to_file', default="Export to File"), command=export_report).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.close', default="Close"), command=report_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.generate_department_report_gui = generate_department_report_gui
@@ -1558,14 +1560,14 @@ def generate_satisfaction_report_gui(self, period='30d'):
 
         # Average satisfaction
         if avg_data and avg_data[0]:
-            summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding="10")
+            summary_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.summary', default="Summary"), padding="10")
             summary_frame.pack(fill='x', pady=(0, 10))
 
             summary_text = f"Average Rating: {avg_data[0]:.2f}/5.0\nTotal Rated Tickets: {avg_data[1]}"
             ttk.Label(summary_frame, text=summary_text, font=('TkDefaultFont', 11, 'bold')).pack()
 
         # Rating distribution
-        dist_frame = ttk.LabelFrame(main_frame, text="Rating Distribution", padding="10")
+        dist_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.rating_distribution', default="Rating Distribution"), padding="10")
         dist_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Rating', 'Count', 'Percentage')
@@ -1596,11 +1598,11 @@ def generate_satisfaction_report_gui(self, period='30d'):
         def export_report():
             self.save_report_to_file_gui("satisfaction", period, report_text)
 
-        ttk.Button(button_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.export_to_file', default="Export to File"), command=export_report).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.close', default="Close"), command=report_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.generate_satisfaction_report_gui = generate_satisfaction_report_gui
@@ -1651,7 +1653,7 @@ def generate_trend_analysis_report_gui(self, period='30d'):
                  font=('TkDefaultFont', 14, 'bold')).pack(pady=(0, 10))
 
         # Daily trends
-        daily_frame = ttk.LabelFrame(main_frame, text="Daily Ticket Volume", padding="10")
+        daily_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.daily_ticket_volume', default="Daily Ticket Volume"), padding="10")
         daily_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('Date', 'Tickets Created')
@@ -1669,7 +1671,7 @@ def generate_trend_analysis_report_gui(self, period='30d'):
             report_text += f"{date}: {count} tickets\n"
 
         # Status distribution
-        status_frame = ttk.LabelFrame(main_frame, text="Status Distribution", padding="10")
+        status_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.status_distribution', default="Status Distribution"), padding="10")
         status_frame.pack(fill='x', pady=(0, 10))
 
         status_text = "\n\nStatus Distribution:\n"
@@ -1686,11 +1688,11 @@ def generate_trend_analysis_report_gui(self, period='30d'):
         def export_report():
             self.save_report_to_file_gui("trend_analysis", period, report_text)
 
-        ttk.Button(button_frame, text="Export to File", command=export_report).pack(side='right', padx=5)
-        ttk.Button(button_frame, text="Close", command=report_window.destroy).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.export_to_file', default="Export to File"), command=export_report).pack(side='right', padx=5)
+        ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.close', default="Close"), command=report_window.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.generate_trend_analysis_report_gui = generate_trend_analysis_report_gui
@@ -1699,7 +1701,7 @@ def generate_custom_date_report_gui(self):
     """Generate report for custom date range"""
     # Create dialog for date selection
     dialog = tk.Toplevel(self.root)
-    dialog.title("Custom Date Range Report")
+    dialog.title(_t('gui.pastoral.helpdesk.analytics_reports.windows.custom_date_range_report', default="Custom Date Range Report"))
     dialog.geometry("400x300")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -1707,19 +1709,19 @@ def generate_custom_date_report_gui(self):
     main_frame = ttk.Frame(dialog, padding="10")
     main_frame.pack(fill='both', expand=True)
 
-    ttk.Label(main_frame, text="Select Date Range",
+    ttk.Label(main_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.select_date_range', default="Select Date Range"),
              font=('TkDefaultFont', 12, 'bold')).pack(pady=(0, 10))
 
     # Date inputs
-    date_frame = ttk.LabelFrame(main_frame, text="Date Range", padding="10")
+    date_frame = ttk.LabelFrame(main_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.date_range', default="Date Range"), padding="10")
     date_frame.pack(fill='x', pady=(0, 10))
 
-    ttk.Label(date_frame, text="Start Date (YYYY-MM-DD):").grid(row=0, column=0, sticky='w', pady=5)
+    ttk.Label(date_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=0, column=0, sticky='w', pady=5)
     start_entry = ttk.Entry(date_frame, width=20)
     start_entry.insert(0, (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
     start_entry.grid(row=0, column=1, pady=5)
 
-    ttk.Label(date_frame, text="End Date (YYYY-MM-DD):").grid(row=1, column=0, sticky='w', pady=5)
+    ttk.Label(date_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=1, column=0, sticky='w', pady=5)
     end_entry = ttk.Entry(date_frame, width=20)
     end_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
     end_entry.grid(row=1, column=1, pady=5)
@@ -1738,14 +1740,14 @@ def generate_custom_date_report_gui(self):
             datetime.strptime(end_date, '%Y-%m-%d')
 
             dialog.destroy()
-            messagebox.showinfo("Info", f"Generating report from {start_date} to {end_date}")
+            messagebox.showinfo(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.info', default="Info"), f"Generating report from {start_date} to {end_date}")
             # Here you would call the actual report generation with the custom dates
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid date format. Use YYYY-MM-DD")
+            messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), _t('gui.pastoral.helpdesk.analytics_reports.dialogs.invalid_date_format_use_yyyy_mm_dd', default="Invalid date format. Use YYYY-MM-DD"))
 
-    ttk.Button(button_frame, text="Generate", command=generate).pack(side='right', padx=5)
-    ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.generate', default="Generate"), command=generate).pack(side='right', padx=5)
+    ttk.Button(button_frame, text=_t('gui.pastoral.helpdesk.analytics_reports.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right', padx=5)
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.generate_custom_date_report_gui = generate_custom_date_report_gui
@@ -1772,10 +1774,10 @@ def save_report_to_file_gui(self, report_type, period, report_content):
             f.write("\n" + "="*50 + "\n\n")
             f.write(report_content)
 
-        messagebox.showinfo("Success", f"Report saved to {filename}")
+        messagebox.showinfo(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.success', default="Success"), f"Report saved to {filename}")
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+        messagebox.showerror(_t('gui.pastoral.helpdesk.analytics_reports.dialogs.error', default="Error"), f"Failed to save report: {str(e)}")
 
 # Attach method to HelpdeskGUI class
 HelpdeskGUI.save_report_to_file_gui = save_report_to_file_gui

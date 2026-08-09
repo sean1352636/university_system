@@ -1,4 +1,6 @@
 """Import operations manager for batch operations GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import datetime
 import json
@@ -509,7 +511,7 @@ Modules that will be assigned to DS students:
         resume_files = list(Path('.').glob('import_resume_*.json'))
 
         if not resume_files:
-            messagebox.showinfo(_t("batch_ops.msg_titles.no_resumes"), "No failed imports found to resume")
+            messagebox.showinfo(_t("batch_ops.msg_titles.no_resumes"), _t('gui.shell.batch_operations.import_manager.dialogs.no_failed_imports_found_to_resume', default="No failed imports found to resume"))
             return
 
         # Show selection dialog
@@ -522,7 +524,7 @@ Modules that will be assigned to DS students:
         # Center dialog
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
-        ttk.Label(dialog, text="Select import to resume:", font=("Arial", 12, "bold")).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.shell.batch_operations.import_manager.labels.select_import_to_resume', default="Select import to resume:"), font=("Arial", 12, "bold")).pack(pady=10)
 
         # Resume file list
         selected_file = tk.StringVar()
@@ -545,7 +547,7 @@ Modules that will be assigned to DS students:
                 dialog.destroy()
                 self.execute_resume_import(file_path)
 
-        ttk.Button(button_frame, text="Resume", command=resume_selected).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.shell.batch_operations.import_manager.buttons.resume', default="Resume"), command=resume_selected).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text=_t("batch_ops.buttons.cancel"), command=dialog.destroy).pack(side=tk.LEFT)
 
     def execute_resume_import(self, resume_file_path):
@@ -653,12 +655,12 @@ Processing Time: {duration:.1f} seconds"""
         button_frame = ttk.Frame(dialog)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="OK", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.shell.batch_operations.import_manager.buttons.ok', default="OK"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
         if result.errors:
             def export_errors():
                 error_file = filedialog.asksaveasfilename(
-                    title="Save error report",
+                    title=_t('gui.shell.batch_operations.import_manager.dialogs.save_error_report', default="Save error report"),
                     defaultextension=".txt",
                     filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
                 )

@@ -514,11 +514,29 @@ class TestFailedLoginAlerts:
         assert sec[0]["severity"] == "warning"
         assert sec[0]["action"] == "users"
 
+    def test_active_lockout_details_returned_for_gui(self, tmp_path):
+        future = (datetime.utcnow() + timedelta(hours=1)).isoformat()
+        auth = self._auth_with_lockout(tmp_path, future)
+        svc = AdminService(db_paths={}, auth_db=str(auth))
+
+        accounts = svc.get_locked_accounts()
+
+        assert len(accounts) == 1
+        assert accounts[0]["username"] == "bob"
+        assert accounts[0]["failed_login_attempts"] == 5
+        assert accounts[0]["locked_until"] == future
+
     def test_expired_lockout_not_flagged(self, tmp_path):
         past = (datetime.utcnow() - timedelta(hours=1)).isoformat()
         auth = self._auth_with_lockout(tmp_path, past)
         svc = AdminService(db_paths={}, auth_db=str(auth))
         assert [a for a in svc.get_alerts() if a["category"] == "security"] == []
+
+    def test_expired_lockout_not_returned_for_gui(self, tmp_path):
+        past = (datetime.utcnow() - timedelta(hours=1)).isoformat()
+        auth = self._auth_with_lockout(tmp_path, past)
+        svc = AdminService(db_paths={}, auth_db=str(auth))
+        assert svc.get_locked_accounts() == []
 
 
 class TestMisconductAlerts:

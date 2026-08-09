@@ -10,7 +10,7 @@ import json
 import logging
 
 from education_system.systems.university.infrastructure.database.db import get_connection, transaction
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.activity_logger import log_activity
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 
@@ -25,7 +25,7 @@ class SchedulingMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to schedule")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.scheduling.dialogs.please_select_an_integration_to_schedule', default="Please select an integration to schedule"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
@@ -41,8 +41,8 @@ class SchedulingMixin:
                      style='Title.TLabel').pack(pady=10)
 
             # Frequency selection
-            ttk.Label(dialog, text="Sync Frequency:").pack(anchor='w', padx=10, pady=5)
-            frequency_var = tk.StringVar(value='daily')
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.sync_frequency', default="Sync Frequency:")).pack(anchor='w', padx=10, pady=5)
+            frequency_var = tk.StringVar(value=_t('gui.shell.services.integration_marketplace_gui.scheduling.values.daily', default='daily'))
             freq_frame = ttk.Frame(dialog)
             freq_frame.pack(fill='x', padx=10, pady=5)
 
@@ -51,17 +51,17 @@ class SchedulingMixin:
                                value=freq).pack(side='left', padx=10)
 
             # Time of day
-            ttk.Label(dialog, text="Time of Day (HH:MM):").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.time_of_day_hh_mm', default="Time of Day (HH:MM):")).pack(anchor='w', padx=10, pady=5)
             time_var = tk.StringVar(value="02:00")
             ttk.Entry(dialog, textvariable=time_var, width=10).pack(anchor='w', padx=10, pady=5)
 
             # Days of week (for weekly)
-            ttk.Label(dialog, text="Days (for weekly, comma-separated 0-6):").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.days_for_weekly_comma_separated_0_6', default="Days (for weekly, comma-separated 0-6):")).pack(anchor='w', padx=10, pady=5)
             days_var = tk.StringVar(value="1,3,5")
             ttk.Entry(dialog, textvariable=days_var, width=20).pack(anchor='w', padx=10, pady=5)
 
             # Cron expression (advanced)
-            ttk.Label(dialog, text="Cron Expression (advanced, optional):").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.cron_expression_advanced_optional', default="Cron Expression (advanced, optional):")).pack(anchor='w', padx=10, pady=5)
             cron_var = tk.StringVar()
             ttk.Entry(dialog, textvariable=cron_var, width=30).pack(anchor='w', padx=10, pady=5)
 
@@ -100,7 +100,7 @@ class SchedulingMixin:
                     logger.error(f"Error saving schedule: {e}")
                     messagebox.showerror(_t("common.error"), f"Failed to save schedule: {e}")
 
-            ttk.Button(dialog, text="Save Schedule", command=save_schedule).pack(pady=20)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.buttons.save_schedule', default="Save Schedule"), command=save_schedule).pack(pady=20)
 
         except Exception as e:
             logger.error(f"Error opening schedule dialog: {e}")
@@ -114,7 +114,7 @@ class SchedulingMixin:
             dialog.geometry("900x500")
             dialog.transient(self.root)
 
-            ttk.Label(dialog, text="Scheduled Sync Tasks",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.scheduled_sync_tasks', default="Scheduled Sync Tasks"),
                      style='Title.TLabel').pack(pady=10)
 
             # Tasks tree
@@ -179,7 +179,7 @@ class SchedulingMixin:
                 install_ids = None
                 msg = "Pause ALL scheduled syncs?\n\nThis will pause syncs for all integrations."
 
-            if not messagebox.askyesno("Confirm Pause", msg):
+            if not messagebox.askyesno(_t('gui.shell.services.integration_marketplace_gui.scheduling.dialogs.confirm_pause', default="Confirm Pause"), msg):
                 return
 
             with transaction() as conn:
@@ -210,7 +210,7 @@ class SchedulingMixin:
             log_activity('pause', 'scheduled_syncs', None,
                         details={'paused_count': paused_count})
 
-            messagebox.showinfo("Syncs Paused", f"Paused {paused_count} scheduled sync(s)")
+            messagebox.showinfo(_t('gui.shell.services.integration_marketplace_gui.scheduling.dialogs.syncs_paused', default="Syncs Paused"), f"Paused {paused_count} scheduled sync(s)")
             self.load_installed()
 
         except Exception as e:
@@ -221,23 +221,23 @@ class SchedulingMixin:
         """Define maintenance windows when syncs won't run"""
         try:
             dialog = tk.Toplevel(self.root)
-            dialog.title("Set Maintenance Window")
+            dialog.title(_t('gui.shell.services.integration_marketplace_gui.scheduling.windows.set_maintenance_window', default="Set Maintenance Window"))
             dialog.geometry("500x400")
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Configure Maintenance Window",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.configure_maintenance_window', default="Configure Maintenance Window"),
                      style='Title.TLabel').pack(pady=10)
 
-            ttk.Label(dialog, text="Start Time (HH:MM):").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.start_time_hh_mm', default="Start Time (HH:MM):")).pack(anchor='w', padx=10, pady=5)
             start_var = tk.StringVar(value="22:00")
             ttk.Entry(dialog, textvariable=start_var, width=10).pack(anchor='w', padx=10)
 
-            ttk.Label(dialog, text="End Time (HH:MM):").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.end_time_hh_mm', default="End Time (HH:MM):")).pack(anchor='w', padx=10, pady=5)
             end_var = tk.StringVar(value="06:00")
             ttk.Entry(dialog, textvariable=end_var, width=10).pack(anchor='w', padx=10)
 
-            ttk.Label(dialog, text="Days of Week:").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.days_of_week', default="Days of Week:")).pack(anchor='w', padx=10, pady=5)
             days_frame = ttk.Frame(dialog)
             days_frame.pack(fill='x', padx=10, pady=5)
 
@@ -259,7 +259,7 @@ class SchedulingMixin:
                         'created_at': datetime.now().isoformat()
                     }
 
-                    config_path = str(paths.MAINTENANCE_WINDOWS_FILE)
+                    config_path = str(paths.UNIVERSITY_MAINTENANCE_WINDOWS_FILE)
                     os.makedirs(os.path.dirname(config_path), exist_ok=True)
 
                     windows = []
@@ -285,7 +285,7 @@ class SchedulingMixin:
                     logger.error(f"Error saving maintenance window: {e}")
                     messagebox.showerror(_t("common.error"), f"Failed to save: {e}")
 
-            ttk.Button(dialog, text="Save Maintenance Window", command=save_window).pack(pady=20)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.buttons.save_maintenance_window', default="Save Maintenance Window"), command=save_window).pack(pady=20)
 
         except Exception as e:
             logger.error(f"Error opening maintenance window dialog: {e}")
@@ -296,7 +296,7 @@ class SchedulingMixin:
         try:
             selected = self.installed_tree.selection()
             if not selected:
-                messagebox.showwarning(_t("common.warning"), "Please select an integration to configure retry policy")
+                messagebox.showwarning(_t("common.warning"), _t('gui.shell.services.integration_marketplace_gui.scheduling.dialogs.please_select_an_integration_to_configure_retry_policy', default="Please select an integration to configure retry policy"))
                 return
 
             install_id = self.installed_tree.item(selected[0])['values'][0]
@@ -308,18 +308,18 @@ class SchedulingMixin:
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Configure Retry Policy",
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.configure_retry_policy', default="Configure Retry Policy"),
                      style='Title.TLabel').pack(pady=10)
 
-            ttk.Label(dialog, text="Max Retry Attempts:").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.max_retry_attempts', default="Max Retry Attempts:")).pack(anchor='w', padx=10, pady=5)
             retries_var = tk.StringVar(value="3")
             ttk.Spinbox(dialog, from_=0, to=10, textvariable=retries_var, width=10).pack(anchor='w', padx=10)
 
-            ttk.Label(dialog, text="Initial Backoff (seconds):").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.initial_backoff_seconds', default="Initial Backoff (seconds):")).pack(anchor='w', padx=10, pady=5)
             backoff_var = tk.StringVar(value="60")
             ttk.Entry(dialog, textvariable=backoff_var, width=10).pack(anchor='w', padx=10)
 
-            ttk.Label(dialog, text="Backoff Multiplier:").pack(anchor='w', padx=10, pady=5)
+            ttk.Label(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.labels.backoff_multiplier', default="Backoff Multiplier:")).pack(anchor='w', padx=10, pady=5)
             multiplier_var = tk.StringVar(value="2.0")
             ttk.Entry(dialog, textvariable=multiplier_var, width=10).pack(anchor='w', padx=10)
 
@@ -354,7 +354,7 @@ class SchedulingMixin:
                     logger.error(f"Error saving retry policy: {e}")
                     messagebox.showerror(_t("common.error"), f"Failed to save: {e}")
 
-            ttk.Button(dialog, text="Save Retry Policy", command=save_policy).pack(pady=20)
+            ttk.Button(dialog, text=_t('gui.shell.services.integration_marketplace_gui.scheduling.buttons.save_retry_policy', default="Save Retry Policy"), command=save_policy).pack(pady=20)
 
         except Exception as e:
             logger.error(f"Error opening retry policy dialog: {e}")

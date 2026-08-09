@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
 import threading
@@ -49,30 +51,30 @@ def create_compliance_view(self, parent):
     compliance_card = ttk.Frame(compliance_frame, style='Card.TFrame')
     compliance_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(compliance_card, text="Privacy & Compliance", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(compliance_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.privacy_compliance', default="Privacy & Compliance"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Compliance frameworks
-    frameworks_frame = ttk.LabelFrame(compliance_card, text="Active Frameworks", padding=15)
+    frameworks_frame = ttk.LabelFrame(compliance_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.active_frameworks', default="Active Frameworks"), padding=15)
     frameworks_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     self.gdpr_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(frameworks_frame, text="GDPR", variable=self.gdpr_var).pack(anchor='w')
+    ttk.Checkbutton(frameworks_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.gdpr', default="GDPR"), variable=self.gdpr_var).pack(anchor='w')
 
     self.ferpa_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(frameworks_frame, text="FERPA", variable=self.ferpa_var).pack(anchor='w')
+    ttk.Checkbutton(frameworks_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.ferpa', default="FERPA"), variable=self.ferpa_var).pack(anchor='w')
 
     self.coppa_var = tk.BooleanVar()
-    ttk.Checkbutton(frameworks_frame, text="COPPA", variable=self.coppa_var).pack(anchor='w')
+    ttk.Checkbutton(frameworks_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.coppa', default="COPPA"), variable=self.coppa_var).pack(anchor='w')
 
     # Privacy controls
-    privacy_frame = ttk.LabelFrame(compliance_card, text="Privacy Controls", padding=15)
+    privacy_frame = ttk.LabelFrame(compliance_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.privacy_controls', default="Privacy Controls"), padding=15)
     privacy_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(privacy_frame, text="Generate Compliance Report",
+    ttk.Button(privacy_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.generate_compliance_report', default="Generate Compliance Report"),
               command=self.generate_compliance_report).pack(side='left', padx=(0, 10))
-    ttk.Button(privacy_frame, text="Data Retention Status",
+    ttk.Button(privacy_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.data_retention_status', default="Data Retention Status"),
               command=self.show_data_retention_status).pack(side='left', padx=(0, 10))
-    ttk.Button(privacy_frame, text="Consent Management",
+    ttk.Button(privacy_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.consent_management', default="Consent Management"),
               command=self.show_consent_management).pack(side='left')
 
 
@@ -83,15 +85,15 @@ def generate_compliance_report(self):
             report = self.detector.compliance_manager.generate_compliance_report()
             self.show_compliance_report_window(report)
         else:
-            messagebox.showwarning("Warning", "Compliance manager not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.compliance_manager_not_available', default="Compliance manager not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate compliance report: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.error', default="Error"), f"Failed to generate compliance report: {str(e)}")
 
 
 def show_compliance_report_window(self, report):
     """Show compliance report in new window"""
     report_window = tk.Toplevel(self.root)
-    report_window.title("Compliance Report")
+    report_window.title(_t('gui.academics.ai_detector.compliance_bias_view.windows.compliance_report', default="Compliance Report"))
     report_window.geometry("700x500")
     report_window.configure(bg=self.colors['bg_primary'])
 
@@ -124,18 +126,18 @@ def show_data_retention_status(self):
     """Show data retention status"""
     try:
         # This would query the data retention tables
-        messagebox.showinfo("Data Retention", "Data retention monitoring feature available")
+        messagebox.showinfo(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.data_retention', default="Data Retention"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.data_retention_monitoring_feature_available', default="Data retention monitoring feature available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to get retention status: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.error', default="Error"), f"Failed to get retention status: {str(e)}")
 
 
 def show_consent_management(self):
     """Show consent management interface"""
     try:
         # This would open consent management interface
-        messagebox.showinfo("Consent Management", "Consent management interface feature available")
+        messagebox.showinfo(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.consent_management', default="Consent Management"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.consent_management_interface_feature_available', default="Consent management interface feature available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open consent management: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.error', default="Error"), f"Failed to open consent management: {str(e)}")
 
 
 def create_bias_detection_view(self, parent):
@@ -148,17 +150,17 @@ def create_bias_detection_view(self, parent):
     bias_card = ttk.Frame(bias_frame, style='Card.TFrame')
     bias_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(bias_card, text="Bias Detection & Fairness", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(bias_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.bias_detection_fairness', default="Bias Detection & Fairness"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Institution bias analysis
-    institution_frame = ttk.LabelFrame(bias_card, text="Institution Analysis", padding=15)
+    institution_frame = ttk.LabelFrame(bias_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.institution_analysis', default="Institution Analysis"), padding=15)
     institution_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Label(institution_frame, text="Institution ID:").pack(side='left')
+    ttk.Label(institution_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.institution_id', default="Institution ID:")).pack(side='left')
     self.bias_institution_var = tk.StringVar()
     ttk.Entry(institution_frame, textvariable=self.bias_institution_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Button(institution_frame, text="Analyze Bias",
+    ttk.Button(institution_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.analyze_bias', default="Analyze Bias"),
               command=self.analyze_institutional_bias).pack(side='right')
 
     # Results display
@@ -170,7 +172,7 @@ def analyze_institutional_bias(self):
     """Analyze institutional bias"""
     institution_id = self.bias_institution_var.get()
     if not institution_id:
-        messagebox.showwarning("Warning", "Please enter an Institution ID")
+        messagebox.showwarning(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.please_enter_an_institution_id', default="Please enter an Institution ID"))
         return
 
     try:
@@ -178,9 +180,9 @@ def analyze_institutional_bias(self):
             bias_analysis = self.detector.analyze_institutional_bias(institution_id)
             self.display_bias_analysis(bias_analysis)
         else:
-            messagebox.showwarning("Warning", "Bias detection not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.bias_detection_not_available', default="Bias detection not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to analyze bias: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.error', default="Error"), f"Failed to analyze bias: {str(e)}")
 
 
 def display_bias_analysis(self, analysis):
@@ -208,26 +210,26 @@ def create_predictive_analytics_view(self, parent):
     predictive_card = ttk.Frame(predictive_frame, style='Card.TFrame')
     predictive_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(predictive_card, text="Predictive Analytics", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(predictive_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.predictive_analytics', default="Predictive Analytics"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Student risk prediction
-    risk_frame = ttk.LabelFrame(predictive_card, text="Student Risk Prediction", padding=15)
+    risk_frame = ttk.LabelFrame(predictive_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.student_risk_prediction', default="Student Risk Prediction"), padding=15)
     risk_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Label(risk_frame, text="Student ID:").pack(side='left')
+    ttk.Label(risk_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.student_id', default="Student ID:")).pack(side='left')
     self.risk_student_var = tk.StringVar()
     ttk.Entry(risk_frame, textvariable=self.risk_student_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Button(risk_frame, text="Predict Risk",
+    ttk.Button(risk_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.predict_risk', default="Predict Risk"),
               command=self.predict_student_risk).pack(side='right')
 
     # Model training
-    training_frame = ttk.LabelFrame(predictive_card, text="Model Training", padding=15)
+    training_frame = ttk.LabelFrame(predictive_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.model_training', default="Model Training"), padding=15)
     training_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(training_frame, text="Train Risk Prediction Model",
+    ttk.Button(training_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.train_risk_prediction_model', default="Train Risk Prediction Model"),
               command=self.train_risk_model).pack(side='left', padx=(0, 10))
-    ttk.Button(training_frame, text="Model Performance",
+    ttk.Button(training_frame, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.model_performance', default="Model Performance"),
               command=self.show_model_performance).pack(side='left')
 
     # Results display
@@ -239,7 +241,7 @@ def predict_student_risk(self):
     """Predict student risk"""
     student_id = self.risk_student_var.get()
     if not student_id:
-        messagebox.showwarning("Warning", "Please enter a Student ID")
+        messagebox.showwarning(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.please_enter_a_student_id', default="Please enter a Student ID"))
         return
 
     try:
@@ -247,9 +249,9 @@ def predict_student_risk(self):
             risk_prediction = self.detector.predictive_analytics.predict_student_risk(student_id)
             self.display_risk_prediction(risk_prediction)
         else:
-            messagebox.showwarning("Warning", "Predictive analytics not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.predictive_analytics_not_available', default="Predictive analytics not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to predict risk: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.error', default="Error"), f"Failed to predict risk: {str(e)}")
 
 
 def display_risk_prediction(self, prediction):
@@ -292,20 +294,20 @@ def train_risk_model(self):
 
             threading.Thread(target=train_thread, daemon=True).start()
         else:
-            messagebox.showwarning("Warning", "Predictive analytics not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.predictive_analytics_not_available', default="Predictive analytics not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to start training: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.error', default="Error"), f"Failed to start training: {str(e)}")
 
 
 def show_model_performance(self):
     """Show model performance metrics"""
     try:
         if hasattr(self.detector, 'predictive_analytics'):
-            messagebox.showinfo("Model Performance", "Model performance metrics feature available")
+            messagebox.showinfo(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.model_performance', default="Model Performance"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.model_performance_metrics_feature_available', default="Model performance metrics feature available"))
         else:
-            messagebox.showwarning("Warning", "Predictive analytics not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.predictive_analytics_not_available', default="Predictive analytics not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to get model performance: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.error', default="Error"), f"Failed to get model performance: {str(e)}")
 
 
 def create_student_self_check_view(self, parent):
@@ -318,7 +320,7 @@ def create_student_self_check_view(self, parent):
     self_check_card = ttk.Frame(self_check_frame, style='Card.TFrame')
     self_check_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(self_check_card, text="Student Self-Check Tool", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(self_check_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.student_self_check_tool', default="Student Self-Check Tool"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Info section
     info_frame = ttk.Frame(self_check_card)
@@ -328,7 +330,7 @@ def create_student_self_check_view(self, parent):
     ttk.Label(info_frame, text=info_text, style='Subtitle.TLabel', wraplength=600).pack(anchor='w')
 
     # Text input for self-check
-    ttk.Label(self_check_card, text="Text to Check:", style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=(10, 5))
+    ttk.Label(self_check_card, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.text_to_check', default="Text to Check:"), style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=(10, 5))
 
     self.self_check_text = scrolledtext.ScrolledText(
         self_check_card, wrap=tk.WORD, height=10,
@@ -337,7 +339,7 @@ def create_student_self_check_view(self, parent):
     self.self_check_text.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
     # Check button
-    ttk.Button(self_check_card, text="Preview Analysis",
+    ttk.Button(self_check_card, text=_t('gui.academics.ai_detector.compliance_bias_view.buttons.preview_analysis', default="Preview Analysis"),
               command=self.run_self_check, style='Accent.TButton').pack(pady=(0, 15))
 
 
@@ -345,7 +347,7 @@ def run_self_check(self):
     """Run student self-check analysis"""
     text = self.self_check_text.get('1.0', tk.END).strip()
     if not text:
-        messagebox.showwarning("Warning", "Please enter text to check")
+        messagebox.showwarning(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.please_enter_text_to_check', default="Please enter text to check"))
         return
 
     try:
@@ -353,20 +355,20 @@ def run_self_check(self):
             result = self.detector.student_self_check.preview_analysis(text, "SELF_CHECK_USER")
             self.show_self_check_results(result)
         else:
-            messagebox.showwarning("Warning", "Self-check tool not available")
+            messagebox.showwarning(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.compliance_bias_view.dialogs.self_check_tool_not_available', default="Self-check tool not available"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to run self-check: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.compliance_bias_view.dialogs.error', default="Error"), f"Failed to run self-check: {str(e)}")
 
 
 def show_self_check_results(self, result):
     """Show self-check results"""
     results_window = tk.Toplevel(self.root)
-    results_window.title("Self-Check Results")
+    results_window.title(_t('gui.academics.ai_detector.compliance_bias_view.windows.self_check_results', default="Self-Check Results"))
     results_window.geometry("600x400")
     results_window.configure(bg=self.colors['bg_primary'])
 
     # Display results
-    ttk.Label(results_window, text="Self-Check Analysis", style='Title.TLabel').pack(pady=20)
+    ttk.Label(results_window, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.self_check_analysis', default="Self-Check Analysis"), style='Title.TLabel').pack(pady=20)
 
     assessment = result.get('overall_assessment', 'unknown')
     suggestions = result.get('suggestions', [])
@@ -380,7 +382,7 @@ def show_self_check_results(self, result):
 
     # Suggestions
     if suggestions:
-        suggestions_frame = ttk.LabelFrame(results_window, text="Suggestions", padding=15)
+        suggestions_frame = ttk.LabelFrame(results_window, text=_t('gui.academics.ai_detector.compliance_bias_view.labels.suggestions', default="Suggestions"), padding=15)
         suggestions_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
 
         for i, suggestion in enumerate(suggestions, 1):

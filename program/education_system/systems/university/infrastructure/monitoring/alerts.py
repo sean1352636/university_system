@@ -134,27 +134,17 @@ class AlertManager:
         """Send alert via email"""
         try:
             from education_system.systems.university.infrastructure.email.email_service import EmailService
+            from education_system.systems.university.infrastructure.email.template_utils import render_template
 
             email_service = EmailService()
 
-            subject = f"[{alert['level'].upper()}] {alert['type']}"
-            body = f"""
-System Alert
-
-Type: {alert['type']}
-Level: {alert['level']}
-Time: {alert['timestamp']}
-
-Message:
-{alert['message']}
-
-Details:
-{alert['details']}
-
----
-University Management System
-Automated Alert
-"""
+            subject, body = render_template("system/monitoring_alert", {
+                "level": alert["level"].upper(),
+                "type": alert["type"],
+                "timestamp": alert["timestamp"],
+                "message": alert["message"],
+                "details": alert["details"],
+            })
 
             # Try to send email (don't fail if email not configured)
             email_service.send_email(

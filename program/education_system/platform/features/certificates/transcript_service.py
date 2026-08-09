@@ -21,9 +21,11 @@ from datetime import datetime
 from pathlib import Path
 from string import Template
 
+from education_system.paths import PLATFORM_DOCUMENT_TEMPLATES_DIR
+
 logger = logging.getLogger(__name__)
 
-_TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
+_TEMPLATE_DIR = PLATFORM_DOCUMENT_TEMPLATES_DIR
 
 # ---------------------------------------------------------------------------
 # Institution labels (fallback when DB doesn't provide one)
@@ -96,6 +98,7 @@ class TranscriptService:
         conn = self._conn()
         try:
             student_name, sid_display = self._resolve_student(conn, student_id)
+            award = self._ratified_award(conn, student_id)
             subjects = self._collect_subjects(conn, student_id, academic_year)
             gpa = self._compute_gpa(subjects)
             transcript_id = f"TR-{uuid.uuid4().hex[:12].upper()}"
@@ -109,6 +112,7 @@ class TranscriptService:
                 "gpa": gpa,
                 "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
                 "transcript_id": transcript_id,
+                "ratified_award": award,
             }
 
             # Log the request if the table exists
@@ -117,6 +121,26 @@ class TranscriptService:
             return transcript
         finally:
             conn.close()
+
+    def _ratified_award(self, conn, student_id) -> dict | None:
+        """Require the authoritative board outcome on university schemas."""
+        if not _table_exists(conn, "ratified_student_awards"):
+            return None
+        row = conn.execute(
+            """SELECT award_id, award_name, classification, programme_code,
+                      academic_year, ratified_at
+                 FROM ratified_student_awards
+                WHERE student_id = ? AND status = 'ratified'
+                  AND release_authorised = 1
+                ORDER BY ratified_at DESC LIMIT 1""",
+            (student_id,),
+        ).fetchone()
+        if row is None:
+            raise PermissionError(
+                "A transcript cannot be issued until an assessment board "
+                "has ratified and released the award"
+            )
+        return dict(row)
 
     def export_transcript_html(self, student_id, academic_year=None) -> str:
         """Render transcript as an HTML string suitable for printing/PDF."""

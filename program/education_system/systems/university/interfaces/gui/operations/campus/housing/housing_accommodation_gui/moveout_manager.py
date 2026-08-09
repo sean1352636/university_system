@@ -22,6 +22,8 @@ opens the regular refunds tab pre-filtered for the student.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import datetime
 import logging
 import sqlite3
@@ -54,14 +56,14 @@ def show_moveout_workflow(gui_instance) -> None:
 
     header = ttk.Frame(parent)
     header.pack(fill="x", padx=8, pady=(8, 4))
-    ttk.Label(header, text="Move-Out Workflow",
+    ttk.Label(header, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.move_out_workflow', default="Move-Out Workflow"),
               font=("Arial", 14, "bold")).pack(side="left")
-    ttk.Button(header, text="Refresh",
+    ttk.Button(header, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.buttons.refresh', default="Refresh"),
                command=lambda: show_moveout_workflow(gui_instance)).pack(
         side="right")
 
     # ── Step 0: pick an active assignment ──
-    picker = ttk.LabelFrame(parent, text="1. Select active assignment",
+    picker = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.value_1_select_active_assignment', default="1. Select active assignment"),
                             padding=8)
     picker.pack(fill="x", padx=8, pady=4)
 
@@ -205,7 +207,7 @@ def _render_workspace(gui_instance, parent: ttk.Frame,
     inspection = _moveout_inspection(assignment['room_id'])
 
     # ── Summary banner ──
-    summary = ttk.LabelFrame(parent, text="Tenancy", padding=8)
+    summary = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.tenancy', default="Tenancy"), padding=8)
     summary.pack(fill="x", pady=(4, 8))
     rows = [
         ("Assignment", assignment['assignment_id']),
@@ -224,7 +226,7 @@ def _render_workspace(gui_instance, parent: ttk.Frame,
         ttk.Label(summary, text=val).grid(row=i, column=1, sticky="w", padx=4)
 
     # ── Step 2: Move-out inspection ──
-    insp = ttk.LabelFrame(parent, text="2. Final inspection", padding=8)
+    insp = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.value_2_final_inspection', default="2. Final inspection"), padding=8)
     insp.pack(fill="x", pady=4)
 
     if inspection:
@@ -232,7 +234,7 @@ def _render_workspace(gui_instance, parent: ttk.Frame,
                   text=(f"Inspection {inspection['inspection_id']} on "
                         f"{inspection['inspection_date']} — "
                         f"status: {inspection['status']}")).pack(anchor="w")
-        ttk.Label(insp, text="Findings:",
+        ttk.Label(insp, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.findings', default="Findings:"),
                   foreground="#666").pack(anchor="w", pady=(4, 0))
         body = tk.Text(insp, height=4, width=80)
         body.insert("1.0", inspection.get('findings') or "")
@@ -240,7 +242,7 @@ def _render_workspace(gui_instance, parent: ttk.Frame,
         body.pack(anchor="w")
     else:
         ttk.Label(insp,
-                  text="No move-out inspection recorded yet.").pack(anchor="w")
+                  text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.no_move_out_inspection_recorded_yet', default="No move-out inspection recorded yet.")).pack(anchor="w")
 
     ttk.Button(insp,
                text=("Edit inspection…" if inspection
@@ -252,14 +254,14 @@ def _render_workspace(gui_instance, parent: ttk.Frame,
                ).pack(anchor="e", pady=(4, 0))
 
     # ── Step 3: Deductions ──
-    ded = ttk.LabelFrame(parent, text="3. Damages & deductions", padding=8)
+    ded = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.value_3_damages_deductions', default="3. Damages & deductions"), padding=8)
     ded.pack(fill="both", expand=False, pady=4)
 
     cols = ("desc", "amount", "status")
     tree = ttk.Treeview(ded, columns=cols, show="headings", height=5)
-    tree.heading("desc", text="Description")
-    tree.heading("amount", text="Amount")
-    tree.heading("status", text="Status")
+    tree.heading("desc", text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.headings.description', default="Description"))
+    tree.heading("amount", text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.headings.amount', default="Amount"))
+    tree.heading("status", text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.headings.status', default="Status"))
     tree.column("desc", width=420)
     tree.column("amount", width=100, anchor="e")
     tree.column("status", width=120)
@@ -271,12 +273,12 @@ def _render_workspace(gui_instance, parent: ttk.Frame,
 
     btns = ttk.Frame(ded)
     btns.pack(fill="x", pady=(4, 0))
-    ttk.Button(btns, text="Add deduction…",
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.buttons.add_deduction', default="Add deduction…"),
                command=lambda: _open_deduction_dialog(
                    gui_instance, assignment, inspection,
                    on_done=lambda: _render_workspace(
                        gui_instance, parent, assignment))).pack(side="left")
-    ttk.Button(btns, text="Withdraw selected",
+    ttk.Button(btns, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.buttons.withdraw_selected', default="Withdraw selected"),
                command=lambda: _withdraw_selected(
                    tree, gui_instance, assignment,
                    on_done=lambda: _render_workspace(
@@ -284,7 +286,7 @@ def _render_workspace(gui_instance, parent: ttk.Frame,
                                                                  padx=4)
 
     # ── Step 4: Finalise ──
-    fin = ttk.LabelFrame(parent, text="4. Finalise move-out", padding=8)
+    fin = ttk.LabelFrame(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.value_4_finalise_move_out', default="4. Finalise move-out"), padding=8)
     fin.pack(fill="x", pady=4)
     ttk.Label(fin,
               text=(f"Refundable to student: £{refundable:,.2f}. "
@@ -294,10 +296,10 @@ def _render_workspace(gui_instance, parent: ttk.Frame,
               ).pack(anchor="w")
     row = ttk.Frame(fin)
     row.pack(fill="x", pady=(4, 0))
-    ttk.Button(row, text="Issue refund…",
+    ttk.Button(row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.buttons.issue_refund', default="Issue refund…"),
                command=lambda: _open_refunds(gui_instance, assignment)).pack(
         side="left")
-    ttk.Button(row, text="Finalise move-out",
+    ttk.Button(row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.buttons.finalise_move_out', default="Finalise move-out"),
                command=lambda: _finalise(
                    gui_instance, assignment,
                    on_done=lambda: show_moveout_workflow(gui_instance))).pack(
@@ -308,14 +310,14 @@ def _render_workspace(gui_instance, parent: ttk.Frame,
 
 def _open_inspection_dialog(gui_instance, assignment, existing, *, on_done):
     dlg = tk.Toplevel(gui_instance.root)
-    dlg.title("Move-out inspection")
+    dlg.title(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.windows.move_out_inspection', default="Move-out inspection"))
     dlg.geometry("520x360")
     dlg.transient(gui_instance.root)
 
     body = ttk.Frame(dlg, padding=10)
     body.pack(fill="both", expand=True)
 
-    ttk.Label(body, text="Inspector:").grid(row=0, column=0, sticky="e")
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.inspector', default="Inspector:")).grid(row=0, column=0, sticky="e")
     inspector_var = tk.StringVar(
         value=(existing or {}).get('inspector')
         or (gui_instance.auth.current_user.get('username')
@@ -323,20 +325,20 @@ def _open_inspection_dialog(gui_instance, assignment, existing, *, on_done):
     ttk.Entry(body, textvariable=inspector_var, width=40).grid(
         row=0, column=1, sticky="w", pady=2)
 
-    ttk.Label(body, text="Date (YYYY-MM-DD):").grid(row=1, column=0, sticky="e")
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.date_yyyy_mm_dd', default="Date (YYYY-MM-DD):")).grid(row=1, column=0, sticky="e")
     date_var = tk.StringVar(
         value=(existing or {}).get('inspection_date')
         or datetime.date.today().isoformat())
     ttk.Entry(body, textvariable=date_var, width=20).grid(
         row=1, column=1, sticky="w", pady=2)
 
-    ttk.Label(body, text="Status:").grid(row=2, column=0, sticky="e")
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.status', default="Status:")).grid(row=2, column=0, sticky="e")
     status_var = tk.StringVar(value=(existing or {}).get('status') or 'Passed')
     ttk.Combobox(body, textvariable=status_var,
                  values=['Passed', 'Issues found', 'Failed'],
                  state="readonly", width=18).grid(row=2, column=1, sticky="w")
 
-    ttk.Label(body, text="Findings:").grid(row=3, column=0, sticky="ne", pady=4)
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.findings', default="Findings:")).grid(row=3, column=0, sticky="ne", pady=4)
     findings = tk.Text(body, height=8, width=50)
     if existing and existing.get('findings'):
         findings.insert("1.0", existing['findings'])
@@ -386,34 +388,34 @@ def _open_inspection_dialog(gui_instance, assignment, existing, *, on_done):
             on_done()
         except sqlite3.Error as e:
             logger.exception("Inspection save failed")
-            messagebox.showerror("Inspection",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.inspection', default="Inspection"),
                                  f"Could not save inspection:\n\n{e}",
                                  parent=dlg)
 
     bar = ttk.Frame(body)
     bar.grid(row=4, column=0, columnspan=2, sticky="e", pady=(10, 0))
-    ttk.Button(bar, text="Cancel", command=dlg.destroy).pack(side="right",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side="right",
                                                               padx=4)
-    ttk.Button(bar, text="Save", command=save).pack(side="right")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.buttons.save', default="Save"), command=save).pack(side="right")
 
 
 # ── Deduction dialog ───────────────────────────────────────────────────
 
 def _open_deduction_dialog(gui_instance, assignment, inspection, *, on_done):
     dlg = tk.Toplevel(gui_instance.root)
-    dlg.title("Add deduction")
+    dlg.title(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.windows.add_deduction', default="Add deduction"))
     dlg.geometry("460x220")
     dlg.transient(gui_instance.root)
 
     body = ttk.Frame(dlg, padding=10)
     body.pack(fill="both", expand=True)
 
-    ttk.Label(body, text="Description:").grid(row=0, column=0, sticky="e")
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.description', default="Description:")).grid(row=0, column=0, sticky="e")
     desc_var = tk.StringVar()
     ttk.Entry(body, textvariable=desc_var, width=46).grid(
         row=0, column=1, sticky="w", pady=2)
 
-    ttk.Label(body, text="Amount (£):").grid(row=1, column=0, sticky="e")
+    ttk.Label(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.amount', default="Amount (£):")).grid(row=1, column=0, sticky="e")
     amt_var = tk.StringVar()
     ttk.Entry(body, textvariable=amt_var, width=16).grid(
         row=1, column=1, sticky="w", pady=2)
@@ -426,14 +428,14 @@ def _open_deduction_dialog(gui_instance, assignment, inspection, *, on_done):
                                            sticky="w", pady=(8, 0))
     else:
         ttk.Label(body,
-                  text="No move-out inspection on file yet — record one first.",
+                  text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.labels.no_move_out_inspection_on_file_yet_record_one_first', default="No move-out inspection on file yet — record one first."),
                   foreground="#a00").grid(row=2, column=0, columnspan=2,
                                            sticky="w", pady=(8, 0))
 
     def save():
         desc = desc_var.get().strip()
         if not desc:
-            messagebox.showwarning("Add deduction", "Description is required.",
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.add_deduction', default="Add deduction"), _t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.description_is_required', default="Description is required."),
                                    parent=dlg)
             return
         try:
@@ -441,8 +443,8 @@ def _open_deduction_dialog(gui_instance, assignment, inspection, *, on_done):
             if amount <= 0:
                 raise ValueError
         except ValueError:
-            messagebox.showwarning("Add deduction",
-                                   "Amount must be a positive number.",
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.add_deduction', default="Add deduction"),
+                                   _t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.amount_must_be_a_positive_number', default="Amount must be a positive number."),
                                    parent=dlg)
             return
         try:
@@ -471,25 +473,25 @@ def _open_deduction_dialog(gui_instance, assignment, inspection, *, on_done):
             on_done()
         except sqlite3.Error as e:
             logger.exception("Deduction insert failed")
-            messagebox.showerror("Add deduction",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.add_deduction', default="Add deduction"),
                                  f"Could not save deduction:\n\n{e}",
                                  parent=dlg)
 
     bar = ttk.Frame(body)
     bar.grid(row=3, column=0, columnspan=2, sticky="e", pady=(12, 0))
-    ttk.Button(bar, text="Cancel", command=dlg.destroy).pack(side="right",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.buttons.cancel', default="Cancel"), command=dlg.destroy).pack(side="right",
                                                               padx=4)
-    ttk.Button(bar, text="Save", command=save).pack(side="right")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.buttons.save', default="Save"), command=save).pack(side="right")
 
 
 def _withdraw_selected(tree, gui_instance, assignment, *, on_done):
     sel = tree.focus()
     if not sel:
-        messagebox.showinfo("Withdraw deduction",
-                            "Select a deduction first.",
+        messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.withdraw_deduction', default="Withdraw deduction"),
+                            _t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.select_a_deduction_first', default="Select a deduction first."),
                             parent=gui_instance.root)
         return
-    if not messagebox.askyesno("Withdraw deduction",
+    if not messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.withdraw_deduction', default="Withdraw deduction"),
                                f"Withdraw deduction {sel}?",
                                parent=gui_instance.root):
         return
@@ -510,7 +512,7 @@ def _withdraw_selected(tree, gui_instance, assignment, *, on_done):
         on_done()
     except sqlite3.Error as e:
         logger.exception("Withdraw deduction failed")
-        messagebox.showerror("Withdraw deduction",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.withdraw_deduction', default="Withdraw deduction"),
                              f"Could not withdraw:\n\n{e}",
                              parent=gui_instance.root)
 
@@ -525,7 +527,7 @@ def _finalise(gui_instance, assignment, *, on_done):
            "• Room freed (status='Available', occupants - 1)\n"
            "• Any matching waitlist entry will be promoted automatically.\n\n"
            "Issue any refund BEFORE finalising.")
-    if not messagebox.askyesno("Finalise move-out", msg,
+    if not messagebox.askyesno(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.finalise_move_out', default="Finalise move-out"), msg,
                                parent=gui_instance.root):
         return
     now = datetime.datetime.now().isoformat(timespec='seconds')
@@ -587,20 +589,20 @@ def _finalise(gui_instance, assignment, *, on_done):
 
         if promotion_summary:
             messagebox.showinfo(
-                "Move-out finalised",
+                _t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.move_out_finalised', default="Move-out finalised"),
                 ("Move-out finalised.\n\n"
                  f"Waitlist promoted: student {promotion_summary['student_id']} "
                  f"-> assignment {promotion_summary['assignment_id']} "
                  "(status Pending — complete paperwork to activate)."),
                 parent=gui_instance.root)
         else:
-            messagebox.showinfo("Move-out finalised",
-                                "Move-out finalised. Room is now Available.",
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.move_out_finalised', default="Move-out finalised"),
+                                _t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.move_out_finalised_room_is_now_available', default="Move-out finalised. Room is now Available."),
                                 parent=gui_instance.root)
         on_done()
     except sqlite3.Error as e:
         logger.exception("Finalise failed")
-        messagebox.showerror("Finalise move-out",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.finalise_move_out', default="Finalise move-out"),
                              f"Could not finalise move-out:\n\n{e}",
                              parent=gui_instance.root)
 
@@ -613,6 +615,6 @@ def _open_refunds(gui_instance, assignment):
             gui_instance.refund_search_var.set(assignment['student_id'])
     except Exception as e:
         logger.exception("Could not open refunds tab")
-        messagebox.showerror("Refunds",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.moveout_manager.dialogs.refunds', default="Refunds"),
                              f"Could not open refunds tab:\n\n{e}",
                              parent=gui_instance.root)

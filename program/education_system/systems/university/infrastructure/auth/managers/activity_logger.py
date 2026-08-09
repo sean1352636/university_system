@@ -32,7 +32,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Callable
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 __all__ = [
     'log_activity',
@@ -611,7 +611,9 @@ def _handle_shared_connection_unexpected_error(error: Exception, log_entry: Dict
 
 def _fallback_to_file_logging(log_entry: Dict[str, Any], reason: str) -> bool:
     """Fallback to file-based logging with comprehensive error handling"""
-    backup_file = 'activity_backup.log'
+    # Absolute, under var/logs (ADR 0018) - a bare relative name resolved
+    # against the CWD and dropped the log inside the package tree.
+    backup_file = str(paths.UNIVERSITY_LOG_DIR / 'activity_backup.log')
 
     try:
         # Ensure backup directory exists
@@ -658,9 +660,9 @@ def _fallback_to_file_logging(log_entry: Dict[str, Any], reason: str) -> bool:
 def _fallback_to_alternate_location(log_entry: Dict[str, Any], reason: str) -> bool:
     """Try alternative logging locations when primary backup fails"""
     alternate_locations = [
-        str(paths.TEMP_DIR / 'activity_backup.log'),
-        str(paths.LOG_DIR / 'activity_backup.log'),
-        str(paths.DATA_DIR / 'activity_backup.log'),
+        str(paths.UNIVERSITY_TEMP_DIR / 'activity_backup.log'),
+        str(paths.UNIVERSITY_LOG_DIR / 'activity_backup.log'),
+        str(paths.UNIVERSITY_DATA_DIR / 'activity_backup.log'),
     ]
 
     for alt_location in alternate_locations:

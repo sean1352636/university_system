@@ -8,7 +8,7 @@ import os
 import random
 import requests
 import smtplib
-from education_system.systems.university.infrastructure.database.db import sqlite3
+from education_system.systems.university.infrastructure.health.storage import sqlite3
 import statistics
 import threading
 import time
@@ -21,7 +21,7 @@ from email.mime.multipart import MIMEMultipart
 from cryptography.fernet import Fernet
 
 # Project imports - database
-from education_system.systems.university.infrastructure.database.db import DatabaseManager, get_connection
+from education_system.systems.university.infrastructure.health.storage import DatabaseManager, get_connection
 from education_system.systems.university.infrastructure.database.data_backup import backup_before_operation
 
 # Project imports - authentication

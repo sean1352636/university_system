@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -60,17 +62,17 @@ def view_child_assignments(self, child):
 
     # Upcoming assignments tab
     upcoming_frame = ttk.Frame(notebook)
-    notebook.add(upcoming_frame, text="Upcoming")
+    notebook.add(upcoming_frame, text=_t('gui.academics.parent_portal.assignments.tabs.upcoming', default="Upcoming"))
     upcoming_tree = self.create_assignments_tree(upcoming_frame)
 
     # Overdue assignments tab
     overdue_frame = ttk.Frame(notebook)
-    notebook.add(overdue_frame, text="Overdue")
+    notebook.add(overdue_frame, text=_t('gui.academics.parent_portal.assignments.tabs.overdue', default="Overdue"))
     overdue_tree = self.create_assignments_tree(overdue_frame)
 
     # Completed assignments tab
     completed_frame = ttk.Frame(notebook)
-    notebook.add(completed_frame, text="Completed")
+    notebook.add(completed_frame, text=_t('gui.academics.parent_portal.assignments.tabs.completed', default="Completed"))
     completed_tree = self.create_assignments_tree(completed_frame)
 
     # Load assignments from database
@@ -139,7 +141,7 @@ def view_child_assignments(self, child):
         upcoming_tree.insert('', tk.END, values=('Error', str(e), '', '', ''))
 
     # Back button
-    back_btn = ttk.Button(self.content_frame, text="← Back", command=self.show_children)
+    back_btn = ttk.Button(self.content_frame, text=_t('gui.academics.parent_portal.assignments.buttons.back', default="← Back"), command=self.show_children)
     back_btn.pack(pady=10)
 ParentPortalGUI.view_child_assignments = view_child_assignments
 
@@ -166,18 +168,18 @@ def show_timetable_interface(self):
     self.clear_content()
     self.update_status("Timetable")
 
-    title = ttk.Label(self.content_frame, text="Student Timetables", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.assignments.labels.student_timetables', default="Student Timetables"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.assignments.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.assignments.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -186,7 +188,7 @@ def show_timetable_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Timetable display frame
-    timetable_frame = ttk.LabelFrame(self.content_frame, text="Weekly Timetable", padding=15)
+    timetable_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.assignments.labels.weekly_timetable', default="Weekly Timetable"), padding=15)
     timetable_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_timetable():
@@ -196,7 +198,7 @@ def show_timetable_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(timetable_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(timetable_frame, text=_t('gui.academics.parent_portal.assignments.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         # Extract student ID
@@ -208,7 +210,7 @@ def show_timetable_interface(self):
                      "12:00-13:00", "13:00-14:00", "14:00-15:00", "15:00-16:00"]
 
         # Create header
-        ttk.Label(timetable_frame, text="Time", font=('Arial', 10, 'bold'),
+        ttk.Label(timetable_frame, text=_t('gui.academics.parent_portal.assignments.labels.time', default="Time"), font=('Arial', 10, 'bold'),
                  relief=tk.RIDGE, width=15).grid(row=0, column=0, sticky='nsew', padx=1, pady=1)
 
         for col, day in enumerate(days, start=1):
@@ -300,7 +302,7 @@ def show_timetable_interface(self):
                     cell.grid(row=row, column=col, sticky='nsew', padx=1, pady=1)
 
             if not schedule:
-                ttk.Label(timetable_frame, text="No timetable entries found for this student.\nCheck enrollments or contact administration.",
+                ttk.Label(timetable_frame, text=_t('gui.academics.parent_portal.assignments.labels.no_timetable_entries_found_for_this_student_check_enrollments_or', default="No timetable entries found for this student.\nCheck enrollments or contact administration."),
                          font=('Arial', 11)).grid(row=1, column=0, columnspan=6, pady=20)
 
             conn.close()
@@ -315,7 +317,7 @@ def show_timetable_interface(self):
         for i in range(6):
             timetable_frame.columnconfigure(i, weight=1)
 
-    ttk.Button(child_frame, text="Load Timetable", command=load_timetable).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.assignments.buttons.load_timetable', default="Load Timetable"), command=load_timetable).pack(side=tk.LEFT, padx=5)
 
     # Load initial timetable
     load_timetable()
@@ -326,18 +328,18 @@ def show_homework_interface(self):
     self.clear_content()
     self.update_status("Homework & Assignments")
 
-    title = ttk.Label(self.content_frame, text="Homework & Assignments", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.assignments.labels.homework_assignments', default="Homework & Assignments"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.assignments.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.assignments.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -346,7 +348,7 @@ def show_homework_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Homework display frame
-    homework_frame = ttk.LabelFrame(self.content_frame, text="Assignments", padding=15)
+    homework_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.assignments.labels.assignments', default="Assignments"), padding=15)
     homework_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_homework():
@@ -355,7 +357,7 @@ def show_homework_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(homework_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(homework_frame, text=_t('gui.academics.parent_portal.assignments.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -410,18 +412,18 @@ def show_homework_interface(self):
                         selected = tree.selection()
                         if selected:
                             item = tree.item(selected[0])
-                            messagebox.showinfo("Assignment Details",
+                            messagebox.showinfo(_t('gui.academics.parent_portal.assignments.dialogs.assignment_details', default="Assignment Details"),
                                                f"Assignment: {item['values'][0]}\n"
                                                f"Subject: {item['values'][1]}\n"
                                                f"Due: {item['values'][2]}\n"
                                                f"Status: {item['values'][3]}")
 
-                    ttk.Button(homework_frame, text="View Details", command=view_details).pack(pady=10)
+                    ttk.Button(homework_frame, text=_t('gui.academics.parent_portal.assignments.buttons.view_details', default="View Details"), command=view_details).pack(pady=10)
                 else:
-                    ttk.Label(homework_frame, text="No upcoming assignments",
+                    ttk.Label(homework_frame, text=_t('gui.academics.parent_portal.assignments.labels.no_upcoming_assignments', default="No upcoming assignments"),
                              font=('Arial', 11)).pack(pady=50)
             else:
-                ttk.Label(homework_frame, text="Assignments system not configured",
+                ttk.Label(homework_frame, text=_t('gui.academics.parent_portal.assignments.labels.assignments_system_not_configured', default="Assignments system not configured"),
                          font=('Arial', 11)).pack(pady=20)
 
             conn.close()
@@ -430,6 +432,6 @@ def show_homework_interface(self):
             ttk.Label(homework_frame, text=f"Error loading assignments: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Assignments", command=load_homework).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.assignments.buttons.load_assignments', default="Load Assignments"), command=load_homework).pack(side=tk.LEFT, padx=5)
     load_homework()
 ParentPortalGUI.show_homework_interface = show_homework_interface

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 student_services_bp = Blueprint(
     "sf_student_services", __name__,
-    url_prefix="/api/sixthform/student-services")
+    url_prefix="/api/student-services")
 
 
 def _token_required(view):

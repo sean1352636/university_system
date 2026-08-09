@@ -79,9 +79,9 @@ def _enrolment_to_payload(e: Enrolment, **overrides: Any) -> dict[str, Any]:
 
 # ── Saved filter presets (persisted as JSON in the data dir) ─────────
 
-from education_system.systems.sixth_form.infrastructure import paths as _paths
+from education_system import paths as _paths
 
-_PRESETS_PATH = _paths.DATA_DIR / "enrolment_filter_presets.json"
+_PRESETS_PATH = _paths.SIXTH_FORM_DATA_DIR / "enrolment_filter_presets.json"
 
 
 def _load_presets() -> dict[str, dict[str, str]]:
@@ -98,7 +98,7 @@ def _load_presets() -> dict[str, dict[str, str]]:
 
 def _save_presets(presets: dict[str, dict[str, str]]) -> None:
     try:
-        _paths.ensure_directories()
+        _paths.ensure_sixth_form_directories()
         with open(_PRESETS_PATH, "w", encoding="utf-8") as fh:
             json.dump(presets, fh, indent=2)
     except Exception:
@@ -2329,7 +2329,7 @@ def import_enrolments_csv(gui) -> None:
 
 # ── Academic-year list manager (feature 50) ─────────────────────────
 
-_YEARS_PATH = _paths.DATA_DIR / "enrolment_academic_years.json"
+_YEARS_PATH = _paths.SIXTH_FORM_DATA_DIR / "enrolment_academic_years.json"
 
 
 def _load_academic_years() -> list[str]:
@@ -2346,7 +2346,7 @@ def _load_academic_years() -> list[str]:
 
 def _save_academic_years(years: list[str]) -> None:
     try:
-        _paths.ensure_directories()
+        _paths.ensure_sixth_form_directories()
         with open(_YEARS_PATH, "w", encoding="utf-8") as fh:
             json.dump(sorted(set(years)), fh, indent=2)
     except Exception:

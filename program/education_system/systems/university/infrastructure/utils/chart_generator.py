@@ -319,24 +319,15 @@ class ChartGenerator:
             fig.savefig(temp_path, dpi=200, bbox_inches='tight', facecolor='white')
 
             # Prepare email content
-            subject = f"Chart: {chart_title}"
-
             if message is None:
-                body = f"""Dear Administrator,
-
-Please find attached the requested chart: {chart_title}
-
-Chart Details:
-- Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-- Format: PNG (High Resolution - 200 DPI)
-- File: {filename}
-
-This chart was automatically generated from the University Management System.
-
-Best regards,
-University System
-"""
+                from education_system.systems.university.infrastructure.email.template_utils import render_template
+                subject, body = render_template("system/chart_delivery", {
+                    "chart_title": chart_title,
+                    "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "filename": filename,
+                })
             else:
+                subject = f"Chart: {chart_title}"
                 body = message
 
             # Send email with attachment

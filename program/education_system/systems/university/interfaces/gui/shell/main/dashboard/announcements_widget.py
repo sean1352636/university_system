@@ -13,6 +13,8 @@ announcements.py) so the panel and the Communications GUI agree on what each
 role is allowed to see.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 from datetime import datetime
@@ -86,7 +88,7 @@ def create_announcements_panel(parent, auth, limit=5, **pack_kwargs):
     Extra ``pack_kwargs`` are forwarded to the frame's ``pack`` call so callers
     can tune padding to match their layout.
     """
-    frame = ttk.LabelFrame(parent, text="📢 Announcements", padding=10)
+    frame = ttk.LabelFrame(parent, text=_t('gui.shell.main.dashboard.announcements_widget.labels.announcements', default="📢 Announcements"), padding=10)
     pack_opts = {'fill': tk.X, 'padx': 15, 'pady': (10, 5)}
     pack_opts.update(pack_kwargs)
     frame.pack(**pack_opts)
@@ -101,7 +103,7 @@ def create_announcements_panel(parent, auth, limit=5, **pack_kwargs):
     announcements = fetch_announcements(role, limit=limit)
 
     if not announcements:
-        ttk.Label(frame, text="No active announcements.",
+        ttk.Label(frame, text=_t('gui.shell.main.dashboard.announcements_widget.labels.no_active_announcements', default="No active announcements."),
                   foreground="#777").pack(anchor='w')
         return frame
 

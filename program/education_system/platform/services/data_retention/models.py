@@ -13,6 +13,8 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
+from education_system.paths import PLATFORM_DB_FILES_DIR
+
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -26,10 +28,8 @@ def get_retention_db_path() -> Path:
     """Return the path to the shared retention database, creating dirs if needed."""
     if _RETENTION_DB is not None:
         return _RETENTION_DB
-    shared_root = Path(__file__).resolve().parent.parent.parent.parent  # education_system/shared
-    db_dir = shared_root / "data" / "db_files"
-    db_dir.mkdir(parents=True, exist_ok=True)
-    return db_dir / "retention.db"
+    PLATFORM_DB_FILES_DIR.mkdir(parents=True, exist_ok=True)
+    return PLATFORM_DB_FILES_DIR / "retention.db"
 
 
 def _connect(db_path: str | Path | None = None) -> sqlite3.Connection:

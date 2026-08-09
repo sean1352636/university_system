@@ -1,0 +1,122 @@
+"""Health portal CLI workflow extracted from the legacy module."""
+
+from __future__ import annotations
+
+import csv
+import json
+import logging
+import os
+import shutil
+import sys
+from datetime import datetime, timedelta
+from pathlib import Path
+
+from education_system.systems.university.infrastructure.database.db import (
+    DEFAULT_DB_PATH,
+    get_connection,
+)
+from education_system import paths
+
+logger = logging.getLogger(__name__)
+
+def view_health_records(auth):
+    """View student health records."""
+    print("\n--- Health Records ---")
+
+    try:
+        # Get student ID from username
+        username = auth.get_username()
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Get user ID
+        cursor.execute("SELECT id FROM users WHERE username = ?", (username,))
+        user_row = cursor.fetchone()
+        if not user_row:
+            print("Error: User not found in database.")
+            conn.close()
+            return
+
+        student_id = user_row['id']
+
+        # Create health_records table if it doesn't exist
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS health_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id INTEGER NOT NULL,
+                blood_type TEXT,
+                allergies TEXT,
+                medications TEXT,
+                conditions TEXT,
+                insurance_provider TEXT,
+                insurance_policy_number TEXT,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (student_id) REFERENCES users(id)
+            )
+        """)
+        conn.commit()
+
+        # Query health records
+        cursor.execute("""
+            SELECT blood_type, allergies, medications, conditions,
+                   insurance_provider, insurance_policy_number, last_updated
+            FROM health_records
+            WHERE student_id = ?
+        """, (student_id,))
+
+        record = cursor.fetchone()
+
+        if record:
+            print("\nYour Health Information:")
+            print("=" * 50)
+
+            if record['blood_type']:
+                print(f"Blood Type: {record['blood_type']}")
+
+            if record['allergies']:
+                print(f"\nAllergies:\n  {record['allergies']}")
+
+            if record['medications']:
+                print(f"\nCurrent Medications:\n  {record['medications']}")
+
+            if record['conditions']:
+                print(f"\nMedical Conditions:\n  {record['conditions']}")
+
+            if record['insurance_provider']:
+                print("\nInsurance Information:")
+                print(f"  Provider: {record['insurance_provider']}")
+                if record['insurance_policy_number']:
+                    print(f"  Policy Number: {record['insurance_policy_number']}")
+
+            if record['last_updated']:
+                print(f"\nLast Updated: {record['last_updated']}")
+
+            print("\n" + "=" * 50)
+        else:
+            print("\nNo health records found in the system.")
+            print("Please visit the health center to create your health profile.")
+
+        # Show recent appointments
+        cursor.execute("""
+            SELECT appointment_type, appointment_date, appointment_time, status
+            FROM health_appointments
+            WHERE student_id = ?
+            ORDER BY appointment_date DESC, appointment_time DESC
+            LIMIT 5
+        """, (student_id,))
+
+        appointments = cursor.fetchall()
+        if appointments:
+            print("\nRecent Appointments:")
+            for apt in appointments:
+                print(f"  - {apt['appointment_type']}: {apt['appointment_date']} at {apt['appointment_time']} (Status: {apt['status']})")
+
+        conn.close()
+
+        print("\nNote: For detailed medical records or to update your health information,")
+        print("please contact the health center or visit in person.")
+
+    except Exception as e:
+        logger.error(f"Error viewing health records: {e}")
+        print(f"\nError accessing health records: {e}")
+        print("Please contact the health center for assistance.")

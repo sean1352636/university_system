@@ -2,6 +2,8 @@
 Grades and Transcript mixins - detailed grade table and printable transcript.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime
@@ -72,14 +74,14 @@ class GradesMixin:
         header.pack(fill='x', padx=10, pady=(10, 0))
         ttk.Label(
             header,
-            text='My Grades',
+            text=_t('gui.academics.student_grades.grades.labels.my_grades', default='My Grades'),
             font=('Arial', 14, 'bold'),
             foreground=COLORS['primary'],
         ).pack(side='left')
 
         ttk.Button(
             header,
-            text='Refresh',
+            text=_t('gui.academics.student_grades.grades.buttons.refresh', default='Refresh'),
             command=lambda: self._refresh_grades(parent),
         ).pack(side='right')
 
@@ -159,7 +161,7 @@ class GradesMixin:
 
         except Exception as e:
             logger.error(f'Error loading grades: {e}')
-            messagebox.showerror('Error', f'Failed to load grades: {e}')
+            messagebox.showerror(_t('gui.academics.student_grades.grades.dialogs.error', default='Error'), f'Failed to load grades: {e}')
 
     def _refresh_grades(self, parent):
         """Clear and re-populate the grades table."""
@@ -181,14 +183,14 @@ class TranscriptMixin:
         header.pack(fill='x', padx=10, pady=(10, 0))
         ttk.Label(
             header,
-            text='Academic Transcript',
+            text=_t('gui.academics.student_grades.grades.labels.academic_transcript', default='Academic Transcript'),
             font=('Arial', 14, 'bold'),
             foreground=COLORS['primary'],
         ).pack(side='left')
 
         ttk.Button(
             header,
-            text='Export',
+            text=_t('gui.academics.student_grades.grades.buttons.export', default='Export'),
             command=lambda: self._export_transcript(),
         ).pack(side='right')
 
@@ -327,7 +329,7 @@ class TranscriptMixin:
             text = self._build_transcript_text()
             with open(filepath, 'w', encoding='utf-8') as fh:
                 fh.write(text)
-            messagebox.showinfo('Export Successful', f'Transcript saved to:\n{filepath}')
+            messagebox.showinfo(_t('gui.academics.student_grades.grades.dialogs.export_successful', default='Export Successful'), f'Transcript saved to:\n{filepath}')
         except Exception as e:
             logger.error(f'Error exporting transcript: {e}')
-            messagebox.showerror('Export Error', f'Failed to save transcript: {e}')
+            messagebox.showerror(_t('gui.academics.student_grades.grades.dialogs.export_error', default='Export Error'), f'Failed to save transcript: {e}')

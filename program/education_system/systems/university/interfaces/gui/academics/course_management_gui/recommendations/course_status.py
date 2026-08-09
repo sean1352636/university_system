@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.recommendations._imports import (
     tk, ttk, messagebox, sqlite3, _, DEFAULT_DB_PATH, datetime,
 )
@@ -10,36 +12,36 @@ class CourseStatusMixin:
         Opens a dialog to change course status.
         """
         dialog = tk.Toplevel(self.root)
-        dialog.title("Manage Course Status")
+        dialog.title(_t('gui.academics.course_management_gui.recommendations.course_status.windows.manage_course_status', default="Manage Course Status"))
         dialog.geometry("600x400")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Manage Course Status",
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.labels.manage_course_status', default="Manage Course Status"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Course selection
-        select_frame = ttk.LabelFrame(main_frame, text="Select Course", padding="10")
+        select_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.labels.select_course', default="Select Course"), padding="10")
         select_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(select_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(select_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.labels.course', default="Course:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         course_var = tk.StringVar()
         course_combo = ttk.Combobox(select_frame, textvariable=course_var, state='readonly', width=45)
         course_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
 
         # Current status display
-        current_status_var = tk.StringVar(value="No course selected")
-        ttk.Label(select_frame, text="Current Status:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        current_status_var = tk.StringVar(value=_t('gui.academics.course_management_gui.recommendations.course_status.values.no_course_selected', default="No course selected"))
+        ttk.Label(select_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.labels.current_status', default="Current Status:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         ttk.Label(select_frame, textvariable=current_status_var,
                  font=('Arial', 10, 'bold')).grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
 
         # New status selection
-        status_frame = ttk.LabelFrame(main_frame, text="Select New Status", padding="10")
+        status_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.labels.select_new_status', default="Select New Status"), padding="10")
         status_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(status_frame, text="New Status:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(status_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.labels.new_status', default="New Status:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         status_var = tk.StringVar()
         status_combo = ttk.Combobox(status_frame, textvariable=status_var,
                                    values=["Active", "Inactive", "Archived", "Cancelled"],
@@ -81,21 +83,21 @@ class CourseStatusMixin:
 
         def update_status():
             if not course_var.get():
-                messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a course")
+                messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.recommendations.course_status.dialogs.please_select_a_course', default="Please select a course"))
                 return
 
             if not status_var.get():
-                messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a new status")
+                messagebox.showwarning(_("course_management.messages.no_selection"), _t('gui.academics.course_management_gui.recommendations.course_status.dialogs.please_select_a_new_status', default="Please select a new status"))
                 return
 
             current = current_status_var.get()
             new = status_var.get()
 
             if current == new:
-                messagebox.showinfo("No Change", "Status is already set to " + new)
+                messagebox.showinfo(_t('gui.academics.course_management_gui.recommendations.course_status.dialogs.no_change', default="No Change"), "Status is already set to " + new)
                 return
 
-            if messagebox.askyesno("Confirm Status Change",
+            if messagebox.askyesno(_t('gui.academics.course_management_gui.recommendations.course_status.dialogs.confirm_status_change', default="Confirm Status Change"),
                                   f"Change course status from {current} to {new}?"):
                 try:
                     course_id = int(course_var.get().split("ID: ")[1].rstrip(")"))
@@ -122,8 +124,8 @@ class CourseStatusMixin:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Update Status", command=update_status).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.buttons.update_status', default="Update Status"), command=update_status).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         load_courses()
 
@@ -133,21 +135,21 @@ class CourseStatusMixin:
         Opens a dialog with course history information.
         """
         dialog = tk.Toplevel(self.root)
-        dialog.title("View Course History")
+        dialog.title(_t('gui.academics.course_management_gui.recommendations.course_status.windows.view_course_history', default="View Course History"))
         dialog.geometry("900x600")
         dialog.transient(self.root)
 
         main_frame = ttk.Frame(dialog, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Course Change History",
+        ttk.Label(main_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.labels.course_change_history', default="Course Change History"),
                  font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
         # Filter frame
         filter_frame = ttk.Frame(main_frame)
         filter_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(filter_frame, text="Filter by Course:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.labels.filter_by_course', default="Filter by Course:")).pack(side=tk.LEFT, padx=5)
         course_var = tk.StringVar()
         course_combo = ttk.Combobox(filter_frame, textvariable=course_var, state='readonly', width=40)
         course_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
@@ -260,8 +262,8 @@ class CourseStatusMixin:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Button(button_frame, text="Refresh", command=load_history).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.buttons.refresh', default="Refresh"), command=load_history).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.recommendations.course_status.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Initial load
         load_courses()

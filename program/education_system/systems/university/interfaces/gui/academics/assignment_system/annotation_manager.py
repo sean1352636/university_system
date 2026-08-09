@@ -1,5 +1,7 @@
 """Annotation manager for inline commenting on student submissions"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 import json
@@ -110,14 +112,14 @@ class AnnotationManager:
     def show_annotation_interface(self, submission_id):
         """Main annotation view with submission text and inline comments"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to annotate submissions.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.annotation_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.annotation_manager.dialogs.you_do_not_have_permission_to_annotate_submissions', default="You do not have permission to annotate submissions."))
             return
 
         self._ensure_tables()
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Annotation Interface", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.annotation_manager.labels.annotation_interface', default="Annotation Interface"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 10))
 
         # Info bar
@@ -130,7 +132,7 @@ class AnnotationManager:
         paned.pack(fill='both', expand=True, pady=(0, 10))
 
         # --- Left: submission text ---
-        left_frame = ttk.LabelFrame(paned, text="Submission Content", padding=5)
+        left_frame = ttk.LabelFrame(paned, text=_t('gui.academics.assignment_system.annotation_manager.labels.submission_content', default="Submission Content"), padding=5)
         paned.add(left_frame, weight=3)
 
         text_widget = tk.Text(left_frame, wrap='word', font=('Consolas', 10), state='normal')
@@ -153,25 +155,25 @@ class AnnotationManager:
         text_widget.config(state='disabled')
 
         # --- Right: annotation panel ---
-        right_frame = ttk.LabelFrame(paned, text="Annotations", padding=5)
+        right_frame = ttk.LabelFrame(paned, text=_t('gui.academics.assignment_system.annotation_manager.labels.annotations', default="Annotations"), padding=5)
         paned.add(right_frame, weight=2)
 
         # Add annotation controls
         controls_frame = ttk.Frame(right_frame)
         controls_frame.pack(fill='x', pady=(0, 5))
 
-        ttk.Label(controls_frame, text="Line #:").grid(row=0, column=0, sticky='w', padx=(0, 5))
+        ttk.Label(controls_frame, text=_t('gui.academics.assignment_system.annotation_manager.labels.line', default="Line #:")).grid(row=0, column=0, sticky='w', padx=(0, 5))
         line_var = tk.StringVar(value="1")
         line_entry = ttk.Spinbox(controls_frame, from_=1, to=99999, textvariable=line_var, width=6)
         line_entry.grid(row=0, column=1, sticky='w', padx=(0, 10))
 
-        ttk.Label(controls_frame, text="Category:").grid(row=0, column=2, sticky='w', padx=(0, 5))
-        category_var = tk.StringVar(value='suggestion')
+        ttk.Label(controls_frame, text=_t('gui.academics.assignment_system.annotation_manager.labels.category', default="Category:")).grid(row=0, column=2, sticky='w', padx=(0, 5))
+        category_var = tk.StringVar(value=_t('gui.academics.assignment_system.annotation_manager.values.suggestion', default='suggestion'))
         category_combo = ttk.Combobox(controls_frame, textvariable=category_var,
                                       values=ANNOTATION_CATEGORIES, state='readonly', width=12)
         category_combo.grid(row=0, column=3, sticky='w', padx=(0, 10))
 
-        ttk.Label(controls_frame, text="Comment:").grid(row=1, column=0, sticky='nw', pady=(5, 0))
+        ttk.Label(controls_frame, text=_t('gui.academics.assignment_system.annotation_manager.labels.comment', default="Comment:")).grid(row=1, column=0, sticky='nw', pady=(5, 0))
         comment_text = scrolledtext.ScrolledText(controls_frame, height=4, width=40, wrap='word')
         comment_text.grid(row=1, column=1, columnspan=3, sticky='ew', pady=(5, 0))
 
@@ -181,19 +183,19 @@ class AnnotationManager:
         btn_frame.pack(fill='x', pady=(5, 5))
 
         ttk.Button(
-            btn_frame, text="Add Annotation",
+            btn_frame, text=_t('gui.academics.assignment_system.annotation_manager.buttons.add_annotation', default="Add Annotation"),
             command=lambda: self._do_add_annotation(
                 submission_id, line_var, comment_text, category_var, text_widget, annot_tree
             )
         ).pack(side='left', padx=(0, 5))
 
         ttk.Button(
-            btn_frame, text="Insert Template",
+            btn_frame, text=_t('gui.academics.assignment_system.annotation_manager.buttons.insert_template', default="Insert Template"),
             command=lambda: self._insert_template(comment_text)
         ).pack(side='left', padx=(0, 5))
 
         ttk.Button(
-            btn_frame, text="Delete Selected",
+            btn_frame, text=_t('gui.academics.assignment_system.annotation_manager.buttons.delete_selected', default="Delete Selected"),
             command=lambda: self._delete_annotation(submission_id, annot_tree, text_widget)
         ).pack(side='left')
 
@@ -223,11 +225,11 @@ class AnnotationManager:
         bottom_frame = ttk.Frame(parent)
         bottom_frame.pack(fill='x')
 
-        ttk.Button(bottom_frame, text="Export Annotations",
+        ttk.Button(bottom_frame, text=_t('gui.academics.assignment_system.annotation_manager.buttons.export_annotations', default="Export Annotations"),
                    command=lambda: self.export_annotations(submission_id)).pack(side='left', padx=(0, 10))
-        ttk.Button(bottom_frame, text="Annotation Summary",
+        ttk.Button(bottom_frame, text=_t('gui.academics.assignment_system.annotation_manager.buttons.annotation_summary', default="Annotation Summary"),
                    command=self.show_annotation_summary).pack(side='left', padx=(0, 10))
-        ttk.Button(bottom_frame, text="Manage Templates",
+        ttk.Button(bottom_frame, text=_t('gui.academics.assignment_system.annotation_manager.buttons.manage_templates', default="Manage Templates"),
                    command=self.show_annotation_templates).pack(side='left')
 
     def _do_add_annotation(self, submission_id, line_var, comment_text, category_var, text_widget, annot_tree):
@@ -235,12 +237,12 @@ class AnnotationManager:
         try:
             line_number = int(line_var.get())
         except (ValueError, TypeError):
-            messagebox.showwarning("Invalid Input", "Line number must be an integer.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.annotation_manager.dialogs.invalid_input', default="Invalid Input"), _t('gui.academics.assignment_system.annotation_manager.dialogs.line_number_must_be_an_integer', default="Line number must be an integer."))
             return
 
         comment = comment_text.get('1.0', 'end').strip()
         if not comment:
-            messagebox.showwarning("Missing Comment", "Please enter a comment.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.annotation_manager.dialogs.missing_comment', default="Missing Comment"), _t('gui.academics.assignment_system.annotation_manager.dialogs.please_enter_a_comment', default="Please enter a comment."))
             return
 
         category = category_var.get()
@@ -310,13 +312,13 @@ class AnnotationManager:
         """Delete the selected annotation"""
         selection = annot_tree.selection()
         if not selection:
-            messagebox.showinfo("No Selection", "Please select an annotation to delete.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.annotation_manager.dialogs.please_select_an_annotation_to_delete', default="Please select an annotation to delete."))
             return
 
         values = annot_tree.item(selection[0], 'values')
         annot_id = values[0]
 
-        if not messagebox.askyesno("Confirm Delete", "Delete this annotation?"):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.annotation_manager.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.academics.assignment_system.annotation_manager.dialogs.delete_this_annotation', default="Delete this annotation?")):
             return
 
         try:
@@ -327,7 +329,7 @@ class AnnotationManager:
             conn.close()
             self._load_annotations(submission_id, annot_tree, text_widget)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete annotation: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.annotation_manager.dialogs.error', default="Error"), f"Failed to delete annotation: {e}")
 
     def _insert_template(self, comment_text):
         """Show template picker and insert selected template text into comment field"""
@@ -339,16 +341,16 @@ class AnnotationManager:
         conn.close()
 
         if not templates:
-            messagebox.showinfo("No Templates", "No annotation templates found. Create one first.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.no_templates', default="No Templates"), _t('gui.academics.assignment_system.annotation_manager.dialogs.no_annotation_templates_found_create_one_first', default="No annotation templates found. Create one first."))
             return
 
         picker = tk.Toplevel(self.root)
-        picker.title("Select Annotation Template")
+        picker.title(_t('gui.academics.assignment_system.annotation_manager.windows.select_annotation_template', default="Select Annotation Template"))
         picker.geometry("500x400")
         picker.transient(self.root)
         picker.grab_set()
 
-        ttk.Label(picker, text="Select a template to insert:", font=('Segoe UI', 11, 'bold')).pack(
+        ttk.Label(picker, text=_t('gui.academics.assignment_system.annotation_manager.labels.select_a_template_to_insert', default="Select a template to insert:"), font=('Segoe UI', 11, 'bold')).pack(
             anchor='w', padx=10, pady=(10, 5))
 
         columns = ('Name', 'Category', 'Text')
@@ -383,7 +385,7 @@ class AnnotationManager:
                 pass
             picker.destroy()
 
-        ttk.Button(picker, text="Insert", command=insert_selected).pack(pady=10)
+        ttk.Button(picker, text=_t('gui.academics.assignment_system.annotation_manager.buttons.insert', default="Insert"), command=insert_selected).pack(pady=10)
 
     # ------------------------------------------------------------------
     # Core add annotation
@@ -410,7 +412,7 @@ class AnnotationManager:
             conn.commit()
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add annotation: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.annotation_manager.dialogs.error', default="Error"), f"Failed to add annotation: {e}")
 
     # ------------------------------------------------------------------
     # Annotation templates management
@@ -419,18 +421,18 @@ class AnnotationManager:
     def show_annotation_templates(self):
         """Manage reusable annotation comment templates"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to manage templates.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.annotation_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.annotation_manager.dialogs.you_do_not_have_permission_to_manage_templates', default="You do not have permission to manage templates."))
             return
 
         self._ensure_tables()
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Annotation Templates", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.annotation_manager.labels.annotation_templates', default="Annotation Templates"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 10))
 
         # Templates treeview
-        tree_frame = ttk.LabelFrame(parent, text="Saved Templates", padding=10)
+        tree_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.annotation_manager.labels.saved_templates', default="Saved Templates"), padding=10)
         tree_frame.pack(fill='both', expand=True)
 
         columns = ('ID', 'Name', 'Category', 'Text', 'Uses', 'Created')
@@ -455,11 +457,11 @@ class AnnotationManager:
         btn_frame = ttk.Frame(parent)
         btn_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(btn_frame, text="Create New Template",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.annotation_manager.buttons.create_new_template', default="Create New Template"),
                    command=lambda: self.create_template(template_tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Edit Template",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.annotation_manager.buttons.edit_template', default="Edit Template"),
                    command=lambda: self._edit_template(template_tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(btn_frame, text="Delete Template",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.annotation_manager.buttons.delete_template', default="Delete Template"),
                    command=lambda: self._delete_template(template_tree)).pack(side='left')
 
     def _load_templates(self, template_tree):
@@ -487,7 +489,7 @@ class AnnotationManager:
         self._ensure_tables()
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Create Annotation Template")
+        dialog.title(_t('gui.academics.assignment_system.annotation_manager.windows.create_annotation_template', default="Create Annotation Template"))
         dialog.geometry("450x350")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -495,16 +497,16 @@ class AnnotationManager:
         form = ttk.Frame(dialog, padding=15)
         form.pack(fill='both', expand=True)
 
-        ttk.Label(form, text="Template Name:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(form, text=_t('gui.academics.assignment_system.annotation_manager.labels.template_name', default="Template Name:")).grid(row=0, column=0, sticky='w', pady=(0, 5))
         name_var = tk.StringVar()
         ttk.Entry(form, textvariable=name_var, width=40).grid(row=0, column=1, sticky='ew', pady=(0, 5))
 
-        ttk.Label(form, text="Category:").grid(row=1, column=0, sticky='w', pady=(0, 5))
-        cat_var = tk.StringVar(value='suggestion')
+        ttk.Label(form, text=_t('gui.academics.assignment_system.annotation_manager.labels.category', default="Category:")).grid(row=1, column=0, sticky='w', pady=(0, 5))
+        cat_var = tk.StringVar(value=_t('gui.academics.assignment_system.annotation_manager.values.suggestion', default='suggestion'))
         ttk.Combobox(form, textvariable=cat_var, values=ANNOTATION_CATEGORIES,
                      state='readonly', width=37).grid(row=1, column=1, sticky='ew', pady=(0, 5))
 
-        ttk.Label(form, text="Template Text:").grid(row=2, column=0, sticky='nw', pady=(0, 5))
+        ttk.Label(form, text=_t('gui.academics.assignment_system.annotation_manager.labels.template_text', default="Template Text:")).grid(row=2, column=0, sticky='nw', pady=(0, 5))
         text_field = scrolledtext.ScrolledText(form, height=8, width=40, wrap='word')
         text_field.grid(row=2, column=1, sticky='ew', pady=(0, 5))
 
@@ -515,7 +517,7 @@ class AnnotationManager:
             text = text_field.get('1.0', 'end').strip()
             category = cat_var.get()
             if not name or not text:
-                messagebox.showwarning("Missing Fields", "Please fill in both name and text.", parent=dialog)
+                messagebox.showwarning(_t('gui.academics.assignment_system.annotation_manager.dialogs.missing_fields', default="Missing Fields"), _t('gui.academics.assignment_system.annotation_manager.dialogs.please_fill_in_both_name_and_text', default="Please fill in both name and text."), parent=dialog)
                 return
             try:
                 created_by = getattr(self.auth, 'username', 'unknown')
@@ -527,20 +529,20 @@ class AnnotationManager:
                 ''', (name, text, category, created_by, datetime.now().isoformat()))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success", f"Template '{name}' created.", parent=dialog)
+                messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.success', default="Success"), f"Template '{name}' created.", parent=dialog)
                 dialog.destroy()
                 if template_tree is not None:
                     self._load_templates(template_tree)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to create template: {e}", parent=dialog)
+                messagebox.showerror(_t('gui.academics.assignment_system.annotation_manager.dialogs.error', default="Error"), f"Failed to create template: {e}", parent=dialog)
 
-        ttk.Button(form, text="Save Template", command=save).grid(row=3, column=1, sticky='e', pady=(10, 0))
+        ttk.Button(form, text=_t('gui.academics.assignment_system.annotation_manager.buttons.save_template', default="Save Template"), command=save).grid(row=3, column=1, sticky='e', pady=(10, 0))
 
     def _edit_template(self, template_tree):
         """Edit a selected template"""
         selection = template_tree.selection()
         if not selection:
-            messagebox.showinfo("No Selection", "Please select a template to edit.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.annotation_manager.dialogs.please_select_a_template_to_edit', default="Please select a template to edit."))
             return
 
         values = template_tree.item(selection[0], 'values')
@@ -553,13 +555,13 @@ class AnnotationManager:
         conn.close()
 
         if not row:
-            messagebox.showerror("Error", "Template not found.")
+            messagebox.showerror(_t('gui.academics.assignment_system.annotation_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.annotation_manager.dialogs.template_not_found', default="Template not found."))
             return
 
         _, name, text, category = row
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Edit Annotation Template")
+        dialog.title(_t('gui.academics.assignment_system.annotation_manager.windows.edit_annotation_template', default="Edit Annotation Template"))
         dialog.geometry("450x350")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -567,16 +569,16 @@ class AnnotationManager:
         form = ttk.Frame(dialog, padding=15)
         form.pack(fill='both', expand=True)
 
-        ttk.Label(form, text="Template Name:").grid(row=0, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(form, text=_t('gui.academics.assignment_system.annotation_manager.labels.template_name', default="Template Name:")).grid(row=0, column=0, sticky='w', pady=(0, 5))
         name_var = tk.StringVar(value=name)
         ttk.Entry(form, textvariable=name_var, width=40).grid(row=0, column=1, sticky='ew', pady=(0, 5))
 
-        ttk.Label(form, text="Category:").grid(row=1, column=0, sticky='w', pady=(0, 5))
+        ttk.Label(form, text=_t('gui.academics.assignment_system.annotation_manager.labels.category', default="Category:")).grid(row=1, column=0, sticky='w', pady=(0, 5))
         cat_var = tk.StringVar(value=category)
         ttk.Combobox(form, textvariable=cat_var, values=ANNOTATION_CATEGORIES,
                      state='readonly', width=37).grid(row=1, column=1, sticky='ew', pady=(0, 5))
 
-        ttk.Label(form, text="Template Text:").grid(row=2, column=0, sticky='nw', pady=(0, 5))
+        ttk.Label(form, text=_t('gui.academics.assignment_system.annotation_manager.labels.template_text', default="Template Text:")).grid(row=2, column=0, sticky='nw', pady=(0, 5))
         text_field = scrolledtext.ScrolledText(form, height=8, width=40, wrap='word')
         text_field.grid(row=2, column=1, sticky='ew', pady=(0, 5))
         text_field.insert('1.0', text)
@@ -588,7 +590,7 @@ class AnnotationManager:
             new_text = text_field.get('1.0', 'end').strip()
             new_cat = cat_var.get()
             if not new_name or not new_text:
-                messagebox.showwarning("Missing Fields", "Please fill in both name and text.", parent=dialog)
+                messagebox.showwarning(_t('gui.academics.assignment_system.annotation_manager.dialogs.missing_fields', default="Missing Fields"), _t('gui.academics.assignment_system.annotation_manager.dialogs.please_fill_in_both_name_and_text', default="Please fill in both name and text."), parent=dialog)
                 return
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -598,25 +600,25 @@ class AnnotationManager:
                 ''', (new_name, new_text, new_cat, tid))
                 conn.commit()
                 conn.close()
-                messagebox.showinfo("Success", "Template updated.", parent=dialog)
+                messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.annotation_manager.dialogs.template_updated', default="Template updated."), parent=dialog)
                 dialog.destroy()
                 self._load_templates(template_tree)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update template: {e}", parent=dialog)
+                messagebox.showerror(_t('gui.academics.assignment_system.annotation_manager.dialogs.error', default="Error"), f"Failed to update template: {e}", parent=dialog)
 
-        ttk.Button(form, text="Save Changes", command=save).grid(row=3, column=1, sticky='e', pady=(10, 0))
+        ttk.Button(form, text=_t('gui.academics.assignment_system.annotation_manager.buttons.save_changes', default="Save Changes"), command=save).grid(row=3, column=1, sticky='e', pady=(10, 0))
 
     def _delete_template(self, template_tree):
         """Delete the selected template"""
         selection = template_tree.selection()
         if not selection:
-            messagebox.showinfo("No Selection", "Please select a template to delete.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.annotation_manager.dialogs.please_select_a_template_to_delete', default="Please select a template to delete."))
             return
 
         values = template_tree.item(selection[0], 'values')
         tid = values[0]
 
-        if not messagebox.askyesno("Confirm Delete", "Delete this template?"):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.annotation_manager.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.academics.assignment_system.annotation_manager.dialogs.delete_this_template', default="Delete this template?")):
             return
 
         try:
@@ -627,7 +629,7 @@ class AnnotationManager:
             conn.close()
             self._load_templates(template_tree)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete template: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.annotation_manager.dialogs.error', default="Error"), f"Failed to delete template: {e}")
 
     # ------------------------------------------------------------------
     # Student view of annotations
@@ -639,7 +641,7 @@ class AnnotationManager:
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Submission Feedback", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.annotation_manager.labels.submission_feedback', default="Submission Feedback"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 10))
 
         # Main paned layout
@@ -647,7 +649,7 @@ class AnnotationManager:
         paned.pack(fill='both', expand=True, pady=(0, 10))
 
         # Left: submission text with highlights
-        left_frame = ttk.LabelFrame(paned, text="Your Submission", padding=5)
+        left_frame = ttk.LabelFrame(paned, text=_t('gui.academics.assignment_system.annotation_manager.labels.your_submission', default="Your Submission"), padding=5)
         paned.add(left_frame, weight=3)
 
         text_widget = tk.Text(left_frame, wrap='word', font=('Consolas', 10), state='normal')
@@ -667,7 +669,7 @@ class AnnotationManager:
         text_widget.config(state='disabled')
 
         # Right: annotations list with response capability
-        right_frame = ttk.LabelFrame(paned, text="Instructor Feedback", padding=5)
+        right_frame = ttk.LabelFrame(paned, text=_t('gui.academics.assignment_system.annotation_manager.labels.instructor_feedback', default="Instructor Feedback"), padding=5)
         paned.add(right_frame, weight=2)
 
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -682,7 +684,7 @@ class AnnotationManager:
         conn.close()
 
         if not annotations:
-            ttk.Label(right_frame, text="No annotations yet.").pack(pady=20)
+            ttk.Label(right_frame, text=_t('gui.academics.assignment_system.annotation_manager.labels.no_annotations_yet', default="No annotations yet.")).pack(pady=20)
             return
 
         # Scrollable frame for annotations
@@ -719,7 +721,7 @@ class AnnotationManager:
             ttk.Label(card, text=comment, wraplength=300, justify='left').pack(anchor='w', pady=(5, 5))
 
             if student_response:
-                resp_frame = ttk.LabelFrame(card, text="Your Response", padding=5)
+                resp_frame = ttk.LabelFrame(card, text=_t('gui.academics.assignment_system.annotation_manager.labels.your_response', default="Your Response"), padding=5)
                 resp_frame.pack(fill='x', pady=(2, 0))
                 ttk.Label(resp_frame, text=student_response, wraplength=280, justify='left').pack(anchor='w')
             else:
@@ -727,7 +729,7 @@ class AnnotationManager:
                 resp_entry = scrolledtext.ScrolledText(card, height=2, width=35, wrap='word')
                 resp_entry.pack(fill='x', pady=(2, 2))
                 ttk.Button(
-                    card, text="Reply",
+                    card, text=_t('gui.academics.assignment_system.annotation_manager.buttons.reply', default="Reply"),
                     command=lambda aid=annot_id, entry=resp_entry: self._submit_student_response(
                         aid, entry, submission_id
                     )
@@ -750,7 +752,7 @@ class AnnotationManager:
         """Save a student response to an annotation"""
         response = entry_widget.get('1.0', 'end').strip()
         if not response:
-            messagebox.showwarning("Empty Response", "Please type a response.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.annotation_manager.dialogs.empty_response', default="Empty Response"), _t('gui.academics.assignment_system.annotation_manager.dialogs.please_type_a_response', default="Please type a response."))
             return
 
         try:
@@ -763,11 +765,11 @@ class AnnotationManager:
             ''', (response, datetime.now().isoformat(), annotation_id))
             conn.commit()
             conn.close()
-            messagebox.showinfo("Response Saved", "Your response has been saved.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.response_saved', default="Response Saved"), _t('gui.academics.assignment_system.annotation_manager.dialogs.your_response_has_been_saved', default="Your response has been saved."))
             # Refresh the view
             self.show_student_annotations(submission_id)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save response: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.annotation_manager.dialogs.error', default="Error"), f"Failed to save response: {e}")
 
     # ------------------------------------------------------------------
     # Annotation summary
@@ -776,18 +778,18 @@ class AnnotationManager:
     def show_annotation_summary(self):
         """Summary of all annotations across submissions for an assignment"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to view annotation summaries.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.annotation_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.annotation_manager.dialogs.you_do_not_have_permission_to_view_annotation_summaries', default="You do not have permission to view annotation summaries."))
             return
 
         self._ensure_tables()
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Annotation Summary", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.annotation_manager.labels.annotation_summary', default="Annotation Summary"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 10))
 
         # Stats frame
-        stats_frame = ttk.LabelFrame(parent, text="Overview Statistics", padding=10)
+        stats_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.annotation_manager.labels.overview_statistics', default="Overview Statistics"), padding=10)
         stats_frame.pack(fill='x', pady=(0, 10))
 
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -828,7 +830,7 @@ class AnnotationManager:
                   font=('Segoe UI', 10, 'bold')).grid(row=row, column=2, sticky='w')
 
         # Category breakdown
-        cat_frame = ttk.LabelFrame(parent, text="By Category", padding=10)
+        cat_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.annotation_manager.labels.by_category', default="By Category"), padding=10)
         cat_frame.pack(fill='x', pady=(0, 10))
 
         for i, (cat, cnt) in enumerate(by_category):
@@ -838,7 +840,7 @@ class AnnotationManager:
             lbl.grid(row=0, column=i, padx=(0, 10), pady=5)
 
         # Reviewer breakdown
-        reviewer_frame = ttk.LabelFrame(parent, text="By Reviewer", padding=10)
+        reviewer_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.annotation_manager.labels.by_reviewer', default="By Reviewer"), padding=10)
         reviewer_frame.pack(fill='x', pady=(0, 10))
 
         columns = ('Reviewer', 'Annotation Count')
@@ -852,7 +854,7 @@ class AnnotationManager:
             reviewer_tree.insert('', 'end', values=(reviewer_id, cnt))
 
         # Recent annotations list
-        recent_frame = ttk.LabelFrame(parent, text="Recent Annotations", padding=10)
+        recent_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.annotation_manager.labels.recent_annotations', default="Recent Annotations"), padding=10)
         recent_frame.pack(fill='both', expand=True)
 
         columns = ('ID', 'Submission', 'Line', 'Category', 'Comment', 'Reviewer', 'Date')
@@ -910,11 +912,11 @@ class AnnotationManager:
         conn.close()
 
         if not annotations:
-            messagebox.showinfo("No Annotations", "No annotations found for this submission.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.no_annotations', default="No Annotations"), _t('gui.academics.assignment_system.annotation_manager.dialogs.no_annotations_found_for_this_submission', default="No annotations found for this submission."))
             return
 
         save_path = filedialog.asksaveasfilename(
-            title="Export Annotations",
+            title=_t('gui.academics.assignment_system.annotation_manager.dialogs.export_annotations', default="Export Annotations"),
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("JSON files", "*.json"), ("All files", "*.*")]
         )
@@ -963,6 +965,6 @@ class AnnotationManager:
                 with open(save_path, 'w', encoding='utf-8') as f:
                     f.write('\n'.join(lines))
 
-            messagebox.showinfo("Export Complete", f"Annotations exported to:\n{save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.annotation_manager.dialogs.export_complete', default="Export Complete"), f"Annotations exported to:\n{save_path}")
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export annotations: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.annotation_manager.dialogs.export_error', default="Export Error"), f"Failed to export annotations: {e}")

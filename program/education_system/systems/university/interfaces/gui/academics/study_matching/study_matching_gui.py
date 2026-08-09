@@ -11,6 +11,8 @@ Features:
 - Analytics dashboard
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -45,7 +47,7 @@ class StudyMatchingGUI:
         # Frames have no ``wm_title``; Tk/Toplevel do.
         if hasattr(parent, "wm_title"):
             self.window = tk.Toplevel(parent)
-            self.window.title("Peer Study Matching & Collaboration")
+            self.window.title(_t('gui.academics.study_matching.study_matching.windows.peer_study_matching_collaboration', default="Peer Study Matching & Collaboration"))
             self.window.geometry("1300x850")
             self._owns_window = True
         else:
@@ -53,7 +55,7 @@ class StudyMatchingGUI:
             self._owns_window = False
 
         if not self.auth.current_user:
-            messagebox.showerror("Error", "You must be logged in to use Peer Study Matching.")
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), _t('gui.academics.study_matching.study_matching.dialogs.you_must_be_logged_in_to_use_peer_study_matching', default="You must be logged in to use Peer Study Matching."))
             if self._owns_window:
                 self.window.destroy()
             return
@@ -128,10 +130,10 @@ class StudyMatchingGUI:
     def create_profile_tab(self):
         """Create study profile management tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Profile")
+        self.notebook.add(tab, text=_t('gui.academics.study_matching.study_matching.tabs.my_profile', default="My Profile"))
 
         # Header
-        header = ttk.Label(tab, text="My Study Profile", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.academics.study_matching.study_matching.labels.my_study_profile', default="My Study Profile"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Profile display frame
@@ -142,9 +144,9 @@ class StudyMatchingGUI:
         button_frame = ttk.Frame(tab)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Create/Update Profile", command=self.open_profile_editor).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Refresh", command=self.load_profile).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Compatibility Info", command=self.show_compatibility_info).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.create_update_profile', default="Create/Update Profile"), command=self.open_profile_editor).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.refresh', default="Refresh"), command=self.load_profile).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.compatibility_info', default="Compatibility Info"), command=self.show_compatibility_info).pack(side=tk.LEFT, padx=5)
 
         # Load profile
         self.load_profile()
@@ -162,8 +164,8 @@ class StudyMatchingGUI:
             # No profile exists
             no_profile_label = ttk.Label(
                 self.profile_display,
-                text="You haven't created a study profile yet.\n\n"
-                     "Create a profile to find compatible study partners!",
+                text=_t('gui.academics.study_matching.study_matching.labels.you_haven_t_created_a_study_profile_yet_create_a_profile_to_find', default="You haven't created a study profile yet.\n\n"
+                     "Create a profile to find compatible study partners!"),
                 font=('Arial', 12),
                 justify=tk.CENTER
             )
@@ -175,7 +177,7 @@ class StudyMatchingGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Left column - preferences
-        left_frame = ttk.LabelFrame(main_frame, text="Study Preferences", padding=10)
+        left_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.study_matching.study_matching.labels.study_preferences', default="Study Preferences"), padding=10)
         left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         preferences = [
@@ -193,18 +195,18 @@ class StudyMatchingGUI:
             ttk.Label(frame, text=value, font=('Arial', 10)).pack(side=tk.LEFT)
 
         # Right column - availability and interests
-        right_frame = ttk.LabelFrame(main_frame, text="Availability & Interests", padding=10)
+        right_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.study_matching.study_matching.labels.availability_interests', default="Availability & Interests"), padding=10)
         right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         if profile['availability']:
-            ttk.Label(right_frame, text="Availability:", font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=5)
+            ttk.Label(right_frame, text=_t('gui.academics.study_matching.study_matching.labels.availability', default="Availability:"), font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=5)
             avail_text = scrolledtext.ScrolledText(right_frame, height=5, width=40, wrap=tk.WORD)
             avail_text.pack(fill=tk.BOTH, expand=True, pady=5)
             avail_text.insert('1.0', '\n'.join(profile['availability']))
             avail_text.config(state='disabled')
 
         if profile['interests']:
-            ttk.Label(right_frame, text="Interests:", font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=5)
+            ttk.Label(right_frame, text=_t('gui.academics.study_matching.study_matching.labels.interests', default="Interests:"), font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=5)
             interest_text = scrolledtext.ScrolledText(right_frame, height=5, width=40, wrap=tk.WORD)
             interest_text.pack(fill=tk.BOTH, expand=True, pady=5)
             interest_text.insert('1.0', ', '.join(profile['interests']))
@@ -219,10 +221,10 @@ class StudyMatchingGUI:
     def open_profile_editor(self):
         """Open dialog to create/update profile."""
         dialog = tk.Toplevel(self.window)
-        dialog.title("Edit Study Profile")
+        dialog.title(_t('gui.academics.study_matching.study_matching.windows.edit_study_profile', default="Edit Study Profile"))
         dialog.geometry("600x700")
 
-        ttk.Label(dialog, text="Study Profile Editor", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.study_matching.study_matching.labels.study_profile_editor', default="Study Profile Editor"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Get current profile if exists
         user_id = self.auth.get_current_user()['username']
@@ -233,46 +235,46 @@ class StudyMatchingGUI:
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Study Style
-        ttk.Label(form_frame, text="Study Style:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.study_style', default="Study Style:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         style_var = tk.StringVar(value=current_profile['study_style'] if current_profile else "Visual")
         style_combo = ttk.Combobox(form_frame, textvariable=style_var, values=STUDY_STYLES, state='readonly', width=30)
         style_combo.grid(row=0, column=1, pady=5)
 
         # Preferred Time
-        ttk.Label(form_frame, text="Preferred Time:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.preferred_time', default="Preferred Time:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         time_var = tk.StringVar(value=current_profile['preferred_time'] if current_profile else "Evening")
         time_combo = ttk.Combobox(form_frame, textvariable=time_var, values=PREFERRED_TIMES, state='readonly', width=30)
         time_combo.grid(row=1, column=1, pady=5)
 
         # Group Size
-        ttk.Label(form_frame, text="Group Size:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.group_size', default="Group Size:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         size_var = tk.StringVar(value=current_profile['group_size_preference'] if current_profile else "Small (2-4)")
         size_combo = ttk.Combobox(form_frame, textvariable=size_var, values=GROUP_SIZES, state='readonly', width=30)
         size_combo.grid(row=2, column=1, pady=5)
 
         # Communication Style
-        ttk.Label(form_frame, text="Communication:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.communication', default="Communication:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         comm_var = tk.StringVar(value=current_profile['communication_style'] if current_profile else "Collaborative")
         comm_combo = ttk.Combobox(form_frame, textvariable=comm_var, values=COMMUNICATION_STYLES, state='readonly', width=30)
         comm_combo.grid(row=3, column=1, pady=5)
 
         # Noise Preference
-        ttk.Label(form_frame, text="Noise Level:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.noise_level', default="Noise Level:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         noise_var = tk.StringVar(value=current_profile['noise_preference'] if current_profile else "Quiet")
         noise_combo = ttk.Combobox(form_frame, textvariable=noise_var, values=NOISE_PREFERENCES, state='readonly', width=30)
         noise_combo.grid(row=4, column=1, pady=5)
 
         # Availability
-        ttk.Label(form_frame, text="Availability:").grid(row=5, column=0, sticky=tk.W, pady=5)
-        ttk.Label(form_frame, text="(one per line)", font=('Arial', 8, 'italic')).grid(row=6, column=0, sticky=tk.W)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.availability', default="Availability:")).grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.one_per_line', default="(one per line)"), font=('Arial', 8, 'italic')).grid(row=6, column=0, sticky=tk.W)
         avail_text = scrolledtext.ScrolledText(form_frame, height=5, width=35, wrap=tk.WORD)
         avail_text.grid(row=5, column=1, rowspan=2, pady=5)
         if current_profile and current_profile['availability']:
             avail_text.insert('1.0', '\n'.join(current_profile['availability']))
 
         # Interests
-        ttk.Label(form_frame, text="Interests:").grid(row=7, column=0, sticky=tk.W, pady=5)
-        ttk.Label(form_frame, text="(comma-separated)", font=('Arial', 8, 'italic')).grid(row=8, column=0, sticky=tk.W)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.interests', default="Interests:")).grid(row=7, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.comma_separated', default="(comma-separated)"), font=('Arial', 8, 'italic')).grid(row=8, column=0, sticky=tk.W)
         interests_text = scrolledtext.ScrolledText(form_frame, height=5, width=35, wrap=tk.WORD)
         interests_text.grid(row=7, column=1, rowspan=2, pady=5)
         if current_profile and current_profile['interests']:
@@ -297,14 +299,14 @@ class StudyMatchingGUI:
                     availability=availability,
                     interests=interests
                 )
-                messagebox.showinfo("Success", "Study profile saved successfully!")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), _t('gui.academics.study_matching.study_matching.dialogs.study_profile_saved_successfully', default="Study profile saved successfully!"))
                 dialog.destroy()
                 self.load_profile()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Save Profile", command=save_profile).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.save_profile', default="Save Profile"), command=save_profile).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def show_compatibility_info(self):
         """Show compatibility scoring information."""
@@ -333,34 +335,34 @@ Your compatibility with other students is calculated based on:
 Minimum Threshold: 30%
 High Compatibility: 70%+
         """
-        messagebox.showinfo("Compatibility Scoring", info_text)
+        messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.compatibility_scoring', default="Compatibility Scoring"), info_text)
 
     # ========== Matches Tab ==========
 
     def create_matches_tab(self):
         """Create study partner matches tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Find Partners")
+        self.notebook.add(tab, text=_t('gui.academics.study_matching.study_matching.tabs.find_partners', default="Find Partners"))
 
         # Header
-        header = ttk.Label(tab, text="Find Compatible Study Partners", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.academics.study_matching.study_matching.labels.find_compatible_study_partners', default="Find Compatible Study Partners"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Search controls
         search_frame = ttk.Frame(tab)
         search_frame.pack(pady=10)
 
-        ttk.Label(search_frame, text="Module (optional):").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.academics.study_matching.study_matching.labels.module_optional', default="Module (optional):")).pack(side=tk.LEFT, padx=5)
         self.match_course_var = tk.StringVar()
         match_course_combo = ttk.Combobox(search_frame, textvariable=self.match_course_var,
                                          width=30, state='readonly', values=self.available_modules)
         match_course_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(search_frame, text="Max results:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.academics.study_matching.study_matching.labels.max_results', default="Max results:")).pack(side=tk.LEFT, padx=5)
         self.match_limit_var = tk.IntVar(value=10)
         ttk.Spinbox(search_frame, from_=5, to=50, textvariable=self.match_limit_var, width=10).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(search_frame, text="Find Matches", command=self.find_matches).pack(side=tk.LEFT, padx=10)
+        ttk.Button(search_frame, text=_t('gui.academics.study_matching.study_matching.buttons.find_matches', default="Find Matches"), command=self.find_matches).pack(side=tk.LEFT, padx=10)
 
         # Matches display
         columns = ('Name', 'ID', 'Compatibility', 'Style', 'Time', 'Reason')
@@ -387,7 +389,7 @@ High Compatibility: 70%+
         action_frame = ttk.Frame(tab)
         action_frame.pack(pady=10)
 
-        ttk.Button(action_frame, text="Send Match Suggestion", command=self.send_match_suggestion).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.academics.study_matching.study_matching.buttons.send_match_suggestion', default="Send Match Suggestion"), command=self.send_match_suggestion).pack(side=tk.LEFT, padx=5)
 
     def find_matches(self):
         """Find and display study partner matches."""
@@ -396,7 +398,7 @@ High Compatibility: 70%+
         # Check profile
         profile = self.service.get_study_profile(user_id)
         if not profile:
-            messagebox.showwarning("No Profile", "Please create a study profile first!")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.no_profile', default="No Profile"), _t('gui.academics.study_matching.study_matching.dialogs.please_create_a_study_profile_first', default="Please create a study profile first!"))
             self.notebook.select(0)  # Switch to profile tab
             return
 
@@ -412,7 +414,7 @@ High Compatibility: 70%+
             matches = self.service.find_study_matches(user_id, course_id, limit)
 
             if not matches:
-                messagebox.showinfo("No Matches", "No compatible study partners found.\nTry adjusting your search criteria.")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.no_matches', default="No Matches"), _t('gui.academics.study_matching.study_matching.dialogs.no_compatible_study_partners_found_try_adjusting_your_search_cri', default="No compatible study partners found.\nTry adjusting your search criteria."))
                 return
 
             for match in matches:
@@ -429,16 +431,16 @@ High Compatibility: 70%+
                     match['match_reason']
                 ), tags=(match['student_id'],))
 
-            messagebox.showinfo("Success", f"Found {len(matches)} compatible study partners!")
+            messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), f"Found {len(matches)} compatible study partners!")
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def send_match_suggestion(self):
         """Send match suggestion to selected partner."""
         selection = self.matches_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a match first.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.no_selection', default="No Selection"), _t('gui.academics.study_matching.study_matching.dialogs.please_select_a_match_first', default="Please select a match first."))
             return
 
         item = self.matches_tree.item(selection[0])
@@ -449,19 +451,19 @@ High Compatibility: 70%+
 
         try:
             suggestion_id = self.service.create_match_suggestion(user_id, suggested_id, course_id)
-            messagebox.showinfo("Success", f"Match suggestion sent! (ID: {suggestion_id})")
+            messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), f"Match suggestion sent! (ID: {suggestion_id})")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     # ========== Study Groups Tab ==========
 
     def create_groups_tab(self):
         """Create study groups management tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Study Groups")
+        self.notebook.add(tab, text=_t('gui.academics.study_matching.study_matching.tabs.study_groups', default="Study Groups"))
 
         # Header
-        header = ttk.Label(tab, text="Study Groups", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.academics.study_matching.study_matching.labels.study_groups', default="Study Groups"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Sub-notebook for my groups vs browse
@@ -470,23 +472,23 @@ High Compatibility: 70%+
 
         # My Groups tab
         my_groups_frame = ttk.Frame(sub_notebook)
-        sub_notebook.add(my_groups_frame, text="My Groups")
+        sub_notebook.add(my_groups_frame, text=_t('gui.academics.study_matching.study_matching.tabs.my_groups', default="My Groups"))
         self.setup_my_groups_tab(my_groups_frame)
 
         # Browse Groups tab
         browse_groups_frame = ttk.Frame(sub_notebook)
-        sub_notebook.add(browse_groups_frame, text="Browse & Join")
+        sub_notebook.add(browse_groups_frame, text=_t('gui.academics.study_matching.study_matching.tabs.browse_join', default="Browse & Join"))
         self.setup_browse_groups_tab(browse_groups_frame)
 
         # Create Group button
         button_frame = ttk.Frame(tab)
         button_frame.pack(pady=10)
-        ttk.Button(button_frame, text="Create New Group", command=self.create_study_group_dialog).pack()
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.create_new_group', default="Create New Group"), command=self.create_study_group_dialog).pack()
 
     def setup_my_groups_tab(self, parent):
         """Setup my groups display."""
         # Refresh button
-        ttk.Button(parent, text="Refresh", command=self.load_my_groups).pack(pady=5)
+        ttk.Button(parent, text=_t('gui.academics.study_matching.study_matching.buttons.refresh', default="Refresh"), command=self.load_my_groups).pack(pady=5)
 
         # Groups display
         columns = ('ID', 'Name', 'Course', 'Role', 'Members', 'Type', 'Status')
@@ -508,7 +510,7 @@ High Compatibility: 70%+
         # Action buttons
         action_frame = ttk.Frame(parent)
         action_frame.pack(pady=10)
-        ttk.Button(action_frame, text="View Details", command=self.view_group_details).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.academics.study_matching.study_matching.buttons.view_details', default="View Details"), command=self.view_group_details).pack(side=tk.LEFT, padx=5)
 
         self.load_my_groups()
 
@@ -534,7 +536,7 @@ High Compatibility: 70%+
                 ), tags=(group['group_id'],))
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def setup_browse_groups_tab(self, parent):
         """Setup browse groups display."""
@@ -542,12 +544,12 @@ High Compatibility: 70%+
         search_frame = ttk.Frame(parent)
         search_frame.pack(pady=10)
 
-        ttk.Label(search_frame, text="Module:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.academics.study_matching.study_matching.labels.module', default="Module:")).pack(side=tk.LEFT, padx=5)
         self.browse_course_var = tk.StringVar()
         browse_course_combo = ttk.Combobox(search_frame, textvariable=self.browse_course_var,
                                           width=30, state='readonly', values=self.available_modules)
         browse_course_combo.pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Search", command=self.browse_groups).pack(side=tk.LEFT, padx=10)
+        ttk.Button(search_frame, text=_t('gui.academics.study_matching.study_matching.buttons.search', default="Search"), command=self.browse_groups).pack(side=tk.LEFT, padx=10)
 
         # Groups display
         columns = ('ID', 'Name', 'Members', 'Type', 'Location', 'Schedule')
@@ -566,14 +568,14 @@ High Compatibility: 70%+
         self.browse_groups_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Action button
-        ttk.Button(parent, text="Join Selected Group", command=self.join_group).pack(pady=10)
+        ttk.Button(parent, text=_t('gui.academics.study_matching.study_matching.buttons.join_selected_group', default="Join Selected Group"), command=self.join_group).pack(pady=10)
 
     def browse_groups(self):
         """Browse available study groups."""
         # Extract module code from selection
         course_id = self._get_module_code_from_selection(self.browse_course_var.get())
         if not course_id:
-            messagebox.showwarning("Missing Input", "Please select a module.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.missing_input', default="Missing Input"), _t('gui.academics.study_matching.study_matching.dialogs.please_select_a_module', default="Please select a module."))
             return
 
         for item in self.browse_groups_tree.get_children():
@@ -583,7 +585,7 @@ High Compatibility: 70%+
             groups = self.service.get_available_study_groups(course_id)
 
             if not groups:
-                messagebox.showinfo("No Groups", f"No available study groups found for {course_id}.")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.no_groups', default="No Groups"), f"No available study groups found for {course_id}.")
                 return
 
             for group in groups:
@@ -597,47 +599,47 @@ High Compatibility: 70%+
                 ), tags=(group['group_id'],))
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def create_study_group_dialog(self):
         """Open dialog to create study group."""
         dialog = tk.Toplevel(self.window)
-        dialog.title("Create Study Group")
+        dialog.title(_t('gui.academics.study_matching.study_matching.windows.create_study_group', default="Create Study Group"))
         dialog.geometry("500x450")
 
-        ttk.Label(dialog, text="Create Study Group", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.study_matching.study_matching.labels.create_study_group', default="Create Study Group"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(dialog)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Module
-        ttk.Label(form_frame, text="Module:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.module', default="Module:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         course_var = tk.StringVar()
         course_combo = ttk.Combobox(form_frame, textvariable=course_var, width=28,
                                     state='readonly', values=self.available_modules)
         course_combo.grid(row=0, column=1, pady=5)
 
         # Group Name
-        ttk.Label(form_frame, text="Group Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.group_name', default="Group Name:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=name_var, width=30).grid(row=1, column=1, pady=5)
 
         # Max Members
-        ttk.Label(form_frame, text="Max Members:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.max_members', default="Max Members:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         max_var = tk.IntVar(value=6)
         ttk.Spinbox(form_frame, from_=2, to=20, textvariable=max_var, width=28).grid(row=2, column=1, pady=5)
 
         # Virtual checkbox
         is_virtual_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(form_frame, text="Virtual Group", variable=is_virtual_var).grid(row=3, column=0, columnspan=2, pady=10)
+        ttk.Checkbutton(form_frame, text=_t('gui.academics.study_matching.study_matching.buttons.virtual_group', default="Virtual Group"), variable=is_virtual_var).grid(row=3, column=0, columnspan=2, pady=10)
 
         # Location
-        ttk.Label(form_frame, text="Location/Platform:").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.location_platform', default="Location/Platform:")).grid(row=4, column=0, sticky=tk.W, pady=5)
         location_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=location_var, width=30).grid(row=4, column=1, pady=5)
 
         # Schedule
-        ttk.Label(form_frame, text="Meeting Schedule:").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.meeting_schedule', default="Meeting Schedule:")).grid(row=5, column=0, sticky=tk.W, pady=5)
         schedule_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=schedule_var, width=30).grid(row=5, column=1, pady=5)
 
@@ -651,7 +653,7 @@ High Compatibility: 70%+
             name = name_var.get().strip()
 
             if not course or not name:
-                messagebox.showerror("Missing Input", "Module and Group Name are required.")
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.missing_input', default="Missing Input"), _t('gui.academics.study_matching.study_matching.dialogs.module_and_group_name_are_required', default="Module and Group Name are required."))
                 return
 
             user_id = self.auth.get_current_user()['username']
@@ -666,20 +668,20 @@ High Compatibility: 70%+
                     location=location_var.get() or None,
                     is_virtual=is_virtual_var.get()
                 )
-                messagebox.showinfo("Success", f"Study group created! (ID: {group_id})")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), f"Study group created! (ID: {group_id})")
                 dialog.destroy()
                 self.load_my_groups()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Create", command=create_group).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.create', default="Create"), command=create_group).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def join_group(self):
         """Join selected study group."""
         selection = self.browse_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a group to join.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.no_selection', default="No Selection"), _t('gui.academics.study_matching.study_matching.dialogs.please_select_a_group_to_join', default="Please select a group to join."))
             return
 
         item = self.browse_groups_tree.item(selection[0])
@@ -689,20 +691,20 @@ High Compatibility: 70%+
 
         try:
             if self.service.join_study_group(group_id, user_id):
-                messagebox.showinfo("Success", "Successfully joined the study group!")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), _t('gui.academics.study_matching.study_matching.dialogs.successfully_joined_the_study_group', default="Successfully joined the study group!"))
                 self.load_my_groups()
             else:
-                messagebox.showinfo("Already Member", "You are already a member of this group.")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.already_member', default="Already Member"), _t('gui.academics.study_matching.study_matching.dialogs.you_are_already_a_member_of_this_group', default="You are already a member of this group."))
         except ValueError as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def view_group_details(self):
         """View detailed group information."""
         selection = self.my_groups_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a group first.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.no_selection', default="No Selection"), _t('gui.academics.study_matching.study_matching.dialogs.please_select_a_group_first', default="Please select a group first."))
             return
 
         item = self.my_groups_tree.item(selection[0])
@@ -711,7 +713,7 @@ High Compatibility: 70%+
         try:
             group_data = self.service.get_study_group(group_id)
             if not group_data:
-                messagebox.showerror("Error", "Group not found.")
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), _t('gui.academics.study_matching.study_matching.dialogs.group_not_found', default="Group not found."))
                 return
 
             # Create details window
@@ -720,7 +722,7 @@ High Compatibility: 70%+
             details_window.geometry("700x600")
 
             # Group info
-            info_frame = ttk.LabelFrame(details_window, text="Group Information", padding=10)
+            info_frame = ttk.LabelFrame(details_window, text=_t('gui.academics.study_matching.study_matching.labels.group_information', default="Group Information"), padding=10)
             info_frame.pack(fill=tk.X, padx=10, pady=10)
 
             group = group_data['group']
@@ -737,7 +739,7 @@ Created: {group['created_at']}
             ttk.Label(info_frame, text=info_text, justify=tk.LEFT).pack()
 
             # Members list
-            members_frame = ttk.LabelFrame(details_window, text="Members", padding=10)
+            members_frame = ttk.LabelFrame(details_window, text=_t('gui.academics.study_matching.study_matching.labels.members', default="Members"), padding=10)
             members_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             columns = ('Name', 'ID', 'Role', 'Joined', 'Attendance', 'Contribution')
@@ -759,26 +761,26 @@ Created: {group['created_at']}
             members_tree.pack(fill=tk.BOTH, expand=True)
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     # ========== Virtual Study Rooms Tab ==========
 
     def create_study_rooms_tab(self):
         """Create virtual study rooms tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Study Rooms")
+        self.notebook.add(tab, text=_t('gui.academics.study_matching.study_matching.tabs.study_rooms', default="Study Rooms"))
 
         # Header
-        header = ttk.Label(tab, text="Virtual Study Rooms", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.academics.study_matching.study_matching.labels.virtual_study_rooms', default="Virtual Study Rooms"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Controls
         control_frame = ttk.Frame(tab)
         control_frame.pack(pady=10)
 
-        ttk.Button(control_frame, text="Create Room", command=self.create_study_room_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Join by Code", command=self.join_room_by_code).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Refresh", command=self.load_study_rooms).pack(side=tk.LEFT, padx=5)
+        ttk.Button(control_frame, text=_t('gui.academics.study_matching.study_matching.buttons.create_room', default="Create Room"), command=self.create_study_room_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(control_frame, text=_t('gui.academics.study_matching.study_matching.buttons.join_by_code', default="Join by Code"), command=self.join_room_by_code).pack(side=tk.LEFT, padx=5)
+        ttk.Button(control_frame, text=_t('gui.academics.study_matching.study_matching.buttons.refresh', default="Refresh"), command=self.load_study_rooms).pack(side=tk.LEFT, padx=5)
 
         # Rooms display
         columns = ('Code', 'Name', 'Host', 'Participants', 'Course', 'Pomodoro', 'Sessions')
@@ -821,45 +823,45 @@ Created: {group['created_at']}
                 ))
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def create_study_room_dialog(self):
         """Open dialog to create study room."""
         dialog = tk.Toplevel(self.window)
-        dialog.title("Create Virtual Study Room")
+        dialog.title(_t('gui.academics.study_matching.study_matching.windows.create_virtual_study_room', default="Create Virtual Study Room"))
         dialog.geometry("500x450")
 
-        ttk.Label(dialog, text="Create Virtual Study Room", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.study_matching.study_matching.labels.create_virtual_study_room', default="Create Virtual Study Room"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(dialog)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Room Name
-        ttk.Label(form_frame, text="Room Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.room_name', default="Room Name:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=name_var, width=30).grid(row=0, column=1, pady=5)
 
         # Module (optional)
-        ttk.Label(form_frame, text="Module (optional):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.module_optional', default="Module (optional):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         course_var = tk.StringVar()
         course_combo = ttk.Combobox(form_frame, textvariable=course_var, width=28,
                                     state='readonly', values=self.available_modules)
         course_combo.grid(row=1, column=1, pady=5)
 
         # Max Participants
-        ttk.Label(form_frame, text="Max Participants:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.max_participants', default="Max Participants:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         max_var = tk.IntVar(value=8)
         ttk.Spinbox(form_frame, from_=2, to=20, textvariable=max_var, width=28).grid(row=2, column=1, pady=5)
 
         # Pomodoro settings
         pomodoro_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(form_frame, text="Enable Pomodoro Timer", variable=pomodoro_var).grid(row=3, column=0, columnspan=2, pady=10)
+        ttk.Checkbutton(form_frame, text=_t('gui.academics.study_matching.study_matching.buttons.enable_pomodoro_timer', default="Enable Pomodoro Timer"), variable=pomodoro_var).grid(row=3, column=0, columnspan=2, pady=10)
 
-        ttk.Label(form_frame, text="Work Duration (min):").grid(row=4, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.work_duration_min', default="Work Duration (min):")).grid(row=4, column=0, sticky=tk.W, pady=5)
         work_var = tk.IntVar(value=25)
         ttk.Spinbox(form_frame, from_=5, to=60, textvariable=work_var, width=28).grid(row=4, column=1, pady=5)
 
-        ttk.Label(form_frame, text="Break Duration (min):").grid(row=5, column=0, sticky=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.break_duration_min', default="Break Duration (min):")).grid(row=5, column=0, sticky=tk.W, pady=5)
         break_var = tk.IntVar(value=5)
         ttk.Spinbox(form_frame, from_=5, to=30, textvariable=break_var, width=28).grid(row=5, column=1, pady=5)
 
@@ -870,7 +872,7 @@ Created: {group['created_at']}
         def create_room():
             name = name_var.get().strip()
             if not name:
-                messagebox.showerror("Missing Input", "Room name is required.")
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.missing_input', default="Missing Input"), _t('gui.academics.study_matching.study_matching.dialogs.room_name_is_required', default="Room name is required."))
                 return
 
             user_id = self.auth.get_current_user()['username']
@@ -887,14 +889,14 @@ Created: {group['created_at']}
                     work_duration=work_var.get(),
                     break_duration=break_var.get()
                 )
-                messagebox.showinfo("Success", f"Room created!\n\nRoom Code: {room['room_code']}\n\nShare this code with others to invite them.")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), f"Room created!\n\nRoom Code: {room['room_code']}\n\nShare this code with others to invite them.")
                 dialog.destroy()
                 self.load_study_rooms()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Create", command=create_room).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.create', default="Create"), command=create_room).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def join_room_by_code(self):
         """Join room by entering code."""
@@ -906,48 +908,48 @@ Created: {group['created_at']}
 
         try:
             room = self.service.join_virtual_study_room(code.upper(), user_id)
-            messagebox.showinfo("Success", f"Joined room: {room['room_name']}")
+            messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), f"Joined room: {room['room_name']}")
             self.load_study_rooms()
         except ValueError as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     # ========== Pomodoro Timer Tab ==========
 
     def create_pomodoro_tab(self):
         """Create Pomodoro timer controls tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Pomodoro")
+        self.notebook.add(tab, text=_t('gui.academics.study_matching.study_matching.tabs.pomodoro', default="Pomodoro"))
 
         # Header
-        header = ttk.Label(tab, text="Pomodoro Timer", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.academics.study_matching.study_matching.labels.pomodoro_timer', default="Pomodoro Timer"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Session controls
-        control_frame = ttk.LabelFrame(tab, text="Session Controls", padding=15)
+        control_frame = ttk.LabelFrame(tab, text=_t('gui.academics.study_matching.study_matching.labels.session_controls', default="Session Controls"), padding=15)
         control_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Label(control_frame, text="Room ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(control_frame, text=_t('gui.academics.study_matching.study_matching.labels.room_id', default="Room ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         self.pomodoro_room_var = tk.StringVar()
         ttk.Entry(control_frame, textvariable=self.pomodoro_room_var, width=15).grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
 
-        ttk.Button(control_frame, text="Start Work Session",
+        ttk.Button(control_frame, text=_t('gui.academics.study_matching.study_matching.buttons.start_work_session', default="Start Work Session"),
                    command=lambda: self.start_pomodoro('work')).grid(row=0, column=2, padx=5)
-        ttk.Button(control_frame, text="Start Break Session",
+        ttk.Button(control_frame, text=_t('gui.academics.study_matching.study_matching.buttons.start_break_session', default="Start Break Session"),
                    command=lambda: self.start_pomodoro('break')).grid(row=0, column=3, padx=5)
 
-        ttk.Label(control_frame, text="Session ID:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(control_frame, text=_t('gui.academics.study_matching.study_matching.labels.session_id', default="Session ID:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         self.pomodoro_session_var = tk.StringVar()
         ttk.Entry(control_frame, textvariable=self.pomodoro_session_var, width=15).grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
 
-        ttk.Button(control_frame, text="Complete Session",
+        ttk.Button(control_frame, text=_t('gui.academics.study_matching.study_matching.buttons.complete_session', default="Complete Session"),
                    command=self.complete_pomodoro).grid(row=1, column=2, padx=5)
-        ttk.Button(control_frame, text="View Statistics",
+        ttk.Button(control_frame, text=_t('gui.academics.study_matching.study_matching.buttons.view_statistics', default="View Statistics"),
                    command=self.load_pomodoro_stats).grid(row=1, column=3, padx=5)
 
         # Statistics display
-        stats_frame = ttk.LabelFrame(tab, text="My Pomodoro Statistics", padding=15)
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.academics.study_matching.study_matching.labels.my_pomodoro_statistics', default="My Pomodoro Statistics"), padding=15)
         stats_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         self.pomodoro_stats_text = scrolledtext.ScrolledText(stats_frame, height=12, wrap=tk.WORD)
@@ -959,17 +961,17 @@ Created: {group['created_at']}
         try:
             room_id = int(room_str)
         except ValueError:
-            messagebox.showwarning("Invalid Input", "Please enter a valid numeric Room ID.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.invalid_input', default="Invalid Input"), _t('gui.academics.study_matching.study_matching.dialogs.please_enter_a_valid_numeric_room_id', default="Please enter a valid numeric Room ID."))
             return
 
         user_id = self.auth.get_current_user()['username']
         try:
             session_id = self.service.start_pomodoro_session(room_id, user_id, session_type)
             self.pomodoro_session_var.set(str(session_id))
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"),
                                 f"{session_type.capitalize()} session started!\nSession ID: {session_id}")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def complete_pomodoro(self):
         """Complete a Pomodoro session by ID."""
@@ -977,17 +979,17 @@ Created: {group['created_at']}
         try:
             session_id = int(session_str)
         except ValueError:
-            messagebox.showwarning("Invalid Input", "Please enter a valid numeric Session ID.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.invalid_input', default="Invalid Input"), _t('gui.academics.study_matching.study_matching.dialogs.please_enter_a_valid_numeric_session_id', default="Please enter a valid numeric Session ID."))
             return
 
         try:
             if self.service.complete_pomodoro_session(session_id):
-                messagebox.showinfo("Success", "Session completed! Well done!")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), _t('gui.academics.study_matching.study_matching.dialogs.session_completed_well_done', default="Session completed! Well done!"))
                 self.load_pomodoro_stats()
             else:
-                messagebox.showinfo("Info", "Session not found or already completed.")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.info', default="Info"), _t('gui.academics.study_matching.study_matching.dialogs.session_not_found_or_already_completed', default="Session not found or already completed."))
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def load_pomodoro_stats(self):
         """Load and display the user's Pomodoro statistics."""
@@ -1015,36 +1017,36 @@ Created: {group['created_at']}
             self.pomodoro_stats_text.insert(tk.END, f"Average Session:     {stats['avg_session_duration']:.1f} minutes\n")
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     # ========== Q&A Board Tab ==========
 
     def create_qa_board_tab(self):
         """Create Q&A board tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Q&A Board")
+        self.notebook.add(tab, text=_t('gui.academics.study_matching.study_matching.tabs.q_a_board', default="Q&A Board"))
 
         # Header
-        header = ttk.Label(tab, text="Anonymous Q&A Board", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.academics.study_matching.study_matching.labels.anonymous_q_a_board', default="Anonymous Q&A Board"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Controls
         control_frame = ttk.Frame(tab)
         control_frame.pack(pady=10)
 
-        ttk.Label(control_frame, text="Module:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(control_frame, text=_t('gui.academics.study_matching.study_matching.labels.module', default="Module:")).pack(side=tk.LEFT, padx=5)
         self.qa_course_var = tk.StringVar()
         qa_course_combo = ttk.Combobox(control_frame, textvariable=self.qa_course_var,
                                        width=30, state='readonly', values=self.available_modules)
         qa_course_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(control_frame, text="Sort:").pack(side=tk.LEFT, padx=5)
-        self.qa_sort_var = tk.StringVar(value="recent")
+        ttk.Label(control_frame, text=_t('gui.academics.study_matching.study_matching.labels.sort', default="Sort:")).pack(side=tk.LEFT, padx=5)
+        self.qa_sort_var = tk.StringVar(value=_t('gui.academics.study_matching.study_matching.values.recent', default="recent"))
         ttk.Combobox(control_frame, textvariable=self.qa_sort_var, values=["recent", "popular", "unanswered"],
                      state='readonly', width=12).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(control_frame, text="Load Questions", command=self.load_questions).pack(side=tk.LEFT, padx=10)
-        ttk.Button(control_frame, text="Ask Question", command=self.ask_question_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(control_frame, text=_t('gui.academics.study_matching.study_matching.buttons.load_questions', default="Load Questions"), command=self.load_questions).pack(side=tk.LEFT, padx=10)
+        ttk.Button(control_frame, text=_t('gui.academics.study_matching.study_matching.buttons.ask_question', default="Ask Question"), command=self.ask_question_dialog).pack(side=tk.LEFT, padx=5)
 
         # Questions display
         columns = ('ID', 'Title', 'Category', 'Votes', 'Answers', 'Status')
@@ -1066,16 +1068,16 @@ Created: {group['created_at']}
         action_frame = ttk.Frame(tab)
         action_frame.pack(pady=10)
 
-        ttk.Button(action_frame, text="View Question", command=self.view_question_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Answer Question", command=self.answer_question_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="▲ Upvote", command=lambda: self.vote_on_question('upvote')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="▼ Downvote", command=lambda: self.vote_on_question('downvote')).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.academics.study_matching.study_matching.buttons.view_question', default="View Question"), command=self.view_question_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.academics.study_matching.study_matching.buttons.answer_question', default="Answer Question"), command=self.answer_question_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.academics.study_matching.study_matching.buttons.upvote', default="▲ Upvote"), command=lambda: self.vote_on_question('upvote')).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.academics.study_matching.study_matching.buttons.downvote', default="▼ Downvote"), command=lambda: self.vote_on_question('downvote')).pack(side=tk.LEFT, padx=5)
 
     def vote_on_question(self, vote_type):
         """Cast an up/down vote on the selected question."""
         selection = self.qa_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a question to vote on.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.no_selection', default="No Selection"), _t('gui.academics.study_matching.study_matching.dialogs.please_select_a_question_to_vote_on', default="Please select a question to vote on."))
             return
 
         item = self.qa_tree.item(selection[0])
@@ -1084,17 +1086,17 @@ Created: {group['created_at']}
 
         try:
             if self.service.vote_on_content(user_id, 'question', question_id, vote_type):
-                messagebox.showinfo("Success", f"Your {vote_type} was recorded!")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), f"Your {vote_type} was recorded!")
                 self.load_questions()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def load_questions(self):
         """Load questions from Q&A board."""
         # Extract module code from selection
         course_id = self._get_module_code_from_selection(self.qa_course_var.get())
         if not course_id:
-            messagebox.showwarning("Missing Input", "Please select a module.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.missing_input', default="Missing Input"), _t('gui.academics.study_matching.study_matching.dialogs.please_select_a_module', default="Please select a module."))
             return
 
         for item in self.qa_tree.get_children():
@@ -1104,7 +1106,7 @@ Created: {group['created_at']}
             questions = self.service.get_course_questions(course_id, sort_by=self.qa_sort_var.get())
 
             if not questions:
-                messagebox.showinfo("No Questions", f"No questions found for {course_id}.")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.no_questions', default="No Questions"), f"No questions found for {course_id}.")
                 return
 
             for q in questions:
@@ -1121,42 +1123,42 @@ Created: {group['created_at']}
                 ), tags=(q['question_id'],))
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def ask_question_dialog(self):
         """Open dialog to ask a question."""
         # Extract module code from selection
         course_id = self._get_module_code_from_selection(self.qa_course_var.get())
         if not course_id:
-            messagebox.showwarning("Missing Input", "Please select a module first.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.missing_input', default="Missing Input"), _t('gui.academics.study_matching.study_matching.dialogs.please_select_a_module_first', default="Please select a module first."))
             return
 
         dialog = tk.Toplevel(self.window)
-        dialog.title("Ask Question (Anonymous)")
+        dialog.title(_t('gui.academics.study_matching.study_matching.windows.ask_question_anonymous', default="Ask Question (Anonymous)"))
         dialog.geometry("600x500")
 
-        ttk.Label(dialog, text="Ask Question", font=('Arial', 14, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.academics.study_matching.study_matching.labels.ask_question', default="Ask Question"), font=('Arial', 14, 'bold')).pack(pady=10)
 
         form_frame = ttk.Frame(dialog)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Title
-        ttk.Label(form_frame, text="Question Title:").pack(anchor=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.question_title', default="Question Title:")).pack(anchor=tk.W, pady=5)
         title_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=title_var, width=60).pack(fill=tk.X, pady=5)
 
         # Question text
-        ttk.Label(form_frame, text="Question Details:").pack(anchor=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.question_details', default="Question Details:")).pack(anchor=tk.W, pady=5)
         question_text = scrolledtext.ScrolledText(form_frame, height=10, width=60, wrap=tk.WORD)
         question_text.pack(fill=tk.BOTH, expand=True, pady=5)
 
         # Category
-        ttk.Label(form_frame, text="Category:").pack(anchor=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.category', default="Category:")).pack(anchor=tk.W, pady=5)
         category_var = tk.StringVar(value=QA_CATEGORIES[0])
         ttk.Combobox(form_frame, textvariable=category_var, values=QA_CATEGORIES, state='readonly').pack(anchor=tk.W, pady=5)
 
         # Difficulty
-        ttk.Label(form_frame, text="Difficulty:").pack(anchor=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.difficulty', default="Difficulty:")).pack(anchor=tk.W, pady=5)
         difficulty_var = tk.StringVar(value=DIFFICULTY_LEVELS[1])
         ttk.Combobox(form_frame, textvariable=difficulty_var, values=DIFFICULTY_LEVELS, state='readonly').pack(anchor=tk.W, pady=5)
 
@@ -1169,7 +1171,7 @@ Created: {group['created_at']}
             text = question_text.get('1.0', tk.END).strip()
 
             if not title or not text:
-                messagebox.showerror("Missing Input", "Please provide both title and question details.")
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.missing_input', default="Missing Input"), _t('gui.academics.study_matching.study_matching.dialogs.please_provide_both_title_and_question_details', default="Please provide both title and question details."))
                 return
 
             user_id = self.auth.get_current_user()['username']
@@ -1183,20 +1185,20 @@ Created: {group['created_at']}
                     category=category_var.get(),
                     difficulty_level=difficulty_var.get()
                 )
-                messagebox.showinfo("Success", f"Question posted!\n\nQuestion ID: {result['question_id']}\nYour anonymous ID: {result['anonymous_id']}")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), f"Question posted!\n\nQuestion ID: {result['question_id']}\nYour anonymous ID: {result['anonymous_id']}")
                 dialog.destroy()
                 self.load_questions()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Post Question", command=post_question).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.post_question', default="Post Question"), command=post_question).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def view_question_dialog(self):
         """View question with answers."""
         selection = self.qa_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a question first.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.no_selection', default="No Selection"), _t('gui.academics.study_matching.study_matching.dialogs.please_select_a_question_first', default="Please select a question first."))
             return
 
         item = self.qa_tree.item(selection[0])
@@ -1205,7 +1207,7 @@ Created: {group['created_at']}
         try:
             data = self.service.get_question_with_answers(question_id)
             if not data:
-                messagebox.showerror("Error", "Question not found.")
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), _t('gui.academics.study_matching.study_matching.dialogs.question_not_found', default="Question not found."))
                 return
 
             # Create view window
@@ -1231,7 +1233,7 @@ Created: {group['created_at']}
             ttk.Label(header_frame, text=status_text, font=('Arial', 9)).pack(anchor=tk.W)
 
             # Question text
-            q_frame = ttk.LabelFrame(view_window, text="Question", padding=10)
+            q_frame = ttk.LabelFrame(view_window, text=_t('gui.academics.study_matching.study_matching.labels.question', default="Question"), padding=10)
             q_frame.pack(fill=tk.X, padx=10, pady=10)
 
             q_text = scrolledtext.ScrolledText(q_frame, height=6, width=80, wrap=tk.WORD)
@@ -1260,16 +1262,16 @@ Created: {group['created_at']}
 
                 answers_text.config(state='disabled')
             else:
-                ttk.Label(answers_frame, text="No answers yet. Be the first to answer!").pack()
+                ttk.Label(answers_frame, text=_t('gui.academics.study_matching.study_matching.labels.no_answers_yet_be_the_first_to_answer', default="No answers yet. Be the first to answer!")).pack()
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def answer_question_dialog(self):
         """Open dialog to answer a question."""
         selection = self.qa_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a question to answer.")
+            messagebox.showwarning(_t('gui.academics.study_matching.study_matching.dialogs.no_selection', default="No Selection"), _t('gui.academics.study_matching.study_matching.dialogs.please_select_a_question_to_answer', default="Please select a question to answer."))
             return
 
         item = self.qa_tree.item(selection[0])
@@ -1285,7 +1287,7 @@ Created: {group['created_at']}
         form_frame = ttk.Frame(dialog)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
-        ttk.Label(form_frame, text="Your Answer:").pack(anchor=tk.W, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.study_matching.study_matching.labels.your_answer', default="Your Answer:")).pack(anchor=tk.W, pady=5)
         answer_text = scrolledtext.ScrolledText(form_frame, height=12, width=60, wrap=tk.WORD)
         answer_text.pack(fill=tk.BOTH, expand=True, pady=5)
 
@@ -1297,7 +1299,7 @@ Created: {group['created_at']}
             text = answer_text.get('1.0', tk.END).strip()
 
             if not text:
-                messagebox.showerror("Missing Input", "Please enter an answer.")
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.missing_input', default="Missing Input"), _t('gui.academics.study_matching.study_matching.dialogs.please_enter_an_answer', default="Please enter an answer."))
                 return
 
             user_id = self.auth.get_current_user()['username']
@@ -1308,28 +1310,28 @@ Created: {group['created_at']}
                     student_id=user_id,
                     answer_text=text
                 )
-                messagebox.showinfo("Success", f"Answer posted! (ID: {answer_id})")
+                messagebox.showinfo(_t('gui.academics.study_matching.study_matching.dialogs.success', default="Success"), f"Answer posted! (ID: {answer_id})")
                 dialog.destroy()
                 self.load_questions()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(button_frame, text="Post Answer", command=post_answer).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.post_answer', default="Post Answer"), command=post_answer).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.study_matching.study_matching.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     # ========== Analytics Tab ==========
 
     def create_analytics_tab(self):
         """Create analytics dashboard tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Analytics")
+        self.notebook.add(tab, text=_t('gui.academics.study_matching.study_matching.tabs.analytics', default="Analytics"))
 
         # Header
-        header = ttk.Label(tab, text="My Study Matching Analytics", font=('Arial', 16, 'bold'))
+        header = ttk.Label(tab, text=_t('gui.academics.study_matching.study_matching.labels.my_study_matching_analytics', default="My Study Matching Analytics"), font=('Arial', 16, 'bold'))
         header.pack(pady=10)
 
         # Refresh button
-        ttk.Button(tab, text="Refresh Statistics", command=self.load_analytics).pack(pady=5)
+        ttk.Button(tab, text=_t('gui.academics.study_matching.study_matching.buttons.refresh_statistics', default="Refresh Statistics"), command=self.load_analytics).pack(pady=5)
 
         # Analytics display frame
         self.analytics_frame = ttk.Frame(tab)
@@ -1349,7 +1351,7 @@ Created: {group['created_at']}
             analytics = self.service.get_study_matching_analytics(user_id)
 
             # Groups stats
-            group_frame = ttk.LabelFrame(self.analytics_frame, text="Study Groups", padding=15)
+            group_frame = ttk.LabelFrame(self.analytics_frame, text=_t('gui.academics.study_matching.study_matching.labels.study_groups', default="Study Groups"), padding=15)
             group_frame.pack(fill=tk.X, pady=10)
 
             group_stats = analytics.get('groups', {})
@@ -1362,10 +1364,10 @@ Total Attendance: {group_stats.get('total_attendance', 0)} sessions
                 """
                 ttk.Label(group_frame, text=stats_text, justify=tk.LEFT, font=('Arial', 10)).pack()
             else:
-                ttk.Label(group_frame, text="No group activity yet").pack()
+                ttk.Label(group_frame, text=_t('gui.academics.study_matching.study_matching.labels.no_group_activity_yet', default="No group activity yet")).pack()
 
             # Virtual rooms stats
-            room_frame = ttk.LabelFrame(self.analytics_frame, text="Virtual Study Rooms", padding=15)
+            room_frame = ttk.LabelFrame(self.analytics_frame, text=_t('gui.academics.study_matching.study_matching.labels.virtual_study_rooms', default="Virtual Study Rooms"), padding=15)
             room_frame.pack(fill=tk.X, pady=10)
 
             room_stats = analytics.get('virtual_rooms', {})
@@ -1378,10 +1380,10 @@ Pomodoro Sessions Completed: {room_stats.get('total_pomodoros', 0)}
                 """
                 ttk.Label(room_frame, text=stats_text, justify=tk.LEFT, font=('Arial', 10)).pack()
             else:
-                ttk.Label(room_frame, text="No study room activity yet").pack()
+                ttk.Label(room_frame, text=_t('gui.academics.study_matching.study_matching.labels.no_study_room_activity_yet', default="No study room activity yet")).pack()
 
             # Q&A stats
-            qa_frame = ttk.LabelFrame(self.analytics_frame, text="Q&A Participation", padding=15)
+            qa_frame = ttk.LabelFrame(self.analytics_frame, text=_t('gui.academics.study_matching.study_matching.labels.q_a_participation', default="Q&A Participation"), padding=15)
             qa_frame.pack(fill=tk.X, pady=10)
 
             qa_stats = analytics.get('qa_participation', {})
@@ -1394,10 +1396,10 @@ Answer Upvotes: {qa_stats.get('answer_upvotes', 0)}
                 """
                 ttk.Label(qa_frame, text=stats_text, justify=tk.LEFT, font=('Arial', 10)).pack()
             else:
-                ttk.Label(qa_frame, text="No Q&A activity yet").pack()
+                ttk.Label(qa_frame, text=_t('gui.academics.study_matching.study_matching.labels.no_q_a_activity_yet', default="No Q&A activity yet")).pack()
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.academics.study_matching.study_matching.dialogs.error', default="Error"), str(e))
 
     def run(self):
         """Run the GUI (for standalone testing)."""

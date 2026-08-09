@@ -36,7 +36,7 @@ if project_root not in sys.path:
 from education_system.systems.university.infrastructure.database.db import get_db_connection
 from education_system.systems.university.infrastructure.auth import UserAuth
 from education_system.systems.university.infrastructure.shared_context import get_auth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.email.admin import display_communication_dashboard
 
 # Import get_stored_emails first - this is critical for the inbox functionality
@@ -148,8 +148,8 @@ except ImportError as e:
     def save_config(cfg):
         """Save configuration to JSON file"""
         try:
-            paths.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-            config_path = str(paths.CONFIG_DIR / 'email_manager_config.json')
+            paths.UNIVERSITY_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+            config_path = str(paths.UNIVERSITY_CONFIG_DIR / 'email_manager_config.json')
             with open(config_path, 'w') as f:
                 json.dump(cfg, f, indent=4)
             print(f"✓ Configuration saved to {config_path}")

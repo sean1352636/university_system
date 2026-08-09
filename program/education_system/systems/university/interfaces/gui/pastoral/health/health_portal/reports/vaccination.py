@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -14,7 +16,7 @@ class VaccinationReportsMixin:
         self.vaccination_report_text = scrolledtext.ScrolledText(main_frame, width=80, height=25, font=('Consolas', 10))
         self.vaccination_report_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        ttk.Button(main_frame, text="Generate Vaccination Coverage Report",
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.health_portal.reports.vaccination.buttons.generate_vaccination_coverage_report', default="Generate Vaccination Coverage Report"),
                   command=self.generate_vaccination_report).grid(row=1, column=0, pady=10)
 
         parent.columnconfigure(0, weight=1)
@@ -123,4 +125,4 @@ class VaccinationReportsMixin:
             self.log_audit_event('generate_vaccination_report', 'report', 'vaccination_coverage')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to generate vaccination report: {str(e)}")
+            messagebox.showerror(_t('gui.pastoral.health.health_portal.reports.vaccination.dialogs.error', default="Error"), f"Failed to generate vaccination report: {str(e)}")

@@ -41,14 +41,14 @@ def create_timetables_tab(self):
 
     ttk.Label(
         box,
-        text="Generate, view, email and export student & instructor "
-             "timetables in the Timetable Manager.",
+        text=_t('gui.academics.module_scheduling.timetables_tab.labels.generate_view_email_and_export_student_instructor_timetables_in', default="Generate, view, email and export student & instructor "
+             "timetables in the Timetable Manager."),
         font=("Arial", 11), wraplength=520, justify=tk.LEFT,
     ).pack(anchor="w", pady=(0, 14))
 
-    ttk.Button(box, text="Open Timetable Manager…",
+    ttk.Button(box, text=_t('gui.academics.module_scheduling.timetables_tab.buttons.open_timetable_manager', default="Open Timetable Manager…"),
                command=self.open_timetable_manager).pack(anchor="w", pady=4)
-    ttk.Button(box, text="Open Student Timetable Viewer…",
+    ttk.Button(box, text=_t('gui.academics.module_scheduling.timetables_tab.buttons.open_student_timetable_viewer', default="Open Student Timetable Viewer…"),
                command=self._show_student_timetable_dialog).pack(anchor="w", pady=4)
 
 
@@ -68,7 +68,7 @@ def open_timetable_manager(self):
         except Exception:
             pass
     except Exception as e:
-        messagebox.showerror("Error",
+        messagebox.showerror(_t('gui.academics.module_scheduling.timetables_tab.dialogs.error', default="Error"),
                              f"Failed to open Timetable Manager: {e}",
                              parent=self.root)
 
@@ -87,11 +87,11 @@ def _select_module_dialog(self):
         modules = cursor.fetchall()
 
     if not modules:
-        messagebox.showinfo("No Modules", "No modules found in the system.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.timetables_tab.dialogs.no_modules', default="No Modules"), _t('gui.academics.module_scheduling.timetables_tab.dialogs.no_modules_found_in_the_system', default="No modules found in the system."), parent=self.root)
         return None
 
     dialog = tk.Toplevel(self.root)
-    dialog.title("Select Module")
+    dialog.title(_t('gui.academics.module_scheduling.timetables_tab.windows.select_module', default="Select Module"))
     dialog.geometry("600x400")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -109,7 +109,7 @@ def _select_module_dialog(self):
             selected[0] = modules[idx][0]
             dialog.destroy()
 
-    ttk.Button(dialog, text="Select", command=on_select).pack(pady=5)
+    ttk.Button(dialog, text=_t('gui.academics.module_scheduling.timetables_tab.buttons.select', default="Select"), command=on_select).pack(pady=5)
 
     dialog.wait_window()
     return selected[0]
@@ -127,7 +127,7 @@ def view_calendar(self):
         from education_system.systems.university.interfaces.gui.academics.academic_calendar.main_gui import CalendarGUI
 
         calendar_window = tk.Toplevel(self.root)
-        calendar_window.title("Academic Calendar")
+        calendar_window.title(_t('gui.academics.module_scheduling.timetables_tab.windows.academic_calendar', default="Academic Calendar"))
         calendar_window.geometry("1200x800")
 
         try:
@@ -138,7 +138,7 @@ def view_calendar(self):
             print(f"Could not load full calendar GUI: {e}")
             calendar_window.destroy()
             calendar_window = tk.Toplevel(self.root)
-            calendar_window.title("Academic Calendar - Basic View")
+            calendar_window.title(_t('gui.academics.module_scheduling.timetables_tab.windows.academic_calendar_basic_view', default="Academic Calendar - Basic View"))
             calendar_window.geometry("600x400")
 
         calendar_text = scrolledtext.ScrolledText(calendar_window, font=('Courier', 10))
@@ -175,7 +175,7 @@ def view_calendar(self):
         calendar_text.config(state=tk.DISABLED)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to view calendar: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.timetables_tab.dialogs.error', default="Error"), f"Failed to view calendar: {str(e)}", parent=self.root)
 
 
 ModuleSchedulingGUI.view_calendar = view_calendar
@@ -195,7 +195,7 @@ def _show_student_timetable_dialog(self):
         from education_system.systems.university.interfaces.gui.academics.module_scheduling.student_timetable_dialog import StudentTimetableDialog
         StudentTimetableDialog(self.root, self.scheduler)
     except Exception as e:
-        messagebox.showerror("Error",
+        messagebox.showerror(_t('gui.academics.module_scheduling.timetables_tab.dialogs.error', default="Error"),
                              f"Failed to open student timetable viewer: {e}",
                              parent=self.root)
 
@@ -209,7 +209,7 @@ def _show_drag_drop_grid(self):
         from education_system.systems.university.interfaces.gui.academics.module_scheduling.drag_grid_dialog import DragDropTimetableDialog
         DragDropTimetableDialog(self.root, self.scheduler, gui=self)
     except Exception as e:
-        messagebox.showerror("Error",
+        messagebox.showerror(_t('gui.academics.module_scheduling.timetables_tab.dialogs.error', default="Error"),
                              f"Failed to open drag-drop grid: {e}",
                              parent=self.root)
 

@@ -3,6 +3,7 @@
 Supports both per-IP and per-user (JWT-based) rate limiting.
 """
 
+import os
 import time
 import threading
 import logging
@@ -10,6 +11,12 @@ from functools import wraps
 from flask import request, jsonify, g
 
 logger = logging.getLogger(__name__)
+
+# Paths that must not be throttled by the global default (health checks and
+# metrics are scraped frequently by monitoring; login has its own tighter
+# per-endpoint limit).
+_GLOBAL_LIMIT_EXEMPT_PREFIXES = ("/api/v1/health", "/api/health", "/metrics",
+                                 "/health", "/api/v1/metrics")
 
 
 class RateLimiter:
@@ -40,6 +47,43 @@ class RateLimiter:
     def init_app(self, app):
         """Register rate limiter with a Flask app."""
         self._enabled = not app.config.get("TESTING", False)
+
+        # Global default limit: every endpoint gets a baseline per-user+IP cap
+        # even if it carries no explicit @limit decorator, so an un-annotated
+        # expensive endpoint (a report, an analytics query, a bulk op) can't be
+        # hammered without limit. A per-endpoint @limit still layers on top in
+        # its own bucket, so a tighter route limit wins. Configurable and
+        # opt-out-able via env for load testing.
+        default_rate = os.getenv("API_DEFAULT_RATE_LIMIT", "300/minute").strip()
+        try:
+            self._default_count, self._default_period = self._parse_rate(default_rate)
+        except Exception:
+            self._default_count, self._default_period = 300, 60.0
+        self._global_enabled = default_rate.lower() not in ("", "off", "0", "none")
+
+        @app.before_request
+        def _global_rate_limit():
+            if not self._enabled or not self._global_enabled:
+                return None
+            if request.method == "OPTIONS":
+                return None
+            path = request.path or ""
+            if any(path.startswith(p) for p in _GLOBAL_LIMIT_EXEMPT_PREFIXES):
+                return None
+            key = f"global:{self.user_and_ip_key()}"
+            allowed, info = self._check_rate(key, self._default_count, self._default_period)
+            request._rate_limit_info = info
+            if not allowed:
+                logger.warning("Global rate limit exceeded from %s on %s",
+                               self.user_and_ip_key(), path)
+                resp = jsonify({
+                    "error": "Rate limit exceeded",
+                    "retry_after": int(info["reset"] - time.time()),
+                })
+                resp.status_code = 429
+                resp.headers["Retry-After"] = str(int(info["reset"] - time.time()))
+                return resp
+            return None
 
         @app.after_request
         def add_rate_limit_headers(response):

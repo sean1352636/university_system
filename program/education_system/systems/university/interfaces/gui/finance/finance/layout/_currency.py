@@ -1,5 +1,7 @@
 """Currency exchange rates mixin for LayoutManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -72,14 +74,14 @@ class CurrencyMixin:
         form_frame.pack(padx=20, pady=10, fill='both', expand=True)
 
         tk.Label(form_frame, text=_("finance_gui.labels.from_currency")).grid(row=0, column=0, sticky='w', pady=5)
-        from_currency_var = tk.StringVar(value="GBP")
+        from_currency_var = tk.StringVar(value=_t('gui.finance.finance.layout.currency.values.gbp', default="GBP"))
         from_currency_combo = ttk.Combobox(form_frame, textvariable=from_currency_var,
                                           values=['GBP', 'USD', 'EUR', 'CAD', 'AUD', 'JPY', 'CHF'],
                                           state='readonly', width=27)
         from_currency_combo.grid(row=0, column=1, pady=5)
 
         tk.Label(form_frame, text=_("finance_gui.labels.to_currency")).grid(row=1, column=0, sticky='w', pady=5)
-        to_currency_var = tk.StringVar(value="USD")
+        to_currency_var = tk.StringVar(value=_t('gui.finance.finance.layout.currency.values.usd', default="USD"))
         to_currency_combo = ttk.Combobox(form_frame, textvariable=to_currency_var,
                                         values=['GBP', 'USD', 'EUR', 'CAD', 'AUD', 'JPY', 'CHF'],
                                         state='readonly', width=27)
@@ -90,7 +92,7 @@ class CurrencyMixin:
         rate_entry.grid(row=2, column=1, pady=5)
 
         tk.Label(form_frame, text=_("finance_gui.labels.source")).grid(row=3, column=0, sticky='w', pady=5)
-        source_var = tk.StringVar(value="manual")
+        source_var = tk.StringVar(value=_t('gui.finance.finance.layout.currency.values.manual', default="manual"))
         source_combo = ttk.Combobox(form_frame, textvariable=source_var,
                                    values=['manual', 'api', 'bank'],
                                    state='readonly', width=27)

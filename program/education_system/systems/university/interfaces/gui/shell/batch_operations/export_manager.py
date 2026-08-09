@@ -1,4 +1,6 @@
 """Export operations manager for batch operations GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import os
 import json
 import csv
@@ -34,24 +36,24 @@ class ExportManager:
         header.pack(pady=10)
 
         # Format selection
-        format_frame = ttk.LabelFrame(dialog, text="Export Format", padding="10")
+        format_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.export_manager.labels.export_format', default="Export Format"), padding="10")
         format_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        format_var = tk.StringVar(value="csv")
+        format_var = tk.StringVar(value=_t('gui.shell.batch_operations.export_manager.values.csv', default="csv"))
 
-        ttk.Radiobutton(format_frame, text="CSV", variable=format_var, value="csv").pack(anchor='w')
-        ttk.Radiobutton(format_frame, text="Excel", variable=format_var, value="xlsx").pack(anchor='w')
-        ttk.Radiobutton(format_frame, text="JSON", variable=format_var, value="json").pack(anchor='w')
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.csv', default="CSV"), variable=format_var, value="csv").pack(anchor='w')
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.excel', default="Excel"), variable=format_var, value="xlsx").pack(anchor='w')
+        ttk.Radiobutton(format_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.json', default="JSON"), variable=format_var, value="json").pack(anchor='w')
 
         # Filter options
-        filter_frame = ttk.LabelFrame(dialog, text="Filter Options", padding="10")
+        filter_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.export_manager.labels.filter_options', default="Filter Options"), padding="10")
         filter_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        filter_var = tk.StringVar(value="all")
+        filter_var = tk.StringVar(value=_t('gui.shell.batch_operations.export_manager.values.all', default="all"))
 
-        ttk.Radiobutton(filter_frame, text="All students", variable=filter_var, value="all").pack(anchor='w')
-        ttk.Radiobutton(filter_frame, text="Filter by course", variable=filter_var, value="course").pack(anchor='w')
-        ttk.Radiobutton(filter_frame, text="Filter by date range", variable=filter_var, value="date").pack(anchor='w')
+        ttk.Radiobutton(filter_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.all_students', default="All students"), variable=filter_var, value="all").pack(anchor='w')
+        ttk.Radiobutton(filter_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.filter_by_course', default="Filter by course"), variable=filter_var, value="course").pack(anchor='w')
+        ttk.Radiobutton(filter_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.filter_by_date_range', default="Filter by date range"), variable=filter_var, value="date").pack(anchor='w')
 
         # Course selection
         course_frame = ttk.Frame(filter_frame)
@@ -78,7 +80,7 @@ class ExportManager:
 
         # Include modules option
         include_modules_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(filter_frame, text="Include module information",
+        ttk.Checkbutton(filter_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.include_module_information', default="Include module information"),
                        variable=include_modules_var).pack(anchor='w', pady=5)
 
         # Buttons
@@ -102,7 +104,7 @@ class ExportManager:
                 file_types = [("JSON files", "*.json")]
 
             output_file = filedialog.asksaveasfilename(
-                title="Save export as",
+                title=_t('gui.shell.batch_operations.export_manager.dialogs.save_export_as', default="Save export as"),
                 defaultextension=file_extension,
                 filetypes=file_types + [("All files", "*.*")]
             )
@@ -145,13 +147,13 @@ class ExportManager:
             thread.daemon = True
             thread.start()
 
-        ttk.Button(button_frame, text="Export", command=execute_export).pack(side=tk.LEFT, padx=10)
+        ttk.Button(button_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.export', default="Export"), command=execute_export).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text=_t("batch_ops.buttons.cancel"), command=dialog.destroy).pack(side=tk.LEFT)
 
     def export_statistics(self):
         """GUI version of export statistics"""
         output_file = filedialog.asksaveasfilename(
-            title="Save statistics as",
+            title=_t('gui.shell.batch_operations.export_manager.dialogs.save_statistics_as', default="Save statistics as"),
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
         )
@@ -191,22 +193,22 @@ class ExportManager:
         dialog.geometry("+%d+%d" % (self.gui.root.winfo_rootx() + 100, self.gui.root.winfo_rooty() + 100))
 
         # Header
-        header = ttk.Label(dialog, text="Generate Reports", font=("Arial", 14, "bold"))
+        header = ttk.Label(dialog, text=_t('gui.shell.batch_operations.export_manager.labels.generate_reports', default="Generate Reports"), font=("Arial", 14, "bold"))
         header.pack(pady=10)
 
         # Report type selection
-        report_frame = ttk.LabelFrame(dialog, text="Report Type", padding="10")
+        report_frame = ttk.LabelFrame(dialog, text=_t('gui.shell.batch_operations.export_manager.labels.report_type', default="Report Type"), padding="10")
         report_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        report_var = tk.StringVar(value="success_rates")
+        report_var = tk.StringVar(value=_t('gui.shell.batch_operations.export_manager.values.success_rates', default="success_rates"))
 
-        ttk.Radiobutton(report_frame, text="Import success rates",
+        ttk.Radiobutton(report_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.import_success_rates', default="Import success rates"),
                        variable=report_var, value="success_rates").pack(anchor='w')
-        ttk.Radiobutton(report_frame, text="Common error analysis",
+        ttk.Radiobutton(report_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.common_error_analysis', default="Common error analysis"),
                        variable=report_var, value="error_analysis").pack(anchor='w')
-        ttk.Radiobutton(report_frame, text="Performance trends",
+        ttk.Radiobutton(report_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.performance_trends', default="Performance trends"),
                        variable=report_var, value="performance").pack(anchor='w')
-        ttk.Radiobutton(report_frame, text="Comprehensive report",
+        ttk.Radiobutton(report_frame, text=_t('gui.shell.batch_operations.export_manager.buttons.comprehensive_report', default="Comprehensive report"),
                        variable=report_var, value="comprehensive").pack(anchor='w')
 
         # Buttons

@@ -7,6 +7,8 @@ condition, attach photos.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import sqlite3
 import subprocess
@@ -33,13 +35,13 @@ def show_checklists(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Move-in / Move-out Checklists",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.labels.move_in_move_out_checklists', default="Move-in / Move-out Checklists"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
 
     pick = ttk.Frame(parent)
     pick.pack(fill="x", padx=8, pady=4)
-    ttk.Label(pick, text="Assignment:").pack(side="left", padx=(0, 4))
+    ttk.Label(pick, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.labels.assignment', default="Assignment:")).pack(side="left", padx=(0, 4))
     asg_var = tk.StringVar()
     asg_combo = ttk.Combobox(pick, textvariable=asg_var, state="readonly",
                                width=68)
@@ -64,15 +66,15 @@ def show_checklists(gui_instance) -> None:
 
         bar = ttk.Frame(body)
         bar.pack(fill="x")
-        ttk.Button(bar, text="New move-in checklist",
+        ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.buttons.new_move_in_checklist', default="New move-in checklist"),
                    command=lambda: _new_checklist(
                        gui_instance, asg_id, 'move-in',
                        reload_for_assignment)).pack(side="left")
-        ttk.Button(bar, text="New move-out checklist",
+        ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.buttons.new_move_out_checklist', default="New move-out checklist"),
                    command=lambda: _new_checklist(
                        gui_instance, asg_id, 'move-out',
                        reload_for_assignment)).pack(side="left", padx=4)
-        ttk.Button(bar, text="Refresh",
+        ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.buttons.refresh', default="Refresh"),
                    command=reload_for_assignment).pack(side="right")
 
         cols = ("checklist_id", "template", "created", "completed_by",
@@ -101,7 +103,7 @@ def show_checklists(gui_instance) -> None:
                 return
             _open_checklist_window(gui_instance, sel)
 
-        ttk.Button(body, text="Open selected →",
+        ttk.Button(body, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.buttons.open_selected', default="Open selected →"),
                    command=open_selected).pack(anchor="e", pady=(0, 4))
 
     asg_combo.bind("<<ComboboxSelected>>", lambda _e: reload_for_assignment())
@@ -111,8 +113,8 @@ def show_checklists(gui_instance) -> None:
 def _new_checklist(gui_instance, asg_id: str, template: str, on_done):
     cl_id = extras.create_checklist(asg_id, template)
     if not cl_id:
-        messagebox.showerror("Checklist",
-                              "Failed to create checklist (see logs).",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.checklist', default="Checklist"),
+                              _t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.failed_to_create_checklist_see_logs', default="Failed to create checklist (see logs)."),
                               parent=gui_instance.root)
         return
     log_activity(f"Checklist {cl_id} ({template}) created for {asg_id}")
@@ -138,7 +140,7 @@ def _open_checklist_window(gui_instance, checklist_id: str):
 
     items = extras.list_checklist_items(checklist_id)
     if not items:
-        ttk.Label(inner, text="No items.",
+        ttk.Label(inner, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.labels.no_items', default="No items."),
                   foreground="#a00").pack(padx=10, pady=10)
         return
 
@@ -153,14 +155,14 @@ def _open_checklist_window(gui_instance, checklist_id: str):
 
         line = ttk.Frame(block)
         line.pack(fill="x")
-        ttk.Label(line, text="Condition:").pack(side="left", padx=(0, 4))
+        ttk.Label(line, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.labels.condition', default="Condition:")).pack(side="left", padx=(0, 4))
         cvar = tk.StringVar(value=row.get('condition') or '')
         condition_vars[item_id] = cvar
         ttk.Combobox(line, textvariable=cvar, state="readonly", width=12,
                      values=["", "Good", "Damaged", "Missing"]).pack(
             side="left", padx=(0, 12))
 
-        ttk.Label(line, text="Notes:").pack(side="left", padx=(0, 4))
+        ttk.Label(line, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.labels.notes', default="Notes:")).pack(side="left", padx=(0, 4))
         nvar = tk.StringVar(value=row.get('notes') or '')
         notes_vars[item_id] = nvar
         ttk.Entry(line, textvariable=nvar, width=60).pack(side="left",
@@ -173,12 +175,12 @@ def _open_checklist_window(gui_instance, checklist_id: str):
         ttk.Label(photo_row,
                   text=f"Photos: {len(existing)}").pack(side="left",
                                                          padx=(0, 6))
-        ttk.Button(photo_row, text="Add photo…",
+        ttk.Button(photo_row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.buttons.add_photo', default="Add photo…"),
                    command=lambda iid=item_id, blk=block:
                    _add_photo(gui_instance, iid, blk)).pack(side="left")
         if existing:
             for ph in existing:
-                ttk.Button(photo_row, text="View",
+                ttk.Button(photo_row, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.buttons.view', default="View"),
                            command=lambda p=ph['stored_path']:
                            _open_path(p)).pack(side="left", padx=2)
 
@@ -196,7 +198,7 @@ def _open_checklist_window(gui_instance, checklist_id: str):
             win.destroy()
         except Exception as e:
             logger.exception("Checklist save failed")
-            messagebox.showerror("Checklist", f"Save failed:\n\n{e}",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.checklist', default="Checklist"), f"Save failed:\n\n{e}",
                                   parent=win)
 
     def save_only():
@@ -206,37 +208,37 @@ def _open_checklist_window(gui_instance, checklist_id: str):
                     iid, condition=cvar.get() or None,
                     notes=notes_vars[iid].get().strip() or None)
             log_activity(f"Checklist {checklist_id} updated")
-            messagebox.showinfo("Checklist", "Saved.", parent=win)
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.checklist', default="Checklist"), _t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.saved', default="Saved."), parent=win)
         except Exception as e:
             logger.exception("Checklist save failed")
-            messagebox.showerror("Checklist", f"Save failed:\n\n{e}",
+            messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.checklist', default="Checklist"), f"Save failed:\n\n{e}",
                                   parent=win)
 
     bar = ttk.Frame(inner)
     bar.pack(fill="x", padx=8, pady=10)
-    ttk.Button(bar, text="Save", command=save_only).pack(side="right",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.buttons.save', default="Save"), command=save_only).pack(side="right",
                                                           padx=4)
-    ttk.Button(bar, text="Save & complete",
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.buttons.save_complete', default="Save & complete"),
                command=save_and_complete).pack(side="right")
 
 
 def _add_photo(gui_instance, item_id: str, parent_widget):
     path = filedialog.askopenfilename(
-        parent=gui_instance.root, title="Select photo",
+        parent=gui_instance.root, title=_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.select_photo', default="Select photo"),
         filetypes=[("Images", "*.jpg *.jpeg *.png *.heic *.gif"),
                    ("All files", "*.*")])
     if not path:
         return
-    caption = simpledialog.askstring("Caption", "Optional caption:",
+    caption = simpledialog.askstring(_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.caption', default="Caption"), _t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.optional_caption', default="Optional caption:"),
                                        parent=gui_instance.root)
     pid = extras.attach_photo(item_id, path, caption=caption)
     if not pid:
-        messagebox.showerror("Photo", "Failed to attach photo (see logs).",
+        messagebox.showerror(_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.photo', default="Photo"), _t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.failed_to_attach_photo_see_logs', default="Failed to attach photo (see logs)."),
                               parent=gui_instance.root)
         return
     log_activity(f"Photo {pid} attached to checklist item {item_id}")
-    messagebox.showinfo("Photo", "Photo attached. Reopen the checklist to "
-                                  "see it in the list.",
+    messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.photo', default="Photo"), _t('gui.operations.campus.housing.housing_accommodation_gui.checklists_manager.dialogs.photo_attached_reopen_the_checklist_to_see_it_in_the_list', default="Photo attached. Reopen the checklist to "
+                                  "see it in the list."),
                          parent=gui_instance.root)
 
 

@@ -218,11 +218,21 @@ CREATE TABLE IF NOT EXISTS student_journey (
     school_pk             INTEGER,
     college_pk            INTEGER,
     university_pk         INTEGER,
+    -- FE College and Apprenticeships are post-16 destinations that sit
+    -- alongside sixth form rather than after it. They get their own slots
+    -- because ``college_*`` already belongs to the sixth-form system and
+    -- reusing it would merge two different institutions' learner ids.
+    fe_college_pk         INTEGER,
+    apprenticeships_pk    INTEGER,
     nursery_student_id    TEXT,
     primary_student_id    TEXT,
     school_student_id     TEXT,
     college_student_id    TEXT,
     university_student_id TEXT,
+    fe_college_student_id TEXT,
+    -- Named ``learner_id``, not ``student_id``: an apprentice is employed
+    -- and the system's own vocabulary says so throughout.
+    apprenticeships_learner_id TEXT,
     legal_first_name      TEXT    NOT NULL,
     legal_last_name       TEXT    NOT NULL,
     date_of_birth         TEXT    NOT NULL,
@@ -243,6 +253,11 @@ CREATE INDEX IF NOT EXISTS idx_journey_school_pk
     ON student_journey(school_pk) WHERE school_pk IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_journey_primary_pk
     ON student_journey(primary_pk) WHERE primary_pk IS NOT NULL;
+-- NB: the fe_college_pk / apprenticeships_pk indexes are deliberately NOT
+-- here. This script runs before the column migration below, so on an
+-- existing database CREATE TABLE is a no-op, the columns do not exist yet,
+-- and indexing them would raise "no such column" and abort the whole init.
+-- They are created in the migration block instead, after the ALTERs.
 
 -- Append-only audit of every system transition.
 CREATE TABLE IF NOT EXISTS student_journey_transitions (
@@ -271,12 +286,17 @@ CREATE INDEX IF NOT EXISTS idx_journey_trans_journey
 CREATE TABLE IF NOT EXISTS cross_system_event_outbox (
     event_id       TEXT    PRIMARY KEY,
     event_name     TEXT    NOT NULL,
+    event_version  INTEGER NOT NULL DEFAULT 1,
+    correlation_id TEXT    NOT NULL,
+    causation_id   TEXT,
+    idempotency_key TEXT   NOT NULL UNIQUE,
     journey_id     TEXT,
     source_system  TEXT    NOT NULL,
     source_module  TEXT    NOT NULL,
     target_system  TEXT,
     payload_json   TEXT    NOT NULL,
     actor_user_id  INTEGER,
+    available_at   TEXT    NOT NULL DEFAULT (datetime('now')),
     created_at     TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_cse_target_time
@@ -293,11 +313,59 @@ CREATE TABLE IF NOT EXISTS cross_system_event_consumed (
     status           TEXT    NOT NULL,
     error_message    TEXT,
     attempts         INTEGER NOT NULL DEFAULT 1,
+    next_attempt_at  TEXT,
     consumed_at      TEXT    NOT NULL DEFAULT (datetime('now')),
     PRIMARY KEY (event_id, consumer_system, consumer_handler)
 );
 CREATE INDEX IF NOT EXISTS idx_cse_consumed_status
     ON cross_system_event_consumed(consumer_system, status, consumed_at);
+
+-- Sensitive-record purpose and break-glass access control. No clinical or
+-- safeguarding content is stored here; only authorization/audit metadata.
+CREATE TABLE IF NOT EXISTS sensitive_access_audit (
+    audit_id       TEXT PRIMARY KEY,
+    actor_id       TEXT NOT NULL,
+    actor_role     TEXT NOT NULL,
+    domain         TEXT NOT NULL,
+    subject_id     TEXT,
+    fields_json    TEXT NOT NULL,
+    purpose        TEXT NOT NULL,
+    decision       TEXT NOT NULL,
+    reason         TEXT,
+    correlation_id TEXT,
+    occurred_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_sensitive_access_subject
+    ON sensitive_access_audit(domain, subject_id, occurred_at);
+CREATE TRIGGER IF NOT EXISTS prevent_sensitive_access_audit_update
+BEFORE UPDATE ON sensitive_access_audit
+BEGIN
+    SELECT RAISE(ABORT, 'sensitive access audit records are immutable');
+END;
+CREATE TRIGGER IF NOT EXISTS prevent_sensitive_access_audit_delete
+BEFORE DELETE ON sensitive_access_audit
+BEGIN
+    SELECT RAISE(ABORT, 'sensitive access audit records are immutable');
+END;
+
+CREATE TABLE IF NOT EXISTS break_glass_grants (
+    grant_id        TEXT PRIMARY KEY,
+    actor_id        TEXT NOT NULL,
+    domain          TEXT NOT NULL,
+    subject_id      TEXT,
+    purpose         TEXT NOT NULL,
+    reason          TEXT NOT NULL,
+    approved_by     TEXT,
+    status          TEXT NOT NULL DEFAULT 'pending',
+    requested_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    approved_at     TEXT,
+    expires_at      TEXT NOT NULL,
+    reviewed_by     TEXT,
+    reviewed_at     TEXT,
+    review_outcome  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_break_glass_actor
+    ON break_glass_grants(actor_id, status, expires_at);
 
 -- ── Cross-system safeguarding alerts ──
 -- A flag raised in one system, keyed on the canonical journey_id so it
@@ -348,14 +416,20 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_staffdir_name
 # They MUST be changed before any production or internet-facing deployment.
 # Consider using environment variables or a secrets manager in production.
 #
-# 18 accounts total:
-#   1  Super Admin   — all 5 systems as admin
-#   5  Admins        — 1 per system (admin/admin1/admin2/admin3/admin4)
-#   4  Staff         — university, college, school, primary (staff/staff1/staff2/staff3)
-#   4  Students      — university, college, school, primary (S12345/student1/student2/student3)
-#   4  Parents       — university, college, school, primary (parent/parent1/parent2/parent3)
+# 26 accounts total:
+#   1  Super Admin   — every system as admin (SuperAdmin@123)
+#   7  Admins        — 1 per system
+#                     (admin/admin1/admin2/admin3/admin4/admin5/admin6)
+#   4  Staff         — university, college, school, primary
+#                     (staff/staff1/staff2/staff3)
+#   4  Students      — university, college, school, primary
+#                     (S12345/student1/student2/student3)
+#   4  Parents       — university, college, school, primary
+#                     (parent/parent1/parent2/parent3)
+#   4  Apprenticeships-specific — tutor1, apprentice1, employer1, assessor1
+#   2  FE College-specific      — lecturer1, learner1
 #
-# Nursery seeds an admin only. Super Admin uses SuperAdmin@123
+# Nursery seeds an admin only.
 
 _DEFAULT_ACCOUNTS = [
     # ── Super Admin (all systems) ────────────────────────────────────────
@@ -370,6 +444,8 @@ _DEFAULT_ACCOUNTS = [
             ("secondary", "admin"),
             ("primary", "admin"),
             ("nursery", "admin"),
+            ("apprenticeships", "admin"),
+            ("fe_college", "admin"),
         ],
     },
     # ── University accounts ────────────────────────────────────────────────
@@ -467,6 +543,71 @@ _DEFAULT_ACCOUNTS = [
         "display_name": "Nursery Administrator",
         "email": "admin@nursery.local",
         "systems": [("nursery", "admin")],
+    },
+    # ── Apprenticeships accounts ─────────────────────────────────────────
+    # Five roles, because an apprenticeship has five parties round it:
+    # the provider, the tutor delivering it, the learner, the employer,
+    # and the independent end-point assessor.
+    {
+        "username": "admin5",
+        "password": "admin1234",
+        "display_name": "Apprenticeships Administrator",
+        "email": "admin@apprenticeships.local",
+        "systems": [("apprenticeships", "admin")],
+    },
+    {
+        "username": "tutor1",
+        "password": "tutor1234",
+        "display_name": "Apprenticeship Tutor",
+        "email": "tutor@apprenticeships.local",
+        "systems": [("apprenticeships", "staff")],
+    },
+    {
+        "username": "apprentice1",
+        "password": "apprentice1234",
+        "display_name": "Demo Apprentice",
+        "email": "apprentice@apprenticeships.local",
+        "systems": [("apprenticeships", "apprentice")],
+    },
+    {
+        "username": "employer1",
+        "password": "employer1234",
+        "display_name": "Employer Manager",
+        "email": "manager@employer.local",
+        "systems": [("apprenticeships", "employer")],
+    },
+    {
+        "username": "assessor1",
+        "password": "assessor1234",
+        "display_name": "End-Point Assessor",
+        "email": "assessor@epao.local",
+        "systems": [("apprenticeships", "end_point_assessor")],
+    },
+    # ── FE College accounts ──────────────────────────────────────────────
+    # The emails matter: the FE College system joins a signed-in account to
+    # its own staff or learner record by email address, so these must match
+    # the records its demo seed creates (see fe_college demo_data.ADMIN_EMAIL,
+    # LECTURER_EMAIL and LEARNER_EMAIL). Change one and change both.
+    {
+        "username": "admin6",
+        "password": "admin1234",
+        "display_name": "FE College Administrator",
+        "email": "admin@riverside.ac.uk",
+        "systems": [("fe_college", "admin")],
+    },
+    {
+        "username": "lecturer1",
+        "password": "lecturer1234",
+        "display_name": "FE College Lecturer",
+        "email": "dev.chaudhury@riverside.ac.uk",
+        "systems": [("fe_college", "teacher")],
+    },
+    {
+        "username": "learner1",
+        "password": "learner1234",
+        "display_name": "FE College Learner",
+        "email": "student@riverside.ac.uk",
+        "systems": [("fe_college", "student")],
     },
     # ── Parent accounts ─────────────────────────────────────────────────
     {
@@ -699,18 +840,77 @@ def initialise_auth_db(db_path: str | None = None):
         except sqlite3.Error as exc:
             logger.warning("System-key migration skipped: %s", exc)
 
-        # student_journey gained a nursery slot so all 5 systems can link.
+        # student_journey gained a nursery slot so all 5 systems can link,
+        # then fe_college and apprenticeships slots when those two joined the
+        # cross-system registry. Adding a slot is always additive: an existing
+        # database keeps every row and simply gains NULL columns, so this is
+        # safe to run against a live auth.db.
         jcols = {
             r[1] for r in
             conn.execute("PRAGMA table_info(student_journey)").fetchall()
         }
         if jcols:  # table exists
-            if "nursery_pk" not in jcols:
-                conn.execute("ALTER TABLE student_journey ADD COLUMN nursery_pk INTEGER")
-            if "nursery_student_id" not in jcols:
-                conn.execute(
-                    "ALTER TABLE student_journey ADD COLUMN nursery_student_id TEXT")
+            for column, coltype in (
+                ("nursery_pk", "INTEGER"),
+                ("nursery_student_id", "TEXT"),
+                ("fe_college_pk", "INTEGER"),
+                ("fe_college_student_id", "TEXT"),
+                ("apprenticeships_pk", "INTEGER"),
+                ("apprenticeships_learner_id", "TEXT"),
+            ):
+                if column not in jcols:
+                    conn.execute(
+                        f"ALTER TABLE student_journey ADD COLUMN {column} {coltype}")
+            # The partial indexes live in _TABLES_SQL, which runs before this
+            # block — on an old database the columns did not exist yet, so
+            # those CREATE INDEX statements were skipped. Create them here now
+            # the columns are present.
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_journey_fe_college_pk "
+                "ON student_journey(fe_college_pk) WHERE fe_college_pk IS NOT NULL")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_journey_apprenticeships_pk "
+                "ON student_journey(apprenticeships_pk) "
+                "WHERE apprenticeships_pk IS NOT NULL")
             conn.commit()
+
+        event_cols = {
+            r[1] for r in
+            conn.execute("PRAGMA table_info(cross_system_event_outbox)").fetchall()
+        }
+        for name, definition in (
+            ("event_version", "INTEGER NOT NULL DEFAULT 1"),
+            ("correlation_id", "TEXT"),
+            ("causation_id", "TEXT"),
+            ("idempotency_key", "TEXT"),
+            ("available_at", "TEXT"),
+        ):
+            if event_cols and name not in event_cols:
+                conn.execute(
+                    f"ALTER TABLE cross_system_event_outbox "
+                    f"ADD COLUMN {name} {definition}"
+                )
+        if event_cols:
+            conn.execute(
+                "UPDATE cross_system_event_outbox "
+                "SET correlation_id = COALESCE(correlation_id, event_id), "
+                "idempotency_key = COALESCE(idempotency_key, event_id), "
+                "available_at = COALESCE(available_at, created_at)"
+            )
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_cse_idempotency "
+                "ON cross_system_event_outbox(idempotency_key)"
+            )
+        receipt_cols = {
+            r[1] for r in
+            conn.execute("PRAGMA table_info(cross_system_event_consumed)").fetchall()
+        }
+        if receipt_cols and "next_attempt_at" not in receipt_cols:
+            conn.execute(
+                "ALTER TABLE cross_system_event_consumed "
+                "ADD COLUMN next_attempt_at TEXT"
+            )
+        conn.commit()
 
         logger.info("Auth database initialised")
     finally:
@@ -805,6 +1005,7 @@ def _bootstrap_admin_from_env(conn) -> bool:
         ("secondary", "admin"),
         ("primary", "admin"),
         ("nursery", "admin"),
+        ("fe_college", "admin"),
     ]
     _create_default_user(
         conn,

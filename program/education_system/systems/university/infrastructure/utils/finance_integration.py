@@ -20,7 +20,10 @@ Usage:
 """
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
+import html
 import logging
+import math
+import uuid
 from datetime import datetime
 from typing import Optional, Dict, Any
 from education_system.systems.university.infrastructure.sql_safety import validate_identifier  # nosec B608
@@ -36,7 +39,7 @@ except ImportError:
 # Import transaction context manager for write operations
 from education_system.systems.university.infrastructure.database.db import transaction
 
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 logger = logging.getLogger(__name__)
 
@@ -1135,5 +1138,346 @@ def top_up_student_finance_account(
         return result
     except Exception as e:
         logger.error(f"Error topping up finance account: {e}")
+        result['message'] = f"Error: {e}"
+        return result
+
+# ==================== Student-to-Student Transfers ====================
+
+def _resolve_user_row_id(party_id: str) -> Optional[int]:
+    """University users.id for a student_id/username, for inbox sender attribution."""
+    try:
+        with get_finance_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT id FROM users WHERE student_id = ? OR username = ?',
+                           (party_id, party_id))
+            row = cursor.fetchone()
+            return row[0] if row else None
+    except sqlite3.Error:
+        return None
+
+def send_transfer_receipt_email(
+    student_id: str,
+    recipient_name: str,
+    recipient_id: str,
+    amount: float,
+    reference: str,
+    reference_number: str,
+    balance_before: float,
+    balance_after: float
+) -> bool:
+    """
+    Send a money-sent receipt email to the sender of a transfer.
+
+    Uses the finance_commerce/finance/p2p_transfer_sent_receipt JSON template.
+
+    Args:
+        student_id: Sender's student ID (or username)
+        recipient_name: Recipient's full name
+        recipient_id: Recipient's student ID (or username)
+        amount: Amount transferred
+        reference: Sender-supplied reference (e.g. "Meal out")
+        reference_number: Generated transfer reference number
+        balance_before: Sender balance before the transfer
+        balance_after: Sender balance after the transfer
+
+    Returns:
+        True if email sent successfully, False otherwise
+    """
+    try:
+        student_info = get_student_info(student_id)
+        if not student_info or not student_info.get('email'):
+            logger.warning(f"Cannot send transfer receipt: No email found for student {student_id}")
+            return False
+
+        try:
+            from education_system.systems.university.infrastructure.email.email_service import send_template_email
+
+            # The template renders as body_html; user-supplied text must be
+            # escaped for it. Plain-text renderings go through
+            # html_to_plain_text(), which unescapes these entities again.
+            template_vars = {
+                'sender_name': html.escape(student_info.get('full_name', 'Student')),
+                'sender_id': html.escape(str(student_id)),
+                'recipient_name': html.escape(recipient_name),
+                'recipient_id': html.escape(str(recipient_id)),
+                'amount': f"{amount:.2f}",
+                'reference': html.escape(reference),
+                'reference_number': reference_number,
+                'transfer_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'balance_before': f"{balance_before:.2f}",
+                'balance_after': f"{balance_after:.2f}",
+            }
+
+            result = send_template_email(
+                'finance_commerce/finance/p2p_transfer_sent_receipt',
+                student_info['email'],
+                template_vars
+            )
+            if result:
+                logger.info(f"Transfer receipt email sent to {student_info['email']} for {reference_number}")
+                return True
+            logger.warning(f"Failed to send transfer receipt email to {student_info['email']}")
+            return False
+
+        except ImportError:
+            logger.warning("Email service not available for transfer receipt")
+            return False
+
+    except Exception as e:
+        logger.error(f"Error sending transfer receipt email: {e}")
+        return False
+
+def send_transfer_received_notification(
+    recipient_id: str,
+    recipient_name: str,
+    sender_id: str,
+    sender_name: str,
+    amount: float,
+    reference: str,
+    reference_number: str
+) -> bool:
+    """
+    Deliver an in-app inbox notification to the recipient of a transfer.
+
+    The Notifications Hub is an unread inbox over the `messages` table, so
+    this lands there via deliver_inbox_message. Body text comes from the
+    finance_commerce/finance/p2p_transfer_received_notification JSON template.
+
+    Returns:
+        True if the notification was delivered, False otherwise
+    """
+    try:
+        from education_system.systems.university.infrastructure.email.messages_inbox import deliver_inbox_message
+        from education_system.systems.university.infrastructure.email.template_utils import render_template
+
+        subject, body = render_template(
+            'finance_commerce/finance/p2p_transfer_received_notification',
+            {
+                'recipient_name': recipient_name,
+                'sender_name': sender_name,
+                'sender_id': sender_id,
+                'amount': f"{amount:.2f}",
+                'reference': reference,
+                'reference_number': reference_number,
+                'transfer_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            }
+        )
+        if subject is None or body is None:
+            subject = f"You received £{amount:.2f} from {sender_name}"
+            body = (
+                f"{sender_name} ({sender_id}) has sent you £{amount:.2f}.\n\n"
+                f"Reference: {reference}\n"
+                f"Reference Number: {reference_number}"
+            )
+
+        message_id = deliver_inbox_message(
+            recipient_id, subject, body,
+            sender_id=_resolve_user_row_id(sender_id)
+        )
+        if message_id is not None:
+            logger.info(f"Transfer notification delivered to {recipient_id} for {reference_number}")
+            return True
+        logger.warning(f"Failed to deliver transfer notification to {recipient_id}")
+        return False
+
+    except Exception as e:
+        logger.error(f"Error delivering transfer notification: {e}")
+        return False
+
+def transfer_student_finance_funds(
+    from_student_id: str,
+    to_student_id: str,
+    amount: float,
+    reference: str,
+    processed_by: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Send money from one student finance account to another.
+
+    Moves the amount between the two accounts and records both legs in the
+    unified transactions ledger ('transfer_out' / 'transfer_in') under a
+    shared generated reference number, all in one database transaction.
+    The sender is emailed a receipt and the recipient gets an in-app
+    notification.
+
+    Args:
+        from_student_id: Sender's student ID or username
+        to_student_id: Recipient's student ID or username
+        amount: Amount to send
+        reference: Free-text reference for the transfer (e.g. "Meal out",
+                   "Money owed") - required
+        processed_by: Username recorded against the ledger rows (defaults
+                      to the sender)
+
+    Returns:
+        Dictionary with:
+            - success: bool - Whether the transfer completed
+            - message: str - Status message
+            - new_balance: float - Sender balance after transfer (if successful)
+            - reference_number: str - Generated transfer reference (if successful)
+            - recipient_name: str - Recipient's full name (if resolved)
+            - email_sent: bool - Whether the sender receipt email was sent
+            - notification_sent: bool - Whether the recipient notification was delivered
+    """
+    result = {
+        'success': False,
+        'message': '',
+        'new_balance': None,
+        'reference_number': None,
+        'recipient_name': None,
+        'email_sent': False,
+        'notification_sent': False
+    }
+
+    try:
+        try:
+            amount = round(float(amount), 2)
+        except (TypeError, ValueError):
+            result['message'] = "Transfer amount must be a number"
+            return result
+
+        # not > 0 (rather than <= 0) so NaN is rejected too
+        if not math.isfinite(amount) or not amount > 0:
+            result['message'] = "Transfer amount must be positive"
+            return result
+
+        reference = (reference or '').strip()
+        if not reference:
+            result['message'] = "A reference is required (e.g. 'Meal out', 'Money owed')"
+            return result
+
+        from_ref = (from_student_id or '').strip()
+        to_ref = (to_student_id or '').strip()
+        if not from_ref or not to_ref:
+            result['message'] = "Sender and recipient are required"
+            return result
+
+        from_info = get_student_info(from_ref)
+        if not from_info:
+            result['message'] = f"Sender not found: {from_ref}"
+            return result
+
+        to_info = get_student_info(to_ref)
+        if not to_info:
+            result['message'] = f"Recipient not found: {to_ref}"
+            return result
+
+        # Canonical account keys: student_id when the user has one, else
+        # username - the same choice the bank GUI makes at login, so the
+        # money lands on the account each user actually sees.
+        from_id = from_info.get('student_id') or from_ref
+        to_id = to_info.get('student_id') or to_ref
+
+        if from_id == to_id:
+            result['message'] = "Cannot send money to yourself"
+            return result
+
+        from_name = from_info.get('full_name') or from_id
+        to_name = to_info.get('full_name') or to_id
+        result['recipient_name'] = to_name
+
+        ensure_student_finance_account_exists(from_id)
+        ensure_student_finance_account_exists(to_id)
+
+        reference_number = f"TRF-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
+        processed_by = processed_by or from_id
+
+        with transaction() as conn:
+            cursor = conn.cursor()
+
+            cursor.execute('''
+                SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?
+            ''', (from_id,))
+            from_row = cursor.fetchone()
+            cursor.execute('''
+                SELECT account_id, balance FROM student_finance_accounts WHERE student_id = ?
+            ''', (to_id,))
+            to_row = cursor.fetchone()
+
+            if not from_row:
+                result['message'] = f"Finance account not found for student {from_id}"
+                return result
+            if not to_row:
+                result['message'] = f"Finance account not found for student {to_id}"
+                return result
+
+            from_account_id, from_balance = from_row[0], float(from_row[1])
+            to_account_id, to_balance = to_row[0], float(to_row[1])
+
+            if from_balance < amount:
+                result['message'] = f"Insufficient balance. Current: £{from_balance:.2f}, Required: £{amount:.2f}"
+                return result
+
+            from_new_balance = round(from_balance - amount, 2)
+            to_new_balance = round(to_balance + amount, 2)
+
+            cursor.execute('''
+                UPDATE student_finance_accounts
+                SET balance = ?, updated_at = datetime('now')
+                WHERE student_id = ?
+            ''', (from_new_balance, from_id))
+            cursor.execute('''
+                UPDATE student_finance_accounts
+                SET balance = ?, updated_at = datetime('now')
+                WHERE student_id = ?
+            ''', (to_new_balance, to_id))
+
+            cursor.execute('''
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                 reference_type, reference_id, reference_number, description, processed_by)
+                VALUES ('student_finance', ?, ?, 'transfer_out', ?, ?, ?, 'p2p_transfer', ?, ?, ?, ?)
+            ''', (from_account_id, from_id, amount, from_balance, from_new_balance,
+                  to_id, reference_number,
+                  f"[Transfer] To {to_name} ({to_id}): {reference}", processed_by))
+
+            cursor.execute('''
+                INSERT INTO transactions
+                (source_type, account_id, student_id, transaction_type, amount, balance_before, balance_after,
+                 reference_type, reference_id, reference_number, description, processed_by)
+                VALUES ('student_finance', ?, ?, 'transfer_in', ?, ?, ?, 'p2p_transfer', ?, ?, ?, ?)
+            ''', (to_account_id, to_id, amount, to_balance, to_new_balance,
+                  from_id, reference_number,
+                  f"[Transfer] From {from_name} ({from_id}): {reference}", processed_by))
+
+        result['success'] = True
+        result['message'] = f"£{amount:.2f} sent to {to_name}"
+        result['new_balance'] = from_new_balance
+        result['reference_number'] = reference_number
+
+        logger.info(
+            f"Finance transfer: {from_id} -> {to_id} £{amount:.2f} "
+            f"({reference_number}: {reference})"
+        )
+
+        result['email_sent'] = send_transfer_receipt_email(
+            student_id=from_id,
+            recipient_name=to_name,
+            recipient_id=to_id,
+            amount=amount,
+            reference=reference,
+            reference_number=reference_number,
+            balance_before=from_balance,
+            balance_after=from_new_balance
+        )
+
+        result['notification_sent'] = send_transfer_received_notification(
+            recipient_id=to_id,
+            recipient_name=to_name,
+            sender_id=from_id,
+            sender_name=from_name,
+            amount=amount,
+            reference=reference,
+            reference_number=reference_number
+        )
+
+        return result
+
+    except sqlite3.Error as e:
+        logger.error(f"Database error transferring finance funds: {e}")
+        result['message'] = f"Database error: {e}"
+        return result
+    except Exception as e:
+        logger.error(f"Error transferring finance funds: {e}")
         result['message'] = f"Error: {e}"
         return result

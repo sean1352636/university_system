@@ -23,7 +23,7 @@ class StatisticsDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("System Statistics")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.statistics.windows.system_statistics', default="System Statistics"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -50,7 +50,7 @@ class StatisticsDialog:
                 self.dialog.after(0, lambda err=error_msg: self.show_error(err))
 
         # Show loading message
-        loading_label = ttk.Label(self.dialog, text="Loading statistics...", font=GuiConfig.BODY_FONT)
+        loading_label = ttk.Label(self.dialog, text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.labels.loading_statistics', default="Loading statistics..."), font=GuiConfig.BODY_FONT)
         loading_label.pack(expand=True)
 
         thread = threading.Thread(target=load_task, daemon=True)
@@ -70,7 +70,7 @@ class StatisticsDialog:
         title_label.pack(pady=(0, GuiConfig.PADDING_LARGE))
 
         # Overview
-        overview_frame = ttk.LabelFrame(main_frame, text="Overview", padding=GuiConfig.PADDING_MEDIUM)
+        overview_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.labels.overview', default="Overview"), padding=GuiConfig.PADDING_MEDIUM)
         overview_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
         overview_info = [
@@ -101,7 +101,7 @@ class StatisticsDialog:
         self.create_recent_tab(notebook, stats.get('recent_checks', []))
 
         # Close button
-        close_btn = ttk.Button(main_frame, text="Close", command=self.dialog.destroy)
+        close_btn = ttk.Button(main_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.buttons.close', default="Close"), command=self.dialog.destroy)
         close_btn.pack()
 
     def create_status_tab(self, notebook, status_counts):
@@ -112,7 +112,7 @@ class StatisticsDialog:
         if not status_counts:
             no_data_label = ttk.Label(
                 status_frame,
-                text="No plagiarism check data available",
+                text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.labels.no_plagiarism_check_data_available', default="No plagiarism check data available"),
                 font=GuiConfig.BODY_FONT
             )
             no_data_label.pack(expand=True)
@@ -153,7 +153,7 @@ class StatisticsDialog:
         if not module_counts:
             no_data_label = ttk.Label(
                 modules_frame,
-                text="No module data available",
+                text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.labels.no_module_data_available', default="No module data available"),
                 font=GuiConfig.BODY_FONT
             )
             no_data_label.pack(expand=True)
@@ -194,7 +194,7 @@ class StatisticsDialog:
         if not recent_checks:
             no_data_label = ttk.Label(
                 recent_frame,
-                text="No recent check data available",
+                text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.labels.no_recent_check_data_available', default="No recent check data available"),
                 font=GuiConfig.BODY_FONT
             )
             no_data_label.pack(expand=True)
@@ -204,10 +204,10 @@ class StatisticsDialog:
         columns = ('Document', 'Status', 'Similarity', 'Date')
         recent_tree = ttk.Treeview(recent_frame, columns=columns, show='headings', height=15)
 
-        recent_tree.heading('Document', text='Document Title')
-        recent_tree.heading('Status', text='Status')
-        recent_tree.heading('Similarity', text='Similarity Score')
-        recent_tree.heading('Date', text='Check Date')
+        recent_tree.heading('Document', text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.headings.document_title', default='Document Title'))
+        recent_tree.heading('Status', text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.headings.status', default='Status'))
+        recent_tree.heading('Similarity', text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.headings.similarity_score', default='Similarity Score'))
+        recent_tree.heading('Date', text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.headings.check_date', default='Check Date'))
 
         recent_tree.column('Document', width=300)
         recent_tree.column('Status', width=120)
@@ -252,5 +252,5 @@ class StatisticsDialog:
         )
         error_label.pack(expand=True)
 
-        close_btn = ttk.Button(self.dialog, text="Close", command=self.dialog.destroy)
+        close_btn = ttk.Button(self.dialog, text=_t('gui.academics.plagiarism_main_gui.dialogs.statistics.buttons.close', default="Close"), command=self.dialog.destroy)
         close_btn.pack(pady=GuiConfig.PADDING_MEDIUM)

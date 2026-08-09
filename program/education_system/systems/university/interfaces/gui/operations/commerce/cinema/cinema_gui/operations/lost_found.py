@@ -106,7 +106,7 @@ def set_lf_filter(self, filter_value):
 def log_found_item(self):
     """Log a newly found item."""
     form = tk.Toplevel(self.root)
-    form.title("Log Found Item")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.windows.log_found_item', default="Log Found Item"))
     form.geometry("450x550")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -126,7 +126,7 @@ def log_found_item(self):
 
     tk.Label(frame, text=_t("cinema.labels.category"), bg="#ffffff", fg="#333333").grid(row=2, column=0, sticky="w", pady=5)
     categories = ["electronics", "clothing", "bags", "accessories", "documents", "keys", "jewelry", "other"]
-    cat_var = tk.StringVar(value="other")
+    cat_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.values.other', default="other"))
     cat_combo = ttk.Combobox(frame, textvariable=cat_var, values=categories, width=27)
     cat_combo.grid(row=2, column=1, pady=5)
     fields['cat_var'] = cat_var
@@ -167,7 +167,7 @@ def log_found_item(self):
     def save():
         desc = fields['desc'].get("1.0", tk.END).strip()
         if not desc:
-            messagebox.showwarning(_t("cinema.common.warning"), "Description is required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.description_is_required', default="Description is required"))
             return
 
         screen = None
@@ -190,7 +190,7 @@ def log_found_item(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Item logged successfully!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.item_logged_successfully', default="Item logged successfully!"))
         form.destroy()
         self.show_lost_found_page()
 
@@ -199,7 +199,7 @@ def log_found_item(self):
 def search_lost_items(self):
     """Search for lost items."""
     form = tk.Toplevel(self.root)
-    form.title("Search Lost Items")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.windows.search_lost_items', default="Search Lost Items"))
     form.geometry("600x500")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -219,7 +219,7 @@ def search_lost_items(self):
 
     tk.Label(search_frame, text=_t("cinema.labels.category"), bg="#ffffff", fg="#333333").pack(side="left", padx=(10, 0))
     categories = ["all", "electronics", "clothing", "bags", "accessories", "documents", "keys", "jewelry", "other"]
-    cat_var = tk.StringVar(value="all")
+    cat_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.values.all', default="all"))
     cat_combo = ttk.Combobox(search_frame, textvariable=cat_var, values=categories, width=15, state="readonly")
     cat_combo.pack(side="left", padx=5)
 
@@ -270,7 +270,7 @@ def process_claim(self):
     """Process a claim for a lost item."""
     selected = self.lf_tree.selection() if hasattr(self, 'lf_tree') else None
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select an item to process claim")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.please_select_an_item_to_process_claim', default="Please select an item to process claim"))
         return
 
     item_id = self.lf_tree.item(selected[0])['values'][0]
@@ -284,11 +284,11 @@ def process_claim(self):
         conn.close()
 
     if not item:
-        messagebox.showerror(_t("cinema.common.error"), "Item not found")
+        messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.item_not_found', default="Item not found"))
         return
 
     form = tk.Toplevel(self.root)
-    form.title("Process Claim")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.windows.process_claim', default="Process Claim"))
     form.geometry("450x450")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -316,13 +316,13 @@ def process_claim(self):
 
     tk.Label(frame, text=_t("cinema.labels.identification_method"), bg="#ffffff", fg="#333333").pack(anchor="w")
     methods = ["ID verification", "Described item accurately", "Provided receipt", "Other"]
-    method_var = tk.StringVar(value="ID verification")
+    method_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.values.id_verification', default="ID verification"))
     method_combo = ttk.Combobox(frame, textvariable=method_var, values=methods, width=32)
     method_combo.pack(pady=5)
 
     def complete_claim():
         if not name_e.get().strip():
-            messagebox.showwarning(_t("cinema.common.warning"), "Claimant name is required")
+            messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.claimant_name_is_required', default="Claimant name is required"))
             return
 
         conn = sqlite3.connect(DB_FILE)
@@ -339,7 +339,7 @@ def process_claim(self):
         finally:
             conn.close()
 
-        messagebox.showinfo(_t("cinema.common.success"), "Claim processed successfully!")
+        messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.claim_processed_successfully', default="Claim processed successfully!"))
         form.destroy()
         self.show_lost_found_page()
 
@@ -349,7 +349,7 @@ def view_lf_details(self):
     """View details of selected lost & found item."""
     selected = self.lf_tree.selection() if hasattr(self, 'lf_tree') else None
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select an item")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.please_select_an_item', default="Please select an item"))
         return
 
     item_id = self.lf_tree.item(selected[0])['values'][0]
@@ -363,11 +363,11 @@ def view_lf_details(self):
         conn.close()
 
     if not item:
-        messagebox.showerror(_t("cinema.common.error"), "Item not found")
+        messagebox.showerror(_t("cinema.common.error"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.item_not_found', default="Item not found"))
         return
 
     form = tk.Toplevel(self.root)
-    form.title("Item Details")
+    form.title(_t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.windows.item_details', default="Item Details"))
     form.geometry("400x450")
     form.configure(bg="#ecf0f1")
     form.transient(self.root)
@@ -405,12 +405,12 @@ def dispose_lf_item(self):
     """Mark item as disposed after retention period."""
     selected = self.lf_tree.selection() if hasattr(self, 'lf_tree') else None
     if not selected:
-        messagebox.showwarning(_t("cinema.common.warning"), "Please select an item")
+        messagebox.showwarning(_t("cinema.common.warning"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.please_select_an_item', default="Please select an item"))
         return
 
     item_id = self.lf_tree.item(selected[0])['values'][0]
 
-    if not messagebox.askyesno(_t("cinema.common.confirm"), "Mark this item as disposed?\n\nThis action cannot be undone."):
+    if not messagebox.askyesno(_t("cinema.common.confirm"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.mark_this_item_as_disposed_this_action_cannot_be_undone', default="Mark this item as disposed?\n\nThis action cannot be undone.")):
         return
 
     conn = sqlite3.connect(DB_FILE)
@@ -421,5 +421,5 @@ def dispose_lf_item(self):
     finally:
         conn.close()
 
-    messagebox.showinfo(_t("cinema.common.success"), "Item marked as disposed")
+    messagebox.showinfo(_t("cinema.common.success"), _t('gui.operations.commerce.cinema.cinema_gui.operations.lost_found.dialogs.item_marked_as_disposed', default="Item marked as disposed"))
     self.show_lost_found_page()

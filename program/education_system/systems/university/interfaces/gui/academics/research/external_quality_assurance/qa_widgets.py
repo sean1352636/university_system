@@ -7,6 +7,8 @@ launched dialog (#14, #15, #17).
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import functools
 import logging
 import tkinter as tk
@@ -41,7 +43,7 @@ class EQAStatusStrip(ttk.Frame):
     def __init__(self, parent, poll_seconds: int = 30, **kw):
         super().__init__(parent, **kw)
         self._labels: dict[str, ttk.Label] = {}
-        ttk.Label(self, text="External QA:",
+        ttk.Label(self, text=_t('gui.academics.research.external_quality_assurance.qa_widgets.labels.external_qa', default="External QA:"),
                   font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(0, 6))
         for fw in qa.FRAMEWORKS:
             lbl = ttk.Label(self, text=f"{fw} —", padding=(6, 0))
@@ -111,7 +113,7 @@ def embed_kpi_panel(parent, category: str = "external_qa") -> ttk.Frame:
 
     bar = ttk.Frame(f)
     bar.pack(fill=tk.X, pady=(4, 0))
-    ttk.Button(bar, text="Refresh", command=_refresh).pack(side=tk.RIGHT)
+    ttk.Button(bar, text=_t('gui.academics.research.external_quality_assurance.qa_widgets.buttons.refresh', default="Refresh"), command=_refresh).pack(side=tk.RIGHT)
     _refresh()
     return f
 

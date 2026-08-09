@@ -12,10 +12,11 @@ import pytest
 @pytest.fixture
 def fresh_log_store(tmp_path, monkeypatch):
     """Point ``log_store`` at a fresh SQLite file and reset module state."""
-    from education_system.systems.sixth_form.infrastructure import log_store, paths
+    from education_system import paths
+    from education_system.systems.sixth_form.infrastructure import log_store
 
     db_path = tmp_path / "logs.db"
-    monkeypatch.setattr(paths, "SYSTEM_LOGS_DB", db_path)
+    monkeypatch.setattr(paths, "SIXTH_FORM_SYSTEM_LOGS_DB", db_path)
     monkeypatch.setattr(log_store, "DB_PATH", db_path)
     monkeypatch.setattr(log_store, "_DB_READY", False)
     monkeypatch.setattr(log_store, "_INSTALLED", False)

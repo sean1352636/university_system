@@ -5,6 +5,8 @@ Comprehensive interface for managing accessibility profiles, accommodation reque
 exam accommodations, and assistive technology.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -636,7 +638,7 @@ class AccessibilityToolsGUI:
     def lookup_student(self, entry_widget):
         """Open student lookup dialog and populate entry widget"""
         lookup_dialog = tk.Toplevel(self.window)
-        lookup_dialog.title("Student Lookup")
+        lookup_dialog.title(_t('gui.pastoral.accessibility_tools.windows.student_lookup', default="Student Lookup"))
         lookup_dialog.geometry("700x500")
         lookup_dialog.transient(self.window)
         lookup_dialog.grab_set()
@@ -644,13 +646,13 @@ class AccessibilityToolsGUI:
         main_frame = ttk.Frame(lookup_dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Student Lookup", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.pastoral.accessibility_tools.labels.student_lookup', default="Student Lookup"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Search frame
         search_frame = ttk.Frame(main_frame)
         search_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(search_frame, text=_t('gui.pastoral.accessibility_tools.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, width=40)
         search_entry.pack(side=tk.LEFT, padx=5)
@@ -666,10 +668,10 @@ class AccessibilityToolsGUI:
                                     show='headings', yscrollcommand=v_scroll.set)
         v_scroll.config(command=student_tree.yview)
 
-        student_tree.heading('Student ID', text='Student ID')
-        student_tree.heading('Name', text='Name')
-        student_tree.heading('Email', text='Email')
-        student_tree.heading('Course', text='Course')
+        student_tree.heading('Student ID', text=_t('gui.pastoral.accessibility_tools.headings.student_id', default='Student ID'))
+        student_tree.heading('Name', text=_t('gui.pastoral.accessibility_tools.headings.name', default='Name'))
+        student_tree.heading('Email', text=_t('gui.pastoral.accessibility_tools.headings.email', default='Email'))
+        student_tree.heading('Course', text=_t('gui.pastoral.accessibility_tools.headings.course', default='Course'))
 
         student_tree.column('Student ID', width=120)
         student_tree.column('Name', width=200)
@@ -711,7 +713,7 @@ class AccessibilityToolsGUI:
                         ))
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load students: {e}")
+                messagebox.showerror(_t('gui.pastoral.accessibility_tools.dialogs.error', default="Error"), f"Failed to load students: {e}")
 
         def search_students(*args):
             load_students(search_var.get().strip())
@@ -723,7 +725,7 @@ class AccessibilityToolsGUI:
             """Select student and populate entry"""
             selection = student_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a student")
+                messagebox.showwarning(_t('gui.pastoral.accessibility_tools.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.accessibility_tools.dialogs.please_select_a_student', default="Please select a student"))
                 return
 
             item = student_tree.item(selection[0])
@@ -737,8 +739,8 @@ class AccessibilityToolsGUI:
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Select", command=select_student).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.select', default="Select"), command=select_student).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.cancel', default="Cancel"), command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         # Double-click to select
         student_tree.bind('<Double-1>', lambda e: select_student())
@@ -746,7 +748,7 @@ class AccessibilityToolsGUI:
     def lookup_user(self, entry_widget):
         """Open user lookup dialog and populate entry widget"""
         lookup_dialog = tk.Toplevel(self.window)
-        lookup_dialog.title("User Lookup")
+        lookup_dialog.title(_t('gui.pastoral.accessibility_tools.windows.user_lookup', default="User Lookup"))
         lookup_dialog.geometry("700x500")
         lookup_dialog.transient(self.window)
         lookup_dialog.grab_set()
@@ -754,13 +756,13 @@ class AccessibilityToolsGUI:
         main_frame = ttk.Frame(lookup_dialog, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="User Lookup", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.pastoral.accessibility_tools.labels.user_lookup', default="User Lookup"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Search frame
         search_frame = ttk.Frame(main_frame)
         search_frame.pack(fill=tk.X, pady=(0, 10))
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(search_frame, text=_t('gui.pastoral.accessibility_tools.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, width=40)
         search_entry.pack(side=tk.LEFT, padx=5)
@@ -776,11 +778,11 @@ class AccessibilityToolsGUI:
                                 show='headings', yscrollcommand=v_scroll.set)
         v_scroll.config(command=user_tree.yview)
 
-        user_tree.heading('ID', text='ID')
-        user_tree.heading('Username', text='Username')
-        user_tree.heading('Name', text='Name')
-        user_tree.heading('Email', text='Email')
-        user_tree.heading('Role', text='Role')
+        user_tree.heading('ID', text=_t('gui.pastoral.accessibility_tools.headings.id', default='ID'))
+        user_tree.heading('Username', text=_t('gui.pastoral.accessibility_tools.headings.username', default='Username'))
+        user_tree.heading('Name', text=_t('gui.pastoral.accessibility_tools.headings.name', default='Name'))
+        user_tree.heading('Email', text=_t('gui.pastoral.accessibility_tools.headings.email', default='Email'))
+        user_tree.heading('Role', text=_t('gui.pastoral.accessibility_tools.headings.role', default='Role'))
 
         user_tree.column('ID', width=50)
         user_tree.column('Username', width=120)
@@ -824,7 +826,7 @@ class AccessibilityToolsGUI:
                         ))
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load users: {e}")
+                messagebox.showerror(_t('gui.pastoral.accessibility_tools.dialogs.error', default="Error"), f"Failed to load users: {e}")
 
         def search_users(*args):
             load_users(search_var.get().strip())
@@ -836,7 +838,7 @@ class AccessibilityToolsGUI:
             """Select user and populate entry"""
             selection = user_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select a user")
+                messagebox.showwarning(_t('gui.pastoral.accessibility_tools.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.accessibility_tools.dialogs.please_select_a_user', default="Please select a user"))
                 return
 
             item = user_tree.item(selection[0])
@@ -850,8 +852,8 @@ class AccessibilityToolsGUI:
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Select", command=select_user).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.select', default="Select"), command=select_user).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.cancel', default="Cancel"), command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         # Double-click to select
         user_tree.bind('<Double-1>', lambda e: select_user())
@@ -860,11 +862,11 @@ class AccessibilityToolsGUI:
         """Open exam lookup dialog filtered by student and populate entry widget"""
         student_id = student_id_var.get().strip()
         if not student_id:
-            messagebox.showwarning("Student ID Required", "Please enter a student ID first")
+            messagebox.showwarning(_t('gui.pastoral.accessibility_tools.dialogs.student_id_required', default="Student ID Required"), _t('gui.pastoral.accessibility_tools.dialogs.please_enter_a_student_id_first', default="Please enter a student ID first"))
             return
 
         lookup_dialog = tk.Toplevel(self.window)
-        lookup_dialog.title("Exam Lookup")
+        lookup_dialog.title(_t('gui.pastoral.accessibility_tools.windows.exam_lookup', default="Exam Lookup"))
         lookup_dialog.geometry("900x600")
         lookup_dialog.transient(self.window)
         lookup_dialog.grab_set()
@@ -878,7 +880,7 @@ class AccessibilityToolsGUI:
         # Info label
         info_frame = ttk.Frame(main_frame)
         info_frame.pack(fill=tk.X, pady=(0, 10))
-        ttk.Label(info_frame, text="Double-click an exam to select it, or click 'Open Exam Scheduler' to view all exams",
+        ttk.Label(info_frame, text=_t('gui.pastoral.accessibility_tools.labels.double_click_an_exam_to_select_it_or_click_open_exam_scheduler_t', default="Double-click an exam to select it, or click 'Open Exam Scheduler' to view all exams"),
                  foreground='blue').pack()
 
         # Exam list
@@ -893,12 +895,12 @@ class AccessibilityToolsGUI:
                                 show='headings', yscrollcommand=v_scroll.set)
         v_scroll.config(command=exam_tree.yview)
 
-        exam_tree.heading('Exam ID', text='Exam ID')
-        exam_tree.heading('Module', text='Module')
-        exam_tree.heading('Date', text='Date')
-        exam_tree.heading('Time', text='Time')
-        exam_tree.heading('Room', text='Room')
-        exam_tree.heading('Duration', text='Duration (mins)')
+        exam_tree.heading('Exam ID', text=_t('gui.pastoral.accessibility_tools.headings.exam_id', default='Exam ID'))
+        exam_tree.heading('Module', text=_t('gui.pastoral.accessibility_tools.headings.module', default='Module'))
+        exam_tree.heading('Date', text=_t('gui.pastoral.accessibility_tools.headings.date', default='Date'))
+        exam_tree.heading('Time', text=_t('gui.pastoral.accessibility_tools.headings.time', default='Time'))
+        exam_tree.heading('Room', text=_t('gui.pastoral.accessibility_tools.headings.room', default='Room'))
+        exam_tree.heading('Duration', text=_t('gui.pastoral.accessibility_tools.headings.duration_mins', default='Duration (mins)'))
 
         exam_tree.column('Exam ID', width=80)
         exam_tree.column('Module', width=200)
@@ -930,7 +932,7 @@ class AccessibilityToolsGUI:
 
                     if not rows:
                         # If no exams found, show message
-                        messagebox.showinfo("No Exams",
+                        messagebox.showinfo(_t('gui.pastoral.accessibility_tools.dialogs.no_exams', default="No Exams"),
                                           f"No scheduled exams found for student {student_id}.\n" +
                                           "Click 'Open Exam Scheduler' to view all exams.")
                         return
@@ -956,7 +958,7 @@ class AccessibilityToolsGUI:
 
             except Exception as e:
                 # Table might not exist, show info message
-                messagebox.showinfo("Exam Data",
+                messagebox.showinfo(_t('gui.pastoral.accessibility_tools.dialogs.exam_data', default="Exam Data"),
                                   f"Failed to load exam data: {e}\n" +
                                   "Click 'Open Exam Scheduler' to manage exams.")
 
@@ -966,7 +968,7 @@ class AccessibilityToolsGUI:
             """Select exam and populate entry"""
             selection = exam_tree.selection()
             if not selection:
-                messagebox.showwarning("No Selection", "Please select an exam")
+                messagebox.showwarning(_t('gui.pastoral.accessibility_tools.dialogs.no_selection', default="No Selection"), _t('gui.pastoral.accessibility_tools.dialogs.please_select_an_exam', default="Please select an exam"))
                 return
 
             item = exam_tree.item(selection[0])
@@ -982,22 +984,22 @@ class AccessibilityToolsGUI:
             try:
                 from education_system.systems.university.interfaces.gui.academics.exam_management import ExamSchedulerApp
                 scheduler_window = tk.Toplevel(self.window)
-                scheduler_window.title("Exam Scheduler")
+                scheduler_window.title(_t('gui.pastoral.accessibility_tools.windows.exam_scheduler', default="Exam Scheduler"))
                 scheduler_window.geometry("1200x800")
                 ExamSchedulerApp(scheduler_window, self.auth)
             except ImportError as e:
-                messagebox.showerror("Import Error",
+                messagebox.showerror(_t('gui.pastoral.accessibility_tools.dialogs.import_error', default="Import Error"),
                                    f"Exam Scheduler GUI not available: {e}")
             except Exception as e:
-                messagebox.showerror("Error",
+                messagebox.showerror(_t('gui.pastoral.accessibility_tools.dialogs.error', default="Error"),
                                    f"Failed to open Exam Scheduler: {e}")
 
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Select Exam", command=select_exam).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Open Exam Scheduler", command=open_exam_scheduler).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.select_exam', default="Select Exam"), command=select_exam).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.open_exam_scheduler', default="Open Exam Scheduler"), command=open_exam_scheduler).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.pastoral.accessibility_tools.buttons.cancel', default="Cancel"), command=lookup_dialog.destroy).pack(side=tk.LEFT, padx=5)
 
         # Double-click to select
         exam_tree.bind('<Double-1>', lambda e: select_exam())
@@ -1024,7 +1026,7 @@ class AccessibilityToolsGUI:
         user_id_var = tk.StringVar()
         user_id_entry = ttk.Entry(row1, textvariable=user_id_var, width=20)
         user_id_entry.pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(row1, text="🔍 Lookup", command=lambda: self.lookup_user(user_id_entry), width=10).pack(side=tk.LEFT)
+        ttk.Button(row1, text=_t('gui.pastoral.accessibility_tools.buttons.lookup', default="🔍 Lookup"), command=lambda: self.lookup_user(user_id_entry), width=10).pack(side=tk.LEFT)
 
         # Disabilities
         ttk.Label(main_frame, text=_t("accessibility.labels.disabilities_one_per_line")).pack(anchor=tk.W, pady=(10, 5))
@@ -1330,7 +1332,7 @@ class AccessibilityToolsGUI:
         student_id_var = tk.StringVar()
         student_id_entry = ttk.Entry(row1, textvariable=student_id_var, width=20)
         student_id_entry.pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(row1, text="🔍 Lookup", command=lambda: self.lookup_student(student_id_entry), width=10).pack(side=tk.LEFT)
+        ttk.Button(row1, text=_t('gui.pastoral.accessibility_tools.buttons.lookup', default="🔍 Lookup"), command=lambda: self.lookup_student(student_id_entry), width=10).pack(side=tk.LEFT)
 
         # Exam ID (optional)
         row2 = ttk.Frame(main_frame)
@@ -1339,7 +1341,7 @@ class AccessibilityToolsGUI:
         exam_id_var = tk.StringVar()
         exam_id_entry = ttk.Entry(row2, textvariable=exam_id_var, width=20)
         exam_id_entry.pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(row2, text="🔍 Lookup", command=lambda: self.lookup_exam(student_id_var, exam_id_entry), width=10).pack(side=tk.LEFT)
+        ttk.Button(row2, text=_t('gui.pastoral.accessibility_tools.buttons.lookup', default="🔍 Lookup"), command=lambda: self.lookup_exam(student_id_var, exam_id_entry), width=10).pack(side=tk.LEFT)
 
         # Extended Time
         row3 = ttk.Frame(main_frame)

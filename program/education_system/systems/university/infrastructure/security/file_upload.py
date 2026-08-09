@@ -46,6 +46,14 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
+from education_system.platform.kernel.core.safe_paths import (
+    ensure_secure_dir,
+    open_exclusive,
+    resolve_under,
+    safe_join,
+    secure_temp_dir,
+)
+
 # Import the new comprehensive validator
 try:
     from education_system.systems.university.infrastructure.security.file_upload_validator import (
@@ -284,20 +292,15 @@ class SecureFileUpload:
         """
         if upload_dir is None:
             try:
-                from education_system.systems.university.infrastructure import paths
-                upload_dir = paths.UPLOAD_DIR
+                from education_system import paths
+                upload_dir = paths.UNIVERSITY_UPLOAD_DIR
             except ImportError:
-                upload_dir = tempfile.mkdtemp(prefix='uploads_')
+                upload_dir = secure_temp_dir(prefix='uploads_')
                 logger.warning(f"Could not import paths module, using {upload_dir}")
 
-        self.upload_dir = Path(upload_dir)
-        self.upload_dir.mkdir(parents=True, exist_ok=True)
-
-        # Set restrictive permissions on upload directory
-        try:
-            os.chmod(self.upload_dir, 0o700)
-        except OSError as e:
-            logger.warning(f"Could not set permissions on upload directory: {e}")
+        # ensure_secure_dir re-applies 0o700 after mkdir, which otherwise
+        # honours the process umask and can leave the directory 0o755.
+        self.upload_dir = ensure_secure_dir(upload_dir)
 
         logger.info(f"SecureFileUpload initialized with upload_dir: {self.upload_dir}")
 
@@ -461,30 +464,35 @@ class SecureFileUpload:
             ext = Path(validation['safe_filename']).suffix.lower()
             unique_name = f"{uuid.uuid4().hex}_{file_hash[:8]}{ext}"
 
-            # Create category subdirectory
-            category_dir = self.upload_dir / category
-            category_dir.mkdir(parents=True, exist_ok=True)
+            # `category` reaches us from the caller and is only *locally*
+            # defaulted inside validate_file, so it must be re-checked here
+            # before it becomes a directory name — otherwise a category of
+            # "../../etc" would place the upload outside the upload root.
+            if category not in self.ALLOWED_EXTENSIONS:
+                logger.warning("Unknown upload category %r, storing under 'documents'", category)
+                category = 'documents'
 
-            # Ensure category directory has restrictive permissions
+            category_dir = ensure_secure_dir(safe_join(self.upload_dir, category))
+
+            # Generate full file path. resolve_under is belt-and-braces: the
+            # name is UUID-derived so it cannot traverse, but this keeps the
+            # containment guarantee local to the write.
+            file_path = resolve_under(category_dir, unique_name)
+
+            # Write with O_EXCL so a pre-planted file or symlink at this path
+            # aborts the save instead of being written through, and with the
+            # 0o600 mode applied at creation rather than after — the previous
+            # write-then-chmod left the file briefly world-readable.
             try:
-                os.chmod(category_dir, 0o700)
-            except OSError:
-                logger.exception("Failed to set permissions on category directory: %s", category_dir)
-
-            # Generate full file path
-            file_path = category_dir / unique_name
-
-            # Check if file already exists (extremely unlikely with UUID)
-            if file_path.exists():
+                with open_exclusive(file_path, text=False) as handle:
+                    handle.write(file_content)
+            except FileExistsError:
+                # Effectively impossible with a UUID name; treat as a collision.
                 logger.warning(f"File collision detected: {file_path}")
                 unique_name = f"{uuid.uuid4().hex}_{uuid.uuid4().hex[:8]}{ext}"
-                file_path = category_dir / unique_name
-
-            # Save file
-            file_path.write_bytes(file_content)
-
-            # Set restrictive permissions (read/write for owner only)
-            os.chmod(file_path, 0o600)
+                file_path = resolve_under(category_dir, unique_name)
+                with open_exclusive(file_path, text=False) as handle:
+                    handle.write(file_content)
 
             # Log the upload for audit trail
             try:

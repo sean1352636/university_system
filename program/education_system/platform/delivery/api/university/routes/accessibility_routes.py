@@ -7,7 +7,11 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, g, jsonify, request
 
-from education_system.platform.delivery.api.university.auth import token_required
+from education_system.platform.delivery.api.university.auth import (
+    deny_unless_owner_or_staff,
+    staff_required,
+    token_required,
+)
 from education_system.platform.delivery.api.university.pagination import get_pagination_params, paginated_response
 from education_system.systems.university.infrastructure.exceptions import ValidationError
 from education_system.systems.university.infrastructure.sql_safety import escape_like
@@ -82,6 +86,9 @@ def get_request(request_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"requests {request_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
     log_activity("view", "accommodation_requests", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -168,6 +175,9 @@ def get_accommodation(accommodation_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"accommodations {accommodation_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
     log_activity("view", "accommodations", user=g.current_user.get("sub"))
     return jsonify(_row_to_dict(row))
 
@@ -202,6 +212,7 @@ def create_accommodation():
 
 @accessibility_bp.route("/requests/<int:request_id>/status", methods=["PUT"])
 @token_required
+@staff_required
 def update_request_status(request_id: int):
     data = request.get_json(silent=True) or {}
     if "status" not in data:
@@ -242,6 +253,7 @@ def update_request_status(request_id: int):
 
 @accessibility_bp.route("/requests/<int:request_id>/approve", methods=["POST"])
 @token_required
+@staff_required
 def approve_request(request_id: int):
     data = request.get_json(silent=True) or {}
 
@@ -338,6 +350,10 @@ def upload_documentation(request_id: int):
         row = conn.execute(
             "SELECT * FROM accommodation_requests WHERE request_id = ?", (request_id,)
         ).fetchone()
+    if row is not None:
+        denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+        if denial:
+            return denial
     if not row:
         raise ValidationError(f"Request {request_id} not found")
 
@@ -371,6 +387,9 @@ def get_documentation(request_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Request {request_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
 
     with get_connection() as conn:
         page, per_page, offset = get_pagination_params()
@@ -395,6 +414,7 @@ def get_documentation(request_id: int):
 
 @accessibility_bp.route("/accommodations/<int:accommodation_id>", methods=["DELETE"])
 @token_required
+@staff_required
 def deactivate_accommodation(accommodation_id: int):
     data = request.get_json(silent=True) or {}
 
@@ -494,6 +514,9 @@ def request_renewal(request_id: int):
         ).fetchone()
     if not row:
         raise ValidationError(f"Request {request_id} not found")
+    denial = deny_unless_owner_or_staff(_row_to_dict(row).get("student_id"))
+    if denial:
+        return denial
     req = _row_to_dict(row)
 
     # Find the active accommodation for this request's student and type
@@ -572,6 +595,7 @@ def list_renewals():
 
 @accessibility_bp.route("/renewals/<int:renewal_id>", methods=["PUT"])
 @token_required
+@staff_required
 def process_renewal(renewal_id: int):
     data = request.get_json(silent=True) or {}
     if "status" not in data:

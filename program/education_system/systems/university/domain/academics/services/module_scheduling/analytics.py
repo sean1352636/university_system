@@ -271,12 +271,12 @@ class AnalyticsMixin:
     def _export_analytics_csv(self, data, filename_prefix):
         """Export analytics data to CSV"""
         import pandas as pd
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = os.path.join(str(paths.ANALYTICS_DIR), f"{filename_prefix}_{timestamp}.csv")
+        filename = os.path.join(str(paths.UNIVERSITY_ANALYTICS_DIR), f"{filename_prefix}_{timestamp}.csv")
 
         # Ensure directory exists (already created via paths._ensure)
-        os.makedirs(str(paths.ANALYTICS_DIR), exist_ok=True)
+        os.makedirs(str(paths.UNIVERSITY_ANALYTICS_DIR), exist_ok=True)
 
         df = pd.DataFrame(data)
         df.to_csv(filename, index=False)
@@ -291,12 +291,12 @@ class AnalyticsMixin:
         from reportlab.lib.styles import getSampleStyleSheet
         from reportlab.lib import colors
         from reportlab.lib.units import inch
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = os.path.join(str(paths.ANALYTICS_DIR), f"{title.lower().replace(' ', '_')}_{timestamp}.pdf")
+        filename = os.path.join(str(paths.UNIVERSITY_ANALYTICS_DIR), f"{title.lower().replace(' ', '_')}_{timestamp}.pdf")
 
         # Ensure directory exists (already created via paths._ensure)
-        os.makedirs(str(paths.ANALYTICS_DIR), exist_ok=True)
+        os.makedirs(str(paths.UNIVERSITY_ANALYTICS_DIR), exist_ok=True)
 
         doc = SimpleDocTemplate(filename, pagesize=landscape(letter))
         styles = getSampleStyleSheet()

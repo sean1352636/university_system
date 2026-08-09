@@ -1,10 +1,10 @@
 """University-side consumer for sixth-form progression events.
 
 Subscribes to ``student.progression.completed`` on the durable
-cross-system bus and admits the student into the university: it creates
-a university ``students`` row **linked to the canonical journey_id**
-(rather than re-keying demographics), records the transition, and copies
-the sixth-form medical record across.
+cross-system bus and creates an idempotent university applicant.  The
+applicant is deliberately not made an active student here: the admissions
+lifecycle performs that conversion only after offer, checks, acceptance,
+right-to-study and registration have completed.
 
 Idempotent on three levels: the bus's ``cross_system_event_consumed``
 table drops re-delivery; the journey's ``university_student_id`` short-
@@ -17,7 +17,6 @@ startup (and which a scheduled job could call too).
 from __future__ import annotations
 
 import logging
-import secrets
 from datetime import datetime
 
 from education_system.platform.cross_system import identity_service
@@ -26,7 +25,6 @@ from education_system.platform.integrations.external import cross_system_bus
 logger = logging.getLogger(__name__)
 
 CONSUMER_SYSTEM = "university"
-_DEFAULT_COURSE = "CS"
 
 
 def _age_from_dob(dob: str | None) -> int | None:
@@ -40,78 +38,91 @@ def _age_from_dob(dob: str | None) -> int | None:
     return now.year - d.year - ((now.month, now.day) < (d.month, d.day))
 
 
-def _new_student_id() -> str:
-    return str(secrets.randbelow(9000000) + 1000000).zfill(7)
+def _create_applicant(journey_id: str, payload: dict) -> int:
+    """Create (or return) the CRM application for a sixth-form handover."""
+    from education_system.systems.university.infrastructure.database.schemas.admissions_schemas import (
+        init_admissions_crm_system_db,
+    )
+    from education_system.systems.university.domain.admissions.services.admissions_crm_core import (
+        ApplicationManager,
+        ProspectManager,
+    )
+    from education_system.systems.university.domain.admissions.services import (
+        admissions_lifecycle,
+    )
 
-
-def _stamp_journey_id(student_id: str, journey_id: str) -> None:
+    init_admissions_crm_system_db()
+    external_reference = str(
+        payload.get("ucas_application_id")
+        or payload.get("sf_student_id")
+        or journey_id
+    )
     from education_system.systems.university.infrastructure.database.db import (
-        transaction,
+        get_connection, transaction,
+    )
+    with get_connection() as conn:
+        existing = conn.execute(
+            """SELECT application_id FROM admission_applications
+                WHERE journey_id = ? AND external_reference = ?""",
+            (journey_id, external_reference),
+        ).fetchone()
+    if existing:
+        return int(existing["application_id"])
+
+    journey = identity_service.get(journey_id) or {}
+    first = payload.get("first_name") or journey.get("legal_first_name") or ""
+    last = payload.get("last_name") or journey.get("legal_last_name") or ""
+    dob = payload.get("date_of_birth") or journey.get("date_of_birth") or ""
+    prospect_id = ProspectManager.create_prospect(
+        first_name=first,
+        last_name=last,
+        email=payload.get("email") or "",
+        phone=payload.get("phone") or "",
+        date_of_birth=dob,
+        high_school=payload.get("sixth_form_name") or "",
+        intended_major=payload.get("programme_name")
+        or payload.get("programme_code") or "",
+        source="sixth_form_progression",
+    )
+    programme_code = payload.get("programme_code") or "UNDECLARED"
+    application_id = ApplicationManager.submit_application(
+        prospect_id=prospect_id,
+        application_type="undergraduate",
+        program_applied=payload.get("programme_name") or programme_code,
+        academic_year=payload.get("entry_year") or "",
+        semester=payload.get("semester") or "autumn",
     )
     with transaction() as conn:
-        # The students.journey_id link column is normally added by the
-        # university DB migration; ensure it exists so intake doesn't
-        # depend on that having run first.
-        cols = {r[1] for r in conn.execute(
-            "PRAGMA table_info(students)").fetchall()}
-        if "journey_id" not in cols:
-            conn.execute(
-                "ALTER TABLE students ADD COLUMN journey_id TEXT")
         conn.execute(
-            "UPDATE students SET journey_id = ? WHERE student_id = ?",
-            (journey_id, student_id))
-
-
-def _admit_student(journey_id: str, payload: dict) -> str | None:
-    """Create a university student linked to the journey. Returns the new
-    university student_id, or None if one already exists for the journey."""
-    journey = identity_service.get(journey_id)
-    if journey and journey.get("university_student_id"):
-        logger.info(
-            "Journey %s already admitted as university student %s — "
-            "skipping", journey_id, journey["university_student_id"])
-        return None
-
-    from education_system.systems.university.infrastructure.repositories.student import (
-        Student, SQLiteStudentRepository,
+            """UPDATE admission_applications
+                  SET journey_id = ?, external_reference = ?,
+                      status = 'documents_pending'
+                WHERE application_id = ?""",
+            (journey_id, external_reference, application_id),
+        )
+        conn.execute(
+            """INSERT INTO admission_status_history
+                   (application_id, from_status, to_status, reason)
+               VALUES (?, 'submitted', 'documents_pending',
+                       'Sixth-form handover received')""",
+            (application_id,),
+        )
+    admissions_lifecycle.add_choice(
+        application_id, programme_code,
+        programme_name=payload.get("programme_name") or "",
+        entry_year=payload.get("entry_year") or "", rank=1,
     )
-    repo = SQLiteStudentRepository()
-
-    first = payload.get("first_name") or (journey or {}).get(
-        "legal_first_name")
-    last = payload.get("last_name") or (journey or {}).get(
-        "legal_last_name")
-    dob = payload.get("date_of_birth") or (journey or {}).get(
-        "date_of_birth")
-
-    for _ in range(5):
-        sid = _new_student_id()
-        if repo.get_by_id(sid) is None:
-            break
-    else:
-        raise RuntimeError("Could not allocate a free university id")
-
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    student = Student(
-        student_id=sid,
-        email_address=f"C{sid}@tees.ac.uk",
-        title=payload.get("title"),
-        first_name=first, middle_name=payload.get("middle_name"),
-        last_name=last, gender=(payload.get("gender") or None),
-        dob=dob, age=_age_from_dob(dob),
-        course=_DEFAULT_COURSE, registration_datetime=now,
-        status="Active", enrollment_date=now,
-    )
-    repo.save(student)
-    _stamp_journey_id(sid, journey_id)
-    identity_service.link_system(journey_id, "university",
-                                 student_id=sid, set_current=True)
-    identity_service.record_transition(
-        journey_id, from_system="sixth_form", to_system="university",
-        reason="Sixth-form progression intake (bus)")
-    logger.info("Admitted journey %s as university student %s",
-                journey_id, sid)
-    return sid
+    for requirement_type, description in (
+        ("identity", "Identity and date-of-birth evidence"),
+        ("qualifications", "Final qualification results"),
+        ("right_to_study", "Right-to-study check"),
+    ):
+        admissions_lifecycle.add_requirement(
+            application_id, requirement_type, description
+        )
+    logger.info("Created university application %s for journey %s",
+                application_id, journey_id)
+    return application_id
 
 
 def _import_medical(uni_student_id: str, sf_student_id: str) -> None:
@@ -128,7 +139,7 @@ def _import_medical(uni_student_id: str, sf_student_id: str) -> None:
 
 
 def handle_progression_completed(envelope: dict) -> None:
-    """Bus handler: admit the student and pull their medical record."""
+    """Bus handler: create an applicant; enrolment is a later gated step."""
     # Progression events are explicitly addressed. Ignore any not bound
     # for the university so co-located K-12 intakes (same launcher
     # process) don't get admitted here by mistake.
@@ -142,9 +153,9 @@ def handle_progression_completed(envelope: dict) -> None:
         logger.warning("Progression event %s has no journey_id — "
                        "ignoring", envelope.get("event_id"))
         return
-    uni_id = _admit_student(journey_id, payload)
-    if uni_id and sf_student_id:
-        _import_medical(uni_id, sf_student_id)
+    application_id = _create_applicant(journey_id, payload)
+    logger.info("Sixth-form journey %s staged as application %s",
+                journey_id, application_id)
 
 
 _registered = False

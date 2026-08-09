@@ -6,6 +6,8 @@ Supports three role-based views:
 - Admin: all instructor features plus exam deletion and bulk operations
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 import json
@@ -38,7 +40,7 @@ class ExamPortalGUI:
             self._is_standalone = False
         else:
             self.root = tk.Tk()
-            self.root.title("Exam Management")
+            self.root.title(_t('gui.academics.exam_management.exam_portal.windows.exam_management', default="Exam Management"))
             self.root.geometry("1200x800")
             self._is_standalone = True
 
@@ -80,7 +82,7 @@ class ExamPortalGUI:
         # Toolbar
         toolbar = ttk.Frame(self.root, padding=(10, 5))
         toolbar.pack(fill="x")
-        ttk.Button(toolbar, text="Return to Main Menu",
+        ttk.Button(toolbar, text=_t('gui.academics.exam_management.exam_portal.buttons.return_to_main_menu', default="Return to Main Menu"),
                    command=self._close).pack(side="left")
         ttk.Label(toolbar, text=f"Exam Management  |  {self._user.get('username', '')} ({self._role})",
                   font=("Arial", 11, "bold")).pack(side="left", padx=20)
@@ -150,7 +152,7 @@ class ExamPortalGUI:
     def _build_scheduling_tab(self):
         """Embed the Exam Scheduler inside a tab for staff/admin users."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Scheduling")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.exam_portal.tabs.scheduling', default="Scheduling"))
 
         try:
             from education_system.systems.university.interfaces.gui.academics.exam_management import ExamSchedulerApp
@@ -174,12 +176,12 @@ class ExamPortalGUI:
 
     def _build_browse_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Available Exams")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.exam_portal.tabs.available_exams', default="Available Exams"))
 
         header = ttk.Frame(tab)
         header.pack(fill="x", padx=10, pady=10)
-        ttk.Label(header, text="Available Exams", font=("Arial", 14, "bold")).pack(side="left")
-        ttk.Button(header, text="Refresh", command=self._refresh_browse).pack(side="right")
+        ttk.Label(header, text=_t('gui.academics.exam_management.exam_portal.labels.available_exams', default="Available Exams"), font=("Arial", 14, "bold")).pack(side="left")
+        ttk.Button(header, text=_t('gui.academics.exam_management.exam_portal.buttons.refresh', default="Refresh"), command=self._refresh_browse).pack(side="right")
 
         cols = ("ID", "Title", "Module", "Duration", "Start", "End", "Attempts", "Status")
         self.browse_tree = ttk.Treeview(tab, columns=cols, show="headings", height=12)
@@ -201,7 +203,7 @@ class ExamPortalGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill="x", padx=10, pady=(0, 10))
-        ttk.Button(btn_frame, text="Start Exam", command=self._start_exam).pack(side="left")
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.start_exam', default="Start Exam"), command=self._start_exam).pack(side="left")
 
         # Populate after the window paints so the user sees the chrome
         # immediately rather than waiting on the available-exams query.
@@ -226,15 +228,15 @@ class ExamPortalGUI:
     def _start_exam(self):
         sel = self.browse_tree.selection()
         if not sel:
-            messagebox.showwarning("No Selection", "Please select an exam to start.")
+            messagebox.showwarning(_t('gui.academics.exam_management.exam_portal.dialogs.no_selection', default="No Selection"), _t('gui.academics.exam_management.exam_portal.dialogs.please_select_an_exam_to_start', default="Please select an exam to start."))
             return
         exam_id = self.browse_tree.item(sel[0])["values"][0]
         exam = self.svc.get_exam(exam_id)
         if not exam:
-            messagebox.showerror("Error", "Exam not found.")
+            messagebox.showerror(_t('gui.academics.exam_management.exam_portal.dialogs.error', default="Error"), _t('gui.academics.exam_management.exam_portal.dialogs.exam_not_found', default="Exam not found."))
             return
 
-        if not messagebox.askyesno("Start Exam",
+        if not messagebox.askyesno(_t('gui.academics.exam_management.exam_portal.dialogs.start_exam', default="Start Exam"),
                                    f"Start '{exam['title']}'?\n\n"
                                    f"Duration: {exam['duration_minutes']} minutes\n"
                                    f"Questions: {self.svc.get_question_count(exam_id)}\n"
@@ -245,10 +247,10 @@ class ExamPortalGUI:
         sid = self._user.get("username", "")
         attempt = self.svc.start_attempt(exam_id, sid, student_name=sid)
         if not attempt:
-            messagebox.showerror("Error", "Cannot start exam. You may have reached the maximum attempts.")
+            messagebox.showerror(_t('gui.academics.exam_management.exam_portal.dialogs.error', default="Error"), _t('gui.academics.exam_management.exam_portal.dialogs.cannot_start_exam_you_may_have_reached_the_maximum_attempts', default="Cannot start exam. You may have reached the maximum attempts."))
             return
         if attempt.get("error"):
-            messagebox.showerror("Cannot start", attempt.get("reason", attempt["error"]))
+            messagebox.showerror(_t('gui.academics.exam_management.exam_portal.dialogs.cannot_start', default="Cannot start"), attempt.get("reason", attempt["error"]))
             return
 
         # If accommodations were applied, tell the candidate their timer is
@@ -257,7 +259,7 @@ class ExamPortalGUI:
             mins = attempt.get("extra_seconds", 0) // 60
             baseline = exam["duration_minutes"]
             messagebox.showinfo(
-                "Accommodations applied",
+                _t('gui.academics.exam_management.exam_portal.dialogs.accommodations_applied', default="Accommodations applied"),
                 f"Accommodations on file: {attempt['accommodation_summary']}\n\n"
                 + (f"Timer: {baseline} min baseline + {mins} min extra "
                    f"= {baseline + mins} min total" if mins else
@@ -280,7 +282,7 @@ class ExamPortalGUI:
         # Timer bar
         timer_frame = ttk.Frame(self.exam_win)
         timer_frame.pack(fill="x", padx=10, pady=5)
-        self._timer_var = tk.StringVar(value="Loading...")
+        self._timer_var = tk.StringVar(value=_t('gui.academics.exam_management.exam_portal.values.loading', default="Loading..."))
         ttk.Label(timer_frame, text=exam["title"], font=("Arial", 12, "bold")).pack(side="left")
         self._timer_label = ttk.Label(timer_frame, textvariable=self._timer_var,
                                        font=("Arial", 12, "bold"), foreground="red")
@@ -300,11 +302,11 @@ class ExamPortalGUI:
         # Bottom buttons
         btn_frame = ttk.Frame(self.exam_win)
         btn_frame.pack(fill="x", padx=10, pady=10)
-        ttk.Button(btn_frame, text="Previous", command=self._prev_question).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Next", command=self._next_question).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Flag for Review",
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.previous', default="Previous"), command=self._prev_question).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.next', default="Next"), command=self._next_question).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.flag_for_review', default="Flag for Review"),
                    command=self._flag_question).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Submit Exam",
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.submit_exam', default="Submit Exam"),
                    command=self._confirm_submit).pack(side="right", padx=5)
 
         self._show_question(0)
@@ -313,7 +315,7 @@ class ExamPortalGUI:
     def _build_question_nav(self):
         for w in self._q_nav_frame.winfo_children():
             w.destroy()
-        ttk.Label(self._q_nav_frame, text="Questions:", font=("Arial", 9)).pack(side="left", padx=(0, 5))
+        ttk.Label(self._q_nav_frame, text=_t('gui.academics.exam_management.exam_portal.labels.questions', default="Questions:"), font=("Arial", 9)).pack(side="left", padx=(0, 5))
         self._nav_buttons = []
         for i, q in enumerate(self._current_questions):
             qid = q["id"]
@@ -418,7 +420,7 @@ class ExamPortalGUI:
         entry["flagged"] = not entry.get("flagged", False)
         self._build_question_nav()
         status = "flagged" if entry["flagged"] else "unflagged"
-        messagebox.showinfo("Flag", f"Question {self._current_question_idx + 1} {status} for review.")
+        messagebox.showinfo(_t('gui.academics.exam_management.exam_portal.dialogs.flag', default="Flag"), f"Question {self._current_question_idx + 1} {status} for review.")
 
     def _tick_timer(self):
         if self._time_remaining <= 0:
@@ -435,7 +437,7 @@ class ExamPortalGUI:
 
     def _auto_submit(self):
         self._save_current_answer()
-        messagebox.showwarning("Time's Up", "Your exam has been auto-submitted.")
+        messagebox.showwarning(_t('gui.academics.exam_management.exam_portal.dialogs.time_s_up', default="Time's Up"), _t('gui.academics.exam_management.exam_portal.dialogs.your_exam_has_been_auto_submitted', default="Your exam has been auto-submitted."))
         self._do_submit(auto=True)
 
     def _confirm_submit(self):
@@ -450,7 +452,7 @@ class ExamPortalGUI:
                f"Flagged: {flagged}\n"
                f"Unanswered: {total - answered}\n\n"
                "Are you sure you want to submit?")
-        if messagebox.askyesno("Confirm Submission", msg):
+        if messagebox.askyesno(_t('gui.academics.exam_management.exam_portal.dialogs.confirm_submission', default="Confirm Submission"), msg):
             self._do_submit(auto=False)
 
     def _do_submit(self, auto=False):
@@ -469,18 +471,18 @@ class ExamPortalGUI:
                f"Result: {'PASSED' if result['passed'] else 'FAILED'}")
         if result.get("needs_manual_grading"):
             msg += "\n\nSome questions require manual grading."
-        messagebox.showinfo("Exam Submitted", msg)
+        messagebox.showinfo(_t('gui.academics.exam_management.exam_portal.dialogs.exam_submitted', default="Exam Submitted"), msg)
 
     # ── Results Tab ─────────────────────────────────────────────────
 
     def _build_results_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Results")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.exam_portal.tabs.my_results', default="My Results"))
 
         header = ttk.Frame(tab)
         header.pack(fill="x", padx=10, pady=10)
-        ttk.Label(header, text="My Exam Results", font=("Arial", 14, "bold")).pack(side="left")
-        ttk.Button(header, text="Refresh", command=self._refresh_results).pack(side="right")
+        ttk.Label(header, text=_t('gui.academics.exam_management.exam_portal.labels.my_exam_results', default="My Exam Results"), font=("Arial", 14, "bold")).pack(side="left")
+        ttk.Button(header, text=_t('gui.academics.exam_management.exam_portal.buttons.refresh', default="Refresh"), command=self._refresh_results).pack(side="right")
 
         cols = ("ID", "Exam", "Score", "Percentage", "Result", "Submitted", "Status")
         self.results_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
@@ -523,7 +525,7 @@ class ExamPortalGUI:
 
         exam = self.svc.get_exam(attempt["exam_id"])
         if not exam or not exam.get("allow_review"):
-            messagebox.showinfo("Review", "Review is not available for this exam.")
+            messagebox.showinfo(_t('gui.academics.exam_management.exam_portal.dialogs.review', default="Review"), _t('gui.academics.exam_management.exam_portal.dialogs.review_is_not_available_for_this_exam', default="Review is not available for this exam."))
             return
 
         questions = self.svc.get_questions(attempt["exam_id"])
@@ -556,20 +558,20 @@ class ExamPortalGUI:
             text.insert("end", "\n")
 
         text.config(state=tk.DISABLED)
-        ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
+        ttk.Button(win, text=_t('gui.academics.exam_management.exam_portal.buttons.close', default="Close"), command=win.destroy).pack(pady=10)
 
     # ── Manage Exams Tab (Instructor/Admin) ─────────────────────────
 
     def _build_manage_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Manage Exams")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.exam_portal.tabs.manage_exams', default="Manage Exams"))
 
         # Exam list
         header = ttk.Frame(tab)
         header.pack(fill="x", padx=10, pady=10)
-        ttk.Label(header, text="Exam Management", font=("Arial", 14, "bold")).pack(side="left")
-        ttk.Button(header, text="Sync from Scheduler", command=self._sync_and_refresh).pack(side="right", padx=5)
-        ttk.Button(header, text="Refresh", command=self._refresh_manage).pack(side="right")
+        ttk.Label(header, text=_t('gui.academics.exam_management.exam_portal.labels.exam_management', default="Exam Management"), font=("Arial", 14, "bold")).pack(side="left")
+        ttk.Button(header, text=_t('gui.academics.exam_management.exam_portal.buttons.sync_from_scheduler', default="Sync from Scheduler"), command=self._sync_and_refresh).pack(side="right", padx=5)
+        ttk.Button(header, text=_t('gui.academics.exam_management.exam_portal.buttons.refresh', default="Refresh"), command=self._refresh_manage).pack(side="right")
 
         cols = ("ID", "Title", "Module", "Status", "Questions", "Duration", "Created")
         self.manage_tree = ttk.Treeview(tab, columns=cols, show="headings", height=8)
@@ -586,20 +588,20 @@ class ExamPortalGUI:
 
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Button(btn_frame, text="Edit Exam", command=self._edit_exam).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Manage Questions", command=self._manage_questions).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Publish", command=self._publish_exam).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Unpublish", command=self._unpublish_exam).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Delete", command=self._delete_exam).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="View Results", command=self._view_exam_results).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Export CSV", command=self._export_csv).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.edit_exam', default="Edit Exam"), command=self._edit_exam).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.manage_questions', default="Manage Questions"), command=self._manage_questions).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.publish', default="Publish"), command=self._publish_exam).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.unpublish', default="Unpublish"), command=self._unpublish_exam).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.delete', default="Delete"), command=self._delete_exam).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.view_results', default="View Results"), command=self._view_exam_results).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.export_csv', default="Export CSV"), command=self._export_csv).pack(side="left", padx=2)
 
         self._refresh_manage()
 
     def _get_selected_exam_id(self):
         sel = self.manage_tree.selection()
         if not sel:
-            messagebox.showwarning("No Selection", "Please select an exam.")
+            messagebox.showwarning(_t('gui.academics.exam_management.exam_portal.dialogs.no_selection', default="No Selection"), _t('gui.academics.exam_management.exam_portal.dialogs.please_select_an_exam', default="Please select an exam."))
             return None
         return self.manage_tree.item(sel[0])["values"][0]
 
@@ -622,10 +624,10 @@ class ExamPortalGUI:
             created_by=self._user.get("username", "scheduler")
         )
         if result.get("error"):
-            messagebox.showerror("Sync Error", f"Error: {result['error']}")
+            messagebox.showerror(_t('gui.academics.exam_management.exam_portal.dialogs.sync_error', default="Sync Error"), f"Error: {result['error']}")
         else:
             messagebox.showinfo(
-                "Sync Complete",
+                _t('gui.academics.exam_management.exam_portal.dialogs.sync_complete', default="Sync Complete"),
                 f"Synced: {result['imported']} new exam(s)\n"
                 f"Already up to date: {result['skipped']}\n\n"
                 "Add questions and publish when ready.",
@@ -640,11 +642,11 @@ class ExamPortalGUI:
     def _exam_form_dialog(self, exam_id):
         exam = self.svc.get_exam(exam_id)
         if not exam:
-            messagebox.showerror("Error", "Exam not found.")
+            messagebox.showerror(_t('gui.academics.exam_management.exam_portal.dialogs.error', default="Error"), _t('gui.academics.exam_management.exam_portal.dialogs.exam_not_found', default="Exam not found."))
             return
 
         win = tk.Toplevel(self.root)
-        win.title("Edit Exam")
+        win.title(_t('gui.academics.exam_management.exam_portal.windows.edit_exam', default="Edit Exam"))
         win.geometry("550x600")
         win.transient(self.root)
 
@@ -726,25 +728,25 @@ class ExamPortalGUI:
 
             title = data.pop("title", "")
             if not title:
-                messagebox.showerror("Validation", "Title is required.", parent=win)
+                messagebox.showerror(_t('gui.academics.exam_management.exam_portal.dialogs.validation', default="Validation"), _t('gui.academics.exam_management.exam_portal.dialogs.title_is_required', default="Title is required."), parent=win)
                 return
 
             data["title"] = title
             self.svc.update_exam(exam_id, **data)
-            messagebox.showinfo("Saved", "Exam updated.", parent=win)
+            messagebox.showinfo(_t('gui.academics.exam_management.exam_portal.dialogs.saved', default="Saved"), _t('gui.academics.exam_management.exam_portal.dialogs.exam_updated', default="Exam updated."), parent=win)
             win.destroy()
             self._refresh_manage()
 
         btn_f = ttk.Frame(inner)
         btn_f.pack(fill="x", pady=15)
-        ttk.Button(btn_f, text="Save", command=_save).pack(side="right", padx=5)
-        ttk.Button(btn_f, text="Cancel", command=win.destroy).pack(side="right")
+        ttk.Button(btn_f, text=_t('gui.academics.exam_management.exam_portal.buttons.save', default="Save"), command=_save).pack(side="right", padx=5)
+        ttk.Button(btn_f, text=_t('gui.academics.exam_management.exam_portal.buttons.cancel', default="Cancel"), command=win.destroy).pack(side="right")
 
     def _publish_exam(self):
         eid = self._get_selected_exam_id()
         if eid:
             if self.svc.get_question_count(eid) == 0:
-                messagebox.showwarning("No Questions", "Add questions before publishing.")
+                messagebox.showwarning(_t('gui.academics.exam_management.exam_portal.dialogs.no_questions', default="No Questions"), _t('gui.academics.exam_management.exam_portal.dialogs.add_questions_before_publishing', default="Add questions before publishing."))
                 return
             self.svc.publish_exam(eid)
             self._refresh_manage()
@@ -757,7 +759,7 @@ class ExamPortalGUI:
 
     def _delete_exam(self):
         eid = self._get_selected_exam_id()
-        if eid and messagebox.askyesno("Delete", "Delete this exam and all its data?"):
+        if eid and messagebox.askyesno(_t('gui.academics.exam_management.exam_portal.dialogs.delete', default="Delete"), _t('gui.academics.exam_management.exam_portal.dialogs.delete_this_exam_and_all_its_data', default="Delete this exam and all its data?")):
             self.svc.delete_exam(eid)
             self._refresh_manage()
 
@@ -771,7 +773,7 @@ class ExamPortalGUI:
         if path:
             with open(path, "w") as f:
                 f.write(csv_data)
-            messagebox.showinfo("Export", f"Results exported to {path}")
+            messagebox.showinfo(_t('gui.academics.exam_management.exam_portal.dialogs.export', default="Export"), f"Results exported to {path}")
 
     def _view_exam_results(self):
         eid = self._get_selected_exam_id()
@@ -799,7 +801,7 @@ class ExamPortalGUI:
                 r.get("submitted_at", ""), r["status"],
             ))
 
-        ttk.Button(win, text="Close", command=win.destroy).pack(pady=5)
+        ttk.Button(win, text=_t('gui.academics.exam_management.exam_portal.buttons.close', default="Close"), command=win.destroy).pack(pady=5)
 
     # ── Question Management ─────────────────────────────────────────
 
@@ -848,14 +850,14 @@ class ExamPortalGUI:
 
         def del_q():
             sel = q_tree.selection()
-            if sel and messagebox.askyesno("Delete", "Delete this question?", parent=win):
+            if sel and messagebox.askyesno(_t('gui.academics.exam_management.exam_portal.dialogs.delete', default="Delete"), _t('gui.academics.exam_management.exam_portal.dialogs.delete_this_question', default="Delete this question?"), parent=win):
                 qid = q_tree.item(sel[0])["values"][0]
                 self.svc.delete_question(qid)
                 refresh()
 
-        ttk.Button(btn_frame, text="Add Question", command=add_q).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Edit", command=edit_q).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="Delete", command=del_q).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.add_question', default="Add Question"), command=add_q).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.edit', default="Edit"), command=edit_q).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text=_t('gui.academics.exam_management.exam_portal.buttons.delete', default="Delete"), command=del_q).pack(side="left", padx=2)
 
         refresh()
 
@@ -872,42 +874,42 @@ class ExamPortalGUI:
         f = ttk.Frame(win, padding=15)
         f.pack(fill="both", expand=True)
 
-        ttk.Label(f, text="Question Type:").pack(anchor="w")
+        ttk.Label(f, text=_t('gui.academics.exam_management.exam_portal.labels.question_type', default="Question Type:")).pack(anchor="w")
         type_var = tk.StringVar(value=existing["question_type"] if existing else "mcq")
         type_combo = ttk.Combobox(f, textvariable=type_var,
                                   values=[t[0] for t in QUESTION_TYPES],
                                   state="readonly", width=20)
         type_combo.pack(anchor="w", pady=(0, 8))
 
-        ttk.Label(f, text="Question Text:").pack(anchor="w")
+        ttk.Label(f, text=_t('gui.academics.exam_management.exam_portal.labels.question_text', default="Question Text:")).pack(anchor="w")
         q_text = tk.Text(f, height=4, wrap=tk.WORD)
         q_text.pack(fill="x", pady=(0, 8))
         if existing:
             q_text.insert("1.0", existing["question_text"])
 
-        ttk.Label(f, text="Options (one per line, for MCQ):").pack(anchor="w")
+        ttk.Label(f, text=_t('gui.academics.exam_management.exam_portal.labels.options_one_per_line_for_mcq', default="Options (one per line, for MCQ):")).pack(anchor="w")
         opts_text = tk.Text(f, height=4, wrap=tk.WORD)
         opts_text.pack(fill="x", pady=(0, 8))
         if existing and existing.get("options"):
             opts_text.insert("1.0", "\n".join(existing["options"]))
 
-        ttk.Label(f, text="Correct Answer:").pack(anchor="w")
+        ttk.Label(f, text=_t('gui.academics.exam_management.exam_portal.labels.correct_answer', default="Correct Answer:")).pack(anchor="w")
         ans_var = tk.StringVar(value=existing.get("correct_answer", "") if existing else "")
         ttk.Entry(f, textvariable=ans_var, width=50).pack(fill="x", pady=(0, 8))
 
         row = ttk.Frame(f)
         row.pack(fill="x", pady=(0, 8))
-        ttk.Label(row, text="Marks:").pack(side="left")
+        ttk.Label(row, text=_t('gui.academics.exam_management.exam_portal.labels.marks', default="Marks:")).pack(side="left")
         marks_var = tk.StringVar(value=str(existing["marks"]) if existing else "1")
         ttk.Spinbox(row, from_=0.5, to=100, increment=0.5, textvariable=marks_var,
                      width=8).pack(side="left", padx=10)
-        ttk.Label(row, text="Difficulty:").pack(side="left", padx=(20, 0))
+        ttk.Label(row, text=_t('gui.academics.exam_management.exam_portal.labels.difficulty', default="Difficulty:")).pack(side="left", padx=(20, 0))
         diff_var = tk.StringVar(value=existing.get("difficulty", "medium") if existing else "medium")
         ttk.Combobox(row, textvariable=diff_var,
                       values=["easy", "medium", "hard"], state="readonly",
                       width=10).pack(side="left", padx=5)
 
-        ttk.Label(f, text="Explanation (shown after grading):").pack(anchor="w")
+        ttk.Label(f, text=_t('gui.academics.exam_management.exam_portal.labels.explanation_shown_after_grading', default="Explanation (shown after grading):")).pack(anchor="w")
         expl_text = tk.Text(f, height=2, wrap=tk.WORD)
         expl_text.pack(fill="x", pady=(0, 8))
         if existing and existing.get("explanation"):
@@ -916,7 +918,7 @@ class ExamPortalGUI:
         def _save_q():
             text = q_text.get("1.0", tk.END).strip()
             if not text:
-                messagebox.showerror("Validation", "Question text is required.", parent=win)
+                messagebox.showerror(_t('gui.academics.exam_management.exam_portal.dialogs.validation', default="Validation"), _t('gui.academics.exam_management.exam_portal.dialogs.question_text_is_required', default="Question text is required."), parent=win)
                 return
             opts_raw = opts_text.get("1.0", tk.END).strip()
             options = [o.strip() for o in opts_raw.split("\n") if o.strip()] if opts_raw else None
@@ -940,19 +942,19 @@ class ExamPortalGUI:
 
         btn_f = ttk.Frame(f)
         btn_f.pack(fill="x", pady=10)
-        ttk.Button(btn_f, text="Save", command=_save_q).pack(side="right", padx=5)
-        ttk.Button(btn_f, text="Cancel", command=win.destroy).pack(side="right")
+        ttk.Button(btn_f, text=_t('gui.academics.exam_management.exam_portal.buttons.save', default="Save"), command=_save_q).pack(side="right", padx=5)
+        ttk.Button(btn_f, text=_t('gui.academics.exam_management.exam_portal.buttons.cancel', default="Cancel"), command=win.destroy).pack(side="right")
 
     # ── Grading Tab ─────────────────────────────────────────────────
 
     def _build_grading_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Grading")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.exam_portal.tabs.grading', default="Grading"))
 
         header = ttk.Frame(tab)
         header.pack(fill="x", padx=10, pady=10)
-        ttk.Label(header, text="Manual Grading Queue", font=("Arial", 14, "bold")).pack(side="left")
-        ttk.Button(header, text="Refresh", command=self._refresh_grading).pack(side="right")
+        ttk.Label(header, text=_t('gui.academics.exam_management.exam_portal.labels.manual_grading_queue', default="Manual Grading Queue"), font=("Arial", 14, "bold")).pack(side="left")
+        ttk.Button(header, text=_t('gui.academics.exam_management.exam_portal.buttons.refresh', default="Refresh"), command=self._refresh_grading).pack(side="right")
 
         cols = ("ID", "Exam", "Student", "Submitted", "Score", "Status")
         self.grading_tree = ttk.Treeview(tab, columns=cols, show="headings", height=10)
@@ -966,7 +968,7 @@ class ExamPortalGUI:
         self.grading_tree.column("Status", width=80)
         self.grading_tree.pack(fill="both", expand=True, padx=10)
 
-        ttk.Button(tab, text="Grade Selected", command=self._grade_attempt).pack(padx=10, pady=10, anchor="w")
+        ttk.Button(tab, text=_t('gui.academics.exam_management.exam_portal.buttons.grade_selected', default="Grade Selected"), command=self._grade_attempt).pack(padx=10, pady=10, anchor="w")
         self._refresh_grading()
 
     def _refresh_grading(self):
@@ -982,7 +984,7 @@ class ExamPortalGUI:
     def _grade_attempt(self):
         sel = self.grading_tree.selection()
         if not sel:
-            messagebox.showwarning("No Selection", "Select an attempt to grade.")
+            messagebox.showwarning(_t('gui.academics.exam_management.exam_portal.dialogs.no_selection', default="No Selection"), _t('gui.academics.exam_management.exam_portal.dialogs.select_an_attempt_to_grade', default="Select an attempt to grade."))
             return
         attempt_id = self.grading_tree.item(sel[0])["values"][0]
         attempt = self.svc.get_attempt(attempt_id)
@@ -1021,13 +1023,13 @@ class ExamPortalGUI:
 
             row = ttk.Frame(frame)
             row.pack(fill="x", padx=5, pady=5)
-            ttk.Label(row, text="Marks:").pack(side="left")
+            ttk.Label(row, text=_t('gui.academics.exam_management.exam_portal.labels.marks', default="Marks:")).pack(side="left")
             mark_var = tk.StringVar(value=str(a.get("marks_awarded", 0) or 0))
             ttk.Spinbox(row, from_=0, to=q["marks"], increment=0.5,
                          textvariable=mark_var, width=8).pack(side="left", padx=5)
             ttk.Label(row, text=f"/ {q['marks']}").pack(side="left")
 
-            ttk.Label(row, text="Feedback:").pack(side="left", padx=(20, 5))
+            ttk.Label(row, text=_t('gui.academics.exam_management.exam_portal.labels.feedback', default="Feedback:")).pack(side="left", padx=(20, 5))
             fb_var = tk.StringVar(value=a.get("feedback", "") or "")
             ttk.Entry(row, textvariable=fb_var, width=30).pack(side="left", fill="x", expand=True)
 
@@ -1038,32 +1040,32 @@ class ExamPortalGUI:
                 if answer_id:
                     self.svc.grade_answer(answer_id, float(mark_var.get()), fb_var.get())
             result = self.svc.finalise_grading(attempt_id, self._user.get("username", ""))
-            messagebox.showinfo("Graded",
+            messagebox.showinfo(_t('gui.academics.exam_management.exam_portal.dialogs.graded', default="Graded"),
                                 f"Score: {result['score']} ({result['percentage']}%)\n"
                                 f"Result: {'PASSED' if result['passed'] else 'FAILED'}",
                                 parent=win)
             win.destroy()
             self._refresh_grading()
 
-        ttk.Button(inner, text="Save Grades & Finalise", command=_save_grades).pack(pady=15)
+        ttk.Button(inner, text=_t('gui.academics.exam_management.exam_portal.buttons.save_grades_finalise', default="Save Grades & Finalise"), command=_save_grades).pack(pady=15)
 
     # ── Analytics Tab ───────────────────────────────────────────────
 
     def _build_analytics_tab(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Analytics")
+        self.notebook.add(tab, text=_t('gui.academics.exam_management.exam_portal.tabs.analytics', default="Analytics"))
 
         header = ttk.Frame(tab)
         header.pack(fill="x", padx=10, pady=10)
-        ttk.Label(header, text="Exam Analytics", font=("Arial", 14, "bold")).pack(side="left")
+        ttk.Label(header, text=_t('gui.academics.exam_management.exam_portal.labels.exam_analytics', default="Exam Analytics"), font=("Arial", 14, "bold")).pack(side="left")
 
         # Exam selector
-        ttk.Label(header, text="Select Exam:").pack(side="left", padx=(30, 5))
+        ttk.Label(header, text=_t('gui.academics.exam_management.exam_portal.labels.select_exam', default="Select Exam:")).pack(side="left", padx=(30, 5))
         self._analytics_exam_var = tk.StringVar()
         self._analytics_combo = ttk.Combobox(header, textvariable=self._analytics_exam_var,
                                               state="readonly", width=40)
         self._analytics_combo.pack(side="left", padx=5)
-        ttk.Button(header, text="Load", command=self._load_analytics).pack(side="left", padx=5)
+        ttk.Button(header, text=_t('gui.academics.exam_management.exam_portal.buttons.load', default="Load"), command=self._load_analytics).pack(side="left", padx=5)
 
         self._analytics_text = scrolledtext.ScrolledText(tab, wrap=tk.WORD, font=("Courier", 10))
         self._analytics_text.pack(fill="both", expand=True, padx=10, pady=(0, 10))

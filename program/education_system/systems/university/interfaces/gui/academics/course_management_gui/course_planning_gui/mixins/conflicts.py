@@ -2,6 +2,8 @@
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import threading
@@ -22,7 +24,7 @@ class _ConflictsMixin:
     def _create_conflicts_tab(self):
         """Add the conflicts tab frame (content built lazily on first view)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Conflicts")
+        self.notebook.add(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.tabs.conflicts', default="Conflicts"))
         self._register_lazy_tab(tab, self._populate_conflicts_tab)
 
     def _populate_conflicts_tab(self, tab):
@@ -31,25 +33,25 @@ class _ConflictsMixin:
         control_frame = ttk.Frame(tab)
         control_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(control_frame, text="Detect Conflicts",
+        ttk.Button(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.buttons.detect_conflicts', default="Detect Conflicts"),
                   command=self._detect_conflicts).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Refresh",
+        ttk.Button(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.buttons.refresh', default="Refresh"),
                   command=self._detect_conflicts).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Export Report",
+        ttk.Button(control_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.buttons.export_report', default="Export Report"),
                   command=self._export_conflicts_report).pack(side=tk.LEFT, padx=5)
 
         # Conflicts display
-        conflicts_frame = ttk.LabelFrame(tab, text="Detected Conflicts", padding=10)
+        conflicts_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.labels.detected_conflicts', default="Detected Conflicts"), padding=10)
         conflicts_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Create treeview for conflicts
         columns = ('Severity', 'Type', 'Semester', 'Description')
         self.conflicts_tree = ttk.Treeview(conflicts_frame, columns=columns, show='tree headings', height=20)
 
-        self.conflicts_tree.heading('Severity', text='Severity')
-        self.conflicts_tree.heading('Type', text='Type')
-        self.conflicts_tree.heading('Semester', text='Semester')
-        self.conflicts_tree.heading('Description', text='Description')
+        self.conflicts_tree.heading('Severity', text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.headings.severity', default='Severity'))
+        self.conflicts_tree.heading('Type', text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.headings.type', default='Type'))
+        self.conflicts_tree.heading('Semester', text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.headings.semester', default='Semester'))
+        self.conflicts_tree.heading('Description', text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.headings.description', default='Description'))
 
         self.conflicts_tree.column('Severity', width=100)
         self.conflicts_tree.column('Type', width=150)
@@ -64,7 +66,7 @@ class _ConflictsMixin:
         self.conflicts_tree.configure(yscrollcommand=conflicts_scrollbar.set)
 
         # Details panel
-        details_frame = ttk.LabelFrame(tab, text="Suggestions", padding=10)
+        details_frame = ttk.LabelFrame(tab, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.labels.suggestions', default="Suggestions"), padding=10)
         details_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.conflict_details_text = scrolledtext.ScrolledText(details_frame, wrap=tk.WORD,
@@ -78,7 +80,7 @@ class _ConflictsMixin:
     def _detect_conflicts(self):
         """Detect schedule conflicts."""
         if not self.current_plan_id:
-            messagebox.showwarning("Warning", "Please load a plan first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.dialogs.please_load_a_plan_first', default="Please load a plan first."))
             return
 
         try:
@@ -117,7 +119,7 @@ class _ConflictsMixin:
             self.status_bar.config(text=f"Detected {len(conflicts)} conflict(s)")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to detect conflicts: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.dialogs.error', default="Error"), f"Failed to detect conflicts: {e}")
 
     def _on_conflict_select(self, event):
         """Handle conflict selection to show suggestions."""
@@ -136,7 +138,7 @@ class _ConflictsMixin:
     def _export_conflicts_report(self):
         """Export conflicts report."""
         if not self.current_plan_id:
-            messagebox.showwarning("Warning", "Please load a plan first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.dialogs.please_load_a_plan_first', default="Please load a plan first."))
             return
 
         try:
@@ -154,8 +156,8 @@ class _ConflictsMixin:
             with open(filename, 'w') as f:
                 json.dump(conflicts, f, indent=2, default=str)
 
-            messagebox.showinfo("Success", f"Conflicts report exported to:\n{filename}")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.dialogs.success', default="Success"), f"Conflicts report exported to:\n{filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export report: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.conflicts.dialogs.error', default="Error"), f"Failed to export report: {e}")
 

@@ -1,6 +1,8 @@
 """Split from equality_diversity/gui.py — assembled in package __init__.py."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import csv
 import json
 import os
@@ -58,7 +60,7 @@ class _ReportsMixin:
                    command=lambda x=f: self._render_field_report(x),
                    bg=t["accent"], fg=t["header_fg"],
                    relief="flat", padx=10, pady=4).pack(side="left", padx=3)
-        Button(quick, text="Incidents",
+        Button(quick, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.incidents', default="Incidents"),
                command=self._render_incidents_report,
                bg=t["accent"], fg=t["header_fg"], relief="flat",
                padx=10, pady=4).pack(side="left", padx=3)
@@ -66,20 +68,20 @@ class _ReportsMixin:
         # advanced buttons
         adv = Frame(top, bg=t["panel"])
         adv.pack(anchor="w", pady=(10, 0))
-        Button(adv, text="Cross-tab…", command=self._open_crosstab,
+        Button(adv, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.cross_tab', default="Cross-tab…"), command=self._open_crosstab,
                bg="#27ae60", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
-        Button(adv, text="Trends…", command=self._open_trends,
+        Button(adv, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.trends', default="Trends…"), command=self._open_trends,
                bg="#27ae60", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
-        Button(adv, text="Benchmark vs baseline",
+        Button(adv, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.benchmark_vs_baseline', default="Benchmark vs baseline"),
                command=self._open_benchmarks,
                bg="#27ae60", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
-        Button(adv, text="Pay-gap", command=self._show_pay_gap,
+        Button(adv, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.pay_gap', default="Pay-gap"), command=self._show_pay_gap,
                bg="#27ae60", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
-        Button(adv, text="Export PDF", command=self._export_last_pdf,
+        Button(adv, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.export_pdf', default="Export PDF"), command=self._export_last_pdf,
                bg="#1e3a5f", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
 
@@ -88,7 +90,7 @@ class _ReportsMixin:
         # auto-synced by integrations.sync_from_students.
         seg = Frame(top, bg=t["panel"])
         seg.pack(anchor="w", pady=(10, 0))
-        Label(seg, text="Segment by:",
+        Label(seg, text=_t('gui.pastoral.equality_diversity.mixins.reports.labels.segment_by', default="Segment by:"),
               bg=t["panel"], fg=t["text"],
               font=("Helvetica", 9, "bold")
               ).pack(side="left", padx=(0, 6))
@@ -110,19 +112,19 @@ class _ReportsMixin:
               ).pack(anchor="w", pady=(14, 0))
         cross = Frame(top, bg=t["panel"])
         cross.pack(anchor="w", pady=(4, 0))
-        Button(cross, text="Attendance × demographic",
+        Button(cross, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.attendance_demographic', default="Attendance × demographic"),
                command=lambda: self._open_intersection('attendance'),
                bg="#dc2626", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
-        Button(cross, text="Discipline × demographic",
+        Button(cross, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.discipline_demographic', default="Discipline × demographic"),
                command=lambda: self._open_intersection('discipline'),
                bg="#dc2626", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
-        Button(cross, text="Risk feed × demographic",
+        Button(cross, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.risk_feed_demographic', default="Risk feed × demographic"),
                command=lambda: self._open_intersection('risk'),
                bg="#dc2626", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
-        Button(cross, text="Attainment gap",
+        Button(cross, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.attainment_gap', default="Attainment gap"),
                command=lambda: self._open_intersection('attainment'),
                bg="#dc2626", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
@@ -209,8 +211,8 @@ class _ReportsMixin:
               fg=self.theme["accent"]).pack(anchor="w", pady=(0, 8))
         if not triples:
             Label(self.report_frame,
-                  text="No data — sync the roster from the Admin tab "
-                       "to populate course / year on records.",
+                  text=_t('gui.pastoral.equality_diversity.mixins.reports.labels.no_data_sync_the_roster_from_the_admin_tab_to_populate_course_ye', default="No data — sync the roster from the Admin tab "
+                       "to populate course / year on records."),
                   bg=self.theme["panel"],
                   fg=self.theme["muted"]).pack(pady=20)
             return
@@ -221,7 +223,7 @@ class _ReportsMixin:
                              show="headings", height=14)
         tree.heading("seg", text=segment.replace('_', ' ').title())
         tree.heading("value", text=field.replace('_', ' ').title())
-        tree.heading("n", text="Count")
+        tree.heading("n", text=_t('gui.pastoral.equality_diversity.mixins.reports.headings.count', default="Count"))
         tree.column("seg", width=180)
         tree.column("value", width=180)
         tree.column("n", width=80, anchor="e")
@@ -238,7 +240,7 @@ class _ReportsMixin:
         win = Toplevel(self.root)
         win.title(f"Intersection — {kind}")
         win.configure(bg=self.theme["panel"])
-        Label(win, text="Break down by:",
+        Label(win, text=_t('gui.pastoral.equality_diversity.mixins.reports.labels.break_down_by', default="Break down by:"),
               bg=self.theme["panel"],
               fg=self.theme["text"]).pack(padx=12, pady=(10, 6))
         for label, field in [("Gender", "gender"),
@@ -270,8 +272,8 @@ class _ReportsMixin:
               bg=self.theme["panel"],
               fg=self.theme["accent"]).pack(anchor="w", pady=(0, 4))
         Label(self.report_frame,
-              text="Joins ed_people → central tables. Categories with "
-                   "n<5 are suppressed.",
+              text=_t('gui.pastoral.equality_diversity.mixins.reports.labels.joins_ed_people_central_tables_categories_with_n_5_are_suppresse', default="Joins ed_people → central tables. Categories with "
+                   "n<5 are suppressed."),
               bg=self.theme["panel"], fg=self.theme["muted"],
               font=("Helvetica", 9, "italic")
               ).pack(anchor="w", pady=(0, 10))
@@ -314,8 +316,8 @@ class _ReportsMixin:
 
         if not rows:
             Label(self.report_frame,
-                  text="No data — either no rows match or the "
-                       "underlying tables aren't present in this DB.",
+                  text=_t('gui.pastoral.equality_diversity.mixins.reports.labels.no_data_either_no_rows_match_or_the_underlying_tables_aren_t_pre', default="No data — either no rows match or the "
+                       "underlying tables aren't present in this DB."),
                   bg=self.theme["panel"],
                   fg=self.theme["muted"]).pack(pady=20)
             return
@@ -333,10 +335,10 @@ class _ReportsMixin:
 
     def _open_crosstab(self):
         win = Toplevel(self.root)
-        win.title("Cross-tab")
+        win.title(_t('gui.pastoral.equality_diversity.mixins.reports.windows.cross_tab', default="Cross-tab"))
         win.configure(bg=self.theme["panel"])
-        row_v = StringVar(value="gender")
-        col_v = StringVar(value="department")
+        row_v = StringVar(value=_t('gui.pastoral.equality_diversity.mixins.reports.values.gender', default="gender"))
+        col_v = StringVar(value=_t('gui.pastoral.equality_diversity.mixins.reports.values.department', default="department"))
         OptionMenu(win, row_v, *DEMOGRAPHIC_FIELDS).grid(row=0, column=0, padx=6, pady=6)
         Label(win, text="×", bg=self.theme["panel"], fg=self.theme["text"]
               ).grid(row=0, column=1)
@@ -350,7 +352,7 @@ class _ReportsMixin:
             try:
                 ct = reports_engine.cross_tab(row_v.get(), col_v.get())
             except ValueError as e:
-                messagebox.showerror("Cross-tab", str(e))
+                messagebox.showerror(_t('gui.pastoral.equality_diversity.mixins.reports.dialogs.cross_tab', default="Cross-tab"), str(e))
                 return
             Label(out, text="", bg=self.theme["panel"]
                   ).grid(row=0, column=0)
@@ -369,15 +371,15 @@ class _ReportsMixin:
                           borderwidth=1, relief="solid", padx=6
                           ).grid(row=i, column=j, sticky="ew")
 
-        Button(win, text="Run", command=run,
+        Button(win, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.run', default="Run"), command=run,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=10).grid(row=2, column=0, columnspan=3, pady=6)
 
     def _open_trends(self):
         win = Toplevel(self.root)
-        win.title("Yearly trends")
+        win.title(_t('gui.pastoral.equality_diversity.mixins.reports.windows.yearly_trends', default="Yearly trends"))
         win.configure(bg=self.theme["panel"])
-        var = StringVar(value="gender")
+        var = StringVar(value=_t('gui.pastoral.equality_diversity.mixins.reports.values.gender', default="gender"))
         OptionMenu(win, var, *DEMOGRAPHIC_FIELDS).pack(padx=8, pady=8)
         tree = ttk.Treeview(win, columns=("Year", "Value", "Count"),
                             show="headings", height=12)
@@ -391,15 +393,15 @@ class _ReportsMixin:
             for row in reports_engine.yearly_trend(var.get()):
                 tree.insert("", END, values=row)
 
-        Button(win, text="Show", command=run,
+        Button(win, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.show', default="Show"), command=run,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=10).pack(pady=6)
 
     def _open_benchmarks(self):
         win = Toplevel(self.root)
-        win.title("Benchmarks")
+        win.title(_t('gui.pastoral.equality_diversity.mixins.reports.windows.benchmarks', default="Benchmarks"))
         win.configure(bg=self.theme["panel"])
-        var = StringVar(value="gender")
+        var = StringVar(value=_t('gui.pastoral.equality_diversity.mixins.reports.values.gender', default="gender"))
         OptionMenu(win, var, *["gender", "ethnicity", "disability"]
                    ).pack(padx=8, pady=8)
         tree = ttk.Treeview(win, columns=("Cat", "Observed %", "Baseline %", "Δpp"),
@@ -415,13 +417,13 @@ class _ReportsMixin:
                 tree.insert("", END, values=(cat, f"{obs:.1f}",
                                              f"{base:.1f}", f"{delta:+.1f}"))
 
-        Button(win, text="Compare", command=run,
+        Button(win, text=_t('gui.pastoral.equality_diversity.mixins.reports.buttons.compare', default="Compare"), command=run,
                bg=self.theme["accent"], fg=self.theme["header_fg"],
                relief="flat", padx=10).pack(pady=6)
 
     def _show_pay_gap(self):
         win = Toplevel(self.root)
-        win.title("Pay gap (staff)")
+        win.title(_t('gui.pastoral.equality_diversity.mixins.reports.windows.pay_gap_staff', default="Pay gap (staff)"))
         win.configure(bg=self.theme["panel"])
         tree = ttk.Treeview(win, columns=("Group", "Mean salary", "N"),
                             show="headings", height=8)
@@ -447,7 +449,7 @@ class _ReportsMixin:
 
     def _export_last_pdf(self):
         if not self._last_report:
-            messagebox.showinfo("PDF", "Pick a report first.")
+            messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.reports.dialogs.pdf', default="PDF"), _t('gui.pastoral.equality_diversity.mixins.reports.dialogs.pick_a_report_first', default="Pick a report first."))
             return
         path = filedialog.asksaveasfilename(
             defaultextension=".pdf",
@@ -457,7 +459,7 @@ class _ReportsMixin:
             return
         title, data = self._last_report
         reports_engine.export_pdf(title, data, path)
-        messagebox.showinfo("PDF", f"Saved to {path}")
+        messagebox.showinfo(_t('gui.pastoral.equality_diversity.mixins.reports.dialogs.pdf', default="PDF"), f"Saved to {path}")
 
     # ============================================================== My Data
 

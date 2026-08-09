@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from tkinter.simpledialog import askstring, askinteger
@@ -94,7 +96,7 @@ def create_my_rooms_tab(self):
     body.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
     columns = ("Type", "Members", "Messages", "Unread", "Role")
     self.my_rooms_tree = ttk.Treeview(body, columns=columns, show="tree headings")
-    self.my_rooms_tree.heading("#0", text="Room")
+    self.my_rooms_tree.heading("#0", text=_t('gui.shell.email.email_gui.chat_tab.headings.room', default="Room"))
     self.my_rooms_tree.column("#0", width=260)
     for col in columns:
         self.my_rooms_tree.heading(col, text=col)
@@ -298,28 +300,28 @@ def _on_my_room_right_click(self, event):
         command=lambda: self._toggle_favourite_room(room['id'], not room.get('is_favourite')),
     )
     menu.add_separator()
-    menu.add_command(label="Open", command=lambda: ChatRoomWindow(
+    menu.add_command(label=_t('gui.shell.email.email_gui.chat_tab.menus.open', default="Open"), command=lambda: ChatRoomWindow(
         self.root, self.dashboard, room['id'], room['name'],
     ))
     if is_admin:
-        menu.add_command(label="Edit Room…",
+        menu.add_command(label=_t('gui.shell.email.email_gui.chat_tab.menus.edit_room', default="Edit Room…"),
                          command=lambda: EditRoomDialog(self.root, self.dashboard, room,
                                                         self.refresh_chat_rooms))
-        menu.add_command(label="Manage Members…",
+        menu.add_command(label=_t('gui.shell.email.email_gui.chat_tab.menus.manage_members', default="Manage Members…"),
                          command=lambda: ManageMembersDialog(self.root, self.dashboard, room,
                                                              self.refresh_chat_rooms))
-        menu.add_command(label="Audit Log…",
+        menu.add_command(label=_t('gui.shell.email.email_gui.chat_tab.menus.audit_log', default="Audit Log…"),
                          command=lambda: AuditLogDialog(self.root, self.dashboard,
                                                         room_id=room['id'],
                                                         room_name=room['name']))
-        menu.add_command(label="Reports for this room…",
+        menu.add_command(label=_t('gui.shell.email.email_gui.chat_tab.menus.reports_for_this_room', default="Reports for this room…"),
                          command=lambda: self._open_room_reports(room['id'], room['name']))
-        menu.add_command(label="Purge expired (all rooms)",
+        menu.add_command(label=_t('gui.shell.email.email_gui.chat_tab.menus.purge_expired_all_rooms', default="Purge expired (all rooms)"),
                          command=self._purge_expired)
         menu.add_separator()
-        menu.add_command(label="Archive", command=lambda: self._archive_room(room['id']))
+        menu.add_command(label=_t('gui.shell.email.email_gui.chat_tab.menus.archive', default="Archive"), command=lambda: self._archive_room(room['id']))
         if is_creator:
-            menu.add_command(label="Delete Room…",
+            menu.add_command(label=_t('gui.shell.email.email_gui.chat_tab.menus.delete_room', default="Delete Room…"),
                              command=lambda: self._delete_room(room['id'], room['name']))
     try:
         menu.tk_popup(event.x_root, event.y_root)
@@ -333,26 +335,26 @@ def _toggle_favourite_room(self, room_id, favourite):
         if self.dashboard.set_favourite_room(room_id, favourite=favourite):
             self.refresh_chat_rooms()
     except Exception as e:
-        messagebox.showerror("Error", str(e))
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_tab.dialogs.error', default="Error"), str(e))
 
 EmailManagerGUI._toggle_favourite_room = _toggle_favourite_room
 
 def _archive_room(self, room_id):
-    if not messagebox.askyesno("Archive", "Archive this room? Members keep history "
-                                          "but the room is hidden."):
+    if not messagebox.askyesno(_t('gui.shell.email.email_gui.chat_tab.dialogs.archive', default="Archive"), _t('gui.shell.email.email_gui.chat_tab.dialogs.archive_this_room_members_keep_history_but_the_room_is_hidden', default="Archive this room? Members keep history "
+                                          "but the room is hidden.")):
         return
     try:
         if self.dashboard.archive_chat_room(room_id, archive=True):
             self.refresh_chat_rooms()
         else:
-            messagebox.showerror("Error", "Could not archive (admin only).")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_tab.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_tab.dialogs.could_not_archive_admin_only', default="Could not archive (admin only)."))
     except Exception as e:
-        messagebox.showerror("Error", str(e))
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_tab.dialogs.error', default="Error"), str(e))
 
 EmailManagerGUI._archive_room = _archive_room
 
 def _delete_room(self, room_id, room_name):
-    if not messagebox.askyesno("Delete",
+    if not messagebox.askyesno(_t('gui.shell.email.email_gui.chat_tab.dialogs.delete', default="Delete"),
                                f"Permanently delete '{room_name}' and all its messages? "
                                "This cannot be undone."):
         return
@@ -360,9 +362,9 @@ def _delete_room(self, room_id, room_name):
         if self.dashboard.delete_chat_room(room_id):
             self.refresh_chat_rooms()
         else:
-            messagebox.showerror("Error", "Could not delete (creator only).")
+            messagebox.showerror(_t('gui.shell.email.email_gui.chat_tab.dialogs.error', default="Error"), _t('gui.shell.email.email_gui.chat_tab.dialogs.could_not_delete_creator_only', default="Could not delete (creator only)."))
     except Exception as e:
-        messagebox.showerror("Error", str(e))
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_tab.dialogs.error', default="Error"), str(e))
 
 EmailManagerGUI._delete_room = _delete_room
 
@@ -383,7 +385,7 @@ def _open_room_reports(self, room_id, room_name):
                 reports = self.dashboard.list_chat_reports(
                     status=dlg.status_var.get(), room_id=room_id) or []
             except Exception as e:
-                messagebox.showerror("Error", str(e), parent=dlg.dialog)
+                messagebox.showerror(_t('gui.shell.email.email_gui.chat_tab.dialogs.error', default="Error"), str(e), parent=dlg.dialog)
                 return
             for r in reports:
                 target = (f"@{r.get('target_user')}" if r.get('target_user')
@@ -403,23 +405,23 @@ def _open_room_reports(self, room_id, room_name):
         dlg._refresh = scoped
         dlg._refresh()
     except Exception as e:
-        messagebox.showerror("Error", str(e))
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_tab.dialogs.error', default="Error"), str(e))
 
 EmailManagerGUI._open_room_reports = _open_room_reports
 
 def _purge_expired(self):
     if not messagebox.askyesno(
-        "Purge expired",
-        "Delete chat messages older than each room's retention setting?\n"
-        "Polls and pinned messages are skipped. This cannot be undone.",
+        _t('gui.shell.email.email_gui.chat_tab.dialogs.purge_expired', default="Purge expired"),
+        _t('gui.shell.email.email_gui.chat_tab.dialogs.delete_chat_messages_older_than_each_room_s_retention_setting_po', default="Delete chat messages older than each room's retention setting?\n"
+        "Polls and pinned messages are skipped. This cannot be undone."),
     ):
         return
     try:
         n = self.dashboard.purge_expired_chat_messages()
-        messagebox.showinfo("Purge", f"Removed {n} message(s).")
+        messagebox.showinfo(_t('gui.shell.email.email_gui.chat_tab.dialogs.purge', default="Purge"), f"Removed {n} message(s).")
         self.refresh_chat_rooms()
     except Exception as e:
-        messagebox.showerror("Error", str(e))
+        messagebox.showerror(_t('gui.shell.email.email_gui.chat_tab.dialogs.error', default="Error"), str(e))
 
 EmailManagerGUI._purge_expired = _purge_expired
 

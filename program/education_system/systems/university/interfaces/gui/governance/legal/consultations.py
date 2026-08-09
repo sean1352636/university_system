@@ -1,5 +1,7 @@
 """Consultations mixin for the Legal Services GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.governance.legal._imports import (
     tk, ttk, messagebox, scrolledtext, simpledialog, traceback,
     datetime, timedelta,
@@ -59,7 +61,7 @@ class ConsultationsMixin:
         columns = ('id', 'client', 'date', 'time', 'type', 'fee', 'payment', 'status')
         self.consult_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
 
-        self.consult_tree.heading('id', text='ID')
+        self.consult_tree.heading('id', text=_t('gui.governance.legal.consultations.headings.id', default='ID'))
         self.consult_tree.heading('client', text=_t("legal.labels.client_name", default="Client"))
         self.consult_tree.heading('date', text=_t("legal.labels.scheduled_date", default="Date"))
         self.consult_tree.heading('time', text=_t("legal.labels.scheduled_time", default="Time"))
@@ -158,7 +160,7 @@ class ConsultationsMixin:
 
         # Fee display
         ttk.Label(form_frame, text=_t("legal.labels.fee", default="Fee") + ":").grid(row=8, column=0, sticky=tk.W, pady=3)
-        self.fee_display_var = tk.StringVar(value="GBP 25.00")
+        self.fee_display_var = tk.StringVar(value=_t('gui.governance.legal.consultations.values.gbp_25_00', default="GBP 25.00"))
         ttk.Label(form_frame, textvariable=self.fee_display_var, font=('Arial', 11, 'bold')).grid(row=8, column=1, sticky=tk.W, pady=3)
 
         # Notes
@@ -266,7 +268,7 @@ class ConsultationsMixin:
         try:
             consultation = ConsultationManager.get_consultation(self.selected_consultation['consultation_id'])
             if not consultation:
-                messagebox.showerror(_t("common.error", default="Error"), "Consultation not found")
+                messagebox.showerror(_t("common.error", default="Error"), _t('gui.governance.legal.consultations.dialogs.consultation_not_found', default="Consultation not found"))
                 return
 
             fee = consultation.get('fee', 0)
@@ -288,7 +290,7 @@ class ConsultationsMixin:
             ttk.Label(dialog, text=_t("legal.labels.payment_method", default="Payment Method") + ":", font=('Arial', 10, 'bold')).pack(pady=(10, 5))
 
             # Payment method radio buttons
-            payment_method_var = tk.StringVar(value="Cash")
+            payment_method_var = tk.StringVar(value=_t('gui.governance.legal.consultations.values.cash', default="Cash"))
             methods_frame = ttk.Frame(dialog)
             methods_frame.pack(pady=5)
 
@@ -390,7 +392,7 @@ class ConsultationsMixin:
         try:
             consultation = ConsultationManager.get_consultation(consultation_id)
             if not consultation:
-                messagebox.showerror(_t("common.error", default="Error"), "Consultation not found")
+                messagebox.showerror(_t("common.error", default="Error"), _t('gui.governance.legal.consultations.dialogs.consultation_not_found', default="Consultation not found"))
                 return
 
             if consultation.get('payment_status') != 'paid':

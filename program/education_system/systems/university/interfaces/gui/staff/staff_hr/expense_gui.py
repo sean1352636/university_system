@@ -11,6 +11,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import datetime
@@ -35,7 +37,7 @@ class ExpenseGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Expense Claims")
+            messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), _t('gui.staff.staff_hr.expense.dialogs.login_required_to_access_expense_claims', default="Login required to access Expense Claims"))
             return
 
         if parent_notebook:
@@ -50,21 +52,21 @@ class ExpenseGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Expenses")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.expense.tabs.expenses', default="Expenses"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Expense Claims & Reimbursements")
+        self.window.title(_t('gui.staff.staff_hr.expense.windows.expense_claims_reimbursements', default="Expense Claims & Reimbursements"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.expense.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.expense.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -88,51 +90,51 @@ class ExpenseGUI:
     def _create_submit_tab(self):
         """Create submit expense claim tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Submit Claim")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.expense.tabs.submit_claim', default="Submit Claim"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Submit New Expense Claim", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.expense.labels.submit_new_expense_claim', default="Submit New Expense Claim"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Form
-        form_frame = ttk.LabelFrame(tab, text="Claim Details", padding=15)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.expense.labels.claim_details', default="Claim Details"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 1
-        ttk.Label(form_frame, text="Category:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.expense.labels.category', default="Category:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.category_combo = ttk.Combobox(form_frame, width=25, state='readonly')
         self.category_combo.grid(row=0, column=1, padx=10, pady=8, sticky='w')
         self._load_categories_combo()
 
-        ttk.Label(form_frame, text="Amount ($):").grid(row=0, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.expense.labels.amount', default="Amount ($):")).grid(row=0, column=2, sticky='e', padx=10, pady=8)
         self.amount_entry = ttk.Entry(form_frame, width=15)
         self.amount_entry.grid(row=0, column=3, padx=10, pady=8, sticky='w')
 
         # Row 2
-        ttk.Label(form_frame, text="Expense Date:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.expense.labels.expense_date', default="Expense Date:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.date_entry = ttk.Entry(form_frame, width=15)
         self.date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         self.date_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Receipt:").grid(row=1, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.expense.labels.receipt', default="Receipt:")).grid(row=1, column=2, sticky='e', padx=10, pady=8)
         receipt_frame = ttk.Frame(form_frame)
         receipt_frame.grid(row=1, column=3, padx=10, pady=8, sticky='w')
         self.receipt_entry = ttk.Entry(receipt_frame, width=30)
         self.receipt_entry.pack(side=tk.LEFT)
-        ttk.Button(receipt_frame, text="Browse", command=self._browse_receipt).pack(side=tk.LEFT, padx=5)
+        ttk.Button(receipt_frame, text=_t('gui.staff.staff_hr.expense.buttons.browse', default="Browse"), command=self._browse_receipt).pack(side=tk.LEFT, padx=5)
 
         # Row 3
-        ttk.Label(form_frame, text="Description:").grid(row=2, column=0, sticky='ne', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.expense.labels.description', default="Description:")).grid(row=2, column=0, sticky='ne', padx=10, pady=8)
         self.description_text = tk.Text(form_frame, width=60, height=4)
         self.description_text.grid(row=2, column=1, columnspan=3, padx=10, pady=8, sticky='w')
 
         # Submit button
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=3, column=0, columnspan=4, pady=15)
-        ttk.Button(btn_frame, text="Submit Claim", command=self._submit_claim).pack()
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.expense.buttons.submit_claim', default="Submit Claim"), command=self._submit_claim).pack()
 
         # Recent submissions
-        recent_frame = ttk.LabelFrame(tab, text="My Recent Submissions", padding=10)
+        recent_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.expense.labels.my_recent_submissions', default="My Recent Submissions"), padding=10)
         recent_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         columns = ('ID', 'Date', 'Category', 'Amount', 'Status')
@@ -172,7 +174,7 @@ class ExpenseGUI:
             return
 
         if category_name not in self.categories_data:
-            messagebox.showerror("Error", "Please select a valid category")
+            messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), _t('gui.staff.staff_hr.expense.dialogs.please_select_a_valid_category', default="Please select a valid category"))
             return
 
         category = self.categories_data[category_name]
@@ -186,14 +188,14 @@ class ExpenseGUI:
 
         # Check category limit
         if category.get('max_amount') and amount > category['max_amount']:
-            if not messagebox.askyesno("Warning",
+            if not messagebox.askyesno(_t('gui.staff.staff_hr.expense.dialogs.warning', default="Warning"),
                 f"Amount exceeds category limit of £{category['max_amount']:.2f}. Continue?"):
                 return
 
         # Check receipt requirement
         receipt_path = self.receipt_entry.get().strip() or None
         if category.get('requires_receipt') and not receipt_path:
-            messagebox.showerror("Error", "This category requires a receipt")
+            messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), _t('gui.staff.staff_hr.expense.dialogs.this_category_requires_a_receipt', default="This category requires a receipt"))
             return
 
         # Validate date and description
@@ -213,7 +215,7 @@ class ExpenseGUI:
                 expense_date=expense_date,
                 receipt_path=receipt_path
             )
-            messagebox.showinfo("Success", f"Claim submitted successfully. ID: {claim_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.expense.dialogs.success', default="Success"), f"Claim submitted successfully. ID: {claim_id}")
 
             # Clear form
             self.amount_entry.delete(0, tk.END)
@@ -222,7 +224,7 @@ class ExpenseGUI:
             self._load_recent_claims()
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), str(e))
 
     def _load_recent_claims(self):
         """Load recent claims."""
@@ -242,22 +244,22 @@ class ExpenseGUI:
     def _create_my_claims_tab(self):
         """Create my claims tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Claims")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.expense.tabs.my_claims', default="My Claims"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Expense Claims", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.expense.labels.my_expense_claims', default="My Expense Claims"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Filter
         filter_frame = ttk.Frame(header_frame)
         filter_frame.pack(side=tk.RIGHT)
-        ttk.Label(filter_frame, text="Status:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(filter_frame, text=_t('gui.staff.staff_hr.expense.labels.status', default="Status:")).pack(side=tk.LEFT, padx=5)
         self.status_filter = ttk.Combobox(filter_frame,
             values=['All', 'Pending', 'Approved', 'Rejected', 'Reimbursed'], width=12, state='readonly')
         self.status_filter.set('All')
         self.status_filter.pack(side=tk.LEFT, padx=5)
         self.status_filter.bind('<<ComboboxSelected>>', lambda e: self._load_my_claims())
-        ttk.Button(filter_frame, text="Refresh", command=self._load_my_claims).pack(side=tk.LEFT, padx=10)
+        ttk.Button(filter_frame, text=_t('gui.staff.staff_hr.expense.buttons.refresh', default="Refresh"), command=self._load_my_claims).pack(side=tk.LEFT, padx=10)
 
         # Summary
         summary_frame = ttk.Frame(tab)
@@ -329,12 +331,12 @@ class ExpenseGUI:
     def _create_approvals_tab(self):
         """Create approvals tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Approvals")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.expense.tabs.approvals', default="Approvals"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Pending Approvals", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_approvals).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.expense.labels.pending_approvals', default="Pending Approvals"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.expense.buttons.refresh', default="Refresh"), command=self._load_approvals).pack(side=tk.RIGHT)
 
         # Pending claims
         tree_frame = ttk.Frame(tab)
@@ -356,8 +358,8 @@ class ExpenseGUI:
         btn_frame = ttk.Frame(tab)
         btn_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        ttk.Button(btn_frame, text="Approve Selected", command=self._approve_claim).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Reject Selected", command=self._reject_claim).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.expense.buttons.approve_selected', default="Approve Selected"), command=self._approve_claim).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.expense.buttons.reject_selected', default="Reject Selected"), command=self._reject_claim).pack(side=tk.LEFT, padx=5)
 
         self._load_approvals()
 
@@ -383,7 +385,7 @@ class ExpenseGUI:
         """Approve selected claim."""
         selection = self.approvals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a claim to approve")
+            messagebox.showinfo(_t('gui.staff.staff_hr.expense.dialogs.info', default="Info"), _t('gui.staff.staff_hr.expense.dialogs.please_select_a_claim_to_approve', default="Please select a claim to approve"))
             return
 
         item = self.approvals_tree.item(selection[0])
@@ -393,16 +395,16 @@ class ExpenseGUI:
 
         try:
             ExpenseManager.approve_claim(claim_id, self._get_user_id(), comments or '')
-            messagebox.showinfo("Success", "Claim approved")
+            messagebox.showinfo(_t('gui.staff.staff_hr.expense.dialogs.success', default="Success"), _t('gui.staff.staff_hr.expense.dialogs.claim_approved', default="Claim approved"))
             self._load_approvals()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), str(e))
 
     def _reject_claim(self):
         """Reject selected claim."""
         selection = self.approvals_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a claim to reject")
+            messagebox.showinfo(_t('gui.staff.staff_hr.expense.dialogs.info', default="Info"), _t('gui.staff.staff_hr.expense.dialogs.please_select_a_claim_to_reject', default="Please select a claim to reject"))
             return
 
         item = self.approvals_tree.item(selection[0])
@@ -410,26 +412,26 @@ class ExpenseGUI:
 
         comments = tk.simpledialog.askstring("Reason", "Enter rejection reason:", parent=self.root)
         if not comments:
-            messagebox.showerror("Error", "Rejection reason is required")
+            messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), _t('gui.staff.staff_hr.expense.dialogs.rejection_reason_is_required', default="Rejection reason is required"))
             return
 
         try:
             ExpenseManager.reject_claim(claim_id, self._get_user_id(), comments)
-            messagebox.showinfo("Success", "Claim rejected")
+            messagebox.showinfo(_t('gui.staff.staff_hr.expense.dialogs.success', default="Success"), _t('gui.staff.staff_hr.expense.dialogs.claim_rejected', default="Claim rejected"))
             self._load_approvals()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), str(e))
 
     def _create_categories_tab(self):
         """Create categories management tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Categories")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.expense.tabs.categories', default="Categories"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Expense Categories", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Add Category", command=self._add_category).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text="Refresh", command=self._load_categories).pack(side=tk.RIGHT, padx=5)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.expense.labels.expense_categories', default="Expense Categories"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.expense.buttons.add_category', default="Add Category"), command=self._add_category).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.expense.buttons.refresh', default="Refresh"), command=self._load_categories).pack(side=tk.RIGHT, padx=5)
 
         # Categories list
         tree_frame = ttk.Frame(tab)
@@ -469,33 +471,33 @@ class ExpenseGUI:
     def _add_category(self):
         """Add new category dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Category")
+        dialog.title(_t('gui.staff.staff_hr.expense.windows.add_category', default="Add Category"))
         dialog.geometry("400x300")
         dialog.transient(self.root)
 
         frame = ttk.Frame(dialog, padding=20)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.expense.labels.name', default="Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         name_entry = ttk.Entry(frame, width=30)
         name_entry.grid(row=0, column=1, padx=10, pady=8)
 
-        ttk.Label(frame, text="Description:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.expense.labels.description', default="Description:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         desc_entry = ttk.Entry(frame, width=30)
         desc_entry.grid(row=1, column=1, padx=10, pady=8)
 
-        ttk.Label(frame, text="Max Amount:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(frame, text=_t('gui.staff.staff_hr.expense.labels.max_amount', default="Max Amount:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         max_entry = ttk.Entry(frame, width=15)
         max_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         receipt_var = tk.BooleanVar()
-        ttk.Checkbutton(frame, text="Requires Receipt", variable=receipt_var).grid(
+        ttk.Checkbutton(frame, text=_t('gui.staff.staff_hr.expense.buttons.requires_receipt', default="Requires Receipt"), variable=receipt_var).grid(
             row=3, column=0, columnspan=2, pady=10)
 
         def save():
             name = name_entry.get().strip()
             if not name:
-                messagebox.showerror("Error", "Name is required")
+                messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), _t('gui.staff.staff_hr.expense.dialogs.name_is_required', default="Name is required"))
                 return
 
             try:
@@ -510,27 +512,27 @@ class ExpenseGUI:
                     max_amount=max_amt,
                     requires_receipt=receipt_var.get()
                 )
-                messagebox.showinfo("Success", "Category created")
+                messagebox.showinfo(_t('gui.staff.staff_hr.expense.dialogs.success', default="Success"), _t('gui.staff.staff_hr.expense.dialogs.category_created', default="Category created"))
                 dialog.destroy()
                 self._load_categories()
                 self._load_categories_combo()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.staff.staff_hr.expense.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(frame, text="Save", command=save).grid(row=4, column=0, columnspan=2, pady=20)
+        ttk.Button(frame, text=_t('gui.staff.staff_hr.expense.buttons.save', default="Save"), command=save).grid(row=4, column=0, columnspan=2, pady=20)
 
     def _create_reports_tab(self):
         """Create reports tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Reports")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.expense.tabs.reports', default="Reports"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Expense Reports", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_expense_stats).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.expense.labels.expense_reports', default="Expense Reports"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.expense.buttons.refresh', default="Refresh"), command=self._load_expense_stats).pack(side=tk.RIGHT)
 
         # Statistics
-        stats_frame = ttk.LabelFrame(tab, text="Overview", padding=15)
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.expense.labels.overview', default="Overview"), padding=15)
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.expense_stats = {}
@@ -542,7 +544,7 @@ class ExpenseGUI:
             ttk.Label(frame, text=label).pack()
 
         # By category
-        cat_frame = ttk.LabelFrame(tab, text="By Category", padding=10)
+        cat_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.expense.labels.by_category', default="By Category"), padding=10)
         cat_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         columns = ('Category', 'Claims', 'Total Amount', 'Average')

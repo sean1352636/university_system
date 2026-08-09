@@ -4,6 +4,8 @@ Lost & Found GUI Interface
 Full-featured GUI for lost and found item management with image upload.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from datetime import datetime
@@ -34,7 +36,7 @@ class LostFoundGUI:
 
     def __init__(self, parent, auth=None):
         self.root = tk.Toplevel(parent)
-        self.root.title("Lost & Found System")
+        self.root.title(_t('gui.operations.campus.lost_found.lost_found.windows.lost_found_system', default="Lost & Found System"))
         self.root.geometry("1400x900")
 
         self.auth = auth or get_auth()
@@ -55,7 +57,7 @@ class LostFoundGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        title = ttk.Label(main_frame, text="Lost & Found System",
+        title = ttk.Label(main_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.lost_found_system', default="Lost & Found System"),
                          font=('Arial', 20, 'bold'))
         title.pack(pady=10)
 
@@ -83,21 +85,21 @@ class LostFoundGUI:
     def create_lost_items_tab(self):
         """Create Lost Items tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Lost Items")
+        self.notebook.add(tab, text=_t('gui.operations.campus.lost_found.lost_found.tabs.lost_items', default="Lost Items"))
 
         # Top frame for report form
-        form_frame = ttk.LabelFrame(tab, text="Report Lost Item", padding="10")
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.lost_found.lost_found.labels.report_lost_item', default="Report Lost Item"), padding="10")
         form_frame.pack(fill=tk.X, padx=5, pady=5)
 
         # Item details in grid
         row = 0
 
-        ttk.Label(form_frame, text="Item Name:*").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.item_name', default="Item Name:*")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.lost_name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.lost_name_var, width=30).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Category:*").grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.category', default="Category:*")).grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.lost_category_var = tk.StringVar()
         category_combo = ttk.Combobox(form_frame, textvariable=self.lost_category_var,
                                       values=self.CATEGORIES, state='readonly', width=20)
@@ -105,56 +107,56 @@ class LostFoundGUI:
         category_combo.current(0)
 
         row += 1
-        ttk.Label(form_frame, text="Description:*").grid(row=row, column=0, sticky=tk.NW, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.description', default="Description:*")).grid(row=row, column=0, sticky=tk.NW, pady=3)
         self.lost_description = tk.Text(form_frame, width=30, height=3)
         self.lost_description.grid(row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Distinctive Features:").grid(
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.distinctive_features', default="Distinctive Features:")).grid(
             row=row, column=2, sticky=tk.NW, pady=3, padx=(15, 0))
         self.lost_features = tk.Text(form_frame, width=25, height=3)
         self.lost_features.grid(row=row, column=3, pady=3, sticky=tk.W, padx=5)
 
         row += 1
-        ttk.Label(form_frame, text="Lost Date:*").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.lost_date', default="Lost Date:*")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.lost_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(form_frame, textvariable=self.lost_date_var, width=15).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Lost Time:").grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.lost_time', default="Lost Time:")).grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.lost_time_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.lost_time_var, width=10).grid(
             row=row, column=3, pady=3, sticky=tk.W, padx=5)
 
         row += 1
-        ttk.Label(form_frame, text="Lost Location:*").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.lost_location', default="Lost Location:*")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.lost_location_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.lost_location_var, width=30).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Color:").grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.color', default="Color:")).grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.lost_color_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.lost_color_var, width=15).grid(
             row=row, column=3, pady=3, sticky=tk.W, padx=5)
 
         row += 1
-        ttk.Label(form_frame, text="Brand:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.brand', default="Brand:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.lost_brand_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.lost_brand_var, width=20).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Estimated Value ($):").grid(
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.estimated_value', default="Estimated Value ($):")).grid(
             row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.lost_value_var = tk.StringVar(value="0.00")
         ttk.Entry(form_frame, textvariable=self.lost_value_var, width=10).grid(
             row=row, column=3, pady=3, sticky=tk.W, padx=5)
 
         row += 1
-        ttk.Label(form_frame, text="Contact Email:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.contact_email', default="Contact Email:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.lost_email_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.lost_email_var, width=30).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Contact Phone:").grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.contact_phone', default="Contact Phone:")).grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.lost_phone_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.lost_phone_var, width=20).grid(
             row=row, column=3, pady=3, sticky=tk.W, padx=5)
@@ -164,28 +166,28 @@ class LostFoundGUI:
         button_frame = ttk.Frame(form_frame)
         button_frame.grid(row=row, column=0, columnspan=4, pady=10)
 
-        ttk.Button(button_frame, text="Report Lost Item",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.report_lost_item', default="Report Lost Item"),
                   command=self.report_lost_item).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Clear Form",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.clear_form', default="Clear Form"),
                   command=self.clear_lost_form).pack(side=tk.LEFT, padx=5)
 
         # Search and list frame
-        list_frame = ttk.LabelFrame(tab, text="Lost Items List", padding="10")
+        list_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.lost_found.lost_found.labels.lost_items_list', default="Lost Items List"), padding="10")
         list_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Search controls
         search_frame = ttk.Frame(list_frame)
         search_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.search', default="Search:")).pack(side=tk.LEFT, padx=5)
         self.lost_search_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=self.lost_search_var, width=30).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(search_frame, text="Search",
+        ttk.Button(search_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.search', default="Search"),
                   command=lambda: self.search_items('lost')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Show All",
+        ttk.Button(search_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.show_all', default="Show All"),
                   command=self.load_lost_items).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Refresh",
+        ttk.Button(search_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.refresh', default="Refresh"),
                   command=self.load_lost_items).pack(side=tk.LEFT, padx=5)
 
         # Treeview for lost items
@@ -207,31 +209,31 @@ class LostFoundGUI:
         action_frame = ttk.Frame(list_frame)
         action_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(action_frame, text="View Details",
+        ttk.Button(action_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.view_details', default="View Details"),
                   command=lambda: self.view_item_details('lost')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Update Status",
+        ttk.Button(action_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.update_status', default="Update Status"),
                   command=lambda: self.update_item_status_dialog('lost')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="View Matches",
+        ttk.Button(action_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.view_matches', default="View Matches"),
                   command=lambda: self.view_item_matches('lost')).pack(side=tk.LEFT, padx=5)
 
     def create_found_items_tab(self):
         """Create Found Items tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Found Items")
+        self.notebook.add(tab, text=_t('gui.operations.campus.lost_found.lost_found.tabs.found_items', default="Found Items"))
 
         # Top frame for report form
-        form_frame = ttk.LabelFrame(tab, text="Report Found Item", padding="10")
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.lost_found.lost_found.labels.report_found_item', default="Report Found Item"), padding="10")
         form_frame.pack(fill=tk.X, padx=5, pady=5)
 
         # Item details in grid
         row = 0
 
-        ttk.Label(form_frame, text="Item Name:*").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.item_name', default="Item Name:*")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.found_name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.found_name_var, width=30).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Category:*").grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.category', default="Category:*")).grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.found_category_var = tk.StringVar()
         category_combo = ttk.Combobox(form_frame, textvariable=self.found_category_var,
                                       values=self.CATEGORIES, state='readonly', width=20)
@@ -239,73 +241,73 @@ class LostFoundGUI:
         category_combo.current(0)
 
         row += 1
-        ttk.Label(form_frame, text="Description:*").grid(row=row, column=0, sticky=tk.NW, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.description', default="Description:*")).grid(row=row, column=0, sticky=tk.NW, pady=3)
         self.found_description = tk.Text(form_frame, width=30, height=3)
         self.found_description.grid(row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Distinctive Features:").grid(
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.distinctive_features', default="Distinctive Features:")).grid(
             row=row, column=2, sticky=tk.NW, pady=3, padx=(15, 0))
         self.found_features = tk.Text(form_frame, width=25, height=3)
         self.found_features.grid(row=row, column=3, pady=3, sticky=tk.W, padx=5)
 
         row += 1
-        ttk.Label(form_frame, text="Found Date:*").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.found_date', default="Found Date:*")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.found_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(form_frame, textvariable=self.found_date_var, width=15).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Found Time:").grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.found_time', default="Found Time:")).grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.found_time_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.found_time_var, width=10).grid(
             row=row, column=3, pady=3, sticky=tk.W, padx=5)
 
         row += 1
-        ttk.Label(form_frame, text="Found Location:*").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.found_location', default="Found Location:*")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.found_location_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.found_location_var, width=30).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Color:").grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.color', default="Color:")).grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.found_color_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.found_color_var, width=15).grid(
             row=row, column=3, pady=3, sticky=tk.W, padx=5)
 
         row += 1
-        ttk.Label(form_frame, text="Brand:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.brand', default="Brand:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.found_brand_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.found_brand_var, width=20).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Current Location:").grid(
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.current_location', default="Current Location:")).grid(
             row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.found_current_location_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.found_current_location_var, width=25).grid(
             row=row, column=3, pady=3, sticky=tk.W, padx=5)
 
         row += 1
-        ttk.Label(form_frame, text="Storage Info:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.storage_info', default="Storage Info:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.found_storage_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.found_storage_var, width=30).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
         row += 1
-        ttk.Label(form_frame, text="Contact Email:").grid(row=row, column=0, sticky=tk.W, pady=3)
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.contact_email', default="Contact Email:")).grid(row=row, column=0, sticky=tk.W, pady=3)
         self.found_email_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.found_email_var, width=30).grid(
             row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Label(form_frame, text="Contact Phone:").grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.contact_phone', default="Contact Phone:")).grid(row=row, column=2, sticky=tk.W, pady=3, padx=(15, 0))
         self.found_phone_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.found_phone_var, width=20).grid(
             row=row, column=3, pady=3, sticky=tk.W, padx=5)
 
         # Photo upload
         row += 1
-        ttk.Label(form_frame, text="Photo:").grid(row=row, column=0, sticky=tk.W, pady=3)
-        self.found_photo_label = ttk.Label(form_frame, text="No photo selected")
+        ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.photo', default="Photo:")).grid(row=row, column=0, sticky=tk.W, pady=3)
+        self.found_photo_label = ttk.Label(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.no_photo_selected', default="No photo selected"))
         self.found_photo_label.grid(row=row, column=1, pady=3, sticky=tk.W, padx=5)
 
-        ttk.Button(form_frame, text="Select Photo",
+        ttk.Button(form_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.select_photo', default="Select Photo"),
                   command=lambda: self.select_photo('found')).grid(
             row=row, column=2, pady=3, sticky=tk.W, padx=(15, 0))
 
@@ -314,28 +316,28 @@ class LostFoundGUI:
         button_frame = ttk.Frame(form_frame)
         button_frame.grid(row=row, column=0, columnspan=4, pady=10)
 
-        ttk.Button(button_frame, text="Report Found Item",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.report_found_item', default="Report Found Item"),
                   command=self.report_found_item).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Clear Form",
+        ttk.Button(button_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.clear_form', default="Clear Form"),
                   command=self.clear_found_form).pack(side=tk.LEFT, padx=5)
 
         # Search and list frame
-        list_frame = ttk.LabelFrame(tab, text="Found Items List", padding="10")
+        list_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.lost_found.lost_found.labels.found_items_list', default="Found Items List"), padding="10")
         list_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Search controls
         search_frame = ttk.Frame(list_frame)
         search_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(search_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.search', default="Search:")).pack(side=tk.LEFT, padx=5)
         self.found_search_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=self.found_search_var, width=30).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(search_frame, text="Search",
+        ttk.Button(search_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.search', default="Search"),
                   command=lambda: self.search_items('found')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Show All",
+        ttk.Button(search_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.show_all', default="Show All"),
                   command=self.load_found_items).pack(side=tk.LEFT, padx=5)
-        ttk.Button(search_frame, text="Refresh",
+        ttk.Button(search_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.refresh', default="Refresh"),
                   command=self.load_found_items).pack(side=tk.LEFT, padx=5)
 
         # Treeview for found items
@@ -357,29 +359,29 @@ class LostFoundGUI:
         action_frame = ttk.Frame(list_frame)
         action_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(action_frame, text="View Details",
+        ttk.Button(action_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.view_details', default="View Details"),
                   command=lambda: self.view_item_details('found')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Update Status",
+        ttk.Button(action_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.update_status', default="Update Status"),
                   command=lambda: self.update_item_status_dialog('found')).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Submit Claim",
+        ttk.Button(action_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.submit_claim', default="Submit Claim"),
                   command=self.submit_claim_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="View Matches",
+        ttk.Button(action_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.view_matches', default="View Matches"),
                   command=lambda: self.view_item_matches('found')).pack(side=tk.LEFT, padx=5)
 
     def create_my_reports_tab(self):
         """Create My Reports tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="My Reports")
+        self.notebook.add(tab, text=_t('gui.operations.campus.lost_found.lost_found.tabs.my_reports', default="My Reports"))
 
         # Lost items section
-        lost_frame = ttk.LabelFrame(tab, text="My Lost Items", padding="10")
+        lost_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.lost_found.lost_found.labels.my_lost_items', default="My Lost Items"), padding="10")
         lost_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Controls
         control_frame = ttk.Frame(lost_frame)
         control_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(control_frame, text="Refresh",
+        ttk.Button(control_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.refresh', default="Refresh"),
                   command=self.load_my_lost_items).pack(side=tk.LEFT, padx=5)
 
         # Treeview
@@ -397,14 +399,14 @@ class LostFoundGUI:
         self.my_lost_tree.configure(yscrollcommand=scrollbar.set)
 
         # Found items section
-        found_frame = ttk.LabelFrame(tab, text="My Found Items", padding="10")
+        found_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.lost_found.lost_found.labels.my_found_items', default="My Found Items"), padding="10")
         found_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Controls
         control_frame = ttk.Frame(found_frame)
         control_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Button(control_frame, text="Refresh",
+        ttk.Button(control_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.refresh', default="Refresh"),
                   command=self.load_my_found_items).pack(side=tk.LEFT, padx=5)
 
         # Treeview
@@ -423,25 +425,25 @@ class LostFoundGUI:
     def create_claims_tab(self):
         """Create Claims tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Claims")
+        self.notebook.add(tab, text=_t('gui.operations.campus.lost_found.lost_found.tabs.claims', default="Claims"))
 
         # Controls
         control_frame = ttk.Frame(tab)
         control_frame.pack(fill=tk.X, pady=5)
 
-        ttk.Label(control_frame, text="Filter by Status:").pack(side=tk.LEFT, padx=5)
-        self.claims_status_var = tk.StringVar(value="All")
+        ttk.Label(control_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.filter_by_status', default="Filter by Status:")).pack(side=tk.LEFT, padx=5)
+        self.claims_status_var = tk.StringVar(value=_t('gui.operations.campus.lost_found.lost_found.values.all', default="All"))
         status_combo = ttk.Combobox(control_frame, textvariable=self.claims_status_var,
                                     values=['All', 'Pending', 'Approved', 'Rejected'],
                                     state='readonly', width=15)
         status_combo.pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(control_frame, text="Refresh",
+        ttk.Button(control_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.refresh', default="Refresh"),
                   command=self.load_claims).pack(side=tk.LEFT, padx=5)
 
         user = self.auth.get_current_user()
         if user and user.get('role', '').lower() in ['admin', 'staff']:
-            ttk.Button(control_frame, text="Review Claims",
+            ttk.Button(control_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.review_claims', default="Review Claims"),
                       command=self.review_claim_dialog).pack(side=tk.LEFT, padx=5)
 
         # Treeview for claims
@@ -460,38 +462,38 @@ class LostFoundGUI:
         self.claims_tree.configure(yscrollcommand=scrollbar.set)
 
         # Details button
-        ttk.Button(tab, text="View Claim Details",
+        ttk.Button(tab, text=_t('gui.operations.campus.lost_found.lost_found.buttons.view_claim_details', default="View Claim Details"),
                   command=self.view_claim_details).pack(pady=5)
 
     def create_matches_tab(self):
         """Create Matches tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Potential Matches")
+        self.notebook.add(tab, text=_t('gui.operations.campus.lost_found.lost_found.tabs.potential_matches', default="Potential Matches"))
 
         # Instructions
-        ttk.Label(tab, text="Select an item type and ID to view potential matches:",
+        ttk.Label(tab, text=_t('gui.operations.campus.lost_found.lost_found.labels.select_an_item_type_and_id_to_view_potential_matches', default="Select an item type and ID to view potential matches:"),
                  font=('Arial', 11)).pack(pady=10)
 
         # Input frame
         input_frame = ttk.Frame(tab)
         input_frame.pack(fill=tk.X, pady=10)
 
-        ttk.Label(input_frame, text="Item Type:").pack(side=tk.LEFT, padx=5)
-        self.match_type_var = tk.StringVar(value="lost")
-        ttk.Radiobutton(input_frame, text="Lost", variable=self.match_type_var,
+        ttk.Label(input_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.item_type', default="Item Type:")).pack(side=tk.LEFT, padx=5)
+        self.match_type_var = tk.StringVar(value=_t('gui.operations.campus.lost_found.lost_found.values.lost', default="lost"))
+        ttk.Radiobutton(input_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.lost', default="Lost"), variable=self.match_type_var,
                        value="lost").pack(side=tk.LEFT, padx=5)
-        ttk.Radiobutton(input_frame, text="Found", variable=self.match_type_var,
+        ttk.Radiobutton(input_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.found', default="Found"), variable=self.match_type_var,
                        value="found").pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(input_frame, text="Item ID:").pack(side=tk.LEFT, padx=(20, 5))
+        ttk.Label(input_frame, text=_t('gui.operations.campus.lost_found.lost_found.labels.item_id', default="Item ID:")).pack(side=tk.LEFT, padx=(20, 5))
         self.match_item_id_var = tk.StringVar()
         ttk.Entry(input_frame, textvariable=self.match_item_id_var, width=10).pack(side=tk.LEFT, padx=5)
 
-        ttk.Button(input_frame, text="Find Matches",
+        ttk.Button(input_frame, text=_t('gui.operations.campus.lost_found.lost_found.buttons.find_matches', default="Find Matches"),
                   command=self.load_matches).pack(side=tk.LEFT, padx=10)
 
         # Matches display
-        matches_frame = ttk.LabelFrame(tab, text="Matches", padding="10")
+        matches_frame = ttk.LabelFrame(tab, text=_t('gui.operations.campus.lost_found.lost_found.labels.matches', default="Matches"), padding="10")
         matches_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         # Treeview
@@ -516,10 +518,10 @@ class LostFoundGUI:
     def create_statistics_tab(self):
         """Create Statistics tab"""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Statistics")
+        self.notebook.add(tab, text=_t('gui.operations.campus.lost_found.lost_found.tabs.statistics', default="Statistics"))
 
         # Title
-        ttk.Label(tab, text="Lost & Found Statistics",
+        ttk.Label(tab, text=_t('gui.operations.campus.lost_found.lost_found.labels.lost_found_statistics', default="Lost & Found Statistics"),
                  font=('Arial', 16, 'bold')).pack(pady=10)
 
         # Scrolled text for statistics
@@ -528,7 +530,7 @@ class LostFoundGUI:
         self.stats_text.pack(fill=tk.BOTH, expand=True, pady=10)
 
         # Refresh button
-        ttk.Button(tab, text="Refresh Statistics",
+        ttk.Button(tab, text=_t('gui.operations.campus.lost_found.lost_found.buttons.refresh_statistics', default="Refresh Statistics"),
                   command=self.load_statistics).pack(pady=5)
 
     # ====================
@@ -538,7 +540,7 @@ class LostFoundGUI:
     def select_photo(self, item_type: str):
         """Select a photo file"""
         file_path = filedialog.askopenfilename(
-            title="Select Photo",
+            title=_t('gui.operations.campus.lost_found.lost_found.dialogs.select_photo', default="Select Photo"),
             filetypes=[
                 ("Image files", "*.jpg *.jpeg *.png *.gif *.bmp"),
                 ("All files", "*.*")
@@ -555,32 +557,32 @@ class LostFoundGUI:
                 # For future lost item photo support
                 pass
 
-            messagebox.showinfo("Photo Selected", f"Selected: {filename}")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.photo_selected', default="Photo Selected"), f"Selected: {filename}")
 
     def report_lost_item(self):
         """Report a lost item"""
         user = self.auth.get_current_user()
         if not user:
-            messagebox.showerror("Error", "User not found.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.user_not_found', default="User not found."))
             return
 
         # Validate required fields
         if not self.lost_name_var.get().strip():
-            messagebox.showerror("Error", "Item name is required.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.item_name_is_required', default="Item name is required."))
             return
 
         if not self.lost_description.get("1.0", tk.END).strip():
-            messagebox.showerror("Error", "Description is required.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.description_is_required', default="Description is required."))
             return
 
         if not self.lost_location_var.get().strip():
-            messagebox.showerror("Error", "Lost location is required.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.lost_location_is_required', default="Lost location is required."))
             return
 
         try:
             estimated_value = float(self.lost_value_var.get() or "0")
         except ValueError:
-            messagebox.showerror("Error", "Invalid estimated value.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.invalid_estimated_value', default="Invalid estimated value."))
             return
 
         try:
@@ -600,7 +602,7 @@ class LostFoundGUI:
                 contact_phone=self.lost_phone_var.get().strip()
             )
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.success', default="Success"),
                               f"Lost item reported successfully!\n"
                               f"Item ID: {item_id}\n"
                               f"The system will search for potential matches.")
@@ -610,26 +612,26 @@ class LostFoundGUI:
             self.load_my_lost_items()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to report lost item:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to report lost item:\n{str(e)}")
 
     def report_found_item(self):
         """Report a found item"""
         user = self.auth.get_current_user()
         if not user:
-            messagebox.showerror("Error", "User not found.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.user_not_found', default="User not found."))
             return
 
         # Validate required fields
         if not self.found_name_var.get().strip():
-            messagebox.showerror("Error", "Item name is required.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.item_name_is_required', default="Item name is required."))
             return
 
         if not self.found_description.get("1.0", tk.END).strip():
-            messagebox.showerror("Error", "Description is required.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.description_is_required', default="Description is required."))
             return
 
         if not self.found_location_var.get().strip():
-            messagebox.showerror("Error", "Found location is required.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.found_location_is_required', default="Found location is required."))
             return
 
         try:
@@ -658,10 +660,10 @@ class LostFoundGUI:
                     self.service.add_item_photo('found', item_id, photo_data,
                                                caption="Item photo")
                 except Exception as e:
-                    messagebox.showwarning("Photo Upload",
+                    messagebox.showwarning(_t('gui.operations.campus.lost_found.lost_found.dialogs.photo_upload', default="Photo Upload"),
                                          f"Item reported but photo upload failed:\n{str(e)}")
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.success', default="Success"),
                               f"Found item reported successfully!\n"
                               f"Item ID: {item_id}\n"
                               f"The system will search for potential matches.")
@@ -671,7 +673,7 @@ class LostFoundGUI:
             self.load_my_found_items()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to report found item:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to report found item:\n{str(e)}")
 
     def clear_lost_form(self):
         """Clear the lost item form"""
@@ -704,7 +706,7 @@ class LostFoundGUI:
         self.found_email_var.set("")
         self.found_phone_var.set("")
         self.selected_photo_path = None
-        self.found_photo_label.config(text="No photo selected")
+        self.found_photo_label.config(text=_t('gui.operations.campus.lost_found.lost_found.text.no_photo_selected', default="No photo selected"))
 
     def load_lost_items(self):
         """Load all lost items"""
@@ -712,7 +714,7 @@ class LostFoundGUI:
             items = self.service.get_lost_items(status='Active')
             self._populate_tree(self.lost_tree, items, 'lost')
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load lost items:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load lost items:\n{str(e)}")
 
     def load_found_items(self):
         """Load all found items"""
@@ -720,7 +722,7 @@ class LostFoundGUI:
             items = self.service.get_found_items(status='Available')
             self._populate_tree(self.found_tree, items, 'found')
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load found items:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load found items:\n{str(e)}")
 
     def load_my_lost_items(self):
         """Load user's lost items"""
@@ -732,7 +734,7 @@ class LostFoundGUI:
             items = self.service.get_lost_items(reporter_id=user['username'])
             self._populate_tree(self.my_lost_tree, items, 'lost')
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load your lost items:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load your lost items:\n{str(e)}")
 
     def load_my_found_items(self):
         """Load user's found items"""
@@ -744,7 +746,7 @@ class LostFoundGUI:
             items = self.service.get_found_items(finder_id=user['username'])
             self._populate_tree(self.my_found_tree, items, 'found')
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load your found items:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load your found items:\n{str(e)}")
 
     def _populate_tree(self, tree, items, item_type):
         """Populate a treeview with items"""
@@ -772,7 +774,7 @@ class LostFoundGUI:
         search_term = search_var.get().strip()
 
         if not search_term:
-            messagebox.showinfo("Info", "Please enter a search term.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.info', default="Info"), _t('gui.operations.campus.lost_found.lost_found.dialogs.please_enter_a_search_term', default="Please enter a search term."))
             return
 
         try:
@@ -780,10 +782,10 @@ class LostFoundGUI:
             tree = self.lost_tree if item_type == 'lost' else self.found_tree
             self._populate_tree(tree, items, item_type)
 
-            messagebox.showinfo("Search Results", f"Found {len(items)} matching items.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.search_results', default="Search Results"), f"Found {len(items)} matching items.")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Search failed:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Search failed:\n{str(e)}")
 
     def view_item_details(self, item_type: str):
         """View detailed information about an item"""
@@ -791,7 +793,7 @@ class LostFoundGUI:
         selection = tree.selection()
 
         if not selection:
-            messagebox.showinfo("Info", "Please select an item to view.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.info', default="Info"), _t('gui.operations.campus.lost_found.lost_found.dialogs.please_select_an_item_to_view', default="Please select an item to view."))
             return
 
         item_id = tree.item(selection[0])['values'][0]
@@ -803,7 +805,7 @@ class LostFoundGUI:
                 item = self.service.get_found_item(item_id)
 
             if not item:
-                messagebox.showerror("Error", "Item not found.")
+                messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.item_not_found', default="Item not found."))
                 return
 
             # Create details window
@@ -838,7 +840,7 @@ class LostFoundGUI:
             scrollbar.pack(side="right", fill="y")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load item details:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load item details:\n{str(e)}")
 
     def _format_item_details(self, item: dict, item_type: str) -> str:
         """Format item details as text"""
@@ -921,7 +923,7 @@ class LostFoundGUI:
         selection = tree.selection()
 
         if not selection:
-            messagebox.showinfo("Info", "Please select an item to update.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.info', default="Info"), _t('gui.operations.campus.lost_found.lost_found.dialogs.please_select_an_item_to_update', default="Please select an item to update."))
             return
 
         item_id = tree.item(selection[0])['values'][0]
@@ -934,20 +936,20 @@ class LostFoundGUI:
 
         # Create dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Update Item Status")
+        dialog.title(_t('gui.operations.campus.lost_found.lost_found.windows.update_item_status', default="Update Item Status"))
         dialog.geometry("400x250")
 
         ttk.Label(dialog, text=f"Update status for Item ID: {item_id}",
                  font=('Arial', 12, 'bold')).pack(pady=10)
 
-        ttk.Label(dialog, text="New Status:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.operations.campus.lost_found.lost_found.labels.new_status', default="New Status:")).pack(pady=5)
 
         status_var = tk.StringVar(value=statuses[0])
         for status in statuses:
             ttk.Radiobutton(dialog, text=status, variable=status_var,
                           value=status).pack(pady=2)
 
-        ttk.Label(dialog, text="Notes (optional):").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.operations.campus.lost_found.lost_found.labels.notes_optional', default="Notes (optional):")).pack(pady=5)
         notes_text = tk.Text(dialog, width=40, height=3)
         notes_text.pack(pady=5)
 
@@ -964,7 +966,7 @@ class LostFoundGUI:
                         notes_text.get("1.0", tk.END).strip()
                     )
 
-                messagebox.showinfo("Success", f"Item status updated to: {status_var.get()}")
+                messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.success', default="Success"), f"Item status updated to: {status_var.get()}")
                 dialog.destroy()
 
                 # Refresh lists
@@ -976,9 +978,9 @@ class LostFoundGUI:
                     self.load_my_found_items()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to update status:\n{str(e)}")
+                messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to update status:\n{str(e)}")
 
-        ttk.Button(dialog, text="Update", command=update).pack(pady=10)
+        ttk.Button(dialog, text=_t('gui.operations.campus.lost_found.lost_found.buttons.update', default="Update"), command=update).pack(pady=10)
 
     def view_item_matches(self, item_type: str):
         """View potential matches for an item"""
@@ -986,7 +988,7 @@ class LostFoundGUI:
         selection = tree.selection()
 
         if not selection:
-            messagebox.showinfo("Info", "Please select an item to view matches.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.info', default="Info"), _t('gui.operations.campus.lost_found.lost_found.dialogs.please_select_an_item_to_view_matches', default="Please select an item to view matches."))
             return
 
         item_id = tree.item(selection[0])['values'][0]
@@ -995,7 +997,7 @@ class LostFoundGUI:
             matches = self.service.get_matches(item_type, item_id)
 
             if not matches:
-                messagebox.showinfo("No Matches", "No potential matches found for this item.")
+                messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.no_matches', default="No Matches"), _t('gui.operations.campus.lost_found.lost_found.dialogs.no_potential_matches_found_for_this_item', default="No potential matches found for this item."))
                 return
 
             # Create matches window
@@ -1036,33 +1038,33 @@ class LostFoundGUI:
                 ))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load matches:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load matches:\n{str(e)}")
 
     def submit_claim_dialog(self):
         """Show dialog to submit a claim for a found item"""
         selection = self.found_tree.selection()
 
         if not selection:
-            messagebox.showinfo("Info", "Please select a found item to claim.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.info', default="Info"), _t('gui.operations.campus.lost_found.lost_found.dialogs.please_select_a_found_item_to_claim', default="Please select a found item to claim."))
             return
 
         item_id = self.found_tree.item(selection[0])['values'][0]
 
         user = self.auth.get_current_user()
         if not user:
-            messagebox.showerror("Error", "User not found.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.user_not_found', default="User not found."))
             return
 
         # Get item details
         try:
             item = self.service.get_found_item(item_id)
             if not item:
-                messagebox.showerror("Error", "Item not found.")
+                messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.item_not_found', default="Item not found."))
                 return
 
             # Create claim dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Submit Claim")
+            dialog.title(_t('gui.operations.campus.lost_found.lost_found.windows.submit_claim', default="Submit Claim"))
             dialog.geometry("600x600")
 
             ttk.Label(dialog, text=f"Submit Claim for: {item['item_name']}",
@@ -1071,7 +1073,7 @@ class LostFoundGUI:
             ttk.Label(dialog, text=f"Found at: {item['found_location']} on {item['found_date']}").pack()
 
             # Claim description
-            ttk.Label(dialog, text="Why do you believe this is your item?*",
+            ttk.Label(dialog, text=_t('gui.operations.campus.lost_found.lost_found.labels.why_do_you_believe_this_is_your_item', default="Why do you believe this is your item?*"),
                      font=('Arial', 10, 'bold')).pack(pady=(20, 5))
             claim_desc = tk.Text(dialog, width=60, height=4)
             claim_desc.pack(pady=5)
@@ -1079,7 +1081,7 @@ class LostFoundGUI:
             # Verification questions
             verification_answers = {}
             if item.get('verification_questions'):
-                ttk.Label(dialog, text="Verification Questions:",
+                ttk.Label(dialog, text=_t('gui.operations.campus.lost_found.lost_found.labels.verification_questions', default="Verification Questions:"),
                          font=('Arial', 10, 'bold')).pack(pady=(20, 5))
 
                 questions_frame = ttk.Frame(dialog)
@@ -1107,14 +1109,14 @@ class LostFoundGUI:
                 scrollbar.pack(side="right", fill="y")
 
             # Supporting evidence
-            ttk.Label(dialog, text="Additional Supporting Evidence (optional):").pack(pady=(10, 5))
+            ttk.Label(dialog, text=_t('gui.operations.campus.lost_found.lost_found.labels.additional_supporting_evidence_optional', default="Additional Supporting Evidence (optional):")).pack(pady=(10, 5))
             evidence_text = tk.Text(dialog, width=60, height=3)
             evidence_text.pack(pady=5)
 
             def submit():
                 claim_description = claim_desc.get("1.0", tk.END).strip()
                 if not claim_description:
-                    messagebox.showerror("Error", "Claim description is required.")
+                    messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.claim_description_is_required', default="Claim description is required."))
                     return
 
                 # Get verification answers
@@ -1131,7 +1133,7 @@ class LostFoundGUI:
                         supporting_evidence=evidence_text.get("1.0", tk.END).strip()
                     )
 
-                    messagebox.showinfo("Success",
+                    messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.success', default="Success"),
                                       f"Claim submitted successfully!\n"
                                       f"Claim ID: {claim_id}\n"
                                       f"Your claim will be reviewed by staff.")
@@ -1139,12 +1141,12 @@ class LostFoundGUI:
                     self.load_claims()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to submit claim:\n{str(e)}")
+                    messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to submit claim:\n{str(e)}")
 
-            ttk.Button(dialog, text="Submit Claim", command=submit).pack(pady=20)
+            ttk.Button(dialog, text=_t('gui.operations.campus.lost_found.lost_found.buttons.submit_claim', default="Submit Claim"), command=submit).pack(pady=20)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load item details:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load item details:\n{str(e)}")
 
     def load_claims(self):
         """Load claims"""
@@ -1178,14 +1180,14 @@ class LostFoundGUI:
                 ))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load claims:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load claims:\n{str(e)}")
 
     def view_claim_details(self):
         """View details of a selected claim"""
         selection = self.claims_tree.selection()
 
         if not selection:
-            messagebox.showinfo("Info", "Please select a claim to view.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.info', default="Info"), _t('gui.operations.campus.lost_found.lost_found.dialogs.please_select_a_claim_to_view', default="Please select a claim to view."))
             return
 
         claim_id = self.claims_tree.item(selection[0])['values'][0]
@@ -1195,7 +1197,7 @@ class LostFoundGUI:
             claim = next((c for c in claims if c['claim_id'] == claim_id), None)
 
             if not claim:
-                messagebox.showerror("Error", "Claim not found.")
+                messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.claim_not_found', default="Claim not found."))
                 return
 
             # Create details window
@@ -1250,47 +1252,47 @@ class LostFoundGUI:
             text.config(state=tk.DISABLED)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load claim details:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load claim details:\n{str(e)}")
 
     def review_claim_dialog(self):
         """Review a claim (staff only)"""
         user = self.auth.get_current_user()
         if not user or user.get('role', '').lower() not in ['admin', 'staff']:
-            messagebox.showerror("Access Denied", "Only staff can review claims.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.access_denied', default="Access Denied"), _t('gui.operations.campus.lost_found.lost_found.dialogs.only_staff_can_review_claims', default="Only staff can review claims."))
             return
 
         selection = self.claims_tree.selection()
 
         if not selection:
-            messagebox.showinfo("Info", "Please select a claim to review.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.info', default="Info"), _t('gui.operations.campus.lost_found.lost_found.dialogs.please_select_a_claim_to_review', default="Please select a claim to review."))
             return
 
         claim_id = self.claims_tree.item(selection[0])['values'][0]
 
         # Create review dialog
         dialog = tk.Toplevel(self.root)
-        dialog.title("Review Claim")
+        dialog.title(_t('gui.operations.campus.lost_found.lost_found.windows.review_claim', default="Review Claim"))
         dialog.geometry("400x300")
 
         ttk.Label(dialog, text=f"Review Claim ID: {claim_id}",
                  font=('Arial', 12, 'bold')).pack(pady=10)
 
-        ttk.Label(dialog, text="Decision:").pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.operations.campus.lost_found.lost_found.labels.decision', default="Decision:")).pack(pady=5)
 
-        decision_var = tk.StringVar(value="approve")
-        ttk.Radiobutton(dialog, text="Approve", variable=decision_var,
+        decision_var = tk.StringVar(value=_t('gui.operations.campus.lost_found.lost_found.values.approve', default="approve"))
+        ttk.Radiobutton(dialog, text=_t('gui.operations.campus.lost_found.lost_found.buttons.approve', default="Approve"), variable=decision_var,
                        value="approve").pack(pady=2)
-        ttk.Radiobutton(dialog, text="Reject", variable=decision_var,
+        ttk.Radiobutton(dialog, text=_t('gui.operations.campus.lost_found.lost_found.buttons.reject', default="Reject"), variable=decision_var,
                        value="reject").pack(pady=2)
 
-        ttk.Label(dialog, text="Resolution Notes:").pack(pady=10)
+        ttk.Label(dialog, text=_t('gui.operations.campus.lost_found.lost_found.labels.resolution_notes', default="Resolution Notes:")).pack(pady=10)
         notes_text = tk.Text(dialog, width=40, height=5)
         notes_text.pack(pady=5)
 
         def submit_review():
             notes = notes_text.get("1.0", tk.END).strip()
             if not notes:
-                messagebox.showerror("Error", "Resolution notes are required.")
+                messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.resolution_notes_are_required', default="Resolution notes are required."))
                 return
 
             approved = (decision_var.get() == "approve")
@@ -1304,15 +1306,15 @@ class LostFoundGUI:
                 )
 
                 status = "approved" if approved else "rejected"
-                messagebox.showinfo("Success", f"Claim {status} successfully!")
+                messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.success', default="Success"), f"Claim {status} successfully!")
                 dialog.destroy()
                 self.load_claims()
                 self.load_found_items()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to review claim:\n{str(e)}")
+                messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to review claim:\n{str(e)}")
 
-        ttk.Button(dialog, text="Submit Review", command=submit_review).pack(pady=20)
+        ttk.Button(dialog, text=_t('gui.operations.campus.lost_found.lost_found.buttons.submit_review', default="Submit Review"), command=submit_review).pack(pady=20)
 
     def load_matches(self):
         """Load potential matches"""
@@ -1320,13 +1322,13 @@ class LostFoundGUI:
         item_id_str = self.match_item_id_var.get().strip()
 
         if not item_id_str:
-            messagebox.showinfo("Info", "Please enter an item ID.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.info', default="Info"), _t('gui.operations.campus.lost_found.lost_found.dialogs.please_enter_an_item_id', default="Please enter an item ID."))
             return
 
         try:
             item_id = int(item_id_str)
         except ValueError:
-            messagebox.showerror("Error", "Invalid item ID.")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), _t('gui.operations.campus.lost_found.lost_found.dialogs.invalid_item_id', default="Invalid item ID."))
             return
 
         try:
@@ -1337,7 +1339,7 @@ class LostFoundGUI:
                 self.matches_tree.delete(item)
 
             if not matches:
-                messagebox.showinfo("No Matches", "No potential matches found.")
+                messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.no_matches', default="No Matches"), _t('gui.operations.campus.lost_found.lost_found.dialogs.no_potential_matches_found', default="No potential matches found."))
                 return
 
             # Populate
@@ -1360,10 +1362,10 @@ class LostFoundGUI:
                     reasons_str
                 ))
 
-            messagebox.showinfo("Matches Found", f"Found {len(matches)} potential matches.")
+            messagebox.showinfo(_t('gui.operations.campus.lost_found.lost_found.dialogs.matches_found', default="Matches Found"), f"Found {len(matches)} potential matches.")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load matches:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load matches:\n{str(e)}")
 
     def load_statistics(self):
         """Load system statistics"""
@@ -1442,7 +1444,7 @@ class LostFoundGUI:
             self.stats_text.config(state=tk.DISABLED)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load statistics:\n{str(e)}")
+            messagebox.showerror(_t('gui.operations.campus.lost_found.lost_found.dialogs.error', default="Error"), f"Failed to load statistics:\n{str(e)}")
 
     def refresh_all_tabs(self):
         """Refresh all data in tabs"""

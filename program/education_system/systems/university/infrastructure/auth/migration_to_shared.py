@@ -24,8 +24,8 @@ def migrate(university_db_path: str | None = None):
     from education_system.platform.identity.auth.schema import initialise_auth_db, seed_default_users
 
     if university_db_path is None:
-        from education_system.systems.university.infrastructure import paths
-        university_db_path = str(paths.DEFAULT_DB_PATH)
+        from education_system import paths
+        university_db_path = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
 
     # Ensure shared DB schema exists
     initialise_auth_db()

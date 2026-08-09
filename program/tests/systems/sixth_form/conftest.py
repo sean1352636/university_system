@@ -187,7 +187,9 @@ def fresh_ay_db(tmp_path, monkeypatch):
         academic_year as data,
     )
     monkeypatch.setattr(data, "DB_PATH", str(db_path))
-    monkeypatch.setattr(data, "_DB_READY", False)
+    # Schema-ready state is keyed by DB path, so a fresh file is
+    # initialised even after another test has run.
+    monkeypatch.setattr(data, "_DB_READY", set())
     # Reset RBAC defaults so a previous test can't leak.
     monkeypatch.setattr(data, "ENFORCE_RBAC", False)
     monkeypatch.setattr(data, "CURRENT_ACTOR_ROLE", None)

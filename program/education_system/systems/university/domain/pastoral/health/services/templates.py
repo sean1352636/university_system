@@ -5,7 +5,7 @@ import json
 import logging
 import os
 
-from education_system.systems.university.infrastructure.database.db import get_connection, sqlite3
+from education_system.systems.university.infrastructure.health.storage import get_connection, sqlite3
 from education_system.systems.university.domain.pastoral.health.services.audit import log_audit_event
 from education_system.systems.university.domain.pastoral.health.services.security import truthy
 from education_system.systems.university.domain.pastoral.health.services.health_db_backup import ensure_templates_schema

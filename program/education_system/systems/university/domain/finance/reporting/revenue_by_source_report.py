@@ -11,7 +11,7 @@ generating revenue and track trends by source over time.
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 import logging
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ def get_revenue_by_source(
         }
     """
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         # Build date filter conditions
@@ -306,7 +306,7 @@ def get_source_revenue_trend(
         List of tuples: [(month, revenue, transaction_count), ...]
     """
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         source_pattern = f'[{source}]%'
@@ -352,7 +352,7 @@ def compare_source_revenue_periods(
         Dictionary with comparison metrics
     """
     try:
-        conn = sqlite3.connect(str(paths.DEFAULT_DB_PATH))
+        conn = sqlite3.connect(str(paths.UNIVERSITY_DEFAULT_DB_PATH))
         cursor = conn.cursor()
 
         source_pattern = f'[{source}]%'

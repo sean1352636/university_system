@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.pastoral.internship_management._imports import (
     _t, messagebox, scrolledtext, tk, ttk, sqlite3, get_connection,
 )
@@ -54,7 +56,7 @@ class MyApplicationsMixin:
         btn_frame = tk.Frame(self.content_frame, bg='white')
         btn_frame.pack(fill='x', padx=20, pady=10)
 
-        tk.Button(btn_frame, text="View Details", command=self.view_application_details,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.my_applications.buttons.view_details', default="View Details"), command=self.view_application_details,
                  bg='#3498db', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
     def load_my_applications_data(self):
@@ -101,13 +103,13 @@ class MyApplicationsMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading applications: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.my_applications.dialogs.database_error', default="Database Error"), f"Error loading applications: {e}")
 
     def view_application_details(self):
         """View details of selected application"""
         selection = self.app_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select an application to view.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.my_applications.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.my_applications.dialogs.please_select_an_application_to_view', default="Please select an application to view."))
             return
 
         item = self.app_tree.item(selection[0])
@@ -133,13 +135,13 @@ class MyApplicationsMixin:
             app_data = cursor.fetchone()
 
             if not app_data:
-                messagebox.showerror("Error", "Application not found.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.my_applications.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.my_applications.dialogs.application_not_found', default="Application not found."))
                 conn.close()
                 return
 
             # Create comprehensive popup window
             popup = tk.Toplevel(self.root)
-            popup.title("Complete Application Details")
+            popup.title(_t('gui.pastoral.internship_management.my_applications.windows.complete_application_details', default="Complete Application Details"))
             popup.geometry("800x600")
             popup.configure(bg='white')
             popup.grab_set()
@@ -158,11 +160,11 @@ class MyApplicationsMixin:
             canvas.configure(yscrollcommand=scrollbar.set)
 
             # Title
-            tk.Label(scrollable_frame, text="Complete Application Details",
+            tk.Label(scrollable_frame, text=_t('gui.pastoral.internship_management.my_applications.labels.complete_application_details', default="Complete Application Details"),
                     font=('Arial', 16, 'bold'), bg='white', fg='#2c3e50').pack(pady=10)
 
             # Student Information Section
-            student_frame = tk.LabelFrame(scrollable_frame, text="Student Information",
+            student_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.my_applications.labels.student_information', default="Student Information"),
                                         font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             student_frame.pack(fill='x', padx=20, pady=10)
 
@@ -178,7 +180,7 @@ class MyApplicationsMixin:
                     bg='white', fg='#34495e', justify='left').pack(anchor='w', padx=10, pady=5)
 
             # Internship Information Section
-            internship_frame = tk.LabelFrame(scrollable_frame, text="Internship Information",
+            internship_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.my_applications.labels.internship_information', default="Internship Information"),
                                            font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             internship_frame.pack(fill='x', padx=20, pady=10)
 
@@ -193,7 +195,7 @@ class MyApplicationsMixin:
                     bg='white', fg='#34495e', justify='left').pack(anchor='w', padx=10, pady=5)
 
             # Job Description
-            desc_frame = tk.LabelFrame(scrollable_frame, text="Job Description",
+            desc_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.my_applications.labels.job_description', default="Job Description"),
                                       font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             desc_frame.pack(fill='x', padx=20, pady=10)
 
@@ -204,7 +206,7 @@ class MyApplicationsMixin:
             desc_text.config(state='disabled')
 
             # Requirements
-            req_frame = tk.LabelFrame(scrollable_frame, text="Requirements",
+            req_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.my_applications.labels.requirements', default="Requirements"),
                                      font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             req_frame.pack(fill='x', padx=20, pady=10)
 
@@ -215,7 +217,7 @@ class MyApplicationsMixin:
             req_text.config(state='disabled')
 
             # Cover Letter Section
-            cover_frame = tk.LabelFrame(scrollable_frame, text="Cover Letter",
+            cover_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.my_applications.labels.cover_letter', default="Cover Letter"),
                                        font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
             cover_frame.pack(fill='x', padx=20, pady=10)
 
@@ -227,7 +229,7 @@ class MyApplicationsMixin:
 
             # Feedback Section (if available)
             if app_data[7]:  # Assuming feedback is at index 7
-                feedback_frame = tk.LabelFrame(scrollable_frame, text="Feedback",
+                feedback_frame = tk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.internship_management.my_applications.labels.feedback', default="Feedback"),
                                              font=('Arial', 12, 'bold'), bg='white', fg='#2c3e50')
                 feedback_frame.pack(fill='x', padx=20, pady=10)
 
@@ -241,11 +243,11 @@ class MyApplicationsMixin:
             btn_frame = tk.Frame(scrollable_frame, bg='white')
             btn_frame.pack(fill='x', padx=20, pady=20)
 
-            tk.Button(btn_frame, text="Close", command=popup.destroy,
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.my_applications.buttons.close', default="Close"), command=popup.destroy,
                      bg='#6c757d', fg='white', font=('Arial', 10), padx=20, pady=5, relief='flat').pack(side='left', padx=5)
 
             if self.auth.check_permission('approve_applications'):
-                tk.Button(btn_frame, text="Review Application",
+                tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.my_applications.buttons.review_application', default="Review Application"),
                          command=lambda: self.open_review_dialog(app_id, popup),
                          bg='#f39c12', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
@@ -256,7 +258,7 @@ class MyApplicationsMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading application details: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.my_applications.dialogs.database_error', default="Database Error"), f"Error loading application details: {e}")
 
     def show_application_details_window(self, app_id):
         """Show application details in a popup window"""
@@ -274,19 +276,19 @@ class MyApplicationsMixin:
             app_data = cursor.fetchone()
 
             if not app_data:
-                messagebox.showerror("Error", "Application not found.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.my_applications.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.my_applications.dialogs.application_not_found', default="Application not found."))
                 conn.close()
                 return
 
             # Create popup window
             popup = tk.Toplevel(self.root)
-            popup.title("Application Details")
+            popup.title(_t('gui.pastoral.internship_management.my_applications.windows.application_details', default="Application Details"))
             popup.geometry("600x500")
             popup.configure(bg='white')
             popup.grab_set()  # Make modal
 
             # Title
-            tk.Label(popup, text="Application Details", font=('Arial', 16, 'bold'),
+            tk.Label(popup, text=_t('gui.pastoral.internship_management.my_applications.labels.application_details', default="Application Details"), font=('Arial', 16, 'bold'),
                     bg='white', fg='#2c3e50').pack(pady=10)
 
             # Details frame
@@ -307,7 +309,7 @@ CV Filename: {app_data[5]}
                     bg='white', fg='#34495e', justify='left').pack(anchor='w')
 
             # Cover letter
-            tk.Label(details_frame, text="Cover Letter:", font=('Arial', 12, 'bold'),
+            tk.Label(details_frame, text=_t('gui.pastoral.internship_management.my_applications.labels.cover_letter_variant_2', default="Cover Letter:"), font=('Arial', 12, 'bold'),
                     bg='white', fg='#2c3e50').pack(anchor='w', pady=(10, 5))
 
             cover_text = scrolledtext.ScrolledText(details_frame, height=8, wrap='word',
@@ -318,7 +320,7 @@ CV Filename: {app_data[5]}
 
             # Feedback (if any)
             if app_data[7]:  # Assuming feedback is at index 7
-                tk.Label(details_frame, text="Feedback:", font=('Arial', 12, 'bold'),
+                tk.Label(details_frame, text=_t('gui.pastoral.internship_management.my_applications.labels.feedback_variant_2', default="Feedback:"), font=('Arial', 12, 'bold'),
                         bg='white', fg='#2c3e50').pack(anchor='w', pady=(10, 5))
 
                 feedback_text = scrolledtext.ScrolledText(details_frame, height=4, wrap='word',
@@ -328,10 +330,10 @@ CV Filename: {app_data[5]}
                 feedback_text.config(state='disabled')
 
             # Close button
-            tk.Button(popup, text="Close", command=popup.destroy,
+            tk.Button(popup, text=_t('gui.pastoral.internship_management.my_applications.buttons.close', default="Close"), command=popup.destroy,
                      bg='#6c757d', fg='white', font=('Arial', 10), padx=20, pady=5, relief='flat').pack(pady=10)
 
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading application details: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.my_applications.dialogs.database_error', default="Database Error"), f"Error loading application details: {e}")

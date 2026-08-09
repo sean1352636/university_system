@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import tkinter.scrolledtext as scrolledtext
@@ -10,11 +12,11 @@ import math
 from scipy import stats
 from datetime import datetime, timedelta
 import json
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # Optional imports with fallbacks
 try:
@@ -188,7 +190,7 @@ def init_basic_database():
         return True
 
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def init_enhanced_grades_db():
@@ -307,7 +309,7 @@ def init_enhanced_grades_db():
         conn.close()
         return True
     except sqlite3.Error as e:
-        messagebox.showerror("Database Error", f"Database error: {e}")
+        messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.database_error', default="Database Error"), f"Database error: {e}")
         return False
 
 def safe_grab_set(dialog):
@@ -338,7 +340,7 @@ def safe_combo_update(obj, combo_attr, values):
 class UpdateGradesDialog:
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Update Existing Grades")
+        self.dialog.title(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.windows.update_existing_grades', default="Update Existing Grades"))
         self.dialog.geometry("900x600")
         safe_grab_set(self.dialog)
 
@@ -347,24 +349,24 @@ class UpdateGradesDialog:
     def setup_dialog(self):
         """Setup the update grades dialog"""
         # Title
-        ttk.Label(self.dialog, text="Update Existing Grades",
+        ttk.Label(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.labels.update_existing_grades', default="Update Existing Grades"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Student selection frame
-        student_frame = ttk.LabelFrame(self.dialog, text="Select Student")
+        student_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.labels.select_student', default="Select Student"))
         student_frame.pack(fill=tk.X, padx=20, pady=10)
 
         self.student_var = tk.StringVar()
         self.student_combo = ttk.Combobox(student_frame, textvariable=self.student_var, width=50)
         self.student_combo.pack(side=tk.LEFT, padx=10, pady=10)
 
-        ttk.Button(student_frame, text="Load Students",
+        ttk.Button(student_frame, text=_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.buttons.load_students', default="Load Students"),
                   command=self.load_students).pack(side=tk.LEFT, padx=10)
-        ttk.Button(student_frame, text="Select",
+        ttk.Button(student_frame, text=_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.buttons.select', default="Select"),
                   command=self.select_student).pack(side=tk.LEFT, padx=10)
 
         # Grades frame
-        grades_frame = ttk.LabelFrame(self.dialog, text="Existing Grades")
+        grades_frame = ttk.LabelFrame(self.dialog, text=_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.labels.existing_grades', default="Existing Grades"))
         grades_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Treeview for grades
@@ -385,9 +387,9 @@ class UpdateGradesDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Edit Selected Grade",
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.buttons.edit_selected_grade', default="Edit Selected Grade"),
                   command=self.edit_selected_grade).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.buttons.close', default="Close"),
                   command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
         # Bind double-click event
@@ -417,17 +419,17 @@ class UpdateGradesDialog:
             conn.close()
 
             if student_list:
-                messagebox.showinfo("Success", f"Loaded {len(student_list)} students")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.success', default="Success"), f"Loaded {len(student_list)} students")
             else:
-                messagebox.showwarning("Warning", "No students found")
+                messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.no_students_found', default="No students found"))
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading students: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.database_error', default="Database Error"), f"Error loading students: {e}")
 
     def select_student(self):
         """Select a student and load their grades"""
         if not self.student_var.get():
-            messagebox.showwarning("Warning", "Please select a student first")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.please_select_a_student_first', default="Please select a student first"))
             return
 
         # Extract student ID
@@ -460,22 +462,22 @@ class UpdateGradesDialog:
             conn.close()
 
             if grades:
-                messagebox.showinfo("Success", f"Loaded {len(grades)} grades")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.success', default="Success"), f"Loaded {len(grades)} grades")
             else:
-                messagebox.showinfo("Info", "No grades found for this student")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.info', default="Info"), _t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.no_grades_found_for_this_student', default="No grades found for this student"))
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading grades: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.database_error', default="Database Error"), f"Error loading grades: {e}")
 
     def edit_selected_grade(self, event=None):  # Move this method out and fix indentation
         """Edit the selected grade"""
         if not hasattr(self, 'grades_tree') or not self.grades_tree:
-            messagebox.showwarning("Warning", "Grades view not available")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.grades_view_not_available', default="Grades view not available"))
             return
 
         selection = self.grades_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a grade to edit")
+            messagebox.showwarning(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.warning', default="Warning"), _t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.please_select_a_grade_to_edit', default="Please select a grade to edit"))
             return
 
         item = selection[0]
@@ -499,7 +501,7 @@ class UpdateGradesDialog:
             conn.close()
 
             if not grade_data:
-                messagebox.showerror("Error", "Grade not found")
+                messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.error', default="Error"), _t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.grade_not_found', default="Grade not found"))
                 return
 
             student_id, assessment_id, score, letter_grade, date, feedback, max_points = grade_data
@@ -510,7 +512,7 @@ class UpdateGradesDialog:
                                    score, letter_grade, max_points, feedback, self.refresh_student_grades)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading grade: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.dialogs.update_grades_dialog.dialogs.database_error', default="Database Error"), f"Error loading grade: {e}")
 
     def refresh_student_grades(self):
         """Refresh the grades display"""

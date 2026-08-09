@@ -343,7 +343,8 @@ def reset_user_password(
             # Update the password
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             cursor.execute(
-                'UPDATE user_accounts SET password_hash = ?, salt = ?, updated_at = ?, password_reset_required = 1 WHERE id = ?',
+                'UPDATE user_accounts SET password_hash = ?, salt = ?, updated_at = ?, '
+                'password_reset_required = 1, is_active = 1 WHERE id = ?',
                 (password_hash, salt, timestamp, account_id)
             )
 

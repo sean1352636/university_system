@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 # dialogs/details_dialog.py
 # Dialog for showing accommodation details.
 
@@ -71,4 +73,4 @@ Last Updated: {accommodation['updated_at']}
         self.details_text.config(state=tk.DISABLED)
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
+        ttk.Button(main_frame, text=_t('gui.pastoral.health.medical_accommodation.dialogs.details_dialog.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=10)

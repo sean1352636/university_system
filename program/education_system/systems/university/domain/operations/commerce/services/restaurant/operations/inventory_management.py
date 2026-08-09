@@ -29,8 +29,8 @@ logger = configure_logging(name=__name__)
 warnings.filterwarnings('ignore')
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import auth instance management from user_authentication
 try:

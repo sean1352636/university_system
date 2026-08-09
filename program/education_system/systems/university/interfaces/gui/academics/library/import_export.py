@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -119,7 +121,7 @@ def import_books_gui(self):
     """Import books from CSV or Excel file"""
     try:
         file_path = filedialog.askopenfilename(
-            title="Select Book File to Import",
+            title=_t('gui.academics.library.import_export.dialogs.select_book_file_to_import', default="Select Book File to Import"),
             filetypes=[
                 ("CSV files", "*.csv"),
                 ("Excel files", "*.xlsx *.xls"),
@@ -132,11 +134,11 @@ def import_books_gui(self):
 
         # Ask user about column mapping
         dialog = tk.Toplevel(self.master)
-        dialog.title("Import Books")
+        dialog.title(_t('gui.academics.library.import_export.windows.import_books', default="Import Books"))
         dialog.geometry("600x400")
         dialog.transient(self.master)
 
-        ttk.Label(dialog, text="Importing books from:", font=('Arial', 10, 'bold')).pack(pady=5)
+        ttk.Label(dialog, text=_t('gui.academics.library.import_export.labels.importing_books_from', default="Importing books from:"), font=('Arial', 10, 'bold')).pack(pady=5)
         ttk.Label(dialog, text=os.path.basename(file_path)).pack(pady=5)
 
         # Read file preview
@@ -149,12 +151,12 @@ def import_books_gui(self):
                     preview_rows = [next(reader) for _ in range(min(3, sum(1 for _ in reader)))]
             else:
                 # For Excel, would need openpyxl - fallback to CSV-like approach
-                messagebox.showwarning("Format", "Excel import requires openpyxl. Please convert to CSV.")
+                messagebox.showwarning(_t('gui.academics.library.import_export.dialogs.format', default="Format"), _t('gui.academics.library.import_export.dialogs.excel_import_requires_openpyxl_please_convert_to_csv', default="Excel import requires openpyxl. Please convert to CSV."))
                 dialog.destroy()
                 return
 
             # Show column mapping
-            frame = ttk.LabelFrame(dialog, text="Column Mapping")
+            frame = ttk.LabelFrame(dialog, text=_t('gui.academics.library.import_export.labels.column_mapping', default="Column Mapping"))
             frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
             mappings = {}
@@ -230,7 +232,7 @@ def export_books_gui(self):
     """Export books to CSV file"""
     try:
         file_path = filedialog.asksaveasfilename(
-            title="Export Books",
+            title=_t('gui.academics.library.import_export.dialogs.export_books', default="Export Books"),
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
@@ -270,7 +272,7 @@ def backup_system_gui(self):
         default_name = f"library_backup_{timestamp}.db"
 
         file_path = filedialog.asksaveasfilename(
-            title="Save Backup",
+            title=_t('gui.academics.library.import_export.dialogs.save_backup', default="Save Backup"),
             defaultextension=".db",
             initialfile=default_name,
             filetypes=[("Database files", "*.db"), ("All files", "*.*")]
@@ -307,26 +309,26 @@ def restore_system_gui(self):
     if not self.check_permission('system_config'):
         return
 
-    backup_dir = filedialog.askdirectory(title="Select Backup Directory")
+    backup_dir = filedialog.askdirectory(title=_t('gui.academics.library.import_export.dialogs.select_backup_directory', default="Select Backup Directory"))
 
     if backup_dir:
         # Confirm restore operation
-        result = messagebox.askyesno("Confirm Restore",
-                                   "This will overwrite current data. Are you sure you want to restore from backup?")
+        result = messagebox.askyesno(_t('gui.academics.library.import_export.dialogs.confirm_restore', default="Confirm Restore"),
+                                   _t('gui.academics.library.import_export.dialogs.this_will_overwrite_current_data_are_you_sure_you_want_to_restor', default="This will overwrite current data. Are you sure you want to restore from backup?"))
 
         if result:
             try:
                 if ORIGINAL_LIBRARY_AVAILABLE:
                     success = self.restore_from_backup(backup_dir)
                     if success:
-                        messagebox.showinfo(_("common.success"), "System restored successfully!")
+                        messagebox.showinfo(_("common.success"), _t('gui.academics.library.import_export.dialogs.system_restored_successfully', default="System restored successfully!"))
                         # Restart application to reload data
-                        restart = messagebox.askyesno("Restart Required",
-                                                    "Application needs to restart to complete restore. Restart now?")
+                        restart = messagebox.askyesno(_t('gui.academics.library.import_export.dialogs.restart_required', default="Restart Required"),
+                                                    _t('gui.academics.library.import_export.dialogs.application_needs_to_restart_to_complete_restore_restart_now', default="Application needs to restart to complete restore. Restart now?"))
                         if restart:
                             self.exit_application(restart=True)
                     else:
-                        messagebox.showerror(_("common.error"), "Restore failed")
+                        messagebox.showerror(_("common.error"), _t('gui.academics.library.import_export.dialogs.restore_failed', default="Restore failed"))
                 else:
                     messagebox.showinfo(_("common.demo"), f"Would restore from {backup_dir}")
             except tk.TclError as e:
@@ -379,7 +381,7 @@ def restore_from_backup(self, backup_dir):
 def bulk_import_books_gui(self):
     """Bulk import books from CSV/Excel with GUI"""
     file_path = filedialog.askopenfilename(
-        title="Select Books File",
+        title=_t('gui.academics.library.import_export.dialogs.select_books_file', default="Select Books File"),
         filetypes=[
             ("CSV files", "*.csv"),
             ("Excel files", "*.xlsx;*.xls"),
@@ -399,7 +401,7 @@ def bulk_import_books_gui(self):
         elif file_path.lower().endswith(('.xlsx', '.xls')):
             df = pd.read_excel(file_path)
         else:
-            messagebox.showerror(_("common.error"), "Unsupported file format. Use CSV or Excel files.")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.import_export.dialogs.unsupported_file_format_use_csv_or_excel_files', default="Unsupported file format. Use CSV or Excel files."))
             return
 
         # Validate required columns
@@ -408,7 +410,7 @@ def bulk_import_books_gui(self):
 
         if missing_columns:
             messagebox.showerror(
-                "Error",
+                _t('gui.academics.library.import_export.dialogs.error', default="Error"),
                 f"Missing required columns: {', '.join(missing_columns)}\n\n" +
                 "Required: title, author\n" +
                 "Optional: isbn, publisher, category, year_published, description, location, reading_level, tags"
@@ -417,7 +419,7 @@ def bulk_import_books_gui(self):
 
         # Show preview dialog
         preview_dialog = tk.Toplevel(self.master)
-        preview_dialog.title("Import Preview")
+        preview_dialog.title(_t('gui.academics.library.import_export.windows.import_preview', default="Import Preview"))
         preview_dialog.geometry("900x600")
 
         ttk.Label(preview_dialog, text=f"Found {len(df)} books to import",
@@ -455,11 +457,11 @@ def bulk_import_books_gui(self):
             preview_dialog.destroy()
             self._perform_import(df)
 
-        ttk.Button(button_frame, text="Import All", command=do_import).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.library.import_export.buttons.import_all', default="Import All"), command=do_import).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text=_("common.cancel"), command=preview_dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     except ImportError:
-        messagebox.showerror(_("common.error"), "pandas library is required for bulk import.\nInstall it with: pip install pandas openpyxl")
+        messagebox.showerror(_("common.error"), _t('gui.academics.library.import_export.dialogs.pandas_library_is_required_for_bulk_import_install_it_with_pip_i', default="pandas library is required for bulk import.\nInstall it with: pip install pandas openpyxl"))
     except tk.TclError as e:
         messagebox.showerror(_("common.error"), f"Failed to read file: {str(e)}")
 
@@ -484,10 +486,10 @@ def _perform_import(self, df):
 
         # Progress dialog
         progress_dialog = tk.Toplevel(self.master)
-        progress_dialog.title("Importing Books")
+        progress_dialog.title(_t('gui.academics.library.import_export.windows.importing_books', default="Importing Books"))
         progress_dialog.geometry("400x150")
 
-        ttk.Label(progress_dialog, text="Importing books...").pack(pady=10)
+        ttk.Label(progress_dialog, text=_t('gui.academics.library.import_export.labels.importing_books', default="Importing books...")).pack(pady=10)
         progress_var = tk.DoubleVar()
         progress_bar = ttk.Progressbar(progress_dialog, variable=progress_var, maximum=len(df))
         progress_bar.pack(fill=tk.X, padx=20, pady=10)
@@ -556,7 +558,7 @@ def _perform_import(self, df):
             result_msg += f"\nErrors: {error_count}\n\nFirst few errors:\n"
             result_msg += "\n".join(errors[:5])
 
-        messagebox.showinfo("Import Complete", result_msg)
+        messagebox.showinfo(_t('gui.academics.library.import_export.dialogs.import_complete', default="Import Complete"), result_msg)
 
         # Refresh the books display
         if hasattr(self, 'show_all_books'):
@@ -572,45 +574,45 @@ def bulk_export_books_gui(self):
     export_dialog.title(_("library.dialogs.export_books"))
     export_dialog.geometry("400x350")
 
-    ttk.Label(export_dialog, text="Export Books to CSV/Excel",
+    ttk.Label(export_dialog, text=_t('gui.academics.library.import_export.labels.export_books_to_csv_excel', default="Export Books to CSV/Excel"),
              font=('Arial', 14, 'bold')).pack(pady=15)
 
-    export_type = tk.StringVar(value="all")
+    export_type = tk.StringVar(value=_t('gui.academics.library.import_export.values.all', default="all"))
 
-    ttk.Radiobutton(export_dialog, text="Export All Books",
+    ttk.Radiobutton(export_dialog, text=_t('gui.academics.library.import_export.buttons.export_all_books', default="Export All Books"),
                    variable=export_type, value="all").pack(anchor=tk.W, padx=30, pady=5)
-    ttk.Radiobutton(export_dialog, text="Export by Category",
+    ttk.Radiobutton(export_dialog, text=_t('gui.academics.library.import_export.buttons.export_by_category', default="Export by Category"),
                    variable=export_type, value="category").pack(anchor=tk.W, padx=30, pady=5)
-    ttk.Radiobutton(export_dialog, text="Export by Status",
+    ttk.Radiobutton(export_dialog, text=_t('gui.academics.library.import_export.buttons.export_by_status', default="Export by Status"),
                    variable=export_type, value="status").pack(anchor=tk.W, padx=30, pady=5)
-    ttk.Radiobutton(export_dialog, text="Export by Date Range",
+    ttk.Radiobutton(export_dialog, text=_t('gui.academics.library.import_export.buttons.export_by_date_range', default="Export by Date Range"),
                    variable=export_type, value="date").pack(anchor=tk.W, padx=30, pady=5)
 
     # Additional options frame
-    options_frame = ttk.LabelFrame(export_dialog, text="Options", padding=10)
+    options_frame = ttk.LabelFrame(export_dialog, text=_t('gui.academics.library.import_export.labels.options', default="Options"), padding=10)
     options_frame.pack(fill=tk.X, padx=20, pady=10)
 
     category_var = tk.StringVar()
-    status_var = tk.StringVar(value="available")
+    status_var = tk.StringVar(value=_t('gui.academics.library.import_export.values.available', default="available"))
     start_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
     end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
 
     # Category selection
-    ttk.Label(options_frame, text="Category:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    ttk.Label(options_frame, text=_t('gui.academics.library.import_export.labels.category', default="Category:")).grid(row=0, column=0, sticky=tk.W, pady=2)
     category_combo = ttk.Combobox(options_frame, textvariable=category_var, width=20)
     category_combo.grid(row=0, column=1, pady=2)
 
     # Status selection
-    ttk.Label(options_frame, text="Status:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    ttk.Label(options_frame, text=_t('gui.academics.library.import_export.labels.status', default="Status:")).grid(row=1, column=0, sticky=tk.W, pady=2)
     status_combo = ttk.Combobox(options_frame, textvariable=status_var,
                                 values=["available", "checked_out", "reserved", "lost", "damaged"], width=20)
     status_combo.grid(row=1, column=1, pady=2)
 
     # Date range
-    ttk.Label(options_frame, text="Start Date:").grid(row=2, column=0, sticky=tk.W, pady=2)
+    ttk.Label(options_frame, text=_t('gui.academics.library.import_export.labels.start_date', default="Start Date:")).grid(row=2, column=0, sticky=tk.W, pady=2)
     ttk.Entry(options_frame, textvariable=start_date_var, width=22).grid(row=2, column=1, pady=2)
 
-    ttk.Label(options_frame, text="End Date:").grid(row=3, column=0, sticky=tk.W, pady=2)
+    ttk.Label(options_frame, text=_t('gui.academics.library.import_export.labels.end_date', default="End Date:")).grid(row=3, column=0, sticky=tk.W, pady=2)
     ttk.Entry(options_frame, textvariable=end_date_var, width=22).grid(row=3, column=1, pady=2)
 
     # Load categories
@@ -665,7 +667,7 @@ def _perform_export(self, export_type, category, status, start_date, end_date):
         conn.close()
 
         if not data:
-            messagebox.showinfo("No Data", "No books found matching the criteria.")
+            messagebox.showinfo(_t('gui.academics.library.import_export.dialogs.no_data', default="No Data"), _t('gui.academics.library.import_export.dialogs.no_books_found_matching_the_criteria', default="No books found matching the criteria."))
             return
 
         # Create DataFrame
@@ -692,17 +694,17 @@ def _perform_export(self, export_type, category, status, start_date, end_date):
             messagebox.showinfo(_("common.success"), f"Exported {len(data)} books to:\n{file_path}")
 
     except ImportError:
-        messagebox.showerror(_("common.error"), "pandas and openpyxl libraries are required for export.\nInstall them with: pip install pandas openpyxl")
+        messagebox.showerror(_("common.error"), _t('gui.academics.library.import_export.dialogs.pandas_and_openpyxl_libraries_are_required_for_export_install_th', default="pandas and openpyxl libraries are required for export.\nInstall them with: pip install pandas openpyxl"))
     except (OSError, IOError, tk.TclError) as e:
         messagebox.showerror(_("common.error"), f"Export failed: {str(e)}")
 
 def system_backup_gui(self):
     """System backup and recovery interface"""
     backup_window = tk.Toplevel(self.master)
-    backup_window.title("System Backup & Recovery")
+    backup_window.title(_t('gui.academics.library.import_export.windows.system_backup_recovery', default="System Backup & Recovery"))
     backup_window.geometry("700x600")
 
-    ttk.Label(backup_window, text="System Backup & Recovery",
+    ttk.Label(backup_window, text=_t('gui.academics.library.import_export.labels.system_backup_recovery', default="System Backup & Recovery"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Notebook for backup options
@@ -711,48 +713,48 @@ def system_backup_gui(self):
 
     # Tab 1: Create Backup
     backup_tab = ttk.Frame(notebook)
-    notebook.add(backup_tab, text="Create Backup")
+    notebook.add(backup_tab, text=_t('gui.academics.library.import_export.tabs.create_backup', default="Create Backup"))
 
-    ttk.Label(backup_tab, text="Create a backup of the library system",
+    ttk.Label(backup_tab, text=_t('gui.academics.library.import_export.labels.create_a_backup_of_the_library_system', default="Create a backup of the library system"),
              font=('Arial', 12)).pack(pady=20)
 
-    backup_type_var = tk.StringVar(value="full")
-    ttk.Radiobutton(backup_tab, text="Full Backup (All data)",
+    backup_type_var = tk.StringVar(value=_t('gui.academics.library.import_export.values.full', default="full"))
+    ttk.Radiobutton(backup_tab, text=_t('gui.academics.library.import_export.buttons.full_backup_all_data', default="Full Backup (All data)"),
                    variable=backup_type_var, value="full").pack(anchor=tk.W, padx=50, pady=5)
-    ttk.Radiobutton(backup_tab, text="Database Only",
+    ttk.Radiobutton(backup_tab, text=_t('gui.academics.library.import_export.buttons.database_only', default="Database Only"),
                    variable=backup_type_var, value="database").pack(anchor=tk.W, padx=50, pady=5)
-    ttk.Radiobutton(backup_tab, text="Settings Only",
+    ttk.Radiobutton(backup_tab, text=_t('gui.academics.library.import_export.buttons.settings_only', default="Settings Only"),
                    variable=backup_type_var, value="settings").pack(anchor=tk.W, padx=50, pady=5)
 
     def create_backup():
         try:
             import shutil
-            from education_system.systems.university.infrastructure.paths import BACKUP_DIR
+            from education_system.paths import UNIVERSITY_BACKUP_DIR
 
-            BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+            UNIVERSITY_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             backup_type = backup_type_var.get()
 
             if backup_type == "full":
                 backup_name = f"library_full_backup_{timestamp}.zip"
-                backup_path = BACKUP_DIR / backup_name
+                backup_path = UNIVERSITY_BACKUP_DIR / backup_name
 
                 # Create zip of entire database directory
-                from education_system.systems.university.infrastructure.paths import DATA_DIR
-                shutil.make_archive(str(backup_path.with_suffix('')), 'zip', DATA_DIR)
+                from education_system.paths import UNIVERSITY_DATA_DIR
+                shutil.make_archive(str(backup_path.with_suffix('')), 'zip', UNIVERSITY_DATA_DIR)
 
             elif backup_type == "database":
                 backup_name = f"library_db_backup_{timestamp}.db"
-                backup_path = BACKUP_DIR / backup_name
+                backup_path = UNIVERSITY_BACKUP_DIR / backup_name
 
                 # Copy database file
-                from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-                shutil.copy2(DEFAULT_DB_PATH, backup_path)
+                from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+                shutil.copy2(UNIVERSITY_DEFAULT_DB_PATH, backup_path)
 
             else:  # settings
                 backup_name = f"library_settings_backup_{timestamp}.sql"
-                backup_path = BACKUP_DIR / backup_name
+                backup_path = UNIVERSITY_BACKUP_DIR / backup_name
 
                 # Export settings table
                 conn = get_db_connection()
@@ -768,26 +770,26 @@ def system_backup_gui(self):
                 "Backup created successfully!\n\n" +
                 f"Type: {backup_type}\n" +
                 f"File: {backup_name}\n" +
-                f"Location: {BACKUP_DIR}")
+                f"Location: {UNIVERSITY_BACKUP_DIR}")
 
         except (sqlite3.Error, DatabaseError, OSError, IOError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Backup failed: {str(e)}")
 
-    ttk.Button(backup_tab, text="Create Backup", command=create_backup).pack(pady=30)
+    ttk.Button(backup_tab, text=_t('gui.academics.library.import_export.buttons.create_backup', default="Create Backup"), command=create_backup).pack(pady=30)
 
     # Tab 2: Restore
     restore_tab = ttk.Frame(notebook)
-    notebook.add(restore_tab, text="Restore from Backup")
+    notebook.add(restore_tab, text=_t('gui.academics.library.import_export.tabs.restore_from_backup', default="Restore from Backup"))
 
-    ttk.Label(restore_tab, text="Restore system from a backup file",
+    ttk.Label(restore_tab, text=_t('gui.academics.library.import_export.labels.restore_system_from_a_backup_file', default="Restore system from a backup file"),
              font=('Arial', 12)).pack(pady=20)
 
-    ttk.Label(restore_tab, text="⚠️ Warning: This will overwrite current data!",
+    ttk.Label(restore_tab, text=_t('gui.academics.library.import_export.labels.warning_this_will_overwrite_current_data', default="⚠️ Warning: This will overwrite current data!"),
              foreground='red').pack(pady=10)
 
     def restore_backup():
         file_path = filedialog.askopenfilename(
-            title="Select Backup File",
+            title=_t('gui.academics.library.import_export.dialogs.select_backup_file', default="Select Backup File"),
             filetypes=[
                 ("All backup files", "*.zip;*.db;*.sql"),
                 ("ZIP files", "*.zip"),
@@ -799,7 +801,7 @@ def system_backup_gui(self):
         if not file_path:
             return
 
-        confirm = messagebox.askyesnocancel("Confirm Restore",
+        confirm = messagebox.askyesnocancel(_t('gui.academics.library.import_export.dialogs.confirm_restore', default="Confirm Restore"),
             "This will overwrite current data. Continue?\n\n" +
             "A backup of current data will be created first.",
             icon='warning')
@@ -810,18 +812,18 @@ def system_backup_gui(self):
         try:
             # Create safety backup first
             import shutil
-            from education_system.systems.university.infrastructure.paths import BACKUP_DIR, DEFAULT_DB_PATH
+            from education_system.paths import UNIVERSITY_BACKUP_DIR, UNIVERSITY_DEFAULT_DB_PATH
 
-            safety_backup = BACKUP_DIR / f"pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
-            shutil.copy2(DEFAULT_DB_PATH, safety_backup)
+            safety_backup = UNIVERSITY_BACKUP_DIR / f"pre_restore_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+            shutil.copy2(UNIVERSITY_DEFAULT_DB_PATH, safety_backup)
 
             # Restore based on file type
             if file_path.endswith('.zip'):
                 # Extract zip
-                shutil.unpack_archive(file_path, DEFAULT_DB_PATH.parent)
+                shutil.unpack_archive(file_path, UNIVERSITY_DEFAULT_DB_PATH.parent)
             elif file_path.endswith('.db'):
                 # Copy database
-                shutil.copy2(file_path, DEFAULT_DB_PATH)
+                shutil.copy2(file_path, UNIVERSITY_DEFAULT_DB_PATH)
             elif file_path.endswith('.sql'):
                 # Execute SQL
                 conn = get_db_connection()
@@ -839,21 +841,21 @@ def system_backup_gui(self):
         except (sqlite3.Error, DatabaseError, OSError, IOError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Restore failed: {str(e)}")
 
-    ttk.Button(restore_tab, text="Select Backup File and Restore",
+    ttk.Button(restore_tab, text=_t('gui.academics.library.import_export.buttons.select_backup_file_and_restore', default="Select Backup File and Restore"),
               command=restore_backup).pack(pady=30)
 
     # Tab 3: Scheduled Backups
     schedule_tab = ttk.Frame(notebook)
-    notebook.add(schedule_tab, text="Backup Schedule")
+    notebook.add(schedule_tab, text=_t('gui.academics.library.import_export.tabs.backup_schedule', default="Backup Schedule"))
 
-    ttk.Label(schedule_tab, text="Configure automated backup schedule",
+    ttk.Label(schedule_tab, text=_t('gui.academics.library.import_export.labels.configure_automated_backup_schedule', default="Configure automated backup schedule"),
              font=('Arial', 12)).pack(pady=20)
 
-    schedule_var = tk.StringVar(value="daily")
-    ttk.Radiobutton(schedule_tab, text="Hourly", variable=schedule_var, value="hourly").pack(anchor=tk.W, padx=50, pady=5)
-    ttk.Radiobutton(schedule_tab, text="Daily (recommended)", variable=schedule_var, value="daily").pack(anchor=tk.W, padx=50, pady=5)
-    ttk.Radiobutton(schedule_tab, text="Weekly", variable=schedule_var, value="weekly").pack(anchor=tk.W, padx=50, pady=5)
-    ttk.Radiobutton(schedule_tab, text="Disabled", variable=schedule_var, value="disabled").pack(anchor=tk.W, padx=50, pady=5)
+    schedule_var = tk.StringVar(value=_t('gui.academics.library.import_export.values.daily', default="daily"))
+    ttk.Radiobutton(schedule_tab, text=_t('gui.academics.library.import_export.buttons.hourly', default="Hourly"), variable=schedule_var, value="hourly").pack(anchor=tk.W, padx=50, pady=5)
+    ttk.Radiobutton(schedule_tab, text=_t('gui.academics.library.import_export.buttons.daily_recommended', default="Daily (recommended)"), variable=schedule_var, value="daily").pack(anchor=tk.W, padx=50, pady=5)
+    ttk.Radiobutton(schedule_tab, text=_t('gui.academics.library.import_export.buttons.weekly', default="Weekly"), variable=schedule_var, value="weekly").pack(anchor=tk.W, padx=50, pady=5)
+    ttk.Radiobutton(schedule_tab, text=_t('gui.academics.library.import_export.buttons.disabled', default="Disabled"), variable=schedule_var, value="disabled").pack(anchor=tk.W, padx=50, pady=5)
 
     def save_schedule():
         try:
@@ -873,7 +875,7 @@ def system_backup_gui(self):
         except (sqlite3.Error, DatabaseError, tk.TclError) as e:
             messagebox.showerror(_("common.error"), f"Failed to save schedule: {str(e)}")
 
-    ttk.Button(schedule_tab, text="Save Schedule", command=save_schedule).pack(pady=30)
+    ttk.Button(schedule_tab, text=_t('gui.academics.library.import_export.buttons.save_schedule', default="Save Schedule"), command=save_schedule).pack(pady=30)
 
     # Close button
     ttk.Button(backup_window, text=_("common.close"), command=backup_window.destroy).pack(pady=10)

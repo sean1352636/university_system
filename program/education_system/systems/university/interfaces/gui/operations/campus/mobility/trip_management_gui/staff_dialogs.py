@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.simpledialog import Dialog
@@ -16,14 +18,14 @@ class AssignStaffDialog(Dialog):
     def body(self, master):
         """Create the dialog body"""
         # Available staff
-        ttk.Label(master, text="Available Staff:").pack(anchor=tk.W)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.labels.available_staff', default="Available Staff:")).pack(anchor=tk.W)
 
         self.staff_listbox = tk.Listbox(master, width=60, height=10)
         self.staff_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
         # Role selection
-        ttk.Label(master, text="Role:").pack(anchor=tk.W)
-        self.role_var = tk.StringVar(value="supervisor")
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.labels.role', default="Role:")).pack(anchor=tk.W)
+        self.role_var = tk.StringVar(value=_t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.values.supervisor', default="supervisor"))
 
         role_frame = ttk.Frame(master)
         role_frame.pack(fill=tk.X, pady=5)
@@ -67,7 +69,7 @@ class AssignStaffDialog(Dialog):
         """Validate staff selection"""
         selection = self.staff_listbox.curselection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a staff member.")
+            messagebox.showwarning(_t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.dialogs.no_selection', default="No Selection"), _t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.dialogs.please_select_a_staff_member', default="Please select a staff member."))
             return False
         return True
 
@@ -95,10 +97,10 @@ class AssignStaffDialog(Dialog):
 
         try:
             if safe_db_operation(assign_staff_operation):
-                messagebox.showinfo("Success", "Staff member assigned successfully!")
+                messagebox.showinfo(_t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.dialogs.success', default="Success"), _t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.dialogs.staff_member_assigned_successfully', default="Staff member assigned successfully!"))
                 if self.refresh_callback:
                     self.refresh_callback()
             else:
-                messagebox.showerror("Error", "Failed to assign staff member.")
+                messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.dialogs.failed_to_assign_staff_member', default="Failed to assign staff member."))
         except sqlite3.IntegrityError:
-            messagebox.showerror("Error", "Staff member is already assigned to this trip.")
+            messagebox.showerror(_t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.dialogs.error', default="Error"), _t('gui.operations.campus.mobility.trip_management_gui.staff_dialogs.dialogs.staff_member_is_already_assigned_to_this_trip', default="Staff member is already assigned to this trip."))

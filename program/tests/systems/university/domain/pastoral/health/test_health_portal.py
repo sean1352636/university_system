@@ -13,6 +13,7 @@ from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
 from education_system.systems.university.domain.pastoral.health.services import health_portal
+from education_system.systems.university.infrastructure.database import db
 from education_system.systems.university.infrastructure.database.db import get_connection
 
 
@@ -35,9 +36,12 @@ def mock_auth():
     return auth
 
 
-@pytest.fixture
-def setup_portal_db():
-    """Setup database for health portal tests."""
+@pytest.fixture(autouse=True)
+def setup_portal_db(tmp_path, monkeypatch):
+    """Set up an isolated health-portal database for every test."""
+    database_path = str(tmp_path / "health_portal.db")
+    monkeypatch.setattr(db, "DEFAULT_DB_PATH", database_path)
+
     conn = get_connection()
     cursor = conn.cursor()
 
@@ -166,16 +170,6 @@ def setup_portal_db():
 
     yield
 
-    # Cleanup
-    conn = get_connection()
-    cursor = conn.cursor()
-    tables = ['users', 'health_records', 'health_appointments', 'vaccinations',
-              'emergency_contacts', 'medical_history']
-    for table in tables:
-        cursor.execute(f'DROP TABLE IF EXISTS {table}')
-    conn.commit()
-    conn.close()
-
 
 class TestViewHealthRecords:
     """Tests for view_health_records function."""
@@ -289,7 +283,7 @@ class TestExportHealthRecords:
 
     @patch('builtins.input', side_effect=['1'])
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.paths')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.exports.paths')
     def test_export_health_records_csv(self, mock_paths, mock_print, mock_input, mock_auth, setup_portal_db, temp_dir):
         """Test exporting health records to CSV."""
         mock_paths.DATA_DIR = Path(temp_dir)
@@ -302,7 +296,7 @@ class TestExportHealthRecords:
 
     @patch('builtins.input', side_effect=['2'])
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.paths')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.exports.paths')
     def test_export_health_records_json(self, mock_paths, mock_print, mock_input, mock_auth, setup_portal_db, temp_dir):
         """Test exporting health records to JSON."""
         mock_paths.DATA_DIR = Path(temp_dir)
@@ -318,8 +312,8 @@ class TestBackupManagement:
     """Tests for backup management functions."""
 
     @patch('builtins.print')
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.paths')
-    @patch('education_system.systems.university.domain.pastoral.health.services.health_portal.DEFAULT_DB_PATH')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.backups.paths')
+    @patch('education_system.systems.university.interfaces.cli.pastoral.health_portal.backups.DEFAULT_DB_PATH')
     def test_create_manual_backup(self, mock_db_path, mock_paths, mock_print, mock_auth, temp_dir):
         """Test creating a manual backup."""
         mock_paths.DATA_DIR = Path(temp_dir)
@@ -377,7 +371,7 @@ class TestAdvancedReports:
 class TestSecurityAudit:
     """Tests for security and audit functions."""
 
-    @patch('builtins.input', side_effect=['1', '0'])
+    @patch('builtins.input', side_effect=['1', '1', '0'])
     @patch('builtins.print')
     def test_security_audit_menu(self, mock_print, mock_input, mock_auth):
         """Test security audit menu navigation."""
@@ -465,6 +459,14 @@ class TestErrorHandling:
         """Test viewing health records when user doesn't exist."""
         # Clear users
         conn = get_connection()
+        for table in (
+            "health_records",
+            "health_appointments",
+            "vaccinations",
+            "emergency_contacts",
+            "medical_history",
+        ):
+            conn.execute(f"DELETE FROM {table}")  # nosec B608 - fixed test tables
         conn.execute('DELETE FROM users')
         conn.commit()
         conn.close()

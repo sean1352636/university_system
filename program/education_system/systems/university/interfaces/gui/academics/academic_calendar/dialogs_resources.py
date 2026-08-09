@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, simpledialog
@@ -272,7 +274,7 @@ class BookResourceDialog:
             gui_logger.warning(f"Failed to load events: {e}")
 
         # Date picker
-        ttk.Label(main_frame, text="Date:").pack(anchor=tk.W, pady=(5, 0))
+        ttk.Label(main_frame, text=_t('gui.academics.academic_calendar.dialogs_resources.labels.date', default="Date:")).pack(anchor=tk.W, pady=(5, 0))
         date_frame = ttk.Frame(main_frame)
         date_frame.pack(fill=tk.X, pady=(5, 10))
 
@@ -284,7 +286,7 @@ class BookResourceDialog:
         date_combo.pack(fill=tk.X)
 
         # Start time picker
-        ttk.Label(main_frame, text="Start Time:").pack(anchor=tk.W, pady=(5, 0))
+        ttk.Label(main_frame, text=_t('gui.academics.academic_calendar.dialogs_resources.labels.start_time', default="Start Time:")).pack(anchor=tk.W, pady=(5, 0))
         start_frame = ttk.Frame(main_frame)
         start_frame.pack(fill=tk.X, pady=(5, 10))
 
@@ -298,7 +300,7 @@ class BookResourceDialog:
         ttk.Combobox(start_frame, textvariable=self.start_min_var, values=minutes, width=5, state='readonly').pack(side=tk.LEFT)
 
         # End time picker
-        ttk.Label(main_frame, text="End Time:").pack(anchor=tk.W, pady=(5, 0))
+        ttk.Label(main_frame, text=_t('gui.academics.academic_calendar.dialogs_resources.labels.end_time', default="End Time:")).pack(anchor=tk.W, pady=(5, 0))
         end_frame = ttk.Frame(main_frame)
         end_frame.pack(fill=tk.X, pady=(5, 10))
 
@@ -329,11 +331,11 @@ class BookResourceDialog:
             end_time = f"{date} {self.end_hour_var.get()}:{self.end_min_var.get()}"
 
             if not resource_name:
-                messagebox.showerror(_("common.error"), "Please select a resource.", parent=self.dialog)
+                messagebox.showerror(_("common.error"), _t('gui.academics.academic_calendar.dialogs_resources.dialogs.please_select_a_resource', default="Please select a resource."), parent=self.dialog)
                 return
 
             if start_time >= end_time:
-                messagebox.showerror(_("common.error"), "End time must be after start time.", parent=self.dialog)
+                messagebox.showerror(_("common.error"), _t('gui.academics.academic_calendar.dialogs_resources.dialogs.end_time_must_be_after_start_time', default="End time must be after start time."), parent=self.dialog)
                 return
 
             # Get resource ID
@@ -579,7 +581,7 @@ class LinkCourseEventDialog:
             pass
 
         if not self.event_map:
-            messagebox.showwarning(_("common.warning"), "No events found. Create an event first.")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.academic_calendar.dialogs_resources.dialogs.no_events_found_create_an_event_first', default="No events found. Create an event first."))
             return
 
         self.dialog = tk.Toplevel(parent)
@@ -591,11 +593,11 @@ class LinkCourseEventDialog:
         frm = ttk.Frame(self.dialog, padding=15)
         frm.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frm, text="Link Course to Event",
+        ttk.Label(frm, text=_t('gui.academics.academic_calendar.dialogs_resources.labels.link_course_to_event', default="Link Course to Event"),
                   font=('Arial', 12, 'bold')).pack(pady=(0, 15))
 
         # Course (pre-filled if provided)
-        ttk.Label(frm, text="Course:").pack(anchor=tk.W)
+        ttk.Label(frm, text=_t('gui.academics.academic_calendar.dialogs_resources.labels.course', default="Course:")).pack(anchor=tk.W)
         self.course_var = tk.StringVar(value=course_name or "")
         course_entry = ttk.Entry(frm, textvariable=self.course_var, width=55)
         course_entry.pack(fill=tk.X, pady=(5, 10))
@@ -603,7 +605,7 @@ class LinkCourseEventDialog:
             course_entry.configure(state="readonly")
 
         # Event dropdown
-        ttk.Label(frm, text="Event:").pack(anchor=tk.W)
+        ttk.Label(frm, text=_t('gui.academics.academic_calendar.dialogs_resources.labels.event', default="Event:")).pack(anchor=tk.W)
         self.event_combo = ttk.Combobox(frm, values=list(self.event_map.keys()), width=53, state='readonly')
         self.event_combo.pack(fill=tk.X, pady=(5, 15))
         if self.event_map:
@@ -611,7 +613,7 @@ class LinkCourseEventDialog:
 
         btn_frame = ttk.Frame(frm)
         btn_frame.pack(fill=tk.X)
-        ttk.Button(btn_frame, text="Link", command=self._link).pack(side=tk.RIGHT, padx=(10, 0))
+        ttk.Button(btn_frame, text=_t('gui.academics.academic_calendar.dialogs_resources.buttons.link', default="Link"), command=self._link).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(btn_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def _link(self):
@@ -619,10 +621,10 @@ class LinkCourseEventDialog:
         selected_event = self.event_combo.get()
 
         if not course_name:
-            messagebox.showwarning(_("common.warning"), "Please enter a course name.")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.academic_calendar.dialogs_resources.dialogs.please_enter_a_course_name', default="Please enter a course name."))
             return
         if selected_event not in self.event_map:
-            messagebox.showwarning(_("common.warning"), "Please select an event.")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.academic_calendar.dialogs_resources.dialogs.please_select_an_event', default="Please select an event."))
             return
 
         event_id = self.event_map[selected_event]

@@ -2,6 +2,8 @@
 course_planning_gui/__init__.py into the final CoursePlanningGUI class."""
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import json
 import logging
 import threading
@@ -22,7 +24,7 @@ class _ExportMixin:
     def _export_plan_pdf(self):
         """Export current plan to PDF."""
         if not self.current_plan_id or not self.current_plan_data:
-            messagebox.showwarning("Warning", "Please load a plan first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.please_load_a_plan_first', default="Please load a plan first."))
             return
 
         try:
@@ -36,9 +38,9 @@ class _ExportMixin:
 
         except ImportError:
             messagebox.showerror(
-                "Error",
-                "PDF export requires reportlab library.\n\n"
-                "Install with: pip install reportlab"
+                _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.error', default="Error"),
+                _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.pdf_export_requires_reportlab_library_install_with_pip_install_r', default="PDF export requires reportlab library.\n\n"
+                "Install with: pip install reportlab")
             )
             return
 
@@ -149,32 +151,32 @@ class _ExportMixin:
             # Build PDF
             doc.build(story)
 
-            messagebox.showinfo("Success", f"Plan exported to PDF:\n{filename}")
+            messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.success', default="Success"), f"Plan exported to PDF:\n{filename}")
 
             log_activity('export', 'semester_plan', user_id=self.student_id,
                         details={'action': 'export_pdf', 'plan_id': self.current_plan_id,
                                 'filename': filename})
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export PDF: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.error', default="Error"), f"Failed to export PDF: {e}")
 
     def _email_plan_to_advisor(self):
         """Email current plan to academic advisor."""
         if not self.current_plan_id or not self.current_plan_data:
-            messagebox.showwarning("Warning", "Please load a plan first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.please_load_a_plan_first', default="Please load a plan first."))
             return
 
         # Create dialog to select advisor
         dialog = tk.Toplevel(self.window)
-        dialog.title("Email Plan to Advisor")
+        dialog.title(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.windows.email_plan_to_advisor', default="Email Plan to Advisor"))
         dialog.geometry("500x350")
         dialog.transient(self.window)
         dialog.grab_set()
 
         # Header
-        ttk.Label(dialog, text="Select Academic Advisor",
+        ttk.Label(dialog, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.labels.select_academic_advisor', default="Select Academic Advisor"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        ttk.Label(dialog, text="Choose a staff member or administrator to email your course plan:",
+        ttk.Label(dialog, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.labels.choose_a_staff_member_or_administrator_to_email_your_course_plan', default="Choose a staff member or administrator to email your course plan:"),
                  font=('Arial', 10)).pack(pady=5)
 
         # Get staff and admin users
@@ -188,12 +190,12 @@ class _ExportMixin:
             """).fetchall()
 
         if not staff_users:
-            messagebox.showerror("Error", "No staff/admin users found with email addresses.")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.error', default="Error"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.no_staff_admin_users_found_with_email_addresses', default="No staff/admin users found with email addresses."))
             dialog.destroy()
             return
 
         # List frame
-        list_frame = ttk.LabelFrame(dialog, text="Available Advisors", padding=10)
+        list_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.labels.available_advisors', default="Available Advisors"), padding=10)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
         # Create listbox with scrollbar
@@ -216,7 +218,7 @@ class _ExportMixin:
         def select_and_send():
             selection = advisor_listbox.curselection()
             if not selection:
-                messagebox.showwarning("Warning", "Please select an advisor.")
+                messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.please_select_an_advisor', default="Please select an advisor."))
                 return
 
             selected_text = advisor_listbox.get(selection[0])
@@ -227,8 +229,8 @@ class _ExportMixin:
         button_frame = ttk.Frame(dialog)
         button_frame.pack(fill=tk.X, padx=20, pady=10)
 
-        ttk.Button(button_frame, text="Send Email", command=select_and_send).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.buttons.send_email', default="Send Email"), command=select_and_send).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(button_frame, text=_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         # Wait for dialog to close
         dialog.wait_window()
@@ -250,9 +252,9 @@ class _ExportMixin:
 
             if not EMAIL_AVAILABLE:
                 messagebox.showerror(
-                    "Error",
-                    "Email service is not available.\n\n"
-                    "Configure email settings in the system."
+                    _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.error', default="Error"),
+                    _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.email_service_is_not_available_configure_email_settings_in_the_s', default="Email service is not available.\n\n"
+                    "Configure email settings in the system.")
                 )
                 return
 
@@ -310,7 +312,7 @@ SEMESTER BREAKDOWN
 
             if success:
                 messagebox.showinfo(
-                    "Success",
+                    _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.success', default="Success"),
                     f"Course plan emailed to:\n{advisor_email}\n\n"
                     "Your advisor will receive the plan details shortly."
                 )
@@ -319,15 +321,15 @@ SEMESTER BREAKDOWN
                             details={'action': 'email_to_advisor', 'plan_id': self.current_plan_id,
                                     'advisor_email': advisor_email})
             else:
-                messagebox.showerror("Error", "Failed to queue email. Please try again.")
+                messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.error', default="Error"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.failed_to_queue_email_please_try_again', default="Failed to queue email. Please try again."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to email plan: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.error', default="Error"), f"Failed to email plan: {e}")
 
     def _email_report_to_admin(self):
         """Email the current plan report to all admin users."""
         if not self.current_plan_id or not self.current_plan_data:
-            messagebox.showwarning("Warning", "Please load a plan first.")
+            messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.warning', default="Warning"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.please_load_a_plan_first', default="Please load a plan first."))
             return
 
         try:
@@ -364,7 +366,7 @@ SEMESTER BREAKDOWN
                 ).fetchall()
 
             if not admins:
-                messagebox.showinfo("No Admins", "No admin email addresses found.")
+                messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.no_admins', default="No Admins"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.no_admin_email_addresses_found', default="No admin email addresses found."))
                 return
 
             sent = 0
@@ -380,10 +382,10 @@ SEMESTER BREAKDOWN
                     pass
 
             if sent > 0:
-                messagebox.showinfo("Email Sent", f"Report emailed to {sent} admin(s).")
+                messagebox.showinfo(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.email_sent', default="Email Sent"), f"Report emailed to {sent} admin(s).")
             else:
-                messagebox.showwarning("Email Failed", "Could not send email to any admin.")
+                messagebox.showwarning(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.email_failed', default="Email Failed"), _t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.could_not_send_email_to_any_admin', default="Could not send email to any admin."))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to email report: {e}")
+            messagebox.showerror(_t('gui.academics.course_management_gui.course_planning_gui.mixins.export.dialogs.error', default="Error"), f"Failed to email report: {e}")
 

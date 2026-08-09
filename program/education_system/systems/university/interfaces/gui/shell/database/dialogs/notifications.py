@@ -5,6 +5,8 @@ and WebhookConfigDialog for configuring Slack and Discord webhook
 integrations used by the backup notification system.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 
@@ -17,7 +19,7 @@ class EmailConfigDialog:
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Email Configuration")
+        self.dialog.title(_t('gui.shell.database.dialogs.notifications.windows.email_configuration', default="Email Configuration"))
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -30,30 +32,30 @@ class EmailConfigDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # SMTP settings
-        smtp_frame = ttk.LabelFrame(self.dialog, text="SMTP Settings", padding=10)
+        smtp_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.notifications.labels.smtp_settings', default="SMTP Settings"), padding=10)
         smtp_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(smtp_frame, text="SMTP Server:").grid(row=0, column=0, sticky="w", pady=2)
+        ttk.Label(smtp_frame, text=_t('gui.shell.database.dialogs.notifications.labels.smtp_server', default="SMTP Server:")).grid(row=0, column=0, sticky="w", pady=2)
         self.smtp_server_var = tk.StringVar()
         ttk.Entry(smtp_frame, textvariable=self.smtp_server_var, width=30).grid(row=0, column=1, padx=5)
 
-        ttk.Label(smtp_frame, text="Port:").grid(row=1, column=0, sticky="w", pady=2)
+        ttk.Label(smtp_frame, text=_t('gui.shell.database.dialogs.notifications.labels.port', default="Port:")).grid(row=1, column=0, sticky="w", pady=2)
         self.smtp_port_var = tk.StringVar()
         ttk.Entry(smtp_frame, textvariable=self.smtp_port_var, width=10).grid(row=1, column=1, sticky="w", padx=5)
 
-        ttk.Label(smtp_frame, text="Username:").grid(row=2, column=0, sticky="w", pady=2)
+        ttk.Label(smtp_frame, text=_t('gui.shell.database.dialogs.notifications.labels.username', default="Username:")).grid(row=2, column=0, sticky="w", pady=2)
         self.email_username_var = tk.StringVar()
         ttk.Entry(smtp_frame, textvariable=self.email_username_var, width=30).grid(row=2, column=1, padx=5)
 
-        ttk.Label(smtp_frame, text="Password:").grid(row=3, column=0, sticky="w", pady=2)
+        ttk.Label(smtp_frame, text=_t('gui.shell.database.dialogs.notifications.labels.password', default="Password:")).grid(row=3, column=0, sticky="w", pady=2)
         self.email_password_var = tk.StringVar()
         ttk.Entry(smtp_frame, textvariable=self.email_password_var, show="*", width=30).grid(row=3, column=1, padx=5)
 
         # Recipients
-        recipients_frame = ttk.LabelFrame(self.dialog, text="Recipients", padding=10)
+        recipients_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.notifications.labels.recipients', default="Recipients"), padding=10)
         recipients_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
-        ttk.Label(recipients_frame, text="Email addresses (one per line):").pack(anchor="w")
+        ttk.Label(recipients_frame, text=_t('gui.shell.database.dialogs.notifications.labels.email_addresses_one_per_line', default="Email addresses (one per line):")).pack(anchor="w")
         self.recipients_text = scrolledtext.ScrolledText(recipients_frame, height=6, wrap=tk.WORD)
         self.recipients_text.pack(fill="both", expand=True, pady=5)
 
@@ -61,9 +63,9 @@ class EmailConfigDialog:
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Test Email", command=self.test_email).pack(side="left", padx=5)
-        ttk.Button(button_frame, text="Save", command=self.save_settings).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.test_email', default="Test Email"), command=self.test_email).pack(side="left", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.save', default="Save"), command=self.save_settings).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side="right")
 
     def load_current_settings(self):
         """Load current email settings"""
@@ -103,10 +105,10 @@ class EmailConfigDialog:
             # Restore config
             config.update(old_config)
 
-            messagebox.showinfo("Test Successful", "Test email sent successfully!")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.notifications.dialogs.test_successful', default="Test Successful"), _t('gui.shell.database.dialogs.notifications.dialogs.test_email_sent_successfully', default="Test email sent successfully!"))
 
         except Exception as e:
-            messagebox.showerror("Test Failed", f"Email test failed: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.notifications.dialogs.test_failed', default="Test Failed"), f"Email test failed: {e}")
 
     def save_settings(self):
         """Save email settings"""
@@ -122,20 +124,20 @@ class EmailConfigDialog:
 
             save_config()
 
-            messagebox.showinfo("Success", "Email configuration saved!")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.notifications.dialogs.success', default="Success"), _t('gui.shell.database.dialogs.notifications.dialogs.email_configuration_saved', default="Email configuration saved!"))
             self.dialog.destroy()
 
         except ValueError:
-            messagebox.showerror("Invalid Port", "Please enter a valid port number")
+            messagebox.showerror(_t('gui.shell.database.dialogs.notifications.dialogs.invalid_port', default="Invalid Port"), _t('gui.shell.database.dialogs.notifications.dialogs.please_enter_a_valid_port_number', default="Please enter a valid port number"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save email configuration: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.notifications.dialogs.error', default="Error"), f"Failed to save email configuration: {e}")
 
 class WebhookConfigDialog:
     """Dialog for configuring webhooks"""
 
     def __init__(self, parent):
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Webhook Configuration")
+        self.dialog.title(_t('gui.shell.database.dialogs.notifications.windows.webhook_configuration', default="Webhook Configuration"))
         self.dialog.geometry("450x250")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -148,31 +150,31 @@ class WebhookConfigDialog:
     def create_widgets(self):
         """Create dialog widgets"""
         # Slack webhook
-        slack_frame = ttk.LabelFrame(self.dialog, text="Slack Webhook", padding=10)
+        slack_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.notifications.labels.slack_webhook', default="Slack Webhook"), padding=10)
         slack_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(slack_frame, text="Webhook URL:").pack(anchor="w")
+        ttk.Label(slack_frame, text=_t('gui.shell.database.dialogs.notifications.labels.webhook_url', default="Webhook URL:")).pack(anchor="w")
         self.slack_webhook_var = tk.StringVar()
         ttk.Entry(slack_frame, textvariable=self.slack_webhook_var, width=50).pack(fill="x", pady=2)
 
-        ttk.Button(slack_frame, text="Test Slack", command=self.test_slack).pack(pady=5)
+        ttk.Button(slack_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.test_slack', default="Test Slack"), command=self.test_slack).pack(pady=5)
 
         # Discord webhook
-        discord_frame = ttk.LabelFrame(self.dialog, text="Discord Webhook", padding=10)
+        discord_frame = ttk.LabelFrame(self.dialog, text=_t('gui.shell.database.dialogs.notifications.labels.discord_webhook', default="Discord Webhook"), padding=10)
         discord_frame.pack(fill="x", padx=10, pady=5)
 
-        ttk.Label(discord_frame, text="Webhook URL:").pack(anchor="w")
+        ttk.Label(discord_frame, text=_t('gui.shell.database.dialogs.notifications.labels.webhook_url', default="Webhook URL:")).pack(anchor="w")
         self.discord_webhook_var = tk.StringVar()
         ttk.Entry(discord_frame, textvariable=self.discord_webhook_var, width=50).pack(fill="x", pady=2)
 
-        ttk.Button(discord_frame, text="Test Discord", command=self.test_discord).pack(pady=5)
+        ttk.Button(discord_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.test_discord', default="Test Discord"), command=self.test_discord).pack(pady=5)
 
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(fill="x", padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Save", command=self.save_settings).pack(side="right", padx=5)
-        ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.save', default="Save"), command=self.save_settings).pack(side="right", padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.database.dialogs.notifications.buttons.cancel', default="Cancel"), command=self.dialog.destroy).pack(side="right")
 
     def load_current_settings(self):
         """Load current webhook settings"""
@@ -189,10 +191,10 @@ class WebhookConfigDialog:
 
             config["slack_webhook"] = old_webhook
 
-            messagebox.showinfo("Test Successful", "Slack test message sent!")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.notifications.dialogs.test_successful', default="Test Successful"), _t('gui.shell.database.dialogs.notifications.dialogs.slack_test_message_sent', default="Slack test message sent!"))
 
         except Exception as e:
-            messagebox.showerror("Test Failed", f"Slack test failed: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.notifications.dialogs.test_failed', default="Test Failed"), f"Slack test failed: {e}")
 
     def test_discord(self):
         """Test Discord webhook"""
@@ -204,10 +206,10 @@ class WebhookConfigDialog:
 
             config["discord_webhook"] = old_webhook
 
-            messagebox.showinfo("Test Successful", "Discord test message sent!")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.notifications.dialogs.test_successful', default="Test Successful"), _t('gui.shell.database.dialogs.notifications.dialogs.discord_test_message_sent', default="Discord test message sent!"))
 
         except Exception as e:
-            messagebox.showerror("Test Failed", f"Discord test failed: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.notifications.dialogs.test_failed', default="Test Failed"), f"Discord test failed: {e}")
 
     def save_settings(self):
         """Save webhook settings"""
@@ -217,8 +219,8 @@ class WebhookConfigDialog:
 
             save_config()
 
-            messagebox.showinfo("Success", "Webhook configuration saved!")
+            messagebox.showinfo(_t('gui.shell.database.dialogs.notifications.dialogs.success', default="Success"), _t('gui.shell.database.dialogs.notifications.dialogs.webhook_configuration_saved', default="Webhook configuration saved!"))
             self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save webhook configuration: {e}")
+            messagebox.showerror(_t('gui.shell.database.dialogs.notifications.dialogs.error', default="Error"), f"Failed to save webhook configuration: {e}")

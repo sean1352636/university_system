@@ -1,0 +1,1 @@
+"""Apprenticeships gui package."""

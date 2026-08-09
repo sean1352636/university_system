@@ -7,15 +7,17 @@ checks and notifications, so planners can iterate freely before promoting
 anything to published.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 logger = logging.getLogger(__name__)
 
 _SEMESTERS = ["Fall", "Spring", "Summer", "Winter"]
@@ -30,7 +32,7 @@ class CloneTermDialog:
         self.gui = gui
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Clone Term Plan")
+        self.dialog.title(_t('gui.academics.module_scheduling.clone_term_dialog.windows.clone_term_plan', default="Clone Term Plan"))
         self.dialog.geometry("520x340")
         self.dialog.transient(parent)
         try:
@@ -45,9 +47,9 @@ class CloneTermDialog:
         frame.pack(fill=tk.BOTH, expand=True)
 
         ttk.Label(frame,
-                  text="Copy published schedules from one term into draft "
+                  text=_t('gui.academics.module_scheduling.clone_term_dialog.labels.copy_published_schedules_from_one_term_into_draft_rows_of_anothe', default="Copy published schedules from one term into draft "
                        "rows of another term.\nDrafts skip conflict checks "
-                       "and notifications until you publish them.",
+                       "and notifications until you publish them."),
                   wraplength=480, justify=tk.LEFT
                   ).grid(row=0, column=0, columnspan=4, pady=(0, 12), sticky=tk.W)
 
@@ -58,7 +60,7 @@ class CloneTermDialog:
         next_year = now.year if next_sem != "Fall" else now.year + 1
 
         # Source
-        ttk.Label(frame, text="From:").grid(row=1, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.academics.module_scheduling.clone_term_dialog.labels.from', default="From:")).grid(row=1, column=0, sticky=tk.W, pady=4)
         self.src_sem_var = tk.StringVar(value=default_sem)
         ttk.Combobox(frame, textvariable=self.src_sem_var, values=_SEMESTERS,
                      width=10, state="readonly").grid(row=1, column=1, padx=4)
@@ -66,11 +68,11 @@ class CloneTermDialog:
         ttk.Spinbox(frame, from_=now.year - 5, to=now.year + 5,
                     textvariable=self.src_year_var, width=6
                     ).grid(row=1, column=2, padx=4)
-        ttk.Button(frame, text="Preview", command=self._refresh_preview
+        ttk.Button(frame, text=_t('gui.academics.module_scheduling.clone_term_dialog.buttons.preview', default="Preview"), command=self._refresh_preview
                    ).grid(row=1, column=3, padx=8)
 
         # Target
-        ttk.Label(frame, text="To:").grid(row=2, column=0, sticky=tk.W, pady=4)
+        ttk.Label(frame, text=_t('gui.academics.module_scheduling.clone_term_dialog.labels.to', default="To:")).grid(row=2, column=0, sticky=tk.W, pady=4)
         self.tgt_sem_var = tk.StringVar(value=next_sem)
         ttk.Combobox(frame, textvariable=self.tgt_sem_var, values=_SEMESTERS,
                      width=10, state="readonly").grid(row=2, column=1, padx=4)
@@ -80,7 +82,7 @@ class CloneTermDialog:
                     ).grid(row=2, column=2, padx=4)
 
         # Preview line
-        self.preview_var = tk.StringVar(value="(click Preview to see how many published rows would clone)")
+        self.preview_var = tk.StringVar(value=_t('gui.academics.module_scheduling.clone_term_dialog.values.click_preview_to_see_how_many_published_rows_would_clone', default="(click Preview to see how many published rows would clone)"))
         ttk.Label(frame, textvariable=self.preview_var, foreground="#444",
                   wraplength=480, justify=tk.LEFT
                   ).grid(row=3, column=0, columnspan=4, pady=(12, 0), sticky=tk.W)
@@ -88,9 +90,9 @@ class CloneTermDialog:
         # Action buttons
         btn = ttk.Frame(frame)
         btn.grid(row=4, column=0, columnspan=4, pady=20, sticky=tk.E)
-        ttk.Button(btn, text="Clone as drafts",
+        ttk.Button(btn, text=_t('gui.academics.module_scheduling.clone_term_dialog.buttons.clone_as_drafts', default="Clone as drafts"),
                    command=self._do_clone).pack(side=tk.LEFT, padx=4)
-        ttk.Button(btn, text="Cancel",
+        ttk.Button(btn, text=_t('gui.academics.module_scheduling.clone_term_dialog.buttons.cancel', default="Cancel"),
                    command=self.dialog.destroy).pack(side=tk.LEFT, padx=4)
 
     def _src_term(self):
@@ -142,12 +144,12 @@ class CloneTermDialog:
         src_sem, src_year = self._src_term()
         tgt_sem, tgt_year = self._tgt_term()
         if not src_year or not tgt_year:
-            messagebox.showerror("Error", "Year fields must be whole numbers.",
+            messagebox.showerror(_t('gui.academics.module_scheduling.clone_term_dialog.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.clone_term_dialog.dialogs.year_fields_must_be_whole_numbers', default="Year fields must be whole numbers."),
                                  parent=self.dialog)
             return
         if (src_sem, src_year) == (tgt_sem, tgt_year):
-            messagebox.showerror("Error",
-                                 "Source and target must be different terms.",
+            messagebox.showerror(_t('gui.academics.module_scheduling.clone_term_dialog.dialogs.error', default="Error"),
+                                 _t('gui.academics.module_scheduling.clone_term_dialog.dialogs.source_and_target_must_be_different_terms', default="Source and target must be different terms."),
                                  parent=self.dialog)
             return
 
@@ -172,18 +174,18 @@ class CloneTermDialog:
                 """, (src_sem, src_year))
                 source_rows = cur.fetchall()
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to read source term: {e}",
+            messagebox.showerror(_t('gui.academics.module_scheduling.clone_term_dialog.dialogs.error', default="Error"), f"Failed to read source term: {e}",
                                  parent=self.dialog)
             return
 
         if not source_rows:
-            messagebox.showinfo("Nothing to clone",
+            messagebox.showinfo(_t('gui.academics.module_scheduling.clone_term_dialog.dialogs.nothing_to_clone', default="Nothing to clone"),
                                 f"No published rows in {src_sem} {src_year}.",
                                 parent=self.dialog)
             return
 
         if not messagebox.askyesno(
-                "Confirm",
+                _t('gui.academics.module_scheduling.clone_term_dialog.dialogs.confirm', default="Confirm"),
                 f"Clone {len(source_rows)} published row(s) "
                 f"from {src_sem} {src_year} into {tgt_sem} {tgt_year} as drafts?",
                 parent=self.dialog):
@@ -217,7 +219,7 @@ class CloneTermDialog:
                 failures += 1
 
         messagebox.showinfo(
-            "Clone complete",
+            _t('gui.academics.module_scheduling.clone_term_dialog.dialogs.clone_complete', default="Clone complete"),
             f"Cloned {cloned} row(s) into {tgt_sem} {tgt_year} as drafts."
             + (f"\n{failures} failed." if failures else ""),
             parent=self.dialog,

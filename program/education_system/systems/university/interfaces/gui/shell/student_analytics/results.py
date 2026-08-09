@@ -1,4 +1,6 @@
 """Results display, reports, email, and export mixin for the Student Analytics GUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.shell.student_analytics._imports import (
     tk, ttk, messagebox, filedialog, scrolledtext,
     plt, pd, json, datetime, _t, CONFIG,
@@ -137,7 +139,7 @@ class ResultsMixin:
                 ttk.Label(main_frame, text=_t("analytics.labels.send_report_to"), font=('Arial', 12, 'bold')).pack(pady=(0, 10))
 
                 # Radio buttons for recipient selection
-                recipient_var = tk.StringVar(value="admin")
+                recipient_var = tk.StringVar(value=_t('gui.shell.student_analytics.results.values.admin', default="admin"))
 
                 # Get admin email
                 admin_email = "admin@university.edu"  # Default
@@ -214,20 +216,8 @@ class ResultsMixin:
         try:
             from education_system.systems.university.infrastructure.email.email_service import send_email
 
-            # Build email body
-            email_body = f"""
-Analytics Report: {title}
-{'='*80}
-
-{summary_text}
-
-{'='*80}
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-This is an automated report from the University Management System.
-"""
-
-            # Send email immediately using the email service
-            subject = f"Analytics Report: {title}"
+            from education_system.systems.university.infrastructure.email.template_utils import render_template
+            subject, email_body = render_template("reports/student_analytics_report", {"title": title, "summary_text": summary_text, "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
             success = send_email(recipient, subject, email_body)
 
             if success:
@@ -241,21 +231,54 @@ This is an automated report from the University Management System.
             messagebox.showerror(_t("common.error"), _t("analytics.error.send_email", error=str(e)))
 
     def custom_report_builder(self):
-        """Custom report builder for GUI"""
-        print("Custom report builder would open a dialog in GUI version")
+        """Open the shared custom-report builder."""
+        return self.show_custom_report_dialog()
 
     def export_data(self):
-        """Export data functionality for GUI"""
-        print("Export data would open export dialog in GUI version")
+        """Open the shared analytics export dialog."""
+        return self.show_export_dialog()
 
     def email_reports(self):
-        """Send email reports - GUI compatible stub"""
-        print("Email functionality would be implemented here")
-        print("This requires SMTP configuration and recipient setup")
+        """Compose and send a current analytics summary."""
+        students = self.get_all_students()
+        modules = self.get_all_modules()
+        summary = (
+            "Student analytics summary\n\n"
+            f"Students: {len(students)}\n"
+            f"Modules: {len(modules)}\n"
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
+        return self.email_report("Student Analytics Summary", summary)
 
     def send_email_with_attachment(self, recipient, subject, report_type):
-        """Send email with attachment - GUI compatible stub"""
-        print(f"Would send {report_type} report to {recipient} with subject: {subject}")
+        """Export analytics data and email it as an attachment."""
+        from pathlib import Path
+        from education_system.systems.university.infrastructure.email.email_service import send_email
+        from education_system import paths
+
+        report_dir = Path(paths.UNIVERSITY_REPORTS_DIR) / "student_analytics"
+        report_dir.mkdir(parents=True, exist_ok=True)
+        kind = str(report_type).lower().strip()
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        students = self.get_all_students()
+        if kind in {"excel", "xlsx"}:
+            report_path = report_dir / f"student_analytics_{stamp}.xlsx"
+            students.to_excel(report_path, index=False)
+        else:
+            report_path = report_dir / f"student_analytics_{stamp}.csv"
+            students.to_csv(report_path, index=False)
+
+        success = send_email(
+            recipient_email=recipient,
+            subject=subject,
+            body="Please find the requested student analytics report attached.",
+            attachments=[str(report_path)],
+        )
+        if success:
+            messagebox.showinfo(_t("common.success"), f"Report sent to {recipient}")
+        else:
+            messagebox.showwarning(_t("common.warning"), _t('gui.shell.student_analytics.results.dialogs.the_report_could_not_be_sent', default="The report could not be sent."))
+        return success
 
     def data_quality_check(self):
         """Perform data quality check"""

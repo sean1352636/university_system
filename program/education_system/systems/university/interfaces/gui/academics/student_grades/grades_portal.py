@@ -5,6 +5,8 @@ Uses a tabbed notebook to present Dashboard, Grades, and Transcript views
 for the currently authenticated student.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from tkinter import ttk
 
 from education_system.systems.university.interfaces.gui.academics.student_grades.common_imports import get_auth, get_student_id
@@ -35,15 +37,15 @@ class StudentGradesPortal(DashboardMixin, GradesMixin, TranscriptMixin):
 
         # Dashboard tab
         dash_frame = ttk.Frame(self.notebook)
-        self.notebook.add(dash_frame, text='Dashboard')
+        self.notebook.add(dash_frame, text=_t('gui.academics.student_grades.grades_portal.tabs.dashboard', default='Dashboard'))
         self.show_dashboard(dash_frame)
 
         # Grades tab
         grades_frame = ttk.Frame(self.notebook)
-        self.notebook.add(grades_frame, text='My Grades')
+        self.notebook.add(grades_frame, text=_t('gui.academics.student_grades.grades_portal.tabs.my_grades', default='My Grades'))
         self.show_grades_table(grades_frame)
 
         # Transcript tab
         transcript_frame = ttk.Frame(self.notebook)
-        self.notebook.add(transcript_frame, text='Transcript')
+        self.notebook.add(transcript_frame, text=_t('gui.academics.student_grades.grades_portal.tabs.transcript', default='Transcript'))
         self.show_transcript(transcript_frame)

@@ -1,4 +1,6 @@
 """Dashboard tab mixin for ParkingManagementGUI."""
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox
 from tkinter.scrolledtext import ScrolledText
@@ -44,7 +46,7 @@ class DashboardMixin:
             stat_frame.grid(row=row, column=col, padx=20, pady=10, sticky="w")
 
             ttk.Label(stat_frame, text=label + ":", font=("Arial", 10, "bold")).pack()
-            self.stats_labels[key] = ttk.Label(stat_frame, text="Loading...",
+            self.stats_labels[key] = ttk.Label(stat_frame, text=_t('gui.operations.campus.mobility.parking_management.tabs.dashboard.labels.loading', default="Loading..."),
                                              font=("Arial", 12))
             self.stats_labels[key].pack()
 
@@ -114,4 +116,4 @@ class DashboardMixin:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to refresh dashboard: {e}")
+            messagebox.showerror(_t('gui.operations.campus.mobility.parking_management.tabs.dashboard.dialogs.error', default="Error"), f"Failed to refresh dashboard: {e}")

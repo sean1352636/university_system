@@ -23,7 +23,7 @@ class BackupRestoreDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -53,16 +53,16 @@ class BackupRestoreDialog:
         backup_frame = ttk.LabelFrame(main_frame, text=_t("plagiarism.create_backup"), padding=GuiConfig.PADDING_MEDIUM)
         backup_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
-        ttk.Label(backup_frame, text="Create a backup of the plagiarism checker database and documents.").pack(anchor=tk.W, pady=(0, GuiConfig.PADDING_SMALL))
+        ttk.Label(backup_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.labels.create_a_backup_of_the_plagiarism_checker_database_and_documents', default="Create a backup of the plagiarism checker database and documents.")).pack(anchor=tk.W, pady=(0, GuiConfig.PADDING_SMALL))
 
         backup_options_frame = ttk.Frame(backup_frame)
         backup_options_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_SMALL))
 
         self.include_documents_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(backup_options_frame, text="Include document content", variable=self.include_documents_var).pack(anchor=tk.W)
+        ttk.Checkbutton(backup_options_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.buttons.include_document_content', default="Include document content"), variable=self.include_documents_var).pack(anchor=tk.W)
 
         self.include_results_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(backup_options_frame, text="Include plagiarism results", variable=self.include_results_var).pack(anchor=tk.W)
+        ttk.Checkbutton(backup_options_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.buttons.include_plagiarism_results', default="Include plagiarism results"), variable=self.include_results_var).pack(anchor=tk.W)
 
         ttk.Button(backup_frame, text=_t("plagiarism.create_backup"), command=self.create_backup).pack(anchor=tk.W, pady=(GuiConfig.PADDING_SMALL, 0))
 
@@ -70,14 +70,14 @@ class BackupRestoreDialog:
         restore_frame = ttk.LabelFrame(main_frame, text=_t("plagiarism.restore_from_backup"), padding=GuiConfig.PADDING_MEDIUM)
         restore_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_MEDIUM))
 
-        ttk.Label(restore_frame, text="Restore system from a previous backup file.").pack(anchor=tk.W, pady=(0, GuiConfig.PADDING_SMALL))
+        ttk.Label(restore_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.labels.restore_system_from_a_previous_backup_file', default="Restore system from a previous backup file.")).pack(anchor=tk.W, pady=(0, GuiConfig.PADDING_SMALL))
 
         self.backup_file_var = tk.StringVar()
         backup_file_frame = ttk.Frame(restore_frame)
         backup_file_frame.pack(fill=tk.X, pady=(0, GuiConfig.PADDING_SMALL))
 
         ttk.Entry(backup_file_frame, textvariable=self.backup_file_var, state='readonly').pack(side=tk.LEFT, fill=tk.X, expand=True)
-        ttk.Button(backup_file_frame, text="Browse...", command=self.select_backup_file).pack(side=tk.RIGHT, padx=(GuiConfig.PADDING_SMALL, 0))
+        ttk.Button(backup_file_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.buttons.browse', default="Browse..."), command=self.select_backup_file).pack(side=tk.RIGHT, padx=(GuiConfig.PADDING_SMALL, 0))
 
         ttk.Button(restore_frame, text=_t("plagiarism.restore_from_backup"), command=self.restore_backup).pack(anchor=tk.W, pady=(GuiConfig.PADDING_SMALL, 0))
 
@@ -91,7 +91,7 @@ class BackupRestoreDialog:
         ttk.Label(main_frame, textvariable=self.status_var).pack()
 
         # Close button
-        ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=(GuiConfig.PADDING_MEDIUM, 0))
+        ttk.Button(main_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.buttons.close', default="Close"), command=self.dialog.destroy).pack(pady=(GuiConfig.PADDING_MEDIUM, 0))
 
     def create_backup(self):
         """Create a system backup"""
@@ -104,7 +104,7 @@ class BackupRestoreDialog:
             filename = filedialog.asksaveasfilename(
                 defaultextension=".backup",
                 filetypes=[("Backup files", "*.backup"), ("ZIP files", "*.zip"), ("All files", "*.*")],
-                title="Save Backup"
+                title=_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.save_backup', default="Save Backup")
             )
 
             if not filename:
@@ -150,23 +150,23 @@ class BackupRestoreDialog:
 
                         self.dialog.after(0, lambda: self.progress_var.set(100))
                         self.dialog.after(0, lambda: self.status_var.set("Backup completed"))
-                        self.dialog.after(0, lambda: messagebox.showinfo("Success", f"Backup created successfully!\nLocation: {filename}"))
+                        self.dialog.after(0, lambda: messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.success', default="Success"), f"Backup created successfully!\nLocation: {filename}"))
 
                 except Exception as e:
                     error_msg = str(e)
                     self.dialog.after(0, lambda: self.status_var.set("Backup failed"))
-                    self.dialog.after(0, lambda err=error_msg: messagebox.showerror("Error", f"Backup failed: {err}"))
+                    self.dialog.after(0, lambda err=error_msg: messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.error', default="Error"), f"Backup failed: {err}"))
 
             thread = threading.Thread(target=backup_task, daemon=True)
             thread.start()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create backup: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.error', default="Error"), f"Failed to create backup: {e}")
 
     def select_backup_file(self):
         """Select backup file for restore"""
         filename = filedialog.askopenfilename(
-            title="Select Backup File",
+            title=_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.select_backup_file', default="Select Backup File"),
             filetypes=[("Backup files", "*.backup"), ("ZIP files", "*.zip"), ("All files", "*.*")]
         )
 
@@ -177,11 +177,11 @@ class BackupRestoreDialog:
         """Restore from backup file"""
         backup_file = self.backup_file_var.get()
         if not backup_file:
-            messagebox.showwarning("No File", "Please select a backup file.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.no_file', default="No File"), _t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.please_select_a_backup_file', default="Please select a backup file."))
             return
 
-        if not messagebox.askyesno("Confirm Restore",
-                                   "This will replace the current system data. Are you sure?"):
+        if not messagebox.askyesno(_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.confirm_restore', default="Confirm Restore"),
+                                   _t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.this_will_replace_the_current_system_data_are_you_sure', default="This will replace the current system data. Are you sure?")):
             return
 
         try:
@@ -204,23 +204,35 @@ class BackupRestoreDialog:
 
                         self.dialog.after(0, lambda: self.progress_var.set(30))
 
-                        # Restore database
+                        # Restore database. Extract via safe_extract into a
+                        # dedicated temp dir (validates the member path stays
+                        # contained) rather than ZipFile.extract into '.', which
+                        # trusts the archive's member name for the output path.
                         if 'database/student_records.db' in backup_zip.namelist():
-                            backup_zip.extract('database/student_records.db', '.')
-                            os.rename('database/student_records.db', str(DEFAULT_DB_PATH))
+                            import tempfile
+
+                            from education_system.platform.kernel.core.safe_paths import (
+                                safe_extract,
+                            )
+
+                            _tmp = tempfile.mkdtemp(prefix="restore_")
+                            written = safe_extract(
+                                backup_zip, _tmp, members=['database/student_records.db']
+                            )
+                            os.replace(str(written[0]), str(DEFAULT_DB_PATH))
                             self.dialog.after(0, lambda: self.progress_var.set(70))
 
                         self.dialog.after(0, lambda: self.progress_var.set(100))
                         self.dialog.after(0, lambda: self.status_var.set("Restore completed"))
-                        self.dialog.after(0, lambda: messagebox.showinfo("Success", "System restored successfully!\nPlease restart the application."))
+                        self.dialog.after(0, lambda: messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.success', default="Success"), _t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.system_restored_successfully_please_restart_the_application', default="System restored successfully!\nPlease restart the application.")))
 
                 except Exception as e:
                     error_msg = str(e)
                     self.dialog.after(0, lambda: self.status_var.set("Restore failed"))
-                    self.dialog.after(0, lambda err=error_msg: messagebox.showerror("Error", f"Restore failed: {err}"))
+                    self.dialog.after(0, lambda err=error_msg: messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.error', default="Error"), f"Restore failed: {err}"))
 
             thread = threading.Thread(target=restore_task, daemon=True)
             thread.start()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to restore backup: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.backup_restore.dialogs.error', default="Error"), f"Failed to restore backup: {e}")

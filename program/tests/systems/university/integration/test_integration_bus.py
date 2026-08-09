@@ -11,6 +11,7 @@ shared dev DB.
 from __future__ import annotations
 
 import sqlite3
+import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
@@ -148,8 +149,16 @@ def tmp_db(monkeypatch):
         finance_bus, integration_bus,
     )
     monkeypatch.setattr(finance_bus, "get_connection", fake_get)
-    monkeypatch.setattr(integration_bus, "get_connection", fake_get)
-    monkeypatch.setattr(integration_bus, "transaction", fake_tx)
+    for name, module in tuple(sys.modules.items()):
+        if name.startswith(
+            "education_system.systems.university.services.bus.integration"
+        ) or name.startswith(
+            "education_system.systems.university.services.bus.jobs"
+        ):
+            if hasattr(module, "get_connection"):
+                monkeypatch.setattr(module, "get_connection", fake_get)
+            if hasattr(module, "transaction"):
+                monkeypatch.setattr(module, "transaction", fake_tx)
 
     # Reset bus subscribers across tests.
     from education_system.systems.university.interfaces.gui.academics import _event_bus

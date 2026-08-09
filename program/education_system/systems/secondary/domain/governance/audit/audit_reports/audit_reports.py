@@ -28,14 +28,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
-from education_system.systems.secondary.infrastructure import paths
+from education_system import paths
 from education_system.systems.secondary.domain.operations.communications.activity_feed import (
     activity_feed as _af,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.AUDIT_REPORTS_DB
+DB_PATH = paths.SECONDARY_AUDIT_REPORTS_DB
 
 
 # Report-type catalogue. Each key maps to a builder function below.
@@ -136,7 +136,7 @@ CREATE INDEX IF NOT EXISTS idx_ar_runs_def  ON audit_report_runs(def_id);
 
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_secondary_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

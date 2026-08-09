@@ -1,5 +1,7 @@
 """Course Health Dashboard GUI (Feature 28)."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import logging
 import tkinter as tk
 from tkinter import ttk
@@ -22,7 +24,7 @@ class CourseHealthDashboardGUI:
             self.user_role = auth.current_user.get('role', '')
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Course Health Dashboard")
+        self.window.title(_t('gui.academics.course_health.course_health.windows.course_health_dashboard', default="Course Health Dashboard"))
         self.window.geometry("1200x800")
         self.window.transient(parent)
 
@@ -32,34 +34,34 @@ class CourseHealthDashboardGUI:
     def _setup_ui(self):
         """Build the course health dashboard UI."""
         ttk.Label(
-            self.window, text="Course Health Dashboard",
+            self.window, text=_t('gui.academics.course_health.course_health.labels.course_health_dashboard', default="Course Health Dashboard"),
             font=('Arial', 16, 'bold')
         ).pack(pady=(10, 5))
 
         # Refresh button
         top_frame = ttk.Frame(self.window)
         top_frame.pack(fill=tk.X, padx=15, pady=5)
-        ttk.Button(top_frame, text="Refresh", command=self._load_data).pack(side=tk.RIGHT)
+        ttk.Button(top_frame, text=_t('gui.academics.course_health.course_health.buttons.refresh', default="Refresh"), command=self._load_data).pack(side=tk.RIGHT)
 
         # Summary cards frame
-        self.cards_frame = ttk.LabelFrame(self.window, text="Course Overview", padding="10")
+        self.cards_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.course_health.course_health.labels.course_overview', default="Course Overview"), padding="10")
         self.cards_frame.pack(fill=tk.X, padx=15, pady=5)
 
         # Detail table
-        detail_frame = ttk.LabelFrame(self.window, text="Detailed Metrics", padding="5")
+        detail_frame = ttk.LabelFrame(self.window, text=_t('gui.academics.course_health.course_health.labels.detailed_metrics', default="Detailed Metrics"), padding="5")
         detail_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
 
         cols = ('module_code', 'module_name', 'enrolled', 'capacity',
                 'avg_grade', 'attendance', 'submission', 'at_risk')
         self.tree = ttk.Treeview(detail_frame, columns=cols, show='headings')
-        self.tree.heading('module_code', text='Code')
-        self.tree.heading('module_name', text='Course Name')
-        self.tree.heading('enrolled', text='Enrolled')
-        self.tree.heading('capacity', text='Capacity')
-        self.tree.heading('avg_grade', text='Avg Grade')
-        self.tree.heading('attendance', text='Attendance %')
-        self.tree.heading('submission', text='Submission %')
-        self.tree.heading('at_risk', text='At-Risk')
+        self.tree.heading('module_code', text=_t('gui.academics.course_health.course_health.headings.code', default='Code'))
+        self.tree.heading('module_name', text=_t('gui.academics.course_health.course_health.headings.course_name', default='Course Name'))
+        self.tree.heading('enrolled', text=_t('gui.academics.course_health.course_health.headings.enrolled', default='Enrolled'))
+        self.tree.heading('capacity', text=_t('gui.academics.course_health.course_health.headings.capacity', default='Capacity'))
+        self.tree.heading('avg_grade', text=_t('gui.academics.course_health.course_health.headings.avg_grade', default='Avg Grade'))
+        self.tree.heading('attendance', text=_t('gui.academics.course_health.course_health.headings.attendance', default='Attendance %'))
+        self.tree.heading('submission', text=_t('gui.academics.course_health.course_health.headings.submission', default='Submission %'))
+        self.tree.heading('at_risk', text=_t('gui.academics.course_health.course_health.headings.at_risk', default='At-Risk'))
         self.tree.column('module_code', width=100)
         self.tree.column('module_name', width=250)
         self.tree.column('enrolled', width=80)
@@ -77,7 +79,7 @@ class CourseHealthDashboardGUI:
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        self.status_var = tk.StringVar(value="Loading...")
+        self.status_var = tk.StringVar(value=_t('gui.academics.course_health.course_health.values.loading', default="Loading..."))
         ttk.Label(self.window, textvariable=self.status_var).pack(anchor="w", padx=15, pady=5)
 
     def _load_data(self):

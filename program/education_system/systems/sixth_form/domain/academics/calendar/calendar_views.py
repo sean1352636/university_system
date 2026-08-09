@@ -1,10 +1,18 @@
 """Tkinter views for Sixth Form Calendar.
 
-Notebook with 4 tabs:
-* Upcoming  — events from today onwards, with date-range presets.
-* All       — every event, filterable by type/audience/status/title etc.
-* Day       — single-day lookup.
-* Summary   — counts and alerts.
+The notebook's flat tabs live here — Upcoming, All Events, Day and
+Summary — along with the event dialogs. The richer shapes mount from
+siblings: :mod:`calendar_grid_views` (Month / Week / Agenda),
+:mod:`calendar_planning_views` (Rooms / My Events / Y12-Y13) and
+:mod:`calendar_admin_views` (Bookings / Trips / Series / Messages /
+Audit / Archive). The import graph is one-way: this module imports
+the siblings, never the reverse.
+
+Saves run the clash check (:mod:`calendar_clashes`) and the term
+check (:mod:`calendar_terms`) and put what they find in front of the
+user — a warning with a "save anyway", never a silent veto. Deleting
+from here is an *archive* (recoverable from the Archive tab);
+permanent deletion lives only there.
 """
 
 from __future__ import annotations
@@ -17,6 +25,12 @@ from typing import Callable
 from education_system.platform import branding
 from education_system.systems.sixth_form.domain.academics.calendar import (
     calendar as data,
+    calendar_admin_views as admin_views,
+    calendar_governance as governance,
+    calendar_grid_views as grid_views,
+    calendar_notifications as notifications,
+    calendar_planning_views as planning_views,
+    calendar_taxonomy as taxonomy,
 )
 from education_system.systems.sixth_form.domain.academics.calendar.calendar import (
     AUDIENCES,
@@ -24,6 +38,8 @@ from education_system.systems.sixth_form.domain.academics.calendar.calendar impo
     DEFAULT_EVENT_TYPE,
     DEFAULT_STATUS,
     EVENT_TYPES,
+    VISIBILITIES,
+    DEFAULT_VISIBILITY,
     Event,
     STATUSES,
     ValidationError,
@@ -35,6 +51,23 @@ WIN_GEOMETRY = "1400x900"
 WIN_MINSIZE = (1200, 800)
 
 
+def _actor(gui) -> str | None:
+    auth = getattr(gui, "auth", None)
+    return ((getattr(auth, "current_user", None) or {}).get("username")
+            if auth else None)
+
+
+def _role(gui) -> str | None:
+    """The launcher's sixth-form role for the logged-in user, when
+    the window was opened from the main GUI."""
+    auth = getattr(gui, "auth", None)
+    cu = (getattr(auth, "current_user", None) or {}) if auth else {}
+    for s in cu.get("systems", []) or []:
+        if s.get("system_key") == "sixth_form":
+            return s.get("role")
+    return None
+
+
 def open_calendar_window(parent=None) -> None:
     data.init_db()
     master = getattr(parent, "root", parent)
@@ -43,12 +76,19 @@ def open_calendar_window(parent=None) -> None:
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
 
+    actor = _actor(parent)
+    role = _role(parent)
+
     nb = ttk.Notebook(win)
     nb.pack(fill="both", expand=True, padx=10, pady=10)
 
-    EventsTab(nb, upcoming_only=True, label="Upcoming")
-    EventsTab(nb, upcoming_only=False, label="All Events")
+    EventsTab(nb, upcoming_only=True, label="Upcoming", actor=actor)
+    EventsTab(nb, upcoming_only=False, label="All Events",
+              actor=actor)
     DayTab(nb)
+    grid_views.add_tabs(nb)
+    planning_views.add_tabs(nb, actor=actor)
+    admin_views.add_tabs(nb, actor=actor, role=role)
     SummaryTab(nb)
 
 
@@ -60,8 +100,10 @@ def _today() -> str:
 
 class EventsTab:
     def __init__(self, nb: ttk.Notebook, *,
-                 upcoming_only: bool, label: str) -> None:
+                 upcoming_only: bool, label: str,
+                 actor: str | None = None) -> None:
         self.upcoming_only = upcoming_only
+        self.actor = actor
         self.frame = ttk.Frame(nb)
         nb.add(self.frame, text=label)
         self._build()
@@ -117,6 +159,19 @@ class EventsTab:
                         command=lambda: self._preset(90)
                         ).pack(side="left", padx=2)
 
+        # Quick add: "Title, 2026-09-14[, 14:00-15:30][, Hall]" —
+        # three fields for a three-fact event instead of the twelve-
+        # field dialog.
+        quick = ttk.Frame(self.frame)
+        quick.pack(fill="x", padx=8, pady=(0, 4))
+        ttk.Label(quick, text="Quick add:").pack(side="left")
+        self.quick_e = ttk.Entry(quick)
+        self.quick_e.pack(side="left", fill="x", expand=True,
+                           padx=(4, 4))
+        self.quick_e.bind("<Return>", lambda _e: self._quick_add())
+        ttk.Button(quick, text="Add",
+                    command=self._quick_add).pack(side="left")
+
         table_frame = ttk.Frame(self.frame)
         table_frame.pack(fill="both", expand=True, padx=8, pady=4)
         cols = ("id", "date", "time", "type", "audience",
@@ -141,6 +196,11 @@ class EventsTab:
         self.tree.tag_configure("Completed", background="#eeeeee")
         self.tree.tag_configure("Postponed", background="#fff7d0")
         self.tree.tag_configure("Draft",     background="#eef7ff")
+        # One foreground tag per event type; background (status) and
+        # foreground (type) tags don't fight over options.
+        for etype, colour in taxonomy.palette().items():
+            self.tree.tag_configure(f"type:{etype}",
+                                     foreground=colour)
         self.tree.bind("<Double-1>", lambda _e: self._edit_selected())
 
         self.count_var = tk.StringVar(value="")
@@ -155,6 +215,9 @@ class EventsTab:
                     command=self._new).pack(side="left", padx=4)
         ttk.Button(actions, text="Edit",
                     command=self._edit_selected).pack(side="left", padx=4)
+        ttk.Button(actions, text="Duplicate",
+                    command=self._duplicate_selected).pack(side="left",
+                                                             padx=4)
         ttk.Button(actions, text="Status",
                     command=self._status_selected).pack(side="left",
                                                           padx=4)
@@ -164,9 +227,9 @@ class EventsTab:
         ttk.Button(actions, text="Complete",
                     command=lambda: self._quick_status(
                         "Completed")).pack(side="left", padx=2)
-        ttk.Button(actions, text="Delete",
-                    command=self._delete_selected).pack(side="left",
-                                                          padx=4)
+        ttk.Button(actions, text="Archive",
+                    command=self._archive_selected).pack(side="left",
+                                                           padx=4)
         ttk.Button(actions, text="Refresh",
                     command=self.refresh).pack(side="right")
 
@@ -209,12 +272,14 @@ class EventsTab:
         for e in rows:
             date = (e.start_date if not e.is_multiday
                     else f"{e.start_date} → {e.end_date}")
-            tags = (e.status,) if e.status in STATUSES else ()
+            tags = [f"type:{e.event_type}"]
+            if e.status in STATUSES:
+                tags.append(e.status)
             self.tree.insert("", "end", iid=str(e.event_id), values=(
                 e.event_id, date, e.time_label,
                 e.event_type, e.audience,
                 e.title, e.location or "—", e.status,
-            ), tags=tags)
+            ), tags=tuple(tags))
         self.count_var.set(f"{len(rows)} event(s).")
 
     def _selected_id(self) -> int | None:
@@ -223,11 +288,47 @@ class EventsTab:
             return None
         return int(sel[0])
 
+    def _selected_ids(self) -> list[int]:
+        return [int(i) for i in self.tree.selection()]
+
     def _selected(self) -> Event | None:
         eid = self._selected_id()
         if eid is None:
             return None
         return data.get_event(eid)
+
+    def _quick_add(self) -> None:
+        """Parse 'Title, date[, HH:MM[-HH:MM]][, location]'."""
+        raw = self.quick_e.get().strip()
+        if not raw:
+            return
+        parts = [p.strip() for p in raw.split(",")]
+        if len(parts) < 2:
+            messagebox.showinfo(
+                "Quick add",
+                "Format: Title, YYYY-MM-DD[, HH:MM[-HH:MM]]"
+                "[, location]")
+            return
+        payload: dict = {"title": parts[0],
+                          "start_date": parts[1]}
+        rest = parts[2:]
+        if rest and rest[0][:1].isdigit() and ":" in rest[0]:
+            start, _, end = rest[0].partition("-")
+            payload["start_time"] = start.strip()
+            if end.strip():
+                payload["end_time"] = end.strip()
+            rest = rest[1:]
+        if rest:
+            payload["location"] = ", ".join(rest)
+        try:
+            event = governance.audited_create(payload,
+                                                actor=self.actor)
+        except ValidationError as e:
+            messagebox.showerror("Quick add", str(e))
+            return
+        self.quick_e.delete(0, "end")
+        logger.info("Quick-added event #%d", event.event_id)
+        self.refresh()
 
     def _view_selected(self) -> None:
         e = self._selected()
@@ -238,7 +339,8 @@ class EventsTab:
 
     def _new(self) -> None:
         EventDialog(self.frame.winfo_toplevel(),
-                     existing=None, on_save=self.refresh)
+                     existing=None, on_save=self.refresh,
+                     actor=self.actor)
 
     def _edit_selected(self) -> None:
         e = self._selected()
@@ -246,7 +348,19 @@ class EventsTab:
             messagebox.showinfo("Edit", "Select an event first.")
             return
         EventDialog(self.frame.winfo_toplevel(),
-                     existing=e, on_save=self.refresh)
+                     existing=e, on_save=self.refresh,
+                     actor=self.actor)
+
+    def _duplicate_selected(self) -> None:
+        """Open the New Event dialog pre-filled from the selected
+        event — how next year's version of anything starts."""
+        e = self._selected()
+        if e is None:
+            messagebox.showinfo("Duplicate", "Select an event first.")
+            return
+        EventDialog(self.frame.winfo_toplevel(),
+                     existing=None, template=e,
+                     on_save=self.refresh, actor=self.actor)
 
     def _status_selected(self) -> None:
         e = self._selected()
@@ -257,37 +371,57 @@ class EventsTab:
                        on_save=self.refresh)
 
     def _quick_status(self, new_status: str) -> None:
-        e = self._selected()
-        if e is None:
+        """Set the selected event(s) — plural: a snow day is twenty
+        cancellations, not twenty dialogs."""
+        ids = self._selected_ids()
+        if not ids:
             messagebox.showinfo(new_status,
-                                  "Select an event first.")
+                                  "Select at least one event.")
             return
-        if not messagebox.askyesno(
-                new_status,
-                f"Set #{e.event_id} ({e.title}) → {new_status}?"):
+        what = (f"#{ids[0]}" if len(ids) == 1
+                else f"{len(ids)} events")
+        if not messagebox.askyesno(new_status,
+                                     f"Set {what} → {new_status}?"):
             return
-        try:
-            data.set_status(e.event_id, new_status)
-        except ValidationError as ex:
-            messagebox.showerror(new_status, str(ex))
-            return
+        errors: list[str] = []
+        for eid in ids:
+            before = data.get_event(eid)
+            try:
+                after = governance.audited_set_status(
+                    eid, new_status, actor=self.actor)
+            except ValidationError as ex:
+                errors.append(f"#{eid}: {ex}")
+                continue
+            if (new_status == "Cancelled" and before is not None
+                    and before.status != "Cancelled"):
+                try:
+                    notifications.notify_cancellation(after)
+                except Exception:       # pragma: no cover - defensive
+                    logger.debug("Cancellation notice failed",
+                                  exc_info=True)
+        if errors:
+            messagebox.showerror(new_status, "\n".join(errors))
         self.refresh()
 
-    def _delete_selected(self) -> None:
-        e = self._selected()
-        if e is None:
-            messagebox.showinfo("Delete",
-                                  "Select an event first.")
+    def _archive_selected(self) -> None:
+        ids = self._selected_ids()
+        if not ids:
+            messagebox.showinfo("Archive",
+                                  "Select at least one event.")
             return
-        if not messagebox.askyesno("Delete",
-                                     f"Delete event #{e.event_id} "
-                                     f"({e.title})?"):
+        what = (f"event #{ids[0]}" if len(ids) == 1
+                else f"{len(ids)} events")
+        if not messagebox.askyesno(
+                "Archive",
+                f"Archive {what}? Recoverable from the Archive "
+                "tab."):
             return
-        try:
-            data.delete_event(e.event_id)
-        except Exception as ex:
-            messagebox.showerror("Delete failed", str(ex))
-            return
+        for eid in ids:
+            try:
+                governance.audited_archive(eid, actor=self.actor)
+            except Exception as ex:
+                messagebox.showerror("Archive failed",
+                                       f"#{eid}: {ex}")
         self.refresh()
 
 
@@ -433,6 +567,7 @@ class SummaryTab:
             f"This week          : {summ.this_week_count}",
             f"Upcoming ({win}d){' ' * (6 - len(str(win)))}: "
             f"{summ.upcoming}",
+            f"Archived           : {summ.archived}",
             "",
             "By status:",
         ]
@@ -452,6 +587,12 @@ class SummaryTab:
             n = summ.by_audience.get(a, 0)
             if n:
                 lines.append(f"  {a:<14} : {n}")
+        if summ.by_department:
+            lines.append("")
+            lines.append("By department:")
+            for dept in sorted(summ.by_department):
+                lines.append(
+                    f"  {dept:<20} : {summ.by_department[dept]}")
         self.text.configure(state="normal")
         self.text.delete("1.0", "end")
         self.text.insert("1.0", "\n".join(lines))
@@ -554,16 +695,29 @@ class StatusDialog:
 class EventDialog:
     def __init__(self, parent: tk.Misc, *,
                  existing: Event | None,
-                 on_save: Callable[[], None]) -> None:
+                 on_save: Callable[[], None],
+                 template: Event | None = None,
+                 actor: str | None = None) -> None:
         self.existing = existing
+        # A template pre-fills a *new* event from an old one
+        # (Duplicate); saving creates rather than updates.
+        self.template = template if existing is None else None
         self.on_save = on_save
+        self.actor = actor
         self.win = tk.Toplevel(parent)
         self.win.title("Edit Event" if existing else "New Event")
         self.win.transient(parent)
         self.win.after_idle(self.win.grab_set)
         self._build()
 
+    @property
+    def _fill(self) -> Event | None:
+        """What pre-fills the fields: the row being edited, or the
+        row being duplicated."""
+        return self.existing or self.template
+
     def _build(self) -> None:
+        ex = self._fill
         form = ttk.Frame(self.win, padding=12)
         form.pack(fill="both", expand=True)
         r = 0
@@ -571,8 +725,8 @@ class EventDialog:
         ttk.Label(form, text="Title:").grid(row=r, column=0,
                                                 sticky="e", pady=4)
         self.title_e = ttk.Entry(form, width=44)
-        if self.existing:
-            self.title_e.insert(0, self.existing.title)
+        if ex:
+            self.title_e.insert(0, ex.title)
         self.title_e.grid(row=r, column=1, columnspan=3,
                             sticky="w", padx=6)
 
@@ -581,34 +735,30 @@ class EventDialog:
                                                sticky="e", pady=4)
         self.type_cb = ttk.Combobox(form, values=EVENT_TYPES,
                                        state="readonly", width=18)
-        self.type_cb.set(self.existing.event_type if self.existing
-                            else DEFAULT_EVENT_TYPE)
+        self.type_cb.set(ex.event_type if ex else DEFAULT_EVENT_TYPE)
         self.type_cb.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="Audience:").grid(row=r, column=2,
                                                   sticky="e", pady=4)
         self.audience_cb = ttk.Combobox(form, values=AUDIENCES,
                                            state="readonly", width=14)
-        self.audience_cb.set(self.existing.audience if self.existing
-                                else DEFAULT_AUDIENCE)
+        self.audience_cb.set(ex.audience if ex else DEFAULT_AUDIENCE)
         self.audience_cb.grid(row=r, column=3, sticky="w", padx=6)
 
         r += 1
         ttk.Label(form, text="Start date:").grid(row=r, column=0,
                                                     sticky="e", pady=4)
         self.start_e = ttk.Entry(form, width=14)
-        self.start_e.insert(0, (self.existing.start_date
-                                  if self.existing else _today()))
+        self.start_e.insert(0, (ex.start_date if ex else _today()))
         self.start_e.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="End date:").grid(row=r, column=2,
                                                   sticky="e", pady=4)
         self.end_e = ttk.Entry(form, width=14)
-        self.end_e.insert(0, (self.existing.end_date
-                                if self.existing else ""))
+        self.end_e.insert(0, (ex.end_date if ex else ""))
         self.end_e.grid(row=r, column=3, sticky="w", padx=6)
 
         r += 1
         self.allday_var = tk.BooleanVar(
-            value=(self.existing.all_day if self.existing else False))
+            value=(ex.all_day if ex else False))
         ttk.Checkbutton(form, text="All day",
                           variable=self.allday_var).grid(
             row=r, column=1, sticky="w", padx=6, pady=4)
@@ -617,22 +767,22 @@ class EventDialog:
         ttk.Label(form, text="Start time:").grid(row=r, column=0,
                                                     sticky="e", pady=4)
         self.stime_e = ttk.Entry(form, width=10)
-        if self.existing and self.existing.start_time:
-            self.stime_e.insert(0, self.existing.start_time[:5])
+        if ex and ex.start_time:
+            self.stime_e.insert(0, ex.start_time[:5])
         self.stime_e.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="End time:").grid(row=r, column=2,
                                                   sticky="e", pady=4)
         self.etime_e = ttk.Entry(form, width=10)
-        if self.existing and self.existing.end_time:
-            self.etime_e.insert(0, self.existing.end_time[:5])
+        if ex and ex.end_time:
+            self.etime_e.insert(0, ex.end_time[:5])
         self.etime_e.grid(row=r, column=3, sticky="w", padx=6)
 
         r += 1
         ttk.Label(form, text="Location:").grid(row=r, column=0,
                                                   sticky="e", pady=4)
         self.location_e = ttk.Entry(form, width=44)
-        if self.existing and self.existing.location:
-            self.location_e.insert(0, self.existing.location)
+        if ex and ex.location:
+            self.location_e.insert(0, ex.location)
         self.location_e.grid(row=r, column=1, columnspan=3,
                                 sticky="w", padx=6)
 
@@ -640,35 +790,52 @@ class EventDialog:
         ttk.Label(form, text="Organiser:").grid(row=r, column=0,
                                                    sticky="e", pady=4)
         self.organiser_e = ttk.Entry(form, width=30)
-        if self.existing and self.existing.organiser:
-            self.organiser_e.insert(0, self.existing.organiser)
+        if ex and ex.organiser:
+            self.organiser_e.insert(0, ex.organiser)
         self.organiser_e.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="Status:").grid(row=r, column=2,
                                                 sticky="e", pady=4)
         self.status_cb = ttk.Combobox(form, values=STATUSES,
                                          state="readonly", width=14)
+        # A duplicate starts life Scheduled regardless of what the
+        # original had got to.
         self.status_cb.set(self.existing.status if self.existing
                               else DEFAULT_STATUS)
         self.status_cb.grid(row=r, column=3, sticky="w", padx=6)
 
         r += 1
+        ttk.Label(form, text="Department:").grid(row=r, column=0,
+                                                    sticky="e", pady=4)
+        self.dept_cb = ttk.Combobox(
+            form, values=[""] + taxonomy.list_departments(),
+            width=18)
+        if ex and ex.department:
+            self.dept_cb.set(ex.department)
+        self.dept_cb.grid(row=r, column=1, sticky="w", padx=6)
+        ttk.Label(form, text="Visibility:").grid(row=r, column=2,
+                                                    sticky="e", pady=4)
+        self.vis_cb = ttk.Combobox(form, values=VISIBILITIES,
+                                      state="readonly", width=14)
+        self.vis_cb.set(ex.visibility if ex else DEFAULT_VISIBILITY)
+        self.vis_cb.grid(row=r, column=3, sticky="w", padx=6)
+
+        r += 1
         ttk.Label(form, text="Capacity:").grid(row=r, column=0,
                                                   sticky="e", pady=4)
         self.cap_e = ttk.Entry(form, width=10)
-        if self.existing and self.existing.capacity is not None:
-            self.cap_e.insert(0, str(self.existing.capacity))
+        if ex and ex.capacity is not None:
+            self.cap_e.insert(0, str(ex.capacity))
         self.cap_e.grid(row=r, column=1, sticky="w", padx=6)
         ttk.Label(form, text="Cost:").grid(row=r, column=2,
                                               sticky="e", pady=4)
         self.cost_e = ttk.Entry(form, width=10)
-        if self.existing and self.existing.cost is not None:
-            self.cost_e.insert(0, f"{self.existing.cost:.2f}")
+        if ex and ex.cost is not None:
+            self.cost_e.insert(0, f"{ex.cost:.2f}")
         self.cost_e.grid(row=r, column=3, sticky="w", padx=6)
 
         r += 1
         self.rsvp_var = tk.BooleanVar(
-            value=(self.existing.rsvp_required
-                   if self.existing else False))
+            value=(ex.rsvp_required if ex else False))
         ttk.Checkbutton(form, text="RSVP required",
                           variable=self.rsvp_var).grid(
             row=r, column=1, sticky="w", padx=6, pady=4)
@@ -677,8 +844,8 @@ class EventDialog:
         ttk.Label(form, text="Description:").grid(row=r, column=0,
                                                      sticky="ne", pady=4)
         self.desc_t = tk.Text(form, width=60, height=4)
-        if self.existing and self.existing.description:
-            self.desc_t.insert("1.0", self.existing.description)
+        if ex and ex.description:
+            self.desc_t.insert("1.0", ex.description)
         self.desc_t.grid(row=r, column=1, columnspan=3,
                             sticky="w", padx=6)
 
@@ -686,8 +853,8 @@ class EventDialog:
         ttk.Label(form, text="Notes:").grid(row=r, column=0,
                                                sticky="ne", pady=4)
         self.notes_t = tk.Text(form, width=60, height=3)
-        if self.existing and self.existing.notes:
-            self.notes_t.insert("1.0", self.existing.notes)
+        if ex and ex.notes:
+            self.notes_t.insert("1.0", ex.notes)
         self.notes_t.grid(row=r, column=1, columnspan=3,
                             sticky="w", padx=6)
 
@@ -711,6 +878,8 @@ class EventDialog:
             "location":      self.location_e.get().strip() or None,
             "organiser":     self.organiser_e.get().strip() or None,
             "status":        self.status_cb.get(),
+            "department":    self.dept_cb.get().strip() or None,
+            "visibility":    self.vis_cb.get(),
             "capacity":      self.cap_e.get().strip() or None,
             "cost":          self.cost_e.get().strip() or None,
             "rsvp_required": self.rsvp_var.get(),
@@ -720,13 +889,63 @@ class EventDialog:
                               or None,
         }
 
+    def _warnings(self, payload: dict) -> list[str]:
+        """What the clash and term checks have to say. A checker
+        blowing up must never block a save — it reports nothing."""
+        out: list[str] = []
+        exclude = (self.existing.event_id if self.existing else None)
+        try:
+            from education_system.systems.sixth_form.domain.academics.calendar import (  # noqa: E501
+                calendar_clashes as clashes,
+            )
+            out.extend(c.label for c in
+                        clashes.check(payload,
+                                       exclude_event_id=exclude
+                                       ).clashes)
+        except ValidationError:
+            raise
+        except Exception:                   # pragma: no cover - defensive
+            logger.debug("Clash check unavailable", exc_info=True)
+        try:
+            from education_system.systems.sixth_form.domain.academics.calendar import (  # noqa: E501
+                calendar_terms as terms,
+            )
+            out.extend(w.label for w in
+                        terms.check(payload,
+                                     exclude_event_id=exclude
+                                     ).warnings)
+        except ValidationError:
+            raise
+        except Exception:                   # pragma: no cover - defensive
+            logger.debug("Term check unavailable", exc_info=True)
+        return out
+
     def _save(self) -> None:
         try:
             payload = self._collect()
+            warnings = self._warnings(payload)
+            if warnings:
+                listing = "\n".join(f"• {w}" for w in warnings[:8])
+                if len(warnings) > 8:
+                    listing += f"\n… and {len(warnings) - 8} more"
+                if not messagebox.askyesno(
+                        "Check before saving",
+                        f"{listing}\n\nSave anyway?",
+                        parent=self.win):
+                    return
             if self.existing:
-                data.update_event(self.existing.event_id, payload)
+                before = data.get_event(self.existing.event_id)
+                after = governance.audited_update(
+                    self.existing.event_id, payload,
+                    actor=self.actor)
+                if before is not None:
+                    try:
+                        notifications.notify_change(before, after)
+                    except Exception:   # pragma: no cover - defensive
+                        logger.debug("Change notice failed",
+                                      exc_info=True)
             else:
-                data.create_event(payload)
+                governance.audited_create(payload, actor=self.actor)
         except (ValidationError, Exception) as e:
             messagebox.showerror("Save failed", str(e))
             return

@@ -23,7 +23,7 @@ class SystemTestingDialog:
     def show(self):
         """Show the dialog"""
         self.dialog = tk.Toplevel(self.parent)
-        self.dialog.title("Repository Search")
+        self.dialog.title(_t('gui.academics.plagiarism_main_gui.dialogs.system_testing.windows.repository_search', default="Repository Search"))
         self.dialog.geometry(f"{GuiConfig.DIALOG_WIDTH}x{GuiConfig.DIALOG_HEIGHT}")
         self.dialog.transient(self.parent)
 
@@ -116,7 +116,7 @@ class SystemTestingDialog:
 
         ttk.Button(button_frame, text=_t("plagiarism.save_results"), command=self.save_results).pack(side=tk.LEFT)
         ttk.Button(button_frame, text=_t("plagiarism.clear_results"), command=self.clear_results).pack(side=tk.LEFT, padx=(GuiConfig.PADDING_SMALL, 0))
-        ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(button_frame, text=_t('gui.academics.plagiarism_main_gui.dialogs.system_testing.buttons.close', default="Close"), command=self.dialog.destroy).pack(side=tk.RIGHT)
 
     def select_all_tests(self):
         """Select all test categories"""
@@ -133,7 +133,7 @@ class SystemTestingDialog:
         selected_tests = [key for key, var in self.test_vars.items() if var.get()]
 
         if not selected_tests:
-            messagebox.showwarning("No Tests Selected", "Please select at least one test category.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.system_testing.dialogs.no_tests_selected', default="No Tests Selected"), _t('gui.academics.plagiarism_main_gui.dialogs.system_testing.dialogs.please_select_at_least_one_test_category', default="Please select at least one test category."))
             return
 
         # Clear previous results
@@ -161,7 +161,7 @@ class SystemTestingDialog:
 
             except Exception as e:
                 error_msg = str(e)
-                self.dialog.after(0, lambda err=error_msg: messagebox.showerror("Test Error", f"Testing failed: {err}"))
+                self.dialog.after(0, lambda err=error_msg: messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.system_testing.dialogs.test_error', default="Test Error"), f"Testing failed: {err}"))
 
         thread = threading.Thread(target=test_task, daemon=True)
         thread.start()
@@ -595,7 +595,7 @@ class SystemTestingDialog:
     def save_results(self):
         """Save test results to file"""
         if not self.test_results:
-            messagebox.showwarning("No Results", "No test results to save.")
+            messagebox.showwarning(_t('gui.academics.plagiarism_main_gui.dialogs.system_testing.dialogs.no_results', default="No Results"), _t('gui.academics.plagiarism_main_gui.dialogs.system_testing.dialogs.no_test_results_to_save', default="No test results to save."))
             return
 
         try:
@@ -604,7 +604,7 @@ class SystemTestingDialog:
             filename = filedialog.asksaveasfilename(
                 defaultextension=".txt",
                 filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
-                title="Save Test Results"
+                title=_t('gui.academics.plagiarism_main_gui.dialogs.system_testing.dialogs.save_test_results', default="Save Test Results")
             )
 
             if filename:
@@ -612,7 +612,7 @@ class SystemTestingDialog:
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write(content)
 
-                messagebox.showinfo("Save Complete", f"Test results saved to {filename}")
+                messagebox.showinfo(_t('gui.academics.plagiarism_main_gui.dialogs.system_testing.dialogs.save_complete', default="Save Complete"), f"Test results saved to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Save Error", f"Error saving results: {e}")
+            messagebox.showerror(_t('gui.academics.plagiarism_main_gui.dialogs.system_testing.dialogs.save_error', default="Save Error"), f"Error saving results: {e}")

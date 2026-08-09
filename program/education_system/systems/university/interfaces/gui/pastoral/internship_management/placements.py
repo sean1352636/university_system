@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.pastoral.internship_management._imports import (
     messagebox, scrolledtext, tk, ttk, sqlite3, get_connection,
 )
@@ -9,31 +11,31 @@ class PlacementsMixin:
         self.clear_content()
 
         if not self.auth.check_permission('view_all_applications'):
-            messagebox.showerror("Permission Error", "You don't have permission to manage placements.")
+            messagebox.showerror(_t('gui.pastoral.internship_management.placements.dialogs.permission_error', default="Permission Error"), _t('gui.pastoral.internship_management.placements.dialogs.you_don_t_have_permission_to_manage_placements', default="You don't have permission to manage placements."))
             return
 
         # Title
         title_frame = tk.Frame(self.content_frame, bg='white')
         title_frame.pack(fill='x', padx=20, pady=(20, 10))
 
-        tk.Label(title_frame, text="Placement Management",
+        tk.Label(title_frame, text=_t('gui.pastoral.internship_management.placements.labels.placement_management', default="Placement Management"),
                 font=('Arial', 18, 'bold'), bg='white', fg='#2c3e50').pack(side='left')
 
         # Filter frame
         filter_frame = tk.Frame(title_frame, bg='white')
         filter_frame.pack(side='right')
 
-        tk.Label(filter_frame, text="Filter by Status:", font=('Arial', 10),
+        tk.Label(filter_frame, text=_t('gui.pastoral.internship_management.placements.labels.filter_by_status', default="Filter by Status:"), font=('Arial', 10),
                 bg='white', fg='#34495e').pack(side='left', padx=(0, 5))
 
-        self.placement_status_filter = tk.StringVar(value="All")
+        self.placement_status_filter = tk.StringVar(value=_t('gui.pastoral.internship_management.placements.values.all', default="All"))
         status_combo = ttk.Combobox(filter_frame, textvariable=self.placement_status_filter,
                                    values=["All", "active", "completed", "terminated"],
                                    font=('Arial', 9), state='readonly', width=12)
         status_combo.pack(side='left', padx=5)
         status_combo.bind('<<ComboboxSelected>>', lambda e: self.load_placement_data())
 
-        refresh_btn = tk.Button(filter_frame, text="Refresh", command=self.load_placement_data,
+        refresh_btn = tk.Button(filter_frame, text=_t('gui.pastoral.internship_management.placements.buttons.refresh', default="Refresh"), command=self.load_placement_data,
                                bg='#27ae60', fg='white', font=('Arial', 10),
                                padx=10, pady=3, relief='flat')
         refresh_btn.pack(side='left', padx=5)
@@ -75,10 +77,10 @@ class PlacementsMixin:
         btn_frame = tk.Frame(self.content_frame, bg='white')
         btn_frame.pack(fill='x', padx=20, pady=10)
 
-        tk.Button(btn_frame, text="View Details", command=self.view_placement_details,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.placements.buttons.view_details', default="View Details"), command=self.view_placement_details,
                  bg='#3498db', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
-        tk.Button(btn_frame, text="Update Status", command=self.update_placement_status,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.placements.buttons.update_status', default="Update Status"), command=self.update_placement_status,
                  bg='#f39c12', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
     def load_placement_data(self):
@@ -130,13 +132,13 @@ class PlacementsMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading placements: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.placements.dialogs.database_error', default="Database Error"), f"Error loading placements: {e}")
 
     def view_placement_details(self):
         """View details of selected placement"""
         selection = self.placement_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select a placement to view.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.placements.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.placements.dialogs.please_select_a_placement_to_view', default="Please select a placement to view."))
             return
 
         item = self.placement_tree.item(selection[0])
@@ -158,19 +160,19 @@ class PlacementsMixin:
             placement_data = cursor.fetchone()
 
             if not placement_data:
-                messagebox.showerror("Error", "Placement not found.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.placements.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.placements.dialogs.placement_not_found', default="Placement not found."))
                 conn.close()
                 return
 
             # Create popup window
             popup = tk.Toplevel(self.root)
-            popup.title("Placement Details")
+            popup.title(_t('gui.pastoral.internship_management.placements.windows.placement_details', default="Placement Details"))
             popup.geometry("600x500")
             popup.configure(bg='white')
             popup.grab_set()
 
             # Title
-            tk.Label(popup, text="Placement Details", font=('Arial', 16, 'bold'),
+            tk.Label(popup, text=_t('gui.pastoral.internship_management.placements.labels.placement_details', default="Placement Details"), font=('Arial', 16, 'bold'),
                     bg='white', fg='#2c3e50').pack(pady=10)
 
             # Details frame
@@ -194,7 +196,7 @@ class PlacementsMixin:
 
             # Feedback sections
             if placement_data[8]:  # Student feedback
-                tk.Label(details_frame, text="Student Feedback:", font=('Arial', 12, 'bold'),
+                tk.Label(details_frame, text=_t('gui.pastoral.internship_management.placements.labels.student_feedback', default="Student Feedback:"), font=('Arial', 12, 'bold'),
                         bg='white', fg='#2c3e50').pack(anchor='w', pady=(10, 5))
 
                 student_feedback = scrolledtext.ScrolledText(details_frame, height=4, wrap='word',
@@ -204,7 +206,7 @@ class PlacementsMixin:
                 student_feedback.config(state='disabled')
 
             if placement_data[9]:  # Employer feedback
-                tk.Label(details_frame, text="Employer Feedback:", font=('Arial', 12, 'bold'),
+                tk.Label(details_frame, text=_t('gui.pastoral.internship_management.placements.labels.employer_feedback', default="Employer Feedback:"), font=('Arial', 12, 'bold'),
                         bg='white', fg='#2c3e50').pack(anchor='w', pady=(10, 5))
 
                 employer_feedback = scrolledtext.ScrolledText(details_frame, height=4, wrap='word',
@@ -214,19 +216,19 @@ class PlacementsMixin:
                 employer_feedback.config(state='disabled')
 
             # Close button
-            tk.Button(popup, text="Close", command=popup.destroy,
+            tk.Button(popup, text=_t('gui.pastoral.internship_management.placements.buttons.close', default="Close"), command=popup.destroy,
                      bg='#6c757d', fg='white', font=('Arial', 10), padx=20, pady=5, relief='flat').pack(pady=10)
 
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading placement details: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.placements.dialogs.database_error', default="Database Error"), f"Error loading placement details: {e}")
 
     def update_placement_status(self):
         """Update status of selected placement"""
         selection = self.placement_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select a placement to update.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.placements.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.placements.dialogs.please_select_a_placement_to_update', default="Please select a placement to update."))
             return
 
         item = self.placement_tree.item(selection[0])
@@ -235,19 +237,19 @@ class PlacementsMixin:
 
         # Create update dialog
         update_dialog = tk.Toplevel(self.root)
-        update_dialog.title("Update Placement Status")
+        update_dialog.title(_t('gui.pastoral.internship_management.placements.windows.update_placement_status', default="Update Placement Status"))
         update_dialog.geometry("400x200")
         update_dialog.configure(bg='white')
         update_dialog.grab_set()
 
-        tk.Label(update_dialog, text="Update Placement Status",
+        tk.Label(update_dialog, text=_t('gui.pastoral.internship_management.placements.labels.update_placement_status', default="Update Placement Status"),
                 font=('Arial', 14, 'bold'), bg='white', fg='#2c3e50').pack(pady=10)
 
         tk.Label(update_dialog, text=f"Current Status: {current_status}",
                 font=('Arial', 11), bg='white', fg='#34495e').pack()
 
         # Status selection
-        tk.Label(update_dialog, text="New Status:", font=('Arial', 12, 'bold'),
+        tk.Label(update_dialog, text=_t('gui.pastoral.internship_management.placements.labels.new_status', default="New Status:"), font=('Arial', 12, 'bold'),
                 bg='white', fg='#2c3e50').pack(pady=(10, 5))
 
         new_status_var = tk.StringVar(value=current_status)
@@ -275,15 +277,15 @@ class PlacementsMixin:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", f"Placement status updated to: {new_status_var.get()}")
+                messagebox.showinfo(_t('gui.pastoral.internship_management.placements.dialogs.success', default="Success"), f"Placement status updated to: {new_status_var.get()}")
                 update_dialog.destroy()
                 self.load_placement_data()
 
             except sqlite3.Error as e:
-                messagebox.showerror("Database Error", f"Error updating placement status: {e}")
+                messagebox.showerror(_t('gui.pastoral.internship_management.placements.dialogs.database_error', default="Database Error"), f"Error updating placement status: {e}")
 
-        tk.Button(btn_frame, text="Save", command=save_status,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.placements.buttons.save', default="Save"), command=save_status,
                  bg='#27ae60', fg='white', font=('Arial', 10), padx=20, pady=5, relief='flat').pack(side='left', padx=5)
 
-        tk.Button(btn_frame, text="Cancel", command=update_dialog.destroy,
+        tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.placements.buttons.cancel', default="Cancel"), command=update_dialog.destroy,
                  bg='#6c757d', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)

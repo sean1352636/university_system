@@ -1,5 +1,7 @@
 """Barber Shop GUI - Finance & payment feature methods."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.operations.commerce.barber.common import (
     tk, ttk, messagebox, logging, json,
     datetime, timedelta,
@@ -26,7 +28,7 @@ class FinanceMixin:
             cash_revenue = daily_revenue.get('service_revenue') or 0
             self.cash_drawer_label.config(text=f"Cash Revenue: £{cash_revenue:.2f}")
 
-            self.outstanding_label.config(text="Outstanding: £0.00")
+            self.outstanding_label.config(text=_t('gui.operations.commerce.barber.features.finance.text.outstanding_0_00', default="Outstanding: £0.00"))
 
         except Exception as e:
             logger.error(f"Error updating finance summary: {e}")
@@ -35,14 +37,14 @@ class FinanceMixin:
         """Apply discount to transaction."""
         selected = self.appointments_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select an appointment.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.finance.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.finance.dialogs.please_select_an_appointment', default="Please select an appointment."))
             return
 
         item = self.appointments_tree.item(selected[0])
         appt_number = item['values'][0]
 
         discount_window = tk.Toplevel(self.parent)
-        discount_window.title("Apply Discount")
+        discount_window.title(_t('gui.operations.commerce.barber.features.finance.windows.apply_discount', default="Apply Discount"))
         discount_window.geometry("350x250")
         discount_window.transient(self.parent)
         discount_window.grab_set()
@@ -53,17 +55,17 @@ class FinanceMixin:
         frame = ttk.Frame(discount_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Discount Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.discount_type', default="Discount Type:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         type_combo = ttk.Combobox(frame, values=['percentage', 'fixed_amount'], width=15)
         type_combo.set('percentage')
         type_combo.grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Value (% or £):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.value_or', default="Value (% or £):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         value_var = tk.StringVar(value="10")
         ttk.Entry(frame, textvariable=value_var, width=10).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Reason:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        reason_var = tk.StringVar(value="Loyalty discount")
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.reason', default="Reason:")).grid(row=2, column=0, sticky=tk.W, pady=5)
+        reason_var = tk.StringVar(value=_t('gui.operations.commerce.barber.features.finance.values.loyalty_discount', default="Loyalty discount"))
         ttk.Entry(frame, textvariable=reason_var, width=25).grid(row=2, column=1, pady=5)
 
         def apply():
@@ -80,26 +82,26 @@ class FinanceMixin:
                         reason=reason_var.get(),
                         applied_by=self.current_user.get('username')
                     )
-                    messagebox.showinfo("Success", "Discount applied!")
+                    messagebox.showinfo(_t('gui.operations.commerce.barber.features.finance.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.finance.dialogs.discount_applied', default="Discount applied!"))
                     discount_window.destroy()
                     self._load_appointments()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.finance.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(discount_window, text="Apply Discount", command=apply).pack(pady=10)
+        ttk.Button(discount_window, text=_t('gui.operations.commerce.barber.features.finance.buttons.apply_discount', default="Apply Discount"), command=apply).pack(pady=10)
 
     def issue_refund(self):
         """Issue refund."""
         selected = self.appointments_tree.selection()
         if not selected:
-            messagebox.showwarning("Warning", "Please select an appointment.")
+            messagebox.showwarning(_t('gui.operations.commerce.barber.features.finance.dialogs.warning', default="Warning"), _t('gui.operations.commerce.barber.features.finance.dialogs.please_select_an_appointment', default="Please select an appointment."))
             return
 
         item = self.appointments_tree.item(selected[0])
         appt_number = item['values'][0]
 
         refund_window = tk.Toplevel(self.parent)
-        refund_window.title("Issue Refund")
+        refund_window.title(_t('gui.operations.commerce.barber.features.finance.windows.issue_refund', default="Issue Refund"))
         refund_window.geometry("400x300")
         refund_window.transient(self.parent)
         refund_window.grab_set()
@@ -110,16 +112,16 @@ class FinanceMixin:
         frame = ttk.Frame(refund_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Refund Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.refund_type', default="Refund Type:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         type_combo = ttk.Combobox(frame, values=['full', 'partial'], width=15)
         type_combo.set('full')
         type_combo.grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Amount (for partial):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.amount_for_partial', default="Amount (for partial):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         amount_var = tk.StringVar()
         ttk.Entry(frame, textvariable=amount_var, width=15).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Reason:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.reason', default="Reason:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         reason_text = tk.Text(frame, height=3, width=25)
         reason_text.grid(row=2, column=1, pady=5)
 
@@ -141,18 +143,18 @@ class FinanceMixin:
                         reason=reason_text.get('1.0', tk.END).strip(),
                         processed_by=self.current_user.get('username')
                     )
-                    messagebox.showinfo("Success", "Refund processed!")
+                    messagebox.showinfo(_t('gui.operations.commerce.barber.features.finance.dialogs.success', default="Success"), _t('gui.operations.commerce.barber.features.finance.dialogs.refund_processed', default="Refund processed!"))
                     refund_window.destroy()
                     self._load_appointments()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.finance.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(refund_window, text="Process Refund", command=process_refund).pack(pady=10)
+        ttk.Button(refund_window, text=_t('gui.operations.commerce.barber.features.finance.buttons.process_refund', default="Process Refund"), command=process_refund).pack(pady=10)
 
     def view_daily_sales(self):
         """View daily sales."""
         sales_window = tk.Toplevel(self.parent)
-        sales_window.title("Daily Sales Report")
+        sales_window.title(_t('gui.operations.commerce.barber.features.finance.windows.daily_sales_report', default="Daily Sales Report"))
         sales_window.geometry("600x450")
         sales_window.transient(self.parent)
 
@@ -160,7 +162,7 @@ class FinanceMixin:
         date_frame = ttk.Frame(sales_window, padding="10")
         date_frame.pack(fill=tk.X)
 
-        ttk.Label(date_frame, text="Date:").pack(side=tk.LEFT)
+        ttk.Label(date_frame, text=_t('gui.operations.commerce.barber.features.finance.labels.date', default="Date:")).pack(side=tk.LEFT)
         date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(date_frame, textvariable=date_var, width=12).pack(side=tk.LEFT, padx=5)
 
@@ -189,13 +191,13 @@ class FinanceMixin:
             except Exception as e:
                 sales_text.insert('1.0', f"Error: {e}")
 
-        ttk.Button(date_frame, text="Load", command=load_sales).pack(side=tk.LEFT, padx=10)
+        ttk.Button(date_frame, text=_t('gui.operations.commerce.barber.features.finance.buttons.load', default="Load"), command=load_sales).pack(side=tk.LEFT, padx=10)
         load_sales()
 
     def generate_financial_report(self):
         """Generate financial report."""
         report_window = tk.Toplevel(self.parent)
-        report_window.title("Financial Report")
+        report_window.title(_t('gui.operations.commerce.barber.features.finance.windows.financial_report', default="Financial Report"))
         report_window.geometry("700x500")
         report_window.transient(self.parent)
 
@@ -203,11 +205,11 @@ class FinanceMixin:
         options_frame = ttk.Frame(report_window, padding="10")
         options_frame.pack(fill=tk.X)
 
-        ttk.Label(options_frame, text="From:").pack(side=tk.LEFT)
+        ttk.Label(options_frame, text=_t('gui.operations.commerce.barber.features.finance.labels.from', default="From:")).pack(side=tk.LEFT)
         from_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
         ttk.Entry(options_frame, textvariable=from_var, width=12).pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(options_frame, text="To:").pack(side=tk.LEFT, padx=(10, 0))
+        ttk.Label(options_frame, text=_t('gui.operations.commerce.barber.features.finance.labels.to', default="To:")).pack(side=tk.LEFT, padx=(10, 0))
         to_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(options_frame, textvariable=to_var, width=12).pack(side=tk.LEFT, padx=5)
 
@@ -270,18 +272,18 @@ class FinanceMixin:
                 logger.error(f"Error generating financial report: {e}\n{error_detail}")
                 report_text.insert('1.0', f"Error generating report: {e}")
 
-        ttk.Button(options_frame, text="Generate", command=generate).pack(side=tk.LEFT, padx=20)
+        ttk.Button(options_frame, text=_t('gui.operations.commerce.barber.features.finance.buttons.generate', default="Generate"), command=generate).pack(side=tk.LEFT, padx=20)
         generate()
 
     def track_cash_drawer(self):
         """Track cash drawer."""
         drawer_window = tk.Toplevel(self.parent)
-        drawer_window.title("Cash Drawer")
+        drawer_window.title(_t('gui.operations.commerce.barber.features.finance.windows.cash_drawer', default="Cash Drawer"))
         drawer_window.geometry("500x400")
         drawer_window.transient(self.parent)
         drawer_window.grab_set()
 
-        ttk.Label(drawer_window, text="Cash Drawer Management",
+        ttk.Label(drawer_window, text=_t('gui.operations.commerce.barber.features.finance.labels.cash_drawer_management', default="Cash Drawer Management"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         # Current balance
@@ -299,16 +301,16 @@ class FinanceMixin:
         frame = ttk.Frame(drawer_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Action:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.action', default="Action:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         action_combo = ttk.Combobox(frame, values=['add', 'remove', 'count'], width=15)
         action_combo.set('add')
         action_combo.grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Amount (£):").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.amount', default="Amount (£):")).grid(row=1, column=0, sticky=tk.W, pady=5)
         amount_var = tk.StringVar()
         ttk.Entry(frame, textvariable=amount_var, width=15).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Note:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.note', default="Note:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         note_var = tk.StringVar()
         ttk.Entry(frame, textvariable=note_var, width=30).grid(row=2, column=1, pady=5)
 
@@ -323,47 +325,47 @@ class FinanceMixin:
                         opening_amount=amount,
                         opened_by=self.current_user.get('username', 'System')
                     )
-                    messagebox.showinfo("Success", f"Drawer opened with £{amount:.2f}\nNote: {note_var.get()}")
+                    messagebox.showinfo(_t('gui.operations.commerce.barber.features.finance.dialogs.success', default="Success"), f"Drawer opened with £{amount:.2f}\nNote: {note_var.get()}")
                 elif action == 'remove':
-                    messagebox.showinfo("Info", "Use 'Close Drawer' function to reconcile cash at end of shift")
+                    messagebox.showinfo(_t('gui.operations.commerce.barber.features.finance.dialogs.info', default="Info"), _t('gui.operations.commerce.barber.features.finance.dialogs.use_close_drawer_function_to_reconcile_cash_at_end_of_shift', default="Use 'Close Drawer' function to reconcile cash at end of shift"))
                 elif action == 'count':
-                    messagebox.showinfo("Info", "Use 'Close Drawer' function to record final count")
+                    messagebox.showinfo(_t('gui.operations.commerce.barber.features.finance.dialogs.info', default="Info"), _t('gui.operations.commerce.barber.features.finance.dialogs.use_close_drawer_function_to_record_final_count', default="Use 'Close Drawer' function to record final count"))
 
                 balance_label.config(text=f"Current Balance: £{amount:.2f}")
                 self._update_finance_summary()
 
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.finance.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(frame, text="Execute", command=execute_action).grid(row=3, column=0, columnspan=2, pady=20)
+        ttk.Button(frame, text=_t('gui.operations.commerce.barber.features.finance.buttons.execute', default="Execute"), command=execute_action).grid(row=3, column=0, columnspan=2, pady=20)
 
     def create_gift_card(self):
         """Create gift card."""
         gift_window = tk.Toplevel(self.parent)
-        gift_window.title("Create Gift Card")
+        gift_window.title(_t('gui.operations.commerce.barber.features.finance.windows.create_gift_card', default="Create Gift Card"))
         gift_window.geometry("400x350")
         gift_window.transient(self.parent)
         gift_window.grab_set()
 
-        ttk.Label(gift_window, text="Create Gift Card",
+        ttk.Label(gift_window, text=_t('gui.operations.commerce.barber.features.finance.labels.create_gift_card', default="Create Gift Card"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(gift_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Value (£):").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.value', default="Value (£):")).grid(row=0, column=0, sticky=tk.W, pady=5)
         value_var = tk.StringVar(value="50")
         ttk.Entry(frame, textvariable=value_var, width=15).grid(row=0, column=1, pady=5)
 
-        ttk.Label(frame, text="Recipient Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.recipient_name', default="Recipient Name:")).grid(row=1, column=0, sticky=tk.W, pady=5)
         name_var = tk.StringVar()
         ttk.Entry(frame, textvariable=name_var, width=25).grid(row=1, column=1, pady=5)
 
-        ttk.Label(frame, text="Recipient Email:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.recipient_email', default="Recipient Email:")).grid(row=2, column=0, sticky=tk.W, pady=5)
         email_var = tk.StringVar()
         ttk.Entry(frame, textvariable=email_var, width=25).grid(row=2, column=1, pady=5)
 
-        ttk.Label(frame, text="Message:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.message', default="Message:")).grid(row=3, column=0, sticky=tk.W, pady=5)
         msg_text = tk.Text(frame, height=3, width=25)
         msg_text.grid(row=3, column=1, pady=5)
 
@@ -377,32 +379,32 @@ class FinanceMixin:
                     message=msg_text.get('1.0', tk.END).strip(),
                     created_by=self.current_user.get('username')
                 )
-                messagebox.showinfo("Success", f"Gift card created!\nCode: {card_code}")
+                messagebox.showinfo(_t('gui.operations.commerce.barber.features.finance.dialogs.success', default="Success"), f"Gift card created!\nCode: {card_code}")
                 gift_window.destroy()
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.finance.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(gift_window, text="Create Gift Card", command=create).pack(pady=10)
+        ttk.Button(gift_window, text=_t('gui.operations.commerce.barber.features.finance.buttons.create_gift_card', default="Create Gift Card"), command=create).pack(pady=10)
 
     def redeem_gift_card(self):
         """Redeem gift card."""
         redeem_window = tk.Toplevel(self.parent)
-        redeem_window.title("Redeem Gift Card")
+        redeem_window.title(_t('gui.operations.commerce.barber.features.finance.windows.redeem_gift_card', default="Redeem Gift Card"))
         redeem_window.geometry("400x250")
         redeem_window.transient(self.parent)
         redeem_window.grab_set()
 
-        ttk.Label(redeem_window, text="Redeem Gift Card",
+        ttk.Label(redeem_window, text=_t('gui.operations.commerce.barber.features.finance.labels.redeem_gift_card', default="Redeem Gift Card"),
                  font=('Helvetica', 14, 'bold')).pack(pady=10)
 
         frame = ttk.Frame(redeem_window, padding="20")
         frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(frame, text="Gift Card Code:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.gift_card_code', default="Gift Card Code:")).grid(row=0, column=0, sticky=tk.W, pady=5)
         code_var = tk.StringVar()
         ttk.Entry(frame, textvariable=code_var, width=20).grid(row=0, column=1, pady=5)
 
-        balance_label = ttk.Label(frame, text="Balance: --")
+        balance_label = ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.balance', default="Balance: --"))
         balance_label.grid(row=1, column=0, columnspan=2, pady=10)
 
         def check_balance():
@@ -412,13 +414,13 @@ class FinanceMixin:
                 if card:
                     balance_label.config(text=f"Balance: £{card['current_balance']:.2f}")
                 else:
-                    balance_label.config(text="Invalid card code")
+                    balance_label.config(text=_t('gui.operations.commerce.barber.features.finance.text.invalid_card_code', default="Invalid card code"))
             except Exception as e:
                 balance_label.config(text=f"Error: {e}")
 
-        ttk.Button(frame, text="Check Balance", command=check_balance).grid(row=2, column=0, columnspan=2, pady=5)
+        ttk.Button(frame, text=_t('gui.operations.commerce.barber.features.finance.buttons.check_balance', default="Check Balance"), command=check_balance).grid(row=2, column=0, columnspan=2, pady=5)
 
-        ttk.Label(frame, text="Amount to Redeem (£):").grid(row=3, column=0, sticky=tk.W, pady=5)
+        ttk.Label(frame, text=_t('gui.operations.commerce.barber.features.finance.labels.amount_to_redeem', default="Amount to Redeem (£):")).grid(row=3, column=0, sticky=tk.W, pady=5)
         amount_var = tk.StringVar()
         ttk.Entry(frame, textvariable=amount_var, width=15).grid(row=3, column=1, pady=5)
 
@@ -431,31 +433,31 @@ class FinanceMixin:
                     redeemed_by=self.current_user.get('username')
                 )
                 if success:
-                    messagebox.showinfo("Success", message)
+                    messagebox.showinfo(_t('gui.operations.commerce.barber.features.finance.dialogs.success', default="Success"), message)
                     redeem_window.destroy()
                 else:
-                    messagebox.showerror("Error", message)
+                    messagebox.showerror(_t('gui.operations.commerce.barber.features.finance.dialogs.error', default="Error"), message)
             except Exception as e:
-                messagebox.showerror("Error", str(e))
+                messagebox.showerror(_t('gui.operations.commerce.barber.features.finance.dialogs.error', default="Error"), str(e))
 
-        ttk.Button(frame, text="Redeem", command=redeem).grid(row=4, column=0, columnspan=2, pady=10)
+        ttk.Button(frame, text=_t('gui.operations.commerce.barber.features.finance.buttons.redeem', default="Redeem"), command=redeem).grid(row=4, column=0, columnspan=2, pady=10)
 
     def view_outstanding_payments(self):
         """View outstanding payments."""
         outstanding_window = tk.Toplevel(self.parent)
-        outstanding_window.title("Outstanding Payments")
+        outstanding_window.title(_t('gui.operations.commerce.barber.features.finance.windows.outstanding_payments', default="Outstanding Payments"))
         outstanding_window.geometry("700x400")
         outstanding_window.transient(self.parent)
 
         columns = ('appt', 'date', 'customer', 'service', 'amount', 'status')
         tree = ttk.Treeview(outstanding_window, columns=columns, show='headings', height=15)
 
-        tree.heading('appt', text='Appointment')
-        tree.heading('date', text='Date')
-        tree.heading('customer', text='Customer')
-        tree.heading('service', text='Service')
-        tree.heading('amount', text='Amount')
-        tree.heading('status', text='Status')
+        tree.heading('appt', text=_t('gui.operations.commerce.barber.features.finance.headings.appointment', default='Appointment'))
+        tree.heading('date', text=_t('gui.operations.commerce.barber.features.finance.headings.date', default='Date'))
+        tree.heading('customer', text=_t('gui.operations.commerce.barber.features.finance.headings.customer', default='Customer'))
+        tree.heading('service', text=_t('gui.operations.commerce.barber.features.finance.headings.service', default='Service'))
+        tree.heading('amount', text=_t('gui.operations.commerce.barber.features.finance.headings.amount', default='Amount'))
+        tree.heading('status', text=_t('gui.operations.commerce.barber.features.finance.headings.status', default='Status'))
 
         for col in columns:
             tree.column(col, width=100)

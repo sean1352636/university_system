@@ -36,13 +36,70 @@ from education_system.platform.integrations.external import cross_system_bus
 
 logger = logging.getLogger(__name__)
 
-# Canonical phase order (auth seed keys, matching identity_service.SYSTEM_SLOTS).
+# The linear phase chain, and *only* that. Deliberately narrower than
+# identity_service.SYSTEM_SLOTS: fe_college and apprenticeships are systems
+# this platform runs, with journey slots and adapters of their own, but they
+# are not stations on this chain. A learner does not pass *through* an
+# apprenticeship on the way to university — they take one instead of, before,
+# or at the same time as a degree.
+#
+# Keeping them out is what makes next_phase() a useful default: secondary
+# should pre-fill "sixth_form", not "whichever post-16 system sorts first".
 PHASE_ORDER: tuple[str, ...] = ("nursery", "primary", "secondary",
                                 "sixth_form", "university")
 
+# Post-16 systems that sit beside the chain rather than on it. Offered as
+# destinations everywhere the chain is, and each one has a full journey slot
+# and adapter, so a move here creates a real local record.
+PARALLEL_SYSTEMS: tuple[str, ...] = ("fe_college", "apprenticeships")
+
+
+# Destinations that are not systems of this platform at all. A learner who
+# leaves for a school we do not run, goes into employment or is educated at
+# home has still gone *somewhere*, and the journey should say so rather than
+# simply stopping.
+NON_PHASE_DESTINATIONS: tuple[str, ...] = (
+    "external",         # another provider, outside the platform
+    "employment",
+    "home_education",
+)
+
+# ``apprenticeship`` (singular) was the destination string used before the
+# apprenticeships system joined the registry — a label on a transition with
+# nothing behind it. Journeys recorded then still carry it, so it is
+# normalised to the real system key rather than left as a second spelling
+# that every reader has to know about.
+_DESTINATION_ALIASES: dict[str, str] = {
+    "apprenticeship": "apprenticeships",
+    "apprentice": "apprenticeships",
+    "fe": "fe_college",
+    "further_education": "fe_college",
+    "college": "sixth_form",   # the historical key for the sixth-form system
+    "school": "secondary",     # ditto for secondary
+}
+
+
+def normalise_system(system: str | None) -> str | None:
+    """Map a legacy or shorthand destination onto its canonical system key.
+
+    Unknown values pass through unchanged: a destination this platform does
+    not run is still a legitimate thing to record.
+    """
+    if not system:
+        return system
+    return _DESTINATION_ALIASES.get(system.strip().lower(), system)
+
 
 def next_phase(system: str) -> str | None:
-    """The system a pupil progresses *to* after ``system`` (or None)."""
+    """The **recommended** destination after ``system`` (or None).
+
+    This is a default, not a rule. Plenty of real journeys do not follow
+    the chain: skipping sixth form, an apprenticeship before university,
+    changing school within a phase, leaving and returning, or moving to a
+    provider outside the platform entirely. Use this to pre-fill a
+    destination, never to decide whether one is allowed — see
+    :func:`is_permitted_destination`.
+    """
     try:
         i = PHASE_ORDER.index(system)
     except ValueError:
@@ -50,13 +107,66 @@ def next_phase(system: str) -> str | None:
     return PHASE_ORDER[i + 1] if i + 1 < len(PHASE_ORDER) else None
 
 
+#: Readable alias for the recommendation, at call sites where the
+#: distinction between "suggested" and "required" matters.
+recommended_destination = next_phase
+
+
 def previous_phase(system: str) -> str | None:
-    """The system a pupil progresses *from* into ``system`` (or None)."""
+    """The system a pupil most often progresses *from* into ``system``.
+
+    The same caveat as :func:`next_phase`: a recommendation, used to
+    default the source of an intake, not a constraint on where a learner
+    may have come from.
+    """
     try:
         i = PHASE_ORDER.index(system)
     except ValueError:
         return None
     return PHASE_ORDER[i - 1] if i > 0 else None
+
+
+def is_permitted_destination(source_system: str,
+                             destination_system: str) -> bool:
+    """Whether a move is allowed. Any named destination is.
+
+    Deliberately permissive. The platform records what happened to a
+    learner; it is not the body that decides where they may go. The only
+    rejections are a missing destination, and a move to the phase the
+    learner is already in *by that name alone* — which is expressed as a
+    change of institution within the phase, not as no move at all.
+    """
+    if not destination_system:
+        return False
+    return True
+
+
+def known_destinations(system: str | None = None) -> list[str]:
+    """Every destination the UI should offer, recommendation first.
+
+    A picker built from this lets staff record an apprenticeship or a
+    move to another school as easily as the default next phase, which is
+    what stops those journeys being forced into the wrong slot.
+
+    Order is deliberate: the recommended next phase, then the rest of the
+    chain, then the parallel post-16 systems, then the destinations
+    outside the platform. Real systems come before "external" so that
+    picking one is the easy default and leaving the platform is the
+    considered choice.
+    """
+    system = normalise_system(system)
+    out: list[str] = []
+    recommended = next_phase(system) if system else None
+    if recommended:
+        out.append(recommended)
+    for phase in PHASE_ORDER:
+        if phase != system and phase not in out:
+            out.append(phase)
+    for parallel in PARALLEL_SYSTEMS:
+        if parallel != system and parallel not in out:
+            out.append(parallel)
+    out.extend(NON_PHASE_DESTINATIONS)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -303,8 +413,14 @@ class ProgressionIntake:
 
 __all__ = [
     "PHASE_ORDER",
+    "PARALLEL_SYSTEMS",
+    "NON_PHASE_DESTINATIONS",
+    "normalise_system",
     "next_phase",
+    "recommended_destination",
     "previous_phase",
+    "is_permitted_destination",
+    "known_destinations",
     "register_local_student",
     "publish_progression",
     "announce_progression",

@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from tkinter.simpledialog import askstring, askinteger
@@ -212,7 +214,7 @@ def export_selected_email(self):
 
     ttk.Label(export_dialog, text=_t("email.select_export_format", default="Select Export Format:"), font=('Arial', 10, 'bold')).pack(pady=10)
 
-    format_var = tk.StringVar(value="txt")
+    format_var = tk.StringVar(value=_t('gui.shell.email.email_gui.email_tab.values.txt', default="txt"))
     ttk.Radiobutton(export_dialog, text=_t("email.format_txt", default="Text File (.txt)"), variable=format_var, value="txt").pack(anchor=tk.W, padx=20)
     ttk.Radiobutton(export_dialog, text=_t("email.format_html", default="HTML File (.html)"), variable=format_var, value="html").pack(anchor=tk.W, padx=20)
     ttk.Radiobutton(export_dialog, text=_t("email.format_json", default="JSON File (.json)"), variable=format_var, value="json").pack(anchor=tk.W, padx=20)
@@ -242,7 +244,7 @@ def export_selected_email(self):
             }
 
             file_path = filedialog.asksaveasfilename(
-                title="Save Email Export",
+                title=_t('gui.shell.email.email_gui.email_tab.dialogs.save_email_export', default="Save Email Export"),
                 defaultextension=f".{format_type}",
                 filetypes=file_types.get(format_type, [("All files", "*.*")])
             )

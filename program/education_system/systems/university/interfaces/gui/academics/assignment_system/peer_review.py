@@ -1,5 +1,7 @@
 """Peer review system"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -12,7 +14,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.i18n import get_text as _
 from collections import deque
 
@@ -80,7 +82,7 @@ class PeerReviewManager:
 
                 ttk.Label(review_frame, text=f"Assignment: {review[1]}").pack(anchor='w')
                 ttk.Label(review_frame, text=f"Student: {review[2]} {review[3]}").pack(anchor='w')
-                ttk.Button(review_frame, text="Complete Review",
+                ttk.Button(review_frame, text=_t('gui.academics.assignment_system.peer_review.buttons.complete_review', default="Complete Review"),
                           command=lambda r=review[0]: self.start_peer_review(r)).pack(anchor='e')
 
             conn.close()
@@ -93,7 +95,7 @@ class PeerReviewManager:
         """Start a specific peer review"""
         # Create peer review form window
         review_window = tk.Toplevel(self.root)
-        review_window.title("Peer Review")
+        review_window.title(_t('gui.academics.assignment_system.peer_review.windows.peer_review', default="Peer Review"))
         review_window.geometry("600x500")
 
         # Add peer review form components
@@ -184,7 +186,7 @@ class PeerReviewManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Manage Peer Reviews", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.peer_review.labels.manage_peer_reviews', default="Manage Peer Reviews"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create notebook for different views
@@ -193,37 +195,37 @@ class PeerReviewManager:
 
         # Setup tab
         setup_frame = ttk.Frame(notebook)
-        notebook.add(setup_frame, text="Setup Reviews")
+        notebook.add(setup_frame, text=_t('gui.academics.assignment_system.peer_review.tabs.setup_reviews', default="Setup Reviews"))
 
         # Monitor tab
         monitor_frame = ttk.Frame(notebook)
-        notebook.add(monitor_frame, text="Monitor Progress")
+        notebook.add(monitor_frame, text=_t('gui.academics.assignment_system.peer_review.tabs.monitor_progress', default="Monitor Progress"))
 
         # Results tab
         results_frame = ttk.Frame(notebook)
-        notebook.add(results_frame, text="View Results")
+        notebook.add(results_frame, text=_t('gui.academics.assignment_system.peer_review.tabs.view_results', default="View Results"))
 
         # Add content to tabs
-        ttk.Label(setup_frame, text="Setup peer review assignments").pack(pady=20)
-        ttk.Button(setup_frame, text="Configure Peer Review",
+        ttk.Label(setup_frame, text=_t('gui.academics.assignment_system.peer_review.labels.setup_peer_review_assignments', default="Setup peer review assignments")).pack(pady=20)
+        ttk.Button(setup_frame, text=_t('gui.academics.assignment_system.peer_review.buttons.configure_peer_review', default="Configure Peer Review"),
                   command=self.configure_peer_review).pack(pady=10)
 
-        ttk.Label(monitor_frame, text="Monitor review progress").pack(pady=20)
-        ttk.Label(results_frame, text="View completed reviews and results").pack(pady=20)
+        ttk.Label(monitor_frame, text=_t('gui.academics.assignment_system.peer_review.labels.monitor_review_progress', default="Monitor review progress")).pack(pady=20)
+        ttk.Label(results_frame, text=_t('gui.academics.assignment_system.peer_review.labels.view_completed_reviews_and_results', default="View completed reviews and results")).pack(pady=20)
 
 
     def configure_peer_review(self):
         """Configure peer review settings"""
         # Create configuration window
         config_window = tk.Toplevel(self.root)
-        config_window.title("Configure Peer Review")
+        config_window.title(_t('gui.academics.assignment_system.peer_review.windows.configure_peer_review', default="Configure Peer Review"))
         config_window.geometry("500x400")
 
-        ttk.Label(config_window, text="Peer Review Configuration",
+        ttk.Label(config_window, text=_t('gui.academics.assignment_system.peer_review.labels.peer_review_configuration', default="Peer Review Configuration"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Assignment selection
-        assignment_frame = ttk.LabelFrame(config_window, text="Select Assignment", padding=10)
+        assignment_frame = ttk.LabelFrame(config_window, text=_t('gui.academics.assignment_system.peer_review.labels.select_assignment', default="Select Assignment"), padding=10)
         assignment_frame.pack(fill='x', padx=10, pady=10)
 
         self.peer_assignment_var = tk.StringVar()
@@ -250,10 +252,10 @@ class PeerReviewManager:
             print(f"Failed to load assignments for peer review: {e}")
 
         # Review criteria
-        criteria_frame = ttk.LabelFrame(config_window, text="Review Criteria", padding=10)
+        criteria_frame = ttk.LabelFrame(config_window, text=_t('gui.academics.assignment_system.peer_review.labels.review_criteria', default="Review Criteria"), padding=10)
         criteria_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Label(criteria_frame, text="Add criteria (one per line):").pack(anchor='w')
+        ttk.Label(criteria_frame, text=_t('gui.academics.assignment_system.peer_review.labels.add_criteria_one_per_line', default="Add criteria (one per line):")).pack(anchor='w')
         self.criteria_text = scrolledtext.ScrolledText(criteria_frame, height=6)
         self.criteria_text.pack(fill='both', expand=True)
 
@@ -262,15 +264,15 @@ class PeerReviewManager:
         self.criteria_text.insert(tk.END, default_criteria)
 
         # Configuration options
-        options_frame = ttk.LabelFrame(config_window, text="Options", padding=10)
+        options_frame = ttk.LabelFrame(config_window, text=_t('gui.academics.assignment_system.peer_review.labels.options', default="Options"), padding=10)
         options_frame.pack(fill='x', padx=10, pady=10)
 
         self.anonymous_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Anonymous reviews",
+        ttk.Checkbutton(options_frame, text=_t('gui.academics.assignment_system.peer_review.buttons.anonymous_reviews_variant_2', default="Anonymous reviews"),
                        variable=self.anonymous_var).pack(anchor='w')
 
         # Submit button
-        ttk.Button(config_window, text="Setup Peer Reviews",
+        ttk.Button(config_window, text=_t('gui.academics.assignment_system.peer_review.buttons.setup_peer_reviews', default="Setup Peer Reviews"),
                   command=lambda: self.setup_peer_review_assignments(config_window)).pack(pady=10)
 
 
@@ -283,41 +285,41 @@ class PeerReviewManager:
             anonymous_reviews = self.anonymous_var.get()
 
             if not criteria:
-                messagebox.showerror("Error", "Please add at least one review criterion")
+                messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.please_add_at_least_one_review_criterion', default="Please add at least one review criterion"))
                 return
 
             if not selected_assignment:
-                messagebox.showerror("Error", "Please select an assignment")
+                messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.please_select_an_assignment', default="Please select an assignment"))
                 return
 
             # Parse assignment ID from "3 - Title (Module)" format
             try:
                 assignment_id = int(selected_assignment.split(' - ')[0])
             except (ValueError, IndexError):
-                messagebox.showerror("Error", "Invalid assignment selection")
+                messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.invalid_assignment_selection', default="Invalid assignment selection"))
                 return
 
             # Create progress window
             progress_window = tk.Toplevel(window)
-            progress_window.title("Setting up Peer Reviews")
+            progress_window.title(_t('gui.academics.assignment_system.peer_review.windows.setting_up_peer_reviews', default="Setting up Peer Reviews"))
             progress_window.geometry("600x500")
             progress_window.transient(window)
             progress_window.grab_set()
 
-            ttk.Label(progress_window, text="Setting up Peer Review Assignments",
+            ttk.Label(progress_window, text=_t('gui.academics.assignment_system.peer_review.labels.setting_up_peer_review_assignments', default="Setting up Peer Review Assignments"),
                      style='Title.TLabel').pack(pady=15)
 
-            progress_frame = ttk.LabelFrame(progress_window, text="Setup Progress", padding=15)
+            progress_frame = ttk.LabelFrame(progress_window, text=_t('gui.academics.assignment_system.peer_review.labels.setup_progress', default="Setup Progress"), padding=15)
             progress_frame.pack(fill='x', padx=20, pady=(0, 15))
 
             progress_var = tk.DoubleVar()
             ttk.Progressbar(progress_frame, variable=progress_var,
                            mode='determinate', length=500).pack(pady=(0, 10))
 
-            status_label = ttk.Label(progress_frame, text="Initializing setup...")
+            status_label = ttk.Label(progress_frame, text=_t('gui.academics.assignment_system.peer_review.labels.initializing_setup', default="Initializing setup..."))
             status_label.pack()
 
-            results_frame = ttk.LabelFrame(progress_window, text="Setup Results", padding=15)
+            results_frame = ttk.LabelFrame(progress_window, text=_t('gui.academics.assignment_system.peer_review.labels.setup_results', default="Setup Results"), padding=15)
             results_frame.pack(fill='both', expand=True, padx=20, pady=(0, 15))
 
             results_text = tk.Text(results_frame, height=15, wrap='word')
@@ -334,7 +336,7 @@ class PeerReviewManager:
                 results_text.insert(tk.END, f"Anonymous reviews: {'Yes' if anonymous_reviews else 'No'}\n\n")
 
                 # Step 1: Get submissions
-                status_label.config(text="Retrieving submissions...")
+                status_label.config(text=_t('gui.academics.assignment_system.peer_review.text.retrieving_submissions', default="Retrieving submissions..."))
                 progress_var.set(10)
 
                 try:
@@ -352,14 +354,14 @@ class PeerReviewManager:
                     submissions = cursor.fetchall()
                 except Exception as e:
                     results_text.insert(tk.END, f"Error loading submissions: {e}\n")
-                    status_label.config(text="Setup failed!")
+                    status_label.config(text=_t('gui.academics.assignment_system.peer_review.text.setup_failed', default="Setup failed!"))
                     return
 
                 if len(submissions) < 2:
                     results_text.insert(tk.END,
                         f"Need at least 2 submissions for peer review, found {len(submissions)}.\n\n"
                         "Make sure students have submitted their work first.\n")
-                    status_label.config(text="Setup failed - insufficient submissions")
+                    status_label.config(text=_t('gui.academics.assignment_system.peer_review.text.setup_failed_insufficient_submissions', default="Setup failed - insufficient submissions"))
                     conn.close()
                     return
 
@@ -367,7 +369,7 @@ class PeerReviewManager:
                 progress_var.set(25)
 
                 # Step 2: Clear old assignments for this assignment
-                status_label.config(text="Clearing previous peer review assignments...")
+                status_label.config(text=_t('gui.academics.assignment_system.peer_review.text.clearing_previous_peer_review_assignments', default="Clearing previous peer review assignments..."))
                 try:
                     cursor.execute(
                         'DELETE FROM peer_review_assignments WHERE assignment_id = ?',
@@ -378,7 +380,7 @@ class PeerReviewManager:
                 progress_var.set(35)
 
                 # Step 3: Assign peer reviewers (each student reviews up to 3 others)
-                status_label.config(text="Assigning peer reviewers...")
+                status_label.config(text=_t('gui.academics.assignment_system.peer_review.text.assigning_peer_reviewers', default="Assigning peer reviewers..."))
                 progress_var.set(50)
 
                 review_session_id = f"review_{assignment_id}_{int(datetime.now().timestamp())}"
@@ -411,7 +413,7 @@ class PeerReviewManager:
                     progress_var.set(50 + ((i + 1) / len(submissions)) * 30)
 
                 # Step 4: Save to database
-                status_label.config(text="Saving review assignments...")
+                status_label.config(text=_t('gui.academics.assignment_system.peer_review.text.saving_review_assignments', default="Saving review assignments..."))
                 progress_var.set(85)
 
                 try:
@@ -435,7 +437,7 @@ class PeerReviewManager:
                     conn.close()
 
                 # Step 5: Send email notifications
-                status_label.config(text="Sending notifications...")
+                status_label.config(text=_t('gui.academics.assignment_system.peer_review.text.sending_notifications', default="Sending notifications..."))
                 progress_var.set(90)
 
                 emails_sent = 0
@@ -492,7 +494,7 @@ class PeerReviewManager:
 
                 # Summary
                 progress_var.set(100)
-                status_label.config(text="Peer review setup completed!")
+                status_label.config(text=_t('gui.academics.assignment_system.peer_review.text.peer_review_setup_completed', default="Peer review setup completed!"))
 
                 unique_reviewers = len(set(a['reviewer_id'] for a in review_assignments))
                 results_text.insert(tk.END, f"\n{'='*50}\n")
@@ -513,9 +515,9 @@ class PeerReviewManager:
             button_frame = ttk.Frame(progress_window)
             button_frame.pack(fill='x', padx=20, pady=(0, 15))
 
-            ttk.Button(button_frame, text="Start Setup",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.peer_review.buttons.start_setup', default="Start Setup"),
                       command=run_setup).pack(side='left', padx=(0, 10))
-            ttk.Button(button_frame, text="Close", command=progress_window.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.peer_review.buttons.close', default="Close"), command=progress_window.destroy).pack(side='right')
 
             # Initial message
             results_text.insert(tk.END, "Peer Review Configuration:\n")
@@ -527,7 +529,7 @@ class PeerReviewManager:
             results_text.insert(tk.END, "Click 'Start Setup' to create peer review assignments.\n")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to setup peer reviews: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), f"Failed to setup peer reviews: {e}")
 
     # RUBRIC MANAGEMENT METHODS
 
@@ -535,7 +537,7 @@ class PeerReviewManager:
         """Show peer review dashboard"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Peer Review Dashboard", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.peer_review.labels.peer_review_dashboard', default="Peer Review Dashboard"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create notebook for different peer review views
@@ -544,20 +546,20 @@ class PeerReviewManager:
 
         # My Reviews tab
         my_reviews_frame = ttk.Frame(notebook)
-        notebook.add(my_reviews_frame, text="My Reviews")
+        notebook.add(my_reviews_frame, text=_t('gui.academics.assignment_system.peer_review.tabs.my_reviews', default="My Reviews"))
 
         # Reviews to Complete tab
         pending_reviews_frame = ttk.Frame(notebook)
-        notebook.add(pending_reviews_frame, text="Pending Reviews")
+        notebook.add(pending_reviews_frame, text=_t('gui.academics.assignment_system.peer_review.tabs.pending_reviews', default="Pending Reviews"))
 
         # Review Results tab
         results_frame = ttk.Frame(notebook)
-        notebook.add(results_frame, text="Review Results")
+        notebook.add(results_frame, text=_t('gui.academics.assignment_system.peer_review.tabs.review_results', default="Review Results"))
 
         # Placeholder content
-        ttk.Label(my_reviews_frame, text="Peer reviews you have completed will appear here").pack(pady=20)
-        ttk.Label(pending_reviews_frame, text="Reviews waiting for your input will appear here").pack(pady=20)
-        ttk.Label(results_frame, text="Results from peer reviews of your work will appear here").pack(pady=20)
+        ttk.Label(my_reviews_frame, text=_t('gui.academics.assignment_system.peer_review.labels.peer_reviews_you_have_completed_will_appear_here', default="Peer reviews you have completed will appear here")).pack(pady=20)
+        ttk.Label(pending_reviews_frame, text=_t('gui.academics.assignment_system.peer_review.labels.reviews_waiting_for_your_input_will_appear_here', default="Reviews waiting for your input will appear here")).pack(pady=20)
+        ttk.Label(results_frame, text=_t('gui.academics.assignment_system.peer_review.labels.results_from_peer_reviews_of_your_work_will_appear_here', default="Results from peer reviews of your work will appear here")).pack(pady=20)
 
 
     def setup_peer_review(self, *args, **kwargs):
@@ -569,12 +571,12 @@ class PeerReviewManager:
         try:
             # Create configuration dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Configure Peer Review Settings")
+            dialog.title(_t('gui.academics.assignment_system.peer_review.windows.configure_peer_review_settings', default="Configure Peer Review Settings"))
             dialog.geometry("550x600")
             dialog.transient(self.root)
             dialog.grab_set()
 
-            ttk.Label(dialog, text="Peer Review Configuration", font=('TkDefaultFont', 14, 'bold')).pack(pady=10)
+            ttk.Label(dialog, text=_t('gui.academics.assignment_system.peer_review.labels.peer_review_configuration', default="Peer Review Configuration"), font=('TkDefaultFont', 14, 'bold')).pack(pady=10)
 
             # Assignment info
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -586,36 +588,36 @@ class PeerReviewManager:
                 conn.close()
 
             if not assignment_info:
-                messagebox.showerror("Error", "Assignment not found")
+                messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.assignment_not_found', default="Assignment not found"))
                 dialog.destroy()
                 return
 
             title, due_date = assignment_info
 
-            info_frame = ttk.LabelFrame(dialog, text="Assignment", padding=10)
+            info_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.peer_review.labels.assignment', default="Assignment"), padding=10)
             info_frame.pack(fill='x', padx=10, pady=(0, 10))
             ttk.Label(info_frame, text=f"Title: {title}\nDue Date: {due_date}").pack(anchor='w')
 
             # Review settings
-            settings_frame = ttk.LabelFrame(dialog, text="Review Settings", padding=10)
+            settings_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.peer_review.labels.review_settings', default="Review Settings"), padding=10)
             settings_frame.pack(fill='x', padx=10, pady=(0, 10))
 
-            ttk.Label(settings_frame, text="Reviews per Student:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(settings_frame, text=_t('gui.academics.assignment_system.peer_review.labels.reviews_per_student', default="Reviews per Student:")).grid(row=0, column=0, sticky='w', pady=5)
             reviews_per_student_var = tk.StringVar(value="3")
             ttk.Entry(settings_frame, textvariable=reviews_per_student_var, width=10).grid(row=0, column=1, sticky='w', padx=(10, 0))
 
-            ttk.Label(settings_frame, text="Review Deadline (days after submission):").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Label(settings_frame, text=_t('gui.academics.assignment_system.peer_review.labels.review_deadline_days_after_submission', default="Review Deadline (days after submission):")).grid(row=1, column=0, sticky='w', pady=5)
             review_deadline_var = tk.StringVar(value="7")
             ttk.Entry(settings_frame, textvariable=review_deadline_var, width=10).grid(row=1, column=1, sticky='w', padx=(10, 0))
 
             anonymous_var = tk.BooleanVar(value=True)
-            ttk.Checkbutton(settings_frame, text="Anonymous Reviews", variable=anonymous_var).grid(row=2, column=0, columnspan=2, sticky='w', pady=5)
+            ttk.Checkbutton(settings_frame, text=_t('gui.academics.assignment_system.peer_review.buttons.anonymous_reviews', default="Anonymous Reviews"), variable=anonymous_var).grid(row=2, column=0, columnspan=2, sticky='w', pady=5)
 
             # Review criteria
-            criteria_frame = ttk.LabelFrame(dialog, text="Review Criteria", padding=10)
+            criteria_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.peer_review.labels.review_criteria', default="Review Criteria"), padding=10)
             criteria_frame.pack(fill='both', expand=True, padx=10, pady=(0, 10))
 
-            ttk.Label(criteria_frame, text="Enter criteria (one per line):").pack(anchor='w', pady=(0, 5))
+            ttk.Label(criteria_frame, text=_t('gui.academics.assignment_system.peer_review.labels.enter_criteria_one_per_line', default="Enter criteria (one per line):")).pack(anchor='w', pady=(0, 5))
             criteria_text = scrolledtext.ScrolledText(criteria_frame, height=8, wrap=tk.WORD)
             criteria_text.pack(fill='both', expand=True)
 
@@ -624,10 +626,10 @@ class PeerReviewManager:
             criteria_text.insert(tk.END, default_criteria)
 
             # Grading weight
-            weight_frame = ttk.LabelFrame(dialog, text="Grading Weight", padding=10)
+            weight_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.assignment_system.peer_review.labels.grading_weight', default="Grading Weight"), padding=10)
             weight_frame.pack(fill='x', padx=10, pady=(0, 10))
 
-            ttk.Label(weight_frame, text="Peer Review Weight (% of final grade):").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(weight_frame, text=_t('gui.academics.assignment_system.peer_review.labels.peer_review_weight_of_final_grade', default="Peer Review Weight (% of final grade):")).grid(row=0, column=0, sticky='w', pady=5)
             weight_var = tk.StringVar(value="20")
             ttk.Entry(weight_frame, textvariable=weight_var, width=10).grid(row=0, column=1, sticky='w', padx=(10, 0))
 
@@ -639,22 +641,22 @@ class PeerReviewManager:
                     weight = float(weight_var.get())
 
                     if not (1 <= reviews_per <= 10):
-                        messagebox.showerror("Error", "Reviews per student must be between 1 and 10", parent=dialog)
+                        messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.reviews_per_student_must_be_between_1_and_10', default="Reviews per student must be between 1 and 10"), parent=dialog)
                         return
 
                     if not (1 <= deadline_days <= 30):
-                        messagebox.showerror("Error", "Review deadline must be between 1 and 30 days", parent=dialog)
+                        messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.review_deadline_must_be_between_1_and_30_days', default="Review deadline must be between 1 and 30 days"), parent=dialog)
                         return
 
                     if not (0 <= weight <= 100):
-                        messagebox.showerror("Error", "Weight must be between 0 and 100", parent=dialog)
+                        messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.weight_must_be_between_0_and_100', default="Weight must be between 0 and 100"), parent=dialog)
                         return
 
                     criteria_list = criteria_text.get(1.0, tk.END).strip().split('\n')
                     criteria_list = [c.strip() for c in criteria_list if c.strip()]
 
                     if not criteria_list:
-                        messagebox.showerror("Error", "At least one criterion is required", parent=dialog)
+                        messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.at_least_one_criterion_is_required', default="At least one criterion is required"), parent=dialog)
                         return
 
                     # Save configuration
@@ -684,23 +686,23 @@ class PeerReviewManager:
                     finally:
                         conn.close()
 
-                    messagebox.showinfo("Success", "Peer review configuration saved successfully!", parent=dialog)
+                    messagebox.showinfo(_t('gui.academics.assignment_system.peer_review.dialogs.success', default="Success"), _t('gui.academics.assignment_system.peer_review.dialogs.peer_review_configuration_saved_successfully', default="Peer review configuration saved successfully!"), parent=dialog)
                     dialog.destroy()
 
                 except ValueError:
-                    messagebox.showerror("Error", "Please enter valid numeric values", parent=dialog)
+                    messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.please_enter_valid_numeric_values', default="Please enter valid numeric values"), parent=dialog)
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to save configuration: {e}", parent=dialog)
+                    messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), f"Failed to save configuration: {e}", parent=dialog)
 
             button_frame = ttk.Frame(dialog)
             button_frame.pack(fill='x', padx=10, pady=(0, 10))
 
-            ttk.Button(button_frame, text="Save Configuration", command=save_peer_review_config,
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.peer_review.buttons.save_configuration', default="Save Configuration"), command=save_peer_review_config,
                       style='Accent.TButton').pack(side='left')
-            ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='right')
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.peer_review.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='right')
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open configuration: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), f"Failed to open configuration: {e}")
 
     def _assign_peer_reviewers(self, assignment_id):
         """Assign peer reviewers automatically based on configuration"""
@@ -716,7 +718,7 @@ class PeerReviewManager:
 
             config = cursor.fetchone()
             if not config:
-                messagebox.showerror("Error", "Please configure peer review settings first")
+                messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), _t('gui.academics.assignment_system.peer_review.dialogs.please_configure_peer_review_settings_first', default="Please configure peer review settings first"))
                 conn.close()
                 return
 
@@ -731,7 +733,7 @@ class PeerReviewManager:
             submissions = cursor.fetchall()
 
             if len(submissions) < 2:
-                messagebox.showwarning("Warning", "At least 2 submissions are required for peer review")
+                messagebox.showwarning(_t('gui.academics.assignment_system.peer_review.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.peer_review.dialogs.at_least_2_submissions_are_required_for_peer_review', default="At least 2 submissions are required for peer review"))
                 conn.close()
                 return
 
@@ -771,18 +773,18 @@ class PeerReviewManager:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.academics.assignment_system.peer_review.dialogs.success', default="Success"),
                               f"Peer review assignments created successfully!\n\n"
                               f"Total assignments: {assignments_created}\n"
                               f"Reviews per student: ~{reviews_per_student}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to assign peer reviewers: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), f"Failed to assign peer reviewers: {e}")
 
     def _launch_gui_feature(self, callback, feature_name):
         """Helper to launch GUI features with error handling"""
         try:
             callback()
         except Exception as e:
-            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.peer_review.dialogs.error', default="Error"), f"Error launching {feature_name}: {str(e)}")
 

@@ -18,6 +18,8 @@ successfully and shows the recipient count — useful for development.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import datetime
 import logging
 import sqlite3
@@ -73,7 +75,7 @@ def show_broadcasts(gui_instance) -> None:
     gui_instance.clear_content()
     parent = gui_instance.content_frame
 
-    ttk.Label(parent, text="Resident Broadcasts",
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.labels.resident_broadcasts', default="Resident Broadcasts"),
               font=("Arial", 14, "bold")).pack(anchor="w", padx=8,
                                                 pady=(8, 4))
 
@@ -82,8 +84,8 @@ def show_broadcasts(gui_instance) -> None:
 
     compose = ttk.Frame(nb, padding=8)
     history = ttk.Frame(nb, padding=8)
-    nb.add(compose, text="Compose")
-    nb.add(history, text="History")
+    nb.add(compose, text=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.tabs.compose', default="Compose"))
+    nb.add(history, text=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.tabs.history', default="History"))
 
     _build_compose(gui_instance, compose, on_sent=lambda: _reload_history(history))
     _build_history(history)
@@ -93,14 +95,14 @@ def show_broadcasts(gui_instance) -> None:
 
 def _build_compose(gui_instance, parent: ttk.Frame, *, on_sent) -> None:
     ttk.Label(parent,
-              text=("Audience is resolved live from current 'Active' "
+              text=(_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.labels.audience_is_resolved_live_from_current_active_assignments_at_sen', default="Audience is resolved live from current 'Active' "
                     "assignments at send time. Leave filters blank to "
-                    "include every current resident."),
+                    "include every current resident.")),
               wraplength=820, foreground="#555").pack(anchor="w", pady=(0, 6))
 
     row1 = ttk.Frame(parent)
     row1.pack(fill="x", pady=2)
-    ttk.Label(row1, text="Building:").pack(side="left", padx=(0, 4))
+    ttk.Label(row1, text=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.labels.building', default="Building:")).pack(side="left", padx=(0, 4))
     building_var = tk.StringVar()
     building_combo = ttk.Combobox(row1, textvariable=building_var,
                                     state="readonly", width=30)
@@ -109,7 +111,7 @@ def _build_compose(gui_instance, parent: ttk.Frame, *, on_sent) -> None:
     building_combo.current(0)
     building_combo.pack(side="left", padx=(0, 12))
 
-    ttk.Label(row1, text="Room type:").pack(side="left")
+    ttk.Label(row1, text=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.labels.room_type', default="Room type:")).pack(side="left")
     type_var = tk.StringVar()
     type_combo = ttk.Combobox(row1, textvariable=type_var,
                                 state="readonly", width=18)
@@ -117,16 +119,16 @@ def _build_compose(gui_instance, parent: ttk.Frame, *, on_sent) -> None:
     type_combo.current(0)
     type_combo.pack(side="left", padx=(4, 12))
 
-    preview_var = tk.StringVar(value="No audience preview yet.")
+    preview_var = tk.StringVar(value=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.values.no_audience_preview_yet', default="No audience preview yet."))
     ttk.Label(parent, textvariable=preview_var,
               foreground="#444").pack(anchor="w", pady=(6, 4))
 
-    ttk.Label(parent, text="Subject:").pack(anchor="w")
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.labels.subject', default="Subject:")).pack(anchor="w")
     subject_var = tk.StringVar()
     ttk.Entry(parent, textvariable=subject_var, width=90).pack(anchor="w",
                                                                  pady=(0, 6))
 
-    ttk.Label(parent, text="Body:").pack(anchor="w")
+    ttk.Label(parent, text=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.labels.body', default="Body:")).pack(anchor="w")
     body = tk.Text(parent, height=10, width=90, wrap="word")
     body.pack(anchor="w", pady=(0, 6))
 
@@ -146,18 +148,18 @@ def _build_compose(gui_instance, parent: ttk.Frame, *, on_sent) -> None:
         subj = subject_var.get().strip()
         msg = body.get("1.0", "end").strip()
         if not subj or not msg:
-            messagebox.showwarning("Broadcast",
-                                    "Subject and body are both required.",
+            messagebox.showwarning(_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.dialogs.broadcast', default="Broadcast"),
+                                    _t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.dialogs.subject_and_body_are_both_required', default="Subject and body are both required."),
                                     parent=gui_instance.root)
             return
         recips = _resolve_audience(b_id, rt)
         if not recips:
-            messagebox.showinfo("Broadcast",
-                                 "No residents match — nothing to send.",
+            messagebox.showinfo(_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.dialogs.broadcast', default="Broadcast"),
+                                 _t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.dialogs.no_residents_match_nothing_to_send', default="No residents match — nothing to send."),
                                  parent=gui_instance.root)
             return
         if not messagebox.askyesno(
-                "Broadcast",
+                _t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.dialogs.broadcast', default="Broadcast"),
                 f"Send to {len(recips)} resident(s)?",
                 parent=gui_instance.root):
             return
@@ -187,7 +189,7 @@ def _build_compose(gui_instance, parent: ttk.Frame, *, on_sent) -> None:
             logger.exception("Failed to record broadcast")
 
         messagebox.showinfo(
-            "Broadcast",
+            _t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.dialogs.broadcast', default="Broadcast"),
             f"Sent: {delivered}\nFailed: {failed}\n\n"
             "Note: when SMTP isn't configured, emails are still queued "
             "by the email service stub and the broadcast is logged.",
@@ -198,8 +200,8 @@ def _build_compose(gui_instance, parent: ttk.Frame, *, on_sent) -> None:
 
     bar = ttk.Frame(parent)
     bar.pack(fill="x", pady=(4, 0))
-    ttk.Button(bar, text="Preview audience", command=preview).pack(side="left")
-    ttk.Button(bar, text="Send →", command=send).pack(side="right")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.buttons.preview_audience', default="Preview audience"), command=preview).pack(side="left")
+    ttk.Button(bar, text=_t('gui.operations.campus.housing.housing_accommodation_gui.broadcasts.buttons.send', default="Send →"), command=send).pack(side="right")
 
 
 # ── History tab ────────────────────────────────────────────────────────

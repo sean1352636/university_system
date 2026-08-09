@@ -11,6 +11,8 @@ This separates the *catalog definition* of a course from its per-term
 *offerings*, which the original GUI conflated.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     ExtFormDialog, tk, ttk, messagebox, _, logger,
 )
@@ -166,7 +168,7 @@ class SectionsTabMixin:
             name = (values.get("name") or "").strip()
             if not name:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Term name is required.")
+                                     _t('gui.academics.course_management_gui.core.sections_tab.dialogs.term_name_is_required', default="Term name is required."))
                 return False
             try:
                 with self._ext_db(write=True) as conn:
@@ -199,7 +201,7 @@ class SectionsTabMixin:
         vals = self._ext_selected_values(self._terms_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a term first.")
+                                   _t('gui.academics.course_management_gui.core.sections_tab.dialogs.select_a_term_first', default="Select a term first."))
             return None
         return vals
 
@@ -344,7 +346,7 @@ class SectionsTabMixin:
             name = (values.get("name") or "").strip()
             if not name:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Term name is required.")
+                                     _t('gui.academics.course_management_gui.core.sections_tab.dialogs.term_name_is_required', default="Term name is required."))
                 return False
             try:
                 with self._ext_db(write=True) as conn:
@@ -415,7 +417,7 @@ class SectionsTabMixin:
 
         flt = ttk.Frame(tab)
         flt.pack(fill=tk.X, pady=5)
-        ttk.Label(flt, text="Filter by term:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(flt, text=_t('gui.academics.course_management_gui.core.sections_tab.labels.filter_by_term', default="Filter by term:")).pack(side=tk.LEFT, padx=5)
         self._section_term_filter = ttk.Combobox(flt, width=30, state="readonly")
         self._section_term_filter.pack(side=tk.LEFT, padx=5)
         self._section_term_filter.bind("<<ComboboxSelected>>", self._reload_sections)
@@ -529,11 +531,11 @@ class SectionsTabMixin:
             enrolled = int(values.get("enrolled") or 0)
         except (TypeError, ValueError):
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Capacity and Enrolled must be whole numbers.")
+                                 _t('gui.academics.course_management_gui.core.sections_tab.dialogs.capacity_and_enrolled_must_be_whole_numbers', default="Capacity and Enrolled must be whole numbers."))
             return None
         if cap < 0 or enrolled < 0:
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Capacity and Enrolled cannot be negative.")
+                                 _t('gui.academics.course_management_gui.core.sections_tab.dialogs.capacity_and_enrolled_cannot_be_negative', default="Capacity and Enrolled cannot be negative."))
             return None
         return cap, enrolled
 
@@ -545,7 +547,7 @@ class SectionsTabMixin:
         term_labels = list(getattr(self, "_term_label_to_id", {}).keys())
         if not term_labels:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Create an academic term before adding sections.")
+                                   _t('gui.academics.course_management_gui.core.sections_tab.dialogs.create_an_academic_term_before_adding_sections', default="Create an academic term before adding sections."))
             return
 
         def submit(values):
@@ -553,7 +555,7 @@ class SectionsTabMixin:
             term_id = getattr(self, "_term_label_to_id", {}).get(values.get("term"))
             if not code or term_id is None:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Select both a course and a term.")
+                                     _t('gui.academics.course_management_gui.core.sections_tab.dialogs.select_both_a_course_and_a_term', default="Select both a course and a term."))
                 return False
             nums = self._parse_section_numbers(values)
             if nums is None:
@@ -590,7 +592,7 @@ class SectionsTabMixin:
         vals = self._ext_selected_values(self._sections_tree)
         if not vals:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a section first.")
+                                   _t('gui.academics.course_management_gui.core.sections_tab.dialogs.select_a_section_first', default="Select a section first."))
             return None
         return vals
 
@@ -614,7 +616,7 @@ class SectionsTabMixin:
             self._ext_report_error("load section", exc)
             return
         if not row:
-            messagebox.showerror(_("common.error", default="Error"), "Section not found.")
+            messagebox.showerror(_("common.error", default="Error"), _t('gui.academics.course_management_gui.core.sections_tab.dialogs.section_not_found', default="Section not found."))
             return
 
         course_labels, course_map = self._ext_course_choices()
@@ -636,7 +638,7 @@ class SectionsTabMixin:
             term_id = getattr(self, "_term_label_to_id", {}).get(values.get("term"))
             if not new_code or term_id is None:
                 messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                     "Select both a course and a term.")
+                                     _t('gui.academics.course_management_gui.core.sections_tab.dialogs.select_both_a_course_and_a_term', default="Select both a course and a term."))
                 return False
             nums = self._parse_section_numbers(values)
             if nums is None:

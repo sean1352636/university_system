@@ -1,5 +1,7 @@
 """Assignment template management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -12,7 +14,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from collections import deque
 
 class TemplateManager:
@@ -51,7 +53,7 @@ class TemplateManager:
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load modules: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), f"Failed to load modules: {e}")
 
     def show_templates(self):
         """Show assignment templates interface"""
@@ -60,7 +62,7 @@ class TemplateManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Assignment Templates", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.template_manager.labels.assignment_templates', default="Assignment Templates"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create notebook for template management
@@ -69,15 +71,15 @@ class TemplateManager:
 
         # View templates tab
         view_frame = ttk.Frame(notebook)
-        notebook.add(view_frame, text="View Templates")
+        notebook.add(view_frame, text=_t('gui.academics.assignment_system.template_manager.tabs.view_templates', default="View Templates"))
 
         # Create template tab
         create_frame = ttk.Frame(notebook)
-        notebook.add(create_frame, text="Create Template")
+        notebook.add(create_frame, text=_t('gui.academics.assignment_system.template_manager.tabs.create_template', default="Create Template"))
 
         # Use template tab
         use_frame = ttk.Frame(notebook)
-        notebook.add(use_frame, text="Use Template")
+        notebook.add(use_frame, text=_t('gui.academics.assignment_system.template_manager.tabs.use_template', default="Use Template"))
 
         # Templates list in view tab
         templates_tree = ttk.Treeview(view_frame, columns=('ID', 'Name', 'Category', 'Usage Count', 'Created'), show='headings')
@@ -94,11 +96,11 @@ class TemplateManager:
         template_buttons = ttk.Frame(view_frame)
         template_buttons.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(template_buttons, text="Edit Template",
+        ttk.Button(template_buttons, text=_t('gui.academics.assignment_system.template_manager.buttons.edit_template', default="Edit Template"),
                   command=lambda: self.edit_template(templates_tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(template_buttons, text="Delete Template",
+        ttk.Button(template_buttons, text=_t('gui.academics.assignment_system.template_manager.buttons.delete_template', default="Delete Template"),
                   command=lambda: self.delete_template(templates_tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(template_buttons, text="Duplicate Template",
+        ttk.Button(template_buttons, text=_t('gui.academics.assignment_system.template_manager.buttons.duplicate_template', default="Duplicate Template"),
                   command=lambda: self.duplicate_template(templates_tree)).pack(side='left')
 
         # Create template form in create tab
@@ -140,11 +142,11 @@ class TemplateManager:
 
         # Load from filesystem
         try:
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
             import json
             from pathlib import Path
 
-            templates_dir = paths.ASSIGNMENT_TEMPLATES_DIR
+            templates_dir = paths.UNIVERSITY_ASSIGNMENT_TEMPLATES_DIR
 
             if templates_dir.exists():
                 template_files = sorted(templates_dir.glob('*.json'))
@@ -184,66 +186,66 @@ class TemplateManager:
 
         # Show message if no templates found
         if len(tree.get_children()) == 0:
-            messagebox.showinfo("No Templates",
+            messagebox.showinfo(_t('gui.academics.assignment_system.template_manager.dialogs.no_templates', default="No Templates"),
                 "No templates found.\n\n"
                 f"You can create templates in the 'Create Template' tab or\n"
-                f"place .json template files in:\n{paths.ASSIGNMENT_TEMPLATES_DIR}"
+                f"place .json template files in:\n{paths.UNIVERSITY_ASSIGNMENT_TEMPLATES_DIR}"
             )
 
 
     def create_template_form(self, parent):
         """Create template form"""
-        form_frame = ttk.LabelFrame(parent, text="Create New Template", padding=20)
+        form_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.template_manager.labels.create_new_template', default="Create New Template"), padding=20)
         form_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Template name
-        ttk.Label(form_frame, text="Template Name:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.template_manager.labels.template_name', default="Template Name:")).grid(row=0, column=0, sticky='w', pady=5)
         self.template_name_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.template_name_var, width=50).grid(row=0, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         # Category
-        ttk.Label(form_frame, text="Category:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.template_manager.labels.category', default="Category:")).grid(row=1, column=0, sticky='w', pady=5)
         self.template_category_var = tk.StringVar()
         category_combo = ttk.Combobox(form_frame, textvariable=self.template_category_var,
                                      values=["Programming", "Essay", "Lab Report", "Research", "Presentation", "Other"])
         category_combo.grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Description
-        ttk.Label(form_frame, text="Description:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.template_manager.labels.description', default="Description:")).grid(row=2, column=0, sticky='nw', pady=5)
         self.template_desc_text = scrolledtext.ScrolledText(form_frame, height=4, width=50)
         self.template_desc_text.grid(row=2, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         # Template fields
-        ttk.Label(form_frame, text="Template Fields:", font=('Arial', 12, 'bold')).grid(row=3, column=0, columnspan=2, sticky='w', pady=(20, 10))
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.template_manager.labels.template_fields', default="Template Fields:"), font=('Arial', 12, 'bold')).grid(row=3, column=0, columnspan=2, sticky='w', pady=(20, 10))
 
         # Title template
-        ttk.Label(form_frame, text="Title Template:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.template_manager.labels.title_template', default="Title Template:")).grid(row=4, column=0, sticky='w', pady=5)
         self.template_title_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.template_title_var, width=50).grid(row=4, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         # Instructions template
-        ttk.Label(form_frame, text="Instructions Template:").grid(row=5, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.template_manager.labels.instructions_template', default="Instructions Template:")).grid(row=5, column=0, sticky='nw', pady=5)
         self.template_instructions_text = scrolledtext.ScrolledText(form_frame, height=6, width=50)
         self.template_instructions_text.grid(row=5, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         # Default settings
-        defaults_frame = ttk.LabelFrame(form_frame, text="Default Settings", padding=10)
+        defaults_frame = ttk.LabelFrame(form_frame, text=_t('gui.academics.assignment_system.template_manager.labels.default_settings', default="Default Settings"), padding=10)
         defaults_frame.grid(row=6, column=0, columnspan=2, sticky='ew', pady=(20, 0))
 
-        ttk.Label(defaults_frame, text="Max Marks:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(defaults_frame, text=_t('gui.academics.assignment_system.template_manager.labels.max_marks', default="Max Marks:")).grid(row=0, column=0, sticky='w', pady=5)
         self.template_marks_var = tk.StringVar(value="100")
         ttk.Entry(defaults_frame, textvariable=self.template_marks_var, width=10).grid(row=0, column=1, sticky='w', pady=5, padx=5)
 
-        ttk.Label(defaults_frame, text="File Types:").grid(row=0, column=2, sticky='w', pady=5, padx=(20, 0))
-        self.template_filetypes_var = tk.StringVar(value=".pdf,.docx,.txt")
+        ttk.Label(defaults_frame, text=_t('gui.academics.assignment_system.template_manager.labels.file_types', default="File Types:")).grid(row=0, column=2, sticky='w', pady=5, padx=(20, 0))
+        self.template_filetypes_var = tk.StringVar(value=_t('gui.academics.assignment_system.template_manager.values.pdf_docx_txt', default=".pdf,.docx,.txt"))
         ttk.Entry(defaults_frame, textvariable=self.template_filetypes_var, width=20).grid(row=0, column=3, sticky='w', pady=5, padx=5)
 
-        ttk.Label(defaults_frame, text="Max File Size (MB):").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(defaults_frame, text=_t('gui.academics.assignment_system.template_manager.labels.max_file_size_mb', default="Max File Size (MB):")).grid(row=1, column=0, sticky='w', pady=5)
         self.template_filesize_var = tk.StringVar(value="10")
         ttk.Entry(defaults_frame, textvariable=self.template_filesize_var, width=10).grid(row=1, column=1, sticky='w', pady=5, padx=5)
 
         # Save button
-        ttk.Button(form_frame, text="Save Template",
+        ttk.Button(form_frame, text=_t('gui.academics.assignment_system.template_manager.buttons.save_template', default="Save Template"),
                   command=self.save_template).grid(row=7, column=1, sticky='e', pady=(20, 0))
 
         form_frame.grid_columnconfigure(1, weight=1)
@@ -254,7 +256,7 @@ class TemplateManager:
         try:
             name = self.template_name_var.get().strip()
             if not name:
-                messagebox.showerror("Error", "Template name is required")
+                messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.template_manager.dialogs.template_name_is_required', default="Template name is required"))
                 return
 
             category = self.template_category_var.get().strip()
@@ -282,11 +284,11 @@ class TemplateManager:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Template '{name}' created successfully!")
+            messagebox.showinfo(_t('gui.academics.assignment_system.template_manager.dialogs.success', default="Success"), f"Template '{name}' created successfully!")
             self.clear_template_form()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save template: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), f"Failed to save template: {e}")
 
 
     def clear_template_form(self):
@@ -303,11 +305,11 @@ class TemplateManager:
 
     def use_template_form(self, parent):
         """Create use template form"""
-        form_frame = ttk.LabelFrame(parent, text="Create Assignment from Template", padding=20)
+        form_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.template_manager.labels.create_assignment_from_template', default="Create Assignment from Template"), padding=20)
         form_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Template selection
-        ttk.Label(form_frame, text="Select Template:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.template_manager.labels.select_template', default="Select Template:")).pack(anchor='w', pady=(0, 5))
         self.use_template_var = tk.StringVar()
         template_combo = ttk.Combobox(form_frame, textvariable=self.use_template_var, width=60)
         template_combo.pack(fill='x', pady=(0, 20))
@@ -316,7 +318,7 @@ class TemplateManager:
         self.load_template_options(template_combo)
 
         # Module selection
-        ttk.Label(form_frame, text="Select Module:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.template_manager.labels.select_module', default="Select Module:")).pack(anchor='w', pady=(0, 5))
         self.use_module_var = tk.StringVar()
         module_combo = ttk.Combobox(form_frame, textvariable=self.use_module_var, width=60)
         module_combo.pack(fill='x', pady=(0, 20))
@@ -326,18 +328,18 @@ class TemplateManager:
         due_frame = ttk.Frame(form_frame)
         due_frame.pack(fill='x', pady=(0, 20))
 
-        ttk.Label(due_frame, text="Due Date (YYYY-MM-DD):").pack(side='left')
+        ttk.Label(due_frame, text=_t('gui.academics.assignment_system.template_manager.labels.due_date_yyyy_mm_dd', default="Due Date (YYYY-MM-DD):")).pack(side='left')
         self.use_due_date_var = tk.StringVar()
         ttk.Entry(due_frame, textvariable=self.use_due_date_var, width=15).pack(side='left', padx=(10, 0))
 
-        ttk.Label(due_frame, text="Time:").pack(side='left', padx=(20, 5))
+        ttk.Label(due_frame, text=_t('gui.academics.assignment_system.template_manager.labels.time', default="Time:")).pack(side='left', padx=(20, 5))
         self.use_due_time_var = tk.StringVar(value="23:59")
         time_combo = ttk.Combobox(due_frame, textvariable=self.use_due_time_var, width=8,
                                  values=["08:00", "12:00", "17:00", "23:59"])
         time_combo.pack(side='left')
 
         # Create button
-        ttk.Button(form_frame, text="Create Assignment from Template",
+        ttk.Button(form_frame, text=_t('gui.academics.assignment_system.template_manager.buttons.create_assignment_from_template', default="Create Assignment from Template"),
                   command=self.create_from_template).pack(pady=20)
 
 
@@ -371,10 +373,10 @@ class TemplateManager:
 
             # Load from filesystem
             try:
-                from education_system.systems.university.infrastructure import paths
+                from education_system import paths
                 import json
 
-                templates_dir = paths.ASSIGNMENT_TEMPLATES_DIR
+                templates_dir = paths.UNIVERSITY_ASSIGNMENT_TEMPLATES_DIR
 
                 if templates_dir.exists():
                     template_files = sorted(templates_dir.glob('*.json'))
@@ -400,7 +402,7 @@ class TemplateManager:
             combo['values'] = template_list
 
             if not template_list:
-                messagebox.showinfo("No Templates", "No templates available.\nPlease create a template first.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.template_manager.dialogs.no_templates', default="No Templates"), _t('gui.academics.assignment_system.template_manager.dialogs.no_templates_available_please_create_a_template_first', default="No templates available.\nPlease create a template first."))
 
         except Exception as e:
             print(f"Error loading templates: {e}")
@@ -409,11 +411,11 @@ class TemplateManager:
     def create_from_template(self):
         """Create assignment from selected template"""
         if not self.use_template_var.get() or not self.use_module_var.get():
-            messagebox.showerror("Error", "Please select both template and module")
+            messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.template_manager.dialogs.please_select_both_template_and_module', default="Please select both template and module"))
             return
 
         if not self.use_due_date_var.get():
-            messagebox.showerror("Error", "Please enter due date")
+            messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.template_manager.dialogs.please_enter_due_date', default="Please enter due date"))
             return
 
         try:
@@ -516,19 +518,19 @@ class TemplateManager:
             except Exception as email_error:
                 print(f"Warning: Failed to send template assignment emails: {email_error}")
 
-            messagebox.showinfo("Success", f"Assignment created from template '{template_name}'!\nStudents have been notified by email.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.template_manager.dialogs.success', default="Success"), f"Assignment created from template '{template_name}'!\nStudents have been notified by email.")
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid date format")
+            messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.template_manager.dialogs.invalid_date_format', default="Invalid date format"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create assignment: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), f"Failed to create assignment: {e}")
 
 
     def edit_template(self, tree):
         """Edit selected template"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a template to edit")
+            messagebox.showwarning(_t('gui.academics.assignment_system.template_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.template_manager.dialogs.please_select_a_template_to_edit', default="Please select a template to edit"))
             return
 
         item = tree.item(selection[0])
@@ -536,24 +538,24 @@ class TemplateManager:
 
         # Create edit window
         edit_window = tk.Toplevel(self.root)
-        edit_window.title("Edit Template")
+        edit_window.title(_t('gui.academics.assignment_system.template_manager.windows.edit_template', default="Edit Template"))
         edit_window.geometry("600x500")
 
-        messagebox.showinfo("Edit Template", f"Template editing interface for ID: {template_id}")
+        messagebox.showinfo(_t('gui.academics.assignment_system.template_manager.dialogs.edit_template', default="Edit Template"), f"Template editing interface for ID: {template_id}")
 
 
     def delete_template(self, tree):
         """Delete selected template"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a template to delete")
+            messagebox.showwarning(_t('gui.academics.assignment_system.template_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.template_manager.dialogs.please_select_a_template_to_delete', default="Please select a template to delete"))
             return
 
         item = tree.item(selection[0])
         template_id = item['values'][0]
         template_name = item['values'][1]
 
-        if messagebox.askyesno("Confirm Delete", f"Delete template '{template_name}'?"):
+        if messagebox.askyesno(_t('gui.academics.assignment_system.template_manager.dialogs.confirm_delete', default="Confirm Delete"), f"Delete template '{template_name}'?"):
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
@@ -562,18 +564,18 @@ class TemplateManager:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo("Success", "Template deleted successfully")
+                messagebox.showinfo(_t('gui.academics.assignment_system.template_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.template_manager.dialogs.template_deleted_successfully', default="Template deleted successfully"))
                 self.load_templates_data(tree)
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete template: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), f"Failed to delete template: {e}")
 
 
     def duplicate_template(self, tree):
         """Duplicate selected template"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a template to duplicate")
+            messagebox.showwarning(_t('gui.academics.assignment_system.template_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.template_manager.dialogs.please_select_a_template_to_duplicate', default="Please select a template to duplicate"))
             return
 
         item = tree.item(selection[0])
@@ -599,11 +601,11 @@ class TemplateManager:
             conn.commit()
             conn.close()
 
-            messagebox.showinfo("Success", f"Template duplicated as '{new_name}'")
+            messagebox.showinfo(_t('gui.academics.assignment_system.template_manager.dialogs.success', default="Success"), f"Template duplicated as '{new_name}'")
             self.load_templates_data(tree)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to duplicate template: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), f"Failed to duplicate template: {e}")
 
     # EXTENSION REQUEST REVIEW (missing detailed GUI)
 
@@ -629,7 +631,7 @@ class TemplateManager:
 
             if not template:
                 conn.close()
-                messagebox.showerror("Error", "Template not found")
+                messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.template_manager.dialogs.template_not_found', default="Template not found"))
                 return False
 
             # Extract template data (assuming columns match structure)
@@ -682,11 +684,11 @@ class TemplateManager:
             except Exception as email_error:
                 print(f"Warning: Failed to send template assignment emails: {email_error}")
 
-            messagebox.showinfo("Success", f"Assignment '{assignment_title}' created successfully from template!\nStudents have been notified by email.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.template_manager.dialogs.success', default="Success"), f"Assignment '{assignment_title}' created successfully from template!\nStudents have been notified by email.")
             return True
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create assignment from template: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), f"Failed to create assignment from template: {e}")
             return False
 
     def _launch_gui_feature(self, callback, feature_name):
@@ -694,7 +696,7 @@ class TemplateManager:
         try:
             callback()
         except Exception as e:
-            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.template_manager.dialogs.error', default="Error"), f"Error launching {feature_name}: {str(e)}")
 
     def _send_template_assignment_emails(self, assignment_id, assignment_title,
                                          module_code, module_name, due_date,

@@ -1,7 +1,9 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3, get_connection
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 import time
 import os
 import re
@@ -79,7 +81,7 @@ def add_selected_to_cart(self):
     """Add selected product to cart"""
     selection = self.products_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select a product first")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.please_select_a_product_first', default="Please select a product first"))
         return
 
     item = self.products_tree.item(selection[0])
@@ -91,14 +93,14 @@ def add_selected_to_cart(self):
     product_id = values[0]
 
     # Ask for quantity
-    quantity = simpledialog.askinteger("Quantity", "Enter quantity to add to cart:",
+    quantity = simpledialog.askinteger(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.quantity', default="Quantity"), _t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.enter_quantity_to_add_to_cart', default="Enter quantity to add to cart:"),
                                      initialvalue=1, minvalue=1, maxvalue=100)
 
     if quantity:
         try:
             self.add_to_cart(product_id, quantity)
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add to cart: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.error', default="Error"), f"Failed to add to cart: {e}")
 
 
 def add_to_cart(self, product_id, quantity):
@@ -133,7 +135,7 @@ def add_to_cart(self, product_id, quantity):
 
         # Update status
         self.update_status(f"Added {quantity} x {product_details['name']} to cart")
-        messagebox.showinfo("Success", f"Added {quantity} x {product_details['name']} to cart")
+        messagebox.showinfo(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.success', default="Success"), f"Added {quantity} x {product_details['name']} to cart")
 
     except Exception as e:
         print(f"Error in add_to_cart: {e}")
@@ -150,7 +152,7 @@ def show_shopping_cart(self):
     title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
     title_frame.columnconfigure(1, weight=1)
 
-    ttk.Label(title_frame, text="Shopping Cart", style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(title_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.labels.shopping_cart', default="Shopping Cart"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
 
     # Cart summary
     summary_label = ttk.Label(title_frame, text=f"Items in cart: {len(self.cart_items)}")
@@ -161,13 +163,13 @@ def show_shopping_cart(self):
         empty_frame = ttk.Frame(self.content_frame)
         empty_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        ttk.Label(empty_frame, text="Your cart is empty", style='Heading.TLabel').grid(row=0, column=0, pady=20)
-        ttk.Label(empty_frame, text="Browse products to add items to your cart").grid(row=1, column=0, pady=10)
-        ttk.Button(empty_frame, text="Browse Products", command=self.show_browse_products,
+        ttk.Label(empty_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.labels.your_cart_is_empty', default="Your cart is empty"), style='Heading.TLabel').grid(row=0, column=0, pady=20)
+        ttk.Label(empty_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.labels.browse_products_to_add_items_to_your_cart', default="Browse products to add items to your cart")).grid(row=1, column=0, pady=10)
+        ttk.Button(empty_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.buttons.browse_products', default="Browse Products"), command=self.show_browse_products,
                   style='Primary.TButton').grid(row=2, column=0, pady=10)
     else:
         # Cart items
-        cart_frame = ttk.LabelFrame(self.content_frame, text="Cart Items", padding="10")
+        cart_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.labels.cart_items', default="Cart Items"), padding="10")
         cart_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
         cart_frame.columnconfigure(0, weight=1)
         cart_frame.rowconfigure(0, weight=1)
@@ -209,14 +211,14 @@ def show_shopping_cart(self):
         action_frame = ttk.Frame(self.content_frame)
         action_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
 
-        ttk.Button(action_frame, text="Update Quantity", command=self.update_cart_quantity).grid(row=0, column=0, padx=5)
-        ttk.Button(action_frame, text="Remove Item", command=self.remove_cart_item,
+        ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.buttons.update_quantity', default="Update Quantity"), command=self.update_cart_quantity).grid(row=0, column=0, padx=5)
+        ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.buttons.remove_item', default="Remove Item"), command=self.remove_cart_item,
                   style='Warning.TButton').grid(row=0, column=1, padx=5)
-        ttk.Button(action_frame, text="Clear Cart", command=self.clear_cart,
+        ttk.Button(action_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.buttons.clear_cart', default="Clear Cart"), command=self.clear_cart,
                   style='Danger.TButton').grid(row=0, column=2, padx=5)
 
         # Total and checkout
-        total_frame = ttk.LabelFrame(self.content_frame, text="Order Summary", padding="10")
+        total_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.labels.order_summary', default="Order Summary"), padding="10")
         total_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=10)
 
         ttk.Label(total_frame, text=f"Total: £{total:.2f}", font=('Arial', 14, 'bold')).grid(row=0, column=0, sticky=tk.W)
@@ -224,8 +226,8 @@ def show_shopping_cart(self):
         checkout_frame = ttk.Frame(total_frame)
         checkout_frame.grid(row=0, column=1, sticky=tk.E)
 
-        ttk.Button(checkout_frame, text="Continue Shopping", command=self.show_browse_products).grid(row=0, column=0, padx=5)
-        ttk.Button(checkout_frame, text="Checkout", command=self.show_checkout,
+        ttk.Button(checkout_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.buttons.continue_shopping', default="Continue Shopping"), command=self.show_browse_products).grid(row=0, column=0, padx=5)
+        ttk.Button(checkout_frame, text=_t('gui.operations.commerce.shop_management_gui.cart_manager.buttons.checkout', default="Checkout"), command=self.show_checkout,
                   style='Success.TButton').grid(row=0, column=1, padx=5)
 
     self.update_status("Cart loaded")
@@ -238,7 +240,7 @@ def update_cart_quantity(self):
 
     selection = self.cart_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select an item to update")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.please_select_an_item_to_update', default="Please select an item to update"))
         return
 
     item = self.cart_tree.item(selection[0])
@@ -256,7 +258,7 @@ def update_cart_quantity(self):
         return
 
     # Ask for new quantity
-    new_quantity = simpledialog.askinteger("Update Quantity",
+    new_quantity = simpledialog.askinteger(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.update_quantity', default="Update Quantity"),
                                          f"Enter new quantity for {cart_item['name']}:",
                                          initialvalue=cart_item['quantity'],
                                          minvalue=1, maxvalue=100)
@@ -266,7 +268,7 @@ def update_cart_quantity(self):
             # Check stock
             product_details = self.get_product_details(product_id)
             if new_quantity > product_details['quantity']:
-                messagebox.showerror("Error", f"Insufficient stock. Only {product_details['quantity']} available.")
+                messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.error', default="Error"), f"Insufficient stock. Only {product_details['quantity']} available.")
                 return
 
             cart_item['quantity'] = new_quantity
@@ -276,7 +278,7 @@ def update_cart_quantity(self):
             self.update_status(f"Updated quantity for {cart_item['name']}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update quantity: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.error', default="Error"), f"Failed to update quantity: {e}")
 
 
 def remove_cart_item(self):
@@ -286,7 +288,7 @@ def remove_cart_item(self):
 
     selection = self.cart_tree.selection()
     if not selection:
-        messagebox.showwarning("Warning", "Please select an item to remove")
+        messagebox.showwarning(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.warning', default="Warning"), _t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.please_select_an_item_to_remove', default="Please select an item to remove"))
         return
 
     item = self.cart_tree.item(selection[0])
@@ -296,7 +298,7 @@ def remove_cart_item(self):
     # Find and remove item from cart
     for i, cart_item in enumerate(self.cart_items):
         if cart_item['product_id'] == product_id:
-            if messagebox.askyesno("Confirm", f"Remove {cart_item['name']} from cart?"):
+            if messagebox.askyesno(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.confirm', default="Confirm"), f"Remove {cart_item['name']} from cart?"):
                 del self.cart_items[i]
                 self.show_shopping_cart()  # Refresh display
                 self.update_status(f"Removed {cart_item['name']} from cart")
@@ -305,7 +307,7 @@ def remove_cart_item(self):
 
 def clear_cart(self):
     """Clear all items from cart"""
-    if self.cart_items and messagebox.askyesno("Confirm", "Clear all items from cart?"):
+    if self.cart_items and messagebox.askyesno(_t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.confirm', default="Confirm"), _t('gui.operations.commerce.shop_management_gui.cart_manager.dialogs.clear_all_items_from_cart', default="Clear all items from cart?")):
         self.cart_items.clear()
         self.show_shopping_cart()  # Refresh display
         self.update_status("Cart cleared")

@@ -8,6 +8,8 @@ times for a section (the data the grid renders).
 Meeting times live in ``section_meetings`` and link to ``course_sections``.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     ExtFormDialog, tk, ttk, messagebox, _, logger,
 )
@@ -48,12 +50,12 @@ class TimetableTabMixin:
 
             bar = ttk.Frame(frame)
             bar.pack(fill=tk.X, padx=5, pady=5)
-            ttk.Label(bar, text="Term:").pack(side=tk.LEFT, padx=5)
+            ttk.Label(bar, text=_t('gui.academics.course_management_gui.core.timetable_tab.labels.term', default="Term:")).pack(side=tk.LEFT, padx=5)
             self._tt_term_combo = ttk.Combobox(bar, width=30, state="readonly")
             self._tt_term_combo.pack(side=tk.LEFT, padx=5)
             self._tt_term_combo.bind("<<ComboboxSelected>>", self._draw_timetable)
             if self._ext_can_edit():
-                ttk.Button(bar, text="Manage Meeting Times…",
+                ttk.Button(bar, text=_t('gui.academics.course_management_gui.core.timetable_tab.buttons.manage_meeting_times', default="Manage Meeting Times…"),
                            command=self._manage_meetings).pack(side=tk.LEFT, padx=10)
             ttk.Button(bar, text=_("common.refresh", default="Refresh"),
                        command=self._reload_timetable).pack(side=tk.LEFT, padx=5)
@@ -213,13 +215,13 @@ class TimetableTabMixin:
         term_id = self._current_tt_term_id()
         if term_id is None:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a term first.")
+                                   _t('gui.academics.course_management_gui.core.timetable_tab.dialogs.select_a_term_first', default="Select a term first."))
             return
         sections = self._term_sections(term_id)
         if not sections:
             messagebox.showinfo(_("common.info", default="Info"),
-                                "This term has no course sections yet. Add sections "
-                                "in the Terms & Sections tab first.")
+                                _t('gui.academics.course_management_gui.core.timetable_tab.dialogs.this_term_has_no_course_sections_yet_add_sections_in_the_terms_s', default="This term has no course sections yet. Add sections "
+                                "in the Terms & Sections tab first."))
             return
 
         dlg = tk.Toplevel(self.root)
@@ -230,7 +232,7 @@ class TimetableTabMixin:
 
         top = ttk.Frame(dlg, padding=8)
         top.pack(fill=tk.X)
-        ttk.Label(top, text="Section:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(top, text=_t('gui.academics.course_management_gui.core.timetable_tab.labels.section', default="Section:")).pack(side=tk.LEFT, padx=5)
         sec_map = {label: sid for sid, label in sections}
         sec_combo = ttk.Combobox(top, width=30, state="readonly",
                                  values=list(sec_map.keys()))
@@ -297,11 +299,11 @@ class TimetableTabMixin:
                 end_m = _to_minutes(values.get("end_time"))
                 if start_m is None or end_m is None:
                     messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                         "Times must be in HH:MM format.")
+                                         _t('gui.academics.course_management_gui.core.timetable_tab.dialogs.times_must_be_in_hh_mm_format', default="Times must be in HH:MM format."))
                     return False
                 if end_m <= start_m:
                     messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                         "End time must be after start time.")
+                                         _t('gui.academics.course_management_gui.core.timetable_tab.dialogs.end_time_must_be_after_start_time', default="End time must be after start time."))
                     return False
                 # Resolve the chosen room; default the free-text location to the
                 # room number when a room is picked but no location was typed.
@@ -358,7 +360,7 @@ class TimetableTabMixin:
             vals = self._ext_selected_values(tree)
             if not vals:
                 messagebox.showwarning(_("common.warning", default="Warning"),
-                                       "Select a meeting time to remove.")
+                                       _t('gui.academics.course_management_gui.core.timetable_tab.dialogs.select_a_meeting_time_to_remove', default="Select a meeting time to remove."))
                 return
             try:
                 with self._ext_db(write=True) as conn:
@@ -372,7 +374,7 @@ class TimetableTabMixin:
 
         btns = ttk.Frame(dlg, padding=8)
         btns.pack(fill=tk.X)
-        ttk.Button(btns, text="Add Meeting", command=add_meeting).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btns, text=_t('gui.academics.course_management_gui.core.timetable_tab.buttons.add_meeting', default="Add Meeting"), command=add_meeting).pack(side=tk.LEFT, padx=5)
         ttk.Button(btns, text=_("common.delete", default="Remove"),
                    command=delete_meeting).pack(side=tk.LEFT, padx=5)
         ttk.Button(btns, text=_("common.close", default="Close"),

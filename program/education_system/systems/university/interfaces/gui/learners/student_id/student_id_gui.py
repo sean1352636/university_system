@@ -13,7 +13,7 @@ class StudentIDGUI:
 
     def __init__(self, parent=None):
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title("Digital Student ID")
+        self.window.title(_t('gui.learners.student_id.student_id.windows.digital_student_id', default="Digital Student ID"))
         self.window.geometry("500x700")
         self.window.resizable(False, False)
 
@@ -132,9 +132,9 @@ class StudentIDGUI:
         header.pack(fill=tk.X)
         header.pack_propagate(False)
 
-        tk.Label(header, text="UNIVERSITY", font=("Helvetica", 18, "bold"),
+        tk.Label(header, text=_t('gui.learners.student_id.student_id.labels.university', default="UNIVERSITY"), font=("Helvetica", 18, "bold"),
                  fg="white", bg="#1a237e").pack(pady=(15, 0))
-        tk.Label(header, text="STUDENT IDENTIFICATION CARD", font=("Helvetica", 9),
+        tk.Label(header, text=_t('gui.learners.student_id.student_id.labels.student_identification_card', default="STUDENT IDENTIFICATION CARD"), font=("Helvetica", 9),
                  fg="#90caf9", bg="#1a237e").pack()
 
         # Photo placeholder
@@ -170,7 +170,7 @@ class StudentIDGUI:
         # QR Code placeholder
         qr_frame = tk.Frame(inner, bg="white")
         qr_frame.pack(pady=15)
-        tk.Label(qr_frame, text="QR Code", font=("Helvetica", 8), bg="white", fg="#9e9e9e").pack()
+        tk.Label(qr_frame, text=_t('gui.learners.student_id.student_id.labels.qr_code', default="QR Code"), font=("Helvetica", 8), bg="white", fg="#9e9e9e").pack()
 
         self.qr_canvas = tk.Canvas(qr_frame, width=120, height=120, bg="white",
                                     highlightthickness=1, highlightbackground="#e0e0e0")
@@ -180,14 +180,14 @@ class StudentIDGUI:
         # Footer
         footer = tk.Frame(inner, bg="#e8eaf6")
         footer.pack(fill=tk.X, side=tk.BOTTOM)
-        tk.Label(footer, text="Present this card for campus access and services",
+        tk.Label(footer, text=_t('gui.learners.student_id.student_id.labels.present_this_card_for_campus_access_and_services', default="Present this card for campus access and services"),
                  font=("Helvetica", 8), bg="#e8eaf6", fg="#5c6bc0").pack(pady=5)
 
         # Buttons below card
         btn_frame = ttk.Frame(self.window)
         btn_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
-        ttk.Button(btn_frame, text="Refresh", command=self._load_student_info).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Report Lost Card", command=self._report_lost).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.learners.student_id.student_id.buttons.refresh', default="Refresh"), command=self._load_student_info).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text=_t('gui.learners.student_id.student_id.buttons.report_lost_card', default="Report Lost Card"), command=self._report_lost).pack(side=tk.LEFT, padx=5)
 
     def _draw_qr_placeholder(self):
         """Draw a simple QR-like pattern as placeholder."""
@@ -213,8 +213,8 @@ class StudentIDGUI:
                 label.configure(fg=color, font=("Helvetica", 9, "bold"))
 
     def _report_lost(self):
-        if messagebox.askyesno("Report Lost Card",
-                "Report your student ID card as lost?\nA new card number will be generated."):
+        if messagebox.askyesno(_t('gui.learners.student_id.student_id.dialogs.report_lost_card', default="Report Lost Card"),
+                _t('gui.learners.student_id.student_id.dialogs.report_your_student_id_card_as_lost_a_new_card_number_will_be_ge', default="Report your student ID card as lost?\nA new card number will be generated.")):
             try:
                 from education_system.systems.university.infrastructure.database.db import get_connection
                 sid = self._get_student_info()['student_id']
@@ -229,10 +229,10 @@ class StudentIDGUI:
                         (sid, new_num, qr_data)
                     )
                     conn.commit()
-                messagebox.showinfo("Success", f"New card issued: {new_num}")
+                messagebox.showinfo(_t('gui.learners.student_id.student_id.dialogs.success', default="Success"), f"New card issued: {new_num}")
                 self._load_student_info()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed: {e}")
+                messagebox.showerror(_t('gui.learners.student_id.student_id.dialogs.error', default="Error"), f"Failed: {e}")
 
 
 def launch_student_id_gui(parent=None):

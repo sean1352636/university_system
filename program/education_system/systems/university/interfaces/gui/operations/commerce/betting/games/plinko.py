@@ -9,6 +9,8 @@ slot with a payout multiplier. The middle slots are common and pay little; the
 edges are rare and pay big.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import random
 import tkinter as tk
 try:
@@ -42,7 +44,7 @@ def slot_color(m):
 class Plinko:
     def __init__(self, root):
         self.root = root
-        root.title("Plinko")
+        root.title(_t('gui.operations.commerce.betting.games.plinko.windows.plinko', default="Plinko"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -58,12 +60,12 @@ class Plinko:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=12)
         f.pack()
-        tk.Label(f, text="P L I N K O", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.plinko.labels.p_l_i_n_k_o', default="P L I N K O"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 22, "bold")).pack()
         self.canvas = tk.Canvas(f, width=self.width, height=self.height,
                                 bg="#060a18", highlightthickness=0)
         self.canvas.pack(pady=8)
-        self.msg = tk.Label(f, text="Set a stake and drop!", bg=FELT, fg="white",
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.plinko.labels.set_a_stake_and_drop', default="Set a stake and drop!"), bg=FELT, fg="white",
                             font=("Helvetica", 12, "bold"))
         self.msg.pack()
 
@@ -75,7 +77,7 @@ class Plinko:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Stake:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.plinko.labels.stake', default="Stake:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -88,7 +90,7 @@ class Plinko:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.drop_btn = tk.Button(f, text="DROP", command=self.drop, width=16,
+        self.drop_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.plinko.buttons.drop', default="DROP"), command=self.drop, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -153,12 +155,12 @@ class Plinko:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.plinko.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.busy = True
         self.drop_btn.config(state="disabled")
-        self.msg.config(text="Dropping...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.plinko.text.dropping', default="Dropping..."), fg="white")
         self.refresh()
 
         # decide the path: ROWS left/right moves; slot = number of rights
@@ -193,7 +195,7 @@ class Plinko:
                              f"({'+' if net >= 0 else ''}{net}).",
                         fg=GOLD if net >= 0 else "white")
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.plinko.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

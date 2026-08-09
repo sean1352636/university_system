@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH, get_connection, transaction  # injected
 from education_system.systems.university.infrastructure.exceptions import (
     CourseNotFoundError,
@@ -73,7 +75,7 @@ def _export_text_to_pdf(self, content):
         filename = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf")],
-            title="Save PDF"
+            title=_t('gui.academics.module_scheduling.exports.dialogs.save_pdf', default="Save PDF")
         )
 
         if filename:
@@ -85,12 +87,12 @@ def _export_text_to_pdf(self, content):
                 story.append(Paragraph(line or ' ', styles['Normal']))
 
             doc.build(story)
-            messagebox.showinfo("Success", f"PDF exported to {filename}", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.success', default="Success"), f"PDF exported to {filename}", parent=self.root)
 
     except ImportError:
-        messagebox.showerror("Error", "ReportLab library not available for PDF export.", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.exports.dialogs.reportlab_library_not_available_for_pdf_export', default="ReportLab library not available for PDF export."), parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export PDF: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), f"Failed to export PDF: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_text_to_pdf = _export_text_to_pdf
 
@@ -102,7 +104,7 @@ def _export_text_to_csv(self, content):
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")],
-            title="Save CSV"
+            title=_t('gui.academics.module_scheduling.exports.dialogs.save_csv', default="Save CSV")
         )
 
         if filename:
@@ -112,10 +114,10 @@ def _export_text_to_csv(self, content):
                     if line.strip():
                         writer.writerow([line])
 
-            messagebox.showinfo("Success", f"CSV exported to {filename}", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.success', default="Success"), f"CSV exported to {filename}", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export CSV: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), f"Failed to export CSV: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_text_to_csv = _export_text_to_csv
 
@@ -127,7 +129,7 @@ def _export_text_to_excel(self, content):
         filename = filedialog.asksaveasfilename(
             defaultextension=".xlsx",
             filetypes=[("Excel files", "*.xlsx")],
-            title="Save Excel"
+            title=_t('gui.academics.module_scheduling.exports.dialogs.save_excel', default="Save Excel")
         )
 
         if filename:
@@ -135,12 +137,12 @@ def _export_text_to_excel(self, content):
             df = pd.DataFrame(lines, columns=['Content'])
             df.to_excel(filename, index=False)
 
-            messagebox.showinfo("Success", f"Excel file exported to {filename}", parent=self.root)
+            messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.success', default="Success"), f"Excel file exported to {filename}", parent=self.root)
 
     except ImportError:
-        messagebox.showerror("Error", "Pandas library not available for Excel export.", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.exports.dialogs.pandas_library_not_available_for_excel_export', default="Pandas library not available for Excel export."), parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export Excel: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), f"Failed to export Excel: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_text_to_excel = _export_text_to_excel
 
@@ -153,7 +155,7 @@ def _export_timetable_to_ical(self, timetable_data):
         filename = filedialog.asksaveasfilename(
             defaultextension=".ics",
             filetypes=[("iCalendar files", "*.ics"), ("All files", "*.*")],
-            title="Save iCalendar File"
+            title=_t('gui.academics.module_scheduling.exports.dialogs.save_icalendar_file', default="Save iCalendar File")
         )
 
         if not filename:
@@ -262,10 +264,10 @@ def _export_timetable_to_ical(self, timetable_data):
         with open(filename, 'w', encoding='utf-8') as f:
             f.write('\r\n'.join(ical_lines))
 
-        messagebox.showinfo("Success", f"iCalendar file exported to {filename}\n\nYou can import this into Google Calendar, Outlook, Apple Calendar, or any calendar application.", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.success', default="Success"), f"iCalendar file exported to {filename}\n\nYou can import this into Google Calendar, Outlook, Apple Calendar, or any calendar application.", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export iCalendar: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), f"Failed to export iCalendar: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_timetable_to_ical = _export_timetable_to_ical
 
@@ -280,7 +282,7 @@ def _export_timetable_to_pdf(self, timetable_data):
         filename = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf")],
-            title="Save PDF"
+            title=_t('gui.academics.module_scheduling.exports.dialogs.save_pdf', default="Save PDF")
         )
 
         if not filename:
@@ -323,12 +325,12 @@ def _export_timetable_to_pdf(self, timetable_data):
         elements.append(table)
         doc.build(elements)
 
-        messagebox.showinfo("Success", f"PDF exported to {filename}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.success', default="Success"), f"PDF exported to {filename}", parent=self.root)
 
     except ImportError:
-        messagebox.showerror("Error", "ReportLab library not available for PDF export.", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.exports.dialogs.reportlab_library_not_available_for_pdf_export', default="ReportLab library not available for PDF export."), parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export PDF: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), f"Failed to export PDF: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_timetable_to_pdf = _export_timetable_to_pdf
 
@@ -340,7 +342,7 @@ def _export_timetable_to_csv(self, timetable_data):
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")],
-            title="Save CSV"
+            title=_t('gui.academics.module_scheduling.exports.dialogs.save_csv', default="Save CSV")
         )
 
         if not filename:
@@ -360,10 +362,10 @@ def _export_timetable_to_csv(self, timetable_data):
 
                 writer.writerow([day, start_time, end_time, module, session_type, room])
 
-        messagebox.showinfo("Success", f"CSV exported to {filename}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.success', default="Success"), f"CSV exported to {filename}", parent=self.root)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export CSV: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), f"Failed to export CSV: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_timetable_to_csv = _export_timetable_to_csv
 
@@ -375,7 +377,7 @@ def _export_timetable_to_excel(self, timetable_data):
         filename = filedialog.asksaveasfilename(
             defaultextension=".xlsx",
             filetypes=[("Excel files", "*.xlsx")],
-            title="Save Excel"
+            title=_t('gui.academics.module_scheduling.exports.dialogs.save_excel', default="Save Excel")
         )
 
         if not filename:
@@ -396,12 +398,12 @@ def _export_timetable_to_excel(self, timetable_data):
         df = pd.DataFrame(data)
         df.to_excel(filename, index=False, engine='openpyxl')
 
-        messagebox.showinfo("Success", f"Excel file exported to {filename}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.success', default="Success"), f"Excel file exported to {filename}", parent=self.root)
 
     except ImportError:
-        messagebox.showerror("Error", "Pandas library not available for Excel export.", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.exports.dialogs.pandas_library_not_available_for_excel_export', default="Pandas library not available for Excel export."), parent=self.root)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to export Excel: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), f"Failed to export Excel: {str(e)}", parent=self.root)
 
 ModuleSchedulingGUI._export_timetable_to_excel = _export_timetable_to_excel
 
@@ -410,7 +412,7 @@ def export_to_ical(self, entity_type, entity_id, filename=None):
     try:
         from icalendar import Calendar, Event
     except ImportError:
-        messagebox.showerror("Error", "icalendar library not installed. Run: pip install icalendar", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.exports.dialogs.icalendar_library_not_installed_run_pip_install_icalendar', default="icalendar library not installed. Run: pip install icalendar"), parent=self.root)
         return None
 
     cal = Calendar()
@@ -429,7 +431,7 @@ def export_to_ical(self, entity_type, entity_id, filename=None):
         schedules = get_instructor_schedule_data(entity_id)
         cal.add('x-wr-calname', f'Instructor {entity_id} Schedule')
     else:
-        messagebox.showerror("Error", "Invalid entity type", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.exports.dialogs.invalid_entity_type', default="Invalid entity type"), parent=self.root)
         return None
 
     # Add events
@@ -477,7 +479,7 @@ def export_to_ical(self, entity_type, entity_id, filename=None):
         with open(filename, 'wb') as f:
             f.write(cal.to_ical())
 
-        messagebox.showinfo("Success", f"iCal file exported: {filename}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.success', default="Success"), f"iCal file exported: {filename}", parent=self.root)
         return filename
 
     return None
@@ -487,7 +489,7 @@ ModuleSchedulingGUI.export_to_ical = export_to_ical
 def _export_analytics_csv(self, data, filename_prefix):
     """Export analytics data to CSV"""
     filename = filedialog.asksaveasfilename(
-        title="Export Analytics to CSV",
+        title=_t('gui.academics.module_scheduling.exports.dialogs.export_analytics_to_csv', default="Export Analytics to CSV"),
         defaultextension=".csv",
         initialfile=f"{filename_prefix}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
         filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
@@ -505,11 +507,11 @@ def _export_analytics_csv(self, data, filename_prefix):
                 writer.writeheader()
                 writer.writerows(data)
 
-        messagebox.showinfo("Export Complete", f"Analytics exported to:\n{filename}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.export_complete', default="Export Complete"), f"Analytics exported to:\n{filename}", parent=self.root)
         return filename
 
     except Exception as e:
-        messagebox.showerror("Export Error", f"Failed to export analytics: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.export_error', default="Export Error"), f"Failed to export analytics: {str(e)}", parent=self.root)
         return None
 
 ModuleSchedulingGUI._export_analytics_csv = _export_analytics_csv
@@ -523,7 +525,7 @@ def _generate_analytics_pdf(self, data, title):
         from reportlab.lib import colors
 
         filename = filedialog.asksaveasfilename(
-            title="Save PDF Report",
+            title=_t('gui.academics.module_scheduling.exports.dialogs.save_pdf_report', default="Save PDF Report"),
             defaultextension=".pdf",
             initialfile=f"{title.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d')}.pdf",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")]
@@ -563,14 +565,14 @@ def _generate_analytics_pdf(self, data, title):
 
         doc.build(elements)
 
-        messagebox.showinfo("PDF Generated", f"PDF report generated:\n{filename}", parent=self.root)
+        messagebox.showinfo(_t('gui.academics.module_scheduling.exports.dialogs.pdf_generated', default="PDF Generated"), f"PDF report generated:\n{filename}", parent=self.root)
         return filename
 
     except ImportError:
-        messagebox.showerror("Error", "reportlab library not installed.\nRun: pip install reportlab", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.error', default="Error"), _t('gui.academics.module_scheduling.exports.dialogs.reportlab_library_not_installed_run_pip_install_reportlab', default="reportlab library not installed.\nRun: pip install reportlab"), parent=self.root)
         return None
     except Exception as e:
-        messagebox.showerror("PDF Error", f"Failed to generate PDF: {str(e)}", parent=self.root)
+        messagebox.showerror(_t('gui.academics.module_scheduling.exports.dialogs.pdf_error', default="PDF Error"), f"Failed to generate PDF: {str(e)}", parent=self.root)
         return None
 
 ModuleSchedulingGUI._generate_analytics_pdf = _generate_analytics_pdf

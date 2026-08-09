@@ -2,6 +2,8 @@
 Dashboard mixin - GPA overview, statistics cards, and quick actions.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from tkinter import ttk
 import logging
 
@@ -38,7 +40,7 @@ class DashboardMixin:
         title_frame.pack(fill='x', padx=10, pady=10)
         ttk.Label(
             title_frame,
-            text='Grades Dashboard',
+            text=_t('gui.academics.student_grades.dashboard.labels.grades_dashboard', default='Grades Dashboard'),
             font=('Arial', 16, 'bold'),
             foreground=COLORS['primary'],
         ).pack(anchor='w')
@@ -52,7 +54,7 @@ class DashboardMixin:
         if gpa is None:
             ttk.Label(
                 parent,
-                text='No grade data available.',
+                text=_t('gui.academics.student_grades.dashboard.labels.no_grade_data_available', default='No grade data available.'),
                 font=('Arial', 12),
                 foreground=COLORS['warning'],
             ).pack(pady=20)
@@ -77,19 +79,19 @@ class DashboardMixin:
             stats_frame.grid_columnconfigure(i, weight=1)
 
         # Quick actions
-        actions_frame = ttk.LabelFrame(parent, text='Quick Actions', padding=10)
+        actions_frame = ttk.LabelFrame(parent, text=_t('gui.academics.student_grades.dashboard.labels.quick_actions', default='Quick Actions'), padding=10)
         actions_frame.pack(fill='x', padx=10, pady=10)
 
         ttk.Button(
             actions_frame,
-            text='View Grades',
+            text=_t('gui.academics.student_grades.dashboard.buttons.view_grades', default='View Grades'),
             command=lambda: self.notebook.select(1),
             width=20,
         ).pack(side='left', padx=5)
 
         ttk.Button(
             actions_frame,
-            text='View Transcript',
+            text=_t('gui.academics.student_grades.dashboard.buttons.view_transcript', default='View Transcript'),
             command=lambda: self.notebook.select(2),
             width=20,
         ).pack(side='left', padx=5)

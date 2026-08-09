@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
@@ -246,7 +248,7 @@ class PaymentDialog:
         self.order_total = 0
 
         self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Process Payment")
+        self.dialog.title(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.windows.process_payment', default="Process Payment"))
         self.dialog.geometry("450x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
@@ -259,7 +261,7 @@ class PaymentDialog:
         try:
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror("Error", "Database connection failed")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.database_connection_failed', default="Database connection failed"))
                 self.dialog.destroy()
                 return
 
@@ -280,16 +282,16 @@ class PaymentDialog:
 
                 # Check if already paid
                 if self.order_status == 'Paid' or self.current_payment_method:
-                    messagebox.showinfo("Already Paid",
+                    messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.already_paid', default="Already Paid"),
                                       f"Order #{self.order_id} has already been paid.\n"
                                       f"Payment method: {self.current_payment_method}")
                     self.dialog.destroy()
             else:
-                messagebox.showerror("Error", f"Order #{self.order_id} not found")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.error', default="Error"), f"Order #{self.order_id} not found")
                 self.dialog.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load order: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.error', default="Error"), f"Failed to load order: {e}")
             self.dialog.destroy()
 
     def create_widgets(self):
@@ -304,10 +306,10 @@ class PaymentDialog:
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
         # Payment method selection
-        ttk.Label(main_frame, text="Select Payment Method:",
+        ttk.Label(main_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.labels.select_payment_method', default="Select Payment Method:"),
                  font=('Arial', 10, 'bold')).pack(pady=(10, 5))
 
-        self.payment_var = tk.StringVar(value="Cash")
+        self.payment_var = tk.StringVar(value=_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.values.cash', default="Cash"))
 
         payment_methods = [
             ("Cash", "Cash"),
@@ -324,7 +326,7 @@ class PaymentDialog:
             balance_frame = ttk.Frame(main_frame)
             balance_frame.pack(pady=10)
 
-            ttk.Button(balance_frame, text="Check Student Balance",
+            ttk.Button(balance_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.buttons.check_student_balance', default="Check Student Balance"),
                       command=self.check_student_balance).pack()
 
             self.balance_label = ttk.Label(balance_frame, text="",
@@ -335,20 +337,20 @@ class PaymentDialog:
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
 
-        ttk.Button(button_frame, text="Process Payment",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.buttons.process_payment', default="Process Payment"),
                   command=self.process_payment).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel",
+        ttk.Button(button_frame, text=_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.buttons.cancel', default="Cancel"),
                   command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def check_student_balance(self):
         """Check student account balance"""
         if not FINANCE_ACCOUNT_AVAILABLE:
-            messagebox.showwarning("Not Available",
-                                 "Student finance integration not available")
+            messagebox.showwarning(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.not_available', default="Not Available"),
+                                 _t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.student_finance_integration_not_available', default="Student finance integration not available"))
             return
 
-        student_id = simpledialog.askstring("Student ID",
-                                           "Enter Student ID to check balance:")
+        student_id = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.student_id', default="Student ID"),
+                                           _t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.enter_student_id_to_check_balance', default="Enter Student ID to check balance:"))
         if not student_id:
             return
 
@@ -366,14 +368,14 @@ class PaymentDialog:
                     foreground='red'
                 )
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to check balance: {e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.error', default="Error"), f"Failed to check balance: {e}")
 
     def process_payment(self):
         """Process the payment"""
         payment_method = self.payment_var.get()
 
         # Confirm payment
-        if not messagebox.askyesno("Confirm Payment",
+        if not messagebox.askyesno(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.confirm_payment', default="Confirm Payment"),
                                   f"Process payment of £{self.order_total:.2f}\n"
                                   f"Payment method: {payment_method}?"):
             return
@@ -382,15 +384,15 @@ class PaymentDialog:
             # Handle student account payment
             if payment_method == "Finance Account":
                 if not FINANCE_ACCOUNT_AVAILABLE:
-                    messagebox.showerror("Error",
-                                       "Student finance integration not available")
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.error', default="Error"),
+                                       _t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.student_finance_integration_not_available', default="Student finance integration not available"))
                     return
 
                 # Get student ID
                 student_id = getattr(self, 'last_checked_student_id', None)
                 if not student_id:
-                    student_id = simpledialog.askstring("Student ID",
-                                                       "Enter Student ID for payment:")
+                    student_id = simpledialog.askstring(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.student_id', default="Student ID"),
+                                                       _t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.enter_student_id_for_payment', default="Enter Student ID for payment:"))
                     if not student_id:
                         return
 
@@ -405,14 +407,14 @@ class PaymentDialog:
                 )
 
                 if not result.get('success'):
-                    messagebox.showerror("Payment Failed",
+                    messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.payment_failed', default="Payment Failed"),
                                        result.get('message', 'Payment failed'))
                     return
 
             # Update order in database
             conn = get_db_connection()
             if not conn:
-                messagebox.showerror("Error", "Database connection failed")
+                messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.error', default="Error"), _t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.database_connection_failed', default="Database connection failed"))
                 return
 
             cursor = conn.cursor()
@@ -428,11 +430,11 @@ class PaymentDialog:
             self.result = True
             self.dialog.destroy()
 
-            messagebox.showinfo("Success",
+            messagebox.showinfo(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.success', default="Success"),
                               f"Payment of £{self.order_total:.2f} processed successfully!\n\n"
                               f"Order #{self.order_id}\n"
                               f"Payment method: {payment_method}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to process payment:\n{e}")
+            messagebox.showerror(_t('gui.operations.commerce.restaurant_management_gui.orders.order_management.dialogs.error', default="Error"), f"Failed to process payment:\n{e}")
 

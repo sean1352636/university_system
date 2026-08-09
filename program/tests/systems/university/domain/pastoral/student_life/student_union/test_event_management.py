@@ -324,13 +324,7 @@ class TestRecurringEvents:
         '1',                    # days_of_week
     ])
     def test_create_recurring_event_weekly(self, mock_input, mock_cursor, mock_conn, mock_auth):
-        """Test creating weekly recurring event.
-
-        Note: The source uses datetime.timedelta which raises AttributeError
-        (timedelta is not an attribute of the datetime class). The error is
-        caught by the generic except handler, so we verify the function
-        completes without propagating the exception.
-        """
+        """Test creating a weekly recurring event."""
         event_management.auth = mock_auth
         mock_cursor.fetchone.return_value = ('S123',)
         mock_cursor.fetchall.return_value = [(1, 'Test Club')]
@@ -339,11 +333,11 @@ class TestRecurringEvents:
              patch('builtins.print') as mock_print:
             event_management.create_recurring_event()
 
-        # The function hits an AttributeError on datetime.timedelta inside the
-        # occurrence-generation loop, which is caught by the broad except.
         mock_cursor.execute.assert_called()
-        assert any('error' in str(call).lower() or 'occurred' in str(call).lower()
-                   for call in mock_print.call_args_list)
+        assert any(
+            "generated 1 individual events" in str(call).lower()
+            for call in mock_print.call_args_list
+        )
 
     @patch('builtins.input', side_effect=[
         'Monthly Event', 'Monthly meeting', '18:00', 'Main Hall',

@@ -13,7 +13,7 @@ import logging
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ def sync_assignment_to_calendar(
     event_id = _event_id(assignment_id)
 
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         try:
             cur = conn.cursor()
@@ -108,7 +108,7 @@ def remove_assignment_from_calendar(assignment_id: int) -> bool:
     if not assignment_id:
         return False
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
+        conn = sqlite3.connect(str(UNIVERSITY_DEFAULT_DB_PATH), timeout=30)
         conn.execute("PRAGMA busy_timeout = 30000")
         try:
             conn.execute(

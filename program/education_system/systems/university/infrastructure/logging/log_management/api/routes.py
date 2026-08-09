@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH as _DB_PATH
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import TEMP_DIR
+from education_system.paths import UNIVERSITY_TEMP_DIR
 from education_system.systems.university.infrastructure.utils.activity_logger import logger
 
 from education_system.systems.university.infrastructure.logging.log_management.api import app, request, jsonify, send_file
@@ -172,7 +172,7 @@ def generate_chart(current_user):
         chart_type = data.get('type', 'daily')
 
         # Generate chart and save to temp file
-        temp_path = TEMP_DIR / f"chart_{current_user}_{datetime.now().timestamp()}.png"
+        temp_path = UNIVERSITY_TEMP_DIR / f"chart_{current_user}_{datetime.now().timestamp()}.png"
 
         log_manager = _get_log_manager()
         chart_path = log_manager.analytics.create_activity_chart(
@@ -267,7 +267,7 @@ def export_logs(current_user):
             import pandas as pd
             df = pd.DataFrame(results)
             filename = f'logs_export_{timestamp}.csv'
-            filepath = TEMP_DIR / filename
+            filepath = UNIVERSITY_TEMP_DIR / filename
             df.to_csv(filepath, index=False)
 
             return send_file(filepath, as_attachment=True, download_name=filename)
@@ -276,7 +276,7 @@ def export_logs(current_user):
             import pandas as pd
             df = pd.DataFrame(results)
             filename = f'logs_export_{timestamp}.xlsx'
-            filepath = TEMP_DIR / filename
+            filepath = UNIVERSITY_TEMP_DIR / filename
             df.to_excel(filepath, index=False)
 
             return send_file(filepath, as_attachment=True, download_name=filename)
@@ -439,20 +439,18 @@ def webhook_log_entry():
         except ValueError:
             return jsonify({'error': 'Invalid timestamp format'}), 401
 
-        # Verify HMAC-SHA256 signature of request body
+        # Verify HMAC-SHA256 signature of request body. The legacy
+        # X-Webhook-Key fallback (sending the raw shared secret as a header
+        # on every request) is gone: signature-or-nothing.
         signature = request.headers.get('X-Webhook-Signature', '')
         if not signature:
-            # Fall back to legacy key-based auth
-            webhook_key = request.headers.get('X-Webhook-Key')
-            if not webhook_key or not secrets.compare_digest(webhook_key, webhook_secret):
-                return jsonify({'error': 'Invalid webhook key'}), 401
-        else:
-            body = request.get_data()
-            expected = hmac.new(
-                webhook_secret.encode(), webhook_ts.encode() + b'.' + body, _hashlib.sha256
-            ).hexdigest()
-            if not hmac.compare_digest(signature, expected):
-                return jsonify({'error': 'Invalid webhook signature'}), 401
+            return jsonify({'error': 'Missing webhook signature'}), 401
+        body = request.get_data()
+        expected = hmac.new(
+            webhook_secret.encode(), webhook_ts.encode() + b'.' + body, _hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            return jsonify({'error': 'Invalid webhook signature'}), 401
 
         log_data = request.get_json()
 

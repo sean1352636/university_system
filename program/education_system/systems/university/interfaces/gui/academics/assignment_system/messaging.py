@@ -1,5 +1,7 @@
 """Messaging system"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
@@ -13,7 +15,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from collections import deque
 
 
@@ -93,32 +95,32 @@ class MessagingManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Send Messages", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.messaging.labels.send_messages', default="Send Messages"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Message composition frame
-        compose_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Compose Message", padding=20)
+        compose_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.messaging.labels.compose_message', default="Compose Message"), padding=20)
         compose_frame.pack(fill='both', expand=True)
 
         # Recipient type
-        ttk.Label(compose_frame, text="Send To:", font=('Arial', 12, 'bold')).grid(row=0, column=0, sticky='w', pady=(0, 10))
+        ttk.Label(compose_frame, text=_t('gui.academics.assignment_system.messaging.labels.send_to', default="Send To:"), font=('Arial', 12, 'bold')).grid(row=0, column=0, sticky='w', pady=(0, 10))
 
-        self.recipient_type_var = tk.StringVar(value="module")
+        self.recipient_type_var = tk.StringVar(value=_t('gui.academics.assignment_system.messaging.values.module', default="module"))
         recipient_frame = ttk.Frame(compose_frame)
         recipient_frame.grid(row=1, column=0, columnspan=2, sticky='w', pady=(0, 20))
 
-        ttk.Radiobutton(recipient_frame, text="All students in module",
+        ttk.Radiobutton(recipient_frame, text=_t('gui.academics.assignment_system.messaging.buttons.all_students_in_module', default="All students in module"),
                        variable=self.recipient_type_var, value="module").pack(anchor='w')
-        ttk.Radiobutton(recipient_frame, text="Specific student",
+        ttk.Radiobutton(recipient_frame, text=_t('gui.academics.assignment_system.messaging.buttons.specific_student', default="Specific student"),
                        variable=self.recipient_type_var, value="student").pack(anchor='w')
-        ttk.Radiobutton(recipient_frame, text="All instructors",
+        ttk.Radiobutton(recipient_frame, text=_t('gui.academics.assignment_system.messaging.buttons.all_instructors', default="All instructors"),
                        variable=self.recipient_type_var, value="instructors").pack(anchor='w')
 
         # Module/Student selection
         selection_frame = ttk.Frame(compose_frame)
         selection_frame.grid(row=2, column=0, columnspan=2, sticky='ew', pady=(0, 20))
 
-        ttk.Label(selection_frame, text="Module/Student:").pack(side='left')
+        ttk.Label(selection_frame, text=_t('gui.academics.assignment_system.messaging.labels.module_student', default="Module/Student:")).pack(side='left')
         self.recipient_selection_var = tk.StringVar()
         self.recipient_combo = ttk.Combobox(selection_frame, textvariable=self.recipient_selection_var, width=40)
         self.recipient_combo.pack(side='left', padx=(10, 0))
@@ -129,24 +131,24 @@ class MessagingManager:
                 widget.configure(command=self.update_recipient_options)
 
         # Subject
-        ttk.Label(compose_frame, text="Subject:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(compose_frame, text=_t('gui.academics.assignment_system.messaging.labels.subject', default="Subject:")).grid(row=3, column=0, sticky='w', pady=5)
         self.message_subject_var = tk.StringVar()
         ttk.Entry(compose_frame, textvariable=self.message_subject_var, width=60).grid(row=3, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         # Message body
-        ttk.Label(compose_frame, text="Message:").grid(row=4, column=0, sticky='nw', pady=5)
+        ttk.Label(compose_frame, text=_t('gui.academics.assignment_system.messaging.labels.message', default="Message:")).grid(row=4, column=0, sticky='nw', pady=5)
         self.message_body_text = scrolledtext.ScrolledText(compose_frame, height=10, width=60)
         self.message_body_text.grid(row=4, column=1, sticky='ew', pady=5, padx=(10, 0))
 
         # Assignment reference (optional)
-        ttk.Label(compose_frame, text="Related Assignment (optional):").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(compose_frame, text=_t('gui.academics.assignment_system.messaging.labels.related_assignment_optional', default="Related Assignment (optional):")).grid(row=5, column=0, sticky='w', pady=5)
         self.message_assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(compose_frame, textvariable=self.message_assignment_var, width=40)
         assignment_combo.grid(row=5, column=1, sticky='w', pady=5, padx=(10, 0))
         self.load_assignments_for_message(assignment_combo)
 
         # Send button
-        ttk.Button(compose_frame, text="Send Message",
+        ttk.Button(compose_frame, text=_t('gui.academics.assignment_system.messaging.buttons.send_message', default="Send Message"),
                   command=self.send_message_gui).grid(row=6, column=1, sticky='e', pady=(20, 0))
 
         compose_frame.grid_columnconfigure(1, weight=1)
@@ -190,14 +192,14 @@ class MessagingManager:
             message = self.message_body_text.get(1.0, tk.END).strip()
 
             if not subject or not message:
-                messagebox.showerror("Error", "Subject and message are required")
+                messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.subject_and_message_are_required', default="Subject and message are required"))
                 return
 
             recipient_type = self.recipient_type_var.get()
             selection = self.recipient_selection_var.get()
 
             if not selection:
-                messagebox.showerror("Error", "Please select a recipient")
+                messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.please_select_a_recipient', default="Please select a recipient"))
                 return
 
             # Get assignment ID if selected
@@ -231,7 +233,7 @@ class MessagingManager:
                     recipients = [row[0] for row in cursor.fetchall()]
 
                 if not recipients:
-                    messagebox.showerror("Error", "No recipients found")
+                    messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.no_recipients_found', default="No recipients found"))
                     return
 
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -294,7 +296,7 @@ class MessagingManager:
             if emails_failed > 0:
                 success_msg += f"\n⚠ {emails_failed} email(s) failed to send"
 
-            messagebox.showinfo("Success", success_msg)
+            messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), success_msg)
 
             # Clear form
             self.message_subject_var.set('')
@@ -302,7 +304,7 @@ class MessagingManager:
             self.message_assignment_var.set("None")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send message: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to send message: {e}")
 
     # GROUP ASSIGNMENT CREATION (enhanced GUI)
 
@@ -321,14 +323,14 @@ class MessagingManager:
         try:
             # Create messages window
             messages_window = tk.Toplevel(self.root)
-            messages_window.title("Messages")
+            messages_window.title(_t('gui.academics.assignment_system.messaging.windows.messages', default="Messages"))
             messages_window.geometry("1000x700")
             messages_window.configure(bg='#f0f0f0')
 
             # Get current user ID
             user_id = self.auth.current_user.get('id')
             if not user_id:
-                messagebox.showerror("Error", "User not authenticated")
+                messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.user_not_authenticated', default="User not authenticated"))
                 messages_window.destroy()
                 return
 
@@ -341,26 +343,26 @@ class MessagingManager:
 
             # Inbox tab
             inbox_frame = ttk.Frame(notebook)
-            notebook.add(inbox_frame, text="Inbox")
+            notebook.add(inbox_frame, text=_t('gui.academics.assignment_system.messaging.tabs.inbox', default="Inbox"))
             self._create_inbox_view(inbox_frame, user_id)
 
             # Sent messages tab
             sent_frame = ttk.Frame(notebook)
-            notebook.add(sent_frame, text="Sent")
+            notebook.add(sent_frame, text=_t('gui.academics.assignment_system.messaging.tabs.sent', default="Sent"))
             self._create_sent_view(sent_frame, user_id)
 
             # Compose message tab
             compose_frame = ttk.Frame(notebook)
-            notebook.add(compose_frame, text="Compose")
+            notebook.add(compose_frame, text=_t('gui.academics.assignment_system.messaging.tabs.compose', default="Compose"))
             self._create_compose_view(compose_frame, user_id)
 
             # Archive tab
             archive_frame = ttk.Frame(notebook)
-            notebook.add(archive_frame, text="Archive")
+            notebook.add(archive_frame, text=_t('gui.academics.assignment_system.messaging.tabs.archive', default="Archive"))
             self._create_archive_view(archive_frame, user_id)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load messages: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to load messages: {str(e)}")
             print(f"Error in view_messages: {e}")
 
 
@@ -370,19 +372,19 @@ class MessagingManager:
         search_frame = ttk.Frame(parent)
         search_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
+        ttk.Label(search_frame, text=_t('gui.academics.assignment_system.messaging.labels.search', default="Search:")).pack(side='left', padx=5)
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
         search_entry.pack(side='left', padx=5)
 
         # Filter options
-        filter_var = tk.StringVar(value="all")
-        ttk.Radiobutton(search_frame, text="All", variable=filter_var, value="all").pack(side='left', padx=5)
-        ttk.Radiobutton(search_frame, text="Unread", variable=filter_var, value="unread").pack(side='left', padx=5)
-        ttk.Radiobutton(search_frame, text="Read", variable=filter_var, value="read").pack(side='left', padx=5)
+        filter_var = tk.StringVar(value=_t('gui.academics.assignment_system.messaging.values.all', default="all"))
+        ttk.Radiobutton(search_frame, text=_t('gui.academics.assignment_system.messaging.buttons.all', default="All"), variable=filter_var, value="all").pack(side='left', padx=5)
+        ttk.Radiobutton(search_frame, text=_t('gui.academics.assignment_system.messaging.buttons.unread', default="Unread"), variable=filter_var, value="unread").pack(side='left', padx=5)
+        ttk.Radiobutton(search_frame, text=_t('gui.academics.assignment_system.messaging.buttons.read', default="Read"), variable=filter_var, value="read").pack(side='left', padx=5)
 
         # Refresh button
-        refresh_btn = ttk.Button(search_frame, text="Refresh",
+        refresh_btn = ttk.Button(search_frame, text=_t('gui.academics.assignment_system.messaging.buttons.refresh', default="Refresh"),
                                 command=lambda: self._refresh_inbox(tree, user_id, search_var.get(), filter_var.get()))
         refresh_btn.pack(side='right', padx=5)
 
@@ -394,11 +396,11 @@ class MessagingManager:
         columns = ('Status', 'From', 'Subject', 'Date')
         tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
 
-        tree.heading('#0', text='ID')
-        tree.heading('Status', text='Status')
-        tree.heading('From', text='From')
-        tree.heading('Subject', text='Subject')
-        tree.heading('Date', text='Date')
+        tree.heading('#0', text=_t('gui.academics.assignment_system.messaging.headings.id', default='ID'))
+        tree.heading('Status', text=_t('gui.academics.assignment_system.messaging.headings.status', default='Status'))
+        tree.heading('From', text=_t('gui.academics.assignment_system.messaging.headings.from', default='From'))
+        tree.heading('Subject', text=_t('gui.academics.assignment_system.messaging.headings.subject', default='Subject'))
+        tree.heading('Date', text=_t('gui.academics.assignment_system.messaging.headings.date', default='Date'))
 
         tree.column('#0', width=50)
         tree.column('Status', width=80)
@@ -417,15 +419,15 @@ class MessagingManager:
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="View Message",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.view_message', default="View Message"),
                   command=lambda: self._view_message_details(tree, user_id)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Mark as Read",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.mark_as_read', default="Mark as Read"),
                   command=lambda: self._mark_message_read(tree, user_id, True)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Mark as Unread",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.mark_as_unread', default="Mark as Unread"),
                   command=lambda: self._mark_message_read(tree, user_id, False)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Archive",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.archive', default="Archive"),
                   command=lambda: self._archive_message(tree, user_id)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Delete",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.delete', default="Delete"),
                   command=lambda: self._delete_message(tree, user_id, 'recipient')).pack(side='left', padx=5)
 
         # Load messages
@@ -491,7 +493,7 @@ class MessagingManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load messages: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to load messages: {str(e)}")
             print(f"Error refreshing inbox: {e}")
 
 
@@ -501,13 +503,13 @@ class MessagingManager:
         search_frame = ttk.Frame(parent)
         search_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
+        ttk.Label(search_frame, text=_t('gui.academics.assignment_system.messaging.labels.search', default="Search:")).pack(side='left', padx=5)
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
         search_entry.pack(side='left', padx=5)
 
         # Refresh button
-        refresh_btn = ttk.Button(search_frame, text="Refresh",
+        refresh_btn = ttk.Button(search_frame, text=_t('gui.academics.assignment_system.messaging.buttons.refresh', default="Refresh"),
                                 command=lambda: self._refresh_sent(tree, user_id, search_var.get()))
         refresh_btn.pack(side='right', padx=5)
 
@@ -518,11 +520,11 @@ class MessagingManager:
         columns = ('To', 'Subject', 'Date', 'Read')
         tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
 
-        tree.heading('#0', text='ID')
-        tree.heading('To', text='To')
-        tree.heading('Subject', text='Subject')
-        tree.heading('Date', text='Date')
-        tree.heading('Read', text='Status')
+        tree.heading('#0', text=_t('gui.academics.assignment_system.messaging.headings.id', default='ID'))
+        tree.heading('To', text=_t('gui.academics.assignment_system.messaging.headings.to', default='To'))
+        tree.heading('Subject', text=_t('gui.academics.assignment_system.messaging.headings.subject', default='Subject'))
+        tree.heading('Date', text=_t('gui.academics.assignment_system.messaging.headings.date', default='Date'))
+        tree.heading('Read', text=_t('gui.academics.assignment_system.messaging.headings.status', default='Status'))
 
         tree.column('#0', width=50)
         tree.column('To', width=150)
@@ -540,9 +542,9 @@ class MessagingManager:
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="View Message",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.view_message', default="View Message"),
                   command=lambda: self._view_sent_message_details(tree, user_id)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Delete",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.delete', default="Delete"),
                   command=lambda: self._delete_message(tree, user_id, 'sender')).pack(side='left', padx=5)
 
         # Load messages
@@ -595,7 +597,7 @@ class MessagingManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load sent messages: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to load sent messages: {str(e)}")
             print(f"Error refreshing sent messages: {e}")
 
 
@@ -618,40 +620,40 @@ class MessagingManager:
         scrollbar.pack(side='right', fill='y')
 
         # Compose form
-        form_frame = ttk.LabelFrame(scrollable_frame, text="New Message", padding=20)
+        form_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.academics.assignment_system.messaging.labels.new_message', default="New Message"), padding=20)
         form_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
         # Recipient
-        ttk.Label(form_frame, text="To (Username):").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.to_username', default="To (Username):")).grid(row=0, column=0, sticky='w', pady=5)
         recipient_var = tk.StringVar()
         recipient_entry = ttk.Entry(form_frame, textvariable=recipient_var, width=50)
         recipient_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=5)
 
         # Browse recipients button
-        ttk.Button(form_frame, text="Browse Users",
+        ttk.Button(form_frame, text=_t('gui.academics.assignment_system.messaging.buttons.browse_users', default="Browse Users"),
                   command=lambda: self._browse_users(recipient_var)).grid(row=0, column=2, padx=5)
 
         # Subject
-        ttk.Label(form_frame, text="Subject:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.subject', default="Subject:")).grid(row=1, column=0, sticky='w', pady=5)
         subject_var = tk.StringVar()
         subject_entry = ttk.Entry(form_frame, textvariable=subject_var, width=50)
         subject_entry.grid(row=1, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
 
         # Message body
-        ttk.Label(form_frame, text="Message:").grid(row=2, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.message', default="Message:")).grid(row=2, column=0, sticky='nw', pady=5)
         message_text = scrolledtext.ScrolledText(form_frame, width=50, height=15, wrap=tk.WORD)
         message_text.grid(row=2, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
 
         # Attachment (optional)
-        ttk.Label(form_frame, text="Attachment:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.attachment', default="Attachment:")).grid(row=3, column=0, sticky='w', pady=5)
         attachment_var = tk.StringVar()
         attachment_entry = ttk.Entry(form_frame, textvariable=attachment_var, width=50, state='readonly')
         attachment_entry.grid(row=3, column=1, sticky='ew', pady=5, padx=5)
-        ttk.Button(form_frame, text="Browse",
+        ttk.Button(form_frame, text=_t('gui.academics.assignment_system.messaging.buttons.browse', default="Browse"),
                   command=lambda: self._browse_attachment(attachment_var)).grid(row=3, column=2, padx=5)
 
         # Assignment reference (optional)
-        ttk.Label(form_frame, text="Assignment:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.assignment', default="Assignment:")).grid(row=4, column=0, sticky='w', pady=5)
         assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(form_frame, textvariable=assignment_var, width=48, state='readonly')
         assignment_combo.grid(row=4, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
@@ -665,14 +667,14 @@ class MessagingManager:
         button_frame = ttk.Frame(scrollable_frame)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="Send Message",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.send_message', default="Send Message"),
                   command=lambda: self._send_composed_message(
                       user_id, recipient_var.get(), subject_var.get(),
                       message_text.get('1.0', 'end-1c'), attachment_var.get(),
                       assignment_var.get(), recipient_entry, subject_entry, message_text
                   )).pack(side='left', padx=5)
 
-        ttk.Button(button_frame, text="Clear Form",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.clear_form', default="Clear Form"),
                   command=lambda: self._clear_compose_form(
                       recipient_entry, subject_entry, message_text, attachment_var, assignment_combo
                   )).pack(side='left', padx=5)
@@ -687,10 +689,10 @@ class MessagingManager:
         columns = ('From', 'Subject', 'Date')
         tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
 
-        tree.heading('#0', text='ID')
-        tree.heading('From', text='From')
-        tree.heading('Subject', text='Subject')
-        tree.heading('Date', text='Date')
+        tree.heading('#0', text=_t('gui.academics.assignment_system.messaging.headings.id', default='ID'))
+        tree.heading('From', text=_t('gui.academics.assignment_system.messaging.headings.from', default='From'))
+        tree.heading('Subject', text=_t('gui.academics.assignment_system.messaging.headings.subject', default='Subject'))
+        tree.heading('Date', text=_t('gui.academics.assignment_system.messaging.headings.date', default='Date'))
 
         tree.column('#0', width=50)
         tree.column('From', width=200)
@@ -707,13 +709,13 @@ class MessagingManager:
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill='x', padx=10, pady=10)
 
-        ttk.Button(button_frame, text="View Message",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.view_message', default="View Message"),
                   command=lambda: self._view_message_details(tree, user_id)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Unarchive",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.unarchive', default="Unarchive"),
                   command=lambda: self._unarchive_message(tree, user_id)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Delete",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.delete', default="Delete"),
                   command=lambda: self._delete_message(tree, user_id, 'recipient')).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Refresh",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.refresh', default="Refresh"),
                   command=lambda: self._refresh_archive(tree, user_id)).pack(side='right', padx=5)
 
         # Load archived messages
@@ -757,7 +759,7 @@ class MessagingManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load archived messages: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to load archived messages: {str(e)}")
             print(f"Error refreshing archive: {e}")
 
 
@@ -765,7 +767,7 @@ class MessagingManager:
         """View full message details"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a message to view")
+            messagebox.showwarning(_t('gui.academics.assignment_system.messaging.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.messaging.dialogs.please_select_a_message_to_view', default="Please select a message to view"))
             return
 
         msg_id = tree.item(selection[0])['text']
@@ -786,7 +788,7 @@ class MessagingManager:
                 message = cursor.fetchone()
 
                 if not message:
-                    messagebox.showerror("Error", "Message not found")
+                    messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.message_not_found', default="Message not found"))
                     return
 
                 # Mark as read if recipient is viewing
@@ -800,24 +802,24 @@ class MessagingManager:
 
             # Create detail window
             detail_window = tk.Toplevel(self.root)
-            detail_window.title("Message Details")
+            detail_window.title(_t('gui.academics.assignment_system.messaging.windows.message_details', default="Message Details"))
             detail_window.geometry("800x600")
             detail_window.configure(bg='#f0f0f0')
 
             # Message info frame
-            info_frame = ttk.LabelFrame(detail_window, text="Message Information", padding=10)
+            info_frame = ttk.LabelFrame(detail_window, text=_t('gui.academics.assignment_system.messaging.labels.message_information', default="Message Information"), padding=10)
             info_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Label(info_frame, text="From:").grid(row=0, column=0, sticky='w', padx=5, pady=2)
+            ttk.Label(info_frame, text=_t('gui.academics.assignment_system.messaging.labels.from', default="From:")).grid(row=0, column=0, sticky='w', padx=5, pady=2)
             ttk.Label(info_frame, text=message[15], font=('TkDefaultFont', 10, 'bold')).grid(row=0, column=1, sticky='w', padx=5, pady=2)
 
-            ttk.Label(info_frame, text="To:").grid(row=1, column=0, sticky='w', padx=5, pady=2)
+            ttk.Label(info_frame, text=_t('gui.academics.assignment_system.messaging.labels.to', default="To:")).grid(row=1, column=0, sticky='w', padx=5, pady=2)
             ttk.Label(info_frame, text=message[16], font=('TkDefaultFont', 10, 'bold')).grid(row=1, column=1, sticky='w', padx=5, pady=2)
 
-            ttk.Label(info_frame, text="Subject:").grid(row=2, column=0, sticky='w', padx=5, pady=2)
+            ttk.Label(info_frame, text=_t('gui.academics.assignment_system.messaging.labels.subject', default="Subject:")).grid(row=2, column=0, sticky='w', padx=5, pady=2)
             ttk.Label(info_frame, text=message[3], font=('TkDefaultFont', 10, 'bold')).grid(row=2, column=1, sticky='w', padx=5, pady=2)
 
-            ttk.Label(info_frame, text="Date:").grid(row=3, column=0, sticky='w', padx=5, pady=2)
+            ttk.Label(info_frame, text=_t('gui.academics.assignment_system.messaging.labels.date', default="Date:")).grid(row=3, column=0, sticky='w', padx=5, pady=2)
             try:
                 date_obj = datetime.fromisoformat(message[12])
                 formatted_date = date_obj.strftime("%Y-%m-%d %H:%M:%S")
@@ -826,7 +828,7 @@ class MessagingManager:
             ttk.Label(info_frame, text=formatted_date).grid(row=3, column=1, sticky='w', padx=5, pady=2)
 
             # Message content frame
-            content_frame = ttk.LabelFrame(detail_window, text="Message Content", padding=10)
+            content_frame = ttk.LabelFrame(detail_window, text=_t('gui.academics.assignment_system.messaging.labels.message_content', default="Message Content"), padding=10)
             content_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
             message_content = message[4] or message[5] or "No content"
@@ -845,14 +847,14 @@ class MessagingManager:
             button_frame.pack(fill='x', padx=10, pady=10)
 
             if message[2] == user_id:  # If current user is recipient
-                ttk.Button(button_frame, text="Reply",
+                ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.reply', default="Reply"),
                           command=lambda: self._reply_to_message(msg_id, message[1], message[3])).pack(side='left', padx=5)
 
-            ttk.Button(button_frame, text="Close",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.close', default="Close"),
                       command=detail_window.destroy).pack(side='right', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to view message: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to view message: {str(e)}")
             print(f"Error viewing message: {e}")
 
 
@@ -865,7 +867,7 @@ class MessagingManager:
         """Mark message as read or unread"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a message")
+            messagebox.showwarning(_t('gui.academics.assignment_system.messaging.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.messaging.dialogs.please_select_a_message', default="Please select a message"))
             return
 
         msg_id = tree.item(selection[0])['text']
@@ -888,10 +890,10 @@ class MessagingManager:
             self._refresh_inbox(tree, user_id)
 
             status = "read" if is_read else "unread"
-            messagebox.showinfo("Success", f"Message marked as {status}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), f"Message marked as {status}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to update message: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to update message: {str(e)}")
             print(f"Error marking message: {e}")
 
 
@@ -899,7 +901,7 @@ class MessagingManager:
         """Archive a message"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a message to archive")
+            messagebox.showwarning(_t('gui.academics.assignment_system.messaging.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.messaging.dialogs.please_select_a_message_to_archive', default="Please select a message to archive"))
             return
 
         msg_id = tree.item(selection[0])['text']
@@ -918,10 +920,10 @@ class MessagingManager:
                 conn.close()
 
             self._refresh_inbox(tree, user_id)
-            messagebox.showinfo("Success", "Message archived")
+            messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), _t('gui.academics.assignment_system.messaging.dialogs.message_archived', default="Message archived"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to archive message: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to archive message: {str(e)}")
             print(f"Error archiving message: {e}")
 
 
@@ -929,7 +931,7 @@ class MessagingManager:
         """Unarchive a message"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a message to unarchive")
+            messagebox.showwarning(_t('gui.academics.assignment_system.messaging.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.messaging.dialogs.please_select_a_message_to_unarchive', default="Please select a message to unarchive"))
             return
 
         msg_id = tree.item(selection[0])['text']
@@ -948,10 +950,10 @@ class MessagingManager:
                 conn.close()
 
             self._refresh_archive(tree, user_id)
-            messagebox.showinfo("Success", "Message moved to inbox")
+            messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), _t('gui.academics.assignment_system.messaging.dialogs.message_moved_to_inbox', default="Message moved to inbox"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to unarchive message: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to unarchive message: {str(e)}")
             print(f"Error unarchiving message: {e}")
 
 
@@ -959,10 +961,10 @@ class MessagingManager:
         """Delete a message"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a message to delete")
+            messagebox.showwarning(_t('gui.academics.assignment_system.messaging.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.messaging.dialogs.please_select_a_message_to_delete', default="Please select a message to delete"))
             return
 
-        if not messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this message?"):
+        if not messagebox.askyesno(_t('gui.academics.assignment_system.messaging.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.academics.assignment_system.messaging.dialogs.are_you_sure_you_want_to_delete_this_message', default="Are you sure you want to delete this message?")):
             return
 
         msg_id = tree.item(selection[0])['text']
@@ -991,10 +993,10 @@ class MessagingManager:
             else:
                 self._refresh_sent(tree, user_id)
 
-            messagebox.showinfo("Success", "Message deleted")
+            messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), _t('gui.academics.assignment_system.messaging.dialogs.message_deleted', default="Message deleted"))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete message: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to delete message: {str(e)}")
             print(f"Error deleting message: {e}")
 
 
@@ -1018,14 +1020,14 @@ class MessagingManager:
 
             # Create selection window
             select_window = tk.Toplevel(self.root)
-            select_window.title("Select Recipient")
+            select_window.title(_t('gui.academics.assignment_system.messaging.windows.select_recipient', default="Select Recipient"))
             select_window.geometry("600x400")
 
             # Search frame
             search_frame = ttk.Frame(select_window)
             search_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
+            ttk.Label(search_frame, text=_t('gui.academics.assignment_system.messaging.labels.search', default="Search:")).pack(side='left', padx=5)
             search_var = tk.StringVar()
             search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
             search_entry.pack(side='left', padx=5)
@@ -1037,10 +1039,10 @@ class MessagingManager:
             columns = ('Username', 'Name', 'Role')
             tree = ttk.Treeview(list_frame, columns=columns, show='tree headings')
 
-            tree.heading('#0', text='ID')
-            tree.heading('Username', text='Username')
-            tree.heading('Name', text='Name')
-            tree.heading('Role', text='Role')
+            tree.heading('#0', text=_t('gui.academics.assignment_system.messaging.headings.id', default='ID'))
+            tree.heading('Username', text=_t('gui.academics.assignment_system.messaging.headings.username', default='Username'))
+            tree.heading('Name', text=_t('gui.academics.assignment_system.messaging.headings.name', default='Name'))
+            tree.heading('Role', text=_t('gui.academics.assignment_system.messaging.headings.role', default='Role'))
 
             tree.column('#0', width=50)
             tree.column('Username', width=150)
@@ -1079,25 +1081,25 @@ class MessagingManager:
                     recipient_var.set(username)
                     select_window.destroy()
                 else:
-                    messagebox.showwarning("No Selection", "Please select a user")
+                    messagebox.showwarning(_t('gui.academics.assignment_system.messaging.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.messaging.dialogs.please_select_a_user', default="Please select a user"))
 
             button_frame = ttk.Frame(select_window)
             button_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Button(button_frame, text="Select", command=select_user).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=select_window.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.select', default="Select"), command=select_user).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.cancel', default="Cancel"), command=select_window.destroy).pack(side='left', padx=5)
 
             tree.bind('<Double-1>', lambda e: select_user())
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load users: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to load users: {str(e)}")
             print(f"Error browsing users: {e}")
 
 
     def _browse_attachment(self, attachment_var):
         """Browse for file attachment"""
         file_path = filedialog.askopenfilename(
-            title="Select Attachment",
+            title=_t('gui.academics.assignment_system.messaging.dialogs.select_attachment', default="Select Attachment"),
             filetypes=[("All Files", "*.*")]
         )
 
@@ -1110,15 +1112,15 @@ class MessagingManager:
         """Send a composed message"""
         # Validate inputs
         if not recipient_username:
-            messagebox.showerror("Error", "Please specify a recipient")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.please_specify_a_recipient', default="Please specify a recipient"))
             return
 
         if not subject:
-            messagebox.showerror("Error", "Please enter a subject")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.please_enter_a_subject', default="Please enter a subject"))
             return
 
         if not message_body.strip():
-            messagebox.showerror("Error", "Please enter a message")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.please_enter_a_message', default="Please enter a message"))
             return
 
         try:
@@ -1131,7 +1133,7 @@ class MessagingManager:
                 recipient = cursor.fetchone()
 
                 if not recipient:
-                    messagebox.showerror("Error", f"User '{recipient_username}' not found")
+                    messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"User '{recipient_username}' not found")
                     return
 
                 recipient_id = recipient[0]
@@ -1157,13 +1159,13 @@ class MessagingManager:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", "Message sent successfully!")
+            messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), _t('gui.academics.assignment_system.messaging.dialogs.message_sent_successfully', default="Message sent successfully!"))
 
             # Clear form
             self._clear_compose_form(recipient_entry, subject_entry, message_text, None, None)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send message: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to send message: {str(e)}")
             print(f"Error sending message: {e}")
 
 
@@ -1172,15 +1174,15 @@ class MessagingManager:
         """Send message and close the window"""
         # Validate inputs
         if not recipient_username:
-            messagebox.showerror("Error", "Please specify a recipient")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.please_specify_a_recipient', default="Please specify a recipient"))
             return
 
         if not subject:
-            messagebox.showerror("Error", "Please enter a subject")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.please_enter_a_subject', default="Please enter a subject"))
             return
 
         if not message_body.strip():
-            messagebox.showerror("Error", "Please enter a message")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.please_enter_a_message', default="Please enter a message"))
             return
 
         try:
@@ -1193,7 +1195,7 @@ class MessagingManager:
                 recipient = cursor.fetchone()
 
                 if not recipient:
-                    messagebox.showerror("Error", f"User '{recipient_username}' not found")
+                    messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"User '{recipient_username}' not found")
                     return
 
                 recipient_id = recipient[0]
@@ -1219,11 +1221,11 @@ class MessagingManager:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", "Message sent successfully!")
+            messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), _t('gui.academics.assignment_system.messaging.dialogs.message_sent_successfully', default="Message sent successfully!"))
             window.destroy()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send message: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to send message: {str(e)}")
             print(f"Error sending message: {e}")
 
 
@@ -1253,14 +1255,14 @@ class MessagingManager:
                 conn.close()
 
             if contacts:
-                ttk.Label(parent, text="Click to select:").pack(side='left', padx=5)
+                ttk.Label(parent, text=_t('gui.academics.assignment_system.messaging.labels.click_to_select', default="Click to select:")).pack(side='left', padx=5)
 
                 for username, first_name, last_name in contacts:
                     btn = ttk.Button(parent, text=username,
                                     command=lambda u=username: recipient_var.set(u))
                     btn.pack(side='left', padx=2)
             else:
-                ttk.Label(parent, text="No recent contacts",
+                ttk.Label(parent, text=_t('gui.academics.assignment_system.messaging.labels.no_recent_contacts', default="No recent contacts"),
                          foreground='#666666').pack(side='left', padx=5)
 
         except Exception as e:
@@ -1295,33 +1297,33 @@ class MessagingManager:
                 conn.close()
 
             if not sender:
-                messagebox.showerror("Error", "Original sender not found")
+                messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.original_sender_not_found', default="Original sender not found"))
                 return
 
             sender_username = sender[0]
 
             # Create reply window
             reply_window = tk.Toplevel(self.root)
-            reply_window.title("Reply to Message")
+            reply_window.title(_t('gui.academics.assignment_system.messaging.windows.reply_to_message', default="Reply to Message"))
             reply_window.geometry("700x500")
             reply_window.configure(bg='#f0f0f0')
 
-            form_frame = ttk.LabelFrame(reply_window, text="Reply", padding=20)
+            form_frame = ttk.LabelFrame(reply_window, text=_t('gui.academics.assignment_system.messaging.labels.reply', default="Reply"), padding=20)
             form_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
             # Recipient (read-only)
-            ttk.Label(form_frame, text="To:").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.to', default="To:")).grid(row=0, column=0, sticky='w', pady=5)
             recipient_label = ttk.Label(form_frame, text=sender_username, font=('TkDefaultFont', 10, 'bold'))
             recipient_label.grid(row=0, column=1, sticky='w', pady=5)
 
             # Subject
-            ttk.Label(form_frame, text="Subject:").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.subject', default="Subject:")).grid(row=1, column=0, sticky='w', pady=5)
             reply_subject = f"Re: {original_subject}" if not original_subject.startswith("Re:") else original_subject
             subject_label = ttk.Label(form_frame, text=reply_subject, font=('TkDefaultFont', 10, 'bold'))
             subject_label.grid(row=1, column=1, sticky='w', pady=5)
 
             # Message
-            ttk.Label(form_frame, text="Message:").grid(row=2, column=0, sticky='nw', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.message', default="Message:")).grid(row=2, column=0, sticky='nw', pady=5)
             message_text = scrolledtext.ScrolledText(form_frame, width=60, height=15, wrap=tk.WORD)
             message_text.grid(row=2, column=1, sticky='ew', pady=5, padx=5)
 
@@ -1336,7 +1338,7 @@ class MessagingManager:
                 message_body = message_text.get('1.0', 'end-1c')
 
                 if not message_body.strip():
-                    messagebox.showerror("Error", "Please enter a message")
+                    messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.please_enter_a_message', default="Please enter a message"))
                     return
 
                 try:
@@ -1355,18 +1357,18 @@ class MessagingManager:
                     finally:
                         conn.close()
 
-                    messagebox.showinfo("Success", "Reply sent successfully!")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), _t('gui.academics.assignment_system.messaging.dialogs.reply_sent_successfully', default="Reply sent successfully!"))
                     reply_window.destroy()
 
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to send reply: {str(e)}")
+                    messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to send reply: {str(e)}")
                     print(f"Error sending reply: {e}")
 
-            ttk.Button(button_frame, text="Send Reply", command=send_reply).pack(side='left', padx=5)
-            ttk.Button(button_frame, text="Cancel", command=reply_window.destroy).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.send_reply', default="Send Reply"), command=send_reply).pack(side='left', padx=5)
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.cancel', default="Cancel"), command=reply_window.destroy).pack(side='left', padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create reply: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to create reply: {str(e)}")
             print(f"Error creating reply: {e}")
 
 
@@ -1385,7 +1387,7 @@ class MessagingManager:
             # Get current user ID
             user_id = self.auth.current_user.get('id')
             if not user_id:
-                messagebox.showerror("Error", "User not authenticated")
+                messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.user_not_authenticated', default="User not authenticated"))
                 return
 
             # Ensure messages table exists
@@ -1393,7 +1395,7 @@ class MessagingManager:
 
             # Create compose message window
             compose_window = tk.Toplevel(self.root)
-            compose_window.title("Send Message")
+            compose_window.title(_t('gui.academics.assignment_system.messaging.windows.send_message', default="Send Message"))
             compose_window.geometry("800x600")
             compose_window.configure(bg='#f0f0f0')
 
@@ -1401,51 +1403,51 @@ class MessagingManager:
             header_frame = ttk.Frame(compose_window)
             header_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Label(header_frame, text="Compose New Message",
+            ttk.Label(header_frame, text=_t('gui.academics.assignment_system.messaging.labels.compose_new_message', default="Compose New Message"),
                      font=('TkDefaultFont', 16, 'bold')).pack(side='left')
 
             # Form frame
-            form_frame = ttk.LabelFrame(compose_window, text="Message Details", padding=20)
+            form_frame = ttk.LabelFrame(compose_window, text=_t('gui.academics.assignment_system.messaging.labels.message_details', default="Message Details"), padding=20)
             form_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
             # Recipient
-            ttk.Label(form_frame, text="To (Username):").grid(row=0, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.to_username', default="To (Username):")).grid(row=0, column=0, sticky='w', pady=5)
             recipient_var = tk.StringVar()
             recipient_entry = ttk.Entry(form_frame, textvariable=recipient_var, width=50)
             recipient_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=5)
 
             # Browse recipients button
-            ttk.Button(form_frame, text="Browse Users",
+            ttk.Button(form_frame, text=_t('gui.academics.assignment_system.messaging.buttons.browse_users', default="Browse Users"),
                       command=lambda: self._browse_users(recipient_var)).grid(row=0, column=2, padx=5)
 
             # Subject
-            ttk.Label(form_frame, text="Subject:").grid(row=1, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.subject', default="Subject:")).grid(row=1, column=0, sticky='w', pady=5)
             subject_var = tk.StringVar()
             subject_entry = ttk.Entry(form_frame, textvariable=subject_var, width=50)
             subject_entry.grid(row=1, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
 
             # Priority (optional)
-            ttk.Label(form_frame, text="Priority:").grid(row=2, column=0, sticky='w', pady=5)
-            priority_var = tk.StringVar(value="normal")
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.priority', default="Priority:")).grid(row=2, column=0, sticky='w', pady=5)
+            priority_var = tk.StringVar(value=_t('gui.academics.assignment_system.messaging.values.normal', default="normal"))
             priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, width=48,
                                          values=["low", "normal", "high", "urgent"], state='readonly')
             priority_combo.grid(row=2, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
 
             # Message body
-            ttk.Label(form_frame, text="Message:").grid(row=3, column=0, sticky='nw', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.message', default="Message:")).grid(row=3, column=0, sticky='nw', pady=5)
             message_text = scrolledtext.ScrolledText(form_frame, width=50, height=12, wrap=tk.WORD)
             message_text.grid(row=3, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
 
             # Attachment (optional)
-            ttk.Label(form_frame, text="Attachment:").grid(row=4, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.attachment', default="Attachment:")).grid(row=4, column=0, sticky='w', pady=5)
             attachment_var = tk.StringVar()
             attachment_entry = ttk.Entry(form_frame, textvariable=attachment_var, width=50, state='readonly')
             attachment_entry.grid(row=4, column=1, sticky='ew', pady=5, padx=5)
-            ttk.Button(form_frame, text="Browse",
+            ttk.Button(form_frame, text=_t('gui.academics.assignment_system.messaging.buttons.browse', default="Browse"),
                       command=lambda: self._browse_attachment(attachment_var)).grid(row=4, column=2, padx=5)
 
             # Assignment reference (optional)
-            ttk.Label(form_frame, text="Assignment:").grid(row=5, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.messaging.labels.assignment', default="Assignment:")).grid(row=5, column=0, sticky='w', pady=5)
             assignment_var = tk.StringVar()
             assignment_combo = ttk.Combobox(form_frame, textvariable=assignment_var, width=48, state='readonly')
             assignment_combo.grid(row=5, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
@@ -1459,24 +1461,24 @@ class MessagingManager:
             button_frame = ttk.Frame(compose_window)
             button_frame.pack(fill='x', padx=10, pady=10)
 
-            ttk.Button(button_frame, text="Send Message",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.send_message', default="Send Message"),
                       command=lambda: self._send_message_and_close(
                           compose_window, user_id, recipient_var.get(), subject_var.get(),
                           message_text.get('1.0', 'end-1c'), attachment_var.get(),
                           assignment_var.get()
                       ), style='Accent.TButton').pack(side='left', padx=5)
 
-            ttk.Button(button_frame, text="Cancel",
+            ttk.Button(button_frame, text=_t('gui.academics.assignment_system.messaging.buttons.cancel', default="Cancel"),
                       command=compose_window.destroy).pack(side='left', padx=5)
 
             # Quick recipients frame (recent contacts)
-            quick_frame = ttk.LabelFrame(compose_window, text="Recent Contacts", padding=10)
+            quick_frame = ttk.LabelFrame(compose_window, text=_t('gui.academics.assignment_system.messaging.labels.recent_contacts', default="Recent Contacts"), padding=10)
             quick_frame.pack(fill='x', padx=10, pady=5)
 
             self._load_recent_contacts(quick_frame, recipient_var, user_id)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open compose dialog: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to open compose dialog: {str(e)}")
             print(f"Error in send_message: {e}")
 
 
@@ -1513,7 +1515,7 @@ class MessagingManager:
                 self._reply_to_message(message_id, message[0], message[1])
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send reply: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to send reply: {e}")
 
 
     def _send_module_message(self, module_code, subject, message_body):
@@ -1521,7 +1523,7 @@ class MessagingManager:
         try:
             user_id = self.auth.current_user.get('id')
             if not user_id:
-                messagebox.showerror("Error", "User not authenticated")
+                messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.user_not_authenticated', default="User not authenticated"))
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -1539,7 +1541,7 @@ class MessagingManager:
                 students = cursor.fetchall()
 
                 if not students:
-                    messagebox.showinfo("No Students", f"No students found for module {module_code}")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.no_students', default="No Students"), f"No students found for module {module_code}")
                     return
 
                 # Send message to each student
@@ -1561,10 +1563,10 @@ class MessagingManager:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Message sent to {count} students in {module_code}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), f"Message sent to {count} students in {module_code}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send module message: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to send module message: {e}")
 
 
     def _send_individual_message(self, recipient_username, subject, message_body):
@@ -1579,7 +1581,7 @@ class MessagingManager:
         try:
             user_id = self.auth.current_user.get('id')
             if not user_id:
-                messagebox.showerror("Error", "User not authenticated")
+                messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), _t('gui.academics.assignment_system.messaging.dialogs.user_not_authenticated', default="User not authenticated"))
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -1597,7 +1599,7 @@ class MessagingManager:
                 recipients = cursor.fetchall()
 
                 if not recipients:
-                    messagebox.showinfo("No Recipients", "No instructors/admins found")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.no_recipients', default="No Recipients"), _t('gui.academics.assignment_system.messaging.dialogs.no_instructors_admins_found', default="No instructors/admins found"))
                     return
 
                 # Send message to each recipient
@@ -1619,10 +1621,10 @@ class MessagingManager:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Broadcast message sent to {count} instructors/admins")
+            messagebox.showinfo(_t('gui.academics.assignment_system.messaging.dialogs.success', default="Success"), f"Broadcast message sent to {count} instructors/admins")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send broadcast: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Failed to send broadcast: {e}")
 
 
     def _launch_gui_feature(self, callback, feature_name):
@@ -1630,6 +1632,6 @@ class MessagingManager:
         try:
             callback()
         except Exception as e:
-            messagebox.showerror("Error", f"Error launching {feature_name}: {str(e)}")
+            messagebox.showerror(_t('gui.academics.assignment_system.messaging.dialogs.error', default="Error"), f"Error launching {feature_name}: {str(e)}")
 
 

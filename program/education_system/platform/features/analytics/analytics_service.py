@@ -18,15 +18,13 @@ logger = logging.getLogger(__name__)
 
 def _default_db_paths():
     """Return a dict of system -> default database Path (the canonical registry)."""
-    try:
-        from education_system.platform.kernel.database.paths import SYSTEM_DB_PATHS
-        return {k: Path(v) for k, v in SYSTEM_DB_PATHS.items()}
-    except Exception:
-        shared_dir = Path(__file__).resolve().parent.parent  # .../shared
-        edu_root = shared_dir.parent  # .../education_system
-        return {
-            "university": edu_root / "post_18" / "university_system" / "data" / "db_files" / "student_records.db",
-        }
+    # education_system.paths depends on nothing beyond the standard library,
+    # so this import cannot realistically fail. The previous fallback built a
+    # ``post_18/university_system/...`` path that has not existed since the
+    # ADR 0018 move, so a failure here silently analysed a non-existent file.
+    from education_system.paths import SYSTEM_DB_PATHS
+
+    return {k: Path(v) for k, v in SYSTEM_DB_PATHS.items()}
 
 
 def _table_exists(conn, table_name):
@@ -47,10 +45,7 @@ def _get_columns(conn, table_name):
 # Enumerate the same nine systems (in the same order) as the rest of the
 # platform, so the per-system analytics breakdown covers every system.
 try:
-    from education_system.platform.kernel.database.paths import (
-        SYSTEM_ORDER as SYSTEM_ORDER,
-        SYSTEM_LABELS as SYSTEM_LABELS,
-    )
+    from education_system.paths import SYSTEM_ORDER, SYSTEM_LABELS
 except Exception:  # pragma: no cover - fallback if the registry can't be imported
     SYSTEM_LABELS = {"university": "University"}
     SYSTEM_ORDER = ["primary", "secondary", "sixth_form", "university"]
@@ -232,9 +227,16 @@ class AnalyticsService:
                         f"WHERE previous_system_id IS NOT NULL AND previous_system_id != ''"
                     ).fetchone()[0]
                     if cnt > 0:
-                        # Infer source from system order
-                        idx = SYSTEM_ORDER.index(sys_key)
-                        src = SYSTEM_ORDER[idx - 1] if idx > 0 else "unknown"
+                        # Infer the source from the linear phase chain, not
+                        # from SYSTEM_ORDER. SYSTEM_ORDER is a display order
+                        # and now interleaves the post-16 systems, so the
+                        # entry before "university" in it is
+                        # "apprenticeships" — a worse guess than the phase
+                        # a learner actually usually arrives from.
+                        from education_system.platform.cross_system.progression import (
+                            previous_phase,
+                        )
+                        src = previous_phase(sys_key) or "unknown"
                         already = any(
                             x["destination_system"] == sys_key and x["source_system"] == src
                             for x in results

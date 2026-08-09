@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -48,18 +50,18 @@ def show_library_interface(self):
     self.clear_content()
     self.update_status("Library Account")
 
-    title = ttk.Label(self.content_frame, text="Library Account", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.library.labels.library_account', default="Library Account"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.library.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.library.labels.select_student', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -68,7 +70,7 @@ def show_library_interface(self):
     child_combo.pack(side=tk.LEFT, padx=5)
 
     # Library display frame
-    library_frame = ttk.LabelFrame(self.content_frame, text="Library Information", padding=15)
+    library_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.library.labels.library_information', default="Library Information"), padding=15)
     library_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     def load_library_info():
@@ -77,7 +79,7 @@ def show_library_interface(self):
 
         selected_child = child_var.get()
         if not selected_child:
-            ttk.Label(library_frame, text="Please select a child").pack(pady=20)
+            ttk.Label(library_frame, text=_t('gui.academics.parent_portal.library.labels.please_select_a_child', default="Please select a child")).pack(pady=20)
             return
 
         student_id = selected_child.split("ID: ")[1].rstrip(")")
@@ -105,7 +107,7 @@ def show_library_interface(self):
                 checkouts = cursor.fetchall()
 
                 # Summary
-                summary_frame = ttk.LabelFrame(library_frame, text="Account Summary", padding=10)
+                summary_frame = ttk.LabelFrame(library_frame, text=_t('gui.academics.parent_portal.library.labels.account_summary', default="Account Summary"), padding=10)
                 summary_frame.pack(fill=tk.X, pady=(0, 10))
 
                 ttk.Label(summary_frame, text=f"Books Checked Out: {len(checkouts)}",
@@ -134,13 +136,13 @@ def show_library_interface(self):
                     tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
                     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
                 else:
-                    ttk.Label(library_frame, text="No books currently checked out",
+                    ttk.Label(library_frame, text=_t('gui.academics.parent_portal.library.labels.no_books_currently_checked_out', default="No books currently checked out"),
                              font=('Arial', 11)).pack(pady=50)
 
-                ttk.Button(library_frame, text="View Reading History",
+                ttk.Button(library_frame, text=_t('gui.academics.parent_portal.library.buttons.view_reading_history', default="View Reading History"),
                           command=lambda: self.view_reading_history(student_id)).pack(pady=10)
             else:
-                ttk.Label(library_frame, text="Library system not configured",
+                ttk.Label(library_frame, text=_t('gui.academics.parent_portal.library.labels.library_system_not_configured', default="Library system not configured"),
                          font=('Arial', 11)).pack(pady=20)
 
             conn.close()
@@ -149,7 +151,7 @@ def show_library_interface(self):
             ttk.Label(library_frame, text=f"Error loading library info: {str(e)}",
                      font=('Arial', 10)).pack(pady=20)
 
-    ttk.Button(child_frame, text="Load Library Info", command=load_library_info).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.library.buttons.load_library_info', default="Load Library Info"), command=load_library_info).pack(side=tk.LEFT, padx=5)
     load_library_info()
 ParentPortalGUI.show_library_interface = show_library_interface
 
@@ -157,7 +159,7 @@ def view_reading_history(self, student_id):
     """View reading history"""
     # Create dialog window
     dialog = tk.Toplevel(self.root)
-    dialog.title("Reading History")
+    dialog.title(_t('gui.academics.parent_portal.library.windows.reading_history', default="Reading History"))
     dialog.geometry("800x600")
     dialog.transient(self.root)
     dialog.grab_set()
@@ -166,7 +168,7 @@ def view_reading_history(self, student_id):
     main_frame = ttk.Frame(dialog, padding=20)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Reading History",
+    ttk.Label(main_frame, text=_t('gui.academics.parent_portal.library.labels.reading_history', default="Reading History"),
              font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
     try:
@@ -180,9 +182,9 @@ def view_reading_history(self, student_id):
         """)
 
         if not cursor.fetchone():
-            ttk.Label(main_frame, text="Library system not configured.",
+            ttk.Label(main_frame, text=_t('gui.academics.parent_portal.library.labels.library_system_not_configured_variant_2', default="Library system not configured."),
                      font=('Arial', 11)).pack(pady=50)
-            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack()
+            ttk.Button(main_frame, text=_t('gui.academics.parent_portal.library.buttons.close', default="Close"), command=dialog.destroy).pack()
             conn.close()
             return
 
@@ -198,21 +200,21 @@ def view_reading_history(self, student_id):
         conn.close()
 
         if not checkouts:
-            ttk.Label(main_frame, text="No reading history found.",
+            ttk.Label(main_frame, text=_t('gui.academics.parent_portal.library.labels.no_reading_history_found', default="No reading history found."),
                      font=('Arial', 11)).pack(pady=50)
-            ttk.Button(main_frame, text="Close", command=dialog.destroy).pack()
+            ttk.Button(main_frame, text=_t('gui.academics.parent_portal.library.buttons.close', default="Close"), command=dialog.destroy).pack()
             return
 
         # Display reading history
         columns = ("Title", "Author", "Checked Out", "Due Date", "Returned", "Status")
         tree = ttk.Treeview(main_frame, columns=columns, show="headings", height=15)
 
-        tree.heading("Title", text="Title")
-        tree.heading("Author", text="Author")
-        tree.heading("Checked Out", text="Checked Out")
-        tree.heading("Due Date", text="Due Date")
-        tree.heading("Returned", text="Returned")
-        tree.heading("Status", text="Status")
+        tree.heading("Title", text=_t('gui.academics.parent_portal.library.headings.title', default="Title"))
+        tree.heading("Author", text=_t('gui.academics.parent_portal.library.headings.author', default="Author"))
+        tree.heading("Checked Out", text=_t('gui.academics.parent_portal.library.headings.checked_out', default="Checked Out"))
+        tree.heading("Due Date", text=_t('gui.academics.parent_portal.library.headings.due_date', default="Due Date"))
+        tree.heading("Returned", text=_t('gui.academics.parent_portal.library.headings.returned', default="Returned"))
+        tree.heading("Status", text=_t('gui.academics.parent_portal.library.headings.status', default="Status"))
 
         tree.column("Title", width=200)
         tree.column("Author", width=150)
@@ -240,9 +242,9 @@ def view_reading_history(self, student_id):
         ttk.Label(summary_frame, text=f"Total Books: {total_books} | Returned: {returned_books}",
                  font=('Arial', 11)).pack(side=tk.LEFT)
 
-        ttk.Button(summary_frame, text="Close", command=dialog.destroy).pack(side=tk.RIGHT)
+        ttk.Button(summary_frame, text=_t('gui.academics.parent_portal.library.buttons.close', default="Close"), command=dialog.destroy).pack(side=tk.RIGHT)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load reading history: {str(e)}")
+        messagebox.showerror(_t('gui.academics.parent_portal.library.dialogs.error', default="Error"), f"Failed to load reading history: {str(e)}")
         dialog.destroy()
 ParentPortalGUI.view_reading_history = view_reading_history

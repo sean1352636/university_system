@@ -24,14 +24,14 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from education_system.systems.sixth_form.infrastructure import paths
+from education_system import paths
 from education_system.systems.sixth_form.domain.assessment.risk_analytics import (
     risk_analytics,
 )
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = paths.AUTOMATION_RULES_DB
+DB_PATH = paths.SIXTH_FORM_AUTOMATION_RULES_DB
 
 SEVERITIES: tuple[str, ...] = ("Low", "Medium", "High", "Critical")
 ACTION_STATUSES: tuple[str, ...] = ("Open", "Done", "Dismissed")
@@ -97,7 +97,7 @@ _TRIGGER_BY_KEY = {t.key: t for t in TRIGGERS}
 # ── DB plumbing ──────────────────────────────────────────────────────
 
 def _connect() -> sqlite3.Connection:
-    paths.ensure_directories()
+    paths.ensure_sixth_form_directories()
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")

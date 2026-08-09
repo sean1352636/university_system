@@ -1,5 +1,7 @@
 """Expense and income tracking"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
@@ -13,7 +15,7 @@ class ExpensesIncomeMixin:
     def create_expenses_income_tab(self, notebook):
         """Create expenses and income tracking tab"""
         tab = ttk.Frame(notebook, padding="10")
-        notebook.add(tab, text="Expenses & Income")
+        notebook.add(tab, text=_t('gui.finance.finance.budget_manager.expenses_income.tabs.expenses_income', default="Expenses & Income"))
 
         # Create sub-notebook for expenses and income
         sub_notebook = ttk.Notebook(tab)
@@ -21,35 +23,35 @@ class ExpensesIncomeMixin:
 
         # Expenses sub-tab
         expenses_tab = ttk.Frame(sub_notebook, padding="10")
-        sub_notebook.add(expenses_tab, text="Expenses")
+        sub_notebook.add(expenses_tab, text=_t('gui.finance.finance.budget_manager.expenses_income.tabs.expenses', default="Expenses"))
 
         # Add expense form
-        form_frame = ttk.LabelFrame(expenses_tab, text="Add New Expense", padding="10")
+        form_frame = ttk.LabelFrame(expenses_tab, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.add_new_expense', default="Add New Expense"), padding="10")
         form_frame.pack(fill=tk.X, pady=(0, 10))
 
         fields = ttk.Frame(form_frame)
         fields.pack(fill=tk.X)
 
-        ttk.Label(fields, text="Amount (\u00a3):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.amount', default="Amount (\u00a3):")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.expense_amount_entry = ttk.Entry(fields, width=15)
         self.expense_amount_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(fields, text="Description:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.description', default="Description:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.expense_desc_entry = ttk.Entry(fields, width=30)
         self.expense_desc_entry.grid(row=0, column=3, padx=5, pady=5)
 
-        ttk.Label(fields, text="Category:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(fields, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.category', default="Category:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.expense_category_combo = ttk.Combobox(fields,
             values=['Food', 'Transport', 'Books', 'Entertainment', 'Housing', 'Other'],
             width=13)
         self.expense_category_combo.current(0)
         self.expense_category_combo.grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Button(fields, text="Add Expense", command=self.add_personal_expense).grid(
+        ttk.Button(fields, text=_t('gui.finance.finance.budget_manager.expenses_income.buttons.add_expense', default="Add Expense"), command=self.add_personal_expense).grid(
             row=1, column=3, padx=5, pady=5)
 
         # Expenses list
-        list_frame = ttk.LabelFrame(expenses_tab, text="My Expenses", padding="10")
+        list_frame = ttk.LabelFrame(expenses_tab, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.my_expenses', default="My Expenses"), padding="10")
         list_frame.pack(fill=tk.BOTH, expand=True)
 
         self.expenses_tree = ttk.Treeview(list_frame,
@@ -70,39 +72,39 @@ class ExpensesIncomeMixin:
         # Expense buttons
         exp_btn_frame = ttk.Frame(expenses_tab)
         exp_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(exp_btn_frame, text="Refresh", command=self.refresh_expenses_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(exp_btn_frame, text=_t('gui.finance.finance.budget_manager.expenses_income.buttons.refresh', default="Refresh"), command=self.refresh_expenses_list).pack(side=tk.LEFT, padx=5)
 
         # Income sub-tab
         income_tab = ttk.Frame(sub_notebook, padding="10")
-        sub_notebook.add(income_tab, text="Income")
+        sub_notebook.add(income_tab, text=_t('gui.finance.finance.budget_manager.expenses_income.tabs.income', default="Income"))
 
         # Add income form
-        income_form = ttk.LabelFrame(income_tab, text="Add New Income", padding="10")
+        income_form = ttk.LabelFrame(income_tab, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.add_new_income', default="Add New Income"), padding="10")
         income_form.pack(fill=tk.X, pady=(0, 10))
 
         income_fields = ttk.Frame(income_form)
         income_fields.pack(fill=tk.X)
 
-        ttk.Label(income_fields, text="Amount (\u00a3):").grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(income_fields, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.amount', default="Amount (\u00a3):")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
         self.income_amount_entry = ttk.Entry(income_fields, width=15)
         self.income_amount_entry.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(income_fields, text="Source:").grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(income_fields, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.source', default="Source:")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.income_source_entry = ttk.Entry(income_fields, width=30)
         self.income_source_entry.grid(row=0, column=3, padx=5, pady=5)
 
-        ttk.Label(income_fields, text="Type:").grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
+        ttk.Label(income_fields, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.type', default="Type:")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
         self.income_type_combo = ttk.Combobox(income_fields,
             values=['Salary', 'Scholarship', 'Grant', 'Allowance', 'Other'],
             width=13)
         self.income_type_combo.current(0)
         self.income_type_combo.grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Button(income_fields, text="Add Income", command=self.add_personal_income).grid(
+        ttk.Button(income_fields, text=_t('gui.finance.finance.budget_manager.expenses_income.buttons.add_income', default="Add Income"), command=self.add_personal_income).grid(
             row=1, column=3, padx=5, pady=5)
 
         # Income list
-        income_list = ttk.LabelFrame(income_tab, text="My Income", padding="10")
+        income_list = ttk.LabelFrame(income_tab, text=_t('gui.finance.finance.budget_manager.expenses_income.labels.my_income', default="My Income"), padding="10")
         income_list.pack(fill=tk.BOTH, expand=True)
 
         self.income_tree = ttk.Treeview(income_list,
@@ -123,7 +125,7 @@ class ExpensesIncomeMixin:
         # Income buttons
         inc_btn_frame = ttk.Frame(income_tab)
         inc_btn_frame.pack(fill=tk.X, pady=5)
-        ttk.Button(inc_btn_frame, text="Refresh", command=self.refresh_income_list).pack(side=tk.LEFT, padx=5)
+        ttk.Button(inc_btn_frame, text=_t('gui.finance.finance.budget_manager.expenses_income.buttons.refresh', default="Refresh"), command=self.refresh_income_list).pack(side=tk.LEFT, padx=5)
 
         # Initial load
         self.root.after(200, self.refresh_expenses_list)
@@ -134,14 +136,14 @@ class ExpensesIncomeMixin:
         try:
             amount_str = self.expense_amount_entry.get().strip()
             if not amount_str:
-                messagebox.showwarning("Warning", "Please enter an amount.")
+                messagebox.showwarning(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.please_enter_an_amount', default="Please enter an amount."))
                 return
             amount = float(amount_str)
             description = self.expense_desc_entry.get().strip()
             category = self.expense_category_combo.get()
 
             if not description or amount <= 0:
-                messagebox.showerror("Error", "Please enter valid description and amount.")
+                messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.please_enter_valid_description_and_amount', default="Please enter valid description and amount."))
                 return
 
             # Get current user
@@ -160,30 +162,30 @@ class ExpensesIncomeMixin:
                 payment_method='other'
             )
 
-            messagebox.showinfo("Success", "Expense added successfully!")
+            messagebox.showinfo(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.success', default="Success"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.expense_added_successfully', default="Expense added successfully!"))
             self.expense_amount_entry.delete(0, tk.END)
             self.expense_desc_entry.delete(0, tk.END)
             self.refresh_expenses_list()
             self.refresh_dashboard()
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid amount. Please enter a number.")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.invalid_amount_please_enter_a_number', default="Invalid amount. Please enter a number."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add expense: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), f"Failed to add expense: {e}")
 
     def add_personal_income(self):
         """Add a new personal income"""
         try:
             amount_str = self.income_amount_entry.get().strip()
             if not amount_str:
-                messagebox.showwarning("Warning", "Please enter an amount.")
+                messagebox.showwarning(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.please_enter_an_amount', default="Please enter an amount."))
                 return
             amount = float(amount_str)
             source = self.income_source_entry.get().strip()
             income_type = self.income_type_combo.get()
 
             if not source or amount <= 0:
-                messagebox.showerror("Error", "Please enter valid source and amount.")
+                messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.please_enter_valid_source_and_amount', default="Please enter valid source and amount."))
                 return
 
             # Map GUI display values to DB CHECK constraint values
@@ -212,16 +214,16 @@ class ExpensesIncomeMixin:
                 description=f"{income_type} from {source}"
             )
 
-            messagebox.showinfo("Success", "Income added successfully!")
+            messagebox.showinfo(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.success', default="Success"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.income_added_successfully', default="Income added successfully!"))
             self.income_amount_entry.delete(0, tk.END)
             self.income_source_entry.delete(0, tk.END)
             self.refresh_income_list()
             self.refresh_dashboard()
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid amount. Please enter a number.")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.invalid_amount_please_enter_a_number', default="Invalid amount. Please enter a number."))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to add income: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), f"Failed to add income: {e}")
 
     def refresh_expenses_list(self):
         """Refresh the expenses tree with data from database"""
@@ -279,23 +281,23 @@ class ExpensesIncomeMixin:
     def delete_expense(self):
         """Delete selected expense"""
         if not hasattr(self, 'expenses_tree'):
-            messagebox.showwarning("Warning", "Please navigate to the Expenses tab first.")
+            messagebox.showwarning(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.please_navigate_to_the_expenses_tab_first', default="Please navigate to the Expenses tab first."))
             return
 
         selection = self.expenses_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an expense to delete.")
+            messagebox.showwarning(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.warning', default="Warning"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.please_select_an_expense_to_delete', default="Please select an expense to delete."))
             return
 
         try:
             item = self.expenses_tree.item(selection[0])
             expense_desc = item['values'][1] if len(item['values']) > 1 else 'this expense'
 
-            if messagebox.askyesno("Confirm", f"Delete {expense_desc}?"):
+            if messagebox.askyesno(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.confirm', default="Confirm"), f"Delete {expense_desc}?"):
                 from education_system.systems.university.domain.finance.budget.services.budget_service import ExpenseManager
-                messagebox.showinfo("Success", "Expense deleted!")
+                messagebox.showinfo(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.success', default="Success"), _t('gui.finance.finance.budget_manager.expenses_income.dialogs.expense_deleted', default="Expense deleted!"))
                 self.refresh_expenses_list()
                 self.refresh_dashboard()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete expense: {e}")
+            messagebox.showerror(_t('gui.finance.finance.budget_manager.expenses_income.dialogs.error', default="Error"), f"Failed to delete expense: {e}")

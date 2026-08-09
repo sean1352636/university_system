@@ -1,0 +1,21 @@
+{
+  "template_id": "p2p_transfer_received_notification",
+  "category": "finance",
+  "name": "Money Received Notification",
+  "description": "In-app notification delivered to the recipient of a student-to-student money transfer",
+  "version": "1.0.0",
+  "subject": "You received £{amount} from {sender_name}",
+  "body": "Hi {recipient_name},\n\n{sender_name} ({sender_id}) has sent you £{amount}.\n\nReference:          {reference}\nReference Number:   {reference_number}\nDate & Time:        {transfer_date}\n\nThe money has been added to your Student Finance Account. Open the Student Bank app to see your updated balance and transaction history.",
+  "variables": {
+    "sender_name": {"type": "string", "required": true, "description": "Full name of the sender"},
+    "sender_id": {"type": "string", "required": true, "description": "Student ID or username of the sender"},
+    "recipient_name": {"type": "string", "required": true, "description": "Full name of the recipient"},
+    "amount": {"type": "string", "required": true, "description": "Amount received, formatted to two decimal places"},
+    "reference": {"type": "string", "required": true, "description": "Sender-supplied reference (e.g. 'Meal out', 'Money owed')"},
+    "reference_number": {"type": "string", "required": true, "description": "Generated transfer reference number (TRF-...)"},
+    "transfer_date": {"type": "string", "required": true, "description": "Date and time of the transfer"}
+  },
+  "tags": ["finance", "transfer", "notification", "p2p"],
+  "created_at": "2026-08-08T00:00:00Z",
+  "updated_at": "2026-08-08T00:00:00Z"
+}

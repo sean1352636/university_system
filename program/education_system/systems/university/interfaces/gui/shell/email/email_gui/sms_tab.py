@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from tkinter.simpledialog import askstring, askinteger
@@ -53,22 +55,22 @@ def create_sms_tab(self):
     paned.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # Top pane - SMS Composer
-    compose_frame = ttk.LabelFrame(paned, text="📱 Compose SMS", padding=10)
+    compose_frame = ttk.LabelFrame(paned, text=_t('gui.shell.email.email_gui.sms_tab.labels.compose_sms', default="📱 Compose SMS"), padding=10)
     paned.add(compose_frame, weight=1)
 
     # Recipient selection
     recipient_frame = ttk.Frame(compose_frame)
     recipient_frame.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Label(recipient_frame, text="Recipient:").pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Label(recipient_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.recipient', default="Recipient:")).pack(side=tk.LEFT, padx=(0, 5))
 
     # Recipient type selection
-    self.sms_recipient_type = tk.StringVar(value="individual")
-    ttk.Radiobutton(recipient_frame, text="Individual", variable=self.sms_recipient_type,
+    self.sms_recipient_type = tk.StringVar(value=_t('gui.shell.email.email_gui.sms_tab.values.individual', default="individual"))
+    ttk.Radiobutton(recipient_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.individual', default="Individual"), variable=self.sms_recipient_type,
                    value="individual", command=self.on_sms_recipient_type_change).pack(side=tk.LEFT, padx=5)
-    ttk.Radiobutton(recipient_frame, text="Group", variable=self.sms_recipient_type,
+    ttk.Radiobutton(recipient_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.group', default="Group"), variable=self.sms_recipient_type,
                    value="group", command=self.on_sms_recipient_type_change).pack(side=tk.LEFT, padx=5)
-    ttk.Radiobutton(recipient_frame, text="Role", variable=self.sms_recipient_type,
+    ttk.Radiobutton(recipient_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.role', default="Role"), variable=self.sms_recipient_type,
                    value="role", command=self.on_sms_recipient_type_change).pack(side=tk.LEFT, padx=5)
 
     # Recipient input area
@@ -78,22 +80,22 @@ def create_sms_tab(self):
     # Phone number entry (for individual)
     phone_frame = ttk.Frame(recipient_input_frame)
     phone_frame.pack(fill=tk.X)
-    ttk.Label(phone_frame, text="Phone Number:").pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Label(phone_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.phone_number', default="Phone Number:")).pack(side=tk.LEFT, padx=(0, 5))
     self.sms_phone_entry = ttk.Entry(phone_frame, width=20)
     self.sms_phone_entry.pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Label(phone_frame, text="(Format: +1234567890)", foreground='gray').pack(side=tk.LEFT)
+    ttk.Label(phone_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.format_1234567890', default="(Format: +1234567890)"), foreground='gray').pack(side=tk.LEFT)
 
     # User selection combobox (for individual user lookup)
     user_frame = ttk.Frame(recipient_input_frame)
-    ttk.Label(user_frame, text="Or select user:").pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Label(user_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.or_select_user', default="Or select user:")).pack(side=tk.LEFT, padx=(0, 5))
     self.sms_user_combo = ttk.Combobox(user_frame, width=30, state='readonly')
     self.sms_user_combo.pack(side=tk.LEFT, padx=(0, 5))
     self.sms_user_combo.bind('<<ComboboxSelected>>', self.on_sms_user_selected)
-    ttk.Button(user_frame, text="🔄 Refresh Users", command=self.load_sms_users).pack(side=tk.LEFT, padx=5)
+    ttk.Button(user_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.refresh_users', default="🔄 Refresh Users"), command=self.load_sms_users).pack(side=tk.LEFT, padx=5)
 
     # Group/Role selection (hidden by default)
     self.sms_group_frame = ttk.Frame(recipient_input_frame)
-    ttk.Label(self.sms_group_frame, text="Select Group/Role:").pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Label(self.sms_group_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.select_group_role', default="Select Group/Role:")).pack(side=tk.LEFT, padx=(0, 5))
     self.sms_group_combo = ttk.Combobox(self.sms_group_frame, width=30, state='readonly')
     self.sms_group_combo.pack(side=tk.LEFT, padx=(0, 5))
 
@@ -101,12 +103,12 @@ def create_sms_tab(self):
     message_frame = ttk.Frame(compose_frame)
     message_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
-    ttk.Label(message_frame, text="Message:").pack(anchor=tk.W, pady=(0, 5))
+    ttk.Label(message_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.message', default="Message:")).pack(anchor=tk.W, pady=(0, 5))
 
     # Character counter
     counter_frame = ttk.Frame(message_frame)
     counter_frame.pack(fill=tk.X, pady=(0, 5))
-    self.sms_char_label = ttk.Label(counter_frame, text="0 / 160 characters", foreground='gray')
+    self.sms_char_label = ttk.Label(counter_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.value_0_160_characters', default="0 / 160 characters"), foreground='gray')
     self.sms_char_label.pack(side=tk.RIGHT)
 
     # Text area with scrollbar
@@ -121,26 +123,26 @@ def create_sms_tab(self):
     button_frame = ttk.Frame(compose_frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text="📤 Send SMS", command=self.send_sms).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="🗑️ Clear", command=self.clear_sms_form).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text="📋 Template", command=self.sms_templates).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.send_sms', default="📤 Send SMS"), command=self.send_sms).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.clear', default="🗑️ Clear"), command=self.clear_sms_form).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.template', default="📋 Template"), command=self.sms_templates).pack(side=tk.LEFT, padx=5)
 
     # Bottom pane - SMS History
-    history_frame = ttk.LabelFrame(paned, text="📋 SMS History", padding=10)
+    history_frame = ttk.LabelFrame(paned, text=_t('gui.shell.email.email_gui.sms_tab.labels.sms_history', default="📋 SMS History"), padding=10)
     paned.add(history_frame, weight=2)
 
     # History toolbar
     history_toolbar = ttk.Frame(history_frame)
     history_toolbar.pack(fill=tk.X, pady=(0, 10))
 
-    ttk.Button(history_toolbar, text="🔄 Refresh", command=self.refresh_sms_history).pack(side=tk.LEFT, padx=5)
-    ttk.Button(history_toolbar, text="🗑️ Delete", command=self.delete_sms).pack(side=tk.LEFT, padx=5)
-    ttk.Button(history_toolbar, text="📊 Statistics", command=self.sms_statistics).pack(side=tk.LEFT, padx=5)
+    ttk.Button(history_toolbar, text=_t('gui.shell.email.email_gui.sms_tab.buttons.refresh', default="🔄 Refresh"), command=self.refresh_sms_history).pack(side=tk.LEFT, padx=5)
+    ttk.Button(history_toolbar, text=_t('gui.shell.email.email_gui.sms_tab.buttons.delete_variant_2', default="🗑️ Delete"), command=self.delete_sms).pack(side=tk.LEFT, padx=5)
+    ttk.Button(history_toolbar, text=_t('gui.shell.email.email_gui.sms_tab.buttons.statistics', default="📊 Statistics"), command=self.sms_statistics).pack(side=tk.LEFT, padx=5)
 
     # Search frame
     search_frame = ttk.Frame(history_toolbar)
     search_frame.pack(side=tk.RIGHT)
-    ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=(0, 5))
+    ttk.Label(search_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.search', default="Search:")).pack(side=tk.LEFT, padx=(0, 5))
     self.sms_search_entry = ttk.Entry(search_frame, width=20)
     self.sms_search_entry.pack(side=tk.LEFT)
     self.sms_search_entry.bind('<KeyRelease>', lambda e: self.refresh_sms_history())
@@ -169,22 +171,22 @@ def create_sms_tab(self):
     hsb.config(command=self.sms_history_tree.xview)
 
     # Configure columns
-    self.sms_history_tree.heading("ID", text="ID")
+    self.sms_history_tree.heading("ID", text=_t('gui.shell.email.email_gui.sms_tab.headings.id', default="ID"))
     self.sms_history_tree.column("ID", width=50, minwidth=50)
 
-    self.sms_history_tree.heading("Date", text="Date & Time")
+    self.sms_history_tree.heading("Date", text=_t('gui.shell.email.email_gui.sms_tab.headings.date_time', default="Date & Time"))
     self.sms_history_tree.column("Date", width=150, minwidth=120)
 
-    self.sms_history_tree.heading("Recipient", text="Recipient")
+    self.sms_history_tree.heading("Recipient", text=_t('gui.shell.email.email_gui.sms_tab.headings.recipient', default="Recipient"))
     self.sms_history_tree.column("Recipient", width=150, minwidth=100)
 
-    self.sms_history_tree.heading("Phone", text="Phone Number")
+    self.sms_history_tree.heading("Phone", text=_t('gui.shell.email.email_gui.sms_tab.headings.phone_number', default="Phone Number"))
     self.sms_history_tree.column("Phone", width=120, minwidth=100)
 
-    self.sms_history_tree.heading("Message", text="Message")
+    self.sms_history_tree.heading("Message", text=_t('gui.shell.email.email_gui.sms_tab.headings.message', default="Message"))
     self.sms_history_tree.column("Message", width=300, minwidth=200)
 
-    self.sms_history_tree.heading("Status", text="Status")
+    self.sms_history_tree.heading("Status", text=_t('gui.shell.email.email_gui.sms_tab.headings.status', default="Status"))
     self.sms_history_tree.column("Status", width=100, minwidth=80)
 
     # Status tags
@@ -340,7 +342,7 @@ def update_sms_char_count(self, event=None):
 
         # Update label with color coding
         if char_count == 0:
-            self.sms_char_label.config(text="0 / 160 characters", foreground='gray')
+            self.sms_char_label.config(text=_t('gui.shell.email.email_gui.sms_tab.text.value_0_160_characters', default="0 / 160 characters"), foreground='gray')
         elif char_count <= 160:
             self.sms_char_label.config(
                 text=f"{char_count} / 160 characters",
@@ -365,7 +367,7 @@ def send_sms(self):
         # Get message
         message = self.sms_message_text.get("1.0", tk.END).strip()
         if not message:
-            messagebox.showwarning("No Message", "Please enter a message to send.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.sms_tab.dialogs.no_message', default="No Message"), _t('gui.shell.email.email_gui.sms_tab.dialogs.please_enter_a_message_to_send', default="Please enter a message to send."))
             return
 
         # Get recipients based on type
@@ -375,12 +377,12 @@ def send_sms(self):
         if recipient_type == "individual":
             phone = self.sms_phone_entry.get().strip()
             if not phone:
-                messagebox.showwarning("No Recipient", "Please enter a phone number or select a user.")
+                messagebox.showwarning(_t('gui.shell.email.email_gui.sms_tab.dialogs.no_recipient', default="No Recipient"), _t('gui.shell.email.email_gui.sms_tab.dialogs.please_enter_a_phone_number_or_select_a_user', default="Please enter a phone number or select a user."))
                 return
 
             # Validate phone format
             if not self.validate_phone_number(phone):
-                messagebox.showerror("Invalid Phone", "Phone number must be in format: +1234567890")
+                messagebox.showerror(_t('gui.shell.email.email_gui.sms_tab.dialogs.invalid_phone', default="Invalid Phone"), _t('gui.shell.email.email_gui.sms_tab.dialogs.phone_number_must_be_in_format_1234567890', default="Phone number must be in format: +1234567890"))
                 return
 
             recipients = [(phone, self.sms_user_combo.get() or "Unknown")]
@@ -388,19 +390,19 @@ def send_sms(self):
         elif recipient_type in ["group", "role"]:
             group_or_role = self.sms_group_combo.get()
             if not group_or_role:
-                messagebox.showwarning("No Selection", f"Please select a {recipient_type}.")
+                messagebox.showwarning(_t('gui.shell.email.email_gui.sms_tab.dialogs.no_selection', default="No Selection"), f"Please select a {recipient_type}.")
                 return
 
             # Get recipients from group/role
             recipients = self.get_recipients_for_group_or_role(recipient_type, group_or_role)
 
             if not recipients:
-                messagebox.showwarning("No Recipients", f"No users found for {recipient_type}: {group_or_role}")
+                messagebox.showwarning(_t('gui.shell.email.email_gui.sms_tab.dialogs.no_recipients', default="No Recipients"), f"No users found for {recipient_type}: {group_or_role}")
                 return
 
         # Confirm bulk send
         if len(recipients) > 1:
-            if not messagebox.askyesno("Confirm Bulk SMS",
+            if not messagebox.askyesno(_t('gui.shell.email.email_gui.sms_tab.dialogs.confirm_bulk_sms', default="Confirm Bulk SMS"),
                 f"Send SMS to {len(recipients)} recipients?\n\nThis will send {len(recipients)} messages."):
                 return
 
@@ -423,7 +425,7 @@ def send_sms(self):
         if fail_count > 0:
             result_msg += f"\n⚠️ {fail_count} failed"
 
-        messagebox.showinfo("SMS Sent", result_msg)
+        messagebox.showinfo(_t('gui.shell.email.email_gui.sms_tab.dialogs.sms_sent', default="SMS Sent"), result_msg)
 
         # Log activity
         log_activity(
@@ -442,7 +444,7 @@ def send_sms(self):
         self.refresh_sms_history()
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to send SMS: {str(e)}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.sms_tab.dialogs.error', default="Error"), f"Failed to send SMS: {str(e)}")
         print(f"SMS send error: {e}")
 
 # Bind method to EmailManagerGUI
@@ -552,7 +554,7 @@ EmailManagerGUI.clear_sms_form = clear_sms_form
 def sms_templates(self):
     """Show SMS templates dialog for managing reusable SMS messages"""
     dialog = tk.Toplevel(self.root)
-    dialog.title("SMS Templates")
+    dialog.title(_t('gui.shell.email.email_gui.sms_tab.windows.sms_templates', default="SMS Templates"))
     dialog.geometry("700x500")
     dialog.transient(self.root)
 
@@ -561,26 +563,26 @@ def sms_templates(self):
     main_frame.pack(fill='both', expand=True, padx=10, pady=10)
 
     # Left pane - template list
-    list_frame = ttk.LabelFrame(main_frame, text="Templates")
+    list_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.templates', default="Templates"))
     list_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
 
     # Templates treeview
     templates_tree = ttk.Treeview(list_frame, columns=('name', 'category'), show='headings', height=15)
-    templates_tree.heading('name', text='Template Name')
-    templates_tree.heading('category', text='Category')
+    templates_tree.heading('name', text=_t('gui.shell.email.email_gui.sms_tab.headings.template_name', default='Template Name'))
+    templates_tree.heading('category', text=_t('gui.shell.email.email_gui.sms_tab.headings.category', default='Category'))
     templates_tree.column('name', width=150)
     templates_tree.column('category', width=100)
     templates_tree.pack(fill='both', expand=True, padx=5, pady=5)
 
     # Right pane - template editor
-    editor_frame = ttk.LabelFrame(main_frame, text="Template Editor")
+    editor_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.template_editor', default="Template Editor"))
     editor_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
 
-    ttk.Label(editor_frame, text="Template Name:").pack(anchor='w', padx=5, pady=(5, 0))
+    ttk.Label(editor_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.template_name', default="Template Name:")).pack(anchor='w', padx=5, pady=(5, 0))
     name_var = tk.StringVar()
     ttk.Entry(editor_frame, textvariable=name_var, width=30).pack(fill='x', padx=5, pady=2)
 
-    ttk.Label(editor_frame, text="Category:").pack(anchor='w', padx=5, pady=(5, 0))
+    ttk.Label(editor_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.category', default="Category:")).pack(anchor='w', padx=5, pady=(5, 0))
     category_var = tk.StringVar()
     category_combo = ttk.Combobox(editor_frame, textvariable=category_var,
                                   values=['Notification', 'Reminder', 'Alert', 'Verification', 'General'],
@@ -588,12 +590,12 @@ def sms_templates(self):
     category_combo.pack(fill='x', padx=5, pady=2)
     category_combo.set('General')
 
-    ttk.Label(editor_frame, text="Message (160 chars max):").pack(anchor='w', padx=5, pady=(5, 0))
+    ttk.Label(editor_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.message_160_chars_max', default="Message (160 chars max):")).pack(anchor='w', padx=5, pady=(5, 0))
     message_text = tk.Text(editor_frame, height=5, width=30, wrap='word')
     message_text.pack(fill='x', padx=5, pady=2)
 
     # Character counter
-    char_label = ttk.Label(editor_frame, text="0/160 characters")
+    char_label = ttk.Label(editor_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.value_0_160_characters_variant_2', default="0/160 characters"))
     char_label.pack(anchor='w', padx=5)
 
     def update_char_count(event=None):
@@ -604,7 +606,7 @@ def sms_templates(self):
     message_text.bind('<KeyRelease>', update_char_count)
 
     # Placeholders info
-    ttk.Label(editor_frame, text="Available placeholders:", font=('Arial', 9, 'bold')).pack(anchor='w', padx=5, pady=(10, 0))
+    ttk.Label(editor_frame, text=_t('gui.shell.email.email_gui.sms_tab.labels.available_placeholders', default="Available placeholders:"), font=('Arial', 9, 'bold')).pack(anchor='w', padx=5, pady=(10, 0))
     placeholders = "{name}, {student_id}, {date}, {time}, {code}"
     ttk.Label(editor_frame, text=placeholders, font=('Arial', 8), foreground='gray').pack(anchor='w', padx=5)
 
@@ -630,7 +632,7 @@ def sms_templates(self):
                     templates_tree.insert('', 'end', iid=row[0], values=(row[1], row[2]))
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load templates: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.sms_tab.dialogs.error', default="Error"), f"Failed to load templates: {e}")
 
     def on_template_select(event):
         """Load selected template into editor"""
@@ -654,7 +656,7 @@ def sms_templates(self):
                     update_char_count()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load template: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.sms_tab.dialogs.error', default="Error"), f"Failed to load template: {e}")
 
     templates_tree.bind('<<TreeviewSelect>>', on_template_select)
 
@@ -662,12 +664,12 @@ def sms_templates(self):
         """Save current template"""
         name = name_var.get().strip()
         if not name:
-            messagebox.showwarning("Validation Error", "Please enter a template name")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.sms_tab.dialogs.validation_error', default="Validation Error"), _t('gui.shell.email.email_gui.sms_tab.dialogs.please_enter_a_template_name', default="Please enter a template name"))
             return
 
         message = message_text.get("1.0", "end-1c").strip()
         if not message:
-            messagebox.showwarning("Validation Error", "Please enter a message")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.sms_tab.dialogs.validation_error', default="Validation Error"), _t('gui.shell.email.email_gui.sms_tab.dialogs.please_enter_a_message', default="Please enter a message"))
             return
 
         try:
@@ -677,20 +679,20 @@ def sms_templates(self):
                     VALUES (?, ?, ?)
                 """, (name, category_var.get(), message))
 
-            messagebox.showinfo("Success", "Template saved successfully")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.sms_tab.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.sms_tab.dialogs.template_saved_successfully', default="Template saved successfully"))
             load_templates()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save template: {e}")
+            messagebox.showerror(_t('gui.shell.email.email_gui.sms_tab.dialogs.error', default="Error"), f"Failed to save template: {e}")
 
     def delete_template():
         """Delete selected template"""
         selection = templates_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a template to delete")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.sms_tab.dialogs.no_selection', default="No Selection"), _t('gui.shell.email.email_gui.sms_tab.dialogs.please_select_a_template_to_delete', default="Please select a template to delete"))
             return
 
-        if messagebox.askyesno("Confirm Delete", "Delete this template?"):
+        if messagebox.askyesno(_t('gui.shell.email.email_gui.sms_tab.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.email.email_gui.sms_tab.dialogs.delete_this_template', default="Delete this template?")):
             try:
                 with get_db_connection() as conn:
                     conn.execute("DELETE FROM sms_templates WHERE id = ?", (selection[0],))
@@ -701,7 +703,7 @@ def sms_templates(self):
                 load_templates()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to delete template: {e}")
+                messagebox.showerror(_t('gui.shell.email.email_gui.sms_tab.dialogs.error', default="Error"), f"Failed to delete template: {e}")
 
     def use_template():
         """Use selected template in SMS composer"""
@@ -711,7 +713,7 @@ def sms_templates(self):
             self.sms_message_text.insert("1.0", message)
             self.update_sms_char_count()
             dialog.destroy()
-            messagebox.showinfo("Success", "Template loaded into SMS composer")
+            messagebox.showinfo(_t('gui.shell.email.email_gui.sms_tab.dialogs.success', default="Success"), _t('gui.shell.email.email_gui.sms_tab.dialogs.template_loaded_into_sms_composer', default="Template loaded into SMS composer"))
 
     def new_template():
         """Clear form for new template"""
@@ -724,10 +726,10 @@ def sms_templates(self):
     btn_frame = ttk.Frame(editor_frame)
     btn_frame.pack(fill='x', padx=5, pady=10)
 
-    ttk.Button(btn_frame, text="New", command=new_template).pack(side='left', padx=2)
-    ttk.Button(btn_frame, text="Save", command=save_template).pack(side='left', padx=2)
-    ttk.Button(btn_frame, text="Delete", command=delete_template).pack(side='left', padx=2)
-    ttk.Button(btn_frame, text="Use Template", command=use_template).pack(side='left', padx=2)
+    ttk.Button(btn_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.new', default="New"), command=new_template).pack(side='left', padx=2)
+    ttk.Button(btn_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.save', default="Save"), command=save_template).pack(side='left', padx=2)
+    ttk.Button(btn_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.delete', default="Delete"), command=delete_template).pack(side='left', padx=2)
+    ttk.Button(btn_frame, text=_t('gui.shell.email.email_gui.sms_tab.buttons.use_template', default="Use Template"), command=use_template).pack(side='left', padx=2)
 
     # Load initial templates
     load_templates()
@@ -810,7 +812,7 @@ def refresh_sms_history(self):
 
     except Exception as e:
         print(f"⚠️ Error loading SMS history: {e}")
-        messagebox.showerror("Error", f"Failed to load SMS history: {str(e)}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.sms_tab.dialogs.error', default="Error"), f"Failed to load SMS history: {str(e)}")
 
 # Bind method to EmailManagerGUI
 EmailManagerGUI.refresh_sms_history = refresh_sms_history
@@ -820,10 +822,10 @@ def delete_sms(self):
     try:
         selection = self.sms_history_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select an SMS to delete.")
+            messagebox.showwarning(_t('gui.shell.email.email_gui.sms_tab.dialogs.no_selection', default="No Selection"), _t('gui.shell.email.email_gui.sms_tab.dialogs.please_select_an_sms_to_delete', default="Please select an SMS to delete."))
             return
 
-        if not messagebox.askyesno("Confirm Delete", "Delete selected SMS from history?"):
+        if not messagebox.askyesno(_t('gui.shell.email.email_gui.sms_tab.dialogs.confirm_delete', default="Confirm Delete"), _t('gui.shell.email.email_gui.sms_tab.dialogs.delete_selected_sms_from_history', default="Delete selected SMS from history?")):
             return
 
         # Get SMS ID
@@ -837,10 +839,10 @@ def delete_sms(self):
         # Refresh list
         self.refresh_sms_history()
 
-        messagebox.showinfo("Deleted", "SMS deleted successfully")
+        messagebox.showinfo(_t('gui.shell.email.email_gui.sms_tab.dialogs.deleted', default="Deleted"), _t('gui.shell.email.email_gui.sms_tab.dialogs.sms_deleted_successfully', default="SMS deleted successfully"))
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to delete SMS: {str(e)}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.sms_tab.dialogs.error', default="Error"), f"Failed to delete SMS: {str(e)}")
 
 # Bind method to EmailManagerGUI
 EmailManagerGUI.delete_sms = delete_sms
@@ -855,7 +857,7 @@ def sms_statistics(self):
                 WHERE type='table' AND name='sms_messages'
             """)
             if not cursor.fetchone():
-                messagebox.showinfo("Statistics", "No SMS data available yet.")
+                messagebox.showinfo(_t('gui.shell.email.email_gui.sms_tab.dialogs.statistics', default="Statistics"), _t('gui.shell.email.email_gui.sms_tab.dialogs.no_sms_data_available_yet', default="No SMS data available yet."))
                 return
 
             # Get statistics
@@ -885,10 +887,10 @@ Total Messages: {total}
 Success Rate: {success_rate:.1f}%
 """
 
-            messagebox.showinfo("SMS Statistics", stats_msg)
+            messagebox.showinfo(_t('gui.shell.email.email_gui.sms_tab.dialogs.sms_statistics', default="SMS Statistics"), stats_msg)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load statistics: {str(e)}")
+        messagebox.showerror(_t('gui.shell.email.email_gui.sms_tab.dialogs.error', default="Error"), f"Failed to load statistics: {str(e)}")
 
 # Bind method to EmailManagerGUI
 EmailManagerGUI.sms_statistics = sms_statistics

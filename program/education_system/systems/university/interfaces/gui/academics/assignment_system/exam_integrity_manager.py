@@ -1,5 +1,7 @@
 """Exam integrity management - randomization, time limits, proctoring, and monitoring"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import json
@@ -80,20 +82,20 @@ class ExamIntegrityManager:
     def show_exam_integrity_settings(self):
         """Main settings dashboard for exam integrity"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to manage exam integrity settings.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.you_do_not_have_permission_to_manage_exam_integrity_settings', default="You do not have permission to manage exam integrity settings."))
             return
 
         self.gui.layout.clear_content_area()
         content = self.gui.layout.content_area
 
-        title = ttk.Label(content, text="Exam Integrity Settings", style='Title.TLabel')
+        title = ttk.Label(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.exam_integrity_settings', default="Exam Integrity Settings"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Assessment selector
-        sel_frame = ttk.LabelFrame(content, text="Select Assessment", padding=10)
+        sel_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.select_assessment', default="Select Assessment"), padding=10)
         sel_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(sel_frame, text="Assessment:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(sel_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.assessment', default="Assessment:")).grid(row=0, column=0, sticky='w', pady=5)
         self.integrity_assessment_var = tk.StringVar()
         assessment_combo = ttk.Combobox(
             sel_frame, textvariable=self.integrity_assessment_var, width=50, state='readonly'
@@ -102,7 +104,7 @@ class ExamIntegrityManager:
         self._load_assessments_into_combo(assessment_combo)
 
         # Action buttons
-        btn_frame = ttk.LabelFrame(content, text="Configuration", padding=10)
+        btn_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.configuration', default="Configuration"), padding=10)
         btn_frame.pack(fill='x', pady=(0, 15))
 
         buttons = [
@@ -119,16 +121,16 @@ class ExamIntegrityManager:
         btn_frame.columnconfigure(1, weight=1)
 
         # Monitoring buttons
-        mon_frame = ttk.LabelFrame(content, text="Monitoring & Logs", padding=10)
+        mon_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.monitoring_logs', default="Monitoring & Logs"), padding=10)
         mon_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Button(mon_frame, text="Proctoring Dashboard", command=self.show_proctoring_dashboard).grid(
+        ttk.Button(mon_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.proctoring_dashboard', default="Proctoring Dashboard"), command=self.show_proctoring_dashboard).grid(
             row=0, column=0, padx=10, pady=5, sticky='ew'
         )
-        ttk.Button(mon_frame, text="View Integrity Logs", command=self.view_integrity_logs).grid(
+        ttk.Button(mon_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.view_integrity_logs', default="View Integrity Logs"), command=self.view_integrity_logs).grid(
             row=0, column=1, padx=10, pady=5, sticky='ew'
         )
-        ttk.Button(mon_frame, text="Flagged Students", command=self.show_flagged_students).grid(
+        ttk.Button(mon_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.flagged_students', default="Flagged Students"), command=self.show_flagged_students).grid(
             row=0, column=2, padx=10, pady=5, sticky='ew'
         )
         mon_frame.columnconfigure(0, weight=1)
@@ -142,7 +144,7 @@ class ExamIntegrityManager:
         """Get the currently selected assessment ID or show warning"""
         label = getattr(self, 'integrity_assessment_var', tk.StringVar()).get()
         if not label:
-            messagebox.showwarning("No Selection", "Please select an assessment first.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.no_selection', default="No Selection"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.please_select_an_assessment_first', default="Please select an assessment first."))
             return None
         return self._assessment_map.get(label)
 
@@ -168,7 +170,7 @@ class ExamIntegrityManager:
 
     def _show_settings_overview(self, parent):
         """Show overview table of all assessment integrity settings"""
-        overview_frame = ttk.LabelFrame(parent, text="Settings Overview", padding=10)
+        overview_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.settings_overview', default="Settings Overview"), padding=10)
         overview_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         columns = ('assessment', 'randomize_q', 'randomize_a', 'q_count', 'time_limit',
@@ -232,7 +234,7 @@ class ExamIntegrityManager:
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Configure Randomization")
+        dialog.title(_t('gui.academics.assignment_system.exam_integrity_manager.windows.configure_randomization', default="Configure Randomization"))
         dialog.geometry("450x350")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -240,7 +242,7 @@ class ExamIntegrityManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Randomization Settings", font=('Helvetica', 14, 'bold')).pack(
+        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.randomization_settings', default="Randomization Settings"), font=('Helvetica', 14, 'bold')).pack(
             anchor='w', pady=(0, 15)
         )
 
@@ -249,21 +251,21 @@ class ExamIntegrityManager:
 
         # Randomize question order
         rand_q_var = tk.BooleanVar(value=bool(settings.get('randomize_questions', 0)))
-        ttk.Checkbutton(main_frame, text="Randomize question order per student", variable=rand_q_var).pack(
+        ttk.Checkbutton(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.randomize_question_order_per_student', default="Randomize question order per student"), variable=rand_q_var).pack(
             anchor='w', pady=5
         )
 
         # Randomize answer choices
         rand_a_var = tk.BooleanVar(value=bool(settings.get('randomize_answers', 0)))
-        ttk.Checkbutton(main_frame, text="Randomize answer choices per student", variable=rand_a_var).pack(
+        ttk.Checkbutton(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.randomize_answer_choices_per_student', default="Randomize answer choices per student"), variable=rand_a_var).pack(
             anchor='w', pady=5
         )
 
         # Question bank selection
-        bank_frame = ttk.LabelFrame(main_frame, text="Question Bank Selection", padding=10)
+        bank_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.question_bank_selection', default="Question Bank Selection"), padding=10)
         bank_frame.pack(fill='x', pady=(10, 5))
 
-        ttk.Label(bank_frame, text="Select N questions from bank (0 = all):").grid(
+        ttk.Label(bank_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.select_n_questions_from_bank_0_all', default="Select N questions from bank (0 = all):")).grid(
             row=0, column=0, sticky='w', pady=5
         )
         q_count_var = tk.StringVar(value=str(settings.get('question_count', 0)))
@@ -271,7 +273,7 @@ class ExamIntegrityManager:
             row=0, column=1, sticky='w', pady=5, padx=(10, 0)
         )
 
-        ttk.Label(bank_frame, text="Each student receives a different random subset\nof questions from the question bank.",
+        ttk.Label(bank_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.each_student_receives_a_different_random_subset_of_questions_fro', default="Each student receives a different random subset\nof questions from the question bank."),
                   foreground='gray').grid(row=1, column=0, columnspan=2, sticky='w', pady=5)
 
         def save():
@@ -280,7 +282,7 @@ class ExamIntegrityManager:
                 if q_count < 0:
                     raise ValueError
             except ValueError:
-                messagebox.showerror("Error", "Question count must be a non-negative integer.", parent=dialog)
+                messagebox.showerror(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.question_count_must_be_a_non_negative_integer', default="Question count must be a non-negative integer."), parent=dialog)
                 return
 
             self._save_settings(assessment_id, {
@@ -288,13 +290,13 @@ class ExamIntegrityManager:
                 'randomize_answers': int(rand_a_var.get()),
                 'question_count': q_count,
             })
-            messagebox.showinfo("Saved", "Randomization settings saved successfully.", parent=dialog)
+            messagebox.showinfo(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.saved', default="Saved"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.randomization_settings_saved_successfully', default="Randomization settings saved successfully."), parent=dialog)
             dialog.destroy()
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill='x', pady=(15, 0))
-        ttk.Button(btn_frame, text="Save", command=save, style='Accent.TButton').pack(side='left')
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=(10, 0))
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.save', default="Save"), command=save, style='Accent.TButton').pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=(10, 0))
 
     # -------------------------------------------------------------------------
     # Time limit settings
@@ -306,7 +308,7 @@ class ExamIntegrityManager:
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Configure Time Limits")
+        dialog.title(_t('gui.academics.assignment_system.exam_integrity_manager.windows.configure_time_limits', default="Configure Time Limits"))
         dialog.geometry("450x320")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -314,17 +316,17 @@ class ExamIntegrityManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Time Limit Settings", font=('Helvetica', 14, 'bold')).pack(
+        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.time_limit_settings', default="Time Limit Settings"), font=('Helvetica', 14, 'bold')).pack(
             anchor='w', pady=(0, 15)
         )
 
         settings = self._load_settings(assessment_id)
 
         # Time limit
-        time_frame = ttk.LabelFrame(main_frame, text="Time Limit", padding=10)
+        time_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.time_limit', default="Time Limit"), padding=10)
         time_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(time_frame, text="Time limit (minutes, 0 = unlimited):").grid(
+        ttk.Label(time_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.time_limit_minutes_0_unlimited', default="Time limit (minutes, 0 = unlimited):")).grid(
             row=0, column=0, sticky='w', pady=5
         )
         time_var = tk.StringVar(value=str(settings.get('time_limit_minutes', 0)))
@@ -335,21 +337,21 @@ class ExamIntegrityManager:
         # Auto-submit
         auto_var = tk.BooleanVar(value=bool(settings.get('auto_submit', 0)))
         ttk.Checkbutton(
-            main_frame, text="Auto-submit when time expires", variable=auto_var
+            main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.auto_submit_when_time_expires', default="Auto-submit when time expires"), variable=auto_var
         ).pack(anchor='w', pady=5)
 
         ttk.Label(
             main_frame,
-            text="When enabled, the student's exam will be automatically\n"
+            text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.when_enabled_the_student_s_exam_will_be_automatically_submitted', default="When enabled, the student's exam will be automatically\n"
                  "submitted when the time limit is reached. Unanswered\n"
-                 "questions will be submitted as-is.",
+                 "questions will be submitted as-is."),
             foreground='gray'
         ).pack(anchor='w', pady=(5, 10))
 
         # Warning thresholds
-        warn_frame = ttk.LabelFrame(main_frame, text="Warnings", padding=10)
+        warn_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.warnings', default="Warnings"), padding=10)
         warn_frame.pack(fill='x', pady=(0, 10))
-        ttk.Label(warn_frame, text="Students are warned at 10, 5, and 1 minute(s) remaining.").pack(
+        ttk.Label(warn_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.students_are_warned_at_10_5_and_1_minute_s_remaining', default="Students are warned at 10, 5, and 1 minute(s) remaining.")).pack(
             anchor='w'
         )
 
@@ -359,20 +361,20 @@ class ExamIntegrityManager:
                 if minutes < 0:
                     raise ValueError
             except ValueError:
-                messagebox.showerror("Error", "Time limit must be a non-negative integer.", parent=dialog)
+                messagebox.showerror(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.time_limit_must_be_a_non_negative_integer', default="Time limit must be a non-negative integer."), parent=dialog)
                 return
 
             self._save_settings(assessment_id, {
                 'time_limit_minutes': minutes,
                 'auto_submit': int(auto_var.get()),
             })
-            messagebox.showinfo("Saved", "Time limit settings saved successfully.", parent=dialog)
+            messagebox.showinfo(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.saved', default="Saved"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.time_limit_settings_saved_successfully', default="Time limit settings saved successfully."), parent=dialog)
             dialog.destroy()
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill='x', pady=(10, 0))
-        ttk.Button(btn_frame, text="Save", command=save, style='Accent.TButton').pack(side='left')
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=(10, 0))
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.save', default="Save"), command=save, style='Accent.TButton').pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=(10, 0))
 
     # -------------------------------------------------------------------------
     # Browser lockdown / proctoring
@@ -384,7 +386,7 @@ class ExamIntegrityManager:
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("Browser Lockdown & Proctoring")
+        dialog.title(_t('gui.academics.assignment_system.exam_integrity_manager.windows.browser_lockdown_proctoring', default="Browser Lockdown & Proctoring"))
         dialog.geometry("500x420")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -392,34 +394,34 @@ class ExamIntegrityManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="Browser Lockdown & Proctoring", font=('Helvetica', 14, 'bold')).pack(
+        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.browser_lockdown_proctoring', default="Browser Lockdown & Proctoring"), font=('Helvetica', 14, 'bold')).pack(
             anchor='w', pady=(0, 15)
         )
 
         settings = self._load_settings(assessment_id)
 
         # Lockdown browser
-        lockdown_frame = ttk.LabelFrame(main_frame, text="Lockdown Browser", padding=10)
+        lockdown_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.lockdown_browser', default="Lockdown Browser"), padding=10)
         lockdown_frame.pack(fill='x', pady=(0, 10))
 
         lockdown_var = tk.BooleanVar(value=bool(settings.get('browser_lockdown', 0)))
         ttk.Checkbutton(
-            lockdown_frame, text="Require lockdown browser", variable=lockdown_var
+            lockdown_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.require_lockdown_browser', default="Require lockdown browser"), variable=lockdown_var
         ).pack(anchor='w', pady=5)
 
         ttk.Label(
             lockdown_frame,
-            text="Students must use a lockdown browser to take the exam.\n"
+            text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.students_must_use_a_lockdown_browser_to_take_the_exam_this_preve', default="Students must use a lockdown browser to take the exam.\n"
                  "This prevents opening other applications, tabs, or\n"
-                 "right-clicking during the assessment.",
+                 "right-clicking during the assessment."),
             foreground='gray'
         ).pack(anchor='w', pady=(0, 5))
 
         # Proctoring provider
-        proctor_frame = ttk.LabelFrame(main_frame, text="Proctoring Integration", padding=10)
+        proctor_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.proctoring_integration', default="Proctoring Integration"), padding=10)
         proctor_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(proctor_frame, text="Proctoring Provider:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(proctor_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.proctoring_provider', default="Proctoring Provider:")).grid(row=0, column=0, sticky='w', pady=5)
         provider_var = tk.StringVar(value=settings.get('proctoring_provider', ''))
         provider_combo = ttk.Combobox(
             proctor_frame, textvariable=provider_var,
@@ -430,20 +432,20 @@ class ExamIntegrityManager:
 
         ttk.Label(
             proctor_frame,
-            text="Select a proctoring provider for webcam/screen monitoring.\n"
-                 "Leave empty to disable remote proctoring.",
+            text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.select_a_proctoring_provider_for_webcam_screen_monitoring_leave', default="Select a proctoring provider for webcam/screen monitoring.\n"
+                 "Leave empty to disable remote proctoring."),
             foreground='gray'
         ).grid(row=1, column=0, columnspan=2, sticky='w', pady=5)
 
         # Copy-paste and tab-switch detection
-        detect_frame = ttk.LabelFrame(main_frame, text="Activity Detection", padding=10)
+        detect_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.activity_detection', default="Activity Detection"), padding=10)
         detect_frame.pack(fill='x', pady=(0, 10))
 
         ttk.Label(
             detect_frame,
-            text="Copy-paste detection and tab-switch logging are always\n"
+            text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.copy_paste_detection_and_tab_switch_logging_are_always_enabled_w', default="Copy-paste detection and tab-switch logging are always\n"
                  "enabled when lockdown browser is required. Events are\n"
-                 "recorded in integrity logs for review."
+                 "recorded in integrity logs for review.")
         ).pack(anchor='w')
 
         def save():
@@ -451,13 +453,13 @@ class ExamIntegrityManager:
                 'browser_lockdown': int(lockdown_var.get()),
                 'proctoring_provider': provider_var.get(),
             })
-            messagebox.showinfo("Saved", "Lockdown and proctoring settings saved successfully.", parent=dialog)
+            messagebox.showinfo(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.saved', default="Saved"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.lockdown_and_proctoring_settings_saved_successfully', default="Lockdown and proctoring settings saved successfully."), parent=dialog)
             dialog.destroy()
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill='x', pady=(10, 0))
-        ttk.Button(btn_frame, text="Save", command=save, style='Accent.TButton').pack(side='left')
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=(10, 0))
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.save', default="Save"), command=save, style='Accent.TButton').pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=(10, 0))
 
     # -------------------------------------------------------------------------
     # IP restrictions
@@ -469,7 +471,7 @@ class ExamIntegrityManager:
             return
 
         dialog = tk.Toplevel(self.root)
-        dialog.title("IP Restrictions")
+        dialog.title(_t('gui.academics.assignment_system.exam_integrity_manager.windows.ip_restrictions', default="IP Restrictions"))
         dialog.geometry("500x480")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -477,7 +479,7 @@ class ExamIntegrityManager:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill='both', expand=True)
 
-        ttk.Label(main_frame, text="IP Restriction Settings", font=('Helvetica', 14, 'bold')).pack(
+        ttk.Label(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.ip_restriction_settings', default="IP Restriction Settings"), font=('Helvetica', 14, 'bold')).pack(
             anchor='w', pady=(0, 15)
         )
 
@@ -486,14 +488,14 @@ class ExamIntegrityManager:
         # Enable/disable
         ip_enabled_var = tk.BooleanVar(value=bool(settings.get('ip_restriction_enabled', 0)))
         ttk.Checkbutton(
-            main_frame, text="Enable IP restriction (campus-only exams)", variable=ip_enabled_var
+            main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.enable_ip_restriction_campus_only_exams', default="Enable IP restriction (campus-only exams)"), variable=ip_enabled_var
         ).pack(anchor='w', pady=(0, 10))
 
         # Allowed IPs list
-        ip_frame = ttk.LabelFrame(main_frame, text="Allowed IP Ranges / Subnets", padding=10)
+        ip_frame = ttk.LabelFrame(main_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.allowed_ip_ranges_subnets', default="Allowed IP Ranges / Subnets"), padding=10)
         ip_frame.pack(fill='both', expand=True, pady=(0, 10))
 
-        ttk.Label(ip_frame, text="Enter one IP address or CIDR range per line:").pack(anchor='w', pady=(0, 5))
+        ttk.Label(ip_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.enter_one_ip_address_or_cidr_range_per_line', default="Enter one IP address or CIDR range per line:")).pack(anchor='w', pady=(0, 5))
 
         ip_text = scrolledtext.ScrolledText(ip_frame, height=8, width=50)
         ip_text.pack(fill='both', expand=True)
@@ -507,7 +509,7 @@ class ExamIntegrityManager:
 
         ttk.Label(
             main_frame,
-            text="Examples: 192.168.1.0/24, 10.0.0.0/8, 172.16.5.100",
+            text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.examples_192_168_1_0_24_10_0_0_0_8_172_16_5_100', default="Examples: 192.168.1.0/24, 10.0.0.0/8, 172.16.5.100"),
             foreground='gray'
         ).pack(anchor='w', pady=(0, 5))
 
@@ -522,13 +524,13 @@ class ExamIntegrityManager:
             else:
                 ip_text.insert('1.0', cidr)
 
-        ttk.Button(preset_frame, text="Add 10.0.0.0/8", command=lambda: add_preset("10.0.0.0/8")).pack(
+        ttk.Button(preset_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.add_10_0_0_0_8', default="Add 10.0.0.0/8"), command=lambda: add_preset("10.0.0.0/8")).pack(
             side='left', padx=(0, 5)
         )
-        ttk.Button(preset_frame, text="Add 172.16.0.0/12", command=lambda: add_preset("172.16.0.0/12")).pack(
+        ttk.Button(preset_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.add_172_16_0_0_12', default="Add 172.16.0.0/12"), command=lambda: add_preset("172.16.0.0/12")).pack(
             side='left', padx=(0, 5)
         )
-        ttk.Button(preset_frame, text="Add 192.168.0.0/16", command=lambda: add_preset("192.168.0.0/16")).pack(
+        ttk.Button(preset_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.add_192_168_0_0_16', default="Add 192.168.0.0/16"), command=lambda: add_preset("192.168.0.0/16")).pack(
             side='left'
         )
 
@@ -539,13 +541,13 @@ class ExamIntegrityManager:
                 'ip_restriction_enabled': int(ip_enabled_var.get()),
                 'allowed_ips_json': json.dumps(ip_list),
             })
-            messagebox.showinfo("Saved", "IP restriction settings saved successfully.", parent=dialog)
+            messagebox.showinfo(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.saved', default="Saved"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.ip_restriction_settings_saved_successfully', default="IP restriction settings saved successfully."), parent=dialog)
             dialog.destroy()
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(fill='x', pady=(5, 0))
-        ttk.Button(btn_frame, text="Save", command=save, style='Accent.TButton').pack(side='left')
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=(10, 0))
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.save', default="Save"), command=save, style='Accent.TButton').pack(side='left')
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=(10, 0))
 
     # -------------------------------------------------------------------------
     # Proctoring dashboard
@@ -554,26 +556,26 @@ class ExamIntegrityManager:
     def show_proctoring_dashboard(self):
         """Live monitoring dashboard showing active exams and flagged students"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to view the proctoring dashboard.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.you_do_not_have_permission_to_view_the_proctoring_dashboard', default="You do not have permission to view the proctoring dashboard."))
             return
 
         self.gui.layout.clear_content_area()
         content = self.gui.layout.content_area
 
-        title = ttk.Label(content, text="Proctoring Dashboard", style='Title.TLabel')
+        title = ttk.Label(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.proctoring_dashboard', default="Proctoring Dashboard"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Active exams section
-        active_frame = ttk.LabelFrame(content, text="Active Exams with Integrity Settings", padding=10)
+        active_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.active_exams_with_integrity_settings', default="Active Exams with Integrity Settings"), padding=10)
         active_frame.pack(fill='x', pady=(0, 15))
 
         active_cols = ('assessment', 'lockdown', 'proctoring', 'time_limit', 'students')
         active_tree = ttk.Treeview(active_frame, columns=active_cols, show='headings', height=6)
-        active_tree.heading('assessment', text='Assessment')
-        active_tree.heading('lockdown', text='Lockdown')
-        active_tree.heading('proctoring', text='Proctoring')
-        active_tree.heading('time_limit', text='Time Limit')
-        active_tree.heading('students', text='Active Students')
+        active_tree.heading('assessment', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.assessment', default='Assessment'))
+        active_tree.heading('lockdown', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.lockdown', default='Lockdown'))
+        active_tree.heading('proctoring', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.proctoring', default='Proctoring'))
+        active_tree.heading('time_limit', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.time_limit', default='Time Limit'))
+        active_tree.heading('students', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.active_students', default='Active Students'))
         active_tree.column('assessment', width=200)
         active_tree.column('lockdown', width=80, anchor='center')
         active_tree.column('proctoring', width=120, anchor='center')
@@ -617,16 +619,16 @@ class ExamIntegrityManager:
             ttk.Label(active_frame, text=f"Error loading data: {e}").pack()
 
         # Flagged students summary
-        flag_frame = ttk.LabelFrame(content, text="Recently Flagged Students", padding=10)
+        flag_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.recently_flagged_students', default="Recently Flagged Students"), padding=10)
         flag_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         flag_cols = ('student', 'assessment', 'event_type', 'count', 'last_event')
         flag_tree = ttk.Treeview(flag_frame, columns=flag_cols, show='headings', height=8)
-        flag_tree.heading('student', text='Student ID')
-        flag_tree.heading('assessment', text='Assessment')
-        flag_tree.heading('event_type', text='Event Type')
-        flag_tree.heading('count', text='Count')
-        flag_tree.heading('last_event', text='Last Event')
+        flag_tree.heading('student', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.student_id', default='Student ID'))
+        flag_tree.heading('assessment', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.assessment', default='Assessment'))
+        flag_tree.heading('event_type', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.event_type', default='Event Type'))
+        flag_tree.heading('count', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.count', default='Count'))
+        flag_tree.heading('last_event', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.last_event', default='Last Event'))
         flag_tree.column('student', width=100)
         flag_tree.column('assessment', width=180)
         flag_tree.column('event_type', width=120, anchor='center')
@@ -663,8 +665,8 @@ class ExamIntegrityManager:
         # Navigation
         nav_frame = ttk.Frame(content)
         nav_frame.pack(fill='x', pady=(0, 10))
-        ttk.Button(nav_frame, text="Back to Settings", command=self.show_exam_integrity_settings).pack(side='left')
-        ttk.Button(nav_frame, text="Refresh", command=self.show_proctoring_dashboard).pack(side='left', padx=(10, 0))
+        ttk.Button(nav_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.back_to_settings', default="Back to Settings"), command=self.show_exam_integrity_settings).pack(side='left')
+        ttk.Button(nav_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.refresh', default="Refresh"), command=self.show_proctoring_dashboard).pack(side='left', padx=(10, 0))
 
     # -------------------------------------------------------------------------
     # Integrity logs viewer
@@ -673,21 +675,21 @@ class ExamIntegrityManager:
     def view_integrity_logs(self):
         """View tab-switch and copy-paste logs"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to view integrity logs.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.you_do_not_have_permission_to_view_integrity_logs', default="You do not have permission to view integrity logs."))
             return
 
         self.gui.layout.clear_content_area()
         content = self.gui.layout.content_area
 
-        title = ttk.Label(content, text="Exam Integrity Logs", style='Title.TLabel')
+        title = ttk.Label(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.exam_integrity_logs', default="Exam Integrity Logs"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 15))
 
         # Filters
-        filter_frame = ttk.LabelFrame(content, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill='x', pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Event Type:").grid(row=0, column=0, sticky='w', pady=5)
-        event_filter_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.event_type', default="Event Type:")).grid(row=0, column=0, sticky='w', pady=5)
+        event_filter_var = tk.StringVar(value=_t('gui.academics.assignment_system.exam_integrity_manager.values.all', default="All"))
         event_combo = ttk.Combobox(
             filter_frame, textvariable=event_filter_var,
             values=["All", "tab_switch", "copy_paste", "focus_lost", "ip_violation"],
@@ -695,7 +697,7 @@ class ExamIntegrityManager:
         )
         event_combo.grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
 
-        ttk.Label(filter_frame, text="Student ID:").grid(row=0, column=2, sticky='w', pady=5, padx=(20, 0))
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.student_id', default="Student ID:")).grid(row=0, column=2, sticky='w', pady=5, padx=(20, 0))
         student_filter_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=student_filter_var, width=15).grid(
             row=0, column=3, sticky='w', pady=5, padx=(10, 0)
@@ -707,12 +709,12 @@ class ExamIntegrityManager:
 
         log_cols = ('id', 'assessment', 'student', 'event_type', 'details', 'timestamp')
         log_tree = ttk.Treeview(log_frame, columns=log_cols, show='headings', height=15)
-        log_tree.heading('id', text='ID')
-        log_tree.heading('assessment', text='Assessment')
-        log_tree.heading('student', text='Student')
-        log_tree.heading('event_type', text='Event Type')
-        log_tree.heading('details', text='Details')
-        log_tree.heading('timestamp', text='Timestamp')
+        log_tree.heading('id', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.id', default='ID'))
+        log_tree.heading('assessment', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.assessment', default='Assessment'))
+        log_tree.heading('student', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.student', default='Student'))
+        log_tree.heading('event_type', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.event_type', default='Event Type'))
+        log_tree.heading('details', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.details', default='Details'))
+        log_tree.heading('timestamp', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.timestamp', default='Timestamp'))
         log_tree.column('id', width=40, anchor='center')
         log_tree.column('assessment', width=180)
         log_tree.column('student', width=100)
@@ -769,10 +771,10 @@ class ExamIntegrityManager:
                     ))
                 conn.close()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to load logs: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.error', default="Error"), f"Failed to load logs: {e}")
 
         # Filter button
-        ttk.Button(filter_frame, text="Apply Filter", command=load_logs).grid(
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.apply_filter', default="Apply Filter"), command=load_logs).grid(
             row=0, column=4, padx=(15, 0), pady=5
         )
 
@@ -807,8 +809,8 @@ class ExamIntegrityManager:
         # Navigation
         nav_frame = ttk.Frame(content)
         nav_frame.pack(fill='x', pady=(0, 10))
-        ttk.Button(nav_frame, text="Back to Settings", command=self.show_exam_integrity_settings).pack(side='left')
-        ttk.Button(nav_frame, text="Refresh", command=load_logs).pack(side='left', padx=(10, 0))
+        ttk.Button(nav_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.back_to_settings', default="Back to Settings"), command=self.show_exam_integrity_settings).pack(side='left')
+        ttk.Button(nav_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.refresh', default="Refresh"), command=load_logs).pack(side='left', padx=(10, 0))
 
         # Initial load
         load_logs()
@@ -820,18 +822,18 @@ class ExamIntegrityManager:
     def show_flagged_students(self):
         """Show students flagged for suspicious behavior"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Permission Denied", "You do not have permission to view flagged students.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.permission_denied', default="Permission Denied"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.you_do_not_have_permission_to_view_flagged_students', default="You do not have permission to view flagged students."))
             return
 
         self.gui.layout.clear_content_area()
         content = self.gui.layout.content_area
 
-        title = ttk.Label(content, text="Flagged Students", style='Title.TLabel')
+        title = ttk.Label(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.flagged_students', default="Flagged Students"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 15))
 
         ttk.Label(
             content,
-            text="Students with 3 or more integrity events in a single assessment are flagged for review.",
+            text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.students_with_3_or_more_integrity_events_in_a_single_assessment', default="Students with 3 or more integrity events in a single assessment are flagged for review."),
             foreground='gray'
         ).pack(anchor='w', pady=(0, 15))
 
@@ -843,14 +845,14 @@ class ExamIntegrityManager:
                 'ip_violations', 'total', 'last_event')
         tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=15)
 
-        tree.heading('student', text='Student ID')
-        tree.heading('assessment', text='Assessment')
-        tree.heading('tab_switches', text='Tab Switches')
-        tree.heading('copy_pastes', text='Copy/Paste')
-        tree.heading('focus_lost', text='Focus Lost')
-        tree.heading('ip_violations', text='IP Violations')
-        tree.heading('total', text='Total Events')
-        tree.heading('last_event', text='Last Event')
+        tree.heading('student', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.student_id', default='Student ID'))
+        tree.heading('assessment', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.assessment', default='Assessment'))
+        tree.heading('tab_switches', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.tab_switches', default='Tab Switches'))
+        tree.heading('copy_pastes', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.copy_paste', default='Copy/Paste'))
+        tree.heading('focus_lost', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.focus_lost', default='Focus Lost'))
+        tree.heading('ip_violations', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.ip_violations', default='IP Violations'))
+        tree.heading('total', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.total_events', default='Total Events'))
+        tree.heading('last_event', text=_t('gui.academics.assignment_system.exam_integrity_manager.headings.last_event', default='Last Event'))
 
         tree.column('student', width=100)
         tree.column('assessment', width=170)
@@ -894,13 +896,13 @@ class ExamIntegrityManager:
             ttk.Label(tree_frame, text=f"Error loading flagged students: {e}").pack()
 
         # Actions
-        action_frame = ttk.LabelFrame(content, text="Actions", padding=10)
+        action_frame = ttk.LabelFrame(content, text=_t('gui.academics.assignment_system.exam_integrity_manager.labels.actions', default="Actions"), padding=10)
         action_frame.pack(fill='x', pady=(0, 10))
 
         def view_student_logs():
             selected = tree.selection()
             if not selected:
-                messagebox.showinfo("Info", "Select a student to view their logs.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.select_a_student_to_view_their_logs', default="Select a student to view their logs."))
                 return
             values = tree.item(selected[0], 'values')
             # Navigate to logs filtered by student
@@ -912,11 +914,11 @@ class ExamIntegrityManager:
         def dismiss_flag():
             selected = tree.selection()
             if not selected:
-                messagebox.showinfo("Info", "Select a student entry to dismiss.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.select_a_student_entry_to_dismiss', default="Select a student entry to dismiss."))
                 return
             values = tree.item(selected[0], 'values')
             if messagebox.askyesno(
-                "Confirm Dismiss",
+                _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.confirm_dismiss', default="Confirm Dismiss"),
                 f"Dismiss all flags for student {values[0]} on {values[1]}?\n"
                 "This will add a 'dismissed' event to the log."
             ):
@@ -938,19 +940,19 @@ class ExamIntegrityManager:
                         )
                         conn.commit()
                     conn.close()
-                    messagebox.showinfo("Done", "Flag dismissed successfully.")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.done', default="Done"), _t('gui.academics.assignment_system.exam_integrity_manager.dialogs.flag_dismissed_successfully', default="Flag dismissed successfully."))
                     self.show_flagged_students()
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to dismiss: {e}")
+                    messagebox.showerror(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.error', default="Error"), f"Failed to dismiss: {e}")
 
-        ttk.Button(action_frame, text="View Student Logs", command=view_student_logs).pack(side='left', padx=(0, 10))
-        ttk.Button(action_frame, text="Dismiss Flag", command=dismiss_flag).pack(side='left', padx=(0, 10))
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.view_student_logs', default="View Student Logs"), command=view_student_logs).pack(side='left', padx=(0, 10))
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.dismiss_flag', default="Dismiss Flag"), command=dismiss_flag).pack(side='left', padx=(0, 10))
 
         # Navigation
         nav_frame = ttk.Frame(content)
         nav_frame.pack(fill='x', pady=(0, 10))
-        ttk.Button(nav_frame, text="Back to Settings", command=self.show_exam_integrity_settings).pack(side='left')
-        ttk.Button(nav_frame, text="Refresh", command=self.show_flagged_students).pack(side='left', padx=(10, 0))
+        ttk.Button(nav_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.back_to_settings', default="Back to Settings"), command=self.show_exam_integrity_settings).pack(side='left')
+        ttk.Button(nav_frame, text=_t('gui.academics.assignment_system.exam_integrity_manager.buttons.refresh', default="Refresh"), command=self.show_flagged_students).pack(side='left', padx=(10, 0))
 
     # -------------------------------------------------------------------------
     # Helper methods
@@ -1021,4 +1023,4 @@ class ExamIntegrityManager:
             conn.commit()
             conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save settings: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.exam_integrity_manager.dialogs.error', default="Error"), f"Failed to save settings: {e}")

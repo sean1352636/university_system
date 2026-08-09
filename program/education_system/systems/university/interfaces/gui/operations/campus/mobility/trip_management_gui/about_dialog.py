@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk
 from tkinter.simpledialog import Dialog
@@ -13,11 +15,11 @@ class AboutDialog(Dialog):
         ttk.Label(master, text="\U0001f392", font=('Arial', 48)).pack(pady=10)
 
         # Title
-        ttk.Label(master, text="Trip Management System",
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.about_dialog.labels.trip_management_system', default="Trip Management System"),
                  font=('Arial', 16, 'bold')).pack(pady=5)
 
         # Version info
-        ttk.Label(master, text="Version 2.0 - GUI Edition").pack(pady=2)
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.about_dialog.labels.version_2_0_gui_edition', default="Version 2.0 - GUI Edition")).pack(pady=2)
 
         # Description
         description = """
@@ -37,7 +39,7 @@ Built with backwards compatibility to the original command-line system.
         ttk.Label(master, text=description, justify=tk.LEFT).pack(pady=20, padx=20)
 
         # Copyright
-        ttk.Label(master, text="\u00a9 2024 Educational Trip Management System",
+        ttk.Label(master, text=_t('gui.operations.campus.mobility.trip_management_gui.about_dialog.labels.value_2024_educational_trip_management_system', default="\u00a9 2024 Educational Trip Management System"),
                  font=('Arial', 8)).pack(pady=5)
 
         return None
@@ -45,5 +47,5 @@ Built with backwards compatibility to the original command-line system.
     def buttonbox(self):
         """Create button box"""
         box = ttk.Frame(self)
-        ttk.Button(box, text="Close", command=self.ok).pack()
+        ttk.Button(box, text=_t('gui.operations.campus.mobility.trip_management_gui.about_dialog.buttons.close', default="Close"), command=self.ok).pack()
         box.pack(pady=10)

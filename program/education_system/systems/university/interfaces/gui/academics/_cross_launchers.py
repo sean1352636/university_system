@@ -13,6 +13,8 @@ the launch target is broken.
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from dataclasses import dataclass
 from tkinter import messagebox
@@ -73,7 +75,7 @@ def open_exam_gui(parent: tk.Misc, auth=None, *,
         gui = ExamSchedulerApp(win)
         _apply_context(gui, context)
     except Exception as exc:
-        messagebox.showerror("Error", f"Failed to open Exam Scheduler: {exc}")
+        messagebox.showerror(_t('gui.academics.cross_launchers.dialogs.error', default="Error"), f"Failed to open Exam Scheduler: {exc}")
 
 
 def open_grade_gui(parent: tk.Misc, auth=None, *,
@@ -87,7 +89,7 @@ def open_grade_gui(parent: tk.Misc, auth=None, *,
         gui = GradeTrackingApp(win, auth=auth)
         _apply_context(gui, context)
     except Exception as exc:
-        messagebox.showerror("Error", f"Failed to open Grade Tracking: {exc}")
+        messagebox.showerror(_t('gui.academics.cross_launchers.dialogs.error', default="Error"), f"Failed to open Grade Tracking: {exc}")
 
 
 def open_module_gui(parent: tk.Misc, auth=None, *,
@@ -103,7 +105,7 @@ def open_module_gui(parent: tk.Misc, auth=None, *,
             gui.set_auth(auth)
         _apply_context(gui, context)
     except Exception as exc:
-        messagebox.showerror("Error", f"Failed to open Module Scheduling: {exc}")
+        messagebox.showerror(_t('gui.academics.cross_launchers.dialogs.error', default="Error"), f"Failed to open Module Scheduling: {exc}")
 
 
 def open_course_gui(parent: tk.Misc, auth=None, *,
@@ -117,7 +119,7 @@ def open_course_gui(parent: tk.Misc, auth=None, *,
         gui = CourseManagementGUI(win, auth_system=auth)
         _apply_context(gui, context)
     except Exception as exc:
-        messagebox.showerror("Error", f"Failed to open Course Management: {exc}")
+        messagebox.showerror(_t('gui.academics.cross_launchers.dialogs.error', default="Error"), f"Failed to open Course Management: {exc}")
 
 
 __all__ = [

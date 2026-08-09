@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import tkinter.font as tkFont
@@ -10,7 +12,7 @@ from typing import Dict, List, Optional, Any
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import i18n for language support
 from education_system.systems.university.infrastructure.i18n import (
@@ -43,8 +45,8 @@ except ImportError:
     render_template = lambda *args, **kwargs: (None, None)
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this module when targeting the
@@ -181,7 +183,7 @@ class StudentSupportGUIBase:
             self.config = SupportConfig()
             self.support = EnhancedStudentSupport(self.config)
         except Exception as e:
-            messagebox.showerror("Initialization Error", f"Failed to initialize support system: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.base.dialogs.initialization_error', default="Initialization Error"), f"Failed to initialize support system: {e}")
             self.support = None
 
         # Theme configuration
@@ -223,9 +225,9 @@ class StudentSupportGUIBase:
 
         if not auth_valid:
             print(f"✗ Student Support GUI: Authentication failed - auth={self.auth}, current_user={getattr(self.auth, 'current_user', None) if self.auth else None}")
-            messagebox.showerror("Authentication Required",
-                "Please log in through the main University System GUI.\n\n"
-                "Run: python run.py --gui")
+            messagebox.showerror(_t('gui.pastoral.student_support.base.dialogs.authentication_required', default="Authentication Required"),
+                _t('gui.pastoral.student_support.base.dialogs.please_log_in_through_the_main_university_system_gui_run_python', default="Please log in through the main University System GUI.\n\n"
+                "Run: python run.py --gui"))
             self.root.destroy()
             return
 

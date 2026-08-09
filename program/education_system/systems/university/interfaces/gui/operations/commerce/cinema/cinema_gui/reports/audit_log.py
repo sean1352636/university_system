@@ -143,14 +143,14 @@ def show_audit_log_page(self):
 
     # Source selector (Log Files or Database)
     tk.Label(filter_frame, text=_t("cinema.common.source"), bg="#ffffff", fg="#333333").pack(side="left")
-    source_var = tk.StringVar(value="Log Files")
+    source_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.reports.audit_log.values.log_files', default="Log Files"))
     source_combo = ttk.Combobox(filter_frame, textvariable=source_var, width=12,
                                  values=["Log Files", "Database"], state="readonly")
     source_combo.pack(side="left", padx=5)
 
     # Action filter
     tk.Label(filter_frame, text=_t("cinema.common.filter"), bg="#ffffff", fg="#333333").pack(side="left", padx=(10, 0))
-    action_var = tk.StringVar(value="all")
+    action_var = tk.StringVar(value=_t('gui.operations.commerce.cinema.cinema_gui.reports.audit_log.values.all', default="all"))
     action_combo = ttk.Combobox(filter_frame, textvariable=action_var, width=12,
                                  values=["all", "login", "logout", "create", "update", "delete", "view"], state="readonly")
     action_combo.pack(side="left", padx=5)

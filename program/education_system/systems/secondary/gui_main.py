@@ -19,6 +19,7 @@ from datetime import datetime
 from tkinter import messagebox, ttk
 from typing import Callable
 
+from education_system.platform.delivery.gui import window_sizing
 from education_system.systems.secondary import SYSTEM_NAME
 
 logger = logging.getLogger(__name__)
@@ -197,8 +198,7 @@ class SecondarySchoolMainGUI:
         self.auth = auth
         self.root = tk.Tk()
         self.root.title(SYSTEM_NAME)
-        self.root.geometry("1400x900")
-        self.root.minsize(1200, 800)
+        window_sizing.fit(self.root, "1400x900", (1200, 800))
 
         self.style = ttk.Style()
         try:

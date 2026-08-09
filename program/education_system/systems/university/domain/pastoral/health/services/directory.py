@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from education_system.systems.university.infrastructure.database.db import get_connection
+from education_system.systems.university.infrastructure.health.storage import get_connection
 from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.domain.pastoral.health.services.contacts import get_user_student_id
 

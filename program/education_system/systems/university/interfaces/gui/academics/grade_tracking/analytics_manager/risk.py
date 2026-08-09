@@ -1,5 +1,7 @@
 """Risk assessment and early warning methods for AnalyticsManager."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -104,16 +106,16 @@ class RiskMixin:
                     pass
 
             if not at_risk_students:
-                messagebox.showinfo("At-Risk Students", "No students currently identified as at-risk.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.at_risk_students', default="At-Risk Students"), _t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.no_students_currently_identified_as_at_risk', default="No students currently identified as at-risk."))
                 return
 
             # Display results window
             results_window = tk.Toplevel(self.root)
-            results_window.title("At-Risk Students")
+            results_window.title(_t('gui.academics.grade_tracking.analytics_manager.risk.windows.at_risk_students', default="At-Risk Students"))
             results_window.geometry("900x600")
             safe_grab_set(results_window)
 
-            ttk.Label(results_window, text="At-Risk Student Identification",
+            ttk.Label(results_window, text=_t('gui.academics.grade_tracking.analytics_manager.risk.labels.at_risk_student_identification', default="At-Risk Student Identification"),
                      font=('Arial', 16, 'bold')).pack(pady=10)
 
             # Summary
@@ -152,7 +154,7 @@ class RiskMixin:
                 tree.insert('', 'end', values=(student_id, name, risk_score, risk_level, risk_factors))
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to identify at-risk students: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.database_error', default="Database Error"), f"Failed to identify at-risk students: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
@@ -173,16 +175,16 @@ class RiskMixin:
             students = cursor.fetchall()
 
             if not students:
-                messagebox.showinfo("No Students", "No students found in database.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.no_students', default="No Students"), _t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.no_students_found_in_database', default="No students found in database."))
                 return
 
             # Selection dialog
             dialog = tk.Toplevel(self.root)
-            dialog.title("Select Student for Risk Assessment")
+            dialog.title(_t('gui.academics.grade_tracking.analytics_manager.risk.windows.select_student_for_risk_assessment', default="Select Student for Risk Assessment"))
             dialog.geometry("400x500")
             safe_grab_set(dialog)
 
-            ttk.Label(dialog, text="Select a student:", font=('Arial', 12, 'bold')).pack(pady=10)
+            ttk.Label(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.risk.labels.select_a_student', default="Select a student:"), font=('Arial', 12, 'bold')).pack(pady=10)
 
             # Listbox with scrollbar
             list_frame = ttk.Frame(dialog)
@@ -201,17 +203,17 @@ class RiskMixin:
             def assess_student():
                 selection = listbox.curselection()
                 if not selection:
-                    messagebox.showwarning("No Selection", "Please select a student.")
+                    messagebox.showwarning(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.no_selection', default="No Selection"), _t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.please_select_a_student', default="Please select a student."))
                     return
 
                 student_id = students[selection[0]][0]
                 dialog.destroy()
                 self._perform_detailed_risk_assessment(student_id)
 
-            ttk.Button(dialog, text="Assess", command=assess_student).pack(pady=10)
+            ttk.Button(dialog, text=_t('gui.academics.grade_tracking.analytics_manager.risk.buttons.assess', default="Assess"), command=assess_student).pack(pady=10)
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to load students: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.database_error', default="Database Error"), f"Failed to load students: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
@@ -338,7 +340,7 @@ class RiskMixin:
                                "This assessment is based on current academic performance data.")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to perform risk assessment: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.database_error', default="Database Error"), f"Failed to perform risk assessment: {e}")
         finally:
             if conn:
                 conn.close()
@@ -480,7 +482,7 @@ class RiskMixin:
 
             # Display results
             if not dropout_risks:
-                messagebox.showinfo("Dropout Risk Analysis", "No students identified at significant dropout risk.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.dropout_risk_analysis', default="Dropout Risk Analysis"), _t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.no_students_identified_at_significant_dropout_risk', default="No students identified at significant dropout risk."))
                 return
 
             # Sort by dropout score
@@ -505,7 +507,7 @@ class RiskMixin:
                                "Immediate intervention recommended for critical and high-risk students.")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to analyze dropout risk: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.database_error', default="Database Error"), f"Failed to analyze dropout risk: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
@@ -539,7 +541,7 @@ class RiskMixin:
             at_risk = cursor.fetchall()
 
             if not at_risk:
-                messagebox.showinfo("Interventions", "No students currently require intervention.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.interventions', default="Interventions"), _t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.no_students_currently_require_intervention', default="No students currently require intervention."))
                 return
 
             interventions = []
@@ -599,7 +601,7 @@ class RiskMixin:
                                "Follow up with students within 48 hours of critical interventions.")
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Failed to generate interventions: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.database_error', default="Database Error"), f"Failed to generate interventions: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
@@ -659,16 +661,16 @@ class RiskMixin:
                                f"Only {count} submission(s) recorded", "Medium"))
 
             if not warnings:
-                messagebox.showinfo("Early Warning System", "No current warnings to display.")
+                messagebox.showinfo(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.early_warning_system', default="Early Warning System"), _t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.no_current_warnings_to_display', default="No current warnings to display."))
                 return
 
             # Display warnings window
             warning_window = tk.Toplevel(self.root)
-            warning_window.title("Early Warning Alerts")
+            warning_window.title(_t('gui.academics.grade_tracking.analytics_manager.risk.windows.early_warning_alerts', default="Early Warning Alerts"))
             warning_window.geometry("900x600")
             safe_grab_set(warning_window)
 
-            ttk.Label(warning_window, text="Early Warning Alerts",
+            ttk.Label(warning_window, text=_t('gui.academics.grade_tracking.analytics_manager.risk.labels.early_warning_alerts', default="Early Warning Alerts"),
                      font=('Arial', 16, 'bold')).pack(pady=10)
 
             # Summary
@@ -708,7 +710,7 @@ class RiskMixin:
                 tree.insert('', 'end', values=(priority, student_id, name, warning_type, details))
 
         except sqlite3.Error as e:
-            messagebox.showerror("Error", f"Failed to generate early warnings: {e}")
+            messagebox.showerror(_t('gui.academics.grade_tracking.analytics_manager.risk.dialogs.error', default="Error"), f"Failed to generate early warnings: {e}")
         finally:
             if conn:
                 if raw_conn is not conn and hasattr(raw_conn, "__exit__"):

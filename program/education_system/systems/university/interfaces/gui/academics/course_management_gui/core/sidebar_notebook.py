@@ -19,6 +19,8 @@ Selecting a tab raises its content frame and fires the virtual
 (e.g. the lazy Course Planning loader) depend on.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk
 
@@ -49,7 +51,7 @@ class SidebarNotebook(ttk.Frame):
         side.grid(row=0, column=0, sticky='ns')
         side.grid_propagate(False)
 
-        ttk.Label(side, text="Sections", font=('Arial', 12, 'bold')
+        ttk.Label(side, text=_t('gui.academics.course_management_gui.core.sidebar_notebook.labels.sections', default="Sections"), font=('Arial', 12, 'bold')
                   ).pack(fill=tk.X, padx=10, pady=(8, 6))
         ttk.Separator(side, orient='horizontal').pack(fill=tk.X, padx=6)
 

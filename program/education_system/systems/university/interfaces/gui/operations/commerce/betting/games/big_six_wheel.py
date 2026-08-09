@@ -10,6 +10,8 @@ and pays fixed odds if the pointer lands on your pick.
   Joker / Star -> 40:1
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import math
 import random
 import tkinter as tk
@@ -34,7 +36,7 @@ START_CREDITS, MIN_BET = 200, 5
 class BigSixWheel:
     def __init__(self, root):
         self.root = root
-        root.title("Big Six Money Wheel")
+        root.title(_t('gui.operations.commerce.betting.games.big_six_wheel.windows.big_six_money_wheel', default="Big Six Money Wheel"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -54,12 +56,12 @@ class BigSixWheel:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=12)
         f.pack()
-        tk.Label(f, text="BIG SIX MONEY WHEEL", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.big_six_wheel.labels.big_six_money_wheel', default="BIG SIX MONEY WHEEL"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 18, "bold")).pack()
         self.wheel = tk.Canvas(f, width=WR * 2 + 20, height=WR * 2 + 30,
                                bg=FELT, highlightthickness=0)
         self.wheel.pack(pady=6)
-        self.msg = tk.Label(f, text="Pick a slot and spin!", bg=FELT, fg="white",
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.big_six_wheel.labels.pick_a_slot_and_spin', default="Pick a slot and spin!"), bg=FELT, fg="white",
                             font=("Helvetica", 12, "bold"))
         self.msg.pack()
 
@@ -79,7 +81,7 @@ class BigSixWheel:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Bet:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.big_six_wheel.labels.bet', default="Bet:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -92,7 +94,7 @@ class BigSixWheel:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.big_six_wheel.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -147,12 +149,12 @@ class BigSixWheel:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.big_six_wheel.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.busy = True
         self.spin_btn.config(state="disabled")
-        self.msg.config(text="Spinning...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.big_six_wheel.text.spinning', default="Spinning..."), fg="white")
         self.refresh()
         target = random.randrange(len(self.slots))
         n = len(self.slots)
@@ -185,7 +187,7 @@ class BigSixWheel:
             self.msg.config(text=f"Landed {LABEL[key]}. You had {LABEL[pick]}.",
                             fg="white")
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.big_six_wheel.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

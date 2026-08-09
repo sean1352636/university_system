@@ -1,5 +1,7 @@
 """Assignment submission handling"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -13,7 +15,7 @@ import logging
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from education_system.systems.university.infrastructure.security.file_upload import (
     get_upload_handler,
     validate_upload,
@@ -75,17 +77,17 @@ class SubmissionManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load modules: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to load modules: {e}")
 
     def show_submit_assignment(self):
         """Show assignment submission form"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Submit Assignment", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.submission_manager.labels.submit_assignment', default="Submit Assignment"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create submission form
-        form_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Assignment Submission", padding=20)
+        form_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.submission_manager.labels.assignment_submission', default="Assignment Submission"), padding=20)
         form_frame.pack(fill='x', pady=(0, 20))
 
         current_row = 0
@@ -95,7 +97,7 @@ class SubmissionManager:
         self._admin_student_var = None
         self._admin_student_map = {}
         if current_user_role == 'admin':
-            ttk.Label(form_frame, text="[ADMIN] Submit as Student:").grid(row=current_row, column=0, sticky='w', pady=5)
+            ttk.Label(form_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.admin_submit_as_student', default="[ADMIN] Submit as Student:")).grid(row=current_row, column=0, sticky='w', pady=5)
             self._admin_student_var = tk.StringVar()
             student_combo = ttk.Combobox(form_frame, textvariable=self._admin_student_var, width=50, state='readonly')
             student_combo.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
@@ -103,7 +105,7 @@ class SubmissionManager:
             current_row += 1
 
         # Assignment selection
-        ttk.Label(form_frame, text="Select Assignment:").grid(row=current_row, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.select_assignment', default="Select Assignment:")).grid(row=current_row, column=0, sticky='w', pady=5)
         self.assignment_var = tk.StringVar()
         assignment_row = ttk.Frame(form_frame)
         assignment_row.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
@@ -111,7 +113,7 @@ class SubmissionManager:
         assignment_combo.pack(side='left', fill='x', expand=True)
         ttk.Button(
             assignment_row,
-            text="Resources",
+            text=_t('gui.academics.assignment_system.submission_manager.buttons.resources', default="Resources"),
             command=lambda: self._open_resources_for_selected_assignment(),
         ).pack(side='right', padx=(8, 0))
         self._submit_assignment_combo = assignment_combo
@@ -121,7 +123,7 @@ class SubmissionManager:
         self.load_available_assignments(assignment_combo)
 
         # File selection
-        ttk.Label(form_frame, text="Select File:").grid(row=current_row, column=0, sticky='w', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.select_file', default="Select File:")).grid(row=current_row, column=0, sticky='w', pady=5)
         self.file_var = tk.StringVar()
         file_frame = ttk.Frame(form_frame)
         file_frame.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
@@ -130,11 +132,11 @@ class SubmissionManager:
         file_entry = ttk.Entry(file_frame, textvariable=self.file_var, width=40)
         file_entry.pack(side='left', fill='x', expand=True)
 
-        ttk.Button(file_frame, text="Browse",
+        ttk.Button(file_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.browse', default="Browse"),
                   command=self.browse_file).pack(side='right', padx=(10, 0))
 
         # Comments
-        ttk.Label(form_frame, text="Comments (optional):").grid(row=current_row, column=0, sticky='nw', pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.comments_optional', default="Comments (optional):")).grid(row=current_row, column=0, sticky='nw', pady=5)
         self.comments_text = scrolledtext.ScrolledText(form_frame, height=4, width=50)
         self.comments_text.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
         current_row += 1
@@ -143,7 +145,7 @@ class SubmissionManager:
         form_frame.grid_columnconfigure(1, weight=1)
 
         # Submit button
-        submit_btn = ttk.Button(form_frame, text="Submit Assignment",
+        submit_btn = ttk.Button(form_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.submit_assignment', default="Submit Assignment"),
                                command=self.submit_assignment_gui)
         submit_btn.grid(row=current_row, column=1, sticky='e', pady=(20, 0))
 
@@ -246,7 +248,7 @@ class SubmissionManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to load assignments: {e}")
 
 
     def _open_resources_for_selected_assignment(self):
@@ -256,8 +258,8 @@ class SubmissionManager:
         ).get(self.assignment_var.get())
         if not assignment_id:
             messagebox.showinfo(
-                "Resources",
-                "Pick an assignment first to see its module resources.",
+                _t('gui.academics.assignment_system.submission_manager.dialogs.resources', default="Resources"),
+                _t('gui.academics.assignment_system.submission_manager.dialogs.pick_an_assignment_first_to_see_its_module_resources', default="Pick an assignment first to see its module resources."),
             )
             return
         try:
@@ -270,7 +272,7 @@ class SubmissionManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Resources", f"Could not look up module: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.resources', default="Resources"), f"Could not look up module: {e}")
             return
         module_code = row[0] if row else None
         student_id = self.assignment_system._get_student_id() if self.assignment_system else None
@@ -280,7 +282,7 @@ class SubmissionManager:
     def browse_file(self):
         """Open file browser for assignment submission"""
         filename = filedialog.askopenfilename(
-            title="Select Assignment File",
+            title=_t('gui.academics.assignment_system.submission_manager.dialogs.select_assignment_file', default="Select Assignment File"),
             filetypes=[
                 ("All Files", "*.*"),
                 ("PDF Files", "*.pdf"),
@@ -540,12 +542,12 @@ class SubmissionManager:
 
                 # Create submission directory
                 import shutil
-                from education_system.systems.university.infrastructure import paths
+                from education_system import paths
 
                 # Use proper path from shared constants with fallback
                 assignment_submission_dir = getattr(self.assignment_system, 'submission_dir', None)
                 if assignment_submission_dir is None:
-                    base_dir = paths.SUBMISSIONS_DIR
+                    base_dir = paths.UNIVERSITY_SUBMISSIONS_DIR
                 else:
                     base_dir = Path(assignment_submission_dir)
 
@@ -711,7 +713,7 @@ class SubmissionManager:
         """Show student's submissions"""
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="My Submissions", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.submission_manager.labels.my_submissions', default="My Submissions"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create submissions table
@@ -749,11 +751,11 @@ class SubmissionManager:
         buttons_frame = ttk.Frame(self.gui.layout.content_area)
         buttons_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(buttons_frame, text="View File",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.view_file', default="View File"),
                   command=lambda: self.view_submission_file(tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="Download File",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.download_file', default="Download File"),
                   command=lambda: self.download_submission_file(tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="Refresh",
+        ttk.Button(buttons_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.refresh', default="Refresh"),
                   command=lambda: self.load_submissions_data(tree)).pack(side='left')
 
 
@@ -790,7 +792,7 @@ class SubmissionManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to load submissions: {e}")
 
 
     def view_submissions(self):
@@ -800,38 +802,38 @@ class SubmissionManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="My Submissions", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.submission_manager.labels.my_submissions', default="My Submissions"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Enhanced filter frame
-        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Filters & Search", padding=10)
+        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.submission_manager.labels.filters_search', default="Filters & Search"), padding=10)
         filter_frame.pack(fill='x', pady=(0, 10))
 
         # Assignment filter
-        ttk.Label(filter_frame, text="Assignment:").grid(row=0, column=0, sticky='w', padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.assignment', default="Assignment:")).grid(row=0, column=0, sticky='w', padx=5)
         self.submission_assignment_filter = tk.StringVar()
         assignment_combo = ttk.Combobox(filter_frame, textvariable=self.submission_assignment_filter, width=25)
         assignment_combo.grid(row=0, column=1, padx=5)
 
         # Grade status filter
-        ttk.Label(filter_frame, text="Status:").grid(row=0, column=2, sticky='w', padx=5)
-        self.submission_status_filter = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.status', default="Status:")).grid(row=0, column=2, sticky='w', padx=5)
+        self.submission_status_filter = tk.StringVar(value=_t('gui.academics.assignment_system.submission_manager.values.all', default="All"))
         status_combo = ttk.Combobox(filter_frame, textvariable=self.submission_status_filter,
                                    values=["All", "Graded", "Ungraded", "Late"], width=12)
         status_combo.grid(row=0, column=3, padx=5)
 
         # Date range filter
-        ttk.Label(filter_frame, text="From:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.from', default="From:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.submission_date_from = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.submission_date_from, width=12).grid(row=1, column=1, padx=5, pady=5)
 
-        ttk.Label(filter_frame, text="To:").grid(row=1, column=2, sticky='w', padx=5, pady=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.to', default="To:")).grid(row=1, column=2, sticky='w', padx=5, pady=5)
         self.submission_date_to = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.submission_date_to, width=12).grid(row=1, column=3, padx=5, pady=5)
 
-        ttk.Button(filter_frame, text="Apply Filters",
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.apply_filters', default="Apply Filters"),
                   command=self.apply_my_submission_filters).grid(row=1, column=4, padx=10, pady=5)
-        ttk.Button(filter_frame, text="Clear Filters",
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.clear_filters', default="Clear Filters"),
                   command=self.clear_submission_filters).grid(row=1, column=5, padx=5, pady=5)
 
         # Enhanced submissions table
@@ -867,15 +869,15 @@ class SubmissionManager:
         actions_frame = ttk.Frame(self.gui.layout.content_area)
         actions_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(actions_frame, text="View Feedback",
+        ttk.Button(actions_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.view_feedback', default="View Feedback"),
                   command=self.view_detailed_feedback).pack(side='left', padx=(0, 10))
-        ttk.Button(actions_frame, text="Download File",
+        ttk.Button(actions_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.download_file', default="Download File"),
                   command=self.download_my_submission).pack(side='left', padx=(0, 10))
-        ttk.Button(actions_frame, text="Resubmit (if allowed)",
+        ttk.Button(actions_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.resubmit_if_allowed', default="Resubmit (if allowed)"),
                   command=self.resubmit_assignment).pack(side='left', padx=(0, 10))
-        ttk.Button(actions_frame, text="Export My Grades",
+        ttk.Button(actions_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.export_my_grades', default="Export My Grades"),
                   command=self.export_my_grades).pack(side='left', padx=(0, 10))
-        ttk.Button(actions_frame, text="Grade Statistics",
+        ttk.Button(actions_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.grade_statistics', default="Grade Statistics"),
                   command=self.show_my_grade_stats).pack(side='left')
 
         # Load submissions
@@ -984,14 +986,14 @@ class SubmissionManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to load submissions: {e}")
 
 
     def view_detailed_feedback(self):
         """View detailed feedback for selected submission"""
         selection = self.enhanced_submissions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a submission")
+            messagebox.showwarning(_t('gui.academics.assignment_system.submission_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.submission_manager.dialogs.please_select_a_submission', default="Please select a submission"))
             return
 
         item = self.enhanced_submissions_tree.item(selection[0])
@@ -999,7 +1001,7 @@ class SubmissionManager:
 
         # Create feedback window
         feedback_window = tk.Toplevel(self.root)
-        feedback_window.title("Detailed Feedback")
+        feedback_window.title(_t('gui.academics.assignment_system.submission_manager.windows.detailed_feedback', default="Detailed Feedback"))
         feedback_window.geometry("600x500")
         feedback_window.transient(self.root)
 
@@ -1020,7 +1022,7 @@ class SubmissionManager:
                 submission = cursor.fetchone()
 
                 if not submission:
-                    messagebox.showerror("Error", "Submission not found")
+                    messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.submission_manager.dialogs.submission_not_found', default="Submission not found"))
                     feedback_window.destroy()
                     return
 
@@ -1035,13 +1037,13 @@ class SubmissionManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load feedback: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to load feedback: {e}")
 
     def download_my_submission(self):
         """Download selected submission file"""
         selection = self.enhanced_submissions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a submission")
+            messagebox.showwarning(_t('gui.academics.assignment_system.submission_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.submission_manager.dialogs.please_select_a_submission', default="Please select a submission"))
             return
 
         item = self.enhanced_submissions_tree.item(selection[0])
@@ -1064,21 +1066,21 @@ class SubmissionManager:
 
                     if save_path:
                         shutil.copy2(result[0], save_path)
-                        messagebox.showinfo("Success", f"File saved to: {save_path}")
+                        messagebox.showinfo(_t('gui.academics.assignment_system.submission_manager.dialogs.success', default="Success"), f"File saved to: {save_path}")
                 else:
-                    messagebox.showerror("Error", "File not found")
+                    messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.submission_manager.dialogs.file_not_found_variant_2', default="File not found"))
             finally:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to download file: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to download file: {e}")
 
 
     def resubmit_assignment(self):
         """Allow resubmission if permitted"""
         selection = self.enhanced_submissions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a submission")
+            messagebox.showwarning(_t('gui.academics.assignment_system.submission_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.submission_manager.dialogs.please_select_a_submission', default="Please select a submission"))
             return
 
         item = self.enhanced_submissions_tree.item(selection[0])
@@ -1100,20 +1102,20 @@ class SubmissionManager:
 
                 result = cursor.fetchone()
                 if not result:
-                    messagebox.showerror("Error", "Assignment not found")
+                    messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.submission_manager.dialogs.assignment_not_found', default="Assignment not found"))
                     return
 
                 due_date, allow_late, assignment_id = result
                 due_datetime = datetime.strptime(due_date, '%Y-%m-%d %H:%M:%S')
 
                 if datetime.now() > due_datetime and not allow_late:
-                    messagebox.showerror("Error", "Resubmission not allowed after due date")
+                    messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.submission_manager.dialogs.resubmission_not_allowed_after_due_date', default="Resubmission not allowed after due date"))
                     return
             finally:
                 conn.close()
 
             # Confirm resubmission
-            if messagebox.askyesno("Confirm Resubmission",
+            if messagebox.askyesno(_t('gui.academics.assignment_system.submission_manager.dialogs.confirm_resubmission', default="Confirm Resubmission"),
                                   f"Are you sure you want to resubmit '{assignment_title}'?\n"
                                   f"This will create a new version."):
                 # Switch to submission interface for this assignment
@@ -1121,7 +1123,7 @@ class SubmissionManager:
                 # Pre-select the assignment (if possible with current interface)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to check resubmission: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to check resubmission: {e}")
 
 
     def export_my_grades(self):
@@ -1138,7 +1140,7 @@ class SubmissionManager:
 
             student_id = self.assignment_system._get_student_id()
             if not student_id:
-                messagebox.showerror("Error", "Student ID not found")
+                messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.submission_manager.dialogs.student_id_not_found', default="Student ID not found"))
                 return
 
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -1171,22 +1173,22 @@ class SubmissionManager:
 
                     writer.writerow([title, module, date, f"{grade_pct:.1f}", late_text, max_marks, feedback or ''])
 
-            messagebox.showinfo("Success", f"Grades exported to: {save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.submission_manager.dialogs.success', default="Success"), f"Grades exported to: {save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export grades: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to export grades: {e}")
 
 
     def show_my_grade_stats(self):
         """Show grade statistics for student"""
         student_id = self.assignment_system._get_student_id()
         if not student_id:
-            messagebox.showerror("Error", "Student ID not found")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.submission_manager.dialogs.student_id_not_found', default="Student ID not found"))
             return
 
         # Create statistics window
         stats_window = tk.Toplevel(self.root)
-        stats_window.title("My Grade Statistics")
+        stats_window.title(_t('gui.academics.assignment_system.submission_manager.windows.my_grade_statistics', default="My Grade Statistics"))
         stats_window.geometry("500x400")
         stats_window.transient(self.root)
 
@@ -1209,13 +1211,13 @@ class SubmissionManager:
                 stats = cursor.fetchone()
 
                 if not stats or not stats[0]:
-                    ttk.Label(stats_window, text="No graded submissions found").pack(pady=20)
+                    ttk.Label(stats_window, text=_t('gui.academics.assignment_system.submission_manager.labels.no_graded_submissions_found', default="No graded submissions found")).pack(pady=20)
                     return
 
                 total, avg, min_grade, max_grade, late_count = stats
 
                 # Display statistics
-                stats_frame = ttk.LabelFrame(stats_window, text="Grade Summary", padding=20)
+                stats_frame = ttk.LabelFrame(stats_window, text=_t('gui.academics.assignment_system.submission_manager.labels.grade_summary', default="Grade Summary"), padding=20)
                 stats_frame.pack(fill='x', padx=10, pady=10)
 
                 stats_label = ttk.Label(stats_frame, text=f"Total Graded Assignments: {total}")
@@ -1224,7 +1226,7 @@ class SubmissionManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Operation failed: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Operation failed: {e}")
 
     def view_all_submissions(self):
         """View all submissions (instructor/admin)"""
@@ -1233,15 +1235,15 @@ class SubmissionManager:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="All Submissions", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.submission_manager.labels.all_submissions', default="All Submissions"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Filter frame
-        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.submission_manager.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill='x', pady=(0, 10))
 
         # Module filter
-        ttk.Label(filter_frame, text="Module:").grid(row=0, column=0, sticky='w', padx=5)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.module', default="Module:")).grid(row=0, column=0, sticky='w', padx=5)
         self.module_filter_var = tk.StringVar()
         module_combo = ttk.Combobox(filter_frame, textvariable=self.module_filter_var, width=20)
         module_combo.grid(row=0, column=1, padx=5)
@@ -1253,14 +1255,14 @@ class SubmissionManager:
             self.module_map["All Modules"] = None
 
         # Status filter
-        ttk.Label(filter_frame, text="Status:").grid(row=0, column=2, sticky='w', padx=5)
-        self.status_filter_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.submission_manager.labels.status', default="Status:")).grid(row=0, column=2, sticky='w', padx=5)
+        self.status_filter_var = tk.StringVar(value=_t('gui.academics.assignment_system.submission_manager.values.all', default="All"))
         status_combo = ttk.Combobox(filter_frame, textvariable=self.status_filter_var,
                                    values=["All", "Submitted", "Graded", "Late"], width=15)
         status_combo.grid(row=0, column=3, padx=5)
 
         # Apply filter button
-        ttk.Button(filter_frame, text="Apply Filters",
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.apply_filters', default="Apply Filters"),
                   command=self.apply_admin_submission_filters).grid(row=0, column=4, padx=10)
 
         # Submissions table
@@ -1293,11 +1295,11 @@ class SubmissionManager:
         action_frame = ttk.Frame(self.gui.layout.content_area)
         action_frame.pack(fill='x', pady=(10, 0))
 
-        ttk.Button(action_frame, text="Grade Selected",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.grade_selected', default="Grade Selected"),
                   command=self.grade_selected_submission).pack(side='left', padx=(0, 10))
-        ttk.Button(action_frame, text="Download File",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.download_file', default="Download File"),
                   command=self.download_selected_file).pack(side='left', padx=(0, 10))
-        ttk.Button(action_frame, text="Export List",
+        ttk.Button(action_frame, text=_t('gui.academics.assignment_system.submission_manager.buttons.export_list', default="Export List"),
                   command=self.export_submissions_list).pack(side='left')
 
 
@@ -1319,7 +1321,7 @@ class SubmissionManager:
                     if module_code is None and module_label not in ("All Modules", "") and ' - ' not in module_label:
                         module_code = module_label
 
-                status_filter = getattr(self, 'status_filter_var', tk.StringVar(value="All")).get()
+                status_filter = getattr(self, 'status_filter_var', tk.StringVar(value=_t('gui.academics.assignment_system.submission_manager.values.all', default="All"))).get()
 
                 query = '''
                     SELECT s.id, st.first_name, st.last_name, a.title, a.module_code,
@@ -1371,7 +1373,7 @@ class SubmissionManager:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to load submissions: {e}")
 
 
     def apply_admin_submission_filters(self):
@@ -1383,7 +1385,7 @@ class SubmissionManager:
         """Grade the selected submission"""
         selection = self.all_submissions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a submission to grade")
+            messagebox.showwarning(_t('gui.academics.assignment_system.submission_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.submission_manager.dialogs.please_select_a_submission_to_grade', default="Please select a submission to grade"))
             return
 
         item = self.all_submissions_tree.item(selection[0])
@@ -1397,7 +1399,7 @@ class SubmissionManager:
         """Download the selected submission file"""
         selection = self.all_submissions_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a submission")
+            messagebox.showwarning(_t('gui.academics.assignment_system.submission_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.submission_manager.dialogs.please_select_a_submission', default="Please select a submission"))
             return
 
         item = self.all_submissions_tree.item(selection[0])
@@ -1421,14 +1423,14 @@ class SubmissionManager:
 
                     if save_path and os.path.exists(file_path):
                         shutil.copy2(file_path, save_path)
-                        messagebox.showinfo("Success", f"File saved to: {save_path}")
+                        messagebox.showinfo(_t('gui.academics.assignment_system.submission_manager.dialogs.success', default="Success"), f"File saved to: {save_path}")
                     else:
-                        messagebox.showerror("Error", "Source file not found")
+                        messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.submission_manager.dialogs.source_file_not_found', default="Source file not found"))
             finally:
                 conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to download file: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to download file: {e}")
 
 
     def export_submissions_list(self):
@@ -1465,10 +1467,10 @@ class SubmissionManager:
                 writer.writerow(['ID', 'Student ID', 'First Name', 'Last Name', 'Assignment', 'Module', 'Submitted', 'Status', 'Grade'])
                 writer.writerows(data)
 
-            messagebox.showinfo("Success", f"Submissions exported to: {save_path}")
+            messagebox.showinfo(_t('gui.academics.assignment_system.submission_manager.dialogs.success', default="Success"), f"Submissions exported to: {save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export submissions: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to export submissions: {e}")
 
     # Additional helper method for permission checking in GUI
 
@@ -1476,7 +1478,7 @@ class SubmissionManager:
         """View selected submission file"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a submission")
+            messagebox.showwarning(_t('gui.academics.assignment_system.submission_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.submission_manager.dialogs.please_select_a_submission', default="Please select a submission"))
             return
 
         submission_id = tree.item(selection[0])['values'][0]
@@ -1493,16 +1495,16 @@ class SubmissionManager:
             finally:
                 conn.close()
         except Exception as exc:
-            messagebox.showerror("Error", f"Unable to load submission: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Unable to load submission: {exc}")
             return
 
         if not row or not row[0]:
-            messagebox.showwarning("Missing File", "No file is associated with this submission.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.submission_manager.dialogs.missing_file', default="Missing File"), _t('gui.academics.assignment_system.submission_manager.dialogs.no_file_is_associated_with_this_submission', default="No file is associated with this submission."))
             return
 
         file_path = row[0]
         if not os.path.exists(file_path):
-            messagebox.showerror("File Not Found", f"The file could not be located:\n{file_path}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.file_not_found', default="File Not Found"), f"The file could not be located:\n{file_path}")
             return
 
         self.open_submission_file(file_path)
@@ -1512,7 +1514,7 @@ class SubmissionManager:
         """Download selected submission file"""
         selection = tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select a submission")
+            messagebox.showwarning(_t('gui.academics.assignment_system.submission_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.submission_manager.dialogs.please_select_a_submission', default="Please select a submission"))
             return
 
         submission_id = tree.item(selection[0])['values'][0]
@@ -1529,16 +1531,16 @@ class SubmissionManager:
             finally:
                 conn.close()
         except Exception as exc:
-            messagebox.showerror("Error", f"Unable to load submission: {exc}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Unable to load submission: {exc}")
             return
 
         if not row or not row[0]:
-            messagebox.showwarning("Missing File", "No file is associated with this submission.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.submission_manager.dialogs.missing_file', default="Missing File"), _t('gui.academics.assignment_system.submission_manager.dialogs.no_file_is_associated_with_this_submission', default="No file is associated with this submission."))
             return
 
         file_path = row[0]
         if not os.path.exists(file_path):
-            messagebox.showerror("File Not Found", f"The file could not be located:\n{file_path}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.file_not_found', default="File Not Found"), f"The file could not be located:\n{file_path}")
             return
 
         self.download_file(file_path)
@@ -1559,7 +1561,7 @@ class SubmissionManager:
                 subprocess.run(['xdg-open', file_path], check=False)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to open file: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to open file: {e}")
 
 
     def download_file(self, file_path):
@@ -1573,10 +1575,10 @@ class SubmissionManager:
             if save_path:
                 import shutil
                 shutil.copy2(file_path, save_path)
-                messagebox.showinfo("Success", f"File saved to: {save_path}")
+                messagebox.showinfo(_t('gui.academics.assignment_system.submission_manager.dialogs.success', default="Success"), f"File saved to: {save_path}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to download file: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.submission_manager.dialogs.error', default="Error"), f"Failed to download file: {e}")
 
     def _send_submission_emails(self, student_id, assignment_id, assignment_title,
                                 module_code, module_name, version_number,

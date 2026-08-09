@@ -76,48 +76,17 @@ except ImportError:
         return logging.getLogger(name or __name__)
 
     def get_log_file(name):
-        from education_system.systems.university.infrastructure import paths
-        return str(paths.LOG_DIR / name)
+        from education_system import paths
+        return str(paths.UNIVERSITY_LOG_DIR / name)
 
-try:
-    from education_system.systems.university.domain.finance.core.financial_core import (
+from education_system.systems.university.domain.finance.facade import (
         assign_to_collection_agency, track_collection_progress,
         update_collection_case_status, create_payment_arrangement,
         send_arrangement_confirmation, setup_collection_workflows,
         check_required_packages, ensure_database_exists, verify_fix
-    )
-except ImportError:
-    # Stub implementations for missing functions
-    def assign_to_collection_agency(*args, **kwargs):
-        print("assign_to_collection_agency function not implemented")
+)
 
-    def track_collection_progress(*args, **kwargs):
-        print("track_collection_progress function not implemented")
-
-    def update_collection_case_status(*args, **kwargs):
-        print("update_collection_case_status function not implemented")
-
-    def create_payment_arrangement(*args, **kwargs):
-        print("create_payment_arrangement function not implemented")
-
-    def send_arrangement_confirmation(*args, **kwargs):
-        print("send_arrangement_confirmation function not implemented")
-
-    def setup_collection_workflows(*args, **kwargs):
-        print("setup_collection_workflows function not implemented")
-
-    def check_required_packages(*args, **kwargs):
-        print("check_required_packages function not implemented")
-
-    def ensure_database_exists(*args, **kwargs):
-        print("ensure_database_exists function not implemented")
-
-    def verify_fix(*args, **kwargs):
-        print("verify_fix function not implemented")
-
-# Add these import stubs for the missing functions if they don't exist
-try:
-    from education_system.systems.university.domain.finance.core.financial_core import (
+from education_system.systems.university.domain.finance.facade import (
         modify_payment_plan, view_student_credits, add_student_credit,
         manage_financial_aid, create_budget_plan, view_overdue_accounts,
         create_collection_case, aging_analysis_report, collection_case_status_report,
@@ -139,39 +108,7 @@ try:
         add_collection_agency, edit_collection_agency, deactivate_collection_agency,
         view_collection_agencies, test_email_service, test_sms_service,
         generate_audit_report
-    )
-except ImportError:
-    # Create stub functions for missing finance core features so the GUI can still load
-    def _make_stub(name):
-        def _stub(*args, **kwargs):
-            print(f"{name} function not implemented")
-        return _stub
-
-    _missing_functions = [
-        'modify_payment_plan', 'view_student_credits', 'add_student_credit',
-        'manage_financial_aid', 'create_budget_plan', 'view_overdue_accounts',
-        'create_collection_case', 'aging_analysis_report', 'collection_case_status_report',
-        'view_student_collection_detail', 'manage_collection_agencies',
-        'budget_vs_actual_analysis', 'generate_aid_reports', 'aid_distribution_summary',
-        'aid_by_academic_year', 'loan_repayment_status_report', 'aid_effectiveness_analysis',
-        'track_loan_repayments', 'view_aid_types', 'create_aid_type', 'edit_aid_type',
-        'deactivate_aid_type', 'review_pending_aid_applications', 'process_loan_payment',
-        'view_aid_application_detail', 'manage_budget_categories', 'view_budget_categories',
-        'create_budget_category', 'edit_budget_category', 'deactivate_budget_category',
-        'variance_analysis_report', 'budget_performance_trends', 'category_performance_report',
-        'collection_performance_summary', 'monthly_revenue_trend_report',
-        'enhanced_notification_system', 'manage_aid_types', 'recovery_rate_analysis',
-        'agency_performance_report', 'export_forecast_report', 'complete_database_fix',
-        'quick_fix_database', 'initialize_finance', 'detect_payment_fraud',
-        'setup_email_config', 'setup_sms_config', 'generate_qr_payment_code',
-        'process_stripe_payment', 'create_approval_workflow', 'apply_credit_to_fees',
-        'update_actual_amounts', 'view_credit_history', 'send_collection_notice',
-        'add_collection_agency', 'edit_collection_agency', 'deactivate_collection_agency',
-        'view_collection_agencies', 'test_email_service', 'test_sms_service',
-        'generate_audit_report'
-    ]
-
-    globals().update({name: _make_stub(name) for name in _missing_functions})
+)
 
 # Configure logging
 log_path = get_log_file("app.log")
@@ -238,6 +175,7 @@ from education_system.systems.university.interfaces.gui.finance.finance.layout._
 from education_system.systems.university.interfaces.gui.finance.finance.layout._ledger import LedgerMixin
 from education_system.systems.university.interfaces.gui.finance.finance.layout._bank_rec import BankRecMixin
 from education_system.systems.university.interfaces.gui.finance.finance.layout._statements import StatementsMixin
+from education_system.systems.university.interfaces.gui.finance.finance.layout._operations import FinanceOperationsMixin
 
 
 class LayoutManager(
@@ -269,6 +207,7 @@ class LayoutManager(
     LedgerMixin,
     BankRecMixin,
     StatementsMixin,
+    FinanceOperationsMixin,
 ):
     """UI layout and navigation"""
 

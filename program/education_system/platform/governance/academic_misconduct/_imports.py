@@ -37,15 +37,15 @@ DEFAULT_DB_PATH = None
 
 # Try university
 try:
-    from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH as _p
+    from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH as _p
     DEFAULT_DB_PATH = _p
 except ImportError:
     pass
 
 # Absolute fallback — use shared data dir
 if DEFAULT_DB_PATH is None:
-    from education_system.platform.paths import MISCONDUCT_DB_FILE
-    DEFAULT_DB_PATH = MISCONDUCT_DB_FILE
+    from education_system.paths import PLATFORM_MISCONDUCT_DB_FILE
+    DEFAULT_DB_PATH = PLATFORM_MISCONDUCT_DB_FILE
 
 # ---------------------------------------------------------------------------
 # Email — optional

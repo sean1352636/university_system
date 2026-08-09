@@ -1,5 +1,7 @@
 """Report generation and operations methods mixin for the enhanced reporting GUI."""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.standalone.constants import (
     tk, ttk, filedialog, messagebox,
     ScrolledText,
@@ -76,7 +78,7 @@ class ReportsMixin:
         """Generate report from selected template"""
         selection = self.template_listbox.curselection()
         if not selection or not hasattr(self, 'templates_data'):
-            messagebox.showwarning("No Selection", "Please select a template to generate report.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.please_select_a_template_to_generate_report', default="Please select a template to generate report."))
             return
 
         template_data = self.templates_data[selection[0]]
@@ -91,7 +93,7 @@ class ReportsMixin:
         """Generate a report using the selected template and parameters"""
         template_name = self.template_combo.get()
         if not template_name:
-            messagebox.showwarning("No Template", "Please select a template.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.no_template', default="No Template"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.please_select_a_template_variant_2', default="Please select a template."))
             return
 
         try:
@@ -104,7 +106,7 @@ class ReportsMixin:
             datetime.strptime(end_date, "%Y-%m-%d")
 
         except ValueError:
-            messagebox.showerror("Invalid Date", "Please enter valid dates in YYYY-MM-DD format.")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.invalid_date', default="Invalid Date"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.please_enter_valid_dates_in_yyyy_mm_dd_format', default="Please enter valid dates in YYYY-MM-DD format."))
             return
 
         self.update_status("Generating report...")
@@ -129,35 +131,35 @@ class ReportsMixin:
                         self.root.after(0, lambda: [
                             self.stop_progress(),
                             self.update_status("Report generation failed", "error"),
-                            messagebox.showerror("Error", "Failed to generate report")
+                            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.failed_to_generate_report', default="Failed to generate report"))
                         ])
                 else:
                     # Fallback for basic functionality
                     self.root.after(0, lambda: [
                         self.stop_progress(),
                         self.update_status("Enhanced reporting not available", "warning"),
-                        messagebox.showwarning("Feature Unavailable",
-                                             "Enhanced reporting features require the full system to be available.")
+                        messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.feature_unavailable', default="Feature Unavailable"),
+                                             _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.enhanced_reporting_features_require_the_full_system_to_be_availa', default="Enhanced reporting features require the full system to be available."))
                     ])
 
             except Exception as e:
                 self.root.after(0, lambda _e=e: [
                     self.update_status(f"Error: {_e}", "error"),
-                    messagebox.showerror("Error", f"Failed to generate report: {str(_e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to generate report: {str(_e)}")
                 ])
 
         threading.Thread(target=generate_task, daemon=True).start()
 
     def show_report_success(self, report_path):
         """Show success dialog with options to open/share report"""
-        result = messagebox.askyesnocancel("Report Generated",
+        result = messagebox.askyesnocancel(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.report_generated', default="Report Generated"),
                                           f"Report generated successfully!\n\nFile: {os.path.basename(report_path)}\n\nWould you like to open it now?")
 
         if result is True:  # Yes - open report
             try:
                 webbrowser.open(f"file://{os.path.abspath(report_path)}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to open report: {str(e)}")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to open report: {str(e)}")
         elif result is False:  # No - show in file manager
             try:
                 import subprocess
@@ -180,7 +182,7 @@ class ReportsMixin:
         """Open selected report"""
         selection = self.reports_tree.selection()
         if not selection or not hasattr(self, 'reports_data'):
-            messagebox.showwarning("No Selection", "Please select a report to open.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.please_select_a_report_to_open', default="Please select a report to open."))
             return
 
         item = self.reports_tree.item(selection[0])
@@ -192,13 +194,13 @@ class ReportsMixin:
             try:
                 webbrowser.open(f"file://{os.path.abspath(report['path'])}")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to open report: {str(e)}")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to open report: {str(e)}")
 
     def share_report(self):
         """Share selected report"""
         selection = self.reports_tree.selection()
         if not selection:
-            messagebox.showwarning("No Selection", "Please select a report to share.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.please_select_a_report_to_share', default="Please select a report to share."))
             return
 
         # Get selected report
@@ -208,12 +210,12 @@ class ReportsMixin:
         # Find report in data
         report = next((r for r in self.reports_data if r['name'] == report_name), None)
         if not report:
-            messagebox.showerror("Error", "Report not found")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.report_not_found', default="Report not found"))
             return
 
         # Create share dialog
         share_dialog = tk.Toplevel(self.root)
-        share_dialog.title("Share Report")
+        share_dialog.title(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.windows.share_report', default="Share Report"))
         share_dialog.geometry("600x500")
         share_dialog.transient(self.root)
         share_dialog.grab_set()
@@ -224,7 +226,7 @@ class ReportsMixin:
         ttk.Label(main_frame, text=f"Share Report: {report_name}", font=('Arial', 12, 'bold')).pack(pady=10)
 
         # Report info
-        info_frame = ttk.LabelFrame(main_frame, text="Report Information", padding=10)
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.report_information', default="Report Information"), padding=10)
         info_frame.pack(fill='x', pady=10)
 
         ttk.Label(info_frame, text=f"Format: {report['format']}").pack(anchor='w')
@@ -232,11 +234,11 @@ class ReportsMixin:
         ttk.Label(info_frame, text=f"Generated: {report['generated']}").pack(anchor='w')
 
         # Email settings
-        email_frame = ttk.LabelFrame(main_frame, text="Email Settings", padding=10)
+        email_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.email_settings', default="Email Settings"), padding=10)
         email_frame.pack(fill='both', expand=True, pady=10)
 
-        ttk.Label(email_frame, text="Recipient Email(s):").pack(anchor='w', pady=(0, 5))
-        ttk.Label(email_frame, text="(Separate multiple emails with commas)", font=('Arial', 8)).pack(anchor='w')
+        ttk.Label(email_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.recipient_email_s', default="Recipient Email(s):")).pack(anchor='w', pady=(0, 5))
+        ttk.Label(email_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.separate_multiple_emails_with_commas', default="(Separate multiple emails with commas)"), font=('Arial', 8)).pack(anchor='w')
 
         # Get admin email from database
         admin_email = ""
@@ -257,11 +259,11 @@ class ReportsMixin:
         recipients_var = tk.StringVar(value=admin_email)
         ttk.Entry(email_frame, textvariable=recipients_var, width=60).pack(fill='x', pady=5)
 
-        ttk.Label(email_frame, text="Subject:").pack(anchor='w', pady=(10, 5))
+        ttk.Label(email_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.subject', default="Subject:")).pack(anchor='w', pady=(10, 5))
         subject_var = tk.StringVar(value=f"University Report: {report_name}")
         ttk.Entry(email_frame, textvariable=subject_var, width=60).pack(fill='x', pady=5)
 
-        ttk.Label(email_frame, text="Message:").pack(anchor='w', pady=(10, 5))
+        ttk.Label(email_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.message', default="Message:")).pack(anchor='w', pady=(10, 5))
         message_text = tk.Text(email_frame, height=8, width=60)
         message_text.pack(fill='both', expand=True, pady=5)
         message_text.insert('1.0', f"""Please find attached the university report: {report_name}
@@ -274,7 +276,7 @@ University Reporting System""")
         def send_report():
             recipients = recipients_var.get().strip()
             if not recipients:
-                messagebox.showwarning("Missing Recipients", "Please enter at least one recipient email address")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.missing_recipients', default="Missing Recipients"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.please_enter_at_least_one_recipient_email_address', default="Please enter at least one recipient email address"))
                 return
 
             # Parse recipients
@@ -305,41 +307,41 @@ University Reporting System""")
                         logging.error(f"Failed to send to {recipient_email}: {str(e)}")
 
                 if success_count > 0:
-                    messagebox.showinfo("Report Shared", f"Report sent successfully to {success_count} of {len(recipient_list)} recipient(s)!")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.report_shared', default="Report Shared"), f"Report sent successfully to {success_count} of {len(recipient_list)} recipient(s)!")
                     share_dialog.destroy()
                 else:
-                    messagebox.showerror("Share Failed", "Failed to share report with any recipients")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.share_failed', default="Share Failed"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.failed_to_share_report_with_any_recipients', default="Failed to share report with any recipients"))
 
             except Exception as e:
-                messagebox.showerror("Share Failed", f"Failed to share report: {str(e)}")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.share_failed', default="Share Failed"), f"Failed to share report: {str(e)}")
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=10)
 
-        ttk.Button(button_frame, text="Send", command=send_report).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Cancel", command=share_dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.buttons.send', default="Send"), command=send_report).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.buttons.cancel', default="Cancel"), command=share_dialog.destroy).pack(side='left', padx=5)
 
     def delete_report(self):
         """Delete selected report"""
         selection = self.reports_tree.selection()
         if not selection or not hasattr(self, 'reports_data'):
-            messagebox.showwarning("No Selection", "Please select a report to delete.")
+            messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.no_selection', default="No Selection"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.please_select_a_report_to_delete', default="Please select a report to delete."))
             return
 
         item = self.reports_tree.item(selection[0])
         report_name = item['values'][0]
 
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{report_name}'?"):
+        if messagebox.askyesno(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.confirm_delete', default="Confirm Delete"), f"Are you sure you want to delete '{report_name}'?"):
             # Find and delete report
             report = next((r for r in self.reports_data if r['name'] == report_name), None)
             if report:
                 try:
                     os.remove(report['path'])
                     self.refresh_reports()
-                    messagebox.showinfo("Success", "Report deleted successfully!")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.success', default="Success"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.report_deleted_successfully', default="Report deleted successfully!"))
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to delete report: {str(e)}")
+                    messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to delete report: {str(e)}")
 
     def _save_analytics_report(self, content, report_type):
         """Save analytics report to file"""
@@ -353,10 +355,10 @@ University Reporting System""")
             if file_path:
                 with open(file_path, 'w') as f:
                     f.write(content)
-                messagebox.showinfo("Success", f"Report saved successfully to:\n{file_path}")
+                messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.success', default="Success"), f"Report saved successfully to:\n{file_path}")
                 self.update_status(f"Report saved to {os.path.basename(file_path)}")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to save report: {str(e)}")
             self.update_status(f"Failed to save report: {str(e)}", "error")
 
     def _send_report_to_admin(self, content, report_title):
@@ -378,7 +380,7 @@ University Reporting System""")
                 admin_email = result[0]
 
             if not admin_email:
-                messagebox.showerror("Error", "No admin email found in database.")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.no_admin_email_found_in_database', default="No admin email found in database."))
                 return
 
             # Save report to temporary file
@@ -415,15 +417,15 @@ University Reporting System
                 )
 
                 if success:
-                    messagebox.showinfo("Success", f"Report sent successfully to:\n{admin_email}")
+                    messagebox.showinfo(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.success', default="Success"), f"Report sent successfully to:\n{admin_email}")
                     self.update_status("Report emailed to admin")
                 else:
-                    messagebox.showwarning("Warning", "Email may not have been sent. Check email configuration.")
+                    messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.warning', default="Warning"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.email_may_not_have_been_sent_check_email_configuration', default="Email may not have been sent. Check email configuration."))
 
             except ImportError as e:
-                messagebox.showerror("Error", f"Email service not available: {str(e)}\nPlease check your email configuration.")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Email service not available: {str(e)}\nPlease check your email configuration.")
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to send email: {str(e)}")
+                messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to send email: {str(e)}")
             finally:
                 # Clean up temp file
                 try:
@@ -432,26 +434,28 @@ University Reporting System
                     pass
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to send report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to send report: {str(e)}")
             self.update_status(f"Failed to send report: {str(e)}", "error")
 
     def send_scheduled_report_email(self, recipients, report_path, template_name):
         """Send scheduled report via email"""
         try:
-            subject = f"Scheduled Report: {template_name}"
-            body = f"Please find attached the scheduled report generated on {datetime.now().strftime('%Y-%m-%d %H:%M')}."
-
-            # Note: This is a placeholder. Actual email sending would require SMTP configuration
-            logging.info(f"Would send email to {recipients} with report {report_path}")
+            from education_system.systems.university.interfaces.gui.shell.enhanced_reporting.email_delivery import send_report_email
+            results = send_report_email(recipients, report_path, template_name)
+            failed = [address for address, sent in results.items() if not sent]
+            if failed:
+                logging.error("Scheduled report failed for: %s", ", ".join(failed))
+            return not failed
 
         except Exception as e:
             logging.error(f"Error sending scheduled report email: {str(e)}")
+            return False
 
     def generate_report_method(self, template_name, start_date, end_date, format='pdf'):
         """Generate a report (wrapper method)"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return None
 
             self.update_status(f"Generating {format.upper()} report...")
@@ -463,27 +467,27 @@ University Reporting System
 
                     if report_path:
                         self.root.after(0, lambda: messagebox.showinfo(
-                            "Success", f"Report generated successfully!\n\nLocation: {report_path}"))
+                            _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.success', default="Success"), f"Report generated successfully!\n\nLocation: {report_path}"))
                         self.root.after(0, lambda: self.update_status("Report generated", "success"))
                     else:
                         self.root.after(0, lambda: messagebox.showwarning(
-                            "Failed", "Report generation failed"))
+                            _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.failed', default="Failed"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.report_generation_failed', default="Report generation failed")))
                 except Exception as e:
                     self.root.after(0, lambda _e=e: messagebox.showerror(
-                        "Error", f"Report generation failed: {str(_e)}"))
+                        _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Report generation failed: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
 
             threading.Thread(target=generate, daemon=True).start()
         except Exception as e:
             self.stop_progress()
-            messagebox.showerror("Error", f"Failed to start report generation: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to start report generation: {str(e)}")
 
     def generate_enhanced_excel_report(self, template_name, start_date, end_date):
         """Generate enhanced Excel report"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return
 
             self.update_status("Generating Excel report...")
@@ -495,13 +499,13 @@ University Reporting System
 
                     if report_path:
                         self.root.after(0, lambda: messagebox.showinfo(
-                            "Success", f"Excel report generated!\n\nLocation: {report_path}"))
+                            _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.success', default="Success"), f"Excel report generated!\n\nLocation: {report_path}"))
                     else:
                         self.root.after(0, lambda: messagebox.showwarning(
-                            "Failed", "Excel report generation failed"))
+                            _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.failed', default="Failed"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.excel_report_generation_failed', default="Excel report generation failed")))
                 except Exception as e:
                     self.root.after(0, lambda _e=e: messagebox.showerror(
-                        "Error", f"Excel generation failed: {str(_e)}"))
+                        _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Excel generation failed: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Ready"))
@@ -509,13 +513,13 @@ University Reporting System
             threading.Thread(target=generate, daemon=True).start()
         except Exception as e:
             self.stop_progress()
-            messagebox.showerror("Error", f"Failed to generate Excel report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to generate Excel report: {str(e)}")
 
     def generate_interactive_report(self, template_name, start_date, end_date):
         """Generate interactive HTML report"""
         try:
             if not ENHANCED_AVAILABLE:
-                messagebox.showwarning("Not Available", "Enhanced features not available")
+                messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.not_available', default="Not Available"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.enhanced_features_not_available', default="Enhanced features not available"))
                 return
 
             self.update_status("Generating interactive report...")
@@ -530,10 +534,10 @@ University Reporting System
                             report_path, "Interactive Report", is_html=True))
                     else:
                         self.root.after(0, lambda: messagebox.showwarning(
-                            "Failed", "Interactive report generation failed"))
+                            _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.failed', default="Failed"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.interactive_report_generation_failed', default="Interactive report generation failed")))
                 except Exception as e:
                     self.root.after(0, lambda _e=e: messagebox.showerror(
-                        "Error", f"Interactive report failed: {str(_e)}"))
+                        _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Interactive report failed: {str(_e)}"))
                 finally:
                     self.root.after(0, self.stop_progress)
                     self.root.after(0, lambda: self.update_status("Ready"))
@@ -541,32 +545,32 @@ University Reporting System
             threading.Thread(target=generate, daemon=True).start()
         except Exception as e:
             self.stop_progress()
-            messagebox.showerror("Error", f"Failed to generate interactive report: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to generate interactive report: {str(e)}")
 
     def generate_advanced_report_menu(self):
         """Show advanced report generation dialog"""
         try:
             self.generate_report_dialog()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show report generation: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to show report generation: {str(e)}")
 
     def generate_interactive_report_menu(self):
         """Show interactive report generation menu"""
         try:
             gen_window = tk.Toplevel(self.root)
-            gen_window.title("Generate Interactive Report")
+            gen_window.title(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.windows.generate_interactive_report', default="Generate Interactive Report"))
             gen_window.geometry("500x400")
             gen_window.transient(self.root)
 
-            ttk.Label(gen_window, text="Generate Interactive Report",
+            ttk.Label(gen_window, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.generate_interactive_report', default="Generate Interactive Report"),
                      font=('Arial', 14, 'bold')).pack(pady=10)
 
             # Form
-            form_frame = ttk.LabelFrame(gen_window, text="Report Configuration", padding="10")
+            form_frame = ttk.LabelFrame(gen_window, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.report_configuration', default="Report Configuration"), padding="10")
             form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
             # Template selection
-            ttk.Label(form_frame, text="Template:").grid(row=0, column=0, sticky=tk.W, pady=5)
+            ttk.Label(form_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.template', default="Template:")).grid(row=0, column=0, sticky=tk.W, pady=5)
             template_var = tk.StringVar()
             template_combo = ttk.Combobox(form_frame, textvariable=template_var, state='readonly')
             template_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5)
@@ -582,11 +586,11 @@ University Reporting System
                 template_combo['values'] = []
 
             # Date range
-            ttk.Label(form_frame, text="Start Date (YYYY-MM-DD):").grid(row=1, column=0, sticky=tk.W, pady=5)
+            ttk.Label(form_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.start_date_yyyy_mm_dd', default="Start Date (YYYY-MM-DD):")).grid(row=1, column=0, sticky=tk.W, pady=5)
             start_date_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"))
             ttk.Entry(form_frame, textvariable=start_date_var).grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5)
 
-            ttk.Label(form_frame, text="End Date (YYYY-MM-DD):").grid(row=2, column=0, sticky=tk.W, pady=5)
+            ttk.Label(form_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.labels.end_date_yyyy_mm_dd', default="End Date (YYYY-MM-DD):")).grid(row=2, column=0, sticky=tk.W, pady=5)
             end_date_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
             ttk.Entry(form_frame, textvariable=end_date_var).grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5)
 
@@ -599,15 +603,15 @@ University Reporting System
             def generate_action():
                 template_name = template_var.get()
                 if not template_name:
-                    messagebox.showwarning("Validation", "Please select a template")
+                    messagebox.showwarning(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.validation', default="Validation"), _t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.please_select_a_template', default="Please select a template"))
                     return
 
                 self.generate_interactive_report(template_name, start_date_var.get(), end_date_var.get())
                 gen_window.destroy()
 
-            ttk.Button(button_frame, text="Generate", command=generate_action,
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.buttons.generate', default="Generate"), command=generate_action,
                       style='Success.TButton').pack(side=tk.LEFT, padx=5)
-            ttk.Button(button_frame, text="Cancel", command=gen_window.destroy).pack(side=tk.LEFT, padx=5)
+            ttk.Button(button_frame, text=_t('gui.shell.enhanced_reporting.mixins.reports_mixin.buttons.cancel', default="Cancel"), command=gen_window.destroy).pack(side=tk.LEFT, padx=5)
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to show generation dialog: {str(e)}")
+            messagebox.showerror(_t('gui.shell.enhanced_reporting.mixins.reports_mixin.dialogs.error', default="Error"), f"Failed to show generation dialog: {str(e)}")

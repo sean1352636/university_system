@@ -10,6 +10,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -46,7 +48,7 @@ class DirectoryGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Staff Directory")
+            messagebox.showerror(_t('gui.staff.staff_hr.directory.dialogs.error', default="Error"), _t('gui.staff.staff_hr.directory.dialogs.login_required_to_access_staff_directory', default="Login required to access Staff Directory"))
             return
 
         if parent_notebook:
@@ -59,18 +61,18 @@ class DirectoryGUI:
 
     def create_as_tab(self, notebook: ttk.Notebook):
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Directory")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.directory.tabs.directory', default="Directory"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         self.window = tk.Toplevel(self.root)
-        self.window.title("Staff Directory")
+        self.window.title(_t('gui.staff.staff_hr.directory.windows.staff_directory', default="Staff Directory"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.directory.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.directory.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
         self._build_interface(self.window)
 
@@ -94,7 +96,7 @@ class DirectoryGUI:
         try:
             full = DirectoryManager.get_full_profile(user_id)
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load profile: {exc}")
+            messagebox.showerror(_t('gui.staff.staff_hr.directory.dialogs.error', default="Error"), f"Failed to load profile: {exc}")
             return
 
         profile = full.get('profile')
@@ -111,7 +113,7 @@ class DirectoryGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # -- Profile information --
-        info_frame = ttk.LabelFrame(main_frame, text="Profile Information", padding=10)
+        info_frame = ttk.LabelFrame(main_frame, text=_t('gui.staff.staff_hr.directory.labels.profile_information', default="Profile Information"), padding=10)
         info_frame.pack(fill=tk.X, pady=(0, 8))
 
         if profile:
@@ -131,10 +133,10 @@ class DirectoryGUI:
                 ttk.Label(info_frame, text=str(value) if value else "-").grid(
                     row=i // 2, column=(i % 2) * 2 + 1, sticky='w', padx=5, pady=2)
         else:
-            ttk.Label(info_frame, text="No profile found for this user.").pack(anchor=tk.W)
+            ttk.Label(info_frame, text=_t('gui.staff.staff_hr.directory.labels.no_profile_found_for_this_user', default="No profile found for this user.")).pack(anchor=tk.W)
 
         # -- Expertise areas --
-        exp_frame = ttk.LabelFrame(main_frame, text="Expertise Areas", padding=10)
+        exp_frame = ttk.LabelFrame(main_frame, text=_t('gui.staff.staff_hr.directory.labels.expertise_areas', default="Expertise Areas"), padding=10)
         exp_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
 
         if expertise_list:
@@ -152,10 +154,10 @@ class DirectoryGUI:
                 ))
             exp_tree.pack(fill=tk.BOTH, expand=True)
         else:
-            ttk.Label(exp_frame, text="No expertise areas listed.").pack(anchor=tk.W)
+            ttk.Label(exp_frame, text=_t('gui.staff.staff_hr.directory.labels.no_expertise_areas_listed', default="No expertise areas listed.")).pack(anchor=tk.W)
 
         # -- Office hours --
-        hours_frame = ttk.LabelFrame(main_frame, text="Office Hours", padding=10)
+        hours_frame = ttk.LabelFrame(main_frame, text=_t('gui.staff.staff_hr.directory.labels.office_hours', default="Office Hours"), padding=10)
         hours_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 8))
 
         if office_hours_list:
@@ -174,10 +176,10 @@ class DirectoryGUI:
                 oh_tree.insert('', 'end', values=(day_display, time_range, location))
             oh_tree.pack(fill=tk.BOTH, expand=True)
         else:
-            ttk.Label(hours_frame, text="No office hours listed.").pack(anchor=tk.W)
+            ttk.Label(hours_frame, text=_t('gui.staff.staff_hr.directory.labels.no_office_hours_listed', default="No office hours listed.")).pack(anchor=tk.W)
 
         # -- Close button --
-        ttk.Button(main_frame, text="Close", command=dialog.destroy).pack(pady=(8, 0))
+        ttk.Button(main_frame, text=_t('gui.staff.staff_hr.directory.buttons.close', default="Close"), command=dialog.destroy).pack(pady=(8, 0))
 
     # ==================================================================
     # Tab 1 -- Search Directory
@@ -186,26 +188,26 @@ class DirectoryGUI:
     def _create_search_tab(self):
         """Create the Search Directory tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Search Directory")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.directory.tabs.search_directory', default="Search Directory"))
 
         # -- Header --
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Search Staff Directory", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.directory.labels.search_staff_directory', default="Search Staff Directory"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # -- Search bar --
-        search_frame = ttk.LabelFrame(tab, text="Search", padding=10)
+        search_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.directory.labels.search', default="Search"), padding=10)
         search_frame.pack(fill=tk.X, padx=10, pady=(0, 5))
 
-        ttk.Label(search_frame, text="Name / Email:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(search_frame, text=_t('gui.staff.staff_hr.directory.labels.name_email', default="Name / Email:")).pack(side=tk.LEFT, padx=(0, 5))
         self.search_query_entry = ttk.Entry(search_frame, width=30)
         self.search_query_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Label(search_frame, text="Department:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(search_frame, text=_t('gui.staff.staff_hr.directory.labels.department_variant_2', default="Department:")).pack(side=tk.LEFT, padx=(0, 5))
         self.search_dept_entry = ttk.Entry(search_frame, width=20)
         self.search_dept_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        ttk.Button(search_frame, text="Search", command=self._do_search_directory).pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text=_t('gui.staff.staff_hr.directory.buttons.search', default="Search"), command=self._do_search_directory).pack(side=tk.LEFT, padx=5)
 
         # Bind Enter key
         self.search_query_entry.bind('<Return>', lambda e: self._do_search_directory())
@@ -244,7 +246,7 @@ class DirectoryGUI:
         try:
             results = DirectoryManager.search_directory(query=query, department=department)
         except Exception as exc:
-            messagebox.showerror("Error", f"Search failed: {exc}")
+            messagebox.showerror(_t('gui.staff.staff_hr.directory.dialogs.error', default="Error"), f"Search failed: {exc}")
             return
 
         self.search_tree.delete(*self.search_tree.get_children())
@@ -275,21 +277,21 @@ class DirectoryGUI:
     def _create_department_tab(self):
         """Create the Department Browse tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Department Browse")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.directory.tabs.department_browse', default="Department Browse"))
 
         # -- Header --
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Browse by Department", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.directory.labels.browse_by_department', default="Browse by Department"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # -- Department entry and button --
-        dept_frame = ttk.LabelFrame(tab, text="Department", padding=10)
+        dept_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.directory.labels.department', default="Department"), padding=10)
         dept_frame.pack(fill=tk.X, padx=10, pady=(0, 5))
 
-        ttk.Label(dept_frame, text="Department:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(dept_frame, text=_t('gui.staff.staff_hr.directory.labels.department_variant_2', default="Department:")).pack(side=tk.LEFT, padx=(0, 5))
         self.dept_browse_entry = ttk.Entry(dept_frame, width=30)
         self.dept_browse_entry.pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(dept_frame, text="Browse", command=self._do_browse_department).pack(side=tk.LEFT, padx=5)
+        ttk.Button(dept_frame, text=_t('gui.staff.staff_hr.directory.buttons.browse', default="Browse"), command=self._do_browse_department).pack(side=tk.LEFT, padx=5)
 
         self.dept_browse_entry.bind('<Return>', lambda e: self._do_browse_department())
 
@@ -319,13 +321,13 @@ class DirectoryGUI:
         """Load staff for the entered department."""
         department = self.dept_browse_entry.get().strip()
         if not department:
-            messagebox.showwarning("Warning", "Please enter a department name.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.directory.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.directory.dialogs.please_enter_a_department_name', default="Please enter a department name."))
             return
 
         try:
             results = DirectoryManager.get_department_staff(department)
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load department staff: {exc}")
+            messagebox.showerror(_t('gui.staff.staff_hr.directory.dialogs.error', default="Error"), f"Failed to load department staff: {exc}")
             return
 
         self.dept_tree.delete(*self.dept_tree.get_children())
@@ -346,7 +348,7 @@ class DirectoryGUI:
     def _create_my_profile_tab(self):
         """Create the My Profile tab with expertise and office-hours management."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Profile")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.directory.tabs.my_profile', default="My Profile"))
 
         # Scrollable canvas so everything fits
         canvas = tk.Canvas(tab, highlightthickness=0)
@@ -361,7 +363,7 @@ class DirectoryGUI:
         v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Profile information ----
-        profile_frame = ttk.LabelFrame(scroll_frame, text="My Profile", padding=10)
+        profile_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.directory.labels.my_profile', default="My Profile"), padding=10)
         profile_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.profile_labels = {}
@@ -374,13 +376,13 @@ class DirectoryGUI:
             self.profile_labels[field] = lbl
 
         # ---- Expertise Management ----
-        exp_frame = ttk.LabelFrame(scroll_frame, text="Expertise Management", padding=10)
+        exp_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.directory.labels.expertise_management', default="Expertise Management"), padding=10)
         exp_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         exp_btn_frame = ttk.Frame(exp_frame)
         exp_btn_frame.pack(fill=tk.X, pady=(0, 5))
-        ttk.Button(exp_btn_frame, text="Add Expertise", command=self._add_expertise_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(exp_btn_frame, text="Remove Selected", command=self._remove_selected_expertise).pack(side=tk.LEFT, padx=5)
+        ttk.Button(exp_btn_frame, text=_t('gui.staff.staff_hr.directory.buttons.add_expertise', default="Add Expertise"), command=self._add_expertise_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(exp_btn_frame, text=_t('gui.staff.staff_hr.directory.buttons.remove_selected', default="Remove Selected"), command=self._remove_selected_expertise).pack(side=tk.LEFT, padx=5)
 
         exp_tree_frame = ttk.Frame(exp_frame)
         exp_tree_frame.pack(fill=tk.BOTH, expand=True)
@@ -402,13 +404,13 @@ class DirectoryGUI:
         exp_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # ---- Office Hours Management ----
-        hours_frame = ttk.LabelFrame(scroll_frame, text="Office Hours Management", padding=10)
+        hours_frame = ttk.LabelFrame(scroll_frame, text=_t('gui.staff.staff_hr.directory.labels.office_hours_management', default="Office Hours Management"), padding=10)
         hours_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         hours_btn_frame = ttk.Frame(hours_frame)
         hours_btn_frame.pack(fill=tk.X, pady=(0, 5))
-        ttk.Button(hours_btn_frame, text="Add Hours", command=self._add_hours_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(hours_btn_frame, text="Remove Selected", command=self._remove_selected_hours).pack(side=tk.LEFT, padx=5)
+        ttk.Button(hours_btn_frame, text=_t('gui.staff.staff_hr.directory.buttons.add_hours', default="Add Hours"), command=self._add_hours_dialog).pack(side=tk.LEFT, padx=5)
+        ttk.Button(hours_btn_frame, text=_t('gui.staff.staff_hr.directory.buttons.remove_selected', default="Remove Selected"), command=self._remove_selected_hours).pack(side=tk.LEFT, padx=5)
 
         hours_tree_frame = ttk.Frame(hours_frame)
         hours_tree_frame.pack(fill=tk.BOTH, expand=True)
@@ -506,7 +508,7 @@ class DirectoryGUI:
     def _add_expertise_dialog(self):
         """Open a dialog to add a new expertise area."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Expertise")
+        dialog.title(_t('gui.staff.staff_hr.directory.windows.add_expertise', default="Add Expertise"))
         dialog.geometry("420x300")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -514,21 +516,21 @@ class DirectoryGUI:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Add Expertise Area", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.staff.staff_hr.directory.labels.add_expertise_area', default="Add Expertise Area"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         fields = {}
 
         # Area
         row = ttk.Frame(main_frame)
         row.pack(fill=tk.X, pady=5)
-        ttk.Label(row, text="Expertise Area:", width=16, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.expertise_area', default="Expertise Area:"), width=16, anchor=tk.W).pack(side=tk.LEFT)
         fields['area'] = ttk.Entry(row, width=28)
         fields['area'].pack(side=tk.LEFT)
 
         # Category
         row = ttk.Frame(main_frame)
         row.pack(fill=tk.X, pady=5)
-        ttk.Label(row, text="Category:", width=16, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.category', default="Category:"), width=16, anchor=tk.W).pack(side=tk.LEFT)
         fields['category'] = ttk.Combobox(row, values=[
             'academic', 'research', 'technical', 'administrative',
         ], width=25, state='readonly')
@@ -538,7 +540,7 @@ class DirectoryGUI:
         # Proficiency
         row = ttk.Frame(main_frame)
         row.pack(fill=tk.X, pady=5)
-        ttk.Label(row, text="Proficiency:", width=16, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.proficiency', default="Proficiency:"), width=16, anchor=tk.W).pack(side=tk.LEFT)
         fields['proficiency'] = ttk.Combobox(row, values=[
             'beginner', 'intermediate', 'advanced', 'expert',
         ], width=25, state='readonly')
@@ -548,7 +550,7 @@ class DirectoryGUI:
         # Keywords
         row = ttk.Frame(main_frame)
         row.pack(fill=tk.X, pady=5)
-        ttk.Label(row, text="Keywords:", width=16, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.keywords', default="Keywords:"), width=16, anchor=tk.W).pack(side=tk.LEFT)
         fields['keywords'] = ttk.Entry(row, width=28)
         fields['keywords'].pack(side=tk.LEFT)
 
@@ -558,7 +560,7 @@ class DirectoryGUI:
         def save():
             area = fields['area'].get().strip()
             if not area:
-                error_label.config(text="Expertise Area is required.")
+                error_label.config(text=_t('gui.staff.staff_hr.directory.text.expertise_area_is_required', default="Expertise Area is required."))
                 return
             category = fields['category'].get()
             proficiency = fields['proficiency'].get()
@@ -572,7 +574,7 @@ class DirectoryGUI:
                     proficiency=proficiency,
                     keywords=keywords,
                 )
-                messagebox.showinfo("Success", "Expertise area added successfully.")
+                messagebox.showinfo(_t('gui.staff.staff_hr.directory.dialogs.success', default="Success"), _t('gui.staff.staff_hr.directory.dialogs.expertise_area_added_successfully', default="Expertise area added successfully."))
                 dialog.destroy()
                 self._load_my_expertise()
             except Exception as exc:
@@ -580,36 +582,36 @@ class DirectoryGUI:
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.directory.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.directory.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _remove_selected_expertise(self):
         """Remove the selected expertise entry."""
         selection = self.my_expertise_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select an expertise entry to remove.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.directory.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.directory.dialogs.please_select_an_expertise_entry_to_remove', default="Please select an expertise entry to remove."))
             return
 
         item = self.my_expertise_tree.item(selection[0])
         expertise_id = item['values'][0]
         area_name = item['values'][1]
 
-        if not messagebox.askyesno("Confirm", f"Remove expertise '{area_name}'?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.directory.dialogs.confirm', default="Confirm"), f"Remove expertise '{area_name}'?"):
             return
 
         try:
             DirectoryManager.remove_expertise(int(expertise_id))
-            messagebox.showinfo("Success", "Expertise removed.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.directory.dialogs.success', default="Success"), _t('gui.staff.staff_hr.directory.dialogs.expertise_removed', default="Expertise removed."))
             self._load_my_expertise()
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to remove expertise: {exc}")
+            messagebox.showerror(_t('gui.staff.staff_hr.directory.dialogs.error', default="Error"), f"Failed to remove expertise: {exc}")
 
     # ---- My Profile: office hours dialogs ----
 
     def _add_hours_dialog(self):
         """Open a dialog to add new office hours."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Add Office Hours")
+        dialog.title(_t('gui.staff.staff_hr.directory.windows.add_office_hours', default="Add Office Hours"))
         dialog.geometry("440x380")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -617,14 +619,14 @@ class DirectoryGUI:
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        ttk.Label(main_frame, text="Add Office Hours", font=('Arial', 14, 'bold')).pack(pady=(0, 15))
+        ttk.Label(main_frame, text=_t('gui.staff.staff_hr.directory.labels.add_office_hours', default="Add Office Hours"), font=('Arial', 14, 'bold')).pack(pady=(0, 15))
 
         fields = {}
 
         # Day of week
         row = ttk.Frame(main_frame)
         row.pack(fill=tk.X, pady=5)
-        ttk.Label(row, text="Day of Week:", width=16, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.day_of_week', default="Day of Week:"), width=16, anchor=tk.W).pack(side=tk.LEFT)
         day_values = [f"{k} - {v}" for k, v in DAY_NAMES.items()]
         fields['day'] = ttk.Combobox(row, values=day_values, width=25, state='readonly')
         fields['day'].set(day_values[0])
@@ -633,38 +635,38 @@ class DirectoryGUI:
         # Start time
         row = ttk.Frame(main_frame)
         row.pack(fill=tk.X, pady=5)
-        ttk.Label(row, text="Start Time:", width=16, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.start_time', default="Start Time:"), width=16, anchor=tk.W).pack(side=tk.LEFT)
         fields['start'] = ttk.Entry(row, width=12)
         fields['start'].insert(0, "09:00")
         fields['start'].pack(side=tk.LEFT)
-        ttk.Label(row, text="(HH:MM)", font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.hh_mm', default="(HH:MM)"), font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
 
         # End time
         row = ttk.Frame(main_frame)
         row.pack(fill=tk.X, pady=5)
-        ttk.Label(row, text="End Time:", width=16, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.end_time', default="End Time:"), width=16, anchor=tk.W).pack(side=tk.LEFT)
         fields['end'] = ttk.Entry(row, width=12)
         fields['end'].insert(0, "10:00")
         fields['end'].pack(side=tk.LEFT)
-        ttk.Label(row, text="(HH:MM)", font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.hh_mm', default="(HH:MM)"), font=('Arial', 8)).pack(side=tk.LEFT, padx=5)
 
         # Location
         row = ttk.Frame(main_frame)
         row.pack(fill=tk.X, pady=5)
-        ttk.Label(row, text="Location:", width=16, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.location', default="Location:"), width=16, anchor=tk.W).pack(side=tk.LEFT)
         fields['location'] = ttk.Entry(row, width=28)
         fields['location'].pack(side=tk.LEFT)
 
         # Virtual link
         row = ttk.Frame(main_frame)
         row.pack(fill=tk.X, pady=5)
-        ttk.Label(row, text="Virtual Link:", width=16, anchor=tk.W).pack(side=tk.LEFT)
+        ttk.Label(row, text=_t('gui.staff.staff_hr.directory.labels.virtual_link', default="Virtual Link:"), width=16, anchor=tk.W).pack(side=tk.LEFT)
         fields['virtual_link'] = ttk.Entry(row, width=28)
         fields['virtual_link'].pack(side=tk.LEFT)
 
         # By appointment
         fields['by_appointment'] = tk.BooleanVar(value=False)
-        ttk.Checkbutton(main_frame, text="By Appointment Only",
+        ttk.Checkbutton(main_frame, text=_t('gui.staff.staff_hr.directory.buttons.by_appointment_only', default="By Appointment Only"),
                         variable=fields['by_appointment']).pack(anchor=tk.W, pady=5)
 
         error_label = ttk.Label(main_frame, text="", foreground='red')
@@ -673,7 +675,7 @@ class DirectoryGUI:
         def save():
             day_raw = fields['day'].get()
             if not day_raw:
-                error_label.config(text="Please select a day of week.")
+                error_label.config(text=_t('gui.staff.staff_hr.directory.text.please_select_a_day_of_week', default="Please select a day of week."))
                 return
             # Extract numeric key (e.g. "0" from "0 - Monday")
             day_of_week = day_raw.split(" - ")[0].strip()
@@ -681,7 +683,7 @@ class DirectoryGUI:
             start_time = fields['start'].get().strip()
             end_time = fields['end'].get().strip()
             if not start_time or not end_time:
-                error_label.config(text="Start and end times are required.")
+                error_label.config(text=_t('gui.staff.staff_hr.directory.text.start_and_end_times_are_required', default="Start and end times are required."))
                 return
 
             location = fields['location'].get().strip() or None
@@ -698,7 +700,7 @@ class DirectoryGUI:
                     virtual_link=virtual_link,
                     is_by_appointment=by_appt,
                 )
-                messagebox.showinfo("Success", "Office hours added successfully.")
+                messagebox.showinfo(_t('gui.staff.staff_hr.directory.dialogs.success', default="Success"), _t('gui.staff.staff_hr.directory.dialogs.office_hours_added_successfully', default="Office hours added successfully."))
                 dialog.destroy()
                 self._load_my_hours()
             except Exception as exc:
@@ -706,29 +708,29 @@ class DirectoryGUI:
 
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=15)
-        ttk.Button(btn_frame, text="Save", command=save).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.directory.buttons.save', default="Save"), command=save).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.directory.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=10)
 
     def _remove_selected_hours(self):
         """Remove the selected office-hours entry."""
         selection = self.my_hours_tree.selection()
         if not selection:
-            messagebox.showwarning("Warning", "Please select office hours to remove.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.directory.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.directory.dialogs.please_select_office_hours_to_remove', default="Please select office hours to remove."))
             return
 
         item = self.my_hours_tree.item(selection[0])
         hours_id = item['values'][0]
         day_display = item['values'][1]
 
-        if not messagebox.askyesno("Confirm", f"Remove office hours for {day_display}?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.directory.dialogs.confirm', default="Confirm"), f"Remove office hours for {day_display}?"):
             return
 
         try:
             DirectoryManager.remove_office_hours(int(hours_id))
-            messagebox.showinfo("Success", "Office hours removed.")
+            messagebox.showinfo(_t('gui.staff.staff_hr.directory.dialogs.success', default="Success"), _t('gui.staff.staff_hr.directory.dialogs.office_hours_removed', default="Office hours removed."))
             self._load_my_hours()
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to remove office hours: {exc}")
+            messagebox.showerror(_t('gui.staff.staff_hr.directory.dialogs.error', default="Error"), f"Failed to remove office hours: {exc}")
 
     # ==================================================================
     # Tab 4 -- Expertise Search
@@ -737,21 +739,21 @@ class DirectoryGUI:
     def _create_expertise_search_tab(self):
         """Create the Expertise Search tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Expertise Search")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.directory.tabs.expertise_search', default="Expertise Search"))
 
         # -- Header --
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Search by Expertise", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.directory.labels.search_by_expertise', default="Search by Expertise"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # -- Keyword search --
-        search_frame = ttk.LabelFrame(tab, text="Keyword Search", padding=10)
+        search_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.directory.labels.keyword_search', default="Keyword Search"), padding=10)
         search_frame.pack(fill=tk.X, padx=10, pady=(0, 5))
 
-        ttk.Label(search_frame, text="Keyword:").pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Label(search_frame, text=_t('gui.staff.staff_hr.directory.labels.keyword', default="Keyword:")).pack(side=tk.LEFT, padx=(0, 5))
         self.expertise_keyword_entry = ttk.Entry(search_frame, width=30)
         self.expertise_keyword_entry.pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(search_frame, text="Search", command=self._do_expertise_search).pack(side=tk.LEFT, padx=5)
+        ttk.Button(search_frame, text=_t('gui.staff.staff_hr.directory.buttons.search', default="Search"), command=self._do_expertise_search).pack(side=tk.LEFT, padx=5)
 
         self.expertise_keyword_entry.bind('<Return>', lambda e: self._do_expertise_search())
 
@@ -781,13 +783,13 @@ class DirectoryGUI:
         """Execute an expertise keyword search."""
         keyword = self.expertise_keyword_entry.get().strip()
         if not keyword:
-            messagebox.showwarning("Warning", "Please enter a keyword to search.")
+            messagebox.showwarning(_t('gui.staff.staff_hr.directory.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.directory.dialogs.please_enter_a_keyword_to_search', default="Please enter a keyword to search."))
             return
 
         try:
             results = DirectoryManager.search_by_expertise(keyword)
         except Exception as exc:
-            messagebox.showerror("Error", f"Expertise search failed: {exc}")
+            messagebox.showerror(_t('gui.staff.staff_hr.directory.dialogs.error', default="Error"), f"Expertise search failed: {exc}")
             return
 
         self.expertise_tree.delete(*self.expertise_tree.get_children())
@@ -815,5 +817,5 @@ def launch_directory_gui(root, auth):
     try:
         return DirectoryGUI(root, auth)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to launch Directory GUI: {e}")
+        messagebox.showerror(_t('gui.staff.staff_hr.directory.dialogs.error', default="Error"), f"Failed to launch Directory GUI: {e}")
         return None

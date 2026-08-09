@@ -12,6 +12,8 @@ Provides interface for:
 
 from __future__ import annotations
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -36,7 +38,7 @@ class PayrollGUI:
         self.window = None
 
         if not self.current_user:
-            messagebox.showerror("Error", "Login required to access Payroll")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), _t('gui.staff.staff_hr.payroll.dialogs.login_required_to_access_payroll', default="Login required to access Payroll"))
             return
 
         if parent_notebook:
@@ -51,21 +53,21 @@ class PayrollGUI:
     def create_as_tab(self, notebook: ttk.Notebook):
         """Create as a tab in parent notebook."""
         self.tab_frame = ttk.Frame(notebook)
-        notebook.add(self.tab_frame, text="Payroll")
+        notebook.add(self.tab_frame, text=_t('gui.staff.staff_hr.payroll.tabs.payroll', default="Payroll"))
         self._build_interface(self.tab_frame)
 
     def create_main_window(self):
         """Create as standalone window."""
         self.window = tk.Toplevel(self.root)
-        self.window.title("Payroll Management")
+        self.window.title(_t('gui.staff.staff_hr.payroll.windows.payroll_management', default="Payroll Management"))
         self.window.geometry("1200x700")
         self.window.minsize(1000, 600)
 
         bottom_frame = ttk.Frame(self.window)
         bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
-        ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(bottom_frame, text=_t('gui.staff.staff_hr.payroll.buttons.close', default="Close"), command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-        self.status_bar = ttk.Label(self.window, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = ttk.Label(self.window, text=_t('gui.staff.staff_hr.payroll.labels.ready', default="Ready"), relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
         self._build_interface(self.window)
@@ -92,15 +94,15 @@ class PayrollGUI:
     def _create_payslips_tab(self):
         """Create payslips tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="My Payslips")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.payroll.tabs.my_payslips', default="My Payslips"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="My Payslips", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_payslips).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.payroll.labels.my_payslips', default="My Payslips"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.payroll.buttons.refresh', default="Refresh"), command=self._load_payslips).pack(side=tk.RIGHT)
 
         # YTD Summary
-        summary_frame = ttk.LabelFrame(tab, text="Year-to-Date Summary", padding=15)
+        summary_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.year_to_date_summary', default="Year-to-Date Summary"), padding=15)
         summary_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.ytd_labels = {}
@@ -175,43 +177,43 @@ class PayrollGUI:
     def _create_overtime_tab(self):
         """Create overtime management tab."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Overtime")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.payroll.tabs.overtime', default="Overtime"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Overtime Management", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.payroll.labels.overtime_management', default="Overtime Management"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Log overtime form
-        form_frame = ttk.LabelFrame(tab, text="Log Overtime", padding=15)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.log_overtime', default="Log Overtime"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 1
-        ttk.Label(form_frame, text="Date:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.date', default="Date:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.ot_date_entry = ttk.Entry(form_frame, width=15)
         self.ot_date_entry.insert(0, datetime.now().strftime('%Y-%m-%d'))
         self.ot_date_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Hours:").grid(row=0, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.hours', default="Hours:")).grid(row=0, column=2, sticky='e', padx=10, pady=8)
         self.ot_hours_entry = ttk.Entry(form_frame, width=10)
         self.ot_hours_entry.grid(row=0, column=3, padx=10, pady=8, sticky='w')
 
         # Row 2
-        ttk.Label(form_frame, text="Rate Multiplier:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.rate_multiplier', default="Rate Multiplier:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.ot_rate_combo = ttk.Combobox(form_frame, values=['1.0', '1.5', '2.0'], width=10, state='readonly')
         self.ot_rate_combo.set('1.5')
         self.ot_rate_combo.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Reason:").grid(row=1, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.reason', default="Reason:")).grid(row=1, column=2, sticky='e', padx=10, pady=8)
         self.ot_reason_entry = ttk.Entry(form_frame, width=40)
         self.ot_reason_entry.grid(row=1, column=3, padx=10, pady=8, sticky='w')
 
         # Submit button
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=2, column=0, columnspan=4, pady=15)
-        ttk.Button(btn_frame, text="Submit Overtime", command=self._log_overtime).pack()
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.payroll.buttons.submit_overtime', default="Submit Overtime"), command=self._log_overtime).pack()
 
         # My overtime list
-        my_ot_frame = ttk.LabelFrame(tab, text="My Overtime Entries", padding=10)
+        my_ot_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.my_overtime_entries', default="My Overtime Entries"), padding=10)
         my_ot_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         y_scroll = ttk.Scrollbar(my_ot_frame, orient=tk.VERTICAL)
@@ -234,7 +236,7 @@ class PayrollGUI:
 
         # Admin section: Pending Approvals
         if self.current_user.get('role') in ['admin', 'Admin', 'administrator', 'staff']:
-            admin_frame = ttk.LabelFrame(tab, text="Pending Approvals", padding=10)
+            admin_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.pending_approvals', default="Pending Approvals"), padding=10)
             admin_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
             y_scroll2 = ttk.Scrollbar(admin_frame, orient=tk.VERTICAL)
@@ -253,9 +255,9 @@ class PayrollGUI:
 
             approval_btn_frame = ttk.Frame(tab)
             approval_btn_frame.pack(fill=tk.X, padx=10, pady=5)
-            ttk.Button(approval_btn_frame, text="Approve Selected",
+            ttk.Button(approval_btn_frame, text=_t('gui.staff.staff_hr.payroll.buttons.approve_selected', default="Approve Selected"),
                        command=self._approve_overtime).pack(side=tk.LEFT, padx=5)
-            ttk.Button(approval_btn_frame, text="Reject Selected",
+            ttk.Button(approval_btn_frame, text=_t('gui.staff.staff_hr.payroll.buttons.reject_selected', default="Reject Selected"),
                        command=self._reject_overtime).pack(side=tk.LEFT, padx=5)
 
         self._load_overtime()
@@ -270,15 +272,15 @@ class PayrollGUI:
 
         hours_str = self.ot_hours_entry.get().strip()
         if not hours_str:
-            messagebox.showerror("Validation Error", "Hours is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.hours_is_required', default="Hours is required."))
             return
         try:
             hours = float(hours_str)
             if hours <= 0:
-                messagebox.showerror("Validation Error", "Hours must be greater than 0.")
+                messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.hours_must_be_greater_than_0', default="Hours must be greater than 0."))
                 return
         except ValueError:
-            messagebox.showerror("Validation Error", "Hours must be a valid number.")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.hours_must_be_a_valid_number', default="Hours must be a valid number."))
             return
 
         try:
@@ -298,7 +300,7 @@ class PayrollGUI:
                 rate_multiplier=rate_multiplier,
                 reason=reason
             )
-            messagebox.showinfo("Success", f"Overtime logged successfully. ID: {overtime_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), f"Overtime logged successfully. ID: {overtime_id}")
 
             # Clear form
             self.ot_hours_entry.delete(0, tk.END)
@@ -306,7 +308,7 @@ class PayrollGUI:
             self._load_overtime()
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
 
     def _load_overtime(self):
         """Load overtime entries."""
@@ -345,7 +347,7 @@ class PayrollGUI:
         """Approve selected overtime entry."""
         selection = self.pending_ot_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an overtime entry to approve")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.info', default="Info"), _t('gui.staff.staff_hr.payroll.dialogs.please_select_an_overtime_entry_to_approve', default="Please select an overtime entry to approve"))
             return
 
         item = self.pending_ot_tree.item(selection[0])
@@ -353,16 +355,16 @@ class PayrollGUI:
 
         try:
             PayrollManager.approve_overtime(overtime_id, self._get_user_id())
-            messagebox.showinfo("Success", "Overtime approved")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), _t('gui.staff.staff_hr.payroll.dialogs.overtime_approved', default="Overtime approved"))
             self._load_overtime()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
 
     def _reject_overtime(self):
         """Reject selected overtime entry."""
         selection = self.pending_ot_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an overtime entry to reject")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.info', default="Info"), _t('gui.staff.staff_hr.payroll.dialogs.please_select_an_overtime_entry_to_reject', default="Please select an overtime entry to reject"))
             return
 
         item = self.pending_ot_tree.item(selection[0])
@@ -370,44 +372,44 @@ class PayrollGUI:
 
         try:
             PayrollManager.reject_overtime(overtime_id, self._get_user_id())
-            messagebox.showinfo("Success", "Overtime rejected")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), _t('gui.staff.staff_hr.payroll.dialogs.overtime_rejected', default="Overtime rejected"))
             self._load_overtime()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 3: ALLOWANCES (ADMIN) ====================
 
     def _create_allowances_tab(self):
         """Create allowance management tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Allowances")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.payroll.tabs.allowances', default="Allowances"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Allowance Management", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_allowances).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.payroll.labels.allowance_management', default="Allowance Management"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.payroll.buttons.refresh', default="Refresh"), command=self._load_allowances).pack(side=tk.RIGHT)
 
         # Add allowance form
-        form_frame = ttk.LabelFrame(tab, text="Add Allowance", padding=15)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.add_allowance', default="Add Allowance"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 1
-        ttk.Label(form_frame, text="User ID:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.user_id', default="User ID:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.allow_user_entry = ttk.Entry(form_frame, width=20)
         self.allow_user_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Type:").grid(row=0, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.type', default="Type:")).grid(row=0, column=2, sticky='e', padx=10, pady=8)
         self.allow_type_combo = ttk.Combobox(form_frame,
             values=['Housing', 'Transport', 'Meal', 'Phone', 'Other'], width=15, state='readonly')
         self.allow_type_combo.set('Housing')
         self.allow_type_combo.grid(row=0, column=3, padx=10, pady=8, sticky='w')
 
         # Row 2
-        ttk.Label(form_frame, text="Amount ($):").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.amount', default="Amount ($):")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.allow_amount_entry = ttk.Entry(form_frame, width=15)
         self.allow_amount_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Frequency:").grid(row=1, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.frequency', default="Frequency:")).grid(row=1, column=2, sticky='e', padx=10, pady=8)
         self.allow_freq_combo = ttk.Combobox(form_frame,
             values=['monthly', 'bi-weekly', 'weekly', 'annual'], width=15, state='readonly')
         self.allow_freq_combo.set('monthly')
@@ -416,7 +418,7 @@ class PayrollGUI:
         # Add button
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=2, column=0, columnspan=4, pady=15)
-        ttk.Button(btn_frame, text="Add Allowance", command=self._add_allowance).pack()
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.payroll.buttons.add_allowance', default="Add Allowance"), command=self._add_allowance).pack()
 
         # Allowances list
         tree_frame = ttk.Frame(tab)
@@ -441,7 +443,7 @@ class PayrollGUI:
         # Deactivate button
         deact_frame = ttk.Frame(tab)
         deact_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(deact_frame, text="Deactivate Selected",
+        ttk.Button(deact_frame, text=_t('gui.staff.staff_hr.payroll.buttons.deactivate_selected', default="Deactivate Selected"),
                    command=self._deactivate_allowance).pack(side=tk.LEFT, padx=5)
 
         self._load_allowances()
@@ -480,7 +482,7 @@ class PayrollGUI:
                 frequency=frequency,
                 approved_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", f"Allowance added successfully. ID: {allowance_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), f"Allowance added successfully. ID: {allowance_id}")
 
             # Clear form
             self.allow_user_entry.delete(0, tk.END)
@@ -488,7 +490,7 @@ class PayrollGUI:
             self._load_allowances()
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
 
     def _load_allowances(self):
         """Load all allowances."""
@@ -523,69 +525,69 @@ class PayrollGUI:
         """Deactivate selected allowance."""
         selection = self.allowances_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select an allowance to deactivate")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.info', default="Info"), _t('gui.staff.staff_hr.payroll.dialogs.please_select_an_allowance_to_deactivate', default="Please select an allowance to deactivate"))
             return
 
         item = self.allowances_tree.item(selection[0])
         allowance_id = item['values'][0]
 
-        if not messagebox.askyesno("Confirm", "Are you sure you want to deactivate this allowance?"):
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.payroll.dialogs.confirm', default="Confirm"), _t('gui.staff.staff_hr.payroll.dialogs.are_you_sure_you_want_to_deactivate_this_allowance', default="Are you sure you want to deactivate this allowance?")):
             return
 
         try:
             PayrollManager.deactivate_allowance(allowance_id)
-            messagebox.showinfo("Success", "Allowance deactivated")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), _t('gui.staff.staff_hr.payroll.dialogs.allowance_deactivated', default="Allowance deactivated"))
             self._load_allowances()
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 4: RUN PAYROLL (ADMIN) ====================
 
     def _create_run_payroll_tab(self):
         """Create run payroll tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Run Payroll")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.payroll.tabs.run_payroll', default="Run Payroll"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Run Payroll", style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.payroll.labels.run_payroll', default="Run Payroll"), style='Header.TLabel').pack(side=tk.LEFT)
 
         # Create new period form
-        form_frame = ttk.LabelFrame(tab, text="Create New Pay Period", padding=15)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.create_new_pay_period', default="Create New Pay Period"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 1
-        ttk.Label(form_frame, text="Name:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.name', default="Name:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.period_name_entry = ttk.Entry(form_frame, width=25)
         self.period_name_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Type:").grid(row=0, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.type', default="Type:")).grid(row=0, column=2, sticky='e', padx=10, pady=8)
         self.period_type_combo = ttk.Combobox(form_frame,
             values=['monthly', 'bi-weekly', 'weekly'], width=15, state='readonly')
         self.period_type_combo.set('monthly')
         self.period_type_combo.grid(row=0, column=3, padx=10, pady=8, sticky='w')
 
         # Row 2
-        ttk.Label(form_frame, text="Start Date:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.start_date', default="Start Date:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.period_start_entry = ttk.Entry(form_frame, width=15)
         self.period_start_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="End Date:").grid(row=1, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.end_date', default="End Date:")).grid(row=1, column=2, sticky='e', padx=10, pady=8)
         self.period_end_entry = ttk.Entry(form_frame, width=15)
         self.period_end_entry.grid(row=1, column=3, padx=10, pady=8, sticky='w')
 
         # Row 3
-        ttk.Label(form_frame, text="Payment Date:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.payment_date', default="Payment Date:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.period_payment_entry = ttk.Entry(form_frame, width=15)
         self.period_payment_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
         # Create button
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=2, column=2, columnspan=2, pady=8)
-        ttk.Button(btn_frame, text="Create Period", command=self._create_period).pack()
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.payroll.buttons.create_period', default="Create Period"), command=self._create_period).pack()
 
         # Existing periods list
-        periods_frame = ttk.LabelFrame(tab, text="Pay Periods", padding=10)
+        periods_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.pay_periods', default="Pay Periods"), padding=10)
         periods_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         y_scroll = ttk.Scrollbar(periods_frame, orient=tk.VERTICAL)
@@ -609,9 +611,9 @@ class PayrollGUI:
         # Process payroll button and results
         action_frame = ttk.Frame(tab)
         action_frame.pack(fill=tk.X, padx=10, pady=5)
-        ttk.Button(action_frame, text="Process Payroll for Selected Period",
+        ttk.Button(action_frame, text=_t('gui.staff.staff_hr.payroll.buttons.process_payroll_for_selected_period', default="Process Payroll for Selected Period"),
                    command=self._run_payroll).pack(side=tk.LEFT, padx=5)
-        ttk.Button(action_frame, text="Refresh", command=self._load_periods).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_t('gui.staff.staff_hr.payroll.buttons.refresh', default="Refresh"), command=self._load_periods).pack(side=tk.LEFT, padx=5)
 
         self.payroll_result_label = ttk.Label(action_frame, text="", font=('Arial', 10))
         self.payroll_result_label.pack(side=tk.LEFT, padx=20)
@@ -663,7 +665,7 @@ class PayrollGUI:
                 payment_date=payment_date,
                 created_by=self._get_user_id()
             )
-            messagebox.showinfo("Success", f"Pay period created successfully. ID: {period_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), f"Pay period created successfully. ID: {period_id}")
 
             # Clear form
             self.period_name_entry.delete(0, tk.END)
@@ -673,7 +675,7 @@ class PayrollGUI:
             self._load_periods()
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
 
     def _load_periods(self):
         """Load pay periods."""
@@ -697,7 +699,7 @@ class PayrollGUI:
         """Run payroll for selected period."""
         selection = self.periods_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a period to process")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.info', default="Info"), _t('gui.staff.staff_hr.payroll.dialogs.please_select_a_period_to_process', default="Please select a period to process"))
             return
 
         item = self.periods_tree.item(selection[0])
@@ -706,10 +708,10 @@ class PayrollGUI:
         period_status = item['values'][5]
 
         if period_status.lower() == 'completed':
-            messagebox.showwarning("Warning", "This period has already been processed")
+            messagebox.showwarning(_t('gui.staff.staff_hr.payroll.dialogs.warning', default="Warning"), _t('gui.staff.staff_hr.payroll.dialogs.this_period_has_already_been_processed', default="This period has already been processed"))
             return
 
-        if not messagebox.askyesno("Confirm",
+        if not messagebox.askyesno(_t('gui.staff.staff_hr.payroll.dialogs.confirm', default="Confirm"),
                 f"Run payroll for period '{period_name}'?\nThis will process all active contracts."):
             return
 
@@ -717,7 +719,7 @@ class PayrollGUI:
             result = PayrollManager.run_payroll(period_id, created_by=self._get_user_id())
 
             if result.get('error'):
-                messagebox.showerror("Error", result['error'])
+                messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), result['error'])
                 return
 
             summary = (
@@ -726,23 +728,23 @@ class PayrollGUI:
                 f"Net: £{result.get('total_net', 0):.2f}"
             )
             self.payroll_result_label.config(text=summary)
-            messagebox.showinfo("Success", summary)
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), summary)
             self._load_periods()
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 5: TAX CONFIG (ADMIN) ====================
 
     def _create_tax_config_tab(self):
         """Create tax configuration tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Tax Config")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.payroll.tabs.tax_config', default="Tax Config"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Tax Configuration", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_tax_brackets).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.payroll.labels.tax_configuration', default="Tax Configuration"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.payroll.buttons.refresh', default="Refresh"), command=self._load_tax_brackets).pack(side=tk.RIGHT)
 
         # Tax brackets list
         tree_frame = ttk.Frame(tab)
@@ -763,34 +765,34 @@ class PayrollGUI:
         y_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         # Add bracket form
-        form_frame = ttk.LabelFrame(tab, text="Add Tax Bracket", padding=15)
+        form_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.add_tax_bracket', default="Add Tax Bracket"), padding=15)
         form_frame.pack(fill=tk.X, padx=10, pady=10)
 
         # Row 1
-        ttk.Label(form_frame, text="Year:").grid(row=0, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.year', default="Year:")).grid(row=0, column=0, sticky='e', padx=10, pady=8)
         self.tax_year_entry = ttk.Entry(form_frame, width=12)
         self.tax_year_entry.insert(0, '2025/26')
         self.tax_year_entry.grid(row=0, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Name:").grid(row=0, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.name', default="Name:")).grid(row=0, column=2, sticky='e', padx=10, pady=8)
         self.tax_name_entry = ttk.Entry(form_frame, width=20)
         self.tax_name_entry.grid(row=0, column=3, padx=10, pady=8, sticky='w')
 
         # Row 2
-        ttk.Label(form_frame, text="Lower Limit:").grid(row=1, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.lower_limit', default="Lower Limit:")).grid(row=1, column=0, sticky='e', padx=10, pady=8)
         self.tax_lower_entry = ttk.Entry(form_frame, width=12)
         self.tax_lower_entry.grid(row=1, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Upper Limit:").grid(row=1, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.upper_limit', default="Upper Limit:")).grid(row=1, column=2, sticky='e', padx=10, pady=8)
         self.tax_upper_entry = ttk.Entry(form_frame, width=12)
         self.tax_upper_entry.grid(row=1, column=3, padx=10, pady=8, sticky='w')
 
         # Row 3
-        ttk.Label(form_frame, text="Rate:").grid(row=2, column=0, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.rate', default="Rate:")).grid(row=2, column=0, sticky='e', padx=10, pady=8)
         self.tax_rate_entry = ttk.Entry(form_frame, width=12)
         self.tax_rate_entry.grid(row=2, column=1, padx=10, pady=8, sticky='w')
 
-        ttk.Label(form_frame, text="Allowance:").grid(row=2, column=2, sticky='e', padx=10, pady=8)
+        ttk.Label(form_frame, text=_t('gui.staff.staff_hr.payroll.labels.allowance', default="Allowance:")).grid(row=2, column=2, sticky='e', padx=10, pady=8)
         self.tax_allowance_entry = ttk.Entry(form_frame, width=12)
         self.tax_allowance_entry.insert(0, '0')
         self.tax_allowance_entry.grid(row=2, column=3, padx=10, pady=8, sticky='w')
@@ -798,7 +800,7 @@ class PayrollGUI:
         # Add button
         btn_frame = ttk.Frame(form_frame)
         btn_frame.grid(row=3, column=0, columnspan=4, pady=15)
-        ttk.Button(btn_frame, text="Add Tax Bracket", command=self._add_tax_bracket).pack()
+        ttk.Button(btn_frame, text=_t('gui.staff.staff_hr.payroll.buttons.add_tax_bracket', default="Add Tax Bracket"), command=self._add_tax_bracket).pack()
 
         self._load_tax_brackets()
 
@@ -840,39 +842,39 @@ class PayrollGUI:
 
         lower_str = self.tax_lower_entry.get().strip()
         if not lower_str:
-            messagebox.showerror("Validation Error", "Lower Limit is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.lower_limit_is_required', default="Lower Limit is required."))
             return
         try:
             lower_limit = float(lower_str)
         except ValueError:
-            messagebox.showerror("Validation Error", "Lower Limit must be a valid number.")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.lower_limit_must_be_a_valid_number', default="Lower Limit must be a valid number."))
             return
 
         upper_str = self.tax_upper_entry.get().strip()
         if not upper_str:
-            messagebox.showerror("Validation Error", "Upper Limit is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.upper_limit_is_required', default="Upper Limit is required."))
             return
         try:
             upper_limit = float(upper_str)
         except ValueError:
-            messagebox.showerror("Validation Error", "Upper Limit must be a valid number.")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.upper_limit_must_be_a_valid_number', default="Upper Limit must be a valid number."))
             return
 
         rate_str = self.tax_rate_entry.get().strip()
         if not rate_str:
-            messagebox.showerror("Validation Error", "Rate is required.")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.rate_is_required', default="Rate is required."))
             return
         try:
             rate = float(rate_str)
         except ValueError:
-            messagebox.showerror("Validation Error", "Rate must be a valid number (e.g. 0.20 for 20%).")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.rate_must_be_a_valid_number_e_g_0_20_for_20', default="Rate must be a valid number (e.g. 0.20 for 20%)."))
             return
 
         allowance_str = self.tax_allowance_entry.get().strip()
         try:
             personal_allowance = float(allowance_str) if allowance_str else 0
         except ValueError:
-            messagebox.showerror("Validation Error", "Allowance must be a valid number.")
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.validation_error', default="Validation Error"), _t('gui.staff.staff_hr.payroll.dialogs.allowance_must_be_a_valid_number', default="Allowance must be a valid number."))
             return
 
         try:
@@ -884,7 +886,7 @@ class PayrollGUI:
                 rate=rate,
                 personal_allowance=personal_allowance
             )
-            messagebox.showinfo("Success", f"Tax bracket created successfully. ID: {bracket_id}")
+            messagebox.showinfo(_t('gui.staff.staff_hr.payroll.dialogs.success', default="Success"), f"Tax bracket created successfully. ID: {bracket_id}")
 
             # Clear form (except year)
             self.tax_name_entry.delete(0, tk.END)
@@ -896,25 +898,25 @@ class PayrollGUI:
             self._load_tax_brackets()
 
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror(_t('gui.staff.staff_hr.payroll.dialogs.error', default="Error"), str(e))
 
     # ==================== TAB 6: REPORTS (ADMIN) ====================
 
     def _create_reports_tab(self):
         """Create payroll reports tab (admin)."""
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text="Reports")
+        self.notebook.add(tab, text=_t('gui.staff.staff_hr.payroll.tabs.reports', default="Reports"))
 
         header_frame = ttk.Frame(tab)
         header_frame.pack(fill=tk.X, padx=10, pady=10)
-        ttk.Label(header_frame, text="Payroll Reports", style='Header.TLabel').pack(side=tk.LEFT)
-        ttk.Button(header_frame, text="Refresh", command=self._load_payroll_report).pack(side=tk.RIGHT)
+        ttk.Label(header_frame, text=_t('gui.staff.staff_hr.payroll.labels.payroll_reports', default="Payroll Reports"), style='Header.TLabel').pack(side=tk.LEFT)
+        ttk.Button(header_frame, text=_t('gui.staff.staff_hr.payroll.buttons.refresh', default="Refresh"), command=self._load_payroll_report).pack(side=tk.RIGHT)
 
         # Period selector
         selector_frame = ttk.Frame(tab)
         selector_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        ttk.Label(selector_frame, text="Select Period:").pack(side=tk.LEFT, padx=5)
+        ttk.Label(selector_frame, text=_t('gui.staff.staff_hr.payroll.labels.select_period', default="Select Period:")).pack(side=tk.LEFT, padx=5)
         self.report_period_combo = ttk.Combobox(selector_frame, width=30, state='readonly')
         self.report_period_combo.pack(side=tk.LEFT, padx=5)
         self.report_period_combo.bind('<<ComboboxSelected>>', lambda e: self._load_payroll_report())
@@ -924,7 +926,7 @@ class PayrollGUI:
         self._load_report_periods()
 
         # Summary statistics
-        stats_frame = ttk.LabelFrame(tab, text="Summary Statistics", padding=15)
+        stats_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.summary_statistics', default="Summary Statistics"), padding=15)
         stats_frame.pack(fill=tk.X, padx=10, pady=10)
 
         self.report_stats = {}
@@ -938,7 +940,7 @@ class PayrollGUI:
             ttk.Label(frame, text=label).pack()
 
         # Department breakdown
-        dept_frame = ttk.LabelFrame(tab, text="By Department", padding=10)
+        dept_frame = ttk.LabelFrame(tab, text=_t('gui.staff.staff_hr.payroll.labels.by_department', default="By Department"), padding=10)
         dept_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         columns = ('Department', 'Records', 'Gross', 'Net')

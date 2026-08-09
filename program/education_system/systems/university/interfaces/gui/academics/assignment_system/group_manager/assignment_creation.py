@@ -1,5 +1,7 @@
 """Group assignment creation GUI and logic"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
@@ -16,27 +18,27 @@ class AssignmentCreationMixin:
 
         self.gui.layout.clear_content_area()
 
-        title = ttk.Label(self.gui.layout.content_area, text="Create Group Assignment", style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.create_group_assignment', default="Create Group Assignment"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Basic assignment details
-        basic_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Basic Assignment Details", padding=20)
+        basic_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.basic_assignment_details', default="Basic Assignment Details"), padding=20)
         basic_frame.pack(fill='x', pady=(0, 10))
 
         # Module selection
-        ttk.Label(basic_frame, text="Module:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.module', default="Module:")).grid(row=0, column=0, sticky='w', pady=5)
         self.group_module_var = tk.StringVar()
         module_combo = ttk.Combobox(basic_frame, textvariable=self.group_module_var, width=35, state='readonly')
         module_combo.grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
         self.load_modules(module_combo)
 
         # Title
-        ttk.Label(basic_frame, text="Title:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.title', default="Title:")).grid(row=1, column=0, sticky='w', pady=5)
         self.group_title_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=self.group_title_var, width=40).grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Due date
-        ttk.Label(basic_frame, text="Due Date:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.due_date', default="Due Date:")).grid(row=2, column=0, sticky='w', pady=5)
         due_frame = ttk.Frame(basic_frame)
         due_frame.grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
 
@@ -44,96 +46,96 @@ class AssignmentCreationMixin:
         self.group_due_time_var = tk.StringVar(value="23:59")
 
         ttk.Entry(due_frame, textvariable=self.group_due_date_var, width=12).pack(side='left')
-        ttk.Label(due_frame, text="Time:").pack(side='left', padx=(10, 5))
+        ttk.Label(due_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.time', default="Time:")).pack(side='left', padx=(10, 5))
         ttk.Combobox(due_frame, textvariable=self.group_due_time_var, width=8,
                     values=["08:00", "12:00", "17:00", "23:59"]).pack(side='left')
 
         # Max marks
-        ttk.Label(basic_frame, text="Max Marks:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(basic_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.max_marks', default="Max Marks:")).grid(row=3, column=0, sticky='w', pady=5)
         self.group_max_marks_var = tk.StringVar(value="100")
         ttk.Entry(basic_frame, textvariable=self.group_max_marks_var, width=10).grid(row=3, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Group settings frame
-        group_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Group Settings", padding=20)
+        group_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.group_settings', default="Group Settings"), padding=20)
         group_frame.pack(fill='x', pady=(0, 10))
 
         # Group size
-        ttk.Label(group_frame, text="Group Size:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(group_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.group_size', default="Group Size:")).grid(row=0, column=0, sticky='w', pady=5)
         size_frame = ttk.Frame(group_frame)
         size_frame.grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
 
-        ttk.Label(size_frame, text="Min:").pack(side='left')
+        ttk.Label(size_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.min', default="Min:")).pack(side='left')
         self.group_min_var = tk.StringVar(value="2")
         ttk.Entry(size_frame, textvariable=self.group_min_var, width=5).pack(side='left', padx=5)
 
-        ttk.Label(size_frame, text="Max:").pack(side='left', padx=(10, 0))
+        ttk.Label(size_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.max', default="Max:")).pack(side='left', padx=(10, 0))
         self.group_max_var = tk.StringVar(value="4")
         ttk.Entry(size_frame, textvariable=self.group_max_var, width=5).pack(side='left', padx=5)
 
         # Group formation method
-        ttk.Label(group_frame, text="Group Formation:").grid(row=1, column=0, sticky='w', pady=5)
-        self.group_formation_var = tk.StringVar(value="self_select")
+        ttk.Label(group_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.group_formation', default="Group Formation:")).grid(row=1, column=0, sticky='w', pady=5)
+        self.group_formation_var = tk.StringVar(value=_t('gui.academics.assignment_system.group_manager.assignment_creation.values.self_select', default="self_select"))
 
         formation_frame = ttk.Frame(group_frame)
         formation_frame.grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
-        ttk.Radiobutton(formation_frame, text="Students self-select",
+        ttk.Radiobutton(formation_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.students_self_select', default="Students self-select"),
                        variable=self.group_formation_var, value="self_select").pack(anchor='w')
-        ttk.Radiobutton(formation_frame, text="Instructor assigns",
+        ttk.Radiobutton(formation_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.instructor_assigns', default="Instructor assigns"),
                        variable=self.group_formation_var, value="instructor_assign").pack(anchor='w')
-        ttk.Radiobutton(formation_frame, text="Random assignment",
+        ttk.Radiobutton(formation_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.random_assignment', default="Random assignment"),
                        variable=self.group_formation_var, value="random").pack(anchor='w')
 
         # Collaboration settings
-        collab_frame = ttk.LabelFrame(group_frame, text="Collaboration Settings", padding=10)
+        collab_frame = ttk.LabelFrame(group_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.collaboration_settings', default="Collaboration Settings"), padding=10)
         collab_frame.grid(row=2, column=0, columnspan=2, sticky='ew', pady=(10, 0))
 
         self.allow_member_removal_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(collab_frame, text="Allow groups to remove members",
+        ttk.Checkbutton(collab_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.allow_groups_to_remove_members', default="Allow groups to remove members"),
                        variable=self.allow_member_removal_var).pack(anchor='w')
 
         self.require_peer_eval_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(collab_frame, text="Require peer evaluation",
+        ttk.Checkbutton(collab_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.require_peer_evaluation', default="Require peer evaluation"),
                        variable=self.require_peer_eval_var).pack(anchor='w')
 
         self.individual_grades_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(collab_frame, text="Allow individual grades within group",
+        ttk.Checkbutton(collab_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.allow_individual_grades_within_group', default="Allow individual grades within group"),
                        variable=self.individual_grades_var).pack(anchor='w')
 
         # Submission settings
-        submission_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Submission Settings", padding=20)
+        submission_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.submission_settings', default="Submission Settings"), padding=20)
         submission_frame.pack(fill='x', pady=(0, 10))
 
         # File settings
-        ttk.Label(submission_frame, text="Allowed File Types:").grid(row=0, column=0, sticky='w', pady=5)
-        self.group_file_types_var = tk.StringVar(value=".pdf,.docx,.zip")
+        ttk.Label(submission_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.allowed_file_types', default="Allowed File Types:")).grid(row=0, column=0, sticky='w', pady=5)
+        self.group_file_types_var = tk.StringVar(value=_t('gui.academics.assignment_system.group_manager.assignment_creation.values.pdf_docx_zip', default=".pdf,.docx,.zip"))
         ttk.Entry(submission_frame, textvariable=self.group_file_types_var, width=30).grid(row=0, column=1, sticky='w', pady=5, padx=(10, 0))
 
-        ttk.Label(submission_frame, text="Max File Size (MB):").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(submission_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.max_file_size_mb', default="Max File Size (MB):")).grid(row=1, column=0, sticky='w', pady=5)
         self.group_max_size_var = tk.StringVar(value="50")
         ttk.Entry(submission_frame, textvariable=self.group_max_size_var, width=10).grid(row=1, column=1, sticky='w', pady=5, padx=(10, 0))
 
         # Submission method
-        ttk.Label(submission_frame, text="Submission Method:").grid(row=2, column=0, sticky='w', pady=5)
-        self.submission_method_var = tk.StringVar(value="one_per_group")
+        ttk.Label(submission_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.submission_method', default="Submission Method:")).grid(row=2, column=0, sticky='w', pady=5)
+        self.submission_method_var = tk.StringVar(value=_t('gui.academics.assignment_system.group_manager.assignment_creation.values.one_per_group', default="one_per_group"))
 
         method_frame = ttk.Frame(submission_frame)
         method_frame.grid(row=2, column=1, sticky='w', pady=5, padx=(10, 0))
 
-        ttk.Radiobutton(method_frame, text="One submission per group",
+        ttk.Radiobutton(method_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.one_submission_per_group', default="One submission per group"),
                        variable=self.submission_method_var, value="one_per_group").pack(anchor='w')
-        ttk.Radiobutton(method_frame, text="All members must submit",
+        ttk.Radiobutton(method_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.all_members_must_submit', default="All members must submit"),
                        variable=self.submission_method_var, value="all_submit").pack(anchor='w')
 
         # Description & Instructions
-        desc_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Description & Instructions", padding=10)
+        desc_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.description_instructions', default="Description & Instructions"), padding=10)
         desc_frame.pack(fill='both', expand=True, pady=(0, 10))
 
-        ttk.Label(desc_frame, text="Description:").pack(anchor='w')
+        ttk.Label(desc_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.description', default="Description:")).pack(anchor='w')
         self.group_description_text = scrolledtext.ScrolledText(desc_frame, height=3)
         self.group_description_text.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(desc_frame, text="Instructions:").pack(anchor='w')
+        ttk.Label(desc_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.labels.instructions', default="Instructions:")).pack(anchor='w')
         self.group_instructions_text = scrolledtext.ScrolledText(desc_frame, height=4)
         self.group_instructions_text.pack(fill='both', expand=True)
         self.group_instructions_text.insert(tk.END, "Group Assignment Instructions: Please work in groups as assigned.")
@@ -142,12 +144,12 @@ class AssignmentCreationMixin:
         button_frame = ttk.Frame(self.gui.layout.content_area)
         button_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Button(button_frame, text="Save Group Assignment",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.save_group_assignment', default="Save Group Assignment"),
                   command=self.create_group_assignment_gui,
                   style='Accent.TButton').pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Group Configuration",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.group_configuration', default="Group Configuration"),
                   command=self.show_group_configuration).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Clear Form",
+        ttk.Button(button_frame, text=_t('gui.academics.assignment_system.group_manager.assignment_creation.buttons.clear_form', default="Clear Form"),
                   command=self.clear_group_assignment_form).pack(side='left')
 
     def create_group_assignment_gui(self):
@@ -155,11 +157,11 @@ class AssignmentCreationMixin:
         try:
             # Validate form
             if not self.group_module_var.get() or not self.group_title_var.get():
-                messagebox.showerror("Error", "Module and title are required")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.module_and_title_are_required', default="Module and title are required"))
                 return
 
             if not self.group_due_date_var.get():
-                messagebox.showerror("Error", "Due date is required")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.due_date_is_required', default="Due date is required"))
                 return
 
             # Validate group size
@@ -167,10 +169,10 @@ class AssignmentCreationMixin:
                 min_size = int(self.group_min_var.get())
                 max_size = int(self.group_max_var.get())
                 if min_size < 1 or max_size < min_size:
-                    messagebox.showerror("Error", "Invalid group size")
+                    messagebox.showerror(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.invalid_group_size', default="Invalid group size"))
                     return
             except ValueError:
-                messagebox.showerror("Error", "Group size must be numbers")
+                messagebox.showerror(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.group_size_must_be_numbers', default="Group size must be numbers"))
                 return
 
             # Get module code
@@ -231,7 +233,7 @@ class AssignmentCreationMixin:
             finally:
                 conn.close()
 
-            messagebox.showinfo("Success", f"Group assignment '{self.group_title_var.get()}' created successfully!")
+            messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.success', default="Success"), f"Group assignment '{self.group_title_var.get()}' created successfully!")
 
             # Email students about the assignment and their group members
             assignment_title = self.group_title_var.get().strip()
@@ -253,9 +255,9 @@ class AssignmentCreationMixin:
             self.clear_group_assignment_form()
 
         except ValueError:
-            messagebox.showerror("Error", "Invalid date format. Use YYYY-MM-DD")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.error', default="Error"), _t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.invalid_date_format_use_yyyy_mm_dd', default="Invalid date format. Use YYYY-MM-DD"))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create group assignment: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.error', default="Error"), f"Failed to create group assignment: {e}")
 
 
     def create_initial_groups(self, cursor, assignment_id, module_code, method, min_size, max_size):
@@ -270,7 +272,7 @@ class AssignmentCreationMixin:
             students = [row[0] for row in cursor.fetchall()]
 
             if len(students) < min_size:
-                messagebox.showwarning("Warning", f"Not enough students ({len(students)}) to form groups of minimum size {min_size}")
+                messagebox.showwarning(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.warning', default="Warning"), f"Not enough students ({len(students)}) to form groups of minimum size {min_size}")
                 return groups_created
 
             if method == 'random':
@@ -324,10 +326,10 @@ class AssignmentCreationMixin:
                 i += group_size
                 group_number += 1
 
-            messagebox.showinfo("Groups Created", f"Created {group_number - 1} groups with {method} method")
+            messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.groups_created', default="Groups Created"), f"Created {group_number - 1} groups with {method} method")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create initial groups: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.error', default="Error"), f"Failed to create initial groups: {e}")
 
         return groups_created
 
@@ -358,11 +360,11 @@ class AssignmentCreationMixin:
                 ''', (assignment_id, group_name, timestamp, 'system'))
                 groups_created.append({'name': group_name, 'members': []})
 
-            messagebox.showinfo("Groups Created",
+            messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.groups_created', default="Groups Created"),
                               f"Created {num_groups} empty groups for self-selection")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to create empty groups: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.error', default="Error"), f"Failed to create empty groups: {e}")
 
         return groups_created
 
@@ -430,7 +432,7 @@ class AssignmentCreationMixin:
                         pass
 
             if sent > 0:
-                messagebox.showinfo("Emails Sent", f"Notified {sent} students about their group assignments.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.emails_sent', default="Emails Sent"), f"Notified {sent} students about their group assignments.")
 
         except Exception as e:
             print(f"Group notification email failed: {e}")
@@ -475,7 +477,7 @@ class AssignmentCreationMixin:
                     pass
 
             if sent > 0:
-                messagebox.showinfo("Emails Sent", f"Notified {sent} students about the new group assignment.")
+                messagebox.showinfo(_t('gui.academics.assignment_system.group_manager.assignment_creation.dialogs.emails_sent', default="Emails Sent"), f"Notified {sent} students about the new group assignment.")
 
         except Exception as e:
             print(f"Self-select notification email failed: {e}")

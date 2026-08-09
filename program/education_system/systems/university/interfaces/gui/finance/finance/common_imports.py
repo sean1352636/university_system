@@ -4,6 +4,8 @@ This module provides all necessary imports and function definitions
 so they don't need to be repeated in every GUI manager file.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import logging
@@ -75,7 +77,7 @@ def _create_warning_stub(feature_name: str, message: str = None):
     display_message = message or f"{feature_name} functionality not yet implemented"
 
     def stub(*args, **kwargs):
-        messagebox.showwarning("Not Available", display_message)
+        messagebox.showwarning(_t('gui.finance.finance.common_imports.dialogs.not_available', default="Not Available"), display_message)
 
     stub.__doc__ = f"Stub warning for {feature_name.lower()}"
     stub.__name__ = feature_name.lower().replace(' ', '_')
@@ -104,7 +106,7 @@ except ImportError as e:
     # Provide stub implementations
     def assign_to_collection_agency(case_id, agency_id):
         """Assign case to collection agency"""
-        messagebox.showinfo("Collection", f"Case {case_id} assigned to agency {agency_id}")
+        messagebox.showinfo(_t('gui.finance.finance.common_imports.dialogs.collection', default="Collection"), f"Case {case_id} assigned to agency {agency_id}")
 
     def track_collection_progress():
         """Track collection progress"""
@@ -258,7 +260,7 @@ except ImportError as e:
 
             # Create a new window for financial aid management
             aid_window = tk.Toplevel()
-            aid_window.title("Financial Aid Management")
+            aid_window.title(_t('gui.finance.finance.common_imports.windows.financial_aid_management', default="Financial Aid Management"))
             aid_window.geometry("1200x800")
 
             # Initialize the admin portal
@@ -268,10 +270,10 @@ except ImportError as e:
         except ImportError as e:
             # If admin portal not available, show a basic financial aid interface
             aid_window = tk.Toplevel()
-            aid_window.title("Financial Aid Management")
+            aid_window.title(_t('gui.finance.finance.common_imports.windows.financial_aid_management', default="Financial Aid Management"))
             aid_window.geometry("800x600")
 
-            ttk.Label(aid_window, text="Financial Aid Management",
+            ttk.Label(aid_window, text=_t('gui.finance.finance.common_imports.labels.financial_aid_management', default="Financial Aid Management"),
                      font=('Arial', 16, 'bold')).pack(pady=20)
 
             # Create a basic interface
@@ -279,18 +281,18 @@ except ImportError as e:
             frame.pack(fill='both', expand=True)
 
             # Quick actions
-            actions_frame = ttk.LabelFrame(frame, text="Quick Actions", padding=10)
+            actions_frame = ttk.LabelFrame(frame, text=_t('gui.finance.finance.common_imports.labels.quick_actions', default="Quick Actions"), padding=10)
             actions_frame.pack(fill='x', pady=10)
 
-            ttk.Button(actions_frame, text="View Aid Applications",
-                      command=lambda: messagebox.showinfo("Aid Applications",
-                          "Aid applications viewer not available in fallback mode")).pack(side='left', padx=5)
-            ttk.Button(actions_frame, text="Process Disbursements",
-                      command=lambda: messagebox.showinfo("Disbursements",
-                          "Disbursement processing not available in fallback mode")).pack(side='left', padx=5)
-            ttk.Button(actions_frame, text="Generate Reports",
-                      command=lambda: messagebox.showinfo("Reports",
-                          "Report generation not available in fallback mode")).pack(side='left', padx=5)
+            ttk.Button(actions_frame, text=_t('gui.finance.finance.common_imports.buttons.view_aid_applications', default="View Aid Applications"),
+                      command=lambda: messagebox.showinfo(_t('gui.finance.finance.common_imports.dialogs.aid_applications', default="Aid Applications"),
+                          _t('gui.finance.finance.common_imports.dialogs.aid_applications_viewer_not_available_in_fallback_mode', default="Aid applications viewer not available in fallback mode"))).pack(side='left', padx=5)
+            ttk.Button(actions_frame, text=_t('gui.finance.finance.common_imports.buttons.process_disbursements', default="Process Disbursements"),
+                      command=lambda: messagebox.showinfo(_t('gui.finance.finance.common_imports.dialogs.disbursements', default="Disbursements"),
+                          _t('gui.finance.finance.common_imports.dialogs.disbursement_processing_not_available_in_fallback_mode', default="Disbursement processing not available in fallback mode"))).pack(side='left', padx=5)
+            ttk.Button(actions_frame, text=_t('gui.finance.finance.common_imports.buttons.generate_reports', default="Generate Reports"),
+                      command=lambda: messagebox.showinfo(_t('gui.finance.finance.common_imports.dialogs.reports', default="Reports"),
+                          _t('gui.finance.finance.common_imports.dialogs.report_generation_not_available_in_fallback_mode', default="Report generation not available in fallback mode"))).pack(side='left', padx=5)
 
             # Info label
             ttk.Label(frame, text=f"Note: Full Financial Aid Admin Portal not available.\nError: {e}",
@@ -341,7 +343,7 @@ except ImportError as e:
 
     def create_payment_arrangement(student_id, total_amount, monthly_payment, start_date, terms=''):
         """Create payment arrangement"""
-        messagebox.showinfo("Payment Arrangement", f"Arrangement created for student {student_id}")
+        messagebox.showinfo(_t('gui.finance.finance.common_imports.dialogs.payment_arrangement', default="Payment Arrangement"), f"Arrangement created for student {student_id}")
 
 
 # ==================== STUDENT CREDITS ====================
@@ -353,28 +355,28 @@ try:
     def view_student_credits(student_id=None):
         """View student credits"""
         if not student_id:
-            student_id = simpledialog.askstring("Student Credits", "Enter student ID:")
+            student_id = simpledialog.askstring(_t('gui.finance.finance.common_imports.dialogs.student_credits', default="Student Credits"), _t('gui.finance.finance.common_imports.dialogs.enter_student_id', default="Enter student ID:"))
         if student_id:
             manage_student_credits(student_id, action='view')
 
     def add_student_credit(student_id=None, amount=None):
         """Add credit to student account"""
         if not student_id:
-            student_id = simpledialog.askstring("Add Credit", "Enter student ID:")
+            student_id = simpledialog.askstring(_t('gui.finance.finance.common_imports.dialogs.add_credit', default="Add Credit"), _t('gui.finance.finance.common_imports.dialogs.enter_student_id', default="Enter student ID:"))
         if student_id:
             manage_student_credits(student_id, action='add')
 
     def apply_credit_to_fees(student_id=None):
         """Apply credits to fees"""
         if not student_id:
-            student_id = simpledialog.askstring("Apply Credit", "Enter student ID:")
+            student_id = simpledialog.askstring(_t('gui.finance.finance.common_imports.dialogs.apply_credit', default="Apply Credit"), _t('gui.finance.finance.common_imports.dialogs.enter_student_id', default="Enter student ID:"))
         if student_id:
             manage_student_credits(student_id, action='apply')
 
     def view_credit_history(student_id=None):
         """View credit history"""
         if not student_id:
-            student_id = simpledialog.askstring("Credit History", "Enter student ID:")
+            student_id = simpledialog.askstring(_t('gui.finance.finance.common_imports.dialogs.credit_history', default="Credit History"), _t('gui.finance.finance.common_imports.dialogs.enter_student_id', default="Enter student ID:"))
         if student_id:
             manage_student_credits(student_id, action='history')
 

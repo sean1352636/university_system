@@ -13,6 +13,8 @@ this deployment), filling free seats computed from the ``courses`` enrolment
 numbers.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.academics.course_management_gui.core.ext_common import (
     tk, ttk, messagebox, _, logger,
 )
@@ -36,7 +38,7 @@ class WaitlistRulesTabMixin:
             sel = ttk.LabelFrame(frame, text=_("course_management.labels.select_course",
                                                default="Select Course"), padding=10)
             sel.pack(fill=tk.X, padx=5, pady=5)
-            ttk.Label(sel, text="Course:").pack(side=tk.LEFT, padx=5)
+            ttk.Label(sel, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.labels.course', default="Course:")).pack(side=tk.LEFT, padx=5)
             self._wr_course_combo = ttk.Combobox(sel, width=46, state="readonly")
             self._wr_course_combo.pack(side=tk.LEFT, padx=5)
             self._wr_course_combo.bind("<<ComboboxSelected>>", self._reload_waitlist)
@@ -47,24 +49,24 @@ class WaitlistRulesTabMixin:
                       font=("Arial", 9, "bold")).pack(side=tk.RIGHT, padx=10)
 
             editable = self._ext_can_edit()
-            cfg = ttk.LabelFrame(frame, text="Automation rule", padding=10)
+            cfg = ttk.LabelFrame(frame, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.labels.automation_rule', default="Automation rule"), padding=10)
             cfg.pack(fill=tk.X, padx=5, pady=5)
 
             self._wr_auto = tk.BooleanVar(value=False)
-            ttk.Checkbutton(cfg, text="Auto-promote when a seat frees up",
+            ttk.Checkbutton(cfg, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.buttons.auto_promote_when_a_seat_frees_up', default="Auto-promote when a seat frees up"),
                             variable=self._wr_auto,
                             state="normal" if editable else "disabled").grid(
                 row=0, column=0, columnspan=2, sticky=tk.W, padx=5, pady=3)
 
-            ttk.Label(cfg, text="Promotion order:").grid(row=1, column=0, sticky=tk.W,
+            ttk.Label(cfg, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.labels.promotion_order', default="Promotion order:")).grid(row=1, column=0, sticky=tk.W,
                                                          padx=5)
-            self._wr_order = tk.StringVar(value="FIFO")
+            self._wr_order = tk.StringVar(value=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.values.fifo', default="FIFO"))
             ttk.Combobox(cfg, textvariable=self._wr_order, values=PROMOTION_ORDERS,
                          width=14,
                          state="readonly" if editable else "disabled").grid(
                 row=1, column=1, sticky=tk.W, padx=5)
 
-            ttk.Label(cfg, text="Max auto-promotions per run (0 = no limit):").grid(
+            ttk.Label(cfg, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.labels.max_auto_promotions_per_run_0_no_limit', default="Max auto-promotions per run (0 = no limit):")).grid(
                 row=2, column=0, sticky=tk.W, padx=5)
             self._wr_max = tk.StringVar(value="0")
             ttk.Entry(cfg, textvariable=self._wr_max, width=8,
@@ -72,13 +74,13 @@ class WaitlistRulesTabMixin:
                 row=2, column=1, sticky=tk.W, padx=5)
 
             self._wr_notify = tk.BooleanVar(value=True)
-            ttk.Checkbutton(cfg, text="Notify promoted students",
+            ttk.Checkbutton(cfg, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.buttons.notify_promoted_students', default="Notify promoted students"),
                             variable=self._wr_notify,
                             state="normal" if editable else "disabled").grid(
                 row=3, column=0, columnspan=2, sticky=tk.W, padx=5, pady=3)
 
             self._wr_active = tk.BooleanVar(value=True)
-            ttk.Checkbutton(cfg, text="Rule active",
+            ttk.Checkbutton(cfg, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.buttons.rule_active', default="Rule active"),
                             variable=self._wr_active,
                             state="normal" if editable else "disabled").grid(
                 row=4, column=0, columnspan=2, sticky=tk.W, padx=5, pady=3)
@@ -86,14 +88,14 @@ class WaitlistRulesTabMixin:
             if editable:
                 btns = ttk.Frame(cfg)
                 btns.grid(row=0, column=2, rowspan=5, padx=20)
-                ttk.Button(btns, text="Save Rule",
+                ttk.Button(btns, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.buttons.save_rule', default="Save Rule"),
                            command=self._save_rule).pack(pady=4)
-                ttk.Button(btns, text="Preview Promotions",
+                ttk.Button(btns, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.buttons.preview_promotions', default="Preview Promotions"),
                            command=self._preview_promotions).pack(pady=4)
-                ttk.Button(btns, text="Run Promotion Now",
+                ttk.Button(btns, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.buttons.run_promotion_now', default="Run Promotion Now"),
                            command=self._run_promotion).pack(pady=4)
 
-            wl = ttk.LabelFrame(frame, text="Current waitlist (in promotion order)",
+            wl = ttk.LabelFrame(frame, text=_t('gui.academics.course_management_gui.core.waitlist_rules_tab.labels.current_waitlist_in_promotion_order', default="Current waitlist (in promotion order)"),
                                 padding=8)
             wl.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
             cols = ("Order", "Student", "Position", "Added", "Status")
@@ -213,7 +215,7 @@ class WaitlistRulesTabMixin:
         code = self._current_wr_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.waitlist_rules_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
         try:
             max_auto = int(self._wr_max.get())
@@ -221,7 +223,7 @@ class WaitlistRulesTabMixin:
                 raise ValueError
         except ValueError:
             messagebox.showerror(_("common.validation_error", default="Validation Error"),
-                                 "Max auto-promotions must be a non-negative whole number.")
+                                 _t('gui.academics.course_management_gui.core.waitlist_rules_tab.dialogs.max_auto_promotions_must_be_a_non_negative_whole_number', default="Max auto-promotions must be a non-negative whole number."))
             return
         try:
             with self._ext_db(write=True) as conn:
@@ -264,7 +266,7 @@ class WaitlistRulesTabMixin:
         code = self._current_wr_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.waitlist_rules_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
         plan, free, waiting = self._promotion_plan(code)
         if not plan:
@@ -284,7 +286,7 @@ class WaitlistRulesTabMixin:
         code = self._current_wr_course()
         if not code:
             messagebox.showwarning(_("common.warning", default="Warning"),
-                                   "Select a course first.")
+                                   _t('gui.academics.course_management_gui.core.waitlist_rules_tab.dialogs.select_a_course_first', default="Select a course first."))
             return
         plan, free, waiting = self._promotion_plan(code)
         if not plan:

@@ -1,5 +1,5 @@
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.logging.log_config import configure_logging
 from contextlib import contextmanager
 
@@ -9,7 +9,7 @@ logger = configure_logging(name=__name__)
 
 
 @contextmanager
-def get_safe_db_connection(db_path=str(DEFAULT_DB_PATH)):
+def get_safe_db_connection(db_path=str(UNIVERSITY_DEFAULT_DB_PATH)):
     """Safe database connection context manager"""
     conn = None
     try:

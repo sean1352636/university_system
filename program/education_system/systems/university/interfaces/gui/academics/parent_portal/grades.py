@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH  # injected
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog, scrolledtext, filedialog
@@ -132,12 +134,12 @@ def view_child_grades(self, child):
             grade_gui = GradeTrackingManagementGUI(self.root, self.auth)
             grade_gui.show_grade_tracking_gui()
         except ImportError as e:
-            messagebox.showinfo("Info", f"Grade Tracking GUI not available: {e}")
+            messagebox.showinfo(_t('gui.academics.parent_portal.grades.dialogs.info', default="Info"), f"Grade Tracking GUI not available: {e}")
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open Grade Tracking: {e}")
+            messagebox.showerror(_t('gui.academics.parent_portal.grades.dialogs.error', default="Error"), f"Could not open Grade Tracking: {e}")
 
-    ttk.Button(btn_frame, text="📊 Open Full Grade Tracking", command=open_grade_tracking).pack(side=tk.LEFT, padx=5)
-    ttk.Button(btn_frame, text="← Back", command=self.show_children).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.grades.buttons.open_full_grade_tracking', default="📊 Open Full Grade Tracking"), command=open_grade_tracking).pack(side=tk.LEFT, padx=5)
+    ttk.Button(btn_frame, text=_t('gui.academics.parent_portal.grades.buttons.back', default="← Back"), command=self.show_children).pack(side=tk.LEFT, padx=5)
 ParentPortalGUI.view_child_grades = view_child_grades
 
 def view_teacher_reports(self, child):
@@ -154,7 +156,7 @@ def view_teacher_reports(self, child):
     reports_frame.pack(fill=tk.BOTH, expand=True, padx=20)
 
     # Left side - report list
-    list_frame = ttk.LabelFrame(reports_frame, text="Available Reports", padding=10)
+    list_frame = ttk.LabelFrame(reports_frame, text=_t('gui.academics.parent_portal.grades.labels.available_reports', default="Available Reports"), padding=10)
     list_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
 
     reports_listbox = tk.Listbox(list_frame, width=40, height=15)
@@ -202,7 +204,7 @@ def view_teacher_reports(self, child):
         reports_listbox.insert(tk.END, f"Error loading reports: {str(e)}")
 
     # Right side - report content
-    content_frame = ttk.LabelFrame(reports_frame, text="Report Content", padding=10)
+    content_frame = ttk.LabelFrame(reports_frame, text=_t('gui.academics.parent_portal.grades.labels.report_content', default="Report Content"), padding=10)
     content_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
 
     report_text = scrolledtext.ScrolledText(content_frame, width=50, height=15)
@@ -225,7 +227,7 @@ def view_teacher_reports(self, child):
     reports_listbox.bind('<<ListboxSelect>>', show_report)
 
     # Back button
-    back_btn = ttk.Button(self.content_frame, text="← Back", command=self.show_children)
+    back_btn = ttk.Button(self.content_frame, text=_t('gui.academics.parent_portal.grades.buttons.back', default="← Back"), command=self.show_children)
     back_btn.pack(pady=10)
 ParentPortalGUI.view_teacher_reports = view_teacher_reports
 
@@ -282,13 +284,13 @@ def show_grades_interface(self):
     self.clear_content()
     self.update_status("Grades Interface")
 
-    title = ttk.Label(self.content_frame, text="Grade Management", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.grades.labels.grade_management', default="Grade Management"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     # Child selection
     if self.children:
         child_var = tk.StringVar()
-        child_frame = ttk.LabelFrame(self.content_frame, text="Select Student", padding=10)
+        child_frame = ttk.LabelFrame(self.content_frame, text=_t('gui.academics.parent_portal.grades.labels.select_student', default="Select Student"), padding=10)
         child_frame.pack(fill=tk.X, padx=20, pady=10)
 
         child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=50)
@@ -302,10 +304,10 @@ def show_grades_interface(self):
                 if selected_index >= 0:
                     self.view_child_grades(self.children[selected_index])
 
-        view_btn = ttk.Button(child_frame, text="View Grades", command=view_selected_grades)
+        view_btn = ttk.Button(child_frame, text=_t('gui.academics.parent_portal.grades.buttons.view_grades', default="View Grades"), command=view_selected_grades)
         view_btn.pack(pady=5)
     else:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.grades.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
 ParentPortalGUI.show_grades_interface = show_grades_interface
 
 def show_reports_interface(self):
@@ -313,7 +315,7 @@ def show_reports_interface(self):
     self.clear_content()
     self.update_status("Instructor Reports")
 
-    title = ttk.Label(self.content_frame, text="Instructor Reports", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.grades.labels.instructor_reports', default="Instructor Reports"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if self.children:
@@ -324,11 +326,11 @@ def show_reports_interface(self):
             info_label = ttk.Label(child_frame, text=f"Student ID: {child[0]} | Course: {child[4]}")
             info_label.pack()
 
-            view_btn = ttk.Button(child_frame, text="View Reports",
+            view_btn = ttk.Button(child_frame, text=_t('gui.academics.parent_portal.grades.buttons.view_reports', default="View Reports"),
                                  command=lambda c=child: self.view_teacher_reports(c))
             view_btn.pack(pady=5)
     else:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.grades.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
 ParentPortalGUI.show_reports_interface = show_reports_interface
 
 def show_analytics_interface(self):
@@ -336,18 +338,18 @@ def show_analytics_interface(self):
     self.clear_content()
     self.update_status("Grade Analytics")
 
-    title = ttk.Label(self.content_frame, text="Grade Analytics", style='Title.TLabel', font=('Arial', 20, 'bold'))
+    title = ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.grades.labels.grade_analytics', default="Grade Analytics"), style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
 
     if not self.children:
-        ttk.Label(self.content_frame, text="No students linked to your guardian account.").pack(pady=50)
+        ttk.Label(self.content_frame, text=_t('gui.academics.parent_portal.grades.labels.no_students_linked_to_your_guardian_account', default="No students linked to your guardian account.")).pack(pady=50)
         return
 
     # Child selection
     child_frame = ttk.Frame(self.content_frame)
     child_frame.pack(fill=tk.X, padx=20, pady=10)
 
-    ttk.Label(child_frame, text="Select Student:").pack(side=tk.LEFT, padx=5)
+    ttk.Label(child_frame, text=_t('gui.academics.parent_portal.grades.labels.select_student_variant_2', default="Select Student:")).pack(side=tk.LEFT, padx=5)
     child_var = tk.StringVar()
     child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=40, state="readonly")
     child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
@@ -361,15 +363,15 @@ def show_analytics_interface(self):
 
     # Performance Overview Tab
     overview_frame = ttk.Frame(analytics_notebook, padding=10)
-    analytics_notebook.add(overview_frame, text="Performance Overview")
+    analytics_notebook.add(overview_frame, text=_t('gui.academics.parent_portal.grades.tabs.performance_overview', default="Performance Overview"))
 
     # Grade Distribution Tab
     distribution_frame = ttk.Frame(analytics_notebook, padding=10)
-    analytics_notebook.add(distribution_frame, text="Grade Distribution")
+    analytics_notebook.add(distribution_frame, text=_t('gui.academics.parent_portal.grades.tabs.grade_distribution', default="Grade Distribution"))
 
     # Trends Tab
     trends_frame = ttk.Frame(analytics_notebook, padding=10)
-    analytics_notebook.add(trends_frame, text="Trends")
+    analytics_notebook.add(trends_frame, text=_t('gui.academics.parent_portal.grades.tabs.trends', default="Trends"))
 
     def load_analytics():
         selected_child = child_var.get()
@@ -431,7 +433,7 @@ def show_analytics_interface(self):
                     max_grade = max(grade_values)
                     min_grade = min(grade_values)
 
-                    stats_frame = ttk.LabelFrame(overview_frame, text="Statistics", padding=15)
+                    stats_frame = ttk.LabelFrame(overview_frame, text=_t('gui.academics.parent_portal.grades.labels.statistics', default="Statistics"), padding=15)
                     stats_frame.pack(fill=tk.X, pady=10)
 
                     ttk.Label(stats_frame, text=f"Average Grade: {avg_grade:.2f}%",
@@ -444,7 +446,7 @@ def show_analytics_interface(self):
                              font=('Arial', 11)).pack(anchor='w', pady=3)
 
                 # Recent grades list
-                recent_frame = ttk.LabelFrame(overview_frame, text="Recent Grades", padding=10)
+                recent_frame = ttk.LabelFrame(overview_frame, text=_t('gui.academics.parent_portal.grades.labels.recent_grades', default="Recent Grades"), padding=10)
                 recent_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
                 columns = ("Subject", "Grade", "Date")
@@ -459,7 +461,7 @@ def show_analytics_interface(self):
 
                 grades_tree.pack(fill=tk.BOTH, expand=True)
             else:
-                ttk.Label(overview_frame, text="No grades found for this student",
+                ttk.Label(overview_frame, text=_t('gui.academics.parent_portal.grades.labels.no_grades_found_for_this_student', default="No grades found for this student"),
                          font=('Arial', 11)).pack(pady=50)
 
             # Grade Distribution
@@ -467,7 +469,7 @@ def show_analytics_interface(self):
                 widget.destroy()
 
             if grade_values:
-                dist_frame = ttk.LabelFrame(distribution_frame, text="Grade Distribution", padding=15)
+                dist_frame = ttk.LabelFrame(distribution_frame, text=_t('gui.academics.parent_portal.grades.labels.grade_distribution', default="Grade Distribution"), padding=15)
                 dist_frame.pack(fill=tk.BOTH, expand=True, pady=10)
 
                 # Calculate distribution
@@ -490,7 +492,7 @@ def show_analytics_interface(self):
                     ttk.Label(dist_frame, text=f"{grade_range}: {count} ({percentage:.1f}%)",
                              font=('Arial', 11)).pack(anchor='w', pady=3)
             else:
-                ttk.Label(distribution_frame, text="No grade data available",
+                ttk.Label(distribution_frame, text=_t('gui.academics.parent_portal.grades.labels.no_grade_data_available', default="No grade data available"),
                          font=('Arial', 11)).pack(pady=50)
 
             # Trends
@@ -498,7 +500,7 @@ def show_analytics_interface(self):
                 widget.destroy()
 
             if len(grade_values) >= 2:
-                trends_label_frame = ttk.LabelFrame(trends_frame, text="Performance Trends", padding=15)
+                trends_label_frame = ttk.LabelFrame(trends_frame, text=_t('gui.academics.parent_portal.grades.labels.performance_trends', default="Performance Trends"), padding=15)
                 trends_label_frame.pack(fill=tk.X, pady=10)
 
                 # Simple trend analysis
@@ -513,15 +515,15 @@ def show_analytics_interface(self):
                 ttk.Label(trends_label_frame, text=f"Overall Average: {overall_avg:.2f}%",
                          font=('Arial', 11)).pack(anchor='w', pady=3)
             else:
-                ttk.Label(trends_frame, text="Not enough data for trend analysis",
+                ttk.Label(trends_frame, text=_t('gui.academics.parent_portal.grades.labels.not_enough_data_for_trend_analysis', default="Not enough data for trend analysis"),
                          font=('Arial', 11)).pack(pady=50)
 
             conn.close()
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load analytics: {str(e)}")
+            messagebox.showerror(_t('gui.academics.parent_portal.grades.dialogs.error', default="Error"), f"Failed to load analytics: {str(e)}")
 
-    ttk.Button(child_frame, text="Load Analytics", command=load_analytics).pack(side=tk.LEFT, padx=5)
+    ttk.Button(child_frame, text=_t('gui.academics.parent_portal.grades.buttons.load_analytics', default="Load Analytics"), command=load_analytics).pack(side=tk.LEFT, padx=5)
 
     # Load initial analytics
     load_analytics()

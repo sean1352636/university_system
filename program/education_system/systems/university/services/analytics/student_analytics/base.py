@@ -5,7 +5,7 @@ import numpy as np
 from datetime import datetime
 
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 from education_system.systems.university.services.analytics.student_analytics.config import CONFIG, GUI_AVAILABLE
 
@@ -16,13 +16,13 @@ class StudentAnalyticsBase:
         conn = get_connection()
         if hasattr(conn, 'execute'):
             # Get database path from connection
-            self.db_path = conn.execute("PRAGMA database_list").fetchone()[2] if conn else str(paths.DEFAULT_DB_PATH)
+            self.db_path = conn.execute("PRAGMA database_list").fetchone()[2] if conn else str(paths.UNIVERSITY_DEFAULT_DB_PATH)
             conn.close()
         else:
-            self.db_path = str(paths.DEFAULT_DB_PATH)
+            self.db_path = str(paths.UNIVERSITY_DEFAULT_DB_PATH)
         # Use canonical analytics directories
-        self.plots_dir = str(paths.ANALYTICS_PLOTS_DIR)
-        self.reports_dir = str(paths.ANALYTICS_REPORTS_DIR)
+        self.plots_dir = str(paths.UNIVERSITY_ANALYTICS_PLOTS_DIR)
+        self.reports_dir = str(paths.UNIVERSITY_ANALYTICS_REPORTS_DIR)
         self.create_directories()
         self.custom_filters = {}
         self.gui_mode = gui_mode  # Flag to control output mode

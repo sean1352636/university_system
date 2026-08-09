@@ -1,5 +1,7 @@
 """UI layout and styling management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 import os
@@ -12,7 +14,7 @@ import csv
 from PIL import Image, ImageTk
 from education_system.systems.university.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.auth import UserAuth
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 from collections import deque
 
 
@@ -88,7 +90,7 @@ class LayoutManager:
         # Toolbar
         toolbar = ttk.Frame(main_container, padding=(10, 8))
         toolbar.pack(fill='x')
-        ttk.Button(toolbar, text="Return to Main Menu", command=self.return_to_main_menu).pack(side='left')
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.layout_manager.buttons.return_to_main_menu', default="Return to Main Menu"), command=self.return_to_main_menu).pack(side='left')
 
         # Header frame
         header_holder = ttk.Frame(main_container)
@@ -115,17 +117,17 @@ class LayoutManager:
         header_frame.pack(fill='x', pady=(0, 10))
 
         # Title
-        title_label = ttk.Label(header_frame, text="Assignment Management System",
+        title_label = ttk.Label(header_frame, text=_t('gui.academics.assignment_system.layout_manager.labels.assignment_management_system', default="Assignment Management System"),
                                style='Title.TLabel')
         title_label.pack(side='left')
 
         # User info and controls
         user_frame = ttk.Frame(header_frame)
         user_frame.pack(side='right')
-        ttk.Button(user_frame, text="Return to Main Menu", command=self.return_to_main_menu).pack(side='right', padx=(0, 10))
+        ttk.Button(user_frame, text=_t('gui.academics.assignment_system.layout_manager.buttons.return_to_main_menu', default="Return to Main Menu"), command=self.return_to_main_menu).pack(side='right', padx=(0, 10))
 
         # Notifications button
-        self.notification_btn = ttk.Button(user_frame, text="🔔 Notifications (0)",
+        self.notification_btn = ttk.Button(user_frame, text=_t('gui.academics.assignment_system.layout_manager.buttons.notifications_0', default="🔔 Notifications (0)"),
                                           command=self.gui.show_notifications)
         self.notification_btn.pack(side='right', padx=(0, 10))
 
@@ -176,7 +178,7 @@ class LayoutManager:
         self.sidebar_inner.bind("<Configure>", _on_inner_configure)
 
         # Header
-        ttk.Label(self.sidebar_inner, text="Navigation", style='Header.TLabel').pack(anchor='w', pady=(0, 10))
+        ttk.Label(self.sidebar_inner, text=_t('gui.academics.assignment_system.layout_manager.labels.navigation', default="Navigation"), style='Header.TLabel').pack(anchor='w', pady=(0, 10))
 
         # Sections/buttons
         for section_name, buttons in self.get_navigation_sections():

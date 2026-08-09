@@ -2,6 +2,8 @@
 Configuration management tab for the Activity Logger GUI.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 from education_system.systems.university.interfaces.gui.shell.activity_logger._imports import (
     tk, ttk, messagebox, filedialog,
     json, os,
@@ -160,13 +162,13 @@ class ConfigurationTab(ttk.Frame):
         self.config_vars["output_formats.csv"] = tk.BooleanVar()
         self.config_vars["output_formats.database"] = tk.BooleanVar()
 
-        ttk.Checkbutton(scrollable_frame, text="JSON",
+        ttk.Checkbutton(scrollable_frame, text=_t('gui.shell.activity_logger.tabs.configuration.buttons.json', default="JSON"),
                        variable=self.config_vars["output_formats.json"]).grid(
                            row=1, column=0, sticky=tk.W, padx=20, pady=2)
-        ttk.Checkbutton(scrollable_frame, text="CSV",
+        ttk.Checkbutton(scrollable_frame, text=_t('gui.shell.activity_logger.tabs.configuration.buttons.csv', default="CSV"),
                        variable=self.config_vars["output_formats.csv"]).grid(
                            row=1, column=1, sticky=tk.W, padx=5, pady=2)
-        ttk.Checkbutton(scrollable_frame, text="Database",
+        ttk.Checkbutton(scrollable_frame, text=_t('gui.shell.activity_logger.tabs.configuration.buttons.database', default="Database"),
                        variable=self.config_vars["output_formats.database"]).grid(
                            row=1, column=2, sticky=tk.W, padx=5, pady=2)
 
@@ -302,7 +304,7 @@ class ConfigurationTab(ttk.Frame):
         """Load configuration from file"""
         try:
             file_path = filedialog.askopenfilename(
-                title="Load Configuration",
+                title=_t('gui.shell.activity_logger.tabs.configuration.dialogs.load_configuration', default="Load Configuration"),
                 filetypes=[
                     ("JSON files", "*.json"),
                     ("YAML files", "*.yaml"),
@@ -319,16 +321,16 @@ class ConfigurationTab(ttk.Frame):
                         config = json.load(f)
 
                 self.update_config_vars(config)
-                messagebox.showinfo("Configuration Loaded", f"Configuration loaded from: {file_path}")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.configuration.dialogs.configuration_loaded', default="Configuration Loaded"), f"Configuration loaded from: {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Load Error", f"Failed to load configuration: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.configuration.dialogs.load_error', default="Load Error"), f"Failed to load configuration: {str(e)}")
 
     def save_config(self):
         """Save current configuration to file"""
         try:
             file_path = filedialog.asksaveasfilename(
-                title="Save Configuration",
+                title=_t('gui.shell.activity_logger.tabs.configuration.dialogs.save_configuration', default="Save Configuration"),
                 defaultextension=".json",
                 filetypes=[
                     ("JSON files", "*.json"),
@@ -347,10 +349,10 @@ class ConfigurationTab(ttk.Frame):
                     else:
                         json.dump(config, f, indent=2)
 
-                messagebox.showinfo("Configuration Saved", f"Configuration saved to: {file_path}")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.configuration.dialogs.configuration_saved', default="Configuration Saved"), f"Configuration saved to: {file_path}")
 
         except Exception as e:
-            messagebox.showerror("Save Error", f"Failed to save configuration: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.configuration.dialogs.save_error', default="Save Error"), f"Failed to save configuration: {str(e)}")
 
     def build_config_dict(self) -> Dict[str, Any]:
         """Build configuration dictionary from current values"""
@@ -442,7 +444,7 @@ class ConfigurationTab(ttk.Frame):
         """Apply configuration changes to logger"""
         try:
             if not LOGGER_AVAILABLE or not hasattr(self.main_app, 'logger') or not self.main_app.logger:
-                messagebox.showwarning("Apply Configuration", "Logger not available.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.tabs.configuration.dialogs.apply_configuration', default="Apply Configuration"), _t('gui.shell.activity_logger.tabs.configuration.dialogs.logger_not_available', default="Logger not available."))
                 return
 
             config = self.build_config_dict()
@@ -450,19 +452,19 @@ class ConfigurationTab(ttk.Frame):
             # Update logger configuration
             if hasattr(self.main_app.logger, 'update_config'):
                 self.main_app.logger.update_config(config)
-                messagebox.showinfo("Configuration Applied", "Configuration changes have been applied.")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.configuration.dialogs.configuration_applied', default="Configuration Applied"), _t('gui.shell.activity_logger.tabs.configuration.dialogs.configuration_changes_have_been_applied', default="Configuration changes have been applied."))
             else:
-                messagebox.showwarning("Apply Configuration",
-                                     "Configuration update not supported in current logger version.")
+                messagebox.showwarning(_t('gui.shell.activity_logger.tabs.configuration.dialogs.apply_configuration', default="Apply Configuration"),
+                                     _t('gui.shell.activity_logger.tabs.configuration.dialogs.configuration_update_not_supported_in_current_logger_version', default="Configuration update not supported in current logger version."))
 
         except Exception as e:
-            messagebox.showerror("Apply Error", f"Failed to apply configuration: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.configuration.dialogs.apply_error', default="Apply Error"), f"Failed to apply configuration: {str(e)}")
 
     def reset_config(self):
         """Reset configuration to defaults"""
         try:
-            if messagebox.askyesno("Reset Configuration",
-                                 "Are you sure you want to reset all settings to defaults?"):
+            if messagebox.askyesno(_t('gui.shell.activity_logger.tabs.configuration.dialogs.reset_configuration', default="Reset Configuration"),
+                                 _t('gui.shell.activity_logger.tabs.configuration.dialogs.are_you_sure_you_want_to_reset_all_settings_to_defaults', default="Are you sure you want to reset all settings to defaults?")):
 
                 # Create default config
                 default_config_file = create_default_config("temp_default_config.json")
@@ -475,7 +477,7 @@ class ConfigurationTab(ttk.Frame):
                 # Clean up temp file
                 os.remove(default_config_file)
 
-                messagebox.showinfo("Configuration Reset", "Configuration has been reset to defaults.")
+                messagebox.showinfo(_t('gui.shell.activity_logger.tabs.configuration.dialogs.configuration_reset', default="Configuration Reset"), _t('gui.shell.activity_logger.tabs.configuration.dialogs.configuration_has_been_reset_to_defaults', default="Configuration has been reset to defaults."))
 
         except Exception as e:
-            messagebox.showerror("Reset Error", f"Failed to reset configuration: {str(e)}")
+            messagebox.showerror(_t('gui.shell.activity_logger.tabs.configuration.dialogs.reset_error', default="Reset Error"), f"Failed to reset configuration: {str(e)}")

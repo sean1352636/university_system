@@ -14,7 +14,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any, Iterator
 
-from education_system.systems.nursery.infrastructure import paths as _paths
+from education_system import paths as _paths
 
 logger = logging.getLogger(__name__)
 
@@ -160,8 +160,8 @@ class ExpenseClaimsSummary:
 
 @contextmanager
 def _connect() -> Iterator[sqlite3.Connection]:
-    _paths.ensure_directories()
-    conn = sqlite3.connect(_paths.EXPENSE_CLAIMS_DB)
+    _paths.ensure_nursery_directories()
+    conn = sqlite3.connect(_paths.NURSERY_EXPENSE_CLAIMS_DB)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     try:

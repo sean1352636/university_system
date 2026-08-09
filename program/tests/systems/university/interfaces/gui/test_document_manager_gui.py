@@ -251,7 +251,7 @@ class TestDocumentManagerGUI(unittest.TestCase):
 
         # Mock database path – patch both the canonical constant and the
         # copy that ``get_connection`` (in db.py) actually reads at runtime.
-        self.patcher = patch('education_system.systems.university.infrastructure.paths.DEFAULT_DB_PATH',
+        self.patcher = patch('education_system.paths.UNIVERSITY_DEFAULT_DB_PATH',
                             self.test_db)
         self.patcher.start()
         self.patcher_db = patch('education_system.systems.university.infrastructure.database.db.DEFAULT_DB_PATH',
@@ -935,7 +935,7 @@ class TestDocumentManager(unittest.TestCase):
         """Set up before each test"""
         _create_test_tables(self.test_db)
 
-        self.patcher = patch('education_system.systems.university.infrastructure.paths.DEFAULT_DB_PATH',
+        self.patcher = patch('education_system.paths.UNIVERSITY_DEFAULT_DB_PATH',
                             self.test_db)
         self.patcher.start()
 
@@ -986,7 +986,7 @@ class TestIntegrationScenarios(unittest.TestCase):
 
         _create_test_tables(self.test_db)
 
-        self.patcher = patch('education_system.systems.university.infrastructure.paths.DEFAULT_DB_PATH',
+        self.patcher = patch('education_system.paths.UNIVERSITY_DEFAULT_DB_PATH',
                             self.test_db)
         self.patcher.start()
 

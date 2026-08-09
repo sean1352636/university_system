@@ -70,8 +70,8 @@ class HealthChecker:
                     wal_enabled = wal_check and wal_check[0] == 'wal'
 
                     # Get database size
-                    from education_system.systems.university.infrastructure import paths
-                    db_size = os.path.getsize(paths.DEFAULT_DB_PATH) / (1024 * 1024)  # MB
+                    from education_system import paths
+                    db_size = os.path.getsize(paths.UNIVERSITY_DEFAULT_DB_PATH) / (1024 * 1024)  # MB
 
                     return {
                         'status': HealthStatus.HEALTHY.value,
@@ -97,10 +97,10 @@ class HealthChecker:
     def _check_disk_space(self) -> Dict[str, Any]:
         """Check available disk space"""
         try:
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
 
             # Check data directory disk space
-            data_dir = os.path.dirname(paths.DEFAULT_DB_PATH)
+            data_dir = os.path.dirname(paths.UNIVERSITY_DEFAULT_DB_PATH)
             usage = shutil.disk_usage(data_dir)
 
             total_gb = usage.total / (1024 ** 3)
@@ -166,12 +166,12 @@ class HealthChecker:
     def _check_critical_files(self) -> Dict[str, Any]:
         """Check existence of critical files"""
         try:
-            from education_system.systems.university.infrastructure import paths
+            from education_system import paths
 
             critical_paths = {
-                'database': paths.DEFAULT_DB_PATH,
-                'data_dir': paths.DATA_DIR,
-                'logs_dir': paths.LOG_DIR,
+                'database': paths.UNIVERSITY_DEFAULT_DB_PATH,
+                'data_dir': paths.UNIVERSITY_DATA_DIR,
+                'logs_dir': paths.UNIVERSITY_LOG_DIR,
             }
 
             missing_files = []

@@ -194,9 +194,9 @@ def generate_analytics_dashboard(auth):
 def export_analytics_report(auth):
     """Export analytics to a file"""
     try:
-        from education_system.systems.university.infrastructure import paths
+        from education_system import paths
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = str(paths.REPORTS_DIR / f"analytics_report_{timestamp}.json")
+        filename = str(paths.UNIVERSITY_REPORTS_DIR / f"analytics_report_{timestamp}.json")
 
         # Generate detailed analytics data
         conn = get_connection()

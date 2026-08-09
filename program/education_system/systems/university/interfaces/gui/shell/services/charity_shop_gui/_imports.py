@@ -16,7 +16,7 @@ import json
 import os
 
 # University system imports
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
 from education_system.systems.university.infrastructure.shared_context import get_auth, get_current_user
 from education_system.systems.university.infrastructure.sql_safety import safe_alter_table_add_column
 
@@ -95,7 +95,8 @@ def load_email_template(template_name: str) -> dict:
         Dictionary with 'subject' and 'body' keys, or empty dict if not found
     """
     try:
-        template_path = EMAIL_TEMPLATES_DIR / f"{template_name}.json"
+        candidates = list(EMAIL_TEMPLATES_DIR.rglob(f"{template_name}.json"))
+        template_path = candidates[0] if candidates else EMAIL_TEMPLATES_DIR / f"{template_name}.json"
         if template_path.exists():
             with open(template_path, 'r', encoding='utf-8') as f:
                 return json.load(f)

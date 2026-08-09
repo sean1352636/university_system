@@ -27,16 +27,24 @@ import sqlite3
 from pathlib import Path
 
 from education_system.platform.cross_system import identity_service
-from education_system.platform.kernel.database.paths import SYSTEM_DB_PATHS, SYSTEM_ORDER
+from education_system.paths import SYSTEM_DB_PATHS, SYSTEM_ORDER
 
 logger = logging.getLogger(__name__)
 
 # system -> (table, id_col, first_name_col, last_name_col, dob_col)
+#
+# The name columns are per-system, which is why this cannot simply reuse
+# paths.SYSTEM_LEARNER_TABLE: university stores ``dob`` where everyone else
+# stores ``date_of_birth``, and apprenticeships uses the employment-record
+# vocabulary ``given_name``/``family_name`` rather than first/last.
 _SOURCES: dict[str, tuple[str, str, str, str, str]] = {
     "nursery":    ("pupils",   "pupil_id",   "first_name", "last_name", "date_of_birth"),
     "primary":    ("pupils",   "pupil_id",   "first_name", "last_name", "date_of_birth"),
     "secondary":     ("pupils",   "pupil_id",   "first_name", "last_name", "date_of_birth"),
     "sixth_form":    ("students",  "student_id", "first_name", "last_name", "date_of_birth"),
+    "fe_college": ("students",  "student_id", "first_name", "last_name", "date_of_birth"),
+    "apprenticeships": ("apprentices", "apprentice_id",
+                        "given_name", "family_name", "date_of_birth"),
     "university": ("students",  "student_id", "first_name", "last_name", "dob"),
 }
 

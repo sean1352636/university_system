@@ -4,6 +4,8 @@ Comprehensive Security & Compliance Dashboard
 Integrates all security features into one admin interface
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 from education_system.systems.university.infrastructure.database.db import sqlite3
@@ -570,10 +572,10 @@ class SecurityDashboard(tk.Toplevel):
     def _create_compliance_tab(self):
         """GDPR/FERPA compliance reporting tab"""
         tab = tk.Frame(self.notebook, bg="white")
-        self.notebook.add(tab, text="Compliance")
+        self.notebook.add(tab, text=_t('gui.shell.security.security_dashboard.tabs.compliance', default="Compliance"))
 
         tk.Label(
-            tab, text="Compliance Reporting (GDPR/FERPA)",
+            tab, text=_t('gui.shell.security.security_dashboard.labels.compliance_reporting_gdpr_ferpa', default="Compliance Reporting (GDPR/FERPA)"),
             font=("Arial", 12, "bold"), bg="white"
         ).pack(pady=10)
 
@@ -583,13 +585,13 @@ class SecurityDashboard(tk.Toplevel):
 
         # --- Data Access Audit ---
         audit_tab = tk.Frame(compliance_nb, bg="white")
-        compliance_nb.add(audit_tab, text="Data Access Audit")
+        compliance_nb.add(audit_tab, text=_t('gui.shell.security.security_dashboard.tabs.data_access_audit', default="Data Access Audit"))
 
         audit_btn_frame = tk.Frame(audit_tab, bg="white")
         audit_btn_frame.pack(fill=tk.X, padx=15, pady=5)
-        ttk.Button(audit_btn_frame, text="Refresh",
+        ttk.Button(audit_btn_frame, text=_t('gui.shell.security.security_dashboard.buttons.refresh', default="Refresh"),
                    command=lambda: self._load_compliance_audit()).pack(side=tk.LEFT, padx=5)
-        ttk.Button(audit_btn_frame, text="Export Report",
+        ttk.Button(audit_btn_frame, text=_t('gui.shell.security.security_dashboard.buttons.export_report', default="Export Report"),
                    command=lambda: self._export_compliance_report('audit')).pack(side=tk.LEFT, padx=5)
 
         cols = ("timestamp", "user_id", "action", "resource_type", "resource_id", "success")
@@ -609,13 +611,13 @@ class SecurityDashboard(tk.Toplevel):
 
         # --- Sensitive Data Access ---
         privacy_tab = tk.Frame(compliance_nb, bg="white")
-        compliance_nb.add(privacy_tab, text="Sensitive Data Access")
+        compliance_nb.add(privacy_tab, text=_t('gui.shell.security.security_dashboard.tabs.sensitive_data_access', default="Sensitive Data Access"))
 
         priv_btn_frame = tk.Frame(privacy_tab, bg="white")
         priv_btn_frame.pack(fill=tk.X, padx=15, pady=5)
-        ttk.Button(priv_btn_frame, text="Refresh",
+        ttk.Button(priv_btn_frame, text=_t('gui.shell.security.security_dashboard.buttons.refresh', default="Refresh"),
                    command=lambda: self._load_privacy_audit()).pack(side=tk.LEFT, padx=5)
-        ttk.Button(priv_btn_frame, text="Export Report",
+        ttk.Button(priv_btn_frame, text=_t('gui.shell.security.security_dashboard.buttons.export_report', default="Export Report"),
                    command=lambda: self._export_compliance_report('privacy')).pack(side=tk.LEFT, padx=5)
 
         priv_cols = ("timestamp", "user_id", "student_id", "action", "data_accessed", "ip_address")
@@ -634,11 +636,11 @@ class SecurityDashboard(tk.Toplevel):
 
         # --- Permission Change History ---
         perm_tab = tk.Frame(compliance_nb, bg="white")
-        compliance_nb.add(perm_tab, text="Permission Changes")
+        compliance_nb.add(perm_tab, text=_t('gui.shell.security.security_dashboard.tabs.permission_changes', default="Permission Changes"))
 
         perm_btn_frame = tk.Frame(perm_tab, bg="white")
         perm_btn_frame.pack(fill=tk.X, padx=15, pady=5)
-        ttk.Button(perm_btn_frame, text="Refresh",
+        ttk.Button(perm_btn_frame, text=_t('gui.shell.security.security_dashboard.buttons.refresh', default="Refresh"),
                    command=lambda: self._load_permission_changes()).pack(side=tk.LEFT, padx=5)
 
         perm_cols = ("timestamp", "user_id", "action", "old_values", "new_values", "ip_address")
@@ -659,22 +661,22 @@ class SecurityDashboard(tk.Toplevel):
 
         # --- Data Retention ---
         retention_tab = tk.Frame(compliance_nb, bg="white")
-        compliance_nb.add(retention_tab, text="Data Retention")
+        compliance_nb.add(retention_tab, text=_t('gui.shell.security.security_dashboard.tabs.data_retention', default="Data Retention"))
 
         ret_btn_frame = tk.Frame(retention_tab, bg="white")
         ret_btn_frame.pack(fill=tk.X, padx=15, pady=5)
-        ttk.Button(ret_btn_frame, text="Refresh",
+        ttk.Button(ret_btn_frame, text=_t('gui.shell.security.security_dashboard.buttons.refresh', default="Refresh"),
                    command=lambda: self._load_retention_policies()).pack(side=tk.LEFT, padx=5)
 
         ret_cols = ("data_type", "retention_months", "deletion_method", "last_cleanup", "is_active")
         self.retention_tree = ttk.Treeview(
             retention_tab, columns=ret_cols, show="headings", height=10
         )
-        self.retention_tree.heading("data_type", text="Data Type")
-        self.retention_tree.heading("retention_months", text="Retention (Months)")
-        self.retention_tree.heading("deletion_method", text="Deletion Method")
-        self.retention_tree.heading("last_cleanup", text="Last Cleanup")
-        self.retention_tree.heading("is_active", text="Active")
+        self.retention_tree.heading("data_type", text=_t('gui.shell.security.security_dashboard.headings.data_type', default="Data Type"))
+        self.retention_tree.heading("retention_months", text=_t('gui.shell.security.security_dashboard.headings.retention_months', default="Retention (Months)"))
+        self.retention_tree.heading("deletion_method", text=_t('gui.shell.security.security_dashboard.headings.deletion_method', default="Deletion Method"))
+        self.retention_tree.heading("last_cleanup", text=_t('gui.shell.security.security_dashboard.headings.last_cleanup', default="Last Cleanup"))
+        self.retention_tree.heading("is_active", text=_t('gui.shell.security.security_dashboard.headings.active', default="Active"))
         for col in ret_cols:
             self.retention_tree.column(col, width=130)
 
@@ -698,7 +700,7 @@ class SecurityDashboard(tk.Toplevel):
                 for r in rows:
                     self.compliance_audit_tree.insert('', tk.END, values=tuple(r))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load audit trail: {e}")
+            messagebox.showerror(_t('gui.shell.security.security_dashboard.dialogs.error', default="Error"), f"Failed to load audit trail: {e}")
 
     def _load_privacy_audit(self):
         """Load privacy/sensitive data access log."""
@@ -713,7 +715,7 @@ class SecurityDashboard(tk.Toplevel):
                 for r in rows:
                     self.privacy_audit_tree.insert('', tk.END, values=tuple(r))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load privacy audit: {e}")
+            messagebox.showerror(_t('gui.shell.security.security_dashboard.dialogs.error', default="Error"), f"Failed to load privacy audit: {e}")
 
     def _load_permission_changes(self):
         """Load permission change history from audit trail."""
@@ -730,7 +732,7 @@ class SecurityDashboard(tk.Toplevel):
                 for r in rows:
                     self.permission_changes_tree.insert('', tk.END, values=tuple(r))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load permission changes: {e}")
+            messagebox.showerror(_t('gui.shell.security.security_dashboard.dialogs.error', default="Error"), f"Failed to load permission changes: {e}")
 
     def _load_retention_policies(self):
         """Load data retention policy status."""
@@ -746,7 +748,7 @@ class SecurityDashboard(tk.Toplevel):
                 for r in rows:
                     self.retention_tree.insert('', tk.END, values=tuple(r))
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load retention policies: {e}")
+            messagebox.showerror(_t('gui.shell.security.security_dashboard.dialogs.error', default="Error"), f"Failed to load retention policies: {e}")
 
     def _export_compliance_report(self, report_type):
         """Export compliance report to file."""
@@ -779,9 +781,9 @@ class SecurityDashboard(tk.Toplevel):
                 for r in rows:
                     writer.writerow(tuple(r))
 
-            messagebox.showinfo("Export Complete", f"Report exported to {file_path}")
+            messagebox.showinfo(_t('gui.shell.security.security_dashboard.dialogs.export_complete', default="Export Complete"), f"Report exported to {file_path}")
         except Exception as e:
-            messagebox.showerror("Error", f"Export failed: {e}")
+            messagebox.showerror(_t('gui.shell.security.security_dashboard.dialogs.error', default="Error"), f"Export failed: {e}")
 
     def _apply_eqa_context(self):
         """#3 — Honour an EQA drill-through ("View audit log for this
@@ -1284,14 +1286,14 @@ ID: {values[0]}
         """Rotate encryption key"""
         messagebox.showinfo(
             _t("security_dashboard.common.info"),
-            "Key rotation will be implemented"
+            _t('gui.shell.security.security_dashboard.dialogs.key_rotation_will_be_implemented', default="Key rotation will be implemented")
         )
 
     def _create_encrypted_backup(self):
         """Create encrypted backup"""
         messagebox.showinfo(
             _t("security_dashboard.common.info"),
-            "Encrypted backup will be implemented"
+            _t('gui.shell.security.security_dashboard.dialogs.encrypted_backup_will_be_implemented', default="Encrypted backup will be implemented")
         )
 
     def _create_api_key(self):
@@ -1640,14 +1642,14 @@ ID: {values[0]}
         """Approve export request"""
         messagebox.showinfo(
             _t("security_dashboard.common.info"),
-            "Export approval will be implemented"
+            _t('gui.shell.security.security_dashboard.dialogs.export_approval_will_be_implemented', default="Export approval will be implemented")
         )
 
     def _deny_export(self):
         """Deny export request"""
         messagebox.showinfo(
             _t("security_dashboard.common.info"),
-            "Export denial will be implemented"
+            _t('gui.shell.security.security_dashboard.dialogs.export_denial_will_be_implemented', default="Export denial will be implemented")
         )
 
     def _scan_sql_injection(self):

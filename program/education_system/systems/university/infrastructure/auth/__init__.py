@@ -214,6 +214,25 @@ except ImportError:
     MFAEnforcement = None
     MFA_ENFORCEMENT_AVAILABLE = False
 
+from education_system.systems.university.infrastructure.auth.authentication import (
+    AuthenticationService,
+)
+from education_system.systems.university.infrastructure.auth.credentials import (
+    CredentialService,
+)
+from education_system.systems.university.infrastructure.auth.sessions import (
+    SessionService,
+)
+from education_system.systems.university.infrastructure.auth.recovery import (
+    RecoveryService,
+)
+from education_system.systems.university.infrastructure.auth.audit import (
+    SecurityAuditService,
+)
+from education_system.systems.university.infrastructure.auth.composition import (
+    compose_authentication,
+)
+
 __all__ = [
     # Core authentication
     'UserAuth',
@@ -228,6 +247,12 @@ __all__ = [
     'get_global_auth',
     'set_global_auth',
     'reset_global_auth',
+    'AuthenticationService',
+    'CredentialService',
+    'SessionService',
+    'RecoveryService',
+    'SecurityAuditService',
+    'compose_authentication',
 
     # Manager classes
     'DatabaseConnectionManager',

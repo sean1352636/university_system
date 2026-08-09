@@ -110,6 +110,8 @@ class SecurityAlertManager:
 
     def _format_alert_message(self, level: str, title: str, details: Dict) -> str:
         """Format alert message for display."""
+        from education_system.systems.university.infrastructure.email.template_utils import render_template
+
         emoji_map = {
             'LOW': 'ℹ️',
             'MEDIUM': '⚠️',
@@ -117,20 +119,17 @@ class SecurityAlertManager:
             'CRITICAL': '🚨'
         }
         emoji = emoji_map.get(level, '⚠️')
-
-        message = f"""
-{emoji} SECURITY ALERT - {level}
-
-{title}
-
-Details:
-"""
-        for key, value in details.items():
-            if key != 'timestamp':  # Timestamp added at end
-                message += f"  {key}: {value}\n"
-
-        message += f"\nTimestamp: {details.get('timestamp', datetime.now().isoformat())}\n"
-        message += "\n---\nUniversity Management System Security Monitoring"
+        detail_lines = "".join(
+            f"  {key}: {value}\n" for key, value in details.items()
+            if key != "timestamp"
+        )
+        _, message = render_template("system/security_alert_runtime", {
+            "emoji": emoji,
+            "level": level,
+            "title": title,
+            "details": detail_lines.rstrip(),
+            "timestamp": details.get("timestamp", datetime.now().isoformat()),
+        })
         return message
 
     def _send_email_alert(self, level: str, title: str, message: str) -> bool:

@@ -57,16 +57,34 @@ def create_subscription():
     if not data or not data.get("url"):
         return jsonify({"error": "url is required"}), 400
 
+    import secrets as _secrets
+
     from flask import g
-    sub_id = _svc().subscribe(
-        url=data["url"],
-        event_types=data.get("event_types"),
-        system_key=data.get("system_key", "all"),
-        secret=data.get("secret"),
-        description=data.get("description"),
-        created_by=g.current_user.get("user_id"),
+
+    from education_system.platform.integrations.webhooks.webhook_service import (
+        WebhookURLError,
     )
-    return jsonify({"message": "Subscription created", "id": sub_id}), 201
+
+    # Deliveries must be signed, so a subscription needs a secret. Generate a
+    # strong one when the caller does not supply theirs, and return it once so
+    # they can configure their receiver; it is not echoed again afterwards.
+    supplied_secret = data.get("secret")
+    secret = supplied_secret or _secrets.token_urlsafe(32)
+    try:
+        sub_id = _svc().subscribe(
+            url=data["url"],
+            event_types=data.get("event_types"),
+            system_key=data.get("system_key", "all"),
+            secret=secret,
+            description=data.get("description"),
+            created_by=g.current_user.get("user_id"),
+        )
+    except WebhookURLError as exc:
+        return jsonify({"error": str(exc)}), 400
+    body = {"message": "Subscription created", "id": sub_id}
+    if not supplied_secret:
+        body["secret"] = secret  # shown once
+    return jsonify(body), 201
 
 
 @webhook_bp.route("/subscriptions/<int:sub_id>", methods=["DELETE"])

@@ -7,7 +7,7 @@ import uuid
 from datetime import timedelta
 from pathlib import Path
 from education_system.systems.university.infrastructure.database.db import get_connection
-from education_system.systems.university.infrastructure.paths import QR_CODES_DIR
+from education_system.paths import UNIVERSITY_QR_CODES_DIR
 from education_system.systems.university.domain.academics.services.attendance.settings import get_setting
 from education_system.systems.university.domain.academics.services.attendance.gamification import update_gamification_points
 
@@ -66,7 +66,7 @@ class QRAttendanceSystem:
             qr_image = qr.make_image(fill_color="black", back_color="white")
 
             # Save QR code image to QR codes directory
-            qr_filename = Path(QR_CODES_DIR) / f"qr_session_{session_id}.png"
+            qr_filename = Path(UNIVERSITY_QR_CODES_DIR) / f"qr_session_{session_id}.png"
             qr_image.save(str(qr_filename))
 
             print(f"QR code generated: {qr_filename}")

@@ -9,6 +9,8 @@ lose the stake, otherwise you get stake x multiplier back. About a 94% return
 overall, so the house keeps a small edge.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import math
 import random
 import tkinter as tk
@@ -29,7 +31,7 @@ START_CREDITS, MIN_BET = 200, 5
 class MultiplierWheel:
     def __init__(self, root):
         self.root = root
-        root.title("Multiplier Wheel")
+        root.title(_t('gui.operations.commerce.betting.games.multiplier_wheel.windows.multiplier_wheel', default="Multiplier Wheel"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -43,12 +45,12 @@ class MultiplierWheel:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=12)
         f.pack()
-        tk.Label(f, text="MULTIPLIER WHEEL", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.multiplier_wheel.labels.multiplier_wheel', default="MULTIPLIER WHEEL"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 18, "bold")).pack()
         self.wheel = tk.Canvas(f, width=WR * 2 + 20, height=WR * 2 + 30,
                                bg=FELT, highlightthickness=0)
         self.wheel.pack(pady=6)
-        self.msg = tk.Label(f, text="Set your stake and spin!", bg=FELT,
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.multiplier_wheel.labels.set_your_stake_and_spin', default="Set your stake and spin!"), bg=FELT,
                             fg="white", font=("Helvetica", 12, "bold"))
         self.msg.pack()
 
@@ -60,7 +62,7 @@ class MultiplierWheel:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Stake:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.multiplier_wheel.labels.stake', default="Stake:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -73,7 +75,7 @@ class MultiplierWheel:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.multiplier_wheel.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#7b2cbf",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -129,12 +131,12 @@ class MultiplierWheel:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.multiplier_wheel.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.busy = True
         self.spin_btn.config(state="disabled")
-        self.msg.config(text="Spinning...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.multiplier_wheel.text.spinning', default="Spinning..."), fg="white")
         self.refresh()
         target = random.randrange(len(SEGMENTS))
         n = len(SEGMENTS)
@@ -163,9 +165,9 @@ class MultiplierWheel:
             self.credits += win
             self.msg.config(text=f"x{mult} \u2014 WIN {win}!", fg=GOLD)
         else:
-            self.msg.config(text="LOSE \u2014 no return this spin.", fg="white")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.multiplier_wheel.text.lose_no_return_this_spin', default="LOSE \u2014 no return this spin."), fg="white")
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.multiplier_wheel.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

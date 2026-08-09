@@ -29,7 +29,7 @@ class SearchManager:
     def advanced_search_dialog(self):
         """Show advanced search dialog"""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Advanced Search")
+        dialog.title(_t('gui.shell.document_manager.search.windows.advanced_search', default="Advanced Search"))
         dialog.geometry("900x700")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -42,47 +42,47 @@ class SearchManager:
         main_frame.pack(fill='both', expand=True)
 
         # Title
-        ttk.Label(main_frame, text="Advanced Document Search", font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+        ttk.Label(main_frame, text=_t('gui.shell.document_manager.search.labels.advanced_document_search', default="Advanced Document Search"), font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
         # Search criteria frame
-        criteria_frame = ttk.LabelFrame(main_frame, text="Search Criteria", padding=15)
+        criteria_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.search.labels.search_criteria', default="Search Criteria"), padding=15)
         criteria_frame.pack(fill='x', pady=(0, 15))
 
         # Student search
-        ttk.Label(criteria_frame, text="Student (Name or ID):").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.search.labels.student_name_or_id', default="Student (Name or ID):")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.gui.search_student = tk.Entry(criteria_frame, width=30)
         self.gui.search_student.grid(row=0, column=1, padx=5, pady=5, sticky='ew')
 
         # Document type
-        ttk.Label(criteria_frame, text="Document Type:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.search.labels.document_type', default="Document Type:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.gui.search_doc_type = ttk.Combobox(criteria_frame, values=['All'] + self.gui.get_document_types())
         self.gui.search_doc_type.set('All')
         self.gui.search_doc_type.grid(row=1, column=1, padx=5, pady=5, sticky='ew')
 
         # Status
-        ttk.Label(criteria_frame, text="Status:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.search.labels.status', default="Status:")).grid(row=2, column=0, sticky='w', padx=5, pady=5)
         self.gui.search_status = ttk.Combobox(criteria_frame, values=['All', 'Pending', 'Verified', 'Rejected', 'Expired'])
         self.gui.search_status.set('All')
         self.gui.search_status.grid(row=2, column=1, padx=5, pady=5, sticky='ew')
 
         # Date range
-        ttk.Label(criteria_frame, text="From Date:").grid(row=3, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.search.labels.from_date', default="From Date:")).grid(row=3, column=0, sticky='w', padx=5, pady=5)
         self.gui.search_from_date = tk.Entry(criteria_frame, width=15)
         self.gui.search_from_date.grid(row=3, column=1, padx=5, pady=5, sticky='w')
 
-        ttk.Label(criteria_frame, text="To Date:").grid(row=4, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.search.labels.to_date', default="To Date:")).grid(row=4, column=0, sticky='w', padx=5, pady=5)
         self.gui.search_to_date = tk.Entry(criteria_frame, width=15)
         self.gui.search_to_date.grid(row=4, column=1, padx=5, pady=5, sticky='w')
 
         # Tags
-        ttk.Label(criteria_frame, text="Tags:").grid(row=5, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(criteria_frame, text=_t('gui.shell.document_manager.search.labels.tags', default="Tags:")).grid(row=5, column=0, sticky='w', padx=5, pady=5)
         self.gui.search_tags = tk.Entry(criteria_frame, width=30)
         self.gui.search_tags.grid(row=5, column=1, padx=5, pady=5, sticky='ew')
 
         criteria_frame.grid_columnconfigure(1, weight=1)
 
         # Results frame
-        results_frame = ttk.LabelFrame(main_frame, text="Search Results", padding=10)
+        results_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.search.labels.search_results', default="Search Results"), padding=10)
         results_frame.pack(fill='both', expand=True, pady=(0, 15))
 
         # Results tree
@@ -104,10 +104,10 @@ class SearchManager:
         buttons_frame = ttk.Frame(main_frame)
         buttons_frame.pack(fill='x')
 
-        ttk.Button(buttons_frame, text="🔍 Search", command=self.perform_advanced_search).pack(side='left', padx=5)
-        ttk.Button(buttons_frame, text="📊 Export Results", command=self.export_search_results_internal).pack(side='left', padx=5)
-        ttk.Button(buttons_frame, text="Clear", command=self.clear_search_criteria).pack(side='left', padx=5)
-        ttk.Button(buttons_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.search.buttons.search_variant_2', default="🔍 Search"), command=self.perform_advanced_search).pack(side='left', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.search.buttons.export_results_variant_2', default="📊 Export Results"), command=self.export_search_results_internal).pack(side='left', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.search.buttons.clear', default="Clear"), command=self.clear_search_criteria).pack(side='left', padx=5)
+        ttk.Button(buttons_frame, text=_t('gui.shell.document_manager.search.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
         # Store dialog reference
         self.gui.search_dialog = dialog
@@ -182,7 +182,7 @@ class SearchManager:
             self.gui.status_var.set(f"Search completed: {len(results)} results found")
 
         except Exception as e:
-            messagebox.showerror("Search Error", f"Search failed: {str(e)}")
+            messagebox.showerror(_t('gui.shell.document_manager.search.dialogs.search_error', default="Search Error"), f"Search failed: {str(e)}")
 
     def clear_search_criteria(self):
         """Clear all search criteria"""
@@ -204,13 +204,13 @@ class SearchManager:
 
         # Create advanced search window
         search_window = tk.Toplevel(self.root)
-        search_window.title("Advanced Search")
+        search_window.title(_t('gui.shell.document_manager.search.windows.advanced_search', default="Advanced Search"))
         search_window.geometry("1000x750")
         search_window.transient(self.root)
         search_window.grab_set()
 
         # Title
-        title_label = ttk.Label(search_window, text="Advanced Document Search",
+        title_label = ttk.Label(search_window, text=_t('gui.shell.document_manager.search.labels.advanced_document_search', default="Advanced Document Search"),
                                font=("Arial", 16, "bold"))
         title_label.pack(pady=10)
 
@@ -219,16 +219,16 @@ class SearchManager:
         main_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         # Left frame - Search criteria
-        left_frame = ttk.LabelFrame(main_frame, text="Search Criteria", padding=10)
+        left_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.search.labels.search_criteria', default="Search Criteria"), padding=10)
         left_frame.pack(side='left', fill='both', expand=True, padx=(0, 5))
 
         # Student ID
-        ttk.Label(left_frame, text="Student ID:").grid(row=0, column=0, sticky='w', pady=5)
+        ttk.Label(left_frame, text=_t('gui.shell.document_manager.search.labels.student_id', default="Student ID:")).grid(row=0, column=0, sticky='w', pady=5)
         student_id_entry = ttk.Entry(left_frame, width=30)
         student_id_entry.grid(row=0, column=1, sticky='ew', pady=5)
 
         # Document Type
-        ttk.Label(left_frame, text="Document Type:").grid(row=1, column=0, sticky='w', pady=5)
+        ttk.Label(left_frame, text=_t('gui.shell.document_manager.search.labels.document_type', default="Document Type:")).grid(row=1, column=0, sticky='w', pady=5)
         doc_type_combo = ttk.Combobox(left_frame, width=28, state='readonly')
         doc_type_combo['values'] = ['All Types', 'Transcript', 'ID Card', 'Health Form',
                                      'Enrollment', 'Financial', 'Other']
@@ -236,76 +236,76 @@ class SearchManager:
         doc_type_combo.grid(row=1, column=1, sticky='ew', pady=5)
 
         # Status
-        ttk.Label(left_frame, text="Status:").grid(row=2, column=0, sticky='w', pady=5)
+        ttk.Label(left_frame, text=_t('gui.shell.document_manager.search.labels.status', default="Status:")).grid(row=2, column=0, sticky='w', pady=5)
         status_combo = ttk.Combobox(left_frame, width=28, state='readonly')
         status_combo['values'] = ['All Statuses', 'Pending', 'Approved', 'Rejected', 'Expired']
         status_combo.current(0)
         status_combo.grid(row=2, column=1, sticky='ew', pady=5)
 
         # Date Range
-        ttk.Label(left_frame, text="Upload Date From:").grid(row=3, column=0, sticky='w', pady=5)
+        ttk.Label(left_frame, text=_t('gui.shell.document_manager.search.labels.upload_date_from', default="Upload Date From:")).grid(row=3, column=0, sticky='w', pady=5)
         date_from_entry = ttk.Entry(left_frame, width=30)
         date_from_entry.insert(0, "YYYY-MM-DD")
         date_from_entry.grid(row=3, column=1, sticky='ew', pady=5)
 
-        ttk.Label(left_frame, text="Upload Date To:").grid(row=4, column=0, sticky='w', pady=5)
+        ttk.Label(left_frame, text=_t('gui.shell.document_manager.search.labels.upload_date_to', default="Upload Date To:")).grid(row=4, column=0, sticky='w', pady=5)
         date_to_entry = ttk.Entry(left_frame, width=30)
         date_to_entry.insert(0, "YYYY-MM-DD")
         date_to_entry.grid(row=4, column=1, sticky='ew', pady=5)
 
         # Tags
-        ttk.Label(left_frame, text="Tags (comma-separated):").grid(row=5, column=0, sticky='w', pady=5)
+        ttk.Label(left_frame, text=_t('gui.shell.document_manager.search.labels.tags_comma_separated', default="Tags (comma-separated):")).grid(row=5, column=0, sticky='w', pady=5)
         tags_entry = ttk.Entry(left_frame, width=30)
         tags_entry.grid(row=5, column=1, sticky='ew', pady=5)
 
         # File Name
-        ttk.Label(left_frame, text="File Name Contains:").grid(row=6, column=0, sticky='w', pady=5)
+        ttk.Label(left_frame, text=_t('gui.shell.document_manager.search.labels.file_name_contains', default="File Name Contains:")).grid(row=6, column=0, sticky='w', pady=5)
         filename_entry = ttk.Entry(left_frame, width=30)
         filename_entry.grid(row=6, column=1, sticky='ew', pady=5)
 
         # Expiry Status
-        ttk.Label(left_frame, text="Expiry Status:").grid(row=7, column=0, sticky='w', pady=5)
+        ttk.Label(left_frame, text=_t('gui.shell.document_manager.search.labels.expiry_status', default="Expiry Status:")).grid(row=7, column=0, sticky='w', pady=5)
         expiry_combo = ttk.Combobox(left_frame, width=28, state='readonly')
         expiry_combo['values'] = ['All', 'Not Expired', 'Expiring Soon (30 days)', 'Expired']
         expiry_combo.current(0)
         expiry_combo.grid(row=7, column=1, sticky='ew', pady=5)
 
         # Advanced options
-        advanced_frame = ttk.LabelFrame(left_frame, text="Advanced Options", padding=5)
+        advanced_frame = ttk.LabelFrame(left_frame, text=_t('gui.shell.document_manager.search.labels.advanced_options', default="Advanced Options"), padding=5)
         advanced_frame.grid(row=8, column=0, columnspan=2, sticky='ew', pady=10)
 
         case_sensitive_var = tk.BooleanVar()
-        ttk.Checkbutton(advanced_frame, text="Case Sensitive",
+        ttk.Checkbutton(advanced_frame, text=_t('gui.shell.document_manager.search.buttons.case_sensitive', default="Case Sensitive"),
                        variable=case_sensitive_var).pack(anchor='w')
 
         include_archived_var = tk.BooleanVar()
-        ttk.Checkbutton(advanced_frame, text="Include Archived Documents",
+        ttk.Checkbutton(advanced_frame, text=_t('gui.shell.document_manager.search.buttons.include_archived_documents', default="Include Archived Documents"),
                        variable=include_archived_var).pack(anchor='w')
 
         exact_match_var = tk.BooleanVar()
-        ttk.Checkbutton(advanced_frame, text="Exact Match Only",
+        ttk.Checkbutton(advanced_frame, text=_t('gui.shell.document_manager.search.buttons.exact_match_only', default="Exact Match Only"),
                        variable=exact_match_var).pack(anchor='w')
 
         left_frame.columnconfigure(1, weight=1)
 
         # Right frame - Results
-        right_frame = ttk.LabelFrame(main_frame, text="Search Results", padding=10)
+        right_frame = ttk.LabelFrame(main_frame, text=_t('gui.shell.document_manager.search.labels.search_results', default="Search Results"), padding=10)
         right_frame.pack(side='right', fill='both', expand=True, padx=(5, 0))
 
         # Results info
-        results_info_label = ttk.Label(right_frame, text="No search performed yet",
+        results_info_label = ttk.Label(right_frame, text=_t('gui.shell.document_manager.search.labels.no_search_performed_yet', default="No search performed yet"),
                                        font=("Arial", 10))
         results_info_label.pack(pady=5)
 
         # Results treeview
         results_tree = ttk.Treeview(right_frame, columns=('ID', 'Student', 'Type', 'Status', 'Upload Date'),
                                     show='tree headings', height=20)
-        results_tree.heading('#0', text='File Name')
-        results_tree.heading('ID', text='Doc ID')
-        results_tree.heading('Student', text='Student ID')
-        results_tree.heading('Type', text='Type')
-        results_tree.heading('Status', text='Status')
-        results_tree.heading('Upload Date', text='Upload Date')
+        results_tree.heading('#0', text=_t('gui.shell.document_manager.search.headings.file_name', default='File Name'))
+        results_tree.heading('ID', text=_t('gui.shell.document_manager.search.headings.doc_id', default='Doc ID'))
+        results_tree.heading('Student', text=_t('gui.shell.document_manager.search.headings.student_id', default='Student ID'))
+        results_tree.heading('Type', text=_t('gui.shell.document_manager.search.headings.type', default='Type'))
+        results_tree.heading('Status', text=_t('gui.shell.document_manager.search.headings.status', default='Status'))
+        results_tree.heading('Upload Date', text=_t('gui.shell.document_manager.search.headings.upload_date', default='Upload Date'))
 
         results_tree.column('#0', width=150)
         results_tree.column('ID', width=60)
@@ -341,8 +341,8 @@ class SearchManager:
                 exact_match=exact_match_var.get()
             )
 
-        ttk.Button(button_frame, text="Search", command=perform_search).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Clear Filters",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.search.buttons.search', default="Search"), command=perform_search).pack(side='left', padx=5)
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.search.buttons.clear_filters', default="Clear Filters"),
                   command=lambda: [student_id_entry.delete(0, 'end'),
                                   doc_type_combo.current(0),
                                   status_combo.current(0),
@@ -353,9 +353,9 @@ class SearchManager:
                                   tags_entry.delete(0, 'end'),
                                   filename_entry.delete(0, 'end'),
                                   expiry_combo.current(0)]).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Export Results",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.search.buttons.export_results', default="Export Results"),
                   command=lambda: self.export_search_results(results_tree)).pack(side='left', padx=5)
-        ttk.Button(button_frame, text="Close",
+        ttk.Button(button_frame, text=_t('gui.shell.document_manager.search.buttons.close', default="Close"),
                   command=search_window.destroy).pack(side='right', padx=5)
 
         # Log activity
@@ -425,7 +425,7 @@ class SearchManager:
                           details=f'Search returned {len(results)} results')
 
         except Exception as e:
-            messagebox.showerror("Search Error", f"Failed to execute search: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.search.dialogs.search_error', default="Search Error"), f"Failed to execute search: {e}")
             self.gui.log_event('error', 'advanced_search', details=str(e))
 
     def export_search_results(self, results_tree):
@@ -433,14 +433,14 @@ class SearchManager:
         try:
             items = results_tree.get_children()
             if not items:
-                messagebox.showwarning("No Results", "No search results to export")
+                messagebox.showwarning(_t('gui.shell.document_manager.search.dialogs.no_results', default="No Results"), _t('gui.shell.document_manager.search.dialogs.no_search_results_to_export', default="No search results to export"))
                 return
 
             # Ask for save location
             file_path = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")],
-                title="Export Search Results"
+                title=_t('gui.shell.document_manager.search.dialogs.export_search_results', default="Export Search Results")
             )
 
             if not file_path:
@@ -456,23 +456,23 @@ class SearchManager:
                     values = results_tree.item(item, 'values')
                     writer.writerow([file_name] + list(values))
 
-            messagebox.showinfo("Export Successful", f"Search results exported to:\n{file_path}")
+            messagebox.showinfo(_t('gui.shell.document_manager.search.dialogs.export_successful', default="Export Successful"), f"Search results exported to:\n{file_path}")
             self.gui.log_event('export', 'search_results', details=f'Exported {len(items)} results')
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export search results: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.search.dialogs.export_error', default="Export Error"), f"Failed to export search results: {e}")
 
     def export_search_results_internal(self):
         """Export search results to CSV (uses self.gui.search_results_tree)"""
         try:
             if not hasattr(self.gui, 'search_results_tree'):
-                messagebox.showwarning("Warning", "No search results to export")
+                messagebox.showwarning(_t('gui.shell.document_manager.search.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.search.dialogs.no_search_results_to_export', default="No search results to export"))
                 return
 
             # Get results from tree
             items = self.gui.search_results_tree.get_children()
             if not items:
-                messagebox.showwarning("Warning", "No search results to export")
+                messagebox.showwarning(_t('gui.shell.document_manager.search.dialogs.warning', default="Warning"), _t('gui.shell.document_manager.search.dialogs.no_search_results_to_export', default="No search results to export"))
                 return
 
             # Ask for save location
@@ -497,7 +497,7 @@ class SearchManager:
                     values = self.gui.search_results_tree.item(item)['values']
                     writer.writerow(values)
 
-            messagebox.showinfo("Success", f"Search results exported to {filename}")
+            messagebox.showinfo(_t('gui.shell.document_manager.search.dialogs.success', default="Success"), f"Search results exported to {filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to export search results: {e}")
+            messagebox.showerror(_t('gui.shell.document_manager.search.dialogs.error', default="Error"), f"Failed to export search results: {e}")

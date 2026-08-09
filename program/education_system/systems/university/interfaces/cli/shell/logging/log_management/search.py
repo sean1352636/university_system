@@ -22,7 +22,7 @@ except Exception:
 
 from education_system.systems.university.infrastructure.database.db import DEFAULT_DB_PATH as _DB_PATH
 from education_system.systems.university.infrastructure.database.db import sqlite3
-from education_system.systems.university.infrastructure.paths import LOG_DIR
+from education_system.paths import UNIVERSITY_LOG_DIR
 
 
 def advanced_search_menu(log_manager, auth):
@@ -144,7 +144,7 @@ def export_search_results(results, filters):
 
     format_choice = input("Choose format: ")
 
-    export_dir = LOG_DIR / "exports"
+    export_dir = UNIVERSITY_LOG_DIR / "exports"
     export_dir.mkdir(parents=True, exist_ok=True)
     export_dir = str(export_dir)
 

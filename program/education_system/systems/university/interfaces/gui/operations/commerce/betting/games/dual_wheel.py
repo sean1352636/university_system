@@ -9,6 +9,8 @@ win is stake x inner x outer (a 0 on the inner wheel means no win). Both wheels
 are read at the top pointer.
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import math
 import random
 import tkinter as tk
@@ -31,7 +33,7 @@ START_CREDITS, MIN_BET = 200, 5
 class DualWheel:
     def __init__(self, root):
         self.root = root
-        root.title("Dual Wheel")
+        root.title(_t('gui.operations.commerce.betting.games.dual_wheel.windows.dual_wheel', default="Dual Wheel"))
         root.configure(bg=FELT)
         root.resizable(False, False)
         self.credits = wallet.get_credits()
@@ -46,14 +48,14 @@ class DualWheel:
     def _build(self):
         f = tk.Frame(self.root, bg=FELT, padx=18, pady=12)
         f.pack()
-        tk.Label(f, text="DUAL WHEEL", bg=FELT, fg=GOLD,
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.dual_wheel.labels.dual_wheel', default="DUAL WHEEL"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 18, "bold")).pack()
-        tk.Label(f, text="win = stake \u00d7 inner value \u00d7 outer multiplier",
+        tk.Label(f, text=_t('gui.operations.commerce.betting.games.dual_wheel.labels.win_stake_inner_value_outer_multiplier', default="win = stake \u00d7 inner value \u00d7 outer multiplier"),
                  bg=FELT, fg="#9fb3c8", font=("Helvetica", 10)).pack()
         self.wheel = tk.Canvas(f, width=R_OUT * 2 + 20, height=R_OUT * 2 + 30,
                                bg=FELT, highlightthickness=0)
         self.wheel.pack(pady=6)
-        self.msg = tk.Label(f, text="Set a stake and spin!", bg=FELT, fg="white",
+        self.msg = tk.Label(f, text=_t('gui.operations.commerce.betting.games.dual_wheel.labels.set_a_stake_and_spin', default="Set a stake and spin!"), bg=FELT, fg="white",
                             font=("Helvetica", 12, "bold"))
         self.msg.pack()
 
@@ -65,7 +67,7 @@ class DualWheel:
         tk.Button(bar, text="\u2212", width=3, command=lambda: self.chg(-MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        tk.Label(bar, text="Stake:", bg=FELT, fg=GOLD,
+        tk.Label(bar, text=_t('gui.operations.commerce.betting.games.dual_wheel.labels.stake', default="Stake:"), bg=FELT, fg=GOLD,
                  font=("Helvetica", 13, "bold")).pack(side="left", padx=(6, 2))
         self.bet_var = tk.StringVar()
         self.bet_entry = tk.Entry(bar, textvariable=self.bet_var, width=6,
@@ -78,7 +80,7 @@ class DualWheel:
         tk.Button(bar, text="+", width=3, command=lambda: self.chg(MIN_BET),
                   font=("Helvetica", 11, "bold"), bg="#333", fg="white",
                   bd=0).pack(side="left")
-        self.spin_btn = tk.Button(f, text="SPIN", command=self.spin, width=16,
+        self.spin_btn = tk.Button(f, text=_t('gui.operations.commerce.betting.games.dual_wheel.buttons.spin', default="SPIN"), command=self.spin, width=16,
                                   font=("Helvetica", 14, "bold"), bg="#1b7a4b",
                                   fg="white", activebackground=GOLD, bd=0, pady=8,
                                   cursor="hand2")
@@ -149,12 +151,12 @@ class DualWheel:
         if self.busy:
             return
         if self.credits < self.bet:
-            self.msg.config(text="Not enough credits.")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.dual_wheel.text.not_enough_credits', default="Not enough credits."))
             return
         self.credits -= self.bet
         self.busy = True
         self.spin_btn.config(state="disabled")
-        self.msg.config(text="Spinning...", fg="white")
+        self.msg.config(text=_t('gui.operations.commerce.betting.games.dual_wheel.text.spinning', default="Spinning..."), fg="white")
         self.refresh()
         self._ti = random.randrange(len(INNER))
         self._to = random.randrange(len(OUTER))
@@ -189,7 +191,7 @@ class DualWheel:
         else:
             self.msg.config(text=f"Inner 0 \u00d7 x{m} \u2014 no win.", fg="white")
         if self.credits < MIN_BET:
-            self.msg.config(text="Out of credits \u2014 buy more credits!")
+            self.msg.config(text=_t('gui.operations.commerce.betting.games.dual_wheel.text.out_of_credits_buy_more_credits', default="Out of credits \u2014 buy more credits!"))
             wallet.close_game(self.root)
         self.bet = min(self.bet, self.credits)
         self.refresh()

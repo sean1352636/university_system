@@ -4,6 +4,8 @@ Maintains all original CLI functions while adding a modern GUI interface
 Backwards compatible with existing database and auth systems
 """
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog
@@ -72,8 +74,8 @@ except ImportError:
     def get_current_user():
         return None
 
-from education_system.systems.university.infrastructure.paths import DEFAULT_DB_PATH
-DATABASE_FILE = str(DEFAULT_DB_PATH)
+from education_system.paths import UNIVERSITY_DEFAULT_DB_PATH
+DATABASE_FILE = str(UNIVERSITY_DEFAULT_DB_PATH)
 
 # Import finance integration for student finance account payments
 try:
@@ -124,23 +126,23 @@ def show_reviews(self):
     self.clear_content_area()
 
     reviews_frame = ttk.Frame(self.notebook)
-    self.notebook.add(reviews_frame, text="Reviews & Ratings")
+    self.notebook.add(reviews_frame, text=_t('gui.academics.library.reviews.tabs.reviews_ratings', default="Reviews & Ratings"))
 
-    title_label = ttk.Label(reviews_frame, text="Book Reviews & Ratings", style='Title.TLabel')
+    title_label = ttk.Label(reviews_frame, text=_t('gui.academics.library.reviews.labels.book_reviews_ratings', default="Book Reviews & Ratings"), style='Title.TLabel')
     title_label.pack(pady=10)
 
     # Control frame
     control_frame = ttk.Frame(reviews_frame)
     control_frame.pack(fill=tk.X, padx=10, pady=5)
 
-    ttk.Button(control_frame, text="Write Review", command=self.write_review_dialog).pack(side=tk.LEFT, padx=5)
-    ttk.Button(control_frame, text="My Reviews", command=self.show_my_reviews).pack(side=tk.LEFT, padx=5)
-    ttk.Button(control_frame, text="Publish All Reviews", command=self.publish_all_reviews).pack(side=tk.LEFT, padx=5)
-    ttk.Button(control_frame, text="All Reviews", command=self.show_all_reviews).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.reviews.buttons.write_review', default="Write Review"), command=self.write_review_dialog).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.reviews.buttons.my_reviews', default="My Reviews"), command=self.show_my_reviews).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.reviews.buttons.publish_all_reviews', default="Publish All Reviews"), command=self.publish_all_reviews).pack(side=tk.LEFT, padx=5)
+    ttk.Button(control_frame, text=_t('gui.academics.library.reviews.buttons.all_reviews', default="All Reviews"), command=self.show_all_reviews).pack(side=tk.LEFT, padx=5)
     ttk.Button(control_frame, text=_("common.refresh"), command=self.refresh_reviews).pack(side=tk.LEFT, padx=5)
 
     # Reviews display
-    reviews_display_frame = ttk.LabelFrame(reviews_frame, text="Recent Reviews")
+    reviews_display_frame = ttk.LabelFrame(reviews_frame, text=_t('gui.academics.library.reviews.labels.recent_reviews', default="Recent Reviews"))
     reviews_display_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     # Reviews table
@@ -246,12 +248,12 @@ def write_review_dialog(self):
     main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     # Book selection
-    ttk.Label(main_frame, text="Book ID:").pack(anchor='w', pady=(0, 5))
+    ttk.Label(main_frame, text=_t('gui.academics.library.reviews.labels.book_id', default="Book ID:")).pack(anchor='w', pady=(0, 5))
     book_id_var = tk.StringVar()
     ttk.Entry(main_frame, textvariable=book_id_var, width=30).pack(anchor='w', pady=(0, 10))
 
     # Rating selection
-    ttk.Label(main_frame, text="Rating:").pack(anchor='w', pady=(0, 5))
+    ttk.Label(main_frame, text=_t('gui.academics.library.reviews.labels.rating', default="Rating:")).pack(anchor='w', pady=(0, 5))
     rating_var = tk.StringVar(value="5")
     rating_frame = ttk.Frame(main_frame)
     rating_frame.pack(anchor='w', pady=(0, 10))
@@ -261,7 +263,7 @@ def write_review_dialog(self):
                        variable=rating_var, value=str(i)).pack(side=tk.LEFT, padx=5)
 
     # Review text
-    ttk.Label(main_frame, text="Review:").pack(anchor='w', pady=(0, 5))
+    ttk.Label(main_frame, text=_t('gui.academics.library.reviews.labels.review_variant_2', default="Review:")).pack(anchor='w', pady=(0, 5))
     review_text = ScrolledText(main_frame, height=8, width=50)
     review_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
@@ -275,22 +277,22 @@ def write_review_dialog(self):
         review_content = review_text.get("1.0", tk.END).strip()
 
         if not book_id:
-            messagebox.showwarning(_("common.warning"), "Please enter a book ID")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reviews.dialogs.please_enter_a_book_id', default="Please enter a book ID"))
             return
 
         if not review_content:
-            messagebox.showwarning(_("common.warning"), "Please write a review")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reviews.dialogs.please_write_a_review', default="Please write a review"))
             return
 
         try:
             if ORIGINAL_LIBRARY_AVAILABLE:
                 success = self.submit_review_database(book_id, rating, review_content)
                 if success:
-                    messagebox.showinfo(_("common.success"), "Review submitted successfully!")
+                    messagebox.showinfo(_("common.success"), _t('gui.academics.library.reviews.dialogs.review_submitted_successfully', default="Review submitted successfully!"))
                     dialog.destroy()
                     self.refresh_reviews()
                 else:
-                    messagebox.showerror(_("common.error"), "Failed to submit review")
+                    messagebox.showerror(_("common.error"), _t('gui.academics.library.reviews.dialogs.failed_to_submit_review', default="Failed to submit review"))
             else:
                 messagebox.showinfo(_("common.demo"), f"Review for book {book_id} submitted!")
                 dialog.destroy()
@@ -298,7 +300,7 @@ def write_review_dialog(self):
         except tk.TclError as e:
             messagebox.showerror(_("common.error"), f"Error submitting review: {str(e)}")
 
-    ttk.Button(button_frame, text="Submit", command=submit_review).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reviews.buttons.submit', default="Submit"), command=submit_review).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
 def submit_review_database(self, book_id, rating, review_text):
@@ -313,7 +315,7 @@ def submit_review_database(self, book_id, rating, review_text):
         # Check if book exists
         cursor.execute('SELECT title FROM books WHERE book_id = ?', (book_id,))
         if not cursor.fetchone():
-            messagebox.showerror(_("common.error"), "Book not found")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.reviews.dialogs.book_not_found', default="Book not found"))
             return False
 
         # Check if user already reviewed this book
@@ -322,7 +324,7 @@ def submit_review_database(self, book_id, rating, review_text):
                       (book_id, user_id))
 
         if cursor.fetchone():
-            messagebox.showwarning(_("common.warning"), "You have already reviewed this book")
+            messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reviews.dialogs.you_have_already_reviewed_this_book', default="You have already reviewed this book"))
             return False
 
         # Insert review
@@ -350,7 +352,7 @@ def view_review_details(self, event=None):
     if not selection:
         if event:
             return
-        messagebox.showwarning(_("common.warning"), "Please select a review first")
+        messagebox.showwarning(_("common.warning"), _t('gui.academics.library.reviews.dialogs.please_select_a_review_first', default="Please select a review first"))
         return
 
     item = self.reviews_tree.item(selection[0])
@@ -376,7 +378,7 @@ def view_review_details(self, event=None):
         conn.close()
 
         if not review:
-            messagebox.showinfo("Review", "Review details not found.")
+            messagebox.showinfo(_t('gui.academics.library.reviews.dialogs.review', default="Review"), _t('gui.academics.library.reviews.dialogs.review_details_not_found', default="Review details not found."))
             return
 
         review_id, title, author, uid, rating, text, date, status, votes, mod_by, mod_date = review
@@ -387,14 +389,14 @@ def view_review_details(self, event=None):
         dialog.transient(self.master)
 
         # Book info
-        info_frame = ttk.LabelFrame(dialog, text="Book Information", padding=10)
+        info_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.library.reviews.labels.book_information', default="Book Information"), padding=10)
         info_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
         ttk.Label(info_frame, text=f"Title: {title}").pack(anchor='w')
         ttk.Label(info_frame, text=f"Author: {author}").pack(anchor='w')
         ttk.Label(info_frame, text=f"Book ID: {book_id}").pack(anchor='w')
 
         # Review info
-        review_frame = ttk.LabelFrame(dialog, text="Review", padding=10)
+        review_frame = ttk.LabelFrame(dialog, text=_t('gui.academics.library.reviews.labels.review', default="Review"), padding=10)
         review_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         stars = "★" * rating + "☆" * (5 - rating)
@@ -405,7 +407,7 @@ def view_review_details(self, event=None):
         ttk.Label(review_frame, text=f"Status: {status}").pack(anchor='w')
         ttk.Label(review_frame, text=f"Helpful votes: {votes or 0}").pack(anchor='w')
 
-        ttk.Label(review_frame, text="Review Text:", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
+        ttk.Label(review_frame, text=_t('gui.academics.library.reviews.labels.review_text', default="Review Text:"), font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
 
         import tkinter.scrolledtext as st
         review_text_widget = st.ScrolledText(review_frame, height=8, wrap=tk.WORD)
@@ -427,19 +429,19 @@ def view_review_details(self, event=None):
                 cur.execute("UPDATE book_reviews SET status = 'published' WHERE review_id = ?", (review_id,))
                 c.commit()
                 c.close()
-                messagebox.showinfo("Success", "Review published!")
+                messagebox.showinfo(_t('gui.academics.library.reviews.dialogs.success', default="Success"), _t('gui.academics.library.reviews.dialogs.review_published', default="Review published!"))
                 dialog.destroy()
                 self.load_reviews()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to publish: {e}")
+                messagebox.showerror(_t('gui.academics.library.reviews.dialogs.error', default="Error"), f"Failed to publish: {e}")
 
         if status != 'published':
-            ttk.Button(btn_frame, text="Publish Review", command=publish_review).pack(side='left', padx=5)
+            ttk.Button(btn_frame, text=_t('gui.academics.library.reviews.buttons.publish_review', default="Publish Review"), command=publish_review).pack(side='left', padx=5)
 
-        ttk.Button(btn_frame, text="Close", command=dialog.destroy).pack(side='right', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.library.reviews.buttons.close', default="Close"), command=dialog.destroy).pack(side='right', padx=5)
 
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load review: {e}")
+        messagebox.showerror(_t('gui.academics.library.reviews.dialogs.error', default="Error"), f"Failed to load review: {e}")
 
 
 def publish_all_reviews(self):
@@ -453,28 +455,28 @@ def publish_all_reviews(self):
         count = cursor.rowcount
         conn.commit()
         conn.close()
-        messagebox.showinfo("Reviews Published", f"Published {count} review(s).")
+        messagebox.showinfo(_t('gui.academics.library.reviews.dialogs.reviews_published', default="Reviews Published"), f"Published {count} review(s).")
         self.load_reviews()
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to publish reviews: {e}")
+        messagebox.showerror(_t('gui.academics.library.reviews.dialogs.error', default="Error"), f"Failed to publish reviews: {e}")
 
 def rate_and_review_book_gui(self, book_id=None):
     """Rate and review a book"""
     review_window = tk.Toplevel(self.master)
-    review_window.title("Rate and Review Book")
+    review_window.title(_t('gui.academics.library.reviews.windows.rate_and_review_book', default="Rate and Review Book"))
     review_window.geometry("600x500")
 
-    ttk.Label(review_window, text="Rate and Review Book",
+    ttk.Label(review_window, text=_t('gui.academics.library.reviews.labels.rate_and_review_book', default="Rate and Review Book"),
              font=('Arial', 16, 'bold')).pack(pady=10)
 
     # Book selection
-    book_frame = ttk.LabelFrame(review_window, text="Book", padding=15)
+    book_frame = ttk.LabelFrame(review_window, text=_t('gui.academics.library.reviews.labels.book', default="Book"), padding=15)
     book_frame.pack(fill=tk.X, padx=10, pady=10)
 
     book_id_var = tk.StringVar(value=book_id or "")
-    book_info_var = tk.StringVar(value="No book selected")
+    book_info_var = tk.StringVar(value=_t('gui.academics.library.reviews.values.no_book_selected', default="No book selected"))
 
-    ttk.Label(book_frame, text="Book ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
+    ttk.Label(book_frame, text=_t('gui.academics.library.reviews.labels.book_id', default="Book ID:")).grid(row=0, column=0, sticky=tk.W, pady=5)
     ttk.Entry(book_frame, textvariable=book_id_var, width=30).grid(row=0, column=1, padx=10, pady=5)
 
     def lookup_book():
@@ -497,17 +499,17 @@ def rate_and_review_book_gui(self, book_id=None):
         except (sqlite3.Error, DatabaseError) as e:
             messagebox.showerror(_("common.error"), f"Failed to lookup book: {str(e)}")
 
-    ttk.Button(book_frame, text="Lookup", command=lookup_book).grid(row=0, column=2, padx=5)
+    ttk.Button(book_frame, text=_t('gui.academics.library.reviews.buttons.lookup', default="Lookup"), command=lookup_book).grid(row=0, column=2, padx=5)
     ttk.Label(book_frame, textvariable=book_info_var, foreground='blue').grid(
         row=1, column=0, columnspan=3, pady=10, sticky=tk.W)
 
     # Rating frame
-    rating_frame = ttk.LabelFrame(review_window, text="Your Rating", padding=15)
+    rating_frame = ttk.LabelFrame(review_window, text=_t('gui.academics.library.reviews.labels.your_rating', default="Your Rating"), padding=15)
     rating_frame.pack(fill=tk.X, padx=10, pady=10)
 
     rating_var = tk.IntVar(value=5)
 
-    ttk.Label(rating_frame, text="Rating (1-5 stars):").pack(anchor=tk.W, pady=5)
+    ttk.Label(rating_frame, text=_t('gui.academics.library.reviews.labels.rating_1_5_stars', default="Rating (1-5 stars):")).pack(anchor=tk.W, pady=5)
     rating_scale = ttk.Scale(rating_frame, from_=1, to=5, variable=rating_var, orient=tk.HORIZONTAL)
     rating_scale.pack(fill=tk.X, pady=5)
 
@@ -521,7 +523,7 @@ def rate_and_review_book_gui(self, book_id=None):
     rating_scale.config(command=update_rating_display)
 
     # Review frame
-    review_frame = ttk.LabelFrame(review_window, text="Your Review (Optional)", padding=15)
+    review_frame = ttk.LabelFrame(review_window, text=_t('gui.academics.library.reviews.labels.your_review_optional', default="Your Review (Optional)"), padding=15)
     review_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     review_text = tk.Text(review_frame, height=8, width=60)
@@ -530,7 +532,7 @@ def rate_and_review_book_gui(self, book_id=None):
     def submit_review():
         bid = book_id_var.get().strip()
         if not bid:
-            messagebox.showerror(_("common.error"), "Please select a book")
+            messagebox.showerror(_("common.error"), _t('gui.academics.library.reviews.dialogs.please_select_a_book', default="Please select a book"))
             return
 
         rating = rating_var.get()
@@ -543,7 +545,7 @@ def rate_and_review_book_gui(self, book_id=None):
             # Check if book exists
             cursor.execute('SELECT title FROM books WHERE book_id = ?', (bid,))
             if not cursor.fetchone():
-                messagebox.showerror(_("common.error"), "Book not found")
+                messagebox.showerror(_("common.error"), _t('gui.academics.library.reviews.dialogs.book_not_found', default="Book not found"))
                 conn.close()
                 return
 
@@ -591,6 +593,6 @@ def rate_and_review_book_gui(self, book_id=None):
     button_frame = ttk.Frame(review_window)
     button_frame.pack(fill=tk.X, padx=10, pady=10)
 
-    ttk.Button(button_frame, text="Submit Review", command=submit_review).pack(side=tk.LEFT, padx=5)
+    ttk.Button(button_frame, text=_t('gui.academics.library.reviews.buttons.submit_review', default="Submit Review"), command=submit_review).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_("common.cancel"), command=review_window.destroy).pack(side=tk.LEFT, padx=5)
 

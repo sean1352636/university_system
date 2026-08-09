@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.interfaces.gui.pastoral.internship_management._imports import (
     _t, datetime, messagebox, scrolledtext, tk, ttk, sqlite3, get_connection,
 )
@@ -117,13 +119,13 @@ class InternshipsBrowseMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading internships: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.database_error', default="Database Error"), f"Error loading internships: {e}")
 
     def view_selected_internship(self):
         """View details of selected internship"""
         selection = self.internship_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select an internship to view.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.internships.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.internships.dialogs.please_select_an_internship_to_view', default="Please select an internship to view."))
             return
 
         item = self.internship_tree.item(selection[0])
@@ -143,7 +145,7 @@ class InternshipsBrowseMixin:
             internship = cursor.fetchone()
 
             if not internship:
-                messagebox.showerror("Error", "Internship not found.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.internships.dialogs.internship_not_found', default="Internship not found."))
                 conn.close()
                 return
 
@@ -167,7 +169,7 @@ class InternshipsBrowseMixin:
                     bg='#ecf0f1', fg='#34495e').pack(anchor='w', padx=15, pady=(2, 5))
 
             # Description
-            desc_frame = tk.LabelFrame(details_frame, text="Description", font=('Arial', 12, 'bold'),
+            desc_frame = tk.LabelFrame(details_frame, text=_t('gui.pastoral.internship_management.internships.labels.description', default="Description"), font=('Arial', 12, 'bold'),
                                       bg='white', fg='#2c3e50')
             desc_frame.pack(fill='x', pady=(0, 15))
 
@@ -178,7 +180,7 @@ class InternshipsBrowseMixin:
             desc_text.config(state='disabled')
 
             # Requirements
-            req_frame = tk.LabelFrame(details_frame, text="Requirements", font=('Arial', 12, 'bold'),
+            req_frame = tk.LabelFrame(details_frame, text=_t('gui.pastoral.internship_management.internships.labels.requirements', default="Requirements"), font=('Arial', 12, 'bold'),
                                      bg='white', fg='#2c3e50')
             req_frame.pack(fill='x', pady=(0, 15))
 
@@ -238,31 +240,31 @@ class InternshipsBrowseMixin:
                     tk.Label(status_frame, text=f"Applied on: {application[1]}",
                             font=('Arial', 10), bg=status_frame['bg'], fg='#34495e').pack()
                 else:
-                    tk.Label(status_frame, text="Application Status: NOT APPLIED",
+                    tk.Label(status_frame, text=_t('gui.pastoral.internship_management.internships.labels.application_status_not_applied', default="Application Status: NOT APPLIED"),
                             font=('Arial', 12, 'bold'), bg=status_frame['bg'], fg='#2c3e50').pack(pady=5)
 
             # Buttons
             btn_frame = tk.Frame(details_frame, bg='white')
             btn_frame.pack(fill='x', pady=10)
 
-            tk.Button(btn_frame, text="Back to List", command=self.show_internships,
+            tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.internships.buttons.back_to_list', default="Back to List"), command=self.show_internships,
                      bg='#6c757d', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
             if (self.auth.check_permission('apply_for_internship') and
                 (not application if self.auth.current_user['role'] == 'student' else True)):
-                tk.Button(btn_frame, text="Apply Now", command=lambda: self.show_application_form(internship_id),
+                tk.Button(btn_frame, text=_t('gui.pastoral.internship_management.internships.buttons.apply_now', default="Apply Now"), command=lambda: self.show_application_form(internship_id),
                          bg='#e74c3c', fg='white', font=('Arial', 10), padx=15, pady=5, relief='flat').pack(side='left', padx=5)
 
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading internship details: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.database_error', default="Database Error"), f"Error loading internship details: {e}")
 
     def apply_for_selected_internship(self):
         """Apply for the selected internship"""
         selection = self.internship_tree.selection()
         if not selection:
-            messagebox.showwarning("Selection Error", "Please select an internship to apply for.")
+            messagebox.showwarning(_t('gui.pastoral.internship_management.internships.dialogs.selection_error', default="Selection Error"), _t('gui.pastoral.internship_management.internships.dialogs.please_select_an_internship_to_apply_for', default="Please select an internship to apply for."))
             return
 
         item = self.internship_tree.item(selection[0])
@@ -382,22 +384,22 @@ class InternshipsBrowseMixin:
             conn.close()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error loading internships: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.database_error', default="Database Error"), f"Error loading internships: {e}")
 
     def submit_application(self):
         """Submit the internship application"""
         try:
             # Validate inputs
             if not self.internship_var.get():
-                messagebox.showerror("Validation Error", "Please select an internship.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.internships.dialogs.please_select_an_internship', default="Please select an internship."))
                 return
 
             if not self.cv_entry.get().strip():
-                messagebox.showerror("Validation Error", "Please enter your CV filename.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.internships.dialogs.please_enter_your_cv_filename', default="Please enter your CV filename."))
                 return
 
             if not self.cover_letter_text.get('1.0', 'end-1c').strip():
-                messagebox.showerror("Validation Error", "Please provide a cover letter.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.validation_error', default="Validation Error"), _t('gui.pastoral.internship_management.internships.dialogs.please_provide_a_cover_letter', default="Please provide a cover letter."))
                 return
 
             # Extract internship ID
@@ -413,7 +415,7 @@ class InternshipsBrowseMixin:
             result = cursor.fetchone()
 
             if not result or not result[0]:
-                messagebox.showerror("Error", "No student record associated with your account.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.internships.dialogs.no_student_record_associated_with_your_account', default="No student record associated with your account."))
                 conn.close()
                 return
 
@@ -431,7 +433,7 @@ class InternshipsBrowseMixin:
             ''', (student_id, internship_id))
 
             if cursor.fetchone():
-                messagebox.showerror("Error", "You have already applied for this internship.")
+                messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.error', default="Error"), _t('gui.pastoral.internship_management.internships.dialogs.you_have_already_applied_for_this_internship', default="You have already applied for this internship."))
                 conn.close()
                 return
 
@@ -455,8 +457,8 @@ class InternshipsBrowseMixin:
                 import logging
                 logging.warning(f"Failed to send application confirmation email: {e}")
 
-            messagebox.showinfo("Success", "Application submitted successfully!")
+            messagebox.showinfo(_t('gui.pastoral.internship_management.internships.dialogs.success', default="Success"), _t('gui.pastoral.internship_management.internships.dialogs.application_submitted_successfully', default="Application submitted successfully!"))
             self.show_my_applications()
 
         except sqlite3.Error as e:
-            messagebox.showerror("Database Error", f"Error submitting application: {e}")
+            messagebox.showerror(_t('gui.pastoral.internship_management.internships.dialogs.database_error', default="Database Error"), f"Error submitting application: {e}")

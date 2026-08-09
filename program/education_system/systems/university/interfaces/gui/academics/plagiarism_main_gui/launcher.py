@@ -76,13 +76,13 @@ def run_gui_tests():
 
         print("Test 2: Testing window creation...")
         root = tk.Tk()
-        root.title("Test Window")
+        root.title(_t('gui.academics.plagiarism_main_gui.launcher.windows.test_window', default="Test Window"))
         root.geometry("400x300")
 
-        label = ttk.Label(root, text="Test Label")
+        label = ttk.Label(root, text=_t('gui.academics.plagiarism_main_gui.launcher.labels.test_label', default="Test Label"))
         label.pack()
 
-        button = ttk.Button(root, text="Test Button")
+        button = ttk.Button(root, text=_t('gui.academics.plagiarism_main_gui.launcher.buttons.test_button', default="Test Button"))
         button.pack()
 
         root.destroy()

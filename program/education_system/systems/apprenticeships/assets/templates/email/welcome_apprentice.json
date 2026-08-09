@@ -1,0 +1,8 @@
+{
+  "subject": "Welcome to your apprenticeship, {{first_name}}",
+  "body": "Hi {{first_name}},\n\nWelcome to {{standard_title}} with {{employer_name}}. You start on {{start_date}} and your planned end date is {{planned_end_date}}.\n\nA few things worth knowing on day one:\n\n  Your tutor is {{tutor_name}} — they are your first point of contact for anything.\n  You are an employee first. Your contract and pay come from {{employer_name}}; we handle the training.\n  At least {{otj_hours_target}} hours of your apprenticeship are off-the-job training. Log them as you go rather than trying to reconstruct them later — this is the single thing apprentices most often leave until it is a problem.\n\nYou will have a progress review with us and your employer roughly every {{review_frequency}}.\n\nAny questions before you start, just reply.\n\n{{tutor_name}}\n{{provider_name}}",
+  "from_name": "{{provider_name}}",
+  "from_address": "training@provider.ac.uk",
+  "category": "Recruitment",
+  "priority": "Normal"
+}

@@ -199,7 +199,7 @@ class GymGUI:
         # Handle student account payment
         if payment_method == 'Student Account':
             if not self._deduct_from_student_account(total_fee):
-                messagebox.showerror(_t("gym.window_title"), "Payment failed. Please try another payment method.")
+                messagebox.showerror(_t("gym.window_title"), _t('gui.operations.commerce.gym.gym.dialogs.payment_failed_please_try_another_payment_method', default="Payment failed. Please try another payment method."))
                 return
 
         result = MembershipManager.create_membership(user_id=self.user_id, user_name=self.user_id, user_email=self.user_email, membership_type=membership_type, months=months, emergency_contact=emergency_contact, emergency_phone=emergency_phone, created_by=self.user_id)
@@ -276,7 +276,7 @@ University Gym & Fitness Center"""
         # Handle student account payment
         if payment_method == 'Student Account':
             if not self._deduct_from_student_account(total_fee):
-                messagebox.showerror(_t("gym.window_title"), "Payment failed. Please try another payment method.")
+                messagebox.showerror(_t("gym.window_title"), _t('gui.operations.commerce.gym.gym.dialogs.payment_failed_please_try_another_payment_method', default="Payment failed. Please try another payment method."))
                 return
 
         result = MembershipManager.renew_membership(self.membership['membership_id'], months)
@@ -603,7 +603,7 @@ University Gym & Fitness Center"""
         self.pt_time_var = tk.StringVar()
         ttk.Combobox(booking_frame, textvariable=self.pt_time_var, values=['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'], width=30).grid(row=2, column=1, pady=2)
         ttk.Label(booking_frame, text=_t("gym.labels.session_type") + ":").grid(row=3, column=0, sticky=tk.W, pady=2)
-        self.pt_type_var = tk.StringVar(value='single')
+        self.pt_type_var = tk.StringVar(value=_t('gui.operations.commerce.gym.gym.values.single', default='single'))
         ttk.Combobox(booking_frame, textvariable=self.pt_type_var, values=list(PT_SESSION_FEES.keys()), width=30).grid(row=3, column=1, pady=2)
         ttk.Button(booking_frame, text=_t("gym.btn.book_pt"), command=self.book_pt_session).grid(row=4, column=1, pady=10)
         sessions_frame = ttk.LabelFrame(tab, text=_t("gym.my_pt_sessions"), padding="5")
@@ -638,7 +638,7 @@ University Gym & Fitness Center"""
         # Handle student account payment
         if payment_method == 'Student Account':
             if not self._deduct_from_student_account(fee):
-                messagebox.showerror(_t("gym.window_title"), "Payment failed. Please try another payment method.")
+                messagebox.showerror(_t("gym.window_title"), _t('gui.operations.commerce.gym.gym.dialogs.payment_failed_please_try_another_payment_method', default="Payment failed. Please try another payment method."))
                 return
 
         result = PTSessionManager.book_session(member_id=self.membership['membership_id'], trainer_name=trainer_name, session_date=session_date, session_time=session_time, session_type=session_type)
@@ -756,7 +756,7 @@ University Gym & Fitness Center"""
         filter_frame = ttk.Frame(tab)
         filter_frame.pack(fill=tk.X, pady=(0, 10))
         ttk.Label(filter_frame, text=_t("gym.labels.category") + ":").pack(side=tk.LEFT)
-        self.equipment_category_var = tk.StringVar(value='all')
+        self.equipment_category_var = tk.StringVar(value=_t('gui.operations.commerce.gym.gym.values.all', default='all'))
         ttk.Combobox(filter_frame, textvariable=self.equipment_category_var, values=['all', 'cardio', 'strength', 'free_weights', 'machines', 'accessories'], width=15).pack(side=tk.LEFT, padx=5)
         ttk.Button(filter_frame, text=_t("gym.btn.filter"), command=self._refresh_equipment_list).pack(side=tk.LEFT)
         list_frame = ttk.LabelFrame(tab, text=_t("gym.equipment_list"), padding="5")
@@ -804,7 +804,7 @@ University Gym & Fitness Center"""
     def create_payments_tab(self):
         """Create payments and refunds tab."""
         tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text="Payments & Refunds")
+        self.notebook.add(tab, text=_t('gui.operations.commerce.gym.gym.tabs.payments_refunds', default="Payments & Refunds"))
 
         # Header
         header_frame = ttk.Frame(tab)
@@ -879,7 +879,7 @@ University Gym & Fitness Center"""
         report_frame = ttk.LabelFrame(tab, text=_t("gym.reports.title"), padding="10")
         report_frame.pack(fill=tk.X, pady=(0, 10))
         ttk.Label(report_frame, text=_t("gym.labels.report_type") + ":").grid(row=0, column=0, sticky=tk.W)
-        self.report_type_var = tk.StringVar(value='daily')
+        self.report_type_var = tk.StringVar(value=_t('gui.operations.commerce.gym.gym.values.daily', default='daily'))
         ttk.Combobox(report_frame, textvariable=self.report_type_var, values=['daily', 'monthly', 'membership'], width=20).grid(row=0, column=1, padx=5)
         ttk.Button(report_frame, text=_t("gym.btn.generate_report"), command=self.generate_admin_report).grid(row=0, column=2, padx=5)
         ttk.Button(report_frame, text=_t("gym.btn.email_report"), command=self.email_admin_report).grid(row=0, column=3, padx=5)
@@ -953,7 +953,7 @@ University Gym & Fitness Center"""
             # Fallback: prompt for email if no admins found
             admin_email = simpledialog.askstring(
                 _t("gym.window_title"),
-                "No admin emails found. Enter admin email manually:"
+                _t('gui.operations.commerce.gym.gym.dialogs.no_admin_emails_found_enter_admin_email_manually', default="No admin emails found. Enter admin email manually:")
             )
             if admin_email:
                 admin_emails = [admin_email]
@@ -1080,7 +1080,7 @@ University Gym & Fitness Center"""
         """View detailed payment information."""
         selection = self.payments_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("gym.msg_titles.no_selection"), "Please select a payment to view details")
+            messagebox.showwarning(_t("gym.msg_titles.no_selection"), _t('gui.operations.commerce.gym.gym.dialogs.please_select_a_payment_to_view_details', default="Please select a payment to view details"))
             return
 
         try:
@@ -1089,7 +1089,7 @@ University Gym & Fitness Center"""
             # Ensure we have all required values
             if len(values) < 8:
                 messagebox.showerror(_t("gym.msg_titles.data_error"),
-                    "Payment record is incomplete. Please refresh the list and try again.")
+                    _t('gui.operations.commerce.gym.gym.dialogs.payment_record_is_incomplete_please_refresh_the_list_and_try_aga', default="Payment record is incomplete. Please refresh the list and try again."))
                 return
 
             details = f"""PAYMENT DETAILS
@@ -1138,7 +1138,7 @@ Status: {values[7]}
         """Process a refund with cash/card/student account options."""
         selection = self.payments_tree.selection()
         if not selection:
-            messagebox.showwarning(_t("gym.msg_titles.no_selection"), "Please select a payment to refund")
+            messagebox.showwarning(_t("gym.msg_titles.no_selection"), _t('gui.operations.commerce.gym.gym.dialogs.please_select_a_payment_to_refund', default="Please select a payment to refund"))
             return
 
         try:
@@ -1147,7 +1147,7 @@ Status: {values[7]}
             # Ensure we have all required values
             if len(values) < 8:
                 messagebox.showerror(_t("gym.msg_titles.data_error"),
-                    "Payment record is incomplete. Please refresh the list and try again.")
+                    _t('gui.operations.commerce.gym.gym.dialogs.payment_record_is_incomplete_please_refresh_the_list_and_try_aga', default="Payment record is incomplete. Please refresh the list and try again."))
                 return
 
             transaction_id = values[0]
@@ -1161,7 +1161,7 @@ Status: {values[7]}
             return
 
         if status == 'refunded':
-            messagebox.showinfo(_t("gym.msg_titles.refund_already_made"), "Refund already made")
+            messagebox.showinfo(_t("gym.msg_titles.refund_already_made"), _t('gui.operations.commerce.gym.gym.dialogs.refund_already_made', default="Refund already made"))
             return
 
         # Confirm refund
@@ -1228,12 +1228,12 @@ Status: {values[7]}
             except Exception as e:
                 messagebox.showerror(_t("gym.msg_titles.refund_error"), f"Failed to process refund: {e}")
         else:
-            messagebox.showerror(_t("gym.msg_titles.refund_failed"), "Failed to process student account refund")
+            messagebox.showerror(_t("gym.msg_titles.refund_failed"), _t('gui.operations.commerce.gym.gym.dialogs.failed_to_process_student_account_refund', default="Failed to process student account refund"))
 
     def _show_refund_method_dialog(self, amount: float, user_id: str) -> Optional[str]:
         """Show refund method selection dialog."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Select Refund Method")
+        dialog.title(_t('gui.operations.commerce.gym.gym.windows.select_refund_method', default="Select Refund Method"))
         dialog.geometry("400x350")
         dialog.transient(self.root)
         dialog.grab_set()
@@ -1453,7 +1453,7 @@ University Gym & Fitness Center"""
     def _show_payment_dialog(self, amount: float, description: str) -> Optional[str]:
         """Show payment method selection dialog. Returns payment method or None if cancelled."""
         dialog = tk.Toplevel(self.root)
-        dialog.title("Select Payment Method")
+        dialog.title(_t('gui.operations.commerce.gym.gym.windows.select_payment_method', default="Select Payment Method"))
         dialog.geometry("400x350")
         dialog.transient(self.root)
         dialog.grab_set()

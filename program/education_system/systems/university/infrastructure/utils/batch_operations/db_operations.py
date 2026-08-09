@@ -13,6 +13,7 @@ from education_system.systems.university.domain.academics.services.modules impor
     DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4,
 )
 from education_system.systems.university.infrastructure.utils.batch_operations.models import ImportResult, ProgressTracker
+from education_system.paths import UNIVERSITY_DATA_DIR, UNIVERSITY_IMPORT_HISTORY_FILE
 
 logger = configure_logging(name=__name__)
 
@@ -178,7 +179,7 @@ class DbOperationsMixin:
                 'original_file': getattr(self, 'current_import_file', 'unknown')
             }
 
-            with open(filename, 'w') as f:
+            with open(UNIVERSITY_DATA_DIR / filename, 'w') as f:
                 json.dump(progress_data, f, default=str)
 
         except Exception as e:
@@ -204,7 +205,7 @@ class DbOperationsMixin:
 
         # Save to file
         try:
-            with open('import_history.json', 'w') as f:
+            with open(UNIVERSITY_IMPORT_HISTORY_FILE, 'w') as f:
                 json.dump(self.import_history[-100:], f, indent=2)  # Keep last 100 entries
         except Exception as e:
             logger.error(f"Error saving import history: {e}")

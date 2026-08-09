@@ -118,10 +118,10 @@ def view_student_attendance(self, student_id, email, first_name, last_name):
             try:
                 import json
                 from education_system.systems.university.infrastructure.email.email_service import send_email
-                from education_system.systems.university.infrastructure.paths import TEMPLATES_DIR
+                from education_system.paths import UNIVERSITY_TEMPLATES_DIR
 
                 # Load email template
-                template_path = os.path.join(TEMPLATES_DIR, 'email', 'academics', 'low_attendance_alert.json')
+                template_path = os.path.join(UNIVERSITY_TEMPLATES_DIR, 'email', 'academics', 'low_attendance_alert.json')
                 with open(template_path, 'r') as f:
                     template = json.load(f)
 
@@ -149,11 +149,11 @@ def view_student_attendance(self, student_id, email, first_name, last_name):
             # Show status label based on whether email was sent
             if email_sent:
                 ttk.Label(summary_frame,
-                         text="⚠ Low Attendance Alert Sent",
+                         text=_t('gui.learners.students.student_crud_gui.attendance.labels.low_attendance_alert_sent', default="⚠ Low Attendance Alert Sent"),
                          foreground='red').grid(row=1, column=0, columnspan=3, pady=5)
             else:
                 ttk.Label(summary_frame,
-                         text="⚠ Low Attendance - Email notification failed",
+                         text=_t('gui.learners.students.student_crud_gui.attendance.labels.low_attendance_email_notification_failed', default="⚠ Low Attendance - Email notification failed"),
                          foreground='orange').grid(row=1, column=0, columnspan=3, pady=5)
 
         # Close button

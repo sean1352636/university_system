@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 from education_system.systems.university.infrastructure.sql_safety import escape_like
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
@@ -11,7 +13,7 @@ from typing import Dict, List, Optional, Any
 from education_system.systems.university.infrastructure.database.db import sqlite3
 from pathlib import Path
 import logging
-from education_system.systems.university.infrastructure import paths
+from education_system import paths
 
 # Import i18n for language support
 from education_system.systems.university.infrastructure.i18n import (
@@ -44,8 +46,8 @@ except ImportError:
     render_template = lambda *args, **kwargs: (None, None)
 
 # Use centralized path configuration
-DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
-_CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+DEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
+_CENTRALDEFAULT_DB_PATH = paths.UNIVERSITY_DEFAULT_DB_PATH
 
 # --------------------------------------------------------------------
 # Override sqlite3.connect for this module when targeting the
@@ -161,7 +163,7 @@ class ContentMixin:
         self.clear_content()
 
         faqs_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(faqs_frame, text="❓ FAQs")
+        self.notebook.add(faqs_frame, text=_t('gui.pastoral.student_support.content.tabs.faqs', default="❓ FAQs"))
 
         # Configure frame to expand
         faqs_frame.rowconfigure(0, weight=1)
@@ -171,7 +173,7 @@ class ContentMixin:
         header_frame = ttk.Frame(faqs_frame)
         header_frame.pack(fill="x", pady=(0, 15))
 
-        ttk.Label(header_frame, text="❓ Frequently Asked Questions",
+        ttk.Label(header_frame, text=_t('gui.pastoral.student_support.content.labels.frequently_asked_questions', default="❓ Frequently Asked Questions"),
                  style='Title.TLabel').pack(side="left")
 
         search_frame = ttk.Frame(header_frame)
@@ -181,10 +183,10 @@ class ContentMixin:
         self.faq_search.pack(side="left", padx=(0, 5))
         self.faq_search.bind('<Return>', lambda e: self.search_faqs())
 
-        ttk.Button(search_frame, text="🔍 Search", command=self.search_faqs).pack(side="left")
+        ttk.Button(search_frame, text=_t('gui.pastoral.student_support.content.buttons.search', default="🔍 Search"), command=self.search_faqs).pack(side="left")
 
         # Categories
-        categories_frame = ttk.LabelFrame(faqs_frame, text="📂 Browse by Category", padding="10")
+        categories_frame = ttk.LabelFrame(faqs_frame, text=_t('gui.pastoral.student_support.content.labels.browse_by_category', default="📂 Browse by Category"), padding="10")
         categories_frame.pack(fill="x", pady=(0, 15))
 
         self.faq_categories_frame = ttk.Frame(categories_frame)
@@ -207,7 +209,7 @@ class ContentMixin:
             # Check if FAQs table exists
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='faqs'")
             if not cursor.fetchone():
-                ttk.Label(self.faqs_display_frame, text="📭 No FAQs available").pack(pady=20)
+                ttk.Label(self.faqs_display_frame, text=_t('gui.pastoral.student_support.content.labels.no_faqs_available', default="📭 No FAQs available")).pack(pady=20)
                 conn.close()
                 return
 
@@ -220,7 +222,7 @@ class ContentMixin:
                 widget.destroy()
 
             # Create category buttons
-            ttk.Button(self.faq_categories_frame, text="📋 All Categories",
+            ttk.Button(self.faq_categories_frame, text=_t('gui.pastoral.student_support.content.buttons.all_categories', default="📋 All Categories"),
                       command=lambda: self.show_faqs_by_category(None)).pack(side="left", padx=(0, 5))
 
             for category in categories:
@@ -255,7 +257,7 @@ class ContentMixin:
                 faqs = []
 
             if not faqs:
-                ttk.Label(self.faqs_display_frame, text="📭 No FAQs found").pack(pady=20)
+                ttk.Label(self.faqs_display_frame, text=_t('gui.pastoral.student_support.content.labels.no_faqs_found', default="📭 No FAQs found")).pack(pady=20)
                 return
 
             # Create scrollable FAQ list
@@ -291,16 +293,16 @@ class ContentMixin:
         def toggle_answer():
             if answer_frame.winfo_viewable():
                 answer_frame.pack_forget()
-                toggle_btn.config(text="▶️ Show Answer")
+                toggle_btn.config(text=_t('gui.pastoral.student_support.content.text.show_answer', default="▶️ Show Answer"))
             else:
                 answer_frame.pack(fill="x", pady=(10, 0), before=toggle_frame)
-                toggle_btn.config(text="🔽 Hide Answer")
+                toggle_btn.config(text=_t('gui.pastoral.student_support.content.text.hide_answer', default="🔽 Hide Answer"))
 
-        toggle_btn = ttk.Button(toggle_frame, text="▶️ Show Answer", command=toggle_answer)
+        toggle_btn = ttk.Button(toggle_frame, text=_t('gui.pastoral.student_support.content.buttons.show_answer', default="▶️ Show Answer"), command=toggle_answer)
         toggle_btn.pack(side="left")
 
         # Helpful button
-        ttk.Button(toggle_frame, text="👍 Helpful",
+        ttk.Button(toggle_frame, text=_t('gui.pastoral.student_support.content.buttons.helpful', default="👍 Helpful"),
                   command=lambda: self.mark_faq_helpful(faq['faq_id'])).pack(side="right")
 
         # Answer content (initially hidden)
@@ -359,26 +361,26 @@ class ContentMixin:
         """Download ticket attachment"""
         # Handle None or invalid attachment
         if attachment is None or not isinstance(attachment, dict):
-            messagebox.showerror("Error", "Invalid attachment data")
+            messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), _t('gui.pastoral.student_support.content.dialogs.invalid_attachment_data', default="Invalid attachment data"))
             return
 
         try:
             attachment_id = attachment.get('attachment_id')
             if not attachment_id:
-                messagebox.showerror("Error", "No attachment ID found")
+                messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), _t('gui.pastoral.student_support.content.dialogs.no_attachment_id_found', default="No attachment ID found"))
                 return
 
             file_info = self.support.download_attachment(attachment_id)
 
             if not file_info or not isinstance(file_info, dict):
-                messagebox.showerror("Error", "Could not retrieve attachment data")
+                messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), _t('gui.pastoral.student_support.content.dialogs.could_not_retrieve_attachment_data', default="Could not retrieve attachment data"))
                 return
 
             file_name = file_info.get('filename', 'download')
 
             # Save file dialog
             filename = filedialog.asksaveasfilename(
-                title="Save Attachment",
+                title=_t('gui.pastoral.student_support.content.dialogs.save_attachment', default="Save Attachment"),
                 initialfile=file_name,
                 defaultextension=os.path.splitext(file_name)[1]
             )
@@ -387,17 +389,17 @@ class ContentMixin:
                 with open(filename, 'wb') as f:
                     f.write(file_info.get('data', b''))
 
-                messagebox.showinfo("Success", f"File saved as {filename}")
+                messagebox.showinfo(_t('gui.pastoral.student_support.content.dialogs.success', default="Success"), f"File saved as {filename}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Could not download attachment: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), f"Could not download attachment: {e}")
 
     def open_url(self, url):
         """Open URL in web browser"""
         try:
             webbrowser.open(url)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open URL: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), f"Could not open URL: {e}")
 
     def open_file(self, file_path):
         """Open file with default application"""
@@ -405,9 +407,9 @@ class ContentMixin:
             if os.path.exists(file_path):
                 os.startfile(file_path)  # Windows
             else:
-                messagebox.showerror("Error", "File not found")
+                messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), _t('gui.pastoral.student_support.content.dialogs.file_not_found', default="File not found"))
         except Exception as e:
-            messagebox.showerror("Error", f"Could not open file: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), f"Could not open file: {e}")
 
     def open_resource(self, resource):
         """Open support resource in a window"""
@@ -578,10 +580,10 @@ class ContentMixin:
             self.root.clipboard_append(text)
             self.update_status("Content copied to clipboard")
 
-        ttk.Button(button_frame, text="📋 Copy Content", command=copy_content).pack(side="left", padx=(0, 10))
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_support.content.buttons.copy_content', default="📋 Copy Content"), command=copy_content).pack(side="left", padx=(0, 10))
 
         # Close button
-        ttk.Button(button_frame, text="❌ Close", command=detail_window.destroy).pack(side="right")
+        ttk.Button(button_frame, text=_t('gui.pastoral.student_support.content.buttons.close', default="❌ Close"), command=detail_window.destroy).pack(side="right")
 
         # Update access count if possible
         self._increment_resource_access(resource)
@@ -626,7 +628,7 @@ class ContentMixin:
                  foreground=self.colors['text_secondary']).pack(anchor="w", pady=(0, 15))
 
         # Answer
-        ttk.Label(content_frame, text="Answer:", font=('Segoe UI', 10, 'bold')).pack(anchor="w")
+        ttk.Label(content_frame, text=_t('gui.pastoral.student_support.content.labels.answer', default="Answer:"), font=('Segoe UI', 10, 'bold')).pack(anchor="w")
 
         answer_text = scrolledtext.ScrolledText(content_frame, wrap=tk.WORD, state='disabled')
         answer_text.pack(fill="both", expand=True, pady=(5, 15))
@@ -639,9 +641,9 @@ class ContentMixin:
         feedback_frame = ttk.Frame(content_frame)
         feedback_frame.pack(fill="x")
 
-        ttk.Button(feedback_frame, text="👍 Helpful",
+        ttk.Button(feedback_frame, text=_t('gui.pastoral.student_support.content.buttons.helpful', default="👍 Helpful"),
                   command=lambda: self.mark_faq_helpful(faq['faq_id'])).pack(side="left", padx=(0, 10))
-        ttk.Button(feedback_frame, text="❌ Close", command=detail_window.destroy).pack(side="right")
+        ttk.Button(feedback_frame, text=_t('gui.pastoral.student_support.content.buttons.close', default="❌ Close"), command=detail_window.destroy).pack(side="right")
 
     def mark_faq_helpful(self, faq_id):
         """Mark FAQ as helpful"""
@@ -660,14 +662,14 @@ class ContentMixin:
 
             updated = self._safe_db_call(update)
             if updated:
-                messagebox.showinfo("Thank You", "Thank you for your feedback!")
+                messagebox.showinfo(_t('gui.pastoral.student_support.content.dialogs.thank_you', default="Thank You"), _t('gui.pastoral.student_support.content.dialogs.thank_you_for_your_feedback', default="Thank you for your feedback!"))
                 self.update_status("Marked FAQ as helpful")
                 self.load_dashboard()
                 self._refresh_faq_view()
             else:
-                messagebox.showwarning("Notice", "FAQ entry not found.")
+                messagebox.showwarning(_t('gui.pastoral.student_support.content.dialogs.notice', default="Notice"), _t('gui.pastoral.student_support.content.dialogs.faq_entry_not_found', default="FAQ entry not found."))
         except Exception as e:
-            messagebox.showerror("Error", f"Could not record feedback: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), f"Could not record feedback: {e}")
 
     def _refresh_faq_view(self):
         """Refresh the FAQ view based on the last interaction."""
@@ -687,7 +689,7 @@ class ContentMixin:
         self.clear_content()
 
         kb_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(kb_frame, text="📚 Knowledge Base")
+        self.notebook.add(kb_frame, text=_t('gui.pastoral.student_support.content.tabs.knowledge_base', default="📚 Knowledge Base"))
 
         # Configure frame to expand
         kb_frame.rowconfigure(0, weight=1)
@@ -697,7 +699,7 @@ class ContentMixin:
         header_frame = ttk.Frame(kb_frame)
         header_frame.pack(fill="x", pady=(0, 15))
 
-        ttk.Label(header_frame, text="📚 Knowledge Base",
+        ttk.Label(header_frame, text=_t('gui.pastoral.student_support.content.labels.knowledge_base', default="📚 Knowledge Base"),
                  style='Title.TLabel').pack(side="left")
 
         # Search
@@ -708,16 +710,16 @@ class ContentMixin:
         self.kb_search.pack(side="left", padx=(0, 5))
         self.kb_search.bind('<Return>', lambda e: self.search_knowledge_base())
 
-        ttk.Button(search_frame, text="🔍 Search", command=self.search_knowledge_base).pack(side="left")
+        ttk.Button(search_frame, text=_t('gui.pastoral.student_support.content.buttons.search', default="🔍 Search"), command=self.search_knowledge_base).pack(side="left")
 
         # Categories and filters
-        filter_frame = ttk.LabelFrame(kb_frame, text="📂 Browse Articles", padding="10")
+        filter_frame = ttk.LabelFrame(kb_frame, text=_t('gui.pastoral.student_support.content.labels.browse_articles', default="📂 Browse Articles"), padding="10")
         filter_frame.pack(fill="x", pady=(0, 15))
 
         filter_grid = ttk.Frame(filter_frame)
         filter_grid.pack(fill="x")
 
-        ttk.Label(filter_grid, text="Category:").grid(row=0, column=0, sticky="w", padx=(0, 5))
+        ttk.Label(filter_grid, text=_t('gui.pastoral.student_support.content.labels.category', default="Category:")).grid(row=0, column=0, sticky="w", padx=(0, 5))
         self.kb_category_filter = ttk.Combobox(filter_grid, values=[
             "All", "Technical", "Academic", "Financial Aid", "Housing", "General"
         ], state="readonly")
@@ -725,7 +727,7 @@ class ContentMixin:
         self.kb_category_filter.grid(row=0, column=1, padx=(0, 10))
         self.kb_category_filter.bind('<<ComboboxSelected>>', lambda e: self.load_knowledge_base())
 
-        ttk.Label(filter_grid, text="Sort by:").grid(row=0, column=2, sticky="w", padx=(0, 5))
+        ttk.Label(filter_grid, text=_t('gui.pastoral.student_support.content.labels.sort_by', default="Sort by:")).grid(row=0, column=2, sticky="w", padx=(0, 5))
         self.kb_sort_filter = ttk.Combobox(filter_grid, values=[
             "Most Recent", "Most Viewed", "Most Helpful", "Alphabetical"
         ], state="readonly")
@@ -733,7 +735,7 @@ class ContentMixin:
         self.kb_sort_filter.grid(row=0, column=3, padx=(0, 10))
         self.kb_sort_filter.bind('<<ComboboxSelected>>', lambda e: self.load_knowledge_base())
 
-        ttk.Button(filter_grid, text="🔄 Refresh",
+        ttk.Button(filter_grid, text=_t('gui.pastoral.student_support.content.buttons.refresh', default="🔄 Refresh"),
                   command=self.load_knowledge_base).grid(row=0, column=4)
 
         # Articles display area
@@ -753,7 +755,7 @@ class ContentMixin:
 
         try:
             if not self.support:
-                ttk.Label(self.kb_display_frame, text="❌ Support system not available").pack(pady=20)
+                ttk.Label(self.kb_display_frame, text=_t('gui.pastoral.student_support.content.labels.support_system_not_available', default="❌ Support system not available")).pack(pady=20)
                 return
 
             # Get filter values
@@ -774,7 +776,7 @@ class ContentMixin:
                 articles.sort(key=lambda x: x.get('published_datetime', ''), reverse=True)
 
             if not articles:
-                ttk.Label(self.kb_display_frame, text="📭 No articles found").pack(pady=20)
+                ttk.Label(self.kb_display_frame, text=_t('gui.pastoral.student_support.content.labels.no_articles_found', default="📭 No articles found")).pack(pady=20)
                 return
 
             # Create scrollable articles list
@@ -827,7 +829,7 @@ class ContentMixin:
                 tags_frame = ttk.Frame(article_frame)
                 tags_frame.pack(fill="x", pady=(0, 10))
 
-                ttk.Label(tags_frame, text="🏷️ Tags:", font=('Segoe UI', 9, 'bold')).pack(side="left")
+                ttk.Label(tags_frame, text=_t('gui.pastoral.student_support.content.labels.tags', default="🏷️ Tags:"), font=('Segoe UI', 9, 'bold')).pack(side="left")
                 for tag in tags[:5]:  # Show max 5 tags
                     tag_label = tk.Label(tags_frame, text=tag, bg="#e5e7eb", fg="#374151",
                                        padx=6, pady=2, relief="solid", borderwidth=1,
@@ -838,10 +840,10 @@ class ContentMixin:
         btn_frame = ttk.Frame(article_frame)
         btn_frame.pack(fill="x")
 
-        ttk.Button(btn_frame, text="📖 Read Full Article",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.content.buttons.read_full_article', default="📖 Read Full Article"),
                   command=lambda: self.show_article_detail(article)).pack(side="left", padx=(0, 5))
 
-        ttk.Button(btn_frame, text="👍 Helpful",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.content.buttons.helpful', default="👍 Helpful"),
                   command=lambda: self.mark_article_helpful(article['article_id'])).pack(side="left")
 
     def search_knowledge_base(self):
@@ -937,15 +939,15 @@ class ContentMixin:
         feedback_frame = ttk.Frame(content_frame, padding="20")
         feedback_frame.pack(fill="x")
 
-        ttk.Label(feedback_frame, text="Was this article helpful?", font=('Segoe UI', 10, 'bold')).pack(anchor="w")
+        ttk.Label(feedback_frame, text=_t('gui.pastoral.student_support.content.labels.was_this_article_helpful', default="Was this article helpful?"), font=('Segoe UI', 10, 'bold')).pack(anchor="w")
 
         btn_frame = ttk.Frame(feedback_frame)
         btn_frame.pack(anchor="w", pady=(5, 0))
 
-        ttk.Button(btn_frame, text="👍 Yes, helpful",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.content.buttons.yes_helpful', default="👍 Yes, helpful"),
                   command=lambda: self.mark_article_helpful(article['article_id'])).pack(side="left", padx=(0, 10))
 
-        ttk.Button(btn_frame, text="👎 Not helpful",
+        ttk.Button(btn_frame, text=_t('gui.pastoral.student_support.content.buttons.not_helpful', default="👎 Not helpful"),
                   command=lambda: self.mark_article_not_helpful(article['article_id'])).pack(side="left")
 
         canvas.grid(row=0, column=0, sticky="nsew")
@@ -968,14 +970,14 @@ class ContentMixin:
 
             updated = self._safe_db_call(update)
             if updated:
-                messagebox.showinfo("Thank You", "Thank you for your feedback!")
+                messagebox.showinfo(_t('gui.pastoral.student_support.content.dialogs.thank_you', default="Thank You"), _t('gui.pastoral.student_support.content.dialogs.thank_you_for_your_feedback', default="Thank you for your feedback!"))
                 self.update_status("Marked article as helpful")
                 self.load_dashboard()
                 self._refresh_kb_view()
             else:
-                messagebox.showwarning("Notice", "Article not found.")
+                messagebox.showwarning(_t('gui.pastoral.student_support.content.dialogs.notice', default="Notice"), _t('gui.pastoral.student_support.content.dialogs.article_not_found', default="Article not found."))
         except Exception as e:
-            messagebox.showerror("Error", f"Could not record feedback: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), f"Could not record feedback: {e}")
 
     def mark_article_not_helpful(self, article_id):
         """Mark article as not helpful"""
@@ -994,14 +996,14 @@ class ContentMixin:
 
             updated = self._safe_db_call(update)
             if updated:
-                messagebox.showinfo("Thank You", "Thank you for your feedback!")
+                messagebox.showinfo(_t('gui.pastoral.student_support.content.dialogs.thank_you', default="Thank You"), _t('gui.pastoral.student_support.content.dialogs.thank_you_for_your_feedback', default="Thank you for your feedback!"))
                 self.update_status("Recorded article feedback")
                 self.load_dashboard()
                 self._refresh_kb_view()
             else:
-                messagebox.showwarning("Notice", "Article not found.")
+                messagebox.showwarning(_t('gui.pastoral.student_support.content.dialogs.notice', default="Notice"), _t('gui.pastoral.student_support.content.dialogs.article_not_found', default="Article not found."))
         except Exception as e:
-            messagebox.showerror("Error", f"Could not record feedback: {e}")
+            messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), f"Could not record feedback: {e}")
 
     def _refresh_kb_view(self):
         """Refresh knowledge base view respecting the last interaction."""
@@ -1021,7 +1023,7 @@ class ContentMixin:
         self.clear_content()
 
         resources_frame = ttk.Frame(self.notebook, padding="3")
-        self.notebook.add(resources_frame, text="📋 Resources")
+        self.notebook.add(resources_frame, text=_t('gui.pastoral.student_support.content.tabs.resources', default="📋 Resources"))
 
         # Configure frame to expand
         resources_frame.rowconfigure(0, weight=1)
@@ -1033,7 +1035,7 @@ class ContentMixin:
         header_frame = ttk.Frame(scrollable_frame)
         header_frame.pack(fill="x", pady=(0, 15))
 
-        ttk.Label(header_frame, text="📋 Support Resources",
+        ttk.Label(header_frame, text=_t('gui.pastoral.student_support.content.labels.support_resources', default="📋 Support Resources"),
                   style='Title.TLabel').pack(side="left")
 
         controls_frame = ttk.Frame(header_frame)
@@ -1046,17 +1048,17 @@ class ContentMixin:
         search_entry.pack(side="left", padx=(0, 5))
         search_entry.bind('<Return>', lambda _: self._load_resources())
 
-        ttk.Button(controls_frame, text="🔍 Search",
+        ttk.Button(controls_frame, text=_t('gui.pastoral.student_support.content.buttons.search', default="🔍 Search"),
                    command=self._load_resources).pack(side="left")
 
-        ttk.Button(controls_frame, text="🔄 Refresh",
+        ttk.Button(controls_frame, text=_t('gui.pastoral.student_support.content.buttons.refresh', default="🔄 Refresh"),
                    command=self._refresh_resource_filters).pack(side="left", padx=(5, 0))
 
-        filter_frame = ttk.LabelFrame(scrollable_frame, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.student_support.content.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill="x", pady=(0, 15))
 
-        ttk.Label(filter_frame, text="Category:").grid(row=0, column=0, sticky="w")
-        self.resource_category_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_support.content.labels.category', default="Category:")).grid(row=0, column=0, sticky="w")
+        self.resource_category_var = tk.StringVar(value=_t('gui.pastoral.student_support.content.values.all', default="All"))
         self.resource_category_combo = ttk.Combobox(
             filter_frame,
             textvariable=self.resource_category_var,
@@ -1069,8 +1071,8 @@ class ContentMixin:
             lambda _: self._load_resources()
         )
 
-        ttk.Label(filter_frame, text="Type:").grid(row=0, column=2, sticky="w")
-        self.resource_type_var = tk.StringVar(value="All")
+        ttk.Label(filter_frame, text=_t('gui.pastoral.student_support.content.labels.type', default="Type:")).grid(row=0, column=2, sticky="w")
+        self.resource_type_var = tk.StringVar(value=_t('gui.pastoral.student_support.content.values.all', default="All"))
         type_combo = ttk.Combobox(
             filter_frame,
             textvariable=self.resource_type_var,
@@ -1081,7 +1083,7 @@ class ContentMixin:
         type_combo.grid(row=0, column=3, padx=(5, 0))
         type_combo.bind('<<ComboboxSelected>>', lambda _: self._load_resources())
 
-        ttk.Button(filter_frame, text="Clear Filters",
+        ttk.Button(filter_frame, text=_t('gui.pastoral.student_support.content.buttons.clear_filters', default="Clear Filters"),
                    command=lambda: self._reset_resource_filters()).grid(row=0, column=4, padx=(15, 0))
 
         content_frame = ttk.Frame(scrollable_frame)
@@ -1102,7 +1104,7 @@ class ContentMixin:
         tree_scrollbar.pack(side="right", fill="y")
         self.resources_tree.configure(yscrollcommand=tree_scrollbar.set)
 
-        detail_frame = ttk.LabelFrame(scrollable_frame, text="Resource Details", padding=10)
+        detail_frame = ttk.LabelFrame(scrollable_frame, text=_t('gui.pastoral.student_support.content.labels.resource_details', default="Resource Details"), padding=10)
         detail_frame.pack(fill="x", pady=(15, 0))
 
         self.resource_detail_text = scrolledtext.ScrolledText(detail_frame, height=6, wrap=tk.WORD, state='disabled')
@@ -1111,7 +1113,7 @@ class ContentMixin:
         action_frame = ttk.Frame(detail_frame)
         action_frame.pack(fill="x")
 
-        self.resource_link_button = ttk.Button(action_frame, text="View Resource",
+        self.resource_link_button = ttk.Button(action_frame, text=_t('gui.pastoral.student_support.content.buttons.view_resource', default="View Resource"),
                                                command=self._open_selected_resource,
                                                state='disabled')
         self.resource_link_button.pack(side="left")
@@ -1137,7 +1139,7 @@ class ContentMixin:
             if self.resource_category_var.get() not in values:
                 self.resource_category_var.set("All")
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load resource categories: {exc}")
+            messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), f"Failed to load resource categories: {exc}")
             self.resource_category_combo['values'] = ["All"]
             self.resource_category_var.set("All")
 
@@ -1222,7 +1224,7 @@ class ContentMixin:
                 self.resource_detail_text.config(state='disabled')
                 self.resource_link_button.config(state='disabled')
         except Exception as exc:
-            messagebox.showerror("Error", f"Failed to load resources: {exc}")
+            messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), f"Failed to load resources: {exc}")
 
     def _on_resource_select(self, event=None):
         """Display details for the selected resource."""
@@ -1277,7 +1279,7 @@ class ContentMixin:
             return
 
         if resource.get('requires_auth') and not self.auth.current_user:
-            messagebox.showwarning("Restricted", "Please sign in to access this resource.")
+            messagebox.showwarning(_t('gui.pastoral.student_support.content.dialogs.restricted', default="Restricted"), _t('gui.pastoral.student_support.content.dialogs.please_sign_in_to_access_this_resource', default="Please sign in to access this resource."))
             return
 
         # Open resource in a window instead of browser/external app
@@ -1288,7 +1290,7 @@ class ContentMixin:
         """Copy the selected resource URL to the clipboard."""
         selection = self.resources_tree.selection()
         if not selection:
-            messagebox.showwarning("Copy Link", "Select a resource first.")
+            messagebox.showwarning(_t('gui.pastoral.student_support.content.dialogs.copy_link', default="Copy Link"), _t('gui.pastoral.student_support.content.dialogs.select_a_resource_first', default="Select a resource first."))
             return
 
         resource = self.resource_records.get(int(selection[0]))
@@ -1298,7 +1300,7 @@ class ContentMixin:
                 self.root.clipboard_append(resource['url'])
                 self.update_status("Resource link copied to clipboard")
             except Exception as exc:
-                messagebox.showerror("Error", f"Could not copy link: {exc}")
+                messagebox.showerror(_t('gui.pastoral.student_support.content.dialogs.error', default="Error"), f"Could not copy link: {exc}")
         else:
-            messagebox.showwarning("Copy Link", "The selected resource does not have a URL.")
+            messagebox.showwarning(_t('gui.pastoral.student_support.content.dialogs.copy_link', default="Copy Link"), _t('gui.pastoral.student_support.content.dialogs.the_selected_resource_does_not_have_a_url', default="The selected resource does not have a URL."))
 

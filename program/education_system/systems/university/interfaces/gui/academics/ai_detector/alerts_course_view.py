@@ -1,3 +1,5 @@
+
+from education_system.systems.university.infrastructure.i18n import get_text as _t
 import json
 import os
 import threading
@@ -48,75 +50,75 @@ def create_alerts_notifications_view(self, parent):
     alerts_card = ttk.Frame(alerts_frame, style='Card.TFrame')
     alerts_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(alerts_card, text="Alerts & Notifications", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(alerts_card, text=_t('gui.academics.ai_detector.alerts_course_view.labels.alerts_notifications', default="Alerts & Notifications"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Alert Thresholds Section
-    thresholds_frame = ttk.LabelFrame(alerts_card, text="Alert Thresholds", padding=15)
+    thresholds_frame = ttk.LabelFrame(alerts_card, text=_t('gui.academics.ai_detector.alerts_course_view.labels.alert_thresholds', default="Alert Thresholds"), padding=15)
     thresholds_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     # Low Risk Threshold
     low_frame = ttk.Frame(thresholds_frame)
     low_frame.pack(fill='x', pady=2)
-    ttk.Label(low_frame, text="Low Risk Threshold (%):").pack(side='left')
+    ttk.Label(low_frame, text=_t('gui.academics.ai_detector.alerts_course_view.labels.low_risk_threshold', default="Low Risk Threshold (%):")).pack(side='left')
     self.low_threshold_var = tk.StringVar(value="30")
     ttk.Entry(low_frame, textvariable=self.low_threshold_var, width=10).pack(side='left', padx=(5, 0))
 
     # Medium Risk Threshold
     med_frame = ttk.Frame(thresholds_frame)
     med_frame.pack(fill='x', pady=2)
-    ttk.Label(med_frame, text="Medium Risk Threshold (%):").pack(side='left')
+    ttk.Label(med_frame, text=_t('gui.academics.ai_detector.alerts_course_view.labels.medium_risk_threshold', default="Medium Risk Threshold (%):")).pack(side='left')
     self.med_threshold_var = tk.StringVar(value="60")
     ttk.Entry(med_frame, textvariable=self.med_threshold_var, width=10).pack(side='left', padx=(5, 0))
 
     # High Risk Threshold
     high_frame = ttk.Frame(thresholds_frame)
     high_frame.pack(fill='x', pady=2)
-    ttk.Label(high_frame, text="High Risk Threshold (%):").pack(side='left')
+    ttk.Label(high_frame, text=_t('gui.academics.ai_detector.alerts_course_view.labels.high_risk_threshold', default="High Risk Threshold (%):")).pack(side='left')
     self.high_threshold_var = tk.StringVar(value="80")
     ttk.Entry(high_frame, textvariable=self.high_threshold_var, width=10).pack(side='left', padx=(5, 0))
 
-    ttk.Button(thresholds_frame, text="Save Thresholds",
+    ttk.Button(thresholds_frame, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.save_thresholds', default="Save Thresholds"),
               command=self.configure_alert_thresholds).pack(anchor='e', pady=(10, 0))
 
     # Email Alerts Section
-    email_frame = ttk.LabelFrame(alerts_card, text="Email Alerts", padding=15)
+    email_frame = ttk.LabelFrame(alerts_card, text=_t('gui.academics.ai_detector.alerts_course_view.labels.email_alerts', default="Email Alerts"), padding=15)
     email_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     self.email_alerts_enabled = tk.BooleanVar(value=False)
-    ttk.Checkbutton(email_frame, text="Enable automatic email alerts for high-risk submissions",
+    ttk.Checkbutton(email_frame, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.enable_automatic_email_alerts_for_high_risk_submissions', default="Enable automatic email alerts for high-risk submissions"),
                    variable=self.email_alerts_enabled).pack(anchor='w')
 
     email_input_frame = ttk.Frame(email_frame)
     email_input_frame.pack(fill='x', pady=(10, 0))
-    ttk.Label(email_input_frame, text="Notification Email:").pack(side='left')
+    ttk.Label(email_input_frame, text=_t('gui.academics.ai_detector.alerts_course_view.labels.notification_email', default="Notification Email:")).pack(side='left')
     self.alert_email_var = tk.StringVar()
     ttk.Entry(email_input_frame, textvariable=self.alert_email_var, width=30).pack(side='left', padx=(5, 10))
-    ttk.Button(email_input_frame, text="Setup Email Alerts",
+    ttk.Button(email_input_frame, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.setup_email_alerts', default="Setup Email Alerts"),
               command=self.setup_email_alerts).pack(side='left')
 
     # Alert Queue Section
-    queue_frame = ttk.LabelFrame(alerts_card, text="Alert Queue", padding=15)
+    queue_frame = ttk.LabelFrame(alerts_card, text=_t('gui.academics.ai_detector.alerts_course_view.labels.alert_queue', default="Alert Queue"), padding=15)
     queue_frame.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
     # Queue controls
     queue_controls = ttk.Frame(queue_frame)
     queue_controls.pack(fill='x', pady=(0, 10))
-    ttk.Button(queue_controls, text="Refresh Queue",
+    ttk.Button(queue_controls, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.refresh_queue', default="Refresh Queue"),
               command=self.view_alert_queue).pack(side='left', padx=(0, 10))
-    ttk.Button(queue_controls, text="Dismiss Selected",
+    ttk.Button(queue_controls, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.dismiss_selected', default="Dismiss Selected"),
               command=self.dismiss_alert).pack(side='left', padx=(0, 10))
-    ttk.Button(queue_controls, text="Escalate to Dean",
+    ttk.Button(queue_controls, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.escalate_to_dean', default="Escalate to Dean"),
               command=self.escalate_to_dean).pack(side='left')
 
     # Alert queue treeview
     columns = ('id', 'student', 'assignment', 'risk_level', 'score', 'date')
     self.alert_tree = ttk.Treeview(queue_frame, columns=columns, show='headings', height=8)
-    self.alert_tree.heading('id', text='ID')
-    self.alert_tree.heading('student', text='Student')
-    self.alert_tree.heading('assignment', text='Assignment')
-    self.alert_tree.heading('risk_level', text='Risk Level')
-    self.alert_tree.heading('score', text='AI Score')
-    self.alert_tree.heading('date', text='Date')
+    self.alert_tree.heading('id', text=_t('gui.academics.ai_detector.alerts_course_view.headings.id', default='ID'))
+    self.alert_tree.heading('student', text=_t('gui.academics.ai_detector.alerts_course_view.headings.student', default='Student'))
+    self.alert_tree.heading('assignment', text=_t('gui.academics.ai_detector.alerts_course_view.headings.assignment', default='Assignment'))
+    self.alert_tree.heading('risk_level', text=_t('gui.academics.ai_detector.alerts_course_view.headings.risk_level', default='Risk Level'))
+    self.alert_tree.heading('score', text=_t('gui.academics.ai_detector.alerts_course_view.headings.ai_score', default='AI Score'))
+    self.alert_tree.heading('date', text=_t('gui.academics.ai_detector.alerts_course_view.headings.date', default='Date'))
 
     self.alert_tree.column('id', width=50)
     self.alert_tree.column('student', width=120)
@@ -139,7 +141,7 @@ def configure_alert_thresholds(self):
         high = int(self.high_threshold_var.get())
 
         if not (0 <= low < med < high <= 100):
-            messagebox.showerror("Error", "Thresholds must be in order: Low < Medium < High (0-100)")
+            messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.thresholds_must_be_in_order_low_medium_high_0_100', default="Thresholds must be in order: Low < Medium < High (0-100)"))
             return
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
@@ -165,12 +167,12 @@ def configure_alert_thresholds(self):
         finally:
             conn.close()
 
-        messagebox.showinfo("Success", f"Alert thresholds updated:\nLow: {low}%\nMedium: {med}%\nHigh: {high}%")
+        messagebox.showinfo(_t('gui.academics.ai_detector.alerts_course_view.dialogs.success', default="Success"), f"Alert thresholds updated:\nLow: {low}%\nMedium: {med}%\nHigh: {high}%")
         self.update_status("Alert thresholds configured")
     except ValueError:
-        messagebox.showerror("Error", "Please enter valid numbers for thresholds")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_enter_valid_numbers_for_thresholds', default="Please enter valid numbers for thresholds"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to configure thresholds: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), f"Failed to configure thresholds: {str(e)}")
 
 
 def setup_email_alerts(self):
@@ -180,11 +182,11 @@ def setup_email_alerts(self):
         enabled = self.email_alerts_enabled.get()
 
         if enabled and not email:
-            messagebox.showerror("Error", "Please enter a notification email address")
+            messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_enter_a_notification_email_address', default="Please enter a notification email address"))
             return
 
         if enabled and '@' not in email:
-            messagebox.showerror("Error", "Please enter a valid email address")
+            messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_enter_a_valid_email_address', default="Please enter a valid email address"))
             return
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
@@ -215,10 +217,10 @@ def setup_email_alerts(self):
             conn.close()
 
         status = "enabled" if enabled else "disabled"
-        messagebox.showinfo("Success", f"Email alerts {status}" + (f" for {email}" if enabled else ""))
+        messagebox.showinfo(_t('gui.academics.ai_detector.alerts_course_view.dialogs.success', default="Success"), f"Email alerts {status}" + (f" for {email}" if enabled else ""))
         self.update_status(f"Email alerts {status}")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to setup email alerts: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), f"Failed to setup email alerts: {str(e)}")
 
 
 def view_alert_queue(self):
@@ -273,19 +275,19 @@ def view_alert_queue(self):
 
         self.update_status(f"Loaded {len(alerts)} pending alerts")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to load alert queue: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), f"Failed to load alert queue: {str(e)}")
 
 
 def dismiss_alert(self):
     """Dismiss false positive alerts with reason logging"""
     selected = self.alert_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select an alert to dismiss")
+        messagebox.showwarning(_t('gui.academics.ai_detector.alerts_course_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_select_an_alert_to_dismiss', default="Please select an alert to dismiss"))
         return
 
     # Ask for dismiss reason
-    reason = simpledialog.askstring("Dismiss Alert",
-                                    "Enter reason for dismissing this alert:",
+    reason = simpledialog.askstring(_t('gui.academics.ai_detector.alerts_course_view.dialogs.dismiss_alert', default="Dismiss Alert"),
+                                    _t('gui.academics.ai_detector.alerts_course_view.dialogs.enter_reason_for_dismissing_this_alert', default="Enter reason for dismissing this alert:"),
                                     parent=self.root)
     if not reason:
         return
@@ -308,22 +310,22 @@ def dismiss_alert(self):
         conn.close()
 
         self.alert_tree.delete(selected[0])
-        messagebox.showinfo("Success", "Alert dismissed successfully")
+        messagebox.showinfo(_t('gui.academics.ai_detector.alerts_course_view.dialogs.success', default="Success"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.alert_dismissed_successfully', default="Alert dismissed successfully"))
         self.update_status("Alert dismissed")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to dismiss alert: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), f"Failed to dismiss alert: {str(e)}")
 
 
 def escalate_to_dean(self):
     """Escalate serious cases directly to academic dean's queue"""
     selected = self.alert_tree.selection()
     if not selected:
-        messagebox.showwarning("Warning", "Please select an alert to escalate")
+        messagebox.showwarning(_t('gui.academics.ai_detector.alerts_course_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_select_an_alert_to_escalate', default="Please select an alert to escalate"))
         return
 
-    if not messagebox.askyesno("Confirm Escalation",
-                               "Are you sure you want to escalate this case to the Academic Dean?\n\n"
-                               "This action will flag the case for immediate review by university administration."):
+    if not messagebox.askyesno(_t('gui.academics.ai_detector.alerts_course_view.dialogs.confirm_escalation', default="Confirm Escalation"),
+                               _t('gui.academics.ai_detector.alerts_course_view.dialogs.are_you_sure_you_want_to_escalate_this_case_to_the_academic_dean', default="Are you sure you want to escalate this case to the Academic Dean?\n\n"
+                               "This action will flag the case for immediate review by university administration.")):
         return
 
     try:
@@ -370,12 +372,12 @@ def escalate_to_dean(self):
             conn.close()
 
         self.alert_tree.delete(selected[0])
-        messagebox.showinfo("Success",
+        messagebox.showinfo(_t('gui.academics.ai_detector.alerts_course_view.dialogs.success', default="Success"),
                           f"Case escalated to Academic Dean's review queue.\n\n"
                           f"Student: {student_name}\nAssignment: {assignment}")
         self.update_status("Case escalated to dean")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to escalate case: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), f"Failed to escalate case: {str(e)}")
 
 
 def create_course_management_view(self, parent):
@@ -387,81 +389,81 @@ def create_course_management_view(self, parent):
     course_card = ttk.Frame(course_frame, style='Card.TFrame')
     course_card.pack(fill='both', expand=True, padx=10, pady=10)
 
-    ttk.Label(course_card, text="Course & Assignment Management", style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
+    ttk.Label(course_card, text=_t('gui.academics.ai_detector.alerts_course_view.labels.course_assignment_management', default="Course & Assignment Management"), style='Title.TLabel').pack(anchor='w', padx=15, pady=15)
 
     # Assignment Profile Section
-    profile_frame = ttk.LabelFrame(course_card, text="Assignment Profile", padding=15)
+    profile_frame = ttk.LabelFrame(course_card, text=_t('gui.academics.ai_detector.alerts_course_view.labels.assignment_profile', default="Assignment Profile"), padding=15)
     profile_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     profile_row1 = ttk.Frame(profile_frame)
     profile_row1.pack(fill='x', pady=2)
-    ttk.Label(profile_row1, text="Assignment Name:").pack(side='left')
+    ttk.Label(profile_row1, text=_t('gui.academics.ai_detector.alerts_course_view.labels.assignment_name', default="Assignment Name:")).pack(side='left')
     self.profile_name_var = tk.StringVar()
     ttk.Entry(profile_row1, textvariable=self.profile_name_var, width=30).pack(side='left', padx=(5, 15))
-    ttk.Label(profile_row1, text="Course:").pack(side='left')
+    ttk.Label(profile_row1, text=_t('gui.academics.ai_detector.alerts_course_view.labels.course', default="Course:")).pack(side='left')
     self.profile_course_var = tk.StringVar()
     ttk.Entry(profile_row1, textvariable=self.profile_course_var, width=20).pack(side='left', padx=(5, 0))
 
     profile_row2 = ttk.Frame(profile_frame)
     profile_row2.pack(fill='x', pady=2)
-    ttk.Label(profile_row2, text="Expected Word Count:").pack(side='left')
+    ttk.Label(profile_row2, text=_t('gui.academics.ai_detector.alerts_course_view.labels.expected_word_count', default="Expected Word Count:")).pack(side='left')
     self.profile_words_var = tk.StringVar(value="1000")
     ttk.Entry(profile_row2, textvariable=self.profile_words_var, width=10).pack(side='left', padx=(5, 15))
-    ttk.Label(profile_row2, text="Assignment Type:").pack(side='left')
-    self.profile_type_var = tk.StringVar(value="Essay")
+    ttk.Label(profile_row2, text=_t('gui.academics.ai_detector.alerts_course_view.labels.assignment_type', default="Assignment Type:")).pack(side='left')
+    self.profile_type_var = tk.StringVar(value=_t('gui.academics.ai_detector.alerts_course_view.values.essay', default="Essay"))
     ttk.Combobox(profile_row2, textvariable=self.profile_type_var,
                 values=["Essay", "Research Paper", "Lab Report", "Code", "Creative Writing"],
                 width=15, state='readonly').pack(side='left', padx=(5, 0))
 
-    ttk.Button(profile_frame, text="Create Assignment Profile",
+    ttk.Button(profile_frame, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.create_assignment_profile', default="Create Assignment Profile"),
               command=self.create_assignment_profile).pack(anchor='e', pady=(10, 0))
 
     # Baseline Section
-    baseline_frame = ttk.LabelFrame(course_card, text="Assignment Baseline", padding=15)
+    baseline_frame = ttk.LabelFrame(course_card, text=_t('gui.academics.ai_detector.alerts_course_view.labels.assignment_baseline', default="Assignment Baseline"), padding=15)
     baseline_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     baseline_row = ttk.Frame(baseline_frame)
     baseline_row.pack(fill='x', pady=2)
-    ttk.Label(baseline_row, text="Select Assignment:").pack(side='left')
+    ttk.Label(baseline_row, text=_t('gui.academics.ai_detector.alerts_course_view.labels.select_assignment', default="Select Assignment:")).pack(side='left')
     self.baseline_assignment_var = tk.StringVar()
     self.baseline_combo = ttk.Combobox(baseline_row, textvariable=self.baseline_assignment_var,
                                       width=30, state='readonly')
     self.baseline_combo.pack(side='left', padx=(5, 10))
-    ttk.Button(baseline_row, text="Refresh", command=self._load_assignment_profiles).pack(side='left')
+    ttk.Button(baseline_row, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.refresh', default="Refresh"), command=self._load_assignment_profiles).pack(side='left')
 
     baseline_controls = ttk.Frame(baseline_frame)
     baseline_controls.pack(fill='x', pady=(10, 0))
-    ttk.Button(baseline_controls, text="Set Baseline from Sample",
+    ttk.Button(baseline_controls, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.set_baseline_from_sample', default="Set Baseline from Sample"),
               command=self.set_assignment_baseline).pack(side='left', padx=(0, 10))
-    ttk.Button(baseline_controls, text="Compare Against Baseline",
+    ttk.Button(baseline_controls, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.compare_against_baseline', default="Compare Against Baseline"),
               command=self.compare_against_assignment_baseline).pack(side='left')
 
     # Course Dashboard Section
-    dashboard_frame = ttk.LabelFrame(course_card, text="Course Integrity Dashboard", padding=15)
+    dashboard_frame = ttk.LabelFrame(course_card, text=_t('gui.academics.ai_detector.alerts_course_view.labels.course_integrity_dashboard', default="Course Integrity Dashboard"), padding=15)
     dashboard_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     dash_row = ttk.Frame(dashboard_frame)
     dash_row.pack(fill='x', pady=2)
-    ttk.Label(dash_row, text="Select Course:").pack(side='left')
+    ttk.Label(dash_row, text=_t('gui.academics.ai_detector.alerts_course_view.labels.select_course', default="Select Course:")).pack(side='left')
     self.dash_course_var = tk.StringVar()
     self.dash_course_combo = ttk.Combobox(dash_row, textvariable=self.dash_course_var,
                                          width=30, state='readonly')
     self.dash_course_combo.pack(side='left', padx=(5, 10))
-    ttk.Button(dash_row, text="View Dashboard",
+    ttk.Button(dash_row, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.view_dashboard', default="View Dashboard"),
               command=self.view_course_integrity_dashboard).pack(side='left')
 
     # End of Semester Report
-    report_frame = ttk.LabelFrame(course_card, text="Semester Reports", padding=15)
+    report_frame = ttk.LabelFrame(course_card, text=_t('gui.academics.ai_detector.alerts_course_view.labels.semester_reports', default="Semester Reports"), padding=15)
     report_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     report_row = ttk.Frame(report_frame)
     report_row.pack(fill='x')
-    ttk.Label(report_row, text="Semester:").pack(side='left')
-    self.report_semester_var = tk.StringVar(value="Fall 2025")
+    ttk.Label(report_row, text=_t('gui.academics.ai_detector.alerts_course_view.labels.semester', default="Semester:")).pack(side='left')
+    self.report_semester_var = tk.StringVar(value=_t('gui.academics.ai_detector.alerts_course_view.values.fall_2025', default="Fall 2025"))
     ttk.Combobox(report_row, textvariable=self.report_semester_var,
                 values=["Fall 2025", "Spring 2025", "Summer 2025", "Fall 2024"],
                 width=15, state='readonly').pack(side='left', padx=(5, 10))
-    ttk.Button(report_row, text="Generate Course End Report",
+    ttk.Button(report_row, text=_t('gui.academics.ai_detector.alerts_course_view.buttons.generate_course_end_report', default="Generate Course End Report"),
               command=self.generate_course_end_report).pack(side='left')
 
     # Load initial data
@@ -512,7 +514,7 @@ def create_assignment_profile(self):
         assignment_type = self.profile_type_var.get()
 
         if not name or not course:
-            messagebox.showerror("Error", "Please enter assignment name and course")
+            messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_enter_assignment_name_and_course', default="Please enter assignment name and course"))
             return
 
         conn = sqlite3.connect(DEFAULT_DB_PATH)
@@ -542,25 +544,25 @@ def create_assignment_profile(self):
         finally:
             conn.close()
 
-        messagebox.showinfo("Success", f"Assignment profile '{name}' created")
+        messagebox.showinfo(_t('gui.academics.ai_detector.alerts_course_view.dialogs.success', default="Success"), f"Assignment profile '{name}' created")
         self._load_assignment_profiles()
         self.update_status(f"Assignment profile created: {name}")
     except sqlite3.IntegrityError:
-        messagebox.showerror("Error", "An assignment with this name already exists")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.an_assignment_with_this_name_already_exists', default="An assignment with this name already exists"))
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to create profile: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), f"Failed to create profile: {str(e)}")
 
 
 def set_assignment_baseline(self):
     """Establish baseline metrics for a specific assignment"""
     assignment = self.baseline_assignment_var.get()
     if not assignment:
-        messagebox.showwarning("Warning", "Please select an assignment")
+        messagebox.showwarning(_t('gui.academics.ai_detector.alerts_course_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_select_an_assignment', default="Please select an assignment"))
         return
 
     # Ask user to select sample submissions
     files = filedialog.askopenfilenames(
-        title="Select Sample Submissions for Baseline",
+        title=_t('gui.academics.ai_detector.alerts_course_view.dialogs.select_sample_submissions_for_baseline', default="Select Sample Submissions for Baseline"),
         filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
     )
 
@@ -586,7 +588,7 @@ def set_assignment_baseline(self):
                     count += 1
 
         if count == 0:
-            messagebox.showwarning("Warning", "Could not analyze any files")
+            messagebox.showwarning(_t('gui.academics.ai_detector.alerts_course_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.could_not_analyze_any_files', default="Could not analyze any files"))
             return
 
         avg_ai = total_ai_score / count
@@ -605,27 +607,27 @@ def set_assignment_baseline(self):
         finally:
             conn.close()
 
-        messagebox.showinfo("Success",
+        messagebox.showinfo(_t('gui.academics.ai_detector.alerts_course_view.dialogs.success', default="Success"),
                           f"Baseline established from {count} samples:\n\n"
                           f"Avg AI Score: {avg_ai:.1f}%\n"
                           f"Avg Vocabulary Diversity: {avg_vocab:.2f}\n"
                           f"Avg Sentence Complexity: {avg_complexity:.2f}")
         self.update_status(f"Baseline set for {assignment}")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to set baseline: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), f"Failed to set baseline: {str(e)}")
 
 
 def compare_against_assignment_baseline(self):
     """Compare submission against assignment expectations"""
     assignment = self.baseline_assignment_var.get()
     if not assignment:
-        messagebox.showwarning("Warning", "Please select an assignment")
+        messagebox.showwarning(_t('gui.academics.ai_detector.alerts_course_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_select_an_assignment', default="Please select an assignment"))
         return
 
     # Get current text
     text = self.text_input.get('1.0', tk.END).strip() if hasattr(self, 'text_input') else ""
     if not text:
-        messagebox.showwarning("Warning", "Please enter text to compare in the Text Analysis view")
+        messagebox.showwarning(_t('gui.academics.ai_detector.alerts_course_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_enter_text_to_compare_in_the_text_analysis_view', default="Please enter text to compare in the Text Analysis view"))
         return
 
     try:
@@ -639,7 +641,7 @@ def compare_against_assignment_baseline(self):
         conn.close()
 
         if not baseline or baseline[0] is None:
-            messagebox.showwarning("Warning", "No baseline set for this assignment. Please set baseline first.")
+            messagebox.showwarning(_t('gui.academics.ai_detector.alerts_course_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.no_baseline_set_for_this_assignment_please_set_baseline_first', default="No baseline set for this assignment. Please set baseline first."))
             return
 
         # Analyze current text
@@ -663,17 +665,17 @@ def compare_against_assignment_baseline(self):
                 if abs(ai_diff) > 20:
                     report += "WARNING: AI score significantly differs from baseline\n"
 
-                messagebox.showinfo("Baseline Comparison", report)
+                messagebox.showinfo(_t('gui.academics.ai_detector.alerts_course_view.dialogs.baseline_comparison', default="Baseline Comparison"), report)
                 self.update_status("Baseline comparison complete")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to compare: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), f"Failed to compare: {str(e)}")
 
 
 def view_course_integrity_dashboard(self):
     """Course-level integrity metrics dashboard"""
     course = self.dash_course_var.get()
     if not course:
-        messagebox.showwarning("Warning", "Please select a course")
+        messagebox.showwarning(_t('gui.academics.ai_detector.alerts_course_view.dialogs.warning', default="Warning"), _t('gui.academics.ai_detector.alerts_course_view.dialogs.please_select_a_course', default="Please select a course"))
         return
 
     # Create dashboard window
@@ -685,7 +687,7 @@ def view_course_integrity_dashboard(self):
              font=('Segoe UI', 14, 'bold')).pack(pady=15)
 
     # Stats frame
-    stats_frame = ttk.LabelFrame(dash_window, text="Overview Statistics", padding=15)
+    stats_frame = ttk.LabelFrame(dash_window, text=_t('gui.academics.ai_detector.alerts_course_view.labels.overview_statistics', default="Overview Statistics"), padding=15)
     stats_frame.pack(fill='x', padx=20, pady=10)
 
     try:
@@ -759,9 +761,9 @@ def generate_course_end_report(self):
         if file_path:
             with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(report)
-            messagebox.showinfo("Success", f"Report saved to {file_path}")
+            messagebox.showinfo(_t('gui.academics.ai_detector.alerts_course_view.dialogs.success', default="Success"), f"Report saved to {file_path}")
             self.update_status("Course end report generated")
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to generate report: {str(e)}")
+        messagebox.showerror(_t('gui.academics.ai_detector.alerts_course_view.dialogs.error', default="Error"), f"Failed to generate report: {str(e)}")
 
 

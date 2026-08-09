@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://education.local/schemas/university-plugin-v1.json",
+  "type": "object",
+  "required": [
+    "schemaVersion", "id", "version", "platform", "capabilities",
+    "permissions", "dataClassifications", "support", "retention",
+    "healthCheck", "uninstall"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,63}$"},
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "platform": {
+      "type": "object",
+      "required": ["minimum", "maximumExclusive"],
+      "properties": {
+        "minimum": {"type": "string"},
+        "maximumExclusive": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "capabilities": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "routes": {
+      "type": "array",
+      "default": [],
+      "comment": "module:attribute references, constrained to the education_system package so a manifest cannot name an arbitrary importable module (e.g. os:system).",
+      "items": {
+        "type": "string",
+        "pattern": "^education_system\\.[A-Za-z0-9_.]+:[A-Za-z_][A-Za-z0-9_]*$"
+      }
+    },
+    "optionalDependencies": {"type": "array", "items": {"type": "string"}, "default": []},
+    "permissions": {"type": "array", "items": {"type": "string"}},
+    "dataClassifications": {
+      "type": "array",
+      "items": {"enum": ["public", "internal", "personal", "confidential", "restricted"]}
+    },
+    "canonicalWrites": {"type": "array", "maxItems": 0},
+    "support": {"enum": ["supported", "community", "demo"]},
+    "retention": {"type": "string", "minLength": 1},
+    "healthCheck": {"type": "string", "minLength": 1},
+    "uninstall": {"type": "string", "minLength": 1}
+  }
+}

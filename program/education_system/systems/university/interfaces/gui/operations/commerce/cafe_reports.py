@@ -438,7 +438,7 @@ class CafeReportsMixin:
 
         subject, body = render_template('commerce/cafe_report', template_vars)
         if not subject or not body:
-            messagebox.showerror(_t("common.error"), "Failed to render email template")
+            messagebox.showerror(_t("common.error"), _t('gui.operations.commerce.cafe_reports.dialogs.failed_to_render_email_template', default="Failed to render email template"))
             return
 
         try:

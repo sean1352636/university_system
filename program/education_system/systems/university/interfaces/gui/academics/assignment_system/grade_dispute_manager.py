@@ -1,5 +1,7 @@
 """Grade dispute and appeal workflow management"""
 
+from education_system.systems.university.infrastructure.i18n import get_text as _t
+
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 import json
@@ -78,27 +80,27 @@ class GradeDisputeManager:
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Submit Grade Dispute", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.submit_grade_dispute', default="Submit Grade Dispute"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
-        form_frame = ttk.LabelFrame(parent, text="Dispute Details", padding=15)
+        form_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.dispute_details', default="Dispute Details"), padding=15)
         form_frame.pack(fill='x', pady=(0, 10))
 
         # Assignment selector
-        ttk.Label(form_frame, text="Assignment:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.assignment', default="Assignment:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         self.dispute_assignment_combo = ttk.Combobox(form_frame, state='readonly', width=50)
         self.dispute_assignment_combo.grid(row=0, column=1, sticky='ew', padx=5, pady=5)
         self.dispute_assignment_combo.bind('<<ComboboxSelected>>', self._on_dispute_assignment_selected)
 
         # Original grade (read-only, populated on assignment select)
-        ttk.Label(form_frame, text="Original Grade:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.original_grade', default="Original Grade:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.dispute_original_grade_var = tk.StringVar(value="--")
         ttk.Label(form_frame, textvariable=self.dispute_original_grade_var).grid(
             row=1, column=1, sticky='w', padx=5, pady=5
         )
 
         # Requested action
-        ttk.Label(form_frame, text="Requested Action:").grid(row=2, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.requested_action', default="Requested Action:")).grid(row=2, column=0, sticky='w', padx=5, pady=5)
         self.dispute_action_combo = ttk.Combobox(
             form_frame, state='readonly', width=50,
             values=['Full regrade', 'Partial regrade', 'Grade review', 'Rubric clarification']
@@ -107,26 +109,26 @@ class GradeDisputeManager:
         self.dispute_action_combo.current(0)
 
         # Reason
-        ttk.Label(form_frame, text="Reason:").grid(row=3, column=0, sticky='nw', padx=5, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.reason', default="Reason:")).grid(row=3, column=0, sticky='nw', padx=5, pady=5)
         self.dispute_reason_text = scrolledtext.ScrolledText(form_frame, width=50, height=6)
         self.dispute_reason_text.grid(row=3, column=1, sticky='ew', padx=5, pady=5)
 
         # Evidence attachment
-        ttk.Label(form_frame, text="Evidence:").grid(row=4, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(form_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.evidence', default="Evidence:")).grid(row=4, column=0, sticky='w', padx=5, pady=5)
         evidence_frame = ttk.Frame(form_frame)
         evidence_frame.grid(row=4, column=1, sticky='ew', padx=5, pady=5)
 
-        self.dispute_evidence_var = tk.StringVar(value="No file selected")
+        self.dispute_evidence_var = tk.StringVar(value=_t('gui.academics.assignment_system.grade_dispute_manager.values.no_file_selected', default="No file selected"))
         ttk.Label(evidence_frame, textvariable=self.dispute_evidence_var).pack(side='left', padx=(0, 10))
-        ttk.Button(evidence_frame, text="Browse...", command=self._browse_evidence).pack(side='left')
+        ttk.Button(evidence_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.browse', default="Browse..."), command=self._browse_evidence).pack(side='left')
 
         form_frame.columnconfigure(1, weight=1)
 
         # Submit button
         btn_frame = ttk.Frame(parent)
         btn_frame.pack(fill='x', pady=10)
-        ttk.Button(btn_frame, text="Submit Dispute", command=self._submit_dispute).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=self.show_my_disputes).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.submit_dispute', default="Submit Dispute"), command=self._submit_dispute).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.cancel', default="Cancel"), command=self.show_my_disputes).pack(side='left', padx=5)
 
         # Load assignments for this student
         self._load_graded_assignments()
@@ -140,7 +142,7 @@ class GradeDisputeManager:
         """Load assignments that have been graded for the current student"""
         student_id = self._get_student_id_safe()
         if not student_id:
-            messagebox.showwarning("Warning", "Could not determine student ID.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.warning', default="Warning"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.could_not_determine_student_id', default="Could not determine student ID."))
             return
 
         try:
@@ -174,7 +176,7 @@ class GradeDisputeManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load assignments: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), f"Failed to load assignments: {e}")
 
     def _on_dispute_assignment_selected(self, _event=None):
         """Update original grade when assignment is selected"""
@@ -188,7 +190,7 @@ class GradeDisputeManager:
     def _browse_evidence(self):
         """Open file dialog to attach evidence"""
         path = filedialog.askopenfilename(
-            title="Select Evidence File",
+            title=_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.select_evidence_file', default="Select Evidence File"),
             filetypes=[
                 ("Documents", "*.pdf *.docx *.txt"),
                 ("Images", "*.png *.jpg *.jpeg"),
@@ -203,18 +205,18 @@ class GradeDisputeManager:
         """Validate and submit the grade dispute"""
         sel = self.dispute_assignment_combo.get()
         if not sel:
-            messagebox.showwarning("Validation", "Please select an assignment.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.please_select_an_assignment', default="Please select an assignment."))
             return
 
         reason = self.dispute_reason_text.get("1.0", tk.END).strip()
         if not reason:
-            messagebox.showwarning("Validation", "Please provide a reason for the dispute.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.please_provide_a_reason_for_the_dispute', default="Please provide a reason for the dispute."))
             return
 
         info = self._dispute_submission_map.get(sel, {})
         student_id = self._get_student_id_safe()
         if not student_id:
-            messagebox.showerror("Error", "Could not determine student ID.")
+            messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.could_not_determine_student_id', default="Could not determine student ID."))
             return
 
         requested_action = self.dispute_action_combo.get()
@@ -286,12 +288,12 @@ class GradeDisputeManager:
                 if ticket_id:
                     msg += f"\nHelpdesk ticket #{ticket_id} opened."
                 msg += mc_note
-                messagebox.showinfo("Success", msg)
+                messagebox.showinfo(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.success', default="Success"), msg)
                 self.show_my_disputes()
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to submit dispute: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), f"Failed to submit dispute: {e}")
 
     # ------------------------------------------------------------------ #
     #  Student: View my disputes
@@ -302,14 +304,14 @@ class GradeDisputeManager:
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="My Grade Disputes", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.my_grade_disputes', default="My Grade Disputes"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Toolbar
         toolbar = ttk.Frame(parent)
         toolbar.pack(fill='x', pady=(0, 10))
-        ttk.Button(toolbar, text="New Dispute", command=self.show_dispute_form).pack(side='left', padx=5)
-        ttk.Button(toolbar, text="Refresh", command=self.show_my_disputes).pack(side='left', padx=5)
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.new_dispute', default="New Dispute"), command=self.show_dispute_form).pack(side='left', padx=5)
+        ttk.Button(toolbar, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.refresh', default="Refresh"), command=self.show_my_disputes).pack(side='left', padx=5)
 
         # Treeview
         columns = ('ID', 'Assignment', 'Original Grade', 'Action', 'Status', 'Submitted')
@@ -328,7 +330,7 @@ class GradeDisputeManager:
         scrollbar.pack(side='right', fill='y')
 
         # Detail panel
-        detail_frame = ttk.LabelFrame(parent, text="Dispute Details", padding=10)
+        detail_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.dispute_details', default="Dispute Details"), padding=10)
         detail_frame.pack(fill='x', pady=(10, 0))
         self.my_dispute_detail_text = scrolledtext.ScrolledText(detail_frame, height=6, state='disabled')
         self.my_dispute_detail_text.pack(fill='x')
@@ -369,7 +371,7 @@ class GradeDisputeManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load disputes: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), f"Failed to load disputes: {e}")
 
     def _on_my_dispute_select(self, _event=None):
         """Show details when a dispute is selected"""
@@ -397,29 +399,29 @@ class GradeDisputeManager:
     def show_regrade_queue(self):
         """Instructor view of all pending regrade requests"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Access Denied", "You do not have permission to view the regrade queue.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.you_do_not_have_permission_to_view_the_regrade_queue', default="You do not have permission to view the regrade queue."))
             return
 
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Regrade Request Queue", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.regrade_request_queue', default="Regrade Request Queue"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Filter bar
         filter_frame = ttk.Frame(parent)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Status:").pack(side='left', padx=(0, 5))
-        self.queue_status_var = tk.StringVar(value='pending')
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.status', default="Status:")).pack(side='left', padx=(0, 5))
+        self.queue_status_var = tk.StringVar(value=_t('gui.academics.assignment_system.grade_dispute_manager.values.pending', default='pending'))
         status_combo = ttk.Combobox(
             filter_frame, textvariable=self.queue_status_var,
             values=['all'] + self.STATUSES, state='readonly', width=15
         )
         status_combo.pack(side='left', padx=(0, 10))
 
-        ttk.Button(filter_frame, text="Filter", command=self._load_regrade_queue).pack(side='left', padx=5)
-        ttk.Button(filter_frame, text="Refresh", command=self._load_regrade_queue).pack(side='left', padx=5)
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.filter', default="Filter"), command=self._load_regrade_queue).pack(side='left', padx=5)
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.refresh', default="Refresh"), command=self._load_regrade_queue).pack(side='left', padx=5)
 
         # Treeview
         columns = ('ID', 'Student', 'Assignment', 'Original Grade', 'Action', 'Status', 'Submitted')
@@ -441,7 +443,7 @@ class GradeDisputeManager:
         # Action buttons
         btn_frame = ttk.Frame(parent)
         btn_frame.pack(fill='x', pady=(10, 0))
-        ttk.Button(btn_frame, text="Review Selected", command=self._review_selected_dispute).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.review_selected', default="Review Selected"), command=self._review_selected_dispute).pack(side='left', padx=5)
 
         self._load_regrade_queue()
 
@@ -477,13 +479,13 @@ class GradeDisputeManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load regrade queue: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), f"Failed to load regrade queue: {e}")
 
     def _review_selected_dispute(self):
         """Open review dialog for the selected dispute"""
         selection = self.queue_tree.selection()
         if not selection:
-            messagebox.showinfo("Info", "Please select a dispute to review.")
+            messagebox.showinfo(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.info', default="Info"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.please_select_a_dispute_to_review', default="Please select a dispute to review."))
             return
         dispute_id = int(selection[0])
         self.review_dispute(dispute_id)
@@ -495,7 +497,7 @@ class GradeDisputeManager:
     def review_dispute(self, dispute_id):
         """Instructor dialog to review a dispute, add comments, approve/deny, adjust grade"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Access Denied", "You do not have permission to review disputes.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.you_do_not_have_permission_to_review_disputes', default="You do not have permission to review disputes."))
             return
 
         # Fetch dispute data
@@ -515,11 +517,11 @@ class GradeDisputeManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load dispute: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), f"Failed to load dispute: {e}")
             return
 
         if not row:
-            messagebox.showerror("Error", "Dispute not found.")
+            messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.dispute_not_found', default="Dispute not found."))
             return
 
         did, student_id, atitle, orig_grade, action, reason, evidence, status, prev_comments, prev_new = row
@@ -535,7 +537,7 @@ class GradeDisputeManager:
         main.pack(fill='both', expand=True)
 
         # Info section
-        info_frame = ttk.LabelFrame(main, text="Dispute Information", padding=10)
+        info_frame = ttk.LabelFrame(main, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.dispute_information', default="Dispute Information"), padding=10)
         info_frame.pack(fill='x', pady=(0, 10))
 
         labels = [
@@ -553,7 +555,7 @@ class GradeDisputeManager:
             ttk.Label(info_frame, text=val).grid(row=i, column=1, sticky='w', padx=5, pady=2)
 
         # Student reason
-        reason_frame = ttk.LabelFrame(main, text="Student Reason", padding=10)
+        reason_frame = ttk.LabelFrame(main, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.student_reason', default="Student Reason"), padding=10)
         reason_frame.pack(fill='x', pady=(0, 10))
         reason_text = scrolledtext.ScrolledText(reason_frame, height=4, state='normal')
         reason_text.insert(tk.END, reason or "")
@@ -564,14 +566,14 @@ class GradeDisputeManager:
         if evidence:
             ev_frame = ttk.Frame(main)
             ev_frame.pack(fill='x', pady=(0, 10))
-            ttk.Label(ev_frame, text="Evidence:").pack(side='left', padx=(0, 5))
+            ttk.Label(ev_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.evidence', default="Evidence:")).pack(side='left', padx=(0, 5))
             ttk.Label(ev_frame, text=evidence, foreground='blue').pack(side='left')
 
         # Reviewer section
-        review_frame = ttk.LabelFrame(main, text="Review", padding=10)
+        review_frame = ttk.LabelFrame(main, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.review', default="Review"), padding=10)
         review_frame.pack(fill='both', expand=True, pady=(0, 10))
 
-        ttk.Label(review_frame, text="Decision:").grid(row=0, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(review_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.decision', default="Decision:")).grid(row=0, column=0, sticky='w', padx=5, pady=5)
         decision_var = tk.StringVar(value=status if status in ('approved', 'denied') else 'under_review')
         decision_combo = ttk.Combobox(
             review_frame, textvariable=decision_var,
@@ -579,12 +581,12 @@ class GradeDisputeManager:
         )
         decision_combo.grid(row=0, column=1, sticky='w', padx=5, pady=5)
 
-        ttk.Label(review_frame, text="New Grade:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
+        ttk.Label(review_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.new_grade', default="New Grade:")).grid(row=1, column=0, sticky='w', padx=5, pady=5)
         new_grade_var = tk.StringVar(value=str(prev_new) if prev_new is not None else "")
         new_grade_entry = ttk.Entry(review_frame, textvariable=new_grade_var, width=15)
         new_grade_entry.grid(row=1, column=1, sticky='w', padx=5, pady=5)
 
-        ttk.Label(review_frame, text="Comments:").grid(row=2, column=0, sticky='nw', padx=5, pady=5)
+        ttk.Label(review_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.comments', default="Comments:")).grid(row=2, column=0, sticky='nw', padx=5, pady=5)
         comments_text = scrolledtext.ScrolledText(review_frame, height=5, width=40)
         comments_text.grid(row=2, column=1, sticky='ew', padx=5, pady=5)
         if prev_comments:
@@ -605,7 +607,7 @@ class GradeDisputeManager:
                 try:
                     new_grade = float(new_grade_str)
                 except ValueError:
-                    messagebox.showwarning("Validation", "New grade must be a number.")
+                    messagebox.showwarning(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.validation', default="Validation"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.new_grade_must_be_a_number', default="New grade must be a number."))
                     return
 
             reviewer_id = None
@@ -633,7 +635,7 @@ class GradeDisputeManager:
                         ''', (new_grade, dispute_id))
 
                     conn.commit()
-                    messagebox.showinfo("Success", "Dispute review saved.")
+                    messagebox.showinfo(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.success', default="Success"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.dispute_review_saved', default="Dispute review saved."))
                     dialog.destroy()
                     # Refresh queue if visible
                     if hasattr(self, 'queue_tree'):
@@ -641,7 +643,7 @@ class GradeDisputeManager:
                 finally:
                     conn.close()
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to save review: {e}")
+                messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), f"Failed to save review: {e}")
 
         def view_related_mc():
             """Open the MC GUI focused on this student so the reviewer can
@@ -653,18 +655,18 @@ class GradeDisputeManager:
                 )
                 claims = claims_for_student(student_id)
                 if not claims:
-                    messagebox.showinfo("MC", "No MC claims on file for this student.",
+                    messagebox.showinfo(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.mc', default="MC"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.no_mc_claims_on_file_for_this_student', default="No MC claims on file for this student."),
                                         parent=dialog)
                     return
                 open_mc_gui_for_student(dialog, student_id=student_id)
             except Exception as exc:
-                messagebox.showerror("MC", f"Could not open MC GUI: {exc}",
+                messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.mc', default="MC"), f"Could not open MC GUI: {exc}",
                                      parent=dialog)
 
-        ttk.Button(btn_frame, text="Save Review", command=save_review).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="View related MC claims",
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.save_review', default="Save Review"), command=save_review).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.view_related_mc_claims', default="View related MC claims"),
                    command=view_related_mc).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.cancel', default="Cancel"), command=dialog.destroy).pack(side='left', padx=5)
 
     # ------------------------------------------------------------------ #
     #  Dispute history with filters
@@ -673,46 +675,46 @@ class GradeDisputeManager:
     def show_dispute_history(self):
         """Full history of all disputes with filters"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Access Denied", "You do not have permission to view dispute history.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.you_do_not_have_permission_to_view_dispute_history', default="You do not have permission to view dispute history."))
             return
 
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Dispute History", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.dispute_history', default="Dispute History"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Filters
-        filter_frame = ttk.LabelFrame(parent, text="Filters", padding=10)
+        filter_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.filters', default="Filters"), padding=10)
         filter_frame.pack(fill='x', pady=(0, 10))
 
-        ttk.Label(filter_frame, text="Status:").grid(row=0, column=0, sticky='w', padx=5, pady=3)
-        self.hist_status_var = tk.StringVar(value='all')
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.status', default="Status:")).grid(row=0, column=0, sticky='w', padx=5, pady=3)
+        self.hist_status_var = tk.StringVar(value=_t('gui.academics.assignment_system.grade_dispute_manager.values.all', default='all'))
         ttk.Combobox(
             filter_frame, textvariable=self.hist_status_var,
             values=['all'] + self.STATUSES, state='readonly', width=15
         ).grid(row=0, column=1, sticky='w', padx=5, pady=3)
 
-        ttk.Label(filter_frame, text="Student ID:").grid(row=0, column=2, sticky='w', padx=5, pady=3)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.student_id', default="Student ID:")).grid(row=0, column=2, sticky='w', padx=5, pady=3)
         self.hist_student_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.hist_student_var, width=15).grid(
             row=0, column=3, sticky='w', padx=5, pady=3
         )
 
-        ttk.Label(filter_frame, text="From:").grid(row=1, column=0, sticky='w', padx=5, pady=3)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.from', default="From:")).grid(row=1, column=0, sticky='w', padx=5, pady=3)
         self.hist_from_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.hist_from_var, width=15).grid(
             row=1, column=1, sticky='w', padx=5, pady=3
         )
-        ttk.Label(filter_frame, text="(YYYY-MM-DD)").grid(row=1, column=2, sticky='w', padx=5, pady=3)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.yyyy_mm_dd', default="(YYYY-MM-DD)")).grid(row=1, column=2, sticky='w', padx=5, pady=3)
 
-        ttk.Label(filter_frame, text="To:").grid(row=2, column=0, sticky='w', padx=5, pady=3)
+        ttk.Label(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.to', default="To:")).grid(row=2, column=0, sticky='w', padx=5, pady=3)
         self.hist_to_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.hist_to_var, width=15).grid(
             row=2, column=1, sticky='w', padx=5, pady=3
         )
 
-        ttk.Button(filter_frame, text="Apply Filters", command=self._load_dispute_history).grid(
+        ttk.Button(filter_frame, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.apply_filters', default="Apply Filters"), command=self._load_dispute_history).grid(
             row=2, column=3, padx=5, pady=3
         )
 
@@ -788,7 +790,7 @@ class GradeDisputeManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load dispute history: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), f"Failed to load dispute history: {e}")
 
     def _review_from_history(self):
         """Open review dialog from history treeview"""
@@ -803,13 +805,13 @@ class GradeDisputeManager:
     def show_dispute_analytics(self):
         """Stats on disputes: count by status, average resolution time, common reasons"""
         if not self._check_permission('manage_assignments'):
-            messagebox.showwarning("Access Denied", "You do not have permission to view analytics.")
+            messagebox.showwarning(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.access_denied', default="Access Denied"), _t('gui.academics.assignment_system.grade_dispute_manager.dialogs.you_do_not_have_permission_to_view_analytics', default="You do not have permission to view analytics."))
             return
 
         self.gui.layout.clear_content_area()
         parent = self.gui.layout.content_area
 
-        title = ttk.Label(parent, text="Dispute Analytics", style='Title.TLabel')
+        title = ttk.Label(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.dispute_analytics', default="Dispute Analytics"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         try:
@@ -866,7 +868,7 @@ class GradeDisputeManager:
             finally:
                 conn.close()
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to load analytics: {e}")
+            messagebox.showerror(_t('gui.academics.assignment_system.grade_dispute_manager.dialogs.error', default="Error"), f"Failed to load analytics: {e}")
             return
 
         # Summary cards
@@ -892,12 +894,12 @@ class GradeDisputeManager:
             summary_frame.columnconfigure(c, weight=1)
 
         # Status breakdown
-        breakdown_frame = ttk.LabelFrame(parent, text="Status Breakdown", padding=10)
+        breakdown_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.status_breakdown', default="Status Breakdown"), padding=10)
         breakdown_frame.pack(fill='x', pady=(0, 10))
 
         status_tree = ttk.Treeview(breakdown_frame, columns=('Status', 'Count'), show='headings', height=4)
-        status_tree.heading('Status', text='Status')
-        status_tree.heading('Count', text='Count')
+        status_tree.heading('Status', text=_t('gui.academics.assignment_system.grade_dispute_manager.headings.status', default='Status'))
+        status_tree.heading('Count', text=_t('gui.academics.assignment_system.grade_dispute_manager.headings.count', default='Count'))
         status_tree.column('Status', width=200)
         status_tree.column('Count', width=100)
         for s in self.STATUSES:
@@ -905,12 +907,12 @@ class GradeDisputeManager:
         status_tree.pack(fill='x')
 
         # Common requested actions
-        actions_frame = ttk.LabelFrame(parent, text="Common Requested Actions", padding=10)
+        actions_frame = ttk.LabelFrame(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.labels.common_requested_actions', default="Common Requested Actions"), padding=10)
         actions_frame.pack(fill='x', pady=(0, 10))
 
         action_tree = ttk.Treeview(actions_frame, columns=('Action', 'Count'), show='headings', height=5)
-        action_tree.heading('Action', text='Requested Action')
-        action_tree.heading('Count', text='Count')
+        action_tree.heading('Action', text=_t('gui.academics.assignment_system.grade_dispute_manager.headings.requested_action', default='Requested Action'))
+        action_tree.heading('Count', text=_t('gui.academics.assignment_system.grade_dispute_manager.headings.count', default='Count'))
         action_tree.column('Action', width=250)
         action_tree.column('Count', width=100)
         for action_name, cnt in action_counts:
@@ -918,4 +920,4 @@ class GradeDisputeManager:
         action_tree.pack(fill='x')
 
         # Refresh button
-        ttk.Button(parent, text="Refresh", command=self.show_dispute_analytics).pack(anchor='w', pady=(10, 0))
+        ttk.Button(parent, text=_t('gui.academics.assignment_system.grade_dispute_manager.buttons.refresh', default="Refresh"), command=self.show_dispute_analytics).pack(anchor='w', pady=(10, 0))

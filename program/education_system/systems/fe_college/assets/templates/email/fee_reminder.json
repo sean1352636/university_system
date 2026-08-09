@@ -1,0 +1,8 @@
+{
+  "subject": "Fees outstanding — learner {{student_id}}",
+  "body": "Dear {{recipient_name}},\n\nOur records show {{amount_due}} outstanding on {{first_name}}'s account for {{course_title}}, due {{due_date}}.\n\nIf you have paid in the last few days, thank you — please ignore this.\n\nIf paying in full is difficult, contact the finance team on {{college_phone}}. We can usually arrange instalments, and there is a bursary fund for learners who qualify. Nobody is removed from a course for asking about this.\n\nFinance Team\n{{college_name}}",
+  "from_name": "{{college_name}} Finance",
+  "from_address": "finance@fecollege.ac.uk",
+  "category": "Finance",
+  "priority": "Normal"
+}

@@ -97,10 +97,10 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
     except Exception:
         logger.exception("Sixth-form module not importable")
         messagebox.showerror(
-            "Import from Sixth Form System",
-            "Could not load the sixth-form student module. "
+            _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
+            _t('gui.learners.students.student_crud_gui.importers.dialogs.could_not_load_the_sixth_form_student_module_make_sure_the_sixth', default="Could not load the sixth-form student module. "
             "Make sure the sixth-form system is installed alongside "
-            "the university system.",
+            "the university system."),
             parent=parent_dialog,
         )
         return
@@ -110,7 +110,7 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
     except Exception as e:
         logger.exception("list_year_13_students failed")
         messagebox.showerror(
-            "Import from Sixth Form System",
+            _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
             f"Could not load Year 13 students: {e}",
             parent=parent_dialog,
         )
@@ -118,16 +118,16 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
 
     if not rows:
         messagebox.showinfo(
-            "Import from Sixth Form System",
-            "No active Year 13 students were found in the sixth-form "
+            _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
+            _t('gui.learners.students.student_crud_gui.importers.dialogs.no_active_year_13_students_were_found_in_the_sixth_form_database', default="No active Year 13 students were found in the sixth-form "
             "database. (Looking for enrolments with year_group=13 and "
-            "status='Enrolled'.)",
+            "status='Enrolled'.)"),
             parent=parent_dialog,
         )
         return
 
     picker = tk.Toplevel(parent_dialog)
-    picker.title("Import from Sixth Form System — Year 13")
+    picker.title(_t('gui.learners.students.student_crud_gui.importers.windows.import_from_sixth_form_system_year_13', default="Import from Sixth Form System — Year 13"))
     picker.geometry("820x520")
     picker.transient(parent_dialog)
     try:
@@ -139,8 +139,8 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
     header.pack(fill=tk.X)
     ttk.Label(
         header,
-        text=("Year 13 students in the sixth-form database. "
-              "Pick one and click Import to pre-fill the form."),
+        text=(_t('gui.learners.students.student_crud_gui.importers.labels.year_13_students_in_the_sixth_form_database_pick_one_and_click_i', default="Year 13 students in the sixth-form database. "
+              "Pick one and click Import to pre-fill the form.")),
         font=('Arial', 10),
     ).pack(side=tk.LEFT)
 
@@ -187,12 +187,12 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
     def _do_import():
         sel = tree.selection()
         if not sel:
-            info.config(text="Select a student first.")
+            info.config(text=_t('gui.learners.students.student_crud_gui.importers.text.select_a_student_first', default="Select a student first."))
             return
         sid = sel[0]
         student = next((s for s in rows if s.student_id == sid), None)
         if student is None:
-            info.config(text="Selection lost — refresh the list.")
+            info.config(text=_t('gui.learners.students.student_crud_gui.importers.text.selection_lost_refresh_the_list', default="Selection lost — refresh the list."))
             return
         # Remember the origin id on the parent dialog so the eventual
         # Save handler can call mark_transferred() against the right
@@ -235,7 +235,7 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
             logger.exception(
                 "Pre-filling form from sixth-form student %s failed", sid)
             messagebox.showerror(
-                "Import from Sixth Form System",
+                _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
                 f"Could not pre-fill the form: {e}",
                 parent=picker,
             )
@@ -288,7 +288,7 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
         )
         if sf_subjects and filled_grades < len(sf_subjects):
             messagebox.showinfo(
-                "Import from Sixth Form System",
+                _t('gui.learners.students.student_crud_gui.importers.dialogs.import_from_sixth_form_system', default="Import from Sixth Form System"),
                 "Imported the student's A-level subjects, but "
                 f"{len(sf_subjects) - filled_grades} grade(s) were not on "
                 "record in the sixth-form system. Please complete the missing "
@@ -299,9 +299,9 @@ def _open_sixth_form_import_dialog(parent_dialog, fields):
 
     btns = ttk.Frame(footer)
     btns.pack(side=tk.RIGHT)
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(btns, text=_t('gui.learners.students.student_crud_gui.importers.buttons.cancel', default="Cancel"),
                 command=picker.destroy).pack(side=tk.RIGHT, padx=4)
-    ttk.Button(btns, text="Import",
+    ttk.Button(btns, text=_t('gui.learners.students.student_crud_gui.importers.buttons.import', default="Import"),
                 command=_do_import).pack(side=tk.RIGHT, padx=4)
 
     tree.bind("<Double-Button-1>", lambda _e: _do_import())
@@ -321,7 +321,7 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
     not abort the rest of the import.
     """
     win = tk.Toplevel(parent_dialog)
-    win.title("Bulk import students from CSV")
+    win.title(_t('gui.learners.students.student_crud_gui.importers.windows.bulk_import_students_from_csv', default="Bulk import students from CSV"))
     win.geometry("900x680")
     try:
         win.transient(parent_dialog)
@@ -332,7 +332,7 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
     # File picker row
     top = ttk.Frame(win, padding=(12, 10))
     top.pack(fill=tk.X)
-    ttk.Label(top, text="CSV file:").pack(side=tk.LEFT)
+    ttk.Label(top, text=_t('gui.learners.students.student_crud_gui.importers.labels.csv_file', default="CSV file:")).pack(side=tk.LEFT)
     path_var = tk.StringVar()
     ttk.Entry(top, textvariable=path_var, width=70).pack(
         side=tk.LEFT, padx=(8, 8), fill=tk.X, expand=True)
@@ -340,20 +340,20 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
     def _browse():
         p = filedialog.askopenfilename(
             parent=win,
-            title="Choose CSV",
+            title=_t('gui.learners.students.student_crud_gui.importers.dialogs.choose_csv', default="Choose CSV"),
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
         if p:
             path_var.set(p)
             _refresh_preview()
 
-    ttk.Button(top, text="Browse…",
+    ttk.Button(top, text=_t('gui.learners.students.student_crud_gui.importers.buttons.browse', default="Browse…"),
                 command=_browse).pack(side=tk.LEFT)
 
     # Preview area (column → field mapping + first few rows)
     body = ttk.Frame(win, padding=(12, 0))
     body.pack(fill=tk.BOTH, expand=True)
 
-    map_frame = ttk.LabelFrame(body, text="Column mapping", padding=10)
+    map_frame = ttk.LabelFrame(body, text=_t('gui.learners.students.student_crud_gui.importers.labels.column_mapping', default="Column mapping"), padding=10)
     map_frame.pack(fill=tk.X, pady=(8, 6))
     map_widgets: dict[str, ttk.Combobox] = {}
     expected = ("first_name", "middle_name", "last_name",
@@ -371,7 +371,7 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
                   sticky=tk.W, padx=(0, 16), pady=2)
         map_widgets[field] = cb
 
-    preview_lbl = ttk.LabelFrame(body, text="Preview (first 5 rows)",
+    preview_lbl = ttk.LabelFrame(body, text=_t('gui.learners.students.student_crud_gui.importers.labels.preview_first_5_rows', default="Preview (first 5 rows)"),
                                     padding=10)
     preview_lbl.pack(fill=tk.BOTH, expand=True, pady=6)
     preview_text = scrolledtext.ScrolledText(
@@ -459,7 +459,7 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
 
     def _import_rows():
         if not csv_rows:
-            status_lbl.config(text="No rows to import.",
+            status_lbl.config(text=_t('gui.learners.students.student_crud_gui.importers.text.no_rows_to_import', default="No rows to import."),
                                 foreground="red")
             return
         mapping = {f: w.get() for f, w in map_widgets.items()}
@@ -660,7 +660,7 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
                 summary += f"  line {ln}: {msg}\n"
             if len(err_rows) > 30:
                 summary += f"  …plus {len(err_rows) - 30} more\n"
-        messagebox.showinfo("CSV import", summary, parent=win)
+        messagebox.showinfo(_t('gui.learners.students.student_crud_gui.importers.dialogs.csv_import', default="CSV import"), summary, parent=win)
 
         # Refresh the parent views
         try:
@@ -672,9 +672,9 @@ def _open_bulk_csv_import_dialog(self, parent_dialog):
         if ok_rows and not err_rows:
             win.destroy()
 
-    ttk.Button(btns, text="Cancel",
+    ttk.Button(btns, text=_t('gui.learners.students.student_crud_gui.importers.buttons.cancel', default="Cancel"),
                 command=win.destroy).pack(side=tk.RIGHT, padx=4)
-    ttk.Button(btns, text="Import",
+    ttk.Button(btns, text=_t('gui.learners.students.student_crud_gui.importers.buttons.import', default="Import"),
                 command=_import_rows).pack(side=tk.RIGHT, padx=4)
 
 
